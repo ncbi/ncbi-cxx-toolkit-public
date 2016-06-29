@@ -1,0 +1,1444 @@
+Seq-entry ::= set {
+  class phy-set ,
+  descr {
+    pub {
+      pub {
+        gen {
+          cit "Unpublished" ,
+          authors {
+            names
+              std {
+                {
+                  name
+                    name {
+                      last "q" ,
+                      first "q" ,
+                      initials "qq." } } } ,
+            affil
+              str "q" } ,
+          title "q" } } } ,
+    user {
+      class "Genomes" ,
+      type
+        str "info" ,
+      data {
+        {
+          label
+            id 0 ,
+          data
+            int 0 } } } ,
+    user {
+      type
+        str "NcbiCleanup" ,
+      data {
+        {
+          label
+            str "method" ,
+          data
+            str "SequinCleanup" } ,
+        {
+          label
+            str "version" ,
+          data
+            int 8 } ,
+        {
+          label
+            str "month" ,
+          data
+            int 6 } ,
+        {
+          label
+            str "day" ,
+          data
+            int 1 } ,
+        {
+          label
+            str "year" ,
+          data
+            int 2016 } } } ,
+    create-date
+      std {
+        year 2011 ,
+        month 8 ,
+        day 25 } } ,
+  seq-set {
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          org {
+            taxname "uncultured bacterium" ,
+            orgname {
+              mod {
+                {
+                  subtype strain ,
+                  subname "nuc1" } } ,
+              lineage "Bacteria; environmental samples" ,
+              div "ENV" } } ,
+          subtype {
+            {
+              subtype other ,
+              name "[cultured; wizard]" } } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "nuc1" } ,
+          descr {
+            title "TSA: uncultured bacterium mobile element integron fake
+ protein name gene, partial cds; 23S ribosomal RNA (genex) gene, partial
+ sequence; and tRNA-Ala (genex), tmRNA product name (genex), and ncRNA product
+ telomerase RNA (genex) genes, complete sequence." ,
+            molinfo {
+              biomol genomic ,
+              tech tsa } ,
+            pub {
+              pub {
+                pmid 12345 ,
+                article {
+                  title {
+                    name "A new granulation method for compressed tablets
+ [proceedings]." } ,
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Rubinstein" ,
+                              first "M" ,
+                              initials "M.H." } } } } ,
+                  from
+                    journal {
+                      title {
+                        iso-jta "J. Pharm. Pharmacol." } ,
+                      imp {
+                        date
+                          std {
+                            year 1976 ,
+                            month 12 } ,
+                        volume "28" ,
+                        pages "67P" ,
+                        pubstatus ppublish } } ,
+                  ids {
+                    pubmed 12345 } } } ,
+              comment "pub descriptor" } ,
+            comment "this is a comment on the first sequence" ,
+            name "This is a name descriptor" ,
+            user {
+              type
+                str "GenomeProjectsDB" ,
+              data {
+                {
+                  label
+                    str "ProjectID" ,
+                  data
+                    int 1234 } ,
+                {
+                  label
+                    str "ParentID" ,
+                  data
+                    int 0 } } } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##abc-START##" } ,
+                {
+                  label
+                    str "field1" ,
+                  data
+                    str "value1" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##abc-END##" } } } ,
+            user {
+              type
+                str "OriginalID" ,
+              data {
+                {
+                  label
+                    str "LocalId" ,
+                  data
+                    str "nuc1" } } } ,
+            region "This is a region descriptor." } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 118 ,
+            seq-data
+              ncbi4na '1848482118848844114111185182118848841881188888844444444
+444422222222222221111111111888888888884444444444442222222222222'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      rna {
+                        type rRNA ,
+                        ext
+                          name "23S ribosomal RNA" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 25 ,
+                        to 117 ,
+                        strand plus ,
+                        id
+                          local
+                            str "nuc1" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } ,
+                  {
+                    id
+                      local
+                        id 1 ,
+                    data
+                      gene {
+                        locus "genex" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 25 ,
+                        to 117 ,
+                        strand plus ,
+                        id
+                          local
+                            str "nuc1" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } ,
+                    qual {
+                      {
+                        qual "bound_moiety" ,
+                        val "bound-moiety value" } ,
+                      {
+                        qual "rpt_type" ,
+                        val "unwise" } } ,
+                    xref {
+                      {
+                        id
+                          local
+                            id 2 } } } ,
+                  {
+                    data
+                      pub {
+                        pub {
+                          gen {
+                            cit "Unpublished" ,
+                            authors {
+                              names
+                                std {
+                                  {
+                                    name
+                                      name {
+                                        last "m" ,
+                                        first "a" ,
+                                        initials "at." } } } ,
+                              affil
+                                std {
+                                  affil "institution" ,
+                                  div "dept" ,
+                                  city "city" ,
+                                  sub "state" ,
+                                  country "country name" ,
+                                  street "address" ,
+                                  postal-code "zip code" } } ,
+                            title "sample unpublished feature" } } ,
+                        comment "a remark" } ,
+                    location
+                      int {
+                        from 25 ,
+                        to 55 ,
+                        strand plus ,
+                        id
+                          local
+                            str "nuc1" } } ,
+                  {
+                    data
+                      biosrc {
+                        genome genomic ,
+                        org {
+                          taxname "Acanthamoeba castellanii" ,
+                          orgname {
+                            mod {
+                              {
+                                subtype cultivar ,
+                                subname "xyz" } } ,
+                            gcode 1 ,
+                            mgcode 4 ,
+                            div "INV" } } ,
+                        subtype {
+                          {
+                            subtype cell-line ,
+                            name "a" } ,
+                          {
+                            subtype other ,
+                            name "this is a sample biosource feature" } } } ,
+                    location
+                      int {
+                        from 25 ,
+                        to 55 ,
+                        strand plus ,
+                        id
+                          local
+                            str "nuc1" } } ,
+                  {
+                    data
+                      pub {
+                        pub {
+                          pmid 123456 ,
+                          article {
+                            title {
+                              name "[The laboratory in programs for enteric
+ infection control]." } ,
+                            authors {
+                              names
+                                std {
+                                  {
+                                    name
+                                      name {
+                                        last "Grados" ,
+                                        first "O" ,
+                                        initials "O.B." } } } } ,
+                            from
+                              journal {
+                                title {
+                                  iso-jta "Bol Oficina Sanit Panam" } ,
+                                imp {
+                                  date
+                                    std {
+                                      year 1975 ,
+                                      month 4 } ,
+                                  volume "78" ,
+                                  issue "4" ,
+                                  pages "318-322" ,
+                                  retract {
+                                    type retracted ,
+                                    exp "foo" } ,
+                                  pubstatus ppublish } } ,
+                            ids {
+                              pubmed 123456 } } } } ,
+                    location
+                      int {
+                        from 25 ,
+                        to 65 ,
+                        strand plus ,
+                        id
+                          local
+                            str "nuc1" } } ,
+                  {
+                    data
+                      pub {
+                        pub {
+                          article {
+                            title {
+                              name "book chapter title" } ,
+                            authors {
+                              names
+                                std {
+                                  {
+                                    name
+                                      name {
+                                        last "last" ,
+                                        first "first" ,
+                                        initials "fm." } } ,
+                                  {
+                                    name
+                                      name {
+                                        last "second" ,
+                                        first "second" ,
+                                        initials "sk." ,
+                                        suffix "II" } } ,
+                                  {
+                                    name
+                                      name {
+                                        last "thirdlast" ,
+                                        first "third" ,
+                                        initials "td." ,
+                                        suffix "III" } } ,
+                                  {
+                                    name
+                                      name {
+                                        last "fourthlast" ,
+                                        first "fourth" ,
+                                        initials "ff." ,
+                                        suffix "IV" } } ,
+                                  {
+                                    name
+                                      name {
+                                        last "fivelast" ,
+                                        first "five" ,
+                                        initials "ff." ,
+                                        suffix "V" } } ,
+                                  {
+                                    name
+                                      name {
+                                        last "sixlast" ,
+                                        first "six" ,
+                                        initials "ss." ,
+                                        suffix "VI" } } } } ,
+                            from
+                              book {
+                                title {
+                                  name "book title" } ,
+                                authors {
+                                  names
+                                    std {
+                                      {
+                                        name
+                                          name {
+                                            last "elast" ,
+                                            first "efirst" ,
+                                            initials "em." } } } } ,
+                                imp {
+                                  date
+                                    std {
+                                      year 2001 } ,
+                                  pages "pub pages" ,
+                                  pub
+                                    std {
+                                      affil "publisher" ,
+                                      city "publisher city" ,
+                                      sub "publisher state" ,
+                                      country "publisher country" ,
+                                      street "publisher address" ,
+                                      email "pub email" ,
+                                      fax "pub fax" ,
+                                      phone "pub phone" ,
+                                      postal-code "publisher zip" } ,
+                                  cprt
+                                    std {
+                                      year 2002 } } } } } ,
+                        comment "remark" } ,
+                    location
+                      int {
+                        from 25 ,
+                        to 55 ,
+                        strand plus ,
+                        id
+                          local
+                            str "nuc1" } } ,
+                  {
+                    data
+                      pub {
+                        pub {
+                          book {
+                            title {
+                              name "book title" } ,
+                            authors {
+                              names
+                                std {
+                                  {
+                                    name
+                                      name {
+                                        last "last" ,
+                                        first "first" ,
+                                        initials "fm." } } } ,
+                              affil
+                                std {
+                                  affil "institution" ,
+                                  div "department" ,
+                                  city "city" ,
+                                  sub "state" ,
+                                  country "country" ,
+                                  street "address" ,
+                                  postal-code "zip" } } ,
+                            imp {
+                              date
+                                std {
+                                  year 2001 } ,
+                              pub
+                                std {
+                                  affil "publisher" ,
+                                  city "city" ,
+                                  sub "state" ,
+                                  country "country" ,
+                                  street "address" ,
+                                  email "email" ,
+                                  fax "fax" ,
+                                  phone "phone" ,
+                                  postal-code "zip" } ,
+                              cprt
+                                std {
+                                  year 2002 } } } } ,
+                        comment "remark" } ,
+                    location
+                      int {
+                        from 25 ,
+                        to 55 ,
+                        strand plus ,
+                        id
+                          local
+                            str "nuc1" } } ,
+                  {
+                    data
+                      pub {
+                        pub {
+                          article {
+                            title {
+                              name "abstract title" } ,
+                            authors {
+                              names
+                                std {
+                                  {
+                                    name
+                                      name {
+                                        last "presenter" ,
+                                        first "presenter" ,
+                                        initials "pk." ,
+                                        suffix "IV" } } } ,
+                              affil
+                                str "paffil" } ,
+                            from
+                              proc {
+                                book {
+                                  title {
+                                    name "proceedings title" } ,
+                                  authors {
+                                    names
+                                      std {
+                                        {
+                                          name
+                                            name {
+                                              last "person" ,
+                                              first "chair" ,
+                                              initials "c." } } } ,
+                                    affil
+                                      str "chair affil" } ,
+                                  imp {
+                                    date
+                                      std {
+                                        year 2001 } ,
+                                    pages "pages" ,
+                                    pub
+                                      std {
+                                        affil "publisher" ,
+                                        city "city" ,
+                                        sub "state" ,
+                                        country "country" ,
+                                        street "address" ,
+                                        email "email" ,
+                                        fax "fax" ,
+                                        phone "phone" ,
+                                        postal-code "zip" } } } ,
+                                meet {
+                                  number "number" ,
+                                  date
+                                    std {
+                                      year 2001 } ,
+                                  place
+                                    std {
+                                      affil "locale location" ,
+                                      city "locale city" ,
+                                      sub "locale state" ,
+                                      country "locale country" ,
+                                      street "locale address" } } } } } ,
+                        comment "remark" } ,
+                    location
+                      int {
+                        from 25 ,
+                        to 55 ,
+                        strand plus ,
+                        id
+                          local
+                            str "nuc1" } } ,
+                  {
+                    data
+                      pub {
+                        pub {
+                          proc {
+                            book {
+                              title {
+                                name "proceedings title" } ,
+                              authors {
+                                names
+                                  std {
+                                    {
+                                      name
+                                        name {
+                                          last "vener" ,
+                                          first "con" ,
+                                          initials "c" } } } ,
+                                affil
+                                  str "convener affil" } ,
+                              imp {
+                                date
+                                  std {
+                                    year 2001 } ,
+                                pub
+                                  std {
+                                    affil "publisher" ,
+                                    city "city" ,
+                                    sub "state" ,
+                                    country "country" ,
+                                    street "address" ,
+                                    email "email" ,
+                                    fax "fax" ,
+                                    phone "phone" ,
+                                    postal-code "zip" } } } ,
+                            meet {
+                              number "number" ,
+                              date
+                                std {
+                                  year 2001 } ,
+                              place
+                                std {
+                                  affil "local location" ,
+                                  city "locale city" ,
+                                  sub "locale state" ,
+                                  country "locale country" ,
+                                  street "locale address" } } } } ,
+                        comment "remark" } ,
+                    location
+                      int {
+                        from 25 ,
+                        to 55 ,
+                        strand plus ,
+                        id
+                          local
+                            str "nuc1" } } ,
+                  {
+                    data
+                      pub {
+                        pub {
+                          patent {
+                            title "patent title" ,
+                            authors {
+                              names
+                                std {
+                                  {
+                                    name
+                                      name {
+                                        last "lastname" ,
+                                        first "fname" ,
+                                        initials "fm." } } } ,
+                              affil
+                                str "author affil" } ,
+                            country "pat country" ,
+                            doc-type "doctype" ,
+                            number "patnum" ,
+                            date-issue
+                              std {
+                                year 2011 ,
+                                month 1 ,
+                                day 1 } ,
+                            app-number "appnum" ,
+                            app-date
+                              std {
+                                year 2010 ,
+                                month 1 ,
+                                day 1 } ,
+                            applicants {
+                              names
+                                std {
+                                  {
+                                    name
+                                      name {
+                                        last "app" ,
+                                        first "app" ,
+                                        initials "a." } } } ,
+                              affil
+                                str "app affil" } ,
+                            assignees {
+                              names
+                                std {
+                                  {
+                                    name
+                                      name {
+                                        last "assig" ,
+                                        first "assig" ,
+                                        initials "a." } } } ,
+                              affil
+                                str "assig affil" } ,
+                            abstract "abstract" } } ,
+                        comment "remark" } ,
+                    location
+                      int {
+                        from 25 ,
+                        to 50 ,
+                        strand plus ,
+                        id
+                          local
+                            str "nuc1" } } ,
+                  {
+                    data
+                      pub {
+                        pub {
+                          gen {
+                            cit "Online Publication" ,
+                            authors {
+                              names
+                                std {
+                                  {
+                                    name
+                                      name {
+                                        last "lname" ,
+                                        first "fname" ,
+                                        initials "f." } } } ,
+                              affil
+                                str "institution" } ,
+                            title "online title" } } ,
+                        comment "remark" } ,
+                    location
+                      int {
+                        from 25 ,
+                        to 45 ,
+                        strand plus ,
+                        id
+                          local
+                            str "nuc1" } } ,
+                  {
+                    data
+                      rna {
+                        type ncRNA ,
+                        ext
+                          gen {
+                            class "telomerase_RNA" ,
+                            product "ncRNA product" } } ,
+                    location
+                      int {
+                        from 25 ,
+                        to 50 ,
+                        strand plus ,
+                        id
+                          local
+                            str "nuc1" } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 65 ,
+                            codon {
+                              0 } ,
+                            anticodon
+                              int {
+                                from 45 ,
+                                to 47 ,
+                                strand plus ,
+                                id
+                                  local
+                                    str "nuc1" } } } ,
+                    location
+                      int {
+                        from 25 ,
+                        to 75 ,
+                        strand plus ,
+                        id
+                          local
+                            str "nuc1" } } ,
+                  {
+                    data
+                      rna {
+                        type tmRNA ,
+                        ext
+                          gen {
+                            product "tmRNA product name" ,
+                            quals {
+                              {
+                                qual "tag_peptide" ,
+                                val "4..6" } } } } ,
+                    location
+                      int {
+                        from 25 ,
+                        to 70 ,
+                        strand plus ,
+                        id
+                          local
+                            str "nuc1" } } ,
+                  {
+                    data
+                      pub {
+                        pub {
+                          sub {
+                            authors {
+                              names
+                                std {
+                                  {
+                                    name
+                                      name {
+                                        last "itter" ,
+                                        first "sub" ,
+                                        initials "sm." } } ,
+                                  {
+                                    name
+                                      consortium "consortium A" } ,
+                                  {
+                                    name
+                                      consortium "consortium B" } } ,
+                              affil
+                                str "inst" } ,
+                            date
+                              std {
+                                year 2011 ,
+                                month 9 ,
+                                day 23 } ,
+                            descr "citsub description" } } ,
+                        comment "remark" } ,
+                    location
+                      int {
+                        from 25 ,
+                        to 45 ,
+                        strand plus ,
+                        id
+                          local
+                            str "nuc1" } } ,
+                  {
+                    data
+                      pub {
+                        pub {
+                          man {
+                            cit {
+                              title {
+                                name "thesis title" } ,
+                              authors {
+                                names
+                                  std {
+                                    {
+                                      name
+                                        name {
+                                          last "sis" ,
+                                          first "the" ,
+                                          initials "t." } } } ,
+                                affil
+                                  str "a" } ,
+                              imp {
+                                date
+                                  std {
+                                    year 2001 } ,
+                                pub
+                                  str "publisher" ,
+                                cprt
+                                  std {
+                                    year 2010 } } } ,
+                            type thesis } } ,
+                        comment "remark" } ,
+                    location
+                      int {
+                        from 25 ,
+                        to 50 ,
+                        strand plus ,
+                        id
+                          local
+                            str "nuc1" } } ,
+                  {
+                    data
+                      imp {
+                        key "misc_feature" } ,
+                    location
+                      int {
+                        from 25 ,
+                        to 117 ,
+                        strand plus ,
+                        id
+                          local
+                            str "nuc1" } ,
+                    qual {
+                      {
+                        qual "inference" ,
+                        val "COORDINATES:
+ alignment:program:version:INSD|AY123456.1,INSD|AY123457.1,INSD|AY123458.1" } ,
+                      {
+                        qual "inference" ,
+                        val "COORDINATES: similar to sequence:INSD:AY123456.1" } ,
+                      {
+                        qual "inference" ,
+                        val "DESCRIPTION: profile:program:version" } ,
+                      {
+                        qual "inference" ,
+                        val "EXISTENCE: ab initio prediction:tRNAscan:1" } ,
+                      {
+                        qual "rpt_family" ,
+                        val "repeat family" } ,
+                      {
+                        qual "rpt_type" ,
+                        val "inverted" } ,
+                      {
+                        qual "rpt_type" ,
+                        val "tandem" } ,
+                      {
+                        qual "rpt_unit_range" ,
+                        val "4..7" } ,
+                      {
+                        qual "rpt_unit_seq" ,
+                        val "aatt" } } } ,
+                  {
+                    data
+                      imp {
+                        key "mobile_element" } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 117 ,
+                        strand plus ,
+                        id
+                          local
+                            str "nuc1" } ,
+                    qual {
+                      {
+                        qual "mobile_element_type" ,
+                        val "integron:mobile element" } ,
+                      {
+                        qual "satellite" ,
+                        val "satellite:satellite element" } } } ,
+                  {
+                    data
+                      imp {
+                        key "oriT" } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 117 ,
+                        strand plus ,
+                        id
+                          local
+                            str "nuc1" } ,
+                    qual {
+                      {
+                        qual "direction" ,
+                        val "goofy" } ,
+                      {
+                        qual "rpt_type" ,
+                        val "inverted" } ,
+                      {
+                        qual "rpt_type" ,
+                        val "tandem" } } ,
+                    cit
+                      pub {
+                        gen {
+                          cit "last,fm. (2001) pub pages|bct" } ,
+                        pmid 123456 } } ,
+                  {
+                    data
+                      rna {
+                        type mRNA ,
+                        ext
+                          name "fake protein name accessroy" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 117 ,
+                        strand plus ,
+                        id
+                          local
+                            str "nuc1" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "nuc1_1" } ,
+          descr {
+            title "fake protein name, partial [uncultured bacterium]" ,
+            molinfo {
+              biomol peptide ,
+              tech concept-trans-a ,
+              completeness no-right } ,
+            user {
+              type
+                str "GenomeProjectsDB" ,
+              data {
+                {
+                  label
+                    str "ProjectID" ,
+                  data
+                    int 1235 } ,
+                {
+                  label
+                    str "ParentID" ,
+                  data
+                    int 0 } } } ,
+            user {
+              type
+                str "OriginalID" ,
+              data {
+                {
+                  label
+                    str "LocalId" ,
+                  data
+                    str "nuc1_1" } } } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 39 ,
+            seq-data
+              ncbieaa "MCQLLEENBQLLINFLGGGGPPPPKKKIFFFGGGGPPPP" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "fake protein name accessroy" } ,
+                        desc "fake protein description" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 38 ,
+                        id
+                          local
+                            str "nuc1_1" ,
+                        fuzz-to
+                          lim gt } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    conflict TRUE ,
+                    code {
+                      id 1 } ,
+                    code-break {
+                      {
+                        loc
+                          int {
+                            from 9 ,
+                            to 11 ,
+                            strand plus ,
+                            id
+                              local
+                                str "nuc1" } ,
+                        aa
+                          ncbieaa 65 } } } ,
+                partial TRUE ,
+                product
+                  whole
+                    local
+                      str "nuc1_1" ,
+                location
+                  int {
+                    from 0 ,
+                    to 117 ,
+                    strand plus ,
+                    id
+                      local
+                        str "nuc1" ,
+                    fuzz-to
+                      lim gt } ,
+                qual {
+                  {
+                    qual "inference" ,
+                    val "COORDINATES:
+ alignment:a:b:INSD|AY123456.1,INSD|AY123457.1,INSD|AY123458.1" } ,
+                  {
+                    qual "inference" ,
+                    val "EXISTENCE: similar to sequence (same
+ species):INSD:AY123456.1" } } } } } } } ,
+    seq {
+      id {
+        local
+          str "nuc2" } ,
+      descr {
+        title "Uncultured bacterium." ,
+        source {
+          org {
+            taxname "uncultured bacterium" ,
+            orgname {
+              mod {
+                {
+                  subtype strain ,
+                  subname "nuc2" } } ,
+              lineage "Bacteria; environmental samples" ,
+              div "ENV" } } ,
+          subtype {
+            {
+              subtype other ,
+              name "[cultured; wizard]" } } } ,
+        molinfo {
+          biomol genomic } ,
+        user {
+          type
+            str "OriginalID" ,
+          data {
+            {
+              label
+                str "LocalId" ,
+              data
+                str "nuc2" } } } } ,
+      inst {
+        repr raw ,
+        mol dna ,
+        length 138 ,
+        seq-data
+          ncbi2na 'AAAAAA955555400000FFFFFAAAAAA955555400000FFFFFAAAAAA9555554
+00000FFFFFF'H } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  imp {
+                    key "misc_feature" } ,
+                comment "amplified using primers designed for 16S ribosomal
+ RNA" ,
+                location
+                  int {
+                    from 0 ,
+                    to 137 ,
+                    strand plus ,
+                    id
+                      local
+                        str "nuc2" } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          org {
+            taxname "uncultured bacterium" ,
+            orgname {
+              mod {
+                {
+                  subtype strain ,
+                  subname "nuc3" } } ,
+              lineage "Bacteria; environmental samples" ,
+              div "ENV" } } ,
+          subtype {
+            {
+              subtype other ,
+              name "[cultured; wizard]" } } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "nuc3" } ,
+          descr {
+            title "Uncultured bacterium 23S ribosomal RNA (genex) gene,
+ partial sequence." ,
+            molinfo {
+              biomol genomic } ,
+            user {
+              type
+                str "OriginalID" ,
+              data {
+                {
+                  label
+                    str "LocalId" ,
+                  data
+                    str "nuc3" } } } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 138 ,
+            seq-data
+              ncbi4na '4444444444444222222222222111111111118888824242424242424
+242424FFFFFFFFFFFF111111111888888888844444444444442222222222221111111111188888
+88888'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      rna {
+                        type rRNA ,
+                        ext
+                          name "23S ribosomal RNA" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 137 ,
+                        strand minus ,
+                        id
+                          local
+                            str "nuc3" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } ,
+                  {
+                    data
+                      gene {
+                        locus "genex" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 137 ,
+                        strand minus ,
+                        id
+                          local
+                            str "nuc3" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } ,
+                    qual {
+                      {
+                        qual "bound_moiety" ,
+                        val "bound-moiety value" } ,
+                      {
+                        qual "rpt_type" ,
+                        val "unwise" } } } ,
+                  {
+                    data
+                      imp {
+                        key "misc_feature" } ,
+                    partial TRUE ,
+                    location
+                      mix {
+                        int {
+                          from 0 ,
+                          to 19 ,
+                          strand plus ,
+                          id
+                            local
+                              str "nuc3" ,
+                          fuzz-from
+                            lim lt ,
+                          fuzz-to
+                            lim gt } ,
+                        int {
+                          from 49 ,
+                          to 99 ,
+                          strand plus ,
+                          id
+                            local
+                              str "nuc3" ,
+                          fuzz-from
+                            lim lt ,
+                          fuzz-to
+                            lim gt } } } ,
+                  {
+                    data
+                      imp {
+                        key "3'UTR" } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 9 ,
+                        strand minus ,
+                        id
+                          local
+                            str "nuc3" } } ,
+                  {
+                    data
+                      imp {
+                        key "5'UTR" } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 20 ,
+                        strand plus ,
+                        id
+                          local
+                            str "nuc3" } } ,
+                  {
+                    data
+                      rna {
+                        type mRNA ,
+                        ext
+                          name "plus strand protein" } ,
+                    partial TRUE ,
+                    location
+                      mix {
+                        int {
+                          from 20 ,
+                          to 39 ,
+                          strand plus ,
+                          id
+                            local
+                              str "nuc3" ,
+                          fuzz-from
+                            lim lt } ,
+                        int {
+                          from 24 ,
+                          to 137 ,
+                          strand plus ,
+                          id
+                            local
+                              str "nuc3" ,
+                          fuzz-to
+                            lim gt } } } } } } } ,
+        seq {
+          id {
+            local
+              str "nuc3_1" } ,
+          descr {
+            molinfo {
+              biomol peptide ,
+              tech concept-trans } ,
+            user {
+              type
+                str "OriginalID" ,
+              data {
+                {
+                  label
+                    str "LocalId" ,
+                  data
+                    str "nuc3_1" } } } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 44 ,
+            seq-data
+              ncbieaa "-GGGAPHKKKNFSRARARAXXXXKKKFFFWGGGGPPPPKKKIFF" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "plus strand protein" } } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 43 ,
+                        id
+                          local
+                            str "nuc3_1" } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    code {
+                      id 1 } ,
+                    code-break {
+                      {
+                        loc
+                          packed-int {
+                            {
+                              from 38 ,
+                              to 39 ,
+                              strand plus ,
+                              id
+                                local
+                                  str "nuc3" } ,
+                            {
+                              from 24 ,
+                              to 24 ,
+                              strand plus ,
+                              id
+                                local
+                                  str "nuc3" } } ,
+                        aa
+                          ncbieaa 72 } } } ,
+                product
+                  whole
+                    local
+                      str "nuc3_1" ,
+                location
+                  mix {
+                    int {
+                      from 20 ,
+                      to 39 ,
+                      strand plus ,
+                      id
+                        local
+                          str "nuc3" } ,
+                    int {
+                      from 24 ,
+                      to 137 ,
+                      strand plus ,
+                      id
+                        local
+                          str "nuc3" } } } ,
+              {
+                data
+                  rna {
+                    type mRNA ,
+                    ext
+                      name "CDS" } ,
+                location
+                  mix {
+                    int {
+                      from 124 ,
+                      to 137 ,
+                      strand minus ,
+                      id
+                        local
+                          str "nuc3" } ,
+                    int {
+                      from 15 ,
+                      to 119 ,
+                      strand minus ,
+                      id
+                        local
+                          str "nuc3" } } } ,
+              {
+                data
+                  cdregion {
+                    code {
+                      id 1 } } ,
+                product
+                  whole
+                    local
+                      str "nuc3_2" ,
+                location
+                  mix {
+                    int {
+                      from 124 ,
+                      to 137 ,
+                      strand minus ,
+                      id
+                        local
+                          str "nuc3" } ,
+                    int {
+                      from 15 ,
+                      to 119 ,
+                      strand minus ,
+                      id
+                        local
+                          str "nuc3" } } } } } } } } ,
+  annot {
+    {
+      data
+        align {
+          {
+            type partial ,
+            dim 3 ,
+            segs
+              denseg {
+                dim 3 ,
+                numseg 2 ,
+                ids {
+                  local
+                    str "nuc1" ,
+                  local
+                    str "nuc2" ,
+                  local
+                    str "nuc3" } ,
+                starts {
+                  41 ,
+                  25 ,
+                  86 ,
+                  93 ,
+                  0 ,
+                  -1 } ,
+                lens {
+                  52 ,
+                  25 } ,
+                strands {
+                  plus ,
+                  minus ,
+                  plus ,
+                  plus ,
+                  minus ,
+                  plus } } } } } } }

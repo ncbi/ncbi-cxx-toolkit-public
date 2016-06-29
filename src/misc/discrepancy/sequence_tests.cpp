@@ -32,6 +32,7 @@
 #include <objects/seq/MolInfo.hpp>
 #include <objects/valid/Comment_rule.hpp>
 #include <objmgr/seqdesc_ci.hpp>
+#include <objmgr/feat_ci.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Delta_ext.hpp>
@@ -40,6 +41,12 @@
 #include <objects/seq/seqport_util.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
+#include <objects/pub/Pub.hpp>
+#include <objects/pub/Pub_equiv.hpp>
+#include <objects/biblio/Auth_list.hpp>
+#include <objects/biblio/Author.hpp>
+#include <objects/general/Person_id.hpp>
+
 
 #include "discrepancy_core.hpp"
 #include "utils.hpp"
@@ -1621,6 +1628,107 @@ DISCREPANCY_CASE(TAXNAME_NOT_IN_DEFLINE, CSeq_inst, eDisc | eOncaller, "Complete
 DISCREPANCY_SUMMARIZE(TAXNAME_NOT_IN_DEFLINE)
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+// HAS_PROJECT_ID
+
+const string kProjId = "ProjectID";
+
+static string GetProjectID(const CUser_object& user)
+{
+    string res;
+    if (user.IsSetData()) {
+
+        ITERATE(CUser_object::TData, field, user.GetData()) {
+            if ((*field)->IsSetData() && (*field)->GetData().IsInt() && (*field)->IsSetLabel() && (*field)->GetLabel().IsStr() && (*field)->GetLabel().GetStr() == "ProjectID") {
+                res = NStr::IntToString((*field)->GetData().GetInt());
+                break;
+            }
+        }
+    }
+
+    return res;
+}
+
+DISCREPANCY_CASE(HAS_PROJECT_ID, CSeq_inst, eOncaller, "Sequences with project IDs (looks for genome project IDs)")
+{
+    CConstRef<CBioseq> seq = context.GetCurrentBioseq();
+    if (!seq) {
+        return;
+    }
+
+    CBioseq_Handle seq_h = context.GetScope().GetBioseqHandle(*seq);
+    for (CSeqdesc_CI user(seq_h, CSeqdesc::e_User); user; ++user) {
+
+        if (user->GetUser().IsSetType() && user->GetUser().GetType().IsStr() && user->GetUser().GetType().GetStr() == "GenomeProjectsDB") {
+            string proj_id = GetProjectID(user->GetUser());
+            if (!proj_id.empty()) {
+                m_Objs[kProjId][proj_id].Add(*context.NewDiscObj(seq, eKeepRef), false);
+            }
+        }
+    }
+}
+
+typedef map<string, list<CConstRef<CBioseq> > > TBioseqMapByID;
+
+static void CollectSequencesByProjectID(CReportNode& bioseqs, TBioseqMapByID& prots, TBioseqMapByID& nucs)
+{
+    NON_CONST_ITERATE(CReportNode::TNodeMap, node, bioseqs.GetMap()) {
+
+        ITERATE(TReportObjectList, bioseq, node->second->GetObjects()) {
+            const CDiscrepancyObject* dobj = dynamic_cast<const CDiscrepancyObject*>(bioseq->GetPointer());
+            if (dobj) {
+                const CBioseq* cur_bioseq = dobj->GetBioseq();
+                if (cur_bioseq) {
+                    if (cur_bioseq->IsNa()) {
+                        nucs[node->first].push_back(ConstRef<CBioseq>(cur_bioseq));
+                    }
+                    else {
+                        prots[node->first].push_back(ConstRef<CBioseq>(cur_bioseq));
+                    }
+                }
+            }
+        }
+    }
+}
+
+static string kAllHasProjID = "[n] sequence[s] [has] project IDs ";
+static string kProtHasProjID = "[n] protein sequence[s] [has] project IDs ";
+static string kNucHasProjID = "[n] nucleotide sequence[s] [has] project IDs ";
+
+static void FillReport(const TBioseqMapByID& projs, CReportNode& report, CDiscrepancyContext& context, const string& what)
+{
+    if (!projs.empty()) {
+        ITERATE(TBioseqMapByID, proj, projs) {
+            ITERATE(list<CConstRef<CBioseq> >, bioseq, proj->second) {
+                report[what].Add(*context.NewDiscObj(*bioseq), false);
+            }
+        }
+    }
+}
+
+DISCREPANCY_SUMMARIZE(HAS_PROJECT_ID)
+{
+    TBioseqMapByID prots,
+                   nucs;
+
+    CollectSequencesByProjectID(m_Objs[kProjId], prots, nucs);
+
+    CReportNode res;
+    CReportNode* report = &res;
+    if (!prots.empty() && !nucs.empty()) {
+        string all = kAllHasProjID + (m_Objs[kProjId].GetMap().size() > 1 ? "(some different)" : "(all same)");
+        report = &res[all];
+    }
+
+    string sub_group = kProtHasProjID + (prots.size() > 1 ? "(some different)" : "(all same)");
+    FillReport(prots, *report, context, sub_group);
+
+    sub_group = kNucHasProjID + (prots.size() > 1 ? "(some different)" : "(all same)");
+    FillReport(nucs, *report, context, sub_group);
+
+    m_ReportItems = res.Export(*this)->GetSubitems();
 }
 
 
