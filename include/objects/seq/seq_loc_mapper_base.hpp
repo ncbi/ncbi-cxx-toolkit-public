@@ -1413,7 +1413,7 @@ CSeq_loc_Mapper_Options::SetTrimMappedLocation(bool value)
 inline
 bool CSeq_loc_Mapper_Options::x_IsSetOption(int opt) const
 {
-    return m_Options & opt;
+    return (m_Options & opt) != 0;
 }
 
 inline
