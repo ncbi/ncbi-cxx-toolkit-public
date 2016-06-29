@@ -840,6 +840,7 @@ CRef<CSeq_feat> CFeatTableEdit::xMakeGeneForFeature(
         eExtreme_Positional));
     pGene->SetLocation().SetInt().SetTo(rna.GetLocation().GetStop(
         eExtreme_Positional));
+    pGene->SetLocation().SetInt().SetStrand(rna.GetLocation().GetStrand());
     pGene->SetData().SetGene();
     return pGene;
 }
