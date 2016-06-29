@@ -54,7 +54,7 @@
  *    - searching for an attribute of the node
  *
  * For more details see the 'Thread Safety' section in the C++ Toolkit Book at:
- * http://www.ncbi.nlm.nih.gov/toolkit/doc/book/ch_xmlwrapp/
+ * http://ncbi.github.io/cxx-toolkit/pages/ch_xmlwrapp
  */
 
 
