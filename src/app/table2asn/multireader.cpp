@@ -202,7 +202,7 @@ CMultiReader::xReadASN1(CFormatGuess::EFormat format, CNcbiIstream& instream, CR
     auto_ptr<CObjectIStream> pObjIstrm = xCreateASNStream(format, instream);
 
     // guess object type
-    const string sType = pObjIstrm->ReadFileHeader();
+    string sType = pObjIstrm->ReadFileHeader();
 
     // do the right thing depending on the input type
     if( sType == CBioseq_set::GetTypeInfo()->GetName() ) {
@@ -228,6 +228,25 @@ CMultiReader::xReadASN1(CFormatGuess::EFormat format, CNcbiIstream& instream, CR
     if( sType == CSeq_entry::GetTypeInfo()->GetName() ) {
         entry.Reset(new CSeq_entry);
         pObjIstrm->Read(ObjectInfo(*entry), CObjectIStream::eNoFileHeader);
+    }
+    else
+    if (sType == CSeq_annot::GetTypeInfo()->GetName()) {
+        entry.Reset(new CSeq_entry);
+        do
+        {
+            CRef<CSeq_annot> annot(new CSeq_annot);
+            pObjIstrm->Read(ObjectInfo(*annot), CObjectIStream::eNoFileHeader);
+            entry->SetSeq().SetAnnot().push_back(annot);
+            try
+            {
+                sType = pObjIstrm->ReadFileHeader();
+            }
+            catch (CEofException& e)
+            {
+                sType.clear();
+                // ignore EOF exception
+            }
+        } while (sType == CSeq_annot::GetTypeInfo()->GetName());
     }
     else
     {
@@ -1062,6 +1081,7 @@ CRef<CSeq_entry> CMultiReader::xReadGFF3(CNcbiIstream& instream)
     flags |= CGff3Reader::fGenbankMode;
     flags |= CGff3Reader::fRetainLocusIds;
     flags |= CGff3Reader::fGeneXrefs;
+    flags |= CGff3Reader::fAllIdsAsLocal;
 
     CGff3Reader reader(flags, m_AnnotName, m_AnnotTitle);
     CStreamLineReader lr(instream);
@@ -1139,7 +1159,7 @@ class CAnnotationLoader
 public:
     bool Init(CRef<CSeq_entry> entry)
     {
-        if (entry && entry->IsSeq() && entry->IsSetAnnot())
+        if (entry && entry->IsSetAnnot())
         {
            m_entry = entry;
            m_annot_iteator = m_entry->SetAnnot().begin();
@@ -1205,6 +1225,12 @@ bool CMultiReader::xGetAnnotLoader(CAnnotationLoader& loader, CNcbiIstream& in)
         return loader.Init(seqid_prefix, in, m_context.m_logger);
     }
     break;
+    case CFormatGuess::eTextASN:
+        {
+          CRef<CSeq_submit> unused;
+          xReadASN1(m_uFormat, in, entry, unused);
+        }
+        break;
     case CFormatGuess::eGff2:
     case CFormatGuess::eGff3:
         entry = xReadGFF3(in);
@@ -1231,7 +1257,7 @@ bool CMultiReader::LoadAnnot(objects::CSeq_entry& entry, CNcbiIstream& in)
     {
         CScope scope(*m_context.m_ObjMgr);
         scope.AddTopLevelSeqEntry(entry);
-       
+
         CRef<CSeq_annot> annot_it;
         while ((annot_it = annot_loader.GetNextAnnot()).NotEmpty())
         {
@@ -1269,7 +1295,7 @@ bool CMultiReader::LoadAnnot(objects::CSeq_entry& entry, CNcbiIstream& in)
                 CSeq_id::ParseIDs(ids, annot_id->GetLocal().GetStr());
                 if (ids.size() == 1)
                 {
-                    bioseq_h = scope.GetBioseqHandle(*ids.front()); 
+                    bioseq_h = scope.GetBioseqHandle(*ids.front());
                 }
                 if (!bioseq_h && !m_context.m_genome_center_id.empty())
                 {
@@ -1278,12 +1304,26 @@ bool CMultiReader::LoadAnnot(objects::CSeq_entry& entry, CNcbiIstream& in)
                     CSeq_id::ParseIDs(ids, id);
                     if (ids.size() == 1)
                     {
-                        bioseq_h = scope.GetBioseqHandle(*ids.front()); 
+                        bioseq_h = scope.GetBioseqHandle(*ids.front());
                     }
                 }
                 if (bioseq_h)
                 {
-                    annot_id = ids.front();
+                    if (annot_id->Compare(*ids.front()) != CSeq_id::e_YES)
+                    {
+                        CSeq_annot::C_Data::TFtable& ftable = annot_it->SetData().SetFtable();
+                        NON_CONST_ITERATE(CSeq_annot::C_Data::TFtable, feat_it, ftable)
+                        {
+                            if ((**feat_it).IsSetLocation())
+                            {
+                                if ((**feat_it).GetLocation().GetId()->Compare(*annot_id) == CSeq_id::e_YES)
+                                {
+                                    (**feat_it).SetLocation().SetId(*annot_id);
+                                }
+                            }
+                        }
+                        annot_id->Assign(*ids.front());
+                    }
                 }
             }
             if (!bioseq_h)
