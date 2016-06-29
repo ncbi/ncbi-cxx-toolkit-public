@@ -164,7 +164,7 @@ ENa_strand s_IndexToStrand(size_t idx)
 CSeq_loc_Mapper::CSeq_loc_Mapper(CMappingRanges* mapping_ranges,
                                  CScope*         scope)
     : CSeq_loc_Mapper_Base(mapping_ranges,
-                           new CScope_Mapper_Sequence_Info(scope)),
+                           CSeq_loc_Mapper_Options(new CScope_Mapper_Sequence_Info(scope))),
       m_Scope(scope)
 {
 }
@@ -173,7 +173,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(CMappingRanges* mapping_ranges,
 CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_feat&  map_feat,
                                  EFeatMapDirection dir,
                                  CScope*           scope)
-    : CSeq_loc_Mapper_Base(new CScope_Mapper_Sequence_Info(scope)),
+    : CSeq_loc_Mapper_Base(CSeq_loc_Mapper_Options(new CScope_Mapper_Sequence_Info(scope))),
       m_Scope(scope)
 {
     x_InitializeFeat(map_feat, dir);
@@ -182,46 +182,43 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_feat&  map_feat,
 
 CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_loc& source,
                                  const CSeq_loc& target,
-                                 CScope* scope)
-    : CSeq_loc_Mapper_Base(new CScope_Mapper_Sequence_Info(scope)),
+                                 CScope*         scope)
+    : CSeq_loc_Mapper_Base(CSeq_loc_Mapper_Options(new CScope_Mapper_Sequence_Info(scope))),
       m_Scope(scope)
 {
     x_InitializeLocs(source, target);
 }
 
 
-CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_align& map_align,
-                                 const CSeq_id&    to_id,
-                                 CScope*           scope,
-                                 TMapOptions       opts)
-    : CSeq_loc_Mapper_Base(new CScope_Mapper_Sequence_Info(scope)),
+CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_align&       map_align,
+                                 const CSeq_id&          to_id,
+                                 CScope*                 scope,
+                                 CSeq_loc_Mapper_Options options)
+    : CSeq_loc_Mapper_Base(options.SetMapperSequenceInfo(new CScope_Mapper_Sequence_Info(scope))),
       m_Scope(scope)
 {
-    m_MapOptions = opts;
     x_InitializeAlign(map_align, to_id);
 }
 
 
-CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_align& map_align,
-                                 size_t            to_row,
-                                 CScope*           scope,
-                                 TMapOptions       opts)
-    : CSeq_loc_Mapper_Base(new CScope_Mapper_Sequence_Info(scope)),
+CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_align&       map_align,
+                                 size_t                  to_row,
+                                 CScope*                 scope,
+                                 CSeq_loc_Mapper_Options options)
+    : CSeq_loc_Mapper_Base(options.SetMapperSequenceInfo(new CScope_Mapper_Sequence_Info(scope))),
       m_Scope(scope)
 {
-    m_MapOptions = opts;
     x_InitializeAlign(map_align, to_row);
 }
 
 
 CSeq_loc_Mapper::CSeq_loc_Mapper(CBioseq_Handle   target_seq,
                                  ESeqMapDirection direction,
-                                 TMapOptions      opts)
-    : CSeq_loc_Mapper_Base(new CScope_Mapper_Sequence_Info(
-                           &target_seq.GetScope())),
+                                 CSeq_loc_Mapper_Options options)
+    : CSeq_loc_Mapper_Base(options.SetMapperSequenceInfo(new CScope_Mapper_Sequence_Info(
+                           &target_seq.GetScope()))),
       m_Scope(&target_seq.GetScope())
 {
-    m_MapOptions = opts;
     CConstRef<CSeq_id> top_level_id = target_seq.GetSeqId();
     if ( !top_level_id ) {
         // Bioseq handle has no id, try to get one.
@@ -249,11 +246,10 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeqMap&   seq_map,
                                  ESeqMapDirection direction,
                                  const CSeq_id*   top_level_id,
                                  CScope*          scope,
-                                 TMapOptions      opts)
-    : CSeq_loc_Mapper_Base(new CScope_Mapper_Sequence_Info(scope)),
+                                 CSeq_loc_Mapper_Options options)
+    : CSeq_loc_Mapper_Base(options.SetMapperSequenceInfo(new CScope_Mapper_Sequence_Info(scope))),
       m_Scope(scope)
 {
-    m_MapOptions = opts;
     x_InitializeSeqMap(seq_map, top_level_id, direction);
     x_PreserveDestinationLocs();
 }
@@ -262,12 +258,11 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeqMap&   seq_map,
 CSeq_loc_Mapper::CSeq_loc_Mapper(CBioseq_Handle   target_seq,
                                  ESeqMapDirection direction,
                                  SSeqMapSelector  selector,
-                                 TMapOptions      opts)
-    : CSeq_loc_Mapper_Base(new CScope_Mapper_Sequence_Info(
-                           &target_seq.GetScope())),
+                                 CSeq_loc_Mapper_Options options)
+    : CSeq_loc_Mapper_Base(options.SetMapperSequenceInfo(new CScope_Mapper_Sequence_Info(
+                           &target_seq.GetScope()))),
       m_Scope(&target_seq.GetScope())
 {
-    m_MapOptions = opts;
     CConstRef<CSeq_id> top_id = target_seq.GetSeqId();
     if ( !top_id ) {
         // Bioseq handle has no id, try to get one.
@@ -295,11 +290,10 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeqMap&   seq_map,
                                  SSeqMapSelector  selector,
                                  const CSeq_id*   top_level_id,
                                  CScope*          scope,
-                                 TMapOptions      opts)
-    : CSeq_loc_Mapper_Base(new CScope_Mapper_Sequence_Info(scope)),
+                                 CSeq_loc_Mapper_Options options)
+    : CSeq_loc_Mapper_Base(options.SetMapperSequenceInfo(new CScope_Mapper_Sequence_Info(scope))),
       m_Scope(scope)
 {
-    m_MapOptions = opts;
     x_InitializeSeqMap(seq_map,
                        selector,
                        top_level_id,
@@ -311,12 +305,11 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeqMap&   seq_map,
 CSeq_loc_Mapper::CSeq_loc_Mapper(size_t                 depth,
                                  const CBioseq_Handle&  top_level_seq,
                                  ESeqMapDirection       direction,
-                                 TMapOptions            opts)
-    : CSeq_loc_Mapper_Base(new CScope_Mapper_Sequence_Info(
-                           &top_level_seq.GetScope())),
+                                 CSeq_loc_Mapper_Options options)
+    : CSeq_loc_Mapper_Base(options.SetMapperSequenceInfo(new CScope_Mapper_Sequence_Info(
+                           &top_level_seq.GetScope()))),
       m_Scope(&top_level_seq.GetScope())
 {
-    m_MapOptions = opts;
     if (depth > 0) {
         depth--;
         x_InitializeSeqMap(top_level_seq.GetSeqMap(),
@@ -340,11 +333,10 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(size_t           depth,
                                  ESeqMapDirection direction,
                                  const CSeq_id*   top_level_id,
                                  CScope*          scope,
-                                 TMapOptions      opts)
-    : CSeq_loc_Mapper_Base(new CScope_Mapper_Sequence_Info(scope)),
+                                 CSeq_loc_Mapper_Options options)
+    : CSeq_loc_Mapper_Base(options.SetMapperSequenceInfo(new CScope_Mapper_Sequence_Info(scope))),
       m_Scope(scope)
 {
-    m_MapOptions = opts;
     if (depth > 0) {
         depth--;
         x_InitializeSeqMap(top_level_seq, depth, top_level_id, direction);
@@ -363,7 +355,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CGC_Assembly& gc_assembly,
                                  EGCAssemblyAlias    to_alias,
                                  CScope*             scope,
                                  EScopeFlag          scope_flag)
-    : CSeq_loc_Mapper_Base(new CScope_Mapper_Sequence_Info(scope)),
+    : CSeq_loc_Mapper_Base(CSeq_loc_Mapper_Options(new CScope_Mapper_Sequence_Info(scope))),
       m_Scope(scope)
 {
     // While parsing GC-Assembly the mapper will need to add virtual
@@ -374,7 +366,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CGC_Assembly& gc_assembly,
         if ( scope ) {
             m_Scope.GetScope().AddScope(*scope);
         }
-        m_SeqInfo.Reset(new CScope_Mapper_Sequence_Info(m_Scope));
+        m_MapOptions.SetMapperSequenceInfo(new CScope_Mapper_Sequence_Info(m_Scope));
     }
     x_InitGCAssembly(gc_assembly, to_alias);
 }
@@ -385,11 +377,10 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CGC_Assembly& gc_assembly,
                                  SSeqMapSelector     selector,
                                  CScope*             scope,
                                  EScopeFlag          scope_flag,
-                                 TMapOptions         opts)
-    : CSeq_loc_Mapper_Base(new CScope_Mapper_Sequence_Info(scope)),
+                                 CSeq_loc_Mapper_Options options)
+    : CSeq_loc_Mapper_Base(options.SetMapperSequenceInfo(new CScope_Mapper_Sequence_Info(scope))),
       m_Scope(scope)
 {
-    m_MapOptions = opts;
     // While parsing GC-Assembly the mapper will need to add virtual
     // bioseqs to the scope. To keep the original scope clean of them,
     // create a new scope and add the original one as a child.
@@ -398,7 +389,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CGC_Assembly& gc_assembly,
         if ( scope ) {
             m_Scope.GetScope().AddScope(*scope);
         }
-        m_SeqInfo.Reset(new CScope_Mapper_Sequence_Info(m_Scope));
+        m_MapOptions.SetMapperSequenceInfo(new CScope_Mapper_Sequence_Info(m_Scope));
     }
     CGC_Assembly_Parser parser(gc_assembly);
     CRef<CSeq_entry> entry = parser.GetTSE();
@@ -464,7 +455,7 @@ void CSeq_loc_Mapper::x_InitializeSeqMap(CSeqMap_CI       seg_it,
                                          const CSeq_id*   top_id,
                                          ESeqMapDirection direction)
 {
-    if (m_MapOptions & fMapSingleLevel) {
+    if (m_MapOptions.GetMapSingleLevel()) {
         x_InitializeSeqMapSingleLevel(seg_it, top_id, direction);
     }
     else if (direction == eSeqMap_Up) {
@@ -948,7 +939,7 @@ void CSeq_loc_Mapper::x_InitGCSequence(const CGC_Sequence& gc_seq,
             x_AddConversion(gc_seq.GetSeq_id(), 0, eNa_strand_unknown,
                 *dst_id, 0, eNa_strand_unknown,
                 hlen != kInvalidSeqPos ? hlen : TRange::GetWholeLength(),
-                false, 0, hlen, hlen, hlen);
+                false, 0, hlen, hlen);
         }
         else if (to_alias == eGCA_UCSC  ||  to_alias == eGCA_Refseq) {
             TSynonyms synonyms;

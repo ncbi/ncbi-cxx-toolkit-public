@@ -274,6 +274,65 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 ///
+///  CSeq_loc_Mapper_Options --
+///
+///  Options passed to CSeq_loc_Mapper[_Base] constructor.
+///
+
+class NCBI_SEQ_EXPORT CSeq_loc_Mapper_Options
+{
+public:
+    typedef int TMapOptions;
+
+    CSeq_loc_Mapper_Options(void);
+    CSeq_loc_Mapper_Options(IMapper_Sequence_Info* seq_info,
+                            TMapOptions opts = 0);
+    CSeq_loc_Mapper_Options(TMapOptions opts);
+
+    ///  Sequence type, length etc. provider. If any ids from the mapping
+    ///  ranges are not available through this object, they should be
+    ///  registered using CSeq_loc_Mapper_Base::SetSeqTypeById().
+    IMapper_Sequence_Info* GetMapperSequenceInfo(void) const;
+    CSeq_loc_Mapper_Options& SetMapperSequenceInfo(IMapper_Sequence_Info* seq_info);
+
+    /// Dense-seg mapping option.
+    /// @sa CSeq_loc_Mapper_Base::fAlign_Dense_seg_TotalRange
+    bool GetAlign_Dense_seg_TotalRange(void) const;
+    CSeq_loc_Mapper_Options& SetAlign_Dense_seg_TotalRange(bool value = true);
+
+    /// Mapping direction when mapping through a sparse-seg.
+    /// @sa CSeq_loc_Mapper_Base::fAlign_Sparse_ToFirst
+    /// @sa CSeq_loc_Mapper_Base::fAlign_Sparse_ToSecond
+    bool GetAlign_Sparse_ToFirst(void) const;
+    bool GetAlign_Sparse_ToSecond(void) const;
+    CSeq_loc_Mapper_Options& SetAlign_Sparse_ToFirst(bool value = true);
+    CSeq_loc_Mapper_Options& SetAlign_Sparse_ToSecond(bool value = true);
+
+    /// Mapping depth when using a seq-map, a bioseq or a GC-assembly.
+    /// @sa CSeq_loc_Mapper_Base::fMapSingleLevel
+    bool GetMapSingleLevel(void) const;
+    CSeq_loc_Mapper_Options& SetMapSingleLevel(bool value = true);
+
+    /// Mapped location trimming at sequence end. Off by default.
+    /// @sa CSeq_loc_Mapper_Base::fTrimMappedLocation
+    bool GetTrimMappedLocation(void) const;
+    CSeq_loc_Mapper_Options& SetTrimMappedLocation(bool value = true);
+
+private:
+    friend class CSeq_loc_Mapper_Base;
+
+    IMapper_Sequence_Info& GetSeqInfo(void) const;
+
+    bool x_IsSetOption(int opt) const;
+    void x_SetOption(int opt, bool enable);
+
+    mutable CRef<IMapper_Sequence_Info> m_SeqInfo;
+    TMapOptions m_Options;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
 ///  CSeq_loc_Mapper_Base --
 ///
 ///  Mapping locations and alignments between bioseqs through seq-locs,
@@ -292,12 +351,12 @@ public:
     enum EMapOptions {
         /// Ignore internal dense-seg structure - map each
         /// dense-seg according to the total ranges involved
-        fAlign_Dense_seg_TotalRange = 0x01,
+        fAlign_Dense_seg_TotalRange = 1 << 0,
 
         /// Flags used to indicate mapping direction when mapping
         /// through a sparse-seg.
-        fAlign_Sparse_ToFirst       = 0x00, ///< Map to first-id
-        fAlign_Sparse_ToSecond      = 0x02, ///< Map to second-id
+        fAlign_Sparse_ToFirst       = 0,      ///< Map to first-id
+        fAlign_Sparse_ToSecond      = 1 << 1, ///< Map to second-id
         
         /// Flag used when mapping through a seq-map (this includes
         /// mapping through a bioseq or a GC-assembly). If set, each
@@ -305,7 +364,12 @@ public:
         /// mode which maps from any level as far up/down as possible.
         /// The result of mapping can be mapped further by making another
         /// call to Map().
-        fMapSingleLevel             = 0x04
+        fMapSingleLevel             = 1 << 2,
+
+        /// Enable trimming of source/destination ranges at sequence end.
+        /// By default locations can stretch beyond sequence end. With trimming
+        /// enabled the mapper will truncate ranges to fit sequence lengths.
+        fTrimMappedLocation         = 1 << 3
     };
     typedef int TMapOptions;
 
@@ -333,40 +397,48 @@ public:
     ///  NOTE: If the mapper is used with mixed sequence types, the
     ///  ranges must use genomic coordinates (for ranges on proteins
     ///  multiply all coordinates by 3).
-    /// @param seq_info
-    ///  Sequence type, length etc. provider. If any ids from the mapping
-    ///  ranges are not available through this object, they must be
-    ///  registered using SetSeqTypeById.
-    /// @sa IMapper_Sequence_Info
-    /// @sa SetSeqTypeById
-    CSeq_loc_Mapper_Base(CMappingRanges*        mapping_ranges,
-                         IMapper_Sequence_Info* seq_info = 0);
+    /// @param options
+    ///  Mapping options which need to be set during mapper initialization.
+    /// @sa CSeq_loc_Mapper_Options
+    CSeq_loc_Mapper_Base(CMappingRanges*         mapping_ranges,
+                         CSeq_loc_Mapper_Options options = CSeq_loc_Mapper_Options());
 
     /// Mapping through a feature, both location and product must be set.
-    CSeq_loc_Mapper_Base(const CSeq_feat&       map_feat,
-                         EFeatMapDirection      dir,
-                         IMapper_Sequence_Info* seq_info = 0);
+    CSeq_loc_Mapper_Base(const CSeq_feat&        map_feat,
+                         EFeatMapDirection       dir,
+                         CSeq_loc_Mapper_Options options = CSeq_loc_Mapper_Options());
 
     /// Mapping between two seq_locs.
-    CSeq_loc_Mapper_Base(const CSeq_loc&        source,
-                         const CSeq_loc&        target,
-                         IMapper_Sequence_Info* seq_info = 0);
+    CSeq_loc_Mapper_Base(const CSeq_loc&         source,
+                         const CSeq_loc&         target,
+                         CSeq_loc_Mapper_Options options = CSeq_loc_Mapper_Options());
 
     /// Mapping through an alignment. Need to specify target ID or
     /// target row of the alignment. Any other ID is mapped to the
     /// target one. Only the first row matching target ID is used,
     /// all other rows are considered source.
+    CSeq_loc_Mapper_Base(const CSeq_align&       map_align,
+                         const CSeq_id&          to_id,
+                         CSeq_loc_Mapper_Options options = CSeq_loc_Mapper_Options());
+    /// @deprecated Use the version with CSeq_loc_Mapper_Options instead.
+    NCBI_DEPRECATED
     CSeq_loc_Mapper_Base(const CSeq_align&      map_align,
                          const CSeq_id&         to_id,
-                         TMapOptions            opts = 0,
-                         IMapper_Sequence_Info* seq_info = 0);
+                         TMapOptions            opts,
+                         IMapper_Sequence_Info* seq_info);
+
     /// Sparse alignments require special row indexing since each
     /// row contains two seq-ids. Use options to specify mapping
     /// direction.
+    CSeq_loc_Mapper_Base(const CSeq_align&       map_align,
+                         size_t                  to_row,
+                         CSeq_loc_Mapper_Options options = CSeq_loc_Mapper_Options());
+    /// @deprecated Use the version with CSeq_loc_Mapper_Options instead.
+    NCBI_DEPRECATED
     CSeq_loc_Mapper_Base(const CSeq_align&      map_align,
                          size_t                 to_row,
-                         TMapOptions            opts = 0,
-                         IMapper_Sequence_Info* seq_info = 0);
+                         TMapOptions            opts,
+                         IMapper_Sequence_Info* seq_info);
 
     ~CSeq_loc_Mapper_Base(void);
 
@@ -564,7 +636,6 @@ protected:
                             const CInt_fuzz* fuzz_from = 0,
                             const CInt_fuzz* fuzz_to = 0,
                             int              frame = 0,
-                            TSeqPos          dst_total_len = kInvalidSeqPos,
                             TSeqPos          src_bioseq_len = kInvalidSeqPos);
 
     // Add new CMappingRange. This includes collecting all synonyms for the id,
@@ -579,7 +650,6 @@ protected:
                          TSeqPos        length,
                          bool           ext_right,
                          int            frame,
-                         TSeqPos        dst_total_len,
                          TSeqPos        src_bioseq_len,
                          TSeqPos        dst_length );
 
@@ -878,14 +948,11 @@ protected:
     // Control how fuzz is generated and propagated
     TFuzzOption          m_FuzzOption;
     // Misc mapping options
-    TMapOptions          m_MapOptions;
-
-    // Sequence info provider
-    mutable CRef<IMapper_Sequence_Info> m_SeqInfo;
+    CSeq_loc_Mapper_Options m_MapOptions;
 
 public:
     // Initialize the mapper with default values
-    CSeq_loc_Mapper_Base(IMapper_Sequence_Info* seqinfo = 0);
+    CSeq_loc_Mapper_Base(CSeq_loc_Mapper_Options options = CSeq_loc_Mapper_Options());
 
     /// Methods for getting sequence types, use cached types (m_SeqTypes)
     /// if possible.
@@ -1242,6 +1309,122 @@ inline
 int CSeq_loc_Mapper_Base::GetWidthById(const CSeq_id& id) const
 {
     return GetWidthById(CSeq_id_Handle::GetHandle(id));
+}
+
+
+inline
+CSeq_loc_Mapper_Options::CSeq_loc_Mapper_Options(void)
+    : m_SeqInfo(0), m_Options(0) {}
+
+inline
+CSeq_loc_Mapper_Options::CSeq_loc_Mapper_Options(IMapper_Sequence_Info* seq_info,
+                                                 TMapOptions            opts)
+    : m_SeqInfo(seq_info), m_Options(opts) {}
+
+inline
+CSeq_loc_Mapper_Options::CSeq_loc_Mapper_Options(TMapOptions opts)
+    : m_SeqInfo(0), m_Options(opts) {}
+
+inline
+IMapper_Sequence_Info*
+CSeq_loc_Mapper_Options::GetMapperSequenceInfo(void) const
+{
+    return m_SeqInfo;
+}
+
+inline
+CSeq_loc_Mapper_Options&
+CSeq_loc_Mapper_Options::SetMapperSequenceInfo(IMapper_Sequence_Info* seq_info)
+{
+    m_SeqInfo = seq_info;
+    return *this;
+}
+
+inline
+bool CSeq_loc_Mapper_Options::GetAlign_Dense_seg_TotalRange(void) const
+{
+    return x_IsSetOption(CSeq_loc_Mapper_Base::fAlign_Dense_seg_TotalRange);
+}
+
+inline
+CSeq_loc_Mapper_Options&
+CSeq_loc_Mapper_Options::SetAlign_Dense_seg_TotalRange(bool value)
+{
+    x_SetOption(CSeq_loc_Mapper_Base::fAlign_Dense_seg_TotalRange, value);
+    return *this;
+}
+
+inline
+bool CSeq_loc_Mapper_Options::GetAlign_Sparse_ToFirst(void) const
+{
+    return !x_IsSetOption(CSeq_loc_Mapper_Base::fAlign_Sparse_ToSecond);
+}
+
+inline
+bool CSeq_loc_Mapper_Options::GetAlign_Sparse_ToSecond(void) const
+{
+    return x_IsSetOption(CSeq_loc_Mapper_Base::fAlign_Sparse_ToSecond);
+}
+
+inline
+CSeq_loc_Mapper_Options&
+CSeq_loc_Mapper_Options::SetAlign_Sparse_ToFirst(bool value)
+{
+    x_SetOption(CSeq_loc_Mapper_Base::fAlign_Sparse_ToSecond, !value);
+    return *this;
+}
+
+inline
+CSeq_loc_Mapper_Options&
+CSeq_loc_Mapper_Options::SetAlign_Sparse_ToSecond(bool value)
+{
+    x_SetOption(CSeq_loc_Mapper_Base::fAlign_Sparse_ToSecond, value);
+    return *this;
+}
+
+inline
+bool CSeq_loc_Mapper_Options::GetMapSingleLevel(void) const
+{
+    return x_IsSetOption(CSeq_loc_Mapper_Base::fMapSingleLevel);
+}
+
+inline
+CSeq_loc_Mapper_Options&
+CSeq_loc_Mapper_Options::SetMapSingleLevel(bool value)
+{
+    x_SetOption(CSeq_loc_Mapper_Base::fMapSingleLevel, value);
+    return *this;
+}
+
+inline
+bool CSeq_loc_Mapper_Options::GetTrimMappedLocation(void) const
+{
+    return x_IsSetOption(CSeq_loc_Mapper_Base::fTrimMappedLocation);
+}
+
+inline
+CSeq_loc_Mapper_Options&
+CSeq_loc_Mapper_Options::SetTrimMappedLocation(bool value)
+{
+    x_SetOption(CSeq_loc_Mapper_Base::fTrimMappedLocation, value);
+    return *this;
+}
+
+inline
+bool CSeq_loc_Mapper_Options::x_IsSetOption(int opt) const
+{
+    return m_Options & opt;
+}
+
+inline
+void CSeq_loc_Mapper_Options::x_SetOption(int opt, bool enable)
+{
+    if ( enable ) {
+        m_Options |= opt;
+    }
+    else {
+        m_Options &= ~opt;
+    }
 }
 
 

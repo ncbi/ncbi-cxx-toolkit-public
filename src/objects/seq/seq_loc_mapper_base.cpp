@@ -609,6 +609,21 @@ void CSeq_loc_Mapper_Message::ResetObject(void)
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+///
+///  CSeq_loc_Mapper_Options --
+///
+
+
+IMapper_Sequence_Info& CSeq_loc_Mapper_Options::GetSeqInfo(void) const
+{
+    if ( !m_SeqInfo ) {
+        m_SeqInfo.Reset(new CDefault_Mapper_Sequence_Info);
+    }
+    return *m_SeqInfo;
+}
+
+
 /////////////////////////////////////////////////////////////////////
 //
 // CSeq_loc_Mapper_Base
@@ -638,7 +653,7 @@ ENa_strand s_IndexToStrand(size_t idx)
     s_IndexToStrand(idx)
 
 
-CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(IMapper_Sequence_Info* seqinfo)
+CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(CSeq_loc_Mapper_Options options)
     : m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
       m_MiscFlags(fTrimSplicedSegs),
@@ -647,14 +662,13 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(IMapper_Sequence_Info* seqinfo)
       m_Mappings(new CMappingRanges),
       m_CurrentGroup(0),
       m_FuzzOption(0),
-      m_MapOptions(0),
-      m_SeqInfo(seqinfo ? seqinfo : new CDefault_Mapper_Sequence_Info)
+      m_MapOptions(options)
 {
 }
 
 
-CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(CMappingRanges* mapping_ranges,
-                                           IMapper_Sequence_Info* seq_info)
+CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(CMappingRanges*         mapping_ranges,
+                                           CSeq_loc_Mapper_Options options)
     : m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
       m_MiscFlags(fTrimSplicedSegs),
@@ -663,15 +677,14 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(CMappingRanges* mapping_ranges,
       m_Mappings(mapping_ranges),
       m_CurrentGroup(0),
       m_FuzzOption(0),
-      m_MapOptions(0),
-      m_SeqInfo(seq_info ? seq_info : new CDefault_Mapper_Sequence_Info)
+      m_MapOptions(options)
 {
 }
 
 
-CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_feat&  map_feat,
-                                           EFeatMapDirection dir,
-                                           IMapper_Sequence_Info* seq_info)
+CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_feat&        map_feat,
+                                           EFeatMapDirection       dir,
+                                           CSeq_loc_Mapper_Options options)
     : m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
       m_MiscFlags(fTrimSplicedSegs),
@@ -680,16 +693,15 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_feat&  map_feat,
       m_Mappings(new CMappingRanges),
       m_CurrentGroup(0),
       m_FuzzOption(0),
-      m_MapOptions(0),
-      m_SeqInfo(seq_info ? seq_info : new CDefault_Mapper_Sequence_Info)
+      m_MapOptions(options)
 {
     x_InitializeFeat(map_feat, dir);
 }
 
 
-CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_loc& source,
-                                           const CSeq_loc& target,
-                                           IMapper_Sequence_Info* seq_info)
+CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_loc&         source,
+                                           const CSeq_loc&         target,
+                                           CSeq_loc_Mapper_Options options)
     : m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
       m_MiscFlags(fTrimSplicedSegs),
@@ -698,16 +710,32 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_loc& source,
       m_Mappings(new CMappingRanges),
       m_CurrentGroup(0),
       m_FuzzOption(0),
-      m_MapOptions(0),
-      m_SeqInfo(seq_info ? seq_info : new CDefault_Mapper_Sequence_Info)
+      m_MapOptions(options)
 {
     x_InitializeLocs(source, target);
 }
 
 
-CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_align& map_align,
-                                           const CSeq_id&    to_id,
-                                           TMapOptions       opts,
+CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_align&       map_align,
+                                           const CSeq_id&          to_id,
+                                           CSeq_loc_Mapper_Options options)
+    : m_MergeFlag(eMergeNone),
+      m_GapFlag(eGapPreserve),
+      m_MiscFlags(fTrimSplicedSegs),
+      m_Partial(false),
+      m_LastTruncated(false),
+      m_Mappings(new CMappingRanges),
+      m_CurrentGroup(0),
+      m_FuzzOption(0),
+      m_MapOptions(options)
+{
+    x_InitializeAlign(map_align, to_id);
+}
+
+
+CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_align&      map_align,
+                                           const CSeq_id&         to_id,
+                                           TMapOptions            opts,
                                            IMapper_Sequence_Info* seq_info)
     : m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
@@ -717,10 +745,26 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_align& map_align,
       m_Mappings(new CMappingRanges),
       m_CurrentGroup(0),
       m_FuzzOption(0),
-      m_MapOptions(opts),
-      m_SeqInfo(seq_info ? seq_info : new CDefault_Mapper_Sequence_Info)
+      m_MapOptions(CSeq_loc_Mapper_Options(seq_info, opts))
 {
     x_InitializeAlign(map_align, to_id);
+}
+
+
+CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_align&       map_align,
+                                           size_t                  to_row,
+                                           CSeq_loc_Mapper_Options options)
+    : m_MergeFlag(eMergeNone),
+      m_GapFlag(eGapPreserve),
+      m_MiscFlags(fTrimSplicedSegs),
+      m_Partial(false),
+      m_LastTruncated(false),
+      m_Mappings(new CMappingRanges),
+      m_CurrentGroup(0),
+      m_FuzzOption(0),
+      m_MapOptions(options)
+{
+    x_InitializeAlign(map_align, to_row);
 }
 
 
@@ -736,8 +780,7 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_align& map_align,
       m_Mappings(new CMappingRanges),
       m_CurrentGroup(0),
       m_FuzzOption(0),
-      m_MapOptions(opts),
-      m_SeqInfo(seq_info ? seq_info : new CDefault_Mapper_Sequence_Info)
+      m_MapOptions(seq_info, opts)
 {
     x_InitializeAlign(map_align, to_row);
 }
@@ -976,24 +1019,31 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
     }
     // If both source and destination total length are known, check if
     // they match each other.
+    // NOTE: The actual lengths may change later if trimming at sequence
+    // length is enabled.
+    TSeqPos trim_src_incomplete_codons = 0;
+    TSeqPos trim_dst_incomplete_codons = 0;
+    bool multiseq_src = !source.GetId();
+    bool multiseq_dst = !target.GetId();
     if (src_total_len != kInvalidSeqPos  &&  dst_total_len != kInvalidSeqPos) {
         if ( src_frame ) src_total_len -= src_frame - 1;
         if ( dst_frame ) dst_total_len -= dst_frame - 1;
-        // Check for incomplete and stop codons.
         if (src_type == eSeq_nuc  &&  dst_type == eSeq_prot) {
-            // Report overhanging bases if any
-            if (src_total_len == (dst_total_len + 1)*3) {
-                // Skip stop codon
+            // Report length mismatch except a single stop codon on a single bioseq.
+            if (src_total_len == (dst_total_len + 1)*3  &&  !multiseq_dst) {
+                // Extend destination to include stop codon
                 dst_total_len++;
             }
+            // Report and drop overhanging bases if any
             else if (src_total_len/3 == dst_total_len  &&  src_total_len % 3 != 0) {
                 ERR_POST_X(28, Info <<
                     "Source and destination lengths do not match, "
                     "dropping " << src_total_len % 3 <<
                     " overhanging bases on source location");
-                src_total_len -= src_total_len % 3;
+                trim_src_incomplete_codons = src_total_len % 3;
+                src_total_len -= trim_src_incomplete_codons;
             }
-            // Allow partial codon mismatch
+            // Allow partial codon mismatch, report more than one codon.
             if (dst_total_len*3 >= src_total_len + 3  ||
                 dst_total_len*3 + 3 <= src_total_len) {
                 ERR_POST_X(31, Warning <<
@@ -1001,9 +1051,9 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
             }
         }
         else if (dst_type == eSeq_nuc  &&  src_type == eSeq_prot) {
-            // Report overhanging bases if any
-            if (dst_total_len == (src_total_len + 1)*3) {
-                // Skip stop codon
+            // Report length mismatch except a single stop codon on a single bioseq.
+            if (dst_total_len == (src_total_len + 1)*3  &&  !multiseq_src) {
+                // Extend stop codon.
                 src_total_len++;
             }
             else if (dst_total_len/3 == src_total_len  &&  dst_total_len % 3 != 0) {
@@ -1011,7 +1061,8 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
                     "Source and destination lengths do not match, "
                     "dropping " << dst_total_len % 3 <<
                     " overhanging bases on destination location");
-                dst_total_len -= dst_total_len % 3;
+                trim_dst_incomplete_codons = dst_total_len % 3;
+                dst_total_len -= trim_dst_incomplete_codons;
             }
             // Allow partial codon mismatch
             if (src_total_len*3 >= dst_total_len + 3  ||
@@ -1046,25 +1097,61 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
     // to be different from its genomic couterpart.
     if ( rg.IsWhole() ) {
         src_start = 0;
-        src_len = kInvalidSeqPos;
+        // Use actual length if trimming is enabled or if the location
+        // references multiple sequences.
+        if ( multiseq_src  ||  m_MapOptions.GetTrimMappedLocation() ) {
+            src_len = GetSequenceLength(src_it.GetSeq_id());
+            if (src_type == eSeq_prot) {
+                src_len *= 3;
+            }
+        }
+        else {
+            src_len = kInvalidSeqPos;
+        }
     }
     else if ( !rg.Empty() ) {
         src_start = src_it.GetRange().GetFrom()*src_width;
         src_len = x_GetRangeLength(src_it)*src_width;
     }
+    // Trim incomplete codons.
+    if (trim_src_incomplete_codons  &&
+        src_len != kInvalidSeqPos) {
+        if (src_len == src_total_len + trim_src_incomplete_codons) {
+            src_len = src_total_len;
+            trim_src_incomplete_codons = 0; // only trim once
+        }
+        src_total_len -= src_len;
+    }
+
     rg = dst_it.GetRange();
     TSeqPos dst_start = kInvalidSeqPos;
     TSeqPos dst_len = 0;
     if ( rg.IsWhole() ) {
         dst_start = 0;
-        dst_len = GetSequenceLength(dst_it.GetSeq_id());
-        if (dst_type == eSeq_prot) {
-            dst_len *= 3;
+        // Use actual length if trimming is enabled or if the location
+        // references multiple sequences.
+        if ( multiseq_dst  ||  m_MapOptions.GetTrimMappedLocation() ) {
+            dst_len = GetSequenceLength(dst_it.GetSeq_id());
+            if (dst_type == eSeq_prot) {
+                dst_len *= 3;
+            }
+        }
+        else {
+            dst_len = kInvalidSeqPos;
         }
     }
     else if ( !rg.Empty() ) {
         dst_start = dst_it.GetRange().GetFrom()*dst_width;
         dst_len = x_GetRangeLength(dst_it)*dst_width;
+    }
+    // Trim incomplete codons.
+    if (trim_dst_incomplete_codons  &&
+        dst_len != kInvalidSeqPos) {
+        if (dst_len == dst_total_len + trim_dst_incomplete_codons) {
+            dst_len = dst_total_len;
+            trim_dst_incomplete_codons = 0; // only trim once
+        }
+        dst_total_len -= dst_len;
     }
 
     if (src_frame  &&  dst_type == eSeq_prot  &&  src_start != kInvalidSeqPos  &&
@@ -1140,7 +1227,7 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
             dst_it.GetSeq_id(), dst_start, dst_len, dst_it.GetStrand(),
             dst_it.GetFuzzFrom(), dst_it.GetFuzzTo(),
             src_frame ? src_frame : dst_frame,
-            dst_total_len, src_bioseq_len);
+            src_bioseq_len);
         // Start new group on a gap in src or dst.
         // If the whole source or destination range was used, increment the
         // iterator.
@@ -1160,11 +1247,28 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
             }
             else if ( rg.IsWhole() ) {
                 src_start = 0;
-                src_len = kInvalidSeqPos;
+                if ( multiseq_src  ||  m_MapOptions.GetTrimMappedLocation() ) {
+                    src_len = GetSequenceLength(src_it.GetSeq_id());
+                    if (src_type == eSeq_prot) {
+                        src_len *= 3;
+                    }
+                }
+                else {
+                    src_len = kInvalidSeqPos;
+                }
             }
             else {
                 src_start = src_it.GetRange().GetFrom()*src_width;
                 src_len = x_GetRangeLength(src_it)*src_width;
+            }
+            // Trim incomplete codons.
+            if (trim_src_incomplete_codons  &&
+                src_len != kInvalidSeqPos) {
+                if (src_len == src_total_len + trim_src_incomplete_codons) {
+                    src_len = src_total_len;
+                    trim_src_incomplete_codons = 0; // only trim once
+                }
+                src_total_len -= src_len;
             }
             if (last_src_id != src_it.GetSeq_id_Handle() ||
                 last_src_reverse != IsReverse(src_it.GetStrand())) {
@@ -1181,14 +1285,28 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
             }
             else if ( rg.IsWhole() ) {
                 dst_start = 0;
-                dst_len = GetSequenceLength(dst_it.GetSeq_id());
-                if (dst_type == eSeq_prot) {
-                    dst_len *= 3;
+                if ( multiseq_dst  ||  m_MapOptions.GetTrimMappedLocation() ) {
+                    dst_len = GetSequenceLength(dst_it.GetSeq_id());
+                    if (dst_type == eSeq_prot) {
+                        dst_len *= 3;
+                    }
+                }
+                else {
+                    dst_len = kInvalidSeqPos;
                 }
             }
             else {
                 dst_start = dst_it.GetRange().GetFrom()*dst_width;
                 dst_len = x_GetRangeLength(dst_it)*dst_width;
+            }
+            // Trim incomplete codons.
+            if (trim_dst_incomplete_codons  &&
+                dst_len != kInvalidSeqPos) {
+                if (dst_len == dst_total_len + trim_dst_incomplete_codons) {
+                    dst_len = dst_total_len;
+                    trim_dst_incomplete_codons = 0; // only trim once
+                }
+                dst_total_len -= dst_len;
             }
             if (last_dst_id != dst_it.GetSeq_id_Handle() ||
                 last_dst_reverse != IsReverse(dst_it.GetStrand())) {
@@ -1342,12 +1460,10 @@ void CSeq_loc_Mapper_Base::x_InitializeAlign(const CSeq_align& map_align,
                 // Prefer to map from the second subrow to the first one
                 // if their ids are the same.
                 if ( x_IsSynonym((*it)->GetFirst_id(), to_ids) ) {
-                    m_MapOptions &= ~fAlign_Sparse_ToSecond;
-                    m_MapOptions |= fAlign_Sparse_ToFirst;
+                    m_MapOptions.SetAlign_Sparse_ToFirst();
                 }
                 else if ( x_IsSynonym((*it)->GetSecond_id(), to_ids) ) {
-                    m_MapOptions &= ~fAlign_Sparse_ToFirst;
-                    m_MapOptions |= fAlign_Sparse_ToSecond;
+                    m_MapOptions.SetAlign_Sparse_ToSecond();
                 }
                 x_InitSparse(sparse, row);
             }
@@ -1545,7 +1661,7 @@ void CSeq_loc_Mapper_Base::x_InitAlign(const CDense_seg& denseg,
 
         // Depending on the flags we may need to use whole range
         // for each dense-seg ignoring its segments.
-        if (m_MapOptions & fAlign_Dense_seg_TotalRange) {
+        if (m_MapOptions.GetAlign_Dense_seg_TotalRange()) {
             // Get total range for source and destination rows.
             // Both ranges must be not empty.
             TSeqRange r_src = denseg.GetSeqRange(row);
@@ -1976,7 +2092,7 @@ void CSeq_loc_Mapper_Base::x_InitSparse(const CSparse_seg& sparse,
                                         int to_row)
 {
     // Sparse-seg needs special row indexing.
-    bool to_second = (m_MapOptions & fAlign_Sparse_ToSecond) != 0;
+    bool to_second = m_MapOptions.GetAlign_Sparse_ToSecond();
 
     // Check the alignment for consistency. Adjust invalid values, show
     // warnings if this happens.
@@ -2066,14 +2182,13 @@ CSeq_loc_Mapper_Base::ESeqType
 CSeq_loc_Mapper_Base::GetSeqType(const CSeq_id_Handle& idh) const
 {
     // NOTE: Maping synonyms to the main id should be done by the caller.
-    _ASSERT(m_SeqInfo);
     // Check cached types.
     TSeqTypeById::const_iterator found = m_SeqTypes.find(idh);
     if (found != m_SeqTypes.end()) {
         return found->second;
     }
     // New sequence - check the type and cache it.
-    ESeqType seqtype = m_SeqInfo->GetSequenceType(idh);
+    ESeqType seqtype = m_MapOptions.GetSeqInfo().GetSequenceType(idh);
     if (seqtype != eSeq_unknown) {
         // Cache sequence type for all synonyms if any
         SetSeqTypeById(idh, seqtype);
@@ -2085,8 +2200,7 @@ CSeq_loc_Mapper_Base::GetSeqType(const CSeq_id_Handle& idh) const
 void CSeq_loc_Mapper_Base::CollectSynonyms(const CSeq_id_Handle& id,
                                            TSynonyms& synonyms) const
 {
-    _ASSERT(m_SeqInfo);
-    m_SeqInfo->CollectSynonyms(id, synonyms);
+    m_MapOptions.GetSeqInfo().CollectSynonyms(id, synonyms);
     if ( synonyms.empty() ) {
         synonyms.insert(id);
     }
@@ -2100,9 +2214,8 @@ CSeq_loc_Mapper_Base::CollectSynonyms(const CSeq_id_Handle& id) const
     if (primary_it != m_SynonymMap.end()) {
         return primary_it->second;
     }
-    _ASSERT(m_SeqInfo);
     TSynonyms synonyms;
-    m_SeqInfo->CollectSynonyms(id, synonyms);
+    m_MapOptions.GetSeqInfo().CollectSynonyms(id, synonyms);
     ITERATE(TSynonyms, syn, synonyms) {
         m_SynonymMap[*syn] = id;
         // Add matching (e.g. versionless) synonyms.
@@ -2119,13 +2232,12 @@ CSeq_loc_Mapper_Base::CollectSynonyms(const CSeq_id_Handle& id) const
 
 TSeqPos CSeq_loc_Mapper_Base::GetSequenceLength(const CSeq_id& id)
 {
-    _ASSERT(m_SeqInfo);
     CSeq_id_Handle idh = CollectSynonyms(CSeq_id_Handle::GetHandle(id));
     TLengthMap::const_iterator it = m_LengthMap.find(idh);
     if (it != m_LengthMap.end()) {
         return it->second;
     }
-    TSeqPos len = m_SeqInfo->GetSequenceLength(idh);
+    TSeqPos len = m_MapOptions.GetSeqInfo().GetSequenceLength(idh);
     m_LengthMap[idh] = len;
     return len;
 }
@@ -2174,9 +2286,19 @@ bool CSeq_loc_Mapper_Base::x_CheckSeqTypes(const CSeq_loc& loc,
             seqtype = eSeq_unknown; // Report multiple types as 'unknown'
         }
         // Adjust total length or reset it.
+        // kInvalidSeqPos indicates at least some ranges of unknown length
+        // have been already parsed. Once this happen, do not check other
+        // lengths.
         if (len != kInvalidSeqPos) {
             if ( it.GetRange().IsWhole() ) {
-                len = GetSequenceLength(it.GetSeq_id());
+                TSeqPos seq_len = GetSequenceLength(it.GetSeq_id());
+                if (seq_len == kInvalidSeqPos) {
+                    // Unknown length - stop checking other lengths.
+                    len = kInvalidSeqPos;
+                }
+                else {
+                    len += seq_len;
+                }
             }
             else {
                 len += it.GetRange().GetLength();
@@ -2324,7 +2446,6 @@ void CSeq_loc_Mapper_Base::x_NextMappingRange(const CSeq_id&   src_id,
                                               const CInt_fuzz* fuzz_from,
                                               const CInt_fuzz* fuzz_to,
                                               int              frame,
-                                              TSeqPos          dst_total_len,
                                               TSeqPos          src_bioseq_len )
 {
     TSeqPos cvt_src_start = src_start;
@@ -2335,7 +2456,7 @@ void CSeq_loc_Mapper_Base::x_NextMappingRange(const CSeq_id&   src_id,
 
     if (src_len == dst_len) {
         if (src_len == kInvalidSeqPos) {
-            // Mapping whole to whole - try to get real length.
+            // Mapping whole to whole - try to get actual lengths.
             src_len = GetSequenceLength(src_id);
             if (src_len != kInvalidSeqPos) {
                 src_len -= src_start;
@@ -2344,7 +2465,7 @@ void CSeq_loc_Mapper_Base::x_NextMappingRange(const CSeq_id&   src_id,
             if (dst_len != kInvalidSeqPos) {
                 dst_len -= dst_start;
             }
-            // GetSequenceLength() could fail to get the real length.
+            // GetSequenceLength() could fail to get the length.
             // We can still try to initialize the mapper but with care.
             // If a location is whole, its start must be 0 and strand unknown.
             _ASSERT(src_len != kInvalidSeqPos  ||
@@ -2416,7 +2537,7 @@ void CSeq_loc_Mapper_Base::x_NextMappingRange(const CSeq_id&   src_id,
     // Ready to add the conversion.
     x_AddConversion(src_id, cvt_src_start, src_strand,
         dst_id, cvt_dst_start, dst_strand, cvt_length, ext_to, frame, 
-        dst_total_len, src_bioseq_len, original_dst_len );
+        src_bioseq_len, original_dst_len);
 }
 
 
@@ -2429,7 +2550,6 @@ void CSeq_loc_Mapper_Base::x_AddConversion(const CSeq_id& src_id,
                                            TSeqPos        length,
                                            bool           ext_right,
                                            int            frame,
-                                           TSeqPos        dst_total_len,
                                            TSeqPos        src_bioseq_len,
                                            TSeqPos        dst_len)
 {
@@ -2440,24 +2560,44 @@ void CSeq_loc_Mapper_Base::x_AddConversion(const CSeq_id& src_id,
     CSeq_id_Handle src_idh = CSeq_id_Handle::GetHandle(src_id);
     CSeq_id_Handle dst_idh = CSeq_id_Handle::GetHandle(dst_id);
     CSeq_id_Handle main_id = CollectSynonyms(src_idh);
-    TSeqPos dst_seq_len = GetSequenceLength(dst_id);
-    if (dst_seq_len != kInvalidSeqPos  &&  dst_seq_len > 0) {
-        ESeqType dst_type = GetSeqType(dst_idh);
-        if (dst_type == eSeq_prot) {
-            dst_seq_len *= 3;
+
+    if ( m_MapOptions.GetTrimMappedLocation() ) {
+        TSeqPos src_seq_len = GetSequenceLength(src_id);
+        if (src_seq_len != kInvalidSeqPos && src_seq_len > 0) {
+            ESeqType src_type = GetSeqType(src_idh);
+            if (src_type == eSeq_prot) {
+                src_seq_len *= 3;
+            }
+            if (length > src_seq_len - src_start) {
+                TSeqPos trim = length - src_seq_len + src_start;
+                if ( !SameOrientation(src_strand, dst_strand) ) {
+                    dst_start += trim;
+                }
+                length -= trim;
+            }
         }
-        if (length > dst_seq_len - dst_start) {
-            TSeqPos trim = length - dst_seq_len + dst_start;
-            length -= trim;
-            if (dst_len != kInvalidSeqPos) {
-                dst_len = dst_len > trim ? dst_len - trim : 0;
+        TSeqPos dst_seq_len = GetSequenceLength(dst_id);
+        if (dst_seq_len != kInvalidSeqPos  &&  dst_seq_len > 0) {
+            ESeqType dst_type = GetSeqType(dst_idh);
+            if (dst_type == eSeq_prot) {
+                dst_seq_len *= 3;
+            }
+            if (length > dst_seq_len - dst_start) {
+                TSeqPos trim = length - dst_seq_len + dst_start;
+                if ( !SameOrientation(src_strand, dst_strand) ) {
+                    src_start += trim;
+                }
+                length -= trim;
+                if (dst_len != kInvalidSeqPos) {
+                    dst_len = dst_len > trim ? dst_len - trim : 0;
+                }
             }
         }
     }
     CRef<CMappingRange> rg = m_Mappings->AddConversion(
         main_id, src_start, length, src_strand,
         dst_idh, dst_start, dst_strand,
-        ext_right, frame, dst_total_len, src_bioseq_len, dst_len );
+        ext_right, frame, kInvalidSeqPos, src_bioseq_len, dst_len);
     if ( m_CurrentGroup ) {
         rg->SetGroup(m_CurrentGroup);
     }
@@ -3526,6 +3666,7 @@ x_RangeToSeq_loc(const CSeq_id_Handle& idh,
         loc->SetPnt().SetId().Assign(*idh.GetSeqId());
         loc->SetPnt().SetPoint(from);
         if (strand_idx > 0) {
+
             loc->SetPnt().SetStrand(INDEX_TO_STRAND(strand_idx));
         }
         if ( rg_fuzz.first ) {

@@ -1149,6 +1149,162 @@ void TestMapper_TruncatedMix()
 }
 
 
+void TestMapper_Trimming()
+{
+    CNcbiIfstream in("mapper_test_data/trimming.asn");
+    cout << "Testing trimming of mapped locations" << endl;
+
+    CRef<CTestMapperSeqInfo> info(new CTestMapperSeqInfo);
+    info->AddSeq(2, CSeq_loc_Mapper_Base::eSeq_nuc, 600);
+    info->AddSeq(3, CSeq_loc_Mapper_Base::eSeq_prot, 100);
+    info->AddSeq(4, CSeq_loc_Mapper_Base::eSeq_prot, 10);
+    info->AddSeq(5, CSeq_loc_Mapper_Base::eSeq_nuc, 300);
+
+    CSeq_loc src, dst, orig;
+    // Read seq-locs first to skip ASN.1 comments
+    in >> MSerial_AsnText >> src;
+    in >> MSerial_AsnText >> dst;
+    in >> MSerial_AsnText >> orig;
+
+    // No trimming - stop codon should be preserved.
+    cout << "  Test stop codon mapping: trimming=off" << endl;
+    auto_ptr<CSeq_loc_Mapper_Base> mapper(
+        new CSeq_loc_Mapper_Base(src, dst,
+        CSeq_loc_Mapper_Options(info.GetPointer())));
+    TestMappingSeq_loc(*mapper, orig, in);
+
+    // Trimming enabled - stop codon should be dropped.
+    cout << "  Test stop codon mapping: trimming=on" << endl;
+    mapper.reset(
+        new CSeq_loc_Mapper_Base(src, dst,
+        CSeq_loc_Mapper_Options(info.GetPointer())
+        .SetTrimMappedLocation(true)));
+    TestMappingSeq_loc(*mapper, orig, in);
+
+    // Mapping prot->nuc, no trimming - stop codon should be preserved.
+    in >> MSerial_AsnText >> orig;
+    cout << "  Test stop codon mapping, prot->nuc: trimming=off" << endl;
+    mapper.reset(
+        new CSeq_loc_Mapper_Base(dst, src,
+        CSeq_loc_Mapper_Options(info.GetPointer())));
+    TestMappingSeq_loc(*mapper, orig, in);
+
+    // Mapping prot->nuc, trimming enabled - stop codon should be dropped.
+    cout << "  Test stop codon mapping, prot->nuc: trimming=on" << endl;
+    mapper.reset(
+        new CSeq_loc_Mapper_Base(dst, src,
+        CSeq_loc_Mapper_Options(info.GetPointer())
+        .SetTrimMappedLocation(true)));
+    TestMappingSeq_loc(*mapper, orig, in);
+
+    // Stop codon trimming - minus strand.
+    cout << "  Test stop codon trimming on minus strand, nuc->prot" << endl;
+    in >> MSerial_AsnText >> src;
+    in >> MSerial_AsnText >> dst;
+    mapper.reset(
+        new CSeq_loc_Mapper_Base(src, dst,
+        CSeq_loc_Mapper_Options(info.GetPointer())
+        .SetTrimMappedLocation(true)));
+    TestMappingSeq_loc(*mapper, src, in);
+    cout << "  Test stop codon trimming on minus strand, prot->nuc" << endl;
+    mapper.reset(
+        new CSeq_loc_Mapper_Base(dst, src,
+        CSeq_loc_Mapper_Options(info.GetPointer())
+        .SetTrimMappedLocation(true)));
+    TestMappingSeq_loc(*mapper, dst, in);
+
+    // Incomplete codon should be always trimmed off.
+    cout << "  Test incomplete codon trimming" << endl;
+    in >> MSerial_AsnText >> src;
+    in >> MSerial_AsnText >> dst;
+    mapper.reset(
+        new CSeq_loc_Mapper_Base(src, dst,
+        CSeq_loc_Mapper_Options(info.GetPointer())));
+    TestMappingSeq_loc(*mapper, in);
+
+    // Ignore extra codon when there are multiple destination proteins.
+    cout << "  Test stop codon non-extension, multi-id destionation" << endl;
+    in >> MSerial_AsnText >> src;
+    in >> MSerial_AsnText >> dst;
+    mapper.reset(
+        new CSeq_loc_Mapper_Base(src, dst,
+        CSeq_loc_Mapper_Options(info.GetPointer())));
+    TestMappingSeq_loc(*mapper, in);
+
+    // Ignore extra codon when there are multiple source proteins.
+    cout << "  Test stop codon non-extension, multi-id source" << endl;
+    mapper.reset(
+        new CSeq_loc_Mapper_Base(dst, src,
+        CSeq_loc_Mapper_Options(info.GetPointer())));
+    mapper->SetMergeAbutting();
+    TestMappingSeq_loc(*mapper, in);
+
+    // Mapping to minus strand, nuc->nuc, trim=on.
+    cout << "  Test trimming while mapping to minus strand, nuc->nuc, #1" << endl;
+    in >> MSerial_AsnText >> src;
+    in >> MSerial_AsnText >> dst;
+    mapper.reset(
+        new CSeq_loc_Mapper_Base(src, dst,
+        CSeq_loc_Mapper_Options(info.GetPointer())
+        .SetTrimMappedLocation(true)));
+    TestMappingSeq_loc(*mapper, in);
+
+    cout << "  Test trimming while mapping to minus strand, nuc->nuc, #2" << endl;
+    TestMappingSeq_loc(*mapper, in);
+
+    cout << "  Test trimming while mapping to minus strand, nuc->nuc, #3" << endl;
+    TestMappingSeq_loc(*mapper, in);
+
+    // Mapping to minus strand, prot->nuc, trim=on.
+    cout << "  Test trimming while mapping to minus strand, prot->nuc, #1" << endl;
+    in >> MSerial_AsnText >> src;
+    in >> MSerial_AsnText >> dst;
+    mapper.reset(
+        new CSeq_loc_Mapper_Base(src, dst,
+        CSeq_loc_Mapper_Options(info.GetPointer())
+        .SetTrimMappedLocation(true)));
+    TestMappingSeq_loc(*mapper, in);
+
+    cout << "  Test trimming while mapping to minus strand, prot->nuc, #2" << endl;
+    TestMappingSeq_loc(*mapper, in);
+
+    cout << "  Test trimming while mapping to minus strand, prot->nuc, #3" << endl;
+    TestMappingSeq_loc(*mapper, in);
+
+    // Mapping from minus strand, nuc->nuc, trim=on.
+    cout << "  Test trimming while mapping from minus strand, nuc->nuc, #1" << endl;
+    in >> MSerial_AsnText >> src;
+    in >> MSerial_AsnText >> dst;
+    mapper.reset(
+        new CSeq_loc_Mapper_Base(src, dst,
+        CSeq_loc_Mapper_Options(info.GetPointer())
+        .SetTrimMappedLocation(true)));
+    TestMappingSeq_loc(*mapper, in);
+
+    cout << "  Test trimming while mapping from minus strand, nuc->nuc, #2" << endl;
+    TestMappingSeq_loc(*mapper, in);
+
+    cout << "  Test trimming while mapping from minus strand, nuc->nuc, #3" << endl;
+    TestMappingSeq_loc(*mapper, in);
+
+    // Mapping from minus strand, nuc->prot, trim=on.
+    cout << "  Test trimming while mapping from minus strand, nuc->prot, #1" << endl;
+    in >> MSerial_AsnText >> src;
+    in >> MSerial_AsnText >> dst;
+    mapper.reset(
+        new CSeq_loc_Mapper_Base(src, dst,
+        CSeq_loc_Mapper_Options(info.GetPointer())
+        .SetTrimMappedLocation(true)));
+    TestMappingSeq_loc(*mapper, in);
+
+    cout << "  Test trimming while mapping from minus strand, nuc->prot, #2" << endl;
+    TestMappingSeq_loc(*mapper, in);
+
+    cout << "  Test trimming while mapping from minus strand, nuc->prot, #3" << endl;
+    TestMappingSeq_loc(*mapper, in);
+}
+
+
 BOOST_AUTO_TEST_CASE(s_TestMapping)
 {
     TestMapping_Simple();
@@ -1168,4 +1324,5 @@ BOOST_AUTO_TEST_CASE(s_TestMapping)
     TestMapper_Fuzz();
     TestMapper_ExonPartsOrder();
     TestMapper_TruncatedMix();
+    TestMapper_Trimming();
 }

@@ -1,0 +1,428 @@
+-- ===================================================
+-- ! Test stop codon extension and location trimming !
+-- ===================================================
+
+-- Test stop codon mapping: source
+Seq-loc ::= int {
+  from 0,
+  to 302,
+  id gi 2
+}
+
+-- Test stop codon mapping: destination
+Seq-loc ::= whole gi 3
+
+-- Test stop codon mapping: original
+Seq-loc ::= int {
+  from 0,
+  to 320,
+  id gi 2
+}
+
+-- Test stop codon mapping: mapped, trimming=off
+Seq-loc ::= int {
+  from 0,
+  to 100,
+  id gi 3,
+  fuzz-to lim gt
+}
+
+-- Test stop codon mapping: mapped, trimming=on
+Seq-loc ::= int {
+  from 0,
+  to 99,
+  id gi 3,
+  fuzz-to lim gt
+}
+
+-- Test stop codon mapping, prot->nuc: original
+Seq-loc ::= int {
+  from 0,
+  to 100,
+  id gi 3
+}
+
+-- Test stop codon mapping, prot->nuc: mapped, trimming=off
+Seq-loc ::= int {
+  from 0,
+  to 302,
+  id gi 2
+}
+
+-- Test stop codon mapping, prot->nuc: mapped, trimming=on
+Seq-loc ::= int {
+  from 0,
+  to 299,
+  id gi 2,
+  fuzz-to lim gt
+}
+
+
+-- Test stop codon trimming on minus strand, nuc->prot: source
+Seq-loc ::= int {
+  from 0,
+  to 302,
+  strand minus,
+  id gi 2
+}
+
+-- Test stop codon trimming on minus strand, nuc->prot: destination
+Seq-loc ::= whole gi 3
+
+-- Test stop codon trimming on minus strand, nuc->prot: mapped (from source)
+Seq-loc ::= int {
+  from 0,
+  to 99,
+  strand plus,
+  id gi 3,
+  fuzz-to lim gt
+}
+
+-- Test stop codon trimming on minus strand, prot->nuc: mapped (from destination)
+Seq-loc ::= int {
+  from 3,
+  to 302,
+  strand minus,
+  id gi 2
+}
+
+
+-- Test incomplete codon trimming: source
+Seq-loc ::= int {
+  from 0,
+  to 301,
+  id gi 2
+}
+
+-- Test incomplete codon trimming: destination
+Seq-loc ::= whole gi 3
+
+-- Test incomplete codon trimming: original
+Seq-loc ::= int {
+  from 0,
+  to 320,
+  id gi 2
+}
+
+-- Test incomplete codon trimming: mapped
+Seq-loc ::= int {
+  from 0,
+  to 99,
+  id gi 3,
+  fuzz-to lim gt
+}
+
+-- Test stop codon non-extension, multi-id protein: source
+Seq-loc ::= int {
+  from 0,
+  to 332,
+  id gi 2
+}
+
+-- Test stop codon non-extension, multi-id protein: destination
+Seq-loc ::= mix {
+  whole gi 3,
+  whole gi 4
+}
+
+-- Test stop codon non-extension, multi-id destionation: original
+Seq-loc ::= int {
+  from 0,
+  to 340,
+  id gi 2
+}
+
+-- Test stop codon non-extension, multi-id destionation: mapped
+Seq-loc ::= packed-int {
+  {
+    from 0,
+    to 99,
+    id gi 3
+  },
+  {
+    from 0,
+    to 9,
+    id gi 4,
+    fuzz-to lim gt
+  }
+}
+
+-- Test stop codon non-extension, multi-id source: original
+Seq-loc ::= packed-int {
+  {
+    from 0,
+    to 99,
+    id gi 3
+  },
+  {
+    from 0,
+    to 9,
+    id gi 4
+  }
+}
+
+-- Test stop codon non-extension, multi-id source: mapped
+Seq-loc ::= int {
+  from 0,
+  to 329,
+  id gi 2
+}
+
+
+-- Test trimming while mapping to minus strand, nuc->nuc: source
+Seq-loc ::= int {
+  from 0,
+  to 309,
+  id gi 2
+}
+
+-- Test trimming while mapping to minus strand, nuc->nuc: destination
+Seq-loc ::= int {
+  from 0,
+  to 309,
+  strand minus,
+  id gi 5
+}
+
+-- Test trimming while mapping to minus strand, nuc->nuc: original 1
+Seq-loc ::= int {
+  from 12,
+  to 306,
+  id gi 2
+}
+
+-- Test trimming while mapping to minus strand, nuc->nuc: mapped 1
+Seq-loc ::= int {
+  from 3,
+  to 297,
+  strand minus,
+  id gi 5
+}
+
+-- Test trimming while mapping to minus strand, nuc->nuc: original 2
+Seq-loc ::= int {
+  from 0,
+  to 309,
+  id gi 2
+}
+
+-- Test trimming while mapping to minus strand, nuc->nuc: mapped 2
+Seq-loc ::= int {
+  from 0,
+  to 299,
+  strand minus,
+  id gi 5,
+  fuzz-to lim gt
+}
+
+-- Test trimming while mapping to minus strand, nuc->nuc: original 3
+Seq-loc ::= int {
+  from 10,
+  to 319,
+  id gi 2
+}
+
+-- Test trimming while mapping to minus strand, nuc->nuc: mapped 3
+Seq-loc ::= int {
+  from 0,
+  to 299,
+  strand minus,
+  id gi 5,
+  fuzz-from lim lt
+}
+
+
+-- Test trimming while mapping to minus strand, prot->nuc: source
+Seq-loc ::= int {
+  from 0,
+  to 102,
+  id gi 3
+}
+
+-- Test trimming while mapping to minus strand, prot->nuc: destination
+Seq-loc ::= int {
+  from 0,
+  to 308,
+  strand minus,
+  id gi 5
+}
+
+-- Test trimming while mapping to minus strand, prot->nuc: original 1
+Seq-loc ::= int {
+  from 4,
+  to 99,
+  id gi 3
+}
+
+-- Test trimming while mapping to minus strand, prot->nuc: mapped 1
+Seq-loc ::= int {
+  from 9,
+  to 296,
+  strand minus,
+  id gi 5
+}
+
+-- Test trimming while mapping to minus strand, prot->nuc: original 2
+Seq-loc ::= int {
+  from 0,
+  to 102,
+  id gi 3
+}
+
+-- Test trimming while mapping to minus strand, prot->nuc: mapped 2
+Seq-loc ::= int {
+  from 9,
+  to 299,
+  strand minus,
+  id gi 5,
+  fuzz-from lim lt,
+  fuzz-to lim gt
+}
+
+-- Test trimming while mapping to minus strand, prot->nuc: original 3
+Seq-loc ::= int {
+  from 4,
+  to 110,
+  id gi 3
+}
+
+-- Test trimming while mapping to minus strand, prot->nuc: mapped 3
+Seq-loc ::= int {
+  from 9,
+  to 296,
+  strand minus,
+  id gi 5,
+  fuzz-from lim lt
+}
+
+
+-- Test trimming while mapping from minus strand, nuc->nuc: source
+Seq-loc ::= int {
+  from 0,
+  to 309,
+  strand minus,
+  id gi 2
+}
+
+-- Test trimming while mapping from minus strand, nuc->nuc: destination
+Seq-loc ::= int {
+  from 0,
+  to 309,
+  id gi 5
+}
+
+-- Test trimming while mapping from minus strand, nuc->nuc: original 1
+Seq-loc ::= int {
+  from 12,
+  to 306,
+  strand minus,
+  id gi 2
+}
+
+-- Test trimming while mapping from minus strand, nuc->nuc: mapped 1
+Seq-loc ::= int {
+  from 3,
+  to 297,
+  strand plus,
+  id gi 5
+}
+
+-- Test trimming while mapping from minus strand, nuc->nuc: original 2
+Seq-loc ::= int {
+  from 0,
+  to 309,
+  strand minus,
+  id gi 2
+}
+
+-- Test trimming while mapping from minus strand, nuc->nuc: mapped 2
+Seq-loc ::= int {
+  from 0,
+  to 299,
+  strand plus,
+  id gi 5,
+  fuzz-to lim gt
+}
+
+-- Test trimming while mapping from minus strand, nuc->nuc: original 3
+Seq-loc ::= int {
+  from 10,
+  to 319,
+  strand minus,
+  id gi 2
+}
+
+-- Test trimming while mapping from minus strand, nuc->nuc: mapped 3
+Seq-loc ::= int {
+  from 0,
+  to 299,
+  strand plus,
+  id gi 5,
+  fuzz-from lim lt
+}
+
+
+-- Test trimming while mapping from minus strand, nuc->prot: source
+Seq-loc ::= int {
+  from 0,
+  to 308,
+  strand minus,
+  id gi 5
+}
+
+-- Test trimming while mapping from minus strand, nuc->prot: destination
+Seq-loc ::= int {
+  from 0,
+  to 102,
+  id gi 3
+}
+
+-- Test trimming while mapping from minus strand, nuc->prot: original 1
+Seq-loc ::= int {
+  from 12,
+  to 296,
+  strand minus,
+  id gi 5
+}
+
+-- Test trimming while mapping from minus strand, nuc->prot: mapped 1
+Seq-loc ::= int {
+  from 4,
+  to 98,
+  strand plus,
+  id gi 3
+}
+
+-- Test trimming while mapping from minus strand, nuc->prot: original 2
+Seq-loc ::= int {
+  from 0,
+  to 299,
+  strand minus,
+  id gi 5
+}
+
+-- Test trimming while mapping from minus strand, nuc->prot: mapped 2
+Seq-loc ::= int {
+  from 3,
+  to 99,
+  strand plus,
+  id gi 3,
+  fuzz-to lim gt
+}
+
+-- Test trimming while mapping from minus strand, nuc->prot: original 3
+Seq-loc ::= int {
+  from 12,
+  to 311,
+  strand minus,
+  id gi 5
+}
+
+-- Test trimming while mapping from minus strand, nuc->prot: mapped 3
+Seq-loc ::= int {
+  from 3,
+  to 98,
+  strand plus,
+  id gi 3,
+  fuzz-from lim lt
+}
