@@ -42,6 +42,7 @@ class CDirectNetStorageObject : public CNetStorageObject
 public:
     CDirectNetStorageObject(EVoid);
     string Relocate(TNetStorageFlags flags);
+    void CancelRelocate();
     ENetStorageRemoveResult Remove();
     const CNetStorageObjectLoc& Locator();
     string FileTrack_Path();

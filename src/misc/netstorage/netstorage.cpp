@@ -59,6 +59,11 @@ string CDirectNetStorageObject::Relocate(TNetStorageFlags flags)
 }
 
 
+void CDirectNetStorageObject::CancelRelocate()
+{
+}
+
+
 ENetStorageRemoveResult CDirectNetStorageObject::Remove()
 {
     return Impl<CObj>(m_Impl)->Remove();
