@@ -36,7 +36,7 @@
 ///   Test ncbidiag macros DIAG_COMPILE_INFO
 ///
 ///   More elaborate documentation could be found in:
-///     http://www.ncbi.nlm.nih.gov/toolkit/doc/book/ch_core/#ch_core.diag
+///     http://ncbi.github.io/cxx-toolkit/pages/ch_log
 
 #include <corelib/ncbidiag.hpp>
 

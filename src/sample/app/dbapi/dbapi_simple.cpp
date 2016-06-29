@@ -299,17 +299,17 @@ void CDbapiSimpleApp::ParseArgs(void)
 //
 //  9.  Setting NCBI configuration parameters, such as FTDS_TDS_VERSION,
 //      NCBI_CONFIG__DB_CONNECTION_FACTORY__MAX_CONN_ATTEMPTS, and others
-//      (see http://www.ncbi.nlm.nih.gov/toolkit/doc/book/ch_libconfig/).
+//      (see http://ncbi.github.io/cxx-toolkit/pages/ch_libconfig).
 //
 //  10. Setting environment variables, such as FREEBCP_DATEFMT, TDSQUERY,
 //      DATA_TABLE, and others (to see how these are used, see
-//      http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=_bcp_exec_out).
+//      https://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/lxr/ident?i=_bcp_exec_out).
 //
 //  11. Setting parameters in an interfaces file.
 //
 //  For more information on setting connection options, please see the NCBI C++
 //  Toolkit book chapter on DBAPI:
-//      http://www.ncbi.nlm.nih.gov/toolkit/doc/book/ch_dbapi/
+//      http://ncbi.github.io/cxx-toolkit/pages/ch_dbapi
 
 void CDbapiSimpleApp::SetupDb(void)
 {

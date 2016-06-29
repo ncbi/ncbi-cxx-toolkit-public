@@ -67,7 +67,7 @@ extern "C" {
 
 /* Minimum line length:
     5+3+4+2+16+4+4+23+15+15+24 (min for fields) + (11 delimiters) + (1 char for appname)
-    http://www.ncbi.nlm.nih.gov/toolkit/doc/book/ch_core/#ch_core.The_New_Post_Format
+    http://ncbi.github.io/cxx-toolkit/pages/ch_log#ch_core.The_New_Post_Format
 */
 #define NCBILOG_ENTRY_MIN        127
 
