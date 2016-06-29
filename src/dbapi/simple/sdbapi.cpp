@@ -2360,6 +2360,80 @@ CQuery::CField::CField(CQueryImpl* q, unsigned int col_num)
 CQuery::CField::~CField()
 {}
 
+CQuery::CRow::CRow()
+{}
+
+CQuery::CRow::CRow(const CRow& r)
+    : m_Fields(r.m_Fields), m_MetaData(r.m_MetaData)
+{}
+
+CQuery::CRow::~CRow()
+{}
+
+
+inline
+void CQuery::CRow::x_CheckColumnNumber(unsigned int col) const
+{
+    if (col == 0  ||  col > m_Fields.size()) {
+        NCBI_THROW(CSDB_Exception, eNotExist,
+                   "No such column in the result set: "
+                   + NStr::NumericToString(col) + ".  " + x_GetContext());
+    }
+}
+
+const CQuery::CField& CQuery::CRow::operator[](unsigned int col) const
+{
+    x_CheckColumnNumber(col);
+    return m_Fields[col - 1];
+}
+
+const CQuery::CField& CQuery::CRow::operator[](CTempString col) const
+{
+    SQueryRSMetaData::TColNumsMap::const_iterator it
+        = m_MetaData->col_nums.find(col);
+    if (it == m_MetaData->col_nums.end()) {
+        NCBI_THROW(CSDB_Exception, eNotExist,
+                   "No such column in the result set: " + col + ".  "
+                   + x_GetContext());
+    } else {
+        return m_Fields[it->second - 1];
+    }
+}
+
+unsigned int CQuery::CRow::GetTotalColumns(void) const
+{
+    return m_Fields.size();
+}
+
+const string& CQuery::CRow::GetColumnName(unsigned int col) const
+{
+    x_CheckColumnNumber(col);
+    return m_MetaData->col_names[col - 1];
+}
+
+ESDB_Type CQuery::CRow::GetColumnType(unsigned int col) const
+{
+    x_CheckColumnNumber(col);
+    return m_MetaData->col_types[col - 1];
+}
+
+void CQuery::CRow::x_Reset(CQueryImpl& q, IResultSet& rs)
+{
+    m_Fields.clear();
+    m_MetaData.Reset(new SQueryRSMetaData);
+    m_MetaData->exception_context.Reset(&q.x_GetContext());
+
+    unsigned int cols_cnt = rs.GetTotalColumns();
+    const IResultSetMetaData* meta = rs.GetMetaData();
+    m_Fields.clear();
+    m_Fields.reserve(cols_cnt);
+    for (unsigned int i = 1; i <= cols_cnt; ++i) {
+        m_Fields.emplace_back(CQuery::CField(&q, i));
+        m_MetaData->col_nums[meta->GetName(i)] = i;
+        m_MetaData->col_names.emplace_back(meta->GetName(i));
+        m_MetaData->col_types.emplace_back(s_ConvertType(meta->GetType(i)));
+    }
+}
 
 // NB: x_InitBeforeExec resets many of these fields.
 inline
@@ -2375,6 +2449,7 @@ CQueryImpl::CQueryImpl(CDatabaseImpl* db_impl)
       m_Executed(false),
       m_ReportedWrongRowCount(false),
       m_IsSP(false),
+      m_RowUnderConstruction(false),
       m_CurRSNo(0),
       m_CurRowNo(0),
       m_CurRelRowNo(0),
@@ -2573,8 +2648,8 @@ CQueryImpl::SetSql(CTempString sql)
 
 void CQueryImpl::x_DetachAllFields(void)
 {
-    for (auto& f : m_Fields) {
-        f->x_Detach();
+    for (auto& f : m_Row.m_Fields) {
+        f.x_Detach();
     }
 }
 
@@ -2805,15 +2880,9 @@ inline void
 CQueryImpl::x_InitRSFields(void)
 {
     x_DetachAllFields();
-    m_Fields.clear();
-    m_ColNums.clear();
-    unsigned int cols_cnt = m_CurRS->GetTotalColumns();
-    const IResultSetMetaData* meta = m_CurRS->GetMetaData();
-    m_Fields.resize(cols_cnt);
-    for (unsigned int i = 1; i <= cols_cnt; ++i) {
-        m_Fields[i - 1] = new CQuery::CField(this, i);
-        m_ColNums[meta->GetName(i)] = i;
-    }
+    m_RowUnderConstruction = true;
+    m_Row.x_Reset(*this, *m_CurRS);
+    m_RowUnderConstruction = false;
 }
 
 bool
@@ -2921,7 +2990,9 @@ CQueryImpl::BeginNewRS(void)
         // GetRowCount.
         m_RSFinished  = false;
         m_CurRelRowNo = 0;
-        x_InitRSFields();
+        try {
+            x_InitRSFields();
+        } SDBAPI_CATCH_LOWLEVEL()
     }
     while (HasMoreResultSets()  &&  !x_Fetch()  &&  m_IgnoreBounds)
         m_RSBeginned = true;
@@ -2962,30 +3033,28 @@ unsigned int
 CQueryImpl::GetTotalColumns(void) const
 {
     x_CheckCanWork(true);
-    try {
-        return m_CurRS->GetTotalColumns();
-    }
-    SDBAPI_CATCH_LOWLEVEL()
+    return m_Row.GetTotalColumns();
 }
 
 inline string
 CQueryImpl::GetColumnName(unsigned int col) const
 {
     x_CheckCanWork(true);
-    try {
-        return m_CurRS->GetMetaData()->GetName(col);
-    }
-    SDBAPI_CATCH_LOWLEVEL()
+    return m_Row.GetColumnName(col);
 }
 
 inline ESDB_Type
 CQueryImpl::GetColumnType(unsigned int col) const
 {
     x_CheckCanWork(true);
-    try {
-        return s_ConvertType(m_CurRS->GetMetaData()->GetType(col));
+    if (m_RowUnderConstruction) {
+        try {
+            return s_ConvertType(m_CurRS->GetMetaData()->GetType(col));
+        }
+        SDBAPI_CATCH_LOWLEVEL()
+    } else {
+        return m_Row.GetColumnType(col);
     }
-    SDBAPI_CATCH_LOWLEVEL()
 }
 
 inline void
@@ -3074,44 +3143,34 @@ CQueryImpl::IsFinished(CQuery::EHowMuch how_much) const
     // case some state (saved here) will need to be rolled back.
     // m_CurRS will have to remain advanced, but HasMoreResultSets
     // knows not to advance it again until BeginNewRS has run.
-    TColNumsMap  saved_col_nums   = m_ColNums;
-    TFields      saved_fields;
+    CQuery::CRow saved_row        = m_Row;
     unsigned int saved_rel_row_no = m_CurRelRowNo;
     CQueryImpl&  nc_self          = const_cast<CQueryImpl&>(*this);
 
-    swap(nc_self.m_Fields, saved_fields);
+    nc_self.m_Row.m_Fields.clear();
+    nc_self.m_Row.m_MetaData.Reset();
     if (nc_self.HasMoreResultSets()) {
         nc_self.m_RSFinished  = true; // still match end()
-        nc_self.m_ColNums     = saved_col_nums;
         nc_self.m_CurRelRowNo = saved_rel_row_no;
-        swap(nc_self.m_Fields, saved_fields);
+        nc_self.m_Row         = saved_row;
         return false;
     }
 
     return true;
 }
 
-inline const CQuery::CField&
-CQueryImpl::GetColumn(const CDBParamVariant& col) const
+inline
+const CQuery::CRow& CQueryImpl::GetRow(void) const
 {
     x_CheckCanWork(true);
-    int pos = -1;
-    if (col.IsPositional())
-        pos = col.GetPosition();
-    else {
-        TColNumsMap::const_iterator it = m_ColNums.find(col.GetName());
-        if (it != m_ColNums.end())
-            pos = it->second;
-    }
-    if (pos <= 0  ||  pos > int(m_Fields.size())) {
-        NCBI_THROW(CSDB_Exception, eNotExist,
-                   "No such column in the result set: "
-                   + (col.IsPositional()
-                      ? NStr::NumericToString(col.GetPosition())
-                      : col.GetName())
-                   + ".  " + x_GetContext());
-    }
-    return *m_Fields[pos - 1];
+    return m_Row;
+}
+
+inline const CQuery::CField&
+CQueryImpl::GetColumn(const CDBParamVariant& c) const
+{
+    x_CheckCanWork(true);
+    return c.IsPositional() ? m_Row[c.GetPosition()] : m_Row[c.GetName()];
 }
 
 inline CDatabaseImpl*
@@ -3201,6 +3260,11 @@ CAutoTrans::CSubject DBAPI_MakeTrans(CQuery& query)
     return DBAPI_MakeTrans(*query.m_Impl->GetConnection());
 }
 
+inline
+const CDB_Exception::SContext& CQuery::CRow::x_GetContext(void) const
+{
+    return *m_MetaData->exception_context;
+}
 
 CQuery::CRowIterator::CRowIterator(void)
     : m_IsEnd(false)
@@ -3289,13 +3353,18 @@ CQuery::CRowIterator::operator++ (void)
 const CQuery::CField&
 CQuery::CRowIterator::operator[](unsigned int col) const
 {
-    return m_Query->GetColumn(col);
+    return m_Query->GetRow()[col];
 }
 
 const CQuery::CField&
 CQuery::CRowIterator::operator[](CTempString col) const
 {
-    return m_Query->GetColumn(string(col));
+    return m_Query->GetRow()[col];
+}
+
+const CQuery::CRow& CQuery::CRowIterator::operator*(void) const
+{
+    return m_Query->GetRow();
 }
 
 

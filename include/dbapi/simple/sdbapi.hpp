@@ -57,6 +57,8 @@ class CQueryImpl;
 class CQueryFieldImpl;
 class CRemoteQFB;
 class CBlobBookmarkImpl;
+class IResultSet;
+struct SQueryRSMetaData;
 
 
 /// Exception class used throughout the API
@@ -217,6 +219,8 @@ public:
         eEnableLog       ///< Enables log.
     };
 
+    class CRow;
+    
     /// Class representing value in result set or output parameter of stored
     /// procedure.
     class CField
@@ -323,6 +327,7 @@ public:
     private:
         friend class CQueryImpl;
         friend class CQueryFieldImpl;
+        friend class CRow;
 
         void x_Detach(void);
 
@@ -332,6 +337,41 @@ public:
         CField(CQueryImpl* q, CVariant* v, ESP_ParamType param_type);
 
         CRef<CQueryFieldImpl> m_Impl;
+    };
+
+    /// A full row of result data.
+    class CRow
+    {
+    public:
+        CRow(const CRow& r);
+        ~CRow();
+
+        /// Get column value by its number.
+        /// All columns are numbered starting with 1.
+        const CField& operator[](unsigned int col) const;
+        /// Get column value by its name.
+        const CField& operator[](CTempString col) const;
+
+        /// Get number of columns in the row.
+        unsigned int GetTotalColumns(void) const;
+        /// Get name of the column with given number in the row.
+        /// All columns are numbered starting with 1.
+        const string& GetColumnName(unsigned int col) const;
+        /// Get type of the column with given number in the row.
+        /// All columns are numbered starting with 1.
+        ESDB_Type GetColumnType(unsigned int col) const;
+
+    private:
+        friend class CQueryImpl;
+
+        CRow(void);
+        void x_Reset(CQueryImpl& q, IResultSet& rs);
+
+        const CDB_Exception::SContext& x_GetContext(void) const;
+        void x_CheckColumnNumber(unsigned int col) const;
+
+        vector<CField>         m_Fields;
+        CRef<SQueryRSMetaData> m_MetaData;
     };
 
     /// Iterator class doing main navigation through result sets.
@@ -384,6 +424,9 @@ public:
         /// Advance iterator to the next row in the result set.
         CRowIterator& operator++(void);
         CRowIterator  operator++(int);
+
+        /// Get the full row.  (The caller is welcome to keep a copy.)
+        const CRow& operator*(void) const;
         
     private:
         friend class CQuery;

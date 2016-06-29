@@ -268,6 +268,16 @@ private:
     mutable unique_ptr<CNcbiOstream>    m_OStream;
 };
 
+struct SQueryRSMetaData : public CObject
+{
+    typedef map<string, int> TColNumsMap;
+    
+    TColNumsMap       col_nums;
+    vector<string>    col_names;
+    vector<ESDB_Type> col_types;
+
+    CConstRef<CDB_Exception::SContext> exception_context;
+};
 
 class CQueryImpl: public CObject
 {
@@ -292,6 +302,7 @@ public:
     void Next(void);
     void RequireRowCount(unsigned int min_rows, unsigned int max_rows);
     void VerifyDone(CQuery::EHowMuch how_much = CQuery::eThisResultSet);
+    const CQuery::CRow& GetRow(void) const;
     const CQuery::CField& GetColumn(const CDBParamVariant& col) const;
     const CVariant& GetFieldValue(unsigned int col_num);
     bool IsFinished(CQuery::EHowMuch how_much = CQuery::eThisResultSet) const;
@@ -325,8 +336,6 @@ private:
 
 
     typedef map<string, CQuery::CField>         TParamsMap;
-    typedef map<string, int>                    TColNumsMap;
-    typedef vector< AutoPtr<CQuery::CField> >   TFields;
 
     CRef<CDatabaseImpl> m_DBImpl;
     IStatement*         m_Stmt;
@@ -341,6 +350,7 @@ private:
     bool                m_Executed;
     bool                m_ReportedWrongRowCount;
     bool                m_IsSP;
+    bool                m_RowUnderConstruction;
     unsigned int        m_CurRSNo;
     unsigned int        m_CurRowNo;
     unsigned int        m_CurRelRowNo;
@@ -348,8 +358,7 @@ private:
     unsigned int        m_MaxRowCount;
     int                 m_RowCount;
     int                 m_Status;
-    TColNumsMap         m_ColNums;
-    TFields             m_Fields;
+    CQuery::CRow        m_Row;
     mutable CRef<CDB_Exception::SContext> m_Context;
 };
 

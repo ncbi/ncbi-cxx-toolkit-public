@@ -625,10 +625,25 @@ BOOST_AUTO_TEST_CASE(Test_FieldCopying)
         CQuery::CField f3 = it[1];
         BOOST_CHECK(++it == query->end());
         query->VerifyDone();
+
+        vector<CQuery::CRow> rows;
+        query->SetSql("SELECT id, int_field, vc1000_field FROM "
+                      + GetTableName());
+        query->Execute();
+        query->RequireRowCount(3);
+        for (CQuery::CRowIterator it = query->begin();
+             it != query->end();  ++it) {
+            rows.push_back(*it);
+        }
+        query->VerifyDone();
+
         query.reset();
         BOOST_CHECK_EQUAL(f1.AsString(), "one");
         BOOST_CHECK_EQUAL(f2.AsString(), "two");
         BOOST_CHECK_EQUAL(f3.AsString(), "three");
+        BOOST_CHECK_EQUAL(rows[0][3].AsString(), "one");
+        BOOST_CHECK_EQUAL(rows[1][2].AsInt4(),   2);
+        BOOST_CHECK_EQUAL(rows[2]["vc1000_field"].AsString(), "three");
     } catch (const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
     } 
