@@ -288,7 +288,8 @@ string GetStdPath(const string& path)
 {
     string stdpath = path;
     // Replace each native separator character with the 'standard' one.
-    SIZE_TYPE ibeg = NStr::StartsWith(path, "http://", NStr::eNocase) ? 7 : 0;
+    SIZE_TYPE ibeg = NStr::StartsWith(path, "http://", NStr::eNocase) ? 7 : 
+                    (NStr::StartsWith(path, "https://", NStr::eNocase) ? 8 : 0);
     for (SIZE_TYPE i=ibeg ; i < stdpath.size(); i++) {
 #ifdef NCBI_OS_MSWIN
         if ( i==1 && IsDiskSeparator(stdpath[i]) ) {
