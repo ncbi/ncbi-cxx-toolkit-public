@@ -152,7 +152,8 @@ CXXCPP = $(CONF_CXXCPP)
 AR     = $(CONF_AR)
 RANLIB = $(CONF_RANLIB)
 LINK   = $(CONF_LINK)
-C_LINK = $(CONF_C_LINK) # Linker for pure-C programs
+# Linker for pure-C programs
+C_LINK = $(CONF_C_LINK)
 STRIP  = $(CONF_STRIP)
 
 CFLAGS   = $(CONF_CFLAGS)
@@ -164,7 +165,8 @@ LDFLAGS  = $(CONF_LDFLAGS)
 APP_LDFLAGS = $(CONF_APP_LDFLAGS)
 DLL_LDFLAGS = $(CONF_DLL_LDFLAGS)
 LIBS     = $(CONF_LIBS)
-C_LIBS   = $(CONF_C_LIBS) # Libraries for pure-C programs
+# Libraries for pure-C programs
+C_LIBS   = $(CONF_C_LIBS)
 PRE_LIBS =
 
 # To add directory /foo to the list to search at runtime, you can add
