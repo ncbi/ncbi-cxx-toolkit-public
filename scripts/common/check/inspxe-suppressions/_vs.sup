@@ -309,18 +309,6 @@ suppression = {
 	}
 }
 suppression = {
-	name = "False positive in basic_string::assign() called from CNcbiEnvironment constructor"
-	type = {invalid_memory_access}
-	stacks = {
-		{
-			...;
-			func=assign,src=xstring;
-			mod=ncbi_core.dll,func=Reset,src=ncbienv.cpp;
-			mod=ncbi_core.dll,func=CNcbiEnvironment,src=ncbienv.cpp;
-		}
-	}
-}
-suppression = {
 	name = "False positive in operator<<()"
 	type = {invalid_memory_access}
 	stacks = {
