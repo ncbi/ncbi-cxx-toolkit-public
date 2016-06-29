@@ -482,6 +482,9 @@ string CBioSource::GetBioprojectType (void) const
             case CBioSource::eGenome_plasmid_in_plastid:
                 return "ePlasmid";
                 break;
+            case CBioSource::eGenome_extrachrom:
+                return "eExtrachrom";
+                break;
         }
     }
 
@@ -537,7 +540,7 @@ string CBioSource::GetBioprojectLocation(void) const
                 return "eMacronuclear";
                 break;
             case CBioSource::eGenome_extrachrom:
-                return "eOtherLoc";
+                return "eOther";
                 break;
             case CBioSource::eGenome_cyanelle:
                 return "eCyanelle";
@@ -561,7 +564,7 @@ string CBioSource::GetBioprojectLocation(void) const
                 return "eProplastid";
                 break;
             case CBioSource::eGenome_endogenous_virus:
-                return "eOtherLoc";
+                return "eOther";
                 break;
             case CBioSource::eGenome_hydrogenosome:
                 return "eHydrogenosome";
