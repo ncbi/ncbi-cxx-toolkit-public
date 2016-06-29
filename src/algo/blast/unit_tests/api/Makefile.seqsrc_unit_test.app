@@ -11,4 +11,4 @@ CHECK_REQUIRES = MT in-house-resources
 CHECK_CMD = seqsrc_unit_test
 CHECK_COPY = seqsrc_unit_test.ini data
 
-WATCHERS = boratyng madden camacho fongah2 elisovdn
+WATCHERS = boratyng madden camacho fongah2

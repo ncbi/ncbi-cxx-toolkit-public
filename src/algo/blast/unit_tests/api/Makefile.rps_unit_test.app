@@ -11,4 +11,4 @@ CHECK_REQUIRES = MT in-house-resources
 CHECK_CMD = rps_unit_test
 CHECK_COPY = rps_unit_test.ini data
 
-WATCHERS = madden fongah2 elisovdn
+WATCHERS = madden fongah2

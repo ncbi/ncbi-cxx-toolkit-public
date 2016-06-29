@@ -12,4 +12,4 @@ CHECK_COPY = test_feat_tree.sh
 CHECK_CMD = test_feat_tree.sh
 CHECK_REQUIRES = unix in-house-resources -Cygwin
 
-WATCHERS = vasilche elisovdn
+WATCHERS = vasilche

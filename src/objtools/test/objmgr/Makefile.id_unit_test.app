@@ -17,4 +17,4 @@ CHECK_COPY = all_readers.sh
 CHECK_CMD = all_readers.sh id_unit_test
 CHECK_TIMEOUT = 400
 
-WATCHERS = vasilche elisovdn
+WATCHERS = vasilche

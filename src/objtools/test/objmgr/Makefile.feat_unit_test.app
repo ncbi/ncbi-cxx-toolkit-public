@@ -14,4 +14,4 @@ LIBS = $(FTDS_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CHECK_CMD = feat_unit_test
 
-WATCHERS = vasilche elisovdn
+WATCHERS = vasilche

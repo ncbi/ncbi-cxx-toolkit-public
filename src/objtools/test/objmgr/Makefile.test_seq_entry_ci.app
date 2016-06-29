@@ -12,4 +12,4 @@ REQUIRES = Boost.Test.Included
 
 CHECK_CMD =
 
-WATCHERS = vasilche grichenk elisovdn
+WATCHERS = vasilche grichenk

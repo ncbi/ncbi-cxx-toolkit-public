@@ -16,4 +16,4 @@ CHECK_COPY = mapfile
 CHECK_CMD = test_csra_loader
 CHECK_REQUIRES = in-house-resources -Solaris
 
-WATCHERS = vasilche ucko elisovdn
+WATCHERS = vasilche ucko

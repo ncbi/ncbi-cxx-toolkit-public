@@ -15,4 +15,4 @@ LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CHECK_CMD = test_objmgr_mem
 
-WATCHERS = vasilche elisovdn
+WATCHERS = vasilche

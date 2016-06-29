@@ -33,4 +33,4 @@ CHECK_CMD = dbapi_context_test -dr ctlib      -S Sybase
 CHECK_CMD = dbapi_context_test -dr ftds64     -S Sybase
 CHECK_CMD = dbapi_context_test -dr ftds95     -S Sybase
 
-WATCHERS = ucko elisovdn
+WATCHERS = ucko

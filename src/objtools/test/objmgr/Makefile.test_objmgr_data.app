@@ -18,4 +18,4 @@ CHECK_CMD = test_objmgr_data.sh pubseqos /CHECK_NAME=test_objmgr_data_pubseqos
 CHECK_CMD = test_objmgr_data -prefetch
 CHECK_TIMEOUT = 800
 
-WATCHERS = vasilche elisovdn
+WATCHERS = vasilche

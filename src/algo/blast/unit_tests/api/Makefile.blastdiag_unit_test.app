@@ -12,4 +12,4 @@ LIBS = $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 CHECK_CMD = blastdiag_unit_test
 CHECK_COPY = blastdiag_unit_test.ini
 
-WATCHERS = boratyng madden camacho fongah2 elisovdn
+WATCHERS = boratyng madden camacho fongah2

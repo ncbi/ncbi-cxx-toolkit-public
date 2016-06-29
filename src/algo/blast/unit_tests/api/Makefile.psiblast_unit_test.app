@@ -12,4 +12,4 @@ CHECK_REQUIRES = MT in-house-resources
 CHECK_CMD = psiblast_unit_test
 CHECK_COPY = psiblast_unit_test.ini data
 
-WATCHERS = boratyng madden camacho elisovdn
+WATCHERS = boratyng madden camacho
