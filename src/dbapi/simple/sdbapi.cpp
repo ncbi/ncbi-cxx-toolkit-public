@@ -2341,7 +2341,6 @@ CQuery::CField::CField(CQueryImpl* q, CVariant* v, ESP_ParamType param_type)
 
 inline
 CQuery::CField::CField(CQueryImpl* q, unsigned int col_num)
-    : m_Impl(new CQueryFieldImpl(q, col_num))
 {
     switch (q->GetColumnType(col_num)) {
     case eSDB_Text:
