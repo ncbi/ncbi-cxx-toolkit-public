@@ -87,7 +87,7 @@
  * determine which applications should log to which /log sub-directory. 
  * If this file can't be found or can't be read, or the log files can not
  * be open, it fall back to logging to destination specified here:
- * http://www.ncbi.nlm.nih.gov/toolkit/doc/book/ch_core/#ch_core.Where_Diagnostic_Messages_Go
+ * http://ncbi.github.io/cxx-toolkit/pages/ch_log#ch_core.Where_Diagnostic_Messages_Go
  *
  * Thread-specific serial number is always 0. We cannot provide mechanism
  * to maintain correct value for each thread.
