@@ -108,7 +108,7 @@ static void s_TEST_Tags(void)
     body->AppendChild(
           new CHTMLDualNode("<p>Example2</p>","Example2\n"));
     body->AppendChild(
-          new CHTML_script("text/javascript","http://localhost/sample.js"));
+          new CHTML_script("text/javascript","https://localhost/sample.js"));
 
     CHTML_script* script = new CHTML_script("text/vbscript");
     script->AppendScript("Place VB1 script here");
