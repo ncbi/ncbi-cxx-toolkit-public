@@ -38,6 +38,7 @@
 #include <serial/serial.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
+#include <serial/rpcbase.hpp>
 #include <connect/services/grid_worker_app.hpp>
 #include <connect/services/grid_rw_impl.hpp>
 #include <connect/services/grid_client.hpp>
@@ -74,7 +75,7 @@ public:
 class CAsnBinCompressed : public CAsnBin
 {
 public:
-    typedef int TOwnership;
+    using TOwnership = int;
 
     struct SStreamProp
     {
@@ -93,17 +94,17 @@ public:
     ///   underlying output stream
     /// @return
     ///   object stream
-    static CObjectOStream*
+    static unique_ptr<CObjectOStream>
     GetOStream(CNcbiOstream& ostr, SStreamProp stream_prop = SStreamProp(CCompressStream::eZip))
     {
-        auto_ptr<CCompressionOStream> outstr_zip(
+        unique_ptr<CCompressionOStream> outstr_zip(
             new CCompressionOStream(
                 ostr,
                 CreateStreamCompressor(stream_prop),
                 CCompressionStream::fOwnProcessor
             )
         );
-        return CObjectOStream::Open(GetDataFormat(), *outstr_zip.release(), eTakeOwnership);
+        return unique_ptr<CObjectOStream>(CObjectOStream::Open(GetDataFormat(), *outstr_zip.release(), eTakeOwnership));
     }
 
     /// Return an object input stream (CObjectIStream)
@@ -112,43 +113,57 @@ public:
     ///   underlying input stream
     /// @return
     ///   object stream
-    static CObjectIStream*
+    static unique_ptr<CObjectIStream>
     GetIStream(CNcbiIstream& istr)
     {
         return GetIStream(istr, GetIStreamProperties(istr));
     }
 
-    static CObjectIStream*
+    static unique_ptr<CObjectIStream>
     GetIStream(const string& job_content, CNetCacheAPI& nc_api)
     {
         SStreamProp sp;
         return GetIStream(job_content, nc_api, sp);
     }
 
-    static CObjectIStream*
+    static unique_ptr<CObjectIStream>
     GetIStream(const string& job_content, CNetCacheAPI& nc_api, SStreamProp& streamprop)
     {
-        streamprop = GetJobStreamProperties(job_content, nc_api);
-        auto_ptr<CStringOrBlobStorageReader> reader(new CStringOrBlobStorageReader(job_content, nc_api));
-        auto_ptr<CRStream> rstr(new CRStream(reader.release(), CRWStreambuf::fOwnReader));
+        auto rstr = GetRawIStream(job_content, nc_api, streamprop);
         return GetIStream(*rstr.release(), streamprop, CCompressionStream::fOwnAll);
     }
 
+    static unique_ptr<CNcbiIstream>
+    GetRawIStream(const string& job_content, CNetCacheAPI& nc_api)
+    {
+        SStreamProp sp;
+        return GetRawIStream(job_content, nc_api, sp);
+    }
+
+    static unique_ptr<CNcbiIstream>
+    GetRawIStream(const string& job_content, CNetCacheAPI& nc_api, SStreamProp& streamprop)
+    {
+        streamprop = GetJobStreamProperties(job_content, nc_api);
+        unique_ptr<CStringOrBlobStorageReader> reader(new CStringOrBlobStorageReader(job_content, nc_api));
+        unique_ptr<CNcbiIstream> rstr(new CRStream(reader.release(), CRWStreambuf::fOwnReader));
+        return rstr;
+    }
+
 protected:
-    static CObjectIStream*
+    static unique_ptr<CObjectIStream>
     GetIStream(CNcbiIstream& istr,
                const SStreamProp& stream_prop,
                TOwnership ownership = CCompressionStream::fOwnProcessor
               )
     {
-        auto_ptr<CCompressionIStream> instr_zip(
+        unique_ptr<CCompressionIStream> instr_zip(
             new CCompressionIStream(
                 istr,
                 CreateStreamDecompressor(stream_prop),
                 ownership
             )
         );
-        return CObjectIStream::Open(GetDataFormat(), *instr_zip.release(), eTakeOwnership);
+        return unique_ptr<CObjectIStream>(CObjectIStream::Open(GetDataFormat(), *instr_zip.release(), eTakeOwnership));
     }
 
     static SStreamProp GetJobStreamProperties(const string& job_content, CNetCacheAPI& nc_api)
@@ -192,7 +207,7 @@ protected:
 
     static CCompressionStreamProcessor* CreateStreamCompressor(const SStreamProp& stream_prop)
     {
-        auto_ptr<CCompressionStreamProcessor> sp;
+        unique_ptr<CCompressionStreamProcessor> sp;
         if (stream_prop.compress_method == CCompressStream::eLZO) {
             sp.reset(new CLZOStreamCompressor());
         }
@@ -204,7 +219,7 @@ protected:
 
     static CCompressionStreamProcessor* CreateStreamDecompressor(const SStreamProp& stream_prop)
     {
-        auto_ptr<CCompressionStreamProcessor> sp;
+        unique_ptr<CCompressionStreamProcessor> sp;
         if (stream_prop.compress_method == CCompressStream::eLZO) {
             sp.reset(new CLZOStreamDecompressor());
         }
@@ -257,7 +272,7 @@ public:
 /// TConnectTraits template classes: CAsnBinCompressed
 ///
 template <typename TConnectTraits = CAsnBinCompressed, int DefaultTimeout = 20>
-class CGridRPCBaseClient : private TConnectTraits
+class CGridRPCBaseClient : protected TConnectTraits
 {
 public:
     CGridRPCBaseClient(const string& NS_service,
@@ -297,8 +312,65 @@ public:
         m_NC_api = CNetCacheAPI(CNetCacheAPI::eAppRegistry, NC_registry_section);
     }
 
-    virtual ~CGridRPCBaseClient()
+    virtual ~CGridRPCBaseClient() = default;
+
+    pair<CNetScheduleJob, bool> AskStream(CNcbiIstream& request, CNcbiOstream& reply) const
     {
+        CGridClient grid_cli(m_NS_api.GetSubmitter(),
+                             m_NC_api,
+                             CGridClient::eManualCleanup,
+                             CGridClient::eProgressMsgOn
+                            );
+        auto& job_in = grid_cli.GetOStream(); // job input stream
+        NcbiStreamCopy(job_in, request);
+        if (job_in.bad()) {
+            NCBI_THROW(CIOException, eWrite, "Error while writing request");
+        }
+        grid_cli.CloseStream();
+
+        CNetScheduleJob& job = grid_cli.GetJob();
+        bool timed_out = false;
+        x_PrepareJob(job);
+
+        try {
+            const CNetScheduleAPI::EJobStatus evt = grid_cli.SubmitAndWait(m_Timeout);
+            switch (evt) {
+            case CNetScheduleAPI::eDone:
+            {
+                m_NS_api.GetJobDetails(job);
+                auto instr = TConnectTraits::GetRawIStream(job.output, m_NC_api);
+                NcbiStreamCopy(reply, *instr);
+                break;
+            }
+            case CNetScheduleAPI::eFailed:
+                NCBI_THROW(CGridRPCBaseClientException, eUnexpectedFailure, "Job failed");
+
+            case CNetScheduleAPI::eCanceled:
+                NCBI_THROW(CGridRPCBaseClientException, eUnexpectedFailure, "Job canceled");
+
+            case CNetScheduleAPI::eRunning:
+                NCBI_THROW(CGridRPCBaseClientException, eUnexpectedFailure, "Job running");
+
+            default:
+                NCBI_THROW(CGridRPCBaseClientException,
+                           eWaitTimeout,
+                           "Unexpected status: " + CNetScheduleAPI::StatusToString(evt)
+                          );
+            }
+        }
+        catch (const CGridRPCBaseClientException& e) {
+            switch (e.GetErrCode()) {
+            case CGridRPCBaseClientException::eUnexpectedFailure:
+                timed_out = true;
+                break;
+
+            case CGridRPCBaseClientException::eWaitTimeout:
+            default:
+                break;
+            }
+            throw e;
+        }
+        return make_pair(job, timed_out);
     }
 
     template <class TRequest, class TReply>
@@ -309,8 +381,8 @@ public:
                              CGridClient::eManualCleanup,
                              CGridClient::eProgressMsgOn
                             );
-        CNcbiOstream& job_in = grid_cli.GetOStream(); // job input stream
-        auto_ptr<CObjectOStream> outstr(TConnectTraits::GetOStream(job_in));
+        auto& job_in = grid_cli.GetOStream(); // job input stream
+        auto outstr = TConnectTraits::GetOStream(job_in);
         *outstr << request;
         if (job_in.bad()) {
             NCBI_THROW(CIOException, eWrite, "Error while writing request");
@@ -328,7 +400,7 @@ public:
             case CNetScheduleAPI::eDone:
             {
                 m_NS_api.GetJobDetails(job);
-                auto_ptr<CObjectIStream> instr(TConnectTraits::GetIStream(job.output, m_NC_api));
+                auto instr = TConnectTraits::GetIStream(job.output, m_NC_api);
                 *instr >> reply;
                 break;
             }
@@ -364,6 +436,9 @@ public:
     }
 
 protected:
+    CGridRPCBaseClient(const CGridRPCBaseClient&) = delete;
+    CGridRPCBaseClient(CGridRPCBaseClient&&) = default;
+
     virtual void x_PrepareJob(CNetScheduleJob& job) const
     {
     }
@@ -380,7 +455,7 @@ protected:
         case CNetScheduleAPI::eDone:
         {
             m_NS_api.GetJobDetails(job);
-            auto_ptr<CObjectIStream> instr(TConnectTraits::GetIStream(job.output, m_NC_api));
+            auto instr = TConnectTraits::GetIStream(job.output, m_NC_api);
             *instr >> reply;
             break;
         }
@@ -406,6 +481,30 @@ private:
     mutable CNetScheduleAPI m_NS_api;
     mutable CNetCacheAPI m_NC_api;
     Uint4 m_Timeout;
+};
+
+
+template <typename TRequest, typename TReply>
+class CGridRPCHttpClient : public CRPCClient<TRequest, TReply>
+{
+protected:
+    using TParent = CRPCClient<TRequest, TReply>;
+
+public:
+    CGridRPCHttpClient(const string& http_service)
+        : TParent(http_service)
+    {
+    }
+
+    virtual ~CGridRPCHttpClient() = default;
+
+protected:
+    virtual void x_Connect() override
+    {
+        TParent::x_Connect();
+        TParent::m_In.reset(CAsnBinCompressed::GetIStream(*TParent::m_Stream).release());
+        TParent::m_Out.reset(CAsnBinCompressed::GetOStream(*TParent::m_Stream).release());
+    }
 };
 
 

@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <objects/trackmgr/trackmgr__.hpp>
 #include <objects/trackmgr/displaytrack_client.hpp>
+#include <serial/rpcbase.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -53,20 +54,90 @@ CTMS_DisplayTrack_Client::CTMS_DisplayTrack_Client(const string& NS_registry_sec
 {
 }
 
-CTMS_DisplayTrack_Client::~CTMS_DisplayTrack_Client()
+CTMS_DisplayTrack_Client::CTMS_DisplayTrack_Client(const HttpService&& http_svc)
+    : m_Http_svc(http_svc.service),
+      m_Http_session(new CHttpSession())
 {
 }
 
-CTMS_DisplayTrack_Client::TReplyRef
-CTMS_DisplayTrack_Client::Fetch(const TRequest& request) const
+CTMS_DisplayTrack_Client
+CTMS_DisplayTrack_Client::CreateServiceClient(const string& http_svc)
 {
-    CRef<TReply> reply;
+    return CTMS_DisplayTrack_Client{HttpService{http_svc}};
+}
+
+bool
+CTMS_DisplayTrack_Client::FetchRawStream(CNcbiIstream& requeststr, CNcbiOstream& replystr) const
+{
+    if (m_Http_session.NotNull()) {
+        NCBI_THROW(CException, eUnknown, "FetchRawStream() does not support HTTP-based client");
+    }
     try {
-        reply.Reset(new TReply());
-        TBaseClient::Ask(request, *reply);
+        const auto retval = TBaseClient::AskStream(requeststr, replystr);
+        return retval.second; // timed_out
     }
     catch (const CException& e) {
         NCBI_REPORT_EXCEPTION("Exception communicating with TMS-DisplayTrack service ", e);
+        return false;
+    }
+    NCBI_THROW(CException, eUnknown, "FetchRawStream(): unexpected code path");
+}
+
+string
+RequestToString(const CTMS_DisplayTrack_Client::TRequest& request)
+{
+    CConn_MemoryStream mem_str;
+    // need the asnbincompressed stream to be destroyed in order for stream to be flushed
+    *CAsnBinCompressed::GetOStream(mem_str) << request;
+    string data;
+    mem_str.ToString(&data);
+    ERR_POST(Trace << "encoded request " << mem_str.tellp() << " bytes");
+    return data;
+}
+
+auto
+CTMS_DisplayTrack_Client::x_HttpFetch(const TRequest& request) const
+-> TReplyRef
+{
+    CPerfLogGuard pl("Fetch via HTTP");
+    const CTimeout timeout{ 20, 400000 }; // 20400ms
+    const auto& content_type = kEmptyStr;
+    // read data from stream
+    const auto reqdata = RequestToString(request);
+    ERR_POST(Trace << "encoded request " << reqdata.size() << " bytes");
+    // connect to http service
+    const auto response = m_Http_session->Post(m_Http_svc, reqdata, content_type, timeout);
+    if (!response.CanGetContentStream()) {
+        pl.Post(CRequestStatus::e200_Ok, "No response");
+        CConn_MemoryStream mem_str;
+        NcbiStreamCopy(mem_str, response.ErrorStream());
+        string err;
+        mem_str.ToString(&err);
+        ERR_POST(response.GetStatusText() << " -- " << err);
+        return TReplyRef{};
+    }
+    ERR_POST(Trace << "status_code: " << response.GetStatusCode());
+    auto objistr = CAsnBinCompressed::GetIStream(response.ContentStream());
+    auto reply = Ref(new TReply());
+    *objistr >> *reply;
+    pl.Post(CRequestStatus::e200_Ok, "Fetch");
+    return reply;
+}
+
+auto
+CTMS_DisplayTrack_Client::Fetch(const TRequest& request) const
+-> TReplyRef
+{
+    TReplyRef reply;
+    try {
+        if (m_Http_session.NotNull()) {
+            return x_HttpFetch(request);
+        }
+        reply.Reset(new TReply());
+        TBaseClient::Ask(request, reply.GetObject());
+    }
+    catch (const CException& e) {
+        NCBI_REPORT_EXCEPTION("Exception communicating with TMS-DisplayTracks service ", e);
         reply.Reset();
     }
     return reply;

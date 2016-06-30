@@ -36,6 +36,8 @@
 /// NetSchedule grid client for TrackManager display-track request/reply
 
 #include <objects/trackmgr/gridrpcclient.hpp>
+#include <connect/ncbi_http_session.hpp>
+#include <serial/rpcbase.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -49,13 +51,23 @@ END_SCOPE(objects)
 class CTMS_DisplayTrack_Client : private CGridRPCBaseClient<CAsnBinCompressed>
 {
 private:
-    typedef CGridRPCBaseClient<ncbi::CAsnBinCompressed> TBaseClient;
+    using TBaseClient = CGridRPCBaseClient<ncbi::CAsnBinCompressed>;
+
+    struct HttpService
+    {
+        explicit HttpService(const string& svc)
+            : service(svc)
+        {
+        }
+        string service;
+    };
+
 
 public:
-    typedef objects::CTMgr_DisplayTrackRequest TRequest;
-    typedef objects::CTMgr_DisplayTrackReply TReply;
-    typedef CConstRef<TRequest> TRequestCRef;
-    typedef CRef<TReply> TReplyRef;
+    using TRequest = objects::CTMgr_DisplayTrackRequest;
+    using TReply = objects::CTMgr_DisplayTrackReply;
+    using TRequestCRef = CConstRef<TRequest>;
+    using TReplyRef = CRef<TReply>;
 
 public:
     CTMS_DisplayTrack_Client(const string& NS_service,
@@ -67,10 +79,25 @@ public:
     CTMS_DisplayTrack_Client(const string& NS_registry_section = "netschedule_api",
                              const string& NC_registry_section = kEmptyStr
                             );
+    CTMS_DisplayTrack_Client(CTMS_DisplayTrack_Client&&) = default;
+    virtual ~CTMS_DisplayTrack_Client() = default;
 
-    virtual ~CTMS_DisplayTrack_Client();
+    static CTMS_DisplayTrack_Client CreateServiceClient(const string& http_svc = "TMS_DisplayTracks");
 
     TReplyRef Fetch(const TRequest& request) const;
+    bool FetchRawStream(CNcbiIstream& requeststr, CNcbiOstream& replystr) const;
+
+protected:
+    CTMS_DisplayTrack_Client(CTMS_DisplayTrack_Client&) = delete;
+    CTMS_DisplayTrack_Client(const HttpService&& http_svc);
+    TReplyRef x_HttpFetch(const TRequest& request) const;
+
+
+protected:
+    CUrl m_Http_svc;
+    mutable CRef<CHttpSession> m_Http_session;
+    using TRPCBaseClient = CGridRPCHttpClient<TRequest, TReply>;
+    mutable CRef<TRPCBaseClient> m_Rpc_client;
 };
 
 
