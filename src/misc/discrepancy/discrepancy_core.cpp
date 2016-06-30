@@ -224,6 +224,15 @@ string CDiscrepancySet::Format(const string& s, unsigned int count)
     NStr::ReplaceInPlace(str, "[is]", count == 1 ? "is" : "are");
     NStr::ReplaceInPlace(str, "[does]", count == 1 ? "does" : "do");
     NStr::ReplaceInPlace(str, "[has]", count == 1 ? "has" : "have");
+    for (size_t n = NStr::Find(str, "[*"); n != NPOS; n = NStr::Find(str, "[*")) {
+        size_t k = NStr::Find(str, "*]");
+        if (k != NPOS) {
+            str.erase(n, k - n + 2);
+        }
+        else {
+            str.erase(n);
+        }
+    }
     return str;
 }
 

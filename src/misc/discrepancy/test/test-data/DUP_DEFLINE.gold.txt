@@ -1,20 +1,20 @@
 Discrepancy Report Results
 
 Summary
-DUP_DEFLINE: 2 definition lines are identical:Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2)) segment 1 cRNA sequence
-DUP_DEFLINE: 6 definition lines are unique
+DUP_DEFLINE: Defline Problem Report
 
 Detailed Report
 
-DUP_DEFLINE: 2 definition lines are identical:Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2)) segment 1 cRNA sequence
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\DUP_DEFLINES_problem.sqn:gb|KX185883|:Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2)) segment 1 cRNA sequence
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\DUP_DEFLINES_problem.sqn:gb|KX185888|:Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2)) segment 1 cRNA sequence
+DUP_DEFLINE: Defline Problem Report
+DUP_DEFLINE: 2 definition lines are identical
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\DUP_DEFLINES_problem.sqn:gb|KX185883|:Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2)) segment 1 cRNA sequence
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\DUP_DEFLINES_problem.sqn:gb|KX185888|:Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2)) segment 1 cRNA sequence
 
 DUP_DEFLINE: 6 definition lines are unique
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\DUP_DEFLINES_problem.sqn:gb|KX185887|:Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2)) segment 2 cRNA sequence
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\DUP_DEFLINES_problem.sqn:gb|KX185886|:Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2)) segment 3 cRNA sequence
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\DUP_DEFLINES_problem.sqn:gb|KX185885|:Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2)) segment 5 cRNA sequence
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\DUP_DEFLINES_problem.sqn:gb|KX185884|:Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2)) segment 6 cRNA sequence
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\DUP_DEFLINES_problem.sqn:gb|KX185890|:Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2)) segment 7 cRNA sequence
-C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\DUP_DEFLINES_problem.sqn:gb|KX185889|:Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2)) segment 8 cRNA sequence
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\DUP_DEFLINES_problem.sqn:gb|KX185887|:Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2)) segment 2 cRNA sequence
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\DUP_DEFLINES_problem.sqn:gb|KX185886|:Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2)) segment 3 cRNA sequence
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\DUP_DEFLINES_problem.sqn:gb|KX185885|:Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2)) segment 5 cRNA sequence
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\DUP_DEFLINES_problem.sqn:gb|KX185884|:Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2)) segment 6 cRNA sequence
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\DUP_DEFLINES_problem.sqn:gb|KX185890|:Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2)) segment 7 cRNA sequence
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\DUP_DEFLINES_problem.sqn:gb|KX185889|:Influenza A virus (A/chicken/Guangxi/C1228/2015(H9N2)) segment 8 cRNA sequence
 

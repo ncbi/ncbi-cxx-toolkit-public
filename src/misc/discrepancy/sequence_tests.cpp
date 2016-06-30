@@ -103,67 +103,50 @@ DISCREPANCY_SUMMARIZE(MISSING_GENOMEASSEMBLY_COMMENTS)
 }
 
 
-//  ----------------------------------------------------------------------------
+// DUP_DEFLINE
+
+const string kUniqueDeflines = "[n] definition line[s] [is] unique";
+const string kIdenticalDeflines = "[n] definition line[s] [is] identical";
+const string kAllUniqueDeflines = "All deflines are unique";
+const string kSomeIdenticalDeflines = "Defline Problem Report";
+
+
 DISCREPANCY_CASE(DUP_DEFLINE, CSeq_inst, eOncaller, "Definition lines should be unique")
-//  ----------------------------------------------------------------------------
 {
     CConstRef<CBioseq> seq = context.GetCurrentBioseq();
-    if (!seq || !seq->IsSetDescr() || obj.IsAa()) return;
-
+    if (!seq || !seq->IsSetDescr() || obj.IsAa()) {
+        return;
+    }
     ITERATE(CBioseq::TDescr::Tdata, it, seq->GetDescr().Get()) {
         if ((*it)->IsTitle()) {
-            CRef<CDiscrepancyObject> this_disc_obj(context.NewDiscObj((*it), eKeepRef));
-            m_Objs["titles"][(*it)->GetTitle()].Add(*this_disc_obj, false);
+            m_Objs[(*it)->GetTitle()].Add(*context.NewDiscObj(*it), false);
         }
     }
 }
 
 
-const string kIdenticalDeflines = "[n] definition line[s] [is] identical:";
-const string kAllUniqueDeflines = "All deflines are unique";
-const string kUniqueDeflines = "[n] definition line[s] [is] unique";
-
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(DUP_DEFLINE)
-//  ----------------------------------------------------------------------------
 {
     if (m_Objs.empty()) {
         return;
     }
-    CReportNode::TNodeMap::iterator it = m_Objs["titles"].GetMap().begin();
     bool all_unique = true;
-    while (it != m_Objs["titles"].GetMap().end() && all_unique) {
-        if (it->second->GetObjects().size() > 1) {
+    CReportNode tmp;
+    NON_CONST_ITERATE (CReportNode::TNodeMap, it, m_Objs.GetMap()) {
+        TReportObjectList& list = it->second->GetObjects();
+        if (list.size() == 1) {
+            tmp[kSomeIdenticalDeflines][kUniqueDeflines].Add(list);
+        }
+        else if (list.size() > 1) {
+            tmp[kSomeIdenticalDeflines][kIdenticalDeflines + "[*" + it->first + "*]"].Add(list);
             all_unique = false;
         }
-        ++it;
     }
-    it = m_Objs["titles"].GetMap().begin();
-    while (it != m_Objs["titles"].GetMap().end()) {            
-        NON_CONST_ITERATE(TReportObjectList, robj, m_Objs["titles"][it->first].GetObjects())
-        {
-            const CDiscrepancyObject* other_disc_obj = dynamic_cast<CDiscrepancyObject*>(robj->GetNCPointer());
-            CConstRef<CSeqdesc> title_desc(dynamic_cast<const CSeqdesc*>(other_disc_obj->GetObject().GetPointer()));
-            if (it->second->GetObjects().size() > 1) {
-                //non-unique definition line
-                m_Objs[kIdenticalDeflines + it->first].Add(*context.NewDiscObj(title_desc), false);
-            } else {
-                //unique definition line
-                if (all_unique) {
-                    m_Objs[kAllUniqueDeflines].Add(*context.NewDiscObj(title_desc), false);
-                } else {
-                    m_Objs[kUniqueDeflines].Add(*context.NewDiscObj(title_desc), false);
-                }
-            }
-        }  
-        ++it;
-    }
-    m_Objs.GetMap().erase("titles");
     if (all_unique) {
-        m_Objs[kAllUniqueDeflines].clearObjs();
+        tmp.clear();
+        tmp[kAllUniqueDeflines];
     }
-
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+    m_ReportItems = tmp.Export(*this)->GetSubitems();
 }
 
 
