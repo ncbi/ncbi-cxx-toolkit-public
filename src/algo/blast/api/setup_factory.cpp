@@ -314,7 +314,6 @@ CSetupFactory::CreateHspWriter(const CBlastOptionsMemento* opts_memento,
         writer_info = BlastHSPMapperInfoNew(params);
     }
     else if (filt_opts) {
-        bool hsp_writer_found = false;
         if (filt_opts->best_hit && (filt_opts->best_hit_stage & ePrelimSearch))
         {
             BlastHSPBestHitParams* params = 
@@ -325,21 +324,17 @@ CSetupFactory::CreateHspWriter(const CBlastOptionsMemento* opts_memento,
             // Disable overhang in prelimiary stage
             params->overhang = 0;
             writer_info = BlastHSPBestHitInfoNew(params);
-            hsp_writer_found = true;
         }
         else if (filt_opts->culling_opts && 
                  (filt_opts->culling_stage & ePrelimSearch))
         {
-            _ASSERT(hsp_writer_found == false);
             BlastHSPCullingParams* params = 
                 BlastHSPCullingParamsNew(opts_memento->m_HitSaveOpts,
                      filt_opts->culling_opts,
                      opts_memento->m_ExtnOpts->compositionBasedStats,
                      opts_memento->m_ScoringOpts->gapped_calculation);
             writer_info = BlastHSPCullingInfoNew(params);
-            hsp_writer_found = true;
         }
-        (void)hsp_writer_found; /* to pacify compiler warning */
     } else {
         /* Use the collector filtering algorithm as the default */
         BlastHSPCollectorParams * params = 
