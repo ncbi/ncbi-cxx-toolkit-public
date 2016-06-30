@@ -74,6 +74,8 @@
 #  include <sra/data_loaders/wgs/wgsloader.hpp>
 #endif
 
+#include <misc/data_loaders_util/data_loaders_util.hpp>
+
 #include <db/bdb/bdb_cursor.hpp>
 
 #include <string>
@@ -722,6 +724,8 @@ void CAsnCacheApplication::Init(void)
     arg_desc->AddOptionalKey("oseqids","oseqids","Seqids that actually made it to the cache", 
         CArgDescriptions::eOutputFile, CArgDescriptions::fPreOpen);
 
+    CDataLoadersUtil::AddArgumentDescriptions(*arg_desc);
+
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 }
@@ -770,7 +774,7 @@ int CAsnCacheApplication::Run(void)
 
     vector<CDir> main_cache_roots;
     vector<string> main_cache_paths;
-    NStr::Tokenize(args["cache"].AsString(), ",", main_cache_paths);
+    NStr::Split(args["cache"].AsString(), ",", main_cache_paths);
     ITERATE (vector<string>, it, main_cache_paths) {
         CDir cache_root(CDirEntry::NormalizePath(*it, eFollowLinks));
         if (! cache_root.Exists() ) {
@@ -818,10 +822,7 @@ int CAsnCacheApplication::Run(void)
              ? args["max-withdrawn"].AsInteger() : UINT_MAX;
 
     CRef<CObjectManager> om(CObjectManager::GetInstance());
-#ifdef HAVE_NCBI_VDB
-    CWGSDataLoader::RegisterInObjectManager(*om, CObjectManager::eDefault, 0);
-#endif
-    CGBDataLoader::RegisterInObjectManager(*om);
+    CDataLoadersUtil::SetupObjectManager(args, *om);
 
     CStopWatch  sw;
     sw.Start();
