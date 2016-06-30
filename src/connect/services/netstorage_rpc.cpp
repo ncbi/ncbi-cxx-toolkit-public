@@ -1431,12 +1431,12 @@ struct SNetStorageByKeyRPC : public SNetStorageByKeyImpl
             TNetStorageFlags default_flags);
 
     virtual CNetStorageObject Open(const string& unique_key,
-            TNetStorageFlags flags = 0);
+            TNetStorageFlags flags);
     virtual string Relocate(const string& unique_key,
-            TNetStorageFlags flags, TNetStorageFlags old_flags = 0);
-    virtual bool Exists(const string& key, TNetStorageFlags flags = 0);
+            TNetStorageFlags flags, TNetStorageFlags old_flags);
+    virtual bool Exists(const string& key, TNetStorageFlags flags);
     virtual ENetStorageRemoveResult Remove(const string& key,
-            TNetStorageFlags flags = 0);
+            TNetStorageFlags flags);
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     void AllowXSiteConnections() { m_NetStorageRPC->AllowXSiteConnections(); }

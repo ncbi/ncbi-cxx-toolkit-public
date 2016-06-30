@@ -125,14 +125,14 @@ struct SDirectNetStorageImpl : public SNetStorageImpl
 
     CObj* OpenImpl(const string&);
 
-    CNetStorageObject Create(TNetStorageFlags = 0);
+    CNetStorageObject Create(TNetStorageFlags);
     CNetStorageObject Open(const string&);
     string Relocate(const string&, TNetStorageFlags);
     bool Exists(const string&);
     ENetStorageRemoveResult Remove(const string&);
 
     // For direct NetStorage API only
-    CObj* Create(TNetStorageFlags, const string&, Int8 = 0);
+    CObj* Create(TNetStorageFlags, const string&, Int8);
     bool Exists(const string& db_loc, const string& client_loc);
     CJsonNode ReportConfig() const;
 
@@ -286,12 +286,12 @@ struct SDirectNetStorageByKeyImpl : public SNetStorageByKeyImpl
         }
     }
 
-    CObj* OpenImpl(const string&, TNetStorageFlags = 0);
+    CObj* OpenImpl(const string&, TNetStorageFlags);
 
-    CNetStorageObject Open(const string&, TNetStorageFlags = 0);
-    string Relocate(const string&, TNetStorageFlags, TNetStorageFlags = 0);
-    bool Exists(const string&, TNetStorageFlags = 0);
-    ENetStorageRemoveResult Remove(const string&, TNetStorageFlags = 0);
+    CNetStorageObject Open(const string&, TNetStorageFlags);
+    string Relocate(const string&, TNetStorageFlags, TNetStorageFlags);
+    bool Exists(const string&, TNetStorageFlags);
+    ENetStorageRemoveResult Remove(const string&, TNetStorageFlags);
 
     // For direct NetStorage API only
     CObj* Open(TNetStorageFlags, const string&);
