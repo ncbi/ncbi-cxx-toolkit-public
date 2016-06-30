@@ -176,7 +176,8 @@ CReaderServiceConnector::Connect(int error_count)
     
     CRef<SServerScanInfo> scan_info;
 
-    if ( NStr::StartsWith(m_ServiceName, "http://") ) {
+    if ( NStr::StartsWith(m_ServiceName, "http://") ||
+         NStr::StartsWith(m_ServiceName, "https://") ) {
         if ( s_GetDebugLevel() > 0 ) {
             CDebugPrinter s("CReaderConnector");
             s << "Opening HTTP connection to " << m_ServiceName;
