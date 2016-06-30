@@ -1098,13 +1098,7 @@ CRef<CSeq_entry> CMultiReader::xReadGFF3(CNcbiIstream& instream)
 
         edit::CFeatTableEdit fte(**it, m_context.m_locus_tag_prefix, startingLocusTagNumber, m_context.m_logger);
         fte.InferPartials();
-        if (m_context.m_eukariote) {
-            fte.GenerateMissingMrnaForCds();
-            fte.GenerateMissingGeneForMrna();
-        }
-        else {
-            fte.GenerateMissingGeneForCds();
-        }
+        fte.GenerateMissingParentFeatures(m_context.m_eukariote);
         fte.EliminateBadQualifiers();
         fte.GenerateLocusTags();
         fte.GenerateProteinAndTranscriptIds();
