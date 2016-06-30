@@ -135,7 +135,6 @@ BlastCompo_AlignmentsFree(BlastCompo_Alignment ** palign,
         /* Save the value of align->next, because align is to be deleted. */
         BlastCompo_Alignment * align_next = align->next;
 
-        align_next = align->next;
         if (free_context != NULL && align->context != NULL) {
             free_context(align->context);
         }

@@ -1426,7 +1426,6 @@ BlastScoreBlkProteinMatrixRead(BlastScoreBlk* sbp, FILE *fp)
         if ((lp = (char*)strtok(buf, kTokenStr)) == NULL)
             continue;
         ch = *lp;
-        cp = (char*) lp;
         if ((cp = strtok(NULL, kTokenStr)) == NULL) {
             return 2;
         }

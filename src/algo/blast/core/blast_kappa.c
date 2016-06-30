@@ -1572,6 +1572,9 @@ s_SequenceGetProteinRange(const BlastCompo_MatchingSequence * self,
     BlastKappa_SequenceInfo * local_data = self->local_data;
     BLAST_SequenceBlk * seq = self->local_data;
 
+    if (self->local_data == NULL)
+	return -1;
+
     seqData->data = NULL;
     seqData->length = 0;
     /* Copy the entire sequence (necessary for SEG filtering.) */
@@ -2343,11 +2346,12 @@ s_GappingParamsNew(BlastKappa_GappingParamsContext * context,
     BlastCompo_GappingParams * gapping_params = NULL;
 
     gapping_params = malloc(sizeof(BlastCompo_GappingParams));
-    if (gapping_params != NULL) {
-        gapping_params->gap_open = scoring->gap_open;
-        gapping_params->gap_extend = scoring->gap_extend;
-        gapping_params->context = context;
-    }
+    if (gapping_params == NULL)
+	return NULL;
+
+    gapping_params->gap_open = scoring->gap_open;
+    gapping_params->gap_extend = scoring->gap_extend;
+    gapping_params->context = context;
 
     for (i = 0;  i < num_queries;  i++) {
         if (context->sbp->kbp_gap[i] != NULL &&

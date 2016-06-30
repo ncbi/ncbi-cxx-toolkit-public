@@ -434,7 +434,6 @@ SPHIPatternSearchBlkNew(char* pattern_in, Boolean is_dna, BlastScoreBlk* sbp,
 
     wildcardProduct = 1;
     currentWildcardProduct = 1;
-    prevSetMask = 0;
     currentSetMask = 0;
 
     pattern_length = strlen(pattern_in);

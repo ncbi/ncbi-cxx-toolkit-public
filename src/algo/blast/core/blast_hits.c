@@ -670,7 +670,6 @@ Blast_HSPReevaluateWithAmbiguitiesUngapped(BlastHSP* hsp, const Uint1* query_sta
    sum = 0;
    best_q_start = best_q_end = current_q_start = query;
    best_s_start = best_s_end = current_s_start = subject;
-   index = 0;
 
    for (index = 0; index < hsp_length; ++index) {
       sum += matrix[*query & kResidueMask][*subject];
@@ -3707,7 +3706,6 @@ s_TrimResultsByTotalHSPLimitEx(BlastHSPResults* results,
         	 }
 
         	 qsort((void*)everything_list, total_hsp_limit, sizeof(BlastHSPwOid), s_CompareOidHSPwOid);
-        	 subj_index = 0;
        		 subj_list = NULL;
         	 for(hsp_counter = 0; hsp_counter < total_hsp_limit; ++ hsp_counter)
         	 {

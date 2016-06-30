@@ -685,7 +685,6 @@ Int4 BLAST_GreedyAlign(const Uint1* seq1, Int4 len1,
     /* perform traceback */
 
     d = best_dist; 
-    seq1_index = *seq1_align_len;
     seq2_index = *seq2_align_len; 
 
     /* for all positive distances */

@@ -856,7 +856,6 @@ Int2 PHIGappedAlignmentWithTraceback(Uint1* query, Uint1* subject,
     GapPrelimEditBlockReset(rev_prelim_tback);
 
     found_end = FALSE;
-    score_left = 0;
         
     score_left = 
        Blast_SemiGappedAlign(query, subject, q_start, s_start, 

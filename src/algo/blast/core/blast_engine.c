@@ -1009,7 +1009,7 @@ s_BlastSearchEngineCore(EBlastProgramType program_number,
         if (isRPS) {
             scale_factor = score_params->scale_factor;
         }
-        status = Blast_HSPListGetEvalues(program_number, query_info,
+        Blast_HSPListGetEvalues(program_number, query_info,
                                          stat_length, hsp_list_out, 
                                          score_options->gapped_calculation, 
                                          isRPS, gap_align->sbp, 0, scale_factor);

@@ -1884,6 +1884,7 @@ Int4 BlastNaHashLookupTableNew(BLAST_SequenceBlk* query,
         ASSERT(lookup->word_length == 16);
         counts = (Uint1*)calloc(kNumWords / 2, sizeof(Uint1));
         if (counts == NULL) {
+    	    sfree(thin_backbone);
             BlastNaHashLookupTableDestruct(lookup);
             return -1;
         }
