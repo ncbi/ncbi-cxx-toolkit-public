@@ -161,8 +161,10 @@ const TObjLoc& CObj::Locator() const
 }
 
 
-string CObj::Relocate(TNetStorageFlags flags)
+string CObj::Relocate(TNetStorageFlags flags, TNetStorageProgressCb /*cb*/)
 {
+    // TODO: CXX-8301
+
     // Use Read() to detect the current location
     char buffer[RELOCATION_BUFFER_SIZE];
     size_t bytes_read;
@@ -189,6 +191,12 @@ string CObj::Relocate(TNetStorageFlags flags)
     Close();
     Remove();
     return new_file->GetLoc();
+}
+
+
+void CObj::CancelRelocate()
+{
+    // TODO: CXX-8301
 }
 
 

@@ -72,7 +72,8 @@ public:
     TUserInfo GetUserInfo();
 
     const TObjLoc& Locator() const;
-    string Relocate(TNetStorageFlags);
+    string Relocate(TNetStorageFlags, TNetStorageProgressCb cb);
+    void CancelRelocate();
     bool Exists();
     ENetStorageRemoveResult Remove();
 

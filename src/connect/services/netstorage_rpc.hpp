@@ -46,7 +46,8 @@ struct SNetStorageRPC : public SNetStorageImpl
 
     virtual CNetStorageObject Create(TNetStorageFlags flags);
     virtual CNetStorageObject Open(const string& object_loc);
-    virtual string Relocate(const string& object_loc, TNetStorageFlags flags);
+    virtual string Relocate(const string& object_loc, TNetStorageFlags flags,
+            TNetStorageProgressCb cb);
     virtual bool Exists(const string& object_loc);
     virtual ENetStorageRemoveResult Remove(const string& object_loc);
 

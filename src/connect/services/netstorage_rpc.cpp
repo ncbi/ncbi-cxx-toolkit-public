@@ -779,7 +779,7 @@ CNetStorageObject SNetStorageRPC::Open(const string& object_loc)
 }
 
 string SNetStorageRPC::Relocate(const string& object_loc,
-        TNetStorageFlags flags)
+        TNetStorageFlags flags, TNetStorageProgressCb /*cb*/)
 {
     if (x_NetCacheMode(object_loc))
         NCBI_THROW_FMT(CNetStorageException, eNotSupported, object_loc <<
@@ -793,6 +793,8 @@ string SNetStorageRPC::Relocate(const string& object_loc,
     x_SetStorageFlags(new_location, flags);
 
     request.SetByKey("NewLocation", new_location);
+
+    // TODO: CXX-8302
 
     return Exchange(GetServiceFromLocator(object_loc),
             request).GetString("ObjectLoc");
@@ -1433,7 +1435,8 @@ struct SNetStorageByKeyRPC : public SNetStorageByKeyImpl
     virtual CNetStorageObject Open(const string& unique_key,
             TNetStorageFlags flags);
     virtual string Relocate(const string& unique_key,
-            TNetStorageFlags flags, TNetStorageFlags old_flags);
+            TNetStorageFlags flags, TNetStorageFlags old_flags,
+            TNetStorageProgressCb cb);
     virtual bool Exists(const string& key, TNetStorageFlags flags);
     virtual ENetStorageRemoveResult Remove(const string& key,
             TNetStorageFlags flags);
@@ -1465,7 +1468,8 @@ CNetStorageObject SNetStorageByKeyRPC::Open(const string& unique_key,
 }
 
 string SNetStorageByKeyRPC::Relocate(const string& unique_key,
-        TNetStorageFlags flags, TNetStorageFlags old_flags)
+        TNetStorageFlags flags, TNetStorageFlags old_flags,
+        TNetStorageProgressCb /*cb*/)
 {
     m_NetStorageRPC->m_UseNextSubHitID.ProperCommand();
     CJsonNode request(m_NetStorageRPC->MkObjectRequest(
@@ -1476,6 +1480,8 @@ string SNetStorageByKeyRPC::Relocate(const string& unique_key,
     SNetStorageRPC::x_SetStorageFlags(new_location, flags);
 
     request.SetByKey("NewLocation", new_location);
+
+    // TODO: CXX-8302
 
     return m_NetStorageRPC->Exchange(m_NetStorageRPC->m_Service,
             request).GetString("ObjectLoc");

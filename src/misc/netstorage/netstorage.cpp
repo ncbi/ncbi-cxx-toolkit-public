@@ -54,14 +54,15 @@ CDirectNetStorageObject::CDirectNetStorageObject(EVoid)
 
 
 string CDirectNetStorageObject::Relocate(TNetStorageFlags flags,
-        TNetStorageProgressCb /*cb*/)
+        TNetStorageProgressCb cb)
 {
-    return Impl<CObj>(m_Impl)->Relocate(flags);
+    return Impl<CObj>(m_Impl)->Relocate(flags, cb);
 }
 
 
 void CDirectNetStorageObject::CancelRelocate()
 {
+    return Impl<CObj>(m_Impl)->CancelRelocate();
 }
 
 
@@ -127,7 +128,7 @@ struct SDirectNetStorageImpl : public SNetStorageImpl
 
     CNetStorageObject Create(TNetStorageFlags);
     CNetStorageObject Open(const string&);
-    string Relocate(const string&, TNetStorageFlags);
+    string Relocate(const string&, TNetStorageFlags, TNetStorageProgressCb cb);
     bool Exists(const string&);
     ENetStorageRemoveResult Remove(const string&);
 
@@ -166,11 +167,11 @@ CNetStorageObject SDirectNetStorageImpl::Open(const string& object_loc)
 
 
 string SDirectNetStorageImpl::Relocate(const string& object_loc,
-        TNetStorageFlags flags)
+        TNetStorageFlags flags, TNetStorageProgressCb cb)
 {
     ISelector::Ptr selector(m_Context->Create(object_loc));
     CRef<CObj> file(new CObj(selector));
-    return file->Relocate(flags);
+    return file->Relocate(flags, cb);
 }
 
 
@@ -289,7 +290,8 @@ struct SDirectNetStorageByKeyImpl : public SNetStorageByKeyImpl
     CObj* OpenImpl(const string&, TNetStorageFlags);
 
     CNetStorageObject Open(const string&, TNetStorageFlags);
-    string Relocate(const string&, TNetStorageFlags, TNetStorageFlags);
+    string Relocate(const string&, TNetStorageFlags, TNetStorageFlags,
+            TNetStorageProgressCb cb);
     bool Exists(const string&, TNetStorageFlags);
     ENetStorageRemoveResult Remove(const string&, TNetStorageFlags);
 
@@ -319,11 +321,12 @@ CObj* SDirectNetStorageByKeyImpl::OpenImpl(const string& key,
 
 
 string SDirectNetStorageByKeyImpl::Relocate(const string& key,
-        TNetStorageFlags flags, TNetStorageFlags old_flags)
+        TNetStorageFlags flags, TNetStorageFlags old_flags,
+        TNetStorageProgressCb cb)
 {
     ISelector::Ptr selector(m_Context->Create(old_flags, key));
     CRef<CObj> file(new CObj(selector));
-    return file->Relocate(flags);
+    return file->Relocate(flags, cb);
 }
 
 
