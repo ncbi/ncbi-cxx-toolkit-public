@@ -32,7 +32,7 @@ public:
     void Init();
     int Run();
 
-    typedef list<CRef<CSeq_annot> > TMatches;
+    typedef list<CRef<CSeq_annot>> TMatches;
 
 private:
     bool x_GenerateMatchTable(const TMatches& matches);
@@ -67,12 +67,13 @@ private:
 
 
     CRef<CSeq_table> mMatchTable;
+    // This maps the column name/title to its index in the CSeq_table::TData vector
     map<string, size_t> mColnameToIndex;
 
 };
 
 
-
+// Check to see if Seq-annot is a feature table containing a pair of CDS features
 bool CProteinMatchApp::x_IsCdsComparison(const CSeq_annot& seq_annot) const
 {
     if (!seq_annot.IsFtable() ||
@@ -93,7 +94,7 @@ bool CProteinMatchApp::x_IsCdsComparison(const CSeq_annot& seq_annot) const
     return true;
 }
 
-
+// Check to see if the match is the best global reciprocal match 
 bool CProteinMatchApp::x_IsGoodGloballyReciprocalBest(const CUser_object& user_obj) const
 {
    if (!user_obj.IsSetType() ||
@@ -124,6 +125,7 @@ bool CProteinMatchApp::x_IsGoodGloballyReciprocalBest(const CUser_object& user_o
 
 
 
+// Check to see if the match is the best global reciprocal match 
 bool CProteinMatchApp::x_IsGoodGloballyReciprocalBest(const CSeq_annot& seq_annot) const 
 {
 
@@ -149,7 +151,7 @@ bool CProteinMatchApp::x_IsGoodGloballyReciprocalBest(const CSeq_annot& seq_anno
     return false;
 }
 
-
+// Return the threshold for the match
 bool CProteinMatchApp::x_GetGGRBThreshold(const CSeq_annot& seq_annot, double& threshold) const 
 {
     if (seq_annot.IsSetDesc()) {
@@ -177,6 +179,7 @@ bool CProteinMatchApp::x_GetGGRBThreshold(const CSeq_annot& seq_annot, double& t
 
 
 
+// Return the threshold for the match
 bool CProteinMatchApp::x_GetGGRBThreshold(const CUser_object& user_obj, double& threshold) const
 {
    if (!user_obj.IsSetType() ||
@@ -330,7 +333,6 @@ string CProteinMatchApp::x_GetLocalID(const CSeq_feat& seq_feat) const
 }
 
 
-// revisit x_GetLocalID
 string CProteinMatchApp::x_GetAccessionVersion(const CUser_object& user_obj) const 
 {
    if (!user_obj.IsSetType() ||
@@ -338,7 +340,6 @@ string CProteinMatchApp::x_GetAccessionVersion(const CUser_object& user_obj) con
         user_obj.GetType().GetStr() != "Comparison") {
        return "";
    }
-
 
    ITERATE(CUser_object::TData, it, user_obj.GetData()) {
 
@@ -355,7 +356,6 @@ string CProteinMatchApp::x_GetAccessionVersion(const CUser_object& user_obj) con
            return uf.GetData().GetStr();
        }
    }
-
 
     return "";
 }
@@ -424,11 +424,18 @@ int CProteinMatchApp::Run()
     const CArgs& args = GetArgs();
 
     TMatches matches;
-    x_TryProcessInputFile(args, matches);
+    // Attempt to read a list of Seq-annots encoding the 
+    // the protein matches.
+    if (!x_TryProcessInputFile(args, matches)) {
+        return 1;
+    }
+
+    // Generate a mMatchTable (of type CRef<CSeq_table> from the list of Seq-annots. 
     x_GenerateMatchTable(matches);
 
     CNcbiOstream* pOs = x_InitOutputStream(args);
 
+    // Write the contents of mMatchTable
     x_WriteTable(*pOs);
 
     return 0;    
@@ -440,8 +447,7 @@ bool CProteinMatchApp::x_TryProcessInputFile(
         const CArgs& args,
         TMatches& matches) 
 {
-    auto_ptr<CObjectIStream> pObjIstream;
-    pObjIstream.reset(x_InitInputStream(args));
+    unique_ptr<CObjectIStream> pObjIstream(x_InitInputStream(args));
 
     while (!pObjIstream->EndOfData()) {
         CRef<CSeq_annot> pSeqAnnot(new CSeq_annot());
@@ -460,19 +466,24 @@ bool CProteinMatchApp::x_TryProcessInputFile(
 }
 
 
-
+// Add a new (empty) column to the table
 void CProteinMatchApp::x_AddColumn(const string& colName)
 {
+    // Check that a column doesn't appear more than once in the Table
+    if (mColnameToIndex.find(colName) != mColnameToIndex.end()) {
+        return;
+    }
+
     CRef<CSeqTable_column> pColumn(new CSeqTable_column());
-    pColumn->SetHeader().SetField_name(colName);
-    pColumn->SetHeader().SetTitle(colName);
+    pColumn->SetHeader().SetField_name(colName); // Not the title. for internal use
+    pColumn->SetHeader().SetTitle(colName); // The title appearing in the table header
     pColumn->SetDefault().SetString("");
     mColnameToIndex[colName] = mMatchTable->GetColumns().size();
     mMatchTable->SetColumns().push_back(pColumn);
 }
 
 
-
+// Add data specified by colVal to a table column
 void CProteinMatchApp::x_AppendColumnValue(
         const string& colName,
         const string& colVal)
@@ -512,54 +523,47 @@ bool CProteinMatchApp::x_GenerateMatchTable(
     return true;
 }
 
-
+// Write the match table. Rows are odered by local ID
 void CProteinMatchApp::x_WriteTable(
         CNcbiOstream& out)
 {
-
-    vector<string> colName(mColnameToIndex.size());
+    // colNames contains the column names in the order in which they were added to the table
+    vector<string> colNames(mColnameToIndex.size());
 
     for (map<string,size_t>::const_iterator cit = mColnameToIndex.begin();
          cit != mColnameToIndex.end();
          ++cit) {
-        colName[cit->second] = cit->first;
+        colNames[cit->second] = cit->first;
     }
 
-    for (vector<string>::const_iterator cit = colName.begin(); 
-         cit != colName.end();
-         ++cit) {
-        const CSeqTable_column& column = mMatchTable->GetColumn(*cit);
+    // First, write the column titles
+    for (const auto& column_name :  colNames) {
+        const CSeqTable_column& column = mMatchTable->GetColumn(column_name);
         string displayName = column.GetHeader().GetTitle();
         out << displayName << "\t";
     }
     out << '\n';
 
     const unsigned int numRows = mMatchTable->GetNum_rows();
-    map<string, unsigned int> RowNameToIndex;
+    // LocalIDToRowIndex maps each local ID to its row index
+    // This is used to order the rows by local ID.
+    map<string, unsigned int> LocalIDToRowIndex;
     {
         const CSeqTable_column& column = mMatchTable->GetColumn("LocalID");
-       
-        for (unsigned int r=0; r<numRows; ++r) {
+        for (unsigned int row_index=0; row_index<numRows; ++row_index) {
           const string* pValue = column.GetStringPtr(r);
-          RowNameToIndex[*pValue] = r;
+          LocalIDToRowIndex[*pValue] = row_index;
         }
     }
 
 
-    for (map<string, unsigned int>::const_iterator row_it = RowNameToIndex.begin();
-            row_it != RowNameToIndex.end();
-            ++row_it) {
-
-        unsigned int r = row_it->second;
-    
-        for (vector<string>::const_iterator cit = colName.begin();
-             cit != colName.end();
-             ++cit) {
-
-            const CSeqTable_column& column = mMatchTable->GetColumn(*cit);
-
-            const string* pValue = column.GetStringPtr(r);
-
+    // By iterating over the LocalIDToRowIndex map, 
+    // we order the rows by local ID
+   for (auto& id_index_pair : LocalIDToRowIndex) {
+        unsigned int row_index = id_index_pair.second;
+        for (const auto& column_name : colNames) {
+            const CSeqTable_column& column = mMatchTable->GetColumn(column_name);
+            const string* pValue = column.GetStringPtr(row_index);
             out << *pValue << "\t";
         }
         out << '\n';
@@ -570,6 +574,7 @@ void CProteinMatchApp::x_WriteTable(
 
 CObjectIStream* CProteinMatchApp::x_InitInputStream(const CArgs& args) const
 {
+    // Defaults to binary input
     ESerialDataFormat serial = eSerial_AsnBinary;
     if (args["text-input"]) {
         serial = eSerial_AsnText;
@@ -580,8 +585,7 @@ CObjectIStream* CProteinMatchApp::x_InitInputStream(const CArgs& args) const
 
     CNcbiIstream* pInStream = new CNcbiIfstream(infile.c_str(), ios::in | ios::binary);
 
-    if (pInStream->fail())
-    {
+    if (pInStream->fail()) {
         NCBI_THROW(CProteinMatchException, 
                    eInputError, 
                    "Could not create input stream for \"" + infile + "\"");
