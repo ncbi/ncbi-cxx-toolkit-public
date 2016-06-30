@@ -33,7 +33,9 @@
 #include <ncbi_pch.hpp>
 #include <sra/readers/bam/bamread.hpp> // for CBamException
 #include <sra/readers/bam/bamindex.hpp>
+#include <util/compress/zlib.hpp>
 #include <util/util_exception.hpp>
+#include <util/timsort.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqres/seqres__.hpp>
 #include <objects/seqloc/seqloc__.hpp>
@@ -48,8 +50,10 @@ BEGIN_SCOPE(objects)
 class CSeq_entry;
 
 
+static const uint32_t kBlockBits = 14;
+static const uint32_t kBlockSize = 1<<kBlockBits;
+static const uint32_t kBlockBase = 4681;
 static const float kEstimatedCompression = 0.25;
-
 
 static inline
 void s_Read(CNcbiIstream& in, char* dst, size_t len)
@@ -67,7 +71,27 @@ void s_Read(CNcbiIstream& in, char* dst, size_t len)
 
 
 static inline
+void s_Read(CBGZFStream& in, char* dst, size_t len)
+{
+    while ( len ) {
+        size_t cnt = in.Read(dst, len);
+        len -= cnt;
+        dst += cnt;
+    }
+}
+
+
+static inline
 string s_ReadString(CNcbiIstream& in, size_t len)
+{
+    string ret(len, ' ');
+    s_Read(in, &ret[0], len);
+    return ret;
+}
+
+
+static inline
+string s_ReadString(CBGZFStream& in, size_t len)
 {
     string ret(len, ' ');
     s_Read(in, &ret[0], len);
@@ -89,34 +113,15 @@ void s_ReadMagic(CNcbiIstream& in, const char* magic)
 
 
 static inline
-uint16_t s_MakeUint16(const char* buf)
+void s_ReadMagic(CBGZFStream& in, const char* magic)
 {
-    return uint16_t(uint8_t(buf[0]))|
-        (uint16_t(uint8_t(buf[1]))<<8);
-}
-
-
-static inline
-uint32_t s_MakeUint32(const char* buf)
-{
-    return uint32_t(uint8_t(buf[0]))|
-        (uint32_t(uint8_t(buf[1]))<<8)|
-        (uint32_t(uint8_t(buf[2]))<<16)|
-        (uint32_t(uint8_t(buf[3]))<<24);
-}
-
-
-static inline
-uint64_t s_MakeUint64(const char* buf)
-{
-    return uint64_t(uint8_t(buf[0]))|
-        (uint64_t(uint8_t(buf[1]))<<8)|
-        (uint64_t(uint8_t(buf[2]))<<16)|
-        (uint64_t(uint8_t(buf[3]))<<24)|
-        (uint64_t(uint8_t(buf[4]))<<32)|
-        (uint64_t(uint8_t(buf[5]))<<40)|
-        (uint64_t(uint8_t(buf[6]))<<48)|
-        (uint64_t(uint8_t(buf[7]))<<56);
+    _ASSERT(strlen(magic) == 4);
+    char buf[4];
+    s_Read(in, buf, 4);
+    if ( memcmp(buf, magic, 4) != 0 ) {
+        NCBI_THROW_FMT(CBGZFException, eFormatError,
+                       "Bad file magic: "<<NStr::PrintableString(string(buf, buf+4)));
+    }
 }
 
 
@@ -125,7 +130,7 @@ uint32_t s_ReadUInt32(CNcbiIstream& in)
 {
     char buf[4];
     s_Read(in, buf, 4);
-    return s_MakeUint32(buf);
+    return CBGZFFile::MakeUint4(buf);
 }
 
 
@@ -141,7 +146,7 @@ uint64_t s_ReadUInt64(CNcbiIstream& in)
 {
     char buf[8];
     s_Read(in, buf, 8);
-    return s_MakeUint64(buf);
+    return CBGZFFile::MakeUint8(buf);
 }
 
 
@@ -158,6 +163,22 @@ CBGZFRange s_ReadFileRange(CNcbiIstream& in)
     CBGZFPos beg = s_ReadFilePos(in);
     CBGZFPos end = s_ReadFilePos(in);
     return CBGZFRange(beg, end);
+}
+
+
+static inline
+uint32_t s_ReadUInt32(CBGZFStream& in)
+{
+    char buf[4];
+    s_Read(in, buf, 4);
+    return CBGZFFile::MakeUint4(buf);
+}
+
+
+static inline
+int32_t s_ReadInt32(CBGZFStream& in)
+{
+    return int32_t(s_ReadUInt32(in));
 }
 
 
@@ -205,9 +226,10 @@ SBamIndexRefIndex x_ReadRef(CNcbiIstream& in)
             ref.m_UnmappedCount = bin.m_Chunks[1].second.GetVirtualPos();
         }
         else {
-            ref.m_Bins.push_back(bin);
+            ref.m_Bins.push_back(move(bin));
         }
     }
+    gfx::timsort(ref.m_Bins.begin(), ref.m_Bins.end());
         
     int32_t n_intv = s_ReadInt32(in);
     ref.m_Intervals.reserve(n_intv);
@@ -286,10 +308,20 @@ Uint8 s_EstimatedSize(const CBGZFRange& range)
 }
 
 
+const SBamIndexRefIndex& CBamIndex::GetRef(size_t ref_index) const
+{
+    if ( ref_index >= GetRefCount() ) {
+        NCBI_THROW(CBamException, eInvalidArg,
+                   "Bad reference sequence index");
+    }
+    return m_Refs[ref_index];
+}
+
+
 CBGZFRange CBamIndex::GetTotalFileRange(size_t ref_index) const
 {
     CBGZFRange total_range(CBGZFPos(-1), CBGZFPos(0));
-    for ( auto& b : m_Refs[ref_index].m_Bins ) {
+    for ( auto& b : GetRef(ref_index).m_Bins ) {
         for ( auto& c : b.m_Chunks ) {
             if ( c.first < total_range.first )
                 total_range.first = c.first;
@@ -359,13 +391,8 @@ CBamIndex::MakeEstimatedCoverageAnnot(size_t ref_index,
                                       const string& annot_name,
                                       TSeqPos length) const
 {
-    if ( ref_index >= m_Refs.size() ) {
-        NCBI_THROW(CBamException, eInvalidArg,
-                   "Bad reference sequence index");
-    }
-    const uint32_t kBlockSize = 1<<14;
     vector<uint64_t> vv;
-    for ( auto& b : m_Refs[ref_index].m_Bins ) {
+    for ( auto& b : GetRef(ref_index).m_Bins ) {
         COpenRange<TSeqPos> range = b.GetSeqRange();
         uint32_t len = range.GetLength();
         if ( len == kBlockSize ) {
@@ -424,14 +451,31 @@ CBamHeader::CBamHeader(const string& bam_file_name)
 }
 
 
+CBamHeader::CBamHeader(CNcbiIstream& file_stream)
+{
+    Read(file_stream);
+}
+
+
 CBamHeader::~CBamHeader()
 {
 }
 
 
-SBamRefHeaderInfo CBamHeader::ReadRef(CNcbiIstream& in)
+SBamHeaderRefInfo CBamHeader::ReadRef(CNcbiIstream& in)
 {
-    SBamRefHeaderInfo ref;
+    SBamHeaderRefInfo ref;
+    int32_t l_name = s_ReadInt32(in);
+    ref.m_Name = s_ReadString(in, l_name);
+    ref.m_Name.resize(l_name-1);
+    ref.m_Length = s_ReadInt32(in);
+    return ref;
+}
+
+
+SBamHeaderRefInfo CBamHeader::ReadRef(CBGZFStream& in)
+{
+    SBamHeaderRefInfo ref;
     int32_t l_name = s_ReadInt32(in);
     ref.m_Name = s_ReadString(in, l_name);
     ref.m_Name.resize(l_name-1);
@@ -442,9 +486,15 @@ SBamRefHeaderInfo CBamHeader::ReadRef(CNcbiIstream& in)
 
 void CBamHeader::Read(const string& bam_file_name)
 {
+    CNcbiIfstream file_stream(bam_file_name.c_str(), ios::binary);
+    Read(file_stream);
+}
+
+
+void CBamHeader::Read(CNcbiIstream& file_stream)
+{
     m_RefByName.clear();
     m_Refs.clear();
-    CNcbiIfstream file_stream(bam_file_name.c_str(), ios::binary);
     CCompressionIStream in(file_stream,
                            new CZipStreamDecompressor(CZipCompression::fGZip),
                            CCompressionIStream::fOwnProcessor);
@@ -460,6 +510,22 @@ void CBamHeader::Read(const string& bam_file_name)
 }
 
 
+void CBamHeader::Read(CBGZFStream& stream)
+{
+    m_RefByName.clear();
+    m_Refs.clear();
+    s_ReadMagic(stream, "BAM\1");
+    int32_t l_text = s_ReadInt32(stream);
+    m_Text = s_ReadString(stream, l_text);
+    int32_t n_ref = s_ReadInt32(stream);
+    m_Refs.reserve(n_ref);
+    for ( int32_t i_ref = 0; i_ref < n_ref; ++i_ref ) {
+        m_Refs.push_back(ReadRef(stream));
+        m_RefByName[m_Refs.back().m_Name] = m_RefByName.size()-1;
+    }
+}
+
+
 size_t CBamHeader::GetRefIndex(const string& name) const
 {
     auto iter = m_RefByName.find(name);
@@ -467,6 +533,271 @@ size_t CBamHeader::GetRefIndex(const string& name) const
         return size_t(-1);
     }
     return iter->second;
+}
+
+
+CBamFileRangeSet::CBamFileRangeSet()
+{
+}
+
+
+CBamFileRangeSet::CBamFileRangeSet(const CBamIndex& index,
+                                   size_t ref_index,
+                                   COpenRange<TSeqPos> ref_range)
+{
+    AddRanges(index, ref_index, ref_range);
+}
+
+
+CBamFileRangeSet::~CBamFileRangeSet()
+{
+}
+
+
+ostream& operator<<(ostream& out, const CBamFileRangeSet& ranges)
+{
+    cout << '(';
+    for ( auto& r : ranges ) {
+        cout << " (" << r.first<<" "<<r.second<<")";
+    }
+    return cout << " )";
+}
+
+
+inline
+void CBamFileRangeSet::AddSortedRanges(const vector<CBGZFRange>& ranges)
+{
+    for ( auto iter = ranges.begin(); iter != ranges.end(); ) {
+        CBGZFPos start = iter->first, end = iter->second;
+        for ( ++iter; iter != ranges.end() && !(end < iter->first); ++iter ) {
+            if ( end < iter->second ) {
+                end = iter->second;
+            }
+        }
+        m_Ranges += CBGZFRange(start, end);
+    }
+}
+
+
+inline
+void CBamFileRangeSet::AddBinsRanges(vector<CBGZFRange>& ranges,
+                                     const CBGZFRange& limit,
+                                     const SBamIndexRefIndex& ref,
+                                     TBin bin1, TBin bin2)
+{
+    for ( auto it = lower_bound(ref.m_Bins.begin(), ref.m_Bins.end(), bin1);
+          it != ref.m_Bins.end() && it->m_Bin <= bin2; ++it ) {
+        for ( auto c : it->m_Chunks ) {
+            if ( c.first < limit.first ) {
+                c.first = limit.first;
+            }
+            if ( limit.second < c.second ) {
+                c.second = limit.second;
+            }
+            if ( c.first < c.second ) {
+                ranges.push_back(c);
+            }
+        }
+    }
+}
+
+
+void CBamFileRangeSet::AddRanges(const CBamIndex& index,
+                                 size_t ref_index,
+                                 COpenRange<TSeqPos> ref_range)
+{
+    if ( ref_range.Empty() ) {
+        return;
+    }
+    const SBamIndexRefIndex& ref = index.GetRef(ref_index);
+    TSeqPos beg = ref_range.GetFrom();
+    TSeqPos end = min(ref_range.GetToOpen(),
+                      TSeqPos(ref.m_Intervals.size()*kBlockSize));
+    if ( end <= beg ) {
+        return;
+    }
+    --end;
+    _ASSERT((beg>>29) == 0);
+    _ASSERT((end>>29) == 0);
+
+    // set limits
+    CBGZFRange limit;
+    // start limit is from intervals and beg position
+    _ASSERT((beg>>kBlockBits)<ref.m_Intervals.size());
+    limit.first = ref.m_Intervals[beg>>kBlockBits];
+    // end limit is from low-level block after end position
+    limit.second = CBGZFPos(CBGZFPos::TVirtualPos(-1));
+    uint64_t end_bin = kBlockBase+(end>>kBlockBits)+1;
+    auto end_it = lower_bound(ref.m_Bins.begin(), ref.m_Bins.end(), end_bin);
+    if ( end_it != ref.m_Bins.end() ) {
+        limit.second = end_it->m_Chunks[0].first;
+    }
+
+    vector<CBGZFRange> ranges;
+    for ( unsigned k = 0; k <= 5; ++k ) {
+        unsigned shift = kBlockBits+3*k;
+        unsigned base = kBlockBase>>(3*k);
+        AddBinsRanges(ranges, limit, ref,
+                      base + (beg>>shift),
+                      base + (end>>shift));
+    }
+    gfx::timsort(ranges.begin(), ranges.end());
+    AddSortedRanges(ranges);
+}
+
+
+void CBamFileRangeSet::SetRanges(const CBamIndex& index,
+                                 size_t ref_index,
+                                 COpenRange<TSeqPos> ref_range)
+{
+    Clear();
+    AddRanges(index, ref_index, ref_range);
+}
+
+
+CBamRawDb::~CBamRawDb()
+{
+}
+
+
+void CBamRawDb::Open(const string& bam_path, const string& index_path)
+{
+    m_Index.Read(index_path);
+    m_File = new CBGZFFile(bam_path);
+    CBGZFStream stream(*m_File);
+    m_Header.Read(stream);
+}
+
+
+string SBamAlignInfo::get_read() const
+{
+    string ret;
+    const char* ptr = get_read_ptr();
+    for ( uint32_t len = get_read_len(); len; ) {
+        char c = *ptr++;
+        uint32_t b1 = (c >> 4)&0xf;
+        uint32_t b2 = (c     )&0xf;
+        ret += "=ACMGRSVTWYHKDBN"[b1];
+        if ( len == 1 ) {
+            len = 0;
+        }
+        else {
+            ret += "=ACMGRSVTWYHKDBN"[b2];
+            len -= 2;
+        }
+    }
+    return ret;
+}
+
+
+uint32_t SBamAlignInfo::get_cigar_ref_size() const
+{
+    uint32_t ret = 0;
+    const char* ptr = get_cigar_ptr();
+    for ( uint16_t count = get_cigar_ops_count(); count--; ) {
+        uint32_t op = CBGZFFile::MakeUint4(ptr);
+        ptr += 4;
+        switch ( op & 0xf ) {
+        case 0: // M
+        case 2: // D
+        case 3: // N ?
+        case 7: // =
+        case 8: // X
+            ret += op >> 4;
+            break;
+        default:
+            break;
+        }
+    }
+    return ret;
+}
+
+
+string SBamAlignInfo::get_cigar() const
+{
+    CNcbiOstrstream ret;
+    const char* ptr = get_cigar_ptr();
+    for ( uint16_t count = get_cigar_ops_count(); count--; ) {
+        uint32_t op = CBGZFFile::MakeUint4(ptr);
+        ptr += 4;
+        uint32_t len = op >> 4;
+        op &= 0xf;
+        if ( len != 1 )
+            ret << len;
+        ret << "MIDNSHP=X???????"[op];
+    }
+    return CNcbiOstrstreamToString(ret);
+}
+
+
+void SBamAlignInfo::Read(CBGZFStream& in)
+{
+    m_RecordSize = CBGZFFile::MakeUint4(in.Read(4));
+    m_RecordPtr = in.Read(m_RecordSize);
+    _ASSERT(get_qual_ptr() <= get_qual_end());
+}
+
+
+void CBamRawAlignIterator::x_Select(const CBamIndex& index,
+                                    int ref_index, CRange<TSeqPos> ref_range)
+{
+    m_RefIndex = ref_index;
+    m_RefRange = ref_range;
+    m_Ranges.SetRanges(index, ref_index, ref_range);
+    m_NextRange = m_Ranges.begin();
+    if ( x_UpdateRange() ) {
+        x_Settle();
+    }
+}
+
+
+bool CBamRawAlignIterator::x_UpdateRange()
+{
+    if ( m_NextRange == m_Ranges.end() ) {
+        m_CurrentRangeEnd = CBGZFPos(0);
+        return false;
+    }
+    else {
+        m_CurrentRangeEnd = m_NextRange->second;
+        m_Reader.Seek(m_NextRange->first);
+        ++m_NextRange;
+        return true;
+    }
+}
+
+
+bool CBamRawAlignIterator::x_NeedToSkip()
+{
+    _ASSERT(*this);
+    m_AlignInfo.Read(m_Reader);
+    if ( m_AlignInfo.get_ref_index() != m_RefIndex ) {
+        // wrong reference sequence
+        return true;
+    }
+    TSeqPos pos = m_AlignInfo.get_ref_pos();
+    if ( pos >= m_RefRange.GetToOpen() ) {
+        // after search range
+        x_Stop();
+        return false;
+    }
+    if ( pos < m_RefRange.GetFrom() ) {
+        TSeqPos end = pos + m_AlignInfo.get_cigar_ref_size();
+        if ( end <= m_RefRange.GetFrom() ) {
+            // before search range
+            return true;
+        }
+    }
+    return false;
+}
+
+
+void CBamRawAlignIterator::x_Settle()
+{
+    while ( x_NeedToSkip() ) {
+        if ( !x_NextAnnot() ) {
+            return;
+        }
+    }
 }
 
 

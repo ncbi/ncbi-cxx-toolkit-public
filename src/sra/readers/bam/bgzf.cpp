@@ -33,6 +33,8 @@
 #include <ncbi_pch.hpp>
 #include <sra/readers/bam/bgzf.hpp>
 #include <util/util_exception.hpp>
+#include <util/checksum.hpp>
+#include <util/compress/zlib/zlib.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -42,6 +44,9 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 class CSeq_entry;
+
+static const bool kCheckBlockCRC32 = true;
+static const Uint8 kSegmentSize = 64<<20;
 
 const char* CBGZFException::GetErrCodeString(void) const
 {
@@ -55,107 +60,77 @@ const char* CBGZFException::GetErrCodeString(void) const
 
 
 static inline
-void s_Read(CNcbiIstream& in, char* dst, size_t len)
+char* s_Reserve(size_t size, CSimpleBufferT<char>& buffer)
 {
-    while ( len ) {
-        in.read(dst, len);
-        if ( !in ) {
-            NCBI_THROW(CIOException, eRead, "Read failure");
+    if ( buffer.size() < size ) {
+        if ( size < buffer.size()*2 ) {
+            size = max(buffer.size()*2, size_t(1024));
         }
-        size_t cnt = in.gcount();
-        len -= cnt;
-        dst += cnt;
+        buffer.resize(size);
     }
+    return buffer.data();
 }
 
 
 static inline
-string s_ReadString(CNcbiIstream& in, size_t len)
+const char* s_Read(CMemoryFile& in,
+                   Uint8 file_pos, size_t len,
+                   char* buffer)
 {
-    string ret(len, ' ');
-    s_Read(in, &ret[0], len);
-    return ret;
-}
-
-
-static inline
-void s_ReadMagic(CNcbiIstream& in, const char* magic)
-{
-    _ASSERT(strlen(magic) == 4);
-    char buf[4];
-    s_Read(in, buf, 4);
-    if ( memcmp(buf, magic, 4) != 0 ) {
-        NCBI_THROW_FMT(CBGZFException, eFormatError,
-                       "Bad file magic: "<<NStr::PrintableString(string(buf, buf+4)));
-    }
-}
-
-
-static inline
-uint16_t s_MakeUint16(const char* buf)
-{
-    return uint16_t(uint8_t(buf[0]))|
-        (uint16_t(uint8_t(buf[1]))<<8);
-}
-
-
-static inline
-uint32_t s_MakeUint32(const char* buf)
-{
-    return uint32_t(uint8_t(buf[0]))|
-        (uint32_t(uint8_t(buf[1]))<<8)|
-        (uint32_t(uint8_t(buf[2]))<<16)|
-        (uint32_t(uint8_t(buf[3]))<<24);
-}
-
-
-static inline
-uint64_t s_MakeUint64(const char* buf)
-{
-    return uint64_t(uint8_t(buf[0]))|
-        (uint64_t(uint8_t(buf[1]))<<8)|
-        (uint64_t(uint8_t(buf[2]))<<16)|
-        (uint64_t(uint8_t(buf[3]))<<24)|
-        (uint64_t(uint8_t(buf[4]))<<32)|
-        (uint64_t(uint8_t(buf[5]))<<40)|
-        (uint64_t(uint8_t(buf[6]))<<48)|
-        (uint64_t(uint8_t(buf[7]))<<56);
-}
-
-
-static inline
-void s_Read(CBGZFStream& in, char* dst, size_t len)
-{
+    char* dst = buffer;
     while ( len ) {
-        size_t cnt = in.Read(dst, len);
+        Uint8 seg = file_pos / kSegmentSize;
+        Uint8 seg_start = seg * kSegmentSize;
+        const char* ptr = (const char*)in.Map(seg_start, kSegmentSize);
+        _ASSERT(ptr);
+        Uint8 off = file_pos - seg_start;
+        Uint8 avail = kSegmentSize - off;
+        size_t cnt = size_t(min(avail, Uint8(len)));
+        memcpy(dst, ptr + off, cnt);
         len -= cnt;
+        file_pos += cnt;
         dst += cnt;
     }
+    return buffer;
 }
 
 
 static inline
-uint32_t s_ReadUInt32(CBGZFStream& in)
+const char* s_Read(CMemoryFile& in,
+                   Uint8 file_pos, size_t len,
+                   CSimpleBufferT<char>& buffer)
 {
-    char buf[4];
-    s_Read(in, buf, 4);
-    return s_MakeUint32(buf);
-}
-
-
-static inline
-uint64_t s_ReadUInt64(CBGZFStream& in)
-{
-    char buf[8];
-    s_Read(in, buf, 8);
-    return s_MakeUint64(buf);
-}
-
-
-static inline
-int32_t s_ReadInt32(CBGZFStream& in)
-{
-    return int32_t(s_ReadUInt32(in));
+    Uint8 seg = file_pos / kSegmentSize;
+    Uint8 seg_start = seg * kSegmentSize;
+    const char* ptr = (const char*)in.GetPtr();
+    if ( !ptr || (Uint8)in.GetOffset() != seg_start ) {
+        ptr = (const char*)in.Map(seg_start, kSegmentSize);
+        _ASSERT(ptr);
+    }
+    Uint8 off = file_pos - seg_start;
+    Uint8 avail = kSegmentSize - off;
+    if ( len <= avail ) {
+        return ptr + off;
+    }
+    char* dst = s_Reserve(len, buffer);
+    memcpy(dst, ptr + off, avail);
+    len -= avail;
+    file_pos += avail;
+    dst += avail;
+    while ( len ) {
+        seg = file_pos / kSegmentSize;
+        seg_start = seg * kSegmentSize;
+        ptr = (const char*)in.Map(seg_start, kSegmentSize);
+        _ASSERT(ptr);
+        off = file_pos - seg_start;
+        avail = kSegmentSize - off;
+        size_t cnt = size_t(min(avail, Uint8(len)));
+        memcpy(dst, ptr + off, cnt);
+        len -= cnt;
+        file_pos += cnt;
+        dst += cnt;
+    }
+    return buffer.data();
 }
 
 
@@ -164,65 +139,110 @@ ostream& operator<<(ostream& out, const CBGZFPos& p)
     return out << p.GetFileBlockPos() << '.' << p.GetByteOffset();
 }
 
-ostream& operator<<(ostream& out, const CBGZFBlockInfo& b)
+
+CBGZFFile::CBGZFFile(const string& file_name)
+    : m_MemFile(file_name,
+                CMemoryFile::eMMP_Read,
+                CMemoryFile::eMMS_Shared,
+                0, kSegmentSize) // to prevent initial mapping
 {
-    return out << "BGZF("<<b.GetFileBlockPos()<<')';
 }
 
-void CBGZFBlockInfo::Read(CNcbiIstream& in, char* data)
+
+CBGZFFile::~CBGZFFile()
 {
-    m_FileBlockPos = in.tellg();
-    char buf[kHeaderSize];
-    s_Read(in, buf, 18);
+}
+
+
+const char* CBGZFFile::Read(CBGZFPos::TFileBlockPos file_pos, size_t size,
+                            char* buffer)
+{
+    return s_Read(m_MemFile, file_pos, size, buffer);
+}
+
+
+const char* CBGZFFile::Read(CBGZFPos::TFileBlockPos file_pos, size_t size,
+                            CSimpleBufferT<char>& buffer)
+{
+    return s_Read(m_MemFile, file_pos, size, buffer);
+}
+
+
+const char* CBGZFFile::ReadBlock(CBGZFPos::TFileBlockPos file_pos,
+                                 CBGZFBlockInfo& block_info,
+                                 CSimpleBufferT<char>* buffer)
+{
+    const size_t kHeaderSize = CBGZFBlockInfo::kHeaderSize;
+    const size_t kFooterSize = CBGZFBlockInfo::kFooterSize;
+    const size_t kMaxDataSize = CBGZFBlockInfo::kMaxDataSize;
+
+    char tmp[kHeaderSize];
+    const char* header = Read(file_pos, kHeaderSize, tmp);
+
     // parse and check GZip header
-    if ( buf[0] != 31 || buf[1] != '\x8b' || buf[2] != 8 || buf[3] != 4 ) {
+    if ( header[0] != 31 || header[1] != '\x8b' ||
+         header[2] != 8 || header[3] != 4 ) {
         NCBI_THROW_FMT(CBGZFException, eFormatError,
-                       "Bad "<<*this<<" MAGIC: ");
+                       "Bad BGZF("<<file_pos<<") MAGIC: ");
     }
     // 4-7 - modification time
     // 8 - extra flags
     // 9 - OS
-    if ( s_MakeUint16(buf+10) != 6 ) {
+    if ( CBGZFFile::MakeUint2(header+10) != 6 ) {
         NCBI_THROW_FMT(CBGZFException, eFormatError,
-                       "Bad "<<*this<<" XLEN: ");
+                       "Bad BGZF("<<file_pos<<") XLEN: ");
     }
     // extra data
-    if ( buf[12] != 'B' || buf[13] != 'C' || buf[14] != 2 || buf[15] != 0 ) {
+    if ( header[12] != 'B' || header[13] != 'C' ||
+         header[14] != 2 || header[15] != 0 ) {
         NCBI_THROW_FMT(CBGZFException, eFormatError,
-                       "Bad "<<*this<<" EXTRA: ");
+                       "Bad BGZF("<<file_pos<<") EXTRA: ");
     }
-    m_FileBlockSize = s_MakeUint16(buf+16)+1;
-    if ( GetFileBlockSize() <= kHeaderSize+kFooterSize ) {
+
+    CBGZFBlockInfo::TFileBlockSize block_size = CBGZFFile::MakeUint2(header+16)+1;
+
+    if ( block_size <= kHeaderSize + kFooterSize ) {
         NCBI_THROW_FMT(CBGZFException, eFormatError,
-                       "Bad "<<*this<<" FILE SIZE: "<<GetFileBlockSize());
+                       "Bad BGZF("<<file_pos<<") FILE SIZE: "<<block_size);
     }
+
+    const char* data;
     const char* footer;
-    if ( data ) {
-        memcpy(data, buf, kHeaderSize);
-        s_Read(in, data+kHeaderSize, GetCompressedSize()+kFooterSize);
-        footer = data+kHeaderSize+GetCompressedSize();
+    if ( buffer ) {
+        data = Read(file_pos + kHeaderSize, block_size - kHeaderSize, *buffer);
+        footer = data + block_size - kHeaderSize - kFooterSize;
     }
     else {
-        in.seekg(GetCompressedSize(), ios::cur);
-        s_Read(in, buf, kFooterSize);
-        footer = buf;
+        data = 0;
+        footer = Read(file_pos + block_size - kFooterSize, kFooterSize, tmp);
     }
-    m_CRC32 = s_MakeUint32(footer);
-    m_DataSize = s_MakeUint32(footer+4);
-    if ( GetDataSize() == 0 || GetDataSize() > kMaxDataSize ) {
+
+    CBGZFBlockInfo::TDataSize data_size = CBGZFFile::MakeUint4(footer+4);
+
+    if ( data_size == 0 || data_size > kMaxDataSize ) {
         NCBI_THROW_FMT(CBGZFException, eFormatError,
-                       "Bad "<<*this<<" DATA SIZE: "<<GetDataSize());
+                       "Bad BGZF("<<file_pos<<") DATA SIZE: "<<data_size);
     }
+
+    block_info.m_FileBlockPos = file_pos;
+    block_info.m_FileBlockSize = block_size;
+    block_info.m_CRC32 = CBGZFFile::MakeUint4(footer);
+    block_info.m_DataSize = data_size;
+
+    return data;
 }
 
 
-CBGZFStream::CBGZFStream(const string& file_name)
-    : m_File(file_name.c_str(), ios::binary),
-      m_ReadPos(0),
-      m_Data(CBGZFBlockInfo::kMaxDataSize),
-      m_FileData(CBGZFBlockInfo::kMaxFileBlockSize)
+CBGZFStream::CBGZFStream()
+    : m_ReadPos(0)
 {
-    m_Zip.SetFlags(m_Zip.fGZip);
+}
+
+
+CBGZFStream::CBGZFStream(CBGZFFile& file)
+    : m_ReadPos(0)
+{
+    Open(file);
 }
 
 
@@ -231,58 +251,143 @@ CBGZFStream::~CBGZFStream()
 }
 
 
-void CBGZFStream::Open(const string& file_name)
+void CBGZFStream::Close()
 {
-    m_File.open(file_name.c_str(), ios::binary);
-    m_BlockInfo = CBGZFBlockInfo();
-    m_ReadPos = 0;
+    m_File.Reset();
+    m_ReadPos = m_BlockInfo.GetDataSize();
+}
+
+
+void CBGZFStream::Open(CBGZFFile& file)
+{
+    Close();
+    m_File.Reset(&file);
+    if ( !m_Data.get() ) {
+        m_Data.reset(new char[CBGZFBlockInfo::kMaxDataSize]);
+    }
 }
 
 
 void CBGZFStream::Seek(CBGZFPos pos)
 {
-    if ( pos.GetFileBlockPos() != m_BlockInfo.GetFileBlockPos() ||
+    CBGZFPos::TFileBlockPos file_pos = pos.GetFileBlockPos();
+    if ( file_pos != m_BlockInfo.GetFileBlockPos() ||
          m_BlockInfo.GetDataSize() == 0 ) {
-        m_File.seekg(pos.GetFileBlockPos());
-        x_ReadBlock();
+        x_ReadBlock(pos.GetFileBlockPos());
     }
     m_ReadPos = pos.GetByteOffset();
     if ( m_ReadPos >= m_BlockInfo.GetDataSize() ) {
         NCBI_THROW_FMT(CBGZFException, eInvalidArg,
-                       "Bad "<<m_BlockInfo<<" offset: "<<
+                       "Bad BGZF("<<file_pos<<") offset: "<<
                        m_ReadPos<<" vs "<<m_BlockInfo.GetDataSize());
     }
 }
 
 
-void CBGZFStream::x_ReadBlock()
+void CBGZFStream::x_ReadBlock(CBGZFPos::TFileBlockPos file_pos)
 {
-    m_BlockInfo.Read(m_File, m_FileData.get());
-    size_t size;
-    m_Zip.DecompressBuffer(m_FileData.get(), m_BlockInfo.GetFileBlockSize(),
-                           m_Data.get(), CBGZFBlockInfo::kMaxDataSize,
-                           &size);
+    const char* data = m_File->ReadBlock(file_pos, m_BlockInfo, &m_ReadBuffer);
+    size_t size = 0;
+
+    {
+        const char* src = data;
+        size_t src_size = m_BlockInfo.GetCompressedSize();
+        char* dst = m_Data.get();
+        size_t dst_size = CBGZFBlockInfo::kMaxDataSize;
+
+        z_stream stream;
+        stream.next_in = (Bytef*)src;
+        stream.avail_in = (uInt)src_size;
+        stream.next_out = (Bytef*)dst;
+        stream.avail_out = (uInt)dst_size;
+        stream.zalloc = (alloc_func)0;
+        stream.zfree = (free_func)0;
+        
+        // Check for source > 64K on 16-bit machine:
+        if ( stream.avail_in != src_size ||
+             stream.avail_out != dst_size ) {
+            NCBI_THROW_FMT(CBGZFException, eInvalidArg,
+                           "Bad BGZF("<<file_pos<<") compression sizes: "<<
+                           src_size<<" -> "<<dst_size);
+        }
+        
+        int err = inflateInit2(&stream, -15);
+        if ( err == Z_OK ) {
+            err = inflate(&stream, Z_FINISH);
+            if ( err == Z_STREAM_END ) {
+                size = stream.total_out;
+            }
+        }
+    }
+
     if ( size != m_BlockInfo.GetDataSize() ) {
         NCBI_THROW_FMT(CBGZFException, eFormatError,
-                       "Bad "<<m_BlockInfo<<" decompressed data size: "<<
+                       "Bad BGZF("<<file_pos<<") decompressed data size: "<<
                        size<<" vs "<<m_BlockInfo.GetDataSize());
+    }
+    if ( kCheckBlockCRC32 ) {
+        CChecksum checksum(CChecksum::eCRC32ZIP);
+        checksum.AddChars(m_Data.get(), size);
+        if ( checksum.GetChecksum() != m_BlockInfo.GetCRC32() ) {
+            NCBI_THROW_FMT(CBGZFException, eFormatError,
+                           "Bad BGZF("<<file_pos<<") CRC32: "<<
+                           hex<<Uint4(checksum.GetChecksum())<<" vs "<<
+                           Uint4(m_BlockInfo.GetCRC32())<<dec);
+        }
     }
     m_ReadPos = 0;
 }
 
 
-size_t CBGZFStream::Read(char* buf, size_t count)
+size_t CBGZFStream::GetNextAvailableBytes()
 {
-    while ( m_ReadPos >= m_BlockInfo.GetDataSize() ) {
-        x_ReadBlock();
+    size_t avail;
+    while ( !(avail = (m_BlockInfo.GetDataSize() - m_ReadPos)) ) {
+        x_ReadBlock(m_BlockInfo.GetNextFileBlockPos());
     }
-    CBGZFBlockInfo::TDataSize avail = m_BlockInfo.GetDataSize() - m_ReadPos;
-    CBGZFBlockInfo::TDataSize cnt = CBGZFBlockInfo::TDataSize(min(size_t(avail), count));
-    memcpy(buf, m_Data.get() + m_ReadPos, cnt);
-    m_ReadPos += cnt;
-    return cnt;
+    return avail;
 }
 
-    
+/*
+const char* CBGZFStream::GetReadPtr(size_t count)
+{
+    if ( count > GetNextAvailableBytes() ) {
+        return 0;
+    }
+    const char* ret = m_Data.get() + m_ReadPos;
+    m_ReadPos += count;
+    return ret;
+}
+*/
+
+size_t CBGZFStream::Read(char* buf, size_t count)
+{
+    count = min(GetNextAvailableBytes(), count);
+    memcpy(buf, m_Data.get() + m_ReadPos, count);
+    m_ReadPos += count;
+    return count;
+}
+
+
+const char* CBGZFStream::Read(size_t count)
+{
+    size_t avail = GetNextAvailableBytes();
+    if ( count <= avail ) {
+        const char* ret = m_Data.get() + m_ReadPos;
+        m_ReadPos += count;
+        return ret;
+    }
+    char* dst = s_Reserve(count, m_ReadBuffer);
+    while ( count ) {
+        size_t cnt = min(GetNextAvailableBytes(), count);
+        memcpy(dst, m_Data.get() + m_ReadPos, cnt);
+        m_ReadPos += cnt;
+        dst += cnt;
+        count -= cnt;
+    }
+    return m_ReadBuffer.data();
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

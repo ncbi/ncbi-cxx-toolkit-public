@@ -15,7 +15,7 @@
 # EXPENDABLE_LIB_PROJ =
 
 ## Applications to be built as usual.
-APP_PROJ = bam_test bamgraph_test
+APP_PROJ = bam_test bamgraph_test bamindex_test
 EXPENDABLE_APP_PROJ = bam_compare
 
 ## Subdirectories to traverse.

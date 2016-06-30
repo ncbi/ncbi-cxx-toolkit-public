@@ -124,6 +124,9 @@ public:
     bool GetOutlierDetails(void) const;
     void SetOutlierDetails(bool details);
     
+    bool GetRawAccess(void) const;
+    void SetRawAccess(bool raw_access);
+    
     /// Generate raw align coverage for BAM file using BAM file index
     vector<Int8> CollectCoverage(CBamMgr& mgr,
                                  const string& bam_file,
@@ -162,6 +165,7 @@ private:
     TSeqPos         m_GraphBinSize;
     double          m_OutlierMax;
     bool            m_OutlierDetails;
+    bool            m_RawAccess;
 
     // statistics
     CRange<TSeqPos> m_TotalRange;
@@ -218,6 +222,12 @@ inline TSeqPos CBam2Seq_graph::GetGraphBinSize(void) const
 inline bool CBam2Seq_graph::GetOutlierDetails(void) const
 {
     return m_OutlierDetails;
+}
+
+
+inline bool CBam2Seq_graph::GetRawAccess(void) const
+{
+    return m_RawAccess;
 }
 
 

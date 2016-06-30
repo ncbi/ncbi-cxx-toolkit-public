@@ -33,7 +33,8 @@
  */
 
 #include <corelib/ncbistd.hpp>
-#include <util/compress/zlib.hpp>
+#include <corelib/ncbifile.hpp>
+#include <util/simple_buffer.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -94,6 +95,14 @@ public:
         {
             return m_VirtualPos < b.m_VirtualPos;
         }
+    bool operator==(const CBGZFPos& b) const
+        {
+            return m_VirtualPos == b.m_VirtualPos;
+        }
+    bool operator!=(const CBGZFPos& b) const
+        {
+            return !(*this == b);
+        }
 
 private:    
     TVirtualPos m_VirtualPos;
@@ -130,6 +139,10 @@ public:
         {
             return m_FileBlockSize;
         }
+    TFileBlockPos GetNextFileBlockPos() const
+        {
+            return GetFileBlockPos() + GetFileBlockSize();
+        }
     TCRC32 GetCRC32() const
         {
             return m_CRC32;
@@ -138,11 +151,6 @@ public:
         {
             return m_DataSize;
         }
-
-
-    // read block info from a BGZF stream
-    // optionally save whole block data for decompression
-    NCBI_BAMREAD_EXPORT void Read(CNcbiIstream& in, char* data = 0);
 
     static const TFileBlockSize kHeaderSize = 18;
     static const TFileBlockSize kFooterSize = 8;
@@ -154,43 +162,110 @@ public:
             return m_FileBlockSize - (kHeaderSize+kFooterSize);
         }
 
+protected:
+    friend class CBGZFFile;
+
 private:
     TFileBlockPos m_FileBlockPos;
     TFileBlockSize m_FileBlockSize;
     TCRC32 m_CRC32;
     TDataSize m_DataSize;
 };
-NCBI_BAMREAD_EXPORT
-ostream& operator<<(ostream& out, const CBGZFBlockInfo& block);
+
+
+class NCBI_BAMREAD_EXPORT CBGZFFile : public CObject
+{
+public:
+    explicit
+    CBGZFFile(const string& file_name);
+    ~CBGZFFile();
+
+    // Read block info from a BGZF stream.
+    // Optionally save whole block data for decompression
+    // and return pointer to compressed data.
+    const char* ReadBlock(CBGZFPos::TFileBlockPos file_pos,
+                          CBGZFBlockInfo& block_info,
+                          CSimpleBufferT<char>* buffer);
+
+    // read using buffer pointer if necessary
+    // the buffer should have at least size bytes
+    const char* Read(CBGZFPos::TFileBlockPos file_pos, size_t size,
+                     char* buffer);
+    // read using buffer if necessary
+    const char* Read(CBGZFPos::TFileBlockPos file_pos, size_t size,
+                     CSimpleBufferT<char>& buffer);
+
+    static Uint2 MakeUint2(const char* buf)
+        {
+            return Uint2(Uint1(buf[0]))|
+                (Uint2(Uint1(buf[1]))<<8);
+        }
+    
+    static Uint4 MakeUint4(const char* buf)
+        {
+            return Uint4(Uint1(buf[0]))|
+                (Uint4(Uint1(buf[1]))<<8)|
+                (Uint4(Uint1(buf[2]))<<16)|
+                (Uint4(Uint1(buf[3]))<<24);
+        }
+
+    static Uint8 MakeUint8(const char* buf)
+        {
+            return Uint8(Uint1(buf[0]))|
+                (Uint8(Uint1(buf[1]))<<8)|
+                (Uint8(Uint1(buf[2]))<<16)|
+                (Uint8(Uint1(buf[3]))<<24)|
+                (Uint8(Uint1(buf[4]))<<32)|
+                (Uint8(Uint1(buf[5]))<<40)|
+                (Uint8(Uint1(buf[6]))<<48)|
+                (Uint8(Uint1(buf[7]))<<56);
+        }
+    
+protected:
+
+private:
+    CMemoryFile m_MemFile;
+};
 
 
 class NCBI_BAMREAD_EXPORT CBGZFStream
 {
 public:
+    CBGZFStream();
     explicit
-    CBGZFStream(const string& file_name);
+    CBGZFStream(CBGZFFile& file);
     ~CBGZFStream();
 
-    void Open(const string& file_name);
-    
-    void Seek(CBGZFPos pos);
+    void Close();
+    void Open(CBGZFFile& file);
 
     CBGZFPos GetPos() const
         {
             return CBGZFPos(m_BlockInfo.GetFileBlockPos(), m_ReadPos);
         }
+    void Seek(CBGZFPos pos);
 
+    // return number of available bytes in current decompressed buffer
+    size_t GetNextAvailableBytes();
+    // return pointer to count bytes in current decompressed buffer
+    // or null if current buffer has smaller number of remaining bytes
+    //const char* GetReadPtr(size_t count);
+    // read up to count bytes into a buffer, may return smaller number
     size_t Read(char* buf, size_t count);
+
+    // read count bytes and return pointer to read data
+    // the pointer is either into decompressed buffer or into temporary buffer
+    // the returned pointer is guaranteed to be valid until next read or seek
+    const char* Read(size_t count);
     
 private:
-    void x_ReadBlock();
+    void x_ReadBlock(CBGZFPos::TFileBlockPos file_pos);
 
-    CNcbiIfstream m_File;
-    CZipCompression m_Zip;
+    CRef<CBGZFFile> m_File;
     CBGZFBlockInfo m_BlockInfo;
     CBGZFPos::TByteOffset m_ReadPos;
     AutoArray<char> m_Data;
-    AutoArray<char> m_FileData;
+    CSimpleBufferT<char> m_ReadBuffer;
 };
 
 
