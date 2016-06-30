@@ -1127,6 +1127,16 @@ bool CCleanup::SetFrameFromLoc(CCdregion &cdregion, const CSeq_loc& loc, CScope&
 }
 
 
+bool IsTransSpliced(const CSeq_feat& feat)
+{
+    if (feat.IsSetExcept_text() && NStr::Find(feat.GetExcept_text(), "trans-splicing") != string::npos) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
 CConstRef <CSeq_feat> CCleanup::GetGeneForFeature(const CSeq_feat& feat, CScope& scope)
 {
     const CGene_ref* gene = feat.GetGeneXref();
@@ -1155,15 +1165,7 @@ CConstRef <CSeq_feat> CCleanup::GetGeneForFeature(const CSeq_feat& feat, CScope&
             }
         } else return (CConstRef <CSeq_feat>());
     } else {
-#if 1
-        return sequence::GetOverlappingGene(feat.GetLocation(), scope, sequence::eTransSplicing_Auto);
-#else
-        return(
-            CConstRef <CSeq_feat>(sequence::GetBestOverlappingFeat(feat.GetLocation(),
-            CSeqFeatData::e_Gene,
-            sequence::eOverlap_Contained,
-            scope)));
-#endif
+        return sequence::GetOverlappingGene(feat.GetLocation(), scope, IsTransSpliced(feat) ? sequence::eTransSplicing_Yes : sequence::eTransSplicing_Auto);
     }
 
     return (CConstRef <CSeq_feat>());

@@ -45,6 +45,7 @@
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <util/xregexp/regexp.hpp>
+#include <objtools/cleanup/cleanup.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -495,35 +496,7 @@ bool CDiscrepancyContext::IsBGPipe(void)
 
 const CSeq_feat* CDiscrepancyContext::GetCurrentGene() // todo: optimize
 {
-    const CGene_ref* gene = m_Current_Seq_feat->GetGeneXref();
-    if (gene && gene->IsSuppressed()) {
-        return CConstRef <CSeq_feat>();
-    }
-
-    if (gene) {
-        //CBioseq_Handle bioseq_hl = sequence::GetBioseqFromSeqLoc(feat.GetLocation(), scope);
-        //if (!bioseq_hl) {
-        //    return (CConstRef <CSeq_feat>());
-        //}
-
-        CTSE_Handle tse_hl = m_Current_Bioseq_Handle.GetTSE_Handle();
-        if (gene->CanGetLocus_tag() && !(gene->GetLocus_tag().empty())) {
-            CSeq_feat_Handle seq_feat_hl = tse_hl.GetGeneWithLocus(gene->GetLocus_tag(), true);
-            if (seq_feat_hl) {
-                return seq_feat_hl.GetOriginalSeq_feat();
-            }
-        }
-        else if (gene->CanGetLocus() && !(gene->GetLocus().empty())) {
-            CSeq_feat_Handle seq_feat_hl = tse_hl.GetGeneWithLocus(gene->GetLocus(), false);
-            if (seq_feat_hl) {
-                return seq_feat_hl.GetOriginalSeq_feat();
-            }
-        }
-        else return CConstRef <CSeq_feat>();
-    }
-    else {
-        return CConstRef <CSeq_feat>(sequence::GetBestOverlappingFeat(m_Current_Seq_feat->GetLocation(), CSeqFeatData::e_Gene, sequence::eOverlap_Contained, *m_Scope));
-    }
+    return CCleanup::GetGeneForFeature(*m_Current_Seq_feat, *m_Scope);
 }
 
 
