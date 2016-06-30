@@ -1608,7 +1608,7 @@ autodep suffix hostspec version execopy bincopy lib-rebuilds lib-rebuilds=ask \
 deactivation makefile-auto-update projects flat-makefile configure-dialog \
 check ncbi-public strip pch caution ccache distcc \
 ncbi-c wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
-geo included-geo vdb downloaded-vdb \
+geo included-geo vdb downloaded-vdb static-vdb \
 z bz2 lzo pcre gmp gcrypt nettle gnutls openssl krb5 \
 sybase sybase-local sybase-new ftds mysql \
 orbacus freetype ftgl opengl mesa glut glew glew-mx \
@@ -1877,6 +1877,7 @@ Optional Packages:
  --with-vdb=DIR          use NCBI SRA/VDB Toolkit installation in DIR
  --without-vdb           do not use the NCBI SRA/VDB Toolkit
  --with-downloaded-vdb   download and build SRA/VDB from GitHub
+ --with-static-vdb       always link statically against SRA/VDB
  --with-z=DIR            use zlib installation in DIR
  --without-z             use internal copy of zlib
  --with-bz2=DIR          use bzlib installation in DIR
@@ -3297,6 +3298,12 @@ if test "${with_downloaded_vdb+set}" = set; then
 fi
 
 
+# Check whether --with-static-vdb was given.
+if test "${with_static_vdb+set}" = set; then
+  withval=$with_static_vdb;
+fi
+
+
 ## Third-party and system packages
 
 # Check whether --with-z was given.
@@ -4265,6 +4272,20 @@ echo "$as_me: error: incompatible options: --without-vdb but
       ;;
    yes: )
       with_vdb=yes
+      ;;
+esac
+
+case "$with_static_vdb:$with_vdb" in
+   yes:no )
+      { { echo "$as_me:$LINENO: error: incompatible options: --without-vdb but --with-static-vdb" >&5
+echo "$as_me: error: incompatible options: --without-vdb but --with-static-vdb" >&2;}
+   { (exit 1); exit 1; }; }
+      ;;
+   yes: )
+      with_vdb=yes
+      ;;
+   :* )
+      with_static_vdb=$with_bin_release
       ;;
 esac
 
@@ -41160,6 +41181,9 @@ echo "${ECHO_T}$ncbi_cv_lib_ncbi_vdb" >&6; }
                    WithPackages="$WithPackages${WithPackagesSep}VDB"; WithPackagesSep=" "
          if test -f "$VDB_LIBDIR/libncbi-vdb-static.a"; then
             VDB_STATIC_LIBS="-L$VDB_LIBDIR -lncbi-vdb-static $vdb_deps"
+            if test "$with_static_vdb" = yes; then
+               VDB_LIBS=$VDB_STATIC_LIBS
+            fi
          else
             VDB_STATIC_LIBS=$VDB_LIBS
          fi

@@ -243,6 +243,8 @@ AC_ARG_WITH(vdb2,
    [ --without-vdb           do not use the NCBI SRA/VDB Toolkit])
 AC_ARG_WITH(downloaded-vdb,
    [ --with-downloaded-vdb   download and build SRA/VDB from GitHub])
+AC_ARG_WITH(static-vdb,
+   [ --with-static-vdb       always link statically against SRA/VDB])
 
 ## Third-party and system packages
 AC_ARG_WITH(z,
@@ -542,7 +544,7 @@ autodep suffix hostspec version execopy bincopy lib-rebuilds lib-rebuilds=ask \
 deactivation makefile-auto-update projects flat-makefile configure-dialog \
 check ncbi-public strip pch caution ccache distcc \
 ncbi-c wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
-geo included-geo vdb downloaded-vdb \
+geo included-geo vdb downloaded-vdb static-vdb \
 z bz2 lzo pcre gmp gcrypt nettle gnutls openssl krb5 \
 sybase sybase-local sybase-new ftds mysql \
 orbacus freetype ftgl opengl mesa glut glew glew-mx \
@@ -713,6 +715,18 @@ case "$with_downloaded_vdb:$with_vdb" in
       ;;
    yes: )
       with_vdb=yes
+      ;;
+esac
+
+case "$with_static_vdb:$with_vdb" in
+   yes:no )
+      AC_MSG_ERROR([incompatible options: --without-vdb but --with-static-vdb])
+      ;;
+   yes: )
+      with_vdb=yes
+      ;;
+   :* )
+      with_static_vdb=$with_bin_release
       ;;
 esac
 
@@ -6878,6 +6892,9 @@ if test "$with_vdb" != "no" ; then
          NCBI_PACKAGE(VDB)
          if test -f "$VDB_LIBDIR/libncbi-vdb-static.a"; then
             VDB_STATIC_LIBS="-L$VDB_LIBDIR -lncbi-vdb-static $vdb_deps"
+            if test "$with_static_vdb" = yes; then
+               VDB_LIBS=$VDB_STATIC_LIBS
+            fi
          else
             VDB_STATIC_LIBS=$VDB_LIBS
          fi
