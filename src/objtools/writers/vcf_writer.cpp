@@ -57,6 +57,7 @@
 
 #include <objtools/writers/feature_context.hpp>
 #include <objtools/variation/variation_utils.hpp>
+#include <objtools/writers/writer_exception.hpp>
 #include <objtools/writers/vcf_writer.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -367,6 +368,11 @@ bool CVcfWriter::x_WriteFeature(
                     seqvec->GetSeqData(pos, pos+1, anchor);
                 }
                 catch(...) {}
+
+                if (anchor.empty()) {
+                    string msg = "Missing sequence data";
+                    NCBI_THROW(CObjWriterException, eBadInput, msg);
+                }
             }
         }
         else  // if id == "local id 1"
