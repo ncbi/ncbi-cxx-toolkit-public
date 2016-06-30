@@ -132,7 +132,7 @@ bool CAsnCache::s_GetChunkAndOffset(const CSeq_id_Handle&   idh,
               (info[0].version == current_info.version &&
                info[0].timestamp < current_info.timestamp)) ||
              /// version specified; choose best timestamp for this version
-             version && info[0].timestamp < current_info.timestamp));
+             (version && info[0].timestamp < current_info.timestamp)));
         if (should_report) {
             was_id_found = true;
             if (!multiple) {
