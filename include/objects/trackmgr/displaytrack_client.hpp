@@ -79,7 +79,13 @@ public:
     CTMS_DisplayTrack_Client(const string& NS_registry_section = "netschedule_api",
                              const string& NC_registry_section = kEmptyStr
                             );
-    CTMS_DisplayTrack_Client(CTMS_DisplayTrack_Client&&) = default;
+    CTMS_DisplayTrack_Client(CTMS_DisplayTrack_Client&& c)
+        : TBaseClient(move(c)),
+          m_Http_svc(move(c.m_Http_svc)),
+          m_Http_session(move(c.m_Http_session)),
+          m_Rpc_client(move(c.m_Rpc_client))
+    {
+    }
     virtual ~CTMS_DisplayTrack_Client() = default;
 
     static CTMS_DisplayTrack_Client CreateServiceClient(const string& http_svc = "TMS_DisplayTracks");

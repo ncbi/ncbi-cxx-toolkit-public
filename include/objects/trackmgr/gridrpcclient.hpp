@@ -437,7 +437,11 @@ public:
 
 protected:
     CGridRPCBaseClient(const CGridRPCBaseClient&) = delete;
-    CGridRPCBaseClient(CGridRPCBaseClient&&) = default;
+    CGridRPCBaseClient(CGridRPCBaseClient&& c)
+        : m_NS_api(move(c.m_NS_api)), m_NC_api(move(c.m_NC_api)),
+          m_Timeout(c.m_Timeout)
+    {
+    }
 
     virtual void x_PrepareJob(CNetScheduleJob& job) const
     {
