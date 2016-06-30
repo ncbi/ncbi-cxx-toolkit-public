@@ -46,7 +46,7 @@ BEGIN_SCOPE(objects)
 class CSeq_entry;
 
 static const bool kCheckBlockCRC32 = true;
-static const Uint8 kSegmentSize = 64<<20;
+static const Uint8 kSegmentSize = 4<<20;
 
 const char* CBGZFException::GetErrCodeString(void) const
 {
@@ -79,14 +79,16 @@ const char* s_Read(CMemoryFile& in,
 {
     char* dst = buffer;
     while ( len ) {
-        Uint8 seg = file_pos / kSegmentSize;
-        Uint8 seg_start = seg * kSegmentSize;
-        const char* ptr = (const char*)in.Map(seg_start, kSegmentSize);
-        _ASSERT(ptr);
-        Uint8 off = file_pos - seg_start;
-        Uint8 avail = kSegmentSize - off;
-        size_t cnt = size_t(min(avail, Uint8(len)));
-        memcpy(dst, ptr + off, cnt);
+        Uint8 off = file_pos % kSegmentSize;
+        off_t seg_start = off_t(file_pos - off);
+        const void* ptr = in.GetPtr();
+        if ( !ptr || in.GetOffset() != seg_start ) {
+            ptr = in.Map(seg_start, kSegmentSize);
+        }
+        _ASSERT(ptr && in.GetOffset() == seg_start);
+        size_t cnt = size_t(min(kSegmentSize - off, Uint8(len)));
+        _ASSERT(cnt < 0x10000);
+        memcpy(dst, static_cast<const char*>(ptr)+off, cnt);
         len -= cnt;
         file_pos += cnt;
         dst += cnt;
@@ -100,32 +102,32 @@ const char* s_Read(CMemoryFile& in,
                    Uint8 file_pos, size_t len,
                    CSimpleBufferT<char>& buffer)
 {
-    Uint8 seg = file_pos / kSegmentSize;
-    Uint8 seg_start = seg * kSegmentSize;
-    const char* ptr = (const char*)in.GetPtr();
-    if ( !ptr || (Uint8)in.GetOffset() != seg_start ) {
-        ptr = (const char*)in.Map(seg_start, kSegmentSize);
-        _ASSERT(ptr);
+    Uint8 off = file_pos % kSegmentSize;
+    off_t seg_start = off_t(file_pos - off);
+    const void* ptr = in.GetPtr();
+    if ( !ptr || in.GetOffset() != seg_start ) {
+        ptr = in.Map(seg_start, kSegmentSize);
     }
-    Uint8 off = file_pos - seg_start;
+    _ASSERT(ptr && in.GetOffset() == seg_start);
     Uint8 avail = kSegmentSize - off;
     if ( len <= avail ) {
-        return ptr + off;
+        return static_cast<const char*>(ptr) + off;
     }
     char* dst = s_Reserve(len, buffer);
-    memcpy(dst, ptr + off, avail);
+    _ASSERT(avail < 0x10000);
+    memcpy(dst, static_cast<const char*>(ptr)+off, avail);
     len -= avail;
     file_pos += avail;
     dst += avail;
     while ( len ) {
-        seg = file_pos / kSegmentSize;
-        seg_start = seg * kSegmentSize;
-        ptr = (const char*)in.Map(seg_start, kSegmentSize);
-        _ASSERT(ptr);
-        off = file_pos - seg_start;
+        off = file_pos % kSegmentSize;
+        seg_start = off_t(file_pos - off);
+        ptr = in.Map(seg_start, kSegmentSize);
+        _ASSERT(ptr && in.GetOffset() == seg_start);
         avail = kSegmentSize - off;
         size_t cnt = size_t(min(avail, Uint8(len)));
-        memcpy(dst, ptr + off, cnt);
+        _ASSERT(cnt < 0x10000);
+        memcpy(dst, static_cast<const char*>(ptr)+off, cnt);
         len -= cnt;
         file_pos += cnt;
         dst += cnt;
@@ -363,8 +365,9 @@ const char* CBGZFStream::GetReadPtr(size_t count)
 size_t CBGZFStream::Read(char* buf, size_t count)
 {
     count = min(GetNextAvailableBytes(), count);
+    _ASSERT(count < 0x10000);
     memcpy(buf, m_Data.get() + m_ReadPos, count);
-    m_ReadPos += count;
+    m_ReadPos += CBGZFPos::TByteOffset(count);
     return count;
 }
 
@@ -374,12 +377,14 @@ const char* CBGZFStream::Read(size_t count)
     size_t avail = GetNextAvailableBytes();
     if ( count <= avail ) {
         const char* ret = m_Data.get() + m_ReadPos;
-        m_ReadPos += count;
+        m_ReadPos += CBGZFPos::TByteOffset(count);
         return ret;
     }
     char* dst = s_Reserve(count, m_ReadBuffer);
     while ( count ) {
-        size_t cnt = min(GetNextAvailableBytes(), count);
+        CBGZFPos::TByteOffset cnt =
+            CBGZFPos::TByteOffset(min(GetNextAvailableBytes(), count));
+        _ASSERT(cnt < 0x10000);
         memcpy(dst, m_Data.get() + m_ReadPos, cnt);
         m_ReadPos += cnt;
         dst += cnt;

@@ -82,20 +82,18 @@ void s_Read(CBGZFStream& in, char* dst, size_t len)
 
 
 static inline
-string s_ReadString(CNcbiIstream& in, size_t len)
+void s_ReadString(CNcbiIstream& in, string& ret, size_t len)
 {
-    string ret(len, ' ');
+    ret.resize(len);
     s_Read(in, &ret[0], len);
-    return ret;
 }
 
 
 static inline
-string s_ReadString(CBGZFStream& in, size_t len)
+void s_ReadString(CBGZFStream& in, string& ret, size_t len)
 {
-    string ret(len, ' ');
+    ret.resize(len);
     s_Read(in, &ret[0], len);
-    return ret;
 }
 
 
@@ -194,49 +192,42 @@ COpenRange<TSeqPos> SBamIndexBinInfo::GetSeqRange(uint32_t bin)
     return COpenRange<TSeqPos>(pos, pos+len);
 }
 
-static
-SBamIndexBinInfo x_ReadBin(CNcbiIstream& in)
+
+void SBamIndexBinInfo::Read(CNcbiIstream& in)
 {
-    SBamIndexBinInfo bin;
-    bin.m_Bin = s_ReadUInt32(in);
+    m_Bin = s_ReadUInt32(in);
     int32_t n_chunk = s_ReadInt32(in);
-    bin.m_Chunks.reserve(n_chunk);
+    m_Chunks.resize(n_chunk);
     for ( int32_t i_chunk = 0; i_chunk < n_chunk; ++i_chunk ) {
-        bin.m_Chunks.push_back(s_ReadFileRange(in));
+        m_Chunks[i_chunk] = s_ReadFileRange(in);
     }
-    return bin;
 }
 
 
-static
-SBamIndexRefIndex x_ReadRef(CNcbiIstream& in)
+void SBamIndexRefIndex::Read(CNcbiIstream& in)
 {
-    SBamIndexRefIndex ref;
     int32_t n_bin = s_ReadInt32(in);
-    ref.m_Bins.reserve(n_bin);
+    m_Bins.resize(n_bin);
     for ( int32_t i_bin = 0; i_bin < n_bin; ++i_bin ) {
-        SBamIndexBinInfo bin = x_ReadBin(in);
+        SBamIndexBinInfo& bin = m_Bins[i_bin];
+        bin.Read(in);
         if ( bin.m_Bin == 37450 ) {
             if ( bin.m_Chunks.size() != 2 ) {
                 NCBI_THROW(CBamException, eOtherError,
                            "Bad unmapped bin format");
             }
-            ref.m_UnmappedChunk = bin.m_Chunks[0];
-            ref.m_MappedCount = bin.m_Chunks[1].first.GetVirtualPos();
-            ref.m_UnmappedCount = bin.m_Chunks[1].second.GetVirtualPos();
-        }
-        else {
-            ref.m_Bins.push_back(move(bin));
+            m_UnmappedChunk = bin.m_Chunks[0];
+            m_MappedCount = bin.m_Chunks[1].first.GetVirtualPos();
+            m_UnmappedCount = bin.m_Chunks[1].second.GetVirtualPos();
         }
     }
-    gfx::timsort(ref.m_Bins.begin(), ref.m_Bins.end());
+    gfx::timsort(m_Bins.begin(), m_Bins.end());
         
     int32_t n_intv = s_ReadInt32(in);
-    ref.m_Intervals.reserve(n_intv);
+    m_Intervals.resize(n_intv);
     for ( int32_t i_intv = 0; i_intv < n_intv; ++i_intv ) {
-        ref.m_Intervals.push_back(s_ReadFilePos(in));
+        m_Intervals[i_intv] = s_ReadFilePos(in);
     }
-    return ref;
 }
 
 
@@ -267,9 +258,9 @@ void CBamIndex::Read(const string& index_file_name)
     s_ReadMagic(in, "BAI\1");
 
     int32_t n_ref = s_ReadInt32(in);
-    m_Refs.reserve(n_ref);
+    m_Refs.resize(n_ref);
     for ( int32_t i_ref = 0; i_ref < n_ref; ++i_ref ) {
-        m_Refs.push_back(x_ReadRef(in));
+        m_Refs[i_ref].Read(in);
     }
 
     streampos extra_pos = in.tellg();
@@ -462,25 +453,21 @@ CBamHeader::~CBamHeader()
 }
 
 
-SBamHeaderRefInfo CBamHeader::ReadRef(CNcbiIstream& in)
+void SBamHeaderRefInfo::Read(CNcbiIstream& in)
 {
-    SBamHeaderRefInfo ref;
     int32_t l_name = s_ReadInt32(in);
-    ref.m_Name = s_ReadString(in, l_name);
-    ref.m_Name.resize(l_name-1);
-    ref.m_Length = s_ReadInt32(in);
-    return ref;
+    s_ReadString(in, m_Name, l_name);
+    m_Name.resize(l_name-1);
+    m_Length = s_ReadInt32(in);
 }
 
 
-SBamHeaderRefInfo CBamHeader::ReadRef(CBGZFStream& in)
+void SBamHeaderRefInfo::Read(CBGZFStream& in)
 {
-    SBamHeaderRefInfo ref;
     int32_t l_name = s_ReadInt32(in);
-    ref.m_Name = s_ReadString(in, l_name);
-    ref.m_Name.resize(l_name-1);
-    ref.m_Length = s_ReadInt32(in);
-    return ref;
+    s_ReadString(in, m_Name, l_name);
+    m_Name.resize(l_name-1);
+    m_Length = s_ReadInt32(in);
 }
 
 
@@ -500,12 +487,12 @@ void CBamHeader::Read(CNcbiIstream& file_stream)
                            CCompressionIStream::fOwnProcessor);
     s_ReadMagic(in, "BAM\1");
     int32_t l_text = s_ReadInt32(in);
-    m_Text = s_ReadString(in, l_text);
+    s_ReadString(in, m_Text, l_text);
     int32_t n_ref = s_ReadInt32(in);
-    m_Refs.reserve(n_ref);
+    m_Refs.resize(n_ref);
     for ( int32_t i_ref = 0; i_ref < n_ref; ++i_ref ) {
-        m_Refs.push_back(ReadRef(in));
-        m_RefByName[m_Refs.back().m_Name] = m_RefByName.size()-1;
+        m_Refs[i_ref].Read(in);
+        m_RefByName[m_Refs[i_ref].m_Name] = i_ref;
     }
 }
 
@@ -516,12 +503,12 @@ void CBamHeader::Read(CBGZFStream& stream)
     m_Refs.clear();
     s_ReadMagic(stream, "BAM\1");
     int32_t l_text = s_ReadInt32(stream);
-    m_Text = s_ReadString(stream, l_text);
+    s_ReadString(stream, m_Text, l_text);
     int32_t n_ref = s_ReadInt32(stream);
-    m_Refs.reserve(n_ref);
+    m_Refs.resize(n_ref);
     for ( int32_t i_ref = 0; i_ref < n_ref; ++i_ref ) {
-        m_Refs.push_back(ReadRef(stream));
-        m_RefByName[m_Refs.back().m_Name] = m_RefByName.size()-1;
+        m_Refs[i_ref].Read(stream);
+        m_RefByName[m_Refs[i_ref].m_Name] = i_ref;
     }
 }
 
@@ -627,7 +614,8 @@ void CBamFileRangeSet::AddRanges(const CBamIndex& index,
     limit.first = ref.m_Intervals[beg>>kBlockBits];
     // end limit is from low-level block after end position
     limit.second = CBGZFPos(CBGZFPos::TVirtualPos(-1));
-    uint64_t end_bin = kBlockBase+(end>>kBlockBits)+1;
+    SBamIndexBinInfo::TBin end_bin =
+        SBamIndexBinInfo::TBin(kBlockBase + (end >> kBlockBits) + 1);
     auto end_it = lower_bound(ref.m_Bins.begin(), ref.m_Bins.end(), end_bin);
     if ( end_it != ref.m_Bins.end() ) {
         limit.second = end_it->m_Chunks[0].first;
@@ -739,7 +727,7 @@ void SBamAlignInfo::Read(CBGZFStream& in)
 
 
 void CBamRawAlignIterator::x_Select(const CBamIndex& index,
-                                    int ref_index, CRange<TSeqPos> ref_range)
+                                    size_t ref_index, CRange<TSeqPos> ref_range)
 {
     m_RefIndex = ref_index;
     m_RefRange = ref_range;

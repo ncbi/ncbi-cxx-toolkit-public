@@ -42,8 +42,11 @@ BEGIN_SCOPE(objects)
 
 class CSeq_annot;
 
-struct SBamHeaderRefInfo
+struct NCBI_BAMREAD_EXPORT SBamHeaderRefInfo
 {
+    void Read(CNcbiIstream& in);
+    void Read(CBGZFStream& in);
+
     string m_Name;
     TSeqPos m_Length;
 };
@@ -98,6 +101,8 @@ struct NCBI_BAMREAD_EXPORT SBamIndexBinInfo
 {
     typedef Uint4 TBin;
 
+    void Read(CNcbiIstream& in);
+
     static COpenRange<TSeqPos> GetSeqRange(TBin bin);
     COpenRange<TSeqPos> GetSeqRange() const
         {
@@ -120,6 +125,8 @@ struct NCBI_BAMREAD_EXPORT SBamIndexBinInfo
 
 struct NCBI_BAMREAD_EXPORT SBamIndexRefIndex
 {
+    void Read(CNcbiIstream& in);
+
     vector<SBamIndexBinInfo> m_Bins;
     CBGZFRange m_UnmappedChunk;
     Uint8 m_MappedCount;
@@ -339,7 +346,7 @@ public:
         {
             return m_Index;
         }
-    int GetRefIndex(const string& ref_label) const
+    size_t GetRefIndex(const string& ref_label) const
         {
             return GetHeader().GetRefIndex(ref_label);
         }
@@ -527,7 +534,7 @@ public:
 
 protected:
     void x_Select(const CBamIndex& index,
-                  int ref_index, CRange<TSeqPos> ref_range);
+                  size_t ref_index, CRange<TSeqPos> ref_range);
     bool x_UpdateRange();
     bool x_NextAnnot()
         {
@@ -547,7 +554,7 @@ protected:
     void x_Settle();
     
 private:
-    int32_t m_RefIndex;
+    size_t m_RefIndex;
     CRange<TSeqPos> m_RefRange;
     SBamAlignInfo m_AlignInfo;
     CBamFileRangeSet m_Ranges;
