@@ -848,6 +848,7 @@ public:
     const TObjLoc& Locator();
     void SetLocator();
     ISelector* Clone(TNetStorageFlags);
+    const SContext& GetContext() const;
 
 private:
     void InitLocations(ENetStorageObjectLocation, TNetStorageFlags);
@@ -1013,6 +1014,12 @@ ISelector* CSelector::Clone(TNetStorageFlags flags)
     flags = m_Context->DefaultFlags(flags);
     return new CSelector(TObjLoc(m_Context->compound_id_pool,
                     m_ObjectLoc.GetLocator(), flags), m_Context, flags);
+}
+
+
+const SContext& CSelector::GetContext() const
+{
+    return *m_Context;
 }
 
 

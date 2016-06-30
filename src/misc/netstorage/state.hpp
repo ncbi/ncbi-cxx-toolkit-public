@@ -108,6 +108,8 @@ protected:
     }
 };
 
+struct SContext;
+
 class ISelector
 {
 public:
@@ -123,6 +125,7 @@ public:
     virtual void SetLocator() = 0;
 
     virtual ISelector* Clone(TNetStorageFlags) = 0;
+    virtual const SContext& GetContext() const = 0;
 };
 
 struct SContext : CObject
@@ -132,6 +135,7 @@ struct SContext : CObject
     CCompoundIDPool compound_id_pool;
     TNetStorageFlags default_flags = 0;
     string app_domain;
+    size_t relocate_chunk = 1024 * 1024;
 
     SContext(const SCombinedNetStorageConfig&, TNetStorageFlags);
     SContext(const string&, CNetICacheClient::TInstance,

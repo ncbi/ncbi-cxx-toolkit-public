@@ -30,14 +30,14 @@
 #include <ncbi_pch.hpp>
 #include "object.hpp"
 
+#include <array>
+
 
 BEGIN_NCBI_SCOPE
 
 
 namespace NDirectNetStorageImpl
 {
-
-#define RELOCATION_BUFFER_SIZE (128 * 1024)
 
 CObj::~CObj()
 {
@@ -161,14 +161,16 @@ const TObjLoc& CObj::Locator() const
 }
 
 
-string CObj::Relocate(TNetStorageFlags flags, TNetStorageProgressCb /*cb*/)
+string CObj::Relocate(TNetStorageFlags flags, TNetStorageProgressCb cb)
 {
-    // TODO: CXX-8301
+    const size_t max = m_Selector->GetContext().relocate_chunk;
+    size_t current = 0;
+    size_t total = 0;
+    size_t bytes_read;
+    array<char, 128 * 1024> buffer;
 
     // Use Read() to detect the current location
-    char buffer[RELOCATION_BUFFER_SIZE];
-    size_t bytes_read;
-    Read(buffer, sizeof(buffer), &bytes_read);
+    Read(buffer.data(), buffer.size(), &bytes_read);
 
     // Selector can only be cloned after location is detected
     ISelector::Ptr selector(m_Selector->Clone(flags));
@@ -182,9 +184,23 @@ string CObj::Relocate(TNetStorageFlags flags, TNetStorageProgressCb /*cb*/)
     CRef<CObj> new_file(new CObj(selector));
 
     for (;;) {
-        new_file->Write(buffer, bytes_read, NULL);
+        new_file->Write(buffer.data(), bytes_read, NULL);
+        current += bytes_read;
         if (Eof()) break;
-        Read(buffer, sizeof(buffer), &bytes_read);
+
+        if (current >= max) {
+            total += current;
+            current = 0;
+
+            if (cb) {
+                CJsonNode progress(CJsonNode::NewObjectNode());
+                progress.SetInteger("BytesRelocated", total);
+                progress.SetString("Message", "Relocating");
+                cb(progress);
+            }
+        }
+
+        Read(buffer.data(), buffer.size(), &bytes_read);
     }
 
     new_file->Close();
