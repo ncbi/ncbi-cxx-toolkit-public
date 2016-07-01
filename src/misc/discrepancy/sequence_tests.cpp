@@ -34,6 +34,7 @@
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/seq_vector.hpp>
+#include <objtools/cleanup/cleanup.hpp>
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/seq/Delta_seq.hpp>
@@ -1713,6 +1714,70 @@ DISCREPANCY_SUMMARIZE(HAS_PROJECT_ID)
 
     m_ReportItems = res.Export(*this)->GetSubitems();
 }
+
+
+// MULTIPLE_CDS_ON_MRNA
+
+const string kCDSOnMrna = "CDS on mRNA";
+const string kPseudoCDSOnMRNA = "Pseudo";
+const string kDisruptedCmt = "coding region disrupted by sequencing gap";
+const string kLastBioseq = "Last Bioseq";
+const string kMultipleCdsOnMrna = "[n] mRNA bioseq[s] [has] multiple CDS features";
+
+void SummarizeMultCDSOnMrna(CReportNode& m_Objs)
+{
+    size_t num_cds = m_Objs[kCDSOnMrna].GetObjects().size();
+    if (num_cds > 1 &&
+        num_cds != m_Objs[kPseudoCDSOnMRNA].GetObjects().size() &&
+        num_cds != m_Objs[kDisruptedCmt].GetObjects().size()) {
+        CRef<CDiscrepancyObject> seq_disc_obj(dynamic_cast<CDiscrepancyObject*>(m_Objs[kLastBioseq].GetObjects().back().GetNCPointer()));
+        m_Objs[kMultipleCdsOnMrna].Add(*seq_disc_obj, false);
+
+    }
+    m_Objs[kCDSOnMrna].clearObjs();
+    m_Objs[kPseudoCDSOnMRNA].clearObjs();
+    m_Objs[kDisruptedCmt].clearObjs();
+
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(MULTIPLE_CDS_ON_MRNA, CSeq_feat_BY_BIOSEQ, eDisc, "Multiple CDS on mRNA")
+//  ----------------------------------------------------------------------------
+{
+    if (m_Count != context.GetCountBioseq()) {
+        m_Count = context.GetCountBioseq();
+        SummarizeMultCDSOnMrna(m_Objs);
+
+        CRef<CDiscrepancyObject> this_disc_obj(context.NewDiscObj(CConstRef<CBioseq>(context.GetCurrentBioseq()), eKeepRef));
+        m_Objs[kLastBioseq].Add(*this_disc_obj, false);
+    }
+    if (!context.IsCurrentSequenceMrna() || !obj.IsSetData() || !obj.GetData().IsCdregion()) {
+        return;
+    }
+    m_Objs[kCDSOnMrna].Add(*(context.NewDiscObj(CConstRef<CSeq_feat>(&obj))), false);
+    if (obj.IsSetComment() && NStr::Find(obj.GetComment(), kDisruptedCmt) != string::npos) {
+        m_Objs[kDisruptedCmt].Add(*(context.NewDiscObj(CConstRef<CSeq_feat>(&obj))), false);
+    }
+    if (CCleanup::IsPseudo(obj, context.GetScope())) {
+        m_Objs[kPseudoCDSOnMRNA].Add(*(context.NewDiscObj(CConstRef<CSeq_feat>(&obj))), false);
+    }
+
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(MULTIPLE_CDS_ON_MRNA)
+//  ----------------------------------------------------------------------------
+{
+    SummarizeMultCDSOnMrna(m_Objs);
+    m_Objs.GetMap().erase(kCDSOnMrna);
+    m_Objs.GetMap().erase(kPseudoCDSOnMRNA);
+    m_Objs.GetMap().erase(kDisruptedCmt);
+    m_Objs.GetMap().erase(kLastBioseq);
+    m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
+}
+
 
 
 END_SCOPE(NDiscrepancy)
