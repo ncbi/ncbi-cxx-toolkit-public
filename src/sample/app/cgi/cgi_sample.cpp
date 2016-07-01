@@ -116,7 +116,7 @@ int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
     // you are encouraged to use XML/XSLT and the NCBI port of XmlWrapp.
     // For more info:
     //  http://ncbi.github.io/cxx-toolkit/pages/ch_xmlwrapp
-    //  https://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/doxyhtml/namespacexml.html
+    //  http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/doxyhtml/namespacexml.html
 
     // Create a HTML page (using template HTML file "cgi_sample.html")
     auto_ptr<CHTMLPage> page;
