@@ -141,7 +141,7 @@ Int2 LookupTableWrapInit(BLAST_SequenceBlk* query,
       break;
 
    case eNaHashLookupTable:
-           BlastNaHashLookupTableNew(query, lookup_segments,
+           status = BlastNaHashLookupTableNew(query, lookup_segments,
                              (BlastNaHashLookupTable**) &(lookup_wrap->lut), 
                              lookup_options, query_options, seqsrc);
        break;

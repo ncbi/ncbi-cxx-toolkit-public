@@ -55,6 +55,7 @@
 #include <algo/blast/api/blastx_options.hpp>
 #include <algo/blast/api/tblastn_options.hpp>
 #include <algo/blast/api/blast_nucl_options.hpp>
+#include <algo/blast/api/uniform_search.hpp>
 #include <algo/blast/api/disc_nucl_options.hpp>
 #include <algo/blast/core/blast_nalookup.h>
 #include <algo/blast/core/lookup_util.h>
@@ -485,6 +486,160 @@ BOOST_AUTO_TEST_CASE(testDiscontiguousMBLookupTableTwoTemplatesWordSize11) {
         BOOST_REQUIRE(lookup_options == NULL);
 }
 
+
+BOOST_AUTO_TEST_CASE(testHashLookupTableWordSize16) {
+
+    SetUpQuery(LARGE_QUERY_GI);
+	LookupTableOptions* lookup_options;
+	LookupTableOptionsNew(eBlastTypeMapping, &lookup_options);
+	BLAST_FillLookupTableOptions(lookup_options, eBlastTypeMapping,
+                                 FALSE, 0, 0);
+
+    QuerySetUpOptions* query_options = NULL;
+    BlastQuerySetUpOptionsNew(&query_options);
+	LookupTableWrap* lookup_wrap_ptr;
+ 	BOOST_REQUIRE_EQUAL((int)LookupTableWrapInit(query_blk, 
+                             lookup_options, query_options, lookup_segments, 
+                             0, &lookup_wrap_ptr, NULL, NULL, NULL), 0);
+    query_options = BlastQuerySetUpOptionsFree(query_options);
+    BOOST_REQUIRE(query_options == NULL);
+	BOOST_REQUIRE_EQUAL(eNaHashLookupTable,
+                        (ELookupTableType)lookup_wrap_ptr->lut_type);
+
+	BlastNaHashLookupTable* lookup =
+        (BlastNaHashLookupTable*)lookup_wrap_ptr->lut;
+	BOOST_REQUIRE_EQUAL(16, (int)lookup->lut_word_length); 
+	BOOST_REQUIRE_EQUAL(1, lookup->scan_step);
+	BOOST_REQUIRE_EQUAL(10, lookup->longest_chain);
+    BOOST_REQUIRE_EQUAL(16777216, lookup->backbone_size);
+    BOOST_REQUIRE_EQUAL(24, lookup->offsets_size);
+    BOOST_REQUIRE_EQUAL(11, lookup->pv_array_bts);
+	BOOST_REQUIRE_EQUAL(11, lookup->pv_array_bts);
+    BOOST_REQUIRE(lookup->hash_callback);
+
+    Uint4 pv_array_size = 1u << (32 - 10);
+	int pv_array_hash =
+            EndianIndependentBufferHash((char*) lookup->pv,
+                                        pv_array_size * sizeof(PV_ARRAY_TYPE),
+                                        sizeof(PV_ARRAY_TYPE));
+	BOOST_REQUIRE_EQUAL(-1839333193, pv_array_hash);
+
+    TNaLookupHashFunction hash_func =
+        (TNaLookupHashFunction)lookup->hash_callback;
+
+    // locate the first sequence word in the lookup table
+    // get the word in BLASTNA
+    Uint4 word = 0;
+    for (int i=0;i < 16;i++) {
+        BOOST_REQUIRE((query_blk->sequence[i] & 0xfc) == 0);
+        word = (word << 2) | query_blk->sequence[i];
+    }
+    // hash the word
+    Uint4 hashed_word = hash_func((Uint1*)&word, lookup->mask);
+    // the word must be present in the lookup table ...
+    BOOST_REQUIRE(lookup->thick_backbone[hashed_word].num_words > 0);
+    BOOST_REQUIRE_EQUAL(word, lookup->thick_backbone[hashed_word].words[0]);
+    BOOST_REQUIRE(lookup->thick_backbone[hashed_word].num_offsets[0] <
+                  NA_OFFSETS_PER_HASH);
+    // ... at position zero
+    BOOST_REQUIRE_EQUAL(0, lookup->thick_backbone[hashed_word].offsets[0]);
+
+	lookup_wrap_ptr = LookupTableWrapFree(lookup_wrap_ptr);
+        BOOST_REQUIRE(lookup_wrap_ptr == NULL);
+	lookup_options = LookupTableOptionsFree(lookup_options);
+        BOOST_REQUIRE(lookup_options == NULL);
+}
+
+
+BOOST_AUTO_TEST_CASE(testHashLookupTableWordSize16WithDbFilter) {
+
+    SetUpQuery(LARGE_QUERY_GI);
+	LookupTableOptions* lookup_options;
+	LookupTableOptionsNew(eBlastTypeMapping, &lookup_options);
+	BLAST_FillLookupTableOptions(lookup_options, eBlastTypeMapping,
+                                 FALSE, 0, 0);
+    lookup_options->db_filter = TRUE;
+
+    CSearchDatabase db("data/pombe", CSearchDatabase::eBlastDbIsNucleotide);
+    CLocalDbAdapter db_adapter(db);
+    BlastSeqSrc* seqsrc = db_adapter.MakeSeqSrc();
+    BOOST_REQUIRE(seqsrc);
+
+    QuerySetUpOptions* query_options = NULL;
+    BlastQuerySetUpOptionsNew(&query_options);
+
+    BOOST_REQUIRE(lookup_options->db_filter);
+	LookupTableWrap* lookup_wrap_ptr;
+    BOOST_REQUIRE(lookup_options->db_filter);
+ 	BOOST_REQUIRE_EQUAL((int)LookupTableWrapInit(query_blk, 
+                             lookup_options, query_options, lookup_segments, 
+                             0, &lookup_wrap_ptr, NULL, NULL, seqsrc), 0);
+    query_options = BlastQuerySetUpOptionsFree(query_options);
+    BOOST_REQUIRE(query_options == NULL);
+	BOOST_REQUIRE_EQUAL(eNaHashLookupTable,
+                        (ELookupTableType)lookup_wrap_ptr->lut_type);
+
+	BlastNaHashLookupTable* lookup =
+        (BlastNaHashLookupTable*)lookup_wrap_ptr->lut;
+	BOOST_REQUIRE_EQUAL(16, (int)lookup->lut_word_length); 
+	BOOST_REQUIRE_EQUAL(1, lookup->scan_step);
+	BOOST_REQUIRE_EQUAL(10, lookup->longest_chain);
+    BOOST_REQUIRE_EQUAL(16777216, lookup->backbone_size);
+    BOOST_REQUIRE_EQUAL(12, lookup->offsets_size);
+    BOOST_REQUIRE_EQUAL(11, lookup->pv_array_bts);
+	BOOST_REQUIRE_EQUAL(11, lookup->pv_array_bts);
+    BOOST_REQUIRE(lookup->hash_callback);
+
+    Uint4 pv_array_size = 1u << (32 - 10);
+	int pv_array_hash =
+            EndianIndependentBufferHash((char*) lookup->pv,
+                                        pv_array_size * sizeof(PV_ARRAY_TYPE),
+                                        sizeof(PV_ARRAY_TYPE));
+	BOOST_REQUIRE_EQUAL(2116636124, pv_array_hash);
+
+
+    TNaLookupHashFunction hash_func =
+        (TNaLookupHashFunction)lookup->hash_callback;
+
+    // locate the first sequence word in the lookup table
+    Uint4 word = 0;
+    for (int i=0;i < 16;i++) {
+        BOOST_REQUIRE((query_blk->sequence[i] & 0xfc) == 0);
+        word = (word << 2) | query_blk->sequence[i];
+    }
+    Uint4 hashed_word = hash_func((Uint1*)&word, lookup->mask);
+    // the word was filtered out and is not in the lookup table
+    BOOST_REQUIRE(lookup->thick_backbone[hashed_word].num_words == 0);
+
+	lookup_wrap_ptr = LookupTableWrapFree(lookup_wrap_ptr);
+        BOOST_REQUIRE(lookup_wrap_ptr == NULL);
+	lookup_options = LookupTableOptionsFree(lookup_options);
+        BOOST_REQUIRE(lookup_options == NULL);
+}
+
+
+BOOST_AUTO_TEST_CASE(testHashLookupTableMissingSeqSrc) {
+
+    SetUpQuery(LARGE_QUERY_GI);
+	LookupTableOptions* lookup_options;
+	LookupTableOptionsNew(eBlastTypeMapping, &lookup_options);
+	BLAST_FillLookupTableOptions(lookup_options, eBlastTypeMapping,
+                                 FALSE, 0, 0);
+    lookup_options->db_filter = TRUE;
+
+    QuerySetUpOptions* query_options = NULL;
+    BlastQuerySetUpOptionsNew(&query_options);
+
+    BOOST_REQUIRE(lookup_options->db_filter);
+	LookupTableWrap* lookup_wrap_ptr;
+    BOOST_REQUIRE(lookup_options->db_filter);
+ 	BOOST_REQUIRE((int)LookupTableWrapInit(query_blk, 
+                             lookup_options, query_options, lookup_segments, 
+                             0, &lookup_wrap_ptr, NULL, NULL, NULL) !=  0);
+
+	lookup_options = LookupTableOptionsFree(lookup_options);
+        BOOST_REQUIRE(lookup_options == NULL);
+}
 
 BOOST_AUTO_TEST_CASE(testStdLookupTableDebruijn) {
 

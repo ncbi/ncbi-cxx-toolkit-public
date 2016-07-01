@@ -1703,7 +1703,7 @@ static void s_BlastNaHashLookupFinalize(BackboneCell** thin_backbone,
 
     /* allocate the overflow array */
     if (overflow_cells_needed > 0) {
-        lookup->overflow = (Int4*)calloc(overflow_cells_needed, sizeof(Uint4));
+        lookup->overflow = (Int4*)calloc(overflow_cells_needed, sizeof(Int4));
         ASSERT(lookup->overflow != NULL);
     }
 
@@ -1847,14 +1847,20 @@ Int4 BlastNaHashLookupTableNew(BLAST_SequenceBlk* query,
     const Int8 kNumWords = (1ULL << 32);
     Uint1* counts = NULL;
     Int4 num_hash_bits = 24;
-    Int8 database_length;
+    Int8 database_length = 0;
 
     ASSERT(lookup != NULL);
+
+    if (opt->db_filter && !seqsrc) {
+        return -1;
+    }
 
     /* use more bits for hash function for larger databases to decrease number
        of collisions */
     /* FIXME: number of bits may also depend on concatenated query length */
-    database_length = BlastSeqSrcGetTotLen(seqsrc);
+    if (seqsrc) {
+        database_length = BlastSeqSrcGetTotLen(seqsrc);
+    }
     if (database_length > 500000000L) {
         num_hash_bits = 25;
     }
