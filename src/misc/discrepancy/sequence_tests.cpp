@@ -1742,7 +1742,7 @@ void SummarizeMultCDSOnMrna(CReportNode& m_Objs)
 
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(MULTIPLE_CDS_ON_MRNA, CSeq_feat_BY_BIOSEQ, eDisc, "Multiple CDS on mRNA")
+DISCREPANCY_CASE(MULTIPLE_CDS_ON_MRNA, CSeq_feat_BY_BIOSEQ, eOncaller|eDisc, "Multiple CDS on mRNA")
 //  ----------------------------------------------------------------------------
 {
     if (m_Count != context.GetCountBioseq()) {
@@ -1774,6 +1774,53 @@ DISCREPANCY_SUMMARIZE(MULTIPLE_CDS_ON_MRNA)
     m_Objs.GetMap().erase(kCDSOnMrna);
     m_Objs.GetMap().erase(kPseudoCDSOnMRNA);
     m_Objs.GetMap().erase(kDisruptedCmt);
+    m_Objs.GetMap().erase(kLastBioseq);
+    m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
+}
+
+
+// MRNA_SEQUENCE_MINUS_STRAND_FEATURES
+
+const string kMinusStrandOnMrna = "features";
+const string kMrnaSequenceMinusStrandFeatures = "[n] mRNA sequences have features on the complement strand.";
+
+void SummarizeMinusOnMrna(CReportNode& m_Objs)
+{
+    if (m_Objs[kMinusStrandOnMrna].GetObjects().size() > 0) {
+        CRef<CDiscrepancyObject> seq_disc_obj(dynamic_cast<CDiscrepancyObject*>(m_Objs[kLastBioseq].GetObjects().back().GetNCPointer()));
+        m_Objs[kMrnaSequenceMinusStrandFeatures].Add(*seq_disc_obj, false);
+
+    }
+    m_Objs[kMinusStrandOnMrna].clearObjs();
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(MRNA_SEQUENCE_MINUS_STRAND_FEATURES, CSeq_feat_BY_BIOSEQ, eOncaller | eDisc, "mRNA sequences have CDS/gene on the complement strand")
+//  ----------------------------------------------------------------------------
+{
+    if (m_Count != context.GetCountBioseq()) {
+        m_Count = context.GetCountBioseq();
+        SummarizeMinusOnMrna(m_Objs);
+
+        CRef<CDiscrepancyObject> this_disc_obj(context.NewDiscObj(CConstRef<CBioseq>(context.GetCurrentBioseq()), eKeepRef));
+        m_Objs[kLastBioseq].Add(*this_disc_obj, false);
+    }
+    if (!context.IsCurrentSequenceMrna() || 
+        obj.GetLocation().GetStrand() != eNa_strand_minus ||
+        obj.GetData().GetSubtype() == CSeqFeatData::eSubtype_primer_bind) {
+        return;
+    }
+    m_Objs[kMinusStrandOnMrna].Add(*(context.NewDiscObj(CConstRef<CSeq_feat>(&obj))), false);
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(MRNA_SEQUENCE_MINUS_STRAND_FEATURES)
+//  ----------------------------------------------------------------------------
+{
+    SummarizeMinusOnMrna(m_Objs);
+    m_Objs.GetMap().erase(kMinusStrandOnMrna);
     m_Objs.GetMap().erase(kLastBioseq);
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
 }
