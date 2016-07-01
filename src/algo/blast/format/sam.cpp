@@ -85,7 +85,7 @@ void CBlast_SAM_Formatter::x_ProcessCustomSpec(const string & custom_spec,
 		                                       const CSAM_Formatter::SProgramInfo & info)
 {
 	vector<string> format_tokens;
-	NStr::Tokenize(custom_spec, " ", format_tokens);
+	NStr::Split(custom_spec, " ", format_tokens);
 	CSAM_Formatter::SetProgram(info);
 	m_refRow = 1;
 	ITERATE (vector<string>, iter, format_tokens) {
