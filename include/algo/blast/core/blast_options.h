@@ -70,7 +70,7 @@ extern "C" {
                                           the word size is explicitly 
                                           overridden) */
 
-#define BLAST_WORD_SIZE_MAPPER 16  /**< default word size for mapping rna-seq
+#define BLAST_WORDSIZE_MAPPER 16   /**< default word size for mapping rna-seq
                                         to a genome */
 
 /** Default matrix name: BLOSUM62 */

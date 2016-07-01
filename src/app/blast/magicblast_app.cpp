@@ -546,7 +546,7 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
 
     string btop_string;
     int query_len = 0;
-    int num_hits;
+    int num_hits = 0;
     int context = -1;
     
     // if paired alignment

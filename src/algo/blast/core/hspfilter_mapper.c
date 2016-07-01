@@ -1382,7 +1382,7 @@ static BlastHSP* s_MergeHSPs(const BlastHSP* first, const BlastHSP* second,
     const BlastHSP* hsp = second;
     Int4 query_gap;
     Int4 subject_gap;
-    Int4 mismatches;
+    Int4 mismatches = 0;
     Int4 gap_info_size;
     Int4 edits_size;
     Int4 k;
@@ -1435,8 +1435,6 @@ static BlastHSP* s_MergeHSPs(const BlastHSP* first, const BlastHSP* second,
 
     if (query_gap == subject_gap) {
         mismatches = query_gap;
-        query_gap = 0;
-        subject_gap = 0;
     }
     
     /* add mismatches to gap_info */
@@ -1887,6 +1885,10 @@ static BlastHSPChain* s_HSPChainToBlastHSPChain(HSPChain* chain)
     Int4 num_hsps = 0;
     Int4 index = 0;
 
+    if (!chain || !chain->hsps) {
+        return NULL;
+    }
+
     new_chain = Blast_HSPChainNew();
     if (!new_chain) {
         return NULL;
@@ -2063,6 +2065,9 @@ static int s_Finalize(HSPChain** saved, BlastMappingResults* results,
 
     results->chain_array = calloc(num_results, sizeof(BlastHSPChain*));
     if (!results->chain_array) {
+        if (num_unique_chains) {
+            free(num_unique_chains);
+        }
         return -1;
     }
     results->num_results = num_results;
@@ -2451,6 +2456,20 @@ s_FindSpliceJunctionsForOverlaps(BlastHSP* first, BlastHSP* second,
     return 0;
 }
 
+static void s_ExtendAlignmentCleanup(Uint1* subject,
+                                     BlastGapAlignStruct* gap_align,
+                                     GapEditScript* edit_script,
+                                     JumperEditsBlock* edits)
+{
+    if (subject) {
+        free(subject);
+    }
+
+    BLAST_GapAlignStructFree(gap_align);
+    GapEditScriptDelete(edit_script);
+    JumperEditsBlockFree(edits);
+}
+
 /* Extend alignment on one side of an HSP up to a given point (a splice site)
 */
 static Int4 s_ExtendAlignment(BlastHSP* hsp, const Uint1* query,
@@ -2520,10 +2539,12 @@ static Int4 s_ExtendAlignment(BlastHSP* hsp, const Uint1* query,
        fields that will be needed in these calls */
     gap_align = calloc(1, sizeof(BlastGapAlignStruct));
     if (!gap_align) {
+        s_ExtendAlignmentCleanup(subject, NULL, edit_script, edits);
         return -1;
     }
     gap_align->jumper = JumperGapAlignNew(o_len * 2);
     if (!gap_align->jumper) {
+        s_ExtendAlignmentCleanup(subject, gap_align, edit_script, edits);
         return -1;
     }
 
@@ -2541,6 +2562,7 @@ static Int4 s_ExtendAlignment(BlastHSP* hsp, const Uint1* query,
 
     default:
         ASSERT(0);
+        s_ExtendAlignmentCleanup(subject, gap_align, edit_script, edits);
         return -1;
     };
 
@@ -2586,6 +2608,10 @@ static Int4 s_ExtendAlignment(BlastHSP* hsp, const Uint1* query,
     edit_script = JumperPrelimEditBlockToGapEditScript(
                                         gap_align->jumper->left_prelim_block,
                                         gap_align->jumper->right_prelim_block);
+    if (!edit_script) {
+        s_ExtendAlignmentCleanup(subject, gap_align, edit_script, edits);
+        return -1;
+    }
 
     if (is_left) {
         hsp->gap_info = GapEditScriptCombine(&edit_script, &hsp->gap_info);
@@ -2596,7 +2622,7 @@ static Int4 s_ExtendAlignment(BlastHSP* hsp, const Uint1* query,
     }
     ASSERT(hsp->gap_info);
     if (!hsp->gap_info) {
-        /* cleanup */
+        s_ExtendAlignmentCleanup(subject, gap_align, edit_script, edits);
         return -1;
     }
 
@@ -2608,6 +2634,7 @@ static Int4 s_ExtendAlignment(BlastHSP* hsp, const Uint1* query,
     edits = JumperFindEdits(query, subject, gap_align);
     ASSERT(edits);
     if (!edits) {
+        s_ExtendAlignmentCleanup(subject, gap_align, NULL, edits);
         return -1;
     }
  
@@ -2623,6 +2650,7 @@ static Int4 s_ExtendAlignment(BlastHSP* hsp, const Uint1* query,
     }
     ASSERT(hsp->map_info->edits);
     if (!hsp->map_info->edits) {
+        s_ExtendAlignmentCleanup(subject, gap_align, NULL, edits);
         return -1;
     }
 
@@ -3716,8 +3744,8 @@ static Boolean s_FindBestPairs(HSPChain** first_list,
                                Int4* max_num_pairs,
                                const ScoringOptions* scoring_options)
 {
-    HSPChain* first = *first_list;
-    HSPChain* second = *second_list;
+    HSPChain* first;
+    HSPChain* second;
     Pairinfo* pair_info = *pair_info_ptr;
     Int4 conv_bonus = 0;
     Int4 num_pairs = 0;
@@ -4021,13 +4049,6 @@ static Boolean s_FindBestPairs(HSPChain** first_list,
     }
 
     return found;
-}
-
-
-NCBI_INLINE static Int4
-s_GetReadIndexFromContext(Int4 context)
-{
-    return context / 4;
 }
 
 

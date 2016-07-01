@@ -1103,8 +1103,7 @@ BLAST_FillLookupTableOptions(LookupTableOptions* options,
    if (!options)
       return BLASTERR_INVALIDPARAM;
 
-   if (program_number == eBlastTypeBlastn ||
-       program_number == eBlastTypeMapping) {
+   if (program_number == eBlastTypeBlastn) {
 
       if (is_megablast)	{
          options->lut_type = eMBLookupTable;
@@ -1113,6 +1112,9 @@ BLAST_FillLookupTableOptions(LookupTableOptions* options,
          options->lut_type = eNaLookupTable;
          options->word_size = BLAST_WORDSIZE_NUCL;
       }
+   } else if (program_number == eBlastTypeMapping) {
+       options->lut_type = eNaHashLookupTable;
+       options->word_size = BLAST_WORDSIZE_MAPPER;
    } else {
       options->lut_type = eAaLookupTable;
    }
@@ -1369,7 +1371,7 @@ LookupTableOptionsValidate(EBlastProgramType program_number,
        return BLASTERR_OPTION_VALUE_INVALID;
    }
 
-   if (options->db_filter && options->word_size < BLAST_WORD_SIZE_MAPPER) {
+   if (options->db_filter && options->word_size < BLAST_WORDSIZE_MAPPER) {
        Blast_MessageWrite(blast_msg, eBlastSevError, kBlastMessageNoContext,
                           "The limit_lookup option can only be used with "
                           "word size >= 16");
