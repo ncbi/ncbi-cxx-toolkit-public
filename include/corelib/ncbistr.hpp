@@ -3078,42 +3078,42 @@ public:
     ///   first line.
     /// @return
     ///   Return "arr", the list of wrapped lines.
-	template<typename _D>
-	static void WrapIt(const string& str, SIZE_TYPE width,
-		_D& dest, TWrapFlags flags = 0,
-		const string* prefix = 0,
-		const string* prefix1 = 0);
+    template<typename _D>
+    static void WrapIt(const string& str, SIZE_TYPE width,
+        _D& dest, TWrapFlags flags = 0,
+        const string* prefix = 0,
+        const string* prefix1 = 0);
 
-	class IWrapDest
-	{
-	public:
-		virtual void Append(const string& s) = 0;
-		virtual void Append(const CTempString& s) = 0;
-	};
+    class IWrapDest
+    {
+    public:
+        virtual void Append(const string& s) = 0;
+        virtual void Append(const CTempString& s) = 0;
+    };
 
-	class CWrapDestStringList : public IWrapDest
-	{
-	protected:
-		list<string>& m_list;
-	public:
-		CWrapDestStringList(list<string>& l) : m_list(l) {};
-		virtual void Append(const string& s)
-		{
-			m_list.push_back(s);
-		}
-		virtual void Append(const CTempString& s)
-		{
+    class CWrapDestStringList : public IWrapDest
+    {
+    protected:
+        list<string>& m_list;
+    public:
+        CWrapDestStringList(list<string>& l) : m_list(l) {};
+        virtual void Append(const string& s)
+        {
+            m_list.push_back(s);
+        }
+        virtual void Append(const CTempString& s)
+        {
             m_list.push_back(NcbiEmptyString);
             m_list.back().assign(s.data(), s.length());
-		}
-	};
+        }
+    };
 
-	static void Wrap(const string& str, SIZE_TYPE width,
-							  IWrapDest& dest, TWrapFlags flags,
-							  const string* prefix,
-							  const string* prefix1);
+    static void Wrap(const string& str, SIZE_TYPE width,
+                              IWrapDest& dest, TWrapFlags flags,
+                              const string* prefix,
+                              const string* prefix1);
 
-	static list<string>& Wrap(const string& str, SIZE_TYPE width,
+    static list<string>& Wrap(const string& str, SIZE_TYPE width,
                               list<string>& arr, TWrapFlags flags = 0,
                               const string* prefix = 0,
                               const string* prefix1 = 0);
