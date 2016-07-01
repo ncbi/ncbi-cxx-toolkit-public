@@ -140,7 +140,7 @@ CMagicBlastOptionsHandle::SetLookupTableDefaults()
     else {
         m_Opts->SetLookupTableType(eNaHashLookupTable);
     }
-    SetWordSize(BLAST_WORD_SIZE_MAPPER);
+    SetWordSize(BLAST_WORDSIZE_MAPPER);
     m_Opts->SetWordThreshold(BLAST_WORD_THRESHOLD_BLASTN);
     SetLookupTableStride(0);
 }
