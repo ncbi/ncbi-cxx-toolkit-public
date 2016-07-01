@@ -35,10 +35,8 @@
 
 #include <algo/blast/core/blast_extend.h>
 
-#include "test_objmgr.hpp"
 
 using namespace ncbi;
-using namespace ncbi::blast;
 
 BOOST_AUTO_TEST_SUITE(BlastDiag)
 
