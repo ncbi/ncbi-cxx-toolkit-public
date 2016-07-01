@@ -12616,29 +12616,33 @@ void CNewCleanup_imp::CdRegionEC(CSeq_feat& sf)
     if (cdr.IsSetConflict() && 
         cdr.GetConflict() &&
         sf.IsSetProduct()) {
-        CBioseq_Handle nuc = m_Scope->GetBioseqHandle(sf.GetLocation());
-        if (nuc) {
-            CSeqdesc_CI src(nuc, CSeqdesc::e_Source);
-            if (src && src->GetSource().IsSetGcode()) {
-                CBioseq_Handle prot = m_Scope->GetBioseqHandle(sf.GetProduct());
-                string expected;
-                CSeqTranslator::Translate(sf, *m_Scope, expected, false);
-                CSeqVector vec(prot, CBioseq_Handle::eCoding_Iupac);
-                CSeqVector_CI vi = vec.begin();
-                string::iterator si = expected.begin();
-                while (vi != vec.end() && si != expected.end() && *vi == *si) {
-                    ++vi;
-                    ++si;
-                }
-                if (vi != vec.end() || si != expected.end()) {
-                    if (CCleanup::SetMolinfoTech(prot, CMolInfo::eTech_concept_trans_a)) {
-                        ChangeMade(CCleanupChange::eChangeMolInfo);
+        try {
+            CBioseq_Handle nuc = m_Scope->GetBioseqHandle(sf.GetLocation());
+            if (nuc) {
+                CSeqdesc_CI src(nuc, CSeqdesc::e_Source);
+                if (src && src->GetSource().IsSetGcode()) {
+                    CBioseq_Handle prot = m_Scope->GetBioseqHandle(sf.GetProduct());
+                    string expected;
+                    CSeqTranslator::Translate(sf, *m_Scope, expected, false);
+                    CSeqVector vec(prot, CBioseq_Handle::eCoding_Iupac);
+                    CSeqVector_CI vi = vec.begin();
+                    string::iterator si = expected.begin();
+                    while (vi != vec.end() && si != expected.end() && *vi == *si) {
+                        ++vi;
+                        ++si;
                     }
-                } else {
-                    cdr.ResetConflict();
-                    ChangeMade(CCleanupChange::eChangeOther);
+                    if (vi != vec.end() || si != expected.end()) {
+                        if (CCleanup::SetMolinfoTech(prot, CMolInfo::eTech_concept_trans_a)) {
+                            ChangeMade(CCleanupChange::eChangeMolInfo);
+                        }
+                    } else {
+                        cdr.ResetConflict();
+                        ChangeMade(CCleanupChange::eChangeOther);
+                    }
                 }
             }
+        } catch (CException& ex) {
+            // unable to get bioseq handle when loc is on multiple sequences
         }
     }
 
@@ -12646,26 +12650,30 @@ void CNewCleanup_imp::CdRegionEC(CSeq_feat& sf)
     CConstRef<CSeq_feat> gene = CCleanup::GetGeneForFeature(sf, *m_Scope);
 
     if (!m_IsEmblOrDdbj) {
-        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(sf.GetLocation());
-        if (bsh && CCleanup::ExtendToStopIfShortAndNotPartial(sf, bsh)) {
-            CCdregion::TFrame frame = cdr.IsSetFrame() ? cdr.GetFrame() : CCdregion::eFrame_not_set;
-            if (gene && s_LocationShouldBeExtendedToMatch(gene->GetLocation(), sf.GetLocation())) {
-                CRef<CSeq_feat> new_gene(new CSeq_feat());
-                new_gene->Assign(*gene);
-                if (CCleanup::ExtendToStopCodon(*new_gene, bsh, 3, frame)) {
-                    CSeq_feat_EditHandle efh = CSeq_feat_EditHandle(m_Scope->GetSeq_featHandle(*gene));
-                    efh.Replace(*new_gene);
+        try {
+            CBioseq_Handle bsh = m_Scope->GetBioseqHandle(sf.GetLocation());
+            if (bsh && CCleanup::ExtendToStopIfShortAndNotPartial(sf, bsh)) {
+                CCdregion::TFrame frame = cdr.IsSetFrame() ? cdr.GetFrame() : CCdregion::eFrame_not_set;
+                if (gene && s_LocationShouldBeExtendedToMatch(gene->GetLocation(), sf.GetLocation())) {
+                    CRef<CSeq_feat> new_gene(new CSeq_feat());
+                    new_gene->Assign(*gene);
+                    if (CCleanup::ExtendToStopCodon(*new_gene, bsh, 3, frame)) {
+                        CSeq_feat_EditHandle efh = CSeq_feat_EditHandle(m_Scope->GetSeq_featHandle(*gene));
+                        efh.Replace(*new_gene);
+                    }
                 }
-            }
-            if (mrna && s_LocationShouldBeExtendedToMatch(mrna->GetLocation(), sf.GetLocation())) {
-                CRef<CSeq_feat> new_mrna(new CSeq_feat());
-                new_mrna->Assign(*mrna);
-                if (CCleanup::ExtendToStopCodon(*new_mrna, bsh, 3, frame)) {
-                    CSeq_feat_EditHandle efh = CSeq_feat_EditHandle(m_Scope->GetSeq_featHandle(*mrna));
-                    efh.Replace(*new_mrna);
+                if (mrna && s_LocationShouldBeExtendedToMatch(mrna->GetLocation(), sf.GetLocation())) {
+                    CRef<CSeq_feat> new_mrna(new CSeq_feat());
+                    new_mrna->Assign(*mrna);
+                    if (CCleanup::ExtendToStopCodon(*new_mrna, bsh, 3, frame)) {
+                        CSeq_feat_EditHandle efh = CSeq_feat_EditHandle(m_Scope->GetSeq_featHandle(*mrna));
+                        efh.Replace(*new_mrna);
+                    }
                 }
+                ChangeMade(CCleanupChange::eChangeFeatureLocation);
             }
-            ChangeMade(CCleanupChange::eChangeFeatureLocation);
+        } catch (CException& ex) {
+            // unable to get bioseq handle when loc is on multiple sequences
         }
     }
 
