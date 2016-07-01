@@ -802,5 +802,38 @@ DISCREPANCY_SUMMARIZE(SUBMITBLOCK_CONFLICT)
 }
 
 
+// CONSORTIUM
+
+const string kHasConsortium = "[n] publication[s]/submitter block[s] [has] consortium";
+
+DISCREPANCY_CASE(CONSORTIUM, CAuth_list, eOncaller, "Submitter blocks and publications have consortiums")
+{
+    if (obj.IsSetNames() && obj.GetNames().IsStd()) {
+        ITERATE (CAuth_list::C_Names::TStd, auth, obj.GetNames().GetStd()) {
+            if ((*auth)->IsSetName() && (*auth)->GetName().IsConsortium()) {
+                CConstRef<CSeq_feat> feat = context.GetCurrentSeq_feat();
+                CConstRef<CSeqdesc> desc = context.GetCurrentSeqdesc();
+                //ASSERT(!feat || !desc);
+                if (feat) {
+                    m_Objs[kHasConsortium].Add(*context.NewDiscObj(feat));
+                }
+                else if (desc) {
+                    m_Objs[kHasConsortium].Add(*context.NewDiscObj(desc));
+                }
+                else {
+                    // todo: add submit-block
+                    //m_Objs[kHasConsortium].Add(*context.NewDiscObj(desc));
+                }
+            }
+        }
+    }
+}
+
+DISCREPANCY_SUMMARIZE(CONSORTIUM)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
