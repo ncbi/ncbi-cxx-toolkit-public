@@ -1879,7 +1879,6 @@ BlastHSPFilteringOptionsValidate(const BlastHSPFilteringOptions* opts)
     if ((opts->culling_stage & ePrelimSearch) && writer_found) {
         return 1;
     }
-    writer_found = (opts->culling_stage & ePrelimSearch ? TRUE : FALSE);
 
     return retval;
 }

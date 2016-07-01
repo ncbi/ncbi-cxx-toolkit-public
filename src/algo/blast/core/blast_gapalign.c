@@ -4279,7 +4279,7 @@ Int2 BLAST_GappedAlignmentWithTraceback(EBlastProgramType program,
         Int4 q_start, Int4 s_start, Int4 query_length, Int4 subject_length,
         Boolean * fence_hit)
 {
-    Boolean found_start, found_end;
+    Boolean found_end;
     Int4 score_right, score_left, private_q_length, private_s_length;
     Int4 q_length, s_length;
     Boolean is_ooframe = score_params->options->is_ooframe;
@@ -4296,7 +4296,6 @@ Int2 BLAST_GappedAlignmentWithTraceback(EBlastProgramType program,
     GapPrelimEditBlockReset(fwd_prelim_tback);
     GapPrelimEditBlockReset(rev_prelim_tback);
 
-    found_start = FALSE;
     found_end = FALSE;
     
     q_length = query_length;
@@ -4314,7 +4313,6 @@ Int2 BLAST_GappedAlignmentWithTraceback(EBlastProgramType program,
     }
 
     score_left = 0;
-    found_start = TRUE;
         
     if(is_ooframe) {
        /* NB: Left extension does not include starting point corresponding
@@ -4374,11 +4372,6 @@ Int2 BLAST_GappedAlignmentWithTraceback(EBlastProgramType program,
 
         gap_align->query_stop = q_start + private_q_length + 1;
         gap_align->subject_stop = s_start + private_s_length + 1;
-    }
-    
-    if (found_start == FALSE) {	/* Start never found */
-        gap_align->query_start = q_start;
-        gap_align->subject_start = s_start;
     }
     
     if (found_end == FALSE) {

@@ -838,8 +838,10 @@ s_WindowsFromProteinAligns(BlastCompo_Alignment * alignments,
     }
     /* shrink to fit */
     {
-        s_WindowInfo ** new_windows =
-            realloc(windows, window_index * sizeof(s_WindowInfo*));
+        s_WindowInfo ** new_windows = NULL;
+	if (window_index > 0)
+            new_windows = realloc(windows, window_index * sizeof(s_WindowInfo*));
+
         if (new_windows == NULL) {
             goto error_return;
         } else {
