@@ -429,7 +429,8 @@ public:
     const CSubmit_block* GetSubmitBlock(void) const { return m_Submit; }
     void SetSubmit(const CSubmit_block& sub) { m_Submit = &sub; }
 
-    CFlatFileConfig& GetConfig(void) { return m_Cfg; }
+    const CFlatFileConfig& GetConfig(void) const { return m_Cfg; }
+    CFlatFileConfig& SetConfig(void) { return m_Cfg; }
 
     const SAnnotSelector* GetAnnotSelector(void) const;
     SAnnotSelector& SetAnnotSelector(void);

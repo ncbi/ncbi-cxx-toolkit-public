@@ -66,9 +66,188 @@
 #include <util/compress/zlib.hpp>
 #include <util/compress/stream.hpp>
 
+#include <objmgr/util/objutil.hpp>
+
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
+#ifdef NEW_HTML_FMT
+class CHTMLFormatterEx : public IHTMLFormatter
+{
+public:
+    CHTMLFormatterEx(CRef<CScope> scope);
+    virtual ~CHTMLFormatterEx();
+
+    void FormatProteinId(string &, const CSeq_id& seq_id, const string& prot_id) const;
+    void FormatNucSearch(CNcbiOstream& os, const string& id) const;
+    void FormatNucId(string& str, const CSeq_id& seq_id, TIntId gi, const string& acc_id) const;
+    void FormatTaxid(string& str, const int taxid, const string& taxname) const;
+    void FormatLocation(string& str, const CSeq_loc& loc, TIntId gi, const string& visible_text) const;
+    void FormatModelEvidence(string& str, const SModelEvidance& me) const;
+    void FormatTranscript(string& str, const string& name) const;
+    void FormatGeneralId(CNcbiOstream& os, const string& id) const;
+private:
+    mutable CRef<CScope> m_scope;
+};
+
+
+CHTMLFormatterEx::CHTMLFormatterEx(CRef<CScope> scope) : m_scope(scope)
+{
+}
+
+CHTMLFormatterEx::~CHTMLFormatterEx()
+{
+}
+
+void CHTMLFormatterEx::FormatProteinId(string& str, const CSeq_id& seq_id, const string& prot_id) const
+{
+    string index = prot_id;
+    CBioseq_Handle bsh = m_scope->GetBioseqHandle(seq_id);
+    vector< CSeq_id_Handle > ids = bsh.GetId();
+    ITERATE(vector< CSeq_id_Handle >, it, ids) {
+        CSeq_id_Handle hid = *it;
+        if (hid.IsGi()) {
+            index = NStr::NumericToString(hid.GetGi());
+            break;
+        }
+    }
+    str = "<a href=\"";
+    str += strLinkBaseProt;
+    str += index;
+    str += "\">";
+    str += prot_id;
+    str += "</a>";
+}
+
+void CHTMLFormatterEx::FormatNucId(string& str, const CSeq_id& seq_id, TIntId gi, const string& acc_id) const
+{
+    str = "<a href=\"" + strLinkBaseNuc + NStr::NumericToString(gi) + "\">" + acc_id + "</a>";
+}
+
+void CHTMLFormatterEx::FormatTaxid(string& str, const int taxid, const string& taxname) const
+{
+    if (!NStr::StartsWith(taxname, "Unknown", NStr::eNocase)) {
+        if (taxid > 0) {
+            str += "<a href=\"";
+            str += strLinkBaseTaxonomy;
+            str += "id=";
+            str += taxid;
+            str += "\">";
+        }
+        else {
+            string t_taxname = taxname;
+            replace(t_taxname.begin(), t_taxname.end(), ' ', '+');
+            str += "<a href=\"";
+            str += strLinkBaseTaxonomy;
+            str += "name=";
+            str += taxname;
+            str += "\">";
+        }
+        str += taxname;
+        str += "</a>";
+    }
+    else {
+        str = taxname;
+    }
+
+    TryToSanitizeHtml(str);
+}
+
+void CHTMLFormatterEx::FormatNucSearch(CNcbiOstream& os, const string& id) const
+{
+    os << "<a href=\"" << strLinkBaseNucSearch << id << "\">" << id << "</a>";
+}
+
+void CHTMLFormatterEx::FormatLocation(string& strLink, const CSeq_loc& loc, TIntId gi, const string& visible_text) const
+{
+    // check if this is a protein or nucleotide link
+    bool is_prot = false;
+    {{
+        CBioseq_Handle bioseq_h;
+        ITERATE(CSeq_loc, loc_ci, loc) {
+            bioseq_h = m_scope->GetBioseqHandle(loc_ci.GetSeq_id());
+            if (bioseq_h) {
+                break;
+            }
+        }
+        if (bioseq_h) {
+            is_prot = (bioseq_h.GetBioseqMolType() == CSeq_inst::eMol_aa);
+        }
+    }}
+
+    // assembly of the actual string:
+    strLink.reserve(100); // euristical URL length
+
+    strLink = "<a href=\"";
+
+    // link base
+    if (is_prot) {
+        strLink += strLinkBaseProt;
+    }
+    else {
+        strLink += strLinkBaseNuc;
+    }
+    strLink += NStr::NumericToString(gi);
+
+    // location
+    if (loc.IsInt() || loc.IsPnt()) {
+        TSeqPos iFrom = loc.GetStart(eExtreme_Positional) + 1;
+        TSeqPos iTo = loc.GetStop(eExtreme_Positional) + 1;
+        strLink += "?from=";
+        strLink += NStr::IntToString(iFrom);
+        strLink += "&amp;to=";
+        strLink += NStr::IntToString(iTo);
+    }
+    else if (visible_text != "Precursor") {
+        // TODO: this fails on URLs that require "?itemID=" (e.g. almost any, such as U54469)
+        strLink += "?itemid=TBD";
+    }
+
+    strLink += "\">";
+    strLink += visible_text;
+    strLink += "</a>";
+}
+
+void CHTMLFormatterEx::FormatModelEvidence(string& str, const SModelEvidance& me) const
+{
+    str += "<a href=\"";
+    str += strLinkBaseNuc;
+    if (me.gi > ZERO_GI) {
+        str += NStr::NumericToString(me.gi);
+    }
+    else {
+        str += me.name;
+    }
+    str += "?report=graph";
+    if ((me.span.first >= 0) && (me.span.second >= me.span.first)) {
+        const Int8 kPadAmount = 500;
+        // The "+1" is because we display 1-based to user and in URL
+        str += "&v=";
+        str += NStr::NumericToString(max<Int8>(me.span.first + 1 - kPadAmount, 1));
+        str += ":";
+        str += NStr::NumericToString(me.span.second + 1 + kPadAmount); // okay if second number goes over end of sequence
+    }
+    str += "\">";
+    str += me.name;
+    str += "</a>";
+}
+
+void CHTMLFormatterEx::FormatTranscript(string& str, const string& name) const
+{
+    str += "<a href=\"";
+    str += strLinkBaseNuc;
+    str += name;
+    str += "\">";
+    str += name;
+    str += "</a>";
+}
+
+void CHTMLFormatterEx::FormatGeneralId(CNcbiOstream& os, const string& id) const
+{
+    os << "<a href=\"" << strLinkBaseNuc << id << "\">" << id << "</a>";
+}
+
+#endif
 
 class CAsn2FlatApp : public CNcbiApplication, public CGBReleaseFile::ISeqEntryHandler
 {
@@ -765,6 +944,19 @@ CFlatFileGenerator* CAsn2FlatApp::x_CreateFlatFileGenerator(const CArgs& args)
     m_do_cleanup = ( ! args["nocleanup"]);
     cfg.BasicCleanup(false);
 
+#ifdef NEW_HTML_FMT
+    if (args["html"])
+    {
+        CRef<IHTMLFormatter> html_fmt(new CHTMLFormatterEx(m_Scope));
+        cfg.SetHTMLFormatter(html_fmt);
+    }
+    else
+    {
+        CRef<IHTMLFormatter> html_fmt(new CHTMLEmptyFormatter);
+        cfg.SetHTMLFormatter(html_fmt);        
+    }
+#endif
+
     CRef<TGenbankBlockCallback> genbank_callback( x_GetGenbankCallback(args) );
 
     if( args["benchmark-cancel-checking"] ) {
@@ -857,7 +1049,7 @@ CAsn2FlatApp::x_GetGenbankCallback(const CArgs& args)
 #undef SIMPLE_CALLBACK_NOTIFY
 
     private:
-        typedef map<string, int> TTypeToCountMap;
+        typedef map<string, size_t> TTypeToCountMap;
         // for each type, how many instances of that type did we see?
         // We use the special string "TOTAL" for a total count.
         TTypeToCountMap m_TypeAppearancesMap;
@@ -876,8 +1068,8 @@ CAsn2FlatApp::x_GetGenbankCallback(const CArgs& args)
         void x_PrintAverageStats(void) {
             ITERATE( TTypeToCountMap, map_iter, m_TypeAppearancesMap ) {
                 const string sType = map_iter->first;
-                const int iAppearances = map_iter->second;
-                const int iTotalCharacters = m_TypeCharsMap[sType];
+                const size_t iAppearances = map_iter->second;
+                const size_t iTotalCharacters = m_TypeCharsMap[sType];
                 cerr << setw(25) << left << (sType + ':')
                      << " " << (iTotalCharacters / iAppearances) << endl;
             }

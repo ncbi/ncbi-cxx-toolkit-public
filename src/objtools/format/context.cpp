@@ -251,7 +251,7 @@ void CBioseqContext::x_Init(const CBioseq_Handle& seq, const CSeq_loc* user_loc)
     m_HasOperon = x_HasOperon();
 
     if (IsRefSeq()) {
-        m_FFCtx.GetConfig().SetRefSeqConventions();
+        m_FFCtx.SetConfig().SetRefSeqConventions();
     }
 
     SAnnotSelector sel = SetAnnotSelector();

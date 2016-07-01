@@ -1055,7 +1055,7 @@ void CFlatGatherer::x_IdComments(CBioseqContext& ctx,
                 {
                     SModelEvidance me;
                     if ( GetModelEvidance(ctx.GetHandle(), me) ) {
-                        string str = CCommentItem::GetStringForModelEvidance(me, format);
+                        string str = CCommentItem::GetStringForModelEvidance(ctx, me);
                         if ( !str.empty() ) {
                             CRef<CCommentItem> item(new CCommentItem(str, ctx));
                             item->SetNeedPeriod(false);
@@ -1140,10 +1140,7 @@ void CFlatGatherer::x_RefSeqComments(CBioseqContext& ctx,
         // RefTrack
         {{
             if ( !did_ref_track ) {
-                CCommentItem::ECommentFormat format = ctx.Config().DoHTML() ?
-                    CCommentItem::eFormat_Html : CCommentItem::eFormat_Text;
-                string str = 
-                    CCommentItem::GetStringForRefTrack(uo, ctx.GetHandle(), format, 
+                string str = CCommentItem::GetStringForRefTrack(ctx, uo, ctx.GetHandle(),
                     ( /* eGenomeAnnotComment == eGenomeAnnotComment_Yes ?
                       CCommentItem::eGenomeBuildComment_Yes : */
                       CCommentItem::eGenomeBuildComment_No ) );

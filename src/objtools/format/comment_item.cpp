@@ -359,16 +359,12 @@ string CCommentItem::GetStringForBankIt(const CUser_object& uo, bool dump_mode)
 }
 
 
-
-static void s_GetAssemblyInfo(const CUser_object& uo,
-                              string& s,
-                              CCommentItem::ECommentFormat format,
-                              CScope &scope )
+static 
+void s_GetAssemblyInfo(const CBioseqContext& ctx, string& s, const CUser_object& uo)
 {
     s.clear();
 
-    const bool is_html = (format == CCommentItem::eFormat_Html);
-
+    const bool is_html = ctx.Config().DoHTML();
     vector<string> assembly_pieces;
 
     if ( uo.HasField("Assembly") ) {
@@ -436,11 +432,19 @@ static void s_GetAssemblyInfo(const CUser_object& uo,
                 // } catch(...) {
                 //     // do nothing, we know there's an error because new_gi is zero
                 // }
+#ifdef NEW_HTML_FMT
+                if (IsValidAccession(accession)) {
+                    ctx.Config().GetHTMLFormatter().FormatGeneralId(oss, accession);
+                } else {
+                    oss << accession;                    
+                }
+#else
                 if( IsValidAccession(accession) ) {
                     NcbiId(oss, accession, is_html);
                 } else {
                     oss << accession;                    
                 }
+#endif
 
                 if( from > 0 && to > 0 ) {
                     oss << " (range: " << from << "-" << to << ")";
@@ -516,12 +520,12 @@ CCommentItem::TRefTrackStatus CCommentItem::GetRefTrackStatus
 }
 
 
-string CCommentItem::GetStringForRefTrack
-(const CUser_object& uo,
- const CBioseq_Handle& bsh,
- ECommentFormat format,
- EGenomeBuildComment eGenomeBuildComment )
+string CCommentItem::GetStringForRefTrack(const CBioseqContext& ctx, const CUser_object& uo,
+    const CBioseq_Handle& bsh,
+    EGenomeBuildComment eGenomeBuildComment )
 {
+    bool is_html = ctx.Config().DoHTML();
+
     if ( !uo.IsSetType()  ||  !uo.GetType().IsStr()  ||
          uo.GetType().GetStr() != "RefGeneTracking") {
         return kEmptyStr;
@@ -598,10 +602,10 @@ string CCommentItem::GetStringForRefTrack
 
     CNcbiOstrstream oss;
     if (status == eRefTrackStatus_Pipeline) {
-        oss << ( format == eFormat_Html ? kRefSeqInformationLink : kRefSeqInformation ) << ":";
+        oss << (is_html ? kRefSeqInformationLink : kRefSeqInformation) << ":";
     } else {
         oss << status_str << ' ' 
-            << ( format == eFormat_Html ? kRefSeqLink : kRefSeq ) << ":";
+            << (is_html ? kRefSeqLink : kRefSeq) << ":";
     }
     switch ( status ) {
     case eRefTrackStatus_Inferred:
@@ -614,11 +618,11 @@ string CCommentItem::GetStringForRefTrack
                 oss << " Features on this sequence have been produced for build "
                     << build_num << " of the NCBI's genome annotation"
                     << " [see ";
-                if( format == eFormat_Html ) {
+                if (is_html) {
                     oss << "<a href=\"" << strDocLink << "\">" ;
                 }
                 oss << "documentation";
-                if( format == eFormat_Html ) {
+                if (is_html) {
                     oss << "</a>";
                 }
                 oss << "].";
@@ -675,8 +679,17 @@ string CCommentItem::GetStringForRefTrack
 
     if ( !identical_to.empty() ) {
         oss << " The reference sequence is identical to ";
-        const bool add_link = (format == eFormat_Html && identical_to_priority != eIdenticalToPriority_Name);
+        const bool add_link = (is_html && identical_to_priority != eIdenticalToPriority_Name);
+#ifdef NEW_HTML_FMT
+        if (add_link) {
+            ctx.Config().GetHTMLFormatter().FormatGeneralId(oss, identical_to);
+        }
+        else {
+            oss << identical_to;
+        }
+#else
         NcbiId( oss, identical_to, add_link );
+#endif
 
         if( ! identical_to_start.empty() && ! identical_to_end.empty() ) {
             oss << " (range: " << identical_to_start << "-" << 
@@ -688,7 +701,7 @@ string CCommentItem::GetStringForRefTrack
     {{
          /// add our assembly info
          string s;
-         s_GetAssemblyInfo(uo, s, format, bsh.GetScope());
+         s_GetAssemblyInfo(ctx, s, uo);
          oss << s;
      }}
 
@@ -706,7 +719,7 @@ string CCommentItem::GetStringForRefTrack
                 const string& status = f->GetData().GetStr();
                 if (status == "Reference Standard") {
                     oss << "~This sequence is a reference standard in the " 
-                        << ( format == eFormat_Html ? kRefSeqGeneLink : kRefSeqGene )
+                        << (is_html ? kRefSeqGeneLink : kRefSeqGene)
                         << " project.";
                 }
             }
@@ -1122,6 +1135,7 @@ string CCommentItem::GetStringForHTGS(CBioseqContext& ctx)
     return comment;
 }
 
+#ifndef NEW_HTML_FMT
 static
 string s_HtmlWrapModelEvidenceName( const SModelEvidance& me )
 {
@@ -1149,18 +1163,22 @@ string s_HtmlWrapTranscriptName( const string& name )
 {
     return "<a href=\"" + strLinkBaseNuc + name + "\">" + name + "</a>";
 }
+#endif
 
-string CCommentItem::GetStringForModelEvidance
-(const SModelEvidance& me,
- ECommentFormat format)
+string CCommentItem::GetStringForModelEvidance(const CBioseqContext& ctx, const SModelEvidance& me)
 {
-    const bool bHtml = (format == eFormat_Html);
+    const bool bHtml = ctx.Config().DoHTML();
 
     const string *refseq = (bHtml ? &kRefSeqLink : &kRefSeq);
 
     CNcbiOstrstream text;
 
+#ifdef NEW_HTML_FMT
+    string me_name;
+    ctx.Config().GetHTMLFormatter().FormatModelEvidence(me_name, me);
+#else
     const string me_name = ( bHtml ? s_HtmlWrapModelEvidenceName(me) : me.name );
+#endif
 
     text << "MODEL " << *refseq << ":  " << "This record is predicted by "
          << "automated computational analysis. This record is derived from "
@@ -1176,7 +1194,12 @@ string CCommentItem::GetStringForModelEvidance
         int count = 0;
         string prefix = "";
         FOR_EACH_STRING_IN_LIST (str, me.assembly) {
+#ifdef NEW_HTML_FMT
+            string tr_name;
+            ctx.Config().GetHTMLFormatter().FormatTranscript(tr_name, *str);
+#else
             const string tr_name = ( bHtml ? s_HtmlWrapTranscriptName(*str) : *str);
+#endif
             text << prefix << tr_name;
             count++;
             if (num_assm == count + 1) {
@@ -1960,11 +1983,7 @@ void CGenomeAnnotComment::x_GatherInfo(CBioseqContext& ctx)
         }
 
         string s;
-        s_GetAssemblyInfo(uo, s,
-                          ctx.Config().DoHTML() ?
-                          CCommentItem::eFormat_Html :
-                          CCommentItem::eFormat_Text,
-                              ctx.GetScope() );
+        s_GetAssemblyInfo(ctx, s, uo);
         text << s;
         break;
     }
@@ -2024,7 +2043,11 @@ string s_CreateHistCommentString
             text << ",";
         }
         text << " gi:";
+#ifdef NEW_HTML_FMT
+        ctx.Config().GetHTMLFormatter().FormatGeneralId(text, NStr::NumericToString(gis[count]));
+#else
         NcbiId(text, gis[count], ctx.Config().DoHTML());
+#endif
     }
     text << '.' << '\n';
 

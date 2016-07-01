@@ -127,8 +127,8 @@ public:
         eGenomeBuildComment_No = 0,
         eGenomeBuildComment_Yes
     };
-    static string GetStringForRefTrack(const CUser_object& uo,
-        const CBioseq_Handle& seq, ECommentFormat format = eFormat_Text,
+    static string GetStringForRefTrack(const CBioseqContext& ctx, const CUser_object& uo,
+        const CBioseq_Handle& seq, 
         EGenomeBuildComment eGenomeBuildComment = eGenomeBuildComment_Yes
         );
     static string GetStringForRefSeqGenome(const CUser_object& uo);
@@ -138,8 +138,7 @@ public:
     static string GetStringForMolinfo(const CMolInfo& mi, CBioseqContext& ctx);
     static string GetStringForHTGS(CBioseqContext& ctx);
     static string GetStringForUnordered(CBioseqContext& ctx);
-    static string GetStringForModelEvidance(const SModelEvidance& me,
-        ECommentFormat format = eFormat_Text);
+    static string GetStringForModelEvidance(const CBioseqContext& ctx, const SModelEvidance& me);
     static TRefTrackStatus GetRefTrackStatus(const CUser_object& uo,
         string* st = 0);
     static string GetStringForEncode(CBioseqContext& ctx);

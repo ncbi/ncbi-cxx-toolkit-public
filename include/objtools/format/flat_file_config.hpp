@@ -70,8 +70,47 @@ class CWGSItem;
 class CTSAItem;
 class CEndSectionItem;
 class IFlatItem;
+class CSeq_id;
+class CSeq_loc;
+struct SModelEvidance;
 
 // --- Flat File configuration class
+
+// NEW_HTML_FMT define enables new interceptor interface for HTML links generation
+//#define NEW_HTML_FMT
+
+#ifdef NEW_HTML_FMT
+
+class IHTMLFormatter: public CObject
+{
+public:
+    virtual ~IHTMLFormatter() {};
+    
+    virtual void FormatProteinId(string& str, const CSeq_id& seq_id, const string& prot_id) const = 0;
+    virtual void FormatNucSearch(CNcbiOstream& os, const string& id) const = 0;
+    virtual void FormatNucId(string& str, const CSeq_id& seq_id, TIntId gi, const string& acc_id) const = 0;
+    virtual void FormatTaxid(string& str, const int taxid, const string& taxname) const = 0;
+    virtual void FormatLocation(string& str, const CSeq_loc& loc, TIntId gi, const string& visible_text) const = 0;
+    virtual void FormatModelEvidence(string& str, const SModelEvidance& me) const = 0;
+    virtual void FormatTranscript(string& str, const string& name) const = 0;
+    virtual void FormatGeneralId(CNcbiOstream& os, const string& id) const = 0;
+};
+
+class CHTMLEmptyFormatter : public IHTMLFormatter
+{
+public:
+    virtual ~CHTMLEmptyFormatter() {};
+
+    void FormatProteinId(string& str, const CSeq_id& seq_id, const string& prot_id) const;
+    void FormatNucSearch(CNcbiOstream& os, const string& id) const;
+    void FormatNucId(string& str, const CSeq_id& seq_id, TIntId gi, const string& acc_id) const;
+    void FormatTaxid(string& str, const int taxid, const string& taxname) const;
+    void FormatLocation(string& str, const CSeq_loc& loc, TIntId gi, const string& visible_text) const;
+    void FormatModelEvidence(string& str, const SModelEvidance& me) const;
+    void FormatTranscript(string& str, const string& name) const;
+    void FormatGeneralId(CNcbiOstream& os, const string& id) const;
+};
+#endif
 
 class NCBI_FORMAT_EXPORT CFlatFileConfig
 {
@@ -349,6 +388,17 @@ public:
                     TCustom custom = 0 );
     // destructor
     ~CFlatFileConfig(void);
+
+#ifdef NEW_HTML_FMT
+    void SetHTMLFormatter(CRef<IHTMLFormatter> html_fmt)
+    {
+        m_html_formatter = html_fmt;
+    }
+    const IHTMLFormatter& GetHTMLFormatter() const
+    {
+        return *m_html_formatter;
+    }
+#endif
 
     // -- Format
     // getters
@@ -678,6 +728,9 @@ private:
     const ICanceled * m_pCanceledCallback; // instance does NOT own it
     bool        m_BasicCleanup;
     TCustom     m_Custom;
+#ifdef NEW_HTML_FMT
+    CRef<IHTMLFormatter> m_html_formatter;
+#endif
 };
 
 

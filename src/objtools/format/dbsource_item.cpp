@@ -609,13 +609,18 @@ string CDBSourceItem::x_FormatDBSourceID(const CSeq_id_Handle& idh)
                     choice != CSeq_id::e_Swissprot) {
                     acc += '.' + NStr::IntToString(tsid->GetVersion());
                 }
-                if( is_html ) {
+#ifdef NEW_HTML_FMT
+                s += comma + sep + "accession ";
+                GetContext()->Config().GetHTMLFormatter().FormatNucId(s, *idh.GetSeqId(), GetContext()->GetScope().GetGi(idh), acc);
+#else
+                if (is_html) {
                     const TIntId gi = GetContext()->GetScope().GetGi(idh);
                     s += comma + sep + "accession <a href=\"" + strLinkBaseNuc +
                         NStr::NumericToString(gi) + "\">" + acc + "</a>";
                 } else {
                     s += comma + sep + "accession " + acc;
                 }
+#endif
                 sep = " ";
             }
             /**

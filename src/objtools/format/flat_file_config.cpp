@@ -58,6 +58,8 @@
 #include <objtools/format/items/wgs_item.hpp>
 #include <objtools/format/flat_expt.hpp>
 
+#include <objmgr/util/objutil.hpp>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -864,6 +866,48 @@ void CFlatFileConfig::FromArguments(const CArgs& args)
     m_BasicCleanup = args["cleanup"];
     SetCustom(custom);
 }
+
+#ifdef NEW_HTML_FMT
+void CHTMLEmptyFormatter::FormatProteinId(string& str, const CSeq_id& seq_id, const string& prot_id) const
+{
+    str = prot_id;
+}
+
+void CHTMLEmptyFormatter::FormatNucId(string& str, const CSeq_id& seq_id, TIntId gi, const string& acc_id) const
+{
+    str = acc_id;
+}
+
+void CHTMLEmptyFormatter::FormatLocation(string& str, const CSeq_loc& loc, TIntId gi, const string& visible_text) const
+{
+    str = visible_text;
+}
+
+void CHTMLEmptyFormatter::FormatModelEvidence(string& str, const SModelEvidance& me) const
+{
+    str = me.name;
+}
+
+void CHTMLEmptyFormatter::FormatNucSearch(CNcbiOstream& os, const string& id) const
+{
+    os << id;
+}
+
+void CHTMLEmptyFormatter::FormatTaxid(string& str, const int taxid, const string& taxname) const
+{
+    str = taxname;
+}
+
+void CHTMLEmptyFormatter::FormatTranscript(string& str, const string& name) const
+{
+    str = name;
+}
+
+void CHTMLEmptyFormatter::FormatGeneralId(CNcbiOstream& os, const string& id) const
+{
+    os << id;
+}
+#endif
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

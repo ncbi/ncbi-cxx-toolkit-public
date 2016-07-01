@@ -383,7 +383,7 @@ void CFlatFileGenerator::Generate
     location->Assign(loc);
     m_Ctx->SetLocation(location);
 
-    CFlatFileConfig& cfg = m_Ctx->GetConfig();
+    CFlatFileConfig& cfg = m_Ctx->SetConfig();
     if (cfg.IsStyleNormal()) {
         cfg.SetStyleMaster();
     }

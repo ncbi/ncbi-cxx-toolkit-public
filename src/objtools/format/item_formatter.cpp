@@ -207,6 +207,10 @@ string  CFlatItemFormatter::x_FormatAccession
     acc_line << primary;
 
     if ( ctx.IsWGS() && ! acc.GetWGSAccession().empty() ) {
+#ifdef NEW_HTML_FMT
+        acc_line << separator;
+        ctx.Config().GetHTMLFormatter().FormatNucSearch(acc_line, acc.GetWGSAccession());
+#else
         const bool is_html = ctx.Config().DoHTML();
         if( is_html ) {
             acc_line << separator << "<a href=\"" << strLinkBaseNucSearch << acc.GetWGSAccession() << 
@@ -214,9 +218,14 @@ string  CFlatItemFormatter::x_FormatAccession
         } else {
             acc_line << separator << acc.GetWGSAccession();
         }
+#endif
     }
 
     if ( ctx.IsTSA() && ! acc.GetTSAAccession().empty() ) {
+#ifdef NEW_HTML_FMT
+        acc_line << separator;
+        ctx.Config().GetHTMLFormatter().FormatNucSearch(acc_line, acc.GetTSAAccession());
+#else
         const bool is_html = ctx.Config().DoHTML();
         if( is_html ) {
             acc_line << separator << "<a href=\"" << strLinkBaseNucSearch << acc.GetTSAAccession() << 
@@ -224,6 +233,7 @@ string  CFlatItemFormatter::x_FormatAccession
         } else {
             acc_line << separator << acc.GetTSAAccession();
         }
+#endif
     }
 
     if (!acc.GetExtraAccessions().empty()) {

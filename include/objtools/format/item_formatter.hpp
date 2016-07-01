@@ -116,7 +116,8 @@ public:
 
     // Context
     void SetContext(CFlatFileContext& ctx);
-    CFlatFileContext& GetContext(void) { return *m_Ctx; }
+    const CFlatFileContext& GetContext(void) const
+    { return *m_Ctx; }
 
 protected:
     typedef NStr::TWrapFlags    TWrapFlags;
