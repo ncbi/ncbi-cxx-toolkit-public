@@ -3313,7 +3313,7 @@ BOOST_AUTO_TEST_CASE(testOneSubjectResults2CSeqAlign)
     int index;
     for (index = 0; index < num_subjects; ++index) {
         id.Reset(new CSeq_id(CSeq_id::e_Gi, (query_gi + gi_diff + index)));
-cerr << query_gi + gi_diff + index << endl;
+        //cerr << query_gi + gi_diff + index << endl;
         sl.reset(CTestObjMgr::Instance().CreateSSeqLoc(*id, 
                                                        eNa_strand_both));
         subjects.push_back(*sl);
@@ -3325,7 +3325,7 @@ cerr << query_gi + gi_diff + index << endl;
     index = 0;
     ITERATE(TSeqAlignVector, itr, seqalign_v)
     {
-cerr << index << endl;
+        //cerr << index << endl;
         BOOST_REQUIRE_EQUAL(results_size[index], (int) (*itr)->Get().size());
         index++;
     }
