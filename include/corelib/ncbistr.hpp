@@ -2404,7 +2404,7 @@ public:
         /// Note that it truncates leading and trailing delimiters as well.
         /// Please use ESplitFlags instead.
         fSplit_MergeDelims = fSplit_MergeDelimiters | fSplit_Truncate,
-        /// Mo merge the delimiters.
+        /// Do not merge the delimiters.
         /// fSplit_NoMergeDelims can be temporary used for semantics
         /// purposes only, because we still have legacy Split() version
         /// without flags, that use fSplit_MergeDelims by default.
