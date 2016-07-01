@@ -3087,6 +3087,7 @@ public:
     class IWrapDest
     {
     public:
+        virtual ~IWrapDest() {}
         virtual void Append(const string& s) = 0;
         virtual void Append(const CTempString& s) = 0;
     };
