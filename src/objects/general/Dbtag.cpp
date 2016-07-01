@@ -68,6 +68,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     { "ApiDB_CryptoDB", CDbtag::eDbtagType_ApiDB_CryptoDB },
     { "ApiDB_PlasmoDB", CDbtag::eDbtagType_ApiDB_PlasmoDB },
     { "ApiDB_ToxoDB", CDbtag::eDbtagType_ApiDB_ToxoDB },
+    { "Araport", CDbtag::eDbtagType_Araport },
     { "Axeldb", CDbtag::eDbtagType_axeldb },
     { "BDGP_EST", CDbtag::eDbtagType_BDGP_EST },
     { "BDGP_INS", CDbtag::eDbtagType_BDGP_INS },
@@ -689,6 +690,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_I5KNAL, "https://i5k.nal.usda.gov/" },
     { CDbtag::eDbtagType_VISTA, "http://enhancer.lbl.gov/cgi-bin/dbxref.pl?id=" },
     { CDbtag::eDbtagType_BEI, "https://www.beiresources.org/Catalog/animalViruses/" },
+    { CDbtag::eDbtagType_Araport, "https://www.araport.org/locus/" },
 };
 
 typedef CStaticPairArrayMap<CDbtag::EDbtagType, const char*> TUrlPrefixMap;
