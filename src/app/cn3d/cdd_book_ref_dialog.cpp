@@ -372,10 +372,10 @@ void CDDBookRefDialog::OnClick(wxCommandEvent& event)
             //  Entrez will redirect those links to the corresponding Portal-ized URLs.
             wxString url;
             if (ncbi::cd_utils::IsPortalDerivedBookRef((*selDescr)->GetBook_ref())) {
-                url.Printf("http://www.ncbi.nlm.nih.gov/books/%s",
+                url.Printf("https://www.ncbi.nlm.nih.gov/books/%s",
                     MakePortalParameterString((*selDescr)->GetBook_ref()).c_str());
             } else {
-                url.Printf("http://www.ncbi.nlm.nih.gov/bookshelf/br.fcgi?book=%s",
+                url.Printf("https://www.ncbi.nlm.nih.gov/bookshelf/br.fcgi?book=%s",
                     MakeBrParameterString((*selDescr)->GetBook_ref()).c_str());
             }
             LaunchWebPage(url.c_str());

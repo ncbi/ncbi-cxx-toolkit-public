@@ -443,7 +443,7 @@ static void DumpText(bool doHTML, const BlockMultipleAlignment *alignment,
             // title
             if (doHTML && uids[row].size() > 0) {
 				string descr = sequence->GetDescription();
-                os << "<a href=\"http://www.ncbi.nlm.nih.gov/protein/"
+                os << "<a href=\"https://www.ncbi.nlm.nih.gov/protein/"
                     << uids[row] << "\" onMouseOut=\"window.status=''\"\n"
                     << "onMouseOver=\"window.status='"
                     << ShortAndEscapedString((descr.size() > 0) ? descr : titles[row])

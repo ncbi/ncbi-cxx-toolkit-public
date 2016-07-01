@@ -767,7 +767,7 @@ unsigned int GetAllSelectedListCtrlItemIds(const wxListCtrl& listCtrl, vector<lo
 
 /*  Conventions/formatting of ibis.cgi calls:
 
-http://www.ncbi.nlm.nih.gov/Structure/ibis/ibis.cgi?sqat&range=1,332&mmdbid=51257&molid=1&asc=1&web=1
+https://www.ncbi.nlm.nih.gov/Structure/ibis/ibis.cgi?sqat&range=1,332&mmdbid=51257&molid=1&asc=1&web=1
 
 Arguments:
 sqat:   trigger output SeqAnnot Asn1 data
@@ -1473,10 +1473,10 @@ void IBISAnnotateDialog::LaunchIbisWebPage(void)
     const CRef<IBISInteraction>& ibisInt = vecIbisInteractions[index];
 
     //  if only want a general page for a given pdb id:
-    //  http://www.ncbi.nlm.nih.gov/Structure/ibis/ibis.cgi?search=1y7oa
+    //  https://www.ncbi.nlm.nih.gov/Structure/ibis/ibis.cgi?search=1y7oa
     //  
     //  but to open a page on the exact selected interaction, use something like this:
-    //  http://www.ncbi.nlm.nih.gov/Structure/ibis/ibis.cgi?id=131080&type=7&rowid=116103
+    //  https://www.ncbi.nlm.nih.gov/Structure/ibis/ibis.cgi?id=131080&type=7&rowid=116103
 
     if (ibisInt.NotEmpty()) {
 
@@ -1494,10 +1494,10 @@ void IBISAnnotateDialog::LaunchIbisWebPage(void)
                 } else {
                     pdbQuery.Printf("%s", IBISInteraction::GetQueryMolecule()->pdbID.c_str());
                 }
-                url.Printf("http://www.ncbi.nlm.nih.gov/Structure/ibis/ibis.cgi?search=%s", pdbQuery.c_str());
+                url.Printf("https://www.ncbi.nlm.nih.gov/Structure/ibis/ibis.cgi?search=%s", pdbQuery.c_str());
             }
         } else {
-            url.Printf("http://www.ncbi.nlm.nih.gov/Structure/ibis/ibis.cgi?id=%d&type=%d&rowid=%d", ibisInt->GetSdiId(), (int) ibisInt->GetType(), ibisInt->GetRowId());
+            url.Printf("https://www.ncbi.nlm.nih.gov/Structure/ibis/ibis.cgi?id=%d&type=%d&rowid=%d", ibisInt->GetSdiId(), (int) ibisInt->GetType(), ibisInt->GetRowId());
         }
     }
 

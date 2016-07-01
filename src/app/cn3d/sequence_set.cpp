@@ -436,7 +436,7 @@ int Sequence::GetOrSetMMDBLink(void) const
 void Sequence::LaunchWebBrowserWithInfo(void) const
 {
     CNcbiOstrstream oss;
-    oss << "http://www.ncbi.nlm.nih.gov/" << (isProtein ? "protein" : "nuccore") << "/";
+    oss << "https://www.ncbi.nlm.nih.gov/" << (isProtein ? "protein" : "nuccore") << "/";
     // prefer gi's, since accessions can be outdated
     if (identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) {
         oss << identifier->gi;

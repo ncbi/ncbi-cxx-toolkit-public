@@ -650,7 +650,7 @@ int AlignmentDisplay::DumpCondensed(CNcbiOstream& os, unsigned int options,
 
             // title
             if (isAlnRow && doHTML && uids[alnRow].size() > 0) {
-                os << "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi"
+                os << "<a href=\"https://www.ncbi.nlm.nih.gov/entrez/query.fcgi"
                     << "?cmd=Search&doptcmdl=GenPept&db=Protein&term="
                     << uids[alnRow] << "\" onMouseOut=\"window.status=''\"\n"
                     << "onMouseOver=\"window.status='"
@@ -908,7 +908,7 @@ int AlignmentDisplay::DumpText(CNcbiOstream& os, unsigned int options,
 
             // title
             if (isAlnRow && doHTML && uids[alnRow].size() > 0) {
-                os << "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi"
+                os << "<a href=\"https://www.ncbi.nlm.nih.gov/entrez/query.fcgi"
                     << "?cmd=Search&doptcmdl=GenPept&db=Protein&term="
                     << uids[alnRow] << "\" onMouseOut=\"window.status=''\"\n"
                     << "onMouseOver=\"window.status='"

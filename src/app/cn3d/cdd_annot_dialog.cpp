@@ -1188,7 +1188,7 @@ void CDDAnnotateDialog::ShowEvidence(void)
     // launch URL given PMID
     if (selectedEvidence->IsReference() && selectedEvidence->GetReference().IsPmid()) {
         wxString url;
-        url.Printf("http://www.ncbi.nlm.nih.gov/pubmed/%i", selectedEvidence->GetReference().GetPmid().Get());
+        url.Printf("https://www.ncbi.nlm.nih.gov/pubmed/%i", selectedEvidence->GetReference().GetPmid().Get());
         LaunchWebPage(url);
     }
 

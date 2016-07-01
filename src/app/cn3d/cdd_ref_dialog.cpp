@@ -154,7 +154,7 @@ void CDDRefDialog::OnButton(wxCommandEvent& event)
 
     // launch URL(s) given PMID
     if (event.GetId() == ID_B_LAUNCH && nSelected > 0) {
-        string url("http://www.ncbi.nlm.nih.gov/pubmed/");
+        string url("https://www.ncbi.nlm.nih.gov/pubmed/");
         for (int i=0; i<nSelected; ++i) {
             descr = dynamic_cast<CCdd_descr*>(reinterpret_cast<CObject*>(listbox->GetClientData(selections.Item(i))));
             if (i > 0)

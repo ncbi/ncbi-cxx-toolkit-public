@@ -537,7 +537,7 @@ void StructureWindow::OnHelp(wxCommandEvent& event)
     }
 
     else if (event.GetId() == MID_ONLINE_HELP) {
-        LaunchWebPage("http://www.ncbi.nlm.nih.gov/Structure/CN3D/cn3d.shtml");
+        LaunchWebPage("https://www.ncbi.nlm.nih.gov/Structure/CN3D/cn3d.shtml");
     }
 
     else if (event.GetId() == MID_ABOUT) {
@@ -546,7 +546,7 @@ void StructureWindow::OnHelp(wxCommandEvent& event)
             CN3D_VERSION_STRING
             "\n\n"
             "Produced by the National Center for Biotechnology Information\n"
-            "     http://www.ncbi.nlm.nih.gov\n\n"
+            "     https://www.ncbi.nlm.nih.gov\n\n"
             "Please direct all questions and comments to:\n"
             "     info@ncbi.nlm.nih.gov"
         );
