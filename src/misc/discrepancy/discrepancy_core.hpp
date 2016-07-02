@@ -49,6 +49,7 @@ class CDiscrepancyConstructor;
 class CDiscrepancyConstructor
 {
 protected:
+    virtual ~CDiscrepancyConstructor() {}
     virtual CRef<CDiscrepancyCase> Create(void) const = 0;
     static void Register(const string& name, const string& descr, TGroup group, CDiscrepancyConstructor& obj);
     static string GetDiscrepancyCaseName(const string& s);
