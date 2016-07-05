@@ -1096,7 +1096,7 @@ void CNewCleanup_imp::GBblockBC (
         CGB_block::TKeywords::iterator it = gbk.SetKeywords().begin();
         while (it != gbk.SetKeywords().end()) {
             vector<string> tokens;
-            NStr::Tokenize(*it, ";", tokens);
+            NStr::Split(*it, ";", tokens);
             if (tokens.size() > 1) {
                 it = gbk.SetKeywords().erase(it);
                 gbk.SetKeywords().insert(it, tokens.begin(), tokens.end());
@@ -4155,7 +4155,7 @@ void s_ExpandThisQual(
     //    
     vector< string > newValues;
     string valueList = val.substr(1, val.length() - 2);
-    NStr::Tokenize(valueList, ",", newValues);
+    NStr::Split(valueList, ",", newValues);
     
     qual.SetVal( newValues[0] );
    
@@ -4606,7 +4606,7 @@ void s_TokenizeTRnaString (const string &tRNA_string, list<string> &out_string_l
     vector<string> tRNA_tokens;
     // " \t\n\v\f\r" are the standard whitespace chars
     // ( source: http://www.cplusplus.com/reference/clibrary/cctype/isspace/ )
-    NStr::Tokenize( tRNA_string_copy, " \t\n\v\f\r", tRNA_tokens, NStr::eMergeDelims );
+    NStr::Split(tRNA_string_copy, " \t\n\v\f\r", tRNA_tokens, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
     EDIT_EACH_STRING_IN_VECTOR( tRNA_token_iter, tRNA_tokens ) {
         string &tRNA_token = *tRNA_token_iter;
@@ -5817,7 +5817,7 @@ void CNewCleanup_imp::x_SplitDbtag( CDbtag &dbt, vector< CRef< CDbtag > > & out_
 
     // split by colon and generate new tags
     vector<string> tags;
-    NStr::Tokenize( dbt.GetTag().GetStr(), ":", tags );
+    NStr::Split(dbt.GetTag().GetStr(), ":", tags);
     _ASSERT( tags.size() >= 2 );
 
     // treat the CDbtag argument as the first of the new CDbtags
@@ -5920,7 +5920,7 @@ void s_ParsePCRComponent(vector<string> &out_list, const string *component)
         component_copy = component_copy.substr( 1, component_copy.length() - 2 );
     }
 
-    NStr::Tokenize( component_copy, string(","), out_list );
+    NStr::Split(component_copy, string(","), out_list);
     EDIT_EACH_STRING_IN_VECTOR( str_iter, out_list ) {
         NStr::TruncateSpacesInPlace( *str_iter );
     }
@@ -6034,7 +6034,7 @@ void s_ParsePCRSet( const CBioSource &biosrc, list<CPCRParsedSet> &out_pcr_set )
 static
 void s_ParsePCRColonString( vector<string> &out_list, const string &str ) 
 {
-    NStr::Tokenize( str, ":", out_list );
+    NStr::Split(str, ":", out_list);
     EDIT_EACH_STRING_IN_VECTOR(str_iter, out_list ) {
         NStr::TruncateSpacesInPlace( *str_iter );
         if( str_iter->empty() ) {
@@ -7128,7 +7128,7 @@ void CNewCleanup_imp::Except_textBC (
     }
 
     vector<string> exceptions;
-    NStr::Tokenize (except_text, ",", exceptions);
+    NStr::Split(except_text, ",", exceptions);
 
     EDIT_EACH_STRING_IN_VECTOR (it, exceptions) {
         string& text = *it;
@@ -7426,12 +7426,12 @@ bool s_SplitGeneSyn( const string &syn, vector<string> &gene_syns_to_add)
 
     // split by comma
     vector<string> pieces_split_by_comma;
-    NStr::Tokenize( syn, ",", pieces_split_by_comma );
+    NStr::Split(syn, ",", pieces_split_by_comma);
 
     // now split each of those pieces by "; "
     vector<string> pieces_split_by_semicolon;
     FOR_EACH_STRING_IN_VECTOR( piece_iter, pieces_split_by_comma ) {
-        NStr::TokenizePattern( *piece_iter, "; ", pieces_split_by_semicolon );
+        NStr::SplitByPattern(*piece_iter, "; ", pieces_split_by_semicolon);
     }
 
     if( pieces_split_by_semicolon.size() > 1 ) {
