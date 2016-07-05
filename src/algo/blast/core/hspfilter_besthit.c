@@ -604,7 +604,7 @@ BlastHSPBestHitParamsNew(const BlastHitSavingOptions* hit_options,
                                    prelim_hitlist_size + 50);
 
     retval = (BlastHSPBestHitParams*) malloc(sizeof(BlastHSPBestHitParams));
-    retval->prelim_hitlist_size = MAX(hit_options->hitlist_size, 10);
+    retval->prelim_hitlist_size = MAX(prelim_hitlist_size, 10);
     retval->hsp_num_max = BlastHspNumMax(gapped_calculation, hit_options);
     retval->program = hit_options->program_number;
     retval->overhang = best_hit_opts->overhang;
