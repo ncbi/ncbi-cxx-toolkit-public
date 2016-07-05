@@ -5317,7 +5317,7 @@ string s_LastErrorMessage(void)
 
 CMemoryFileSegment::CMemoryFileSegment(SMemoryFileHandle& handle,
                                        SMemoryFileAttrs&  attrs,
-                                       off_t              offset,
+                                       TOffsetType        offset,
                                        size_t             length)
     : m_DataPtr(0), m_Offset(offset), m_Length(length),
       m_DataPtrReal(0), m_OffsetReal(offset), m_LengthReal(length)
@@ -5496,7 +5496,7 @@ CMemoryFileMap::~CMemoryFileMap(void)
 }
 
 
-void* CMemoryFileMap::Map(off_t offset, size_t length)
+void* CMemoryFileMap::Map(TOffsetType offset, size_t length)
 {
     if ( !m_Handle  ||  (m_Handle->hMap == kInvalidHandle) ) {
         // Special case.
@@ -5809,7 +5809,7 @@ CMemoryFileMap::x_GetMemoryFileSegment(void* ptr) const
 CMemoryFile::CMemoryFile(const string&  file_name,
                          EMemMapProtect protect,
                          EMemMapShare   share,
-                         off_t          offset,
+                         TOffsetType    offset,
                          size_t         length,
                          EOpenMode      mode,
                          Uint8          max_file_len)
@@ -5824,7 +5824,7 @@ CMemoryFile::CMemoryFile(const string&  file_name,
 }
 
 
-void* CMemoryFile::Map(off_t offset, size_t length)
+void* CMemoryFile::Map(TOffsetType offset, size_t length)
 {
     // Unmap if already mapped
     if ( m_Ptr ) {
@@ -5852,7 +5852,7 @@ void* CMemoryFile::Extend(size_t length)
 
     // Get current mapped segment
     CMemoryFileSegment* segment = x_GetMemoryFileSegment(m_Ptr);
-    off_t offset = segment->GetOffset();
+    TOffsetType offset = segment->GetOffset();
 
     // Get file size
     Int8 file_size = GetFileSize();
@@ -6782,11 +6782,11 @@ ERW_Result CFileReaderWriter::Flush(void)
 // Platform-dependent structure to store file locking information
 struct SLock {
     SLock(void) {};
-    SLock(off_t off, size_t len) {
+    SLock(CFileLock::TOffsetType off, size_t len) {
         Reset(off, len);
     }
 #if defined(NCBI_OS_MSWIN)
-    void Reset(off_t off, size_t len) 
+    void Reset(CFileLock::TOffsetType off, size_t len) 
     {
         offset_lo = (DWORD)(off & 0xFFFFFFFF);
         offset_hi = (DWORD)((Int8(off) >> 32) & 0xFFFFFFFF);
@@ -6806,7 +6806,7 @@ struct SLock {
     DWORD length_lo;
     DWORD length_hi;
 #elif defined(NCBI_OS_UNIX)
-    void Reset(off_t off, size_t len) {
+    void Reset(CFileLock::TOffsetType off, size_t len) {
         offset = off;
         length = len;
     }
@@ -6817,7 +6817,7 @@ struct SLock {
 
 
 CFileLock::CFileLock(const string& filename, TFlags flags, EType type,
-                     off_t offset, size_t length)
+                     TOffsetType offset, size_t length)
     : m_Handle(kInvalidHandle), m_CloseHandle(false), m_Flags(flags),
       m_IsLocked(false), m_Lock(0)
 {
@@ -6826,7 +6826,7 @@ CFileLock::CFileLock(const string& filename, TFlags flags, EType type,
 
 
 CFileLock::CFileLock(const char* filename, TFlags flags, EType type,
-                     off_t offset, size_t length)
+                     TOffsetType offset, size_t length)
     : m_Handle(kInvalidHandle), m_CloseHandle(false), m_Flags(flags),
       m_IsLocked(false), m_Lock(0)
 {
@@ -6835,7 +6835,7 @@ CFileLock::CFileLock(const char* filename, TFlags flags, EType type,
 
 
 CFileLock::CFileLock(TFileHandle handle, TFlags flags, EType type,
-                     off_t offset, size_t length)
+                     TOffsetType offset, size_t length)
     : m_Handle(handle), m_CloseHandle(false), m_Flags(flags),
       m_IsLocked(false), m_Lock(0)
 {
@@ -6844,7 +6844,7 @@ CFileLock::CFileLock(TFileHandle handle, TFlags flags, EType type,
 
 
 void CFileLock::x_Init(const char* filename, EType type,
-                       off_t offset, size_t length)
+                       TOffsetType offset, size_t length)
 {
     // Reset redundant flags
     F_CLEAN_REDUNDANT(fLockNow | fLockLater);
@@ -6902,7 +6902,7 @@ CFileLock::~CFileLock()
 }
 
 
-void CFileLock::Lock(EType type, off_t offset, size_t length)
+void CFileLock::Lock(EType type, TOffsetType offset, size_t length)
 {
     // Remove previous lock
     if (m_IsLocked) {

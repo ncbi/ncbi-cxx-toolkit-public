@@ -2259,6 +2259,8 @@ struct SMemoryFileAttrs;
 class NCBI_XNCBI_EXPORT CMemoryFile_Base
 {
 public:
+    typedef Int8 TOffsetType; // signed for POSIX compatibility
+
     /// Which operations are permitted in memory map file.
     typedef enum {
         eMMP_Read,        ///< Data can be read
@@ -2360,7 +2362,7 @@ public:
     ///   EMemMapProtect, EMemMapShare, GetPtr, GetSize, GetOffset
     CMemoryFileSegment(SMemoryFileHandle& handle,
                        SMemoryFileAttrs&  attrs,
-                       off_t              offset,
+                       TOffsetType        offset,
                        size_t             length);
 
     /// Destructor.
@@ -2381,7 +2383,7 @@ public:
     ///   Offset in bytes of mapped area from beginning of the file.
     ///   Always return value passed in constructor even if data
     ///   was not successfully mapped.
-    off_t GetOffset(void) const;
+    TOffsetType GetOffset(void) const;
 
     /// Get length of the mapped area.
     ///
@@ -2412,7 +2414,7 @@ public:
     ///   Always return adjusted value even if data was not successfully mapped.
     /// @sa
     ///    GetRealPtr, GetRealSize, GetOffset 
-    off_t GetRealOffset(void) const;
+    TOffsetType GetRealOffset(void) const;
 
     /// Get real length of the mapped area.
     ///
@@ -2460,14 +2462,14 @@ private:
     // Values for user
     void*   m_DataPtr;     ///< Pointer to the beginning of the mapped area.
                            ///> The user seen this one.
-    off_t   m_Offset;      ///< Requested starting offset of the
+    TOffsetType   m_Offset;      ///< Requested starting offset of the
                            ///< mapped area from beginning of file.
     size_t  m_Length;      ///< Requested length of the mapped area.
 
     // Internal real values
     void*   m_DataPtrReal; ///< Real pointer to the beginning of the mapped
                            ///< area which should be fried later.
-    off_t   m_OffsetReal;  ///< Corrected starting offset of the
+    TOffsetType   m_OffsetReal;  ///< Corrected starting offset of the
                            ///< mapped area from beginning of file.
     size_t  m_LengthReal;  ///< Corrected length of the mapped area.
 
@@ -2555,7 +2557,7 @@ public:
     ///   MS Windows: If file is open in eMMP_Read mode with eMMS_Private
     ///   protection, that memory pages will be mapped in exclusive mode,
     ///   and any other process cannot access the same file for writing.
-    void* Map(off_t offset, size_t length);
+    void* Map(TOffsetType offset, size_t length);
 
     /// Unmap file segment.
     ///
@@ -2582,7 +2584,7 @@ public:
     ///   Offset in bytes of mapped segment from beginning of the file.
     ///   Returned value is a value of "offset" parameter passed
     ///   to Map() method for specified "ptr".
-    off_t GetOffset(void* ptr) const;
+    TOffsetType GetOffset(void* ptr) const;
 
     /// Get length of the mapped segment.
     ///
@@ -2714,7 +2716,7 @@ public:
     CMemoryFile(const string&  file_name,
                 EMemMapProtect protect_attr = eMMP_Read,
                 EMemMapShare   share_attr   = eMMS_Shared,
-                off_t          offset       = 0,
+                TOffsetType    offset       = 0,
                 size_t         lendth       = 0,
                 EOpenMode      mode         = eDefault,
                 Uint8          max_file_len = 0);
@@ -2739,7 +2741,7 @@ public:
     ///   - NULL if mapped to a file of zero length, or if not mapped.
     /// @sa
     ///   Unmap, GetPtr, GetOffset, GetSize, Extend
-    void* Map(off_t offset = 0, size_t length = 0);
+    void* Map(TOffsetType offset = 0, size_t length = 0);
 
     /// Unmap file if mapped.
     ///
@@ -2777,7 +2779,7 @@ public:
     ///
     /// @return
     ///   Offset in bytes of mapped area from beginning of the file.
-    off_t GetOffset(void) const;
+    TOffsetType GetOffset(void) const;
 
     /// Get length of the mapped region.
     ///
@@ -3540,6 +3542,8 @@ private:
 class NCBI_XNCBI_EXPORT CFileLock
 {
 public:
+    typedef Int8 TOffsetType; // signed for POSIX compatibility
+
     /// Type of file lock.
     ///
     /// Shared lock allows all processes to read from the locked portion
@@ -3578,12 +3582,12 @@ public:
     CFileLock(const string& filename,
               TFlags flags  = fDefault,
               EType  type   = eShared,
-              off_t  offset = 0,
+              TOffsetType offset = 0,
               size_t length = 0);
     CFileLock(const char* filename,
               TFlags flags  = fDefault,
               EType  type   = eShared,
-              off_t  offset = 0,
+              TOffsetType offset = 0,
               size_t length = 0);
 
     /// Construct CFileLock for locking file by system file handle 'handle'.
@@ -3593,7 +3597,7 @@ public:
     CFileLock(TFileHandle handle,
               TFlags flags  = fDefault,
               EType  type   = eShared,
-              off_t  offset = 0,
+              TOffsetType offset = 0,
               size_t length = 0);
 
     /// Destruct the CFileLock, close file and remove all locks if necessary.
@@ -3614,7 +3618,7 @@ public:
     ///   Number of bytes to lock.
     ///   The value 0 means that whole file will be locked.
     /// @sa Unlock
-    void Lock(EType type, off_t offset = 0, size_t length = 0);
+    void Lock(EType type, TOffsetType offset = 0, size_t length = 0);
 
     /// Unlock file.
     ///
@@ -3636,7 +3640,7 @@ public:
 
 protected:
     /// Auxiliary method for constructors.
-    void x_Init(const char* filename, EType type, off_t offset, size_t length);
+    void x_Init(const char* filename, EType type, TOffsetType offset, size_t length);
 
 private:
     TFileHandle    m_Handle;      ///< System file handle.
@@ -3950,7 +3954,7 @@ size_t CMemoryFileSegment::GetSize(void) const
 
 
 inline
-off_t CMemoryFileSegment::GetOffset(void) const
+CMemoryFileSegment::TOffsetType CMemoryFileSegment::GetOffset(void) const
 {
     return m_Offset;
 }
@@ -3969,7 +3973,7 @@ size_t CMemoryFileSegment::GetRealSize(void) const
 
 
 inline
-off_t CMemoryFileSegment::GetRealOffset(void) const
+CMemoryFileSegment::TOffsetType CMemoryFileSegment::GetRealOffset(void) const
 {
     return m_OffsetReal;
 }
@@ -3993,7 +3997,7 @@ CMemoryFileMap::GetMemoryFileSegment(void* ptr) const
 }
 
 inline
-off_t CMemoryFileMap::GetOffset(void* ptr) const
+CMemoryFileMap::TOffsetType CMemoryFileMap::GetOffset(void* ptr) const
 {
     return GetMemoryFileSegment(ptr)->GetOffset();
 }
@@ -4038,7 +4042,7 @@ size_t CMemoryFile::GetSize(void) const
 }
 
 inline
-off_t CMemoryFile::GetOffset(void) const
+CMemoryFile::TOffsetType CMemoryFile::GetOffset(void) const
 {
     x_Verify();
     return CMemoryFileMap::GetOffset(m_Ptr);
