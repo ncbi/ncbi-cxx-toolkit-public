@@ -298,6 +298,10 @@ void CFeatTableEdit::EliminateBadQualifiers()
 {
     typedef CSeq_feat::TQual QUALS;
 
+    vector<string> specialQuals{
+        "Transcript_id", "protein_id", "Protein", "protein",
+        "go_function", "go_component", "go_process" };
+
     CFeat_CI it(mHandle);
     for ( ; it; ++it) {
         CSeqFeatData::ESubtype subtype = it->GetData().GetSubtype();
@@ -308,18 +312,25 @@ void CFeatTableEdit::EliminateBadQualifiers()
         for (QUALS::const_iterator qual = quals.begin(); qual != quals.end(); 
                 ++qual) {
             string qualVal = (*qual)->GetQual();
-            if (qualVal == "transcript_id") {
+            if (NStr::StartsWith(qualVal, "go")) {
+                cerr << "";
+            }
+            if (std::find(specialQuals.begin(), specialQuals.end(), qualVal) 
+                    != specialQuals.end()) {
                 continue;
             }
-            if (qualVal == "protein_id") {
-                continue;
-            }
-            if (qualVal == "Protein") {
-                continue;
-            }
-            if (qualVal == "protein") {
-                continue;
-            }
+            //if (qualVal == "transcript_id") {
+            //    continue;
+            //}
+            //if (qualVal == "protein_id") {
+            //    continue;
+            //}
+            //if (qualVal == "Protein") {
+            //    continue;
+            //}
+            //if (qualVal == "protein") {
+            //    continue;
+            //}
             CSeqFeatData::EQualifier qualType = CSeqFeatData::GetQualifierType(qualVal);
             if (!CSeqFeatData::IsLegalQualifier(subtype, qualType)) {
                 badQuals.push_back(qualVal);
