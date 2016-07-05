@@ -1,0 +1,305 @@
+Seq-submit ::= {
+  sub {
+    contact {
+      contact {
+        name
+          name {
+            last "Pupkin" ,
+            first "" ,
+            initials "M" } ,
+        affil
+          str "q" } } ,
+    cit {
+      authors {
+        names
+          std {
+            {
+              name
+                consortium "X" } } ,
+        affil
+          str "q" } ,
+      date
+        std {
+          year 2012 ,
+          month 3 ,
+          day 5 } } ,
+    subtype new ,
+    tool "Sequin 12.08 - MS WINDOWS VISTA" } ,
+  data
+    entrys {
+      set {
+        class pop-set ,
+        descr {
+          pub {
+            pub {
+              gen {
+                cit "Unpublished" ,
+                authors {
+                  names
+                    std {
+                      {
+                        name
+                          name {
+                            last "Pupkin" ,
+                            first "Vasya" ,
+                            initials "M." } } ,
+                      {
+                        name
+                          consortium "XXX" } ,
+                      {
+                        name
+                          name {
+                            last "Pupkin" ,
+                            first "" ,
+                            initials "M." } } } ,
+                  affil
+                    str "q" } ,
+                title "On NCBI Discrepancy Reports" } } } ,
+          user {
+            type
+              str "NcbiCleanup" ,
+            data {
+              {
+                label
+                  str "method" ,
+                data
+                  str "SeriousSeqEntryCleanup" } ,
+              {
+                label
+                  str "version" ,
+                data
+                  int 7 } ,
+              {
+                label
+                  str "month" ,
+                data
+                  int 3 } ,
+              {
+                label
+                  str "day" ,
+                data
+                  int 5 } ,
+              {
+                label
+                  str "year" ,
+                data
+                  int 2012 } } } ,
+          create-date
+            std {
+              year 2012 ,
+              month 3 ,
+              day 5 } ,
+          update-date
+            std {
+              year 2012 ,
+              month 3 ,
+              day 5 } } ,
+        seq-set {
+          set {
+            class nuc-prot ,
+            descr {
+              source {
+                genome genomic ,
+                org {
+                  taxname "Homo sapiens" ,
+                  common "human" ,
+                  db {
+                    {
+                      db "taxon" ,
+                      tag
+                        id 9606 } } ,
+                  orgname {
+                    mod {
+                      {
+                        subtype isolate ,
+                        subname "TGGE gel band 123" } } ,
+                    lineage "Eukaryota; Metazoa; Chordata; Craniata;
+ Vertebrata; Euteleostomi; Mammalia; Eutheria; Euarchontoglires; Primates;
+ Haplorrhini; Catarrhini; Hominidae; Homo" ,
+                    gcode 1 ,
+                    mgcode 2 ,
+                    div "PRI" } } ,
+                subtype {
+                  {
+                    subtype clone ,
+                    name "c1" } ,
+                  {
+                    subtype isolation-source ,
+                    name "sea" } } } } ,
+            seq-set {
+              seq {
+                id {
+                  local
+                    str "nuc1" } ,
+                descr {
+                  molinfo {
+                    biomol genomic } } ,
+                inst {
+                  repr raw ,
+                  mol dna ,
+                  length 92 ,
+                  seq-data
+                    ncbi2na '00000FFFFFEAAAAA955555500000FFFFFEAAAAA9555555'H } } ,
+              seq {
+                id {
+                  local
+                    str "nuc1_1" } ,
+                descr {
+                  title "something biosyntesis, partial [Homo sapiens]" ,
+                  molinfo {
+                    biomol peptide ,
+                    tech concept-trans ,
+                    completeness no-ends } } ,
+                inst {
+                  repr raw ,
+                  mol aa ,
+                  length 31 ,
+                  seq-data
+                    ncbieaa "KKKIFFFGGGGPPPPQKKNFFFWGGGAPPPP" } ,
+                annot {
+                  {
+                    data
+                      ftable {
+                        {
+                          data
+                            prot {
+                              name {
+                                "something biosyntesis" } } ,
+                          partial TRUE ,
+                          location
+                            int {
+                              from 0 ,
+                              to 30 ,
+                              id
+                                local
+                                  str "nuc1_1" ,
+                              fuzz-from
+                                lim lt ,
+                              fuzz-to
+                                lim gt } } } } } } } ,
+            annot {
+              {
+                data
+                  ftable {
+                    {
+                      data
+                        cdregion {
+                          frame one ,
+                          code {
+                            id 1 } } ,
+                      partial TRUE ,
+                      product
+                        whole
+                          local
+                            str "nuc1_1" ,
+                      location
+                        int {
+                          from 0 ,
+                          to 91 ,
+                          strand plus ,
+                          id
+                            local
+                              str "nuc1" ,
+                          fuzz-from
+                            lim lt ,
+                          fuzz-to
+                            lim gt } } } } } } ,
+          set {
+            class nuc-prot ,
+            descr {
+              source {
+                genome genomic ,
+                org {
+                  taxname "Homo sapiens" ,
+                  common "human" ,
+                  db {
+                    {
+                      db "taxon" ,
+                      tag
+                        id 9606 } } ,
+                  orgname {
+                    lineage "Eukaryota; Metazoa; Chordata; Craniata;
+ Vertebrata; Euteleostomi; Mammalia; Eutheria; Euarchontoglires; Primates;
+ Haplorrhini; Catarrhini; Hominidae; Homo" ,
+                    gcode 1 ,
+                    mgcode 2 ,
+                    div "PRI" } } } } ,
+            seq-set {
+              seq {
+                id {
+                  local
+                    str "nuc2" } ,
+                descr {
+                  molinfo {
+                    biomol genomic } } ,
+                inst {
+                  repr raw ,
+                  mol dna ,
+                  length 138 ,
+                  seq-data
+                    ncbi2na '00000FFFFFEAAAAA955555500000FFFFFEAAAAA9555555000
+00FFFFFEAAAAA95555550'H } } ,
+              seq {
+                id {
+                  local
+                    str "nuc2_1" } ,
+                descr {
+                  title "something biosythesis, partial [Homo sapiens]" ,
+                  molinfo {
+                    biomol peptide ,
+                    tech concept-trans ,
+                    completeness no-ends } } ,
+                inst {
+                  repr raw ,
+                  mol aa ,
+                  length 46 ,
+                  seq-data
+                    ncbieaa "KKKIFFFGGGGPPPPQKKNFFFWGGGAPPPPKKKFFFLGGGGPPPP" } ,
+                annot {
+                  {
+                    data
+                      ftable {
+                        {
+                          data
+                            prot {
+                              name {
+                                "something biosythesis" } } ,
+                          partial TRUE ,
+                          location
+                            int {
+                              from 0 ,
+                              to 45 ,
+                              id
+                                local
+                                  str "nuc2_1" ,
+                              fuzz-from
+                                lim lt ,
+                              fuzz-to
+                                lim gt } } } } } } } ,
+            annot {
+              {
+                data
+                  ftable {
+                    {
+                      data
+                        cdregion {
+                          frame one ,
+                          code {
+                            id 1 } } ,
+                      partial TRUE ,
+                      product
+                        whole
+                          local
+                            str "nuc2_1" ,
+                      location
+                        int {
+                          from 0 ,
+                          to 137 ,
+                          strand plus ,
+                          id
+                            local
+                              str "nuc2" ,
+                          fuzz-from
+                            lim lt ,
+                          fuzz-to
+                            lim gt } } } } } } } } } }

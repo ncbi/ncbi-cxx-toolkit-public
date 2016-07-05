@@ -76,6 +76,9 @@ void CReportObject::SetText(CScope& scope)
     else if (m_Seqdesc) {
         m_Text = GetTextObjectDescription(*m_Seqdesc, scope);
     }
+    else if (m_Submit_block) {
+        m_Text = GetTextObjectDescription(*m_Submit_block, scope);
+    }
     else if (m_Bioseq_set) {
         CBioseq_set_Handle bssh = scope.GetBioseq_setHandle(*m_Bioseq_set);
         m_Text = GetTextObjectDescription(bssh);
@@ -567,11 +570,18 @@ string CReportObject::GetTextObjectDescription(CBioseq_set_Handle bssh)
 }
 
 
+string CReportObject::GetTextObjectDescription(const CSubmit_block& sb, CScope& scope)
+{
+return "Submit block!";
+}
+
+
 void CReportObject::DropReference()
 {
     m_Bioseq.Reset();
     m_Seq_feat.Reset();
     m_Seqdesc.Reset();
+    m_Submit_block.Reset();
     m_Bioseq_set.Reset();
 }
 

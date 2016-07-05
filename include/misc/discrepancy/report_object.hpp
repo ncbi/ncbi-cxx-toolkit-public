@@ -33,6 +33,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/submit/Submit_block.hpp>
 #include <objmgr/scope.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -50,6 +51,7 @@ public:
     CReportObject(CConstRef<CBioseq> obj, CScope& scope) : m_Bioseq(obj), m_Scope(scope) {}
     CReportObject(CConstRef<CSeq_feat> obj, CScope& scope) : m_Seq_feat(obj), m_Scope(scope) {}
     CReportObject(CConstRef<CSeqdesc> obj, CScope& scope) : m_Seqdesc(obj), m_Scope(scope) {}
+    CReportObject(CConstRef<CSubmit_block> obj, CScope& scope) : m_Submit_block(obj), m_Scope(scope) {}
     CReportObject(CConstRef<CBioseq_set> obj, CScope& scope) : m_Bioseq_set(obj), m_Scope(scope) {}
     CReportObject(const CReportObject& other) :
         m_Text(other.m_Text),
@@ -59,6 +61,7 @@ public:
         m_Bioseq(other.m_Bioseq),
         m_Seq_feat(other.m_Seq_feat),
         m_Seqdesc(other.m_Seqdesc),
+        m_Submit_block(other.m_Submit_block),
         m_Bioseq_set(other.m_Bioseq_set),
         m_Filename(other.m_Filename),
         m_Scope(other.m_Scope) {}
@@ -99,6 +102,7 @@ public:
     static string GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope, const string& product);  
     static string GetTextObjectDescription(const CSeqdesc& sd, CScope& scope);
     static string GetTextObjectDescription(const CSeqdesc& sd);
+    static string GetTextObjectDescription(const CSubmit_block& sb, CScope& scope);
     static string GetTextObjectDescription(CBioseq_Handle bsh);
     static string GetTextObjectDescription(CBioseq_set_Handle bssh);
     static void GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope, string &label, string &context, string &location, string &locus_tag);
@@ -116,6 +120,9 @@ public:
         if (m_Seqdesc) {
             return CConstRef<CSerialObject>(&*m_Seqdesc);
         }
+        if (m_Submit_block) {
+            return CConstRef<CSerialObject>(&*m_Submit_block);
+        }
         if( m_Bioseq_set ) {
             return CConstRef<CSerialObject>(&*m_Bioseq_set);
         }
@@ -130,6 +137,7 @@ protected:
     CConstRef<CBioseq>     m_Bioseq;
     CConstRef<CSeq_feat>   m_Seq_feat;
     CConstRef<CSeqdesc>    m_Seqdesc;
+    CConstRef<CSubmit_block> m_Submit_block;
     CConstRef<CBioseq_set> m_Bioseq_set;
     string                 m_Filename;
     CScope&                m_Scope;

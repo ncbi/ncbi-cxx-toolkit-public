@@ -38,6 +38,7 @@
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/OrgName.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
+#include <objects/submit/Submit_block.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
@@ -124,6 +125,14 @@ public:
         }
     }
     CDiscrepancyObject(CConstRef<CSeq_feat> obj, CScope& scope, const string& filename, bool keep_ref, bool autofix = false, CObject* more = 0) : CReportObject(obj, scope), m_Autofix(autofix), m_More(more)
+    {
+        SetFilename(filename);
+        SetText(scope);
+        if (!keep_ref) {
+            DropReference();
+        }
+    }
+    CDiscrepancyObject(CConstRef<CSubmit_block> obj, CScope& scope, const string& filename, bool keep_ref, bool autofix = false, CObject* more = 0) : CReportObject(obj, scope), m_Autofix(autofix), m_More(more)
     {
         SetFilename(filename);
         SetText(scope);
@@ -332,6 +341,7 @@ public:
     CConstRef<CBioseq> GetCurrentBioseq(void) const;
     CConstRef<CBioseq_set> GetCurrentBioseq_set(void) const { return m_Bioseq_set_Stack.empty() ? CConstRef<CBioseq_set>(0) : m_Bioseq_set_Stack.back(); }
     const vector<CConstRef<CBioseq_set> > &Get_Bioseq_set_Stack(void) const { return m_Bioseq_set_Stack; }
+    CConstRef<CSubmit_block> GetCurrentSubmit_block(void) const { return m_Current_Submit_block; }
     CConstRef<CSeqdesc> GetCurrentSeqdesc(void) const { return m_Current_Seqdesc; }
     CConstRef<CSeq_feat> GetCurrentSeq_feat(void) const { return m_Current_Seq_feat; }
     size_t GetCountBioseq(void) const { return m_Count_Bioseq; }
@@ -377,6 +387,7 @@ public:
     CDiscrepancyObject* NewDiscObj(CConstRef<CBioseq> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0) { return new CDiscrepancyObject(obj, *m_Scope, m_File, keep_ref || m_KeepRef, autofix, more); }
     CDiscrepancyObject* NewDiscObj(CConstRef<CSeqdesc> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0) { return new CDiscrepancyObject(obj, *m_Scope, m_File, keep_ref || m_KeepRef, autofix, more); }
     CDiscrepancyObject* NewDiscObj(CConstRef<CSeq_feat> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0) { return new CDiscrepancyObject(obj, *m_Scope, m_File, keep_ref || m_KeepRef, autofix, more); }
+    CDiscrepancyObject* NewDiscObj(CConstRef<CSubmit_block> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0) { return new CDiscrepancyObject(obj, *m_Scope, m_File, keep_ref || m_KeepRef, autofix, more); }
     CDiscrepancyObject* NewDiscObj(CConstRef<CBioseq_set> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0) { return new CDiscrepancyObject(obj, *m_Scope, m_File, keep_ref || m_KeepRef, autofix, more); }
 
 protected:
@@ -386,6 +397,7 @@ protected:
     vector<CConstRef<CBioseq_set> > m_Bioseq_set_Stack;
     CBioseq_Handle m_Current_Bioseq_Handle;
     CConstRef<CBioseq> m_Current_Bioseq;
+    CConstRef<CSubmit_block> m_Current_Submit_block;
     CConstRef<CSeqdesc> m_Current_Seqdesc;
     CConstRef<CSeq_feat> m_Current_Seq_feat;
     CConstRef<CSuspect_rule_set> m_ProductRules;

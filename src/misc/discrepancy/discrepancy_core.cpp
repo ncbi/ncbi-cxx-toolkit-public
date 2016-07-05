@@ -310,6 +310,7 @@ void CDiscrepancyContext::Parse(const CSerialObject& root)
     CTypesConstIterator i;
     CType<CBioseq>::AddTo(i);
     CType<CBioseq_set>::AddTo(i);
+    CType<CSubmit_block>::AddTo(i);
     CType<CSeqdesc>::AddTo(i);
     CType<CSeq_feat>::AddTo(i);
     CType<CSeq_annot>::AddTo(i);
@@ -328,6 +329,8 @@ void CDiscrepancyContext::Parse(const CSerialObject& root)
     ENABLE_DISCREPANCY_TYPE(CAuth_list)
     // Don't ENABLE_DISCREPANCY_TYPE(CSeq_annot), it is handled separately!
     // Don't ENABLE_DISCREPANCY_TYPE(CBioseq_set), it is handled separately!
+
+    m_Current_Submit_block.Reset();
 
     CSeqdesc_CI::TDescChoices desc_choices = {CSeqdesc::e_Source};
 
@@ -404,8 +407,10 @@ void CDiscrepancyContext::Parse(const CSerialObject& root)
                 }
             }
         }
+        else if (CType<CSubmit_block>::Match(i)) {
+            m_Current_Submit_block.Reset(CType<CSubmit_block>::Get(i));
+        }
         else if (CType<CSeqdesc>::Match(i)) {
-            //cout << "CSeqdesc !!!" << endl;
             m_Current_Seq_feat.Reset();
             m_Current_Seqdesc.Reset(CType<CSeqdesc>::Get(i));
             m_Count_Seqdesc++;

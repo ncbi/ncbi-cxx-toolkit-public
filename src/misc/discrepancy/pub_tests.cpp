@@ -813,7 +813,7 @@ DISCREPANCY_CASE(CONSORTIUM, CAuth_list, eOncaller, "Submitter blocks and public
             if ((*auth)->IsSetName() && (*auth)->GetName().IsConsortium()) {
                 CConstRef<CSeq_feat> feat = context.GetCurrentSeq_feat();
                 CConstRef<CSeqdesc> desc = context.GetCurrentSeqdesc();
-                //ASSERT(!feat || !desc);
+                _ASSERT(!feat || !desc);
                 if (feat) {
                     m_Objs[kHasConsortium].Add(*context.NewDiscObj(feat));
                 }
@@ -821,15 +821,48 @@ DISCREPANCY_CASE(CONSORTIUM, CAuth_list, eOncaller, "Submitter blocks and public
                     m_Objs[kHasConsortium].Add(*context.NewDiscObj(desc));
                 }
                 else {
-                    // todo: add submit-block
-                    //m_Objs[kHasConsortium].Add(*context.NewDiscObj(desc));
+                    CConstRef<CSubmit_block> subb = context.GetCurrentSubmit_block();
+                    _ASSERT(subb);
+                    m_Objs[kHasConsortium].Add(*context.NewDiscObj(subb));
                 }
             }
         }
     }
 }
 
+
 DISCREPANCY_SUMMARIZE(CONSORTIUM)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+// CHECK_AUTH_NAME
+
+DISCREPANCY_CASE(CHECK_AUTH_NAME, CAuth_list, eOncaller, "Submitter blocks and publications have consortiums")
+{
+    if (obj.IsSetNames() && obj.GetNames().IsStd()) {
+        ITERATE (CAuth_list::C_Names::TStd, auth, obj.GetNames().GetStd()) {
+            if ((*auth)->IsSetName() && (*auth)->GetName().IsConsortium()) {
+                CConstRef<CSeq_feat> feat = context.GetCurrentSeq_feat();
+                CConstRef<CSeqdesc> desc = context.GetCurrentSeqdesc();
+                _ASSERT(!feat || !desc);
+                if (feat) {
+                    m_Objs[kHasConsortium].Add(*context.NewDiscObj(feat));
+                }
+                else if (desc) {
+                    m_Objs[kHasConsortium].Add(*context.NewDiscObj(desc));
+                }
+                else {
+                    // C Toolkit does not test submit blocks
+                }
+            }
+        }
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(CHECK_AUTH_NAME)
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
