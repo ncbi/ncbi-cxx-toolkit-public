@@ -41,6 +41,100 @@ BEGIN_SCOPE(objects)
 
 class CSeq_entry;
 
+class NCBI_BAMREAD_EXPORT CPagedFile : public CObject
+{
+public:
+    typedef Uint8 TFilePos;
+
+    explicit
+        CPagedFile(const string& file_name);
+    ~CPagedFile();
+
+protected:
+    friend class CPagedFilePage;
+    void x_Select(CPagedFilePage& page, TFilePos pos);
+    void x_Release(CPagedFilePage& page);
+
+private:
+    // two variants: direct file IO or memory mapped file
+    CFileIO m_File;
+    AutoPtr<CMemoryFile> m_MemFile;
+};
+
+
+class CPagedFilePage
+{
+public:
+    typedef CPagedFile::TFilePos TFilePos;
+
+    CPagedFilePage()
+        : m_FilePos(0),
+          m_Size(0),
+          m_Ptr(0)
+    {
+    }
+    CPagedFilePage(CPagedFile& file, TFilePos pos)
+        : m_FilePos(0),
+          m_Size(0),
+          m_Ptr(0)
+    {
+        file.x_Select(*this, pos);
+    }
+
+    void Reset()
+    {
+        if (m_File) {
+            m_File->x_Release(*this);
+            m_File = null;
+        }
+    }
+    void Select(CPagedFile& file)
+    {
+        if (m_File != &file) {
+            Reset();
+        }
+        m_File = &file;
+    }
+    void Select(TFilePos pos)
+    {
+        m_File->x_Select(*this, pos);
+    }
+    void Select(CPagedFile& file, TFilePos pos)
+    {
+        Select(file);
+        Select(pos);
+    }
+
+    TFilePos GetPageFilePos() const
+    {
+        return m_FilePos;
+    }
+    size_t GetPageSize() const
+    {
+        return m_Size;
+    }
+    const char* GetPagePtr() const
+    {
+        return m_Ptr;
+    }
+
+    bool Contains(TFilePos file_pos) const
+    {
+        return (file_pos - m_FilePos) < m_Size;
+    }
+
+protected:
+    friend class CPagedFile;
+
+private:
+    CRef<CPagedFile> m_File;
+    TFilePos m_FilePos;
+    size_t m_Size;
+    const char* m_Ptr;
+    CSimpleBufferT<char> m_Buffer;
+};
+
+
 class NCBI_BAMREAD_EXPORT CBGZFException : public CException
 {
 public:
@@ -163,7 +257,7 @@ public:
         }
 
 protected:
-    friend class CBGZFFile;
+    friend class CBGZFStream;
 
 private:
     TFileBlockPos m_FileBlockPos;
@@ -179,21 +273,6 @@ public:
     explicit
     CBGZFFile(const string& file_name);
     ~CBGZFFile();
-
-    // Read block info from a BGZF stream.
-    // Optionally save whole block data for decompression
-    // and return pointer to compressed data.
-    const char* ReadBlock(CBGZFPos::TFileBlockPos file_pos,
-                          CBGZFBlockInfo& block_info,
-                          CSimpleBufferT<char>* buffer);
-
-    // read using buffer pointer if necessary
-    // the buffer should have at least size bytes
-    const char* Read(CBGZFPos::TFileBlockPos file_pos, size_t size,
-                     char* buffer);
-    // read using buffer if necessary
-    const char* Read(CBGZFPos::TFileBlockPos file_pos, size_t size,
-                     CSimpleBufferT<char>& buffer);
 
     static Uint2 MakeUint2(const char* buf)
         {
@@ -222,9 +301,10 @@ public:
         }
     
 protected:
+    friend class CBGZFStream;
 
 private:
-    CMemoryFile m_MemFile;
+    CRef<CPagedFile> m_File;
 };
 
 
@@ -259,12 +339,14 @@ public:
     const char* Read(size_t count);
     
 private:
+    const char* x_Read(CBGZFPos::TFileBlockPos file_pos, size_t size, char* buffer);
     void x_ReadBlock(CBGZFPos::TFileBlockPos file_pos);
 
     CRef<CBGZFFile> m_File;
+    CPagedFilePage m_Page;
     CBGZFBlockInfo m_BlockInfo;
-    CBGZFPos::TByteOffset m_ReadPos;
     AutoArray<char> m_Data;
+    CBGZFPos::TByteOffset m_ReadPos;
     CSimpleBufferT<char> m_ReadBuffer;
 };
 

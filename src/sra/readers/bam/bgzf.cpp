@@ -45,8 +45,9 @@ BEGIN_SCOPE(objects)
 
 class CSeq_entry;
 
+static const bool kUseMemFile = false;
 static const bool kCheckBlockCRC32 = true;
-static const Uint8 kSegmentSize = 4<<20;
+static const size_t kSegmentSize = 4<<20; // 16 MB
 
 const char* CBGZFException::GetErrCodeString(void) const
 {
@@ -56,6 +57,79 @@ const char* CBGZFException::GetErrCodeString(void) const
     case eInvalidArg:   return "eInvalidArg";
     default:            return CException::GetErrCodeString();
     }
+}
+
+
+CPagedFile::CPagedFile(const string& file_name)
+{
+    if (kUseMemFile) {
+        m_MemFile.reset(new CMemoryFile(file_name,
+            CMemoryFile::eMMP_Read,
+            CMemoryFile::eMMS_Shared,
+            0, kSegmentSize)); // to prevent initial mapping
+    }
+    else {
+        m_File.Open(file_name, CFileIO::eOpen, CFileIO::eRead);
+    }
+}
+
+
+CPagedFile::~CPagedFile()
+{
+}
+
+
+void CPagedFile::x_Release(CPagedFilePage& page)
+{
+    if (page.m_Ptr) {
+        if (kUseMemFile) {
+            m_MemFile->Unmap();
+        }
+        else {
+        }
+        page.m_Ptr = 0;
+    }
+    page.m_Size = 0;
+    page.m_FilePos = 0;
+}
+
+
+void CPagedFile::x_Select(CPagedFilePage& page, TFilePos file_pos)
+{
+    if (page.m_File == this && page.Contains(file_pos)) {
+        return;
+    }
+    if (page.m_File != this) {
+        page.Reset();
+        page.m_File = this;
+    }
+    TFilePos base_pos = file_pos / kSegmentSize * kSegmentSize;
+    size_t size = kSegmentSize;
+    if (kUseMemFile) {
+        page.m_Ptr = (const char*)m_MemFile->Map(base_pos, size);
+    }
+    else {
+        page.m_Buffer.resize(size);
+        m_File.SetFilePos(base_pos);
+        char* dst = page.m_Buffer.data();
+        size_t rem = size;
+        while (rem) {
+            size_t cnt = m_File.Read(dst, rem);
+            if (cnt == 0) {
+                // end of file or error
+                break;
+            }
+            rem -= cnt;
+            dst += cnt;
+        }
+        if (rem) {
+            memset(dst, 0, min(rem, size_t(CBGZFBlockInfo::kMaxFileBlockSize)));
+            size -= rem;
+        }
+        page.m_Ptr = page.m_Buffer.data();
+    }
+    page.m_FilePos = base_pos;
+    page.m_Size = size;
 }
 
 
@@ -73,22 +147,21 @@ char* s_Reserve(size_t size, CSimpleBufferT<char>& buffer)
 
 
 static inline
-const char* s_Read(CMemoryFile& in,
+const char* s_Read(CPagedFilePage& in,
                    Uint8 file_pos, size_t len,
                    char* buffer)
 {
     char* dst = buffer;
     while ( len ) {
-        Uint8 off = file_pos % kSegmentSize;
-        off_t seg_start = off_t(file_pos - off);
-        const void* ptr = in.GetPtr();
-        if ( !ptr || in.GetOffset() != seg_start ) {
-            ptr = in.Map(seg_start, kSegmentSize);
-        }
-        _ASSERT(ptr && in.GetOffset() == seg_start);
-        size_t cnt = size_t(min(kSegmentSize - off, Uint8(len)));
+        in.Select(file_pos);
+        const char* ptr = in.GetPagePtr();
+        _ASSERT(ptr);
+        _ASSERT(in.Contains(file_pos));
+        size_t off = size_t(file_pos - in.GetPageFilePos());
+        size_t avail = in.GetPageSize() - off;
+        size_t cnt = min(avail, len);
         _ASSERT(cnt < 0x10000);
-        memcpy(dst, static_cast<const char*>(ptr)+off, cnt);
+        memcpy(dst, ptr+off, cnt);
         len -= cnt;
         file_pos += cnt;
         dst += cnt;
@@ -98,36 +171,35 @@ const char* s_Read(CMemoryFile& in,
 
 
 static inline
-const char* s_Read(CMemoryFile& in,
+const char* s_Read(CPagedFilePage& in,
                    Uint8 file_pos, size_t len,
                    CSimpleBufferT<char>& buffer)
 {
-    Uint8 off = file_pos % kSegmentSize;
-    off_t seg_start = off_t(file_pos - off);
-    const void* ptr = in.GetPtr();
-    if ( !ptr || in.GetOffset() != seg_start ) {
-        ptr = in.Map(seg_start, kSegmentSize);
-    }
-    _ASSERT(ptr && in.GetOffset() == seg_start);
-    Uint8 avail = kSegmentSize - off;
+    in.Select(file_pos);
+    const char* ptr = in.GetPagePtr();
+    _ASSERT(ptr);
+    _ASSERT(in.Contains(file_pos));
+    size_t off = size_t(file_pos - in.GetPageFilePos());
+    size_t avail = in.GetPageSize() - off;
     if ( len <= avail ) {
-        return static_cast<const char*>(ptr) + off;
+        return ptr + off;
     }
     char* dst = s_Reserve(len, buffer);
     _ASSERT(avail < 0x10000);
-    memcpy(dst, static_cast<const char*>(ptr)+off, avail);
+    memcpy(dst, ptr+off, avail);
     len -= avail;
     file_pos += avail;
     dst += avail;
     while ( len ) {
-        off = file_pos % kSegmentSize;
-        seg_start = off_t(file_pos - off);
-        ptr = in.Map(seg_start, kSegmentSize);
-        _ASSERT(ptr && in.GetOffset() == seg_start);
-        avail = kSegmentSize - off;
-        size_t cnt = size_t(min(avail, Uint8(len)));
+        in.Select(file_pos);
+        ptr = in.GetPagePtr();
+        _ASSERT(ptr);
+        _ASSERT(in.Contains(file_pos));
+        off = size_t(file_pos - in.GetPageFilePos());
+        avail = in.GetPageSize() - off;
+        size_t cnt = min(avail, len);
         _ASSERT(cnt < 0x10000);
-        memcpy(dst, static_cast<const char*>(ptr)+off, cnt);
+        memcpy(dst, ptr+off, cnt);
         len -= cnt;
         file_pos += cnt;
         dst += cnt;
@@ -143,95 +215,13 @@ ostream& operator<<(ostream& out, const CBGZFPos& p)
 
 
 CBGZFFile::CBGZFFile(const string& file_name)
-    : m_MemFile(file_name,
-                CMemoryFile::eMMP_Read,
-                CMemoryFile::eMMS_Shared,
-                0, kSegmentSize) // to prevent initial mapping
+    : m_File(new CPagedFile(file_name))
 {
 }
 
 
 CBGZFFile::~CBGZFFile()
 {
-}
-
-
-const char* CBGZFFile::Read(CBGZFPos::TFileBlockPos file_pos, size_t size,
-                            char* buffer)
-{
-    return s_Read(m_MemFile, file_pos, size, buffer);
-}
-
-
-const char* CBGZFFile::Read(CBGZFPos::TFileBlockPos file_pos, size_t size,
-                            CSimpleBufferT<char>& buffer)
-{
-    return s_Read(m_MemFile, file_pos, size, buffer);
-}
-
-
-const char* CBGZFFile::ReadBlock(CBGZFPos::TFileBlockPos file_pos,
-                                 CBGZFBlockInfo& block_info,
-                                 CSimpleBufferT<char>* buffer)
-{
-    const size_t kHeaderSize = CBGZFBlockInfo::kHeaderSize;
-    const size_t kFooterSize = CBGZFBlockInfo::kFooterSize;
-    const size_t kMaxDataSize = CBGZFBlockInfo::kMaxDataSize;
-
-    char tmp[kHeaderSize];
-    const char* header = Read(file_pos, kHeaderSize, tmp);
-
-    // parse and check GZip header
-    if ( header[0] != 31 || header[1] != '\x8b' ||
-         header[2] != 8 || header[3] != 4 ) {
-        NCBI_THROW_FMT(CBGZFException, eFormatError,
-                       "Bad BGZF("<<file_pos<<") MAGIC: ");
-    }
-    // 4-7 - modification time
-    // 8 - extra flags
-    // 9 - OS
-    if ( CBGZFFile::MakeUint2(header+10) != 6 ) {
-        NCBI_THROW_FMT(CBGZFException, eFormatError,
-                       "Bad BGZF("<<file_pos<<") XLEN: ");
-    }
-    // extra data
-    if ( header[12] != 'B' || header[13] != 'C' ||
-         header[14] != 2 || header[15] != 0 ) {
-        NCBI_THROW_FMT(CBGZFException, eFormatError,
-                       "Bad BGZF("<<file_pos<<") EXTRA: ");
-    }
-
-    CBGZFBlockInfo::TFileBlockSize block_size = CBGZFFile::MakeUint2(header+16)+1;
-
-    if ( block_size <= kHeaderSize + kFooterSize ) {
-        NCBI_THROW_FMT(CBGZFException, eFormatError,
-                       "Bad BGZF("<<file_pos<<") FILE SIZE: "<<block_size);
-    }
-
-    const char* data;
-    const char* footer;
-    if ( buffer ) {
-        data = Read(file_pos + kHeaderSize, block_size - kHeaderSize, *buffer);
-        footer = data + block_size - kHeaderSize - kFooterSize;
-    }
-    else {
-        data = 0;
-        footer = Read(file_pos + block_size - kFooterSize, kFooterSize, tmp);
-    }
-
-    CBGZFBlockInfo::TDataSize data_size = CBGZFFile::MakeUint4(footer+4);
-
-    if ( data_size == 0 || data_size > kMaxDataSize ) {
-        NCBI_THROW_FMT(CBGZFException, eFormatError,
-                       "Bad BGZF("<<file_pos<<") DATA SIZE: "<<data_size);
-    }
-
-    block_info.m_FileBlockPos = file_pos;
-    block_info.m_FileBlockSize = block_size;
-    block_info.m_CRC32 = CBGZFFile::MakeUint4(footer);
-    block_info.m_DataSize = data_size;
-
-    return data;
 }
 
 
@@ -255,6 +245,7 @@ CBGZFStream::~CBGZFStream()
 
 void CBGZFStream::Close()
 {
+    m_Page.Reset();
     m_File.Reset();
     m_ReadPos = m_BlockInfo.GetDataSize();
 }
@@ -264,6 +255,7 @@ void CBGZFStream::Open(CBGZFFile& file)
 {
     Close();
     m_File.Reset(&file);
+    m_Page.Select(*file.m_File);
     if ( !m_Data.get() ) {
         m_Data.reset(new char[CBGZFBlockInfo::kMaxDataSize]);
     }
@@ -288,14 +280,56 @@ void CBGZFStream::Seek(CBGZFPos pos)
 
 void CBGZFStream::x_ReadBlock(CBGZFPos::TFileBlockPos file_pos)
 {
-    const char* data = m_File->ReadBlock(file_pos, m_BlockInfo, &m_ReadBuffer);
+    const size_t kHeaderSize = CBGZFBlockInfo::kHeaderSize;
+    const size_t kFooterSize = CBGZFBlockInfo::kFooterSize;
+    const size_t kMaxDataSize = CBGZFBlockInfo::kMaxDataSize;
+    const char* data;
+
+    {
+
+        char tmp[kHeaderSize];
+        const char* header = s_Read(m_Page, file_pos, kHeaderSize, tmp);
+
+        // parse and check GZip header
+        if (header[0] != 31 || header[1] != '\x8b' ||
+            header[2] != 8 || header[3] != 4) {
+            NCBI_THROW_FMT(CBGZFException, eFormatError,
+                "Bad BGZF(" << file_pos << ") MAGIC: ");
+        }
+        // 4-7 - modification time
+        // 8 - extra flags
+        // 9 - OS
+        if (CBGZFFile::MakeUint2(header + 10) != 6) {
+            NCBI_THROW_FMT(CBGZFException, eFormatError,
+                "Bad BGZF(" << file_pos << ") XLEN: ");
+        }
+        // extra data
+        if (header[12] != 'B' || header[13] != 'C' ||
+            header[14] != 2 || header[15] != 0) {
+            NCBI_THROW_FMT(CBGZFException, eFormatError,
+                "Bad BGZF(" << file_pos << ") EXTRA: ");
+        }
+
+        CBGZFBlockInfo::TFileBlockSize block_size = CBGZFFile::MakeUint2(header + 16) + 1;
+
+        if (block_size <= kHeaderSize + kFooterSize) {
+            NCBI_THROW_FMT(CBGZFException, eFormatError,
+                "Bad BGZF(" << file_pos << ") FILE SIZE: " << block_size);
+        }
+
+        data = s_Read(m_Page, file_pos + kHeaderSize, block_size - kHeaderSize, m_ReadBuffer);
+
+        m_BlockInfo.m_FileBlockPos = file_pos;
+        m_BlockInfo.m_FileBlockSize = block_size;
+    }
+
     size_t size = 0;
 
     {
         const char* src = data;
         size_t src_size = m_BlockInfo.GetCompressedSize();
         char* dst = m_Data.get();
-        size_t dst_size = CBGZFBlockInfo::kMaxDataSize;
+        size_t dst_size = kMaxDataSize;
 
         z_stream stream;
         stream.next_in = (Bytef*)src;
@@ -320,6 +354,20 @@ void CBGZFStream::x_ReadBlock(CBGZFPos::TFileBlockPos file_pos)
                 size = stream.total_out;
             }
         }
+    }
+
+    {
+        const char* footer = data + m_BlockInfo.GetCompressedSize();
+
+        m_BlockInfo.m_CRC32 = CBGZFFile::MakeUint4(footer);
+        CBGZFBlockInfo::TDataSize data_size = CBGZFFile::MakeUint4(footer + 4);
+
+        if ( data_size == 0 || data_size > kMaxDataSize ) {
+            NCBI_THROW_FMT(CBGZFException, eFormatError,
+            "Bad BGZF(" << file_pos << ") DATA SIZE: " << data_size);
+        }
+
+        m_BlockInfo.m_DataSize = data_size;
     }
 
     if ( size != m_BlockInfo.GetDataSize() ) {
@@ -366,6 +414,7 @@ size_t CBGZFStream::Read(char* buf, size_t count)
 {
     count = min(GetNextAvailableBytes(), count);
     _ASSERT(count < 0x10000);
+    _ASSERT(m_Data);
     memcpy(buf, m_Data.get() + m_ReadPos, count);
     m_ReadPos += CBGZFPos::TByteOffset(count);
     return count;
@@ -385,6 +434,7 @@ const char* CBGZFStream::Read(size_t count)
         CBGZFPos::TByteOffset cnt =
             CBGZFPos::TByteOffset(min(GetNextAvailableBytes(), count));
         _ASSERT(cnt < 0x10000);
+        _ASSERT(m_Data);
         memcpy(dst, m_Data.get() + m_ReadPos, cnt);
         m_ReadPos += cnt;
         dst += cnt;
