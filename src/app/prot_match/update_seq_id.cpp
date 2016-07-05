@@ -121,15 +121,14 @@ int CSeqIdUpdateApp::Run(void)
 {
     const CArgs& args = GetArgs();
 
-    // Setup scope
+    // Set up scope
     CRef<CObjectManager> obj_mgr = CObjectManager::GetInstance();
     CGBDataLoader::RegisterInObjectManager(*obj_mgr);
     CRef<CScope> scope(new CScope(*obj_mgr));
     scope->AddDefaults();
 
     // Set up object input stream
-    auto_ptr<CObjectIStream> istr;
-    istr.reset(x_InitInputEntryStream(args));
+    unique_ptr<CObjectIStream> istr(x_InitInputEntryStream(args));
 
     // Attempt to read Seq-entry from input file 
     CSeq_entry seq_entry;
@@ -214,12 +213,12 @@ bool CSeqIdUpdateApp::x_ProcessInputTable(CNcbiIstream& istr, TIdMap& id_map)
             NStr::Split(line, delim, entries);
             if (entries.size() >= 2 &&
                 entries[0] == "LocalID" &&
-                entries[1] == "AccVer") {
+                entries[1] == "AccVer") { // Skip over the column titles
                 continue;
             } 
             else 
-            if (entries.size() < 2) {
-                continue;
+            if (entries.size() < 2) { // Each row must contain at least a local id 
+                continue;             // and an accession+version.
             }
 
             CRef<CSeq_id> gb_id = Ref(new CSeq_id());

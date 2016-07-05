@@ -3,11 +3,11 @@
 # Author:  Justin Foley
 #################################
 
-# Build application "process_entry"
+# Build application "preprocess_entry"
 #################################
 
-APP = process_entry
-SRC = process_entry
+APP = preprocess_entry
+SRC = preprocess_entry
 LIB = xobjwrite variation_utils $(OBJREAD_LIBS) xalnmgr xobjutil \
       gbseq entrez2cli entrez2 tables $(OBJMGR_LIBS)
 

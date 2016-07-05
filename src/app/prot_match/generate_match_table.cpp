@@ -551,7 +551,7 @@ void CProteinMatchApp::x_WriteTable(
     {
         const CSeqTable_column& column = mMatchTable->GetColumn("LocalID");
         for (unsigned int row_index=0; row_index<numRows; ++row_index) {
-          const string* pValue = column.GetStringPtr(r);
+          const string* pValue = column.GetStringPtr(row_index);
           LocalIDToRowIndex[*pValue] = row_index;
         }
     }

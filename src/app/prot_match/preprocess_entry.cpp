@@ -24,7 +24,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
-class CProcessUpdateApp : public CNcbiApplication
+class CPreprocessUpdateApp : public CNcbiApplication
 {
 public:
     void Init(void);
@@ -32,28 +32,30 @@ public:
 
 private:
     CSeq_entry_Handle x_GetGenomeSEH(CSeq_entry_Handle& seh);
-    bool x_GetProductLocationId(CSeq_entry_Handle& seh, CRef<CSeq_id>& prod_id);
-    bool x_ReplaceSequenceId(CRef<CSeq_id>& new_id, CSeq_entry_Handle& seh);
+    bool x_GetSequenceIdFromCDSs(CSeq_entry_Handle& seh, CRef<CSeq_id>& prod_id);
+    bool x_UpdateSequenceIds(CRef<CSeq_id>& new_id, CSeq_entry_Handle& seh);
 
     CObjectIStream* x_InitInputStream(const CArgs& args);
 
 };
 
 
-void CProcessUpdateApp::Init(void) 
+void CPreprocessUpdateApp::Init(void) 
 {
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions());
 
     arg_desc->AddKey("i",
             "InputFile",
             "Seq-entry input file",
             CArgDescriptions::eInputFile);
 
-    arg_desc->AddKey("o", "OutputFile",
-            "Processed seq-entry output file",
-            CArgDescriptions::eOutputFile);
+    arg_desc->AddKey("o", 
+                     "OutputFile",
+                     "Processed seq-entry output file",
+                     CArgDescriptions::eOutputFile);
 
-    arg_desc->AddOptionalKey("og", "GenomicOutputFile",
+    arg_desc->AddOptionalKey("og", 
+                             "GenomicOutputFile",
                              "Genomic seq-entry output file",
                              CArgDescriptions::eOutputFile);
 
@@ -63,18 +65,18 @@ void CProcessUpdateApp::Init(void)
 }
 
 
-int CProcessUpdateApp::Run(void) 
+int CPreprocessUpdateApp::Run(void) 
 {
     const CArgs& args = GetArgs();
 
-    // Setup scope
+    // Set up scope
     CRef<CObjectManager> obj_mgr = CObjectManager::GetInstance();
     CGBDataLoader::RegisterInObjectManager(*obj_mgr);
     CRef<CScope> scope(new CScope(*obj_mgr));
     scope->AddDefaults();
 
     // Set up object input stream
-    auto_ptr<CObjectIStream> pInStream(x_InitInputStream(args));
+    unique_ptr<CObjectIStream> pInStream(x_InitInputStream(args));
 
     // Attempt to read Seq-entry from input file 
     CSeq_entry seq_entry;
@@ -98,11 +100,14 @@ int CProcessUpdateApp::Run(void)
                    "Could not obtain valid seq-entry handle");
     }
 
+    // Seq-entry Handle for the nucleotide sequence
     CSeq_entry_Handle genome_seh = x_GetGenomeSEH(seh);
     
-    CRef<CSeq_id> prod_id;
-    if (x_GetProductLocationId(genome_seh, prod_id)) {
-        x_ReplaceSequenceId(prod_id, genome_seh);
+
+    CRef<CSeq_id> local_id;
+    // Convert product id on annotation into local id
+    if (x_GetSequenceIdFromCDSs(genome_seh, local_id)) {
+        x_UpdateSequenceIds(local_id, genome_seh); // Replace any preexisting ids and replace by local_id
     }
 
     try {
@@ -129,7 +134,7 @@ int CProcessUpdateApp::Run(void)
 }
 
 
-CObjectIStream* CProcessUpdateApp::x_InitInputStream(
+CObjectIStream* CPreprocessUpdateApp::x_InitInputStream(
         const CArgs& args) 
 {
     ESerialDataFormat serial = eSerial_AsnText;
@@ -151,7 +156,7 @@ CObjectIStream* CProcessUpdateApp::x_InitInputStream(
 
 
 
-CSeq_entry_Handle CProcessUpdateApp::x_GetGenomeSEH(CSeq_entry_Handle& seh)
+CSeq_entry_Handle CPreprocessUpdateApp::x_GetGenomeSEH(CSeq_entry_Handle& seh)
 {
     if (seh.IsSeq()) {
         const CMolInfo* molinfo = sequence::GetMolInfo(seh.GetSeq());
@@ -190,11 +195,14 @@ struct SEquivalentTo
 };
 
 
-
-bool CProcessUpdateApp::x_GetProductLocationId(CSeq_entry_Handle& seh, CRef<CSeq_id>& id)
+// Search for a unique id in the Seq-locs appearing in CDS features in the sequence annotations. If found,
+// convert to a local ID and return true. Else, return false.
+bool CPreprocessUpdateApp::x_GetSequenceIdFromCDSs(CSeq_entry_Handle& seh, CRef<CSeq_id>& id)
 {
+    // Set containing distinct product ids
+    set<CRef<CSeq_id>> ids;
 
-    set<CRef<CSeq_id> > ids;
+    // Loop over annotations, looking for product
     for (CSeq_annot_CI ai(seh); ai; ++ai) {
         const CSeq_annot_Handle& sah = *ai;
 
@@ -204,7 +212,7 @@ bool CProcessUpdateApp::x_GetProductLocationId(CSeq_entry_Handle& seh, CRef<CSeq
 
         for (CSeq_annot_ftable_CI fi(sah); fi; ++fi) {
             const CSeq_feat_Handle& sfh = *fi;
-            if (!sfh.IsSetProduct()) { 
+            if (!sfh.IsSetProduct()) { // Skip if product not specified
                 continue;
             }
 
@@ -214,7 +222,7 @@ bool CProcessUpdateApp::x_GetProductLocationId(CSeq_entry_Handle& seh, CRef<CSeq
             if (!product_id) {
                 continue;
             }
-
+            
             if (ids.empty() || 
                 find_if(ids.begin(), ids.end(), SEquivalentTo(product_id)) == ids.end()) {
                 ids.insert(product_id);
@@ -226,17 +234,17 @@ bool CProcessUpdateApp::x_GetProductLocationId(CSeq_entry_Handle& seh, CRef<CSeq
     if (ids.size() > 1) {
         NCBI_THROW(CProteinMatchException,
                    eBadInput,
-                   "Nucleotide seq-entry has multiple product identifiers");
+                   "Multiple CDS locations found");
     }
 
     if (ids.empty()) {
         return false;
     }
 
-    CRef<CSeq_id> sa_id = *(ids.begin());
+    CRef<CSeq_id> sannot_id = *(ids.begin());
 
     const bool with_version = true;
-    string local_id_string = sa_id->GetSeqIdString(with_version);
+    string local_id_string = sannot_id->GetSeqIdString(with_version);
 
 
     if (id.IsNull()) {
@@ -248,7 +256,8 @@ bool CProcessUpdateApp::x_GetProductLocationId(CSeq_entry_Handle& seh, CRef<CSeq
 }
 
 
-bool CProcessUpdateApp::x_ReplaceSequenceId(CRef<CSeq_id>& new_id, CSeq_entry_Handle& seh) 
+// Strip old identifiers on the sequence and annptations and replace with new id
+bool CPreprocessUpdateApp::x_UpdateSequenceIds(CRef<CSeq_id>& new_id, CSeq_entry_Handle& seh) 
 {
     if (!seh.IsSeq()) {
         return false;
@@ -260,7 +269,7 @@ bool CProcessUpdateApp::x_ReplaceSequenceId(CRef<CSeq_id>& new_id, CSeq_entry_Ha
     CSeq_id_Handle new_idh = CSeq_id_Handle::GetHandle(*new_id);
     bseh.AddId(new_idh); // Add the new sequence id
 
-    for (CSeq_annot_CI ai(seh); ai; ++ai) { // Add new id to product annotations
+    for (CSeq_annot_CI ai(seh); ai; ++ai) { // Add new id to sequence annotations
         const CSeq_annot_Handle& sah = *ai;
 
         for (CSeq_annot_ftable_CI fi(sah); fi; ++fi) {
@@ -289,5 +298,5 @@ USING_NCBI_SCOPE;
 
 int main(int argc, const char* argv[])
 {
-    return CProcessUpdateApp().AppMain(argc, argv, 0, eDS_ToStderr, 0);
+    return CPreprocessUpdateApp().AppMain(argc, argv, 0, eDS_ToStderr, 0);
 }
