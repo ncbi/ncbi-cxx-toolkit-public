@@ -1967,5 +1967,59 @@ DISCREPANCY_SUMMARIZE(FEATURE_LOCATION_CONFLICT)
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
 }
 
+
+// SUSPECT_PHRASES
+
+const string suspect_phrases[] =
+{
+    "fragment",
+    "frameshift",
+    "%",
+    "E-value",
+    "E value",
+    "Evalue",
+    "..."
+};
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(SUSPECT_PHRASES, CSeq_feat, eDisc, "Suspect Phrases")
+//  ----------------------------------------------------------------------------
+{
+    if (!obj.IsSetData()) {
+        return;
+    }
+    string check = kEmptyStr;
+    if (obj.GetData().IsCdregion() && obj.IsSetComment()) {
+        check = obj.GetComment();
+    } else if (obj.GetData().IsProt() && obj.GetData().GetProt().IsSetDesc()) {
+        check = obj.GetData().GetProt().GetDesc();
+    }
+    if (NStr::IsBlank(check)) {
+        return;
+    }
+
+    bool found = false;
+    for (size_t i = 0; i < sizeof(suspect_phrases) / sizeof(string); i++) {
+        if (NStr::FindNoCase(check, suspect_phrases[i]) != string::npos) {
+            m_Objs["[n] cds comments or protein descriptions contain suspect_phrases"]
+                ["[n] cds comments or protein descriptions contain '" + suspect_phrases[i] + "'"]
+                .Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
+            break;
+        }
+    }
+
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(SUSPECT_PHRASES)
+//  ----------------------------------------------------------------------------
+{
+    m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
+}
+
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

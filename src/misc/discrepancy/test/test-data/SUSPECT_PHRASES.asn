@@ -1,0 +1,1681 @@
+Seq-entry ::= set {
+  class pop-set ,
+  seq-set {
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex1" ,
+            orgname {
+               } } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "ex1" } ,
+          inst {
+            repr raw ,
+            mol na ,
+            length 247 ,
+            seq-data
+              ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9
+168E9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      cdregion {
+                        frame one ,
+                        code {
+                          id 1 } } ,
+                    partial TRUE ,
+                    comment "contains fragment" ,
+                    product
+                      whole
+                        local
+                          str "ex1_1" ,
+                    location
+                      int {
+                        from 0 ,
+                        to 246 ,
+                        strand plus ,
+                        id
+                          local
+                            str "ex1" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "ex1_1" } ,
+          descr {
+            molinfo {
+              biomol peptide ,
+              tech concept-trans ,
+              completeness no-ends } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 82 ,
+            seq-data
+              ncbieaa "TGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHR
+MAPDGGTGWHRMAGTGWHRMAPDGTGW" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "x" } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 81 ,
+                        id
+                          local
+                            str "ex1_1" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex2" ,
+            orgname {
+               } } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "ex2" } ,
+          inst {
+            repr raw ,
+            mol na ,
+            length 247 ,
+            seq-data
+              ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9
+168E9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      cdregion {
+                        frame one ,
+                        code {
+                          id 1 } } ,
+                    partial TRUE ,
+                    product
+                      whole
+                        local
+                          str "ex2_1" ,
+                    location
+                      int {
+                        from 0 ,
+                        to 246 ,
+                        strand plus ,
+                        id
+                          local
+                            str "ex2" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "ex2_1" } ,
+          descr {
+            molinfo {
+              biomol peptide ,
+              tech concept-trans ,
+              completeness no-ends } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 82 ,
+            seq-data
+              ncbieaa "TGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHR
+MAPDGGTGWHRMAGTGWHRMAPDGTGW" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "x" } ,
+                        desc "frameshift here" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 81 ,
+                        id
+                          local
+                            str "ex2_1" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex3" ,
+            orgname {
+               } } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "ex3" } ,
+          inst {
+            repr raw ,
+            mol na ,
+            length 247 ,
+            seq-data
+              ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9
+168E9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      cdregion {
+                        frame one ,
+                        code {
+                          id 1 } } ,
+                    partial TRUE ,
+                    comment "95% match" ,
+                    product
+                      whole
+                        local
+                          str "ex3_1" ,
+                    location
+                      int {
+                        from 0 ,
+                        to 246 ,
+                        strand plus ,
+                        id
+                          local
+                            str "ex3" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "ex3_1" } ,
+          descr {
+            molinfo {
+              biomol peptide ,
+              tech concept-trans ,
+              completeness no-ends } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 82 ,
+            seq-data
+              ncbieaa "TGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHR
+MAPDGGTGWHRMAGTGWHRMAPDGTGW" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "x" } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 81 ,
+                        id
+                          local
+                            str "ex3_1" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex4" ,
+            orgname {
+               } } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "ex4" } ,
+          inst {
+            repr raw ,
+            mol na ,
+            length 247 ,
+            seq-data
+              ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9
+168E9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      cdregion {
+                        frame one ,
+                        code {
+                          id 1 } } ,
+                    partial TRUE ,
+                    product
+                      whole
+                        local
+                          str "ex4_1" ,
+                    location
+                      int {
+                        from 0 ,
+                        to 246 ,
+                        strand plus ,
+                        id
+                          local
+                            str "ex4" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "ex4_1" } ,
+          descr {
+            molinfo {
+              biomol peptide ,
+              tech concept-trans ,
+              completeness no-ends } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 82 ,
+            seq-data
+              ncbieaa "TGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHR
+MAPDGGTGWHRMAGTGWHRMAPDGTGW" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "x" } ,
+                        desc "E-value" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 81 ,
+                        id
+                          local
+                            str "ex4_1" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex5" } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "ex5" } ,
+          inst {
+            repr raw ,
+            mol na ,
+            length 247 ,
+            seq-data
+              ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9
+168E9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      cdregion {
+                        frame one ,
+                        code {
+                          id 0 } } ,
+                    partial TRUE ,
+                    product
+                      whole
+                        local
+                          str "ex5_1" ,
+                    location
+                      int {
+                        from 0 ,
+                        to 246 ,
+                        strand plus ,
+                        id
+                          local
+                            str "ex5" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "ex5_1" } ,
+          descr {
+            molinfo {
+              biomol peptide ,
+              tech concept-trans ,
+              completeness no-ends } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 82 ,
+            seq-data
+              ncbieaa "TGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHR
+MAPDGGTGWHRMAGTGWHRMAPDGTGW" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "x" } ,
+                        desc "E value" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 81 ,
+                        strand plus ,
+                        id
+                          local
+                            str "ex5_1" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex6" } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "ex6" } ,
+          inst {
+            repr raw ,
+            mol na ,
+            length 247 ,
+            seq-data
+              ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9
+168E9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      cdregion {
+                        frame one ,
+                        code {
+                          id 1 } } ,
+                    partial TRUE ,
+                    product
+                      whole
+                        local
+                          str "ex6_1" ,
+                    location
+                      int {
+                        from 0 ,
+                        to 246 ,
+                        strand plus ,
+                        id
+                          local
+                            str "ex6" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "ex6_1" } ,
+          descr {
+            molinfo {
+              biomol peptide ,
+              tech concept-trans ,
+              completeness no-ends } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 82 ,
+            seq-data
+              ncbieaa "TGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHR
+MAPDGGTGWHRMAGTGWHRMAPDGTGW" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "x" } ,
+                        desc "Evalue" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 81 ,
+                        id
+                          local
+                            str "ex6_1" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex7" } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "ex7" } ,
+          inst {
+            repr raw ,
+            mol na ,
+            length 247 ,
+            seq-data
+              ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9
+168E9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      cdregion {
+                        frame one ,
+                        code {
+                          id 1 } } ,
+                    partial TRUE ,
+                    comment "..." ,
+                    product
+                      whole
+                        local
+                          str "ex7_1" ,
+                    location
+                      int {
+                        from 0 ,
+                        to 246 ,
+                        strand plus ,
+                        id
+                          local
+                            str "ex7" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "ex7_1" } ,
+          descr {
+            molinfo {
+              biomol peptide ,
+              tech concept-trans ,
+              completeness no-ends } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 82 ,
+            seq-data
+              ncbieaa "TGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHR
+MAPDGGTGWHRMAGTGWHRMAPDGTGW" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "x" } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 81 ,
+                        id
+                          local
+                            str "ex7_1" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex8" } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "ex8" } ,
+          inst {
+            repr raw ,
+            mol na ,
+            length 247 ,
+            seq-data
+              ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9
+168E9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      cdregion {
+                        frame one ,
+                        code {
+                          id 1 } } ,
+                    partial TRUE ,
+                    comment "'fragment','frameshift','%','E-value','E
+ value','Evalue','...'" ,
+                    product
+                      whole
+                        local
+                          str "ex8_1" ,
+                    location
+                      int {
+                        from 0 ,
+                        to 246 ,
+                        strand plus ,
+                        id
+                          local
+                            str "ex8" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "ex8_1" } ,
+          descr {
+            molinfo {
+              biomol peptide ,
+              tech concept-trans ,
+              completeness no-ends } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 82 ,
+            seq-data
+              ncbieaa "TGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHR
+MAPDGGTGWHRMAGTGWHRMAPDGTGW" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "x" } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 81 ,
+                        id
+                          local
+                            str "ex8_1" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex9" } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "ex9" } ,
+          inst {
+            repr raw ,
+            mol na ,
+            length 247 ,
+            seq-data
+              ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9
+168E9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      cdregion {
+                        frame one ,
+                        code {
+                          id 0 } } ,
+                    partial TRUE ,
+                    product
+                      whole
+                        local
+                          str "ex9_1" ,
+                    location
+                      int {
+                        from 0 ,
+                        to 246 ,
+                        strand plus ,
+                        id
+                          local
+                            str "ex9" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "ex9_1" } ,
+          descr {
+            molinfo {
+              biomol peptide ,
+              tech concept-trans ,
+              completeness no-ends } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 82 ,
+            seq-data
+              ncbieaa "TGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHR
+MAPDGGTGWHRMAGTGWHRMAPDGTGW" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "x" } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 81 ,
+                        id
+                          local
+                            str "ex9_1" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex10" } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "ex10" } ,
+          inst {
+            repr raw ,
+            mol na ,
+            length 247 ,
+            seq-data
+              ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9
+168E9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      cdregion {
+                        frame one ,
+                        code {
+                          id 0 } } ,
+                    partial TRUE ,
+                    product
+                      whole
+                        local
+                          str "ex10_1" ,
+                    location
+                      int {
+                        from 0 ,
+                        to 246 ,
+                        strand plus ,
+                        id
+                          local
+                            str "ex10" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "ex10_1" } ,
+          descr {
+            molinfo {
+              biomol peptide ,
+              tech concept-trans ,
+              completeness no-ends } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 82 ,
+            seq-data
+              ncbieaa "TGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHR
+MAPDGGTGWHRMAGTGWHRMAPDGTGW" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "x" } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 81 ,
+                        id
+                          local
+                            str "ex10_1" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex11" } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "ex11" } ,
+          inst {
+            repr raw ,
+            mol na ,
+            length 247 ,
+            seq-data
+              ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9
+168E9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      cdregion {
+                        frame one ,
+                        code {
+                          id 0 } } ,
+                    partial TRUE ,
+                    product
+                      whole
+                        local
+                          str "ex11_1" ,
+                    location
+                      int {
+                        from 0 ,
+                        to 246 ,
+                        strand plus ,
+                        id
+                          local
+                            str "ex11" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "ex11_1" } ,
+          descr {
+            molinfo {
+              biomol peptide ,
+              tech concept-trans ,
+              completeness no-ends } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 82 ,
+            seq-data
+              ncbieaa "TGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHR
+MAPDGGTGWHRMAGTGWHRMAPDGTGW" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "x" } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 81 ,
+                        id
+                          local
+                            str "ex11_1" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex12" } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "ex12" } ,
+          inst {
+            repr raw ,
+            mol na ,
+            length 247 ,
+            seq-data
+              ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9
+168E9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      cdregion {
+                        frame one ,
+                        code {
+                          id 0 } } ,
+                    partial TRUE ,
+                    product
+                      whole
+                        local
+                          str "ex12_1" ,
+                    location
+                      int {
+                        from 0 ,
+                        to 246 ,
+                        strand plus ,
+                        id
+                          local
+                            str "ex12" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "ex12_1" } ,
+          descr {
+            molinfo {
+              biomol peptide ,
+              tech concept-trans ,
+              completeness no-ends } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 82 ,
+            seq-data
+              ncbieaa "TGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHR
+MAPDGGTGWHRMAGTGWHRMAPDGTGW" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "x" } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 81 ,
+                        id
+                          local
+                            str "ex12_1" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex13" } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "ex13" } ,
+          inst {
+            repr raw ,
+            mol na ,
+            length 247 ,
+            seq-data
+              ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9
+168E9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      cdregion {
+                        frame one ,
+                        code {
+                          id 0 } } ,
+                    partial TRUE ,
+                    product
+                      whole
+                        local
+                          str "ex13_1" ,
+                    location
+                      int {
+                        from 0 ,
+                        to 246 ,
+                        strand plus ,
+                        id
+                          local
+                            str "ex13" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "ex13_1" } ,
+          descr {
+            molinfo {
+              biomol peptide ,
+              tech concept-trans ,
+              completeness no-ends } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 82 ,
+            seq-data
+              ncbieaa "TGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHR
+MAPDGGTGWHRMAGTGWHRMAPDGTGW" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "x" } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 81 ,
+                        id
+                          local
+                            str "ex13_1" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex14" } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "ex14" } ,
+          inst {
+            repr raw ,
+            mol na ,
+            length 247 ,
+            seq-data
+              ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9
+168E9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      cdregion {
+                        frame one ,
+                        code {
+                          id 0 } } ,
+                    partial TRUE ,
+                    product
+                      whole
+                        local
+                          str "ex14_1" ,
+                    location
+                      int {
+                        from 0 ,
+                        to 246 ,
+                        strand plus ,
+                        id
+                          local
+                            str "ex14" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "ex14_1" } ,
+          descr {
+            molinfo {
+              biomol peptide ,
+              tech concept-trans ,
+              completeness no-ends } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 82 ,
+            seq-data
+              ncbieaa "TGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHR
+MAPDGGTGWHRMAGTGWHRMAPDGTGW" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "x" } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 81 ,
+                        id
+                          local
+                            str "ex14_1" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex15" } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "ex15" } ,
+          inst {
+            repr raw ,
+            mol na ,
+            length 247 ,
+            seq-data
+              ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9
+168E9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      cdregion {
+                        frame one ,
+                        code {
+                          id 0 } } ,
+                    partial TRUE ,
+                    product
+                      whole
+                        local
+                          str "ex15_1" ,
+                    location
+                      int {
+                        from 0 ,
+                        to 246 ,
+                        strand plus ,
+                        id
+                          local
+                            str "ex15" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "ex15_1" } ,
+          descr {
+            molinfo {
+              biomol peptide ,
+              tech concept-trans ,
+              completeness no-ends } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 82 ,
+            seq-data
+              ncbieaa "TGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHR
+MAPDGGTGWHRMAGTGWHRMAPDGTGW" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "x" } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 81 ,
+                        id
+                          local
+                            str "ex15_1" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex16" } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "ex16" } ,
+          inst {
+            repr raw ,
+            mol na ,
+            length 247 ,
+            seq-data
+              ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9
+168E9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      cdregion {
+                        frame one ,
+                        code {
+                          id 0 } } ,
+                    partial TRUE ,
+                    product
+                      whole
+                        local
+                          str "ex16_1" ,
+                    location
+                      int {
+                        from 0 ,
+                        to 246 ,
+                        strand plus ,
+                        id
+                          local
+                            str "ex16" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "ex16_1" } ,
+          descr {
+            molinfo {
+              biomol peptide ,
+              tech concept-trans ,
+              completeness no-ends } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 82 ,
+            seq-data
+              ncbieaa "TGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHR
+MAPDGGTGWHRMAGTGWHRMAPDGTGW" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "x" } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 81 ,
+                        id
+                          local
+                            str "ex16_1" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex17" } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "ex17" } ,
+          inst {
+            repr raw ,
+            mol na ,
+            length 247 ,
+            seq-data
+              ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9
+168E9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      cdregion {
+                        frame one ,
+                        code {
+                          id 0 } } ,
+                    partial TRUE ,
+                    product
+                      whole
+                        local
+                          str "ex17_1" ,
+                    location
+                      int {
+                        from 0 ,
+                        to 246 ,
+                        strand plus ,
+                        id
+                          local
+                            str "ex17" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "ex17_1" } ,
+          descr {
+            molinfo {
+              biomol peptide ,
+              tech concept-trans ,
+              completeness no-ends } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 82 ,
+            seq-data
+              ncbieaa "TGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHR
+MAPDGGTGWHRMAGTGWHRMAPDGTGW" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "x" } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 81 ,
+                        id
+                          local
+                            str "ex17_1" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex18" } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "ex18" } ,
+          inst {
+            repr raw ,
+            mol na ,
+            length 247 ,
+            seq-data
+              ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9
+168E9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      cdregion {
+                        frame one ,
+                        code {
+                          id 0 } } ,
+                    partial TRUE ,
+                    product
+                      whole
+                        local
+                          str "ex18_1" ,
+                    location
+                      int {
+                        from 0 ,
+                        to 246 ,
+                        strand plus ,
+                        id
+                          local
+                            str "ex18" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "ex18_1" } ,
+          descr {
+            molinfo {
+              biomol peptide ,
+              tech concept-trans ,
+              completeness no-ends } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 82 ,
+            seq-data
+              ncbieaa "TGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHR
+MAPDGGTGWHRMAGTGWHRMAPDGTGW" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "x" } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 81 ,
+                        id
+                          local
+                            str "ex18_1" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex19" } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "ex19" } ,
+          inst {
+            repr raw ,
+            mol na ,
+            length 247 ,
+            seq-data
+              ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9
+168E9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      cdregion {
+                        frame one ,
+                        code {
+                          id 0 } } ,
+                    partial TRUE ,
+                    product
+                      whole
+                        local
+                          str "ex19_1" ,
+                    location
+                      int {
+                        from 0 ,
+                        to 246 ,
+                        strand plus ,
+                        id
+                          local
+                            str "ex19" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "ex19_1" } ,
+          descr {
+            molinfo {
+              biomol peptide ,
+              tech concept-trans ,
+              completeness no-ends } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 82 ,
+            seq-data
+              ncbieaa "TGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHR
+MAPDGGTGWHRMAGTGWHRMAPDGTGW" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "x" } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 81 ,
+                        id
+                          local
+                            str "ex19_1" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex20" } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "ex20" } ,
+          inst {
+            repr raw ,
+            mol na ,
+            length 247 ,
+            seq-data
+              ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9
+168E9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      cdregion {
+                        frame one ,
+                        code {
+                          id 0 } } ,
+                    partial TRUE ,
+                    product
+                      whole
+                        local
+                          str "ex20_1" ,
+                    location
+                      int {
+                        from 0 ,
+                        to 246 ,
+                        strand plus ,
+                        id
+                          local
+                            str "ex20" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "ex20_1" } ,
+          descr {
+            molinfo {
+              biomol peptide ,
+              tech concept-trans ,
+              completeness no-ends } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 82 ,
+            seq-data
+              ncbieaa "TGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHRMAPDGTGWHR
+MAPDGGTGWHRMAGTGWHRMAPDGTGW" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "x" } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 81 ,
+                        id
+                          local
+                            str "ex20_1" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } } } }
