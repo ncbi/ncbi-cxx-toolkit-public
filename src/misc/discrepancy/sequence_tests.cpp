@@ -1827,5 +1827,85 @@ DISCREPANCY_SUMMARIZE(MRNA_SEQUENCE_MINUS_STRAND_FEATURES)
 
 
 
+// LOW_QUALITY_REGION
+
+const string kLowQualityRegion = "[n] sequence[s] contain[S] low quality region";
+
+const SIZE_TYPE MIN_SEQ_LEN = 30;
+const SIZE_TYPE MAX_N_IN_SEQ = 7; // 25% of the sequence
+
+static bool HasLowQualityRegion(const CSeq_data& seq_data)
+{
+    CSeq_data as_iupacna;
+    TSeqPos nconv = CSeqportUtil::Convert(seq_data, &as_iupacna, CSeq_data::e_Iupacna);
+    if (nconv == 0) {
+        return false;
+    }
+
+    const string& iupacna_str = as_iupacna.GetIupacna().Get();
+    size_t seq_len = iupacna_str.size();
+    if (seq_len < MIN_SEQ_LEN)
+        return false;
+
+    size_t cur = 0;
+    size_t num_of_n = 0;
+    for (; cur < MIN_SEQ_LEN; ++cur) {
+        if (!IsATGC(iupacna_str[cur])) {
+            ++num_of_n;
+        }
+    }
+
+    for (; cur < seq_len; ++cur) {
+        if (num_of_n > MAX_N_IN_SEQ) {
+            break;
+        }
+
+        if (!IsATGC(iupacna_str[cur - MIN_SEQ_LEN])) {
+            --num_of_n;
+        }
+
+        if (!IsATGC(iupacna_str[cur])) {
+            ++num_of_n;
+        }
+    }
+
+    return (num_of_n > MAX_N_IN_SEQ);
+}
+
+DISCREPANCY_CASE(LOW_QUALITY_REGION, CSeq_inst, eDisc, "Sequence contains regions of low quality")
+{
+    if (obj.IsNa()) {
+
+        if (obj.IsSetSeq_data()) {
+            if (HasLowQualityRegion(obj.GetSeq_data())) {
+                m_Objs[kLowQualityRegion].Add(*context.NewDiscObj(context.GetCurrentBioseq()), false);
+            }
+        }
+        else if (obj.IsSetExt() && obj.GetExt().IsDelta()) {
+
+            const CSeq_ext::TDelta& deltas = obj.GetExt().GetDelta();
+            if (deltas.IsSet()) {
+
+                ITERATE(CDelta_ext::Tdata, delta, deltas.Get()) {
+
+                    if ((*delta)->IsLiteral() && (*delta)->GetLiteral().IsSetSeq_data()) {
+
+                        if (HasLowQualityRegion(obj.GetSeq_data())) {
+                            m_Objs[kLowQualityRegion].Add(*context.NewDiscObj(context.GetCurrentBioseq()), false);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+DISCREPANCY_SUMMARIZE(LOW_QUALITY_REGION)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
