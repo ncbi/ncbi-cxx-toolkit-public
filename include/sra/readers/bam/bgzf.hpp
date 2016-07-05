@@ -40,6 +40,10 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 class CSeq_entry;
+class CPagedFile;
+class CPagedFilePage;
+class CBGZFFile;
+class CBGZFStream;
 
 class NCBI_BAMREAD_EXPORT CPagedFile : public CObject
 {
