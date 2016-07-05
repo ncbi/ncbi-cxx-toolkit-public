@@ -6162,6 +6162,7 @@ CCdsMatchInfo::CCdsMatchInfo(const CSeq_feat& cds,
     m_Cds(&cds),
     m_Scope(scope),
     m_IsPseudo(false),
+    m_NeedsMatch(true),
     m_MatchType(eMatch_None)
 {
     m_OverlapType = eOverlap_CheckIntRev;
@@ -6187,10 +6188,19 @@ bool CCdsMatchInfo::Overlaps(const CSeq_feat& mrna) const
 }
 
 
+void CCdsMatchInfo::NeedsMatch(const bool needs_match) {
+    m_NeedsMatch = needs_match;
+}
+
+
+bool CCdsMatchInfo::NeedsMatch(void) const {
+    return m_NeedsMatch;
+}
+
+
 bool CCdsMatchInfo::HasMatch(void) const {
     return  (m_BestMatch != nullptr);
 }
-
 
 const CMrnaMatchInfo& CCdsMatchInfo::GetMatch(void) const {
     return *m_BestMatch;
@@ -6424,7 +6434,6 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq,
     // Now loop over cds to find number of matched cds and number of matched mrna
     int num_matched_cds = 0;
     int num_unmatched_cds = 0;
-    int num_matched_pseudo_cds = 0;
     for (auto&& cds : cds_list) {
         // Check to see if a CDS feat references or overlaps multiple mRNAs
         // mrna_list now contains only unmatched mrnas
@@ -6435,6 +6444,7 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq,
             (cds->GetSeqfeat().IsSetExcept() &&
              cds->GetSeqfeat().IsSetExcept_text() &&
              NStr::Find(cds->GetSeqfeat().GetExcept_text(), "rearrangement required for product") != string::npos)) {
+            cds->NeedsMatch(false); // In this case, we don't require a matching mRNA
             continue;
         }
 
@@ -6445,7 +6455,7 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq,
         }
     }
 
-    // Code now returns a eErr_SEQ_FEAT_CDSwithNoMRNAOverlap warning, 
+    // Code now returns a eErr_SEQ_FEAT_CDSwithNoMRNA warning, 
     // even when no CDS features are matched
     if (num_unmatched_cds > 0 &&
         num_mrna > 0) {
@@ -6458,7 +6468,7 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq,
                     *(seq.GetCompleteBioseq()));
         } else {
             for (const auto& cds : cds_list) {
-                if (!cds->HasMatch()) {
+                if (!cds->HasMatch() && cds->NeedsMatch()) {
                     PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSwithNoMRNA,
                             "Unmatched CDS", cds->GetSeqfeat());
                 }

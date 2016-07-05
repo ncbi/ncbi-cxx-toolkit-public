@@ -1392,6 +1392,8 @@ public:
     bool AssignXrefMatch(list<CRef<CMrnaMatchInfo>>& unmatched_mrnas);
     bool AssignOverlapMatch(list<CRef<CMrnaMatchInfo>>& unmatched_mrnas);
     bool HasMatch(void) const;
+    void NeedsMatch(bool needs_match);
+    bool NeedsMatch(void) const;
     const CMrnaMatchInfo& GetMatch(void) const;
     bool IsPseudo(void) const;
     void SetPseudo(void);
@@ -1410,6 +1412,7 @@ private:
     sequence::EOverlapType m_OverlapType;
     CScope* m_Scope;
     bool m_IsPseudo;
+    bool m_NeedsMatch;
     EMatchType m_MatchType;
 };
 
