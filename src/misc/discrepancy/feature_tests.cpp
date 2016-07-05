@@ -2021,5 +2021,34 @@ DISCREPANCY_SUMMARIZE(SUSPECT_PHRASES)
 
 
 
+
+// UNUSUAL_MISC_RNA
+
+const string kUnusualMiscRNA = "[n] unexpected misc_RNA feature[s] found.  misc_RNAs are unusual in a genome, consider using ncRNA, misc_binding, or misc_feature as appropriate";
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(UNUSUAL_MISC_RNA, CSeq_feat, eDisc, "Unexpected misc_RNA features")
+//  ----------------------------------------------------------------------------
+{
+    if (obj.IsSetData() && obj.GetData().GetSubtype() == CSeqFeatData::eSubtype_otherRNA) {
+
+        const CRNA_ref& rna = obj.GetData().GetRna();
+        string product = rna.GetRnaProductName();
+
+        if (NStr::FindCase(product, "ITS", 0) == NPOS && NStr::FindCase(product, "internal transcribed spacer", 0) == NPOS) {
+            m_Objs[kUnusualMiscRNA].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
+        }
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(UNUSUAL_MISC_RNA)
+//  ----------------------------------------------------------------------------
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
