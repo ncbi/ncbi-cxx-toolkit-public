@@ -86,7 +86,7 @@ CRef<CCode_break> s_StringToCodeBreak(
 //  ----------------------------------------------------------------------------
 {
     const string cdstr_start = "(pos:";
-    const string cdstr_div = ",aa=";
+    const string cdstr_div = ",aa:";
     const string cdstr_end = ")";
     
     CRef<CCode_break> pCodeBreak;
@@ -986,8 +986,10 @@ bool CGff2Record::x_MigrateAttributes(
             NStr::Split(it->second, ",", codebreaks, NStr::eMergeDelims);
             for (vector<string>::iterator it1 = codebreaks.begin(); 
                     it1 != codebreaks.end(); ++it1 ) {
+                string breakData = xNormalizedAttributeValue(*it1);
+                CRef<CSeq_id> pBreakId = GetSeqId(flags);
                 CRef<CCode_break> pCodeBreak = s_StringToCodeBreak(
-                    xNormalizedAttributeValue(*it1), *GetSeqId(flags), flags);
+                    breakData, *pBreakId, flags);
                 if (pCodeBreak) {
                     pFeature->SetData().SetCdregion().SetCode_break().push_back(
                         pCodeBreak);
