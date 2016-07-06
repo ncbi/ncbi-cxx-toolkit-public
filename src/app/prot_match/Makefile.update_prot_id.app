@@ -3,11 +3,11 @@
 # Author:  Justin Foley
 #################################
 
-# Build application "update_seq_id"
+# Build application "update_prot_id"
 #################################
 
-APP = update_seq_id
-SRC = update_seq_id
+APP = update_prot_id
+SRC = update_prot_id
 LIB = xobjwrite variation_utils $(OBJREAD_LIBS) xalnmgr xobjutil \
       gbseq entrez2cli entrez2 tables $(OBJMGR_LIBS)
 
