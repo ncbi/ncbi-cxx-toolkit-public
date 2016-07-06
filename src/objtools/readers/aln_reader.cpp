@@ -187,38 +187,6 @@ void CAlnReader::Read(bool guess, bool generate_local_ids)
                             s_ReportError, &(m_Errors), &info,
                             (generate_local_ids ? eTrue : eFalse));
 
-    // if the first attempt failed, change the alphabet and attempt to 
-    // read a second time
-    if (!afp && 
-        m_Errors.GetErrorCount(CAlnError::eAlnErr_BadChar)
-        && start_pos >= 0) {
-        m_Errors.clear();
-        // reset the input stream
-        m_IS.clear();
-        m_IS.seekg(start_pos, ios::beg);
-
-        string message = "Attempted read failed due to bad characters.";
-        // reset alphabet
-        if (IsAlphabet(eAlpha_Nucleotide)) {
-            message += " Switching to protein alphabet";
-            SetAlphabet(eAlpha_Protein);
-        } else 
-        if (IsAlphabet(eAlpha_Protein)) {
-            message += " Switching to nucleotide alphabet";
-            SetAlphabet(eAlpha_Nucleotide);
-        }
-        ERR_POST(Warning << message);
-
-        info.alphabet = const_cast<char *>(m_Alphabet.c_str());
-
-        // read a second time
-        afp = ReadAlignmentFile2(s_ReadLine, (void *) &m_IS,
-                                 s_ReportError, &(m_Errors), &info,
-                                 (generate_local_ids ? eTrue : eFalse));
-    }
-
-
-
     if (!afp) {
         NCBI_THROW2(CObjReaderParseException, eFormat,
                    "Error reading alignment", 0);
