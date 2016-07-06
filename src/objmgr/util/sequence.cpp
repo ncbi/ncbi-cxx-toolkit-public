@@ -1272,18 +1272,43 @@ CConstRef<CSeq_feat> GetOverlappingGene(
         {
             ENa_strand strand = loc.GetStrand();
             if (strand == eNa_strand_both  ||  strand == eNa_strand_other) {
-                opt = fBestFeat_IgnoreStrand;
+                // Mixed strand indicates trans-splicing must be on.
+                return GetOverlappingGene(loc, scope, eTransSplicing_Yes);
             }
+            // Try with trans-splicing on first. If it finds nothing, try
+            // to turn it off.
+            CConstRef<CSeq_feat> ret = GetOverlappingGene(loc, scope, eTransSplicing_Yes);
+            return ret ? ret : GetOverlappingGene(loc, scope, eTransSplicing_No);
         }
-        break;
     case eTransSplicing_Yes:
-        opt = fBestFeat_IgnoreStrand;
-        break;
-    default:
-        break;
+        {
+            // If trans-splicing is on, the result must be a multi-range gene.
+            CConstRef<CSeq_feat> ret = GetBestOverlappingFeat(loc,
+                CSeqFeatData::eSubtype_gene,
+                eOverlap_Contained, scope, fBestFeat_IgnoreStrand);
+            if ( ret ) {
+                CSeq_loc_CI it(ret->GetLocation());
+                ++it;
+                if ( !it ) ret.Reset();
+            }
+            return ret;
+        }
+    case eTransSplicing_No:
+        {
+            // Multi-range genes assume trans-splicing=on and should not be included
+            // when it's off.
+            CConstRef<CSeq_feat> ret = GetBestOverlappingFeat(loc,
+                CSeqFeatData::eSubtype_gene,
+                eOverlap_Contained, scope, 0);
+            if ( ret ) {
+                CSeq_loc_CI it(ret->GetLocation());
+                ++it;
+                if ( it ) ret.Reset();
+            }
+            return ret;
+        }
     }
-    return GetBestOverlappingFeat(loc, CSeqFeatData::eSubtype_gene,
-        eOverlap_Contained, scope, opt);
+    return null;
 }
 
 
