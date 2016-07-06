@@ -64,7 +64,7 @@ BEGIN_NCBI_SCOPE
 class NCBI_EUTILS_EXPORT CEUtils_ConnContext : public CObject
 {
 public:
-    CEUtils_ConnContext(void) {}
+    CEUtils_ConnContext(void);
     virtual ~CEUtils_ConnContext(void) {}
 
     /// Get timeout

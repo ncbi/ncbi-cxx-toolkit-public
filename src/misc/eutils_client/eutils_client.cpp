@@ -383,6 +383,9 @@ CEutilsClient()
     : m_UrlTag("gpipe")
     , m_RetMax(kMax_Int)
 {
+    class CInPlaceConnIniter : protected CConnIniter
+    {
+    } conn_initer;  /*NCBI_FAKE_WARNING*/
     SetMessageHandlerDefault();
 }
 
@@ -392,6 +395,9 @@ CEutilsClient(const string& host)
     , m_UrlTag("gpipe")
     , m_RetMax(kMax_Int)
 {
+    class CInPlaceConnIniter : protected CConnIniter
+    {
+    } conn_initer;  /*NCBI_FAKE_WARNING*/
     SetMessageHandlerDefault();
 }
 
@@ -460,10 +466,8 @@ Uint8 CEutilsClient::Count(const string& db,
         try {
             string path = "/entrez/eutils/esearch.fcgi";
             string hostname = x_GetHostName();
-            CConn_HttpStream istr(hostname,
-                                  path);
+            CConn_HttpStream istr(x_BuildUrl(hostname, path, kEmptyStr));
             m_Url.push_back(x_BuildUrl(hostname, path, params));
-
             istr << params;
             m_Time.push_back(CTime(CTime::eCurrent));
             vector<Int8> uids;
@@ -617,9 +621,7 @@ Uint8 CEutilsClient::x_Search(const string& db,
         try {
             string path = "/entrez/eutils/esearch.fcgi";
             string hostname = x_GetHostName();
-            CConn_HttpStream istr(hostname,
-                                  path);
-
+            CConn_HttpStream istr(x_BuildUrl(hostname, path, kEmptyStr));
             m_Url.push_back(x_BuildUrl(hostname, path, params));
             istr << params;
             m_Time.push_back(CTime(CTime::eCurrent));
@@ -725,7 +727,7 @@ string CEutilsClient::x_GetHostName() const
 {
     static const char kEutils[]   = "eutils.ncbi.nlm.nih.gov";
     static const char kEutilsLB[] = "eutils_lb";
-    
+
     if (!m_HostName.empty()) {
         return m_HostName;
     }
@@ -738,13 +740,18 @@ string CEutilsClient::x_GetHostName() const
         free(info);
     }
     ConnNetInfo_Destroy(net_info);
-    if (!host.empty()) {
-        return host;
+    string scheme;
+    if (host.empty()) {
+        char buf[80];
+        const char* web = ConnNetInfo_GetValue(kEutilsLB, REG_CONN_HOST,
+                                               buf, sizeof(buf), kEutils);
+        host = string(web  &&  *web ? web : kEutils);
+            scheme = "https";
     }
-    char buf[80];
-    const char* web = ConnNetInfo_GetValue(kEutilsLB, REG_CONN_HOST,
-                                           buf, sizeof(buf), kEutils);
-    return string(web  &&  *web ? web : kEutils);
+    else {
+        scheme = "http";
+    }
+    return scheme + "://" + host;
 }
 
 
@@ -758,11 +765,8 @@ void CEutilsClient::x_Get(string const& path,
     for (int retries = 0;  retries < 10;  ++retries) {
         try {
             string hostname = x_GetHostName();
- 
-            CConn_HttpStream istr(hostname,
-                                  path);
+            CConn_HttpStream istr(x_BuildUrl(hostname, path, kEmptyStr));
             m_Url.push_back(x_BuildUrl(hostname, path, params));
-            
             istr << params;
             m_Time.push_back(CTime(CTime::eCurrent));
             if (NcbiStreamCopy(ostr, istr) && 200 == istr.GetStatusCode()) {
@@ -865,9 +869,7 @@ void CEutilsClient::x_Link(const string& db_from,
         try {
             string path = "/entrez/eutils/elink.fcgi";
             string hostname = x_GetHostName();
-            CConn_HttpStream istr(hostname,
-                                  path);
-
+            CConn_HttpStream istr(x_BuildUrl(hostname, path, kEmptyStr));
             m_Url.push_back(x_BuildUrl(hostname, path, params));
             istr << params;
             m_Time.push_back(CTime(CTime::eCurrent));
@@ -967,8 +969,7 @@ void CEutilsClient::x_Link(const string& db_from,
         try {
             string path = "/entrez/eutils/elink.fcgi";
             string hostname = x_GetHostName();
-            CConn_HttpStream istr(hostname,
-                                  path);
+            CConn_HttpStream istr(x_BuildUrl(hostname, path, kEmptyStr));
             m_Url.push_back(x_BuildUrl(hostname, path, params));
             istr << params;
             m_Time.push_back(CTime(CTime::eCurrent));
@@ -1054,11 +1055,11 @@ void CEutilsClient::x_Summary(const string& db,
     for (int retries = 0;  retries < 10;  ++retries) {
         try {
             string path = "/entrez/eutils/esummary.fcgi?";
-            LOG_POST(Trace << "query: " << m_HostName + path + params );
             string hostname = x_GetHostName();
-            CConn_HttpStream istr(hostname,
-                                  path);
-            m_Url.push_back(x_BuildUrl(hostname, path, params));
+            string url = x_BuildUrl(hostname, path, params);
+            LOG_POST(Trace << "query: " << url);
+            CConn_HttpStream istr(x_BuildUrl(hostname, path, kEmptyStr));
+            m_Url.push_back(url);
             istr << params;
             m_Time.push_back(CTime(CTime::eCurrent));
             // slurp up all the output.
@@ -1173,8 +1174,7 @@ void CEutilsClient::x_Fetch(const string& db,
         try {
             string path = "/entrez/eutils/efetch.fcgi";
             string hostname = x_GetHostName();
-            CConn_HttpStream istr(hostname,
-                                  path);
+            CConn_HttpStream istr(x_BuildUrl(hostname, path, kEmptyStr));
             m_Url.push_back(x_BuildUrl(hostname, path, params));
             istr << params;
             m_Time.push_back(CTime(CTime::eCurrent));
@@ -1238,7 +1238,7 @@ const list<CTime> CEutilsClient::GetTime()
 
 string CEutilsClient::x_BuildUrl(const string& host, const string &path, const string &params)
 {
-    string url = "http://" + host + path;
+    string url = host + path;
     if(!params.empty()) {
         url += '?' + params;
     }

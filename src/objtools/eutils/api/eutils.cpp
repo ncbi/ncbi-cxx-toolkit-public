@@ -42,6 +42,13 @@
 BEGIN_NCBI_SCOPE
 
 
+CEUtils_ConnContext::CEUtils_ConnContext(void)
+{
+    class CInPlaceConnIniter : protected CConnIniter
+    {
+    } conn_initer;  /*NCBI_FAKE_WARNING*/
+}
+
 CEUtils_Request::CEUtils_Request(CRef<CEUtils_ConnContext>& ctx,
                                  const string& script_name)
     : m_Context(ctx),
@@ -86,7 +93,7 @@ string CEUtils_Request::GetBaseURL(void)
         static const char kEutils[] = "eutils.ncbi.nlm.nih.gov";
         static const char kEutilsLB[] = "eutils_lb";
 
-        string host;
+        string scheme, host;
         SConnNetInfo* net_info = ConnNetInfo_Create(kEutilsLB);
         SSERV_Info* info = SERV_GetInfo(kEutilsLB, fSERV_Dns,
             SERV_ANYHOST, net_info);
@@ -101,9 +108,13 @@ string CEUtils_Request::GetBaseURL(void)
             const char* web = ConnNetInfo_GetValue(kEutilsLB, REG_CONN_HOST,
                 buf, sizeof(buf), kEutils);
             host = string(web  &&  *web ? web : kEutils);
+            scheme = "https";
+        }
+        else {
+            scheme = "http";
         }
         _ASSERT(!host.empty());
-        url = "http://" + host + kDefaultEUtils_Path;
+        url = scheme + "://" + host + kDefaultEUtils_Path;
         TEUtilsBaseURLParam::SetDefault(url);
     }
     return url;
