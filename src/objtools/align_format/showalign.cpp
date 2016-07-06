@@ -116,7 +116,7 @@ const string k_DefaultMaskSeqLocTempl = "<font color=\"<@color@>\"><@alndata@></
 
 #ifdef USE_ORG_IMPL
 static string k_GetSeqSubmitForm[] = {"<FORM  method=\"post\" \
-action=\"http://www.ncbi.nlm.nih.gov:80/entrez/query.fcgi?SUBMIT=y\" \
+action=\"//www.ncbi.nlm.nih.gov:80/entrez/query.fcgi?SUBMIT=y\" \
 name=\"%s%d\"><input type=button value=\"Get selected sequences\" \
 onClick=\"finalSubmit(%d, 'getSeqAlignment%d', 'getSeqGi', '%s%d', %d)\"><input \
 type=\"hidden\" name=\"db\" value=\"\"><input type=\"hidden\" name=\"term\" \
@@ -124,7 +124,7 @@ value=\"\"><input type=\"hidden\" name=\"doptcmdl\" value=\"docsum\"><input \
 type=\"hidden\" name=\"cmd\" value=\"search\"></form>",
                                      
                                      "<FORM  method=\"POST\" \
-action=\"http://www.ncbi.nlm.nih.gov/Traces/trace.cgi\" \
+action=\"//www.ncbi.nlm.nih.gov/Traces/trace.cgi\" \
 name=\"%s%d\"><input type=button value=\"Get selected sequences\" \
 onClick=\"finalSubmit(%d, 'getSeqAlignment%d', 'getSeqGi', '%s%d', %d)\"><input \
 type=\"hidden\" name=\"val\" value=\"\"><input \
@@ -139,7 +139,7 @@ type=\"button\" value=\"Deselect all\" onClick=\"handleCheckAll('deselect', \
 
 
 static string k_GetTreeViewForm =  "<FORM  method=\"post\" \
-action=\"http://www.ncbi.nlm.nih.gov/blast/treeview/blast_tree_view.cgi?request=page&rid=%s&queryID=%s&distmode=on\" \
+action=\"//www.ncbi.nlm.nih.gov/blast/treeview/blast_tree_view.cgi?request=page&rid=%s&queryID=%s&distmode=on\" \
 name=\"tree%s%d\" target=\"trv%s\"> \
 <input type=button value=\"Distance tree of results\" onClick=\"extractCheckedSeq('getSeqAlignment%d', 'getSeqGi', 'tree%s%d')\"> \
 <input type=\"hidden\" name=\"sequenceSet\" value=\"\"><input type=\"hidden\" name=\"screenWidth\" value=\"\"></form>";
