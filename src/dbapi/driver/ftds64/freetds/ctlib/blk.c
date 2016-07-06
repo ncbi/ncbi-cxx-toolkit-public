@@ -2087,6 +2087,9 @@ _blk_get_col_data(CS_BLKDESC *blkdesc, TDSCOLUMN *bindcol, int offset)
             if (nullind &&  *nullind == -1) {
                 null_column = 1;
             }
+        } else if (is_blob_type(bindcol->column_type)) {
+            bindcol->bcp_column_data->data
+                = realloc(bindcol->bcp_column_data->data, srclen);
         }
 
         if (!null_column) {
