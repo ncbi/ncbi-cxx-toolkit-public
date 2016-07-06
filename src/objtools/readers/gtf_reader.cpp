@@ -843,7 +843,7 @@ bool CGtfReader::x_CreateParentGene(
     if ( ! x_CreateFeatureId( gff, "gene", pFeature ) ) {
         return false;
     }
-    if ( ! x_FeatureSetQualifiers( gff, pFeature ) ) {
+    if ( ! xFeatureSetQualifiersGene( gff, pFeature ) ) {
         return false;
     }
     m_GeneMap[ s_GeneKey( gff ) ] = pFeature;
@@ -861,6 +861,37 @@ bool CGtfReader::x_MergeParentGene(
     if (!x_MergeFeatureLocationSingleInterval( record, pFeature )) {
         return false;
     }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGtfReader::xFeatureSetQualifiersGene(
+    const CGff2Record& record,
+    CRef< CSeq_feat > pFeature )
+//  ----------------------------------------------------------------------------
+{
+    //
+    //  Create GB qualifiers for the record attributes:
+    //
+    CRef< CGb_qual > pQual(0);
+    const CGff2Record::TAttributes& attrs = record.Attributes();
+    CGff2Record::TAttrCit it = attrs.begin();
+    for (/*NOOP*/; it != attrs.end(); ++it) {
+        // gtf genes don't get transcript_id
+        if (it->first == "transcript_id") {
+            continue;
+        }
+        // special case some well-known attributes
+        if (x_ProcessQualifierSpecialCase(it, pFeature)) {
+            continue;
+        }
+
+        // turn everything else into a qualifier
+        pQual.Reset(new CGb_qual);
+        pQual->SetQual(it->first);
+        pQual->SetVal(it->second);
+        pFeature->SetQual().push_back(pQual);
+    } 
     return true;
 }
 
@@ -1066,79 +1097,6 @@ bool CGtfReader::x_FeatureSetDataCDS(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGtfReader::x_FeatureSetQualifiers(
-    const CGff2Record& record,
-    CRef< CSeq_feat > pFeature)
-//  ----------------------------------------------------------------------------
-{
-    if (this->m_iFlags & fGenbankMode) {
-        // mss-399: Strip gene_id and transcript_id qualifiers in their 
-        //  entirety.
-        return CGff2Reader::x_FeatureSetQualifiers(record, pFeature);
-    }
-    else {
-        // mss-399: Keep gene_id and transcript_id as qualifiers without any 
-        //  further processing
-        return CGff2Reader::x_FeatureSetQualifiers(record, pFeature);
-    }
-}
-
-//  ----------------------------------------------------------------------------
-bool CGtfReader::x_SkipAttribute(
-    const CGff2Record& record,
-    const string& strKey ) const
-//  ----------------------------------------------------------------------------
-{
-    if ( strKey == "exon_number" ) {
-        return true;
-    }
-
-    if ( record.Type() == "CDS" ) {
-        if ( strKey == "protein_id" ) {
-            return true;
-        }
-        if ( strKey == "ribosomal_slippage" ) {
-            return true;
-        }
-        if ( strKey == "product" ) {
-            return true;
-        }
-        if ( strKey == "transl_table" ) {
-            return true;
-        }
-        if ( strKey == "gene_id" ) {
-            return true;
-        }
-        if ( strKey == "transcript_id" ) { // ! implied by parent mRNA
-            return true;
-        }
-    }
-
-    if ( record.Type() == "exon" ) {
-        if ( strKey == "product" ) {
-            return true;
-        }
-        if ( strKey == "gene_id" ) {
-            return true;
-        }
-        if ( strKey == "transcript_id" ) {
-            return true;
-        }
-    }
-
-    if ( record.Type() == "gene" ) {
-        if ( strKey == "gene_synonym" ) {
-            return true;
-        }
-        if ( strKey == "gene_id" ) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-//  ----------------------------------------------------------------------------
 bool CGtfReader::x_CdsIsPartial(
     const CGff2Record& record )
 //  ----------------------------------------------------------------------------
@@ -1196,7 +1154,7 @@ bool CGtfReader::x_ProcessQualifierSpecialCase(
         return true;
     }
     if (0 == NStr::CompareNocase(it->first, "gene_id")) {
-        if (m_iFlags | fGenbankMode) {
+        if (m_iFlags & fGenbankMode) {
             // mss-399:
             //  in genbank mode, drop gene_id altogether
             return true;
@@ -1209,7 +1167,7 @@ bool CGtfReader::x_ProcessQualifierSpecialCase(
         }
     }
     if (0 == NStr::CompareNocase(it->first, "transcript_id")) {
-        if (m_iFlags | fGenbankMode) {
+        if (m_iFlags & fGenbankMode) {
             // mss-399:
             //  in genbank mode, drop transcript_id altogether
             return true;
@@ -1221,10 +1179,6 @@ bool CGtfReader::x_ProcessQualifierSpecialCase(
             return false;
         }
     }
-    //if (0 == NStr::CompareNocase(it->first, "transcript_id") &&
-    //    pFeature->GetData().IsGene()) {
-    //    return true;
-    //}
 
     return false;
 }  

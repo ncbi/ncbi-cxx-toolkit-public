@@ -162,6 +162,10 @@ protected:
         const CGff2Record&,
         CRef< CSeq_feat > );
             
+    bool xFeatureSetQualifiersGene(
+        const CGff2Record& record,
+        CRef<CSeq_feat>);
+
     bool x_CreateParentCds(
         const CGff2Record&,
         CRef< CSeq_annot > );
@@ -199,20 +203,12 @@ protected:
         const CGff2Record&,
         CRef< CSeq_feat >& );
 
-    bool x_FeatureSetQualifiers(
-        const CGff2Record&,
-        CRef< CSeq_feat >);
-
     virtual bool x_ProcessQualifierSpecialCase(
         CGff2Record::TAttrCit,
         CRef< CSeq_feat > );
   
     bool x_CdsIsPartial(
         const CGff2Record& );
-
-    bool x_SkipAttribute(
-        const CGff2Record&,
-        const string& ) const;
 
     typedef map< string, CRef< CSeq_feat > > TIdToFeature;
     TIdToFeature m_GeneMap;
