@@ -443,13 +443,15 @@ CNWAligner::TScore CNWAligner::x_Align(SAlignInOut* data)
     if(!m_terminate) {
         x_SWDoBackTrace(backtrace_matrix, data);
         //check back trace
+        TTranscript rv (data->m_transcript.size());
+        copy(data->m_transcript.rbegin(), data->m_transcript.rend(), rv.begin());        
         if(m_SmithWaterman) {
-            if( best_V != ScoreFromTranscript(data->m_transcript) ) {
+            if( best_V != ScoreFromTranscript(rv,  data->m_offset1,  data->m_offset2) ) {
                 NCBI_THROW(CAlgoAlignException, eInternal,
                            "CNWAligner: error in back trace");
             }
         } else {
-            if( V != ScoreFromTranscript(data->m_transcript) ) {
+            if( V != ScoreFromTranscript(rv,  data->m_offset1,  data->m_offset2) ) {
                 NCBI_THROW(CAlgoAlignException, eInternal,
                            "CNWAligner: error in back trace");
             }
