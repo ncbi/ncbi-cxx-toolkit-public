@@ -642,9 +642,12 @@ bool CGff3Reader::xReadInit()
 
 //  ----------------------------------------------------------------------------
 bool CGff3Reader::xIsIgnoredFeatureType(
-    const string& ftype)
+    const string& featureType)
 //  ----------------------------------------------------------------------------
 {
+    string ftype(featureType);
+    NStr::ToLower(ftype);
+
     vector<string>::const_iterator cit;
 
     static vector<string> ignoredTypesAlways;

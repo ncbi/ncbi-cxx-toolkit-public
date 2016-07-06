@@ -40,7 +40,30 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects) // namespace ncbi::objects::
 
-typedef map< string, CFeatListItem > TLookupSofaToGenbank;
+//  ----------------------------------------------------------------------------
+class CompareNoCase 
+//  ----------------------------------------------------------------------------
+{
+public:
+    bool operator()(string x, const string& y) const {
+        string::const_iterator pX = x.begin();
+        string::const_iterator pY = y.begin();
+        while (pX != x.end()  &&  pY != y.end()  &&  
+                tolower(*pX) ==  tolower(*pY)) {
+            ++pX;
+            ++pY;
+        }
+        if (pX == x.end()) {
+            return (pY != y.end());
+        }
+        if (pY == y.end()) {
+            return false;
+        }
+        return (tolower(*pX) < tolower(*pY)); 
+    }
+};
+
+typedef map< string, CFeatListItem, CompareNoCase > TLookupSofaToGenbank;
 typedef TLookupSofaToGenbank::const_iterator TLookupSofaToGenbankCit;
 
 //  ----------------------------------------------------------------------------
