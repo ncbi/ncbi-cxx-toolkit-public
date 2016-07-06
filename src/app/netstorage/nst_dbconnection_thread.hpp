@@ -46,7 +46,8 @@ class CNSTDBConnectionThread : public CThread
 {
 public:
     CNSTDBConnectionThread(bool &  connected, CDatabase * &  db,
-                           CNSTDatabase *  db_wrapper);
+                           CNSTDatabase *  db_wrapper,
+                           CFastMutex &  db_lock);
     ~CNSTDBConnectionThread();
 
     void Stop(void);
@@ -56,6 +57,7 @@ private:
     bool &                                  m_Connected;
     CDatabase * &                           m_Database;
     CNSTDatabase *                          m_DBWrapper;
+    CFastMutex &                            m_DbLock;
 
     void x_RestoreConnection(void);
     void x_CreateDatabase(void);

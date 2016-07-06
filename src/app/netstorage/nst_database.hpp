@@ -212,6 +212,7 @@ private:
     SDbAccessInfo                   m_DbAccessInfo;
     CNetStorageServer *             m_Server;
     CDatabase *                     m_Db;
+    CFastMutex                      m_DbLock;
     bool                            m_Connected;
     CRef<CNSTDBConnectionThread>    m_RestoreConnectionThread;
 

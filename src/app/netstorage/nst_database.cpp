@@ -55,7 +55,8 @@ CNSTDatabase::CNSTDatabase(CNetStorageServer *  server)
     x_CreateDatabase(true);
     try {
         m_RestoreConnectionThread.Reset(new CNSTDBConnectionThread(
-                                                m_Connected, m_Db, this));
+                                                m_Connected, m_Db,
+                                                this, m_DbLock));
         m_RestoreConnectionThread->Run();
     } catch (...) {
         if (m_Db != NULL)
@@ -1674,6 +1675,8 @@ CNSTDatabase::ExecSP_UpdateObjectSizeIfNULL(const string &  object_key,
 
 void CNSTDatabase::x_PreCheckConnection(void)
 {
+    CFastMutexGuard     guard(m_DbLock);
+
     if (m_Db == NULL || !m_Connected)
         NCBI_THROW(CNetStorageServerException, eDatabaseError,
                    "There is no connection to metadata information database");
@@ -1698,6 +1701,8 @@ void CNSTDatabase::x_PreCheckConnection(void)
 
 void CNSTDatabase::x_PostCheckConnection(void)
 {
+    CFastMutexGuard     guard(m_DbLock);
+
     if (m_Db == NULL)
         return;     // It must never happened - the existance of the m_Db is
                     // checked in the pre condition

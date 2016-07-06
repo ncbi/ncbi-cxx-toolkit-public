@@ -46,9 +46,11 @@ static const CNSTPreciseTime    gs_MinRetryToCreateTimeout(100.0);
 
 CNSTDBConnectionThread::CNSTDBConnectionThread(bool &  connected,
                                                CDatabase * &  db,
-                                               CNSTDatabase *  db_wrapper) :
+                                               CNSTDatabase *  db_wrapper,
+                                               CFastMutex &  db_lock) :
     m_Connected(connected), m_Database(db),
     m_DBWrapper(db_wrapper),
+    m_DbLock(db_lock),
     m_StopSignal(0, 10000000)
 {}
 
@@ -81,18 +83,14 @@ void *  CNSTDBConnectionThread::Main(void)
 
             // There are two cases:
             // - could not decrypt the DB password
-            // - coneection is lost
+            // - connection is lost
             if (m_Database == NULL)
                 x_CreateDatabase();
             x_RestoreConnection();
-        } catch (const CException &  ex) {
-            ERR_POST("Unexpected toolkit exception in the DB restore "
-                     "connection thread Main() function: " + string(ex.what()) +
-                     " -- Ignore and continue.");
         } catch (const exception &  ex) {
-            ERR_POST("Unexpected C++ std exception in the DB restore "
-                     "connection thread Main() function: " + string(ex.what()) +
-                     " -- Ignore and continue.");
+            ERR_POST("Unexpected exception in the DB restore "
+                     "connection thread Main() function: " << ex <<
+                     " Ignore and continue.");
         } catch (...) {
             ERR_POST("Unexpected unknown exception in the DB restore "
                      "connection thread Main() function. Ignore and continue.");
@@ -104,24 +102,28 @@ void *  CNSTDBConnectionThread::Main(void)
 
 void CNSTDBConnectionThread::x_RestoreConnection(void)
 {
-    if (m_Database == NULL)
+    m_DbLock.Lock();
+    if (m_Database == NULL) {
+        m_DbLock.Unlock();
         return;
+    }
+    m_DbLock.Unlock();
 
     while (m_StopFlag.Get() == 0 && m_Connected == false) {
         CNSTPreciseTime     start = CNSTPreciseTime::Current();
 
         try {
-            m_Database->Close();
-            m_Database->Connect();
-            m_Connected = true;
+            {
+                CFastMutexGuard     guard(m_DbLock);
+                m_Database->Close();
+                m_Database->Connect();
+                m_Connected = true;
+            }
             LOG_POST(Note << "Database connection has been restored");
             return;
-        } catch (const CException &  ex) {
-            ERR_POST("Toolkit exception while restoring DB connection: " +
-                     string(ex.what()) + " -- Ignore and continue.");
         } catch (const exception &  ex) {
-            ERR_POST("C++ std exception while restoring DB connection: " +
-                     string(ex.what()) + " -- Ignore and continue.");
+            ERR_POST("Exception while restoring DB connection: " << ex <<
+                     " Ignore and continue.");
         } catch (...) {
             ERR_POST("Unknown exception while restoring DB connection. "
                      "Ignore and continue.");
@@ -157,12 +159,9 @@ void CNSTDBConnectionThread::x_CreateDatabase(void)
                                  "has been decrypted");
                 return;
             }
-        } catch (const CException &  ex) {
-            ERR_POST("Toolkit exception while decrypting database password: " +
-                     string(ex.what()) + " -- Ignore and continue.");
         } catch (const exception &  ex) {
-            ERR_POST("C++ std exception while decrypting database password: " +
-                     string(ex.what()) + " -- Ignore and continue.");
+            ERR_POST("Exception while decrypting database password: " << ex <<
+                     " Ignore and continue.");
         } catch (...) {
             ERR_POST("Unknown exception while decrypting database password. "
                      "Ignore and continue.");
