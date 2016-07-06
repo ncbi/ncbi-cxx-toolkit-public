@@ -2879,7 +2879,8 @@ CNetStorageHandler::x_ProcessExists(
 
     // Part I. MS SQL db access if needed
     if (need_db_access) {
-        int             status;
+        int             status = kSPStatusOK;
+        bool            db_error = true;
         try {
             TNSTDBValue<Int8>       object_size;
             TNSTDBValue<string>     object_locator;
@@ -2887,6 +2888,8 @@ CNetStorageHandler::x_ProcessExists(
             status = m_Server->GetDb().ExecSP_GetObjectSizeAndLocator(
                                         direct_object.Locator().GetUniqueKey(),
                                         object_size, object_locator);
+            db_error = false;
+
             // status could be:
             // - object expired
             // - object not found
@@ -2904,8 +2907,10 @@ CNetStorageHandler::x_ProcessExists(
                      "size and a locator from the DB");
         }
 
-        // The check will throw an exception if the object is expired
-        x_CheckExpirationStatus(status);
+        if (!db_error) {
+            // The check will throw an exception if the object is expired
+            x_CheckExpirationStatus(status);
+        }
     }
 
     // Part II. Calling the API
