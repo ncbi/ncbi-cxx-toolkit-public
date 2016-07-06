@@ -1847,7 +1847,7 @@ Int4 BlastNaHashLookupTableNew(BLAST_SequenceBlk* query,
     const Int8 kNumWords = (1ULL << 32);
     Uint1* counts = NULL;
     Int4 num_hash_bits = 24;
-    Int8 database_length = 0;
+    Int8 database_length = 0LL;
 
     ASSERT(lookup != NULL);
 
