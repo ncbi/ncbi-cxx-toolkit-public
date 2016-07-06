@@ -77,6 +77,31 @@ class CMessageListenerResetter
 };
 
 
+// The CRelocateCallback is used to provide a callback during the RELOCATE
+// message processing. The NetStorageAPI Relocate call is synchronous so
+// it may take a long time within which the client socket could time out.
+// The callback is called after each portion of data is relocated so it is
+// a good suitable point to send a heartbeat message to the client. The
+// heartbeat - in addition to the keeping the connection active - sends some
+// progress information, notably the number of the relocated bytes.
+class CNetStorageHandler;
+class CRelocateCallback
+{
+    public:
+        CRelocateCallback(CNetStorageHandler &  handler,
+                          const SCommonRequestArguments &  common_args,
+                          CDirectNetStorageObject &  object);
+
+    public:
+        // Should match TNetStorageProgressCb prototype
+        void  Callback(CJsonNode  info);
+
+    private:
+        CNetStorageHandler &                m_Handler;
+        const SCommonRequestArguments &     m_CommonArgs;
+        CDirectNetStorageObject &           m_Object;
+};
+
 
 class CNetStorageHandler : public IServer_ConnectionHandler
 {
@@ -113,6 +138,14 @@ public:
         eStatus_ShuttingDown        = 503  // Server is shutting down
     };
 
+    // In most of the case a socket timeout is considered as an error however
+    // there could be a case -- e.g. candidate is the relocate progress message
+    // -- when a timeout needs to be ignored. So there is an enumeration below.
+    enum ESocketTimeoutTreat {
+        eTimeoutIsError,
+        eTimeoutIsOK
+    };
+
 private:
     // Application specific part
     bool  x_ReadRawData();
@@ -121,8 +154,10 @@ private:
     void  x_SendWriteConfirmation();
 
     // It closes the connection if there were socket writing errors
-    EIO_Status  x_SendSyncMessage(const CJsonNode &  message);
-    EIO_Status  x_SendOutputBuffer(void);
+    EIO_Status  x_SendSyncMessage(
+                        const CJsonNode &  message,
+                        ESocketTimeoutTreat  timeout_treat = eTimeoutIsError);
+    EIO_Status  x_SendOutputBuffer(ESocketTimeoutTreat  timeout_treat);
     void  x_OnSocketWriteError(EIO_Status  status, size_t  bytes_written,
                                const char *  output_buffer,
                                size_t  output_buffer_size);
@@ -311,6 +346,8 @@ private:
     void x_ProlongObjectOnFailure(EOp  operation,
                                   const string &  object_key,
                                   const CNSTServiceProperties &  service_props);
+
+    friend class CRelocateCallback;
 }; // CNetStorageHandler
 
 

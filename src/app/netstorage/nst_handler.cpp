@@ -56,6 +56,7 @@
 
 
 USING_NCBI_SCOPE;
+using namespace std::placeholders;
 
 const size_t    kReadBufferSize = 1024 * 1024;
 const size_t    kWriteBufferSize = 16 * 1024;
@@ -112,6 +113,48 @@ CMessageListenerResetter::~CMessageListenerResetter()
     IMessageListener::PopListener();
 }
 
+
+
+CRelocateCallback::CRelocateCallback(
+                    CNetStorageHandler &  handler,
+                    const SCommonRequestArguments &  common_args,
+                    CDirectNetStorageObject &  object) :
+    m_Handler(handler), m_CommonArgs(common_args), m_Object(object)
+{}
+
+
+void CRelocateCallback::Callback(CJsonNode  info)
+{
+    CJsonNode       reply = CreateResponseMessage(m_CommonArgs.m_SerialNumber);
+    reply.SetByKey("ProgressInfo", info);
+
+    // The x_SendSyncMessage() call will also close the client socket if
+    // it was an unsucessfull writing.
+    EIO_Status    status = m_Handler.x_SendSyncMessage(reply,
+                                        CNetStorageHandler::eTimeoutIsError);
+    switch (status) {
+        case eIO_Success:
+            return;
+        #if 0
+        // It is commented out for the time being.
+        // Now it is not clear what to do with the output buffers in case of a
+        // timeout. One of the options is to discard them. Another is to leave
+        // intact. When (and if) it becomes clear that ignoring of the timeout
+        // is really needed then this part should be uncommented. See the
+        // x_SendSyncMessage(...) call above as well.
+        case eIO_Timeout:   // It was decided to ignore the timeouts
+            ERR_POST(Warning << "Timeout writing a relocate progress info. "
+                                "Client socket: "
+                             << m_Handler.GetSocket().GetPeerAddress());
+            return;
+        #endif
+        default:
+            break;
+    }
+
+    // Some other unsuccessfull socket.write() return code
+    m_Object.CancelRelocate();
+}
 
 
 CNetStorageHandler::CNetStorageHandler(CNetStorageServer *  server)
@@ -299,10 +342,10 @@ void CNetStorageHandler::OnWrite(void)
 
         if (!m_JSONWriter.WriteMessage(message))
             do
-                x_SendOutputBuffer();
+                x_SendOutputBuffer(eTimeoutIsError);
             while (!m_JSONWriter.CompleteMessage());
 
-        x_SendOutputBuffer();
+        x_SendOutputBuffer(eTimeoutIsError);
     }
 }
 
@@ -847,16 +890,18 @@ void CNetStorageHandler::x_SendWriteConfirmation()
 }
 
 
-EIO_Status CNetStorageHandler::x_SendSyncMessage(const CJsonNode & message)
+EIO_Status
+CNetStorageHandler::x_SendSyncMessage(const CJsonNode &    message,
+                                      ESocketTimeoutTreat  timeout_treat)
 {
     if (!m_JSONWriter.WriteMessage(message))
         do {
-            EIO_Status      status = x_SendOutputBuffer();
+            EIO_Status      status = x_SendOutputBuffer(timeout_treat);
             if (status != eIO_Success)
                 return status;
         } while (!m_JSONWriter.CompleteMessage());
 
-    return x_SendOutputBuffer();
+    return x_SendOutputBuffer(timeout_treat);
 }
 
 
@@ -915,7 +960,8 @@ void  CNetStorageHandler::x_OnSocketWriteError(
 }
 
 
-EIO_Status CNetStorageHandler::x_SendOutputBuffer(void)
+EIO_Status
+CNetStorageHandler::x_SendOutputBuffer(ESocketTimeoutTreat  timeout_treat)
 {
     const char *    output_buffer;
     size_t          output_buffer_size;
@@ -933,6 +979,16 @@ EIO_Status CNetStorageHandler::x_SendOutputBuffer(void)
                                 NStr::NumericToString(output_buffer_size) + ")",
                                 start);
             if (status != eIO_Success) {
+                if (status == eIO_Timeout && timeout_treat == eTimeoutIsOK) {
+                    // It is up to the caller to log a message.
+                    // It is not clear what to do with the output buffers:
+                    // -- discard
+                    // -- leave not touched
+                    // So it is not recommended to use the eTimeoutIsOK here
+                    // till this is resolved.
+                    return status;
+                }
+
                 // Error writing to the socket. Log what we can and close the
                 // connection.
                 x_OnSocketWriteError(status, bytes_written,
@@ -2704,15 +2760,43 @@ CNetStorageHandler::x_ProcessRelocate(
 
 
     string              new_object_loc;
+    CRelocateCallback   callback(*this, common_args, direct_object);
     CNSTPreciseTime     start = CNSTPreciseTime::Current();
     try {
-        new_object_loc = direct_object.Relocate(new_location_flags);
+        TNetStorageProgressCb   cb = std::bind(&CRelocateCallback::Callback,
+                                               &callback, _1);
+        new_object_loc = direct_object.Relocate(new_location_flags, cb);
         if (m_Server->IsLogTimingNSTAPI())
             m_Timing.Append("NetStorageAPI Relocate", start);
+    } catch (const CNetStorageException &  ex) {
+        if (ex.GetErrCode() == CNetStorageException::eInterrupted) {
+            // Here: relocate was interrupted via a callback return value.
+            // That means that the client socket is closed and an error is
+            // registered for the client.
+            // So the rest is to log a message, print stop request and exit
+            if (m_Server->IsLogTimingNSTAPI())
+                m_Timing.Append("NetStorageAPI Relocate interrupt", start);
+            ERR_POST("NetStorageAPI Relocate interrupt: " << ex);
+            if (need_meta_db_update)
+                x_ProlongObjectOnFailure(eRelocateOp, object_key,
+                                         service_properties);
+
+            x_PrintMessageRequestStop();
+            return;
+        }
+
+        if (m_Server->IsLogTimingNSTAPI())
+            m_Timing.Append("NetStorageAPI Relocate exception", start);
+        if (need_meta_db_update)
+            x_ProlongObjectOnFailure(eRelocateOp, object_key,
+                                     service_properties);
+        throw;
     } catch (...) {
         if (m_Server->IsLogTimingNSTAPI())
             m_Timing.Append("NetStorageAPI Relocate exception", start);
-        x_ProlongObjectOnFailure(eRelocateOp, object_key, service_properties);
+        if (need_meta_db_update)
+            x_ProlongObjectOnFailure(eRelocateOp, object_key,
+                                     service_properties);
         throw;
     }
 
@@ -2747,7 +2831,6 @@ CNetStorageHandler::x_ProcessRelocate(
             if (GetReplyMessageProperties(ex, &error_scope, &error_code,
                                           &error_sub_code) == false)
                 error_sub_code = CNetStorageServerException::eDatabaseError;
-            // false -> do not change response to ERROR
             AppendError(reply, error_code, ex.what(), error_scope,
                         error_sub_code, false);
 
@@ -2756,7 +2839,6 @@ CNetStorageHandler::x_ProcessRelocate(
             string  msg = "Unknown metainfo DB update error "
                           "on object relocation";
             ERR_POST(msg);
-            // false -> do not change response to ERROR
             AppendError(reply, NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
                         msg, kScopeUnknownException,
                         CNetStorageServerException::eDatabaseError, false);
