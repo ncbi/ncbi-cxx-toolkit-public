@@ -35,11 +35,13 @@
 
 #include "discrepancy_core.hpp"
 #include <misc/discrepancy/report_object.hpp>
+#include <objects/biblio/Cit_sub.hpp>
 #include <objects/general/Date.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/misc/sequence_util_macros.hpp>
+#include <objects/pub/Pub.hpp>
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/seq/Pubdesc.hpp>
 #include <objects/seq/Seqdesc.hpp>
@@ -50,6 +52,7 @@
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_loc_mix.hpp>
 #include <objects/seqloc/Seq_point.hpp>
+//#include <objects/submit/Submit_block.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/util/feature.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -380,6 +383,10 @@ string CReportObject::GetTextObjectDescription(const CSeq_feat& seq_feat, CScope
 string CReportObject::GetTextObjectDescription(const CSeqdesc& sd, CScope& scope)
 {
     string desc = GetTextObjectDescription(sd);
+//    if (sd.IsPub()) {
+//        return desc;
+//    }
+
     CRef<CScope> s(&scope);
     CSeq_entry_Handle seh = edit::GetSeqEntryForSeqdesc (s, sd);
 
@@ -572,7 +579,11 @@ string CReportObject::GetTextObjectDescription(CBioseq_set_Handle bssh)
 
 string CReportObject::GetTextObjectDescription(const CSubmit_block& sb, CScope& scope)
 {
-return "Submit block!";
+    string label;
+    CRef<CPub> tmp_pub(new CPub());
+    tmp_pub->SetSub().Assign(sb.GetCit());
+    tmp_pub->GetLabel(&label, CPub::eContent, true);
+    return label;
 }
 
 

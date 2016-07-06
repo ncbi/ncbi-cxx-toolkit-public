@@ -242,6 +242,28 @@ bool CDiscrepancyContext::IsViral()
 }
 
 
+bool CDiscrepancyContext::IsPubMed()
+{
+    static bool result = false;
+    static size_t count = 0;
+    if (count != m_Count_Pub_equiv) {
+        count = m_Count_Pub_equiv;
+        result = false;
+        const CPub_equiv* equiv = GetCurrentPub_equiv();
+        if (equiv) {
+            const CPub_equiv::Tdata& list = equiv->Get();
+            ITERATE (CPub_equiv::Tdata, it, list) {
+                if ((*it)->IsPmid()) {
+                    result = true;
+                    break;
+                }
+            }
+        }
+    }
+    return result;
+}
+
+
 bool CDiscrepancyContext::IsCurrentRnaInGenProdSet()
 {
     static bool result = false;

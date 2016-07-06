@@ -314,6 +314,7 @@ void CDiscrepancyContext::Parse(const CSerialObject& root)
     CType<CSeqdesc>::AddTo(i);
     CType<CSeq_feat>::AddTo(i);
     CType<CSeq_annot>::AddTo(i);
+    CType<CPub_equiv>::AddTo(i);
 #define ENABLE_DISCREPANCY_TYPE(type) if (m_Enable_##type) CType<type>::AddTo(i);
     ENABLE_DISCREPANCY_TYPE(CSeq_inst)
     // ENABLE_DISCREPANCY_TYPE(CSeqdesc) - don't need!
@@ -409,6 +410,10 @@ void CDiscrepancyContext::Parse(const CSerialObject& root)
         }
         else if (CType<CSubmit_block>::Match(i)) {
             m_Current_Submit_block.Reset(CType<CSubmit_block>::Get(i));
+        }
+        else if (CType<CPub_equiv>::Match(i)) {
+            m_Current_Pub_equiv.Reset(CType<CPub_equiv>::Get(i));
+            m_Count_Pub_equiv++;
         }
         else if (CType<CSeqdesc>::Match(i)) {
             m_Current_Seq_feat.Reset();

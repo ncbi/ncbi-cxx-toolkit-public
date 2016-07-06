@@ -839,24 +839,56 @@ DISCREPANCY_SUMMARIZE(CONSORTIUM)
 
 // CHECK_AUTH_NAME
 
-DISCREPANCY_CASE(CHECK_AUTH_NAME, CAuth_list, eOncaller, "Submitter blocks and publications have consortiums")
+const string kMissingAuthorsName = "[n] pub[s] missing author\'s first or last name";
+
+static bool MissingAuthorName(const CAuthor& auth)
 {
+    if (!auth.IsSetName()) {
+cout << "case 1\n";
+        return true;
+    }
+    if (!auth.GetName().IsName()) {
+cout << "case 2\n";
+        return true;
+    }
+    return !auth.GetName().GetName().CanGetFirst() || !auth.GetName().GetName().CanGetLast() || !auth.GetName().GetName().GetFirst().empty() || !auth.GetName().GetName().GetFirst().empty();
+}
+
+
+DISCREPANCY_CASE(CHECK_AUTH_NAME, CAuth_list, eOncaller, "Missing authors or first/last author's names")
+{
+    bool report = false;
+    if (context.IsPubMed()) {
+        return;
+    }
     if (obj.IsSetNames() && obj.GetNames().IsStd()) {
-        ITERATE (CAuth_list::C_Names::TStd, auth, obj.GetNames().GetStd()) {
-            if ((*auth)->IsSetName() && (*auth)->GetName().IsConsortium()) {
-                CConstRef<CSeq_feat> feat = context.GetCurrentSeq_feat();
-                CConstRef<CSeqdesc> desc = context.GetCurrentSeqdesc();
-                _ASSERT(!feat || !desc);
-                if (feat) {
-                    m_Objs[kHasConsortium].Add(*context.NewDiscObj(feat));
-                }
-                else if (desc) {
-                    m_Objs[kHasConsortium].Add(*context.NewDiscObj(desc));
-                }
-                else {
-                    // C Toolkit does not test submit blocks
+        const CAuth_list::C_Names::TStd& names = obj.GetNames().GetStd();
+        if (names.empty()) {
+            report = true;
+        }
+        else {
+            ITERATE (CAuth_list::C_Names::TStd, auth, obj.GetNames().GetStd()) {
+                if (MissingAuthorName(**auth)) {
+                    report = true;
+                    break;
                 }
             }
+        }
+    }
+    if (report) {
+        CConstRef<CSeq_feat> feat = context.GetCurrentSeq_feat();
+        CConstRef<CSeqdesc> desc = context.GetCurrentSeqdesc();
+        _ASSERT(!feat || !desc);
+        if (feat) {
+            m_Objs[kMissingAuthorsName].Add(*context.NewDiscObj(feat));
+        }
+        else if (desc) {
+            m_Objs[kMissingAuthorsName].Add(*context.NewDiscObj(desc));
+        }
+        else {  // C Toolkit does not test submit blocks; C++ Toolkit - does!
+            CConstRef<CSubmit_block> subb = context.GetCurrentSubmit_block();
+            _ASSERT(subb);
+            m_Objs[kMissingAuthorsName].Add(*context.NewDiscObj(subb));
         }
     }
 }
