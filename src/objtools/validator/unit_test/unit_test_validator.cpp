@@ -12429,10 +12429,10 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BothStrands)
     feat->SetLocation().SetMix().Set().back()->SetInt().SetStrand(eNa_strand_both_rev);
     feat->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
     feat->SetData().SetRna().SetExt().SetName("mRNA product");
-    // make pseudo to prevent splice errors
     CRef<CSeq_feat> gene = unit_test_util::MakeGeneForFeature (feat);
-    gene->SetPseudo(true);
-    unit_test_util::AddFeat (gene, entry);
+    unit_test_util::AddFeat(gene, entry);
+    // make pseudo to prevent splice errors
+    feat->SetPseudo(true);
     // set trans-splicing exception to prevent mixed-strand error
     feat->SetExcept(true);
     feat->SetExcept_text("trans-splicing");
@@ -12442,6 +12442,9 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BothStrands)
                               "No match for 1 mRNA"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BothStrands", 
                       "mRNA may not be on both (forward and reverse) strands"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "mRNAgeneRange",
+                      "gene overlaps mRNA but does not completely contain it"));
+
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
