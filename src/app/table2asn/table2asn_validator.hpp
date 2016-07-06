@@ -25,7 +25,12 @@ public:
     size_t TotalErrors() const; 
     void ReportDiscrepancies(CSerialObject& obj, objects::CScope& scope, CNcbiOstream& output);
 protected:
-    typedef map<int, size_t> TErrorStats;
+    typedef map<int, size_t> TErrorStatMap;
+    typedef struct 
+    {
+        TErrorStatMap m_individual;
+        size_t m_total;
+    } TErrorStats;
     vector<TErrorStats> m_stats;
 };
 

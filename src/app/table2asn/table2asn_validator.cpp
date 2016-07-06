@@ -111,7 +111,8 @@ void CTable2AsnValidator::ReportErrors(CConstRef<CValidError> errors, CNcbiOstre
                << ": valid [" << item.GetErrGroup() << "." << item.GetErrCode() <<"] "
                << item.GetMsg() << " " << item.GetObjDesc() << endl;
 
-        m_stats[item.GetSev()][item.GetErrIndex()]++;
+        m_stats[item.GetSev()].m_total++;
+        m_stats[item.GetSev()].m_individual[item.GetErrIndex()]++;
     }
     //out << MSerial_AsnText << *errors;
 }
@@ -121,7 +122,7 @@ size_t CTable2AsnValidator::TotalErrors() const
     size_t result = 0;
     ITERATE(vector<TErrorStats>, stats, m_stats)
     {
-        result += stats->size();
+        result += stats->m_total;
     }
     return result;
 }
@@ -132,19 +133,19 @@ void CTable2AsnValidator::ReportErrorStats(CNcbiOstream& out)
     
     for (size_t sev = 0; sev < m_stats.size(); sev++)
     {
-        if (m_stats[sev].empty())
+        if (m_stats[sev].m_individual.empty())
             continue;
 
-        string severity = CValidErrItem::ConvertSeverity(EDiagSev(sev));
+        string severity = CValidErrItem::ConvertSeverity(EDiagSev(sev));       
         NStr::ToUpper(severity);
-        out << NStr::NumericToString(m_stats[sev].size()) << " " << severity << "-level messages exist" << endl << endl;
+        out << NStr::NumericToString(m_stats[sev].m_total) << " " << severity << "-level messages exist" << endl << endl;
 
-        ITERATE(TErrorStats, it, m_stats[sev])
+        for_each(m_stats[sev].m_individual.begin(), m_stats[sev].m_individual.end(), [&out](const TErrorStatMap::const_iterator::value_type& it)
         {
             out <<
-                CValidErrItem::ConvertErrGroup(it->first) << "." <<
-                CValidErrItem::ConvertErrCode(it->first) << ":\t" << NStr::NumericToString(it->second) << endl;
-        }
+                CValidErrItem::ConvertErrGroup(it.first) << "." <<
+                CValidErrItem::ConvertErrCode(it.first) << ":\t" << NStr::NumericToString(it.second) << endl;
+        });
         out << endl << big_separator << endl;
     }
 }
