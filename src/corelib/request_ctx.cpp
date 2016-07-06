@@ -291,6 +291,9 @@ static bool IsValidHitID(const string& hit) {
             return false;
         }
     }
+    // Hit id must be present before the first separator.
+    // Note that empty hit id is still allowed if there are no sub-hit ids.
+    if (sep_pos == 0) return false;
     if (sep_pos == NPOS) return true;
     // Separator found - make sure the rest of the id contains only separators
     // and valid sub-hit ids: a prefix consisting of allowed chars and some
@@ -354,7 +357,7 @@ void CRequestContext::SetHitID(const string& hit)
 }
 
 
-void CRequestContext::x_UpdateSubHitID(bool increment)
+void CRequestContext::x_UpdateSubHitID(bool increment, CTempString prefix)
 {
     static CAtomicCounter s_DefaultSubHitCounter;
 
@@ -375,7 +378,7 @@ void CRequestContext::x_UpdateSubHitID(bool increment)
     }
 
     // Cache the string so that C code can use it.
-    m_SubHitIDCache += "." + NStr::NumericToString(sub_hit_id);
+    m_SubHitIDCache += "." + prefix + NStr::NumericToString(sub_hit_id);
 }
 
 

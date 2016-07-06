@@ -341,8 +341,9 @@ CNcbiOstream& CCgiResponse::WriteHeader(CNcbiOstream& os) const
         self->m_Cookies.Add(*m_TrackingCookie);
         self->SetHeaderValue(TCGI_TrackingTagName::GetDefault(),
             m_TrackingCookie->GetValue());
+        CRequestContext& rctx = GetDiagContext().GetRequestContext();
         self->SetHeaderValue("NCBI-PHID",
-            GetDiagContext().GetRequestContext().GetHitID());
+            rctx.GetHitID() + rctx.GetNextSubHitID("m_"));
         // Prevent storing the page in public caches.
         string cc = GetHeaderValue(sm_CacheControl);
         if ( cc.empty() ) {
