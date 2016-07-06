@@ -124,7 +124,7 @@ private:
     bool                        m_do_cleanup;
     bool                        m_AllFeats;
     bool                        m_CDS;
-    bool                        m_TranslatedCDS;
+    bool                        m_TranslateCDS;
     bool                        m_Gene;
     bool                        m_RNA;
     CArgValue::TStringArray     m_FeatureSelection;
@@ -430,7 +430,7 @@ int CAsn2FastaApp::Run(void)
 
     // Default is not to look at features
     m_AllFeats = m_CDS 
-               = m_TranslatedCDS 
+               = m_TranslateCDS 
                = m_Gene 
                = m_RNA 
                = false;
@@ -450,7 +450,8 @@ int CAsn2FastaApp::Run(void)
                     m_CDS = true;
                 } else
                 if (feat_name == "fasta_cds_aa") {
-                    m_TranslatedCDS = true;
+                    m_CDS = true;
+                    m_TranslateCDS = true;
                 } else 
                 if (feat_name == "gene_fasta") {
                     m_Gene = true;
@@ -464,7 +465,7 @@ int CAsn2FastaApp::Run(void)
             }
         }
         m_CDS   |= m_AllFeats;
-        m_TranslatedCDS |= m_AllFeats;
+    //    m_TranslateCDS |= m_AllFeats;
         m_Gene  |= m_AllFeats;
         m_RNA   |= m_AllFeats;
     }
@@ -957,7 +958,7 @@ bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
 
     bool any_feats = m_AllFeats
                    | m_CDS 
-                   | m_TranslatedCDS
+                   | m_TranslateCDS
                    | m_Gene 
                    | m_RNA;
 
@@ -993,6 +994,11 @@ bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
         const CSeq_feat& feat = feat_it->GetOriginalFeature();
         auto bsh = scope.GetBioseqHandle(feat.GetLocation());
         CFastaOstreamEx* fasta_os = x_GetFastaOstream(bsh);
+
+        if (feat.IsSetData() &&
+            feat.GetData().IsCdregion()) {
+        }
+
         if (!feat.IsSetData() ||
             (feat.GetData().IsCdregion() && !m_CDS) ||
             (feat.GetData().IsGene() && !m_Gene) ||
@@ -1000,9 +1006,9 @@ bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
             continue;
         }
         if ( m_DeflineOnly ) {
-            fasta_os->WriteFeatureTitle(feat, scope);
+            fasta_os->WriteFeatureTitle(feat, scope, m_TranslateCDS);
         } else {
-            fasta_os->WriteFeature(feat, scope);
+            fasta_os->WriteFeature(feat, scope, m_TranslateCDS);
         }
     }
     return true;
