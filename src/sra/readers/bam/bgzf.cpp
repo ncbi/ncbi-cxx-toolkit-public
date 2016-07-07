@@ -45,9 +45,19 @@ BEGIN_SCOPE(objects)
 
 class CSeq_entry;
 
+NCBI_PARAM_DECL(int, BGZF, DEBUG);
+NCBI_PARAM_DEF_EX(int, BGZF, DEBUG, 0, eParam_NoThread, BGZF_DEBUG);
+
+
+static int s_GetDebug(void)
+{
+    return NCBI_PARAM_TYPE(BGZF, DEBUG)::GetDefault();
+}
+
+
 static const bool kUseMemFile = false;
 static const bool kCheckBlockCRC32 = true;
-static const size_t kSegmentSize = 4<<20; // 16 MB
+static const size_t kSegmentSize = 16<<20; // 16 MB
 
 const char* CBGZFException::GetErrCodeString(void) const
 {
@@ -115,7 +125,12 @@ void CPagedFile::x_Select(CPagedFilePage& page, TFilePos file_pos)
         char* dst = page.m_Buffer.data();
         size_t rem = size;
         {
+            bool trace = s_GetDebug() >= 1;
             CFastMutexGuard guard(m_Mutex);
+            CStopWatch sw;
+            if (trace) {
+                sw.Start();
+            }
             m_File.SetFilePos(base_pos);
             while (rem) {
                 size_t cnt = m_File.Read(dst, rem);
@@ -125,6 +140,10 @@ void CPagedFile::x_Select(CPagedFilePage& page, TFilePos file_pos)
                 }
                 rem -= cnt;
                 dst += cnt;
+            }
+            if (trace) {
+                LOG_POST("BGZF: Read page " << base_pos / kSegmentSize << " @ " << base_pos
+                    << " in " << (size - rem) / sw.Elapsed() / (1 << 20) << " MB/s");
             }
         }
         if (rem) {
