@@ -997,7 +997,6 @@ class COffsetList
         class CDataPool
         {
                 static const Uint4 BLOCK_SIZE     = 1024*1024ULL;
-                static const Uint4 BLOCKS_RESERVE = 10*1024ULL;
 
                 typedef vector< SDataUnit > TBlock;
                 typedef vector< TBlock > TBlocks;
@@ -1006,7 +1005,6 @@ class COffsetList
 
                 CDataPool() : free_( 0 )
                 {
-                    pool_.reserve( BLOCKS_RESERVE );
                     new_block();
                 }
 
@@ -1052,6 +1050,8 @@ class COffsetList
 
                 TBlocks pool_;
         };
+
+        void SetDataPool( CDataPool * pool ) { data_.SetDataPool( pool ); }
 
     private:
 
@@ -1140,8 +1140,11 @@ class COffsetList
                 typedef CDataIterator const_iterator;
                 typedef Uint4 size_type;
 
-                CData() : start_( 0 ), curr_( 0 ), last_( 0 ), size_( 0 )
+                CData() : pool_( 0 ), 
+                          start_( 0 ), curr_( 0 ), last_( 0 ), size_( 0 )
                 {}
+
+                void SetDataPool( CDataPool * pool ) { pool_ = pool; }
 
                 const_iterator begin() const
                 { return const_iterator( start_, 1, size_ ); }
@@ -1155,14 +1158,14 @@ class COffsetList
                 void push_back( const TWord & d )
                 {
                     if( start_ == 0 ) {
-                        start_ = curr_ = Pool_.alloc();
+                        start_ = curr_ = pool_->alloc();
                         start_->next = 0;
                     }
                     
                     curr_->data[last_++] = d;
 
                     if( last_ >= DATA_UNIT_SIZE ) {
-                        SDataUnit * t = Pool_.alloc();
+                        SDataUnit * t = pool_->alloc();
                         t->next = 0;
                         curr_->next = t;
                         curr_ = t;
@@ -1175,7 +1178,7 @@ class COffsetList
                 void resize( Uint4 newsize )
                 {
                     if( newsize == 0 ) {
-                        Pool_.free( start_ );
+                        pool_->free( start_ );
                         start_ = curr_ = 0;
                         size_ = last_ = 0;
                         return;
@@ -1191,17 +1194,15 @@ class COffsetList
                         tn = tp->next;
                     }
 
-                    Pool_.free( tn );
+                    pool_->free( tn );
                     curr_ = tp;
                     last_ = DATA_UNIT_SIZE - (t - newsize) - 1;
                     size_ = newsize;
                 }
 
-                static void Clear() { Pool_.clear(); }
-
             private:
 
-                static CDataPool Pool_;
+                CDataPool * pool_;
 
                 SDataUnit * start_;
                 SDataUnit * curr_;
@@ -1215,13 +1216,7 @@ class COffsetList
         TData data_;               /**< Offset list data storage. */
         unsigned long min_offset_; /**< Minimum offset used by the index. */
         unsigned long mult_;       /**< Max multiple to use in list pre-ordering. */
-
-    public:
-
-        static void ClearAll() { TData::Clear(); }
 };
-
-COffsetList::CDataPool COffsetList::CData::Pool_;
 
 //-------------------------------------------------------------------------
 inline void COffsetList::Save( CNcbiOstream & os) const
@@ -1307,7 +1302,8 @@ class COffsetData_Factory
         */
         COffsetData_Factory( 
                 TSubjectMap & subject_map, 
-                const CDbIndex::SOptions & options )
+                const CDbIndex::SOptions & options,
+                COffsetList::CDataPool * pool )
             : subject_map_( subject_map ),
               hash_table_( 1<<(2*options.hkey_width) ),
               report_level_( options.report_level ),
@@ -1320,10 +1316,9 @@ class COffsetData_Factory
             for( THashTable::iterator i = hash_table_.begin();
                     i != hash_table_.end(); ++i ) {
                 i->SetIndexParams( options_ );
+                i->SetDataPool( pool );
             }
         }
-
-        ~COffsetData_Factory() { COffsetList::ClearAll(); }
 
         /** Get the total memory usage by offset lists in bytes.
             @return memory usage by this instance
@@ -1669,8 +1664,11 @@ void CDbIndex_Factory::do_create_1_2(
     typedef CSubjectMap_Factory TSubjectMap;
     typedef COffsetData_Factory TOffsetData;
 
+    std::auto_ptr< COffsetList::CDataPool > pool( 
+            new COffsetList::CDataPool );
+
     TSubjectMap subject_map( options );
-    TOffsetData offset_data( subject_map, options );
+    TOffsetData offset_data( subject_map, options, pool.get() );
 
     TSeqNum i = start;
 
