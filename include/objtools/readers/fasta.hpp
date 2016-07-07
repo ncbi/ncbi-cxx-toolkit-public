@@ -277,7 +277,7 @@ protected:
 
     std::string x_NucOrProt(void) const;
     
-private:
+protected:
     struct SGap : public CObject {
         enum EKnownSize {
             eKnownSize_No,
@@ -381,7 +381,7 @@ public:
     void SetCounter(TInt n)           { m_Counter.Set(n); }
     void SetSuffix (const string& s)  { m_Suffix  = s;    }
 
-private:
+protected:
     string         m_Prefix, m_Suffix;
     CAtomicCounter_WithAutoInit m_Counter;
 };
