@@ -79,9 +79,6 @@ void CReportObject::SetText(CScope& scope)
     else if (m_Seqdesc) {
         m_Text = GetTextObjectDescription(*m_Seqdesc, scope);
     }
-    else if (m_Submit_block) {
-        m_Text = GetTextObjectDescription(*m_Submit_block, scope);
-    }
     else if (m_Bioseq_set) {
         CBioseq_set_Handle bssh = scope.GetBioseq_setHandle(*m_Bioseq_set);
         m_Text = GetTextObjectDescription(bssh);
@@ -383,10 +380,6 @@ string CReportObject::GetTextObjectDescription(const CSeq_feat& seq_feat, CScope
 string CReportObject::GetTextObjectDescription(const CSeqdesc& sd, CScope& scope)
 {
     string desc = GetTextObjectDescription(sd);
-//    if (sd.IsPub()) {
-//        return desc;
-//    }
-
     CRef<CScope> s(&scope);
     CSeq_entry_Handle seh = edit::GetSeqEntryForSeqdesc (s, sd);
 
@@ -574,16 +567,6 @@ string CReportObject::GetTextObjectDescription(CBioseq_set_Handle bssh)
     }
 
     return (string)CNcbiOstrstreamToString(result_strm);
-}
-
-
-string CReportObject::GetTextObjectDescription(const CSubmit_block& sb, CScope& scope)
-{
-    string label;
-    CRef<CPub> tmp_pub(new CPub());
-    tmp_pub->SetSub().Assign(sb.GetCit());
-    tmp_pub->GetLabel(&label, CPub::eContent, true);
-    return label;
 }
 
 

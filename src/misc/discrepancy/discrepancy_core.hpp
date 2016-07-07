@@ -133,10 +133,10 @@ public:
             DropReference();
         }
     }
-    CDiscrepancyObject(CConstRef<CSubmit_block> obj, CScope& scope, const string& filename, bool keep_ref, bool autofix = false, CObject* more = 0) : CReportObject(obj, scope), m_Autofix(autofix), m_More(more)
+    CDiscrepancyObject(CConstRef<CSubmit_block> obj, CScope& scope, const string& text, const string& filename, bool keep_ref, bool autofix = false, CObject* more = 0) : CReportObject(obj, scope, text), m_Autofix(autofix), m_More(more)
     {
         SetFilename(filename);
-        SetText(scope);
+        //SetText(scope);
         if (!keep_ref) {
             DropReference();
         }
@@ -391,8 +391,8 @@ public:
     CDiscrepancyObject* NewDiscObj(CConstRef<CBioseq> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0) { return new CDiscrepancyObject(obj, *m_Scope, m_File, keep_ref || m_KeepRef, autofix, more); }
     CDiscrepancyObject* NewDiscObj(CConstRef<CSeqdesc> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0) { return new CDiscrepancyObject(obj, *m_Scope, m_File, keep_ref || m_KeepRef, autofix, more); }
     CDiscrepancyObject* NewDiscObj(CConstRef<CSeq_feat> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0) { return new CDiscrepancyObject(obj, *m_Scope, m_File, keep_ref || m_KeepRef, autofix, more); }
-    CDiscrepancyObject* NewDiscObj(CConstRef<CSubmit_block> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0) { return new CDiscrepancyObject(obj, *m_Scope, m_File, keep_ref || m_KeepRef, autofix, more); }
     CDiscrepancyObject* NewDiscObj(CConstRef<CBioseq_set> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0) { return new CDiscrepancyObject(obj, *m_Scope, m_File, keep_ref || m_KeepRef, autofix, more); }
+    CDiscrepancyObject* NewSubmitBlockObj(EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
 
 protected:
     void Update_Bioseq_set_Stack(CTypesConstIterator& it);

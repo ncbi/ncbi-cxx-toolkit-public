@@ -51,7 +51,7 @@ public:
     CReportObject(CConstRef<CBioseq> obj, CScope& scope) : m_Bioseq(obj), m_Scope(scope) {}
     CReportObject(CConstRef<CSeq_feat> obj, CScope& scope) : m_Seq_feat(obj), m_Scope(scope) {}
     CReportObject(CConstRef<CSeqdesc> obj, CScope& scope) : m_Seqdesc(obj), m_Scope(scope) {}
-    CReportObject(CConstRef<CSubmit_block> obj, CScope& scope) : m_Submit_block(obj), m_Scope(scope) {}
+    CReportObject(CConstRef<CSubmit_block> obj, CScope& scope, const string& text) : m_Submit_block(obj), m_Scope(scope), m_Text(text) {}
     CReportObject(CConstRef<CBioseq_set> obj, CScope& scope) : m_Bioseq_set(obj), m_Scope(scope) {}
     CReportObject(const CReportObject& other) :
         m_Text(other.m_Text),
@@ -102,7 +102,6 @@ public:
     static string GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope, const string& product);  
     static string GetTextObjectDescription(const CSeqdesc& sd, CScope& scope);
     static string GetTextObjectDescription(const CSeqdesc& sd);
-    static string GetTextObjectDescription(const CSubmit_block& sb, CScope& scope);
     static string GetTextObjectDescription(CBioseq_Handle bsh);
     static string GetTextObjectDescription(CBioseq_set_Handle bssh);
     static void GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope, string &label, string &context, string &location, string &locus_tag);
