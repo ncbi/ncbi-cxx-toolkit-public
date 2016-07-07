@@ -89,6 +89,7 @@ public:
         eBam                 = 31, ///< Binary alignment/map file
         eVcf                 = 32, ///< VCF, CVcfReader
         eUCSCRegion          = 33, ///< USCS Region file format
+        eGffAugustus         = 34, ///< GFFish output of Augustus Gene Prediction
         /// Max value of EFormat
         eFormat_max
     };
@@ -282,6 +283,8 @@ protected:
         EMode mode );
     bool TestFormatVcf(
         EMode mode );
+    bool TestFormatAugustus(
+        EMode mode );
 
     bool IsInputRepeatMaskerWithoutHeader();
     bool IsInputRepeatMaskerWithHeader();
@@ -303,6 +306,8 @@ protected:
 	static bool IsLineGff3(
 		const std::string& );
 	static bool IsLineGff2(
+		const std::string& );
+	static bool IsLineAugustus(
 		const std::string& );
 	static bool IsLinePhrapId(
         const std::string& );

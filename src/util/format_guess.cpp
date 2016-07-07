@@ -167,6 +167,7 @@ int CFormatGuess::s_CheckOrder[] =
     eGvf,
     eGff3,
     eGtf,
+    eGffAugustus,
     eGff2,
     eGlimmer3,
     eAgp,
@@ -229,7 +230,8 @@ const char* const CFormatGuess::sm_FormatNames[CFormatGuess::eFormat_max] =
     "SRA",
     "BAM",
     "VCF",
-    "UCSC Region"
+    "UCSC Region",
+    "GFF Augustus"
 };
 
 const char*
@@ -505,6 +507,8 @@ bool CFormatGuess::x_TestFormat(EFormat format, EMode mode)
         return TestFormatVcf( mode );
     case eUCSCRegion:
         return false;
+    case eGffAugustus:
+        return TestFormatAugustus( mode );
     default:
         NCBI_THROW( CCoreException, eInvalidArg,
             "CFormatGuess::x_TestFormat(): Unsupported format ID (" +
@@ -789,6 +793,44 @@ CFormatGuess::TestFormatGff3(
             continue;
         }
         if ( ! IsLineGff3( *it ) ) {
+            return false;
+        }
+        ++uGffLineCount;
+    }
+    return (uGffLineCount != 0);
+}
+
+
+//  -----------------------------------------------------------------------------
+bool
+CFormatGuess::TestFormatAugustus(
+    EMode /*not used*/)
+{
+    if ( ! EnsureTestBuffer() || ! EnsureSplitLines() ) {
+        return false;
+    }
+
+    unsigned int uGffLineCount = 0;
+    list<string>::iterator it = m_TestLines.begin();
+
+    for ( ;  it != m_TestLines.end();  ++it) {
+        //
+        //  Make sure to ignore any UCSC track and browser lines prior to the
+        //  start of data
+        //
+        if (!uGffLineCount && NStr::StartsWith(*it, "##gff-version 3")) {
+            return false;
+        }
+        if ( it->empty() || (*it)[0] == '#' ) {
+            continue;
+        }
+        if ( !uGffLineCount && NStr::StartsWith( *it, "browser " ) ) {
+            return false;
+        }
+        if ( !uGffLineCount && NStr::StartsWith( *it, "track " ) ) {
+            return false;
+        }
+        if ( !IsLineAugustus( *it ) ) {
             return false;
         }
         ++uGffLineCount;
@@ -2252,6 +2294,99 @@ bool CFormatGuess::IsLineGff3(
         }
     }
 
+    return true;
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CFormatGuess::IsLineAugustus(
+    const string& line )
+{
+    vector<string> tokens;
+    string remaining(line), head, tail;
+
+    //column 0: ID, string
+    if (!NStr::SplitInTwo(remaining, " \t", head, tail)) {
+        return false;
+    }
+    remaining = tail;
+
+    //column 1: method, most likely "AUGUSTUS" but don't want to rely on this
+    if (!NStr::SplitInTwo(remaining, " \t", head, tail)) {
+        return false;
+    }
+    remaining = tail;
+
+    //column 2: feature type, controlled vocabulary
+    if (!NStr::SplitInTwo(remaining, " \t", head, tail)) {
+        return false;
+    }
+    remaining = tail;
+    string featureType = head;
+
+    //column 3: start, integer
+    if (!NStr::SplitInTwo(remaining, " \t", head, tail)  ||  !s_IsTokenPosInt(head)) {
+        return false;
+    }
+    remaining = tail;
+
+    //column 4: stop, integer
+    if (!NStr::SplitInTwo(remaining, " \t", head, tail)  ||  !s_IsTokenPosInt(head)) {
+        return false;
+    }
+    remaining = tail;
+
+    //column 5: score, double
+    if (!NStr::SplitInTwo(remaining, " \t", head, tail)  ||  !s_IsTokenDouble(head)) {
+        return false;
+    }
+    remaining = tail;
+
+    //column 6: strand, one in "+-.?"
+    const string legalStrands{"+-.?"};
+    if (!NStr::SplitInTwo(remaining, " \t", head, tail)  ||  !head.size() == 1  ||  
+            string::npos == legalStrands.find(head)) {
+        return false;
+    }
+    remaining = tail;
+
+    //column 7: phase, one in ".0123"
+    const string legalPhases{".0123"};
+    if (!NStr::SplitInTwo(remaining, " \t", head, tail)  ||  !head.size() == 1  ||  
+            string::npos == legalPhases.find(head)) {
+        return false;
+    }
+    remaining = tail;
+
+    //everything else: attributes, format depends on featureType
+    if (remaining.empty()) {
+        return false;
+    }
+
+    if (featureType == "gene") {
+        if (NPOS != NStr::Find(remaining, ";")) {
+            return false;
+        }
+        if (NPOS != NStr::Find(remaining, " ")) {
+            return false;
+        }
+        return true;
+    }
+    if (featureType == "transcript") {
+        if (NPOS != NStr::Find(remaining, ";")) {
+            return false;
+        }
+        if (NPOS != NStr::Find(remaining, " ")) {
+            return false;
+        }
+        return true;
+    }
+    if (NPOS == NStr::Find(remaining, "transcript_id")) {
+        return false;
+    }
+    if (NPOS == NStr::Find(remaining, "gene_id")) {
+        return false;
+    }
     return true;
 }
 
