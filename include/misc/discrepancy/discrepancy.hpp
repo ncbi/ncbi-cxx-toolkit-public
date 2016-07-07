@@ -98,13 +98,22 @@ class NCBI_DISCREPANCY_EXPORT CDiscrepancySet : public CObject
 public:
     CDiscrepancySet(void) : m_SesameStreetCutoff(0.75), m_KeepRef(false), m_UserData(0) {}
     virtual ~CDiscrepancySet(void){}
+
+    template<typename Container>
+    bool AddTests(const Container& cont)
+    {
+        bool success = true;
+        for_each(cont.begin(), cont.end(), [this, &success](const string& test_name) { success &= this->AddTest(test_name); });
+        return success;
+    };
+
     virtual bool AddTest(const string& name) = 0;
     virtual bool SetAutofixHook(const string& name, TAutofixHook func) = 0;
     virtual void Parse(const CSerialObject& root) = 0;
     virtual void Summarize(void) = 0;
     virtual const TDiscrepancyCaseMap& GetTests(void) = 0;
-    virtual void OutputText(ostream& out, bool summary = false, bool ext = false) = 0;  // ugly!
-    virtual void OutputXML(ostream& out, bool ext = false) = 0;                         // ugly!
+    virtual void OutputText(CNcbiOstream& out, bool summary = false, bool ext = false) = 0;  // ugly!
+    virtual void OutputXML(CNcbiOstream& out, bool ext = false) = 0;                         // ugly!
 
     const string& GetFile(void) const { return m_File;}
     const string& GetLineage(void) const { return m_Lineage; }
@@ -119,6 +128,7 @@ public:
     void SetUserData(void* p){ m_UserData = p; }
     static CRef<CDiscrepancySet> New(objects::CScope& scope);
     static string Format(const string& str, unsigned int count);
+    static const char** GetTestSuiteKClark();
 
 protected:
     string m_File;
