@@ -223,23 +223,6 @@ static void s_ProcessResult(unsigned short result,
 }
 
 
-/** Convert meta parameter string to char** for C part (it is easier to do in 
- *  C++ and then pass to C) */
-static char** s_MetaStringToCharArr(const string& metadata)
-{
-    list<CTempString> name_vals;
-    NStr::TSplitFlags flags = NStr::fSplit_Tokenize;
-    NStr::Split(metadata, "?=&", name_vals, flags);
-    char** params_arr = (char**)malloc(sizeof(char*) * (name_vals.size() + 1));
-    auto iter = name_vals.begin();
-    unsigned short i = 0;
-    for (; iter != name_vals.begin();  iter++) {
-        params_arr[i++] = strdup(iter->data());
-    }
-    params_arr[i] = NULL; /* closing item */
-    return params_arr;
-}
-
 void LBOS::Announce(const string& service, 
                     const string& version,
                     const string& host, 
@@ -630,7 +613,7 @@ LBOS::CMetaData::CMetaData()
 }
 
 
-void LBOS::CMetaData::Set(const string& name_in, const string& val_in)
+void LBOS::CMetaData::Set(const CTempString name_in, const CTempString val_in)
 {
     string name = name_in;
     /* First, transform name to lower register to search it */
@@ -664,6 +647,24 @@ string LBOS::CMetaData::Get(const string& name) const
         return iter->second;
     }
     return "";
+}
+
+
+void LBOS::CMetaData::GetNames(list<string>& cont)
+{
+    auto iter = m_Meta.begin();
+    for (; iter != m_Meta.end(); iter++) {
+        cont.push_back(iter->first);
+    }
+}
+
+
+void LBOS::CMetaData::GetNames(vector<string>& cont)
+{
+    auto iter = m_Meta.begin();
+    for (; iter != m_Meta.end(); iter++) {
+        cont.push_back(iter->first);
+    }
 }
 
 
@@ -737,6 +738,9 @@ void LBOS::CMetaData::SetType(EHostType host_type)
     case eHTTP_POST:
         SetType("HTTP_POST");
         break;
+    case eHTTP_GET:
+        SetType("HTTP_GET");
+        break;
     case eStandalone:
         SetType("STANDALONE");
         break;
@@ -746,12 +750,49 @@ void LBOS::CMetaData::SetType(EHostType host_type)
     case eDNS:
         SetType("DNS");
         break;
+    case eFirewall:
+        SetType("FIREWALL");
+        break;
     case eNone:
         SetType("");
         break;
     default:
         throw CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
                              CLBOSException::eInvalidArgs, "Unknown EHostType "
+                             "value. If you are sure that a correct value is "
+                             "used, please tell the developer about this issue", 
+                             eLBOS_InvalidArgs);
+    }
+}
+
+
+void LBOS::CMetaData::SetType(ESERV_Type host_type)
+{
+    switch (host_type) {
+    case fSERV_Http:
+        SetType("HTTP");
+        break;
+    case fSERV_HttpPost:
+        SetType("HTTP_POST");
+        break;
+    case fSERV_HttpGet:
+        SetType("HTTP_GET");
+        break;
+    case fSERV_Standalone:
+        SetType("STANDALONE");
+        break;
+    case fSERV_Ncbid:
+        SetType("NCBID");
+        break;
+    case fSERV_Dns:
+        SetType("DNS");
+        break;
+    case fSERV_Firewall:
+        SetType("FIREWALL");
+        break;
+    default:
+        throw CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
+                             CLBOSException::eInvalidArgs, "Unknown ESERV_Type "
                              "value. If you are sure that a correct value is "
                              "used, please tell the developer about this issue", 
                              eLBOS_InvalidArgs);
@@ -857,6 +898,14 @@ string LBOS::CMetaData::GetMetaString() const
     }
     return meta_stringstream.str();
 }
+
+
+ostream& operator<<(ostream& os, const LBOS::CMetaData& metadata)
+{
+    os << metadata.GetMetaString();
+    return os;
+}
+
 
 #endif /* LBOS_METADATA */
 

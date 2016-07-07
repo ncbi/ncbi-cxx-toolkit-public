@@ -36,6 +36,7 @@
 */
 
 #include <corelib/ncbiexpt.hpp>
+#include <connect/ncbi_server_info.h>
 
 
 BEGIN_NCBI_SCOPE
@@ -54,83 +55,94 @@ public:
         enum EHostType {
             eNone,          /**< no "type" meta parameter */
             eHTTP,          /**< "HTTP" */
+            eHTTP_GET,      /**< "HTTP_GET" */
             eHTTP_POST,     /**< "HTTP_POST" */
-            eStandalone,     /**< "STANDALONE" */
+            eStandalone,    /**< "STANDALONE" */
             eNCBID,         /**< "NCBID" */
             eDNS,           /**< "DNS" */
+            eFirewall,      /**< "FIREWALL" */
             eUnknown        /**< a value that has no corresponding enum,  
                                  but still valid */
         };
 
         CMetaData();
-        /** Set "rate" meta parameter.
-         * @parameter[i] rate
-         *  Rate to announce. "" to unset the value */
-        void SetRate (const string& rate);
-        /** Set "rate" meta parameter.
-         * @parameter[i] rate
-         *  Rate to announce. 0 to unset the value */
-        void SetRate (double rate);
-        /** Set "type" meta parameter. 
-         * @parameter[i] host_type
-         *  Host type to announce. EHostType has most popular options. 
-         *  LBOS::CMetaData::eNone to clear */
-        void SetType (EHostType host_type);
-        /** Set "type" meta parameter. 
-         * @parameter[i] host_type
-         *  Host type to announce. Integer equivalents of EHostType. 0 to clear
-         *  the value               */
-        void SetType (int host_type);
-        /** Set "type" meta parameter.
-         * @parameter[i] host_type
-         *  Host type to announce. Any string value will be accepted. 
-         *  "" to unset the value.
-         * @note
-         *  host_type will be converted to upper case.    */
-        void SetType (const string& host_type);
-        /** Set "extra" meta parameter. Usually used to store a URL path to the
-         *  HTTP server.
-         * @parameter[i] extra
-         *  Extra to announce. Any string value will be accepted. 
-         *  "" to unset the value    */
-        void SetExtra(const string& extra);
+        /** Get any meta parameter, including "known types" which can also be
+         * obtained via their corresponding individual functions */
+        string Get(const string& name) const;
         /** Set any metadata, including "known types" - "type", "rate", "extra",
          *  which can also be set by corresponding special functions. 
          *  "" to unset the value
-         * @parameter[i] name
+         * @parameter[in] name
          *  Case-insensitive name of meta parameter (will be converted
          *  to lower case)
-         * @parameter[i] val
+         * @parameter[in] val
          *  Value to announce. "" to unset the value. Any string value will be
          *  accepted. If name is "extra", whitespace characters are forbidden
          *  in val. If name is "type", val is converted to upper case.  */
-        void Set(const string& name, const string& val);
+        void Set(const CTempString name, const CTempString val);
+        /** Get names of all meta parameters in this CMetaData instance */
+        void GetNames(vector<string>& cont);
+        /** Get names of all meta parameters in this CMetaData instance */
+        void GetNames(list<string>& cont);
         /** Get "rate" parameter as double. Returns 0 if value is 
          *  not set */
         double GetRate() const;
-        /** Get "server type" meta parameter. Returns a corresponding enumerator
-         *  if "type" meta parameter is set and equal to any of HTTP, HTTP_POST,
-         *  DNS, STANDALONE or NCBID (case-insensitively). 
-         *  If "type is unset - returns eNone. 
-         *  Otherwise, retuns eUknown and actual value can be obtained with 
-         *  GetType(bool()); */
-        LBOS::CMetaData::EHostType GetType() const;
+        /** Set "rate" meta parameter.
+         * @parameter[in] rate
+         *  Rate to announce. "" to unset the value */
+        void SetRate (const string& rate);
+        /** Set "rate" meta parameter.
+         * @parameter[in] rate
+         *  Rate to announce. 0 to unset the value */
+        void SetRate (double rate);
         /** Get "server type" meta parameter. Returns upper-cased string value
          *  of the "type" meta parameter.
          * @param[in] bool_fake_param
          *  To distinguish between EHostType and string return types */
         string GetType(bool) const;
+        /** Set "type" meta parameter. 
+         * @parameter[in] host_type
+         *  Host type to announce. EHostType has most popular options. 
+         *  LBOS::CMetaData::eNone to clear */
+        void SetType (EHostType host_type);
+        /** Set "type" meta parameter using ncbi_server_info.h enums
+         * @parameter[in] host_type
+         *  Host type to announce. Only values from ESERV_Type are valid. */
+        void SetType (ESERV_Type host_type);
+        /** Set "type" meta parameter. 
+         * @parameter[in] host_type
+         *  Host type to announce. Integer equivalents of EHostType. 0 to clear
+         *  the value               */
+        void SetType (int host_type);
+        /** Set "type" meta parameter.
+         * @parameter[in] host_type
+         *  Host type to announce. Any string value will be accepted. 
+         *  "" to unset the value.
+         * @note
+         *  host_type will be converted to upper case.    */
+        void SetType (const string& host_type);
         /** Get "extra" meta parameter */
         string GetExtra() const;
-        /** Get any meta parameter, including "known types" which can also be
-         * obtained via their corresponding individual functions */
-        string Get(const string& name) const;
+        /** Set "extra" meta parameter. Usually used to store a URL path to the
+         *  HTTP server.
+         * @parameter[in] extra
+         *  Extra to announce. Any string value will be accepted. 
+         *  "" to unset the value    */
+        void SetExtra(const string& extra);
+        /** Get "server type" meta parameter. Returns a corresponding enumerator
+         *  if "type" meta parameter is set and equal to any of HTTP, HTTP_POST,
+         *  DNS, STANDALONE or NCBID (case-insensitively). 
+         *  If "type is unset - returns eNone. 
+         *  Otherwise, returns eUnknown and actual value can be obtained with 
+         *  GetType(bool()); */
+        LBOS::CMetaData::EHostType GetType() const;
         /** Get a string with all parameters ready to put it into URL */
         string GetMetaString() const;
-
+        bool operator==(const CMetaData& other) const;
     private:
         map<string, string> m_Meta;
     };
+
 #endif /* LBOS_METADATA */
    /** Announce server.
     *
@@ -239,6 +251,7 @@ public:
 };
 
 
+ostream& operator<<(ostream& os, const LBOS::CMetaData& metadata);
 
 
 /** CLBOSException is thrown if a request to LBOS fails for any
