@@ -1073,11 +1073,12 @@ bool CGtfReader::x_FeatureSetDataCDS(
     }
 
     CCdregion& cdr = pFeature->SetData().SetCdregion();
-
     string strValue;
     if ( record.GetAttribute( "protein_id", strValue ) ) {
-        pFeature->SetProduct().SetWhole(
-            *CReadUtil::AsSeqId(strValue,m_iFlags));
+        CRef<CSeq_id> pId = CReadUtil::AsSeqId(strValue,m_iFlags);
+        if (pId->IsGenbank()) {
+            pFeature->SetProduct().SetWhole(*pId);
+        }
     }
     if ( record.GetAttribute( "ribosomal_slippage", strValue ) ) {
         pFeature->SetExcept( true );
@@ -1153,30 +1154,9 @@ bool CGtfReader::x_ProcessQualifierSpecialCase(
         pFeature->SetPartial( true );
         return true;
     }
-    if (0 == NStr::CompareNocase(it->first, "gene_id")) {
-        if (m_iFlags & fGenbankMode) {
-            // mss-399:
-            //  in genbank mode, drop gene_id altogether
+    if (0 == NStr::CompareNocase(it->first, "protein_id")) {
+        if (pFeature->IsSetProduct()) {
             return true;
-        }
-        else {
-            // mss-399:
-            //  in regular mode, retain gene_id as a qualifier but do nothing
-            //  else with it.
-            return false;
-        }
-    }
-    if (0 == NStr::CompareNocase(it->first, "transcript_id")) {
-        if (m_iFlags & fGenbankMode) {
-            // mss-399:
-            //  in genbank mode, drop transcript_id altogether
-            return true;
-        }
-        else {
-            // mss-399:
-            //  in regular mode, retain transcript_id as a qualifier but do 
-            //  nothing else with it.
-            return false;
         }
     }
 

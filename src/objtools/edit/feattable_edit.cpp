@@ -278,6 +278,9 @@ void CFeatTableEdit::SubmitFixProducts()
     sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_cdregion);
     for (CFeat_CI it(mHandle, sel); it; ++it){
         CMappedFeat mf = *it;
+        if (mf.IsSetProduct()) {
+            continue;
+        }
         //debug CSeqFeatData::ESubtype st = mf.GetFeatSubtype();
         string product = mf.GetNamedQual("Product");
         CRef<CSeq_feat> pEditedFeature(new CSeq_feat);
@@ -299,7 +302,7 @@ void CFeatTableEdit::EliminateBadQualifiers()
     typedef CSeq_feat::TQual QUALS;
 
     vector<string> specialQuals{
-        "Transcript_id", "protein_id", "Protein", "protein",
+        "Protein", "protein",
         "go_function", "go_component", "go_process" };
 
     CFeat_CI it(mHandle);
@@ -311,30 +314,28 @@ void CFeatTableEdit::EliminateBadQualifiers()
         vector<string> badQuals;
         for (QUALS::const_iterator qual = quals.begin(); qual != quals.end(); 
                 ++qual) {
-            string qualVal = (*qual)->GetQual();
-            if (NStr::StartsWith(qualVal, "go")) {
-                cerr << "";
-            }
-            if (std::find(specialQuals.begin(), specialQuals.end(), qualVal) 
+            string qualKey = (*qual)->GetQual();
+            if (std::find(specialQuals.begin(), specialQuals.end(), qualKey) 
                     != specialQuals.end()) {
                 continue;
             }
-            //if (qualVal == "transcript_id") {
-            //    continue;
-            //}
-            //if (qualVal == "protein_id") {
-            //    continue;
-            //}
-            //if (qualVal == "Protein") {
-            //    continue;
-            //}
-            //if (qualVal == "protein") {
-            //    continue;
-            //}
-            CSeqFeatData::EQualifier qualType = CSeqFeatData::GetQualifierType(qualVal);
-            if (!CSeqFeatData::IsLegalQualifier(subtype, qualType)) {
-                badQuals.push_back(qualVal);
+            if (qualKey == "transcript_id") {
+                if (!NStr::StartsWith((*qual)->GetVal(), "gnl|")) {
+                    badQuals.push_back(qualKey);
+                }
+                continue;
             }
+            if (qualKey == "protein_id") {
+                if (!NStr::StartsWith((*qual)->GetVal(), "gnl|")) {
+                    badQuals.push_back(qualKey);
+                }
+                continue;
+            }
+            CSeqFeatData::EQualifier qualType = CSeqFeatData::GetQualifierType(qualKey);
+            if (CSeqFeatData::IsLegalQualifier(subtype, qualType)) {
+                continue;
+            }
+            badQuals.push_back(qualKey);
         }
         for (vector<string>::const_iterator badIt = badQuals.begin();
                 badIt != badQuals.end(); ++badIt) {
@@ -342,6 +343,7 @@ void CFeatTableEdit::EliminateBadQualifiers()
         }
     }
 }
+
 
 //  ----------------------------------------------------------------------------
 void CFeatTableEdit::GenerateProteinAndTranscriptIds()
