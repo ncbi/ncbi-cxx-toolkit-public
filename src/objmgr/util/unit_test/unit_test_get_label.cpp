@@ -109,7 +109,7 @@ BOOST_AUTO_TEST_CASE(Test_feature_GetLabel)
     BOOST_CHECK_EQUAL(label, "neuronal thread protein AD7c-NTP");
     label = kEmptyStr;
 
-    feature::GetLabel(*(cds->GetSeq_feat()), &label, feature::fFGL_Type, &scope);
+    feature::GetLabel(*(prot->GetSeq_feat()), &label, feature::fFGL_Type, &scope);
     BOOST_CHECK_EQUAL(label, "Prot");
     label = kEmptyStr;
 
