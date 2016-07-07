@@ -208,10 +208,11 @@ void SBamIndexRefIndex::Read(CNcbiIstream& in)
 {
     int32_t n_bin = s_ReadInt32(in);
     m_Bins.resize(n_bin);
+    const SBamIndexBinInfo::TBin kSpecialBin = 37450;
     for ( int32_t i_bin = 0; i_bin < n_bin; ++i_bin ) {
         SBamIndexBinInfo& bin = m_Bins[i_bin];
         bin.Read(in);
-        if ( bin.m_Bin == 37450 ) {
+        if ( bin.m_Bin == kSpecialBin ) {
             if ( bin.m_Chunks.size() != 2 ) {
                 NCBI_THROW(CBamException, eOtherError,
                            "Bad unmapped bin format");
@@ -222,6 +223,7 @@ void SBamIndexRefIndex::Read(CNcbiIstream& in)
         }
     }
     gfx::timsort(m_Bins.begin(), m_Bins.end());
+    m_Bins.erase(lower_bound(m_Bins.begin(), m_Bins.end(), kSpecialBin), m_Bins.end());
         
     int32_t n_intv = s_ReadInt32(in);
     m_Intervals.resize(n_intv);
