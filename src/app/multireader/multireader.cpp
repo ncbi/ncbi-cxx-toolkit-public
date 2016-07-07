@@ -335,7 +335,7 @@ void CMultiReaderApp::Init(void)
             "bed", 
             "microarray", "bed15", 
             "wig", "wiggle", 
-            "gtf", "gff3", "gff2",
+            "gtf", "gff3", "gff2", "augustus"
             "gvf",
             "agp",
             "newick", "tree", "tre",
@@ -724,6 +724,7 @@ CMultiReaderApp::xProcessSingleFile(
                 break;
             case CFormatGuess::eGtf:
             case CFormatGuess::eGtf_POISENED:
+            case CFormatGuess::eGffAugustus:
                 xProcessGtf(args, istr, ostr);
                 break;
             case CFormatGuess::eVcf:
@@ -1153,6 +1154,9 @@ void CMultiReaderApp::xSetFormat(
     }
     if (NStr::StartsWith(strProgramName, "gtf") || format == "gtf") {
         m_uFormat = CFormatGuess::eGtf;
+    }
+    if (NStr::StartsWith(strProgramName, "gtf") || format == "augustus") {
+        m_uFormat = CFormatGuess::eGffAugustus;
     }
     if (NStr::StartsWith(strProgramName, "gff") || 
         format == "gff3" || format == "gff2") {
