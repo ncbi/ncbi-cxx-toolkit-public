@@ -3459,7 +3459,7 @@ static string GetPubFieldFromPub(const CPub& the_pub, EPublication_field field, 
             break;
         case CPub::e_Pmid:
             if (field == ePublication_field_pmid) {
-                return NStr::IntToString(the_pub.GetPmid());
+                return NStr::NumericToString(INT_ID_TO(int, the_pub.GetPmid()));
             }
             break;
         default: break;
