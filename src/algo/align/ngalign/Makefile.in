@@ -4,7 +4,7 @@
 #################################
 
 LIB_PROJ = xngalign
-EXPENDABLE_SUB_PROJ = app  test
+EXPENDABLE_SUB_PROJ = app
 
 REQUIRES = objects
 
