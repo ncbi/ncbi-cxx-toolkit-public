@@ -383,11 +383,11 @@ struct NCBI_BAMREAD_EXPORT SBamAlignInfo
 
     int32_t get_ref_index() const
         {
-            return CBGZFFile::MakeUint4(get_record_ptr());
+            return SBamUtil::MakeUint4(get_record_ptr());
         }
     int32_t get_ref_pos() const
         {
-            return CBGZFFile::MakeUint4(get_record_ptr()+4);
+            return SBamUtil::MakeUint4(get_record_ptr()+4);
         }
 
     uint8_t get_read_name_len() const
@@ -400,31 +400,31 @@ struct NCBI_BAMREAD_EXPORT SBamAlignInfo
         }
     uint16_t get_bin() const
         {
-            return CBGZFFile::MakeUint2(get_record_ptr()+10);
+            return SBamUtil::MakeUint2(get_record_ptr()+10);
         }
     uint16_t get_cigar_ops_count() const
         {
-            return CBGZFFile::MakeUint2(get_record_ptr()+12);
+            return SBamUtil::MakeUint2(get_record_ptr()+12);
         }
     uint16_t get_flag() const
         {
-            return CBGZFFile::MakeUint2(get_record_ptr()+14);
+            return SBamUtil::MakeUint2(get_record_ptr()+14);
         }
     uint32_t get_read_len() const
         {
-            return CBGZFFile::MakeUint4(get_record_ptr()+16);
+            return SBamUtil::MakeUint4(get_record_ptr()+16);
         }
     int32_t get_next_ref_index() const
         {
-            return CBGZFFile::MakeUint4(get_record_ptr()+20);
+            return SBamUtil::MakeUint4(get_record_ptr()+20);
         }
     int32_t get_next_ref_pos() const
         {
-            return CBGZFFile::MakeUint4(get_record_ptr()+24);
+            return SBamUtil::MakeUint4(get_record_ptr()+24);
         }
     int32_t get_tlen() const
         {
-            return CBGZFFile::MakeUint4(get_record_ptr()+28);
+            return SBamUtil::MakeUint4(get_record_ptr()+28);
         }
     const char* get_read_name_ptr() const
         {

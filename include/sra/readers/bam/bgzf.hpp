@@ -51,7 +51,7 @@ public:
     typedef Uint8 TFilePos;
 
     explicit
-        CPagedFile(const string& file_name);
+    CPagedFile(const string& file_name);
     ~CPagedFile();
 
 protected:
@@ -60,6 +60,7 @@ protected:
     void x_Release(CPagedFilePage& page);
 
 private:
+    CFastMutex m_Mutex;
     // two variants: direct file IO or memory mapped file
     CFileIO m_File;
     AutoPtr<CMemoryFile> m_MemFile;
@@ -72,13 +73,13 @@ public:
     typedef CPagedFile::TFilePos TFilePos;
 
     CPagedFilePage()
-        : m_FilePos(0),
+        : m_FilePos(-1),
           m_Size(0),
           m_Ptr(0)
     {
     }
     CPagedFilePage(CPagedFile& file, TFilePos pos)
-        : m_FilePos(0),
+        : m_FilePos(-1),
           m_Size(0),
           m_Ptr(0)
     {
@@ -149,6 +150,35 @@ public:
     };
     virtual const char* GetErrCodeString(void) const;
     NCBI_EXCEPTION_DEFAULT(CBGZFException,CException);
+};
+
+
+struct SBamUtil {
+    static Uint2 MakeUint2(const char* buf)
+        {
+            return Uint2(Uint1(buf[0]))|
+                (Uint2(Uint1(buf[1]))<<8);
+        }
+    
+    static Uint4 MakeUint4(const char* buf)
+        {
+            return Uint4(Uint1(buf[0]))|
+                (Uint4(Uint1(buf[1]))<<8)|
+                (Uint4(Uint1(buf[2]))<<16)|
+                (Uint4(Uint1(buf[3]))<<24);
+        }
+
+    static Uint8 MakeUint8(const char* buf)
+        {
+            return Uint8(Uint1(buf[0]))|
+                (Uint8(Uint1(buf[1]))<<8)|
+                (Uint8(Uint1(buf[2]))<<16)|
+                (Uint8(Uint1(buf[3]))<<24)|
+                (Uint8(Uint1(buf[4]))<<32)|
+                (Uint8(Uint1(buf[5]))<<40)|
+                (Uint8(Uint1(buf[6]))<<48)|
+                (Uint8(Uint1(buf[7]))<<56);
+        }
 };
 
 
@@ -223,7 +253,6 @@ public:
     CBGZFBlockInfo()
         : m_FileBlockPos(0),
           m_FileBlockSize(0),
-          m_CRC32(0),
           m_DataSize(0)
         {
         }
@@ -241,24 +270,13 @@ public:
         {
             return GetFileBlockPos() + GetFileBlockSize();
         }
-    TCRC32 GetCRC32() const
-        {
-            return m_CRC32;
-        }
     TDataSize GetDataSize() const
         {
             return m_DataSize;
         }
 
-    static const TFileBlockSize kHeaderSize = 18;
-    static const TFileBlockSize kFooterSize = 8;
     static const TFileBlockSize kMaxFileBlockSize = 1<<16;
     static const TDataSize kMaxDataSize = 1<<16;
-
-    TFileBlockSize GetCompressedSize() const
-        {
-            return m_FileBlockSize - (kHeaderSize+kFooterSize);
-        }
 
 protected:
     friend class CBGZFStream;
@@ -266,7 +284,6 @@ protected:
 private:
     TFileBlockPos m_FileBlockPos;
     TFileBlockSize m_FileBlockSize;
-    TCRC32 m_CRC32;
     TDataSize m_DataSize;
 };
 
@@ -278,32 +295,6 @@ public:
     CBGZFFile(const string& file_name);
     ~CBGZFFile();
 
-    static Uint2 MakeUint2(const char* buf)
-        {
-            return Uint2(Uint1(buf[0]))|
-                (Uint2(Uint1(buf[1]))<<8);
-        }
-    
-    static Uint4 MakeUint4(const char* buf)
-        {
-            return Uint4(Uint1(buf[0]))|
-                (Uint4(Uint1(buf[1]))<<8)|
-                (Uint4(Uint1(buf[2]))<<16)|
-                (Uint4(Uint1(buf[3]))<<24);
-        }
-
-    static Uint8 MakeUint8(const char* buf)
-        {
-            return Uint8(Uint1(buf[0]))|
-                (Uint8(Uint1(buf[1]))<<8)|
-                (Uint8(Uint1(buf[2]))<<16)|
-                (Uint8(Uint1(buf[3]))<<24)|
-                (Uint8(Uint1(buf[4]))<<32)|
-                (Uint8(Uint1(buf[5]))<<40)|
-                (Uint8(Uint1(buf[6]))<<48)|
-                (Uint8(Uint1(buf[7]))<<56);
-        }
-    
 protected:
     friend class CBGZFStream;
 
@@ -331,9 +322,6 @@ public:
 
     // return number of available bytes in current decompressed buffer
     size_t GetNextAvailableBytes();
-    // return pointer to count bytes in current decompressed buffer
-    // or null if current buffer has smaller number of remaining bytes
-    //const char* GetReadPtr(size_t count);
     // read up to count bytes into a buffer, may return smaller number
     size_t Read(char* buf, size_t count);
 
@@ -349,8 +337,8 @@ private:
     CRef<CBGZFFile> m_File;
     CPagedFilePage m_Page;
     CBGZFBlockInfo m_BlockInfo;
-    AutoArray<char> m_Data;
     CBGZFPos::TByteOffset m_ReadPos;
+    AutoArray<char> m_Data;
     CSimpleBufferT<char> m_ReadBuffer;
 };
 

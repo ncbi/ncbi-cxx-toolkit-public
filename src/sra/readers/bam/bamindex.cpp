@@ -128,7 +128,7 @@ uint32_t s_ReadUInt32(CNcbiIstream& in)
 {
     char buf[4];
     s_Read(in, buf, 4);
-    return CBGZFFile::MakeUint4(buf);
+    return SBamUtil::MakeUint4(buf);
 }
 
 
@@ -144,7 +144,7 @@ uint64_t s_ReadUInt64(CNcbiIstream& in)
 {
     char buf[8];
     s_Read(in, buf, 8);
-    return CBGZFFile::MakeUint8(buf);
+    return SBamUtil::MakeUint8(buf);
 }
 
 
@@ -169,7 +169,7 @@ uint32_t s_ReadUInt32(CBGZFStream& in)
 {
     char buf[4];
     s_Read(in, buf, 4);
-    return CBGZFFile::MakeUint4(buf);
+    return SBamUtil::MakeUint4(buf);
 }
 
 
@@ -683,7 +683,7 @@ uint32_t SBamAlignInfo::get_cigar_ref_size() const
     uint32_t ret = 0;
     const char* ptr = get_cigar_ptr();
     for ( uint16_t count = get_cigar_ops_count(); count--; ) {
-        uint32_t op = CBGZFFile::MakeUint4(ptr);
+        uint32_t op = SBamUtil::MakeUint4(ptr);
         ptr += 4;
         switch ( op & 0xf ) {
         case 0: // M
@@ -706,7 +706,7 @@ string SBamAlignInfo::get_cigar() const
     CNcbiOstrstream ret;
     const char* ptr = get_cigar_ptr();
     for ( uint16_t count = get_cigar_ops_count(); count--; ) {
-        uint32_t op = CBGZFFile::MakeUint4(ptr);
+        uint32_t op = SBamUtil::MakeUint4(ptr);
         ptr += 4;
         uint32_t len = op >> 4;
         op &= 0xf;
@@ -720,7 +720,7 @@ string SBamAlignInfo::get_cigar() const
 
 void SBamAlignInfo::Read(CBGZFStream& in)
 {
-    m_RecordSize = CBGZFFile::MakeUint4(in.Read(4));
+    m_RecordSize = SBamUtil::MakeUint4(in.Read(4));
     m_RecordPtr = in.Read(m_RecordSize);
     _ASSERT(get_qual_ptr() <= get_qual_end());
 }
@@ -758,7 +758,7 @@ bool CBamRawAlignIterator::x_NeedToSkip()
 {
     _ASSERT(*this);
     m_AlignInfo.Read(m_Reader);
-    if ( m_AlignInfo.get_ref_index() != m_RefIndex ) {
+    if ( size_t(m_AlignInfo.get_ref_index()) != m_RefIndex ) {
         // wrong reference sequence
         return true;
     }

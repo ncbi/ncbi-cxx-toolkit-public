@@ -42,6 +42,7 @@
 #include <objects/seqset/seqset__.hpp>
 #include <objects/seqres/Seq_graph.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+#include <thread>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -261,6 +262,10 @@ int CBamIndexTestApp::Run(void)
 
     CBamRawDb bam_raw_db(path, path+".bai");
 
+    if ( bam_raw_db.GetRefIndex(ref_label) == size_t(-1) ) {
+        ERR_POST(Fatal<<"Unknown reference sequence: "<<ref_label);
+    }
+
     if ( args["dump"] ) {
         s_DumpIndex(bam_raw_db.GetIndex(), bam_raw_db.GetRefIndex(ref_label));
     }
@@ -285,47 +290,85 @@ int CBamIndexTestApp::Run(void)
             out << MSerial_AsnText;
         out << *entry;
     }
+    
+    if ( args["file-range"] ) {
+        CBamFileRangeSet rs(bam_raw_db.GetIndex(),
+                            bam_raw_db.GetRefIndex(ref_label), ref_range);
+        for ( auto& c : rs ) {
+            cout << "Ref["<<ref_label<<"] @"<<ref_range<<": "
+                 << c.first<<" - "<<c.second
+                 << endl;
+        }
+    }
 
-    Uint8 align_count = 0;
+    CBamMgr mgr;
+    CBamDb bam_db;
     if ( args["sra"] ) {
-        CBamMgr mgr;
-        CBamDb bam_db(mgr, path, path+".bai");
-        for ( CBamAlignIterator it(bam_db, ref_label, ref_range.GetFrom(), ref_range.GetLength()); it; ++it ) {
-            if ( verbose ) {
-                TSeqPos ref_pos = it.GetRefSeqPos();
-                TSeqPos ref_size = it.GetCIGARRefSize();
-                cout << "Ref: " << ref_label
-                     << " at [" << ref_pos
-                     << " - " << (ref_pos+ref_size-1)
-                     << "] = " << ref_size
-                     << '\n';
-            }
-            ++align_count;
-        }
+        bam_db = CBamDb(mgr, path, path+".bai");
     }
-    else {
-        if ( args["file-range"] ) {
-            CBamFileRangeSet rs(bam_raw_db.GetIndex(),
-                                bam_raw_db.GetRefIndex(ref_label), ref_range);
-            for ( auto& c : rs ) {
-                cout << "Ref["<<ref_label<<"] @"<<ref_range<<": "
-                     << c.first<<" - "<<c.second
-                     << endl;
-            }
-        }
-        for ( CBamRawAlignIterator it(bam_raw_db, ref_label, ref_range); it; ++it ) {
-            if ( verbose ) {
-                TSeqPos ref_pos = it.GetRefSeqPos();
-                TSeqPos ref_size = it.GetCIGARRefSize();
-                cout << "Ref: " << ref_label
-                     << " at [" << ref_pos
-                     << " - " << (ref_pos+ref_size-1)
-                     << "] = " << ref_size
-                     << '\n';
-            }
-            ++align_count;
-        }
+    
+    Uint8 align_count = 0;
+    thread tt[10];
+    for ( int i = 0; i < 10; ++i ) {
+        tt[i] =
+            thread([&bam_raw_db, &bam_db,
+                    ref_label, ref_range,
+                    &align_count, verbose]()
+                   {
+                       Uint8 count = 0;
+                       try {
+                           if ( bam_db ) {
+                               for ( CBamAlignIterator it(bam_db, ref_label, ref_range.GetFrom(), ref_range.GetLength()); it; ++it ) {
+                                   if ( verbose ) {
+                                       TSeqPos ref_pos = it.GetRefSeqPos();
+                                       TSeqPos ref_size = it.GetCIGARRefSize();
+                                       cout << "Ref: " << ref_label
+                                            << " at [" << ref_pos
+                                            << " - " << (ref_pos+ref_size-1)
+                                            << "] = " << ref_size
+                                            << '\n';
+                                   }
+                                   ++count;
+                               }
+                           }
+                           else {
+                               for ( CBamRawAlignIterator it(bam_raw_db, ref_label, ref_range); it; ++it ) {
+                                   if ( verbose ) {
+                                       TSeqPos ref_pos = it.GetRefSeqPos();
+                                       TSeqPos ref_size = it.GetCIGARRefSize();
+                                       cout << "Ref: " << ref_label
+                                            << " at [" << ref_pos
+                                            << " - " << (ref_pos+ref_size-1)
+                                            << "] = " << ref_size
+                                            << '\n';
+                                   }
+                                   ++count;
+                               }
+                           }
+                       }
+                       catch ( exception& exc ) {
+                           ERR_POST("Exception: "<<exc.what());
+                       }
+                       align_count += count;
+                   });
     }
+    for ( int i = 0; i < 10; ++i ) {
+        tt[i].join();
+    }
+    /*
+      for ( CBamRawAlignIterator it(bam_raw_db, ref_label, ref_range); it; ++it ) {
+      if ( verbose ) {
+      TSeqPos ref_pos = it.GetRefSeqPos();
+      TSeqPos ref_size = it.GetCIGARRefSize();
+      cout << "Ref: " << ref_label
+      << " at [" << ref_pos
+      << " - " << (ref_pos+ref_size-1)
+      << "] = " << ref_size
+      << '\n';
+      }
+      ++align_count;
+      }
+    */
     cout << "Align count: "<<align_count<<endl;
 
     return 0;

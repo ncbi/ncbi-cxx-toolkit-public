@@ -83,6 +83,7 @@ void CPagedFile::x_Release(CPagedFilePage& page)
 {
     if (page.m_Ptr) {
         if (kUseMemFile) {
+            CFastMutexGuard guard(m_Mutex);
             m_MemFile->Unmap();
         }
         else {
@@ -96,31 +97,35 @@ void CPagedFile::x_Release(CPagedFilePage& page)
 
 void CPagedFile::x_Select(CPagedFilePage& page, TFilePos file_pos)
 {
-    if (page.m_File == this && page.Contains(file_pos)) {
+    TFilePos base_pos = file_pos - file_pos % kSegmentSize;
+    if ( page.m_File == this && page.GetPageFilePos() == base_pos ) {
         return;
     }
-    if (page.m_File != this) {
+    if ( page.m_File != this ) {
         page.Reset();
         page.m_File = this;
     }
-    TFilePos base_pos = file_pos / kSegmentSize * kSegmentSize;
     size_t size = kSegmentSize;
-    if (kUseMemFile) {
+    if ( kUseMemFile ) {
+        CFastMutexGuard guard(m_Mutex);
         page.m_Ptr = (const char*)m_MemFile->Map(base_pos, size);
     }
     else {
         page.m_Buffer.resize(size);
-        m_File.SetFilePos(base_pos);
         char* dst = page.m_Buffer.data();
         size_t rem = size;
-        while (rem) {
-            size_t cnt = m_File.Read(dst, rem);
-            if (cnt == 0) {
-                // end of file or error
-                break;
+        {
+            CFastMutexGuard guard(m_Mutex);
+            m_File.SetFilePos(base_pos);
+            while (rem) {
+                size_t cnt = m_File.Read(dst, rem);
+                if (cnt == 0) {
+                    // end of file or error
+                    break;
+                }
+                rem -= cnt;
+                dst += cnt;
             }
-            rem -= cnt;
-            dst += cnt;
         }
         if (rem) {
             memset(dst, 0, min(rem, size_t(CBGZFBlockInfo::kMaxFileBlockSize)));
@@ -147,33 +152,8 @@ char* s_Reserve(size_t size, CSimpleBufferT<char>& buffer)
 
 
 static inline
-const char* s_Read(CPagedFilePage& in,
-                   Uint8 file_pos, size_t len,
-                   char* buffer)
-{
-    char* dst = buffer;
-    while ( len ) {
-        in.Select(file_pos);
-        const char* ptr = in.GetPagePtr();
-        _ASSERT(ptr);
-        _ASSERT(in.Contains(file_pos));
-        size_t off = size_t(file_pos - in.GetPageFilePos());
-        size_t avail = in.GetPageSize() - off;
-        size_t cnt = min(avail, len);
-        _ASSERT(cnt < 0x10000);
-        memcpy(dst, ptr+off, cnt);
-        len -= cnt;
-        file_pos += cnt;
-        dst += cnt;
-    }
-    return buffer;
-}
-
-
-static inline
-const char* s_Read(CPagedFilePage& in,
-                   Uint8 file_pos, size_t len,
-                   CSimpleBufferT<char>& buffer)
+const char* s_Read(char* buffer, CPagedFilePage& in,
+                   Uint8 file_pos, size_t len)
 {
     in.Select(file_pos);
     const char* ptr = in.GetPagePtr();
@@ -184,13 +164,16 @@ const char* s_Read(CPagedFilePage& in,
     if ( len <= avail ) {
         return ptr + off;
     }
-    char* dst = s_Reserve(len, buffer);
-    _ASSERT(avail < 0x10000);
+    // current buffer doesn't have enough,
+    // combine required data from several buffers
+    char* dst = buffer;
+    _ASSERT(avail < CBGZFBlockInfo::kMaxFileBlockSize);
     memcpy(dst, ptr+off, avail);
     len -= avail;
     file_pos += avail;
     dst += avail;
-    while ( len ) {
+    _ASSERT(len);
+    do {
         in.Select(file_pos);
         ptr = in.GetPagePtr();
         _ASSERT(ptr);
@@ -203,8 +186,8 @@ const char* s_Read(CPagedFilePage& in,
         len -= cnt;
         file_pos += cnt;
         dst += cnt;
-    }
-    return buffer.data();
+    } while ( len );
+    return buffer;
 }
 
 
@@ -232,7 +215,9 @@ CBGZFStream::CBGZFStream()
 
 
 CBGZFStream::CBGZFStream(CBGZFFile& file)
-    : m_ReadPos(0)
+    : m_ReadPos(0),
+      m_Data(new char[CBGZFBlockInfo::kMaxDataSize]),
+      m_ReadBuffer(CBGZFBlockInfo::kMaxFileBlockSize)
 {
     Open(file);
 }
@@ -256,9 +241,6 @@ void CBGZFStream::Open(CBGZFFile& file)
     Close();
     m_File.Reset(&file);
     m_Page.Select(*file.m_File);
-    if ( !m_Data.get() ) {
-        m_Data.reset(new char[CBGZFBlockInfo::kMaxDataSize]);
-    }
 }
 
 
@@ -278,58 +260,93 @@ void CBGZFStream::Seek(CBGZFPos pos)
 }
 
 
-void CBGZFStream::x_ReadBlock(CBGZFPos::TFileBlockPos file_pos)
+static const size_t kFixedHeaderSize = 12; // up to and including XLEN
+static const size_t kExtraHeaderSize = 4; // type and size
+static const size_t kRequiredExtraSize = kExtraHeaderSize + 2; // BSIZE block
+static const size_t kInitialExtraSize = kRequiredExtraSize;
+static const size_t kFooterSize = 8; // CRC & ISIZE
+
+void CBGZFStream::x_ReadBlock(CBGZFPos::TFileBlockPos file_pos0)
 {
-    const size_t kHeaderSize = CBGZFBlockInfo::kHeaderSize;
-    const size_t kFooterSize = CBGZFBlockInfo::kFooterSize;
-    const size_t kMaxDataSize = CBGZFBlockInfo::kMaxDataSize;
-    const char* data;
+    CBGZFPos::TFileBlockPos file_pos = file_pos0;
 
-    {
-
-        char tmp[kHeaderSize];
-        const char* header = s_Read(m_Page, file_pos, kHeaderSize, tmp);
-
-        // parse and check GZip header
-        if (header[0] != 31 || header[1] != '\x8b' ||
-            header[2] != 8 || header[3] != 4) {
-            NCBI_THROW_FMT(CBGZFException, eFormatError,
-                "Bad BGZF(" << file_pos << ") MAGIC: ");
-        }
-        // 4-7 - modification time
-        // 8 - extra flags
-        // 9 - OS
-        if (CBGZFFile::MakeUint2(header + 10) != 6) {
-            NCBI_THROW_FMT(CBGZFException, eFormatError,
-                "Bad BGZF(" << file_pos << ") XLEN: ");
-        }
-        // extra data
-        if (header[12] != 'B' || header[13] != 'C' ||
-            header[14] != 2 || header[15] != 0) {
-            NCBI_THROW_FMT(CBGZFException, eFormatError,
-                "Bad BGZF(" << file_pos << ") EXTRA: ");
-        }
-
-        CBGZFBlockInfo::TFileBlockSize block_size = CBGZFFile::MakeUint2(header + 16) + 1;
-
-        if (block_size <= kHeaderSize + kFooterSize) {
-            NCBI_THROW_FMT(CBGZFException, eFormatError,
-                "Bad BGZF(" << file_pos << ") FILE SIZE: " << block_size);
-        }
-
-        data = s_Read(m_Page, file_pos + kHeaderSize, block_size - kHeaderSize, m_ReadBuffer);
-
-        m_BlockInfo.m_FileBlockPos = file_pos;
-        m_BlockInfo.m_FileBlockSize = block_size;
+    // parse header
+    char header_tmp[kFixedHeaderSize + kInitialExtraSize];
+    const char* header =
+        s_Read(header_tmp, m_Page,
+               file_pos, kFixedHeaderSize + kInitialExtraSize);
+    file_pos += kFixedHeaderSize + kInitialExtraSize;
+    
+    // parse and check GZip header
+    if (header[0] != 31 || header[1] != '\x8b' ||
+        header[2] != 8 || header[3] != 4) {
+        NCBI_THROW_FMT(CBGZFException, eFormatError,
+                       "Bad BGZF("<<file_pos0<<") MAGIC: "<<
+                       hex<<SBamUtil::MakeUint4(header));
     }
+    // 4-7 - modification time - ignored
+    // 8 - extra flags - ignored
+    // 9 - OS - ignored
 
-    size_t size = 0;
+    // prepare extra data
+    size_t extra_size = SBamUtil::MakeUint2(header + 10);
+    if ( extra_size < kRequiredExtraSize ) {
+        // too small
+        NCBI_THROW_FMT(CBGZFException, eFormatError,
+                       "Bad BGZF("<<file_pos0<<") XLEN: "<<extra_size);
+    }
+    const char* extra = header + kFixedHeaderSize;
+    if ( extra_size >= kInitialExtraSize ) {
+        // read remainder of extra data
+        memcpy(m_ReadBuffer.data(), extra, kInitialExtraSize);
+        size_t more_extra_size = extra_size - kInitialExtraSize;
+        char* more_extra_dst = m_ReadBuffer.data() + kInitialExtraSize;
+        const char* more_extra =
+            s_Read(more_extra_dst, m_Page,
+                   file_pos, more_extra_size);
+        file_pos += more_extra_size;
+        if ( more_extra != more_extra_dst ) {
+            memcpy(more_extra_dst, more_extra, more_extra_size);
+        }
+        extra = m_ReadBuffer.data();
+    }
+    size_t real_header_size = kFixedHeaderSize + extra_size;
 
+    // parse extra data to determine BGZF block size
+    CBGZFBlockInfo::TFileBlockSize block_size = 0;
+    while ( extra_size >= kExtraHeaderSize ) {
+        size_t extra_data_size = SBamUtil::MakeUint2(extra + 2);
+        size_t extra_block_size = extra_data_size + kExtraHeaderSize;
+        if ( extra[0] == 'B' && extra[1] == 'C' &&
+             extra_data_size == 2 &&
+             extra_block_size <= extra_size ) {
+            block_size = SBamUtil::MakeUint2(extra + 4) + 1;
+        }
+        if ( extra_block_size >= extra_size ) {
+            break;
+        }
+        extra_size -= extra_block_size;
+        extra += extra_block_size;
+    }
+    if ( block_size <= real_header_size + kFooterSize ) {
+        NCBI_THROW_FMT(CBGZFException, eFormatError,
+                       "Bad BGZF("<<file_pos0<<") SIZE: "<<block_size);
+    }
+    
+    // read compressed data and footer
+    _ASSERT(block_size <= CBGZFBlockInfo::kMaxFileBlockSize);
+    const char* compressed_data =
+        s_Read(m_ReadBuffer.data(), m_Page,
+               file_pos, block_size - real_header_size);
+    size_t compressed_size = block_size - (real_header_size + kFooterSize);
+    
+    // decompress data
+    size_t decompressed_size = 0;
     {
-        const char* src = data;
-        size_t src_size = m_BlockInfo.GetCompressedSize();
+        const char* src = compressed_data;
+        size_t src_size = compressed_size;
         char* dst = m_Data.get();
-        size_t dst_size = kMaxDataSize;
+        size_t dst_size = CBGZFBlockInfo::kMaxDataSize;
 
         z_stream stream;
         stream.next_in = (Bytef*)src;
@@ -343,7 +360,7 @@ void CBGZFStream::x_ReadBlock(CBGZFPos::TFileBlockPos file_pos)
         if ( stream.avail_in != src_size ||
              stream.avail_out != dst_size ) {
             NCBI_THROW_FMT(CBGZFException, eInvalidArg,
-                           "Bad BGZF("<<file_pos<<") compression sizes: "<<
+                           "Bad BGZF("<<file_pos0<<") compression sizes: "<<
                            src_size<<" -> "<<dst_size);
         }
         
@@ -351,40 +368,40 @@ void CBGZFStream::x_ReadBlock(CBGZFPos::TFileBlockPos file_pos)
         if ( err == Z_OK ) {
             err = inflate(&stream, Z_FINISH);
             if ( err == Z_STREAM_END ) {
-                size = stream.total_out;
+                decompressed_size = stream.total_out;
             }
         }
     }
-
-    {
-        const char* footer = data + m_BlockInfo.GetCompressedSize();
-
-        m_BlockInfo.m_CRC32 = CBGZFFile::MakeUint4(footer);
-        CBGZFBlockInfo::TDataSize data_size = CBGZFFile::MakeUint4(footer + 4);
-
-        if ( data_size == 0 || data_size > kMaxDataSize ) {
-            NCBI_THROW_FMT(CBGZFException, eFormatError,
-            "Bad BGZF(" << file_pos << ") DATA SIZE: " << data_size);
-        }
-
-        m_BlockInfo.m_DataSize = data_size;
+    
+    // parse footer
+    const char* footer = compressed_data + compressed_size;
+    CBGZFBlockInfo::TCRC32 crc32 = SBamUtil::MakeUint4(footer);
+    CBGZFBlockInfo::TDataSize data_size = SBamUtil::MakeUint4(footer + 4);
+    if ( data_size == 0 || data_size > CBGZFBlockInfo::kMaxDataSize ) {
+        NCBI_THROW_FMT(CBGZFException, eFormatError,
+                       "Bad BGZF("<<file_pos0<<") DATA SIZE: " << data_size);
     }
 
-    if ( size != m_BlockInfo.GetDataSize() ) {
+    // check decompression results
+    if ( decompressed_size != data_size ) {
         NCBI_THROW_FMT(CBGZFException, eFormatError,
-                       "Bad BGZF("<<file_pos<<") decompressed data size: "<<
-                       size<<" vs "<<m_BlockInfo.GetDataSize());
+                       "Bad BGZF("<<file_pos0<<") decompressed data size: "<<
+                       decompressed_size<<" vs "<<data_size);
     }
     if ( kCheckBlockCRC32 ) {
         CChecksum checksum(CChecksum::eCRC32ZIP);
-        checksum.AddChars(m_Data.get(), size);
-        if ( checksum.GetChecksum() != m_BlockInfo.GetCRC32() ) {
+        checksum.AddChars(m_Data.get(), decompressed_size);
+        if ( checksum.GetChecksum() != crc32 ) {
             NCBI_THROW_FMT(CBGZFException, eFormatError,
-                           "Bad BGZF("<<file_pos<<") CRC32: "<<
-                           hex<<Uint4(checksum.GetChecksum())<<" vs "<<
-                           Uint4(m_BlockInfo.GetCRC32())<<dec);
+                           "Bad BGZF("<<file_pos0<<") CRC32: "<<
+                           hex<<Uint4(checksum.GetChecksum())<<" vs "<<crc32);
         }
     }
+
+    // save block parameters
+    m_BlockInfo.m_FileBlockPos = file_pos0;
+    m_BlockInfo.m_FileBlockSize = block_size;
+    m_BlockInfo.m_DataSize = data_size;
     m_ReadPos = 0;
 }
 
@@ -398,17 +415,6 @@ size_t CBGZFStream::GetNextAvailableBytes()
     return avail;
 }
 
-/*
-const char* CBGZFStream::GetReadPtr(size_t count)
-{
-    if ( count > GetNextAvailableBytes() ) {
-        return 0;
-    }
-    const char* ret = m_Data.get() + m_ReadPos;
-    m_ReadPos += count;
-    return ret;
-}
-*/
 
 size_t CBGZFStream::Read(char* buf, size_t count)
 {
@@ -433,7 +439,7 @@ const char* CBGZFStream::Read(size_t count)
     while ( count ) {
         CBGZFPos::TByteOffset cnt =
             CBGZFPos::TByteOffset(min(GetNextAvailableBytes(), count));
-        _ASSERT(cnt < 0x10000);
+        _ASSERT(cnt <= CBGZFBlockInfo::kMaxDataSize);
         _ASSERT(m_Data);
         memcpy(dst, m_Data.get() + m_ReadPos, cnt);
         m_ReadPos += cnt;
