@@ -800,7 +800,7 @@ void CValidError_imp::PostErr
     }
     try {
         CSeq_align::TDim dim = align.GetDim();
-        desc += ", dim=" + NStr::IntToString(dim);
+        desc += ", dim=" + NStr::NumericToString(dim);
     } catch ( const CUnassignedMember ) {
         desc += ", dim=UNASSIGNED";
     }
@@ -1221,7 +1221,7 @@ bool CValidError_imp::Validate
                 vector<CSeq_feat_Handle> handles = tse.GetFeaturesWithId(CSeqFeatData::e_not_set, id);
                 ITERATE( vector<CSeq_feat_Handle>, feat_it, handles ) {
                     PostErr (eDiag_Critical, eErr_SEQ_FEAT_CollidingFeatureIDs,
-                             "Colliding feature ID " + NStr::IntToString (id), *(feat_it->GetSeq_feat()));
+                             "Colliding feature ID " + NStr::NumericToString (id), *(feat_it->GetSeq_feat()));
                 }
                 while (it != feature_ids.end() && *it == id) {
                     ++it;
@@ -1651,7 +1651,7 @@ void CValidError_imp::ValidateDbxref
     if (xref.IsSetTag() && xref.GetTag().IsStr()) {
         dbv = xref.GetTag().GetStr();
     } else if (xref.IsSetTag() && xref.GetTag().IsId()) {
-        dbv = NStr::IntToString (xref.GetTag().GetId());
+        dbv = NStr::NumericToString (xref.GetTag().GetId());
     }
 
     if (ContainsSgml(db)) {
@@ -2462,7 +2462,7 @@ void CValidError_imp::ValidateCitations (const CSeq_entry_Handle& seh)
                     if (!found) {
                         PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureCitationProblem,
                                  "Citation on feature refers to uid ["
-                                 + NStr::IntToString((*cit_it)->GetPmid())
+                                 + NStr::NumericToString(INT_ID_TO(int, (*cit_it)->GetPmid()))
                                  + "] not on a publication in the record",
                                  f->GetOriginalFeature());
                     }
@@ -2477,7 +2477,7 @@ void CValidError_imp::ValidateCitations (const CSeq_entry_Handle& seh)
                     if (!found) {
                         PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureCitationProblem,
                                  "Citation on feature refers to uid ["
-                                 + NStr::IntToString((*cit_it)->GetMuid())
+                                 + NStr::NumericToString((*cit_it)->GetMuid())
                                  + "] not on a publication in the record",
                                  f->GetOriginalFeature());
                     }
