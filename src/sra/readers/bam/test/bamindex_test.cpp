@@ -113,6 +113,7 @@ void CBamIndexTestApp::Init(void)
     arg_desc->AddFlag("verbose", "Verbose output");
     arg_desc->AddFlag("dump", "Dump index");
     arg_desc->AddFlag("sra", "Use SRA toolkit");
+    arg_desc->AddFlag("ST", "Single thread");
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
@@ -159,6 +160,9 @@ void s_DumpIndex(const CBamIndex& index,
         prev = v.first.second;
     }
 }
+
+
+DEFINE_STATIC_MUTEX(s_Mutex);
 
 
 int CBamIndexTestApp::Run(void)
@@ -219,85 +223,85 @@ int CBamIndexTestApp::Run(void)
         return 1;
     }
 
-    string ref_label;
-    CRange<TSeqPos> ref_range = CRange<TSeqPos>::GetWhole();
+    typedef CRange<TSeqPos> TRange;
+    typedef pair<string, TRange> TQuery;
+    vector<TQuery> queries;
 
     if ( args["ref_label"] ) {
-        ref_label = args["ref_label"].AsString();
+        vector<string> ss;
+        NStr::Split(args["ref_label"].AsString(), ",", ss);
+        for ( auto& l : ss ) {
+            queries.push_back(make_pair(l, TRange::GetWhole()));
+        }
     }
     else if ( args["q"] ) {
-        string q = args["q"].AsString();
-        SIZE_TYPE colon = q.find(':');
-        if ( colon == NPOS ) {
-            ref_label = q;
-        }
-        else {
-            ref_label = q.substr(0, colon);
-            q = q.substr(colon+1);
-            SIZE_TYPE dash = q.find('-');
-            if ( dash == NPOS ) {
-                ERR_POST(Fatal<<"Bad query format");
+        vector<string> ss;
+        NStr::Split(args["q"].AsString(), ",", ss);
+        for ( auto& q : ss ) {
+            SIZE_TYPE colon = q.find(':');
+            string ref_label;
+            TRange ref_range;
+            if ( colon == NPOS ) {
+                ref_label = q;
+                ref_range = TRange::GetWhole();
             }
-            ref_range.SetFrom(NStr::StringToNumeric<TSeqPos>(q.substr(0, dash)));
-            ref_range.SetTo(NStr::StringToNumeric<TSeqPos>(q.substr(dash+1)));
-        }
-    }
-    else {
-        SIZE_TYPE p1 = file.rfind('/');
-        if ( p1 == NPOS ) {
-            p1 = 0;
-        }
-        else {
-            p1 += 1;
-        }
-        vector<string> tt;
-        NStr::Split(file.substr(p1), ".", tt);
-        if ( tt.size() > 2 ) {
-            ref_label = tt[1];
-        }
-        else {
-            ERR_POST(Fatal<<"Cannot determine RefSeq label");
+            else {
+                ref_label = q.substr(0, colon);
+                q = q.substr(colon+1);
+                SIZE_TYPE dash = q.find('-');
+                if ( dash == NPOS ) {
+                    ERR_POST(Fatal<<"Bad query format");
+                }
+                ref_range.SetFrom(NStr::StringToNumeric<TSeqPos>(q.substr(0, dash)));
+                ref_range.SetTo(NStr::StringToNumeric<TSeqPos>(q.substr(dash+1)));
+            }
+            queries.push_back(make_pair(ref_label, ref_range));
         }
     }
 
     CBamRawDb bam_raw_db(path, path+".bai");
 
-    if ( bam_raw_db.GetRefIndex(ref_label) == size_t(-1) ) {
-        ERR_POST(Fatal<<"Unknown reference sequence: "<<ref_label);
+    for ( auto& q : queries ) {
+        if ( bam_raw_db.GetRefIndex(q.first) == size_t(-1) ) {
+            ERR_POST(Fatal<<"Unknown reference sequence: "<<q.first);
+        }
+        if ( args["dump"] ) {
+            s_DumpIndex(bam_raw_db.GetIndex(), bam_raw_db.GetRefIndex(q.first));
+        }
     }
 
-    if ( args["dump"] ) {
-        s_DumpIndex(bam_raw_db.GetIndex(), bam_raw_db.GetRefIndex(ref_label));
-    }
-    
     if ( args["o"] ) {
-        CSeq_id seq_id;
-        if ( args["seq_id"] ) {
-            seq_id.Set(args["seq_id"].AsString());
-        }
-        else {
-            seq_id.Set(CSeq_id::e_Local, ref_label);
-        }
-        CRef<CSeq_entry> entry(new CSeq_entry);
-        entry->SetSet().SetSeq_set();
-        entry->SetSet().SetAnnot().push_back
-            (bam_raw_db.GetIndex().MakeEstimatedCoverageAnnot(bam_raw_db.GetRefIndex(ref_label), seq_id, "graph"));
+        for ( auto& q : queries ) {
+            CSeq_id seq_id;
+            if ( args["seq_id"] ) {
+                seq_id.Set(args["seq_id"].AsString());
+            }
+            else {
+                seq_id.Set(CSeq_id::e_Local, q.first);
+            }
+            CRef<CSeq_entry> entry(new CSeq_entry);
+            entry->SetSet().SetSeq_set();
+            entry->SetSet().SetAnnot().push_back
+                (bam_raw_db.GetIndex().MakeEstimatedCoverageAnnot(bam_raw_db.GetRefIndex(q.first), seq_id, "graph"));
 
-        CNcbiOstream& out = args["o"].AsOutputFile();
-        if ( args["bin"] )
-            out << MSerial_AsnBinary;
-        else
-            out << MSerial_AsnText;
-        out << *entry;
+            CNcbiOstream& out = args["o"].AsOutputFile();
+            if ( args["bin"] )
+                out << MSerial_AsnBinary;
+            else
+                out << MSerial_AsnText;
+            out << *entry;
+        }
     }
     
     if ( args["file-range"] ) {
-        CBamFileRangeSet rs(bam_raw_db.GetIndex(),
-                            bam_raw_db.GetRefIndex(ref_label), ref_range);
-        for ( auto& c : rs ) {
-            cout << "Ref["<<ref_label<<"] @"<<ref_range<<": "
-                 << c.first<<" - "<<c.second
-                 << endl;
+        for ( auto& q : queries ) {
+            CBamFileRangeSet rs(bam_raw_db.GetIndex(),
+                                bam_raw_db.GetRefIndex(q.first), q.second);
+            for ( auto& c : rs ) {
+                cout << "Ref["<<q.first<<"] @"<<q.second<<": "
+                     << c.first<<" - "<<c.second
+                     << endl;
+            }
         }
     }
 
@@ -306,15 +310,20 @@ int CBamIndexTestApp::Run(void)
     if ( args["sra"] ) {
         bam_db = CBamDb(mgr, path, path+".bai");
     }
+    bool single_thread = args["ST"];
     
     Uint8 align_count = 0;
-    thread tt[10];
-    for ( int i = 0; i < 10; ++i ) {
+    const size_t NQ = queries.size();
+    vector<thread> tt(NQ);
+    for ( size_t i = 0; i < NQ; ++i ) {
         tt[i] =
-            thread([&bam_raw_db, &bam_db,
-                    ref_label, ref_range,
-                    &align_count, verbose]()
+            thread([&bam_raw_db, &bam_db, &align_count, verbose, single_thread]
+                   (string ref_label, CRange<TSeqPos> ref_range)
                    {
+                       CMutexGuard guard(eEmptyGuard);
+                       if ( single_thread ) {
+                           guard.Guard(s_Mutex);
+                       }
                        Uint8 count = 0;
                        try {
                            if ( bam_db ) {
@@ -347,12 +356,16 @@ int CBamIndexTestApp::Run(void)
                            }
                        }
                        catch ( exception& exc ) {
-                           ERR_POST("Exception: "<<exc.what());
+                           ERR_POST("Run("<<ref_label<<"): Exception: "<<exc.what());
                        }
-                       align_count += count;
-                   });
+                       {
+                           CMutexGuard guard(s_Mutex);
+                           LOG_POST("Run("<<ref_label<<"): count "<<count);
+                           align_count += count;
+                       }
+                   }, queries[i].first, queries[i].second);
     }
-    for ( int i = 0; i < 10; ++i ) {
+    for ( size_t i = 0; i < NQ; ++i ) {
         tt[i].join();
     }
     /*
