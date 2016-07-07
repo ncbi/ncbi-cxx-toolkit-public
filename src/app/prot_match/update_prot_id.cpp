@@ -316,6 +316,7 @@ void CProtIdUpdateApp::x_UpdateBioseq(const TIdMap& id_map,
 void CProtIdUpdateApp::x_UpdateSeqAnnot(const TIdMap& id_map,
                                        CSeq_annot& annot) 
 {
+    // First update Annotdesc on the annotation
     EDIT_EACH_ANNOTDESC_ON_SEQANNOT(it, annot) 
     {
         x_UpdateAnnotDesc(id_map, **it);
@@ -325,55 +326,64 @@ void CProtIdUpdateApp::x_UpdateSeqAnnot(const TIdMap& id_map,
         return;
     }
 
-    if (annot.IsFtable()) {  // Annotation is a feature table
+    // Supported annotation types are 
+    // 1) Feature tables
+    // 2) Alignments
+    // 3) Graphs
+    // 4) Seq-id sets
+    // 5) Seq-loc sets
+    // Seq-table is not supported
+    switch (annot.GetData().Which()) {
+   
+    default : {
+        break;
+    } 
+
+    case CSeq_annot::TData::e_Ftable: { // Feature table
         EDIT_EACH_SEQFEAT_ON_SEQANNOT(it, annot)
         {
             x_UpdateSeqFeat(id_map, **it);
         }
-        return;
+        break;
     }
 
-    if (annot.IsAlign()) { // Annotation is a set of alignments
+    case CSeq_annot::TData::e_Align: { // Set of alignments
         EDIT_EACH_SEQALIGN_ON_SEQANNOT(it, annot)
         {
             x_UpdateSeqAlign(id_map, **it);
         }
-        return;
+        break;
     }
 
-    if (annot.IsGraph()) { // Annotation is a set of graphs
-
-     /*
-        EDIT_EACH_SEQGRAPH_ON_SEQANNOT(it, annot)
-        {
-            x_UpdateSeqGraph(id_map, **it);
+    case CSeq_annot::TData::e_Graph: { // Set of graphs
+        // EACH_SEQGRAPH_ON_SEQANNOT gives a compilation error
+        // Loop explicitly
+        auto&& graphs = annot.SetData().SetGraph();
+        for (CRef<CSeq_graph> seq_graph : graphs) {
+            x_UpdateSeqGraph(id_map, *seq_graph);
         }
-    */
-        return;
+        break;
     }
 
-    if (annot.IsIds()) {
+    case CSeq_annot::TData::e_Ids: {
         NON_CONST_ITERATE(CSeq_annot::C_Data::TIds, it, annot.SetData().SetIds()) 
         {
             x_UpdateSeqId(id_map, **it);
         }
-        return;
+        break;
     }
 
-
-    if (annot.IsLocs()) {
+    case CSeq_annot::TData::e_Locs: {
         NON_CONST_ITERATE(CSeq_annot::C_Data::TLocs, it, annot.SetData().SetLocs()) {
             x_UpdateSeqLoc(id_map, **it);
         }
-        return;
+        break;
     }
 
 
-    if (annot.IsSeq_table()) { // features in table format
-        // Need to complete this
-        return;
-    }
+    }; // switch
 
+    // Doesn't cover Seq_table
     return;
 }
 
@@ -455,65 +465,6 @@ void CProtIdUpdateApp::x_UpdateSeqGraph(const TIdMap& id_map,
     x_UpdateSeqLoc(id_map, graph.SetLoc());
 }
 
-/*
-void CProtIdUpdateApp::x_UpdateSeqAnnot(const TIdMap& id_map,
-                                       CSeq_annot& annot) 
-{
-
-    EDIT_EACH_ANNOTDESC_ON_SEQANNOT(it, annot) 
-    {
-        if ((*it)->IsSrc()) { // If the source sequence from which annot came is known
-            x_UpdateSeqId(id_map, (*it)->SetSrc());
-        } 
-        else 
-        if ((*it)->IsRegion()) { 
-            x_UpdateSeqLoc(id_map, (*it)->SetRegion());
-        }
-    }
-
-    if (!annot.IsSetData()) {
-        return;
-    }
-
-  
-    EDIT_EACH_SEQFEAT_ON_SEQANNOT(it, annot)
-    {
-        x_UpdateSeqFeat(id_map, **it);
-    }
-
-    EDIT_EACH_SEQALIGN_ON_SEQANNOT(it, annot)
-    {
-        x_UpdateSeqAlign(id_map, **it);
-    }
-
-
-    return;
-
-
-    if (!annot.IsSetData()) {
-        return;
-    }
-
-    CSeq_annot::TData& data = annot.SetData();
-
-    if (data.IsIds())
-        NON_CONST_ITERATE(CSeq_annot::C_Data::TIds, it, data.SetIds()) 
-        {
-            x_UpdateSeqId(id_map, **it);
-        }
-        return;
-    }
-
-    if (data.IsLocs()) {
-        NON_CONST_ITERATE(CSeq_annot::C_Data::TLocs, it, data.SetLocs()) {
-            x_UpdateSeqLoc(id_map, **it);
-        }
-        return;
-    }
-    return;
-}
-
-*/
 
 
 void CProtIdUpdateApp::x_UpdateSeqFeat(const TIdMap& id_map,
@@ -542,18 +493,19 @@ void CProtIdUpdateApp::x_UpdateSeqEntry(const TIdMap& id_map,
     for (CSeq_entry_CI it(tlseh, CSeq_entry_CI::fRecursive); it; ++it) {
        CSeq_entry_Handle seh = *it;
 
-       if (seh.IsSeq()) {
+       if (seh.IsSeq()) { // Bioseq
            CRef<CBioseq> new_seq(new CBioseq());
            new_seq->Assign(*seh.GetSeq().GetBioseqCore());
-
+           
+           // update ids on the sequence and in the sequence annotations
            x_UpdateBioseq(id_map, *new_seq);
 
            CSeq_entry_EditHandle edit_handle(seh); // Is there a better way to 
            edit_handle.SelectNone(); // generate a blank CSeq_entry_edit_Handle??
            edit_handle.SelectSeq(*new_seq);
        }
-       else
-       {
+       else // Must be Bioseq-set
+       { 
            SAnnotSelector sel;
            for (CAnnot_CI annot_ci(seh, sel); annot_ci; ++annot_ci) 
            {
