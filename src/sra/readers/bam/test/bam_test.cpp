@@ -309,9 +309,16 @@ private:
 
 #ifdef _MSC_VER
 # include <io.h>
+CRITICAL_SECTION sdk_mutex;
+# define SDKLock() EnterCriticalSection(&sdk_mutex)
+# define SDKUnlock() LeaveCriticalSection(&sdk_mutex)
 #else
 # include <unistd.h>
+# define SDKLock() do{}while(0)
+# define SDKUnlock() do{}while(0)
 #endif
+
+#define CALL(call) CheckRc((call), #call, __FILE__, __LINE__)
 
 void CheckRc(rc_t rc, const char* code, const char* file, int line)
 {
@@ -327,7 +334,68 @@ void CheckRc(rc_t rc, const char* code, const char* file, int line)
     }
 }
 
-#define CALL(call) CheckRc((call), #call, __FILE__, __LINE__)
+DEFINE_STATIC_MUTEX(s_BamMutex);
+
+struct SThreadInfo
+{
+#ifdef _MSC_VER
+    HANDLE thread_id;
+#else
+    pthread_t thread_id;
+#endif
+
+    int t;
+    const AlignAccessDB* bam;
+    const char* ref;
+    int count;
+
+    void init(int t, const AlignAccessDB* bam, const char* ref)
+        {
+            this->t = t;
+            this->bam = bam;
+            this->ref = ref;
+            count = 0;
+        }
+
+#define GUARD() CMutexGuard guard(s_BamMutex)
+
+    void run()
+    {
+        //GUARD();
+        AlignAccessAlignmentEnumerator* iter = 0;
+        rc_t rc;
+        {
+            //GUARD();
+            rc = AlignAccessDBWindowedAlignments(bam, &iter, ref, 0, 0);
+        }
+        while ( rc == 0 ) {
+            ++count;
+            //GUARD();
+            rc = AlignAccessAlignmentEnumeratorNext(iter);
+        }
+        if ( !AlignAccessAlignmentEnumeratorIsEOF(rc) ) {
+            CALL(rc);
+        }
+        {
+            //GUARD();
+            AlignAccessAlignmentEnumeratorRelease(iter);
+        }
+    }
+
+#undef GUARD
+
+};
+
+#ifdef _MSC_VER
+DWORD
+#else
+void*
+#endif
+read_thread_func(void* arg)
+{
+    ((SThreadInfo*)arg)->run();
+    return 0;
+}
 
 int LowLevelTest()
 {
@@ -342,6 +410,7 @@ int LowLevelTest()
 #else
 # define BAM_FILE "/netmnt/traces04/1kg_pilot_data/ftp/pilot_data/data/NA10851/alignment/NA10851.SLX.maq.SRP000031.2009_08.bam"
 #endif
+    cout << "Testing BAM file: "<<BAM_FILE<<endl;
     CALL(VFSManagerMakeSysPath(vfs_mgr, &bam_path, BAM_FILE));
     VPath* bai_path = 0;
     CALL(VFSManagerMakeSysPath(vfs_mgr, &bai_path, BAM_FILE ".bai"));
@@ -349,21 +418,44 @@ int LowLevelTest()
     const AlignAccessDB* bam = 0;
     CALL(AlignAccessMgrMakeIndexBAMDB(mgr, &bam, bam_path, bai_path));
 
-    for ( int t = 0; t < 2; ++t ) {
-        cout << "Scan " << t << endl;
-        size_t count = 0;
-        const char* ref = "NT_113960";
-        AlignAccessAlignmentEnumerator* iter = 0;
-        rc_t rc = AlignAccessDBWindowedAlignments(bam, &iter, ref, 0, 0);
-        while ( rc == 0 ) {
-            ++count;
-            rc = AlignAccessAlignmentEnumeratorNext(iter);
-        }
-        if ( !AlignAccessAlignmentEnumeratorIsEOF(rc) ) {
-            CALL(rc);
-        }
-        AlignAccessAlignmentEnumeratorRelease(iter);
-        cout << "Align count: " << count << endl;
+#ifdef _MSC_VER
+    InitializeCriticalSection(&sdk_mutex);
+#endif
+
+    const size_t kNumCursors = 8;
+    SThreadInfo tinfo[kNumCursors];
+    const char* ids[kNumCursors] = {
+        "NT_113960",
+        "NT_113960",
+        "NT_113960",
+        "NT_113960",
+        "NT_113945",
+        "NT_113945",
+        "NT_113880",
+        "NT_113880"
+    };
+    for ( size_t i = 0; i < kNumCursors; ++i ) {
+        tinfo[i].init(i, bam, ids[i]);
+    }
+    for ( size_t i = 0; i < kNumCursors; ++i ) {
+        cout << "Starting thread " << i << " for " << ids[i] << endl;
+#ifdef _MSC_VER
+        tinfo[i].thread_id = CreateThread(NULL, 0, read_thread_func,
+                                            &tinfo[i], 0, NULL);
+#else
+        pthread_create(&tinfo[i].thread_id, 0, read_thread_func, &tinfo[i]);
+#endif
+    }
+    for ( size_t i = 0; i < kNumCursors; ++i ) {
+        cout << "Waiting for thread " << i << endl;
+        void* ret = 0;
+#ifdef _MSC_VER
+        WaitForSingleObject(tinfo[i].thread_id, INFINITE);
+        CloseHandle(tinfo[i].thread_id);
+#else
+        pthread_join(tinfo[i].thread_id, &ret);
+#endif
+        cout << "Align count: " << tinfo[i].count << endl;
     }
 
     CALL(AlignAccessDBRelease(bam));
