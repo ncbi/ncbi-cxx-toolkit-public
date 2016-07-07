@@ -12,8 +12,8 @@ Seq-annot ::= {
         },
         {
           label str "feature-ontology",
-          data str "www.sequenceontology.org/resources/obo_files/curren
-t_release.obo"
+          data str "www.sequenceontology.org/resources/obo_files/current_relea
+se.obo"
         },
         {
           label str "genome-build",
