@@ -1,0 +1,10 @@
+Discrepancy Report Results
+
+Summary
+CHECK_AUTH_NAME: 1 pub missing author's first or last name
+
+Detailed Report
+
+CHECK_AUTH_NAME: 1 pub missing author's first or last name
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\authors0.sqn:U54469 (3 components): ,P.F. (4-9-1996) 
+
