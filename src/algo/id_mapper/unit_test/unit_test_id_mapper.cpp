@@ -920,7 +920,7 @@ BOOST_AUTO_TEST_CASE(TestCase_GINumberString)
     
     // This PDB Seq-id is a mis-read of "local.str = 2LHet"
     CSeq_loc OrigLoc;
-    OrigLoc.SetInt().SetId().SetGi(397912605);
+    OrigLoc.SetInt().SetId().SetGi(GI_CONST(397912605));
     OrigLoc.SetInt().SetFrom(1);
     OrigLoc.SetInt().SetTo(41937);
     
@@ -929,4 +929,3 @@ BOOST_AUTO_TEST_CASE(TestCase_GINumberString)
     BOOST_CHECK_EQUAL(Result->GetInt().GetId().GetSeqIdString(true), "NC_018264.1"); 
 }
 BOOST_AUTO_TEST_SUITE_END();
-
