@@ -78,7 +78,9 @@ CDriverContext::CDriverContext(void) :
 
 CDriverContext::~CDriverContext(void)
 {
-    DeleteAllConn();
+    try {
+        DeleteAllConn();
+    } STD_CATCH_ALL("CDriverContext::DeleteAllConn");
 }
 
 void
