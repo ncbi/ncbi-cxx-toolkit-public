@@ -191,7 +191,7 @@ CBlastDBCmdApp::x_AddOid(CBlastDBCmdApp::TQueries& retval,
     // Default:  add all possible ids
     ITERATE(vector<TGi>, gi, gis) {
         retval.push_back(CRef<CBlastDBSeqId>
-                         (new CBlastDBSeqId(NStr::IntToString(GI_TO(TIntId, *gi)))));
+                         (new CBlastDBSeqId(NStr::NumericToString(GI_TO(TIntId, *gi)))));
     }
 }
 
