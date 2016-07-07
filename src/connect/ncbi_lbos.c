@@ -66,16 +66,8 @@
     static const char* kLbosresolverFile      = "/etc/ncbi/lbosresolver";
 #endif
 
-/* Test mode of JSON. 
- * TODO: The sections in this file that are not used when USE_JSON is defined - 
- * are to be removed on or after July, 1, 2016 */
-#define USE_JSON   
-#ifdef USE_JSON
 static const char* kLBOSQuery                 = "/lbos/v3/services/"
                                                 "?format=json&show=all&q=";
-#else
-static const char* kLBOSQuery                 = "/lbos/text/mlresolve?name=";
-#endif
 
 /*
  * LBOS registry section for announcement
@@ -132,7 +124,9 @@ static void           s_LBOS_Reset         (SERV_ITER     iter);
 static int/*bool*/    s_LBOS_Update        (SERV_ITER     iter,
                                             const char*   text,
                                             int           code);
+#if defined NCBI_OS_LINUX || defined NCBI_OS_MSWIN
 static const char*    s_LBOS_ReadLbosresolver(void);
+#endif /* defined NCBI_OS_LINUX || defined NCBI_OS_MSWIN */
 static 
 EHTTP_HeaderParse     s_LBOS_ParseHeader   (const char*   header,
                                             void*         /* SLBOS_UserData* */
@@ -554,7 +548,9 @@ int/*bool*/ g_LBOS_CheckIterator(SERV_ITER              iter,
 char* g_LBOS_GetLBOSAddressEx (ELBOSFindMethod priority_find_method,
                                 const char* lbos_addr)
 {
+#if defined NCBI_OS_LINUX || defined NCBI_OS_MSWIN
     const char* lbosaddress = NULL; /* for const strings */
+#endif /* defined NCBI_OS_LINUX || defined NCBI_OS_MSWIN */
     char* lbosaddress_temp = NULL;  /* for non-const strings */
     char* address = NULL;
     /* List of methods used, in their order */
@@ -600,7 +596,7 @@ char* g_LBOS_GetLBOSAddressEx (ELBOSFindMethod priority_find_method,
             } else {
                 address = strdup(lbosaddress);
             }
-#endif
+#endif /* defined NCBI_OS_LINUX || defined NCBI_OS_MSWIN */
             break;
         case eLBOS_FindMethod_Registry:
             lbosaddress_temp = g_LBOS_RegGet("CONN", "lbos", NULL);
@@ -705,7 +701,7 @@ static const char* s_LBOS_ReadRole()
 
 #endif /* 0 */
 
-
+#if defined NCBI_OS_LINUX || defined NCBI_OS_MSWIN
 /**  Read contents of lbosresolver
  *
  *  @warning 
@@ -765,6 +761,7 @@ static const char* s_LBOS_ReadLbosresolver(void)
     
     return s_LBOS_Lbosresolver;
 }
+#endif  /* defined NCBI_OS_LINUX || defined NCBI_OS_MSWIN */
 
 
 /**  Take original string and return URL-encoded string.
@@ -772,13 +769,13 @@ static const char* s_LBOS_ReadLbosresolver(void)
  *   Original string is untouched. Caller is responsible for freeing
  *   allocated space.
  */
-char* s_LBOS_URLEncode (const char* to_encode)
+static char* s_LBOS_URLEncode (const char* to_encode)
 {
     /* If all symbols are escape, our string will take triple space */
     size_t encoded_string_buf_size = strlen(to_encode)*3 + 1;
     char* encoded_string = (char*)calloc(encoded_string_buf_size, 
                                          sizeof(char));
-    size_t src_read, dst_written; /*strange things needed by URL_Encode*/
+    size_t src_read, dst_written; /* strange things needed by URL_Encode */
     URL_Encode(to_encode, strlen(to_encode), &src_read,
                encoded_string, encoded_string_buf_size, &dst_written);
     return encoded_string;
@@ -877,8 +874,9 @@ static char * s_LBOS_UrlReadAll(SConnNetInfo*   net_info,
     size_t        totalBufSize;
     char*         realloc_result;
 
-    /* Not to handle case when status_code is NULL, we use internal variable,
-       and only try to set status_code in the end of this function */
+    /* Not to handle case when 'status_code' is NULL, we use internal variable,
+     * and only try to set 'status_code' in the end of this function (and if it 
+     * is NULL, we do not set it) */
     user_data.http_response_code = 0;
     /* The same for status_message */
     user_data.http_status_mesage = NULL;
@@ -965,7 +963,7 @@ static char * s_LBOS_UrlReadAll(SConnNetInfo*   net_info,
  *   Uses LBZK at specified IP and port.
  */
 static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
-                                         const char* serviceName,
+                                         const char* service_name,
                                          SConnNetInfo* net_info)
 { 
     SSERV_Info** infos;
@@ -980,7 +978,7 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
     size_t user_dtab_length;
     char* new_dtab = NULL;
     char* user_dtab_end;
-    char* token = NULL, *saveptr = NULL, *str = NULL, *opt_param = NULL;
+    char* *saveptr = NULL, *str = NULL, *opt_param = NULL;
     /* Allocate space for answer (will be expanded later, if needed) */
     infos = (SSERV_Info**)calloc(2, sizeof(SSERV_Info*));
     if (infos == NULL) {
@@ -1036,7 +1034,7 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
         ConnNetInfo_OverrideUserHeader(net_info, new_dtab);
         free(new_dtab);
     }
-    servicename_url_encoded = s_LBOS_ModifyServiceName(serviceName);
+    servicename_url_encoded = s_LBOS_ModifyServiceName(service_name);
   /*encode service name to url encoding (change ' ' to %20, '/' to %2f, etc.)*/
     url_length = strlen("http://")  + strlen(lbos_address) +
                  strlen(kLBOSQuery) + strlen(servicename_url_encoded);
@@ -1122,7 +1120,7 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
         server_description = malloc(sizeof(char) * length);
         sprintf(server_description, descr_format, type, host, 
                 port, extra, rate);
-        SSERV_Info * info = SERV_ReadInfoEx(server_description, serviceName, 0);
+        SSERV_Info * info = SERV_ReadInfoEx(server_description,service_name, 0);
         free(server_description);
         if (info == NULL) {
             continue;
@@ -1147,10 +1145,8 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
     }
 
 clean_and_exit:
-    free(lbos_answer);
-#ifdef USE_JSON
     json_value_free(root_value);
-#endif /* #ifdef USE_JSON */
+    free(lbos_answer);
     /* Shuffle list with Durstenfeld's shuffle algorithm 
      * (also credits go to Fisher and Yates, and Knuth) */
     if (infos_count > 1) {
@@ -2043,8 +2039,7 @@ unsigned short s_LBOS_Announce(const char*             service,
             query, "&",       NULL), 
                    meta_args, NULL);
     }
-    buf = s_LBOS_UrlReadAll(net_info, query, &status_code, 
-                            &status_message);
+    buf = s_LBOS_UrlReadAll(net_info, query, &status_code, &status_message);
     free(query);
     if (!g_LBOS_StringIsNullOrEmpty(buf)) {
         /* If this function is not able to parse LBOS output, original LBOS
@@ -2289,7 +2284,6 @@ unsigned short s_LBOS_Deannounce(const char*      service,
     * Try deannounce
     */
     char* query;
-    size_t length;
     assert(!g_LBOS_StringIsNullOrEmpty(host));
     /* We do not count extra 1 byte for \0 because we still have extra 
         * bytes because of %s placeholders */
@@ -2299,7 +2293,6 @@ unsigned short s_LBOS_Deannounce(const char*      service,
                           sizeof(char));
     sprintf(query, query_format, 
             lbos_address, service, version, port, host);
-    length = strlen(query);
     buf = s_LBOS_UrlReadAll(net_info, query, &status_code, 
                             &status_message);
     free(query);
