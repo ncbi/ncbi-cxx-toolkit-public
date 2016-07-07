@@ -33,6 +33,7 @@
 #include <objects/seqfeat/OrgName.hpp>
 #include <objects/seqfeat/OrgMod.hpp>
 #include <objmgr/seqdesc_ci.hpp>
+#include <objmgr/seq_vector.hpp>
 
 #include "discrepancy_core.hpp"
 
@@ -1104,6 +1105,199 @@ DISCREPANCY_SUMMARIZE(ORGANELLE_ITS)
     }
 
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+// HAPLOTYPE_MISMATCH
+
+static const string kTaxnameAndHaplotype = "TaxnameAndHaplotype";
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(HAPLOTYPE_MISMATCH, CBioSource, eOncaller, "Sequences with the same haplotype should match")
+//  ----------------------------------------------------------------------------
+{
+    if (!obj.IsSetTaxname() || !obj.IsSetSubtype()) {
+        return;
+    }
+
+    ITERATE(CBioSource::TSubtype, subtype, obj.GetSubtype()) {
+        if ((*subtype)->IsSetSubtype() && (*subtype)->GetSubtype() == CSubSource::eSubtype_haplotype) {
+            m_Objs[kTaxnameAndHaplotype].Add(*context.NewDiscObj(context.GetCurrentBioseq(), eKeepRef), true);
+            break;
+        }
+    }
+}
+
+typedef list<CBioseq_Handle> TBioseqHandleList;
+typedef map<pair<string, string>, TBioseqHandleList> THaplotypeMap;
+
+static string GetHaplotype(const CBioSource& biosource)
+{
+    string res;
+    ITERATE(CBioSource::TSubtype, subtype, biosource.GetSubtype()) {
+        if ((*subtype)->IsSetSubtype() && (*subtype)->GetSubtype() == CSubSource::eSubtype_haplotype && (*subtype)->IsSetName()) {
+            res = (*subtype)->GetName();
+            break;
+        }
+    }
+
+    return res;
+}
+
+static void CollectBioseqsByTaxnameAndHaplotype(CDiscrepancyContext& context, TReportObjectList& bioseqs, THaplotypeMap& haplotypes)
+{
+    NON_CONST_ITERATE(TReportObjectList, bioseq, bioseqs) {
+
+        const CDiscrepancyObject* dobj = dynamic_cast<const CDiscrepancyObject*>(bioseq->GetPointer());
+        if (dobj) {
+            const CBioseq* cur_bioseq = dobj->GetBioseq();
+            if (cur_bioseq) {
+
+                CBioseq_Handle bioseq_h = context.GetScope().GetBioseqHandle(*cur_bioseq);
+
+                CSeqdesc_CI biosrc(bioseq_h, CSeqdesc::e_Source);
+                if (biosrc) {
+                    const CBioSource& biosource = biosrc->GetSource();
+                    string taxname = biosource.GetTaxname(),
+                        haplotype = GetHaplotype(biosource);
+
+                    if (!taxname.empty() && !haplotype.empty()) {
+                        haplotypes[make_pair(taxname, haplotype)].push_back(bioseq_h);
+                    }
+                }
+            }
+        }
+    }
+}
+
+enum EHaplotypeProblem
+{
+    noProblem,
+    strictMatchProblem,
+    nonStrictMatchProblem
+};
+
+static bool IsEqualSubSeq(const CSeqVector& seq1, const CSeqVector& seq2, size_t start1, size_t start2, size_t len, bool allowN)
+{
+    for (size_t i = 0; i < len; ++i) {
+
+        if (allowN && (seq1.IsInGap(start1 + i) || seq2.IsInGap(start2 + i))) {
+            continue;
+        }
+
+        if (seq1[start1 + i] != seq2[start2 + i]) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+static bool IsSeqOverlap(const CSeqVector& seq1, const CSeqVector& seq2, bool allowN)
+{
+    size_t seq1_size = seq1.size(),
+           seq2_size = seq2.size(),
+           min_size = min(seq1_size, seq2_size);
+
+    for (size_t cur_size = min_size / 2 + 1; // minimum size of an overlapping area
+         cur_size <= min_size;
+         ++cur_size) {
+
+        if (IsEqualSubSeq(seq1, seq2, seq1_size - cur_size, 0, cur_size, allowN)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static bool IsSeqEqualOrOverlap(const CBioseq_Handle& bioseq1, const CBioseq_Handle& bioseq2, bool allowN)
+{
+    CSeqVector seq1(bioseq1, CBioseq_Handle::eCoding_Ncbi, eNa_strand_plus),
+               seq2(bioseq2, CBioseq_Handle::eCoding_Ncbi, eNa_strand_plus);
+
+    bool res = false;
+    // Check for equality at first
+    if (seq1.size() == seq2.size()) {
+
+        res = IsEqualSubSeq(seq1, seq2, 0, 0, seq1.size(), allowN);
+    }
+
+    // Overlap check
+    if (!res) {
+        res = IsSeqOverlap(seq1, seq2, allowN) || IsSeqOverlap(seq2, seq1, allowN);
+    }
+
+    return res;
+}
+
+static EHaplotypeProblem CheckForHaplotypeProblems(const TBioseqHandleList& bioseqs)
+{
+    ITERATE(TBioseqHandleList, cur_bioseq, bioseqs) {
+        TBioseqHandleList::const_iterator next_bioseq = cur_bioseq;
+        for (++next_bioseq; next_bioseq != bioseqs.end(); ++next_bioseq) {
+
+            // strict match check
+            bool has_problem = !IsSeqEqualOrOverlap(*cur_bioseq, *next_bioseq, false);
+
+            // non-strict match check
+            if (has_problem) {
+                has_problem = !IsSeqEqualOrOverlap(*cur_bioseq, *next_bioseq, true);
+
+                return has_problem ? nonStrictMatchProblem : strictMatchProblem;
+            }
+        }
+    }
+
+    return noProblem;
+}
+
+static const string kHaplotypeReport = "Haplotype Problem Report";
+static const string kHaplotypeStrictMatchProblem = "There [is] [n] haplotype problem[s] (strict match)";
+static const string kHaplotypeNonStrictMatchProblem = "There [is] [n] haplotype problem[s] (loose match, allowing Ns to differ)";
+
+static const string kStrictMatchDescr = "(strict match)";
+static const string kNonStrictMatchDescr = "(allowing N to match any)";
+
+static void AddHaplotypeProblems(CDiscrepancyContext& context, CReportNode& report, const string& subtype, const string& match_descr, const THaplotypeMap::const_iterator& bioseqs)
+{
+    string sub_subtype = "[n] sequences have organism " + bioseqs->first.first + " haplotype " + bioseqs->first.second + " but the sequences do not match " + match_descr;
+
+    ITERATE(TBioseqHandleList, bioseq_h, bioseqs->second) {
+
+        report[kHaplotypeReport][subtype][sub_subtype].Add(*(context.NewDiscObj(bioseq_h->GetBioseqCore())), false);
+    }
+
+    report[kHaplotypeReport][subtype].Incr();
+}
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(HAPLOTYPE_MISMATCH)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+
+    THaplotypeMap haplotypes;
+    CollectBioseqsByTaxnameAndHaplotype(context, m_Objs[kTaxnameAndHaplotype].GetObjects(), haplotypes);
+
+    CReportNode report;
+    ITERATE(THaplotypeMap, cur, haplotypes) {
+        if (cur->second.size() > 1) {
+
+            EHaplotypeProblem res = CheckForHaplotypeProblems(cur->second);
+            if (res == strictMatchProblem || res == nonStrictMatchProblem) {
+                AddHaplotypeProblems(context, report, kHaplotypeStrictMatchProblem, kStrictMatchDescr, cur);
+            }
+
+            if (res == nonStrictMatchProblem) {
+                AddHaplotypeProblems(context, report, kHaplotypeNonStrictMatchProblem, kNonStrictMatchDescr, cur);
+            }
+        }
+    }
+
+    m_ReportItems = report.Export(*this)->GetSubitems();
 }
 
 
