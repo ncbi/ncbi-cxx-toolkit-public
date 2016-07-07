@@ -370,6 +370,7 @@ void CBGZFStream::x_ReadBlock(CBGZFPos::TFileBlockPos file_pos0)
             if ( err == Z_STREAM_END ) {
                 decompressed_size = stream.total_out;
             }
+            inflateEnd(&stream);
         }
     }
     
