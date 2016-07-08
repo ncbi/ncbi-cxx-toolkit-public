@@ -1620,7 +1620,7 @@ const string strLinkBaseProt(
     "https://www.ncbi.nlm.nih.gov/protein/" );
 
 const string strLinkBaseEntrezViewer(
-    "http://www.ncbi.nlm.nih.gov/entrez/viewer.fcgi?val=" ); // https forwarded to http
+    "https://www.ncbi.nlm.nih.gov/entrez/viewer.fcgi?val=" ); // https forwarded to http
 
 const string strLinkBaseTaxonomy( 
     "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?" );
