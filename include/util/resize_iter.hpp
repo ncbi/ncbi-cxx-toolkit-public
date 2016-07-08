@@ -164,9 +164,6 @@ size_t x_BitsPerElement(const TIterator&)
 #ifdef _RWSTD_NO_CLASS_PARTIAL_SPEC
     // Sun cares way too much about backward bug-for-bug compatibility...
     return xx_BitsPerElement(__value_type(TIterator()));
-#elif defined(NCBI_COMPILER_MSVC)
-    // iterator_traits seems to be broken under MSVC. :-/
-    return xx_BitsPerElement(_Val_type(TIterator()));    
 #else
     return CHAR_BIT * sizeof(typename iterator_traits<TIterator>::value_type);
 #endif    
@@ -182,9 +179,6 @@ TOut ExtractBits(TIterator& start, const TIterator& end,
 #elif defined(_RWSTD_NO_CLASS_PARTIAL_SPEC)
     static const size_t kBitsPerElement
         = xx_BitsPerElement(__value_type(TIterator()));
-#elif defined(NCBI_COMPILER_MSVC)
-    static const size_t kBitsPerElement
-        = xx_BitsPerElement(_Val_type(TIterator()));    
 #else
     static const size_t kBitsPerElement
         = CHAR_BIT * sizeof(typename iterator_traits<TIterator>::value_type);
