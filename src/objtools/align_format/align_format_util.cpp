@@ -199,9 +199,9 @@ void CAlignFormatUtil::BlastPrintError(list<SBlastError>&
 void  CAlignFormatUtil::PrintTildeSepLines(string str, size_t line_len,
                                            CNcbiOstream& out) {
     
-    list<string> split_line;
+    vector<string> split_line;
     NStr::Split(str, "~", split_line);
-    ITERATE(list<string>, iter, split_line) {
+    ITERATE(vector<string>, iter, split_line) {
         x_WrapOutputLine(*iter,  line_len, out);
     }
 }
@@ -3537,7 +3537,7 @@ string  CAlignFormatUtil::GetFASTALinkURL(SSeqURLInfo *seqUrlInfo,
         linkUrl = seqUrlInfo->seqUrl;    
         vector<string> parts;
         //SNP accession=dbSNP:rs35885954
-        NStr::Tokenize(seqUrlInfo->accession,":rs",parts,NStr::eMergeDelims); 
+        NStr::Split(seqUrlInfo->accession,":rs",parts,NStr::fSplit_MergeDelimiters); 
         string rs;
         if(parts.size() > 1) {
             rs = parts[1];
