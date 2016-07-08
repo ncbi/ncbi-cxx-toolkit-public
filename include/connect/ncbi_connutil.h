@@ -177,8 +177,8 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
     char            pass[64];         /* password (if any)                   */
     char            host[256];        /* host to connect to                  */
     unsigned short  port;             /* port to connect to, host byte order */
-    char            path[1024];       /* path (e.g. to  a CGI script or page)*/
-    char            args[1024];       /* args (e.g. for a CGI script)        */
+    char            path[2048];       /* path (e.g. to  a CGI script or page)*/
+    char            args[2048];       /* args (e.g. for a CGI script)        */
     char            http_proxy_host[256]; /* hostname of HTTP proxy server   */
     unsigned short  http_proxy_port;      /* port #   of HTTP proxy server   */
     char            http_proxy_user[64];  /* http proxy username (if req'd)  */
@@ -188,6 +188,7 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
     const char*     http_user_header; /* user header to add to HTTP request  */
     const char*     http_referer;     /* default referrer (when not spec'd)  */
     NCBI_CRED       credentials;      /* connection credentials (optional)   */
+    unsigned short  magic;            /* to detect version skew              */
 
     /* the following field(s) are for the internal use only -- don't touch!  */
     STimeout        tmo;              /* default storage for finite timeout  */
