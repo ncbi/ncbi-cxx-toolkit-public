@@ -978,7 +978,6 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
     size_t user_dtab_length;
     char* new_dtab = NULL;
     char* user_dtab_end;
-    char* *saveptr = NULL, *str = NULL, *opt_param = NULL;
     /* Allocate space for answer (will be expanded later, if needed) */
     infos = (SSERV_Info**)calloc(2, sizeof(SSERV_Info*));
     if (infos == NULL) {
