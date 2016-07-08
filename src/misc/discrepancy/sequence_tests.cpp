@@ -1907,5 +1907,31 @@ DISCREPANCY_SUMMARIZE(LOW_QUALITY_REGION)
 }
 
 
+// DEFLINE_ON_SET
+
+const string kDeflineOnSet = "[n] title[s] on sets were found";
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(DEFLINE_ON_SET, CBioseq_set, eOncaller, "Titles on sets")
+//  ----------------------------------------------------------------------------
+{
+    if (obj.IsSetDescr()) {
+        ITERATE(CSeq_descr::Tdata, descr, obj.GetDescr().Get()) {
+            if ((*descr)->IsTitle()) {
+                m_Objs[kDeflineOnSet].Add(*context.NewDiscObj(*descr), false);
+            }
+        }
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(DEFLINE_ON_SET)
+//  ----------------------------------------------------------------------------
+{
+    m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
+}
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
