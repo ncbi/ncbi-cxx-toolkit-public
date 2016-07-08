@@ -282,6 +282,7 @@ protected:
 
     bool    m_Debug;
 
+    unsigned int m_DisplayOption;
     bool  m_ConnectToTaxServer;
     bool  m_TaxTreeLoaded;    
     CRef< ITreeIterator > m_TreeIterator;
@@ -294,7 +295,7 @@ protected:
     unsigned int m_MaxEvalLength;
 
     unsigned int m_LineLength;
-    unsigned int m_DisplayOption;
+    
 
     string   m_Protocol; ///< protocol, default https otherwise get from .ncbirc
     
