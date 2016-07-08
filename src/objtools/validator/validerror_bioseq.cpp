@@ -8626,7 +8626,7 @@ void CValidError_bioseq::ValidateMolInfoContext
             && seq.GetInst().GetStrand() != CSeq_inst::eStrand_not_set
             && seq.GetInst().GetStrand() != CSeq_inst::eStrand_ss) {
             PostErr(eDiag_Error, eErr_SEQ_INST_DSmRNA, 
-                    "mRNA not single stranded", seq);
+                    "mRNA not single stranded", ctx, desc);
         }
     } else {
         if (is_synthetic_construct && !seq.IsAa()) {
