@@ -39,7 +39,7 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/util/sequence.hpp>
-#include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <misc/data_loaders_util/data_loaders_util.hpp>
 
 #include <serial/serial.hpp>
 #include <serial/objostr.hpp>
@@ -202,6 +202,10 @@ void CIdfetchApplication::Init(void)
     arg_desc->AddFlag("dn", "Query is for nucleotide database");
 
 
+    // Add standard data loader support
+    CDataLoadersUtil::AddArgumentDescriptions(*arg_desc);
+
+
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 }
@@ -238,7 +242,7 @@ int CIdfetchApplication::Run(void)
     //
     // object manager setup
     CRef<CObjectManager> om(CObjectManager::GetInstance());
-    CGBDataLoader::RegisterInObjectManager(*om);
+    CDataLoadersUtil::SetupObjectManager(args, *om);
 
     CRef<CScope> scope(new CScope(*om));
     scope->AddDefaults();

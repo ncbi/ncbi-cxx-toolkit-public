@@ -10,8 +10,10 @@ APP = idfetch
 SRC = idfetch
 # OBJ =
 
-LIB = eutils_client xmlwrapp xobjutil $(OBJMGR_LIBS) $(COMPRESS_LIBS)
-LIBS = $(LIBXSLT_LIBS) $(LIBXML_LIBS) $(CMPRS_LIBS) $(ORIG_LIBS)
+LIB = eutils_client xmlwrapp xobjutil \
+	  $(DATA_LOADERS_UTIL_LIB) $(OBJMGR_LIBS) $(COMPRESS_LIBS)
+LIBS = $(DATA_LOADERS_UTIL_LIBS) \
+	   $(LIBXSLT_LIBS) $(LIBXML_LIBS) $(CMPRS_LIBS) $(ORIG_LIBS)
 
 # LIB      = xser xhtml xcgi xconnect xutil xncbi
 
