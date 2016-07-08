@@ -668,7 +668,8 @@ string CSuspectRuleCheck :: GetPubFieldFromPub (const CPub& the_pub, EPublicatio
         break;
       }
     case CPub::e_Pmid:
-      if (field == ePublication_field_pmid) return NStr::IntToString(the_pub.GetPmid());
+      if (field == ePublication_field_pmid)
+          return NStr::NumericToString(INT_ID_TO(int, the_pub.GetPmid()));
       break;
     default: break;
   }
