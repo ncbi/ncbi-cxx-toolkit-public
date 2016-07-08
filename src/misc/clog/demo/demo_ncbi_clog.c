@@ -40,16 +40,21 @@
  *  MT-locking
  */
 
+
 /* Fake MT-lock handler -- for display purposes only 
    Used by NcbiLog_Init() method only.
 */
-static int Test_MT_Handler(void* user_data, ENcbiLog_MTLock_Action action)
+/* #define NCBI_DEMO_MT_LOCK_HANDLER */
+#ifdef NCBI_DEMO_MT_LOCK_HANDLER
+static int s_Test_MT_Handler(void* user_data, ENcbiLog_MTLock_Action action)
 {
     /*
-        MT lock implementation goes here
+        Your alternative MT locking implementation goes here
     */
     return 1 /*true*/;
 }
+#endif
+
 
 
 /*****************************************************************************
@@ -58,18 +63,19 @@ static int Test_MT_Handler(void* user_data, ENcbiLog_MTLock_Action action)
 
 int main(int argc, const char* argv[] /*, const char* envp[]*/)
 {
-    /* Uncomment for NcbiLog_Init() method below
-       TNcbiLog_MTLock mt_lock = NcbiLog_MTLock_Create(NULL, Test_MT_Handler); 
-    */
-
     /* Initialize logging API 
     */
+#ifndef NCBI_DEMO_MT_LOCK_HANDLER
     NcbiLog_InitMT(argv[0]);
+#else
+    TNcbiLog_MTLock mt_lock = NcbiLog_MTLock_Create(NULL, s_Test_MT_Handler);
+    NcbiLog_Init(argv[0], mt_lock, eNcbiLog_MT_TakeOwnership);
+#endif
     /* Or,
-       NcbiLog_Init(argv[0], mt_lock, eNcbiLog_MT_TakeOwnership);
        NcbiLog_InitMT(argv[0]); -- use default internal MT handler
        NcbiLog_InitST(argv[0]); -- only for single-threaded applications
     */
+
     
     /* Create separate files for log/err/trace/perf records.
        By default only single.log file will be created.
