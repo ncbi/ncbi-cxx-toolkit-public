@@ -1387,7 +1387,7 @@ const CSeq_entry *ctx)
             if (IsGenomeSubmission())
                 sev = eDiag_Error;
             else
-                sev = eDiag_Warning;
+                sev = eDiag_Info;
             PostObjErr(sev, eErr_SEQ_DESCR_OrganismIsUndefinedSpecies,
                 "Organism '" + taxname + "' is undefined species and does not have a specific identifier.",
                 obj, ctx);
