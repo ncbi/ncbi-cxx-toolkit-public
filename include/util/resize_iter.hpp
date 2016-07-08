@@ -161,12 +161,7 @@ size_t xx_BitsPerElement(const T*)
 template <class TIterator>
 size_t x_BitsPerElement(const TIterator&)
 {
-#ifdef _RWSTD_NO_CLASS_PARTIAL_SPEC
-    // Sun cares way too much about backward bug-for-bug compatibility...
-    return xx_BitsPerElement(__value_type(TIterator()));
-#else
     return CHAR_BIT * sizeof(typename iterator_traits<TIterator>::value_type);
-#endif    
 }
 
 
@@ -174,15 +169,7 @@ template <class TIterator, class TOut>
 TOut ExtractBits(TIterator& start, const TIterator& end,
                  size_t& bit_offset, size_t bit_count)
 {
-#if 1
     static const size_t kBitsPerElement = x_BitsPerElement(start);
-#elif defined(_RWSTD_NO_CLASS_PARTIAL_SPEC)
-    static const size_t kBitsPerElement
-        = xx_BitsPerElement(__value_type(TIterator()));
-#else
-    static const size_t kBitsPerElement
-        = CHAR_BIT * sizeof(typename iterator_traits<TIterator>::value_type);
-#endif
 
     const TOut kMask = (1 << bit_count) - 1;
     static const TOut kMask2 = (1 << kBitsPerElement) - 1;
