@@ -128,9 +128,6 @@ bool CGffWriteRecord::SetAttribute(
     const string& value )
 //  ----------------------------------------------------------------------------
 {
-    if (value.empty()) {
-        return false; //don't accept blank values 
-    }
     TAttrIt it = m_Attributes.find(key);
     if (it == m_Attributes.end()) {
         m_Attributes[key] = vector<string>();
