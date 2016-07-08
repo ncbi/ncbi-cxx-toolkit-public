@@ -223,12 +223,12 @@ static void s_ProcessResult(unsigned short result,
 }
 
 
-void LBOS::Announce(const string& service, 
-                    const string& version,
-                    const string& host, 
+void LBOS::Announce(const string&  service, 
+                    const string&  version,
+                    const string&  host, 
                     unsigned short port,
-                    const string& healthcheck_url,
-                    const string& metadata)
+                    const string&  healthcheck_url,
+                    const string&  metadata)
 {
     char* body_str = NULL, *status_message_str = NULL;
     AutoPtr< char*, Free<char*> > body_aptr(&body_str),
