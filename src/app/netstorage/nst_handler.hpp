@@ -90,7 +90,8 @@ class CRelocateCallback
     public:
         CRelocateCallback(CNetStorageHandler &  handler,
                           const SCommonRequestArguments &  common_args,
-                          CDirectNetStorageObject &  object);
+                          CDirectNetStorageObject &  object,
+                          bool  need_progress_report);
 
     public:
         // Should match TNetStorageProgressCb prototype
@@ -100,6 +101,7 @@ class CRelocateCallback
         CNetStorageHandler &                m_Handler;
         const SCommonRequestArguments &     m_CommonArgs;
         CDirectNetStorageObject &           m_Object;
+        bool                                m_NeedProgressReport;
 };
 
 

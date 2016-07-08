@@ -118,13 +118,18 @@ CMessageListenerResetter::~CMessageListenerResetter()
 CRelocateCallback::CRelocateCallback(
                     CNetStorageHandler &  handler,
                     const SCommonRequestArguments &  common_args,
-                    CDirectNetStorageObject &  object) :
-    m_Handler(handler), m_CommonArgs(common_args), m_Object(object)
+                    CDirectNetStorageObject &  object,
+                    bool  need_progress_report) :
+    m_Handler(handler), m_CommonArgs(common_args), m_Object(object),
+    m_NeedProgressReport(need_progress_report)
 {}
 
 
 void CRelocateCallback::Callback(CJsonNode  info)
 {
+    if (!m_NeedProgressReport)
+        return;
+
     CJsonNode       reply = CreateResponseMessage(m_CommonArgs.m_SerialNumber);
     reply.SetByKey("ProgressInfo", info);
 
@@ -2742,6 +2747,11 @@ CNetStorageHandler::x_ProcessRelocate(
         create_if_not_found = message.GetBoolean("CreateIfNotFound");
     }
 
+    bool                        need_progress_report = false;  // default
+    if (message.HasKey("NeedProgressReport")) {
+        need_progress_report = message.GetBoolean("NeedProgressReport");
+    }
+
     if (need_meta_db_update) {
         // Meta information is required so check the DB
         x_CreateClient();
@@ -2760,7 +2770,8 @@ CNetStorageHandler::x_ProcessRelocate(
 
 
     string              new_object_loc;
-    CRelocateCallback   callback(*this, common_args, direct_object);
+    CRelocateCallback   callback(*this, common_args, direct_object,
+                                 need_progress_report);
     CNSTPreciseTime     start = CNSTPreciseTime::Current();
     try {
         TNetStorageProgressCb   cb = std::bind(&CRelocateCallback::Callback,
