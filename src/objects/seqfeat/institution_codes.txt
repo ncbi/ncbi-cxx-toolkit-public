@@ -4538,6 +4538,9 @@ NRN	s	Nairn Literary Society Library, Public Library
 NRNZ	s	Northland Regional Museum
 NRPSU	c	Department of Agro-industry, Faculty of Natural Resources
 NRRL	c	Agricultural Research Service Culture Collection
+NRRL:NRRL:MOLD	 	Agricultural Research Service Culture Collection, 
+NRRL:NRRL:PROK	 	Agricultural Research Service Culture Collection, 
+NRRL:NRRL:YEAST	 	Agricultural Research Service Culture Collection, 
 NRS	s	Naturhistoriska Riksmuseet
 NRWC	s	N. R. Whitney Collection
 NRZM	c	German Reference Center for Meningococci
@@ -6721,7 +6724,7 @@ VUWE	s	Victoria University
 VYH	c	Finnish Environment Institute (SYKE)
 VYM	s	Muzeum Vyakovska
 W	s	Naturhistorisches Museum Wien, Department of Botany
-WA	s	Warsaw University, Department of Plant Systematics and Geography
+WA	s	Herbarium, Faculty of Biology, University of Warsaw
 WAB	s	Wabash College, Biological Sciences Department
 WAC	c	Department of Agriculture Western Australia Plant Pathogen Collection
 WACA<USA-AZ>	s	Walnut Canyon National Monument
