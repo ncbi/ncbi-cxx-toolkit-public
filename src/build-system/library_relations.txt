@@ -1344,9 +1344,8 @@ xdiscrepancy needs macro
 xdiscrepancy needs xalnmgr
 xdiscrepancy_report needs $(OBJMGR_LIBS)
 xdiscrepancy_report needs macro
+xdiscrepancy_report needs xmlwrapp
 xdiscrepancy_report needs xvalidate
-xdiscrepancy_report needs3party $(LIBXML_LIBS)
-xdiscrepancy_report needs3party $(LIBXSLT_LIBS)
 xerces-c needs3party $(CURL_LIBS)
 xerces-c needs3party $(ORIG_LIBS)
 xfcgi includes xcgi
