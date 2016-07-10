@@ -184,8 +184,18 @@ string CObj::Relocate(TNetStorageFlags flags, TNetStorageProgressCb cb)
     CRef<CObj> new_file(new CObj(selector));
 
     for (;;) {
-        new_file->Write(buffer.data(), bytes_read, NULL);
         current += bytes_read;
+
+        const char *data = buffer.data();
+        size_t bytes_written;
+
+        do {
+            new_file->Write(data, bytes_read, &bytes_written);
+            data += bytes_written;
+            bytes_read -= bytes_written;
+        }
+        while (bytes_read);
+
         if (Eof()) break;
 
         if (current >= max) {
