@@ -161,6 +161,28 @@ const TObjLoc& CObj::Locator() const
 }
 
 
+void s_Check(ERW_Result result, const char* what)
+{
+    switch (result) {
+    case eRW_Success:
+    case eRW_Eof:
+        return;
+
+    case eRW_Timeout:
+        NCBI_THROW_FMT(CNetStorageException, eTimeout,
+            "Timeout during " << what << " on relocate");
+
+    case eRW_Error:
+        NCBI_THROW_FMT(CNetStorageException, eIOError,
+            "IO error during " << what << " on relocate");
+
+    case eRW_NotImplemented:
+        NCBI_THROW_FMT(CNetStorageException, eNotSupported,
+            "Non-implemented operation called during " << what << " on relocate");
+    }
+}
+
+
 string CObj::Relocate(TNetStorageFlags flags, TNetStorageProgressCb cb)
 {
     const size_t max = m_Selector->GetContext().relocate_chunk;
@@ -170,7 +192,7 @@ string CObj::Relocate(TNetStorageFlags flags, TNetStorageProgressCb cb)
     array<char, 128 * 1024> buffer;
 
     // Use Read() to detect the current location
-    Read(buffer.data(), buffer.size(), &bytes_read);
+    s_Check(Read(buffer.data(), buffer.size(), &bytes_read), "reading");
 
     // Selector can only be cloned after location is detected
     ISelector::Ptr selector(m_Selector->Clone(flags));
@@ -190,7 +212,7 @@ string CObj::Relocate(TNetStorageFlags flags, TNetStorageProgressCb cb)
         size_t bytes_written;
 
         do {
-            new_file->Write(data, bytes_read, &bytes_written);
+            s_Check(new_file->Write(data, bytes_read, &bytes_written), "writing");
             data += bytes_written;
             bytes_read -= bytes_written;
         }
@@ -216,7 +238,7 @@ string CObj::Relocate(TNetStorageFlags flags, TNetStorageProgressCb cb)
             }
         }
 
-        Read(buffer.data(), buffer.size(), &bytes_read);
+        s_Check(Read(buffer.data(), buffer.size(), &bytes_read), "reading");
     }
 
     new_file->Close();
