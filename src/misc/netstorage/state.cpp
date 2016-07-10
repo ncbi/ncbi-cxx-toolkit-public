@@ -1047,25 +1047,28 @@ string s_GetSection(const IRegistry& registry, const string& service,
         const string section = "service_" + service;
 
         if (registry.HasEntry(section, name)) {
-            return registry.Get(section, name);
+            return section;
         }
     }
 
-    const string server_wide = registry.Get("netstorage_api", name);
-    return server_wide;
+    return "netstorage_api";
 }
 
 
 SFileTrackConfig s_GetFTConfig(const IRegistry& registry, const string& service)
 {
-    const string ft_section = s_GetSection(registry, service, "filetrack");
+    const string param_name = "filetrack";
+    const string service_section = s_GetSection(registry, service, param_name);
+    const string ft_section = registry.Get(service_section, param_name);
     return ft_section.empty() ? eVoid : SFileTrackConfig(registry, ft_section);
 }
 
 
 CNetICacheClient s_GetICClient(const IRegistry& registry, const string& service)
 {
-    const string nc_section = s_GetSection(registry, service, "netcache");
+    const string param_name = "netcache";
+    const string service_section = s_GetSection(registry, service, param_name);
+    const string nc_section = registry.Get(service_section, param_name);
     return nc_section.empty() ? eVoid : CNetICacheClient(registry, nc_section);
 }
 
@@ -1078,6 +1081,15 @@ string s_GetAppDomain(const string& app_domain, CNetICacheClient& nc_client)
     // If that is not avaiable, "default" value is used instead.
     const string cache_name(nc_client ? nc_client.GetCacheName() : kEmptyStr);
     return cache_name.empty() ? "default" : cache_name;
+}
+
+
+size_t s_GetRelocateChunk(const IRegistry& registry, const string& service,
+        size_t default_value)
+{
+    const string param_name = "relocate_chunk";
+    const string service_section = s_GetSection(registry, service, param_name);
+    return registry.GetInt(service_section, param_name, default_value);
 }
 
 
@@ -1097,7 +1109,8 @@ SContext::SContext(const string& service_name, const string& domain,
     : icache_client(s_GetICClient(registry, service_name)),
       filetrack_api(s_GetFTConfig(registry, service_name)),
       compound_id_pool(id_pool ? CCompoundIDPool(id_pool) : CCompoundIDPool()),
-      app_domain(s_GetAppDomain(domain, icache_client))
+      app_domain(s_GetAppDomain(domain, icache_client)),
+      relocate_chunk(s_GetRelocateChunk(registry, service_name, relocate_chunk))
 {
     Init();
 }
