@@ -51,7 +51,6 @@ struct SCombinedNetStorageConfig : SNetStorage::SConfig
 
     SCombinedNetStorageConfig() : mode(eDefault) {}
     void ParseArg(const string&, const string&);
-    void Validate(const string&);
 
     static SCombinedNetStorageConfig Build(const string& init_string)
     {
@@ -138,8 +137,8 @@ struct SContext : CObject
     size_t relocate_chunk = 1024 * 1024;
 
     SContext(const SCombinedNetStorageConfig&, TNetStorageFlags);
-    SContext(const string&, CNetICacheClient::TInstance,
-            CCompoundIDPool::TInstance, const SFileTrackConfig&);
+    SContext(const string&, const string&,
+            CCompoundIDPool::TInstance, const IRegistry&);
 
     TNetStorageFlags DefaultFlags(TNetStorageFlags flags) const
     {

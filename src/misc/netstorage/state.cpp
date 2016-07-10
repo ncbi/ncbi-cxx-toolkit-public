@@ -1040,23 +1040,64 @@ CNetICacheClient s_GetICClient(const SCombinedNetStorageConfig& c)
 }
 
 
+string s_GetSection(const IRegistry& registry, const string& service,
+        const string& name)
+{
+    if (!service.empty()) {
+        const string section = "service_" + service;
+
+        if (registry.HasEntry(section, name)) {
+            return registry.Get(section, name);
+        }
+    }
+
+    const string server_wide = registry.Get("netstorage_api", name);
+    return server_wide;
+}
+
+
+SFileTrackConfig s_GetFTConfig(const IRegistry& registry, const string& service)
+{
+    const string ft_section = s_GetSection(registry, service, "filetrack");
+    return ft_section.empty() ? eVoid : SFileTrackConfig(registry, ft_section);
+}
+
+
+CNetICacheClient s_GetICClient(const IRegistry& registry, const string& service)
+{
+    const string nc_section = s_GetSection(registry, service, "netcache");
+    return nc_section.empty() ? eVoid : CNetICacheClient(registry, nc_section);
+}
+
+
+string s_GetAppDomain(const string& app_domain, CNetICacheClient& nc_client)
+{
+    // In general, app_domain may not be avaiable.
+    // Since its value does not actually affect anything,
+    // we just use cache name from CNetICacheClient.
+    // If that is not avaiable, "default" value is used instead.
+    const string cache_name(nc_client ? nc_client.GetCacheName() : kEmptyStr);
+    return cache_name.empty() ? "default" : cache_name;
+}
+
+
 SContext::SContext(const SCombinedNetStorageConfig& config, TNetStorageFlags flags)
     : icache_client(s_GetICClient(config)),
       filetrack_api(config.ft),
       default_flags(flags),
-      app_domain(config.app_domain)
+      app_domain(s_GetAppDomain(config.app_domain, icache_client))
 {
     Init();
 }
 
 
-SContext::SContext(const string& domain, CNetICacheClient::TInstance client,
+SContext::SContext(const string& service_name, const string& domain,
         CCompoundIDPool::TInstance id_pool,
-        const SFileTrackConfig& ft_config)
-    : icache_client(client),
-      filetrack_api(ft_config),
+        const IRegistry& registry)
+    : icache_client(s_GetICClient(registry, service_name)),
+      filetrack_api(s_GetFTConfig(registry, service_name)),
       compound_id_pool(id_pool ? CCompoundIDPool(id_pool) : CCompoundIDPool()),
-      app_domain(domain)
+      app_domain(s_GetAppDomain(domain, icache_client))
 {
     Init();
 }
@@ -1154,17 +1195,6 @@ void SCombinedNetStorageConfig::ParseArg(const string& name,
         mode = GetMode(value);
     else if (!ft.ParseArg(name, value))
         SNetStorage::SConfig::ParseArg(name, value);
-}
-
-
-void SCombinedNetStorageConfig::Validate(const string& init_string)
-{
-    if (mode == eServerless && app_domain.empty()) {
-        // TODO: Turn on nocreate/readonly mode instead? (CXX-7801)
-        app_domain = "default";
-    }
-
-    SNetStorage::SConfig::Validate(init_string);
 }
 
 

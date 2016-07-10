@@ -115,15 +115,6 @@ struct SDirectNetStorageImpl : public SNetStorageImpl
     {
     }
 
-    SDirectNetStorageImpl(const string& app_domain,
-            CNetICacheClient::TInstance icache_client,
-            CCompoundIDPool::TInstance compound_id_pool,
-            const SFileTrackConfig& ft_config)
-        : m_Context(new SContext(app_domain, icache_client,
-                    compound_id_pool, ft_config))
-    {
-    }
-
     CObj* OpenImpl(const string&);
 
     CNetStorageObject Create(TNetStorageFlags);
@@ -133,6 +124,8 @@ struct SDirectNetStorageImpl : public SNetStorageImpl
     ENetStorageRemoveResult Remove(const string&);
 
     // For direct NetStorage API only
+    SDirectNetStorageImpl(const string&, CCompoundIDPool::TInstance,
+            const IRegistry&);
     CObj* Create(TNetStorageFlags, const string&, Int8);
     bool Exists(const string& db_loc, const string& client_loc);
     CJsonNode ReportConfig() const;
@@ -204,6 +197,19 @@ CObj* SDirectNetStorageImpl::Create(TNetStorageFlags flags,
 }
 
 
+SDirectNetStorageImpl::SDirectNetStorageImpl(const string& service_name,
+        CCompoundIDPool::TInstance compound_id_pool,
+        const IRegistry& registry)
+    // NetStorage server does not get app_domain from clients
+    // if object locators are used (opposed to object keys).
+    // Instead of introducing new configuration parameter
+    // we notify the context that app_domain not available (thus kEmptyStr).
+    : m_Context(new SContext(service_name, kEmptyStr,
+                compound_id_pool, registry))
+{
+}
+
+
 bool s_TrustOldLoc(CCompoundIDPool& pool, const string& old_loc,
         TNetStorageFlags new_flags)
 {
@@ -272,21 +278,6 @@ struct SDirectNetStorageByKeyImpl : public SNetStorageByKeyImpl
     {
     }
 
-    SDirectNetStorageByKeyImpl(const string& service_name,
-            const string& app_domain,
-            CNetICacheClient::TInstance icache_client,
-            CCompoundIDPool::TInstance compound_id_pool,
-            const SFileTrackConfig& ft_config)
-        : m_Context(new SContext(app_domain, icache_client,
-                    compound_id_pool, ft_config)),
-          m_ServiceName(service_name)
-    {
-        if (app_domain.empty()) {
-            NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
-                    "Domain name cannot be empty.");
-        }
-    }
-
     CObj* OpenImpl(const string&, TNetStorageFlags);
 
     CNetStorageObject Open(const string&, TNetStorageFlags);
@@ -296,6 +287,8 @@ struct SDirectNetStorageByKeyImpl : public SNetStorageByKeyImpl
     ENetStorageRemoveResult Remove(const string&, TNetStorageFlags);
 
     // For direct NetStorage API only
+    SDirectNetStorageByKeyImpl(const string&, const string&,
+            CCompoundIDPool::TInstance, const IRegistry&);
     CObj* Open(TNetStorageFlags, const string&);
     bool Exists(const string& db_loc, const string& key, TNetStorageFlags flags);
 
@@ -347,6 +340,22 @@ ENetStorageRemoveResult SDirectNetStorageByKeyImpl::Remove(const string& key,
 }
 
 
+SDirectNetStorageByKeyImpl::SDirectNetStorageByKeyImpl(
+        const string& service_name,
+        const string& app_domain,
+        CCompoundIDPool::TInstance compound_id_pool,
+        const IRegistry& registry)
+    : m_Context(new SContext(service_name, app_domain,
+                compound_id_pool, registry)),
+        m_ServiceName(service_name)
+{
+    if (app_domain.empty()) {
+        NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
+                "Domain name cannot be empty.");
+    }
+}
+
+
 CObj* SDirectNetStorageByKeyImpl::Open(TNetStorageFlags flags,
         const string& key)
 {
@@ -366,60 +375,12 @@ bool SDirectNetStorageByKeyImpl::Exists(const string& db_loc,
 }
 
 
-string s_GetSection(const IRegistry& registry, const string& service,
-        const string& name)
-{
-    if (!service.empty()) {
-        const string section = "service_" + service;
-
-        if (registry.HasEntry(section, name)) {
-            return registry.Get(section, name);
-        }
-    }
-
-    const string server_wide = registry.Get("netstorage_api", name);
-    return server_wide;
-}
-
-
-SFileTrackConfig s_GetFTConfig(const IRegistry& registry, const string& service)
-{
-    const string ft_section = s_GetSection(registry, service, "filetrack");
-    return ft_section.empty() ? eVoid : SFileTrackConfig(registry, ft_section);
-}
-
-
-CNetICacheClient s_GetICClient(const IRegistry& registry, const string& service)
-{
-    const string nc_section = s_GetSection(registry, service, "netcache");
-    return nc_section.empty() ? eVoid : CNetICacheClient(registry, nc_section);
-}
-
-
-CNetStorage s_GetNetStorage(
-        const IRegistry& registry,
-        const string& service_name,
-        CCompoundIDPool::TInstance compound_id_pool)
-{
-    // In general, NetStorage server cannot get app_domain from client.
-    // Instead of introducing new configuration parameter
-    // (with a value not actually affecting anything),
-    // we just use cache name from CNetICacheClient.
-    // If that is not avaiable, service_name value is used instead.
-    CNetICacheClient nc_client(s_GetICClient(registry, service_name));
-    const string cache_name(nc_client ? nc_client.GetCacheName() : kEmptyStr);
-    const string app_domain(cache_name.empty() ? service_name : cache_name);
-
-    return new SDirectNetStorageImpl(app_domain, nc_client,
-                compound_id_pool, s_GetFTConfig(registry, service_name));
-}
-
-
 CDirectNetStorage::CDirectNetStorage(
         const IRegistry& registry,
         const string& service_name,
         CCompoundIDPool::TInstance compound_id_pool)
-    : CNetStorage(s_GetNetStorage(registry, service_name, compound_id_pool))
+    : CNetStorage(
+            new SDirectNetStorageImpl(service_name, compound_id_pool, registry))
 {
 }
 
@@ -458,8 +419,7 @@ CDirectNetStorageByKey::CDirectNetStorageByKey(
         const string& app_domain)
     : CNetStorageByKey(
             new SDirectNetStorageByKeyImpl(service_name, app_domain,
-                s_GetICClient(registry, service_name),
-                compound_id_pool, s_GetFTConfig(registry, service_name)))
+                compound_id_pool, registry))
 {
 }
 
