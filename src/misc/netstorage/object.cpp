@@ -196,7 +196,13 @@ string CObj::Relocate(TNetStorageFlags flags, TNetStorageProgressCb cb)
                 CJsonNode progress(CJsonNode::NewObjectNode());
                 progress.SetInteger("BytesRelocated", total);
                 progress.SetString("Message", "Relocating");
-                cb(progress);
+
+                // m_CancelRelocate may only be set to true inside the callback
+                if (cb(progress), m_CancelRelocate) {
+                    m_CancelRelocate = false;
+                    NCBI_THROW(CNetStorageException, eInterrupted,
+                        "Request to interrupt Relocate has been received.");
+                }
             }
         }
 
@@ -212,7 +218,7 @@ string CObj::Relocate(TNetStorageFlags flags, TNetStorageProgressCb cb)
 
 void CObj::CancelRelocate()
 {
-    // TODO: CXX-8301
+    m_CancelRelocate = true;
 }
 
 

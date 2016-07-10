@@ -108,6 +108,7 @@ private:
     IState* m_State;
     ILocation* m_Location;
     const bool m_RemoveOldCopy;
+    bool m_CancelRelocate = false;
 };
 
 }
