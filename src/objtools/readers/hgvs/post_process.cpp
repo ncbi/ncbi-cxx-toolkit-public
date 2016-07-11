@@ -121,8 +121,6 @@ CRef<CSeq_feat> CNormalizeVariant::GetNormalizedSNP(const CSeq_feat& seq_feat) c
         return normalized_feat;
     }
 
-
-
     auto& identity_inst = normalized_feat->SetData().SetVariation().SetData().SetSet().SetVariations().back()->SetData().SetInstance();
 
     NormalizeIdentityInstance(identity_inst, normalized_feat->GetLocation());
@@ -133,15 +131,23 @@ CRef<CSeq_feat> CNormalizeVariant::GetNormalizedSNP(const CSeq_feat& seq_feat) c
 
 void CNormalizeVariant::NormalizeIdentityInstance(CVariation_inst& identity_inst, const CSeq_loc& location) const
 {
-    // Should post a warning
+
+    if (!identity_inst.SetType()) {
+        ERR_POST(Warning << "CVariation_inst: Type not set");
+        return;
+    }
+
     if (identity_inst.GetType() != CVariation_inst::eType_identity)
     {
-        // Post a warning
+        string message = "CVariation_inst: Invalid type ("
+                       + NStr::NumericToString(identity_inst.GetType())
+                       + ").";
+        ERR_POST(Warning << message);
         return;
     }
 
     if (!identity_inst.IsSetDelta()) {
-        // Post a warning
+        ERR_POST(Warning << "CVariation_inst: Delta-item not set");
         return;
     }
 
@@ -154,7 +160,7 @@ void CNormalizeVariant::NormalizeIdentityInstance(CVariation_inst& identity_inst
     auto& delta_item = *identity_inst.SetDelta().back();
 
     if (!delta_item.IsSetSeq()) {
-        // Post a warning
+        ERR_POST(Warning << "CDelta_item: Sequence not set");
         return;
     }
 
