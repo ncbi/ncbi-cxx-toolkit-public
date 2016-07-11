@@ -65,6 +65,7 @@ m_TryServerToo(false)
 
 CDBConnectionFactory::~CDBConnectionFactory(void)
 {
+    CDB_UserHandler::ClearExceptions(m_Errors);
 }
 
 void
