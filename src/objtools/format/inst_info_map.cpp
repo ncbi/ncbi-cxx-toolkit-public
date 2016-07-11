@@ -72,6 +72,9 @@ CInstInfoMap::GetInstitutionVoucherInfo(
     static const string  s_ncimb_base("http://www.ncimb.com/BioloMICS.aspx?Table=NCIMBstrains&ExactMatch=T&Fields=All&Name=NCIMB%20");
     static const string  s_nctc_base("https://www.phe-culturecollections.org.uk/products/bacteria/detail.jsp?collection=nctc&refId=NCTC+");
     static const string  s_nrrl_base("http://nrrl.ncaur.usda.gov/cgi-bin/usda/prokaryote/report.html?nrrlcodes=");
+    static const string  s_nrrl_mold("http://nrrl.ncaur.usda.gov/cgi-bin/usda/mold/report.html?nrrlcodes=");
+    static const string  s_nrrl_prok("http://nrrl.ncaur.usda.gov/cgi-bin/usda/prokaryote/report.html?nrrlcodes=");
+    static const string  s_nrrl_yest("http://nrrl.ncaur.usda.gov/cgi-bin/usda/yeast/report.html?nrrlcodes=");
     static const string  s_pcc_base("http://www.crbip.pasteur.fr/fiches/fichecata.jsp?crbip=PCC+");
     static const string  s_pcmb_base("http://www2.bishopmuseum.org/HBS/PCMB/results3.asp?searchterm3=");
     static const string  s_pycc_base("http://pycc.bio-aware.com/BioloMICS.aspx?Table=PYCC%20strains&Name=PYCC%20");
@@ -169,6 +172,9 @@ CInstInfoMap::GetInstitutionVoucherInfo(
         { "NCIMB",            TVoucherInfoRef(new SVoucherInfo(&s_ncimb_base, false, 0, NULL,   NULL,          NULL,        "National Collections of Industrial Food and Marine Bacteria (incorporating the NCFB)") ) },
         { "NCTC",             TVoucherInfoRef(new SVoucherInfo(&s_nctc_base,  false, 0, NULL,   NULL,          NULL,        "National Collection of Type Cultures") ) },
         { "NRRL",             TVoucherInfoRef(new SVoucherInfo(&s_nrrl_base,  false, 0, NULL,   NULL,          NULL,        "Agricultural Research Service Culture Collection") ) },
+        { "NRRL:MOLD",        TVoucherInfoRef(new SVoucherInfo(&s_nrrl_mold,  false, 0, NULL,   NULL,          NULL,        "Agricultural Research Service Culture Collection") ) },
+        { "NRRL:PROK",        TVoucherInfoRef(new SVoucherInfo(&s_nrrl_prok,  false, 0, NULL,   NULL,          NULL,        "Agricultural Research Service Culture Collection") ) },
+        { "NRRL:YEAST",       TVoucherInfoRef(new SVoucherInfo(&s_nrrl_yest,  false, 0, NULL,   NULL,          NULL,        "Agricultural Research Service Culture Collection") ) },
         { "NZAC",             TVoucherInfoRef(new SVoucherInfo(&s_lcr_base,   true,  0, NULL,   &s_uscr_pfx,   NULL,        "New Zealand Arthropod Collection") ) },
         { "PCC",              TVoucherInfoRef(new SVoucherInfo(&s_pcc_base,   false, 0, NULL,   NULL,          NULL,        "Pasteur Culture Collection of Cyanobacteria") ) },
         { "PCMB",             TVoucherInfoRef(new SVoucherInfo(&s_pcmb_base,  false, 0, NULL,   NULL,          NULL,        "The Pacific Center for Molecular Biodiversity") ) },
