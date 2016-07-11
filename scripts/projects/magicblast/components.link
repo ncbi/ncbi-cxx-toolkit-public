@@ -1,0 +1,9 @@
+[components]
+infrastructure  17.0
+core            17.0
+dbase           17.0
+web             17.0
+objects         17.0
+objtools        17.0
+algo            17.0
+app             17.0
