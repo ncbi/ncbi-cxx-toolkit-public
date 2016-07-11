@@ -734,7 +734,8 @@ CDBUDPriorityMapper::Exclude(const string& service,
 void
 CDBUDPriorityMapper::CleanExcluded(const string& service)
 {
-    CNcbiDiag::DiagTrouble(DIAG_COMPILE_INFO, "Not implemented");
+    CFastMutexGuard mg(m_Mtx);
+    m_ServiceUsageMap[service] = m_OrigServiceUsageMap[service];
 }
 
 void
@@ -766,6 +767,7 @@ CDBUDPriorityMapper::Add(const string&    service,
 {
     TSvrMap& server_list = m_ServerMap[service];
     TServerUsageMap& usage_map = m_ServiceUsageMap[service];
+    TServerUsageMap& usage_map2 = m_OrigServiceUsageMap[service];
 
     if (preference < 0) {
         preference = 0;
@@ -776,10 +778,9 @@ CDBUDPriorityMapper::Add(const string&    service,
     server_list.insert(
         TSvrMap::value_type(server, preference)
         );
-    usage_map.insert(TServerUsageMap::value_type(
-        100 - preference,
-        server)
-        );
+    TServerUsageMap::value_type usage(100 - preference, server);
+    usage_map.insert(usage);
+    usage_map2.insert(usage);
 }
 
 

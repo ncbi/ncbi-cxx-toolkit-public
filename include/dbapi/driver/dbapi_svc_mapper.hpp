@@ -204,6 +204,7 @@ private:
     TLBNameMap          m_LBNameMap;
     TServiceMap         m_ServerMap;
     TServiceUsageMap    m_ServiceUsageMap;
+    TServiceUsageMap    m_OrigServiceUsageMap;
 };
 
 class NCBI_DBAPIDRIVER_EXPORT CDBUniversalMapper : public CDBServiceMapperCoR

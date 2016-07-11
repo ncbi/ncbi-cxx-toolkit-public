@@ -361,6 +361,7 @@ CDBConnectionFactory::MakeDBConnection(
             // We definitely need to re-dispatch it ...
 
             // Clean previous info ...
+            rt_data.CleanExcluded(params.GetServerName());
             rt_data.SetDispatchedServer(params.GetServerName(), TSvrRef());
             t_con = DispatchServerName(opening_ctx, params);
         } else {
