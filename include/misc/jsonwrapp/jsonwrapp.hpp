@@ -94,8 +94,10 @@ class CJson_ConstObject;
 class CJson_Object;
 
 enum EJson_Write_Flags {
-    fJson_Write_NoIndentation = 1, ///< do not use indentation
-    fJson_Write_NoEol         = 2  ///< do not write end-of-line symbol
+    fJson_Write_IndentWithSpace = 0,        ///< use space (' ') symbol for indentation
+    fJson_Write_NoIndentation   = (1 << 0), ///< do not use indentation
+    fJson_Write_NoEol           = (1 << 1), ///< do not write end-of-line symbol
+    fJson_Write_IndentWithTab   = (1 << 2)  ///< use tab ('\t') symbol for indentation
 };
 typedef unsigned int TJson_Write_Flags;
 
@@ -148,7 +150,8 @@ public:
     CJson_ConstObject GetObject(void) const;
 
     /// Convert the contents of the node into string
-    std::string ToString(TJson_Write_Flags flags = 0) const;
+    std::string ToString(TJson_Write_Flags flags = fJson_Write_IndentWithSpace,
+                         unsigned int indent_char_count = 4) const;
 
     ~CJson_ConstNode(void) {}
     /// Note: this does not copy Node data
@@ -1018,12 +1021,14 @@ public:
     std::string GetReadError(void) const;
 
     /// Write JSON data into a stream
-    void Write(std::ostream& out, TJson_Write_Flags flags = 0) const;
+    void Write(std::ostream& out, TJson_Write_Flags flags = fJson_Write_IndentWithSpace,
+                                  unsigned int indent_char_count = 4) const;
 
     /// Write JSON data into a file
-    void Write(const std::string& filename, TJson_Write_Flags flags = 0) const {
+    void Write(const std::string& filename, TJson_Write_Flags flags = fJson_Write_IndentWithSpace,
+                                            unsigned int indent_char_count = 4) const {
         std::ofstream out(filename.c_str());
-        Write(out, flags);
+        Write(out, flags, indent_char_count);
     }
 
     /// Traverse the document contents
@@ -1185,12 +1190,14 @@ inline CJson_ConstObject CJson_ConstNode::GetObject(void) const {
     return CJson_ConstObject(m_Impl);
 }
 inline std::string
-CJson_ConstNode::ToString(TJson_Write_Flags flags) const {
+CJson_ConstNode::ToString(TJson_Write_Flags flags, unsigned int indent_char_count) const {
     ncbi::CNcbiOstrstream os;
     rapidjson::CppOStream ofs(os);
     rapidjson::PrettyWriter<rapidjson::CppOStream> writer(ofs);
     if (flags & fJson_Write_NoIndentation) {
         writer.SetIndent(' ', 0);
+    } else {
+        writer.SetIndent( (flags & fJson_Write_IndentWithTab) ? '\t' : ' ', indent_char_count);
     }
     if (flags & fJson_Write_NoEol) {
         writer.SetWriteEol(false);
@@ -2184,11 +2191,14 @@ inline std::string CJson_Document::GetReadError() const {
     return rapidjson::GetParseError_En(m_DocImpl.GetParseError());
 }
 
-inline void CJson_Document::Write(std::ostream& out, TJson_Write_Flags flags) const {
+inline void CJson_Document::Write(std::ostream& out,
+    TJson_Write_Flags flags, unsigned int indent_char_count) const {
     rapidjson::CppOStream ofs(out);
     rapidjson::PrettyWriter<rapidjson::CppOStream> writer(ofs);
     if (flags & fJson_Write_NoIndentation) {
         writer.SetIndent(' ', 0);
+    } else {
+        writer.SetIndent( (flags & fJson_Write_IndentWithTab) ? '\t' : ' ', indent_char_count);
     }
     if (flags & fJson_Write_NoEol) {
         writer.SetWriteEol(false);
