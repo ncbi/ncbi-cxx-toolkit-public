@@ -513,7 +513,13 @@ size_t CMemoryByteSourceReader::Read(char* buffer, size_t bufferLength)
 
 bool CMemoryByteSourceReader::EndOfData(void) const
 {
-    return !m_CurrentChunk;
+    if (!m_CurrentChunk) {
+        return true;
+    }
+    if (GetCurrentChunkAvailable() != 0) {
+        return false;
+    }
+    return !(m_CurrentChunk->GetNextChunk());
 }
 
 
