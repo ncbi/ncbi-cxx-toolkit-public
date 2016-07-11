@@ -786,7 +786,8 @@ void s_LBOS_CPP_Announce(const string&   service,
 
 #ifndef NCBI_THREADS // If we have to answer healthcheck in the same thread
     s_ReadFunc = g_LBOS_UnitTesting_GetLBOSFuncs()->Read;
-    CMockFunction<FLBOS_ConnReadMethod*> mock(
+    CMockFunction<FLBOS_ConnReadMethod*> mock
+    (
         g_LBOS_UnitTesting_GetLBOSFuncs()->Read,
         s_RealReadAnnounce);
 #endif /* NCBI_THREADS */
@@ -1142,6 +1143,7 @@ static void s_FakeFillCandidates (SLBOS_Data* data,
         if (data->cand[i].info == NULL) return;
         data->cand[i].info->host = host;
         data->cand[i].info->port = port;
+        data->cand[i].info->type = fSERV_Standalone;
         data->cand[i].info->rate = 1;
     }
 }
@@ -1213,8 +1215,8 @@ static void s_FakeInitializeCheckInstances()
 
 
 static SSERV_Info** s_FakeResolveIPPort (const char*   lbos_address,
-                                  const char*   serviceName,
-                                  SConnNetInfo* net_info)
+                                         const char*   serviceName,
+                                         SConnNetInfo* net_info)
 {
     s_CallCounter++;
     if (net_info->http_user_header) {
@@ -1239,8 +1241,9 @@ static SSERV_Info** s_FakeResolveIPPort (const char*   lbos_address,
         SOCK_StringToHostPort("127.0.0.1:80", &host, &port);
         hostports[0]->host = host;
         hostports[0]->port = port;
+        hostports[0]->type = fSERV_Standalone;
         hostports[1] = NULL;
-        return   hostports;
+        return hostports;
     }
 }
 

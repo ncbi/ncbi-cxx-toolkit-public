@@ -2106,7 +2106,6 @@ void SetTypeBadEnumVal__Exception()
                    "value is used, please tell the developer about this "
                    "issue\n");
     BOOST_CHECK_EXCEPTION(meta.SetType(-1), CLBOSException, comparator);
-    BOOST_CHECK_EXCEPTION(meta.SetType(6), CLBOSException, comparator);
     BOOST_CHECK_EXCEPTION(meta.SetType(7), CLBOSException, comparator);
     BOOST_CHECK_EXCEPTION(meta.SetType(10), CLBOSException, comparator);
     BOOST_CHECK_EXCEPTION(meta.SetType(15), CLBOSException, comparator);
@@ -2438,7 +2437,7 @@ void SetTypeValidVal__SeeMetaInDiscovery()
     NCBITEST_CHECK_EQUAL_MT_SAFE(host_type, LBOS::CMetaData::eUnknown);
 }
 
-void SetTypeEmpty__TypeStayInDiscovery()
+void SetTypeEmpty__TypeStandaloneInDiscovery()
 {
     CConnNetInfo net_info;
     string version = "1.0.0";
@@ -2483,12 +2482,12 @@ void SetTypeEmpty__TypeStayInDiscovery()
                                         NULL, NULL));
     lbos_output = *lbos_output_orig2;
     find_pos = lbos_output.find(expected);
-    NCBITEST_CHECK_NE_MT_SAFE(find_pos, string::npos);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(find_pos, string::npos);
 
     s_DeannounceCPP(service, version, ANNOUNCEMENT_HOST, port);
 }
 
-void SetExtraEmpty__ExtraStayInDiscovery()
+void SetExtraEmpty__ExtraChangesToEmpty()
 {
     CConnNetInfo net_info;
     unsigned short port = s_GeneratePort();
@@ -2533,7 +2532,7 @@ void SetExtraEmpty__ExtraStayInDiscovery()
                                         NULL, NULL));
     lbos_output = *lbos_output_orig2;
     find_pos = lbos_output.find(expected);
-    NCBITEST_CHECK_NE_MT_SAFE(find_pos, string::npos);
+    NCBITEST_CHECK_EQUAL_MT_SAFE(find_pos, string::npos);
 
     s_DeannounceCPP(service, version, ANNOUNCEMENT_HOST, port);
 }
@@ -3231,7 +3230,7 @@ void HostInHealthcheck__TryFindReturnsHostIP()
     /* Test - announce, then check TryFind */
     BOOST_CHECK_NO_THROW(s_AnnounceCPPSafe(node_name, "1.0.0", "", port,
                                            string("http://") + s_GetMyHost() + 
-                                           ":" + s_PortStr(PORT_N) + 
+                                           ":" + s_PortStr(PORT_N) +
                                            "/health"));
     string IP = CLBOSIpCache::HostnameTryFind(node_name, 
                                               s_GetMyHost(), "1.0.0", port);

@@ -426,19 +426,19 @@ BOOST_AUTO_TEST_CASE(AnnounceMetadata__SetTypeValidVal__SeeMetaInDiscovery)
 
 /* 10. type meta parameter - on re-announce the parameter is saved, even if
  *     re-announced without type */
-BOOST_AUTO_TEST_CASE(AnnounceMetadata__SetTypeEmpty__TypeStayInDiscovery)
+BOOST_AUTO_TEST_CASE(AnnounceMetadata__SetTypeEmpty__TypeStandaloneInDiscovery)
 {
     CHECK_LBOS_VERSION();
-    AnnounceMetadata::SetTypeEmpty__TypeStayInDiscovery();
+    AnnounceMetadata::SetTypeEmpty__TypeStandaloneInDiscovery();
 }
 
 
 /* 11. SetExtra(string) - remove meta on empty value. First announce with extra,
  *     then re-announce without extra */
-BOOST_AUTO_TEST_CASE(AnnounceMetadata__SetExtraEmpty__ExtraStayInDiscovery)
+BOOST_AUTO_TEST_CASE(AnnounceMetadata__SetExtraEmpty__ExtraChangesToEmpty)
 {
     CHECK_LBOS_VERSION();
-    AnnounceMetadata::SetExtraEmpty__ExtraStayInDiscovery();
+    AnnounceMetadata::SetExtraEmpty__ExtraChangesToEmpty();
 }
 
 
