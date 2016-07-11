@@ -130,3 +130,15 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "False positive in basic_string::assign() called from CNcbiEnvironment constructor"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func=assign,src=xstring;
+			func=Reset,src=ncbienv.cpp;
+			func=CNcbiEnvironment,src=ncbienv.cpp;
+		}
+	}
+}
