@@ -188,7 +188,7 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
     const char*     http_user_header; /* user header to add to HTTP request  */
     const char*     http_referer;     /* default referrer (when not spec'd)  */
     NCBI_CRED       credentials;      /* connection credentials (optional)   */
-    unsigned short  magic;            /* to detect version skew              */
+    unsigned        magic;            /* to detect version skew              */
 
     /* the following field(s) are for the internal use only -- don't touch!  */
     STimeout        tmo;              /* default storage for finite timeout  */
