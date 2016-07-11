@@ -349,6 +349,7 @@ void CRequestContext::SetHitID(const string& hit)
     x_SetProp(eProp_HitID);
     if (m_HitID != hit) {
         m_SubHitID = 0;
+        m_SharedSubHitID.Reset();
         m_SubHitIDCache.clear();
     }
     m_HitID = hit;
@@ -368,11 +369,19 @@ void CRequestContext::x_UpdateSubHitID(bool increment, CTempString prefix)
     m_SubHitIDCache = GetHitID();
 
     unsigned int sub_hit_id;
-    if (m_SubHitIDCache == GetDiagContext().GetDefaultHitID()) {
+    if ( m_SharedSubHitID ) {
+        // Hit id and sub-hit id is shared between several clones.
+        sub_hit_id = (unsigned int)(increment ? m_SharedSubHitID->GetData().Add(1) :
+            m_SharedSubHitID->GetData().Get());
+    }
+    else if (CDiagContext::sx_IsDefaultHitID(m_SubHitIDCache)  &&
+        m_SubHitIDCache == GetDiagContext().GetDefaultHitID()) {
+        // Using global hit id and sub-hit counter.
         sub_hit_id = (unsigned int)(increment ? s_DefaultSubHitCounter.Add(1) :
             s_DefaultSubHitCounter.Get());
     }
     else {
+        // Normal unshared sub-hit id.
         if ( increment ) ++m_SubHitID;
         sub_hit_id = m_SubHitID;
     }
@@ -511,6 +520,11 @@ CRef<CRequestContext> CRequestContext::Clone(void) const
     ret->m_HitID = m_HitID;
     ret->m_LoggedHitID = m_LoggedHitID;
     ret->m_SubHitID = m_SubHitID;
+    if ( !m_SharedSubHitID ) {
+        m_SharedSubHitID.Reset(new TSharedCounter());
+        m_SharedSubHitID->GetData().Set(m_SubHitID);
+    }
+    ret->m_SharedSubHitID = m_SharedSubHitID;
     ret->m_SubHitIDCache = m_SubHitIDCache;
     ret->m_Dtab = m_Dtab;
     ret->m_ReqStatus = m_ReqStatus;

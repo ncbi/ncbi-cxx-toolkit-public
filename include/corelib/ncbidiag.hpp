@@ -2345,6 +2345,8 @@ private:
     bool x_DiagAtApplicationLevel(void) const;
     bool x_IsSetDefaultHitID(void) const;
     string x_GetDefaultHitID(EDefaultHitIDFlags flag) const;
+    string x_GetNextHitID(bool is_default) const;
+    static bool sx_IsDefaultHitID(const string& phid);
     void x_LogHitID(void) const;
     void x_LogHitID_WithLock(void) const; // Same as above but with mutex lock.
 

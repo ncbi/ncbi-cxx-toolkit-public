@@ -314,6 +314,8 @@ private:
     // Copy std properties from pass-through data to CRequestContext.
     void x_UpdateStdContextProp(CTempString name) const;
 
+    typedef CObjectFor<CAtomicCounter> TSharedCounter;
+
     TCount         m_RequestID;
     EDiagAppState  m_AppState;
     string         m_ClientIP;
@@ -332,6 +334,7 @@ private:
     bool           m_AutoIncOnPost;
     TContextFlags  m_Flags;
     string         m_SubHitIDCache;
+    mutable CRef<TSharedCounter> m_SharedSubHitID;
 
     // For saving/checking owner TID.
     friend class CDiagContextThreadData;
@@ -535,6 +538,7 @@ void CRequestContext::UnsetHitID(void)
     m_HitID.clear();
     m_LoggedHitID = false;
     m_SubHitID = 0;
+    m_SharedSubHitID.Reset();
     m_SubHitIDCache.clear();
 }
 

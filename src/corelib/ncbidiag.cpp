@@ -1529,20 +1529,40 @@ CDiagContext::TUID CDiagContext::UpdateUID(TUID uid) const
 
 string CDiagContext::GetNextHitID(void) const
 {
+    return x_GetNextHitID(false);
+}
+
+
+string CDiagContext::x_GetNextHitID(bool is_default) const
+{
+    static CAtomicCounter s_HitIdCounter;
+
     Uint8 hi = GetUID();
     Uint4 b3 = Uint4((hi >> 32) & 0xFFFFFFFF);
     Uint4 b2 = Uint4(hi & 0xFFFFFFFF);
 
     CDiagContextThreadData& thr_data = CDiagContextThreadData::GetThreadData();
     Uint8 tid = (thr_data.GetTID() & 0xFFFFFF) << 40;
-    Uint8 rid = Uint8(thr_data.GetRequestContext().GetRequestID() & 0xFFFFFF) << 16;
-    Uint8 us = (GetFastLocalTime().MicroSecond()/16) & 0xFFFF;
+    Uint8 rid;
+    if ( !is_default ) {
+        rid = ((Uint8)thr_data.GetRequestContext().GetRequestID() & 0xFFFFFF) << 16;
+    }
+    else {
+        rid = ((Uint8)0xFFFFFF) << 16;
+    }
+    Uint8 us = (Uint8)(s_HitIdCounter.Add(1) & 0xFFFF);
     Uint8 lo = tid | rid | us;
     Uint4 b1 = Uint4((lo >> 32) & 0xFFFFFFFF);
     Uint4 b0 = Uint4(lo & 0xFFFFFFFF);
     char buf[40];
     sprintf(buf, "%08X%08X%08X%08X", b3, b2, b1, b0);
     return string(buf);
+}
+
+
+bool CDiagContext::sx_IsDefaultHitID(const string& phid)
+{
+    return (phid.substr(22, 6) == "FFFFFF");
 }
 
 
@@ -2581,7 +2601,7 @@ string CDiagContext::x_GetDefaultHitID(EDefaultHitIDFlags flag) const
             *m_DefaultHitId = phid;
         }
         if (m_DefaultHitId->empty()  &&  (flag == eHitID_Create)) {
-            *m_DefaultHitId = GetNextHitID();
+            *m_DefaultHitId = x_GetNextHitID(true);
         }
     }
     _ASSERT(!m_LoggedHitId);
