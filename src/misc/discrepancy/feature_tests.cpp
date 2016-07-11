@@ -2050,5 +2050,137 @@ DISCREPANCY_SUMMARIZE(UNUSUAL_MISC_RNA)
 }
 
 
+// CDS_WITHOUT_MRNA
+
+/*const string kCDSWithoutMRNA = "[n] coding region[s] [does] not have an mRNA";
+
+static bool IsOrganelle(CBioSource::TGenome genome)
+{
+    return (genome == CBioSource::eGenome_chloroplast
+            || genome == CBioSource::eGenome_chromoplast
+            || genome == CBioSource::eGenome_kinetoplast
+            || genome == CBioSource::eGenome_mitochondrion
+            || genome == CBioSource::eGenome_cyanelle
+            || genome == CBioSource::eGenome_nucleomorph
+            || genome == CBioSource::eGenome_apicoplast
+            || genome == CBioSource::eGenome_leucoplast
+            || genome == CBioSource::eGenome_proplastid
+            || genome == CBioSource::eGenome_hydrogenosome
+            || genome == CBioSource::eGenome_plastid
+            || genome == CBioSource::eGenome_chromatophore);
+}
+
+static bool IsDNA(const CBioseq* bioseq)
+{
+    if (bioseq && bioseq->IsNa() && bioseq->IsSetInst()) {
+
+        return (bioseq->GetInst().IsSetMol() && bioseq->GetInst().GetMol() == CSeq_inst::eMol_dna);
+    }
+
+    return false;
+}
+
+
+static bool IsProductMatch(const string& rna_product, const string& cds_product)
+{
+    if (rna_product.empty() || cds_product.empty()) {
+        return false;
+    }
+
+    if (rna_product == cds_product) {
+        return true;
+    }
+
+    const string kmRNAVariant = ", transcript variant ";
+    const string kCDSVariant = ", isoform ";
+
+    size_t pos_in_rna = rna_product.find(kmRNAVariant);
+    size_t pos_in_cds = cds_product.find(kCDSVariant);
+
+    if (pos_in_rna == string::npos || pos_in_cds == string::npos || pos_in_rna != pos_in_cds ||
+        !NStr::EqualCase(rna_product, 0, pos_in_rna, cds_product)) {
+        return false;
+    }
+
+    string rna_rest = rna_product.substr(pos_in_rna + kmRNAVariant.size()),
+        cds_rest = cds_product.substr(pos_in_cds + kCDSVariant.size());
+    return rna_rest == cds_rest;
+}
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(CDS_WITHOUT_MRNA, CSeq_feat, eDisc | eOncaller, "Coding regions on eukaryotic genomic DNA should have mRNAs with matching products")
+//  ----------------------------------------------------------------------------
+{
+    CConstRef<CBioseq> seq = context.GetCurrentBioseq();
+    if (obj.IsSetData() && obj.GetData().IsCdregion() && !CCleanup::IsPseudo(obj, context.GetScope()) &&
+        context.IsEukaryotic() && IsDNA(seq)) {
+
+        const CBioSource* bio_src = context.GetCurrentBiosource();
+        if (bio_src && bio_src->IsSetGenome() && !IsOrganelle(bio_src->GetGenome())) {
+
+            CConstRef<CSeq_feat> mRNA = sequence::GetOverlappingmRNA(obj.GetLocation(), context.GetScope());
+            if (mRNA.Empty()) {
+                m_Objs[kCDSWithoutMRNA].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
+            }
+            else {
+                const CRNA_ref& rna = mRNA->GetData().GetRna();
+
+                if (!IsProductMatch(rna.GetRnaProductName(), GetProductForCDS(obj, context.GetScope()))) {
+                    m_Objs[kCDSWithoutMRNA].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj), eKeepRef), false);
+                }
+            }
+        }
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(CDS_WITHOUT_MRNA)
+//  ----------------------------------------------------------------------------
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+static bool AddmRNAForCDS(const CSeq_feat& cds, CScope& scope)
+{
+    CConstRef<CSeq_feat> mRNA = sequence::GetOverlappingmRNA(cds.GetLocation(), scope);
+    CRef<CSeq_feat> new_mRNA(new CSeq_feat);
+
+    if (mRNA) {
+        new_mRNA->Assign(*mRNA);
+    }
+
+    string remainder;
+    new_mRNA->SetData().SetRna().SetRnaProductName(GetProductForCDS(cds, scope), remainder);
+
+    if (!new_mRNA->IsSetLocation()) {
+
+        new_mRNA->SetLocation().Assign(cds.GetLocation());
+        CBioseq_EditHandle bioseq_edit(scope.GetBioseqHandle(new_mRNA->GetLocation()));
+
+        CSeq_annot_EditHandle annot_edit; //+++++ HOW TO GET IT?
+    }
+    else {
+        CSeq_feat_EditHandle new_mRNA_edit(scope.GetSeq_featHandle(*mRNA));
+        new_mRNA_edit.Replace(*new_mRNA);
+    }
+
+    return true;
+}
+
+DISCREPANCY_AUTOFIX(CDS_WITHOUT_MRNA)
+{
+    TReportObjectList list = item->GetDetails();
+    unsigned int n = 0;
+    NON_CONST_ITERATE(TReportObjectList, it, list) {
+        const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
+        if (sf && AddmRNAForCDS(*sf, scope)) {
+            n++;
+        }
+    }
+    return CRef<CAutofixReport>(n ? new CAutofixReport("CDS_WITHOUT_MRNA: Add mRNA for [n] CDS feature[s]", n) : 0);
+}*/
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

@@ -143,6 +143,7 @@ protected:
 friend struct CReportObjPtr;
 };
 
+string GetProductForCDS(const CSeq_feat& cds, CScope& scope);
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
