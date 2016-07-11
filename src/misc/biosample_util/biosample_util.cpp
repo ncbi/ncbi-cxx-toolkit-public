@@ -63,6 +63,7 @@
 #include <objects/seq/Seq_descr.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 #include <serial/objistrasn.hpp>
+#include <connect/ncbi_gnutls.h>
 
 #include <misc/xmlwrapp/xmlwrapp.hpp>
 #include <misc/biosample_util/biosample_util.hpp>
@@ -81,6 +82,28 @@ BEGIN_SCOPE(biosample_util)
 
 using namespace xml;
 
+void LibSSLInit()
+{
+    static bool initialized = false;
+    if ( !initialized)
+    {
+        class CInPlaceConnIniter : protected CConnIniter
+        {
+        } conn_initer;  /*NCBI_FAKE_WARNING*/
+        SOCK_SetupSSL(NcbiSetupGnuTls);
+        initialized = true;
+    }
+}
+
+string PrepareUrl(bool use_dev_server, const string &args)
+{
+    LibSSLInit();
+    string host = use_dev_server ? "dev-api-int" : "api-int";
+    string path = "/biosample/fetch/";
+    string url = "https://" + host + path + "?" + args;
+    return url;
+}
+
 CRef< CSeq_descr >
 GetBiosampleData(const string& accession, bool use_dev_server, TBioSamples *cache)
 {
@@ -93,10 +116,8 @@ GetBiosampleData(const string& accession, bool use_dev_server, TBioSamples *cach
         }
     }
     
-    string host = use_dev_server ? "dev-api-int" : "api-int";
-    string path = "/biosample/fetch/";
     string args = "accession=" + accession + "&format=asn1raw";
-    CConn_HttpStream http_stream(host, path, args);
+    CConn_HttpStream http_stream(PrepareUrl(use_dev_server, args));
     auto_ptr<CObjectIStream> in_stream;
     in_stream.reset(new CObjectIStreamAsn(http_stream));
  
@@ -175,10 +196,8 @@ EStatus GetBiosampleStatus(const string& accession, bool use_dev_server, TStatus
     }
 
     EStatus status = eStatus_Unknown;
-    string host = use_dev_server ? "dev-api-int" : "api-int";
-    string path = "/biosample/fetch/";
     string args = "accession=" + accession;
-    CConn_HttpStream http_stream(host, path, args);
+    CConn_HttpStream http_stream(PrepareUrl(use_dev_server, args));
     xml::error_messages errors;
     document response(http_stream, &errors);
     
@@ -208,11 +227,8 @@ EStatus GetBiosampleStatus(const string& accession, bool use_dev_server, TStatus
 
 void ProcessBulkBioSample(TStatuses& status, string list, bool use_dev_server)
 {
-    string host = use_dev_server ? "dev-api-int" : "api-int";
-    string path = "/biosample/fetch/";
     string args = "id=" + list + "&bulk=true";
-
-    CConn_HttpStream http_stream(host, path, args);
+    CConn_HttpStream http_stream(PrepareUrl(use_dev_server, args));
     xml::error_messages errors;
     document response(http_stream, &errors);
 
