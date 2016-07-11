@@ -12,5 +12,5 @@ AB019592.1	DDBJ	N_region	172	185	.	+	.	ID=id3;gbkey=N_region;gene=IgH
 AB019592.1	DDBJ	D_gene_segment	186	204	.	+	.	ID=id4;Parent=gene0;Note=D21/9;gbkey=D_segment;gene=IgH
 AB019592.1	DDBJ	exon	186	204	.	+	.	ID=id5;Parent=id4;Note=D21/9;gbkey=D_segment;gene=IgH
 AB019592.1	DDBJ	N_region	205	216	.	+	.	ID=id6;gbkey=N_region;gene=IgH
-AB019592.1	DDBJ	sequence_feature	217	853	.	+	.	ID=id7;Note=J segment region (Jh2c-Jh3c);gbkey=misc_feature;gene=IgH
+AB019592.1	DDBJ	sequence_feature	217	853	.	+	.	ID=id7;Note=J segment region (Jh2c-Jh3c);gbkey=misc_feature
 ###
