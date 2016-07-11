@@ -5460,10 +5460,10 @@ DISCREPANCY_AUTOFIX(SUSPECT_PRODUCT_NAMES)
     return CRef<CAutofixReport>(n ? new CAutofixReport("SUSPECT_PRODUCT_NAMES: [n] product name[s] fixed", n) : 0);
 }
 
-///////////////////////////////////// TEST_ORGANELLE_PRODUCTS
+///////////////////////////////////// ORGANELLE_PRODUCTS
 
 
-DISCREPANCY_CASE(TEST_ORGANELLE_PRODUCTS, CSeqFeatData, eOncaller, "Organelle products on non-organelle sequence: on when neither bacteria nor virus")
+DISCREPANCY_CASE(ORGANELLE_PRODUCTS, CSeqFeatData, eOncaller, "Organelle products on non-organelle sequence: on when neither bacteria nor virus")
 {
     if (obj.GetSubtype() != CSeqFeatData::eSubtype_prot) {
         return;
@@ -5509,16 +5509,16 @@ DISCREPANCY_CASE(TEST_ORGANELLE_PRODUCTS, CSeqFeatData, eOncaller, "Organelle pr
 }
 
 
-DISCREPANCY_SUMMARIZE(TEST_ORGANELLE_PRODUCTS)
+DISCREPANCY_SUMMARIZE(ORGANELLE_PRODUCTS)
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
-DISCREPANCY_AUTOFIX(TEST_ORGANELLE_PRODUCTS)
+DISCREPANCY_AUTOFIX(ORGANELLE_PRODUCTS)
 {
     unsigned int n = AutofixProductNames(item, scope);
-    return CRef<CAutofixReport>(n ? new CAutofixReport("TEST_ORGANELLE_PRODUCTS: [n] organelle product name[s] fixed", n) : 0);
+    return CRef<CAutofixReport>(n ? new CAutofixReport("ORGANELLE_PRODUCTS: [n] organelle product name[s] fixed", n) : 0);
 }
 
 
