@@ -1080,6 +1080,9 @@ STypeLink::STypeLink(CSeqFeatData::ESubtype subtype,
         m_ByProduct = true;
         m_ParentType = CSeqFeatData::eSubtype_cdregion;
         break;
+    case CSeqFeatData::eSubtype_ncRNA:
+        m_ParentType = CSeqFeatData::eSubtype_preRNA;
+        break;
     default:
         m_ParentType = CSeqFeatData::eSubtype_gene;
         break;
@@ -1490,8 +1493,8 @@ namespace {
 ///   parent-child relationship:
 ///   1.1. operon, gap cannot have a parent,
 ///   1.2. gene can have operon as a parent,
-///   1.3. mRNA can have gene as a parent,
-///   1.4. cdregion can have mRNA as a parent,
+///   1.3. mRNA, VDJ_segment, and C_region can have gene as a parent,
+///   1.4. cdregion can have mRNA, VDJ_segment, or C_region as a parent,
 ///   1.5. prot can have cdregion as a parent (by its product location),
 ///   1.6. mat_peptide, sig_peptide can have prot as a parent,
 ///   1.x. all other feature types can have gene as a parent.
