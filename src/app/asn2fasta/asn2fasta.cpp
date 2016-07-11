@@ -133,7 +133,7 @@ private:
 // constructor
 CAsn2FastaApp::CAsn2FastaApp (void)
 {
-    SetVersion(CVersionInfo(0, 9, 2));
+    SetVersion(CVersionInfo(0, 9, 3));
 }
 
 // destructor
@@ -704,6 +704,7 @@ void CAsn2FastaApp::PrintQualityScores(const CBioseq& bsp, CNcbiOstream* out_str
     int i = 0;
     int j = 0;
     bool first = true;
+    bool needToWrite = true;
     int min = 0;
     int max = 0;
 
@@ -719,7 +720,24 @@ void CAsn2FastaApp::PrintQualityScores(const CBioseq& bsp, CNcbiOstream* out_str
             if (first) {
                 first = false;
                 *out_stream << ">";
-                CSeq_id::WriteAsFasta(*out_stream, bsp);
+                needToWrite = true;
+                FOR_EACH_SEQID_ON_BIOSEQ (id_it, bsp) {
+                     if ((*id_it)->IsGenbank()
+                        || (*id_it)->IsDdbj() 
+                        || (*id_it)->IsEmbl()
+                        || (*id_it)->IsSwissprot()
+                        || (*id_it)->IsOther()
+                        || (*id_it)->IsTpd()
+                        || (*id_it)->IsTpe()
+                        || (*id_it)->IsTpg()) {
+                        (*id_it)->WriteAsFasta(*out_stream);
+                        needToWrite = false;
+                        break;
+                    }
+                }
+                if (needToWrite) {
+                    CSeq_id::WriteAsFasta(*out_stream, bsp);
+                }
                 if (graph.IsSetTitle()) {
                     const string& g_title = graph.GetTitle();
                     *out_stream << " " << g_title;
