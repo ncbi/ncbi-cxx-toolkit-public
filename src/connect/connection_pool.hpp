@@ -62,6 +62,7 @@ public:
 
     bool Add(TConnBase* conn, EServerConnType type);
     void Remove(TConnBase* conn);
+    bool RemoveListener(unsigned short  port);
     void PingControlConnection(void);
 
     /// Guard connection from out-of-order packet processing by
@@ -87,6 +88,11 @@ public:
     void StartListening(void);
     void StopListening(void);
 
+    /// Provides a list of ports on which the server is listening
+    /// @return
+    ///  currently listened ports
+    vector<unsigned short>  GetListenerPorts(void);
+
 private:
     void x_UpdateExpiration(TConnBase* conn);
 
@@ -97,6 +103,15 @@ private:
     mutable CMutex      m_Mutex;
     unsigned int        m_MaxConnections;
     mutable CTrigger    m_ControlTrigger;
+
+private:
+    // A list of ports on which the listeners should be stopped.
+    // A storage for the ports is needed because the listener deletion could
+    // not be done synchronously - the listener needs to be taken out of a poll
+    // vector.
+    // The access to the container is protected with m_Mutex
+    vector<unsigned short>  m_ListenerPortsToStop;
+    bool                    m_ListeningStarted;
 };
 
 

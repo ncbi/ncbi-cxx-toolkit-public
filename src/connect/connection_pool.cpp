@@ -57,7 +57,7 @@ std::string g_ServerConnTypeToString(enum EServerConnType  conn_type)
 
 
 CServer_ConnectionPool::CServer_ConnectionPool(unsigned max_connections) :
-    m_MaxConnections(max_connections)
+    m_MaxConnections(max_connections), m_ListeningStarted(false)
 {}
 
 CServer_ConnectionPool::~CServer_ConnectionPool()
@@ -114,6 +114,13 @@ bool CServer_ConnectionPool::Add(TConnBase* conn, EServerConnType type)
         m_Data.insert(conn);
     }}
 
+    if (type == eListener)
+        if (m_ListeningStarted)
+            // That's a new listener which should be activated right away
+            // because the StartListening() had already been called earlier
+            // (e.g. in CServer::Run())
+            conn->Activate();
+
     PingControlConnection();
     return true;
 }
@@ -122,6 +129,50 @@ void CServer_ConnectionPool::Remove(TConnBase* conn)
 {
     CMutexGuard guard(m_Mutex);
     m_Data.erase(conn);
+}
+
+
+bool CServer_ConnectionPool::RemoveListener(unsigned short  port)
+{
+    bool        found = false;
+
+    {{
+        CMutexGuard     guard(m_Mutex);
+
+        if (std::find(m_ListenerPortsToStop.begin(),
+                      m_ListenerPortsToStop.end(), port) !=
+                                                m_ListenerPortsToStop.end()) {
+            ERR_POST(Warning << "Removing listener on port " << port <<
+                     " which has already been requested for removal");
+            return false;
+        }
+
+        ITERATE (TData, it, m_Data) {
+            TConnBase *         conn_base = *it;
+
+            conn_base->type_lock.Lock();    // To be on the safe side
+            if (conn_base->type == eListener) {
+                CServer_Listener *  listener = dynamic_cast<CServer_Listener *>(
+                                                                    conn_base);
+                if (listener) {
+                    if (listener->GetPort() == port) {
+                        m_ListenerPortsToStop.push_back(port);
+                        conn_base->type_lock.Unlock();
+
+                        found = true;
+                        break;
+                    }
+                }
+            }
+            conn_base->type_lock.Unlock();
+        }
+    }}
+
+    if (found)
+        PingControlConnection();
+    else
+        ERR_POST(Warning << "No listener on port " << port << " found");
+    return found;
 }
 
 
@@ -212,6 +263,28 @@ bool CServer_ConnectionPool::GetPollAndTimerVec(
         TConnBase* conn_base = *it;
         conn_base->type_lock.Lock();
         EServerConnType conn_type = conn_base->type;
+
+        // There might be a request to delete a listener
+        if (conn_type == eListener) {
+            CServer_Listener *  listener = dynamic_cast<CServer_Listener *>(
+                                                                    conn_base);
+            if (listener) {
+                unsigned short  port = listener->GetPort();
+
+                vector<unsigned short>::iterator    port_it = 
+                        std::find(m_ListenerPortsToStop.begin(),
+                                  m_ListenerPortsToStop.end(), port);
+                if (port_it != m_ListenerPortsToStop.end()) {
+                    conn_base->type_lock.Unlock();
+                    m_ListenerPortsToStop.erase(port_it);
+                    delete conn_base;
+                    m_Data.erase(it);
+                    continue;
+                }
+            }
+        }
+
+
         if (conn_type == eClosedSocket
             ||  (conn_type == eInactiveSocket  &&  !conn_base->IsOpen()))
         {
@@ -326,6 +399,7 @@ void CServer_ConnectionPool::StartListening(void)
     ITERATE (TData, it, m_Data) {
         (*it)->Activate();
     }
+    m_ListeningStarted = true;
 }
 
 
@@ -335,6 +409,34 @@ void CServer_ConnectionPool::StopListening(void)
     ITERATE (TData, it, m_Data) {
         (*it)->Passivate();
     }
+}
+
+
+vector<unsigned short>  CServer_ConnectionPool::GetListenerPorts(void)
+{
+    vector<unsigned short>      ports;
+
+    CMutexGuard guard(m_Mutex);
+    ITERATE (TData, it, m_Data) {
+        TConnBase *         conn_base = *it;
+
+        conn_base->type_lock.Lock();    // To be on the safe side
+        if (conn_base->type == eListener) {
+            CServer_Listener *  listener = dynamic_cast<CServer_Listener *>(
+                                                                    conn_base);
+            if (listener) {
+                unsigned short  port = listener->GetPort();
+
+                if (std::find(m_ListenerPortsToStop.begin(),
+                              m_ListenerPortsToStop.end(), port) ==
+                                                m_ListenerPortsToStop.end())
+                    ports.push_back(listener->GetPort());
+            }
+        }
+        conn_base->type_lock.Unlock();
+    }
+
+    return ports;
 }
 
 END_NCBI_SCOPE

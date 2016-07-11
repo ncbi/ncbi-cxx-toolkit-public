@@ -103,6 +103,14 @@ public:
     void AddListener(IServer_ConnectionFactory* factory,
                      unsigned short             port);
 
+    /// Removes a listener
+    /// @param port
+    ///  the listener on the port will be removed
+    /// @return
+    ///  true if the listener has been removed, false if the server does not
+    ///  listen on the port.
+    bool RemoveListener(unsigned short  port);
+
     /// 
     void SetParameters(const SServer_Parameters& new_params);
 
@@ -151,6 +159,11 @@ public:
     /// after call to Run() will be ignored.
     void SetCustomThreadSuffix(const string& suffix)
     { m_ThreadSuffix = suffix; }
+
+    /// Provides a list of ports on which the server is listening
+    /// @return
+    ///  currently listened ports
+    vector<unsigned short>  GetListenerPorts(void);
 
 protected:
     /// Initialize the server

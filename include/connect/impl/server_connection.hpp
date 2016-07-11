@@ -139,6 +139,7 @@ public:
         }
     }
     virtual void Passivate(void) { Close(); }
+    unsigned short GetPort(void) const { return m_Port; }
 private:
     friend class CAcceptRequest;
     auto_ptr<IServer_ConnectionFactory> m_Factory;

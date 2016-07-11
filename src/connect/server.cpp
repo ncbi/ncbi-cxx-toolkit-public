@@ -627,6 +627,12 @@ void CServer::AddListener(IServer_ConnectionFactory* factory,
 }
 
 
+bool CServer::RemoveListener(unsigned short  port)
+{
+    return m_ConnectionPool->RemoveListener(port);
+}
+
+
 void CServer::SetParameters(const SServer_Parameters& new_params)
 {
     if (new_params.init_threads <= 0  ||
@@ -849,6 +855,11 @@ void CServer::RemoveConnectionFromPool(CServer_Connection* conn)
 void CServer::WakeUpPollCycle(void)
 {
     m_ConnectionPool->PingControlConnection();
+}
+
+vector<unsigned short>  CServer::GetListenerPorts(void)
+{
+    return m_ConnectionPool->GetListenerPorts();
 }
 
 /////////////////////////////////////////////////////////////////////////////
