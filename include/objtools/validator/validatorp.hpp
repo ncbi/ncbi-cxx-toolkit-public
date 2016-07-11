@@ -510,7 +510,7 @@ public:
 
     static bool IsSyntheticConstruct (const CBioSource& src);
     bool IsArtificial (const CBioSource& src);
-    bool IsOrganelle (int genome);
+    static bool IsOrganelle (int genome);
     bool IsOrganelle (CBioseq_Handle seq);
     bool IsOtherDNA(const CBioseq_Handle& bsh) const;
     void ValidateSeqLoc(const CSeq_loc& loc, const CBioseq_Handle& seq, bool report_abutting,
@@ -1521,6 +1521,7 @@ private:
     void x_ValidateLocusTagGeneralMatch(const CBioseq_Handle& seq);
 
     void ValidateSeqDescContext(const CBioseq& seq);
+    void CheckForMissingChromosome(CBioseq_Handle bsh);
     void CheckForMultipleStructuredComments(const CBioseq& seq);
     void x_CheckForMultipleComments(CBioseq_Handle bsh);
     void x_ValidateStructuredCommentContext(const CSeqdesc& desc, const CBioseq& seq);

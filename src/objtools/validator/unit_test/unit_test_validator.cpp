@@ -8004,6 +8004,12 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MissingChromosome)
     CheckErrors (*eval, expected_errors);
     unit_test_util::SetDiv(entry, "");
 
+    // error is suppressed if linkage group
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_linkage_group, "x");
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_linkage_group, "");
+
     // error is suppressed if organelle
     unit_test_util::SetGenome (entry, CBioSource::eGenome_chloroplast);
     eval = validator.Validate(seh, options);

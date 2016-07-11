@@ -7954,6 +7954,83 @@ void CValidError_bioseq::x_CheckForMultipleComments(CBioseq_Handle bsh)
 }
 
 
+void CValidError_bioseq::CheckForMissingChromosome(CBioseq_Handle bsh)
+{
+    if (!bsh) {
+        return;
+    }
+    CConstRef<CBioseq> b = bsh.GetCompleteBioseq();
+    if (!b) {
+        return;
+    }
+    if (SeqIsPatent(*b)) {
+        return;
+    }
+    bool is_nc = false;
+    bool is_ac = false;
+    FOR_EACH_SEQID_ON_BIOSEQ(id_it, *b) {
+        if ((*id_it)->IsOther() && (*id_it)->GetOther().IsSetAccession()) {
+            string accession = (*id_it)->GetOther().GetAccession();
+            if (NStr::StartsWith(accession, "NC_")) {
+                is_nc = true;
+                break;
+            } else if (NStr::StartsWith(accession, "AC_")) {
+                is_ac = true;
+                break;
+            }
+        }
+    }
+    if (!is_nc && !is_ac) {
+        return;
+    }
+
+    bool report_missing_chromosome = true;
+
+    CSeqdesc_CI d(bsh, CSeqdesc::e_Source);
+    while (d && report_missing_chromosome)
+    {
+        const CSeqdesc::TSource& source = d->GetSource();
+
+        // look for chromosome, prokaryote, linkage group
+        FOR_EACH_SUBSOURCE_ON_BIOSOURCE(it, source) {
+            if ((*it)->IsSetSubtype() && (*it)->IsSetName() && !NStr::IsBlank((*it)->GetName())) {
+                if ((*it)->GetSubtype() == CSubSource::eSubtype_chromosome) {
+                    report_missing_chromosome = false;
+                } else if ((*it)->GetSubtype() == CSubSource::eSubtype_linkage_group) {
+                    report_missing_chromosome = false;
+                }
+            }
+        }
+        if (source.IsSetLineage()) {
+            string lineage = source.GetLineage();
+            if (NStr::StartsWith(lineage, "Viruses; ")
+                || NStr::StartsWith(lineage, "Bacteria; ")
+                || NStr::StartsWith(lineage, "Archaea; ")) {
+                report_missing_chromosome = false;
+            }
+        }
+        if (source.IsSetDivision()) {
+            string div = source.GetDivision();
+            if (NStr::Equal(div, "BCT") || NStr::Equal(div, "VRL")) {
+                report_missing_chromosome = false;
+            }
+        }
+
+        // check for organelle
+        if (source.IsSetGenome() && CValidError_imp::IsOrganelle(source.GetGenome())) {
+            report_missing_chromosome = false;
+        }
+        ++d;
+    }
+
+    if (report_missing_chromosome) {
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_MissingChromosome, "Missing chromosome qualifier on NC or AC RefSeq record",
+            *b);
+    }
+
+}
+
+
 // Validate CSeqdesc within the context of a bioseq. 
 // See: CValidError_desc for validation of standalone CSeqdesc,
 // and CValidError_descr for validation of descriptors in the context
@@ -7982,10 +8059,6 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
 
       string name_str = "";
       string comment_str = "";
-
-    bool has_chromosome = false;
-    bool is_prokaryote = false;
-    bool is_organelle = false;
 
     bool is_genome_assembly = false;
     bool is_assembly = false;
@@ -8157,35 +8230,7 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
                             ValidateOrgContext(di, orgref, 
                                                 *org, seq, desc);
                         }
-
-                // look for chromosome, prokaryote
-                  FOR_EACH_SUBSOURCE_ON_BIOSOURCE (it, source) {
-                    if ((*it)->IsSetSubtype()
-                        && (*it)->GetSubtype() == CSubSource::eSubtype_chromosome) {
-                        has_chromosome = true;
-                        break;
-                    }
-                }
-                if (source.IsSetLineage()) {
-                    string lineage = source.GetLineage();
-                    if (NStr::StartsWith(lineage, "Viruses; ")
-                        || NStr::StartsWith(lineage, "Bacteria; ")
-                        || NStr::StartsWith(lineage, "Archaea; ")) {
-                        is_prokaryote = true;
-                    }
-                }
-                if (source.IsSetDivision()) {
-                    string div = source.GetDivision();
-                    if (NStr::Equal(div, "BCT") || NStr::Equal(div, "VRL")) {
-                        is_prokaryote = true;
-                    }
-                }
                 
-                // check for organelle
-                if (source.IsSetGenome()) {
-                    is_organelle = m_Imp.IsOrganelle(source.GetGenome());
-                }
-
             }
             break;
 
@@ -8378,26 +8423,7 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
         }
     }
 
-    if (!has_chromosome && !is_prokaryote && !is_organelle && !SeqIsPatent (seq)) {
-        bool is_nc = false;
-        bool is_ac = false;
-        FOR_EACH_SEQID_ON_BIOSEQ (id_it, seq) {
-            if ((*id_it)->IsOther() && (*id_it)->GetOther().IsSetAccession()) {
-                string accession = (*id_it)->GetOther().GetAccession();
-                if (NStr::StartsWith(accession, "NC_")) {
-                    is_nc = true;
-                    break;
-                } else if (NStr::StartsWith(accession, "AC_")) {
-                    is_ac = true;
-                    break;
-                }
-            }
-        }
-        if ((is_nc || is_ac) && ! is_prokaryote && ! is_organelle && ! has_chromosome) {
-            PostErr (eDiag_Error, eErr_SEQ_DESCR_MissingChromosome, "Missing chromosome qualifier on NC or AC RefSeq record",
-                     seq);
-        }
-    }
+    CheckForMissingChromosome(m_CurrentHandle);
 
     if (is_genome_assembly && is_finished_status && tech == CMolInfo::eTech_wgs) {
         const string& buf = seq.GetId().front()->AsFastaString();
