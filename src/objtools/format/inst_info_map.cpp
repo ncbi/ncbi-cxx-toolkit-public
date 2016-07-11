@@ -87,8 +87,8 @@ CInstInfoMap::GetInstitutionVoucherInfo(
     static const string s_colon_pfx(":");
     static const string s_uscr_pfx("_");
     
-    static const string s_kui_pfx("KU_Fish/detail.jsp?record=");
-    static const string s_kuit_pfx("KU_Tissue/detail.jsp?record=");
+    static const string s_kui_pfx("KUI/");
+    static const string s_kuit_pfx("KUIT/");
     static const string s_psu_pfx("PSU:Mamm:");
     static const string s_usnm_pfx("voucher=Birds:");
 
@@ -134,8 +134,8 @@ CInstInfoMap::GetInstitutionVoucherInfo(
         { "JCM",              TVoucherInfoRef(new SVoucherInfo(&s_jcm_base,   false, 0, NULL,   NULL,          NULL,        "Japan Collection of Microorganisms") ) },
         { "KCTC",             TVoucherInfoRef(new SVoucherInfo(&s_kctc_base,  false, 0, NULL,   NULL,          NULL,        "Korean Collection for Type Cultures") ) },
         { "KNWR:Ento",        TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  0, NULL,   &s_colon_pfx,  NULL,        "Kenai National Wildlife Refuge, Entomology Collection") ) },
-        { "KU:I",             TVoucherInfoRef(new SVoucherInfo(&s_ku_base,    false, 0, NULL,   &s_kui_pfx,    NULL,        "University of Kansas, Museum of Natural History, Ichthyology collection") ) },
-        { "KU:IT",            TVoucherInfoRef(new SVoucherInfo(&s_ku_base,    false, 0, NULL,   &s_kuit_pfx,   NULL,        "University of Kansas, Museum of Natural History, Ichthyology tissue collection") ) },
+        { "KU:I",             TVoucherInfoRef(new SVoucherInfo(&s_ku_base,    false, 0, NULL,   &s_kui_pfx,    &s_ku_sfx,   "University of Kansas, Museum of Natural History, Ichthyology collection") ) },
+        { "KU:IT",            TVoucherInfoRef(new SVoucherInfo(&s_ku_base,    false, 0, NULL,   &s_kuit_pfx,   &s_ku_sfx,   "University of Kansas, Museum of Natural History, Ichthyology tissue collection") ) },
         { "KWP:Ento",         TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  0, NULL,   &s_colon_pfx,  NULL,        "Kenelm W. Philip Collection, University of Alaska Museum of the North, Lepidoptera collection") ) },
         { "MAFF",             TVoucherInfoRef(new SVoucherInfo(&s_maff_base,  false, 0, NULL,   NULL,          NULL,        "Genebank, Ministry of Agriculture Forestry and Fisheries") ) },
         { "MCZ:Bird",         TVoucherInfoRef(new SVoucherInfo(&s_mcz_base,   true,  0, NULL,   &s_colon_pfx,  NULL,        "Harvard Museum of Comparative Zoology, Ornithology Collection") ) },
