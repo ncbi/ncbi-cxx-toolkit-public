@@ -44,6 +44,8 @@
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/tse_handle.hpp>
+#include <objtools/edit/cds_fix.hpp>
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
@@ -2052,7 +2054,7 @@ DISCREPANCY_SUMMARIZE(UNUSUAL_MISC_RNA)
 
 // CDS_WITHOUT_MRNA
 
-/*const string kCDSWithoutMRNA = "[n] coding region[s] [does] not have an mRNA";
+const string kCDSWithoutMRNA = "[n] coding region[s] [does] not have an mRNA";
 
 static bool IsOrganelle(CBioSource::TGenome genome)
 {
@@ -2143,6 +2145,7 @@ DISCREPANCY_SUMMARIZE(CDS_WITHOUT_MRNA)
 
 static bool AddmRNAForCDS(const CSeq_feat& cds, CScope& scope)
 {
+#if 0
     CConstRef<CSeq_feat> mRNA = sequence::GetOverlappingmRNA(cds.GetLocation(), scope);
     CRef<CSeq_feat> new_mRNA(new CSeq_feat);
 
@@ -2166,6 +2169,15 @@ static bool AddmRNAForCDS(const CSeq_feat& cds, CScope& scope)
     }
 
     return true;
+#else
+    CConstRef<CSeq_feat> old_mRNA = sequence::GetmRNAforCDS(cds, scope);
+    CRef<CSeq_feat> new_mRNA = edit::MakemRNAforCDS(cds, scope);
+    CSeq_feat_EditHandle cds_edit_handle(scope.GetSeq_featHandle(cds));
+    CSeq_annot_EditHandle annot_handle = cds_edit_handle.GetAnnot();
+    annot_handle.AddFeat(*new_mRNA);
+    return true;
+
+#endif
 }
 
 DISCREPANCY_AUTOFIX(CDS_WITHOUT_MRNA)
@@ -2179,7 +2191,7 @@ DISCREPANCY_AUTOFIX(CDS_WITHOUT_MRNA)
         }
     }
     return CRef<CAutofixReport>(n ? new CAutofixReport("CDS_WITHOUT_MRNA: Add mRNA for [n] CDS feature[s]", n) : 0);
-}*/
+}
 
 
 END_SCOPE(NDiscrepancy)
