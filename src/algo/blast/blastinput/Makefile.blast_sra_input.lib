@@ -10,7 +10,7 @@ DLL_LIB = xblast align_format ncbi_xloader_blastdb_rmt ncbi_xloader_blastdb seqd
 ASN_DEP = seqset xnetblast
 
 CFLAGS   = $(FAST_CFLAGS)
-CPPFLAGS = -DNCBI_MODULE=BLAST $(SRA_INCLUDE) $(ORIG_CPPFLAGS)
+CPPFLAGS = -DNCBI_MODULE=BLAST $(VDB_INCLUDE) $(ORIG_CPPFLAGS)
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
 
