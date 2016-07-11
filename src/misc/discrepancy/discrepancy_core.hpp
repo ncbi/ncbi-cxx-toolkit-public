@@ -71,7 +71,7 @@ private:
 friend string GetDiscrepancyCaseName(const string& s);
 friend string GetDiscrepancyDescr(const string& s);
 friend TGroup GetDiscrepancyGroup(const string& s);
-friend vector<string> GetDiscrepancyNames(void);
+friend vector<string> GetDiscrepancyNames(TGroup group);
 friend vector<string> GetDiscrepancyAliases(const string& name);
 friend class CDiscrepancyAlias;
 friend class CDiscrepancyContext;

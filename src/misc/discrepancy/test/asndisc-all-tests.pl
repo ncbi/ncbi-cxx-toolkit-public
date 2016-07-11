@@ -10,11 +10,12 @@ my $exe_cpp;
 my %tests;
 my $keep_output;
 my $quiet;
+my $nogold;
 my $dev_tests;
 
 my $usage = <<"<<END>>";
 USAGE:
-      $exe [-c <c-version-exe>] [-cpp <cpp-version-exe>] [-keep] [-quiet] [-dev]
+      $exe [-c <c-version-exe>] [-cpp <cpp-version-exe>] [-keep] [-quiet] [-dev] [-nogold]
 <<END>>
 
 for (my $n = 0; $n < scalar @ARGV; $n++)
@@ -30,6 +31,10 @@ for (my $n = 0; $n < scalar @ARGV; $n++)
   }
   if ($ARGV[$n] eq '-quiet')
   { $quiet = 1;
+    next;
+  }
+  if ($ARGV[$n] eq '-nogold')
+  { $nogold = 1;
     next;
   }
   if ($ARGV[$n] eq '-keep')
@@ -92,6 +97,7 @@ foreach my $test (sort keys %tests)
   my $cmd = "perl $script $test -c $exe_c -cpp $exe_cpp";
   $cmd = "$cmd -keep" if $keep_output;
   $cmd = "$cmd -quiet" if $quiet;
+  $cmd = "$cmd -nogold" if $nogold;
   print "##teamcity[testStarted name='$test' captureStandardOutput='true']\n";
   open(OLD_STDOUT, '>&STDOUT') if $quiet;
   open(STDOUT, '>/dev/null') if $quiet;

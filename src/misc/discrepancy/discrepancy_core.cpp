@@ -89,13 +89,16 @@ TGroup GetDiscrepancyGroup(const string& name)
 }
 
 
-vector<string> GetDiscrepancyNames()
+vector<string> GetDiscrepancyNames(TGroup group)
 {
     typedef map<string, CDiscrepancyConstructor*> MyMap;
     map<string, CDiscrepancyConstructor*>& Table = CDiscrepancyConstructor::GetTable();
+    map<string, TGroup>& Group = CDiscrepancyConstructor::GetGroupTable();
     vector<string> V;
     ITERATE (MyMap, J, Table) {
-        V.push_back(J->first);
+        if ((Group[J->first] & group) == group) {
+            V.push_back(J->first);
+        }
     }
     return V;
 }

@@ -175,7 +175,7 @@ struct CAutofixHookRegularArguments // (*TAutofixHook)(void*) can accept any oth
 NCBI_DISCREPANCY_EXPORT string GetDiscrepancyCaseName(const string&);
 NCBI_DISCREPANCY_EXPORT string GetDiscrepancyDescr(const string&);
 NCBI_DISCREPANCY_EXPORT TGroup GetDiscrepancyGroup(const string&);
-NCBI_DISCREPANCY_EXPORT vector<string> GetDiscrepancyNames(void);
+NCBI_DISCREPANCY_EXPORT vector<string> GetDiscrepancyNames(TGroup group = 0);
 NCBI_DISCREPANCY_EXPORT vector<string> GetDiscrepancyAliases(const string&);
 
 END_SCOPE(NDiscrepancy)

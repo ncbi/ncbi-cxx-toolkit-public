@@ -11,10 +11,11 @@ my $exe_cpp;
 my %tests;
 my $keep_output;
 my $quiet;
+my $nogold;
 
 my $usage = <<"<<END>>";
 USAGE:
-      $exe <TEST_NAME> [-c <c-version-exe>] [-cpp <cpp-version-exe>] [-keep] [-quiet]
+      $exe <TEST_NAME> [-c <c-version-exe>] [-cpp <cpp-version-exe>] [-keep] [-quiet] [-nogold]
 <<END>>
 
 for (my $n = 0; $n < scalar @ARGV; $n++)
@@ -34,6 +35,10 @@ for (my $n = 0; $n < scalar @ARGV; $n++)
   }
   if ($ARGV[$n] eq '-quiet')
   { $quiet = 1;
+    next;
+  }
+  if ($ARGV[$n] eq '-nogold')
+  { $nogold = 1;
     next;
   }
   if ($test eq '')
@@ -71,7 +76,7 @@ my $arg0 = $tests{$test}{arg0};
 my $input = File::Spec->catfile($path, 'test-data', $tests{$test}{data});
 my $out_c = "$test.c.txt";
 my $out_cpp = "$test.cpp.txt";
-my $gold = File::Spec->catfile($path, 'test-data', $tests{$test}{gold}) if $tests{$test}{gold} ne '';
+my $gold = File::Spec->catfile($path, 'test-data', $tests{$test}{gold}) if $tests{$test}{gold} ne '' && !$nogold;
 my $data = $tests{$test}{data};
 my $rx = join('|', split(',', $arg.','.$arg0));
 my $ip = -d $input ? 'p' : 'i';
