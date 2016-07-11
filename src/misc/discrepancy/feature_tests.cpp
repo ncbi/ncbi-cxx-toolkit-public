@@ -2145,39 +2145,20 @@ DISCREPANCY_SUMMARIZE(CDS_WITHOUT_MRNA)
 
 static bool AddmRNAForCDS(const CSeq_feat& cds, CScope& scope)
 {
-#if 0
-    CConstRef<CSeq_feat> mRNA = sequence::GetOverlappingmRNA(cds.GetLocation(), scope);
-    CRef<CSeq_feat> new_mRNA(new CSeq_feat);
-
-    if (mRNA) {
-        new_mRNA->Assign(*mRNA);
-    }
-
-    string remainder;
-    new_mRNA->SetData().SetRna().SetRnaProductName(GetProductForCDS(cds, scope), remainder);
-
-    if (!new_mRNA->IsSetLocation()) {
-
-        new_mRNA->SetLocation().Assign(cds.GetLocation());
-        CBioseq_EditHandle bioseq_edit(scope.GetBioseqHandle(new_mRNA->GetLocation()));
-
-        CSeq_annot_EditHandle annot_edit; //+++++ HOW TO GET IT?
-    }
-    else {
-        CSeq_feat_EditHandle new_mRNA_edit(scope.GetSeq_featHandle(*mRNA));
-        new_mRNA_edit.Replace(*new_mRNA);
-    }
-
-    return true;
-#else
     CConstRef<CSeq_feat> old_mRNA = sequence::GetmRNAforCDS(cds, scope);
     CRef<CSeq_feat> new_mRNA = edit::MakemRNAforCDS(cds, scope);
-    CSeq_feat_EditHandle cds_edit_handle(scope.GetSeq_featHandle(cds));
-    CSeq_annot_EditHandle annot_handle = cds_edit_handle.GetAnnot();
-    annot_handle.AddFeat(*new_mRNA);
-    return true;
 
-#endif
+    if (old_mRNA.Empty()) {
+        CSeq_feat_EditHandle cds_edit_handle(scope.GetSeq_featHandle(cds));
+        CSeq_annot_EditHandle annot_handle = cds_edit_handle.GetAnnot();
+        annot_handle.AddFeat(*new_mRNA);
+    }
+    else
+    {
+        CSeq_feat_EditHandle old_mRNA_edit(scope.GetSeq_featHandle(*old_mRNA));
+        old_mRNA_edit.Replace(*new_mRNA);
+    }
+    return true;
 }
 
 DISCREPANCY_AUTOFIX(CDS_WITHOUT_MRNA)

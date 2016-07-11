@@ -1588,13 +1588,13 @@ DISCREPANCY_CASE(TAXNAME_NOT_IN_DEFLINE, CSeq_inst, eDisc | eOncaller, "Complete
         if (title) {
             const string& title_str = title->GetTitle();
 
-            SIZE_TYPE taxname_pos = NStr::FindNoCase(taxname, title_str);
+            SIZE_TYPE taxname_pos = NStr::FindNoCase(title_str, taxname);
             if (taxname_pos == NPOS) {
                 no_taxname_in_defline = true;
             }
             else {
                 //capitalization must match for all but the first letter
-                no_taxname_in_defline = NStr::CompareNocase(taxname.c_str(), 1, taxname.size() - 1, title_str.c_str() + 1) != 0;
+                no_taxname_in_defline = NStr::CompareCase(title_str.c_str() + taxname_pos, 1, taxname.size() - 1, taxname.c_str() + 1) != 0;
 
                 if (taxname_pos > 0 && !isspace(title_str[taxname_pos - 1]) && !ispunct(title_str[taxname_pos - 1])) {
                     no_taxname_in_defline = true;
