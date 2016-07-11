@@ -41,8 +41,9 @@
 #include <stdlib.h>
 
 #define NCBI_USE_ERRCODE_X   Connect_Util
-#define CONN_NET_INFO_MAGIC 0x600D600D
 
+
+#define CONN_NET_INFO_MAGIC  0x600D600D
 
 #define SizeOf(arr)  (sizeof(arr) / sizeof((arr)[0]))
 
@@ -287,7 +288,7 @@ static EFWMode x_ParseFirewall(const char* str, int/*bool*/ generic)
 static int/*bool*/ s_InfoIsValid(const SConnNetInfo* info)
 {
     assert(info->magic == CONN_NET_INFO_MAGIC);
-    return (info->magic == CONN_NET_INFO_MAGIC) ? 1/*true*/ : 0/*false*/;
+    return info->magic == CONN_NET_INFO_MAGIC ? 1/*true*/ : 0/*false*/;
 }
 
 
@@ -468,10 +469,11 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
     size_t len;
     char* p;
 
-    if (url && !*url)
-        return 1/*success*/;
-    if (!url  ||  !s_InfoIsValid(info))
+    if (!s_InfoIsValid(info)  ||  !url)
         return 0/*failure*/;
+
+    if (!*url)
+        return 1/*success*/;
 
     if ((info->req_method & ~eReqMethod_v1) == eReqMethod_Connect) {
         len = strlen(url);
@@ -649,7 +651,7 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
 extern int/*bool*/ ConnNetInfo_SetUserHeader(SConnNetInfo* info,
                                              const char*   user_header)
 {
-    if (!info  ||  !s_InfoIsValid(info))
+    if (!s_InfoIsValid(info))
         return 0/*failure*/;
 
     if (info->http_user_header)
@@ -667,7 +669,7 @@ extern int/*bool*/ ConnNetInfo_AppendUserHeader(SConnNetInfo* info,
 {
     char* new_header;
 
-    if (!info  ||  !s_InfoIsValid(info))
+    if (!s_InfoIsValid(info))
         return 0/*failure*/;
 
     if (!info->http_user_header  ||  !*info->http_user_header)
@@ -729,11 +731,11 @@ static int/*bool*/ s_ModifyUserHeader(SConnNetInfo*      info,
     size_t hdrlen;
     char*  hdr;
 
+    if (!s_InfoIsValid(info))
+        return 0/*failure*/;
+
     if (!user_header || !(newhdrlen = strlen(user_header)))
         return 1/*success*/;
-
-    if (!info  ||  !s_InfoIsValid(info))
-        return 0/*failure*/;
 
     if (!(hdr = (char*) info->http_user_header) || !(hdrlen = strlen(hdr))) {
         if (op == eUserHeaderOp_Delete)
@@ -919,11 +921,11 @@ extern int/*bool*/ ConnNetInfo_AppendArg(SConnNetInfo* info,
 {
     size_t len, used;
 
+    if (!s_InfoIsValid(info))
+        return 0/*failure*/;
+
     if (!arg  ||  !*arg)
         return 1/*success*/;
-
-    if (!info  ||  !s_InfoIsValid(info))
-        return 0/*failure*/;
 
     used = strlen(info->args);
     len  = strlen(arg);
@@ -951,11 +953,11 @@ extern int/*bool*/ ConnNetInfo_PrependArg(SConnNetInfo* info,
 {
     size_t len, off, used;
 
-    if (!arg || !*arg)
-        return 1/*success*/;
-
-    if (!info  ||  !s_InfoIsValid(info))
+    if (!s_InfoIsValid(info))
         return 0/*failure*/;
+
+    if (!arg  ||  !*arg)
+        return 1/*success*/;
 
     used = strlen(info->args);
     len  = strlen(arg);
@@ -985,8 +987,7 @@ extern int/*bool*/ ConnNetInfo_DeleteArg(SConnNetInfo* info,
     size_t arglen;
     char*  a;
 
-    if (!arg  ||  !(argnamelen = strcspn(arg, "=&"))  ||
-        !info  ||  !s_InfoIsValid(info))
+    if (!s_InfoIsValid(info)  ||  !arg  ||  !(argnamelen = strcspn(arg, "=&")))
         return 0/*false*/;
     
     deleted = 0/*false*/;
@@ -1017,7 +1018,7 @@ extern int/*bool*/ ConnNetInfo_DeleteArg(SConnNetInfo* info,
 extern void ConnNetInfo_DeleteAllArgs(SConnNetInfo* info,
                                       const char*   args)
 {
-    if (!args  ||  !info  ||  !s_InfoIsValid(info))
+    if (!s_InfoIsValid(info)  ||  !args)
         return;
 
     while (*args) {
@@ -1036,11 +1037,11 @@ extern int/*bool*/ ConnNetInfo_PreOverrideArg(SConnNetInfo* info,
                                               const char*   arg,
                                               const char*   val)
 {
-    if (!arg || !*arg)
-        return 1/*success*/;
-
-    if (!info  ||  !s_InfoIsValid(info))
+    if (!s_InfoIsValid(info))
         return 0/*failure*/;
+
+    if (!arg  ||  !*arg)
+        return 1/*success*/;
 
     ConnNetInfo_DeleteAllArgs(info, arg);
     return ConnNetInfo_PrependArg(info, arg, val);
@@ -1051,11 +1052,11 @@ extern int/*bool*/ ConnNetInfo_PostOverrideArg(SConnNetInfo* info,
                                                const char*   arg,
                                                const char*   val)
 {
-    if (!arg || !*arg)
-        return 1/*success*/;
-
-    if (!info  ||  !s_InfoIsValid(info))
+    if (!s_InfoIsValid(info))
         return 0/*failure*/;
+
+    if (!arg  ||  !*arg)
+        return 1/*success*/;
 
     ConnNetInfo_DeleteAllArgs(info, arg);
     return ConnNetInfo_AppendArg(info, arg, val);
@@ -1162,56 +1163,59 @@ extern SConnNetInfo* ConnNetInfo_Clone(const SConnNetInfo* info)
     if (!info  ||  !s_InfoIsValid(info))
         return 0;
 
-    /* Allocate space */
     if (!(x_info = (SConnNetInfo*) malloc(sizeof(*info) + strlen(info->svc))))
         return 0;
 
-    strcpy(x_info->client_host,       info->client_host);
-    x_info->scheme                  = info->scheme;
-    x_info->req_method              = info->req_method;
-    x_info->version                 = info->version;
-    x_info->firewall                = info->firewall;
-    x_info->stateless               = info->stateless;
-    x_info->lb_disable              = info->lb_disable;
-    x_info->debug_printout          = info->debug_printout;
-    x_info->http_push_auth          = info->http_push_auth;
-    x_info->http_proxy_leak         = info->http_proxy_leak;
-    x_info->reserved                = info->reserved;
-    strcpy(x_info->user,              info->user);
-    strcpy(x_info->pass,              info->pass);
-    strcpy(x_info->host,              info->host);
-    x_info->port                    = info->port;
-    strcpy(x_info->path,              info->path);
-    strcpy(x_info->args,              info->args);
-    strcpy(x_info->http_proxy_host,   info->http_proxy_host);
-    x_info->http_proxy_port         = info->http_proxy_port;
-    strcpy(x_info->http_proxy_user,   info->http_proxy_user);
-    strcpy(x_info->http_proxy_pass,   info->http_proxy_pass);
-    x_info->max_try                 = info->max_try;
-    x_info->timeout              = info->timeout ? &x_info->tmo : info->timeout;
-    x_info->http_user_header        = 0;
-    x_info->http_referer            = 0;
-    x_info->credentials             = info->credentials;
-    x_info->magic                   = info->magic;
-    x_info->tmo                    = info->timeout ? *info->timeout : info->tmo;
-    strcpy(x_info->svc, info->svc);
+    strcpy(x_info->client_host,     info->client_host);
+    x_info->scheme                = info->scheme;
+    x_info->req_method            = info->req_method;
+    x_info->version               = info->version;
+    x_info->firewall              = info->firewall;
+    x_info->stateless             = info->stateless;
+    x_info->lb_disable            = info->lb_disable;
+    x_info->debug_printout        = info->debug_printout;
+    x_info->http_push_auth        = info->http_push_auth;
+    x_info->http_proxy_leak       = info->http_proxy_leak;
+    x_info->reserved              = info->reserved;
+    strcpy(x_info->user,            info->user);
+    strcpy(x_info->pass,            info->pass);
+    strcpy(x_info->host,            info->host);
+    x_info->port                  = info->port;
+    strcpy(x_info->path,            info->path);
+    strcpy(x_info->args,            info->args);
+    strcpy(x_info->http_proxy_host, info->http_proxy_host);
+    x_info->http_proxy_port       = info->http_proxy_port;
+    strcpy(x_info->http_proxy_user, info->http_proxy_user);
+    strcpy(x_info->http_proxy_pass, info->http_proxy_pass);
+    x_info->max_try               = info->max_try;
+    x_info->http_user_header      = 0;
+    x_info->http_referer          = 0;
+    x_info->credentials           = info->credentials;
 
-    /* If original info has http_user_header that is not empty, copy
-     * it to the new info */
     if (info->http_user_header  &&  *info->http_user_header
         &&  !(x_info->http_user_header = strdup(info->http_user_header))) {
         ConnNetInfo_Destroy(x_info);
         return 0;
     }
-    /* If original info has http_referer that is not empty, copy
-     * it to the new info */
     if (info->http_referer  &&  *info->http_referer
         &&  !(x_info->http_referer = strdup(info->http_referer))) {
         ConnNetInfo_Destroy(x_info);
         return 0;
     }
+
+    x_info->tmo                   = info->timeout ? *info->timeout : info->tmo;
+    x_info->timeout               = info->timeout ? &x_info->tmo   : 0;
     strcpy((char*) x_info->svc, info->svc);
+
+    x_info->magic                 = CONN_NET_INFO_MAGIC;
     return x_info;
+}
+
+
+static const char* x_BadMagic(unsigned int magic, char buf[])
+{
+    sprintf(buf, "0x%08lX (INVALID)", (unsigned long) magic);
+    return buf;
 }
 
 
@@ -1337,6 +1341,7 @@ static void s_SaveUserHeader(char* s, const char* name,
         memcpy(s, "NULL\n", 6);
 }
 
+
 extern void ConnNetInfo_Log(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
 {
     char   buf[80];
@@ -1346,13 +1351,7 @@ extern void ConnNetInfo_Log(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
 
     if (!info) {
         LOG_Write(lg, NCBI_C_ERRCODE_X, 10, sev, 0, 0, 0, 0,
-                  "ConnNetInfo_Log: NULL info", 0, 0);
-        return;
-    }
-
-    if (!info  ||  !s_InfoIsValid(info)) {
-        LOG_Write(lg, NCBI_C_ERRCODE_X, 10, sev, 0, 0, 0, 0,
-                  "ConnNetInfo_Log: info has an invalid magic number", 0, 0);
+                  "ConnNetInfo_Log: NULL", 0, 0);
         return;
     }
 
@@ -1372,6 +1371,8 @@ extern void ConnNetInfo_Log(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
 
     strcpy(s, "ConnNetInfo_Log\n"
            "#################### [BEGIN] SConnNetInfo:\n");
+    if (!s_InfoIsValid(info))
+        s_SaveKeyval(s, "magic",           x_BadMagic(info->magic, buf));
     if (*info->svc)
         s_SaveString(s, "service",         info->svc);
     else
@@ -1510,7 +1511,7 @@ extern char* ConnNetInfo_URL(const SConnNetInfo* info)
 extern int/*bool*/ ConnNetInfo_SetTimeout(SConnNetInfo*   info,
                                           const STimeout* timeout)
 {
-    if (!info  ||  !s_InfoIsValid(info)  ||  timeout == kDefaultTimeout)
+    if (!s_InfoIsValid(info)  ||  timeout == kDefaultTimeout)
         return 0/*failed*/;
     if (timeout) {
         info->tmo     = *timeout;
@@ -1520,13 +1521,9 @@ extern int/*bool*/ ConnNetInfo_SetTimeout(SConnNetInfo*   info,
     return 1/*succeeded*/;
 }
 
-/* NOT SURE WHAT TO DO */
 extern void ConnNetInfo_Destroy(SConnNetInfo* info)
 {
     if (info) {
-        if (!s_InfoIsValid(info))
-            return;
-
         ConnNetInfo_SetUserHeader(info, 0);
         if (info->http_referer) {
             free((void*) info->http_referer);
