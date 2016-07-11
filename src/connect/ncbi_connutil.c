@@ -1214,7 +1214,8 @@ extern SConnNetInfo* ConnNetInfo_Clone(const SConnNetInfo* info)
 
 static const char* x_BadMagic(unsigned int magic, char buf[])
 {
-    sprintf(buf, "0x%08lX (INVALID)", (unsigned long) magic);
+    sprintf(buf, "0x%08lX (INVALID != 0x%08lX)",
+            (unsigned long) magic, (unsigned long) CONN_NET_INFO_MAGIC);
     return buf;
 }
 
