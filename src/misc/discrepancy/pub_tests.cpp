@@ -200,7 +200,7 @@ void GetPubTitleAndAuthors(const CPubdesc& pubdesc, string& title, string& autho
 
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(TITLE_AUTHOR_CONFLICT, CSeqdesc, eDisc | eOncaller, "Publications with the same titles should have the same authors")
+DISCREPANCY_CASE(TITLE_AUTHOR_CONFLICT, CSeqdesc, eDisc | eOncaller | eSmart, "Publications with the same titles should have the same authors")
 //  ----------------------------------------------------------------------------
 {
     if (!obj.IsPub()) {
@@ -368,7 +368,7 @@ bool HasUnpubWithoutTitle(const CPubdesc& pubdesc)
 
 const string kUnpubPubWithoutTitle = "[n] unpublished pub[s] [has] no title";
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(UNPUB_PUB_WITHOUT_TITLE, CPubdesc, eDisc | eOncaller, "Unpublished pubs should have titles")
+DISCREPANCY_CASE(UNPUB_PUB_WITHOUT_TITLE, CPubdesc, eDisc | eOncaller | eSubmitter | eSmart, "Unpublished pubs should have titles")
 //  ----------------------------------------------------------------------------
 {
     if (HasUnpubWithoutTitle(obj)) {
@@ -552,7 +552,7 @@ const string kCitSubSummary = "Citsub affiliation conflicts found";
 const string kSummaries = "summaries";
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(CITSUBAFFIL_CONFLICT, CPubdesc, eDisc | eOncaller, "All Cit-subs should have identical affiliations")
+DISCREPANCY_CASE(CITSUBAFFIL_CONFLICT, CPubdesc, eDisc | eOncaller | eSmart, "All Cit-subs should have identical affiliations")
 //  ----------------------------------------------------------------------------
 {
     if (!obj.IsSetPub()) {
@@ -747,7 +747,7 @@ static bool s_SortSubmitBlock(CRef<CSubmit_block> sb1, CRef<CSubmit_block> sb2)
 
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(SUBMITBLOCK_CONFLICT, CSubmit_block, eDisc | eOncaller, "Records should have identical submit-blocks")
+DISCREPANCY_CASE(SUBMITBLOCK_CONFLICT, CSubmit_block, eDisc | eOncaller | eSmart, "Records should have identical submit-blocks")
 //  ----------------------------------------------------------------------------
 {
     // We ask to keep the reference because we do need the actual object to stick around so we can deal with them later.
@@ -839,7 +839,7 @@ DISCREPANCY_SUMMARIZE(CONSORTIUM)
 
 const string kMissingAuthorsName = "[n] pub[s] missing author\'s first or last name";
 
-DISCREPANCY_CASE(CHECK_AUTH_NAME, CAuth_list, eOncaller, "Missing authors or first/last author's names")
+DISCREPANCY_CASE(CHECK_AUTH_NAME, CAuth_list, eDisc | eOncaller | eSubmitter | eSmart, "Missing authors or first/last author's names")
 {
     bool report = false;
     if (context.IsPubMed()) {

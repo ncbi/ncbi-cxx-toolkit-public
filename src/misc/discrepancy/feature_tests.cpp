@@ -59,7 +59,7 @@ DISCREPANCY_MODULE(feature_tests);
 const string kPseudoMismatch = "[n] CDSs, RNAs, and genes have mismatching pseudos.";
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(PSEUDO_MISMATCH, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller, "Pseudo Mismatch")
+DISCREPANCY_CASE(PSEUDO_MISMATCH, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller | eSubmitter | eSmart, "Pseudo Mismatch")
 //  ----------------------------------------------------------------------------
 {
     if (obj.IsSetPseudo() && obj.GetPseudo() && 
@@ -118,7 +118,7 @@ bool IsShortrRNA(const CSeq_feat& f, CScope* scope);
 const string kShortRRNA = "[n] rRNA feature[s] [is] too short";
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(SHORT_RRNA, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller, "Short rRNA Features")
+DISCREPANCY_CASE(SHORT_RRNA, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller | eSubmitter | eSmart, "Short rRNA Features")
 //  ----------------------------------------------------------------------------
 {
     if (!obj.IsSetPartial() && IsShortrRNA(obj, &(context.GetScope()))) {
@@ -172,7 +172,7 @@ void AddRBS(CReportNode& objs, CDiscrepancyContext& context)
     }
 }
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(RBS_WITHOUT_GENE, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller, "RBS features should have an overlapping gene")
+DISCREPANCY_CASE(RBS_WITHOUT_GENE, CSeq_feat_BY_BIOSEQ, eOncaller, "RBS features should have an overlapping gene")
 //  ----------------------------------------------------------------------------
 {
     // See if we have moved to the "next" Bioseq
@@ -228,7 +228,7 @@ bool ReportGeneMissing(const CSeq_feat& f)
 
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(MISSING_GENES, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller, "Missing Genes")
+DISCREPANCY_CASE(MISSING_GENES, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller | eSubmitter | eSmart, "Missing Genes")
 //  ----------------------------------------------------------------------------
 {
     if (!ReportGeneMissing(obj)) {
@@ -260,7 +260,7 @@ const string kExtraPseudo = "[n] pseudo gene feature[s] [is] not associated with
 const string kExtraGeneNonPseudoNonFrameshift = "[n] non-pseudo gene feature[s] are not associated with a CDS or RNA feature and [does] not have frameshift in the comment.";
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(EXTRA_GENES, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller, "Extra Genes")
+DISCREPANCY_CASE(EXTRA_GENES, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller | eSubmitter | eSmart, "Extra Genes")
 //  ----------------------------------------------------------------------------
 {
     // TODO: Do not collect if mRNA sequence in Gen-prod set
@@ -427,7 +427,7 @@ bool IsNonExtendable(const CSeq_loc& loc, const CBioseq& seq, CScope* scope)
 
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS, CSeq_feat_BY_BIOSEQ, eDisc, "Find partial feature ends on bacterial sequences that cannot be extended: on when non-eukaryote")
+DISCREPANCY_CASE(BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS, CSeq_feat_BY_BIOSEQ, eDisc | eSubmitter | eSmart, "Find partial feature ends on bacterial sequences that cannot be extended: on when non-eukaryote")
 //  ----------------------------------------------------------------------------
 {
     if (context.HasLineage("Eukaryota") || context.GetCurrentBioseq()->IsAa()) {
@@ -497,7 +497,7 @@ DISCREPANCY_SUMMARIZE(BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS)
 
 const string kBacterialPartialNonextendableException = "[n] feature[s] [has] partial ends that do not abut the end of the sequence or a gap, and cannot be extended by 3 or fewer nucleotides to do so, but [has] the correct exception";
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(BACTERIAL_PARTIAL_NONEXTENDABLE_EXCEPTION, CSeq_feat_BY_BIOSEQ, eDisc, "Find partial feature ends on bacterial sequences that cannot be extended but have exceptions: on when non-eukaryote")
+DISCREPANCY_CASE(BACTERIAL_PARTIAL_NONEXTENDABLE_EXCEPTION, CSeq_feat_BY_BIOSEQ, eDisc | eSubmitter | eSmart, "Find partial feature ends on bacterial sequences that cannot be extended but have exceptions: on when non-eukaryote")
 //  ----------------------------------------------------------------------------
 {
     if (context.HasLineage("Eukaryota") || context.GetCurrentBioseq()->IsAa()) {
@@ -532,7 +532,7 @@ DISCREPANCY_SUMMARIZE(BACTERIAL_PARTIAL_NONEXTENDABLE_EXCEPTION)
 
 const string kPartialProblems = "[n] feature[s] [has] partial ends that do not abut the end of the sequence or a gap, but could be extended by 3 or fewer nucleotides to do so";
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(PARTIAL_PROBLEMS, CSeq_feat_BY_BIOSEQ, eDisc, "Find partial feature ends on bacterial sequences that cannot be extended but have exceptions: on when non-eukaryote")
+DISCREPANCY_CASE(PARTIAL_PROBLEMS, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller | eSubmitter | eSmart, "Find partial feature ends on bacterial sequences that cannot be extended but have exceptions: on when non-eukaryote")
 //  ----------------------------------------------------------------------------
 {
     if (context.HasLineage("Eukaryota") || context.GetCurrentBioseq()->IsAa()) {
@@ -643,7 +643,7 @@ const string kEukaryoteShouldHavemRNA = "no mRNA present";
 const string kEukaryoticCDSHasMrna = "Eukaryotic CDS has mRNA";
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(EUKARYOTE_SHOULD_HAVE_MRNA, CSeq_feat_BY_BIOSEQ, eDisc, "Eukaryote should have mRNA")
+DISCREPANCY_CASE(EUKARYOTE_SHOULD_HAVE_MRNA, CSeq_feat_BY_BIOSEQ, eDisc | eSubmitter | eSmart, "Eukaryote should have mRNA")
 //  ----------------------------------------------------------------------------
 {
     if (!obj.IsSetData() || !obj.GetData().IsCdregion() || CCleanup::IsPseudo(obj, context.GetScope())) {
@@ -686,7 +686,7 @@ DISCREPANCY_SUMMARIZE(EUKARYOTE_SHOULD_HAVE_MRNA)
 
 // NON_GENE_LOCUS_TAG
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(NON_GENE_LOCUS_TAG, CSeq_feat, eDisc | eOncaller, "Nongene Locus Tag")
+DISCREPANCY_CASE(NON_GENE_LOCUS_TAG, CSeq_feat, eDisc | eOncaller | eSubmitter | eSmart, "Nongene Locus Tag")
 //  ----------------------------------------------------------------------------
 {
     if (obj.IsSetData() && obj.GetData().IsGene()) {
@@ -720,7 +720,7 @@ DISCREPANCY_SUMMARIZE(NON_GENE_LOCUS_TAG)
 const string ktRNATooShort = "[n] tRNA[s] [is] too short";
 const string ktRNATooLong = "[n] tRNA[s] [is] too long";
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(FIND_BADLEN_TRNAS, CSeq_feat, eDisc | eOncaller, "Find short and long tRNAs")
+DISCREPANCY_CASE(FIND_BADLEN_TRNAS, CSeq_feat, eDisc | eOncaller | eSubmitter | eSmart, "Find short and long tRNAs")
 //  ----------------------------------------------------------------------------
 {
     if (!obj.IsSetData() || obj.GetData().GetSubtype() != CSeqFeatData::eSubtype_tRNA) {
@@ -790,7 +790,7 @@ const string kConflictStop = " feature partialness conflicts with gene on 3' end
 
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(GENE_PARTIAL_CONFLICT, CSeq_feat_BY_BIOSEQ, eOncaller, "Feature partialness should agree with gene partialness if endpoints match")
+DISCREPANCY_CASE(GENE_PARTIAL_CONFLICT, CSeq_feat_BY_BIOSEQ, eOncaller | eSubmitter | eSmart, "Feature partialness should agree with gene partialness if endpoints match")
 //  ----------------------------------------------------------------------------
 {
     if (!obj.IsSetData()) {
@@ -915,7 +915,7 @@ bool HasMixedStrands(const CSeq_loc& loc)
 const string kBadGeneStrand = "[n/2] feature location[s] conflict with gene location strand[s]";
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(BAD_GENE_STRAND, CSeq_feat_BY_BIOSEQ, eOncaller, "Genes and features that share endpoints should be on the same strand")
+DISCREPANCY_CASE(BAD_GENE_STRAND, CSeq_feat_BY_BIOSEQ, eOncaller | eSubmitter | eSmart, "Genes and features that share endpoints should be on the same strand")
 //  ----------------------------------------------------------------------------
 {
     if (!obj.IsSetData() || !obj.GetData().IsGene() || !obj.IsSetLocation()) {
@@ -1129,7 +1129,7 @@ static const string kNewExceptions[] =
 
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(CDS_HAS_NEW_EXCEPTION, CSeq_feat, eOncaller|eDisc, "Coding region has new exception")
+DISCREPANCY_CASE(CDS_HAS_NEW_EXCEPTION, CSeq_feat, eDisc | eOncaller | eSmart, "Coding region has new exception")
 //  ----------------------------------------------------------------------------
 {
     if (!obj.IsSetData() || !obj.GetData().IsCdregion() || !obj.IsSetExcept_text()) {
@@ -1160,7 +1160,7 @@ DISCREPANCY_SUMMARIZE(CDS_HAS_NEW_EXCEPTION)
 // SHORT_LNCRNA
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(SHORT_LNCRNA, CSeq_feat, eOncaller | eDisc, "Short lncRNA sequences")
+DISCREPANCY_CASE(SHORT_LNCRNA, CSeq_feat, eDisc | eOncaller | eSubmitter | eSmart, "Short lncRNA sequences")
 //  ----------------------------------------------------------------------------
 {
     // only looking at lncrna features
@@ -1200,7 +1200,7 @@ const string& kJoinedFeaturesException = "[n] feature[s] [has] joined location b
 const string& kJoinedFeaturesBlankException = "[n] feature[s] [has] joined location but a blank exception";
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(JOINED_FEATURES, CSeq_feat_BY_BIOSEQ, eDisc, "Joined Features: on when non-eukaryote")
+DISCREPANCY_CASE(JOINED_FEATURES, CSeq_feat_BY_BIOSEQ, eDisc | eSubmitter | eSmart, "Joined Features: on when non-eukaryote")
 //  ----------------------------------------------------------------------------
 {
     if (context.IsEukaryotic() || !obj.IsSetLocation()) {
@@ -1237,7 +1237,7 @@ const string kShortIntronExcept = "[n] intron[s] [is] shorter than 11 nt and [ha
 //"Introns shorter than 10 nt", "DISC_SHORT_INTRON", FindShortIntrons, AddExceptionsToShortIntrons},
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(SHORT_INTRON, CSeq_feat, eDisc | eOncaller, "Introns shorter than 10 nt")
+DISCREPANCY_CASE(SHORT_INTRON, CSeq_feat, eDisc | eOncaller | eSubmitter | eSmart, "Introns shorter than 10 nt")
 //  ----------------------------------------------------------------------------
 {
     if (!obj.IsSetData() || !obj.GetData().IsCdregion() || !obj.IsSetLocation()) {
@@ -1516,7 +1516,7 @@ DISCREPANCY_SUMMARIZE(UNNECESSARY_VIRUS_GENE)
 
 // CDS_HAS_CDD_XREF
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(CDS_HAS_CDD_XREF, CSeq_feat, eDisc|eOncaller, "CDS has CDD Xref")
+DISCREPANCY_CASE(CDS_HAS_CDD_XREF, CSeq_feat, eDisc | eOncaller, "CDS has CDD Xref")
 //  ----------------------------------------------------------------------------
 {
     if (!obj.IsSetData() || !obj.GetData().IsCdregion() || !obj.IsSetDbxref()) {
@@ -1550,7 +1550,7 @@ DISCREPANCY_SUMMARIZE(CDS_HAS_CDD_XREF)
 static const string kShowTranslExc = "[n] coding region[s] [has] a translation exception";
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(SHOW_TRANSL_EXCEPT, CSeq_feat, eDisc, "Show translation exception")
+DISCREPANCY_CASE(SHOW_TRANSL_EXCEPT, CSeq_feat, eDisc | eSubmitter | eSmart, "Show translation exception")
 //  ----------------------------------------------------------------------------
 {
     if (!obj.IsSetData() || !obj.GetData().IsCdregion()) {
@@ -1880,7 +1880,7 @@ bool IsGeneLocationOk(const CSeq_loc& feat_loc, const CSeq_loc& gene_loc, bool i
 
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(FEATURE_LOCATION_CONFLICT, CSeq_feat_BY_BIOSEQ, eDisc, "Feature Location Conflict")
+DISCREPANCY_CASE(FEATURE_LOCATION_CONFLICT, CSeq_feat_BY_BIOSEQ, eDisc | eSubmitter | eSmart, "Feature Location Conflict")
 //  ----------------------------------------------------------------------------
 {
     if (!obj.IsSetData() || context.IsCurrentRnaInGenProdSet() || !obj.IsSetLocation()) {
@@ -1985,7 +1985,7 @@ const string suspect_phrases[] =
 
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(SUSPECT_PHRASES, CSeq_feat, eDisc, "Suspect Phrases")
+DISCREPANCY_CASE(SUSPECT_PHRASES, CSeq_feat, eDisc | eSubmitter | eSmart, "Suspect Phrases")
 //  ----------------------------------------------------------------------------
 {
     if (!obj.IsSetData()) {
@@ -2029,7 +2029,7 @@ DISCREPANCY_SUMMARIZE(SUSPECT_PHRASES)
 const string kUnusualMiscRNA = "[n] unexpected misc_RNA feature[s] found.  misc_RNAs are unusual in a genome, consider using ncRNA, misc_binding, or misc_feature as appropriate";
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(UNUSUAL_MISC_RNA, CSeq_feat, eDisc, "Unexpected misc_RNA features")
+DISCREPANCY_CASE(UNUSUAL_MISC_RNA, CSeq_feat, eDisc | eSubmitter | eSmart, "Unexpected misc_RNA features")
 //  ----------------------------------------------------------------------------
 {
     if (obj.IsSetData() && obj.GetData().GetSubtype() == CSeqFeatData::eSubtype_otherRNA) {
@@ -2110,7 +2110,7 @@ static bool IsProductMatch(const string& rna_product, const string& cds_product)
 }
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(CDS_WITHOUT_MRNA, CSeq_feat, eDisc | eOncaller, "Coding regions on eukaryotic genomic DNA should have mRNAs with matching products")
+DISCREPANCY_CASE(CDS_WITHOUT_MRNA, CSeq_feat, eDisc | eOncaller | eSmart, "Coding regions on eukaryotic genomic DNA should have mRNAs with matching products")
 //  ----------------------------------------------------------------------------
 {
     CConstRef<CBioseq> seq = context.GetCurrentBioseq();

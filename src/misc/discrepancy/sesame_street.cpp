@@ -91,7 +91,7 @@ static string OrderQual(const string& s)
 }
 
 
-DISCREPANCY_CASE(SOURCE_QUALS, CBioSource, eDisc | eOncaller, "Some animals are more equal than others...")
+DISCREPANCY_CASE(SOURCE_QUALS, CBioSource, eDisc | eOncaller | eSubmitter | eSmart, "Some animals are more equal than others...")
 {
     CConstRef<CSeqdesc> desc = context.GetCurrentSeqdesc();
     if (desc.IsNull()) {

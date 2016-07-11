@@ -58,7 +58,7 @@ DISCREPANCY_MODULE(discrepancy_case);
 
 // COUNT_NUCLEOTIDES
 
-DISCREPANCY_CASE(COUNT_NUCLEOTIDES, CSeq_inst, eOncaller, "Count nucleotide sequences")
+DISCREPANCY_CASE(COUNT_NUCLEOTIDES, CSeq_inst, eOncaller | eSubmitter | eSmart, "Count nucleotide sequences")
 {
     CSeq_inst::TMol mol = obj.GetMol();
     if (mol != CSeq_inst::eMol_dna && mol != CSeq_inst::eMol_rna && mol != CSeq_inst::eMol_na) {
@@ -94,7 +94,7 @@ DISCREPANCY_SUMMARIZE(COUNT_PROTEINS)
 
 
 // MISSING_PROTEIN_ID
-DISCREPANCY_CASE(MISSING_PROTEIN_ID, CSeq_inst, eDisc, "Missing Protein ID")
+DISCREPANCY_CASE(MISSING_PROTEIN_ID, CSeq_inst, eDisc | eSubmitter | eSmart, "Missing Protein ID")
 {
     CConstRef<CBioseq> bioseq = context.GetCurrentBioseq();
     if( ! bioseq || ! bioseq->IsAa() ) {
@@ -114,8 +114,7 @@ DISCREPANCY_SUMMARIZE(MISSING_PROTEIN_ID)
 
 
 // INCONSISTENT_PROTEIN_ID
-DISCREPANCY_CASE(INCONSISTENT_PROTEIN_ID, CSeq_inst, eDisc,
-                 "Inconsistent Protein ID")
+DISCREPANCY_CASE(INCONSISTENT_PROTEIN_ID, CSeq_inst, eDisc | eSubmitter | eSmart, "Inconsistent Protein ID")
 {
     CConstRef<CBioseq> bioseq = context.GetCurrentBioseq();
     if( ! bioseq || ! bioseq->IsAa() ) {
@@ -170,7 +169,7 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_PROTEIN_ID)
 }
 
 // SHORT_SEQUENCES
-DISCREPANCY_CASE(SHORT_SEQUENCES, CSeq_inst, eDisc, "Find Short Sequences")
+DISCREPANCY_CASE(SHORT_SEQUENCES, CSeq_inst, eDisc | eSubmitter | eSmart, "Find Short Sequences")
 {
     if (obj.IsAa()) {
         return;
@@ -229,7 +228,7 @@ void FindNRuns(vector<CRange<TSeqPos> >& runs, const CSeq_data& seq_data, const 
 }
 
 
-DISCREPANCY_CASE(N_RUNS, CSeq_inst, eDisc, "More than 10 Ns in a row")
+DISCREPANCY_CASE(N_RUNS, CSeq_inst, eDisc | eSubmitter | eSmart, "More than 10 Ns in a row")
 {
     if (obj.IsAa() || context.SequenceHasFarPointers()) {
         return;
@@ -275,7 +274,7 @@ DISCREPANCY_SUMMARIZE(N_RUNS)
 
 // PERCENT_N
 
-DISCREPANCY_CASE(PERCENT_N, CSeq_inst, eDisc, "More than 5 percent Ns")
+DISCREPANCY_CASE(PERCENT_N, CSeq_inst, eDisc | eSubmitter | eSmart, "More than 5 percent Ns")
 {
     if (obj.IsAa() || context.SequenceHasFarPointers()) {
         return;
@@ -517,7 +516,7 @@ DISCREPANCY_AUTOFIX(OVERLAPPING_CDS)
 }
 
 
-DISCREPANCY_CASE(PARTIAL_CDS_COMPLETE_SEQUENCE, CSeq_feat, eDisc, "Partial CDSs in Complete Sequences")
+DISCREPANCY_CASE(PARTIAL_CDS_COMPLETE_SEQUENCE, CSeq_feat, eDisc | eSubmitter | eSmart, "Partial CDSs in Complete Sequences")
 {
     if (obj.GetData().GetSubtype() != CSeqFeatData::eSubtype_cdregion) {
         return;
@@ -551,7 +550,7 @@ DISCREPANCY_SUMMARIZE(PARTIAL_CDS_COMPLETE_SEQUENCE)
 }
 
 
-DISCREPANCY_CASE(RNA_NO_PRODUCT, CSeq_feat, eOncaller, "Find RNAs without Products")
+DISCREPANCY_CASE(RNA_NO_PRODUCT, CSeq_feat, eDisc | eOncaller | eSubmitter | eSmart, "Find RNAs without Products")
 {
     if( ! obj.GetData().IsRna() ) {
         return;
@@ -706,7 +705,7 @@ static const char* kContainedSame = "[n] coding region[s] [is] completely contai
 static const char* kContainedOpps = "[n] coding region[s] [is] completely contained in another coding region, but on the opposite strand.";
 
 
-DISCREPANCY_CASE(CONTAINED_CDS, CSeqFeatData, eDisc, "Contained CDs")
+DISCREPANCY_CASE(CONTAINED_CDS, CSeqFeatData, eDisc | eSubmitter | eSmart, "Contained CDs")
 {
     if (obj.Which() != CSeqFeatData::e_Cdregion) {
         return;
@@ -761,7 +760,7 @@ DISCREPANCY_AUTOFIX(CONTAINED_CDS)
 }
 
 
-DISCREPANCY_CASE(ZERO_BASECOUNT, CSeq_inst, eDisc | eOncaller, "Zero Base Counts")
+DISCREPANCY_CASE(ZERO_BASECOUNT, CSeq_inst, eDisc | eOncaller | eSubmitter | eSmart, "Zero Base Counts")
 {
     static const char* kMsg = "[n] sequence[s] [has] a zero basecount for a nucleotide";
     if (obj.IsAa() || context.SequenceHasFarPointers()) {
@@ -790,8 +789,7 @@ DISCREPANCY_SUMMARIZE(ZERO_BASECOUNT)
 
 
 // NONWGS_SETS_PRESENT
-DISCREPANCY_CASE(NONWGS_SETS_PRESENT, CBioseq_set, eDisc,
-                 "Eco, mut, phy or pop sets present")
+DISCREPANCY_CASE(NONWGS_SETS_PRESENT, CBioseq_set, eDisc, "Eco, mut, phy or pop sets present")
 {
     _ASSERT(&obj == &*context.GetCurrentBioseq_set());
 
@@ -821,7 +819,7 @@ DISCREPANCY_SUMMARIZE(NONWGS_SETS_PRESENT)
 }
 
 
-DISCREPANCY_CASE(NO_ANNOTATION, CSeq_inst, eDisc | eOncaller, "No annotation")
+DISCREPANCY_CASE(NO_ANNOTATION, CSeq_inst, eDisc | eOncaller | eSubmitter | eSmart, "No annotation")
 {
     if (context.HasFeatures()) {
         return;
@@ -836,7 +834,7 @@ DISCREPANCY_SUMMARIZE(NO_ANNOTATION)
 }
 
 
-DISCREPANCY_CASE(LONG_NO_ANNOTATION, CSeq_inst, eDisc, "No annotation for LONG sequence")
+DISCREPANCY_CASE(LONG_NO_ANNOTATION, CSeq_inst, eDisc | eSubmitter | eSmart, "No annotation for LONG sequence")
 {
     const int kSeqLength = 5000;
     if (obj.IsAa() || context.HasFeatures() || !(obj.CanGetLength() && obj.GetLength() > kSeqLength)) {
@@ -916,7 +914,7 @@ DISCREPANCY_SUMMARIZE(POSSIBLE_LINKER)
 
 
 // ORDERED_LOCATION
-DISCREPANCY_CASE(ORDERED_LOCATION, CSeq_feat, eDisc | eOncaller, "Location is ordered (intervals interspersed with gaps)")
+DISCREPANCY_CASE(ORDERED_LOCATION, CSeq_feat, eDisc | eOncaller | eSmart, "Location is ordered (intervals interspersed with gaps)")
 {
     if( ! obj.IsSetLocation() ) {
         return;
@@ -987,7 +985,7 @@ DISCREPANCY_AUTOFIX(ORDERED_LOCATION)
 }
 
 
-DISCREPANCY_CASE(MISSING_LOCUS_TAGS, CSeqFeatData, eDisc, "Missing locus tags")
+DISCREPANCY_CASE(MISSING_LOCUS_TAGS, CSeqFeatData, eDisc | eSubmitter | eSmart, "Missing locus tags")
 {
     if (obj.Which() != CSeqFeatData::e_Gene) {
         return;
@@ -1013,7 +1011,7 @@ DISCREPANCY_SUMMARIZE(MISSING_LOCUS_TAGS)
 }
 
 
-DISCREPANCY_CASE(INCONSISTENT_LOCUS_TAG_PREFIX, CSeqFeatData, eDisc, "Inconsistent locus tag prefix")
+DISCREPANCY_CASE(INCONSISTENT_LOCUS_TAG_PREFIX, CSeqFeatData, eDisc | eSubmitter | eSmart, "Inconsistent locus tag prefix")
 {
     if (obj.Which() != CSeqFeatData::e_Gene) {
         return;
@@ -1058,7 +1056,7 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_LOCUS_TAG_PREFIX)
 
 static const string kInconsistent_Moltype = "[n] sequences have inconsistent moltypes";
 
-DISCREPANCY_CASE(INCONSISTENT_MOLTYPES, CSeq_inst, eDisc | eOncaller, "Inconsistent molecule types")
+DISCREPANCY_CASE(INCONSISTENT_MOLTYPES, CSeq_inst, eDisc | eOncaller | eSmart, "Inconsistent molecule types")
 {
     if (obj.IsAa() ) {
         return;
@@ -1105,7 +1103,7 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_MOLTYPES)
 }
 
 
-DISCREPANCY_CASE(BAD_LOCUS_TAG_FORMAT, CSeqFeatData, eDisc, "Bad locus tag format")
+DISCREPANCY_CASE(BAD_LOCUS_TAG_FORMAT, CSeqFeatData, eDisc | eSubmitter | eSmart, "Bad locus tag format")
 {
     if (obj.Which() != CSeqFeatData::e_Gene) {
         return;
@@ -1138,7 +1136,7 @@ DISCREPANCY_SUMMARIZE(BAD_LOCUS_TAG_FORMAT)
 
 
 // SEGSETS_PRESENT
-DISCREPANCY_CASE(SEGSETS_PRESENT, CBioseq_set, eDisc, "Segsets present")
+DISCREPANCY_CASE(SEGSETS_PRESENT, CBioseq_set, eDisc | eSmart, "Segsets present")
 {
     if( GET_FIELD_OR_DEFAULT(obj, Class, CBioseq_set::eClass_not_set) !=
         CBioseq_set::eClass_segset )
@@ -1157,7 +1155,7 @@ DISCREPANCY_SUMMARIZE(SEGSETS_PRESENT)
 
 
 // QUALITY_SCORES
-DISCREPANCY_CASE(QUALITY_SCORES, CSeq_annot, eDisc, "Check for quality scores")
+DISCREPANCY_CASE(QUALITY_SCORES, CSeq_annot, eDisc | eSmart, "Check for quality scores")
 {
     if (!context.GetCurrentBioseq()->IsSetInst() || context.GetCurrentBioseq()->IsAa()) {
         return;
@@ -1192,7 +1190,7 @@ DISCREPANCY_SUMMARIZE(QUALITY_SCORES)
 }
 
 
-DISCREPANCY_CASE(BACTERIA_SHOULD_NOT_HAVE_MRNA, CSeqFeatData, eDisc | eOncaller, "Bacterial sequences should not have mRNA features")
+DISCREPANCY_CASE(BACTERIA_SHOULD_NOT_HAVE_MRNA, CSeqFeatData, eDisc | eOncaller | eSubmitter | eSmart, "Bacterial sequences should not have mRNA features")
 {
     if (!context.IsBacterial() || obj.GetSubtype() != CSeqFeatData::eSubtype_mRNA) {
         return;
@@ -1207,7 +1205,7 @@ DISCREPANCY_SUMMARIZE(BACTERIA_SHOULD_NOT_HAVE_MRNA)
 }
 
 
-DISCREPANCY_CASE(BAD_BGPIPE_QUALS, CSeq_feat, eDisc, "Bad BGPIPE qualifiers")
+DISCREPANCY_CASE(BAD_BGPIPE_QUALS, CSeq_feat, eDisc | eSmart, "Bad BGPIPE qualifiers")
 {
     if (context.IsRefseq() || !context.IsBGPipe()) {
         return;
@@ -1259,7 +1257,7 @@ static const string kGeneProductConflict = "[n] coding region[s] [has] the same 
 static const string kGenes = "Genes";
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(GENE_PRODUCT_CONFLICT, CSeq_feat, eDisc, "Gene Product Conflict")
+DISCREPANCY_CASE(GENE_PRODUCT_CONFLICT, CSeq_feat, eDisc | eSubmitter | eSmart, "Gene Product Conflict")
 //  ----------------------------------------------------------------------------
 {
     if (obj.IsSetData() && obj.GetData().IsCdregion()) {

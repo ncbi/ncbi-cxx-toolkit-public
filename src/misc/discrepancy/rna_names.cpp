@@ -61,7 +61,7 @@ static const char* rrna_standard_name[] = {
 SAFE_CONST_STATIC_STRING(rrna_name_conflicts_complain,
                          "[n] rRNA product name[s] [is] not standard. Correct the names to the standard format, eg \"16S ribosomal RNA\"");
 
-DISCREPANCY_CASE(RRNA_NAME_CONFLICTS, CSeqFeatData, eDisc, "rRNA name conflicts")
+DISCREPANCY_CASE(RRNA_NAME_CONFLICTS, CSeqFeatData, eDisc | eSubmitter | eSmart, "rRNA name conflicts")
 {
     if (!obj.IsRna() || !obj.GetRna().CanGetExt() || !obj.GetRna().GetExt().IsName() || obj.GetRna().GetType() != CRNA_ref::eType_rRNA) {
         return;

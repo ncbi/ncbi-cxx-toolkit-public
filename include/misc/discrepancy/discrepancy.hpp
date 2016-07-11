@@ -156,7 +156,9 @@ protected:
 enum EGroup {
     eNone = 0,
     eDisc = 1,
-    eOncaller = 2
+    eOncaller = 2,
+    eSubmitter = 4,
+    eSmart = 8
 };
 typedef unsigned short TGroup;
 

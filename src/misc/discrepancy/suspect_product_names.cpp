@@ -5347,7 +5347,7 @@ static string GetRuleMatch(const CSuspect_rule& rule)
 ///////////////////////////////////// SUSPECT_PRODUCT_NAMES
 
 
-DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData, eDisc|eOncaller, "Suspect Product Name")
+DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData, eDisc | eOncaller | eSubmitter | eSmart, "Suspect Product Name")
 {
     if (obj.GetSubtype() != CSeqFeatData::eSubtype_prot) {
         return;
@@ -5632,7 +5632,7 @@ static void s_SummarizeSuspectRule(
     }
 }
 
-DISCREPANCY_CASE(SUSPECT_RRNA_PRODUCTS, CSeq_feat, eDisc, "rRNA product names should not contain 'partial' or 'domain'")
+DISCREPANCY_CASE(SUSPECT_RRNA_PRODUCTS, CSeq_feat, eDisc | eSubmitter | eSmart, "rRNA product names should not contain 'partial' or 'domain'")
 {
     if( ! obj.IsSetData() ||
         obj.GetData().GetSubtype() != CSeqFeatData::eSubtype_rRNA )

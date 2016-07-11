@@ -39,7 +39,7 @@ DISCREPANCY_MODULE(overlapping_features);
 
 // CDS_TRNA_OVERLAP
 
-DISCREPANCY_CASE(CDS_TRNA_OVERLAP, CSeq_feat_BY_BIOSEQ, eDisc, "CDS tRNA Overlap")
+DISCREPANCY_CASE(CDS_TRNA_OVERLAP, CSeq_feat_BY_BIOSEQ, eDisc | eSubmitter | eSmart, "CDS tRNA Overlap")
 {
     if (m_Count != context.GetCountBioseq()) {
         m_Count = context.GetCountBioseq();
@@ -200,7 +200,7 @@ void ProcessCDSRNAPair(CConstRef<CSeq_feat> cds_sf, CConstRef<CSeq_feat> rna_sf,
 }
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(RNA_CDS_OVERLAP, CSeq_feat_BY_BIOSEQ, eDisc, "CDS RNA Overlap")
+DISCREPANCY_CASE(RNA_CDS_OVERLAP, CSeq_feat_BY_BIOSEQ, eDisc | eSubmitter | eSmart, "CDS RNA Overlap")
 //  ----------------------------------------------------------------------------
 {
     if (!obj.GetData().IsRna() && !obj.GetData().IsCdregion()) {
@@ -282,7 +282,7 @@ DISCREPANCY_SUMMARIZE(RNA_CDS_OVERLAP)
 }
 
 
-DISCREPANCY_CASE(OVERLAPPING_RRNAS, COverlappingFeatures, eDisc, "Overlapping rRNAs")
+DISCREPANCY_CASE(OVERLAPPING_RRNAS, COverlappingFeatures, eDisc | eSubmitter | eSmart, "Overlapping rRNAs")
 {
     const vector<CConstRef<CSeq_feat> >& rrnas = context.FeatRRNAs();
     for (size_t i = 0; i < rrnas.size(); i++) {
@@ -328,7 +328,7 @@ DISCREPANCY_SUMMARIZE(OVERLAPPING_GENES)
 
 // FIND_OVERLAPPED_GENES
 
-DISCREPANCY_CASE(FIND_OVERLAPPED_GENES, COverlappingFeatures, eDisc, "Genes completely contained by another gene on the same strand")
+DISCREPANCY_CASE(FIND_OVERLAPPED_GENES, COverlappingFeatures, eDisc | eSmart, "Genes completely contained by another gene on the same strand")
 {
     const vector<CConstRef<CSeq_feat> >& genes = context.FeatGenes();
     for (size_t i = 0; i < genes.size(); i++) {

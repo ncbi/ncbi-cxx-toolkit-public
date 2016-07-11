@@ -64,7 +64,7 @@ static bool Has4Numbers(const string& s)
 };
 
 
-DISCREPANCY_CASE(BAD_GENE_NAME, CSeqFeatData, eDisc, "Bad gene name")
+DISCREPANCY_CASE(BAD_GENE_NAME, CSeqFeatData, eDisc | eSubmitter | eSmart, "Bad gene name")
 {
     if (!obj.IsGene() || !obj.GetGene().CanGetLocus()) {
         return;
@@ -110,7 +110,7 @@ DISCREPANCY_AUTOFIX(BAD_GENE_NAME)
 
 
 // BAD_BACTERIAL_GENE_NAME
-DISCREPANCY_CASE(BAD_BACTERIAL_GENE_NAME, CSeqFeatData, eDisc | eOncaller, "Bad bacterial gene name")
+DISCREPANCY_CASE(BAD_BACTERIAL_GENE_NAME, CSeqFeatData, eDisc | eOncaller | eSubmitter | eSmart, "Bad bacterial gene name")
 {
     if (!obj.IsGene() || !obj.GetGene().CanGetLocus() || context.HasLineage("Eukaryota") || context.IsViral()) {
         return;
@@ -144,7 +144,7 @@ DISCREPANCY_AUTOFIX(BAD_BACTERIAL_GENE_NAME)
 
 
 // EC_NUMBER_ON_UNKNOWN_PROTEIN
-DISCREPANCY_CASE(EC_NUMBER_ON_UNKNOWN_PROTEIN, CSeqFeatData, eDisc, "EC number on unknown protein")
+DISCREPANCY_CASE(EC_NUMBER_ON_UNKNOWN_PROTEIN, CSeqFeatData, eDisc | eSubmitter | eSmart, "EC number on unknown protein")
 {
     if (!obj.IsProt() || !obj.GetProt().CanGetName() || !obj.GetProt().CanGetEc() || obj.GetProt().GetEc().empty()) {
         return;
@@ -188,7 +188,7 @@ DISCREPANCY_AUTOFIX(EC_NUMBER_ON_UNKNOWN_PROTEIN)
 
 
 // SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME
-DISCREPANCY_CASE(SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME, CSeqFeatData, eDisc, "Hypothetical CDS with gene names")
+DISCREPANCY_CASE(SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME, CSeqFeatData, eDisc | eSubmitter | eSmart, "Hypothetical CDS with gene names")
 {
     if (!obj.IsCdregion() || !context.GetCurrentSeq_feat()->CanGetProduct()) {
         return;
@@ -246,7 +246,7 @@ const string kDuplicateLocusTagsStart = "[n] gene[s] [has] locus tag ";
 const string kDuplicateAdjacent = "[n] gene[s] [is] adjacent to another gene with the same locus tag.";
 const string kDuplicateLocusTags = "locus_tag";
 
-DISCREPANCY_CASE(DUPLICATE_LOCUS_TAGS, CSeq_inst, eOncaller, "Duplicate Locus Tags")
+DISCREPANCY_CASE(DUPLICATE_LOCUS_TAGS, CSeq_inst, eDisc | eOncaller | eSubmitter | eSmart, "Duplicate Locus Tags")
 {
     CBioseq_Handle bsh = context.GetScope().GetBioseqHandle(*context.GetCurrentBioseq());
     CFeat_CI f(bsh, CSeqFeatData::e_Gene);

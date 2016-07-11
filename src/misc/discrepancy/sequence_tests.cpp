@@ -64,7 +64,7 @@ DISCREPANCY_MODULE(sequence_tests);
 const string kMissingGenomeAssemblyComments = "[n] bioseq[s] [is] missing GenomeAssembly structured comments";
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(MISSING_GENOMEASSEMBLY_COMMENTS, CSeq_inst, eDisc, "Bioseqs should have GenomeAssembly structured comments")
+DISCREPANCY_CASE(MISSING_GENOMEASSEMBLY_COMMENTS, CSeq_inst, eDisc | eSmart, "Bioseqs should have GenomeAssembly structured comments")
 //  ----------------------------------------------------------------------------
 {
     if (obj.IsAa()) {
@@ -156,7 +156,7 @@ DISCREPANCY_SUMMARIZE(DUP_DEFLINE)
 const string kTerminalNs = "[n] sequence[s] [has] terminal Ns";
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(TERMINAL_NS, CSeq_inst, eDisc, "Ns at end of sequences")
+DISCREPANCY_CASE(TERMINAL_NS, CSeq_inst, eDisc | eSubmitter | eSmart, "Ns at end of sequences")
 //  ----------------------------------------------------------------------------
 {
     CConstRef<CBioseq> seq = context.GetCurrentBioseq();
@@ -212,7 +212,7 @@ DISCREPANCY_SUMMARIZE(TERMINAL_NS)
 const string kShortProtSeqs = "[n] protein sequences are shorter than 50 aa.";
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(SHORT_PROT_SEQUENCES, CSeq_inst, eDisc | eOncaller, "Protein sequences should be at least 50 aa, unless they are partial")
+DISCREPANCY_CASE(SHORT_PROT_SEQUENCES, CSeq_inst, eDisc | eOncaller | eSmart, "Protein sequences should be at least 50 aa, unless they are partial")
 //  ----------------------------------------------------------------------------
 {
     if (!obj.IsAa() || !obj.IsSetLength() || obj.GetLength() >= 50) {
@@ -297,7 +297,7 @@ DISCREPANCY_SUMMARIZE(COMMENT_PRESENT)
 
 const string kmRNAOnWrongSequenceType = "[n] mRNA[s] [is] located on eukaryotic sequence[s] that [does] not have genomic or plasmid source[s]";
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(mRNA_ON_WRONG_SEQUENCE_TYPE, CSeq_feat_BY_BIOSEQ, eOncaller | eDisc, "Eukaryotic sequences that are not genomic or macronuclear should not have mRNA features")
+DISCREPANCY_CASE(mRNA_ON_WRONG_SEQUENCE_TYPE, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller, "Eukaryotic sequences that are not genomic or macronuclear should not have mRNA features")
 //  ----------------------------------------------------------------------------
 {
     if (!obj.IsSetData() || obj.GetData().GetSubtype() != CSeqFeatData::eSubtype_mRNA) {
@@ -344,7 +344,7 @@ DISCREPANCY_SUMMARIZE(mRNA_ON_WRONG_SEQUENCE_TYPE)
 const string kSequencesWithGaps = "[n] sequence[s] contain[S] gaps";
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(GAPS, CSeq_inst, eDisc, "Sequences with gaps")
+DISCREPANCY_CASE(GAPS, CSeq_inst, eDisc | eSubmitter | eSmart, "Sequences with gaps")
 //  ----------------------------------------------------------------------------
 {
     if (obj.IsSetRepr() && obj.GetRepr() == CSeq_inst::eRepr_delta) {
@@ -550,7 +550,7 @@ DISCREPANCY_SUMMARIZE(N_RUNS_14)
 const string kMoreThan10PercentsN = "[n] sequence[s] [has] > 10%% Ns";
 const double MIN_N_PERCENTAGE = 10.0;
 
-DISCREPANCY_CASE(10_PERCENTN, CSeq_inst, eDisc, "Greater than 10 percent Ns")
+DISCREPANCY_CASE(10_PERCENTN, CSeq_inst, eDisc | eSubmitter | eSmart, "Greater than 10 percent Ns")
 {
     if (obj.IsAa() || context.SequenceHasFarPointers()) {
         return;
@@ -618,7 +618,7 @@ void SummarizeFeatureCount(CReportNode& m_Objs)
 }
 
 
-DISCREPANCY_CASE(FEATURE_COUNT, CSeq_feat_BY_BIOSEQ, eOncaller, "Count features present or missing from sequences")
+DISCREPANCY_CASE(FEATURE_COUNT, CSeq_feat_BY_BIOSEQ, eOncaller | eSubmitter | eSmart, "Count features present or missing from sequences")
 {
     if (m_Count != context.GetCountBioseq()) {
         m_Count = context.GetCountBioseq();
@@ -681,7 +681,7 @@ void SummarizeExonCount(CReportNode& m_Objs)
     }
 }
 
-DISCREPANCY_CASE(EXON_ON_MRNA, CSeq_feat_BY_BIOSEQ, eOncaller, "mRNA sequences should not have exons")
+DISCREPANCY_CASE(EXON_ON_MRNA, CSeq_feat_BY_BIOSEQ, eOncaller | eSmart, "mRNA sequences should not have exons")
 {
     if (m_Count != context.GetCountBioseq()) {
         m_Count = context.GetCountBioseq();
@@ -712,7 +712,7 @@ DISCREPANCY_SUMMARIZE(EXON_ON_MRNA)
 
 static const string kMissingTech = "missing";
 
-DISCREPANCY_CASE(INCONSISTENT_MOLINFO_TECH, CSeq_inst, eDisc, "Inconsistent Molinfo Techniques")
+DISCREPANCY_CASE(INCONSISTENT_MOLINFO_TECH, CSeq_inst, eDisc | eSmart, "Inconsistent Molinfo Techniques")
 {
     if (obj.IsAa()) {
         return;
@@ -822,7 +822,7 @@ static bool EndsWithSequence(const string& title)
 
 static const string kEndsWithSeq = "[n] defline[s] appear[S] to end with sequence characters";
 
-DISCREPANCY_CASE(TITLE_ENDS_WITH_SEQUENCE, CSeqdesc, eDisc, "Sequence characters at end of defline")
+DISCREPANCY_CASE(TITLE_ENDS_WITH_SEQUENCE, CSeqdesc, eDisc | eSubmitter | eSmart, "Sequence characters at end of defline")
 {
     if (!obj.IsTitle()) {
         return;
@@ -1023,7 +1023,7 @@ void AddUserObjectFieldItems
 
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(INCONSISTENT_DBLINK, CSeq_inst, eDisc, "Inconsistent DBLink fields")
+DISCREPANCY_CASE(INCONSISTENT_DBLINK, CSeq_inst, eDisc | eSubmitter | eSmart, "Inconsistent DBLink fields")
 //  ----------------------------------------------------------------------------
 {
     if (obj.IsAa()) {
@@ -1220,7 +1220,7 @@ const string kStructuredCommentPrevious = "previous";
 const string kStructuredCommentFieldPrefix = "structured comment field ";
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(INCONSISTENT_STRUCTURED_COMMENTS, CSeq_inst, eDisc, "Inconsistent structured comments")
+DISCREPANCY_CASE(INCONSISTENT_STRUCTURED_COMMENTS, CSeq_inst, eDisc | eSubmitter | eSmart, "Inconsistent structured comments")
 //  ----------------------------------------------------------------------------
 {
     if (obj.IsAa()) {
@@ -1518,7 +1518,7 @@ static bool ContainsUnusualNucleotide(const CSeq_data& seq_data)
     return unusual_found;
 }
 
-DISCREPANCY_CASE(UNUSUAL_NT, CSeq_inst, eDisc, "Sequence contains unusual nucleotides")
+DISCREPANCY_CASE(UNUSUAL_NT, CSeq_inst, eDisc | eSubmitter | eSmart, "Sequence contains unusual nucleotides")
 {
     if (obj.IsNa()) {
 
@@ -1635,7 +1635,7 @@ static string GetProjectID(const CUser_object& user)
     return res;
 }
 
-DISCREPANCY_CASE(HAS_PROJECT_ID, CSeq_inst, eOncaller, "Sequences with project IDs (looks for genome project IDs)")
+DISCREPANCY_CASE(HAS_PROJECT_ID, CSeq_inst, eOncaller | eSmart, "Sequences with project IDs (looks for genome project IDs)")
 {
     CConstRef<CBioseq> seq = context.GetCurrentBioseq();
     if (!seq) {
@@ -1742,7 +1742,7 @@ void SummarizeMultCDSOnMrna(CReportNode& m_Objs)
 
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(MULTIPLE_CDS_ON_MRNA, CSeq_feat_BY_BIOSEQ, eOncaller|eDisc, "Multiple CDS on mRNA")
+DISCREPANCY_CASE(MULTIPLE_CDS_ON_MRNA, CSeq_feat_BY_BIOSEQ, eOncaller | eSubmitter | eSmart, "Multiple CDS on mRNA")
 //  ----------------------------------------------------------------------------
 {
     if (m_Count != context.GetCountBioseq()) {
@@ -1796,7 +1796,7 @@ void SummarizeMinusOnMrna(CReportNode& m_Objs)
 
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(MRNA_SEQUENCE_MINUS_STRAND_FEATURES, CSeq_feat_BY_BIOSEQ, eOncaller | eDisc, "mRNA sequences have CDS/gene on the complement strand")
+DISCREPANCY_CASE(MRNA_SEQUENCE_MINUS_STRAND_FEATURES, CSeq_feat_BY_BIOSEQ, eOncaller, "mRNA sequences have CDS/gene on the complement strand")
 //  ----------------------------------------------------------------------------
 {
     if (m_Count != context.GetCountBioseq()) {
@@ -1872,7 +1872,7 @@ static bool HasLowQualityRegion(const CSeq_data& seq_data)
     return (num_of_n > MAX_N_IN_SEQ);
 }
 
-DISCREPANCY_CASE(LOW_QUALITY_REGION, CSeq_inst, eDisc, "Sequence contains regions of low quality")
+DISCREPANCY_CASE(LOW_QUALITY_REGION, CSeq_inst, eDisc | eSubmitter | eSmart, "Sequence contains regions of low quality")
 {
     if (obj.IsNa()) {
 

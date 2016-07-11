@@ -97,7 +97,7 @@ DISCREPANCY_SUMMARIZE(BAD_MRNA_QUAL)
 
 // ORGANELLE_NOT_GENOMIC
 
-DISCREPANCY_CASE(ORGANELLE_NOT_GENOMIC, CSeqdesc_BY_BIOSEQ, eDisc|eOncaller, "Organelle location should have genomic moltype")
+DISCREPANCY_CASE(ORGANELLE_NOT_GENOMIC, CSeqdesc_BY_BIOSEQ, eDisc | eOncaller, "Organelle location should have genomic moltype")
 {
 //cout<<"CSeqdesc_BY_BIOSEQ\n";
 }

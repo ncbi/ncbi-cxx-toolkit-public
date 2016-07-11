@@ -50,7 +50,7 @@ const string kMapChromosomeConflict = "[n] source[s] on eukaryotic sequence[s] [
 
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(MAP_CHROMOSOME_CONFLICT, CSeqdesc, eDisc | eOncaller, "Eukaryotic sequences with a map source qualifier should also have a chromosome source qualifier")
+DISCREPANCY_CASE(MAP_CHROMOSOME_CONFLICT, CSeqdesc, eDisc | eOncaller | eSmart, "Eukaryotic sequences with a map source qualifier should also have a chromosome source qualifier")
 //  ----------------------------------------------------------------------------
 {
     if (!obj.IsSource() || !context.IsEukaryotic() || !obj.GetSource().IsSetSubtype()) {
@@ -412,7 +412,7 @@ void AddObjSource(CReportNode& objs, CDiscrepancyContext& context, const string&
 const string kATCCCultureConflict = "[n] biosource[s] [has] conflicting ATCC strain and culture collection values";
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(ATCC_CULTURE_CONFLICT, CBioSource, eOncaller|eDisc, "ATCC strain should also appear in culture collection")
+DISCREPANCY_CASE(ATCC_CULTURE_CONFLICT, CBioSource, eDisc | eOncaller, "ATCC strain should also appear in culture collection")
 //  ----------------------------------------------------------------------------
 {
     if (!obj.IsSetOrg() || !obj.GetOrg().IsSetOrgname() || !obj.GetOrg().GetOrgname().IsSetMod()) {
@@ -511,7 +511,7 @@ DISCREPANCY_AUTOFIX(ATCC_CULTURE_CONFLICT)
 
 // BACTERIA_MISSING_STRAIN
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(BACTERIA_MISSING_STRAIN, CBioSource, eOncaller | eDisc, "Missing strain on bacterial 'Genus sp. strain'")
+DISCREPANCY_CASE(BACTERIA_MISSING_STRAIN, CBioSource, eDisc | eOncaller | eSubmitter | eSmart, "Missing strain on bacterial 'Genus sp. strain'")
 //  ----------------------------------------------------------------------------
 {
     // only looking for bacteria
@@ -635,7 +635,7 @@ DISCREPANCY_SUMMARIZE(BACTERIA_SHOULD_NOT_HAVE_ISOLATE)
 // MULTISRC
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(MULTISRC, CBioSource, eOncaller | eDisc, "Comma or semicolon appears in strain or isolate")
+DISCREPANCY_CASE(MULTISRC, CBioSource, eDisc | eOncaller, "Comma or semicolon appears in strain or isolate")
 //  ----------------------------------------------------------------------------
 {
     if (!obj.IsSetOrg() || !obj.GetOrg().IsSetOrgname() || !obj.GetOrg().GetOrgname().IsSetMod()) {
@@ -876,7 +876,7 @@ bool DoTaxnamesMatchForObjectList(const TReportObjectList& obj_list)
 
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(STRAIN_TAXNAME_MISMATCH, CBioSource, eDisc|eOncaller, "BioSources with the same strain should have the same taxname")
+DISCREPANCY_CASE(STRAIN_TAXNAME_MISMATCH, CBioSource, eDisc | eOncaller, "BioSources with the same strain should have the same taxname")
 //  ----------------------------------------------------------------------------
 {
     if (!obj.IsSetOrg() || !obj.GetOrg().IsSetOrgname() || !obj.GetOrg().GetOrgname().IsSetMod()) {
@@ -947,7 +947,7 @@ DISCREPANCY_SUMMARIZE(STRAIN_TAXNAME_MISMATCH)
 
 // SPECVOUCHER_TAXNAME_MISMATCH
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(SPECVOUCHER_TAXNAME_MISMATCH, CBioSource, eOncaller, "BioSources with the same specimen voucher should have the same taxname")
+DISCREPANCY_CASE(SPECVOUCHER_TAXNAME_MISMATCH, CBioSource, eOncaller | eSmart, "BioSources with the same specimen voucher should have the same taxname")
 //  ----------------------------------------------------------------------------
 {
     if (!obj.IsSetOrg() || !obj.GetOrg().IsSetOrgname() || !obj.GetOrg().GetOrgname().IsSetMod()) {
@@ -1007,7 +1007,7 @@ DISCREPANCY_SUMMARIZE(CULTURE_TAXNAME_MISMATCH)
 
 // BIOMATERIAL_TAXNAME_MISMATCH
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(BIOMATERIAL_TAXNAME_MISMATCH, CBioSource, eOncaller, "Test BioSources with the same biomaterial but different taxname")
+DISCREPANCY_CASE(BIOMATERIAL_TAXNAME_MISMATCH, CBioSource, eOncaller | eSmart, "Test BioSources with the same biomaterial but different taxname")
 //  ----------------------------------------------------------------------------
 {
     if (!obj.IsSetOrg() || !obj.GetOrg().IsSetOrgname() || !obj.GetOrg().GetOrgname().IsSetMod()) {
