@@ -111,6 +111,46 @@ string CGff3Reader::xNextGenericId()
 }
 
 //  ----------------------------------------------------------------------------
+bool CGff3ReadRecord::AssignFromGff(
+    const string& strRawInput )
+//  ----------------------------------------------------------------------------
+{
+    if (!CGff2Record::AssignFromGff(strRawInput)) {
+        return false;
+    }
+    if (m_strType == "pseudogene") {
+        m_strType = "gene";
+        m_Attributes["pseudo"] = "true";
+        return true;
+    }
+    if (m_strType == "pseudogenic_transcript") {
+        m_strType = "transcript";
+        m_Attributes["pseudo"] = "true";
+        return true;
+    }        
+    if (m_strType == "pseudogenic_tRNA") {
+        m_strType = "tRNA";
+        m_Attributes["pseudo"] = "true";
+        return true;
+    }
+    if (m_strType == "pseudogenic_rRNA") {
+        m_strType = "rRNA";
+        m_Attributes["pseudo"] = "true";
+        return true;
+    }
+    if (m_strType == "pseudogenic_exon") {
+        m_strType = "exon";
+        return true;
+    }
+    if (m_strType == "pseudogenic_CDS") {
+        m_strType = "CDS";
+        m_Attributes["pseudo"] = "true";
+        return true;
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
 string CGff3ReadRecord::x_NormalizedAttributeKey(
     const string& strRawKey )
 //  ---------------------------------------------------------------------------
@@ -276,7 +316,8 @@ bool CGff3Reader::xUpdateAnnotExon(
             }
             IdToFeatureMap::iterator fit = m_MapIdToFeature.find(parentId);
             if (fit != m_MapIdToFeature.end()) {
-                if (!record.UpdateFeature(m_iFlags, fit->second)) {
+                CRef<CSeq_feat> pParent = fit->second;
+                if (!record.UpdateFeature(m_iFlags, pParent)) {
                     return false;
                 }
             }
@@ -337,8 +378,15 @@ bool CGff3Reader::xUpdateAnnotCds(
         //update parent location:
         IdToFeatureMap::iterator featIt = m_MapIdToFeature.find(parentId);
         if (featIt != m_MapIdToFeature.end()) {
-            if (!record.UpdateFeature(m_iFlags, featIt->second)) {
+            CRef<CSeq_feat> pParent = featIt->second;
+            if (!record.UpdateFeature(m_iFlags, pParent)) {
                 return false;
+            }
+            //rw-143:
+            // if parent type is miscRNA then change it to mRNA:
+            if (pParent->GetData().IsRna()  &&  
+                    pParent->GetData().GetRna().GetType()  ==  CRNA_ref::eType_other) {
+                pParent->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
             }
         }
 
@@ -502,8 +550,6 @@ bool CGff3Reader::xUpdateAnnotGeneric(
         }
         pCodeBreak->SetAa().SetNcbieaa(
             (featType == "selenocysteine") ? 'U' : 'X');
-
-
         CRef<CSeq_feat> pCds = it->second;
         CCdregion& cdRegion = pCds->SetData().SetCdregion();
         list< CRef< CCode_break > >& codeBreaks = cdRegion.SetCode_break();

@@ -59,6 +59,9 @@ public:
     CGff3ReadRecord() {};
     ~CGff3ReadRecord() {};
 
+    virtual bool AssignFromGff(
+        const string& );
+
 protected:
     string x_NormalizedAttributeKey(
         const string& );
