@@ -1,7 +1,7 @@
 LIB = xqueryparse
 PROJ_TAG = core
 
-SRC = query_parse parser query_tree_print query_exec
+SRC = query_parse parser query_tree_print query_exec parse_utils
 
 query_parser_bison.tab.c : query_parser_bison.y
 	bison -v -p ncbi_q_ -o query_parser_bison.tab.c query_parser_bison.y

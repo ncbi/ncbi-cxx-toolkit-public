@@ -4,7 +4,7 @@
 #################################
 
 
-APP_PROJ = test_qparse
+APP_PROJ = test_qparse unit_test_parse_utils
 PROJ_TAG = test
 
 srcdir = @srcdir@
