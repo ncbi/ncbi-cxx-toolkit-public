@@ -50,7 +50,7 @@ static int _ct_fetch_cursor(CS_COMMAND * cmd, CS_INT type, CS_INT offset, CS_INT
 static int _ct_fetchable_results(CS_COMMAND * cmd);
 static TDSRET _ct_process_return_status(TDSSOCKET * tds);
 
-static int _ct_fill_param(CS_INT cmd_type, CS_PARAM * param, CS_DATAFMT * datafmt, CS_VOID * data,
+static int _ct_fill_param(CS_COMMAND * cmd, CS_PARAM * param, CS_DATAFMT * datafmt, CS_VOID * data,
 			  CS_INT * datalen, CS_SMALLINT * indicator, CS_BYTE byvalue);
 void _ctclient_msg(CS_CONNECTION * con, const char *funcname, int layer, int origin, int severity, int number,
 			  const char *fmt, ...);
@@ -3283,7 +3283,7 @@ ct_param(CS_COMMAND * cmd, CS_DATAFMT * datafmt, CS_VOID * data, CS_INT datalen,
 		if (!param)
 			return CS_FAIL;
 
-		if (CS_SUCCEED != _ct_fill_param(cmd->command_type, param, datafmt, data, &datalen, &indicator, 1)) {
+		if (CS_SUCCEED != _ct_fill_param(cmd, param, datafmt, data, &datalen, &indicator, 1)) {
 			tdsdump_log(TDS_DBG_INFO1, "ct_param() failed to add rpc param\n");
 			tdsdump_log(TDS_DBG_INFO1, "ct_param() failed to add input value\n");
 			free(param);
@@ -3310,7 +3310,7 @@ ct_param(CS_COMMAND * cmd, CS_DATAFMT * datafmt, CS_VOID * data, CS_INT datalen,
 
 		param = (CSREMOTE_PROC_PARAM *) calloc(1, sizeof(CSREMOTE_PROC_PARAM));
 
-		if (CS_SUCCEED != _ct_fill_param(cmd->command_type, param, datafmt, data, &datalen, &indicator, 1)) {
+		if (CS_SUCCEED != _ct_fill_param(cmd, param, datafmt, data, &datalen, &indicator, 1)) {
 			free(param);
 			return CS_FAIL;
 		}
@@ -3337,7 +3337,7 @@ ct_param(CS_COMMAND * cmd, CS_DATAFMT * datafmt, CS_VOID * data, CS_INT datalen,
 		if (!param)
 			return CS_FAIL;
 
-		if (CS_SUCCEED != _ct_fill_param(cmd->command_type, param, datafmt, data, &datalen, &indicator, 1)) {
+		if (CS_SUCCEED != _ct_fill_param(cmd, param, datafmt, data, &datalen, &indicator, 1)) {
 			tdsdump_log(TDS_DBG_INFO1, "ct_param() failed to add CS_DYNAMIC param\n");
 			free(param);
 			return CS_FAIL;
@@ -3385,7 +3385,7 @@ ct_setparam(CS_COMMAND * cmd, CS_DATAFMT * datafmt, CS_VOID * data, CS_INT * dat
 
 		param = (CSREMOTE_PROC_PARAM *) calloc(1, sizeof(CSREMOTE_PROC_PARAM));
 
-		if (CS_SUCCEED != _ct_fill_param(cmd->command_type, param, datafmt, data, datalen, indicator, 0)) {
+		if (CS_SUCCEED != _ct_fill_param(cmd, param, datafmt, data, datalen, indicator, 0)) {
 			tdsdump_log(TDS_DBG_INFO1, "ct_setparam() failed to add rpc param\n");
 			tdsdump_log(TDS_DBG_INFO1, "ct_setparam() failed to add input value\n");
 			free(param);
@@ -3417,7 +3417,7 @@ ct_setparam(CS_COMMAND * cmd, CS_DATAFMT * datafmt, CS_VOID * data, CS_INT * dat
 
 		param = (CS_DYNAMIC_PARAM *) calloc(1, sizeof(CS_DYNAMIC_PARAM));
 
-		if (CS_SUCCEED != _ct_fill_param(cmd->command_type, param, datafmt, data, datalen, indicator, 0)) {
+		if (CS_SUCCEED != _ct_fill_param(cmd, param, datafmt, data, datalen, indicator, 0)) {
 			tdsdump_log(TDS_DBG_INFO1, "ct_setparam() failed to add dynamic param\n");
 			free(param);
 			return CS_FAIL;
@@ -3448,7 +3448,7 @@ ct_setparam(CS_COMMAND * cmd, CS_DATAFMT * datafmt, CS_VOID * data, CS_INT * dat
 
 		param = (CSREMOTE_PROC_PARAM *) calloc(1, sizeof(CSREMOTE_PROC_PARAM));
 
-		if (CS_SUCCEED != _ct_fill_param(cmd->command_type, param, datafmt, data, datalen, indicator, 0)) {
+		if (CS_SUCCEED != _ct_fill_param(cmd, param, datafmt, data, datalen, indicator, 0)) {
 			tdsdump_log(TDS_DBG_INFO1, "ct_setparam() failed to add language param\n");
 			free(param);
 			return CS_FAIL;
@@ -4304,13 +4304,14 @@ param_clear(CS_PARAM * pparam)
 
 
 static int
-_ct_fill_param(CS_INT cmd_type, CS_PARAM *param, CS_DATAFMT *datafmt, CS_VOID *data, CS_INT *datalen,
+_ct_fill_param(CS_COMMAND *cmd, CS_PARAM *param, CS_DATAFMT *datafmt, CS_VOID *data, CS_INT *datalen,
 	       CS_SMALLINT *indicator, CS_BYTE byvalue)
 {
+    CS_INT cmd_type = cmd->command_type;
 	int desttype;
 
-	tdsdump_log(TDS_DBG_FUNC, "_ct_fill_param(%d, %p, %p, %p, %p, %p, %x)\n",
-				cmd_type, param, datafmt, data, datalen, indicator, byvalue);
+	tdsdump_log(TDS_DBG_FUNC, "_ct_fill_param(%p [%d], %p, %p, %p, %p, %p, %x)\n",
+				cmd, cmd_type, param, datafmt, data, datalen, indicator, byvalue);
 
 	if (cmd_type == CS_DYNAMIC_CMD) {
 		param->name = NULL;
@@ -4380,6 +4381,8 @@ _ct_fill_param(CS_INT cmd_type, CS_PARAM *param, CS_DATAFMT *datafmt, CS_VOID *d
 			}
 
 			if (data) {
+                int varint_size
+                  = tds_get_varint_size(cmd->con->tds_socket->conn, desttype);
 				if (*(param->datalen) == CS_NULLTERM) {
 					tdsdump_log(TDS_DBG_INFO1,
 						    " _ct_fill_param() about to strdup string %u bytes long\n",
@@ -4388,6 +4391,11 @@ _ct_fill_param(CS_INT cmd_type, CS_PARAM *param, CS_DATAFMT *datafmt, CS_VOID *d
 				} else if (*(param->datalen) < 0) {
 					return CS_FAIL;
 				}
+                if ((varint_size == 2  &&  *(param->datalen) > 8000)
+                    ||  (varint_size == 1  &&  *(param->datalen) > 255)) {
+                    _csclient_msg(cmd->con->ctx, "_ct_fill_param",
+                                  2, 1, 10, 25, "");
+                }
 				param->value = (CS_BYTE*) malloc(*(param->datalen) ? *(param->datalen) : 1);
 				if (param->value == NULL)
 					return CS_FAIL;
