@@ -12,7 +12,6 @@ LIBS = $(DL_LIBS) $(ORIG_LIBS)
 REQUIRES = Boost.Test.Included
 
 CHECK_CMD = unit_test_parse_utils
-CHECK_COPY
 CHECK_TIMEOUT = 3000
 
 WATCHERS = asztalos
