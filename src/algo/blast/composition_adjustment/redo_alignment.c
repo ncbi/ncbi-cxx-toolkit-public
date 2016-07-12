@@ -632,17 +632,6 @@ int s_GetTranslatedLength(int length,int frame, int is_pos_based) {
 	return	((length - ABS(frame) + 1)/3);
 }
 
-static
-Boolean s_UseFullLengthForCBS(void)
-{
-    char* use_full_len_str = getenv("FULL_LEN_CBS");
-    if(use_full_len_str != NULL) {
-    	return TRUE;
-    }
-
-    return FALSE;
-}
-
 /**
  * Read a list of alignments from a translated search and create a
  * new array of pointers to s_WindowInfo so that each alignment is
@@ -692,14 +681,6 @@ s_WindowsFromTranslatedAligns(BlastCompo_Alignment * alignments,
         if (align_copy == NULL)
             goto error_return;
 
-        if(s_UseFullLengthForCBS()) {
-            begin = 0;
-            end  =translated_length;
-            windows[k] = s_WindowInfoNew(begin, end, frame, 0,
-                                query_length, query_index, align_copy);
-
-        }
-        else {
         if (subject_is_translated) {
             begin = MAX(0, align->matchStart - border);
             end   = MIN(translated_length, align->matchEnd + border);
@@ -711,7 +692,6 @@ s_WindowsFromTranslatedAligns(BlastCompo_Alignment * alignments,
             /* for blastx, temporarily swap subject and query ranges*/
             windows[k] = s_WindowInfoNew(begin, end, query_index, 0,
                                 sequence_length, 0, align_copy);
-        }
         }
         if (windows[k] == NULL)
 	{
@@ -937,8 +917,7 @@ s_GetComposition(Blast_AminoAcidComposition * composition,
 
     data = seq->data;
     length = range->end - range->begin;
-    if ((query_is_translated || subject_is_translated)  &&
-    	(!s_UseFullLengthForCBS())){
+    if (query_is_translated || subject_is_translated) {
         int start;
         int end;
         start = ((query_is_translated) ?
