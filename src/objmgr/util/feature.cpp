@@ -3778,13 +3778,17 @@ bool sGetFeatureGeneBiotypeWrapper(
             biotype = "ncRNA";
             return true;
         }
-        string rnaClass = ext.GetGen().GetClass();
-        if (rnaClass == "other") {
+        if (ext.IsGen()  &&  ext.GetGen().IsSetClass()) {
+            string rnaClass = ext.GetGen().GetClass();
+            if (rnaClass == "other") {
+                biotype = "ncRNA";
+                return true;
+            }
+        }
+        else {
             biotype = "ncRNA";
             return true;
         }
-        biotype = rnaClass;
-        return true;
     }
 
     //2b
