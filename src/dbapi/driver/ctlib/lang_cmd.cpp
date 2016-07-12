@@ -140,8 +140,8 @@ CTL_Cmd::~CTL_Cmd(void)
         if (!IsDead()) {
             // Check(ct_cancel(NULL, x_GetSybaseCmd(), CS_CANCEL_CURRENT));
             // Check(ct_cancel(NULL, x_GetSybaseCmd(), CS_CANCEL_ALL));
-            Check(ct_cmd_drop(x_GetSybaseCmd()));
         }
+        Check(ct_cmd_drop(x_GetSybaseCmd()));
     }
     NCBI_CATCH_ALL_X( 4, NCBI_CURRENT_FUNCTION )
 
