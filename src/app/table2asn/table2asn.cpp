@@ -135,7 +135,7 @@ private:
     auto_ptr<CMultiReader> m_reader;
     CRef<CSeq_entry> m_replacement_proteins;
     CRef<CSeq_entry> m_possible_proteins;
-    CTable2AsnValidator m_validator;
+    CRef<CTable2AsnValidator> m_validator;
     CRef<CTable2AsnLogger> m_logger;
     auto_ptr<CForeignContaminationScreenReportReader> m_fcs_reader;
     CTable2AsnContext    m_context;
@@ -381,6 +381,7 @@ int CTbl2AsnApp::Run(void)
     m_logger->SetProgressOstream(args["logfile"] ? &(args["logfile"].AsOutputFile()) : &NcbiCout);
     m_context.m_logger = m_logger;
     m_logger->m_enable_log = args["W"].AsBoolean();
+    m_validator.Reset(new CTable2AsnValidator(m_context));
 
     // note - the C Toolkit uses 0 for SEV_NONE, but the C++ Toolkit uses 0 for SEV_INFO
     // adjust here to make the inputs to table2asn match tbl2asn expectations
@@ -728,14 +729,14 @@ int CTbl2AsnApp::Run(void)
                 ProcessOneFile();
             }
         }
-        if (m_validator.TotalErrors() > 0)
+        if (m_validator->TotalErrors() > 0)
         {
             string outputfile;
             if (!m_context.m_ResultsDirectory.empty())
                 outputfile = m_context.m_ResultsDirectory;
             outputfile += "errorlog.val";
             CNcbiOfstream val_stats(outputfile.c_str());
-            m_validator.ReportErrorStats(val_stats);
+            m_validator->ReportErrorStats(val_stats);
         }
     }
     catch (const CBadResiduesException& e)
@@ -939,21 +940,21 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
     if (!m_context.m_cleanup.empty())
     {
-      m_validator.Cleanup(entry_edit_handle, m_context.m_cleanup);
+       m_validator->Cleanup(entry_edit_handle, m_context.m_cleanup);
     }
 
     if (!IsDryRun())
     {
-        m_validator.UpdateECNumbers(entry_edit_handle, GenerateOutputFilename(".ecn"), m_context.m_ecn_numbers_ostream);
+        m_validator->UpdateECNumbers(entry_edit_handle, GenerateOutputFilename(".ecn"), m_context.m_ecn_numbers_ostream);
 
         if (!m_context.m_validate.empty())
         {
-            m_validator.Validate(submit, entry, m_context.m_validate, GenerateOutputFilename(".val"));
+            m_validator->Validate(submit, entry, m_context.m_validate, GenerateOutputFilename(".val"));
         }
 
         if (m_context.m_discrepancy_file)
         {
-            m_validator.ReportDiscrepancies(submit.Empty() ? (CSerialObject&)*entry : (CSerialObject&)*submit, *m_context.m_scope, *m_context.m_discrepancy_file);
+            m_validator->ReportDiscrepancies(submit.Empty() ? (CSerialObject&)*entry : (CSerialObject&)*submit, *m_context.m_scope, *m_context.m_discrepancy_file);
         }
     }
 }

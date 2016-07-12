@@ -13,12 +13,13 @@ namespace objects
     class CScope;
 };
 
-class CTable2AsnValidator
+class CTable2AsnContext;
+class CTable2AsnValidator: public CObject
 {
 public:
-    CTable2AsnValidator();
+    CTable2AsnValidator(CTable2AsnContext& ctx);
     void Validate(CRef<objects::CSeq_submit> submit, CRef<objects::CSeq_entry> entry, const string& flags, const string& report_name);
-    void Cleanup(objects::CSeq_entry_Handle entry, const string& flags);
+    void Cleanup(objects::CSeq_entry_Handle& entry, const string& flags);
     void UpdateECNumbers(objects::CSeq_entry_Handle seh, const string& fname, auto_ptr<CNcbiOfstream>& ostream);
     void ReportErrors(CConstRef<objects::CValidError> errors, CNcbiOstream& out);
     void ReportErrorStats(CNcbiOstream& out);
@@ -32,6 +33,7 @@ protected:
         size_t m_total;
     } TErrorStats;
     vector<TErrorStats> m_stats;
+    CTable2AsnContext* m_context;
 };
 
 END_NCBI_SCOPE

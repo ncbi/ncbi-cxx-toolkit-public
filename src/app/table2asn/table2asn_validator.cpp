@@ -15,6 +15,7 @@
 #include <objmgr/feat_ci.hpp>
 
 #include "table2asn_validator.hpp"
+#include "table2asn_context.hpp"
 
 #include <misc/discrepancy/discrepancy.hpp>
 
@@ -48,11 +49,11 @@ void xGetLabel(const CSeq_feat& feat, string& label)
 
 } // end anonymous namespace
 
-CTable2AsnValidator::CTable2AsnValidator() : m_stats(CValidErrItem::eSev_trace)
+CTable2AsnValidator::CTable2AsnValidator(CTable2AsnContext& ctx) : m_stats(CValidErrItem::eSev_trace), m_context(&ctx)
 {
 }
 
-void CTable2AsnValidator::Cleanup(CSeq_entry_Handle h_entry, const string& flags)
+void CTable2AsnValidator::Cleanup(CSeq_entry_Handle& h_entry, const string& flags)
 {
     CRef<CSeq_entry> entry((CSeq_entry*)(h_entry.GetEditHandle().GetCompleteSeq_entry().GetPointer()));
 
@@ -152,10 +153,10 @@ void CTable2AsnValidator::ReportErrorStats(CNcbiOstream& out)
 
 void CTable2AsnValidator::ReportDiscrepancies(CSerialObject& obj, CScope& scope, CNcbiOstream& output)
 {
-    const char* list[] = { "BACTERIA_SHOULD_NOT_HAVE_MRNA", "COUNT_NUCLEOTIDES" };
     CRef<NDiscrepancy::CDiscrepancySet> tests = NDiscrepancy::CDiscrepancySet::New(scope);
-    tests->AddTest(list[0]); 
-    tests->AddTest(list[1]);
+    vector<string> names = NDiscrepancy::GetDiscrepancyNames(NDiscrepancy::eSubmitter);
+    tests->AddTests(names);
+    tests->SetFile(m_context->m_current_file);
 
 //    Tests->SetSuspectRules(m_SuspectRules);
 //    Tests->SetLineage(m_Lineage);
