@@ -75,12 +75,14 @@ DISCREPANCY_SUMMARIZE(CDS_TRNA_OVERLAP)
         cds_L.Add(((CSeq_feat*)(*it)->GetObject().GetPointer())->GetLocation());
     }
     NON_CONST_ITERATE (TReportObjectList, it, trna) {
-        if (cds_L.Intersect(((CSeq_feat*)(*it)->GetObject().GetPointer())->GetLocation(), 0, 0)) {
+        CRef<CSeq_loc> loc = cds_L.Intersect(((CSeq_feat*)(*it)->GetObject().GetPointer())->GetLocation(), 0, 0);
+        if (loc.NotEmpty() && !loc->IsEmpty() && !loc->IsNull()) {
             trna_N.Add(**it);
         }
     }
     NON_CONST_ITERATE (TReportObjectList, it, cds) {
-        if (trna_L.Intersect(((CSeq_feat*)(*it)->GetObject().GetPointer())->GetLocation(), 0, 0)) {
+        CRef<CSeq_loc> loc = trna_L.Intersect(((CSeq_feat*)(*it)->GetObject().GetPointer())->GetLocation(), 0, 0);
+        if (loc.NotEmpty() && !loc->IsEmpty() && !loc->IsNull()) {
             cds_N.Add(**it);
         }
     }
