@@ -44,7 +44,6 @@ static const char* const kBuiltInGuide[] = {
     "3+5  E??  gb_wgs_prot",
     "3+5  F??  ddbj_tpa_prot",
     "3+5  G??  ddbj_wgs_prot",
-    "3+5  H??  gb_tpa_wgs_prot",
     "3+5  I??  ddbj_tpa_prot # fallback to placate older clients",
     "3+5  I??  ddbj_tpa_wgs_prot",
     "3+5  J??  gb_tsa_prot",
