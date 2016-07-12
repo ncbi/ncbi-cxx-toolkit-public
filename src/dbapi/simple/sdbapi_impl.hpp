@@ -80,6 +80,7 @@ private:
     list<string> m_PrintOutput;
     CRef<CDB_Exception::SContext> m_Context;
     CRef<CSDB_UserHandler> m_Handler;
+    CMutex       m_Mutex;
 
     friend class CSDB_UserHandler;
 };

@@ -1645,12 +1645,14 @@ CConnHolder::GetConn(void) const
 inline void
 CConnHolder::AddOpenRef(void)
 {
+    CMutexGuard mg(m_Mutex);
     ++m_CntOpen;
 }
 
 inline void
 CConnHolder::CloseRef(void)
 {
+    CMutexGuard mg(m_Mutex);
     if (--m_CntOpen == 0) {
         m_Conn->GetCDB_Connection()->PopMsgHandler(&*m_Handler);
         m_Conn->Close();
@@ -1659,6 +1661,7 @@ CConnHolder::CloseRef(void)
 
 void CConnHolder::SetTimeout(const CTimeout& timeout)
 {
+    CMutexGuard mg(m_Mutex);
     if (timeout.IsDefault()) {
         ResetTimeout();
     } else if (m_CntOpen > 0) {
@@ -1674,6 +1677,7 @@ void CConnHolder::SetTimeout(const CTimeout& timeout)
 
 void CConnHolder::ResetTimeout(void)
 {
+    CMutexGuard mg(m_Mutex);
     if (m_HasCustomTimeout  &&  m_CntOpen > 0) {
         m_Conn->SetTimeout(m_DefaultTimeout);
     }
@@ -1689,6 +1693,7 @@ const list<string>& CConnHolder::GetPrintOutput(void) const
 inline
 void CConnHolder::ResetPrintOutput(void)
 {
+    CMutexGuard mg(m_Mutex);
     m_PrintOutput.clear();
 }
 
