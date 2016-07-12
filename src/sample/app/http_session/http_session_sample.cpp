@@ -56,7 +56,7 @@ public:
     virtual void Init(void);
     virtual int Run(void);
 
-    void PrintResponse(const CHttpSession* session,
+    bool PrintResponse(const CHttpSession* session,
                        const CHttpResponse& response);
 
 private:
@@ -65,13 +65,15 @@ private:
     bool m_PrintHeaders;
     bool m_PrintCookies;
     bool m_PrintBody;
+    int m_Errors;
 };
 
 
 CHttpSessionApp::CHttpSessionApp(void)
     : m_PrintHeaders(true),
       m_PrintCookies(true),
-      m_PrintBody(true)
+      m_PrintBody(true),
+      m_Errors(0)
 {
 }
 
@@ -155,7 +157,7 @@ int CHttpSessionApp::Run(void)
             cout << "HEAD " << *it << endl;
             CHttpRequest req = session.NewRequest(*it, CHttpSession::eHead);
             SetupRequest(req);
-            PrintResponse(&session, req.Execute());
+            if (!PrintResponse(&session, req.Execute())) m_Errors++;
             cout << "-------------------------------------" << endl << endl;
         }
     }
@@ -166,7 +168,7 @@ int CHttpSessionApp::Run(void)
             cout << "GET " << *it << endl;
             CHttpRequest req = session.NewRequest(*it);
             SetupRequest(req);
-            PrintResponse(&session, req.Execute());
+            if (!PrintResponse(&session, req.Execute())) m_Errors++;
             cout << "-------------------------------------" << endl << endl;
         }
     }
@@ -177,7 +179,7 @@ int CHttpSessionApp::Run(void)
         CHttpRequest req = session.NewRequest(url, CHttpSession::ePost);
         SetupRequest(req);
         NcbiStreamCopy(req.ContentStream(), cin);
-        PrintResponse(&session, req.Execute());
+        if (!PrintResponse(&session, req.Execute())) m_Errors++;
         cout << "-------------------------------------" << endl << endl;
     }
 
@@ -186,7 +188,7 @@ int CHttpSessionApp::Run(void)
     }
 
     const string sample_url = "http://web.ncbi.nlm.nih.gov/Service/sample/cgi_sample.cgi";
-    const string bad_url = "http://web.ncbi.nlm.nih.gov/Service/sample/404";
+    const string bad_url = "https://web.ncbi.nlm.nih.gov/Service/sample/404";
     CUrl url(sample_url);
 
     {{
@@ -196,7 +198,7 @@ int CHttpSessionApp::Run(void)
         CHttpRequest req = session.NewRequest(url, CHttpSession::eHead);
         SetupRequest(req);
         CHttpResponse resp = req.Execute();
-        PrintResponse(&session, resp);
+        if (!PrintResponse(&session, resp)) m_Errors++;
         cout << "-------------------------------------" << endl << endl;
     }}
 
@@ -205,7 +207,7 @@ int CHttpSessionApp::Run(void)
         cout << "GET (no args) " << sample_url << endl;
         CHttpRequest req = session.NewRequest(url);
         SetupRequest(req);
-        PrintResponse(&session, req.Execute());
+        if (!PrintResponse(&session, req.Execute())) m_Errors++;
         cout << "-------------------------------------" << endl << endl;
     }}
 
@@ -216,7 +218,7 @@ int CHttpSessionApp::Run(void)
         url_with_args.GetArgs().SetValue("message", "GET data");
         CHttpRequest req = session.NewRequest(url_with_args);
         SetupRequest(req);
-        PrintResponse(&session, req.Execute());
+        if (!PrintResponse(&session, req.Execute())) m_Errors++;
         cout << "-------------------------------------" << endl << endl;
     }}
 
@@ -227,7 +229,7 @@ int CHttpSessionApp::Run(void)
         SetupRequest(req);
         CHttpFormData& data = req.FormData();
         data.AddEntry("message", "POST data");
-        PrintResponse(&session, req.Execute());
+        if (!PrintResponse(&session, req.Execute())) m_Errors++;
         cout << "-------------------------------------" << endl << endl;
     }}
 
@@ -238,7 +240,7 @@ int CHttpSessionApp::Run(void)
         SetupRequest(req);
         CHttpFormData& data = req.FormData();
         data.AddProvider("message", new CTestDataProvider);
-        PrintResponse(&session, req.Execute());
+        if (!PrintResponse(&session, req.Execute())) m_Errors++;
         cout << "-------------------------------------" << endl << endl;
     }}
 
@@ -250,7 +252,7 @@ int CHttpSessionApp::Run(void)
         req.Headers().SetValue(CHttpHeaders::eContentType, "application/x-www-form-urlencoded");
         CNcbiOstream& out = req.ContentStream();
         out << "message=POST manual data";
-        PrintResponse(&session, req.Execute());
+        if (!PrintResponse(&session, req.Execute())) m_Errors++;
         cout << "-------------------------------------" << endl << endl;
     }}
 
@@ -258,7 +260,7 @@ int CHttpSessionApp::Run(void)
         // POST using shortcut
         cout << "POST (shortcut) " << sample_url << endl;
         CHttpResponse response = g_HttpPost(url, "message=POST%20shortcut%20data");
-        PrintResponse(0, response);
+        if (!PrintResponse(0, response)) m_Errors++;
         cout << "-------------------------------------" << endl << endl;
     }}
 
@@ -269,7 +271,7 @@ int CHttpSessionApp::Run(void)
         SetupRequest(req);
         CHttpFormData& data = req.FormData();
         data.AddProvider("message", new CTestDataProvider);
-        PrintResponse(&session, req.Execute());
+        if (!PrintResponse(&session, req.Execute())) m_Errors++;
         cout << "-------------------------------------" << endl << endl;
     }}
 
@@ -286,7 +288,7 @@ int CHttpSessionApp::Run(void)
         // Service request
         cout << "GET service: test" << endl;
         CHttpRequest req = session.NewRequest(CUrl("test"));
-        PrintResponse(&session, req.Execute());
+        if (!PrintResponse(&session, req.Execute())) m_Errors++;
         cout << "-------------------------------------" << endl << endl;
     }}
 
@@ -294,16 +296,20 @@ int CHttpSessionApp::Run(void)
         // Service request
         cout << "GET service (shortcut): test" << endl;
         CHttpResponse response = g_HttpGet(CUrl("test"));
-        PrintResponse(0, response);
+        if (!PrintResponse(0, response)) m_Errors++;
         cout << "-------------------------------------" << endl << endl;
     }}
 
+    if (m_Errors > 0) {
+        cout << m_Errors << " requests failed." << endl;
+        return 1;
+    }
     return 0;
 }
 
 
 
-void CHttpSessionApp::PrintResponse(const CHttpSession* session,
+bool CHttpSessionApp::PrintResponse(const CHttpSession* session,
                                     const CHttpResponse& response)
 {
     cout << "Status: " << response.GetStatusCode() << " "
@@ -340,6 +346,7 @@ void CHttpSessionApp::PrintResponse(const CHttpSession* session,
             }
         }
     }
+    return response.GetStatusCode() == 200;
 }
 
 

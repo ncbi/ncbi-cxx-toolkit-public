@@ -714,9 +714,11 @@ void CCgiApplication::LogRequest(void) const
         // Add target url
         string target_url = ctx.GetRequest().GetProperty(eCgi_ScriptName);
         if ( !target_url.empty() ) {
-            string host = "http://" + GetDiagContext().GetHost();
+            bool secure = AStrEquiv(ctx.GetRequest().GetRandomProperty("HTTPS",
+                false), "on", PNocase());
+            string host = (secure ? "https://" : "http://") + GetDiagContext().GetHost();
             string port = ctx.GetRequest().GetProperty(eCgi_ServerPort);
-            if (!port.empty()  &&  port != "80") {
+            if (!port.empty()  &&  port != (secure ? "443" : "80")) {
                 host += ":" + port;
             }
             target_url = host + target_url;
