@@ -1266,7 +1266,6 @@ CConstRef<CSeq_feat> GetOverlappingGene(
     const CSeq_loc& loc, CScope& scope,
     ETransSplicing eTransSplicing )
 {
-    int opt = 0;
     switch ( eTransSplicing ) {
     case eTransSplicing_Auto:
         {
