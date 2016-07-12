@@ -834,7 +834,7 @@ DISCREPANCY_SUMMARIZE(NO_ANNOTATION)
 }
 
 
-DISCREPANCY_CASE(LONG_NO_ANNOTATION, CSeq_inst, eDisc | eSubmitter | eSmart, "No annotation for LONG sequence")
+DISCREPANCY_CASE(LONG_NO_ANNOTATION, CSeq_inst, eDisc | eOncaller | eSubmitter | eSmart, "No annotation for LONG sequence")
 {
     const int kSeqLength = 5000;
     if (obj.IsAa() || context.HasFeatures() || !(obj.CanGetLength() && obj.GetLength() > kSeqLength)) {
