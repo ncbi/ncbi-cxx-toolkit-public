@@ -589,7 +589,13 @@ void CFlatFileConfig::AddArgumentDescriptions(CArgDescriptions& args)
          arg_desc->AddOptionalKey("depth", "Depth",
                                   "Exploration depth", CArgDescriptions::eInteger);
 
-         arg_desc->AddFlag("show-flags",
+         arg_desc->AddOptionalKey("max_search_segments", "MaxSearchSegments",
+                                  "Max number of empty segments to search", CArgDescriptions::eInteger);
+
+          arg_desc->AddOptionalKey("max_search_time", "MaxSearchTime",
+                                  "Max time to search for first annotation", CArgDescriptions::eDouble);
+
+        arg_desc->AddFlag("show-flags",
                            "Describe the current flag set in ENUM terms");
 
          // view (default: nucleotide)

@@ -310,7 +310,7 @@ private:
 // constructor
 CAsn2FlatApp::CAsn2FlatApp (void)
 {
-    SetVersion(CVersionInfo(0, 9, 23));
+    SetVersion(CVersionInfo(0, 9, 24));
 }
 
 // destructor
@@ -493,6 +493,12 @@ int CAsn2FlatApp::Run(void)
     }
     if( args["depth"] ) {
         m_FFGenerator->SetAnnotSelector().SetResolveDepth(args["depth"].AsInteger());
+    }
+    if( args["max_search_segments"] ) {
+        m_FFGenerator->SetAnnotSelector().SetMaxSearchSegments(args["max_search_segments"].AsInteger());
+    }
+    if( args["max_search_time"] ) {
+        m_FFGenerator->SetAnnotSelector().SetMaxSearchTime(float(args["max_search_time"].AsDouble()));
     }
 
     auto_ptr<CObjectIStream> is;
