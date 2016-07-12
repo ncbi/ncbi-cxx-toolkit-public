@@ -4538,9 +4538,9 @@ NRN	s	Nairn Literary Society Library, Public Library
 NRNZ	s	Northland Regional Museum
 NRPSU	c	Department of Agro-industry, Faculty of Natural Resources
 NRRL	c	Agricultural Research Service Culture Collection
-NRRL:NRRL:MOLD	 	Agricultural Research Service Culture Collection, 
-NRRL:NRRL:PROK	 	Agricultural Research Service Culture Collection, 
-NRRL:NRRL:YEAST	 	Agricultural Research Service Culture Collection, 
+NRRL:MOLD		Agricultural Research Service Culture Collection, 
+NRRL:PROK		Agricultural Research Service Culture Collection, 
+NRRL:YEAST		Agricultural Research Service Culture Collection, 
 NRS	s	Naturhistoriska Riksmuseet
 NRWC	s	N. R. Whitney Collection
 NRZM	c	German Reference Center for Meningococci
