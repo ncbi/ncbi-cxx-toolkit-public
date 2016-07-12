@@ -1,0 +1,127 @@
+Seq-annot ::= {
+  id {
+    local str "Scaffold7"
+  },
+  data ftable {
+    {
+      id local id 1,
+      data gene {
+        locus-tag "A271_CLEC026002"
+      },
+      comment "Gap in scaffold at 5 end of conserved domain,Partial GTPX
+ conserved domain at 5 end of model near gap in scaffold. Premature
+ stop-codons are probably remnants of the pseudogene.",
+      location int {
+        from 12504878,
+        to 12518543,
+        strand plus,
+        id local str "Scaffold7"
+      },
+      qual {
+        {
+          qual "ID",
+          val "CLEC026002"
+        },
+        {
+          qual "Name",
+          val "Partial-Glutathion Peroxidase"
+        },
+        {
+          qual "date_last_modified",
+          val "2014-05-3"
+        },
+        {
+          qual "owner",
+          val "agondhalekar"
+        },
+        {
+          qual "symbol",
+          val "GTPX 2-Pseudogene"
+        }
+      },
+      pseudo TRUE
+    },
+    {
+      id local id 2,
+      data rna {
+        type mRNA
+      },
+      comment "Gap in scaffold at 5 end of conserved domain,Partial GTPX
+ conserved domain at 5 end of model near gap in scaffold. Premature
+ stop-codons are probably remnants of the pseudogene.",
+      product whole local str "CLEC026002-RA",
+      location mix {
+        int {
+          from 12504878,
+          to 12518543,
+          strand plus,
+          id local str "Scaffold7"
+        }
+      },
+      qual {
+        {
+          qual "Parent",
+          val "CLEC026002"
+        },
+        {
+          qual "transcript_id",
+          val "CLEC026002-RA"
+        },
+        {
+          qual "ID",
+          val "CLEC026002-RA"
+        },
+        {
+          qual "Name",
+          val "Glutathion Peroxidase 2- Pseudogene"
+        },
+        {
+          qual "date_last_modified",
+          val "2014-05-3"
+        },
+        {
+          qual "owner",
+          val "agondhalekar"
+        },
+        {
+          qual "symbol",
+          val "Glutathion Peroxidase 2- Pseudogene"
+        }
+      },
+      xref {
+        {
+          id local id 3
+        }
+      },
+      pseudo TRUE
+    },
+    {
+      id local id 3,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 12504878,
+        to 12518543,
+        strand plus,
+        id local str "Scaffold7"
+      },
+      qual {
+        {
+          qual "ID",
+          val "CLEC026002-RA-CDS"
+        },
+        {
+          qual "Parent",
+          val "CLEC026002-RA"
+        }
+      },
+      xref {
+        {
+          id local id 2
+        }
+      },
+      pseudo TRUE
+    }
+  }
+}
