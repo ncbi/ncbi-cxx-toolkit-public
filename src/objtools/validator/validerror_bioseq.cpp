@@ -7301,6 +7301,7 @@ EDiagSev CValidError_bioseq::x_DupFeatSeverity
  bool is_fruitfly,
  bool is_viral,
  bool is_htgs,
+ bool is_small_genome,
  bool same_annot,
  bool same_label)
 {
@@ -7343,6 +7344,13 @@ EDiagSev CValidError_bioseq::x_DupFeatSeverity
             if ( curr_frame != prev_frame ) {
                 severity = eDiag_Warning;
             }
+        }
+    }
+
+    if (is_small_genome) {
+        if (curr_subtype == CSeqFeatData::eSubtype_gene ||
+            curr_subtype == CSeqFeatData::eSubtype_cdregion) {
+            severity = eDiag_Warning;
         }
     }
 
@@ -7390,7 +7398,7 @@ EDiagSev CValidError_bioseq::x_DupFeatSeverity
 
 
 
-bool CValidError_bioseq::x_ReportDupOverlapFeaturePair (const CSeq_feat_Handle & f1, const CSeq_feat_Handle & f2, bool fruit_fly, bool viral, bool htgs)
+bool CValidError_bioseq::x_ReportDupOverlapFeaturePair (const CSeq_feat_Handle & f1, const CSeq_feat_Handle & f2, bool fruit_fly, bool viral, bool htgs, bool small_genome)
 {
     if (fruit_fly && IsDicistronicGene(f1) && IsDicistronicGene(f2)) {
         return false;
@@ -7406,7 +7414,7 @@ bool CValidError_bioseq::x_ReportDupOverlapFeaturePair (const CSeq_feat_Handle &
     switch (dup_type) {
         case eDuplicate_Duplicate:
             {{
-                EDiagSev severity = x_DupFeatSeverity(feat1, feat2, fruit_fly, viral, htgs, true, true);
+                EDiagSev severity = x_DupFeatSeverity(feat1, feat2, fruit_fly, viral, htgs, small_genome, true, true);
                 CConstRef <CSeq_feat> g1 =
                     CValidError_bioseq::GetGeneForFeature (feat1, m_Scope);
                 CConstRef <CSeq_feat> g2 =
@@ -7421,7 +7429,7 @@ bool CValidError_bioseq::x_ReportDupOverlapFeaturePair (const CSeq_feat_Handle &
             break;
         case eDuplicate_SameIntervalDifferentLabel:
             if (PartialsSame(feat1.GetLocation(), feat2.GetLocation())) {
-                EDiagSev severity = x_DupFeatSeverity(feat1, feat2, fruit_fly, viral, htgs, true, false);
+                EDiagSev severity = x_DupFeatSeverity(feat1, feat2, fruit_fly, viral, htgs, small_genome, true, false);
                 if (feat1.GetData().IsImp()) {
                     severity = eDiag_Warning;
                 }
@@ -7433,7 +7441,7 @@ bool CValidError_bioseq::x_ReportDupOverlapFeaturePair (const CSeq_feat_Handle &
             break;
         case eDuplicate_DuplicateDifferentTable:
             {{
-                EDiagSev severity = x_DupFeatSeverity(feat1, feat2, fruit_fly, viral, htgs, false, true);
+                EDiagSev severity = x_DupFeatSeverity(feat1, feat2, fruit_fly, viral, htgs, small_genome, false, true);
                 PostErr (severity, eErr_SEQ_FEAT_FeatContentDup, 
                     "Duplicate feature (packaged in different feature table)",
                     feat2);
@@ -7442,7 +7450,7 @@ bool CValidError_bioseq::x_ReportDupOverlapFeaturePair (const CSeq_feat_Handle &
             break;
         case eDuplicate_SameIntervalDifferentLabelDifferentTable:
             {{
-                EDiagSev severity = x_DupFeatSeverity(feat1, feat2, fruit_fly, viral, htgs, false, false);
+                EDiagSev severity = x_DupFeatSeverity(feat1, feat2, fruit_fly, viral, htgs, small_genome, false, false);
                 PostErr (severity, eErr_SEQ_FEAT_DuplicateFeat,
                     "Features have identical intervals, but labels "
                     "differ (packaged in different feature table)",
@@ -7536,6 +7544,7 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(
         bool fruit_fly = false;
         bool viral = false;
         bool htgs = false;
+        bool small_genome = m_Imp.IsSmallGenomeSet();
 
         CSeqdesc_CI di(m_CurrentHandle, CSeqdesc::e_Source);
         if ( di && di->GetSource().IsSetOrg()) {
@@ -7571,7 +7580,7 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(
                 if (curr_start > prev_end) {
                     break;
                 }
-                if (x_ReportDupOverlapFeaturePair (f1, curr_it->GetSeq_feat_Handle(), fruit_fly, viral, htgs)) {
+                if (x_ReportDupOverlapFeaturePair (f1, curr_it->GetSeq_feat_Handle(), fruit_fly, viral, htgs, small_genome)) {
                     break;
                 }
             }
