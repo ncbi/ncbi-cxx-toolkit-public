@@ -1040,6 +1040,12 @@ struct STypeLink
     bool CanHaveGeneParent(void) const;
     bool CanHaveCommonGene(void) const;
 
+    // special cdregion to mRNA/VDJ_segment/C_range link
+    const CSeqFeatData::ESubtype* GetMultiParentTypes() const;
+    
+    // check for overlap by intervals
+    bool OverlapByIntervals() const;
+
     CSeqFeatData::ESubtype m_StartType;   // initial feature type
     CSeqFeatData::ESubtype m_CurrentType; // current link child type
     CSeqFeatData::ESubtype m_ParentType;  // current link parent type
@@ -1099,6 +1105,35 @@ inline bool STypeLink::CanHaveGeneParent(void) const
 inline bool STypeLink::CanHaveCommonGene(void) const
 {
     return CanHaveGeneParent();
+}
+
+
+const CSeqFeatData::ESubtype* STypeLink::GetMultiParentTypes() const
+{
+    if ( !m_ByProduct &&
+         m_StartType == CSeqFeatData::eSubtype_cdregion &&
+         m_CurrentType == CSeqFeatData::eSubtype_cdregion &&
+         m_ParentType == CSeqFeatData::eSubtype_mRNA ) {
+        // cdregion to mRNA can also link to C_region or VDJ_segment
+        static const CSeqFeatData::ESubtype sm_SpecialVDJTypes[] = {
+            CSeqFeatData::eSubtype_mRNA,
+            CSeqFeatData::eSubtype_C_region,
+            CSeqFeatData::eSubtype_V_segment,
+            CSeqFeatData::eSubtype_D_segment,
+            CSeqFeatData::eSubtype_J_segment,
+            CSeqFeatData::eSubtype_bad
+        };
+        return sm_SpecialVDJTypes;
+    }
+    return 0;
+}
+
+
+inline bool STypeLink::OverlapByIntervals() const
+{
+    return ( m_StartType == CSeqFeatData::eSubtype_cdregion &&
+             m_CurrentType == CSeqFeatData::eSubtype_cdregion &&
+             m_ParentType == CSeqFeatData::eSubtype_mRNA );
 }
 
 
@@ -1352,9 +1387,7 @@ namespace {
                                    TSeqPos circular_length)
     {
         EOverlapType overlap_type = eOverlap_Contained;
-        if ( link.m_StartType == CSeqFeatData::eSubtype_cdregion &&
-             link.m_CurrentType == CSeqFeatData::eSubtype_cdregion &&
-             link.m_ParentType == CSeqFeatData::eSubtype_mRNA ) {
+        if ( link.OverlapByIntervals() ) {
             overlap_type = eOverlap_CheckIntervals;
         }
         if ( link.m_ParentType == CSeqFeatData::eSubtype_gene &&
@@ -1385,6 +1418,7 @@ namespace {
     {
         if ( feat_type != parent_type ) {
             for ( STypeLink link(feat_type); link; ++link ) {
+                // TODO: VDJ
                 if ( link.m_ParentType == parent_type ) {
                     return true;
                 }
@@ -1433,10 +1467,17 @@ namespace {
             if ( xref.IsSetId() ) {
                 const CFeat_id& id = xref.GetId();
                 if ( id.IsLocal() ) {
-                    CSeq_feat_Handle feat1 =
-                        tse.GetFeatureWithId(link.m_ParentType, id.GetLocal());
-                    if ( feat1 ) {
-                        return feat1;
+                    if ( const CSeqFeatData::ESubtype* type_ptr = link.GetMultiParentTypes() ) {
+                        for ( ; *type_ptr != CSeqFeatData::eSubtype_bad; ++type_ptr ) {
+                            if ( CSeq_feat_Handle feat1 = tse.GetFeatureWithId(*type_ptr, id.GetLocal()) ) {
+                                return feat1;
+                            }
+                        }
+                    }
+                    else {
+                        if ( CSeq_feat_Handle feat1 = tse.GetFeatureWithId(link.m_ParentType, id.GetLocal()) ) {
+                            return feat1;
+                        }
                     }
                 }
             }
@@ -1470,6 +1511,11 @@ namespace {
     
         Int8 best_overlap = kMax_I8;
         SAnnotSelector sel(link.m_ParentType);
+        if ( const CSeqFeatData::ESubtype* type_ptr = link.GetMultiParentTypes() ) {
+            for ( ; *type_ptr != CSeqFeatData::eSubtype_bad; ++type_ptr ) {
+                sel.IncludeFeatSubtype(*type_ptr);
+            }
+        }
         sel.SetByProduct(link.m_ByProduct);
         for (CFeat_CI it(feat.GetScope(), c_loc, sel); it; ++it) {
             Int8 overlap = TestForOverlap64(it->GetLocation(),
@@ -1554,6 +1600,10 @@ namespace {
                     m_Overlap = overlap;
                     m_Info = info;
                 }
+            }
+        void CheckBest(const SBestInfo& b)
+            {
+                CheckBest(b.m_Quality, b.m_Overlap, b.m_Info);
             }
 
         Int1 m_Quality;
@@ -2244,12 +2294,36 @@ void CFeatTree::x_AssignParentsByOverlap(TFeatArray& features,
     if ( !m_Index ) {
         m_Index = new CFeatTreeIndex;
     }
-    TRangeArray& parents = m_Index->GetIndex(link, m_InfoArray);
-    if ( parents.empty() ) {
-        return;
-    }
+    // TODO: multi-children/multi-parent assignment
     TBestArray bests;
-    s_CollectBestOverlaps(features, bests, link, parents, this);
+    if ( const CSeqFeatData::ESubtype* type_ptr = link.GetMultiParentTypes() ) {
+        for ( ; *type_ptr != CSeqFeatData::eSubtype_bad; ++type_ptr ) {
+            TRangeArray& parents = m_Index->GetIndex(*type_ptr, link.m_ByProduct, m_InfoArray);
+            if ( parents.empty() ) {
+                continue;
+            }
+            TBestArray bests1;
+            s_CollectBestOverlaps(features, bests1, link, parents, this);
+            if ( bests.empty() ) {
+                swap(bests, bests1);
+            }
+            else {
+                for ( size_t i = 0; i < bests1.size(); ++i ) {
+                    bests[i].CheckBest(bests1[i]);
+                }
+            }
+        }
+        if ( bests.empty() ) {
+            return;
+        }
+    }
+    else {
+        TRangeArray& parents = m_Index->GetIndex(link, m_InfoArray);
+        if ( parents.empty() ) {
+            return;
+        }
+        s_CollectBestOverlaps(features, bests, link, parents, this);
+    }
     size_t cnt = features.size();
     _ASSERT(bests.size() == cnt);
 
@@ -2629,9 +2703,15 @@ void CFeatTree::AddFeaturesFor(CScope& scope, const CSeq_loc& loc,
     }
     if ( top_type != bottom_type ) {
         for ( STypeLink link(bottom_type); link; ++link ) {
-            CSeqFeatData::ESubtype parent_type = link.m_ParentType;
-            sel.IncludeFeatSubtype(parent_type);
-            if ( parent_type == top_type ) {
+            if ( const CSeqFeatData::ESubtype* type_ptr = link.GetMultiParentTypes() ) {
+                for ( ; *type_ptr != CSeqFeatData::eSubtype_bad; ++type_ptr ) {
+                    sel.IncludeFeatSubtype(*type_ptr);
+                }
+            }
+            else {
+                sel.IncludeFeatSubtype(link.m_ParentType);
+            }
+            if ( link.m_ParentType == top_type ) {
                 break;
             }
         }
@@ -3621,7 +3701,7 @@ bool sFeatureGetChildrenOfSubtypeFaster(
     feature::CFeatTree& featTree)
 //  ----------------------------------------------------------------------------
 {
-    const CSeq_feat& ff = mf.GetOriginalFeature();
+    //const CSeq_feat& ff = mf.GetOriginalFeature();
 
     vector<CMappedFeat> c = featTree.GetChildren(mf);
     for (vector<CMappedFeat>::iterator it = c.begin(); it != c.end(); it++) {
@@ -3644,7 +3724,7 @@ bool sFeatureGetChildrenOfSubtype(
     vector<CMappedFeat>& children)
 //  ----------------------------------------------------------------------------
 {
-    const CSeq_feat& ff = mf.GetOriginalFeature();
+    //const CSeq_feat& ff = mf.GetOriginalFeature();
     feature::CFeatTree myTree;
     myTree.AddFeaturesFor(mf, subtype, mf.GetFeatSubtype());
 
