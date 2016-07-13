@@ -224,10 +224,10 @@ void CTestApp::x_TestGetBufferPtr(CSeqVector_CI& vit,
 
     string buf;
     buf.resize(stop - start, ' ');
-    size_t str_pos = 0;
+    TSeqPos str_pos = 0;
     vit.SetPos(start);
     while (str_pos < stop - start) {
-        size_t block_size = min(vit.GetBufferSize(), stop - start - str_pos);
+        TSeqPos block_size = min(vit.GetBufferSize(), stop - start - str_pos);
         if (vit.GetBufferPtr() + block_size != vit.GetBufferEnd(block_size)) {
             cout << endl << "ERROR: Test failed -- invalid buffer ptr" << endl;
             throw runtime_error("Test failed");
