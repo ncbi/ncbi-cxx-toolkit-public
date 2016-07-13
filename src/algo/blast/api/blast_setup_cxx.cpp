@@ -202,11 +202,15 @@ SetupQueryInfo_OMF(const IBlastQuerySource& queries,
                 case eNa_strand_plus:
                     ctx_len = (i<3) ? prot_length : 0;
                     s_QueryInfo_SetContext(query_info, ctx_index + i, ctx_len);
+                    // the missing frame is present in query_info as
+                    // zero-lenghth context
+                    min_length = 0;
                     break;
 
                 case eNa_strand_minus:
                     ctx_len = (i<3) ? 0 : prot_length;
                     s_QueryInfo_SetContext(query_info, ctx_index + i, ctx_len);
+                    min_length = 0;
                     break;
 
                 case eNa_strand_both:
@@ -228,11 +232,15 @@ SetupQueryInfo_OMF(const IBlastQuerySource& queries,
                 case eNa_strand_plus:
                     s_QueryInfo_SetContext(query_info, ctx_index, length);
                     s_QueryInfo_SetContext(query_info, ctx_index+1, 0);
+                    // the missing strand is present in query_info as
+                    // zero-lenghth context
+                    min_length = 0;
                     break;
 
                 case eNa_strand_minus:
                     s_QueryInfo_SetContext(query_info, ctx_index, 0);
                     s_QueryInfo_SetContext(query_info, ctx_index+1, length);
+                    min_length = 0;
                     break;
 
                 case eNa_strand_both:
