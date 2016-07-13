@@ -1,0 +1,25 @@
+##gff-version 3
+#!gff-spec-version 1.21
+#!genome-build ASM584v2
+#!genome-build-accession NCBI_Assembly:GCA_000005845.2
+##sequence-region U00096.3 1 4641652
+##species http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=511145
+U00096.3	EcoCyc	chromosome	1	4641652	.	+	.	Is_circular=true
+U00096.3	EcoCyc	gene	190	255	.	+	.	ID=gene0;Dbxref=EcoGene:EG11277;gene=thrL;gene_synonym=ECK0001,JW4367;locus_tag=b0001
+U00096.3	EcoCyc	attenuator	301	310	.	+	.	ID=id1;Parent=gene0
+U00096.3	EcoCyc	CAAT-signal	311	320	.	+	.	ID=id2;Parent=gene0
+U00096.3	EcoCyc	enhancer	321	330	.	+	.	ID=id3;Parent=gene0
+U00096.3	EcoCyc	insulator	331	340	.	+	.	ID=id4;Parent=gene0
+U00096.3	EcoCyc	GC_rich_promoter_region	341	350	.	+	.	ID=id5;Parent=gene0
+U00096.3	EcoCyc	boundary_element	351	360	.	+	.	ID=id6;Parent=gene0
+U00096.3	EcoCyc	locus_control_region	361	370	.	+	.	ID=id7;Parent=gene0
+U00096.3	EcoCyc	minus_35_signal	371	380	.	+	.	ID=id8;Parent=gene0
+U00096.3	EcoCyc	minus_10_signal	381	390	.	+	.	ID=id9;Parent=gene0
+U00096.3	EcoCyc	polyA_signal_sequence	391	400	.	+	.	ID=id10;Parent=gene0
+U00096.3	EcoCyc	promoter	401	410	.	+	.	ID=id11;Parent=gene0
+U00096.3	EcoCyc	Shine_Dalgarno_sequence	411	420	.	+	.	ID=id12;Parent=gene0
+U00096.3	EcoCyc	riboswitch	421	430	.	+	.	ID=id13;Parent=gene0
+U00096.3	EcoCyc	silencer	431	440	.	+	.	ID=id14;Parent=gene0
+U00096.3	EcoCyc	TATA_box	441	450	.	+	.	ID=id15;Parent=gene0
+U00096.3	EcoCyc	terminator	451	460	.	+	.	ID=id16;Parent=gene0
+###

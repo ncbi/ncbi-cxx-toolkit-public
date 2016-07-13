@@ -1245,17 +1245,16 @@ bool CGff2Record::xInitFeatureData(
     }
 
     //special cases:
-    string ftype = Type();
-    if (ftype == "cross_link") {
-        return xInitFeatureDataBond(flags, pFeature);
+    if (xInitFeatureDataBond(flags, pFeature)) {
+        return true;
     }
-    if (ftype == "disulfide_bond") {
-        return xInitFeatureDataBond(flags, pFeature);
+    if (xInitFeatureDataSpecialImp(flags, pFeature)) {
+        return true;
     }
 
     //regular case:
     // use 1<->1 SOFA map.
-    CFeatListItem itemtype = SofaTypes().MapSofaTermToFeatListItem(ftype);
+    CFeatListItem itemtype = SofaTypes().MapSofaTermToFeatListItem(Type());
     switch( itemtype.GetType() ) {
         default: {
             return true;
@@ -1315,7 +1314,7 @@ bool CGff2Record::xInitFeatureData(
                     imp.SetKey("misc_feature");
                     return true;
                 }
-                imp.SetKey(ftype);
+                imp.SetKey(Type());
                 return true;
             }
             const string& key = CSeqFeatData::SubtypeValueToName(
@@ -1341,8 +1340,33 @@ bool CGff2Record::xInitFeatureDataBond(
         pFeature->SetData().SetBond(CSeqFeatData::eBond_disulfide);
         return true;
     }
-    pFeature->SetData().SetBond(CSeqFeatData::eBond_other);
-    return true;
+    return false;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Record::xInitFeatureDataSpecialImp(
+    int flags,
+    CRef<CSeq_feat> pFeature) const
+//  ----------------------------------------------------------------------------
+{
+    string ftype = Type();
+    if (ftype == "GC_rich_promoter_region") {
+        pFeature->SetData().SetImp().SetKey("GC_signal");
+        return true;
+    }
+    if (ftype == "Shine_Dalgarno_sequence") {
+        pFeature->SetData().SetImp().SetKey("ribosome_binding_site");
+        return true;
+    }
+    if (ftype == "boundary_element") {
+        pFeature->SetData().SetImp().SetKey("insulator");
+        return true;
+    }
+    if (ftype == "insulator") {
+        pFeature->SetData().SetImp().SetKey("enhancer_blocking_element");
+        return true;
+    }
+    return false;
 }
 
 END_objects_SCOPE
