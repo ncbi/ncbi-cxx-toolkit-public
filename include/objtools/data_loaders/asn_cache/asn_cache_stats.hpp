@@ -45,13 +45,21 @@ public:
     void      DumpSeqIds( CNcbiOstream & stream ) const;
     void      DumpIndex( CNcbiOstream & stream ) const;
 
-    CAsnCacheStats( CAsnCache & asn_cache_ref, bool include_timestamp = true )
-        : m_AsnCacheRef( asn_cache_ref ), m_AsnIndexRef( asn_cache_ref.GetIndexRef() ), m_IncludeTimestamp(include_timestamp)
+    enum EIncludeFlags {
+        eIncludeTimestamp = 1 << 0,
+        eIncludeLocation  = 1 << 1,
+
+        eIncludeDefault = eIncludeTimestamp | eIncludeLocation
+    };
+    typedef int TIncludeFlags;
+
+    CAsnCacheStats( CAsnCache & asn_cache_ref, TIncludeFlags include_flags = eIncludeDefault )
+        : m_AsnCacheRef( asn_cache_ref ), m_AsnIndexRef( asn_cache_ref.GetIndexRef() ), m_IncludeFlags(include_flags)
             {}
 private:
     CAsnCache & m_AsnCacheRef;
     CAsnIndex & m_AsnIndexRef;
-    bool m_IncludeTimestamp;
+    TIncludeFlags m_IncludeFlags;
 };
 
 
