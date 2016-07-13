@@ -140,9 +140,11 @@ void CSofaMap::x_Init()
 };
 
 
+//  ----------------------------------------------------------------------------
 string
 CSofaMap::FeatureToSofaType(
     const CSeq_feat& feat)
+//  ----------------------------------------------------------------------------
 {
     const CSeqFeatData& data = feat.GetData();
     CSeqFeatData::ESubtype subtype = data.GetSubtype();
@@ -156,61 +158,41 @@ CSofaMap::FeatureToSofaType(
             return "cross_link"; 
         }
     }
+
     if (subtype == CSeqFeatData::eSubtype_regulatory) {
+        typedef SStaticPair<const char*, const char*>  REGULATORY_ENTRY;
+        static const REGULATORY_ENTRY regulatoryMap_[] = {
+            { "attenuator", "attenuator" },
+            { "boundary_element", "insulator" },
+            { "CAAT_signal", "CAAT_signal" },
+            { "enhancer", "enhancer" },
+            { "enhancer_blocking_element", "insulator" },
+            { "GC_signal", "GC_rich_promoter_region" },
+            { "imprinting_control_region", "regulatory_region" },
+            { "locus_control_region", "locus_control_region" },
+            { "minus_10_signal", "minus_10_signal" },
+            { "minus_35_signal", "minus_35_signal" },
+            { "other", "regulatory_region" },
+            { "polyA_signal_sequence", "polyA_signal_sequence" },
+            { "promoter", "promoter" },
+            { "response_element", "regulatory_region" },
+            { "ribosome_binding_site", "Shine_Dalgarno_sequence" },
+            { "riboswitch", "riboswitch" },
+            { "silencer", "silencer" },
+            { "TATA_box", "TATA_box" },
+            { "terminator", "terminator" },
+        };
+        typedef CStaticArrayMap<string, string, PNocase> REGULATORY_MAP;
+        DEFINE_STATIC_ARRAY_MAP_WITH_COPY(REGULATORY_MAP, regulatoryMap, regulatoryMap_);
+
         string regulatoryClass = feat.GetNamedQual("regulatory_class");
-        if (regulatoryClass.empty()) {
-             return MappedName(data.Which(), subtype);
-       }
-        if (regulatoryClass == "attenuator") {
-            return "attenuator";
-        }
-        if (regulatoryClass == "CAAT_signal") {
-            return "CAAT_signal";
-        }
-        if (regulatoryClass == "enhancer") {
-            return "enhancer";
-        }
-        if (regulatoryClass == "enhancer_blocking_element") {
-            return "insulator";
-        }
-        if (regulatoryClass == "GC_signal") {
-            return "GC_rich_promoter_region";
-        }
-        if (regulatoryClass == "insulator") {
-            return "boundary_element";
-        }
-        if (regulatoryClass == "locus_control_region") {
-            return "locus_control_region";
-        }
-        if (regulatoryClass == "minus_35_signal") {
-            return "minus_35_signal";
-        }
-        if (regulatoryClass == "minus_10_signal") {
-            return "minus_10_signal";
-        }
-        if (regulatoryClass == "polyA_signal_sequence") {
-            return "polyA_signal_sequence";
-        }
-        if (regulatoryClass == "promoter") {
-            return "promoter";
-        }
-        if (regulatoryClass == "ribosome_binding_site") {
-            return "Shine_Dalgarno_sequence";
-        }
-        if (regulatoryClass == "riboswitch") {
-            return "riboswitch";
-        }
-        if (regulatoryClass == "silencer") {
-            return "silencer";
-        }
-        if (regulatoryClass == "TATA_box") {
-            return "TATA_box";
-        }
-        if (regulatoryClass == "terminator") {
-            return "terminator";
+        REGULATORY_MAP::const_iterator cit = regulatoryMap.find(regulatoryClass);
+        if (cit != regulatoryMap.end()) {
+            return cit->second;
         }
         return MappedName(data.Which(), subtype);
     }
+
     if (subtype == CSeqFeatData::eSubtype_ncRNA) {
         const CSeqFeatData::TRna& rna = data.GetRna();
         if ( !rna.IsSetExt() ) {
@@ -221,7 +203,8 @@ CSofaMap::FeatureToSofaType(
             return MappedName(data.Which(), subtype);
         }
         string ncrnaClass = ext.GetGen().GetClass();
-    }    
+    }   
+ 
     return MappedName(data.Which(), subtype);
 }
 

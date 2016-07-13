@@ -1,0 +1,25 @@
+##gff-version 3
+#!gff-spec-version 1.21
+#!processor NCBI annotwriter
+U00096.3	Genbank	region	1	4641652	.	+	.	ID=id0;gbkey=chromosome
+U00096.3	Genbank	gene	190	255	.	+	.	ID=gene0;Dbxref=EcoGene:EG11277;Name=thrL;gbkey=Gene;gene=thrL;gene_synonym=ECK0001,JW4367;locus_tag=b0001
+U00096.3	Genbank	attenuator	301	310	.	+	.	ID=id1;gbkey=regulatory
+U00096.3	Genbank	CAAT_signal	311	320	.	+	.	ID=id2;gbkey=regulatory
+U00096.3	Genbank	enhancer	321	330	.	+	.	ID=id3;gbkey=regulatory
+U00096.3	Genbank	insulator	331	340	.	+	.	ID=id4;gbkey=regulatory
+U00096.3	Genbank	GC_rich_promoter_region	341	350	.	+	.	ID=id5;gbkey=regulatory
+U00096.3	Genbank	region	351	360	.	+	.	ID=id6;gbkey=regulatory
+U00096.3	Genbank	locus_control_region	361	370	.	+	.	ID=id7;gbkey=regulatory
+U00096.3	Genbank	minus_35_signal	371	380	.	+	.	ID=id8;gbkey=regulatory
+U00096.3	Genbank	minus_10_signal	381	390	.	+	.	ID=id9;gbkey=regulatory
+U00096.3	Genbank	polyA_signal_sequence	391	400	.	+	.	ID=id10;gbkey=regulatory
+U00096.3	Genbank	promoter	401	410	.	+	.	ID=id11;gbkey=regulatory
+U00096.3	Genbank	Shine_Dalgarno_sequence	411	420	.	+	.	ID=id12;gbkey=regulatory
+U00096.3	Genbank	riboswitch	421	430	.	+	.	ID=id13;gbkey=regulatory
+U00096.3	Genbank	silencer	431	440	.	+	.	ID=id14;gbkey=regulatory
+U00096.3	Genbank	TATA_box	441	450	.	+	.	ID=id15;gbkey=regulatory
+U00096.3	Genbank	regulatory_region	451	460	.	+	.	ID=id16;gbkey=regulatory
+U00096.3	Genbank	regulatory_region	461	470	.	+	.	ID=id17;gbkey=regulatory
+U00096.3	Genbank	regulatory_region	471	480	.	+	.	ID=id18;gbkey=regulatory
+U00096.3	Genbank	terminator	481	490	.	+	.	ID=id19;gbkey=regulatory
+###
