@@ -187,7 +187,7 @@ int CHttpSessionApp::Run(void)
         return 0;
     }
 
-    const string sample_url = "http://web.ncbi.nlm.nih.gov/Service/sample/cgi_sample.cgi";
+    const string sample_url = "https://web.ncbi.nlm.nih.gov/Service/sample/cgi_sample.cgi";
     const string bad_url = "https://web.ncbi.nlm.nih.gov/Service/sample/404";
     CUrl url(sample_url);
 
