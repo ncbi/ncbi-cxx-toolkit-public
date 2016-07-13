@@ -47,10 +47,12 @@ extern "C" {
 #endif
 
 
-extern SOCKSSL NcbiSetupGnuTls(void);
+extern NCBI_XCONNECT_EXPORT
+SOCKSSL NcbiSetupGnuTls(void);
 
 
-extern NCBI_CRED NcbiCredGnuTls(void* xcred);
+extern NCBI_XCONNECT_EXPORT
+NCBI_CRED NcbiCredGnuTls(void* xcred);
 
 
 #ifdef __cplusplus
