@@ -450,7 +450,7 @@ CAnnotObject_Ref::CAnnotObject_Ref(const CSeq_annot_SNP_Info& snp_annot,
                                    const SSNP_Info& snp,
                                    CSeq_loc_Conversion* cvt)
     : m_Seq_annot(annot_handle),
-      m_AnnotIndex(snp_annot.GetIndex(snp)),
+      m_AnnotIndex(TAnnotIndex(snp_annot.GetIndex(snp))),
       m_AnnotType(eAnnot_SNPTable)
 {
     _ASSERT(IsSNPTableFeat());
@@ -488,7 +488,7 @@ CAnnotObject_Ref::CAnnotObject_Ref(const CSeq_annot_Handle& annot_handle,
                                    const CSeq_annot_SortedIter& iter,
                                    CSeq_loc_Conversion* cvt)
     : m_Seq_annot(annot_handle),
-      m_AnnotIndex(iter.GetRow()),
+      m_AnnotIndex(TAnnotIndex(iter.GetRow())),
       m_AnnotType(eAnnot_SortedSeqTable)
 {
     _ASSERT(IsSortedSeqTableFeat());
