@@ -21,5 +21,6 @@ U00096.3	EcoCyc	Shine_Dalgarno_sequence	411	420	.	+	.	ID=id12;Parent=gene0
 U00096.3	EcoCyc	riboswitch	421	430	.	+	.	ID=id13;Parent=gene0
 U00096.3	EcoCyc	silencer	431	440	.	+	.	ID=id14;Parent=gene0
 U00096.3	EcoCyc	TATA_box	441	450	.	+	.	ID=id15;Parent=gene0
-U00096.3	EcoCyc	terminator	451	460	.	+	.	ID=id16;Parent=gene0
+U00096.3	Genbank	regulatory_region	451	460	.	+	.	ID=id16;Parent=gene0
+U00096.3	Genbank	terminator	461	470	.	+	.	ID=id17;Parent=gene0
 ###

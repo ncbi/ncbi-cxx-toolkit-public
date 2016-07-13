@@ -1362,6 +1362,7 @@ bool CGff2Record::xInitFeatureDataSpecialImp(
         { "minus_35_signal", "minus_35_signal" },
         { "polyA_signal_sequence", "polyA_signal_sequence" },
         { "promoter", "promoter" },
+        { "regulatory_region", "other" },
         { "riboswitch", "riboswitch" },
         { "Shine_Dalgarno_sequence", "ribosome_binding_site" },
         { "silencer", "silencer" },

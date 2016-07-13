@@ -504,7 +504,7 @@ Seq-annot ::= {
       qual {
         {
           qual "regulatory_class",
-          val "terminator"
+          val "other"
         },
         {
           qual "Parent",
@@ -513,6 +513,35 @@ Seq-annot ::= {
         {
           qual "ID",
           val "id16"
+        }
+      }
+    },
+    {
+      id local id 19,
+      data imp {
+        key "regulatory"
+      },
+      location int {
+        from 460,
+        to 469,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "regulatory_class",
+          val "terminator"
+        },
+        {
+          qual "Parent",
+          val "gene0"
+        },
+        {
+          qual "ID",
+          val "id17"
         }
       }
     }
