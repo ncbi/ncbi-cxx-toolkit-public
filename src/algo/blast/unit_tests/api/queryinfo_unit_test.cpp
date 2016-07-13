@@ -145,5 +145,77 @@ BOOST_AUTO_TEST_CASE(BlastnGetQueryIndex) {
     BOOST_REQUIRE_EQUAL(1, query_index);
 }
 
+BOOST_AUTO_TEST_CASE(BlastnSearchContextInfo)
+{
+    CSeq_id id1("gi|3090");
+    CSeq_id id2("gi|555");
+    auto_ptr<SSeqLoc> qsl1(CTestObjMgr::Instance().CreateSSeqLoc(id1));
+    auto_ptr<SSeqLoc> qsl2(CTestObjMgr::Instance().CreateSSeqLoc(id2));
+    TSeqLocVector query_v;
+    query_v.push_back(*qsl1);
+    query_v.push_back(*qsl2);
+    CBlastQueryInfo query_info;
+    CRef<CBlastOptionsHandle> opts(CBlastOptionsFactory::Create(eBlastn));
+
+    const CBlastOptions& kOpts = opts->GetOptions();
+    EBlastProgramType prog = kOpts.GetProgramType();
+    ENa_strand strand_opt = kOpts.GetStrandOption();
+
+    SetupQueryInfo(query_v, prog, strand_opt, &query_info);
+
+    int length_1 = qsl1->scope->GetSequenceLength(id1);
+    int length_2 = qsl2->scope->GetSequenceLength(id2);
+
+    // test min and max query length
+    BOOST_REQUIRE_EQUAL(query_info->min_length, min(length_1, length_2));
+    BOOST_REQUIRE_EQUAL(query_info->max_length, max(length_1, length_2));
+
+    // test context for zero position in each sequence strand
+    BOOST_REQUIRE_EQUAL(0, BSearchContextInfo(0, query_info.Get()));
+    BOOST_REQUIRE_EQUAL(1, BSearchContextInfo(length_1 + 1, query_info.Get()));
+    BOOST_REQUIRE_EQUAL(2, BSearchContextInfo(2 * (length_1 + 1),
+                                              query_info.Get()));
+
+    BOOST_REQUIRE_EQUAL(3, BSearchContextInfo(2 * (length_1 + 1) + length_2 + 1,
+                                              query_info.Get()));
+}
+
+BOOST_AUTO_TEST_CASE(BlastnSearchContextInfoSingleStrand)
+{
+    CSeq_id id1("gi|555");
+    CSeq_id id2("gi|3090");
+    // only plus strand for the first sequence
+    auto_ptr<SSeqLoc> qsl1(CTestObjMgr::Instance().CreateSSeqLoc(id1,
+                                                           eNa_strand_plus));
+    auto_ptr<SSeqLoc> qsl2(CTestObjMgr::Instance().CreateSSeqLoc(id2));
+    TSeqLocVector query_v;
+    query_v.push_back(*qsl1);
+    query_v.push_back(*qsl2);
+    CBlastQueryInfo query_info;
+    CRef<CBlastOptionsHandle> opts(CBlastOptionsFactory::Create(eBlastn));
+
+    const CBlastOptions& kOpts = opts->GetOptions();
+    EBlastProgramType prog = kOpts.GetProgramType();
+    ENa_strand strand_opt = kOpts.GetStrandOption();
+
+    SetupQueryInfo(query_v, prog, strand_opt, &query_info);
+
+    // pre condition: empty context in query info
+    BOOST_REQUIRE_EQUAL(query_info->contexts[1].query_length, 0);
+
+    int length_1 = qsl1->scope->GetSequenceLength(id1);
+    int length_2 = qsl2->scope->GetSequenceLength(id2);
+
+    // test min and max query length
+    BOOST_REQUIRE_EQUAL(query_info->min_length, 0u);
+    BOOST_REQUIRE_EQUAL(query_info->max_length, max(length_1, length_2));
+
+    // test context for zero position in each sequence strand
+    BOOST_REQUIRE_EQUAL(0, BSearchContextInfo(0, query_info.Get()));
+    BOOST_REQUIRE_EQUAL(2, BSearchContextInfo(length_1 + 1, query_info.Get()));
+    BOOST_REQUIRE_EQUAL(3, BSearchContextInfo(length_1 + length_2 + 2,
+                                              query_info.Get()));
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()
