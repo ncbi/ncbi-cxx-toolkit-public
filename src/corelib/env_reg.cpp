@@ -346,6 +346,7 @@ bool CNcbiEnvRegMapper::EnvToReg(const string& env, string& section,
     if (uu_pos == NPOS  ||  uu_pos == env.size() - 2) {
         return false;
     }
+    /* Parse section and entry names from the variable */
     if (env[kPfxLen] == '_') { // regular entry
         section = env.substr(kPfxLen + 1, uu_pos - kPfxLen - 1);
         name    = env.substr(uu_pos + 2);
@@ -354,6 +355,16 @@ bool CNcbiEnvRegMapper::EnvToReg(const string& env, string& section,
         _ASSERT(name[0] == '_');
         name[0] = '.';
         section = env.substr(uu_pos + 2);
+    }
+    if (!IRegistry::IsNameSection(section, 0)) {
+        NCBI_THROW2(CRegistryException, eErr,
+                    "Invalid registry section name in environment variable "  
+                    + env, 0);
+    }
+    if (!IRegistry::IsNameEntry(name, 0)) {
+        NCBI_THROW2(CRegistryException, eErr,
+                    "Invalid registry entry name in environment variable "  
+                    + env, 0);
     }
     NStr::ReplaceInPlace(section, "_DOT_", ".");
     NStr::ReplaceInPlace(name,    "_DOT_", ".");

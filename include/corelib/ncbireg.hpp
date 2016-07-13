@@ -297,6 +297,14 @@ public:
     void WriteLock(void);
     void Unlock   (void);
 
+    /// Check if "str" consists of alphanumeric and '_' only
+    /// Treat the case of set fSectionlessEntries separately
+    static bool IsNameSection(const string& str, TFlags flags);
+
+    // Check if "str" consists of alphanumeric and '_' only
+    static bool IsNameEntry(const string& str, TFlags flags);
+
+
     /// Entry name for an in-section comment
     static const char* sm_InSectionCommentName;
 
