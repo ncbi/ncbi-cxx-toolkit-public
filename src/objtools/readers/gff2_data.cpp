@@ -1349,21 +1349,33 @@ bool CGff2Record::xInitFeatureDataSpecialImp(
     CRef<CSeq_feat> pFeature) const
 //  ----------------------------------------------------------------------------
 {
+    typedef SStaticPair<const char*, const char*>  REGULATORY_ENTRY;
+    static const REGULATORY_ENTRY regulatoryMap_[] = {
+        { "attenuator", "attenuator" },
+        { "boundary_element", "insulator" },
+        { "CAAT_signal", "CAAT_signal" },
+        { "enhancer", "enhancer" },
+        { "GC_rich_promoter_region", "GC_signal" },
+        { "insulator", "enhancer_blocking_element" },
+        { "locus_control_region", "locus_control_region" },
+        { "minus_10_signal", "minus_10_signal" },
+        { "minus_35_signal", "minus_35_signal" },
+        { "polyA_signal_sequence", "polyA_signal_sequence" },
+        { "promoter", "promoter" },
+        { "riboswitch", "riboswitch" },
+        { "Shine_Dalgarno_sequence", "ribosome_binding_site" },
+        { "silencer", "silencer" },
+        { "TATA_box", "TATA_box" },
+        { "terminator", "terminator" },
+    };
+    typedef CStaticArrayMap<string, string, PNocase> REGULATORY_MAP;
+    DEFINE_STATIC_ARRAY_MAP_WITH_COPY(REGULATORY_MAP, regulatoryMap, regulatoryMap_);
+
     string ftype = Type();
-    if (ftype == "GC_rich_promoter_region") {
-        pFeature->SetData().SetImp().SetKey("GC_signal");
-        return true;
-    }
-    if (ftype == "Shine_Dalgarno_sequence") {
-        pFeature->SetData().SetImp().SetKey("ribosome_binding_site");
-        return true;
-    }
-    if (ftype == "boundary_element") {
-        pFeature->SetData().SetImp().SetKey("insulator");
-        return true;
-    }
-    if (ftype == "insulator") {
-        pFeature->SetData().SetImp().SetKey("enhancer_blocking_element");
+    REGULATORY_MAP::const_iterator cit = regulatoryMap.find(ftype);
+    if (cit != regulatoryMap.end()) {
+        pFeature->SetData().SetImp().SetKey("regulatory");
+        pFeature->AddQualifier("regulatory_class", cit->second);
         return true;
     }
     return false;
