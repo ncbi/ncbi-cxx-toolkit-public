@@ -73,15 +73,22 @@ die "Test $test not found\n" unless exists $tests{$test};
 
 my $arg = $tests{$test}{arg};
 my $arg0 = $tests{$test}{arg0};
+my $autofix = 1 if $arg0 eq '__AUTOFIX__';
 my $input = File::Spec->catfile($path, 'test-data', $tests{$test}{data});
 my $out_c = "$test.c.txt";
-my $out_cpp = "$test.cpp.txt";
+my $out_cpp = $autofix ? "$test.cpp.asn" : "$test.cpp.txt";
 my $gold = File::Spec->catfile($path, 'test-data', $tests{$test}{gold}) if $tests{$test}{gold} ne '' && !$nogold;
 my $data = $tests{$test}{data};
 my $rx = join('|', split(',', $arg.','.$arg0));
 my $ip = -d $input ? 'p' : 'i';
-my $cmd = "$exe_cpp -e $arg -$ip $input -o $out_cpp";
-$cmd .= " -X ALL" if $tests{$test}{ext};
+my $cmd;
+if ($autofix)
+{ $cmd = "$exe_cpp -e $arg -i $input -o $out_cpp -r . -F";
+}
+else
+{ $cmd = "$exe_cpp -e $arg -$ip $input -o $out_cpp";
+  $cmd .= " -X ALL" if $tests{$test}{ext};
+}
 
 open(OLD_STDOUT, '>&STDOUT') if $quiet;
 open(STDOUT, '>/dev/null') if $quiet;
@@ -89,7 +96,12 @@ my $result = system($cmd);
 open(STDOUT, '>&OLD_STDOUT') if $quiet;
 die "Error running $exe_cpp\n" if $result;
 
-if ($gold eq '')
+if ($autofix)
+{ my $name = $tests{$test}{data};
+  $name=~s/\.asn$|\.sqn$/.autofix.asn/;
+  rename $name, $out_cpp;
+}
+elsif ($gold eq '')
 {
   my $ip = -d $input ? 'p' : 'i';
   $cmd = "$exe_c -e $arg0 -$ip $input -o $out_c";
@@ -107,12 +119,18 @@ if ($gold eq '')
 ###   Compare output
 ###
 
-my %x = read_output($gold);
-my %y = read_output($out_cpp);
-compare_output(\%x, \%y);
-if (!$keep_output)
-{ unlink $out_cpp;
-  unlink $out_c if $gold eq $out_c;
+if ($autofix)
+{ match_files($out_cpp, $gold) if $gold ne '';
+  unlink $out_cpp if !$keep_output;
+}
+else
+{ my %x = read_output($gold);
+  my %y = read_output($out_cpp);
+  compare_output(\%x, \%y);
+  if (!$keep_output)
+  { unlink $out_cpp;
+    unlink $out_c if $gold eq $out_c;
+  }
 }
 print "SUCCESS!\n";
 
@@ -220,5 +238,21 @@ sub compare_output
     { die "Mismatching item:\n$k\n$m\n" if $x{details}{$k}{$m} != $y{details}{$k}{$m};
       print ">> $m\n";
     }
+  }
+}
+
+sub match_files
+{ my $f0 = shift;
+  my $f1 = shift;
+  open FILE, "<$f0" or die "Cannot open $f0\n";
+  my @ff0 = <FILE>; close FILE;
+  open FILE, "<$f1" or die "Cannot open $f1\n";
+  my @ff1 = <FILE>; close FILE;
+  my $len = scalar @ff0;
+  $len = scalar @ff1 if $len < scalar @ff1;
+  for (my $i = 0; $i < $len; $i++)
+  { my $a = $ff0[$i]; chomp $a; $a=~s/^\s+//; $a=~s/\s+$//;
+    my $b = $ff1[$i]; chomp $b; $b=~s/^\s+//; $b=~s/\s+$//;
+    die "Mismatching line $i: $a / $b\n" if $a ne $b;
   }
 }
