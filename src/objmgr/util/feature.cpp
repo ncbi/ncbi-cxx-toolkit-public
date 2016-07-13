@@ -1282,6 +1282,10 @@ namespace {
     {
         return
             type == CSeqFeatData::eSubtype_mRNA ||
+            type == CSeqFeatData::eSubtype_C_region ||
+            type == CSeqFeatData::eSubtype_V_segment ||
+            type == CSeqFeatData::eSubtype_D_segment ||
+            type == CSeqFeatData::eSubtype_J_segment ||
             type == CSeqFeatData::eSubtype_cdregion;
     }
 
