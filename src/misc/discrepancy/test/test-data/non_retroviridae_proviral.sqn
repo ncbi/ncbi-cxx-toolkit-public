@@ -1,0 +1,1086 @@
+Seq-entry ::= set {
+  class genbank ,
+  seq-set {
+    set {
+      class genbank ,
+      descr {
+        user {
+          class "SMART_V1.0" ,
+          type
+            id 1 ,
+          data {
+            {
+              label
+                id 1 ,
+              num 1 ,
+              data
+                int 9957459 } } } } ,
+      seq-set {
+        set {
+          class nuc-prot ,
+          descr {
+            source {
+              genome proviral ,
+              org {
+                taxname "Human immunodeficiency virus 1" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 11676 } } ,
+                syn {
+                  "human immunodeficiency virus 1 HIV-1" ,
+                  "human immunodeficiency virus HIV-1" ,
+                  "Human immunodeficiency virus type 1" ,
+                  "human immunodeficiency virus type 1 HIV 1" ,
+                  "human immunodeficiency virus type 1 HIV-1" ,
+                  "human immunodeficiency virus type 1 HIV1" ,
+                  "human immunodeficiency virus type 1, HIV-1" ,
+                  "human immunodeficiency virus type I HIV-1" ,
+                  "human immunodeficiency virus type-1 HIV-1" ,
+                  "human immunodeficiency virus-1 HIV-1" } ,
+                orgname {
+                  name
+                    virus "Human immunodeficiency virus 1" ,
+                  mod {
+                    {
+                      subtype subtype ,
+                      subname "A1" } ,
+                    {
+                      subtype isolate ,
+                      subname "2132" } ,
+                    {
+                      subtype nat-host ,
+                      subname "Homo sapiens" } ,
+                    {
+                      subtype gb-acronym ,
+                      subname "HIV-1" } } ,
+                  lineage "Viruses; Retro-transcribing viruses;
+ Orthoretrovirinae; Lentivirus; Primate lentivirus group" ,
+                  gcode 1 ,
+                  div "VRL" } } ,
+              subtype {
+                {
+                  subtype country ,
+                  name "Rwanda" } ,
+                {
+                  subtype collection-date ,
+                  name "2012" } } } ,
+            pub {
+              pub {
+                pmid 26562173 ,
+                article {
+                  title {
+                    name "HIV drug resistance mutations among patients failing
+ second-line antiretroviral therapy in Rwanda." } ,
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Ndahimana" ,
+                              first "J" ,
+                              initials "J.D." } } ,
+                        {
+                          name
+                            name {
+                              last "Riedel" ,
+                              first "D" ,
+                              initials "D.J." } } ,
+                        {
+                          name
+                            name {
+                              last "Muhayimpundu" ,
+                              first "R" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Nsanzimana" ,
+                              first "S" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Niyibizi" ,
+                              first "G" ,
+                              initials "G." } } ,
+                        {
+                          name
+                            name {
+                              last "Mutaganzwa" ,
+                              first "E" ,
+                              initials "E." } } ,
+                        {
+                          name
+                            name {
+                              last "Mulindabigwi" ,
+                              first "A" ,
+                              initials "A." } } ,
+                        {
+                          name
+                            name {
+                              last "Baribwira" ,
+                              first "C" ,
+                              initials "C." } } ,
+                        {
+                          name
+                            name {
+                              last "Kiromera" ,
+                              first "A" ,
+                              initials "A." } } ,
+                        {
+                          name
+                            name {
+                              last "Jagodzinski" ,
+                              first "L" ,
+                              initials "L.L." } } ,
+                        {
+                          name
+                            name {
+                              last "Peel" ,
+                              first "S" ,
+                              initials "S.A." } } ,
+                        {
+                          name
+                            name {
+                              last "Redfield" ,
+                              first "R" ,
+                              initials "R.R." } } } } ,
+                  from
+                    journal {
+                      title {
+                        iso-jta "Antivir. Ther. (Lond.)" ,
+                        ml-jta "Antivir Ther" ,
+                        issn "2040-2058" ,
+                        name "Antiviral therapy" } ,
+                      imp {
+                        date
+                          std {
+                            year 2015 ,
+                            month 11 ,
+                            day 12 } ,
+                        language "ENG" ,
+                        prepub in-press ,
+                        pubstatus aheadofprint ,
+                        history {
+                          {
+                            pubstatus accepted ,
+                            date
+                              std {
+                                year 2015 ,
+                                month 10 ,
+                                day 4 } } ,
+                          {
+                            pubstatus other ,
+                            date
+                              std {
+                                year 2015 ,
+                                month 11 ,
+                                day 13 ,
+                                hour 6 ,
+                                minute 0 } } ,
+                          {
+                            pubstatus pubmed ,
+                            date
+                              std {
+                                year 2015 ,
+                                month 11 ,
+                                day 13 ,
+                                hour 6 ,
+                                minute 0 } } ,
+                          {
+                            pubstatus medline ,
+                            date
+                              std {
+                                year 2015 ,
+                                month 11 ,
+                                day 13 ,
+                                hour 6 ,
+                                minute 0 } } } } } ,
+                  ids {
+                    doi "10.3851/IMP3005" ,
+                    pubmed 26562173 ,
+                    other {
+                      db "ELocationID doi" ,
+                      tag
+                        str "10.3851/IMP3005" } } } } } ,
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Ndahimana" ,
+                              first "Jean Amour" ,
+                              initials "J.A." } } ,
+                        {
+                          name
+                            name {
+                              last "Riedel" ,
+                              first "David" ,
+                              initials "D.J." } } ,
+                        {
+                          name
+                            name {
+                              last "Muhayimpundu" ,
+                              first "Ribakare" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Nsanzimana" ,
+                              first "Sabin" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Niyibizi" ,
+                              first "Gad" ,
+                              initials "G." } } ,
+                        {
+                          name
+                            name {
+                              last "Mutaganzwa" ,
+                              first "Emmanuel" ,
+                              initials "E." } } ,
+                        {
+                          name
+                            name {
+                              last "Mulindabigwi" ,
+                              first "Augustin" ,
+                              initials "A." } } ,
+                        {
+                          name
+                            name {
+                              last "Baribwira" ,
+                              first "Cyprien" ,
+                              initials "C." } } ,
+                        {
+                          name
+                            name {
+                              last "Kiromera" ,
+                              first "Athanase" ,
+                              initials "A." } } ,
+                        {
+                          name
+                            name {
+                              last "Jagodzinski" ,
+                              first "Linda" ,
+                              initials "L.L." } } ,
+                        {
+                          name
+                            name {
+                              last "Peel" ,
+                              first "Sheila" ,
+                              initials "S.A." } } ,
+                        {
+                          name
+                            name {
+                              last "Redfield" ,
+                              first "Robert" ,
+                              initials "R.R." } } } ,
+                    affil
+                      std {
+                        affil "Walter Reed Army Institute of Research" ,
+                        div "Laboratory Diagnostics and Monitoring" ,
+                        city "Silver Spring" ,
+                        sub "MD" ,
+                        country "USA" ,
+                        street "503 Robert Grant Avenue" ,
+                        postal-code "Silver Spring" } } ,
+                  date
+                    std {
+                      year 2015 ,
+                      month 10 ,
+                      day 30 } } } } ,
+            user {
+              type
+                str "NcbiCleanup" ,
+              data {
+                {
+                  label
+                    str "method" ,
+                  data
+                    str "ExtendedSeqEntryCleanup" } ,
+                {
+                  label
+                    str "version" ,
+                  data
+                    int 1 } ,
+                {
+                  label
+                    str "month" ,
+                  data
+                    int 11 } ,
+                {
+                  label
+                    str "day" ,
+                  data
+                    int 17 } ,
+                {
+                  label
+                    str "year" ,
+                  data
+                    int 2015 } } } ,
+            create-date
+              std {
+                year 2015 ,
+                month 10 ,
+                day 28 } } ,
+          seq-set {
+            seq {
+              id {
+                local
+                  id 2132 ,
+                general {
+                  db "NCBIFILE" ,
+                  tag
+                    str "1-288 pro.sqn/2132" } ,
+                general {
+                  db "TMSMART" ,
+                  tag
+                    id 58806485 } ,
+                genbank {
+                  accession "KT982483" } } ,
+              descr {
+                title "HIV-1 isolate 2132 from Rwanda protease (pol) gene,
+ partial cds." ,
+                molinfo {
+                  biomol genomic } ,
+                user {
+                  type
+                    str "OriginalID" ,
+                  data {
+                    {
+                      label
+                        str "LocalId" ,
+                      data
+                        str "2132" } } } ,
+                user {
+                  class "1.0" ,
+                  type
+                    str "AutodefOptions" ,
+                  data {
+                    {
+                      label
+                        str "SpecifyNuclearProduct" ,
+                      data
+                        bool TRUE } ,
+                    {
+                      label
+                        str "MiscFeatRule" ,
+                      data
+                        str "NoncodingProductFeat" } ,
+                    {
+                      label
+                        str "FeatureListType" ,
+                      data
+                        str "List All Features" } ,
+                    {
+                      label
+                        str "ModifierList" ,
+                      data
+                        fields {
+                          {
+                            label
+                              str "OrgMods" ,
+                            num 1 ,
+                            data
+                              strs {
+                                "Isolate" } } } } ,
+                    {
+                      label
+                        str "HIVRule" ,
+                      data
+                        str "WantBoth" } ,
+                    {
+                      label
+                        str "DoNotApplyToSp" ,
+                      data
+                        bool TRUE } ,
+                    {
+                      label
+                        str "LeaveParenthetical" ,
+                      data
+                        bool TRUE } ,
+                    {
+                      label
+                        str "MaxMods" ,
+                      data
+                        int -99 } ,
+                    {
+                      label
+                        str "UseLabels" ,
+                      data
+                        bool TRUE } } } } ,
+              inst {
+                repr raw ,
+                mol dna ,
+                length 288 ,
+                seq-data
+                  ncbi2na '1DFE9061576D10C22CAAA40C0A09DCF211289A38C4B3C820383
+F94A80E8050038CAA83E8A7F340B084B38D2B393223FB81302F12B12CF2CA17117B4130FA080FE
+F0741FAFB1FC0FD'H } ,
+              annot {
+                {
+                  data
+                    ftable {
+                      {
+                        data
+                          gene {
+                            locus "pol" } ,
+                        partial TRUE ,
+                        location
+                          int {
+                            from 0 ,
+                            to 287 ,
+                            strand plus ,
+                            id
+                              genbank {
+                                accession "KT982483" } ,
+                            fuzz-from
+                              lim lt ,
+                            fuzz-to
+                              lim gt } } ,
+                      {
+                        data
+                          rna {
+                            type mRNA ,
+                            ext
+                              name "protease" } ,
+                        partial TRUE ,
+                        location
+                          int {
+                            from 0 ,
+                            to 287 ,
+                            strand plus ,
+                            id
+                              local
+                                id 2132 ,
+                            fuzz-from
+                              lim lt ,
+                            fuzz-to
+                              lim gt } } } } } } ,
+            seq {
+              id {
+                local
+                  str "2132_1" ,
+                general {
+                  db "NCBIFILE" ,
+                  tag
+                    str "1-288 pro.sqn/2132_1" } ,
+                general {
+                  db "TMSMART" ,
+                  tag
+                    id 58806486 } } ,
+              descr {
+                title "protease, partial [Human immunodeficiency virus 1]" ,
+                molinfo {
+                  biomol peptide ,
+                  tech concept-trans ,
+                  completeness no-ends } ,
+                user {
+                  type
+                    str "OriginalID" ,
+                  data {
+                    {
+                      label
+                        str "LocalId" ,
+                      data
+                        str "2132_1" } } } } ,
+              inst {
+                repr raw ,
+                mol aa ,
+                length 96 ,
+                seq-data
+                  ncbieaa "TLWQRPLVTIRVGGQIKEALLDTGADDTVLEEMNLPGKWKPKMIGGIGGFI
+KVRQYDQVCIEICEHKVTGTVLVGPTPVNIIGRNLLTQLGCTLNF" } ,
+              annot {
+                {
+                  data
+                    ftable {
+                      {
+                        data
+                          prot {
+                            name {
+                              "protease" } } ,
+                        partial TRUE ,
+                        location
+                          int {
+                            from 0 ,
+                            to 95 ,
+                            id
+                              local
+                                str "2132_1" ,
+                            fuzz-from
+                              lim lt ,
+                            fuzz-to
+                              lim gt } } } } } } } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      cdregion {
+                        frame one ,
+                        code {
+                          id 1 } } ,
+                    partial TRUE ,
+                    product
+                      whole
+                        local
+                          str "2132_1" ,
+                    location
+                      int {
+                        from 0 ,
+                        to 287 ,
+                        strand plus ,
+                        id
+                          local
+                            id 2132 ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } ,
+                    pseudo TRUE } } } } } ,
+        set {
+          class nuc-prot ,
+          descr {
+            source {
+              genome genomic ,
+              org {
+                taxname "Human immunodeficiency virus 1" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 11676 } } ,
+                syn {
+                  "human immunodeficiency virus 1 HIV-1" ,
+                  "human immunodeficiency virus HIV-1" ,
+                  "Human immunodeficiency virus type 1" ,
+                  "human immunodeficiency virus type 1 HIV 1" ,
+                  "human immunodeficiency virus type 1 HIV-1" ,
+                  "human immunodeficiency virus type 1 HIV1" ,
+                  "human immunodeficiency virus type 1, HIV-1" ,
+                  "human immunodeficiency virus type I HIV-1" ,
+                  "human immunodeficiency virus type-1 HIV-1" ,
+                  "human immunodeficiency virus-1 HIV-1" } ,
+                orgname {
+                  name
+                    virus "Human immunodeficiency virus 1" ,
+                  mod {
+                    {
+                      subtype subtype ,
+                      subname "A1" } ,
+                    {
+                      subtype isolate ,
+                      subname "2141" } ,
+                    {
+                      subtype nat-host ,
+                      subname "Homo sapiens" } ,
+                    {
+                      subtype gb-acronym ,
+                      subname "HIV-1" } } ,
+                  lineage "Viruses; Retro-transcribing viruses; Retroviridae;
+ Orthoretrovirinae; Lentivirus; Primate lentivirus group" ,
+                  gcode 1 ,
+                  div "VRL" } } ,
+              subtype {
+                {
+                  subtype country ,
+                  name "Rwanda" } ,
+                {
+                  subtype collection-date ,
+                  name "2012" } } } ,
+            pub {
+              pub {
+                pmid 26562173 ,
+                article {
+                  title {
+                    name "HIV drug resistance mutations among patients failing
+ second-line antiretroviral therapy in Rwanda." } ,
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Ndahimana" ,
+                              first "J" ,
+                              initials "J.D." } } ,
+                        {
+                          name
+                            name {
+                              last "Riedel" ,
+                              first "D" ,
+                              initials "D.J." } } ,
+                        {
+                          name
+                            name {
+                              last "Muhayimpundu" ,
+                              first "R" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Nsanzimana" ,
+                              first "S" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Niyibizi" ,
+                              first "G" ,
+                              initials "G." } } ,
+                        {
+                          name
+                            name {
+                              last "Mutaganzwa" ,
+                              first "E" ,
+                              initials "E." } } ,
+                        {
+                          name
+                            name {
+                              last "Mulindabigwi" ,
+                              first "A" ,
+                              initials "A." } } ,
+                        {
+                          name
+                            name {
+                              last "Baribwira" ,
+                              first "C" ,
+                              initials "C." } } ,
+                        {
+                          name
+                            name {
+                              last "Kiromera" ,
+                              first "A" ,
+                              initials "A." } } ,
+                        {
+                          name
+                            name {
+                              last "Jagodzinski" ,
+                              first "L" ,
+                              initials "L.L." } } ,
+                        {
+                          name
+                            name {
+                              last "Peel" ,
+                              first "S" ,
+                              initials "S.A." } } ,
+                        {
+                          name
+                            name {
+                              last "Redfield" ,
+                              first "R" ,
+                              initials "R.R." } } } } ,
+                  from
+                    journal {
+                      title {
+                        iso-jta "Antivir. Ther. (Lond.)" ,
+                        ml-jta "Antivir Ther" ,
+                        issn "2040-2058" ,
+                        name "Antiviral therapy" } ,
+                      imp {
+                        date
+                          std {
+                            year 2015 ,
+                            month 11 ,
+                            day 12 } ,
+                        language "ENG" ,
+                        prepub in-press ,
+                        pubstatus aheadofprint ,
+                        history {
+                          {
+                            pubstatus accepted ,
+                            date
+                              std {
+                                year 2015 ,
+                                month 10 ,
+                                day 4 } } ,
+                          {
+                            pubstatus other ,
+                            date
+                              std {
+                                year 2015 ,
+                                month 11 ,
+                                day 13 ,
+                                hour 6 ,
+                                minute 0 } } ,
+                          {
+                            pubstatus pubmed ,
+                            date
+                              std {
+                                year 2015 ,
+                                month 11 ,
+                                day 13 ,
+                                hour 6 ,
+                                minute 0 } } ,
+                          {
+                            pubstatus medline ,
+                            date
+                              std {
+                                year 2015 ,
+                                month 11 ,
+                                day 13 ,
+                                hour 6 ,
+                                minute 0 } } } } } ,
+                  ids {
+                    doi "10.3851/IMP3005" ,
+                    pubmed 26562173 ,
+                    other {
+                      db "ELocationID doi" ,
+                      tag
+                        str "10.3851/IMP3005" } } } } } ,
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Ndahimana" ,
+                              first "Jean Amour" ,
+                              initials "J.A." } } ,
+                        {
+                          name
+                            name {
+                              last "Riedel" ,
+                              first "David" ,
+                              initials "D.J." } } ,
+                        {
+                          name
+                            name {
+                              last "Muhayimpundu" ,
+                              first "Ribakare" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Nsanzimana" ,
+                              first "Sabin" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Niyibizi" ,
+                              first "Gad" ,
+                              initials "G." } } ,
+                        {
+                          name
+                            name {
+                              last "Mutaganzwa" ,
+                              first "Emmanuel" ,
+                              initials "E." } } ,
+                        {
+                          name
+                            name {
+                              last "Mulindabigwi" ,
+                              first "Augustin" ,
+                              initials "A." } } ,
+                        {
+                          name
+                            name {
+                              last "Baribwira" ,
+                              first "Cyprien" ,
+                              initials "C." } } ,
+                        {
+                          name
+                            name {
+                              last "Kiromera" ,
+                              first "Athanase" ,
+                              initials "A." } } ,
+                        {
+                          name
+                            name {
+                              last "Jagodzinski" ,
+                              first "Linda" ,
+                              initials "L.L." } } ,
+                        {
+                          name
+                            name {
+                              last "Peel" ,
+                              first "Sheila" ,
+                              initials "S.A." } } ,
+                        {
+                          name
+                            name {
+                              last "Redfield" ,
+                              first "Robert" ,
+                              initials "R.R." } } } ,
+                    affil
+                      std {
+                        affil "Walter Reed Army Institute of Research" ,
+                        div "Laboratory Diagnostics and Monitoring" ,
+                        city "Silver Spring" ,
+                        sub "MD" ,
+                        country "USA" ,
+                        street "503 Robert Grant Avenue" ,
+                        postal-code "Silver Spring" } } ,
+                  date
+                    std {
+                      year 2015 ,
+                      month 10 ,
+                      day 30 } } } } ,
+            user {
+              type
+                str "NcbiCleanup" ,
+              data {
+                {
+                  label
+                    str "method" ,
+                  data
+                    str "ExtendedSeqEntryCleanup" } ,
+                {
+                  label
+                    str "version" ,
+                  data
+                    int 1 } ,
+                {
+                  label
+                    str "month" ,
+                  data
+                    int 11 } ,
+                {
+                  label
+                    str "day" ,
+                  data
+                    int 17 } ,
+                {
+                  label
+                    str "year" ,
+                  data
+                    int 2015 } } } ,
+            create-date
+              std {
+                year 2015 ,
+                month 10 ,
+                day 28 } } ,
+          seq-set {
+            seq {
+              id {
+                local
+                  id 2141 ,
+                general {
+                  db "NCBIFILE" ,
+                  tag
+                    str "1-288 pro.sqn/2141" } ,
+                general {
+                  db "TMSMART" ,
+                  tag
+                    id 58806487 } ,
+                genbank {
+                  accession "KT982484" } } ,
+              descr {
+                title "HIV-1 isolate 2141 from Rwanda protease (pol) gene,
+ partial cds." ,
+                molinfo {
+                  biomol genomic } ,
+                user {
+                  type
+                    str "OriginalID" ,
+                  data {
+                    {
+                      label
+                        str "LocalId" ,
+                      data
+                        str "2141" } } } ,
+                user {
+                  class "1.0" ,
+                  type
+                    str "AutodefOptions" ,
+                  data {
+                    {
+                      label
+                        str "SpecifyNuclearProduct" ,
+                      data
+                        bool TRUE } ,
+                    {
+                      label
+                        str "MiscFeatRule" ,
+                      data
+                        str "NoncodingProductFeat" } ,
+                    {
+                      label
+                        str "FeatureListType" ,
+                      data
+                        str "List All Features" } ,
+                    {
+                      label
+                        str "ModifierList" ,
+                      data
+                        fields {
+                          {
+                            label
+                              str "OrgMods" ,
+                            num 1 ,
+                            data
+                              strs {
+                                "Isolate" } } } } ,
+                    {
+                      label
+                        str "HIVRule" ,
+                      data
+                        str "WantBoth" } ,
+                    {
+                      label
+                        str "DoNotApplyToSp" ,
+                      data
+                        bool TRUE } ,
+                    {
+                      label
+                        str "LeaveParenthetical" ,
+                      data
+                        bool TRUE } ,
+                    {
+                      label
+                        str "MaxMods" ,
+                      data
+                        int -99 } ,
+                    {
+                      label
+                        str "UseLabels" ,
+                      data
+                        bool TRUE } } } } ,
+              inst {
+                repr raw ,
+                mol rna ,
+                length 288 ,
+                seq-data
+                  ncbi4na '128288844211241221181482121421141481444441214281181
+411428281881418121444421418418121481881411112181118884221444111844111221141181
+18144444118844144488A482144481111214818418211181288181411888848441111114428181
+448121481481481441228121228482112481188441141118181884122214488442848128881118
+882'H } ,
+              annot {
+                {
+                  data
+                    ftable {
+                      {
+                        data
+                          gene {
+                            locus "pol" } ,
+                        partial TRUE ,
+                        location
+                          int {
+                            from 0 ,
+                            to 287 ,
+                            strand plus ,
+                            id
+                              genbank {
+                                accession "KT982484" } ,
+                            fuzz-from
+                              lim lt ,
+                            fuzz-to
+                              lim gt } } ,
+                      {
+                        data
+                          rna {
+                            type mRNA ,
+                            ext
+                              name "protease" } ,
+                        partial TRUE ,
+                        location
+                          int {
+                            from 0 ,
+                            to 287 ,
+                            strand plus ,
+                            id
+                              genbank {
+                                accession "KT982484" } ,
+                            fuzz-from
+                              lim lt ,
+                            fuzz-to
+                              lim gt } ,
+                        pseudo TRUE } } } } } ,
+            seq {
+              id {
+                local
+                  str "2141_1" ,
+                general {
+                  db "NCBIFILE" ,
+                  tag
+                    str "1-288 pro.sqn/2141_1" } ,
+                general {
+                  db "TMSMART" ,
+                  tag
+                    id 58806488 } } ,
+              descr {
+                title "protease, partial [Human immunodeficiency virus 1]" ,
+                molinfo {
+                  biomol peptide ,
+                  tech concept-trans ,
+                  completeness no-ends } ,
+                user {
+                  type
+                    str "OriginalID" ,
+                  data {
+                    {
+                      label
+                        str "LocalId" ,
+                      data
+                        str "2141_1" } } } } ,
+              inst {
+                repr raw ,
+                mol aa ,
+                length 96 ,
+                seq-data
+                  ncbieaa "TLWQRPIVTARVGGQLIEALLDTGADDTVLENINLPGKWKPRIIGGIGGFV
+RVKQYDQILIEFCGKKAIGTVVVGPTPVNVIGRNILTQVGCTLNF" } ,
+              annot {
+                {
+                  data
+                    ftable {
+                      {
+                        data
+                          prot {
+                            name {
+                              "protease" } } ,
+                        partial TRUE ,
+                        location
+                          int {
+                            from 0 ,
+                            to 95 ,
+                            id
+                              local
+                                str "2141_1" ,
+                            fuzz-from
+                              lim lt ,
+                            fuzz-to
+                              lim gt } } } } } } } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      cdregion {
+                        frame one ,
+                        code {
+                          id 1 } } ,
+                    partial TRUE ,
+                    product
+                      whole
+                        local
+                          str "2141_1" ,
+                    location
+                      int {
+                        from 0 ,
+                        to 287 ,
+                        strand plus ,
+                        id
+                          local
+                            id 2141 ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } } } }

@@ -51,8 +51,9 @@ DISCREPANCY_CASE(RETROVIRIDAE_DNA, CSeqdesc_BY_BIOSEQ, eOncaller, "Retroviridae 
     if (!obj.IsSource() || !context.IsDNA()) {
         return;
     }
+    
     const CBioSource& src = obj.GetSource();
-    if (src.IsSetLineage() && NStr::FindCase(src.GetLineage(), "Retroviridae") != NPOS) {
+    if (src.IsSetLineage() && context.HasLineage(src, src.GetLineage(), "Retroviridae")) {
         if (!src.IsSetGenome() || src.GetGenome() != CBioSource::eGenome_proviral) {
 
             m_Objs[kGenomeNotProviral].Add(*context.NewDiscObj(CConstRef<CSeqdesc>(&obj), eKeepRef));
@@ -84,15 +85,27 @@ DISCREPANCY_AUTOFIX(RETROVIRIDAE_DNA)
 
 
 // NON_RETROVIRIDAE_PROVIRAL
+static const std::string kGenomeProviral = "[n] non-Retroviridae biosource[s] [is] proviral";
 
 DISCREPANCY_CASE(NON_RETROVIRIDAE_PROVIRAL, CSeqdesc_BY_BIOSEQ, eOncaller, "Non-Retroviridae biosources that are proviral")
 {
-//cout<<"CSeqdesc_BY_BIOSEQ\n";
+    if (!obj.IsSource() || !context.IsDNA()) {
+        return;
+    }
+
+    const CBioSource& src = obj.GetSource();
+    if (src.IsSetLineage() && !context.HasLineage(src, src.GetLineage(), "Retroviridae")) {
+        if (src.IsSetGenome() && src.GetGenome() == CBioSource::eGenome_proviral) {
+
+            m_Objs[kGenomeProviral].Add(*context.NewDiscObj(CConstRef<CSeqdesc>(&obj), eKeepRef));
+        }
+    }
 }
 
 
 DISCREPANCY_SUMMARIZE(NON_RETROVIRIDAE_PROVIRAL)
 {
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
