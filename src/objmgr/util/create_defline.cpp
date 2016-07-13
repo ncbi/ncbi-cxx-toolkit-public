@@ -1567,8 +1567,11 @@ static CConstRef<CBioSource> x_GetSourceFeatViaCDS  (
         */
         cds_loc = &cds_feat->GetLocation();
         if (cds_loc) {
+            CRef<CSeq_loc> cleaned_location( new CSeq_loc );
+            cleaned_location->Assign( *cds_loc );
+            cleaned_location->SetStrand( eNa_strand_plus );
             CConstRef<CSeq_feat> src_feat
-                = GetOverlappingSource (*cds_loc, scope);
+                = GetOverlappingSource (*cleaned_location, scope);
             if (src_feat) {
                 const CSeq_feat& feat = *src_feat;
                 if (feat.IsSetData()) {
