@@ -93,6 +93,11 @@ int CAsnCacheApplication::Run(void)
     // Get arguments
     const CArgs& args = GetArgs();
 
+    CAsnCacheStats::TIncludeFlags include_flags = 0;
+    if (! args["no-timestamp"]) {
+        include_flags |= CAsnCacheStats::eIncludeTimestamp;
+    }
+
     CStopWatch sw;
     sw.Start();
 
@@ -106,8 +111,8 @@ int CAsnCacheApplication::Run(void)
         return 2;
     }
 
-    CAsnCache   cache( cache_dir.GetPath() );
-    CAsnCacheStats  cache_stats( cache, !args["no-timestamp"] );
+    CAsnCache      cache( cache_dir.GetPath() );
+    CAsnCacheStats cache_stats( cache, include_flags );
 
     cache_stats.DumpSeqIds( args["o"].AsOutputFile() );
     
