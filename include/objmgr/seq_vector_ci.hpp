@@ -133,7 +133,7 @@ public:
     void GetSeqData(string& buffer, TSeqPos count);
 
     /// Get number of chars from current position to the current buffer end
-    size_t GetBufferSize(void) const;
+    TSeqPos GetBufferSize(void) const;
     /// Get pointer to current char in the buffer
     const char* GetBufferPtr(void) const;
     /// Get pointer to current position+size.
@@ -517,9 +517,9 @@ void CSeqVector_CI::GetSeqData(TSeqPos start, TSeqPos stop, string& buffer)
 
 
 inline
-size_t CSeqVector_CI::GetBufferSize(void) const
+TSeqPos CSeqVector_CI::GetBufferSize(void) const
 {
-    return m_CacheEnd - m_Cache;
+    return TSeqPos(m_CacheEnd - m_Cache);
 }
 
 
