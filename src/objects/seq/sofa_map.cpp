@@ -101,7 +101,7 @@ void CSofaMap::x_Init()
     m_Map[ GT( e_Imp, eSubtype_oriT ) ]         = SofaType( 724, "oriT" );
     m_Map[ GT( e_Imp, eSubtype_polyA_signal ) ] = SofaType( 551, "polyA_signal_sequence" );
     m_Map[ GT( e_Imp, eSubtype_polyA_site ) ]   = SofaType( 553, "polyA_site" );
-    m_Map[ GT( e_Imp, eSubtype_precursor_RNA ) ]= SofaType( 185, "primary_transcript" );
+    m_Map[ GT( e_Imp, eSubtype_preRNA ) ]       = SofaType( 185, "primary_transcript" );
     m_Map[ GT( e_Imp, eSubtype_prim_transcript ) ] = SofaType( 185, "primary_transcript" );
     m_Map[ GT( e_Imp, eSubtype_primer_bind ) ]  = SofaType( 5850, "primer_binding_site" );
     m_Map[ GT( e_Imp, eSubtype_promoter ) ]     = SofaType( 167, "promoter" );
@@ -112,7 +112,7 @@ void CSofaMap::x_Init()
     m_Map[ GT( e_Imp, eSubtype_satellite ) ]    = SofaType( 5, "satellite_DNA" );
     m_Map[ GT( e_Imp, eSubtype_sig_peptide ) ]  = SofaType( 418, "signal_peptide" );
     m_Map[ GT( e_Imp, eSubtype_site_ref ) ]       = SofaType( 408, "site" );
-    m_Map[ GT( e_Imp, eSubtype_source ) ]       = SofaType( 2000061, "databank_entry" );
+//    m_Map[ GT( e_Imp, eSubtype_source ) ]       = SofaType( 2000061, "databank_entry" );
     m_Map[ GT( e_Imp, eSubtype_stem_loop ) ]    = SofaType( 313, "stem_loop" );
     m_Map[ GT( e_Imp, eSubtype_telomere ) ]   = SofaType( 624, "telomere" );
     m_Map[ GT( e_Imp, eSubtype_terminator ) ]   = SofaType( 141, "terminator" );

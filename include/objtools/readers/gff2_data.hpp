@@ -166,6 +166,9 @@ protected:
     virtual bool xInitFeatureData(
         int,
         CRef<CSeq_feat> ) const;
+    virtual bool xInitFeatureDataBond(
+        int,
+        CRef<CSeq_feat> ) const;
 
     virtual bool xUpdateFeatureData(
         int,

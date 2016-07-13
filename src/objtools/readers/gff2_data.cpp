@@ -1244,7 +1244,18 @@ bool CGff2Record::xInitFeatureData(
         }
     }
 
-    CFeatListItem itemtype = SofaTypes().MapSofaTermToFeatListItem( Type());
+    //special cases:
+    string ftype = Type();
+    if (ftype == "cross_link") {
+        return xInitFeatureDataBond(flags, pFeature);
+    }
+    if (ftype == "disulfide_bond") {
+        return xInitFeatureDataBond(flags, pFeature);
+    }
+
+    //regular case:
+    // use 1<->1 SOFA map.
+    CFeatListItem itemtype = SofaTypes().MapSofaTermToFeatListItem(ftype);
     switch( itemtype.GetType() ) {
         default: {
             return true;
@@ -1304,7 +1315,7 @@ bool CGff2Record::xInitFeatureData(
                     imp.SetKey("misc_feature");
                     return true;
                 }
-                imp.SetKey(Type());
+                imp.SetKey(ftype);
                 return true;
             }
             const string& key = CSeqFeatData::SubtypeValueToName(
@@ -1313,6 +1324,25 @@ bool CGff2Record::xInitFeatureData(
             return true;
         }
     }
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Record::xInitFeatureDataBond(
+    int flags,
+    CRef<CSeq_feat> pFeature) const
+//  ----------------------------------------------------------------------------
+{
+    string ftype = Type();
+    if (ftype == "cross_link") {
+        pFeature->SetData().SetBond(CSeqFeatData::eBond_xlink);
+        return true;
+    }
+    if (ftype == "disulfide_bond") {
+        pFeature->SetData().SetBond(CSeqFeatData::eBond_disulfide);
+        return true;
+    }
+    pFeature->SetData().SetBond(CSeqFeatData::eBond_other);
+    return true;
 }
 
 END_objects_SCOPE
