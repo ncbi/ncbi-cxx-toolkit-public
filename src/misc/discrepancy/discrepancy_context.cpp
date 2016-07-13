@@ -178,6 +178,24 @@ bool CDiscrepancyContext::HasLineage(const string& lineage)
 }
 
 
+bool CDiscrepancyContext::IsDNA()
+{
+    static bool result = false;
+    static size_t count = 0;
+    if (count != m_Count_Bioseq) {
+        count = m_Count_Bioseq;
+
+        result = false;
+        CConstRef<CBioseq> bioseq = GetCurrentBioseq();
+        if (bioseq && bioseq->IsNa() && bioseq->IsSetInst()) {
+
+            result = (bioseq->GetInst().IsSetMol() && bioseq->GetInst().GetMol() == CSeq_inst::eMol_dna);
+        }
+    }
+    return result;
+}
+
+
 bool CDiscrepancyContext::IsEukaryotic()
 {
     static bool result = false;

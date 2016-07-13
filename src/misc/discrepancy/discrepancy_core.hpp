@@ -364,6 +364,7 @@ public:
     static bool IsUnculturedNonOrganelleName(const string& taxname);
     static bool HasLineage(const CBioSource& biosrc, const string& def_lineage, const string& type);
     bool HasLineage(const string& lineage);
+    bool IsDNA(void);
     bool IsEukaryotic(void);
     bool IsBacterial(void);
     bool IsViral(void);

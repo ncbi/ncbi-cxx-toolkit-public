@@ -2072,17 +2072,6 @@ static bool IsOrganelle(CBioSource::TGenome genome)
             || genome == CBioSource::eGenome_chromatophore);
 }
 
-static bool IsDNA(const CBioseq* bioseq)
-{
-    if (bioseq && bioseq->IsNa() && bioseq->IsSetInst()) {
-
-        return (bioseq->GetInst().IsSetMol() && bioseq->GetInst().GetMol() == CSeq_inst::eMol_dna);
-    }
-
-    return false;
-}
-
-
 static bool IsProductMatch(const string& rna_product, const string& cds_product)
 {
     if (rna_product.empty() || cds_product.empty()) {
@@ -2113,9 +2102,8 @@ static bool IsProductMatch(const string& rna_product, const string& cds_product)
 DISCREPANCY_CASE(CDS_WITHOUT_MRNA, CSeq_feat, eDisc | eOncaller | eSmart, "Coding regions on eukaryotic genomic DNA should have mRNAs with matching products")
 //  ----------------------------------------------------------------------------
 {
-    CConstRef<CBioseq> seq = context.GetCurrentBioseq();
     if (obj.IsSetData() && obj.GetData().IsCdregion() && !CCleanup::IsPseudo(obj, context.GetScope()) &&
-        context.IsEukaryotic() && IsDNA(seq)) {
+        context.IsEukaryotic() && context.IsDNA()) {
 
         const CBioSource* bio_src = context.GetCurrentBiosource();
         if (bio_src && bio_src->IsSetGenome() && !IsOrganelle(bio_src->GetGenome())) {
@@ -2175,7 +2163,7 @@ DISCREPANCY_AUTOFIX(CDS_WITHOUT_MRNA)
 }
 
 
-// UNUSUAL_MISC_RNA
+// PROTEIN_NAMES
 
 static const string kProteinNames = "[n] proteins have name ";
 static const string kAllProteinNames = "All proteins have same name ";
@@ -2256,5 +2244,65 @@ DISCREPANCY_SUMMARIZE(PROTEIN_NAMES)
 }
 
 
+// MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS
+
+/*static const string kNoLackOfmRnaData = "No protein_id and transcript_id present";
+static const string kHasProblems = "Problems";
+
+static bool IsmRnaQualsPresent(const CSeq_feat::TQual& quals)
+{
+    bool protein_id = false,
+         transcript_id = false;
+
+    ITERATE(CSeq_feat::TQual, qual, quals) {
+        if ((*qual)->IsSetQual()) {
+
+            if ((*qual)->GetQual() == "protein_id") {
+                protein_id = true;
+            }
+
+            if ((*qual)->GetQual() == "transcript_id") {
+                transcript_id = true;
+            }
+
+            if (protein_id && transcript_id) {
+                break;
+            }
+        }
+    }
+
+    return protein_id && transcript_id;
+}
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS, CSeq_feat, eDisc | eSubmitter | eSmart, "mRNA should have both protein_id and transcript_id")
+//  ----------------------------------------------------------------------------
+{
+    if (obj.IsSetData() && obj.GetData().IsCdregion() && !CCleanup::IsPseudo(obj, context.GetScope()) &&
+        context.IsEukaryotic() && context.IsDNA()) {
+
+        const CBioSource* bio_src = context.GetCurrentBiosource();
+        if (bio_src && bio_src->IsSetGenome() && !IsOrganelle(bio_src->GetGenome())) {
+
+            CConstRef<CSeq_feat> mRNA = sequence::GetmRNAforCDS(obj, context.GetScope());
+            if (mRNA.NotEmpty()) {
+
+                if (!mRNA->IsSetQual() || !IsmRnaQualsPresent(mRNA->GetQual())) {
+                
+                    m_Objs[kNoLackOfmRnaData].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
+                }
+            }
+        }
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS)
+//  ----------------------------------------------------------------------------
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+*/
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

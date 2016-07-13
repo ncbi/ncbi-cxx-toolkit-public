@@ -44,15 +44,42 @@ USING_SCOPE(objects);
 DISCREPANCY_MODULE(seqdesc_per_bioseq);
 
 // RETROVIRIDAE_DNA
+static const std::string kGenomeNotProviral = "[n] Retroviridae biosource[s] on DNA sequences [is] not proviral";
 
 DISCREPANCY_CASE(RETROVIRIDAE_DNA, CSeqdesc_BY_BIOSEQ, eOncaller, "Retroviridae DNA")
 {
-//cout<<"CSeqdesc_BY_BIOSEQ\n";
-}
+    if (!obj.IsSource() || !context.IsDNA()) {
+        return;
+    }
+    const CBioSource& src = obj.GetSource();
+    if (src.IsSetLineage() && NStr::FindCase(src.GetLineage(), "Retroviridae") != NPOS) {
+        if (!src.IsSetGenome() || src.GetGenome() != CBioSource::eGenome_proviral) {
 
+            m_Objs[kGenomeNotProviral].Add(*context.NewDiscObj(CConstRef<CSeqdesc>(&obj), eKeepRef));
+        }
+    }
+}
 
 DISCREPANCY_SUMMARIZE(RETROVIRIDAE_DNA)
 {
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+DISCREPANCY_AUTOFIX(RETROVIRIDAE_DNA)
+{
+    TReportObjectList list = item->GetDetails();
+    unsigned int n = 0;
+    NON_CONST_ITERATE(TReportObjectList, it, list) {
+        const CSeqdesc* desc = dynamic_cast<const CSeqdesc*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
+        if (desc) {
+
+            CSeqdesc* desc_handle = const_cast<CSeqdesc*>(desc); // Is there a way to do this without const_cast???
+            desc_handle->SetSource().SetGenome(CBioSource::eGenome_proviral);
+
+            n++;
+        }
+    }
+    return CRef<CAutofixReport>(n ? new CAutofixReport("RETROVIRIDAE_DNA: Genome set to proviral for [n] sequence[s]", n) : 0);
 }
 
 
