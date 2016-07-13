@@ -691,15 +691,16 @@ bool CGff3Reader::xIsIgnoredFeatureType(
     const string& featureType)
 //  ----------------------------------------------------------------------------
 {
+    typedef CStaticArraySet<string, PNocase> STRINGARRAY;
+
     string ftype(featureType);
     NStr::ToLower(ftype);
 
-    vector<string>::const_iterator cit;
-
-    static vector<string> ignoredTypesAlways{
+    static const char* const ignoredTypesAlways_[] = {
         "protein"
     };
-    cit = std::find(ignoredTypesAlways.begin(), ignoredTypesAlways.end(), ftype);
+    DEFINE_STATIC_ARRAY_MAP(STRINGARRAY, ignoredTypesAlways, ignoredTypesAlways_);    
+    STRINGARRAY::const_iterator cit = ignoredTypesAlways.find(ftype);
     if (cit != ignoredTypesAlways.end()) {
         return true;
     }
@@ -708,11 +709,13 @@ bool CGff3Reader::xIsIgnoredFeatureType(
     }
 
     /* -genbank mode:*/
-    static vector<string> specialTypesGenbank{
+    static const char* const specialTypesGenbank_[] = {
         "stop_codon_read_through",
         "selenocysteine"
     };
-    static vector<string> ignoredTypesGenbank{
+    DEFINE_STATIC_ARRAY_MAP(STRINGARRAY, specialTypesGenbank, specialTypesGenbank_);    
+
+    static const char* const ignoredTypesGenbank_[] = {
         "apicoplast_chromosome",
         "assembly",
         "chloroplast_chromosome",
@@ -734,13 +737,14 @@ bool CGff3Reader::xIsIgnoredFeatureType(
         "supercontig",
         "ultracontig",
     };
+    DEFINE_STATIC_ARRAY_MAP(STRINGARRAY, ignoredTypesGenbank, ignoredTypesGenbank_);    
 
-    cit = std::find(specialTypesGenbank.begin(), specialTypesGenbank.end(), ftype);
+    cit = specialTypesGenbank.find(ftype);
     if (cit != specialTypesGenbank.end()) {
         return false;
     }
 
-    cit = std::find(ignoredTypesGenbank.begin(), ignoredTypesGenbank.end(), ftype);
+    cit = ignoredTypesGenbank.find(ftype);
     if (cit != ignoredTypesGenbank.end()) {
         return true;
     }
