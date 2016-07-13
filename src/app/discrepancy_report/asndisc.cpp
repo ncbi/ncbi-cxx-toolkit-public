@@ -36,6 +36,7 @@
 #include <objects/submit/Seq_submit.hpp>
 #include <objmgr/object_manager.hpp>
 #include <serial/objistr.hpp>
+#include <serial/objostr.hpp>
 #include <util/format_guess.hpp>
 #include <util/compress/stream_util.hpp>
 
@@ -53,6 +54,7 @@ public:
 
 protected:
     string x_ConstructOutputName(const string& input);
+    string x_ConstructAutofixName(const string& input);
     string x_ConstructMacroName(const string& input);
     CRef<CSerialObject> x_ReadFile(const string& filename);
     void x_ParseDirectory(const string& name, bool recursive);
@@ -63,6 +65,8 @@ protected:
     //void x_RecursiveOutput(CNcbiOfstream& out, const TReportItemList& list);
     //void x_RecursiveXmlOutput(CNcbiOfstream& out, const TReportItemList& list, size_t indent);
     void x_OutputMacro(const string& filename, const TDiscrepancyCaseMap& tests);
+    void x_Autofix(const TDiscrepancyCaseMap& tests);
+    void x_OutputObject(const string& filename, const CSerialObject& obj);
 
     CScope m_Scope;
     string m_SuspectRules;
@@ -177,6 +181,15 @@ string CDiscRepApp::x_ConstructMacroName(const string& input)
 }
 
 
+string CDiscRepApp::x_ConstructAutofixName(const string& input)
+{
+    const CArgs& args = GetArgs();
+    CDirEntry fname(input);
+    string path = args["r"] ? args["r"].AsString() : fname.GetDir();
+    return CDirEntry::MakePath(path, fname.GetBase(), "autofix.asn");
+}
+
+
 auto_ptr<CObjectIStream> OpenUncompressedStream(const string& fname) // JIRA: CXX open the ticket 
 {
     auto_ptr<CNcbiIstream> InputStream(new CNcbiIfstream (fname.c_str(), ios::binary));
@@ -274,14 +287,18 @@ void CDiscRepApp::x_ProcessFile(const string& fname)
     ITERATE (vector<string>, tname, m_Tests) {
         Tests->AddTest(*tname);
     }
-
+    CRef<CSerialObject> obj = x_ReadFile(fname);
+    Tests->SetKeepRef(m_AutoFix);
     Tests->SetSuspectRules(m_SuspectRules);
     Tests->SetLineage(m_Lineage);
-
-    Tests->Parse(*x_ReadFile(fname));
+    Tests->Parse(*obj);
     Tests->Summarize();
     if (m_Macro) {
         x_OutputMacro(x_ConstructMacroName(fname), Tests->GetTests());
+    }
+    if (m_AutoFix) {
+        x_Autofix(Tests->GetTests());
+        x_OutputObject(x_ConstructAutofixName(fname), *obj);
     }
     m_Xml ? x_OutputXml(x_ConstructOutputName(fname), *Tests) : x_Output(x_ConstructOutputName(fname), *Tests);
 }
@@ -293,18 +310,29 @@ void CDiscRepApp::x_ProcessAll(const string& outname)
     ITERATE (vector<string>, tname, m_Tests) {
         Tests->AddTest(*tname);
     }
-
+    Tests->SetKeepRef(m_AutoFix);
     Tests->SetSuspectRules(m_SuspectRules);
     Tests->SetLineage(m_Lineage);
-
+    typedef map<string, CRef<CSerialObject> > TStr2Obj;
+    TStr2Obj objects;
     ITERATE (vector<string>, fname, m_Files) {
+        CRef<CSerialObject> obj = x_ReadFile(*fname);
         Tests->SetFile(*fname);
-        //m_Scope.RemoveTopLevelSeqEntry(*sh);
-        Tests->Parse(*x_ReadFile(*fname));
+        if (m_AutoFix) {
+            objects[*fname] = obj;
+        }
+        //m_Scope.RemoveTopLevelSeqEntry(*obj);
+        Tests->Parse(*obj);
     }
     Tests->Summarize();
     if (m_Macro) {
         x_OutputMacro(x_ConstructMacroName(outname), Tests->GetTests());
+    }
+    if (m_AutoFix) {
+        x_Autofix(Tests->GetTests());
+        ITERATE (TStr2Obj, it, objects) {
+            x_OutputObject(x_ConstructAutofixName(it->first), *it->second);
+        }
     }
     m_Xml ? x_OutputXml(outname, *Tests) : x_Output(outname, *Tests);
 }
@@ -349,6 +377,24 @@ void CDiscRepApp::x_OutputMacro(const string& filename, const TDiscrepancyCaseMa
         out << "    PerformDiscrAutofix(\"" << *it << "\")\n";
     }
     out << "Done\n";
+}
+
+
+void CDiscRepApp::x_Autofix(const TDiscrepancyCaseMap& tests)
+{
+    ITERATE (TDiscrepancyCaseMap, tst, tests) {
+        const TReportItemList& list = tst->second->GetReport();
+        ITERATE (TReportItemList, it, list) {
+            (*it)->Autofix(m_Scope);
+        }
+    }
+}
+
+
+void CDiscRepApp::x_OutputObject(const string& filename, const CSerialObject& obj)
+{
+    CNcbiOfstream out(filename.c_str(), ofstream::out);
+    out << MSerial_AsnText << obj;
 }
 
 

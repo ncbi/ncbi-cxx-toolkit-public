@@ -178,11 +178,11 @@ public:
     bool IsFatal(void) const { return m_Fatal; }
     bool IsExtended(void) const { return m_Ext; }
     bool IsReal(void) const { return !m_Test.Empty(); }
-    CRef<CAutofixReport> Autofix(CScope& scope);
+    CRef<CAutofixReport> Autofix(CScope& scope) const;
 protected:
     string m_Msg;
     string m_Str;
-    bool m_Autofix;
+    mutable bool m_Autofix;
     bool m_Fatal;
     bool m_Ext;
     TReportObjectList m_Objs;
@@ -254,7 +254,7 @@ public:
     CDiscrepancyCore() : m_Count(0) {}
     virtual void Summarize(CDiscrepancyContext& context){}
     virtual TReportItemList GetReport(void) const { return m_ReportItems;}
-    virtual CRef<CAutofixReport> Autofix(const CDiscrepancyItem* item, CScope& scope) { return CRef<CAutofixReport>(0); }
+    virtual CRef<CAutofixReport> Autofix(const CDiscrepancyItem* item, CScope& scope) const { return CRef<CAutofixReport>(0); }
     virtual bool SetHook(TAutofixHook func) { return false;}
 protected:
     CReportNode m_Objs;
@@ -263,7 +263,7 @@ protected:
 };
 
 
-inline CRef<CAutofixReport> CDiscrepancyItem::Autofix(CScope& scope)
+inline CRef<CAutofixReport> CDiscrepancyItem::Autofix(CScope& scope) const
 {
     if (m_Autofix) {
         CRef<CAutofixReport> ret = ((CDiscrepancyCore&)*m_Test).Autofix(this, scope);
@@ -490,7 +490,7 @@ protected:
     {                                                                                                               \
     public:                                                                                                         \
         CDiscrepancyCaseA_##name() : m_Hook(0) {}                                                                   \
-        CRef<CAutofixReport> Autofix(const CDiscrepancyItem* item, CScope& scope);                                  \
+        CRef<CAutofixReport> Autofix(const CDiscrepancyItem* item, CScope& scope) const;                            \
         bool SetHook(TAutofixHook func) { m_Hook = func; return true; }                                             \
         TAutofixHook m_Hook;                                                                                        \
     };                                                                                                              \
@@ -502,7 +502,7 @@ protected:
         CRef<CDiscrepancyCase> Create(void) const { return CRef<CDiscrepancyCase>(new CDiscrepancyCaseA_##name);}   \
     };                                                                                                              \
     static CDiscrepancyCaseAConstructor_##name DiscrepancyCaseAConstructor_##name;                                  \
-    CRef<CAutofixReport> CDiscrepancyCaseA_##name::Autofix(const CDiscrepancyItem* item, CScope& scope)
+    CRef<CAutofixReport> CDiscrepancyCaseA_##name::Autofix(const CDiscrepancyItem* item, CScope& scope) const
 
 
 #define DISCREPANCY_ALIAS(name, alias) \
