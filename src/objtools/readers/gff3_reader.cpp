@@ -532,11 +532,25 @@ bool CGff3Reader::xUpdateAnnotGeneric(
     if (featType == "stop_codon_read_through"  ||  featType == "selenocysteine") {
         string cdsParent;
         if (!record.GetAttribute("Parent", cdsParent)) {
-            cerr << "BAD!" << endl;
+            AutoPtr<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
+                eDiag_Error,
+                0,
+                "Bad data line: Unassigned code break.",
+                ILineError::eProblem_GeneralParsingError) );
+            ProcessError(*pErr, pEC);
+            return false;
         }
         IdToFeatureMap::iterator it = m_MapIdToFeature.find(cdsParent);
         if (it == m_MapIdToFeature.end()) {
-            cerr << "BAD!" << endl;
+            AutoPtr<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
+                eDiag_Error,
+                0,
+                "Bad data line: Code break assigned to missing feature.",
+                ILineError::eProblem_GeneralParsingError) );
+            ProcessError(*pErr, pEC);
+            return false;
         }
 
         CRef<CCode_break> pCodeBreak(new CCode_break); 
