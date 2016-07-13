@@ -202,7 +202,7 @@ CAsnvalApp::CAsnvalApp(void) :
     m_NumRecords(0), m_Level(0), m_Reported(0), m_verbosity(eVerbosity_min),
     m_ValidErrorStream(0), m_LogStream(0)
 {
-    SetVersion(CVersionInfo(0, 9, 4));
+    SetVersion(CVersionInfo(0, 9, 5));
 }
 
 
@@ -350,7 +350,6 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
     if (m_LogStream) {
         *m_LogStream << fname << endl;
     }
-    time_t start_time = time(NULL);
     auto_ptr<CNcbiOfstream> local_stream;
 
     bool close_error_stream = false;
@@ -384,7 +383,8 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
             else {
                 size_t num_validated = 0;
                 while (true) {
-                    try {
+                   time_t start_time = time(NULL);
+                   try {
                         CConstRef<CValidError> eval = ValidateInput();
 
                         if (eval) {
@@ -400,6 +400,12 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
                             break;
                         }
                     }
+                    time_t stop_time = time(NULL);
+                    time_t elapsed = stop_time - start_time;
+                    if (elapsed > m_Longest) {
+                        m_Longest = elapsed;
+                        m_LongestId = m_CurrentId;
+                    }
                 }
             }
         } catch (CException &e) {
@@ -407,12 +413,6 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
             ERR_POST(e);
             ++m_Reported;
         }
-    }
-    time_t stop_time = time(NULL);
-    time_t elapsed = stop_time - start_time;
-    if (elapsed > m_Longest) {
-        m_Longest = elapsed;
-        m_LongestId = m_CurrentId;
     }
     m_NumFiles++;
     if (close_error_stream) {
@@ -558,6 +558,15 @@ void CAsnvalApp::ReadClassMember
                 CRef<CScope> scope = BuildScope();
                 CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*se);
 
+                if (m_LogStream) {
+                    CBioseq_CI bi(seh);
+                    if (bi) {
+                        m_CurrentId = "";
+                        bi->GetId().front().GetSeqId()->GetLabel(&m_CurrentId);
+                        *m_LogStream << m_CurrentId << endl;
+                    }
+                }
+
                 if (m_DoCleanup) {
                     m_Cleanup.SetScope (scope);
                     m_Cleanup.BasicCleanup (*se);
@@ -577,6 +586,11 @@ void CAsnvalApp::ReadClassMember
                     CStopWatch sw(CStopWatch::eStart);
                     CConstRef<CValidError> eval = validator.Validate(seh, m_Options);
                     m_NumRecords++;
+                    time_t elapsed = sw.Elapsed();
+                    if (elapsed > m_Longest) {
+                        m_Longest = elapsed;
+                        m_LongestId = m_CurrentId;
+                   }
                     //if (m_ValidErrorStream) {
                     //    *m_ValidErrorStream << "Elapsed = " << sw.Elapsed() << endl;
                     //}
