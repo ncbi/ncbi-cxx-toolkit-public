@@ -668,42 +668,23 @@ TGi CCleanupApp::x_SeqIdToGiNumber(
 
 bool CCleanupApp::HandleSeqID( const string& seq_id )
 {
-    //
-    //  Let's make sure we are dealing with something that qualifies a seq id
-    //  in the first place:
-    //
+    CRef<CScope> scope(new CScope(*m_Objmgr));
+    scope->AddDefaults();
+
+    CBioseq_Handle bsh;
     try {
-        CSeq_id SeqId( seq_id );
+        CSeq_id SeqId(seq_id);
+        bsh = scope->GetBioseqHandle(SeqId);
     }
     catch ( CException& ) {
         ERR_FATAL("The ID " << seq_id.c_str() << " is not a valid seq ID." );
     }
-    
-    TGi gi_number = NStr::StringToNumeric<TGi>(seq_id, NStr::fConvErr_NoThrow);
- 
-    //
-    //  We need a gi number for the remote fetching. So if seq_id does not come
-    //  as a gi number already, we have to go through a lookup step first. 
-    //
-    const char* database_names[] = { "Nucleotide", "Protein" };
-    const int num_databases = sizeof( database_names ) / sizeof( const char* );
-    
-    for (int i = 0; (gi_number == ZERO_GI) && (i < num_databases); ++i) {
-        gi_number = x_SeqIdToGiNumber( seq_id, database_names[ i ] );
+
+    if (!bsh) {
+        ERR_FATAL("Sequence for " << seq_id.c_str() << " cannot be retrieved.");
+        return false;
     }
-    if (ZERO_GI == gi_number) {
-        ERR_FATAL("Given ID \"" << seq_id.c_str() 
-                  << "\" does not resolve to a GI number." );
-    }
-       
-    //
-    //  Now use the gi_number to get the actual seq object...
-    //
-    CSeq_id id;
-    id.SetGi( gi_number );
-    CRef<CScope> scope(new CScope(*m_Objmgr));
-    scope->AddDefaults();
-    CBioseq_Handle bsh = scope->GetBioseqHandle( id );
+
     CRef<CSeq_entry> entry(new CSeq_entry());
     entry->Assign(*(bsh.GetSeq_entry_Handle().GetCompleteSeq_entry()));
     HandleSeqEntry(entry);
