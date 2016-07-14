@@ -992,8 +992,7 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
     /* First, we look if there is DTab-Local already in header*/
     char* old_header = net_info->http_user_header ?
             strdup(net_info->http_user_header) : NULL;
-    user_dtab = g_LBOS_strcasestr(net_info->http_user_header, 
-                                              "DTab-local:");
+    user_dtab = g_LBOS_strcasestr(net_info->http_user_header, "DTab-local:");
     /* If there is an already defined local DTab, we mix it with one from 
      * registry */
     if (user_dtab != NULL) 
@@ -1034,7 +1033,7 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
         free(new_dtab);
     }
     servicename_url_encoded = s_LBOS_ModifyServiceName(service_name);
-  /*encode service name to url encoding (change ' ' to %20, '/' to %2f, etc.)*/
+   /*encode service name to url encoding (change ' ' to %20, '/' to %2f, etc.)*/
     url_length = strlen("http://")  + strlen(lbos_address) +
                  strlen(kLBOSQuery) + strlen(servicename_url_encoded);
     url = (char*)malloc(sizeof(char) * url_length + 1); /** to make up
