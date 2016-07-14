@@ -222,6 +222,16 @@ static bool s_IsSkippableDbtag (const CDbtag& dbt)
     }
 }
 
+static char CheckForBadSeqIdChars (const string id)
+
+{
+    FOR_EACH_CHAR_IN_STRING(itr, id) {
+        const char& ch = *itr;
+        if (ch == '|' || ch == ',') return ch;
+    }
+    return '\0';
+}
+
 
 // validation for individual Seq-id
 void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
@@ -266,6 +276,11 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
         case CSeq_id::e_Ddbj:
             if ( tsid  &&  tsid->IsSetAccession() ) {
                 const string& acc = tsid->GetAccession();
+                const char badch = CheckForBadSeqIdChars (acc);
+                if (badch != '\0') {
+                    PostErr(eDiag_Warning, eErr_SEQ_INST_BadSeqIdFormat,
+                           "Bad character '" + string(1, badch) + "' in accession '" + acc + "'", ctx);
+                }
                 unsigned int num_digits = 0;
                 unsigned int num_letters = 0;
                 size_t num_underscores = 0;
@@ -344,6 +359,11 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
 
                 if ( tsid->IsSetAccession()  &&  id.IsOther() ) {                    
                     const string& acc = tsid->GetAccession();
+                    const char badch = CheckForBadSeqIdChars (acc);
+                    if (badch != '\0') {
+                        PostErr(eDiag_Warning, eErr_SEQ_INST_BadSeqIdFormat,
+                                "Bad character '" + string(1, badch) + "' in accession '" + acc + "'", ctx);
+                    }
                     size_t num_letters = 0;
                     size_t num_digits = 0;
                     size_t num_underscores = 0;
@@ -447,6 +467,14 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
                         }
                     }
                 }
+                if (dbt.IsSetTag() && dbt.GetTag().IsStr()) {
+                    const string& acc = dbt.GetTag().GetStr();
+                    const char badch = CheckForBadSeqIdChars (acc);
+                    if (badch != '\0') {
+                        PostErr(eDiag_Warning, eErr_SEQ_INST_BadSeqIdFormat,
+                                "Bad character '" + string(1, badch) + "' in accession '" + acc + "'", ctx);
+                    }
+                }
              }
            break;
         case CSeq_id::e_Local:
@@ -458,6 +486,14 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
                     sev = eDiag_Error;
                 }
                 PostErr(sev, eErr_SEQ_INST_BadSeqIdFormat, "Local identifier longer than 50 characters", ctx);
+            }
+            if (id.IsLocal() && id.GetLocal().IsStr()) {
+                const string& acc = id.GetLocal().GetStr();
+                const char badch = CheckForBadSeqIdChars (acc);
+                if (badch != '\0') {
+                    PostErr(eDiag_Warning, eErr_SEQ_INST_BadSeqIdFormat,
+                            "Bad character '" + string(1, badch) + "' in accession '" + acc + "'", ctx);
+                }
             }
             break;
         default:
