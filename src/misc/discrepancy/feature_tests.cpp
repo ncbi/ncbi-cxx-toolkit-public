@@ -2246,8 +2246,7 @@ DISCREPANCY_SUMMARIZE(PROTEIN_NAMES)
 
 // MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS
 
-/*static const string kNoLackOfmRnaData = "No protein_id and transcript_id present";
-static const string kHasProblems = "Problems";
+static const string kNoLackOfmRnaData = "[n] mRNA[s] [does] not have both protein_id and transcript_id";
 
 static bool IsmRnaQualsPresent(const CSeq_feat::TQual& quals)
 {
@@ -2257,11 +2256,11 @@ static bool IsmRnaQualsPresent(const CSeq_feat::TQual& quals)
     ITERATE(CSeq_feat::TQual, qual, quals) {
         if ((*qual)->IsSetQual()) {
 
-            if ((*qual)->GetQual() == "protein_id") {
+            if ((*qual)->GetQual() == "orig_protein_id") {
                 protein_id = true;
             }
 
-            if ((*qual)->GetQual() == "transcript_id") {
+            if ((*qual)->GetQual() == "orig_transcript_id") {
                 transcript_id = true;
             }
 
@@ -2282,14 +2281,14 @@ DISCREPANCY_CASE(MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS, CSeq_feat, eDisc | eSu
         context.IsEukaryotic() && context.IsDNA()) {
 
         const CBioSource* bio_src = context.GetCurrentBiosource();
-        if (bio_src && bio_src->IsSetGenome() && !IsOrganelle(bio_src->GetGenome())) {
+        if (bio_src) {
 
             CConstRef<CSeq_feat> mRNA = sequence::GetmRNAforCDS(obj, context.GetScope());
             if (mRNA.NotEmpty()) {
 
-                if (!mRNA->IsSetQual() || !IsmRnaQualsPresent(mRNA->GetQual())) {
+                if (mRNA->IsSetQual() && !IsmRnaQualsPresent(mRNA->GetQual())) {
                 
-                    m_Objs[kNoLackOfmRnaData].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
+                    m_Objs[kNoLackOfmRnaData].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false).Fatal();
                 }
             }
         }
@@ -2303,6 +2302,6 @@ DISCREPANCY_SUMMARIZE(MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS)
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
-*/
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
