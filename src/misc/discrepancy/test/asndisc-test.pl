@@ -204,6 +204,7 @@ sub normalize_detail
   $str=~s/(\(\S+,\s)(\S+:)/$1/g;
   $str=~s/^lcl\|//g;
   $str=~s/misc_RNA/RNA/g;
+  $str=~s/\/inference=//g;
   # C seems to prefer "()" for seq-loc-mix but C++ seems to prefer "[]"
   $str=~s/\s*\(\d+ components?\)//g;
   $str=~s/[][)(]//g;
