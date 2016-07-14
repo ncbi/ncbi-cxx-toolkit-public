@@ -60,6 +60,7 @@ BEGIN_NAMESPACE(objects);
 
 //#define DEFAULT_WGS_INDEX_PATH "WGS_INDEX"
 //#define DEFAULT_WGS_INDEX_PATH "AAAA00"
+#define WGS_INDEX_ACC "ZZZZ99"
 #define DEFAULT_WGS_INDEX_PATH1 NCBI_TRACES04_PATH "/wgs01/WGS/WGS_INDEX"
 #define DEFAULT_WGS_INDEX_PATH2 NCBI_TRACES04_PATH "/wgs01/NEW/WGS/WGS_INDEX"
 
@@ -68,6 +69,16 @@ BEGIN_NAMESPACE(objects);
 
 #define DEFAULT_PROT_ACC_INDEX_PATH                             \
     NCBI_TRACES04_PATH "/wgs01/wgs_aux/list.wgs_acc_ranges"
+
+
+NCBI_PARAM_DECL(bool, WGS, RESOLVER_DIRECT_WGS_INDEX);
+NCBI_PARAM_DEF(bool, WGS, RESOLVER_DIRECT_WGS_INDEX, true);
+
+NCBI_PARAM_DECL(bool, WGS, RESOLVER_GENBANK);
+NCBI_PARAM_DEF(bool, WGS, RESOLVER_GENBANK, true);
+
+NCBI_PARAM_DECL(bool, WGS, RESOLVER_RANGEFILES);
+NCBI_PARAM_DEF(bool, WGS, RESOLVER_RANGEFILES, false);
 
 
 NCBI_PARAM_DECL(string, WGS, WGS_INDEX);
@@ -175,9 +186,9 @@ CRef<CWGSResolver> CWGSResolver_VDB::CreateResolver(const CVDBMgr& mgr)
 {
     string path = GetDefaultWGSIndexPath();
     if ( path.empty() ) {
-        return null;
+        path = WGS_INDEX_ACC;
     }
-    if ( !CDirEntry(path).Exists() ) {
+    if ( path.find_first_of("\\/") != NPOS && !CDirEntry(path).Exists() ) {
         if ( s_DebugEnabled(eDebug_error) ) {
             ERR_POST_X(9, "CWGSResolver_VDB: cannot find index file: "<<path);
         }
@@ -253,7 +264,8 @@ bool CWGSResolver_VDB::Update(void)
 string CWGSResolver_VDB::GetDefaultWGSIndexPath(void)
 {
     string path = NCBI_PARAM_TYPE(WGS, WGS_INDEX)::GetDefault();
-    if ( path.empty() ) {
+    if ( path.empty() &&
+         NCBI_PARAM_TYPE(WGS, RESOLVER_DIRECT_WGS_INDEX)::GetDefault() ) {
         if ( CDirEntry(DEFAULT_WGS_INDEX_PATH1).Exists() ) {
             path = DEFAULT_WGS_INDEX_PATH1;
         }
@@ -759,6 +771,9 @@ CWGSResolver_RangeFiles::~CWGSResolver_RangeFiles(void)
 
 CRef<CWGSResolver> CWGSResolver_RangeFiles::CreateResolver(void)
 {
+    if ( !NCBI_PARAM_TYPE(WGS, RESOLVER_RANGEFILES)::GetDefault() ) {
+        return null;
+    }
     return CRef<CWGSResolver>(new CWGSResolver_RangeFiles);
 }
 
@@ -991,6 +1006,9 @@ CWGSResolver_DL::CreateResolver(CDataLoader* loader)
 CRef<CWGSResolver>
 CWGSResolver_DL::CreateResolver(void)
 {
+    if ( !NCBI_PARAM_TYPE(WGS, RESOLVER_GENBANK)::GetDefault() ) {
+        return null;
+    }
     CRef<CWGSResolver_DL> resolver(new CWGSResolver_DL());
     if ( !resolver->IsValid() ) {
         return null;
