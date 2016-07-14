@@ -54,7 +54,7 @@ BEGIN_NCBI_SCOPE
 //                      address, node id and session id
 CNSClientId::CNSClientId() :
     m_Addr(0), m_ClientType(eClaimedNotProvided),
-    m_PassedChecks(0), m_ID(0)
+    m_ControlPort(0), m_PassedChecks(0), m_ID(0)
 {}
 
 
