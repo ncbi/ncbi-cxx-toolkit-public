@@ -195,6 +195,37 @@ bool CDiscrepancyContext::IsDNA()
     return result;
 }
 
+bool CDiscrepancyContext::IsOrganelle()
+{
+    static bool result = false;
+    static size_t count = 0;
+    if (count != m_Count_Bioseq) {
+        count = m_Count_Bioseq;
+
+        result = false;
+        const CBioSource* biosrc = GetCurrentBiosource();
+        if (biosrc && biosrc->IsSetGenome()) {
+
+            int genome = biosrc->GetGenome();
+
+            result = ((genome == CBioSource::eGenome_chloroplast
+                || genome == CBioSource::eGenome_chromoplast
+                || genome == CBioSource::eGenome_kinetoplast
+                || genome == CBioSource::eGenome_mitochondrion
+                || genome == CBioSource::eGenome_cyanelle
+                || genome == CBioSource::eGenome_nucleomorph
+                || genome == CBioSource::eGenome_apicoplast
+                || genome == CBioSource::eGenome_leucoplast
+                || genome == CBioSource::eGenome_proplastid
+                || genome == CBioSource::eGenome_hydrogenosome
+                || genome == CBioSource::eGenome_plastid
+                || genome == CBioSource::eGenome_chromatophore));
+        }
+    }
+
+    return result;
+}
+
 
 bool CDiscrepancyContext::IsEukaryotic()
 {

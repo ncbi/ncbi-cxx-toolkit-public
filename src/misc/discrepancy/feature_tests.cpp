@@ -2056,22 +2056,6 @@ DISCREPANCY_SUMMARIZE(UNUSUAL_MISC_RNA)
 
 const string kCDSWithoutMRNA = "[n] coding region[s] [does] not have an mRNA";
 
-static bool IsOrganelle(CBioSource::TGenome genome)
-{
-    return (genome == CBioSource::eGenome_chloroplast
-            || genome == CBioSource::eGenome_chromoplast
-            || genome == CBioSource::eGenome_kinetoplast
-            || genome == CBioSource::eGenome_mitochondrion
-            || genome == CBioSource::eGenome_cyanelle
-            || genome == CBioSource::eGenome_nucleomorph
-            || genome == CBioSource::eGenome_apicoplast
-            || genome == CBioSource::eGenome_leucoplast
-            || genome == CBioSource::eGenome_proplastid
-            || genome == CBioSource::eGenome_hydrogenosome
-            || genome == CBioSource::eGenome_plastid
-            || genome == CBioSource::eGenome_chromatophore);
-}
-
 static bool IsProductMatch(const string& rna_product, const string& cds_product)
 {
     if (rna_product.empty() || cds_product.empty()) {
@@ -2106,7 +2090,7 @@ DISCREPANCY_CASE(CDS_WITHOUT_MRNA, CSeq_feat, eDisc | eOncaller | eSmart, "Codin
         context.IsEukaryotic() && context.IsDNA()) {
 
         const CBioSource* bio_src = context.GetCurrentBiosource();
-        if (bio_src && bio_src->IsSetGenome() && !IsOrganelle(bio_src->GetGenome())) {
+        if (bio_src && bio_src->IsSetGenome() && !context.IsOrganelle()) {
 
             CConstRef<CSeq_feat> mRNA = sequence::GetOverlappingmRNA(obj.GetLocation(), context.GetScope());
             if (mRNA.Empty()) {

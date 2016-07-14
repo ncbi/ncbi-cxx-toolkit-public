@@ -137,14 +137,26 @@ DISCREPANCY_SUMMARIZE(BAD_MRNA_QUAL)
 
 // ORGANELLE_NOT_GENOMIC
 
+static const std::string kOrganelleNotGenomic = "[n] non-genomic sequence[s] [is] organelle[s]";
+
 DISCREPANCY_CASE(ORGANELLE_NOT_GENOMIC, CSeqdesc_BY_BIOSEQ, eDisc | eOncaller, "Organelle location should have genomic moltype")
 {
-//cout<<"CSeqdesc_BY_BIOSEQ\n";
+    if (!obj.IsSource() || context.IsDNA()) {
+        return;
+    }
+
+    const CMolInfo* molinfo = context.GetCurrentMolInfo();
+    if (molinfo == nullptr || !molinfo->IsSetBiomol() || molinfo->GetBiomol() == CMolInfo::eBiomol_genomic)
+        return;
+
+    if (context.IsOrganelle())
+        m_Objs[kOrganelleNotGenomic].Add(*context.NewDiscObj(CConstRef<CSeqdesc>(&obj)));
 }
 
 
 DISCREPANCY_SUMMARIZE(ORGANELLE_NOT_GENOMIC)
 {
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
