@@ -11174,7 +11174,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_MixedStrand)
     STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "MixedStrand",
-                                                 "Mixed strands in Anticodon [[lcl|good:minus1-1, 10-11]]"));
+                                                 "Mixed strands in Anticodon [[lcl|good:c1-1, 10-11]]"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadAnticodonAA",
                                                  "Codons predicted from anticodon (UAA) cannot produce amino acid (N/Asn)"));
     eval = validator.Validate(seh, options);
@@ -11193,7 +11193,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_MixedStrand)
     unit_test_util::AddFeat (trna, entry);
     seh = scope.AddTopLevelSeqEntry(*entry);
 
-    expected_errors[0]->SetErrMsg("Mixed plus and unknown strands in Anticodon [[lcl|good:plus1-1, 10-11]]");
+    expected_errors[0]->SetErrMsg("Mixed plus and unknown strands in Anticodon [[lcl|good:1-1, 10-11]]");
     expected_errors[1]->SetErrMsg("Codons predicted from anticodon (AAA) cannot produce amino acid (N/Asn)");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
