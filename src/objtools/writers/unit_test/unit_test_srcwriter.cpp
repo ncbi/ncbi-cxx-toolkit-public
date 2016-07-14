@@ -112,20 +112,22 @@ public:
 
         // extract info from the file name
         const string sFileName = file.GetName();
-        vector<string> vecFileNamePieces;
-        NStr::Tokenize( sFileName, ".", vecFileNamePieces );
-        BOOST_REQUIRE(vecFileNamePieces.size() == 3);
+        list<string> fileNamePieces;
+        NStr::Split( sFileName, ".", fileNamePieces, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
+        BOOST_REQUIRE(fileNamePieces.size() == 3);
 
-        string sTestName = vecFileNamePieces[0];
+        
+
+        string sTestName = fileNamePieces.front();
         BOOST_REQUIRE(!sTestName.empty());
-        string sObjType = vecFileNamePieces[1];
-        BOOST_REQUIRE(!sTestName.empty());
-        string sFileType = vecFileNamePieces[2];
+        string sObjType = *(next(fileNamePieces.begin()));
+        BOOST_REQUIRE(!sObjType.empty());
+        string sFileType = fileNamePieces.back();
         BOOST_REQUIRE(!sFileType.empty());
        
             
         STestInfo & test_info_to_load =
-            (*m_pTestNameToInfoMap)[vecFileNamePieces[0]];
+            (*m_pTestNameToInfoMap)[sTestName];
    
 
         // Figure out which test to perform
