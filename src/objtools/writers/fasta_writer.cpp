@@ -780,21 +780,6 @@ static const string s_TrnaList[] = {
 };
 
 
-static const string& s_AaName(int aa)
-{
-    int idx = 255;
-    if (aa != '*') {
-        idx = aa - 64;
-    } else {
-        idx = 27;
-    }
-    if ( idx > 0 && idx < ArraySize(s_TrnaList) ) {
-        return s_TrnaList [idx];
-    }
-    return kEmptyStr;
-}
-
-
 void CFastaOstreamEx::x_AddRNAProductAttribute(const CSeq_feat& feat,
                                                string& defline) const
 {
