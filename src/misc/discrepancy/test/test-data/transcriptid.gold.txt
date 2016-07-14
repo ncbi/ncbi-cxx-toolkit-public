@@ -6,6 +6,6 @@ MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS: 2 mRNAs do not have both protein_id and
 Detailed Report
 
 MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS: 2 mRNAs do not have both protein_id and transcript_id
-test-data/transcriptid.sqn:CDS	1 protein	lcl|contig001:plus19569-21623	abc_1234
-test-data/transcriptid.sqn:CDS	test protein	lcl|contig001:plus127105-130227	abc_1111
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\transcriptid.sqn:CDS	1 protein	lcl|contig001:19569-21623	abc_1234
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\transcriptid.sqn:CDS	test protein	lcl|contig001:127105-130227	abc_1111
 
