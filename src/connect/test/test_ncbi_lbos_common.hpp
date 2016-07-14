@@ -1850,8 +1850,6 @@ void FullCycle__ShouldNotCrash();
 namespace MultiThreading
 // \/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
 {
-    /*
-    */
 void TryMultiThread(); /* namespace MultiThreading */
 }
 
@@ -7199,7 +7197,6 @@ void AlreadyAnnouncedInTheSameZone__ReplaceInStorage()
      * and check if there is no server already announced */
     int count_before;
     SELECT_PORT(count_before, node_name, port);
-    //SleepMilliSec(1500); //ZK is not that fast
     /*
      * First time
      */
@@ -8069,9 +8066,7 @@ void RealLife__InvisibleAfterDeannounce()
      * and check if there is no server already announced */
     int count_before;
     SELECT_PORT(count_before, node_name, port);
-    //SleepMilliSec(1500); //ZK is not that fast
     Deannounced__Return1(port);
-    //SleepMilliSec(1500); //ZK is not that fast
     int count_after = s_CountServersWithExpectation(node_name, port, 0,
                                                     __LINE__,
                                                     kDiscoveryDelaySec);
@@ -8180,7 +8175,6 @@ void AllDeannounced__NoSavedLeft()
     }
     WRITE_LOG("Part II. DeannounceAll");
     BOOST_CHECK_NO_THROW(LBOS::DeannounceAll());
-    //SleepMilliSec(10000); //We need LBOS to clear cache
 
     WRITE_LOG("Part III. Checking discovery - should find nothing");
     for (i = 0;  i < ports.size();  i++) {
@@ -8965,7 +8959,6 @@ void TryMultiThread()
     LIST_OF_FUNCS
 #undef X
 
-//SleepMilliSec(10000);
 #define X(num,name) thread##num->Join(); 
     LIST_OF_FUNCS
 #undef X
