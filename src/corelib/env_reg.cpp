@@ -357,14 +357,12 @@ bool CNcbiEnvRegMapper::EnvToReg(const string& env, string& section,
         section = env.substr(uu_pos + 2);
     }
     if (!IRegistry::IsNameSection(section, 0)) {
-        NCBI_THROW2(CRegistryException, eErr,
-                    "Invalid registry section name in environment variable "  
-                    + env, 0);
+        LOG_POST(Info << "Invalid registry section name in environment "
+                            "variable " << env);
     }
     if (!IRegistry::IsNameEntry(name, 0)) {
-        NCBI_THROW2(CRegistryException, eErr,
-                    "Invalid registry entry name in environment variable "  
-                    + env, 0);
+        LOG_POST(Info << "Invalid registry entry name in environment "
+                            "variable " << env);
     }
     NStr::ReplaceInPlace(section, "_DOT_", ".");
     NStr::ReplaceInPlace(name,    "_DOT_", ".");
