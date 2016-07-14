@@ -181,8 +181,6 @@ void CAlnReader::Read(bool guess, bool generate_local_ids)
     TAlignmentFilePtr afp;
     m_Errors.clear();
 
-    const streampos start_pos = m_IS.tellg();
-
     afp = ReadAlignmentFile2(s_ReadLine, (void *) &m_IS,
                             s_ReportError, &(m_Errors), &info,
                             (generate_local_ids ? eTrue : eFalse));
