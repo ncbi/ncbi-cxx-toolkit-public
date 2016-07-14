@@ -64,7 +64,7 @@ CConnection::CConnection(CDataSource* ds, EOwnership ownership)
 CConnection::CConnection(CDB_Connection *conn, CDataSource* ds)
     : m_ds(ds), m_connection(conn), m_connCounter(-1), m_connUsed(false),
       m_modeMask(0), m_forceSingle(false), m_multiExH(0),
-      m_msgToEx(false)
+      m_msgToEx(false), m_ownership(eNoOwnership)
 {
     _TRACE("Auxiliary connection " << (void *)this << " created...");
     SetIdent("CConnection");
