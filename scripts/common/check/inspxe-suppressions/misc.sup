@@ -28,4 +28,24 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "Missing allocation in vdbread.cpp:707 - False positive"
+	type = {invalid_deallocation}
+	stacks = {
+		allocation={
+			...;
+			func=Init,src=vdbread.cpp;
+		}
+	}
+}
+suppression = {
+	name = "Invalid memory access in vdbread.cpp:477 - False positive"
+	type = {invalid_memory_access}
+	stacks = {
+		allocation={
+			...;
+			func=CVDB,src=vdbread.cpp;
+		}
+	}
+}
 
