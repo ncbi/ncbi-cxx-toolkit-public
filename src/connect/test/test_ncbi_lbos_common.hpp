@@ -1095,6 +1095,51 @@ static string s_PortStr(unsigned int i = 0)
 }
 
 
+static SERV_ITER s_SERVOpenP_Safe(
+ const char*          service,       /* service name (here: can be a mask!)  */
+ TSERV_Type           types,
+ unsigned int         preferred_host,
+ unsigned short       preferred_port,
+ double               preference,
+ const SConnNetInfo*  net_info,
+ SSERV_InfoCPtr       skip[],        /* must be "named" if service is a mask!*/
+ size_t               n_skip,
+ int/*bool*/          external,
+ const char*          arg,
+ const char*          val,
+ int                  expected_count = 1)
+{
+    int retries = 0, max_retries = 10;
+    SERV_ITER res = NULL;
+    int wait_msec = 500;
+    
+    do {
+        if (retries++)
+            SleepMilliSec(wait_msec);
+        WRITE_LOG("Running SERV_OpenP with "
+                  "\"service\": \"" << (service ? service : "<NULL>") << "\", "
+                  "\"types\": " << types << ", "
+                  "preferred host and port: " <<
+                      CSocketAPI::HostPortToString(preferred_host, 
+                                                   preferred_port)  << ", "
+                   "\"arg\": " << (arg ? arg : "<NULL>") << "\", "
+                   "\"val\": " << (val ? val : "<NULL>") << "\", "
+                  "retry #" << retries+1);
+        res = SERV_OpenP(service, types, preferred_host, preferred_port,
+                         preference, net_info, skip, n_skip, external, 
+                         arg, val);
+    } while ((expected_count ? res == NULL : res != NULL)  && 
+             retries < max_retries);
+    WRITE_LOG("SERV_OpenP with "
+              "\"service\": \"" << (service ? service : "<NULL>") << "\", "
+              "\"types\": " << types << ", "
+              "preferred host and port: " <<
+                  CSocketAPI::HostPortToString(preferred_host, 
+                                              preferred_port)  << ", "
+              << (res ? "" : "NOT ") << "found announced servers after " 
+              << retries+1 << " retries");
+    return res;
+}
 class CHealthcheckThread
 #ifdef NCBI_THREADS
         : public CThread
@@ -1419,10 +1464,9 @@ int s_CountServersWithExpectation(const string&     service,
         } else {
             ConnNetInfo_SetUserHeader(*net_info, "DTab-Local: ");
         }
-        CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,
-                                  SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                                  *net_info, 0/*skip*/, 0/*n_skip*/,
-                                  0/*external*/, 0/*arg*/, 0/*val*/));
+        CServIter iter(s_SERVOpenP_Safe(service.c_str(), fSERV_All,
+                                        SERV_LOCALHOST, 0, 0.0,
+                                        *net_info, 0, 0, 0, 0, 0));
         do {
             info = SERV_GetNextInfoEx(*iter, NULL);
             if (info != NULL && info->port == port)
@@ -1859,7 +1903,7 @@ void TryMultiThread(); /* namespace MultiThreading */
 ///////////////////////////////////////////////////////////////////////////////
 namespace AnnounceMetadata
 {
-void KnowmMetaSpecFunc__SeeMetaInDescovery()
+void KnownMetaSpecFunc__SeeMetaInDescovery()
 {
     CConnNetInfo net_info;
     const SSERV_Info* info;
@@ -1879,10 +1923,9 @@ void KnowmMetaSpecFunc__SeeMetaInDescovery()
     meta.SetType(LBOS::CMetaData::eHTTP);
     meta.SetRate(rate);
     s_AnnounceCPP(service, version, ANNOUNCEMENT_HOST, port, health, meta);
-    CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,
-                              SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                              *net_info, 0/*skip*/, 0/*n_skip*/,
-                              0/*external*/, 0/*arg*/, 0/*val*/));
+    CServIter iter(s_SERVOpenP_Safe(service.c_str(), fSERV_All,
+                                    SERV_LOCALHOST, 0, 0.0,
+                                    *net_info, 0, 0, 0, 0, 0));
     NCBITEST_REQUIRE_MESSAGE_MT_SAFE(*iter!=NULL, "Announced server not found");
     info = SERV_GetNextInfoEx(*iter, NULL);
     /* Extra */
@@ -1918,10 +1961,9 @@ void KnownMetaMainFunc__SeeMetaInDiscovery()
     meta.Set("type", "HTTP");
     meta.Set("rate", NStr::IntToString(rate));
     s_AnnounceCPP(service, version, ANNOUNCEMENT_HOST, port, health, meta);
-    CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,
-                              SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                              *net_info, 0/*skip*/, 0/*n_skip*/,
-                              0/*external*/, 0/*arg*/, 0/*val*/));
+    CServIter iter(s_SERVOpenP_Safe(service.c_str(), fSERV_All,
+                                    SERV_LOCALHOST, 0, 0.0,
+                                    *net_info, 0, 0, 0, 0, 0));
     NCBITEST_REQUIRE_MESSAGE_MT_SAFE(*iter!=NULL, "Announced server not found");
     info = SERV_GetNextInfoEx(*iter, NULL);
     /* Extra */
@@ -2009,10 +2051,9 @@ void KnownAndUnknown__SeeMetaInDiscovery()
     s_AnnounceCPP(service, version, ANNOUNCEMENT_HOST, port, health, meta);
     
     /* Check known */
-    CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,
-        SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-        *net_info, 0/*skip*/, 0/*n_skip*/,
-        0/*external*/, 0/*arg*/, 0/*val*/));
+    CServIter iter(s_SERVOpenP_Safe(service.c_str(), fSERV_All,
+                                    SERV_LOCALHOST, 0, 0.0,
+                                    *net_info, 0, 0, 0, 0, 0));
     NCBITEST_REQUIRE_MESSAGE_MT_SAFE(*iter!=NULL, "Announced server not found");
     info = SERV_GetNextInfoEx(*iter, NULL);
     /* Extra */
@@ -2949,10 +2990,9 @@ void AnnounceFromRegistry__SeeMetaInDiscovery()
     s_AnnounceCPPFromRegistry("SECTION_WITH_METADATA");
     
     /* Check known */
-    CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,
-                   SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                   *net_info, 0/*skip*/, 0/*n_skip*/,
-                   0/*external*/, 0/*arg*/, 0/*val*/));
+    CServIter iter(s_SERVOpenP_Safe(service.c_str(), fSERV_All,
+                                    SERV_LOCALHOST, 0, 0.0,
+                                    *net_info, 0, 0, 0, 0, 0));
     NCBITEST_REQUIRE_MESSAGE_MT_SAFE(*iter!=NULL, "Announced server not found");
     info = SERV_GetNextInfoEx(*iter, NULL);
     /* Extra */
@@ -3548,10 +3588,9 @@ void NoConditions__IterContainsZeroCandidates()
     CLBOSStatus lbos_status(true, true);
     string service = "/lbos";
     CConnNetInfo net_info;
-    CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,
-                   SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                   *net_info, 0/*skip*/, 0/*n_skip*/,
-                   0/*external*/, 0/*arg*/, 0/*val*/));
+    CServIter iter(s_SERVOpenP_Safe(service.c_str(), fSERV_All,
+                                    SERV_LOCALHOST, 0, 0.0,
+                                    *net_info, 0, 0, 0, 0, 0));
     /*
      * We know that iter is LBOS's.
      */
@@ -3581,10 +3620,9 @@ void MultipleReset__ShouldNotCrash()
     string service = "/lbos";    
     SLBOS_Data* data;  
     CConnNetInfo net_info;
-    CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,
-                   SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                   *net_info, 0/*skip*/, 0/*n_skip*/,
-                   0/*external*/, 0/*arg*/, 0/*val*/));
+    CServIter iter(s_SERVOpenP_Safe(service.c_str(), fSERV_All,
+                                    SERV_LOCALHOST, 0, 0.0,
+                                    *net_info, 0, 0, 0, 0, 0));
     /*
      * We know that iter is LBOS's. It must have clear info by
      * implementation before GetNextInfo is called, so we can set
@@ -3617,10 +3655,9 @@ void Multiple_AfterGetNextInfo__ShouldNotCrash()
     string service = "/lbos";   
     SLBOS_Data* data;
     CConnNetInfo net_info;
-    CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,                      
-                   SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                   *net_info, 0/*skip*/, 0/*n_skip*/,
-                   0/*external*/, 0/*arg*/, 0/*val*/));
+    CServIter iter(s_SERVOpenP_Safe(service.c_str(), fSERV_All,
+                                    SERV_LOCALHOST, 0, 0.0,
+                                    *net_info, 0, 0, 0, 0, 0));
     if (*iter == NULL) {
         NCBITEST_CHECK_MESSAGE_MT_SAFE(*iter != NULL, 
                                        "LBOS not found when should be");
@@ -3696,10 +3733,9 @@ void AfterOpen__ShouldWork()
     CLBOSStatus lbos_status(true, true);
     string service = "/lbos";
     CConnNetInfo net_info;
-    CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,                      
-                              SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                              *net_info, 0/*skip*/, 0/*n_skip*/,
-                              0/*external*/, 0/*arg*/, 0/*val*/));
+    CServIter iter(s_SERVOpenP_Safe(service.c_str(), fSERV_All,
+                                    SERV_LOCALHOST, 0, 0.0,
+                                    *net_info, 0, 0, 0, 0, 0));
     if (*iter == NULL) {
         NCBITEST_CHECK_MESSAGE_MT_SAFE(*iter != NULL,
                                "LBOS not found when it should be");
@@ -3716,10 +3752,9 @@ void AfterReset__ShouldWork()
     CLBOSStatus lbos_status(true, true);
     string service = "/lbos";
     CConnNetInfo net_info;
-    CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,                      
-                              SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                              *net_info, 0/*skip*/, 0/*n_skip*/,
-                              0/*external*/, 0/*arg*/, 0/*val*/));
+    CServIter iter(s_SERVOpenP_Safe(service.c_str(), fSERV_All,
+                                    SERV_LOCALHOST, 0, 0.0,
+                                    *net_info, 0, 0, 0, 0, 0));
     if (*iter == NULL) {
         NCBITEST_CHECK_MESSAGE_MT_SAFE(*iter != NULL,
                                "LBOS not found when it should be");
@@ -3738,10 +3773,9 @@ void AfterGetNextInfo__ShouldWork()
     string service = "/lbos";
     SLBOS_Data* data;
     CConnNetInfo net_info;
-    CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,
-                              SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                              *net_info, 0/*skip*/, 0/*n_skip*/,
-                              0/*external*/, 0/*arg*/, 0/*val*/));
+    CServIter iter(s_SERVOpenP_Safe(service.c_str(), fSERV_All,
+                                    SERV_LOCALHOST, 0, 0.0,
+                                    *net_info, 0, 0, 0, 0, 0));
     SERV_GetNextInfo(*iter);
     if (*iter == NULL) {
         NCBITEST_CHECK_MESSAGE_MT_SAFE(*iter != NULL,
@@ -3814,10 +3848,9 @@ void FullCycle__ShouldWork()
     /*
      * 1. We close after first GetNextInfo
      */
-    CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,                      
-                              SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                              *net_info, 0/*skip*/, 0/*n_skip*/,
-                              0/*external*/, 0/*arg*/, 0/*val*/));
+    CServIter iter(s_SERVOpenP_Safe(service.c_str(), fSERV_All,
+                                    SERV_LOCALHOST, 0, 0.0,
+                                    *net_info, 0, 0, 0, 0, 0));
     NCBITEST_REQUIRE_MESSAGE_MT_SAFE(*iter != NULL,
                            "Could not find announced lbostest nodes");
     SERV_GetNextInfo(*iter);
@@ -3830,13 +3863,13 @@ void FullCycle__ShouldWork()
     /*
      * 2. We close after half hosts checked with GetNextInfo
      */
-    iter = SERV_OpenP(service.c_str(), fSERV_All,                      
-                      SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                      *net_info, 0/*skip*/, 0/*n_skip*/,
-                      0/*external*/, 0/*arg*/, 0/*val*/);
+    iter = s_SERVOpenP_Safe(service.c_str(), fSERV_All,
+                            SERV_LOCALHOST, 0, 0.0,
+                            *net_info, 0, 0, 0, 0, 0);
     if (*iter == NULL) {
         NCBITEST_CHECK_MESSAGE_MT_SAFE(*iter != NULL,
-            "Could not find announced lbostest nodes");
+                                       "Could not find announced "
+                                       "lbostest nodes");
         return;
     }
     data = static_cast<SLBOS_Data*>(iter->data);
@@ -3850,14 +3883,13 @@ void FullCycle__ShouldWork()
                                                "than 0 after GetNextInfo");
 
     /* 3. We close after all hosts checked with GetNextInfo*/
-    iter = SERV_OpenP(service.c_str(), fSERV_All,                      
-                      SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                      *net_info, 0/*skip*/, 0/*n_skip*/,
-                      0/*external*/, 0/*arg*/, 0/*val*/);
+    iter = s_SERVOpenP_Safe(service.c_str(), fSERV_All,
+                            SERV_LOCALHOST, 0, 0.0,
+                            *net_info, 0, 0, 0, 0, 0);
     
     if (*iter == NULL) {
         NCBITEST_CHECK_MESSAGE_MT_SAFE(*iter != NULL,
-            "Could not find announced lbostest nodes");
+                                     "Could not find announced lbostest nodes");
         return;
     }
     for (i = 0;  i < static_cast<SLBOS_Data*>(iter->data)->n_cand;  ++i) {
@@ -3899,16 +3931,17 @@ void DTabRegistryAndHttp__RegistryGoesFirst()
         s_FakeReadWithErrorFromLBOSCheckDTab);
     ConnNetInfo_SetUserHeader(*net_info, 
                               "DTab-local: /lbostest=>/zk#/lbostest/1.1.0");
-    CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,
-                   SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                   *net_info, 0/*skip*/, 0/*n_skip*/,
-                   0/*external*/, 0/*arg*/, 0/*val*/));
+    CServIter iter(s_SERVOpenP_Safe(service.c_str(), fSERV_All,
+                                    SERV_LOCALHOST, 0, 0.0,
+                                    *net_info, 0, 0, 0, 0, 0));
     string expected_header = "DTab-local: /lbostest=>/zk#/lbostest/1.0.0; "
                             "/lbostest=>/zk#/lbostest/1.1.0";
     
-    NCBITEST_CHECK_MESSAGE_MT_SAFE(s_LBOS_header.substr(0, expected_header.length()) ==
-                                expected_header, 
-                           "Header with DTab did not combine as expected");
+    NCBITEST_CHECK_MESSAGE_MT_SAFE(s_LBOS_header.substr(
+                                   0, expected_header.length()) ==
+                                   expected_header, 
+                                   "Header with DTab did not combine "
+                                   "as expected");
 }
 
 /** 2. Announce server with non-standard version and server with no standard 
@@ -3946,8 +3979,7 @@ void NonStandardVersion__FoundWithDTab()
                            "Error while searching non-standard server "
                            "version with DTab");
     /* Cleanup */
-    s_DeannounceC(service.c_str(), "1.1.0", 
-                    NULL, port, NULL, NULL);
+    s_DeannounceC(service.c_str(), "1.1.0", NULL, port, NULL, NULL);
     lbos_answer = NULL;
     
     /*
@@ -3955,7 +3987,8 @@ void NonStandardVersion__FoundWithDTab()
      */
     service = "/lbostest1";
     count_before = s_CountServers(service, port,
-                                  "DTab-local: /lbostest1=>/zk#/lbostest1/1.1.0");
+                                  "DTab-local: /lbostest1=>/zk#/"
+                                  "lbostest1/1.1.0");
     while (count_before != 0) {
         port = s_GeneratePort();
         count_before =
@@ -3971,12 +4004,11 @@ void NonStandardVersion__FoundWithDTab()
                                       kDiscoveryDelaySec, "DTab-local: "
                                       "/lbostest1=>/zk#/lbostest1/1.1.0");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(servers_found == 1,
-                           "Error while searching server with no standard"
-                           "version with DTab");
+                                   "Error while searching server with no "
+                                   "standard version with DTab");
 
     /* Cleanup */
-    s_DeannounceC(service.c_str(), "1.1.0", 
-        NULL, port, NULL, NULL);
+    s_DeannounceC(service.c_str(), "1.1.0", NULL, port, NULL, NULL);
     lbos_answer = NULL;
 }
 
@@ -3992,18 +4024,19 @@ void DTabRegistryAndHttpAndRequestContext__RegistryGoesFirst()
                                         s_FakeReadWithErrorFromLBOSCheckDTab);
     ConnNetInfo_SetUserHeader(*net_info,
                               "DTab-local: /lbostest=>/zk#/lbostest/1.1.0");
-    CDiagContext::GetRequestContext().SetDtab("DTab-local: /lbostest=>/zk#/lbostest/1.2.0");
-    CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,
-                   SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                   *net_info, 0/*skip*/, 0/*n_skip*/,
-                   0/*external*/, 0/*arg*/, 0/*val*/));
+    CDiagContext::GetRequestContext().SetDtab("DTab-local: /lbostest=>"
+                                              "/zk#/lbostest/1.2.0");
+    CServIter iter(s_SERVOpenP_Safe(service.c_str(), fSERV_All,
+                                    SERV_LOCALHOST, 0, 0.0,
+                                    *net_info, 0, 0, 0, 0, 0));
     string expected_header = "DTab-local: /lbostest=>/zk#/lbostest/1.0.0; "
                               "/lbostest=>/zk#/lbostest/1.1.0 ; "
                               "/lbostest=>/zk#/lbostest/1.2.0";
 
-    NCBITEST_CHECK_MESSAGE_MT_SAFE(s_LBOS_header.substr(0, expected_header.length()) ==
-                           expected_header,
-                           "Header with DTab did not combine as expected");
+    NCBITEST_CHECK_MESSAGE_MT_SAFE(s_LBOS_header.substr(0, 
+                                   expected_header.length()) == expected_header,
+                                   "Header with DTab did not combine as "
+                                   "expected");
 }
 
 /** 4. Announce server with non-standard version and server with no standard 
@@ -4044,8 +4077,7 @@ void NonStandardVersion__FoundWithRequestContextDTab()
                            "Error while searching non-standard server "
                            "version with DTab");
     /* Cleanup */
-    s_DeannounceC(service.c_str(), "1.2.0", 
-                    NULL, port, NULL, NULL);
+    s_DeannounceC(service.c_str(), "1.2.0", NULL, port, NULL, NULL);
     lbos_answer = NULL;
     
     /*
@@ -4053,7 +4085,8 @@ void NonStandardVersion__FoundWithRequestContextDTab()
      */
     service = "/lbostest1";
     count_before = s_CountServers(service, port,
-                                  "DTab-local: /lbostest1=>/zk#/lbostest1/1.2.0");
+                                  "DTab-local: /lbostest1=>/zk#/"
+                                  "lbostest1/1.2.0");
     while (count_before != 0) {
         port = s_GeneratePort();
         count_before =
@@ -4065,7 +4098,8 @@ void NonStandardVersion__FoundWithRequestContextDTab()
                   s_PortStr(PORT_N) +  "/health", "",
                   &lbos_answer.Get(), NULL);
 
-    CDiagContext::GetRequestContext().SetDtab("DTab-local: /lbostest1=>/zk#/lbostest1/1.2.0");
+    CDiagContext::GetRequestContext().SetDtab("DTab-local: /lbostest1=>/zk#/"
+                                              "lbostest1/1.2.0");
     servers_found = 
         s_CountServersWithExpectation(service, port, 1, __LINE__,
                                       kDiscoveryDelaySec, "DTab-local: "
@@ -4076,8 +4110,7 @@ void NonStandardVersion__FoundWithRequestContextDTab()
                            "version with DTab");
 
     /* Cleanup */
-    s_DeannounceC(service.c_str(), "1.2.0", 
-        NULL, port, NULL, NULL);
+    s_DeannounceC(service.c_str(), "1.2.0", NULL, port, NULL, NULL);
     lbos_answer = NULL;
 }
 
@@ -4520,11 +4553,10 @@ void LBOSNoResponse__ErrorNoLBOS()
     CMockFunction<FLBOS_ResolveIPPortMethod*> mock(
                             g_LBOS_UnitTesting_GetLBOSFuncs()->ResolveIPPort,
                             s_FakeResolveIPPort);
-
-    CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,
-                              SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                              *net_info, 0/*skip*/, 0/*n_skip*/,
-                              0/*external*/, 0/*arg*/, 0/*val*/));
+    
+    CServIter iter(s_SERVOpenP_Safe(service.c_str(), fSERV_All,
+                                    SERV_LOCALHOST, 0, 0.0,
+                                    *net_info, 0, 0, 0, 0, 0, 0));
     NCBITEST_REQUIRE_MESSAGE_MT_SAFE(*iter == NULL,
                                      "LBOS found when it should not be");
 }
@@ -4541,11 +4573,10 @@ void LBOSResponds__Finish()
     CMockFunction<FLBOS_ResolveIPPortMethod*> mock(
         g_LBOS_UnitTesting_GetLBOSFuncs()->ResolveIPPort, 
         s_FakeResolveIPPort);
-
-    CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,
-                      SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                      *net_info, 0/*skip*/, 0/*n_skip*/,
-                      0/*external*/, 0/*arg*/, 0/*val*/));
+    
+    CServIter iter(s_SERVOpenP_Safe(service.c_str(), fSERV_All,
+                                    SERV_LOCALHOST, 0, 0.0,
+                                    *net_info, 0, 0, 0, 0, 0));
     if (*iter == NULL) {
         NCBITEST_CHECK_MESSAGE_MT_SAFE(*iter != NULL,
             "LBOS not found when it should be");
@@ -4578,11 +4609,10 @@ void NetInfoProvided__UseNetInfo()
     s_CallCounter = 2; // to get desired behavior from s_FakeResolveIPPort
     CMockFunction<FLBOS_ResolveIPPortMethod*> mock(
         g_LBOS_UnitTesting_GetLBOSFuncs()->ResolveIPPort, s_FakeResolveIPPort);
-
-    CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,                      
-                      SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                      *net_info, 0/*skip*/, 0/*n_skip*/,
-                      0/*external*/, 0/*arg*/, 0/*val*/));
+    
+    CServIter iter(s_SERVOpenP_Safe(service.c_str(), fSERV_All,
+                                    SERV_LOCALHOST, 0, 0.0,
+                                    *net_info, 0, 0, 0, 0, 0));
     if (*iter == NULL) {
         NCBITEST_CHECK_MESSAGE_MT_SAFE(*iter != NULL,
             "LBOS not found when it should be");
@@ -4624,10 +4654,9 @@ void EmptyCands__RunGetCandidates()
                             s_FakeFillCandidates<10>);
 
     /* If no candidates found yet, get candidates and return first of them. */
-    CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,                      
-                      SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                      *net_info, 0/*skip*/, 0/*n_skip*/,
-                      0/*external*/, 0/*arg*/, 0/*val*/));
+    CServIter iter(s_SERVOpenP_Safe(service.c_str(), fSERV_All,
+                                    SERV_LOCALHOST, 0, 0.0,
+                                    *net_info, 0, 0, 0, 0, 0));
     if (*iter == NULL) {
         NCBITEST_CHECK_MESSAGE_MT_SAFE(*iter != NULL,
             "LBOS not found when it should be");
@@ -4655,19 +4684,14 @@ void EmptyCands__RunGetCandidates()
     SERV_Reset(*iter);
     info = SERV_GetNextInfoEx(*iter, &hinfo);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(s_CallCounter == 1,
-                           "SERV_GetNextInfoEx: mapper did not ask "
-                           "LBOS for candidates");
+                                   "SERV_GetNextInfoEx: mapper did not ask "
+                                   "LBOS for candidates");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(info->port == port && info->host == host,
-                           "SERV_GetNextInfoEx: mapper error with "
-                           "first returned element");
+                                   "SERV_GetNextInfoEx: mapper error with "
+                                   "first returned element");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(hinfo == NULL,
-                           "SERV_GetNextInfoEx: hinfo is not NULL "
-                           "(always should be NULL)");
-
-    /* Cleanup*/
-//     SERV_Close(*iter);
-//     g_LBOS_UnitTesting_GetLBOSFuncs()->FillCandidates = temp_func_pointer;
-//     s_CallCounter = 0;
+                                   "SERV_GetNextInfoEx: hinfo is not NULL "
+                                   "(always should be NULL)");
 }
 
 
@@ -4683,10 +4707,9 @@ void ErrorUpdating__ReturnNull()
         s_FakeFillCandidatesWithError);
 
     /*If no candidates found yet, get candidates, catch error and return NULL*/
-    CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,                      
-                   SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                   *net_info, 0/*skip*/, 0/*n_skip*/,
-                   0/*external*/, 0/*arg*/, 0/*val*/));
+    CServIter iter(s_SERVOpenP_Safe(service.c_str(), fSERV_All,
+                                    SERV_LOCALHOST, 0, 0.0,
+                                    *net_info, 0, 0, 0, 0, 0, 0));
     HOST_INFO hinfo = NULL;
     info = SERV_GetNextInfoEx(*iter, &hinfo);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(info == 0, 
@@ -4705,11 +4728,10 @@ void ErrorUpdating__ReturnNull()
     /* Now we first play fair, Open() iter, then Reset() iter, and in the
      * end simulate error */
     mock = s_FakeFillCandidates<10>;
-    iter = SERV_OpenP(service.c_str(), fSERV_All,                      
-                      SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                      *net_info, 0/*skip*/, 0/*n_skip*/,
-                      0/*external*/, 0/*arg*/, 0/*val*/);
-    /* If reset was just made, get candidates and return first of them.
+    iter = s_SERVOpenP_Safe(service.c_str(), fSERV_All,
+                            SERV_LOCALHOST, 0, 0.0,
+                            *net_info, 0, 0, 0, 0, 0);
+    /* If reset was just made, get candidates and return firs of them.
      * We do not care about results, we care how many times algorithm tried
      * to resolve service  */
     SERV_Reset(*iter);
@@ -4726,12 +4748,6 @@ void ErrorUpdating__ReturnNull()
     NCBITEST_CHECK_MESSAGE_MT_SAFE(hinfo == NULL,
                                    "SERV_GetNextInfoEx: hinfo is not NULL "
                                    "(always should be NULL)");
-
-    /* Cleanup*/
-    /*ConnNetInfo_Destroy(*net_info);*/
-//     SERV_Close(*iter);
-//     s_CallCounter = 0;
-//     g_LBOS_UnitTesting_GetLBOSFuncs()->FillCandidates = temp_func_pointer;
 }
 
 void HaveCands__ReturnNext()
@@ -4750,10 +4766,9 @@ void HaveCands__ReturnNext()
 
     /* We will get 200 candidates, iterate 220 times and see how the system
      * behaves */
-    CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,                      
-                      SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                      *net_info, 0/*skip*/, 0/*n_skip*/,
-                      0/*external*/, 0/*arg*/, 0/*val*/));
+    CServIter iter(s_SERVOpenP_Safe(service.c_str(), fSERV_All,
+                                    SERV_LOCALHOST, 0, 0.0,
+                                    *net_info, 0, 0, 0, 0, 0));
     /*ConnNetInfo_Destroy(*net_info);*/
     HOST_INFO hinfo;
     NCBITEST_CHECK_MESSAGE_MT_SAFE(s_CallCounter == 1,
@@ -4813,10 +4828,9 @@ void LastCandReturned__ReturnNull()
                             g_LBOS_UnitTesting_GetLBOSFuncs()->FillCandidates,
                             s_FakeFillCandidates<200>);
     /* If no candidates found yet, get candidates and return first of them. */
-    CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,                      
-                      SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                      *net_info, 0/*skip*/, 0/*n_skip*/,
-                      0/*external*/, 0/*arg*/, 0/*val*/));
+    CServIter iter(s_SERVOpenP_Safe(service.c_str(), fSERV_All,
+                                    SERV_LOCALHOST, 0, 0.0,
+                                    *net_info, 0, 0, 0, 0, 0));
 
     /*ConnNetInfo_Destroy(*net_info);*/
     NCBITEST_CHECK_MESSAGE_MT_SAFE(s_CallCounter == 1,
@@ -4856,10 +4870,9 @@ void DataIsNull__ReconstructData()
                                        
     /* We will get iterator, and then delete data from it and run GetNextInfo.
      * The mapper should recover from this kind of error */
-    CServIter iter(SERV_OpenP(service.c_str(), fSERV_All /*types*/,
-                              SERV_LOCALHOST /*preferred_host*/, 0/*port*/, 
-                              0.0/*preference*/, *net_info, 0/*skip*/, 
-                              0/*n_skip*/, 0/*external*/, 0/*arg*/, 0/*val*/));
+    CServIter iter(s_SERVOpenP_Safe(service.c_str(), fSERV_All,
+                                    SERV_LOCALHOST, 0, 0.0,
+                                    *net_info, 0, 0, 0, 0, 0));
     if (*iter == NULL) {
         NCBITEST_CHECK_MESSAGE_MT_SAFE(*iter != NULL,
             "LBOS not found when it should be");
@@ -4893,10 +4906,9 @@ void WrongMapper__ReturnNull()
     /* We will get iterator, and then change mapper name from it and run
      * GetNextInfo.
      * The mapper should return null */
-    CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,                      
-                   SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                   *net_info, 0/*skip*/, 0/*n_skip*/,
-                   0/*external*/, 0/*arg*/, 0/*val*/));
+    CServIter iter(s_SERVOpenP_Safe(service.c_str(), fSERV_All,
+                                    SERV_LOCALHOST, 0, 0.0,
+                                    *net_info, 0, 0, 0, 0, 0));
     if (*iter == NULL) {
         NCBITEST_CHECK_MESSAGE_MT_SAFE(*iter != NULL,
                                        "LBOS not found when it should be");
@@ -4929,13 +4941,12 @@ void NetInfoNull__ConstructNetInfo()
     CLBOSStatus lbos_status(true, true);
     string service = "/lbos";
     
-    CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,                      
-                      SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                      NULL/*net_info*/, 0/*skip*/, 0/*n_skip*/,
-                      0/*external*/, 0/*arg*/, 0/*val*/));
+    CServIter iter(s_SERVOpenP_Safe(service.c_str(), fSERV_All,
+                                    SERV_LOCALHOST, 0, 0.0,
+                                    0, 0, 0, 0, 0, 0));
     if (*iter == NULL) {
         NCBITEST_CHECK_MESSAGE_MT_SAFE(*iter != NULL,
-                                           "LBOS not found when it should be");
+                                       "LBOS not found when it should be");
         return;
     }
     if (iter->op == NULL) {
@@ -5108,11 +5119,9 @@ void ServerExists__ServOpenPReturnsLbosOperations()
     CLBOSStatus lbos_status(true, true);
     string service = "/lbos";    
     CConnNetInfo net_info;
-    CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,
-                      
-                      SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                      *net_info, 0/*skip*/, 0/*n_skip*/,
-                      0/*external*/, 0/*arg*/, 0/*val*/));
+    CServIter iter(s_SERVOpenP_Safe(service.c_str(), fSERV_All,
+                                    SERV_LOCALHOST, 0, 0.0,
+                                    *net_info, 0, 0, 0, 0, 0));
     if (*iter == NULL) {
         NCBITEST_CHECK_MESSAGE_MT_SAFE(*iter != NULL,
                                        "LBOS not found when it should be");
@@ -5152,10 +5161,9 @@ void ServerDoesNotExist__ShouldReturnNull()
     CLBOSStatus lbos_status(true, true);
     string service = "/asdf/idonotexist";
     CConnNetInfo net_info;
-    CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,                      
-                   SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                   *net_info, 0/*skip*/, 0/*n_skip*/,
-                   0/*external*/, 0/*arg*/, 0/*val*/));
+    CServIter iter(s_SERVOpenP_Safe(service.c_str(), fSERV_All,
+                                    SERV_LOCALHOST, 0, 0.0,
+                                    *net_info, 0, 0, 0, 0, 0));
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*iter == NULL,
                                    "Mapper should not find service, but "
                                    "it somehow found.");
@@ -5167,10 +5175,10 @@ void DbafUnknownDB__ReturnNull()
     CLBOSStatus lbos_status(true, true);
     string service = "dbinfo";
     CConnNetInfo net_info;
-    CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,                      
-                   SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                   *net_info, 0/*skip*/, 0/*n_skip*/,
-                   0/*external*/, "dbaf"/*arg*/, "mypubmed"/*val*/));
+    CServIter iter(s_SERVOpenP_Safe(service.c_str(), fSERV_All,
+                                    SERV_LOCALHOST, 0, 0.0,
+                                    *net_info, 0, 0, 0, 
+                                    "dbaf"/*arg*/, "mypubmed"/*val*/));
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*iter == NULL,
                                    "Mapper should not find service, but "
                                    "it somehow found.");
@@ -5183,10 +5191,10 @@ void DbafKnownDB__ShouldWork()
     string service = "dbinfo";
     CConnNetInfo net_info;
     const SSERV_Info* info = NULL;
-    CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,                      
-                   SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                   *net_info, 0/*skip*/, 0/*n_skip*/,
-                   0/*external*/, "dbaf"/*arg*/, "pubmed"/*val*/));
+    CServIter iter(s_SERVOpenP_Safe(service.c_str(), fSERV_All,
+                                    SERV_LOCALHOST, 0, 0.0,
+                                    *net_info, 0, 0, 0, 
+                                    "dbaf"/*arg*/, "pubmed"/*val*/));
     NCBITEST_REQUIRE_MESSAGE_MT_SAFE(*iter != NULL,
                                    "LBOS did not find dbinfo/pubmed");
     int servers = -1;
@@ -5204,10 +5212,9 @@ void NameIsMask__ReturnNull()
     CLBOSStatus lbos_status(true, true);
     string service = "/lbos*";
     CConnNetInfo net_info;
-    CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,                      
-                   SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                   *net_info, 0/*skip*/, 0/*n_skip*/,
-                   0/*external*/, 0/*arg*/, 0/*val*/));
+    CServIter iter(s_SERVOpenP_Safe(service.c_str(), fSERV_All,
+                                    SERV_LOCALHOST, 0, 0.0,
+                                    *net_info, 0, 0, 0, 0, 0));
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*iter == NULL,
                                    "Mapper should not find service, but "
                                    "it somehow found.");
@@ -5320,8 +5327,7 @@ void AllOK__LBOSAnswerProvided()
                            "Announcement function did not return "
                            "LBOS answer as expected");
     /* Cleanup */
-    s_DeannounceC(node_name.c_str(), "1.0.0", NULL, port, 
-                  NULL, NULL);
+    s_DeannounceC(node_name.c_str(), "1.0.0", NULL, port, NULL, NULL);
     lbos_answer = NULL;
     lbos_status_message = NULL;
 
@@ -5333,8 +5339,8 @@ void AllOK__LBOSAnswerProvided()
                     s_PortStr(PORT_N) + "/health").c_str(), "",
                     &lbos_answer.Get(), &lbos_status_message.Get());
     NCBITEST_CHECK_MESSAGE_MT_SAFE(!g_LBOS_StringIsNullOrEmpty(*lbos_answer),
-                           "Announcement function did not return "
-                           "LBOS answer as expected");
+                                   "Announcement function did not return "
+                                   "LBOS answer as expected");
     /* Cleanup */
     s_DeannounceC(node_name.c_str(), "1.0.0", ANNOUNCEMENT_HOST.c_str(),
                   port, NULL, NULL);
@@ -5371,8 +5377,7 @@ void AllOK__LBOSStatusMessageIsOK()
         string(*lbos_status_message ? *lbos_status_message : "<NULL>"), 
         string("OK"));
     /* Cleanup */
-    s_DeannounceC(node_name.c_str(), "1.0.0", NULL, port, 
-                  NULL, NULL);
+    s_DeannounceC(node_name.c_str(), "1.0.0", NULL, port, NULL, NULL);
     lbos_answer = NULL;
     lbos_status_message = NULL;
 
@@ -5468,9 +5473,7 @@ void AllOK__AnnouncedServerSaved()
     /* Cleanup */
     lbos_answer = NULL;
     lbos_status_message = NULL;
-    deannounce_result = s_DeannounceC(node_name.c_str(), 
-                                      "1.0.0",
-                                      "",
+    deannounce_result = s_DeannounceC(node_name.c_str(), "1.0.0", "",
                                       port, NULL, NULL);
     NCBITEST_CHECK_EQUAL_MT_SAFE(deannounce_result, eLBOS_Success);
     lbos_answer = NULL;
@@ -5540,8 +5543,7 @@ void NoLBOS__LBOSAnswerNull()
                          "LBOS status message is not NULL");
 
     /* Cleanup*/
-    WRITE_LOG(
-        "Reverting mock of CONN_Read() with s_FakeReadEmpty()");
+    WRITE_LOG("Reverting mock of CONN_Read() with s_FakeReadEmpty()");
 }
 
 
@@ -5572,8 +5574,7 @@ void NoLBOS__LBOSStatusMessageNull()
                            "Answer from LBOS was not NULL");
 
     /* Cleanup*/
-    WRITE_LOG(
-            "Reverting mock of CONN_Read() with s_FakeReadEmpty()");
+    WRITE_LOG("Reverting mock of CONN_Read() with s_FakeReadEmpty()");
 }
 
 
@@ -5606,8 +5607,7 @@ void LBOSError__ReturnServerErrorCode()
                            "Announcement did not return "
                            "eLBOS_DNSResolve as expected");
     /* Cleanup*/
-    WRITE_LOG(
-        "Reverting mock of CONN_Read() with s_FakeReadEmpty()");
+    WRITE_LOG("Reverting mock of CONN_Read() with s_FakeReadEmpty()");
 }
 
 
@@ -5634,9 +5634,10 @@ void LBOSError__ReturnServerStatusMessage()
                 &lbos_answer.Get(), &lbos_status_message.Get());
 
     /* Check that error code is the same as in mock*/
-    NCBITEST_CHECK_MESSAGE_MT_SAFE(strcmp(*lbos_status_message, "LBOS STATUS") == 0,
-                           "Announcement did not return "
-                           "eLBOS_DNSResolve as expected");
+    NCBITEST_CHECK_MESSAGE_MT_SAFE(strcmp(*lbos_status_message, "LBOS STATUS") 
+                                   == 0,
+                                   "Announcement did not return "
+                                   "eLBOS_DNSResolve as expected");
     /* Cleanup*/
     WRITE_LOG("Reverting mock of CONN_Read() with "
               "s_FakeReadAnnouncementWithErrorFromLBOS()");
@@ -5665,7 +5666,7 @@ void LBOSError__LBOSAnswerProvided()
                 s_PortStr(PORT_N) + "/health", "",
                 &lbos_answer.Get(), &lbos_status_message.Get());
     NCBITEST_CHECK_EQUAL_MT_SAFE(string(*lbos_answer ? *lbos_answer : "<NULL>"),
-                         "Those lbos errors are scaaary");
+                                 "Those lbos errors are scaaary");
     /* Cleanup*/
     WRITE_LOG("Reverting mock of CONN_Read() with "
               "s_FakeReadAnnouncementWithErrorFromLBOS()");
@@ -5763,9 +5764,8 @@ void AlreadyAnnouncedInTheSameZone__ReplaceInStorage()
 
     /* Cleanup */     
     int deannounce_result = s_DeannounceC(node_name.c_str(), 
-                                            "1.0.0",
-                                            ANNOUNCEMENT_HOST.c_str(),
-                                            port, NULL, NULL);
+                                          "1.0.0", ANNOUNCEMENT_HOST.c_str(),
+                                          port, NULL, NULL);
     NCBITEST_CHECK_EQUAL_MT_SAFE(deannounce_result, eLBOS_Success);
 #undef PORT_N
 #define PORT_N 0 
@@ -5988,9 +5988,9 @@ void IncorrectServiceName__ReturnInvalidArgs()
     /* Count how many servers there are */
     NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_InvalidArgs);
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
-                           "LBOS status message is not NULL");
+                                   "LBOS status message is not NULL");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_status_message == NULL,
-                           "Answer from LBOS was not NULL");
+                                   "Answer from LBOS was not NULL");
     /* Cleanup */
     lbos_answer = NULL;
     lbos_status_message = NULL;
@@ -6048,8 +6048,7 @@ void RealLife__VisibleAfterAnnounce()
     NCBITEST_CHECK_EQUAL_MT_SAFE(result, eLBOS_Success);
     NCBITEST_CHECK_EQUAL_MT_SAFE(count_after, count_before + 1);
     /* Cleanup */
-    s_DeannounceC(node_name.c_str(), "1.0.0",
-                  "", port, NULL, NULL);
+    s_DeannounceC(node_name.c_str(), "1.0.0", "", port, NULL, NULL);
 #undef PORT_N
 #define PORT_N 0
 }
@@ -6227,7 +6226,8 @@ void HealthcheckDead__ReturnKLBOSSuccess()
         "Bad Request");
     /* Cleanup */
     lbos_answer = NULL;
-    s_DeannounceC(node_name.c_str(), "1.0.0", "", port, &lbos_answer.Get(), NULL);
+    s_DeannounceC(node_name.c_str(), "1.0.0", "", port, &lbos_answer.Get(), 
+                  NULL);
     lbos_answer = NULL;
     lbos_status_message = NULL;
     /*
@@ -6246,7 +6246,8 @@ void HealthcheckDead__ReturnKLBOSSuccess()
     /* Cleanup */
     lbos_answer = NULL;
     lbos_status_message = NULL;
-    s_DeannounceC(node_name.c_str(), "1.0.0", "", port, &lbos_answer.Get(), NULL);
+    s_DeannounceC(node_name.c_str(), "1.0.0", "", port, &lbos_answer.Get(), 
+                  NULL);
 }
 
 
@@ -6494,7 +6495,7 @@ void PortContainsLetters__ReturnInvalidArgs()
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
                                    "Answer from LBOS was not NULL");
     /* Cleanup */
-    lbos_answer = NULL;    
+    lbos_answer = NULL;
 }
 
 /*  9.  Healthcheck is empty or NULL - return eLBOS_InvalidArgs              */
@@ -6523,7 +6524,7 @@ void HealthcheckDoesNotStartWithHttp__ReturnInvalidArgs()
     NCBITEST_CHECK_MESSAGE_MT_SAFE(*lbos_answer == NULL,
                                    "Answer from LBOS was not NULL");
     /* Cleanup */
-    lbos_answer = NULL;    
+    lbos_answer = NULL;
 }
 /*  11. Trying to announce server providing dead healthcheck URL -
         return eLBOS_Success (previously was eLbosNotFound)                    */
@@ -6558,7 +6559,7 @@ void HealthcheckDead__ReturnKLBOSSuccess()
     NCBITEST_CHECK_EQUAL_MT_SAFE(
         string(*lbos_status_message ? *lbos_status_message : "<NULL>"), "OK");
     NCBITEST_CHECK_MESSAGE_MT_SAFE(!g_LBOS_StringIsNullOrEmpty(*lbos_answer),
-                           "Answer from LBOS was NULL");
+                                   "Answer from LBOS was NULL");
     /* Cleanup */
     s_DeannounceAll();
     lbos_answer         = NULL;  
@@ -7228,8 +7229,7 @@ void AlreadyAnnouncedInTheSameZone__ReplaceInStorage()
     NCBITEST_CHECK_EQUAL_MT_SAFE(find_result, 1);
     NCBITEST_CHECK_EQUAL_MT_SAFE(count_after, count_before + 1);
     /* Cleanup */     
-    BOOST_CHECK_NO_THROW(
-        s_DeannounceCPP(node_name, "1.0.0", "", port));
+    BOOST_CHECK_NO_THROW(s_DeannounceCPP(node_name, "1.0.0", "", port));
 }
 
 
@@ -7465,8 +7465,7 @@ void ResolveLocalIPError__ReturnDNSError()
     WRITE_LOG("Reverting mock og SOCK_gethostbyaddr with \"0.0.0.0\"");
 }
 
-/* 20. LBOS is OFF - return eLBOS_Disabled                                        */
-/* Test is NOT thread-safe. */
+/* 20. LBOS is OFF - return eLBOS_Disabled                                    */
 void LBOSOff__ThrowKLBOSOff()
 {
     ExceptionComparator<CLBOSException::eDisabled, 550> 
@@ -8171,7 +8170,8 @@ void AllDeannounced__NoSavedLeft()
         counts_before.push_back(count_before);
         BOOST_CHECK_NO_THROW(
             s_AnnounceCPPSafe(node_name, "1.0.0", "", ports[i],
-                              "http://" ANNOUNCEMENT_HOST_0000 ":" + s_PortStr(PORT_N) +  "/health"));
+                              "http://" ANNOUNCEMENT_HOST_0000 ":" + 
+                              s_PortStr(PORT_N) +  "/health"));
     }
     WRITE_LOG("Part II. DeannounceAll");
     BOOST_CHECK_NO_THROW(LBOS::DeannounceAll());
@@ -8210,11 +8210,10 @@ namespace Initialization
         CMockFunction<FLBOS_FillCandidatesMethod*> mock(
                             g_LBOS_UnitTesting_GetLBOSFuncs()->FillCandidates,
                             s_FakeFillCandidates<0>);
-
-        CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,            
-                       SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                       NULL/*net_info*/, 0/*skip*/, 0/*n_skip*/,
-                       0/*external*/, 0/*arg*/, 0/*val*/));
+        
+        CServIter iter(s_SERVOpenP_Safe(service.c_str(), fSERV_All,
+                                        SERV_LOCALHOST, 0, 0.0,
+                                        0, 0, 0, 0, 0, 0));
         NCBITEST_CHECK_MESSAGE_MT_SAFE(*iter == NULL,
                                "LBOS found when it should not be");
         NCBITEST_CHECK_MESSAGE_MT_SAFE(*(g_LBOS_UnitTesting_PowerStatus()) == 0,
@@ -8232,11 +8231,10 @@ namespace Initialization
         CMockFunction<FLBOS_FillCandidatesMethod*> mock(
                             g_LBOS_UnitTesting_GetLBOSFuncs()->FillCandidates,
                             s_FakeFillCandidates<1>);
-
-        CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,            
-                       SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                       NULL/*net_info*/, 0/*skip*/, 0/*n_skip*/,
-                       0/*external*/, 0/*arg*/, 0/*val*/));
+        
+        CServIter iter(s_SERVOpenP_Safe(service.c_str(), fSERV_All,
+                                        SERV_LOCALHOST, 0, 0.0,
+                                        0, 0, 0, 0, 0, 0));
         NCBITEST_CHECK_MESSAGE_MT_SAFE(*iter != NULL,
                                "LBOS not found when it should be");
         NCBITEST_CHECK_MESSAGE_MT_SAFE(*(g_LBOS_UnitTesting_PowerStatus()) == 1,
@@ -8255,19 +8253,15 @@ namespace Initialization
         CLBOSStatus lbos_status(false, false);
         string service = "/lbos";
         CCounterResetter resetter(s_CallCounter);
-
-        CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,            
-                                 SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                                 NULL/*net_info*/, 0/*skip*/, 0/*n_skip*/,
-                                 0/*external*/, 0/*arg*/, 0/*val*/));
+        
+        CServIter iter(s_SERVOpenP_Safe(service.c_str(), fSERV_All,
+                                        SERV_LOCALHOST, 0, 0.0,
+                                        0, 0, 0, 0, 0, 0, 0));
         NCBITEST_CHECK_MESSAGE_MT_SAFE(*iter == NULL,
-            "Error: LBOS found when mapper is OFF");
+                                       "Error: LBOS found when mapper is OFF");
         NCBITEST_CHECK_MESSAGE_MT_SAFE(s_CallCounter == 1,
-            "Initialization was not called when it should be");
-
-        /* Cleanup */
-//         g_LBOS_UnitTesting_GetLBOSFuncs()->Initialize = temp_func_pointer;
-//         SERV_Close(*iter);
+                                       "Initialization was not called "
+                                       "when it should be");
     }
 
 
@@ -8277,12 +8271,12 @@ namespace Initialization
         CLBOSStatus lbos_status(true, false);
         string service = "/lbos";
         CCounterResetter resetter(s_CallCounter);
-        CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,            
-                                  SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                                  NULL/*net_info*/, 0/*skip*/, 0/*n_skip*/,
-                                  0/*external*/, 0/*arg*/, 0/*val*/));
+        CServIter iter(s_SERVOpenP_Safe(service.c_str(), fSERV_All,
+                                        SERV_LOCALHOST, 0, 0.0,
+                                        0, 0, 0, 0, 0, 0));
         NCBITEST_CHECK_MESSAGE_MT_SAFE(*iter == NULL,
-            "SERV_LBOS_Open did not return NULL when it is disabled");
+                                       "SERV_LBOS_Open did not return NULL "
+                                       "when it is disabled");
 
         /* Cleanup */
         *(g_LBOS_UnitTesting_PowerStatus()) = 1;
@@ -8300,19 +8294,14 @@ namespace Initialization
         CLBOSStatus lbos_status(false, true);
         string service = "/lbos";
         CCounterResetter resetter(s_CallCounter);
-
-        CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,            
-                       SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                       NULL/*net_info*/, 0/*skip*/, 0/*n_skip*/,
-                       0/*external*/, 0/*arg*/, 0/*val*/));
+        
+        CServIter iter(s_SERVOpenP_Safe(service.c_str(), fSERV_All,
+                                        SERV_LOCALHOST, 0, 0.0,
+                                        0, 0, 0, 0, 0, 0));
         NCBITEST_CHECK_MESSAGE_MT_SAFE(*iter != NULL,
                                "LBOS not found when it should be");
         NCBITEST_CHECK_MESSAGE_MT_SAFE(s_CallCounter == 1,
                       "Fake initialization was not called when it should be");
-
-        /* Cleanup */
-//         g_LBOS_UnitTesting_GetLBOSFuncs()->Initialize = temp_func_pointer;
-//         SERV_Close(*iter);
     }
 
 
@@ -8326,11 +8315,10 @@ namespace Initialization
         CLBOSStatus lbos_status(false, true);
         string service = "/lbos";
         CCounterResetter resetter(s_CallCounter);
-
-        CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,            
-                       SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                       NULL/*net_info*/, 0/*skip*/, 0/*n_skip*/,
-                       0/*external*/, 0/*arg*/, 0/*val*/));
+        
+        CServIter iter(s_SERVOpenP_Safe(service.c_str(), fSERV_All,
+                                        SERV_LOCALHOST, 0, 0.0,
+                                        0, 0, 0, 0, 0, 0));
 
         NCBITEST_CHECK_MESSAGE_MT_SAFE(*iter != NULL,
                                        "LBOS not found when it should be");
@@ -8398,8 +8386,7 @@ void DeleteThenCheck__SetExistsFalse()
     bool exists;
     CLBOSStatus lbos_status(true, true);
     string node_name = s_GetUnknownService();
-    ExceptionComparator<CLBOSException::eLbosNotFound, 404> 
-                                                                  comp("404\n");
+    ExceptionComparator<CLBOSException::eLbosNotFound, 404> comp("404\n");
 
     /* Set version */
     LBOSPrivate::SetServiceVersion(node_name, "1.0.0", &exists);
@@ -8542,8 +8529,7 @@ void SetEmptyVersion__OK()
 {
     CLBOSStatus lbos_status(true, true);
     string node_name = s_GetUnknownService();
-    ExceptionComparator<CLBOSException::eInvalidArgs, 452> 
-                                                                  comp("452\n");
+    ExceptionComparator<CLBOSException::eInvalidArgs, 452> comp("452\n");
 
     /* Set version */
     BOOST_CHECK_EXCEPTION(LBOSPrivate::SetServiceVersion(node_name, ""),
@@ -8561,8 +8547,7 @@ void SetEmptyVersion__OK()
 void SetNoServiceEmptyVersion__InvalidArgs()
 {
     CLBOSStatus lbos_status(true, true);
-    ExceptionComparator<CLBOSException::eInvalidArgs, 452> 
-                                                                  comp("452\n");
+    ExceptionComparator<CLBOSException::eInvalidArgs, 452> comp("452\n");
 
     /* Set version */
     BOOST_CHECK_EXCEPTION(LBOSPrivate::SetServiceVersion("", ""),
@@ -8720,10 +8705,9 @@ void GetNext_Reset__ShouldNotCrash()
     CConnNetInfo net_info;
     double elapsed = 0.0;
 
-    CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,
-                              SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                              *net_info, 0/*skip*/, 0/*n_skip*/,
-                              0/*external*/, 0/*arg*/, 0/*val*/));
+    CServIter iter(s_SERVOpenP_Safe(service.c_str(), fSERV_All,
+                                    SERV_LOCALHOST, 0, 0.0,
+                                    *net_info, 0, 0, 0, 0, 0));
     for (i = 0;  elapsed < secondsBeforeStop;  ++i) {
         do {
             info = SERV_GetNextInfoEx(*iter, NULL);
@@ -8753,10 +8737,9 @@ void FullCycle__ShouldNotCrash()
     int i = 0;
     CConnNetInfo net_info;
     for (i = 0;  elapsed < secondsBeforeStop;  ++i) {
-        CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,
-                          SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                          *net_info, 0/*skip*/, 0/*n_skip*/,
-                          0/*external*/, 0/*arg*/, 0/*val*/));
+        CServIter iter(s_SERVOpenP_Safe(service.c_str(), fSERV_All,
+                                        SERV_LOCALHOST, 0, 0.0,
+                                        *net_info, 0, 0, 0, 0, 0));
         do {
             info = SERV_GetNextInfoEx(*iter, NULL);
         } while (info != NULL);
@@ -8832,10 +8815,9 @@ void FullCycle__ShouldNotCrash()
      */
     for (total_iters = 0, cycle_iters = 0;  total_elapsed < secondsBeforeStop;
             ++total_iters, ++cycle_iters) {
-        CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,
-                                  SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                                  *net_info, 0/*skip*/, 0/*n_skip*/,
-                                  0/*external*/, 0/*arg*/, 0/*val*/));
+        CServIter iter(s_SERVOpenP_Safe(service.c_str(), fSERV_All,
+                                        SERV_LOCALHOST, 0, 0.0,
+                                        *net_info, 0, 0, 0, 0, 0));
         int hosts_found = 0;
         while ((info = SERV_GetNextInfoEx(*iter, NULL)) != NULL) {
             ++hosts_found;
@@ -9152,10 +9134,9 @@ void s_TestFindMethod(ELBOSFindMethod find_method)
     if (s_GetTimeOfDay(&start) != 0) {
         memset(&start, 0, sizeof(start));
     }
-    CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,
-                              SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                              *net_info, 0/*skip*/, 0/*n_skip*/,
-                              0/*external*/, 0/*arg*/, 0/*val*/));
+    CServIter iter(s_SERVOpenP_Safe(service.c_str(), fSERV_All,
+                                    SERV_LOCALHOST, 0, 0.0,
+                                    *net_info, 0, 0, 0, 0, 0));
     if (*iter == NULL) {
         NCBITEST_CHECK_MESSAGE_MT_SAFE(*iter != NULL,
             "LBOS not found when it should be");

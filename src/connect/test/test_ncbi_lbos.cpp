@@ -347,10 +347,10 @@ BOOST_AUTO_TEST_SUITE( Metadata ) /////////////////////////////////////
  /* 1. Announce with known 'extra' meta parameter using a special function for
   *    "known" metas. Run service discovery and get the announced metadata
   *    parameter. The same for "rate" and "type" */
-BOOST_AUTO_TEST_CASE(AnnounceMetadata__KnowmMetaSpecFunc__SeeMetaInDescovery)
+BOOST_AUTO_TEST_CASE(AnnounceMetadata__KnownMetaSpecFunc__SeeMetaInDescovery)
 {
     CHECK_LBOS_VERSION();
-    AnnounceMetadata::KnowmMetaSpecFunc__SeeMetaInDescovery();
+    AnnounceMetadata::KnownMetaSpecFunc__SeeMetaInDescovery();
 }
 
 
