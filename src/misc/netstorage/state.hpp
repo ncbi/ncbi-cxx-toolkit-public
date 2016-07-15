@@ -134,7 +134,7 @@ struct SContext : CObject
     CCompoundIDPool compound_id_pool;
     TNetStorageFlags default_flags = 0;
     string app_domain;
-    size_t relocate_chunk = 1024 * 1024;
+    size_t relocate_chunk;
 
     SContext(const SCombinedNetStorageConfig&, TNetStorageFlags);
     SContext(const string&, const string&,

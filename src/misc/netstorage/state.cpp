@@ -1093,11 +1093,15 @@ size_t s_GetRelocateChunk(const IRegistry& registry, const string& service,
 }
 
 
+const size_t kRelocateChunk = 1024 * 1024;
+
+
 SContext::SContext(const SCombinedNetStorageConfig& config, TNetStorageFlags flags)
     : icache_client(s_GetICClient(config)),
       filetrack_api(config.ft),
       default_flags(flags),
-      app_domain(s_GetAppDomain(config.app_domain, icache_client))
+      app_domain(s_GetAppDomain(config.app_domain, icache_client)),
+      relocate_chunk(kRelocateChunk)
 {
     Init();
 }
@@ -1110,7 +1114,7 @@ SContext::SContext(const string& service_name, const string& domain,
       filetrack_api(s_GetFTConfig(registry, service_name)),
       compound_id_pool(id_pool ? CCompoundIDPool(id_pool) : CCompoundIDPool()),
       app_domain(s_GetAppDomain(domain, icache_client)),
-      relocate_chunk(s_GetRelocateChunk(registry, service_name, relocate_chunk))
+      relocate_chunk(s_GetRelocateChunk(registry, service_name, kRelocateChunk))
 {
     Init();
 }
