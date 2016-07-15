@@ -646,6 +646,11 @@ bool CAutoDefFeatureClause::x_GetProductName(string &product_name)
         
         if (NStr::IsBlank(label)) {                    
             feature::GetLabel(m_MainFeat, &label, feature::fFGL_Content);
+            if ((subtype == CSeqFeatData::eSubtype_exon && NStr::Equal(label, "exon"))
+                || (subtype == CSeqFeatData::eSubtype_intron && NStr::Equal(label, "[intron]"))
+                || (subtype != CSeqFeatData::eSubtype_exon && subtype != CSeqFeatData::eSubtype_intron)) {
+                label = "";
+            }
         }
         if ((subtype == CSeqFeatData::eSubtype_cdregion && !NStr::Equal(label, "CDS"))
             || (subtype == CSeqFeatData::eSubtype_mRNA && !NStr::Equal(label, "mRNA"))
