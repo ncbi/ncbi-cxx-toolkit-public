@@ -2514,6 +2514,7 @@ bool CValidError_bioseq::HasBadWGSGap(const CBioseq& seq)
             }
         }
     }
+    return false;
 }
 
 
