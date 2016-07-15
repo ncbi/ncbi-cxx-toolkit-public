@@ -932,7 +932,7 @@ CDriverContext::MakeConnection(const CDBConnParams& params)
 
     int was_timeout = GetTimeout();
     int was_login_timeout = GetLoginTimeout();
-    CDB_Connection* t_con = NULL;
+    unique_ptr<CDB_Connection> t_con;
     try {
         string server_name = (conf_params.IsServerSet()?   conf_params.server:
                                                            params.GetServerName());
@@ -1063,13 +1063,13 @@ CDriverContext::MakeConnection(const CDBConnParams& params)
         act_params.SetPassword(password);
 
         CRef<IDBConnectionFactory> factory = CDbapiConnMgr::Instance().GetConnectionFactory();
-        t_con = factory->MakeDBConnection(*this, act_params);
+        t_con.reset(factory->MakeDBConnection(*this, act_params));
 
-        if((!t_con && act_params.GetParam("do_not_connect") == "true")) {
-            return NULL;
-        }
+        if (t_con.get() == NULL) {
+            if (act_params.GetParam("do_not_connect") == "true") {
+                return NULL;
+            }
 
-        if (!t_con) {
             string err;
             err += "Cannot connect to the server '" + act_params.GetServerName();
             err += "' as user '" + act_params.GetUserName() + "'";
@@ -1096,7 +1096,7 @@ CDriverContext::MakeConnection(const CDBConnParams& params)
     SetTimeout(was_timeout);
     SetLoginTimeout(was_login_timeout);
 
-    return t_con;
+    return t_con.release();
 }
 
 void CDriverContext::CloseConnsForPool(const string& pool_name)

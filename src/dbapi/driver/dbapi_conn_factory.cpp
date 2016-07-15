@@ -316,7 +316,7 @@ CDBConnectionFactory::MakeDBConnection(
 
     CDB_UserHandler::ClearExceptions(m_Errors);
 
-    CDB_Connection* t_con = NULL;
+    unique_ptr<CDB_Connection> t_con;
     CRuntimeData& rt_data = GetRuntimeData(params.GetConnValidator());
     TSvrRef dsp_srv = rt_data.GetDispatchedServer(params.GetServerName());
 
@@ -351,7 +351,7 @@ CDBConnectionFactory::MakeDBConnection(
         // because a named connection pool has been used before.
         // Dispatch server name ...
 
-        t_con = DispatchServerName(opening_ctx, params);
+        t_con.reset(DispatchServerName(opening_ctx, params));
     } else {
         // Server name is already dispatched ...
         string single_server(params.GetParam("single_server"));
@@ -364,7 +364,7 @@ CDBConnectionFactory::MakeDBConnection(
             // Clean previous info ...
             rt_data.CleanExcluded(params.GetServerName());
             rt_data.SetDispatchedServer(params.GetServerName(), TSvrRef());
-            t_con = DispatchServerName(opening_ctx, params);
+            t_con.reset(DispatchServerName(opening_ctx, params));
         } else {
             // We do not need to re-dispatch it ...
 
@@ -381,9 +381,9 @@ CDBConnectionFactory::MakeDBConnection(
 
                 // MakeValidConnection may return NULL here because a newly
                 // created connection may not pass validation.
-                t_con = MakeValidConnection(opening_ctx,
-                                            // cur_conn_attr,
-                                            cur_params);
+                t_con.reset(MakeValidConnection(opening_ctx,
+                                                // cur_conn_attr,
+                                                cur_params));
 
             } catch (CDB_Exception& ex) {
                 // m_Errors.push_back(ex.Clone());
@@ -394,7 +394,7 @@ CDBConnectionFactory::MakeDBConnection(
                 }
             }
 
-            if (!t_con) {
+            if (t_con.get() == NULL) {
                 // We couldn't connect ...
                 if (single_server != "true") {
                     // Server might be temporarily unavailable ...
@@ -406,7 +406,7 @@ CDBConnectionFactory::MakeDBConnection(
                     }
 
                     // Re-dispatch ...
-                    t_con = DispatchServerName(opening_ctx, params);
+                    t_con.reset(DispatchServerName(opening_ctx, params));
                 }
             } else {
                 // Dispatched server is already set, but calling of this method
@@ -420,14 +420,14 @@ CDBConnectionFactory::MakeDBConnection(
     ctx.SetTimeout(query_timeout);
 
     // Restore original query timeout ...
-    if (t_con) {
+    if (t_con.get() != NULL) {
         t_con->SetTimeout(query_timeout);
     }
 
-    x_LogConnection(opening_ctx, t_con, params);
-    handler->Flush((t_con == NULL) ? eDiagSevMax : eDiag_Warning);
+    x_LogConnection(opening_ctx, t_con.get(), params);
+    handler->Flush((t_con.get() == NULL) ? eDiagSevMax : eDiag_Warning);
 
-    return t_con;
+    return t_con.release();
 }
 
 CDB_Connection*
