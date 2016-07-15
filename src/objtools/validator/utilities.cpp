@@ -906,14 +906,6 @@ string GetValidatorLocationLabel (const CSeq_loc& loc, CScope& scope)
         tweaked_loc.Assign(loc);
         UpdateGItoAccn(tweaked_loc, scope);
         tweaked_loc.GetLabel(&loc_label);
-        NStr::ReplaceInPlace(loc_label, ":plus", ":");
-        NStr::ReplaceInPlace(loc_label, ", plus", ", ");
-        NStr::ReplaceInPlace(loc_label, ":both", ":");
-        NStr::ReplaceInPlace(loc_label, ", both", ", ");
-        NStr::ReplaceInPlace(loc_label, ":minus", ":c");
-        NStr::ReplaceInPlace(loc_label, ", minus", ", c");
-        NStr::ReplaceInPlace(loc_label, ":-rev", ":c");
-        NStr::ReplaceInPlace(loc_label, ", -rev", ", c");
         NStr::ReplaceInPlace(loc_label, "[", "(");
         NStr::ReplaceInPlace(loc_label, "]", ")");
     }

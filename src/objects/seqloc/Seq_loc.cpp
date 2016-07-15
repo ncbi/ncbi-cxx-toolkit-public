@@ -3039,7 +3039,7 @@ const CSeq_id* s_GetLabel
     }
     last_id = &itval.GetId();
     //if (itval.IsSetStrand() && itval.GetStrand() != eNa_strand_unknown) {
-    if (itval.IsSetStrand() && itval.GetStrand() == eNa_strand_minus) {
+    if (itval.IsSetStrand() && (itval.GetStrand() == eNa_strand_minus || itval.GetStrand() == eNa_strand_both_rev)) {
         //*label += GetTypeInfo_enum_ENa_strand()->FindName(itval.GetStrand(), true);
         *label += "c";
     }
