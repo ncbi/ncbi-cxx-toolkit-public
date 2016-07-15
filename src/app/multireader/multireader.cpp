@@ -335,7 +335,7 @@ void CMultiReaderApp::Init(void)
             "bed", 
             "microarray", "bed15", 
             "wig", "wiggle", 
-            "gtf", "gff3", "gff2", "augustus"
+            "gtf", "gff3", "gff2", "augustus",
             "gvf",
             "agp",
             "newick", "tree", "tre",
