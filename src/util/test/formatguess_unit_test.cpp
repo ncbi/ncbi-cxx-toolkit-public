@@ -174,7 +174,7 @@ static const char* kData_Agp =
 static const char* kData_Xml =
     "<?xml version=\"1.0\"?>\n"
     "<!DOCTYPE Seq-entry PUBLIC \"-//NCBI//NCBI Seqset/EN\" "
-    "\"http://www.ncbi.nlm.nih.gov/dtd/NCBI_Seqset.dtd\">\n"
+    "\"https://www.ncbi.nlm.nih.gov/dtd/NCBI_Seqset.dtd\">\n"
     "<Seq-entry>\n";
 static const char* kData_Wiggle =
     "browser position chr19:59302001-59311000\n"

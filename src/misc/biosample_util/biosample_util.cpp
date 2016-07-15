@@ -1280,9 +1280,9 @@ void PrintBioseqXML(CBioseq_Handle bh,
 
     node::iterator sample = data->insert(node("XmlContent"))->insert(node("BioSample"));
     sample->get_attributes().insert("schema_version", "2.0");
-    xml::ns ourns("xsi", "http://www.w3.org/2001/XMLSchema-instance");
+    xml::ns ourns("xsi", "https://www.w3.org/2001/XMLSchema-instance");
     sample->add_namespace_definition(ourns, node::type_replace_if_exists);
-    sample->get_attributes().insert("xsi:noNamespaceSchemaLocation", "http://www.ncbi.nlm.nih.gov/viewvc/v1/trunk/submit/public-docs/biosample/biosample.xsd?view=co");
+    sample->get_attributes().insert("xsi:noNamespaceSchemaLocation", "https://www.ncbi.nlm.nih.gov/viewvc/v1/trunk/submit/public-docs/biosample/biosample.xsd?view=co");
 
     node::iterator ids = sample->insert(node("SampleId"));
     string sample_id = sequence_id;
