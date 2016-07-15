@@ -47,7 +47,6 @@
 #include <util/xregexp/regexp.hpp>
 #include <objtools/cleanup/cleanup.hpp>
 
-
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
 USING_SCOPE(objects);
@@ -574,6 +573,7 @@ const CSeq_feat* CDiscrepancyContext::GetCurrentGene() // todo: optimize
 void CDiscrepancyContext::ClearFeatureList(void)
 {
     m_FeatGenes.clear();
+    m_FeatPseudo.clear();
     m_FeatCDS.clear();
     m_FeatMRNAs.clear();
     m_FeatRRNAs.clear();
@@ -592,7 +592,7 @@ void CDiscrepancyContext::CollectFeature(const CSeq_feat& feat)
             m_FeatCDS.push_back(CConstRef<CSeq_feat>(&feat));
             break;
         case CSeqFeatData::eSubtype_mRNA:
-            //m_FeatMRNAs.push_back(CConstRef<CSeq_feat>(&feat)); // will add when needed...
+            m_FeatMRNAs.push_back(CConstRef<CSeq_feat>(&feat));
             break;
         case CSeqFeatData::eSubtype_tRNA:
             m_FeatTRNAs.push_back(CConstRef<CSeq_feat>(&feat));
@@ -604,6 +604,9 @@ void CDiscrepancyContext::CollectFeature(const CSeq_feat& feat)
             if (feat.GetData().IsRna()) {
                 m_Feat_RNAs.push_back(CConstRef<CSeq_feat>(&feat));
             }
+    }
+    if (CCleanup::IsPseudo(feat, *m_Scope)) {
+        m_FeatPseudo.push_back(CConstRef<CSeq_feat>(&feat));
     }
 }
 

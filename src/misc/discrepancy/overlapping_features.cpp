@@ -354,5 +354,58 @@ DISCREPANCY_SUMMARIZE(FIND_OVERLAPPED_GENES)
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
+
+// DUP_GENES_OPPOSITE_STRANDS
+
+DISCREPANCY_CASE(DUP_GENES_OPPOSITE_STRANDS, COverlappingFeatures, eDisc | eOncaller | eSubmitter | eSmart, "Genes match other genes in the same location, but on the opposite strand")
+{
+    const vector<CConstRef<CSeq_feat> >& genes = context.FeatGenes();
+    for (size_t i = 0; i < genes.size(); i++) {
+        const CSeq_loc& loc_i = genes[i]->GetLocation();
+        for (size_t j = i + 1; j < genes.size(); j++) {
+            const CSeq_loc& loc_j = genes[j]->GetLocation();
+            if (loc_i.GetStrand() == loc_j.GetStrand()) {
+                continue;
+            }
+            sequence::ECompare ovlp = sequence::Compare(loc_i, loc_j, &context.GetScope(), sequence::fCompareOverlapping);
+            if (ovlp == sequence::eSame) {
+                m_Objs["[n] genes match other genes in the same location, but on the opposite strand"].Add(*context.NewDiscObj(genes[i])).Add(*context.NewDiscObj(genes[j]));
+            }
+        }
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(DUP_GENES_OPPOSITE_STRANDS)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+// MRNA_OVERLAPPING_PSEUDO_GENE
+
+DISCREPANCY_CASE(MRNA_OVERLAPPING_PSEUDO_GENE, COverlappingFeatures, eOncaller, "mRNA overlapping pseudo gene")
+{
+    const vector<CConstRef<CSeq_feat> >& pseudo = context.FeatPseudo();
+    const vector<CConstRef<CSeq_feat> >& mrnas = context.FeatMRNAs();
+    for (size_t i = 0; i < pseudo.size(); i++) {
+        const CSeq_loc& loc_i = pseudo[i]->GetLocation();
+        for (size_t j = 0; j < mrnas.size(); j++) {
+            const CSeq_loc& loc_j = mrnas[j]->GetLocation();
+            sequence::ECompare ovlp = sequence::Compare(loc_i, loc_j, &context.GetScope(), sequence::fCompareOverlapping);
+            if (ovlp != sequence::eNoOverlap) {
+                m_Objs["[n] Pseudogene[s] [has] overlapping mRNA[s]."].Add(*context.NewDiscObj(pseudo[i]));
+            }
+        }
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(MRNA_OVERLAPPING_PSEUDO_GENE)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

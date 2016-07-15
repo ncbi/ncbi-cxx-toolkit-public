@@ -384,6 +384,7 @@ public:
     void CollectFeature(const CSeq_feat& feat);
     void ClearFeatureList(void);
     const vector<CConstRef<CSeq_feat> >& FeatGenes() { return m_FeatGenes; }
+    const vector<CConstRef<CSeq_feat> >& FeatPseudo() { return m_FeatPseudo; }
     const vector<CConstRef<CSeq_feat> >& FeatCDS() { return m_FeatCDS; }
     const vector<CConstRef<CSeq_feat> >& FeatMRNAs() { return m_FeatMRNAs; }
     const vector<CConstRef<CSeq_feat> >& FeatRRNAs() { return m_FeatRRNAs; }
@@ -417,6 +418,7 @@ protected:
     bool m_Feat_CI;
     TReportObjectList m_NaSeqs;
     vector<CConstRef<CSeq_feat> > m_FeatGenes;
+    vector<CConstRef<CSeq_feat> > m_FeatPseudo;
     vector<CConstRef<CSeq_feat> > m_FeatCDS;
     vector<CConstRef<CSeq_feat> > m_FeatMRNAs;
     vector<CConstRef<CSeq_feat> > m_FeatRRNAs;
