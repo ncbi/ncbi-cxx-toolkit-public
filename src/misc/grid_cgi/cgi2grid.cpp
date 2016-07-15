@@ -42,7 +42,7 @@ BEGIN_NCBI_SCOPE
 static inline 
 string s_GetCgiTunnel2GridUrl(const CCgiRequest& cgi_request)
 {
-    string ret = "http://";
+    string ret = "https://";
     string server(cgi_request.GetProperty(eCgi_ServerName));
     if (NStr::StartsWith(server, "www.ncbi",   NStr::eNocase) )
         ret += "www.ncbi.nlm.nih.gov";
