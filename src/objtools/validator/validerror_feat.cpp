@@ -3058,15 +3058,16 @@ void CValidError_feat::ValidateProt(
     }
 
     // only look for EC numbers in first protein name
-    if (prot.IsSetName() && prot.GetName().size() > 0
-        && HasECnumberPattern(prot.GetName().front())) {
-            PostErr (eDiag_Warning, eErr_SEQ_FEAT_EcNumberProblem, 
-                     "Apparent EC number in protein title", feat);
+    // only look for brackets and hypothetical protein XP_ in first protein name
+    if (prot.IsSetName() && prot.GetName().size() > 0) {
+        if (HasECnumberPattern(prot.GetName().front())) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_EcNumberProblem,
+                "Apparent EC number in protein title", feat);
+        }
+        x_ValidateProteinName(prot.GetName().front(), feat);
     }
 
-    FOR_EACH_NAME_ON_PROTREF (it, prot) {
-        x_ValidateProteinName(*it, feat);
-
+    FOR_EACH_NAME_ON_PROTREF (it, prot) {        
         if (prot.IsSetEc() && !prot.IsSetProcessed()
             && (NStr::EqualCase (*it, "Hypothetical protein")
                 || NStr::EqualCase (*it, "hypothetical protein")
