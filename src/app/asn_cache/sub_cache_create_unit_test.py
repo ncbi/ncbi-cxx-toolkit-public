@@ -1,12 +1,46 @@
-import  os
-import  sys
-import  tempfile
-import  shutil
-import  filecmp
+import os
+import sys
+import subprocess
+import tempfile
+import shutil
+import filecmp
 from optparse import OptionParser
 
-import  asn_cache_subprocess
+# Copy-hack of asn_cache_subprocess module.
 
+def Run( args, error_message, debug = False, expected_return = 0 ):
+    if 'CHECK_EXEC' in os.environ:
+        args.insert(0, os.environ['CHECK_EXEC'])
+    if debug:
+        print " ".join( args )
+    return_code = subprocess.call( args )
+    if debug:
+        print "Returned ", return_code
+
+    if return_code != expected_return:
+        ReportFailedSubprocess( return_code, args, error_message )
+
+
+def RunExpectingFailure( args, error_message, debug = False ):
+    if 'CHECK_EXEC' in os.environ:
+        args.insert(0, os.environ['CHECK_EXEC'])
+    if debug:
+        print " ".join( args )
+    return_code = subprocess.call( args )
+    if debug:
+        print "Returned ", return_code
+
+    if return_code == 0:
+        ReportFailedSubprocess( return_code, args, error_message )
+
+
+def ReportFailedSubprocess( return_code, args, error_message ):
+    error_string = "%s with return code: %d.  Call arguments were %s" \
+    % ( error_message, return_code, " ".join( args ) )
+    raise Exception( error_string )
+
+
+# Main unit test logic.
 
 def main():
     usage_string = "usage: %prog [options] <GI list File>"
@@ -141,66 +175,66 @@ def main():
     print "Fetching ASN:"
     args = [ "id1_fetch", "-in", gi_file_name, "-fmt", "asnb", "-out",
                 complete_asn_file_name, "-logfile", log_file_name ]
-    asn_cache_subprocess.Run( args, "complete ASN id1_fetch failed ", options.verbose )
+    Run( args, "complete ASN id1_fetch failed ", options.verbose )
     args = [ "id1_fetch", "-in", gi_dump1_file_name, "-fmt", "asnb", "-out",
                 asn_file1_name, "-logfile", log_file_name ]
-    asn_cache_subprocess.Run( args, "main id1_fetch failed ", options.verbose )
+    Run( args, "main id1_fetch failed ", options.verbose )
     args = [ "id1_fetch", "-in", gi_dump2_file_name, "-fmt", "asnb", "-out",
                 asn_file2_name, "-logfile", log_file_name ]
-    asn_cache_subprocess.Run( args, "main id1_fetch failed ", options.verbose )
+    Run( args, "main id1_fetch failed ", options.verbose )
     args = [ "id1_fetch", "-in", gi_dump3_file_name, "-fmt", "asnb", "-out",
                 asn_file3_name, "-logfile", log_file_name ]
-    asn_cache_subprocess.Run( args, "main id1_fetch failed ", options.verbose )
+    Run( args, "main id1_fetch failed ", options.verbose )
     args = [ "id1_fetch", "-in", first_update_gi_file_name, "-fmt", "asnb", "-out",
                 update1_asn_file_name, "-logfile", log_file_name ]
-    asn_cache_subprocess.Run( args, "first update main id1_fetch failed ", options.verbose )
+    Run( args, "first update main id1_fetch failed ", options.verbose )
     args = [ "id1_fetch", "-in", second_update_gi_file_name, "-fmt", "asnb", "-out",
                 update2_asn_file_name, "-logfile", log_file_name ]
-    asn_cache_subprocess.Run( args, "second update id1_fetch failed ", options.verbose )
+    Run( args, "second update id1_fetch failed ", options.verbose )
         
     print "Creating dump2:"
     args = [ "test_dump_asn_index", "-i", asn_file1_name,
                 "-dump", id_dump_dir_path, "-logfile", log_file_name,
                 "-satid", "3", "-satkeystart", "1", "-satkeyend", "4" ]
-    asn_cache_subprocess.Run( args, "main test_dump_asn_index failed ", options.verbose )
+    Run( args, "main test_dump_asn_index failed ", options.verbose )
     args = [ "test_dump_asn_index", "-i", asn_file2_name,
                 "-dump", id_dump_dir_path, "-logfile", log_file_name,
                 "-satid", "3", "-satkeystart", "10", "-satkeyend", "14" ]
-    asn_cache_subprocess.Run( args, "main test_dump_asn_index failed ", options.verbose )
+    Run( args, "main test_dump_asn_index failed ", options.verbose )
     args = [ "test_dump_asn_index", "-i", asn_file3_name,
                 "-dump", id_dump_dir_path, "-logfile", log_file_name,
                 "-satid", "3", "-satkeystart", "20", "-satkeyend", "24" ]
-    asn_cache_subprocess.Run( args, "main test_dump_asn_index failed ", options.verbose )
+    Run( args, "main test_dump_asn_index failed ", options.verbose )
     
     print "Merging into master cache:"
     args = [ "merge_sub_caches", "-dump", id_dump_dir_path,
                 "-cache", cache_dir_path, "-logfile", log_file_name, "-size", "50" ]
-    asn_cache_subprocess.Run( args, "merge_sub_caches failed ", options.verbose )
+    Run( args, "merge_sub_caches failed ", options.verbose )
 
     print "Dumping first update:"
 # To fail by creating a lockfile, comment in this code.
 #    args = [ "lockfile", id_dump_dir_path + "/.asndump_lock.1.0_0" ]
-#    asn_cache_subprocess.Run( args, "creating the lockfile ", options.verbose )
+#    Run( args, "creating the lockfile ", options.verbose )
     args = [ "test_dump_asn_index", "-i", update1_asn_file_name,
                 "-dump", id_dump_dir_path, "-logfile", log_file_name,
                 "-satid", "1", "-satkeystart", "0", "-satkeyend", "0" ]
-    asn_cache_subprocess.Run( args, "first update test_dump_asn_index failed ", options.verbose )
+    Run( args, "first update test_dump_asn_index failed ", options.verbose )
 
     print "Updating master cache:"
     args = [ "update_cache", "-dump", id_dump_dir_path,
                 "-cache", cache_dir_path, "-logfile", log_file_name ]
-    asn_cache_subprocess.Run( args, "first update failed ", options.verbose )
+    Run( args, "first update failed ", options.verbose )
 
     print "Dumping second update:"
     args = [ "test_dump_asn_index", "-i", update2_asn_file_name,
                 "-dump", id_dump_dir_path, "-logfile", log_file_name,
                 "-satid", "1", "-satkeystart", "0", "-satkeyend", "0" ]
-    asn_cache_subprocess.Run( args, "second update test_dump_asn_index failed ", options.verbose )
+    Run( args, "second update test_dump_asn_index failed ", options.verbose )
 
     print "Updating master cache second time:"
     args = [ "update_cache", "-dump", id_dump_dir_path,
                 "-cache", cache_dir_path, "-logfile", log_file_name ]
-    asn_cache_subprocess.Run( args, "second update failed ", options.verbose )
+    Run( args, "second update failed ", options.verbose )
         
     print "Creating subcache:"
     args = [ "sub_cache_create", "-cache", cache_dir_path,
@@ -208,12 +242,12 @@ def main():
                 log_file_name ]
     if options.missing_gis and not options.extract:
         args.append( "-fetch-missing" )
-    asn_cache_subprocess.Run( args, "sub_cache_create failed ", options.verbose )
+    Run( args, "sub_cache_create failed ", options.verbose )
     
     print "Extracting ASN from cache:"
     args =  [ "asn_cache_test", "-cache", subcache_dir_path, "-i", gi_file_name,
               "-o", target_asn_file_name, "-logfile", log_file_name, "-verify-ids", ]
-    asn_cache_subprocess.Run( args, "asn_cache_test failed ", options.verbose )
+    Run( args, "asn_cache_test failed ", options.verbose )
     
     print "Comparing extracted ASN to original ASN:",
     if not filecmp.cmp( complete_asn_file_name, target_asn_file_name ):
@@ -227,17 +261,17 @@ def main():
         print "Extracting missing GIs ASN:"
         args = [ "asn_cache_test", "-cache", subcache_dir_path,
                     "-i", options.missing_gis, "-o", "/dev/null", "-logfile", log_file_name ]
-        asn_cache_subprocess.Run( args, "asn_cache_test failed ", options.verbose )
+        Run( args, "asn_cache_test failed ", options.verbose )
     
     print "Extracting ASN from orig cache:"
     args =  [ "asn_cache_test", "-cache", cache_dir_path, "-i", gi_file_name,
               "-o", "/dev/null", "-logfile", log_file_name, "-verify-ids" ]
-    asn_cache_subprocess.Run( args, "asn_cache_test failed ", options.verbose )
+    Run( args, "asn_cache_test failed ", options.verbose )
     
     print "Extracting ASN with data loader:"
     args =  [ "asn_cache_test", "-cache", subcache_dir_path, "-i", gi_file_name,
               "-o", target2_asn_file_name, "-logfile", log_file_name, "-verify-ids", "-test-loader" ]
-    asn_cache_subprocess.Run( args, "asn_cache_test failed ", options.verbose )
+    Run( args, "asn_cache_test failed ", options.verbose )
     
     print "Comparing extracted ASN to original ASN:",
     if not filecmp.cmp( complete_asn_file_name, target2_asn_file_name ):
@@ -260,12 +294,12 @@ def main():
             args.append( "-lds2" )
             args.append( options.lds )
             args.append( "-nogenbank" )
-        asn_cache_subprocess.Run( args, "sub_cache_create failed ", options.verbose )
+        Run( args, "sub_cache_create failed ", options.verbose )
         print "Comparing index of new subcache to reference:",
         args =  [ "dump_index", "-cache", fetched_subcache_dir_path,
                   "-o", fetched_cache_index_file_name, "-logfile", log_file_name,
                   "-no-timestamp", "-no-location" ]
-        asn_cache_subprocess.Run( args, "dump_index failed ", options.verbose )
+        Run( args, "dump_index failed ", options.verbose )
         if not filecmp.cmp( fetched_cache_index_file_name, options.reference_index ):
             print "  fail"
             print "Index of fetched gis subcache does not match reference index."
