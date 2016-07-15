@@ -1029,15 +1029,7 @@ bool CValidError_bioseq::x_ShowBioProjectWarning(const CBioseq& seq)
         ++title;
     }
 
-    CSeqdesc_CI molinfo(bsh, CSeqdesc::e_Molinfo);
-    while (molinfo) {
-        if (molinfo->GetMolinfo().IsSetTech() && molinfo->GetMolinfo().GetTech() == CMolInfo::eTech_wgs) {
-            is_wgs = true;
-            break;
-        }
-        ++molinfo;
-    }
-
+    is_wgs = IsWGS(bsh);
 
     bool is_gb = false, /* is_eb_db = false, */ is_refseq = false, is_ng = false;
 
@@ -2145,6 +2137,12 @@ bool CValidError_bioseq::IsWGSMaster(const CBioseq& seq, CScope& scope)
         return false;
     }
     CBioseq_Handle bsh = scope.GetBioseqHandle(seq);
+    return IsWGS(bsh);
+}
+
+
+bool CValidError_bioseq::IsWGS(CBioseq_Handle bsh)
+{
     CSeqdesc_CI molinfo(bsh, CSeqdesc::e_Molinfo);
     if (molinfo && molinfo->GetMolinfo().IsSetTech() && molinfo->GetMolinfo().GetTech() == CMolInfo::eTech_wgs) {
         return true;
@@ -2495,6 +2493,39 @@ void CValidError_bioseq::ReportBadAssemblyGap (const CBioseq& seq)
 }
 
 
+bool CValidError_bioseq::HasBadWGSGap(const CBioseq& seq)
+{
+    const CSeq_inst& inst = seq.GetInst();
+    if (inst.CanGetRepr() && inst.GetRepr() == CSeq_inst::eRepr_delta && inst.CanGetExt() && inst.GetExt().IsDelta()) {
+        ITERATE(CDelta_ext::Tdata, sg, inst.GetExt().GetDelta().Get()) {
+            if (!(*sg)) continue;
+            if ((**sg).Which() != CDelta_seq::e_Literal) continue;
+            const CSeq_literal& lit = (*sg)->GetLiteral();
+            if (!lit.IsSetSeq_data()) {
+                return true;
+            } else {
+                const CSeq_data& data = lit.GetSeq_data();
+                if (data.Which() == CSeq_data::e_Gap) {
+                    const CSeq_gap& gap = data.GetGap();
+                    if (!gap.IsSetLinkage_evidence() || gap.GetLinkage_evidence().empty()) {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+void CValidError_bioseq::ReportBadWGSGap(const CBioseq& seq)
+{
+    if (HasBadWGSGap(seq)) {
+        PostErr(eDiag_Error, eErr_SEQ_INST_SeqGapProblem, 
+            "WGS submission includes wrong gap type. Gaps for WGS genomes should be Assembly Gaps with linkage evidence.", seq);
+    }
+}
+
+
 static EDiagSev GetBioseqEndWarning (bool is_NC, bool isPatent, bool only_local, bool is_circular, EBioseqEndIsType end_is_char)
 {
     EDiagSev sev;
@@ -2753,6 +2784,10 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
                 PostErr (eDiag_Warning, eErr_SEQ_INST_HighNContentPercent, 
                             "Sequence contains " + NStr::IntToString(pct_n) + " percent Ns", seq);
             }
+        }
+
+        if (IsWGS(bsh) && !IsRefSeq(seq) && !IsEmblOrDdbj(seq)) {
+            ReportBadWGSGap(seq);
         }
     } catch ( exception& ) {
         // just ignore, and continue with the validation process.
@@ -3089,12 +3124,7 @@ void CValidError_bioseq::ValidateRawConst(
             }
         }
 
-        bool is_wgs = false;
-        CSeqdesc_CI mi_desc(bsh, CSeqdesc::e_Molinfo);
-        if (mi_desc && mi_desc->IsMolinfo() && mi_desc->GetMolinfo().IsSetTech()
-            && mi_desc->GetMolinfo().GetTech() == CMolInfo::eTech_wgs) {
-            is_wgs = true;
-        }
+        bool is_wgs = IsWGS(bsh);
 
         if (seq.IsNa() && seq.GetInst().GetRepr() == CSeq_inst::eRepr_raw) {
             // look for runs of Ns and gap characters
@@ -7977,6 +8007,28 @@ bool CValidError_bioseq::IsEmblOrDdbj(const CBioseq& seq)
     }
 
     return embl_or_ddbj;
+}
+
+
+bool CValidError_bioseq::IsGenbank(const CBioseq& seq)
+{
+    ITERATE(CBioseq::TId, id, seq.GetId()) {
+        if ((*id)->IsGenbank()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+bool CValidError_bioseq::IsRefSeq(const CBioseq& seq)
+{
+    ITERATE(CBioseq::TId, id, seq.GetId()) {
+        if ((*id)->IsOther()) {
+            return true;
+        }
+    }
+    return false;
 }
 
 

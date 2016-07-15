@@ -1454,8 +1454,11 @@ public:
 
     static bool IsMaster(const CBioseq& seq);
     static bool IsWGSMaster(const CBioseq& seq, CScope& scope);
+    static bool IsWGS(CBioseq_Handle bsh);
     static bool IsWp(CBioseq_Handle bsh);
     static bool IsEmblOrDdbj(const CBioseq& seq);
+    static bool IsGenbank(const CBioseq& seq);
+    static bool IsRefSeq(const CBioseq& seq);
     static bool IsPdb(const CBioseq& seq);
     static bool IsPartial(const CBioseq& seq, CScope& scope);
 
@@ -1486,6 +1489,8 @@ private:
     void x_CalculateNsStretchAndTotal(const CBioseq& seq, TSeqPos& num_ns, TSeqPos& max_stretch, bool& n5, bool& n3);
     void ValidateNsAndGaps(const CBioseq& seq);
     void ReportBadAssemblyGap (const CBioseq& seq);
+    static bool HasBadWGSGap(const CBioseq& seq);
+    void ReportBadWGSGap(const CBioseq& seq);
     
     void ValidateMultiIntervalGene (const CBioseq& seq);
     void ValidateMultipleGeneOverlap (const CBioseq_Handle& bsh);
