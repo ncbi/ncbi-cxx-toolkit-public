@@ -4,7 +4,7 @@
 #################################
 
 APP_PROJ = asn_cache_test cache_index_copy concat_seqentries \
-           dump_seqids merge_sub_caches prime_cache read_index_speed \
+           dump_seqids prime_cache read_index_speed \
            sub_cache_create walk_cache_test
 
 srcdir = @srcdir@
