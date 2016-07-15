@@ -884,5 +884,186 @@ DISCREPANCY_SUMMARIZE(CHECK_AUTH_NAME)
 }
 
 
+// CITSUB_AFFIL_DUP_TEXT
+
+static void AddParentObject(CReportNode& objs, CDiscrepancyContext& context, const string& category, EKeepRef keepref, bool autofix, CObject* more)
+{
+    CConstRef<CSeq_feat> feat = context.GetCurrentSeq_feat();
+    CConstRef<CSeqdesc> desc = context.GetCurrentSeqdesc();
+    if (feat) {
+        objs[category].Add(*context.NewDiscObj(feat, keepref, autofix, more));
+    }
+    else if (desc) {
+        objs[category].Add(*context.NewDiscObj(desc, keepref, autofix, more));
+    }
+    else {  // C Toolkit does not test submit blocks; C++ Toolkit - does!
+        objs[category].Add(*context.NewSubmitBlockObj(keepref, autofix, more));
+    }
+}
+
+const string kCitPubDupText = "[n] Cit-sub pubs have duplicate affil text";
+
+static const CCit_sub* GetCitSubFromPub(const CPub& pub)
+{
+    const CCit_sub* ret = nullptr;
+
+    if (pub.IsEquiv() && pub.GetEquiv().IsSet()) {
+        ITERATE(CPub_equiv::Tdata, cur_pub, pub.GetEquiv().Get()) {
+            ret = GetCitSubFromPub(**cur_pub);
+            if (ret) {
+                break;
+            }
+        }
+    }
+    else if (pub.IsSub()) {
+        ret = &pub.GetSub();
+    }
+
+    return ret;
+}
+
+static bool AffilStreetEndsWith(const string& street, const string& tail)
+{
+    bool ret = false;
+    if (street.size() > tail.size() && NStr::EndsWith(street, tail, NStr::eNocase)) {
+
+        size_t delimiter_pos = street.size() - tail.size() - 1;
+        if (ispunct(street[delimiter_pos]) || isspace(street[delimiter_pos])) {
+            string university_of("University of");
+            university_of += street[delimiter_pos] + tail;
+
+            ret = !NStr::EndsWith(street, university_of, NStr::eNocase);
+        }
+    }
+    return ret;
+}
+
+static bool AffilStreetContainsDup(const CAffil& affil)
+{
+    bool ret = false;
+    if (affil.IsStd() && affil.GetStd().IsSetStreet() && !affil.GetStd().GetStreet().empty()) {
+
+        const CAffil::C_Std& data = affil.GetStd();
+        const string& street = data.GetStreet();
+
+        if (data.IsSetCountry()) {
+            ret = AffilStreetEndsWith(street, data.GetCountry());
+        }
+
+        if (!ret && data.IsSetPostal_code()) {
+            ret = AffilStreetEndsWith(street, data.GetPostal_code());
+        }
+
+        if (!ret && data.IsSetSub()) {
+            ret = AffilStreetEndsWith(street, data.GetSub());
+        }
+
+        if (!ret && data.IsSetCity()) {
+            ret = AffilStreetEndsWith(street, data.GetCity());
+        }
+    }
+
+    return ret;
+}
+
+DISCREPANCY_CASE(CITSUB_AFFIL_DUP_TEXT, CPubdesc, eOncaller, "Cit-sub affiliation street contains text from other affiliation fields")
+{
+    if (!obj.IsSetPub()) {
+        return;
+    }
+
+    const CCit_sub* cit_sub = nullptr;
+    ITERATE(CPubdesc::TPub::Tdata, it, obj.GetPub().Get()) {
+        cit_sub = GetCitSubFromPub(**it);
+        if (cit_sub) {
+            break;
+        }
+    }
+
+    if (cit_sub && cit_sub->IsSetAuthors() && cit_sub->GetAuthors().IsSetAffil()) {
+
+        const CAffil& affil = cit_sub->GetAuthors().GetAffil();
+        if (AffilStreetContainsDup(affil)) {
+            AddParentObject(m_Objs, context, kCitPubDupText, eKeepRef, true, const_cast<CCit_sub*>(cit_sub));
+        }
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(CITSUB_AFFIL_DUP_TEXT)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+static bool RemoveAffilStreetEnd(string& street, const string& tail, bool country)
+{
+    bool ret = AffilStreetEndsWith(street, tail);
+
+    if (ret) {
+
+        size_t off = street.size() - tail.size();
+
+        static const string kChina = "China";
+        static const string kChinaPR = "P.R. China";
+
+        if (country && NStr::EqualNocase(tail, kChina) && NStr::EndsWith(street, kChinaPR, NStr::eNocase)) {
+            off = street.size() - kChinaPR.size();
+        }
+
+        string new_street = street.substr(0, off);
+        street = NStr::Sanitize(new_street, NStr::fSS_NoTruncate_Begin | NStr::fSS_alnum);
+    }
+
+    return ret;
+}
+
+static bool RemoveAffilDup(CCit_sub* cit_sub)
+{
+    bool ret = false;
+    if (cit_sub) {
+        CAffil& affil = cit_sub->SetAuthors().SetAffil();
+
+        CAffil::C_Std& data = affil.SetStd();
+        string& street = data.SetStreet();
+
+        if (data.IsSetCountry()) {
+            ret = RemoveAffilStreetEnd(street, data.GetCountry(), true);
+        }
+
+        if (!ret && data.IsSetPostal_code()) {
+            ret = RemoveAffilStreetEnd(street, data.GetPostal_code(), false);
+        }
+
+        if (!ret && data.IsSetSub()) {
+            ret = RemoveAffilStreetEnd(street, data.GetSub(), false);
+        }
+
+        if (!ret && data.IsSetCity()) {
+            ret = RemoveAffilStreetEnd(street, data.GetCity(), false);
+        }
+    }
+
+    return ret;
+}
+
+DISCREPANCY_AUTOFIX(CITSUB_AFFIL_DUP_TEXT)
+{
+    TReportObjectList list = item->GetDetails();
+    unsigned int n = 0;
+    NON_CONST_ITERATE(TReportObjectList, it, list) {
+
+        const CObject* obj = dynamic_cast<CDiscrepancyObject*>(it->GetNCPointer())->GetMoreInfo();
+        if (obj) {
+            CCit_sub* cit_sub = dynamic_cast<CCit_sub*>(const_cast<CObject*>(obj));
+            if (RemoveAffilDup(cit_sub)) {
+                ++n;
+            }
+        }
+    }
+
+    return CRef<CAutofixReport>(n ? new CAutofixReport("CITSUB_AFFIL_DUP_TEXT: [n] Cit-sub affiliation street duplication[s] [is] removed", n) : 0);
+}
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
