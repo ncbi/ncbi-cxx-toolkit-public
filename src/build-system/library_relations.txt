@@ -111,8 +111,10 @@ auxcomm_g needs splitdbasncpp_g
 auxcomm_g needs tea_crypt
 auxcommcpp_g needs muxex_g
 auxnet_g needs generic_db_utils
+bacterial_pipeline_proc needs attr_cd
 bacterial_pipeline_proc needs gencoll_client
-bacterial_pipeline_proc needs gpipe_objutil
+bacterial_pipeline_proc needs gpipe_alnutil
+bacterial_pipeline_proc needs xalgoalignutil
 bag_access needs $(SEQ_LIBS)
 bag_access needs gpipe_common
 bag_access needs pub
@@ -344,8 +346,6 @@ gene_info needs xncbi
 gene_info_writer needs gene_info
 gene_info_writer needs seqdb
 genemark_proc needs bacterial_pipeline_proc
-genemark_proc needs genomic_repeat_region
-genemark_proc needs xalgoseq
 general needs xser
 generic_db_asn needs xser
 generic_db_core needs $(CONNEXT)
@@ -361,7 +361,6 @@ genome_collection needs pub
 genome_size needs $(COMPRESS_LIBS)
 genome_size needs xconnect
 genome_size needs xutil
-genomic_repeat_region needs $(SOBJMGR_LIBS)
 gensvc_g needs xser
 geodataset needs biblio
 gif needs3party $(ORIG_LIBS)
@@ -462,7 +461,7 @@ gpipe_objutil needs taxon1
 gpipe_objutil needs writedb
 gpipe_objutil needs xalnmgr
 gpipe_objutil needs3party $(UUID_LIBS)
-gpipe_prodigal needs prok_cluster_data
+gpipe_prodigal needs bacterial_pipeline_proc
 gpipe_property needs gpipe_common
 gpipe_remap needs xobjreadex
 gpipe_resource_req needs xncbi
@@ -873,10 +872,6 @@ png needs3party $(Z_LIBS)
 process_annotation_stats needs xser
 proj needs pubmed
 proj needs seqset
-prok_align_monomer needs gpipe_alnutil
-prok_cluster_data needs attr_cd
-prok_cluster_data needs bacterial_pipeline_proc
-prok_cluster_data needs xalgoalignutil
 prosplign needs xalgoalignutil
 proxsort needs taxoscli
 pstub needs3party $(ORIG_LIBS)
@@ -1023,7 +1018,6 @@ sybtcl64 needs3party sybintl64
 sybtcl64 needs3party sybunic64
 sybunic64 needs3party $(ORIG_LIBS)
 tables needs3party $(ORIG_LIBS)
-tax_assignment_region needs gpipe_objutil
 tax_xml needs $(GPIPE_GENCOLL_LIBS)
 tax_xml needs simple_asm
 taxon needs xser
