@@ -81,6 +81,7 @@ endif
 # 1: proj_name, 2: lock_map?, 3: command, 4: target, 5: ext, 6: cleanup,
 # 7: error_status, 8: is_expendable?
 define make_one_leaf_proj
+NCBICXX_TESTING_REQS=1 $(3) -q requirements REQUIRES= && \
 $(if $(8),NCBI_BUT_EXPENDABLE=$(but_exp);,) \
 if NCBICXX_TESTING_REQS=1 $(3) -q requirements; then \
     if $(3) -q depend >/dev/null 2>&1 && $(3) -q $(4) >/dev/null 2>&1; then \
@@ -207,6 +208,7 @@ endif
 # 1: proj_name
 define add_one_check
 @i=$(1) ; \
+NCBICXX_TESTING_REQS=1 $(MAKE_APP) -q requirements REQUIRES= && \
 if NCBICXX_TESTING_REQS=1 $(MAKE_APP) -q requirements >/dev/null 2>&1; then \
     $(check_add) $(abs_srcdir) $(1) $(signature) $(subdir)  ||  exit 5 ; \
 else \
