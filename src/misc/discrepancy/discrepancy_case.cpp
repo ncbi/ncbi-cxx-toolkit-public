@@ -88,7 +88,6 @@ DISCREPANCY_CASE(COUNT_PROTEINS, CSeq_inst, eDisc, "Count Proteins")
 
 DISCREPANCY_SUMMARIZE(COUNT_PROTEINS)
 {
-    m_Objs["[n] protein sequence[s] [is] present"]; // If no sequences found still report 0
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
