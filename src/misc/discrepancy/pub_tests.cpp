@@ -1065,5 +1065,200 @@ DISCREPANCY_AUTOFIX(CITSUB_AFFIL_DUP_TEXT)
     return CRef<CAutofixReport>(n ? new CAutofixReport("CITSUB_AFFIL_DUP_TEXT: [n] Cit-sub affiliation street duplication[s] [is] removed", n) : 0);
 }
 
+
+// USA_STATE
+
+static pair<string, string> us_state_abbreviations[] = {
+    { "AL", "Alabama" },
+    { "AL", "Ala" },
+    { "AK", "Alaska" },
+    { "AK", "Alas" },
+    { "AZ", "Arizona" },
+    { "AZ", "Ariz" },
+    { "AR", "Arkansas" },
+    { "AR", "Ark" },
+    { "CA", "California" },
+    { "CA", "Calif" },
+    { "CA", "Cali" },
+    { "CA", "Cal" },
+    { "CO", "Colorado" },
+    { "CO", "Colo" },
+    { "CO", "Col" },
+    { "CT", "Connecticut" },
+    { "CT", "Conn" },
+    { "DE", "Delaware" },
+    { "DE", "Del" },
+    { "FL", "Florida" },
+    { "FL", "Fla" },
+    { "GA", "Georgia" },
+    { "HI", "Hawaii" },
+    { "ID", "Idaho" },
+    { "ID", "Ida" },
+    { "IL", "Illinois" },
+    { "IL", "Ill" },
+    { "IN", "Indiana" },
+    { "IN", "Ind" },
+    { "IA", "Iowa" },
+    { "KS", "Kansas" },
+    { "KS", "Kans" },
+    { "KS", "Kan" },
+    { "KY", "Kentucky" },
+    { "KY", "Kent" },
+    { "KY", "Ken" },
+    { "LA", "Louisiana" },
+    { "ME", "Maine" },
+    { "MD", "Maryland" },
+    { "MA", "Massachusetts" },
+    { "MA", "Mass" },
+    { "MI", "Michigan" },
+    { "MI", "Mich" },
+    { "MN", "Minnesota" },
+    { "MN", "Minn" },
+    { "MS", "Mississippi" },
+    { "MS", "Miss" },
+    { "MO", "Missouri" },
+    { "MT", "Montana" },
+    { "MT", "Mont" },
+    { "NE", "Nebraska" },
+    { "NE", "Nebr" },
+    { "NE", "Neb" },
+    { "NV", "Nevada" },
+    { "NV", "Nev" },
+    { "NH", "New Hampshire" },
+    { "NJ", "New Jersey" },
+    { "NM", "New Mexico" },
+    { "NY", "New York" },
+    { "NC", "North Carolina" },
+    { "NC", "N Car" },
+    { "ND", "North Dakota" },
+    { "ND", "N Dak" },
+    { "OH", "Ohio" },
+    { "OK", "Oklahoma" },
+    { "OK", "Okla" },
+    { "OR", "Oregon" },
+    { "OR", "Oreg" },
+    { "OR", "Ore" },
+    { "PA", "Pennsylvania" },
+    { "PA", "Penna" },
+    { "PA", "Penn" },
+    { "PR", "Puerto Rico" },
+    { "RI", "Rhode Island" },
+    { "SC", "South Carolina" },
+    { "SC", "S Car" },
+    { "SD", "South Dakota" },
+    { "SD", "S Dak" },
+    { "TN", "Tennessee" },
+    { "TN", "Tenn" },
+    { "TX", "Texas" },
+    { "TX", "Tex" },
+    { "UT", "Utah" },
+    { "VT", "Vermont" },
+    { "VA", "Virginia" },
+    { "VA", "Virg" },
+    { "WA", "Washington" },
+    { "WA", "Wash" },
+    { "WV", "West Virginia" },
+    { "WI", "Wisconsin" },
+    { "WI", "Wisc" },
+    { "WI", "Wis" },
+    { "WY", "Wyoming" },
+    { "WY", "Wyo" }
+};
+
+static size_t kNumOfAbbreviations = sizeof(us_state_abbreviations) / sizeof(us_state_abbreviations[0]);
+
+static bool IsValidStateAbbreviation(const string& state)
+{
+    for (size_t i = 0; i < kNumOfAbbreviations; ++i) {
+        if (state == us_state_abbreviations[i].first) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static const string kMissingState = "[n] cit-sub[s] [is] missing state abbreviations";
+
+DISCREPANCY_CASE(USA_STATE, CPubdesc, eDisc | eOncaller | eSmart, "For country USA, state should be present and abbreviated")
+{
+    if (!obj.IsSetPub()) {
+        return;
+    }
+
+    const CCit_sub* cit_sub = nullptr;
+    ITERATE(CPubdesc::TPub::Tdata, it, obj.GetPub().Get()) {
+        cit_sub = GetCitSubFromPub(**it);
+        if (cit_sub) {
+            break;
+        }
+    }
+
+    if (cit_sub && cit_sub->IsSetAuthors() && cit_sub->GetAuthors().IsSetAffil()) {
+
+        const CAffil& affil = cit_sub->GetAuthors().GetAffil();
+        if (affil.IsStd() && affil.GetStd().IsSetCountry()) {
+
+            const string& country = affil.GetStd().GetCountry();
+
+            if (country == "USA") {
+                bool report = !affil.GetStd().IsSetSub();
+                if (!report) {
+                    const string& state = affil.GetStd().GetSub();
+                    report = !IsValidStateAbbreviation(state);
+                }
+
+                if (report) {
+                    AddParentObject(m_Objs, context, kMissingState, eKeepRef, true, const_cast<CAffil*>(&affil));
+                }
+            }
+        }
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(USA_STATE)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+static bool ReplaceStateAbbreviation(CAffil* affil)
+{
+    if (affil == nullptr) {
+        return false;
+    }
+
+    if (affil->GetStd().IsSetSub()) {
+
+        const string& state = affil->GetStd().GetSub();
+
+        for (size_t i = 0; i < kNumOfAbbreviations; ++i) {
+            if (NStr::EqualNocase(state, us_state_abbreviations[i].second) || NStr::EqualNocase(state, us_state_abbreviations[i].first)) {
+                affil->SetStd().SetSub(us_state_abbreviations[i].first);
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+DISCREPANCY_AUTOFIX(USA_STATE)
+{
+    TReportObjectList list = item->GetDetails();
+    unsigned int n = 0;
+    NON_CONST_ITERATE(TReportObjectList, it, list) {
+
+        const CObject* obj = dynamic_cast<CDiscrepancyObject*>(it->GetNCPointer())->GetMoreInfo();
+        if (obj) {
+            CAffil* affil = dynamic_cast<CAffil*>(const_cast<CObject*>(obj));
+            if (ReplaceStateAbbreviation(affil)) {
+                ++n;
+            }
+        }
+    }
+
+    return CRef<CAutofixReport>(n ? new CAutofixReport("USA_STATE: [n] Cit-sub[s] [is] changed to contain a correct US state abbreviation", n) : 0);
+}
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

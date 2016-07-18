@@ -1,0 +1,1600 @@
+Seq-entry ::= set {
+  class genbank ,
+  seq-set {
+    seq {
+      id {
+        local
+          str "seq_1" } ,
+      descr {
+        title "[host=1]" ,
+        source {
+          org {
+            taxname "Homo sapiens" } } ,
+        pub {
+          pub {
+            sub {
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Bollin" ,
+                          first "Colleen" ,
+                          initials "C.J." } } } ,
+                affil
+                  str "NCBI" } ,
+              medium other ,
+              date
+                std {
+                  year 2016 ,
+                  month 5 ,
+                  day 24 } ,
+              descr "this sub" } } } ,
+        user {
+          type
+            str "CFastaReader" ,
+          data {
+            {
+              label
+                str "DefLine" ,
+              data
+                str ">seq_1 [host=1]" } } } ,
+        user {
+          type
+            str "OriginalID" ,
+          data {
+            {
+              label
+                str "LocalId" ,
+              data
+                str "seq_1" } } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 5 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 24 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2016 } } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 336 ,
+        seq-data
+          ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA95'H } } ,
+    seq {
+      id {
+        local
+          str "seq_2" } ,
+      descr {
+        title "[host=2]" ,
+        source {
+          org {
+            taxname "Homo sapiens" } } ,
+        pub {
+          pub {
+            sub {
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Bollin" ,
+                          first "Colleen" ,
+                          initials "C.J." } } } ,
+                affil
+                  str "Not NCBI" } ,
+              date
+                str "?" ,
+              descr "this sub" } } } ,
+        user {
+          type
+            str "CFastaReader" ,
+          data {
+            {
+              label
+                str "DefLine" ,
+              data
+                str ">seq_2 [host=2]" } } } ,
+        user {
+          type
+            str "OriginalID" ,
+          data {
+            {
+              label
+                str "LocalId" ,
+              data
+                str "seq_2" } } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 5 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 24 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2016 } } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 336 ,
+        seq-data
+          ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA95'H } } ,
+    seq {
+      id {
+        local
+          str "seq_3" } ,
+      descr {
+        title "[host=3]" ,
+        source {
+          org {
+            taxname "Homo sapiens" } } ,
+        pub {
+          pub {
+            sub {
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Bollin" ,
+                          first "Colleen" ,
+                          initials "C.J." } } } ,
+                affil
+                  std {
+                    affil "Not NCBI" ,
+                    div "X" } } ,
+              medium other ,
+              date
+                std {
+                  year 2016 ,
+                  month 5 ,
+                  day 24 } ,
+              descr "this sub" } } } ,
+        user {
+          type
+            str "CFastaReader" ,
+          data {
+            {
+              label
+                str "DefLine" ,
+              data
+                str ">seq_3 [host=3]" } } } ,
+        user {
+          type
+            str "OriginalID" ,
+          data {
+            {
+              label
+                str "LocalId" ,
+              data
+                str "seq_3" } } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 5 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 24 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2016 } } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 336 ,
+        seq-data
+          ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA95'H } } ,
+    seq {
+      id {
+        local
+          str "seq_4" } ,
+      descr {
+        title "[host=4]" ,
+        source {
+          org {
+            taxname "Homo sapiens" } } ,
+        pub {
+          pub {
+            sub {
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Bollin" ,
+                          first "Colleen" ,
+                          initials "C.J." } } } ,
+                affil
+                  std {
+                    affil "Not NCBI" ,
+                    street "Y" } } ,
+              medium other ,
+              date
+                std {
+                  year 2016 ,
+                  month 5 ,
+                  day 24 } ,
+              descr "this sub" } } } ,
+        user {
+          type
+            str "CFastaReader" ,
+          data {
+            {
+              label
+                str "DefLine" ,
+              data
+                str ">seq_4 [host=4]" } } } ,
+        user {
+          type
+            str "OriginalID" ,
+          data {
+            {
+              label
+                str "LocalId" ,
+              data
+                str "seq_4" } } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 5 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 24 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2016 } } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 336 ,
+        seq-data
+          ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA95'H } } ,
+    seq {
+      id {
+        local
+          str "seq_5" } ,
+      descr {
+        title "[host=5]" ,
+        source {
+          org {
+            taxname "Homo sapiens" } } ,
+        pub {
+          pub {
+            sub {
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Bollin" ,
+                          first "Colleen" ,
+                          initials "C.J." } } } ,
+                affil
+                  std {
+                    affil "Not NCBI" ,
+                    city "Z" } } ,
+              medium other ,
+              date
+                std {
+                  year 2016 ,
+                  month 5 ,
+                  day 24 } ,
+              descr "this sub" } } } ,
+        user {
+          type
+            str "CFastaReader" ,
+          data {
+            {
+              label
+                str "DefLine" ,
+              data
+                str ">seq_5 [host=5]" } } } ,
+        user {
+          type
+            str "OriginalID" ,
+          data {
+            {
+              label
+                str "LocalId" ,
+              data
+                str "seq_5" } } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 5 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 24 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2016 } } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 336 ,
+        seq-data
+          ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA95'H } } ,
+    seq {
+      id {
+        local
+          str "seq_6" } ,
+      descr {
+        title "[host=6]" ,
+        source {
+          org {
+            taxname "Homo sapiens" } } ,
+        pub {
+          pub {
+            sub {
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Bollin" ,
+                          first "Colleen" ,
+                          initials "C.J." } } } ,
+                affil
+                  std {
+                    affil "Not NCBI" ,
+                    sub "MD" } } ,
+              medium other ,
+              date
+                std {
+                  year 2016 ,
+                  month 5 ,
+                  day 24 } ,
+              descr "this sub" } } } ,
+        user {
+          type
+            str "CFastaReader" ,
+          data {
+            {
+              label
+                str "DefLine" ,
+              data
+                str ">seq_6 [host=6]" } } } ,
+        user {
+          type
+            str "OriginalID" ,
+          data {
+            {
+              label
+                str "LocalId" ,
+              data
+                str "seq_6" } } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 5 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 24 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2016 } } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 336 ,
+        seq-data
+          ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA95'H } } ,
+    seq {
+      id {
+        local
+          str "seq_7" } ,
+      descr {
+        title "[host=7]" ,
+        source {
+          org {
+            taxname "Homo sapiens" } } ,
+        pub {
+          pub {
+            sub {
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Bollin" ,
+                          first "Colleen" ,
+                          initials "C.J." } } } ,
+                affil
+                  std {
+                    affil "Not NCBI" ,
+                    postal-code "22301" } } ,
+              medium other ,
+              date
+                std {
+                  year 2016 ,
+                  month 5 ,
+                  day 24 } ,
+              descr "this sub" } } } ,
+        user {
+          type
+            str "CFastaReader" ,
+          data {
+            {
+              label
+                str "DefLine" ,
+              data
+                str ">seq_7 [host=7]" } } } ,
+        user {
+          type
+            str "OriginalID" ,
+          data {
+            {
+              label
+                str "LocalId" ,
+              data
+                str "seq_7" } } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 5 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 24 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2016 } } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 336 ,
+        seq-data
+          ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA95'H } } ,
+    seq {
+      id {
+        local
+          str "seq_8" } ,
+      descr {
+        title "[host=8]" ,
+        source {
+          org {
+            taxname "Homo sapiens" } } ,
+        pub {
+          pub {
+            sub {
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Bollin" ,
+                          first "Colleen" ,
+                          initials "C.J." } } } ,
+                affil
+                  std {
+                    affil "Not NCBI" ,
+                    country "USA" } } ,
+              medium other ,
+              date
+                std {
+                  year 2016 ,
+                  month 5 ,
+                  day 24 } ,
+              descr "this sub" } } } ,
+        user {
+          type
+            str "CFastaReader" ,
+          data {
+            {
+              label
+                str "DefLine" ,
+              data
+                str ">seq_8 [host=8]" } } } ,
+        user {
+          type
+            str "OriginalID" ,
+          data {
+            {
+              label
+                str "LocalId" ,
+              data
+                str "seq_8" } } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 5 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 24 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2016 } } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 336 ,
+        seq-data
+          ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA95'H } } ,
+    seq {
+      id {
+        local
+          str "seq_9" } ,
+      descr {
+        title "[host=9]" ,
+        source {
+          org {
+            taxname "Homo sapiens" } } ,
+        pub {
+          pub {
+            sub {
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Bollin" ,
+                          first "Colleen" ,
+                          initials "C.J." } } } } ,
+              medium other ,
+              date
+                std {
+                  year 2016 ,
+                  month 5 ,
+                  day 24 } ,
+              descr "this sub" } } } ,
+        user {
+          type
+            str "CFastaReader" ,
+          data {
+            {
+              label
+                str "DefLine" ,
+              data
+                str ">seq_9 [host=9]" } } } ,
+        user {
+          type
+            str "OriginalID" ,
+          data {
+            {
+              label
+                str "LocalId" ,
+              data
+                str "seq_9" } } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 5 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 24 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2016 } } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 336 ,
+        seq-data
+          ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA95'H } } ,
+    seq {
+      id {
+        local
+          str "seq_10" } ,
+      descr {
+        title "[host=10]" ,
+        source {
+          org {
+            taxname "Homo sapiens" } } ,
+        pub {
+          pub {
+            sub {
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Bollin" ,
+                          first "Colleen" ,
+                          initials "C.J." } } } ,
+                affil
+                  std {
+                    div "empty institution" } } ,
+              medium other ,
+              date
+                std {
+                  year 2016 ,
+                  month 5 ,
+                  day 24 } ,
+              descr "this sub" } } } ,
+        user {
+          type
+            str "CFastaReader" ,
+          data {
+            {
+              label
+                str "DefLine" ,
+              data
+                str ">seq_10 [host=10]" } } } ,
+        user {
+          type
+            str "OriginalID" ,
+          data {
+            {
+              label
+                str "LocalId" ,
+              data
+                str "seq_10" } } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 5 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 24 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2016 } } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 336 ,
+        seq-data
+          ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA95'H } } ,
+    seq {
+      id {
+        local
+          str "seq_11" } ,
+      descr {
+        title "[host=11]" ,
+        source {
+          org {
+            taxname "Homo sapiens" } } ,
+        pub {
+          pub {
+            sub {
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Bollin" ,
+                          first "Colleen" ,
+                          initials "C.J." } } } ,
+                affil
+                  std {
+                    affil "NCBI" ,
+                    div "IEB" ,
+                    city "Bethesda" ,
+                    sub "Md" ,
+                    country "USA" ,
+                    street "9000 Rockvile Pike" ,
+                    postal-code "20894" } } ,
+              medium other ,
+              date
+                std {
+                  year 2016 ,
+                  month 5 ,
+                  day 24 } ,
+              descr "this sub" } } } ,
+        user {
+          type
+            str "CFastaReader" ,
+          data {
+            {
+              label
+                str "DefLine" ,
+              data
+                str ">seq_11 [host=11]" } } } ,
+        user {
+          type
+            str "OriginalID" ,
+          data {
+            {
+              label
+                str "LocalId" ,
+              data
+                str "seq_11" } } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 5 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 24 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2016 } } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 336 ,
+        seq-data
+          ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA95'H } } ,
+    seq {
+      id {
+        local
+          str "seq_12" } ,
+      descr {
+        title "2[host=12]" ,
+        source {
+          org {
+            taxname "Homo sapiens" } } ,
+        pub {
+          pub {
+            sub {
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Bollin" ,
+                          first "Colleen" ,
+                          initials "C.J." } } } ,
+                affil
+                  str "Not NCBI" } ,
+              date
+                str "?" ,
+              descr "this sub" } } } ,
+        user {
+          type
+            str "CFastaReader" ,
+          data {
+            {
+              label
+                str "DefLine" ,
+              data
+                str ">seq_12 2[host=12]" } } } ,
+        user {
+          type
+            str "OriginalID" ,
+          data {
+            {
+              label
+                str "LocalId" ,
+              data
+                str "seq_12" } } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 5 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 24 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2016 } } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 336 ,
+        seq-data
+          ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA95'H } } ,
+    seq {
+      id {
+        local
+          str "seq_13" } ,
+      descr {
+        title "[host=13]" ,
+        source {
+          org {
+            taxname "Homo sapiens" } } ,
+        pub {
+          pub {
+            sub {
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Bollin" ,
+                          first "Colleen" ,
+                          initials "C.J." } } } ,
+                affil
+                  str "Not NCBI" } ,
+              date
+                str "?" ,
+              descr "this sub" } } } ,
+        user {
+          type
+            str "CFastaReader" ,
+          data {
+            {
+              label
+                str "DefLine" ,
+              data
+                str ">seq_13 [host=13]" } } } ,
+        user {
+          type
+            str "OriginalID" ,
+          data {
+            {
+              label
+                str "LocalId" ,
+              data
+                str "seq_13" } } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 5 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 24 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2016 } } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 336 ,
+        seq-data
+          ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA95'H } } ,
+    seq {
+      id {
+        local
+          str "seq_14" } ,
+      descr {
+        title "[host=14]" ,
+        source {
+          org {
+            taxname "Homo sapiens" } } ,
+        pub {
+          pub {
+            sub {
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Bollin" ,
+                          first "Colleen" ,
+                          initials "C.J." } } } ,
+                affil
+                  str "Not NCBI" } ,
+              date
+                str "?" ,
+              descr "this sub" } } } ,
+        user {
+          type
+            str "CFastaReader" ,
+          data {
+            {
+              label
+                str "DefLine" ,
+              data
+                str ">seq_14 [host=14]" } } } ,
+        user {
+          type
+            str "OriginalID" ,
+          data {
+            {
+              label
+                str "LocalId" ,
+              data
+                str "seq_14" } } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 5 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 24 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2016 } } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 336 ,
+        seq-data
+          ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA95'H } } ,
+    seq {
+      id {
+        local
+          str "seq_15" } ,
+      descr {
+        title "[host=15]" ,
+        source {
+          org {
+            taxname "Homo sapiens" } } ,
+        pub {
+          pub {
+            sub {
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Bollin" ,
+                          first "Colleen" ,
+                          initials "C.J." } } } ,
+                affil
+                  str "Not NCBI" } ,
+              date
+                str "?" ,
+              descr "this sub" } } } ,
+        user {
+          type
+            str "CFastaReader" ,
+          data {
+            {
+              label
+                str "DefLine" ,
+              data
+                str ">seq_15 [host=15]" } } } ,
+        user {
+          type
+            str "OriginalID" ,
+          data {
+            {
+              label
+                str "LocalId" ,
+              data
+                str "seq_15" } } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 5 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 24 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2016 } } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 336 ,
+        seq-data
+          ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA95'H } } ,
+    seq {
+      id {
+        local
+          str "seq_16" } ,
+      descr {
+        title "[host=16]" ,
+        source {
+          org {
+            taxname "Homo sapiens" } } ,
+        pub {
+          pub {
+            sub {
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Bollin" ,
+                          first "Colleen" ,
+                          initials "C.J." } } } ,
+                affil
+                  str "Not NCBI" } ,
+              date
+                str "?" ,
+              descr "this sub" } } } ,
+        user {
+          type
+            str "CFastaReader" ,
+          data {
+            {
+              label
+                str "DefLine" ,
+              data
+                str ">seq_16 [host=16]" } } } ,
+        user {
+          type
+            str "OriginalID" ,
+          data {
+            {
+              label
+                str "LocalId" ,
+              data
+                str "seq_16" } } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 5 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 24 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2016 } } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 336 ,
+        seq-data
+          ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA95'H } } ,
+    seq {
+      id {
+        local
+          str "seq_17" } ,
+      descr {
+        title "[host=17]" ,
+        source {
+          org {
+            taxname "Homo sapiens" } } ,
+        pub {
+          pub {
+            sub {
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Bollin" ,
+                          first "Colleen" ,
+                          initials "C.J." } } } ,
+                affil
+                  str "Not NCBI" } ,
+              date
+                str "?" ,
+              descr "this sub" } } } ,
+        user {
+          type
+            str "CFastaReader" ,
+          data {
+            {
+              label
+                str "DefLine" ,
+              data
+                str ">seq_17 [host=17]" } } } ,
+        user {
+          type
+            str "OriginalID" ,
+          data {
+            {
+              label
+                str "LocalId" ,
+              data
+                str "seq_17" } } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 5 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 24 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2016 } } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 336 ,
+        seq-data
+          ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA95'H } } ,
+    seq {
+      id {
+        local
+          str "seq_18" } ,
+      descr {
+        title "[host=18]" ,
+        source {
+          org {
+            taxname "Homo sapiens" } } ,
+        pub {
+          pub {
+            sub {
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Bollin" ,
+                          first "Colleen" ,
+                          initials "C.J." } } } ,
+                affil
+                  str "Not NCBI" } ,
+              date
+                str "?" ,
+              descr "this sub" } } } ,
+        user {
+          type
+            str "CFastaReader" ,
+          data {
+            {
+              label
+                str "DefLine" ,
+              data
+                str ">seq_18 [host=18]" } } } ,
+        user {
+          type
+            str "OriginalID" ,
+          data {
+            {
+              label
+                str "LocalId" ,
+              data
+                str "seq_18" } } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 5 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 24 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2016 } } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 336 ,
+        seq-data
+          ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA95'H } } ,
+    seq {
+      id {
+        local
+          str "seq_19" } ,
+      descr {
+        title "[host=19]" ,
+        source {
+          org {
+            taxname "Homo sapiens" } } ,
+        pub {
+          pub {
+            sub {
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Bollin" ,
+                          first "Colleen" ,
+                          initials "C.J." } } } ,
+                affil
+                  str "Not NCBI" } ,
+              date
+                str "?" ,
+              descr "this sub" } } } ,
+        user {
+          type
+            str "CFastaReader" ,
+          data {
+            {
+              label
+                str "DefLine" ,
+              data
+                str ">seq_19 [host=19]" } } } ,
+        user {
+          type
+            str "OriginalID" ,
+          data {
+            {
+              label
+                str "LocalId" ,
+              data
+                str "seq_19" } } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 5 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 24 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2016 } } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 336 ,
+        seq-data
+          ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
+503FA9503FA9503FA9503FA9503FA95'H } } } }
