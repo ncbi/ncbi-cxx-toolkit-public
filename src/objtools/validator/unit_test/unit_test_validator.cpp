@@ -1878,9 +1878,11 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadDeltaSeq)
                  expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "SeqGapProblem", "TSA Seq_gap NULL"));
                  expected_errors.push_back(new CExpectedError("good", eDiag_Error, "ConflictingBiomolTech", "TSA sequence should not be DNA"));
                  expected_errors.push_back(new CExpectedError("good", eDiag_Error, "WrongBiomolForTechnique", "Biomol \"genomic\" is not appropriate for sequences that use the TSA technique."));
+             } else if (i == CMolInfo::eTech_wgs) {
+                 expected_errors.push_back(new CExpectedError("good", eDiag_Error, "SeqGapProblem", "WGS submission includes wrong gap type. Gaps for WGS genomes should be Assembly Gaps with linkage evidence."));
              }
              CheckErrors (*eval, expected_errors);
-             if (i == CMolInfo::eTech_barcode || i == CMolInfo::eTech_tsa) {
+             if (i == CMolInfo::eTech_barcode || i == CMolInfo::eTech_tsa || i == CMolInfo::eTech_wgs) {
                  CLEAR_ERRORS
              }
          }
@@ -1939,8 +1941,11 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadDeltaSeq)
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadDeltaSeq", "First delta seq component is a gap"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BadDeltaSeq", "There is 1 adjacent gap in delta seq"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadDeltaSeq", "Last delta seq component is a gap"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "SeqGapProblem", "WGS submission includes wrong gap type. Gaps for WGS genomes should be Assembly Gaps with linkage evidence."));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+    delete expected_errors[3];
+    expected_errors.pop_back();
     SetTech(entry, CMolInfo::eTech_htgs_0);
     expected_errors[0]->SetSeverity(eDiag_Error);
     expected_errors[2]->SetSeverity(eDiag_Error);
@@ -3062,12 +3067,16 @@ BOOST_AUTO_TEST_CASE(Test_InternalNsInSeqLit)
     STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "InternalNsInSeqLit", "Run of 20 Ns in delta component 5 that starts at base 45"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "SeqGapProblem", "WGS submission includes wrong gap type. Gaps for WGS genomes should be Assembly Gaps with linkage evidence."));
+
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     unit_test_util::AddToDeltaSeq(entry, "AANNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNGG");
     SetTech(entry, CMolInfo::eTech_htgs_1);
     expected_errors[0]->SetErrMsg("Run of 81 Ns in delta component 7 that starts at base 79");
+    delete expected_errors[1];
+    expected_errors.pop_back();
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -9547,7 +9556,7 @@ BOOST_AUTO_TEST_CASE(Test_Generic_SgmlPresentInText)
     entry = unit_test_util::BuildGoodNucProtSet ();
     feat = entry->SetSet().SetSeq_set().back()->SetSeq().SetAnnot().front()->SetData().SetFtable().front();
     foo = sgml_tags[tag_num] + "foo";
-    feat->SetData().SetProt().SetName().push_back(foo);
+    feat->SetData().SetProt().SetName().front().assign(foo);
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors[0]->SetAccession("prot");
     expected_errors[0]->SetErrMsg("protein name " + foo + " has SGML");
@@ -14515,7 +14524,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_RedundantFields)
     gene->ResetQual();
 
     CRef<CSeq_feat> prot = unit_test_util::GetProtFeatFromGoodNucProtSet(entry);
-    prot->SetData().SetProt().SetName().push_back("redundant_p");
+    prot->SetData().SetProt().SetName().front().assign("redundant_p");
     prot->SetComment("redundant_p");
     prot->SetData().SetProt().SetDesc("redundant_p");
 
@@ -16802,7 +16811,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ProteinNameHasPMID)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
     CRef<CSeq_feat> prot = unit_test_util::GetProtFeatFromGoodNucProtSet(entry);
-    prot->SetData().SetProt().SetName().push_back("(PMID 1234)");
+    prot->SetData().SetProt().SetName().front().assign("(PMID 1234)");
     STANDARD_SETUP
     expected_errors.push_back (new CExpectedError("prot", eDiag_Warning, "ProteinNameHasPMID", 
                               "Protein name has internal PMID"));
