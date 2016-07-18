@@ -51,6 +51,10 @@ PTBGUI="${TREE_ROOT}/src/build-system/project_tree_builder_gui/bin/ptbgui.jar"
 DEFPTB_VERSION_FILE="${TREE_ROOT}/src/build-system/ptb_version.txt"
 PTB_INI="${TREE_ROOT}/src/build-system/${ptbname}.ini"
 PTB_SLN="${BUILD_TREE_ROOT}/static/UtilityProjects/PTB.xcodeproj"
+NCBICONF_MSVC="${TREE_ROOT}/include/common/config/ncbiconf_xcode_site.h"
+if test -e "${NCBICONF_MSVC}"; then
+  NCBICONF_MSVC=
+fi
 
 # -------------------------------------------------------------------------
 # get PTB version: from DEFPTB_VERSION_FILE  or from PREBUILT_PTB_EXE
@@ -165,7 +169,13 @@ if test ! -x "$PTB_EXE"; then
   cmd="`dirname $0`/xcodebuild.sh -project $PTB_SLN -target $ptbname -configuration ReleaseDLL"
   echo "$cmd"
   echo "=============================================================================="
+  if test "${NCBICONF_MSVC}" != ""; then
+    echo // > "${NCBICONF_MSVC}"
+  fi
   $cmd
+  if test "${NCBICONF_MSVC}" != ""; then
+    rm "${NCBICONF_MSVC}"
+  fi
 else
   echo "=============================================================================="
   echo "Using PREBUILT $ptbname at $PTB_EXE"
