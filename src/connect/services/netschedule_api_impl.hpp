@@ -399,7 +399,7 @@ struct SNetScheduleSubmitterImpl : public CObject
 {
     SNetScheduleSubmitterImpl(CNetScheduleAPI::TInstance ns_api_impl);
 
-    string SubmitJobImpl(CNetScheduleJob& job, unsigned short udp_port,
+    string SubmitJobImpl(CNetScheduleNewJob& job, unsigned short udp_port,
             unsigned wait_time, CNetServer* server = NULL);
 
     void FinalizeRead(const char* cmd_start,

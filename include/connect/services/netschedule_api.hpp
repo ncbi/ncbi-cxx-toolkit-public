@@ -296,19 +296,17 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
 };
 
 
-////////////////////////////////////////////////////////////////////////////////
-////
-/// Job description
+/// New job description
 ///
-struct CNetScheduleJob
+
+struct CNetScheduleNewJob
 {
-    explicit CNetScheduleJob(const string& _input = kEmptyStr,
+    explicit CNetScheduleNewJob(const string& _input = kEmptyStr,
             const string& _affinity = kEmptyStr,
             CNetScheduleAPI::TJobMask _mask = CNetScheduleAPI::eEmptyMask) :
         input(_input),
         affinity(_affinity),
-        mask(_mask),
-        ret_code(0)
+        mask(_mask)
     {
     }
 
@@ -316,20 +314,10 @@ struct CNetScheduleJob
     {
         input.erase();
         affinity.erase();
-        client_ip.erase();
-        session_id.erase();
-        page_hit_id.erase();
         mask = CNetScheduleAPI::eEmptyMask;
         job_id.erase();
-        ret_code = 0;
-        output.erase();
-        error_msg.erase();
-        progress_msg.erase();
         group.erase();
-        auth_token.erase();
-        server = NULL;
     }
-    // input parameters
 
     /// Input data. Arbitrary string that contains input data
     /// for the job. It is suggested to use NetCache to keep
@@ -338,22 +326,52 @@ struct CNetScheduleJob
 
     string affinity;
 
+    string group;
+
+    CNetScheduleAPI::TJobMask  mask;
+
+    /// Output job key.
+    string job_id;
+};
+
+
+/// Job description
+///
+
+struct CNetScheduleJob : CNetScheduleNewJob
+{
+    explicit CNetScheduleJob(const string& _input = kEmptyStr,
+            const string& _affinity = kEmptyStr,
+            CNetScheduleAPI::TJobMask _mask = CNetScheduleAPI::eEmptyMask) :
+        CNetScheduleNewJob(_input, _affinity, _mask),
+        ret_code(0)
+    {
+    }
+
+    void Reset()
+    {
+        CNetScheduleNewJob::Reset();
+        client_ip.erase();
+        session_id.erase();
+        page_hit_id.erase();
+        ret_code = 0;
+        output.erase();
+        error_msg.erase();
+        progress_msg.erase();
+        auth_token.erase();
+        server = NULL;
+    }
+
     string client_ip;
     string session_id;
     string page_hit_id;
 
-    CNetScheduleAPI::TJobMask  mask;
-
-    /// Job key.
-    string job_id;
     /// Job return code.
     int ret_code;
     /// Job result data.
     string output;
     string error_msg;
     string progress_msg;
-
-    string group;
 
     string auth_token;
 
@@ -375,7 +393,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleSubmitter
 
     /// Submit job.
     /// @note on success job.job_id will be set.
-    string SubmitJob(CNetScheduleJob& job);
+    string SubmitJob(CNetScheduleNewJob& job);
 
     /// Submit job batch.
     /// Method automatically splits the submission into reasonable sized

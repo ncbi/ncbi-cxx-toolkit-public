@@ -47,7 +47,7 @@ BEGIN_NCBI_SCOPE
 #define FORCED_SST_INTERVAL_NANOSEC 500 * 1000 * 1000
 
 //////////////////////////////////////////////////////////////////////////////
-static void s_SerializeJob(string& cmd, const CNetScheduleJob& job,
+static void s_SerializeJob(string& cmd, const CNetScheduleNewJob& job,
     unsigned short udp_port, unsigned wait_time)
 {
     cmd.push_back('"');
@@ -82,12 +82,12 @@ void static s_CheckInputSize(const string& input, size_t max_input_size)
     }
 }
 
-string CNetScheduleSubmitter::SubmitJob(CNetScheduleJob& job)
+string CNetScheduleSubmitter::SubmitJob(CNetScheduleNewJob& job)
 {
     return m_Impl->SubmitJobImpl(job, 0, 0);
 }
 
-string SNetScheduleSubmitterImpl::SubmitJobImpl(CNetScheduleJob& job,
+string SNetScheduleSubmitterImpl::SubmitJobImpl(CNetScheduleNewJob& job,
         unsigned short udp_port, unsigned wait_time, CNetServer* server)
 {
     size_t max_input_size = m_API->GetServerParams().max_input_size;
