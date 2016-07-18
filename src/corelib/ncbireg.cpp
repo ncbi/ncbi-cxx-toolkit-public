@@ -1963,7 +1963,8 @@ void CCompoundRWRegistry::x_Enumerate(const string& section,
                                       list<string>& entries,
                                       TFlags flags) const
 {
-    set<string, PNocase> accum;
+    typedef set<string, PNocase> SetNoCase;
+    SetNoCase accum;
     REVERSE_ITERATE (CCompoundRegistry::TPriorityMap, it,
                      m_AllRegistries->m_PriorityMap) {
         if ((flags & fJustCore)  &&  (it->first < GetCoreCutoff())) {
@@ -1990,7 +1991,7 @@ void CCompoundRWRegistry::x_Enumerate(const string& section,
             }
         }
     }
-    ITERATE (set<string>, it, accum) {
+    ITERATE(SetNoCase, it, accum) {
         entries.push_back(*it);
     }
 }
