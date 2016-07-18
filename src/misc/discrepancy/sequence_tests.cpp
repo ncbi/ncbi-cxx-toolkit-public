@@ -293,11 +293,11 @@ DISCREPANCY_SUMMARIZE(COMMENT_PRESENT)
 }
 
 
-// mRNA_ON_WRONG_SEQUENCE_TYPE
+// MRNA_ON_WRONG_SEQUENCE_TYPE
 
 const string kmRNAOnWrongSequenceType = "[n] mRNA[s] [is] located on eukaryotic sequence[s] that [does] not have genomic or plasmid source[s]";
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(mRNA_ON_WRONG_SEQUENCE_TYPE, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller, "Eukaryotic sequences that are not genomic or macronuclear should not have mRNA features")
+DISCREPANCY_CASE(MRNA_ON_WRONG_SEQUENCE_TYPE, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller, "Eukaryotic sequences that are not genomic or macronuclear should not have mRNA features")
 //  ----------------------------------------------------------------------------
 {
     if (!obj.IsSetData() || obj.GetData().GetSubtype() != CSeqFeatData::eSubtype_mRNA) {
@@ -329,7 +329,7 @@ DISCREPANCY_CASE(mRNA_ON_WRONG_SEQUENCE_TYPE, CSeq_feat_BY_BIOSEQ, eDisc | eOnca
 
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_SUMMARIZE(mRNA_ON_WRONG_SEQUENCE_TYPE)
+DISCREPANCY_SUMMARIZE(MRNA_ON_WRONG_SEQUENCE_TYPE)
 //  ----------------------------------------------------------------------------
 {
     if (m_Objs.empty()) {
@@ -1937,7 +1937,7 @@ DISCREPANCY_SUMMARIZE(DEFLINE_ON_SET)
 const string kMitochondrionRequired = "[n] bioseq[s] [has] D-loop or control region misc_feature, but [is] do not have mitochondrial source";
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(MITOCHONDRION_REQUIRED, CSeq_inst, eOncaller | eDisc, "If D-loop or control region misc_feat is present, source must be mitochondrial")
+DISCREPANCY_CASE(MITOCHONDRION_REQUIRED, CSeq_inst, eDisc | eOncaller, "If D-loop or control region misc_feat is present, source must be mitochondrial")
 //  ----------------------------------------------------------------------------
 {
     CConstRef<CBioseq> seq = context.GetCurrentBioseq();

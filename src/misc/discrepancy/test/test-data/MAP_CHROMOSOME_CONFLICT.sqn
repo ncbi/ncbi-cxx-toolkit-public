@@ -2,449 +2,512 @@ Seq-submit ::= {
   sub {
     contact {
       contact {
-        name
-          name {
-            last "q" ,
-            first "q" ,
-            initials "q" } ,
-        affil
-          str "q" } } ,
+        name name {
+          last "q",
+          first "q",
+          initials "q"
+        },
+        affil str "q"
+      }
+    },
     cit {
       authors {
-        names
-          std {
-            {
-              name
-                name {
-                  last "q" ,
-                  first "q" ,
-                  initials "q." } } } ,
-        affil
-          str "q" } ,
-      date
-        std {
-          year 2014 ,
-          month 1 ,
-          day 8 } } ,
-    subtype new ,
-    tool "tbl2asn 22.9 - LINUX UNIX" } ,
-  data
-    entrys {
-      set {
-        class genbank ,
-        seq-set {
-          seq {
-            id {
-              local
-                str "seq_1" } ,
-            descr {
-              source {
-                org {
-                  taxname "Gorilla gorilla" ,
-                  common "western gorilla" ,
-                  db {
+        names std {
+          {
+            name name {
+              last "q",
+              first "q",
+              initials "q."
+            }
+          }
+        },
+        affil str "q"
+      },
+      date std {
+        year 2014,
+        month 1,
+        day 8
+      }
+    },
+    subtype new,
+    tool "tbl2asn 22.9 - LINUX UNIX"
+  },
+  data entrys {
+    set {
+      class genbank,
+      seq-set {
+        seq {
+          id {
+            local str "seq_1"
+          },
+          descr {
+            source {
+              org {
+                taxname "Gorilla gorilla",
+                common "western gorilla",
+                db {
+                  {
+                    db "taxon",
+                    tag id 9593
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Gorilla",
+                    species "gorilla"
+                  },
+                  mod {
                     {
-                      db "taxon" ,
-                      tag
-                        id 9593 } } ,
-                  orgname {
-                    name
-                      binomial {
-                        genus "Gorilla" ,
-                        species "gorilla" } ,
-                    mod {
-                      {
-                        subtype nat-host ,
-                        subname "1" } } ,
-                    lineage "Eukaryota; Metazoa; Chordata; Craniata;
- Vertebrata; Euteleostomi; Mammalia; Eutheria; Euarchontoglires; Primates;
- Haplorrhini; Catarrhini; Hominidae; Gorilla" ,
-                    gcode 1 ,
-                    mgcode 2 ,
-                    div "PRI" } } ,
-                subtype {
-                  {
-                    subtype chromosome ,
-                    name "12" } ,
-                  {
-                    subtype map ,
-                    name "star" } } } ,
-              molinfo {
-                biomol genomic } ,
+                      subtype nat-host,
+                      subname "1"
+                    }
+                  },
+                  lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
+ Euteleostomi; Mammalia; Eutheria; Euarchontoglires; Primates; Haplorrhini;
+ Catarrhini; Hominidae; Gorilla",
+                  gcode 1,
+                  mgcode 2,
+                  div "PRI"
+                }
+              },
+              subtype {
+                {
+                  subtype chromosome,
+                  name "12"
+                },
+                {
+                  subtype map,
+                  name "star"
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            pub {
               pub {
-                pub {
-                  gen {
-                    cit "Unpublished" ,
-                    authors {
-                      names
-                        std {
-                          {
-                            name
-                              name {
-                                last "q" ,
-                                first "q" ,
-                                initials "q." } } } ,
-                      affil
-                        str "q" } ,
-                    title "a" } } } ,
-              user {
-                type
-                  str "NcbiCleanup" ,
-                data {
+                gen {
+                  cit "Unpublished",
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "q",
+                          first "q",
+                          initials "q."
+                        }
+                      }
+                    },
+                    affil str "q"
+                  },
+                  title "a"
+                }
+              }
+            },
+            user {
+              type str "NcbiCleanup",
+              data {
+                {
+                  label str "method",
+                  data str "SequinCleanup"
+                },
+                {
+                  label str "version",
+                  data int 8
+                },
+                {
+                  label str "month",
+                  data int 5
+                },
+                {
+                  label str "day",
+                  data int 19
+                },
+                {
+                  label str "year",
+                  data int 2016
+                }
+              }
+            },
+            create-date std {
+              year 2014,
+              month 1,
+              day 8
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 336,
+            seq-data ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA95
+03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA95
+03FA9503FA9503FA9503FA9503FA9503FA9503FA95'H
+          }
+        },
+        seq {
+          id {
+            local str "seq_2"
+          },
+          descr {
+            source {
+              org {
+                taxname "Mus musculus",
+                common "house mouse",
+                db {
                   {
-                    label
-                      str "method" ,
-                    data
-                      str "SequinCleanup" } ,
-                  {
-                    label
-                      str "version" ,
-                    data
-                      int 8 } ,
-                  {
-                    label
-                      str "month" ,
-                    data
-                      int 5 } ,
-                  {
-                    label
-                      str "day" ,
-                    data
-                      int 19 } ,
-                  {
-                    label
-                      str "year" ,
-                    data
-                      int 2016 } } } ,
-              create-date
-                std {
-                  year 2014 ,
-                  month 1 ,
-                  day 8 } } ,
-            inst {
-              repr raw ,
-              mol dna ,
-              length 336 ,
-              seq-data
-                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
-503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
-503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
-          seq {
-            id {
-              local
-                str "seq_2" } ,
-            descr {
-              source {
-                org {
-                  taxname "Mus musculus" ,
-                  common "house mouse" ,
-                  db {
+                    db "taxon",
+                    tag id 10090
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Mus",
+                    species "musculus"
+                  },
+                  mod {
                     {
-                      db "taxon" ,
-                      tag
-                        id 10090 } } ,
-                  orgname {
-                    name
-                      binomial {
-                        genus "Mus" ,
-                        species "musculus" } ,
-                    mod {
-                      {
-                        subtype nat-host ,
-                        subname "2" } } ,
-                    lineage "Eukaryota; Metazoa; Chordata; Craniata;
- Vertebrata; Euteleostomi; Mammalia; Eutheria; Euarchontoglires; Glires;
- Rodentia; Sciurognathi; Muroidea; Muridae; Murinae; Mus; Mus" ,
-                    gcode 1 ,
-                    mgcode 2 ,
-                    div "ROD" } } ,
-                subtype {
-                  {
-                    subtype map ,
-                    name "star" } } } ,
-              molinfo {
-                biomol genomic } ,
+                      subtype nat-host,
+                      subname "2"
+                    }
+                  },
+                  lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
+ Euteleostomi; Mammalia; Eutheria; Euarchontoglires; Glires; Rodentia;
+ Sciurognathi; Muroidea; Muridae; Murinae; Mus; Mus",
+                  gcode 1,
+                  mgcode 2,
+                  div "ROD"
+                }
+              },
+              subtype {
+                {
+                  subtype map,
+                  name "star"
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            pub {
               pub {
-                pub {
-                  gen {
-                    cit "Unpublished" ,
-                    authors {
-                      names
-                        std {
-                          {
-                            name
-                              name {
-                                last "q" ,
-                                first "q" ,
-                                initials "q." } } } ,
-                      affil
-                        str "q" } ,
-                    title "a" } } } ,
-              user {
-                type
-                  str "NcbiCleanup" ,
-                data {
+                gen {
+                  cit "Unpublished",
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "q",
+                          first "q",
+                          initials "q."
+                        }
+                      }
+                    },
+                    affil str "q"
+                  },
+                  title "a"
+                }
+              }
+            },
+            user {
+              type str "NcbiCleanup",
+              data {
+                {
+                  label str "method",
+                  data str "SequinCleanup"
+                },
+                {
+                  label str "version",
+                  data int 8
+                },
+                {
+                  label str "month",
+                  data int 5
+                },
+                {
+                  label str "day",
+                  data int 19
+                },
+                {
+                  label str "year",
+                  data int 2016
+                }
+              }
+            },
+            create-date std {
+              year 2014,
+              month 1,
+              day 8
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 336,
+            seq-data ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA95
+03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA95
+03FA9503FA9503FA9503FA9503FA9503FA9503FA95'H
+          }
+        },
+        seq {
+          id {
+            local str "seq_3"
+          },
+          descr {
+            source {
+              org {
+                taxname "Rattus norvegicus",
+                common "Norway rat",
+                db {
                   {
-                    label
-                      str "method" ,
-                    data
-                      str "SequinCleanup" } ,
-                  {
-                    label
-                      str "version" ,
-                    data
-                      int 8 } ,
-                  {
-                    label
-                      str "month" ,
-                    data
-                      int 5 } ,
-                  {
-                    label
-                      str "day" ,
-                    data
-                      int 19 } ,
-                  {
-                    label
-                      str "year" ,
-                    data
-                      int 2016 } } } ,
-              create-date
-                std {
-                  year 2014 ,
-                  month 1 ,
-                  day 8 } } ,
-            inst {
-              repr raw ,
-              mol dna ,
-              length 336 ,
-              seq-data
-                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
-503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
-503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
-          seq {
-            id {
-              local
-                str "seq_3" } ,
-            descr {
-              source {
-                org {
-                  taxname "Rattus norvegicus" ,
-                  common "Norway rat" ,
-                  db {
+                    db "taxon",
+                    tag id 10116
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Rattus",
+                    species "norvegicus"
+                  },
+                  mod {
                     {
-                      db "taxon" ,
-                      tag
-                        id 10116 } } ,
-                  orgname {
-                    name
-                      binomial {
-                        genus "Rattus" ,
-                        species "norvegicus" } ,
-                    mod {
-                      {
-                        subtype nat-host ,
-                        subname "3" } } ,
-                    lineage "Eukaryota; Metazoa; Chordata; Craniata;
- Vertebrata; Euteleostomi; Mammalia; Eutheria; Euarchontoglires; Glires;
- Rodentia; Sciurognathi; Muroidea; Muridae; Murinae; Rattus" ,
-                    gcode 1 ,
-                    mgcode 2 ,
-                    div "ROD" } } ,
-                subtype {
-                  {
-                    subtype map ,
-                    name "star" } } } ,
-              molinfo {
-                biomol genomic } ,
+                      subtype nat-host,
+                      subname "3"
+                    }
+                  },
+                  lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
+ Euteleostomi; Mammalia; Eutheria; Euarchontoglires; Glires; Rodentia;
+ Sciurognathi; Muroidea; Muridae; Murinae; Rattus",
+                  gcode 1,
+                  mgcode 2,
+                  div "ROD"
+                }
+              },
+              subtype {
+                {
+                  subtype map,
+                  name "star"
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            pub {
               pub {
-                pub {
-                  gen {
-                    cit "Unpublished" ,
-                    authors {
-                      names
-                        std {
-                          {
-                            name
-                              name {
-                                last "q" ,
-                                first "q" ,
-                                initials "q." } } } ,
-                      affil
-                        str "q" } ,
-                    title "a" } } } ,
-              user {
-                type
-                  str "NcbiCleanup" ,
-                data {
+                gen {
+                  cit "Unpublished",
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "q",
+                          first "q",
+                          initials "q."
+                        }
+                      }
+                    },
+                    affil str "q"
+                  },
+                  title "a"
+                }
+              }
+            },
+            user {
+              type str "NcbiCleanup",
+              data {
+                {
+                  label str "method",
+                  data str "SequinCleanup"
+                },
+                {
+                  label str "version",
+                  data int 8
+                },
+                {
+                  label str "month",
+                  data int 5
+                },
+                {
+                  label str "day",
+                  data int 19
+                },
+                {
+                  label str "year",
+                  data int 2016
+                }
+              }
+            },
+            create-date std {
+              year 2014,
+              month 1,
+              day 8
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 336,
+            seq-data ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA95
+03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA95
+03FA9503FA9503FA9503FA9503FA9503FA9503FA95'H
+          }
+        },
+        seq {
+          id {
+            local str "seq_4"
+          },
+          descr {
+            source {
+              org {
+                taxname "Escherichia coli",
+                db {
                   {
-                    label
-                      str "method" ,
-                    data
-                      str "SequinCleanup" } ,
-                  {
-                    label
-                      str "version" ,
-                    data
-                      int 8 } ,
-                  {
-                    label
-                      str "month" ,
-                    data
-                      int 5 } ,
-                  {
-                    label
-                      str "day" ,
-                    data
-                      int 19 } ,
-                  {
-                    label
-                      str "year" ,
-                    data
-                      int 2016 } } } ,
-              create-date
-                std {
-                  year 2014 ,
-                  month 1 ,
-                  day 8 } } ,
-            inst {
-              repr raw ,
-              mol dna ,
-              length 336 ,
-              seq-data
-                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
-503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
-503FA9503FA9503FA9503FA9503FA9503FA95'H } } ,
-          seq {
-            id {
-              local
-                str "seq_4" } ,
-            descr {
-              source {
-                org {
-                  taxname "Escherichia coli" ,
-                  db {
+                    db "taxon",
+                    tag id 562
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Escherichia",
+                    species "coli"
+                  },
+                  mod {
                     {
-                      db "taxon" ,
-                      tag
-                        id 562 } } ,
-                  orgname {
-                    name
-                      binomial {
-                        genus "Escherichia" ,
-                        species "coli" } ,
-                    mod {
+                      subtype nat-host,
+                      subname "4"
+                    }
+                  },
+                  lineage "Bacteria; Proteobacteria; Gammaproteobacteria;
+ Enterobacteriales; Enterobacteriaceae; Escherichia",
+                  gcode 11,
+                  div "BCT"
+                }
+              },
+              subtype {
+                {
+                  subtype map,
+                  name "star"
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished",
+                  authors {
+                    names std {
                       {
-                        subtype nat-host ,
-                        subname "4" } } ,
-                    lineage "Bacteria; Proteobacteria; Gammaproteobacteria;
- Enterobacteriales; Enterobacteriaceae; Escherichia" ,
-                    gcode 11 ,
-                    div "BCT" } } ,
-                subtype {
-                  {
-                    subtype map ,
-                    name "star" } } } ,
-              molinfo {
-                biomol genomic } ,
+                        name name {
+                          last "q",
+                          first "q",
+                          initials "q."
+                        }
+                      }
+                    },
+                    affil str "q"
+                  },
+                  title "a"
+                }
+              }
+            },
+            pub {
               pub {
-                pub {
-                  gen {
-                    cit "Unpublished" ,
-                    authors {
-                      names
-                        std {
-                          {
-                            name
-                              name {
-                                last "q" ,
-                                first "q" ,
-                                initials "q." } } } ,
-                      affil
-                        str "q" } ,
-                    title "a" } } } ,
-              pub {
-                pub {
-                  pmid 123 ,
-                  article {
+                pmid 123,
+                article {
+                  title {
+                    name "The importance of an innervated and intact antrum
+ and pylorus in preventing postoperative duodenogastric reflux and gastritis."
+                  },
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Keighley",
+                          first "M",
+                          initials "M.R."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Asquith",
+                          first "P",
+                          initials "P."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Alexander-Williams",
+                          first "J",
+                          initials "J."
+                        }
+                      }
+                    }
+                  },
+                  from journal {
                     title {
-                      name "The importance of an innervated and intact antrum
- and pylorus in preventing postoperative duodenogastric reflux and gastritis." } ,
-                    authors {
-                      names
-                        std {
-                          {
-                            name
-                              name {
-                                last "Keighley" ,
-                                first "M" ,
-                                initials "M.R." } } ,
-                          {
-                            name
-                              name {
-                                last "Asquith" ,
-                                first "P" ,
-                                initials "P." } } ,
-                          {
-                            name
-                              name {
-                                last "Alexander-Williams" ,
-                                first "J" ,
-                                initials "J." } } } } ,
-                    from
-                      journal {
-                        title {
-                          iso-jta "Br J Surg" } ,
-                        imp {
-                          date
-                            std {
-                              year 1975 ,
-                              month 10 } ,
-                          volume "62" ,
-                          issue "10" ,
-                          pages "845-849" ,
-                          pubstatus ppublish } } ,
-                    ids {
-                      pubmed 123 } } } } ,
-              user {
-                type
-                  str "NcbiCleanup" ,
-                data {
-                  {
-                    label
-                      str "method" ,
-                    data
-                      str "SequinCleanup" } ,
-                  {
-                    label
-                      str "version" ,
-                    data
-                      int 8 } ,
-                  {
-                    label
-                      str "month" ,
-                    data
-                      int 5 } ,
-                  {
-                    label
-                      str "day" ,
-                    data
-                      int 19 } ,
-                  {
-                    label
-                      str "year" ,
-                    data
-                      int 2016 } } } ,
-              create-date
-                std {
-                  year 2014 ,
-                  month 1 ,
-                  day 8 } } ,
-            inst {
-              repr raw ,
-              mol dna ,
-              length 336 ,
-              seq-data
-                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
-503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
-503FA9503FA9503FA9503FA9503FA9503FA95'H } } } } } }
+                      iso-jta "Br J Surg"
+                    },
+                    imp {
+                      date std {
+                        year 1975,
+                        month 10
+                      },
+                      volume "62",
+                      issue "10",
+                      pages "845-849",
+                      pubstatus ppublish
+                    }
+                  },
+                  ids {
+                    pubmed 123
+                  }
+                }
+              }
+            },
+            user {
+              type str "NcbiCleanup",
+              data {
+                {
+                  label str "method",
+                  data str "SequinCleanup"
+                },
+                {
+                  label str "version",
+                  data int 8
+                },
+                {
+                  label str "month",
+                  data int 5
+                },
+                {
+                  label str "day",
+                  data int 19
+                },
+                {
+                  label str "year",
+                  data int 2016
+                }
+              }
+            },
+            create-date std {
+              year 2014,
+              month 1,
+              day 8
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 336,
+            seq-data ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA95
+03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA95
+03FA9503FA9503FA9503FA9503FA9503FA9503FA95'H
+          }
+        }
+      }
+    }
+  }
+}

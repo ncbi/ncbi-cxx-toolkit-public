@@ -211,14 +211,12 @@ NFITTIINMRVQGMSLDRIPLFVWAVGITALLLLLSLPVLAGAITMLLTDRNLNTSFFDPAGGGDPIL"
                             loc int {
                               from 188,
                               to 189,
-                              strand plus,
                               id local str "P.92000_1"
                             },
                             aa ncbieaa 42
                           }
                         }
                       },
-                      
                       partial TRUE,
                       location int {
                         from 0,
@@ -255,7 +253,8 @@ NFITTIINMRVQGMSLDRIPLFVWAVGITALLLLLSLPVLAGAITMLLTDRNLNTSFFDPAGGGDPIL"
                     }
                   },
                   partial TRUE,
-                  comment "TAA stop codon is completed by the addition of 3' A residues to the mRNA",
+                  comment "TAA stop codon is completed by the addition of 3' A
+ residues to the mRNA",
                   product whole local str "P.92000_1",
                   location int {
                     from 0,

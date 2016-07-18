@@ -1,317 +1,371 @@
 Seq-entry ::= set {
-  class nuc-prot ,
+  class nuc-prot,
   descr {
     source {
       org {
-        taxname "Escherichia coli" ,
+        taxname "Escherichia coli",
         db {
           {
-            db "taxon" ,
-            tag
-              id 562 } } ,
+            db "taxon",
+            tag id 562
+          }
+        },
         orgname {
-          name
-            binomial {
-              genus "Escherichia" ,
-              species "coli" } ,
+          name binomial {
+            genus "Escherichia",
+            species "coli"
+          },
           mod {
             {
-              subtype strain ,
-              subname "E142" } } ,
+              subtype strain,
+              subname "E142"
+            }
+          },
           lineage "Bacteria; Proteobacteria; Gammaproteobacteria;
- Enterobacteriales; Enterobacteriaceae; Escherichia" ,
-          gcode 11 ,
-          div "BCT" } } ,
+ Enterobacteriales; Enterobacteriaceae; Escherichia",
+          gcode 11,
+          div "BCT"
+        }
+      },
       subtype {
         {
-          subtype other ,
-          name "clinical isolate" } } } ,
+          subtype other,
+          name "clinical isolate"
+        }
+      }
+    },
     pub {
       pub {
         sub {
           authors {
-            names
-              std {
-                {
-                  name
-                    name {
-                      last "Kim" ,
-                      first "J" ,
-                      initials "J." } } } ,
-            affil
-              std {
-                affil "Dankook University, College of Medicine" ,
-                div "Microbiology" ,
-                city "Cheonan" ,
-                country "South Korea" ,
-                street "San29, Anseo-Dong" ,
-                postal-code "330-180" } } ,
-          medium email ,
-          date
-            std {
-              year 1999 ,
-              month 1 ,
-              day 28 } } } } ,
+            names std {
+              {
+                name name {
+                  last "Kim",
+                  first "J",
+                  initials "J."
+                }
+              }
+            },
+            affil std {
+              affil "Dankook University, College of Medicine",
+              div "Microbiology",
+              city "Cheonan",
+              country "South Korea",
+              street "San29, Anseo-Dong",
+              postal-code "330-180"
+            }
+          },
+          medium email,
+          date std {
+            year 1999,
+            month 1,
+            day 28
+          }
+        }
+      }
+    },
     pub {
       pub {
         gen {
-          cit "Unpublished" ,
+          cit "Unpublished",
           authors {
-            names
-              std {
-                {
-                  name
-                    name {
-                      last "Kim" ,
-                      first "J" ,
-                      initials "J." } } ,
-                {
-                  name
-                    name {
-                      last "Kwon" ,
-                      first "Y" ,
-                      initials "Y." } } } } ,
+            names std {
+              {
+                name name {
+                  last "Kim",
+                  first "J",
+                  initials "J."
+                }
+              },
+              {
+                name name {
+                  last "Kwon",
+                  first "Y",
+                  initials "Y."
+                }
+              }
+            }
+          },
           title "Characterization of AmpC type b-lactamases in clinical
- isolates of cefoxitin-resistant Escherichia coli and Klebsiella pneumoniae" } } } ,
-    create-date
-      std {
-        year 1999 ,
-        month 4 ,
-        day 28 } ,
-    update-date
-      std {
-        year 1999 ,
-        month 4 ,
-        day 21 } } ,
+ isolates of cefoxitin-resistant Escherichia coli and Klebsiella pneumoniae"
+        }
+      }
+    },
+    create-date std {
+      year 1999,
+      month 4,
+      day 28
+    },
+    update-date std {
+      year 1999,
+      month 4,
+      day 21
+    }
+  },
   seq-set {
     seq {
       id {
         genbank {
-          accession "AF124201" ,
-          version 1 } ,
-        gi 4691715 } ,
+          accession "AF124201",
+          version 1
+        },
+        gi 4691715
+      },
       descr {
         title "Escherichia coli E142 beta-lactamase precursor (ampC) gene,
- complete cds." ,
+ complete cds.",
         molinfo {
-          biomol genomic } } ,
+          biomol genomic
+        }
+      },
       inst {
-        repr raw ,
-        mol dna ,
-        length 1313 ,
-        seq-data
-          ncbi2na '6CE45198E4637803D1B979A903ABFDC6B7A79CDF84BED19E3EB36F10DC1
-B3650EC0D694973A6A5BFECE885217CEF4018677997CF0F165DF9D44FE79574103418CFB936443
-C559F32241008D56B3A6BA6B0FCD2AC05F3C7F17AA739A1365002495B444901BEFE2F2BDAD2401
-3F1A9B9FAE98A73E762A80D0BC263544100C7A5E07C59C04BA0EA34473C4DD905C479E9A5E53E4
-AE5A38AE035D0987E799F73401E925E4EA65281106DECE50752CDAFEF6991E9EE096DEBF8BFE24
-A639011BB7D4947407414C6E8F0EC5959208020F197AA33660A4292F4EFD94AA6F239E09F3AEE0
-B614F8233A5E7AB1824338355B8CD0610047D242A3107A4437671E901698CECD2A5EA7A80E7A1E
-96B035E124D3C1A4BA4300FB1E924455B0098F1955075E4B19934EAC4C012AD05A68FEB273B66F
-CF5200227AB32E39E9C1001CD50D4988B65965E923DD067710C00'H } ,
+        repr raw,
+        mol dna,
+        length 1313,
+        seq-data ncbi2na '6CE45198E4637803D1B979A903ABFDC6B7A79CDF84BED19E3EB3
+6F10DC1B3650EC0D694973A6A5BFECE885217CEF4018677997CF0F165DF9D44FE79574103418CF
+B936443C559F32241008D56B3A6BA6B0FCD2AC05F3C7F17AA739A1365002495B444901BEFE2F2B
+DAD24013F1A9B9FAE98A73E762A80D0BC263544100C7A5E07C59C04BA0EA34473C4DD905C479E9
+A5E53E4AE5A38AE035D0987E799F73401E925E4EA65281106DECE50752CDAFEF6991E9EE096DEB
+F8BFE24A639011BB7D4947407414C6E8F0EC5959208020F197AA33660A4292F4EFD94AA6F239E0
+9F3AEE0B614F8233A5E7AB1824338355B8CD0610047D242A3107A4437671E901698CECD2A5EA7A
+80E7A1E96B035E124D3C1A4BA4300FB1E924455B0098F1955075E4B19934EAC4C012AD05A68FEB
+273B66FCF5200227AB32E39E9C1001CD50D4988B65965E923DD067710C00'H
+      },
       annot {
         {
-          data
-            ftable {
-              {
-                data
-                  gene {
-                    locus "AMPC" } ,
-                location
-                  int {
-                    from 179 ,
-                    to 1312 ,
-                    id
-                      gi 4691715 } } ,
-              {
-                data
-                  imp {
-                    key "misc_difference" } ,
-                comment "compared to Escherichia coli beta-lactamase sequence
- presented in GenBank Accession Number AE000487" ,
-                location
-                  pnt {
-                    point 32 ,
-                    strand plus ,
-                    id
-                      gi 4691715 } ,
-                qual {
-                  {
-                    qual "replace" ,
-                    val "c" } } } ,
-              {
-                data
-                  imp {
-                    key "misc_difference" } ,
-                comment "compared to Escherichia coli beta-lactamase sequence
- presented in GenBank Accession Number AE000487" ,
-                location
-                  pnt {
-                    point 38 ,
-                    strand plus ,
-                    id
-                      gi 4691715 } ,
-                qual {
-                  {
-                    qual "replace" ,
-                    val "a" } } } ,
-              {
-                data
-                  imp {
-                    key "misc_difference" } ,
-                comment "compared to Escherichia coli beta-lactamase sequence
- presented in GenBank Accession Number AE000487" ,
-                location
-                  pnt {
-                    point 78 ,
-                    strand plus ,
-                    id
-                      gi 4691715 } ,
-                qual {
-                  {
-                    qual "replace" ,
-                    val "c" } } } ,
-              {
-                data
-                  imp {
-                    key "misc_difference" } ,
-                comment "compared to Escherichia coli beta-lactamase sequence
- presented in GenBank Accession Number AE000487" ,
-                location
-                  pnt {
-                    point 102 ,
-                    strand plus ,
-                    id
-                      gi 4691715 } ,
-                qual {
-                  {
-                    qual "replace" ,
-                    val "g" } } } ,
-              {
-                data
-                  imp {
-                    key "misc_difference" } ,
-                comment "compared to Escherichia coli beta-lactamase sequence
- presented in GenBank Accession Number AE000487" ,
-                location
-                  pnt {
-                    point 119 ,
-                    strand plus ,
-                    id
-                      gi 4691715 } ,
-                qual {
-                  {
-                    qual "replace" ,
-                    val "c" } } } ,
-              {
-                data
-                  imp {
-                    key "misc_difference" } ,
-                comment "compared to Escherichia coli beta-lactamase sequence
- presented in GenBank Accession Number AE000487" ,
-                location
-                  pnt {
-                    point 141 ,
-                    strand plus ,
-                    id
-                      gi 4691715 } ,
-                qual {
-                  {
-                    qual "replace" ,
-                    val "c" } } } ,
-              {
-                data
-                  imp {
-                    key "misc_difference" } ,
-                comment "compared to Escherichia coli beta-lactamase sequence
- presented in GenBank Accession Number AE000487" ,
-                location
-                  pnt {
-                    point 168 ,
-                    strand plus ,
-                    id
-                      gi 4691715 } ,
-                qual {
-                  {
-                    qual "replace" ,
-                    val "a" } } } ,
-              {
-                data
-                  imp {
-                    key "misc_difference" } ,
-                comment "compared to Escherichia coli beta-lactamase sequence
- presented in GenBank Accession Number AE000487" ,
-                location
-                  pnt {
-                    point 177 ,
-                    strand plus ,
-                    id
-                      gi 4691715 } ,
-                qual {
-                  {
-                    qual "replace" ,
-                    val "c" } } } } } } } ,
+          data ftable {
+            {
+              data gene {
+                locus "AMPC"
+              },
+              location int {
+                from 179,
+                to 1312,
+                id gi 4691715
+              }
+            },
+            {
+              data imp {
+                key "misc_difference"
+              },
+              comment "compared to Escherichia coli beta-lactamase sequence
+ presented in GenBank Accession Number AE000487",
+              location pnt {
+                point 32,
+                strand plus,
+                id gi 4691715
+              },
+              qual {
+                {
+                  qual "replace",
+                  val "c"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_difference"
+              },
+              comment "compared to Escherichia coli beta-lactamase sequence
+ presented in GenBank Accession Number AE000487",
+              location pnt {
+                point 38,
+                strand plus,
+                id gi 4691715
+              },
+              qual {
+                {
+                  qual "replace",
+                  val "a"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_difference"
+              },
+              comment "compared to Escherichia coli beta-lactamase sequence
+ presented in GenBank Accession Number AE000487",
+              location pnt {
+                point 78,
+                strand plus,
+                id gi 4691715
+              },
+              qual {
+                {
+                  qual "replace",
+                  val "c"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_difference"
+              },
+              comment "compared to Escherichia coli beta-lactamase sequence
+ presented in GenBank Accession Number AE000487",
+              location pnt {
+                point 102,
+                strand plus,
+                id gi 4691715
+              },
+              qual {
+                {
+                  qual "replace",
+                  val "g"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_difference"
+              },
+              comment "compared to Escherichia coli beta-lactamase sequence
+ presented in GenBank Accession Number AE000487",
+              location pnt {
+                point 119,
+                strand plus,
+                id gi 4691715
+              },
+              qual {
+                {
+                  qual "replace",
+                  val "c"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_difference"
+              },
+              comment "compared to Escherichia coli beta-lactamase sequence
+ presented in GenBank Accession Number AE000487",
+              location pnt {
+                point 141,
+                strand plus,
+                id gi 4691715
+              },
+              qual {
+                {
+                  qual "replace",
+                  val "c"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_difference"
+              },
+              comment "compared to Escherichia coli beta-lactamase sequence
+ presented in GenBank Accession Number AE000487",
+              location pnt {
+                point 168,
+                strand plus,
+                id gi 4691715
+              },
+              qual {
+                {
+                  qual "replace",
+                  val "a"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_difference"
+              },
+              comment "compared to Escherichia coli beta-lactamase sequence
+ presented in GenBank Accession Number AE000487",
+              location pnt {
+                point 177,
+                strand plus,
+                id gi 4691715
+              },
+              qual {
+                {
+                  qual "replace",
+                  val "c"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     seq {
       id {
         genbank {
-          name "AF124201_1" ,
-          accession "AAD28041" ,
-          version 1 } ,
-        gi 4691716 } ,
+          name "AF124201_1",
+          accession "AAD28041",
+          version 1
+        },
+        gi 4691716
+      },
       descr {
-        title "beta-lactamase precursor [Escherichia coli]" ,
+        title "beta-lactamase precursor [Escherichia coli]",
         molinfo {
-          biomol peptide ,
-          tech concept-trans-a } } ,
+          biomol peptide,
+          tech concept-trans-a
+        }
+      },
       inst {
-        repr raw ,
-        mol aa ,
-        length 377 ,
-        topology not-set ,
-        seq-data
-          ncbieaa "MFKTTLCALLITASCSTFAAPQQINDIVHRTITPLIEQQKIPGMAVAVIYQGKPYYFTW
-GYADIAKKQPVTQQTLFELGSVSKTFTGVLGGEAIARGEIKLSDPTTKYWPELTAKQWNGITLLHLATYTAGGLPLQV
-PDEVKSSSDLLRFYQNWQPAWAPGTQRLYANSSIGLFGALAVKPSGLSFEQAMQTRVFQPLKLNHTWINVPPAEEKNY
-AWGYREGKAVHVSPGALDAEAYGVKSTIEDMACWVRSNMNPRDINDKTLQQGIQLAQSRYWQTGDMYQGLGWEMLDWP
-VNPDSIINGSGNKIVLAAHPVKAITPPTPAVRASWVHKTGSTGGFGSYVAFIPEKELGIVMLANKNYPNPARVAAAWQ
-ILNALQ" } ,
+        repr raw,
+        mol aa,
+        length 377,
+        topology not-set,
+        seq-data ncbieaa "MFKTTLCALLITASCSTFAAPQQINDIVHRTITPLIEQQKIPGMAVAVIYQG
+KPYYFTWGYADIAKKQPVTQQTLFELGSVSKTFTGVLGGEAIARGEIKLSDPTTKYWPELTAKQWNGITLLHLATYTA
+GGLPLQVPDEVKSSSDLLRFYQNWQPAWAPGTQRLYANSSIGLFGALAVKPSGLSFEQAMQTRVFQPLKLNHTWINVP
+PAEEKNYAWGYREGKAVHVSPGALDAEAYGVKSTIEDMACWVRSNMNPRDINDKTLQQGIQLAQSRYWQTGDMYQGLG
+WEMLDWPVNPDSIINGSGNKIVLAAHPVKAITPPTPAVRASWVHKTGSTGGFGSYVAFIPEKELGIVMLANKNYPNPA
+RVAAAWQILNALQ"
+      },
       annot {
         {
-          data
-            ftable {
-              {
-                data
-                  prot {
-                    name {
-                      "beta-lactamase precursor" } ,
-                    activity {
-                      "confers resistance to ampicillin, cefoxitin,
- ceftazidime and cefotaxime" } } ,
-                comment "hyperproducing variant; hyperproduction due to
- promoter, attenuator and sequence changes" ,
-                location
-                  int {
-                    from 0 ,
-                    to 376 ,
-                    id
-                      gi 4691716 } } } } } } } ,
+          data ftable {
+            {
+              data prot {
+                name {
+                  "beta-lactamase precursor"
+                },
+                activity {
+                  "confers resistance to ampicillin, cefoxitin, ceftazidime
+ and cefotaxime"
+                }
+              },
+              comment "hyperproducing variant; hyperproduction due to
+ promoter, attenuator and sequence changes",
+              location int {
+                from 0,
+                to 376,
+                id gi 4691716
+              }
+            }
+          }
+        }
+      }
+    }
+  },
   annot {
     {
-      data
-        ftable {
-          {
-            data
-              cdregion {
-                frame one ,
-                code {
-                  id 11 } } ,
-            product
-              whole
-                gi 4691716 ,
-            location
-              int {
-                from 179 ,
-                to 1312 ,
-                id
-                  gi 4691715 } } } } } }
-
+      data ftable {
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 11
+            }
+          },
+          product whole gi 4691716,
+          location int {
+            from 179,
+            to 1312,
+            id gi 4691715
+          }
+        }
+      }
+    }
+  }
+}

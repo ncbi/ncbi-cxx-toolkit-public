@@ -1,112 +1,117 @@
 Seq-entry ::= seq {
   id {
-    local
-      str "nuc_1" } ,
+    local str "nuc_1"
+  },
   descr {
     source {
-      genome genomic ,
+      genome genomic,
       org {
-        taxname "Acanthamoeba castellanii" ,
+        taxname "Acanthamoeba castellanii",
         orgname {
-          lineage "Eukaryota; Acanthamoebidae; Acanthamoeba" ,
-          gcode 1 ,
-          div "INV" } } } ,
+          lineage "Eukaryota; Acanthamoebidae; Acanthamoeba",
+          gcode 1,
+          div "INV"
+        }
+      }
+    },
     molinfo {
-      biomol mRNA } ,
+      biomol mRNA
+    },
     pub {
       pub {
         gen {
-          cit "Unpublished" ,
+          cit "Unpublished",
           authors {
-            names
-              std {
-                {
-                  name
-                    name {
-                      last "Gobu" ,
-                      first "Vasuki" ,
-                      initials "V." } } } ,
-            affil
-              std {
-                affil "NIH" ,
-                div "NCBI" } } ,
-          title "Testing rna poly A tail" } } } ,
+            names std {
+              {
+                name name {
+                  last "Gobu",
+                  first "Vasuki",
+                  initials "V."
+                }
+              }
+            },
+            affil std {
+              affil "NIH",
+              div "NCBI"
+            }
+          },
+          title "Testing rna poly A tail"
+        }
+      }
+    },
     user {
-      type
-        str "StructuredComment" ,
+      type str "StructuredComment",
       data {
         {
-          label
-            str "StructuredCommentPrefix" ,
-          data
-            str "##Assembly-Data-START##" } ,
+          label str "StructuredCommentPrefix",
+          data str "##Assembly-Data-START##"
+        },
         {
-          label
-            str "StructuredCommentSuffix" ,
-          data
-            str "##Assembly-Data-END##" } ,
+          label str "StructuredCommentSuffix",
+          data str "##Assembly-Data-END##"
+        },
         {
-          label
-            str "Sequencing Technology" ,
-          data
-            str "Sanger dideoxy sequencing" } } } ,
+          label str "Sequencing Technology",
+          data str "Sanger dideoxy sequencing"
+        }
+      }
+    },
     user {
-      type
-        str "NcbiCleanup" ,
+      type str "NcbiCleanup",
       data {
         {
-          label
-            str "method" ,
-          data
-            str "SequinCleanup" } ,
+          label str "method",
+          data str "SequinCleanup"
+        },
         {
-          label
-            str "version" ,
-          data
-            int 8 } ,
+          label str "version",
+          data int 8
+        },
         {
-          label
-            str "month" ,
-          data
-            int 11 } ,
+          label str "month",
+          data int 11
+        },
         {
-          label
-            str "day" ,
-          data
-            int 24 } ,
+          label str "day",
+          data int 24
+        },
         {
-          label
-            str "year" ,
-          data
-            int 2015 } } } ,
-    create-date
-      std {
-        year 2015 ,
-        month 11 ,
-        day 22 } } ,
+          label str "year",
+          data int 2015
+        }
+      }
+    },
+    create-date std {
+      year 2015,
+      month 11,
+      day 22
+    }
+  },
   inst {
-    repr raw ,
-    mol rna ,
-    length 1559 ,
-    seq-data
-      iupacna "GTGGAATCTCTCTGTTCTTAGTTCTGTTCTACTTCTCCACCAAGTCCCTAACACGCGGGTGGC
-GGGTCCGCCGCCGCCGCCGTTCGAAGACTCGAGGCTCGAGCACCTCTTCTGCTCGCCCGGCCCCTCCTATCCCTCGCG
-CGACTGTCTCCGCCGACGACCATAAGCCGCCTGCCTCATCGCTGGCCACACAACGATCCGTGGCAAGGAAAGCACGAG
-GACGTACAGTAGAATTGTGAATCGCCGGAAAAACATCTGTTGGCGGCGTCATGAATAAGCGGCCCCRCGACGACCACT
-CCTTCGCCTCCGCGCCCAAGCGCCAGTATGGCGMAGGCGGAGGGTATGGCCCGCAGCAGGGTTACTCGGAAGAGCGGA
-GCAGCGCGCGGCGGGTGGCCGACCACTACAGCGCGCGGTCCAACCAGACACTCGAGGAACGCGAGAACAGCCCCATCA
-TCCACCTCAAGAAGCTCAACAACTGGATCAAGAGTGTTTTGGTCCAGTTGTATGCACGCCCGGGTGACTGCGTTCTTG
-ATCTTGCTTGCGGGAAGGGAGGTGATTTGATAAAGTGGGATAAAGCCAAGGTTGGCTACTATGTAGGGGTTGATATTG
-CTGAAGGCTCGATAAAAGATTGCATGACTCGCTACAATGGTGACACAGATCAACAAAGAAGGAAAAGGTTCAGTTTCC
-CTGCACGGCTTATTTGTACTGATTGCTATGAGGCTCGTTTGGATGAATATTTATATGAGGATGCTCCGTTTGATATAT
-GTAGCTGTCAGTTTGCTTTACACTATTCATGGTCAACTGAAGCACGCGCTAGACAAGCCTTGGCAAATGTGTCTGCAT
-TACTTCGTCCTGGAGGCATTTTTATTGGGACAATGCCTGATGCCAATGTCATTATCAAAAGGCTTCGAGAATCTGAAG
-GGTTGGAATTTGGGAACAGTGTTTACTGCATTAGCTTTGGCAATGAGTACGCTGAAAAGAAATTCCCTGCATCCAGAC
-CGTTTGGTATCAAGTACAAGTTTCACTTAGAGGATGCTGTTGATTGCCCAGAATGGGTTGTTCCATTCCATCTCTTCA
-AATTATTGGCAGAGGAGTATGATCTCGAGCTGGTTCTGATGAAGAACTTCCATGAATTTGTACACGAGTACTTGCAAA
-AACCAGAGTTCGCCGAGCTGATGCGGAGGCTGGGTGCCCTCGGTGATGGAAGGCAGGACCAAAGTACACTGTCACAAG
-ATGAGTGGGAGGTTTCCTATCTCTATCTCGCGTTTGTCCTGCGGAAGCGAGGCCAACCGCCTACCCAACGAAGAGCCA
-GCAACGCAAACAGAGGGAAAATGTTTCTCACCGAGGGTGACATCGAGGTTCTCGGTGTATAAGCATGAGTATATCCTG
-GAAGGGCTTGCTAACAGCTTACCGATTATATGCTCCACAGACCACATAGCATAAAAGAAAGTTGTAACATTAGTGGCT
-CACCTGCTACTCCATCCGTTTATAAATAAATGACAACGTTGACTTTTTTAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-AAAAAAAAAAAGGT" } }
+    repr raw,
+    mol rna,
+    length 1559,
+    seq-data iupacna "GTGGAATCTCTCTGTTCTTAGTTCTGTTCTACTTCTCCACCAAGTCCCTAACACGC
+GGGTGGCGGGTCCGCCGCCGCCGCCGTTCGAAGACTCGAGGCTCGAGCACCTCTTCTGCTCGCCCGGCCCCTCCTATC
+CCTCGCGCGACTGTCTCCGCCGACGACCATAAGCCGCCTGCCTCATCGCTGGCCACACAACGATCCGTGGCAAGGAAA
+GCACGAGGACGTACAGTAGAATTGTGAATCGCCGGAAAAACATCTGTTGGCGGCGTCATGAATAAGCGGCCCCRCGAC
+GACCACTCCTTCGCCTCCGCGCCCAAGCGCCAGTATGGCGMAGGCGGAGGGTATGGCCCGCAGCAGGGTTACTCGGAA
+GAGCGGAGCAGCGCGCGGCGGGTGGCCGACCACTACAGCGCGCGGTCCAACCAGACACTCGAGGAACGCGAGAACAGC
+CCCATCATCCACCTCAAGAAGCTCAACAACTGGATCAAGAGTGTTTTGGTCCAGTTGTATGCACGCCCGGGTGACTGC
+GTTCTTGATCTTGCTTGCGGGAAGGGAGGTGATTTGATAAAGTGGGATAAAGCCAAGGTTGGCTACTATGTAGGGGTT
+GATATTGCTGAAGGCTCGATAAAAGATTGCATGACTCGCTACAATGGTGACACAGATCAACAAAGAAGGAAAAGGTTC
+AGTTTCCCTGCACGGCTTATTTGTACTGATTGCTATGAGGCTCGTTTGGATGAATATTTATATGAGGATGCTCCGTTT
+GATATATGTAGCTGTCAGTTTGCTTTACACTATTCATGGTCAACTGAAGCACGCGCTAGACAAGCCTTGGCAAATGTG
+TCTGCATTACTTCGTCCTGGAGGCATTTTTATTGGGACAATGCCTGATGCCAATGTCATTATCAAAAGGCTTCGAGAA
+TCTGAAGGGTTGGAATTTGGGAACAGTGTTTACTGCATTAGCTTTGGCAATGAGTACGCTGAAAAGAAATTCCCTGCA
+TCCAGACCGTTTGGTATCAAGTACAAGTTTCACTTAGAGGATGCTGTTGATTGCCCAGAATGGGTTGTTCCATTCCAT
+CTCTTCAAATTATTGGCAGAGGAGTATGATCTCGAGCTGGTTCTGATGAAGAACTTCCATGAATTTGTACACGAGTAC
+TTGCAAAAACCAGAGTTCGCCGAGCTGATGCGGAGGCTGGGTGCCCTCGGTGATGGAAGGCAGGACCAAAGTACACTG
+TCACAAGATGAGTGGGAGGTTTCCTATCTCTATCTCGCGTTTGTCCTGCGGAAGCGAGGCCAACCGCCTACCCAACGA
+AGAGCCAGCAACGCAAACAGAGGGAAAATGTTTCTCACCGAGGGTGACATCGAGGTTCTCGGTGTATAAGCATGAGTA
+TATCCTGGAAGGGCTTGCTAACAGCTTACCGATTATATGCTCCACAGACCACATAGCATAAAAGAAAGTTGTAACATT
+AGTGGCTCACCTGCTACTCCATCCGTTTATAAATAAATGACAACGTTGACTTTTTTAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAGGT"
+  }
+}

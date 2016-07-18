@@ -17,12 +17,14 @@ Seq-entry ::= set {
             sub {
               authors {
                 names std {
-                    {
-                      name
-                        name {
-                          last "Bollin" ,
-                          first "Colleen" ,
-                          initials "C.J." } } },
+                  {
+                    name name {
+                      last "Bollin",
+                      first "Colleen",
+                      initials "C.J."
+                    }
+                  }
+                },
                 affil str "NCBI"
               },
               medium other,
@@ -104,12 +106,14 @@ Seq-entry ::= set {
             sub {
               authors {
                 names std {
-                    {
-                      name
-                        name {
-                          last "Bollin" ,
-                          first "Colleen" ,
-                          initials "C.J." } } },
+                  {
+                    name name {
+                      last "Bollin",
+                      first "Colleen",
+                      initials "C.J."
+                    }
+                  }
+                },
                 affil str "Not NCBI"
               },
               date str "?",
@@ -186,12 +190,14 @@ Seq-entry ::= set {
             sub {
               authors {
                 names std {
-                    {
-                      name
-                        name {
-                          last "Bollin" ,
-                          first "Colleen" ,
-                          initials "C.J." } } },
+                  {
+                    name name {
+                      last "Bollin",
+                      first "Colleen",
+                      initials "C.J."
+                    }
+                  }
+                },
                 affil std {
                   affil "Not NCBI",
                   div "X"
@@ -276,12 +282,14 @@ Seq-entry ::= set {
             sub {
               authors {
                 names std {
-                    {
-                      name
-                        name {
-                          last "Bollin" ,
-                          first "Colleen" ,
-                          initials "C.J." } } },
+                  {
+                    name name {
+                      last "Bollin",
+                      first "Colleen",
+                      initials "C.J."
+                    }
+                  }
+                },
                 affil std {
                   affil "Not NCBI",
                   street "Y"
@@ -366,12 +374,14 @@ Seq-entry ::= set {
             sub {
               authors {
                 names std {
-                    {
-                      name
-                        name {
-                          last "Bollin" ,
-                          first "Colleen" ,
-                          initials "C.J." } } },
+                  {
+                    name name {
+                      last "Bollin",
+                      first "Colleen",
+                      initials "C.J."
+                    }
+                  }
+                },
                 affil std {
                   affil "Not NCBI",
                   city "Z"
@@ -456,12 +466,14 @@ Seq-entry ::= set {
             sub {
               authors {
                 names std {
-                    {
-                      name
-                        name {
-                          last "Bollin" ,
-                          first "Colleen" ,
-                          initials "C.J." } } },
+                  {
+                    name name {
+                      last "Bollin",
+                      first "Colleen",
+                      initials "C.J."
+                    }
+                  }
+                },
                 affil std {
                   affil "Not NCBI",
                   sub "MD"
@@ -546,12 +558,14 @@ Seq-entry ::= set {
             sub {
               authors {
                 names std {
-                    {
-                      name
-                        name {
-                          last "Bollin" ,
-                          first "Colleen" ,
-                          initials "C.J." } } },
+                  {
+                    name name {
+                      last "Bollin",
+                      first "Colleen",
+                      initials "C.J."
+                    }
+                  }
+                },
                 affil std {
                   affil "Not NCBI",
                   postal-code "22301"
@@ -728,12 +742,14 @@ Seq-entry ::= set {
             sub {
               authors {
                 names std {
-                    {
-                      name
-                        name {
-                          last "Bollin" ,
-                          first "Colleen" ,
-                          initials "C.J." } } }
+                  {
+                    name name {
+                      last "Bollin",
+                      first "Colleen",
+                      initials "C.J."
+                    }
+                  }
+                }
               },
               medium other,
               date std {
@@ -814,12 +830,14 @@ Seq-entry ::= set {
             sub {
               authors {
                 names std {
-                    {
-                      name
-                        name {
-                          last "Bollin" ,
-                          first "Colleen" ,
-                          initials "C.J." } } },
+                  {
+                    name name {
+                      last "Bollin",
+                      first "Colleen",
+                      initials "C.J."
+                    }
+                  }
+                },
                 affil std {
                   div "empty institution"
                 }
@@ -1000,12 +1018,14 @@ Seq-entry ::= set {
             sub {
               authors {
                 names std {
-                    {
-                      name
-                        name {
-                          last "Bollin" ,
-                          first "Colleen" ,
-                          initials "C.J." } } },
+                  {
+                    name name {
+                      last "Bollin",
+                      first "Colleen",
+                      initials "C.J."
+                    }
+                  }
+                },
                 affil str "Not NCBI"
               },
               date str "?",
@@ -1082,12 +1102,14 @@ Seq-entry ::= set {
             sub {
               authors {
                 names std {
-                    {
-                      name
-                        name {
-                          last "Bollin" ,
-                          first "Colleen" ,
-                          initials "C.J." } } },
+                  {
+                    name name {
+                      last "Bollin",
+                      first "Colleen",
+                      initials "C.J."
+                    }
+                  }
+                },
                 affil str "Not NCBI"
               },
               date str "?",
@@ -1164,12 +1186,14 @@ Seq-entry ::= set {
             sub {
               authors {
                 names std {
-                    {
-                      name
-                        name {
-                          last "Bollin" ,
-                          first "Colleen" ,
-                          initials "C.J." } } },
+                  {
+                    name name {
+                      last "Bollin",
+                      first "Colleen",
+                      initials "C.J."
+                    }
+                  }
+                },
                 affil str "Not NCBI"
               },
               date str "?",
@@ -1246,12 +1270,14 @@ Seq-entry ::= set {
             sub {
               authors {
                 names std {
-                    {
-                      name
-                        name {
-                          last "Bollin" ,
-                          first "Colleen" ,
-                          initials "C.J." } } },
+                  {
+                    name name {
+                      last "Bollin",
+                      first "Colleen",
+                      initials "C.J."
+                    }
+                  }
+                },
                 affil str "Not NCBI"
               },
               date str "?",
@@ -1328,12 +1354,14 @@ Seq-entry ::= set {
             sub {
               authors {
                 names std {
-                    {
-                      name
-                        name {
-                          last "Bollin" ,
-                          first "Colleen" ,
-                          initials "C.J." } } },
+                  {
+                    name name {
+                      last "Bollin",
+                      first "Colleen",
+                      initials "C.J."
+                    }
+                  }
+                },
                 affil str "Not NCBI"
               },
               date str "?",
@@ -1410,12 +1438,14 @@ Seq-entry ::= set {
             sub {
               authors {
                 names std {
-                    {
-                      name
-                        name {
-                          last "Bollin" ,
-                          first "Colleen" ,
-                          initials "C.J." } } },
+                  {
+                    name name {
+                      last "Bollin",
+                      first "Colleen",
+                      initials "C.J."
+                    }
+                  }
+                },
                 affil str "Not NCBI"
               },
               date str "?",
@@ -1492,12 +1522,14 @@ Seq-entry ::= set {
             sub {
               authors {
                 names std {
-                    {
-                      name
-                        name {
-                          last "Bollin" ,
-                          first "Colleen" ,
-                          initials "C.J." } } },
+                  {
+                    name name {
+                      last "Bollin",
+                      first "Colleen",
+                      initials "C.J."
+                    }
+                  }
+                },
                 affil str "Not NCBI"
               },
               date str "?",
@@ -1574,12 +1606,14 @@ Seq-entry ::= set {
             sub {
               authors {
                 names std {
-                    {
-                      name
-                        name {
-                          last "Bollin" ,
-                          first "Colleen" ,
-                          initials "C.J." } } },
+                  {
+                    name name {
+                      last "Bollin",
+                      first "Colleen",
+                      initials "C.J."
+                    }
+                  }
+                },
                 affil str "Not NCBI"
               },
               date str "?",

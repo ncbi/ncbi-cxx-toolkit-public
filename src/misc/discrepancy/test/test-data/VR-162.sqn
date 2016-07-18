@@ -1,2236 +1,2155 @@
 Seq-entry ::= set {
-  class nuc-prot ,
+  class nuc-prot,
   descr {
     source {
       org {
-        taxname "Mitsuaria sp. H24L5A" ,
+        taxname "Mitsuaria sp. H24L5A",
         db {
           {
-            db "taxon" ,
-            tag
-              id 557855 } } ,
+            db "taxon",
+            tag id 557855
+          }
+        },
         orgname {
-          name
-            binomial {
-              genus "Mitsuaria" ,
-              species "sp. H24L5A" } ,
+          name binomial {
+            genus "Mitsuaria",
+            species "sp. H24L5A"
+          },
           mod {
             {
-              subtype strain ,
-              subname "H24L5A" } } ,
+              subtype strain,
+              subname "H24L5A"
+            }
+          },
           lineage "Bacteria; Proteobacteria; Betaproteobacteria;
- Burkholderiales; Mitsuaria" ,
-          gcode 11 ,
-          div "BCT" } } ,
+ Burkholderiales; Mitsuaria",
+          gcode 11,
+          div "BCT"
+        }
+      },
       subtype {
         {
-          subtype other ,
-          name "contig NODE_2554_length_11178_cov_9.997942" } } } ,
+          subtype other,
+          name "contig NODE_2554_length_11178_cov_9.997942"
+        }
+      }
+    },
     pub {
       pub {
         sub {
           authors {
-            names
-              std {
-                {
-                  name
-                    name {
-                      last "Rong" ,
-                      initials "X." } } } ,
-            affil
-              str "to the INSDC. Plant Pathology, The Ohio State University,
- 236 Selby, 1680 Madison Ave, OH 44691, USA" } ,
-          medium other ,
-          date
-            std {
-              year 2011 ,
-              month 9 ,
-              day 12 } } } } ,
+            names std {
+              {
+                name name {
+                  last "Rong",
+                  initials "X."
+                }
+              }
+            },
+            affil str "to the INSDC. Plant Pathology, The Ohio State
+ University, 236 Selby, 1680 Madison Ave, OH 44691, USA"
+          },
+          medium other,
+          date std {
+            year 2011,
+            month 9,
+            day 12
+          }
+        }
+      }
+    },
     pub {
       pub {
         gen {
-          cit "Unpublished" ,
+          cit "Unpublished",
           authors {
-            names
-              std {
-                {
-                  name
-                    name {
-                      last "Rong" ,
-                      initials "X." } } ,
-                {
-                  name
-                    name {
-                      last "Gurel" ,
-                      initials "F.B." } } ,
-                {
-                  name
-                    name {
-                      last "McSpadden Gardener" ,
-                      initials "B.B." } } } } ,
+            names std {
+              {
+                name name {
+                  last "Rong",
+                  initials "X."
+                }
+              },
+              {
+                name name {
+                  last "Gurel",
+                  initials "F.B."
+                }
+              },
+              {
+                name name {
+                  last "McSpadden Gardener",
+                  initials "B.B."
+                }
+              }
+            }
+          },
           title "Draft genome sequences of the biocontrol bacterium Mitsuaria
- sp. strain H24L5A" } } ,
-      reftype no-target } ,
+ sp. strain H24L5A"
+        }
+      },
+      reftype no-target
+    },
     user {
-      type
-        str "DBLink" ,
+      type str "DBLink",
       data {
         {
-          label
-            str "BioProject" ,
-          num 1 ,
-          data
-            strs {
-              "PRJEA73045" } } ,
+          label str "BioProject",
+          num 1,
+          data strs {
+            "PRJEA73045"
+          }
+        },
         {
-          label
-            str "Assembly" ,
-          num 1 ,
-          data
-            strs {
-              "GCA_000285635.1" } } } } ,
+          label str "Assembly",
+          num 1,
+          data strs {
+            "GCA_000285635.1"
+          }
+        }
+      }
+    },
     user {
-      type
-        str "NcbiCleanup" ,
+      type str "NcbiCleanup",
       data {
         {
-          label
-            str "method" ,
-          data
-            str "ExtendedSeqEntryCleanup" } ,
+          label str "method",
+          data str "ExtendedSeqEntryCleanup"
+        },
         {
-          label
-            str "version" ,
-          data
-            int 1 } ,
+          label str "version",
+          data int 1
+        },
         {
-          label
-            str "month" ,
-          data
-            int 1 } ,
+          label str "month",
+          data int 1
+        },
         {
-          label
-            str "day" ,
-          data
-            int 16 } ,
+          label str "day",
+          data int 16
+        },
         {
-          label
-            str "year" ,
-          data
-            int 2015 } } } } ,
+          label str "year",
+          data int 2015
+        }
+      }
+    }
+  },
   seq-set {
     seq {
       id {
         embl {
-          accession "CAFG01000076" ,
-          version 1 } ,
-        gi 354809154 } ,
+          accession "CAFG01000076",
+          version 1
+        },
+        gi 354809154
+      },
       descr {
         molinfo {
-          biomol genomic ,
-          tech wgs } ,
+          biomol genomic,
+          tech wgs
+        },
         comment "Assembly created by Velvet 0.7.55 using hash length 31 nt and
- minimal contig length 900 nt" ,
+ minimal contig length 900 nt",
         user {
-          type
-            str "WGSProjects" ,
+          type str "WGSProjects",
           data {
             {
-              label
-                str "WGS_accession_first" ,
-              data
-                str "CAFG01000001" } ,
+              label str "WGS_accession_first",
+              data str "CAFG01000001"
+            },
             {
-              label
-                str "WGS_accession_last" ,
-              data
-                str "CAFG01000607" } } } ,
+              label str "WGS_accession_last",
+              data str "CAFG01000607"
+            }
+          }
+        },
         embl {
-          div pro ,
-          creation-date
-            std {
-              year 2011 ,
-              month 10 ,
-              day 11 } ,
-          update-date
-            std {
-              year 2011 ,
-              month 12 ,
-              day 15 } } ,
-        update-date
-          std {
-            year 2011 ,
-            month 12 ,
-            day 15 } ,
-        update-date
-          std {
-            year 2011 ,
-            month 12 ,
-            day 15 } } ,
+          div pro,
+          creation-date std {
+            year 2011,
+            month 10,
+            day 11
+          },
+          update-date std {
+            year 2011,
+            month 12,
+            day 15
+          }
+        },
+        update-date std {
+          year 2011,
+          month 12,
+          day 15
+        },
+        update-date std {
+          year 2011,
+          month 12,
+          day 15
+        }
+      },
       inst {
-        repr delta ,
-        mol dna ,
-        length 11208 ,
-        ext
-          delta {
-            literal {
-              length 4479 ,
-              seq-data
-                ncbi2na '894A965F69976AA6D86D4A57E866D8D4920691967A5F4997D235D
-A8DAE2860FDB7D480AB98494615F5357E48C4E549F45EA5B6A37DF49387A6FF6D4A1044B3A6575
-5A64644B481290C001657A6A6BE9C79DF67E459A7A744979468D0681663E6A1EC68BDA3A425E50
-33E61209F4BDA6E1E0F9F45E9594D166FAE656E31A7E57637ACA1F49946C48CB69B9E9690DFAAC
-AE5B6369F9E0BE994E1276646657ED4927DF86DA5A65D85B66A469B617E94A5A6CB1DA2376B8ED
-5AD950E926639664EB6AE7E6B657E9B196D264FA63B1FA6F7A56634DA85FB9176A82BA5E325AA3
-94E9258E44E945FA5E45AA5EAA52BBE59A1B669AABADB61A67ED5A66A6182A9BE8789A71040647
-D694934198A88DE4BEDF74EB5637DCA3FAA6998F32AAA57331EBFD15799C88255D380F50AF54A1
-C6D94656178E7A6B419A534678669679EB42A605A916908679E96282D94295EA1E59E792E91B82
-2461429924A97B18B1866B4969E6612527698610AE66136507136D0A919EEA29FD9B68465AE99E
-78D8623610A584D8BD54185E79981D8593A2F71B71885662EAD6A60116967AEF4D17504188289E
-56197D799679F7D471342F558A584639294DB61B51F55A9E08285E7A596678217DC61B9909E5AA
-7820825751B589E361E9D09E79E96284D59E8A67921928610AD98D5967AEA6679E08189285E15E
-F6209DB71392259059E248B49E248B49EA4A35960965A948108DA0428E2129389421F41965E991
-667A58667A8F6EA69A6E36979EB696757A8EA0F4DA62569EA958548D7A979E14D76DA4EA69E59E
-9E79969E79DA410A9E29595E57656D7D15D55FF5D9165A58AB69D874E16454757D1665AD19E169
-59399A7625BED928D166299EB619AD961A6277A09DEB1145B959958193A99A23616997A8799866
-A763815BD96EF63961A59B65A4E185C4E04D866143659B62369D45E85666D4949926A781192E42
-79E79E6919BD8847A1E4D9AE8BD64505974119225966636269DA6649D869B5E67644E78E549A5E
-59984596DC493459A583A585352151792E9C761015689978E565B8208756608756408756608254
-D08255635A095965182264D820819759BE085F61B6199EEA67A664DA665897B65A1A664A5B6E5A
-E199C613A20810AA98599EE9E7B619EA6989666E785D65A620A1A52599E89585A60D6F97D3666D
-985282984286191649DC6E3565E1A698A5659B8609E5FDA6D8B5F42EBD561A4265E97DBB5EAD85
-6A5E0A94A59929626590A58828590A0DA5C6E16282BF7167DEA147679638166E593791B8D85E94
-9A62B5985EF62A4587D81D25996256396117D84DD9686965936EF49F615811950867A24590667A
-588D86D676A59992B9E791896A7A85EB665ADC494E6A5144D97D3651514A97824463964927A6B9
-D84646907A96E7B68A1EA14A0B65956799EA18A185DA6E77DE658A14AA6594DDC59F61B8219E46
-6F567B98A9A53B699BD99D8A5A467ADB9E461266D7D5964ADD6DB63662A61962892B9E459360D7
-D0618A6765D3E67DA62B6089DEB182999DA6276D48EE9DC51595A7D8560920850AE59E39278D46
-9AC'H } ,
-            literal {
-              length 115 } ,
-            literal {
-              length 809 ,
-              seq-data
-                ncbi2na '47A67A0514A63A4D92A71B6D979B83C51A76D89F6A059F6587634
-5A9BEA989E81E4A1BA036616179E742495EA58D609ABBD946A69271A69C4EB66E8E06946E5A5A5
-9C52971B79466A79F61E8698EF660619717BA4E50A2FA91A6C7A0A35A50AD96640958DA7199247
-D0465867AD3D1A52761C59B558664A97A5C71046782992A6D86569DB7AF55862053EAD38259907
-529DEB1A62F7D87A7426518441691829A9342969982DA29809809A99809809A990A269D8209266
-5E28924524198A5659A536626D8A9D69165A69A80'H } ,
-            literal {
-              length 95 } ,
-            literal {
-              length 1742 ,
-              seq-data
-                ncbi2na '49181269A6DA46881A69AD59A9AE958D886669A1D881895A69B75
-A465AD0A9BA9A43B610A9A6ED65A45AEDA645A6569A360892F65F65ABA6E997515596595A466A6
-39A746F9A446BA914D19296E5F6432149919D99E36DA1498D99B86764486655E960393B668DE69
-DB2566F55D8E636662376186DB6C76E6564D66DF8A674645969948DAEC9AD86966A46D953827B6
-E95A1AD538129A4A669A5665A46EA62819541642669012B1E4B6E13A8A98695EEA176102F82989
-F5FE9085A856A84A6F990A6C79B365889B6661EEAE9987BABAE61E6ED94266A4751A64AA93575A
-81552453D695493656F879A97ABB98AE7A71176D52D8AD9648A19929A5B5E52CA61A31AD19135E
-996E4A74ACAA66EB7A376585B7616669A0B2A5A66549A934564675369280668D8DD65A158A6A45
-999916375696DB6D490B244DE645B527E282A7A4A5D85268655E7916DE4994994996E681A6D25A
-D4AE356592F997A676F81299484D752668465765B664A069968E160A6015E452B61B5935366279
-935D86B76395D49245260591DB924994537988815994E65989666264D24981AD49F86375A5A359
-48E6360BD8B9546582DB526524A496BA6666970'H } ,
-            literal {
-              length 65 } ,
-            literal {
-              length 201 ,
-              seq-data
-                ncbi2na '595585975D827B6D9994D1B5DAE17608529AE6DA4A549E39185D8
-59999493991792659B93821A5A3A3BD2812524B5A79679980'H } ,
-            literal {
-              length 134 } ,
-            literal {
-              length 3568 ,
-              seq-data
-                ncbi2na '9E5865760A6B85AAE3A8696676D7619A34A576C96169698E68C9E
-C85A7A0667AD25ACBDE82796150696675D961A65B1265E49397D85DA6FB6D96797B56E353D9585
-506FA29E66BD66166896EFE19E39C65EA15969693A30E578E55A2D4AA8A54E78D4BDF7119E6659
-42795B75B428B178579D8A5382969B9D861161369A49A551AE842F7199D95A1767AD0A18A67BD8
-42F61665F66971F42A6D89E3A985EF4297E59283A78601276066278656249D99278299E87A8627
-8E84679949A7628124A0651829A4967A369169A452D5F69069A660D6669B99369A55A69499266B
-42B7A852665C4287186104D89EA45641342B6679969E659F66662AB689E89D85D86114D4421A59
-4196939D84D64E35589B4410AE09E79E78E86DA6918E8E246E45BB6289EF759AD0898BD0917A2F
-7DC7D441E6DC61F6EE8204369967D262085D85EA178D442C416A1C4274DF6DA6194638957188D7
-52569A49B62C41062825A6583A79269D1654FD04246DE8D05581696AB7A43165224DD9E3524BE3
-9241938E59D14EA687604A6399B9D058E1A61857866D6B874FA79A66679637D18DA6699D99E7A9
-A79D9E795161642992782B669858229639410D5C6E14919908DDA5CE2785B62996562799D9E78E
-8917A17A667D6611958A13997859A98BE65A76596D99589294509E7A2165A71F41942B5A16282E
-A617B5869B9905E69E36D845A566667AD6923A1799362A56782165162669842766BA5761646F86
-489E9E7965921A9F494A987A96594206679E19999A992A7359E95A3864498A5B6E4A58610D2B61
-365B467A226A59EF4676989E16D8A9781452562809B9969E9A9C52791495C4188279E761F5289A
-7AEA4649EF6126526D88D495889B455A656996216D8AE5AE16E08D6629666524AD19EA6DA71685
-B61A5626504D83119164257DA9D04D66264909D89ED59B594A67A11A0349D535905413926497A6
-7AE0AD899361841852B41741749199F6BCE60A21A256285A785C6D8AD35AD7A8110969AF5861AE
-9699AED9E05248E1BA69A7A1D99B9E5850A9E89945946B69A69EA5849DA68820695BD99A985A42
-B71EB1D967B6A99E9EF7611A762A6948D7A50A909EA5E5A299E67D645A6986126E669C69C4185E
-A56B81D45A66485A6966E79D06926D8ADD9159D19664D59278EA65BBD3619694A599207AA61C51
-565EA5C6916979BCD9256B69B9E67D87D942A417AD842E99793F49B693417B0D638985666185F5
-46576DD6866995A'H } } } ,
+        repr delta,
+        mol dna,
+        length 11208,
+        ext delta {
+          literal {
+            length 4479,
+            seq-data ncbi2na '894A965F69976AA6D86D4A57E866D8D4920691967A5F4997
+D235DA8DAE2860FDB7D480AB98494615F5357E48C4E549F45EA5B6A37DF49387A6FF6D4A1044B3
+A65755A64644B481290C001657A6A6BE9C79DF67E459A7A744979468D0681663E6A1EC68BDA3A4
+25E5033E61209F4BDA6E1E0F9F45E9594D166FAE656E31A7E57637ACA1F49946C48CB69B9E9690
+DFAACAE5B6369F9E0BE994E1276646657ED4927DF86DA5A65D85B66A469B617E94A5A6CB1DA237
+6B8ED5AD950E926639664EB6AE7E6B657E9B196D264FA63B1FA6F7A56634DA85FB9176A82BA5E3
+25AA394E9258E44E945FA5E45AA5EAA52BBE59A1B669AABADB61A67ED5A66A6182A9BE8789A710
+40647D694934198A88DE4BEDF74EB5637DCA3FAA6998F32AAA57331EBFD15799C88255D380F50A
+F54A1C6D94656178E7A6B419A534678669679EB42A605A916908679E96282D94295EA1E59E792E
+91B822461429924A97B18B1866B4969E6612527698610AE66136507136D0A919EEA29FD9B68465
+AE99E78D8623610A584D8BD54185E79981D8593A2F71B71885662EAD6A60116967AEF4D1750418
+8289E56197D799679F7D471342F558A584639294DB61B51F55A9E08285E7A596678217DC61B990
+9E5AA7820825751B589E361E9D09E79E96284D59E8A67921928610AD98D5967AEA6679E0818928
+5E15EF6209DB71392259059E248B49E248B49EA4A35960965A948108DA0428E2129389421F4196
+5E991667A58667A8F6EA69A6E36979EB696757A8EA0F4DA62569EA958548D7A979E14D76DA4EA6
+9E59E9E79969E79DA410A9E29595E57656D7D15D55FF5D9165A58AB69D874E16454757D1665AD1
+9E16959399A7625BED928D166299EB619AD961A6277A09DEB1145B959958193A99A23616997A87
+99866A763815BD96EF63961A59B65A4E185C4E04D866143659B62369D45E85666D4949926A7811
+92E4279E79E6919BD8847A1E4D9AE8BD64505974119225966636269DA6649D869B5E67644E78E5
+49A5E59984596DC493459A583A585352151792E9C761015689978E565B82087566087564087566
+08254D08255635A095965182264D820819759BE085F61B6199EEA67A664DA665897B65A1A664A5
+B6E5AE199C613A20810AA98599EE9E7B619EA6989666E785D65A620A1A52599E89585A60D6F97D
+3666D985282984286191649DC6E3565E1A698A5659B8609E5FDA6D8B5F42EBD561A4265E97DBB5
+EAD856A5E0A94A59929626590A58828590A0DA5C6E16282BF7167DEA147679638166E593791B8D
+85E949A62B5985EF62A4587D81D25996256396117D84DD9686965936EF49F615811950867A2459
+0667A588D86D676A59992B9E791896A7A85EB665ADC494E6A5144D97D3651514A9782446396492
+7A6B9D84646907A96E7B68A1EA14A0B65956799EA18A185DA6E77DE658A14AA6594DDC59F61B82
+19E466F567B98A9A53B699BD99D8A5A467ADB9E461266D7D5964ADD6DB63662A61962892B9E459
+360D7D0618A6765D3E67DA62B6089DEB182999DA6276D48EE9DC51595A7D8560920850AE59E392
+78D469AC'H
+          },
+          literal {
+            length 115
+          },
+          literal {
+            length 809,
+            seq-data ncbi2na '47A67A0514A63A4D92A71B6D979B83C51A76D89F6A059F65
+876345A9BEA989E81E4A1BA036616179E742495EA58D609ABBD946A69271A69C4EB66E8E06946E
+5A5A59C52971B79466A79F61E8698EF660619717BA4E50A2FA91A6C7A0A35A50AD96640958DA71
+99247D0465867AD3D1A52761C59B558664A97A5C71046782992A6D86569DB7AF55862053EAD382
+59907529DEB1A62F7D87A7426518441691829A9342969982DA29809809A99809809A990A269D82
+092665E28924524198A5659A536626D8A9D69165A69A80'H
+          },
+          literal {
+            length 95
+          },
+          literal {
+            length 1742,
+            seq-data ncbi2na '49181269A6DA46881A69AD59A9AE958D886669A1D881895A
+69B75A465AD0A9BA9A43B610A9A6ED65A45AEDA645A6569A360892F65F65ABA6E997515596595A
+466A639A746F9A446BA914D19296E5F6432149919D99E36DA1498D99B86764486655E960393B66
+8DE69DB2566F55D8E636662376186DB6C76E6564D66DF8A674645969948DAEC9AD86966A46D953
+827B6E95A1AD538129A4A669A5665A46EA62819541642669012B1E4B6E13A8A98695EEA176102F
+82989F5FE9085A856A84A6F990A6C79B365889B6661EEAE9987BABAE61E6ED94266A4751A64AA9
+3575A81552453D695493656F879A97ABB98AE7A71176D52D8AD9648A19929A5B5E52CA61A31AD1
+9135E996E4A74ACAA66EB7A376585B7616669A0B2A5A66549A934564675369280668D8DD65A158
+A6A45999916375696DB6D490B244DE645B527E282A7A4A5D85268655E7916DE4994994996E681A
+6D25AD4AE356592F997A676F81299484D752668465765B664A069968E160A6015E452B61B59353
+66279935D86B76395D49245260591DB924994537988815994E65989666264D24981AD49F86375A
+5A35948E6360BD8B9546582DB526524A496BA6666970'H
+          },
+          literal {
+            length 65
+          },
+          literal {
+            length 201,
+            seq-data ncbi2na '595585975D827B6D9994D1B5DAE17608529AE6DA4A549E39
+185D859999493991792659B93821A5A3A3BD2812524B5A79679980'H
+          },
+          literal {
+            length 134
+          },
+          literal {
+            length 3568,
+            seq-data ncbi2na '9E5865760A6B85AAE3A8696676D7619A34A576C96169698E
+68C9EC85A7A0667AD25ACBDE82796150696675D961A65B1265E49397D85DA6FB6D96797B56E353
+D9585506FA29E66BD66166896EFE19E39C65EA15969693A30E578E55A2D4AA8A54E78D4BDF7119
+E665942795B75B428B178579D8A5382969B9D861161369A49A551AE842F7199D95A1767AD0A18A
+67BD842F61665F66971F42A6D89E3A985EF4297E59283A78601276066278656249D99278299E87
+A86278E84679949A7628124A0651829A4967A369169A452D5F69069A660D6669B99369A55A6949
+9266B42B7A852665C4287186104D89EA45641342B6679969E659F66662AB689E89D85D86114D44
+21A594196939D84D64E35589B4410AE09E79E78E86DA6918E8E246E45BB6289EF759AD0898BD09
+17A2F7DC7D441E6DC61F6EE8204369967D262085D85EA178D442C416A1C4274DF6DA6194638957
+188D752569A49B62C41062825A6583A79269D1654FD04246DE8D05581696AB7A43165224DD9E35
+24BE39241938E59D14EA687604A6399B9D058E1A61857866D6B874FA79A66679637D18DA6699D9
+9E7A9A79D9E795161642992782B669858229639410D5C6E14919908DDA5CE2785B62996562799D
+9E78E8917A17A667D6611958A13997859A98BE65A76596D99589294509E7A2165A71F41942B5A1
+6282EA617B5869B9905E69E36D845A566667AD6923A1799362A56782165162669842766BA57616
+46F86489E9E7965921A9F494A987A96594206679E19999A992A7359E95A3864498A5B6E4A58610
+D2B61365B467A226A59EF4676989E16D8A9781452562809B9969E9A9C52791495C4188279E761F
+5289A7AEA4649EF6126526D88D495889B455A656996216D8AE5AE16E08D6629666524AD19EA6DA
+71685B61A5626504D83119164257DA9D04D66264909D89ED59B594A67A11A0349D535905413926
+497A67AE0AD899361841852B41741749199F6BCE60A21A256285A785C6D8AD35AD7A8110969AF5
+861AE9699AED9E05248E1BA69A7A1D99B9E5850A9E89945946B69A69EA5849DA68820695BD99A9
+85A42B71EB1D967B6A99E9EF7611A762A6948D7A50A909EA5E5A299E67D645A6986126E669C69C
+4185EA56B81D45A66485A6966E79D06926D8ADD9159D19664D59278EA65BBD3619694A599207AA
+61C51565EA5C6916979BCD9256B69B9E67D87D942A417AD842E99793F49B693417B0D638985666
+185F546576DD6866995A'H
+          }
+        }
+      },
       annot {
         {
-          data
-            ftable {
-              {
-                id
-                  local
-                    id 1926 ,
-                data
-                  gene {
-                    locus-tag "MT45_RS04620" } ,
-                partial TRUE ,
-                location
-                  int {
-                    from 0 ,
-                    to 219 ,
-                    strand minus ,
-                    id
-                      gi 354809154 ,
-                    fuzz-from
-                      lim lt } } ,
-              {
-                id
-                  local
-                    id 1928 ,
-                data
-                  gene {
-                    locus-tag "MT45_RS04625" } ,
-                partial TRUE ,
-                location
-                  int {
-                    from 364 ,
-                    to 915 ,
-                    strand minus ,
-                    id
-                      gi 354809154 ,
-                    fuzz-to
-                      lim gt } } ,
-              {
-                id
-                  local
-                    id 1929 ,
-                data
-                  cdregion {
-                    code {
-                      id 11 } } ,
-                partial TRUE ,
-                except TRUE ,
-                product
-                  whole
-                    general {
-                      db "WGS:CAFG" ,
-                      tag
-                        str "MT45_RS04625" } ,
-                location
-                  int {
-                    from 364 ,
-                    to 915 ,
-                    strand minus ,
-                    id
-                      gi 354809154 ,
-                    fuzz-to
-                      lim gt } ,
-                qual {
+          data ftable {
+            {
+              id local id 1926,
+              data gene {
+                locus-tag "MT45_RS04620"
+              },
+              partial TRUE,
+              location int {
+                from 0,
+                to 219,
+                strand minus,
+                id gi 354809154,
+                fuzz-from lim lt
+              }
+            },
+            {
+              id local id 1928,
+              data gene {
+                locus-tag "MT45_RS04625"
+              },
+              partial TRUE,
+              location int {
+                from 364,
+                to 915,
+                strand minus,
+                id gi 354809154,
+                fuzz-to lim gt
+              }
+            },
+            {
+              id local id 1929,
+              data cdregion {
+                code {
+                  id 11
+                }
+              },
+              partial TRUE,
+              except TRUE,
+              product whole general {
+                db "WGS:CAFG",
+                tag str "MT45_RS04625"
+              },
+              location int {
+                from 364,
+                to 915,
+                strand minus,
+                id gi 354809154,
+                fuzz-to lim gt
+              },
+              qual {
+                {
+                  qual "inference",
+                  val "EXISTENCE: similar to AA sequence:RefSeq:WP_019561596.1"
+                }
+              },
+              ext {
+                type str "CombinedFeatureUserObjects",
+                data {
                   {
-                    qual "inference" ,
-                    val "EXISTENCE: similar to AA
- sequence:RefSeq:WP_019561596.1" } } ,
-                ext {
-                  type
-                    str "CombinedFeatureUserObjects" ,
-                  data {
-                    {
-                      label
-                        str "ModelEvidence" ,
-                      data
-                        object {
-                          type
-                            str "ModelEvidence" ,
-                          data {
-                            {
-                              label
-                                str "Method" ,
-                              data
-                                str "Protein Homology" } ,
-                            {
-                              label
-                                str "SeedProtein" ,
-                              data
-                                str "gi|500130647" } ,
-                            {
-                              label
-                                str "SeedAlignPlacement" ,
-                              num 2 ,
-                              data
-                                ints {
-                                  367 ,
-                                  915 } } ,
-                            {
-                              label
-                                str "SeedCluster" ,
-                              data
-                                str "951241" } ,
-                            {
-                              label
-                                str "SeedProteinSource" ,
-                              data
-                                str "Other" } ,
-                            {
-                              label
-                                str "phages_in_seed_cluster_ratio" ,
-                              data
-                                real { 0, 10, 0 } } ,
-                            {
-                              label
-                                str "BestNamingHit" ,
-                              data
-                                str "gi|518391389" } ,
-                            {
-                              label
-                                str "NamingHitCluster" ,
-                              data
-                                str "951241" } ,
-                            {
-                              label
-                                str "NamingHitProteinSource" ,
-                              data
-                                str "Other" } ,
-                            {
-                              label
-                                str "phages_in_naming_hit_cluster_ratio" ,
-                              data
-                                real { 0, 10, 0 } } ,
-                            {
-                              label
-                                str "best_naming_coverage" ,
-                              data
-                                real { 1, 10, 2 } } ,
-                            {
-                              label
-                                str "Cluster" ,
-                              data
-                                str "951241" } } } } } } ,
-                except-text "unextendable partial coding region" } ,
-              {
-                id
-                  local
-                    id 1930 ,
-                data
-                  gene {
-                    locus-tag "MT45_RS04630" } ,
-                location
-                  int {
-                    from 1174 ,
-                    to 2016 ,
-                    strand plus ,
-                    id
-                      gi 354809154 } } ,
-              {
-                id
-                  local
-                    id 1932 ,
-                data
-                  gene {
-                    locus-tag "MT45_RS04635" } ,
-                partial TRUE ,
-                location
-                  int {
-                    from 2138 ,
-                    to 2326 ,
-                    strand plus ,
-                    id
-                      gi 354809154 ,
-                    fuzz-from
-                      lim lt } } ,
-              {
-                id
-                  local
-                    id 1933 ,
-                data
-                  cdregion {
-                    code {
-                      id 11 } } ,
-                partial TRUE ,
-                except TRUE ,
-                product
-                  whole
-                    general {
-                      db "WGS:CAFG" ,
-                      tag
-                        str "MT45_RS04635" } ,
-                location
-                  int {
-                    from 2138 ,
-                    to 2326 ,
-                    strand plus ,
-                    id
-                      gi 354809154 ,
-                    fuzz-from
-                      lim lt } ,
-                qual {
+                    label str "ModelEvidence",
+                    data object {
+                      type str "ModelEvidence",
+                      data {
+                        {
+                          label str "Method",
+                          data str "Protein Homology"
+                        },
+                        {
+                          label str "SeedProtein",
+                          data str "gi|500130647"
+                        },
+                        {
+                          label str "SeedAlignPlacement",
+                          num 2,
+                          data ints {
+                            367,
+                            915
+                          }
+                        },
+                        {
+                          label str "SeedCluster",
+                          data str "951241"
+                        },
+                        {
+                          label str "SeedProteinSource",
+                          data str "Other"
+                        },
+                        {
+                          label str "phages_in_seed_cluster_ratio",
+                          data real { 0, 10, 0 }
+                        },
+                        {
+                          label str "BestNamingHit",
+                          data str "gi|518391389"
+                        },
+                        {
+                          label str "NamingHitCluster",
+                          data str "951241"
+                        },
+                        {
+                          label str "NamingHitProteinSource",
+                          data str "Other"
+                        },
+                        {
+                          label str "phages_in_naming_hit_cluster_ratio",
+                          data real { 0, 10, 0 }
+                        },
+                        {
+                          label str "best_naming_coverage",
+                          data real { 1, 10, 2 }
+                        },
+                        {
+                          label str "Cluster",
+                          data str "951241"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              except-text "unextendable partial coding region"
+            },
+            {
+              id local id 1930,
+              data gene {
+                locus-tag "MT45_RS04630"
+              },
+              location int {
+                from 1174,
+                to 2016,
+                strand plus,
+                id gi 354809154
+              }
+            },
+            {
+              id local id 1932,
+              data gene {
+                locus-tag "MT45_RS04635"
+              },
+              partial TRUE,
+              location int {
+                from 2138,
+                to 2326,
+                strand plus,
+                id gi 354809154,
+                fuzz-from lim lt
+              }
+            },
+            {
+              id local id 1933,
+              data cdregion {
+                code {
+                  id 11
+                }
+              },
+              partial TRUE,
+              except TRUE,
+              product whole general {
+                db "WGS:CAFG",
+                tag str "MT45_RS04635"
+              },
+              location int {
+                from 2138,
+                to 2326,
+                strand plus,
+                id gi 354809154,
+                fuzz-from lim lt
+              },
+              qual {
+                {
+                  qual "inference",
+                  val "EXISTENCE: similar to AA sequence:RefSeq:WP_011828691.1"
+                }
+              },
+              ext {
+                type str "CombinedFeatureUserObjects",
+                data {
                   {
-                    qual "inference" ,
-                    val "EXISTENCE: similar to AA
- sequence:RefSeq:WP_011828691.1" } } ,
-                ext {
-                  type
-                    str "CombinedFeatureUserObjects" ,
-                  data {
-                    {
-                      label
-                        str "ModelEvidence" ,
-                      data
-                        object {
-                          type
-                            str "ModelEvidence" ,
-                          data {
-                            {
-                              label
-                                str "Method" ,
-                              data
-                                str "Protein Homology" } ,
-                            {
-                              label
-                                str "SeedProtein" ,
-                              data
-                                str "gi|500152688" } ,
-                            {
-                              label
-                                str "SeedAlignPlacement" ,
-                              num 2 ,
-                              data
-                                ints {
-                                  2138 ,
-                                  2305 } } ,
-                            {
-                              label
-                                str "SeedCluster" ,
-                              data
-                                str "723304" } ,
-                            {
-                              label
-                                str "SeedProteinSource" ,
-                              data
-                                str "Other" } ,
-                            {
-                              label
-                                str "phages_in_seed_cluster_ratio" ,
-                              data
-                                real { 0, 10, 0 } } ,
-                            {
-                              label
-                                str "BestNamingHit" ,
-                              data
-                                str "gi|500152688" } ,
-                            {
-                              label
-                                str "NamingHitCluster" ,
-                              data
-                                str "723304" } ,
-                            {
-                              label
-                                str "NamingHitProteinSource" ,
-                              data
-                                str "Other" } ,
-                            {
-                              label
-                                str "phages_in_naming_hit_cluster_ratio" ,
-                              data
-                                real { 0, 10, 0 } } ,
-                            {
-                              label
-                                str "best_naming_coverage" ,
-                              data
-                                real { 903225806, 10, -7 } } } } } } } ,
-                except-text "unextendable partial coding region" } ,
-              {
-                id
-                  local
-                    id 1934 ,
-                data
-                  gene {
-                    locus-tag "MT45_RS04640" } ,
-                location
-                  int {
-                    from 2401 ,
-                    to 3009 ,
-                    strand plus ,
-                    id
-                      gi 354809154 } } ,
-              {
-                id
-                  local
-                    id 1936 ,
-                data
-                  gene {
-                    locus-tag "MT45_RS04645" } ,
-                partial TRUE ,
-                location
-                  int {
-                    from 3135 ,
-                    to 4478 ,
-                    strand plus ,
-                    id
-                      gi 354809154 ,
-                    fuzz-to
-                      lim gt } } ,
-              {
-                id
-                  local
-                    id 1937 ,
-                data
-                  cdregion {
-                    code {
-                      id 11 } } ,
-                partial TRUE ,
-                product
-                  whole
-                    general {
-                      db "WGS:CAFG" ,
-                      tag
-                        str "MT45_RS04645" } ,
-                location
-                  int {
-                    from 3135 ,
-                    to 4478 ,
-                    strand plus ,
-                    id
-                      gi 354809154 ,
-                    fuzz-to
-                      lim gt } ,
-                qual {
+                    label str "ModelEvidence",
+                    data object {
+                      type str "ModelEvidence",
+                      data {
+                        {
+                          label str "Method",
+                          data str "Protein Homology"
+                        },
+                        {
+                          label str "SeedProtein",
+                          data str "gi|500152688"
+                        },
+                        {
+                          label str "SeedAlignPlacement",
+                          num 2,
+                          data ints {
+                            2138,
+                            2305
+                          }
+                        },
+                        {
+                          label str "SeedCluster",
+                          data str "723304"
+                        },
+                        {
+                          label str "SeedProteinSource",
+                          data str "Other"
+                        },
+                        {
+                          label str "phages_in_seed_cluster_ratio",
+                          data real { 0, 10, 0 }
+                        },
+                        {
+                          label str "BestNamingHit",
+                          data str "gi|500152688"
+                        },
+                        {
+                          label str "NamingHitCluster",
+                          data str "723304"
+                        },
+                        {
+                          label str "NamingHitProteinSource",
+                          data str "Other"
+                        },
+                        {
+                          label str "phages_in_naming_hit_cluster_ratio",
+                          data real { 0, 10, 0 }
+                        },
+                        {
+                          label str "best_naming_coverage",
+                          data real { 903225806, 10, -7 }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              except-text "unextendable partial coding region"
+            },
+            {
+              id local id 1934,
+              data gene {
+                locus-tag "MT45_RS04640"
+              },
+              location int {
+                from 2401,
+                to 3009,
+                strand plus,
+                id gi 354809154
+              }
+            },
+            {
+              id local id 1936,
+              data gene {
+                locus-tag "MT45_RS04645"
+              },
+              partial TRUE,
+              location int {
+                from 3135,
+                to 4478,
+                strand plus,
+                id gi 354809154,
+                fuzz-to lim gt
+              }
+            },
+            {
+              id local id 1937,
+              data cdregion {
+                code {
+                  id 11
+                }
+              },
+              partial TRUE,
+              product whole general {
+                db "WGS:CAFG",
+                tag str "MT45_RS04645"
+              },
+              location int {
+                from 3135,
+                to 4478,
+                strand plus,
+                id gi 354809154,
+                fuzz-to lim gt
+              },
+              qual {
+                {
+                  qual "inference",
+                  val "EXISTENCE: similar to AA sequence:RefSeq:WP_009856834.1"
+                }
+              },
+              ext {
+                type str "CombinedFeatureUserObjects",
+                data {
                   {
-                    qual "inference" ,
-                    val "EXISTENCE: similar to AA
- sequence:RefSeq:WP_009856834.1" } } ,
-                ext {
-                  type
-                    str "CombinedFeatureUserObjects" ,
-                  data {
-                    {
-                      label
-                        str "ModelEvidence" ,
-                      data
-                        object {
-                          type
-                            str "ModelEvidence" ,
-                          data {
-                            {
-                              label
-                                str "Method" ,
-                              data
-                                str "Protein Homology" } ,
-                            {
-                              label
-                                str "SeedProtein" ,
-                              data
-                                str "gi|501316532" } ,
-                            {
-                              label
-                                str "SeedAlignPlacement" ,
-                              num 2 ,
-                              data
-                                ints {
-                                  3144 ,
-                                  4478 } } ,
-                            {
-                              label
-                                str "SeedCluster" ,
-                              data
-                                str "3607336" } ,
-                            {
-                              label
-                                str "SeedProteinSource" ,
-                              data
-                                str "Other" } ,
-                            {
-                              label
-                                str "phages_in_seed_cluster_ratio" ,
-                              data
-                                real { 0, 10, 0 } } ,
-                            {
-                              label
-                                str "BestNamingHit" ,
-                              data
-                                str "gi|497542636" } ,
-                            {
-                              label
-                                str "NamingHitCluster" ,
-                              data
-                                str "3607336" } ,
-                            {
-                              label
-                                str "NamingHitProteinSource" ,
-                              data
-                                str "Other" } ,
-                            {
-                              label
-                                str "phages_in_naming_hit_cluster_ratio" ,
-                              data
-                                real { 0, 10, 0 } } ,
-                            {
-                              label
-                                str "best_naming_coverage" ,
-                              data
-                                real { 982142857, 10, -7 } } ,
-                            {
-                              label
-                                str "Cluster" ,
-                              data
-                                str "3607336" } } } } } } } ,
-              {
-                id
-                  local
-                    id 1938 ,
-                data
-                  gene {
-                    locus-tag "MT45_RS04650" } ,
-                partial TRUE ,
-                location
-                  int {
-                    from 4594 ,
-                    to 5328 ,
-                    strand plus ,
-                    id
-                      gi 354809154 ,
-                    fuzz-from
-                      lim lt } } ,
-              {
-                id
-                  local
-                    id 1940 ,
-                data
-                  gene {
-                    locus-tag "MT45_RS04655" } ,
-                partial TRUE ,
-                location
-                  int {
-                    from 5747 ,
-                    to 6124 ,
-                    strand minus ,
-                    id
-                      gi 354809154 ,
-                    fuzz-from
-                      lim lt } } ,
-              {
-                id
-                  local
-                    id 1941 ,
-                data
-                  cdregion {
-                    code {
-                      id 11 } } ,
-                partial TRUE ,
-                except TRUE ,
-                product
-                  whole
-                    general {
-                      db "WGS:CAFG" ,
-                      tag
-                        str "MT45_RS04655" } ,
-                location
-                  int {
-                    from 5747 ,
-                    to 6124 ,
-                    strand minus ,
-                    id
-                      gi 354809154 ,
-                    fuzz-from
-                      lim lt } ,
-                qual {
+                    label str "ModelEvidence",
+                    data object {
+                      type str "ModelEvidence",
+                      data {
+                        {
+                          label str "Method",
+                          data str "Protein Homology"
+                        },
+                        {
+                          label str "SeedProtein",
+                          data str "gi|501316532"
+                        },
+                        {
+                          label str "SeedAlignPlacement",
+                          num 2,
+                          data ints {
+                            3144,
+                            4478
+                          }
+                        },
+                        {
+                          label str "SeedCluster",
+                          data str "3607336"
+                        },
+                        {
+                          label str "SeedProteinSource",
+                          data str "Other"
+                        },
+                        {
+                          label str "phages_in_seed_cluster_ratio",
+                          data real { 0, 10, 0 }
+                        },
+                        {
+                          label str "BestNamingHit",
+                          data str "gi|497542636"
+                        },
+                        {
+                          label str "NamingHitCluster",
+                          data str "3607336"
+                        },
+                        {
+                          label str "NamingHitProteinSource",
+                          data str "Other"
+                        },
+                        {
+                          label str "phages_in_naming_hit_cluster_ratio",
+                          data real { 0, 10, 0 }
+                        },
+                        {
+                          label str "best_naming_coverage",
+                          data real { 982142857, 10, -7 }
+                        },
+                        {
+                          label str "Cluster",
+                          data str "3607336"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              id local id 1938,
+              data gene {
+                locus-tag "MT45_RS04650"
+              },
+              partial TRUE,
+              location int {
+                from 4594,
+                to 5328,
+                strand plus,
+                id gi 354809154,
+                fuzz-from lim lt
+              }
+            },
+            {
+              id local id 1940,
+              data gene {
+                locus-tag "MT45_RS04655"
+              },
+              partial TRUE,
+              location int {
+                from 5747,
+                to 6124,
+                strand minus,
+                id gi 354809154,
+                fuzz-from lim lt
+              }
+            },
+            {
+              id local id 1941,
+              data cdregion {
+                code {
+                  id 11
+                }
+              },
+              partial TRUE,
+              except TRUE,
+              product whole general {
+                db "WGS:CAFG",
+                tag str "MT45_RS04655"
+              },
+              location int {
+                from 5747,
+                to 6124,
+                strand minus,
+                id gi 354809154,
+                fuzz-from lim lt
+              },
+              qual {
+                {
+                  qual "inference",
+                  val "EXISTENCE: similar to AA sequence:RefSeq:WP_008449300.1"
+                }
+              },
+              ext {
+                type str "CombinedFeatureUserObjects",
+                data {
                   {
-                    qual "inference" ,
-                    val "EXISTENCE: similar to AA
- sequence:RefSeq:WP_008449300.1" } } ,
-                ext {
-                  type
-                    str "CombinedFeatureUserObjects" ,
-                  data {
-                    {
-                      label
-                        str "ModelEvidence" ,
-                      data
-                        object {
-                          type
-                            str "ModelEvidence" ,
-                          data {
-                            {
-                              label
-                                str "Method" ,
-                              data
-                                str "Protein Homology" } ,
-                            {
-                              label
-                                str "SeedProtein" ,
-                              data
-                                str "gi|495724721" } ,
-                            {
-                              label
-                                str "SeedAlignPlacement" ,
-                              num 2 ,
-                              data
-                                ints {
-                                  5747 ,
-                                  6097 } } ,
-                            {
-                              label
-                                str "SeedCluster" ,
-                              data
-                                str "5839769" } ,
-                            {
-                              label
-                                str "SeedProteinSource" ,
-                              data
-                                str "Other" } ,
-                            {
-                              label
-                                str "phages_in_seed_cluster_ratio" ,
-                              data
-                                real { 0, 10, 0 } } ,
-                            {
-                              label
-                                str "BestNamingHit" ,
-                              data
-                                str "gi|495724721" } ,
-                            {
-                              label
-                                str "NamingHitCluster" ,
-                              data
-                                str "5839769" } ,
-                            {
-                              label
-                                str "NamingHitProteinSource" ,
-                              data
-                                str "Other" } ,
-                            {
-                              label
-                                str "phages_in_naming_hit_cluster_ratio" ,
-                              data
-                                real { 0, 10, 0 } } ,
-                            {
-                              label
-                                str "best_naming_coverage" ,
-                              data
-                                real { 1, 10, 2 } } } } } } } ,
-                except-text "unextendable partial coding region" } ,
-              {
-                id
-                  local
-                    id 1942 ,
-                data
-                  gene {
-                    locus-tag "MT45_RS04660" } ,
-                location
-                  int {
-                    from 6452 ,
-                    to 7840 ,
-                    strand minus ,
-                    id
-                      gi 354809154 } } ,
-              {
-                id
-                  local
-                    id 1946 ,
-                data
-                  gene {
-                    locus-tag "MT45_RS04665" } ,
-                location
-                  int {
-                    from 8023 ,
-                    to 9216 ,
-                    strand plus ,
-                    id
-                      gi 354809154 } } ,
-              {
-                id
-                  local
-                    id 1948 ,
-                data
-                  gene {
-                    locus-tag "MT45_RS04670" } ,
-                location
-                  int {
-                    from 9270 ,
-                    to 11147 ,
-                    strand plus ,
-                    id
-                      gi 354809154 } } ,
-              {
-                id
-                  local
-                    id 1949 ,
-                data
-                  cdregion {
-                    code {
-                      id 11 } } ,
-                product
-                  whole
-                    general {
-                      db "WGS:CAFG" ,
-                      tag
-                        str "MT45_RS04670" } ,
-                location
-                  int {
-                    from 9270 ,
-                    to 11147 ,
-                    strand plus ,
-                    id
-                      gi 354809154 } ,
-                qual {
+                    label str "ModelEvidence",
+                    data object {
+                      type str "ModelEvidence",
+                      data {
+                        {
+                          label str "Method",
+                          data str "Protein Homology"
+                        },
+                        {
+                          label str "SeedProtein",
+                          data str "gi|495724721"
+                        },
+                        {
+                          label str "SeedAlignPlacement",
+                          num 2,
+                          data ints {
+                            5747,
+                            6097
+                          }
+                        },
+                        {
+                          label str "SeedCluster",
+                          data str "5839769"
+                        },
+                        {
+                          label str "SeedProteinSource",
+                          data str "Other"
+                        },
+                        {
+                          label str "phages_in_seed_cluster_ratio",
+                          data real { 0, 10, 0 }
+                        },
+                        {
+                          label str "BestNamingHit",
+                          data str "gi|495724721"
+                        },
+                        {
+                          label str "NamingHitCluster",
+                          data str "5839769"
+                        },
+                        {
+                          label str "NamingHitProteinSource",
+                          data str "Other"
+                        },
+                        {
+                          label str "phages_in_naming_hit_cluster_ratio",
+                          data real { 0, 10, 0 }
+                        },
+                        {
+                          label str "best_naming_coverage",
+                          data real { 1, 10, 2 }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              except-text "unextendable partial coding region"
+            },
+            {
+              id local id 1942,
+              data gene {
+                locus-tag "MT45_RS04660"
+              },
+              location int {
+                from 6452,
+                to 7840,
+                strand minus,
+                id gi 354809154
+              }
+            },
+            {
+              id local id 1946,
+              data gene {
+                locus-tag "MT45_RS04665"
+              },
+              location int {
+                from 8023,
+                to 9216,
+                strand plus,
+                id gi 354809154
+              }
+            },
+            {
+              id local id 1948,
+              data gene {
+                locus-tag "MT45_RS04670"
+              },
+              location int {
+                from 9270,
+                to 11147,
+                strand plus,
+                id gi 354809154
+              }
+            },
+            {
+              id local id 1949,
+              data cdregion {
+                code {
+                  id 11
+                }
+              },
+              product whole general {
+                db "WGS:CAFG",
+                tag str "MT45_RS04670"
+              },
+              location int {
+                from 9270,
+                to 11147,
+                strand plus,
+                id gi 354809154
+              },
+              qual {
+                {
+                  qual "inference",
+                  val "EXISTENCE: similar to AA sequence:RefSeq:WP_014428432.1"
+                }
+              },
+              ext {
+                type str "CombinedFeatureUserObjects",
+                data {
                   {
-                    qual "inference" ,
-                    val "EXISTENCE: similar to AA
- sequence:RefSeq:WP_014428432.1" } } ,
-                ext {
-                  type
-                    str "CombinedFeatureUserObjects" ,
-                  data {
-                    {
-                      label
-                        str "ModelEvidence" ,
-                      data
-                        object {
-                          type
-                            str "ModelEvidence" ,
-                          data {
-                            {
-                              label
-                                str "Method" ,
-                              data
-                                str "Protein Homology" } ,
-                            {
-                              label
-                                str "SeedProtein" ,
-                              data
-                                str "gi|504241330" } ,
-                            {
-                              label
-                                str "SeedAlignPlacement" ,
-                              num 2 ,
-                              data
-                                ints {
-                                  9300 ,
-                                  11138 } } ,
-                            {
-                              label
-                                str "SeedCluster" ,
-                              data
-                                str "3313073" } ,
-                            {
-                              label
-                                str "SeedProteinSource" ,
-                              data
-                                str "Other" } ,
-                            {
-                              label
-                                str "phages_in_seed_cluster_ratio" ,
-                              data
-                                real { 0, 10, 0 } } ,
-                            {
-                              label
-                                str "BestNamingHit" ,
-                              data
-                                str "gi|504241330" } ,
-                            {
-                              label
-                                str "NamingHitCluster" ,
-                              data
-                                str "3313073" } ,
-                            {
-                              label
-                                str "NamingHitProteinSource" ,
-                              data
-                                str "Other" } ,
-                            {
-                              label
-                                str "phages_in_naming_hit_cluster_ratio" ,
-                              data
-                                real { 0, 10, 0 } } ,
-                            {
-                              label
-                                str "best_naming_coverage" ,
-                              data
-                                real { 9776, 10, -2 } } } } } } } } } } } } ,
+                    label str "ModelEvidence",
+                    data object {
+                      type str "ModelEvidence",
+                      data {
+                        {
+                          label str "Method",
+                          data str "Protein Homology"
+                        },
+                        {
+                          label str "SeedProtein",
+                          data str "gi|504241330"
+                        },
+                        {
+                          label str "SeedAlignPlacement",
+                          num 2,
+                          data ints {
+                            9300,
+                            11138
+                          }
+                        },
+                        {
+                          label str "SeedCluster",
+                          data str "3313073"
+                        },
+                        {
+                          label str "SeedProteinSource",
+                          data str "Other"
+                        },
+                        {
+                          label str "phages_in_seed_cluster_ratio",
+                          data real { 0, 10, 0 }
+                        },
+                        {
+                          label str "BestNamingHit",
+                          data str "gi|504241330"
+                        },
+                        {
+                          label str "NamingHitCluster",
+                          data str "3313073"
+                        },
+                        {
+                          label str "NamingHitProteinSource",
+                          data str "Other"
+                        },
+                        {
+                          label str "phages_in_naming_hit_cluster_ratio",
+                          data real { 0, 10, 0 }
+                        },
+                        {
+                          label str "best_naming_coverage",
+                          data real { 9776, 10, -2 }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     seq {
       id {
         general {
-          db "WGS:CAFG" ,
-          tag
-            str "MT45_RS04620" } } ,
+          db "WGS:CAFG",
+          tag str "MT45_RS04620"
+        }
+      },
       descr {
         molinfo {
-          biomol peptide ,
-          completeness no-right } } ,
+          biomol peptide,
+          completeness no-right
+        }
+      },
       inst {
-        repr raw ,
-        mol aa ,
-        length 73 ,
-        seq-data
-          iupacaa "MLKKIPTAQVKLGMYLQGMEGSWLSHPFWKTKFVLTDPEDLKALKASGVPFCWIDASKG
-LDVDAPEAPKAALA" } ,
+        repr raw,
+        mol aa,
+        length 73,
+        seq-data iupacaa "MLKKIPTAQVKLGMYLQGMEGSWLSHPFWKTKFVLTDPEDLKALKASGVPFC
+WIDASKGLDVDAPEAPKAALA"
+      },
       annot {
         {
-          data
-            ftable {
-              {
-                id
-                  local
-                    id 14596 ,
-                data
-                  prot {
-                    name {
-                      "hypothetical protein" } } ,
-                partial TRUE ,
-                location
-                  int {
-                    from 0 ,
-                    to 72 ,
-                    id
-                      general {
-                        db "WGS:CAFG" ,
-                        tag
-                          str "MT45_RS04620" } ,
-                    fuzz-to
-                      lim gt } } } } } } ,
+          data ftable {
+            {
+              id local id 14596,
+              data prot {
+                name {
+                  "hypothetical protein"
+                }
+              },
+              partial TRUE,
+              location int {
+                from 0,
+                to 72,
+                id general {
+                  db "WGS:CAFG",
+                  tag str "MT45_RS04620"
+                },
+                fuzz-to lim gt
+              }
+            }
+          }
+        }
+      }
+    },
     seq {
       id {
         general {
-          db "WGS:CAFG" ,
-          tag
-            str "MT45_RS04630" } } ,
+          db "WGS:CAFG",
+          tag str "MT45_RS04630"
+        }
+      },
       descr {
         molinfo {
-          biomol peptide ,
-          completeness complete } } ,
+          biomol peptide,
+          completeness complete
+        }
+      },
       inst {
-        repr raw ,
-        mol aa ,
-        length 280 ,
-        seq-data
-          iupacaa "MKFQGSQDYVATPDLMLAVNAAITLTRPLLVKGEPGTGKTLLAEEVAKALGLPLLQWHV
-KSTTKAQQGLYEYDAVSRLRDSQLGDDKVRDIANYIVKGTLWEAFASDTPVALLIDEIDKADIEFPNDLLRELDRMEF
-YVYETREWVRAKHRPLVFITSNNEKELPDAFLRRCFFHYIKFPEADTMQAIVDVHFPGLKKDLLAAALKTFYDVRKLP
-GLKKKPSTSELIDWLKLLLAEDIPLEALQTQDDKVAIPPLVGALLKNEQDLTLFEKLVYMQSRNR" } ,
+        repr raw,
+        mol aa,
+        length 280,
+        seq-data iupacaa "MKFQGSQDYVATPDLMLAVNAAITLTRPLLVKGEPGTGKTLLAEEVAKALGL
+PLLQWHVKSTTKAQQGLYEYDAVSRLRDSQLGDDKVRDIANYIVKGTLWEAFASDTPVALLIDEIDKADIEFPNDLLR
+ELDRMEFYVYETREWVRAKHRPLVFITSNNEKELPDAFLRRCFFHYIKFPEADTMQAIVDVHFPGLKKDLLAAALKTF
+YDVRKLPGLKKKPSTSELIDWLKLLLAEDIPLEALQTQDDKVAIPPLVGALLKNEQDLTLFEKLVYMQSRNR"
+      },
       annot {
         {
-          data
-            ftable {
-              {
-                id
-                  local
-                    id 14597 ,
-                data
-                  prot {
-                    name {
-                      "ATPase AAA" } } ,
-                location
-                  int {
-                    from 0 ,
-                    to 279 ,
-                    id
-                      general {
-                        db "WGS:CAFG" ,
-                        tag
-                          str "MT45_RS04630" } } } } } } } ,
+          data ftable {
+            {
+              id local id 14597,
+              data prot {
+                name {
+                  "ATPase AAA"
+                }
+              },
+              location int {
+                from 0,
+                to 279,
+                id general {
+                  db "WGS:CAFG",
+                  tag str "MT45_RS04630"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     seq {
       id {
         general {
-          db "WGS:CAFG" ,
-          tag
-            str "MT45_RS04640" } } ,
+          db "WGS:CAFG",
+          tag str "MT45_RS04640"
+        }
+      },
       descr {
         molinfo {
-          biomol peptide ,
-          completeness complete } } ,
+          biomol peptide,
+          completeness complete
+        }
+      },
       inst {
-        repr raw ,
-        mol aa ,
-        length 202 ,
-        seq-data
-          iupacaa "MTAPTPFTAPVTLTGPHARLEPLSQDHREALVDAVADGELWKLWYTTVPAPERMGAEID
-RRLGLRDAGSMNPFAVFDADGRVAGMTTYMNIDATNRRVEIGSTWTRASSQRSGLNTQCKLLLLRHAFETLDCIAVEF
-RTNRLNTQSRRAIERLGAQLDGVLRSHMLMPSGLPRDTAVYSITAAEWPTIQTHLQWLLDKPRSA" } ,
+        repr raw,
+        mol aa,
+        length 202,
+        seq-data iupacaa "MTAPTPFTAPVTLTGPHARLEPLSQDHREALVDAVADGELWKLWYTTVPAPE
+RMGAEIDRRLGLRDAGSMNPFAVFDADGRVAGMTTYMNIDATNRRVEIGSTWTRASSQRSGLNTQCKLLLLRHAFETL
+DCIAVEFRTNRLNTQSRRAIERLGAQLDGVLRSHMLMPSGLPRDTAVYSITAAEWPTIQTHLQWLLDKPRSA"
+      },
       annot {
         {
-          data
-            ftable {
-              {
-                id
-                  local
-                    id 14598 ,
-                data
-                  prot {
-                    name {
-                      "amino acid acetyltransferase" } } ,
-                location
-                  int {
-                    from 0 ,
-                    to 201 ,
-                    id
-                      general {
-                        db "WGS:CAFG" ,
-                        tag
-                          str "MT45_RS04640" } } } } } } } ,
+          data ftable {
+            {
+              id local id 14598,
+              data prot {
+                name {
+                  "amino acid acetyltransferase"
+                }
+              },
+              location int {
+                from 0,
+                to 201,
+                id general {
+                  db "WGS:CAFG",
+                  tag str "MT45_RS04640"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     seq {
       id {
         general {
-          db "WGS:CAFG" ,
-          tag
-            str "MT45_RS04650" } } ,
+          db "WGS:CAFG",
+          tag str "MT45_RS04650"
+        }
+      },
       descr {
         molinfo {
-          biomol peptide ,
-          completeness no-left } } ,
+          biomol peptide,
+          completeness no-left
+        }
+      },
       inst {
-        repr raw ,
-        mol aa ,
-        length 244 ,
-        seq-data
-          iupacaa "HWRWNHQAMASQGYVVACVNYHGSSSFGNRFADSITGRWGELELQDVEIATDLLLKQPW
-ADPKRVFATGGSYGGYMVAWMNGHVPAGRYQAYVCHAGCFDWTAMFANDAYLWHAKELGTAYWKDPAKVAAQSPIGYA
-QHFNTPTLVIHGQLDYRVPDAQGLAYYNTLKAQGVDARLVWFPDENHWVMKPRNSRLWYGEFFDWLKRHDTTGTKAGI
-KAGAKSEAKAKAGAKAKAGARSGSKKQRA" } ,
+        repr raw,
+        mol aa,
+        length 244,
+        seq-data iupacaa "HWRWNHQAMASQGYVVACVNYHGSSSFGNRFADSITGRWGELELQDVEIATD
+LLLKQPWADPKRVFATGGSYGGYMVAWMNGHVPAGRYQAYVCHAGCFDWTAMFANDAYLWHAKELGTAYWKDPAKVAA
+QSPIGYAQHFNTPTLVIHGQLDYRVPDAQGLAYYNTLKAQGVDARLVWFPDENHWVMKPRNSRLWYGEFFDWLKRHDT
+TGTKAGIKAGAKSEAKAKAGAKAKAGARSGSKKQRA"
+      },
       annot {
         {
-          data
-            ftable {
-              {
-                id
-                  local
-                    id 14599 ,
-                data
-                  prot {
-                    name {
-                      "hypothetical protein" } } ,
-                partial TRUE ,
-                location
-                  int {
-                    from 0 ,
-                    to 243 ,
-                    id
-                      general {
-                        db "WGS:CAFG" ,
-                        tag
-                          str "MT45_RS04650" } ,
-                    fuzz-from
-                      lim lt } } } } } } ,
+          data ftable {
+            {
+              id local id 14599,
+              data prot {
+                name {
+                  "hypothetical protein"
+                }
+              },
+              partial TRUE,
+              location int {
+                from 0,
+                to 243,
+                id general {
+                  db "WGS:CAFG",
+                  tag str "MT45_RS04650"
+                },
+                fuzz-from lim lt
+              }
+            }
+          }
+        }
+      }
+    },
     seq {
       id {
         general {
-          db "WGS:CAFG" ,
-          tag
-            str "MT45_RS04665" } } ,
+          db "WGS:CAFG",
+          tag str "MT45_RS04665"
+        }
+      },
       descr {
         molinfo {
-          biomol peptide ,
-          completeness complete } } ,
+          biomol peptide,
+          completeness complete
+        }
+      },
       inst {
-        repr raw ,
-        mol aa ,
-        length 397 ,
-        seq-data
-          iupacaa "MLIQFFYTLRAAKLPVSVKEYLTLLEAMKAGVLDDTDIGGSGPTVDKFYALARTSLVKD
-EALFDKFDRAFAAYFKGVELMGDLFKALPQEWLTKQLERELTPEQLAQLKALDWDELMDTLRQRLEEQQERHEGGSRW
-IGTGGTSPFGNGGANPRGVRIGGPGGQRSAVKVWDQRAYKDYDDNIELGTRNIKVALRRLRRFAREGSELELDLDDTI
-HKTAANAGMLDIRMIPERHNKVKLLLLMDVGGTMDEHVHRVEELFSAVKSEFKHLEFFYFHNCVYDFVWKNNRRRFSE
-KTSTWDLIHKYNRDYKLIFVGDATMSPYEILQPGGSVEYNNEEAGAEWLQRLTAHFNKHVWINPEPAGVWQYRQSISL
-IQQLMQQRMMPLTMGGLEQAMRVLNR" } ,
+        repr raw,
+        mol aa,
+        length 397,
+        seq-data iupacaa "MLIQFFYTLRAAKLPVSVKEYLTLLEAMKAGVLDDTDIGGSGPTVDKFYALA
+RTSLVKDEALFDKFDRAFAAYFKGVELMGDLFKALPQEWLTKQLERELTPEQLAQLKALDWDELMDTLRQRLEEQQER
+HEGGSRWIGTGGTSPFGNGGANPRGVRIGGPGGQRSAVKVWDQRAYKDYDDNIELGTRNIKVALRRLRRFAREGSELE
+LDLDDTIHKTAANAGMLDIRMIPERHNKVKLLLLMDVGGTMDEHVHRVEELFSAVKSEFKHLEFFYFHNCVYDFVWKN
+NRRRFSEKTSTWDLIHKYNRDYKLIFVGDATMSPYEILQPGGSVEYNNEEAGAEWLQRLTAHFNKHVWINPEPAGVWQ
+YRQSISLIQQLMQQRMMPLTMGGLEQAMRVLNR"
+      },
       annot {
         {
-          data
-            ftable {
-              {
-                id
-                  local
-                    id 14600 ,
-                data
-                  prot {
-                    name {
-                      "von Willebrand factor A" } } ,
-                location
-                  int {
-                    from 0 ,
-                    to 396 ,
-                    id
-                      general {
-                        db "WGS:CAFG" ,
-                        tag
-                          str "MT45_RS04665" } } } } } } } ,
+          data ftable {
+            {
+              id local id 14600,
+              data prot {
+                name {
+                  "von Willebrand factor A"
+                }
+              },
+              location int {
+                from 0,
+                to 396,
+                id general {
+                  db "WGS:CAFG",
+                  tag str "MT45_RS04665"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     seq {
       id {
         general {
-          db "WGS:CAFG" ,
-          tag
-            str "MT45_RS04625" } } ,
+          db "WGS:CAFG",
+          tag str "MT45_RS04625"
+        }
+      },
       descr {
         molinfo {
-          biomol peptide ,
-          completeness no-left } } ,
+          biomol peptide,
+          completeness no-left
+        }
+      },
       inst {
-        repr raw ,
-        mol aa ,
-        length 183 ,
-        seq-data
-          iupacaa "KVAMCIGCHGIPGYQATFPEVHKVPMIAGQNAKYIANALTAYAKGDRKHPTMRGIALPL
-GDRDITEISEYYAGLAKVDAVPATVEAPADVKKLLDKGACASCHGANFSKPIDGTYPKIAGQHADYLYVALKSYQIEG
-KPYHGRTNAVMAGQVKQFSHAELKLLSQYLAGLPSELRTVPQSRFR" } ,
+        repr raw,
+        mol aa,
+        length 183,
+        seq-data iupacaa "KVAMCIGCHGIPGYQATFPEVHKVPMIAGQNAKYIANALTAYAKGDRKHPTM
+RGIALPLGDRDITEISEYYAGLAKVDAVPATVEAPADVKKLLDKGACASCHGANFSKPIDGTYPKIAGQHADYLYVAL
+KSYQIEGKPYHGRTNAVMAGQVKQFSHAELKLLSQYLAGLPSELRTVPQSRFR"
+      },
       annot {
         {
-          data
-            ftable {
-              {
-                id
-                  local
-                    id 14601 ,
-                data
-                  prot {
-                    name {
-                      "cytochrome C" } } ,
-                partial TRUE ,
-                location
-                  int {
-                    from 0 ,
-                    to 182 ,
-                    id
-                      general {
-                        db "WGS:CAFG" ,
-                        tag
-                          str "MT45_RS04625" } ,
-                    fuzz-from
-                      lim lt } } } } } } ,
+          data ftable {
+            {
+              id local id 14601,
+              data prot {
+                name {
+                  "cytochrome C"
+                }
+              },
+              partial TRUE,
+              location int {
+                from 0,
+                to 182,
+                id general {
+                  db "WGS:CAFG",
+                  tag str "MT45_RS04625"
+                },
+                fuzz-from lim lt
+              }
+            }
+          }
+        }
+      }
+    },
     seq {
       id {
         general {
-          db "WGS:CAFG" ,
-          tag
-            str "MT45_RS04635" } } ,
+          db "WGS:CAFG",
+          tag str "MT45_RS04635"
+        }
+      },
       descr {
         molinfo {
-          biomol peptide ,
-          completeness no-left } } ,
+          biomol peptide,
+          completeness no-left
+        }
+      },
       inst {
-        repr raw ,
-        mol aa ,
-        length 62 ,
-        seq-data
-          iupacaa "LADALGFVGGGVIGLLVGRSLGWEFIGEPGWGPTQILGLLTILVGMGGCRWLLRRLLLG
-NKG" } ,
+        repr raw,
+        mol aa,
+        length 62,
+        seq-data iupacaa "LADALGFVGGGVIGLLVGRSLGWEFIGEPGWGPTQILGLLTILVGMGGCRWL
+LRRLLLGNKG"
+      },
       annot {
         {
-          data
-            ftable {
-              {
-                id
-                  local
-                    id 14602 ,
-                data
-                  prot {
-                    name {
-                      "hypothetical protein" } } ,
-                partial TRUE ,
-                location
-                  int {
-                    from 0 ,
-                    to 61 ,
-                    id
-                      general {
-                        db "WGS:CAFG" ,
-                        tag
-                          str "MT45_RS04635" } ,
-                    fuzz-from
-                      lim lt } } } } } } ,
+          data ftable {
+            {
+              id local id 14602,
+              data prot {
+                name {
+                  "hypothetical protein"
+                }
+              },
+              partial TRUE,
+              location int {
+                from 0,
+                to 61,
+                id general {
+                  db "WGS:CAFG",
+                  tag str "MT45_RS04635"
+                },
+                fuzz-from lim lt
+              }
+            }
+          }
+        }
+      }
+    },
     seq {
       id {
         general {
-          db "WGS:CAFG" ,
-          tag
-            str "MT45_RS04645" } } ,
+          db "WGS:CAFG",
+          tag str "MT45_RS04645"
+        }
+      },
       descr {
         molinfo {
-          biomol peptide ,
-          completeness no-right } } ,
+          biomol peptide,
+          completeness no-right
+        }
+      },
       inst {
-        repr raw ,
-        mol aa ,
-        length 448 ,
-        seq-data
-          iupacaa "MKTFDVDALWALARIGAPSLSPDGAQAVVPVTRYDMEKNKGATALWLLSTLGGEPRVLT
-SAGEKDGQPRWSPTGESVAFIARRDQEGDKDDAPQLYVIPPDGGEARRVTKLPFGVESFKWFPDGKRLAFVSWVDPGL
-KGQAAQAERRKAEKDRKESAYVTEEGFYRFWDHSLPMNRVPHLHVIDLASGEVRDLFEGTDFELSRAEPDADTFDISP
-DGRRIVFSFDPNTPKTLEHRNALAEIDVRSGRAQVLLHEPGWDLVAPVYSHAGHHIAFIATHQGLKHTMPQQLAVLDT
-HGNWAVLSEDWDQEVAAPLRWDEDDLGVLFCAEDQGRRHLYRFDVKTLHAFPLCEGGHVGAFALEAGTLVVLHDSASF
-PPQVSVVDREGDAEEQVLHRIESFNDEALASLRFGEVEELWYEGALGELVQMWLYHPPGFDPKQKTKVPLMQLIHGG" } ,
+        repr raw,
+        mol aa,
+        length 448,
+        seq-data iupacaa "MKTFDVDALWALARIGAPSLSPDGAQAVVPVTRYDMEKNKGATALWLLSTLG
+GEPRVLTSAGEKDGQPRWSPTGESVAFIARRDQEGDKDDAPQLYVIPPDGGEARRVTKLPFGVESFKWFPDGKRLAFV
+SWVDPGLKGQAAQAERRKAEKDRKESAYVTEEGFYRFWDHSLPMNRVPHLHVIDLASGEVRDLFEGTDFELSRAEPDA
+DTFDISPDGRRIVFSFDPNTPKTLEHRNALAEIDVRSGRAQVLLHEPGWDLVAPVYSHAGHHIAFIATHQGLKHTMPQ
+QLAVLDTHGNWAVLSEDWDQEVAAPLRWDEDDLGVLFCAEDQGRRHLYRFDVKTLHAFPLCEGGHVGAFALEAGTLVV
+LHDSASFPPQVSVVDREGDAEEQVLHRIESFNDEALASLRFGEVEELWYEGALGELVQMWLYHPPGFDPKQKTKVPLM
+QLIHGG"
+      },
       annot {
         {
-          data
-            ftable {
-              {
-                id
-                  local
-                    id 14603 ,
-                data
-                  prot {
-                    name {
-                      "peptidase S9" } } ,
-                partial TRUE ,
-                location
-                  int {
-                    from 0 ,
-                    to 447 ,
-                    id
-                      general {
-                        db "WGS:CAFG" ,
-                        tag
-                          str "MT45_RS04645" } ,
-                    fuzz-to
-                      lim gt } } } } } } ,
+          data ftable {
+            {
+              id local id 14603,
+              data prot {
+                name {
+                  "peptidase S9"
+                }
+              },
+              partial TRUE,
+              location int {
+                from 0,
+                to 447,
+                id general {
+                  db "WGS:CAFG",
+                  tag str "MT45_RS04645"
+                },
+                fuzz-to lim gt
+              }
+            }
+          }
+        }
+      }
+    },
     seq {
       id {
         general {
-          db "WGS:CAFG" ,
-          tag
-            str "MT45_RS04655" } } ,
+          db "WGS:CAFG",
+          tag str "MT45_RS04655"
+        }
+      },
       descr {
         molinfo {
-          biomol peptide ,
-          completeness no-right } } ,
+          biomol peptide,
+          completeness no-right
+        }
+      },
       inst {
-        repr raw ,
-        mol aa ,
-        length 126 ,
-        seq-data
-          iupacaa "MPARAAAPAACSWDRPGHDSFMGDVPAAVDRYTDLAPAVRERLKTRMRAHEYDDVVEIS
-RDRIEGNAGYEPQIRDMHFGQGRVCASVTRDRWSDDQRERALVYCEGTACVMVPTVCRNVSRIARVP" } ,
+        repr raw,
+        mol aa,
+        length 126,
+        seq-data iupacaa "MPARAAAPAACSWDRPGHDSFMGDVPAAVDRYTDLAPAVRERLKTRMRAHEY
+DDVVEISRDRIEGNAGYEPQIRDMHFGQGRVCASVTRDRWSDDQRERALVYCEGTACVMVPTVCRNVSRIARVP"
+      },
       annot {
         {
-          data
-            ftable {
-              {
-                id
-                  local
-                    id 14604 ,
-                data
-                  prot {
-                    name {
-                      "hypothetical protein" } } ,
-                partial TRUE ,
-                location
-                  int {
-                    from 0 ,
-                    to 125 ,
-                    id
-                      general {
-                        db "WGS:CAFG" ,
-                        tag
-                          str "MT45_RS04655" } ,
-                    fuzz-to
-                      lim gt } } } } } } ,
+          data ftable {
+            {
+              id local id 14604,
+              data prot {
+                name {
+                  "hypothetical protein"
+                }
+              },
+              partial TRUE,
+              location int {
+                from 0,
+                to 125,
+                id general {
+                  db "WGS:CAFG",
+                  tag str "MT45_RS04655"
+                },
+                fuzz-to lim gt
+              }
+            }
+          }
+        }
+      }
+    },
     seq {
       id {
         general {
-          db "WGS:CAFG" ,
-          tag
-            str "MT45_RS04670" } } ,
+          db "WGS:CAFG",
+          tag str "MT45_RS04670"
+        }
+      },
       descr {
         molinfo {
-          biomol peptide ,
-          completeness complete } } ,
+          biomol peptide,
+          completeness complete
+        }
+      },
       inst {
-        repr raw ,
-        mol aa ,
-        length 625 ,
-        seq-data
-          iupacaa "MFTIGAALALLGGCSLLPTDRKAQLKVAATEEADANNPYVTSTRKISAYELTVEAPPEL
-RSLLMEHLDLARFRDTPEDMRLTAGELRRLAAVAPEQATKLLETAGYFNAKVRTEEVGDLSDGVRNLRLIVDTGPRAL
-VRQMDLRIEGPLKTATERGDKLAVALDRTLTQSWLLPPQTGFSQGDWAAAKNALLTRARAQGYPLARMTHSEAVVQAD
-DNQVDIAVTLESGPLFTLGELTVEGLNHQPEESVRRLAGYQLHQPYNEKLLLDFQERLVGTQLFDSASVEIQPESVTP
-APGAETVEVPVTVKIREAARQQVTLGVGYRTVDGPSANIEYTHRKPFGLNIRERSKLELSRVRQALDTEISSHPQPNM
-QRSLALVKVERIDDNDQVNLNLSTRFGYAKETEPEDRLTYVEVIRSWEHKPAVPTTVAGAVSLNQQMTWRRLDSRVLP
-TKGWSATATVGGGWADSSAEKNGPFARATGKVYWYSPLSGRWLFSTRLEGGQILAKGKLGLPEALRFRTGGDDSVRGY
-GYNDLGPVNSTGAQTGGRVLLNGSVEVSHPLTPRIPQLMGAVFIDAGQAAQNWGDYHPAWAYGTGLRYRSPVGVLRFD
-FAKGNLVDKWRLHFSVGINL" } ,
+        repr raw,
+        mol aa,
+        length 625,
+        seq-data iupacaa "MFTIGAALALLGGCSLLPTDRKAQLKVAATEEADANNPYVTSTRKISAYELT
+VEAPPELRSLLMEHLDLARFRDTPEDMRLTAGELRRLAAVAPEQATKLLETAGYFNAKVRTEEVGDLSDGVRNLRLIV
+DTGPRALVRQMDLRIEGPLKTATERGDKLAVALDRTLTQSWLLPPQTGFSQGDWAAAKNALLTRARAQGYPLARMTHS
+EAVVQADDNQVDIAVTLESGPLFTLGELTVEGLNHQPEESVRRLAGYQLHQPYNEKLLLDFQERLVGTQLFDSASVEI
+QPESVTPAPGAETVEVPVTVKIREAARQQVTLGVGYRTVDGPSANIEYTHRKPFGLNIRERSKLELSRVRQALDTEIS
+SHPQPNMQRSLALVKVERIDDNDQVNLNLSTRFGYAKETEPEDRLTYVEVIRSWEHKPAVPTTVAGAVSLNQQMTWRR
+LDSRVLPTKGWSATATVGGGWADSSAEKNGPFARATGKVYWYSPLSGRWLFSTRLEGGQILAKGKLGLPEALRFRTGG
+DDSVRGYGYNDLGPVNSTGAQTGGRVLLNGSVEVSHPLTPRIPQLMGAVFIDAGQAAQNWGDYHPAWAYGTGLRYRSP
+VGVLRFDFAKGNLVDKWRLHFSVGINL"
+      },
       annot {
         {
-          data
-            ftable {
-              {
-                id
-                  local
-                    id 14605 ,
-                data
-                  prot {
-                    name {
-                      "hypothetical protein" } } ,
-                location
-                  int {
-                    from 0 ,
-                    to 624 ,
-                    id
-                      general {
-                        db "WGS:CAFG" ,
-                        tag
-                          str "MT45_RS04670" } } } } } } } ,
+          data ftable {
+            {
+              id local id 14605,
+              data prot {
+                name {
+                  "hypothetical protein"
+                }
+              },
+              location int {
+                from 0,
+                to 624,
+                id general {
+                  db "WGS:CAFG",
+                  tag str "MT45_RS04670"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     seq {
       id {
         general {
-          db "WGS:CAFG" ,
-          tag
-            str "MT45_RS04660-1" } } ,
+          db "WGS:CAFG",
+          tag str "MT45_RS04660-1"
+        }
+      },
       descr {
         molinfo {
-          biomol peptide ,
-          completeness no-right } } ,
+          biomol peptide,
+          completeness no-right
+        }
+      },
       inst {
-        repr raw ,
-        mol aa ,
-        length 67 ,
-        seq-data
-          iupacaa "MQALYGAVGEERGRWVGSFQNYRLTSAFQPVYSYPHRRPVGYEGLIRVEDERGRPITPV
-TAFEGVGS" } ,
+        repr raw,
+        mol aa,
+        length 67,
+        seq-data iupacaa "MQALYGAVGEERGRWVGSFQNYRLTSAFQPVYSYPHRRPVGYEGLIRVEDER
+GRPITPVTAFEGVGS"
+      },
       annot {
         {
-          data
-            ftable {
-              {
-                id
-                  local
-                    id 14606 ,
-                data
-                  prot {
-                    name {
-                      "hypothetical protein" } } ,
-                partial TRUE ,
-                location
-                  int {
-                    from 0 ,
-                    to 66 ,
-                    strand plus ,
-                    id
-                      general {
-                        db "WGS:CAFG" ,
-                        tag
-                          str "MT45_RS04660-1" } ,
-                    fuzz-to
-                      lim gt } } } } } } ,
+          data ftable {
+            {
+              id local id 14606,
+              data prot {
+                name {
+                  "hypothetical protein"
+                }
+              },
+              partial TRUE,
+              location int {
+                from 0,
+                to 66,
+                id general {
+                  db "WGS:CAFG",
+                  tag str "MT45_RS04660-1"
+                },
+                fuzz-to lim gt
+              }
+            }
+          }
+        }
+      }
+    },
     seq {
       id {
         general {
-          db "WGS:CAFG" ,
-          tag
-            str "MT45_RS04660-2" } } ,
+          db "WGS:CAFG",
+          tag str "MT45_RS04660-2"
+        }
+      },
       descr {
         molinfo {
-          biomol peptide ,
-          completeness no-ends } } ,
+          biomol peptide,
+          completeness no-ends
+        }
+      },
       inst {
-        repr raw ,
-        mol aa ,
-        length 66 ,
-        seq-data
-          iupacaa "AQRQPDCWLFLNIHPAVFMHAALQVRMLARAVEVVHQLGLPTHRLVFEVTEDVMARDDS
-FEEAVGG" } ,
+        repr raw,
+        mol aa,
+        length 66,
+        seq-data iupacaa "AQRQPDCWLFLNIHPAVFMHAALQVRMLARAVEVVHQLGLPTHRLVFEVTED
+VMARDDSFEEAVGG"
+      },
       annot {
         {
-          data
-            ftable {
-              {
-                id
-                  local
-                    id 14607 ,
-                data
-                  prot {
-                    name {
-                      "hypothetical protein" } } ,
-                partial TRUE ,
-                location
-                  int {
-                    from 0 ,
-                    to 65 ,
-                    strand plus ,
-                    id
-                      general {
-                        db "WGS:CAFG" ,
-                        tag
-                          str "MT45_RS04660-2" } ,
-                    fuzz-from
-                      lim lt ,
-                    fuzz-to
-                      lim gt } } } } } } ,
+          data ftable {
+            {
+              id local id 14607,
+              data prot {
+                name {
+                  "hypothetical protein"
+                }
+              },
+              partial TRUE,
+              location int {
+                from 0,
+                to 65,
+                id general {
+                  db "WGS:CAFG",
+                  tag str "MT45_RS04660-2"
+                },
+                fuzz-from lim lt,
+                fuzz-to lim gt
+              }
+            }
+          }
+        }
+      }
+    },
     seq {
       id {
         general {
-          db "WGS:CAFG" ,
-          tag
-            str "MT45_RS04660-3" } } ,
+          db "WGS:CAFG",
+          tag str "MT45_RS04660-3"
+        }
+      },
       descr {
         molinfo {
-          biomol peptide ,
-          completeness no-left } } ,
+          biomol peptide,
+          completeness no-left
+        }
+      },
       inst {
-        repr raw ,
-        mol aa ,
-        length 262 ,
-        seq-data
-          iupacaa "XAARATGCLLALDDFGVGHSNFDRIWRIRPEIVKLDRSLLMRSRGSRRMARVLSQMVAL
-LHECGSLVLLEGIETVEDAQLAMDADVDLVQGFAFGHPAPFLRDGEGVSALEDVWRLFNERQAQLRRDHLDRLTPFRT
-ALALALQTVQQGRPLVEACQPFLKLDGAQMCYLLDDDGREIGARAVPASGPAEIDPRFLPMERAGDARWARRPYFRRA
-VETVGEIQTTRPYLSLHGARMCVTVSVAYWQDGRLRVLCGDLDWDEV" } ,
+        repr raw,
+        mol aa,
+        length 262,
+        seq-data iupacaa "XAARATGCLLALDDFGVGHSNFDRIWRIRPEIVKLDRSLLMRSRGSRRMARV
+LSQMVALLHECGSLVLLEGIETVEDAQLAMDADVDLVQGFAFGHPAPFLRDGEGVSALEDVWRLFNERQAQLRRDHLD
+RLTPFRTALALALQTVQQGRPLVEACQPFLKLDGAQMCYLLDDDGREIGARAVPASGPAEIDPRFLPMERAGDARWAR
+RPYFRRAVETVGEIQTTRPYLSLHGARMCVTVSVAYWQDGRLRVLCGDLDWDEV"
+      },
       annot {
         {
-          data
-            ftable {
-              {
-                id
-                  local
-                    id 14608 ,
-                data
-                  prot {
-                    name {
-                      "hypothetical protein" } } ,
-                partial TRUE ,
-                location
-                  int {
-                    from 0 ,
-                    to 261 ,
-                    strand plus ,
-                    id
-                      general {
-                        db "WGS:CAFG" ,
-                        tag
-                          str "MT45_RS04660-3" } ,
-                    fuzz-from
-                      lim lt } } } } } } } ,
+          data ftable {
+            {
+              id local id 14608,
+              data prot {
+                name {
+                  "hypothetical protein"
+                }
+              },
+              partial TRUE,
+              location int {
+                from 0,
+                to 261,
+                id general {
+                  db "WGS:CAFG",
+                  tag str "MT45_RS04660-3"
+                },
+                fuzz-from lim lt
+              }
+            }
+          }
+        }
+      }
+    }
+  },
   annot {
     {
-      data
-        ftable {
-          {
-            id
-              local
-                id 1927 ,
-            data
-              cdregion {
-                frame one ,
-                code {
-                  id 11 } } ,
-            partial TRUE ,
-            product
-              whole
-                general {
-                  db "WGS:CAFG" ,
-                  tag
-                    str "MT45_RS04620" } ,
-            location
-              int {
-                from 0 ,
-                to 219 ,
-                strand minus ,
-                id
-                  gi 354809154 ,
-                fuzz-from
-                  lim lt } ,
-            qual {
+      data ftable {
+        {
+          id local id 1927,
+          data cdregion {
+            frame one,
+            code {
+              id 11
+            }
+          },
+          partial TRUE,
+          product whole general {
+            db "WGS:CAFG",
+            tag str "MT45_RS04620"
+          },
+          location int {
+            from 0,
+            to 219,
+            strand minus,
+            id gi 354809154,
+            fuzz-from lim lt
+          },
+          qual {
+            {
+              qual "inference",
+              val "COORDINATES: ab initio prediction:GeneMarkS+"
+            }
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
               {
-                qual "inference" ,
-                val "COORDINATES: ab initio prediction:GeneMarkS+" } } ,
-            ext {
-              type
-                str "CombinedFeatureUserObjects" ,
-              data {
-                {
-                  label
-                    str "ModelEvidence" ,
-                  data
-                    object {
-                      type
-                        str "ModelEvidence" ,
-                      data {
-                        {
-                          label
-                            str "Method" ,
-                          data
-                            str "GeneMarkS+" } ,
-                        {
-                          label
-                            str "AbInitioEnds" ,
-                          data
-                            bool TRUE } } } } } } } ,
-          {
-            id
-              local
-                id 1931 ,
-            data
-              cdregion {
-                code {
-                  id 11 } } ,
-            product
-              whole
-                general {
-                  db "WGS:CAFG" ,
-                  tag
-                    str "MT45_RS04630" } ,
-            location
-              int {
-                from 1174 ,
-                to 2016 ,
-                strand plus ,
-                id
-                  gi 354809154 } ,
-            qual {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "GeneMarkS+"
+                    },
+                    {
+                      label str "AbInitioEnds",
+                      data bool TRUE
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          id local id 1931,
+          data cdregion {
+            code {
+              id 11
+            }
+          },
+          product whole general {
+            db "WGS:CAFG",
+            tag str "MT45_RS04630"
+          },
+          location int {
+            from 1174,
+            to 2016,
+            strand plus,
+            id gi 354809154
+          },
+          qual {
+            {
+              qual "inference",
+              val "EXISTENCE: similar to AA sequence:RefSeq:WP_011800272.1"
+            }
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
               {
-                qual "inference" ,
-                val "EXISTENCE: similar to AA sequence:RefSeq:WP_011800272.1" } } ,
-            ext {
-              type
-                str "CombinedFeatureUserObjects" ,
-              data {
-                {
-                  label
-                    str "ModelEvidence" ,
-                  data
-                    object {
-                      type
-                        str "ModelEvidence" ,
-                      data {
-                        {
-                          label
-                            str "Method" ,
-                          data
-                            str "Protein Homology" } ,
-                        {
-                          label
-                            str "SeedProtein" ,
-                          data
-                            str "gi|518486011" } ,
-                        {
-                          label
-                            str "SeedAlignPlacement" ,
-                          num 2 ,
-                          data
-                            ints {
-                              1174 ,
-                              2013 } } ,
-                        {
-                          label
-                            str "SeedCluster" ,
-                          data
-                            str "867460" } ,
-                        {
-                          label
-                            str "SeedProteinSource" ,
-                          data
-                            str "Other" } ,
-                        {
-                          label
-                            str "phages_in_seed_cluster_ratio" ,
-                          data
-                            real { 0, 10, 0 } } ,
-                        {
-                          label
-                            str "BestNamingHit" ,
-                          data
-                            str "gi|500124267" } ,
-                        {
-                          label
-                            str "NamingHitCluster" ,
-                          data
-                            str "867460" } ,
-                        {
-                          label
-                            str "NamingHitProteinSource" ,
-                          data
-                            str "Other" } ,
-                        {
-                          label
-                            str "phages_in_naming_hit_cluster_ratio" ,
-                          data
-                            real { 0, 10, 0 } } ,
-                        {
-                          label
-                            str "best_naming_coverage" ,
-                          data
-                            real { 1, 10, 2 } } ,
-                        {
-                          label
-                            str "Cluster" ,
-                          data
-                            str "867460" } } } } } } } ,
-          {
-            id
-              local
-                id 1935 ,
-            data
-              cdregion {
-                code {
-                  id 11 } } ,
-            product
-              whole
-                general {
-                  db "WGS:CAFG" ,
-                  tag
-                    str "MT45_RS04640" } ,
-            location
-              int {
-                from 2401 ,
-                to 3009 ,
-                strand plus ,
-                id
-                  gi 354809154 } ,
-            qual {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "Protein Homology"
+                    },
+                    {
+                      label str "SeedProtein",
+                      data str "gi|518486011"
+                    },
+                    {
+                      label str "SeedAlignPlacement",
+                      num 2,
+                      data ints {
+                        1174,
+                        2013
+                      }
+                    },
+                    {
+                      label str "SeedCluster",
+                      data str "867460"
+                    },
+                    {
+                      label str "SeedProteinSource",
+                      data str "Other"
+                    },
+                    {
+                      label str "phages_in_seed_cluster_ratio",
+                      data real { 0, 10, 0 }
+                    },
+                    {
+                      label str "BestNamingHit",
+                      data str "gi|500124267"
+                    },
+                    {
+                      label str "NamingHitCluster",
+                      data str "867460"
+                    },
+                    {
+                      label str "NamingHitProteinSource",
+                      data str "Other"
+                    },
+                    {
+                      label str "phages_in_naming_hit_cluster_ratio",
+                      data real { 0, 10, 0 }
+                    },
+                    {
+                      label str "best_naming_coverage",
+                      data real { 1, 10, 2 }
+                    },
+                    {
+                      label str "Cluster",
+                      data str "867460"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          id local id 1935,
+          data cdregion {
+            code {
+              id 11
+            }
+          },
+          product whole general {
+            db "WGS:CAFG",
+            tag str "MT45_RS04640"
+          },
+          location int {
+            from 2401,
+            to 3009,
+            strand plus,
+            id gi 354809154
+          },
+          qual {
+            {
+              qual "inference",
+              val "EXISTENCE: similar to AA sequence:RefSeq:WP_009856833.1"
+            }
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
               {
-                qual "inference" ,
-                val "EXISTENCE: similar to AA sequence:RefSeq:WP_009856833.1" } } ,
-            ext {
-              type
-                str "CombinedFeatureUserObjects" ,
-              data {
-                {
-                  label
-                    str "ModelEvidence" ,
-                  data
-                    object {
-                      type
-                        str "ModelEvidence" ,
-                      data {
-                        {
-                          label
-                            str "Method" ,
-                          data
-                            str "Protein Homology" } ,
-                        {
-                          label
-                            str "SeedProtein" ,
-                          data
-                            str "gi|496321287" } ,
-                        {
-                          label
-                            str "SeedAlignPlacement" ,
-                          num 2 ,
-                          data
-                            ints {
-                              2416 ,
-                              3000 } } ,
-                        {
-                          label
-                            str "SeedCluster" ,
-                          data
-                            str "2322560" } ,
-                        {
-                          label
-                            str "SeedProteinSource" ,
-                          data
-                            str "Other" } ,
-                        {
-                          label
-                            str "phages_in_seed_cluster_ratio" ,
-                          data
-                            real { 0, 10, 0 } } ,
-                        {
-                          label
-                            str "BestNamingHit" ,
-                          data
-                            str "gi|497542635" } ,
-                        {
-                          label
-                            str "NamingHitCluster" ,
-                          data
-                            str "2322560" } ,
-                        {
-                          label
-                            str "NamingHitProteinSource" ,
-                          data
-                            str "Other" } ,
-                        {
-                          label
-                            str "phages_in_naming_hit_cluster_ratio" ,
-                          data
-                            real { 0, 10, 0 } } ,
-                        {
-                          label
-                            str "best_naming_coverage" ,
-                          data
-                            real { 965346534, 10, -7 } } ,
-                        {
-                          label
-                            str "Cluster" ,
-                          data
-                            str "2322560" } } } } } } } ,
-          {
-            id
-              local
-                id 1939 ,
-            data
-              cdregion {
-                frame one ,
-                code {
-                  id 11 } } ,
-            partial TRUE ,
-            product
-              whole
-                general {
-                  db "WGS:CAFG" ,
-                  tag
-                    str "MT45_RS04650" } ,
-            location
-              int {
-                from 4594 ,
-                to 5328 ,
-                strand plus ,
-                id
-                  gi 354809154 ,
-                fuzz-from
-                  lim lt } ,
-            qual {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "Protein Homology"
+                    },
+                    {
+                      label str "SeedProtein",
+                      data str "gi|496321287"
+                    },
+                    {
+                      label str "SeedAlignPlacement",
+                      num 2,
+                      data ints {
+                        2416,
+                        3000
+                      }
+                    },
+                    {
+                      label str "SeedCluster",
+                      data str "2322560"
+                    },
+                    {
+                      label str "SeedProteinSource",
+                      data str "Other"
+                    },
+                    {
+                      label str "phages_in_seed_cluster_ratio",
+                      data real { 0, 10, 0 }
+                    },
+                    {
+                      label str "BestNamingHit",
+                      data str "gi|497542635"
+                    },
+                    {
+                      label str "NamingHitCluster",
+                      data str "2322560"
+                    },
+                    {
+                      label str "NamingHitProteinSource",
+                      data str "Other"
+                    },
+                    {
+                      label str "phages_in_naming_hit_cluster_ratio",
+                      data real { 0, 10, 0 }
+                    },
+                    {
+                      label str "best_naming_coverage",
+                      data real { 965346534, 10, -7 }
+                    },
+                    {
+                      label str "Cluster",
+                      data str "2322560"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          id local id 1939,
+          data cdregion {
+            frame one,
+            code {
+              id 11
+            }
+          },
+          partial TRUE,
+          product whole general {
+            db "WGS:CAFG",
+            tag str "MT45_RS04650"
+          },
+          location int {
+            from 4594,
+            to 5328,
+            strand plus,
+            id gi 354809154,
+            fuzz-from lim lt
+          },
+          qual {
+            {
+              qual "inference",
+              val "EXISTENCE: similar to AA sequence:RefSeq:WP_009856834.1"
+            }
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
               {
-                qual "inference" ,
-                val "EXISTENCE: similar to AA sequence:RefSeq:WP_009856834.1" } } ,
-            ext {
-              type
-                str "CombinedFeatureUserObjects" ,
-              data {
-                {
-                  label
-                    str "ModelEvidence" ,
-                  data
-                    object {
-                      type
-                        str "ModelEvidence" ,
-                      data {
-                        {
-                          label
-                            str "Method" ,
-                          data
-                            str "Protein Homology" } ,
-                        {
-                          label
-                            str "BestNamingHit" ,
-                          data
-                            str "gi|497542636" } ,
-                        {
-                          label
-                            str "NamingHitCluster" ,
-                          data
-                            str "3607336" } ,
-                        {
-                          label
-                            str "NamingHitProteinSource" ,
-                          data
-                            str "Other" } ,
-                        {
-                          label
-                            str "phages_in_naming_hit_cluster_ratio" ,
-                          data
-                            real { 0, 10, 0 } } ,
-                        {
-                          label
-                            str "best_naming_coverage" ,
-                          data
-                            real { 864754098, 10, -7 } } ,
-                        {
-                          label
-                            str "AbInitioEnds" ,
-                          data
-                            bool TRUE } } } } } } } ,
-          {
-            id
-              local
-                id 1943 ,
-            data
-              cdregion {
-                frame three ,
-                code {
-                  id 11 } } ,
-            partial TRUE ,
-            product
-              whole
-                general {
-                  db "WGS:CAFG" ,
-                  tag
-                    str "MT45_RS04660-3" } ,
-            location
-              int {
-                from 6452 ,
-                to 7239 ,
-                strand minus ,
-                id
-                  gi 354809154 ,
-                fuzz-to
-                  lim gt } ,
-            qual {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "Protein Homology"
+                    },
+                    {
+                      label str "BestNamingHit",
+                      data str "gi|497542636"
+                    },
+                    {
+                      label str "NamingHitCluster",
+                      data str "3607336"
+                    },
+                    {
+                      label str "NamingHitProteinSource",
+                      data str "Other"
+                    },
+                    {
+                      label str "phages_in_naming_hit_cluster_ratio",
+                      data real { 0, 10, 0 }
+                    },
+                    {
+                      label str "best_naming_coverage",
+                      data real { 864754098, 10, -7 }
+                    },
+                    {
+                      label str "AbInitioEnds",
+                      data bool TRUE
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          id local id 1943,
+          data cdregion {
+            frame three,
+            code {
+              id 11
+            }
+          },
+          partial TRUE,
+          product whole general {
+            db "WGS:CAFG",
+            tag str "MT45_RS04660-3"
+          },
+          location int {
+            from 6452,
+            to 7239,
+            strand minus,
+            id gi 354809154,
+            fuzz-to lim gt
+          },
+          qual {
+            {
+              qual "inference",
+              val "EXISTENCE: similar to AA sequence:RefSeq:WP_019559889.1"
+            }
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
               {
-                qual "inference" ,
-                val "EXISTENCE: similar to AA sequence:RefSeq:WP_019559889.1" } } ,
-            ext {
-              type
-                str "CombinedFeatureUserObjects" ,
-              data {
-                {
-                  label
-                    str "ModelEvidence" ,
-                  data
-                    object {
-                      type
-                        str "ModelEvidence" ,
-                      data {
-                        {
-                          label
-                            str "Method" ,
-                          data
-                            str "Protein Homology" } ,
-                        {
-                          label
-                            str "SeedProtein" ,
-                          data
-                            str "gi|518389682" } ,
-                        {
-                          label
-                            str "SeedAlignPlacement" ,
-                          num 2 ,
-                          data
-                            ints {
-                              6455 ,
-                              7840 } } ,
-                        {
-                          label
-                            str "SeedCluster" ,
-                          data
-                            str "5886164" } ,
-                        {
-                          label
-                            str "SeedProteinSource" ,
-                          data
-                            str "Other" } ,
-                        {
-                          label
-                            str "phages_in_seed_cluster_ratio" ,
-                          data
-                            real { 0, 10, 0 } } ,
-                        {
-                          label
-                            str "BestNamingHit" ,
-                          data
-                            str "gi|518389682" } ,
-                        {
-                          label
-                            str "NamingHitCluster" ,
-                          data
-                            str "5886164" } ,
-                        {
-                          label
-                            str "NamingHitProteinSource" ,
-                          data
-                            str "Other" } ,
-                        {
-                          label
-                            str "phages_in_naming_hit_cluster_ratio" ,
-                          data
-                            real { 0, 10, 0 } } ,
-                        {
-                          label
-                            str "best_naming_coverage" ,
-                          data
-                            real { 82034632, 10, -6 } } } } } } } } ,
-          {
-            id
-              local
-                id 1944 ,
-            data
-              cdregion {
-                frame two ,
-                code {
-                  id 11 } } ,
-            partial TRUE ,
-            except TRUE ,
-            product
-              whole
-                general {
-                  db "WGS:CAFG" ,
-                  tag
-                    str "MT45_RS04660-2" } ,
-            location
-              int {
-                from 7306 ,
-                to 7505 ,
-                strand minus ,
-                id
-                  gi 354809154 ,
-                fuzz-from
-                  lim lt ,
-                fuzz-to
-                  lim gt } ,
-            qual {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "Protein Homology"
+                    },
+                    {
+                      label str "SeedProtein",
+                      data str "gi|518389682"
+                    },
+                    {
+                      label str "SeedAlignPlacement",
+                      num 2,
+                      data ints {
+                        6455,
+                        7840
+                      }
+                    },
+                    {
+                      label str "SeedCluster",
+                      data str "5886164"
+                    },
+                    {
+                      label str "SeedProteinSource",
+                      data str "Other"
+                    },
+                    {
+                      label str "phages_in_seed_cluster_ratio",
+                      data real { 0, 10, 0 }
+                    },
+                    {
+                      label str "BestNamingHit",
+                      data str "gi|518389682"
+                    },
+                    {
+                      label str "NamingHitCluster",
+                      data str "5886164"
+                    },
+                    {
+                      label str "NamingHitProteinSource",
+                      data str "Other"
+                    },
+                    {
+                      label str "phages_in_naming_hit_cluster_ratio",
+                      data real { 0, 10, 0 }
+                    },
+                    {
+                      label str "best_naming_coverage",
+                      data real { 82034632, 10, -6 }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          id local id 1944,
+          data cdregion {
+            frame two,
+            code {
+              id 11
+            }
+          },
+          partial TRUE,
+          except TRUE,
+          product whole general {
+            db "WGS:CAFG",
+            tag str "MT45_RS04660-2"
+          },
+          location int {
+            from 7306,
+            to 7505,
+            strand minus,
+            id gi 354809154,
+            fuzz-from lim lt,
+            fuzz-to lim gt
+          },
+          qual {
+            {
+              qual "inference",
+              val "EXISTENCE: similar to AA sequence:RefSeq:WP_019559889.1"
+            }
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
               {
-                qual "inference" ,
-                val "EXISTENCE: similar to AA sequence:RefSeq:WP_019559889.1" } } ,
-            ext {
-              type
-                str "CombinedFeatureUserObjects" ,
-              data {
-                {
-                  label
-                    str "ModelEvidence" ,
-                  data
-                    object {
-                      type
-                        str "ModelEvidence" ,
-                      data {
-                        {
-                          label
-                            str "Method" ,
-                          data
-                            str "Protein Homology" } ,
-                        {
-                          label
-                            str "SeedProtein" ,
-                          data
-                            str "gi|518389682" } ,
-                        {
-                          label
-                            str "SeedAlignPlacement" ,
-                          num 2 ,
-                          data
-                            ints {
-                              6455 ,
-                              7840 } } ,
-                        {
-                          label
-                            str "SeedCluster" ,
-                          data
-                            str "5886164" } ,
-                        {
-                          label
-                            str "SeedProteinSource" ,
-                          data
-                            str "Other" } ,
-                        {
-                          label
-                            str "phages_in_seed_cluster_ratio" ,
-                          data
-                            real { 0, 10, 0 } } ,
-                        {
-                          label
-                            str "BestNamingHit" ,
-                          data
-                            str "gi|518389682" } ,
-                        {
-                          label
-                            str "NamingHitCluster" ,
-                          data
-                            str "5886164" } ,
-                        {
-                          label
-                            str "NamingHitProteinSource" ,
-                          data
-                            str "Other" } ,
-                        {
-                          label
-                            str "phages_in_naming_hit_cluster_ratio" ,
-                          data
-                            real { 0, 10, 0 } } ,
-                        {
-                          label
-                            str "best_naming_coverage" ,
-                          data
-                            real { 82034632, 10, -6 } } } } } } } ,
-            except-text "unextendable partial coding region" } ,
-          {
-            id
-              local
-                id 1945 ,
-            data
-              cdregion {
-                code {
-                  id 11 } } ,
-            partial TRUE ,
-            product
-              whole
-                general {
-                  db "WGS:CAFG" ,
-                  tag
-                    str "MT45_RS04660-1" } ,
-            location
-              int {
-                from 7640 ,
-                to 7840 ,
-                strand minus ,
-                id
-                  gi 354809154 ,
-                fuzz-from
-                  lim lt } ,
-            qual {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "Protein Homology"
+                    },
+                    {
+                      label str "SeedProtein",
+                      data str "gi|518389682"
+                    },
+                    {
+                      label str "SeedAlignPlacement",
+                      num 2,
+                      data ints {
+                        6455,
+                        7840
+                      }
+                    },
+                    {
+                      label str "SeedCluster",
+                      data str "5886164"
+                    },
+                    {
+                      label str "SeedProteinSource",
+                      data str "Other"
+                    },
+                    {
+                      label str "phages_in_seed_cluster_ratio",
+                      data real { 0, 10, 0 }
+                    },
+                    {
+                      label str "BestNamingHit",
+                      data str "gi|518389682"
+                    },
+                    {
+                      label str "NamingHitCluster",
+                      data str "5886164"
+                    },
+                    {
+                      label str "NamingHitProteinSource",
+                      data str "Other"
+                    },
+                    {
+                      label str "phages_in_naming_hit_cluster_ratio",
+                      data real { 0, 10, 0 }
+                    },
+                    {
+                      label str "best_naming_coverage",
+                      data real { 82034632, 10, -6 }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          except-text "unextendable partial coding region"
+        },
+        {
+          id local id 1945,
+          data cdregion {
+            code {
+              id 11
+            }
+          },
+          partial TRUE,
+          product whole general {
+            db "WGS:CAFG",
+            tag str "MT45_RS04660-1"
+          },
+          location int {
+            from 7640,
+            to 7840,
+            strand minus,
+            id gi 354809154,
+            fuzz-from lim lt
+          },
+          qual {
+            {
+              qual "inference",
+              val "EXISTENCE: similar to AA sequence:RefSeq:WP_019559889.1"
+            }
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
               {
-                qual "inference" ,
-                val "EXISTENCE: similar to AA sequence:RefSeq:WP_019559889.1" } } ,
-            ext {
-              type
-                str "CombinedFeatureUserObjects" ,
-              data {
-                {
-                  label
-                    str "ModelEvidence" ,
-                  data
-                    object {
-                      type
-                        str "ModelEvidence" ,
-                      data {
-                        {
-                          label
-                            str "Method" ,
-                          data
-                            str "Protein Homology" } ,
-                        {
-                          label
-                            str "SeedProtein" ,
-                          data
-                            str "gi|518389682" } ,
-                        {
-                          label
-                            str "SeedAlignPlacement" ,
-                          num 2 ,
-                          data
-                            ints {
-                              6455 ,
-                              7840 } } ,
-                        {
-                          label
-                            str "SeedCluster" ,
-                          data
-                            str "5886164" } ,
-                        {
-                          label
-                            str "SeedProteinSource" ,
-                          data
-                            str "Other" } ,
-                        {
-                          label
-                            str "phages_in_seed_cluster_ratio" ,
-                          data
-                            real { 0, 10, 0 } } ,
-                        {
-                          label
-                            str "BestNamingHit" ,
-                          data
-                            str "gi|518389682" } ,
-                        {
-                          label
-                            str "NamingHitCluster" ,
-                          data
-                            str "5886164" } ,
-                        {
-                          label
-                            str "NamingHitProteinSource" ,
-                          data
-                            str "Other" } ,
-                        {
-                          label
-                            str "phages_in_naming_hit_cluster_ratio" ,
-                          data
-                            real { 0, 10, 0 } } ,
-                        {
-                          label
-                            str "best_naming_coverage" ,
-                          data
-                            real { 82034632, 10, -6 } } } } } } } } ,
-          {
-            id
-              local
-                id 1947 ,
-            data
-              cdregion {
-                code {
-                  id 11 } } ,
-            product
-              whole
-                general {
-                  db "WGS:CAFG" ,
-                  tag
-                    str "MT45_RS04665" } ,
-            location
-              int {
-                from 8023 ,
-                to 9216 ,
-                strand plus ,
-                id
-                  gi 354809154 } ,
-            qual {
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "Protein Homology"
+                    },
+                    {
+                      label str "SeedProtein",
+                      data str "gi|518389682"
+                    },
+                    {
+                      label str "SeedAlignPlacement",
+                      num 2,
+                      data ints {
+                        6455,
+                        7840
+                      }
+                    },
+                    {
+                      label str "SeedCluster",
+                      data str "5886164"
+                    },
+                    {
+                      label str "SeedProteinSource",
+                      data str "Other"
+                    },
+                    {
+                      label str "phages_in_seed_cluster_ratio",
+                      data real { 0, 10, 0 }
+                    },
+                    {
+                      label str "BestNamingHit",
+                      data str "gi|518389682"
+                    },
+                    {
+                      label str "NamingHitCluster",
+                      data str "5886164"
+                    },
+                    {
+                      label str "NamingHitProteinSource",
+                      data str "Other"
+                    },
+                    {
+                      label str "phages_in_naming_hit_cluster_ratio",
+                      data real { 0, 10, 0 }
+                    },
+                    {
+                      label str "best_naming_coverage",
+                      data real { 82034632, 10, -6 }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          id local id 1947,
+          data cdregion {
+            code {
+              id 11
+            }
+          },
+          product whole general {
+            db "WGS:CAFG",
+            tag str "MT45_RS04665"
+          },
+          location int {
+            from 8023,
+            to 9216,
+            strand plus,
+            id gi 354809154
+          },
+          qual {
+            {
+              qual "inference",
+              val "EXISTENCE: similar to AA sequence:RefSeq:WP_011828689.1"
+            }
+          },
+          ext {
+            type str "CombinedFeatureUserObjects",
+            data {
               {
-                qual "inference" ,
-                val "EXISTENCE: similar to AA sequence:RefSeq:WP_011828689.1" } } ,
-            ext {
-              type
-                str "CombinedFeatureUserObjects" ,
-              data {
-                {
-                  label
-                    str "ModelEvidence" ,
-                  data
-                    object {
-                      type
-                        str "ModelEvidence" ,
-                      data {
-                        {
-                          label
-                            str "Method" ,
-                          data
-                            str "Protein Homology" } ,
-                        {
-                          label
-                            str "SeedProtein" ,
-                          data
-                            str "gi|496178867" } ,
-                        {
-                          label
-                            str "SeedAlignPlacement" ,
-                          num 2 ,
-                          data
-                            ints {
-                              8023 ,
-                              9213 } } ,
-                        {
-                          label
-                            str "SeedCluster" ,
-                          data
-                            str "863918" } ,
-                        {
-                          label
-                            str "SeedProteinSource" ,
-                          data
-                            str "Other" } ,
-                        {
-                          label
-                            str "phages_in_seed_cluster_ratio" ,
-                          data
-                            real { 0, 10, 0 } } ,
-                        {
-                          label
-                            str "BestNamingHit" ,
-                          data
-                            str "gi|500152686" } ,
-                        {
-                          label
-                            str "NamingHitCluster" ,
-                          data
-                            str "863918" } ,
-                        {
-                          label
-                            str "NamingHitProteinSource" ,
-                          data
-                            str "Other" } ,
-                        {
-                          label
-                            str "phages_in_naming_hit_cluster_ratio" ,
-                          data
-                            real { 0, 10, 0 } } ,
-                        {
-                          label
-                            str "best_naming_coverage" ,
-                          data
-                            real { 997481108, 10, -7 } } ,
-                        {
-                          label
-                            str "Cluster" ,
-                          data
-                            str "863918" } } } } } } } } } } }
+                label str "ModelEvidence",
+                data object {
+                  type str "ModelEvidence",
+                  data {
+                    {
+                      label str "Method",
+                      data str "Protein Homology"
+                    },
+                    {
+                      label str "SeedProtein",
+                      data str "gi|496178867"
+                    },
+                    {
+                      label str "SeedAlignPlacement",
+                      num 2,
+                      data ints {
+                        8023,
+                        9213
+                      }
+                    },
+                    {
+                      label str "SeedCluster",
+                      data str "863918"
+                    },
+                    {
+                      label str "SeedProteinSource",
+                      data str "Other"
+                    },
+                    {
+                      label str "phages_in_seed_cluster_ratio",
+                      data real { 0, 10, 0 }
+                    },
+                    {
+                      label str "BestNamingHit",
+                      data str "gi|500152686"
+                    },
+                    {
+                      label str "NamingHitCluster",
+                      data str "863918"
+                    },
+                    {
+                      label str "NamingHitProteinSource",
+                      data str "Other"
+                    },
+                    {
+                      label str "phages_in_naming_hit_cluster_ratio",
+                      data real { 0, 10, 0 }
+                    },
+                    {
+                      label str "best_naming_coverage",
+                      data real { 997481108, 10, -7 }
+                    },
+                    {
+                      label str "Cluster",
+                      data str "863918"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -38,6 +38,8 @@ Seq-entry ::= set {
     },
     pub {
       pub {
+        pmid 8663200,
+        muid 96279193,
         article {
           title {
             name "Alternatively spliced transcripts from the Drosophila eIF4E
@@ -49,12 +51,6 @@ Seq-entry ::= set {
                 name name {
                   last "Lavoie",
                   initials "C.A."
-                }
-              },
-              {
-                name name {
-                  last " ",
-                  initials "P.E."
                 }
               },
               {
@@ -96,23 +92,15 @@ Seq-entry ::= set {
             pubmed 8663200,
             medline 96279193
           }
-        },
-        muid 96279193,
-        pmid 8663200
+        }
       }
     },
     pub {
       pub {
         sub {
           authors {
-            names std {
-              {
-                name name {
-                  last " ", 
-                  first "Paul",
-                  initials "P.F."
-                }
-              }
+            names str {
+              "?"
             },
             affil str "Paul F. Lasko, Biology, McGill University, 1205 Avenue
  Docteur Penfield, Montreal, QC H3A 1B1, Canada"
@@ -620,4 +608,3 @@ TADGNNEEAALEIGHKLRDALRLGRNNSLQYQLHKDTMVKQGSNVKSIYTL"
     }
   }
 }
-

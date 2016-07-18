@@ -2,334 +2,372 @@ Seq-submit ::= {
   sub {
     contact {
       contact {
-        name
-          name {
-            last "q" ,
-            first "q" ,
-            initials "q" } ,
-        affil
-          str "q" } } ,
+        name name {
+          last "q",
+          first "q",
+          initials "q"
+        },
+        affil str "q"
+      }
+    },
     cit {
       authors {
-        names
-          std {
+        names std {
+          {
+            name name {
+              last "q",
+              first "q",
+              initials "q."
+            }
+          }
+        },
+        affil str "q"
+      },
+      date std {
+        year 2014,
+        month 1,
+        day 8
+      }
+    },
+    subtype new,
+    tool "tbl2asn 22.9 - LINUX UNIX"
+  },
+  data entrys {
+    set {
+      class genbank,
+      seq-set {
+        seq {
+          id {
+            local str "seq_1"
+          },
+          descr {
+            source {
+              org {
+                orgname {
+                  mod {
+                    {
+                      subtype nat-host,
+                      subname "1"
+                    }
+                  }
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished",
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "q",
+                          first "q",
+                          initials "q."
+                        }
+                      }
+                    },
+                    affil str "q"
+                  },
+                  title "a"
+                }
+              }
+            },
+            user {
+              type str "NcbiCleanup",
+              data {
+                {
+                  label str "method",
+                  data str "SequinCleanup"
+                },
+                {
+                  label str "version",
+                  data int 8
+                },
+                {
+                  label str "month",
+                  data int 5
+                },
+                {
+                  label str "day",
+                  data int 17
+                },
+                {
+                  label str "year",
+                  data int 2016
+                }
+              }
+            },
+            create-date std {
+              year 2014,
+              month 1,
+              day 8
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 336,
+            seq-data ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA95
+03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA95
+03FA9503FA9503FA9503FA9503FA9503FA9503FA95'H
+          },
+          annot {
             {
-              name
-                name {
-                  last "q" ,
-                  first "q" ,
-                  initials "q." } } } ,
-        affil
-          str "q" } ,
-      date
-        std {
-          year 2014 ,
-          month 1 ,
-          day 8 } } ,
-    subtype new ,
-    tool "tbl2asn 22.9 - LINUX UNIX" } ,
-  data
-    entrys {
-      set {
-        class genbank ,
-        seq-set {
-          seq {
-            id {
-              local
-                str "seq_1" } ,
-            descr {
-              source {
-                org {
-                  orgname {
-                    mod {
-                      {
-                        subtype nat-host ,
-                        subname "1" } } } } } ,
-              molinfo {
-                biomol genomic } ,
+              data ftable {
+                {
+                  data imp {
+                    key "regulatory"
+                  },
+                  location int {
+                    from 0,
+                    to 19,
+                    strand plus,
+                    id local str "seq_1"
+                  },
+                  qual {
+                    {
+                      qual "regulatory_class",
+                      val "ribosome_binding_site"
+                    }
+                  }
+                },
+                {
+                  data gene {
+                    locus "abc"
+                  },
+                  location int {
+                    from 299,
+                    to 335,
+                    strand plus,
+                    id local str "seq_1"
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "seq_2"
+          },
+          descr {
+            source {
+              org {
+                orgname {
+                  mod {
+                    {
+                      subtype nat-host,
+                      subname "2"
+                    }
+                  }
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            pub {
               pub {
-                pub {
-                  gen {
-                    cit "Unpublished" ,
-                    authors {
-                      names
-                        std {
-                          {
-                            name
-                              name {
-                                last "q" ,
-                                first "q" ,
-                                initials "q." } } } ,
-                      affil
-                        str "q" } ,
-                    title "a" } } } ,
-              user {
-                type
-                  str "NcbiCleanup" ,
-                data {
-                  {
-                    label
-                      str "method" ,
-                    data
-                      str "SequinCleanup" } ,
-                  {
-                    label
-                      str "version" ,
-                    data
-                      int 8 } ,
-                  {
-                    label
-                      str "month" ,
-                    data
-                      int 5 } ,
-                  {
-                    label
-                      str "day" ,
-                    data
-                      int 17 } ,
-                  {
-                    label
-                      str "year" ,
-                    data
-                      int 2016 } } } ,
-              create-date
-                std {
-                  year 2014 ,
-                  month 1 ,
-                  day 8 } } ,
-            inst {
-              repr raw ,
-              mol dna ,
-              length 336 ,
-              seq-data
-                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
-503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
-503FA9503FA9503FA9503FA9503FA9503FA95'H } ,
-            annot {
-              {
-                data
-                  ftable {
-                    {
-                      data
-                        imp {
-                          key "regulatory" } ,
-                      location
-                        int {
-                          from 0 ,
-                          to 19 ,
-                          strand plus ,
-                          id
-                            local
-                              str "seq_1" } ,
-                      qual {
-                        {
-                          qual "regulatory_class" ,
-                          val "ribosome_binding_site" } } } ,
-                    {
-                      data
-                        gene {
-                          locus "abc" } ,
-                      location
-                        int {
-                          from 299 ,
-                          to 335 ,
-                          strand plus ,
-                          id
-                            local
-                              str "seq_1" } } } } } } ,
-          seq {
-            id {
-              local
-                str "seq_2" } ,
-            descr {
-              source {
-                org {
-                  orgname {
-                    mod {
+                gen {
+                  cit "Unpublished",
+                  authors {
+                    names std {
                       {
-                        subtype nat-host ,
-                        subname "2" } } } } } ,
-              molinfo {
-                biomol genomic } ,
-              pub {
-                pub {
-                  gen {
-                    cit "Unpublished" ,
-                    authors {
-                      names
-                        std {
-                          {
-                            name
-                              name {
-                                last "q" ,
-                                first "q" ,
-                                initials "q." } } } ,
-                      affil
-                        str "q" } ,
-                    title "a" } } } ,
-              user {
-                type
-                  str "NcbiCleanup" ,
-                data {
-                  {
-                    label
-                      str "method" ,
-                    data
-                      str "SequinCleanup" } ,
-                  {
-                    label
-                      str "version" ,
-                    data
-                      int 8 } ,
-                  {
-                    label
-                      str "month" ,
-                    data
-                      int 5 } ,
-                  {
-                    label
-                      str "day" ,
-                    data
-                      int 17 } ,
-                  {
-                    label
-                      str "year" ,
-                    data
-                      int 2016 } } } ,
-              create-date
-                std {
-                  year 2014 ,
-                  month 1 ,
-                  day 8 } } ,
-            inst {
-              repr raw ,
-              mol dna ,
-              length 336 ,
-              seq-data
-                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
-503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
-503FA9503FA9503FA9503FA9503FA9503FA95'H } ,
-            annot {
-              {
-                data
-                  ftable {
+                        name name {
+                          last "q",
+                          first "q",
+                          initials "q."
+                        }
+                      }
+                    },
+                    affil str "q"
+                  },
+                  title "a"
+                }
+              }
+            },
+            user {
+              type str "NcbiCleanup",
+              data {
+                {
+                  label str "method",
+                  data str "SequinCleanup"
+                },
+                {
+                  label str "version",
+                  data int 8
+                },
+                {
+                  label str "month",
+                  data int 5
+                },
+                {
+                  label str "day",
+                  data int 17
+                },
+                {
+                  label str "year",
+                  data int 2016
+                }
+              }
+            },
+            create-date std {
+              year 2014,
+              month 1,
+              day 8
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 336,
+            seq-data ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA95
+03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA95
+03FA9503FA9503FA9503FA9503FA9503FA9503FA95'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data imp {
+                    key "regulatory"
+                  },
+                  location int {
+                    from 0,
+                    to 335,
+                    strand plus,
+                    id local str "seq_2"
+                  },
+                  qual {
                     {
-                      data
-                        imp {
-                          key "regulatory" } ,
-                      location
-                        int {
-                          from 0 ,
-                          to 335 ,
-                          strand plus ,
-                          id
-                            local
-                              str "seq_2" } ,
-                      qual {
-                        {
-                          qual "regulatory_class" ,
-                          val "ribosome_binding_site" } } } } } } } ,
-          seq {
-            id {
-              local
-                str "seq_3" } ,
-            descr {
-              source {
-                org {
-                  orgname {
-                    mod {
+                      qual "regulatory_class",
+                      val "ribosome_binding_site"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "seq_3"
+          },
+          descr {
+            source {
+              org {
+                orgname {
+                  mod {
+                    {
+                      subtype nat-host,
+                      subname "3"
+                    }
+                  }
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished",
+                  authors {
+                    names std {
                       {
-                        subtype nat-host ,
-                        subname "3" } } } } } ,
-              molinfo {
-                biomol genomic } ,
-              pub {
-                pub {
-                  gen {
-                    cit "Unpublished" ,
-                    authors {
-                      names
-                        std {
-                          {
-                            name
-                              name {
-                                last "q" ,
-                                first "q" ,
-                                initials "q." } } } ,
-                      affil
-                        str "q" } ,
-                    title "a" } } } ,
-              user {
-                type
-                  str "NcbiCleanup" ,
-                data {
-                  {
-                    label
-                      str "method" ,
-                    data
-                      str "SequinCleanup" } ,
-                  {
-                    label
-                      str "version" ,
-                    data
-                      int 8 } ,
-                  {
-                    label
-                      str "month" ,
-                    data
-                      int 5 } ,
-                  {
-                    label
-                      str "day" ,
-                    data
-                      int 17 } ,
-                  {
-                    label
-                      str "year" ,
-                    data
-                      int 2016 } } } ,
-              create-date
-                std {
-                  year 2014 ,
-                  month 1 ,
-                  day 8 } } ,
-            inst {
-              repr raw ,
-              mol dna ,
-              length 336 ,
-              seq-data
-                ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
-503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9
-503FA9503FA9503FA9503FA9503FA9503FA95'H } ,
-            annot {
-              {
-                data
-                  ftable {
+                        name name {
+                          last "q",
+                          first "q",
+                          initials "q."
+                        }
+                      }
+                    },
+                    affil str "q"
+                  },
+                  title "a"
+                }
+              }
+            },
+            user {
+              type str "NcbiCleanup",
+              data {
+                {
+                  label str "method",
+                  data str "SequinCleanup"
+                },
+                {
+                  label str "version",
+                  data int 8
+                },
+                {
+                  label str "month",
+                  data int 5
+                },
+                {
+                  label str "day",
+                  data int 17
+                },
+                {
+                  label str "year",
+                  data int 2016
+                }
+              }
+            },
+            create-date std {
+              year 2014,
+              month 1,
+              day 8
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 336,
+            seq-data ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA95
+03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA95
+03FA9503FA9503FA9503FA9503FA9503FA9503FA95'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data imp {
+                    key "regulatory"
+                  },
+                  location int {
+                    from 0,
+                    to 335,
+                    strand plus,
+                    id local str "seq_3"
+                  },
+                  qual {
                     {
-                      data
-                        imp {
-                          key "regulatory" } ,
-                      location
-                        int {
-                          from 0 ,
-                          to 335 ,
-                          strand plus ,
-                          id
-                            local
-                              str "seq_3" } ,
-                      qual {
-                        {
-                          qual "regulatory_class" ,
-                          val "ribosome_binding_site" } } } ,
-                    {
-                      data
-                        gene {
-                          locus "def" } ,
-                      location
-                        int {
-                          from 0 ,
-                          to 335 ,
-                          strand plus ,
-                          id
-                            local
-                              str "seq_3" } } } } } } } } } }
+                      qual "regulatory_class",
+                      val "ribosome_binding_site"
+                    }
+                  }
+                },
+                {
+                  data gene {
+                    locus "def"
+                  },
+                  location int {
+                    from 0,
+                    to 335,
+                    strand plus,
+                    id local str "seq_3"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

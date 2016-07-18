@@ -315,6 +315,7 @@ Seq-entry ::= set {
                   data fields {
                     {
                       label str "OrgMods",
+                      num 1,
                       data strs {
                         "strain"
                       }
@@ -499,6 +500,7 @@ CDDCABED228ED085EB0AF7D9BE7D83C05139D459FB9A955B43D7F8BF4B7E616C75529A2E7C39BC
                   data fields {
                     {
                       label str "OrgMods",
+                      num 1,
                       data strs {
                         "strain"
                       }
@@ -675,6 +677,7 @@ E0BE83672C3648D24E79AE0C6F56A5FB111754'H
                   data fields {
                     {
                       label str "OrgMods",
+                      num 1,
                       data strs {
                         "strain"
                       }
@@ -852,6 +855,7 @@ EA2FAFC560ACB99C16428A4945DCCFFF5554'H
                   data fields {
                     {
                       label str "OrgMods",
+                      num 1,
                       data strs {
                         "strain"
                       }
@@ -1035,6 +1039,7 @@ E4E0BE83672C3648D24E39AC0CFD5A97'H
                   data fields {
                     {
                       label str "OrgMods",
+                      num 1,
                       data strs {
                         "strain"
                       }
@@ -1215,6 +1220,7 @@ C4E09683672C3668D24E59AE0C6F56AD'H
                   data fields {
                     {
                       label str "OrgMods",
+                      num 1,
                       data strs {
                         "strain"
                       }
@@ -1390,6 +1396,7 @@ B8DA511EA1E211A54875C6A2924B2A0DF590E8602DE1A241966E2E382BFDA36C09DEFBCA82042E
                   data fields {
                     {
                       label str "OrgMods",
+                      num 1,
                       data strs {
                         "strain"
                       }
@@ -1564,6 +1571,7 @@ C8EA566993C5CBEB8AC0A7450A418E6C961788AB8DA515EA1E211A54875C6A2924B2A0DF590E86
                   data fields {
                     {
                       label str "OrgMods",
+                      num 1,
                       data strs {
                         "strain"
                       }
@@ -1743,6 +1751,7 @@ D5A97EC44595B445188BF904560B6B8AC17F3A252590'H
                   data fields {
                     {
                       label str "OrgMods",
+                      num 1,
                       data strs {
                         "strain"
                       }
@@ -1919,6 +1928,7 @@ D3E807A807E2E440088BA0F545EC7BC0E6C23BA82045AE982A1DDD'H
                   data fields {
                     {
                       label str "OrgMods",
+                      num 1,
                       data strs {
                         "strain"
                       }
@@ -2097,6 +2107,7 @@ D5A97EC44595B445188BF713D8EDAE0B00'H
                   data fields {
                     {
                       label str "OrgMods",
+                      num 1,
                       data strs {
                         "strain"
                       }
@@ -2278,6 +2289,7 @@ C1E76C5F86B170520251A7071B949259AC31B2BA426FB5A0F3EA6C0999929AD7F0B78EE025469D
                   data fields {
                     {
                       label str "OrgMods",
+                      num 1,
                       data strs {
                         "strain"
                       }
@@ -2452,6 +2464,7 @@ E806B270C59306D9085022AA17DA977E5348EE548EA3C9CB2BAAC1A745CA618D5C9EB788A38525
                   data fields {
                     {
                       label str "OrgMods",
+                      num 1,
                       data strs {
                         "strain"
                       }
@@ -2629,6 +2642,7 @@ FA01EA81F8B9208A22E83D46EC9AE039B023BA28114BA60A61DDEB7B078678A26026EA898118F1
                   data fields {
                     {
                       label str "OrgMods",
+                      num 1,
                       data strs {
                         "strain"
                       }
@@ -2804,6 +2818,7 @@ F6A5F998FA33952BA8F272FAE2B0E9D14298635727ADE228E349447A078846B521D71A8A492EA8
                   data fields {
                     {
                       label str "OrgMods",
+                      num 1,
                       data strs {
                         "strain"
                       }
@@ -2983,6 +2998,7 @@ B521D71A8A492EA833E843A990978D494C59BAB820A5F6AFB0257FEFA80802494BC317AFBDE1AC
                   data fields {
                     {
                       label str "OrgMods",
+                      num 1,
                       data strs {
                         "strain"
                       }
@@ -3180,6 +3196,7 @@ B521D71A8A492EA833E843A990978D494C59BAB820A5F6AFB0257FEFA80802494BC317AFBDE1AC
                   data fields {
                     {
                       label str "OrgMods",
+                      num 1,
                       data strs {
                         "strain"
                       }
@@ -3356,6 +3373,7 @@ AE03DB233DA28114BA60A69F1EB53C78678AE7026EA890128F0315E8'H
                   data fields {
                     {
                       label str "OrgMods",
+                      num 1,
                       data strs {
                         "strain"
                       }
@@ -3540,6 +3558,7 @@ A24EEBF0F6090660817C52B7E135F8435C88CA1B55F6AA48B84AEB93AFB6D276EDB88EFABC2D59
                   data fields {
                     {
                       label str "OrgMods",
+                      num 1,
                       data strs {
                         "strain"
                       }
@@ -3733,6 +3752,7 @@ EBF0F2090664817C5277E13DAACEA4FA218EDBD2F2AE954812B9E4E9EDB49DBB6E23BEAF0B5641
                   data fields {
                     {
                       label str "OrgMods",
+                      num 1,
                       data strs {
                         "strain"
                       }
@@ -3920,6 +3940,7 @@ DEC8AAAC83D4AEC9AE039B2237A28116BA60A6957A1021E19D2B9809BAA2404A3C8C57ACB5196C
                   data fields {
                     {
                       label str "OrgMods",
+                      num 1,
                       data strs {
                         "strain"
                       }
@@ -4105,6 +4126,7 @@ DEC8AAAC83D4AEC9AE039B2237A28116BA60A6957A1021E19D2B9809BAA2404A3C8C57ACB5196C
                   data fields {
                     {
                       label str "OrgMods",
+                      num 1,
                       data strs {
                         "strain"
                       }
@@ -4286,6 +4308,7 @@ E0C6F56A5FB111656D114EA2FAFC5600'H
                   data fields {
                     {
                       label str "OrgMods",
+                      num 1,
                       data strs {
                         "strain"
                       }
@@ -4464,6 +4487,7 @@ D5A97EC44515B444'H
                   data fields {
                     {
                       label str "OrgMods",
+                      num 1,
                       data strs {
                         "strain"
                       }
@@ -4642,6 +4666,7 @@ D5A97EC44515B444'H
                   data fields {
                     {
                       label str "OrgMods",
+                      num 1,
                       data strs {
                         "strain"
                       }
@@ -4818,6 +4843,7 @@ E0C6F56A5FB111656D114622F904563B6B82C1'H
                   data fields {
                     {
                       label str "OrgMods",
+                      num 1,
                       data strs {
                         "strain"
                       }
@@ -4994,6 +5020,7 @@ EA8E1B42D34E95F1A5EA7111B9C43ADAC48ABE509662BA270D510058DB2D68D92DE41D879A0B68
                   data fields {
                     {
                       label str "OrgMods",
+                      num 1,
                       data strs {
                         "strain"
                       }
@@ -5175,6 +5202,7 @@ CB0DB234939C6B831BD5AB7EC44595B445188BFB0456096BA2C1773A0725B6'H
                   data fields {
                     {
                       label str "OrgMods",
+                      num 1,
                       data strs {
                         "strain"
                       }

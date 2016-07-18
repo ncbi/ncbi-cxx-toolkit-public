@@ -1,256 +1,264 @@
 Seq-entry ::= set {
-  class pop-set ,
+  class pop-set,
   descr {
     user {
-      type
-        str "NcbiCleanup" ,
+      type str "NcbiCleanup",
       data {
         {
-          label
-            str "method" ,
-          data
-            str "SequinCleanup" } ,
+          label str "method",
+          data str "SequinCleanup"
+        },
         {
-          label
-            str "version" ,
-          data
-            int 8 } ,
+          label str "version",
+          data int 8
+        },
         {
-          label
-            str "month" ,
-          data
-            int 6 } ,
+          label str "month",
+          data int 6
+        },
         {
-          label
-            str "day" ,
-          data
-            int 22 } ,
+          label str "day",
+          data int 22
+        },
         {
-          label
-            str "year" ,
-          data
-            int 2016 } } } } ,
+          label str "year",
+          data int 2016
+        }
+      }
+    }
+  },
   seq-set {
     seq {
       id {
-        local
-          str "nuc1" } ,
+        local str "nuc1"
+      },
       descr {
-        title "HIV-1." ,
+        title "HIV-1.",
         source {
-          genome genomic ,
+          genome genomic,
           org {
-            taxname "Human immunodeficiency virus type 1" ,
+            taxname "Human immunodeficiency virus type 1",
             orgname {
               mod {
                 {
-                  subtype strain ,
-                  subname "something" } } } } } ,
+                  subtype strain,
+                  subname "something"
+                }
+              }
+            }
+          }
+        },
         molinfo {
-          biomol genomic } ,
+          biomol genomic
+        },
         user {
-          class "1.0" ,
-          type
-            str "AutodefOptions" ,
+          class "1.0",
+          type str "AutodefOptions",
           data {
             {
-              label
-                str "SpecifyNuclearProduct" ,
-              data
-                bool TRUE } ,
+              label str "SpecifyNuclearProduct",
+              data bool TRUE
+            },
             {
-              label
-                str "MiscFeatRule" ,
-              data
-                str "NoncodingProductFeat" } ,
+              label str "MiscFeatRule",
+              data str "NoncodingProductFeat"
+            },
             {
-              label
-                str "FeatureListType" ,
-              data
-                str "List All Features" } ,
+              label str "FeatureListType",
+              data str "List All Features"
+            },
             {
-              label
-                str "HIVRule" ,
-              data
-                str "WantBoth" } ,
+              label str "HIVRule",
+              data str "WantBoth"
+            },
             {
-              label
-                str "DoNotApplyToSp" ,
-              data
-                bool TRUE } ,
+              label str "DoNotApplyToSp",
+              data bool TRUE
+            },
             {
-              label
-                str "MaxMods" ,
-              data
-                int -99 } ,
+              label str "MaxMods",
+              data int -99
+            },
             {
-              label
-                str "UseLabels" ,
-              data
-                bool TRUE } } } ,
+              label str "UseLabels",
+              data bool TRUE
+            }
+          }
+        },
         user {
-          type
-            str "DBLink" ,
+          type str "DBLink",
           data {
             {
-              label
-                str "BioSample" ,
-              num 1 ,
-              data
-                strs {
-                  "xxx" } } } } } ,
+              label str "BioSample",
+              num 1,
+              data strs {
+                "xxx"
+              }
+            }
+          }
+        }
+      },
       inst {
-        repr raw ,
-        mol dna ,
-        length 12 ,
-        seq-data
-          ncbi2na '03FA95'H } } ,
+        repr raw,
+        mol dna,
+        length 12,
+        seq-data ncbi2na '03FA95'H
+      }
+    },
     seq {
       id {
-        local
-          str "nuc2" } ,
+        local str "nuc2"
+      },
       descr {
-        title "HIV-2." ,
+        title "HIV-2.",
         source {
-          genome genomic ,
+          genome genomic,
           org {
-            taxname "Human immunodeficiency virus 2" ,
+            taxname "Human immunodeficiency virus 2",
             orgname {
               mod {
                 {
-                  subtype strain ,
-                  subname "something" } } ,
-              gcode 1 } } } ,
+                  subtype strain,
+                  subname "something"
+                }
+              },
+              gcode 1
+            }
+          }
+        },
         molinfo {
-          biomol genomic } ,
+          biomol genomic
+        },
         user {
-          class "1.0" ,
-          type
-            str "AutodefOptions" ,
+          class "1.0",
+          type str "AutodefOptions",
           data {
             {
-              label
-                str "SpecifyNuclearProduct" ,
-              data
-                bool TRUE } ,
+              label str "SpecifyNuclearProduct",
+              data bool TRUE
+            },
             {
-              label
-                str "MiscFeatRule" ,
-              data
-                str "NoncodingProductFeat" } ,
+              label str "MiscFeatRule",
+              data str "NoncodingProductFeat"
+            },
             {
-              label
-                str "FeatureListType" ,
-              data
-                str "List All Features" } ,
+              label str "FeatureListType",
+              data str "List All Features"
+            },
             {
-              label
-                str "HIVRule" ,
-              data
-                str "WantBoth" } ,
+              label str "HIVRule",
+              data str "WantBoth"
+            },
             {
-              label
-                str "DoNotApplyToSp" ,
-              data
-                bool TRUE } ,
+              label str "DoNotApplyToSp",
+              data bool TRUE
+            },
             {
-              label
-                str "MaxMods" ,
-              data
-                int -99 } ,
+              label str "MaxMods",
+              data int -99
+            },
             {
-              label
-                str "UseLabels" ,
-              data
-                bool TRUE } } } ,
+              label str "UseLabels",
+              data bool TRUE
+            }
+          }
+        },
         user {
-          type
-            str "DBLink" ,
+          type str "DBLink",
           data {
             {
-              label
-                str "BioSample" ,
-              num 1 ,
-              data
-                strs {
-                  "SAMN00713649" } } } } } ,
+              label str "BioSample",
+              num 1,
+              data strs {
+                "SAMN00713649"
+              }
+            }
+          }
+        }
+      },
       inst {
-        repr raw ,
-        mol dna ,
-        length 12 ,
-        seq-data
-          ncbi2na '03FA95'H } } ,
+        repr raw,
+        mol dna,
+        length 12,
+        seq-data ncbi2na '03FA95'H
+      }
+    },
     seq {
       id {
-        local
-          str "nuc3" } ,
+        local str "nuc3"
+      },
       descr {
-        title "Acetabularia acetabulum." ,
+        title "Acetabularia acetabulum.",
         source {
-          genome genomic ,
+          genome genomic,
           org {
-            taxname "Acetabularia acetabulum (in parentheses)" ,
+            taxname "Acetabularia acetabulum (in parentheses)",
             orgname {
               mod {
                 {
-                  subtype strain ,
-                  subname "something" } } } } } ,
+                  subtype strain,
+                  subname "something"
+                }
+              }
+            }
+          }
+        },
         molinfo {
-          biomol genomic } ,
+          biomol genomic
+        },
         user {
-          class "1.0" ,
-          type
-            str "AutodefOptions" ,
+          class "1.0",
+          type str "AutodefOptions",
           data {
             {
-              label
-                str "SpecifyNuclearProduct" ,
-              data
-                bool TRUE } ,
+              label str "SpecifyNuclearProduct",
+              data bool TRUE
+            },
             {
-              label
-                str "MiscFeatRule" ,
-              data
-                str "NoncodingProductFeat" } ,
+              label str "MiscFeatRule",
+              data str "NoncodingProductFeat"
+            },
             {
-              label
-                str "FeatureListType" ,
-              data
-                str "List All Features" } ,
+              label str "FeatureListType",
+              data str "List All Features"
+            },
             {
-              label
-                str "HIVRule" ,
-              data
-                str "WantBoth" } ,
+              label str "HIVRule",
+              data str "WantBoth"
+            },
             {
-              label
-                str "DoNotApplyToSp" ,
-              data
-                bool TRUE } ,
+              label str "DoNotApplyToSp",
+              data bool TRUE
+            },
             {
-              label
-                str "MaxMods" ,
-              data
-                int -99 } ,
+              label str "MaxMods",
+              data int -99
+            },
             {
-              label
-                str "UseLabels" ,
-              data
-                bool TRUE } } } ,
+              label str "UseLabels",
+              data bool TRUE
+            }
+          }
+        },
         user {
-          type
-            str "DBLink" ,
+          type str "DBLink",
           data {
             {
-              label
-                str "BioSample" ,
-              num 1 ,
-              data
-                strs {
-                  "SAMN03381365" } } } } } ,
+              label str "BioSample",
+              num 1,
+              data strs {
+                "SAMN03381365"
+              }
+            }
+          }
+        }
+      },
       inst {
-        repr raw ,
-        mol dna ,
-        length 12 ,
-        seq-data
-          ncbi2na '03FA95'H } } } }
+        repr raw,
+        mol dna,
+        length 12,
+        seq-data ncbi2na '03FA95'H
+      }
+    }
+  }
+}

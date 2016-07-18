@@ -2,116 +2,127 @@ Seq-submit ::= {
   sub {
     contact {
       contact {
-        name
-          name {
-            last "q" ,
-            first "q" ,
-            initials "q" } ,
-        affil
-          str "q" } } ,
+        name name {
+          last "q",
+          first "q",
+          initials "q"
+        },
+        affil str "q"
+      }
+    },
     cit {
       authors {
-        names
-          std {
-            {
-              name
-                name {
-                  last "q" ,
-                  first "q" ,
-                  initials "q." } } } ,
-        affil
-          str "q" } ,
-      date
-        std {
-          year 2014 ,
-          month 1 ,
-          day 8 } } ,
-    subtype new ,
-    tool "tbl2asn 22.9 - LINUX UNIX" } ,
-  data
-    entrys {
-      seq {
-        id {
-          local
-            str "abc" } ,
-        descr {
-          molinfo {
-            biomol genomic } ,
-          pub {
-            pub {
-              gen {
-                cit "Unpublished" ,
-                authors {
-                  names
-                    std {
-                      {
-                        name
-                          name {
-                            last "q" ,
-                            first "q" ,
-                            initials "q." } } } ,
-                  affil
-                    str "q" } ,
-                title "a" } } } ,
-          user {
-            type
-              str "NcbiCleanup" ,
-            data {
-              {
-                label
-                  str "method" ,
-                data
-                  str "SeriousSeqEntryCleanup" } ,
-              {
-                label
-                  str "version" ,
-                data
-                  int 7 } ,
-              {
-                label
-                  str "month" ,
-                data
-                  int 1 } ,
-              {
-                label
-                  str "day" ,
-                data
-                  int 8 } ,
-              {
-                label
-                  str "year" ,
-                data
-                  int 2014 } } } ,
-          create-date
-            std {
-              year 2014 ,
-              month 1 ,
-              day 8 } } ,
-        inst {
-          repr raw ,
-          mol dna ,
-          length 236 ,
-          seq-data
-            ncbi2na '000000000003FFFFFFFFFFFFFFFFAAAAAAAAAAAAAAAAAA95555555555
-55000000000003FFFFFFFFFFFFFFFFAAAAAAAAAAAAAAAAAA9555555555555'H } ,
-        annot {
+        names std {
           {
-            data
-              ftable {
+            name name {
+              last "q",
+              first "q",
+              initials "q."
+            }
+          }
+        },
+        affil str "q"
+      },
+      date std {
+        year 2014,
+        month 1,
+        day 8
+      }
+    },
+    subtype new,
+    tool "tbl2asn 22.9 - LINUX UNIX"
+  },
+  data entrys {
+    seq {
+      id {
+        local str "abc"
+      },
+      descr {
+        molinfo {
+          biomol genomic
+        },
+        pub {
+          pub {
+            gen {
+              cit "Unpublished",
+              authors {
+                names std {
+                  {
+                    name name {
+                      last "q",
+                      first "q",
+                      initials "q."
+                    }
+                  }
+                },
+                affil str "q"
+              },
+              title "a"
+            }
+          }
+        },
+        user {
+          type str "NcbiCleanup",
+          data {
+            {
+              label str "method",
+              data str "SeriousSeqEntryCleanup"
+            },
+            {
+              label str "version",
+              data int 7
+            },
+            {
+              label str "month",
+              data int 1
+            },
+            {
+              label str "day",
+              data int 8
+            },
+            {
+              label str "year",
+              data int 2014
+            }
+          }
+        },
+        create-date std {
+          year 2014,
+          month 1,
+          day 8
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 236,
+        seq-data ncbi2na '000000000003FFFFFFFFFFFFFFFFAAAAAAAAAAAAAAAAAA955555
+5555555000000000003FFFFFFFFFFFFFFFFAAAAAAAAAAAAAAAAAA9555555555555'H
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "a misc feat should not have a locus_tag",
+              location int {
+                from 0,
+                to 235,
+                strand plus,
+                id local str "abc"
+              },
+              qual {
                 {
-                  data
-                    imp {
-                      key "misc_feature" } ,
-                  comment "a misc feat should not have a locus_tag" ,
-                  location
-                    int {
-                      from 0 ,
-                      to 235 ,
-                      strand plus ,
-                      id
-                        local
-                          str "abc" } ,
-                  qual {
-                    {
-                      qual "locus_tag" ,
-                      val "should not be on this feature" } } } } } } } } }
+                  qual "locus_tag",
+                  val "should not be on this feature"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,1578 +1,1653 @@
 Seq-entry ::= set {
-  class genbank ,
+  class genbank,
   seq-set {
     set {
-      class nuc-prot ,
+      class nuc-prot,
       descr {
         source {
-          genome genomic ,
+          genome genomic,
           org {
-            taxname "Influenza A virus (A/peafowl/Kirkuk/1/2015(H5N1))" ,
+            taxname "Influenza A virus (A/peafowl/Kirkuk/1/2015(H5N1))",
             db {
               {
-                db "taxon" ,
-                tag
-                  id 1853717 } } ,
+                db "taxon",
+                tag id 1853717
+              }
+            },
             orgname {
-              name
-                virus "Influenza A virus (A/peafowl/Kirkuk/1/2015(H5N1))" ,
+              name virus "Influenza A virus (A/peafowl/Kirkuk/1/2015(H5N1))",
               mod {
                 {
-                  subtype strain ,
-                  subname "A/peafowl/Kirkuk/1/2015" } ,
+                  subtype strain,
+                  subname "A/peafowl/Kirkuk/1/2015"
+                },
                 {
-                  subtype serotype ,
-                  subname "H5N1" } ,
+                  subtype serotype,
+                  subname "H5N1"
+                },
                 {
-                  subtype nat-host ,
-                  subname "peafowl" } } ,
+                  subtype nat-host,
+                  subname "peafowl"
+                }
+              },
               lineage "Viruses; ssRNA viruses; ssRNA negative-strand viruses;
- Orthomyxoviridae; Influenzavirus A" ,
-              gcode 1 ,
-              div "VRL" } } ,
+ Orthomyxoviridae; Influenzavirus A",
+              gcode 1,
+              div "VRL"
+            }
+          },
           subtype {
             {
-              subtype country ,
-              name "Iraq: Kurdistan,Kirkuk" } ,
+              subtype country,
+              name "Iraq: Kurdistan,Kirkuk"
+            },
             {
-              subtype segment ,
-              name "4" } ,
+              subtype segment,
+              name "4"
+            },
             {
-              subtype isolation-source ,
-              name "tracheal and cloecal swab" } ,
+              subtype isolation-source,
+              name "tracheal and cloecal swab"
+            },
             {
-              subtype collected-by ,
-              name "Dr. Nahla M. Saeed" } } } ,
+              subtype collected-by,
+              name "Dr. Nahla M. Saeed"
+            }
+          }
+        },
         pub {
           pub {
             gen {
-              cit "Unpublished" ,
+              cit "Unpublished",
               authors {
-                names
-                  std {
-                    {
-                      name
-                        name {
-                          last "Rashid" ,
-                          first "Peshnyar" ,
-                          initials "P.M.A." } } ,
-                    {
-                      name
-                        name {
-                          last "Saeed" ,
-                          first "Nahla" ,
-                          initials "N.M." } } } } ,
+                names std {
+                  {
+                    name name {
+                      last "Rashid",
+                      first "Peshnyar",
+                      initials "P.M.A."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Saeed",
+                      first "Nahla",
+                      initials "N.M."
+                    }
+                  }
+                }
+              },
               title "Phylogenic Analysis and Genetic Characterization of
- Highly Pathogenic Avian Influenza Virus H5N1 in Peafowl" } } } ,
+ Highly Pathogenic Avian Influenza Virus H5N1 in Peafowl"
+            }
+          }
+        },
         pub {
           pub {
             sub {
               authors {
-                names
-                  std {
-                    {
-                      name
-                        name {
-                          last "Rashid" ,
-                          first "Peshnyar" ,
-                          initials "P.M.A." } } ,
-                    {
-                      name
-                        name {
-                          last "Saeed" ,
-                          first "Nahla" ,
-                          initials "N.M." } } } ,
-                affil
-                  std {
-                    affil "Micro Vet. Diagnostic Lab" ,
-                    div "Molecular Microbiology" ,
-                    city "Sulaimani" ,
-                    sub "Kurdistan Region" ,
-                    country "Iraq" ,
-                    street "Mamostayan 205/12" ,
-                    postal-code "+964" } } ,
-              medium email ,
-              date
-                std {
-                  year 2016 ,
-                  month 5 ,
-                  day 7 } } } } ,
+                names std {
+                  {
+                    name name {
+                      last "Rashid",
+                      first "Peshnyar",
+                      initials "P.M.A."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Saeed",
+                      first "Nahla",
+                      initials "N.M."
+                    }
+                  }
+                },
+                affil std {
+                  affil "Micro Vet. Diagnostic Lab",
+                  div "Molecular Microbiology",
+                  city "Sulaimani",
+                  sub "Kurdistan Region",
+                  country "Iraq",
+                  street "Mamostayan 205/12",
+                  postal-code "+964"
+                }
+              },
+              medium email,
+              date std {
+                year 2016,
+                month 5,
+                day 7
+              }
+            }
+          }
+        },
         user {
-          class "SMART_V1.0" ,
-          type
-            id 1 ,
+          class "SMART_V1.0",
+          type id 1,
           data {
             {
-              label
-                id 1 ,
-              num 1 ,
-              data
-                int 10459176 } } } ,
+              label id 1,
+              num 1,
+              data int 10459176
+            }
+          }
+        },
         user {
-          type
-            str "Submission" ,
+          type str "Submission",
           data {
             {
-              label
-                str "SmartComment" ,
-              data
-                str "TOTAL # OF SEQS:1" } ,
+              label str "SmartComment",
+              data str "TOTAL # OF SEQS:1"
+            },
             {
-              label
-                str "AdditionalComment" ,
-              data
-                str "BankIt1917121" } } } ,
+              label str "AdditionalComment",
+              data str "BankIt1917121"
+            }
+          }
+        },
         user {
-          type
-            str "Submission" ,
+          type str "Submission",
           data {
             {
-              label
-                str "AdditionalComment" ,
-              data
-                str "Submission Title:peafowl h5n1 Ha 1" } } } ,
+              label str "AdditionalComment",
+              data str "Submission Title:peafowl h5n1 Ha 1"
+            }
+          }
+        },
         user {
-          type
-            str "NcbiCleanup" ,
+          type str "NcbiCleanup",
           data {
             {
-              label
-                str "method" ,
-              data
-                str "SequinCleanup" } ,
+              label str "method",
+              data str "SequinCleanup"
+            },
             {
-              label
-                str "version" ,
-              data
-                int 8 } ,
+              label str "version",
+              data int 8
+            },
             {
-              label
-                str "month" ,
-              data
-                int 5 } ,
+              label str "month",
+              data int 5
+            },
             {
-              label
-                str "day" ,
-              data
-                int 26 } ,
+              label str "day",
+              data int 26
+            },
             {
-              label
-                str "year" ,
-              data
-                int 2016 } } } ,
-        update-date
-          std {
-            year 2016 ,
-            month 5 ,
-            day 26 } } ,
+              label str "year",
+              data int 2016
+            }
+          }
+        },
+        update-date std {
+          year 2016,
+          month 5,
+          day 26
+        }
+      },
       seq-set {
         seq {
           id {
-            local
-              str "BSeq#1__1" ,
+            local str "BSeq#1__1",
             general {
-              db "BankIt" ,
-              tag
-                str "1917121/BSeq#1" } ,
+              db "BankIt",
+              tag str "1917121/BSeq#1"
+            },
             general {
-              db "TMSMART" ,
-              tag
-                id 65969643 } ,
+              db "TMSMART",
+              tag id 65969643
+            },
             genbank {
-              accession "KX215979" } } ,
+              accession "KX215979"
+            }
+          },
           descr {
             title "Influenza A virus (A/peafowl/Kirkuk/1/2015(H5N1)) segment 4
- hemagglutinin (HA) gene, partial cds." ,
+ hemagglutinin (HA) gene, partial cds.",
             molinfo {
-              biomol cRNA } ,
+              biomol cRNA
+            },
             user {
-              type
-                str "StructuredComment" ,
+              type str "StructuredComment",
               data {
                 {
-                  label
-                    str "StructuredCommentPrefix" ,
-                  data
-                    str "##Assembly-Data-START##" } ,
+                  label str "StructuredCommentPrefix",
+                  data str "##Assembly-Data-START##"
+                },
                 {
-                  label
-                    str "Sequencing Technology" ,
-                  data
-                    str "Sanger dideoxy sequencing" } ,
+                  label str "Sequencing Technology",
+                  data str "Sanger dideoxy sequencing"
+                },
                 {
-                  label
-                    str "StructuredCommentSuffix" ,
-                  data
-                    str "##Assembly-Data-END##" } } } ,
+                  label str "StructuredCommentSuffix",
+                  data str "##Assembly-Data-END##"
+                }
+              }
+            },
             user {
-              type
-                str "Submission" ,
+              type str "Submission",
               data {
                 {
-                  label
-                    str "AdditionalComment" ,
-                  data
-                    str "LocalID:BSeq#1" } } } ,
+                  label str "AdditionalComment",
+                  data str "LocalID:BSeq#1"
+                }
+              }
+            },
             user {
-              class "1.0" ,
-              type
-                str "AutodefOptions" ,
+              class "1.0",
+              type str "AutodefOptions",
               data {
                 {
-                  label
-                    str "UseLabels" ,
-                  data
-                    bool TRUE } ,
+                  label str "UseLabels",
+                  data bool TRUE
+                },
                 {
-                  label
-                    str "LeaveParenthetical" ,
-                  data
-                    bool TRUE } ,
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
                 {
-                  label
-                    str "SpecifyNuclearProduct" ,
-                  data
-                    bool TRUE } ,
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
                 {
-                  label
-                    str "MaxMods" ,
-                  data
-                    int 0 } ,
+                  label str "MaxMods",
+                  data int 0
+                },
                 {
-                  label
-                    str "FeatureListType" ,
-                  data
-                    str "List All Features" } ,
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
                 {
-                  label
-                    str "MiscFeatRule" ,
-                  data
-                    str "Delete" } ,
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
                 {
-                  label
-                    str "HIVRule" ,
-                  data
-                    str "WantBoth" } ,
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
                 {
-                  label
-                    str "ModifierList" ,
-                  data
-                    fields {
-                      {
-                        label
-                          str "SubSources" ,
-                        num 1 ,
-                        data
-                          strs {
-                            "segment" } } } } } } ,
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "SubSources",
+                      num 1,
+                      data strs {
+                        "segment"
+                      }
+                    }
+                  }
+                }
+              }
+            },
             user {
-              type
-                str "OriginalID" ,
+              type str "OriginalID",
               data {
                 {
-                  label
-                    str "LocalId" ,
-                  data
-                    str "BSeq#1__1" } } } } ,
+                  label str "LocalId",
+                  data str "BSeq#1__1"
+                }
+              }
+            }
+          },
           inst {
-            repr raw ,
-            mol rna ,
-            length 1605 ,
-            seq-data
-              ncbi2na '4CFE4FAF34E40C1D84892BE110C3A0081BC7BC44E542131E8021110
-6A09DE63703A2E09778FF0087B2EC928E9D7680D4FBBA60F470EE520EB7C4CB220A50D497385DE
-F152A0FD063CE281C01173E24A3004FF88031234D5408F7EB48D3825D3EAAE26493BD314A80F5D
-7DF480EEBBA7CD002843931504302029C430C505882377E31EEAA3514D70E38248921027734015
-071733F53EA1F411C05223EB1400C94723500C06A40BA4A323F7DE843FC0140E190D4FD88B0E80
-FD3E7520CE4C403ED080A21D4434E20B8AE833AC1E4114AED21D432A98C07724E53D4413135DD1
-4DA20ED5033B80D0103CB5F907A9D2032D7408880208008A1EFE89CC92AFCC8A8A3A4A83AC8EBE
-B1AB1451243810A0BAF19E48408371D00A6321A2D1430AD0F434F8403811D2FE29ECA0283F0C1F
-222883200FC04208E821A3D723B7A1F30E781F7AF74E8838881DC87D4E1D03B4205FC630AD61C4
-9F0A30E40227A806BEFD8BDCD103B0C383B3A02EE201A86CE1CD64B3D208242BC0088A030BA2C0
-1E83432837140C7B43F3D04BA62F572E7A434E3A7ADCDC0'H } ,
+            repr raw,
+            mol rna,
+            length 1605,
+            seq-data ncbi2na '4CFE4FAF34E40C1D84892BE110C3A0081BC7BC44E542131E
+80211106A09DE63703A2E09778FF0087B2EC928E9D7680D4FBBA60F470EE520EB7C4CB220A50D4
+97385DEF152A0FD063CE281C01173E24A3004FF88031234D5408F7EB48D3825D3EAAE26493BD31
+4A80F5D7DF480EEBBA7CD002843931504302029C430C505882377E31EEAA3514D70E3824892102
+7734015071733F53EA1F411C05223EB1400C94723500C06A40BA4A323F7DE843FC0140E190D4FD
+88B0E80FD3E7520CE4C403ED080A21D4434E20B8AE833AC1E4114AED21D432A98C07724E53D441
+3135DD14DA20ED5033B80D0103CB5F907A9D2032D7408880208008A1EFE89CC92AFCC8A8A3A4A8
+3AC8EBEB1AB1451243810A0BAF19E48408371D00A6321A2D1430AD0F434F8403811D2FE29ECA02
+83F0C1F222883200FC04208E821A3D723B7A1F30E781F7AF74E8838881DC87D4E1D03B4205FC63
+0AD61C49F0A30E40227A806BEFD8BDCD103B0C383B3A02EE201A86CE1CD64B3D208242BC0088A0
+30BA2C01E83432837140C7B43F3D04BA62F572E7A434E3A7ADCDC0'H
+          },
           annot {
             {
-              data
-                ftable {
-                  {
-                    data
-                      gene {
-                        locus "HA" } ,
-                    partial TRUE ,
-                    location
-                      int {
-                        from 0 ,
-                        to 1604 ,
-                        strand plus ,
-                        id
-                          local
-                            str "BSeq#1__1" ,
-                        fuzz-from
-                          lim lt ,
-                        fuzz-to
-                          lim gt } } } } } } ,
+              data ftable {
+                {
+                  data gene {
+                    locus "HA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 1604,
+                    strand plus,
+                    id local str "BSeq#1__1",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
         seq {
           id {
-            local
-              str "BSeq#1_prot_1__1" ,
+            local str "BSeq#1_prot_1__1",
             general {
-              db "TMSMART" ,
-              tag
-                id 65969644 } } ,
+              db "TMSMART",
+              tag id 65969644
+            }
+          },
           descr {
             title "hemagglutinin, partial [Influenza A virus
- (A/peafowl/Kirkuk/1/2015(H5N1))]" ,
+ (A/peafowl/Kirkuk/1/2015(H5N1))]",
             molinfo {
-              biomol peptide ,
-              completeness no-ends } ,
+              biomol peptide,
+              completeness no-ends
+            },
             user {
-              type
-                str "OriginalID" ,
+              type str "OriginalID",
               data {
                 {
-                  label
-                    str "LocalId" ,
-                  data
-                    str "BSeq#1_prot_1__1" } } } } ,
+                  label str "LocalId",
+                  data str "BSeq#1_prot_1__1"
+                }
+              }
+            }
+          },
           inst {
-            repr raw ,
-            mol aa ,
-            length 535 ,
-            seq-data
-              ncbieaa "HICIGYHANNSTEQVDTIMEKNVTVTHAQDILEKTHNGKLCDLNGVKPLILKDCS
-VAGWLLGNPLCGEFTNVPEWSYIVEKANPAYDLCYPGNFNDYEELKHLLSRIKHFEKIQIIPKDSWSDHEASLGVSAA
-CSYQGNSSFFRNVVWLIKKDNAYPTIKKGYNNTNREDLLILWGIHHPNDEAEQTKLYQNPTTYISIGTSTLNQRLVPK
-IATRSKINGQSGRIDFFWTILKPNDAIHFESNGNFIAPEYAYKIVKKGDSTIMRSEVEYGNCNTRCQTPIGAINSSMP
-FHNIHPLTIGECPKYVKSNKLVLATGLRNSPQREKRRKRGLFGAIAGFIEGGWQGMVDGWYGYHHSNEQGSGYAADKE
-STQKAIDGVTNKVNSIIDKMNTQFEAVGKEFNNLERRIENLNKKMEDGFLDVWTYNAELLVLMENERTLDFHDSNVKN
-LYDKVRLQLKDNAKELGNGCFEFYHKCNNECMESVRNGTYDYPQYSEEARLKREEISGVKLESIGIYQILSIYSTVAS
-SLVLAIMMAGLS" } ,
+            repr raw,
+            mol aa,
+            length 535,
+            seq-data ncbieaa "HICIGYHANNSTEQVDTIMEKNVTVTHAQDILEKTHNGKLCDLNGVKP
+LILKDCSVAGWLLGNPLCGEFTNVPEWSYIVEKANPAYDLCYPGNFNDYEELKHLLSRIKHFEKIQIIPKDSWSDHEA
+SLGVSAACSYQGNSSFFRNVVWLIKKDNAYPTIKKGYNNTNREDLLILWGIHHPNDEAEQTKLYQNPTTYISIGTSTL
+NQRLVPKIATRSKINGQSGRIDFFWTILKPNDAIHFESNGNFIAPEYAYKIVKKGDSTIMRSEVEYGNCNTRCQTPIG
+AINSSMPFHNIHPLTIGECPKYVKSNKLVLATGLRNSPQREKRRKRGLFGAIAGFIEGGWQGMVDGWYGYHHSNEQGS
+GYAADKESTQKAIDGVTNKVNSIIDKMNTQFEAVGKEFNNLERRIENLNKKMEDGFLDVWTYNAELLVLMENERTLDF
+HDSNVKNLYDKVRLQLKDNAKELGNGCFEFYHKCNNECMESVRNGTYDYPQYSEEARLKREEISGVKLESIGIYQILS
+IYSTVASSLVLAIMMAGLS"
+          },
           annot {
             {
-              data
-                ftable {
-                  {
-                    data
-                      prot {
-                        name {
-                          "hemagglutinin" } ,
-                        desc "receptor binding and fusion protein" } ,
-                    partial TRUE ,
-                    location
-                      int {
-                        from 0 ,
-                        to 534 ,
-                        id
-                          local
-                            str "BSeq#1_prot_1__1" ,
-                        fuzz-from
-                          lim lt ,
-                        fuzz-to
-                          lim gt } } } } } } } ,
+              data ftable {
+                {
+                  data prot {
+                    name {
+                      "hemagglutinin"
+                    },
+                    desc "receptor binding and fusion protein"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 534,
+                    id local str "BSeq#1_prot_1__1",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
       annot {
         {
-          data
-            ftable {
-              {
-                data
-                  cdregion {
-                    frame one ,
-                    code {
-                      id 1 } } ,
-                partial TRUE ,
-                product
-                  whole
-                    local
-                      str "BSeq#1_prot_1__1" ,
-                location
-                  int {
-                    from 0 ,
-                    to 1604 ,
-                    strand plus ,
-                    id
-                      local
-                        str "BSeq#1__1" ,
-                    fuzz-from
-                      lim lt ,
-                    fuzz-to
-                      lim gt } } } } } } ,
+          data ftable {
+            {
+              data cdregion {
+                frame one,
+                code {
+                  id 1
+                }
+              },
+              partial TRUE,
+              product whole local str "BSeq#1_prot_1__1",
+              location int {
+                from 0,
+                to 1604,
+                strand plus,
+                id local str "BSeq#1__1",
+                fuzz-from lim lt,
+                fuzz-to lim gt
+              }
+            }
+          }
+        }
+      }
+    },
     set {
-      class nuc-prot ,
+      class nuc-prot,
       descr {
         source {
-          genome genomic ,
+          genome genomic,
           org {
-            taxname "Influenza A virus (A/peafowl/Kirkuk/2/2015(H5N1))" ,
+            taxname "Influenza A virus (A/peafowl/Kirkuk/2/2015(H5N1))",
             db {
               {
-                db "taxon" ,
-                tag
-                  id 1853718 } } ,
+                db "taxon",
+                tag id 1853718
+              }
+            },
             orgname {
-              name
-                virus "Influenza A virus (A/peafowl/Kirkuk/2/2015(H5N1))" ,
+              name virus "Influenza A virus (A/peafowl/Kirkuk/2/2015(H5N1))",
               mod {
                 {
-                  subtype strain ,
-                  subname "A/peafowl/Kirkuk/2/2015" } ,
+                  subtype strain,
+                  subname "A/peafowl/Kirkuk/2/2015"
+                },
                 {
-                  subtype serotype ,
-                  subname "H5N1" } ,
+                  subtype serotype,
+                  subname "H5N1"
+                },
                 {
-                  subtype nat-host ,
-                  subname "peafowl" } } ,
+                  subtype nat-host,
+                  subname "peafowl"
+                }
+              },
               lineage "Viruses; ssRNA viruses; ssRNA negative-strand viruses;
- Orthomyxoviridae; Influenzavirus A" ,
-              gcode 1 ,
-              div "VRL" } } ,
+ Orthomyxoviridae; Influenzavirus A",
+              gcode 1,
+              div "VRL"
+            }
+          },
           subtype {
             {
-              subtype country ,
-              name "Iraq: Kurdistan,Kirkuk" } ,
+              subtype country,
+              name "Iraq: Kurdistan,Kirkuk"
+            },
             {
-              subtype segment ,
-              name "4" } ,
+              subtype segment,
+              name "4"
+            },
             {
-              subtype isolation-source ,
-              name "tracheal and cloecal swab" } ,
+              subtype isolation-source,
+              name "tracheal and cloecal swab"
+            },
             {
-              subtype collection-date ,
-              name "Jul-2015" } ,
+              subtype collection-date,
+              name "Jul-2015"
+            },
             {
-              subtype collected-by ,
-              name "Dr. Kazhan Muhamad" } } } ,
+              subtype collected-by,
+              name "Dr. Kazhan Muhamad"
+            }
+          }
+        },
         pub {
           pub {
             gen {
-              cit "Unpublished" ,
+              cit "Unpublished",
               authors {
-                names
-                  std {
-                    {
-                      name
-                        name {
-                          last "Rashid" ,
-                          first "Peshnyar" ,
-                          initials "P.M.A." } } ,
-                    {
-                      name
-                        name {
-                          last "Saeed" ,
-                          first "Nahla" ,
-                          initials "N.M." } } } } ,
+                names std {
+                  {
+                    name name {
+                      last "Rashid",
+                      first "Peshnyar",
+                      initials "P.M.A."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Saeed",
+                      first "Nahla",
+                      initials "N.M."
+                    }
+                  }
+                }
+              },
               title "Phylogenic Analysis and Genetic Characterization of
- Highly Pathogenic Avian Influenza Virus H5N1 in Peafowl" } } } ,
+ Highly Pathogenic Avian Influenza Virus H5N1 in Peafowl"
+            }
+          }
+        },
         pub {
           pub {
             sub {
               authors {
-                names
-                  std {
-                    {
-                      name
-                        name {
-                          last "Saeed" ,
-                          first "Nahla" ,
-                          initials "N.M." } } ,
-                    {
-                      name
-                        name {
-                          last "Rashid" ,
-                          first "Peshnyar" ,
-                          initials "P.M.A." } } } ,
-                affil
-                  std {
-                    affil "Micro Vet. Diagnostic Lab" ,
-                    div "Molecular Microbiology" ,
-                    city "Sulaimani" ,
-                    sub "Kurdistan Region" ,
-                    country "Iraq" ,
-                    street "Mamostayan 205/12" ,
-                    postal-code "+964" } } ,
-              medium email ,
-              date
-                std {
-                  year 2016 ,
-                  month 5 ,
-                  day 7 } } } } ,
+                names std {
+                  {
+                    name name {
+                      last "Saeed",
+                      first "Nahla",
+                      initials "N.M."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Rashid",
+                      first "Peshnyar",
+                      initials "P.M.A."
+                    }
+                  }
+                },
+                affil std {
+                  affil "Micro Vet. Diagnostic Lab",
+                  div "Molecular Microbiology",
+                  city "Sulaimani",
+                  sub "Kurdistan Region",
+                  country "Iraq",
+                  street "Mamostayan 205/12",
+                  postal-code "+964"
+                }
+              },
+              medium email,
+              date std {
+                year 2016,
+                month 5,
+                day 7
+              }
+            }
+          }
+        },
         user {
-          class "SMART_V1.0" ,
-          type
-            id 1 ,
+          class "SMART_V1.0",
+          type id 1,
           data {
             {
-              label
-                id 1 ,
-              num 1 ,
-              data
-                int 10459508 } } } ,
+              label id 1,
+              num 1,
+              data int 10459508
+            }
+          }
+        },
         user {
-          type
-            str "Submission" ,
+          type str "Submission",
           data {
             {
-              label
-                str "SmartComment" ,
-              data
-                str "TOTAL # OF SEQS:1" } ,
+              label str "SmartComment",
+              data str "TOTAL # OF SEQS:1"
+            },
             {
-              label
-                str "AdditionalComment" ,
-              data
-                str "BankIt1917188" } } } ,
+              label str "AdditionalComment",
+              data str "BankIt1917188"
+            }
+          }
+        },
         user {
-          type
-            str "Submission" ,
+          type str "Submission",
           data {
             {
-              label
-                str "AdditionalComment" ,
-              data
-                str "Submission Title:A/peafowl/Kirkuk/Kurdistan/2/2015(H5N1))
- HA" } } } ,
+              label str "AdditionalComment",
+              data str "Submission
+ Title:A/peafowl/Kirkuk/Kurdistan/2/2015(H5N1)) HA"
+            }
+          }
+        },
         user {
-          type
-            str "NcbiCleanup" ,
+          type str "NcbiCleanup",
           data {
             {
-              label
-                str "method" ,
-              data
-                str "SequinCleanup" } ,
+              label str "method",
+              data str "SequinCleanup"
+            },
             {
-              label
-                str "version" ,
-              data
-                int 8 } ,
+              label str "version",
+              data int 8
+            },
             {
-              label
-                str "month" ,
-              data
-                int 5 } ,
+              label str "month",
+              data int 5
+            },
             {
-              label
-                str "day" ,
-              data
-                int 26 } ,
+              label str "day",
+              data int 26
+            },
             {
-              label
-                str "year" ,
-              data
-                int 2016 } } } ,
-        update-date
-          std {
-            year 2016 ,
-            month 5 ,
-            day 26 } } ,
+              label str "year",
+              data int 2016
+            }
+          }
+        },
+        update-date std {
+          year 2016,
+          month 5,
+          day 26
+        }
+      },
       seq-set {
         seq {
           id {
-            local
-              str "BSeq#1__2" ,
+            local str "BSeq#1__2",
             general {
-              db "BankIt" ,
-              tag
-                str "1917188/BSeq#1" } ,
+              db "BankIt",
+              tag str "1917188/BSeq#1"
+            },
             general {
-              db "TMSMART" ,
-              tag
-                id 65971737 } ,
+              db "TMSMART",
+              tag id 65971737
+            },
             genbank {
-              accession "KX215980" } } ,
+              accession "KX215980"
+            }
+          },
           descr {
             title "Influenza A virus (A/peafowl/Kirkuk/2/2015(H5N1)) segment 4
- hemagglutinin (HA) gene, partial cds." ,
+ hemagglutinin (HA) gene, partial cds.",
             molinfo {
-              biomol cRNA ,
-              completeness partial } ,
+              biomol cRNA,
+              completeness partial
+            },
             user {
-              type
-                str "StructuredComment" ,
+              type str "StructuredComment",
               data {
                 {
-                  label
-                    str "StructuredCommentPrefix" ,
-                  data
-                    str "##Assembly-Data-START##" } ,
+                  label str "StructuredCommentPrefix",
+                  data str "##Assembly-Data-START##"
+                },
                 {
-                  label
-                    str "Sequencing Technology" ,
-                  data
-                    str "Sanger dideoxy sequencing" } ,
+                  label str "Sequencing Technology",
+                  data str "Sanger dideoxy sequencing"
+                },
                 {
-                  label
-                    str "StructuredCommentSuffix" ,
-                  data
-                    str "##Assembly-Data-END##" } } } ,
+                  label str "StructuredCommentSuffix",
+                  data str "##Assembly-Data-END##"
+                }
+              }
+            },
             user {
-              type
-                str "Submission" ,
+              type str "Submission",
               data {
                 {
-                  label
-                    str "AdditionalComment" ,
-                  data
-                    str "LocalID:BSeq#1" } } } ,
+                  label str "AdditionalComment",
+                  data str "LocalID:BSeq#1"
+                }
+              }
+            },
             user {
-              class "1.0" ,
-              type
-                str "AutodefOptions" ,
+              class "1.0",
+              type str "AutodefOptions",
               data {
                 {
-                  label
-                    str "UseLabels" ,
-                  data
-                    bool TRUE } ,
+                  label str "UseLabels",
+                  data bool TRUE
+                },
                 {
-                  label
-                    str "LeaveParenthetical" ,
-                  data
-                    bool TRUE } ,
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
                 {
-                  label
-                    str "SpecifyNuclearProduct" ,
-                  data
-                    bool TRUE } ,
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
                 {
-                  label
-                    str "MaxMods" ,
-                  data
-                    int 0 } ,
+                  label str "MaxMods",
+                  data int 0
+                },
                 {
-                  label
-                    str "FeatureListType" ,
-                  data
-                    str "List All Features" } ,
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
                 {
-                  label
-                    str "MiscFeatRule" ,
-                  data
-                    str "Delete" } ,
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
                 {
-                  label
-                    str "HIVRule" ,
-                  data
-                    str "WantBoth" } ,
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
                 {
-                  label
-                    str "ModifierList" ,
-                  data
-                    fields {
-                      {
-                        label
-                          str "SubSources" ,
-                        num 1 ,
-                        data
-                          strs {
-                            "segment" } } } } } } ,
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "SubSources",
+                      num 1,
+                      data strs {
+                        "segment"
+                      }
+                    }
+                  }
+                }
+              }
+            },
             user {
-              type
-                str "OriginalID" ,
+              type str "OriginalID",
               data {
                 {
-                  label
-                    str "LocalId" ,
-                  data
-                    str "BSeq#1__2" } } } } ,
+                  label str "LocalId",
+                  data str "BSeq#1__2"
+                }
+              }
+            }
+          },
           inst {
-            repr raw ,
-            mol rna ,
-            length 1605 ,
-            seq-data
-              ncbi2na '4CFE4FAF34E40C1D84892BE110C3A0081BC7BC44E542131E8021110
-6A09DE63703A2E09778FF0087B2EC928E9D7680D4FBBA60F470EE520EB7C4CB220A50D494385DE
-F152A0FD063CE281C01173E24A3004FF88031234D5408F7EB48D3825D3EAAE26493BD314A80F5D
-7DF480EEBBA7CD002843931504302029C430C505882377E31EEAA3514D70E38248921027734015
-071733F53EA1F411C05223EB1400C94723500C06A409A4A323F7DE843FC0140E390D4FD88B0E80
-FD3E7520CE4C403ED080A21D4434E20B8AE833AC1E4114AED21D432A98C07724E53D4413135DD1
-CDA20ED5033B80D0103CB5F907A9D2032D7408888208008A1EFE89CC92BFCC8A8A3A4A83AC8EBE
-B3AB1451243810A0BAF19E48408371D00A4321A2D1430AD0F434F8403811D2FE29ECA0283F0C1F
-222883200FC04208E821A3D723B7A1F30E781F7AF74E8838881DC87D4E1D03B4205FC630AD63C4
-9F0A30E40227A806BEFD8BDCD103B0C383B3A02EE201A86CE1CD64B3D2082423C0088A030BA2C0
-1E83432837140C7343F3D04BA62F572E7A434E3A7ADCDC0'H } ,
+            repr raw,
+            mol rna,
+            length 1605,
+            seq-data ncbi2na '4CFE4FAF34E40C1D84892BE110C3A0081BC7BC44E542131E
+80211106A09DE63703A2E09778FF0087B2EC928E9D7680D4FBBA60F470EE520EB7C4CB220A50D4
+94385DEF152A0FD063CE281C01173E24A3004FF88031234D5408F7EB48D3825D3EAAE26493BD31
+4A80F5D7DF480EEBBA7CD002843931504302029C430C505882377E31EEAA3514D70E3824892102
+7734015071733F53EA1F411C05223EB1400C94723500C06A409A4A323F7DE843FC0140E390D4FD
+88B0E80FD3E7520CE4C403ED080A21D4434E20B8AE833AC1E4114AED21D432A98C07724E53D441
+3135DD1CDA20ED5033B80D0103CB5F907A9D2032D7408888208008A1EFE89CC92BFCC8A8A3A4A8
+3AC8EBEB3AB1451243810A0BAF19E48408371D00A4321A2D1430AD0F434F8403811D2FE29ECA02
+83F0C1F222883200FC04208E821A3D723B7A1F30E781F7AF74E8838881DC87D4E1D03B4205FC63
+0AD63C49F0A30E40227A806BEFD8BDCD103B0C383B3A02EE201A86CE1CD64B3D2082423C0088A0
+30BA2C01E83432837140C7343F3D04BA62F572E7A434E3A7ADCDC0'H
+          },
           annot {
             {
-              data
-                ftable {
-                  {
-                    data
-                      gene {
-                        locus "HA" } ,
-                    partial TRUE ,
-                    location
-                      int {
-                        from 0 ,
-                        to 1604 ,
-                        strand plus ,
-                        id
-                          genbank {
-                            accession "KX215980" } ,
-                        fuzz-from
-                          lim lt ,
-                        fuzz-to
-                          lim gt } } } } } } ,
+              data ftable {
+                {
+                  data gene {
+                    locus "HA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 1604,
+                    strand plus,
+                    id genbank {
+                      accession "KX215980"
+                    },
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
         seq {
           id {
-            local
-              str "BSeq#1_prot_1__2" ,
+            local str "BSeq#1_prot_1__2",
             general {
-              db "TMSMART" ,
-              tag
-                id 65971738 } } ,
+              db "TMSMART",
+              tag id 65971738
+            }
+          },
           descr {
             title "hemagglutinin, partial [Influenza A virus
- (A/peafowl/Kirkuk/2/2015(H5N1))]" ,
+ (A/peafowl/Kirkuk/2/2015(H5N1))]",
             molinfo {
-              biomol peptide ,
-              completeness no-ends } ,
+              biomol peptide,
+              completeness no-ends
+            },
             user {
-              type
-                str "OriginalID" ,
+              type str "OriginalID",
               data {
                 {
-                  label
-                    str "LocalId" ,
-                  data
-                    str "BSeq#1_prot_1__2" } } } } ,
+                  label str "LocalId",
+                  data str "BSeq#1_prot_1__2"
+                }
+              }
+            }
+          },
           inst {
-            repr raw ,
-            mol aa ,
-            length 535 ,
-            seq-data
-              ncbieaa "HICIGYHANNSTEQVDTIMEKNVTVTHAQDILEKTHNGKLCDLNGVKPLILKDCS
-VAGWLLGNPLCGEFTNVPEWSYIVEKANPANDLCYPGNFNDYEELKHLLSRIKHFEKIQIIPKDSWSDHEASLGVSAA
-CSYQGNSSFFRNVVWLIKKDNAYPTIKKGYNNTNREDLLILWGIHHPNDEAEQTKLYQNPTTYISIGTSTLNQRLVPK
-IATRSKINGQSGRIDFFWTILKPNDAIHFESNGNFIAPEYAYKIVKKGDSTIMRSEVEYGNCNTRCQTPIGAINSSMP
-FHNIHPLTIGECPKYVKSNKLVLATGLRNSPQRERRRKRGLFGAIAGFIEGGWQGMVDGWYGYHHSNEQGSGYAADKE
-STQKAIDGVTNKVNSIIDKMNTQFEAVGKEFNNLERRIENLNKKMEDGFLDVWTYNAELLVLMENERTLDFHDSNVKN
-LYDKVRLQLKDNAKELGNGCFEFYHKCNNECMESVRNGTYDYPQYSEEARLKREEISGVKLESIGIYQILSIYSTVAS
-SLVLAIMMAGLS" } ,
+            repr raw,
+            mol aa,
+            length 535,
+            seq-data ncbieaa "HICIGYHANNSTEQVDTIMEKNVTVTHAQDILEKTHNGKLCDLNGVKP
+LILKDCSVAGWLLGNPLCGEFTNVPEWSYIVEKANPANDLCYPGNFNDYEELKHLLSRIKHFEKIQIIPKDSWSDHEA
+SLGVSAACSYQGNSSFFRNVVWLIKKDNAYPTIKKGYNNTNREDLLILWGIHHPNDEAEQTKLYQNPTTYISIGTSTL
+NQRLVPKIATRSKINGQSGRIDFFWTILKPNDAIHFESNGNFIAPEYAYKIVKKGDSTIMRSEVEYGNCNTRCQTPIG
+AINSSMPFHNIHPLTIGECPKYVKSNKLVLATGLRNSPQRERRRKRGLFGAIAGFIEGGWQGMVDGWYGYHHSNEQGS
+GYAADKESTQKAIDGVTNKVNSIIDKMNTQFEAVGKEFNNLERRIENLNKKMEDGFLDVWTYNAELLVLMENERTLDF
+HDSNVKNLYDKVRLQLKDNAKELGNGCFEFYHKCNNECMESVRNGTYDYPQYSEEARLKREEISGVKLESIGIYQILS
+IYSTVASSLVLAIMMAGLS"
+          },
           annot {
             {
-              data
-                ftable {
-                  {
-                    data
-                      prot {
-                        name {
-                          "hemagglutinin" } ,
-                        desc "receptor binding and fusion protein" } ,
-                    partial TRUE ,
-                    location
-                      int {
-                        from 0 ,
-                        to 534 ,
-                        id
-                          local
-                            str "BSeq#1_prot_1__2" ,
-                        fuzz-from
-                          lim lt ,
-                        fuzz-to
-                          lim gt } } } } } } } ,
+              data ftable {
+                {
+                  data prot {
+                    name {
+                      "hemagglutinin"
+                    },
+                    desc "receptor binding and fusion protein"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 534,
+                    id local str "BSeq#1_prot_1__2",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
       annot {
         {
-          data
-            ftable {
-              {
-                data
-                  cdregion {
-                    frame one ,
-                    code {
-                      id 1 } } ,
-                partial TRUE ,
-                product
-                  whole
-                    local
-                      str "BSeq#1_prot_1__2" ,
-                location
-                  int {
-                    from 0 ,
-                    to 1604 ,
-                    strand plus ,
-                    id
-                      local
-                        str "BSeq#1__2" ,
-                    fuzz-from
-                      lim lt ,
-                    fuzz-to
-                      lim gt } } } } } } ,
+          data ftable {
+            {
+              data cdregion {
+                frame one,
+                code {
+                  id 1
+                }
+              },
+              partial TRUE,
+              product whole local str "BSeq#1_prot_1__2",
+              location int {
+                from 0,
+                to 1604,
+                strand plus,
+                id local str "BSeq#1__2",
+                fuzz-from lim lt,
+                fuzz-to lim gt
+              }
+            }
+          }
+        }
+      }
+    },
     set {
-      class nuc-prot ,
+      class nuc-prot,
       descr {
         source {
-          genome genomic ,
+          genome genomic,
           org {
-            taxname "Influenza A virus (A/peafowl/Kirkuk/1/2015(H5N1))" ,
+            taxname "Influenza A virus (A/peafowl/Kirkuk/1/2015(H5N1))",
             db {
               {
-                db "taxon" ,
-                tag
-                  id 1853717 } } ,
+                db "taxon",
+                tag id 1853717
+              }
+            },
             orgname {
-              name
-                virus "Influenza A virus (A/peafowl/Kirkuk/1/2015(H5N1))" ,
+              name virus "Influenza A virus (A/peafowl/Kirkuk/1/2015(H5N1))",
               mod {
                 {
-                  subtype strain ,
-                  subname "A/peafowl/Kirkuk/1/2015" } ,
+                  subtype strain,
+                  subname "A/peafowl/Kirkuk/1/2015"
+                },
                 {
-                  subtype serotype ,
-                  subname "H5N1" } ,
+                  subtype serotype,
+                  subname "H5N1"
+                },
                 {
-                  subtype nat-host ,
-                  subname "peafowl" } } ,
+                  subtype nat-host,
+                  subname "peafowl"
+                }
+              },
               lineage "Viruses; ssRNA viruses; ssRNA negative-strand viruses;
- Orthomyxoviridae; Influenzavirus A" ,
-              gcode 1 ,
-              div "VRL" } } ,
+ Orthomyxoviridae; Influenzavirus A",
+              gcode 1,
+              div "VRL"
+            }
+          },
           subtype {
             {
-              subtype country ,
-              name "Iraq: Kurdistan,Kirkuk" } ,
+              subtype country,
+              name "Iraq: Kurdistan,Kirkuk"
+            },
             {
-              subtype segment ,
-              name "6" } ,
+              subtype segment,
+              name "6"
+            },
             {
-              subtype isolation-source ,
-              name "tracheal and cloecal swab" } ,
+              subtype isolation-source,
+              name "tracheal and cloecal swab"
+            },
             {
-              subtype collection-date ,
-              name "Jun-2015" } ,
+              subtype collection-date,
+              name "Jun-2015"
+            },
             {
-              subtype collected-by ,
-              name "Dr. Nahla M. Saeed" } } } ,
+              subtype collected-by,
+              name "Dr. Nahla M. Saeed"
+            }
+          }
+        },
         pub {
           pub {
             gen {
-              cit "Unpublished" ,
+              cit "Unpublished",
               authors {
-                names
-                  std {
-                    {
-                      name
-                        name {
-                          last "Rashid" ,
-                          first "Peshnyar" ,
-                          initials "P.M.A." } } ,
-                    {
-                      name
-                        name {
-                          last "Saeed" ,
-                          first "Nahla" ,
-                          initials "N.M." } } } } ,
+                names std {
+                  {
+                    name name {
+                      last "Rashid",
+                      first "Peshnyar",
+                      initials "P.M.A."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Saeed",
+                      first "Nahla",
+                      initials "N.M."
+                    }
+                  }
+                }
+              },
               title "Phylogenic Analysis and Genetic Characterization of
- Highly Pathogenic Avian Influenza Virus H5N1 in Peafowl" } } } ,
+ Highly Pathogenic Avian Influenza Virus H5N1 in Peafowl"
+            }
+          }
+        },
         pub {
           pub {
             sub {
               authors {
-                names
-                  std {
-                    {
-                      name
-                        name {
-                          last "Rashid" ,
-                          first "Peshnyar" ,
-                          initials "P.M.A." } } ,
-                    {
-                      name
-                        name {
-                          last "Saeed" ,
-                          first "Nahla" ,
-                          initials "N.M." } } } ,
-                affil
-                  std {
-                    affil "Micro Vet. Diagnostic Lab" ,
-                    div "Molecular Microbiology" ,
-                    city "Sulaimani" ,
-                    sub "Kurdistan Region" ,
-                    country "Iraq" ,
-                    street "Mamostayan 205/12" ,
-                    postal-code "+964" } } ,
-              medium email ,
-              date
-                std {
-                  year 2016 ,
-                  month 5 ,
-                  day 7 } } } } ,
+                names std {
+                  {
+                    name name {
+                      last "Rashid",
+                      first "Peshnyar",
+                      initials "P.M.A."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Saeed",
+                      first "Nahla",
+                      initials "N.M."
+                    }
+                  }
+                },
+                affil std {
+                  affil "Micro Vet. Diagnostic Lab",
+                  div "Molecular Microbiology",
+                  city "Sulaimani",
+                  sub "Kurdistan Region",
+                  country "Iraq",
+                  street "Mamostayan 205/12",
+                  postal-code "+964"
+                }
+              },
+              medium email,
+              date std {
+                year 2016,
+                month 5,
+                day 7
+              }
+            }
+          }
+        },
         user {
-          class "SMART_V1.0" ,
-          type
-            id 1 ,
+          class "SMART_V1.0",
+          type id 1,
           data {
             {
-              label
-                id 1 ,
-              num 1 ,
-              data
-                int 10459519 } } } ,
+              label id 1,
+              num 1,
+              data int 10459519
+            }
+          }
+        },
         user {
-          type
-            str "Submission" ,
+          type str "Submission",
           data {
             {
-              label
-                str "SmartComment" ,
-              data
-                str "TOTAL # OF SEQS:1" } ,
+              label str "SmartComment",
+              data str "TOTAL # OF SEQS:1"
+            },
             {
-              label
-                str "AdditionalComment" ,
-              data
-                str "BankIt1917236" } } } ,
+              label str "AdditionalComment",
+              data str "BankIt1917236"
+            }
+          }
+        },
         user {
-          type
-            str "Submission" ,
+          type str "Submission",
           data {
             {
-              label
-                str "AdditionalComment" ,
-              data
-                str "Submission Title:A/peafowl/Karkuk/Kurdistan/1/2015(H5N1))
- Na" } } } ,
+              label str "AdditionalComment",
+              data str "Submission
+ Title:A/peafowl/Karkuk/Kurdistan/1/2015(H5N1)) Na"
+            }
+          }
+        },
         user {
-          type
-            str "NcbiCleanup" ,
+          type str "NcbiCleanup",
           data {
             {
-              label
-                str "method" ,
-              data
-                str "SequinCleanup" } ,
+              label str "method",
+              data str "SequinCleanup"
+            },
             {
-              label
-                str "version" ,
-              data
-                int 8 } ,
+              label str "version",
+              data int 8
+            },
             {
-              label
-                str "month" ,
-              data
-                int 5 } ,
+              label str "month",
+              data int 5
+            },
             {
-              label
-                str "day" ,
-              data
-                int 26 } ,
+              label str "day",
+              data int 26
+            },
             {
-              label
-                str "year" ,
-              data
-                int 2016 } } } ,
-        update-date
-          std {
-            year 2016 ,
-            month 5 ,
-            day 26 } } ,
+              label str "year",
+              data int 2016
+            }
+          }
+        },
+        update-date std {
+          year 2016,
+          month 5,
+          day 26
+        }
+      },
       seq-set {
         seq {
           id {
-            local
-              str "BSeq#1__3" ,
+            local str "BSeq#1__3",
             general {
-              db "BankIt" ,
-              tag
-                str "1917236/BSeq#1" } ,
+              db "BankIt",
+              tag str "1917236/BSeq#1"
+            },
             general {
-              db "TMSMART" ,
-              tag
-                id 65971745 } ,
+              db "TMSMART",
+              tag id 65971745
+            },
             genbank {
-              accession "KX215981" } } ,
+              accession "KX215981"
+            }
+          },
           descr {
             title "Influenza A virus (A/peafowl/Kirkuk/1/2015(H5N1)) segment 6
- neuraminidase (NA) gene, partial cds." ,
+ neuraminidase (NA) gene, partial cds.",
             molinfo {
-              biomol cRNA ,
-              completeness partial } ,
+              biomol cRNA,
+              completeness partial
+            },
             user {
-              type
-                str "StructuredComment" ,
+              type str "StructuredComment",
               data {
                 {
-                  label
-                    str "StructuredCommentPrefix" ,
-                  data
-                    str "##Assembly-Data-START##" } ,
+                  label str "StructuredCommentPrefix",
+                  data str "##Assembly-Data-START##"
+                },
                 {
-                  label
-                    str "Sequencing Technology" ,
-                  data
-                    str "Sanger dideoxy sequencing" } ,
+                  label str "Sequencing Technology",
+                  data str "Sanger dideoxy sequencing"
+                },
                 {
-                  label
-                    str "StructuredCommentSuffix" ,
-                  data
-                    str "##Assembly-Data-END##" } } } ,
+                  label str "StructuredCommentSuffix",
+                  data str "##Assembly-Data-END##"
+                }
+              }
+            },
             user {
-              type
-                str "Submission" ,
+              type str "Submission",
               data {
                 {
-                  label
-                    str "AdditionalComment" ,
-                  data
-                    str "LocalID:BSeq#1" } } } ,
+                  label str "AdditionalComment",
+                  data str "LocalID:BSeq#1"
+                }
+              }
+            },
             user {
-              class "1.0" ,
-              type
-                str "AutodefOptions" ,
+              class "1.0",
+              type str "AutodefOptions",
               data {
                 {
-                  label
-                    str "UseLabels" ,
-                  data
-                    bool TRUE } ,
+                  label str "UseLabels",
+                  data bool TRUE
+                },
                 {
-                  label
-                    str "LeaveParenthetical" ,
-                  data
-                    bool TRUE } ,
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
                 {
-                  label
-                    str "SpecifyNuclearProduct" ,
-                  data
-                    bool TRUE } ,
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
                 {
-                  label
-                    str "MaxMods" ,
-                  data
-                    int 0 } ,
+                  label str "MaxMods",
+                  data int 0
+                },
                 {
-                  label
-                    str "FeatureListType" ,
-                  data
-                    str "List All Features" } ,
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
                 {
-                  label
-                    str "MiscFeatRule" ,
-                  data
-                    str "Delete" } ,
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
                 {
-                  label
-                    str "HIVRule" ,
-                  data
-                    str "WantBoth" } ,
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
                 {
-                  label
-                    str "ModifierList" ,
-                  data
-                    fields {
-                      {
-                        label
-                          str "SubSources" ,
-                        num 1 ,
-                        data
-                          strs {
-                            "segment" } } } } } } ,
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "SubSources",
+                      num 1,
+                      data strs {
+                        "segment"
+                      }
+                    }
+                  }
+                }
+              }
+            },
             user {
-              type
-                str "OriginalID" ,
+              type str "OriginalID",
               data {
                 {
-                  label
-                    str "LocalId" ,
-                  data
-                    str "BSeq#1__3" } } } } ,
+                  label str "LocalId",
+                  data str "BSeq#1__3"
+                }
+              }
+            }
+          },
           inst {
-            repr raw ,
-            mol rna ,
-            length 827 ,
-            seq-data
-              ncbi2na '0B9F94E3A452FAF8C3EA3F7AD4843AA7BA6B3E0310E930C1211CD08
-BE8A0C131E285422DE0EE4EEE0E9DF9FC7BCE123A142C3A92934CC23FD00C800A80B2F0B4B60F8
-39550F34738A0E75EF35E29E980D33BBB92A30FA4E9D01294EAEDFD0D20FE8B340CA333F92E8BF
-DAE10D46960E1AC4A8BEE852ED7706A933AAC02AF74FC0CE90EBB7A36A2850091D3D4A269FE038
-FEA3501ABA1E81A12E2FF638042332C90C1E3EB4A3326A2FFB5245481E128F23E4E217E7DEAF8B
-C348A9A54088910FE872EA249337FFBAEC0CB847B8BEB7C'H } ,
+            repr raw,
+            mol rna,
+            length 827,
+            seq-data ncbi2na '0B9F94E3A452FAF8C3EA3F7AD4843AA7BA6B3E0310E930C1
+211CD08BE8A0C131E285422DE0EE4EEE0E9DF9FC7BCE123A142C3A92934CC23FD00C800A80B2F0
+B4B60F839550F34738A0E75EF35E29E980D33BBB92A30FA4E9D01294EAEDFD0D20FE8B340CA333
+F92E8BFDAE10D46960E1AC4A8BEE852ED7706A933AAC02AF74FC0CE90EBB7A36A2850091D3D4A2
+69FE038FEA3501ABA1E81A12E2FF638042332C90C1E3EB4A3326A2FFB5245481E128F23E4E217E
+7DEAF8BC348A9A54088910FE872EA249337FFBAEC0CB847B8BEB7C'H
+          },
           annot {
             {
-              data
-                ftable {
-                  {
-                    data
-                      gene {
-                        locus "NA" } ,
-                    partial TRUE ,
-                    location
-                      int {
-                        from 0 ,
-                        to 826 ,
-                        strand plus ,
-                        id
-                          local
-                            str "BSeq#1__3" ,
-                        fuzz-from
-                          lim lt ,
-                        fuzz-to
-                          lim gt } } } } } } ,
+              data ftable {
+                {
+                  data gene {
+                    locus "NA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 826,
+                    strand plus,
+                    id local str "BSeq#1__3",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
         seq {
           id {
-            local
-              str "BSeq#1_prot_1__3" ,
+            local str "BSeq#1_prot_1__3",
             general {
-              db "TMSMART" ,
-              tag
-                id 65971746 } } ,
+              db "TMSMART",
+              tag id 65971746
+            }
+          },
           descr {
             title "neuraminidase, partial [Influenza A virus
- (A/peafowl/Kirkuk/1/2015(H5N1))]" ,
+ (A/peafowl/Kirkuk/1/2015(H5N1))]",
             molinfo {
-              biomol peptide ,
-              completeness no-ends } ,
+              biomol peptide,
+              completeness no-ends
+            },
             user {
-              type
-                str "OriginalID" ,
+              type str "OriginalID",
               data {
                 {
-                  label
-                    str "LocalId" ,
-                  data
-                    str "BSeq#1_prot_1__3" } } } } ,
+                  label str "LocalId",
+                  data str "BSeq#1_prot_1__3"
+                }
+              }
+            }
+          },
           inst {
-            repr raw ,
-            mol aa ,
-            length 275 ,
-            seq-data
-              ncbieaa "SACHDGTSWLIIGISGPDNGAVAVLKYNGIITDTIKSWRNNILRTQESECACVNG
-SCFTVMTDGPSNGQASYKIFKIEKGKVVKSVELNAPNYHYEECSCYPEAGEIICVCRDNWHGSNRPWVSFNQNLEYQI
-GYICSGVFGDNPRPNDGTGSCGPVSSNGAYGVKGFSFKYGNGVWIGRTKSTHSRSGFEMIWDPNGWTGTDSEFSMKQD
-IVAITDWSGYSGSFVQHPELTGLDCMRPCFWVELIRGRPKESTIWTSGSSISFCGVNSDTVSWS" } ,
+            repr raw,
+            mol aa,
+            length 275,
+            seq-data ncbieaa "SACHDGTSWLIIGISGPDNGAVAVLKYNGIITDTIKSWRNNILRTQES
+ECACVNGSCFTVMTDGPSNGQASYKIFKIEKGKVVKSVELNAPNYHYEECSCYPEAGEIICVCRDNWHGSNRPWVSFN
+QNLEYQIGYICSGVFGDNPRPNDGTGSCGPVSSNGAYGVKGFSFKYGNGVWIGRTKSTHSRSGFEMIWDPNGWTGTDS
+EFSMKQDIVAITDWSGYSGSFVQHPELTGLDCMRPCFWVELIRGRPKESTIWTSGSSISFCGVNSDTVSWS"
+          },
           annot {
             {
-              data
-                ftable {
-                  {
-                    data
-                      prot {
-                        name {
-                          "neuraminidase" } } ,
-                    partial TRUE ,
-                    location
-                      int {
-                        from 0 ,
-                        to 274 ,
-                        id
-                          local
-                            str "BSeq#1_prot_1__3" ,
-                        fuzz-from
-                          lim lt ,
-                        fuzz-to
-                          lim gt } } } } } } } ,
+              data ftable {
+                {
+                  data prot {
+                    name {
+                      "neuraminidase"
+                    }
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 274,
+                    id local str "BSeq#1_prot_1__3",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
       annot {
         {
-          data
-            ftable {
-              {
-                data
-                  cdregion {
-                    frame two ,
-                    code {
-                      id 1 } } ,
-                partial TRUE ,
-                product
-                  whole
-                    local
-                      str "BSeq#1_prot_1__3" ,
-                location
-                  int {
-                    from 0 ,
-                    to 826 ,
-                    strand plus ,
-                    id
-                      local
-                        str "BSeq#1__3" ,
-                    fuzz-from
-                      lim lt ,
-                    fuzz-to
-                      lim gt } } } } } } ,
+          data ftable {
+            {
+              data cdregion {
+                frame two,
+                code {
+                  id 1
+                }
+              },
+              partial TRUE,
+              product whole local str "BSeq#1_prot_1__3",
+              location int {
+                from 0,
+                to 826,
+                strand plus,
+                id local str "BSeq#1__3",
+                fuzz-from lim lt,
+                fuzz-to lim gt
+              }
+            }
+          }
+        }
+      }
+    },
     set {
-      class nuc-prot ,
+      class nuc-prot,
       descr {
         source {
-          genome genomic ,
+          genome genomic,
           org {
-            taxname "Influenza A virus (A/peafowl/Kirkuk/2/2015(H5N1))" ,
+            taxname "Influenza A virus (A/peafowl/Kirkuk/2/2015(H5N1))",
             db {
               {
-                db "taxon" ,
-                tag
-                  id 1853718 } } ,
+                db "taxon",
+                tag id 1853718
+              }
+            },
             orgname {
-              name
-                virus "Influenza A virus (A/peafowl/Kirkuk/2/2015(H5N1))" ,
+              name virus "Influenza A virus (A/peafowl/Kirkuk/2/2015(H5N1))",
               mod {
                 {
-                  subtype strain ,
-                  subname "A/peafowl/Kirkuk/2/2015" } ,
+                  subtype strain,
+                  subname "A/peafowl/Kirkuk/2/2015"
+                },
                 {
-                  subtype serotype ,
-                  subname "H5N1" } ,
+                  subtype serotype,
+                  subname "H5N1"
+                },
                 {
-                  subtype nat-host ,
-                  subname "peafowl" } } ,
+                  subtype nat-host,
+                  subname "peafowl"
+                }
+              },
               lineage "Viruses; ssRNA viruses; ssRNA negative-strand viruses;
- Orthomyxoviridae; Influenzavirus A" ,
-              gcode 1 ,
-              div "VRL" } } ,
+ Orthomyxoviridae; Influenzavirus A",
+              gcode 1,
+              div "VRL"
+            }
+          },
           subtype {
             {
-              subtype country ,
-              name "Iraq: Kurdistan,Kirkuk" } ,
+              subtype country,
+              name "Iraq: Kurdistan,Kirkuk"
+            },
             {
-              subtype segment ,
-              name "6" } ,
+              subtype segment,
+              name "6"
+            },
             {
-              subtype isolation-source ,
-              name "tracheal and cloecal swab" } ,
+              subtype isolation-source,
+              name "tracheal and cloecal swab"
+            },
             {
-              subtype collection-date ,
-              name "Jun-2015" } ,
+              subtype collection-date,
+              name "Jun-2015"
+            },
             {
-              subtype collected-by ,
-              name "Dr. Kazhan Muhamad" } } } ,
+              subtype collected-by,
+              name "Dr. Kazhan Muhamad"
+            }
+          }
+        },
         pub {
           pub {
             gen {
-              cit "Unpublished" ,
+              cit "Unpublished",
               authors {
-                names
-                  std {
-                    {
-                      name
-                        name {
-                          last "Rashid" ,
-                          first "Peshnyar" ,
-                          initials "P.M.A." } } ,
-                    {
-                      name
-                        name {
-                          last "Saeed" ,
-                          first "Nahla" ,
-                          initials "N.M." } } } } ,
+                names std {
+                  {
+                    name name {
+                      last "Rashid",
+                      first "Peshnyar",
+                      initials "P.M.A."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Saeed",
+                      first "Nahla",
+                      initials "N.M."
+                    }
+                  }
+                }
+              },
               title "Phylogenic Analysis and Genetic Characterization of
- Highly Pathogenic Avian Influenza Virus H5N1 in Peafowl" } } } ,
+ Highly Pathogenic Avian Influenza Virus H5N1 in Peafowl"
+            }
+          }
+        },
         pub {
           pub {
             sub {
               authors {
-                names
-                  std {
-                    {
-                      name
-                        name {
-                          last "Rashid" ,
-                          first "Peshnyar" ,
-                          initials "P.M.A." } } ,
-                    {
-                      name
-                        name {
-                          last "Saeed" ,
-                          first "Nahla" ,
-                          initials "N.M." } } } ,
-                affil
-                  std {
-                    affil "Micro Vet. Diagnostic Lab" ,
-                    div "Molecular Microbiology" ,
-                    city "Sulaimani" ,
-                    sub "Kurdistan Region" ,
-                    country "Iraq" ,
-                    street "Mamostayan 205/12" ,
-                    postal-code "+964" } } ,
-              medium email ,
-              date
-                std {
-                  year 2016 ,
-                  month 5 ,
-                  day 7 } } } } ,
+                names std {
+                  {
+                    name name {
+                      last "Rashid",
+                      first "Peshnyar",
+                      initials "P.M.A."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Saeed",
+                      first "Nahla",
+                      initials "N.M."
+                    }
+                  }
+                },
+                affil std {
+                  affil "Micro Vet. Diagnostic Lab",
+                  div "Molecular Microbiology",
+                  city "Sulaimani",
+                  sub "Kurdistan Region",
+                  country "Iraq",
+                  street "Mamostayan 205/12",
+                  postal-code "+964"
+                }
+              },
+              medium email,
+              date std {
+                year 2016,
+                month 5,
+                day 7
+              }
+            }
+          }
+        },
         user {
-          class "SMART_V1.0" ,
-          type
-            id 1 ,
+          class "SMART_V1.0",
+          type id 1,
           data {
             {
-              label
-                id 1 ,
-              num 1 ,
-              data
-                int 10459523 } } } ,
+              label id 1,
+              num 1,
+              data int 10459523
+            }
+          }
+        },
         user {
-          type
-            str "Submission" ,
+          type str "Submission",
           data {
             {
-              label
-                str "SmartComment" ,
-              data
-                str "TOTAL # OF SEQS:1" } ,
+              label str "SmartComment",
+              data str "TOTAL # OF SEQS:1"
+            },
             {
-              label
-                str "AdditionalComment" ,
-              data
-                str "BankIt1917237" } } } ,
+              label str "AdditionalComment",
+              data str "BankIt1917237"
+            }
+          }
+        },
         user {
-          type
-            str "Submission" ,
+          type str "Submission",
           data {
             {
-              label
-                str "AdditionalComment" ,
-              data
-                str "Submission Title:A/peafowl/Kirkuk/Kurdistan/2/2015(H5N1))
- Na" } } } ,
+              label str "AdditionalComment",
+              data str "Submission
+ Title:A/peafowl/Kirkuk/Kurdistan/2/2015(H5N1)) Na"
+            }
+          }
+        },
         user {
-          type
-            str "NcbiCleanup" ,
+          type str "NcbiCleanup",
           data {
             {
-              label
-                str "method" ,
-              data
-                str "SequinCleanup" } ,
+              label str "method",
+              data str "SequinCleanup"
+            },
             {
-              label
-                str "version" ,
-              data
-                int 8 } ,
+              label str "version",
+              data int 8
+            },
             {
-              label
-                str "month" ,
-              data
-                int 5 } ,
+              label str "month",
+              data int 5
+            },
             {
-              label
-                str "day" ,
-              data
-                int 26 } ,
+              label str "day",
+              data int 26
+            },
             {
-              label
-                str "year" ,
-              data
-                int 2016 } } } ,
-        update-date
-          std {
-            year 2016 ,
-            month 5 ,
-            day 26 } } ,
+              label str "year",
+              data int 2016
+            }
+          }
+        },
+        update-date std {
+          year 2016,
+          month 5,
+          day 26
+        }
+      },
       seq-set {
         seq {
           id {
-            local
-              str "BSeq#1__4" ,
+            local str "BSeq#1__4",
             general {
-              db "BankIt" ,
-              tag
-                str "1917237/BSeq#1" } ,
+              db "BankIt",
+              tag str "1917237/BSeq#1"
+            },
             general {
-              db "TMSMART" ,
-              tag
-                id 65971747 } ,
+              db "TMSMART",
+              tag id 65971747
+            },
             genbank {
-              accession "KX215982" } } ,
+              accession "KX215982"
+            }
+          },
           descr {
             title "Influenza A virus (A/peafowl/Kirkuk/2/2015(H5N1)) segment 6
- neuraminidase (NA) gene, partial cds." ,
+ neuraminidase (NA) gene, partial cds.",
             molinfo {
-              biomol cRNA ,
-              completeness partial } ,
+              biomol cRNA,
+              completeness partial
+            },
             user {
-              type
-                str "StructuredComment" ,
+              type str "StructuredComment",
               data {
                 {
-                  label
-                    str "StructuredCommentPrefix" ,
-                  data
-                    str "##Assembly-Data-START##" } ,
+                  label str "StructuredCommentPrefix",
+                  data str "##Assembly-Data-START##"
+                },
                 {
-                  label
-                    str "Sequencing Technology" ,
-                  data
-                    str "Sanger dideoxy sequencing" } ,
+                  label str "Sequencing Technology",
+                  data str "Sanger dideoxy sequencing"
+                },
                 {
-                  label
-                    str "StructuredCommentSuffix" ,
-                  data
-                    str "##Assembly-Data-END##" } } } ,
+                  label str "StructuredCommentSuffix",
+                  data str "##Assembly-Data-END##"
+                }
+              }
+            },
             user {
-              type
-                str "Submission" ,
+              type str "Submission",
               data {
                 {
-                  label
-                    str "AdditionalComment" ,
-                  data
-                    str "LocalID:BSeq#1" } } } ,
+                  label str "AdditionalComment",
+                  data str "LocalID:BSeq#1"
+                }
+              }
+            },
             user {
-              class "1.0" ,
-              type
-                str "AutodefOptions" ,
+              class "1.0",
+              type str "AutodefOptions",
               data {
                 {
-                  label
-                    str "UseLabels" ,
-                  data
-                    bool TRUE } ,
+                  label str "UseLabels",
+                  data bool TRUE
+                },
                 {
-                  label
-                    str "LeaveParenthetical" ,
-                  data
-                    bool TRUE } ,
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
                 {
-                  label
-                    str "SpecifyNuclearProduct" ,
-                  data
-                    bool TRUE } ,
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
                 {
-                  label
-                    str "MaxMods" ,
-                  data
-                    int 0 } ,
+                  label str "MaxMods",
+                  data int 0
+                },
                 {
-                  label
-                    str "FeatureListType" ,
-                  data
-                    str "List All Features" } ,
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
                 {
-                  label
-                    str "MiscFeatRule" ,
-                  data
-                    str "Delete" } ,
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
                 {
-                  label
-                    str "HIVRule" ,
-                  data
-                    str "WantBoth" } ,
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
                 {
-                  label
-                    str "ModifierList" ,
-                  data
-                    fields {
-                      {
-                        label
-                          str "SubSources" ,
-                        num 1 ,
-                        data
-                          strs {
-                            "segment" } } } } } } ,
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "SubSources",
+                      num 1,
+                      data strs {
+                        "segment"
+                      }
+                    }
+                  }
+                }
+              }
+            },
             user {
-              type
-                str "OriginalID" ,
+              type str "OriginalID",
               data {
                 {
-                  label
-                    str "LocalId" ,
-                  data
-                    str "BSeq#1__4" } } } } ,
+                  label str "LocalId",
+                  data str "BSeq#1__4"
+                }
+              }
+            }
+          },
           inst {
-            repr raw ,
-            mol rna ,
-            length 827 ,
-            seq-data
-              ncbi2na '0B9F94E3A452FAF8C3EA377AD4843A27BA6B3E0310E930C1211CD08
-BE8A0C131E285422DE0EE4EEE0E9DF9FC7BCE123A142C3A92934CC23FD00C800A80B2F0B4B60F8
-39550F34738A0E75EF35E29E980D33BBB92A30FA4E9D01294EAEDFD0D20FE8B340CA333F92E8BF
-DAE10D46960E1AC4A8BEE852ED7706A933AAC02AF74FC0CE90EBB7A36A2850091D3D4A269FE038
-FEA3501ABA1E81A12E2FF638042332C90C1E3EB4A3326A2FFB5245481E128F23E4E217E7DEAF8B
-C348A9A54088910FE872EA249337FFBAEC0CB847B8BEB7C'H } ,
+            repr raw,
+            mol rna,
+            length 827,
+            seq-data ncbi2na '0B9F94E3A452FAF8C3EA377AD4843A27BA6B3E0310E930C1
+211CD08BE8A0C131E285422DE0EE4EEE0E9DF9FC7BCE123A142C3A92934CC23FD00C800A80B2F0
+B4B60F839550F34738A0E75EF35E29E980D33BBB92A30FA4E9D01294EAEDFD0D20FE8B340CA333
+F92E8BFDAE10D46960E1AC4A8BEE852ED7706A933AAC02AF74FC0CE90EBB7A36A2850091D3D4A2
+69FE038FEA3501ABA1E81A12E2FF638042332C90C1E3EB4A3326A2FFB5245481E128F23E4E217E
+7DEAF8BC348A9A54088910FE872EA249337FFBAEC0CB847B8BEB7C'H
+          },
           annot {
             {
-              data
-                ftable {
-                  {
-                    data
-                      gene {
-                        locus "NA" } ,
-                    partial TRUE ,
-                    location
-                      int {
-                        from 0 ,
-                        to 826 ,
-                        strand plus ,
-                        id
-                          local
-                            str "BSeq#1__4" ,
-                        fuzz-from
-                          lim lt ,
-                        fuzz-to
-                          lim gt } } } } } } ,
+              data ftable {
+                {
+                  data gene {
+                    locus "NA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 826,
+                    strand plus,
+                    id local str "BSeq#1__4",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
         seq {
           id {
-            local
-              str "BSeq#1_prot_1__4" ,
+            local str "BSeq#1_prot_1__4",
             general {
-              db "TMSMART" ,
-              tag
-                id 65971748 } } ,
+              db "TMSMART",
+              tag id 65971748
+            }
+          },
           descr {
             title "neuraminidase, partial [Influenza A virus
- (A/peafowl/Kirkuk/2/2015(H5N1))]" ,
+ (A/peafowl/Kirkuk/2/2015(H5N1))]",
             molinfo {
-              biomol peptide ,
-              completeness no-ends } ,
+              biomol peptide,
+              completeness no-ends
+            },
             user {
-              type
-                str "OriginalID" ,
+              type str "OriginalID",
               data {
                 {
-                  label
-                    str "LocalId" ,
-                  data
-                    str "BSeq#1_prot_1__4" } } } } ,
+                  label str "LocalId",
+                  data str "BSeq#1_prot_1__4"
+                }
+              }
+            }
+          },
           inst {
-            repr raw ,
-            mol aa ,
-            length 275 ,
-            seq-data
-              ncbieaa "SACHDGTSWLIIGISGPDNGAVAVLKYNGIITDTIKSWRNNILRTQESECACVNG
-SCFTVMTDGPSNGQASYKIFKIEKGKVVKSVELNAPNYHYEECSCYPEAGEIICVCRDNWHGSNRPWVSFNQNLEYQI
-GYICSGVFGDNPRPNDGTGSCGPVSSNGAYGVKGFSFKYGNGVWIGRTKSTHSRSGFEMIWDPNGWTGTDSEFSMKQD
-IVAITDWSGYSGSFVQHPELTGLDCMRPCFWVELIRGRPKESTIWTSGSSISFCGVNSDTVSWS" } ,
+            repr raw,
+            mol aa,
+            length 275,
+            seq-data ncbieaa "SACHDGTSWLIIGISGPDNGAVAVLKYNGIITDTIKSWRNNILRTQES
+ECACVNGSCFTVMTDGPSNGQASYKIFKIEKGKVVKSVELNAPNYHYEECSCYPEAGEIICVCRDNWHGSNRPWVSFN
+QNLEYQIGYICSGVFGDNPRPNDGTGSCGPVSSNGAYGVKGFSFKYGNGVWIGRTKSTHSRSGFEMIWDPNGWTGTDS
+EFSMKQDIVAITDWSGYSGSFVQHPELTGLDCMRPCFWVELIRGRPKESTIWTSGSSISFCGVNSDTVSWS"
+          },
           annot {
             {
-              data
-                ftable {
-                  {
-                    data
-                      prot {
-                        name {
-                          "neuraminidase" } } ,
-                    partial TRUE ,
-                    location
-                      int {
-                        from 0 ,
-                        to 274 ,
-                        id
-                          local
-                            str "BSeq#1_prot_1__4" ,
-                        fuzz-from
-                          lim lt ,
-                        fuzz-to
-                          lim gt } } } } } } } ,
+              data ftable {
+                {
+                  data prot {
+                    name {
+                      "neuraminidase"
+                    }
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 274,
+                    id local str "BSeq#1_prot_1__4",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
       annot {
         {
-          data
-            ftable {
-              {
-                data
-                  cdregion {
-                    frame two ,
-                    code {
-                      id 1 } } ,
-                partial TRUE ,
-                product
-                  whole
-                    local
-                      str "BSeq#1_prot_1__4" ,
-                location
-                  int {
-                    from 0 ,
-                    to 826 ,
-                    strand plus ,
-                    id
-                      local
-                        str "BSeq#1__4" ,
-                    fuzz-from
-                      lim lt ,
-                    fuzz-to
-                      lim gt } } } } } } } }
+          data ftable {
+            {
+              data cdregion {
+                frame two,
+                code {
+                  id 1
+                }
+              },
+              partial TRUE,
+              product whole local str "BSeq#1_prot_1__4",
+              location int {
+                from 0,
+                to 826,
+                strand plus,
+                id local str "BSeq#1__4",
+                fuzz-from lim lt,
+                fuzz-to lim gt
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

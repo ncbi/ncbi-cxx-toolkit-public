@@ -391,6 +391,7 @@ Seq-entry ::= set {
         },
         pub {
           pub {
+            pmid 23435891,
             article {
               title {
                 name "Comparative Genomic Analysis of Phylogenetically Closely
@@ -470,8 +471,7 @@ Seq-entry ::= set {
                 doi "10.1128/AEM.03591-12",
                 pubmed 23435891
               }
-            },
-            pmid 23435891
+            }
           }
         },
         user {

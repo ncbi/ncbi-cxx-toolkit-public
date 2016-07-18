@@ -1,413 +1,443 @@
 Seq-entry ::= set {
-  class genbank ,
+  class genbank,
   seq-set {
     seq {
       id {
-        local
-          str "n1" } ,
+        local str "n1"
+      },
       descr {
         source {
           org {
-            taxname "Homo sapiens" ,
-            common "human" ,
+            taxname "Homo sapiens",
+            common "human",
             db {
               {
-                db "taxon" ,
-                tag
-                  id 9606 } } ,
+                db "taxon",
+                tag id 9606
+              }
+            },
             orgname {
-              name
-                binomial {
-                  genus "Homo" ,
-                  species "sapiens" } ,
+              name binomial {
+                genus "Homo",
+                species "sapiens"
+              },
               lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
  Euteleostomi; Mammalia; Eutheria; Euarchontoglires; Primates; Haplorrhini;
- Catarrhini; Hominidae; Homo" ,
-              gcode 1 ,
-              mgcode 2 ,
-              div "PRI" } } } ,
+ Catarrhini; Hominidae; Homo",
+              gcode 1,
+              mgcode 2,
+              div "PRI"
+            }
+          }
+        },
         molinfo {
-          biomol genomic } ,
+          biomol genomic
+        },
         pub {
           pub {
             gen {
-              cit "Unpublished" ,
+              cit "Unpublished",
               authors {
-                names
-                  std {
-                    {
-                      name
-                        name {
-                          last "q" ,
-                          first "q" ,
-                          initials "q." } } } ,
-                affil
-                  str "q" } ,
-              title "a" } } } ,
+                names std {
+                  {
+                    name name {
+                      last "q",
+                      first "q",
+                      initials "q."
+                    }
+                  }
+                },
+                affil str "q"
+              },
+              title "a"
+            }
+          }
+        },
         user {
-          type
-            str "NcbiCleanup" ,
+          type str "NcbiCleanup",
           data {
             {
-              label
-                str "method" ,
-              data
-                str "SequinCleanup" } ,
+              label str "method",
+              data str "SequinCleanup"
+            },
             {
-              label
-                str "version" ,
-              data
-                int 8 } ,
+              label str "version",
+              data int 8
+            },
             {
-              label
-                str "month" ,
-              data
-                int 6 } ,
+              label str "month",
+              data int 6
+            },
             {
-              label
-                str "day" ,
-              data
-                int 14 } ,
+              label str "day",
+              data int 14
+            },
             {
-              label
-                str "year" ,
-              data
-                int 2016 } } } ,
-        create-date
-          std {
-            year 2014 ,
-            month 1 ,
-            day 8 } } ,
+              label str "year",
+              data int 2016
+            }
+          }
+        },
+        create-date std {
+          year 2014,
+          month 1,
+          day 8
+        }
+      },
       inst {
-        repr raw ,
-        mol dna ,
-        length 236 ,
-        seq-data
-          ncbi2na '000000000003FFFFFFFFFFFFFFFFAAAAAAAAAAAAAAAAAA9555555555555
-000000000003FFFFFFFFFFFFFFFFAAAAAAAAAAAAAAAAAA9555555555555'H } ,
+        repr raw,
+        mol dna,
+        length 236,
+        seq-data ncbi2na '000000000003FFFFFFFFFFFFFFFFAAAAAAAAAAAAAAAAAA955555
+5555555000000000003FFFFFFFFFFFFFFFFAAAAAAAAAAAAAAAAAA9555555555555'H
+      },
       annot {
         {
-          data
-            ftable {
-              {
-                data
-                  rna {
-                    type mRNA ,
-                    ext
-                      name "abc" } ,
-                location
-                  int {
-                    from 0 ,
-                    to 235 ,
-                    strand plus ,
-                    id
-                      local
-                        str "n1" } } } } } } ,
+          data ftable {
+            {
+              data rna {
+                type mRNA,
+                ext name "abc"
+              },
+              location int {
+                from 0,
+                to 235,
+                strand plus,
+                id local str "n1"
+              }
+            }
+          }
+        }
+      }
+    },
     seq {
       id {
-        local
-          str "n2" } ,
+        local str "n2"
+      },
       descr {
         source {
-          genome apicoplast ,
+          genome apicoplast,
           org {
-            taxname "Homo sapiens" ,
-            common "human" ,
+            taxname "Homo sapiens",
+            common "human",
             db {
               {
-                db "taxon" ,
-                tag
-                  id 9606 } } ,
+                db "taxon",
+                tag id 9606
+              }
+            },
             orgname {
-              name
-                binomial {
-                  genus "Homo" ,
-                  species "sapiens" } ,
+              name binomial {
+                genus "Homo",
+                species "sapiens"
+              },
               lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
  Euteleostomi; Mammalia; Eutheria; Euarchontoglires; Primates; Haplorrhini;
- Catarrhini; Hominidae; Homo" ,
-              gcode 1 ,
-              mgcode 2 ,
-              div "PRI" } } } ,
+ Catarrhini; Hominidae; Homo",
+              gcode 1,
+              mgcode 2,
+              div "PRI"
+            }
+          }
+        },
         molinfo {
-          biomol genomic } ,
+          biomol genomic
+        },
         pub {
           pub {
             gen {
-              cit "Unpublished" ,
+              cit "Unpublished",
               authors {
-                names
-                  std {
-                    {
-                      name
-                        name {
-                          last "q" ,
-                          first "q" ,
-                          initials "q." } } } ,
-                affil
-                  str "q" } ,
-              title "a" } } } ,
+                names std {
+                  {
+                    name name {
+                      last "q",
+                      first "q",
+                      initials "q."
+                    }
+                  }
+                },
+                affil str "q"
+              },
+              title "a"
+            }
+          }
+        },
         user {
-          type
-            str "NcbiCleanup" ,
+          type str "NcbiCleanup",
           data {
             {
-              label
-                str "method" ,
-              data
-                str "SequinCleanup" } ,
+              label str "method",
+              data str "SequinCleanup"
+            },
             {
-              label
-                str "version" ,
-              data
-                int 8 } ,
+              label str "version",
+              data int 8
+            },
             {
-              label
-                str "month" ,
-              data
-                int 6 } ,
+              label str "month",
+              data int 6
+            },
             {
-              label
-                str "day" ,
-              data
-                int 14 } ,
+              label str "day",
+              data int 14
+            },
             {
-              label
-                str "year" ,
-              data
-                int 2016 } } } ,
-        create-date
-          std {
-            year 2014 ,
-            month 1 ,
-            day 8 } } ,
+              label str "year",
+              data int 2016
+            }
+          }
+        },
+        create-date std {
+          year 2014,
+          month 1,
+          day 8
+        }
+      },
       inst {
-        repr raw ,
-        mol dna ,
-        length 236 ,
-        seq-data
-          ncbi2na '000000000003FFFFFFFFFFFFFFFFAAAAAAAAAAAAAAAAAA9555555555555
-000000000003FFFFFFFFFFFFFFFFAAAAAAAAAAAAAAAAAA9555555555555'H } ,
+        repr raw,
+        mol dna,
+        length 236,
+        seq-data ncbi2na '000000000003FFFFFFFFFFFFFFFFAAAAAAAAAAAAAAAAAA955555
+5555555000000000003FFFFFFFFFFFFFFFFAAAAAAAAAAAAAAAAAA9555555555555'H
+      },
       annot {
         {
-          data
-            ftable {
-              {
-                data
-                  rna {
-                    type mRNA ,
-                    ext
-                      name "abc" } ,
-                location
-                  int {
-                    from 0 ,
-                    to 235 ,
-                    strand plus ,
-                    id
-                      local
-                        str "n2" } } } } } } ,
+          data ftable {
+            {
+              data rna {
+                type mRNA,
+                ext name "abc"
+              },
+              location int {
+                from 0,
+                to 235,
+                strand plus,
+                id local str "n2"
+              }
+            }
+          }
+        }
+      }
+    },
     seq {
       id {
-        local
-          str "n3" } ,
+        local str "n3"
+      },
       descr {
         source {
-          genome cyanelle ,
+          genome cyanelle,
           org {
-            taxname "Homo sapiens" ,
-            common "human" ,
+            taxname "Homo sapiens",
+            common "human",
             db {
               {
-                db "taxon" ,
-                tag
-                  id 9606 } } ,
+                db "taxon",
+                tag id 9606
+              }
+            },
             orgname {
-              name
-                binomial {
-                  genus "Homo" ,
-                  species "sapiens" } ,
+              name binomial {
+                genus "Homo",
+                species "sapiens"
+              },
               lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
  Euteleostomi; Mammalia; Eutheria; Euarchontoglires; Primates; Haplorrhini;
- Catarrhini; Hominidae; Homo" ,
-              gcode 1 ,
-              mgcode 2 ,
-              div "PRI" } } } ,
+ Catarrhini; Hominidae; Homo",
+              gcode 1,
+              mgcode 2,
+              div "PRI"
+            }
+          }
+        },
         molinfo {
-          biomol genomic } ,
+          biomol genomic
+        },
         pub {
           pub {
             gen {
-              cit "Unpublished" ,
+              cit "Unpublished",
               authors {
-                names
-                  std {
-                    {
-                      name
-                        name {
-                          last "q" ,
-                          first "q" ,
-                          initials "q." } } } ,
-                affil
-                  str "q" } ,
-              title "a" } } } ,
+                names std {
+                  {
+                    name name {
+                      last "q",
+                      first "q",
+                      initials "q."
+                    }
+                  }
+                },
+                affil str "q"
+              },
+              title "a"
+            }
+          }
+        },
         user {
-          type
-            str "NcbiCleanup" ,
+          type str "NcbiCleanup",
           data {
             {
-              label
-                str "method" ,
-              data
-                str "SequinCleanup" } ,
+              label str "method",
+              data str "SequinCleanup"
+            },
             {
-              label
-                str "version" ,
-              data
-                int 8 } ,
+              label str "version",
+              data int 8
+            },
             {
-              label
-                str "month" ,
-              data
-                int 6 } ,
+              label str "month",
+              data int 6
+            },
             {
-              label
-                str "day" ,
-              data
-                int 14 } ,
+              label str "day",
+              data int 14
+            },
             {
-              label
-                str "year" ,
-              data
-                int 2016 } } } ,
-        create-date
-          std {
-            year 2014 ,
-            month 1 ,
-            day 8 } } ,
+              label str "year",
+              data int 2016
+            }
+          }
+        },
+        create-date std {
+          year 2014,
+          month 1,
+          day 8
+        }
+      },
       inst {
-        repr raw ,
-        mol dna ,
-        length 236 ,
-        seq-data
-          ncbi2na '000000000003FFFFFFFFFFFFFFFFAAAAAAAAAAAAAAAAAA9555555555555
-000000000003FFFFFFFFFFFFFFFFAAAAAAAAAAAAAAAAAA9555555555555'H } ,
+        repr raw,
+        mol dna,
+        length 236,
+        seq-data ncbi2na '000000000003FFFFFFFFFFFFFFFFAAAAAAAAAAAAAAAAAA955555
+5555555000000000003FFFFFFFFFFFFFFFFAAAAAAAAAAAAAAAAAA9555555555555'H
+      },
       annot {
         {
-          data
-            ftable {
-              {
-                data
-                  rna {
-                    type mRNA ,
-                    ext
-                      name "abc" } ,
-                location
-                  int {
-                    from 0 ,
-                    to 235 ,
-                    strand plus ,
-                    id
-                      local
-                        str "n3" } } } } } } ,
+          data ftable {
+            {
+              data rna {
+                type mRNA,
+                ext name "abc"
+              },
+              location int {
+                from 0,
+                to 235,
+                strand plus,
+                id local str "n3"
+              }
+            }
+          }
+        }
+      }
+    },
     seq {
       id {
-        local
-          str "n4" } ,
+        local str "n4"
+      },
       descr {
         source {
           org {
-            taxname "Homo sapiens" ,
-            common "human" ,
+            taxname "Homo sapiens",
+            common "human",
             db {
               {
-                db "taxon" ,
-                tag
-                  id 9606 } } ,
+                db "taxon",
+                tag id 9606
+              }
+            },
             orgname {
-              name
-                binomial {
-                  genus "Homo" ,
-                  species "sapiens" } ,
+              name binomial {
+                genus "Homo",
+                species "sapiens"
+              },
               lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
  Euteleostomi; Mammalia; Eutheria; Euarchontoglires; Primates; Haplorrhini;
- Catarrhini; Hominidae; Homo" ,
-              gcode 1 ,
-              mgcode 2 ,
-              div "PRI" } } } ,
+ Catarrhini; Hominidae; Homo",
+              gcode 1,
+              mgcode 2,
+              div "PRI"
+            }
+          }
+        },
         molinfo {
-          biomol genomic } ,
+          biomol genomic
+        },
         pub {
           pub {
             gen {
-              cit "Unpublished" ,
+              cit "Unpublished",
               authors {
-                names
-                  std {
-                    {
-                      name
-                        name {
-                          last "q" ,
-                          first "q" ,
-                          initials "q." } } } ,
-                affil
-                  str "q" } ,
-              title "a" } } } ,
+                names std {
+                  {
+                    name name {
+                      last "q",
+                      first "q",
+                      initials "q."
+                    }
+                  }
+                },
+                affil str "q"
+              },
+              title "a"
+            }
+          }
+        },
         user {
-          type
-            str "NcbiCleanup" ,
+          type str "NcbiCleanup",
           data {
             {
-              label
-                str "method" ,
-              data
-                str "SequinCleanup" } ,
+              label str "method",
+              data str "SequinCleanup"
+            },
             {
-              label
-                str "version" ,
-              data
-                int 8 } ,
+              label str "version",
+              data int 8
+            },
             {
-              label
-                str "month" ,
-              data
-                int 6 } ,
+              label str "month",
+              data int 6
+            },
             {
-              label
-                str "day" ,
-              data
-                int 14 } ,
+              label str "day",
+              data int 14
+            },
             {
-              label
-                str "year" ,
-              data
-                int 2016 } } } ,
-        create-date
-          std {
-            year 2014 ,
-            month 1 ,
-            day 8 } } ,
+              label str "year",
+              data int 2016
+            }
+          }
+        },
+        create-date std {
+          year 2014,
+          month 1,
+          day 8
+        }
+      },
       inst {
-        repr raw ,
-        mol dna ,
-        length 236 ,
-        seq-data
-          ncbi2na '000000000003FFFFFFFFFFFFFFFFAAAAAAAAAAAAAAAAAA9555555555555
-000000000003FFFFFFFFFFFFFFFFAAAAAAAAAAAAAAAAAA9555555555555'H } ,
+        repr raw,
+        mol dna,
+        length 236,
+        seq-data ncbi2na '000000000003FFFFFFFFFFFFFFFFAAAAAAAAAAAAAAAAAA955555
+5555555000000000003FFFFFFFFFFFFFFFFAAAAAAAAAAAAAAAAAA9555555555555'H
+      },
       annot {
         {
-          data
-            ftable {
-              {
-                data
-                  rna {
-                    type mRNA ,
-                    ext
-                      name "abc" } ,
-                location
-                  int {
-                    from 0 ,
-                    to 235 ,
-                    strand plus ,
-                    id
-                      local
-                        str "n4" } } } } } } } }
+          data ftable {
+            {
+              data rna {
+                type mRNA,
+                ext name "abc"
+              },
+              location int {
+                from 0,
+                to 235,
+                strand plus,
+                id local str "n4"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

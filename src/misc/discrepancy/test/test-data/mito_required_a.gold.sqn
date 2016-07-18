@@ -34,36 +34,42 @@ Seq-entry ::= set {
               cit "Unpublished",
               authors {
                 names std {
-                    {
-                      name
-                        name {
-                          last "Shi" ,
-                          first "Guohui" ,
-                          initials "G." } } ,
-                    {
-                      name
-                        name {
-                          last "Cui" ,
-                          first "Zhaoxia" ,
-                          initials "Z." } } ,
-                    {
-                      name
-                        name {
-                          last "Hui" ,
-                          first "Min" ,
-                          initials "M." } } ,
-                    {
-                      name
-                        name {
-                          last "Liu" ,
-                          first "Yuan" ,
-                          initials "Y." } } ,
-                    {
-                      name
-                        name {
-                          last "Song" ,
-                          first "Chenwen" ,
-                          initials "C." } } },
+                  {
+                    name name {
+                      last "Shi",
+                      first "Guohui",
+                      initials "G."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Cui",
+                      first "Zhaoxia",
+                      initials "Z."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Hui",
+                      first "Min",
+                      initials "M."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Liu",
+                      first "Yuan",
+                      initials "Y."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Song",
+                      first "Chenwen",
+                      initials "C."
+                    }
+                  }
+                },
                 affil std {
                   affil "Institute of Oceanology, Chinese Academy of Sciences",
                   div "Experimental Marine Biology Laboratory",
@@ -85,36 +91,42 @@ Seq-entry ::= set {
             sub {
               authors {
                 names std {
-                    {
-                      name
-                        name {
-                          last "Shi" ,
-                          first "Guohui" ,
-                          initials "G." } } ,
-                    {
-                      name
-                        name {
-                          last "Cui" ,
-                          first "Zhaoxia" ,
-                          initials "Z." } } ,
-                    {
-                      name
-                        name {
-                          last "Hui" ,
-                          first "Min" ,
-                          initials "M." } } ,
-                    {
-                      name
-                        name {
-                          last "Liu" ,
-                          first "Yuan" ,
-                          initials "Y." } } ,
-                    {
-                      name
-                        name {
-                          last "Song" ,
-                          first "Chenwen" ,
-                          initials "C." } } },
+                  {
+                    name name {
+                      last "Shi",
+                      first "Guohui",
+                      initials "G."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Cui",
+                      first "Zhaoxia",
+                      initials "Z."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Hui",
+                      first "Min",
+                      initials "M."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Liu",
+                      first "Yuan",
+                      initials "Y."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Song",
+                      first "Chenwen",
+                      initials "C."
+                    }
+                  }
+                },
                 affil std {
                   affil "Institute of Oceanology, Chinese Academy of Sciences",
                   div "Experimental Marine Biology Laboratory",
@@ -833,7 +845,7 @@ C07EF2C0FC437165C074947F34'H
             }
           },
           descr {
-            title "cytochrome oxidase subunit I (mitochondrion) [Moloha majora]",
+            title "cytochrome oxidase subunit I [Moloha majora]",
             molinfo {
               biomol peptide,
               tech concept-trans-a
@@ -883,8 +895,7 @@ SDYPDAYTTWNIVSSMGSMISMMSVLGFMFIVWESLISNRPVLFASFLPSSIEWEHNTPPADHSYMEIPIITN"
             }
           },
           descr {
-            title "cytochrome oxidase subunit II (mitochondrion) [Moloha
- majora]",
+            title "cytochrome oxidase subunit II [Moloha majora]",
             molinfo {
               biomol peptide,
               tech concept-trans-a
@@ -931,7 +942,7 @@ SFMPIVIESVSTNSFLNWISSAIED"
             }
           },
           descr {
-            title "ATPase 8 (mitochondrion) [Moloha majora]",
+            title "ATPase 8 [Moloha majora]",
             molinfo {
               biomol peptide,
               tech concept-trans-a
@@ -976,7 +987,7 @@ TWKW"
             }
           },
           descr {
-            title "ATPase 6 (mitochondrion) [Moloha majora]",
+            title "ATPase 6 [Moloha majora]",
             molinfo {
               biomol peptide,
               tech concept-trans-a
@@ -1023,8 +1034,7 @@ IIQSYVFAVLSLFYTSKIN"
             }
           },
           descr {
-            title "cytochrome oxidase subunit III (mitochondrion) [Moloha
- majora]",
+            title "cytochrome oxidase subunit III [Moloha majora]",
             molinfo {
               biomol peptide,
               tech concept-trans-a
@@ -1071,7 +1081,7 @@ FHGLHVIIGTTFLAVCFYRLFNCHFSSKHHLGFEAAAWYWHFVDVVWLFLYVFIYWWGGY"
             }
           },
           descr {
-            title "NADH dehydrogenase subunit 3 (mitochondrion) [Moloha majora]",
+            title "NADH dehydrogenase subunit 3 [Moloha majora]",
             molinfo {
               biomol peptide,
               tech concept-trans-a
@@ -1116,7 +1126,7 @@ SRLPFSLRFFLIAVIFLIFDVEITLLLPIASIINITNVFSWMITTSGFLFILLLGLYYEWKQGALEWS"
             }
           },
           descr {
-            title "NADH dehydrogenase subunit 5 (mitochondrion) [Moloha majora]",
+            title "NADH dehydrogenase subunit 5 [Moloha majora]",
             molinfo {
               biomol peptide,
               tech concept-trans-a
@@ -1167,7 +1177,7 @@ TGYSYYKYIDKGWSEFMGPPGLYTVFFKFFFFLNIMQASSIKVFMKMFMFLMIVFFFIYI"
             }
           },
           descr {
-            title "NADH dehydrogenase subunit 4 (mitochondrion) [Moloha majora]",
+            title "NADH dehydrogenase subunit 4 [Moloha majora]",
             molinfo {
               biomol peptide,
               tech concept-trans-a
@@ -1217,8 +1227,7 @@ SLMSTPGLL"
             }
           },
           descr {
-            title "NADH dehydrogenase subunit 4L (mitochondrion) [Moloha
- majora]",
+            title "NADH dehydrogenase subunit 4L [Moloha majora]",
             molinfo {
               biomol peptide,
               tech concept-trans-a
@@ -1263,7 +1272,7 @@ NFYISSVGNEIYFVLFFLTLIAWEGVLGLSLLIYIVRSYGNDCFSSFNVLEC"
             }
           },
           descr {
-            title "NADH dehydrogenase subunit 6 (mitochondrion) [Moloha majora]",
+            title "NADH dehydrogenase subunit 6 [Moloha majora]",
             molinfo {
               biomol peptide,
               tech concept-trans-a
@@ -1309,7 +1318,7 @@ MLINWIYSPKLIMFTLFIVLYLLLTLLVVVKISYSHMGPMRLSS"
             }
           },
           descr {
-            title "cytochrome b (mitochondrion) [Moloha majora]",
+            title "cytochrome b [Moloha majora]",
             molinfo {
               biomol peptide,
               tech concept-trans-a
@@ -1358,7 +1367,7 @@ LFYLMNPMMLMMWDKYLK"
             }
           },
           descr {
-            title "NADH dehydrogenase subunit 1 (mitochondrion) [Moloha majora]",
+            title "NADH dehydrogenase subunit 1 [Moloha majora]",
             molinfo {
               biomol peptide,
               tech concept-trans-a
@@ -1406,7 +1415,7 @@ YLAWKSVLPVAINYLFFFLGIKMFCYCYFI"
             }
           },
           descr {
-            title "NADH2 gene product (mitochondrion) [Moloha majora]",
+            title "NADH2 gene product [Moloha majora]",
             molinfo {
               biomol peptide,
               tech concept-trans-a

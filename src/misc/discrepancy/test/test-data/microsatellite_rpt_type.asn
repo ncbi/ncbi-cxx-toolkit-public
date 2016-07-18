@@ -97,7 +97,7 @@ GACTTAAACCTCCCCGCTATCTGTGAAAACCCCGAAACTGACCTACTA"
                 },
                 {
                   qual "satellite",
-                  val "microSatellite"
+                  val "satellite:microSatellite"
                 }
               }
             },

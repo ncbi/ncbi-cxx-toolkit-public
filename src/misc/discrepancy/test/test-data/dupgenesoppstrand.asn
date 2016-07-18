@@ -2,277 +2,309 @@ Seq-submit ::= {
   sub {
     contact {
       contact {
-        name
-          name {
-            last "Wegrzyn" ,
-            first "Jill" } ,
-        affil
-          std {
-            affil "University of California at Davis" ,
-            div "Department of Plant Sciences" ,
-            city "Davis" ,
-            sub "CA" ,
-            country "USA" ,
-            street "1 Shields Avenue" ,
-            email "jlwegrzyn@ucdavis.edu" ,
-            fax "530-754-9366" ,
-            phone "530-207-0267" ,
-            postal-code "95616" } } } ,
+        name name {
+          last "Wegrzyn",
+          first "Jill"
+        },
+        affil std {
+          affil "University of California at Davis",
+          div "Department of Plant Sciences",
+          city "Davis",
+          sub "CA",
+          country "USA",
+          street "1 Shields Avenue",
+          email "jlwegrzyn@ucdavis.edu",
+          fax "530-754-9366",
+          phone "530-207-0267",
+          postal-code "95616"
+        }
+      }
+    },
     cit {
       authors {
-        names
-          std {
-            {
-              name
-                name {
-                  last "Wegrzyn" ,
-                  first "Jill" ,
-                  initials "J.L." } } ,
-            {
-              name
-                name {
-                  last "Lin" ,
-                  first "Brian" ,
-                  initials "B." } } ,
-            {
-              name
-                name {
-                  last "Zieve" ,
-                  first "Jacob" ,
-                  initials "J.J." } } ,
-            {
-              name
-                name {
-                  last "Dougherty" ,
-                  first "William" ,
-                  initials "W.M." } } ,
-            {
-              name
-                name {
-                  last "Martinez-Garcia" ,
-                  first "Pedro" ,
-                  initials "P.J." } } ,
-            {
-              name
-                name {
-                  last "Neale" ,
-                  first "David" ,
-                  initials "D.B." } } ,
-            {
-              name
-                name {
-                  last "Stevens" ,
-                  first "Kristian" ,
-                  initials "K.A." } } } ,
-        affil
-          std {
-            affil "University of California at Davis" ,
-            div "Department of Plant Sciences" ,
-            city "Davis" ,
-            sub "CA" ,
-            country "USA" ,
-            street "1 Shields Avenue" ,
-            postal-code "95616" } } ,
-      date
-        std {
-          year 2013 ,
-          month 2 ,
-          day 7 } } ,
-    hup TRUE ,
-    reldate
-      std {
-        year 2014 ,
-        month 2 ,
-        day 7 } ,
-    subtype new ,
-    tool "tbl2asn 21.1 - LINUX UNIX" } ,
-  data
-    entrys {
-      seq {
-        id {
-          general {
-            db "UCD_DPS" ,
-            tag
-              str "C437219_C437219_0_1141_f" } } ,
-        descr {
-          source {
-            org {
-              taxname "Pinus taeda" ,
-              common "loblolly pine" ,
-              db {
-                {
-                  db "taxon" ,
-                  tag
-                    id 3352 } } ,
-              orgname {
-                name
-                  binomial {
-                    genus "Pinus" ,
-                    species "taeda" } ,
-                lineage "Eukaryota; Viridiplantae; Streptophyta; Embryophyta;
- Tracheophyta; Spermatophyta; Pinidae; Pinales; Pinaceae; Pinus; Pinus" ,
-                gcode 1 ,
-                mgcode 1 ,
-                div "PLN" ,
-                pgcode 11 } } ,
-            subtype {
+        names std {
+          {
+            name name {
+              last "Wegrzyn",
+              first "Jill",
+              initials "J.L."
+            }
+          },
+          {
+            name name {
+              last "Lin",
+              first "Brian",
+              initials "B."
+            }
+          },
+          {
+            name name {
+              last "Zieve",
+              first "Jacob",
+              initials "J.J."
+            }
+          },
+          {
+            name name {
+              last "Dougherty",
+              first "William",
+              initials "W.M."
+            }
+          },
+          {
+            name name {
+              last "Martinez-Garcia",
+              first "Pedro",
+              initials "P.J."
+            }
+          },
+          {
+            name name {
+              last "Neale",
+              first "David",
+              initials "D.B."
+            }
+          },
+          {
+            name name {
+              last "Stevens",
+              first "Kristian",
+              initials "K.A."
+            }
+          }
+        },
+        affil std {
+          affil "University of California at Davis",
+          div "Department of Plant Sciences",
+          city "Davis",
+          sub "CA",
+          country "USA",
+          street "1 Shields Avenue",
+          postal-code "95616"
+        }
+      },
+      date std {
+        year 2013,
+        month 2,
+        day 7
+      }
+    },
+    hup TRUE,
+    reldate std {
+      year 2014,
+      month 2,
+      day 7
+    },
+    subtype new,
+    tool "tbl2asn 21.1 - LINUX UNIX"
+  },
+  data entrys {
+    seq {
+      id {
+        general {
+          db "UCD_DPS",
+          tag str "C437219_C437219_0_1141_f"
+        }
+      },
+      descr {
+        source {
+          org {
+            taxname "Pinus taeda",
+            common "loblolly pine",
+            db {
               {
-                subtype tissue-type ,
-                name "needle" } } } ,
-          molinfo {
-            biomol genomic } ,
+                db "taxon",
+                tag id 3352
+              }
+            },
+            orgname {
+              name binomial {
+                genus "Pinus",
+                species "taeda"
+              },
+              lineage "Eukaryota; Viridiplantae; Streptophyta; Embryophyta;
+ Tracheophyta; Spermatophyta; Pinidae; Pinales; Pinaceae; Pinus; Pinus",
+              gcode 1,
+              mgcode 1,
+              div "PLN",
+              pgcode 11
+            }
+          },
+          subtype {
+            {
+              subtype tissue-type,
+              name "needle"
+            }
+          }
+        },
+        molinfo {
+          biomol genomic
+        },
+        pub {
           pub {
-            pub {
-              gen {
-                cit "Unpublished" ,
-                authors {
-                  names
-                    std {
-                      {
-                        name
-                          name {
-                            last "Wegrzyn" ,
-                            first "Jill" ,
-                            initials "J.L." } } ,
-                      {
-                        name
-                          name {
-                            last "Lin" ,
-                            first "Brian" ,
-                            initials "B." } } ,
-                      {
-                        name
-                          name {
-                            last "Zieve" ,
-                            first "Jacob" ,
-                            initials "J.J." } } ,
-                      {
-                        name
-                          name {
-                            last "Dougherty" ,
-                            first "William" ,
-                            initials "W.M." } } ,
-                      {
-                        name
-                          name {
-                            last "Martinez-Garcia" ,
-                            first "Pedro" ,
-                            initials "P.J." } } ,
-                      {
-                        name
-                          name {
-                            last "Neale" ,
-                            first "David" ,
-                            initials "D.B." } } ,
-                      {
-                        name
-                          name {
-                            last "Stevens" ,
-                            first "Kristian" ,
-                            initials "K.A." } } } ,
-                  affil
-                    std {
-                      affil "University of California at Davis" ,
-                      div "Department of Plant Sciences" ,
-                      city "Davis" ,
-                      sub "CA" ,
-                      country "USA" ,
-                      street "1 Shields Avenue" ,
-                      postal-code "95616" } } ,
-                title "Insights into the Loblolly Pine Genome:
- Characterization of Fosmid Sequence" } } } ,
-          comment "Needle tissue used to generate a pool of 8 fosmid libraries
+            gen {
+              cit "Unpublished",
+              authors {
+                names std {
+                  {
+                    name name {
+                      last "Wegrzyn",
+                      first "Jill",
+                      initials "J.L."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Lin",
+                      first "Brian",
+                      initials "B."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Zieve",
+                      first "Jacob",
+                      initials "J.J."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Dougherty",
+                      first "William",
+                      initials "W.M."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Martinez-Garcia",
+                      first "Pedro",
+                      initials "P.J."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Neale",
+                      first "David",
+                      initials "D.B."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Stevens",
+                      first "Kristian",
+                      initials "K.A."
+                    }
+                  }
+                },
+                affil std {
+                  affil "University of California at Davis",
+                  div "Department of Plant Sciences",
+                  city "Davis",
+                  sub "CA",
+                  country "USA",
+                  street "1 Shields Avenue",
+                  postal-code "95616"
+                }
+              },
+              title "Insights into the Loblolly Pine Genome: Characterization
+ of Fosmid Sequence"
+            }
+          }
+        },
+        comment "Needle tissue used to generate a pool of 8 fosmid libraries
  with an estimated insert size of 38.5kb, 4,960 clones total.  Sequencing was
  done using an Illumina GAIIx, effectively 2x125 paired-end reads (2x150 with
- 25 bases trimmed) and no quality cutoffs applied.  Assembeled with
- SOAPdenovo." ,
-          user {
-            type
-              str "DBLink" ,
-            data {
-              {
-                label
-                  str "BioProject" ,
-                num 1 ,
-                data
-                  strs {
-                    "PRJNA174450" } } } } ,
-          user {
-            type
-              str "NcbiCleanup" ,
-            data {
-              {
-                label
-                  str "method" ,
-                data
-                  str "SequinCleanup" } ,
-              {
-                label
-                  str "version" ,
-                data
-                  int 8 } ,
-              {
-                label
-                  str "month" ,
-                data
-                  int 7 } ,
-              {
-                label
-                  str "day" ,
-                data
-                  int 15 } ,
-              {
-                label
-                  str "year" ,
-                data
-                  int 2016 } } } ,
-          create-date
-            std {
-              year 2013 ,
-              month 2 ,
-              day 7 } } ,
-        inst {
-          repr raw ,
-          mol dna ,
-          length 1141 ,
-          seq-data
-            ncbi2na 'C43004FB0C080D08DF00000DC800FCC2808C840FD10B0D30C007E7C44
-0C0C0F008C2C020C430004F0040FBC10014D1C410F83B202D308BFA0DC050A28C81C2103D0C84C
-07140002AC0E3833D403E2302134D40D30074D33F58103C1C1CE0343383303847DFC01C3383303
-047DF3335CB541AF2743EB62F4EF9C0913570EA2B4EAB43DD76115D2AF22B8D44D5F4AC8DC538C
-FD7E0820820820820F00FBA03A1F1DE3E80D4011D0F7350305C74100040CF0E00CC11F7CCCDC80
-0D7E0820C3C03EE80E87C770FA035004743DCD40C171D04001233C38033047DF33372083C032D8
-0E0380D3BF90F80C5088FFE800E38C834F2808FBFB4534D140EB2028000C9024FF2C0ED32A2330
-CC4D2AEECB3CFB233D40DD010F3FF4280C3FFB343D3C000'H } ,
-        annot {
-          {
-            data
-              ftable {
-                {
-                  data
-                    gene {
-                      locus-tag "ABC_1" } ,
-                  location
-                    int {
-                      from 0 ,
-                      to 1140 ,
-                      strand plus ,
-                      id
-                        general {
-                          db "UCD_DPS" ,
-                          tag
-                            str "C437219_C437219_0_1141_f" } } } ,
-                {
-                  data
-                    gene {
-                      locus-tag "ABC_2" } ,
-                  location
-                    int {
-                      from 0 ,
-                      to 1140 ,
-                      strand minus ,
-                      id
-                        general {
-                          db "UCD_DPS" ,
-                          tag
-                            str "C437219_C437219_0_1141_f" } } } } } } } } }
+ 25 bases trimmed) and no quality cutoffs applied.  Assembeled with SOAPdenovo.",
+        user {
+          type str "DBLink",
+          data {
+            {
+              label str "BioProject",
+              num 1,
+              data strs {
+                "PRJNA174450"
+              }
+            }
+          }
+        },
+        user {
+          type str "NcbiCleanup",
+          data {
+            {
+              label str "method",
+              data str "SequinCleanup"
+            },
+            {
+              label str "version",
+              data int 8
+            },
+            {
+              label str "month",
+              data int 7
+            },
+            {
+              label str "day",
+              data int 15
+            },
+            {
+              label str "year",
+              data int 2016
+            }
+          }
+        },
+        create-date std {
+          year 2013,
+          month 2,
+          day 7
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 1141,
+        seq-data ncbi2na 'C43004FB0C080D08DF00000DC800FCC2808C840FD10B0D30C007
+E7C440C0C0F008C2C020C430004F0040FBC10014D1C410F83B202D308BFA0DC050A28C81C2103D
+0C84C07140002AC0E3833D403E2302134D40D30074D33F58103C1C1CE0343383303847DFC01C33
+83303047DF3335CB541AF2743EB62F4EF9C0913570EA2B4EAB43DD76115D2AF22B8D44D5F4AC8D
+C538CFD7E0820820820820F00FBA03A1F1DE3E80D4011D0F7350305C74100040CF0E00CC11F7CC
+CDC800D7E0820C3C03EE80E87C770FA035004743DCD40C171D04001233C38033047DF33372083C
+032D80E0380D3BF90F80C5088FFE800E38C834F2808FBFB4534D140EB2028000C9024FF2C0ED32
+A2330CC4D2AEECB3CFB233D40DD010F3FF4280C3FFB343D3C000'H
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data gene {
+                locus-tag "ABC_1"
+              },
+              location int {
+                from 0,
+                to 1140,
+                strand plus,
+                id general {
+                  db "UCD_DPS",
+                  tag str "C437219_C437219_0_1141_f"
+                }
+              }
+            },
+            {
+              data gene {
+                locus-tag "ABC_2"
+              },
+              location int {
+                from 0,
+                to 1140,
+                strand minus,
+                id general {
+                  db "UCD_DPS",
+                  tag str "C437219_C437219_0_1141_f"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

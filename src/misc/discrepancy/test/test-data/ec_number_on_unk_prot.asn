@@ -118,7 +118,6 @@ AESKALQRKLREWIGGTAKTRLY"
                   location int {
                     from 29,
                     to 39,
-                    strand plus,
                     id local str "Seq1_prot_1"
                   }
                 }

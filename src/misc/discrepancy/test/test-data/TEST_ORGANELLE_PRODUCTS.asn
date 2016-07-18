@@ -463,8 +463,8 @@ Seq-entry ::= set {
               }
             },
             syn {
-              "Cladomniopsis crenatoobtusa M.Fleisch.",
-              "Cladomniopsis crenato-obtusa"
+              "Cladomniopsis crenato-obtusa",
+              "Cladomniopsis crenatoobtusa M.Fleisch."
             },
             orgname {
               name binomial {

@@ -211,13 +211,13 @@ Seq-entry ::= set {
                   }
                 },
                 syn {
-                  "Saccharomyces uvarum var. melibiosus",
-                  "Saccharomyces oviformis",
-                  "Saccharomyces italicus",
-                  "Saccharomyces capensis",
-                  "yeast",
+                  "brewer's yeast",
                   "lager beer yeast",
-                  "brewer's yeast"
+                  "Saccharomyces capensis",
+                  "Saccharomyces italicus",
+                  "Saccharomyces oviformis",
+                  "Saccharomyces uvarum var. melibiosus",
+                  "yeast"
                 },
                 orgname {
                   name binomial {
@@ -446,13 +446,13 @@ E88B525A9799F0B99ADF9CA7EC2FDFDF9CF501AE223F7B9FFBCCA10F005BF4310447BA2FF4CDFE
                   }
                 },
                 syn {
-                  "Saccharomyces uvarum var. melibiosus",
-                  "Saccharomyces oviformis",
-                  "Saccharomyces italicus",
-                  "Saccharomyces capensis",
-                  "yeast",
+                  "brewer's yeast",
                   "lager beer yeast",
-                  "brewer's yeast"
+                  "Saccharomyces capensis",
+                  "Saccharomyces italicus",
+                  "Saccharomyces oviformis",
+                  "Saccharomyces uvarum var. melibiosus",
+                  "yeast"
                 },
                 orgname {
                   name binomial {
@@ -681,13 +681,13 @@ A06F363082226DCA6043BDF00FE1740D2B28B159E0'H
                   }
                 },
                 syn {
-                  "Saccharomyces uvarum var. melibiosus",
-                  "Saccharomyces oviformis",
-                  "Saccharomyces italicus",
-                  "Saccharomyces capensis",
-                  "yeast",
+                  "brewer's yeast",
                   "lager beer yeast",
-                  "brewer's yeast"
+                  "Saccharomyces capensis",
+                  "Saccharomyces italicus",
+                  "Saccharomyces oviformis",
+                  "Saccharomyces uvarum var. melibiosus",
+                  "yeast"
                 },
                 orgname {
                   name binomial {
@@ -916,13 +916,13 @@ E88B525A9799F0B99ADF9CA7EC2FDFDF9CF501AE223F7B9FFBCCA10F005BF4310447BA2FF4CDFE
                   }
                 },
                 syn {
-                  "Saccharomyces uvarum var. melibiosus",
-                  "Saccharomyces oviformis",
-                  "Saccharomyces italicus",
-                  "Saccharomyces capensis",
-                  "yeast",
+                  "brewer's yeast",
                   "lager beer yeast",
-                  "brewer's yeast"
+                  "Saccharomyces capensis",
+                  "Saccharomyces italicus",
+                  "Saccharomyces oviformis",
+                  "Saccharomyces uvarum var. melibiosus",
+                  "yeast"
                 },
                 orgname {
                   name binomial {
@@ -1151,13 +1151,13 @@ B8C77FA2F07E03E7A5FF4FA3BFFFD4088AFDDE6E7E2B30E42C6B6FF2BFC5079A70DFFFCC789B3E
                   }
                 },
                 syn {
-                  "Saccharomyces uvarum var. melibiosus",
-                  "Saccharomyces oviformis",
-                  "Saccharomyces italicus",
-                  "Saccharomyces capensis",
-                  "yeast",
+                  "brewer's yeast",
                   "lager beer yeast",
-                  "brewer's yeast"
+                  "Saccharomyces capensis",
+                  "Saccharomyces italicus",
+                  "Saccharomyces oviformis",
+                  "Saccharomyces uvarum var. melibiosus",
+                  "yeast"
                 },
                 orgname {
                   name binomial {
@@ -1385,13 +1385,13 @@ BCD8C20889B729810EF7C0BF85D034ACA2C56781F0'H
                   }
                 },
                 syn {
-                  "Saccharomyces uvarum var. melibiosus",
-                  "Saccharomyces oviformis",
-                  "Saccharomyces italicus",
-                  "Saccharomyces capensis",
-                  "yeast",
+                  "brewer's yeast",
                   "lager beer yeast",
-                  "brewer's yeast"
+                  "Saccharomyces capensis",
+                  "Saccharomyces italicus",
+                  "Saccharomyces oviformis",
+                  "Saccharomyces uvarum var. melibiosus",
+                  "yeast"
                 },
                 orgname {
                   name binomial {
@@ -1608,13 +1608,13 @@ F363082226DCA60400'H
                   }
                 },
                 syn {
-                  "Saccharomyces uvarum var. melibiosus",
-                  "Saccharomyces oviformis",
-                  "Saccharomyces italicus",
-                  "Saccharomyces capensis",
-                  "yeast",
+                  "brewer's yeast",
                   "lager beer yeast",
-                  "brewer's yeast"
+                  "Saccharomyces capensis",
+                  "Saccharomyces italicus",
+                  "Saccharomyces oviformis",
+                  "Saccharomyces uvarum var. melibiosus",
+                  "yeast"
                 },
                 orgname {
                   name binomial {
@@ -1843,13 +1843,13 @@ E31DFE8BC1F80F9E97FD3E8EFFFF50222BF779B9F8ACC390B1ADBFCAFF141E69C37FFF31E26CFA
                   }
                 },
                 syn {
-                  "Saccharomyces uvarum var. melibiosus",
-                  "Saccharomyces oviformis",
-                  "Saccharomyces italicus",
-                  "Saccharomyces capensis",
-                  "yeast",
+                  "brewer's yeast",
                   "lager beer yeast",
-                  "brewer's yeast"
+                  "Saccharomyces capensis",
+                  "Saccharomyces italicus",
+                  "Saccharomyces oviformis",
+                  "Saccharomyces uvarum var. melibiosus",
+                  "yeast"
                 },
                 orgname {
                   name binomial {
@@ -2077,13 +2077,13 @@ D8E0819260398C6C3B83E483D6E0D360DFE0644F9957EB3D4AA9397BF89B4FD7DD013DEFEB2E2E
                   }
                 },
                 syn {
-                  "Saccharomyces uvarum var. melibiosus",
-                  "Saccharomyces oviformis",
-                  "Saccharomyces italicus",
-                  "Saccharomyces capensis",
-                  "yeast",
+                  "brewer's yeast",
                   "lager beer yeast",
-                  "brewer's yeast"
+                  "Saccharomyces capensis",
+                  "Saccharomyces italicus",
+                  "Saccharomyces oviformis",
+                  "Saccharomyces uvarum var. melibiosus",
+                  "yeast"
                 },
                 orgname {
                   name binomial {
@@ -2300,13 +2300,13 @@ A06F363082226DCA604380'H
                   }
                 },
                 syn {
-                  "Saccharomyces uvarum var. melibiosus",
-                  "Saccharomyces oviformis",
-                  "Saccharomyces italicus",
-                  "Saccharomyces capensis",
-                  "yeast",
+                  "brewer's yeast",
                   "lager beer yeast",
-                  "brewer's yeast"
+                  "Saccharomyces capensis",
+                  "Saccharomyces italicus",
+                  "Saccharomyces oviformis",
+                  "Saccharomyces uvarum var. melibiosus",
+                  "yeast"
                 },
                 orgname {
                   name binomial {
@@ -2535,13 +2535,13 @@ A06F363082226DCA6043BDF02FE1740D3B'H
                   }
                 },
                 syn {
-                  "Saccharomyces uvarum var. melibiosus",
-                  "Saccharomyces oviformis",
-                  "Saccharomyces italicus",
-                  "Saccharomyces capensis",
-                  "yeast",
+                  "brewer's yeast",
                   "lager beer yeast",
-                  "brewer's yeast"
+                  "Saccharomyces capensis",
+                  "Saccharomyces italicus",
+                  "Saccharomyces oviformis",
+                  "Saccharomyces uvarum var. melibiosus",
+                  "yeast"
                 },
                 orgname {
                   name binomial {
@@ -2769,13 +2769,13 @@ A06F363082226DCA6043BDF02FE1740D3B'H
                   }
                 },
                 syn {
-                  "Saccharomyces uvarum var. melibiosus",
-                  "Saccharomyces oviformis",
-                  "Saccharomyces italicus",
-                  "Saccharomyces capensis",
-                  "yeast",
+                  "brewer's yeast",
                   "lager beer yeast",
-                  "brewer's yeast"
+                  "Saccharomyces capensis",
+                  "Saccharomyces italicus",
+                  "Saccharomyces oviformis",
+                  "Saccharomyces uvarum var. melibiosus",
+                  "yeast"
                 },
                 orgname {
                   name binomial {
@@ -2992,13 +2992,13 @@ A06F363082226DCA6043BDF0'H
                   }
                 },
                 syn {
-                  "Saccharomyces uvarum var. melibiosus",
-                  "Saccharomyces oviformis",
-                  "Saccharomyces italicus",
-                  "Saccharomyces capensis",
-                  "yeast",
+                  "brewer's yeast",
                   "lager beer yeast",
-                  "brewer's yeast"
+                  "Saccharomyces capensis",
+                  "Saccharomyces italicus",
+                  "Saccharomyces oviformis",
+                  "Saccharomyces uvarum var. melibiosus",
+                  "yeast"
                 },
                 orgname {
                   name binomial {
@@ -3227,13 +3227,13 @@ A06F363082226DCA6043BDF02FE1740D'H
                   }
                 },
                 syn {
-                  "Saccharomyces uvarum var. melibiosus",
-                  "Saccharomyces oviformis",
-                  "Saccharomyces italicus",
-                  "Saccharomyces capensis",
-                  "yeast",
+                  "brewer's yeast",
                   "lager beer yeast",
-                  "brewer's yeast"
+                  "Saccharomyces capensis",
+                  "Saccharomyces italicus",
+                  "Saccharomyces oviformis",
+                  "Saccharomyces uvarum var. melibiosus",
+                  "yeast"
                 },
                 orgname {
                   name binomial {
@@ -3461,13 +3461,13 @@ BCD8C20889B729810EF7C0BF85D034ACA2C564'H
                   }
                 },
                 syn {
-                  "Saccharomyces uvarum var. melibiosus",
-                  "Saccharomyces oviformis",
-                  "Saccharomyces italicus",
-                  "Saccharomyces capensis",
-                  "yeast",
+                  "brewer's yeast",
                   "lager beer yeast",
-                  "brewer's yeast"
+                  "Saccharomyces capensis",
+                  "Saccharomyces italicus",
+                  "Saccharomyces oviformis",
+                  "Saccharomyces uvarum var. melibiosus",
+                  "yeast"
                 },
                 orgname {
                   name binomial {
@@ -3684,13 +3684,13 @@ A06F363082226DCA604380'H
                   }
                 },
                 syn {
-                  "Saccharomyces uvarum var. melibiosus",
-                  "Saccharomyces oviformis",
-                  "Saccharomyces italicus",
-                  "Saccharomyces capensis",
-                  "yeast",
+                  "brewer's yeast",
                   "lager beer yeast",
-                  "brewer's yeast"
+                  "Saccharomyces capensis",
+                  "Saccharomyces italicus",
+                  "Saccharomyces oviformis",
+                  "Saccharomyces uvarum var. melibiosus",
+                  "yeast"
                 },
                 orgname {
                   name binomial {
@@ -3919,13 +3919,13 @@ E31DFE8BC1F80F9E97FD3E8EFFFF50222BF779B9F8ACC390B1ADBFCAFF141E69C37FFF31E26CFA
                   }
                 },
                 syn {
-                  "Saccharomyces uvarum var. melibiosus",
-                  "Saccharomyces oviformis",
-                  "Saccharomyces italicus",
-                  "Saccharomyces capensis",
-                  "yeast",
+                  "brewer's yeast",
                   "lager beer yeast",
-                  "brewer's yeast"
+                  "Saccharomyces capensis",
+                  "Saccharomyces italicus",
+                  "Saccharomyces oviformis",
+                  "Saccharomyces uvarum var. melibiosus",
+                  "yeast"
                 },
                 orgname {
                   name binomial {
@@ -4154,13 +4154,13 @@ B8C77FA2F07E03E7A5FF4FA3BFFFD4088AFDDE6E7E2B30E42C6B6FF2BFC5079A70DFFFCC789B3E
                   }
                 },
                 syn {
-                  "Saccharomyces uvarum var. melibiosus",
-                  "Saccharomyces oviformis",
-                  "Saccharomyces italicus",
-                  "Saccharomyces capensis",
-                  "yeast",
+                  "brewer's yeast",
                   "lager beer yeast",
-                  "brewer's yeast"
+                  "Saccharomyces capensis",
+                  "Saccharomyces italicus",
+                  "Saccharomyces oviformis",
+                  "Saccharomyces uvarum var. melibiosus",
+                  "yeast"
                 },
                 orgname {
                   name binomial {
@@ -4389,13 +4389,13 @@ E81BCD8C20889B729810EF7C0BF85D034ACA2C56781F093340'H
                   }
                 },
                 syn {
-                  "Saccharomyces uvarum var. melibiosus",
-                  "Saccharomyces oviformis",
-                  "Saccharomyces italicus",
-                  "Saccharomyces capensis",
-                  "yeast",
+                  "brewer's yeast",
                   "lager beer yeast",
-                  "brewer's yeast"
+                  "Saccharomyces capensis",
+                  "Saccharomyces italicus",
+                  "Saccharomyces oviformis",
+                  "Saccharomyces uvarum var. melibiosus",
+                  "yeast"
                 },
                 orgname {
                   name binomial {
@@ -4624,13 +4624,13 @@ BC1F80F9E97FD3E8EFFFF50222BF779B9F8ACC390B1ADBFCAFF141E69C37FFF31E26CFA06F3630
                   }
                 },
                 syn {
-                  "Saccharomyces uvarum var. melibiosus",
-                  "Saccharomyces oviformis",
-                  "Saccharomyces italicus",
-                  "Saccharomyces capensis",
-                  "yeast",
+                  "brewer's yeast",
                   "lager beer yeast",
-                  "brewer's yeast"
+                  "Saccharomyces capensis",
+                  "Saccharomyces italicus",
+                  "Saccharomyces oviformis",
+                  "Saccharomyces uvarum var. melibiosus",
+                  "yeast"
                 },
                 orgname {
                   name binomial {
@@ -4858,11 +4858,11 @@ E88B525A9799F0B99ADF9CA7EC2FDFDF9CF501AE223F7B9FFBCCA10F005BF4310447BA2FF4CDFE
                   }
                 },
                 syn {
-                  "Cryptococcus californicus Mrak & McClung ex Anderson &
- Skinner",
-                  "Cryptococcus californicus",
+                  "Candida californica (Anderson & Skinner) Bai, Wu & Robert",
                   "Candida sp. CBS 989",
-                  "Candida californica (Anderson & Skinner) Bai, Wu & Robert"
+                  "Cryptococcus californicus",
+                  "Cryptococcus californicus Mrak & McClung ex Anderson &
+ Skinner"
                 },
                 orgname {
                   name binomial {
@@ -5087,11 +5087,11 @@ C24CD0'H
                   }
                 },
                 syn {
-                  "Cryptococcus californicus Mrak & McClung ex Anderson &
- Skinner",
-                  "Cryptococcus californicus",
+                  "Candida californica (Anderson & Skinner) Bai, Wu & Robert",
                   "Candida sp. CBS 989",
-                  "Candida californica (Anderson & Skinner) Bai, Wu & Robert"
+                  "Cryptococcus californicus",
+                  "Cryptococcus californicus Mrak & McClung ex Anderson &
+ Skinner"
                 },
                 orgname {
                   name binomial {
@@ -5316,11 +5316,11 @@ C24CDC'H
                   }
                 },
                 syn {
-                  "Cryptococcus californicus Mrak & McClung ex Anderson &
- Skinner",
-                  "Cryptococcus californicus",
+                  "Candida californica (Anderson & Skinner) Bai, Wu & Robert",
                   "Candida sp. CBS 989",
-                  "Candida californica (Anderson & Skinner) Bai, Wu & Robert"
+                  "Cryptococcus californicus",
+                  "Cryptococcus californicus Mrak & McClung ex Anderson &
+ Skinner"
                 },
                 orgname {
                   name binomial {
@@ -5545,11 +5545,11 @@ C24CD0'H
                   }
                 },
                 syn {
-                  "Cryptococcus californicus Mrak & McClung ex Anderson &
- Skinner",
-                  "Cryptococcus californicus",
+                  "Candida californica (Anderson & Skinner) Bai, Wu & Robert",
                   "Candida sp. CBS 989",
-                  "Candida californica (Anderson & Skinner) Bai, Wu & Robert"
+                  "Cryptococcus californicus",
+                  "Cryptococcus californicus Mrak & McClung ex Anderson &
+ Skinner"
                 },
                 orgname {
                   name binomial {
@@ -5774,9 +5774,9 @@ DBF5F7C11B2EF213A56967A559600806F9A9E26072012867E9658813C109D85D234ACA0C56781F
                   }
                 },
                 syn {
-                  "Saccharomyces membranifaciens",
+                  "Pichia membranaefaciens",
                   "Pichia membranifaciens (E.C.Hansen) E.C.Hansen",
-                  "Pichia membranaefaciens"
+                  "Saccharomyces membranifaciens"
                 },
                 orgname {
                   name binomial {

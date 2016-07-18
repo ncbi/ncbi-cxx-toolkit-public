@@ -1,223 +1,276 @@
 Seq-entry ::= set {
-  class pop-set ,
+  class pop-set,
   descr {
     user {
-      type
-        str "NcbiCleanup" ,
+      type str "NcbiCleanup",
       data {
         {
-          label
-            str "method" ,
-          data
-            str "SequinCleanup" } ,
+          label str "method",
+          data str "SequinCleanup"
+        },
         {
-          label
-            str "version" ,
-          data
-            int 8 } ,
+          label str "version",
+          data int 8
+        },
         {
-          label
-            str "month" ,
-          data
-            int 6 } ,
+          label str "month",
+          data int 6
+        },
         {
-          label
-            str "day" ,
-          data
-            int 28 } ,
+          label str "day",
+          data int 28
+        },
         {
-          label
-            str "year" ,
-          data
-            int 2016 } } } } ,
+          label str "year",
+          data int 2016
+        }
+      }
+    }
+  },
   seq-set {
     seq {
       id {
-        local
-          str "ex1" } ,
+        local str "ex1"
+      },
       descr {
         source {
-          genome genomic ,
+          genome genomic,
           org {
-            taxname "sample taxname" ,
+            taxname "sample taxname",
             orgname {
-               } } ,
+            }
+          },
           subtype {
             {
-              subtype haplotype ,
-              name "sample haplotype value" } } } } ,
+              subtype haplotype,
+              name "sample haplotype value"
+            }
+          }
+        }
+      },
       inst {
-        repr raw ,
-        mol na ,
-        length 247 ,
-        seq-data
-          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
-9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } ,
+        repr raw,
+        mol na,
+        length 247,
+        seq-data ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E916
+8E9168E9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H
+      }
+    },
     seq {
       id {
-        local
-          str "ex2" } ,
+        local str "ex2"
+      },
       descr {
         source {
-          genome genomic ,
+          genome genomic,
           org {
-            taxname "sample taxname" ,
+            taxname "sample taxname",
             orgname {
-               } } ,
+            }
+          },
           subtype {
             {
-              subtype haplotype ,
-              name "sample haplotype value" } } } } ,
+              subtype haplotype,
+              name "sample haplotype value"
+            }
+          }
+        }
+      },
       inst {
-        repr raw ,
-        mol na ,
-        length 247 ,
-        seq-data
-          ncbi4na '12244184421224418442FFFFF1844212244184421224418442122441844
-212244184421224418442122441844212244184421224418442122441844212244184421224418
-442122441844212244184421224418442122441844244212244184421224418442844212244184
-421224418442122441844212244184420'H } } ,
+        repr raw,
+        mol na,
+        length 247,
+        seq-data ncbi4na '12244184421224418442FFFFF184421224418442122441844212
+244184421224418442122441844212244184421224418442122441844212244184421224418442
+122441844212244184421224418442122441844212244184424421224418442122441844284421
+2244184421224418442122441844212244184420'H
+      }
+    },
     seq {
       id {
-        local
-          str "ex3" } ,
+        local str "ex3"
+      },
       descr {
         source {
-          genome genomic ,
+          genome genomic,
           org {
-            taxname "sample taxname" ,
+            taxname "sample taxname",
             orgname {
-               } } ,
+            }
+          },
           subtype {
             {
-              subtype haplotype ,
-              name "sample haplotype value" } } } } ,
+              subtype haplotype,
+              name "sample haplotype value"
+            }
+          }
+        }
+      },
       inst {
-        repr raw ,
-        mol na ,
-        length 248 ,
-        seq-data
-          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9FFE3A45A3A45A3
-A45A3A45A3A45A3A45A3A45A3A45A3A69168E9168E9E9168E9168E9168E9168E9'H } } ,
+        repr raw,
+        mol na,
+        length 248,
+        seq-data ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9FFE3A45
+A3A45A3A45A3A45A3A45A3A45A3A45A3A45A3A69168E9168E9E9168E9168E9168E9168E9'H
+      }
+    },
     seq {
       id {
-        local
-          str "ex4" } ,
+        local str "ex4"
+      },
       descr {
         source {
-          genome genomic ,
+          genome genomic,
           org {
-            taxname "sample taxname" ,
+            taxname "sample taxname",
             orgname {
-               } } ,
+            }
+          },
           subtype {
             {
-              subtype haplotype ,
-              name "sample haplotype value" } } } } ,
+              subtype haplotype,
+              name "sample haplotype value"
+            }
+          }
+        }
+      },
       inst {
-        repr raw ,
-        mol na ,
-        length 237 ,
-        seq-data
-          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
-9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A40'H } } ,
+        repr raw,
+        mol na,
+        length 237,
+        seq-data ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E916
+8E9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A40'H
+      }
+    },
     seq {
       id {
-        local
-          str "ex5" } ,
+        local str "ex5"
+      },
       descr {
         source {
-          genome genomic ,
+          genome genomic,
           org {
-            taxname "sample taxname" } ,
+            taxname "sample taxname"
+          },
           subtype {
             {
-              subtype haplotype ,
-              name "sample haplotype value" } } } } ,
+              subtype haplotype,
+              name "sample haplotype value"
+            }
+          }
+        }
+      },
       inst {
-        repr raw ,
-        mol na ,
-        length 220 ,
-        seq-data
-          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
-9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45'H } } ,
+        repr raw,
+        mol na,
+        length 220,
+        seq-data ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E916
+8E9168E9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45'H
+      }
+    },
     seq {
       id {
-        local
-          str "ex6" } ,
+        local str "ex6"
+      },
       descr {
         source {
-          genome genomic ,
+          genome genomic,
           org {
-            taxname "sample taxname" } ,
+            taxname "sample taxname"
+          },
           subtype {
             {
-              subtype haplotype ,
-              name "sample haplotype value2" } } } } ,
+              subtype haplotype,
+              name "sample haplotype value2"
+            }
+          }
+        }
+      },
       inst {
-        repr raw ,
-        mol na ,
-        length 239 ,
-        seq-data
-          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E91168E9168E9168
-E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } ,
+        repr raw,
+        mol na,
+        length 239,
+        seq-data ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E91168E91
+68E9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H
+      }
+    },
     seq {
       id {
-        local
-          str "ex7" } ,
+        local str "ex7"
+      },
       descr {
         source {
-          genome genomic ,
+          genome genomic,
           org {
-            taxname "sample taxname2" } ,
+            taxname "sample taxname2"
+          },
           subtype {
             {
-              subtype haplotype ,
-              name "sample haplotype value" } } } } ,
+              subtype haplotype,
+              name "sample haplotype value"
+            }
+          }
+        }
+      },
       inst {
-        repr raw ,
-        mol na ,
-        length 177 ,
-        seq-data
-          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9A45A
-3A45A3A7A45A3A45A3A45A3A45A3A40'H } } ,
+        repr raw,
+        mol na,
+        length 177,
+        seq-data ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E916
+8E9A45A3A45A3A7A45A3A45A3A45A3A45A3A40'H
+      }
+    },
     seq {
       id {
-        local
-          str "ex8" } ,
+        local str "ex8"
+      },
       descr {
         source {
-          genome genomic ,
+          genome genomic,
           org {
-            taxname "sample taxname" } ,
+            taxname "sample taxname"
+          },
           subtype {
             {
-              subtype haplotype ,
-              name "sample haplotype value" } } } } ,
+              subtype haplotype,
+              name "sample haplotype value"
+            }
+          }
+        }
+      },
       inst {
-        repr raw ,
-        mol na ,
-        length 247 ,
-        seq-data
-          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
-9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } ,
+        repr raw,
+        mol na,
+        length 247,
+        seq-data ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E916
+8E9168E9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H
+      }
+    },
     seq {
       id {
-        local
-          str "ex9" } ,
+        local str "ex9"
+      },
       descr {
         source {
-          genome genomic ,
+          genome genomic,
           org {
-            taxname "sample taxname" } ,
+            taxname "sample taxname"
+          },
           subtype {
             {
-              subtype haplotype ,
-              name "sample haplotype value" } } } } ,
+              subtype haplotype,
+              name "sample haplotype value"
+            }
+          }
+        }
+      },
       inst {
-        repr raw ,
-        mol na ,
-        length 247 ,
-        seq-data
-          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
-9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } } }
+        repr raw,
+        mol na,
+        length 247,
+        seq-data ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E916
+8E9168E9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H
+      }
+    }
+  }
+}

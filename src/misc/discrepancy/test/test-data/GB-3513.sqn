@@ -85357,7 +85357,6 @@ IGHTIAVHN"
                   location int {
                     from 212,
                     to 308,
-                    strand minus,
                     id local str "Dta_2_5",
                     fuzz-to lim gt
                   }

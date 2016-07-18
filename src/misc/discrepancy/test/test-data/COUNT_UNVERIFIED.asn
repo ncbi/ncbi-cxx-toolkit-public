@@ -1,83 +1,98 @@
 Seq-entry ::= set {
-  class pop-set ,
+  class pop-set,
   seq-set {
     seq {
       id {
-        local
-          str "ex1" } ,
+        local str "ex1"
+      },
       descr {
         source {
-          genome genomic ,
+          genome genomic,
           org {
-            taxname "ex1" ,
+            taxname "ex1",
             orgname {
-               } } } ,
+            }
+          }
+        },
         user {
-          type
-            str "Unverified" ,
+          type str "Unverified",
           data {
             {
-              label
-                str "Type" ,
-              data
-                str "Features" } } } } ,
+              label str "Type",
+              data str "Features"
+            }
+          }
+        }
+      },
       inst {
-        repr raw ,
-        mol na ,
-        length 247 ,
-        seq-data
-          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
-9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } ,
+        repr raw,
+        mol na,
+        length 247,
+        seq-data ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E916
+8E9168E9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H
+      }
+    },
     seq {
       id {
-        local
-          str "ex2" } ,
+        local str "ex2"
+      },
       descr {
         source {
-          genome genomic ,
+          genome genomic,
           org {
-            taxname "uncultured organism" ,
+            taxname "uncultured organism",
             orgname {
-              gcode 11 ,
-              mgcode 2 } } } ,
+              gcode 11,
+              mgcode 2
+            }
+          }
+        },
         user {
-          type
-            str "Unverified" ,
+          type str "Unverified",
           data {
             {
-              label
-                str "Type" ,
-              data
-                str "Features" } } } } ,
+              label str "Type",
+              data str "Features"
+            }
+          }
+        }
+      },
       inst {
-        repr raw ,
-        mol na ,
-        length 247 ,
-        seq-data
-          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
-9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } ,
+        repr raw,
+        mol na,
+        length 247,
+        seq-data ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E916
+8E9168E9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H
+      }
+    },
     seq {
       id {
-        local
-          str "ex3" } ,
+        local str "ex3"
+      },
       descr {
         source {
-          genome plastid ,
+          genome plastid,
           org {
-            taxname "ex3" } } ,
+            taxname "ex3"
+          }
+        },
         user {
-          type
-            str "Unverified" ,
+          type str "Unverified",
           data {
             {
-              label
-                str "Type" ,
-              data
-                str "Features" } } } } ,
+              label str "Type",
+              data str "Features"
+            }
+          }
+        }
+      },
       inst {
-        repr raw ,
-        mol na ,
-        length 247 ,
-        seq-data
-          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
-9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } } }
+        repr raw,
+        mol na,
+        length 247,
+        seq-data ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E916
+8E9168E9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H
+      }
+    }
+  }
+}

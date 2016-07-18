@@ -1,392 +1,432 @@
 Seq-entry ::= set {
-  level 1 ,
-  class nuc-prot ,
+  level 1,
+  class nuc-prot,
   descr {
     source {
-      genome genomic ,
+      genome genomic,
       org {
-        taxname "Zea mays" ,
+        taxname "Zea mays",
         db {
           {
-            db "taxon" ,
-            tag
-              id 4577 } } ,
+            db "taxon",
+            tag id 4577
+          }
+        },
         orgname {
-          name
-            binomial {
-              genus "Zea" ,
-              species "mays" } ,
+          name binomial {
+            genus "Zea",
+            species "mays"
+          },
           lineage "Eukaryota; Viridiplantae; Streptophyta; Embryophyta;
  Tracheophyta; Spermatophyta; Magnoliophyta; Liliopsida; Poales; Poaceae;
- PACMAD clade; Panicoideae; Andropogonodae; Andropogoneae; Tripsacinae; Zea" ,
-          gcode 1 ,
-          mgcode 1 ,
-          div "PLN" ,
-          pgcode 11 } } ,
+ PACMAD clade; Panicoideae; Andropogonodae; Andropogoneae; Tripsacinae; Zea",
+          gcode 1,
+          mgcode 1,
+          div "PLN",
+          pgcode 11
+        }
+      },
       subtype {
         {
-          subtype chromosome ,
-          name "1" } ,
+          subtype chromosome,
+          name "1"
+        },
         {
-          subtype map ,
-          name "1" } ,
+          subtype map,
+          name "1"
+        },
         {
-          subtype rearranged ,
-          name "" } } } ,
+          subtype rearranged,
+          name ""
+        }
+      }
+    },
     pub {
       pub {
-        pmid 18937034 ,
+        pmid 18937034,
         article {
           title {
             name "Insights into corn genes derived from large-scale cDNA
- sequencing." } ,
+ sequencing."
+          },
           authors {
-            names
-              std {
-                {
-                  name
-                    ml "Alexandrov NN" ,
-                  affil
-                    str "Ceres, Inc., 1535 Rancho Conejo Blvd, Thousand Oaks,
- CA 91320, USA. nalexandrov@ceres-inc.com" } ,
-                {
-                  name
-                    ml "Brover VV" } ,
-                {
-                  name
-                    ml "Freidin S" } ,
-                {
-                  name
-                    ml "Troukhan ME" } ,
-                {
-                  name
-                    ml "Tatarinova TV" } ,
-                {
-                  name
-                    ml "Zhang H" } ,
-                {
-                  name
-                    ml "Swaller TJ" } ,
-                {
-                  name
-                    ml "Lu YP" } ,
-                {
-                  name
-                    ml "Bouck J" } ,
-                {
-                  name
-                    ml "Flavell RB" } ,
-                {
-                  name
-                    ml "Feldmann KA" } } } ,
-          from
-            journal {
-              title {
-                iso-jta "Plant Mol. Biol." ,
-                ml-jta "Plant Mol Biol" ,
-                issn "0167-4412" ,
-                name "Plant molecular biology" } ,
-              imp {
-                date
-                  std {
-                    year 2009 ,
-                    month 1 } ,
-                volume "69" ,
-                issue "1-2" ,
-                pages "179-194" ,
-                language "eng" ,
-                pubstatus ppublish ,
-                history {
-                  {
-                    pubstatus received ,
-                    date
-                      std {
-                        year 2008 ,
-                        month 8 ,
-                        day 15 } } ,
-                  {
-                    pubstatus accepted ,
-                    date
-                      std {
-                        year 2008 ,
-                        month 10 ,
-                        day 1 } } ,
-                  {
-                    pubstatus aheadofprint ,
-                    date
-                      std {
-                        year 2008 ,
-                        month 10 ,
-                        day 21 } } ,
-                  {
-                    pubstatus pubmed ,
-                    date
-                      std {
-                        year 2008 ,
-                        month 10 ,
-                        day 22 ,
-                        hour 9 ,
-                        minute 0 } } ,
-                  {
-                    pubstatus medline ,
-                    date
-                      std {
-                        year 2009 ,
-                        month 4 ,
-                        day 15 ,
-                        hour 9 ,
-                        minute 0 } } ,
-                  {
-                    pubstatus other ,
-                    date
-                      std {
-                        year 2008 ,
-                        month 10 ,
-                        day 22 ,
-                        hour 9 ,
-                        minute 0 } } } } } ,
-          ids {
-            doi "10.1007/s11103-008-9415-4" ,
-            pubmed 18937034 ,
-            other {
-              db "pmc" ,
-              tag
-                str "PMC2709227" } ,
-            other {
-              db "ELocationID doi" ,
-              tag
-                str "10.1007/s11103-008-9415-4" } } } } } ,
-    user {
-      type
-        str "RefGeneTracking" ,
-      data {
-        {
-          label
-            str "Status" ,
-          data
-            str "Provisional" } ,
-        {
-          label
-            str "Assembly" ,
-          data
-            fields {
+            names std {
               {
-                label
-                  id 0 ,
-                data
-                  fields {
-                    {
-                      label
-                        str "accession" ,
-                      data
-                        str "EU965236.1" } ,
-                    {
-                      label
-                        str "gi" ,
-                      data
-                        int 195635771 } } } } } } } ,
+                name ml "Alexandrov NN",
+                affil str "Ceres, Inc., 1535 Rancho Conejo Blvd, Thousand
+ Oaks, CA 91320, USA. nalexandrov@ceres-inc.com"
+              },
+              {
+                name ml "Brover VV"
+              },
+              {
+                name ml "Freidin S"
+              },
+              {
+                name ml "Troukhan ME"
+              },
+              {
+                name ml "Tatarinova TV"
+              },
+              {
+                name ml "Zhang H"
+              },
+              {
+                name ml "Swaller TJ"
+              },
+              {
+                name ml "Lu YP"
+              },
+              {
+                name ml "Bouck J"
+              },
+              {
+                name ml "Flavell RB"
+              },
+              {
+                name ml "Feldmann KA"
+              }
+            }
+          },
+          from journal {
+            title {
+              iso-jta "Plant Mol. Biol.",
+              ml-jta "Plant Mol Biol",
+              issn "0167-4412",
+              name "Plant molecular biology"
+            },
+            imp {
+              date std {
+                year 2009,
+                month 1
+              },
+              volume "69",
+              issue "1-2",
+              pages "179-194",
+              language "eng",
+              pubstatus ppublish,
+              history {
+                {
+                  pubstatus received,
+                  date std {
+                    year 2008,
+                    month 8,
+                    day 15
+                  }
+                },
+                {
+                  pubstatus accepted,
+                  date std {
+                    year 2008,
+                    month 10,
+                    day 1
+                  }
+                },
+                {
+                  pubstatus aheadofprint,
+                  date std {
+                    year 2008,
+                    month 10,
+                    day 21
+                  }
+                },
+                {
+                  pubstatus pubmed,
+                  date std {
+                    year 2008,
+                    month 10,
+                    day 22,
+                    hour 9,
+                    minute 0
+                  }
+                },
+                {
+                  pubstatus medline,
+                  date std {
+                    year 2009,
+                    month 4,
+                    day 15,
+                    hour 9,
+                    minute 0
+                  }
+                },
+                {
+                  pubstatus other,
+                  date std {
+                    year 2008,
+                    month 10,
+                    day 22,
+                    hour 9,
+                    minute 0
+                  }
+                }
+              }
+            }
+          },
+          ids {
+            doi "10.1007/s11103-008-9415-4",
+            pubmed 18937034,
+            other {
+              db "pmc",
+              tag str "PMC2709227"
+            },
+            other {
+              db "ELocationID doi",
+              tag str "10.1007/s11103-008-9415-4"
+            }
+          }
+        }
+      }
+    },
     user {
-      type
-        str "StructuredComment" ,
+      type str "RefGeneTracking",
       data {
         {
-          label
-            str "StructuredCommentPrefix" ,
-          data
-            str "##Evidence-Data-START##" } ,
+          label str "Status",
+          data str "Provisional"
+        },
         {
-          label
-            str "Transcript exon combination" ,
-          data
-            str "EU965236.1 [ECO:0000332]" } ,
+          label str "Assembly",
+          data fields {
+            {
+              label id 0,
+              data fields {
+                {
+                  label str "accession",
+                  data str "EU965236.1"
+                },
+                {
+                  label str "gi",
+                  data int 195635771
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    user {
+      type str "StructuredComment",
+      data {
         {
-          label
-            str "StructuredCommentSuffix" ,
-          data
-            str "##Evidence-Data-END##" } } } ,
-    update-date
-      std {
-        year 2015 ,
-        month 8 ,
-        day 4 } } ,
+          label str "StructuredCommentPrefix",
+          data str "##Evidence-Data-START##"
+        },
+        {
+          label str "Transcript exon combination",
+          data str "EU965236.1 [ECO:0000332]"
+        },
+        {
+          label str "StructuredCommentSuffix",
+          data str "##Evidence-Data-END##"
+        }
+      }
+    },
+    update-date std {
+      year 2015,
+      month 8,
+      day 4
+    }
+  },
   seq-set {
     seq {
       id {
-        local
-          str "n1" } ,
+        local str "n1"
+      },
       descr {
-        title "Zea mays mRNA (LOC100283589), mRNA" ,
+        title "Zea mays mRNA (LOC100283589), mRNA",
         molinfo {
-          biomol mRNA } ,
-        create-date
-          std {
-            year 2009 ,
-            month 4 ,
-            day 10 } } ,
+          biomol mRNA
+        },
+        create-date std {
+          year 2009,
+          month 4,
+          day 10
+        }
+      },
       inst {
-        repr raw ,
-        mol rna ,
-        length 1532 ,
-        seq-data
-          ncbi4na '48441182828284882881488284882812882822122114822281121242444
-844244482242242242242248824114128241442824142122828828428242224422228228182228
-242424128482822422412412218114224228422821824284422121211241822484421144111421
-241441248121481411884841182422441111121828488442442482184118114244222252412412
-212822882422822424222114242214818442431442441444818442224214214448812824411414
-244142142424244244484422412212812142424244822112214121282414411242414112142222
-182182212282114114282112112844182114148488884482214884818421242224448412842488
-288418288428842444114441448418884181114844418111422114488442812818481444488418
-188428411442824181111418842184128242812118448412121418211211141144111144882148
-882228421244288188848128418842818414428248884418411818881818414418428224888418
-181848142848214888428881212818821844821128411421242428141211422884421118484828
-421881288248228441442188888188444121184228418422118482188182111144288241411828
-411444884411888444112148488812842188142888442118414812428411114111882228421822
-141224888448182114812114888212881414418428488418842221411844488488221882218282
-882111881884421414414818418282414284488284184114112882218411888481212414812884
-211111221414882422414284184244144284448422282448418441144214412211148121284821
-211418414844414488822818282818282424888482284244114241442211224228122211241141
-422142112421112141444111184888282122414448412182414488282448481811421841481818
-228441144428842811214288122418818184282212141221218142181111411148848112188148
-442821228428128221822488818111811184121124884128888881111111111111111'H ,
+        repr raw,
+        mol rna,
+        length 1532,
+        seq-data ncbi4na '4844118282828488288148828488281288282212211482228112
+124244484424448224224224224224882411412824144282414212282882842824222442222822
+818222824242412848282242241241221811422422842282182428442212121124182248442114
+411142124144124812148141188484118242244111112182848844244248218411811424422225
+241241221282288242282242422211424221481844243144244144481844222421421444881282
+441141424414214242424424448442241221281214242424482211221412128241441124241411
+214222218218221228211411428211211284418211414848888448221488481842124222444841
+284248828841828842884244411444144841888418111484441811142211448844281281848144
+448841818842841144282418111141884218412824281211844841212141821121114114411114
+488214888222842124428818884812841884281841442824888441841181888181841441842822
+488841818184814284821488842888121281882184482112841142124242814121142288442111
+848482842188128824822844144218888818844412118422841842211848218818211114428824
+141182841144488441188844411214848881284218814288844211841481242841111411188222
+842182214122488844818211481211488821288141441842848841884222141184448848822188
+221828288211188188442141441481841828241428448828418411411288221841188848121241
+481288421111122141488242241428418424414428444842228244841844114421441221114812
+128482121141841484441448882281828281828242488848228424411424144221122422812221
+124114142214211242111214144411118488828212241444841218241448828244848181142184
+148181822844114442884281121428812241881818428221214122121814218111141114884811
+2188148442821228428128221822488818111811184121124884128888881111111111111111'H,
         hist {
           assembly {
             {
-              type partial ,
-              dim 2 ,
-              segs
-                denseg {
-                  dim 2 ,
-                  numseg 1 ,
-                  ids {
-                    gi 672890440 ,
-                    gi 195635770 } ,
-                  starts {
-                    0 ,
-                    1 } ,
-                  lens {
-                    1532 } ,
-                  strands {
-                    plus ,
-                    plus } } } } ,
+              type partial,
+              dim 2,
+              segs denseg {
+                dim 2,
+                numseg 1,
+                ids {
+                  gi 672890440,
+                  gi 195635770
+                },
+                starts {
+                  0,
+                  1
+                },
+                lens {
+                  1532
+                },
+                strands {
+                  plus,
+                  plus
+                }
+              }
+            }
+          },
           replaces {
-            date
-              std {
-                year 2014 ,
-                month 8 ,
-                day 16 } ,
+            date std {
+              year 2014,
+              month 8,
+              day 16
+            },
             ids {
-              gi 226507079 } } } } ,
+              gi 226507079
+            }
+          }
+        }
+      },
       annot {
         {
-          data
-            ftable {
-              {
-                data
-                  gene {
-                    locus "LOC100283589" ,
-                    desc "mRNA" } ,
-                location
-                  int {
-                    from 0 ,
-                    to 1531 ,
-                    strand plus ,
-                    id
-                      local
-                        str "n1" } ,
-                dbxref {
-                  {
-                    db "GeneID" ,
-                    tag
-                      id 100283589 } } } ,
-              {
-                data
-                  imp {
-                    key "misc_feature" } ,
-                comment "upstream in-frame stop codon" ,
-                location
-                  int {
-                    from 236 ,
-                    to 238 ,
-                    strand plus ,
-                    id
-                      local
-                        str "n1" } } ,
-              {
-                data
-                  imp {
-                    key "exon" } ,
-                location
-                  int {
-                    from 0 ,
-                    to 1531 ,
-                    strand plus ,
-                    id
-                      local
-                        str "n1" } ,
-                qual {
-                  {
-                    qual "number" ,
-                    val "1" } } } } } } } ,
+          data ftable {
+            {
+              data gene {
+                locus "LOC100283589",
+                desc "mRNA"
+              },
+              location int {
+                from 0,
+                to 1531,
+                strand plus,
+                id local str "n1"
+              },
+              dbxref {
+                {
+                  db "GeneID",
+                  tag id 100283589
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "upstream in-frame stop codon",
+              location int {
+                from 236,
+                to 238,
+                strand plus,
+                id local str "n1"
+              }
+            },
+            {
+              data imp {
+                key "exon"
+              },
+              location int {
+                from 0,
+                to 1531,
+                strand plus,
+                id local str "n1"
+              },
+              qual {
+                {
+                  qual "number",
+                  val "1"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     seq {
       id {
-        local
-          str "p1" } ,
+        local str "p1"
+      },
       descr {
-        title "mRNA [Zea mays]" ,
+        title "mRNA [Zea mays]",
         molinfo {
-          biomol peptide } ,
-        create-date
-          std {
-            year 2009 ,
-            month 4 ,
-            day 10 } } ,
+          biomol peptide
+        },
+        create-date std {
+          year 2009,
+          month 4,
+          day 10
+        }
+      },
       inst {
-        repr raw ,
-        mol aa ,
-        length 367 ,
-        seq-data
-          ncbieaa "MNKRPXDDHSFASAPKRQYGXGGGYGPQQGYSEERSSARRVADHYSARSNQTLEERENS
-PIIHLKKLNNWIKSVLVQLYARPGDCVLDLACGKGGDLIKWDKAKVGYYVGVDIAEGSIKDCMTRYNGDTDQQRRKRF
-SFPARLICTDCYEARLDEYLYEDAPFDICSCQFALHYSWSTEARARQALANVSALLRPGGIFIGTMPDANVIIKRLRE
-SEGLEFGNSVYCISFGNEYAEKKFPASRPFGIKYKFHLEDAVDCPEWVVPFHLFKLLAEEYDLELVLMKNFHEFVHEY
-LQKPEFAELMRRLGALGDGRQDQSTLSQDEWEVSYLYLAFVLRKRGQPPTQRRASNANRGKMFLTEGDIEVLGV" } ,
+        repr raw,
+        mol aa,
+        length 367,
+        seq-data ncbieaa "MNKRPXDDHSFASAPKRQYGXGGGYGPQQGYSEERSSARRVADHYSARSNQT
+LEERENSPIIHLKKLNNWIKSVLVQLYARPGDCVLDLACGKGGDLIKWDKAKVGYYVGVDIAEGSIKDCMTRYNGDTD
+QQRRKRFSFPARLICTDCYEARLDEYLYEDAPFDICSCQFALHYSWSTEARARQALANVSALLRPGGIFIGTMPDANV
+IIKRLRESEGLEFGNSVYCISFGNEYAEKKFPASRPFGIKYKFHLEDAVDCPEWVVPFHLFKLLAEEYDLELVLMKNF
+HEFVHEYLQKPEFAELMRRLGALGDGRQDQSTLSQDEWEVSYLYLAFVLRKRGQPPTQRRASNANRGKMFLTEGDIEV
+LGV"
+      },
       annot {
         {
-          data
-            ftable {
-              {
-                data
-                  prot {
-                    name {
-                      "mRNA" ,
-                      "GRMZM2G042398" ,
-                      "hypothetical protein" } } ,
-                location
-                  int {
-                    from 0 ,
-                    to 366 ,
-                    id
-                      local
-                        str "p1" } } } } } } } ,
+          data ftable {
+            {
+              data prot {
+                name {
+                  "mRNA",
+                  "GRMZM2G042398",
+                  "hypothetical protein"
+                }
+              },
+              location int {
+                from 0,
+                to 366,
+                id local str "p1"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
   annot {
     {
-      data
-        ftable {
-          {
-            data
-              cdregion {
-                frame one ,
-                code {
-                  id 1 } } ,
-            product
-              whole
-                local
-                  str "p1" ,
-            location
-              int {
-                from 269 ,
-                to 1372 ,
-                strand plus ,
-                id
-                  local
-                    str "n1" } } } } } }
+      data ftable {
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 1
+            }
+          },
+          product whole local str "p1",
+          location int {
+            from 269,
+            to 1372,
+            strand plus,
+            id local str "n1"
+          }
+        }
+      }
+    }
+  }
+}
