@@ -1932,6 +1932,80 @@ DISCREPANCY_SUMMARIZE(DEFLINE_ON_SET)
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
 }
 
+// MITOCHONDRION_REQUIRED
+
+const string kMitochondrionRequired = "[n] bioseq[s] [has] D-loop or control region misc_feature, but [is] do not have mitochondrial source";
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(MITOCHONDRION_REQUIRED, CSeq_inst, eOncaller | eDisc, "If D-loop or control region misc_feat is present, source must be mitochondrial")
+//  ----------------------------------------------------------------------------
+{
+    CConstRef<CBioseq> seq = context.GetCurrentBioseq();
+    if (!seq) {
+        return;
+    }
+    CBioseq_Handle seq_h = context.GetScope().GetBioseqHandle(*seq);
+
+    bool has_D_loop = false;
+    bool has_misc_feat_with_control_region = false;
+
+    for (CFeat_CI feat_it(seq_h); feat_it; ++feat_it) {
+
+        if (feat_it->IsSetData()) {
+            if (feat_it->GetData().GetSubtype() == CSeqFeatData::eSubtype_D_loop) {
+                has_D_loop = true;
+                break;
+            }
+            else if (feat_it->GetData().GetSubtype() == CSeqFeatData::eSubtype_misc_feature) {
+                if (feat_it->IsSetComment() && NStr::FindNoCase(feat_it->GetComment(), "control region") != NPOS) {
+                    has_misc_feat_with_control_region = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (has_D_loop || has_misc_feat_with_control_region) {
+        if (context.GetCurrentGenome() != CBioSource::eGenome_mitochondrion) {
+            m_Objs[kMitochondrionRequired].Add(*context.NewDiscObj(seq, eKeepRef, true), false);
+        }
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(MITOCHONDRION_REQUIRED)
+//  ----------------------------------------------------------------------------
+{
+    m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
+}
+
+static bool FixGenome(const CBioseq& bioseq, CScope& scope)
+{
+    CBioseq_Handle seq_h = scope.GetBioseqHandle(bioseq);
+    CSeqdesc_CI biosrc(seq_h, CSeqdesc::e_Source);
+    if (biosrc) {
+
+        CSeqdesc& edit_biosrc = const_cast<CSeqdesc&>(*biosrc);
+        edit_biosrc.SetSource().SetGenome(CBioSource::eGenome_mitochondrion);
+        return true;
+    }
+
+    return false;
+}
+
+DISCREPANCY_AUTOFIX(MITOCHONDRION_REQUIRED)
+{
+    TReportObjectList list = item->GetDetails();
+    unsigned int n = 0;
+    NON_CONST_ITERATE(TReportObjectList, it, list) {
+        const CBioseq* bioseq = dynamic_cast<const CBioseq*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
+        if (bioseq && FixGenome(*bioseq, scope)) {
+            n++;
+        }
+    }
+    return CRef<CAutofixReport>(n ? new CAutofixReport("MITOCHONDRION_REQUIRED: Genome was set to mitochondrion for [n] bioseq[s]", n) : 0);
+}
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

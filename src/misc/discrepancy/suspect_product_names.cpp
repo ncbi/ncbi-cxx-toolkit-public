@@ -5490,24 +5490,27 @@ DISCREPANCY_CASE(ORGANELLE_PRODUCTS, CSeqFeatData, eOncaller, "Organelle product
 
     CConstRef<CSuspect_rule_set> rules = context.GetOrganelleProductRules();
     const CProt_ref& prot = obj.GetProt();
-    string prot_name = *(prot.GetName().begin());
 
-    ITERATE (list<CRef<CSuspect_rule> >, rule, rules->Get()) {
-        const CSearch_func& find = (*rule)->GetFind();
-        if (!MatchesSearchFunc(prot_name, find)) {
-            continue;
-        }
-        if ((*rule)->CanGetExcept()) {
-            const CSearch_func& except = (*rule)->GetExcept();
-            if (!IsSearchFuncEmpty(except) && MatchesSearchFunc(prot_name, except)) {
+    if (prot.IsSetName() && !prot.GetName().empty()) {
+        string prot_name = *(prot.GetName().begin());
+
+        ITERATE(list<CRef<CSuspect_rule> >, rule, rules->Get()) {
+            const CSearch_func& find = (*rule)->GetFind();
+            if (!MatchesSearchFunc(prot_name, find)) {
                 continue;
             }
+            if ((*rule)->CanGetExcept()) {
+                const CSearch_func& except = (*rule)->GetExcept();
+                if (!IsSearchFuncEmpty(except) && MatchesSearchFunc(prot_name, except)) {
+                    continue;
+                }
+            }
+            if ((*rule)->CanGetFeat_constraint()) {
+                const CConstraint_choice_set& constr = (*rule)->GetFeat_constraint();
+                if (!DoesObjectMatchConstraintChoiceSet(context, constr)) continue;
+            }
+            m_Objs["[n] suspect product[s] not organelle"].Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eNoRef, (*rule)->CanGetReplace(), (CObject*)&**rule)).Fatal((*rule)->GetFatal());
         }
-        if ((*rule)->CanGetFeat_constraint()) {
-            const CConstraint_choice_set& constr = (*rule)->GetFeat_constraint();
-            if (!DoesObjectMatchConstraintChoiceSet(context, constr)) continue;
-        }
-        m_Objs["[n] suspect product[s] not organelle"].Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eNoRef, (*rule)->CanGetReplace(), (CObject*)&**rule)).Fatal((*rule)->GetFatal());
     }
 }
 
