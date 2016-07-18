@@ -820,13 +820,15 @@ DISCREPANCY_CASE(GENE_PARTIAL_CONFLICT, CSeq_feat_BY_BIOSEQ, eOncaller | eSubmit
                     //look for 5' UTR
                     TSeqPos gene_start = gene->GetLocation().GetStart(eExtreme_Biological);
                     bool found_start = false;
+                    bool found_utr5 = false;
                     for (CFeat_CI fi(bsh, CSeqFeatData::eSubtype_5UTR); fi; ++fi) {
+                        found_utr5 = true;
                         if (fi->GetLocation().GetStart(eExtreme_Biological) == gene_start) {
                             found_start = true;
                             break;
                         }
                     }
-                    if (!found_start) {
+                    if (found_utr5 && !found_start) {
                         conflict_start = true;
                     }
                 }
@@ -834,13 +836,15 @@ DISCREPANCY_CASE(GENE_PARTIAL_CONFLICT, CSeq_feat_BY_BIOSEQ, eOncaller | eSubmit
                     //look for 3' UTR
                     TSeqPos gene_stop = gene->GetLocation().GetStop(eExtreme_Biological);
                     bool found_stop = false;
+                    bool found_utr3 = false;
                     for (CFeat_CI fi(bsh, CSeqFeatData::eSubtype_3UTR); fi; ++fi) {
-                        if (fi->GetLocation().GetStart(eExtreme_Biological) == gene_stop) {
+                        found_utr3 = true;
+                        if (fi->GetLocation().GetStop(eExtreme_Biological) == gene_stop) {
                             found_stop = true;
                             break;
                         }
                     }
-                    if (!found_stop) {
+                    if (found_utr3 && !found_stop) {
                         conflict_stop = true;
                     }
                 }
