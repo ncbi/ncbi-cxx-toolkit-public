@@ -51,6 +51,10 @@ set PTBGUI="%TREE_ROOT%\src\build-system\project_tree_builder_gui\bin\ptbgui.jar
 set DEFPTB_VERSION_FILE=%TREE_ROOT%\src\build-system\ptb_version.txt
 set PTB_INI=%TREE_ROOT%\src\build-system\project_tree_builder.ini
 set PTB_SLN=%BUILD_TREE_ROOT%\static\build\UtilityProjects\PTB.sln
+set NCBICONF_MSVC=%TREE_ROOT%\include\common\config\ncbiconf_msvc_site.h
+if exist "%NCBICONF_MSVC%" (
+  set NCBICONF_MSVC=
+)
 
 REM --- get solution dir ---
 call :XSLNPATH %SLN_PATH%
@@ -199,12 +203,18 @@ if not exist "%PTB_EXE%" (
   echo ******************************************************************************
   rem --- @echo msbuild "%BUILD_TREE_ROOT%\static\build\ncbi_cpp.sln" /t:"project_tree_builder_exe:Rebuild" /p:Configuration=ReleaseDLL;Platform=%PTB_PLATFORM% /maxcpucount:1
   rem --- msbuild "%BUILD_TREE_ROOT%\static\build\ncbi_cpp.sln" /t:"project_tree_builder_exe:Rebuild" /p:Configuration=ReleaseDLL;Platform=%PTB_PLATFORM% /maxcpucount:1
+  if not "%NCBICONF_MSVC%"=="" (
+    echo // > "%NCBICONF_MSVC%"
+  )
   if exist "%PTB_SLN%" (
     @echo %DEVENV% "%PTB_SLN%" /rebuild "ReleaseDLL|%PTB_PLATFORM%" /project "project_tree_builder.exe"
     %DEVENV% "%PTB_SLN%" /rebuild "ReleaseDLL|%PTB_PLATFORM%" /project "project_tree_builder.exe"
   ) else (
     @echo %DEVENV% "%BUILD_TREE_ROOT%\static\build\ncbi_cpp.sln" /rebuild "ReleaseDLL|%PTB_PLATFORM%" /project "project_tree_builder.exe"
     %DEVENV% "%BUILD_TREE_ROOT%\static\build\ncbi_cpp.sln" /rebuild "ReleaseDLL|%PTB_PLATFORM%" /project "project_tree_builder.exe"
+  )
+  if not "%NCBICONF_MSVC%"=="" (
+    del "%NCBICONF_MSVC%"
   )
 ) else (
   echo ******************************************************************************
