@@ -11,6 +11,6 @@ LIBS = $(NETWORK_LIBS) $(CMPRS_LIBS) $(ORIG_LIBS)
 
 CHECK_REQUIRES = MT in-house-resources
 CHECK_CMD = magicblast_unit_test
-CHECK_COPY = data
+CHECK_COPY = data magicblast_unit_test.ini
 
 WATCHERS = boratyng

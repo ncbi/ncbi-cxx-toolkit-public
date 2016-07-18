@@ -9,6 +9,6 @@ LIBS = $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CHECK_REQUIRES = MT in-house-resources
 CHECK_CMD = ntlookup_unit_test
-CHECK_COPY = ntlookup_unit_test.ini
+CHECK_COPY = data ntlookup_unit_test.ini
 
 WATCHERS = boratyng morgulis madden camacho fongah2
