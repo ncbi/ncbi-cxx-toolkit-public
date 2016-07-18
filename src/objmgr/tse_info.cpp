@@ -1960,7 +1960,12 @@ void CTSE_Info::SetBioseqUpdater(CRef<CBioseqUpdater> updater)
 string CTSE_Info::GetDescription(void) const
 {
     string ret;
-    ret = GetBlobId().ToString();
+    if ( m_BlobId ) {
+        ret = GetBlobId().ToString();
+    }
+    else {
+        ret = NStr::PtrToString(this);
+    }
     if ( GetName().IsNamed() ) {
         ret += '/';
         ret += GetName().GetName();
