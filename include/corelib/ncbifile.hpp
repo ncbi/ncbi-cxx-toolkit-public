@@ -391,7 +391,8 @@ public:
     /// How to interpret relative paths.
     /// @sa CreateAbsolutePath
     enum ERelativeToWhat {
-        eRelativeToCwd, ///< Relative to the current working directory
+        /// Relative to the current working directory.
+        eRelativeToCwd, 
         /// Relative to the executable's location.  If the executable was
         /// invoked via a symlink, search the directory containing the symlink
         /// before the directory (if different) containing the actual binary.
@@ -409,9 +410,23 @@ public:
     ///   Corresponding absolute path.  May be the original string (if already
     ///   absolute) or the starting point indicated by rtw (if the input was
     ///   empty or ".").
-    /// @sa ERelativeToWhat
+    /// @sa ERelativeToWhat, CreateAbsolutePath
     static string CreateAbsolutePath(const string& path,
                                      ERelativeToWhat rtw = eRelativeToCwd);
+
+    /// Get an absolute path from some, possibly relative, path.
+    ///
+    /// @param path 
+    ///   Path to resolve, in native syntax; returned as is if absolute.
+    /// @param rtw
+    ///   Starting point for relative path resolution. Used as base path
+    ///   for "path" if the latter have an relative form. 
+    ///   Must be an absolute.
+    /// @return
+    ///   Corresponding absolute path.  May be the original string (if already
+    ///   absolute) or concatenation of rtw and path.
+    /// @sa CreateAbsolutePath
+    static string CreateAbsolutePath(const string& path, const string& rtw);
 
     /// Concatenate two parts of the path for the current OS.
     ///

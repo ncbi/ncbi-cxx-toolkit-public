@@ -698,6 +698,40 @@ string CDirEntry::CreateAbsolutePath(const string& path, ERelativeToWhat rtw)
 }
 
 
+string CDirEntry::CreateAbsolutePath(const string& path, const string& rtw)
+{
+    if (IsAbsolutePath(path)) {
+        return path;
+    }
+
+#if defined(NCBI_OS_MSWIN)
+    if ( path.find(DISK_SEPARATOR) != NPOS ) {
+        NCBI_THROW(CFileException, eRelativePath, 
+                   "Path must not contain disk separator: " + path);
+    }
+    // Path started with slash
+    if (!path.empty() && (path[0] == '/' || path[0] == '\\')) {
+        // network path ?
+        if ( s_Win_IsNetworkPath(path) ) {
+            NCBI_THROW(CFileException, eRelativePath,
+                       "Cannot use network path: " + path);
+        }
+        // relative to current drive only -- error
+        NCBI_THROW(CFileException, eRelativePath,
+                    "Path can be used as relative to current drive only: " + path);
+    }
+#endif
+
+    if (!IsAbsolutePath(rtw)) {
+        NCBI_THROW(CFileException, eRelativePath,
+                   "2nd parameter must represent absolute path: " + rtw);
+    }
+    return NormalizePath(ConcatPath(rtw, path));
+
+
+}
+
+
 string CDirEntry::ConvertToOSPath(const string& path)
 {
     // Not process empty or absolute path

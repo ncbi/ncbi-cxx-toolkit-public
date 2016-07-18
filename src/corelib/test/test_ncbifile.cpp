@@ -927,9 +927,13 @@ static void s_TEST_Dir(void)
         assert( CDirEntry::CreateAbsolutePath("")   == cwd );
         assert( CDirEntry::CreateAbsolutePath(".")  == cwd );
 #if defined(NCBI_OS_MSWIN)
-        assert( CDirEntry::CreateAbsolutePath("C:\\path\\") == "C:\\path\\" );
+        assert( CDirEntry::CreateAbsolutePath("c:\\path\\")             == "c:\\path\\" );
+        assert( CDirEntry::CreateAbsolutePath("c:\\file", "c:\\path\\") == "c:\\file" );
+        assert( CDirEntry::CreateAbsolutePath("file", "c:\\path\\")     == "c:\\path\\file" );
 #elif defined(NCBI_OS_UNIX)
-        assert( CDirEntry::CreateAbsolutePath("/usr/path") == "/usr/path" );
+        assert( CDirEntry::CreateAbsolutePath("/usr/path")              == "/usr/path" );
+        assert( CDirEntry::CreateAbsolutePath("/usr/file", "/usr/path") == "/usr/file" );
+        assert( CDirEntry::CreateAbsolutePath("file", "/usr/path")      == "/usr/path/file" );
 #endif
     }}
 }
