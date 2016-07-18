@@ -150,7 +150,7 @@ typedef enum {
 typedef unsigned EBDebugPrintout;
 
 
-/* Network connection related configurable info struct.
+/* Network connection-related configurable informational structure.
  * ATTENTION:  Do NOT fill out this structure (SConnNetInfo) "from scratch"!
  *             Instead, use ConnNetInfo_Create() described below to create
  *             it, and then fix (hard-code) some fields, if really necessary.
@@ -188,9 +188,9 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
     const char*     http_user_header; /* user header to add to HTTP request  */
     const char*     http_referer;     /* default referrer (when not spec'd)  */
     NCBI_CRED       credentials;      /* connection credentials (optional)   */
-    unsigned        magic;            /* to detect version skew              */
 
-    /* the following field(s) are for the internal use only -- don't touch!  */
+    /* the following field(s) are for internal use only -- do not touch!     */
+    unsigned int    magic;            /* to detect version skew              */
     STimeout        tmo;              /* default storage for finite timeout  */
     const char      svc[1];           /* service which this info created for */
 } SConnNetInfo;
