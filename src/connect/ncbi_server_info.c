@@ -241,9 +241,8 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
     if (!info)
         return 0;
     info->host = host;
-    if (port)
-        info->port = port;
-    coef = mime = locl = priv = rate = sful = secu = time = flag = 0;/*false*/
+    info->port = port;
+    coef = mime = locl = priv = rate = sful = secu = time = flag = 0/*false*/;
     /* continue reading server info: optional parts... */
     while (*str  &&  isspace((unsigned char)(*str)))
         ++str;
@@ -262,7 +261,7 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
             case 'B':
                 if (coef)
                     break;
-                coef = 1;
+                coef = 1/*true*/;
                 d = NCBI_simple_atof(++str, &e);
                 if (e > str) {
                     if      (fabs(d) < SERV_MINIMAL_BONUS / 2.0)
@@ -278,7 +277,7 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
             case 'C':
                 if (mime  ||  type == fSERV_Dns)
                     break;
-                mime = 1;
+                mime = 1/*true*/;
                 if (MIME_ParseContentTypeEx(++str, &mime_t, &mime_s, &mime_e)){
                     info->mime_t = mime_t;
                     info->mime_s = mime_s;
@@ -291,7 +290,7 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
             case 'L':
                 if (locl)
                     break;
-                locl = 1;
+                locl = 1/*true*/;
                 if (sscanf(++str, "%3s%n", s, &n) >= 1) {
                     if (strcasecmp(s, "YES") == 0) {
                         info->site |=  fSERV_Local;
@@ -305,7 +304,7 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
             case 'P':
                 if (priv  ||  type == fSERV_Dns)
                     break;
-                priv = 1;
+                priv = 1/*true*/;
                 if (sscanf(++str, "%3s%n", s, &n) >= 1) {
                     if (strcasecmp(s, "YES") == 0) {
                         info->site |=  fSERV_Private;
@@ -319,7 +318,7 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
             case 'R':
                 if (rate)
                     break;
-                rate = 1;
+                rate = 1/*true*/;
                 d = NCBI_simple_atof(++str, &e);
                 if (e > str) {
                     if      (fabs(d) < SERV_MINIMAL_RATE / 2.0)
@@ -335,7 +334,7 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
             case 'S':
                 if (sful  ||  type == fSERV_Dns  ||  (type & fSERV_Http))
                     break;
-                sful = 1;
+                sful = 1/*true*/;
                 if (sscanf(++str, "%3s%n", s, &n) >= 1) {
                     if (strcasecmp(s, "YES") == 0) {
                         info->mode |=  fSERV_Stateful;
@@ -349,7 +348,7 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
             case '$':
                 if (secu  ||  type == fSERV_Dns)
                     break;
-                secu = 1;
+                secu = 1/*true*/;
                 if (sscanf(++str, "%3s%n", s, &n) >= 1) {
                     if (strcasecmp(s, "YES") == 0) {
                         info->mode |=  fSERV_Secure;
@@ -363,7 +362,7 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
             case 'T':
                 if (time)
                     break;
-                time = 1;
+                time = 1/*true*/;
                 if (sscanf(++str, "%lu%n", &t, &n) >= 1) {
                     info->time = (TNCBI_Time) t;
                     str += n;
@@ -372,7 +371,7 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
             }
         } else if (!flag) {
             size_t i;
-            flag = 1;
+            flag = 1/*true*/;
             for (i = 0;  i < sizeof(kFlags) / sizeof(kFlags[0]);  ++i) {
                 if (strncasecmp(str, kFlags[i].tag, kFlags[i].len) == 0) {
                     info->flag = kFlags[i].val;
@@ -387,15 +386,21 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
         while (*str  &&  isspace((unsigned char)(*str)))
             ++str;
     }
-    if (*str) {
+    if (!*str) {
+        if (name) {
+            strcpy((char*) info + SERV_SizeOfInfo(info), name);
+            if (info->type == fSERV_Dns)
+                info->u.dns.name = 1/*true*/;
+        } else if (info->type == fSERV_Dns)
+            info->u.dns.name = 0/*false*/;
+        if (!info->port
+            &&  (info->type == fSERV_Ncbid  ||  (info->type & fSERV_Http))) {
+            info->port = secu ? CONN_PORT_HTTPS : CONN_PORT_HTTP;
+        }
+    } else {
         free(info);
         info = 0;
-    } else if (name) {
-        strcpy((char*) info + SERV_SizeOfInfo(info), name);
-        if (info->type == fSERV_Dns)
-            info->u.dns.name = 1/*true*/;
-    } else if (info->type == fSERV_Dns)
-        info->u.dns.name = 0/*false*/;
+    }
     return info;
 }
 
@@ -485,15 +490,15 @@ static SSERV_Info* s_Ncbid_Read(const char** str, size_t add)
 
     if (!(args = strdup(*str)))
         return 0;
-    for (c = args;  *c;  c++) {
+    for (c = args;  *c;  ++c) {
         if (isspace((unsigned char)(*c))) {
             *c++ = '\0';
             while (*c  &&  isspace((unsigned char)(*c)))
-                c++;
+                ++c;
             break;
         }
     }
-    info = SERV_CreateNcbidInfoEx(0, CONN_PORT_HTTP, args, add);
+    info = SERV_CreateNcbidInfoEx(0, 0, args, add);
     if (info)
         *str += c - args;
     free(args);
@@ -640,17 +645,17 @@ static SSERV_Info* s_HttpAny_Read(ESERV_Type type,const char** str, size_t add)
 
     if (!**str  ||  !(path = strdup(*str)))
         return 0;
-    for (c = path;  *c;  c++) {
+    for (c = path;  *c;  ++c) {
         if (isspace((unsigned char)(*c))) {
             *c++ = '\0';
             while (*c  &&  isspace((unsigned char)(*c)))
-                c++;
+                ++c;
             break;
         }
     }
     if ((args = strchr(path, '?')) != 0)
         *args++ = '\0';
-    info = SERV_CreateHttpInfoEx(type, 0, CONN_PORT_HTTP, path, args, add);
+    info = SERV_CreateHttpInfoEx(type, 0, 0, path, args, add);
     if (info)
         *str += c - path;
     free(path);

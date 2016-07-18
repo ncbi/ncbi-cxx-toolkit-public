@@ -26,8 +26,8 @@
  * Author:  Anton Lavrentiev
  *
  * File Description:
- *   Low-level API to resolve NCBI service name to the server meta-address
- *   with the use of NCBI network dispatcher (DISPD).
+ *   Low-level API to resolve an NCBI service name to server meta-addresses
+ *   with the use of the NCBI network dispatcher (DISPD).
  *
  */
 
@@ -407,7 +407,7 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
         srand(g_NCBI_ConnectRandomSeed);
     }
 
-    /* Reset request method to be GET ('cause there's no HTTP body to send) */
+    data->net_info->scheme = eURL_Https;
     data->net_info->req_method = eReqMethod_Get;
     if (iter->stateless)
         data->net_info->stateless = 1/*true*/;

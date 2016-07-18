@@ -186,10 +186,10 @@ EIO_Status CConn_IOStream::SetCanceledCallback(const ICanceled* canceled)
         CONN_SetCallback(conn, eCONN_OnWrite, &cb,      isset ? 0 : &m_CB[2]);
         CONN_SetCallback(conn, eCONN_OnFlush, &cb,      isset ? 0 : &m_CB[3]);
     } else if (isset) {
-        CONN_SetCallback(conn, eCONN_OnFlush, &m_CB[3], 0);
-        CONN_SetCallback(conn, eCONN_OnWrite, &m_CB[2], 0);
-        CONN_SetCallback(conn, eCONN_OnRead,  &m_CB[1], 0);
-        CONN_SetCallback(conn, eCONN_OnOpen,  &m_CB[0], 0);
+        CONN_SetCallback(conn, eCONN_OnFlush, &m_CB[3],         0);
+        CONN_SetCallback(conn, eCONN_OnWrite, &m_CB[2],         0);
+        CONN_SetCallback(conn, eCONN_OnRead,  &m_CB[1],         0);
+        CONN_SetCallback(conn, eCONN_OnOpen,  &m_CB[0],         0);
         m_Canceled = 0;
     }
 

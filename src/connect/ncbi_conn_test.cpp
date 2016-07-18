@@ -292,6 +292,7 @@ EIO_Status CConnTest::ExtraCheckOnFailure(void)
         return eIO_Unknown;
     }
 
+    net_info->scheme     = eURL_Https;
     net_info->req_method = eReqMethod_Head;
     net_info->timeout    = &kTimeout;
     net_info->max_try    = 0;
@@ -362,6 +363,7 @@ EIO_Status CConnTest::HttpOkay(string* reason)
 {
     SConnNetInfo* net_info = ConnNetInfo_Create(0, m_DebugPrintout);
     if (net_info) {
+        net_info->scheme = eURL_Https;
         if (net_info->http_proxy_host[0]  &&  net_info->http_proxy_port)
             m_HttpProxy = true;
         // Make sure there are no extras
@@ -370,7 +372,7 @@ EIO_Status CConnTest::HttpOkay(string* reason)
     }
 
     PreCheck(eHttp, 0/*main*/,
-             "Checking whether NCBI is HTTP accessible");
+             "Checking whether NCBI is HTTP(S) accessible");
 
     string host(net_info ? net_info->host : DEF_CONN_HOST);
     string port(net_info  &&  net_info->port
@@ -445,6 +447,8 @@ EIO_Status CConnTest::HttpOkay(string* reason)
                 " appear in your configuration -- NCBI services neither"
                 " require nor use them\n";
         }
+        if (net_info  &&  status == eIO_NotSupported)
+            temp += "Your application may also need to have SSL support on\n";
     }
 
     PostCheck(eHttp, 0/*main*/, status, temp);
@@ -459,7 +463,8 @@ EIO_Status CConnTest::HttpOkay(string* reason)
 EIO_Status CConnTest::DispatcherOkay(string* reason)
 {
     SConnNetInfo* net_info = ConnNetInfo_Create(0, m_DebugPrintout);
-    ConnNetInfo_SetupStandardArgs(net_info, kTest);
+    if (ConnNetInfo_SetupStandardArgs(net_info, kTest))
+        net_info->scheme = eURL_Https;
 
     PreCheck(eDispatcher, 0/*main*/,
              "Checking whether NCBI dispatcher is okay");
@@ -498,6 +503,8 @@ EIO_Status CConnTest::DispatcherOkay(string* reason)
             temp += "Check with your network administrator that your network"
                 " neither filters out nor blocks non-standard HTTP headers\n";
         }
+        if (net_info  &&  status == eIO_NotSupported)
+            temp += "NCBI network dispatcher must be accessed via HTTPS\n";
     }
 
     PostCheck(eDispatcher, 0/*main*/, status, temp);
@@ -655,8 +662,9 @@ EIO_Status CConnTest::x_GetFirewallConfiguration(const SConnNetInfo* net_info)
 EIO_Status CConnTest::GetFWConnections(string* reason)
 {
     SConnNetInfo* net_info = ConnNetInfo_Create(0, m_DebugPrintout);
-    if (net_info) {
+    if (ConnNetInfo_SetupStandardArgs(net_info, 0/*w/o service*/)) {
         const char* user_header;
+        net_info->scheme     = eURL_Https;
         net_info->req_method = eReqMethod_Post;
         if (net_info->firewall) {
             user_header = "NCBI-RELAY: FALSE";
@@ -666,7 +674,6 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
         if (net_info->stateless)
             m_Stateless = true;
         ConnNetInfo_OverrideUserHeader(net_info, user_header);
-        ConnNetInfo_SetupStandardArgs(net_info, 0/*w/o service*/);
     }
 
     string temp(m_Firewall ? "FIREWALL" : "RELAY (legacy)");

@@ -313,19 +313,19 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
 
     len = service ? strlen(service) : 0;
 
-    /* NB: *NOT* cleared up with all 0s */
+    /* NB: created *NOT* cleared up with all 0s */
     if (!(info = (SConnNetInfo*) malloc(sizeof(*info) + len)))
         return 0/*failure*/;
     info->reserved = 0/*MBZ*/;
+
+    /* store the service name, which this structure has been created for */
+    memcpy((char*) info->svc, service ? service : "", ++len);
 
     /* client host: default */
     info->client_host[0] = '\0';
 
     /* scheme */
     info->scheme = eURL_Unspec;
-
-    /* magic */
-    info->magic = CONN_NET_INFO_MAGIC;
 
     /* request method */
     REG_VALUE(REG_CONN_REQ_METHOD, str, DEF_CONN_REQ_METHOD);
@@ -449,8 +449,8 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     /* credentials */
     info->credentials = 0;
 
-    /* store the service name, which this structure has been created for */
-    strcpy((char*) info->svc, service ? service : "");
+    /* magic */
+    info->magic = CONN_NET_INFO_MAGIC;
 
     /* done */
     return info;
@@ -1098,8 +1098,7 @@ static const char* x_ClientAddress(const char* client_host,
     sprintf(s, "%s(%s)", client_host, addr);
     if (client_host != c)
         free((void*) client_host);
-    client_host = s;
-    for (;  *s;  ++s) {
+    for (client_host = s;  *s;  ++s) {
         if (*s == ' ')
             *s  = '+';
     }
@@ -1205,7 +1204,7 @@ extern SConnNetInfo* ConnNetInfo_Clone(const SConnNetInfo* info)
 
     x_info->tmo                   = info->timeout ? *info->timeout : info->tmo;
     x_info->timeout               = info->timeout ? &x_info->tmo   : 0;
-    strcpy((char*) x_info->svc, info->svc);
+    strcpy((char*) x_info->svc,     info->svc);
 
     x_info->magic                 = CONN_NET_INFO_MAGIC;
     return x_info;

@@ -702,6 +702,8 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
         EMIME_Type     mime_t;
         EMIME_SubType  mime_s;
         EMIME_Encoding mime_e;
+        if (!net_info->scheme)
+            net_info->scheme = eURL_Https;
         if (net_info->stateless
             ||  (info  &&  (info->u.firewall.type & fSERV_Http))) {
             if (info) {
@@ -724,7 +726,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
             mime_s = eMIME_Undefined;
             mime_e = eENCOD_None;
         }
-        /* Firewall/relay connection to dispatcher, special tags */
+        /* Firewall/relay connection thru dispatcher, special tags */
         user_header = (net_info->stateless
                        ? "Client-Mode: STATELESS_ONLY\r\n" /*default*/
                        : "Client-Mode: STATEFUL_CAPABLE\r\n");
@@ -788,6 +790,8 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
         uuu->port = 0;
         uuu->ticket = 0;
         net_info->max_try = 1;
+        if (info->type != fSERV_Ncbid)
+            net_info->scheme = eURL_Https;
         c = HTTP_CreateConnectorEx(net_info, fHTTP_Flushable,
                                    s_ParseHeaderNoUCB, uuu/*user_data*/,
                                    0/*adjust*/, 0/*cleanup*/);

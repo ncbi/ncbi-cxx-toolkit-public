@@ -33,6 +33,7 @@
 #include "../ncbi_ansi_ext.h"
 #include "../ncbi_lbsmd.h"
 #include "../ncbi_priv.h"               /* CORE logging facilities */
+#include <connect/ncbi_gnutls.h>
 #include <stdlib.h>
 #include <time.h>
 #ifdef NCBI_OS_MSWIN
@@ -162,6 +163,7 @@ int main(int argc, const char* argv[])
     CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
                            fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
+    SOCK_SetupSSL(NcbiSetupGnuTls);
     if (argc > 2) {
         if (strcasecmp(argv[2],"heap") == 0 || strcasecmp(argv[2],"all") == 0){
             HEAP_Options(eOff, eDefault);
