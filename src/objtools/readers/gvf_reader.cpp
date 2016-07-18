@@ -339,6 +339,215 @@ bool CGvfReader::x_FeatureSetLocation(
     }
 }
 
+
+
+//  ----------------------------------------------------------------------------
+bool CGvfReader::x_SetLocation(
+        const CGff2Record& record, 
+        CRef<CSeq_loc> pLocation)
+//  ----------------------------------------------------------------------------
+{
+
+    if (record.SeqStart() < record.SeqStop()) {
+        return x_SetLocationInterval(record, pLocation);
+    }
+    else { // record.SeqStart() == record.SeqStop()
+        return x_SetLocationPoint(record, pLocation);
+    }
+}
+
+
+
+//  ----------------------------------------------------------------------------
+bool CGvfReader::x_SetLocationInterval(
+    const CGff2Record& record,
+    CRef<CSeq_loc> pLocation)
+//  ----------------------------------------------------------------------------
+{
+    CRef< CSeq_id > pId = CReadUtil::AsSeqId(record.Id(), m_iFlags);
+
+    pLocation->SetInt().SetId(*pId);
+    pLocation->SetInt().SetFrom(record.SeqStart());
+    pLocation->SetInt().SetTo(record.SeqStop());
+    if (record.IsSetStrand()) {
+        pLocation->SetInt().SetStrand( record.Strand() );
+    }
+
+
+    //  deal with fuzzy range indicators / lower end:
+    string strRange;
+    list<string> range_borders;
+    size_t lower, upper;
+    if (record.GetAttribute( "Start_range", strRange ) )
+    {
+        NStr::Split( strRange, ",", range_borders, 0 );
+        if ( range_borders.size() != 2 ) {
+            AutoPtr<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
+                eDiag_Error,
+                0,
+                string("CGvfReader::x_SetLocation: Bad \"Start_range\" attribute") +
+                    " (Start_range=" + strRange + ").",
+                ILineError::eProblem_QualifierBadValue) );
+        pErr->Throw();
+        }
+        try {
+            if ( range_borders.back() == "." ) {
+                lower = upper = NStr::StringToUInt( range_borders.front() );
+                pLocation->SetInt().SetFuzz_from().SetLim( CInt_fuzz::eLim_gt );
+            }
+            else if ( range_borders.front() == "." ) { 
+                lower = upper = NStr::StringToUInt( range_borders.back() );
+                pLocation->SetInt().SetFuzz_from().SetLim( CInt_fuzz::eLim_lt );
+            }
+            else {
+                lower = NStr::StringToUInt( range_borders.front() );
+                upper = NStr::StringToUInt( range_borders.back() );
+                pLocation->SetInt().SetFuzz_from().SetRange().SetMin( lower-1 );
+                pLocation->SetInt().SetFuzz_from().SetRange().SetMax( upper-1 );
+            }        
+        }
+        catch ( std::exception& ) {
+            AutoPtr<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
+                eDiag_Error,
+                0,
+                string("CGvfReader::x_SetLocation: Bad \"Start_range\" attribute") +
+                    " (Start_range=" + strRange + ").",
+                ILineError::eProblem_QualifierBadValue) );
+        pErr->Throw();
+        }
+    }
+
+    //  deal with fuzzy range indicators / upper end:
+    range_borders.clear();
+    if (record.GetAttribute( "End_range", strRange ) )
+    {
+        NStr::Split( strRange, ",", range_borders, 0 );
+        if ( range_borders.size() != 2 ) {
+            AutoPtr<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
+                eDiag_Error,
+                0,
+                string("CGvfReader::x_SetLocation: Bad \"End_range\" attribute") +
+                    " (End_range=" + strRange + ").",
+                ILineError::eProblem_QualifierBadValue) );
+        pErr->Throw();
+        }
+        try {
+            if ( range_borders.back() == "." ) {
+                lower = upper = NStr::StringToUInt( range_borders.front() );
+                pLocation->SetInt().SetFuzz_to().SetLim( CInt_fuzz::eLim_gt );
+            }
+            else if ( range_borders.front() == "." ) { 
+                lower = upper = NStr::StringToUInt( range_borders.back() );
+                pLocation->SetInt().SetFuzz_to().SetLim( CInt_fuzz::eLim_lt );
+            }
+            else {
+                lower = NStr::StringToUInt( range_borders.front() );
+                upper = NStr::StringToUInt( range_borders.back() );
+                pLocation->SetInt().SetFuzz_to().SetRange().SetMin( lower-1 );
+                pLocation->SetInt().SetFuzz_to().SetRange().SetMax( upper-1 );
+            }        
+        }
+        catch (std::exception&) {
+            AutoPtr<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
+                eDiag_Error,
+                0,
+                string("CGvfReader::x_SetLocation: Bad \"End_range\" attribute") +
+                    " (End_range=" + strRange + ").",
+                ILineError::eProblem_QualifierBadValue) );
+pErr->Throw();
+        }
+    }
+
+    return true;
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CGvfReader::x_SetLocationPoint(
+    const CGff2Record& record,
+    CRef<CSeq_loc> pLocation)
+//  ----------------------------------------------------------------------------
+{
+    CRef< CSeq_id > pId = CReadUtil::AsSeqId(record.Id(), m_iFlags);
+    pLocation->SetPnt().SetId(*pId);
+    if (record.Type() == "insertion") {
+        //for insertions, GVF uses insert-after logic while NCBI uses insert-before
+        pLocation->SetPnt().SetPoint(record.SeqStart()+1);
+    }
+    else {
+        pLocation->SetPnt().SetPoint(record.SeqStart());
+    }
+    if (record.IsSetStrand()) {
+        pLocation->SetStrand(record.Strand());
+    }
+
+    string strRangeLower, strRangeUpper;
+    bool hasLower = record.GetAttribute("Start_range", strRangeLower);
+    bool hasUpper = record.GetAttribute("End_range", strRangeUpper);
+    if (hasLower  &&  hasUpper  &&  strRangeLower != strRangeUpper) {
+        AutoPtr<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
+            eDiag_Error,
+            0,
+            string("CGvfReader::x_SetLocation: Bad range attribute:") +
+                " Conflicting fuzz ranges for single point location.",
+            ILineError::eProblem_QualifierBadValue) );
+    pErr->Throw();
+    }
+    if (!hasLower  &&  !hasUpper) {
+        return true;
+    }
+    if (!hasLower) {
+        strRangeLower = strRangeUpper;
+    }
+
+    list<string> bounds;
+    size_t lower, upper;
+    NStr::Split( strRangeLower, ",", bounds, 0 );
+    if (bounds.size() != 2) {
+        AutoPtr<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
+            eDiag_Error,
+            0,
+            string("CGvfReader::x_SetLocation: Bad \"XXX_range\" attribute") +
+                " (XXX_range=" + strRangeLower + ").",
+            ILineError::eProblem_QualifierBadValue) );
+pErr->Throw();
+    }
+    try {
+        if (bounds.back() == ".") {
+            lower = upper = NStr::StringToUInt(bounds.front());
+            pLocation->SetPnt().SetFuzz().SetLim(CInt_fuzz::eLim_gt);
+        }
+        else if (bounds.front() == ".") { 
+            lower = upper = NStr::StringToUInt(bounds.back());
+            pLocation->SetPnt().SetFuzz().SetLim( CInt_fuzz::eLim_lt );
+        }
+        else {
+            lower = NStr::StringToUInt(bounds.front());
+            upper = NStr::StringToUInt(bounds.back());
+            pLocation->SetPnt().SetFuzz().SetRange().SetMin(lower-1);
+            pLocation->SetPnt().SetFuzz().SetRange().SetMax(upper-1);
+        }        
+    }
+    catch ( ... ) {
+        AutoPtr<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
+            eDiag_Error,
+            0,
+            string("CGvfReader::x_SetLocation: Bad \"XXX_range\" attribute") +
+                " (XXX_range=" + strRangeLower + ").",
+            ILineError::eProblem_QualifierBadValue) );
+pErr->Throw();
+    }
+    return true;
+}
+
+
 //  ----------------------------------------------------------------------------
 bool CGvfReader::xFeatureSetLocationInterval(
     const CGff2Record& record,
@@ -545,13 +754,54 @@ bool CGvfReader::x_FeatureSetVariation(
             return false;
         }
     }
-    else if (strType == "insertion") {
+    else if (strType == "insertion" || 
+             strType == "alu_insertion" ||
+             strType == "line1_insertion" || 
+             strType == "sva_insertion" ||
+             strType == "mobile_element_insertion" ||
+             strType == "mobile_sequence_insertion" || 
+             strType == "novel_sequence_insertion") {
         if (!xVariationMakeInsertions( record, pVariation )) {
             return false;
         }
     }
-    else if (strType == "deletion") {
+    else if (strType == "deletion" || 
+             strType == "alu_deletion" || 
+             strType == "line1_deletion" ||
+             strType == "sva_deletion" || 
+             strType == "herv_deletion" ||
+             strType == "mobile_element_deletion") {
         if (!xVariationMakeDeletions( record, pVariation )) {
+            return false;
+        }
+    }
+    else if (strType == "inversion") {
+        if (!xVariationMakeInversions( record, pVariation )) {
+            return false;
+        }
+
+    }
+    else if (strType == "tandem_duplication") {
+        if (!xVariationMakeEversions( record, pVariation )) {
+            return false;
+        }
+    }
+    else if (strType == "translocation" ||
+             strType == "interchromosomal_translocation" ||
+             strType == "intrachromosomal_translocation") {
+
+        if (!xVariationMakeTranslocations( record, pVariation )) {
+            return false;
+        }
+    }
+    else if (strType == "complex_chromosomal_rearrangement" ||
+             strType == "complex_substitution") { 
+        if (!xVariationMakeComplex( record, pVariation )){
+            return false;
+        }
+    }
+    else if (strType == "sequence_alteration") {
+        if (!xVariationMakeUnknown( record, pVariation )){
             return false;
         }
     }
@@ -676,7 +926,8 @@ bool CGvfReader::xVariationMakeCNV(
         pVariation->SetCNV();
         return true;
     }
-    if ( strType == "gain" || strType == "copy_number_gain" ) {
+    if ( strType == "gain" || strType == "copy_number_gain" ||
+         strType == "duplication" ) {
         pVariation->SetGain();
         return true;
     }
@@ -715,11 +966,12 @@ bool CGvfReader::xVariationMakeCNV(
 pErr->Throw();
     return false;
 }
-  
+
+
 //  ----------------------------------------------------------------------------
-bool CGvfReader::xVariationMakeSNV(
-    const CGvfReadRecord& record,
-    CRef<CVariation_ref> pVariation)
+bool CGvfReader::xVariationSetCommon(
+        const CGvfReadRecord& record,
+        CRef<CVariation_ref> pVariation)
 //  ----------------------------------------------------------------------------
 {
     pVariation->SetData().SetSet().SetType( 
@@ -737,6 +989,113 @@ bool CGvfReader::xVariationMakeSNV(
     if ( ! xVariationSetProperties( record, pVariation ) ) {
         return false;
     }
+
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGvfReader::xVariationMakeInversions(
+    const CGvfReadRecord& record,
+    CRef<CVariation_ref> pVariation)
+//  ----------------------------------------------------------------------------
+{
+    if ( ! xVariationSetCommon( record, pVariation ) ) {
+        return false;
+    }
+
+    CRef<CSeq_loc> pLocation = Ref(new CSeq_loc());
+    if ( ! x_SetLocation( record, pLocation ) ) {
+        return false;
+    }
+
+    pVariation->SetInversion(*pLocation);
+   
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGvfReader::xVariationMakeEversions(
+    const CGvfReadRecord& record,
+    CRef<CVariation_ref> pVariation)
+//  ----------------------------------------------------------------------------
+{
+    if ( ! xVariationSetCommon( record, pVariation ) ) {
+        return false;
+    }
+
+    CRef<CSeq_loc> pLocation = Ref(new CSeq_loc());
+    if ( ! x_SetLocation( record, pLocation ) ) {
+        return false;
+    }
+
+    pVariation->SetEversion(*pLocation);
+   
+    return true;
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CGvfReader::xVariationMakeTranslocations(
+    const CGvfReadRecord& record,
+    CRef<CVariation_ref> pVariation)
+//  ----------------------------------------------------------------------------
+{
+    if ( ! xVariationSetCommon( record, pVariation ) ) {
+        return false;
+    }
+
+    CRef<CSeq_loc> pLocation = Ref(new CSeq_loc());
+    if ( ! x_SetLocation( record, pLocation ) ) {
+        return false;
+    }
+
+    pVariation->SetTranslocation(*pLocation);
+   
+    return true;
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CGvfReader::xVariationMakeComplex(
+    const CGvfReadRecord& record,
+    CRef<CVariation_ref> pVariation)
+//  ----------------------------------------------------------------------------
+{
+    if ( ! xVariationSetCommon( record, pVariation ) ) {
+        return false;
+    }
+
+    pVariation->SetComplex();
+   
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGvfReader::xVariationMakeUnknown(
+    const CGvfReadRecord& record,
+    CRef<CVariation_ref> pVariation)
+//  ----------------------------------------------------------------------------
+{
+    if ( ! xVariationSetCommon( record, pVariation ) ) {
+        return false;
+    }
+
+    pVariation->SetUnknown();
+   
+    return true;
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CGvfReader::xVariationMakeSNV(
+    const CGvfReadRecord& record,
+    CRef<CVariation_ref> pVariation)
+//  ----------------------------------------------------------------------------
+{
+    if ( ! xVariationSetCommon( record, pVariation ) ) {
+        return false;
+    }
+
     if ( ! xVariationSetSnvs( record, pVariation ) ) {
         return false;
     }
@@ -749,6 +1108,7 @@ bool CGvfReader::xVariationMakeInsertions(
     CRef<CVariation_ref> pVariation )
 //  ----------------------------------------------------------------------------
 {
+/*
     pVariation->SetData().SetSet().SetType( 
         CVariation_ref::C_Data::C_Set::eData_set_type_package );
 
@@ -764,6 +1124,12 @@ bool CGvfReader::xVariationMakeInsertions(
     if ( ! xVariationSetProperties( record, pVariation ) ) {
         return false;
     }
+*/
+
+    if ( ! xVariationSetCommon( record, pVariation ) ) {
+        return false;
+    }
+
     if ( ! xVariationSetInsertions( record, pVariation ) ) {
         return false;
     }
@@ -776,6 +1142,7 @@ bool CGvfReader::xVariationMakeDeletions(
     CRef<CVariation_ref> pVariation )
 //  ----------------------------------------------------------------------------
 {
+/*
     pVariation->SetData().SetSet().SetType( 
         CVariation_ref::C_Data::C_Set::eData_set_type_package );
 
@@ -791,6 +1158,11 @@ bool CGvfReader::xVariationMakeDeletions(
     if ( ! xVariationSetProperties( record, pVariation ) ) {
         return false;
     }
+*/
+    if ( ! xVariationSetCommon( record, pVariation ) ) {
+        return false;
+    }
+
     if ( ! xVariationSetDeletions( record, pVariation ) ) {
         return false;
     }

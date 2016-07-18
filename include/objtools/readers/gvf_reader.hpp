@@ -124,6 +124,18 @@ protected:
     bool xFeatureSetLocationPoint(
         const CGff2Record&,
         CRef< CSeq_feat > );
+
+    bool x_SetLocation(
+        const CGff2Record&,
+        CRef<CSeq_loc> );
+    
+    bool x_SetLocationInterval(
+        const CGff2Record&,
+        CRef<CSeq_loc> );
+
+    bool x_SetLocationPoint(
+        const CGff2Record&,
+        CRef<CSeq_loc> );
     
     bool x_FeatureSetVariation(
         const CGvfReadRecord&,
@@ -150,33 +162,61 @@ protected:
         const CGvfReadRecord&,
         CRef<CVariation_ref> );
 
+    bool xVariationMakeInversions(
+        const CGvfReadRecord&,
+        CRef<CVariation_ref> );
+
+    bool xVariationMakeEversions(
+        const CGvfReadRecord&,
+        CRef<CVariation_ref> );
+
+    bool xVariationMakeTranslocations(
+        const CGvfReadRecord&,
+        CRef<CVariation_ref> );
+
+    bool xVariationMakeComplex(
+        const CGvfReadRecord&,
+        CRef<CVariation_ref> );
+
+    bool xVariationMakeUnknown(
+        const CGvfReadRecord&,
+        CRef<CVariation_ref> );
+
     bool xVariationSetInsertions(
         const CGvfReadRecord&,
-        CRef< CVariation_ref > );
+        CRef<CVariation_ref> );
 
     bool xVariationSetDeletions(
         const CGvfReadRecord&,
-        CRef< CVariation_ref > );
+        CRef<CVariation_ref> );
+
+//    bool xVariationSetEversions(
+//        const CGvfReadRecord&,
+//        CRef<CVariation_ref> );
+
+    bool xVariationSetCommon(
+        const CGvfReadRecord&,
+        CRef<CVariation_ref> );
 
     virtual bool xVariationSetId(
         const CGvfReadRecord&,
-        CRef< CVariation_ref > );
+        CRef<CVariation_ref> );
 
     virtual bool xVariationSetParent(
         const CGvfReadRecord&,
-        CRef< CVariation_ref > );
+        CRef<CVariation_ref> );
 
     virtual bool xVariationSetName(
         const CGvfReadRecord&,
-        CRef< CVariation_ref > );
+        CRef<CVariation_ref> );
 
     virtual bool xVariationSetSnvs(
         const CGvfReadRecord&,
-        CRef< CVariation_ref > );
+        CRef<CVariation_ref> );
 
     virtual bool xVariationSetProperties(
         const CGvfReadRecord&,
-        CRef< CVariation_ref > );
+        CRef<CVariation_ref> );
 
     virtual CGff2Record* x_CreateRecord() { return new CGvfReadRecord(m_uLineNumber); };   
 
