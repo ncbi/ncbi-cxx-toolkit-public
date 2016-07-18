@@ -73,6 +73,9 @@ CSeq_entry_Info::CSeq_entry_Info(const CSeq_entry_Info& info,
     : TParent(info, copy_map),
       m_Which(CSeq_entry::e_not_set)
 {
+    if ( !copy_map ) {
+        info.x_UpdateComplete();
+    }
     x_SetObject(info, copy_map);
 }
 

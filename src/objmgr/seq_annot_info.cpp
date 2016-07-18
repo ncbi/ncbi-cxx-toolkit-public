@@ -90,6 +90,10 @@ CSeq_annot_Info::CSeq_annot_Info(const CSeq_annot_Info& info,
     : TParent(info, copy_map),
       m_ChunkId(info.GetChunkId())
 {
+    if ( !copy_map ) {
+        info.x_UpdateComplete();
+        m_ChunkId = 0;
+    }
     x_SetObject(info, copy_map);
 }
 

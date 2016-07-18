@@ -73,6 +73,12 @@ CBioseq_set_Info::CBioseq_set_Info(const CBioseq_set_Info& info,
       m_BioseqChunks(info.m_BioseqChunks),
       m_Bioseq_set_Id(-1)
 {
+    if ( !copy_map ) {
+        info.x_UpdateComplete();
+        m_DescrChunks.clear();
+        m_AnnotChunks.clear();
+        m_BioseqChunks.clear();
+    }
     x_SetObject(info, copy_map);
 }
 

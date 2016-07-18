@@ -155,7 +155,7 @@ public:
     void x_DoUpdate(TNeedUpdateFlags flags);
     void x_SetNeedUpdateParent(TNeedUpdateFlags flags);
 
-private:
+protected:
     bool x_IsEndNextDesc(TDesc_CI iter) const; // internal inlined method
 
     friend class CAnnotTypes_CI;

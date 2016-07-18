@@ -97,6 +97,13 @@ CBioseq_Info::CBioseq_Info(const CBioseq_Info& info, TObjectCopyMap* copy_map)
       m_AssemblyChunk(info.m_AssemblyChunk),
       m_FeatureFetchPolicy(info.m_FeatureFetchPolicy)
 {
+    if ( !copy_map ) {
+        info.x_UpdateComplete();
+        m_DescrChunks.clear();
+        m_AnnotChunks.clear();
+        m_Seq_dataChunks.clear();
+        m_AssemblyChunk = -1;
+    }
     x_SetObject(info, copy_map);
 }
 
