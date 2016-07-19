@@ -1139,7 +1139,7 @@ private:
 };
 
 /// Argument class to collect debugging options.
-/// Only show in command line if compiled with _DEBUG
+/// Only show in command line if compiled with _BLAST_DEBUG
 class NCBI_BLASTINPUT_EXPORT CDebugArgs : public IBlastCmdLineArgs
 {
 public:
