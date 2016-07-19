@@ -2016,5 +2016,100 @@ DISCREPANCY_AUTOFIX(MITOCHONDRION_REQUIRED)
     return CRef<CAutofixReport>(n ? new CAutofixReport("MITOCHONDRION_REQUIRED: Genome was set to mitochondrion for [n] bioseq[s]", n) : 0);
 }
 
+
+// SHORT_CONTIG
+
+const string kShortContig = "[n] contig[s] [is] shorter than 200 nt";
+
+static bool IsMolProd(int biomol)
+{
+    return biomol == CMolInfo::eBiomol_mRNA ||
+           biomol == CMolInfo::eBiomol_ncRNA ||
+           biomol == CMolInfo::eBiomol_rRNA ||
+           biomol == CMolInfo::eBiomol_pre_RNA ||
+           biomol == CMolInfo::eBiomol_tRNA;
+
+}
+
+static bool IsmRNASequenceInGenProdSet(CDiscrepancyContext& context, const CBioseq& bioseq)
+{
+    bool ret = false;
+
+    if (bioseq.GetInst().IsSetMol() && bioseq.GetInst().GetMol() == CSeq_inst::eMol_rna) {
+
+        CConstRef<CBioseq_set> bio_set = bioseq.GetParentSet();
+        if (bio_set && bio_set->IsSetClass()) {
+
+            if (bio_set->GetClass() == CBioseq_set::eClass_nuc_prot) {
+                bio_set = bio_set->GetParentSet();
+            }
+
+            if (bio_set && bio_set->IsSetClass() && bio_set->GetClass() == CBioseq_set::eClass_gen_prod_set) {
+
+                const CMolInfo* mol_info = context.GetCurrentMolInfo();
+                if (mol_info && mol_info->IsSetBiomol() && IsMolProd(mol_info->GetBiomol())) {
+                    ret = true;
+                }
+            }
+        }
+    }
+
+    return ret;
+}
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(SHORT_CONTIG, CSeq_inst, eDisc | eSubmitter | eSmart, "Short Contig")
+//  ----------------------------------------------------------------------------
+{
+    static TSeqPos MIN_CONTIG_LEN = 200;
+
+    if (obj.IsNa() && obj.IsSetLength() && obj.GetLength() < MIN_CONTIG_LEN) {
+
+        CConstRef<CBioseq> bioseq = context.GetCurrentBioseq();
+        if (!IsmRNASequenceInGenProdSet(context, *bioseq)) {
+            m_Objs[kShortContig].Add(*context.NewDiscObj(bioseq, eKeepRef, true), false);
+        }
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(SHORT_CONTIG)
+//  ----------------------------------------------------------------------------
+{
+    m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
+}
+
+
+static bool RemoveBioseq(const CBioseq& bioseq, CScope& scope)
+{
+    if (bioseq.IsSetAnnot()) {
+        ITERATE(CBioseq::TAnnot, annot_it, bioseq.GetAnnot()) {
+            if ((*annot_it)->IsFtable()) {
+                return false;
+            }
+        }
+    }
+
+    CBioseq_EditHandle bioseq_edit(scope.GetBioseqEditHandle(bioseq));
+    bioseq_edit.Remove();
+
+    return true;
+}
+
+DISCREPANCY_AUTOFIX(SHORT_CONTIG)
+{
+    TReportObjectList list = item->GetDetails();
+    unsigned int n = 0;
+    NON_CONST_ITERATE(TReportObjectList, it, list) {
+        const CBioseq* bioseq = dynamic_cast<const CBioseq*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
+        if (bioseq && RemoveBioseq(*bioseq, scope)) {
+            n++;
+        }
+    }
+    return CRef<CAutofixReport>(n ? new CAutofixReport("SHORT_CONTIG: [n] short bioseq[s] [is] removed", n) : 0);
+}
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
