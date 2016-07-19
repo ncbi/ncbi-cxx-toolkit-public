@@ -1625,6 +1625,9 @@ same id type" } },
    { eErr_SEQ_FEAT_RefSeqInText,
    { "RefSeqInText",
 "The term RefSeq should not appear in a product name or a definition line." } },
+   { eErr_SEQ_FEAT_ColdShockProteinProblem,
+   { "ColdShockProteinProblem",
+"A misc_feature containing cspA should not overlap a cold-shock protein CDS." } },
 
 /* SEQ_ALIGN */
 

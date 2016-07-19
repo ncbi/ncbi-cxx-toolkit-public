@@ -4092,6 +4092,19 @@ void CValidError_feat::ValidateImp(
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_NeedsNote,
                     "A note or other qualifier is required for a misc_feature", feat);
         }
+        if (feat.IsSetComment() && ! NStr::IsBlank (feat.GetComment())) {
+            if (NStr::FindWord(feat.GetComment(), "cspA") != NPOS) {
+                CConstRef<CSeq_feat> cds = GetBestOverlappingFeat(feat.GetLocation(), CSeqFeatData::eSubtype_cdregion, eOverlap_Simple, *m_Scope);
+                if (cds) {
+                    string content_label;
+                    feature::GetLabel(*cds, &content_label, feature::fFGL_Content, m_Scope);
+                    if (NStr::Equal(content_label, "cold-shock protein")) {
+                        PostErr(eDiag_Error, eErr_SEQ_FEAT_ColdShockProteinProblem,
+                                "cspA misc_feature overlapped by cold-shock protein CDS", feat);
+                    }
+                }
+            }
+        }
         break;
     case CSeqFeatData::eSubtype_polyA_site:
         {
