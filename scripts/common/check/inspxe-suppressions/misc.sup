@@ -22,7 +22,7 @@ suppression = {
 	name = "Deallocation without allocation in KNgcObjWriteToFile() at ncbi_vdb.dll - False positive"
 	type = {invalid_deallocation}
 	stacks = {
-		allocation={
+		{
 			...;
 			func=KNgcObjWriteToFile;
 		}
@@ -32,9 +32,9 @@ suppression = {
 	name = "Missing allocation in vdbread.cpp:707 - False positive"
 	type = {invalid_deallocation}
 	stacks = {
-		allocation={
-			...;
-			func=Init,src=vdbread.cpp;
+		{
+			!!!;
+			src=vdbread.cpp,func=Init;
 		}
 	}
 }
@@ -42,9 +42,9 @@ suppression = {
 	name = "Invalid memory access in vdbread.cpp:477 - False positive"
 	type = {invalid_memory_access}
 	stacks = {
-		allocation={
+		{
 			...;
-			func=CVDB,src=vdbread.cpp;
+			src=vdbread.cpp,func=CVDB;
 		}
 	}
 }
