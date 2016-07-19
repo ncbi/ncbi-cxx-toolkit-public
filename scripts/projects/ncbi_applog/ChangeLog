@@ -1,5 +1,16 @@
+1.2.0 ( 06/29/16)
+    - Do not split log files by default, use .log and .perf files for /log, and single .log file for all other locations. CXX-8158
+    - Add euid to log file name when using /log. CXX-8158
+    - Fixes for 'url' command:  CXX-7846
+	- add '-appname', '-host' and '-pid' flags to allow include only necessary information to the search term;
+	- add '-std' flag to automatically imply all 3 flags above (previously default);
+	- use '-maxtime' instead of '-timestamp', add '-maxtime-delay' flag.
 
-1.1.0
+1.1.1 (06/01/16)
+    - Add additional checks to CGI redirecting to return error code if CGI is unavailable. CXX-8117
+    - Add checking /log/logsite location for writing logs, if logsite is known, before redirecting to CGI. CXX-8117
+
+1.1.0 (03/28/16)
     - Allow to send RAW logs incrementally (for CGI redirects). CXX-7803
     - Add possibility to generate an Applog query URL on a base of token ('url' command). CXX-7846
 
@@ -20,7 +31,6 @@
     failed
 
 1.0.13 (01/13/14) - first public version 
-
     - Clog try to fallback to /log/<port> or /log/srv. CXX-3423
     - Add support for $NCBI_CONFIG_LOG_FILE, allow extracting SID from the token. CXX-3818
     - Alow to specify posting timestamp. CXX-3933
