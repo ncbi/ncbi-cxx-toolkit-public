@@ -1087,6 +1087,8 @@ compiler_version
 COMPILER
 OSTYPE
 NCBI_PLATFORM_BITS
+NCBI_TEAMCITY_BUILD_NUMBER
+NCBI_SUBVERSION_REVISION
 LIBOBJS
 LTLIBOBJS'
 ac_subst_files=''
@@ -4386,6 +4388,36 @@ cat >>confdefs.h <<\_ACEOF
 #define NCBI_CXX_TOOLKIT 1
 _ACEOF
 
+
+{ echo "$as_me:$LINENO: checking TeamCity build number" >&5
+echo $ECHO_N "checking TeamCity build number... $ECHO_C" >&6; }
+if test -n "$TEAMCITY_VERSION" -a -n "$BUILD_NUMBER"; then
+   { echo "$as_me:$LINENO: result: $BUILD_NUMBER" >&5
+echo "${ECHO_T}$BUILD_NUMBER" >&6; }
+   NCBI_TEAMCITY_BUILD_NUMBER=$BUILD_NUMBER
+else
+   { echo "$as_me:$LINENO: result: none" >&5
+echo "${ECHO_T}none" >&6; }
+   NCBI_TEAMCITY_BUILD_NUMBER=0
+fi
+
+{ echo "$as_me:$LINENO: checking Subversion revision" >&5
+echo $ECHO_N "checking Subversion revision... $ECHO_C" >&6; }
+svnrev=`svn info "$top_srcdir" 2>/dev/null | sed -ne 's/^Revision: //p'`
+if test -n "$svnrev"; then
+   { echo "$as_me:$LINENO: result: $svnrev" >&5
+echo "${ECHO_T}$svnrev" >&6; }
+   NCBI_SUBVERSION_REVISION=$svnrev
+else
+   { echo "$as_me:$LINENO: result: unknown" >&5
+echo "${ECHO_T}unknown" >&6; }
+   NCBI_SUBVERSION_REVISION=0
+fi
+
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_COMMON_NCBI_BUILD_VER_H 1
+_ACEOF
 
 
 #### Get the running host's properties
@@ -46756,6 +46788,8 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 
+
+
 #############################################################################
 ### Create output files and do some post-configuration
 
@@ -46782,7 +46816,7 @@ ac_config_headers="$ac_config_headers ${ncbiconf}:src/build-system/config.h.in"
 ##
 ## Configure makefiles, shell scripts, etc.
 ##
-ac_config_files="$ac_config_files $configurables $srcdir/./Makefile:src/build-system/Makefile.in.top"
+ac_config_files="$ac_config_files $configurables $srcdir/./Makefile:src/build-system/Makefile.in.top $build_root/inc/common/ncbi_build_ver.h:include/common/ncbi_build_ver.h.in"
 
 
 ac_config_commands="$ac_config_commands default"
@@ -47369,6 +47403,7 @@ do
     "${ncbiconf}") CONFIG_HEADERS="$CONFIG_HEADERS ${ncbiconf}:src/build-system/config.h.in" ;;
     "$configurables") CONFIG_FILES="$CONFIG_FILES $configurables" ;;
     "$srcdir/./Makefile") CONFIG_FILES="$CONFIG_FILES $srcdir/./Makefile:src/build-system/Makefile.in.top" ;;
+    "$build_root/inc/common/ncbi_build_ver.h") CONFIG_FILES="$CONFIG_FILES $build_root/inc/common/ncbi_build_ver.h:include/common/ncbi_build_ver.h.in" ;;
     "default") CONFIG_COMMANDS="$CONFIG_COMMANDS default" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
@@ -48075,11 +48110,13 @@ compiler_version!$compiler_version$ac_delim
 COMPILER!$COMPILER$ac_delim
 OSTYPE!$OSTYPE$ac_delim
 NCBI_PLATFORM_BITS!$NCBI_PLATFORM_BITS$ac_delim
+NCBI_TEAMCITY_BUILD_NUMBER!$NCBI_TEAMCITY_BUILD_NUMBER$ac_delim
+NCBI_SUBVERSION_REVISION!$NCBI_SUBVERSION_REVISION$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 93; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 95; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
@@ -48585,17 +48622,19 @@ else
    rm -f "$build_root/inc/ncbiconf_extra.h"
 fi
 
-ncbicfg="$builddir/corelib/ncbicfg.c"
-if test -f "$ncbicfg.last" && cmp -s "$ncbicfg.last" "$ncbicfg"; then
-   echo "$ncbicfg" is unchanged
-   touch -r "$ncbicfg.last" "$ncbicfg"
-elif test -f "$ncbicfg"; then
-   echo "$ncbicfg" is updated
-   rm -f "$ncbicfg.last"
-   cp -p "$ncbicfg" "$ncbicfg.last"
-else
-   echo "$ncbicfg" is not present
-fi
+for f in "$builddir/corelib/ncbicfg.c" \
+         "$build_root/inc/common/ncbi_build_ver.h"; do
+   if test -f "$f.last" && cmp -s "$f.last" "$f"; then
+      echo "$f" is unchanged
+      touch -r "$f.last" "$f"
+   elif test -f "$f"; then
+      echo "$f" is updated
+      rm -f "$f.last"
+      cp -p "$f" "$f.last"
+   else
+      echo "$f" is not present
+   fi
+done
 
 (cd $builddir/build-system/helpers && $MAKE -k)
 

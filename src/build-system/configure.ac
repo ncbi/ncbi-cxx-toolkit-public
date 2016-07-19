@@ -808,6 +808,27 @@ fi
 #### Always define this
 AC_DEFINE(NCBI_CXX_TOOLKIT, 1, [This is the NCBI C++ Toolkit.])
 
+AC_MSG_CHECKING([TeamCity build number])
+if test -n "$TEAMCITY_VERSION" -a -n "$BUILD_NUMBER"; then
+   AC_MSG_RESULT($BUILD_NUMBER)
+   NCBI_TEAMCITY_BUILD_NUMBER=$BUILD_NUMBER
+else
+   AC_MSG_RESULT(none)
+   NCBI_TEAMCITY_BUILD_NUMBER=0
+fi
+
+AC_MSG_CHECKING([Subversion revision])
+svnrev=`svn info "$top_srcdir" 2>/dev/null | sed -ne 's/^Revision: //p'`
+if test -n "$svnrev"; then
+   AC_MSG_RESULT($svnrev)
+   NCBI_SUBVERSION_REVISION=$svnrev
+else
+   AC_MSG_RESULT(unknown)
+   NCBI_SUBVERSION_REVISION=0
+fi
+
+AC_DEFINE(HAVE_COMMON_NCBI_BUILD_VER_H, 1,
+   [Define to 1 if you have the <common/ncbi_build_ver.h> header file.])
 
 #### Get the running host's properties
 AC_CONFIG_AUX_DIR(src/build-system)
@@ -8173,6 +8194,8 @@ AC_SUBST(COMPILER)
 AC_SUBST(OSTYPE)
 AC_SUBST(NCBI_PLATFORM_BITS)
 
+AC_SUBST(NCBI_TEAMCITY_BUILD_NUMBER)
+AC_SUBST(NCBI_SUBVERSION_REVISION)
 
 #############################################################################
 ### Create output files and do some post-configuration
@@ -8201,7 +8224,9 @@ AC_CONFIG_HEADER(${ncbiconf}:src/build-system/config.h.in)
 ##
 ## Configure makefiles, shell scripts, etc.
 ##
-AC_CONFIG_FILES($configurables $srcdir/./Makefile:src/build-system/Makefile.in.top)
+AC_CONFIG_FILES($configurables \
+   $srcdir/./Makefile:src/build-system/Makefile.in.top \
+   $build_root/inc/common/ncbi_build_ver.h:include/common/ncbi_build_ver.h.in)
 
 AC_CONFIG_COMMANDS([default], [
 dnl make all shell scripts *.sh be executable
@@ -8274,18 +8299,20 @@ else
    rm -f "$build_root/inc/ncbiconf_extra.h"
 fi
 
-dnl Avoid gratuitous relinking
-ncbicfg="$builddir/corelib/ncbicfg.c"
-if test -f "$ncbicfg.last" && cmp -s "$ncbicfg.last" "$ncbicfg"; then
-   echo "$ncbicfg" is unchanged
-   touch -r "$ncbicfg.last" "$ncbicfg"
-elif test -f "$ncbicfg"; then
-   echo "$ncbicfg" is updated
-   rm -f "$ncbicfg.last"
-   cp -p "$ncbicfg" "$ncbicfg.last"
-else
-   echo "$ncbicfg" is not present
-fi
+dnl Avoid gratuitous rebuilding
+for f in "$builddir/corelib/ncbicfg.c" \
+         "$build_root/inc/common/ncbi_build_ver.h"; do
+   if test -f "$f.last" && cmp -s "$f.last" "$f"; then
+      echo "$f" is unchanged
+      touch -r "$f.last" "$f"
+   elif test -f "$f"; then
+      echo "$f" is updated
+      rm -f "$f.last"
+      cp -p "$f" "$f.last"
+   else
+      echo "$f" is not present
+   fi
+done
 
 dnl Try to build simple helpers
 (cd $builddir/build-system/helpers && $MAKE -k)

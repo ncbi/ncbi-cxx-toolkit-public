@@ -71,6 +71,9 @@
 /* Define to 1 if you have the <clapack.h> header file. */
 #undef HAVE_CLAPACK_H
 
+/* Define to 1 if you have the <common/ncbi_build_ver.h> header file. */
+#undef HAVE_COMMON_NCBI_BUILD_VER_H
+
 /* Define to 1 if the preprocessor supports GNU-style variadic macros. */
 #undef HAVE_CPP_GNU_VARARGS
 

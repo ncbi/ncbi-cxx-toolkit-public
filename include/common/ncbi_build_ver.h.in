@@ -24,11 +24,10 @@
  * ===========================================================================
  */
 
-#include <ncbiconf.h>
+#if @NCBI_TEAMCITY_BUILD_NUMBER@ != 0
+#  define NCBI_TEAMCITY_BUILD_NUMBER @NCBI_TEAMCITY_BUILD_NUMBER@
+#endif
 
-/* #undef NCBI_PRODUCTION_VER */
-#define NCBI_DEVELOPMENT_VER 20160719
-
-#ifdef HAVE_COMMON_NCBI_BUILD_VER_H
-#  include <common/ncbi_build_ver.h>
+#if @NCBI_SUBVERSION_REVISION@ != 0
+#  define NCBI_SUBVERSION_REVISION @NCBI_SUBVERSION_REVISION@
 #endif
