@@ -149,8 +149,10 @@ private:
 
 CTbl2AsnApp::CTbl2AsnApp(void)
 {
-    int build_num =
-#if defined(NCBI_PRODUCTION_VER)
+    int build_num = 
+#if defined(NCBI_TEAMCITY_BUILD_NUMBER)
+        NCBI_TEAMCITY_BUILD_NUMBER
+#elif defined(NCBI_PRODUCTION_VER)
         NCBI_PRODUCTION_VER
 #elif defined(NCBI_DEVELOPMENT_VER)
         NCBI_DEVELOPMENT_VER
@@ -159,9 +161,8 @@ CTbl2AsnApp::CTbl2AsnApp(void)
 #endif
         ;
 
-    SetVersion(CVersionInfo(1, 0, build_num));
+    SetVersion(CVersionInfo(1, 1, build_num));
 }
-
 
 void CTbl2AsnApp::Init(void)
 {
