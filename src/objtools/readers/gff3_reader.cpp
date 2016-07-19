@@ -724,8 +724,8 @@ bool CGff3Reader::xIsIgnoredFeatureType(
 
     /* -genbank mode:*/
     static const char* const specialTypesGenbank_[] = {
-        "stop_codon_read_through",
         "selenocysteine"
+        "stop_codon_read_through",
     };
     DEFINE_STATIC_ARRAY_MAP(STRINGARRAY, specialTypesGenbank, specialTypesGenbank_);    
 
