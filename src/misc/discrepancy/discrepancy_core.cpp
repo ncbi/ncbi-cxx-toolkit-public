@@ -185,6 +185,7 @@ CRef<CReportItem> CReportNode::Export(CDiscrepancyCase& test, bool unique)
     item->m_Autofix = autofix;
     item->m_Fatal = fatal;
     item->m_Ext = m_Ext;
+    item->m_Summ = m_Summ;
     item->m_Subs = subs;
     item->m_Objs = objs;
     return CRef<CReportItem>((CReportItem*)item);

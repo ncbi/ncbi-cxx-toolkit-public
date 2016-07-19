@@ -167,8 +167,8 @@ class CReportNode;
 class CDiscrepancyItem : public CReportItem
 {
 public:
-    CDiscrepancyItem(const string& s) : m_Msg(s), m_Autofix(false), m_Fatal(false), m_Ext(false) {}
-    CDiscrepancyItem(CDiscrepancyCase& t, const string& m, const string& s) : m_Msg(m), m_Str(s), m_Autofix(false), m_Fatal(false), m_Ext(false), m_Test(&t) {}
+    CDiscrepancyItem(const string& s) : m_Msg(s), m_Autofix(false), m_Fatal(false), m_Ext(false), m_Summ(false) {}
+    CDiscrepancyItem(CDiscrepancyCase& t, const string& m, const string& s) : m_Msg(m), m_Str(s), m_Autofix(false), m_Fatal(false), m_Ext(false), m_Summ(false), m_Test(&t) {}
     string GetTitle(void) const { return m_Test->GetName(); }
     string GetMsg(void) const { return m_Msg; }
     string GetStr(void) const { return m_Str; }
@@ -177,6 +177,7 @@ public:
     bool CanAutofix(void) const { return m_Autofix; }
     bool IsFatal(void) const { return m_Fatal; }
     bool IsExtended(void) const { return m_Ext; }
+    bool IsSummary(void) const { return m_Summ; }
     bool IsReal(void) const { return !m_Test.Empty(); }
     CRef<CAutofixReport> Autofix(CScope& scope) const;
 protected:
@@ -185,6 +186,7 @@ protected:
     mutable bool m_Autofix;
     bool m_Fatal;
     bool m_Ext;
+    bool m_Summ;
     TReportObjectList m_Objs;
     TReportItemList m_Subs;
     CRef<CDiscrepancyCase> m_Test;
@@ -211,12 +213,13 @@ class CReportNode : public CObject
 public:
     typedef map<string, CRef<CReportNode> > TNodeMap;
 
-    CReportNode(const string& name = kEmptyStr) : m_Name(name), m_Fatal(false), m_Autofix(false), m_Ext(false), m_Count(0) {}
+    CReportNode(const string& name = kEmptyStr) : m_Name(name), m_Fatal(false), m_Autofix(false), m_Ext(false), m_Summ(0), m_Count(0) {}
 
     CReportNode& operator[](const string& name);
 
     CReportNode& Fatal(bool b = true) { m_Fatal = b; return *this; }
     CReportNode& Ext(bool b = true) { m_Ext = b; return *this; }
+    CReportNode& Summ(bool b = true) { m_Summ = b; return *this; }
     CReportNode& Incr() { m_Count++; return *this; }
 
     static bool Exist(TReportObjectList& list, TReportObjectSet& hash, CReportObj& obj) { return hash.find(&obj) != hash.end(); }
@@ -244,6 +247,7 @@ protected:
     bool m_Fatal;
     bool m_Autofix;
     bool m_Ext;
+    bool m_Summ;
     size_t m_Count;
 };
 
@@ -391,11 +395,12 @@ public:
     const vector<CConstRef<CSeq_feat> >& FeatTRNAs() { return m_FeatTRNAs; }
     const vector<CConstRef<CSeq_feat> >& Feat_RNAs() { return m_Feat_RNAs; }
 
-    CDiscrepancyObject* NewDiscObj(CConstRef<CBioseq> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0) { return new CDiscrepancyObject(obj, *m_Scope, m_File, keep_ref || m_KeepRef, autofix, more); }
-    CDiscrepancyObject* NewDiscObj(CConstRef<CSeqdesc> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0) { return new CDiscrepancyObject(obj, *m_Scope, m_File, keep_ref || m_KeepRef, autofix, more); }
-    CDiscrepancyObject* NewDiscObj(CConstRef<CSeq_feat> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0) { return new CDiscrepancyObject(obj, *m_Scope, m_File, keep_ref || m_KeepRef, autofix, more); }
-    CDiscrepancyObject* NewDiscObj(CConstRef<CBioseq_set> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0) { return new CDiscrepancyObject(obj, *m_Scope, m_File, keep_ref || m_KeepRef, autofix, more); }
-    CDiscrepancyObject* NewSubmitBlockObj(EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
+    CRef<CDiscrepancyObject> NewDiscObj(CConstRef<CBioseq> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0) { return CRef<CDiscrepancyObject>(new CDiscrepancyObject(obj, *m_Scope, m_File, keep_ref || m_KeepRef, autofix, more)); }
+    CRef<CDiscrepancyObject> NewDiscObj(CConstRef<CSeqdesc> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0) { return CRef<CDiscrepancyObject>(new CDiscrepancyObject(obj, *m_Scope, m_File, keep_ref || m_KeepRef, autofix, more)); }
+    CRef<CDiscrepancyObject> NewDiscObj(CConstRef<CSeq_feat> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0) { return CRef<CDiscrepancyObject>(new CDiscrepancyObject(obj, *m_Scope, m_File, keep_ref || m_KeepRef, autofix, more)); }
+    CRef<CDiscrepancyObject> NewDiscObj(CConstRef<CBioseq_set> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0) { return CRef<CDiscrepancyObject>(new CDiscrepancyObject(obj, *m_Scope, m_File, keep_ref || m_KeepRef, autofix, more)); }
+    CRef<CDiscrepancyObject> NewSubmitBlockObj(EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
+    CRef<CDiscrepancyObject> NewFeatOrDescOrSubmitBlockObj(EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
 
 protected:
     void Update_Bioseq_set_Stack(CTypesConstIterator& it);

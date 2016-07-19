@@ -1,0 +1,24 @@
+Discrepancy Report Results
+
+Summary
+SUSPECT_PHRASES: 8 cds comments or protein descriptions contain suspect_phrases
+	1 cds comment or protein description contains '%'
+	1 cds comment or protein description contains '...'
+	1 cds comment or protein description contains 'E value'
+	1 cds comment or protein description contains 'E-value'
+	1 cds comment or protein description contains 'Evalue'
+	2 cds comments or protein descriptions contain 'fragment'
+	1 cds comment or protein description contains 'frameshift'
+
+Detailed Report
+
+SUSPECT_PHRASES: 8 cds comments or protein descriptions contain suspect_phrases
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\SUSPECT_PHRASES.asn:CDS	x	lcl|ex3:<1->247	
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\SUSPECT_PHRASES.asn:CDS	x	lcl|ex7:<1->247	
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\SUSPECT_PHRASES.asn:CDS	x	lcl|ex5:<1->247	
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\SUSPECT_PHRASES.asn:CDS	x	lcl|ex4:<1->247	
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\SUSPECT_PHRASES.asn:CDS	x	lcl|ex6:<1->247	
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\SUSPECT_PHRASES.asn:CDS	x	lcl|ex1:<1->247	
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\SUSPECT_PHRASES.asn:CDS	x	lcl|ex8:<1->247	
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\SUSPECT_PHRASES.asn:CDS	x	lcl|ex2:<1->247	
+

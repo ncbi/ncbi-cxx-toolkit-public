@@ -46,7 +46,7 @@ static void RecursiveText(ostream& out, const TReportItemList& list, bool ext)
         out << (*it)->GetTitle() << ": " << (*it)->GetMsg() << "\n";
         cout << (*it)->GetTitle() << ": " << (*it)->GetMsg() << "\n";        // TODO: remove from the final version
         TReportItemList subs = (*it)->GetSubitems();
-        if (!subs.empty() && (ext || !subs[0]->IsExtended())) {
+        if (!subs.empty() && (ext || !subs[0]->IsExtended()) && !subs[0]->IsSummary()) {
             RecursiveText(out, subs, ext);
         }
         else {
@@ -62,6 +62,24 @@ static void RecursiveText(ostream& out, const TReportItemList& list, bool ext)
 }
 
 
+static void RecursiveSummary(ostream& out, const TReportItemList& list, bool first)
+{
+    ITERATE (TReportItemList, it, list) {
+        if (first) {
+            out << (*it)->GetTitle() << ": " << (*it)->GetMsg() << "\n";
+        }
+        else if ((*it)->IsSummary()) {
+            out << "\t" << (*it)->GetMsg() << "\n";
+        }
+        else {
+            continue;
+        }
+        TReportItemList subs = (*it)->GetSubitems();
+        RecursiveSummary(out, subs, false);
+    }
+}
+
+
 void CDiscrepancyContext::OutputText(ostream& out, bool summary, bool ext)
 {
     const TDiscrepancyCaseMap& tests = GetTests();
@@ -70,9 +88,7 @@ void CDiscrepancyContext::OutputText(ostream& out, bool summary, bool ext)
     out << "Summary\n";
     ITERATE(TDiscrepancyCaseMap, tst, tests) {
         TReportItemList rep = tst->second->GetReport();
-        ITERATE(TReportItemList, it, rep) {
-            out << (*it)->GetTitle() << ": " << (*it)->GetMsg() << "\n";
-        }
+        RecursiveSummary(out, rep, true);
     }
     if (summary) return;
 

@@ -611,7 +611,7 @@ void CDiscrepancyContext::CollectFeature(const CSeq_feat& feat)
 }
 
 
-CDiscrepancyObject* CDiscrepancyContext::NewSubmitBlockObj(EKeepRef keep_ref, bool autofix, CObject* more)
+CRef<CDiscrepancyObject> CDiscrepancyContext::NewSubmitBlockObj(EKeepRef keep_ref, bool autofix, CObject* more)
 {
     string label;
     if (m_Current_Bioseq) {
@@ -627,7 +627,24 @@ CDiscrepancyObject* CDiscrepancyContext::NewSubmitBlockObj(EKeepRef keep_ref, bo
     if (!label.empty()) {
         text = text + " for " + label;
     }
-    return new CDiscrepancyObject(m_Current_Submit_block, *m_Scope, text, m_File, keep_ref || m_KeepRef, autofix, more);
+    return CRef<CDiscrepancyObject>(new CDiscrepancyObject(m_Current_Submit_block, *m_Scope, text, m_File, keep_ref || m_KeepRef, autofix, more));
+}
+
+
+CRef<CDiscrepancyObject> CDiscrepancyContext::NewFeatOrDescOrSubmitBlockObj(EKeepRef keep_ref, bool autofix, CObject* more)
+{
+    CConstRef<CSeq_feat> feat = GetCurrentSeq_feat();
+    CConstRef<CSeqdesc> desc = GetCurrentSeqdesc();
+    _ASSERT(!feat || !desc);
+    if (feat) {
+        return NewDiscObj(feat, keep_ref, autofix, more);
+    }
+    else if (desc) {
+        return NewDiscObj(desc, keep_ref, autofix, more);
+    }
+    else {
+        return NewSubmitBlockObj(keep_ref, autofix, more);
+    }
 }
 
 
