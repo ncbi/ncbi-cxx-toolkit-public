@@ -185,7 +185,8 @@ public:
 
     enum ECustom {
         // additional customization flags
-        fHideProteinID         = 1
+        fHideProteinID         = 1,
+        fHideGI                = 1 << 1
     };
 
     enum EView {
@@ -587,10 +588,12 @@ public:
     // getters
     const TCustom& GetCustom(void) const { return m_Custom; }
     bool HideProteinID         (void) const;
+    bool HideGI                (void) const;
 
     // setters
     void SetCustom(const TCustom& custom) { m_Custom = custom; }
     CFlatFileConfig& SetHideProteinID        (bool val = true);
+    CFlatFileConfig& SetHideGI               (bool val = true);
 
     // adjust mode dependant flags for RefSeq
     void SetRefSeqConventions(void);
@@ -816,6 +819,7 @@ CUSTOM_ARG_GET(x) \
 CUSTOM_ARG_SET(x)
 
 CUSTOM_ARG_IMP(HideProteinID)
+CUSTOM_ARG_IMP(HideGI)
 
 #undef FLAG_ARG_IMP
 #undef FLAG_ARG_GET
