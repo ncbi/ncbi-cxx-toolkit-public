@@ -1,0 +1,22 @@
+#gtf-version 2.2
+HSSS1	.	gene	14068	28534	.	-	.	gene_id "Tmx1"; Name "Tmx1"; db_xref "GeneID:72736%2CMGI:MGI:1919986"; gene_synonym "AI465319"; 
+HSSS1	.	exon	28368	28534	.	-	.	gene_id "Tmx1"; transcript_id "trtp1"; db_xref "GeneID:72736%2CGenbank:NM_028339.1%2CMGI:MGI:1919986"; gene "Tmx1"; product "trtp1"; exon_number "1"; 
+HSSS1	.	exon	25562	25677	.	-	.	gene_id "Tmx1"; transcript_id "trtp1"; db_xref "GeneID:72736%2CGenbank:NM_028339.1%2CMGI:MGI:1919986"; gene "Tmx1"; product "trtp1"; exon_number "2"; 
+HSSS1	.	exon	25063	25108	.	-	.	gene_id "Tmx1"; transcript_id "trtp1"; db_xref "GeneID:72736%2CGenbank:NM_028339.1%2CMGI:MGI:1919986"; gene "Tmx1"; product "trtp1"; exon_number "3"; 
+HSSS1	.	exon	22782	22910	.	-	.	gene_id "Tmx1"; transcript_id "trtp1"; db_xref "GeneID:72736%2CGenbank:NM_028339.1%2CMGI:MGI:1919986"; gene "Tmx1"; product "trtp1"; exon_number "4"; 
+HSSS1	.	exon	21299	21344	.	-	.	gene_id "Tmx1"; transcript_id "trtp1"; db_xref "GeneID:72736%2CGenbank:NM_028339.1%2CMGI:MGI:1919986"; gene "Tmx1"; product "trtp1"; exon_number "5"; 
+HSSS1	.	exon	21109	21210	.	-	.	gene_id "Tmx1"; transcript_id "trtp1"; db_xref "GeneID:72736%2CGenbank:NM_028339.1%2CMGI:MGI:1919986"; gene "Tmx1"; product "trtp1"; exon_number "6"; 
+HSSS1	.	exon	17226	17292	.	-	.	gene_id "Tmx1"; transcript_id "trtp1"; db_xref "GeneID:72736%2CGenbank:NM_028339.1%2CMGI:MGI:1919986"; gene "Tmx1"; product "trtp1"; exon_number "7"; 
+HSSS1	.	exon	14068	15714	.	-	.	gene_id "Tmx1"; transcript_id "trtp1"; db_xref "GeneID:72736%2CGenbank:NM_028339.1%2CMGI:MGI:1919986"; gene "Tmx1"; product "trtp1"; exon_number "8"; 
+HSSS1	.	CDS	28368	28519	.	-	0	gene_id "Tmx1"; transcript_id "trtp1"; db_xref "GeneID:72736%2CGenbank:NP_082615.1%2CMGI:MGI:1919986"; gene "Tmx1"; product "trtp1 precursor"; protein_id "NP_082615.1"; exon_number "1"; 
+HSSS1	.	CDS	25562	25677	.	-	1	gene_id "Tmx1"; transcript_id "trtp1"; db_xref "GeneID:72736%2CGenbank:NP_082615.1%2CMGI:MGI:1919986"; gene "Tmx1"; product "trtp1 precursor"; protein_id "NP_082615.1"; exon_number "2"; 
+HSSS1	.	CDS	25063	25108	.	-	2	gene_id "Tmx1"; transcript_id "trtp1"; db_xref "GeneID:72736%2CGenbank:NP_082615.1%2CMGI:MGI:1919986"; gene "Tmx1"; product "trtp1 precursor"; protein_id "NP_082615.1"; exon_number "3"; 
+HSSS1	.	CDS	22782	22910	.	-	1	gene_id "Tmx1"; transcript_id "trtp1"; db_xref "GeneID:72736%2CGenbank:NP_082615.1%2CMGI:MGI:1919986"; gene "Tmx1"; product "trtp1 precursor"; protein_id "NP_082615.1"; exon_number "4"; 
+HSSS1	.	CDS	21299	21344	.	-	1	gene_id "Tmx1"; transcript_id "trtp1"; db_xref "GeneID:72736%2CGenbank:NP_082615.1%2CMGI:MGI:1919986"; gene "Tmx1"; product "trtp1 precursor"; protein_id "NP_082615.1"; exon_number "5"; 
+HSSS1	.	CDS	21109	21210	.	-	0	gene_id "Tmx1"; transcript_id "trtp1"; db_xref "GeneID:72736%2CGenbank:NP_082615.1%2CMGI:MGI:1919986"; gene "Tmx1"; product "trtp1 precursor"; protein_id "NP_082615.1"; exon_number "6"; 
+HSSS1	.	CDS	17226	17292	.	-	0	gene_id "Tmx1"; transcript_id "trtp1"; db_xref "GeneID:72736%2CGenbank:NP_082615.1%2CMGI:MGI:1919986"; gene "Tmx1"; product "trtp1 precursor"; protein_id "NP_082615.1"; exon_number "7"; 
+HSSS1	.	CDS	15539	15714	.	-	2	gene_id "Tmx1"; transcript_id "trtp1"; db_xref "GeneID:72736%2CGenbank:NP_082615.1%2CMGI:MGI:1919986"; gene "Tmx1"; product "trtp1 precursor"; protein_id "NP_082615.1"; exon_number "8"; 
+HSSS1	.	start_codon	28517	28519	.	-	0	gene_id "Tmx1"; transcript_id "trtp1"; db_xref "GeneID:72736%2CGenbank:NP_082615.1%2CMGI:MGI:1919986"; gene "Tmx1"; product "trtp1 precursor"; protein_id "NP_082615.1"; exon_number "1"; 
+HSSS1	.	stop_codon	15536	15538	.	-	0	gene_id "Tmx1"; transcript_id "trtp1"; db_xref "GeneID:72736%2CGenbank:NP_082615.1%2CMGI:MGI:1919986"; gene "Tmx1"; product "trtp1 precursor"; protein_id "NP_082615.1"; exon_number "8"; 
+HSSS1	.	gene	2418312	2419167	.	-	.	gene_id "Hspe1-ps1"; Name "Hspe1-ps1"; db_xref "GeneID:100040681%2CMGI:MGI:1935161"; gene_synonym "10kDa"; pseudo ""; 
+###
