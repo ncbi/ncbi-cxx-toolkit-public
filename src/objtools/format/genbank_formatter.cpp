@@ -473,7 +473,10 @@ void CGenbankFormatter::FormatVersion
     } else {
         version_line << version.GetAccession();
         if ( version.GetGi() > ZERO_GI ) {
-            version_line << "  GI:" << version.GetGi();
+            const CFlatFileConfig& cfg = GetContext().GetConfig();
+            if (! cfg.HideGI()) {
+                version_line << "  GI:" << version.GetGi();
+            }
         }
         string version_line_str = CNcbiOstrstreamToString(version_line);
         if( version.GetContext()->Config().DoHTML() ) {
