@@ -90,6 +90,7 @@ public:
         eVcf                 = 32, ///< VCF, CVcfReader
         eUCSCRegion          = 33, ///< USCS Region file format
         eGffAugustus         = 34, ///< GFFish output of Augustus Gene Prediction
+        eJSON                = 35, ///< JSON 
         /// Max value of EFormat
         eFormat_max
     };
@@ -285,6 +286,8 @@ protected:
         EMode mode );
     bool TestFormatAugustus(
         EMode mode );
+    bool TestFormatJson(
+        EMode mode );
 
     bool IsInputRepeatMaskerWithoutHeader();
     bool IsInputRepeatMaskerWithHeader();
@@ -326,6 +329,11 @@ private:
     // to test for a table we check each of the most common delimiter combitions,
     // ' ' ' \t' '\t' ',' '|'
     bool x_TestTableDelimiter(const string& delims);
+
+    // strips JSON strings from input and copies remainder to output
+    bool x_StripJsonStrings(const string& input, string& output) const;
+
+    bool x_IsJsonNumericChar(const char& c) const;
 
     // data:
     static const char* const sm_FormatNames[eFormat_max];

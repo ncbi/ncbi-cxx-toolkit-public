@@ -189,6 +189,7 @@ int CFormatGuess::s_CheckOrder[] =
     eTable,
     eBinaryASN,
     eUCSCRegion,
+    eJSON
 };
 
 
@@ -231,7 +232,8 @@ const char* const CFormatGuess::sm_FormatNames[CFormatGuess::eFormat_max] =
     "BAM",
     "VCF",
     "UCSC Region",
-    "GFF Augustus"
+    "GFF Augustus",
+    "JSON"
 };
 
 const char*
@@ -509,6 +511,8 @@ bool CFormatGuess::x_TestFormat(EFormat format, EMode mode)
         return false;
     case eGffAugustus:
         return TestFormatAugustus( mode );
+    case eJSON:
+        return TestFormatJson( mode );
     default:
         NCBI_THROW( CCoreException, eInvalidArg,
             "CFormatGuess::x_TestFormat(): Unsupported format ID (" +
@@ -1755,6 +1759,168 @@ bool CFormatGuess::TestFormatVcf(
     }
     return false;
 }
+
+
+//  ----------------------------------------------------------------------------
+bool CFormatGuess::x_StripJsonStrings(const string& input, string& output) const
+//  ----------------------------------------------------------------------------
+{
+    bool string_found = false;
+    const string& double_quotes = "\"";
+
+    size_t pos=0;
+    size_t from_pos=0;
+    list<size_t> indices;
+    // Find all string start and stop positions
+    while (true) {
+        pos = input.find(double_quotes, from_pos);
+        if (pos == string::npos) {
+            break;
+        }
+        string_found = true;
+        from_pos = pos+1;
+
+        if (pos == 0 || input[pos-1] != '\\') {
+            indices.push_back(pos);
+        }
+    }
+
+    if (!string_found) {
+        return false;
+    }
+
+    // Iterate over string start and stop sites
+    // Remove strings from input and copy to output
+    list<size_t>::iterator it = indices.begin();
+    size_t remainder_start = 0;
+
+    while (it != indices.end()) {
+        size_t string_start = *it++;
+        if (string_start != remainder_start) {
+            output += input.substr(remainder_start, string_start-remainder_start);
+        }
+        // No stop double quotes
+        if (it == indices.end()) {
+            break;
+        } 
+
+        size_t string_stop = *it++;
+        remainder_start = string_stop+1;
+        // Reached the final stop
+        // Anything after this is not in a JSON string
+        if (it == indices.end()) {
+            output += input.substr(remainder_start);
+        }
+    }
+
+    return true;
+}
+
+// structure used to check JSON punction
+struct SCheckJsonPunctuation
+{
+    static bool has_left_brace;
+    static bool has_parentheses;
+
+    bool HasParentheses(void) const {
+        return has_parentheses;
+    }
+
+    void Reset(void) {
+        has_parentheses = false;
+    }
+
+    bool operator()(const char& c);
+};
+
+bool SCheckJsonPunctuation::has_parentheses = false;
+
+bool SCheckJsonPunctuation::operator()(const char& c)
+{
+    if ( c == '{' || c == '}' ||  
+         c == '[' || c == ']' ||
+         c == ':' || c == ',' ){
+        return true;
+    }
+
+    if ( c == '(' || c == ')' ) {
+        has_parentheses = true;
+    }
+
+    return false;
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CFormatGuess::x_IsJsonNumericChar(const char& c) const {
+//  ----------------------------------------------------------------------------
+
+    if ( isdigit(c) || c == '.' ||
+         c == 'E' || c == 'e' ||
+         c == '+' || c == '-' ) {
+        return true;
+    }
+    return false;
+}
+
+
+
+//  ----------------------------------------------------------------------------
+bool CFormatGuess::TestFormatJson(
+        EMode)
+//  ----------------------------------------------------------------------------
+{
+    // Convert the test-buffer character array to a string
+    string testString(m_pTestBuffer, m_iTestDataSize);
+
+    // Strip white spaces from testString
+    testString.erase(remove_if(testString.begin(), testString.end(), 
+                               [](char c) { return isspace(c); } ), 
+                     testString.end());
+
+    // testString should begin with a left brace. 
+    if (testString[0] != '{') {
+        return false;
+    }
+
+    // Strip Json strings
+    string stringless = "";
+    x_StripJsonStrings(testString, stringless);
+    testString = stringless;
+
+
+    // Check punctuation and strip from testString
+    // If parentheses are encountered
+    // return false.
+    SCheckJsonPunctuation punctuationChecker;
+    testString.erase(remove_if(testString.begin(), testString.end(),
+                               punctuationChecker ), 
+                     testString.end());
+           
+    if ( punctuationChecker.HasParentheses()) {
+        return false;
+    }
+
+    // Strip any occurances of true, false, null;
+    vector<string> other = {"true", "false", "null"};
+    for (string special : other) {
+        const auto len = special.size();
+        for (auto start_pos = testString.find(special);
+             start_pos != string::npos;
+             start_pos = testString.find(special)) {
+            testString.erase(start_pos, len);
+        }
+    }
+    
+    for (const auto c : testString) {
+        if (!x_IsJsonNumericChar(c)) {
+            return false;
+        }
+    } 
+
+    return true;
+}
+
 
 //  ----------------------------------------------------------------------------
 bool CFormatGuess::IsInputRepeatMaskerWithHeader()
