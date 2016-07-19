@@ -157,6 +157,11 @@ GO
 
 
 
+ALTER TABLE Objects
+ADD ttl BIGINT DEFAULT NULL;
+GO
+
+
 
 ALTER PROCEDURE GetObjectFixedAttributes
     @object_key         VARCHAR(289),
@@ -235,11 +240,6 @@ BEGIN
         RETURN 1;
     END CATCH
 END
-GO
-
-
-ALTER TABLE Objects
-ADD ttl BIGINT DEFAULT NULL;
 GO
 
 
