@@ -786,7 +786,6 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
                                    info->type == fSERV_Ncbid)) {
         /* Auxiliary HTTP connector first */
         EIO_Status temp = eIO_Success;
-        int/*bool*/ secure = 0;
         CONNECTOR c;
         CONN conn;
 
