@@ -48,4 +48,14 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "Invalid memory access in libgnutls"
+	type = {invalid_memory_access}
+	stacks = {
+		allocation = {
+			...;
+			func=gnutls_pkcs12_export2;
+		}
+	}
+}
 
