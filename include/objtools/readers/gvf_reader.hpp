@@ -190,10 +190,6 @@ protected:
         const CGvfReadRecord&,
         CRef<CVariation_ref> );
 
-//    bool xVariationSetEversions(
-//        const CGvfReadRecord&,
-//        CRef<CVariation_ref> );
-
     bool xVariationSetCommon(
         const CGvfReadRecord&,
         CRef<CVariation_ref> );
@@ -220,6 +216,10 @@ protected:
 
     virtual CGff2Record* x_CreateRecord() { return new CGvfReadRecord(m_uLineNumber); };   
 
+    bool x_IsDbvarCall(const string& nameAttr) const;
+
+    bool x_GetNameAttribute(const CGvfReadRecord& record, string& name) const;
+    
 protected:
     CRef< CAnnotdesc > m_Pragmas;
  

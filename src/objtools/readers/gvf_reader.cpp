@@ -340,7 +340,6 @@ bool CGvfReader::x_FeatureSetLocation(
 }
 
 
-
 //  ----------------------------------------------------------------------------
 bool CGvfReader::x_SetLocation(
         const CGff2Record& record, 
@@ -740,6 +739,25 @@ pErr->Throw();
 }
 
 //  ----------------------------------------------------------------------------
+bool CGvfReader::x_IsDbvarCall(const string& nameAttr) const
+//  ----------------------------------------------------------------------------
+{
+    return (nameAttr.find("ssv") != string::npos);
+}
+
+//  ----------------------------------------------------------------------------
+bool CGvfReader::x_GetNameAttribute(const CGvfReadRecord& record, string& name) const
+//  ----------------------------------------------------------------------------
+{
+    if ( record.GetAttribute( "Name", name ) ) {
+        return true;
+    }
+
+    return false;
+}
+
+
+//  ----------------------------------------------------------------------------
 bool CGvfReader::x_FeatureSetVariation(
     const CGvfReadRecord& record,
     CRef< CSeq_feat > pFeature )
@@ -748,6 +766,9 @@ bool CGvfReader::x_FeatureSetVariation(
     CRef<CVariation_ref> pVariation(new CVariation_ref);
     string strType = record.Type();
     NStr::ToLower( strType );
+
+    string nameAttr;
+    x_GetNameAttribute(record, nameAttr);
 
     if ( strType == "snv" ) {
         if (!xVariationMakeSNV( record, pVariation )) {
@@ -770,7 +791,8 @@ bool CGvfReader::x_FeatureSetVariation(
              strType == "line1_deletion" ||
              strType == "sva_deletion" || 
              strType == "herv_deletion" ||
-             strType == "mobile_element_deletion") {
+             (strType == "mobile_element_deletion" && 
+              x_IsDbvarCall(nameAttr))) {
         if (!xVariationMakeDeletions( record, pVariation )) {
             return false;
         }
@@ -920,18 +942,26 @@ bool CGvfReader::xVariationMakeCNV(
         return false;
     }
 
+    string nameAttr;
+    x_GetNameAttribute(record, nameAttr);
+
+
     string strType = record.Type();
     NStr::ToLower( strType );
-    if ( strType == "cnv" || strType == "copy_number_variation" ) {
+    if ( strType == "cnv" || 
+        strType == "copy_number_variation" ) {
         pVariation->SetCNV();
         return true;
     }
-    if ( strType == "gain" || strType == "copy_number_gain" ||
+    if ( strType == "gain" || 
+         strType == "copy_number_gain" ||
          strType == "duplication" ) {
         pVariation->SetGain();
         return true;
     }
-    if ( strType == "loss" || strType == "copy_number_loss" ) {
+    if ( strType == "loss" || 
+         strType == "copy_number_loss" ||
+         (strType == "mobile_element_deletion" && !x_IsDbvarCall(nameAttr)) ) {
         pVariation->SetLoss();
         return pVariation;
     }
@@ -943,8 +973,9 @@ bool CGvfReader::xVariationMakeCNV(
         pVariation->SetConsequence().push_back( pConsequence );
         return true;
     }
-    if ( strType == "complex"  || strType == "complex_substitution"  ||
-        strType == "complex_sequence_alteration" ) {
+    if ( strType == "complex"  || 
+         strType == "complex_substitution"  ||
+         strType == "complex_sequence_alteration" ) {
         pVariation->SetComplex();
         return true;
     }
@@ -952,8 +983,9 @@ bool CGvfReader::xVariationMakeCNV(
         //pVariation->SetInversion( feature.GetLocation() );
         return false;
     }
-    if ( strType == "unknown" || strType == "other" || 
-        strType == "sequence_alteration" ) {
+    if ( strType == "unknown" || 
+         strType == "other" || 
+         strType == "sequence_alteration" ) {
         pVariation->SetUnknown();
         return true;
     }
@@ -1108,23 +1140,6 @@ bool CGvfReader::xVariationMakeInsertions(
     CRef<CVariation_ref> pVariation )
 //  ----------------------------------------------------------------------------
 {
-/*
-    pVariation->SetData().SetSet().SetType( 
-        CVariation_ref::C_Data::C_Set::eData_set_type_package );
-
-    if ( ! xVariationSetId( record, pVariation ) ) {
-        return false;
-    }
-    if ( ! xVariationSetParent( record, pVariation ) ) {
-        return false;
-    }
-    if ( ! xVariationSetName( record, pVariation ) ) {
-        return false;
-    }
-    if ( ! xVariationSetProperties( record, pVariation ) ) {
-        return false;
-    }
-*/
 
     if ( ! xVariationSetCommon( record, pVariation ) ) {
         return false;
@@ -1142,23 +1157,6 @@ bool CGvfReader::xVariationMakeDeletions(
     CRef<CVariation_ref> pVariation )
 //  ----------------------------------------------------------------------------
 {
-/*
-    pVariation->SetData().SetSet().SetType( 
-        CVariation_ref::C_Data::C_Set::eData_set_type_package );
-
-    if ( ! xVariationSetId( record, pVariation ) ) {
-        return false;
-    }
-    if ( ! xVariationSetParent( record, pVariation ) ) {
-        return false;
-    }
-    if ( ! xVariationSetName( record, pVariation ) ) {
-        return false;
-    }
-    if ( ! xVariationSetProperties( record, pVariation ) ) {
-        return false;
-    }
-*/
     if ( ! xVariationSetCommon( record, pVariation ) ) {
         return false;
     }
@@ -1196,6 +1194,7 @@ bool CGvfReader::xVariationSetParent(
     }
     return true;
 }
+
 
 //  ---------------------------------------------------------------------------
 bool CGvfReader::xVariationSetName(
