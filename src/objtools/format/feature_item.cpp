@@ -2324,11 +2324,14 @@ void CFeatureItem::x_AddQualProteinId(
 
             case CSeq_id::e_Gi:
                 if( seqid.GetGi() > ZERO_GI ) {
-                    if ( eLastRegularChoice == CSeq_id::e_not_set ) {
-                        // use as protein_id if it's the first usable one
-                        x_AddQual( eFQ_protein_id, new CFlatSeqIdQVal( seqid ) );
+                    const CFlatFileConfig& cfg = GetContext()->Config();
+                    if (! cfg.HideGI()) {
+                        if ( eLastRegularChoice == CSeq_id::e_not_set ) {
+                            // use as protein_id if it's the first usable one
+                            x_AddQual( eFQ_protein_id, new CFlatSeqIdQVal( seqid ) );
+                        }
+                        x_AddQual( eFQ_db_xref, new CFlatSeqIdQVal( seqid, true ) );
                     }
-                    x_AddQual( eFQ_db_xref, new CFlatSeqIdQVal( seqid, true ) );
                 }
                 break;
 
@@ -2590,10 +2593,13 @@ void CFeatureItem::x_AddProductIdQuals(
     x_AddQual(slot, new CFlatSeqIdQVal(*best.GetSeqId()));
 
     if( m_Feat.GetData().IsCdregion() || ! GetContext()->IsProt() ) {
+        const CFlatFileConfig& cfg = GetContext()->Config();
         ITERATE( CBioseq_Handle::TId, id_iter, ids ) {
             if( id_iter->IsGi() ) {
-                x_AddQual( eFQ_db_xref,
-                    new CFlatStringQVal("GI:" + NStr::NumericToString(id_iter->GetGi()) ));
+                if (! cfg.HideGI()) {
+                    x_AddQual( eFQ_db_xref,
+                        new CFlatStringQVal("GI:" + NStr::NumericToString(id_iter->GetGi()) ));
+                }
             }
         }
     }
