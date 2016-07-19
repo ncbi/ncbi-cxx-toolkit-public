@@ -849,14 +849,19 @@ static const string kMoltypeMismatch = "[n] sequence[s] [has] rRNA or misc_RNA f
 
 DISCREPANCY_CASE(FEATURE_MOLTYPE_MISMATCH, CSeq_inst, eOncaller, "Sequences with rRNA or misc_RNA features should be genomic DNA")
 {
-    if (!obj.IsSetMol() || obj.GetMol() != CSeq_inst::eMol_dna) {
-        return;
+    CBioseq_Handle bioseq_h = context.GetScope().GetBioseqHandle(*context.GetCurrentBioseq());
+
+    bool is_genomic = false;
+    const CMolInfo* molinfo = context.GetCurrentMolInfo();
+    if (molinfo && molinfo->IsSetBiomol() && molinfo->GetBiomol() == CMolInfo::eBiomol_genomic) {
+        is_genomic = true;
+    }
+    bool is_dna = false;
+    if (obj.IsSetMol() && obj.GetMol() == CSeq_inst::eMol_dna) {
+        is_dna = true;
     }
 
-    CBioseq_Handle bioseq_h = context.GetScope().GetBioseqHandle(*context.GetCurrentBioseq());
-    CSeqdesc_CI mi(bioseq_h, CSeqdesc::e_Molinfo);
-
-    if (mi && mi->GetMolinfo().IsSetBiomol() && mi->GetMolinfo().GetBiomol() != CMolInfo::eBiomol_genomic) {
+    if (!is_genomic || !is_dna) {
 
         const CSeq_annot* annot = nullptr;
         CConstRef<CBioseq> bioseq = context.GetCurrentBioseq();
