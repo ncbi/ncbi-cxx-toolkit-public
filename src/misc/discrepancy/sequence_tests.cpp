@@ -1179,6 +1179,10 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_DBLINK)
     bool all_present = true;
     bool all_same = true;
     AnalyzeFieldReport(m_Objs[kDBLinkCollect], all_present, all_same);
+    if (all_present && all_same) {
+        m_Objs.clear();
+        return;
+    }
     string top_label = "DBLink Report " + GetSummaryLabel(all_present, all_same);
 
     CReportNode::TNodeMap::iterator it = m_Objs.GetMap().begin();
