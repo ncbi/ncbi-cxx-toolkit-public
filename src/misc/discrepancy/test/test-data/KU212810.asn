@@ -1,0 +1,623 @@
+Seq-entry ::= set {
+  class genbank ,
+  seq-set {
+    seq {
+      id {
+        local
+          str "HvHMA3-8" ,
+        general {
+          db "BankIt" ,
+          tag
+            str "1874847/HvHMA3-8" } ,
+        general {
+          db "TMSMART" ,
+          tag
+            id 60008282 } ,
+        genbank {
+          accession "KU212810" } } ,
+      descr {
+        title "Hordeum vulgare subsp. vulgare clone HvHMA3-8 HMA3 mRNA,
+ complete sequence." ,
+        source {
+          genome genomic ,
+          org {
+            taxname "Hordeum vulgare subsp. vulgare" ,
+            common "domesticated barley" ,
+            db {
+              {
+                db "taxon" ,
+                tag
+                  id 112509 } } ,
+            orgname {
+              name
+                binomial {
+                  genus "Hordeum" ,
+                  species "vulgare" ,
+                  subspecies "vulgare" } ,
+              mod {
+                {
+                  subtype cultivar ,
+                  subname "Harrington" } ,
+                {
+                  subtype sub-species ,
+                  subname "vulgare" } } ,
+              lineage "Eukaryota; Viridiplantae; Streptophyta; Embryophyta;
+ Tracheophyta; Spermatophyta; Magnoliophyta; Liliopsida; Poales; Poaceae; BOP
+ clade; Pooideae; Triticodae; Triticeae; Hordeinae; Hordeum" ,
+              gcode 1 ,
+              mgcode 1 ,
+              div "PLN" ,
+              pgcode 11 } } ,
+          subtype {
+            {
+              subtype clone ,
+              name "HvHMA3-8" } ,
+            {
+              subtype dev-stage ,
+              name "seedling" } } } ,
+        molinfo {
+          biomol mRNA } ,
+        pub {
+          pub {
+            gen {
+              cit "Unpublished" ,
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Harris" ,
+                          first "Neil" ,
+                          initials "N.S." } } ,
+                    {
+                      name
+                        name {
+                          last "Taylor" ,
+                          first "Gregory" ,
+                          initials "G.J." } } } } ,
+              title "Hordeum vulgare subsp. vulgare P1B-ATPase 3 (HMA3) splice
+ variants" } } } ,
+        pub {
+          pub {
+            sub {
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Harris" ,
+                          first "Neil" ,
+                          initials "N.S." } } ,
+                    {
+                      name
+                        name {
+                          last "Taylor" ,
+                          first "Gregory" ,
+                          initials "G.J." } } } ,
+                affil
+                  std {
+                    affil "University of Alberta" ,
+                    div "Department of Biological Sciences" ,
+                    city "Edmonton" ,
+                    sub "Alberta" ,
+                    country "Canada" ,
+                    street "CW-405 Biological Sciences Building" ,
+                    postal-code "T6G 2E9" } } ,
+              medium email ,
+              date
+                std {
+                  year 2015 ,
+                  month 11 ,
+                  day 30 } } } } ,
+        user {
+          class "SMART_V1.0" ,
+          type
+            id 1 ,
+          data {
+            {
+              label
+                id 1 ,
+              num 1 ,
+              data
+                int 10041845 } } } ,
+        user {
+          type
+            str "Submission" ,
+          data {
+            {
+              label
+                str "AdditionalComment" ,
+              data
+                str "LocalID:HvHMA3-8" } } } ,
+        user {
+          type
+            str "Submission" ,
+          data {
+            {
+              label
+                str "SmartComment" ,
+              data
+                str "TOTAL # OF SEQS:4" } } } ,
+        user {
+          type
+            str "OriginalID" ,
+          data {
+            {
+              label
+                str "LocalId" ,
+              data
+                str "HvHMA3-8" } } } ,
+        user {
+          type
+            str "NcbiAutofix" ,
+          data {
+             } } ,
+        user {
+          class "1.0" ,
+          type
+            str "AutodefOptions" ,
+          data {
+            {
+              label
+                str "SpecifyNuclearProduct" ,
+              data
+                bool TRUE } ,
+            {
+              label
+                str "MiscFeatRule" ,
+              data
+                str "NoncodingProductFeat" } ,
+            {
+              label
+                str "FeatureListType" ,
+              data
+                str "List All Features" } ,
+            {
+              label
+                str "SuppressFeatureAltSplice" ,
+              data
+                bool TRUE } ,
+            {
+              label
+                str "KeepNoncodingProductFeat" ,
+              data
+                bool TRUE } ,
+            {
+              label
+                str "ModifierList" ,
+              data
+                fields {
+                  {
+                    label
+                      str "SubSources" ,
+                    num 1 ,
+                    data
+                      strs {
+                        "Clone" } } } } ,
+            {
+              label
+                str "HIVRule" ,
+              data
+                str "WantBoth" } ,
+            {
+              label
+                str "DoNotApplyToSp" ,
+              data
+                bool TRUE } ,
+            {
+              label
+                str "LeaveParenthetical" ,
+              data
+                bool TRUE } ,
+            {
+              label
+                str "MaxMods" ,
+              data
+                int -99 } ,
+            {
+              label
+                str "UseLabels" ,
+              data
+                bool TRUE } } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 2 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 17 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2016 } } } ,
+        update-date
+          std {
+            year 2016 ,
+            month 2 ,
+            day 17 } } ,
+      inst {
+        repr raw ,
+        mol rna ,
+        length 2635 ,
+        strand ss ,
+        seq-data
+          ncbi2na 'E73775FE5FEFFF9EF6D65A6DD68D8E1A92698B6C5699D8A625F7B58609A
+69B698A282EA2086C5E86E7A9BB9E769A2B6676D89B79E996761A6E2A6BB5B6DB55D5916DBAD89
+1855D65B764B56CFAD781AA6A5E825DAE625C69249AAD36963A5495B136D979A6575D764D75F4A
+E9D79755E4BA7A57AA9A5E65A675563AF758ABD96594929D99E84D04F74E7CD9EFB6B96D99D0A1
+C468A4A6D36DF5DF451E48BA76215E97914294996A3B6DBE38938D5960A4B5D9621A98AFB43B19
+84D8EDA65B4D9AD224AA23AE5AE869BAFB61A922E2B6180A25D1698B6C56B9509059ED62B7A969
+19D07E86BC4D96E2842E5765881D46BA508E88A7AE8229924890B508649A78D8F5E650B1C46565
+BAEFDDA24AAE91E79659EBAA99986689AEBD29E99EB9E7AE266E56E667AE7B6196B661BDE6675E
+1A698A3AA75DB82A2A86D762D9EA6234296E9BD84216914D148AA2F45B613FD86EB68442BD2389
+49F7F1E8DD09362240D494543A69E67AE8B1992D80D4D896015839B678BD64D7D5A62A4DCE988D
+86A099371B6A0422ADFA42A4D75ED212F52020E0EB780A6DD8DA71B8DE61AA176DAAEF76775861
+E5A1699A58263D889E9B53A9349D2E79D1AA8499A29A5B9199289A7A8A25FA289D47589DF568A1
+0AD69EB8B9AE0A62AFA5610E3ADA61A4E06195699E98E9A1BA9B753A9375A7696694E885253986
+74EDC984D74AB558A5B4A769299959687365B013AED76BA5942B65B5D99D99D97A656B9EEA49AE
+76586EA86E5E76DB9D04939E79EAA2AA9A196680A28A6E599469CAD9E88E20ADD076596FD16867
+947009BE8086A69864D80A794FBE51097342D57891DAFB4D06C6AC86241B82A58686613B1969C0
+0ED8AD1687ED865D6C3979F4D89E6EDA8A28E79D5B80012B2813B242AC9B90A22F0FE4022ED10F
+6ADB3D10BE8'H } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  gene {
+                    locus "HMA3" } ,
+                location
+                  int {
+                    from 0 ,
+                    to 2634 ,
+                    strand plus ,
+                    id
+                      genbank {
+                        accession "KU212810" } } } ,
+              {
+                data
+                  imp {
+                    key "misc_feature" } ,
+                comment "nonfunctional cadmium/zinc-transporting P1B-ATPase 3
+ isoform HMA3.3; HvHMA3.3; alternatively spliced; alternative splice acceptor
+ site for intron 1 which results in a frameshift and premature termination
+ codon; distal splice acceptor site for intron 5" ,
+                location
+                  int {
+                    from 57 ,
+                    to 824 ,
+                    strand plus ,
+                    id
+                      genbank {
+                        accession "KU212810" } } } } } } } ,
+    seq {
+      id {
+        local
+          str "HvHMA3-1" ,
+        general {
+          db "BankIt" ,
+          tag
+            str "1874847/HvHMA3-1" } ,
+        general {
+          db "TMSMART" ,
+          tag
+            id 60008283 } ,
+        genbank {
+          accession "KU212811" } } ,
+      descr {
+        title "Hordeum vulgare subsp. vulgare clone HvHMA3-1 HMA3 mRNA,
+ complete sequence." ,
+        source {
+          genome genomic ,
+          org {
+            taxname "Hordeum vulgare subsp. vulgare" ,
+            common "domesticated barley" ,
+            db {
+              {
+                db "taxon" ,
+                tag
+                  id 112509 } } ,
+            orgname {
+              name
+                binomial {
+                  genus "Hordeum" ,
+                  species "vulgare" ,
+                  subspecies "vulgare" } ,
+              mod {
+                {
+                  subtype cultivar ,
+                  subname "Harrington" } ,
+                {
+                  subtype sub-species ,
+                  subname "vulgare" } } ,
+              lineage "Eukaryota; Viridiplantae; Streptophyta; Embryophyta;
+ Tracheophyta; Spermatophyta; Magnoliophyta; Liliopsida; Poales; Poaceae; BOP
+ clade; Pooideae; Triticodae; Triticeae; Hordeinae; Hordeum" ,
+              gcode 1 ,
+              mgcode 1 ,
+              div "PLN" ,
+              pgcode 11 } } ,
+          subtype {
+            {
+              subtype clone ,
+              name "HvHMA3-1" } ,
+            {
+              subtype dev-stage ,
+              name "seedling" } } } ,
+        molinfo {
+          biomol mRNA } ,
+        pub {
+          pub {
+            gen {
+              cit "Unpublished" ,
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Harris" ,
+                          first "Neil" ,
+                          initials "N.S." } } ,
+                    {
+                      name
+                        name {
+                          last "Taylor" ,
+                          first "Gregory" ,
+                          initials "G.J." } } } } ,
+              title "Hordeum vulgare subsp. vulgare P1B-ATPase 3 (HMA3) splice
+ variants" } } } ,
+        pub {
+          pub {
+            sub {
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Harris" ,
+                          first "Neil" ,
+                          initials "N.S." } } ,
+                    {
+                      name
+                        name {
+                          last "Taylor" ,
+                          first "Gregory" ,
+                          initials "G.J." } } } ,
+                affil
+                  std {
+                    affil "University of Alberta" ,
+                    div "Department of Biological Sciences" ,
+                    city "Edmonton" ,
+                    sub "Alberta" ,
+                    country "Canada" ,
+                    street "CW-405 Biological Sciences Building" ,
+                    postal-code "T6G 2E9" } } ,
+              medium email ,
+              date
+                std {
+                  year 2015 ,
+                  month 11 ,
+                  day 30 } } } } ,
+        user {
+          class "SMART_V1.0" ,
+          type
+            id 1 ,
+          data {
+            {
+              label
+                id 1 ,
+              num 1 ,
+              data
+                int 10041846 } } } ,
+        user {
+          type
+            str "Submission" ,
+          data {
+            {
+              label
+                str "AdditionalComment" ,
+              data
+                str "LocalID:HvHMA3-1" } } } ,
+        user {
+          type
+            str "Submission" ,
+          data {
+            {
+              label
+                str "SmartComment" ,
+              data
+                str "TOTAL # OF SEQS:4" } } } ,
+        user {
+          type
+            str "OriginalID" ,
+          data {
+            {
+              label
+                str "LocalId" ,
+              data
+                str "HvHMA3-1" } } } ,
+        user {
+          type
+            str "NcbiAutofix" ,
+          data {
+             } } ,
+        user {
+          class "1.0" ,
+          type
+            str "AutodefOptions" ,
+          data {
+            {
+              label
+                str "SpecifyNuclearProduct" ,
+              data
+                bool TRUE } ,
+            {
+              label
+                str "MiscFeatRule" ,
+              data
+                str "NoncodingProductFeat" } ,
+            {
+              label
+                str "FeatureListType" ,
+              data
+                str "List All Features" } ,
+            {
+              label
+                str "SuppressFeatureAltSplice" ,
+              data
+                bool TRUE } ,
+            {
+              label
+                str "KeepNoncodingProductFeat" ,
+              data
+                bool TRUE } ,
+            {
+              label
+                str "ModifierList" ,
+              data
+                fields {
+                  {
+                    label
+                      str "SubSources" ,
+                    num 1 ,
+                    data
+                      strs {
+                        "Clone" } } } } ,
+            {
+              label
+                str "HIVRule" ,
+              data
+                str "WantBoth" } ,
+            {
+              label
+                str "DoNotApplyToSp" ,
+              data
+                bool TRUE } ,
+            {
+              label
+                str "LeaveParenthetical" ,
+              data
+                bool TRUE } ,
+            {
+              label
+                str "MaxMods" ,
+              data
+                int -99 } ,
+            {
+              label
+                str "UseLabels" ,
+              data
+                bool TRUE } } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 2 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 17 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2016 } } } ,
+        update-date
+          std {
+            year 2016 ,
+            month 2 ,
+            day 17 } } ,
+      inst {
+        repr raw ,
+        mol rna ,
+        length 2638 ,
+        strand ss ,
+        seq-data
+          ncbi2na 'E73775FE5FEFFF9EF6D65A6DD68D8E1A92698B6C5699D8A625F7B58609A
+69B698A282EA2086C5E86E7A9BB9E769A2B6676D89B79E996761A6E2A6BB5B6DB55D5916DBAD89
+1855D65B764B56CFAD781AA6A5E825DAE625C69249AAD36963A5495B136D979A6575D764D75F4A
+E9D79755E4BA7A57AA9A5E65A675563AF758ABD96594929D99E84D04F74E7CD9EFB6B96D99D0A1
+C468A4A6D36DF5DF451E48BA76215E97914294996A3B6DBE38938D5960A4B5D9621A98AFB43B19
+84D8EDA65B4D9AD224AA23AE5AE869BAFB61A922E2B6180A25D1698B6C56B9509059ED62B7A969
+19D07E86BC4D96E2842E5765881D46BA508E88A7AE8229924890B508649A78D8F5E650B1C46565
+BAEFDDA24AAE91E79659EBAA99986689AEBD29E99EB9E7AE266E56E667AE7B6196B6613DE6675E
+1A698A3AA75DB82A2A86D762D9EA6234296E9BD84216914D148AA2F45B613FD86EB68442BD2389
+49F7F1E8DD09362240D494543A69E67AE8B1992D80D4D896015839B678BD64D7D5A62A4DCE988D
+86A099371B6A0422ADFA42A4D75ED2124BD4808383ADE029B76369C6E37986A85DB6ABBDD9DD61
+879685A6696098F6227A6D4EA4D274B9E746AA12668A696E4664A269EA2897E8A2751D6277D5A2
+842B5A7AE2E6B8298ABE958438EB698693818655A67A63A686EA6DD4EA4DD69DA59A53A21494E6
+19D3B726135D2AD56296D29DA4A66565A1CD96C04EBB5DAE9650AD96D766766765E995AE7BA926
+B9D961BAA1B979DB6E74124E79E7AA8AAA68659A028A29B96651A72B67A23882B741D965BF45A1
+9E51C026FA021A9A61936029E53EF94425CD0B55E2476BED341B1AB218906E0A961A1984EC65A7
+003B62B45A1FB61975B0E5E7D36279BB6A28A39E756E0004ACA04EC90AB26E4288BC3F9008BB44
+3DAB6CF442FA0'H } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  gene {
+                    locus "HMA3" } ,
+                location
+                  int {
+                    from 0 ,
+                    to 2637 ,
+                    strand plus ,
+                    id
+                      genbank {
+                        accession "KU212811" } } } ,
+              {
+                data
+                  imp {
+                    key "misc_feature" } ,
+                comment "nonfunctional cadmium/zinc-transporting P1B-ATPase 3
+ isoform HMA3.4; HvHMA3.4; alternatively spliced; alternative splice acceptor
+ site for intron 1 which results in a frameshift and premature termination
+ codon; proximal splice acceptor site for intron 5" ,
+                location
+                  int {
+                    from 57 ,
+                    to 824 ,
+                    strand plus ,
+                    id
+                      genbank {
+                        accession "KU212811" } } } } } } } } }

@@ -364,10 +364,10 @@ static string GetProductName(const CSeq_feat& cds, CScope& scope)
 
 
 static const char* kSimilarProductWords[] = { "transposase", "integrase" };
-static const int   kNumSimilarProductWords = sizeof (kSimilarProductWords) / sizeof (string);
+static const int   kNumSimilarProductWords = sizeof (kSimilarProductWords) / sizeof (char *);
 
 static const char* kIgnoreSimilarProductWords[] = { "hypothetical protein", "phage", "predicted protein" };
-static const int   kNumIgnoreSimilarProductWords = sizeof (kIgnoreSimilarProductWords) / sizeof (string);
+static const int   kNumIgnoreSimilarProductWords = sizeof (kIgnoreSimilarProductWords) / sizeof (char *);
 
 
 static bool ProductNamesAreSimilar(const string& product1, const string& product2)
@@ -984,6 +984,8 @@ DISCREPANCY_AUTOFIX(ORDERED_LOCATION)
 }
 
 
+const string kHasLocusTags = "has locus tags";
+
 DISCREPANCY_CASE(MISSING_LOCUS_TAGS, CSeqFeatData, eDisc | eSubmitter | eSmart, "Missing locus tags")
 {
     if (obj.Which() != CSeqFeatData::e_Gene) {
@@ -1000,12 +1002,19 @@ DISCREPANCY_CASE(MISSING_LOCUS_TAGS, CSeqFeatData, eDisc | eSubmitter | eSmart, 
     // Report missing or empty locus tags
     if (!gene_ref.CanGetLocus_tag() || NStr::TruncateSpaces(gene_ref.GetLocus_tag()).empty()) {
         m_Objs["[n] gene[s] [has] no locus tag[s]."].Add(*context.NewDiscObj(context.GetCurrentSeq_feat()));
+    } else if (!m_Objs.Exist(kHasLocusTags)) {
+        m_Objs[kHasLocusTags].Add(*context.NewDiscObj(context.GetCurrentSeq_feat()));
     }
 }
 
 
 DISCREPANCY_SUMMARIZE(MISSING_LOCUS_TAGS)
 {
+    if (!m_Objs.Exist(kHasLocusTags)) {
+        m_Objs.clear();
+        return;
+    }
+    m_Objs.GetMap().erase(kHasLocusTags);
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
