@@ -62,20 +62,23 @@ static void RecursiveText(ostream& out, const TReportItemList& list, bool ext)
 }
 
 
-static void RecursiveSummary(ostream& out, const TReportItemList& list, bool first)
+static void RecursiveSummary(ostream& out, const TReportItemList& list, size_t level = 0)
 {
     ITERATE (TReportItemList, it, list) {
-        if (first) {
+        if (!level) {
             out << (*it)->GetTitle() << ": " << (*it)->GetMsg() << "\n";
         }
         else if ((*it)->IsSummary()) {
-            out << "\t" << (*it)->GetMsg() << "\n";
+            for (size_t i = 0; i < level; i++) {
+                out << "\t" ;
+            }
+            out << (*it)->GetMsg() << "\n";
         }
         else {
             continue;
         }
         TReportItemList subs = (*it)->GetSubitems();
-        RecursiveSummary(out, subs, false);
+        RecursiveSummary(out, subs, level + 1);
     }
 }
 
@@ -88,7 +91,7 @@ void CDiscrepancyContext::OutputText(ostream& out, bool summary, bool ext)
     out << "Summary\n";
     ITERATE(TDiscrepancyCaseMap, tst, tests) {
         TReportItemList rep = tst->second->GetReport();
-        RecursiveSummary(out, rep, true);
+        RecursiveSummary(out, rep);
     }
     if (summary) return;
 

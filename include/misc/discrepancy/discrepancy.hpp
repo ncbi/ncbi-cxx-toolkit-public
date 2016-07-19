@@ -77,6 +77,7 @@ public:
     virtual bool CanAutofix(void) const = 0;
     virtual bool IsFatal(void) const = 0;
     virtual bool IsExtended(void) const = 0;
+    virtual bool IsSummary(void) const = 0;
     virtual bool IsReal(void) const = 0;
     virtual CRef<CAutofixReport> Autofix(objects::CScope&) const = 0;
 };
