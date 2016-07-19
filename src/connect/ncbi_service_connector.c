@@ -648,6 +648,8 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
         switch (info->type) {
         case fSERV_Ncbid:
             /* Connection directly to NCBID, add NCBID-specific tags */
+            if (info->mode & fSERV_Secure)
+                net_info->scheme = eURL_Https;
             if (net_info->stateless) {
                 /* Connection request with data */
                 user_header = "Connection-Mode: STATELESS\r\n"; /*default*/
@@ -702,8 +704,10 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
         EMIME_Type     mime_t;
         EMIME_SubType  mime_s;
         EMIME_Encoding mime_e;
+#ifdef NCBI_CXX_TOOLKIT
         if (!net_info->scheme)
             net_info->scheme = eURL_Https;
+#endif /*NCBI_CXX_TOOLKIT*/
         if (net_info->stateless
             ||  (info  &&  (info->u.firewall.type & fSERV_Http))) {
             if (info) {
@@ -782,6 +786,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
                                    info->type == fSERV_Ncbid)) {
         /* Auxiliary HTTP connector first */
         EIO_Status temp = eIO_Success;
+        int/*bool*/ secure = 0;
         CONNECTOR c;
         CONN conn;
 
@@ -790,8 +795,6 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
         uuu->port = 0;
         uuu->ticket = 0;
         net_info->max_try = 1;
-        if (info->type != fSERV_Ncbid)
-            net_info->scheme = eURL_Https;
         c = HTTP_CreateConnectorEx(net_info, fHTTP_Flushable,
                                    s_ParseHeaderNoUCB, uuu/*user_data*/,
                                    0/*adjust*/, 0/*cleanup*/);

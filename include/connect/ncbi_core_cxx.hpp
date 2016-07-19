@@ -90,13 +90,14 @@ extern NCBI_XCONNECT_EXPORT MT_LOCK MT_LOCK_cxx2c
  );
 
 
-/// CONNECT_Init flags:  which parameters to own.
+/// CONNECT_Init flags:  which parameters to own / initialize.
 /// @sa
 ///  CONNECT_Init
 enum EConnectInitFlag {
     eConnectInit_OwnNothing  = 0,  ///< Original ownership gets retained
     eConnectInit_OwnRegistry = 1,  ///< Registry ownership gets passed
-    eConnectInit_OwnLock     = 2   ///< Lock ownership gets passed
+    eConnectInit_OwnLock     = 2,  ///< Lock ownership gets passed
+    eConnectInit_NoSSL       = 4   ///< Do not init secure socket layer (SSL)
 };
 typedef unsigned int TConnectInitFlags;  ///< Bitwise OR of EConnectInitFlag
 

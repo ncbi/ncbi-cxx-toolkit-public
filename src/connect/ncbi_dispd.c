@@ -407,7 +407,9 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
         srand(g_NCBI_ConnectRandomSeed);
     }
 
+#ifdef NCBI_CXX_TOOLKIT
     data->net_info->scheme = eURL_Https;
+#endif /*NCBI_CXX_TOOLKIT*/
     data->net_info->req_method = eReqMethod_Get;
     if (iter->stateless)
         data->net_info->stateless = 1/*true*/;

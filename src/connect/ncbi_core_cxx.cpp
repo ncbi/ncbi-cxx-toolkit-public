@@ -468,7 +468,8 @@ extern void CONNECT_Init(IRWRegistry*      reg,
 {
     CFastMutexGuard guard(s_ConnectInitMutex);
     try {
-        s_Init(reg, 0/*ssl*/, lock, flag, eConnectInit_Explicit);
+        s_Init(reg, flag & eConnectInit_NoSSL ? 0 : NcbiSetupGnuTls,
+               lock, flag, eConnectInit_Explicit);
     }
     NCBI_CATCH_ALL_X(8, "CONNECT_Init() failed");
 }
