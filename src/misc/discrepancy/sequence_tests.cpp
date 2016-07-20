@@ -629,7 +629,8 @@ DISCREPANCY_CASE(FEATURE_COUNT, CSeq_feat_BY_BIOSEQ, eOncaller | eSubmitter | eS
     if (obj.GetData().GetSubtype() == CSeqFeatData::eSubtype_prot) {
         return;
     }
-    string key = obj.GetData().IsGene() ? "gene" : obj.GetData().GetKey();
+
+    string key = obj.GetData().IsGene() ? "gene" : obj.GetData().GetKey(CSeqFeatData::eVocabulary_genbank);
     m_Objs[kFeatureCountTop][key].Add(*(context.NewDiscObj(CConstRef<CSeq_feat>(&obj))), false);
     m_Objs[kFeatureCountTotal][key].Add(*(context.NewDiscObj(CConstRef<CSeq_feat>(&obj))), false);
 }
