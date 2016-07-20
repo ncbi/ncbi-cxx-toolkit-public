@@ -391,8 +391,8 @@ bool CGff3Reader::xUpdateAnnotCds(
         }
 
         //generate applicable CDS ID:
-        string siblingId;
-        if (!record.GetAttribute("ID", siblingId)) {
+        string siblingId("cds");
+        if (!record.GetAttribute("ID", siblingId)  ||  IsInGenbankMode()) {
             siblingId = string("cds:") + parentId;
         }
         impliedCdsFeats[siblingId] = parentId;
