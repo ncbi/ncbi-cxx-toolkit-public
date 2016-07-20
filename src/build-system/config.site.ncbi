@@ -48,7 +48,7 @@ try_local() {
         test -f "$d/include/GL/glew.h"     &&  : ${GLEW_PATH=$d}
         test -d "$d/include/gmock"         &&  : ${GMOCK_PATH=$d}
         test -f "$d/include/gmp.h"         &&  : ${GMP_PATH=$d}
-        test -x "$d/lib/pkgconfig/gnutls.pc"  &&  : ${GNUTLS_PATH=$d}
+        test -f "$d/include/gnutls/gnutls.h"  &&  : ${GNUTLS_PATH=$d}
         test -f "$d/include/stdsoap2.h"    &&  : ${GSOAP_PATH=$d}
         test -f "$d/include/hdf5.h"        &&  : ${HDF5_PATH=$d}
         test -x "$d/bin/icu-config"        &&  : ${ICU_PATH=$d}
