@@ -2111,5 +2111,32 @@ DISCREPANCY_AUTOFIX(SHORT_CONTIG)
 }
 
 
+// TECHNIQUE_NOT_TSA
+
+const string kTechNotTSA = "[n] technique [is] not set as TSA";
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(TECHNIQUE_NOT_TSA, CSeq_inst, eDisc, "Technique not set as TSA")
+//  ----------------------------------------------------------------------------
+{
+    if (obj.IsNa()) {
+
+        const CMolInfo* molinfo = context.GetCurrentMolInfo();
+
+        if (molinfo && (!molinfo->IsSetTech() || molinfo->GetTech() != CMolInfo::eTech_tsa)) {
+            m_Objs[kTechNotTSA].Add(*context.NewDiscObj(context.GetCurrentBioseq()), false);
+        }
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(TECHNIQUE_NOT_TSA)
+//  ----------------------------------------------------------------------------
+{
+    m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
+}
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
