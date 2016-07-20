@@ -1899,7 +1899,7 @@ DISCREPANCY_CASE(LOW_QUALITY_REGION, CSeq_inst, eDisc | eSubmitter | eSmart, "Se
 
                     if ((*delta)->IsLiteral() && (*delta)->GetLiteral().IsSetSeq_data()) {
 
-                        if (HasLowQualityRegion(obj.GetSeq_data())) {
+                        if (HasLowQualityRegion((*delta)->GetLiteral().GetSeq_data())) {
                             m_Objs[kLowQualityRegion].Add(*context.NewDiscObj(context.GetCurrentBioseq()), false);
                             break;
                         }
