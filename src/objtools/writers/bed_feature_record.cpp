@@ -57,7 +57,7 @@ CBedFeatureRecord::CBedFeatureRecord():
     m_strChromStart( "." ),
     m_strChromEnd( "." ),
     m_strName( "." ),
-    m_strScore( "." ),
+    m_strScore( "0" ),
     m_strStrand( "." ),
     m_strThickStart( "." ), 
     m_strThickEnd( "." ), 
