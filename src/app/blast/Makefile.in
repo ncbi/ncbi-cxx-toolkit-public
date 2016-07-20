@@ -18,8 +18,7 @@ rpsblast \
 rpstblastn \
 blast_formatter \
 deltablast \
-seedtop \
-magicblast
+seedtop
 
 USR_PROJ = legacy_blast update_blastdb
 
@@ -56,6 +55,4 @@ seedtop: lib
 	${MAKE} ${MFLAGS} -f Makefile.seedtop_app
 deltablast: lib
 	${MAKE} ${MFLAGS} -f Makefile.deltablast_app
-magicblast: lib
-	${MAKE} ${MFLAGS} -f Makefile.magicblast_app
 
