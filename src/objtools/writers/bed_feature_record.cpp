@@ -174,11 +174,15 @@ bool CBedFeatureRecord::AssignLocation(
 //  ----------------------------------------------------------------------------
 {
     if ( interval.CanGetId() ) {
-        string bestId;
         m_strChrom = interval.GetId().GetSeqIdString(true);
-        CWriteUtil::GetBestId(
-            CSeq_id_Handle::GetHandle(m_strChrom), scope, bestId);
-        m_strChrom = bestId;
+        try {
+            string bestId;
+            CWriteUtil::GetBestId(
+                CSeq_id_Handle::GetHandle(m_strChrom), scope, bestId);
+            m_strChrom = bestId;
+            // its OK for this to silently fail. 
+            // Seq-ids that dont look up are just meant to be output directly
+        } catch(...) { ; }
     }
     if ( interval.IsSetFrom() ) {
         m_strChromStart = NStr::UIntToString( interval.GetFrom() );
