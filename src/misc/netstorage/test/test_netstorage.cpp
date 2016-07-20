@@ -77,9 +77,9 @@ NCBI_PARAM_DECL(string, netstorage_api, my_ncbi_id);
 NCBI_PARAM_DEF(string, netstorage_api, my_ncbi_id, "none");
 typedef NCBI_PARAM_TYPE(netstorage_api, my_ncbi_id) TNetStorage_MyNcbiId;
 
-NCBI_PARAM_DECL(string, filetrack, ft_token);
-NCBI_PARAM_DEF(string, filetrack, ft_token, "");
-typedef NCBI_PARAM_TYPE(filetrack, ft_token) TFileTrack_Token;
+NCBI_PARAM_DECL(string, filetrack, token);
+NCBI_PARAM_DEF(string, filetrack, token, "28ca53369135f5e77472e0851f4facf1ab00ffce");
+typedef NCBI_PARAM_TYPE(filetrack, token) TFileTrack_Token;
 
 
 // ENetStorageObjectLocation to type mapping
