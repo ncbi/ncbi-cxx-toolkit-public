@@ -1,0 +1,17 @@
+# $Id$
+
+# Meta-makefile("APP" project)
+#################################
+
+REQUIRES = objects algo
+
+APP_PROJ = magicblast
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
+
+.PHONY: all $(APP_PROJ)
+
+magicblast:
+	${MAKE} ${MFLAGS} -f Makefile.magicblast_app
+
