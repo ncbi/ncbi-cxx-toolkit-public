@@ -10,7 +10,7 @@ SRC = netstorage_gc netstorage_gc_database netstorage_gc_exception
 REQUIRES = MT Linux
 
 
-LIB =  netstorage ncbi_xcache_netcache xconnserv xthrserv \
+LIB =  netstorage ncbi_xcache_netcache xconnserv \
        $(SDBAPI_LIB) xconnect connssl xutil xncbi
 LIBS = $(SDBAPI_LIBS) $(NETWORK_LIBS) $(GNUTLS_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
