@@ -42,7 +42,7 @@
 #include <algo/blast/blastinput/magicblast_args.hpp>
 #include <algo/blast/api/objmgr_query_data.hpp>
 #include <algo/blast/format/blast_format.hpp>
-#include "blast_app_util.hpp"
+#include "../blast/blast_app_util.hpp"
 
 #include <objtools/format/sam_formatter.hpp>
 
@@ -419,8 +419,6 @@ CNcbiOstream& PrintTabular(CNcbiOstream& ostr, const CSeq_align& align,
         }
 
     ostr << sep << fragment_score;
-
-//    ostr << sep << context;
 
     return ostr;
 }
@@ -1024,6 +1022,70 @@ s_CreateInputSource(CRef<CMapperQueryOptionsArgs> query_opts,
 }
 
 
+static void
+s_InitializeSubject(CRef<blast::CBlastDatabaseArgs> db_args, 
+                    CRef<blast::CBlastOptionsHandle> opts_hndl,
+                    CRef<blast::CLocalDbAdapter>& db_adapter)
+{
+    db_adapter.Reset();
+
+    _ASSERT(db_args.NotEmpty());
+    CRef<CSearchDatabase> search_db = db_args->GetSearchDatabase();
+    CRef<CScope> scope;
+
+    // Initialize the scope... 
+    if (scope.Empty()) {
+        scope.Reset(new CScope(*CObjectManager::GetInstance()));
+    }
+    _ASSERT(scope.NotEmpty());
+
+    // ... and then the subjects
+    CRef<IQueryFactory> subjects;
+    if ( (subjects = db_args->GetSubjects(scope)) ) {
+        _ASSERT(search_db.Empty());
+        db_adapter.Reset(new CLocalDbAdapter(subjects, opts_hndl, true));
+    } else {
+        _ASSERT(search_db.NotEmpty());
+        db_adapter.Reset(new CLocalDbAdapter(*search_db));
+    }
+}
+
+
+static bool
+s_IsIStreamEmpty(CNcbiIstream & in)
+{
+	char c;
+	CNcbiStreampos orig_p = in.tellg();
+	// Piped input
+	if(orig_p < 0)
+		return false;
+
+	IOS_BASE::iostate orig_state = in.rdstate();
+	IOS_BASE::fmtflags orig_flags = in.setf(ios::skipws);
+
+	if(! (in >> c))
+		return true;
+
+	in.seekg(orig_p);
+	in.flags(orig_flags);
+	in.clear();
+	in.setstate(orig_state);
+
+	return false;
+}
+
+
+static string
+s_GetCmdlineArgs(const CNcbiArguments & a)
+{
+	string cmd = kEmptyStr;
+	for(unsigned int i=0; i < a.Size(); i++) {
+		cmd += a[i] + " ";
+	}
+	return cmd;
+}
+
+
 int CMagicBlastApp::Run(void)
 {
     int status = BLAST_EXIT_SUCCESS;
@@ -1039,22 +1101,15 @@ int CMagicBlastApp::Run(void)
         /*** Get the BLAST options ***/
         const CArgs& args = GetArgs();
         CRef<CBlastOptionsHandle> opts_hndl;
-        if(RecoverSearchStrategy(args, m_CmdLineArgs)){
-        	opts_hndl.Reset(&*m_CmdLineArgs->SetOptionsForSavedStrategy(args));
-        }
-        else {
-        	opts_hndl.Reset(&*m_CmdLineArgs->SetOptions(args));
-        }
+        opts_hndl.Reset(&*m_CmdLineArgs->SetOptions(args));
         const CBlastOptions& opt = opts_hndl->GetOptions();
         
         /*** Initialize the database/subject ***/
         CRef<CBlastDatabaseArgs> db_args(m_CmdLineArgs->GetBlastDatabaseArgs());
 
         CRef<CLocalDbAdapter> db_adapter;
-        CRef<CScope> scope;
-        InitializeSubject(db_args, opts_hndl, m_CmdLineArgs->ExecuteRemotely(),
-                          db_adapter, scope);
-        _ASSERT(db_adapter && scope);
+        s_InitializeSubject(db_args, opts_hndl, db_adapter);
+        _ASSERT(db_adapter);
 
 
         /*** Get the query sequence(s) ***/
@@ -1062,7 +1117,7 @@ int CMagicBlastApp::Run(void)
             dynamic_cast<CMapperQueryOptionsArgs*>(
                    m_CmdLineArgs->GetQueryOptionsArgs().GetNonNullPointer()));
 
-        if(!args["sra"] && IsIStreamEmpty(m_CmdLineArgs->GetInputStream()))
+        if(!args["sra"] && s_IsIStreamEmpty(m_CmdLineArgs->GetInputStream()))
            	NCBI_THROW(CArgException, eNoValue, "Query is Empty!");
 
         /*** Get the formatting options ***/
@@ -1073,7 +1128,7 @@ int CMagicBlastApp::Run(void)
         if (fmt_args->GetFormattedOutputChoice() == CFormattingArgs::eSAM) {
             if (kNumSubjects < kSamLargeNumSubjects) {
                 PrintSAMHeader(m_CmdLineArgs->GetOutputStream(), db_adapter,
-                               GetCmdlineArgs(GetArguments()));
+                               s_GetCmdlineArgs(GetArguments()));
             }
         }
 
@@ -1115,7 +1170,7 @@ int CMagicBlastApp::Run(void)
             #pragma omp parallel for if (num_query_threads > 1) \
               num_threads(num_query_threads) default(none) shared(opt, input, \
               fmt_args, os_vector, batch_number, print_warning, \
-              db_adapter, scope, num_query_threads, num_db_threads)  \
+              db_adapter, num_query_threads, num_db_threads)  \
               private(index) schedule(dynamic, 1)
             for (index = 0;index < num_query_threads;index++) {
 
@@ -1191,12 +1246,14 @@ int CMagicBlastApp::Run(void)
                     }
                     else {
                 
+/*
                         if (num_query_threads == 1 &&
                             kNumSubjects >= kSamLargeNumSubjects) {
 
                             PrintSAMHeader(os_vector[thread_index], results,
                                       *scope, GetCmdlineArgs(GetArguments()));
                         }
+*/
 
                         CRef<ILocalQueryData> query_data =
                             queries->MakeLocalQueryData(
