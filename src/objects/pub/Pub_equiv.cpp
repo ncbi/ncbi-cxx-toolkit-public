@@ -62,19 +62,17 @@ bool CPub_equiv::GetLabel(string* label, TLabelFlags flags,
     for(i = 0; i < 5; i++) {
         pubs[i] = 0;
     }
-    i = 0;
+    i = 1;
     
     // Get five pubs in the set of pubs, giving preference to e_Muid, 
     // e_Pmid, and e_Gen.
     ITERATE (list<CRef<CPub> >, it, Get()) {
         switch ((**it).Which()) {
         case CPub::e_Muid:
-            if (!pubs[3] || pubs[3]->Which() != CPub::e_Pmid) {
-                pubs[3] = *it;
-            }
+            pubs[3] = *it;
             break;
         case CPub::e_Pmid:
-            pubs[3] = *it;
+            pubs[0] = *it;
             break;
         case CPub::e_Gen:
             if ((**it).GetGen().IsSetSerial_number()) {
