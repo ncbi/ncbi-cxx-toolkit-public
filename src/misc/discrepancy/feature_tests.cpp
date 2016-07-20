@@ -1882,6 +1882,13 @@ bool IsGeneLocationOk(const CSeq_loc& feat_loc, const CSeq_loc& gene_loc, bool i
     return false;
 }
 
+static string GetNextSubitemId(size_t num)
+{
+    string ret = "[*";
+    ret += NStr::SizetToString(num);
+    ret += "*]";
+    return ret;
+}
 
 //  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(FEATURE_LOCATION_CONFLICT, CSeq_feat_BY_BIOSEQ, eDisc | eSubmitter | eSmart, "Feature Location Conflict")
@@ -1917,14 +1924,17 @@ DISCREPANCY_CASE(FEATURE_LOCATION_CONFLICT, CSeq_feat_BY_BIOSEQ, eDisc | eSubmit
                     if (IsGeneLocationOk(obj.GetLocation(), (*it).GetLocation(), obj.GetData().IsCdregion(), context.GetScope())) {
                         found_match = true;
                     } else {
+
+                        string subitem_id = GetNextSubitemId(m_Objs[kFeatureLocationConflictTop].GetMap().size());
+
                         if (obj.GetData().IsCdregion()) {
                             m_Objs[kFeatureLocationConflictTop]
-                                [kFeatureLocationCodingRegion]
+                                [kFeatureLocationCodingRegion + subitem_id]
                             .Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false)
                             .Add(*context.NewDiscObj(it->GetSeq_feat()), false).Ext();
                         } else {
                             m_Objs[kFeatureLocationConflictTop]
-                                [kFeatureLocationRNA]
+                                [kFeatureLocationRNA + subitem_id]
                             .Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false)
                             .Add(*context.NewDiscObj(it->GetSeq_feat()), false).Ext();
                         }
@@ -1949,14 +1959,17 @@ DISCREPANCY_CASE(FEATURE_LOCATION_CONFLICT, CSeq_feat_BY_BIOSEQ, eDisc | eSubmit
         const CSeq_feat* gene = context.GetCurrentGene();
         if (gene && gene->IsSetLocation()) {
             if (!IsGeneLocationOk(obj.GetLocation(), gene->GetLocation(), obj.GetData().IsCdregion(), context.GetScope())) {
+
+                string subitem_id = GetNextSubitemId(m_Objs[kFeatureLocationConflictTop].GetMap().size());
+
                 if (obj.GetData().IsCdregion()) {
                     m_Objs[kFeatureLocationConflictTop]
-                        [kFeatureLocationCodingRegion]
+                        [kFeatureLocationCodingRegion + subitem_id]
                     .Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false)
                     .Add(*context.NewDiscObj(CConstRef<CSeq_feat>(gene)), false).Ext();
                 } else {
                     m_Objs[kFeatureLocationConflictTop]
-                        [kFeatureLocationRNA]
+                        [kFeatureLocationRNA + subitem_id]
                     .Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false)
                     .Add(*context.NewDiscObj(CConstRef<CSeq_feat>(gene)), false).Ext();
                 }
@@ -2152,8 +2165,7 @@ DISCREPANCY_AUTOFIX(CDS_WITHOUT_MRNA)
 
 // PROTEIN_NAMES
 
-static const string kProteinNames = "[n] proteins have name ";
-static const string kAllProteinNames = "All proteins have same name ";
+static const string kProteinNames = "All proteins have same name ";
 static const string kProteins = "Proteins";
 
 //  ----------------------------------------------------------------------------
@@ -2165,6 +2177,9 @@ DISCREPANCY_CASE(PROTEIN_NAMES, CSeq_feat, eDisc | eSubmitter | eSmart, "Frequen
         const CProt_ref& prot = obj.GetData().GetProt();
         if (prot.IsSetName() && !prot.GetName().empty()) {
 
+            CConstRef<CBioseq> bioseq = context.GetCurrentBioseq();
+
+            // const cast is possible here because bioseq will not be changed
             m_Objs[kProteins].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj), eKeepRef), false);
         }
     }
@@ -2177,7 +2192,9 @@ static void CollectProteins(TReportObjectList& prot_feats, TProteinMap& proteins
 {
     NON_CONST_ITERATE(TReportObjectList, prots, prot_feats) {
 
-        const CSeq_feat* cur_feat = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>(prots->GetNCPointer())->GetObject().GetPointer());
+        CDiscrepancyObject* dobj = dynamic_cast<CDiscrepancyObject*>(prots->GetNCPointer());
+        const CSeq_feat* cur_feat = dynamic_cast<const CSeq_feat*>(dobj->GetObject().GetPointer());
+
         if (cur_feat) {
 
             string first_name = cur_feat->GetData().GetProt().GetName().front();
@@ -2199,34 +2216,19 @@ DISCREPANCY_SUMMARIZE(PROTEIN_NAMES)
 
     static const size_t MIN_REPORTABLE_AMOUNT = 100;
 
-    size_t num_of_prot_names = 0;
-    ITERATE(TProteinMap, cur, proteins) {
+    if (proteins.size() == 1) {
 
-        if (cur->second.size() >= MIN_REPORTABLE_AMOUNT) {
-            ++num_of_prot_names;
+        const TSeqFeatList& feats = proteins.begin()->second;
+        const string& name = proteins.begin()->first;
+
+        if (feats.size() >= MIN_REPORTABLE_AMOUNT) {
+
+            CReportNode report;
+            string subcat = kProteinNames + '\"' + name + '\"';
+            report[subcat];
+
+            m_ReportItems = report.Export(*this)->GetSubitems();
         }
-    }
-
-    if (num_of_prot_names > 0) {
-        CReportNode report;
-        ITERATE(TProteinMap, cur, proteins) {
-
-            if (cur->second.size() >= MIN_REPORTABLE_AMOUNT) {
-
-                string subcat = num_of_prot_names > 1 ? kProteinNames + '\"' + cur->first + '\"' : kAllProteinNames + '\"' + cur->first + '\"';
-
-                if (num_of_prot_names > 1) {
-                    ITERATE(TSeqFeatList, prot, cur->second) {
-                        report[subcat].Add(*context.NewDiscObj(*prot), false);
-                    }
-                }
-                else {
-                    report[subcat];
-                    break;
-                }
-            }
-        }
-        m_ReportItems = report.Export(*this)->GetSubitems();
     }
 }
 
