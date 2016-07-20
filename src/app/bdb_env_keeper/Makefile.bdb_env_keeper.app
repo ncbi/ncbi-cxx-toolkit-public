@@ -4,7 +4,7 @@ WATCHERS = vakatov
 
 APP = bdb_env_keeper
 SRC = bdb_env_keeper
-LIB = xthrserv xconnect xutil xncbi
+LIB = xconnect xutil xncbi
 
 
 LIB =  $(BDB_LIB) $(COMPRESS_LIBS) xconnserv xthrserv xconnect xutil xncbi
