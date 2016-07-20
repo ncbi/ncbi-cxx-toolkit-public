@@ -2491,7 +2491,7 @@ unsigned short LBOS_ServiceVersionGet(const char*  service,
     /*
      * First we check input arguments
      */
-    if (!s_CheckConfArgs(service, lbos_answer)) {
+    if (!s_CheckConfArgs(service, (const char**)lbos_answer)) {
         return eLBOS_InvalidArgs;
     }
     /*
@@ -2547,7 +2547,7 @@ unsigned short LBOS_ServiceVersionSet(const char*  service,
     /*
      * First we check input arguments
      */
-    if (!s_CheckConfArgs(service, lbos_answer)) {
+    if (!s_CheckConfArgs(service, (const char**)lbos_answer)) {
         return eLBOS_InvalidArgs;
     }
     /*
@@ -2593,7 +2593,7 @@ unsigned short LBOS_ServiceVersionDelete(const char*  service,
     /*
      * First we check input arguments
      */
-    if (!s_CheckConfArgs(service, lbos_answer)) {
+    if (!s_CheckConfArgs(service, (const char**)lbos_answer)) {
         return eLBOS_InvalidArgs;
     }
     /*
