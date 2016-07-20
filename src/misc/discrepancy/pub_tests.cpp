@@ -219,6 +219,8 @@ DISCREPANCY_CASE(TITLE_AUTHOR_CONFLICT, CSeqdesc, eDisc | eOncaller | eSmart, "P
 }
 
 
+static const char* kTitleAuthorConflict = "Publication Title/Author Inconsistencies";
+
 //  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(TITLE_AUTHOR_CONFLICT)
 //  ----------------------------------------------------------------------------
@@ -236,7 +238,7 @@ DISCREPANCY_SUMMARIZE(TITLE_AUTHOR_CONFLICT)
                 NON_CONST_ITERATE (TReportObjectList, robj, m_Objs["titles"][it->first][it2->first].GetObjects()) {
                     const CDiscrepancyObject* other_disc_obj = dynamic_cast<CDiscrepancyObject*>(robj->GetNCPointer());
                     CConstRef<CSeqdesc> pub_desc(dynamic_cast<const CSeqdesc*>(other_disc_obj->GetObject().GetPointer()));
-                    m_Objs["Publication Title/Author Inconsistencies"][top]["[n] article[s] [has] title '" + it->first + "' and author list '" + it2->first + "'"].Add(*context.NewDiscObj(pub_desc), false).Fatal();
+                    m_Objs[kTitleAuthorConflict][top]["[n] article[s] [has] title '" + it->first + "' and author list '" + it2->first + "'"].Add(*context.NewDiscObj(pub_desc), false).Fatal();
                 }
                 ++it2;
             }
@@ -244,7 +246,7 @@ DISCREPANCY_SUMMARIZE(TITLE_AUTHOR_CONFLICT)
         ++it;
     }
     m_Objs.GetMap().erase("titles");
-    if (m_Objs.GetMap().size() == 1) {
+    if (m_Objs.Exist(kTitleAuthorConflict) && m_Objs[kTitleAuthorConflict].GetMap().size() == 1) {
         m_ReportItems = m_Objs.GetMap().begin()->second->Export(*this)->GetSubitems();
     }
     else {
