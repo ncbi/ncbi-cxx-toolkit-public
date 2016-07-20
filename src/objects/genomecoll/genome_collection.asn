@@ -524,6 +524,7 @@ GC-Scaf-stats ::= SEQUENCE {
         count-real-scaffolds (112), -- number of scaffolds with gb_is_skipped = 0.
         top-level-count (113), -- Number of chromosomes or plasmids, unplaced/unlocalized scaffolds, alt-loci scaffolds, and patch scaffolds
         total-gap-length (114), -- Total length of gaps
+        count-replicons-without-ordered-scaf (115), -- count of replicons without ordered scaffold
 
         other (255) -- catch all
     },
