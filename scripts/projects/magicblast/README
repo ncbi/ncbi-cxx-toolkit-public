@@ -114,10 +114,6 @@ magicblast -query reads.fa -db genome -out output.gz -gzo
 
 CREATION OF A BLAST DATABASE:
 
-To create a BLAST database from a FASTA file you will need the makeblastdb
-application, a part of blast+ package, that can be downloaded from:
-ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/
-
 Use this command line to create a BLAST database:
 makeblastdb -in fasta_file -dbtype nucl -parse_seqids -out database_name
 -title "Database title"
