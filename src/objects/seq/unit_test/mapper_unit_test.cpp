@@ -42,6 +42,8 @@
 #include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp>
 #include <objects/general/Object_id.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seqfeat/Cdregion.hpp>
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/test_boost.hpp>
@@ -1213,15 +1215,6 @@ void TestMapper_Trimming()
         .SetTrimMappedLocation(true)));
     TestMappingSeq_loc(*mapper, dst, in);
 
-    // Incomplete codon should be always trimmed off.
-    cout << "  Test incomplete codon trimming" << endl;
-    in >> MSerial_AsnText >> src;
-    in >> MSerial_AsnText >> dst;
-    mapper.reset(
-        new CSeq_loc_Mapper_Base(src, dst,
-        CSeq_loc_Mapper_Options(info.GetPointer())));
-    TestMappingSeq_loc(*mapper, in);
-
     // Ignore extra codon when there are multiple destination proteins.
     cout << "  Test stop codon non-extension, multi-id destionation" << endl;
     in >> MSerial_AsnText >> src;
@@ -1302,6 +1295,69 @@ void TestMapper_Trimming()
 
     cout << "  Test trimming while mapping from minus strand, nuc->prot, #3" << endl;
     TestMappingSeq_loc(*mapper, in);
+
+    // Incomplete codon trimming test.
+    // - prot->nuc vs nuc->prot
+    // - plus strand, minus strand
+    // - frame not_set/one/two/three
+    // - 0/1/2 extra bases on nuc
+    cout << "Testing frame and incomplete codon trimming" << endl;
+    CSeq_feat feat_base, feat;
+    CSeq_loc nuc_orig_long, nuc_orig_short, prot_orig_long, prot_orig_short;
+    in >> MSerial_AsnText >> feat_base;
+    in >> MSerial_AsnText >> nuc_orig_long;
+    in >> MSerial_AsnText >> nuc_orig_short;
+    in >> MSerial_AsnText >> prot_orig_long;
+    in >> MSerial_AsnText >> prot_orig_short;
+
+    feat.Assign(feat_base);
+    CCdregion& cds = feat.SetData().SetCdregion();
+
+    for (int str_idx = 0; str_idx < 2; ++str_idx) {
+        feat.SetLocation().SetInt().SetStrand(str_idx ? eNa_strand_minus : eNa_strand_plus);
+        if ( str_idx ) {
+            nuc_orig_long.SetStrand(eNa_strand_minus);
+            nuc_orig_short.SetStrand(eNa_strand_minus);
+        }
+        else {
+            nuc_orig_long.ResetStrand();
+            nuc_orig_short.ResetStrand();
+        }
+        for (int frame = CCdregion::eFrame_not_set; frame <= CCdregion::eFrame_three; ++frame) {
+            cds.SetFrame(CCdregion::TFrame(frame));
+            for (TSeqPos extra_bases = 0; extra_bases < 3; ++extra_bases) {
+                cout << "  nuc->prot, boundaries, " <<
+                    (str_idx ? "minus" : "plus") <<
+                    ", frame=" << frame <<
+                    ", " " extra bases=" << extra_bases << endl;
+                mapper.reset(
+                    new CSeq_loc_Mapper_Base(feat, CSeq_loc_Mapper_Base::eLocationToProduct,
+                    CSeq_loc_Mapper_Options(info.GetPointer())));
+                TestMappingSeq_loc(*mapper, nuc_orig_long, in);
+
+                cout << "  nuc->prot, position, " <<
+                    (str_idx ? "minus" : "plus") <<
+                    ", frame=" << frame <<
+                    ", " " extra bases=" << extra_bases << endl;
+                TestMappingSeq_loc(*mapper, nuc_orig_short, in);
+
+                cout << "  prot->nuc, boundaries, " <<
+                    (str_idx ? "minus" : "plus") <<
+                    ", frame=" << frame <<
+                    ", " " extra bases=" << extra_bases << endl;
+                mapper.reset(
+                    new CSeq_loc_Mapper_Base(feat, CSeq_loc_Mapper_Base::eProductToLocation,
+                    CSeq_loc_Mapper_Options(info.GetPointer())));
+                TestMappingSeq_loc(*mapper, prot_orig_long, in);
+
+                cout << "  prot->nuc, position, " <<
+                    (str_idx ? "minus" : "plus") <<
+                    ", frame=" << frame <<
+                    ", " " extra bases=" << extra_bases << endl;
+                TestMappingSeq_loc(*mapper, prot_orig_short, in);
+            }
+        }
+    }
 }
 
 

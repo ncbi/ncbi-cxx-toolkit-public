@@ -87,31 +87,6 @@ Seq-loc ::= int {
 }
 
 
--- Test incomplete codon trimming: source
-Seq-loc ::= int {
-  from 0,
-  to 301,
-  id gi 2
-}
-
--- Test incomplete codon trimming: destination
-Seq-loc ::= whole gi 3
-
--- Test incomplete codon trimming: original
-Seq-loc ::= int {
-  from 0,
-  to 320,
-  id gi 2
-}
-
--- Test incomplete codon trimming: mapped
-Seq-loc ::= int {
-  from 0,
-  to 99,
-  id gi 3,
-  fuzz-to lim gt
-}
-
 -- Test stop codon non-extension, multi-id protein: source
 Seq-loc ::= int {
   from 0,
@@ -425,4 +400,903 @@ Seq-loc ::= int {
   strand plus,
   id gi 3,
   fuzz-from lim lt
+}
+
+
+-- Test frame and incomplete codon trimming: base cdregion
+Seq-feat ::= {
+  id local id 2,
+  data cdregion {
+    code {
+      id 11
+    }
+  },
+  partial TRUE,
+  product whole gi 3,
+  location int {
+    from 0,
+    to 299,
+    id gi 2
+  }
+}
+
+-- Test frame and incomplete codon trimming: nuc original, boundaries
+Seq-loc ::= int {
+  from 0,
+  to 320,
+  id gi 2
+}
+
+-- Test frame and incomplete codon trimming: nuc original, position
+Seq-loc ::= int {
+  from 6,
+  to 290,
+  id gi 2
+}
+
+-- Test frame and incomplete codon trimming: prot original, boundaries
+Seq-loc ::= int {
+  from 0,
+  to 110,
+  id gi 3
+}
+
+-- Test frame and incomplete codon trimming: prot original, position
+Seq-loc ::= int {
+  from 3,
+  to 90,
+  id gi 3
+}
+
+
+-- nuc->prot, boundaries, plus, no frame, no extra bases
+Seq-loc ::= int {
+  from 0,
+  to 99,
+  id gi 3,
+  fuzz-to lim gt
+}
+
+-- nuc->prot, position, plus, no frame, no extra bases
+Seq-loc ::= int {
+  from 2,
+  to 96,
+  id gi 3
+}
+
+-- prot->nuc, boundaries, plus, no frame, no extra bases
+Seq-loc ::= int {
+  from 0,
+  to 299,
+  strand plus,
+  id gi 2,
+  fuzz-to lim gt
+}
+
+-- prot->nuc, position, plus, no frame, no extra bases
+Seq-loc ::= int {
+  from 9,
+  to 272,
+  strand plus,
+  id gi 2
+}
+
+-- nuc->prot, boundaries, plus, no frame, 1 extra base
+Seq-loc ::= int {
+  from 0,
+  to 99,
+  id gi 3,
+  fuzz-to lim gt
+}
+
+-- nuc->prot, position, plus, no frame, 1 extra base
+Seq-loc ::= int {
+  from 2,
+  to 96,
+  id gi 3
+}
+
+-- prot->nuc, boundaries, plus, no frame, 1 extra base
+Seq-loc ::= int {
+  from 0,
+  to 299,
+  strand plus,
+  id gi 2,
+  fuzz-to lim gt
+}
+
+-- prot->nuc, position, plus, no frame, 1 extra base
+Seq-loc ::= int {
+  from 9,
+  to 272,
+  strand plus,
+  id gi 2
+}
+
+-- nuc->prot, boundaries, plus, no frame, 2 extra bases
+Seq-loc ::= int {
+  from 0,
+  to 99,
+  id gi 3,
+  fuzz-to lim gt
+}
+
+-- nuc->prot, position, plus, no frame, 2 extra bases
+Seq-loc ::= int {
+  from 2,
+  to 96,
+  id gi 3
+}
+
+-- prot->nuc, boundaries, plus, no frame, 2 extra bases
+Seq-loc ::= int {
+  from 0,
+  to 299,
+  strand plus,
+  id gi 2,
+  fuzz-to lim gt
+}
+
+-- prot->nuc, position, plus, no frame, 2 extra bases
+Seq-loc ::= int {
+  from 9,
+  to 272,
+  strand plus,
+  id gi 2
+}
+
+
+-- nuc->prot, boundaries, plus, frame 1, no extra bases
+Seq-loc ::= int {
+  from 0,
+  to 99,
+  id gi 3,
+  fuzz-to lim gt
+}
+
+-- nuc->prot, position, plus, frame 1, no extra bases
+Seq-loc ::= int {
+  from 2,
+  to 96,
+  id gi 3
+}
+
+-- prot->nuc, boundaries, plus, frame 1, no extra bases
+Seq-loc ::= int {
+  from 0,
+  to 299,
+  strand plus,
+  id gi 2,
+  fuzz-to lim gt
+}
+
+-- prot->nuc, position, plus, frame 1, no extra bases
+Seq-loc ::= int {
+  from 9,
+  to 272,
+  strand plus,
+  id gi 2
+}
+
+-- nuc->prot, boundaries, plus, frame 1, 1 extra base
+Seq-loc ::= int {
+  from 0,
+  to 99,
+  id gi 3,
+  fuzz-to lim gt
+}
+
+-- nuc->prot, position, plus, frame 1, 1 extra base
+Seq-loc ::= int {
+  from 2,
+  to 96,
+  id gi 3
+}
+
+-- prot->nuc, boundaries, plus, frame 1, 1 extra base
+Seq-loc ::= int {
+  from 0,
+  to 299,
+  strand plus,
+  id gi 2,
+  fuzz-to lim gt
+}
+
+-- prot->nuc, position, plus, frame 1, 1 extra base
+Seq-loc ::= int {
+  from 9,
+  to 272,
+  strand plus,
+  id gi 2
+}
+
+-- nuc->prot, boundaries, plus, frame 1, 2 extra bases
+Seq-loc ::= int {
+  from 0,
+  to 99,
+  id gi 3,
+  fuzz-to lim gt
+}
+
+-- nuc->prot, position, plus, frame 1, 2 extra bases
+Seq-loc ::= int {
+  from 2,
+  to 96,
+  id gi 3
+}
+
+-- prot->nuc, boundaries, plus, frame 1, 2 extra bases
+Seq-loc ::= int {
+  from 0,
+  to 299,
+  strand plus,
+  id gi 2,
+  fuzz-to lim gt
+}
+
+-- prot->nuc, position, plus, frame 1, 2 extra bases
+Seq-loc ::= int {
+  from 9,
+  to 272,
+  strand plus,
+  id gi 2
+}
+
+
+-- nuc->prot, boundaries, plus, frame 2, no extra bases
+Seq-loc ::= int {
+  from 0,
+  to 99,
+  id gi 3,
+  fuzz-from lim lt,
+  fuzz-to lim gt
+}
+
+-- nuc->prot, position, plus, frame 2, no extra bases
+Seq-loc ::= int {
+  from 1,
+  to 96,
+  id gi 3
+}
+
+-- prot->nuc, boundaries, plus, frame 2, no extra bases
+Seq-loc ::= int {
+  from 1,
+  to 299,
+  strand plus,
+  id gi 2,
+  fuzz-to lim gt
+}
+
+-- prot->nuc, position, plus, frame 2, no extra bases
+Seq-loc ::= int {
+  from 10,
+  to 273,
+  strand plus,
+  id gi 2
+}
+
+-- nuc->prot, boundaries, plus, frame 2, 1 extra base
+Seq-loc ::= int {
+  from 0,
+  to 99,
+  id gi 3,
+  fuzz-from lim lt,
+  fuzz-to lim gt
+}
+
+-- nuc->prot, position, plus, frame 2, 1 extra base
+Seq-loc ::= int {
+  from 1,
+  to 96,
+  id gi 3
+}
+
+-- prot->nuc, boundaries, plus, frame 2, 1 extra base
+Seq-loc ::= int {
+  from 1,
+  to 299,
+  strand plus,
+  id gi 2,
+  fuzz-to lim gt
+}
+
+-- prot->nuc, position, plus, frame 2, 1 extra base
+Seq-loc ::= int {
+  from 10,
+  to 273,
+  strand plus,
+  id gi 2
+}
+
+-- nuc->prot, boundaries, plus, frame 2, 2 extra bases
+Seq-loc ::= int {
+  from 0,
+  to 99,
+  id gi 3,
+  fuzz-from lim lt,
+  fuzz-to lim gt
+}
+
+-- nuc->prot, position, plus, frame 2, 2 extra bases
+Seq-loc ::= int {
+  from 1,
+  to 96,
+  id gi 3
+}
+
+-- prot->nuc, boundaries, plus, frame 2, 2 extra bases
+Seq-loc ::= int {
+  from 1,
+  to 299,
+  strand plus,
+  id gi 2,
+  fuzz-to lim gt
+}
+
+-- prot->nuc, position, plus, frame 2, 2 extra bases
+Seq-loc ::= int {
+  from 10,
+  to 273,
+  strand plus,
+  id gi 2
+}
+
+
+-- nuc->prot, boundaries, plus, frame 3, no extra bases
+Seq-loc ::= int {
+  from 0,
+  to 99,
+  id gi 3,
+  fuzz-from lim lt,
+  fuzz-to lim gt
+}
+
+-- nuc->prot, position, plus, frame 3, no extra bases
+Seq-loc ::= int {
+  from 1,
+  to 96,
+  id gi 3
+}
+
+-- prot->nuc, boundaries, plus, frame 3, no extra bases
+Seq-loc ::= int {
+  from 2,
+  to 299,
+  strand plus,
+  id gi 2,
+  fuzz-to lim gt
+}
+
+-- prot->nuc, position, plus, frame 3, no extra bases
+Seq-loc ::= int {
+  from 11,
+  to 274,
+  strand plus,
+  id gi 2
+}
+
+-- nuc->prot, boundaries, plus, frame 3, 1 extra base
+Seq-loc ::= int {
+  from 0,
+  to 99,
+  id gi 3,
+  fuzz-from lim lt,
+  fuzz-to lim gt
+}
+
+-- nuc->prot, position, plus, frame 3, 1 extra base
+Seq-loc ::= int {
+  from 1,
+  to 96,
+  id gi 3
+}
+
+-- prot->nuc, boundaries, plus, frame 3, 1 extra base
+Seq-loc ::= int {
+  from 2,
+  to 299,
+  strand plus,
+  id gi 2,
+  fuzz-to lim gt
+}
+
+-- prot->nuc, position, plus, frame 3, 1 extra base
+Seq-loc ::= int {
+  from 11,
+  to 274,
+  strand plus,
+  id gi 2
+}
+
+-- nuc->prot, boundaries, plus, frame 3, 2 extra bases
+Seq-loc ::= int {
+  from 0,
+  to 99,
+  id gi 3,
+  fuzz-from lim lt,
+  fuzz-to lim gt
+}
+
+-- nuc->prot, position, plus, frame 3, 2 extra bases
+Seq-loc ::= int {
+  from 1,
+  to 96,
+  id gi 3
+}
+
+-- prot->nuc, boundaries, plus, frame 3, 2 extra bases
+Seq-loc ::= int {
+  from 2,
+  to 299,
+  strand plus,
+  id gi 2,
+  fuzz-to lim gt
+}
+
+-- prot->nuc, position, plus, frame 3, 2 extra bases
+Seq-loc ::= int {
+  from 11,
+  to 274,
+  strand plus,
+  id gi 2
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-- nuc->prot, boundaries, minus, no frame, no extra bases
+Seq-loc ::= int {
+  from 0,
+  to 99,
+  strand plus,
+  id gi 3,
+  fuzz-from lim lt
+}
+
+-- nuc->prot, position, minus, no frame, no extra bases
+Seq-loc ::= int {
+  from 3,
+  to 97,
+  strand plus,
+  id gi 3
+}
+
+-- prot->nuc, boundaries, minus, no frame, no extra bases
+Seq-loc ::= int {
+  from 0,
+  to 299,
+  strand minus,
+  id gi 2,
+  fuzz-from lim lt
+}
+
+-- prot->nuc, position, minus, no frame, no extra bases
+Seq-loc ::= int {
+  from 27,
+  to 290,
+  strand minus,
+  id gi 2
+}
+
+-- nuc->prot, boundaries, minus, no frame, 1 extra base
+Seq-loc ::= int {
+  from 0,
+  to 99,
+  strand plus,
+  id gi 3,
+  fuzz-from lim lt
+}
+
+-- nuc->prot, position, minus, no frame, 1 extra base
+Seq-loc ::= int {
+  from 3,
+  to 97,
+  strand plus,
+  id gi 3
+}
+
+-- prot->nuc, boundaries, minus, no frame, 1 extra base
+Seq-loc ::= int {
+  from 0,
+  to 299,
+  strand minus,
+  id gi 2,
+  fuzz-from lim lt
+}
+
+-- prot->nuc, position, minus, no frame, 1 extra base
+Seq-loc ::= int {
+  from 27,
+  to 290,
+  strand minus,
+  id gi 2
+}
+
+-- nuc->prot, boundaries, minus, no frame, 2 extra bases
+Seq-loc ::= int {
+  from 0,
+  to 99,
+  strand plus,
+  id gi 3,
+  fuzz-from lim lt
+}
+
+-- nuc->prot, position, minus, no frame, 2 extra bases
+Seq-loc ::= int {
+  from 3,
+  to 97,
+  strand plus,
+  id gi 3
+}
+
+-- prot->nuc, boundaries, minus, no frame, 2 extra bases
+Seq-loc ::= int {
+  from 0,
+  to 299,
+  strand minus,
+  id gi 2,
+  fuzz-from lim lt
+}
+
+-- prot->nuc, position, minus, no frame, 2 extra bases
+Seq-loc ::= int {
+  from 27,
+  to 290,
+  strand minus,
+  id gi 2
+}
+
+
+-- nuc->prot, boundaries, minus, frame 1, no extra bases
+Seq-loc ::= int {
+  from 0,
+  to 99,
+  strand plus,
+  id gi 3,
+  fuzz-from lim lt
+}
+
+-- nuc->prot, position, minus, frame 1, no extra bases
+Seq-loc ::= int {
+  from 3,
+  to 97,
+  strand plus,
+  id gi 3
+}
+
+-- prot->nuc, boundaries, minus, frame 1, no extra bases
+Seq-loc ::= int {
+  from 0,
+  to 299,
+  strand minus,
+  id gi 2,
+  fuzz-from lim lt
+}
+
+-- prot->nuc, position, minus, frame 1, no extra bases
+Seq-loc ::= int {
+  from 27,
+  to 290,
+  strand minus,
+  id gi 2
+}
+
+-- nuc->prot, boundaries, minus, frame 1, 1 extra base
+Seq-loc ::= int {
+  from 0,
+  to 99,
+  strand plus,
+  id gi 3,
+  fuzz-from lim lt
+}
+
+-- nuc->prot, position, minus, frame 1, 1 extra base
+Seq-loc ::= int {
+  from 3,
+  to 97,
+  strand plus,
+  id gi 3
+}
+
+-- prot->nuc, boundaries, minus, frame 1, 1 extra base
+Seq-loc ::= int {
+  from 0,
+  to 299,
+  strand minus,
+  id gi 2,
+  fuzz-from lim lt
+}
+
+-- prot->nuc, position, minus, frame 1, 1 extra base
+Seq-loc ::= int {
+  from 27,
+  to 290,
+  strand minus,
+  id gi 2
+}
+
+-- nuc->prot, boundaries, minus, frame 1, 2 extra bases
+Seq-loc ::= int {
+  from 0,
+  to 99,
+  strand plus,
+  id gi 3,
+  fuzz-from lim lt
+}
+
+-- nuc->prot, position, minus, frame 1, 2 extra bases
+Seq-loc ::= int {
+  from 3,
+  to 97,
+  strand plus,
+  id gi 3
+}
+
+-- prot->nuc, boundaries, minus, frame 1, 2 extra bases
+Seq-loc ::= int {
+  from 0,
+  to 299,
+  strand minus,
+  id gi 2,
+  fuzz-from lim lt
+}
+
+-- prot->nuc, position, minus, frame 1, 2 extra bases
+Seq-loc ::= int {
+  from 27,
+  to 290,
+  strand minus,
+  id gi 2
+}
+
+
+-- nuc->prot, boundaries, minus, frame 2, no extra bases
+Seq-loc ::= int {
+  from 0,
+  to 99,
+  strand plus,
+  id gi 3,
+  fuzz-from lim lt
+}
+
+-- nuc->prot, position, minus, frame 2, no extra bases
+Seq-loc ::= int {
+  from 2,
+  to 97,
+  strand plus,
+  id gi 3
+}
+
+-- prot->nuc, boundaries, minus, frame 2, no extra bases
+Seq-loc ::= int {
+  from 0,
+  to 298,
+  strand minus,
+  id gi 2,
+  fuzz-from lim lt
+}
+
+-- prot->nuc, position, minus, frame 2, no extra bases
+Seq-loc ::= int {
+  from 26,
+  to 289,
+  strand minus,
+  id gi 2
+}
+
+-- nuc->prot, boundaries, minus, frame 2, 1 extra base
+Seq-loc ::= int {
+  from 0,
+  to 99,
+  strand plus,
+  id gi 3,
+  fuzz-from lim lt
+}
+
+-- nuc->prot, position, minus, frame 2, 1 extra base
+Seq-loc ::= int {
+  from 2,
+  to 97,
+  strand plus,
+  id gi 3
+}
+
+-- prot->nuc, boundaries, minus, frame 2, 1 extra base
+Seq-loc ::= int {
+  from 0,
+  to 298,
+  strand minus,
+  id gi 2,
+  fuzz-from lim lt
+}
+
+-- prot->nuc, position, minus, frame 2, 1 extra base
+Seq-loc ::= int {
+  from 26,
+  to 289,
+  strand minus,
+  id gi 2
+}
+
+-- nuc->prot, boundaries, minus, frame 2, 2 extra bases
+Seq-loc ::= int {
+  from 0,
+  to 99,
+  strand plus,
+  id gi 3,
+  fuzz-from lim lt
+}
+
+-- nuc->prot, position, minus, frame 2, 2 extra bases
+Seq-loc ::= int {
+  from 2,
+  to 97,
+  strand plus,
+  id gi 3
+}
+
+-- prot->nuc, boundaries, minus, frame 2, 2 extra bases
+Seq-loc ::= int {
+  from 0,
+  to 298,
+  strand minus,
+  id gi 2,
+  fuzz-from lim lt
+}
+
+-- prot->nuc, position, minus, frame 2, 2 extra bases
+Seq-loc ::= int {
+  from 26,
+  to 289,
+  strand minus,
+  id gi 2
+}
+
+
+-- nuc->prot, boundaries, minus, frame 3, no extra bases
+Seq-loc ::= int {
+  from 0,
+  to 99,
+  strand plus,
+  id gi 3,
+  fuzz-from lim lt
+}
+
+-- nuc->prot, position, minus, frame 3, no extra bases
+Seq-loc ::= int {
+  from 2,
+  to 97,
+  strand plus,
+  id gi 3
+}
+
+-- prot->nuc, boundaries, minus, frame 3, no extra bases
+Seq-loc ::= int {
+  from 0,
+  to 297,
+  strand minus,
+  id gi 2,
+  fuzz-from lim lt
+}
+
+-- prot->nuc, position, minus, frame 3, no extra bases
+Seq-loc ::= int {
+  from 25,
+  to 288,
+  strand minus,
+  id gi 2
+}
+
+-- nuc->prot, boundaries, minus, frame 3, 1 extra base
+Seq-loc ::= int {
+  from 0,
+  to 99,
+  strand plus,
+  id gi 3,
+  fuzz-from lim lt
+}
+
+-- nuc->prot, position, minus, frame 3, 1 extra base
+Seq-loc ::= int {
+  from 2,
+  to 97,
+  strand plus,
+  id gi 3
+}
+
+-- prot->nuc, boundaries, minus, frame 3, 1 extra base
+Seq-loc ::= int {
+  from 0,
+  to 297,
+  strand minus,
+  id gi 2,
+  fuzz-from lim lt
+}
+
+-- prot->nuc, position, minus, frame 3, 1 extra base
+Seq-loc ::= int {
+  from 25,
+  to 288,
+  strand minus,
+  id gi 2
+}
+
+-- nuc->prot, boundaries, minus, frame 3, 2 extra bases
+Seq-loc ::= int {
+  from 0,
+  to 99,
+  strand plus,
+  id gi 3,
+  fuzz-from lim lt
+}
+
+-- nuc->prot, position, minus, frame 3, 2 extra bases
+Seq-loc ::= int {
+  from 2,
+  to 97,
+  strand plus,
+  id gi 3
+}
+
+-- prot->nuc, boundaries, minus, frame 3, 2 extra bases
+Seq-loc ::= int {
+  from 0,
+  to 297,
+  strand minus,
+  id gi 2,
+  fuzz-from lim lt
+}
+
+-- prot->nuc, position, minus, frame 3, 2 extra bases
+Seq-loc ::= int {
+  from 25,
+  to 288,
+  strand minus,
+  id gi 2
 }

@@ -1117,6 +1117,9 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
     if (trim_src_incomplete_codons  &&
         src_len != kInvalidSeqPos) {
         if (src_len == src_total_len + trim_src_incomplete_codons) {
+            if (IsReverse(src_it.GetStrand())) {
+                src_start += trim_src_incomplete_codons;
+            }
             src_len = src_total_len;
             trim_src_incomplete_codons = 0; // only trim once
         }
@@ -1148,6 +1151,9 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
     if (trim_dst_incomplete_codons  &&
         dst_len != kInvalidSeqPos) {
         if (dst_len == dst_total_len + trim_dst_incomplete_codons) {
+            if (IsReverse(dst_it.GetStrand())) {
+                dst_start += trim_dst_incomplete_codons;
+            }
             dst_len = dst_total_len;
             trim_dst_incomplete_codons = 0; // only trim once
         }
@@ -1265,6 +1271,9 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
             if (trim_src_incomplete_codons  &&
                 src_len != kInvalidSeqPos) {
                 if (src_len == src_total_len + trim_src_incomplete_codons) {
+                    if (IsReverse(src_it.GetStrand())) {
+                        src_start += trim_src_incomplete_codons;
+                    }
                     src_len = src_total_len;
                     trim_src_incomplete_codons = 0; // only trim once
                 }
@@ -1303,6 +1312,9 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
             if (trim_dst_incomplete_codons  &&
                 dst_len != kInvalidSeqPos) {
                 if (dst_len == dst_total_len + trim_dst_incomplete_codons) {
+                    if (IsReverse(dst_it.GetStrand())) {
+                        dst_start += trim_dst_incomplete_codons;
+                    }
                     dst_len = dst_total_len;
                     trim_dst_incomplete_codons = 0; // only trim once
                 }
