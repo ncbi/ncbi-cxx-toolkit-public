@@ -5317,13 +5317,14 @@ static string GetRuleMatch(const CSuspect_rule& rule)
         const CSearch_func& find = rule.GetFind();
         switch (find.Which()) {
             case CSearch_func::e_String_constraint:
-                return string("[n] feature[s] contain[S] \"") + find.GetString_constraint().GetMatch_text() + "\"";
+                return string("[n] feature[s] contain[S] \'") + find.GetString_constraint().GetMatch_text() + "\'";
             case CSearch_func::e_Contains_plural:
                 return "[n] feature[s] may contain plural";
             case CSearch_func::e_N_or_more_brackets_or_parentheses:
                 return "[n] feature[s] violate[S] e_N_or_more_brackets_or_parentheses !!!";
             case CSearch_func::e_Three_numbers:
-                return "[n] feature[s] contain[S] three or more numbers together, but not contain[S] \'methyltransferas\'";
+                //return "[n] feature[s] contain[S] three or more numbers together, but not contain[S] \'methyltransferas\'";
+                return "[n] feature[s] Three or more numbers together but not contain[S] \'methyltransferas\'"; // from C Toolkit
             case CSearch_func::e_Underscore:
                 return "[n] feature[s] contain[S] underscore";
             case CSearch_func::e_Prefix_and_numbers:
@@ -5373,7 +5374,7 @@ DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData, eDisc | eOncaller | eSubmi
                 const CConstraint_choice_set& constr = (*rule)->GetFeat_constraint();
                 if (!DoesObjectMatchConstraintChoiceSet(context, constr)) continue;
             }
-            CReportNode& node = m_Objs["[n] product name[s] contain[S] suspect phrase[s] or character[s]"][GetRuleText(**rule)][GetRuleMatch(**rule)];
+            CReportNode& node = m_Objs["[n] product name[s] contain[S] suspect phrase[s] or character[s]"][GetRuleText(**rule)].Summ()[GetRuleMatch(**rule)].Summ();
             node.Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eNoRef, (*rule)->CanGetReplace(), (CObject*)&**rule)).Fatal((*rule)->GetFatal());
         }
     }
