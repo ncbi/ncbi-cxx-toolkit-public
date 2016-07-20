@@ -1421,6 +1421,17 @@ static char* s_LBOS_Replace0000WithIP(const char* healthcheck_url)
 }
 
 
+static int s_TurnOn()
+{
+    if (s_LBOS_Init == 0) {
+        s_LBOS_funcs.Initialize();
+    }
+    if (s_LBOS_TurnedOn == 0) {
+        return 0;
+    }
+    return 1;
+}
+
 /*/////////////////////////////////////////////////////////////////////////////
 //                             UNIT TESTING                                  //
 /////////////////////////////////////////////////////////////////////////////*/
@@ -1865,10 +1876,7 @@ const SSERV_VTable* SERV_LBOS_Open( SERV_ITER            iter,
     SLBOS_Data* data;
     char* new_name = NULL; /* if we need to add dbaf */
     const char* orig_serv_name = iter->name; /* we may modify name with dbaf */
-    if (s_LBOS_Init == 0) {
-        s_LBOS_funcs.Initialize();
-    }
-    if (s_LBOS_TurnedOn == 0) {
+    if (!s_TurnOn()) {
         return NULL;
     }
     /*
@@ -2000,12 +2008,9 @@ unsigned short s_LBOS_Announce(const char*             service,
     int             parsed_symbols = 0;
     assert(!g_LBOS_StringIsNullOrEmpty(host));
 
-    if (s_LBOS_Init == 0) {
-        s_LBOS_funcs.Initialize();
-    }
-    if (s_LBOS_TurnedOn == 0) {
+    if (s_TurnOn())
         return eLBOS_Disabled;
-    }
+
     lbos_address         = s_LBOS_Instance;
     status_code          = 0;
     status_message       = NULL;
@@ -2331,10 +2336,7 @@ unsigned short LBOS_Deannounce(const char*        service,
     /*
      * Check if LBOS is ON
      */
-    if (s_LBOS_Init == 0) {
-        s_LBOS_funcs.Initialize();
-    }
-    if (s_LBOS_TurnedOn == 0) {
+    if (!s_TurnOn()) {
         return eLBOS_Disabled;
     }
     /*
@@ -2453,6 +2455,20 @@ void LBOS_DeannounceAll()
 /*/////////////////////////////////////////////////////////////////////////////
 //                             LBOS CONFIGURATION                            //
 /////////////////////////////////////////////////////////////////////////////*/
+static int s_CheckConfArgs(const char* service, const char** lbos_answer)
+{
+    unsigned int i;
+    if (g_LBOS_StringIsNullOrEmpty(service)  ||  lbos_answer == NULL) {
+        return 0;
+    }
+    for (i = 0;  i < strlen(service);  i++) {
+        if (isspace(service[i]))
+            return 0;
+    }
+    return 1;
+}
+
+
 /** This request will show currently used version for a requested service.
  * Current and previous version will be the same.
  * @param service[in]
@@ -2475,18 +2491,16 @@ unsigned short LBOS_ServiceVersionGet(const char*  service,
     /*
      * First we check input arguments
      */
-    if (g_LBOS_StringIsNullOrEmpty(service) || lbos_answer == NULL) {
+    if (!s_CheckConfArgs(service, lbos_answer)) {
         return eLBOS_InvalidArgs;
     }
     /*
      * Check if LBOS is ON
      */
-    if (s_LBOS_Init == 0) {
-        s_LBOS_funcs.Initialize();
-    }
-    if (s_LBOS_TurnedOn == 0) {
+    if (!s_TurnOn()) {
         return eLBOS_Disabled;
     }
+    
     /*
      * Arguments are good! Let's do the request
      */
@@ -2533,17 +2547,13 @@ unsigned short LBOS_ServiceVersionSet(const char*  service,
     /*
      * First we check input arguments
      */
-    if (g_LBOS_StringIsNullOrEmpty(service) || lbos_answer == NULL
-            || g_LBOS_StringIsNullOrEmpty(new_version)) {
+    if (!s_CheckConfArgs(service, lbos_answer)) {
         return eLBOS_InvalidArgs;
     }
     /*
      * Check if LBOS is ON
      */
-    if (s_LBOS_Init == 0) {
-        s_LBOS_funcs.Initialize();
-    }
-    if (s_LBOS_TurnedOn == 0) {
+    if (!s_TurnOn()) {
         return eLBOS_Disabled;
     }
     /*
@@ -2583,16 +2593,13 @@ unsigned short LBOS_ServiceVersionDelete(const char*  service,
     /*
      * First we check input arguments
      */
-    if (g_LBOS_StringIsNullOrEmpty(service) || lbos_answer == NULL) {
+    if (!s_CheckConfArgs(service, lbos_answer)) {
         return eLBOS_InvalidArgs;
     }
     /*
      * Check if LBOS is ON
      */
-    if (s_LBOS_Init == 0) {
-        s_LBOS_funcs.Initialize();
-    }
-    if (s_LBOS_TurnedOn == 0) {
+    if (!s_TurnOn()) {
         return eLBOS_Disabled;
     }
     /*

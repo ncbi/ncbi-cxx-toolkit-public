@@ -1056,7 +1056,7 @@ static string s_GetUnknownService() {
 static void s_CleanDTabs() {
     vector<string>      nodes_to_delete;
     CConnNetInfo        net_info;
-    size_t              start           = 0, 
+    size_t              start           = 0,
                         end             = 0;
     CCObjHolder<char>   lbos_address    (g_LBOS_GetLBOSAddress());
     string              lbos_addr       (lbos_address.Get());
@@ -1068,17 +1068,19 @@ static void s_CleanDTabs() {
         lbos_output_orig = strdup("");
     string lbos_output = *lbos_output_orig;
     WRITE_LOG("admin/dtab output: \n" << lbos_output);
-    string to_find = string("/deleteme") + NStr::Replace(s_GetMyIP(),".", "");    
+    string to_find = string("/deleteme") + NStr::Replace(s_GetMyIP(),".", "");
     while (start != string::npos) {
         start = lbos_output.find(to_find, start);
         if (start == string::npos)
             break;
         // We already know service name since we searched for it.
         end = lbos_output.find("=>", start); //skip service name
-        nodes_to_delete.push_back(lbos_output.substr(start, end-start));
+        string service = lbos_output.substr(start, end - start);
+        service = NStr::Replace(service, " ", "");
+        nodes_to_delete.push_back(service);
         start = end+7; //skip "=>/zk#/" 
     }
-    
+
     vector<string>::iterator it;
     for (it = nodes_to_delete.begin();  it != nodes_to_delete.end();  it++ ) {
         LBOSPrivate::DeleteServiceVersion(*it);
