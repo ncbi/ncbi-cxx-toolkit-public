@@ -141,12 +141,13 @@ static const std::string kOrganelleNotGenomic = "[n] non-genomic sequence[s] [is
 
 DISCREPANCY_CASE(ORGANELLE_NOT_GENOMIC, CSeqdesc_BY_BIOSEQ, eDisc | eOncaller, "Organelle location should have genomic moltype")
 {
-    if (!obj.IsSource() || context.IsDNA()) {
+    if (!obj.IsSource() || context.GetCurrentBioseq()->IsAa()) {
         return;
     }
 
     const CMolInfo* molinfo = context.GetCurrentMolInfo();
-    if (molinfo == nullptr || !molinfo->IsSetBiomol() || molinfo->GetBiomol() == CMolInfo::eBiomol_genomic)
+    if (molinfo == nullptr ||
+        (!molinfo->IsSetBiomol() || molinfo->GetBiomol() == CMolInfo::eBiomol_genomic) && context.IsDNA())
         return;
 
     if (context.IsOrganelle())
