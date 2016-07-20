@@ -244,8 +244,12 @@ DISCREPANCY_SUMMARIZE(TITLE_AUTHOR_CONFLICT)
         ++it;
     }
     m_Objs.GetMap().erase("titles");
-
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+    if (m_Objs.GetMap().size() == 1) {
+        m_ReportItems = m_Objs.GetMap().begin()->second->Export(*this)->GetSubitems();
+    }
+    else {
+        m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+    }
 }
 
 
@@ -572,6 +576,25 @@ DISCREPANCY_CASE(CITSUBAFFIL_CONFLICT, CPubdesc, eDisc | eOncaller | eSmart, "Al
 }
 
 
+DISCREPANCY_CASE(CITSUBAFFIL_CONFLICT_1, CAuth_list, eDisc | eOncaller | eSmart, "All Cit-subs should have identical affiliations")
+{
+    CRef<CDiscrepancyObject> repobj = context.NewFeatOrDescOrSubmitBlockObj();
+    //m_Objs[kMissingAuthorsName].Add(*context.NewFeatOrDescOrSubmitBlockObj());
+
+    obj.GetAffil();
+}
+
+
+DISCREPANCY_SUMMARIZE(CITSUBAFFIL_CONFLICT_1)
+{
+    CReportNode out;
+    if (m_Objs.empty()) {
+        out[kCitSubSummary]["No citsubs were found!"].Fatal();
+    }
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
 static void SummarizeAffilField
 (CReportNode& objs,
  CDiscrepancyContext& context, 
@@ -811,18 +834,7 @@ DISCREPANCY_CASE(CONSORTIUM, CAuth_list, eOncaller, "Submitter blocks and public
     if (obj.IsSetNames() && obj.GetNames().IsStd()) {
         ITERATE (CAuth_list::C_Names::TStd, auth, obj.GetNames().GetStd()) {
             if ((*auth)->IsSetName() && (*auth)->GetName().IsConsortium()) {
-                CConstRef<CSeq_feat> feat = context.GetCurrentSeq_feat();
-                CConstRef<CSeqdesc> desc = context.GetCurrentSeqdesc();
-                _ASSERT(!feat || !desc);
-                if (feat) {
-                    m_Objs[kHasConsortium].Add(*context.NewDiscObj(feat));
-                }
-                else if (desc) {
-                    m_Objs[kHasConsortium].Add(*context.NewDiscObj(desc));
-                }
-                else {
-                    m_Objs[kHasConsortium].Add(*context.NewSubmitBlockObj());
-                }
+                m_Objs[kHasConsortium].Add(*context.NewFeatOrDescOrSubmitBlockObj());
             }
         }
     }
@@ -841,38 +853,23 @@ const string kMissingAuthorsName = "[n] pub[s] missing author\'s first or last n
 
 DISCREPANCY_CASE(CHECK_AUTH_NAME, CAuth_list, eDisc | eOncaller | eSubmitter | eSmart, "Missing authors or first/last author's names")
 {
-    bool report = false;
     if (context.IsPubMed()) {
         return;
     }
     if (obj.IsSetNames() && obj.GetNames().IsStd()) {
         const CAuth_list::C_Names::TStd& names = obj.GetNames().GetStd();
         if (names.empty()) {
-            report = true;
+            m_Objs[kMissingAuthorsName].Add(*context.NewFeatOrDescOrSubmitBlockObj());
         }
         else {
             ITERATE (CAuth_list::C_Names::TStd, auth, obj.GetNames().GetStd()) {
                 if (!(*auth)->IsSetName() || !(*auth)->GetName().IsName()
                         || !(*auth)->GetName().GetName().CanGetFirst() || !(*auth)->GetName().GetName().CanGetLast()
                         || !(*auth)->GetName().GetName().GetFirst().empty() || !(*auth)->GetName().GetName().GetFirst().empty()) {
-                    report = true;
+                    m_Objs[kMissingAuthorsName].Add(*context.NewFeatOrDescOrSubmitBlockObj());
                     break;
                 }
             }
-        }
-    }
-    if (report) {
-        CConstRef<CSeq_feat> feat = context.GetCurrentSeq_feat();
-        CConstRef<CSeqdesc> desc = context.GetCurrentSeqdesc();
-        _ASSERT(!feat || !desc);
-        if (feat) {
-            m_Objs[kMissingAuthorsName].Add(*context.NewDiscObj(feat));
-        }
-        else if (desc) {
-            m_Objs[kMissingAuthorsName].Add(*context.NewDiscObj(desc));
-        }
-        else {  // C Toolkit does not test submit blocks; C++ Toolkit - does!
-            m_Objs[kMissingAuthorsName].Add(*context.NewSubmitBlockObj());
         }
     }
 }
