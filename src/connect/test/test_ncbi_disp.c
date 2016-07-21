@@ -33,9 +33,7 @@
 #include "../ncbi_ansi_ext.h"
 #include "../ncbi_lbsmd.h"
 #include "../ncbi_priv.h"               /* CORE logging facilities */
-#ifdef NCBI_CXX_TOOLKIT
-#  include <connect/ncbi_gnutls.h>
-#endif /*NCBI_CXX_TOOLKIT*/
+#include <connect/ncbi_gnutls.h>
 #include <stdlib.h>
 #include <time.h>
 #ifdef NCBI_OS_MSWIN

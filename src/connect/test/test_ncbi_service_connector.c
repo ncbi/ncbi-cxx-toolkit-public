@@ -32,9 +32,7 @@
 
 #include "../ncbi_ansi_ext.h"
 #include "../ncbi_priv.h"               /* CORE logging facilities */
-#ifdef NCBI_CXX_TOOLKIT
-#  include <connect/ncbi_gnutls.h>
-#endif /*NCBI_CXX_TOOLKIT*/
+#include <connect/ncbi_gnutls.h>
 #include <connect/ncbi_service_connector.h>
 #include <stdlib.h>
 #include <time.h>
