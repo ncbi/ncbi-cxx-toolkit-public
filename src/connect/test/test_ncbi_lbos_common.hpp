@@ -1078,7 +1078,7 @@ static void s_CleanDTabs() {
         string service = lbos_output.substr(start, end - start);
         service = NStr::Replace(service, " ", "");
         nodes_to_delete.push_back(service);
-        start = end+7; //skip "=>/zk#/" 
+        start = lbos_output.find("\n", end + 1); //skip "=>/zk#/" 
     }
 
     vector<string>::iterator it;
