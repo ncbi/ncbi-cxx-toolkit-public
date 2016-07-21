@@ -5,7 +5,7 @@ WATCHERS = camacho madden fongah2
 APP = magicblast
 SRC = magicblast_app
 LIB_ =$(BLAST_INPUT_LIBS) blast_sra_input $(BLAST_LIBS) $(SRAREAD_LIBS) $(OBJMGR_LIBS)
-LIB = blast_app_util $(LIB_:%=%$(STATIC))
+LIB = $(LIB_:%=%$(STATIC))
 
 # De-universalize Mac builds to work around a PPC toolchain limitation
 CFLAGS 	 = $(FAST_CXXFLAGS:ppc=i386) 

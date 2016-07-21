@@ -38,7 +38,7 @@
 #include <algo/blast/api/magicblast_options.hpp>
 #include <algo/blast/blastinput/blast_fasta_input.hpp>
 #include <algo/blast/blastinput/blast_asn1_input.hpp>
-#include <algo/blast/blastinput/blast_sra_input.hpp>
+#include <algo/blast/blast_sra_input/blast_sra_input.hpp>
 #include <algo/blast/blastinput/magicblast_args.hpp>
 #include <algo/blast/api/objmgr_query_data.hpp>
 #include <algo/blast/format/blast_format.hpp>

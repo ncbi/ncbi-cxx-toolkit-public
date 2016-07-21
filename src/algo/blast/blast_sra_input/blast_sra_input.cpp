@@ -39,7 +39,7 @@
 #include <objects/general/User_object.hpp>
 
 #include <algo/blast/blastinput/blast_input_aux.hpp>
-#include <algo/blast/blastinput/blast_sra_input.hpp>
+#include <algo/blast/blast_sra_input/blast_sra_input.hpp>
 #include <util/sequtil/sequtil_convert.hpp>
 
 BEGIN_NCBI_SCOPE
