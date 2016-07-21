@@ -15,6 +15,7 @@ HOSTED_LIBS    = xncbi     \
                  xxconnect \
                  xconnect  \
                  connect   \
+                 connssl   \
                  xser      \
                  xqueryparse
 
