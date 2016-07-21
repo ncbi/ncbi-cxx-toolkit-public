@@ -32,6 +32,10 @@
 #include "utils.hpp"
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/SubSource.hpp>
+#include <objects/general/User_object.hpp>
+#include <objects/general/Object_id.hpp>
+#include <objects/valid/Comment_rule.hpp>
+#include <objects/valid/Comment_set.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/util/feature.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -147,17 +151,166 @@ DISCREPANCY_CASE(ORGANELLE_NOT_GENOMIC, CSeqdesc_BY_BIOSEQ, eDisc | eOncaller, "
 
     const CMolInfo* molinfo = context.GetCurrentMolInfo();
     if (molinfo == nullptr ||
-        (!molinfo->IsSetBiomol() || molinfo->GetBiomol() == CMolInfo::eBiomol_genomic) && context.IsDNA())
+        (!molinfo->IsSetBiomol() || molinfo->GetBiomol() == CMolInfo::eBiomol_genomic) && context.IsDNA()) {
         return;
+    }
 
-    if (context.IsOrganelle())
+    if (context.IsOrganelle()) {
         m_Objs[kOrganelleNotGenomic].Add(*context.NewDiscObj(CConstRef<CSeqdesc>(&obj)));
+    }
 }
 
 
 DISCREPANCY_SUMMARIZE(ORGANELLE_NOT_GENOMIC)
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+// SWITCH_STRUCTURED_COMMENT_PREFIX
+
+static const std::string kBadStructCommentPrefix = "[n] structured comment[s] [is] invalid but would be valid with a different prefix";
+
+static const char* kStructuredCommentPrefix = "StructuredCommentPrefix";
+static const char* kStructuredCommentSuffix = "StructuredCommentSuffix";
+
+enum EPrefixOrSuffixType
+{
+    eType_none,
+    eType_prefix,
+    eType_suffix
+};
+
+static EPrefixOrSuffixType GetPrefixOrSuffixType(const CUser_field& field)
+{
+    EPrefixOrSuffixType type = eType_none;
+
+    if (field.IsSetData() && field.GetData().IsStr() && field.IsSetLabel() && field.GetLabel().IsStr()) {
+        if (NStr::Equal(field.GetLabel().GetStr(), kStructuredCommentPrefix)) {
+            type = eType_prefix;
+        }
+        else if (NStr::Equal(field.GetLabel().GetStr(), kStructuredCommentSuffix)) {
+            type = eType_suffix;
+        }
+    }
+
+    return type;
+}
+
+static bool IsAppropriateRule(const CComment_rule& rule, const CUser_object& user)
+{
+    bool ret = true;
+    if (user.IsSetData() && !user.GetData().empty()) {
+        ITERATE(CUser_object::TData, field, user.GetData()) {
+
+            EPrefixOrSuffixType prefixOrSuffix = GetPrefixOrSuffixType(**field);
+            if (prefixOrSuffix == eType_none) {
+
+                CConstRef<CField_rule> field_rule = rule.FindFieldRuleRef((*field)->GetLabel().GetStr());
+                if (field_rule.Empty()) {
+                    ret = false;
+                    break;
+                }
+            }
+        }
+    }
+
+    return ret;
+}
+
+const CComment_rule* FindAppropriateRule(const CComment_set& rules, const CUser_object& user)
+{
+    const CComment_rule* ret = nullptr;
+    if (rules.IsSet()) {
+        ITERATE(CComment_set::Tdata, rule, rules.Get()) {
+
+            CComment_rule::TErrorList errors = (*rule)->IsValid(user);
+
+            if (errors.empty() && IsAppropriateRule(**rule, user)) {
+                if (ret == nullptr) {
+                    ret = *rule;
+                }
+                else {
+                    ret = nullptr;
+                    break;
+                }
+            }
+        }
+    }
+
+    return ret;
+}
+
+DISCREPANCY_CASE(SWITCH_STRUCTURED_COMMENT_PREFIX, CSeqdesc, eOncaller, "Suspicious structured comment prefix")
+{
+    if (obj.IsUser() && obj.GetUser().GetObjectType() == CUser_object::eObjectType_StructuredComment) {
+
+        const CUser_object& user = obj.GetUser();
+        string prefix = CComment_rule::GetStructuredCommentPrefix(user);
+        if (!prefix.empty()) {
+
+            CConstRef<CComment_set> comment_rules = CComment_set::GetCommentRules();
+
+            const CComment_rule& rule = comment_rules->FindCommentRule(prefix);
+            CComment_rule::TErrorList errors = rule.IsValid(user);
+
+            if (!errors.empty()) {
+                const CComment_rule* new_rule = FindAppropriateRule(*comment_rules, user);
+
+                if (new_rule) {
+                    m_Objs[kBadStructCommentPrefix].Add(*context.NewDiscObj(CConstRef<CSeqdesc>(&obj), eKeepRef, true, const_cast<CComment_rule*>(new_rule)));
+                }
+            }
+        }
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(SWITCH_STRUCTURED_COMMENT_PREFIX)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+DISCREPANCY_AUTOFIX(SWITCH_STRUCTURED_COMMENT_PREFIX)
+{
+    TReportObjectList list = item->GetDetails();
+    unsigned int n = 0;
+
+    CConstRef<CComment_set> comment_rules = CComment_set::GetCommentRules();
+
+    NON_CONST_ITERATE(TReportObjectList, it, list) {
+        CDiscrepancyObject* dobj = dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer());
+
+        const CSeqdesc* desc = dynamic_cast<const CSeqdesc*>(dobj->GetObject().GetPointer());
+        const CComment_rule* new_rule = dynamic_cast<const CComment_rule*>(dobj->GetMoreInfo().GetPointer());
+        if (desc && new_rule) {
+
+            CSeqdesc* desc_handle = const_cast<CSeqdesc*>(desc);
+            CUser_object& user = desc_handle->SetUser();
+
+            static const string prefix_tail = "START##";
+            static const string suffix_tail = "END##";
+
+            string prefix = new_rule->GetPrefix();
+            string suffix = prefix.substr(0, prefix.size() - prefix_tail.size()) + suffix_tail;
+
+            NON_CONST_ITERATE(CUser_object::TData, field, user.SetData()) {
+
+                EPrefixOrSuffixType prefixOrSuffix = GetPrefixOrSuffixType(**field);
+                if (prefixOrSuffix == eType_prefix) {
+
+                    (*field)->SetData().SetStr(prefix);
+                    n++;
+                }
+                else if (prefixOrSuffix == eType_suffix) {
+                    (*field)->SetData().SetStr(suffix);
+                    ++n;
+                }
+            }
+        }
+    }
+    return CRef<CAutofixReport>(n ? new CAutofixReport("SWITCH_STRUCTURED_COMMENT_PREFIX: Prefix is changed in [n] structured comment[s]", n) : 0);
 }
 
 
