@@ -206,7 +206,7 @@ BOOST_AUTO_TEST_CASE(CheckRemoteRPSBlastOptionsHandle) {
     rmt_blaster.SetDatabase("cdd");
     CRemoteBlast::TSeqLocList query_seqlocs;
     CRef<CSeq_loc> sl(new CSeq_loc);
-    sl->SetWhole().SetGi(GI_FROM(TIntId, 129295));
+    sl->SetWhole().SetGi(GI_CONST(129295));
     query_seqlocs.push_back(sl);
     rmt_blaster.SetQueries(query_seqlocs);
 

@@ -69,7 +69,7 @@ BOOST_AUTO_TEST_CASE(VecscreenRunWithHits)
     CRef<CScope> scope = ss.NewScope();
 
     CRef<CSeq_loc> query_loc(new CSeq_loc());
-    query_loc->SetWhole().SetGi(GI_FROM(TIntId, 555));
+    query_loc->SetWhole().SetGi(GI_CONST(555));
 
     CVecscreenRun vs_run(query_loc, scope);
 
@@ -94,7 +94,7 @@ BOOST_AUTO_TEST_CASE(VecscreenRunWithNoHits)
     CRef<CScope> scope = ss.NewScope();
 
     CRef<CSeq_loc> query_loc(new CSeq_loc());
-    query_loc->SetWhole().SetGi(GI_FROM(TIntId, 405832));
+    query_loc->SetWhole().SetGi(GI_CONST(405832));
 
     CVecscreenRun vs_run(query_loc, scope);
 
@@ -113,7 +113,7 @@ BOOST_AUTO_TEST_CASE(VecscreenRunWithNoDataLoader)
     CRef<CScope> scope(new CScope(*object_manager));
 
     CRef<CSeq_loc> query_loc(new CSeq_loc());
-    query_loc->SetWhole().SetGi(GI_FROM(TIntId, 555));
+    query_loc->SetWhole().SetGi(GI_CONST(555));
 
     BOOST_REQUIRE_THROW(CVecscreenRun vs_run(query_loc, scope), blast::CBlastException);
 }

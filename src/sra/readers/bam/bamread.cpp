@@ -351,7 +351,7 @@ CRef<CSeq_id> sx_GetRefSeq_id(const string& str, IIdMapper* idmapper)
         catch ( CException& /*ignored*/ ) {
         }
     }
-    if ( !id || (id->IsGi() && id->GetGi() < GI_FROM(int,1000) ) ) {
+    if ( !id || (id->IsGi() && id->GetGi() < GI_CONST(1000) ) ) {
         id = new CSeq_id(CSeq_id::e_Local, str);
     }
     sx_MapId(*id, idmapper);

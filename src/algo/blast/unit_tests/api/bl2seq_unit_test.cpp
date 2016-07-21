@@ -1986,7 +1986,7 @@ BOOST_AUTO_TEST_CASE(ProteinBlast2Seqs) {
     CSeq_id id("gi|129295");
     auto_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateSSeqLoc(id));
 
-    id.SetGi(GI_FROM(TIntId, 7662354));
+    id.SetGi(GI_CONST(7662354));
     auto_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(id));
 
     CBl2Seq blaster(*query, *subj, eBlastp);
@@ -2197,7 +2197,7 @@ BOOST_AUTO_TEST_CASE(ProteinBlastChangeQuery) {
     CSeq_id id("gi|129295");
     auto_ptr<SSeqLoc> query(CTestObjMgr::Instance().CreateSSeqLoc(id));
 
-    id.SetGi(GI_FROM(TIntId, 7662354));
+    id.SetGi(GI_CONST(7662354));
     auto_ptr<SSeqLoc> subj(CTestObjMgr::Instance().CreateSSeqLoc(id));
 
     // Run self hit first
@@ -3593,7 +3593,7 @@ BOOST_AUTO_TEST_CASE(MultiIntervalLoc) {
 
 BOOST_AUTO_TEST_CASE(QueryMaskIgnoredInMiniExtension) {
     CRef<CSeq_loc> qloc(new CSeq_loc());
-    qloc->SetWhole().SetGi(GI_FROM(TIntId, 4505696));
+    qloc->SetWhole().SetGi(GI_CONST(4505696));
     CSeq_id sid("gi|29809252");
     pair<TSeqPos, TSeqPos> range(662070, 662129);
 

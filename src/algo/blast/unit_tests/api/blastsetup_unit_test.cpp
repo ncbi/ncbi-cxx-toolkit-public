@@ -834,8 +834,8 @@ BOOST_AUTO_TEST_CASE(testCalcEffLengths)
     const EProgram kProgram[kNumPrograms] = 
         { eBlastn, eBlastp, eBlastx, eTblastn, eTblastx, eRPSBlast, 
         eRPSTblastn };
-    const TGi kNuclGi = GI_FROM(TIntId, 555);
-    const TGi kProtGi = GI_FROM(TIntId, 129295);
+    const TGi kNuclGi = GI_CONST(555);
+    const TGi kProtGi = GI_CONST(129295);
     // Use values for database length and number of sequences that 
     // approximate the real ones for nt.00 and nr as of 12/17/2004.
     const Int8 kNuclDbLength = (Int8) 39855e+5;

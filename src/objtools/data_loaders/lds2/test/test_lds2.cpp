@@ -328,7 +328,7 @@ void CLDS2TestApplication::x_InitStressTest(void)
             id.SetGi(gi);
             CSeq_feat& feat = *e.SetSeq().SetAnnot().front()->SetData().SetFtable().front();
             feat.SetLocation().SetWhole().SetGi(gi);
-            feat.SetProduct().SetWhole().SetGi(gi+GI_FROM(TIntId, 1));
+            feat.SetProduct().SetWhole().SetGi(gi+GI_CONST(1));
             if ( fasta_out.get() ) {
                 fasta_out->Write(e);
             }

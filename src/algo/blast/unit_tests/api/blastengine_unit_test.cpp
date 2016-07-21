@@ -148,8 +148,8 @@ void testShortMatchDiagnostics(BlastDiagnostics* diagnostics)
 BOOST_AUTO_TEST_CASE(testTBLASTNLongMatchBlastEngine) {
     const Int4 kNumHspsEnd=23;
     const Int8 kEffectiveSearchSpace = 1050668186940LL;
-    const TGi kQueryGi = GI_FROM(TIntId, 9790067);
-    const TGi kSubjectGi = GI_FROM(TIntId, 30698605);
+    const TGi kQueryGi = GI_CONST(9790067);
+    const TGi kSubjectGi = GI_CONST(30698605);
     const EBlastProgramType kProgramType = eBlastTypeTblastn;
     const EProgram kProgram = eTblastn;
 
@@ -220,8 +220,8 @@ BOOST_AUTO_TEST_CASE(testTBLASTNLongMatchBlastEngine) {
 BOOST_AUTO_TEST_CASE(testTBLASTNShortMatchBlastEngine) {
     const Int4 kNumHspsEnd=8;
     const Int8 kEffectiveSearchSpace = 1050668186940LL;
-    const TGi kQueryGi = GI_FROM(TIntId, 9790067);
-    const TGi kSubjectGi = GI_FROM(TIntId, 38547463);
+    const TGi kQueryGi = GI_CONST(9790067);
+    const TGi kSubjectGi = GI_CONST(38547463);
     const EBlastProgramType kProgramType = eBlastTypeTblastn;
     const EProgram kProgram = eTblastn;
     
@@ -282,8 +282,8 @@ BOOST_AUTO_TEST_CASE(testTBLASTNShortMatchBlastEngine) {
 // and hence has a large number of hits, even with an increased word size.
 BOOST_AUTO_TEST_CASE(testBlastnWithLargeWordSize)
 {
-    const TGi kQueryGi = GI_FROM(TIntId, 186279); // Short human sequence with repeats
-    const TGi kSubjectGi = GI_FROM(TIntId, 29791382); // Contig from human chromosome 1
+    const TGi kQueryGi = GI_CONST(186279); // Short human sequence with repeats
+    const TGi kSubjectGi = GI_CONST(29791382); // Contig from human chromosome 1
     const int kNumHsps = 330;
     const EBlastProgramType kProgramType = eBlastTypeBlastn;
 
@@ -316,8 +316,8 @@ BOOST_AUTO_TEST_CASE(testBlastnWithLargeWordSize)
 // only 1 HSP is left. 
 BOOST_AUTO_TEST_CASE(testBlastnWithRepeatsFiltering)
 {
-    const TGi kQueryGi = GI_FROM(TIntId, 186279); // Short human sequence with repeats
-    const TGi kSubjectGi = GI_FROM(TIntId, 29791382); // Contig from human chromosome 1
+    const TGi kQueryGi = GI_CONST(186279); // Short human sequence with repeats
+    const TGi kSubjectGi = GI_CONST(29791382); // Contig from human chromosome 1
     const int kNumHsps = 3;
     const int kMaskedLength = 389;
     const EBlastProgramType kProgramType = eBlastTypeBlastn;
@@ -355,7 +355,7 @@ BOOST_AUTO_TEST_CASE(testBlastnWithRepeatsFiltering)
 
 BOOST_AUTO_TEST_CASE(testDiscMegaBlastPartialRun) 
 {
-    const TGi kQueryGi = GI_FROM(TIntId, 14702146); 
+    const TGi kQueryGi = GI_CONST(14702146); 
     const string kDbName("data/seqn");
     const size_t kNumHits = 2;
     const TIntId kGis[kNumHits] = { 46071158, 46072400 };
@@ -412,8 +412,8 @@ BOOST_AUTO_TEST_CASE(testDiscMegaBlastPartialRun)
 BOOST_AUTO_TEST_CASE(testBlastpPrelimSearch) 
 {
     const string kDbName("data/seqp");
-    const TGi kQueryGi1 = GI_FROM(TIntId, 21282798);
-    const TGi kQueryGi2 = GI_FROM(TIntId, 129295);
+    const TGi kQueryGi1 = GI_CONST(21282798);
+    const TGi kQueryGi2 = GI_CONST(129295);
     const int kNumHits = 31;
     const int kNumHitsToCheck = 3;
     const int kIndices[kNumHitsToCheck] = { 1, 4, 8 };

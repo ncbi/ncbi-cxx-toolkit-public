@@ -261,7 +261,7 @@ int CIdfetchApplication::Run(void)
         // processing single sequence
         CSeq_id_Handle idh;
         if (args["g"]) {
-            idh = CSeq_id_Handle::GetHandle(args["g"].AsInteger());
+            idh = CSeq_id_Handle::GetHandle(args["g"].AsInt8());
         }
         else if (args["s"]) {
             idh = CSeq_id_Handle::GetHandle(args["s"].AsString());
@@ -283,7 +283,7 @@ int CIdfetchApplication::Run(void)
 
         string query = args["q"].AsString();
 
-        vector<int> uids;
+        vector<TGi> uids;
         CEutilsClient cli;
         if (args["dp"]) {
             cli.Search("protein", query, uids);
@@ -297,7 +297,7 @@ int CIdfetchApplication::Run(void)
                        "indicate the database of interest");
         }
 
-        ITERATE (vector<int>, it, uids) {
+        ITERATE (vector<TGi>, it, uids) {
             CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*it);
             CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
             if ( !bsh ) {

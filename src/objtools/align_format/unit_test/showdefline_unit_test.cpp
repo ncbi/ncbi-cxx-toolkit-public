@@ -115,7 +115,7 @@ struct CShowBlastDeflineTest : public CShowBlastDefline {
                   CShowBlastDefline::SScoreInfo* si, 
                   int index)
     {
-        TGi gi_list[] = {GI_FROM(TIntId, 18426812), GI_FROM(TIntId, 6680636)};
+        TGi gi_list[] = {GI_CONST(18426812), GI_CONST(6680636)};
         string defline[] = {"adenosine deaminase [Rattus norvegicus]", 
                             "adenosine deaminase [Mus musculus]"};
         string evalue_string[] = {"2e-141", "3e-141"};

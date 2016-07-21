@@ -101,7 +101,7 @@ void s_PrintIds(const CBioseq_Handle& handle, CNcbiOstream& os)
 
 static const CSeq_id_Handle& s_GetNewIdHandle()
 {
-    static CSeq_id_Handle id = CSeq_id_Handle::GetGiHandle(GI_FROM(TIntId, 2122545143));
+    static CSeq_id_Handle id = CSeq_id_Handle::GetGiHandle(GI_CONST(2122545143));
     return id;
 }
 

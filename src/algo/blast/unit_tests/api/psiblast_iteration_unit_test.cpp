@@ -58,7 +58,7 @@ BOOST_AUTO_TEST_CASE(TestAsLoopCounter) {
             itr.Advance(ids);
         }
 
-        BOOST_REQUIRE_EQUAL(gi, GI_FROM(unsigned int, kNumIterations));
+        BOOST_REQUIRE_EQUAL(gi, GI_CONST(kNumIterations));
         BOOST_REQUIRE_EQUAL(kNumIterations+1, itr.GetIterationNumber());
         BOOST_REQUIRE_EQUAL(false, itr.HasMoreIterations());
         BOOST_REQUIRE_EQUAL(false, itr.HasConverged());
@@ -70,8 +70,8 @@ BOOST_AUTO_TEST_CASE(TestConvergence) {
         BOOST_REQUIRE_EQUAL(false, itr.HasConverged());
         BOOST_REQUIRE_EQUAL(1U, itr.GetIterationNumber());
         CPsiBlastIterationState::TSeqIds ids, ids_plus_1;
-        ids.insert(CSeq_id_Handle::GetHandle(GI_FROM(TIntId, 555)));
-        ids_plus_1.insert(CSeq_id_Handle::GetHandle(GI_FROM(TIntId, 556)));
+        ids.insert(CSeq_id_Handle::GetHandle(GI_CONST(555)));
+        ids_plus_1.insert(CSeq_id_Handle::GetHandle(GI_CONST(556)));
 
         itr.Advance(ids);
         BOOST_REQUIRE_EQUAL(false, itr.HasConverged());
@@ -97,9 +97,9 @@ BOOST_AUTO_TEST_CASE(TestConvergence2) {
         BOOST_REQUIRE_EQUAL(false, itr.HasConverged());
         BOOST_REQUIRE_EQUAL(1U, itr.GetIterationNumber());
         CPsiBlastIterationState::TSeqIds ids_itr1, ids_itr2;
-        ids_itr1.insert(CSeq_id_Handle::GetHandle(GI_FROM(TIntId, 555)));
-        ids_itr1.insert(CSeq_id_Handle::GetHandle(GI_FROM(TIntId, 556)));
-        ids_itr2.insert(CSeq_id_Handle::GetHandle(GI_FROM(TIntId, 555)));
+        ids_itr1.insert(CSeq_id_Handle::GetHandle(GI_CONST(555)));
+        ids_itr1.insert(CSeq_id_Handle::GetHandle(GI_CONST(556)));
+        ids_itr2.insert(CSeq_id_Handle::GetHandle(GI_CONST(555)));
 
         itr.Advance(ids_itr1);
         BOOST_REQUIRE_EQUAL(false, itr.HasConverged());
@@ -117,8 +117,8 @@ BOOST_AUTO_TEST_CASE(TestModifyingConvergedIterationState) {
         BOOST_REQUIRE_EQUAL(false, itr.HasConverged());
 
         CPsiBlastIterationState::TSeqIds ids;
-        ids.insert(CSeq_id_Handle::GetHandle(GI_FROM(TIntId, 555)));
-        ids.insert(CSeq_id_Handle::GetHandle(GI_FROM(TIntId, 555)));
+        ids.insert(CSeq_id_Handle::GetHandle(GI_CONST(555)));
+        ids.insert(CSeq_id_Handle::GetHandle(GI_CONST(555)));
         itr.Advance(ids);
         BOOST_REQUIRE_EQUAL(false, itr.HasConverged());
 

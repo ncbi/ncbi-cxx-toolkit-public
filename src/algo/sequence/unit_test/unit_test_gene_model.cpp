@@ -350,8 +350,8 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
     set<CSeq_id_Handle> genes_for_redo_partial;
     genes_for_redo_partial.insert(CSeq_id_Handle::GetHandle(gene_for_combined_aligns));
     genes_for_redo_partial.insert(CSeq_id_Handle::GetHandle("NT_011515.12"));
-    genes_for_redo_partial.insert(CSeq_id_Handle::GetGiHandle(GI_FROM(int,224514634)));
-    genes_for_redo_partial.insert(CSeq_id_Handle::GetGiHandle(GI_FROM(int,258441149)));
+    genes_for_redo_partial.insert(CSeq_id_Handle::GetGiHandle(GI_CONST(224514634)));
+    genes_for_redo_partial.insert(CSeq_id_Handle::GetGiHandle(GI_CONST(258441149)));
 
     const int default_flags =
         (CFeatureGenerator::fDefaults &

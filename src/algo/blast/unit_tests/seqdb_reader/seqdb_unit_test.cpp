@@ -2501,7 +2501,7 @@ BOOST_AUTO_TEST_CASE(IntersectionGiList)
     // the other to verify that the code computing the intersection
     // correctly sorts its inputs.
 
-    TGi special = GI_FROM(int, 41);
+    TGi special = GI_CONST(41);
 
     // Add to start of a3
     a3.push_back(special);
@@ -2542,7 +2542,7 @@ BOOST_AUTO_TEST_CASE(IntersectionNegGiList)
     // the other to verify that the code computing the intersection
     // correctly sorts its inputs.
 
-    TGi special = GI_FROM(int, 41);
+    TGi special = GI_CONST(41);
 
     // Add to start of a3
     a3.push_back(special);
@@ -2557,7 +2557,7 @@ BOOST_AUTO_TEST_CASE(IntersectionNegGiList)
 
     // Add to end of a5
     a5.push_back(special);
-    a5.push_back(GI_FROM(int, 1000));
+    a5.push_back(GI_CONST(1000));
 
     CSeqDBNegativeList gi3;
     gi3.SetGiList(a3);

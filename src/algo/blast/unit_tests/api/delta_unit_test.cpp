@@ -284,7 +284,7 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_CBS)
     BOOST_REQUIRE(pssm->HasQuery());
     BOOST_REQUIRE(pssm->GetQuery().GetSeq().IsSetInst());
     BOOST_REQUIRE_EQUAL(pssm->GetQuery().GetSeq().GetFirstId()->GetGi(),
-                        GI_FROM(TIntId, 129295));
+                        GI_CONST(129295));
 
     // check alignments from sequence search results
 
@@ -292,7 +292,7 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_CBS)
 
     BOOST_REQUIRE_EQUAL(
                 results[0].GetSeqAlign()->Get().front()->GetSeq_id(0).GetGi(),
-                GI_FROM(TIntId, 129295));
+                GI_CONST(129295));
 
     const int kNumExpectedMatchingSeqs = 8;
     CConstRef<CSeq_align_set> sas = results[0].GetSeqAlign();
@@ -545,7 +545,7 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_NoCBS)
     BOOST_REQUIRE(pssm->HasQuery());
     BOOST_REQUIRE(pssm->GetQuery().GetSeq().IsSetInst());
     BOOST_REQUIRE_EQUAL(pssm->GetQuery().GetSeq().GetFirstId()->GetGi(),
-                        GI_FROM(TIntId, 129295));
+                        GI_CONST(129295));
 
     // check alignments from sequence search results
 
@@ -553,7 +553,7 @@ BOOST_AUTO_TEST_CASE(TestSingleQuery_NoCBS)
 
     BOOST_REQUIRE_EQUAL(
                 results[0].GetSeqAlign()->Get().front()->GetSeq_id(0).GetGi(),
-                GI_FROM(TIntId, 129295));
+                GI_CONST(129295));
 
     const int kNumExpectedMatchingSeqs = 5;
     CConstRef<CSeq_align_set> sas = results[0].GetSeqAlign();
@@ -683,7 +683,7 @@ BOOST_AUTO_TEST_CASE(TestMultipleQueries)
     // verify query id in Seq_aligns
     BOOST_REQUIRE_EQUAL(
                  results[0].GetSeqAlign()->Get().front()->GetSeq_id(0).GetGi(),
-                 GI_FROM(TIntId, 129295));
+                 GI_CONST(129295));
 
     BOOST_REQUIRE_EQUAL(
      results[1].GetSeqAlign()->Get().front()->GetSeq_id(0).GetPir().GetName(),
@@ -693,7 +693,7 @@ BOOST_AUTO_TEST_CASE(TestMultipleQueries)
     // verify query id in PSSMs
     BOOST_REQUIRE_EQUAL(
            deltablast.GetPssm(0)->GetQuery().GetSeq().GetFirstId()->GetGi(),
-           GI_FROM(TIntId, 129295));
+           GI_CONST(129295));
     
     BOOST_REQUIRE_EQUAL(
      deltablast.GetPssm(1)->GetQuery().GetSeq().GetFirstId()->GetPir().GetName(),

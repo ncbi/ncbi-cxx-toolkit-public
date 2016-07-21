@@ -464,7 +464,7 @@ BOOST_AUTO_TEST_CASE(TracebackEntrez) {
     x_FindUsedGis(*rset[0].GetSeqAlign(), use_these);
     
     BOOST_REQUIRE_EQUAL((int)use_these.size(), 1);
-    BOOST_REQUIRE_EQUAL(*use_these.begin(), GI_FROM(TIntId,158292535));
+    BOOST_REQUIRE_EQUAL(*use_these.begin(), GI_CONST(158292535));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

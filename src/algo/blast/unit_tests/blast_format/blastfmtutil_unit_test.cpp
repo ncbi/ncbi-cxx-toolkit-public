@@ -175,7 +175,7 @@ BOOST_AUTO_TEST_CASE(GetAlnScoresAndGetScoreString)
                                    sum_n, num_ident, use_this_gi);
     BOOST_REQUIRE(score == 1296); 
     BOOST_REQUIRE(sum_n == -1);
-    BOOST_REQUIRE(use_this_gi.front() == GI_FROM(TIntId, 18426812));
+    BOOST_REQUIRE(use_this_gi.front() == GI_CONST(18426812));
     BOOST_REQUIRE_CLOSE(evalue, 217774e-146, kMaxDoubleDiff);
     BOOST_REQUIRE_CLOSE(bits, 503.263, 0.0001);
     BOOST_REQUIRE(num_ident == 331);

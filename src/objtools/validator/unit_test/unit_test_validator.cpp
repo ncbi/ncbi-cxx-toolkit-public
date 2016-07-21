@@ -1996,8 +1996,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ConflictingIdsOnBioseq)
 
     // GI
     scope.RemoveTopLevelSeqEntry(seh);
-    id1->SetGi(GI_FROM(TIntId, 1));
-    id2->SetGi(GI_FROM(TIntId, 2));
+    id1->SetGi(GI_CONST(1));
+    id2->SetGi(GI_CONST(2));
     CRef<CSeq_id> id3(new CSeq_id("gb|AY123456.1"));
     entry->SetSeq().SetId().push_back (id3);
     seh = scope.AddTopLevelSeqEntry(*entry);
@@ -2703,13 +2703,13 @@ BOOST_AUTO_TEST_CASE(Test_HistoryGiCollision)
     entry->SetSeq().SetId().front()->SetGenbank().SetAccession("AY123456");
     entry->SetSeq().SetId().front()->SetGenbank().SetVersion(1);
     CRef<CSeq_id> gi_id(new CSeq_id());
-    gi_id->SetGi(GI_FROM(TIntId, 21914627));
+    gi_id->SetGi(GI_CONST(21914627));
     entry->SetSeq().SetId().push_back(gi_id);
 
     STANDARD_SETUP
 
     CRef<CSeq_id> hist_id(new CSeq_id());
-    hist_id->SetGi(GI_FROM(TIntId, 21914627));
+    hist_id->SetGi(GI_CONST(21914627));
     entry->SetSeq().SetInst().SetHist().SetReplaced_by().SetIds().push_back(hist_id);
     entry->SetSeq().SetInst().SetHist().SetReplaced_by().SetDate().SetStd().SetYear(2008);
 
@@ -2744,7 +2744,7 @@ BOOST_AUTO_TEST_CASE(Test_HistoryGiCollision)
 BOOST_AUTO_TEST_CASE(Test_GiWithoutAccession)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
-    entry->SetSeq().SetId().front()->SetGi(GI_FROM(TIntId, 123456));
+    entry->SetSeq().SetId().front()->SetGi(GI_CONST(123456));
 
     STANDARD_SETUP
 
@@ -2762,7 +2762,7 @@ BOOST_AUTO_TEST_CASE(Test_MultipleAccessions)
     entry->SetSeq().SetId().front()->SetGenbank().SetAccession("AY123456");
     entry->SetSeq().SetId().front()->SetGenbank().SetVersion(1);
     CRef<CSeq_id> gi_id(new CSeq_id());
-    gi_id->SetGi(GI_FROM(TIntId, 21914627));
+    gi_id->SetGi(GI_CONST(21914627));
     entry->SetSeq().SetId().push_back(gi_id);
     CRef<CSeq_id> other_acc(new CSeq_id());
     other_acc->SetGenbank().SetAccession("AY123457");
@@ -3033,7 +3033,7 @@ BOOST_AUTO_TEST_CASE(Test_UnexpectedIdentifierChange)
     entry->SetSeq().SetId().front()->SetGenbank().SetAccession("AY123457");
     entry->SetSeq().SetId().front()->SetGenbank().SetVersion(1);
     CRef<CSeq_id> gi_id(new CSeq_id());
-    gi_id->SetGi(GI_FROM(TIntId, 21914627));
+    gi_id->SetGi(GI_CONST(21914627));
     entry->SetSeq().SetId().push_back(gi_id);
 
     STANDARD_SETUP
@@ -3200,7 +3200,7 @@ BOOST_AUTO_TEST_CASE(Test_TpaAssmeblyProblem)
     member1->SetSeq().SetId().front()->SetTpg().SetAccession("AY123456");
     member1->SetSeq().SetId().front()->SetTpg().SetVersion(1);
     CRef<CSeq_id> gi_id(new CSeq_id());
-    gi_id->SetGi(GI_FROM(TIntId, 21914627));
+    gi_id->SetGi(GI_CONST(21914627));
     member1->SetSeq().SetId().push_back(gi_id);
     seh = scope.AddTopLevelSeqEntry(*entry);
 
@@ -18937,7 +18937,7 @@ BOOST_AUTO_TEST_CASE(Test_SQD_292)
 
     CRef<CSeq_entry> nuc = entry->SetSet().SetSeq_set().front();
     CRef<CSeq_id> gi_id(new CSeq_id());
-    gi_id->SetGi(GI_FROM(TIntId, 1322283));
+    gi_id->SetGi(GI_CONST(1322283));
     nuc->SetSeq().SetId().push_front(gi_id);
     CRef<CSeq_id> accv_id(new CSeq_id("gb|U54469.1"));
     nuc->SetSeq().SetId().push_front (accv_id);

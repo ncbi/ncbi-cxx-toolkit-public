@@ -105,7 +105,7 @@ int s_GetId(const CSeq_feat::TXref & ids)
 
 BOOST_AUTO_TEST_CASE(CheckSplit)
 {
-    CSeq_id_Handle id = CSeq_id_Handle::GetHandle(GI_FROM(TIntId, 27501067));
+    CSeq_id_Handle id = CSeq_id_Handle::GetHandle(GI_CONST(27501067));
     vector<SFeatInfo> feats;
     {{
         CRef<CScope> scope = s_InitScope();

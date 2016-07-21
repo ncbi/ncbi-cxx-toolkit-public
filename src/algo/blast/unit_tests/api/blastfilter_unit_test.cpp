@@ -413,9 +413,9 @@ BOOST_AUTO_TEST_CASE(TSeqLocVector2Packed_seqint_TestIntervals) {
 BOOST_AUTO_TEST_CASE(TSeqLocVector2Packed_seqint_TestNoIntervals) {
     typedef pair<TGi, TSeqPos> TGiLength;
     vector<TGiLength> gis;
-    gis.push_back(make_pair(GI_FROM(TIntId, 6), 342U));
-    gis.push_back(make_pair(GI_FROM(TIntId, 129295), 232U));
-    gis.push_back(make_pair(GI_FROM(TIntId, 15606659), 443U));
+    gis.push_back(make_pair(GI_CONST(6), 342U));
+    gis.push_back(make_pair(GI_CONST(129295), 232U));
+    gis.push_back(make_pair(GI_CONST(15606659), 443U));
 
     TSeqLocVector input;
     input.reserve(gis.size());

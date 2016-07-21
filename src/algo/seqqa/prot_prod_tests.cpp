@@ -234,7 +234,7 @@ CTestProtProd_EntrezNeighbors::RunTest(const CSerialObject& obj,
         for (unsigned int i = 0;  i < sp_neigh.size();  ++i) {
             if (index[sp_neigh[i]] < lowest_index) {
                 lowest_index = index[sp_neigh[i]];
-                first_gi = GI_FROM(int, sp_neigh[i]);
+                first_gi = sp_neigh[i];
             }
         }
         CSeq_id neigh_id;

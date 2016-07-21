@@ -686,7 +686,7 @@ TGi CId1FetchApp::LookUpRawSeqID(const string& s)
             return m_ID1Client.AskGetgi(id);
         }
     } catch (CSeqIdException&) {
-        return GI_FROM(TIntGI, -1);
+        return INVALID_GI;
     }
 }
 
@@ -721,7 +721,7 @@ TGi CId1FetchApp::LookUpFlatSeqID(const string& s)
         return m_ID1Client.AskGetgi(id);
     }
     default: // can't happen, but shut the compiler up
-        return GI_FROM(TIntGi, -1);
+        return INVALID_GI;
     }
 }
 
