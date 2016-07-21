@@ -1250,12 +1250,12 @@ public:
                       TTypeInfo , TConstObjectPtr objectPtr)
         {
             out.SetSpecialCaseWrite( CObjectOStream::eWriteAsBigInt);
-            out.WriteStd(Get(objectPtr));
+            out.WriteStd(CParent::Get(objectPtr));
             out.SetSpecialCaseWrite( CObjectOStream::eWriteAsNormal);
         }
     static void Copy(CObjectStreamCopier& copier, TTypeInfo )
         {
-            TObjectType data;
+            typename CParent::TObjectType data;
             copier.In().ReadStd(data);
             copier.In().SetSpecialCaseUsed(CObjectIStream::eReadAsNormal);
             copier.Out().SetSpecialCaseWrite(CObjectOStream::eWriteAsBigInt);
