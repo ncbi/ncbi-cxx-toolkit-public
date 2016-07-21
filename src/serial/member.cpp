@@ -1121,7 +1121,9 @@ void CMemberInfoFunctions::WriteLongMember(CObjectOStream& out,
 void CMemberInfoFunctions::CopySimpleMember(CObjectStreamCopier& copier,
                                             const CMemberInfo* memberInfo)
 {
+    copier.In().SetMemberDefault(0);
     copier.CopyObject(memberInfo->GetTypeInfo());
+    copier.In().SetMemberDefault(0);
 }
 
 void CMemberInfoFunctions::CopyWithDefaultMemberX(CObjectStreamCopier& copier,
@@ -1151,7 +1153,9 @@ void CMemberInfoFunctions::CopyMissingOptionalMember(CObjectStreamCopier& /*copi
 void CMemberInfoFunctions::SkipSimpleMember(CObjectIStream& in,
                                             const CMemberInfo* memberInfo)
 {
+    in.SetMemberDefault(0);
     in.SkipObject(memberInfo->GetTypeInfo());
+    in.SetMemberDefault(0);
 }
 
 void CMemberInfoFunctions::SkipWithDefaultMemberX(CObjectIStream& in,

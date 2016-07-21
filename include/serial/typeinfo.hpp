@@ -264,6 +264,12 @@ public:
     bool IsTagConstructed(void) const {
         return m_TagConstructed == CAsnBinaryDefs::eConstructed;
     }
+    void CodeVersion(size_t codever) {
+        m_CodeVer = codever;
+    }
+    size_t GetCodeVersion(void) const {
+        return m_CodeVer;
+    }
 private:
     // private constructors to avoid copying
     CTypeInfo(const CTypeInfo&);
@@ -275,6 +281,7 @@ private:
     string m_Name;
     string m_ModuleName;
     mutable CNamespaceInfoItem* m_InfoItem;
+    size_t m_CodeVer;
 
 protected:
     void SetCreateFunction(TTypeCreate func);

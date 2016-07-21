@@ -289,12 +289,13 @@ EFixNonPrint CObjectOStream::x_GetFixCharsMethodDefault(void) const
 CObjectOStream::CObjectOStream(ESerialDataFormat format,
                                CNcbiOstream& out, EOwnership edeleteOut)
     : m_Output(out, edeleteOut == eTakeOwnership), m_Fail(fNoError), m_Flags(fFlagNone),
-      m_Separator(""), m_AutoSeparator(false),
+      m_Separator(""),
       m_DataFormat(format),
-      m_WriteNamedIntegersByValue(false),
       m_ParseDelayBuffers(eDelayBufferPolicyNotSet),
-      m_FastWriteDouble(s_FastWriteDouble->Get()),
       m_SpecialCaseWrite(eWriteAsNormal),
+      m_AutoSeparator(false),
+      m_WriteNamedIntegersByValue(false),
+      m_FastWriteDouble(s_FastWriteDouble->Get()),
       m_EnforceWritingDefaults(false),
       m_FixMethod(x_GetFixCharsMethodDefault()),
       m_VerifyData(x_GetVerifyDataDefault())

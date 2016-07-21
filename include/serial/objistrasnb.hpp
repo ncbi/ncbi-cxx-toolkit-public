@@ -298,6 +298,7 @@ private:
                       ETagConstructed tag_constructed,
                       ETagValue tag_value);
     void ExpectSysTag(ETagValue tag_value);
+    void ExpectIntegerTag(void);
 
     void ExpectTag(ETagClass tag_class,
                    ETagConstructed tag_constructed,

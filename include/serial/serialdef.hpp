@@ -195,7 +195,7 @@ enum ESerialRecursionMode {
 
 /// Defines namespace qualification of XML tags
 enum ENsQualifiedMode {
-    eNSQNotSet,
+    eNSQNotSet = 0,
     eNSUnqualified,
     eNSQualified
 };

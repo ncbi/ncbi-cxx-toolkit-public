@@ -1232,6 +1232,48 @@ CTypeInfo* CStdTypeInfo<ncbi::utf8_string_type>::CreateTypeInfo(void)
     return new CPrimitiveTypeInfoString(CPrimitiveTypeInfoString::eStringTypeUTF8);
 }
 
+template<typename T>
+class CPrimitiveTypeInfoBigIntFunctions : public CPrimitiveTypeInfoIntFunctions<T>
+{
+    typedef CPrimitiveTypeInfoIntFunctions<T> CParent;
+public:
+    static CPrimitiveTypeInfoInt* CreateTypeInfo(void)
+        {
+            CPrimitiveTypeInfoInt* info = CParent::CreateTypeInfo();
+            info->SetIOFunctions(&CParent::Read,
+                &CPrimitiveTypeInfoBigIntFunctions::Write,
+                &CPrimitiveTypeInfoBigIntFunctions::Copy,
+                &CParent::Skip);
+            return info;
+        }
+    static void Write(CObjectOStream& out,
+                      TTypeInfo , TConstObjectPtr objectPtr)
+        {
+            out.SetSpecialCaseWrite( CObjectOStream::eWriteAsBigInt);
+            out.WriteStd(Get(objectPtr));
+            out.SetSpecialCaseWrite( CObjectOStream::eWriteAsNormal);
+        }
+    static void Copy(CObjectStreamCopier& copier, TTypeInfo )
+        {
+            TObjectType data;
+            copier.In().ReadStd(data);
+            copier.In().SetSpecialCaseUsed(CObjectIStream::eReadAsNormal);
+            copier.Out().SetSpecialCaseWrite(CObjectOStream::eWriteAsBigInt);
+            copier.Out().WriteStd(data);
+            copier.Out().SetSpecialCaseWrite(CObjectOStream::eWriteAsNormal);
+        }
+};
+
+TTypeInfo CStdTypeInfo<ncbi::bigint_type>::GetTypeInfo(void)
+{
+    static TTypeInfo info = CreateTypeInfo();
+    return info;
+}
+
+CTypeInfo* CStdTypeInfo<ncbi::bigint_type>::CreateTypeInfo(void)
+{
+    return CPrimitiveTypeInfoBigIntFunctions<Int8>::CreateTypeInfo();
+}
 
 class CStringStoreFunctions : public CStringFunctions<string>
 {

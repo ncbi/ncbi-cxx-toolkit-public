@@ -568,7 +568,7 @@ char CObjectIStreamAsnBinary::ReadChar(void)
 
 Int4 CObjectIStreamAsnBinary::ReadInt4(void)
 {
-    ExpectSysTag(eInteger);
+    ExpectIntegerTag();
     Int4 data;
     ReadStdSigned(*this, data);
     return data;
@@ -576,7 +576,7 @@ Int4 CObjectIStreamAsnBinary::ReadInt4(void)
 
 Uint4 CObjectIStreamAsnBinary::ReadUint4(void)
 {
-    ExpectSysTag(eInteger);
+    ExpectIntegerTag();
     Uint4 data;
     ReadStdUnsigned(*this, data);
     return data;
@@ -584,16 +584,7 @@ Uint4 CObjectIStreamAsnBinary::ReadUint4(void)
 
 Int8 CObjectIStreamAsnBinary::ReadInt8(void)
 {
-    if (m_SkipNextTag) {
-        m_SkipNextTag = false;
-    } else {
-        TByte next = PeekTagByte();
-        if (next == MakeTagByte(eUniversal, ePrimitive, eInteger)) {
-            ExpectSysTag(eInteger);
-        } else {
-            ExpectSysTag(eApplication, ePrimitive, eInteger);
-        }
-    }
+    ExpectIntegerTag();
     Uint8 data;
     ReadStdSigned(*this, data);
     return data;
@@ -601,16 +592,7 @@ Int8 CObjectIStreamAsnBinary::ReadInt8(void)
 
 Uint8 CObjectIStreamAsnBinary::ReadUint8(void)
 {
-    if (m_SkipNextTag) {
-        m_SkipNextTag = false;
-    } else {
-        TByte next = PeekTagByte();
-        if (next == MakeTagByte(eUniversal, ePrimitive, eInteger)) {
-            ExpectSysTag(eInteger);
-        } else {
-            ExpectSysTag(eApplication, ePrimitive, eInteger);
-        }
-    }
+    ExpectIntegerTag();
     Uint8 data;
     ReadStdUnsigned(*this, data);
     return data;
@@ -2004,7 +1986,7 @@ CObjectIStreamAsnBinary::ReadEnum(const CEnumeratedTypeValues& values)
     TEnumValueType value;
     if ( values.IsInteger() ) {
         // allow any integer
-        ExpectSysTag(eInteger);
+        ExpectIntegerTag();
         ReadStdSigned(*this, value);
     }
     else {
@@ -2054,13 +2036,13 @@ void CObjectIStreamAsnBinary::SkipChar(void)
 
 void CObjectIStreamAsnBinary::SkipSNumber(void)
 {
-    ExpectSysTag(eInteger);
+    ExpectIntegerTag();
     SkipTagData();
 }
 
 void CObjectIStreamAsnBinary::SkipUNumber(void)
 {
-    ExpectSysTag(eInteger);
+    ExpectIntegerTag();
     SkipTagData();
 }
 

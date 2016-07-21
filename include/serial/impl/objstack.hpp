@@ -61,7 +61,7 @@ class NCBI_XSERIAL_EXPORT CObjectStackFrame
 {
 public:
     enum EFrameType {
-        eFrameOther,
+        eFrameOther = 0,
         eFrameNamed,
         eFrameArray,
         eFrameArrayElement,
@@ -101,13 +101,13 @@ protected:
 private:
     friend class CObjectStack;
 
-    EFrameType m_FrameType;
-    bool m_Notag; // means no XML tag
-    bool m_NoEOC; // no binary ASN end-of-content mark
-    ENsQualifiedMode m_NsqMode;
     TTypeInfo m_TypeInfo;
     const CMemberId* m_MemberId;
     TConstObjectPtr m_ObjectPtr;
+    EFrameType m_FrameType;
+    ENsQualifiedMode m_NsqMode;
+    bool m_Notag; // means no XML tag
+    bool m_NoEOC; // no binary ASN end-of-content mark
 };
 
 #define ThrowError(flag, mess) \
@@ -156,6 +156,7 @@ public:
     TFrame& FetchFrameFromTop(size_t index);
     const TFrame& FetchFrameFromTop(size_t index) const;
     const TFrame& FetchFrameFromBottom(size_t index) const;
+    TTypeInfo GetRecentTypeInfo(void) const;
 
     virtual void UnendedFrame(void);
     const string& GetStackPath(void);

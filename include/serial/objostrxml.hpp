@@ -415,7 +415,7 @@ private:
     void x_EndTypeNamespace(void);
     bool x_BeginNamespace(const string& ns_name, const string& ns_prefix);
     void x_EndNamespace(const string& ns_name);
-    void x_SpecialCaseWrite(void);
+    bool x_SpecialCaseWrite(void);
     char x_VerifyChar(char);
 
     enum ETagAction {

@@ -676,9 +676,16 @@ void CObjectOStreamAsnBinary::WriteUint4(Uint4 data)
     WriteNumberValue(data);
 }
 
+static inline
+bool s_IsOldStyleInt8(const CObjectOStreamAsnBinary* os)
+{
+    TTypeInfo type = os->GetRecentTypeInfo();
+    return type != nullptr && type->GetCodeVersion() < 21600;
+}
+
 void CObjectOStreamAsnBinary::WriteInt8(Int8 data)
 {
-    if ( m_CStyleBigInt ) {
+    if ( m_CStyleBigInt && (m_SpecialCaseWrite == eWriteAsBigInt || s_IsOldStyleInt8(this))) {
         WriteShortTag(eApplication, ePrimitive, eInteger);
     } else {
         WriteSysTag(eInteger);
@@ -688,7 +695,7 @@ void CObjectOStreamAsnBinary::WriteInt8(Int8 data)
 
 void CObjectOStreamAsnBinary::WriteUint8(Uint8 data)
 {
-    if ( m_CStyleBigInt ) {
+    if ( m_CStyleBigInt && (m_SpecialCaseWrite == eWriteAsBigInt || s_IsOldStyleInt8(this))) {
         WriteShortTag(eApplication, ePrimitive, eInteger);
     } else {
         WriteSysTag(eInteger);

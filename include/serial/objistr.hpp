@@ -1071,7 +1071,8 @@ public:
     enum ESpecialCaseRead {
         eReadAsNormal  = 0,
         eReadAsDefault = 1,
-        eReadAsNil     = 2
+        eReadAsNil     = 2,
+        eReadAsBigInt  = 3
     };
 private:
     TConstObjectPtr m_MemberDefault;

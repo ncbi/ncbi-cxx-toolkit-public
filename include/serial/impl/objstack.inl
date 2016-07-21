@@ -35,13 +35,13 @@
 inline
 void CObjectStackFrame::Reset(void)
 {
-    m_FrameType = eFrameOther;
-    m_Notag = false;
-    m_NoEOC = false;
-    m_NsqMode = eNSQNotSet;
     m_TypeInfo = 0;
     m_MemberId = 0;
     m_ObjectPtr = 0;
+    m_FrameType = eFrameOther;
+    m_NsqMode = eNSQNotSet;
+    m_Notag = false;
+    m_NoEOC = false;
 }
 
 inline
@@ -262,6 +262,17 @@ const CObjectStack::TFrame& CObjectStack::FetchFrameFromBottom(size_t index) con
     TFrame* ptr = m_Stack + 1 + index;
     _ASSERT(ptr <= m_StackPtr);
     return *ptr;
+}
+
+inline
+TTypeInfo CObjectStack::GetRecentTypeInfo(void) const
+{
+    for (TFrame* ptr = m_StackPtr; ptr >= m_Stack; --ptr) {
+        if (ptr->HasTypeInfo()) {
+            return ptr->GetTypeInfo();
+        }
+    }
+    return nullptr;
 }
 
 inline

@@ -325,6 +325,16 @@ public:
     static CTypeInfo* CreateTypeInfo(void);
 };
 
+class bigint_type {
+};
+EMPTY_TEMPLATE
+class NCBI_XSERIAL_EXPORT CStdTypeInfo<bigint_type>
+{
+public:
+    static TTypeInfo GetTypeInfo(void);
+    static CTypeInfo* CreateTypeInfo(void);
+};
+
 EMPTY_TEMPLATE
 class NCBI_XSERIAL_EXPORT CStdTypeInfo<char*>
 {

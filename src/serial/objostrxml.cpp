@@ -550,22 +550,29 @@ void CObjectOStreamXml::WriteEncodedChar(const char*& src, EStringType type)
     }
 }
 
-void CObjectOStreamXml::x_SpecialCaseWrite(void) {
-    OpenTagEndBack();
-    if (m_SpecialCaseWrite == eWriteAsNil) {
+bool CObjectOStreamXml::x_SpecialCaseWrite(void)
+{
+    if (m_SpecialCaseWrite == eWriteAsDefault) {
+        OpenTagEndBack();
+        SelfCloseTagEnd();
+        return true;
+    }
+    else if (m_SpecialCaseWrite == eWriteAsNil) {
+        OpenTagEndBack();
          m_Output.PutChar(' ');
         if (m_UseSchemaRef) {
             m_Output.PutString("xs:");
         }
         m_Output.PutString("nil=\"true\"");
+        SelfCloseTagEnd();
+        return true;
     }
-    SelfCloseTagEnd();
+    return false;
 }
 
 void CObjectOStreamXml::WriteBool(bool data)
 {
-    if (m_SpecialCaseWrite) {
-        x_SpecialCaseWrite();
+    if (m_SpecialCaseWrite && x_SpecialCaseWrite()) {
         return;
     }
     if ( !x_IsStdXml() ) {
@@ -590,8 +597,7 @@ void CObjectOStreamXml::WriteChar(char data)
 
 void CObjectOStreamXml::WriteInt4(Int4 data)
 {
-    if (m_SpecialCaseWrite) {
-        x_SpecialCaseWrite();
+    if (m_SpecialCaseWrite && x_SpecialCaseWrite()) {
         return;
     }
     m_Output.PutInt4(data);
@@ -599,8 +605,7 @@ void CObjectOStreamXml::WriteInt4(Int4 data)
 
 void CObjectOStreamXml::WriteUint4(Uint4 data)
 {
-    if (m_SpecialCaseWrite) {
-        x_SpecialCaseWrite();
+    if (m_SpecialCaseWrite && x_SpecialCaseWrite()) {
         return;
     }
     m_Output.PutUint4(data);
@@ -608,8 +613,7 @@ void CObjectOStreamXml::WriteUint4(Uint4 data)
 
 void CObjectOStreamXml::WriteInt8(Int8 data)
 {
-    if (m_SpecialCaseWrite) {
-        x_SpecialCaseWrite();
+    if (m_SpecialCaseWrite && x_SpecialCaseWrite()) {
         return;
     }
     m_Output.PutInt8(data);
@@ -617,8 +621,7 @@ void CObjectOStreamXml::WriteInt8(Int8 data)
 
 void CObjectOStreamXml::WriteUint8(Uint8 data)
 {
-    if (m_SpecialCaseWrite) {
-        x_SpecialCaseWrite();
+    if (m_SpecialCaseWrite && x_SpecialCaseWrite()) {
         return;
     }
     m_Output.PutUint8(data);
@@ -626,8 +629,7 @@ void CObjectOStreamXml::WriteUint8(Uint8 data)
 
 void CObjectOStreamXml::WriteDouble2(double data, unsigned digits)
 {
-    if (m_SpecialCaseWrite) {
-        x_SpecialCaseWrite();
+    if (m_SpecialCaseWrite && x_SpecialCaseWrite()) {
         return;
     }
     if (isnan(data)) {
@@ -893,8 +895,7 @@ void CObjectOStreamXml::WriteCString(const char* str)
 
 void CObjectOStreamXml::WriteString(const string& str, EStringType type)
 {
-    if (m_SpecialCaseWrite) {
-        x_SpecialCaseWrite();
+    if (m_SpecialCaseWrite && x_SpecialCaseWrite()) {
         return;
     }
     for ( const char* src = str.c_str(); *src; ++src ) {

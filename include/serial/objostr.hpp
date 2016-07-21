@@ -754,7 +754,8 @@ public:
     enum ESpecialCaseWrite {
         eWriteAsNormal  = 0,
         eWriteAsDefault = 1,
-        eWriteAsNil     = 2
+        eWriteAsNil     = 2,
+        eWriteAsBigInt  = 3
     };
     void  SetSpecialCaseWrite( ESpecialCaseWrite how) {
         m_SpecialCaseWrite = how;
@@ -793,12 +794,12 @@ protected:
     TFlags m_Flags;
     AutoPtr<CWriteObjectList> m_Objects;
     string m_Separator;
-    bool   m_AutoSeparator;
     ESerialDataFormat   m_DataFormat;
-    bool  m_WriteNamedIntegersByValue;
     EDelayBufferParsing  m_ParseDelayBuffers;
-    bool  m_FastWriteDouble;
     ESpecialCaseWrite m_SpecialCaseWrite;
+    bool  m_AutoSeparator;
+    bool  m_WriteNamedIntegersByValue;
+    bool  m_FastWriteDouble;
     bool  m_EnforceWritingDefaults;
 
 private:

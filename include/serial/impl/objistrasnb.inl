@@ -143,6 +143,27 @@ void CObjectIStreamAsnBinary::ExpectSysTag(ETagValue tag_value)
 }
 
 inline
+void CObjectIStreamAsnBinary::ExpectIntegerTag(void)
+{
+    if (m_SkipNextTag) {
+        m_SkipNextTag = false;
+        return;
+    }
+    Uint1 tag = StartTag(PeekTagByte());
+    Uint1 exp = MakeTagByte(  eUniversal, ePrimitive, eInteger);
+    if (tag != exp) {
+        if (tag != MakeTagByte(eApplication, ePrimitive, eInteger)) {
+            UnexpectedSysTagByte(exp);
+        }
+        SetSpecialCaseUsed(CObjectIStream::eReadAsBigInt);
+    }
+    m_CurrentTagLength = 1;
+#if CHECK_INSTREAM_STATE
+    m_CurrentTagState = eTagParsed;
+#endif
+}
+
+inline
 void CObjectIStreamAsnBinary::ExpectTagClassByte(TByte first_tag_byte,
                                                  TByte expected_class_byte)
 {

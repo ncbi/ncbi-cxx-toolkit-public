@@ -95,6 +95,7 @@ typedef CTypeInfoFunctions TFunc;
 CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size)
     : m_TypeFamily(typeFamily), m_Size(size), m_Name(),
       m_InfoItem(0),
+      m_CodeVer(0),
       m_IsCObject(false),
       m_IsInternal(false),
       m_Tag(eNoExplicitTag), m_TagClass(CAsnBinaryDefs::eUniversal),
@@ -114,6 +115,7 @@ CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size)
 CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size, const char* name)
     : m_TypeFamily(typeFamily), m_Size(size), m_Name(name),
       m_InfoItem(0),
+      m_CodeVer(0),
       m_IsCObject(false),
       m_IsInternal(false),
       m_Tag(eNoExplicitTag), m_TagClass(CAsnBinaryDefs::eUniversal),
@@ -132,6 +134,7 @@ CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size, const char* name)
 CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size, const string& name)
     : m_TypeFamily(typeFamily), m_Size(size), m_Name(name),
       m_InfoItem(0),
+      m_CodeVer(0),
       m_IsCObject(false),
       m_IsInternal(false),
       m_Tag(eNoExplicitTag), m_TagClass(CAsnBinaryDefs::eUniversal),
