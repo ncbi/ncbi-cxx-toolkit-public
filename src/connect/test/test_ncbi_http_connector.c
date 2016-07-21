@@ -30,10 +30,11 @@
  *
  */
 
-#include <connect/ncbi_http_connector.h>
 #include "../ncbi_ansi_ext.h"
 #include "../ncbi_priv.h"               /* CORE logging facilities */
 #include "ncbi_conntest.h"
+#include <connect/ncbi_gnutls.h>
+#include <connect/ncbi_http_connector.h>
 #include <stdlib.h>
 
 #include "test_assert.h"  /* This header must go last */
@@ -43,7 +44,7 @@
  */
 
 #define TEST_HOST            "www.ncbi.nlm.nih.gov"
-#define TEST_PORT            "80"
+#define TEST_PORT            "443"
 #define TEST_PATH            "/Service/bounce.cgi"
 #define TEST_ARGS            "arg1+arg2+arg3"
 #define TEST_DEBUG_PRINTOUT  "yes"
@@ -92,16 +93,20 @@ static void s_REG_Get
 
 int main(int argc, char* argv[])
 {
-    char*       user_header = 0;
-    CONNECTOR   connector;
-    FILE*       data_file;
-    STimeout    timeout;
-    THTTP_Flags flags;
+    char*         user_header = 0;
+    CONNECTOR     connector;
+    FILE*         data_file;
+    SConnNetInfo* net_info;
+    STimeout      timeout;
+    THTTP_Flags   flags;
 
     /* Log and data-log streams */
     CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
                            fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
+#ifdef NCBI_CXX_TOOLKIT
+    SOCK_SetupSSL(NcbiSetupGnuTls);
+#endif /*NCBI_CXX_TOOLKIT*/
 
     data_file = fopen("test_ncbi_http_connector.log", "ab");
     assert(data_file);
@@ -128,22 +133,30 @@ int main(int argc, char* argv[])
         }
     }
 
+    if (atoi(TEST_PORT) == CONN_PORT_HTTPS) {
+        verify((net_info = ConnNetInfo_Create(0)) != 0);
+        net_info->scheme = eURL_Https;
+    } else
+        net_info = 0;
+
     /* Run the tests */
     flags = fHTTP_KeepHeader | (fHCC_UrlCodec|fHCC_UrlEncodeArgs)/*obsolete*/;
-    connector = HTTP_CreateConnector(0, user_header, flags);
+    connector = HTTP_CreateConnector(net_info, user_header, flags);
     CONN_TestConnector(connector, &timeout, data_file, fTC_SingleBouncePrint);
 
     flags = 0;
-    connector = HTTP_CreateConnector(0, user_header, flags);
+    connector = HTTP_CreateConnector(net_info, user_header, flags);
     CONN_TestConnector(connector, &timeout, data_file, fTC_SingleBounceCheck);
 
     flags = fHTTP_AutoReconnect;
-    connector = HTTP_CreateConnector(0, user_header, flags);
+    connector = HTTP_CreateConnector(net_info, user_header, flags);
     CONN_TestConnector(connector, &timeout, data_file, fTC_Everything);
 
     flags = fHTTP_AutoReconnect | fHCC_UrlCodec/*obsolete*/;
-    connector = HTTP_CreateConnector(0, user_header, flags);
+    connector = HTTP_CreateConnector(net_info, user_header, flags);
     CONN_TestConnector(connector, &timeout, data_file, fTC_Everything);
+
+    ConnNetInfo_Destroy(net_info);
 
     /* Cleanup and Exit */
     CORE_SetREG(0);
