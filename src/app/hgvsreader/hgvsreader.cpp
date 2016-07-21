@@ -26,7 +26,7 @@ void CHgvsToSeqfeatConverter::Init(void)
     unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     arg_desc->AddDefaultKey
-        ("in",
+        ("i",
          "input",
          "Text file containing hgvs expression",
          CArgDescriptions::eInputFile,
@@ -34,7 +34,7 @@ void CHgvsToSeqfeatConverter::Init(void)
          CArgDescriptions::fPreOpen);
 
     arg_desc->AddDefaultKey
-        ("out",
+        ("o",
          "output",
          "Output file for seqfeat; used in conjunction with -out",
          CArgDescriptions::eOutputFile,
@@ -65,8 +65,8 @@ int CHgvsToSeqfeatConverter::Run(void)
     CRef<CScope> scope(new CScope(*obj_mgr));
     scope->AddDefaults();
 
-    CNcbiIstream& istr = args["in"].AsInputFile();
-    CNcbiOstream& ostr = args["out"].AsOutputFile();
+    CNcbiIstream& istr = args["i"].AsInputFile();
+    CNcbiOstream& ostr = args["o"].AsOutputFile();
 
     string hgvs_expression;
     try {
