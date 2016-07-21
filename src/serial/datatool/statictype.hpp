@@ -204,16 +204,21 @@ public:
 class CBigIntDataType : public CIntDataType {
     typedef CIntDataType CParent;
 public:
+    CBigIntDataType(bool bAsnBigInt = false) : m_bAsnBigInt(bAsnBigInt) {
+    }
     bool CheckValue(const CDataValue& value) const;
     TObjectPtr CreateDefault(const CDataValue& value) const;
     virtual string GetDefaultString(const CDataValue& value) const;
 
     CTypeRef GetTypeInfo(void);
+    virtual AutoPtr<CTypeStrings> GetFullCType(void) const;
     virtual const char* GetDefaultCType(void) const;
     virtual const char* GetASNKeyword(void) const;
     virtual const char* GetDEFKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
     virtual string GetSchemaTypeString(void) const;
+protected:
+    bool m_bAsnBigInt;
 };
 
 class CAnyContentDataType : public CStaticDataType {

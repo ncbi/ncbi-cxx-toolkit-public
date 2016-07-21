@@ -48,7 +48,6 @@ public:
     string GetCType(const CNamespace& ns) const;
     string GetPrefixedCType(const CNamespace& ns,
                             const string& methodPrefix) const;
-    virtual bool HaveSpecialRef(void) const;
     string GetRef(const CNamespace& ns) const;
     string GetInitializer(void) const;
 

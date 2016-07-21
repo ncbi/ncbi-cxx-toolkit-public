@@ -128,7 +128,12 @@ string CTypeStrings::GetDefaultCode(const string& var) const
 
 bool CTypeStrings::HaveSpecialRef(void) const
 {
-    return false;
+    return !m_SpecialRef.empty();
+}
+
+string CTypeStrings::GetRef(const CNamespace& ns) const
+{
+    return m_SpecialRef;
 }
 
 bool CTypeStrings::CanBeKey(void) const

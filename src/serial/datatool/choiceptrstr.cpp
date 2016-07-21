@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <serial/serialdef.hpp>
+#include "datatool.hpp"
 #include "choiceptrstr.hpp"
 #include "code.hpp"
 #include "namespace.hpp"
@@ -161,6 +162,7 @@ void CChoicePtrTypeStrings::GenerateClassCode(CClassCode& code,
                 "    ADD_NAMED_SUB_CLASS(\""<<i->externalName<<"\", "<<i->type->GetCType(code.GetNamespace())<<");\n";
         }
     }
+    code.Methods() <<  "    info->CodeVersion(" << DATATOOL_VERSION << ");\n";
     code.Methods() <<
         "}\n"
         "END_CLASS_INFO\n"

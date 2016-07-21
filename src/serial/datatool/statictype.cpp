@@ -560,7 +560,11 @@ AutoPtr<CTypeStrings> CStringDataType::GetFullCType(void) const
     bool full_ns = !type.empty();
     if ( type.empty() )
         type = GetDefaultCType();
-    return AutoPtr<CTypeStrings>(new CStringTypeStrings(type,Comments(),full_ns));
+    AutoPtr<CTypeStrings> a = AutoPtr<CTypeStrings>(new CStringTypeStrings(type,Comments(),full_ns));
+    if (m_Type == eStringTypeUTF8) {
+        a->SetSpecialRef("CStringUTF8, ()");
+    }
+    return a;
 }
 
 const char* CStringDataType::GetDefaultCType(void) const
@@ -852,6 +856,14 @@ const char* CBigIntDataType::GetDefaultCType(void) const
     return "Int8";
 }
 
+AutoPtr<CTypeStrings> CBigIntDataType::GetFullCType(void) const
+{
+    AutoPtr<CTypeStrings> a = CParent::GetFullCType();
+    if (m_bAsnBigInt) {
+        a->SetSpecialRef("BigInt, ()");
+    }
+    return a;
+}
 
 bool CAnyContentDataType::CheckValue(const CDataValue& /* value */) const
 {

@@ -88,7 +88,7 @@ int CDataTool::Run(void)
 
 CDataTool::CDataTool(void)
 {
-    SetVersion( CVersionInfo(2,15,0) );
+    SetVersion( CVersionInfo(DATATOOL_VERSION_MAJOR,DATATOOL_VERSION_MINOR,DATATOOL_VERSION_PATCH) );
 }
 
 void CDataTool::Init(void)

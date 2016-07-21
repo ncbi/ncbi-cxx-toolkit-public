@@ -31,6 +31,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiutil.hpp>
+#include "datatool.hpp"
 #include "exceptions.hpp"
 #include "type.hpp"
 #include "aliasstr.hpp"
@@ -324,6 +325,7 @@ void CAliasTypeStrings::GenerateCode(CClassContext& ctx) const
                 "    SET_FULL_ALIAS;\n"
                 "\n";
         }
+        methods <<  "    info->CodeVersion(" << DATATOOL_VERSION << ");\n";
         methods <<
             "}\n"
             "END_ALIAS_INFO\n"

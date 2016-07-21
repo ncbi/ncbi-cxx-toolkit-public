@@ -92,7 +92,7 @@ public:
     virtual string GetPrefixedCType(const CNamespace& ns,
                                     const string& methodPrefix) const = 0;
     virtual bool HaveSpecialRef(void) const;
-    virtual string GetRef(const CNamespace& ns) const = 0;
+    virtual string GetRef(const CNamespace& ns) const;
 
     // for external types
     virtual const CNamespace& GetNamespace(void) const;
@@ -141,10 +141,14 @@ public:
     }
     virtual void SetStorageType(const string& storage);
     virtual string GetStorageType(const CNamespace& ns) const;
+    void SetSpecialRef(const string& ref) {
+        m_SpecialRef = ref;
+    }
 
 private:
     string m_ModuleName;
     string m_NamespaceName;
+    string m_SpecialRef;
     const CDataType* m_DataType;
     CComments m_Comments;
 };

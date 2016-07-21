@@ -30,6 +30,7 @@
 */
 
 #include <ncbi_pch.hpp>
+#include "datatool.hpp"
 #include "exceptions.hpp"
 #include "type.hpp"
 #include "blocktype.hpp"
@@ -1467,6 +1468,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             methods << "    info->RandomOrder();\n";
         }
     }
+    methods <<  "    info->CodeVersion(" << DATATOOL_VERSION << ");\n";
     methods <<
         "}\n"
         "END_CLASS_INFO\n"

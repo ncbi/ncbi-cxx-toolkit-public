@@ -236,7 +236,7 @@ CDataType* ASNParser::x_Type(void)
         if ( CheckSymbol('{') )
             return EnumeratedBlock(new CBigIntEnumDataType());
         else
-            return new CBigIntDataType();
+            return new CBigIntDataType(true);
     case K_ENUMERATED:
         Consume();
         return EnumeratedBlock(new CEnumDataType());
