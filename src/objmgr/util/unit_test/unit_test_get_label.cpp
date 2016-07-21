@@ -77,6 +77,29 @@ USING_SCOPE(objects);
 extern const char* sc_TestEntry; //
 
 
+void CheckOneFeatureType
+(CBioseq_Handle bsh,
+ CSeqFeatData::ESubtype subtype,
+ const string& content,
+ const string& ftype,
+ const string& both)
+{
+    CFeat_CI f(bsh, subtype);
+
+    string label = kEmptyStr;
+
+    feature::GetLabel(*(f->GetSeq_feat()), &label, feature::fFGL_Content, &(bsh.GetScope()));
+    BOOST_CHECK_EQUAL(label, content);
+    label = kEmptyStr;
+
+    feature::GetLabel(*(f->GetSeq_feat()), &label, feature::fFGL_Type, &(bsh.GetScope()));
+    BOOST_CHECK_EQUAL(label, ftype);
+    label = kEmptyStr;
+
+    feature::GetLabel(*(f->GetSeq_feat()), &label, feature::fFGL_Both, &(bsh.GetScope()));
+    BOOST_CHECK_EQUAL(label, both);
+}
+
 BOOST_AUTO_TEST_CASE(Test_feature_GetLabel)
 {
     CSeq_entry entry;
@@ -87,37 +110,27 @@ BOOST_AUTO_TEST_CASE(Test_feature_GetLabel)
 
     CScope scope(*CObjectManager::GetInstance());
     CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(entry);
+    CBioseq_CI nuc_bsh(seh, CSeq_inst::eMol_na);
 
-    CFeat_CI cds(seh, CSeqFeatData::eSubtype_cdregion);
+    CheckOneFeatureType(*nuc_bsh, CSeqFeatData::eSubtype_cdregion,
+        "neuronal thread protein AD7c-NTP",
+        "CDS",
+        "CDS: neuronal thread protein AD7c-NTP");
 
-    string label = kEmptyStr;
-    
-    feature::GetLabel(*(cds->GetSeq_feat()), &label, feature::fFGL_Content, &scope);
-    BOOST_CHECK_EQUAL(label, "neuronal thread protein AD7c-NTP");
-    label = kEmptyStr;
+    CBioseq_CI prot_bsh(seh, CSeq_inst::eMol_aa);
+    CheckOneFeatureType(*prot_bsh, CSeqFeatData::eSubtype_prot,
+        "neuronal thread protein AD7c-NTP",
+        "Prot",
+        "Prot: neuronal thread protein AD7c-NTP");
 
-    feature::GetLabel(*(cds->GetSeq_feat()), &label, feature::fFGL_Type, &scope);
-    BOOST_CHECK_EQUAL(label, "CDS");
-    label = kEmptyStr;
-
-    feature::GetLabel(*(cds->GetSeq_feat()), &label, feature::fFGL_Both, &scope);
-    BOOST_CHECK_EQUAL(label, "CDS: neuronal thread protein AD7c-NTP");
-    label = kEmptyStr;
-
-    CFeat_CI prot(seh, CSeqFeatData::eSubtype_prot);
-    feature::GetLabel(*(prot->GetSeq_feat()), &label, feature::fFGL_Content, &scope);
-    BOOST_CHECK_EQUAL(label, "neuronal thread protein AD7c-NTP");
-    label = kEmptyStr;
-
-    feature::GetLabel(*(prot->GetSeq_feat()), &label, feature::fFGL_Type, &scope);
-    BOOST_CHECK_EQUAL(label, "Prot");
-    label = kEmptyStr;
-
-    feature::GetLabel(*(prot->GetSeq_feat()), &label, feature::fFGL_Both, &scope);
-    BOOST_CHECK_EQUAL(label, "Prot: neuronal thread protein AD7c-NTP");
-    label = kEmptyStr;
-
-
+    CheckOneFeatureType(*prot_bsh, CSeqFeatData::eSubtype_preprotein,
+                        "proprotein", "proprotein", "proprotein: ");
+    CheckOneFeatureType(*prot_bsh, CSeqFeatData::eSubtype_mat_peptide_aa,
+        "mat_peptide", "mat_peptide", "mat_peptide: ");
+    CheckOneFeatureType(*prot_bsh, CSeqFeatData::eSubtype_sig_peptide_aa,
+        "sig_peptide", "sig_peptide", "sig_peptide: ");
+    CheckOneFeatureType(*prot_bsh, CSeqFeatData::eSubtype_transit_peptide_aa,
+        "transit_peptide", "transit_peptide", "transit_peptide: ");
 }
 
 
@@ -185,6 +198,22 @@ LSGWSQTPDLR\"\
       annot {\
         {\
           data ftable {\
+            {\
+              data prot { processed preprotein },\
+              location int { from 0, to 374, id gi 3002527 }\
+            },\
+            {\
+              data prot { processed mature },\
+              location int { from 0, to 374, id gi 3002527 }\
+            },\
+            {\
+              data prot { processed signal-peptide },\
+              location int { from 0, to 374, id gi 3002527 }\
+            },\
+            {\
+              data prot { processed transit-peptide },\
+              location int { from 0, to 374, id gi 3002527 }\
+            },\
             {\
               data prot {\
                 name {\

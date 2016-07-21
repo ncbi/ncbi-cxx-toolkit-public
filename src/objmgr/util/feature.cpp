@@ -106,8 +106,12 @@ void s_GetTypeLabel(const CSeq_feat& feat, string* label, TFeatLabelFlags flags)
     
     // Determine typelabel
     CSeqFeatData::ESubtype idx = feat.GetData().GetSubtype();
-    if ( idx != CSeqFeatData::eSubtype_bad ) {
-        tlabel = feat.GetData().GetKey();
+    if (idx != CSeqFeatData::eSubtype_bad) {
+        if (feat.GetData().IsProt() && idx != CSeqFeatData::eSubtype_prot) {
+            tlabel = feat.GetData().GetKey(CSeqFeatData::eVocabulary_genbank);
+        } else {
+            tlabel = feat.GetData().GetKey();
+        }
         if (feat.GetData().IsImp()) {
             if ( tlabel == "variation" ) {
                 tlabel = "Variation";
