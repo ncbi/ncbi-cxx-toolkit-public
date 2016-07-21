@@ -327,6 +327,30 @@ static const char* kData_JSON =
     "        \"test open string \n";
     
 
+// Missing starting brace
+static const char* kData_NotJSON1 = 
+    "    \"Search\": {\n"
+    "    \"query_id\": \"lcl|1\",\n"
+    "    \"hits\": [\n"
+    "      {  \n"
+    "        \"num\": 1,\n"
+    "        \"test true\": true,\n"
+    "        \"test false\": false,\n"
+    "        \"test null\": null,\n"
+    "        \"test open string \n";
+
+// Unexpected word    
+static const char* kData_NotJSON2 = 
+    "{\n"
+    "    \"Search\": {\n"
+    "    \"query_id\": \"lcl|1\",\n"
+    "    \"hits\": [\n"
+    "      {  \n"
+    "        \"num\": 1,\n"
+    "        \"test true\": true,\n"
+    "        \"test false\": false,\n"
+    "        unexpected,\n"
+    "        \"test open string \n";
 
 
 static const char* kData_Zip = 
@@ -666,3 +690,21 @@ BOOST_AUTO_TEST_CASE(TestJSON)
     CFormatGuess guess(str);
     BOOST_CHECK_EQUAL(guess.GuessFormat(), CFormatGuess::eJSON);
 }
+
+
+BOOST_AUTO_TEST_CASE(TestNotJSON1)
+{
+    CNcbiIstrstream str(kData_NotJSON1);
+    CFormatGuess guess(str);
+    BOOST_CHECK(guess.GuessFormat() != CFormatGuess::eJSON);
+}
+
+
+BOOST_AUTO_TEST_CASE(TestNotJSON2)
+{
+    CNcbiIstrstream str(kData_NotJSON2);
+    CFormatGuess guess(str);
+    BOOST_CHECK(guess.GuessFormat() != CFormatGuess::eJSON);
+}
+
+
