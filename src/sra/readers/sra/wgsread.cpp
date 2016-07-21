@@ -981,55 +981,12 @@ inline
 int sx_StringToNonNegativeInt(const CTempString& str)
 {
     return sx_NewStringToNonNegativeInt(str);
-    //return NStr::StringToNonNegativeInt(str);
 }
-
-#if 0
-static struct SProfile
-{
-    SProfile();
-
-    void test(CTempString s);
-
-} s_Profile;
-
-
-SProfile::SProfile()
-{
-    test("");
-    test("123a");
-    test("0");
-    test("123");
-    test("2147483639");
-    test("2147483647");
-    test("2147483648");
-    test("2147483650");
-    test("21474836470");
-}
-
-
-void SProfile::test(CTempString s)
-{
-    CStopWatch sw;
-    const int COUNT = 10000000;
-    Int8 ret = 0;
-    sw.Restart();
-    for ( int i = 0; i < COUNT; ++i ) {
-        ret += sx_StringToNonNegativeInt(s);
-    }
-    double t = sw.Elapsed();
-    Int8 exp = Int8(COUNT)*NStr::StringToNonNegativeInt(s);
-    if ( ret != exp ) {
-        ERR_POST("Error: \""<<s<<"\" -> "<<ret<<" vs "<<exp);
-    }
-    ERR_POST("Time for \""<<s<<"\": "<<t/COUNT*1e9<<"ns");
-}
-#endif
 
 int sx_NewStringToNonNegativeInt(CTempString str)
 {
-    const bool kSetErrno = false;
-    const bool kSetNcbiError = false;
+    const bool kSetErrno = 0;
+    const bool kSetNcbiError = 0;
 
     int error = 0, ret = -1;
     size_t len = str.size();
@@ -1049,9 +1006,10 @@ int sx_NewStringToNonNegativeInt(CTempString str)
                     break;
                 }
                 unsigned nv = v * 10 + d;
-                if (v > (INT_MAX - 9) / 10) {
+                const unsigned kOverflowLimit = (INT_MAX - 9) / 10 + 1;
+                if ( v >= kOverflowLimit ) {
                     // possible overflow
-                    if (v > (INT_MAX - 9) / 10 + 1 || nv > INT_MAX) {
+                    if ( v > kOverflowLimit || nv > INT_MAX) {
                         error = ERANGE;
                         break;
                     }
