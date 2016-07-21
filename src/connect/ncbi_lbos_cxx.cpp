@@ -413,12 +413,13 @@ SLbosConfigure ParseLbosConfigureAnswer(const char* lbos_answer)
 
 
 string LBOSPrivate::GetServiceVersion(const string&  service,
-                                      bool* exists) 
+                                      bool*          exists) 
 {
     char* body_str = NULL, *status_message_str = NULL;
     AutoPtr< char*, Free<char*> > body_aptr(&body_str),
                                   status_message_aptr(&status_message_str);
-    unsigned short result = LBOS_ServiceVersionGet(service.c_str(), &*body_aptr,
+    unsigned short result = LBOS_ServiceVersionGet(service.c_str(), 
+                                                   &*body_aptr,
                                                    &*status_message_aptr);
     s_ProcessResult(result, *body_aptr, *status_message_aptr);
     SLbosConfigure res = ParseLbosConfigureAnswer(*body_aptr);
