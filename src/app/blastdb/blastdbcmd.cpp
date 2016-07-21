@@ -288,7 +288,7 @@ CBlastDBCmdApp::x_PrintBlastDatabaseInformation()
     const string kLetters = m_DbIsProtein ? "residues" : "bases";
     const CArgs& args = GetArgs();
 
-    CNcbiOstream& out = args["out"].AsOutputFile();
+    CNcbiOstream& out = args[kArgOutput].AsOutputFile();
 
     // Print basic database information
     out << "Database: " << m_BlastDb->GetTitle() << endl
@@ -323,7 +323,7 @@ int
 CBlastDBCmdApp::x_ProcessSearchRequest()
 {
     const CArgs& args = GetArgs();
-    CNcbiOstream& out = args["out"].AsOutputFile();
+    CNcbiOstream& out = args[kArgOutput].AsOutputFile();
 
     CSeqFormatterConfig conf;
     conf.m_LineWidth = args["line_length"].AsInteger();
