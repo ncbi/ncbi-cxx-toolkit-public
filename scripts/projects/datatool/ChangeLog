@@ -152,6 +152,8 @@ Added mapping of certain data types to strings.
 Fixed delayed buffer in choice variants.
 Changed to print schema comments using documentation tag.
 
-
+July 21, 2016
+Version 2.16.0, CXX-8385
+Added option to distinguish BigInt and Int8 in ASN binary serialization.
 
 
