@@ -681,28 +681,39 @@ static const char* s_GnuTlsError(void* session/*unused*/, int error)
 }
 
 
+#else
+
+
+/*ARGSUSED*/
+static EIO_Status s_GnuTlsInit(FSSLPull unused_pull, FSSLPush unused_push)
+{
+    CORE_LOG(eLOG_Critical, "Unavailable feature GNUTLS");
+    return eIO_NotSupported;
+}
+
+
 #endif /*HAVE_LIBGNUTLS*/
 
 
 extern SOCKSSL NcbiSetupGnuTls(void)
 {
-#ifdef HAVE_LIBGNUTLS
     static const struct SOCKSSL_struct kGnuTlsOps = {
-        s_GnuTlsInit,
-        s_GnuTlsCreate,
-        s_GnuTlsOpen,
-        s_GnuTlsRead,
-        s_GnuTlsWrite,
-        s_GnuTlsClose,
-        s_GnuTlsDelete,
-        s_GnuTlsExit,
-        s_GnuTlsError
-    };
-    return &kGnuTlsOps;
-#else
-    CORE_LOG(eLOG_Critical, "Unavailable feature GNUTLS");
-    return 0;
+        s_GnuTlsInit
+#ifdef HAVE_LIBGNUTLS
+        , s_GnuTlsCreate
+        , s_GnuTlsOpen
+        , s_GnuTlsRead
+        , s_GnuTlsWrite
+        , s_GnuTlsClose
+        , s_GnuTlsDelete
+        , s_GnuTlsExit
+        , s_GnuTlsError
 #endif /*HAVE_LIBGNUTLS*/
+    };
+#ifndef HAVE_LIBGNUTLS
+    CORE_LOG(eLOG_Warning, "Unavailable feature GNUTLS");
+#endif /*!HAVE_LIBGNUTLS*/
+    return &kGnuTlsOps;
 }
 
 
