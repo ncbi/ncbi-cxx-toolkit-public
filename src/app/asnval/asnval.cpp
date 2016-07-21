@@ -923,8 +923,8 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqAnnot(void)
 void CAsnvalApp::Setup(const CArgs& args)
 {
     // Setup application registry and logs for CONNECT library
-    CORE_SetLOG(LOG_cxx2c());
-    CORE_SetREG(REG_cxx2c(&GetConfig(), false));
+    // CORE_SetLOG(LOG_cxx2c());
+    // CORE_SetREG(REG_cxx2c(&GetConfig(), false));
     // Setup MT-safety for CONNECT library
     // CORE_SetLOCK(MT_LOCK_cxx2c());
 
