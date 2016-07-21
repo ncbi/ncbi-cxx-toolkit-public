@@ -83,10 +83,10 @@ int CNCBITestApp::Run(void)
 
     ERR_POST(Info << "Seed = " << m_Seed);
     srand(m_Seed);
-        
-    ERR_POST(Info << "Creating HTTP connection to "
-             "http://" + host + path + &"?"[args.empty() ? 1 : 0] + args);
-    CConn_HttpStream ios(host, path, args, uhdr);
+
+    string url = "https://" + host + path + &"?"[args.empty() ? 1 : 0] + args;
+    ERR_POST(Info << "Creating HTTP connection to " + url);
+    CConn_HttpStream ios(url, eReqMethod_Any, uhdr);
 
     return TEST_StreamPushback(ios, false/*no rewind*/);
 }
