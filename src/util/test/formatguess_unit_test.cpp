@@ -313,6 +313,22 @@ static const char* kData_Hgvs =
 static const char* kData_NotHgvs = 
     "Seq-annot ::= {desc {name Primer.\n";
 
+
+static const char* kData_JSON = 
+    "{\n"
+    "    \"Search\": {\n"
+    "    \"query_id\": \"lcl|1\",\n"
+    "    \"hits\": [\n"
+    "      {  \n"
+    "        \"num\": 1,\n"
+    "        \"test true\": true,\n"
+    "        \"test false\": false,\n"
+    "        \"test null\": null,\n"
+    "        \"test open string \n";
+    
+
+
+
 static const char* kData_Zip = 
     "\x50\x4b\x03\x04\x0a\x00\x00\x00\x00\x00\x41\x73\x58\x3f\xb3\xf1"
     "\x7f\x5a\x09\x00\x00\x00\x09\x00\x00\x00\x0c\x00\x15\x00\x7a\x69"
@@ -641,4 +657,12 @@ BOOST_AUTO_TEST_CASE(TestBam)
     CNcbiIstrstream str(kData_Bam, sizeof(kData_Bam));
     CFormatGuess guess(str);
     BOOST_CHECK_EQUAL(guess.GuessFormat(), CFormatGuess::eBam);
+}
+
+
+BOOST_AUTO_TEST_CASE(TestJSON)
+{
+    CNcbiIstrstream str(kData_JSON);
+    CFormatGuess guess(str);
+    BOOST_CHECK_EQUAL(guess.GuessFormat(), CFormatGuess::eJSON);
 }
