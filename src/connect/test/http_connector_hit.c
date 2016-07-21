@@ -97,14 +97,13 @@ int main(int argc, const char* argv[])
     const char* inp_file    = (argc > 5) ? argv[5] : "";
     const char* user_header = (argc > 6) ? argv[6] : "";
 
-    CONNECTOR   connector;
-    CONN        conn;
-    EIO_Status  status;
+    SConnNetInfo* net_info;
+    CONNECTOR     connector;
+    CONN          conn;
+    EIO_Status    status;
 
     char   buffer[100];
     size_t n_read, n_written;
-
-    SConnNetInfo* net_info;
 
     /* Prepare to connect:  parse and check cmd.-line args, etc. */
     s_Args.host         = (argc > 1) ? argv[1] : "";
@@ -147,20 +146,20 @@ int main(int argc, const char* argv[])
         return 1;
     }
 
-    verify((net_info = ConnNetInfo_Create(0)) != 0);
-    if (net_info->port == CONN_PORT_HTTPS)
-        net_info->scheme = eURL_Https;
-
     /* Connect */
+    if (s_Args.port == CONN_PORT_HTTPS) {
+        verify((net_info = ConnNetInfo_Create(0)) != 0);
+        net_info->scheme = eURL_Https;
+    } else
+        net_info = 0;
+
     connector = HTTP_CreateConnector(net_info, user_header, 0);
     assert(connector);
     verify(CONN_Create(connector, &conn) == eIO_Success);
 
     ConnNetInfo_Destroy(net_info);
 
-    /* If the input file is specified,
-     * then send its content (as the HTTP request body) to URL
-     */
+    /* If input file specified, then send its content (as HTTP request body) */
     if (*inp_file) {
         FILE* inp_fp;
 
