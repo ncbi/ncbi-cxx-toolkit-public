@@ -1030,57 +1030,46 @@ int sx_NewStringToNonNegativeInt(CTempString str)
 {
     const bool kSetErrno = false;
     const bool kSetNcbiError = false;
-    int* errno_ptr = kSetErrno? &errno: 0;
+
+    int error = 0, ret = -1;
     size_t len = str.size();
     if ( !len ) {
-        if ( kSetErrno ) {
-            *errno_ptr = EINVAL;
-        }
-        if ( kSetNcbiError ) {
-            CNcbiError::SetErrno(EINVAL, str);
-        }
-        return -1;
+        error = EINVAL;
     }
-    unsigned v = str.data()[0] - '0';
-    if ( v > 9 ) {
-        if ( kSetErrno ) {
-            *errno_ptr = EINVAL;
+    else {
+        unsigned v = str.data()[0] - '0';
+        if (v > 9) {
+            error = EINVAL;
         }
-        if ( kSetNcbiError ) {
-            CNcbiError::SetErrno(EINVAL, str);
-        }
-        return -1;
-    }
-    for ( size_t i = 1; i < len; ++i ) {
-        unsigned d = str.data()[i] - '0';
-        if ( d > 9 ) {
-            if ( kSetErrno ) {
-                *errno_ptr = EINVAL;
-            }
-            if ( kSetNcbiError ) {
-                CNcbiError::SetErrno(EINVAL, str);
-            }
-            return -1;
-        }
-        unsigned nv = v*10 + d;
-        if ( v > (INT_MAX-9)/10 ) {
-            // possible overflow
-            if ( v > (INT_MAX-9)/10+1 || nv > INT_MAX ) {
-                if ( kSetErrno ) {
-                    *errno_ptr = ERANGE;
+        else {
+            for (size_t i = 1; i < len; ++i) {
+                unsigned d = str.data()[i] - '0';
+                if (d > 9) {
+                    error = EINVAL;
+                    break;
                 }
-                if ( kSetNcbiError ) {
-                    CNcbiError::SetErrno(ERANGE, str);
+                unsigned nv = v * 10 + d;
+                if (v > (INT_MAX - 9) / 10) {
+                    // possible overflow
+                    if (v > (INT_MAX - 9) / 10 + 1 || nv > INT_MAX) {
+                        error = ERANGE;
+                        break;
+                    }
                 }
-                return -1;
+                v = nv;
+            }
+            if (!error) {
+                ret = static_cast<int>(v);
             }
         }
-        v = nv;
     }
-    if ( kSetErrno ) {
-        *errno_ptr = 0;
+    if (kSetErrno) {
+        errno = error;
     }
-    return static_cast<int>(v);
+    if (kSetNcbiError && error) {
+        CNcbiError::SetErrno(error, str);
+    }
+    return ret;
 }
 
 
@@ -1287,7 +1276,7 @@ CRef<CSeq_id> CWGSDb_Impl::GetPatentSeq_id(int id) const
 
 CRef<CSeq_id>
 CWGSDb_Impl::GetGeneralOrPatentSeq_id(CTempString str,
-                                      int row,
+                                      TVDBRowId row,
                                       bool omit_wgs_version) const
 {
     if ( str.empty() ) {

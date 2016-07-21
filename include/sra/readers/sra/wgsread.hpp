@@ -186,7 +186,7 @@ public:
     CRef<CSeq_id> GetGeneralSeq_id(CTempString tag,
                                    bool omit_wgs_version = false) const;
     CRef<CSeq_id> GetPatentSeq_id(int id) const;
-    CRef<CSeq_id> GetGeneralOrPatentSeq_id(CTempString str, int row,
+    CRef<CSeq_id> GetGeneralOrPatentSeq_id(CTempString str, TVDBRowId row,
                                            bool omit_wgs_version = false) const;
     CRef<CSeq_id> GetAccSeq_id(CTempString acc,
                                int version) const;
