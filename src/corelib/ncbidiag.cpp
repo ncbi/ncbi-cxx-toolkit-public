@@ -1562,7 +1562,7 @@ string CDiagContext::x_GetNextHitID(bool is_default) const
 
 bool CDiagContext::sx_IsDefaultHitID(const string& phid)
 {
-    return (phid.substr(22, 6) == "FFFFFF");
+    return (phid.size() >= 32  &&  phid.substr(22, 6) == "FFFFFF");
 }
 
 
