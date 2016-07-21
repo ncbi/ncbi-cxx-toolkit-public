@@ -1557,6 +1557,7 @@ x_GetFastaReaderDeflines(const CBioseq                  & bioseq,
         return;
     }
 
+    CNcbiEnvironment env;
     string fasta;
 
     // Scan the CBioseq for the CFastaReader user object.
@@ -1676,8 +1677,9 @@ x_GetFastaReaderDeflines(const CBioseq                  & bioseq,
 
             // Parse '|' seperated ids.
             list< CRef<CSeq_id> > seqids;
-            if ( ids.find('|') == NPOS
-              || !isalpha((unsigned char)(ids[0]))) {
+            if ( (ids.find('|') == NPOS && env.Get("NEW_SEQID_FORMAT").empty())
+                 || !isalpha((unsigned char)(ids[0]))) {
+
                  seqids.push_back(CRef<CSeq_id> (new CSeq_id(CSeq_id::e_Local, ids)));
             } else {
                  CSeq_id::ParseFastaIds(seqids, ids);

@@ -31,6 +31,7 @@
   Code to build a database given various sources of sequence data.
   */
 #include <ncbi_pch.hpp>
+#include <corelib/ncbienv.hpp>
 
 // Blast databases
 
@@ -697,6 +698,7 @@ CFastaBioseqSource::CFastaBioseqSource(CNcbiIstream & fasta_file,
     : m_FastaReader(NULL)
 {
     m_LineReader.Reset(new CBufferedLineReader(fasta_file));
+    CNcbiEnvironment env;
 
     typedef CFastaReader::EFlags TFlags;
 
@@ -712,6 +714,10 @@ CFastaBioseqSource::CFastaBioseqSource(CNcbiIstream & fasta_file,
 
     if (parse_ids) {
         iflags |= CFastaReader::fAllSeqIds | CFastaReader::fRequireID;
+        // parse bare accessions
+        if (!env.Get("NEW_SEQID_FORMAT").empty()) {
+            iflags |= CFastaReader::fParseRawID;
+        }
     } else {
         iflags |= CFastaReader::fNoParseID;
     }

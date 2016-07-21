@@ -50,6 +50,8 @@
 #include <objtools/blast/seqdb_reader/impl/seqdbisam.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 
+#include <unordered_map>
+
 #ifndef SKIP_DOXYGEN_PROCESSING
 
 USING_NCBI_SCOPE;
@@ -2893,6 +2895,376 @@ BOOST_AUTO_TEST_CASE(CSeqDBIsam_32bit_GI)
             return;
         }
     }
+}
+
+BOOST_AUTO_TEST_CASE(ReadBareIDProtein)
+{
+    // create a FASTA file with bare and legacy IDs
+    CTmpFile tmpfile;
+    CNcbiOfstream ostr(tmpfile.GetFileName());
+    string sequence = "MASTQNIVEEVQKMLDTYDTNKDGEITKAEAVEYFKGKKAFNPER";
+
+    std::unordered_map<string, CSeq_id::E_Choice> fasta_ids = {
+        {"XP_642131.1", CSeq_id::e_Other},
+        {"ref|XP_642837.1", CSeq_id::e_Other},
+        {"BAA06266.1", CSeq_id::e_Ddbj},
+        {"dbj|GAE97797.1", CSeq_id::e_Ddbj},
+        {"320460102", CSeq_id::e_Local},
+        {"gi|716054866", CSeq_id::e_Gi}};
+
+    for (auto it: fasta_ids) {
+        ostr << ">" << it.first << endl << sequence << endl;
+    }
+    ostr.close();
+
+    CNcbiEnvironment env;
+    env.Set("NEW_SEQID_FORMAT", "1");
+
+    // create a database from the fasta file
+    CNcbiIstream& istr = tmpfile.AsInputFile(CTmpFile::eIfExists_Throw);
+    BOOST_REQUIRE(istr);
+    string dbname = "data/bare_id_test_prot";
+    string title = "Temporary unit test db";
+    ostringstream log;
+
+    BOOST_REQUIRE(!env.Get("NEW_SEQID_FORMAT").empty());
+    CBuildDatabase db(dbname, title, true, false, true, false, &log);
+
+    db.StartBuild();
+    db.AddFasta(istr);
+    db.EndBuild();
+
+    CFileDeleteAtExit::Add(dbname + ".phr");
+    CFileDeleteAtExit::Add(dbname + ".pin");
+    CFileDeleteAtExit::Add(dbname + ".psq");
+    CFileDeleteAtExit::Add(dbname + ".pog");
+    CFileDeleteAtExit::Add(dbname + ".psd");
+    CFileDeleteAtExit::Add(dbname + ".psi");
+
+    int index = 0;
+    CSeqDB seqdb(dbname, CSeqDB::eProtein);
+
+    // check that each sequence id has a correct type
+    for (auto it: fasta_ids) {
+        list< CRef<CSeq_id> > ids = seqdb.GetSeqIDs(index++);
+        BOOST_REQUIRE_MESSAGE(ids.front()->Which() == it.second,
+                              (string)"Sequence id type for " +
+                              it.first + " is " +
+                              NStr::IntToString(ids.front()->Which()) +
+                              " (expected " + NStr::IntToString(it.second)
+                              + ")");
+    }
+    BOOST_REQUIRE_EQUAL(index, (int)fasta_ids.size());
+
+    env.Unset("NEW_SEQID_FORMAT");
+    BOOST_REQUIRE(env.Get("NEW_SEQID_FORMAT").empty());
+}
+
+
+BOOST_AUTO_TEST_CASE(ReadMultipleBareIDs)
+{
+    // create a FASTA file with bare and legacy IDs
+    CTmpFile tmpfile;
+    CNcbiOfstream ostr(tmpfile.GetFileName());
+    string sequence = "MASTQNIVEEVQKMLDTYDTNKDGEITKAEAVEYFKGKKAFNPER";
+
+    std::unordered_map<string, CSeq_id::E_Choice> fasta_ids = {
+        {"XP_642131.1", CSeq_id::e_Other},
+        {"ref|XP_642837.1", CSeq_id::e_Other},
+        {"BAA06266.1", CSeq_id::e_Ddbj},
+        {"dbj|GAE97797.1", CSeq_id::e_Ddbj},
+        {"320460102", CSeq_id::e_Local},
+        {"gi|716054866", CSeq_id::e_Gi}};
+
+    auto it = fasta_ids.begin();
+    ostr << ">" << it->first << " Some defline";
+    ++it;
+    for (; it != fasta_ids.end(); ++it) {
+        ostr << '\01' << it->first << " Some defline";
+    }
+    ostr << endl << sequence << endl;
+    ostr.close();
+
+    CNcbiEnvironment env;
+    env.Set("NEW_SEQID_FORMAT", "1");
+
+    // create a database from the fasta file
+    CNcbiIstream& istr = tmpfile.AsInputFile(CTmpFile::eIfExists_Throw);
+    BOOST_REQUIRE(istr);
+    string dbname = "data/bare_id_test_prot2";
+    string title = "Temporary unit test db";
+    ostringstream log;
+
+    BOOST_REQUIRE(!env.Get("NEW_SEQID_FORMAT").empty());
+    CBuildDatabase db(dbname, title, true, false, true, false, &log);
+
+    db.StartBuild();
+    db.AddFasta(istr);
+    db.EndBuild();
+
+    CFileDeleteAtExit::Add(dbname + ".phr");
+    CFileDeleteAtExit::Add(dbname + ".pin");
+    CFileDeleteAtExit::Add(dbname + ".psq");
+    CFileDeleteAtExit::Add(dbname + ".pog");
+    CFileDeleteAtExit::Add(dbname + ".psd");
+    CFileDeleteAtExit::Add(dbname + ".psi");
+
+    CSeqDB seqdb(dbname, CSeqDB::eProtein);
+
+    list< CRef<CSeq_id> > ids = seqdb.GetSeqIDs(0);
+    BOOST_REQUIRE_EQUAL(ids.size(), fasta_ids.size());
+
+    auto seqdb_id = ids.begin();
+    for (auto it: fasta_ids) {
+        BOOST_REQUIRE_MESSAGE((*seqdb_id)->Which() == it.second,
+                              (string)"Sequence id type for " +
+                              it.first + " is " +
+                              NStr::IntToString(ids.front()->Which()) +
+                              " (expected " + NStr::IntToString(it.second)
+                              + ")");
+        ++seqdb_id;
+    }
+    BOOST_REQUIRE(seqdb_id == ids.end());
+
+    env.Unset("NEW_SEQID_FORMAT");
+    BOOST_REQUIRE(env.Get("NEW_SEQID_FORMAT").empty());
+}
+
+
+BOOST_AUTO_TEST_CASE(ReadBareIDNucleotide)
+{
+    // create a FASTA file with bare and legacy IDs
+    CTmpFile tmpfile;
+    CNcbiOfstream ostr(tmpfile.GetFileName());
+    string sequence = "AACTAGTATTAGAGGCACTGCCTGCCCAGTGACAATCGTTAAACGGCCG";
+
+    std::unordered_map<string, CSeq_id::E_Choice> fasta_ids = {
+        {"U13103.1", CSeq_id::e_Genbank},
+        {"gb|U13080.1", CSeq_id::e_Genbank},
+        {"Z18633.1", CSeq_id::e_Embl},
+        {"emb|Z18632.1", CSeq_id::e_Embl},
+        {"NM_176670.2", CSeq_id::e_Other},
+        {"ref|NM_175822.2", CSeq_id::e_Other}};
+
+    for (auto it: fasta_ids) {
+        ostr << ">" << it.first << endl << sequence << endl;
+    }
+    ostr.close();
+
+    CNcbiEnvironment env;
+    env.Set("NEW_SEQID_FORMAT", "1");
+
+    // create a database from the fasta file
+    CNcbiIstream& istr = tmpfile.AsInputFile(CTmpFile::eIfExists_Throw);
+    BOOST_REQUIRE(istr);
+    string dbname = "data/bare_id_test_nucl";
+    string title = "Temporary unit test db";
+    ostringstream log;
+
+    BOOST_REQUIRE(!env.Get("NEW_SEQID_FORMAT").empty());
+    CBuildDatabase db(dbname, title, false, false, true, false, &log);
+
+    db.StartBuild();
+    db.AddFasta(istr);
+    db.EndBuild();
+
+    CFileDeleteAtExit::Add(dbname + ".nhr");
+    CFileDeleteAtExit::Add(dbname + ".nin");
+    CFileDeleteAtExit::Add(dbname + ".nsq");
+    CFileDeleteAtExit::Add(dbname + ".nog");
+    CFileDeleteAtExit::Add(dbname + ".nsd");
+    CFileDeleteAtExit::Add(dbname + ".nsi");
+
+    int index = 0;
+    CSeqDB seqdb(dbname, CSeqDB::eNucleotide);
+
+    // check that each sequence id has a correct type
+    for (auto it: fasta_ids) {
+        list< CRef<CSeq_id> > ids = seqdb.GetSeqIDs(index++);
+        BOOST_REQUIRE_MESSAGE(ids.front()->Which() == it.second,
+                              (string)"Sequence id type for " +
+                              it.first + " is " +
+                              NStr::IntToString(ids.front()->Which()) +
+                              " (expected " + NStr::IntToString(it.second)
+                              + ")");
+    }
+    BOOST_REQUIRE_EQUAL(index, (int)fasta_ids.size());
+
+    env.Unset("NEW_SEQID_FORMAT");
+    BOOST_REQUIRE(env.Get("NEWSEQ_ID_FORMAT").empty());
+}
+
+
+BOOST_AUTO_TEST_CASE(ReadLegacyIDProtein)
+{
+    // create a FASTA file with bare and legacy IDs
+    CTmpFile tmpfile;
+    CNcbiOfstream ostr(tmpfile.GetFileName());
+    string sequence = "MASTQNIVEEVQKMLDTYDTNKDGEITKAEAVEYFKGKKAFNPER";
+
+    std::unordered_map<string, CSeq_id::E_Choice> fasta_ids = {
+        {"XP_642131.1", CSeq_id::e_Local},
+        {"ref|XP_642837.1", CSeq_id::e_Other},
+        {"BAA06266.1", CSeq_id::e_Local},
+        {"dbj|GAE97797.1", CSeq_id::e_Ddbj},
+        {"320460102", CSeq_id::e_Local},
+        {"gi|716054866", CSeq_id::e_Gi}};
+
+    for (auto it: fasta_ids) {
+        ostr << ">" << it.first << endl << sequence << endl;
+    }
+    ostr.close();
+
+    CNcbiEnvironment env;
+    BOOST_REQUIRE(env.Get("NEWSEQ_ID_FORMAT").empty());
+
+    // create a database from the fasta file
+    CNcbiIstream& istr = tmpfile.AsInputFile(CTmpFile::eIfExists_Throw);
+    BOOST_REQUIRE(istr);
+    string dbname = "data/bare_id_test_prot_legacy";
+    string title = "Temporary unit test db";
+    ostringstream log;
+    CBuildDatabase db(dbname, title, true, false, true, false, &log);
+
+    db.StartBuild();
+    db.AddFasta(istr);
+    db.EndBuild();
+
+    CFileDeleteAtExit::Add(dbname + ".phr");
+    CFileDeleteAtExit::Add(dbname + ".pin");
+    CFileDeleteAtExit::Add(dbname + ".psq");
+    CFileDeleteAtExit::Add(dbname + ".pog");
+    CFileDeleteAtExit::Add(dbname + ".psd");
+    CFileDeleteAtExit::Add(dbname + ".psi");
+
+    int index = 0;
+    CSeqDB seqdb(dbname, CSeqDB::eProtein);
+
+    // check that each sequence id has a correct type
+    for (auto it: fasta_ids) {
+        list< CRef<CSeq_id> > ids = seqdb.GetSeqIDs(index++);
+        BOOST_REQUIRE_EQUAL(ids.front()->Which(), it.second);
+    }
+    BOOST_REQUIRE_EQUAL(index, (int)fasta_ids.size());
+}
+
+
+BOOST_AUTO_TEST_CASE(ReadMultipleLegacyIDs)
+{
+    // create a FASTA file with bare and legacy IDs
+    CTmpFile tmpfile;
+    CNcbiOfstream ostr(tmpfile.GetFileName());
+    string sequence = "MASTQNIVEEVQKMLDTYDTNKDGEITKAEAVEYFKGKKAFNPER";
+
+    std::unordered_map<string, CSeq_id::E_Choice> fasta_ids = {
+        {"XP_642131.1", CSeq_id::e_Local},
+        {"ref|XP_642837.1", CSeq_id::e_Other},
+        {"BAA06266.1", CSeq_id::e_Local},
+        {"dbj|GAE97797.1", CSeq_id::e_Ddbj},
+        {"320460102", CSeq_id::e_Local},
+        {"gi|716054866", CSeq_id::e_Gi}};
+
+    auto it = fasta_ids.begin();
+    ostr << ">" << it->first << " Some defline";
+    ++it;
+    for (; it != fasta_ids.end(); ++it) {
+        ostr << '\01' << it->first << " Some defline";
+    }
+    ostr << endl << sequence << endl;
+    ostr.close();
+    CNcbiEnvironment env;
+
+    // create a database from the fasta file
+    CNcbiIstream& istr = tmpfile.AsInputFile(CTmpFile::eIfExists_Throw);
+    BOOST_REQUIRE(istr);
+    string dbname = "data/bare_id_test_legacy_prot2";
+    string title = "Temporary unit test db";
+    ostringstream log;
+
+    BOOST_REQUIRE(env.Get("NEW_SEQID_FORMAT").empty());
+    CBuildDatabase db(dbname, title, true, false, true, false, &log);
+
+    db.StartBuild();
+    db.AddFasta(istr);
+    db.EndBuild();
+
+    CFileDeleteAtExit::Add(dbname + ".phr");
+    CFileDeleteAtExit::Add(dbname + ".pin");
+    CFileDeleteAtExit::Add(dbname + ".psq");
+    CFileDeleteAtExit::Add(dbname + ".pog");
+    CFileDeleteAtExit::Add(dbname + ".psd");
+    CFileDeleteAtExit::Add(dbname + ".psi");
+
+    CSeqDB seqdb(dbname, CSeqDB::eProtein);
+
+    list< CRef<CSeq_id> > ids = seqdb.GetSeqIDs(0);
+    BOOST_REQUIRE_EQUAL(ids.size(), fasta_ids.size());
+
+    auto seqdb_id = ids.begin();
+    for (auto it: fasta_ids) {
+        BOOST_REQUIRE_MESSAGE((*seqdb_id)->Which() == it.second,
+                              (string)"Sequence id type for " +
+                              it.first + " is " +
+                              NStr::IntToString(ids.front()->Which()) +
+                              " (expected " + NStr::IntToString(it.second)
+                              + ")");
+        ++seqdb_id;
+    }
+    BOOST_REQUIRE(seqdb_id == ids.end());
+}
+
+
+BOOST_AUTO_TEST_CASE(ReadLegacyIDNucleotide)
+{
+    // create a FASTA file with bare and legacy IDs
+    CTmpFile tmpfile;
+    CNcbiOfstream ostr(tmpfile.GetFileName());
+    string sequence = "AACTAGTATTAGAGGCACTGCCTGCCCAGTGACAATCGTTAAACGGCCG";
+
+    std::unordered_map<string, CSeq_id::E_Choice> fasta_ids = {
+        {"U13103.1", CSeq_id::e_Local},
+        {"gb|U13080.1", CSeq_id::e_Genbank},
+        {"Z18633.1", CSeq_id::e_Local},
+        {"emb|Z18632.1", CSeq_id::e_Embl},
+        {"NM_176670.2", CSeq_id::e_Local},
+        {"ref|NM_175822.2", CSeq_id::e_Other}};
+
+    for (auto it: fasta_ids) {
+        ostr << ">" << it.first << endl << sequence << endl;
+    }
+    ostr.close();
+
+    CNcbiEnvironment env;
+    BOOST_REQUIRE(env.Get("NEWSEQ_ID_FORMAT").empty());
+
+    // create a database from the fasta file
+    CNcbiIstream& istr = tmpfile.AsInputFile(CTmpFile::eIfExists_Throw);
+    BOOST_REQUIRE(istr);
+    string dbname = "data/bare_id_test_nucl_legacy";
+    string title = "Temporary unit test db";
+    ostringstream log;
+    CBuildDatabase db(dbname, title, false, false, true, false, &log);
+
+    db.StartBuild();
+    db.AddFasta(istr);
+    db.EndBuild();
+
+    CFileDeleteAtExit::Add(dbname + ".nhr");
+    CFileDeleteAtExit::Add(dbname + ".nin");
+    CFileDeleteAtExit::Add(dbname + ".nsq");
+    CFileDeleteAtExit::Add(dbname + ".nog");
+    CFileDeleteAtExit::Add(dbname + ".nsd");
+    CFileDeleteAtExit::Add(dbname + ".nsi");
+
+    int index = 0;
+    CSeqDB seqdb(dbname, CSeqDB::eNucleotide);
+
+    // check that each sequence id has a correct type
+    for (auto it: fasta_ids) {
+        list< CRef<CSeq_id> > ids = seqdb.GetSeqIDs(index++);
+        BOOST_REQUIRE_EQUAL(ids.front()->Which(), it.second);
+    }
+    BOOST_REQUIRE_EQUAL(index, (int)fasta_ids.size());
 }
 
 BOOST_AUTO_TEST_SUITE_END()
