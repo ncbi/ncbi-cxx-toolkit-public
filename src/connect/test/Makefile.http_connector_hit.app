@@ -2,7 +2,7 @@
 
 APP = http_connector_hit
 SRC = http_connector_hit
-LIB = connect $(NCBIATOMIC_LIB)
+LIB = connect connssl $(NCBIATOMIC_LIB)
 
 LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 #LINK = purify $(ORIG_LINK)

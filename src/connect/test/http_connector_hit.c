@@ -148,7 +148,7 @@ int main(int argc, const char* argv[])
     }
 
     verify((net_info = ConnNetInfo_Create(0)) != 0);
-    if (port == CONN_PORT_HTTPS)
+    if (net_info->port == CONN_PORT_HTTPS)
         net_info->scheme = eURL_Https;
 
     /* Connect */
