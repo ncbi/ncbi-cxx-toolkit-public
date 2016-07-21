@@ -32,6 +32,9 @@
 
 #include <connect/ncbi_connutil.h>
 #include "../ncbi_priv.h"               /* CORE logging facilities */
+#ifdef NCBI_CXX_TOOLKIT
+#  include <connect/ncbi_gnutls.h>
+#endif /*NCBI_CXX_TOOLKIT*/
 #include <stdlib.h>
 
 #include "test_assert.h"  /* This header must go last */
@@ -57,6 +60,9 @@ int main(int argc, char** argv)
     CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
                            fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
+#ifdef NCBI_CXX_TOOLKIT
+    SOCK_SetupSSL(NcbiSetupGnuTls);
+#endif /*NCBI_CXX_TOOLKIT*/
 
     fprintf(stderr, "Running...\n"
             "  Executable:      '%s'\n"
@@ -101,10 +107,13 @@ int main(int argc, char** argv)
     /* Connect */
     sock = URL_Connect(host, port, path, args,
                        eReqMethod_Any, content_length,
-                       &timeout, &timeout, user_header, 1/*true*/, eDefault);
+                       &timeout, &timeout, user_header, 1/*true*/,
+                       port == CONN_PORT_HTTPS
+                       ? fSOCK_LogDefault | fSOCK_Secure
+                       : fSOCK_LogDefault);
     if ( !sock )
         return 3;
-    
+
     {{ /* Pump data from the input file to socket */
         FILE* fp = fopen(inp_file, "rb");
         if ( !fp ) {

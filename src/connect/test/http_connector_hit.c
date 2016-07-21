@@ -33,6 +33,9 @@
 #include <connect/ncbi_http_connector.h>
 #include "../ncbi_ansi_ext.h"
 #include "../ncbi_priv.h"               /* CORE logging facilities */
+#ifdef NCBI_CXX_TOOLKIT
+#  include <connect/ncbi_gnutls.h>
+#endif /*NCBI_CXX_TOOLKIT*/
 
 #include "test_assert.h"  /* This header must go last */
 
@@ -101,6 +104,8 @@ int main(int argc, const char* argv[])
     char   buffer[100];
     size_t n_read, n_written;
 
+    SConnNetInfo* net_info;
+
     /* Prepare to connect:  parse and check cmd.-line args, etc. */
     s_Args.host         = (argc > 1) ? argv[1] : "";
     s_Args.port         = (argc > 2) ? argv[2] : "";
@@ -127,6 +132,10 @@ int main(int argc, const char* argv[])
     /* Tune to the test URL using hard-coded pseudo-registry */
     CORE_SetREG( REG_Create(0, s_REG_Get, 0, 0, 0) );
 
+#ifdef NCBI_CXX_TOOLKIT
+    SOCK_SetupSSL(NcbiSetupGnuTls);
+#endif /*NCBI_CXX_TOOLKIT*/
+
     /* Usage */
     if (argc < 4) {
         fprintf(stderr,
@@ -138,10 +147,16 @@ int main(int argc, const char* argv[])
         return 1;
     }
 
+    verify((net_info = ConnNetInfo_Create(0)) != 0);
+    if (port == CONN_PORT_HTTPS)
+        net_info->scheme = eURL_Https;
+
     /* Connect */
-    connector = HTTP_CreateConnector(0, user_header, 0);
+    connector = HTTP_CreateConnector(net_info, user_header, 0);
     assert(connector);
     verify(CONN_Create(connector, &conn) == eIO_Success);
+
+    ConnNetInfo_Destroy(net_info);
 
     /* If the input file is specified,
      * then send its content (as the HTTP request body) to URL
