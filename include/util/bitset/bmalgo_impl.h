@@ -114,7 +114,9 @@ struct distance_metric_descriptor
 */
 inline
 void combine_count_operation_with_block(const bm::word_t* blk,
+                                        //unsigned gap,
                                         const bm::word_t* arg_blk,
+                                        //int arg_gap,
                                         distance_metric_descriptor* dmit,
                                         distance_metric_descriptor* dmit_end)
                                             
@@ -195,7 +197,9 @@ void combine_count_operation_with_block(const bm::word_t* blk,
                  case bm::COUNT_SUB_BA:
                      dmd.metric = bm::COUNT_SUB_AB; // recursive call to SUB_AB
                      combine_count_operation_with_block(arg_blk,
+//                                                        arg_gap,
                                                         blk,
+//                                                        gap,
                                                         it, it+1);
                      dmd.metric = bm::COUNT_SUB_BA; // restore status quo
                      break;
@@ -287,6 +291,12 @@ void combine_count_operation_with_block(const bm::word_t* blk,
      // --------------------------------------------
      //
      // Here we combine two plain bitblocks 
+
+     //const bm::word_t* blk_end;
+     //const bm::word_t* arg_end;
+
+     //blk_end = blk + (bm::set_block_size);
+     //arg_end = arg_blk + (bm::set_block_size);
 
 
      for (distance_metric_descriptor* it = dmit; it < dmit_end; ++it)
@@ -617,7 +627,10 @@ void combine_any_operation_with_block(const bm::word_t* blk,
 */
 inline
 unsigned combine_count_operation_with_block(const bm::word_t* blk,
+//                                            unsigned gap,
                                             const bm::word_t* arg_blk,
+//                                            int arg_gap,
+                                            //bm::word_t* temp_blk,
                                             distance_metric metric)
 {
     distance_metric_descriptor dmd(metric);
@@ -788,6 +801,7 @@ unsigned distance_and_operation(const BV& bv1,
 
     bm::word_t*** blk_root = bman1.get_rootblock();
     bm::word_t*** blk_root_arg = bman2.get_rootblock();
+//    unsigned i, j;
 
     unsigned count = 0;
 
@@ -819,6 +833,29 @@ unsigned distance_and_operation(const BV& bv1,
             (blk_blk[j+3] && blk_blk_arg[j+3]) ? 
                 count += combine_count_and_operation_with_block(blk_blk[j+3],blk_blk_arg[j+3])
                 :0;
+/*
+            if ((blk = blk_blk[j]) && (arg_blk = blk_blk_arg[j]) )
+            {
+                count +=
+                combine_count_and_operation_with_block(blk,arg_blk);
+            }
+
+            if ((blk = blk_blk[j+1]) && (arg_blk = blk_blk_arg[j+1]) )
+            {
+                count +=
+                    combine_count_and_operation_with_block(blk,arg_blk);
+            }
+            if ((blk = blk_blk[j+2]) && (arg_blk = blk_blk_arg[j+2]) )
+            {
+                count +=
+                    combine_count_and_operation_with_block(blk, arg_blk);
+            }
+            if ((blk = blk_blk[j+3]) && (arg_blk = blk_blk_arg[j+3]) )
+            {
+                count +=
+                    combine_count_and_operation_with_block(blk, arg_blk);
+            }
+*/
         } // for j
 
     } // for i

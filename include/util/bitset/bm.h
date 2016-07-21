@@ -349,6 +349,12 @@ public:
         {
         }
         
+        insert_iterator(const insert_iterator& iit)
+        : bvect_(iit.bvect_),
+          max_bit_(iit.max_bit_)
+        {
+        }
+        
         insert_iterator& operator=(bm::id_t n)
         {
             BM_ASSERT(n < bm::id_max);
@@ -372,9 +378,8 @@ public:
         insert_iterator& operator++() { return *this; }
         /*! Returns *this. This iterator does not move (no-op)*/
         insert_iterator& operator++(int) { return *this; }
-    //private:
-        //insert_iterator(const insert_iterator&);
-        //insert_iterator& operator=(const insert_iterator& );
+    private:
+        insert_iterator& operator=(const insert_iterator& );
         
     protected:
         bm::bvector<Alloc>&   bvect_;
@@ -1756,7 +1761,7 @@ bm::id_t bvector<Alloc>::count_range(bm::id_t left,
         else 
         {
             if (block)
-                func(block);
+                func(block);//, nb);
         }
     }
     cnt += func.count();
@@ -2509,6 +2514,11 @@ void bvector<Alloc>::combine_operation(
                                   const bm::bvector<Alloc>& bvect, 
                                   bm::operation             opcode)
 {
+    /*typedef void (*block_bit_op)(bm::word_t*, const bm::word_t*);
+    typedef void (*block_bit_op_next)(bm::word_t*, 
+                                        const bm::word_t*, 
+                                        bm::word_t*, 
+                                        const bm::word_t*);*/
 
     unsigned top_blocks = blockman_.top_block_size();
     unsigned bvect_top_blocks = bvect.blockman_.top_block_size();
@@ -2573,11 +2583,11 @@ void bvector<Alloc>::combine_operation(
             }
             // 0 - self, non-zero argument
             unsigned r = i * bm::set_array_size;
-            for (j = 0; j < bm::set_array_size; ++j)
+            for (j = 0; j < bm::set_array_size; ++j)//,++block_idx)
             {
                 const bm::word_t* arg_blk = bvect.blockman_.get_block(i, j);
                 if (arg_blk )
-                    combine_operation_with_block(r + j,
+                    combine_operation_with_block(r + j,//block_idx, 
                                                  0, 0, 
                                                  arg_blk, BM_IS_GAP(arg_blk), 
                                                  opcode);
@@ -2608,7 +2618,7 @@ void bvector<Alloc>::combine_operation(
         else // OR, SUB, XOR
         {
             unsigned r = i * bm::set_array_size;
-            for (j = 0; j < bm::set_array_size; ++j)
+            for (j = 0; j < bm::set_array_size; ++j)//, ++block_idx)
             {            
                 bm::word_t* blk = blk_blk[j];
                 const bm::word_t* arg_blk = bvect.blockman_.get_block(i, j);            
@@ -2689,7 +2699,7 @@ bvector<Alloc>::combine_operation_with_block(unsigned          nb,
                 int new_level = gap_calc_level(res_len, blockman_.glen());
                 if (new_level == -1)
                 {
-                    blockman_.convert_gap2bitset(nb, res, res_len-1);
+                    blockman_.convert_gap2bitset(nb, res);
                     return;
                 }
 
@@ -2993,8 +3003,21 @@ void bvector<Alloc>::set_range_no_check(bm::id_t left,
             if (IS_FULL_BLOCK(block)) 
                 continue;
 
+            bool is_gap = BM_IS_GAP(block);
+
             blockman_.set_block(nb, FULL_BLOCK_ADDR);
-            blockman_.free_block(block);
+            blockman_.set_block_bit(nb);
+            
+            if (is_gap)
+            {
+                blockman_.get_allocator().free_gap_block(BMGAP_PTR(block), 
+                                                            blockman_.glen());
+            }
+            else
+            {
+                blockman_.get_allocator().free_bit_block(block);
+            }
+            
         } // for
     }
     else // value == 0
@@ -3004,8 +3027,19 @@ void bvector<Alloc>::set_range_no_check(bm::id_t left,
             block = blockman_.get_block(nb);
             if (block == 0)  // nothing to do
                 continue;
+            bool is_gap = BM_IS_GAP(block);
             blockman_.set_block(nb, 0, false /*bit*/);
-            blockman_.free_block(block);
+            //blockman_.set_block_bit(nb);
+
+            if (is_gap) 
+            {
+                blockman_.get_allocator().free_gap_block(BMGAP_PTR(block),
+                                                         blockman_.glen());
+            }
+            else
+            {
+                blockman_.get_allocator().free_bit_block(block);
+            }
 
         } // for
     } // if value else 

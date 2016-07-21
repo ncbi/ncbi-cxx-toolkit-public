@@ -140,10 +140,10 @@ public:
     unsigned mem_used() const
     {
         return sizeof(*this) +
-               m_buf ? 
+               (m_buf ?
                  (m_type ? (BM_MINISET_GAPLEN * sizeof(gap_word_t))
                         : (BM_MINISET_ARRSIZE(N) * sizeof(bm::word_t)))
-                : 0; 
+                : 0);
     }
 
     void swap(miniset& mset)
@@ -222,7 +222,7 @@ template<size_t N> class bvmini
 {
 public:
 
-    bvmini(int start_strategy = 0) 
+    bvmini(int = 0)
     {
         ::memset(m_buf, 0, sizeof(m_buf));
     }

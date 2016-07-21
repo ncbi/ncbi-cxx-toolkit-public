@@ -64,10 +64,8 @@ void PrintGap(const bm::gap_word_t* gap_buf)
 inline
 void PrintDGap(const bm::gap_word_t* gap_buf, unsigned gap_len=0)
 {
-    bm::gap_word_t h;
-    memcpy(&h, gap_buf, sizeof(h));
 
-    unsigned len = gap_len ? gap_len : (h >> 3);
+    unsigned len = gap_len ? gap_len : (*gap_buf >> 3);
     cout << "[" " len=" << len << "] ";
     unsigned i = gap_len ? 0 : 1;
     for (; i < len; ++i)
@@ -114,9 +112,7 @@ inline
 void PrintDGapGamma(const bm::gap_word_t* gap_buf, unsigned gap_len=0)
 {
     unsigned total = 0;
-    bm::gap_word_t h;
-    memcpy(&h, gap_buf, sizeof(h));
-    unsigned len = gap_len ? gap_len : (h >> 3);
+    unsigned len = gap_len ? gap_len : (*gap_buf >> 3);
     cout << "[" " len=" << len << "] ";
     unsigned i = gap_len ? 0 : 1;
     for (; i < len; ++i)
@@ -142,7 +138,7 @@ void LoadBVector(const char* fname, TBV& bvector, unsigned* file_size=0)
         exit(1);
     }
     bv_file.seekg(0, ios_base::end);
-    unsigned length = bv_file.tellg();
+    unsigned length = (unsigned)bv_file.tellg();
     if (length == 0)
     {
         cout << "Empty file:" << fname << endl;

@@ -46,7 +46,6 @@ namespace bm
 
 
 
-
 /*!
     SSE4.2 optimized bitcounting .
     @ingroup SSE4
@@ -55,20 +54,15 @@ inline
 bm::id_t sse4_bit_count(const __m128i* block, const __m128i* block_end)
 {
     bm::id_t count = 0;
-
 #ifdef BM64_SSE4
+    const bm::id64_t* b = (bm::id64_t*) block;
+    const bm::id64_t* b_end = (bm::id64_t*) block_end;
     do
     {
-        __m128i tmp0 = _mm_load_si128(block);
-        count += _mm_popcnt_u64(_mm_extract_epi64(tmp0, 0)) +
-                 _mm_popcnt_u64(_mm_extract_epi64(tmp0, 1));
-        __m128i tmp1 = _mm_load_si128(block+1);
-        count += _mm_popcnt_u64(_mm_extract_epi64(tmp1, 0)) +
-                 _mm_popcnt_u64(_mm_extract_epi64(tmp1, 1));
-
-        block +=2;
-    } while (block < block_end);
-
+        count += _mm_popcnt_u64(b[0]) +
+                 _mm_popcnt_u64(b[1]);
+        b += 2;
+    } while (b < b_end);
 #else
     do
     {

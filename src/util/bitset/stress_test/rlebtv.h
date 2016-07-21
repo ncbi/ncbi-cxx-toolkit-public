@@ -24,6 +24,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 #ifndef RLEBTV__H__INCLUDED__
 #define RLEBTV__H__INCLUDED__
 
+#include <cassert>
 
 /*
     GAP vector is designed to be very small.
@@ -94,11 +95,9 @@ inline void gap_vector::combine_or(const gap_vector& vect)
 {
 
     gap_word_t tmp_buf[bm::gap_max_buff_len * 3] = {0,}; // temporary result
-    unsigned len;
-    gap_word_t* res = bm::gap_operation_or(m_buf, vect.get_buf(), tmp_buf);
+    unsigned len, dsize;
+    gap_word_t* res = bm::gap_operation_or(m_buf, vect.get_buf(), tmp_buf, dsize);
     len = bm::gap_length(res);
-
-//    assert(len <= bm::GAP_BUFF_THRESHOLD);
 
     if (res == tmp_buf)
     {
@@ -116,11 +115,10 @@ inline void gap_vector::combine_xor(const gap_vector& vect)
 {
 
     gap_word_t tmp_buf[gap_max_buff_len * 3] = {0,}; // temporary result
-    unsigned len;
-    gap_word_t* res = bm::gap_operation_xor(m_buf, vect.get_buf(), tmp_buf);
+    unsigned len, dsize;
+    gap_word_t* res = 
+        bm::gap_operation_xor(m_buf, vect.get_buf(), tmp_buf, dsize);
     len = bm::gap_length(res);
-
-//    assert(len <= bm::GAP_BUFF_THRESHOLD);
 
     if (res == tmp_buf)
     {
@@ -137,12 +135,11 @@ inline void gap_vector::combine_xor(const gap_vector& vect)
 
 inline void gap_vector::combine_sub(const gap_vector& vect)
 {
-
+    unsigned dsize;
     gap_word_t tmp_buf[bm::gap_max_buff_len * 3] = {0,}; // temporary result
-    gap_word_t* res = bm::gap_operation_sub(m_buf, vect.get_buf(), tmp_buf);
+    gap_word_t* res = 
+        bm::gap_operation_sub(m_buf, vect.get_buf(), tmp_buf, dsize);
     unsigned len = bm::gap_length(res);
-
-//    assert(len <= bm::GAP_BUFF_THRESHOLD);
 
     if (res == tmp_buf)
     {
@@ -226,11 +223,10 @@ int gap_vector::combine_and(const gap_word_t* other)
 {
 
     gap_word_t tmp_buf[gap_max_buff_len * 3] = {0,}; // temporary result
+    unsigned dsize;
 
-    gap_word_t* res = bm::gap_operation_and(m_buf, other, tmp_buf);
+    gap_word_t* res = bm::gap_operation_and(m_buf, other, tmp_buf, dsize);
     unsigned len = bm::gap_length(res);
-
-//    assert(len <= bm::GAP_BUFF_THRESHOLD);
 
     if (res == tmp_buf)
     {
@@ -262,7 +258,7 @@ inline bool gap_vector::clear_bit(unsigned pos)
 
 inline void gap_vector::convert_to_bitset(unsigned* dest) const
 {
-    bm::gap_convert_to_bitset(dest, m_buf, bm::set_block_size);
+    bm::gap_convert_to_bitset(dest, m_buf);
 }
 
 inline int gap_vector::compare(const gap_vector& vect)

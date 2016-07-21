@@ -656,19 +656,19 @@ void tmatrix_restore(TMatrix& tmatrix,
     \brief Copy GAP block body to bit block with DGap transformation 
     \internal
 */
-template<typename GT>//, typename BT>
+template<typename GT, typename BT>
 void gap_2_bitblock(const GT* BMRESTRICT gap_buf, 
-                          GT* BMRESTRICT block, 
+                          BT* BMRESTRICT block, 
                           unsigned       block_size)
 {
-    GT* dgap_buf = block;
-    GT* block_end = block + block_size;
+    GT* dgap_buf = (GT*) block;
+    BT* block_end = block + block_size;
 
     GT* dgap_end = gap_2_dgap<GT>(gap_buf, dgap_buf, false);
-//    GT* block_end2 = (GT*) block_end;
+    GT* block_end2 = (GT*) block_end;
     
     // zero the tail memory
-    for ( ;dgap_end < block_end; ++dgap_end)
+    for ( ;dgap_end < block_end2; ++dgap_end)
     {
         *dgap_end = 0;
     }
@@ -788,18 +788,20 @@ public:
     
     /// Transpose GAP block through a temp. block of aligned(!) memory
     /// 
-    void transpose(const GT* BMRESTRICT gap_buf)
+    void transpose(const GT* BMRESTRICT gap_buf, 
+                         BT* BMRESTRICT tmp_block)
     {
         const unsigned arr_size = BLOCK_SIZE * sizeof(unsigned) / sizeof(GT);
 
         BM_ASSERT(sizeof(tmatrix_.value) == tmatrix_type::n_columns * 
                                             tmatrix_type::n_rows * sizeof(GT));
+                
         // load all GAP as D-GAP(but not head word) into aligned bit-block
-        gap_2_bitblock(gap_buf, tmp_gap_block_, BLOCK_SIZE * 2);
+        gap_2_bitblock(gap_buf, tmp_block, BLOCK_SIZE);
         
         // transpose
         vect_bit_transpose<GT, tmatrix_type::n_rows, tmatrix_type::n_columns>
-                           (tmp_gap_block_, arr_size, tmatrix_.value);
+                           ((GT*)tmp_block, arr_size, tmatrix_.value);
 
         // calculate number of non-zero columns
         eff_cols_ = find_effective_columns(tmatrix_);        
@@ -808,19 +810,20 @@ public:
 	/// Transpose array of shorts
 	///
 	void transpose(const GT* BMRESTRICT garr,
-		           unsigned garr_size)
+		           unsigned garr_size,
+				   BT* BMRESTRICT tmp_block)
 	{
 		BM_ASSERT(garr_size);
 
-		bit_block_set(tmp_gap_block_, 0);
-		::memcpy(tmp_gap_block_, garr, sizeof(GT)*garr_size);
+		bit_block_set(tmp_block, 0);
+		::memcpy(tmp_block, garr, sizeof(GT)*garr_size);
 
         const unsigned arr_size = BLOCK_SIZE * sizeof(unsigned) / sizeof(GT);
         BM_ASSERT(sizeof(tmatrix_.value) == tmatrix_type::n_columns * 
                                             tmatrix_type::n_rows * sizeof(GT));
         // transpose
         vect_bit_transpose<GT, tmatrix_type::n_rows, tmatrix_type::n_columns>
-                           (tmp_gap_block_, arr_size, tmatrix_.value);
+                           ((GT*)tmp_block, arr_size, tmatrix_.value);
 
         // calculate number of non-zero columns
         eff_cols_ = find_effective_columns(tmatrix_);        
@@ -858,18 +861,20 @@ public:
     /// Restore GAP block from the transposed matrix
     ///
     void trestore(GT             gap_head, 
-                  GT* BMRESTRICT gap_buf)
+                  GT* BMRESTRICT gap_buf, 
+                  BT* BMRESTRICT tmp_block)
     {
         BM_ASSERT(sizeof(tmatrix_.value) == tmatrix_type::n_columns * 
                                             tmatrix_type::n_rows * sizeof(GT));
   
         // restore into a temp buffer
-        GT* gap_tmp = tmp_gap_block_;
+        GT* gap_tmp = (GT*)tmp_block;
+        //*gap_tmp++ = gap_head;
        
         vect_bit_trestore<GT, tmatrix_type::n_rows, tmatrix_type::n_columns>(tmatrix_.value, gap_tmp);
         
         // D-Gap to GAP block recalculation
-        gap_tmp = tmp_gap_block_;
+        gap_tmp = (GT*)tmp_block;
         dgap_2_gap<GT>(gap_tmp, gap_buf, gap_head);
     }
     
@@ -881,8 +886,6 @@ public:
     unsigned char                 pc_vector_[tmatrix_type::n_rows];
     unsigned                      pc_vector_stat_[bm::ibpc_end];
     typename tmatrix_type::rstat  rstat_vector_[tmatrix_type::n_rows];
-
-    GT  BM_ALIGN16                tmp_gap_block_[BLOCK_SIZE*2] BM_ALIGN16ATTR;
 };
 
 

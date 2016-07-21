@@ -1,57 +1,56 @@
-/*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author:  Anatoliy Kuznetsov
-*
-*
-*/
+/*
+Copyright (c) 2002-2009 Anatoliy Kuznetsov.
 
-//#define BM64OPT
+Permission is hereby granted, free of charge, to any person 
+obtaining a copy of this software and associated documentation 
+files (the "Software"), to deal in the Software without restriction, 
+including without limitation the rights to use, copy, modify, merge, 
+publish, distribute, sublicense, and/or sell copies of the Software, 
+and to permit persons to whom the Software is furnished to do so, 
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included 
+in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, 
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES 
+OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, 
+DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, 
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR 
+OTHER DEALINGS IN THE SOFTWARE.
+*/
+ 
+
 //#define BM_SET_MMX_GUARD
 //#define BMSSE2OPT
+//#define BMSSE42OPT
+//#define BM64OPT
 //#define BMCOUNTOPT
 
 #include <ncbi_pch.hpp>
+
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
+#include <cassert>
 #include <memory.h>
-#include <iostream>
 #include <time.h>
-#include <util/bitset/bm.h>
-#include <util/bitset/bmalgo.h>
-#include <util/bitset/bmserial.h>
-#include <util/bitset/bitset_debug.hpp>
+#include <math.h>
+
+#include <iostream>
+#include <iomanip>
+
+#include <util/bitset/ncbi_bitset_alloc.hpp>
+#include <util/bitset/ncbi_bitset_util.hpp>
 
 using namespace bm;
 using namespace std;
 
 #include "rlebtv.h"
-#include <util/bitset/encoding.h>
+#include <encoding.h>
 #include <limits.h>
 
+#include <vector>
 
 
 #define POOL_SIZE 5000
@@ -216,8 +215,10 @@ private:
 void* pool_ptr_allocator::free_ptr_blocks_[POOL_SIZE];
 int pool_ptr_allocator::ptr_blocks_idx_ = 0;
 
-
-//#define MEM_DEBUG
+#if defined(BMSSE2OPT) || defined(BMSSE42OPT)
+#else
+# define MEM_DEBUG
+#endif
  
 #ifdef MEM_DEBUG
 
@@ -234,6 +235,11 @@ static unsigned nf_;
         assert(n);
         bm::word_t* p =
             (bm::word_t*) ::malloc((n+1) * sizeof(bm::word_t));
+        if (!p)
+        {
+            std::cerr << "Failed allocation!" << endl;
+            exit(1);
+        }
         *p = n;
         return ++p;
     }
@@ -270,6 +276,11 @@ static unsigned nf_;
         ++na_;
         assert(sizeof(size_t) == sizeof(void*));
         void* p = ::malloc((n+1) * sizeof(void*));
+        if (!p)
+        {
+            std::cerr << "Failed allocation!" << endl;
+            exit(1);
+        }
         size_t* s = (size_t*) p;
         *s = n;
         return (void*)++s;
@@ -622,6 +633,17 @@ void FillSetClearIntervals(bvect_mini* bvect_min,
     FillSetsIntervals(bvect_min, bvect_full, min, max, fill_factor, false);
 }
 
+void FillSetsRandomOne(bvect_mini* bvect_min, 
+					   bvect* bvect_full,
+					   unsigned min, 
+                       unsigned max)
+{
+	unsigned range = max - min;
+	unsigned bit_idx = rand() % range;
+	bvect_min->set_bit(bit_idx);
+	bvect_full->set_bit(bit_idx);
+    cout << "Bit_idx=" << bit_idx << endl;
+}
 
 void FillSetsRandom(bvect_mini* bvect_min, 
               bvect* bvect_full,
@@ -683,10 +705,10 @@ void FillSetsRandomMethod(bvect_mini* bvect_min,
 {
     if (method == -1)
     {
-        method = rand() % 5;
+        method = rand() % 6;
     }
     unsigned factor;
-//method = 4;
+//method = 0;
     switch (method)
     {
 
@@ -711,7 +733,10 @@ void FillSetsRandomMethod(bvect_mini* bvect_min,
         factor = rand()%3;
         FillSetsRandom(bvect_min, bvect_full, min, max, factor?factor:1);
         break;
-
+	case 4:
+		cout << "Random set one bit" << endl;
+		FillSetsRandomOne(bvect_min, bvect_full, min, max);
+		break;
     default:
         cout << "Random filling: method - Set Intervals - factor(random)" << endl;
         factor = rand()%10;
@@ -785,28 +810,127 @@ unsigned SerializationOperation(bvect*             bv_target,
    unsigned slen1 = bm::serialize(bv1, smem1);
    unsigned slen2 = bm::serialize(bv2, smem2);
 
+   if (slen1 > st1.max_serialize_mem || slen2 > st2.max_serialize_mem)
+   {
+       cout << "Serialization override detected!" << endl;
+       exit(1);
+   }
+
+
    unsigned count =
        operation_deserializer<bvect>::deserialize(*bv_target,
                                                   smem1,
                                                   0,
                                                   set_ASSIGN);
+   cout << slen1 << " " << slen2 << endl;
    int res = bv1.compare(*bv_target);
    if (res != 0)
    {
+       cout << "---------------------------------- " << endl;
+       cout << "bv1.count()=" << bv1.count() << endl;
+       print_stat(bv1);
+       cout << "---------------------------------- " << endl;
+       cout << "bv_target.count()=" << bv_target->count() << endl;
+       print_stat(*bv_target);
+       
+       bv_target->bit_xor(bv1);
+       cout << "First diff=" << bv_target->get_first() << endl;
        cout << "set_ASSIGN 1 failed!" << endl;
        exit (1);
    }
-//   PrintSet(cout, *bv_target);
-//bv2.stat();
+   cout << "Deserialization ASSIGN into bv1 OK" << endl;
 
+   {
+       bvect* bv_tmp2 = new bvect();
+       bm::deserialize(*bv_tmp2, smem1);
+       if (*bv_tmp2 != bv1)
+       {
+           cout << "Deserialize NOT equal to Operation deserialize!" << endl;
+           exit(1);
+       }
+       delete bv_tmp2;
+   }
+
+
+   cout << "Operation deserialization... " << op << endl;
     count=
        operation_deserializer<bvect>::deserialize(*bv_target,
                                                   smem2,
                                                   0,
                                                   op);
+    cout << "OK" << endl;
+
+    // check if operation was ok
+    {
+        bvect bvt(bv1);
+        switch(op)
+        {
+        case bm::set_OR:
+            bvt |= bv2;
+            break;
+        case bm::set_XOR:
+            bvt ^= bv2;
+            break;
+        case bm::set_AND:
+            bvt &= bv2;
+            break;
+        case bm::set_SUB:
+            bvt -= bv2;
+            break;
+        default:
+            goto no_compare;
+        }
+        if (bvt.compare(*bv_target) != 0)
+        {
+            cout << "Direct Serial operation comparison failed!" << endl;
+            exit(1);
+        }
+        no_compare:
+        ;
+
+    }
+/*    
+    if (op == bm::set_AND || op == bm::set_OR || op == bm::set_XOR || op == bm::set_SUB)
+    {
+        cout << "3 way operation check... " << op << endl;
+        operation_deserializer<bvect>::deserialize(*bv_target,
+                                                   bv1,
+                                                   smem2,
+                                                   0,
+                                                   op);
+        cout << "OK" << endl;
+
+        bvect bvt(bv1);
+        switch(op)
+        {
+        case bm::set_OR:
+            bvt |= bv2;
+            break;
+        case bm::set_XOR:
+            bvt ^= bv2;
+            break;
+        case bm::set_AND:
+            bvt &= bv2;
+            break;
+        case bm::set_SUB:
+            bvt -= bv2;
+            break;
+        default:
+            goto no_compare2;
+        }
+        if (bvt.compare(*bv_target) != 0)
+        {
+            cout << "3-way Serial operation comparison failed!" << endl;
+            exit(1);
+        }
+        no_compare2:
+        ;
+    }
+*/
 
    if (check_reverse)
    {
+        cout << "Reverse check... " << endl;
         bvect bv_tmp2(BM_GAP);
         operation_deserializer<bvect>::deserialize(bv_tmp2,
                                                    smem2,
@@ -818,8 +942,7 @@ unsigned SerializationOperation(bvect*             bv_target,
             cout << "set_ASSIGN failed 2! " << endl;
             exit(1);
         }
-//        PrintSet(cout, bv_tmp2);
-//bv1.stat();
+        cout << "Deserialization assign to bv_tmp2 OK" << endl;
         unsigned count_rev =
         operation_deserializer<bvect>::deserialize(bv_tmp2,
                                                    smem1,
@@ -827,11 +950,30 @@ unsigned SerializationOperation(bvect*             bv_target,
                                                    op);
         if (count != count_rev)
         {
-            bv1.stat();
+//            print_stat(bv1);
+/*
+            unsigned c = count_or(bv1, bv2);
+            cout << "Correct count=" << c << endl;
+
+            c = count_or(bv2, bv1);
+            cout << "Correct count=" << c << endl;
+
+            bv1 |= bv2;
+            cout << "Count3 = " << bv1.count() << endl;;
+*/
+            //SaveBVector("err1.bv", bv1);
+            //SaveBVector("err2.bv", bv2);
+
+            
+
+            cout << "Operation=" << op << endl;
+
             cout << "Serialization operation reverse check failed"
                  << " count = " << count 
                  << " count rev= " << count_rev
                  << endl;
+            cout << "See bvector dumps: err1.bv, err2.bv" << endl;
+
             exit(1);
         }
 
@@ -851,12 +993,17 @@ void SerializationOperation2Test(bvect*        bv_target,
                                  set_operation op_combine)
 {
     bv_target->clear(true);
+    cout << "Serialization operation count..." << endl;
+
     unsigned scount1 = SerializationOperation(0, 
                                               bv1,
                                               bv2,
                                               op_count,
-                                              true /*reverse check*/);
+                                              true //reverse check
+                                              );
+    cout << "Serialization operation count OK." << endl;
 
+    cout << "Serialization operation. " << endl;
     unsigned scount2 = SerializationOperation(bv_target, 
                                               bv1,
                                               bv2,
@@ -871,16 +1018,27 @@ void SerializationOperation2Test(bvect*        bv_target,
              << endl;
 
         cout << endl << "target:" << endl;
-        bv_target->stat();
+        print_stat(*bv_target);
         cout << endl << endl << "Reference" << endl;
+        if (op_combine == set_OR)
+        {
+            bv1 |= bv2;
+            if (bv1 != *bv_target)
+            {
+                cout << "Comparison OR error!" << endl;
+            }
+            cout << "OR operation count=" << bv1.count() << endl;
+            print_stat(bv1);
+        } else
         if (op_combine == set_AND)
         {
             bv1 &= bv2;
-            bv1.stat();
+            print_stat(bv1);
         }
 
         exit(1);
     }
+    cout << "OK" << endl;
 }
 
 
@@ -1055,7 +1213,7 @@ void CheckVectors(bvect_mini &bvect_min,
     {
         cout << "fullvector count = " << count << endl;
         cout << "Count comparison failed !!!!" << endl;
-        bvect_full.stat();
+        print_stat(bvect_full);
         DetailedCheckVectors(bvect_min, bvect_full, size);
 
         exit(1);  
@@ -1094,7 +1252,7 @@ void CheckVectors(bvect_mini &bvect_min,
               << bit_m << endl;
 
 
-         bvect_full.stat();
+         print_stat(bvect_full);
 
          DetailedCheckVectors(bvect_min, bvect_full, size);
 
@@ -1169,11 +1327,11 @@ void ClearAllTest()
     bvect_full.optimize();
     bvect_full.clear();
 
-    bvect_full.stat();
+    print_stat(bvect_full);
 
     int count = bvect_full.count();
     assert(count == 0);
-    bvect_full.stat();
+    print_stat(bvect_full);
 }
 
 
@@ -1255,12 +1413,12 @@ void BasicFunctionalityTest()
     if (bvect_full1 != bvect_full)
     {
         cout << "set_range failed!" << endl;
-        bvect_full1.stat();
+        print_stat(bvect_full1);
         exit(1);
     }
 
-    bvect_full.stat();
-    bvect_full1.stat();
+    print_stat(bvect_full);
+    print_stat(bvect_full1);
 
     // checking the results
     unsigned count_min = 0;
@@ -1343,11 +1501,60 @@ void BasicFunctionalityTest()
     }
 }
 
+
+
+void TestRandomSubset(const bvect& bv, bm::random_subset<bvect>& rsub)
+{
+    bvect bv_subset;
+    unsigned bcnt = bv.count();
+
+    unsigned samples[] = 
+      { 0, 1, 2, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, bcnt / 5, bcnt / 4, bcnt / 3, bcnt / 2, (bcnt * 2)/3, bcnt };
+    unsigned samples_size = sizeof(samples)/sizeof(*samples);
+
+    printf("Taking random sub-sets: ");
+    
+    for (unsigned i = 0; i < samples_size; ++i)
+    {
+        unsigned sample_count = samples[i];
+        printf(" %u, ", sample_count);
+        rsub.sample(bv_subset, bv, sample_count);
+        if (sample_count > bcnt)
+            sample_count = bcnt;
+
+        if (sample_count != bv_subset.count())
+        {
+            printf("\nRandom subset failed! sample_count = %u result_count=%u\n", 
+                   sample_count,
+                   bv_subset.count());
+            exit(1);
+        }
+        bv_subset -= bv;
+        if (bv_subset.count() != 0)
+        {
+            printf("\nRandom subset failed! Extra bits set! \n");
+            exit(1);
+        }    
+    }
+    printf("\n");
+}
+
 void SimpleRandomFillTest()
 {
     assert(ITERATIONS < BITVECT_SIZE);
 
+    bm::random_subset<bvect> rsub;
+
     cout << "-------------------------- SimpleRandomFillTest" << endl;
+
+    printf("Test for Random inverted subset.");
+
+    {
+        bvect bv;
+        bv.invert();
+        TestRandomSubset(bv, rsub);
+    }
+
 
     {
     printf("Simple random fill test 1.");
@@ -1376,6 +1583,8 @@ void SimpleRandomFillTest()
 
     CheckVectors(bvect_min, bvect_full, iter);
     CheckCountRange(bvect_full, 0, iter);
+
+    TestRandomSubset(bvect_full, rsub);
 
     printf("Simple random fill test 2.");
 
@@ -1414,6 +1623,8 @@ void SimpleRandomFillTest()
 
     CheckVectors(bvect_min, bvect_full, iter);
 
+    TestRandomSubset(bvect_full, rsub);
+
     printf("Simple random fill test 4.");
 
     for(i = 0; i < iter; ++i)
@@ -1428,8 +1639,9 @@ void SimpleRandomFillTest()
 
     CheckVectors(bvect_min, bvect_full, iter);
     CheckCountRange(bvect_full, 0, iter);
-    }
 
+    TestRandomSubset(bvect_full, rsub);
+    }
 
 }
 
@@ -1652,7 +1864,7 @@ void AndOperationsTest()
     if (count != predicted_count)
     {
         cout << "Predicted count error!" << endl;
-        bvect_full1.stat();
+        print_stat(bvect_full1);
         exit(1);
     }
 
@@ -1810,7 +2022,7 @@ void OrOperationsTest()
     {
         cout << "Predicted count error!" << endl;
         cout << predicted_count << " " << count << endl;
-        bvect_full1.stat();
+        print_stat(bvect_full1);
         exit(1);
     }
 
@@ -1889,8 +2101,12 @@ void OrOperationsTest()
     FillSets(&bvect_min2, &bvect_full2, 1, BITVECT_SIZE/5, 2);
 
     bvect_min1.combine_or(bvect_min2);
+    unsigned mcnt = bvect_min1.bit_count();
+
+    cout << mcnt << endl;
     
     bm::id_t predicted_count = bm::count_or(bvect_full1, bvect_full2);    
+    cout << predicted_count << endl;
     bm::id_t predicted_any = bm::any_or(bvect_full1, bvect_full2);
     if (predicted_any == 0 && predicted_count != 0)
     {
@@ -2105,7 +2321,7 @@ void SubOperationsTest()
     {
         cout << "Predicted count error!" << endl;
         cout << predicted_count << " " << count << endl;
-bvect_full1.stat();    
+        print_stat(bvect_full1);    
         
         exit(1);
     }
@@ -2429,7 +2645,7 @@ void XorOperationsTest()
     {
         cout << "5.Predicted count error!" << endl;
         cout << count << " " << predicted_count << endl;
-        bvect_full1.stat();
+        print_stat(bvect_full1);
         exit(1);
     }
 
@@ -2789,7 +3005,7 @@ void DesrializationTest2()
    }
 
    bv1.optimize();
-   bv1.stat();
+   print_stat(bv1);
 
    struct bvect::statistics st1;
    bv1.calc_stat(&st1);
@@ -2821,7 +3037,7 @@ void DesrializationTest2()
       bv2.set_bit(i);
    }
    bv2.optimize();
-   bv2.stat();
+   print_stat(bv2);
 
    struct bvect::statistics st2;
    bv2.calc_stat(&st2);
@@ -2833,7 +3049,7 @@ void DesrializationTest2()
    slen = 0;
 
    bm::deserialize(bvtotal, sermem2);
-   bvtotal.stat();
+   print_stat(bvtotal);
     operation_deserializer<bvect>::deserialize(bv_target_s,
                                                sermem2,
                                                0,
@@ -2880,7 +3096,7 @@ void DesrializationTest2()
    int repetitions = 25;
    for (i = 0; i < repetitions; ++i)
    {
-        cout << endl << "Deserialization STEP " << i << endl;
+        cout << endl << endl << "Deserialization STEP " << i << endl;
 
         bvect_mini*   bvect_min1= new bvect_mini(size);
         bvect*        bvect_full1= new bvect();
@@ -2902,14 +3118,18 @@ void DesrializationTest2()
 
 //       cout << "Before deserialization" << endl;
 //       bvtotal.stat();
-       bm::deserialize(bvtotal, smem);
+
+        bm::deserialize(bvtotal, smem);
         operation_deserializer<bvect>::deserialize(bv_target_s,
-                                                smem,
-                                                0,
-                                                set_OR);
+                                                   smem,
+                                                   0,
+                                                   set_OR);
         res = bvtotal.compare(bv_target_s);
         if (res != 0)
         {
+			unsigned bit_idx = bv_target_s.get_first();
+			cout << bit_idx << " " << bv_target_s.get_next(bit_idx) << endl;;
+			print_stat(bv_target_s);
             cout << "Operation deserialization error 2" << endl;
             exit(1);
         }
@@ -2945,7 +3165,7 @@ void DesrializationTest2()
 }
 
 
-void StressTest(int repetitions)
+void StressTest(int repetitions, int set_operation = -1)
 {
 
    unsigned RatioSum = 0;
@@ -2958,6 +3178,8 @@ void StressTest(int repetitions)
    bvect  bvtotal;
    bvtotal.set_new_blocks_strat(bm::BM_GAP);
 
+   bm::random_subset<bvect> rsub;
+
 
    cout << "----------------------------StressTest" << endl;
 
@@ -2966,7 +3188,17 @@ void StressTest(int repetitions)
    int i;
    for (i = 0; i < repetitions; ++i)
    {
-        cout << endl << " - - - - - - - - - - - - STRESS STEP " << i << endl;
+        cout << endl << " - - - - - - - - - - - - STRESS STEP " << i; 
+        switch (set_operation)
+        {
+        case 0: cout << " [OR]"; break;
+        case 1: cout << " [SUB]";break;
+        case 2: cout << " [XOR]";break;
+        case 3: cout << " [AND]";break;
+        default:
+            cout << " [RANDOM]";
+        }
+        cout << endl;
 
         switch (rand() % 3)
         {
@@ -3044,7 +3276,7 @@ void StressTest(int repetitions)
             }
             cout << endl;
             cout << "================" << endl;
-            bvect_full1->stat();
+            print_stat(*bvect_full1);
 
 
             exit(1);
@@ -3054,13 +3286,14 @@ void StressTest(int repetitions)
         CheckIntervals(*bvect_full1, BITVECT_SIZE);
 
 
-        
-
         CheckCountRange(*bvect_full2, start2, BITVECT_SIZE);
 
         CheckCountRange(*bvect_full1, 0, start1, arr);
         CheckCountRange(*bvect_full2, 0, start2);
 
+
+        TestRandomSubset(*bvect_full1, rsub);
+        TestRandomSubset(*bvect_full2, rsub);
 
 /*        
         cout << "!!!!!!!!!!!!!!!" << endl;
@@ -3075,8 +3308,9 @@ void StressTest(int repetitions)
          bvect_full2->stat();
 */
 
-        int operation = rand()%4;
-//operation = 2;
+        int operation = rand()%5;
+        if (set_operation != -1)
+            operation = set_operation;
 
         switch(operation)
         {
@@ -3190,7 +3424,7 @@ void StressTest(int repetitions)
 
         case 2:
             {
-            cout << "Operation XOR" << endl;
+            cout << "Operation XOR <<<" << endl;
            
             bm::id_t predicted_count = bm::count_xor(*bvect_full1, *bvect_full2);
             bm::id_t predicted_any = bm::any_xor(*bvect_full1, *bvect_full2);
@@ -3249,9 +3483,23 @@ void StressTest(int repetitions)
                                         set_COUNT_AND,
                                         set_AND);
 
-            bvect_full1->bit_and(*bvect_full2);
+            TestRandomSubset(bv_target_s, rsub);
 
+
+            bvect bv1(*bvect_full1);
+
+
+            bvect_full1->bit_and(*bvect_full2);
             bm::id_t count = bvect_full1->count();
+
+            int res = bvect_full1->compare(bv_target_s);
+            if (res != 0)
+            {
+                //SaveBVector("bv1.bv", bv1);
+                //SaveBVector("bv2.bv", *bvect_full2);
+                cout << "Serialization operation failed!" << endl;
+                exit(1);
+            }
 
             if (count != predicted_count)
             {
@@ -3259,16 +3507,12 @@ void StressTest(int repetitions)
                 cout << "Count = " << count << "Predicted count = " << predicted_count << endl;
                 exit(1);
             }
-            int res = bvect_full1->compare(bv_target_s);
-            if (res != 0)
-            {
-                cout << "Serialization operation failed!" << endl;
-                exit(1);
-            }
 
             }
             break;
         }
+
+
 
         cout << "Operation comparison" << endl;
         CheckVectors(*bvect_min1, *bvect_full1, size);
@@ -3476,6 +3720,31 @@ void StressTest(int repetitions)
          << endl;
 }
 
+
+void CheckGap2DGap(gap_vector& gapv)
+{
+   bm::gap_word_t   dgap_buf[bm::gap_max_buff_len+3]; 
+   bm::gap_word_t    gap_buf[bm::gap_max_buff_len+3] = {0, }; 
+   
+   bm::gap_2_dgap(gapv.get_buf(), dgap_buf);
+   bm::dgap_2_gap(dgap_buf, gap_buf);
+   
+   int c = bm::gapcmp(gap_buf, gapv.get_buf());
+   if (c != 0)
+   {
+        cout << "Gap1: ";
+        PrintGap(gapv.get_buf());
+        cout << "D-Gap: ";
+        PrintGap(dgap_buf);
+        cout << "Gap2:";
+        PrintGap(gap_buf);
+        
+        cout << "DGap conversion failed!" << endl;
+        exit(1);
+   }
+} 
+
+
 void GAPCheck()
 {
    cout << "-------------------------------------------GAPCheck" << endl;
@@ -3555,6 +3824,8 @@ void GAPCheck()
    CheckCountRange(gapv, 10, 20);
    CheckCountRange(gapv, 0, 20);
 
+   CheckGap2DGap(gapv);
+
    printf("gapv 1 check ok\n");
    }
 
@@ -3595,6 +3866,10 @@ void GAPCheck()
    CheckCountRange(gapv, 10, 20);
    CheckCountRange(gapv, 0, 20);
 
+   CheckGap2DGap(gapv);
+
+
+
    printf("gapv 2 check ok\n");
    }
 
@@ -3629,6 +3904,8 @@ void GAPCheck()
       cout << "Trouble 3." << endl;
       exit(1);
    }
+
+   CheckGap2DGap(gapv);
 
    }
 
@@ -3668,6 +3945,8 @@ void GAPCheck()
    gapv.set_bit(4);
    gapv.control();
 
+   CheckGap2DGap(gapv);
+
 
    printf("gapv 3 check ok\n");
    }
@@ -3675,25 +3954,31 @@ void GAPCheck()
    {
         gap_vector gapv(0);
         bvect_mini   bvect_min(bm::gap_max_bits);
-cout << "++++++1" << endl;
-print_gap(gapv, 10);
+        
+        cout << "++++++1" << endl;
+        print_gap(gapv, 10);
+        
         gapv.set_bit(bm::gap_max_bits-1);
         gapv.control();
         print_gap(gapv, 10);
 
-//cout << "++++++2" << endl;
-//cout << "m_buf=" << bvect_min.m_buf << endl;
 
         bvect_min.set_bit(bm::gap_max_bits-1);
-cout << "++++++3" << endl;
+        
+        cout << "++++++3" << endl;
+        
         gapv.set_bit(5);
         print_gap(gapv,15);
         gapv.control();
         bvect_min.set_bit(5);
-cout << "++++++4" << endl;
+        
+        cout << "++++++4" << endl;
 
         CheckCountRange(gapv, 13, 150);
         gapv.control();
+        
+        CheckGap2DGap(gapv);
+
 
         unsigned i;
         for (i = 0; i < bm::gap_max_bits; ++i)
@@ -3717,6 +4002,9 @@ cout << "++++++4" << endl;
         gapv.clear_bit(5);
         bvect_min.clear_bit(5);
         gapv.control();
+        
+        CheckGap2DGap(gapv);
+
 
         for ( i = 0; i < bm::gap_max_bits; ++i)
         {
@@ -3748,6 +4036,7 @@ cout << "++++++4" << endl;
             gapv.set_bit(i);
             gapv.control();
             CheckCountRange(gapv, 0, i);
+            
 
             int bit1 = (gapv.is_bit_true(i) == 1);
             int bit2 = (bvect_min.is_bit_true(i) != 0);
@@ -3760,6 +4049,9 @@ cout << "++++++4" << endl;
             {
                 cout << "3.problem with bit test comparison " << i << endl;
             }
+            
+            CheckGap2DGap(gapv);
+            
 
         }
         for (i = 0; i < (int)bm::gap_max_bits; ++i)
@@ -3793,6 +4085,9 @@ cout << "++++++4" << endl;
             gapv.control();
             CheckCountRange(gapv, 0, id);
             CheckCountRange(gapv, id, 65535);
+            
+            CheckGap2DGap(gapv);
+
         }
 
         for (i = 0; i < (int)bm::gap_max_bits; ++i)
@@ -4074,9 +4369,11 @@ cout << "++++++4" << endl;
    gapv2.set_bit(3);
    print_gap(gapv2, 0);
 
+   unsigned dsize=0;
    bm::gap_buff_op((gap_word_t*)gapv.get_buf(), 
                          gapv1.get_buf(), 0,
-                         gapv2.get_buf(), 0, bm::and_op); 
+                         gapv2.get_buf(), 0, bm::and_op, 
+                         dsize); 
    print_gap(gapv, 0);
    gapv.control();
 
@@ -4377,7 +4674,6 @@ void MutationTest()
     bvect_min.set_bit(100000);
     bvect_full.set_bit(100000);
 
-bvect_full.stat();
     // detailed vectors verification
     ::CheckVectors(bvect_min, bvect_full, ITERATIONS, false);
 
@@ -4387,7 +4683,6 @@ bvect_full.stat();
         bvect_min.set_bit(i);
         bvect_full.set_bit(i);
     }
-bvect_full.stat();
     ::CheckVectors(bvect_min, bvect_full, ITERATIONS, false);
 
     for (i = 100000; i < 200000; i+=3)
@@ -4452,7 +4747,7 @@ void MutationOperationsTest()
        bvect_full2.set_bit(i);
        bvect_min2.set_bit(i);
     }
-    bvect_full2.stat();
+    print_stat(bvect_full2);
     CheckVectors(bvect_min2, bvect_full2, 65536, true);
     
     bvect_min1.combine_and(bvect_min2);
@@ -4515,7 +4810,7 @@ void MutationOperationsTest()
 
     bvect        bvect_full3;
     bm::deserialize(bvect_full3, sermem);
-    bvect_full3.stat();
+    print_stat(bvect_full3);
     CheckVectors(bvect_min1, bvect_full3, 100, true);
    }
 
@@ -4541,19 +4836,19 @@ void MutationOperationsTest()
     FillSets(&bvect_min1, &bvect_full1, min, max, 0);
     FillSets(&bvect_min1, &bvect_full1, 0, len, 5);
     printf("Bvect_FULL 1 STAT\n");
-    bvect_full1.stat();
+    print_stat(bvect_full1);
 //    CheckVectors(bvect_min1, bvect_full1, max+10, false);
     FillSets(&bvect_min2, &bvect_full2, min, max, 0);
     FillSets(&bvect_min2, &bvect_full2, 0, len, 0);
     printf("Bvect_FULL 2 STAT\n");
-    bvect_full2.stat();
+    print_stat(bvect_full2);
 //    CheckVectors(bvect_min2, bvect_full2, max+10);
     
 
     bvect_min1.combine_and(bvect_min2);
     bvect_full1.bit_and(bvect_full2);
     printf("Bvect_FULL 1 STAT after AND\n");
-    bvect_full1.stat();
+    print_stat(bvect_full1);
 
     CheckVectors(bvect_min1, bvect_full1, max+10, false);
 
@@ -4565,7 +4860,7 @@ void MutationOperationsTest()
     cout << "MINIVECT: " << bvect_min1.mem_used() << endl;
 
     bvect_full1.optimize();
-    bvect_full1.stat();
+    print_stat(bvect_full1);
 
     CheckVectors(bvect_min1, bvect_full1, max+10, false);
 
@@ -4587,7 +4882,7 @@ void MutationOperationsTest()
     
     bvect        bvect_full3;
     bm::deserialize(bvect_full3, sermem);
-    bvect_full3.stat();
+    print_stat(bvect_full3);
     CheckVectors(bvect_min1, bvect_full3, max+10, true);
     
     delete [] sermem;
@@ -4598,7 +4893,7 @@ void MutationOperationsTest()
 
     {
     bvect       bvect_full4(bvect_full3);
-    bvect_full3.stat();
+    print_stat(bvect_full3);
     CheckVectors(bvect_min1, bvect_full4, max+10, true);
     }
     
@@ -4745,7 +5040,7 @@ void SerializationTest()
     bvect_full1.calc_stat(&st);
 
     unsigned char* sermem = new unsigned char[st.max_serialize_mem];
-    bvect_full1.stat();
+    print_stat(bvect_full1);
     
     unsigned slen = bm::serialize(bvect_full1, sermem);
 
@@ -4834,12 +5129,27 @@ cout << "Deserialization ok" << endl;
 
     FillSetsRandomMethod(bvect_min1, bvect_full1, 1, BITVECT_SIZE, 1);
     FillSetsRandomMethod(bvect_min2, bvect_full2, 1, BITVECT_SIZE, 1);
+    CheckVectors(*bvect_min1, *bvect_full1, BITVECT_SIZE, true);
+    CheckVectors(*bvect_min2, *bvect_full2, BITVECT_SIZE, true);
+
 
     bvect::statistics st;
     bvect_full1->calc_stat(&st);
     unsigned char* sermem = new unsigned char[st.max_serialize_mem];
     unsigned slen = bm::serialize(*bvect_full1, sermem);
-    delete bvect_full1;
+
+    bvect bvt;
+    bm::deserialize(bvt, sermem);
+    if (bvt != *bvect_full1)
+    {
+        print_stat(bvt);
+        print_stat(*bvect_full1);
+        cout << "Error!" << endl;
+        exit(1);
+    }
+
+    CheckVectors(*bvect_min1, *bvect_full1, BITVECT_SIZE, true);
+    CheckVectors(*bvect_min2, *bvect_full2, BITVECT_SIZE, true);
 
     cout << "Serialized mem_max = " << st.max_serialize_mem 
          << " size= " << slen 
@@ -4847,7 +5157,15 @@ cout << "Deserialization ok" << endl;
          << endl;
 
     bvect*  bv_target_s=new bvect(*bvect_full2);
-    bv_target_s->stat();
+    print_stat(*bv_target_s);
+
+    print_stat(*bvect_full2);
+
+    bvect*  bvect_full3= new bvect();
+    *bvect_full3 = *bvect_full1;
+    *bvect_full3 |= *bvect_full2;
+//    CheckVectors(*bvect_min2, *bvect_full3, BITVECT_SIZE, true);
+
 
     bm::deserialize(*bvect_full2, sermem);
 
@@ -4857,14 +5175,29 @@ cout << "Deserialization ok" << endl;
                                                set_OR);
     delete [] sermem;
     
+    CheckVectors(*bvect_min1, *bvect_full1, BITVECT_SIZE, true);
+//    CheckVectors(*bvect_min1, *bvect_full3, BITVECT_SIZE, true);
+
     bvect_min2->combine_or(*bvect_min1);
     delete bvect_min1;
+    
+    if (*bvect_full2 != *bvect_full3)
+    {
+        print_stat(*bvect_full2);
+        print_stat(*bvect_full3);
+
+        cout << "Error!" << endl;
+        exit(1);
+    }
+
 
     CheckVectors(*bvect_min2, *bvect_full2, BITVECT_SIZE, true);
     CheckVectors(*bvect_min2, *bv_target_s, BITVECT_SIZE, true);
 
     delete bv_target_s;
+    delete bvect_full1;
     delete bvect_full2;
+    delete bvect_full3;
     delete bvect_min2;    
 
 
@@ -4905,7 +5238,7 @@ cout << "Deserialization ok" << endl;
 
     bvect_full1->optimize();
 
-    bvect_full1->stat();
+    print_stat(*bvect_full1);
 
 
     bvect::statistics st;
@@ -5312,7 +5645,7 @@ void EnumeratorTest()
         cout << "Enumerator error !" << endl;
         exit(1);
     }
-    bvect1.stat();
+    print_stat(bvect1);
     }
 
     {
@@ -5365,13 +5698,13 @@ void BlockLevelTest()
     {
         bv.set_bit(i);
     }
-    bv.stat();
+    print_stat(bv);
 
     for (i = 0; i < 1000; i+=2)
     {
         bv2.set_bit(i);
     }
-    bv2.stat();
+    print_stat(bv2);
 
     struct bvect::statistics st;
     bv2.calc_stat(&st);
@@ -5385,7 +5718,7 @@ void BlockLevelTest()
     bm::deserialize(bv, sermem);
 //    bv.optimize();
 
-    bv.stat();
+    print_stat(bv);
 
 }
 
@@ -5401,15 +5734,7 @@ __int64 CalcBitCount64(__int64 b)
     return b;
 }
 
-unsigned CalcBitCount32(unsigned b)
-{
-    b = (b & 0x55555555) + (b >> 1 & 0x55555555);
-    b = (b & 0x33333333) + (b >> 2 & 0x33333333);
-    b = b + (b >> 4) & 0x0F0F0F0F;
-    b = b + (b >> 8);
-    b = b + (b >> 16) & 0x0000003F;
-    return b;
-}
+
 */
 
 
@@ -5485,7 +5810,7 @@ void SetTest()
     assert(cnt == 2);
 
     bv.invert();
-    bv.stat();
+    print_stat(bv);
     cnt = bv.count();
 
     if (cnt != bm::id_max-2)
@@ -5502,6 +5827,7 @@ void SetTest()
         cout << "Set &= test failed!" << endl;
         exit(1);
     }
+
 
     bv[1] = true;
     bv[1] &= true;
@@ -5521,6 +5847,7 @@ void SetTest()
         exit(1);
     }
 
+
     bvect bv2;
     bv2[1] = true;
     bv2[1] = false;
@@ -5539,6 +5866,7 @@ void SetTest()
         cout << "Optimization memory free test failed (2)!" << endl;
         exit(1);
     }
+
 
     {
         bvect bv3;
@@ -5568,6 +5896,7 @@ void SetTest()
             exit(1);
         }
     }
+
     {
         bvect bv3(bm::BM_GAP);
         bool changed;
@@ -5596,6 +5925,7 @@ void SetTest()
             exit(1);
         }
     }
+
     {
         bvect bv3(bm::BM_GAP);
         bv3.invert();
@@ -5629,6 +5959,54 @@ void SetTest()
         v = bv3[10];
         if (!v || !changed) {
             cout << "Conditional bit set failed." << endl;
+            exit(1);
+        }
+    }
+
+
+    {
+        bvect bv(0);
+        bv.resize(100);
+        bv[10] = true;
+        bv.resize(1000001);
+        bv[100000] = 1;
+
+        if (bv.size() != 1000001)
+        {
+            cout << "Resize failed" << endl;
+            exit(1);
+        }
+        if (bv.count() != 2)
+        {
+            cout << "Resize count failed" << endl;
+            exit(1);
+        }
+
+        bv.resize(100);
+        if (bv.size() != 100)
+        {
+            cout << "Resize failed" << endl;
+            exit(1);
+        }
+        if (bv.count() != 1)
+        {
+            cout << "Resize count failed" << endl;
+            exit(1);
+        }
+        
+        bv.resize(60000100);
+        bv.invert();
+        bv.clear(true);
+
+
+        if (bv.size() != 60000100)
+        {
+            cout << "Resize failed" << endl;
+            exit(1);
+        }
+        if (bv.count() != 0)
+        {
+            cout << "Resize count failed" << endl;
             exit(1);
         }
     }
@@ -5808,9 +6186,9 @@ unsigned CalcBitCount32(unsigned b)
 {
     b = (b & 0x55555555) + (b >> 1 & 0x55555555);
     b = (b & 0x33333333) + (b >> 2 & 0x33333333);
-    b = b + (b >> 4) & 0x0F0F0F0F;
+    b = b + ((b >> 4) & 0x0F0F0F0F);
     b = b + (b >> 8);
-    b = b + (b >> 16) & 0x0000003F;
+    b = b + ((b >> 16) & 0x0000003F);
     return b;
 }
 
@@ -5887,6 +6265,24 @@ void OptimGAPTest()
 
 }
 
+#if defined(BMSSE2OPT) || defined(BMSSE42OPT)
+
+#if(_MSC_VER)
+#  define BM_ALIGN16 __declspec(align(16))
+#  define BM_ALIGN16ATTR
+#else // GCC
+#  define BM_ALIGN16
+#  define BM_ALIGN16ATTR __attribute__((aligned (16)))
+#endif
+
+#else // NO SSE
+
+#  define BM_ALIGN16ATTR
+#  define BM_ALIGN16
+
+#endif 
+
+
 void BitCountChangeTest()
 {
     cout << "---------------------------- BitCountChangeTest " << endl;
@@ -5941,13 +6337,14 @@ void BitCountChangeTest()
             exit(1);
         }
     }
-   
+  
 
-    bm::word_t   arr[16] = {0,};
+    bm::word_t  BM_ALIGN16 arr[16] BM_ALIGN16ATTR = {0,};
     arr[0] = (bm::word_t)(1 << 31);
     arr[1] = 1; //(bm::word_t)(1 << 31);
     
     bm::id_t cnt;
+    bm::id_t bc, bc1;
     
     cnt = bm::bit_count_change(arr[1]);
     cout << cnt << endl;
@@ -5957,21 +6354,36 @@ void BitCountChangeTest()
         exit(1);
     }
     
-    cnt = bm::bit_block_calc_count_change(arr, arr+4);
+    cnt = bm::bit_block_calc_count_change(arr, arr+4, &bc);
+    
+    bc1 = bit_block_calc_count(arr, arr+4);
+    if (bc != bc1)
+    {
+        cout << "1. bitcount comparison failed " << endl;
+    }
     
     if (cnt != 3)
     {
-        cout << "1.count_intervals() failed " << cnt << endl;
+        cout << "1. count_intervals() failed " << cnt << endl;
         exit(1);
     }
+
+    ::memset(arr, 0, sizeof(arr));
 
     arr[0] = arr[1] = arr[2] = 0xFFFFFFFF;
     arr[3] = (bm::word_t)(0xFFFFFFFF >> 1);
     
-    cnt = bm::bit_block_calc_count_change(arr, arr+4);
+    cnt = bm::bit_block_calc_count_change(arr, arr+4, &bc);
     cout << cnt << endl;
+
+    bc1 = bit_block_calc_count(arr, arr+4);
+    if (bc != bc1)
+    {
+        cout << "1.1 bitcount comparison failed " << endl;
+    }
     
-    if (cnt != 2)
+    // this test is not correct for both 32 and 64 bit mode because of loop unroll
+    if (cnt != 2 && cnt != 3)
     {
         cout << "1.1 count_intervals() failed " << cnt << endl;
         exit(1);
@@ -6029,7 +6441,867 @@ void BitCountChangeTest()
     
     CheckIntervals(bv1, 65536*2);
 
+	cout << "---------------------------- array GAP test " << endl;
+
+	{
+		bm::gap_word_t arr[] = { 0 };
+
+		unsigned gap_count;
+
+		gap_count = bit_array_compute_gaps(arr, sizeof(arr)/sizeof(arr[0]));
+		if (gap_count != 1)
+		{
+			cout << "Array gap test failed. 1. " << endl;
+			exit(1);
+		}
+
+        bm::gap_word_t gap[20] = {0};
+        bm::gap_word_t gap_cntrl[20] = {0};
+
+        gap_set_all(gap_cntrl, bm::gap_max_bits, 0);
+        for (unsigned i = 0; i < sizeof(arr)/sizeof(arr[0]); ++i)
+        {
+            unsigned is_set;
+            gap_set_value(1, gap_cntrl, arr[i], &is_set);
+        }
+        unsigned gap_l_cntrl = gap_length(gap_cntrl);
+        unsigned gap_len = gap_set_array(&gap[0], arr, sizeof(arr)/sizeof(arr[0]));
+        unsigned gap_len1 = gap_length(gap);
+
+		if (gap_len != gap_l_cntrl || gap_len1 != gap_l_cntrl)
+		{
+			cout << "Array gap test failed. 1. " << endl;
+			exit(1);
+		}
+        int cmpres = gapcmp(gap, gap_cntrl);
+        if (cmpres != 0)
+        {
+			cout << "Array gap cmp test failed. 1. " << endl;
+			exit(1);
+        }
+	}
+
+	{
+		bm::gap_word_t arr[] = { 65535 };
+
+		unsigned gap_count;
+
+		gap_count = bit_array_compute_gaps(arr, sizeof(arr)/sizeof(arr[0]));
+		if (gap_count != 2)
+		{
+			cout << "Array gap test failed. 1.1 " << endl;
+			exit(1);
+		}
+
+        bm::gap_word_t gap[20] = {0};
+        bm::gap_word_t gap_cntrl[20] = {0};
+
+        gap_set_all(gap_cntrl, bm::gap_max_bits, 0);
+        for (unsigned i = 0; i < sizeof(arr)/sizeof(arr[0]); ++i)
+        {
+            unsigned is_set;
+            gap_set_value(1, gap_cntrl, arr[i], &is_set);
+        }
+        unsigned gap_l_cntrl = gap_length(gap_cntrl);
+
+        unsigned gap_len = gap_set_array(&gap[0], arr, sizeof(arr)/sizeof(arr[0]));
+        unsigned gap_len1 = gap_length(gap);
+
+		if (gap_len != gap_l_cntrl || gap_len1 != gap_l_cntrl)
+		{
+			cout << "Array gap test failed. 1.1 " << endl;
+			exit(1);
+		}
+        int cmpres = gapcmp(gap, gap_cntrl);
+        if (cmpres != 0)
+        {
+			cout << "Array gap cmp test failed. 1. " << endl;
+			exit(1);
+        }
+	}
+
+	{
+		bm::gap_word_t arr[] = { 0, 65535 };
+
+		unsigned gap_count;
+
+		gap_count = bit_array_compute_gaps(arr, sizeof(arr)/sizeof(arr[0]));
+		if (gap_count != 3)
+		{
+			cout << "Array gap test failed. 1.2 " << endl;
+			exit(1);
+		}
+
+        bm::gap_word_t gap[20] = {0};
+        bm::gap_word_t gap_cntrl[20] = {0};
+
+        gap_set_all(gap_cntrl, bm::gap_max_bits, 0);
+        for (unsigned i = 0; i < sizeof(arr)/sizeof(arr[0]); ++i)
+        {
+            unsigned is_set;
+            gap_set_value(1, gap_cntrl, arr[i], &is_set);
+        }
+        unsigned gap_l_cntrl = gap_length(gap_cntrl);
+
+        unsigned gap_len = gap_set_array(&gap[0], arr, sizeof(arr)/sizeof(arr[0]));
+        unsigned gap_len1 = gap_length(gap);
+
+		if (gap_len != gap_l_cntrl || gap_len1 != gap_l_cntrl)
+		{
+			cout << "Array gap test failed. 1.2 " << endl;
+			exit(1);
+		}
+        int cmpres = gapcmp(gap, gap_cntrl);
+        if (cmpres != 0)
+        {
+			cout << "Array gap cmp test failed. 1.2 " << endl;
+			exit(1);
+        }
+	}
+
+	{
+		bm::gap_word_t arr[] = { 0, 1, 2, 65534, 65535 };
+
+		unsigned gap_count;
+
+		gap_count = bit_array_compute_gaps(arr, sizeof(arr)/sizeof(arr[0]));
+		if (gap_count != 3)
+		{
+			cout << "Array gap test failed. 1.3 " << endl;
+			exit(1);
+		}
+
+        bm::gap_word_t gap[20] = {0};
+        bm::gap_word_t gap_cntrl[20] = {0};
+
+        gap_set_all(gap_cntrl, bm::gap_max_bits, 0);
+        for (unsigned i = 0; i < sizeof(arr)/sizeof(arr[0]); ++i)
+        {
+            unsigned is_set;
+            gap_set_value(1, gap_cntrl, arr[i], &is_set);
+        }
+        unsigned gap_l_cntrl = gap_length(gap_cntrl);
+
+        unsigned gap_len = gap_set_array(&gap[0], arr, sizeof(arr)/sizeof(arr[0]));
+        unsigned gap_len1 = gap_length(gap);
+
+		if (gap_len != gap_l_cntrl || gap_len1 != gap_l_cntrl)
+		{
+			cout << "Array gap test failed. 1.3 " << endl;
+			exit(1);
+		}
+        int cmpres = gapcmp(gap, gap_cntrl);
+        if (cmpres != 0)
+        {
+			cout << "Array gap cmp test failed. 1.3 " << endl;
+			exit(1);
+        }
+	}
+
+	{
+		bm::gap_word_t arr[] = { 0, 1, 2 };
+		unsigned gap_count;
+
+		gap_count = bit_array_compute_gaps(arr, sizeof(arr)/sizeof(arr[0]));
+		if (gap_count != 1)
+		{
+			cout << "Array gap test failed. 2. " << endl;
+			exit(1);
+		}
+        bm::gap_word_t gap[20] = {0};
+        bm::gap_word_t gap_cntrl[20] = {0};
+
+        gap_set_all(gap_cntrl, bm::gap_max_bits, 0);
+        for (unsigned i = 0; i < sizeof(arr)/sizeof(arr[0]); ++i)
+        {
+            unsigned is_set;
+            gap_set_value(1, gap_cntrl, arr[i], &is_set);
+        }
+        unsigned gap_l_cntrl = gap_length(gap_cntrl);
+
+        unsigned gap_len = gap_set_array(&gap[0], arr, sizeof(arr)/sizeof(arr[0]));
+        unsigned gap_len1 = gap_length(gap);
+
+		if (gap_len != gap_l_cntrl || gap_len1 != gap_l_cntrl)
+		{
+			cout << "Array gap test failed. 2 " << endl;
+			exit(1);
+		}
+        int cmpres = gapcmp(gap, gap_cntrl);
+        if (cmpres != 0)
+        {
+			cout << "Array gap cmp test failed. 2 " << endl;
+			exit(1);
+        }
+
+	}
+
+	{
+		bm::gap_word_t arr[] = { 1, 2 };
+		unsigned gap_count;
+
+		gap_count = bit_array_compute_gaps(arr, sizeof(arr)/sizeof(arr[0]));
+		if (gap_count != 2)
+		{
+			cout << "Array gap test failed. 3. " << endl;
+			exit(1);
+		}
+        bm::gap_word_t gap[20] = {0};
+        bm::gap_word_t gap_cntrl[20] = {0};
+
+        gap_set_all(gap_cntrl, bm::gap_max_bits, 0);
+        for (unsigned i = 0; i < sizeof(arr)/sizeof(arr[0]); ++i)
+        {
+            unsigned is_set;
+            gap_set_value(1, gap_cntrl, arr[i], &is_set);
+        }
+        unsigned gap_l_cntrl = gap_length(gap_cntrl);
+
+        unsigned gap_len = gap_set_array(&gap[0], arr, sizeof(arr)/sizeof(arr[0]));
+        unsigned gap_len1 = gap_length(gap);
+
+		if (gap_len != gap_l_cntrl || gap_len1 != gap_l_cntrl)
+		{
+			cout << "Array gap test failed. 3 " << endl;
+			exit(1);
+		}
+        int cmpres = gapcmp(gap, gap_cntrl);
+        if (cmpres != 0)
+        {
+			cout << "Array gap cmp test failed. 3 " << endl;
+			exit(1);
+        }
+	}
+
+	{
+		bm::gap_word_t arr[] = { 1, 2, 10 };
+		unsigned gap_count;
+
+		gap_count = bit_array_compute_gaps(arr, sizeof(arr)/sizeof(arr[0]));
+		if (gap_count != 4)
+		{
+			cout << "Array gap test failed. 4. " << endl;
+			exit(1);
+		}
+        bm::gap_word_t gap[20] = {0};
+        bm::gap_word_t gap_cntrl[20] = {0};
+
+        gap_set_all(gap_cntrl, bm::gap_max_bits, 0);
+        for (unsigned i = 0; i < sizeof(arr)/sizeof(arr[0]); ++i)
+        {
+            unsigned is_set;
+            gap_set_value(1, gap_cntrl, arr[i], &is_set);
+        }
+        unsigned gap_l_cntrl = gap_length(gap_cntrl);
+
+        unsigned gap_len = gap_set_array(&gap[0], arr, sizeof(arr)/sizeof(arr[0]));
+        unsigned gap_len1 = gap_length(gap);
+
+		if (gap_len != gap_l_cntrl || gap_len1 != gap_l_cntrl)
+		{
+			cout << "Array gap test failed. 4 " << endl;
+			exit(1);
+		}
+        int cmpres = gapcmp(gap, gap_cntrl);
+        if (cmpres != 0)
+        {
+			cout << "Array gap cmp test failed. 4 " << endl;
+			exit(1);
+        }
+	}
+
+	{
+		bm::gap_word_t arr[] = { 1, 2, 10, 11 };
+		unsigned gap_count;
+
+		gap_count = bit_array_compute_gaps(arr, sizeof(arr)/sizeof(arr[0]));
+		if (gap_count != 4)
+		{
+			cout << "Array gap test failed. 5. " << endl;
+			exit(1);
+		}
+        bm::gap_word_t gap[20] = {0};
+        bm::gap_word_t gap_cntrl[20] = {0};
+
+        gap_set_all(gap_cntrl, bm::gap_max_bits, 0);
+        for (unsigned i = 0; i < sizeof(arr)/sizeof(arr[0]); ++i)
+        {
+            unsigned is_set;
+            gap_set_value(1, gap_cntrl, arr[i], &is_set);
+        }
+        unsigned gap_l_cntrl = gap_length(gap_cntrl);
+
+        unsigned gap_len = gap_set_array(&gap[0], arr, sizeof(arr)/sizeof(arr[0]));
+        unsigned gap_len1 = gap_length(gap);
+
+		if (gap_len != gap_l_cntrl || gap_len1 != gap_l_cntrl)
+		{
+			cout << "Array gap test failed. 5 " << endl;
+			exit(1);
+		}
+        int cmpres = gapcmp(gap, gap_cntrl);
+        if (cmpres != 0)
+        {
+			cout << "Array gap cmp test failed. 5 " << endl;
+			exit(1);
+        }
+
+	}
+
+	{
+		bm::gap_word_t arr[] = { 1, 2, 10, 11, 256 };
+		unsigned gap_count;
+
+		gap_count = bit_array_compute_gaps(arr, sizeof(arr)/sizeof(arr[0]));
+		if (gap_count != 6)
+		{
+			cout << "Array gap test failed. 6. " << endl;
+			exit(1);
+		}
+        bm::gap_word_t gap[20] = {0};
+        bm::gap_word_t gap_cntrl[20] = {0};
+
+        gap_set_all(gap_cntrl, bm::gap_max_bits, 0);
+        for (unsigned i = 0; i < sizeof(arr)/sizeof(arr[0]); ++i)
+        {
+            unsigned is_set;
+            gap_set_value(1, gap_cntrl, arr[i], &is_set);
+        }
+        unsigned gap_l_cntrl = gap_length(gap_cntrl);
+
+        unsigned gap_len = gap_set_array(&gap[0], arr, sizeof(arr)/sizeof(arr[0]));
+        unsigned gap_len1 = gap_length(gap);
+
+		if (gap_len != gap_l_cntrl || gap_len1 != gap_l_cntrl)
+		{
+			cout << "Array gap test failed. 6 " << endl;
+			exit(1);
+		}
+        int cmpres = gapcmp(gap, gap_cntrl);
+        if (cmpres != 0)
+        {
+			cout << "Array gap cmp test failed. 6 " << endl;
+			exit(1);
+        }
+
+	}
+
+
     cout << "---------------------------- BitCountChangeTest Ok." << endl;
+}
+
+
+void DNACompressionTest()
+{
+    const char seeds[] = 
+        { 'A', 'C', 'G', 'T', 'A', 'C', 'G', 'A', 'N', 'A', 'C', 'G' };
+    
+    const unsigned arr_size = bm::set_block_size*4;
+    const unsigned arr_plain_size = arr_size / 8;    
+    
+    unsigned char BM_ALIGN16 block1[arr_size] BM_ALIGN16ATTR = {0,};
+
+    unsigned char BM_ALIGN16 tmatrix1[8][arr_plain_size] BM_ALIGN16ATTR;
+    unsigned BM_ALIGN16 distance1[8][8] BM_ALIGN16ATTR;
+    unsigned char pc_vector1[8] = {0,};
+    unsigned pc_vector_stat1[bm::ibpc_end];
+/*
+    unsigned   BM_ALIGN16 tmatrix2[32][bm::set_block_plain_size] BM_ALIGN16ATTR;
+    unsigned  
+    BM_ALIGN16 distance2[bm::set_block_plain_cnt][bm::set_block_plain_cnt] BM_ALIGN16ATTR;
+    unsigned char pc_vector2[32] = {0,};
+
+
+    unsigned   BM_ALIGN16 tmatrix3[32][bm::set_block_plain_size] BM_ALIGN16ATTR;
+    unsigned  
+    BM_ALIGN16 distance3[bm::set_block_plain_cnt][bm::set_block_plain_cnt] BM_ALIGN16ATTR;
+    unsigned char pc_vector3[32] = {0,};
+*/
+    
+    // generate pseudo-random DNA sequence
+    for (unsigned i = 0; i < arr_size; ++i)
+    {
+        unsigned letter_idx = rand() % sizeof(seeds);
+        unsigned char l = seeds[letter_idx];
+        unsigned char c = 0;
+        switch (l)
+        {
+        case 'A':
+            c = 0; break;
+        case 'C':
+            c = 1; break;
+        case 'G':
+            c = 2; break;
+        case 'T':
+            c = 3; break;
+        case 'N':
+            c = 4; break;
+        default:
+            cout << "Alphabet error!" << endl;
+            exit(1);
+        };
+        block1[i] = c;
+        //cout << block1[i];
+    }
+    cout << endl;
+        
+    bm::vect_bit_transpose<unsigned char, 
+                           8, 
+                           arr_plain_size>
+                           (block1, arr_size, tmatrix1);
+    
+    bm::tmatrix_distance<unsigned char, 
+                         8, 
+                         arr_plain_size>
+                         (tmatrix1, distance1);
+    
+    cout << "ALL count=" << sizeof(char)*8*arr_plain_size << endl;
+    bm::bit_iblock_make_pcv<unsigned char, 8, arr_plain_size>(distance1, pc_vector1);
+    
+    bm::bit_iblock_pcv_stat(pc_vector1, pc_vector1 + 8, pc_vector_stat1);
+    
+    for (unsigned s = 0; s < bm::ibpc_end; ++s)
+    {
+        switch(s)
+        {
+        case bm::ibpc_uncompr:
+            cout << "Uncompressed: "; 
+            break;
+        case bm::ibpc_all_zero:
+            cout << "    All ZERO: "; 
+            break;
+        case bm::ibpc_all_one:
+            cout << "     All ONE: "; 
+            break;
+        case bm::ibpc_equiv:
+            cout << "       Equiv: "; 
+            break;
+        case bm::ibpc_close:
+            cout << "     Similar: "; 
+            break;
+        default:
+            //cout << "Oops!" << s << " "; 
+            break;
+        }
+        cout << pc_vector_stat1[s] << endl;
+    } // for
+    
+
+    // print out the pc_vector    
+    for (unsigned j = 0; j < 8; ++j)
+    {
+        unsigned ibpc = pc_vector1[j] & 7;
+        unsigned n_row = (pc_vector1[j] >> 3);
+        cout << j << ":" << "->" << n_row << " ";
+        
+        switch(ibpc)
+        {
+        case bm::ibpc_uncompr:
+            cout << "Uncompressed: "; 
+            cout << " popcnt=" << distance1[j][j];
+            break;
+        case bm::ibpc_all_zero:
+            cout << "ZERO";
+            break;            
+        case bm::ibpc_all_one:
+            cout << "ONE: "; 
+            break;
+        case bm::ibpc_equiv:
+            cout << "Equiv: "; 
+            break;            
+        case bm::ibpc_close:
+            cout << " Similar: "; 
+            cout << " popcnt="  << distance1[j][j]
+                 << " Humming=" << distance1[j][n_row];            
+            break;
+        }
+        cout << endl;
+    }
+/*
+    cout << endl << "Second round." << endl << endl;
+
+    bm::bit_iblock_reduce(tmatrix1, pc_vector1, pc_vector1+32, tmatrix2);
+    bm::tmatrix_distance<unsigned, 
+                         bm::set_block_plain_cnt, 
+                         bm::set_block_plain_size>
+                         (tmatrix2, distance2);    
+    
+    bm::bit_iblock_make_pcv(distance2, pc_vector2);
+    
+    // print out the pc_vector    
+    for (unsigned j = 0; j < 32; ++j)
+    {
+        unsigned ibpc = pc_vector2[j] & 7;
+        unsigned n_row = (pc_vector2[j] >> 3);
+        cout << j << ":" << "->" << n_row << " ";
+        
+        switch(ibpc)
+        {
+        case bm::ibpc_uncompr:
+            cout << "Uncompressed: "; 
+            cout << " popcnt=" << distance2[j][j];
+            break;
+        case bm::ibpc_all_zero:
+            cout << "ZERO";
+            break;            
+        case bm::ibpc_all_one:
+            cout << "ONE: "; 
+            break;
+        case bm::ibpc_equiv:
+            cout << "Equiv: "; 
+            break;            
+        case bm::ibpc_close:
+            cout << " Similar: "; 
+            cout << " popcnt="  << distance2[j][j]
+                 << " Humming=" << distance2[j][n_row] << endl; 
+             {
+                const unsigned* r1 = tmatrix2[j];
+                for (unsigned i = 0; i < bm::set_block_plain_size; ++i)
+                {
+                    cout << hex << r1[i] << " ";
+                }
+                cout << dec << endl << endl;                         
+             }           
+            break;
+        }
+        cout << endl;
+    }
+
+
+    cout << endl << "3rd round." << endl << endl;
+
+    bm::bit_iblock_reduce(tmatrix2, pc_vector2, pc_vector2+32, tmatrix3);
+
+    bm::tmatrix_distance<unsigned, 
+                         bm::set_block_plain_cnt, 
+                         bm::set_block_plain_size>
+                         (tmatrix3, distance3);    
+    
+    bm::bit_iblock_make_pcv(distance3, pc_vector3);
+    
+    // print out the pc_vector    
+    for (unsigned j = 0; j < 32; ++j)
+    {
+        unsigned ibpc = pc_vector3[j] & 7;
+        unsigned n_row = (pc_vector3[j] >> 3);
+        cout << j << ":" << "->" << n_row << " ";
+        
+        switch(ibpc)
+        {
+        case bm::ibpc_uncompr:
+            cout << "Uncompressed: "; 
+            cout << " popcnt=" << distance3[j][j];
+            break;
+        case bm::ibpc_all_zero:
+            cout << "ZERO";
+            break;            
+        case bm::ibpc_all_one:
+            cout << "ONE: "; 
+            break;
+        case bm::ibpc_equiv:
+            cout << "Equiv: "; 
+            break;            
+        case bm::ibpc_close:
+            cout << " Similar: "; 
+            cout << " popcnt="  << distance3[j][j]
+                 << " Humming=" << distance3[j][n_row] << endl; 
+             {
+                const unsigned* r1 = tmatrix3[j];
+                for (unsigned i = 0; i < bm::set_block_plain_size; ++i)
+                {
+                    cout << hex << r1[i] << " ";
+                }
+                cout << dec << endl << endl;                         
+             }           
+            break;
+        }
+        cout << endl;
+    }
+*/    
+    
+}
+
+void BitBlockTransposeTest()
+{
+    DNACompressionTest();
+   
+
+    bm::word_t BM_ALIGN16 block1[bm::set_block_size] BM_ALIGN16ATTR = {0,};
+    bm::word_t BM_ALIGN16 block2[bm::set_block_size] BM_ALIGN16ATTR = {0xFF,};
+    unsigned   BM_ALIGN16 tmatrix1[32][bm::set_block_plain_size] BM_ALIGN16ATTR;
+
+
+    cout << "---------------------------- BitTransposeTest" << endl;
+
+    cout << "Transpose 1" << endl;
+
+    for (unsigned i = 0; i < bm::set_block_size; ++i)
+    {
+        block1[i] = 1;
+    }
+
+    bm::vect_bit_transpose<unsigned, 
+                           bm::set_block_plain_cnt, 
+                           bm::set_block_plain_size>
+                           (block1, bm::set_block_size, tmatrix1);
+
+    bm::vect_bit_trestore<unsigned, 
+                           bm::set_block_plain_cnt, 
+                           bm::set_block_plain_size>
+                           (tmatrix1, block2);
+
+    for (unsigned i = 0; i < bm::set_block_size; ++i)
+    {
+        if (block1[i] != block2[i])
+        {
+            cout << "Bit transpose error! " << i << endl; exit(1);
+        }
+    }
+
+    {
+    unsigned BM_ALIGN16 distance[bm::set_block_plain_cnt][bm::set_block_plain_cnt];
+    bm::tmatrix_distance<unsigned, 
+                         bm::set_block_plain_cnt, 
+                         bm::set_block_plain_size>
+                         (tmatrix1, distance);
+    
+    PrintDistanceMatrix(distance);
+
+    // distance matrix verification:
+    {
+    for (unsigned i = 0; i < bm::set_block_plain_cnt; ++i)
+    {
+        const unsigned* row = distance[i];
+        for (unsigned j = i; j < bm::set_block_plain_cnt; ++j)
+        {
+            if (i == j)
+            {
+                if (distance[0][0] != 2048)
+                {
+                    cout << "Self distance(bitcount) is incorrect!" << endl;
+                    exit(1);
+                }
+            }
+            else
+            {
+                if (i == 0)
+                {
+                    if (row[j] != 2048) // max distance
+                    {
+                        cout << "Incorrect max distance!" << endl; exit(1);
+                    }
+                }
+                else
+                {
+                    if (row[j] != 0) // max distance
+                    {
+                        cout << "Incorrect min distance!" << endl; exit(1);
+                    }
+                }
+            }
+        }
+    }
+    }
+
+    }
+
+    cout << "Transpose 2" << endl;
+
+    for (unsigned i = 0; i < bm::set_block_size; ++i)
+    {
+        block1[i] = 1 | (1 << 17);
+    }
+
+    bm::vect_bit_transpose<unsigned, 
+                           bm::set_block_plain_cnt, 
+                           bm::set_block_plain_size>
+                           (block1, bm::set_block_size, tmatrix1);
+    bm::vect_bit_trestore<unsigned, 
+                           bm::set_block_plain_cnt, 
+                           bm::set_block_plain_size>
+                           (tmatrix1, block2);
+
+
+    for (unsigned i = 0; i < bm::set_block_size; ++i)
+    {
+        if (block1[i] != block2[i])
+        {
+            cout << "Bit transpose error! " << i << endl; exit(1);
+        }
+    }
+
+    cout << "Transpose 3" << endl;
+
+    for (unsigned i = 0; i < bm::set_block_size; ++i)
+    {
+        block1[i] = ~1;
+    }
+
+    bm::vect_bit_transpose<unsigned, 
+                           bm::set_block_plain_cnt, 
+                           bm::set_block_plain_size>
+                           (block1, bm::set_block_size, tmatrix1);
+    bm::vect_bit_trestore<unsigned, 
+                           bm::set_block_plain_cnt, 
+                           bm::set_block_plain_size>
+                           (tmatrix1, block2);
+
+    for (unsigned i = 0; i < bm::set_block_size; ++i)
+    {
+        if (block1[i] != block2[i])
+        {
+            cout << "Bit transpose error! " << i << endl; exit(1);
+        }
+    }
+
+    cout << "Transpose 4" << endl;
+
+    for (unsigned i = 0; i < bm::set_block_size; ++i)
+    {
+        block1[i] = i;
+    }
+
+    bm::vect_bit_transpose<unsigned, 
+                           bm::set_block_plain_cnt, 
+                           bm::set_block_plain_size>
+                           (block1, bm::set_block_size, tmatrix1);
+    bm::vect_bit_trestore<unsigned, 
+                           bm::set_block_plain_cnt, 
+                           bm::set_block_plain_size>
+                           (tmatrix1, block2);
+
+    for (unsigned i = 0; i < bm::set_block_size; ++i)
+    {
+        if (block1[i] != block2[i])
+        {
+            cout << "Bit transpose error! " << i << endl; exit(1);
+        }
+    }
+/*    
+    cout << "Transpose 5 - random" << endl;
+
+    for (unsigned c = 0; c < 10000; ++c)
+    {
+        if ((c % 100) == 0) cout << ".";
+
+        for (unsigned i = 0; i < bm::set_block_size; ++i)
+        {
+            block1[i] = rand();
+        }
+
+        bm::vect_bit_transpose<unsigned, 
+                               bm::set_block_plain_cnt, 
+                               bm::set_block_plain_size>
+                               (block1, bm::set_block_size, tmatrix1);
+
+        bm::vect_bit_trestore<unsigned, 
+                               bm::set_block_plain_cnt, 
+                               bm::set_block_plain_size>
+                               (tmatrix1, block2);
+
+
+        for (unsigned i = 0; i < bm::set_block_size; ++i)
+        {
+            if (block1[i] != block2[i])
+            {
+                cout << "Bit transpose error! " << i << endl; exit(1);
+            }
+        }
+    }
+ */   
+
+    cout << "Transpose GAP block 1" << endl;
+    
+    {
+    gap_vector   gapv(0);
+    gap_vector   gapv1(9);
+    gapv.set_bit(1);
+    gapv.set_bit(2);
+    gapv.set_bit(10);
+    gapv.set_bit(65000);
+    
+
+    gap_transpose_engine<bm::gap_word_t, bm::word_t, bm::set_block_size> gte;
+    
+    if (sizeof(gte.tmatrix_) != (2048 * sizeof(bm::word_t)))
+    {
+        cout << "TMatrix recalculation error!" << sizeof(gte.tmatrix_) << endl;
+        exit(1);
+    }
+//    gte.transpose(gapv.get_buf());//, block1);
+
+
+    gte.compute_distance_matrix();
+    gte.reduce();
+    gte.restore();
+    
+    unsigned glen = *(gapv.get_buf()) >> 3;
+    PrintGap(gapv.get_buf());
+    PrintDGap((gap_word_t*) block1, glen-1);
+    PrintDGapGamma((gap_word_t*) block1, glen-1);
+    
+    PrintTMatrix(gte.tmatrix_, gte.eff_cols_, true);
+    
+    bm::gap_word_t gap_head = *gapv.get_buf();
+//    gte.trestore(gap_head, gapv1.get_buf());//, block2);
+/*    
+    if (gapv.compare(gapv1))
+    {
+        cout << "GAP block transpose error!" << endl;
+        PrintGap(gapv.get_buf());
+        PrintGap(gapv1.get_buf());
+        exit(1);
+    }
+*/    
+    }
+
+    cout << "Transpose GAP block 2" << endl;
+
+    {
+    gap_vector   gapv(0);
+    gap_vector   gapv1(0);
+
+    unsigned gcnt = 5;
+    for (unsigned i = 0; i < 65500; i+= 50)
+    {
+        for (unsigned j = 0; j < gcnt ; ++j)
+        {
+            gapv.set_bit(i);
+
+            if (++i > 65500) 
+                break;
+        }
+        gcnt += 2;
+    }
+
+    gap_transpose_engine<bm::gap_word_t, bm::word_t, bm::set_block_size> gte;    
+//    gte.transpose(gapv.get_buf());
+
+
+    gte.compute_distance_matrix();
+    gte.reduce();
+    gte.restore();
+    
+    unsigned glen = *(gapv.get_buf()) >> 3;
+    cout << glen << endl;
+
+    bm::gap_word_t gap_head = *gapv.get_buf();
+//    gte.trestore(gap_head, gapv1.get_buf());
+    
+/*
+    if (gapv.compare(gapv1))
+    {
+        cout << "GAP block transpose error!" << endl;
+        PrintGap(gapv.get_buf());
+        PrintGap(gapv1.get_buf());
+        exit(1);
+    }
+*/
+
+    }
+    
+
+    cout << endl << "---------------------------- BitTransposeTest ok" << endl;
 }
 
 /*
@@ -6121,12 +7393,12 @@ void ResizeTest()
 
     {{
     bvect bv;
-    bv.stat();
+    print_stat(bv);
     bv.set(100);
     bv.set(65536 + 10);
-    bv.stat();
+    print_stat(bv);
     bv.set_range(0, 65536*10, false);
-    bv.stat();
+    print_stat(bv);
     }}
 
     // test logical operations
@@ -6207,6 +7479,7 @@ void ResizeTest()
 
     unsigned char* sermem = new unsigned char[st1.max_serialize_mem];
     unsigned slen2 = bm::serialize(bv1, sermem);
+    cout << slen2 << endl;
 
     bvect bv2(0);
     bm::deserialize(bv2, sermem);
@@ -6352,10 +7625,756 @@ void TestRecomb()
 }
 
 
+void BitForEachTest()
+{
+    cout << "---------------------------- BitForEachTest..." << endl;
+
+	unsigned bit_list1[32];
+	unsigned bit_list2[32];
+
+	for (unsigned i = 0; i < 65536*50; ++i)
+	{
+		unsigned bits1 = bm::bit_list(i, bit_list1);
+		unsigned bits2 = bm::bit_list_4(i, bit_list2);
+		if (bits1 != bits2)
+		{
+			cout << "Bit for each test failed bit_cnt criteria!" << endl;
+			exit(1);
+		}
+		for (unsigned j = 0; j < bits1; ++j)
+		{
+			if (bit_list1[j] != bit_list2[j])
+			{
+				cout << "Bit for each check failed for " << j << endl;
+				exit(1);
+			}
+		}
+
+	} // for
+
+    cout << "---------------------------- BitForEachTest Ok." << endl;
+}
+
+void Log2Test()
+{
+    cout << "---------------------------- Log2 Test..." << endl;
+
+    cout << "Stage 1" << endl;
+    for (unsigned  i = 1; i <= 65535; ++i)
+    {
+        unsigned l1 = bm::ilog2<unsigned short>(i);
+        unsigned l2 = iLog2(i);
+        unsigned l3 = ilog2_LUT<unsigned short>(i);
+        unsigned l4 = l3;//bm::bsr_asm32(i);
+        if (l1 != l2 || l2 != l3 || l2 != l4)
+        {
+            cout << "Log2 error for " << i << endl;
+            cout << l2 << " " << l3 << endl;;
+            exit(1);
+        }
+    }
+    cout << "Stage 2" << endl;
+    for (unsigned  i = 1; i <= 100*65535; ++i)
+    {
+        unsigned l1 = bm::ilog2<unsigned>(i);
+        unsigned l2 = iLog2(i);
+        unsigned l3 = ilog2_LUT<unsigned>(i);
+        unsigned l4 = l3; //bm::bsr_asm32(i);
+        if (l1 != l2 || l2 != l3 || l2 != l4)
+        {
+            cout << "Log2 error for " << i << endl;
+            cout << l2 << " " << l3 << endl;;
+            exit(1);
+        }
+    }
+    cout << "---------------------------- Log2 Test Ok." << endl;
+}
+
+/*
+void BitEncoderTest()
+{
+    cout << "---------------------------- BitEncoderTest..." << endl;
+
+    cout << "Bit encoder stage 1" << endl;
+    
+    unsigned char buf1[2048] = {0, };
+    {
+    encoder enc(buf1, sizeof(buf1));
+    bit_out<encoder> bout(enc);
+
+    bout.put_bit(1);
+    bout.put_zero_bit();
+    bout.put_zero_bits(8);
+    bout.put_bit(1);
+    bout.put_bit(0);
+    bout.put_bit(1);
+    bout.flush();
+
+    decoder dec(buf1);
+    bit_in<decoder> bin(dec);
+    unsigned bit_value;
+
+    bit_value = bin.get_bit();
+    if (bit_value != 1) { cout << "BitEncoder failed!" << endl; exit(1);}
+    bit_value = bin.get_bit();
+    if (bit_value != 0) { cout << "BitEncoder failed!" << endl; exit(1);}
+    unsigned zeros = bin.eat_zero_bits();
+    if (zeros != 8) { cout << "BitEncoder failed!" << endl; exit(1);}
+    bit_value = bin.get_bit();
+    if (bit_value != 1) { cout << "BitEncoder failed!" << endl; exit(1);}
+    zeros = bin.eat_zero_bits();
+    if (zeros != 1) { cout << "BitEncoder failed!" << endl; exit(1);}
+    bit_value = bin.get_bit();
+    if (bit_value != 1) { cout << "BitEncoder failed!" << endl; exit(1);}
+    
+    }
+    
+    cout << "Bit encoder stage 2" << endl;
+    
+    {
+    unsigned char  bits[2048] = {0, };
+
+    {
+    encoder enc(buf1, sizeof(buf1));
+    bit_out<encoder> bout(enc);
+        
+        for (unsigned i = 0; i < 2048; ++i)
+        {
+            unsigned val = rand() % 2;
+            if (val > 1 ) val = 1;
+            bits[i] = (unsigned char) val;
+            
+            bout.put_bit(val);
+        }
+    }
+  
+    {
+    decoder dec(buf1);
+    bit_in<decoder> bin(dec);
+    
+        for (unsigned i = 0; i < 2048; ++i)
+        {
+            unsigned val = bits[i];
+            unsigned bit_value = bin.get_bit();
+            if (val != bit_value)
+            {
+                cout << "Bit " << i << " incorrect!" << endl;
+                exit(1);
+            }
+        }
+    }
+
+    }
+    cout << "---------------------------- BitForEncoderTest Ok." << endl;
+}
+*/
+
+void GammaEncoderTest()
+{
+    cout << "---------------------------- GammaEncoderTest" << endl;
+    
+    
+    unsigned char buf1[2048 * 4] = {0, };
+    
+    cout << "Stage 1" << endl;
+
+    {
+    encoder enc(buf1, sizeof(buf1));
+    typedef bit_out<encoder>  TBitIO;
+    bit_out<encoder> bout(enc);
+    gamma_encoder<bm::gap_word_t, TBitIO> gamma(bout);     
+    gamma(65534);
+    }
+
+    {
+    decoder dec(buf1);
+    typedef bit_in<decoder> TBitIO;
+    bit_in<decoder> bin(dec);
+    gamma_decoder<bm::gap_word_t, TBitIO> gamma(bin);
+    
+    gap_word_t value = gamma();
+    if (value != 65534)
+        {
+            cout << "Gamma decoder error for value=" << value << endl;
+            exit(1);
+        }             
+    }
+
+
+    {
+    encoder enc(buf1, sizeof(buf1));
+    typedef bit_out<encoder>  TBitIO;
+    bit_out<encoder> bout(enc);
+    gamma_encoder<bm::gap_word_t, TBitIO> gamma(bout);
+     
+    for (gap_word_t i = 1; i < 15; ++i)
+    {
+        gamma(i);
+    } 
+    }    
+    
+    {
+    decoder dec(buf1);
+    typedef bit_in<decoder> TBitIO;
+    bit_in<decoder> bin(dec);
+    gamma_decoder<bm::gap_word_t, TBitIO> gamma(bin);
+    
+    for (gap_word_t i = 1; i < 15; ++i)
+    {
+        gap_word_t value = gamma();
+        if (value != i)
+        {
+            cout << "Gamma decoder error for " << i << " value=" << value << endl;
+            exit(1);
+        }
+    }     
+    
+    }
+
+    cout << "Stage 2" << endl;
+
+    for (unsigned i = 0; i < 256; ++i)
+    {
+        gap_word_t short_block[64] = {0,};
+        
+        {
+        encoder enc(buf1, sizeof(buf1));
+        typedef bit_out<encoder>  TBitIO;
+        bit_out<encoder> bout(enc);
+        gamma_encoder<bm::gap_word_t, TBitIO> gamma(bout);
+         
+
+        for (unsigned j = 0; j < 64; ++j)
+        {
+            gap_word_t a = rand() % 65535;
+            if (!a) a = 65535; // 0 is illegal
+            gap_word_t value = short_block[j] = a;
+            gamma(value);
+        } // for
+        }
+
+        {
+        decoder dec(buf1);
+        typedef bit_in<decoder> TBitIO;
+        bit_in<decoder> bin(dec);
+        gamma_decoder<bm::gap_word_t, TBitIO> gamma(bin);
+        
+        for (unsigned j = 0; j < 64; ++j)
+        {
+            gap_word_t value = short_block[j];
+            gap_word_t r = gamma();
+            if (r != value)
+            {
+                cout << "Gamma encoding failure for value=" << value << " gamma=" << r << endl;
+                exit(1);
+            }
+        } // for
+        }
+    }
+
+
+    cout << "Stage 3" << endl;
+
+    unsigned code_value = 65535;
+    for (unsigned i = 0; i < 10000; ++i)
+    {
+        gap_word_t short_block[1000] = {0,};
+        
+        {
+        encoder enc(buf1, sizeof(buf1));
+        typedef bit_out<encoder>  TBitIO;
+        bit_out<encoder> bout(enc);
+        gamma_encoder<bm::gap_word_t, TBitIO> gamma(bout);
+         
+        for (unsigned j = 0; j < 1000; ++j)
+        {
+            gap_word_t a = code_value;
+            if (!a) 
+            {
+                code_value = a = 65535;
+            }
+
+            gap_word_t value = short_block[j] = a;
+            gamma(value);
+            --code_value;
+        } // for
+        }
+
+        {
+        decoder dec(buf1);
+        typedef bit_in<decoder> TBitIO;
+        bit_in<decoder> bin(dec);
+        gamma_decoder<bm::gap_word_t, TBitIO> gamma(bin);
+        
+        for (unsigned j = 0; j < 1000; ++j)
+        {
+            gap_word_t value = short_block[j];
+            gap_word_t r = gamma();
+            if (r != value)
+            {
+                cout << "Gamma encoding failure for value=" << value << " gamma=" << r << endl;
+                exit(1);
+            }
+        } // for
+        }
+    }
+
+
+    cout << "---------------------------- GammaEncoderTest Ok." << endl;
+
+}
+
+void LoadBVDump(const char* filename, const char* filename_out=0, bool validate=false)
+{
+    ifstream bv_file (filename, ios::in | ios::binary);
+    if (!bv_file.good())
+    {
+        cout << "Cannot open file: " << filename << endl;
+        exit(1);
+    }
+
+    ofstream* bv_file_out = 0;
+
+    if (filename_out)
+    {
+        bv_file_out = new ofstream(filename_out, ios::out | ios::binary);
+        if (!bv_file_out->good())
+        {
+            cout << "Cannot create file: " << filename_out << endl;
+            exit(1);
+        }    
+    }
+
+
+    unsigned buffer_size = 1024*1024;
+    unsigned char* buffer = new unsigned char[buffer_size];
+
+    unsigned count = 0;
+    clock_t start = clock();
+    unsigned total_out_size = 0;
+
+    for (;1; ++count)
+    {
+        unsigned bv_size;
+        bv_file.read((char*)&bv_size, sizeof(bv_size));
+        if (!bv_file.good())
+            break;
+        if (bv_size == 0)
+        {
+            cout << "Warning:Zero vector in dump..." << endl;
+            continue;
+        }
+        if (buffer_size < bv_size)
+        {
+            delete [] buffer;
+            buffer_size = bv_size;
+            buffer = new unsigned char[buffer_size];
+        }
+        bv_file.read((char*)buffer, bv_size);
+        {
+            bvect bv;
+            bm::deserialize(bv, (unsigned char*)buffer);
+
+            bvect::statistics st1;
+            bv.calc_stat(&st1);
+
+            if (st1.max_serialize_mem > buffer_size)
+            {
+                delete [] buffer;
+                buffer_size = st1.max_serialize_mem;
+                buffer = new unsigned char[buffer_size];
+            }
+
+            unsigned blob_size = bm::serialize(bv, buffer, BM_NO_GAP_LENGTH|BM_NO_BYTE_ORDER);
+            total_out_size += blob_size;
+
+            if (blob_size > bv_size)
+            {
+                //print_stat(bv);
+                //cout << count << ". -" << blob_size-bv_size << endl;
+                //exit(1);
+            }
+            
+            if (validate)
+            {
+                bvect bv_control;
+                bm::deserialize(bv_control, (unsigned char*)buffer);
+                if (bv_control != bv)
+                {
+                    cout << "Serialization error!" << endl;
+                    exit(1);
+                }
+            }
+            
+            if (bv_file_out)
+            {
+                bv_file_out->write((char*)&blob_size, sizeof(blob_size));
+                bv_file_out->write((char*)buffer, blob_size);
+            }
+
+        }
+        if (count % 1000 == 0)
+        {
+            cout << count << " out=" << total_out_size << endl;
+        }
+        //cout << count << ": size=" << bv_size << endl;
+    }
+
+    delete [] buffer;
+    cout << "Total vectors:" << count << endl;
+    cout << "Total out size:" << total_out_size << endl;
+
+    clock_t finish = clock();
+    clock_t elapsed_clocks = finish - start;
+    double duration = (double)(elapsed_clocks) / CLOCKS_PER_SEC;
+
+    cout << endl
+         << "Serialization duration = " << duration 
+         << endl;
+
+    bv_file_out->close();
+    delete bv_file_out;
+
+}
+
+void GroupByTest(const char* filename, const char* query_filename)
+{
+	bvect bv_query;
+
+    unsigned count = 0;
+	unsigned group_by_count = 0;
+
+    clock_t start = clock();
+
+	// load the query vector
+	{
+		ifstream bv_file (query_filename, ios::in | ios::binary);
+		if (!bv_file.good())
+		{
+			cout << "Cannot open file: " << query_filename << endl;
+			exit(1);
+		}
+	    unsigned buffer_size = 400*1024*1024;
+		unsigned char* buffer = new unsigned char[buffer_size];
+
+        unsigned bv_size=0;
+        bv_file.read((char*)&bv_size, sizeof(bv_size));
+        if (bv_size == 0)
+        {
+            cout << "Warning:Zero vector in query dump..." << endl;
+            return;
+        }
+        bv_file.read((char*)buffer, bv_size);
+        bm::deserialize(bv_query, (unsigned char*)buffer);
+        
+		delete [] buffer;
+
+	}
+
+
+    ifstream bv_file (filename, ios::in | ios::binary);
+    if (!bv_file.good())
+    {
+        cout << "Cannot open file: " << filename << endl;
+        exit(1);
+    }
+
+
+    unsigned buffer_size = 100*1024*1024;
+    unsigned char* buffer = new unsigned char[buffer_size];
+
+    for (;1; ++count)
+    {
+        unsigned bv_size;
+        bv_file.read((char*)&bv_size, sizeof(bv_size));
+        if (!bv_file.good())
+            break;
+        if (bv_size == 0)
+        {
+            cout << "Warning:Zero vector in dump..." << endl;
+            continue;
+        }
+        if (buffer_size < bv_size)
+        {
+            delete [] buffer;
+            buffer_size = bv_size;
+            buffer = new unsigned char[buffer_size];
+        }
+        bv_file.read((char*)buffer, bv_size);
+        bvect bv;
+		if (1)
+        {
+            bv.clear(true);
+            bm::deserialize(bv, (unsigned char*)buffer);
+
+            unsigned bc = bm::count_and(bv, bv_query);
+            if (bc)
+            {
+                ++group_by_count;
+            }
+
+/*            
+			bv &= bv_query;
+			if (bv.any())
+			{
+				++group_by_count;
+			}
+*/            
+
+        }
+	
+	
+#if 0
+//print_stat(bv_query);
+//exit(1);
+		{
+		bvect bv(BM_GAP);
+        operation_deserializer<bvect>::deserialize(bv,
+                                                   bv_query,
+                                                   (unsigned char*)buffer,
+                                                   0,
+												   bm::set_AND);
+		// control			
+		if (0)
+        {
+            bvect bv_control(BM_GAP);
+            bm::deserialize(bv_control, (unsigned char*)buffer);
+			bv_control &= bv_query;
+			if (bv_control != bv)
+			{
+				cerr << "Group by control failure" << endl;
+				cerr << bv_control.count() << endl;
+				cerr << bv.count() << endl;
+				exit(1);
+			}
+        }				
+
+
+		if (bv.any())
+		{
+			++group_by_count;
+		}
+		}
+#endif
+
+        if (count % 1000 == 0)
+        {
+            cout << count << endl;
+        }
+    }
+
+    delete [] buffer;
+    cout << "Total vectors:" << count << endl;
+    cout << "Group by vectors:" << group_by_count << endl;
+
+    clock_t finish = clock();
+    clock_t elapsed_clocks = finish - start;
+    double duration = (double)(elapsed_clocks) / CLOCKS_PER_SEC;
+
+    cout << endl
+         << "Test duration = " << duration 
+         << endl;
+}
+
+
+
+void LoadVectors(const char* dir_name, unsigned from, unsigned to)
+{
+    vector<bvect*>   bv_list;
+    vector<unsigned> sz_list;
+
+    unsigned total_size = 0;
+    unsigned total_new_size = 0;
+
+    for(; from <= to; ++from)
+    {
+        char fname[1024];
+        sprintf(fname, "%s/%i", dir_name, from);
+        bvect* bv = new bvect;
+
+        unsigned fsize = 0;
+        LoadBVector(fname, *bv, &fsize);
+        //bv->optimize();
+        //print_stat(*bv);
+
+
+        // get new size
+        unsigned blob_size = 0;
+        {
+        bvect::statistics st1;
+        bv->calc_stat(&st1);
+
+        unsigned char* blob = new unsigned char[st1.max_serialize_mem];
+        blob_size = bm::serialize(*bv, blob, BM_NO_GAP_LENGTH|BM_NO_BYTE_ORDER);
+
+        if (st1.max_serialize_mem < blob_size)
+        {
+            printf("BLOB size prediction error!\n");
+            exit(1);
+        }
+
+        //if (from >= 27)
+        {
+            bvect bv_control;
+            bm::deserialize(bv_control, (unsigned char*)blob);
+            if (bv_control != *bv)
+            {
+                cout << "Serialization error!" << endl;
+                exit(1);
+            }
+        }
+                
+        delete [] blob;
+
+        }
+
+        cout << fname << "    " 
+             << " old=" << fsize << " new=" << blob_size 
+             << " diff=" << (int)fsize - (int) blob_size
+             << endl;
+
+        bv_list.push_back(bv);
+        sz_list.push_back(fsize);
+
+        total_size += fsize;
+        total_new_size += blob_size;
+    } // for
+
+    cout << "Total size = " << total_size / (1024*1024) << "Mb" << endl;
+    cout << "  New size = " << total_new_size / (1024*1024) << "Mb" << endl;
+    cout << "Total diff = " << (total_size - total_new_size) / (1024*1024) << "Mb" << endl;
+
+    vector<unsigned char*> bv_blobs;
+
+    cout << "Running serialization benchmark..." << endl;
+    {
+    clock_t start = clock();
+
+        for (size_t i = 0; i < bv_list.size(); ++i)
+        {
+            const bvect* bv = bv_list[i];
+            bvect::statistics st1;
+            bv->calc_stat(&st1);
+            unsigned char* blob = new unsigned char[st1.max_serialize_mem*2];
+            bv_blobs.push_back(blob);
+
+            for (int j = 0; j < (int)(400/(i?i:1)); ++j)
+            {
+                //unsigned blob_size = 
+                    bm::serialize(*bv, blob);
+            }
+            // delete [] blob;
+        }
+
+    clock_t finish = clock();
+    clock_t elapsed_clocks = finish - start;
+    double duration = (double)(elapsed_clocks) / CLOCKS_PER_SEC;
+
+    cout << endl
+         << "Serialization duration = " << duration 
+         << endl;
+    }
+
+    cout << "Running de-serialization benchmark..." << endl;
+    {
+    clock_t start = clock();
+
+        for (size_t i = 0; i < bv_blobs.size(); ++i)
+        {
+            const unsigned char* blob = bv_blobs[i];
+            for (int j = 0; j < (int)(400/(i?i:1)); ++j)
+            {
+                 bvect bv;
+                 bm::deserialize(bv, (unsigned char*)blob);
+            }
+            // delete [] blob;
+        }
+
+    clock_t finish = clock();
+    clock_t elapsed_clocks = finish - start;
+    double duration = (double)(elapsed_clocks) / CLOCKS_PER_SEC;
+
+    cout << endl
+         << "DeSerialization duration = " << duration 
+         << endl;
+    }
+
+
+
+
+    for (size_t i = 0; i < bv_list.size(); ++i)
+    {
+        delete bv_list[i];
+    }
+    for (size_t i = 0; i < bv_blobs.size(); ++i)
+    {
+        delete [] bv_blobs[i];
+    }
+
+}
+
+void deser_test()
+{
+    const char* file_names[] = {"1", "2", "3", "4"};
+    const int file_lengths[] = {413760, 127855, 128640, 415192};
+
+    string base_path("c:\\dev\\deser\\");
+
+    bm::bvector<> bv(bm::BM_GAP);
+    bm::bvector<> bv2(bm::BM_GAP);
+
+    for(unsigned i = 0; i < sizeof(file_names) / sizeof(file_names[0]); ++i) {
+        string fname(base_path);
+        fname.append(file_names[i]);
+
+        ifstream f(fname.c_str(), ios::in | ios::binary);
+
+        if (!f.good()) {
+            std::cerr << "Bad file name " << fname.c_str() << endl;
+            return;
+        }
+
+        vector<char> v;
+        v.resize(file_lengths[i]);
+        f.read(&v[0], file_lengths[i]);
+
+        if (i == 3)
+        {
+            cout << " ";
+        }
+        bm::deserialize(bv, (unsigned char*)&v[0]);
+
+        bm::bvector<> bv_temp(bm::BM_GAP);
+        bm::deserialize(bv_temp, (unsigned char*)&v[0]);
+
+        bv2 |= bv_temp;
+
+    }
+    cerr << bv.count() << " (correct answer = " << bv2.count() << ")" << endl;
+    cerr << abs((int)(bv.count() - bv2.count())) << endl;
+
+    bv ^= bv2;
+    bv.optimize();
+
+    cerr << bv.count() << endl;
+
+//    print_stat(bv);
+    cout << endl;
+
+    bv2.optimize();
+//    print_stat(bv2, 126);
+
+}
+
+
+
 int main(void)
 {
     time_t      start_time = time(0);
     time_t      finish_time;
+
+    //deser_test();
+    //return 0;
 
     TestRecomb();
 
@@ -6363,52 +8382,41 @@ int main(void)
 
     CalcBeginMask();
     CalcEndMask();
-/*
-    unsigned a = bm::id_max / 65536;
 
-    bvect bv(BM_BIT, bm::gap_len_table<true>::_len, 65536*10);
-    bm::id_t c = bv.capacity();
-    bv.set(bm::id_max-1);
+    if (0)
+    {
+	    GroupByTest("C:/dev/group-by-sets/sets/geo_organization.bvdump",
+		            "C:/dev/group-by-sets/single/pubmed.dat");
+	    exit(1);
+    }
+/*
+    LoadBVDump("C:/dev/group-by-sets/sets/geo_organization.bvdump", 
+               "C:/dev/group-by-sets/sets/geo_organization.bvdump2", 
+			   false); // not validate!
+    exit(1);
 */
 
-//   cout << sizeof(__int64) << endl;
+/*
+    LoadBVDump("C:/dev/group-by-sets/sets/geo_organization.dat", 
+		       "C:/dev/group-by-sets/sets/geo_organization.bvdump", 
+			   true); //  validate!
 
-//   ::srand((unsigned)::time(NULL));
+    LoadBVDump("C:/dev/group-by-sets/sets/exec_time_msec_bit.dat", 
+		       "C:/dev/group-by-sets/sets/exec_time_msec_bit.bvdump", 
+			   true);
+
+    LoadBVDump("C:/dev/group-by-sets/sets/geo_country.dat", 
+		       "C:/dev/group-by-sets/sets/geo_country.bvdump", 
+			   true);
+    LoadBVDump("C:/dev/group-by-sets/sets/log_displayeduids.dat", 
+		       "C:/dev/group-by-sets/sets/log_displayeduids.bvdump", 
+			   true);
+
+    //LoadVectors("c:/dev/bv_perf", 3, 27);
+    exit(1);
+*/                                                                                                        
 
 /*
-    bvect bv;
-
-    bv.set(786694);
-    bv.set(895785); 
-    bv.set(977200); 
-    bv.set(1038827); 
-    bv.set(1110924); 
-    bv.set(1119532); 
-    bv.set(1123158); 
-    bv.set(1203562); 
-    bv.set(1209502); 
-    bv.set(1247904); 
-    bv.set(1276296); 
-    bv.set(1384903);
-
-    cout << bv.count() << endl;
-
-    bvect::statistics st;
-    bv.calc_stat(&st);
-    unsigned char buf[2048];
-    unsigned slen = bm::serialize(bv, buf);
-    cout << "slen=" << slen << endl;
-
-    bvect bv2;
-    operation_deserializer<bvect>::deserialize(bv2,
-                                                buf,
-                                                0,
-                                                set_ASSIGN);
-
-    cout << "count2=" << bv2.count() << endl;
-    PrintSet(cout, bv2);
-    return 0;
-*/
      ExportTest();
      ResizeTest();
 
@@ -6417,8 +8425,17 @@ int main(void)
      SyntaxTest();
 
      SetTest();
-
+ 
      BitCountChangeTest();
+   
+     Log2Test();
+
+	 BitForEachTest();
+
+//     BitEncoderTest();
+  
+     GammaEncoderTest();
+
 
      EnumeratorTest();
 
@@ -6435,9 +8452,9 @@ int main(void)
      SimpleRandomFillTest();
      
      RangeRandomFillTest();
-
+*/
      AndOperationsTest();   
-           
+          
      OrOperationsTest();
 
      XorOperationsTest();
@@ -6448,6 +8465,8 @@ int main(void)
 
      ComparisonTest();
 
+     BitBlockTransposeTest();
+
      MutationTest();
 
      MutationOperationsTest();
@@ -6457,6 +8476,11 @@ int main(void)
      DesrializationTest2();
 
      BlockLevelTest();
+
+     StressTest(100, 0); // OR
+     StressTest(100, 1); // SUB
+     StressTest(100, 2); // XOR
+     StressTest(100, 3); // AND
 
      StressTest(800);
 
@@ -6469,8 +8493,19 @@ int main(void)
     cout << "Number of BLOCK allocations = " <<  dbg_block_allocator::na_ << endl;
     cout << "Number of PTR allocations = " <<  dbg_ptr_allocator::na_ << endl << endl;
 
-    assert(dbg_block_allocator::balance() == 0);
-    assert(dbg_ptr_allocator::balance() == 0);
+    if(dbg_block_allocator::balance() != 0)
+    {
+        cout << "Block memory leak! " << endl;
+        cout << dbg_block_allocator::balance() << endl;
+        exit(1);
+    }
+
+    if(dbg_ptr_allocator::balance() != 0)
+    {
+        cout << "Ptr memory leak! " << endl;
+        cout << dbg_ptr_allocator::balance() << endl;
+        exit(1);
+    }
 #endif
 
     return 0;

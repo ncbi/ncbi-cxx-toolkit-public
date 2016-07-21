@@ -39,13 +39,16 @@ For more information please visit:  http://bmagic.sourceforge.net
 namespace bm
 {
 
-bm::id_t bit_block_any_range(const bm::word_t* block,
-                             bm::word_t left,
-                             bm::word_t right);
 
+inline 
 bm::id_t bit_block_calc_count_range(const bm::word_t* block,
                                     bm::word_t left,
                                     bm::word_t right);
+
+inline 
+bm::id_t bit_block_any_range(const bm::word_t* block,
+                             bm::word_t left,
+                             bm::word_t right);
 
 /*!
     @brief Structure with statistical information about bitset's memory 
@@ -395,7 +398,7 @@ template<bool T> struct _copyright
 };
 
 template<bool T> const char _copyright<T>::_p[] = 
-    "BitMagic C++ Library. v.3.6.5 (c) 2002-2010 Anatoliy Kuznetsov.";
+    "BitMagic C++ Library. v.3.7.1 (c) 2002-2017 Anatoliy Kuznetsov.";
 
 
 /*! 
@@ -832,7 +835,7 @@ T* gap_2_dgap(const T* gap_buf, T* dgap_buf, bool copy_head=true)
 template<typename T>
 void dgap_2_gap(const T* dgap_buf, T* gap_buf, T gap_header=0)
 {
-    const T* pcurr = dgap_buf;
+    register const T* pcurr = dgap_buf;
     unsigned len;    
     if (!gap_header) // GAP header is already part of the stream
     {
@@ -1681,22 +1684,26 @@ inline void xor_bit_block(unsigned* dest,
    @ingroup gapfunc
 */
 template<typename T> 
-void gap_sub_to_bitset(unsigned* BMRESTRICT dest, const T* BMRESTRICT buf)
+void gap_sub_to_bitset(unsigned* dest, const T*  buf)
 {
-    const T* pend = buf + (*buf >> 3);
-    T b = *buf & 1;
-    ++buf;
+    register const T* pcurr = buf;    
+    register const T* pend = pcurr + (*pcurr >> 3);
+    ++pcurr;
 
-    if (b)  // Starts with 1
+    if (*buf & 1)  // Starts with 1
     {
-        sub_bit_block(dest, 0, *buf + 1);
-        ++buf;
+        sub_bit_block(dest, 0, *pcurr + 1);
+        ++pcurr;
     }
-    for (++buf; buf <= pend; buf += 2)
+    ++pcurr; // now we are in GAP "1" again
+
+    while (pcurr <= pend)
     {
-        T prev = *(buf-1);
-        BM_ASSERT(*buf > prev);
-        sub_bit_block(dest, prev + 1, *buf - prev);
+        unsigned bitpos = *(pcurr-1) + 1;
+        BM_ASSERT(*pcurr > *(pcurr-1));
+        unsigned gap_len = *pcurr - *(pcurr-1);
+        sub_bit_block(dest, bitpos, gap_len);
+        pcurr += 2;
     }
 }
 
@@ -1709,54 +1716,28 @@ void gap_sub_to_bitset(unsigned* BMRESTRICT dest, const T* BMRESTRICT buf)
    @ingroup gapfunc
 */
 template<typename T> 
-void gap_xor_to_bitset(unsigned* BMRESTRICT dest, const T* BMRESTRICT buf)
+void gap_xor_to_bitset(unsigned* dest, const T*  buf)
 {
-    const T* pend = buf + (*buf >> 3);
-    T b = *buf & 1;
-    ++buf;
+    register const T* pcurr = buf;    
+    register const T* pend = pcurr + (*pcurr >> 3);
+    ++pcurr;
 
-    if (b)  // Starts with 1
+    if (*buf & 1)  // Starts with 1
     {
-        xor_bit_block(dest, 0, *buf + 1);
-        ++buf;
+        xor_bit_block(dest, 0, *pcurr + 1);
+        ++pcurr;
     }
-    for (++buf; buf <= pend; buf += 2)
+    ++pcurr; // now we are in GAP "1" again
+
+    while (pcurr <= pend)
     {
-        T prev = *(buf-1);
-        BM_ASSERT(*buf > prev);
-        xor_bit_block(dest, prev + 1, *buf - prev);
+        unsigned bitpos = *(pcurr-1) + 1;
+        BM_ASSERT(*pcurr > *(pcurr-1));
+        unsigned gap_len = *pcurr - *(pcurr-1);
+        xor_bit_block(dest, bitpos, gap_len);
+        pcurr += 2;
     }
 }
-
-/*!
-\brief Adds(OR) GAP block to bitblock.
-\param dest - bitblock buffer pointer.
-\param buf  - GAP buffer pointer.
-\param buf_len - GAP buffer length
-
-@ingroup gapfunc
-*/
-template<typename T> 
-void gap_add_to_bitset_l(unsigned* dest, const T*  buf, unsigned buf_len)
-{
-    BM_ASSERT(buf_len);
-    register const T* pend = buf + buf_len;
-    T b = *buf & 1;
-    ++buf;
-
-    if (b)  // Starts with 1
-    {
-        or_bit_block(dest, 0, *buf + 1);
-        ++buf;
-    }
-    for (++buf; buf <= pend; buf += 2)
-    {
-        T prev = *(buf-1);
-        BM_ASSERT(*buf > prev);
-        or_bit_block(dest, prev + 1, *buf - prev);
-    }
-}
-
 
 
 /*!
@@ -1769,7 +1750,25 @@ void gap_add_to_bitset_l(unsigned* dest, const T*  buf, unsigned buf_len)
 template<typename T> 
 void gap_add_to_bitset(unsigned* dest, const T*  buf)
 {
-    gap_add_to_bitset_l(dest, buf, *buf >> 3);
+    register const T* pcurr = buf;    
+    register const T* pend = pcurr + (*pcurr >> 3);
+    ++pcurr;
+
+    if (*buf & 1)  // Starts with 1
+    {
+        or_bit_block(dest, 0, *pcurr + 1);
+        ++pcurr;
+    }
+    ++pcurr; // now we are in GAP "1" again
+
+    while (pcurr <= pend)
+    {
+        unsigned bitpos = *(pcurr-1) + 1;
+        BM_ASSERT(*pcurr > *(pcurr-1));
+        unsigned gap_len = *pcurr - *(pcurr-1);
+        or_bit_block(dest, bitpos, gap_len);
+        pcurr += 2;
+    }
 }
 
 
@@ -1783,21 +1782,25 @@ void gap_add_to_bitset(unsigned* dest, const T*  buf)
 template<typename T> 
 void gap_and_to_bitset(unsigned* dest, const T*  buf)
 {
-    register const T* pend = buf + (*buf >> 3);
-    T b = *buf & 1;
-    ++buf;
+    register const T* pcurr = buf;    
+    register const T* pend = pcurr + (*pcurr >> 3);
+    ++pcurr;
 
-    if (!b )  // Starts with 0 
+    if (! (*buf & 1) )  // Starts with 0 
     {
         // Instead of AND we can SUB 0 gaps here 
-        sub_bit_block(dest, 0, *buf + 1);
-        ++buf;
+        sub_bit_block(dest, 0, *pcurr + 1);
+        ++pcurr;
     }
-    for (++buf; buf <= pend; buf += 2)
+    ++pcurr; // now we are in GAP "0" again
+
+    while (pcurr <= pend)
     {
-        T prev = *(buf-1);
-        BM_ASSERT(*buf > prev);
-        sub_bit_block(dest, prev + 1, *buf - prev);
+        unsigned bitpos = *(pcurr-1) + 1;
+        BM_ASSERT(*pcurr > *(pcurr-1));
+        unsigned gap_len = *pcurr - *(pcurr-1);
+        sub_bit_block(dest, bitpos, gap_len);
+        pcurr += 2;
     }
 }
 
@@ -2153,21 +2156,6 @@ void gap_convert_to_bitset(unsigned* dest, const T*  buf)
     bit_block_set(dest, 0);
     gap_add_to_bitset(dest, buf);
 }
-
-/*!
-\brief GAP block to bitblock conversion.
-\param dest - bitblock buffer pointer.
-\param buf  - GAP buffer pointer.
-
-@ingroup gapfunc
-*/
-template<typename T> 
-void gap_convert_to_bitset_l(unsigned* dest, const T*  buf, unsigned buf_len)
-{
-    bit_block_set(dest, 0);
-    gap_add_to_bitset_l(dest, buf, buf_len ? buf_len : *buf >> 3);
-}
-
 
 
 /*!
@@ -4429,7 +4417,7 @@ unsigned bit_count_nonzero_size(const T*     blk,
             }
             count += unsigned(sizeof(gap_word_t));
             // count all bit-words now
-            count += unsigned((blk_j - blk) * sizeof(T));
+            count += (unsigned)((blk_j - blk) * sizeof(T));
             blk = blk_j;
         }
         ++blk;
@@ -4776,7 +4764,7 @@ template<typename T> T bit_convert_to_arr(T* BMRESTRICT dest,
 
     	copy_to_array_functor_inc<T> func(pcurr, bit_idx);
     	bit_for_each_4(val, func);    	
-    	unsigned word_bit_cnt = unsigned(func.ptr() - pcurr);
+    	unsigned word_bit_cnt = (unsigned)(func.ptr() - pcurr);
         pcurr += word_bit_cnt;    
 
     } // for
@@ -5101,7 +5089,7 @@ template<typename W> struct bit_XOR
 /// Bit ASSIGN functor
 template<typename W> struct bit_ASSIGN
 {
-    W operator()(W w1, W w2) { return w2; }
+    W operator()(W, W w2) { return w2; }
 };
 
 /// Bit COUNT functor
@@ -5174,7 +5162,7 @@ template<typename W> struct bit_COUNT_SUB_BA
 /// Bit COUNT A functor
 template<typename W> struct bit_COUNT_A
 {
-    W operator()(W w1, W w2) 
+    W operator()(W w1, W )
     {
         W r = 0;
         BM_INCWORD_BITCOUNT(r, w1);
@@ -5185,7 +5173,7 @@ template<typename W> struct bit_COUNT_A
 /// Bit COUNT B functor
 template<typename W> struct bit_COUNT_B
 {
-    W operator()(W w1, W w2) 
+    W operator()(W, W w2)
     {
         W r = 0;
         BM_INCWORD_BITCOUNT(r, w2);
