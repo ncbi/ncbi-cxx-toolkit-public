@@ -185,6 +185,9 @@ public:
 
     CRef<CSeq_id> GetGeneralSeq_id(CTempString tag,
                                    bool omit_wgs_version = false) const;
+    CRef<CSeq_id> GetPatentSeq_id(int id) const;
+    CRef<CSeq_id> GetGeneralOrPatentSeq_id(CTempString str, int row,
+                                           bool omit_wgs_version = false) const;
     CRef<CSeq_id> GetAccSeq_id(CTempString acc,
                                int version) const;
     CRef<CSeq_id> GetAccSeq_id(ERowType type,
@@ -222,6 +225,16 @@ public:
     void ResetMasterDescr(void);
     void SetMasterDescr(const TMasterDescr& descr, int filter);
     bool LoadMasterDescr(int filter);
+
+    void SetPatentId(CRef<CSeq_id> id);
+    bool HasPatentId() const
+        {
+            return m_PatentId;
+        }
+    const CRef<CSeq_id>& GetPatentId(void) const
+        {
+            return m_PatentId;
+        }
 
     // get GI range of nucleotide sequences
     pair<TGi, TGi> GetNucGiRange(void);
@@ -450,6 +463,7 @@ private:
     bool m_IsSetMasterDescr;
     CRef<CSeq_entry> m_MasterEntry;
     TMasterDescr m_MasterDescr;
+    CRef<CSeq_id> m_PatentId;
 };
 
 

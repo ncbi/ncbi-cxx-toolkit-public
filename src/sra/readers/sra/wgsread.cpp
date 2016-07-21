@@ -973,12 +973,166 @@ bool sx_SetName(CSeq_id& id, CTempString name)
     return false;
 }
 
+
+int sx_NewStringToNonNegativeInt(CTempString str);
+
+
+inline
+int sx_StringToNonNegativeInt(const CTempString& str)
+{
+    return sx_NewStringToNonNegativeInt(str);
+    //return NStr::StringToNonNegativeInt(str);
+}
+
+#if 0
+static struct SProfile
+{
+    SProfile();
+
+    void test(CTempString s);
+
+} s_Profile;
+
+
+SProfile::SProfile()
+{
+    test("");
+    test("123a");
+    test("0");
+    test("123");
+    test("2147483639");
+    test("2147483647");
+    test("2147483648");
+    test("2147483650");
+    test("21474836470");
+}
+
+
+void SProfile::test(CTempString s)
+{
+    CStopWatch sw;
+    const int COUNT = 10000000;
+    Int8 ret = 0;
+    sw.Restart();
+    for ( int i = 0; i < COUNT; ++i ) {
+        ret += sx_StringToNonNegativeInt(s);
+    }
+    double t = sw.Elapsed();
+    Int8 exp = Int8(COUNT)*NStr::StringToNonNegativeInt(s);
+    if ( ret != exp ) {
+        ERR_POST("Error: \""<<s<<"\" -> "<<ret<<" vs "<<exp);
+    }
+    ERR_POST("Time for \""<<s<<"\": "<<t/COUNT*1e9<<"ns");
+}
+#endif
+
+int sx_NewStringToNonNegativeInt(CTempString str)
+{
+    const bool kSetErrno = false;
+    const bool kSetNcbiError = false;
+    int* errno_ptr = kSetErrno? &errno: 0;
+    size_t len = str.size();
+    if ( !len ) {
+        if ( kSetErrno ) {
+            *errno_ptr = EINVAL;
+        }
+        if ( kSetNcbiError ) {
+            CNcbiError::SetErrno(EINVAL, str);
+        }
+        return -1;
+    }
+    unsigned v = str.data()[0] - '0';
+    if ( v > 9 ) {
+        if ( kSetErrno ) {
+            *errno_ptr = EINVAL;
+        }
+        if ( kSetNcbiError ) {
+            CNcbiError::SetErrno(EINVAL, str);
+        }
+        return -1;
+    }
+    for ( size_t i = 1; i < len; ++i ) {
+        unsigned d = str.data()[i] - '0';
+        if ( d > 9 ) {
+            if ( kSetErrno ) {
+                *errno_ptr = EINVAL;
+            }
+            if ( kSetNcbiError ) {
+                CNcbiError::SetErrno(EINVAL, str);
+            }
+            return -1;
+        }
+        unsigned nv = v*10 + d;
+        if ( v > (INT_MAX-9)/10 ) {
+            // possible overflow
+            if ( v > (INT_MAX-9)/10+1 || nv > INT_MAX ) {
+                if ( kSetErrno ) {
+                    *errno_ptr = ERANGE;
+                }
+                if ( kSetNcbiError ) {
+                    CNcbiError::SetErrno(ERANGE, str);
+                }
+                return -1;
+            }
+        }
+        v = nv;
+    }
+    if ( kSetErrno ) {
+        *errno_ptr = 0;
+    }
+    return static_cast<int>(v);
+}
+
+
+// return non-negative integer if the string is its canonical representation -
+// no leading zeros or spaces,
+// otherwise return -1
+int sx_GetStringId(CTempString str)
+{
+    int id = sx_StringToNonNegativeInt(str);
+    if ( id >= 0 ) {
+        if ( str.size() == 1 || str.data()[0] != '0' ) { // no leading zeroes
+            return id;
+        }
+    }
+    return -1;
+}
+
+/*
+CRange<int> sx_GetPatentRange(const CUser_object& obj, CTempString prefix)
+{
+    int from = -1;
+    int to = -1;
+    if ( auto field = obj.GetFieldRef("Patent_accession_first") ) {
+        if ( field->GetData().IsStr() ) {
+            CTempString str = field->GetData().GetStr();
+            if ( NStr::StartsWith(str, prefix) ) {
+                from = sx_StringToNonNegativeInt(str.substr(prefix.size()));
+            }
+        }
+    }
+    if ( auto field = obj.GetFieldRef("Patent_accession_last") ) {
+        if ( field->GetData().IsStr() ) {
+            CTempString str = field->GetData().GetStr();
+            if ( NStr::StartsWith(str, prefix) ) {
+                to = sx_StringToNonNegativeInt(str.substr(prefix.size()));
+            }
+        }
+    }
+    if ( from >= 0 && to >= from ) {
+        return CRange<int>(from, to);
+    }
+    else {
+        return CRange<int>::GetEmpty();
+    }
+}
+*/
+
 void sx_SetTag(CDbtag& tag, CTempString str)
 {
     CObject_id& oid = tag.SetTag();
-    int id = NStr::StringToNonNegativeInt(str);
-    if ( id >= 0  && 
-         (str.size() == 1 || (str[0] != '0' && str[0] != '+'))) {
+    int id = sx_GetStringId(str);
+    if ( id >= 0 ) {
         oid.SetId(id);
     }
     else {
@@ -1082,13 +1236,6 @@ void sx_SetSplitInterval(CID2S_Seq_loc& split_loc, CSeq_id& id,
 }
 
 
-bool sx_IsArtificialName(CTempString name, TVDBRowId id)
-{
-    return name.empty() ||
-        (isdigit(Uint1(name[0])) && NStr::StringToNonNegativeInt(name) == id);
-}
-
-
 END_LOCAL_NAMESPACE;
 
 
@@ -1125,6 +1272,35 @@ CRef<CSeq_id> CWGSDb_Impl::GetGeneralSeq_id(CTempString tag,
         }
     }
     return id;
+}
+
+
+CRef<CSeq_id> CWGSDb_Impl::GetPatentSeq_id(int id) const
+{
+    CRef<CSeq_id> seq_id(new CSeq_id);
+    CPatent_seq_id& pat_id = seq_id->SetPatent();
+    pat_id.SetCit(m_PatentId.GetNCObject().SetPatent().SetCit());
+    pat_id.SetSeqid(id);
+    return seq_id;
+}
+
+
+CRef<CSeq_id>
+CWGSDb_Impl::GetGeneralOrPatentSeq_id(CTempString str,
+                                      int row,
+                                      bool omit_wgs_version) const
+{
+    if ( str.empty() ) {
+        return null;
+    }
+    int id = sx_GetStringId(str);
+    if ( id >= 0 && HasPatentId() ) {
+        return GetPatentSeq_id(id);
+    }
+    if ( id == row ) {
+        return null;
+    }
+    return GetGeneralSeq_id(str, omit_wgs_version);
 }
 
 
@@ -1266,6 +1442,40 @@ CRef<CSeq_entry> CWGSDb_Impl::GetMasterDescrEntry(void)
             str >> *master_entry;
             m_MasterEntry =  master_entry;
         }
+        if ( m_MasterEntry->IsSeq() ) {
+            for ( auto& id : m_MasterEntry->GetSeq().GetId() ) {
+                if ( id->IsPatent() ) {
+                    SetPatentId(id);
+                    break;
+                }
+            }
+            /*
+            m_PatentSeqIdRangeNuc = CRange<int>::GetEmpty();
+            m_PatentSeqIdRangeProt = CRange<int>::GetEmpty();
+            if ( HasPatentId() && m_MasterEntry->GetSeq().IsSetDescr() ) {
+                for ( auto& d : m_MasterEntry->GetSeq().GetDescr().Get() ) {
+                    const CSeqdesc& desc = *d;
+                    if ( desc.IsUser() ) {
+                        const CUser_object& obj = desc.GetUser();
+                        const CObject_id& type = obj.GetType();
+                        if ( type.IsStr() &&
+                             type.GetStr() == "PatentProjects" ) {
+                            m_PatentSeqIdRangeNuc = sx_GetPatentRange(obj, GetIdPrefixWithVersion());
+                            m_PatentSeqIdRangeProt = m_PatentSeqIdRangeNuc;
+                        }
+                        if ( type.IsStr() &&
+                             type.GetStr() == "PatentProjectsNucleotide" ) {
+                            m_PatentSeqIdRangeNuc = sx_GetPatentRange(obj, GetIdPrefixWithVersion());
+                        }
+                        if ( type.IsStr() &&
+                             type.GetStr() == "PatentProjectsProtein" ) {
+                            m_PatentSeqIdRangeProt = sx_GetPatentRange(obj, GetIdPrefixWithVersion());
+                        }
+                    }
+                }
+            }
+            */
+        }
     }
     return m_MasterEntry;
 }
@@ -1369,6 +1579,32 @@ CRef<CSeq_entry> CWGSDb_Impl::GetMasterSeq_entry(void) const
     return entry;
 }
 
+
+void CWGSDb_Impl::SetPatentId(CRef<CSeq_id> id)
+{
+    m_PatentId = id;
+}
+
+/*
+int CWGSDb_Impl::GetPatentSeqIdNuc(CTempString str_id) const
+{
+    if ( !HasPatentId() ) {
+        return 0;
+    }
+    int id = sx_GetStringId(str_id);
+    return id >= 0 && IsValidPatentSeqIdNuc(id)? id: 0;
+}
+
+
+int CWGSDb_Impl::GetPatentSeqIdProt(CTempString str_id) const
+{
+    if ( !HasPatentId() ) {
+        return 0;
+    }
+    int id = sx_GetStringId(str_id);
+    return id >= 0 && IsValidPatentSeqIdProt(id)? id: 0;
+}
+*/
 
 TGi CWGSDb_Impl::GetMasterGi(void) const
 {
@@ -2082,11 +2318,7 @@ CRef<CSeq_id> CWGSSeqIterator::GetGiSeq_id(void) const
 
 CRef<CSeq_id> CWGSSeqIterator::GetGeneralSeq_id(void) const
 {
-    CTempString name = GetContigName();
-    if ( sx_IsArtificialName(name, m_CurrId) ) {
-        return null;
-    }
-    return GetDb().GetGeneralSeq_id(name);
+    return GetDb().GetGeneralOrPatentSeq_id(GetContigName(), m_CurrId);
 }
 
 
@@ -3917,7 +4149,7 @@ CRef<CSeq_id> CWGSScaffoldIterator::GetAccSeq_id(void) const
 CRef<CSeq_id> CWGSScaffoldIterator::GetGeneralSeq_id(void) const
 {
     CTempString name = GetScaffoldName();
-    if ( sx_IsArtificialName(name, m_CurrId) ) {
+    if ( name.empty() || sx_GetStringId(name) == m_CurrId ) {
         return null;
     }
     return GetDb().GetGeneralSeq_id(name);
@@ -4480,7 +4712,12 @@ CTempString CWGSProteinIterator::GetAccession(void) const
 {
     PROFILE(sw____GetProtAcc);
     x_CheckValid("CWGSProteinIterator::GetAccession");
-    return *CVDBStringValue(m_Cur->GB_ACCESSION(m_CurrId));
+    if ( m_Cur->m_GB_ACCESSION ) {
+        return *CVDBStringValue(m_Cur->GB_ACCESSION(m_CurrId));
+    }
+    else {
+        return CTempString();
+    }
 }
 
 
@@ -4517,11 +4754,7 @@ CRef<CSeq_id> CWGSProteinIterator::GetAccSeq_id(void) const
 CRef<CSeq_id> CWGSProteinIterator::GetGeneralSeq_id(void) const
 {
     PROFILE(sw____GetProtGnlSeq_id);
-    CTempString name = GetProteinName();
-    if ( sx_IsArtificialName(name, m_CurrId) ) {
-        return null;
-    }
-    return GetDb().GetGeneralSeq_id(name, true);
+    return GetDb().GetGeneralOrPatentSeq_id(GetProteinName(), m_CurrId, true);
 }
 
 

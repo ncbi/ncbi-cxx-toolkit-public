@@ -98,6 +98,7 @@ void CWGSTestApp::Init(void)
 
     arg_desc->AddFlag("withdrawn", "Include withdrawn sequences");
     arg_desc->AddFlag("master", "Include master descriptors if any");
+    arg_desc->AddFlag("print-master", "Print master entry");
     arg_desc->AddFlag("master-no-filter", "Do not filter master descriptors");
 
     //arg_desc->AddFlag("resolve-gi", "Resolve gi list");
@@ -809,6 +810,14 @@ int CWGSTestApp::Run(void)
             ERR_POST("No master descriptors found");
         }
     }
+    if ( args["print-master"] ) {
+        if ( CRef<CSeq_entry> master = wgs_db->GetMasterSeq_entry() ) {
+            out << "Master " << MSerial_AsnText << *master;
+        }
+        else {
+            out << "No master entry" << NcbiEndl;
+        }
+    }
 
     bool is_component = false, is_scaffold = false, is_protein = false;
     uint64_t row = 0;
@@ -1230,8 +1239,9 @@ int CWGSTestApp::Run(void)
         }
         for ( size_t count = 0; it && count < limit_count; ++it, ++count ) {
             out << it.GetScaffoldName() << '\n';
+            CRef<CBioseq> seq = it.GetBioseq();
             if ( print_seq ) {
-                out << MSerial_AsnText << *it.GetBioseq();
+                out << MSerial_AsnText << *seq;
             }
             if ( print_entry ) {
                 out << MSerial_AsnText << *it.GetSeq_entry();
@@ -1255,8 +1265,9 @@ int CWGSTestApp::Run(void)
         }
         for ( size_t count = 0; it && count < limit_count; ++it, ++count ) {
             out << it.GetProteinName() << '\n';
+            CRef<CBioseq> seq = it.GetBioseq();
             if ( print_seq ) {
-                out << MSerial_AsnText << *it.GetBioseq();
+                out << MSerial_AsnText << *seq;
             }
             if ( print_entry ) {
                 out << MSerial_AsnText << *it.GetSeq_entry();
