@@ -43,25 +43,30 @@
  * Registry:
  *    private global:  g_CORE_Registry
  *    macros:          CORE_REG_GET, CORE_REG_SET
+ * Setup accounting:   ECORE_Set
+ *    private global:  g_CORE_Set
  * Random generator seeding support
  *    private global:  g_NCBI_ConnectRandomSeed
  *    macro:           NCBI_CONNECT_SRAND_ADDEND
- * App name and NCBI ID support
+ * App name / NCBI ID / DTab support
  *    private globals: g_CORE_GetAppName
  *                     g_CORE_GetRequestID
+ *                     g_CORE_GetRequestDtab
  *
  */
 
 #include "ncbi_assert.h"
 #include <connect/ncbi_util.h>
 #ifdef NCBI_MONKEY
-#   if defined(NCBI_OS_MSWIN)
-#       include <WinSock2.h>
-#   else
-#       include <sys/socket.h>
-#       define SOCKET int
-#   endif /*NCBI_OS_...*/
+#  if defined(NCBI_OS_MSWIN)
+#    include <WinSock2.h>
+#  else
+#    include <sys/socket.h>
+#    define SOCKET int
+#  endif /*NCBI_OS_MSWIN*/
 #endif /* NCBI_MONKEY */
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -311,6 +316,22 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ g_CORE_RegistrySET
 
 
 /******************************************************************************
+ *  Setup accounting
+ */
+
+typedef enum {
+    eCORE_SetSSL  = 1,
+    eCORE_SetREG  = 4,
+    eCORE_SetLOG  = 2,
+    eCORE_SetLOCK = 8
+} ECORE_Set;
+typedef unsigned int TCORE_Set;
+
+
+extern TCORE_Set g_CORE_Set;
+
+
+/******************************************************************************
  *  Random generator seeding support
  */
 
@@ -338,16 +359,33 @@ extern NCBI_XCONNECT_EXPORT FNcbiGetRequestID g_CORE_GetRequestID;
 
 
 /******************************************************************************
- *  DTab-Local support (may return NULL; gets converted to "" at the user level)
+ *  DTab-Local support (returned NULL gets converted to "" at the user level)
  */
 typedef const char* (*FNcbiGetRequestDtab)(void);
 extern NCBI_XCONNECT_EXPORT FNcbiGetRequestDtab g_CORE_GetRequestDtab;
 
 
+/******************************************************************************
+ *  Miscellanea
+ */
+
+#ifdef __GNUC__
+#  define likely(x)    __builtin_expect(!!(x),1)
+#  define unlikely(x)  __builtin_expect(!!(x),0)
+#else
+#  define likely(x)    (x)
+#  define unlikely(x)  (x)
+#endif /*__GNUC__*/
+
+
+/******************************************************************************
+ *  NCBI Crazy Monkey support
+ */
+
 #ifdef NCBI_MONKEY
 /* UNIX and Windows have different prototypes for send(), recv(), etc., so
-* some types have to be pre-selected based on current OS
-*/
+ * some types have to be pre-selected based on current OS
+ */
 #   ifdef NCBI_OS_MSWIN
 #       define MONKEY_RETTYPE  int
 #       define MONKEY_SOCKTYPE SOCKET
@@ -394,15 +432,7 @@ extern NCBI_XCONNECT_EXPORT FMonkeyRecv     g_MONKEY_Recv;
 extern NCBI_XCONNECT_EXPORT FMonkeyPoll     g_MONKEY_Poll;
 extern NCBI_XCONNECT_EXPORT FMonkeyConnect  g_MONKEY_Connect;
 extern NCBI_XCONNECT_EXPORT FMonkeyClose    g_MONKEY_Close;
-#endif /* NCBI_MONKEY */
-
-#ifdef __GNUC__
-#  define likely(x)    __builtin_expect(!!(x),1)
-#  define unlikely(x)  __builtin_expect(!!(x),0)
-#else
-#  define likely(x)    (x)
-#  define unlikely(x)  (x)
-#endif /*__GNUC__*/
+#endif /*NCBI_MONKEY*/
 
 
 #ifdef __cplusplus

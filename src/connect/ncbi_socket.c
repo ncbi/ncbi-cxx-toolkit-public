@@ -8263,6 +8263,8 @@ extern void SOCK_SetupSSL(FSSLSetup setup)
             CORE_LOG(eLOG_Critical, "Cannot reset SSL while it is in use");
     }
 
+    g_CORE_Set |= eCORE_SetSSL;
+
     CORE_UNLOCK;
 }
 

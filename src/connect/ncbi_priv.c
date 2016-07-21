@@ -31,39 +31,35 @@
  */
 
 #include "ncbi_priv.h"
-#if defined(NCBI_OS_UNIX)
+#if   defined(NCBI_OS_UNIX)
 #  include <unistd.h>
 #elif defined(NCBI_OS_MSWIN)
 #  include <windows.h>
 #else
 #  include <connect/ncbi_socket.h>
-#endif /*NCBI_OS_...*/
+#endif /*NCBI_OS*/
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 
 /* GLOBALS */
-int                     g_NCBI_ConnectRandomSeed = 0;
-MT_LOCK                 g_CORE_MT_Lock           = &g_CORE_MT_Lock_default;
-LOG                     g_CORE_Log               = 0;
-REG                     g_CORE_Registry          = 0;
-FNcbiGetAppName         g_CORE_GetAppName        = 0;
-FNcbiGetRequestID       g_CORE_GetRequestID      = 0;
-FNcbiGetRequestDtab     g_CORE_GetRequestDtab    = 0;
+TCORE_Set           g_CORE_Set               = 0;
+MT_LOCK             g_CORE_MT_Lock           = &g_CORE_MT_Lock_default;
+LOG                 g_CORE_Log               = 0;
+REG                 g_CORE_Registry          = 0;
+int                 g_NCBI_ConnectRandomSeed = 0;
+FNcbiGetAppName     g_CORE_GetAppName        = 0;
+FNcbiGetRequestID   g_CORE_GetRequestID      = 0;
+FNcbiGetRequestDtab g_CORE_GetRequestDtab    = 0;
 
 #ifdef NCBI_MONKEY
-#   ifdef NCBI_OS_UNIX
-#       include <sys/types.h>
-#       include <sys/socket.h>
-#   endif /* NCBI_OS_UNIX */
+FMonkeySend         g_MONKEY_Send            = 0;
+FMonkeyRecv         g_MONKEY_Recv            = 0;
+FMonkeyConnect      g_MONKEY_Connect         = 0;
+FMonkeyPoll         g_MONKEY_Poll            = 0;
+FMonkeyClose        g_MONKEY_Close           = 0;
+#endif /*NCBI_MONKEY*/
 
-
-FMonkeySend    g_MONKEY_Send    = NULL;
-FMonkeyRecv    g_MONKEY_Recv    = NULL;
-FMonkeyConnect g_MONKEY_Connect = NULL;
-FMonkeyPoll    g_MONKEY_Poll    = NULL;
-FMonkeyClose   g_MONKEY_Close   = NULL;
-#endif /* #ifdef NCBI_MONKEY */
 
 extern int g_NCBI_ConnectSrandAddend(void)
 {
@@ -154,4 +150,3 @@ extern int/*bool*/ g_CORE_RegistrySET
     CORE_UNLOCK;
     return retval;
 }
-

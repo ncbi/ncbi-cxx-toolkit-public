@@ -96,7 +96,7 @@ struct MT_LOCK_tag {
   FMT_LOCK_Cleanup cleanup;      /* cleanup function */
   unsigned int     magic_number; /* used internally to make sure it's init'd */
 };
-#define kMT_LOCK_magic_number 0x7A96283F
+#define kMT_LOCK_magic_number  0x7A96283F
 
 
 #ifndef NCBI_NO_THREADS
@@ -132,7 +132,7 @@ static int/*bool*/ s_CORE_MT_Lock_default_handler(void*    unused,
         InitializeCriticalSection(&sx_Crit);
         sx_Inited = 1; /*go*/
     } else while (!sx_Inited)
-        Sleep(10/*ms*/); /*spin*/
+        Sleep(1/*ms*/); /*spin*/
 
     switch (action) {
     case eMT_Lock:
@@ -255,7 +255,7 @@ struct LOG_tag {
     MT_LOCK      mt_lock;
     unsigned int magic_number;  /* used internally, to make sure it's init'd */
 };
-#define kLOG_magic_number 0x3FB97156
+#define kLOG_magic_number  0x3FB97156
 
 
 extern const char* LOG_LevelStr(ELOG_Level level)
@@ -445,7 +445,7 @@ struct REG_tag {
     MT_LOCK      mt_lock;
     unsigned int magic_number;  /* used internally, to make sure it's init'd */
 };
-#define kREG_magic_number 0xA921BC08
+#define kREG_magic_number  0xA921BC08
 
 
 extern REG REG_Create

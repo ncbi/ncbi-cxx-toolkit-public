@@ -72,7 +72,6 @@
 #define NCBI_USE_PRECOMPILED_CRC32_TABLES 1
 
 
-
 /******************************************************************************
  *  MT locking
  */
@@ -81,6 +80,7 @@ extern void CORE_SetLOCK(MT_LOCK lk)
 {
     MT_LOCK old_lk = g_CORE_MT_Lock;
     g_CORE_MT_Lock = lk;
+    g_CORE_Set |= eCORE_SetLOCK;
     if (old_lk  &&  old_lk != lk)
         MT_LOCK_Delete(old_lk);
 }
@@ -104,6 +104,7 @@ extern void CORE_SetLOG(LOG lg)
     CORE_LOCK_WRITE;
     old_lg = g_CORE_Log;
     g_CORE_Log = lg;
+    g_CORE_Set |= eCORE_SetLOG;
     CORE_UNLOCK;
     if (old_lg  &&  old_lg != lg)
         LOG_Delete(old_lg);
@@ -610,6 +611,7 @@ extern void CORE_SetREG(REG rg)
     CORE_LOCK_WRITE;
     old_rg = g_CORE_Registry;
     g_CORE_Registry = rg;
+    g_CORE_Set |= eCORE_SetREG;
     CORE_UNLOCK;
     if (old_rg  &&  old_rg != rg)
         REG_Delete(old_rg);

@@ -50,6 +50,9 @@
 BEGIN_NCBI_SCOPE
 
 
+static TCORE_Set s_CORE_Set = 0;
+
+
 /***********************************************************************
  *                              Registry                               *
  ***********************************************************************/
@@ -152,8 +155,9 @@ static void s_LOG_Handler(void*       /*user_data*/,
             level = eDiag_Fatal;
             break;
         }
-        if (!IsVisibleDiagPostLevel(level))
+        if (!IsVisibleDiagPostLevel(level)) {
             return;
+        }
 
         CDiagCompileInfo info(call_data->file,
                               call_data->line,
@@ -247,21 +251,6 @@ extern MT_LOCK MT_LOCK_cxx2c(CRWLock* lock, bool pass_ownership)
 
 
 /***********************************************************************
- *                                 Fini                                *
- ***********************************************************************/
-
-extern "C" {
-static void s_Fini(void) THROWS_NONE
-{
-    SOCK_SetupSSL(0);
-    CORE_SetREG(0);
-    CORE_SetLOG(0);
-    CORE_SetLOCK(0);
-}
-}
-
-
-/***********************************************************************
  *                               App Name                              *
  ***********************************************************************/
 extern "C" {
@@ -338,7 +327,7 @@ extern "C" {
                                     void* /* SOCK* */ sock_ptr)
     {
         return CMonkey::Instance()->Recv(sock, buf, size, flags, 
-                                         (SOCK*)sock_ptr);
+                                         (SOCK*) sock_ptr);
     }
 
     
@@ -355,7 +344,7 @@ extern "C" {
                                      EIO_Status*              return_status)
     {
         return CMonkey::Instance()->
-            Poll(n, (SSOCK_Poll**)polls, return_status) ? 1 : 0;
+            Poll(n, (SSOCK_Poll**) polls, return_status) ? 1 : 0;
     }
 
 
@@ -386,11 +375,11 @@ static void s_SetMonkeyHooks(EMonkeyHookSwitch hook_switch)
     switch (hook_switch)
     {
     case eMonkeyHookSwitch_Disabled:
-        g_MONKEY_Send    = NULL;
-        g_MONKEY_Recv    = NULL;
-        g_MONKEY_Connect = NULL;
-        g_MONKEY_Poll    = NULL;
-        g_MONKEY_Close   = NULL;
+        g_MONKEY_Send    = 0;
+        g_MONKEY_Recv    = 0;
+        g_MONKEY_Connect = 0;
+        g_MONKEY_Poll    = 0;
+        g_MONKEY_Close   = 0;
         break;
     case eMonkeyHookSwitch_Enabled:
         g_MONKEY_Send    = s_MonkeySend;
@@ -406,18 +395,42 @@ static void s_SetMonkeyHooks(EMonkeyHookSwitch hook_switch)
 #endif //NCBI_MONKEY
 
 
+static enum EConnectInit {
+    eConnectInit_Weak     = -1,  ///< CConn_Initer
+    eConnectInit_Intact   =  0,  ///< Not yet visited
+    eConnectInit_Strong   =  1,  ///< User init detected
+    eConnectInit_Explicit =  2   ///< CONNECT_Init() called
+} s_ConnectInit = eConnectInit_Intact;
+
+
+
+/***********************************************************************
+ *                                 Fini                                *
+ ***********************************************************************/
+
+extern "C" {
+static void s_Fini(void) THROWS_NONE
+{
+    s_CORE_Set &= ~g_CORE_Set;
+    if (s_CORE_Set & eCORE_SetSSL)
+        SOCK_SetupSSL(0);
+    if (s_CORE_Set & eCORE_SetREG)
+        CORE_SetREG(0);
+    if (s_CORE_Set & eCORE_SetLOG)
+        CORE_SetLOG(0);
+    if (s_CORE_Set & eCORE_SetLOCK)
+        CORE_SetLOCK(0);
+    g_CORE_Set &= ~s_CORE_Set;
+    s_CORE_Set  =  0;
+}
+}
+
+
 /***********************************************************************
  *                                 Init                                *
  ***********************************************************************/
 
 DEFINE_STATIC_FAST_MUTEX(s_ConnectInitMutex);
-
-static enum EConnectInit {
-    eConnectInit_Weak = -1,
-    eConnectInit_Intact = 0,
-    eConnectInit_Explicit = 1
-} s_ConnectInit = eConnectInit_Intact;
-
 
 /* NB: gets called under a lock */
 static void s_Init(IRWRegistry*      reg  = 0,
@@ -427,27 +440,36 @@ static void s_Init(IRWRegistry*      reg  = 0,
                    EConnectInit      how  = eConnectInit_Weak)
 {
     _ASSERT(how != eConnectInit_Intact);
-    if (g_NCBI_ConnectRandomSeed == 0) {
+
+    TCORE_Set set = 0;
+    if (!(g_CORE_Set & eCORE_SetLOCK)) {
+        CORE_SetLOCK(MT_LOCK_cxx2c(lock, flag & eConnectInit_OwnLock));
+        set |= eCORE_SetLOCK;
+    }
+    if (!(g_CORE_Set & eCORE_SetLOG)) {
+        CORE_SetLOG(LOG_cxx2c());
+        set |= eCORE_SetLOG;
+    }
+    if (!(g_CORE_Set & eCORE_SetREG)) {
+        CORE_SetREG(REG_cxx2c(reg, flag & eConnectInit_OwnRegistry));
+        set |= eCORE_SetREG;
+    }
+    if (!(g_CORE_Set & eCORE_SetSSL)) {
+        SOCK_SetupSSL(ssl);
+        set |= ssl ? eCORE_SetSSL : 0;
+    }
+    g_CORE_Set &= ~set;
+    s_CORE_Set |=  set;
+
+    if (s_ConnectInit == eConnectInit_Intact) {
         g_NCBI_ConnectRandomSeed  = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
         srand(g_NCBI_ConnectRandomSeed);
-    }
-    CORE_SetLOCK(MT_LOCK_cxx2c(lock,
-                               flag & eConnectInit_OwnLock ? true : false));
-    CORE_SetLOG(LOG_cxx2c());
-    CORE_SetREG(REG_cxx2c(reg, flag & eConnectInit_OwnRegistry));
-    if (s_ConnectInit == eConnectInit_Intact) {
         atexit(s_Fini);
     }
 
-    /* setup retrieval functions */
     g_CORE_GetAppName     = s_GetAppName;
     g_CORE_GetRequestID   = s_GetRequestID;
     g_CORE_GetRequestDtab = s_GetRequestDTab;
-
-    /* setup SSL */
-    if (ssl) {
-        SOCK_SetupSSL(ssl);
-    }
 
 #ifdef NCBI_MONKEY
     /* Allow CMonkey to switch hooks to Connect library */
@@ -456,8 +478,7 @@ static void s_Init(IRWRegistry*      reg  = 0,
     CMonkey::Instance();
 #endif //NCBI_MONKEY
 
-    /* done! */
-    s_ConnectInit = how;
+    s_ConnectInit = g_CORE_Set ? how : eConnectInit_Strong;
 }
 
 
@@ -468,6 +489,7 @@ extern void CONNECT_Init(IRWRegistry*      reg,
 {
     CFastMutexGuard guard(s_ConnectInitMutex);
     try {
+        g_CORE_Set = 0;
         s_Init(reg, flag & eConnectInit_NoSSL ? 0 : NcbiSetupGnuTls,
                lock, flag, eConnectInit_Explicit);
     }
@@ -480,22 +502,14 @@ CConnIniter::CConnIniter(void)
     if (s_ConnectInit != eConnectInit_Intact)
         return;
     CFastMutexGuard guard(s_ConnectInitMutex);
-    if (!g_CORE_Registry  &&  !g_CORE_Log
-        &&  g_CORE_MT_Lock == &g_CORE_MT_Lock_default) {
-        try {
-            if (s_ConnectInit == eConnectInit_Intact) {
-                CMutexGuard appguard(CNcbiApplication::GetInstanceMutex());
-                CNcbiApplication* app = CNcbiApplication::Instance();
-#ifndef HAVE_LIBGNUTLS
-                ERR_POST(Warning << "SSL is not supported in this build");
-#endif //HAVE_LIBGNUTLS
-                s_Init(app ? &app->GetConfig() : 0, NcbiSetupGnuTls);
-            }
+    try {
+        if (s_ConnectInit == eConnectInit_Intact) {
+            CMutexGuard appguard(CNcbiApplication::GetInstanceMutex());
+            CNcbiApplication* app = CNcbiApplication::Instance();
+            s_Init(app ? &app->GetConfig() : 0, NcbiSetupGnuTls);
         }
-        NCBI_CATCH_ALL_X(7, "CONNECT_InitInternal() failed");
-    } else {
-        s_ConnectInit = eConnectInit_Explicit;
     }
+    NCBI_CATCH_ALL_X(7, "CConn_Initer::CConn_Initer() failed");
 }
 
 
