@@ -855,6 +855,8 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
         net_info->port = uuu->port;
         assert(!uuu->descr);
         uuu->descr = x_HostPort(net_info->host, net_info->port);
+        if (net_info->http_proxy_host[0]  &&  net_info->http_proxy_port)
+            net_info->scheme = uuu->net_info->scheme;
         return s_SocketConnectorBuilder(net_info, uuu->descr, status,
                                         &uuu->ticket,
                                         uuu->ticket ? sizeof(uuu->ticket) : 0,
