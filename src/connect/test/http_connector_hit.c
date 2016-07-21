@@ -36,6 +36,7 @@
 #ifdef NCBI_CXX_TOOLKIT
 #  include <connect/ncbi_gnutls.h>
 #endif /*NCBI_CXX_TOOLKIT*/
+#include <stdlib.h>
 
 #include "test_assert.h"  /* This header must go last */
 
@@ -147,7 +148,7 @@ int main(int argc, const char* argv[])
     }
 
     /* Connect */
-    if (s_Args.port == CONN_PORT_HTTPS) {
+    if (atoi(s_Args.port) == CONN_PORT_HTTPS) {
         verify((net_info = ConnNetInfo_Create(0)) != 0);
         net_info->scheme = eURL_Https;
     } else
