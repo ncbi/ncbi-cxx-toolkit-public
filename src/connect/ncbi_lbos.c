@@ -1060,47 +1060,47 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
         free(infos);
         return NULL;
     }
-    JSON_Value  *root_value;
-    JSON_Object *root_obj;
-    JSON_Object *services;
-    JSON_Array  *serviceEndpoints;
-    JSON_Object *serviceEndpoint;
+    x_JSON_Value  *root_value;
+    x_JSON_Object *root_obj;
+    x_JSON_Object *services;
+    x_JSON_Array  *serviceEndpoints;
+    x_JSON_Object *serviceEndpoint;
     unsigned int j = 0;
-    root_value = json_parse_string(lbos_answer);
-    if (json_value_get_type(root_value) != JSONObject) {
+    root_value = x_json_parse_string(lbos_answer);
+    if (x_json_value_get_type(root_value) != JSONObject) {
         goto clean_and_exit;
     }
-    root_obj = json_value_get_object(root_value);
-    services = json_object_get_object(root_obj, "services");
+    root_obj = x_json_value_get_object(root_value);
+    services = x_json_object_get_object(root_obj, "services");
     /* Get endpoints for the first service name. 
      * Note: Multiple service resolution is not supported intentionally 
      * (yet). */
     serviceEndpoints = 
-        json_object_get_array(services, json_object_get_name(services, 0));
+        x_json_object_get_array(services, x_json_object_get_name(services, 0));
     /* Iterate through endpoints */
-    for (j = 0;  j < json_array_get_count(serviceEndpoints);  j++) {
+    for (j = 0;  j < x_json_array_get_count(serviceEndpoints);  j++) {
         const char *host, *rate, *extra, *type;
         char* server_description;
         const char* descr_format = "%s %s:%u %s Regular R=%s L=no T=25";
         int port;
-        serviceEndpoint = json_array_get_object(serviceEndpoints, j);
-        host = json_object_dotget_string(serviceEndpoint,
+        serviceEndpoint = x_json_array_get_object(serviceEndpoints, j);
+        host = x_json_object_dotget_string(serviceEndpoint,
                                          "serviceEndpoint.host");
         if (host == NULL) {
             continue;
         }
-        port = (int)json_object_dotget_number(serviceEndpoint,
+        port = (int)x_json_object_dotget_number(serviceEndpoint,
                                               "serviceEndpoint.port");
         /* -------------rate------------- */
-        rate = json_object_dotget_string(serviceEndpoint,
+        rate = x_json_object_dotget_string(serviceEndpoint,
                                          "meta.rate");
         rate = !g_LBOS_StringIsNullOrEmpty(rate) ? rate : "1";
         /* -------------type------------- */
-        type = json_object_dotget_string(serviceEndpoint,
+        type = x_json_object_dotget_string(serviceEndpoint,
                                          "meta.type");
         type = !g_LBOS_StringIsNullOrEmpty(type) ? type : "STANDALONE";
         /* -------------extra------------- */
-        extra = json_object_dotget_string(serviceEndpoint,
+        extra = x_json_object_dotget_string(serviceEndpoint,
                                          "meta.extra");
         extra = !g_LBOS_StringIsNullOrEmpty(extra) ? extra : "";
 
@@ -1143,7 +1143,7 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
     }
 
 clean_and_exit:
-    json_value_free(root_value);
+    x_json_value_free(root_value);
     free(lbos_answer);
     /* Shuffle list with Durstenfeld's shuffle algorithm 
      * (also credits go to Fisher and Yates, and Knuth) */
@@ -2008,7 +2008,7 @@ unsigned short s_LBOS_Announce(const char*             service,
     int             parsed_symbols = 0;
     assert(!g_LBOS_StringIsNullOrEmpty(host));
 
-    if (s_TurnOn())
+    if (!s_TurnOn())
         return eLBOS_Disabled;
 
     lbos_address         = s_LBOS_Instance;
@@ -2230,6 +2230,9 @@ unsigned short LBOS_AnnounceFromRegistry(const char*  registry_section,
     /* Check port that it is a number of max 5 digits and no other symbols   */
     for (i = 0;  i < strlen(port_str);  i++) {
         if (!isdigit(port_str[i])) {
+            CORE_LOGF_X(eLBOS_InvalidArgs, eLOG_Warning, 
+                        ("Port \"%s\" in section %s is invalid", port_str, 
+                        registry_section));
             result = eLBOS_InvalidArgs;
             goto clean_and_exit;
         }
@@ -2455,15 +2458,22 @@ void LBOS_DeannounceAll()
 /*/////////////////////////////////////////////////////////////////////////////
 //                             LBOS CONFIGURATION                            //
 /////////////////////////////////////////////////////////////////////////////*/
-static int s_CheckConfArgs(const char* service, const char** lbos_answer)
+static int s_LBOS_CheckConfArgs(const char* service, const char** lbos_answer)
 {
     unsigned int i;
     if (g_LBOS_StringIsNullOrEmpty(service)  ||  lbos_answer == NULL) {
+        CORE_LOG_X(eLBOS_InvalidArgs, eLOG_Warning, 
+                    "s_LBOS_CheckConfArgs: service is NULL or lbos_answer "
+                    "is NULL");
         return 0;
     }
     for (i = 0;  i < strlen(service);  i++) {
-        if (isspace(service[i]))
+        if (isspace(service[i])) {
+            CORE_LOGF_X(eLBOS_InvalidArgs, eLOG_Warning, 
+                        ("s_LBOS_CheckConfArgs: service "
+                        "\"%s\" contains invalid character", service));
             return 0;
+        }
     }
     return 1;
 }
@@ -2491,7 +2501,7 @@ unsigned short LBOS_ServiceVersionGet(const char*  service,
     /*
      * First we check input arguments
      */
-    if (!s_CheckConfArgs(service, (const char**)lbos_answer)) {
+    if (!s_LBOS_CheckConfArgs(service, (const char**)lbos_answer)) {
         return eLBOS_InvalidArgs;
     }
     /*
@@ -2547,7 +2557,14 @@ unsigned short LBOS_ServiceVersionSet(const char*  service,
     /*
      * First we check input arguments
      */
-    if (!s_CheckConfArgs(service, (const char**)lbos_answer)) {
+    if (!s_LBOS_CheckConfArgs(service, (const char**)lbos_answer)) {
+        return eLBOS_InvalidArgs;
+    }
+    if (g_LBOS_StringIsNullOrEmpty(new_version)) {
+        CORE_LOG_X(eLBOS_InvalidArgs, eLOG_Warning, 
+                   "LBOS_ServiceVersionSet: new_version is empty. "
+                   "If you want to delete service config, use "
+                   "LBOS_ServiceVersionDelete");
         return eLBOS_InvalidArgs;
     }
     /*
@@ -2593,7 +2610,7 @@ unsigned short LBOS_ServiceVersionDelete(const char*  service,
     /*
      * First we check input arguments
      */
-    if (!s_CheckConfArgs(service, (const char**)lbos_answer)) {
+    if (!s_LBOS_CheckConfArgs(service, (const char**)lbos_answer)) {
         return eLBOS_InvalidArgs;
     }
     /*
