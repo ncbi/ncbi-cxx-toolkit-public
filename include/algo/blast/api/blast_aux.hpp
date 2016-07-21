@@ -43,6 +43,7 @@
 #include <objects/seqloc/Seq_interval.hpp>
 #include <util/range.hpp>       // For TSeqRange
 #include <objects/seq/seqlocinfo.hpp>
+#include <objmgr/scope.hpp>
 
 // BLAST includes
 #include <algo/blast/api/blast_types.hpp>
@@ -178,6 +179,29 @@ NCBI_XBLAST_EXPORT
 CRef<objects::CSeq_loc>
 MaskedQueryRegionsToPackedSeqLoc( const TMaskedQueryRegions & sloc);
 
+struct NCBI_XBLAST_EXPORT CConstRefCSeqId_LessThan
+{
+    bool operator() (const CConstRef<objects::CSeq_id>& a, const CConstRef<objects::CSeq_id>& b) const {
+        if (a.Empty() && b.NotEmpty()) {
+            return true;
+        } else if (a.NotEmpty() && b.Empty()) {
+            return false;
+        } else if (a.Empty() && b.Empty()) {
+            return true;
+        } else {
+            _ASSERT(a.NotEmpty() && b.NotEmpty());
+            return *a < *b;
+        }
+    }
+};
+
+/// This method retrieve sequence data in bulk to scope
+/// @ids  seq id list [in]
+/// @ranges  seq range list [in]
+/// @scope sconfigured with data loader for retrieving seqs [in] | retrieved bioseqs [out]
+NCBI_XBLAST_EXPORT
+void
+LoadSequencesToScope(objects::CScope::TIds& ids, vector<TSeqRange>& ranges, CRef<objects::CScope> & scope);
 
 /// Converts a BlastMaskLoc internal structure into an object returned by the 
 /// C++ API.

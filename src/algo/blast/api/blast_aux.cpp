@@ -53,6 +53,11 @@
 #include "blast_setup.hpp"
 #include "blast_aux_priv.hpp"
 
+#include <objects/seq/Seq_ext.hpp>
+#include <objects/seq/Delta_seq.hpp>
+#include <objects/seq/Delta_ext.hpp>
+#include <objmgr/seq_map_ci.hpp>
+
 #include <algorithm>
 #include <sstream>
 
@@ -1099,6 +1104,51 @@ IsLocalId(const objects::CSeq_id* seqid)
         retval = true;
     }
     return retval;
+}
+
+void
+LoadSequencesToScope(CScope::TIds& ids, vector<TSeqRange>& ranges, CRef<CScope> & scope)
+{
+	CScope::TBioseqHandles bhs = scope->GetBioseqHandles(ids);
+
+    // Per Eugene Vasilchenko's suggestion, via email on 6/8/10:
+    // "With the current API you can make artificial delta sequence
+    // referencing several other sequences and use its CSeqMap to load them
+    // all in one call. There is no straightforward way to do this, sorry."
+
+    // Create virtual delta sequence
+	CRef<CBioseq> top_seq(new CBioseq);
+    CSeq_inst& inst = top_seq->SetInst();
+    inst.SetRepr(CSeq_inst::eRepr_virtual);
+    inst.SetMol(CSeq_inst::eMol_not_set);
+    CDelta_ext& delta = inst.SetExt().SetDelta();
+    int i = 0;
+    ITERATE(CScope::TBioseqHandles, it, bhs) {
+    	CRef<CDelta_seq> seq(new CDelta_seq);
+	    CSeq_interval& interval = seq->SetLoc().SetInt();
+	    interval.SetId(*SerialClone(*it->GetAccessSeq_id_Handle().GetSeqId()));
+	    if (ranges[i].GetFrom() > ranges[i].GetToOpen()) {
+	    	TSeqPos length = it->GetBioseqLength();
+	        interval.SetFrom(length - ranges[i].GetTo());
+	        interval.SetTo(length - ranges[i].GetFrom());
+	    } else {
+	        interval.SetFrom(ranges[i].GetFrom());
+	        interval.SetTo(ranges[i].GetTo());
+	    }
+	    i++;
+	    delta.Set().push_back(seq);
+    }
+
+    // Add it to the scope
+    CBioseq_Handle top_bh = scope->AddBioseq(*top_seq);
+
+    // prepare selector. SetLinkUsedTSE() is necessary for batch loading
+	SSeqMapSelector sel(CSeqMap::fFindAnyLeaf, kInvalidSeqPos);
+	sel.SetLinkUsedTSE(top_bh.GetTSE_Handle());
+
+	// and get all sequence data in batch mode
+	_TRACE("Fetching " << ids.size() << " sequences");
+	top_bh.GetSeqMap().CanResolveRange(&*scope, sel);
 }
 
 END_SCOPE(blast)

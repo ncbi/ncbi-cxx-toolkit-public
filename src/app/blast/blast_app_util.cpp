@@ -48,9 +48,6 @@
 #include <algo/blast/blastinput/blast_scope_src.hpp>
 #include <objmgr/util/sequence.hpp>
 
-#include <objects/seq/Seq_ext.hpp>
-#include <objects/seq/Delta_seq.hpp>
-#include <objects/seq/Delta_ext.hpp>
 #include <objects/scoremat/Pssm.hpp>
 #include <serial/typeinfo.hpp>      // for CTypeInfo, needed by SerialClone
 #include <objtools/data_loaders/blastdb/bdbloader_rmt.hpp>
@@ -640,22 +637,6 @@ SaveSearchStrategy(const CArgs& args,
                            pssm, num_iters);
 }
 
-struct CConstRefCSeqId_LessThan
-{
-    bool operator() (const CConstRef<CSeq_id>& a, const CConstRef<CSeq_id>& b) const {
-        if (a.Empty() && b.NotEmpty()) {
-            return true;
-        } else if (a.NotEmpty() && b.Empty()) {
-            return false;
-        } else if (a.Empty() && b.Empty()) {
-            return true;
-        } else {
-            _ASSERT(a.NotEmpty() && b.NotEmpty());
-            return *a < *b;
-        }
-    }
-};
-
 /// Extracts the subject sequence IDs and ranges from the BLAST results
 /// @note if this ever needs to be refactored for popular developer
 /// consumption, this function should operate on CSeq_align_set as opposed to
@@ -717,6 +698,30 @@ s_IsUsingRemoteBlastDbDataLoader()
     return false;
 }
 
+static bool
+s_PreFetchSeqs(const blast::CSearchResultSet& results)
+{
+	if(!s_IsUsingRemoteBlastDbDataLoader()) {
+		char * pre_fetch_limit_str = getenv("PRE_FETCH_SEQS_LIMIT");
+		if (pre_fetch_limit_str) {
+			int pre_fetch_limit = NStr::StringToInt(pre_fetch_limit_str);
+			if(pre_fetch_limit == 0) {
+				return false;
+			}
+			int num_of_seqs = 0;
+			for(unsigned int i=0; i < results.GetNumResults(); i++) {
+				if(results[i].HasAlignments()) {
+					num_of_seqs += results[i].GetSeqAlign()->Size();
+				}
+			}
+			if(num_of_seqs > pre_fetch_limit) {
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
 void BlastFormatter_PreFetchSequenceData(const blast::CSearchResultSet&
                                          results, CRef<CScope> scope)
 {
@@ -724,63 +729,26 @@ void BlastFormatter_PreFetchSequenceData(const blast::CSearchResultSet&
     if (results.size() == 0) {
         return;
     }
-    // Only useful if we're dealing with then remote BLAST DB data loader
-    if (! s_IsUsingRemoteBlastDbDataLoader() ) {
-        return;
+    if(!s_PreFetchSeqs(results)){
+    	return;
     }
-
-    CScope::TIds ids;
-    vector<TSeqRange> ranges;
-    s_ExtractSeqidsAndRanges(results, ids, ranges);
-    _TRACE("Prefetching " << ids.size() << " sequence lengths");
-
     try {
-        CScope::TBioseqHandles bhs = scope->GetBioseqHandles(ids);
+       CScope::TIds ids;
+       vector<TSeqRange> ranges;
+       s_ExtractSeqidsAndRanges(results, ids, ranges);
+       _TRACE("Prefetching " << ids.size() << " sequence lengths");
+       LoadSequencesToScope(ids, ranges, scope);
+	} catch (CException& e) {
+	   if(s_IsUsingRemoteBlastDbDataLoader()) {
+          NCBI_THROW(CBlastSystemException, eNetworkError,
+                     "Error fetching sequence data from BLAST databases at NCBI, "
+                     "please try again later");
+	   }
+	   else {
+          NCBI_RETHROW_SAME(e, "Error pre-fetching sequence data ");
+	   }
+   }
 
-        // Per Eugene Vasilchenko's suggestion, via email on 6/8/10:
-        // "With the current API you can make artificial delta sequence
-        // referencing several other sequences and use its CSeqMap to load them
-        // all in one call. There is no straightforward way to do this, sorry."
-
-        // Create virtual delta sequence
-        CRef<CBioseq> top_seq(new CBioseq);
-        CSeq_inst& inst = top_seq->SetInst();
-        inst.SetRepr(CSeq_inst::eRepr_virtual);
-        inst.SetMol(CSeq_inst::eMol_not_set);
-        CDelta_ext& delta = inst.SetExt().SetDelta();
-        int i = 0;
-        ITERATE(CScope::TBioseqHandles, it, bhs) {
-            CRef<CDelta_seq> seq(new CDelta_seq);
-            CSeq_interval& interval = seq->SetLoc().SetInt();
-            interval.SetId
-                (*SerialClone(*it->GetAccessSeq_id_Handle().GetSeqId()));
-            if (ranges[i].GetFrom() > ranges[i].GetToOpen()) {
-                TSeqPos length = it->GetBioseqLength();
-                interval.SetFrom(length - ranges[i].GetTo());
-                interval.SetTo(length - ranges[i].GetFrom());
-            } else {
-            interval.SetFrom(ranges[i].GetFrom());
-            interval.SetTo(ranges[i].GetTo());
-            }
-            i++;
-            delta.Set().push_back(seq);
-        }
-
-        // Add it to the scope
-        CBioseq_Handle top_bh = scope->AddBioseq(*top_seq);
-
-        // prepare selector. SetLinkUsedTSE() is necessary for batch loading
-        SSeqMapSelector sel(CSeqMap::fFindAnyLeaf, kInvalidSeqPos);
-        sel.SetLinkUsedTSE(top_bh.GetTSE_Handle());
-
-        // and get all sequence data in batch mode
-        _TRACE("Prefetching " << ids.size() << " sequences");
-        top_bh.GetSeqMap().CanResolveRange(&*scope, sel);
-    } catch (const CException&) {
-        NCBI_THROW(CBlastSystemException, eNetworkError, 
-                   "Error fetching sequence data from BLAST databases at NCBI, "
-                   "please try again later");
-    }
 }
 
 /// Auxiliary function to extract the ancillary data from the PSSM.
