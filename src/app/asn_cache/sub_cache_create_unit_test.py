@@ -78,6 +78,12 @@ def main():
     else:
         scratch_dir_was_created = False
 
+    try:
+        subprocess.call( ['test_dump_asn_index', '-version' ] )
+    except:
+        print 'NCBI_UNITTEST_SKIPPED'
+        exit(0)
+
     # Switch to the test data directory, but make sure the scratch
     # directory isn't affected by the switch.
     test_dir = os.path.join(os.environ['NCBI_TEST_DATA'], 'asn_cache')
