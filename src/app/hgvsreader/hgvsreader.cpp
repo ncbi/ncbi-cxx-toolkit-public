@@ -51,7 +51,7 @@ void CHgvsToSeqfeatConverter::Init(void)
 
     SetupArgDescriptions(arg_desc.release());
 
-    CException::SetStackTraceLevel(eDiag_Warning);
+    CException::SetStackTraceLevel(eDiag_Fatal);
     SetDiagPostLevel(eDiag_Info);
     return;
 }
@@ -113,5 +113,6 @@ int CHgvsToSeqfeatConverter::Run(void)
 
 int main(int argc, const char* argv[])
 {
+    SetDiagFilter(eDiagFilter_All, "!(1306.12)");
     return CHgvsToSeqfeatConverter().AppMain(argc, argv);
 }
