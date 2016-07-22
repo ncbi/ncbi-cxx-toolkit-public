@@ -1449,6 +1449,8 @@ CWGSDb::GetMasterDescrType(const CSeqdesc& desc)
     case CSeqdesc::e_Molinfo:
     case CSeqdesc::e_Create_date:
     case CSeqdesc::e_Update_date:
+    case CSeqdesc::e_Genbank:
+    case CSeqdesc::e_Embl:
         return eDescr_default;
     case CSeqdesc::e_User:
         if ( desc.GetUser().GetType().IsStr() ) {
