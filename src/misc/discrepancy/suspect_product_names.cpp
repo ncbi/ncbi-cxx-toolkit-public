@@ -5317,9 +5317,12 @@ static string GetRuleMatch(const CSuspect_rule& rule)
         const CSearch_func& find = rule.GetFind();
         switch (find.Which()) {
             case CSearch_func::e_String_constraint:
-                return string("[n] feature[s] contain[S] \'") + find.GetString_constraint().GetMatch_text() + "\'";
+                return string(find.GetString_constraint().GetMatch_location() == eString_location_starts ?  "[n] feature[s] start[S] with \'" : "[n] feature[s] contain[S] \'")
+                    + find.GetString_constraint().GetMatch_text()
+                    + (rule.CanGetReplace() && rule.GetReplace().GetReplace_func().IsSimple_replace() ? "\', Replace with \'" + rule.GetReplace().GetReplace_func().GetSimple_replace().GetReplace() : "")
+                    + "\'";
             case CSearch_func::e_Contains_plural:
-                return "[n] feature[s] may contain plural";
+                return "[n] feature[s] May contain plural";
             case CSearch_func::e_N_or_more_brackets_or_parentheses:
                 return "[n] feature[s] violate[S] e_N_or_more_brackets_or_parentheses !!!";
             case CSearch_func::e_Three_numbers:
@@ -5374,7 +5377,7 @@ DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData, eDisc | eOncaller | eSubmi
                 const CConstraint_choice_set& constr = (*rule)->GetFeat_constraint();
                 if (!DoesObjectMatchConstraintChoiceSet(context, constr)) continue;
             }
-            CReportNode& node = m_Objs["[n] product name[s] contain[S] suspect phrase[s] or character[s]"][GetRuleText(**rule)].Summ()[GetRuleMatch(**rule)].Summ();
+            CReportNode& node = m_Objs["[n] product_name[s] contain[S] suspect phrase[s] or character[s]"][GetRuleText(**rule)].Summ()[GetRuleMatch(**rule)].Summ();
             node.Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eNoRef, (*rule)->CanGetReplace(), (CObject*)&**rule)).Fatal((*rule)->GetFatal());
         }
     }
