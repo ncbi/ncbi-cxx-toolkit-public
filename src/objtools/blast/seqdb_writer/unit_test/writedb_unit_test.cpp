@@ -2901,7 +2901,7 @@ BOOST_AUTO_TEST_CASE(ReadBareIDProtein)
 {
     // create a FASTA file with bare and legacy IDs
     CTmpFile tmpfile;
-    CNcbiOfstream ostr(tmpfile.GetFileName());
+    CNcbiOfstream ostr(tmpfile.GetFileName().c_str());
     string sequence = "MASTQNIVEEVQKMLDTYDTNKDGEITKAEAVEYFKGKKAFNPER";
 
     std::unordered_map<string, CSeq_id::E_Choice> fasta_ids = {
@@ -2965,7 +2965,7 @@ BOOST_AUTO_TEST_CASE(ReadMultipleBareIDs)
 {
     // create a FASTA file with bare and legacy IDs
     CTmpFile tmpfile;
-    CNcbiOfstream ostr(tmpfile.GetFileName());
+    CNcbiOfstream ostr(tmpfile.GetFileName().c_str());
     string sequence = "MASTQNIVEEVQKMLDTYDTNKDGEITKAEAVEYFKGKKAFNPER";
 
     std::unordered_map<string, CSeq_id::E_Choice> fasta_ids = {
@@ -3035,7 +3035,7 @@ BOOST_AUTO_TEST_CASE(ReadBareIDNucleotide)
 {
     // create a FASTA file with bare and legacy IDs
     CTmpFile tmpfile;
-    CNcbiOfstream ostr(tmpfile.GetFileName());
+    CNcbiOfstream ostr(tmpfile.GetFileName().c_str());
     string sequence = "AACTAGTATTAGAGGCACTGCCTGCCCAGTGACAATCGTTAAACGGCCG";
 
     std::unordered_map<string, CSeq_id::E_Choice> fasta_ids = {
@@ -3099,7 +3099,7 @@ BOOST_AUTO_TEST_CASE(ReadLegacyIDProtein)
 {
     // create a FASTA file with bare and legacy IDs
     CTmpFile tmpfile;
-    CNcbiOfstream ostr(tmpfile.GetFileName());
+    CNcbiOfstream ostr(tmpfile.GetFileName().c_str());
     string sequence = "MASTQNIVEEVQKMLDTYDTNKDGEITKAEAVEYFKGKKAFNPER";
 
     std::unordered_map<string, CSeq_id::E_Choice> fasta_ids = {
@@ -3153,7 +3153,7 @@ BOOST_AUTO_TEST_CASE(ReadMultipleLegacyIDs)
 {
     // create a FASTA file with bare and legacy IDs
     CTmpFile tmpfile;
-    CNcbiOfstream ostr(tmpfile.GetFileName());
+    CNcbiOfstream ostr(tmpfile.GetFileName().c_str());
     string sequence = "MASTQNIVEEVQKMLDTYDTNKDGEITKAEAVEYFKGKKAFNPER";
 
     std::unordered_map<string, CSeq_id::E_Choice> fasta_ids = {
@@ -3218,7 +3218,7 @@ BOOST_AUTO_TEST_CASE(ReadLegacyIDNucleotide)
 {
     // create a FASTA file with bare and legacy IDs
     CTmpFile tmpfile;
-    CNcbiOfstream ostr(tmpfile.GetFileName());
+    CNcbiOfstream ostr(tmpfile.GetFileName().c_str());
     string sequence = "AACTAGTATTAGAGGCACTGCCTGCCCAGTGACAATCGTTAAACGGCCG";
 
     std::unordered_map<string, CSeq_id::E_Choice> fasta_ids = {
