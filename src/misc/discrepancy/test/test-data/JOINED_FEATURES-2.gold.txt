@@ -1,0 +1,21 @@
+Discrepancy Report Results
+
+Summary
+JOINED_FEATURES: 12 features have joined locations.
+
+Detailed Report
+
+JOINED_FEATURES: 12 features have joined locations.
+D:\toolkit\src\misc\discrepancy\test\test-data\chloro2.sqn:CDS	cytochrome c oxidase subunit 2	[gb|KT201147|:9768-9995, 10915-11043, 12228-12620]	
+D:\toolkit\src\misc\discrepancy\test\test-data\chloro2.sqn:CDS	apocytochrome b	[gb|KT201147|:15214-15606, 16843-17625]	
+D:\toolkit\src\misc\discrepancy\test\test-data\chloro2.sqn:CDS	cytochrome c oxidase subunit 1	[gb|KT201147|:18033-18319, 20592-20696, 21853-22081, 23206-23457, 24592-24781, 26056-26123, 27204-27686]	
+D:\toolkit\src\misc\discrepancy\test\test-data\chloro2.sqn:CDS	NADH dehydrogenase subunit 1	[gb|KT201147|:29790-29927, 31788-32753]	
+D:\toolkit\src\misc\discrepancy\test\test-data\chloro2.sqn:CDS	NADH dehydrogenase subunit 4	[gb|KT201147|:33534-34029, 35415-35644, 36721-37443]	
+D:\toolkit\src\misc\discrepancy\test\test-data\chloro2.sqn:CDS	apocytochrome b	[gb|KT201148|:13130-13522, 14759-15541]	
+D:\toolkit\src\misc\discrepancy\test\test-data\chloro2.sqn:CDS	cytochrome c oxidase subunit 2	[gb|KT201149|:9797-10024, 11103-11624]	
+D:\toolkit\src\misc\discrepancy\test\test-data\chloro2.sqn:CDS	apocytochrome b	[gb|KT201149|:14218-14610, 15849-16631]	
+D:\toolkit\src\misc\discrepancy\test\test-data\chloro2.sqn:CDS	cytochrome c oxidase subunit 2	[gb|KT201150|:11070-11297, 12370-12891]	
+D:\toolkit\src\misc\discrepancy\test\test-data\chloro2.sqn:CDS	NADH dehydrogenase subunit 5	[gb|KT201150|:13311-13727, 14695-16254]	
+D:\toolkit\src\misc\discrepancy\test\test-data\chloro2.sqn:CDS	apocytochrome b	[gb|KT201150|:16552-16944, 18166-18278, 19337-20006]	
+D:\toolkit\src\misc\discrepancy\test\test-data\chloro2.sqn:CDS	cytochrome c oxidase subunit 1	[gb|KT201150|:20403-21459, 22725-22792, 23870-24349]	
+
