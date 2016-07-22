@@ -708,7 +708,9 @@ static const int kForceDescrMask = ((1<<CSeqdesc::e_Pub) |
 static const int kOptionalDescrMask = ((1<<CSeqdesc::e_Source) |
                                        (1<<CSeqdesc::e_Molinfo) |
                                        (1<<CSeqdesc::e_Create_date) |
-                                       (1<<CSeqdesc::e_Update_date));
+                                       (1<<CSeqdesc::e_Update_date) |
+                                       (1<<CSeqdesc::e_Genbank) |
+                                       (1<<CSeqdesc::e_Embl));
 
 static const int kGoodDescrMask = kForceDescrMask | kOptionalDescrMask;
 
