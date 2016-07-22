@@ -112,6 +112,10 @@ BOOST_AUTO_TEST_CASE(Test_feature_GetLabel)
     CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(entry);
     CBioseq_CI nuc_bsh(seh, CSeq_inst::eMol_na);
 
+    CheckOneFeatureType(*nuc_bsh, CSeqFeatData::eSubtype_misc_feature,
+        "/rpt_family=repeat family /rpt_type=inverted /rpt_type=tandem /rpt_unit_range=4..7 /rpt_unit_seq=aatt; tumour",
+        "[misc_feature]",
+        "[misc_feature]: /rpt_family=repeat family /rpt_type=inverted /rpt_type=tandem /rpt_unit_range=4..7 /rpt_unit_seq=aatt; tumour");
     CheckOneFeatureType(*nuc_bsh, CSeqFeatData::eSubtype_cdregion,
         "neuronal thread protein AD7c-NTP",
         "CDS",
@@ -173,7 +177,21 @@ CACCTGCCTCAGCCTTCCAAAGTGCTGGGATTACAGGCGTGAGCCACCTCACCCAGCCGGCTAATTTAGATAAAAAAA\
 TATGTAGCAATGGGGGGTCTTGCTATGTTGCCCAGGCTGGTCTCAAACTTCTGGCTTCATGCAATCCTTCCAAATGAG\
 CCACAACACCCAGCCAGTCACATTTTTTAAACAGTTACATCTTTATTTTAGTATACTAGAAAGTAATACAATAAACAT\
 GTCAAACCTGCAAATTCAGTAGTAACAGAGTTCTTTTATAACTTTTAAACAAAGCTTTAGAGCA\"\
-      }\
+      },\
+      annot { { data ftable {\
+        {\
+          data imp { key \"misc_feature\" },\
+          comment \"tumour\",\
+          location int { from 0, to 374, id gi 3002526 },\
+          qual {\
+            {qual \"rpt_family\", val \"repeat family\"},\
+            {qual \"rpt_type\", val \"inverted\"},\
+            {qual \"rpt_type\", val \"tandem\"},\
+            {qual \"rpt_unit_range\", val \"4..7\"},\
+            {qual \"rpt_unit_seq\", val \"aatt\"}\
+          }\
+        }\
+      } } }\
     },\
     seq {\
       id {\

@@ -507,7 +507,7 @@ static bool s_GetImpLabel
                 }
             }
         // else if the key is misc_feature
-        } else if (NStr::EqualNocase(key, "misc_feature")) {
+        } else if (!NStr::EqualNocase(key, "misc_feature")) {
             if (feat.IsSetQual()) {
                 // Look for a single qualifier qual in order of preference 
                 // "standard_name", "function", "number", any and
@@ -544,7 +544,7 @@ static bool s_GetImpLabel
                     return false;
                 }
             }
-        }
+        } 
     } 
     return false;                
 }
@@ -711,7 +711,7 @@ void s_GetContentLabel
         const CSeq_feat_Base::TQual & qual = feat.GetQual(); // must store reference since ITERATE macro evaluates 3rd arg multiple times
         ITERATE( CSeq_feat::TQual, it, qual ) {
             tlabel += prefix + (**it).GetQual();
-            prefix = " ";
+            prefix = " /";
             if (!(**it).GetVal().empty()) {
                 tlabel += "=" + (**it).GetVal();
             }
