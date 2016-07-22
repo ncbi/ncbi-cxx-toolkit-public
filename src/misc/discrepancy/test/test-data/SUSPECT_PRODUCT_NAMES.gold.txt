@@ -1,0 +1,63 @@
+Discrepancy Report Results
+
+Summary
+SUSPECT_PRODUCT_NAMES: 48 product_names contain suspect phrases or characters
+	May contain database identifier more appropriate in note; remove from product name
+		16 features Three or more numbers together but not contain 'methyltransferas'
+	Putative Typo
+		8 features May contain plural
+	Typo
+		24 features start with 'hypothetical', Replace with 'putative'
+
+Detailed Report
+
+SUSPECT_PRODUCT_NAMES: 48 product_names contain suspect phrases or characters
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	photosystem I P700 apoprotein A2	gb|KT168383|:c40090-37886	Cegl_g20
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	photosystem I P700 apoprotein A1	gb|KT168383|:c42368-40116	Cegl_g21
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	photosystem I P700 apoprotein A2	gb|KT168384|:c39393-37189	Ermi_g20
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	photosystem I P700 apoprotein A1	gb|KT168384|:c41671-39419	Ermi_g21
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	photosystem I P700 apoprotein A2	gb|KT168385|:c39141-36937	Erte_g20
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	photosystem I P700 apoprotein A1	gb|KT168385|:c41419-39167	Erte_g21
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	photosystem I P700 apoprotein A2	gb|KT168386|:c38981-36777	Bocu_g20
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	photosystem I P700 apoprotein A1	gb|KT168386|:c41259-39007	Bocu_g21
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	photosystem I P700 apoprotein A2	gb|KT168387|:c39600-37396	Hice_g20
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	photosystem I P700 apoprotein A1	gb|KT168387|:c41878-39626	Hice_g21
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	photosystem I P700 apoprotein A2	gb|KT168388|:c39729-37525	Sppe_g20
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	photosystem I P700 apoprotein A1	gb|KT168388|:c42007-39755	Sppe_g21
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	photosystem I P700 apoprotein A2	gb|KT168389|:c40067-37863	Sphe_g20
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	photosystem I P700 apoprotein A1	gb|KT168389|:c42345-40093	Sphe_g21
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	photosystem I P700 apoprotein A2	gb|KT168390|:c40132-37928	Zoma_g20
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	photosystem I P700 apoprotein A1	gb|KT168390|:c42410-40158	Zoma_g21
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribulose-1,5-bisphosphate carboxylase/oxygenas	gb|KT168383|:54652-56082	Cegl_g29
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribulose-1,5-bisphosphate carboxylase/oxygenas	gb|KT168384|:54968-56398	Ermi_g29
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribulose-1,5-bisphosphate carboxylase/oxygenas	gb|KT168385|:54283-55713	Erte_g29
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribulose-1,5-bisphosphate carboxylase/oxygenas	gb|KT168386|:53816-55267	Bocu_g29
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribulose-1,5-bisphosphate carboxylase/oxygenas	gb|KT168387|:54873-56300	Hice_g29
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribulose-1,5-bisphosphate carboxylase/oxygenas	gb|KT168388|:55185-56615	Sppe_g29
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribulose-1,5-bisphosphate carboxylase/oxygenas	gb|KT168389|:55596-57026	Sphe_g29
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribulose-1,5-bisphosphate carboxylase/oxygenas	gb|KT168390|:55712-57139	Zoma_g29
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	hypothetical chloroplast RF34	[gb|KT168383|:c44898-44773, c44060-43833, c43098-42940]	Cegl_g22
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	hypothetical chloroplast RF68	gb|KT168383|:93301-93678	Cegl_g67
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	hypothetical chloroplast RF68	gb|KT168383|:c121339-120962	Cegl_g81
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	hypothetical chloroplast RF34	[gb|KT168384|:c44307-44182, c43434-43207, c42477-42319]	Ermi_g22
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	hypothetical chloroplast RF68	gb|KT168384|:93616-93975	Ermi_g67
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	hypothetical chloroplast RF68	gb|KT168384|:c121724-121365	Ermi_g81
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	hypothetical chloroplast RF34	[gb|KT168385|:c44060-43935, c43197-42970, c42244-42086]	Erte_g22
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	hypothetical chloroplast RF68	gb|KT168385|:93065-93424	Erte_g67
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	hypothetical chloroplast RF68	gb|KT168385|:c121173-120814	Erte_g81
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	hypothetical chloroplast RF34	[gb|KT168386|:c43875-43750, c42995-42768, c42055-41897]	Bocu_g22
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	hypothetical chloroplast RF68	gb|KT168386|:92516-92893	Bocu_g67
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	hypothetical chloroplast RF68	gb|KT168386|:c120659-120282	Bocu_g81
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	hypothetical chloroplast RF34	[gb|KT168387|:c44516-44391, c43657-43430, c42688-42530]	Hice_g22
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	hypothetical chloroplast RF68	gb|KT168387|:93529-93906	Hice_g67
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	hypothetical chloroplast RF68	gb|KT168387|:c121534-121157	Hice_g81
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	hypothetical chloroplast RF34	[gb|KT168388|:c44608-44483, c43740-43513, c42793-42635]	Sppe_g22
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	hypothetical chloroplast RF68	gb|KT168388|:94157-94504	Sppe_g67
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	hypothetical chloroplast RF68	gb|KT168388|:c122383-122036	Sppe_g81
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	hypothetical chloroplast RF34	[gb|KT168389|:c44945-44820, c44074-43847, c43121-42963]	Sphe_g22
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	hypothetical chloroplast RF68	gb|KT168389|:94063-94410	Sphe_g67
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	hypothetical chloroplast RF68	gb|KT168389|:c122248-121901	Sphe_g81
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	hypothetical chloroplast RF34	[gb|KT168390|:c45021-44896, c44154-43927, c43197-43039]	Zoma_g22
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	hypothetical chloroplast RF68	gb|KT168390|:94625-94942	Zoma_g67
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	hypothetical chloroplast RF68	gb|KT168390|:c122602-122255	Zoma_g81
+

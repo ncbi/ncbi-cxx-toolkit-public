@@ -6,5 +6,5 @@ RBS_WITHOUT_GENE: 1 RBS feature does not have overlapping gene
 Detailed Report
 
 RBS_WITHOUT_GENE: 1 RBS feature does not have overlapping gene
-C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\rbs_without_gene.sqn:regulatory	/regulatory_class=ribosome_binding_site	lcl|seq_1:1-20	
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\rbs_without_gene.sqn:regulatory	ribosome_binding_site	lcl|seq_1:1-20	
 
