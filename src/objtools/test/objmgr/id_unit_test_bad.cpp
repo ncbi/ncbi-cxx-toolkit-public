@@ -83,7 +83,7 @@ static CRandom s_Random;
 template<class I>
 void s_RandomShuffle(I iter1, I iter2)
 {
-    for ( size_t s = distance(iter1, iter2); s > 1; --s, ++iter1 ) {
+    for ( int s = int(distance(iter1, iter2)); s > 1; --s, ++iter1 ) {
         swap(*iter1, *next(iter1, s_Random.GetRandIndex(s)));
     }
 }
