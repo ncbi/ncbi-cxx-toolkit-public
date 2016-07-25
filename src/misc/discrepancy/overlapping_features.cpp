@@ -388,13 +388,14 @@ DISCREPANCY_CASE(MRNA_OVERLAPPING_PSEUDO_GENE, COverlappingFeatures, eOncaller, 
 {
     const vector<CConstRef<CSeq_feat> >& pseudo = context.FeatPseudo();
     const vector<CConstRef<CSeq_feat> >& mrnas = context.FeatMRNAs();
-    for (size_t i = 0; i < pseudo.size(); i++) {
-        const CSeq_loc& loc_i = pseudo[i]->GetLocation();
-        for (size_t j = 0; j < mrnas.size(); j++) {
-            const CSeq_loc& loc_j = mrnas[j]->GetLocation();
+    for (size_t i = 0; i < mrnas.size(); i++) {
+        const CSeq_loc& loc_i = mrnas[i]->GetLocation();
+        for (size_t j = 0; j < pseudo.size(); j++) {
+            const CSeq_loc& loc_j = pseudo[j]->GetLocation();
             sequence::ECompare ovlp = sequence::Compare(loc_i, loc_j, &context.GetScope(), sequence::fCompareOverlapping);
             if (ovlp != sequence::eNoOverlap) {
-                m_Objs["[n] Pseudogene[s] [has] overlapping mRNA[s]."].Add(*context.NewDiscObj(pseudo[i]));
+                m_Objs["[n] Pseudogene[s] [has] overlapping mRNA[s]."].Add(*context.NewDiscObj(mrnas[i]));  // should say "n mRNAs overlapping pseudogenes", but C Toolkit reports this way.
+                break;
             }
         }
     }
