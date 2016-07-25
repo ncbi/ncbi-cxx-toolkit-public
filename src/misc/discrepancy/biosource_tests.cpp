@@ -32,8 +32,10 @@
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/OrgName.hpp>
 #include <objects/seqfeat/OrgMod.hpp>
+#include <objects/general/Dbtag.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/seq_vector.hpp>
+#include <objects/macro/Source_qual.hpp>
 
 #include "discrepancy_core.hpp"
 
@@ -1298,6 +1300,304 @@ DISCREPANCY_SUMMARIZE(HAPLOTYPE_MISMATCH)
     }
 
     m_ReportItems = report.Export(*this)->GetSubitems();
+}
+
+
+// INCONSISTENT_BIOSOURCE
+typedef list<string> TInconsistecyDescriptionList;
+
+template<class T, typename R> class CCompareValues
+{
+    typedef bool (T::*TIsSetFn)() const;
+    typedef int (T::*TGetIntFn)() const;
+    typedef const R& (T::*TGetRFn)() const;
+
+public:
+    static bool IsEqualInt(const T& first, const T& second, TIsSetFn is_set_fn, TGetIntFn get_fn, int not_set)
+    {
+        int first_val = (first.*is_set_fn)() ? (first.*get_fn)() : not_set,
+            second_val = (second.*is_set_fn)() ? (second.*get_fn)() : not_set;
+
+        return first_val == second_val;
+    }
+
+    static bool IsEqualVal(const T& first, const T& second, TIsSetFn is_set_fn, TGetRFn get_fn, const R& empty_val)
+    {
+        const R& first_val = (first.*is_set_fn)() ? (first.*get_fn)() : empty_val,
+               & second_val = (second.*is_set_fn)() ? (second.*get_fn)() : empty_val;
+
+        return first_val == second_val;
+    }
+};
+
+static bool IsSameSubtype(const CBioSource::TSubtype& first, const CBioSource::TSubtype& second)
+{
+    if (first.size() != second.size()) {
+        return false;
+    }
+
+    for (CBioSource::TSubtype::const_iterator it_first = first.cbegin(), it_second = second.cbegin();
+         it_first != first.cend();
+         ++it_first, ++it_second) {
+
+        if (!CCompareValues<CSubSource, int>::IsEqualInt(**it_first, **it_second, &CSubSource::IsSetSubtype, &CSubSource::GetSubtype, 0)) {
+            return false;
+        }
+
+        if (!CCompareValues<CSubSource, string>::IsEqualVal(**it_first, **it_second, &CSubSource::IsSetName, &CSubSource::GetName, "")) {
+            return false;
+        }
+
+        if (!CCompareValues<CSubSource, string>::IsEqualVal(**it_first, **it_second, &CSubSource::IsSetAttrib, &CSubSource::GetAttrib, "")) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+static bool IsSameDb(const COrg_ref::TDb& first, const COrg_ref::TDb& second)
+{
+    if (first.size() != second.size()) {
+        return false;
+    }
+
+    for (COrg_ref::TDb::const_iterator it_first = first.cbegin(), it_second = second.cbegin();
+         it_first != first.cend();
+         ++it_first, ++it_second) {
+
+        if (!(*it_first)->Equals(**it_second)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+static void GetOrgnameDifferences(const COrgName& first, const COrgName& second, TInconsistecyDescriptionList& diffs)
+{
+    bool first_name_set = first.IsSetName(),
+         second_name_set = second.IsSetName();
+
+    if (first_name_set != second_name_set || (first_name_set && first.GetName().Which() != second.GetName().Which())) {
+        diffs.push_back("orgname choices differ");
+    }
+
+    if (!CCompareValues<COrgName, int>::IsEqualInt(first, second, &COrgName::IsSetGcode, &COrgName::GetGcode, -1)) {
+        diffs.push_back("genetic codes differ");
+    }
+
+    if (!CCompareValues<COrgName, int>::IsEqualInt(first, second, &COrgName::IsSetMgcode, &COrgName::GetMgcode, -1)) {
+        diffs.push_back("mitochondrial genetic codes differ");
+    }
+
+    if (!CCompareValues<COrgName, string>::IsEqualVal(first, second, &COrgName::IsSetAttrib, &COrgName::GetAttrib, "")) {
+        diffs.push_back("attributes differ");
+    }
+
+    if (!CCompareValues<COrgName, string>::IsEqualVal(first, second, &COrgName::IsSetLineage, &COrgName::GetLineage, "")) {
+        diffs.push_back("lineages differ");
+    }
+
+    if (!CCompareValues<COrgName, string>::IsEqualVal(first, second, &COrgName::IsSetDiv, &COrgName::GetDiv, "")) {
+        diffs.push_back("divisions differ");
+    }
+
+    bool first_mod_set = first.IsSetMod(),
+         second_mod_set = second.IsSetMod();
+
+    COrgName::TMod::const_iterator it_first,
+        it_second;
+
+    if (first_mod_set && second_mod_set) {
+        it_first = first.GetMod().cbegin();
+        it_second = second.GetMod().cbegin();
+
+        COrgName::TMod::const_iterator end_first = first.GetMod().cend(),
+            end_second = second.GetMod().cend();
+
+        for (; it_first != end_first && it_second != end_second; ++it_first, ++it_second) {
+
+            const string& qual = (*it_first)->IsSetSubtype() ? COrgMod::ENUM_METHOD_NAME(ESubtype)()->FindName((*it_first)->GetSubtype(), true) : "Unknown source qualifier";
+
+            if (!CCompareValues<COrgMod, int>::IsEqualInt(**it_first, **it_second, &COrgMod::IsSetSubtype, &COrgMod::GetSubtype, -1)) {
+                diffs.push_back("missing " + qual + " modifier");
+            }
+
+            if (!CCompareValues<COrgMod, string>::IsEqualVal(**it_first, **it_second, &COrgMod::IsSetAttrib, &COrgMod::GetAttrib, "")) {
+                diffs.push_back(qual + " modifier attrib values differ");
+            }
+
+            if (!CCompareValues<COrgMod, string>::IsEqualVal(**it_first, **it_second, &COrgMod::IsSetSubname, &COrgMod::GetSubname, "")) {
+                diffs.push_back("different " + qual + " values");
+            }
+        }
+
+        if (it_first != end_first) {
+            first_mod_set = false;
+        }
+        if (it_second != end_second) {
+            second_mod_set = false;
+        }
+    }
+
+    if (first_mod_set && !second_mod_set) {
+        const string& qual = (*it_first)->IsSetSubtype() ? ENUM_METHOD_NAME(ESource_qual)()->FindName((*it_first)->GetSubtype(), true) : "Unknown source qualifier";
+        diffs.push_back("missing " + qual + " modifier");
+    }
+    else if (!first_mod_set && second_mod_set) {
+        const string& qual = (*it_second)->IsSetSubtype() ? ENUM_METHOD_NAME(ESource_qual)()->FindName((*it_second)->GetSubtype(), true) : "Unknown source qualifier";
+        diffs.push_back("missing " + qual + " modifier");
+    }
+}
+
+static void GetOrgrefDifferences(const COrg_ref& first_org, const COrg_ref& second_org, TInconsistecyDescriptionList& diffs)
+{
+    if (!CCompareValues<COrg_ref, string>::IsEqualVal(first_org, second_org, &COrg_ref::IsSetTaxname, &COrg_ref::GetTaxname, "")) {
+        diffs.push_back("taxnames differ");
+    }
+
+    if (!CCompareValues<COrg_ref, string>::IsEqualVal(first_org, second_org, &COrg_ref::IsSetCommon, &COrg_ref::GetCommon, "")) {
+        diffs.push_back("common names differ");
+    }
+
+    if (!CCompareValues<COrg_ref, COrg_ref::TSyn>::IsEqualVal(first_org, second_org, &COrg_ref::IsSetSyn, &COrg_ref::GetSyn, COrg_ref::TSyn())) {
+        diffs.push_back("synonyms differ");
+    }
+
+    bool first_db_set = first_org.IsSetDb(),
+         second_db_set = second_org.IsSetDb();
+
+    if (first_db_set != second_db_set || (first_db_set && !IsSameDb(first_org.GetDb(), second_org.GetDb()))) {
+        diffs.push_back("dbxrefs differ");
+    }
+
+    bool first_orgname_set = first_org.IsSetOrgname(),
+         second_orgname_set = second_org.IsSetOrgname();
+
+    if (first_orgname_set != second_orgname_set) {
+        diffs.push_back("one Orgname is missing");
+    }
+    else if (first_orgname_set && second_orgname_set) {
+        GetOrgnameDifferences(first_org.GetOrgname(), second_org.GetOrgname(), diffs);
+    }
+}
+
+static void GetBiosourceDifferences(const CBioSource& first_biosrc, const CBioSource& second_biosrc, TInconsistecyDescriptionList& diffs)
+{
+    if (!CCompareValues<CBioSource, int>::IsEqualInt(first_biosrc, second_biosrc, &CBioSource::IsSetOrigin, &CBioSource::GetOrigin, CBioSource::eOrigin_unknown)) {
+        diffs.push_back("origins differ");
+    }
+
+    if (first_biosrc.IsSetIs_focus() != second_biosrc.IsSetIs_focus()) {
+        diffs.push_back("focus differs");
+    }
+
+    if (!CCompareValues<CBioSource, int>::IsEqualInt(first_biosrc, second_biosrc, &CBioSource::IsSetGenome, &CBioSource::GetGenome, CBioSource::eGenome_unknown)) {
+        diffs.push_back("locations differ");
+    }
+
+    static const CBioSource::TSubtype empty_subtype;
+
+    const CBioSource::TSubtype& first_subtype = first_biosrc.IsSetSubtype() ? first_biosrc.GetSubtype() : empty_subtype,
+                              & second_subtype = second_biosrc.IsSetSubtype() ? second_biosrc.GetSubtype() : empty_subtype;
+    if (!IsSameSubtype(first_subtype, second_subtype)) {
+        diffs.push_back("subsource qualifiers differ");
+    }
+
+    bool first_org_set = first_biosrc.IsSetOrg(),
+         second_org_set = second_biosrc.IsSetOrg();
+
+    if (first_org_set != second_org_set) {
+        diffs.push_back("one OrgRef is missing");
+    }
+    else if (first_org_set && second_org_set) {
+        GetOrgrefDifferences(first_biosrc.GetOrg(), second_biosrc.GetOrg(), diffs);
+    }
+}
+
+static const string kBioSource = "BioSource";
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(INCONSISTENT_BIOSOURCE, CBioSource, eDisc, "Inconsistent BioSource")
+//  ----------------------------------------------------------------------------
+{
+    if (!context.GetCurrentBioseq()->IsNa() || context.GetCurrentSeqdesc().Empty()) {
+        return;
+    }
+
+    CSeqdesc* seqdesc = const_cast<CSeqdesc*>(context.GetCurrentSeqdesc().GetPointer());
+    m_Objs[kBioSource].Add(*context.NewDiscObj(context.GetCurrentBioseq(), eKeepRef, false, seqdesc), true);
+}
+
+
+typedef pair<const CBioseq*, const CSeqdesc*> TBioseqSeqdesc;
+typedef list<pair<const CBioSource*, list<TBioseqSeqdesc>>> TItemsByBioSource;
+
+static void GetItemsByBiosource(TReportObjectList& objs, TItemsByBioSource& items)
+{
+    NON_CONST_ITERATE(TReportObjectList, obj, objs) {
+
+        CDiscrepancyObject* dobj = dynamic_cast<CDiscrepancyObject*>(obj->GetPointer());
+        if (dobj) {
+            const CBioseq* cur_bioseq = dobj->GetBioseq();
+            const CSeqdesc* cur_seqdesc = dynamic_cast<const CSeqdesc*>(dobj->GetMoreInfo().GetPointer());
+            const CBioSource& cur_biosrc = cur_seqdesc->GetSource();
+
+            bool found = false;
+            NON_CONST_ITERATE(TItemsByBioSource, item, items) {
+                if (item->first->Equals(cur_biosrc)) {
+                    found = true;
+                    item->second.push_back(make_pair(cur_bioseq, cur_seqdesc));
+                    break;
+                }
+            }
+
+            if (!found) {
+                items.push_back(make_pair(&cur_biosrc, list<TBioseqSeqdesc>()));
+                items.back().second.push_back(make_pair(cur_bioseq, cur_seqdesc));
+            }
+        }
+    }
+}
+
+static const string kInconsistentBiosources = "[n/2] inconsistent contig source[s]";
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(INCONSISTENT_BIOSOURCE)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+
+    TItemsByBioSource items;
+    GetItemsByBiosource(m_Objs[kBioSource].GetObjects(), items);
+
+    if (items.size() > 1) {
+
+        m_Objs.GetMap().erase(kBioSource);
+
+        TItemsByBioSource::iterator first = items.begin(),
+                                    second = first;
+        ++second;
+        TInconsistecyDescriptionList diffs;
+        GetBiosourceDifferences(*first->first, *second->first, diffs);
+        string diff_str = NStr::Join(diffs, ", ");
+
+        string subtype = kInconsistentBiosources;
+        if (!diff_str.empty()) {
+            subtype += " (" + diff_str + ")";
+        }
+
+        ITERATE(TItemsByBioSource, item, items) {
+            ITERATE(list<TBioseqSeqdesc>, bioseq_desc, item->second) {
+                m_Objs[subtype].Add(*context.NewDiscObj(CConstRef<CSeqdesc>(bioseq_desc->second)), false);
+                m_Objs[subtype].Add(*context.NewDiscObj(CConstRef<CBioseq>(bioseq_desc->first)), false);
+            }
+        }
+
+        m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+    }
 }
 
 
