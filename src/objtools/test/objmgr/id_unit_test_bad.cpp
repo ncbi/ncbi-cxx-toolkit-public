@@ -48,6 +48,7 @@
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_util.h>
 #include <algorithm>
+#include <numeric>
 
 #include <objects/general/general__.hpp>
 #include <objects/seqfeat/seqfeat__.hpp>
