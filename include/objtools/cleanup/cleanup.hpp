@@ -420,6 +420,9 @@ public:
 /// @return bool indicates whether any changes were made
     static bool RenormalizeNucProtSets(CSeq_entry_Handle seh);
 
+/// decodes various tags, including carriage-return-line-feed constructs
+    static bool DecodeXMLMarkChanged(std::string & str);
+
 private:
     // Prohibit copy constructor & assignment operator
     CCleanup(const CCleanup&);
