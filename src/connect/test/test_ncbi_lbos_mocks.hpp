@@ -64,7 +64,7 @@ unsigned short s_FakeAnnounceEx(const char*     service,
                                const char*      healthcheck_url,
                                const char*      meta,
                                char**           LBOS_answer,
-                               char**           http_status_message)  
+                               char**           http_status_message)
 {
     s_LBOS_hostport = healthcheck_url;
     return eLBOS_DNSResolve;
@@ -91,14 +91,17 @@ private:
 class CServIter 
 {
 public:
+    explicit CServIter() :m_Iter(NULL) {}
     explicit CServIter(SERV_ITER iter):m_Iter(iter) {}
     ~CServIter() {
-        SERV_Close(m_Iter);
+        if (m_Iter)
+            SERV_Close(m_Iter);
     }
     CServIter& operator=(const SERV_ITER iter) {
         if (m_Iter == iter)
             return *this;
-        SERV_Close(m_Iter);
+        if (m_Iter)
+            SERV_Close(m_Iter);
         m_Iter = iter;
         return *this;
     }

@@ -1097,6 +1097,35 @@ static string s_PortStr(unsigned int i = 0)
 }
 
 
+/* We know that the server was announced and just have to wait for it to appear
+ * in LBOS output */
+static void s_WaitTillAnnounced(
+ string               service,       /* service name (here: can be a mask!)  */
+ const SConnNetInfo*  net_info,
+ const char*          arg,
+ const char*          val)
+{
+    int retries = 0, max_retries = 10;
+    CServIter res;
+    int wait_msec = 500;
+    
+    do {
+        if (retries++)
+            SleepMilliSec(wait_msec);
+        WRITE_LOG("Running s_WaitTillAnnounced with "
+                  "\"service\": \"" << service << "\", "
+                   "\"arg\": " << (arg ? arg : "<NULL>") << "\", "
+                   "\"val\": " << (val ? val : "<NULL>") << "\", "
+                  "retry #" << retries+1);
+        res = SERV_OpenP(service.c_str(), fSERV_All, SERV_LOCALHOST, 0, 0.0,
+                         net_info, 0, 0, 0, arg, val);
+    } while (*res == NULL && retries < max_retries);
+    WRITE_LOG("s_WaitTillAnnounced with "
+              "\"service\": \"" << service << "\", "
+              << (*res ? "" : "NOT ") << "found announced servers after " 
+              << retries+1 << " retries");
+}
+
 static SERV_ITER s_SERVOpenP_Safe(
  const char*          service,       /* service name (here: can be a mask!)  */
  TSERV_Type           types,
@@ -2003,6 +2032,7 @@ void UnknownMetaMainFunc__SeeMetaInDiscovery()
     s_AnnounceCPP(service, version, ANNOUNCEMENT_HOST, port, health, meta);
 
     /* Check response from LBOS */
+    s_WaitTillAnnounced(service, *net_info, 0, 0);
     CCObjHolder<char>   lbos_output_orig(g_LBOS_UnitTesting_GetLBOSFuncs()->
                                          UrlReadAll(*net_info, 
                                          (string("http://") + lbos_addr +
@@ -2072,6 +2102,7 @@ void KnownAndUnknown__SeeMetaInDiscovery()
 
     /* Check unknown */
     /* Check response from LBOS */
+    s_WaitTillAnnounced(service, *net_info, 0, 0);
     CCObjHolder<char>   lbos_output_orig(g_LBOS_UnitTesting_GetLBOSFuncs()->
         UrlReadAll(*net_info,
         (string("http://") + lbos_addr +
@@ -2172,6 +2203,7 @@ void MetaNull__NoMetaInDiscovery()
                 &lbos_status_message.Get());
 
     /* Check HTTP output */
+    s_WaitTillAnnounced(service, *net_info, 0, 0);
     CCObjHolder<char> lbos_output_orig(g_LBOS_UnitTesting_GetLBOSFuncs()->
                                        UrlReadAll(*net_info,
                                        (string("http://") + lbos_addr +
@@ -2205,6 +2237,7 @@ void NoMetaProvided__NoMetaInDiscovery()
                   port, health.c_str());
 
     /* Check HTTP output */
+    s_WaitTillAnnounced(service, *net_info, 0, 0);
     CCObjHolder<char> lbos_output_orig(g_LBOS_UnitTesting_GetLBOSFuncs()->
                                        UrlReadAll(*net_info,
                                        (string("http://") + lbos_addr +
@@ -2493,6 +2526,7 @@ void SetTypeEmpty__TypeStandaloneInDiscovery()
     LBOS::CMetaData meta;
     size_t find_pos;
     string lbos_output;
+    int retries = 0;
 
     /* Announce with type */
     meta.SetType(LBOS::CMetaData::eHTTP);
@@ -2500,6 +2534,7 @@ void SetTypeEmpty__TypeStandaloneInDiscovery()
                   port, health.c_str(), meta);
 
     /* Check HTTP output */
+    s_WaitTillAnnounced(service, *net_info, 0, 0);
     CCObjHolder<char> lbos_output_orig1(g_LBOS_UnitTesting_GetLBOSFuncs()->
                                         UrlReadAll(*net_info,
                                         (string("http://") + lbos_addr +
@@ -2516,15 +2551,21 @@ void SetTypeEmpty__TypeStandaloneInDiscovery()
                   port, health.c_str(), meta);
 
     /* Check HTTP output */
-    CCObjHolder<char> lbos_output_orig2(g_LBOS_UnitTesting_GetLBOSFuncs()->
-                                        UrlReadAll(*net_info,
-                                        (string("http://") + lbos_addr +
-                                        "/lbos/v3/services"+service).c_str(),
-                                        NULL, NULL));
-    lbos_output = *lbos_output_orig2;
-    find_pos = lbos_output.find(expected);
+    /* Since the server is already announced, we cannot use 
+       s_WaitTillAnnounced(), so we just do retries */
+    find_pos = string::npos;
+    while (find_pos == string::npos && retries++ < 5) {
+        CCObjHolder<char> lbos_output_orig2(g_LBOS_UnitTesting_GetLBOSFuncs()->
+                                            UrlReadAll(*net_info,
+                                            (string("http://") + lbos_addr +
+                                            "/lbos/v3/services"+service).c_str(),
+                                            NULL, NULL));
+        lbos_output = *lbos_output_orig2;
+        find_pos = lbos_output.find(expected);
+        if (find_pos == string::npos)
+            SleepMilliSec(100);
+    }
     NCBITEST_CHECK_EQUAL_MT_SAFE(find_pos, string::npos);
-
     s_DeannounceCPP(service, version, ANNOUNCEMENT_HOST, port);
 }
 
@@ -2543,6 +2584,7 @@ void SetExtraEmpty__ExtraChangesToEmpty()
     LBOS::CMetaData meta;
     size_t find_pos;
     string lbos_output;
+    int retries = 0;
 
     /* Announce with type */
     meta.SetExtra("test_extra");
@@ -2550,6 +2592,7 @@ void SetExtraEmpty__ExtraChangesToEmpty()
                   port, health.c_str(), meta);
 
     /* Check HTTP output */
+    s_WaitTillAnnounced(service, *net_info, 0, 0);
     CCObjHolder<char> lbos_output_orig1(g_LBOS_UnitTesting_GetLBOSFuncs()->
                                         UrlReadAll(*net_info,
                                         (string("http://") + lbos_addr +
@@ -2566,13 +2609,20 @@ void SetExtraEmpty__ExtraChangesToEmpty()
                   port, health.c_str(), meta);
 
     /* Check HTTP output */
-    CCObjHolder<char> lbos_output_orig2(g_LBOS_UnitTesting_GetLBOSFuncs()->
-                                        UrlReadAll(*net_info,
-                                        (string("http://") + lbos_addr +
-                                        "/lbos/v3/services"+service).c_str(),
-                                        NULL, NULL));
-    lbos_output = *lbos_output_orig2;
-    find_pos = lbos_output.find(expected);
+    /* Since the server is already announced, we cannot use 
+       s_WaitTillAnnounced(), so we just do retries */
+    find_pos = string::npos;
+    while (find_pos == string::npos && retries++ < 5) {
+        CCObjHolder<char> lbos_output_orig2(g_LBOS_UnitTesting_GetLBOSFuncs()->
+                                            UrlReadAll(*net_info,
+                                            (string("http://") + lbos_addr +
+                                            "/lbos/v3/services"+service).c_str(),
+                                            NULL, NULL));
+        lbos_output = *lbos_output_orig2;
+        find_pos = lbos_output.find(expected);
+        if (find_pos == string::npos)
+            SleepMilliSec(100);
+    }
     NCBITEST_CHECK_EQUAL_MT_SAFE(find_pos, string::npos);
 
     s_DeannounceCPP(service, version, ANNOUNCEMENT_HOST, port);
@@ -2825,6 +2875,7 @@ void SetWithWhitespace__SeeInDiscovery()
     meta.Set("type", "a a");
     s_AnnounceCPP(service, version, ANNOUNCEMENT_HOST, port, health, meta);
     /* Check HTTP output */
+    s_WaitTillAnnounced(service, *net_info, 0, 0);
     CCObjHolder<char> lbos_output_orig0(g_LBOS_UnitTesting_GetLBOSFuncs()->
                                         UrlReadAll(*net_info,
                                         (string("http://") + lbos_addr +
@@ -2841,6 +2892,7 @@ void SetWithWhitespace__SeeInDiscovery()
     meta.Set("type", "a\ta");
     s_AnnounceCPP(service, version, ANNOUNCEMENT_HOST, port, health, meta);
     /* Check HTTP output */
+    s_WaitTillAnnounced(service, *net_info, 0, 0);
     CCObjHolder<char> lbos_output_orig1(g_LBOS_UnitTesting_GetLBOSFuncs()->
                                         UrlReadAll(*net_info,
                                         (string("http://") + lbos_addr +
@@ -2857,6 +2909,7 @@ void SetWithWhitespace__SeeInDiscovery()
     meta.Set("type", "a\na");
     s_AnnounceCPP(service, version, ANNOUNCEMENT_HOST, port, health, meta);
     /* Check HTTP output */
+    s_WaitTillAnnounced(service, *net_info, 0, 0);
     CCObjHolder<char> lbos_output_orig2(g_LBOS_UnitTesting_GetLBOSFuncs()->
                                         UrlReadAll(*net_info,
                                         (string("http://") + lbos_addr +
@@ -2873,6 +2926,7 @@ void SetWithWhitespace__SeeInDiscovery()
     meta.Set("type", "a\va");
     s_AnnounceCPP(service, version, ANNOUNCEMENT_HOST, port, health, meta);
     /* Check HTTP output */
+    s_WaitTillAnnounced(service, *net_info, 0, 0);
     CCObjHolder<char> lbos_output_orig3(g_LBOS_UnitTesting_GetLBOSFuncs()->
                                         UrlReadAll(*net_info,
                                         (string("http://") + lbos_addr +
@@ -2889,6 +2943,7 @@ void SetWithWhitespace__SeeInDiscovery()
     meta.Set("type", "a\fa");
     s_AnnounceCPP(service, version, ANNOUNCEMENT_HOST, port, health, meta);
     /* Check HTTP output */
+    s_WaitTillAnnounced(service, *net_info, 0, 0);
     CCObjHolder<char> lbos_output_orig4(g_LBOS_UnitTesting_GetLBOSFuncs()->
                                         UrlReadAll(*net_info,
                                         (string("http://") + lbos_addr +
@@ -2905,6 +2960,7 @@ void SetWithWhitespace__SeeInDiscovery()
     meta.Set("type", "a\ra");
     s_AnnounceCPP(service, version, ANNOUNCEMENT_HOST, port, health, meta);
     /* Check HTTP output */
+    s_WaitTillAnnounced(service, *net_info, 0, 0);
     CCObjHolder<char> lbos_output_orig5(g_LBOS_UnitTesting_GetLBOSFuncs()->
                                         UrlReadAll(*net_info,
                                         (string("http://") + lbos_addr +
@@ -3011,11 +3067,12 @@ void AnnounceFromRegistry__SeeMetaInDiscovery()
 
     /* Check unknown */
     /* Check response from LBOS */
+    s_WaitTillAnnounced(service, *net_info, 0, 0);
     CCObjHolder<char>   lbos_output_orig(g_LBOS_UnitTesting_GetLBOSFuncs()->
-        UrlReadAll(*net_info,
-        (string("http://") + lbos_addr +
-        "/lbos/v3/services"+service).c_str(),
-        NULL, NULL));
+                                         UrlReadAll(*net_info,
+                                         (string("http://") + lbos_addr +
+                                         "/lbos/v3/services"+service).c_str(),
+                                         NULL, NULL));
     string lbos_output = *lbos_output_orig;
     /* Search for mymeta1 */
     string expected1 = "\"meta with spaces\":\"word1 word2\"",
