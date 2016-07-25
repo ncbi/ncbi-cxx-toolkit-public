@@ -3220,9 +3220,18 @@ void CScope_Impl::GetAccVers(TIds& ret,
             remaining = sx_CountFalse(loaded);
         }
     }
-    if ( remaining && (flags & CScope::fThrowOnMissing) ) {
+    if ( remaining && (flags & CScope::fThrowOnMissingSequence) ) {
         NCBI_THROW(CObjMgrException, eFindFailed,
                    "CScope::GetAccVers(): some sequences not found");
+    }
+    if ( (flags & CScope::fThrowOnMissingData) ) {
+        // check if each requested id has accession
+        for ( size_t i = 0; i < count; ++i ) {
+            if ( loaded[i] && !ret[i] ) {
+                NCBI_THROW(CObjMgrException, eMissingData,
+                           "CScope::GetAccVers(): some sequences have no acc");
+            }
+        }
     }
 
     sorted_seq_ids.RestoreOrder(ret);
@@ -3282,9 +3291,18 @@ void CScope_Impl::GetGis(TGIs& ret,
             remaining = sx_CountFalse(loaded);
         }
     }
-    if ( remaining && (flags & CScope::fThrowOnMissing) ) {
+    if ( remaining && (flags & CScope::fThrowOnMissingSequence) ) {
         NCBI_THROW(CObjMgrException, eFindFailed,
                    "CScope::GetGis(): some sequences not found");
+    }
+    if ( (flags & CScope::fThrowOnMissingData) ) {
+        // check if each requested id has accession
+        for ( size_t i = 0; i < count; ++i ) {
+            if ( loaded[i] && !ret[i] ) {
+                NCBI_THROW(CObjMgrException, eMissingData,
+                           "CScope::GetGis(): some sequences have no GI");
+            }
+        }
     }
 
     sorted_seq_ids.RestoreOrder(ret);
