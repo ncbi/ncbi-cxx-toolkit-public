@@ -540,7 +540,7 @@ string CBioSource::GetBioprojectLocation(void) const
                 return "eMacronuclear";
                 break;
             case CBioSource::eGenome_extrachrom:
-                return "eOther";
+                return "eNuclearProkaryote";
                 break;
             case CBioSource::eGenome_cyanelle:
                 return "eCyanelle";
