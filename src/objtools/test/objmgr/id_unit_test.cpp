@@ -112,11 +112,14 @@ bool s_HaveID2(void)
 {
     const char* env = getenv("GENBANK_LOADER_METHOD_BASE");
     if ( !env ) {
+        env = getenv("GENBANK_LOADER_METHOD");
+    }
+    if ( !env ) {
         // assume default ID2
         return true;
     }
-    if ( NStr::EqualNocase(env, "id1") ||
-         NStr::EqualNocase(env, "pubseqos") ) {
+    if ( NStr::EndsWith(env, "id1", NStr::eNocase) ||
+         NStr::EndsWith(env, "pubseqos", NStr::eNocase) ) {
         // non-ID2 based readers
         return false;
     }
@@ -128,10 +131,13 @@ bool s_HaveID1(void)
 {
     const char* env = getenv("GENBANK_LOADER_METHOD_BASE");
     if ( !env ) {
+        env = getenv("GENBANK_LOADER_METHOD");
+    }
+    if ( !env ) {
         // assume default ID2
         return false;
     }
-    return NStr::EqualNocase(env, "id1");
+    return NStr::EndsWith(env, "id1", NStr::eNocase);
 }
 
 
@@ -346,39 +352,6 @@ BOOST_AUTO_TEST_CASE(CheckAll)
     }
 }
 
-
-BOOST_AUTO_TEST_CASE(CheckNoAcc)
-{
-    CSeq_id_Handle id = CSeq_id_Handle::GetGiHandle(156205);
-    {
-        CRef<CScope> scope = s_InitScope();
-        BOOST_CHECK(scope->GetBioseqHandle(id));
-        BOOST_CHECK(!scope->GetAccVer(id));
-    }
-    {
-        CRef<CScope> scope = s_InitScope();
-        BOOST_CHECK(!scope->GetAccVer(id));
-        BOOST_CHECK(scope->GetBioseqHandle(id));
-    }
-}
-
-BOOST_AUTO_TEST_CASE(CheckNoGi)
-{
-    if ( s_HaveID1() ) {
-        return;
-    }
-    CSeq_id_Handle id = CSeq_id_Handle::GetHandle("gnl|Annot:SNP|568802115");
-    {
-        CRef<CScope> scope = s_InitScope();
-        BOOST_CHECK(scope->GetBioseqHandle(id));
-        BOOST_CHECK(!scope->GetGi(id));
-    }
-    {
-        CRef<CScope> scope = s_InitScope();
-        BOOST_CHECK(!scope->GetGi(id));
-        BOOST_CHECK(scope->GetBioseqHandle(id));
-    }
-}
 
 BOOST_AUTO_TEST_CASE(CheckExtSNP)
 {
