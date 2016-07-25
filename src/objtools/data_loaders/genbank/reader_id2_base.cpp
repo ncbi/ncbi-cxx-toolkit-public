@@ -302,7 +302,7 @@ bool CId2ReaderBase::LoadSeq_idGi(CReaderRequestResult& result,
     CID2_Request::C_Request::TGet_seq_id& get_id =
         req.SetRequest().SetGet_seq_id();
     get_id.SetSeq_id().SetSeq_id().Assign(*seq_id.GetSeqId());
-    get_id.SetSeq_id_type(CID2_Request_Get_Seq_id::eSeq_id_type_gi);
+    get_id.SetSeq_id_type(CID2_Request_Get_Seq_id::eSeq_id_type_all);
     x_ProcessRequest(result, req, 0);
 
     if ( !lock.IsLoadedGi() ) {
@@ -324,7 +324,7 @@ bool CId2ReaderBase::LoadSeq_idAccVer(CReaderRequestResult& result,
     CID2_Request::C_Request::TGet_seq_id& get_id =
         req.SetRequest().SetGet_seq_id();
     get_id.SetSeq_id().SetSeq_id().Assign(*seq_id.GetSeqId());
-    get_id.SetSeq_id_type(CID2_Request_Get_Seq_id::eSeq_id_type_text);
+    get_id.SetSeq_id_type(CID2_Request_Get_Seq_id::eSeq_id_type_all);
     x_ProcessRequest(result, req, 0);
 
     if ( lock.IsLoadedAccVer() ) {
@@ -502,7 +502,7 @@ bool CId2ReaderBase::LoadAccVers(CReaderRequestResult& result,
         CID2_Request::C_Request::TGet_seq_id& get_id =
             req->SetRequest().SetGet_seq_id();
         get_id.SetSeq_id().SetSeq_id().Assign(*ids[i].GetSeqId());
-        get_id.SetSeq_id_type(CID2_Request_Get_Seq_id::eSeq_id_type_text);
+        get_id.SetSeq_id_type(CID2_Request_Get_Seq_id::eSeq_id_type_all);
         if ( packet.Set().empty() ) {
             packet_start = i;
         }
@@ -581,7 +581,7 @@ bool CId2ReaderBase::LoadGis(CReaderRequestResult& result,
         CID2_Request::C_Request::TGet_seq_id& get_id =
             req->SetRequest().SetGet_seq_id();
         get_id.SetSeq_id().SetSeq_id().Assign(*ids[i].GetSeqId());
-        get_id.SetSeq_id_type(CID2_Request_Get_Seq_id::eSeq_id_type_gi);
+        get_id.SetSeq_id_type(CID2_Request_Get_Seq_id::eSeq_id_type_all);
         if ( packet.Set().empty() ) {
             packet_start = i;
         }
@@ -2520,10 +2520,10 @@ void CId2ReaderBase::x_ProcessGetSeqIdSeqId(
         ITERATE ( CID2_Reply_Get_Seq_id::TSeq_id, it, reply.GetSeq_id() ) {
             if ( (**it).IsGi() ) {
                 ret.gi = (**it).GetGi();
-                ret.sequence_found = true;
                 break;
             }
         }
+        ret.sequence_found = !got_no_ids;
         SetAndSaveSeq_idGi(result, seq_id, ret);
     }
     if ( req.GetSeq_id_type() & req.eSeq_id_type_text ) {
@@ -2531,10 +2531,10 @@ void CId2ReaderBase::x_ProcessGetSeqIdSeqId(
         ITERATE ( CID2_Reply_Get_Seq_id::TSeq_id, it, reply.GetSeq_id() ) {
             if ( (**it).GetTextseq_Id() ) {
                 ret.acc_ver = CSeq_id_Handle::GetHandle(**it);
-                ret.sequence_found = true;
                 break;
             }
         }
+        ret.sequence_found = !got_no_ids;
         SetAndSaveSeq_idAccVer(result, seq_id, ret);
     }
     if ( req.GetSeq_id_type() & req.eSeq_id_type_label ) {
