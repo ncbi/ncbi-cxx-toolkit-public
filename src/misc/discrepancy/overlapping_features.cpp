@@ -60,51 +60,45 @@ DISCREPANCY_SUMMARIZE(CDS_TRNA_OVERLAP)
     if (m_Objs["tRNA"].empty() || m_Objs["CDS"].empty()) {
         return;
     }
+
     static const char* kMessage = "[n] Bioseq[s] [has] coding regions that overlap tRNAs";
     TReportObjectList& trna = m_Objs["tRNA"].GetObjects();
     TReportObjectList& cds = m_Objs["CDS"].GetObjects();
-    CSeq_loc trna_L;
-    CSeq_loc cds_L;
+
     CReportNode trna_N;
-    CReportNode cds_N;
     
-    ITERATE (TReportObjectList, it, trna) {
-        trna_L.Add(((CSeq_feat*)(*it)->GetObject().GetPointer())->GetLocation());
-    }
-    ITERATE (TReportObjectList, it, cds) {
-        cds_L.Add(((CSeq_feat*)(*it)->GetObject().GetPointer())->GetLocation());
-    }
-    NON_CONST_ITERATE (TReportObjectList, it, trna) {
-        CRef<CSeq_loc> loc = cds_L.Intersect(((CSeq_feat*)(*it)->GetObject().GetPointer())->GetLocation(), 0, 0);
-        if (loc.NotEmpty() && !loc->IsEmpty() && !loc->IsNull()) {
-            trna_N.Add(**it);
+    bool need_to_add_bioseq = true;
+
+    NON_CONST_ITERATE(TReportObjectList, cds_it, cds) {
+
+        const CSeq_loc& cds_loc = dynamic_cast<const CSeq_feat*>((*cds_it)->GetObject().GetPointer())->GetLocation();
+
+        CReportNode trna_N;
+        NON_CONST_ITERATE(TReportObjectList, it, trna) {
+            CRef<CSeq_loc> loc = cds_loc.Intersect(dynamic_cast<const CSeq_feat*>((*it)->GetObject().GetPointer())->GetLocation(), 0, 0);
+            if (loc.NotEmpty() && !loc->IsEmpty() && !loc->IsNull()) {
+                trna_N.Add(**it);
+            }
+        }
+
+        if (!trna_N.empty()) {
+
+            CReportNode& out = need_to_add_bioseq ? m_Objs[kEmptyStr][kMessage].Incr() :
+                                                    m_Objs[kEmptyStr][kMessage];
+
+            need_to_add_bioseq = false;
+
+            static const string cds_S = "[n] coding region[s] [has] overlapping tRNAs";
+
+            out[cds_S].Ext().Add(**cds_it).Incr();
+            out[cds_S].Ext().Add(trna_N.GetObjects());
         }
     }
-    NON_CONST_ITERATE (TReportObjectList, it, cds) {
-        CRef<CSeq_loc> loc = trna_L.Intersect(((CSeq_feat*)(*it)->GetObject().GetPointer())->GetLocation(), 0, 0);
-        if (loc.NotEmpty() && !loc->IsEmpty() && !loc->IsNull()) {
-            cds_N.Add(**it);
-        }
-    }
+
+    m_ReportItems = m_Objs[kEmptyStr].Export(*this)->GetSubitems();
+
     m_Objs["tRNA"].clear();
     m_Objs["CDS"].clear();
-    if (!cds_N.empty() || !trna_N.empty()) {
-        CReportNode& out = m_Objs[kEmptyStr]["[n] Bioseq[s] [has] coding regions that overlap tRNAs"].Incr();
-        string cds_S = "[n] coding region[s] [has] overlapping tRNAs";
-        string trna_S = "[n] tRNA[s] [has] overlapping CDS";
-        size_t n = out.GetMap().size();
-        for (size_t i = 0; i < n; i++) {
-            trna_S += " ";
-            cds_S += " ";
-        }
-        if (!cds_N.empty()) {
-            out[cds_S].Ext().Add(cds_N.GetObjects());
-        }
-        if (!trna_N.empty()) {
-            out[trna_S].Ext().Add(trna_N.GetObjects());
-        }
-        m_ReportItems = m_Objs[kEmptyStr].Export(*this)->GetSubitems();
-    }
 }
 
 
@@ -388,14 +382,13 @@ DISCREPANCY_CASE(MRNA_OVERLAPPING_PSEUDO_GENE, COverlappingFeatures, eOncaller, 
 {
     const vector<CConstRef<CSeq_feat> >& pseudo = context.FeatPseudo();
     const vector<CConstRef<CSeq_feat> >& mrnas = context.FeatMRNAs();
-    for (size_t i = 0; i < mrnas.size(); i++) {
-        const CSeq_loc& loc_i = mrnas[i]->GetLocation();
-        for (size_t j = 0; j < pseudo.size(); j++) {
-            const CSeq_loc& loc_j = pseudo[j]->GetLocation();
+    for (size_t i = 0; i < pseudo.size(); i++) {
+        const CSeq_loc& loc_i = pseudo[i]->GetLocation();
+        for (size_t j = 0; j < mrnas.size(); j++) {
+            const CSeq_loc& loc_j = mrnas[j]->GetLocation();
             sequence::ECompare ovlp = sequence::Compare(loc_i, loc_j, &context.GetScope(), sequence::fCompareOverlapping);
             if (ovlp != sequence::eNoOverlap) {
-                m_Objs["[n] Pseudogene[s] [has] overlapping mRNA[s]."].Add(*context.NewDiscObj(mrnas[i]));  // should say "n mRNAs overlapping pseudogenes", but C Toolkit reports this way.
-                break;
+                m_Objs["[n] Pseudogene[s] [has] overlapping mRNA[s]."].Add(*context.NewDiscObj(pseudo[i]));
             }
         }
     }
