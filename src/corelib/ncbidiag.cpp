@@ -1560,9 +1560,9 @@ string CDiagContext::x_GetNextHitID(bool is_default) const
 }
 
 
-bool CDiagContext::sx_IsDefaultHitID(const string& phid)
+string CDiagContext::GetDefaultHitID(void) const
 {
-    return (phid.size() >= 32  &&  phid.substr(22, 6) == "FFFFFF");
+    return x_GetDefaultHitID(eHitID_Create).GetHitId();
 }
 
 
@@ -2525,11 +2525,11 @@ void CDiagContext::x_LogHitID(void) const
 
     // Log the default hit id only when at application level. Otherwise
     // pospone it untill request-stop/app-stop.
-    if (m_LoggedHitId || !m_DefaultHitId.get() || m_DefaultHitId->empty() ||
+    if (m_LoggedHitId || !m_DefaultHitId.get() || m_DefaultHitId->Empty() ||
         !x_DiagAtApplicationLevel()) {
         return;
     }
-    Extra().Print(g_GetNcbiString(eNcbiStrings_PHID), *m_DefaultHitId);
+    Extra().Print(g_GetNcbiString(eNcbiStrings_PHID), m_DefaultHitId->GetHitId());
     m_LoggedHitId = true;
 }
 
@@ -2544,24 +2544,24 @@ void CDiagContext::x_LogHitID_WithLock(void) const
 bool CDiagContext::x_IsSetDefaultHitID(void) const
 {
     CFastMutexGuard guard(s_DefaultHidMutex);
-    return m_DefaultHitId.get() && !m_DefaultHitId->empty();
+    return m_DefaultHitId.get() && !m_DefaultHitId->Empty();
 }
 
 
-string CDiagContext::x_GetDefaultHitID(EDefaultHitIDFlags flag) const
+CSharedHitId CDiagContext::x_GetDefaultHitID(EDefaultHitIDFlags flag) const
 {
     CFastMutexGuard guard(s_DefaultHidMutex);
-    if (m_DefaultHitId.get()  &&  !m_DefaultHitId->empty()) {
+    if (m_DefaultHitId.get()  &&  !m_DefaultHitId->Empty()) {
         return *m_DefaultHitId;
     }
 
     if ( !m_DefaultHitId.get() ) {
-        m_DefaultHitId.reset(new string);
+        m_DefaultHitId.reset(new CSharedHitId());
     }
-    if ( m_DefaultHitId->empty() ) {
-        *m_DefaultHitId = CRequestContext::SelectLastHitID(
-            TParamHttpHitId::GetDefault());
-        if ( m_DefaultHitId->empty() ) {
+    if ( m_DefaultHitId->Empty() ) {
+        m_DefaultHitId->SetHitId(CRequestContext::SelectLastHitID(
+            TParamHttpHitId::GetDefault()));
+        if ( m_DefaultHitId->Empty() ) {
             string phid = CRequestContext::SelectLastHitID(
                 TParamHitId::GetDefault());
             if ( !phid.empty() ) {
@@ -2598,12 +2598,14 @@ string CDiagContext::x_GetDefaultHitID(EDefaultHitIDFlags flag) const
                     }
                 }
             }
-            *m_DefaultHitId = phid;
+            m_DefaultHitId->SetHitId(phid);
         }
-        if (m_DefaultHitId->empty()  &&  (flag == eHitID_Create)) {
-            *m_DefaultHitId = x_GetNextHitID(true);
+        if (m_DefaultHitId->Empty()  &&  (flag == eHitID_Create)) {
+            m_DefaultHitId->SetHitId(x_GetNextHitID(true));
         }
     }
+    // Default hit id always uses shared sub-hit counter.
+    m_DefaultHitId->SetShared();
     _ASSERT(!m_LoggedHitId);
     // Log hit id if at application level.
     x_LogHitID();
@@ -2615,9 +2617,11 @@ void CDiagContext::SetDefaultHitID(const string& hit_id)
 {
     CFastMutexGuard guard(s_DefaultHidMutex);
     if ( !m_DefaultHitId.get() ) {
-        m_DefaultHitId.reset(new string);
+        m_DefaultHitId.reset(new CSharedHitId());
     }
-    *m_DefaultHitId = hit_id;
+    m_DefaultHitId->SetHitId(hit_id);
+    // Default hit id always uses shared sub-hit counter.
+    m_DefaultHitId->SetShared();
     // Log new hit id when at application level.
     m_LoggedHitId = false;
     x_LogHitID();

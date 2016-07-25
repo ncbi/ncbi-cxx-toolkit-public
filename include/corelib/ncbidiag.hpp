@@ -1783,6 +1783,7 @@ enum EPostNumberIncrement {
 
 struct SRequestCtxWrapper;
 class CRequestContext;
+class CSharedHitId;
 class CRequestRateControl;
 class CEncodedString;
 
@@ -2227,7 +2228,7 @@ public:
     /// or Log.Http_Hit_Id/Log.Hit_Id values in the INI file. The Http-value
     /// has higher priority. If none of the values is set, the default hit id
     /// is generated automatically.
-    string GetDefaultHitID(void) const { return x_GetDefaultHitID(eHitID_Create); }
+    string GetDefaultHitID(void) const;
 
     /// Set new global default hit id. This value is used only if the per-request
     /// hit id is not set.
@@ -2344,9 +2345,8 @@ private:
     // Check if current state is 'PB/P/PE'.
     bool x_DiagAtApplicationLevel(void) const;
     bool x_IsSetDefaultHitID(void) const;
-    string x_GetDefaultHitID(EDefaultHitIDFlags flag) const;
+    CSharedHitId x_GetDefaultHitID(EDefaultHitIDFlags flag) const;
     string x_GetNextHitID(bool is_default) const;
-    static bool sx_IsDefaultHitID(const string& phid);
     void x_LogHitID(void) const;
     void x_LogHitID_WithLock(void) const; // Same as above but with mutex lock.
 
@@ -2357,21 +2357,21 @@ private:
     static TPID                         sm_PID;
 
     mutable TUID                        m_UID;
-    mutable unique_ptr<CEncodedString>    m_Host;
+    mutable unique_ptr<CEncodedString>  m_Host;
     string                              m_HostIP;
-    unique_ptr<CEncodedString>            m_Username;
-    unique_ptr<CEncodedString>            m_AppName;
+    unique_ptr<CEncodedString>          m_Username;
+    unique_ptr<CEncodedString>          m_AppName;
     mutable bool                        m_AppNameSet;
-    mutable unique_ptr<CEncodedString>    m_DefaultSessionId;
-    mutable unique_ptr<string>            m_DefaultHitId;
+    mutable unique_ptr<CEncodedString>  m_DefaultSessionId;
+    mutable unique_ptr<CSharedHitId>    m_DefaultHitId;
     mutable bool                        m_LoggedHitId;
     int                                 m_ExitCode;
     bool                                m_ExitCodeSet;
     int                                 m_ExitSig;
     EDiagAppState                       m_AppState;
     TProperties                         m_Properties;
-    unique_ptr<CStopWatch>                m_StopWatch;
-    unique_ptr<TMessages>                 m_Messages;
+    unique_ptr<CStopWatch>              m_StopWatch;
+    unique_ptr<TMessages>               m_Messages;
     size_t                              m_MaxMessages;
     static CDiagContext*                sm_Instance;
 
@@ -2379,9 +2379,9 @@ private:
     static bool                         sm_ApplogSeverityLocked;
 
     // Rate control
-    unique_ptr<CRequestRateControl>       m_AppLogRC;
-    unique_ptr<CRequestRateControl>       m_ErrLogRC;
-    unique_ptr<CRequestRateControl>       m_TraceLogRC;
+    unique_ptr<CRequestRateControl>     m_AppLogRC;
+    unique_ptr<CRequestRateControl>     m_ErrLogRC;
+    unique_ptr<CRequestRateControl>     m_TraceLogRC;
     bool                                m_AppLogSuspended;
     bool                                m_ErrLogSuspended;
     bool                                m_TraceLogSuspended;

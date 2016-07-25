@@ -58,6 +58,63 @@ BEGIN_NCBI_SCOPE
 // Forward declarations
 class CRequestContext_PassThrough;
 
+
+/// Helper class to hold hit id and sub-hit counter which can be shared
+/// between multiple request contexts.
+class NCBI_XNCBI_EXPORT CSharedHitId
+{
+public:
+    explicit CSharedHitId(const string& hit) : m_HitId(hit), m_SubHitId(0) {}
+    CSharedHitId(void) : m_SubHitId(0) {}
+    ~CSharedHitId(void) {}
+
+    bool Empty(void) const { return m_HitId.empty(); }
+
+    /// Mark this hit id as a shared one and start using shared counter.
+    void SetShared(void) const
+    {
+        if ( IsShared() ) return; // Already shared.
+        m_SharedSubHitId.Reset(new TSharedCounter());
+        m_SharedSubHitId->GetData().Set(m_SubHitId);
+    }
+
+    /// Check if shared counter is used.
+    bool IsShared(void) const { return m_SharedSubHitId; }
+
+    /// Get hit id value.
+    const string& GetHitId(void) const { return m_HitId; }
+
+    /// Set new hit id value. This resets sub-hit counter and makes it non-shared.
+    void SetHitId(const string& hit_id)
+    {
+        m_SharedSubHitId.Reset();
+        m_SubHitId = 0;
+        m_HitId = hit_id;
+    }
+
+    typedef unsigned int TSubHitId;
+
+    /// Get current sub-hit id value.
+    TSubHitId GetCurrentSubHitId(void) const
+    {
+        return IsShared() ? (TSubHitId)m_SharedSubHitId->GetData().Get() : m_SubHitId;
+    }
+
+    /// Get next sub-hit id value.
+    TSubHitId GetNextSubHitId(void)
+    {
+        return IsShared() ? (TSubHitId)m_SharedSubHitId->GetData().Add(1) : ++m_SubHitId;
+    }
+
+private:
+    typedef CObjectFor<CAtomicCounter> TSharedCounter;
+
+    string m_HitId;
+    TSubHitId m_SubHitId;
+    mutable CRef<TSharedCounter> m_SharedSubHitId;
+};
+
+
 class NCBI_XNCBI_EXPORT CRequestContext : public CObject
 {
 public:
@@ -298,6 +355,7 @@ private:
     // If 'ignore_app_state' is set, log any available hit id anyway.
     void x_LogHitID(bool ignore_app_state = false) const;
 
+    void x_SetHitID(const CSharedHitId& hit_id);
     string x_GetHitID(CDiagContext::EDefaultHitIDFlags flag) const;
 
     void x_UpdateSubHitID(bool increment, CTempString prefix);
@@ -314,16 +372,13 @@ private:
     // Copy std properties from pass-through data to CRequestContext.
     void x_UpdateStdContextProp(CTempString name) const;
 
-    typedef CObjectFor<CAtomicCounter> TSharedCounter;
-
     TCount         m_RequestID;
     EDiagAppState  m_AppState;
     string         m_ClientIP;
     CEncodedString m_SessionID;
-    string         m_HitID;
+    CSharedHitId   m_HitID;
     string         m_Dtab;
     mutable bool   m_LoggedHitID;
-    int            m_SubHitID;
     int            m_ReqStatus;
     CStopWatch     m_ReqTimer;
     Int8           m_BytesRd;
@@ -334,7 +389,6 @@ private:
     bool           m_AutoIncOnPost;
     TContextFlags  m_Flags;
     string         m_SubHitIDCache;
-    mutable CRef<TSharedCounter> m_SharedSubHitID;
 
     // For saving/checking owner TID.
     friend class CDiagContextThreadData;
@@ -535,10 +589,8 @@ inline
 void CRequestContext::UnsetHitID(void)
 {
     x_UnsetProp(eProp_HitID);
-    m_HitID.clear();
+    m_HitID.SetHitId(kEmptyStr);
     m_LoggedHitID = false;
-    m_SubHitID = 0;
-    m_SharedSubHitID.Reset();
     m_SubHitIDCache.clear();
 }
 

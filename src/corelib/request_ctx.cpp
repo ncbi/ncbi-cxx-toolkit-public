@@ -53,7 +53,6 @@ CRequestContext::CRequestContext(TContextFlags flags)
     : m_RequestID(0),
       m_AppState(eDiagAppState_NotSet),
       m_LoggedHitID(false),
-      m_SubHitID(0),
       m_ReqStatus(0),
       m_ReqTimer(CStopWatch::eStop),
       m_BytesRd(0),
@@ -81,7 +80,7 @@ CRequestContext::TCount CRequestContext::GetNextRequestID(void)
 
 void CRequestContext::x_LogHitID(bool ignore_app_state) const
 {
-    if (m_LoggedHitID || m_HitID.empty()) return;
+    if (m_LoggedHitID || m_HitID.Empty()) return;
 
     // ignore_app_state can be set by CDiagContext in case if hit-id
     // was set for request context only (no default one), but request
@@ -93,7 +92,8 @@ void CRequestContext::x_LogHitID(bool ignore_app_state) const
         m_AppState != eDiagAppState_Request  &&
         m_AppState != eDiagAppState_RequestBegin  &&
         m_AppState != eDiagAppState_RequestEnd) return;
-    GetDiagContext().Extra().Print(g_GetNcbiString(eNcbiStrings_PHID), m_HitID);
+    GetDiagContext().Extra().Print(g_GetNcbiString(eNcbiStrings_PHID),
+        m_HitID.GetHitId());
     m_LoggedHitID = true;
 }
 
@@ -101,7 +101,7 @@ void CRequestContext::x_LogHitID(bool ignore_app_state) const
 const string& CRequestContext::SetHitID(void)
 {
     SetHitID(GetDiagContext().GetNextHitID());
-    return m_HitID;
+    return m_HitID.GetHitId();
 }
 
 
@@ -109,12 +109,12 @@ string CRequestContext::x_GetHitID(CDiagContext::EDefaultHitIDFlags flag) const
 {
     if ( x_IsSetProp(eProp_HitID) ) {
         x_LogHitID();
-        return m_HitID;
+        return m_HitID.GetHitId();
     }
-    string phid = GetDiagContext().x_GetDefaultHitID(CDiagContext::eHitID_NoCreate);
-    if (!phid.empty()) {
-        const_cast<CRequestContext*>(this)->SetHitID(phid);
-        return phid;
+    CSharedHitId phid = GetDiagContext().x_GetDefaultHitID(CDiagContext::eHitID_NoCreate);
+    if (!phid.Empty()) {
+        const_cast<CRequestContext*>(this)->x_SetHitID(phid);
+        return phid.GetHitId();
     }
     if (flag != CDiagContext::eHitID_NoCreate) {
         // If there's no hit id available, create (and log) a new one.
@@ -319,13 +319,16 @@ static bool IsValidHitID(const string& hit) {
 }
 
 
-void CRequestContext::SetHitID(const string& hit)
+void CRequestContext::x_SetHitID(const CSharedHitId& hit_id)
 {
+    const string& hit = hit_id.GetHitId();
     if ( m_LoggedHitID ) {
         // Show warning when changing hit id after is has been logged.
         ERR_POST_X(28, Warning << "Changing hit ID after one has been logged. "
             "New hit id is: " << hit);
     }
+    if (m_HitID.GetHitId() == hit) return;
+
     static CSafeStatic<TOnBadHitId> action;
     if ( !IsValidHitID(hit) ) {
         switch ( action->Get() ) {
@@ -347,44 +350,30 @@ void CRequestContext::SetHitID(const string& hit)
         }
     }
     x_SetProp(eProp_HitID);
-    if (m_HitID != hit) {
-        m_SubHitID = 0;
-        m_SharedSubHitID.Reset();
-        m_SubHitIDCache.clear();
-    }
-    m_HitID = hit;
+
+    m_SubHitIDCache.clear();
+    m_HitID = hit_id;
     m_LoggedHitID = false;
     x_LogHitID();
 }
 
 
+void CRequestContext::SetHitID(const string& hit)
+{
+    x_SetHitID(CSharedHitId(hit));
+}
+
+
 void CRequestContext::x_UpdateSubHitID(bool increment, CTempString prefix)
 {
-    static CAtomicCounter s_DefaultSubHitCounter;
-
     _ASSERT(IsSetHitID());
 
     // Use global sub-hit counter for default hit id to prevent
     // duplicate phids in different threads.
     m_SubHitIDCache = GetHitID();
 
-    unsigned int sub_hit_id;
-    if ( m_SharedSubHitID ) {
-        // Hit id and sub-hit id is shared between several clones.
-        sub_hit_id = (unsigned int)(increment ? m_SharedSubHitID->GetData().Add(1) :
-            m_SharedSubHitID->GetData().Get());
-    }
-    else if (CDiagContext::sx_IsDefaultHitID(m_SubHitIDCache)  &&
-        m_SubHitIDCache == GetDiagContext().GetDefaultHitID()) {
-        // Using global hit id and sub-hit counter.
-        sub_hit_id = (unsigned int)(increment ? s_DefaultSubHitCounter.Add(1) :
-            s_DefaultSubHitCounter.Get());
-    }
-    else {
-        // Normal unshared sub-hit id.
-        if ( increment ) ++m_SubHitID;
-        sub_hit_id = m_SubHitID;
-    }
+    unsigned int sub_hit_id = increment ?
+        m_HitID.GetNextSubHitId() : m_HitID.GetCurrentSubHitId();
 
     // Cache the string so that C code can use it.
     m_SubHitIDCache += "." + prefix + NStr::NumericToString(sub_hit_id);
@@ -517,14 +506,9 @@ CRef<CRequestContext> CRequestContext::Clone(void) const
     ret->m_AppState = m_AppState;
     ret->m_ClientIP = m_ClientIP;
     ret->m_SessionID.SetString(m_SessionID.GetOriginalString());
+    m_HitID.SetShared();
     ret->m_HitID = m_HitID;
     ret->m_LoggedHitID = m_LoggedHitID;
-    ret->m_SubHitID = m_SubHitID;
-    if ( !m_SharedSubHitID ) {
-        m_SharedSubHitID.Reset(new TSharedCounter());
-        m_SharedSubHitID->GetData().Set(m_SubHitID);
-    }
-    ret->m_SharedSubHitID = m_SharedSubHitID;
     ret->m_SubHitIDCache = m_SubHitIDCache;
     ret->m_Dtab = m_Dtab;
     ret->m_ReqStatus = m_ReqStatus;
