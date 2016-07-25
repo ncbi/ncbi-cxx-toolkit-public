@@ -737,6 +737,14 @@ BOOST_AUTO_TEST_CASE(Test_SetFrameFromLoc)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_DecodeXMLMarkChanged)
+{
+    string str = "multicopper oxidase&#13&#10";
+    CCleanup::DecodeXMLMarkChanged(str);
+    BOOST_CHECK_EQUAL(str, "multicopper oxidase");
+}
+
+
 void CheckQuals(const CSeq_feat::TQual& expected, const CSeq_feat::TQual& actual)
 {
     BOOST_CHECK_EQUAL(expected.size(), actual.size());
