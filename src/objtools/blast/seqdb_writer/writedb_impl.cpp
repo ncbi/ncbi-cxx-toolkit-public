@@ -643,13 +643,23 @@ x_SetDeflinesFromBinary(const string                   & bin_hdr,
 
 static bool s_UseFastaReaderDeflines(CConstRef<CBioseq> & bioseq, CConstRef<CBlast_def_line_set> & deflines)
 {
+    CNcbiEnvironment env;
+
 	if(deflines.Empty())
 		return false;
 
 	const CSeq_id * bioseq_id = bioseq->GetNonLocalId();
 
-	if(bioseq_id == NULL)
-		return true;
+	if(bioseq_id == NULL ||
+       // For bare pdb and prf ids go with the one from defline.
+       // This is to parse bare ids as local ones. The bare pdb ids are pdb in
+       // bioseq (parsed by CFastaReader), but local in deflines (parsed by
+       // CSeq_id).
+       (!env.Get("NEW_SEQID_FORMAT").empty() && (bioseq_id->IsPdb() ||
+                                                 bioseq_id->IsPrf() ||
+                                                 bioseq_id->IsPir()))) {
+        return true;
+       }
 
 	// Bioseq has non-local id, make sure at least one id is non-local from CFastaReader
 	// defline
@@ -1683,6 +1693,23 @@ x_GetFastaReaderDeflines(const CBioseq                  & bioseq,
                  seqids.push_back(CRef<CSeq_id> (new CSeq_id(CSeq_id::e_Local, ids)));
             } else {
                  CSeq_id::ParseFastaIds(seqids, ids);
+
+                 if (!env.Get("NEW_SEQID_FORMAT").empty()) {
+
+                     // If accession's molecule type is different than
+                     // expected, change sequence id to local. CFastaReader
+                     // cannot distingush between bare pir protein ids genbank
+                     // nucleotide ids.
+                     for (auto& it: seqids) {
+                         CSeq_id::EAccessionInfo info = it->IdentifyAccession();
+                         if (!it->IsLocal() &&
+                             bioseq.IsAa() == !!(info & CSeq_id::fAcc_nuc)) {
+
+                             string label = it->GetSeqIdString();
+                             it.Reset(new CSeq_id(CSeq_id::e_Local, label));
+                         }
+                     }
+                 }
             }
 
             // Build the actual defline.

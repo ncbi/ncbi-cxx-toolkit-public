@@ -785,6 +785,8 @@ bool CBuildDatabase::AddSequences(IBioseqSource & src, bool add_pig)
     CStopWatch sw(CStopWatch::eStart);
     int count = 0;
 
+    CNcbiEnvironment env;
+
     CConstRef<CBioseq> bs = src.GetNext();
 
     while(bs.NotEmpty()) {
@@ -794,6 +796,23 @@ bool CBuildDatabase::AddSequences(IBioseqSource & src, bool add_pig)
             const list< CRef<CSeq_id> > & ids = bs->GetId();
             if (! ids.empty() && ids.front().NotEmpty()) {
                 bioseq_id.assign(ids.front()->AsFastaString());
+            }
+
+            if (!env.Get("NEW_SEQID_FORMAT").empty()) {
+
+                // If accession's molecule type is different than expected,
+                // change sequence id to local. CFastaReader cannot distingush
+                // between bare pir protein ids genbank nucleotide ids.
+                CBioseq* bss = const_cast<CBioseq*>(bs.GetNonNullPointer());
+                for (auto& it: bss->SetId()) {
+                    CSeq_id::EAccessionInfo info = it->IdentifyAccession();
+                    if (!it->IsLocal() &&
+                        m_IsProtein == !!(info & CSeq_id::fAcc_nuc)) {
+
+                        string label = it->GetSeqIdString();
+                        it.Reset(new CSeq_id(CSeq_id::e_Local, label));
+                    }
+                }
             }
         }
 

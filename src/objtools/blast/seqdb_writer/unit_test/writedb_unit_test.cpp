@@ -2910,7 +2910,19 @@ BOOST_AUTO_TEST_CASE(ReadBareIDProtein)
         {"BAA06266.1", CSeq_id::e_Ddbj},
         {"dbj|GAE97797.1", CSeq_id::e_Ddbj},
         {"320460102", CSeq_id::e_Local},
-        {"gi|716054866", CSeq_id::e_Gi}};
+        {"gi|716054866", CSeq_id::e_Gi},
+        {"Q02VU1.1", CSeq_id::e_Swissprot},
+        {"sp|Q6GIX1.1|CADA_STAAR", CSeq_id::e_Swissprot},
+        {"EQR80552.1", CSeq_id::e_Genbank},
+        {"gb|EQS08124.1", CSeq_id::e_Genbank},
+        {"Somestring", CSeq_id::e_Local},
+        {"lcl|anotherstring", CSeq_id::e_Local},
+        {"12AS_A", CSeq_id::e_Local},
+        {"pdb|1I4D|D", CSeq_id::e_Pdb},
+        {"2209341B", CSeq_id::e_Local},
+        {"prf||2209335A", CSeq_id::e_Prf},
+        {"T49736", CSeq_id::e_Local},
+        {"pir||AI1052", CSeq_id::e_Pir}};
 
     for (auto it: fasta_ids) {
         ostr << ">" << it.first << endl << sequence << endl;
@@ -3044,7 +3056,9 @@ BOOST_AUTO_TEST_CASE(ReadBareIDNucleotide)
         {"Z18633.1", CSeq_id::e_Embl},
         {"emb|Z18632.1", CSeq_id::e_Embl},
         {"NM_176670.2", CSeq_id::e_Other},
-        {"ref|NM_175822.2", CSeq_id::e_Other}};
+        {"ref|NM_175822.2", CSeq_id::e_Other},
+        {"SRR1272186", CSeq_id::e_Local},
+        {"gnl|SRA|SRR342213.1", CSeq_id::e_General}};
 
     for (auto it: fasta_ids) {
         ostr << ">" << it.first << endl << sequence << endl;
@@ -3108,7 +3122,22 @@ BOOST_AUTO_TEST_CASE(ReadLegacyIDProtein)
         {"BAA06266.1", CSeq_id::e_Local},
         {"dbj|GAE97797.1", CSeq_id::e_Ddbj},
         {"320460102", CSeq_id::e_Local},
-        {"gi|716054866", CSeq_id::e_Gi}};
+        {"gi|716054866", CSeq_id::e_Gi},
+        {"Q02VU1.1", CSeq_id::e_Local},
+        {"sp|Q6GIX1.1|CADA_STAAR", CSeq_id::e_Swissprot},
+        {"EQR80552.1", CSeq_id::e_Local},
+        {"gb|EQS08124.1", CSeq_id::e_Genbank},
+        {"Somestring", CSeq_id::e_Local},
+        {"lcl|anotherstring", CSeq_id::e_Local},
+        {"12AS_A", CSeq_id::e_Local},
+        {"pdb|1I4D|D", CSeq_id::e_Pdb},
+        {"SRR1272186", CSeq_id::e_Local},
+        {"gnl|SRA|SRR342213.1", CSeq_id::e_General},
+        {"2209341B", CSeq_id::e_Local},
+        {"prf||2209335A", CSeq_id::e_Prf},
+        {"T49736", CSeq_id::e_Local},
+        {"pir||AI1052", CSeq_id::e_Pir}};
+
 
     for (auto it: fasta_ids) {
         ostr << ">" << it.first << endl << sequence << endl;
@@ -3143,7 +3172,12 @@ BOOST_AUTO_TEST_CASE(ReadLegacyIDProtein)
     // check that each sequence id has a correct type
     for (auto it: fasta_ids) {
         list< CRef<CSeq_id> > ids = seqdb.GetSeqIDs(index++);
-        BOOST_REQUIRE_EQUAL(ids.front()->Which(), it.second);
+        BOOST_REQUIRE_MESSAGE(ids.front()->Which() == it.second,
+                              (string)"Sequence id type for " +
+                              it.first + " is " +
+                              NStr::IntToString(ids.front()->Which()) +
+                              " (expected " + NStr::IntToString(it.second)
+                              + ")");
     }
     BOOST_REQUIRE_EQUAL(index, (int)fasta_ids.size());
 }
