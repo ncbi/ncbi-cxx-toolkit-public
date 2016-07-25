@@ -1878,8 +1878,8 @@ bool CFormatGuess::TestFormatJson(
                                [](char c) { return isspace(c); } ), 
                      testString.end());
 
-    // testString should begin with a left brace. 
-    if (testString[0] != '{') {
+    // testString should begin with a left brace or bracket.
+    if (testString[0] != '{' && testString[0] != '[') {
         return false;
     }
 

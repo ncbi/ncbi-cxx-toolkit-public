@@ -317,14 +317,14 @@ static const char* kData_NotHgvs =
 static const char* kData_JSON = 
     "{\n"
     "    \"Search\": {\n"
-    "    \"query_id\": \"lcl|1\",\n"
+    "    \"query\\\"_id\": \"lcl|1\",\n"
     "    \"hits\": [\n"
     "      {  \n"
     "        \"num\": 1,\n"
     "        \"test true\": true,\n"
     "        \"test false\": false,\n"
     "        \"test null\": null,\n"
-    "        \"test open string \n";
+    "        \"test open\\\" string \n";
     
 
 // Missing starting brace
