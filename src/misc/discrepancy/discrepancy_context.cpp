@@ -601,9 +601,10 @@ void CDiscrepancyContext::CollectFeature(const CSeq_feat& feat)
             m_FeatRRNAs.push_back(CConstRef<CSeq_feat>(&feat));
             break;
         default:
-            if (feat.GetData().IsRna()) {
-                m_Feat_RNAs.push_back(CConstRef<CSeq_feat>(&feat));
-            }
+            break;
+    }
+    if (feat.GetData().IsRna()) {
+        m_Feat_RNAs.push_back(CConstRef<CSeq_feat>(&feat));
     }
     if (CCleanup::IsPseudo(feat, *m_Scope)) {
         m_FeatPseudo.push_back(CConstRef<CSeq_feat>(&feat));
