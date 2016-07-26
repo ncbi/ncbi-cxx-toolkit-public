@@ -34,6 +34,7 @@
 #include <misc/discrepancy/report_object.hpp>
 #include <objects/biblio/Auth_list.hpp>
 #include <objects/macro/Suspect_rule_set.hpp>
+#include <objects/pub/Pub.hpp>
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/seq/Pubdesc.hpp>
 #include <objects/seqfeat/BioSource.hpp>
@@ -317,6 +318,7 @@ public:
             m_Scope(&scope),
             m_Count_Bioseq(0),
             m_Count_Seq_feat(0),
+            m_Count_Pub(0),
             m_Count_Pub_equiv(0),
 #define INIT_DISCREPANCY_TYPE(type) m_Enable_##type(false)
             INIT_DISCREPANCY_TYPE(CSeq_inst),
@@ -350,6 +352,7 @@ public:
     CConstRef<CSubmit_block> GetCurrentSubmit_block(void) const { return m_Current_Submit_block; }
     CConstRef<CSeqdesc> GetCurrentSeqdesc(void) const { return m_Current_Seqdesc; }
     CConstRef<CSeq_feat> GetCurrentSeq_feat(void) const { return m_Current_Seq_feat; }
+    CConstRef<CPub> GetCurrentPub(void) const { return m_Current_Pub; }
     CConstRef<CPub_equiv> GetCurrentPub_equiv(void) const { return m_Current_Pub_equiv; }
     size_t GetCountBioseq(void) const { return m_Count_Bioseq; }
     size_t GetCountSeq_feat(void) const { return m_Count_Seq_feat;}
@@ -412,6 +415,7 @@ protected:
     CConstRef<CSubmit_block> m_Current_Submit_block;
     CConstRef<CSeqdesc> m_Current_Seqdesc;
     CConstRef<CSeq_feat> m_Current_Seq_feat;
+    CConstRef<CPub> m_Current_Pub;
     CConstRef<CPub_equiv> m_Current_Pub_equiv;
     CConstRef<CSuspect_rule_set> m_ProductRules;
     CConstRef<CSuspect_rule_set> m_OrganelleProductRules;
@@ -419,6 +423,7 @@ protected:
     size_t m_Count_Bioseq;
     size_t m_Count_Seqdesc;
     size_t m_Count_Seq_feat;
+    size_t m_Count_Pub;
     size_t m_Count_Pub_equiv;
     bool m_Feat_CI;
     TReportObjectList m_NaSeqs;
