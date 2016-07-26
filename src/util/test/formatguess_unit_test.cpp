@@ -324,7 +324,7 @@ static const char* kData_JSON =
     "        \"test true\": true,\n"
     "        \"test false\": false,\n"
     "        \"test null\": null,\n"
-    "        \"test open\\\" string \n";
+    "        \"test open\\\\\\\" string \n";
     
 
 // Missing starting brace

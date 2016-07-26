@@ -330,8 +330,12 @@ private:
     // ' ' ' \t' '\t' ',' '|'
     bool x_TestTableDelimiter(const string& delims);
 
+    // Starting at from_pos, find the next set of double quotes 
+    // indicating the end of a JSON string
+    size_t x_FindNextJsonStringStop(const string& input, const size_t from_pos) const;
+
     // strips JSON strings from input and copies remainder to output
-    bool x_StripJsonStrings(const string& input, string& output) const;
+    void x_StripJsonStrings(const string& input, string& output) const;
 
     bool x_IsJsonNumericChar(const char& c) const;
 

@@ -1762,8 +1762,95 @@ bool CFormatGuess::TestFormatVcf(
 
 
 //  ----------------------------------------------------------------------------
-bool CFormatGuess::x_StripJsonStrings(const string& input, string& output) const
+size_t CFormatGuess::x_FindNextJsonStringStop(const string& input, const size_t from_pos) const
 //  ----------------------------------------------------------------------------
+{
+    const string& double_quotes = "\"";
+    size_t pos = input.find(double_quotes, from_pos);
+
+    // Double quotes immediately preceded by an odd number of forward 
+    // slashes, for example, /", ///", are escaped
+    while (pos != string::npos) {
+        size_t num_fslash = 0;
+        if (pos > 0) {
+           int i = pos-1;
+           while ( i >= 0 && input[i] == '\\' ) {
+               ++num_fslash;
+               --i;
+           }
+        }
+
+        // If the number of forward slashes is even
+        // return the position of the double quotes
+        if (num_fslash%2 == 0) {
+            return pos;
+        }
+
+        // Search for the next set of double quotes
+        pos = input.find(double_quotes, pos+1);
+    }   
+    
+    return pos;
+}
+
+
+//  ----------------------------------------------------------------------------
+void CFormatGuess::x_StripJsonStrings(const string& input, string& output) const
+//  ----------------------------------------------------------------------------
+{
+    const string& double_quotes = "\"";
+    bool is_start = true;
+    size_t pos = input.find(double_quotes);
+    list<size_t> indices;
+    // List all string start and stop positions
+    while ( pos != string::npos ) {
+        indices.push_back(pos);
+        if (is_start) {
+            pos = x_FindNextJsonStringStop(input, pos+1);
+        } else {
+            pos = input.find(double_quotes, pos+1);
+        }
+        is_start = !is_start;
+    }
+
+    // If no strings found
+    if ( indices.empty() ) {
+        output = input;
+        return;
+    }
+
+    // Iterate over string start and stop sites
+    // Strip strings and copy what remains to output
+    size_t remainder_start = 0;
+
+    list<size_t>::iterator it = indices.begin();
+    output = "";
+    while (it != indices.end()) {
+        const size_t string_start = *it++;
+        if (string_start != remainder_start) {
+            output += input.substr(remainder_start, string_start-remainder_start);
+        }
+        // No stop double quotes.
+        // Everything following the last set of start quotes is
+        // regarded as being part of a string
+        if (it == indices.end()) {
+            break;
+        }
+
+        const size_t string_stop = *it++;
+        remainder_start = string_stop+1;
+
+        // If reached the final stop
+        if (it == indices.end() && remainder_start != input.size()) {
+            output += input.substr(remainder_start);
+        }
+    }
+
+    return ;
+}
+
+/*
+bool CFormatGuess::x_StripJsonStrings(const string& input, string& output) const
 {
     bool string_found = false;
     const string& double_quotes = "\"";
@@ -1815,41 +1902,7 @@ bool CFormatGuess::x_StripJsonStrings(const string& input, string& output) const
 
     return true;
 }
-
-// structure used to check JSON punction
-struct SCheckJsonPunctuation
-{
-    static bool has_left_brace;
-    static bool has_parentheses;
-
-    bool HasParentheses(void) const {
-        return has_parentheses;
-    }
-
-    void Reset(void) {
-        has_parentheses = false;
-    }
-
-    bool operator()(const char& c);
-};
-
-bool SCheckJsonPunctuation::has_parentheses = false;
-
-bool SCheckJsonPunctuation::operator()(const char& c)
-{
-    if ( c == '{' || c == '}' ||  
-         c == '[' || c == ']' ||
-         c == ':' || c == ',' ){
-        return true;
-    }
-
-    if ( c == '(' || c == ')' ) {
-        has_parentheses = true;
-    }
-
-    return false;
-}
-
+*/
 
 //  ----------------------------------------------------------------------------
 bool CFormatGuess::x_IsJsonNumericChar(const char& c) const {
@@ -1888,30 +1941,26 @@ bool CFormatGuess::TestFormatJson(
     x_StripJsonStrings(testString, stringless);
     testString = stringless;
 
+    if (testString.find_first_of("()") != string::npos) {
+        return false;
+    }
 
     // Check punctuation and strip from testString
     // If parentheses are encountered
     // return false.
-    SCheckJsonPunctuation punctuationChecker;
-    testString.erase(remove_if(testString.begin(), testString.end(),
-                               punctuationChecker ), 
-                     testString.end());
-           
-    if ( punctuationChecker.HasParentheses()) {
-        return false;
-    }
+    NStr::ReplaceInPlace(testString, "{", "");
+    NStr::ReplaceInPlace(testString, "}", "");
+    NStr::ReplaceInPlace(testString, "[", "");
+    NStr::ReplaceInPlace(testString, "]", "");
+    NStr::ReplaceInPlace(testString, ":", "");
+    NStr::ReplaceInPlace(testString, ",", "");
 
-    // Strip any occurances of true, false, null;
-    vector<string> other = {"true", "false", "null"};
-    for (string special : other) {
-        const auto len = special.size();
-        for (auto start_pos = testString.find(special);
-             start_pos != string::npos;
-             start_pos = testString.find(special)) {
-            testString.erase(start_pos, len);
-        }
-    }
-    
+
+    // "true", "false" and "null" are allowed
+    NStr::ReplaceInPlace(testString, "true", "");
+    NStr::ReplaceInPlace(testString, "false", "");
+    NStr::ReplaceInPlace(testString, "null", "");
+
     for (const auto c : testString) {
         if (!x_IsJsonNumericChar(c)) {
             return false;
