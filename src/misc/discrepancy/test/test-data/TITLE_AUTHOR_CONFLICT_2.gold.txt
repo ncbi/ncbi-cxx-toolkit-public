@@ -1,0 +1,19 @@
+Discrepancy Report Results
+
+Summary
+TITLE_AUTHOR_CONFLICT: 7 articles have title 'Strain diversity of Pseudomonas fluorescens group with potential blue pigment phenotype isolated from dairy products' but do not have the same author list
+
+Detailed Report
+
+TITLE_AUTHOR_CONFLICT: 7 articles have title 'Strain diversity of Pseudomonas fluorescens group with potential blue pigment phenotype isolated from dairy products' but do not have the same author list
+TITLE_AUTHOR_CONFLICT: 1 article has title 'Strain diversity of Pseudomonas fluorescens group with potential blue pigment phenotype isolated from dairy products' and author list 'M.Chierici, R.C.F'
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\title_aut_incon.asn:KU512275 (11 components):Chierici,M.Unpublished
+
+TITLE_AUTHOR_CONFLICT: 6 articles have title 'Strain diversity of Pseudomonas fluorescens group with potential blue pigment phenotype isolated from dairy products' and author list 'M.Chierici, R.C.Foschino'
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\title_aut_incon.asn:KU512209 (11 components):Chierici,M.Unpublished
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\title_aut_incon.asn:KU512220 (11 components):Chierici,M.Unpublished
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\title_aut_incon.asn:KU512231 (11 components):Chierici,M.Unpublished
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\title_aut_incon.asn:KU512242 (11 components):Chierici,M.Unpublished
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\title_aut_incon.asn:KU512253 (11 components):Chierici,M.Unpublished
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\title_aut_incon.asn:KU512273 (11 components):Chierici,M.Unpublished
+
