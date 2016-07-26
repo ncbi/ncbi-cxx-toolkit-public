@@ -632,6 +632,20 @@ CRef<CDiscrepancyObject> CDiscrepancyContext::NewSubmitBlockObj(EKeepRef keep_re
 }
 
 
+CRef<CDiscrepancyObject> CDiscrepancyContext::NewFeatOrDescObj(EKeepRef keep_ref, bool autofix, CObject* more)
+{
+    CConstRef<CSeq_feat> feat = GetCurrentSeq_feat();
+    CConstRef<CSeqdesc> desc = GetCurrentSeqdesc();
+    _ASSERT(!feat != !desc);
+    if (feat) {
+        return NewDiscObj(feat, keep_ref, autofix, more);
+    }
+    else if (desc) {
+        return NewDiscObj(desc, keep_ref, autofix, more);
+    }
+}
+
+
 CRef<CDiscrepancyObject> CDiscrepancyContext::NewFeatOrDescOrSubmitBlockObj(EKeepRef keep_ref, bool autofix, CObject* more)
 {
     CConstRef<CSeq_feat> feat = GetCurrentSeq_feat();

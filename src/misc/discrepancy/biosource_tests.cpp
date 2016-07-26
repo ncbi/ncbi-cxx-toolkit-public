@@ -85,9 +85,6 @@ DISCREPANCY_CASE(MAP_CHROMOSOME_CONFLICT, CSeqdesc, eDisc | eOncaller | eSmart, 
 DISCREPANCY_SUMMARIZE(MAP_CHROMOSOME_CONFLICT)
 //  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
@@ -204,9 +201,6 @@ DISCREPANCY_CASE(INFLUENZA_DATE_MISMATCH, CBioSource, eOncaller, "Influenza Stra
 DISCREPANCY_SUMMARIZE(INFLUENZA_DATE_MISMATCH)
 //  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
@@ -250,9 +244,6 @@ DISCREPANCY_CASE(UNCULTURED_NOTES, CBioSource, eOncaller, "Uncultured Notes")
 DISCREPANCY_SUMMARIZE(UNCULTURED_NOTES)
 //  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
@@ -325,9 +316,6 @@ DISCREPANCY_CASE(MISSING_VIRAL_QUALS, CBioSource, eOncaller, "Viruses should spe
 DISCREPANCY_SUMMARIZE(MISSING_VIRAL_QUALS)
 //  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
@@ -393,24 +381,6 @@ bool HasStrainForATCCCultureCollection(const COrgName::TMod& mods, const string&
 }
 
 
-void AddObjSource(CReportNode& objs, CDiscrepancyContext& context, const string& category, bool keepref = false)
-{
-    if (context.GetCurrentSeqdesc() != NULL) {
-        if (keepref) {
-            objs[category].Add(*context.NewDiscObj(context.GetCurrentSeqdesc(), eKeepRef), false);
-        } else {
-            objs[category].Add(*context.NewDiscObj(context.GetCurrentSeqdesc()), false);
-        }
-    } else if (context.GetCurrentSeq_feat() != NULL) {
-        if (keepref) {
-            objs[category].Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eKeepRef), false);
-        } else {
-            objs[category].Add(*context.NewDiscObj(context.GetCurrentSeq_feat()), false);
-        }
-    }
-}
-
-
 const string kATCCCultureConflict = "[n] biosource[s] [has] conflicting ATCC strain and culture collection values";
 
 //  ----------------------------------------------------------------------------
@@ -440,7 +410,7 @@ DISCREPANCY_CASE(ATCC_CULTURE_CONFLICT, CBioSource, eDisc | eOncaller, "ATCC str
         }
     }
     if (report) {
-        AddObjSource(m_Objs, context, kATCCCultureConflict);
+        m_Objs[kATCCCultureConflict].Add(*context.NewFeatOrDescObj());
     }
 }
 
@@ -449,9 +419,6 @@ DISCREPANCY_CASE(ATCC_CULTURE_CONFLICT, CBioSource, eDisc | eOncaller, "ATCC str
 DISCREPANCY_SUMMARIZE(ATCC_CULTURE_CONFLICT)
 //  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
@@ -552,7 +519,7 @@ DISCREPANCY_CASE(BACTERIA_MISSING_STRAIN, CBioSource, eDisc | eOncaller | eSubmi
         }
     }
     if (!found) {
-        AddObjSource(m_Objs, context, "[n] bacterial biosource[s] [has] taxname 'Genus sp. strain' but no strain");
+        m_Objs["[n] bacterial biosource[s] [has] taxname 'Genus sp. strain' but no strain"].Add(*context.NewFeatOrDescObj());
     }
 }
 
@@ -561,9 +528,6 @@ DISCREPANCY_CASE(BACTERIA_MISSING_STRAIN, CBioSource, eDisc | eOncaller | eSubmi
 DISCREPANCY_SUMMARIZE(BACTERIA_MISSING_STRAIN)
 //  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-          return;
-    }
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
@@ -619,7 +583,7 @@ DISCREPANCY_CASE(BACTERIA_SHOULD_NOT_HAVE_ISOLATE, CBioSource, eOncaller, "Bacte
         }
     }
     if (has_bad_isolate) {
-        AddObjSource(m_Objs, context, "[n] bacterial biosource[s] [has] isolate");
+        m_Objs["[n] bacterial biosource[s] [has] isolate"].Add(*context.NewFeatOrDescObj());
     }
 }
 
@@ -627,9 +591,6 @@ DISCREPANCY_CASE(BACTERIA_SHOULD_NOT_HAVE_ISOLATE, CBioSource, eOncaller, "Bacte
 DISCREPANCY_SUMMARIZE(BACTERIA_SHOULD_NOT_HAVE_ISOLATE)
 //  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
@@ -656,7 +617,7 @@ DISCREPANCY_CASE(MULTISRC, CBioSource, eDisc | eOncaller, "Comma or semicolon ap
         }
     }
     if (report) {
-        AddObjSource(m_Objs, context, "[n] organism[s] [has] comma or semicolon in strain or isolate");
+        m_Objs["[n] organism[s] [has] comma or semicolon in strain or isolate"].Add(*context.NewFeatOrDescObj());
     }
 }
 
@@ -665,9 +626,6 @@ DISCREPANCY_CASE(MULTISRC, CBioSource, eDisc | eOncaller, "Comma or semicolon ap
 DISCREPANCY_SUMMARIZE(MULTISRC)
 //  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
@@ -753,9 +711,6 @@ DISCREPANCY_CASE(FIND_STRAND_TRNAS, CBioSource, eDisc, "Find tRNAs on the same s
 DISCREPANCY_SUMMARIZE(FIND_STRAND_TRNAS)
 //  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
@@ -823,7 +778,7 @@ DISCREPANCY_CASE(REQUIRED_CLONE, CBioSource, eOncaller, "Uncultured or environme
 //  ----------------------------------------------------------------------------
 {
     if (IsMissingRequiredClone(obj)) {
-        AddObjSource(m_Objs, context, kMissingRequiredClone);
+        m_Objs[kMissingRequiredClone].Add(*context.NewFeatOrDescObj());
     }
 }
 
@@ -831,9 +786,6 @@ DISCREPANCY_CASE(REQUIRED_CLONE, CBioSource, eOncaller, "Uncultured or environme
 DISCREPANCY_SUMMARIZE(REQUIRED_CLONE)
 //  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
@@ -887,7 +839,7 @@ DISCREPANCY_CASE(STRAIN_TAXNAME_MISMATCH, CBioSource, eDisc | eOncaller, "BioSou
     ITERATE(COrgName::TMod, om, obj.GetOrg().GetOrgname().GetMod()) {
         if ((*om)->IsSetSubtype() && (*om)->GetSubtype() == COrgMod::eSubtype_strain &&
             (*om)->IsSetSubname() && !NStr::IsBlank((*om)->GetSubname())) {
-            AddObjSource(m_Objs, context, "[n] biosource[s] have strain " + (*om)->GetSubname() + " but do not have the same taxnames", true);
+            m_Objs["[n] biosource[s] have strain " + (*om)->GetSubname() + " but do not have the same taxnames"].Add(*context.NewFeatOrDescObj(eKeepRef));
         }
     }
 }
@@ -958,7 +910,7 @@ DISCREPANCY_CASE(SPECVOUCHER_TAXNAME_MISMATCH, CBioSource, eOncaller | eSmart, "
     ITERATE(COrgName::TMod, om, obj.GetOrg().GetOrgname().GetMod()) {
         if ((*om)->IsSetSubtype() && (*om)->GetSubtype() == COrgMod::eSubtype_specimen_voucher &&
             (*om)->IsSetSubname() && !NStr::IsBlank((*om)->GetSubname())) {
-            AddObjSource(m_Objs, context, "[n] biosource[s] have specimen voucher " + (*om)->GetSubname() + " but do not have the same taxnames", true);
+            m_Objs["[n] biosource[s] have specimen voucher " + (*om)->GetSubname() + " but do not have the same taxnames"].Add(*context.NewFeatOrDescObj(eKeepRef));
         }
     }
 }
@@ -988,7 +940,7 @@ DISCREPANCY_CASE(CULTURE_TAXNAME_MISMATCH, CBioSource, eOncaller, "Test BioSourc
     ITERATE(COrgName::TMod, om, obj.GetOrg().GetOrgname().GetMod()) {
         if ((*om)->IsSetSubtype() && (*om)->GetSubtype() == COrgMod::eSubtype_culture_collection &&
             (*om)->IsSetSubname() && !NStr::IsBlank((*om)->GetSubname())) {
-            AddObjSource(m_Objs, context, "[n] biosource[s] have culture collection " + (*om)->GetSubname() + " but do not have the same taxnames", true);
+            m_Objs["[n] biosource[s] have culture collection " + (*om)->GetSubname() + " but do not have the same taxnames"].Add(*context.NewFeatOrDescObj(eKeepRef));
         }
     }
 }
@@ -1018,7 +970,7 @@ DISCREPANCY_CASE(BIOMATERIAL_TAXNAME_MISMATCH, CBioSource, eOncaller | eSmart, "
     ITERATE(COrgName::TMod, om, obj.GetOrg().GetOrgname().GetMod()) {
         if ((*om)->IsSetSubtype() && (*om)->GetSubtype() == COrgMod::eSubtype_bio_material &&
             (*om)->IsSetSubname() && !NStr::IsBlank((*om)->GetSubname())) {
-            AddObjSource(m_Objs, context, "[n] biosource[s] have biomaterial " + (*om)->GetSubname() + " but do not have the same taxnames", true);
+            m_Objs["[n] biosource[s] have biomaterial " + (*om)->GetSubname() + " but do not have the same taxnames"].Add(*context.NewFeatOrDescObj(eKeepRef));
         }
     }
 }
@@ -1102,10 +1054,6 @@ DISCREPANCY_CASE(ORGANELLE_ITS, CBioSource, eOncaller, "Test Bioseqs for suspect
 DISCREPANCY_SUMMARIZE(ORGANELLE_ITS)
 //  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-        return;
-    }
-
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 

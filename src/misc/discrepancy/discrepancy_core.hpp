@@ -403,6 +403,7 @@ public:
     CRef<CDiscrepancyObject> NewDiscObj(CConstRef<CSeq_feat> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0) { return CRef<CDiscrepancyObject>(new CDiscrepancyObject(obj, *m_Scope, m_File, keep_ref || m_KeepRef, autofix, more)); }
     CRef<CDiscrepancyObject> NewDiscObj(CConstRef<CBioseq_set> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0) { return CRef<CDiscrepancyObject>(new CDiscrepancyObject(obj, *m_Scope, m_File, keep_ref || m_KeepRef, autofix, more)); }
     CRef<CDiscrepancyObject> NewSubmitBlockObj(EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
+    CRef<CDiscrepancyObject> NewFeatOrDescObj(EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
     CRef<CDiscrepancyObject> NewFeatOrDescOrSubmitBlockObj(EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
 
 protected:
