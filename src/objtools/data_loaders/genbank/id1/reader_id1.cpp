@@ -282,7 +282,7 @@ bool CId1Reader::LoadSeq_idGi(CReaderRequestResult& result,
     TSequenceGi gi;
     if ( id1_reply.IsGotgi() ) {
         gi.gi = id1_reply.GetGotgi();
-        gi.sequence_found = true;
+        gi.sequence_found = gi.gi != ZERO_GI;
     }
     SetAndSaveSeq_idGi(result, seq_id, gi);
     return true;
