@@ -247,6 +247,11 @@ END
 GO
 
 
+-- extra precautions before deleting dependent procedure
+WAITFOR DELAY '00:00:03';
+GO
+
+
 DROP PROCEDURE UpdateObjectOnRead_IfNotExists;
 GO
 
@@ -324,6 +329,11 @@ BEGIN
         RETURN 1;
     END CATCH
 END
+GO
+
+
+-- extra precautions before deleting dependent procedure
+WAITFOR DELAY '00:00:03';
 GO
 
 
@@ -421,6 +431,11 @@ END
 GO
 
 
+-- extra precautions before deleting dependent procedure
+WAITFOR DELAY '00:00:03';
+GO
+
+
 DROP PROCEDURE UpdateObjectOnWrite_IfNotExists;
 GO
 
@@ -509,6 +524,11 @@ BEGIN
         RETURN 1;
     END CATCH
 END
+GO
+
+
+-- extra precautions before deleting dependent procedure
+WAITFOR DELAY '00:00:03';
 GO
 
 
