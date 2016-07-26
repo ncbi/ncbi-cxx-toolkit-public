@@ -110,19 +110,21 @@ static CRef<CScope> s_InitScope(bool reset_loader = true)
 }
 
 
-string s_AsString(const vector<CSeq_id_Handle>& ids)
+template<class E>
+string s_AsString(const vector<E>& ids)
 {
     CNcbiOstrstream out;
     out << '{';
-    ITERATE ( vector<CSeq_id_Handle>, it, ids ) {
-        out << ' ' <<  *it;
+    for ( auto& e : ids ) {
+        out << ' ' << e;
     }
     out << " }";
     return CNcbiOstrstreamToString(out);
 }
 
 
-bool s_HaveID2(void)
+static
+const char* s_GetGBReader()
 {
     const char* env = getenv("GENBANK_LOADER_METHOD_BASE");
     if ( !env ) {
@@ -130,37 +132,40 @@ bool s_HaveID2(void)
     }
     if ( !env ) {
         // assume default ID2
-        TRACE_POST("Assuming ID2, env=null");
-        return true;
+        TRACE_POST("Assuming default reader ID2");
+        env = "ID2";
     }
+    return env;
+}
+
+
+bool s_HaveID2(void)
+{
+    const char* env = s_GetGBReader();
     if ( NStr::EndsWith(env, "id1", NStr::eNocase) ||
          NStr::EndsWith(env, "pubseqos", NStr::eNocase) ) {
         // non-ID2 based readers
         TRACE_POST("No ID2, env=\""<<env<<"\"");
         return false;
     }
-    TRACE_POST("ID2, env=\""<<env<<"\"");
-    return true;
+    else {
+        TRACE_POST("ID2, env=\""<<env<<"\"");
+        return true;
+    }
 }
 
 
 bool s_HaveID1(void)
 {
-    const char* env = getenv("GENBANK_LOADER_METHOD_BASE");
-    if ( !env ) {
-        env = getenv("GENBANK_LOADER_METHOD");
-    }
-    if ( !env ) {
-        // assume default ID2
-        TRACE_POST("Assuming no ID1, env=null");
-        return false;
-    }
+    const char* env = s_GetGBReader();
     if ( NStr::EndsWith(env, "id1", NStr::eNocase) ) {
         TRACE_POST("ID1, env=\""<<env<<"\"");
         return true;
     }
-    TRACE_POST("No ID1, env=\""<<env<<"\"");
-    return false;
+    else {
+        TRACE_POST("No ID1, env=\""<<env<<"\"");
+        return false;
+    }
 }
 
 
@@ -176,15 +181,18 @@ static const CScope::TGetFlags kThrowNoSeq =
 // all_orders<> - iterate all possible orders of operations
 // random_orders<> - iterate several random orders of operations
 
-struct scope_operation : pair<int, CScope*>
+struct scope_operation
 {
-    scope_operation(int op, const CRef<CScope>& scope)
-        : pair(op, scope.GetNCPointerOrNull())
+    int op;
+    bool last;
+    CScope* scope;
+
+    scope_operation(int op, bool last, const CRef<CScope>& scope)
+        : op(op), last(last), scope(scope.GetNCPointerOrNull())
         {
         }
 
-    int op() const { return first; }
-    CScope* operator->() const { return second; }
+    CScope* operator->() const { return scope; }
 };
 
 template<int N_OPS>
@@ -234,7 +242,7 @@ struct all_orders {
 
         value_type operator*() const
             {
-                return value_type(ops[i], scope);
+                return value_type(ops[i], i == N_OPS-1, scope);
             }
 
         const_iterator& operator++()
@@ -328,7 +336,7 @@ struct random_orders {
 
         value_type operator*() const
             {
-                return value_type(ops[i], scope);
+                return value_type(ops[i], i == N_OPS-1, scope);
             }
 
         const_iterator& operator++()
@@ -380,14 +388,16 @@ private:
 
 BOOST_AUTO_TEST_CASE(CheckNoSeqGi)
 {
-    if ( !s_HaveID2() ) {
+    // no sequence, check GI loading methods
+    // should work with all readers
+    if ( s_HaveID1() ) {
         return;
     }
     CSeq_id_Handle id = CSeq_id_Handle::GetGiHandle(GI_CONST(1));
     vector<CSeq_id_Handle> idvec(1, id);
     LOG_POST("CheckNoSeqGi: "<<id);
-    for ( auto op : all_orders<5>() ) {
-        switch ( op.op() ) {
+    for ( auto op : all_orders<4>() ) {
+        switch ( op.op ) {
         case 0:
             TRACE_POST("GetGi");
             BOOST_CHECK(!op->GetGi(id, kThrowNoData));
@@ -404,10 +414,10 @@ BOOST_AUTO_TEST_CASE(CheckNoSeqGi)
             TRACE_POST("GetGiBulkThrow");
             BOOST_CHECK_THROW(op->GetGis(idvec, kThrowNoSeq), CObjMgrException);
             break;
-        case 4:
+        }
+        if ( op.last ) {
             TRACE_POST("GetIds");
             BOOST_CHECK(op->GetIds(id).empty());
-            break;
         }
     }
 }
@@ -415,11 +425,13 @@ BOOST_AUTO_TEST_CASE(CheckNoSeqGi)
 
 BOOST_AUTO_TEST_CASE(CheckNoSeqAcc)
 {
+    // no sequence, check acc loading methods
+    // should work with all readers
     CSeq_id_Handle id = CSeq_id_Handle::GetGiHandle(GI_CONST(1));
     vector<CSeq_id_Handle> idvec(1, id);
     LOG_POST("CheckNoSeqAcc: "<<id);
-    for ( auto op : all_orders<5>() ) {
-        switch ( op.op() ) {
+    for ( auto op : all_orders<4>() ) {
+        switch ( op.op ) {
         case 0:
             TRACE_POST("GetAccVer");
             BOOST_CHECK(!op->GetAccVer(id, kThrowNoData));
@@ -436,10 +448,10 @@ BOOST_AUTO_TEST_CASE(CheckNoSeqAcc)
             TRACE_POST("GetAccVerBulkThrow");
             BOOST_CHECK_THROW(op->GetAccVers(idvec, kThrowNoSeq), CObjMgrException);
             break;
-        case 4:
+        }
+        if ( op.last ) {
             TRACE_POST("GetIds");
             BOOST_CHECK(op->GetIds(id).empty());
-            break;
         }
     }
 }
@@ -447,14 +459,16 @@ BOOST_AUTO_TEST_CASE(CheckNoSeqAcc)
 
 BOOST_AUTO_TEST_CASE(CheckNoSeqAll)
 {
-    if ( !s_HaveID2() ) {
+    // no sequence, check all loading methods
+    // should work with all readers
+    if ( s_HaveID1() ) {
         return;
     }
     CSeq_id_Handle id = CSeq_id_Handle::GetGiHandle(GI_CONST(1));
     vector<CSeq_id_Handle> idvec(1, id);
     LOG_POST("CheckNoSeq: "<<id);
-    for ( auto op : random_orders<8>(100) ) {
-        switch ( op.op() ) {
+    for ( auto op : random_orders<8>(20) ) {
+        switch ( op.op ) {
         case 0:
             TRACE_POST("GetAccVer");
             BOOST_CHECK(!op->GetAccVer(id));
@@ -494,11 +508,13 @@ BOOST_AUTO_TEST_CASE(CheckNoSeqAll)
 
 BOOST_AUTO_TEST_CASE(CheckNoAcc)
 {
+    // have GI, have no accession
+    // should work with all readers
     CSeq_id_Handle id = CSeq_id_Handle::GetGiHandle(GI_CONST(156205));
     vector<CSeq_id_Handle> idvec(1, id);
     LOG_POST("CheckNoAcc: "<<id);
-    for ( auto op : all_orders<5>() ) {
-        switch ( op.op() ) {
+    for ( auto op : all_orders<4>() ) {
+        switch ( op.op ) {
         case 0:
             TRACE_POST("GetAccVer");
             BOOST_CHECK(!op->GetAccVer(id, kThrowNoSeq));
@@ -515,18 +531,14 @@ BOOST_AUTO_TEST_CASE(CheckNoAcc)
             TRACE_POST("GetAccVerBulkThrow");
             BOOST_CHECK_THROW(op->GetAccVers(idvec, kThrowNoData), CObjMgrException);
             break;
-        case 4:
+        }
+        if ( op.last ) {
             TRACE_POST("GetGi");
             BOOST_CHECK(op->GetGi(id, kThrowNoSeq));
-            break;
-        case 5:
             TRACE_POST("GetIds");
             BOOST_CHECK(!op->GetIds(id).empty());
-            break;
-        case 6:
             TRACE_POST("GetBioseqHandle");
             BOOST_CHECK(op->GetBioseqHandle(id));
-            break;
         }
     }
 }
@@ -534,15 +546,17 @@ BOOST_AUTO_TEST_CASE(CheckNoAcc)
 
 BOOST_AUTO_TEST_CASE(CheckNoGi)
 {
-    if ( !s_HaveID2() ) {
+    // have accession, have no GI
+    // shouldn't work with ID1 reader
+    if ( s_HaveID1() ) {
         return;
     }
     CSeq_id_Handle id = CSeq_id_Handle::GetHandle("gnl|Annot:SNP|568802115");
     //CSeq_id_Handle id = CSeq_id_Handle::GetHandle("gnl|SRA|SRR000010.1.2");
     vector<CSeq_id_Handle> idvec(1, id);
     LOG_POST("CheckNoGi: "<<id);
-    for ( auto op : all_orders<5>() ) {
-        switch ( op.op() ) {
+    for ( auto op : all_orders<4>() ) {
+        switch ( op.op ) {
         case 0:
             TRACE_POST("GetGi");
             BOOST_CHECK(!op->GetGi(id, kThrowNoSeq));
@@ -559,18 +573,16 @@ BOOST_AUTO_TEST_CASE(CheckNoGi)
             TRACE_POST("GetGiBulkThrow");
             BOOST_CHECK_THROW(op->GetGis(idvec, kThrowNoData), CObjMgrException);
             break;
-        case 4:
+        }
+        if ( op.last ) {
             TRACE_POST("GetAcc");
             BOOST_CHECK(!op->GetAccVer(id));
-            break;
-        case 5:
-            TRACE_POST("GetIds");
-            BOOST_CHECK(!op->GetIds(id).empty());
-            break;
-        case 6:
+            if ( s_HaveID2() ) { // doesn't work with pubseqos reader
+                TRACE_POST("GetIds");
+                BOOST_CHECK(!op->GetIds(id).empty());
+            }
             TRACE_POST("GetBioseqHandle");
             BOOST_CHECK(op->GetBioseqHandle(id));
-            break;
         }
     }
 }
