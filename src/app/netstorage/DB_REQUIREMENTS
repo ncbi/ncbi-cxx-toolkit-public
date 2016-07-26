@@ -2,6 +2,9 @@ The code requires the following DB side components:
 - Database structure: version 5
 - Stored procedures: version 11
 
+(or 6.12)
+
+
 To check the DB versions please use the following request:
 SELECT * FROM Versions
 
