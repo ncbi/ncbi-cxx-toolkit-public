@@ -139,7 +139,7 @@ const char* s_GetGBReader()
 }
 
 
-bool s_HaveID2(void)
+bool s_CalcHaveID2(void)
 {
     const char* env = s_GetGBReader();
     if ( NStr::EndsWith(env, "id1", NStr::eNocase) ||
@@ -155,7 +155,7 @@ bool s_HaveID2(void)
 }
 
 
-bool s_HaveID1(void)
+bool s_CalcHaveID1(void)
 {
     const char* env = s_GetGBReader();
     if ( NStr::EndsWith(env, "id1", NStr::eNocase) ) {
@@ -166,6 +166,20 @@ bool s_HaveID1(void)
         TRACE_POST("No ID1, env=\""<<env<<"\"");
         return false;
     }
+}
+
+
+bool s_HaveID2(void)
+{
+    static bool ret = s_CalcHaveID2();
+    return ret;
+}
+
+
+bool s_HaveID1(void)
+{
+    static bool ret = s_CalcHaveID1();
+    return ret;
 }
 
 
@@ -390,9 +404,6 @@ BOOST_AUTO_TEST_CASE(CheckNoSeqGi)
 {
     // no sequence, check GI loading methods
     // should work with all readers
-    if ( s_HaveID1() ) {
-        return;
-    }
     CSeq_id_Handle id = CSeq_id_Handle::GetGiHandle(GI_CONST(1));
     vector<CSeq_id_Handle> idvec(1, id);
     LOG_POST("CheckNoSeqGi: "<<id);
@@ -461,9 +472,6 @@ BOOST_AUTO_TEST_CASE(CheckNoSeqAll)
 {
     // no sequence, check all loading methods
     // should work with all readers
-    if ( s_HaveID1() ) {
-        return;
-    }
     CSeq_id_Handle id = CSeq_id_Handle::GetGiHandle(GI_CONST(1));
     vector<CSeq_id_Handle> idvec(1, id);
     LOG_POST("CheckNoSeq: "<<id);
@@ -548,9 +556,6 @@ BOOST_AUTO_TEST_CASE(CheckNoGi)
 {
     // have accession, have no GI
     // shouldn't work with ID1 reader
-    if ( s_HaveID1() ) {
-        return;
-    }
     CSeq_id_Handle id = CSeq_id_Handle::GetHandle("gnl|Annot:SNP|568802115");
     //CSeq_id_Handle id = CSeq_id_Handle::GetHandle("gnl|SRA|SRR000010.1.2");
     vector<CSeq_id_Handle> idvec(1, id);
@@ -559,19 +564,47 @@ BOOST_AUTO_TEST_CASE(CheckNoGi)
         switch ( op.op ) {
         case 0:
             TRACE_POST("GetGi");
-            BOOST_CHECK(!op->GetGi(id, kThrowNoSeq));
+            if ( s_HaveID1() ) {
+                // id1 treat no-data as no-seq
+                BOOST_CHECK_THROW(op->GetGi(id, kThrowNoSeq), CObjMgrException);
+            }
+            else {
+                // non-id1 distinguish no-data/no-seq
+                BOOST_CHECK(!op->GetGi(id, kThrowNoSeq));
+            }
             break;
         case 1:
             TRACE_POST("GetGi");
-            BOOST_CHECK_THROW(op->GetGi(id, kThrowNoData), CObjMgrException);
+            if ( s_HaveID1() ) {
+                // id1 treat no-data as no-seq
+                BOOST_CHECK(!op->GetGi(id, kThrowNoData));
+            }
+            else {
+                // non-id1 distinguish no-data/no-seq
+                BOOST_CHECK_THROW(op->GetGi(id, kThrowNoData), CObjMgrException);
+            }
             break;
         case 2:
             TRACE_POST("GetGiBulk");
-            BOOST_CHECK(!op->GetGis(idvec, kThrowNoSeq)[0]);
+            if ( s_HaveID1() ) {
+                // id1 treat no-data as no-seq
+                BOOST_CHECK_THROW(op->GetGis(idvec, kThrowNoSeq), CObjMgrException);
+            }
+            else {
+                // non-id1 distinguish no-data/no-seq
+                BOOST_CHECK(!op->GetGis(idvec, kThrowNoSeq)[0]);
+            }
             break;
         case 3:
             TRACE_POST("GetGiBulkThrow");
-            BOOST_CHECK_THROW(op->GetGis(idvec, kThrowNoData), CObjMgrException);
+            if ( s_HaveID1() ) {
+                // id1 treat no-data as no-seq
+                BOOST_CHECK(!op->GetGis(idvec, kThrowNoData)[0]);
+            }
+            else {
+                // non-id1 distinguish no-data/no-seq
+                BOOST_CHECK_THROW(op->GetGis(idvec, kThrowNoData), CObjMgrException);
+            }
             break;
         }
         if ( op.last ) {
