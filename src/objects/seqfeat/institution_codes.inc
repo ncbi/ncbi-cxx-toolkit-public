@@ -2401,7 +2401,6 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "HTTU	s	Tennessee Technological University, Biology Department",
 "HTU	s	University of Taiz, Biology Department",
 "HU	s	University of Zhejiang",
-"HU<USA>	s	Heritage University",
 "HUA	s	Universidad de Antioquia, Centro de Investigaciones",
 "HUAA	s	Universidad Autonoma de Aquascalientes, Departamento de Biologia",
 "HUAL	s	Universidad de Almeria, Departamento de Biologia Vegetal y Ecologia",
