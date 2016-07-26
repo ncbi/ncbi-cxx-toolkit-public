@@ -286,6 +286,7 @@ public:
         fPackageFull    = 0x08,  ///< Print package info, if available
         fBuildInfo      = 0x10,  ///< Print build info (date and tag)
         fBuildSignature = 0x20,  ///< Print build signature, if available
+        fTCBuildNumber  = 0x40,  ///< Print TeamCity build number, if available
         fPrintAll       = 0xFF   ///< Print all version data
     };
     typedef int TPrintFlags;  ///< Binary OR of EPrintFlags

@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/version.hpp>
 #include <common/ncbi_package_ver.h>
+#include <common/ncbi_source_ver.h>
 
 
 BEGIN_NCBI_SCOPE
@@ -594,6 +595,13 @@ string CVersion::Print(const string& appname, TPrintFlags flags) const
             os << " Build-Tag:  " << m_BuildInfo.tag << endl;
         }
     }
+
+#ifdef NCBI_TEAMCITY_BUILD_NUMBER
+    if (flags & fTCBuildNumber) {
+            os << " TeamCity build number:  " << NCBI_TEAMCITY_BUILD_NUMBER
+               << endl;
+    }
+#endif /* NCBI_TEAMCITY_BUILD_NUMBER */
 
     return CNcbiOstrstreamToString(os);
 }
