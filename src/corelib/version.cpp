@@ -598,7 +598,7 @@ string CVersion::Print(const string& appname, TPrintFlags flags) const
 
 #ifdef NCBI_TEAMCITY_BUILD_NUMBER
     if (flags & fTCBuildNumber) {
-            os << " TeamCity build number:  " << NCBI_TEAMCITY_BUILD_NUMBER
+            os << " TeamCity-Build-Number:  " << NCBI_TEAMCITY_BUILD_NUMBER
                << endl;
     }
 #endif /* NCBI_TEAMCITY_BUILD_NUMBER */
