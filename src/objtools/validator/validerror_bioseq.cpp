@@ -4606,7 +4606,7 @@ bool s_CheckPosNOrGap(TSeqPos pos, const CSeqVector& vec)
 }
 
 
-bool s_AfterIsGap(TSeqPos pos, TSeqPos after, TSeqPos len,  const CSeqVector& vec)
+bool s_AfterIsGapORN(TSeqPos pos, TSeqPos after, TSeqPos len,  const CSeqVector& vec)
 {
     if (pos < len - after && s_CheckPosNOrGap(pos + after, vec)) {
         return true;
@@ -4616,9 +4616,29 @@ bool s_AfterIsGap(TSeqPos pos, TSeqPos after, TSeqPos len,  const CSeqVector& ve
 }
 
 
-bool s_BeforeIsGap(TSeqPos pos, TSeqPos before, const CSeqVector& vec)
+bool s_AfterIsGap(TSeqPos pos, TSeqPos after, TSeqPos len, const CSeqVector& vec)
+{
+    if (pos < len - after && vec.IsInGap(pos + after)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+bool s_BeforeIsGapOrN(TSeqPos pos, TSeqPos before, const CSeqVector& vec)
 {
     if (pos >= before && s_CheckPosNOrGap(pos - before, vec)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+bool s_BeforeIsGap(TSeqPos pos, TSeqPos before, const CSeqVector& vec)
+{
+    if (pos >= before && vec.IsInGap(pos - before)) {
         return true;
     } else {
         return false;
@@ -4681,11 +4701,12 @@ bool CValidError_bioseq::x_IsPartialAtSpliceSiteOrGap
     bool result = false;
 
     try {
-        if (tag == eSeqlocPartial_Nostop && s_AfterIsGap(stop, 1, len, vec)) {
+        if (tag == eSeqlocPartial_Nostop &&
+            (s_AfterIsGapORN(stop, 1, len, vec) || s_AfterIsGap(stop, 2, len, vec))) {
             is_gap = true;
             return true;
         } else if (tag == eSeqlocPartial_Nostart && start > 0  && 
-                   s_BeforeIsGap(start, 1, vec)) {
+                   (s_BeforeIsGapOrN(start, 1, vec) || s_BeforeIsGap(start, 2, vec))) {
             is_gap = true;
             return true;
         }
