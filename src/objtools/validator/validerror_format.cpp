@@ -156,9 +156,6 @@ string CValidErrorFormat::FormatForSubmitterReport(const CValidErrItem& error, C
         case eErr_SEQ_FEAT_RareSpliceConsensusDonor:
             rval = x_FormatConsensusSpliceForSubmitterReport(error);
             break;
-        case eErr_SEQ_FEAT_PartialProblem:
-            rval = x_FormatPartialProblemForSubmitterReport(error);
-            break;
         case eErr_SEQ_FEAT_BadEcNumberFormat:
         case eErr_SEQ_FEAT_BadEcNumberValue:
         case eErr_SEQ_FEAT_EcNumberProblem:
@@ -178,7 +175,7 @@ string CValidErrorFormat::FormatForSubmitterReport(const CValidErrItem& error, C
             rval = x_FormatLatLonCountryForSubmitterReport(error);
             break;
         default:
-            rval = error.GetAccession() + ":" + error.GetObjDesc();
+            rval = x_FormatGenericForSubmitterReport(error);
             break;
     }
 
@@ -232,7 +229,7 @@ string CValidErrorFormat::x_FormatConsensusSpliceForSubmitterReport(const CValid
 }
 
 
-string CValidErrorFormat::x_FormatPartialProblemForSubmitterReport(const CValidErrItem& error) const
+string CValidErrorFormat::x_FormatGenericForSubmitterReport(const CValidErrItem& error) const
 {
     string obj_desc = error.GetObjDesc();
     size_t type_pos = NStr::Find(obj_desc, "FEATURE: ");

@@ -121,7 +121,7 @@ private:
     string x_FormatBadSpecificHostForSubmitterReport(const CValidErrItem& error) const;
     string x_FormatBadInstCodeForSubmitterReport(const CValidErrItem& error) const;
     string x_FormatLatLonCountryForSubmitterReport(const CValidErrItem& error) const;
-    string x_FormatPartialProblemForSubmitterReport(const CValidErrItem& error) const;
+    string x_FormatGenericForSubmitterReport(const CValidErrItem& error) const;
 
     CRef<CObjectManager>    m_ObjMgr;
 
