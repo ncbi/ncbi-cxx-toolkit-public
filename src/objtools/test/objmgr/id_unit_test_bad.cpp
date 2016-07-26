@@ -580,9 +580,9 @@ BOOST_AUTO_TEST_CASE(CheckNoGi)
             if ( s_HaveID2() ) { // doesn't work with pubseqos reader
                 TRACE_POST("GetIds");
                 BOOST_CHECK(!op->GetIds(id).empty());
+                TRACE_POST("GetBioseqHandle");
+                BOOST_CHECK(op->GetBioseqHandle(id));
             }
-            TRACE_POST("GetBioseqHandle");
-            BOOST_CHECK(op->GetBioseqHandle(id));
         }
     }
 }
