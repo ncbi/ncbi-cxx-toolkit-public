@@ -797,6 +797,11 @@ bool CGvfReader::x_FeatureSetVariation(
             return false;
         }
     }
+    else if (strType == "indel") {
+        if (!xVariationMakeIndels( record, pVariation )) {
+            return false;
+        }
+    }
     else if (strType == "inversion") {
         if (!xVariationMakeInversions( record, pVariation )) {
             return false;
@@ -925,7 +930,6 @@ bool CGvfReader::xVariationSetInsertions(
                pAllele );
         }
     }
-//    pVariation->SetInsertion();
     return true;
 }
 
@@ -1149,6 +1153,23 @@ bool CGvfReader::xVariationMakeDeletions(
     }
     return true;
 }
+
+//  ----------------------------------------------------------------------------
+bool CGvfReader::xVariationMakeIndels(
+    const CGvfReadRecord& record,
+    CRef<CVariation_ref> pVariation )
+//  ----------------------------------------------------------------------------
+{
+    if ( ! xVariationSetCommon( record, pVariation ) ) {
+        return false;
+    }
+
+    pVariation->SetDeletionInsertion("", CVariation_ref::eSeqType_na);
+    pVariation->SetData().SetInstance().SetType(CVariation_inst::eType_delins);
+
+    return true;
+}
+
 
 //  ---------------------------------------------------------------------------
 bool CGvfReader::xVariationSetId(

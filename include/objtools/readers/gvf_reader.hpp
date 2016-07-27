@@ -162,6 +162,10 @@ protected:
         const CGvfReadRecord&,
         CRef<CVariation_ref> );
 
+    bool xVariationMakeIndels(
+        const CGvfReadRecord&,
+        CRef<CVariation_ref>);
+
     bool xVariationMakeInversions(
         const CGvfReadRecord&,
         CRef<CVariation_ref> );
