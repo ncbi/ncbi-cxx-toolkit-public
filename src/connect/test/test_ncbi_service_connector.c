@@ -57,9 +57,8 @@ int main(int argc, const char* argv[])
     CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
                            fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
-#ifdef NCBI_CXX_TOOLKIT
+
     SOCK_SetupSSL(NcbiSetupGnuTls);
-#endif /*NCBI_CXX_TOOLKIT*/
 
     net_info = ConnNetInfo_Create(service);
     ConnNetInfo_AppendArg(net_info, "testarg",  "val");

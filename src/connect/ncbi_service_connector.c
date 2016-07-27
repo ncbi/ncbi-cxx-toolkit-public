@@ -704,10 +704,8 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
         EMIME_Type     mime_t;
         EMIME_SubType  mime_s;
         EMIME_Encoding mime_e;
-#ifdef NCBI_CXX_TOOLKIT
         if (!net_info->scheme)
             net_info->scheme = eURL_Https;
-#endif /*NCBI_CXX_TOOLKIT*/
         if (net_info->stateless
             ||  (info  &&  (info->u.firewall.type & fSERV_Http))) {
             if (info) {

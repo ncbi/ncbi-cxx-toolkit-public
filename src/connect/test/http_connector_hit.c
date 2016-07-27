@@ -130,9 +130,7 @@ int main(int argc, const char* argv[])
     /* Tune to the test URL using hard-coded pseudo-registry */
     CORE_SetREG( REG_Create(0, s_REG_Get, 0, 0, 0) );
 
-#ifdef NCBI_CXX_TOOLKIT
     SOCK_SetupSSL(NcbiSetupGnuTls);
-#endif /*NCBI_CXX_TOOLKIT*/
 
     /* Usage */
     if (argc < 4) {

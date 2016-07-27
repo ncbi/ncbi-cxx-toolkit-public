@@ -104,9 +104,8 @@ int main(int argc, char* argv[])
     CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
                            fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
-#ifdef NCBI_CXX_TOOLKIT
+
     SOCK_SetupSSL(NcbiSetupGnuTls);
-#endif /*NCBI_CXX_TOOLKIT*/
 
     data_file = fopen("test_ncbi_http_connector.log", "ab");
     assert(data_file);
@@ -135,6 +134,7 @@ int main(int argc, char* argv[])
 
     if (atoi(TEST_PORT) == CONN_PORT_HTTPS) {
         verify((net_info = ConnNetInfo_Create(0)) != 0);
+        assert(net_info->port == CONN_PORT_HTTPS);
         net_info->scheme = eURL_Https;
     } else
         net_info = 0;
