@@ -100,6 +100,8 @@ protected:
     void x_GetOperonSubfeatures(string &interval);
 
     virtual bool x_IsPseudo();
+
+    void x_TypewordFromSequence();
    
     const CSeq_feat& m_MainFeat;
     CRef<CSeq_loc> m_ClauseLocation;

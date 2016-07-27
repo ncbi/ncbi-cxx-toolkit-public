@@ -88,6 +88,7 @@ public:
         eOptionFieldType_KeepMobileElements,
         eOptionFieldType_KeepPrecursorRNA,
         eOptionFieldType_KeepRepeatRegion,
+        eOptionFieldType_KeepMiscRecomb,
         eOptionFieldType_UseNcRNAComment,
         eOptionFieldType_SuppressedFeatures,
         eOptionFieldType_ModifierList,
@@ -188,6 +189,7 @@ public:
     AUTODEFBOOLFIELD(KeepMobileElements)
     AUTODEFBOOLFIELD(KeepPrecursorRNA)
     AUTODEFBOOLFIELD(KeepRepeatRegion)
+    AUTODEFBOOLFIELD(KeepMiscRecomb)
     AUTODEFBOOLFIELD(UseNcRNAComment)
     AUTODEFBOOLFIELD(SuppressMiscFeatureSubfeatures)
 

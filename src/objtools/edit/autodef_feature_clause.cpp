@@ -200,6 +200,7 @@ bool CAutoDefFeatureClause::IsRecognizedFeature()
         || subtype == CSeqFeatData::eSubtype_preRNA
         || subtype == CSeqFeatData::eSubtype_D_loop
         || subtype == CSeqFeatData::eSubtype_regulatory
+        || subtype == CSeqFeatData::eSubtype_misc_recomb
         || IsNoncodingProductFeat()
         || IsMobileElement()
         || IsInsertionSequence()
@@ -235,6 +236,19 @@ bool CAutoDefFeatureClause::x_IsPseudo()
     } else {
         return false;
     }
+}
+
+
+void CAutoDefFeatureClause::x_TypewordFromSequence()
+{
+    if (m_Biomol == CMolInfo::eBiomol_genomic) {
+        m_Typeword = "genomic sequence";
+    } else if (m_Biomol == CMolInfo::eBiomol_mRNA) {
+        m_Typeword = "mRNA sequence";
+    } else {
+        m_Typeword = "sequence";
+    }
+    m_TypewordChosen = true;
 }
 
 
@@ -299,6 +313,10 @@ bool CAutoDefFeatureClause::x_GetFeatureTypeWord(string &typeword)
                     return true;
                 }
             }
+            break;
+        case CSeqFeatData::eSubtype_misc_recomb:
+            x_TypewordFromSequence();
+            return true;
             break;
         case CSeqFeatData::eSubtype_biosrc:
             if (IsEndogenousVirusSourceFeature()) {
@@ -588,6 +606,18 @@ string CAutoDefFeatureClause::x_GetGeneName(const CGene_ref& gref, bool suppress
 }
 
 
+void s_UseCommentBeforeSemicolon(const CSeq_feat& feat, string& label)
+{
+    if (feat.IsSetComment()) {
+        label = feat.GetComment();
+        string::size_type pos = NStr::Find(label, ";");
+        if (pos != NCBI_NS_STD::string::npos) {
+            label = label.substr(0, pos);
+        }
+    }
+}
+
+
 /* Frequently the product associated with a feature is listed as part of the
  * description of the feature in the definition line.  This function determines
  * the name of the product associated with this specific feature.  Some
@@ -630,6 +660,9 @@ bool CAutoDefFeatureClause::x_GetProductName(string &product_name)
         }
         return true;
     } else if (m_MainFeat.GetData().GetSubtype() == CSeqFeatData::eSubtype_regulatory) {
+        return true;
+    } else if (m_MainFeat.GetData().GetSubtype() == CSeqFeatData::eSubtype_misc_recomb) {
+        s_UseCommentBeforeSemicolon(m_MainFeat, product_name);
         return true;
     } else {
         string label;
@@ -912,6 +945,7 @@ bool CAutoDefFeatureClause::x_GetGenericInterval (string &interval, bool suppres
         || subtype == CSeqFeatData::eSubtype_5UTR
         || subtype == CSeqFeatData::eSubtype_3UTR
         || (subtype == CSeqFeatData::eSubtype_repeat_region && !NStr::Equal(m_Typeword, "endogenous virus"))
+        || subtype == CSeqFeatData::eSubtype_misc_recomb
         || IsLTR()) {
         return false;
     } 
@@ -1913,14 +1947,7 @@ CAutoDefMiscCommentClause::CAutoDefMiscCommentClause(CBioseq_Handle bh, const CS
         }
         m_DescriptionChosen = true;
     }
-    if (m_Biomol == CMolInfo::eBiomol_genomic) {
-        m_Typeword = "genomic sequence";
-    } else if (m_Biomol == CMolInfo::eBiomol_mRNA) {
-        m_Typeword = "mRNA sequence";
-    } else {
-        m_Typeword = "sequence";
-    }
-    m_TypewordChosen = true;
+    x_TypewordFromSequence();
     m_Interval = "";
 }
 

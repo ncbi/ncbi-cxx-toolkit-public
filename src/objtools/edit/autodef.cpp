@@ -480,6 +480,11 @@ void CAutoDef::x_RemoveOptionalFeatures(CAutoDefFeatureClause_Base *main_clause,
         main_clause->RemoveOptionalMobileElements();
     }
     
+    // keep misc_recombs only if requested
+    if (!m_Options.GetKeepMiscRecomb()) {
+        main_clause->RemoveFeaturesByType(CSeqFeatData::eSubtype_misc_recomb);
+    }
+
     // delete subclauses at end, so that loneliness calculations will be correct
     main_clause->RemoveDeletedSubclauses();
 }
@@ -692,7 +697,7 @@ string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh)
             } else if ((subtype == CSeqFeatData::eSubtype_misc_feature || subtype == CSeqFeatData::eSubtype_otherRNA) &&
                        (x_AddMiscRNAFeatures(bh, cf, mapped_loc, main_clause) || x_AddtRNAAndOther(bh, cf, mapped_loc, main_clause))) {
                 // special misc_features and misc_RNA features
-            } else if (subtype == CSeqFeatData::eSubtype_misc_feature || subtype == CSeqFeatData::eSubtype_misc_recomb) {
+            } else if (subtype == CSeqFeatData::eSubtype_misc_feature) {
 				// some misc-features may require more parsing
                 new_clause = new CAutoDefFeatureClause(bh, cf, mapped_loc);
                 if (m_Options.GetMiscFeatRule() == CAutoDefOptions::eDelete

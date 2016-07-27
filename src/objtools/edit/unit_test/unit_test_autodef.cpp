@@ -315,6 +315,9 @@ void CheckAutoDefOptions
     if (opts.AreAnyFeaturesSuppressed()) {
         expected_num_fields++;
     }
+    if (opts.GetKeepMiscRecomb()) {
+        expected_num_fields++;
+    }
 
     BOOST_CHECK_EQUAL(user.GetObjectType(), CUser_object::eObjectType_AutodefOptions);
     BOOST_CHECK_EQUAL(user.GetData().size(), expected_num_fields);
@@ -1926,8 +1929,22 @@ BOOST_AUTO_TEST_CASE(Test_GB_5793)
     CRef<CSeq_feat> m = unit_test_util::AddMiscFeature(entry);
     m->SetData().SetImp().SetKey("misc_recomb");
     m->SetComment("GCC2-ALK translocation breakpoint junction; microhomology");
+
+    // by default, misc_recomb not included
+    AddTitle(entry, "Sebaea microphylla.");
+    CheckDeflineMatches(entry);
+
+    // use option to show misc_recomb
     AddTitle(entry, "Sebaea microphylla GCC2-ALK translocation breakpoint junction genomic sequence.");
-    CheckDeflineMatches(entry, false, CAutoDefOptions::eListAllFeatures, CAutoDefOptions::eCommentFeat);
+    objects::CAutoDef autodef;
+    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+    CRef<CScope> scope(new CScope(*object_manager));
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    autodef.AddSources(seh);
+    CRef<CAutoDefModifierCombo> mod_combo(new CAutoDefModifierCombo());
+    autodef.SetFeatureListType(CAutoDefOptions::eListAllFeatures);
+    autodef.SetKeepMiscRecomb(true);
+    CheckDeflineMatches(seh, autodef, mod_combo);
 }
 
 
