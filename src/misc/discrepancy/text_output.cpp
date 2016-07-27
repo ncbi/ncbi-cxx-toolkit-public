@@ -44,7 +44,6 @@ static void RecursiveText(ostream& out, const TReportItemList& list, bool ext)
             continue;
         }
         out << (*it)->GetTitle() << ": " << (*it)->GetMsg() << "\n";
-        cout << (*it)->GetTitle() << ": " << (*it)->GetMsg() << "\n";        // TODO: remove from the final version
         TReportItemList subs = (*it)->GetSubitems();
         if (!subs.empty() && (ext || !subs[0]->IsExtended()) && !subs[0]->IsSummary()) {
             RecursiveText(out, subs, ext);
@@ -53,10 +52,8 @@ static void RecursiveText(ostream& out, const TReportItemList& list, bool ext)
             TReportObjectList det = (*it)->GetDetails();
             ITERATE (TReportObjectList, obj, det) {
                 out << (*obj)->GetText() << "\n";
-                cout << (*obj)->GetText() << "\n";  // TODO: remove from the final version
             }
             out << "\n";
-            cout << "\n";                           // TODO: remove from the final version
         }
     }
 }

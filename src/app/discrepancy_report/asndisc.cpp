@@ -77,10 +77,11 @@ protected:
     bool m_AutoFix;
     bool m_Macro;
     bool m_Xml;
+    bool m_Print;
 };
 
 
-CDiscRepApp::CDiscRepApp(void) : m_Scope(*CObjectManager::GetInstance()), m_Ext(false), m_AutoFix(false), m_Macro(false), m_Xml(false)
+CDiscRepApp::CDiscRepApp(void) : m_Scope(*CObjectManager::GetInstance()), m_Ext(false), m_AutoFix(false), m_Macro(false), m_Xml(false), m_Print(false)
 {
 }
 
@@ -143,6 +144,7 @@ void CDiscRepApp::Init(void)
     arg_desc->AddFlag("F", "Autofix");
     arg_desc->AddFlag("R", "Generate Autofix MACRO file");
     arg_desc->AddFlag("XML", "Generate XML output");
+    arg_desc->AddFlag("STDOUT", "Copy the output to STDOUT");
 
 /*
     arg_desc->AddOptionalKey("M", "MessageLevel", 
@@ -301,6 +303,9 @@ void CDiscRepApp::x_ProcessFile(const string& fname)
         x_OutputObject(x_ConstructAutofixName(fname), *obj);
     }
     m_Xml ? x_OutputXml(x_ConstructOutputName(fname), *Tests) : x_Output(x_ConstructOutputName(fname), *Tests);
+    if (m_Print) {
+        m_Xml ? Tests->OutputXML(cout) : Tests->OutputText(cout);
+    }
 }
 
 
@@ -335,6 +340,9 @@ void CDiscRepApp::x_ProcessAll(const string& outname)
         }
     }
     m_Xml ? x_OutputXml(outname, *Tests) : x_Output(outname, *Tests);
+    if (m_Print) {
+        m_Xml ? Tests->OutputXML(cout) : Tests->OutputText(cout);
+    }
 }
 
 
@@ -467,6 +475,7 @@ int CDiscRepApp::Run(void)
     if (args["F"]) m_AutoFix = args["F"].AsBoolean();
     if (args["R"]) m_Macro = args["R"].AsBoolean();
     if (args["XML"]) m_Xml = args["XML"].AsBoolean();
+    if (args["STDOUT"]) m_Print = args["STDOUT"].AsBoolean();
 
     // run tests
     if (args["o"]) {
