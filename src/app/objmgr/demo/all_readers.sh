@@ -3,22 +3,32 @@
 
 status_dir="$CFG_LIB/../status"
 if test ! -d "$status_dir"; then
-    status_dir="../../../../../status"
+    status_dir="../../../../status"
 fi
+
+disabled() {
+    if test -f "$status_dir/$1.enabled"; then
+        return 1
+    fi
+    case "$FEATURES" in
+        *" $1 "*) return 1;;
+    esac
+    return 0;
+}
 
 if test "$1" = "-id2"; then
     shift
     methods="ID2"
-elif test ! -f "$status_dir/PubSeqOS.enabled"; then
+elif disabled PubSeqOS; then
     echo "Skipping PUBSEQOS loader test (loader unavailable)"
     methods="ID1 ID2"
-elif test ! -f "$status_dir/in-house-resources.enabled"; then
+elif disabled in-house-resources; then
     echo "Skipping PUBSEQOS loader test (in-house resources unavailable)"
     methods="ID1 ID2"
 else
     methods="PUBSEQOS ID1 ID2"
 fi
-if test ! -f "$status_dir/DLL_BUILD.enabled"; then
+if disabled DLL_BUILD; then
     # enable dll plugins for ftds and bdb
     NCBI_LOAD_PLUGINS_FROM_DLLS=1
     export NCBI_LOAD_PLUGINS_FROM_DLLS
@@ -71,10 +81,16 @@ init_cache() {
         fi
         unset NCBI_CONFIG_OVERRIDES
     fi
-    if test ! -f "$status_dir/BerkeleyDB.enabled"; then
+    if disabled BerkeleyDB; then
+        echo BerkeleyDB is not enabled
         return 1
     fi
-    if test ! -f "$status_dir/MT.enabled"; then
+    if disabled MT; then
+        echo MT is not enabled
+        return 1
+    fi
+    if disabled DLL; then
+        echo No DLL plugins
         return 1
     fi
     echo "Init BDB cache"
@@ -85,9 +101,14 @@ init_cache() {
 exitcode=0
 failed=''
 for method in $methods; do
+    GENBANK_LOADER_METHOD_BASE="$method"
+    export GENBANK_LOADER_METHOD_BASE
     for cache in 1 2 3; do
+        GENBANK_ALLOW_INCOMPLETE_COMMANDS=1
+        export GENBANK_ALLOW_INCOMPLETE_COMMANDS
         if test "$cache" = 1; then
             m="$method"
+            unset GENBANK_ALLOW_INCOMPLETE_COMMANDS
         elif test "$cache" = 2; then
             if init_cache; then
                 :
