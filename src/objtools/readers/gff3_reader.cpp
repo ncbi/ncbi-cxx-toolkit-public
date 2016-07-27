@@ -724,8 +724,27 @@ bool CGff3Reader::xIsIgnoredFeatureType(
 
     /* -genbank mode:*/
     static const char* const specialTypesGenbank_[] = {
-        "selenocysteine"
+        "antisense_RNA",
+        "autocatalytically_spliced_intron",
+        "guide_RNA",
+        "hammerhead_ribozyme",
+        "lnc_RNA",
+        "miRNA",
+        "piRNA",
+        "rasiRNA",
+        "ribozyme",
+        "RNase_MRP_RNA",
+        "RNase_P_RNA",
+        "scRNA",
+        "selenocysteine",
+        "siRNA",
+        "snoRNA",
+        "snRNA",
+        "SRP_RNA",
         "stop_codon_read_through",
+        "telomerase_RNA",
+        "vault_RNA",
+        "Y_RNA"
     };
     DEFINE_STATIC_ARRAY_MAP(STRINGARRAY, specialTypesGenbank, specialTypesGenbank_);    
 

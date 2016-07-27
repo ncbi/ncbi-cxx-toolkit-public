@@ -1248,6 +1248,9 @@ bool CGff2Record::xInitFeatureData(
     if (xInitFeatureDataBond(flags, pFeature)) {
         return true;
     }
+    if (xInitFeatureDataNcrna(flags, pFeature)) {
+        return true;
+    }
     if (xInitFeatureDataSpecialImp(flags, pFeature)) {
         return true;
     }
@@ -1338,6 +1341,59 @@ bool CGff2Record::xInitFeatureDataBond(
     }
     if (ftype == "disulfide_bond") {
         pFeature->SetData().SetBond(CSeqFeatData::eBond_disulfide);
+        return true;
+    }
+    return false;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Record::xInitFeatureDataNcrna(
+    int flags,
+    CRef<CSeq_feat> pFeature) const
+//  ----------------------------------------------------------------------------
+{
+    typedef SStaticPair<const char*, const char*>  NCRNA_ENTRY;
+    static const NCRNA_ENTRY ncRnaMap_[] = {
+        { "antisense_RNA", "antisense_RNA" },
+        { "autocatalytically_spliced_intron", "autocatalytically_spliced_intron" },
+        { "guide_RNA", "guide_RNA" },
+        { "hammerhead_ribozyme", "hammerhead_ribozyme" },
+        { "lnc_RNA", "lncRNA" },
+        { "miRNA", "miRNA" },
+        { "ncRNA", "other" },
+        { "piRNA", "piRNA" },
+        { "rasiRNA", "rasiRNA" },
+        { "ribozyme", "ribozyme" },
+        { "RNase_MRP_RNA", "RNase_MRP_RNA" },
+        { "RNase_P_RNA", "RNase_P_RNA" },
+        { "scRNA", "scRNA" },
+        { "siRNA", "siRNA" },
+        { "snoRNA", "snoRNA" },
+        { "snRNA", "snRNA" },
+        { "SRP_RNA", "SRP_RNA" },
+        { "telomerase_RNA", "telomerase_RNA" },
+        { "vault_RNA", "vault_RNA" },
+        { "Y_RNA", "Y_RNA" }
+    };
+    typedef CStaticArrayMap<string, string, PNocase> NCRNA_MAP;
+    DEFINE_STATIC_ARRAY_MAP_WITH_COPY(NCRNA_MAP, ncRnaMap, ncRnaMap_);
+
+    string ftype = Type();
+    if (ftype == "ncRNA") {
+        pFeature->SetData().SetRna().SetType(CRNA_ref::eType_ncRNA);
+        string ncrna_class;
+        if (GetAttribute("ncrna_class", ncrna_class)) {
+            pFeature->SetData().SetRna().SetExt().SetGen().SetClass(ncrna_class);
+        }
+        else {
+            pFeature->SetData().SetRna().SetExt().SetGen().SetClass("other");
+        }
+        return true;
+    }
+    NCRNA_MAP::const_iterator cit = ncRnaMap.find(ftype);
+    if (cit != ncRnaMap.end()) {
+        pFeature->SetData().SetRna().SetType(CRNA_ref::eType_ncRNA);
+        pFeature->SetData().SetRna().SetExt().SetGen().SetClass(cit->second);
         return true;
     }
     return false;
