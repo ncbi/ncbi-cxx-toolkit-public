@@ -1,0 +1,328 @@
+Seq-submit ::= {
+  sub {
+    contact {
+      contact {
+        name
+          name {
+            last "Lichtenstein" ,
+            first "Gabriel" } ,
+        affil
+          std {
+            affil "INTA Castelar" ,
+            div "Insituto de Biotecnologia" ,
+            city "Hurlingham" ,
+            sub "Buenos Aires" ,
+            country "Argentina" ,
+            street "Las Cabanias y Los Reseros s/n" ,
+            email "glichtenstein@cnia.inta.gov.ar" ,
+            phone "(+5411) 4621 1447" ,
+            postal-code "B1712 WAA" } } } ,
+    cit {
+      authors {
+        names
+          std {
+            {
+              name
+                name {
+                  last "Conte" ,
+                  first "Mariana" ,
+                  initials "M." } } ,
+            {
+              name
+                name {
+                  last "Lichtenstein" ,
+                  first "Gabriel" ,
+                  initials "G." } } ,
+            {
+              name
+                name {
+                  last "Carrari" ,
+                  first "Fernando" ,
+                  initials "F." } } } ,
+        affil
+          std {
+            affil "INTA Castelar" ,
+            div "Insituto de Biotecnologia" ,
+            city "Hurlingham" ,
+            sub "Buenos Aires" ,
+            country "Argentina" ,
+            street "Las Cabanias y Los Reseros s/n" ,
+            email "glichtenstein@cnia.inta.gov.ar" ,
+            phone "(+5411) 4621 1447" ,
+            postal-code "B1712 WAA" } } ,
+      date
+        std {
+          year 2011 ,
+          month 11 ,
+          day 30 } } ,
+    subtype new ,
+    tool "tbl2asn 17.9 - LINUX UNIX" } ,
+  data
+    entrys {
+      set {
+        class genbank ,
+        seq-set {
+          seq {
+            id {
+              local
+                str "Contig_12" } ,
+            descr {
+              source {
+                genome mitochondrion ,
+                org {
+                  taxname "Homo sapiens" ,
+                  common "human" ,
+                  db {
+                    {
+                      db "taxon" ,
+                      tag
+                        id 9606 } } ,
+                  orgname {
+                    lineage "Eukaryota; Metazoa; Chordata; Craniata;
+ Vertebrata; Euteleostomi; Mammalia; Eutheria; Primates; Catarrhini;
+ Hominidae; Homo" ,
+                    gcode 1 ,
+                    mgcode 2 ,
+                    div "PRI" } } ,
+                subtype {
+                  {
+                    subtype chromosome ,
+                    name "SlmtSC_A" } } } ,
+              molinfo {
+                biomol genomic } ,
+              pub {
+                pub {
+                  gen {
+                    cit "Unpublished" ,
+                    authors {
+                      names
+                        std {
+                          {
+                            name
+                              name {
+                                last "Clark" ,
+                                first "K" ,
+                                initials "K." } } ,
+                          {
+                            name
+                              name {
+                                last "Bollin" ,
+                                first "C" ,
+                                initials "C." } } } } ,
+                    title "fake pub" } } } ,
+              user {
+                type
+                  str "NcbiCleanup" ,
+                data {
+                  {
+                    label
+                      str "method" ,
+                    data
+                      str "SequinCleanup" } ,
+                  {
+                    label
+                      str "version" ,
+                    data
+                      int 7 } ,
+                  {
+                    label
+                      str "month" ,
+                    data
+                      int 11 } ,
+                  {
+                    label
+                      str "day" ,
+                    data
+                      int 30 } ,
+                  {
+                    label
+                      str "year" ,
+                    data
+                      int 2011 } } } ,
+              create-date
+                std {
+                  year 2011 ,
+                  month 11 ,
+                  day 30 } } ,
+            inst {
+              repr raw ,
+              mol dna ,
+              length 674 ,
+              seq-data
+                ncbi2na '70022820962710800F5659C532C924ECC22580CA2CA55D4E934AC
+14C4E0AA83EA48FC9079169030881264C1B040C003E274F3CC0D0BCF833F60C0DDC0F601D56F35
+0C005C03D70C30140355C463CBC4067FF8424FE5904ADBB014035CF0C8CA044B5050F54003303F
+B340F6072C1C35413A0B1E00074CC24003740C97E34E25330F3473030814C3D412CB8F0CF84C32
+0B0BAB6342CD60B7020034F3C38D4214C4CB8C0481E73F3F9E0'H } } ,
+          seq {
+            id {
+              local
+                str "Contig_13" } ,
+            descr {
+              source {
+                org {
+                  taxname "Solanum lycopersicum" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype cultivar ,
+                        subname "Heinz 1706" } } } } ,
+                subtype {
+                  {
+                    subtype chromosome ,
+                    name "SlmtSC_A" } } } ,
+              molinfo {
+                biomol genomic } ,
+              pub {
+                pub {
+                  gen {
+                    cit "Unpublished" ,
+                    authors {
+                      names
+                        std {
+                          {
+                            name
+                              name {
+                                last "Clark" ,
+                                first "K" ,
+                                initials "K." } } ,
+                          {
+                            name
+                              name {
+                                last "Bollin" ,
+                                first "C" ,
+                                initials "C." } } } } ,
+                    title "fake pub" } } } ,
+              user {
+                type
+                  str "NcbiCleanup" ,
+                data {
+                  {
+                    label
+                      str "method" ,
+                    data
+                      str "SequinCleanup" } ,
+                  {
+                    label
+                      str "version" ,
+                    data
+                      int 7 } ,
+                  {
+                    label
+                      str "month" ,
+                    data
+                      int 11 } ,
+                  {
+                    label
+                      str "day" ,
+                    data
+                      int 30 } ,
+                  {
+                    label
+                      str "year" ,
+                    data
+                      int 2011 } } } ,
+              create-date
+                std {
+                  year 2011 ,
+                  month 11 ,
+                  day 30 } } ,
+            inst {
+              repr raw ,
+              mol dna ,
+              length 1661 ,
+              seq-data
+                ncbi2na 'F87AF2F287FFDC63BD88DFEDD922A60388DF7E810AD2886FA1A14
+BF7DE3D438C8E8EB4ADAC133A3A287DC4AB7DDB99D87202BAFFB298180CAFFECA6268B8A4380FB
+F298080AF898027F6FB368DDA84F0C16B8AA8464C25B3926ADD39FBDD5C2897B42C432AE805CFD
+263871304302E7F8E320B2C238E861FDED483E24CCDC2ABF2B4BDC10FC7D4C1F2903EA3FDF9C09
+17AEDC3E82AE3B085DCB9005164DC6234BB40D2A08ABDCF5BF59876F833BCB11F0F47F428373B5
+E076B5C0AA2A09DFFA2138EA2F96BB3EA679FE73994F4EB9C5B20087F3F821AE3AE7084F5B9FF0
+541D0960807CF43AD1670597FAD5037FA9F9FFD4301BEBC4FDFCEF3FB14B05AFCE8E2E77E8B2DA
+DC99E05C6E5CE1F6FDD280F6649A08D783F887F711700CF77C060ACF667E8E9A74234974E005F3
+3D5E28AF7146E80A77F0E81FC97C9EB6E1420247AFD9FAEA5A8395841D0FCD6B01C72A9D3B254E
+7A3C36CF7A96890E05CFE0BA54FDB148825CECE0428F0FE1F5517271DCAFAAAD00B33331FEFC0C
+A95C2E0D21C145EF4DF7DCFE4AC4447E28D08720DD4E8E877877018283789FCD04F8C27F8E140'H } } ,
+          seq {
+            id {
+              local
+                str "Contig_14" } ,
+            descr {
+              source {
+                org {
+                  taxname "Escherichia coli" ,
+                  db {
+                    {
+                      db "taxon" ,
+                      tag
+                        id 562 } } ,
+                  orgname {
+                    lineage "Bacteria; Proteobacteria; gamma subdivision;
+ Enterobacteriaceae; Escherichia" ,
+                    gcode 11 ,
+                    div "BCT" } } } ,
+              molinfo {
+                biomol genomic } ,
+              pub {
+                pub {
+                  gen {
+                    cit "Unpublished" ,
+                    authors {
+                      names
+                        std {
+                          {
+                            name
+                              name {
+                                last "Clarke" ,
+                                first "K" ,
+                                initials "K." } } ,
+                          {
+                            name
+                              name {
+                                last "Bollin" ,
+                                first "C" ,
+                                initials "C." } } } } ,
+                    title "fake pub" } } } ,
+              user {
+                type
+                  str "NcbiCleanup" ,
+                data {
+                  {
+                    label
+                      str "method" ,
+                    data
+                      str "SequinCleanup" } ,
+                  {
+                    label
+                      str "version" ,
+                    data
+                      int 7 } ,
+                  {
+                    label
+                      str "month" ,
+                    data
+                      int 11 } ,
+                  {
+                    label
+                      str "day" ,
+                    data
+                      int 30 } ,
+                  {
+                    label
+                      str "year" ,
+                    data
+                      int 2011 } } } ,
+              create-date
+                std {
+                  year 2011 ,
+                  month 11 ,
+                  day 30 } } ,
+            inst {
+              repr raw ,
+              mol dna ,
+              length 509 ,
+              seq-data
+                ncbi2na '8C77E02BB9CFE764BDDBF8C5A30240DFAFF6FF5FB8E85E822AAC4
+ED0B3697A8D1B7DF2873DE8EC43D0FDACB0CF53F4BE80392D23BFAA4BB0B8D0AACB074CD1A8A01
+FE648BDCF1CF0EAE9D663F7CEA44A4D52B0F4B7CEBDF4F37933A5FFFD72B9D3FEDEA7FCBF0EFDC
+F49A1BAF3E9081F3E0D4DBFA9D30C0F00BE75E71D258880'H } } } } } }
