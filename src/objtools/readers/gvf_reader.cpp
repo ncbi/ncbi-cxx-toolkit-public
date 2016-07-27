@@ -1035,15 +1035,14 @@ bool CGvfReader::xVariationMakeInversions(
         return false;
     }
 
-    CRef<CSeq_loc> pLocation = Ref(new CSeq_loc());
-    if ( ! x_SetLocation( record, pLocation ) ) {
-        return false;
-    }
+    CRef<CSeq_loc> null = Ref(new CSeq_loc());
+    null->SetNull();
 
-    pVariation->SetInversion(*pLocation);
+    pVariation->SetInversion(*null);
    
     return true;
 }
+
 
 //  ----------------------------------------------------------------------------
 bool CGvfReader::xVariationMakeEversions(
@@ -1055,12 +1054,10 @@ bool CGvfReader::xVariationMakeEversions(
         return false;
     }
 
-    CRef<CSeq_loc> pLocation = Ref(new CSeq_loc());
-    if ( ! x_SetLocation( record, pLocation ) ) {
-        return false;
-    }
+    CRef<CSeq_loc> null = Ref(new CSeq_loc());
+    null->SetNull();
 
-    pVariation->SetEversion(*pLocation);
+    pVariation->SetEversion(*null);
    
     return true;
 }
@@ -1076,12 +1073,10 @@ bool CGvfReader::xVariationMakeTranslocations(
         return false;
     }
 
-    CRef<CSeq_loc> pLocation = Ref(new CSeq_loc());
-    if ( ! x_SetLocation( record, pLocation ) ) {
-        return false;
-    }
+    CRef<CSeq_loc> null = Ref(new CSeq_loc());
+    null->SetNull();
 
-    pVariation->SetTranslocation(*pLocation);
+    pVariation->SetTranslocation(*null);
    
     return true;
 }
