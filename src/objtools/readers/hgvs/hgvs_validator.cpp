@@ -236,7 +236,6 @@ void CHgvsVariantValidator::x_CheckNoOffsets(const CNtLocation& nt_loc)
      
 
     if (nt_loc.IsInt()) { // Need to finish this!
-        std::cout << "Need to finish\n";
         return;
     }
             
@@ -255,6 +254,7 @@ void CHgvsVariantValidator::x_ValidateNtLocation(const CNtLocation& nt_loc,
 
     if (nt_loc.IsRange()) {
         x_ValidateNtLocation(nt_loc.GetRange(), seq_type);
+        return;
     }
 
     // Must be interval
