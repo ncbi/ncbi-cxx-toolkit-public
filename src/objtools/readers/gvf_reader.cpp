@@ -816,13 +816,17 @@ bool CGvfReader::x_FeatureSetVariation(
             return false;
         }
     }
-    else if (strType == "complex_chromosomal_rearrangement" ||
-             strType == "complex_substitution") { 
+    else if (strType == "complex" ||
+             strType == "complex_substitution" ||
+             strType == "complex_chromosomal_rearrangement" ||
+             strType == "complex_sequence_alteration") { 
         if (!xVariationMakeComplex( record, pVariation )){
             return false;
         }
     }
-    else if (strType == "sequence_alteration") {
+    else if (strType == "unknown" ||
+             strType == "other" ||
+             strType == "sequence_alteration") {
         if (!xVariationMakeUnknown( record, pVariation )){
             return false;
         }
@@ -945,7 +949,6 @@ bool CGvfReader::xVariationMakeCNV(
     string nameAttr;
     x_GetNameAttribute(record, nameAttr);
 
-
     string strType = record.Type();
     NStr::ToLower( strType );
     if ( strType == "cnv" || 
@@ -963,7 +966,7 @@ bool CGvfReader::xVariationMakeCNV(
          strType == "copy_number_loss" ||
          (strType == "mobile_element_deletion" && !x_IsDbvarCall(nameAttr)) ) {
         pVariation->SetLoss();
-        return pVariation;
+        return true;
     }
     if ( strType == "loss_of_heterozygosity" ) {
         pVariation->SetLoss();
@@ -973,22 +976,7 @@ bool CGvfReader::xVariationMakeCNV(
         pVariation->SetConsequence().push_back( pConsequence );
         return true;
     }
-    if ( strType == "complex"  || 
-         strType == "complex_substitution"  ||
-         strType == "complex_sequence_alteration" ) {
-        pVariation->SetComplex();
-        return true;
-    }
-    if ( strType == "inversion" ) {
-        //pVariation->SetInversion( feature.GetLocation() );
-        return false;
-    }
-    if ( strType == "unknown" || 
-         strType == "other" || 
-         strType == "sequence_alteration" ) {
-        pVariation->SetUnknown();
-        return true;
-    }
+
     AutoPtr<CObjReaderLineException> pErr(
         CObjReaderLineException::Create(
         eDiag_Error,
