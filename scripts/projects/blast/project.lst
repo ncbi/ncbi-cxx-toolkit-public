@@ -78,4 +78,3 @@ objtools/simple$
 -objects/.*/test
 -objects/.*/demo
 -objects/.*/unit_test
-sra/readers/sra
