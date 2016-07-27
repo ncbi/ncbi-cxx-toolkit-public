@@ -253,11 +253,27 @@ static void s_ReplaceCtrlAsInTitle(CRef<CBioseq> bioseq)
     }
 }
 
+static string s_GetBareId(const CSeq_id& id)
+{
+    string retval; 
+
+    if (id.IsGi() || id.IsPdb() || id.IsPrf() || id.IsPir()) {
+        retval = id.AsFastaString();
+    }
+    else {
+        retval = id.GetSeqIdString(true);
+    }
+
+    return retval;
+}
+
 void CSeqFormatter::DumpAll(CSeqDB& blastdb, CSeqFormatterConfig config)
 {
     CFastaOstream fasta(m_Out);
     fasta.SetWidth(config.m_LineWidth);
     fasta.SetAllFlags(CFastaOstream::fKeepGTSigns|CFastaOstream::fNoExpensiveOps);
+
+    CNcbiEnvironment env;
 
     CRef<CBioseq> bioseq;
     for (int i=0; blastdb.CheckOrFindOID(i); i++) {
@@ -272,7 +288,7 @@ void CSeqFormatter::DumpAll(CSeqDB& blastdb, CSeqFormatterConfig config)
              m_Out << ">" << s_GetTitle(bioseq) << '\n';
              CScope scope(*CObjectManager::GetInstance());
              fasta.WriteSequence(scope.AddBioseq(*bioseq));
-             continue;
+//             continue;
          }
          else if (id->IsLocal()) {
 	     string lcl_tmp = id->AsFastaString();
@@ -280,12 +296,46 @@ void CSeqFormatter::DumpAll(CSeqDB& blastdb, CSeqFormatterConfig config)
 	     m_Out << ">" << lcl_tmp << " " << s_GetTitle(bioseq) << '\n';
              CScope scope(*CObjectManager::GetInstance());
              fasta.WriteSequence(scope.AddBioseq(*bioseq));
-	     continue;
-	 }
-         if (config.m_UseCtrlA) {
-             s_ReplaceCtrlAsInTitle(bioseq);
+//	     continue;
          }
-         fasta.Write(*bioseq, 0, true);
+         else if (env.Get("NEW_SEQID_FORMAT").empty()) {
+
+             if (config.m_UseCtrlA) {
+                 s_ReplaceCtrlAsInTitle(bioseq);
+             }
+             fasta.Write(*bioseq, 0, true);
+         }
+         else {
+
+            string separator = config.m_UseCtrlA ? "\001" : " >";
+
+            m_Out << '>';
+            id = FindBestChoice(bioseq->GetId(), CSeq_id::Score);
+            m_Out << s_GetBareId(*id) << ' ';
+
+            string title = s_GetTitle(bioseq);
+            NStr::ReplaceInPlace(title, " >", "#");
+
+            vector<string> tokens;
+            NStr::Split(title, "#", tokens);
+            auto it = tokens.begin();
+            m_Out << *it;
+            ++it;
+            for (; it != tokens.end(); ++it) {
+                size_t pos = it->find (" ");
+                string str_id(*it, 0, pos);
+                list< CRef<CSeq_id> > seqids;
+                CSeq_id::ParseFastaIds(seqids, str_id);
+                m_Out << separator;
+                id = FindBestChoice(seqids, CSeq_id::Score);
+                m_Out << s_GetBareId(*id);
+                m_Out << it->substr(pos, it->length() - pos);
+            }
+            m_Out << endl;
+
+            CScope scope(*CObjectManager::GetInstance());
+            fasta.WriteSequence(scope.AddBioseq(*bioseq));
+         }
     }
 }
 

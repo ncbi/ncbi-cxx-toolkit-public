@@ -268,10 +268,26 @@ void CBlastDBExtractor::x_SetGi2AccMap()
 	return;
 }
 
+static string s_GetBareId(const CSeq_id& id)
+{
+    string retval; 
+
+    if (id.IsGi() || id.IsPdb() || id.IsPrf() || id.IsPir()) {
+        retval = id.AsFastaString();
+    }
+    else {
+        retval = id.GetSeqIdString(true);
+    }
+
+    return retval;
+}
+
 void CBlastDBExtractor::x_SetGi2SeqIdMap()
 {
 	if (m_Gi2SeqIdMap.first == m_Oid)
 		return;
+
+    CNcbiEnvironment env;
 
 	map<TGi, string> gi2id;
     x_InitDefline();
@@ -284,8 +300,14 @@ void CBlastDBExtractor::x_SetGi2SeqIdMap()
             }
         }
         CRef<CSeq_id> theId = FindBestChoice((*bd)->GetSeqid(), CSeq_id::WorstRank);
-        if (gi != INVALID_GI)
-            gi2id[gi] = theId->AsFastaString();
+        if (gi != INVALID_GI) {
+            if (env.Get("NEW_SEQID_FORMAT").empty()) {
+                gi2id[gi] = theId->AsFastaString();
+            }
+            else {
+                gi2id[gi] = s_GetBareId(*theId);
+            }
+        }
     }
 	m_Gi2SeqIdMap.first = m_Oid;
 	m_Gi2SeqIdMap.second.swap(gi2id);
@@ -343,11 +365,19 @@ string CBlastDBExtractor::ExtractSeqId() {
     if (theId->IsGeneral() && theId->GetGeneral().GetDb() == "BL_ORD_ID") {
         	return NOT_AVAILABLE;
     }
-    string retval = theId->AsFastaString();
+    string retval;
 
-    // Remove "lcl|" on local ID.
-    if(theId->IsLocal())
-	retval = retval.erase(0, 4);
+    CNcbiEnvironment env;
+    if (env.Get("NEW_SEQID_FORMAT").empty()) {
+        retval = theId->AsFastaString();
+
+        // Remove "lcl|" on local ID.
+        if(theId->IsLocal())
+            retval = retval.erase(0, 4);
+    }
+    else {
+        retval = s_GetBareId(*theId);
+    }
 
     return retval;
 }
@@ -629,9 +659,11 @@ string CBlastDBExtractor::ExtractFasta(const CBlastDBSeqId &id) {
     fasta.SetWidth(m_LineWidth);
     fasta.SetAllFlags(CFastaOstream::fKeepGTSigns);
 
+    CNcbiEnvironment env;
+
     SetSeqId(id, true);
 
-    if (m_UseCtrlA) {
+    if (m_UseCtrlA && env.Get("NEW_SEQID_FORMAT").empty()) {
         s_ReplaceCtrlAsInTitle(m_Bioseq);
     }
 
@@ -664,16 +696,52 @@ string CBlastDBExtractor::ExtractFasta(const CBlastDBSeqId &id) {
     }
 
     try { 
-	if (seqid->IsLocal())
-	{
-		string lcl_tmp = seqid->AsFastaString();
-		lcl_tmp = lcl_tmp.erase(0, 4);
-		out << ">" << lcl_tmp << " " << s_GetTitle(m_Bioseq) << '\n';
-		CScope scope(*CObjectManager::GetInstance());
-		fasta.WriteSequence(scope.AddBioseq(*m_Bioseq), range); 
-	}
-	else
-		fasta.Write(*m_Bioseq, range); 
+        if (env.Get("NEW_SEQID_FORMAT").empty()) {
+            if (seqid->IsLocal()) {
+                string lcl_tmp = seqid->AsFastaString();
+                lcl_tmp = lcl_tmp.erase(0, 4);
+                out << ">" << lcl_tmp << " " << s_GetTitle(m_Bioseq) << '\n';
+                CScope scope(*CObjectManager::GetInstance());
+                fasta.WriteSequence(scope.AddBioseq(*m_Bioseq), range); 
+            }
+            else  {
+                fasta.Write(*m_Bioseq, range); 
+            }
+        }
+        else {
+
+            string separator = m_UseCtrlA ? "\001" : " >";
+            CRef<CSeq_id> id;
+
+            out << '>';
+            id = FindBestChoice(m_Bioseq->GetId(), CSeq_id::Score);
+            out << s_GetBareId(*id) << ' ';
+
+            string title =
+                s_GetTitle(CConstRef<CBioseq>(m_Bioseq.GetNonNullPointer()));
+
+            NStr::ReplaceInPlace(title, " >", "#");
+
+            vector<string> tokens;
+            NStr::Split(title, "#", tokens);
+            auto it = tokens.begin();
+            out << *it;
+            ++it;
+            for (; it != tokens.end(); ++it) {
+                size_t pos = it->find (" ");
+                string str_id(*it, 0, pos);
+                list< CRef<CSeq_id> > seqids;
+                CSeq_id::ParseFastaIds(seqids, str_id);
+                out << separator;
+                id = FindBestChoice(seqids, CSeq_id::Score);
+                out << s_GetBareId(*id);
+                out << it->substr(pos, it->length() - pos);
+            }
+            out << endl;
+
+            CScope scope(*CObjectManager::GetInstance());
+            fasta.WriteSequence(scope.AddBioseq(*m_Bioseq), range); 
+        }
     }
     catch (const CObjmgrUtilException& e) {
         if (e.GetErrCode() == CObjmgrUtilException::eBadLocation) {
