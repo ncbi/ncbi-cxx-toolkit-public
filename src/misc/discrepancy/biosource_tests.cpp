@@ -36,6 +36,7 @@
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objects/macro/Source_qual.hpp>
+#include <objects/taxon3/taxon3.hpp>
 
 #include "discrepancy_core.hpp"
 
@@ -1544,6 +1545,120 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_BIOSOURCE)
             }
         }
 
+        m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+    }
+}
+
+
+// TAX_LOOKUP_MISMATCH
+static const string kTaxnameMismatch = "[n] tax name[s] [does] not match taxonomy lookup";
+static const string kOgRefs = "OrgRef";
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(TAX_LOOKUP_MISMATCH, CBioSource, eDisc, "Find Tax Lookup Mismatches")
+//  ----------------------------------------------------------------------------
+{
+    if (!obj.IsSetOrg()) {
+        return;
+    }
+
+    m_Objs[kOgRefs].Add(*context.NewFeatOrDescOrSubmitBlockObj(eKeepRef, false, const_cast<CBioSource*>(&obj)));
+}
+
+static void GetOrgRefs(TReportObjectList& objs, vector<CRef<COrg_ref>>& org_refs)
+{
+    NON_CONST_ITERATE(TReportObjectList, obj, objs) {
+
+        CDiscrepancyObject* dobj = dynamic_cast<CDiscrepancyObject*>(obj->GetPointer());
+        if (dobj) {
+
+            const CBioSource* biosrc = dynamic_cast<const CBioSource*>(dobj->GetMoreInfo().GetPointer());
+            const COrg_ref& org_ref = biosrc->GetOrg();
+            CRef<COrg_ref> new_org_ref(new COrg_ref);
+            new_org_ref->Assign(org_ref);
+            org_refs.push_back(new_org_ref);
+        }
+    }
+}
+
+static const CDbtag* GetTaxonTag(const COrg_ref& org)
+{
+    const CDbtag* ret = nullptr;
+    if (org.IsSetDb()) {
+        ITERATE(COrg_ref::TDb, db, org.GetDb()) {
+            if ((*db)->IsSetDb() && NStr::EqualNocase((*db)->GetDb(), "taxon")) {
+                ret = *db;
+                break;
+            }
+        }
+    }
+
+    return ret;
+}
+
+static bool IsOrgDiffers(const COrg_ref& first, const COrg_ref& second)
+{
+    bool first_set = first.IsSetTaxname(),
+         second_set = second.IsSetTaxname();
+    if (first_set != second_set || (first_set && first.GetTaxname() != second.GetTaxname())) {
+        return true;
+    }
+
+    const CDbtag* first_db_tag = GetTaxonTag(first);
+    const CDbtag* second_db_tag = GetTaxonTag(second);
+
+    if (first_db_tag == nullptr || second_db_tag == nullptr) {
+        return true;
+    }
+
+    return !first_db_tag->Equals(*second_db_tag);
+}
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(TAX_LOOKUP_MISMATCH)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+
+    vector<CRef<COrg_ref>> org_refs;
+    GetOrgRefs(m_Objs[kOgRefs].GetObjects(), org_refs);
+
+    if (!org_refs.empty()) {
+
+        CTaxon3 taxon3;
+        taxon3.Init();
+        CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_refs);
+        if (reply) {
+
+            vector<CRef<COrg_ref>>::const_iterator org_ref = org_refs.begin();
+
+            TReportObjectList& objs = m_Objs[kOgRefs].GetObjects();
+            TReportObjectList::iterator obj_it = objs.begin();
+
+            ITERATE(CTaxon3_reply::TReply, item, reply->GetReply()) {
+                if ((*item)->IsData() && IsOrgDiffers(**org_ref, (*item)->GetData().GetOrg())) {
+
+                    CDiscrepancyObject* dobj = dynamic_cast<CDiscrepancyObject*>(obj_it->GetPointer());
+
+                    CConstRef<CSeqdesc> desc(dynamic_cast<const CSeqdesc*>(dobj->GetObject().GetPointer()));
+                    CConstRef<CSeq_feat> feat(dynamic_cast<const CSeq_feat*>(dobj->GetObject().GetPointer()));
+
+                    if (desc.Empty()) {
+                        m_Objs[kTaxnameMismatch].Add(*context.NewDiscObj(feat), false);
+                    }
+                    else {
+                        m_Objs[kTaxnameMismatch].Add(*context.NewDiscObj(desc), false);
+                    }
+                }
+
+                ++org_ref;
+                ++obj_it;
+            }
+        }
+
+        m_Objs.GetMap().erase(kOgRefs);
         m_ReportItems = m_Objs.Export(*this)->GetSubitems();
     }
 }

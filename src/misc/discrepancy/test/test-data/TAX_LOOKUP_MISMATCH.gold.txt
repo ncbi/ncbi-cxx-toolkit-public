@@ -1,0 +1,221 @@
+Discrepancy Report Results
+
+Summary
+TAX_LOOKUP_MISMATCH: 212 tax names do not match taxonomy lookup
+
+Detailed Report
+
+TAX_LOOKUP_MISMATCH: 212 tax names do not match taxonomy lookup
+test-data/asnfail_all.sqn:AL (2 components):Heterocorticum americanum
+test-data/asnfail_all.sqn:NZ-11 (2 components):Heterocorticum confusum
+test-data/asnfail_all.sqn:TW-10 (2 components):Heterocorticum arcuatum
+test-data/asnfail_all.sqn:FR-D15 (2 components):Heterocorticum confusum
+test-data/asnfail_all.sqn:IT (2 components):Heterocorticum confusum
+test-data/asnfail_all.sqn:OK-C (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:VA-E12 (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:VA-E7 (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:VA-H (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:OH-LT8 (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:OH-LT10 (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:MI (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:NC-9 (2 components):Heterocorticum meridionale
+test-data/asnfail_all.sqn:IN-1 (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:PA-4B (2 components):Heterocorticum americanum
+test-data/asnfail_all.sqn:RI-P3 (2 components):Heterocorticum americanum
+test-data/asnfail_all.sqn:RI-P7 (2 components):Heterocorticum americanum
+test-data/asnfail_all.sqn:TN-W (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:ME-T1 (2 components):Heterocorticum americanum
+test-data/asnfail_all.sqn:OH-LC (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:OH-MRL1 (2 components):Heterocorticum grande
+test-data/asnfail_all.sqn:WI-0201 (2 components):Heterocorticum grande
+test-data/asnfail_all.sqn:GA-8 (2 components):Heterocorticum meridionale
+test-data/asnfail_all.sqn:AZ (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:NZ-6 (2 components):Heterocorticum confusum
+test-data/asnfail_all.sqn:TX-C (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:PL-24-2008 (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:PL-4-2010 (2 components):Heterocorticum anatinum
+test-data/asnfail_all.sqn:PL-5-2010 (2 components):Heterocorticum anatinum
+test-data/asnfail_all.sqn:FI-16-2009 (2 components):Heterocorticum confusum
+test-data/asnfail_all.sqn:FI-19-2009 (2 components):Heterocorticum confusum
+test-data/asnfail_all.sqn:GB-6-2010 (2 components):Heterocorticum anatinum
+test-data/asnfail_all.sqn:GB-E35 (2 components):Heterocorticum confusum
+test-data/asnfail_all.sqn:PL-9-2011 (2 components):Heterocorticum confusum
+test-data/asnfail_all.sqn:VA-E16 (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:VA-E5 (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:VA-E9 (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:OH-LT1 (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:TX-B (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:FL-2 (2 components):Heterocorticum meridionale
+test-data/asnfail_all.sqn:accDQ393136 (2 components):Heterocorticum meridionale
+test-data/asnfail_all.sqn:NC-21 (2 components):Heterocorticum meridionale
+test-data/asnfail_all.sqn:NC-1 (2 components):Heterocorticum meridionale
+test-data/asnfail_all.sqn:NC-2 (2 components):Heterocorticum meridionale
+test-data/asnfail_all.sqn:IN-4 (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:NY-P (2 components):Heterocorticum americanum
+test-data/asnfail_all.sqn:RI-P1 (2 components):Heterocorticum americanum
+test-data/asnfail_all.sqn:SC-L (2 components):Heterocorticum meridionale
+test-data/asnfail_all.sqn:SC-S (2 components):Heterocorticum americanum
+test-data/asnfail_all.sqn:SC-R (2 components):Heterocorticum meridionale
+test-data/asnfail_all.sqn:OH-SF (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:NY-S (2 components):Heterocorticum americanum
+test-data/asnfail_all.sqn:AL-S3 (2 components):Heterocorticum meridionale
+test-data/asnfail_all.sqn:AL-S5 (2 components):Heterocorticum meridionale
+test-data/asnfail_all.sqn:VA-S (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:WI-0202 (2 components):Heterocorticum grande
+test-data/asnfail_all.sqn:GA-5 (2 components):Heterocorticum meridionale
+test-data/asnfail_all.sqn:GA-13 (2 components):Heterocorticum meridionale
+test-data/asnfail_all.sqn:accEF116872 (2 components):Heterocorticum arcuatum
+test-data/asnfail_all.sqn:accEF116877 (2 components):Heterocorticum arcuatum
+test-data/asnfail_all.sqn:accDQ393128 (2 components):Heterocorticum confusum
+test-data/asnfail_all.sqn:AL_2 (2 components):Heterocorticum americanum
+test-data/asnfail_all.sqn:accGU457345 (2 components):Heterocorticum exiguum
+test-data/asnfail_all.sqn:accGU457344 (2 components):Heterocorticum exiguum
+test-data/asnfail_all.sqn:accGU457350 (2 components):Heterocorticum arcuatum
+test-data/asnfail_all.sqn:accGU457349 (2 components):Heterocorticum arcuatum
+test-data/asnfail_all.sqn:accGU457348 (2 components):Heterocorticum arcuatum
+test-data/asnfail_all.sqn:accDQ141320 (2 components):Heterocorticum arcuatum
+test-data/asnfail_all.sqn:accDQ393131 (2 components):Heterocorticum arcuatum
+test-data/asnfail_all.sqn:IT_2 (2 components):Heterocorticum confusum
+test-data/asnfail_all.sqn:FR-R1 (2 components):Heterocorticum exiguum
+test-data/asnfail_all.sqn:FR-D11 (2 components):Heterocorticum confusum
+test-data/asnfail_all.sqn:FR-D15_2 (2 components):Heterocorticum confusum
+test-data/asnfail_all.sqn:FR-V3 (2 components):Heterocorticum arcuatum
+test-data/asnfail_all.sqn:acc393129 (2 components):Heterocorticum arcuatum
+test-data/asnfail_all.sqn:acc393130 (2 components):Heterocorticum arcuatum
+test-data/asnfail_all.sqn:VA-E2 (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:VA-E12_2 (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:accGU457343 (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:VA-H_2 (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:TN-H (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:OH-LT10_2 (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:OH-LT8_2 (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:MI_2 (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:MN (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:NC-9_2 (2 components):Heterocorticum meridionale
+test-data/asnfail_all.sqn:NC-2_2 (2 components):Heterocorticum meridionale
+test-data/asnfail_all.sqn:NC-5 (2 components):Heterocorticum meridionale
+test-data/asnfail_all.sqn:OK-C_2 (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:IN-2 (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:IN-1_2 (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:PA-4B_2 (2 components):Heterocorticum americanum
+test-data/asnfail_all.sqn:RI-P7_2 (2 components):Heterocorticum americanum
+test-data/asnfail_all.sqn:SC-L_2 (2 components):Heterocorticum meridionale
+test-data/asnfail_all.sqn:ME-T1_2 (2 components):Heterocorticum americanum
+test-data/asnfail_all.sqn:OH-LC_2 (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:OH-MRL1_2 (2 components):Heterocorticum grande
+test-data/asnfail_all.sqn:WI-0201_2 (2 components):Heterocorticum grande
+test-data/asnfail_all.sqn:GA-5_2 (2 components):Heterocorticum meridionale
+test-data/asnfail_all.sqn:GA-8_2 (2 components):Heterocorticum meridionale
+test-data/asnfail_all.sqn:GA-13_2 (2 components):Heterocorticum meridionale
+test-data/asnfail_all.sqn:TN-W_2 (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:accAF029140 (2 components):Heterocorticum americanum
+test-data/asnfail_all.sqn:accAF029161 (2 components):Heterocorticum americanum
+test-data/asnfail_all.sqn:accDQ393132 (2 components):Heterocorticum americanum
+test-data/asnfail_all.sqn:AZ_2 (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:accDQ393133 (2 components):Heterocorticum confusum
+test-data/asnfail_all.sqn:accDQ393136_2 (2 components):Heterocorticum meridionale
+test-data/asnfail_all.sqn:accAF029143 (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:accJF701682 (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:OK-B (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:accEF116869 (2 components):Heterocorticum arcuatum
+test-data/asnfail_all.sqn:accEF116876 (2 components):Heterocorticum arcuatum
+test-data/asnfail_all.sqn:accEF116871 (2 components):Heterocorticum arcuatum
+test-data/asnfail_all.sqn:EST (2 components):Heterocorticum exiguum
+test-data/asnfail_all.sqn:LI (2 components):Heterocorticum anatinum
+test-data/asnfail_all.sqn:PL-24-2008_2 (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:S-PL-4-2010 (2 components):Heterocorticum anatinum
+test-data/asnfail_all.sqn:S-PL-5-2010 (2 components):Heterocorticum anatinum
+test-data/asnfail_all.sqn:FI-16-2009_2 (2 components):Heterocorticum confusum
+test-data/asnfail_all.sqn:FI-19-2009_2 (2 components):Heterocorticum confusum
+test-data/asnfail_all.sqn:LI-19-2008 (2 components):Heterocorticum exiguum
+test-data/asnfail_all.sqn:N-PL-5-2010 (2 components):Heterocorticum exiguum
+test-data/asnfail_all.sqn:GB-6-2010_2 (2 components):Heterocorticum anatinum
+test-data/asnfail_all.sqn:GB-1-2010 (2 components):Heterocorticum arcuatum
+test-data/asnfail_all.sqn:GB-E35_2 (2 components):Heterocorticum confusum
+test-data/asnfail_all.sqn:PL-9-2011_2 (2 components):Heterocorticum confusum
+test-data/asnfail_all.sqn:VA-E16_2 (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:VA-E5_2 (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:VA-E9_2 (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:accEF116873 (2 components):Heterocorticum arcuatum
+test-data/asnfail_all.sqn:OH-LT1_2 (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:TX-B_2 (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:TX-C_2 (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:FL-2_2 (2 components):Heterocorticum meridionale
+test-data/asnfail_all.sqn:NC-21_2 (2 components):Heterocorticum meridionale
+test-data/asnfail_all.sqn:NC-1_2 (2 components):Heterocorticum meridionale
+test-data/asnfail_all.sqn:IN-4_2 (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:RI-P3_2 (2 components):Heterocorticum americanum
+test-data/asnfail_all.sqn:NY-P_2 (2 components):Heterocorticum americanum
+test-data/asnfail_all.sqn:RI-P1_2 (2 components):Heterocorticum americanum
+test-data/asnfail_all.sqn:accGU457346 (2 components):Heterocorticum arcuatum
+test-data/asnfail_all.sqn:accGU457347 (2 components):Heterocorticum arcuatum
+test-data/asnfail_all.sqn:SC-S_2 (2 components):Heterocorticum americanum
+test-data/asnfail_all.sqn:SC-R_2 (2 components):Heterocorticum meridionale
+test-data/asnfail_all.sqn:OH-SF_2 (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:NY-S_2 (2 components):Heterocorticum americanum
+test-data/asnfail_all.sqn:AL-S3_2 (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:AL-S5_2 (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:VA-S_2 (2 components):Heterocorticum boryanum
+test-data/asnfail_all.sqn:accAY297054 (2 components):Heterocorticum arcuatum
+test-data/asnfail_all.sqn:ME-T2 (2 components):Heterocorticum americanum
+test-data/asnfail_all.sqn:WI-0202_2 (2 components):Heterocorticum grande
+test-data/asnfail_all.sqn:BG1 (2 components):Batrachospermum arcuatum
+test-data/asnfail_all.sqn:lcl|AL_3:Heterocorticum americanum
+test-data/asnfail_all.sqn:lcl|NZ-11_2:Heterocorticum confusum
+test-data/asnfail_all.sqn:lcl|FR-R1_2:Heterocorticum confusum
+test-data/asnfail_all.sqn:lcl|FR-D11_2:Heterocorticum confusum
+test-data/asnfail_all.sqn:lcl|FR-D15_3:Heterocorticum confusum
+test-data/asnfail_all.sqn:lcl|OK-C_3:Heterocorticum boryanum
+test-data/asnfail_all.sqn:lcl|VA-E12_3:Heterocorticum boryanum
+test-data/asnfail_all.sqn:lcl|VA-E7_2:Heterocorticum boryanum
+test-data/asnfail_all.sqn:lcl|VA-H_3:Heterocorticum boryanum
+test-data/asnfail_all.sqn:lcl|OH-LT8_3:Heterocorticum boryanum
+test-data/asnfail_all.sqn:lcl|MI_3:Heterocorticum boryanum
+test-data/asnfail_all.sqn:lcl|NC-2_3:Heterocorticum meridionale
+test-data/asnfail_all.sqn:lcl|NC-5_2:Heterocorticum meridionale
+test-data/asnfail_all.sqn:lcl|NC-9_3:Heterocorticum meridionale
+test-data/asnfail_all.sqn:lcl|IN-1_3:Heterocorticum boryanum
+test-data/asnfail_all.sqn:lcl|RI-P7_3:Heterocorticum americanum
+test-data/asnfail_all.sqn:lcl|ME-T1_3:Heterocorticum americanum
+test-data/asnfail_all.sqn:lcl|OH-LC_3:Heterocorticum boryanum
+test-data/asnfail_all.sqn:lcl|GA-5_3:Heterocorticum meridionale
+test-data/asnfail_all.sqn:lcl|AZ_3:Heterocorticum boryanum
+test-data/asnfail_all.sqn:lcl|NZ-6_2:Heterocorticum confusum
+test-data/asnfail_all.sqn:lcl|LI_2:Heterocorticum anatinum
+test-data/asnfail_all.sqn:lcl|PL-24-2008_3:Heterocorticum boryanum
+test-data/asnfail_all.sqn:lcl|PL-4-2010_2:Heterocorticum anatinum
+test-data/asnfail_all.sqn:lcl|PL-5-2010_2:Heterocorticum anatinum
+test-data/asnfail_all.sqn:lcl|FI-16-2009_3:Heterocorticum confusum
+test-data/asnfail_all.sqn:lcl|FI-19-2009_3:Heterocorticum confusum
+test-data/asnfail_all.sqn:lcl|GB-6-2010_3:Heterocorticum anatinum
+test-data/asnfail_all.sqn:lcl|GB-E35_3:Heterocorticum confusum
+test-data/asnfail_all.sqn:lcl|PL-9-2011_3:Heterocorticum confusum
+test-data/asnfail_all.sqn:lcl|MN_2:Heterocorticum boryanum
+test-data/asnfail_all.sqn:lcl|VA-E16_3:Heterocorticum boryanum
+test-data/asnfail_all.sqn:lcl|VA-E5_3:Heterocorticum boryanum
+test-data/asnfail_all.sqn:lcl|VA-E9_3:Heterocorticum boryanum
+test-data/asnfail_all.sqn:lcl|TN-H_2:Heterocorticum boryanum
+test-data/asnfail_all.sqn:lcl|OH-LT10_3:Heterocorticum boryanum
+test-data/asnfail_all.sqn:lcl|OH-LT1_3:Heterocorticum boryanum
+test-data/asnfail_all.sqn:lcl|TX-B_3:Heterocorticum boryanum
+test-data/asnfail_all.sqn:lcl|TX-C_3:Heterocorticum boryanum
+test-data/asnfail_all.sqn:lcl|FL-2_3:Heterocorticum meridionale
+test-data/asnfail_all.sqn:lcl|NC-21_3:Heterocorticum meridionale
+test-data/asnfail_all.sqn:lcl|NC-1_3:Heterocorticum meridionale
+test-data/asnfail_all.sqn:lcl|IN-4_3:Heterocorticum boryanum
+test-data/asnfail_all.sqn:lcl|PA-4B_3:Heterocorticum americanum
+test-data/asnfail_all.sqn:lcl|NY-P_3:Heterocorticum americanum
+test-data/asnfail_all.sqn:lcl|RI-P1_3:Heterocorticum americanum
+test-data/asnfail_all.sqn:lcl|SC-L_3:Heterocorticum meridionale
+test-data/asnfail_all.sqn:lcl|SC-R_3:Heterocorticum meridionale
+test-data/asnfail_all.sqn:lcl|OH-SF_3:Heterocorticum boryanum
+test-data/asnfail_all.sqn:lcl|NY-S_3:Heterocorticum americanum
+test-data/asnfail_all.sqn:lcl|AL-S5_3:Heterocorticum meridionale
+test-data/asnfail_all.sqn:lcl|AL-S3_3:Heterocorticum meridionale
+test-data/asnfail_all.sqn:lcl|VA-S_3:Heterocorticum boryanum
+test-data/asnfail_all.sqn:lcl|TN-W_3:Heterocorticum boryanum
+test-data/asnfail_all.sqn:lcl|ME-T2_2:Heterocorticum americanum
+test-data/asnfail_all.sqn:lcl|WI-0201_3:Heterocorticum grande
+test-data/asnfail_all.sqn:lcl|WI-0202_3:Heterocorticum grande
+test-data/asnfail_all.sqn:lcl|GA-13_3:Heterocorticum meridionale
+
