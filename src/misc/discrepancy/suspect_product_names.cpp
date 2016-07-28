@@ -5319,7 +5319,9 @@ static string GetRuleMatch(const CSuspect_rule& rule)
             case CSearch_func::e_String_constraint:
                 return string(find.GetString_constraint().GetMatch_location() == eString_location_starts ?  "[n] feature[s] start[S] with \'" : "[n] feature[s] contain[S] \'")
                     + find.GetString_constraint().GetMatch_text()
-                    + (rule.CanGetReplace() && rule.GetReplace().GetReplace_func().IsSimple_replace() ? "\', Replace with \'" + rule.GetReplace().GetReplace_func().GetSimple_replace().GetReplace() : "")
+                    + (rule.CanGetRule_type() && (rule.GetRule_type() == eFix_type_typo || rule.GetRule_type() == eFix_type_quickfix) &&
+                        rule.CanGetReplace() && rule.GetReplace().GetReplace_func().IsSimple_replace()
+                        ? "\', Replace with \'" + rule.GetReplace().GetReplace_func().GetSimple_replace().GetReplace() : "")
                     + "\'";
             case CSearch_func::e_Contains_plural:
                 return "[n] feature[s] May contain plural";
