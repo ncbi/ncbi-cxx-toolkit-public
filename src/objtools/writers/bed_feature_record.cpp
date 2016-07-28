@@ -170,19 +170,22 @@ bool CBedFeatureRecord::AssignDisplayData(
 //  ----------------------------------------------------------------------------
 bool CBedFeatureRecord::AssignLocation(
     CScope& scope,
-    const CSeq_interval& interval )
+    const CSeq_interval& interval,
+    const bool getBestId )
 //  ----------------------------------------------------------------------------
 {
     if ( interval.CanGetId() ) {
         m_strChrom = interval.GetId().GetSeqIdString(true);
-        try {
-            string bestId;
-            CWriteUtil::GetBestId(
-                CSeq_id_Handle::GetHandle(m_strChrom), scope, bestId);
-            m_strChrom = bestId;
-            // its OK for this to silently fail. 
-            // Seq-ids that dont look up are just meant to be output directly
-        } catch(...) { ; }
+        if (getBestId) {
+            try {
+                string bestId;
+                CWriteUtil::GetBestId(
+                    CSeq_id_Handle::GetHandle(m_strChrom), scope, bestId);
+                m_strChrom = bestId;
+                // its OK for this to silently fail. 
+                // Seq-ids that dont look up are just meant to be output directly
+            } catch(...) { ; }
+        }
     }
     if ( interval.IsSetFrom() ) {
         m_strChromStart = NStr::UIntToString( interval.GetFrom() );
