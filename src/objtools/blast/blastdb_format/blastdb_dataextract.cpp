@@ -720,22 +720,32 @@ string CBlastDBExtractor::ExtractFasta(const CBlastDBSeqId &id) {
             string title =
                 s_GetTitle(CConstRef<CBioseq>(m_Bioseq.GetNonNullPointer()));
 
-            NStr::ReplaceInPlace(title, " >", "#");
+            NStr::ReplaceInPlace(title, " >", "\001");
 
             vector<string> tokens;
-            NStr::Split(title, "#", tokens);
+            NStr::Split(title, "\001", tokens);
             auto it = tokens.begin();
             out << *it;
             ++it;
             for (; it != tokens.end(); ++it) {
                 size_t pos = it->find (" ");
-                string str_id(*it, 0, pos);
+                string str_id(*it, 0, pos != NPOS ? pos : it->length());
                 list< CRef<CSeq_id> > seqids;
                 CSeq_id::ParseFastaIds(seqids, str_id);
+
+                // no valid sequence ids indicates that '>' was within the
+                // defline text
+                if (seqids.empty()) {
+                    out << " >" << *it;
+                    continue;
+                }
+
                 out << separator;
                 id = FindBestChoice(seqids, CSeq_id::Score);
                 out << s_GetBareId(*id);
-                out << it->substr(pos, it->length() - pos);
+                if (pos != NPOS) {
+                    out << it->substr(pos, it->length() - pos);
+                }
             }
             out << endl;
 
