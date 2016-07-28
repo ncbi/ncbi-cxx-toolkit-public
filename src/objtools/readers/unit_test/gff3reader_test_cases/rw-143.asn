@@ -49,7 +49,6 @@ Seq-annot ::= {
       comment "Gap in scaffold at 5 end of conserved domain,Partial GTPX
  conserved domain at 5 end of model near gap in scaffold. Premature
  stop-codons are probably remnants of the pseudogene.",
-      product whole local str "CLEC026002-RA",
       location mix {
         int {
           from 12504878,
@@ -62,10 +61,6 @@ Seq-annot ::= {
         {
           qual "Parent",
           val "CLEC026002"
-        },
-        {
-          qual "transcript_id",
-          val "CLEC026002-RA"
         },
         {
           qual "ID",
@@ -86,6 +81,10 @@ Seq-annot ::= {
         {
           qual "symbol",
           val "Glutathion Peroxidase 2- Pseudogene"
+        },
+        {
+          qual "transcript_id",
+          val "CLEC026002-RA"
         }
       },
       xref {

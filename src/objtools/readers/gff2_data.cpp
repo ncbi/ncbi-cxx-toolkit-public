@@ -932,32 +932,32 @@ bool CGff2Record::x_MigrateAttributes(
         attrs_left.erase(it);
     }
 
-    it = attrs_left.find("product");
-    if (it != attrs_left.end()) {
-        if (!pFeature->IsSetProduct()) {
-            CRef<CSeq_id> pId = CReadUtil::AsSeqId(it->second, flags);
-            CRef<CSeq_loc> pLoc( new CSeq_loc(CSeq_loc::e_Whole));
-            pLoc->SetId(*pId);
-            pFeature->SetProduct(*pLoc);
-        }
-        xMigrateAttributeDefault(
-            attrs_left, "product", pFeature, "product", flags);
-    }
+//    it = attrs_left.find("product");
+//    if (it != attrs_left.end()) {
+//        if (!pFeature->IsSetProduct()) {
+//            CRef<CSeq_id> pId = CReadUtil::AsSeqId(it->second, flags);
+//            CRef<CSeq_loc> pLoc( new CSeq_loc(CSeq_loc::e_Whole));
+//            pLoc->SetId(*pId);
+//            pFeature->SetProduct(*pLoc);
+//        }
+//        xMigrateAttributeDefault(
+//            attrs_left, "product", pFeature, "product", flags);
+//    }
 
-    xMigrateAttributeDefault(
-        attrs_left, "Product", pFeature, "product", flags);
+//    xMigrateAttributeDefault(
+//        attrs_left, "Product", pFeature, "product", flags);
 
-    it = attrs_left.find("protein_id");
-    if (it != attrs_left.end()) {
-        string protId = it->second;
-        CRef<CSeq_id> pId = CReadUtil::AsSeqId(protId, flags);
-        CRef<CSeq_loc> pLoc( new CSeq_loc(CSeq_loc::e_Whole));
-        pLoc->SetId(*pId);
-        pFeature->SetProduct(*pLoc);
+//    it = attrs_left.find("protein_id");
+//    if (it != attrs_left.end()) {
+//        string protId = it->second;
+//        CRef<CSeq_id> pId = CReadUtil::AsSeqId(protId, flags);
+//        CRef<CSeq_loc> pLoc( new CSeq_loc(CSeq_loc::e_Whole));
+//        pLoc->SetId(*pId);
+//        pFeature->SetProduct(*pLoc);
 
-        this->xMigrateAttributeDefault(
-            attrs_left, "protein_id", pFeature, "protein_id", flags);
-    }
+//        this->xMigrateAttributeDefault(
+//            attrs_left, "protein_id", pFeature, "protein_id", flags);
+//    }
 
     it = attrs_left.find("pseudo");
     if (it != attrs_left.end()) {
@@ -965,19 +965,19 @@ bool CGff2Record::x_MigrateAttributes(
         attrs_left.erase(it);
     }
 
-    it = attrs_left.find("transcript_id");
-    if (it != attrs_left.end()) {
-        string transcriptId = it->second;
-        if (!pFeature->IsSetProduct()) {
-            CRef<CSeq_id> pId = CReadUtil::AsSeqId(transcriptId, flags);
-            CRef<CSeq_loc> pLoc( new CSeq_loc(CSeq_loc::e_Whole));
-            pLoc->SetId(*pId);
-            pFeature->SetProduct(*pLoc);
-        }
+//    it = attrs_left.find("transcript_id");
+//    if (it != attrs_left.end()) {
+//        string transcriptId = it->second;
+//        if (!pFeature->IsSetProduct()) {
+//            CRef<CSeq_id> pId = CReadUtil::AsSeqId(transcriptId, flags);
+//            CRef<CSeq_loc> pLoc( new CSeq_loc(CSeq_loc::e_Whole));
+//            pLoc->SetId(*pId);
+//            pFeature->SetProduct(*pLoc);
+//        }
         // mss-362: turn transcript_id attributes into transcript_id quailifiers.
-        xMigrateAttributeSingle(
-            attrs_left, "transcript_id", pFeature, "transcript_id", flags);
-    }
+//        xMigrateAttributeSingle(
+//            attrs_left, "transcript_id", pFeature, "transcript_id", flags);
+//    }
 
     it = attrs_left.find("transl_except");
     if (it != attrs_left.end()) {

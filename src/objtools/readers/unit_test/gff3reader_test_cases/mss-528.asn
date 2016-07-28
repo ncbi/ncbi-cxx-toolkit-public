@@ -93,9 +93,6 @@ Seq-annot ::= {
       data cdregion {
         frame one
       },
-      product whole genbank {
-        accession "AAC73112"
-      },
       location int {
         from 189,
         to 254,
@@ -107,14 +104,6 @@ Seq-annot ::= {
       },
       qual {
         {
-          qual "product",
-          val "thr operon leader peptide"
-        },
-        {
-          qual "protein_id",
-          val "gb|AAC73112"
-        },
-        {
           qual "ID",
           val "cds0"
         },
@@ -125,6 +114,14 @@ Seq-annot ::= {
         {
           qual "go_process",
           val "threonine biosynthetic process|0009088"
+        },
+        {
+          qual "product",
+          val "thr operon leader peptide"
+        },
+        {
+          qual "protein_id",
+          val "gb|AAC73112"
         },
         {
           qual "Parent",
@@ -222,9 +219,6 @@ Seq-annot ::= {
       },
       comment "bifunctional: aspartokinase I (N-terminal); homoserine
  dehydrogenase I (C-terminal)",
-      product whole genbank {
-        accession "AAC73113"
-      },
       location int {
         from 336,
         to 2798,
@@ -238,14 +232,6 @@ Seq-annot ::= {
         {
           qual "experiment",
           val "N-terminus verified by Edman degradation:PMID 354697,4562989"
-        },
-        {
-          qual "product",
-          val "Bifunctional aspartokinase/homoserine dehydrogenase 1"
-        },
-        {
-          qual "protein_id",
-          val "gb|AAC73113"
         },
         {
           qual "ID",
@@ -278,6 +264,14 @@ Seq-annot ::= {
         {
           qual "go_process",
           val "homoserine biosynthetic process|0009090"
+        },
+        {
+          qual "product",
+          val "Bifunctional aspartokinase/homoserine dehydrogenase 1"
+        },
+        {
+          qual "protein_id",
+          val "gb|AAC73113"
         },
         {
           qual "Parent",
@@ -391,8 +385,6 @@ Seq-annot ::= {
       },
       comment "IS186A interrupts hokC transcript downstream of hokC gene in
  K-12",
-      product whole local str "sRNA antisense regulator blocking mokC, and
- hence hokC, translation",
       location int {
         from 16951,
         to 17005,
@@ -408,17 +400,17 @@ Seq-annot ::= {
           val "gene17"
         },
         {
-          qual "product",
-          val "sRNA antisense regulator blocking mokC, and hence hokC,
- translation"
-        },
-        {
           qual "ID",
           val "rna0"
         },
         {
           qual "function",
           val "component of addiction module"
+        },
+        {
+          qual "product",
+          val "sRNA antisense regulator blocking mokC, and hence hokC,
+ translation"
         }
       },
       dbxref {
@@ -469,7 +461,6 @@ Seq-annot ::= {
       comment "acts as tRNA-Ala and mRNA template for tagging proteins
  resulting from premature transcription termination for degradation, a process
  known as trans-translation",
-      product whole local str "tmRNA, 10Sa RNA",
       location mix {
         int {
           from 2755592,
@@ -485,10 +476,6 @@ Seq-annot ::= {
         {
           qual "Parent",
           val "gene2687"
-        },
-        {
-          qual "product",
-          val "tmRNA, 10Sa RNA"
         },
         {
           qual "ID",
@@ -514,6 +501,10 @@ Seq-annot ::= {
         {
           qual "function",
           val "RNA; Ribosomal and stable RNAs"
+        },
+        {
+          qual "product",
+          val "tmRNA, 10Sa RNA"
         }
       },
       dbxref {
@@ -583,7 +574,6 @@ Seq-annot ::= {
         type tRNA
       },
       comment "anticodon: GAU",
-      product whole local str "tRNA-Ile",
       location mix {
         int {
           from 2785761,
@@ -601,12 +591,12 @@ Seq-annot ::= {
           val "gene2717"
         },
         {
-          qual "product",
-          val "tRNA-Ile"
-        },
-        {
           qual "ID",
           val "rna90"
+        },
+        {
+          qual "product",
+          val "tRNA-Ile"
         }
       },
       dbxref {
@@ -655,7 +645,6 @@ Seq-annot ::= {
       data rna {
         type rRNA
       },
-      product whole local str "5S ribosomal RNA of rrnD operon",
       location mix {
         int {
           from 3423422,
@@ -673,12 +662,12 @@ Seq-annot ::= {
           val "gene3334"
         },
         {
-          qual "product",
-          val "5S ribosomal RNA of rrnD operon"
-        },
-        {
           qual "ID",
           val "rna117"
+        },
+        {
+          qual "product",
+          val "5S ribosomal RNA of rrnD operon"
         }
       },
       dbxref {

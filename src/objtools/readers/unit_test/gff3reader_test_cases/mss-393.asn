@@ -41,7 +41,6 @@ Seq-annot ::= {
       data rna {
         type rRNA
       },
-      product whole local str "16S ribosomal RNA",
       location mix {
         int {
           from 722381,
@@ -59,12 +58,12 @@ Seq-annot ::= {
           val "gene649"
         },
         {
-          qual "product",
-          val "16S ribosomal RNA"
-        },
-        {
           qual "ID",
           val "rna9"
+        },
+        {
+          qual "product",
+          val "16S ribosomal RNA"
         }
       }
     },
@@ -103,7 +102,6 @@ Seq-annot ::= {
       data rna {
         type other
       },
-      product whole local str "10Sa RNA (tmRNA)",
       location mix {
         int {
           from 978036,
@@ -121,16 +119,16 @@ Seq-annot ::= {
           val "gene891"
         },
         {
-          qual "product",
-          val "10Sa RNA (tmRNA)"
-        },
-        {
           qual "ID",
           val "rna11"
         },
         {
           qual "gene",
           val "ssrA"
+        },
+        {
+          qual "product",
+          val "10Sa RNA (tmRNA)"
         }
       }
     },
@@ -171,7 +169,6 @@ Seq-annot ::= {
           class "RNase_P_RNA"
         }
       },
-      product whole local str "bacterial RNase P",
       location mix {
         int {
           from 1227237,
@@ -189,12 +186,12 @@ Seq-annot ::= {
           val "gene1111"
         },
         {
-          qual "product",
-          val "bacterial RNase P"
-        },
-        {
           qual "ID",
           val "rna14"
+        },
+        {
+          qual "product",
+          val "bacterial RNase P"
         }
       }
     }

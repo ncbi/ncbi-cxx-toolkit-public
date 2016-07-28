@@ -71,10 +71,6 @@ Seq-annot ::= {
         }
       },
       comment "formate dehydrogenase-N, nitrate-inducible, alpha subunit",
-      product whole genbank {
-        accession "AAD13438",
-        version 1
-      },
       location int {
         from 1547400,
         to 1550447,
@@ -86,20 +82,20 @@ Seq-annot ::= {
       },
       qual {
         {
-          qual "product",
-          val "formate dehydrogenase-N, alpha subunit, nitrate-inducible"
-        },
-        {
-          qual "protein_id",
-          val "AAD13438.1"
-        },
-        {
           qual "ID",
           val "cds1460"
         },
         {
           qual "gene",
           val "fdnG"
+        },
+        {
+          qual "product",
+          val "formate dehydrogenase-N, alpha subunit, nitrate-inducible"
+        },
+        {
+          qual "protein_id",
+          val "AAD13438.1"
         },
         {
           qual "Parent",
