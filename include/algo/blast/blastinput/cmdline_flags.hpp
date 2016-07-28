@@ -71,8 +71,12 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgDbTitle;
 /// seqid list file name to restrict BLAST database
 NCBI_BLASTINPUT_EXPORT extern const string kArgSeqIdList;
 
-/// argument for gi list to exclude from a BLAST database search
+/// argument for seqid list to exclude from a BLAST database search
 NCBI_BLASTINPUT_EXPORT extern const string kArgNegativeGiList;
+
+/// argument for gi list to exclude from a BLAST database search
+NCBI_BLASTINPUT_EXPORT extern const string kArgNegativeSeqidList;
+
 
 /// List of filtering algorithms to apply to subjects as soft masking
 extern const string kArgDbSoftMask;
