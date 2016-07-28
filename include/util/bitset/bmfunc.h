@@ -398,7 +398,7 @@ template<bool T> struct _copyright
 };
 
 template<bool T> const char _copyright<T>::_p[] = 
-    "BitMagic C++ Library. v.3.7.1 (c) 2002-2017 Anatoliy Kuznetsov.";
+    "BitMagic C++ Library. v.3.7.2 (c) 2002-2017 Anatoliy Kuznetsov.";
 
 
 /*! 
@@ -775,7 +775,7 @@ void for_each_dgap(const T* gap_buf, Func& func)
     ++pcurr;
     
     T prev = *pcurr;
-    func((T)(prev + 1)); // first element incremented to avoid 0
+    func((T)prev + 1); // first element incremented to avoid 0
     ++pcurr;
     do
     {
@@ -1193,7 +1193,7 @@ template<typename T> unsigned gap_set_value(unsigned val,
 
     register T* pcurr = buf + curr;
     register T* pprev = pcurr - 1;
-    register T* pend  = buf + end;
+    register T* pend = buf + end;
 
     // Special case, first bit GAP operation. There is no platform beside it.
     // initial flag must be inverted.
@@ -1330,7 +1330,7 @@ unsigned gap_add_value(T* buf, unsigned pos)
 	{
         *pcurr++ = (T)(pos - 1);
         *pcurr = (T)pos;
-        end = (T)(end + 2);
+		end = (T)(end+2);
 	}
 
     // Set correct length word.
@@ -2298,11 +2298,11 @@ void gap_init_range_block(T* buf,
     else
     {
         gap_len = 3;
-        buf[1] = (T)(from - 1);
-        buf[2] = (T)to;
+        buf[1] = (T) (from - 1);
+        buf[2] = (T) to;
         buf[3] = (T)(set_max - 1);
     }
-    buf[0] = (T)((*buf & 6u) + (gap_len << 3) + value);
+    buf[0] =  (T)((*buf & 6u) + (gap_len << 3) + value);
 }
 
 
@@ -2429,7 +2429,7 @@ template<typename T>
 void set_gap_level(T* buf, unsigned level)
 {
     BM_ASSERT(level < bm::gap_levels);
-    *buf = (T)(((level & 3) << 1) | (*buf & 1) | (*buf & ~7)); 
+    *buf = (T)(((level & 3) << 1) | (*buf & 1) | (*buf & ~7));
 }
 
 
@@ -2811,7 +2811,7 @@ void bit_count_change32(const bm::word_t* block,
     
     BM_INCWORD_BITCOUNT(*bit_count, w);
     
-    const int w_shift = (int)sizeof(w) * 8 - 1;    
+    const int w_shift = int(sizeof(w) * 8 - 1);
     w ^= (w >> 1);
     BM_INCWORD_BITCOUNT(*gap_count, w);
     *gap_count -= (w_prev = (w0 >> w_shift)); // negative value correction
@@ -4395,7 +4395,7 @@ unsigned bit_count_nonzero_size(const T*     blk,
                     break;
             }
             blk = blk_j-1;
-            count += unsigned(sizeof(gap_word_t));
+            count += (unsigned)sizeof(gap_word_t);
         }
         else
         {
@@ -4710,12 +4710,9 @@ bm::set_representation best_representation(unsigned bit_count,
                                            unsigned gap_count,
                                            unsigned block_size)
 {
-    unsigned arr_size = 
-        (unsigned)(sizeof(bm::gap_word_t) * bit_count + sizeof(bm::gap_word_t));
-    unsigned gap_size =
-        (unsigned)(sizeof(bm::gap_word_t) * gap_count + sizeof(bm::gap_word_t));
-    unsigned inv_arr_size = 
-        (unsigned)(sizeof(bm::gap_word_t) * (total_possible_bitcount - bit_count) + sizeof(bm::gap_word_t));
+    unsigned arr_size = unsigned(sizeof(bm::gap_word_t) * bit_count + sizeof(bm::gap_word_t));
+    unsigned gap_size = unsigned(sizeof(bm::gap_word_t) * gap_count + sizeof(bm::gap_word_t));
+    unsigned inv_arr_size = unsigned(sizeof(bm::gap_word_t) * (total_possible_bitcount - bit_count) + sizeof(bm::gap_word_t));
 
     if ((gap_size < block_size) && (gap_size < arr_size) && (gap_size < inv_arr_size))
     {
@@ -4750,7 +4747,7 @@ template<typename T> T bit_convert_to_arr(T* BMRESTRICT dest,
                                           unsigned mask = 0)
 {
     T* BMRESTRICT pcurr = dest;
-    for(unsigned bit_idx=0; bit_idx < bits; ++src,bit_idx += unsigned(sizeof(*src) * 8))
+    for (unsigned bit_idx=0; bit_idx < bits; ++src,bit_idx += unsigned(sizeof(*src) * 8))
     {
         unsigned val = *src ^ mask; // possible to invert value by XOR 0xFF..
         if (val == 0) 

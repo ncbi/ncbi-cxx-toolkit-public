@@ -78,6 +78,7 @@ template<typename T>
 T ilog2(T x)
 {
     unsigned int l = 0;
+    
     if (x >= 1<<16) { x = (T)(x >> 16); l |= 16; }
     if (x >= 1<<8)  { x = (T)(x >> 8);  l |= 8; }
     if (x >= 1<<4)  { x = (T)(x >> 4);  l |= 4; }
@@ -140,7 +141,8 @@ template<>
 inline bm::gap_word_t ilog2_LUT<bm::gap_word_t>(bm::gap_word_t x)
 {
     unsigned l = 0;    
-    if (x & 0xff00) {
+    if (x & 0xff00) 
+    {
         l += 8;
         x = (bm::gap_word_t)(x >> 8);
     }

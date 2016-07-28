@@ -1185,7 +1185,7 @@ public:
         if (count_is_valid_)
             return count_ != 0;
     #endif
-
+        
         word_t*** blk_root = blockman_.get_rootblock();
         if (!blk_root) 
             return false;
@@ -1506,10 +1506,10 @@ public:
         combine_operation_with_block(nb, gap, blk, arg_blk, arg_gap, opcode);
     }
 private:
-#if 0 // unused, needs non-existent 6-arg variant
+#if 0
     void combine_count_operation_with_block(unsigned nb,
                                             const bm::word_t* arg_blk,
-                                            int arg_gap,
+                                            bool arg_gap,
                                             bm::operation opcode)
     {
         const bm::word_t* blk = get_block(nb);
@@ -1735,9 +1735,9 @@ bm::id_t bvector<Alloc>::count_range(bm::id_t left,
         {
             if (left_gap)
             {
-                cnt += gap_bit_count_range(BMGAP_PTR(block), 
-                                          (gap_word_t)nbit_left,
-                                          (gap_word_t)r);
+                cnt += gap_bit_count_range(BMGAP_PTR(block),
+                                            (gap_word_t)nbit_left,
+                                            (gap_word_t)r);
             }
             else
             {
@@ -1774,8 +1774,8 @@ bm::id_t bvector<Alloc>::count_range(bm::id_t left,
         if (right_gap)
         {
             cnt += gap_bit_count_range(BMGAP_PTR(block),
-                                      (gap_word_t)0,
-                                      (gap_word_t)nbit_right);
+                                        (gap_word_t)0,
+                                        (gap_word_t)nbit_right);
         }
         else
         {
@@ -2095,8 +2095,13 @@ void bvector<Alloc>::calc_stat(struct bvector<Alloc>::statistics* st) const
                     ++(st->gap_blocks);
 
                     bm::gap_word_t* gap_blk = BMGAP_PTR(blk);
-                    unsigned mem_used = unsigned(bm::gap_capacity(gap_blk, blockman_.glen()) * sizeof(gap_word_t));
+
+                    unsigned mem_used = 
+                        unsigned(bm::gap_capacity(gap_blk, blockman_.glen())
+                        * sizeof(gap_word_t));
+
                     *gapl_ptr = gap_length(gap_blk);
+
                     st->max_serialize_mem += unsigned(*gapl_ptr * sizeof(gap_word_t));
                     blocks_memory += mem_used;
 
@@ -2105,7 +2110,7 @@ void bvector<Alloc>::calc_stat(struct bvector<Alloc>::statistics* st) const
                 else // bit block
                 {
                     ++(st->bit_blocks);
-                    unsigned mem_used = (unsigned)sizeof(bm::word_t) * bm::set_block_size;
+                    unsigned mem_used = unsigned(sizeof(bm::word_t) * bm::set_block_size);
                     st->max_serialize_mem += mem_used;
                     blocks_memory += mem_used;
                 }
@@ -2123,7 +2128,7 @@ void bvector<Alloc>::calc_stat(struct bvector<Alloc>::statistics* st) const
 
     // Calc size of different odd and temporary things.
 
-    st->memory_used += unsigned(sizeof(*this)- sizeof(blockman_));
+    st->memory_used += unsigned(sizeof(*this) - sizeof(blockman_));
     st->memory_used += blockman_.mem_used();
     st->memory_used += blocks_memory;
 }
@@ -2470,7 +2475,9 @@ bm::id_t bvector<Alloc>::check_or_next_extract(bm::id_t prev)
                         }
                         return prev;
                     } else {
-                        if (bm::gap_find_in_block(BMGAP_PTR(block), nbit, &prev))
+                        if (bm::gap_find_in_block(BMGAP_PTR(block),
+                                                    nbit,
+                                                    &prev))
                         {
                             set(prev, false);
                             return prev;
@@ -2483,8 +2490,10 @@ bm::id_t bvector<Alloc>::check_or_next_extract(bm::id_t prev)
                     {
                         BMCOUNT_DEC
 
-                        nbit  = unsigned(prev & bm::set_block_mask); 
-                        unsigned nword = unsigned(nbit >> bm::set_word_shift);
+                        unsigned nbit = 
+                            unsigned(prev & bm::set_block_mask); 
+                        unsigned nword = 
+                            unsigned(nbit >> bm::set_word_shift);
                         nbit &= bm::set_word_mask;
                         bm::word_t* word = block + nword;
                         bm::word_t  mask = ((bm::word_t)1) << nbit;
@@ -2756,6 +2765,7 @@ bvector<Alloc>::combine_operation_with_block(unsigned          nb,
                     unsigned gap_cnt = gap_bit_count(gap_blk);
                     if (gap_cnt < 128)
                     {
+                        
                         gap_word_t arr_len = 
                             gap_convert_to_arr(tmp_buf, gap_blk, 
                                                bm::gap_equiv_len-10);

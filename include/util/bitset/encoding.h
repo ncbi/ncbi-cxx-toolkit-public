@@ -355,7 +355,7 @@ public:
         {
             if (acc == 0)
             {
-                zero_bits = zero_bits + unsigned(sizeof(acc) * 8) - used;
+                zero_bits = unsigned(zero_bits +(sizeof(acc) * 8) - used);
                 used = 0;
                 acc = src_.get_32();
                 continue;
@@ -388,7 +388,7 @@ public:
         // get the value
         unsigned current;
         
-        unsigned free_bits = unsigned(sizeof(acc) * 8) - used;
+        unsigned free_bits = unsigned((sizeof(acc) * 8) - used);
         if (zero_bits <= free_bits)
         {
         take_accum:
@@ -507,8 +507,9 @@ private:
     \param size - size of the buffer
 */
 inline encoder::encoder(unsigned char* buf, unsigned /* size */)
-: buf_(buf), start_(buf) //, size_(size)
+: buf_(buf), start_(buf)
 {
+    // size_ = size;
 }
 /*!
     \grief Encode 8-bit prefix + an array
@@ -796,7 +797,7 @@ inline decoder_little_endian::decoder_little_endian(const unsigned char* buf)
 
 BMFORCEINLINE bm::short_t decoder_little_endian::get_16()
 {
-    bm::short_t a = bm::short_t(((bm::short_t)buf_[0] << 8) + ((bm::short_t)buf_[1]));
+    bm::short_t a = bm::short_t((bm::short_t)buf_[0] << 8) + ((bm::short_t)buf_[1]);
     buf_ += sizeof(a);
     return a;
 }
@@ -841,7 +842,7 @@ inline void decoder_little_endian::get_16(bm::short_t* s, unsigned count)
     const bm::short_t* s_end = s + count;
     do 
     {
-        bm::short_t a = bm::short_t(((bm::short_t)buf[0] << 8) + ((bm::short_t)buf[1]));
+        bm::short_t a = bm::short_t((bm::short_t)buf[0] << 8) + ((bm::short_t)buf[1]);
         *s++ = a;
         buf += sizeof(a);
     } while (s < s_end);

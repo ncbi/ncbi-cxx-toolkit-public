@@ -202,7 +202,7 @@ public:
                     
                 }
             }
-            return count;
+            return cnt;
         }
         
         bm::id_t count() const { return count_; }
@@ -712,11 +712,11 @@ public:
             return bm::set_array_size;
         }
 
-        unsigned top_blk_size = (unsigned)
-            (bits_to_store / (bm::set_block_size * sizeof(bm::word_t) * 
-                              bm::set_array_size * 8));
-        if (top_blk_size < bm::set_array_size) ++top_blk_size;
-        return top_blk_size;
+        unsigned top_block_size = (unsigned)
+            (bits_to_store / (bm::set_block_size * sizeof(bm::word_t) *
+                                                bm::set_array_size * 8));
+        if (top_block_size < bm::set_array_size) ++top_block_size;
+        return top_block_size;
     }
 
     /**
@@ -1474,21 +1474,21 @@ public:
 
     unsigned mem_used() const
     {
-        unsigned used = 
-            (unsigned)(sizeof(*this) +
-                       (temp_block_ ? sizeof(word_t) * bm::set_block_size : 0) +
-                       sizeof(bm::word_t**) * top_block_size_);
+        unsigned mem_used = (unsigned)sizeof(*this);
+        mem_used += (unsigned)(temp_block_ ? sizeof(word_t) * bm::set_block_size : 0);
+        mem_used += (unsigned)(sizeof(bm::word_t**) * top_block_size_);
 
         #ifdef BM_DISBALE_BIT_IN_PTR
-        mem_used += gap_flags_.mem_used() - sizeof(gap_flags_);
+        mem_used += (unsigned)(gap_flags_.mem_used() - sizeof(gap_flags_));
         #endif
 
         for (unsigned i = 0; i < top_block_size_; ++i)
         {
-            used = used + unsigned(blocks_[i] ? sizeof(void*) * bm::set_array_size : 0);
+            mem_used += (unsigned)
+                (blocks_[i] ? sizeof(void*) * bm::set_array_size : 0);
         }
 
-        return used;
+        return mem_used;
     }
 
     /** Returns true if second level block pointer is 0.

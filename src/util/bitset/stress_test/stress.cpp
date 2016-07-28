@@ -8448,11 +8448,11 @@ int main(void)
      MaxSTest();
 
      GetNextTest();
-
+*/
      SimpleRandomFillTest();
      
      RangeRandomFillTest();
-*/
+
      AndOperationsTest();   
           
      OrOperationsTest();

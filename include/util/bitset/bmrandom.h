@@ -160,6 +160,7 @@ void random_subset<BV>::sample(BV&       bv_out,
     }
 
     get_subset(bv_out, bv_in, bcnt, count);
+    bv_out.forget_count();
 }
 
 template<class BV>

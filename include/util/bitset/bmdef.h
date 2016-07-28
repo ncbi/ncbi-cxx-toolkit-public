@@ -4,7 +4,6 @@
 //
 // Set all required preprocessor defines
 
-
 #include <climits>
 
 // macro to define/undefine unaligned memory access (x86, PowerPC)
@@ -86,7 +85,7 @@
 
 # define BMGAP_PTR(ptr) ((bm::gap_word_t*)BMPTR_CLEARBIT0(ptr))
 # define BMSET_PTRGAP(ptr) ptr = (bm::word_t*)BMPTR_SETBIT0(ptr)
-# define BM_IS_GAP(ptr) bool(BMPTR_TESTBIT0(ptr) != 0)
+# define BM_IS_GAP(ptr) bool(BMPTR_TESTBIT0(ptr)!=0)
 
 
 
