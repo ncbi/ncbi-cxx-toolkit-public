@@ -112,7 +112,7 @@ fi
 case "$ncbi_platform" in
     FreeBSD*   ) : ${MAKE=/usr/local/bin/gmake}; export MAKE ;;
     Linux64    )
-        if [ -z "$CXX" ]; then
+        if [ -z "$CXX" -a "$NCBICXX_USE_DEFAULT_GCC" = 1 ]; then
             CXX=/opt/ncbi/gcc/4.8.1/bin/g++
             : ${CC=/opt/ncbi/gcc/4.8.1/bin/gcc}
         fi
