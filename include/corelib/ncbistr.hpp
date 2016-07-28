@@ -572,7 +572,7 @@ public:
     ///     converted value.
     ///   - Otherwise, if fConvErr_NoThrow is not set, throw an exception.
     ///   - Otherwise, set errno to non-zero and return zero.
-    /// @deprecated  Use StringToUInt8_DataSize(str,flags) instead.
+    /// @deprecated  Use StringToUInt8_DataSize(str, flags) instead.
     NCBI_DEPRECATED
     static Uint8 StringToUInt8_DataSize(const CTempString str,
                                         TStringToNumFlags flags,
@@ -1879,8 +1879,8 @@ public:
     ///   NOTE:  When an occurrence is found the next occurrence will be
     ///          searched for starting right *after* the found pattern.
     /// @return
-    ///   - Start of the found pattern in the string.
-    ///   - NPOS if there is no occurrence of the pattern in the string.
+    ///   Start of the found pattern in the string.
+    ///   Or NPOS if there is no occurrence of the pattern in the string.
     static SIZE_TYPE Find(const CTempString str,
                           const CTempString pattern,
                           ECase             use_case   = eCase,
@@ -1894,11 +1894,11 @@ public:
     /// @param pattern
     ///   Pattern to search for in "str". 
     /// @param start
-    ///   Position in "str" to start search from -- default of 0 means start
-    ///   the search from the beginning of the string.
+    ///   Position in "str" to start search from.
+    ///   0 means start the search from the beginning of the string.
     /// @param end
-    ///   Position in "str" to perform search up to -- default of NPOS means
-    ///   to search to the end of the string.
+    ///   Position in "str" to perform search up to.
+    ///   NPOS means to search to the end of the string.
     /// @param which
     ///   When set to eFirst, this means to find the first occurrence of 
     ///   "pattern" in "str". When set to eLast, this means to find the last
@@ -1908,12 +1908,22 @@ public:
     ///   case-insensitive compare (eNocase) while searching for the pattern.
     /// @return
     ///   - The start of the first or last (depending on "which" parameter)
-    ///   occurrence of "pattern" in "str", within the string interval
-    ///   ["start", "end"], or
+    ///     occurrence of "pattern" in "str", within the string interval
+    ///     ["start", "end"], or
     ///   - NPOS if there is no occurrence of the pattern.
     /// @sa FindCase, FindNoCase, FindWord
+    ///
     /// @deprecated
-    ///   Use Find() method without [start:end] range.
+    ///   Use Find(str, pattern, [use_case], [direction], [occurrence]) method instead.
+    ///   For example:
+    ///       Find(str, pattern, 0, NPOS, eLast, eCase)
+    ///   can be replaced by 
+    ///       Find(str, pattern, eCase, eReverseSearch, /* 0 */)
+    ///   If you doing a search on a substring of the 'str' and ["start", "end"] search
+    ///   interval is not a default [0, NPOS], that mean a whole 'str' string, you may
+    ///   need to pass a substring instead of 'str', like 
+    ///       Find(CTempString(str, start, len), pattern, ....)
+    ///  and after checking search result on NPOS, adjust it by 'start' yourself.
     NCBI_DEPRECATED
     static SIZE_TYPE Find(const CTempString str,
                           const CTempString pattern,
@@ -1923,8 +1933,7 @@ public:
 
     /// Wrapper for backward-compatibility
     inline
-    static SIZE_TYPE Find(const CTempString str, const CTempString pattern,
-                          SIZE_TYPE start)
+    static SIZE_TYPE Find(const CTempString str, const CTempString pattern, SIZE_TYPE start)
         { return FindCase(str, pattern, start); }
 
 
@@ -1947,12 +1956,28 @@ public:
     ///    occurrence of "pattern" in "str".
     /// @return
     ///   - The start of the first or last (depending on "which" parameter)
-    ///   occurrence of "pattern" in "str", within the string interval
-    ///   ["start", "end"], or
+    ///     occurrence of "pattern" in "str", within the string interval
+    ///     ["start", "end"], or
     ///   - NPOS if there is no occurrence of the pattern.
     /// @sa Find
+    ///
     /// @deprecated
     ///   Use Find() method without [start:end] range.
+    /// @deprecated
+    ///   Use one of the next methods instead:
+    ///       Find(str, pattern, [use_case], [direction], [occurrence])
+    ///       FindCase(str, pattern, [start])
+    ///   For example:
+    ///       FindCase(str, pattern, 0, NPOS, eLast)
+    ///   can be replaced by 
+    ///       Find(str, pattern, eCase, eReverseSearch, /* 0 */)
+    ///   For simpler cases without range, or with default [0, NPOS] please use 
+    ///       FindCase(str, pattern, [start])
+    ///   But if you doing a search on a substring of the 'str' and ["start", "end"] search
+    ///   interval is not a default [0, NPOS], that mean a whole 'str' string, you may
+    ///   need to pass a substring instead of 'str', like 
+    ///       FindCase(CTempString(str, start, len), pattern, ....)
+    ///  and after checking search result on NPOS, adjust it by 'start' yourself.
     NCBI_DEPRECATED
     static SIZE_TYPE FindCase(const CTempString str, 
                               const CTempString pattern,
@@ -1982,12 +2007,26 @@ public:
     ///    occurrence of "pattern" in "str".
     /// @return
     ///   - The start of the first or last (depending on "which" parameter)
-    ///   occurrence of "pattern" in "str", within the string interval
-    ///   ["start", "end"], or
+    ///     occurrence of "pattern" in "str", within the string interval
+    ///     ["start", "end"], or
     ///   - NPOS if there is no occurrence of the pattern.
     /// @sa Find
+    ///
     /// @deprecated
-    ///   Use Find() method without [start:end] range.
+    ///   Use one of the next methods instead:
+    ///       Find(str, pattern, [use_case], [direction], [occurrence])
+    ///       FindNoCase(str, pattern, [start])
+    ///   For example:
+    ///       FindNoCase(str, pattern, 0, NPOS, eLast)
+    ///   can be replaced by 
+    ///       Find(str, pattern, eNocase, eReverseSearch, /* 0 */)
+    ///   For simpler cases without range, or with default [0, NPOS] please use 
+    ///       FindNoCase(str, pattern, [start])
+    ///   But if you doing a search on a substring of the 'str' and ["start", "end"] search
+    ///   interval is not a default [0, NPOS], that mean a whole 'str' string, you may
+    ///   need to pass a substring instead of 'str', like 
+    ///       FindNoCase(CTempString(str, start, len), pattern, ....)
+    ///  and after checking search result on NPOS, adjust it by 'start' yourself.
     NCBI_DEPRECATED
     static SIZE_TYPE FindNoCase(const CTempString str,
                                 const CTempString pattern,
@@ -2066,7 +2105,8 @@ public:
     ///   - NPOS if there is no occurrence of the word.
     /// @sa Find
     /// @deprecated
-    ///   Use FindWord() variant with EDirection parameter.
+    ///   Use FindWord() variant with EDirection parameter:
+    ///       FindWord(str, word, [use_case], [direction])
     inline
     NCBI_DEPRECATED
     static SIZE_TYPE FindWord(const CTempString str,
