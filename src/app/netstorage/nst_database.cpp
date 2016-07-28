@@ -1427,6 +1427,66 @@ CNSTDatabase::ExecSP_GetClientObjects(const string &  client_name,
 
 
 int
+CNSTDatabase::ExecSP_GetUserObjects(const string &  user_name,
+                                    const string &  user_name_space,
+                                    TNSTDBValue<Int8>  limit,
+                                    Int8 &  total,
+                                    vector<string> &  locators)
+{
+    const string            proc_name = "GetUserObjects";
+    CNSTPreciseTime         start = CNSTPreciseTime::Current();
+    try {
+        x_PreCheckConnection();
+
+        int     status;
+        try {
+            CDatabase               db = m_Db->Clone();
+            CQuery                  query = db.NewQuery();
+
+            query.SetParameter("@user_name", user_name);
+            query.SetParameter("@user_name_space", user_name_space);
+            if (limit.m_IsNull)
+                query.SetNullParameter("@limit", eSDB_Int8);
+            else
+                query.SetParameter("@limit", limit.m_Value);
+            query.SetOutputParameter("@total_object_cnt", eSDB_Int8);
+
+            query.ExecuteSP(proc_name, GetExecuteSPTimeout());
+
+            // NOTE: reading result recordset must be done before getting the
+            //       status code
+            ITERATE(CQuery, qit, query.SingleSet()) {
+                locators.push_back(qit["object_loc"].AsString());
+            }
+
+            if (!query.GetParameter("@total_object_cnt").IsNull())
+                total = query.GetParameter("@total_object_cnt").AsInt8();
+            query.VerifyDone();
+
+            status = x_CheckStatus(query, proc_name);
+            g_DoPerfLogging("MS_SQL_" + proc_name,
+                            CNSTPreciseTime::Current() - start,
+                            CRequestStatus::e200_Ok);
+            return status;
+        } catch (const std::exception &  ex) {
+            m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
+            x_PostCheckConnection();
+            throw;
+        } catch (...) {
+            m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
+            x_PostCheckConnection();
+            throw;
+        }
+    } catch (...) {
+        g_DoPerfLogging("MS_SQL_" + proc_name,
+                        CNSTPreciseTime::Current() - start,
+                        CRequestStatus::e500_InternalServerError);
+        throw;
+    }
+}
+
+
+int
 CNSTDatabase::ExecSP_GetClients(vector<string> &  names)
 {
     const string            proc_name = "GetClients";
@@ -1446,6 +1506,53 @@ CNSTDatabase::ExecSP_GetClients(vector<string> &  names)
             //       even if there is no one.
             ITERATE(CQuery, qit, query.SingleSet()) {
                 names.push_back(qit["name"].AsString());
+            }
+            query.VerifyDone();
+
+            status = x_CheckStatus(query, proc_name);
+            g_DoPerfLogging("MS_SQL_" + proc_name,
+                            CNSTPreciseTime::Current() - start,
+                            CRequestStatus::e200_Ok);
+            return status;
+        } catch (const std::exception &  ex) {
+            m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
+            x_PostCheckConnection();
+            throw;
+        } catch (...) {
+            m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
+            x_PostCheckConnection();
+            throw;
+        }
+    } catch (...) {
+        g_DoPerfLogging("MS_SQL_" + proc_name,
+                        CNSTPreciseTime::Current() - start,
+                        CRequestStatus::e500_InternalServerError);
+        throw;
+    }
+}
+
+
+int
+CNSTDatabase::ExecSP_GetUsers(vector< pair<string, string> > &  users)
+{
+    const string            proc_name = "GetUsers";
+    CNSTPreciseTime         start = CNSTPreciseTime::Current();
+    try {
+        x_PreCheckConnection();
+
+        int     status;
+        try {
+            CDatabase               db = m_Db->Clone();
+            CQuery                  query = db.NewQuery();
+
+            query.ExecuteSP(proc_name, GetExecuteSPTimeout());
+
+            // NOTE: reading result recordset must be done before getting the
+            //       status code. And it is safe to iterate over a recordset
+            //       even if there is no one.
+            ITERATE(CQuery, qit, query.SingleSet()) {
+                users.push_back(make_pair(qit["name"].AsString(),
+                                          qit["name_space"].AsString()));
             }
             query.VerifyDone();
 

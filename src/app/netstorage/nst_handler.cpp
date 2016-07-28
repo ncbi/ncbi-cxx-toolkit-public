@@ -76,10 +76,12 @@ CNetStorageHandler::SProcessorMap   CNetStorageHandler::sm_Processors[] =
     { "RECONFIGURE",      & CNetStorageHandler::x_ProcessReconfigure },
     { "SHUTDOWN",         & CNetStorageHandler::x_ProcessShutdown },
     { "GETCLIENTSINFO",   & CNetStorageHandler::x_ProcessGetClientsInfo },
+    { "GETUSERSINFO",     & CNetStorageHandler::x_ProcessGetUsersInfo },
     { "GETMETADATAINFO",  & CNetStorageHandler::x_ProcessGetMetadataInfo },
     { "GETOBJECTINFO",    & CNetStorageHandler::x_ProcessGetObjectInfo },
     { "GETATTRLIST",      & CNetStorageHandler::x_ProcessGetAttrList },
     { "GETCLIENTOBJECTS", & CNetStorageHandler::x_ProcessGetClientObjects },
+    { "GETUSEROBJECTS",   & CNetStorageHandler::x_ProcessGetUserObjects },
     { "GETATTR",          & CNetStorageHandler::x_ProcessGetAttr },
     { "SETATTR",          & CNetStorageHandler::x_ProcessSetAttr },
     { "DELATTR",          & CNetStorageHandler::x_ProcessDelAttr },
@@ -1632,6 +1634,49 @@ CNetStorageHandler::x_ProcessGetClientsInfo(
 
 
 void
+CNetStorageHandler::x_ProcessGetUsersInfo(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+    x_CheckNonAnonymousClient("users info request");
+    m_Server->GetClientRegistry().AppendType(m_Client,
+                                             CNSTClient::eAdministrator);
+
+    CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
+    try {
+        vector< pair<string, string> >      users;
+        int     status = m_Server->GetDb().ExecSP_GetUsers(users);
+        if (status != kSPStatusOK) {
+            AppendError(reply, NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
+                        "Error executing stored procedure - return code is "
+                        "non zero", kScopeLogic, eDatabaseWarning);
+        } else {
+            CJsonNode       u_list(CJsonNode::NewArrayNode());
+            for (vector< pair<string, string> >::const_iterator
+                    k = users.begin(); k != users.end(); ++k) {
+                CJsonNode       a_user(CJsonNode::NewObjectNode());
+                a_user.SetString("Name", (*k).first);
+                a_user.SetString("Namespace", (*k).second);
+                u_list.Append(a_user);
+            }
+            reply.SetByKey("Users", u_list);
+        }
+    } catch (const exception &  ex) {
+        AppendError(reply, NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
+                    ex.what(), kScopeStdException, eDatabaseWarning);
+    } catch (...) {
+        AppendError(reply, NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
+                    "Unknown error while getting a list of users "
+                    "in the metainfo DB",
+                    kScopeUnknownException, eDatabaseWarning);
+    }
+
+    x_SendSyncMessage(reply);
+    x_PrintMessageRequestStop();
+}
+
+
+void
 CNetStorageHandler::x_ProcessGetMetadataInfo(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
@@ -2026,6 +2071,90 @@ CNetStorageHandler::x_ProcessGetClientObjects(
             // Unknown status
             NCBI_THROW(CNetStorageServerException, eInternalError,
                        "Unknown GetClientObjects status");
+        }
+    }
+
+    x_SendSyncMessage(reply);
+    x_PrintMessageRequestStop();
+}
+
+
+void
+CNetStorageHandler::x_ProcessGetUserObjects(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+    x_CheckNonAnonymousClient("user objects request");
+    m_Server->GetClientRegistry().AppendType(m_Client,
+                                             CNSTClient::eReader);
+
+    if (!message.HasKey("UserName"))
+        NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
+                   "GETUSEROBJECTS message must have UserName.");
+    string  user_name = NStr::TruncateSpaces(message.GetString("UserName"));
+    user_name = NStr::ToLower(user_name);
+
+    if (!message.HasKey("UserNamespace"))
+        NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
+                   "GETUSEROBJECTS message must have UserNamespace.");
+    string  user_namespace = NStr::TruncateSpaces(
+                                    message.GetString("UserNamespace"));
+    user_namespace = NStr::ToLower(user_namespace);
+
+    TNSTDBValue<Int8>  limit;
+    limit.m_IsNull = true;
+    limit.m_Value = 0;
+    if (message.HasKey("Limit")) {
+        try {
+            limit.m_Value = message.GetInteger("Limit");
+            limit.m_IsNull = false;
+        } catch (...) {
+            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                       "GETUSEROBJECTS message Limit argument "
+                       "must be an integer.");
+        }
+        if (limit.m_Value <= 0)
+            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                       "GETUSEROBJECTS message Limit argument "
+                       "must be > 0.");
+    }
+
+    if (m_MetadataOption == eMetadataDisabled)
+        NCBI_THROW(CNetStorageServerException, eInvalidMetaInfoRequest,
+                   "DB access is restricted in HELLO");
+
+    if (m_MetadataOption == eMetadataNotSpecified ||
+        m_MetadataOption == eMetadataRequired)
+        x_ValidateWriteMetaDBAccess(message);
+
+    if (m_MetadataOption != eMetadataMonitoring)
+        x_CreateClient();
+
+    CJsonNode   reply = CreateResponseMessage(common_args.m_SerialNumber);
+
+    vector<string>  locators;
+    Int8            total_client_objects;
+    int             status = m_Server->GetDb().ExecSP_GetUserObjects(
+                                        user_name, user_namespace, limit,
+                                        total_client_objects, locators);
+
+    if (status == kSPStatusOK) {
+        // Everything is fine, the object is found
+        CJsonNode       locators_node(CJsonNode::NewArrayNode());
+        for (vector<string>::const_iterator  k = locators.begin();
+             k != locators.end(); ++k)
+            locators_node.AppendString(*k);
+        reply.SetByKey("ObjectLocators", locators_node);
+        reply.SetInteger("TotalUserObjects", total_client_objects);
+    } else {
+        if (status == -1) {
+            // Client is not found
+            NCBI_THROW(CNetStorageServerException, eNetStorageClientNotFound,
+                       "NetStorage user is not found");
+        } else {
+            // Unknown status
+            NCBI_THROW(CNetStorageServerException, eInternalError,
+                       "Unknown GetUserObjects status");
         }
     }
 

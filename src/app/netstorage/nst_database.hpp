@@ -183,7 +183,13 @@ public:
                                  TNSTDBValue<Int8>  limit,
                                  Int8 &  total,
                                  vector<string> &  locators);
+    int  ExecSP_GetUserObjects(const string &  user_name,
+                               const string &  user_name_space,
+                               TNSTDBValue<Int8>  limit,
+                               Int8 &  total,
+                               vector<string> &  locators);
     int  ExecSP_GetClients(vector<string> &  names);
+    int  ExecSP_GetUsers(vector< pair<string, string> > &  users);
     int  ExecSP_DoesObjectExist(const string &  object_key);
     int  ExecSP_GetObjectSizeAndLocator(const string &  object_key,
                                         TNSTDBValue<Int8> &  object_size,
