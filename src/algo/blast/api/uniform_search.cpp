@@ -251,12 +251,27 @@ CSearchDatabase::x_InitializeDb() const
         m_SeqDb.Reset(new CSeqDB(m_DbName, seq_type, m_GiList));
 
     } else if (! m_NegativeGiList.Empty() && ! m_NegativeGiList->Empty()) {
-        vector<TGi> gis;
-        m_NegativeGiList->GetGiList(gis);
-        CSeqDBIdSet idset(gis, CSeqDBIdSet::eGi, false);
-        m_SeqDb.Reset(new CSeqDB(m_DbName, seq_type, idset));
+        
+        if(m_NegativeGiList->GetNumGis() > 0) {
+            vector<TGi> gis;
+            m_NegativeGiList->GetGiList(gis);
+            CSeqDBIdSet idset(gis, CSeqDBIdSet::eGi, false);
+            m_SeqDb.Reset(new CSeqDB(m_DbName, seq_type, idset));
+        }
+        else {        
+            vector<string> sis;        
+            m_NegativeGiList->GetSiList(sis);
 
-    } else {
+            CRef<CSeqDBNegativeList> seqIds(new CSeqDBNegativeList);
+            seqIds->ReserveSis(sis.size());
+            ITERATE(vector<string>, iter, sis) {
+                seqIds->AddSi(*iter);        
+            }        
+            m_SeqDb.Reset(new CSeqDB(m_DbName, seq_type, seqIds));
+        }
+
+    } 
+    else {
         m_SeqDb.Reset(new CSeqDB(m_DbName, seq_type));
 
     }
