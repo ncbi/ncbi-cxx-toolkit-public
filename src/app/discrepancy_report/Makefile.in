@@ -4,7 +4,7 @@
 # Author: Sema
 #
 
-APP_PROJ = asndisc
+APP_PROJ = asndisc asndisc1
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
