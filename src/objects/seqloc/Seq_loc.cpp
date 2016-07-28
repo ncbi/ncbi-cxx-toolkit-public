@@ -3995,8 +3995,8 @@ public:
 
     void ResetFuzzFrom(void) { m_Fuzz_from.Reset(); }
     void ResetFuzzTo(void) { m_Fuzz_to.Reset(); }
-    TFuzz IsSetFuzzFrom(void) const { return m_Fuzz_from; }
-    TFuzz IsSetFuzzTo(void) const { return m_Fuzz_to; }
+    bool IsSetFuzzFrom(void) const { return m_Fuzz_from; }
+    bool IsSetFuzzTo(void) const { return m_Fuzz_to; }
     const CInt_fuzz& GetFuzzFrom(void) const { return *m_Fuzz_from; }
     const CInt_fuzz& GetFuzzTo(void) const { return *m_Fuzz_to; }
 
@@ -4010,6 +4010,16 @@ public:
     void AddFuzzTo(const CRangeWithFuzz& rg)
     {
         x_AddFuzz(m_Fuzz_to, rg.m_Fuzz_to, rg.m_Strand);
+    }
+
+    void AddFuzzFrom(const CInt_fuzz& fuzz, ENa_strand strand)
+    {
+        x_AddFuzz(m_Fuzz_from, ConstRef(&fuzz), strand);
+    }
+    
+    void AddFuzzTo(const CInt_fuzz& fuzz, ENa_strand strand)
+    {
+        x_AddFuzz(m_Fuzz_to, ConstRef(&fuzz), strand);
     }
 
     void CopyFrom(const CRangeWithFuzz& rg)
@@ -4616,9 +4626,15 @@ void x_MergeAndSort(CSeq_loc& dst,
 }
 
 
+typedef map<TSeqPos, CConstRef<CInt_fuzz> > TFuzzMap;
+
 static
 void x_SingleRange(CSeq_loc& dst,
-                   const CSeq_loc& src,
+                   const CSeq_loc& minuend,
+                   const TFuzzMap& fuzz_from_plus,
+                   const TFuzzMap& fuzz_from_minus,
+                   const TFuzzMap& fuzz_to_plus,
+                   const TFuzzMap& fuzz_to_minus,
                    TIdToRangeColl& rg_coll_plus,
                    TIdToRangeColl& rg_coll_minus,
                    ISynonymMapper& syn_mapper,
@@ -4627,7 +4643,7 @@ void x_SingleRange(CSeq_loc& dst,
     TRangeWithFuzz total_rg(TRangeWithFuzz::GetEmpty());
     CSeq_id_Handle first_id;
     ENa_strand first_strand = eNa_strand_unknown;
-    for (CSeq_loc_CI it(src, CSeq_loc_CI::eEmpty_Allow); it; ++it) {
+    for (CSeq_loc_CI it(minuend, CSeq_loc_CI::eEmpty_Allow); it; ++it) {
         CSeq_id_Handle next_id = syn_mapper.GetBestSynonym(it.GetSeq_id());
         if ( !next_id ) {
             // Ignore NULLs
@@ -4666,9 +4682,22 @@ void x_SingleRange(CSeq_loc& dst,
         if (curr_rg.GetFrom() == it_range.GetFrom()) {
             curr_rg.AddFuzzFrom(it_range);
         }
-        else if (curr_rg.GetTo() == it_range.GetTo()) {
+        if (curr_rg.GetTo() == it_range.GetTo()) {
             curr_rg.AddFuzzTo(it_range);
         }
+        
+        // If range start/stop comes from subtrahend, copy fuzz.
+        const TFuzzMap& fm_from = IsReverse(it.GetStrand()) ? fuzz_from_minus : fuzz_from_plus;
+        TFuzzMap::const_iterator subtr_fuzz = fm_from.find(curr_rg.GetToOpen());
+        if (subtr_fuzz != fm_from.end()) {
+            curr_rg.AddFuzzTo(*subtr_fuzz->second, it.GetStrand());
+        }
+        const TFuzzMap& fm_to = IsReverse(it.GetStrand()) ? fuzz_to_minus : fuzz_to_plus;
+        subtr_fuzz = fm_to.find(curr_rg.GetFrom());
+        if (subtr_fuzz != fm_to.end()) {
+            curr_rg.AddFuzzFrom(*subtr_fuzz->second, it.GetStrand());
+        }
+            
         total_rg += curr_rg;
     }
 
@@ -4700,7 +4729,11 @@ void x_SingleRange(CSeq_loc& dst,
 
 static
 void x_SubNoSort(CSeq_loc& dst,
-                 const CSeq_loc& src,
+                 const CSeq_loc& minuend,
+                 const TFuzzMap& fuzz_from_plus,
+                 const TFuzzMap& fuzz_from_minus,
+                 const TFuzzMap& fuzz_to_plus,
+                 const TFuzzMap& fuzz_to_minus,
                  TIdToRangeColl& rg_coll_plus,
                  TIdToRangeColl& rg_coll_minus,
                  ISynonymMapper& syn_mapper,
@@ -4712,7 +4745,7 @@ void x_SubNoSort(CSeq_loc& dst,
     TRangeWithFuzz last_rg(TRangeWithFuzz::GetEmpty());
     ENa_strand last_strand = eNa_strand_unknown;
     bool have_range = false;
-    for (CSeq_loc_CI it(src, CSeq_loc_CI::eEmpty_Allow); it; ++it) {
+    for (CSeq_loc_CI it(minuend, CSeq_loc_CI::eEmpty_Allow); it; ++it) {
         CSeq_id_Handle idh = syn_mapper.GetBestSynonym(it.GetSeq_id());
         bool rev = IsReverse(it.GetStrand());
         TRangeWithFuzz it_range = TRangeWithFuzz(it);
@@ -4749,9 +4782,22 @@ void x_SubNoSort(CSeq_loc& dst,
                 if (curr_rg.GetFrom() == it_range.GetFrom()) {
                     curr_rg.AddFuzzFrom(it_range);
                 }
-                else if (curr_rg.GetTo() == it_range.GetTo()) {
+                if (curr_rg.GetTo() == it_range.GetTo()) {
                     curr_rg.AddFuzzTo(it_range);
                 }
+
+                // If range start/stop comes from subtrahend, copy fuzz.
+                const TFuzzMap& fm_from = IsReverse(it.GetStrand()) ? fuzz_from_minus : fuzz_from_plus;
+                TFuzzMap::const_iterator subtr_fuzz = fm_from.find(curr_rg.GetToOpen());
+                if (subtr_fuzz != fm_from.end()) {
+                    curr_rg.AddFuzzTo(*subtr_fuzz->second, it.GetStrand());
+                }
+                const TFuzzMap& fm_to = IsReverse(it.GetStrand()) ? fuzz_to_minus : fuzz_to_plus;
+                subtr_fuzz = fm_to.find(curr_rg.GetFrom());
+                if (subtr_fuzz != fm_to.end()) {
+                    curr_rg.AddFuzzFrom(*subtr_fuzz->second, it.GetStrand());
+                }
+
                 if ( have_range  &&  last_id == idh ) {
                     if (x_MergeRanges(last_rg,
                                     last_strand,
@@ -4803,7 +4849,11 @@ void x_SubNoSort(CSeq_loc& dst,
 
 static
 void x_SubAndSort(CSeq_loc& dst,
-                  const CSeq_loc& src,
+                  const CSeq_loc& minuend,
+                  const TFuzzMap& fuzz_from_plus,
+                  const TFuzzMap& fuzz_from_minus,
+                  const TFuzzMap& fuzz_to_plus,
+                  const TFuzzMap& fuzz_to_minus,
                   TIdToRangeColl& rg_coll_plus,
                   TIdToRangeColl& rg_coll_minus,
                   ISynonymMapper& syn_mapper,
@@ -4825,7 +4875,7 @@ void x_SubAndSort(CSeq_loc& dst,
     ENa_strand default_minus = use_strand ?
         eNa_strand_minus : eNa_strand_unknown;
 
-    for (CSeq_loc_CI it(src, CSeq_loc_CI::eEmpty_Allow); it; ++it) {
+    for (CSeq_loc_CI it(minuend, CSeq_loc_CI::eEmpty_Allow); it; ++it) {
         CSeq_id_Handle idh = syn_mapper.GetBestSynonym(it.GetSeq_id());
         TRangeWithFuzz it_range = TRangeWithFuzz(it);
         if ( it_range.IsWhole() ) {
@@ -4853,12 +4903,26 @@ void x_SubAndSort(CSeq_loc& dst,
         if ( modified ) {
             ITERATE(TRangeColl, rg_it, it_rg_coll) {
                 TRangeWithFuzz curr_rg(*rg_it);
+                // If range start/stop comes from the minuend, preserve strand.
                 if (curr_rg.GetFrom() == it_range.GetFrom()) {
                     curr_rg.AddFuzzFrom(it_range);
                 }
-                else if (curr_rg.GetTo() == it_range.GetTo()) {
+                if (curr_rg.GetTo() == it_range.GetTo()) {
                     curr_rg.AddFuzzTo(it_range);
                 }
+
+                // If range start/stop comes from subtrahend, copy fuzz.
+                const TFuzzMap& fm_from = IsReverse(it.GetStrand()) ? fuzz_from_minus : fuzz_from_plus;
+                TFuzzMap::const_iterator subtr_fuzz = fm_from.find(curr_rg.GetToOpen());
+                if (subtr_fuzz != fm_from.end()) {
+                    curr_rg.AddFuzzTo(*subtr_fuzz->second, it.GetStrand());
+                }
+                const TFuzzMap& fm_to = IsReverse(it.GetStrand()) ? fuzz_to_minus : fuzz_to_plus;
+                subtr_fuzz = fm_to.find(curr_rg.GetFrom());
+                if (subtr_fuzz != fm_to.end()) {
+                    curr_rg.AddFuzzFrom(*subtr_fuzz->second, it.GetStrand());
+                }
+
                 rg_map.push_back(curr_rg);
             }
         }
@@ -4980,6 +5044,11 @@ CRef<CSeq_loc> CSeq_loc::Subtract(const CSeq_loc& other,
     TIdToRangeColl& rg_coll_minus = use_strand ?
         *p_rg_coll_minus.get() : rg_coll_plus;
 
+    // Collect fuzzes so that they can be copied to the new ranges after subtracting.
+    // Note: if there are multiple ranges with the same boundaries only the last
+    // fuzz found will be used.
+    TFuzzMap fuzz_from_plus, fuzz_from_minus, fuzz_to_plus, fuzz_to_minus;
+
     // Create range collection(s) for loc2
     for (CSeq_loc_CI it(other); it; ++it) {
         if ( it.IsEmpty() ) {
@@ -4989,11 +5058,31 @@ CRef<CSeq_loc> CSeq_loc::Subtract(const CSeq_loc& other,
         TRangeColl& rmap = IsReverse(it.GetStrand()) ?
             rg_coll_minus[idh] : rg_coll_plus[idh];
         rmap += TRangeWithFuzz(it);
+
+        const CInt_fuzz* fuzz = it.GetFuzzFrom();
+        if ( fuzz ) {
+            if (it.IsSetStrand()  &&  IsReverse(it.GetStrand())) {
+                fuzz_from_minus[it.GetRange().GetFrom()].Reset(fuzz);
+            }
+            else {
+                fuzz_from_plus[it.GetRange().GetFrom()].Reset(fuzz);
+            }
+        }
+        fuzz = it.GetFuzzTo();
+        if ( fuzz ) {
+            if (it.IsSetStrand()  &&  IsReverse(it.GetStrand())) {
+                fuzz_to_minus[it.GetRange().GetToOpen()].Reset(fuzz);
+            }
+            else {
+                fuzz_to_plus[it.GetRange().GetToOpen()].Reset(fuzz);
+            }
+        }
     }
 
     if ( (flags & CSeq_loc::fMerge_SingleRange) != 0 ) {
         x_SingleRange(*ret,
                       *this,
+                      fuzz_from_plus, fuzz_from_minus, fuzz_to_plus, fuzz_to_minus,
                       rg_coll_plus,
                       rg_coll_minus,
                       *syn_mapper,
@@ -5002,6 +5091,7 @@ CRef<CSeq_loc> CSeq_loc::Subtract(const CSeq_loc& other,
     else if ( (flags & CSeq_loc::fSort) == 0 ) {
         x_SubNoSort(*ret,
                     *this,
+                    fuzz_from_plus, fuzz_from_minus, fuzz_to_plus, fuzz_to_minus,
                     rg_coll_plus,
                     rg_coll_minus,
                     *syn_mapper,
@@ -5011,6 +5101,7 @@ CRef<CSeq_loc> CSeq_loc::Subtract(const CSeq_loc& other,
     else {
         x_SubAndSort(*ret,
                      *this,
+                     fuzz_from_plus, fuzz_from_minus, fuzz_to_plus, fuzz_to_minus,
                      rg_coll_plus,
                      rg_coll_minus,
                      *syn_mapper,
