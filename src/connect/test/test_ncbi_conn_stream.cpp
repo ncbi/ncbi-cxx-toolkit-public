@@ -67,6 +67,7 @@ static void s_CreateRegistry(void)
     reg->Set("ID1", DEF_CONN_REG_SECTION "_" REG_CONN_PATH, DEF_CONN_PATH);
     reg->Set("ID1", DEF_CONN_REG_SECTION "_" REG_CONN_ARGS, DEF_CONN_ARGS);
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_HOST,     "www.ncbi.nlm.nih.gov");
+    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_PORT,           "443");
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_PATH,      "/Service/bounce.cgi");
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_ARGS,           "arg1+arg2+arg3");
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_REQ_METHOD,     "POST");
@@ -157,12 +158,14 @@ int CNCBITestApp::Run(void)
 
 
     LOG_POST(Info << "Test 0 of 9: Checking error log setup");
+
     ERR_POST(Info << "Test log message using C++ Toolkit posting");
     CORE_LOG(eLOG_Note, "Another test message using C Toolkit posting");
     LOG_POST(Info << "Test 0 passed\n");
 
 
     LOG_POST(Info << "Test 1 of 9: Memory stream");
+
     // Testing memory stream out-of-sequence interleaving operations
     m = (rand() & 0x00FF) + 1;
     size = 0;
@@ -309,6 +312,7 @@ int CNCBITestApp::Run(void)
 
 
     LOG_POST(Info << "Test 2 of 9: FTP download");
+
     CConn_FTPDownloadStream download(CONN_NCBI_FTP_PUBLIC_HOST,
                                      "Misc/test_ncbi_conn_stream.FTP.data",
                                      "ftp"/*default*/, "-none"/*default*/,
@@ -434,6 +438,7 @@ int CNCBITestApp::Run(void)
 
 
     LOG_POST(Info << "Test 4 of 9: FTP peculiarities");
+
     if (!ftpuser.empty()  &&  !ftppass.empty()) {
         _ASSERT(!ftpfile.empty());
         // Note that FTP streams are not buffered for the sake of command
@@ -495,9 +500,6 @@ int CNCBITestApp::Run(void)
         LOG_POST(Info << "Test 4 skipped\n");
 
 
-    ConnNetInfo_Destroy(net_info);
-
-
     {{
         // Silent test for timeouts and memory leaks in an unused stream
         static const STimeout tmo = {5, 0};
@@ -508,9 +510,14 @@ int CNCBITestApp::Run(void)
 
 
     LOG_POST(Info << "Test 5 of 9: Big buffer bounce via HTTP");
-    CConn_HttpStream ios(0, "User-Header: My header\r\n", 0, 0, 0, 0,
+
+    if (net_info->port == CONN_PORT_HTTPS)
+        net_info->scheme = eURL_Https;
+    CConn_HttpStream ios(net_info, "User-Header: My header\r\n", 0, 0, 0, 0,
                          fHTTP_AutoReconnect | fHTTP_Flushable |
                          fHCC_UrlEncodeArgs/*obsolete now*/);
+
+    ConnNetInfo_Destroy(net_info);
 
     AutoPtr< char, ArrayDeleter<char> >  buf1(new char[kBufferSize + 1]);
     AutoPtr< char, ArrayDeleter<char> >  buf2(new char[kBufferSize + 2]);
@@ -643,9 +650,9 @@ int CNCBITestApp::Run(void)
     ofstream null(DEV_NULL);
     assert(null);
 
-    CConn_HttpStream http("www.ncbi.nlm.nih.gov",
-                          "/cpp/network/dispatcher.html", kEmptyStr/*args*/,
-                          "My-Header: Header", 0/*port*/, fHTTP_Flushable);
+    CConn_HttpStream http("https://www.ncbi.nlm.nih.gov/cpp/network/"
+                          "dispatcher.html", eReqMethod_Any,
+                          "My-Header: Header", fHTTP_Flushable);
     http << "Sample input -- should be ignored";
 
     if (!http.good()  ||  !http.flush()  ||  !NcbiStreamCopy(null, http))
@@ -656,7 +663,7 @@ int CNCBITestApp::Run(void)
 
     LOG_POST(Info << "Test 9 of 9: HTTP status code and text");
 
-    CConn_HttpStream bad_http("http://www.ncbi.nlm.nih.gov/blah");
+    CConn_HttpStream bad_http("https://www.ncbi.nlm.nih.gov/blah");
     bad_http >> ftpfile/*dummy*/;
 
     int    code = bad_http.GetStatusCode();
@@ -666,7 +673,7 @@ int CNCBITestApp::Run(void)
         ERR_POST(Fatal << "Test 9 failed");
     bad_http.Close();
 
-    CConn_HttpStream good_http("http://www.ncbi.nlm.nih.gov/index.html");
+    CConn_HttpStream good_http("https://www.ncbi.nlm.nih.gov/index.html");
     good_http >> ftpfile/*dummy*/;
 
     code = good_http.GetStatusCode();
