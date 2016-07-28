@@ -1965,6 +1965,7 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     database_args.push_back(kArgGiList);
     database_args.push_back(kArgSeqIdList);
     database_args.push_back(kArgNegativeGiList);
+    database_args.push_back(kArgNegativeSeqidList);
     if (m_SupportsDatabaseMasking) {
         database_args.push_back(kArgDbSoftMask);
         database_args.push_back(kArgDbHardMask);
@@ -1993,13 +1994,26 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                                 "Restrict search of database to everything"
                                 " except the listed GIs",
                                 CArgDescriptions::eString);
+
+        // Negative SeqId list
+        arg_desc.AddOptionalKey(kArgNegativeSeqidList, "filename", 
+                                "Restrict search of database to everything"
+                                " except the listed SeqIDs",
+                                CArgDescriptions::eString);        
+
         arg_desc.SetDependency(kArgGiList, CArgDescriptions::eExcludes, 
                                kArgNegativeGiList);
         arg_desc.SetDependency(kArgGiList, CArgDescriptions::eExcludes, 
                                kArgSeqIdList);
+        arg_desc.SetDependency(kArgGiList, CArgDescriptions::eExcludes, 
+                               kArgNegativeSeqidList);
+
         arg_desc.SetDependency(kArgSeqIdList, CArgDescriptions::eExcludes, 
                                kArgNegativeGiList);
+        arg_desc.SetDependency(kArgSeqIdList, CArgDescriptions::eExcludes, 
+                               kArgNegativeSeqidList);
 
+        
         // For now, disable pairing -remote with either -gilist or
         // -negative_gilist as this is not implemented in the BLAST server
         arg_desc.SetDependency(kArgGiList, CArgDescriptions::eExcludes, 
@@ -2007,6 +2021,8 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
         arg_desc.SetDependency(kArgSeqIdList, CArgDescriptions::eExcludes, 
                                kArgRemote);
         arg_desc.SetDependency(kArgNegativeGiList, CArgDescriptions::eExcludes,
+                               kArgRemote);
+        arg_desc.SetDependency(kArgNegativeSeqidList, CArgDescriptions::eExcludes,
                                kArgRemote);
     }
 
@@ -2099,7 +2115,11 @@ CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
             string fn(SeqDB_ResolveDbPath(args[kArgSeqIdList].AsString()));
             m_SearchDb->SetGiList(CRef<CSeqDBGiList> (new CSeqDBFileGiList(fn,
                              CSeqDBFileGiList::eMixList)));
-        }
+        } else if (args.Exist(kArgNegativeSeqidList) && args[kArgNegativeSeqidList]) {
+            string fn(SeqDB_ResolveDbPath(args[kArgNegativeSeqidList].AsString()));
+            m_SearchDb->SetNegativeGiList(CRef<CSeqDBGiList> (new CSeqDBFileGiList(fn,CSeqDBFileGiList::eMixList)));
+        } 
+        
 
         if (args.Exist(kArgEntrezQuery) && args[kArgEntrezQuery])
             m_SearchDb->SetEntrezQueryLimitation(args[kArgEntrezQuery].AsString());
