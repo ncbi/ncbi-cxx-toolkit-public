@@ -75,8 +75,7 @@ int main(int argc, char** argv)
     if ( argc < 4 ) {
         fprintf(stderr,
                 "Usage:   %s host port path args inp_file [user_header]\n"
-                "\nTwo few arguments.\n",
-                argv[0], argv[0]);
+                "\nTwo few arguments.\n", argv[0]);
         return 1;
     }
 
@@ -100,7 +99,7 @@ int main(int argc, char** argv)
     timeout.usec = 0;
     
     /* Connect */
-    sock = URL_Connect(host, port, path, args,
+    sock = URL_Connect(host, port, path, args, /*NCBI_FAKE_WARNING*/
                        eReqMethod_Any, content_length,
                        &timeout, &timeout, user_header, 1/*true*/,
                        port == CONN_PORT_HTTPS
