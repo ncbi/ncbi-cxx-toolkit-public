@@ -965,7 +965,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CETESB	c	Setor de Pesquisa Tecnologica de Sistemas de Tratamento de Efluentes Domesticos",
 "CEU	s	Collage of Eastern Utah",
 "CFB	s	Northern Forestry Centre, Canadian Forest Service",
-"CFBH	s	Celio F. B. Haddad",
+"CFBH	s	Celio F.B. Haddad Herpetological Collection, Departamento de  Zoologia, Universidade Estadual Paulista",
 "CFBP	c	Collection Francaise des Bacteries Phytopathogenes",
 "CFI	s	Genetic Resources and Biotechnology (CENARGEN), EMBRAPA",
 "CFMR	sc	Center for Forest Mycology Research",
