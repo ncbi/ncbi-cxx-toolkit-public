@@ -66,6 +66,9 @@ public:
 
     /// Get a list of NCBI's standard suffixes.
     static const TSuffixes& GetStandardSuffixes(void);
+    static void FixSuffix(string& suffix);
+
+    bool ExtractSuffixFromLastName();
 
 private:
     // Prohibit copy constructor and assignment operator

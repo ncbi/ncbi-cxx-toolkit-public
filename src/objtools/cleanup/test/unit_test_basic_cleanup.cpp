@@ -809,3 +809,52 @@ BOOST_AUTO_TEST_CASE(Test_SQD_3943)
 
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_SQD_3994)
+{
+    CRef<CName_std> name(new CName_std());
+
+    //should extract Sr.
+    name->SetLast("Pogson Sr.");
+    BOOST_CHECK_EQUAL(name->ExtractSuffixFromLastName(), true);
+    BOOST_CHECK_EQUAL(name->GetLast(), "Pogson");
+    BOOST_CHECK_EQUAL(name->GetSuffix(), "Sr.");
+    
+    //should not extract II because suffix is already set
+    name->SetLast("Pogson II");
+    BOOST_CHECK_EQUAL(name->ExtractSuffixFromLastName(), false);
+    BOOST_CHECK_EQUAL(name->GetLast(), "Pogson II");
+    BOOST_CHECK_EQUAL(name->GetSuffix(), "Sr.");
+
+    //should extract II if suffix is blank
+    name->SetSuffix("");
+    BOOST_CHECK_EQUAL(name->ExtractSuffixFromLastName(), true);
+    BOOST_CHECK_EQUAL(name->GetLast(), "Pogson");
+    BOOST_CHECK_EQUAL(name->GetSuffix(), "II");
+
+    // try the rest
+    name->ResetSuffix();
+    name->SetLast("Pogson III");
+    BOOST_CHECK_EQUAL(name->ExtractSuffixFromLastName(), true);
+    BOOST_CHECK_EQUAL(name->GetLast(), "Pogson");
+    BOOST_CHECK_EQUAL(name->GetSuffix(), "III");
+
+    name->ResetSuffix();
+    name->SetLast("Pogson IV");
+    BOOST_CHECK_EQUAL(name->ExtractSuffixFromLastName(), true);
+    BOOST_CHECK_EQUAL(name->GetLast(), "Pogson");
+    BOOST_CHECK_EQUAL(name->GetSuffix(), "IV");
+
+    name->ResetSuffix();
+    name->SetLast("Pogson Jr");
+    BOOST_CHECK_EQUAL(name->ExtractSuffixFromLastName(), true);
+    BOOST_CHECK_EQUAL(name->GetLast(), "Pogson");
+    BOOST_CHECK_EQUAL(name->GetSuffix(), "Jr.");
+
+    name->ResetSuffix();
+    name->SetLast("Pogson Sr");
+    BOOST_CHECK_EQUAL(name->ExtractSuffixFromLastName(), true);
+    BOOST_CHECK_EQUAL(name->GetLast(), "Pogson");
+    BOOST_CHECK_EQUAL(name->GetSuffix(), "Sr.");
+}
+

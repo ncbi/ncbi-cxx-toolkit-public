@@ -5381,6 +5381,7 @@ void CNewCleanup_imp::x_PersonIdBC( CPerson_id& pid, bool fix_initials )
     }
 }
 
+
 void CNewCleanup_imp::x_NameStdBC ( CName_std& name, bool fix_initials )
 {
     // there's a lot of shuffling around (e.g. adding and removing
@@ -5551,28 +5552,7 @@ void CNewCleanup_imp::x_NameStdBC ( CName_std& name, bool fix_initials )
         }
 
         if( FIELD_IS_SET(name, Suffix) ) {
-            string &suffix = GET_MUTABLE(name, Suffix);
-            // remove spaces
-            NStr::ReplaceInPlace( suffix, " ", "" );
-
-            if ( ! suffix.empty() ) {
-                // remove any period, if any, on the end
-                if( NStr::EndsWith(suffix, ".") ) {
-                    suffix.resize( suffix.length() - 1 );
-                }
-
-                if( NStr::EqualNocase(suffix, "1d") ) {
-                     suffix = "1st";
-                } else if( NStr::EqualNocase(suffix, "2d") ) {
-                     suffix = "2nd";
-                } else if( NStr::EqualNocase(suffix, "3d") ) {
-                     suffix = "3rd";
-                } else if( NStr::EqualNocase(suffix, "Sr") ) {
-                     suffix = "Sr.";
-                } else if( NStr::EqualNocase(suffix, "Jr") ) {
-                     suffix = "Jr.";
-                }
-            }
+            name.FixSuffix(name.SetSuffix());
         }
 
         // add dot to "et al"
@@ -5617,14 +5597,8 @@ void CNewCleanup_imp::x_NameStdBC ( CName_std& name, bool fix_initials )
     if( ! FIELD_IS_SET(name, Last) ) {
         SET_FIELD(name, Last, kEmptyCStr );
     }
-    string &last = GET_MUTABLE(name, Last);
-    if( RAW_FIELD_IS_EMPTY_OR_UNSET(name, Suffix) &&
-        ( NStr::EndsWith(last, " Jr.") || NStr::EndsWith(last, " Sr.") ) ) 
-    {
-        SET_FIELD(name, Suffix, last.substr( last.length() - 3 ) );
-        last.resize( last.length() - 4 );
-        NStr::TruncateSpacesInPlace( last );
-    }
+
+    name.ExtractSuffixFromLastName();
 
     if( FIELD_IS_SET(name, Initials) && RAW_FIELD_IS_EMPTY_OR_UNSET(name, Suffix) ) {
         string & initials = GET_MUTABLE(name, Initials);

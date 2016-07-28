@@ -61,6 +61,67 @@ const CName_std::TSuffixes& CName_std::GetStandardSuffixes(void)
 }
 
 
+bool CName_std::ExtractSuffixFromLastName()
+{
+    if ((IsSetSuffix() && !NStr::IsBlank(GetSuffix()))
+        || !IsSetLast()) {
+        // bail if already have non-empty suffix or if no last name
+        return false;
+    }
+    string& last = SetLast();
+    size_t pos = NStr::Find(last, " ");
+    if (pos == string::npos) {
+        return false;
+    }
+    size_t npos = NStr::Find(last, " ", pos + 1);
+    while (npos != string::npos) {
+        pos = npos;
+        npos = NStr::Find(last, " ", pos + 1);
+    }
+
+    string suffix = last.substr(pos + 1);
+    if (NStr::Equal(suffix, "Jr.") ||
+        NStr::Equal(suffix, "Jr") ||
+        NStr::Equal(suffix, "Sr.") ||
+        NStr::Equal(suffix, "Sr") ||
+        NStr::Equal(suffix, "II") ||
+        NStr::Equal(suffix, "III") ||
+        NStr::Equal(suffix, "IV")) {
+        SetSuffix(suffix);
+        FixSuffix(SetSuffix());
+        last = last.substr(0, pos);
+        return true;
+    }
+    return false;
+}
+
+
+void CName_std::FixSuffix(string& suffix)
+{
+    // remove spaces
+    NStr::ReplaceInPlace(suffix, " ", "");
+
+    if (!suffix.empty()) {
+        // remove any period, if any, on the end
+        if (NStr::EndsWith(suffix, ".")) {
+            suffix.resize(suffix.length() - 1);
+        }
+
+        if (NStr::EqualNocase(suffix, "1d")) {
+            suffix = "1st";
+        } else if (NStr::EqualNocase(suffix, "2d")) {
+            suffix = "2nd";
+        } else if (NStr::EqualNocase(suffix, "3d")) {
+            suffix = "3rd";
+        } else if (NStr::EqualNocase(suffix, "Sr")) {
+            suffix = "Sr.";
+        } else if (NStr::EqualNocase(suffix, "Jr")) {
+            suffix = "Jr.";
+        }
+    }
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
