@@ -407,7 +407,7 @@ BOOST_AUTO_TEST_CASE(CheckNoSeqGi)
     CSeq_id_Handle id = CSeq_id_Handle::GetGiHandle(GI_CONST(1));
     vector<CSeq_id_Handle> idvec(1, id);
     LOG_POST("CheckNoSeqGi: "<<id);
-    for ( auto op : all_orders<4>() ) {
+    for ( auto op : random_orders<4>(10) ) {
         switch ( op.op ) {
         case 0:
             TRACE_POST("GetGi");
@@ -441,7 +441,7 @@ BOOST_AUTO_TEST_CASE(CheckNoSeqAcc)
     CSeq_id_Handle id = CSeq_id_Handle::GetGiHandle(GI_CONST(1));
     vector<CSeq_id_Handle> idvec(1, id);
     LOG_POST("CheckNoSeqAcc: "<<id);
-    for ( auto op : all_orders<4>() ) {
+    for ( auto op : random_orders<4>(10) ) {
         switch ( op.op ) {
         case 0:
             TRACE_POST("GetAccVer");
@@ -475,7 +475,7 @@ BOOST_AUTO_TEST_CASE(CheckNoSeqAll)
     CSeq_id_Handle id = CSeq_id_Handle::GetGiHandle(GI_CONST(1));
     vector<CSeq_id_Handle> idvec(1, id);
     LOG_POST("CheckNoSeq: "<<id);
-    for ( auto op : random_orders<8>(20) ) {
+    for ( auto op : random_orders<8>(10) ) {
         switch ( op.op ) {
         case 0:
             TRACE_POST("GetAccVer");
@@ -521,7 +521,7 @@ BOOST_AUTO_TEST_CASE(CheckNoAcc)
     CSeq_id_Handle id = CSeq_id_Handle::GetGiHandle(GI_CONST(156205));
     vector<CSeq_id_Handle> idvec(1, id);
     LOG_POST("CheckNoAcc: "<<id);
-    for ( auto op : all_orders<4>() ) {
+    for ( auto op : random_orders<4>(10) ) {
         switch ( op.op ) {
         case 0:
             TRACE_POST("GetAccVer");
@@ -560,7 +560,7 @@ BOOST_AUTO_TEST_CASE(CheckNoGi)
     //CSeq_id_Handle id = CSeq_id_Handle::GetHandle("gnl|SRA|SRR000010.1.2");
     vector<CSeq_id_Handle> idvec(1, id);
     LOG_POST("CheckNoGi: "<<id);
-    for ( auto op : all_orders<4>() ) {
+    for ( auto op : random_orders<4>(10) ) {
         switch ( op.op ) {
         case 0:
             TRACE_POST("GetGi");
@@ -623,4 +623,8 @@ BOOST_AUTO_TEST_CASE(CheckNoGi)
 
 NCBITEST_INIT_TREE()
 {
+    if ( s_Random.GetSeed() == 0 ) {
+        s_Random.Randomize();
+        LOG_POST("Random seed: "<<s_Random.GetSeed());
+    }
 }
