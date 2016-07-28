@@ -111,6 +111,12 @@ fi
 
 case "$ncbi_platform" in
     FreeBSD*   ) : ${MAKE=/usr/local/bin/gmake}; export MAKE ;;
+    Linux64    )
+        if [ -z "$CXX" ]; then
+            CXX=/opt/ncbi/gcc/4.8.1/bin/g++
+            : ${CC=/opt/ncbi/gcc/4.8.1/bin/gcc}
+        fi
+        ;;
 esac
 
 case "$ncbi_platform" in
