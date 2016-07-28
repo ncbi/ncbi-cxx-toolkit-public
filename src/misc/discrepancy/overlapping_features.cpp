@@ -226,8 +226,8 @@ DISCREPANCY_CASE(OVERLAPPING_GENES, COverlappingFeatures, eDisc, "Overlapping Ge
         const CSeq_loc& loc_i = genes[i]->GetLocation();
         for (size_t j = i + 1; j < genes.size(); j++) {
             const CSeq_loc& loc_j = genes[j]->GetLocation();
-            if (sequence::Compare(loc_j, loc_i, &context.GetScope(), sequence::fCompareOverlapping) != sequence::eNoOverlap) {
-                m_Objs["[n] gene[s] overlap[S] another gene."].Add(*context.NewDiscObj(genes[i])).Add(*context.NewDiscObj(genes[j]));
+            if (loc_j.GetStrand() == loc_i.GetStrand() && sequence::Compare(loc_j, loc_i, &context.GetScope(), sequence::fCompareOverlapping) != sequence::eNoOverlap) {
+                m_Objs["[n] gene[s] overlap[S] another gene on the same strand."].Add(*context.NewDiscObj(genes[i])).Add(*context.NewDiscObj(genes[j]));
             }
         }
     }
