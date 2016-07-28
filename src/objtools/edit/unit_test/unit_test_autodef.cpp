@@ -1923,6 +1923,21 @@ BOOST_AUTO_TEST_CASE(Test_GB_5758)
 }
 
 
+void TestForRecomb(CRef<CSeq_entry> entry, const string& expected)
+{
+    AddTitle(entry, expected);
+    objects::CAutoDef autodef;
+    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+    CRef<CScope> scope(new CScope(*object_manager));
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    autodef.AddSources(seh);
+    CRef<CAutoDefModifierCombo> mod_combo(new CAutoDefModifierCombo());
+    autodef.SetFeatureListType(CAutoDefOptions::eListAllFeatures);
+    autodef.SetKeepMiscRecomb(true);
+    CheckDeflineMatches(seh, autodef, mod_combo);
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_GB_5793)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
@@ -1935,16 +1950,11 @@ BOOST_AUTO_TEST_CASE(Test_GB_5793)
     CheckDeflineMatches(entry);
 
     // use option to show misc_recomb
-    AddTitle(entry, "Sebaea microphylla GCC2-ALK translocation breakpoint junction genomic sequence.");
-    objects::CAutoDef autodef;
-    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
-    CRef<CScope> scope(new CScope(*object_manager));
-    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
-    autodef.AddSources(seh);
-    CRef<CAutoDefModifierCombo> mod_combo(new CAutoDefModifierCombo());
-    autodef.SetFeatureListType(CAutoDefOptions::eListAllFeatures);
-    autodef.SetKeepMiscRecomb(true);
-    CheckDeflineMatches(seh, autodef, mod_combo);
+    TestForRecomb(entry, "Sebaea microphylla GCC2-ALK translocation breakpoint junction genomic sequence.");
+
+    // prefer recombination_class qualifier
+    m->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("recombination_class", "mitotic_recombination")));
+    TestForRecomb(entry, "Sebaea microphylla mitotic_recombination genomic sequence.");
 }
 
 

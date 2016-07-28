@@ -662,6 +662,15 @@ bool CAutoDefFeatureClause::x_GetProductName(string &product_name)
     } else if (m_MainFeat.GetData().GetSubtype() == CSeqFeatData::eSubtype_regulatory) {
         return true;
     } else if (m_MainFeat.GetData().GetSubtype() == CSeqFeatData::eSubtype_misc_recomb) {
+        if (m_MainFeat.IsSetQual()) {
+            ITERATE(CSeq_feat::TQual, q, m_MainFeat.GetQual()) {
+                if ((*q)->IsSetQual() && NStr::Equal((*q)->GetQual(), "recombination_class") &&
+                    (*q)->IsSetVal() && !NStr::IsBlank((*q)->GetVal())) {
+                    product_name = (*q)->GetVal();
+                    return true;
+                }
+            }
+        }
         s_UseCommentBeforeSemicolon(m_MainFeat, product_name);
         return true;
     } else {
