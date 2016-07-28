@@ -611,7 +611,7 @@ CNCBITestApp::CNCBITestApp(void)
 
 void CNCBITestApp::Init(void)
 {
-    // Init the library exlicitly (this sets up the registry)
+    // Init the library explicitly (this sets up the registry)
     {
         class CInPlaceConnIniter : protected CConnIniter
         {
