@@ -2191,6 +2191,17 @@ void CSeqDBVol::IdsToOids(CSeqDBNegativeList & ids,
                        "TI list specified but no ISAM file found for TI in " + m_VolName);
         }
     }
+
+    if (ids.GetNumSis()) {
+        if (!m_StrFileOpened) x_OpenStrFile(locked);
+        if (m_IsamStr.NotEmpty()) {
+            m_IsamStr->IdsToOids(m_VolStart, m_VolEnd, ids, locked);
+        } else {
+            NCBI_THROW(CSeqDBException,
+                       eArgErr,
+                       "SI list specified but no ISAM file found for SI in " + m_VolName);
+        }
+    }
 }
 
 bool CSeqDBVol::GetGi(int                    oid,

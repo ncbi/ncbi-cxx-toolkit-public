@@ -328,6 +328,135 @@ CSeqDBIsam::x_SearchNegativeMulti(int                  vol_start,
     }
 }
 
+//In case if acc2 does not have version and acc1 has version 
+//check if it is the same accession
+static bool s_IsSameAccession(string acc1, string acc2)
+{
+    bool sameAccession = false;
+    if(NStr::Find(acc2,".") == NPOS) { // no version in acc2
+        if(NStr::Find(acc1,".") != NPOS && NStr::Find(acc1, acc2) != NPOS) {
+            string accession, version;
+            NStr::SplitInTwo(acc1,".", accession, version);
+            if(acc2 == accession) {
+                sameAccession = true;
+            }       
+        }
+    }
+    return sameAccession;
+}
+
+//In case if keys[currIndex] does not have version and keys[currIndex + 1] has version 
+//check if it is the same accession
+static bool s_IsSameAccession(vector <string> keys, int num_keys, int currIndex)
+{
+    bool sameAccession = false;
+    if(currIndex < num_keys - 1) {
+        sameAccession = s_IsSameAccession(keys[currIndex + 1], keys[currIndex]);
+    }
+    return sameAccession;    
+}
+
+void
+CSeqDBIsam::x_SearchNegativeMultiSeq(int              vol_start,
+                                     int              vol_end,
+                                     CSeqDBNegativeList & ids,                                     
+                                     CSeqDBLockHold & locked)
+{
+        int gilist_size = ids.ListSize();
+        if (! gilist_size) return;
+        
+        
+        if(m_Initialized == false) {
+            EErrorCode error = x_InitSearch(locked);
+
+            if(error != eNoError) {
+                // Most ordinary errors (missing GIs for example) are
+                // ignored for "multi" mode searches.  But if a GI list is
+                // specified, and cannot be interpreted, it is an error.
+
+                NCBI_THROW(CSeqDBException,
+                       eArgErr,
+                       "Error: Unable to use ISAM index in batch mode.");
+            }
+        }
+        
+        CSeqDBMemLease lease(m_Atlas);
+
+        vector<string> sample_keys;
+        vector<TIndx> page_offs;
+        vector<string> keys;
+        vector<int> vals;
+
+        sample_keys.reserve(m_NumSamples);
+        page_offs.reserve(m_NumSamples + 1);
+        keys.reserve(m_PageSize);
+        vals.reserve(m_PageSize);
+
+        m_Atlas.GetRegion(lease, m_IndexFname, 0, m_IndexFileLength);
+        x_LoadIndex(lease, sample_keys, page_offs);
+        m_Atlas.RetRegion(lease);
+
+        int gilist_index = 0;
+        int sample_index = 0;
+
+        while(sample_index < m_NumSamples) {
+            int start = 0, num_elements = 0;
+
+            // Now we should be ready to search a data block.
+            keys.clear();
+            vals.clear();
+
+            int num_keys = m_PageSize;
+            if (sample_index + 1 == m_NumSamples) {
+                num_keys = m_NumTerms - sample_index * m_PageSize;
+            }
+
+            m_Atlas.GetRegion(lease,
+                              m_DataFname,
+                              page_offs[sample_index],
+                              page_offs[sample_index + 1]);
+            x_LoadData(lease, keys, vals, num_keys, page_offs[sample_index]);
+            m_Atlas.RetRegion(lease);
+
+
+            for(int i = 0; i < num_keys; i++) {
+                // 2. Look for it in the negative id list.
+
+                bool found = false;
+                if (gilist_index < gilist_size) {
+                    found = x_FindInNegativeList(ids,
+                                             gilist_index,
+                                             keys[i]);
+                                             
+                }
+                if (vals[i] < vol_end) {
+                    if (found) {
+                        // OID is found, but may not be included yet.
+                        ids.AddVisibleOid(vals[i] + vol_start);
+                        //If next accession is the same as current, but with version
+                        if(s_IsSameAccession(keys, num_keys, i)) {                        
+                            i++; //skip next check - sequence already excluded
+                        }                        
+                    } else {
+                        // OID is included for iteration.
+                        //Only include next accession if it is not the same as current (but with version)
+                        //because it may be in exclude list. The check will be done in the next step
+                        if(!s_IsSameAccession(keys, num_keys, i)) {                        
+                            ids.AddIncludedOid(vals[i] + vol_start);
+                        }                        
+                    }
+                }
+                
+            }
+            // Move to next data page.  Note that for a negative ID list
+            // processing, we don't actually fetch any samples, because
+            // every ID->OID line needs to be examined anyway.
+
+            sample_index ++;
+
+        }        
+}
+
 
 CSeqDBIsam::EErrorCode
 CSeqDBIsam::x_SearchDataNumeric(Int8             Number,
@@ -1390,7 +1519,7 @@ void CSeqDBIsam::IdsToOids(int                  vol_start,
     // The vol_start parameter is needed because translations in the
     // GI list should refer to global OIDs, not per-volume OIDs.
 
-    _ASSERT(m_IdentType == eGiId || m_IdentType == eTiId);
+    _ASSERT(m_IdentType == eGiId || m_IdentType == eTiId || m_IdentType == eStringId);
 
     m_Atlas.Lock(locked);
     ids.InsureOrder();
@@ -1408,6 +1537,14 @@ void CSeqDBIsam::IdsToOids(int                  vol_start,
                               vol_end,
                               ids,
                               true,
+                              locked);
+    }
+
+    if(m_IdentType == eStringId && ids.GetNumSis()) {
+        x_SearchNegativeMultiSeq(vol_start,
+                              vol_end,
+                              ids,
+                              //true,
                               locked);
     }
 }

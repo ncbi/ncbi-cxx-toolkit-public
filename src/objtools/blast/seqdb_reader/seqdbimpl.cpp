@@ -1818,12 +1818,16 @@ CSeqDBIdSet CSeqDBImpl::GetIdSet()
         } else if (! m_NegativeList.Empty()) {
             const vector<TGi> & ngis = m_NegativeList->GetGiList();
             const vector<TTi> & ntis = m_NegativeList->GetTiList();
+            const vector<string> & stis = m_NegativeList->GetSiList();
 
             if (! ngis.empty()) {
                 CSeqDBIdSet new_ids(ngis, CSeqDBIdSet::eGi, false);
                 m_IdSet = new_ids;
             } else if (! ntis.empty()) {
                 CSeqDBIdSet new_ids(ntis, CSeqDBIdSet::eTi, false);
+                m_IdSet = new_ids;
+            } else if (!stis.empty()) {
+                CSeqDBIdSet new_ids(stis, CSeqDBIdSet::eSi, false);
                 m_IdSet = new_ids;
             }
         }

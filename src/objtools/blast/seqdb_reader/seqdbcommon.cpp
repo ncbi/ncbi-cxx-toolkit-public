@@ -780,6 +780,21 @@ CSeqDBGiList::GetTiList(vector<TTi>& tis) const
 }
 
 
+void
+CSeqDBGiList::GetSiList(vector<string>& sis) const
+{
+    sis.clear();
+    sis.reserve(GetNumSis());
+
+    ITERATE(vector<SSiOid>, itr, m_SisOids) {
+        sis.push_back(itr->si);
+    }
+}
+
+
+
+
+
 void SeqDB_ReadBinaryGiList(const string & fname, vector<TGi> & gis)
 {
     CMemoryFile mfile(SeqDB_MakeOSPath(fname));
@@ -1383,8 +1398,7 @@ void SeqDB_ReadSiList(const string & fname, vector<CSeqDBGiList::SSiOid> & sis, 
 
 bool CSeqDBNegativeList::FindGi(TGi gi)
 {
-    InsureOrder();
-
+    InsureOrder();    
     int b(0), e((int)m_Gis.size());
 
     while(b < e) {
@@ -1433,26 +1447,72 @@ bool CSeqDBNegativeList::FindId(const CSeq_id & id)
 }
 
 
+bool CSeqDBNegativeList::FindSi(string si)
+{
+    InsureOrder();    
+    int b(0), e((int)m_Sis.size());
+
+    while(b < e) {
+        int m = (b + e)/2;
+        string m_si = m_Sis[m];
+
+        if (m_si < si) {
+            b = m + 1;
+        } else if (m_si > si) {
+            e = m;
+        } else {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
 bool CSeqDBNegativeList::FindId(const CSeq_id & id, bool & match_type)
 {
-    if (id.IsGi()) {
-        match_type = true;
-        return FindGi(id.GetGi());
+    if (id.IsGi()) {        
+        match_type = (GetNumGis() > 0) ? true : false;
+        TGi gi = id.GetGi();        
+        if(match_type) {
+            return(FindGi(id.GetGi()));            
+        }
     } else if (id.IsGeneral() && id.GetGeneral().GetDb() == "ti") {
-        match_type = true;
-        const CObject_id & obj = id.GetGeneral().GetTag();
+        match_type = (GetNumTis() > 0) ? true : false;
 
-        Int8 ti = (obj.IsId()
+        if(match_type) {
+            const CObject_id & obj = id.GetGeneral().GetTag();
+
+            Int8 ti = (obj.IsId()
                    ? obj.GetId()
                    : NStr::StringToInt8(obj.GetStr()));
 
-        return FindTi(ti);
+            return FindTi(ti);    
+        }
     } else {
-        match_type = false;
-        return false;
-    }
-}
+        match_type = (GetNumSis() > 0) ? true : false;
+        
+            Int8 num_id;
+            string str_id;
+            bool simpler;
+            
+            SeqDB_SimplifySeqid(*(const_cast<CSeq_id *>(&id)), 0, num_id, str_id, simpler);
+            
+        if(match_type) {
+            if (FindSi(str_id)) {
+                return true;
+            }
 
+            // We may have to strip the version to find it...
+            size_t pos = str_id.find(".");
+            if (pos != str_id.npos) {
+                string nover(str_id, 0, pos);
+                return FindSi(nover);                
+            }
+        }
+    }
+    return false;
+}
 
 bool CSeqDBGiList::FindId(const CSeq_id & id)
 {
@@ -1722,7 +1782,20 @@ CSeqDBIdSet::CSeqDBIdSet(const vector<TGi> & ids, EIdType t, bool positive)
 }
 #endif
 
+CSeqDBIdSet::CSeqDBIdSet(const vector<string> & ids, EIdType t, bool positive)
+    : m_Positive(positive), m_IdType(t), m_Ids(new CSeqDBIdSet_Vector(ids))
+{
+    x_SortAndUnique(m_Ids->SetSeqIDs());
+}
+
 void CSeqDBIdSet::x_SortAndUnique(vector<Int8> & ids)
+{
+    sort(ids.begin(), ids.end());
+    ids.erase(unique(ids.begin(), ids.end()), ids.end());
+}
+
+
+void CSeqDBIdSet::x_SortAndUnique(vector<string> & ids)
 {
     sort(ids.begin(), ids.end());
     ids.erase(unique(ids.begin(), ids.end()), ids.end());
@@ -2021,12 +2094,19 @@ CRef<CSeqDBNegativeList> CSeqDBIdSet::GetNegativeList()
         ITERATE(vector<Int8>, iter, m_Ids->Set()) {
             ids->AddTi(*iter);
         }
-    } else {
+    } else if (m_IdType == eGi) {
         ids->ReserveGis(m_Ids->Size());
 
         ITERATE(vector<Int8>, iter, m_Ids->Set()) {
             _ASSERT(((*iter) >> 32) == 0);
             ids->AddGi(GI_FROM(Int8, *iter));
+        }
+    }
+    else {
+        ids->ReserveSis(m_Ids->Size());
+
+        ITERATE(vector<string>, iter, m_Ids->SetSeqIDs()) {
+            ids->AddSi(*iter);
         }
     }
 
