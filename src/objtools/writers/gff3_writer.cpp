@@ -1276,14 +1276,53 @@ bool CGff3Writer::xAssignFeatureType(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
+    static const char* const ncrnaClasses_[] = {
+        "antisense_RNA",
+        "autocatalytically_spliced_intron",
+        "guide_RNA"
+        "hammerhead_ribozyme",
+        "lncRNA",
+        "miRNA"
+        "piRNA",
+        "rasiRNA",
+        "ribozyme",
+        "RNase_MRP_RNA",
+        "RNase_P_RNA",
+        "scRNA"
+        "siRNA",
+        "snoRNA",
+        "snRNA",
+        "SRP_RNA",
+        "telomerase_RNA",
+        "vault_RNA",
+        "Y_RNA"
+    };
+    typedef CStaticArraySet<string, PNocase> TNcrnaClasses;
+    DEFINE_STATIC_ARRAY_MAP_WITH_COPY(TNcrnaClasses, ncrnaClasses, ncrnaClasses_);
     static CSafeStatic<CSofaMap> SOFAMAP;
 
     if (!mf.IsSetData()) {
         record.SetType(SOFAMAP->DefaultName());
         return true;
     }
-    record.SetType(
-        SOFAMAP->FeatureToSofaType(mf.GetOriginalFeature()));
+    string recordType = SOFAMAP->FeatureToSofaType(mf.GetOriginalFeature());
+    if (recordType == "ncRNA") {
+        const CRNA_ref& rnaRef = mf.GetData().GetRna();
+        if (rnaRef.IsSetExt()  ||  rnaRef.GetExt().IsGen()  ||  
+                rnaRef.GetExt().GetGen().IsSetClass()) {
+            string ncrnaClass = mf.GetData().GetRna().GetExt().GetGen().GetClass();
+            if (ncrnaClass == "lncRNA") {
+                recordType = "lnc_RNA";
+            }
+            else {
+                TNcrnaClasses::const_iterator cit = ncrnaClasses.find(ncrnaClass);
+                if (cit != ncrnaClasses.end()) {
+                    recordType = ncrnaClass;
+                }
+            }
+        }
+    }
+    record.SetType(recordType);
     return true;
 }
 
@@ -1537,9 +1576,10 @@ bool CGff3Writer::xAssignFeatureAttributes(
             break;
 
         case CSeqFeatData::eSubtype_ncRNA:
-            if (!xAssignFeatureAttributeNcrnaClass(record, fc, mf)) {
-                return false;
-            }
+            //rw-234:
+            //if (!xAssignFeatureAttributeNcrnaClass(record, fc, mf)) {
+            //    return false;
+            //}
             break;
     }
 

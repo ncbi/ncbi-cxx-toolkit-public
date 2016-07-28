@@ -112,8 +112,6 @@ protected:
         CMappedFeat );
     virtual bool x_AssignAttributesGene(
         CMappedFeat );
-    virtual bool x_AssignAttributesNcrna(
-        CMappedFeat );
 
     virtual bool x_AssignAttributeGene(
         CMappedFeat );
@@ -150,8 +148,6 @@ protected:
     virtual bool x_AssignAttributeProteinId(
         CMappedFeat );
     virtual bool x_AssignAttributeExonNumber(
-        CMappedFeat );
-    virtual bool x_AssignAttributeNcrnaClass(
         CMappedFeat );
     virtual bool x_AssignAttributeTranslationTable(
         CMappedFeat );

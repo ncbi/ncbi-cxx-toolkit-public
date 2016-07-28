@@ -499,11 +499,6 @@ bool CGff3WriteRecordFeature::x_AssignAttributes(
                 return false;
             }
             break;
-        case CSeqFeatData::eSubtype_ncRNA:
-            if ( !x_AssignAttributesNcrna( mf ) ) {
-                return false;
-            }
-            break;
     }
 
     //  any extra junk in the feature attributes. Such extra junk could originate
@@ -584,16 +579,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributesTrna(
     CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
-    return ( true );
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff3WriteRecordFeature::x_AssignAttributesNcrna(
-    CMappedFeat mapped_feat )
-//  ----------------------------------------------------------------------------
-{
-    return (
-        x_AssignAttributeNcrnaClass( mapped_feat) );
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
@@ -1203,27 +1189,6 @@ bool CGff3WriteRecordFeature::x_AssignAttributeException(
         // what should I do?
         return true;
     }
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff3WriteRecordFeature::x_AssignAttributeNcrnaClass(
-    CMappedFeat mf )
-//  ----------------------------------------------------------------------------
-{
-    if ( !mf.IsSetData()  ||  
-            (mf.GetData().GetSubtype() != CSeqFeatData::eSubtype_ncRNA) ) {
-        return true;
-    }
-    const CSeqFeatData::TRna& rna = mf.GetData().GetRna();
-    if ( !rna.IsSetExt() ) {
-        return true;
-    }
-    const CRNA_ref::TExt& ext = rna.GetExt();
-    if ( !ext.IsGen()  ||  !ext.GetGen().IsSetClass()) {
-        return true;
-    }
-    SetAttribute("ncrna_class", ext.GetGen().GetClass());
     return true;
 }
 

@@ -1,0 +1,160 @@
+Seq-annot ::= {
+  id {
+    local str "U00096.3"
+  },
+  data ftable {
+    {
+      id local id 1,
+      data gene {
+        locus "thrL",
+        syn {
+          "ECK0001",
+          "JW4367"
+        },
+        locus-tag "MSS635_000001"
+      },
+      location int {
+        from 189,
+        to 254,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      xref {
+        {
+          id local id 2
+        },
+        {
+          id local id 3
+        },
+        {
+          id local id 4
+        }
+      },
+      dbxref {
+        {
+          db "EcoGene",
+          tag str "EG11277"
+        }
+      }
+    },
+    {
+      id local id 2,
+      data rna {
+        type ncRNA,
+        ext gen {
+          class "antisense_RNA"
+        }
+      },
+      location int {
+        from 189,
+        to 198,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "function",
+          val "component of addiction module"
+        }
+      },
+      xref {
+        {
+          id local id 1
+        }
+      }
+    },
+    {
+      id local id 3,
+      data rna {
+        type ncRNA,
+        ext gen {
+          class "antisense_RNA"
+        }
+      },
+      location int {
+        from 199,
+        to 208,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "function",
+          val "component of addiction module"
+        }
+      },
+      xref {
+        {
+          id local id 1
+        }
+      }
+    },
+    {
+      id local id 5,
+      data rna {
+        type ncRNA,
+        ext gen {
+          class "lncRNA"
+        }
+      },
+      location int {
+        from 219,
+        to 228,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "function",
+          val "component of addiction module"
+        }
+      },
+      xref {
+        {
+          id local id 1
+        }
+      }
+    },
+    {
+      id local id 4,
+      data rna {
+        type ncRNA,
+        ext gen {
+          class "other"
+        }
+      },
+      location int {
+        from 209,
+        to 218,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "function",
+          val "component of addiction module"
+        }
+      },
+      xref {
+        {
+          id local id 1
+        }
+      }
+    }
+  }
+}

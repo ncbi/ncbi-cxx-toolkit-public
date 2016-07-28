@@ -16,8 +16,8 @@
 1000000	GenInfo	mRNA	15001	19001	.	+	.	ID=rna3;Parent=gene1;gbkey=mRNA;gene=MSS-346
 1000000	GenInfo	exon	15001	19001	.	+	.	ID=id3;Parent=rna3;gbkey=mRNA;gene=MSS-346
 1000000	GenInfo	CDS	15001	19001	.	+	0	ID=cds3;Parent=rna3;Dbxref=NCBI_gi:1000000;Name=1000000;exception=rearrangement required for product;gbkey=CDS;gene=MSS-346;product=1000000;protein_id=1000000
-1000000	GenInfo	ncRNA	19001	19501	.	+	.	ID=rna4;Parent=gene1;gbkey=ncRNA;gene=MSS-346;ncrna_class=classRNA
-1000000	GenInfo	exon	19001	19501	.	+	.	ID=id4;Parent=rna4;gbkey=ncRNA;gene=MSS-346;ncrna_class=classRNA
+1000000	GenInfo	ncRNA	19001	19501	.	+	.	ID=rna4;Parent=gene1;gbkey=ncRNA;gene=MSS-346
+1000000	GenInfo	exon	19001	19501	.	+	.	ID=id4;Parent=rna4;gbkey=ncRNA;gene=MSS-346
 1000000	GenInfo	gene	20001	30001	.	+	.	ID=gene2;Name=MSS-346;gbkey=Gene;gene=MSS-346;gene_biotype=ncRNA
 1000000	GenInfo	mRNA	20001	24001	.	+	.	ID=rna5;Parent=gene2;gbkey=mRNA;gene=MSS-346
 1000000	GenInfo	exon	20001	24001	.	+	.	ID=id5;Parent=rna5;gbkey=mRNA;gene=MSS-346
@@ -25,8 +25,8 @@
 1000000	GenInfo	mRNA	25001	29001	.	+	.	ID=rna6;Parent=gene2;gbkey=mRNA;gene=MSS-346
 1000000	GenInfo	exon	25001	29001	.	+	.	ID=id6;Parent=rna6;gbkey=mRNA;gene=MSS-346
 1000000	GenInfo	CDS	25001	29001	.	+	0	ID=cds5;Parent=rna6;Dbxref=NCBI_gi:1000000;Name=1000000;gbkey=CDS;gene=MSS-346;product=1000000;protein_id=1000000;pseudo=true
-1000000	GenInfo	ncRNA	29001	29501	.	+	.	ID=rna7;Parent=gene2;gbkey=ncRNA;gene=MSS-346;ncrna_class=other
-1000000	GenInfo	exon	29001	29501	.	+	.	ID=id7;Parent=rna7;gbkey=ncRNA;gene=MSS-346;ncrna_class=other
+1000000	GenInfo	ncRNA	29001	29501	.	+	.	ID=rna7;Parent=gene2;gbkey=ncRNA;gene=MSS-346
+1000000	GenInfo	exon	29001	29501	.	+	.	ID=id7;Parent=rna7;gbkey=ncRNA;gene=MSS-346
 1000000	GenInfo	gene	30001	40001	.	+	.	ID=gene3;Name=MSS-346;gbkey=Gene;gene=MSS-346;gene_biotype=J_segment
 1000000	GenInfo	mRNA	30001	34001	.	+	.	ID=rna8;Parent=gene3;gbkey=mRNA;gene=MSS-346
 1000000	GenInfo	exon	30001	34001	.	+	.	ID=id8;Parent=rna8;gbkey=mRNA;gene=MSS-346

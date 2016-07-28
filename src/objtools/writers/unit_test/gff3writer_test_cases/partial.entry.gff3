@@ -796,10 +796,10 @@ NW_001838553.2	RefSeq	STS	3260673	3260821	.	+	.	ID=id472;Dbxref=UniSTS:31541;gbk
 NW_001838553.2	BestRefSeq	gene	3303984	3304063	.	-	.	ID=gene28;Dbxref=GeneID:100616343,HGNC:41844,miRBase:MI0017308;Name=MIR4677;description=microRNA 4677;gbkey=Gene;gene=MIR4677;gene_biotype=ncRNA
 NW_001838553.2	BestRefSeq	primary_transcript	3303984	3304063	.	-	.	ID=rna36;Parent=gene28;Dbxref=GeneID:100616343,Genbank:NR_039824.1,HGNC:41844,miRBase:MI0017308;Name=NR_039824.1;gbkey=precursor_RNA;gene=MIR4677;product=microRNA 4677;transcript_id=NR_039824.1
 NW_001838553.2	BestRefSeq	exon	3303984	3304063	.	-	.	ID=id473;Parent=rna36;Dbxref=GeneID:100616343,Genbank:NR_039824.1,HGNC:41844,miRBase:MI0017308;gbkey=precursor_RNA;gene=MIR4677;product=microRNA 4677;transcript_id=NR_039824.1
-NW_001838553.2	BestRefSeq	ncRNA	3303993	3304014	.	-	.	ID=rna37;Parent=gene28;Dbxref=GeneID:100616343,miRBase:MIMAT0019761,HGNC:41844,miRBase:MI0017308;gbkey=ncRNA;gene=MIR4677;ncrna_class=miRNA;product=hsa-miR-4677-3p
-NW_001838553.2	BestRefSeq	exon	3303993	3304014	.	-	.	ID=id474;Parent=rna37;Dbxref=GeneID:100616343,miRBase:MIMAT0019761,HGNC:41844,miRBase:MI0017308;gbkey=ncRNA;gene=MIR4677;ncrna_class=miRNA;product=hsa-miR-4677-3p
-NW_001838553.2	BestRefSeq	ncRNA	3304030	3304051	.	-	.	ID=rna38;Parent=gene28;Dbxref=GeneID:100616343,miRBase:MIMAT0019760,HGNC:41844,miRBase:MI0017308;gbkey=ncRNA;gene=MIR4677;ncrna_class=miRNA;product=hsa-miR-4677-5p
-NW_001838553.2	BestRefSeq	exon	3304030	3304051	.	-	.	ID=id475;Parent=rna38;Dbxref=GeneID:100616343,miRBase:MIMAT0019760,HGNC:41844,miRBase:MI0017308;gbkey=ncRNA;gene=MIR4677;ncrna_class=miRNA;product=hsa-miR-4677-5p
+NW_001838553.2	BestRefSeq	ncRNA	3303993	3304014	.	-	.	ID=rna37;Parent=gene28;Dbxref=GeneID:100616343,miRBase:MIMAT0019761,HGNC:41844,miRBase:MI0017308;gbkey=ncRNA;gene=MIR4677;product=hsa-miR-4677-3p
+NW_001838553.2	BestRefSeq	exon	3303993	3304014	.	-	.	ID=id474;Parent=rna37;Dbxref=GeneID:100616343,miRBase:MIMAT0019761,HGNC:41844,miRBase:MI0017308;gbkey=ncRNA;gene=MIR4677;product=hsa-miR-4677-3p
+NW_001838553.2	BestRefSeq	ncRNA	3304030	3304051	.	-	.	ID=rna38;Parent=gene28;Dbxref=GeneID:100616343,miRBase:MIMAT0019760,HGNC:41844,miRBase:MI0017308;gbkey=ncRNA;gene=MIR4677;product=hsa-miR-4677-5p
+NW_001838553.2	BestRefSeq	exon	3304030	3304051	.	-	.	ID=id475;Parent=rna38;Dbxref=GeneID:100616343,miRBase:MIMAT0019760,HGNC:41844,miRBase:MI0017308;gbkey=ncRNA;gene=MIR4677;product=hsa-miR-4677-5p
 NW_001838553.2	RefSeq	STS	3360140	3360259	.	+	.	ID=id476;Dbxref=UniSTS:22357;gbkey=STS
 NW_001838553.2	Curated Genomic	gene	3381919	3382420	.	+	.	ID=gene29;Dbxref=GeneID:100422536,HGNC:44619;Name=FCF1P7;description=FCF1 pseudogene 7;gbkey=Gene;gene=FCF1P7;gene_biotype=pseudogene;pseudo=true
 NW_001838553.2	RefSeq	STS	3393541	3393724	.	+	.	ID=id477;Dbxref=UniSTS:89985;gbkey=STS
