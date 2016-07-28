@@ -679,3 +679,15 @@ BOOST_AUTO_TEST_CASE(Test_Matching_COI)
 
     BOOST_CHECK_EQUAL(s.Match("cytochrome oxidase subunit I (COI)"), true);
 }
+
+BOOST_AUTO_TEST_CASE(Test_Matching_Space)
+{
+    CString_constraint s;
+    s.SetMatch_text(" ");
+    s.SetMatch_location(eString_location_contains);
+    s.SetCase_sensitive(false);
+    s.SetIgnore_space(false);
+    s.SetIgnore_punct(false);
+
+    BOOST_CHECK_EQUAL(s.Match("Bacillus"), false);
+}

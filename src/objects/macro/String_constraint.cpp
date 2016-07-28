@@ -61,7 +61,7 @@ bool CString_constraint :: Empty() const
        GetIs_first_cap() ||
        GetIs_first_each_cap()) {
       return false;
-   } else if (!CanGetMatch_text() || NStr::IsBlank(GetMatch_text())) {
+   } else if (!CanGetMatch_text() || GetMatch_text().empty()) {
         return true;
    }
 
@@ -579,7 +579,7 @@ bool CString_constraint :: x_IsStringInSpanInList (const string& str, const stri
 
 bool CString_constraint :: x_DoesSingleStringMatchConstraint(const string& str) const
 {
-    if (NStr::IsBlank(str)) {
+    if (str.empty()) {
         return false;
     }
 
@@ -619,7 +619,7 @@ bool CString_constraint :: x_DoesSingleStringMatchConstraint(const string& str) 
             
             NStr::ECase case_sens = GetCase_sensitive() ? NStr::eCase : NStr::eNocase;
             SIZE_TYPE pFound;
-            if (NStr::IsBlank(pattern)) {
+            if (pattern.empty()) {
                 pFound = 0;
             } else {
                 pFound = NStr::Find(search, pattern, 0, NPOS, NStr::eFirst, case_sens);
