@@ -1,0 +1,40 @@
+Discrepancy Report Results
+
+Summary
+SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME: 31 hypothetical coding regions have a gene name
+
+Detailed Report
+
+SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME: 31 hypothetical coding regions have a gene name
+D:\toolkit\src\misc\discrepancy\test\test-data\File1fordiscrep.asn:CDS	hypothetical protein	lcl|Scaffold_001:6066-6364	test_0002
+D:\toolkit\src\misc\discrepancy\test\test-data\File1fordiscrep.asn:CDS	hypothetical protein	lcl|Scaffold_001:6883-7281	abc_0003
+D:\toolkit\src\misc\discrepancy\test\test-data\File1fordiscrep.asn:CDS	hypothetical protein	lcl|Scaffold_001:19921-20298	
+D:\toolkit\src\misc\discrepancy\test\test-data\File1fordiscrep.asn:CDS	hypothetical protein	lcl|Scaffold_001:20913-21242	
+D:\toolkit\src\misc\discrepancy\test\test-data\File1fordiscrep.asn:CDS	hypothetical protein	lcl|Scaffold_001:c23285-22974	
+D:\toolkit\src\misc\discrepancy\test\test-data\File1fordiscrep.asn:CDS	hypothetical protein	lcl|Scaffold_001:c23830-23446	
+D:\toolkit\src\misc\discrepancy\test\test-data\File1fordiscrep.asn:CDS	hypothetical protein	lcl|Scaffold_001:c26539-26343	
+D:\toolkit\src\misc\discrepancy\test\test-data\File1fordiscrep.asn:CDS	hypothetical protein	lcl|Scaffold_001:c35652-35248	
+D:\toolkit\src\misc\discrepancy\test\test-data\File1fordiscrep.asn:CDS	hypothetical protein	lcl|Scaffold_001:c36846-36478	
+D:\toolkit\src\misc\discrepancy\test\test-data\File1fordiscrep.asn:CDS	hypothetical protein	lcl|Scaffold_001:65901-66323	
+D:\toolkit\src\misc\discrepancy\test\test-data\File1fordiscrep.asn:CDS	hypothetical protein	lcl|Scaffold_001:66874-67278	
+D:\toolkit\src\misc\discrepancy\test\test-data\File1fordiscrep.asn:CDS	hypothetical protein	lcl|Scaffold_001:c67480-67155	
+D:\toolkit\src\misc\discrepancy\test\test-data\File1fordiscrep.asn:CDS	hypothetical protein	lcl|Scaffold_001:68531-69052	
+D:\toolkit\src\misc\discrepancy\test\test-data\File1fordiscrep.asn:CDS	hypothetical protein	lcl|Scaffold_001:70083-70402	
+D:\toolkit\src\misc\discrepancy\test\test-data\File1fordiscrep.asn:CDS	hypothetical protein	lcl|Scaffold_001:c71788-71430	
+D:\toolkit\src\misc\discrepancy\test\test-data\File1fordiscrep.asn:CDS	hypothetical protein	lcl|Scaffold_001:74395-74764	
+D:\toolkit\src\misc\discrepancy\test\test-data\File1fordiscrep.asn:CDS	hypothetical protein	lcl|Scaffold_001:c78646-78220	
+D:\toolkit\src\misc\discrepancy\test\test-data\File1fordiscrep.asn:CDS	hypothetical protein	lcl|Scaffold_001:c83114-82803	
+D:\toolkit\src\misc\discrepancy\test\test-data\File1fordiscrep.asn:CDS	hypothetical protein	lcl|Scaffold_001:85244-85594	
+D:\toolkit\src\misc\discrepancy\test\test-data\File1fordiscrep.asn:CDS	hypothetical protein	lcl|Scaffold_001:c88074-87767	
+D:\toolkit\src\misc\discrepancy\test\test-data\File1fordiscrep.asn:CDS	hypothetical protein	lcl|Scaffold_001:108915-109290	
+D:\toolkit\src\misc\discrepancy\test\test-data\File1fordiscrep.asn:CDS	hypothetical protein	lcl|Scaffold_001:c117394-117089	
+D:\toolkit\src\misc\discrepancy\test\test-data\File1fordiscrep.asn:CDS	hypothetical protein	lcl|Scaffold_001:c118773-118369	
+D:\toolkit\src\misc\discrepancy\test\test-data\File1fordiscrep.asn:CDS	hypothetical protein	lcl|Scaffold_001:c122368-121852	
+D:\toolkit\src\misc\discrepancy\test\test-data\File1fordiscrep.asn:CDS	hypothetical protein	lcl|Scaffold_001:151095-151421	
+D:\toolkit\src\misc\discrepancy\test\test-data\File1fordiscrep.asn:CDS	hypothetical protein	lcl|Scaffold_001:168892-169392	
+D:\toolkit\src\misc\discrepancy\test\test-data\File1fordiscrep.asn:CDS	hypothetical protein	lcl|Scaffold_001:c169007-159450	
+D:\toolkit\src\misc\discrepancy\test\test-data\File1fordiscrep.asn:CDS	hypothetical protein	lcl|Scaffold_001:176243-176548	
+D:\toolkit\src\misc\discrepancy\test\test-data\File1fordiscrep.asn:CDS	hypothetical protein	lcl|Scaffold_001:c176517-176187	
+D:\toolkit\src\misc\discrepancy\test\test-data\File1fordiscrep.asn:CDS	hypothetical protein	lcl|Scaffold_001:c179677-179159	
+D:\toolkit\src\misc\discrepancy\test\test-data\File1fordiscrep.asn:CDS	hypothetical protein	lcl|Scaffold_001:179342-179689	
+
