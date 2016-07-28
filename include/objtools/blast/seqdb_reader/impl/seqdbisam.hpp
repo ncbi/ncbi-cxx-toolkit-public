@@ -524,6 +524,7 @@ private:
         }
     }
 
+    
     /// GiList Translation
     ///
     /// Given a GI list, this routine finds the OID for each ID in the
@@ -695,6 +696,13 @@ private:
                           CSeqDBNegativeList & gis,
                           bool                 use_tis,
                           CSeqDBLockHold     & locked);
+
+    void
+    x_SearchNegativeMultiSeq(int                  vol_start,
+                             int                  vol_end,
+                             CSeqDBNegativeList & gis,                          
+                             CSeqDBLockHold     & locked);
+
 
     /// Data file search
     ///
@@ -1090,6 +1098,12 @@ private:
                          Int8                 key,
                          bool                 use_tis);
 
+    inline bool
+    x_FindInNegativeList(CSeqDBNegativeList & ids,
+                         int                & index,
+                         string             key);
+                         
+
     /// Map a data page.
     ///
     /// The caller provides an index into the sample file.  The page
@@ -1116,6 +1130,11 @@ private:
     void x_GetDataElement(const void      * dpage,
                           int               index,
                           Int8            & key,
+                          int             & data);
+
+    void x_GetDataElement(const void      * dpage,
+                          int               index,
+                          string            & key,
                           int             & data);
 
     /// Find the least and greatest keys in this ISAM file.
@@ -1146,6 +1165,12 @@ private:
                 ? ids.GetTi(index)
                 : GI_TO(Int8, ids.GetGi(index)));
     }
+
+    static string x_GetId(CSeqDBNegativeList & ids, int index)
+    {
+        return (ids.GetSi(index));                
+    }
+    
 
     /// Make filenames for ISAM file.
     ///
@@ -1247,6 +1272,21 @@ private:
         else
             return((int) SeqDB_GetStdOrd(((Uint4 *)p)+1));
     }
+
+    void x_LoadStringData(const char *begin,
+                         string  & key,
+                         int     & data)
+    {
+        const char * keydatap = begin;
+        const char * key_begin = keydatap;
+        while (*keydatap != 0x02) ++keydatap;
+        key = string(key_begin, keydatap);
+
+        key_begin = ++keydatap;
+        while (*keydatap != 0x0a) ++keydatap;
+        data = NStr::StringToUInt(string(key_begin, keydatap));    
+    }
+
 };
 
 inline int
@@ -1386,7 +1426,6 @@ CSeqDBIsam::x_LoadData<string>(CSeqDBMemLease & lease,
     }
 }
 
-
 inline bool
 CSeqDBIsam::x_FindInNegativeList(CSeqDBNegativeList & ids,
                                  int                & index,
@@ -1396,8 +1435,7 @@ CSeqDBIsam::x_FindInNegativeList(CSeqDBNegativeList & ids,
     bool found = false;
 
     // Skip any that are less than key.
-
-    int ids_size = use_tis ? ids.GetNumTis() : ids.GetNumGis();
+    int ids_size = ids.ListSize();
 
     while((index < ids_size) && (x_GetId(ids, index, use_tis) < key)) {
         index++;
@@ -1414,6 +1452,38 @@ CSeqDBIsam::x_FindInNegativeList(CSeqDBNegativeList & ids,
     // Check whether the GI or TI was found.
 
     if ((index < ids_size) && (x_GetId(ids,index,use_tis) == key)) {
+        found = true;
+    }
+
+    return found;
+}
+
+
+inline bool
+CSeqDBIsam::x_FindInNegativeList(CSeqDBNegativeList & ids,
+                                 int                & index,
+                                 string                 key)
+{
+    bool found = false;
+
+    // Skip any that are less than key.
+    int ids_size = ids.ListSize();
+
+    while((index < ids_size) && (x_GetId(ids, index) < key)) {
+        index++;
+
+        int jump = 2;
+
+        while((index + jump) < ids_size &&
+              x_GetId(ids, index + jump) < key) {
+            index += jump;
+            jump += jump;
+        }
+    }
+
+    // Check whether the GI or TI was found.
+
+    if ((index < ids_size) && (x_GetId(ids,index) == key)) {
         found = true;
     }
 
@@ -1456,8 +1526,17 @@ CSeqDBIsam::x_GetDataElement(const void       * dpage,
     data = x_GetNumericData((char *)dpage + index * m_TermSize);
 }
 
+inline void
+CSeqDBIsam::x_GetDataElement(const void       * dpage,
+                             int              index,
+                             string           & key,
+                             int              & data)
+{
+    x_LoadStringData((char *)dpage + index * m_TermSize,
+                      key,
+                      data);                                   
+}
+
 END_NCBI_SCOPE
 
 #endif // OBJTOOLS_READERS_SEQDB__SEQDBFILE_HPP
-
-

@@ -1010,7 +1010,7 @@ private:
         bool match_type = false;
         bool found = L.FindId(id, match_type);
 
-        return (! found) && match_type;
+        return (! found) && match_type;        
     }
 
     /// Get sequence header object.

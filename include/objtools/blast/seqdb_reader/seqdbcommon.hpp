@@ -383,6 +383,7 @@ public:
     void GetTiList(vector<TTi>& tis) const;
 
     /// TODO Get the seqid list?
+    void GetSiList(vector<string>& sis) const;
 
     /// Add a new GI to the list.
     void AddGi(TGi gi)
@@ -412,6 +413,11 @@ public:
     void ReserveTis(size_t n)
     {
         m_TisOids.reserve(n);
+    }
+
+    void ReserveSis(size_t n)
+    {
+        m_SisOids.reserve(n);
     }
 
     /// TODO Reserve space for seqids?
@@ -526,7 +532,7 @@ public:
     /// @param oid The OID in question. [in]
     void ClearBit(int oid)
     {
-        if (oid < m_Size) {
+        if (oid >= m_Size) {
             return;
         }
         x_ClearBit(oid);
@@ -667,6 +673,9 @@ public:
     /// Test for existence of a TI.
     bool FindTi(TTi ti);
 
+
+    bool FindSi(string si);
+
     /// Test for existence of a TI or GI here and report whether the
     /// ID was one of those types.
     ///
@@ -724,6 +733,33 @@ public:
     int GetNumSis() const
     {
         return (int) m_Sis.size();
+    }
+
+    bool IsGiList() const
+    {
+        return(GetNumGis() > 0);
+    }
+
+    bool IsTiList() const
+    {
+        return(GetNumTis() > 0);
+    }
+
+    bool IsSiList() const
+    {
+        return(GetNumSis() > 0);
+    }
+
+    int ListSize()
+    {
+        int size = GetNumGis();
+        if(size == 0) {
+            size = GetNumSis();
+        }
+        if(size == 0) {
+            size = GetNumTis();
+        }
+        return size;
     }
 
     /// Return false if there are elements present.
@@ -790,6 +826,11 @@ public:
         m_Tis.reserve(n);
     }
 
+    void ReserveSis(size_t n)
+    {
+        m_Sis.reserve(n);
+    }
+
     /// Build ID set for this negative list.
     const vector<TGi> & GetGiList()
     {
@@ -808,6 +849,12 @@ public:
     {
         return m_Tis;
     }
+
+    const vector<string> & GetSiList()
+    {
+        return m_Sis;
+    }
+
     /// Get list size
     int Size(void)
     {
@@ -1169,6 +1216,14 @@ public:
         }
     }
 
+    CSeqDBIdSet_Vector(const vector<string> & ids)
+    {
+        ITERATE(vector<string>, iter, ids) {
+            m_SeqIds.push_back((string) *iter);
+        }
+    }
+
+
 #ifdef NCBI_STRICT_GI
     /// Construct from a 'TGi' set when NCBI_STRICT_GI is in force.
     CSeqDBIdSet_Vector(const vector<TGi> & ids)
@@ -1190,16 +1245,34 @@ public:
     {
         return m_Ids;
     }
+    
+    /// Access the string set.
+    vector<string> & SetSeqIDs()
+    {
+        return m_SeqIds;
+    }
+
+    /// Access the string set.
+    const vector<string> & GetSeqIDs() const
+    {
+        return m_SeqIds;
+    }
 
     /// Get the number of elements stored here.
     size_t Size() const
     {
-        return m_Ids.size();
+        size_t n  = m_Ids.size();
+        if(n == 0) {
+            n = m_SeqIds.size();
+        }
+        return n;
     }
 
 private:
     /// The actual list elements.
     vector<Int8> m_Ids;
+
+    vector<string> m_SeqIds;
 
     /// Prevent copy construction.
     CSeqDBIdSet_Vector(CSeqDBIdSet_Vector &);
@@ -1230,7 +1303,8 @@ public:
     /// Type of IDs stored here.
     enum EIdType {
         eGi,  // Found in both X and Y
-        eTi   // Found in X or Y, but not both
+        eTi,   // Found in X or Y, but not both
+        eSi
     };
 
     /// Construct a 'blank' CSeqDBIdSet object.
@@ -1277,6 +1351,9 @@ public:
     /// @param positive True for a positive ID list, false for negative.
     CSeqDBIdSet(const vector<Uint8> & ids, EIdType t, bool positive = true);
 
+
+    
+
 #ifdef NCBI_STRICT_GI
     /// Build a computed ID list given an initial set of IDs.
     ///
@@ -1290,6 +1367,8 @@ public:
     /// @param positive True for a positive ID list, false for negative.
     CSeqDBIdSet(const vector<TGi> & ids, EIdType t, bool positive = true);
 #endif
+
+    CSeqDBIdSet(const vector<string> & ids, EIdType t, bool positive = true);
 
     /// Virtual destructor.
     virtual ~CSeqDBIdSet()
@@ -1400,6 +1479,8 @@ public:
 private:
     /// Sort and unique the internal set.
     static void x_SortAndUnique(vector<Int8> & ids);
+
+    static void x_SortAndUnique(vector<string> & ids);
 
     /// Compute inclusion flags for a boolean operation.
     ///
