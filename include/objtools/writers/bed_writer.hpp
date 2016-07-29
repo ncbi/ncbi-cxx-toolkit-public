@@ -59,6 +59,29 @@ public:
     ///   on the fly).
     /// @param ostr
     ///   stream objects should be written to.
+    /// @param getBestId
+    ///   whether to replace the supplied sequence IDs with preferred
+    ///   equivalents.
+    /// @param colCount
+    ///   number of columns per output record. Each record in a BED file must
+    ///   have the same number of columns. Hence the writer will truncate or
+    ///   extend all records to colCount output columns.
+    /// @param flags
+    ///   any output customization flags.
+    ///
+    CBedWriter(
+        CScope& scope,
+        CNcbiOstream& ostr,
+        bool getBestId,
+        unsigned int colCount=12,
+        unsigned int flags=fNormal );
+
+    /// Constructor.
+    /// @param scope
+    ///   scope to be used for ID reference resolution (it's OK to create one
+    ///   on the fly).
+    /// @param ostr
+    ///   stream objects should be written to.
     /// @param colCount
     ///   number of columns per output record. Each record in a BED file must
     ///   have the same number of columns. Hence the writer will truncate or
@@ -108,6 +131,7 @@ protected:
     virtual SAnnotSelector xGetAnnotSelector();
 
     CScope& m_Scope;
+    bool m_GetBestId;
     unsigned int m_colCount;
 };
 
