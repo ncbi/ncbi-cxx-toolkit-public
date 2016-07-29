@@ -5178,19 +5178,19 @@ RMCA	s	Royal Museum for Central Africa
 RMDRC	s	Rocky Mountain Dinosaur Resource Center
 RMF	c	Rocky Mountain Herbarium, Fungi
 RMFM	s	Richmond Marine Fossils Museum
-RMNH	s	Nationaal Natuurhistorisch Museum
-RMNH:ACA	s	Nationaal Natuurhistorisch Museum, Acari collection
-RMNH:AVES	s	Nationaal Natuurhistorisch Museum, bird collection
-RMNH:BRA	s	Nationaal Natuurhistorisch Museum, brachiopod collection
-RMNH:BRY	s	Nationaal Natuurhistorisch Museum, bryozoan collection
-RMNH:COEL	s	Nationaal Natuurhistorisch Museum, Coelomate collection
-RMNH:CRUS	s	Nationaal Natuurhistorisch Museum, crustacean collection
-RMNH:CRUS.D	s	Nationaal Natuurhistorisch Museum, decapod collection
-RMNH:INS	s	Nationaal Natuurhistorisch Museum, Insect collection
-RMNH:MAM	s	Nationaal Natuurhistorisch Museum, Mammal collection
-RMNH:MOL	s	Nationaal Natuurhistorisch Museum, mollusc collection
-RMNH:PISC	s	Nationaal Natuurhistorisch Museum, fish collection
-RMNH:POR	s	Nationaal Natuurhistorisch Museum, poriferan collection
+RMNH	s	Naturalis Biodiversity Center
+RMNH:ACA	s	Naturalis Biodiversity Center, Acari collection
+RMNH:AVES	s	Naturalis Biodiversity Center, bird collection
+RMNH:BRA	s	Naturalis Biodiversity Center, brachiopod collection
+RMNH:BRY	s	Naturalis Biodiversity Center, bryozoan collection
+RMNH:COEL	s	Naturalis Biodiversity Center, Coelomate collection
+RMNH:CRUS	s	Naturalis Biodiversity Center, crustacean collection
+RMNH:CRUS.D	s	Naturalis Biodiversity Center, decapod collection
+RMNH:INS	s	Naturalis Biodiversity Center, Insect collection
+RMNH:MAM	s	Naturalis Biodiversity Center, Mammal collection
+RMNH:MOL	s	Naturalis Biodiversity Center, mollusc collection
+RMNH:PISC	s	Naturalis Biodiversity Center, fish collection
+RMNH:POR	s	Naturalis Biodiversity Center, poriferan collection
 RMNHD	s	Naturalis Biodiversity Center
 RMNP	s	Riding Mountain National Park
 RMRC	b	Regional Medical Research Centre
