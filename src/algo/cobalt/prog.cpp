@@ -1819,7 +1819,7 @@ CMultiAligner::x_BuildAlignmentIterative(
     int iteration = 0;
     int conserved_cols;
     int new_conserved_cols;
-    double new_score;
+    double new_score = 0.0;
     double best_score = INT4_MIN;
 
     // the initial list of constraints consists of the
