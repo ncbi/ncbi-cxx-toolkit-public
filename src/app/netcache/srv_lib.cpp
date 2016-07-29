@@ -166,4 +166,10 @@ CNcbiApplication::GetInstanceMutex(void) {
 }
 #endif
 
+CSharedHitId CDiagContext::x_GetDefaultHitID(EDefaultHitIDFlags)
+{
+    return CSharedHitId(m_hid);
+}
+
+
 END_NCBI_SCOPE
