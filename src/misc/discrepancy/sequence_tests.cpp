@@ -987,19 +987,25 @@ void AddUserObjectFieldItems
 {
     if (!d) {
         // add missing for all previously seen fields
-        ITERATE(CReportNode::TNodeMap, z, previously_seen[kPreviouslySeenFields].GetMap()) {
-            collector[field_prefix + z->first][" [n] " + object_name + "[s] [is] missing field " + field_prefix + z->first]
-                .Add(*context.NewDiscObj(seq, eKeepRef), false);
+        NON_CONST_ITERATE(CReportNode::TNodeMap, obj, previously_seen[kPreviouslySeenFields].GetMap()) {
+
+            ITERATE(CReportNode::TNodeMap, z, obj->second->GetMap()) {
+                collector[field_prefix + z->first][" [n] " + object_name + "[s] [is] missing field " + field_prefix + z->first]
+                    .Add(*context.NewDiscObj(seq, eKeepRef), false);
+            }
         }
         return;
     }
     
+    bool already_seen = previously_seen[kPreviouslySeenObjects].Exist(object_name);
     ITERATE(CUser_object::TData, f, d->GetUser().GetData()) {
+
         if ((*f)->IsSetLabel() && (*f)->GetLabel().IsStr() && (*f)->IsSetData()) {
+
             string field_name = field_prefix + (*f)->GetLabel().GetStr();
             // add missing field to all previous objects that do not have this field
-            if (!collector.Exist(field_name)) {
-                ITERATE(TReportObjectList, ro, previously_seen[kPreviouslySeenObjects].GetObjects()) {
+            if (already_seen && !collector.Exist(field_name)) {
+                ITERATE(TReportObjectList, ro, previously_seen[kPreviouslySeenObjects][object_name].GetObjects()) {
                     string missing_label = "[n] " + object_name + "[s] [is] missing field " + field_name;
                     CRef<CDiscrepancyObject> seq_disc_obj(dynamic_cast<CDiscrepancyObject*>(ro->GetNCPointer()));
                     collector[field_name][missing_label].Add(*seq_disc_obj, false);
@@ -1007,13 +1013,15 @@ void AddUserObjectFieldItems
             }
             collector[field_name]
                 ["[n] " + object_name + "[s] [has] field " + field_name + " value '" + GetFieldValueAsString(**f) + "'"]
-                .Add(*context.NewDiscObj(d), false);
+            .Add(*context.NewDiscObj(d), false);
             previously_seen[kPreviouslySeenFieldsThis][(*f)->GetLabel().GetStr()].Add(*context.NewDiscObj(d), false);
-            previously_seen[kPreviouslySeenFields][(*f)->GetLabel().GetStr()].Add(*context.NewDiscObj(d), false);
+            previously_seen[kPreviouslySeenFields][object_name][(*f)->GetLabel().GetStr()].Add(*context.NewDiscObj(d), false);
         }
     }
+
     // add missing for all previously seen fields not on this object
-    ITERATE(CReportNode::TNodeMap, z, previously_seen[kPreviouslySeenFields].GetMap()) {
+    ITERATE(CReportNode::TNodeMap, z, previously_seen[kPreviouslySeenFields][object_name].GetMap()) {
+
         if (!previously_seen[kPreviouslySeenFieldsThis].Exist(z->first)) {
             collector[field_prefix + z->first][" [n] " + object_name + "[s] [is] missing field " + field_prefix + z->first]
                 .Add(*context.NewDiscObj(d), false);
@@ -1022,7 +1030,7 @@ void AddUserObjectFieldItems
 
     // maintain object list for missing fields
     CRef<CDiscrepancyObject> this_disc_obj(context.NewDiscObj(d, eKeepRef));
-    previously_seen[kPreviouslySeenObjects].Add(*this_disc_obj, false);
+    previously_seen[kPreviouslySeenObjects][object_name].Add(*this_disc_obj, false);
 
     previously_seen[kPreviouslySeenFieldsThis].clear();
 }

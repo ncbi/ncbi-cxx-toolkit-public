@@ -1614,6 +1614,14 @@ static bool IsOrgDiffers(const COrg_ref& first, const COrg_ref& second)
     return !first_db_tag->Equals(*second_db_tag);
 }
 
+static CRef<CTaxon3_reply> GetOrgRefs(vector<CRef<COrg_ref>>& orgs)
+{
+    CTaxon3 taxon3;
+    taxon3.Init();
+    CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(orgs);
+    return reply;
+}
+
 //  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(TAX_LOOKUP_MISMATCH)
 //  ----------------------------------------------------------------------------
@@ -1627,9 +1635,7 @@ DISCREPANCY_SUMMARIZE(TAX_LOOKUP_MISMATCH)
 
     if (!org_refs.empty()) {
 
-        CTaxon3 taxon3;
-        taxon3.Init();
-        CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_refs);
+        CRef<CTaxon3_reply> reply = GetOrgRefs(org_refs);
         if (reply) {
 
             vector<CRef<COrg_ref>>::const_iterator org_ref = org_refs.begin();
@@ -1646,10 +1652,10 @@ DISCREPANCY_SUMMARIZE(TAX_LOOKUP_MISMATCH)
                     CConstRef<CSeq_feat> feat(dynamic_cast<const CSeq_feat*>(dobj->GetObject().GetPointer()));
 
                     if (desc.Empty()) {
-                        m_Objs[kTaxnameMismatch].Add(*context.NewDiscObj(feat), false);
+                        m_Objs[kTaxnameMismatch].Add(*context.NewDiscObj(feat));
                     }
                     else {
-                        m_Objs[kTaxnameMismatch].Add(*context.NewDiscObj(desc), false);
+                        m_Objs[kTaxnameMismatch].Add(*context.NewDiscObj(desc));
                     }
                 }
 
