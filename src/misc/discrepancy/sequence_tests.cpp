@@ -1583,7 +1583,7 @@ const string kNoTaxnameInDefline = "[n] defline[s] [does] not contain the comple
 DISCREPANCY_CASE(TAXNAME_NOT_IN_DEFLINE, CSeq_inst, eDisc | eOncaller, "Complete taxname should be present in definition line")
 {
     CConstRef<CBioseq> seq = context.GetCurrentBioseq();
-    if (!seq) {
+    if (!seq || seq->IsAa()) {
         return;
     }
 
