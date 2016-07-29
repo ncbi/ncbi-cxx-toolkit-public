@@ -31,7 +31,7 @@
  *
  */
 
-#include <ncbi_pch.hpp>    
+#include <ncbi_pch.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbiapp.hpp>
@@ -68,7 +68,7 @@ USING_NCBI_SCOPE;
 
 /* Mutex for log output */
 DEFINE_STATIC_FAST_MUTEX(s_WriteLogLock);
-const int kPortsNeeded = 9;
+const int kPortsNeeded = 2;
 static CSafeStatic<vector<unsigned short>> s_ListeningPorts;
 static CRef<CTls<int>> tls(new CTls<int>);
 const int              kSingleThreadNumber = -1;
@@ -167,7 +167,8 @@ static CONN s_ConnectURL(SConnNetInfo* net_info, const char* url,
 static unsigned short s_Port(unsigned int i = 0)
 {
     if (i >= s_ListeningPorts->size()) {
-        WRITE_LOG("Error index in s_PortStr(): " << i);
+        WRITE_LOG("Error index in s_PortStr(): " << i <<
+                  ", returning the first element instead.");
         i = 0;
     }
     return (*s_ListeningPorts)[i];
@@ -200,7 +201,7 @@ public:
         : m_RunResponse(true)
     {
         m_Busy = false;
-        for (unsigned short port = 8080; port < 8110; port++) {
+        for (unsigned short port = 8100; port < 8102; port++) {
             if (m_ListeningSockets.size() >= kPortsNeeded) break;
             CListeningSocket* l_sock = new CListeningSocket(port);
             if (l_sock->GetStatus() == eIO_Success) {
@@ -229,26 +230,35 @@ public:
         return m_Busy;
     }
 
-    void AnswerResponse()
+
+    int AcceptIncoming()
     {
         WRITE_LOG("AnswerResponse() started, m_ListeningSockets has " <<
                   s_ListeningPorts->size() << " open listening sockets");
         struct timeval accept_time_stop;
         STimeout       rw_timeout     = { 1, 20000 };
-        STimeout       accept_timeout = { 0, 20000 };
-        STimeout       c_timeout      = { 0, 0 };
         size_t         n_ready        = 0;
-        int            iters_passed   = 0;
-        int            secs_btw_grbg_cllct  = 5;/* collect garbage every 5s */
-        int            iters_btw_grbg_cllct = secs_btw_grbg_cllct * 100000 /
-                                              (rw_timeout.sec * 100000 +
-                                               rw_timeout.usec);
 
         if (s_GetTimeOfDay(&accept_time_stop) != 0) {
             memset(&accept_time_stop, 0, sizeof(accept_time_stop));
         }
-        auto it = m_ListeningSockets.begin();
         CSocketAPI::Poll(m_ListeningSockets, &rw_timeout, &n_ready);
+        return n_ready;
+    }
+
+
+    void AnswerResponse()
+    {
+        STimeout       rw_timeout = { 1, 20000 };
+        STimeout       accept_timeout = { 0, 20000 };
+        STimeout       c_timeout = { 0, 0 };
+        int            iters_passed = 0;
+        int            secs_btw_grbg_cllct = 5;/* collect garbage every 5s */
+        int            iters_btw_grbg_cllct = secs_btw_grbg_cllct * 100000 /
+                                              (rw_timeout.sec * 100000 +
+                                              rw_timeout.usec);
+
+        auto it = m_ListeningSockets.begin();
         for (; it != m_ListeningSockets.end(); it++) {
             if (it->m_REvent != eIO_Open && it->m_REvent != eIO_Close) {
                 CSocket*   sock = new CSocket;
@@ -260,7 +270,8 @@ public:
                 double accept_time_elapsed = 0.0;
                 double last_accept_time_elapsed = 0.0;
                 if (static_cast<CListeningSocket*>(it->m_Pollable)->
-                    Accept(*sock, &accept_timeout) != eIO_Success) {
+                    Accept(*sock, &accept_timeout) != eIO_Success) 
+                {
                     if (s_GetTimeOfDay(&accept_time_stop) != 0)
                         memset(&accept_time_stop, 0, sizeof(accept_time_stop));
                     accept_time_elapsed = s_TimeDiff(&accept_time_stop,
@@ -394,6 +405,7 @@ private:
             memset(&m_LastSuccAcceptTime, 0, sizeof(m_LastSuccAcceptTime));
         }
         while (m_RunResponse) {
+            AcceptIncoming();
             AnswerResponse();
         }
         return NULL;
@@ -484,61 +496,217 @@ NCBITEST_AUTO_INIT()
     CONNECT_Init(&config);
     s_ResponseThread = new CResponseThread;
 #ifdef NCBI_THREADS
-    s_ResponseThread->Run();
+    //s_ResponseThread->Run();
 #endif
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////
-BOOST_AUTO_TEST_SUITE( Miscellaneous )/////////////////////////////////////////
+BOOST_AUTO_TEST_SUITE( MONKEY_BASIC )/////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-/** Check that no interceptions happened for whatever reason */
-static void s_CheckNoInterceptions()
+
+static void s_SetupMonkey(bool   enabled        = true,
+                          string section        = "CHAOS_MONKEY",
+                          string custom_section = "CHAOS_MONKEY")
 {
-    g_Monkey_Foo();
+    CNcbiRegistry& config = CNcbiApplication::Instance()->GetConfig();
+    config.Set("CHAOS_MONKEY", "enabled", enabled ? "yes" : "no");
+    section.empty() ?
+        config.Unset("CHAOS_MONKEY", "config") :
+        config.Set("CHAOS_MONKEY", "config", section);
+    CMonkey::Instance()->ReloadConfig(custom_section);
+}
+
+/** Basic check routine for test cases 
+ *  Make some activity and check that interceptions (not) happened for 
+ *  whatever reason 
+ * @param[in] interception
+ *  If interception is expected or not expected to happen */
+static void s_CheckInterceptions(bool   interception    = false,
+                                 bool   enabled         = true,
+                                 string section         = "CHAOS_MONKEY",
+                                 string custom_section  = "CHAOS_MONKEY")
+{
+    CMonkeyMockCleanup mock_cleanup;
     EIO_Status status = eIO_Timeout;
     SOCK sock;
+    int n_ready = 0;
 
-    g_MonkeyMock_SetInterceptedRecv(false);
-    g_MonkeyMock_SetInterceptedSend(false);
+    s_SetupMonkey(enabled, section, custom_section);
+
+    g_MonkeyMock_SetInterceptedRecv   (false);
+    g_MonkeyMock_SetInterceptedSend   (false);
     g_MonkeyMock_SetInterceptedConnect(false);
-    g_MonkeyMock_SetInterceptedPoll(false);
+    g_MonkeyMock_SetInterceptedPoll   (false);
 
     /* Cause a chance for Monkey to intercept poll() - if Monkey works */
-    /* Doing nothing for this, poll() is part of CResponse::AnswerResponse()  */
+    /* Doing nothing for this, poll() is part of CResponse::AnswerResponse() */
 
-
-    /* Cause a chance for Monkey to intercept connect() - if Monkey works */
+     /*////////////
+      *  connect()
+     /*////////////
     status = SOCK_Create("msdev101", s_Port(0), &kRWTimeout, &sock);
-    NCBITEST_CHECK_EQUAL(status, eIO_Success);
+    NCBITEST_REQUIRE_EQUAL(status, interception ? eIO_Closed : eIO_Success);
+    /* We try second time if for the first time connection was intercepted by 
+     * Monkey. connect() must work for the second time (we configure Monkey
+     * for it to be so) */
+    if (status != eIO_Success) {
+        /* revert enable switch and config so that nothing is intercepted */
+        s_SetupMonkey(false, "CHAOS_MONKEY", "");
 
+        SOCK_Close(sock);
+        status = SOCK_Create("msdev101", s_Port(0), &kRWTimeout, &sock);
+        /* Only success is possible for the second run */
+        NCBITEST_REQUIRE_EQUAL(status, eIO_Success);
 
-    /* Cause a chance for Monkey to intercept send() and recv() - if
-    * Monkey works*/
-    char* data = "I AM DATA";
+        /* set enable switch and config back to tested values*/
+        s_SetupMonkey(enabled, section, custom_section);
+    }
+
+     /*////////////
+      *  poll()
+     /*////////////
+    n_ready = s_ResponseThread->AcceptIncoming();
+    NCBITEST_REQUIRE_EQUAL(n_ready, interception ? 0 : 1);
+    /* We try second time if for the first time connection was intercepted by 
+     * Monkey. connect() must work for the second time (we configure Monkey
+     * for it to be so) */
+    if (n_ready != 1) {
+        /* revert enable switch and config so that nothing is intercepted */
+        s_SetupMonkey(false, "CHAOS_MONKEY", "");
+
+        n_ready = s_ResponseThread->AcceptIncoming();
+        /* Only success is possible for the second run */
+        NCBITEST_REQUIRE_EQUAL(n_ready, 1);
+
+        /* set enable switch and config back to tested values*/
+        s_SetupMonkey(enabled, section, custom_section);
+    }
+
+    /*////////////
+    *  send()
+    /*////////////
+    string data = "I AM DATA";
     size_t n_written;
-    SOCK_Write(sock, data, strlen(data), &n_written,
-               EIO_WriteMethod::eIO_WritePersist);
+    status = SOCK_Write(sock, data.c_str(), data.length(), &n_written,
+                        EIO_WriteMethod::eIO_WritePersist);
+    NCBITEST_REQUIRE_EQUAL(status, interception ? eIO_Closed : eIO_Success);
 
-    /* Wait for response thread to receive the message */
+    /* We try second time if for the first time send was intercepted by 
+     * Monkey. send() must work for the second time (we configure Monkey
+     * for it to be so) */
+    if (status != eIO_Success) {
+        /* revert enable switch and config so that nothing is intercepted */
+        s_SetupMonkey(false, "CHAOS_MONKEY", "");
+        SOCK_Close(sock);
+        status = SOCK_Create("msdev101", s_Port(0), &kRWTimeout, &sock);
+        status = SOCK_Write(sock, data.c_str(), data.length(), &n_written,
+                            EIO_WriteMethod::eIO_WritePersist);
+        /* Only success is possible for the second run */
+        NCBITEST_REQUIRE_EQUAL(status, eIO_Success);
+
+        /* set enable switch and config back to tested values*/
+        s_SetupMonkey(enabled, section, custom_section);
+    }
+
+    /*////////////
+    *  read()
+    /*////////////
     int retries = 0;
     bool message_received = false;
     string last_request;
-    while ((last_request = s_ResponseThread->GetLastRequest()) == "" && 
-        retries++ < 200) {
-        SleepMilliSec(20);
-    }
-    NCBITEST_REQUIRE_EQUAL(last_request, string(data));
+    SleepMilliSec(100);
+    s_ResponseThread->AnswerResponse();
+    last_request = s_ResponseThread->GetLastRequest();
+    NCBITEST_REQUIRE_EQUAL(last_request, interception ? string() : data);
 
-    /* Check that no interception happened */
-    NCBITEST_CHECK_EQUAL(g_MonkeyMock_GetInterceptedRecv(),    false);
-    NCBITEST_CHECK_EQUAL(g_MonkeyMock_GetInterceptedSend(),    false);
-    NCBITEST_CHECK_EQUAL(g_MonkeyMock_GetInterceptedPoll(),    false);
-    NCBITEST_CHECK_EQUAL(g_MonkeyMock_GetInterceptedConnect(), false);
+    /* We try second time if for the first time send was intercepted by 
+     * Monkey. send() must work for the second time (we configure Monkey
+     * for it to be so) */
+    if (last_request.empty()) {
+        /* revert enable switch and config so that nothing is intercepted */
+        s_SetupMonkey(false, "CHAOS_MONKEY", "");
+        s_ResponseThread->AnswerResponse();
+        last_request = s_ResponseThread->GetLastRequest();
+        NCBITEST_REQUIRE_EQUAL(last_request, string(data));
+
+        /* set enable switch and config back to tested values*/
+        s_SetupMonkey(enabled, section, custom_section);
+    }
+
+    SOCK_Close(sock);
+
+    /* Check that interceptions (not) happened */
+    NCBITEST_CHECK_EQUAL(g_MonkeyMock_GetInterceptedRecv(),    interception);
+    NCBITEST_CHECK_EQUAL(g_MonkeyMock_GetInterceptedSend(),    interception);
+    NCBITEST_CHECK_EQUAL(g_MonkeyMock_GetInterceptedPoll(),    interception);
+    NCBITEST_CHECK_EQUAL(g_MonkeyMock_GetInterceptedConnect(), interception);
+
+    /* Cleanup */
+    s_SetupMonkey(true, "CHAOS_MONKEY", "");
 }
 
 
-/* Chaos Monkey not enabled - no calls should be intercepted!
+/** a. No default config in registry - Chaos Monkey is turned off
+ * Preparation:
+ * 1) Set [CHAOS_MONKEY]enabled to "yes"
+ * 2) Set [CHAOS_MONKEY]config to "" (empty)
+ * 3) Reload Chaos Monkey
+ * Test:
+ * Chaos Monkey should not engage */
+BOOST_AUTO_TEST_CASE(NoDefaultConfig__DoesNotIntercept)
+{
+   s_CheckInterceptions(false, true, "", "");
+}
+
+
+/** b. No default config in registry but then a Chaos Monkey config name is
+ *     provided via function - Chaos Monkey is turned off and then it turns on
+ *     with desired section
+ * Preparation:
+ * 1) Set [CHAOS_MONKEY]enabled to "yes"
+ * 2) Set [CHAOS_MONKEY]config to "" (empty)
+ * 3) Reload Chaos Monkey providing a valid section
+ * Test:
+ *  Chaos Monkey should engage
+ */
+BOOST_AUTO_TEST_CASE(NoDefaultConfigFuncConfig__DoesIntercept)
+{
+    s_CheckInterceptions(true, true, "",
+                         "NODEFAULTCONFIGFUNCCONFIG__DOESINTERCEPT");
+}
+
+
+/** c. Default config is provided in .ini and it exists - Chaos Monkey loads it.
+ * Preparation:
+ * 1) Set [CHAOS_MONKEY]enabled to "yes"
+ * 2) Set [CHAOS_MONKEY]config to "CHAOS_MONKEY_TIMEOUT"
+ * 3) Reload Chaos Monkey
+ * Test:
+ *  Chaos Monkey should engage */
+BOOST_AUTO_TEST_CASE(DefaultConfig__DoesIntercept)
+{
+    s_CheckInterceptions(true, true, "DEFAULTCONFIG__DOESINTERCEPT", "");
+}
+
+
+/** d. No [CHAOS_MONKEY] section at all - no calls should be intercepted!
+ * Preparation:
+ * 1) Chaos Monkey is set to believe that its section name is [doesnotexist]
+ * 2) The config file contains [doesnotexist_PLAN1], but does not contain
+ *    [doesnotexist]. [doesnotexist_PLAN1] has all rules and they are set to
+ *    engage for any connection, so if Monkey works, rules should engage.
+ * Test:
+ * Chaos Monkey should not engage
+ */
+BOOST_AUTO_TEST_CASE(NoChaosMonkeySection__DoesNotIntercept)
+{
+    s_CheckInterceptions(false, true, "doesnotexist", "");
+}
+
+
+/** e. CHAOS_MONKEY section exists, but [CHAOS_MONKEY]enabled is set to false -
+       no calls should be intercepted!
  * Preparation:
  * 1) [CHAOS_MONKEY]enabled set to false
  * 2) [CHAOS_MONKEY_PLAN1] has all rules and they are set to
@@ -548,42 +716,31 @@ static void s_CheckNoInterceptions()
 */
 BOOST_AUTO_TEST_CASE(ChaosMonkeyDisabled__DoesNotIntercept)
 {
-    CNcbiRegistry& config = CNcbiApplication::Instance()->GetConfig();
-    config.Set("CHAOS_MONKEY", "enabled", "no");
-    CMonkey::Instance()->ReloadConfig();
-
-    s_CheckNoInterceptions();
-
-    /* Cleanup */
-    config.Set("CHAOS_MONKEY", "enabled", "yes");
+    s_CheckInterceptions(false, false, "CHAOS_MONKEY", "");
 }
 
-
-/* No Monkey section at all - no calls should be intercepted! 
- * Preparation:
- * 1) Chaos Monkey is set to believe that its section name is [doesnotexist]
- * 2) The config file contains [doesnotexist_PLAN1], but does not contain 
- *    [doesnotexist]. [doesnotexist_PLAN1] has all rules and they are set to 
- *    engage for any connection, so if Monkey works, rules should engage.
- * Test:
- * Chaos Monkey should not engage
- */
-BOOST_AUTO_TEST_CASE(NoChaosMonkeySection__DoesNotIntercept)
-{
-    CMonkey::Instance()->ReloadConfig("doesnotexist");
-    s_CheckNoInterceptions();
-}
+BOOST_AUTO_TEST_SUITE_END()
 
 
-/** Check cases when rules end with semicolon and end without semicolon. 
+
+BOOST_AUTO_TEST_SUITE( CHECK_VARIABLES )
+
+/** 3. Check cases when rules end with semicolon and end without semicolon. 
  * Make both types of rules and run them. Rules should be parsed OK and then 
  * run. We check only final behavior. */
 BOOST_AUTO_TEST_CASE(SemicolonLastInLine__Ok)
 {
+    struct ::timeval start; /**< we will measure time from start
+                                 of test as main measure of when
+                                 to finish */
+    double elapsed = 0.0;
+    struct timeval stop;
     CMonkey::Instance()->ReloadConfig("SEMICOLON_TEST");
+    s_ResponseThread->Stop(); /* we receive answers in manual mode */
 
     EIO_Status status = eIO_Timeout;
     SOCK sock;
+    char* data = "I AM DATA";
 
     g_MonkeyMock_SetInterceptedRecv   (false);
     g_MonkeyMock_SetInterceptedSend   (false);
@@ -596,36 +753,131 @@ BOOST_AUTO_TEST_CASE(SemicolonLastInLine__Ok)
 
     /* Cause a chance for Monkey to intercept connect() - if Monkey works */
     unsigned short connect_retries = 0;
+    
+
+    /* First run: - recv returns eIO_Interrupt,
+                  - send returns eIO_InvalidArg,
+                  - poll returns eIO_Success after 2 seconds,
+                  - connect returns eIO_Success after 2 seconds */
+    if (s_GetTimeOfDay(&start) != 0) {
+        memset(&start, 0, sizeof(start));
+    }
     while (status != eIO_Success && connect_retries < 20) {
         status = SOCK_Create("msdev101", s_Port(0), &kRWTimeout, &sock);
         connect_retries++;
     }
+    if (s_GetTimeOfDay(&stop) != 0)
+        memset(&stop, 0, sizeof(stop));
+    elapsed = s_TimeDiff(&stop, &start);
+
+    NCBITEST_CHECK_EQUAL(status, eIO_Success);
+    NCBITEST_CHECK_EQUAL(g_MonkeyMock_GetLastConnectStatus(), eIO_Success);
+    NCBITEST_CHECK_MESSAGE(elapsed > 2, 
+                           "Connected faster than in 2 seconds - "
+                           "Chaos Monkey did not work correctly");
     NCBITEST_CHECK_EQUAL(status, eIO_Success);
     /* we should connect from the 3rd try*/
     NCBITEST_CHECK_EQUAL(connect_retries, 3); 
+    /* Cause a chance for Monkey to intercept send() and recv() - if
+     * Monkey works. We know the structure of calls, so we check that it is 
+     * reproduced */
+    
+    /* Cause a chance for Monkey to intercept send() and recv() - if
+     * Monkey works*/
+    size_t n_written;
+    SOCK_Write(sock, data, strlen(data), &n_written,
+               EIO_WriteMethod::eIO_WritePersist);
+
+    /* Wait for the response thread to receive a message */
+    int retries = 0;
+    bool message_received = false;
+    string last_request;
+    while ((last_request = s_ResponseThread->GetLastRequest()) == "" && 
+        retries++ < 200) {
+        s_ResponseThread->AnswerResponse();
+        SleepMilliSec(20);
+    }
+    NCBITEST_REQUIRE_EQUAL(last_request, string(data));
+
+    SOCK_Close(sock);
+
+    /* Check that interceptions (not) happened */
+    NCBITEST_CHECK_EQUAL(g_MonkeyMock_GetLastRecvStatus(),    eIO_Interrupt);
+    NCBITEST_CHECK_EQUAL(g_MonkeyMock_GetLastSendStatus(),    eIO_InvalidArg);
+    NCBITEST_CHECK_EQUAL(g_MonkeyMock_GetLastPollStatus(),    eIO_Success);
+
+    /* Second and third run: - recv returns    eIO_Closed,
+     *                       - send returns    eIO_Interrupt,
+     *                       - poll returns    eIO_Closed after 2 seconds,
+     *                       - connect returns eIO_Closed after 2 seconds */
+    /* Second connect will be unsuccessful, and we go with third connect
+     * right away. */
+    if (s_GetTimeOfDay(&start) != 0) {
+        memset(&start, 0, sizeof(start));
+    }
+    while (status != eIO_Success && connect_retries < 20) {
+        status = SOCK_Create("msdev101", s_Port(0), &kRWTimeout, &sock);
+        connect_retries++;
+    }
+    if (s_GetTimeOfDay(&stop) != 0)
+        memset(&stop, 0, sizeof(stop));
+    elapsed = s_TimeDiff(&stop, &start);
+    NCBITEST_CHECK_EQUAL(status, eIO_Closed);
+    NCBITEST_CHECK_EQUAL(g_MonkeyMock_GetLastConnectStatus(), eIO_Closed);
+    NCBITEST_CHECK_MESSAGE(elapsed > 0.1, 
+                           "Connected faster than in 2 seconds - "
+                           "Chaos Monkey did not work correctly");
+    NCBITEST_CHECK_MESSAGE(elapsed < 0.2, 
+                           "Connected faster than in 2 seconds - "
+                           "Chaos Monkey did not work correctly");
+
+    /* Third connect */
+    if (status != eIO_Success) {
+        if (s_GetTimeOfDay(&start) != 0) {
+            memset(&start, 0, sizeof(start));
+        }
+        status = SOCK_Create("msdev101", s_Port(0), &kRWTimeout, &sock);
+        if (s_GetTimeOfDay(&stop) != 0)
+            memset(&stop, 0, sizeof(stop));
+        elapsed = s_TimeDiff(&stop, &start);
+        NCBITEST_CHECK_EQUAL(status, eIO_Success);
+        NCBITEST_CHECK_MESSAGE(elapsed > 2, 
+                               "Connected faster than in 2 seconds - "
+                               "Chaos Monkey did not work correctly");
+    }
 
     /* Cause a chance for Monkey to intercept send() and recv() - if
-    *  Monkey works */
-    char*   data          = "I AM DATA";
-    size_t  n_written;
-    /* First time - should be 'MONKEY WRITES_TEXT1' */
-    vector<string> results;
-    results.push_back("I AM DATA");
-    results.push_back("MONKEY_WRITES_TEXT2");
-    results.push_back("MONKEY_WRITES_TEXT1");
-    results.push_back("MONKEY_READS_TEXT2");
-    results.push_back("MONKEY_READS_TEXT1");
-    for (unsigned int i = 0; i < results.size(); ++i) {
-        SOCK_Write(sock, data, strlen(data), &n_written,
-                   EIO_WriteMethod::eIO_WritePersist);
-        int  retries          = 0;
-        bool message_received = false;
-        while (s_ResponseThread->GetLastRequest() == "" && retries++ < 20) {
-            SleepSec(1);
-        }
-        NCBITEST_REQUIRE_EQUAL(s_ResponseThread->GetLastRequest(), 
-                               string(data));
+     * Monkey works*/
+    /* Second run */
+    SOCK_Write(sock, data, strlen(data), &n_written,
+               EIO_WriteMethod::eIO_WritePersist);
+    /* Wait for the response thread to receive a message (that's how we test
+     * SOCK_Read) */
+    while ((last_request = s_ResponseThread->GetLastRequest()) == "" &&
+        retries++ < 200) {
+        s_ResponseThread->AnswerResponse();
+        SleepMilliSec(20);
     }
+
+    /* Third run */
+    SOCK_Write(sock, data, strlen(data), &n_written,
+               EIO_WriteMethod::eIO_WritePersist);
+    /* Wait for the response thread to receive a message (that's how we test
+     * SOCK_Read) */
+    while ((last_request = s_ResponseThread->GetLastRequest()) == "" && 
+        retries++ < 200) {
+        s_ResponseThread->AnswerResponse();
+        SleepMilliSec(20);
+    }
+    NCBITEST_REQUIRE_EQUAL(last_request, string(data));
+
+    SOCK_Close(sock);
+
+    /* Check that interceptions (not) happened */
+    NCBITEST_CHECK_EQUAL(g_MonkeyMock_GetLastRecvStatus(),    eIO_Closed);
+    NCBITEST_CHECK_EQUAL(g_MonkeyMock_GetLastSendStatus(),    eIO_Interrupt);
+    NCBITEST_CHECK_EQUAL(g_MonkeyMock_GetLastPollStatus(),    eIO_Success);
+    NCBITEST_CHECK_EQUAL(g_MonkeyMock_GetLastConnectStatus(), eIO_Success);
 }
 
 
@@ -637,7 +889,7 @@ BOOST_AUTO_TEST_CASE(DuplicateParam__Throw)
                     "Parameter \"runs\" appears twice in "
                     "[DUPLPARAM_TEST_WRITE_PLAN1]write");
     BOOST_CHECK_EXCEPTION(
-        CMonkey::Instance()->ReloadConfig("DUPLPARAM_TEST_WRITE"), 
+        CMonkey::Instance()->ReloadConfig("DUPLPARAM_TEST_WRITE"),
         CMonkeyException,
         comparator);
 
@@ -653,7 +905,7 @@ BOOST_AUTO_TEST_CASE(DuplicateParam__Throw)
                     "Parameter \"allow\" appears twice in "
                     "[DUPLPARAM_TEST_CONNECT_PLAN1]connect");
     BOOST_CHECK_EXCEPTION(
-        CMonkey::Instance()->ReloadConfig("DUPLPARAM_TEST_CONNECT"), 
+        CMonkey::Instance()->ReloadConfig("DUPLPARAM_TEST_CONNECT"),
         CMonkeyException,
         comparator);
 
@@ -693,7 +945,8 @@ BOOST_AUTO_TEST_CASE(ProbabilityGood__Ok)
         BOOST_CHECK_NO_THROW(CMonkey::Instance()->ReloadConfig(ss.str()));
 
         for (unsigned short k = 0;  k < repeats;  k++) {
-            /* Cause a chance for Monkey to intercept connect() - if Monkey works */
+            /* Cause a chance for Monkey to intercept connect() -
+             * if Monkey works */
             unsigned short connect_retries = 0;
             while (status != eIO_Success && connect_retries < 20) {
                 status = SOCK_Create("msdev101", s_Port(0), &kRWTimeout, &sock);
@@ -749,15 +1002,12 @@ BOOST_AUTO_TEST_CASE(ProbabilityInvalid__Throw)
 }
 
 
-
-
 /** Check that 'text' parameter can contain a semicolon and be parsed
 * correctly */
 BOOST_AUTO_TEST_CASE(TextParamContainsSemicolon__Ok)
 {
 
 }
-
 BOOST_AUTO_TEST_SUITE_END()
 
 ///////////////////////////////////////////////////////////////////////////////

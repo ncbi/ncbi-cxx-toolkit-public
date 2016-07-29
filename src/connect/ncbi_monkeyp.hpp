@@ -48,16 +48,22 @@ BEGIN_NCBI_SCOPE
 
 using namespace std;
 
-#define MONKEY_MOCK_MACRO()                                           \
-DECLARE_MONKEY_MOCK(bool, InterceptedRecv, false);               \
-DECLARE_MONKEY_MOCK(bool, InterceptedSend, false);                  \
-DECLARE_MONKEY_MOCK(bool, InterceptedConnect, false);               \
-DECLARE_MONKEY_MOCK(bool, InterceptedPoll, false);                  \
-DECLARE_MONKEY_MOCK(string, LastRecvContent, "");                   \
-DECLARE_MONKEY_MOCK(string, LastSendContent, "");                   \
-DECLARE_MONKEY_MOCK(EIO_Status, LastRecvStatus, eIO_Success);       \
-DECLARE_MONKEY_MOCK(EIO_Status, LastSendStatus, eIO_Success);       \
-DECLARE_MONKEY_MOCK(EIO_Status, LastConnectStatus, eIO_Success);
+/* Generate mock function declarations like:
+ *
+ *   bool g_MonkeyMock_GetInterceptedRecv();
+ *   void g_MonkeyMock_SetInterceptedRecv(const bool& val);
+ */
+#define MONKEY_MOCK_MACRO()                                                    \
+DECLARE_MONKEY_MOCK(bool,       InterceptedRecv,    false);                    \
+DECLARE_MONKEY_MOCK(bool,       InterceptedSend,    false);                    \
+DECLARE_MONKEY_MOCK(bool,       InterceptedConnect, false);                    \
+DECLARE_MONKEY_MOCK(bool,       InterceptedPoll,    false);                    \
+DECLARE_MONKEY_MOCK(string,     LastRecvContent,    "");                       \
+DECLARE_MONKEY_MOCK(string,     LastSendContent,    "");                       \
+DECLARE_MONKEY_MOCK(EIO_Status, LastRecvStatus,     eIO_Success);              \
+DECLARE_MONKEY_MOCK(EIO_Status, LastSendStatus,     eIO_Success);              \
+DECLARE_MONKEY_MOCK(EIO_Status, LastConnectStatus,  eIO_Success);              \
+DECLARE_MONKEY_MOCK(EIO_Status, LastPollStatus,     eIO_Success);
 
 
 #undef DECLARE_MONKEY_MOCK
@@ -67,10 +73,36 @@ DECLARE_MONKEY_MOCK(EIO_Status, LastConnectStatus, eIO_Success);
 
 MONKEY_MOCK_MACRO()
 void g_Monkey_Foo();
- 
+
+
 class CMonkeySpy
 {
 
+};
+
+
+class CMonkeyMocks
+{
+public:
+    static void Reset();
+    static string GetMainMonkeySection();
+    static void SetMainMonkeySection(string section);
+private:
+    static string MainMonkeySection;
+};
+
+
+class CMonkeyMockCleanup
+{
+public:
+    CMonkeyMockCleanup()
+    {
+        CMonkeyMocks::Reset();
+    }
+    ~CMonkeyMockCleanup()
+    {
+        CMonkeyMocks::Reset();
+    }
 };
 
 

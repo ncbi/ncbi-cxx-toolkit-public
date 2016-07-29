@@ -134,6 +134,7 @@ public:
     /** Check that this rule will trigger on this run (host and port have 
      * already been successfully matched if this check is run) */
     bool CheckRun(MONKEY_SOCKTYPE sock,
+                  unsigned short  rule_probability,    
                   unsigned short  probability_left = 100) const;
 
     /** Get probability that the rule will run next time */
@@ -173,24 +174,12 @@ private:
  */
 class CMonkeyRWRuleBase : public CMonkeyRuleBase
 {
-public:
-    enum EFillType {
-        eMonkey_FillRepeat,
-        eMonkey_FillLastLetter
-    };
 protected:
     CMonkeyRWRuleBase(EMonkeyActionType           action_type, 
                       const vector<string>& name_value);
     string    GetText     (void) const;
     size_t    GetTextLength(void) const;
     bool      GetGarbage   (void) const;
-    EFillType GetFillType   (void) const;
-private:
-    void      x_ReadFill(const string& fill_str);
-    string    m_Text;
-    size_t    m_TextLength;
-    bool      m_Garbage;
-    EFillType m_FillType;
 };
 
 
@@ -386,7 +375,7 @@ private:
     map<SOCKET, CMonkeyPlan*> m_KnownSockets;
     static CMonkey*           sm_Instance;
     vector<CMonkeyPlan>       m_Plans;
-    double                    m_Probability;
+    unsigned short            m_Probability;
     bool                      m_Enabled;
     static FMonkeyHookSwitch  sm_HookSwitch;
     CRef<CTls<int>>           m_TlsToken;
