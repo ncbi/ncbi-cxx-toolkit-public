@@ -335,11 +335,10 @@ void CRequestContext::x_SetHitID(const CSharedHitId& hit_id)
         case eOnBadPHID_Ignore:
             return;
         case eOnBadPHID_AllowAndReport:
-            // Use Warning if bad hit id is acceptable.
             ERR_POST_X(27, Warning << "Bad hit ID format: " << hit);
             break;
         case eOnBadPHID_IgnoreAndReport:
-            ERR_POST_X(27, "Bad hit ID format: " << hit);
+            ERR_POST_X(27, Warning << "Bad hit ID format: " << hit);
             return;
         case eOnBadPHID_Throw:
             NCBI_THROW(CRequestContextException, eBadHit,
@@ -388,12 +387,11 @@ void CRequestContext::SetSessionID(const string& session)
         case eOnBadSID_Ignore:
             return;
         case eOnBadSID_AllowAndReport:
-        case eOnBadSID_IgnoreAndReport:
-            ERR_POST_X(26, "Bad session ID format: " << session);
-            if (action == eOnBadSID_IgnoreAndReport) {
-                return;
-            }
+            ERR_POST_X(26, Warning << "Bad session ID format: " << session);
             break;
+        case eOnBadSID_IgnoreAndReport:
+            ERR_POST_X(26, Warning << "Bad session ID format: " << session);
+            return;
         case eOnBadSID_Throw:
             NCBI_THROW(CRequestContextException, eBadSession,
                 "Bad session ID format: " + session);
