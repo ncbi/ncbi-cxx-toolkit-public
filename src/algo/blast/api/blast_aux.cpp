@@ -1129,8 +1129,8 @@ LoadSequencesToScope(CScope::TIds& ids, vector<TSeqRange>& ranges, CRef<CScope> 
 	    interval.SetId(*SerialClone(*it->GetAccessSeq_id_Handle().GetSeqId()));
 	    if (ranges[i].GetFrom() > ranges[i].GetToOpen()) {
 	    	TSeqPos length = it->GetBioseqLength();
-	        interval.SetFrom(length - ranges[i].GetTo());
-	        interval.SetTo(length - ranges[i].GetFrom());
+	        interval.SetFrom(length - ranges[i].GetFrom());
+	        interval.SetTo(length - ranges[i].GetTo());
 	    } else {
 	        interval.SetFrom(ranges[i].GetFrom());
 	        interval.SetTo(ranges[i].GetTo());
