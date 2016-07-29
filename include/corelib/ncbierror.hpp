@@ -204,6 +204,15 @@ public:
     ///   Additional information
     static void Set(ECode code, const CTempString& extra = CTempString());
 
+    /// Set last error using native error code enum
+    ///
+    /// @param code
+    ///   Error code
+    /// @param extra
+    ///   Additional information. Argument will be move()'d into the object
+    ///   and will not be reusable.
+    static void Set(ECode code, string&& extra);
+
     /// Set last error using errno code
     ///
     /// @param errno_code

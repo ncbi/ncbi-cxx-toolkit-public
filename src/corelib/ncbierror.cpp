@@ -148,6 +148,17 @@ void  CNcbiError::Set(ECode code, const CTempString& extra)
     e->m_Extra    = extra;
 }
 
+
+void  CNcbiError::Set(ECode code, string&& extra)
+{
+    CNcbiError* e = NcbiError_GetOrCreate();
+    e->m_Code = code;
+    e->m_Category = code < eUnknown ? eGeneric : eNcbi;
+    e->m_Native = code;
+    e->m_Extra = move(extra);
+}
+
+
 void  CNcbiError::SetErrno(int native_err_code, const CTempString& extra)
 {
     CNcbiError* e = NcbiError_GetOrCreate();
