@@ -3336,6 +3336,38 @@ CSeqFeatData::GetRegulatoryClass(const string & class_name )
     return eSubtype_bad;
 }
 
+
+vector<string> CSeqFeatData::GetRegulatoryClassList()
+{
+    vector<string> choices;
+
+    choices.push_back("promoter");
+    choices.push_back("ribosome_binding_site");
+    choices.push_back("attenuator");
+    choices.push_back("CAAT_signal");
+    choices.push_back("DNase_I_hypersensitive_site");
+    choices.push_back("enhancer");
+    choices.push_back("enhancer_blocking_element");
+    choices.push_back("GC_signal");
+    choices.push_back("imprinting_control_region");
+    choices.push_back("insulator");
+    choices.push_back("locus_control_region");
+    choices.push_back("matrix_attachment_region");
+    choices.push_back("minus_10_signal");
+    choices.push_back("minus_35_signal");
+    choices.push_back("polyA_signal_sequence");
+    choices.push_back("recoding_stimulatory_region");
+    choices.push_back("replication_regulatory_region");
+    choices.push_back("response_element");
+    choices.push_back("riboswitch");
+    choices.push_back("silencer");
+    choices.push_back("TATA_box");
+    choices.push_back("terminator");
+    choices.push_back("transcriptional_cis_regulatory_region");
+
+    return choices;
+}
+
 bool CSeqFeatData::IsDiscouragedSubtype(ESubtype subtype)
 {
     switch(subtype) {
