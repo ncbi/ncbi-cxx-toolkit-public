@@ -1379,14 +1379,12 @@ private:
 #  define NCBI_HAVE_CONDITIONAL_VARIABLE
 #endif
 
-#if defined(NCBI_HAVE_CONDITIONAL_VARIABLE)
-
 class NCBI_XNCBI_EXPORT CConditionVariable
 {
 public:
     CConditionVariable(void);
     ~CConditionVariable(void);
-    
+
     static bool IsSupported(void);
 
     /// Release mutex and lock the calling thread until the condition
@@ -1437,6 +1435,7 @@ public:
     /// @sa WaitForSignal, SignalSome
     void SignalAll(void);
 
+#if defined(NCBI_THREADS)
 private:
     bool x_WaitForSignal(SSystemFastMutex& mutex, const CDeadline& timeout);
 
@@ -1447,9 +1446,9 @@ private:
 #endif
     CAtomicCounter_WithAutoInit  m_WaitCounter;
     SSystemFastMutex* volatile   m_WaitMutex;
+#endif
 };
 
-#endif  /* NCBI_HAVE_CONDITIONAL_VARIABLE */
 
 
 

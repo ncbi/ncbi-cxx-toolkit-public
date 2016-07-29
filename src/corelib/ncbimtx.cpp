@@ -1995,8 +1995,6 @@ CSpinLock::Unlock(void)
 //  CONDITION VARIABLE
 //
 
-#if defined(NCBI_HAVE_CONDITIONAL_VARIABLE)
-
 bool CConditionVariable::IsSupported(void)
 {
     return true;
@@ -2004,9 +2002,12 @@ bool CConditionVariable::IsSupported(void)
 
 
 CConditionVariable::CConditionVariable(void)
+#if defined(NCBI_THREADS)
     : m_WaitCounter(0),
       m_WaitMutex(NULL)
+#endif      // defined(NCBI_THREADS)
 {
+#if defined(NCBI_THREADS)
 #if defined(NCBI_OS_MSWIN)
     InitializeConditionVariable(&m_ConditionVar);
 #else
@@ -2032,11 +2033,13 @@ CConditionVariable::CConditionVariable(void)
                    "CConditionVariable: unknown error");
     }
 #endif
+#endif      // defined(NCBI_THREADS)
 }
 
 
 CConditionVariable::~CConditionVariable(void)
 {
+#if defined(NCBI_THREADS)
 #if !defined(NCBI_OS_MSWIN)
     int res = pthread_cond_destroy(&m_ConditionVar);
     switch (res) {
@@ -2057,9 +2060,11 @@ CConditionVariable::~CConditionVariable(void)
     }
     NCBI_TROUBLE("CConditionVariable: pthread_cond_destroy() failed");
 #endif
+#endif      // defined(NCBI_THREADS)
 }
 
 
+#if defined(NCBI_THREADS)
 template <class T>
 class CQuickAndDirtySamePointerGuard
 {
@@ -2179,11 +2184,13 @@ bool CConditionVariable::x_WaitForSignal
 
     return true;
 }
+#endif      // defined(NCBI_THREADS)
 
 
 bool CConditionVariable::WaitForSignal(CMutex&           mutex,
                                        const CDeadline&  deadline)
 {
+#if defined(NCBI_THREADS)
     SSystemMutex& sys_mtx = mutex;
     if (sys_mtx.m_Count != 1) {
         NCBI_THROW(CConditionVariableException, eMutexLockCount,
@@ -2199,22 +2206,30 @@ bool CConditionVariable::WaitForSignal(CMutex&           mutex,
     bool res = x_WaitForSignal(sys_mtx.m_Mutex, deadline);
     sys_mtx.Lock(SSystemFastMutex::ePseudo);
     return res;
+#else
+    return true;
+#endif      // defined(NCBI_THREADS)
 }
 
 
 bool CConditionVariable::WaitForSignal(CFastMutex&       mutex,
                                        const CDeadline&  deadline)
 {
+#if defined(NCBI_THREADS)
     SSystemFastMutex& sys_mtx = mutex;
     sys_mtx.Unlock(SSystemFastMutex::ePseudo);
     bool res = x_WaitForSignal(sys_mtx, deadline);
     sys_mtx.Lock(SSystemFastMutex::ePseudo);
     return res;
+#else
+    return true;
+#endif      // defined(NCBI_THREADS)
 }
 
 
 void CConditionVariable::SignalSome(void)
 {
+#if defined(NCBI_THREADS)
 #if defined(NCBI_OS_MSWIN)
     WakeConditionVariable(&m_ConditionVar);
 #else
@@ -2230,11 +2245,13 @@ void CConditionVariable::SignalSome(void)
         }
     }
 #endif
+#endif      // defined(NCBI_THREADS)
 }
 
 
 void CConditionVariable::SignalAll(void)
 {
+#if defined(NCBI_THREADS)
 #if defined(NCBI_OS_MSWIN)
     WakeAllConditionVariable(&m_ConditionVar);
 #else
@@ -2250,9 +2267,8 @@ void CConditionVariable::SignalAll(void)
         }
     }
 #endif
+#endif      // defined(NCBI_THREADS)
 }
-
-#endif  /* NCBI_HAVE_CONDITIONAL_VARIABLE */
 
 
 const char* CConditionVariableException::GetErrCodeString(void) const
