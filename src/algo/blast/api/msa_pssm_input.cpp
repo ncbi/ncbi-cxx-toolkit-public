@@ -388,10 +388,10 @@ CPsiBlastInputClustalW::x_ExtractAlignmentData()
         }
 
         // find right flanking gaps
-        i = m_Msa->dimensions->query_length - 1;
-        while (i >= 0 && m_Msa->data[seq_index][i].letter == kGapResidue) {
-            m_Msa->data[seq_index][i].is_aligned = false;
-            i--;
+        int k = m_Msa->dimensions->query_length - 1;
+        while (k >= 0 && m_Msa->data[seq_index][k].letter == kGapResidue) {
+            m_Msa->data[seq_index][k].is_aligned = false;
+            k--;
         }
     }
 }
