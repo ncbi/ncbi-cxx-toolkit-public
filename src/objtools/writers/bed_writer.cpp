@@ -371,31 +371,19 @@ CThreeFeatManager::xAddRecord(
 CBedWriter::CBedWriter(
     CScope& scope,
     CNcbiOstream& ostr,
-    bool getBestId,
     unsigned int colCount,
-    unsigned int uFlags ) :
+    unsigned int uFlags,
+    bool getBestId ) :
 //  ----------------------------------------------------------------------------
     CWriterBase(ostr, uFlags),
     m_Scope(scope),
-    m_GetBestId(getBestId),
-    m_colCount(colCount)
+    m_colCount(colCount),
+    m_GetBestId(getBestId)
 {
     // the first three columns are mandatory
     if (m_colCount < 3) {
         m_colCount = 3;
     }
-};
-
-
-//  ----------------------------------------------------------------------------
-CBedWriter::CBedWriter(
-    CScope& scope,
-    CNcbiOstream& ostr,
-    unsigned int colCount, 
-    unsigned int uFlags) :
-//  ----------------------------------------------------------------------------
-    CBedWriter(scope, ostr, true, colCount, uFlags)  // Constructor delegation
-{
 };
 
 
