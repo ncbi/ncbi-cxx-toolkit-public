@@ -16098,10 +16098,6 @@ FB0D8A3C'H
                     product-end nucpos 423,
                     genomic-start 118806,
                     genomic-end 119228,
-                    parts {
-                      diag 422,
-                      diag 1
-                    },
                     partial TRUE
                   }
                 },
