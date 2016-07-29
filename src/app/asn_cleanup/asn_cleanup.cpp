@@ -962,7 +962,9 @@ bool CCleanupApp::HandleSeqEntry(CSeq_entry_Handle entry)
             do_extended = true;
         }
     }
-    else {
+    else if (args["X"]) {
+        do_basic = true;
+    } else {
         if (args["basic"]) {
             do_basic = true;
         }
