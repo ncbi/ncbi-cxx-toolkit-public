@@ -136,7 +136,7 @@ SFileTrackRequest::SFileTrackRequest(
 {
 }
 
-SFileTrackPostRequest::SFileTrackPostRequest(
+SFileTrackUpload::SFileTrackUpload(
         const SFileTrackConfig& config,
         const CNetStorageObjectLoc& object_loc,
         const string& user_header) :
@@ -199,7 +199,7 @@ static void s_ApplyMyNcbiId(function<void(const string&)> apply)
     if (!my_ncbi_id.empty()) apply(my_ncbi_id);
 }
 
-CRef<SFileTrackPostRequest> SFileTrackAPI::StartUpload(
+CRef<SFileTrackUpload> SFileTrackAPI::StartUpload(
         const CNetStorageObjectLoc& object_loc)
 {
     string user_header;
@@ -216,11 +216,11 @@ CRef<SFileTrackPostRequest> SFileTrackAPI::StartUpload(
         user_header.append("\r\n");
     });
 
-    return CRef<SFileTrackPostRequest>(
-            new SFileTrackPostRequest(config, object_loc, user_header));
+    return CRef<SFileTrackUpload>(
+            new SFileTrackUpload(config, object_loc, user_header));
 }
 
-void SFileTrackPostRequest::Write(const void* buf,
+void SFileTrackUpload::Write(const void* buf,
         size_t count, size_t* bytes_written)
 {
     if (!m_HTTPStream.write(static_cast<const char*>(buf), count)) {
@@ -232,7 +232,7 @@ void SFileTrackPostRequest::Write(const void* buf,
         *bytes_written = count;
 }
 
-void SFileTrackPostRequest::FinishUpload()
+void SFileTrackUpload::FinishUpload()
 {
     string unique_key = m_ObjectLoc.GetUniqueKey();
 
@@ -245,7 +245,7 @@ void SFileTrackPostRequest::FinishUpload()
     }
 }
 
-void SFileTrackPostRequest::RenameFile(const string& from, const string& to,
+void SFileTrackUpload::RenameFile(const string& from, const string& to,
         CHttpHeaders::CHeaderNameConverter header, const string& value)
 {
     string err;

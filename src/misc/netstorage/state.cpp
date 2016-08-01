@@ -177,7 +177,7 @@ private:
 class CWOFileTrack : public CWOState
 {
 public:
-    typedef CRef<SFileTrackPostRequest> TRequest;
+    typedef CRef<SFileTrackUpload> TRequest;
 
     void Set(TRequest request)
     {

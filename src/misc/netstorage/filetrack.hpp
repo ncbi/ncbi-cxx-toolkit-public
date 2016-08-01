@@ -94,12 +94,12 @@ public:
     bool m_FirstRead = false;
 };
 
-struct SFileTrackPostRequest : public SFileTrackRequest
+struct SFileTrackUpload : public SFileTrackRequest
 {
     void Write(const void* buf, size_t count, size_t* bytes_written);
     virtual void FinishUpload();
 
-    SFileTrackPostRequest(const SFileTrackConfig& config,
+    SFileTrackUpload(const SFileTrackConfig& config,
             const CNetStorageObjectLoc& object_loc,
             const string& user_header);
 
@@ -107,7 +107,7 @@ private:
     void RenameFile(const string& from, const string& to,
             CHttpHeaders::CHeaderNameConverter header, const string& value);
 
-    SFileTrackPostRequest();
+    SFileTrackUpload();
 };
 
 struct SFileTrackAPI
@@ -116,7 +116,7 @@ struct SFileTrackAPI
 
     CJsonNode GetFileInfo(const CNetStorageObjectLoc& object_loc);
 
-    CRef<SFileTrackPostRequest> StartUpload(const CNetStorageObjectLoc& object_loc);
+    CRef<SFileTrackUpload> StartUpload(const CNetStorageObjectLoc& object_loc);
     CRef<SFileTrackRequest> StartDownload(const CNetStorageObjectLoc& object_loc);
 
     void Remove(const CNetStorageObjectLoc& object_loc);
