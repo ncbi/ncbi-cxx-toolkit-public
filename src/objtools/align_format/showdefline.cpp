@@ -53,6 +53,7 @@
 #include <objects/blastdb/defline_extra.hpp>
 
 #include <objtools/align_format/showdefline.hpp>
+#include <objtools/align_format/align_format_util.hpp>
 #include <objtools/blast/seqdb_reader/seqdb.hpp>    // for CSeqDB::ExtractBlastDefline
 
 #include <stdio.h>
@@ -635,6 +636,8 @@ void CShowBlastDefline::x_InitDefline(void)
 
 void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
 {
+    CNcbiEnvironment env;
+
     if(!(m_Option & eNoShowHeader)) {
         if((m_PsiblastStatus == eFirstPass) ||
            (m_PsiblastStatus == eRepeatPass)){
@@ -738,7 +741,13 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
         if(!sdl->id.Empty()){
             if(!(sdl->id->AsFastaString().find("gnl|BL_ORD_ID") != string::npos || 
 		sdl->id->AsFastaString().find("lcl|Subject_") != string::npos)){
-            	string idStr = sdl->id->AsFastaString();
+                string idStr;
+                if (env.Get("NEW_SEQID_FORMAT").empty()) {
+                    idStr = sdl->id->AsFastaString();
+                }
+                else {
+                    idStr = CAlignFormatUtil::GetBareId(*sdl->id);
+                }
             	if (strncmp(idStr.c_str(), "lcl|", 4) == 0) {
             		idStr = sdl->id->AsFastaString().substr(4);
             	}

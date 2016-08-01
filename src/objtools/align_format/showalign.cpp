@@ -31,6 +31,7 @@
  */
 #include <ncbi_pch.hpp>
 
+#include <objtools/align_format/align_format_util.hpp>
 #include <objtools/align_format/showalign.hpp>
 
 #include <corelib/ncbiexpt.hpp>
@@ -2255,6 +2256,7 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_
                                  
 {
     CNcbiOstrstream out;                
+    CNcbiEnvironment env;
     /* Facilitates comparing formatted output using diff */
     static string kLengthString("Length=");
 #ifdef CTOOLKIT_COMPATIBLE
@@ -2309,8 +2311,15 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_
 		alnDispParams->seqID->AsFastaString().find("lcl|Subject_") != string::npos)){
                 if (strncmp(alnDispParams->seqID->AsFastaString().c_str(), "lcl|", 4) == 0) 
                          out << alnDispParams->label;
-		else
-                	alnDispParams->seqID->WriteAsFasta(out);
+                else {
+                    if (env.Get("NEW_SEQID_FORMAT").empty()) {
+                        alnDispParams->seqID->WriteAsFasta(out);
+                    }
+                    else {
+                        out << CAlignFormatUtil::GetBareId(*alnDispParams->seqID);
+                    }
+
+                }
             }
             if(m_AlignOption&eHtml){
                 if(alnDispParams->id_url != NcbiEmptyString){
@@ -2386,7 +2395,13 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_
                             out << alnDispParams->label;
                     	}
                     	else {
-                            alnDispParams->seqID->WriteAsFasta(out);
+                            if (env.Get("NEW_SEQID_FORMAT").empty()) {
+                                alnDispParams->seqID->WriteAsFasta(out);
+                            }
+                            else {
+                                out << CAlignFormatUtil::GetBareId(
+                                                       *alnDispParams->seqID);
+                            }
                     	}
                     }
                     if(m_AlignOption&eHtml){

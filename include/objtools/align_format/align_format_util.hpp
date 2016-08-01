@@ -1274,6 +1274,9 @@ public:
 
     static string GetTitle(const objects::CBioseq_Handle & bh);
 
+    /// Get sequence id with no database source (bare accession)
+    static string GetBareId(const objects::CSeq_id& id);
+
 protected:
 
     ///Wrap a string to specified length.  If break happens to be in

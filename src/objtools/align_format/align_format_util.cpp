@@ -503,6 +503,12 @@ CAlignFormatUtil::GetSeqIdString(const list<CRef<CSeq_id> > & ids, bool believe_
 {
     string all_id_str = NcbiEmptyString;
     CRef<CSeq_id> wid = FindBestChoice(ids, CSeq_id::WorstRank);
+
+    CNcbiEnvironment env;
+    if (!env.Get("NEW_SEQID_FORMAT").empty()) {
+        return GetBareId(*wid);
+    }
+
     if (wid && (wid->Which()!= CSeq_id::e_Local || believe_local_id)){
         TGi gi = FindGi(ids);
         if (strncmp(wid->AsFastaString().c_str(), "lcl|", 4) == 0) {
@@ -4039,6 +4045,21 @@ string CAlignFormatUtil::GetTitle(const CBioseq_Handle & bh)
 	}
 	return t;
 }
+
+string CAlignFormatUtil::GetBareId(const CSeq_id& id)
+{
+    string retval; 
+
+    if (id.IsGi() || id.IsPdb() || id.IsPrf() || id.IsPir()) {
+        retval = id.AsFastaString();
+    }
+    else {
+        retval = id.GetSeqIdString(true);
+    }
+
+    return retval;
+}
+
 
 END_SCOPE(align_format)
 END_NCBI_SCOPE
