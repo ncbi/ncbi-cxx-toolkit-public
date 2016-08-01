@@ -272,23 +272,49 @@ DISCREPANCY_CASE(EXTRA_GENES, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller | eSubmitte
     bool gene_partial_start = obj.GetLocation().IsPartialStart(eExtreme_Biological);
     bool gene_partial_stop = obj.GetLocation().IsPartialStop(eExtreme_Biological);
 
+    const string& locus = obj.GetData().GetGene().IsSetLocus() ? obj.GetData().GetGene().GetLocus() : kEmptyStr;
+
     // Are any "reportable" features under this gene?
     CFeat_CI fi(context.GetScope(), obj.GetLocation());
     bool found_reportable = false;
     while (fi && !found_reportable) {
         if (fi->GetData().IsCdregion() ||
             fi->GetData().IsRna()) {
-            bool exclude_for_partials = false;
-            if (sequence::Compare(obj.GetLocation(), fi->GetLocation(), &(context.GetScope()), sequence::fCompareOverlapping) == sequence::eSame) {
-                // check partials
-                if (!gene_partial_start && fi->GetLocation().IsPartialStart(eExtreme_Biological)) {
-                    exclude_for_partials = true;
-                } else if (!gene_partial_stop && fi->GetLocation().IsPartialStop(eExtreme_Biological)) {
-                    exclude_for_partials = true;
+
+            string ref_gene_locus;
+            const CGene_ref* gene_ref = fi->GetGeneXref();
+            const CSeq_loc& feature_loc = fi->GetLocation();
+
+            if (gene_ref) {
+                ref_gene_locus = gene_ref->IsSetLocus() ? gene_ref->GetLocus() : kEmptyStr;
+            }
+            else {
+                CConstRef<CSeq_feat> gene = sequence::GetBestOverlappingFeat(feature_loc, CSeqFeatData::e_Gene, sequence::eOverlap_Contained, context.GetScope());
+                if (gene.NotEmpty()) {
+                    ref_gene_locus = (gene->GetData().GetGene().CanGetLocus()) ? gene->GetData().GetGene().GetLocus() : kEmptyStr;
                 }
             }
-            if (!exclude_for_partials) {
-                found_reportable = true;
+
+            if (ref_gene_locus.empty() || ref_gene_locus == locus) {
+
+                bool exclude_for_partials = false;
+
+                sequence::ECompare cmp_res = sequence::Compare(obj.GetLocation(), feature_loc, &(context.GetScope()), sequence::fCompareOverlapping);
+                bool location_appropriate = cmp_res == sequence::eSame || cmp_res == sequence::eContains;
+
+                if (cmp_res == sequence::eSame) {
+                    // check partials
+                    if (!gene_partial_start && feature_loc.IsPartialStart(eExtreme_Biological)) {
+                        exclude_for_partials = true;
+                    }
+                    else if (!gene_partial_stop && feature_loc.IsPartialStop(eExtreme_Biological)) {
+                        exclude_for_partials = true;
+                    }
+                }
+
+                if (location_appropriate && !exclude_for_partials) {
+                    found_reportable = true;
+                }
             }
         }
         ++fi;
