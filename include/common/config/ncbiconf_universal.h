@@ -31,7 +31,8 @@
  */
 
 /** @file ncbiconf_universal.h
- ** Architecture-specific settings for universal builds.
+ ** Architecture-specific settings for Xcode builds
+ ** (and, historically, universal builds).
  **/
 
 #ifdef NCBI_OS_DARWIN

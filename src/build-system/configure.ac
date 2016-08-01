@@ -147,10 +147,6 @@ AC_ARG_WITH(openmp,
    [ --with-openmp           enable OpenMP extensions for all projects])
 AC_ARG_WITH(64,
    [ --with-64               compile to 64-bit code])
-AC_ARG_WITH(universal,
-   [ --with-universal        build universal binaries on Mac OS X])
-AC_ARG_WITH(universal2,
-   [ --with-universal=CPUs   build universal binaries targeting the given CPUs])
 AC_ARG_WITH(exe,
    [ --without-exe           do not build executables])
 AC_ARG_WITH(runpath,
@@ -538,7 +534,7 @@ m4_rename([AS_MESSAGE_LOG_FD], [NCBI_ORIG_ASMLFD])
 #### Check the passed arguments against the list of available ones
 x_with_list="\
 debug max-debug symbols optimization profiling tcheck dll static static-exe \
-plugin-auto-load bundles bin-release mt 64 universal exe runpath hard-runpath \
+plugin-auto-load bundles bin-release mt 64 exe runpath hard-runpath \
 lfs limited-linker openmp \
 autodep suffix hostspec version execopy bincopy lib-rebuilds lib-rebuilds=ask \
 deactivation makefile-auto-update projects flat-makefile configure-dialog \
@@ -643,7 +639,7 @@ for x_arg in "$@" ; do
       | --silent | --cache-file=* | -C | --config-cache | -n | --no-create \
       | --no-recursion | --prefix=* | --exec-prefix=* | --bindir=* \
       | --libdir=* | --includedir=* | --build=* | --host=* | --target=* \
-      | --with-universal=* | --with-runpath=* | --with-relative-runpath=* \
+      | --with-runpath=* | --with-relative-runpath=* \
       | --with-experimental=* | --with-extra-action=* | --with-build-root=* \
       | --with-fake-root=* | --with-build-root-sfx=* | --with-check=* \
       | --with-check-tools=* | --with-ftds=[[0-9]]* | --with-fastcgi=[[0-9]]* \
@@ -1427,9 +1423,6 @@ case "$host_os:$compiler" in
             darwin?.* | darwin10.* ) # Mac OS X 10.6.x or older
                TARGET='-mmacosx-version-min=10.5'
                sdks="/Developer/SDKs/MacOSX10.6.sdk"
-               if test "$with_64:${with_universal-no}" != "yes:no"; then
-                  sdks="/Developer/SDKs/MacOSX10.5.sdk $sdks"
-               fi
                ;;
             * )
                TARGET='-mmacosx-version-min=10.7'
@@ -1502,51 +1495,7 @@ C_LIBS=$LIBS
 
 ARCH_CPPFLAGS=
 #### architecture settings, and extra C++ LIBS
-if test "${with_universal-no}" != "no" ; then
-   bit64_sfx= #"Univ"
-   case "$host" in
-    *-*-darwin[[89]].* | *-*-darwin[[1-9]][[0-9]]* )
-      case "$with_universal" in
-       yes )
-          case "$with_64:$host_os" in
-           yes:darwin8.* )
-             AC_MSG_ERROR([Unable to build 64-bit universal binaries on $host])
-             ;;
-           yes:* )
-             ARCH_CFLAGS="-arch ppc64 -arch x86_64"
-             ARCH_CPPFLAGS="-m64"
-             ;;
-           * )
-             ARCH_CFLAGS="-arch ppc -arch i386"
-             ARCH_CPPFLAGS="-m32"
-             ;;
-          esac
-          ;;
-       * )
-         ARCH_CFLAGS="-arch `echo $with_universal | sed -e 's/,/ -arch /g'`"
-         ARCH_CPPFLAGS="-arch `echo $with_universal | sed -e 's/,.*//'`"
-         ;;
-      esac
-      case "$host" in
-       p*pc*-*-darwin8.*)
-         # Must specify -isysroot ..., but only once; anyway, the preprocessor
-         # needs to see it, and naturally can't cope with multiple -arch flags.
-         # The -mmacosx-version-min flag avoids link errors under OS 10.5
-         # (Darwin 9), which otherwise tries to use crt1.10.5.o despite the
-         # request for a sysroot lacking that file.
-         SYSROOT="-isysroot /Developer/SDKs/MacOSX10.4u.sdk -mmacosx-version-min=10.4"
-         #ARCH_CFLAGS="$SYSROOT $ARCH_CFLAGS"
-         CC="$CC $SYSROOT"
-         CXX="$CXX $SYSROOT"
-         ;;
-      esac
-      ;;
-    * ) AC_MSG_ERROR([Do not know how to build universal binaries on $host]) ;;
-   esac
-   AC_DEFINE(NCBI_UNIVERSAL_BUILD, 1,
-             [Define to 1 if building universal (multi-architecture) binaries.])
-   with_distcc=no
-elif test "$with_64" = "yes" ; then
+if test "$with_64" = "yes" ; then
    bit64_sfx="64"
    case "$host:$compiler" in
     sparc-sun-solaris*:WorkShop5 | sparc-sun-solaris*:KCC )
@@ -2245,8 +2194,7 @@ fi
 
 ### Support for precompiled headers
 GCCPCH="#"
-if test "$compiler" = GCC -a "$with_pch" = "yes" \
-     -a "${with_universal-no}" = "no"; then
+if test "$compiler" = GCC -a "$with_pch" = "yes"; then
    AC_CACHE_CHECK([whether $CXX supports precompiled headers], ncbi_cv_cxx_pch,
       [echo '#include <iostream>' > conftest.hpp
        echo $CXX $CPPFLAGS $CXXFLAGS -xc++-header -c conftest.hpp >&AS_MESSAGE_LOG_FD
@@ -2570,15 +2518,13 @@ fi
 
 #### Determine whether this is implicitly a 64-bit platform
 AC_TYPE_SIZE_T
-if test "${with_universal-no}" = "no"; then
-   AC_CHECK_SIZEOF(size_t)
-   ac_cv_sizeof_size_t=`echo "$ac_cv_sizeof_size_t" | tr -d '\r'`
-   NCBI_PLATFORM_BITS=`expr 8 \* $ac_cv_sizeof_size_t`
-   AC_DEFINE_UNQUOTED(NCBI_PLATFORM_BITS, $NCBI_PLATFORM_BITS,
-                      [Define to the architecture size.])
-   if test $NCBI_PLATFORM_BITS -eq 64; then
-      bit64_sfx=64
-   fi
+AC_CHECK_SIZEOF(size_t)
+ac_cv_sizeof_size_t=`echo "$ac_cv_sizeof_size_t" | tr -d '\r'`
+NCBI_PLATFORM_BITS=`expr 8 \* $ac_cv_sizeof_size_t`
+AC_DEFINE_UNQUOTED(NCBI_PLATFORM_BITS, $NCBI_PLATFORM_BITS,
+                   [Define to the architecture size.])
+if test $NCBI_PLATFORM_BITS -eq 64; then
+   bit64_sfx=64
 fi
 
 if test "$bit64_sfx" = 64 -o "$with_lfs" = "yes"; then
@@ -3539,21 +3485,19 @@ fi
 AC_C_CONST
 
 ### Check for C standard types and sizes
-if test "${with_universal-no}" = "no"; then
-   AC_C_BIGENDIAN
-   AC_C_CHAR_UNSIGNED
-   AC_CHECK_SIZEOF(char)
-   AC_CHECK_SIZEOF(double)
-   AC_CHECK_SIZEOF(float)
-   AC_CHECK_SIZEOF(int)
-   AC_CHECK_SIZEOF(long)
-   AC_CHECK_SIZEOF(long double)
-   AC_CHECK_SIZEOF(long long)
-   AC_CHECK_SIZEOF(short)
-   AC_CHECK_SIZEOF(void*)
-   AC_CHECK_SIZEOF(wchar_t, [], [#include <wchar.h>])
-   AC_CHECK_SIZEOF(__int64)
-fi
+AC_C_BIGENDIAN
+AC_C_CHAR_UNSIGNED
+AC_CHECK_SIZEOF(char)
+AC_CHECK_SIZEOF(double)
+AC_CHECK_SIZEOF(float)
+AC_CHECK_SIZEOF(int)
+AC_CHECK_SIZEOF(long)
+AC_CHECK_SIZEOF(long double)
+AC_CHECK_SIZEOF(long long)
+AC_CHECK_SIZEOF(short)
+AC_CHECK_SIZEOF(void*)
+AC_CHECK_SIZEOF(wchar_t, [], [#include <wchar.h>])
+AC_CHECK_SIZEOF(__int64)
 AC_CHECK_TYPES([intptr_t, uintptr_t])
 
 AC_CHECK_MEMBER(struct sockaddr_in.sin_len,

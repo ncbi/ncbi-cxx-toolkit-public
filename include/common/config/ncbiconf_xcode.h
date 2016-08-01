@@ -720,11 +720,6 @@
    variables, or leave undefined if it doesn't. */
 /* #undef NCBI_TLS_VAR */
 
-/* Define to 1 if building universal (multi-architecture) binaries. */
-/* (Not necessarily the case, but we shouldn't hardcode anything
- *  PowerPC-specific either.) */
-#define NCBI_UNIVERSAL_BUILD 1
-
 /* Define to 1 if prototypes can use exception specifications. */
 #define NCBI_USE_THROW_SPEC 1
 
@@ -772,3 +767,6 @@
  *  Site localization
  */
 #include <common/config/ncbiconf_xcode_site.h>
+
+/* Architecture specifics */
+#include <common/config/ncbiconf_universal.h>

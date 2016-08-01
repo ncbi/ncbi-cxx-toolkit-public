@@ -897,9 +897,6 @@
    variables, or leave undefined if it doesn't. */
 #undef NCBI_TLS_VAR
 
-/* Define to 1 if building universal (multi-architecture) binaries. */
-#undef NCBI_UNIVERSAL_BUILD
-
 /* Define to 1 if building plugins as bundles, as Mac OS X traditionally
    required. */
 #undef NCBI_USE_BUNDLES
