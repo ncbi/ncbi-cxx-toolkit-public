@@ -462,7 +462,7 @@ static bool s_GetImpLabel
         // else if the key is repeat_unit or repeat_region
         } else if (NStr::EqualNocase(key, "repeat_unit")  ||
                    NStr::EqualNocase(key, "repeat_region")) {
-            if (feat.IsSetQual()) {
+            if (feat.IsSetQual() && (0 == (flags & fFGL_NoQualifiers))) {
                 // Loop thru the feature qualifiers
                 const CSeq_feat_Base::TQual & qual = feat.GetQual(); // must store reference since ITERATE macro evaluates 3rd arg multiple times
                 ITERATE( CSeq_feat::TQual, it, qual ) {
@@ -481,7 +481,7 @@ static bool s_GetImpLabel
             }
         // else if the key is STS
         } else if (NStr::EqualNocase(key, "STS")) {
-            if (feat.IsSetQual()) {
+            if (feat.IsSetQual() && (0 == (flags & fFGL_NoQualifiers))) {
                 const CSeq_feat_Base::TQual & qual = feat.GetQual(); // must store reference since ITERATE macro evaluates 3rd arg multiple times
                 ITERATE( CSeq_feat::TQual, it, qual ) {
                     if (NStr::EqualNocase((*it)->GetQual(),"standard_name"))
@@ -508,7 +508,7 @@ static bool s_GetImpLabel
             }
         // else if the key is misc_feature
         } else if (!NStr::EqualNocase(key, "misc_feature")) {
-            if (feat.IsSetQual()) {
+            if (feat.IsSetQual() && (0 == (flags & fFGL_NoQualifiers))) {
                 // Look for a single qualifier qual in order of preference 
                 // "standard_name", "function", "number", any and
                 // append to tlabel and return if found
