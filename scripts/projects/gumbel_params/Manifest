@@ -39,6 +39,6 @@ Win64_13    : plain : static  64  ReleaseMT
 
 SunOSx86    : plain : WorkShop59.sh 64  --without-debug --without-pcre --with-mt --with-flat-makefile
 
-IntelMAC    : plain : GCC.sh        --without-debug --without-pcre --with-mt --with-flat-makefile --with-ncbi-public
+IntelMAC    : gcc : GCC.sh        --without-debug --without-pcre --with-mt --with-flat-makefile --with-ncbi-public
 
 # USE_COMPONENTS

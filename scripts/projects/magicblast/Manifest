@@ -43,7 +43,8 @@ DEFAULT_CONFIGURATIONS: Linux64-Centos:icc
 
 Win64         : plain : static  64  ReleaseMT <ENV>NCBI_CONFIG____ENABLEDUSERREQUESTS__NCBI-INT8-GI=1</ENV>
 
-IntelMAC    : plain : Clang.sh --with-bin-release --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-ncbi-public --with-experimental=Int8GI --with-downloaded-vdb --with-static-vdb
+#IntelMAC            : gcc : GCC.sh   --with-bin-release --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-ncbi-public --with-downloaded-vdb --with-static-vdb
+IntelMAC    : clang : Clang.sh --with-bin-release --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-ncbi-public --with-experimental=Int8GI --with-downloaded-vdb --with-static-vdb
 #IntelMAC-Clang36    : clang     : Clang.sh --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-ncbi-public --with-downloaded-vdb --with-static-vdb
 
 USE_COMPONENTS
