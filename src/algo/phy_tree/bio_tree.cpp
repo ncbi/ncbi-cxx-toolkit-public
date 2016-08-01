@@ -221,8 +221,7 @@ string CBioTreeFeatureDictionary::GetName(TBioTreeFeatureId id) const
 static string s_EncodeLabel(const string& label);
 
 // recursive function
-void PrintNode(CNcbiOstream& os, const CBioTreeDynamic& tree,
-               const CBioTreeDynamic::TBioTreeNode& node)
+void PrintNode(CNcbiOstream& os, const CBioTreeDynamic& tree, const CBioTreeDynamic::TBioTreeNode& node, const IBioTreeDynamicLabelFormatter* label_fmt)
 {
     if (!node.IsLeaf()) {
         os << '(';
@@ -235,18 +234,25 @@ void PrintNode(CNcbiOstream& os, const CBioTreeDynamic& tree,
             const CBioTreeDynamic::TBioTreeNode::TParent* p = *it;
             const CBioTreeDynamic::TBioTreeNode* pp = 
                 (const CBioTreeDynamic::TBioTreeNode*)p;
-            PrintNode(os, tree, *pp);
+            PrintNode(os, tree, *pp, label_fmt);
         }
         os << ')';
     }
 
-    string label;
-    if (tree.GetFeatureDict().HasFeature("label")) {
-        label = node.GetValue().features
-            .GetFeatureValue(tree.GetFeatureDict().GetId("label"));
-    }
-    if (node.IsLeaf() || !label.empty()) {
-        os << s_EncodeLabel(label);
+    if (node.IsLeaf()) {
+        string label;
+        if (label_fmt) {
+            label = label_fmt->GetLabelForNode(node);
+        }
+        else {
+            if (tree.GetFeatureDict().HasFeature("label")) {
+                label = node.GetValue().features
+                    .GetFeatureValue(tree.GetFeatureDict().GetId("label"));
+            }
+        }
+        if (!label.empty()) {
+            os << s_EncodeLabel(label);
+        }
     }
 
     string dist_string;
@@ -267,12 +273,18 @@ CNcbiOstream& operator<<(CNcbiOstream& os, const CBioTreeDynamic& tree)
     return os;
 };
 
-
-void WriteNexusTree(CNcbiOstream& os, const CBioTreeDynamic& tree,
-                    const string& tree_name)
+void WriteNewickTree(CNcbiOstream& os, const CBioTreeDynamic& tree, const IBioTreeDynamicLabelFormatter* label_fmt)
 {
-    os << "#nexus\n\nbegin trees;\ntree " << tree_name << " = "
-       << tree << "\nend;" << endl;
+    PrintNode(os, tree, *tree.GetTreeNode(), label_fmt);
+    os << ';' << endl;
+}
+
+
+void WriteNexusTree(CNcbiOstream& os, const CBioTreeDynamic& tree, const string& tree_name, const IBioTreeDynamicLabelFormatter* label_fmt)
+{
+    os << "#nexus\n\nbegin trees;\ntree " << tree_name << " = ";
+    WriteNewickTree(os, tree, label_fmt);
+    os << "\nend;" << endl;
 };
 
 

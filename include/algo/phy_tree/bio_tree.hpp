@@ -482,21 +482,37 @@ typedef
   CBioTree<BioTreeBaseNode<CBioTreeEmptyNodeData, CBioTreeFeatureList> >
   CBioTreeDynamic;
 
+/// Interface to obtain custom labels for nodes
+class NCBI_XALGOPHYTREE_EXPORT IBioTreeDynamicLabelFormatter
+{
+public:
+    virtual string GetLabelForNode(const CBioTreeDynamic::TBioTreeNode &node) const = 0;
+    virtual ~IBioTreeDynamicLabelFormatter() {};
+};
+
+
 /// Newick format output
 NCBI_XALGOPHYTREE_EXPORT
 CNcbiOstream& operator<<(CNcbiOstream& os, const CBioTreeDynamic& tree);
+
+/// Newick format output
+///
+/// tree_name gets put in the file.
+NCBI_XALGOPHYTREE_EXPORT
+void WriteNewickTree(CNcbiOstream& os, const CBioTreeDynamic& tree,
+                     const IBioTreeDynamicLabelFormatter* label_fmt = nullptr);
 
 /// Nexus format output (Newick with some stuff around it).
 ///
 /// tree_name gets put in the file.
 NCBI_XALGOPHYTREE_EXPORT
 void WriteNexusTree(CNcbiOstream& os, const CBioTreeDynamic& tree,
-                    const string& tree_name = "the_tree");
+                    const string& tree_name = "the_tree", const IBioTreeDynamicLabelFormatter* label_fmt = nullptr);
 
 /// Newick but without the terminal ';'
 NCBI_XALGOPHYTREE_EXPORT
 void PrintNode(CNcbiOstream& os, const CBioTreeDynamic& tree,
-               const CBioTreeDynamic::TBioTreeNode& node);
+               const CBioTreeDynamic::TBioTreeNode& node, const IBioTreeDynamicLabelFormatter* label_fmt = nullptr);
 
 
 /* @} */
