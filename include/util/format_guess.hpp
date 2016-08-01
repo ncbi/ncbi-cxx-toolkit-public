@@ -334,6 +334,8 @@ private:
     // indicating the end of a JSON string
     size_t x_FindNextJsonStringStop(const string& input, const size_t from_pos) const;
 
+    void x_FindJsonStringLimits(const string& testString, list<size_t>& limits) const;
+
     // In-place deletion of JSON strings
     void x_StripJsonStrings(string& testString) const;
 
