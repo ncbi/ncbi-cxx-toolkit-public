@@ -106,6 +106,15 @@ SFileTrackRequest::SFileTrackRequest(
 {
 }
 
+SFileTrackDownload::SFileTrackDownload(
+        const SFileTrackConfig& config,
+        const CNetStorageObjectLoc& object_loc) :
+    SFileTrackRequest(config, object_loc,
+            s_GetURL(object_loc, "/ft/byid/", "/contents"))
+
+{
+}
+
 SFileTrackUpload::SFileTrackUpload(
         const SFileTrackConfig& config,
         const CNetStorageObjectLoc& object_loc,
@@ -213,7 +222,7 @@ void SFileTrackUpload::FinishUpload()
 {
     string unique_key = m_ObjectLoc.GetUniqueKey();
 
-    CJsonNode upload_result = ReadJsonResponse();
+    CJsonNode upload_result = GetFileInfo();
 
     string filetrack_file_id = upload_result.GetString("key");
 
@@ -266,7 +275,7 @@ void SFileTrackUpload::RenameFile(const string& from, const string& to,
             "Renaming failed, " << err);
 }
 
-CJsonNode SFileTrackRequest::ReadJsonResponse()
+CJsonNode SFileTrackRequest::GetFileInfo()
 {
     string http_response;
 
@@ -319,13 +328,11 @@ CJsonNode SFileTrackRequest::ReadJsonResponse()
     return root;
 }
 
-CRef<SFileTrackRequest> SFileTrackAPI::StartDownload(
+CRef<SFileTrackDownload> SFileTrackAPI::StartDownload(
         const CNetStorageObjectLoc& object_loc)
 {
-    const string url(s_GetURL(object_loc, "/ft/byid/", "/contents"));
-
-    return CRef<SFileTrackRequest>(
-            new SFileTrackRequest(config, object_loc, url));
+    return CRef<SFileTrackDownload>(
+            new SFileTrackDownload(config, object_loc));
 }
 
 void SFileTrackAPI::Remove(const CNetStorageObjectLoc& object_loc)
@@ -350,7 +357,7 @@ void SFileTrackRequest::RemoveFile()
     }
 }
 
-ERW_Result SFileTrackRequest::Read(void* buf, size_t count, size_t* bytes_read)
+ERW_Result SFileTrackDownload::Read(void* buf, size_t count, size_t* bytes_read)
 {
     if (m_HTTPStream.read(static_cast<char*>(buf), count).bad()) {
         THROW_IO_EXCEPTION(eWrite, "Error while reading data from " << m_URL,
@@ -379,12 +386,12 @@ ERW_Result SFileTrackRequest::Read(void* buf, size_t count, size_t* bytes_read)
     return m_HTTPStream.eof() ? eRW_Eof : eRW_Success;
 }
 
-bool SFileTrackRequest::Eof() const
+bool SFileTrackDownload::Eof() const
 {
     return m_HTTPStream.eof();
 }
 
-void SFileTrackRequest::FinishDownload()
+void SFileTrackDownload::FinishDownload()
 {
     CheckIOStatus();
 }
@@ -400,7 +407,7 @@ CJsonNode SFileTrackAPI::GetFileInfo(const CNetStorageObjectLoc& object_loc)
 
     SFileTrackRequest request(config, object_loc, url);
 
-    return request.ReadJsonResponse();
+    return request.GetFileInfo();
 }
 
 string SFileTrackAPI::GetPath(const CNetStorageObjectLoc& object_loc)

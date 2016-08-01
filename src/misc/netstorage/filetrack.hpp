@@ -69,20 +69,28 @@ struct SFileTrackRequest : public CObject
             const string& user_header = kEmptyStr,
             THTTP_Flags flags = 0);
 
-    CJsonNode ReadJsonResponse();
+    CJsonNode GetFileInfo();
+    void RemoveFile();
+
+protected:
+    void CheckIOStatus();
+
+    const SFileTrackConfig& m_Config;
+    const CNetStorageObjectLoc& m_ObjectLoc;
+    string m_URL;
+    CConn_HttpStream m_HTTPStream;
+};
+
+struct SFileTrackDownload : public SFileTrackRequest
+{
+    SFileTrackDownload(const SFileTrackConfig& config,
+            const CNetStorageObjectLoc& object_loc);
 
     ERW_Result Read(void* buf, size_t count, size_t* bytes_read);
     bool Eof() const;
     void FinishDownload();
 
-    void CheckIOStatus();
-    void RemoveFile();
-
-protected:
-    const SFileTrackConfig& m_Config;
-    const CNetStorageObjectLoc& m_ObjectLoc;
-    string m_URL;
-    CConn_HttpStream m_HTTPStream;
+private:
     bool m_FirstRead = true;
 };
 
@@ -107,7 +115,7 @@ struct SFileTrackAPI
     CJsonNode GetFileInfo(const CNetStorageObjectLoc& object_loc);
 
     CRef<SFileTrackUpload> StartUpload(const CNetStorageObjectLoc& object_loc);
-    CRef<SFileTrackRequest> StartDownload(const CNetStorageObjectLoc& object_loc);
+    CRef<SFileTrackDownload> StartDownload(const CNetStorageObjectLoc& object_loc);
 
     void Remove(const CNetStorageObjectLoc& object_loc);
     string GetPath(const CNetStorageObjectLoc& object_loc);

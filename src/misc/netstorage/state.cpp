@@ -158,7 +158,7 @@ private:
 class CROFileTrack : public CROState
 {
 public:
-    typedef CRef<SFileTrackRequest> TRequest;
+    typedef CRef<SFileTrackDownload> TRequest;
 
     void Set(TRequest request)
     {
