@@ -313,44 +313,42 @@ static const char* kData_Hgvs =
 static const char* kData_NotHgvs = 
     "Seq-annot ::= {desc {name Primer.\n";
 
-
 static const char* kData_JSON = 
-    "{\n"
-    "    \"Search\": {\n"
-    "    \"query\\\"_id\": \"lcl|1\",\n"
-    "    \"hits\": [\n"
-    "      {  \n"
-    "        \"num\": 1,\n"
-    "        \"test true\": true,\n"
-    "        \"test false\": false,\n"
-    "        \"test null\": null,\n"
-    "        \"test open\\\\\\\" string \n";
-    
+    R"( { )"
+    R"(    "Search": { )"
+    R"(     "query\"_id": "lcl|1", )"
+    R"(    "hits": [ )"
+    R"(      { )"
+    R"(        "num": 1, )"
+    R"(        "test true": true, )"
+    R"(        "test false": false, )"
+    R"(        "test null": null, )"
+    R"(        "test open\\\" string )";
 
 // Missing starting brace
 static const char* kData_NotJSON1 = 
-    "    \"Search\": {\n"
-    "    \"query_id\": \"lcl|1\",\n"
-    "    \"hits\": [\n"
-    "      {  \n"
-    "        \"num\": 1,\n"
-    "        \"test true\": true,\n"
-    "        \"test false\": false,\n"
-    "        \"test null\": null,\n"
-    "        \"test open string \n";
+    R"(    "Search": { )"
+    R"(    "query_id": "lcl|1", )"
+    R"(    "hits": [ )"
+    R"(      {  )"
+    R"(        "num": 1, )"
+    R"(        "test true": true, )"
+    R"(        "test false": false, )"
+    R"(        "test null": null, )"
+    R"(        "test open string )";
 
 // Unexpected word    
 static const char* kData_NotJSON2 = 
-    "{\n"
-    "    \"Search\": {\n"
-    "    \"query_id\": \"lcl|1\",\n"
-    "    \"hits\": [\n"
-    "      {  \n"
-    "        \"num\": 1,\n"
-    "        \"test true\": true,\n"
-    "        \"test false\": false,\n"
-    "        unexpected,\n"
-    "        \"test open string \n";
+    R"( { )"
+    R"(    "Search": { )"
+    R"(    "query_id": "lcl|1", )"
+    R"(    "hits": [ )"
+    R"(      {  )"
+    R"(        "num": 1, )"
+    R"(        "test true": true, )"
+    R"(        "test false": false, )"
+    R"(        unexpected, )"
+    R"(        "test open string )";
 
 
 static const char* kData_Zip = 
