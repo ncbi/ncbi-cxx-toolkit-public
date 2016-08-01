@@ -337,6 +337,12 @@ private:
     // strips JSON strings from input and copies remainder to output
     void x_StripJsonStrings(const string& input, string& output) const;
 
+    // In-place deletion of JSON punctuation
+    void x_StripJsonPunctuation(string& json_string) const;
+
+    // In-place deletion of JSON keywords: true, false, null
+    void x_StripJsonKeywords(string& json_string) const;
+    
     bool x_IsJsonNumericChar(const char& c) const;
 
     // data:

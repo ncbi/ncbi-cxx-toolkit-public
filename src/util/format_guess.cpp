@@ -1823,7 +1823,7 @@ void CFormatGuess::x_StripJsonStrings(const string& input, string& output) const
     // Strip strings and copy what remains to output
     size_t remainder_start = 0;
 
-    list<size_t>::iterator it = indices.begin();
+    auto it = indices.begin();
     output = "";
     while (it != indices.end()) {
         const size_t string_start = *it++;
@@ -1849,64 +1849,11 @@ void CFormatGuess::x_StripJsonStrings(const string& input, string& output) const
     return ;
 }
 
-/*
-bool CFormatGuess::x_StripJsonStrings(const string& input, string& output) const
+
+//  ----------------------------------------------------------------------------
+bool CFormatGuess::x_IsJsonNumericChar(const char& c) const 
+//  ----------------------------------------------------------------------------
 {
-    bool string_found = false;
-    const string& double_quotes = "\"";
-
-    size_t pos=0;
-    size_t from_pos=0;
-    list<size_t> indices;
-    // Find all string start and stop positions
-    while (true) {
-        pos = input.find(double_quotes, from_pos);
-        if (pos == string::npos) {
-            break;
-        }
-        string_found = true;
-        from_pos = pos+1;
-
-        if (pos == 0 || input[pos-1] != '\\') {
-            indices.push_back(pos);
-        }
-    }
-
-    if (!string_found) {
-        return false;
-    }
-
-    // Iterate over string start and stop sites
-    // Remove strings from input and copy to output
-    list<size_t>::iterator it = indices.begin();
-    size_t remainder_start = 0;
-
-    while (it != indices.end()) {
-        size_t string_start = *it++;
-        if (string_start != remainder_start) {
-            output += input.substr(remainder_start, string_start-remainder_start);
-        }
-        // No stop double quotes
-        if (it == indices.end()) {
-            break;
-        } 
-
-        size_t string_stop = *it++;
-        remainder_start = string_stop+1;
-        // Reached the final stop
-        // Anything after this is not in a JSON string
-        if (it == indices.end()) {
-            output += input.substr(remainder_start);
-        }
-    }
-
-    return true;
-}
-*/
-
-//  ----------------------------------------------------------------------------
-bool CFormatGuess::x_IsJsonNumericChar(const char& c) const {
-//  ----------------------------------------------------------------------------
 
     if ( isdigit(c) || c == '.' ||
          c == 'E' || c == 'e' ||
@@ -1914,6 +1861,31 @@ bool CFormatGuess::x_IsJsonNumericChar(const char& c) const {
         return true;
     }
     return false;
+}
+
+
+
+//  ----------------------------------------------------------------------------
+void CFormatGuess::x_StripJsonPunctuation(string& json_string) const 
+//  ----------------------------------------------------------------------------
+{
+    NStr::ReplaceInPlace(json_string, "{", "");
+    NStr::ReplaceInPlace(json_string, "}", "");
+    NStr::ReplaceInPlace(json_string, "[", "");
+    NStr::ReplaceInPlace(json_string, "]", "");
+    NStr::ReplaceInPlace(json_string, ":", "");
+    NStr::ReplaceInPlace(json_string, ",", "");
+}
+
+
+
+//  ----------------------------------------------------------------------------
+void CFormatGuess::x_StripJsonKeywords(string& json_string) const 
+//  ----------------------------------------------------------------------------
+{
+    NStr::ReplaceInPlace(json_string, "true", "");
+    NStr::ReplaceInPlace(json_string, "false", "");
+    NStr::ReplaceInPlace(json_string, "null", "");
 }
 
 
@@ -1945,22 +1917,14 @@ bool CFormatGuess::TestFormatJson(
         return false;
     }
 
-    // Check punctuation and strip from testString
-    // If parentheses are encountered
-    // return false.
-    NStr::ReplaceInPlace(testString, "{", "");
-    NStr::ReplaceInPlace(testString, "}", "");
-    NStr::ReplaceInPlace(testString, "[", "");
-    NStr::ReplaceInPlace(testString, "]", "");
-    NStr::ReplaceInPlace(testString, ":", "");
-    NStr::ReplaceInPlace(testString, ",", "");
+    // Remove punctuation
+    x_StripJsonPunctuation(testString);
+
+    // Remove any occurences of the "keywords": true, false, null
+    x_StripJsonKeywords(testString);
 
 
-    // "true", "false" and "null" are allowed
-    NStr::ReplaceInPlace(testString, "true", "");
-    NStr::ReplaceInPlace(testString, "false", "");
-    NStr::ReplaceInPlace(testString, "null", "");
-
+    // Check that all remaining characters are allowed numeric characters
     for (const auto c : testString) {
         if (!x_IsJsonNumericChar(c)) {
             return false;
