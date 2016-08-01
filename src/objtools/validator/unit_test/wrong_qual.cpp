@@ -3334,7 +3334,6 @@ static const TKeyQualVal s_KeyQualVal[] = {
     { "rep_origin", "mod_base", "foo" },
     { "rep_origin", "rpt_unit", "foo" },
     { "rep_origin", "anticodon", "foo" },
-    { "rep_origin", "function", "foo" },
     { "rep_origin", "number", "foo" },
     { "rep_origin", "identified_by", "foo" },
     { "rep_origin", "collection_date", "foo" },

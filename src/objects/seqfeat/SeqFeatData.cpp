@@ -2087,6 +2087,7 @@ START_SUBTYPE(rep_origin)
     ADD_QUAL(evidence);
     ADD_QUAL(exception);
     ADD_QUAL(experiment);
+    ADD_QUAL(function);
     ADD_QUAL(gene);
     ADD_QUAL(gene_synonym);
     ADD_QUAL(inference);
