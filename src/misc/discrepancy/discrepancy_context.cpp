@@ -54,34 +54,31 @@ USING_SCOPE(objects);
 
 CConstRef<CBioseq> CDiscrepancyContext::GetCurrentBioseq(void) const 
 {
-    if (m_Current_Bioseq)
-    {
-        return m_Current_Bioseq;
-    }
-    else {
-        CConstRef<CBioseq_set> BS = GetCurrentBioseq_set();
-        if (BS && BS->IsSetClass())
-        {
-            CConstRef<CBioseq> bioseq;
-            CScope &scope = GetScope();
-            if (BS->GetClass() == CBioseq_set::eClass_nuc_prot)
-            {
-                bioseq.Reset(scope.GetBioseqHandle(BS->GetNucFromNucProtSet()).GetCompleteBioseq());
-                return bioseq;
-            }
-            if (BS->GetClass() == CBioseq_set::eClass_gen_prod_set)
-            {
-                bioseq.Reset(scope.GetBioseqHandle(BS->GetGenomicFromGenProdSet()).GetCompleteBioseq());
-                return bioseq;
-            }
-            if (BS->GetClass() == CBioseq_set::eClass_segset)
-            {
-                bioseq.Reset(scope.GetBioseqHandle(BS->GetMasterFromSegSet()).GetCompleteBioseq());
-                return bioseq;
+    static CConstRef<CBioseq> bioseq;
+    static size_t count = 0;
+    if (count != m_Count_Bioseq) {
+        count = m_Count_Bioseq;
+        if (m_Current_Bioseq) {
+            bioseq = m_Current_Bioseq;
+        }
+        else {
+            bioseq.Reset();
+            CConstRef<CBioseq_set> BS = GetCurrentBioseq_set();
+            if (BS && BS->IsSetClass()) {
+                CScope &scope = GetScope();
+                if (BS->GetClass() == CBioseq_set::eClass_nuc_prot) {
+                    bioseq.Reset(scope.GetBioseqHandle(BS->GetNucFromNucProtSet()).GetCompleteBioseq());
+                }
+                else if (BS->GetClass() == CBioseq_set::eClass_gen_prod_set) {
+                    bioseq.Reset(scope.GetBioseqHandle(BS->GetGenomicFromGenProdSet()).GetCompleteBioseq());
+                }
+                else if (BS->GetClass() == CBioseq_set::eClass_segset) {
+                    bioseq.Reset(scope.GetBioseqHandle(BS->GetMasterFromSegSet()).GetCompleteBioseq());
+                }
             }
         }
     }
-    return m_Current_Bioseq;
+    return bioseq;
 }
 
 

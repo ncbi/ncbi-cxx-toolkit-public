@@ -385,6 +385,7 @@ void CDiscrepancyContext::Parse(const CSerialObject& root)
         }
         else if (CType<CBioseq_set>::Match(i)) {
             m_Current_Bioseq.Reset();
+            m_Count_Bioseq++;
             Update_Bioseq_set_Stack(i);
             if (m_Enable_CBioseq_set) {
                 const CBioseq_set & obj = *CType<CBioseq_set>::Get(i);
@@ -402,6 +403,7 @@ void CDiscrepancyContext::Parse(const CSerialObject& root)
             const CSeq_annot_Handle annot_h = m_Scope->GetSeq_annotHandle(obj);
             if (!annot_h.GetParentEntry().IsSeq()) {
                 m_Current_Bioseq.Reset();
+                m_Count_Bioseq++;
                 // if this annot is not on a Bioseq, then we need to check
                 // that the bioseq-set stack is correct in case
                 // we've left any bioseq-sets
