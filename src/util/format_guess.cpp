@@ -1795,27 +1795,27 @@ size_t CFormatGuess::x_FindNextJsonStringStop(const string& input, const size_t 
 
 
 //  ----------------------------------------------------------------------------
-void CFormatGuess::x_StripJsonStrings(const string& input, string& output) const
+void CFormatGuess::x_StripJsonStrings(string& testString) const
 //  ----------------------------------------------------------------------------
 {
+
     const string& double_quotes = "\"";
     bool is_start = true;
-    size_t pos = input.find(double_quotes);
+    size_t pos = testString.find(double_quotes);
     list<size_t> indices;
     // List all string start and stop positions
     while ( pos != string::npos ) {
         indices.push_back(pos);
         if (is_start) {
-            pos = x_FindNextJsonStringStop(input, pos+1);
+            pos = x_FindNextJsonStringStop(testString, pos+1);
         } else {
-            pos = input.find(double_quotes, pos+1);
+            pos = testString.find(double_quotes, pos+1);
         }
         is_start = !is_start;
     }
 
     // If no strings found
     if ( indices.empty() ) {
-        output = input;
         return;
     }
 
@@ -1824,11 +1824,11 @@ void CFormatGuess::x_StripJsonStrings(const string& input, string& output) const
     size_t remainder_start = 0;
 
     auto it = indices.begin();
-    output = "";
+    string output = "";
     while (it != indices.end()) {
         const size_t string_start = *it++;
         if (string_start != remainder_start) {
-            output += input.substr(remainder_start, string_start-remainder_start);
+            output += testString.substr(remainder_start, string_start-remainder_start);
         }
         // No stop double quotes.
         // Everything following the last set of start quotes is
@@ -1841,12 +1841,27 @@ void CFormatGuess::x_StripJsonStrings(const string& input, string& output) const
         remainder_start = string_stop+1;
 
         // If reached the final stop
-        if (it == indices.end() && remainder_start != input.size()) {
-            output += input.substr(remainder_start);
+        if (it == indices.end() && remainder_start != testString.size()) {
+            output += testString.substr(remainder_start);
         }
     }
 
+    testString = output;
+
     return ;
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CFormatGuess::x_AreJsonNumericChars(const string& testString) const 
+//  ----------------------------------------------------------------------------
+{
+    for (const auto c : testString) {
+        if (!x_IsJsonNumericChar(c)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 
@@ -1864,30 +1879,27 @@ bool CFormatGuess::x_IsJsonNumericChar(const char& c) const
 }
 
 
-
 //  ----------------------------------------------------------------------------
-void CFormatGuess::x_StripJsonPunctuation(string& json_string) const 
+void CFormatGuess::x_StripJsonPunctuation(string& testString) const 
 //  ----------------------------------------------------------------------------
 {
-    NStr::ReplaceInPlace(json_string, "{", "");
-    NStr::ReplaceInPlace(json_string, "}", "");
-    NStr::ReplaceInPlace(json_string, "[", "");
-    NStr::ReplaceInPlace(json_string, "]", "");
-    NStr::ReplaceInPlace(json_string, ":", "");
-    NStr::ReplaceInPlace(json_string, ",", "");
+    NStr::ReplaceInPlace(testString, "{", "");
+    NStr::ReplaceInPlace(testString, "}", "");
+    NStr::ReplaceInPlace(testString, "[", "");
+    NStr::ReplaceInPlace(testString, "]", "");
+    NStr::ReplaceInPlace(testString, ":", "");
+    NStr::ReplaceInPlace(testString, ",", "");
 }
 
 
-
 //  ----------------------------------------------------------------------------
-void CFormatGuess::x_StripJsonKeywords(string& json_string) const 
+void CFormatGuess::x_StripJsonKeywords(string& testString) const 
 //  ----------------------------------------------------------------------------
 {
-    NStr::ReplaceInPlace(json_string, "true", "");
-    NStr::ReplaceInPlace(json_string, "false", "");
-    NStr::ReplaceInPlace(json_string, "null", "");
+    NStr::ReplaceInPlace(testString, "true", "");
+    NStr::ReplaceInPlace(testString, "false", "");
+    NStr::ReplaceInPlace(testString, "null", "");
 }
-
 
 
 //  ----------------------------------------------------------------------------
@@ -1909,29 +1921,17 @@ bool CFormatGuess::TestFormatJson(
     }
 
     // Strip Json strings
-    string stringless = "";
-    x_StripJsonStrings(testString, stringless);
-    testString = stringless;
+    x_StripJsonStrings(testString);
 
     if (testString.find_first_of("()") != string::npos) {
         return false;
     }
 
-    // Remove punctuation
     x_StripJsonPunctuation(testString);
 
-    // Remove any occurences of the "keywords": true, false, null
     x_StripJsonKeywords(testString);
 
-
-    // Check that all remaining characters are allowed numeric characters
-    for (const auto c : testString) {
-        if (!x_IsJsonNumericChar(c)) {
-            return false;
-        }
-    } 
-
-    return true;
+    return x_AreJsonNumericChars(testString);
 }
 
 

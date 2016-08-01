@@ -334,16 +334,20 @@ private:
     // indicating the end of a JSON string
     size_t x_FindNextJsonStringStop(const string& input, const size_t from_pos) const;
 
-    // strips JSON strings from input and copies remainder to output
-    void x_StripJsonStrings(const string& input, string& output) const;
+    // In-place deletion of JSON strings
+    void x_StripJsonStrings(string& testString) const;
 
     // In-place deletion of JSON punctuation
-    void x_StripJsonPunctuation(string& json_string) const;
+    void x_StripJsonPunctuation(string& testString) const;
 
     // In-place deletion of JSON keywords: true, false, null
-    void x_StripJsonKeywords(string& json_string) const;
-    
+    void x_StripJsonKeywords(string& testString) const;
+   
+    bool x_AreJsonNumericChars(const string& testString) const;
+
+    // Is character one of the allowed Json numeric characters 
     bool x_IsJsonNumericChar(const char& c) const;
+
 
     // data:
     static const char* const sm_FormatNames[eFormat_max];
