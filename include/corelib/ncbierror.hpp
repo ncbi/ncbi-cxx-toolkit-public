@@ -222,11 +222,28 @@ public:
     static void SetErrno(int                errno_code,
                          const CTempString& extra = CTempString());
 
+    /// Set last error using errno code
+    ///
+    /// @param errno_code
+    ///   "errno" code
+    /// @param extra
+    ///   Additional information. Argument will be move()'d into the object
+    ///   and will not be reusable.
+    static void SetErrno(int                errno_code,
+                         string&&           extra);
+
     /// Set last error using current "errno" code
     ///
     /// @param extra
     ///   Additional information
     static void SetFromErrno(const CTempString& extra = CTempString());
+
+    /// Set last error using current "errno" code
+    ///
+    /// @param extra
+    ///   Additional information. Argument will be move()'d into the object
+    ///   and will not be reusable.
+    static void SetFromErrno(string&&       extra);
 
 #if defined(NCBI_OS_MSWIN)
     /// Set last error using Windows-specific error code
@@ -240,6 +257,18 @@ public:
     ///   In this case, Code() will return 'eUnknown'
     static void SetWindowsError(int                native_err_code,
                                 const CTempString& extra = CTempString());
+    /// Set last error using Windows-specific error code
+    ///
+    /// @param native_err_code
+    ///   Windows-specific error code
+    /// @param extra
+    ///   Additional information. Argument will be move()'d into the object
+    ///   and will not be reusable.
+    /// @note
+    ///   Not all Windows errors can be translated into ECode enum.
+    ///   In this case, Code() will return 'eUnknown'
+    static void SetWindowsError(int                native_err_code,
+                                string&&           extra);
 
     /// Set last error on MS Windows using GetLastError()
     ///
@@ -249,6 +278,16 @@ public:
     ///   Not all Windows errors can be translated into ECode enum.
     ///   In this case, Code() will return 'eUnknown'
     static void SetFromWindowsError(const CTempString& extra = CTempString());
+
+    /// Set last error on MS Windows using GetLastError()
+    ///
+    /// @param extra
+    ///   Additional information. Argument will be move()'d into the object
+    ///   and will not be reusable.
+    /// @note
+    ///   Not all Windows errors can be translated into ECode enum.
+    ///   In this case, Code() will return 'eUnknown'
+    static void SetFromWindowsError(string&& extra);
 #endif  /* NCBI_OS_MSWIN */
 
 protected:
@@ -256,6 +295,8 @@ protected:
     CNcbiError(void);
 
 private:
+    static CNcbiError* x_Init(int err_code, string&& extra);
+    static CNcbiError* x_Init(int err_code, const CTempString& extra);
     mutable ECode m_Code;
     ECategory     m_Category;
     int           m_Native;
