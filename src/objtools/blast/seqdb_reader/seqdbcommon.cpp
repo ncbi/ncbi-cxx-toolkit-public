@@ -1472,8 +1472,7 @@ bool CSeqDBNegativeList::FindSi(string si)
 bool CSeqDBNegativeList::FindId(const CSeq_id & id, bool & match_type)
 {
     if (id.IsGi()) {        
-        match_type = (GetNumGis() > 0) ? true : false;
-        TGi gi = id.GetGi();        
+        match_type = (GetNumGis() > 0) ? true : false;        
         if(match_type) {
             return(FindGi(id.GetGi()));            
         }

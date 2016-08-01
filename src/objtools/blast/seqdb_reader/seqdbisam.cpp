@@ -400,8 +400,7 @@ CSeqDBIsam::x_SearchNegativeMultiSeq(int              vol_start,
         int sample_index = 0;
 
         while(sample_index < m_NumSamples) {
-            int start = 0, num_elements = 0;
-
+            
             // Now we should be ready to search a data block.
             keys.clear();
             vals.clear();
