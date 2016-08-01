@@ -36,5 +36,5 @@ POSTBUILD: [ "$platform" != "Cygwin64" ] || { cp -vp /usr/{bin/cygcheck.exe,bin/
 Linux64-Centos  : ICC   : ICC.sh         --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
 Linux64-Centos  : GCC   : GCC.sh         --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
 FreeBSD64       : Clang : Clang.sh       --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
-IntelMAC        : GCC   : GCC.sh         --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile --with-universal=i386,x86_64
+IntelMAC        : GCC   : GCC.sh         --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
 # Cygwin64        : GCC   : GCC.sh         --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --without-flat-makefile

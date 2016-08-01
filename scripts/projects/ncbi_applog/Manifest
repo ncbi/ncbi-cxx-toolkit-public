@@ -34,7 +34,5 @@ FreeBSD64      : plain  : Clang.sh --without-debug --without-mt --with-static --
 IntelMAC       : plain  : GCC.sh   --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 Win32_13       : plain  : static 32 ReleaseMT
 
-#XCode      : plain  : Xcode.sh 30 --without-debug --with-universal=i386,x86_64
-
 #USE_COMPONENTS
 #
