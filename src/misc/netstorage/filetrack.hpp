@@ -93,18 +93,16 @@ public:
 
 struct SFileTrackUpload : public SFileTrackRequest
 {
-    void Write(const void* buf, size_t count, size_t* bytes_written);
-    virtual void FinishUpload();
-
     SFileTrackUpload(const SFileTrackConfig& config,
             const CNetStorageObjectLoc& object_loc,
             const string& user_header, SConnNetInfo* net_info);
 
+    void Write(const void* buf, size_t count, size_t* bytes_written);
+    virtual void FinishUpload();
+
 private:
     void RenameFile(const string& from, const string& to,
             CHttpHeaders::CHeaderNameConverter header, const string& value);
-
-    SFileTrackUpload();
 };
 
 struct SFileTrackAPI
