@@ -49,7 +49,6 @@ struct SFileTrackConfig
 {
     bool enabled = false;
     CNetStorageObjectLoc::EFileTrackSite site;
-    string key;
     string token;
     const STimeout comm_timeout;
 
@@ -116,39 +115,9 @@ private:
     SFileTrackPostRequest();
 };
 
-struct SFileTrackPostRequestOld : public SFileTrackPostRequest
-{
-    void FinishUpload();
-
-    static CRef<SFileTrackPostRequest> Create(const SFileTrackConfig& config,
-            const CNetStorageObjectLoc& object_loc,
-            const string& cookie,
-            CRandom& random);
-
-private:
-    SFileTrackPostRequestOld();
-    SFileTrackPostRequestOld(const SFileTrackConfig& config,
-            const CNetStorageObjectLoc& object_loc,
-            const string& boundary,
-            const string& cookie,
-            const string& user_header);
-
-    void SendContentDisposition(const char* input_name);
-    void SendFormInput(const char* input_name, const string& value);
-    void SendEndOfFormData();
-
-    static string GenerateUniqueBoundary(CRandom&);
-    static string MakeMutipartFormDataHeader(const string&);
-
-    string m_Boundary;
-    const string m_Cookie;
-};
-
 struct SFileTrackAPI
 {
     SFileTrackAPI(const SFileTrackConfig&);
-
-    string LoginAndGetSessionKey(const CNetStorageObjectLoc& object_loc);
 
     CJsonNode GetFileInfo(const CNetStorageObjectLoc& object_loc);
 
@@ -161,9 +130,6 @@ struct SFileTrackAPI
     DECLARE_OPERATOR_BOOL(config.enabled);
 
     const SFileTrackConfig config;
-
-private:
-    CRandom m_Random;
 };
 
 END_NCBI_SCOPE

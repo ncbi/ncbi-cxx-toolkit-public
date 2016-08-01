@@ -1233,14 +1233,12 @@ inline CCombinedNetStorage g_GetNetStorage<CCombinedNetStorage>(const char*)
     string nst_app_domain(TNetStorage_AppDomain::GetDefault());
     string ft_site(TFileTrack_Site::GetDefault());
     string ft_token(TFileTrack_Token::GetDefault());
-    string ft_key(TFileTrack_Key::GetDefault());
     string init_string(
             "mode=direct&nc="     + nc_service +
             "&domain=" + nst_app_domain +
             "&client="   APP_NAME +
             "&ft_site=" + ft_site +
-            "&ft_token=" + ft_token +
-            "&ft_key=" + ft_key);
+            "&ft_token=" + ft_token);
     return CCombinedNetStorage(init_string);
 }
 
@@ -1251,14 +1249,12 @@ inline CCombinedNetStorageByKey g_GetNetStorage<CCombinedNetStorageByKey>(const 
     string nst_app_domain(TNetStorage_AppDomain::GetDefault());
     string ft_site(TFileTrack_Site::GetDefault());
     string ft_token(TFileTrack_Token::GetDefault());
-    string ft_key(TFileTrack_Key::GetDefault());
     string init_string(
             "mode=direct&nc="     + nc_service +
             "&domain=" + nst_app_domain +
             "&client="   APP_NAME +
             "&ft_site=" + ft_site +
-            "&ft_token=" + ft_token +
-            "&ft_key=" + ft_key);
+            "&ft_token=" + ft_token);
     return CCombinedNetStorageByKey(init_string);
 }
 

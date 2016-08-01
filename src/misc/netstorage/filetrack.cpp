@@ -120,26 +120,20 @@ string s_GetURL(const CNetStorageObjectLoc& object_loc,
 
 SConnNetInfo* SFileTrackRequest::GetNetInfo() const
 {
-    if (m_Config.token.size()) {
-        SConnNetInfo* net_info(ConnNetInfo_Create(0));
-        net_info->version = 1;
-        net_info->req_method = eReqMethod_Post;
-        return net_info;
-    }
-
-    return 0;
+    SConnNetInfo* net_info(ConnNetInfo_Create(0));
+    net_info->version = 1;
+    net_info->req_method = eReqMethod_Post;
+    return net_info;
 }
 
 string SFileTrackRequest::GetURL() const
 {
-    return s_GetURL(m_ObjectLoc, m_Config.token.size() ?
-            "/api/2.0/uploads/binary/" : "/ft/upload/");
+    return s_GetURL(m_ObjectLoc, "/api/2.0/uploads/binary/");
 }
 
 THTTP_Flags SFileTrackRequest::GetUploadFlags() const
 {
-    return m_Config.token.size() ? 
-        kDefaultHttpFlags | fHTTP_WriteThru : kDefaultHttpFlags;
+    return kDefaultHttpFlags | fHTTP_WriteThru;
 }
 
 SFileTrackRequest::SFileTrackRequest(
@@ -175,51 +169,6 @@ SFileTrackPostRequest::SFileTrackPostRequest(
         const string& user_header) :
     SFileTrackRequest(config, object_loc, user_header, 0)
 {
-}
-
-SFileTrackPostRequestOld::SFileTrackPostRequestOld(
-        const SFileTrackConfig& config,
-        const CNetStorageObjectLoc& object_loc,
-        const string& boundary,
-        const string& cookie,
-        const string& user_header) :
-    SFileTrackPostRequest(config, object_loc, user_header),
-    m_Boundary(boundary),
-    m_Cookie(cookie)
-{
-    SendContentDisposition("file\"; filename=\"contents");
-}
-
-void SFileTrackPostRequestOld::SendContentDisposition(const char* input_name)
-{
-    m_HTTPStream << "--" << m_Boundary << "\r\n"
-        "Content-Disposition: form-data; name=\"" << input_name << "\"\r\n"
-        "\r\n";
-}
-
-void SFileTrackPostRequestOld::SendFormInput(
-        const char* input_name, const string& value)
-{
-    SendContentDisposition(input_name);
-
-    m_HTTPStream << value << "\r\n";
-}
-
-void SFileTrackPostRequestOld::SendEndOfFormData()
-{
-    m_HTTPStream << "--" << m_Boundary << "--\r\n" << NcbiFlush;
-
-    static const STimeout kZeroTimeout = {0};
-
-    EIO_Status status = CONN_Wait(m_HTTPStream.GetCONN(),
-            eIO_Read, &kZeroTimeout);
-
-    if (status != eIO_Success && (status != eIO_Timeout ||
-            (status = m_HTTPStream.Status(eIO_Write)) != eIO_Success)) {
-        THROW_IO_EXCEPTION(eWrite,
-                "Error while sending HTTP request to " <<
-                m_URL << ": ", status);
-    }
 }
 
 void SFileTrackRequest::CheckIOStatus()
@@ -299,41 +248,10 @@ CRef<SFileTrackPostRequest> SFileTrackPostRequest::Create(
             new SFileTrackPostRequest(config, object_loc, user_header));
 }
 
-CRef<SFileTrackPostRequest> SFileTrackPostRequestOld::Create(
-        const SFileTrackConfig& config,
-        const CNetStorageObjectLoc& object_loc,
-        const string& cookie,
-        CRandom& random)
-{
-    string boundary(GenerateUniqueBoundary(random));
-
-    string user_header(MakeMutipartFormDataHeader(boundary));
-
-    user_header.append("Cookie: ");
-    user_header.append(cookie);
-    user_header.append("\r\n", 2);
-
-    s_ApplyMyNcbiId([&user_header](const string& my_ncbi_id)
-    {
-        user_header.append(DELEGATED_FROM_MYNCBI_ID_HEADER ": ");
-        user_header.append(my_ncbi_id);
-        user_header.append("\r\n");
-    });
-
-    return CRef<SFileTrackPostRequest>(
-            new SFileTrackPostRequestOld(config, object_loc,
-                boundary, cookie, user_header));
-}
-
 CRef<SFileTrackPostRequest> SFileTrackAPI::StartUpload(
         const CNetStorageObjectLoc& object_loc)
 {
-    if (config.token.size()) {
-        return SFileTrackPostRequest::Create(config, object_loc);
-    }
-
-    const string cookie(LoginAndGetSessionKey(object_loc));
-    return SFileTrackPostRequestOld::Create(config, object_loc, cookie, m_Random);
+    return SFileTrackPostRequest::Create(config, object_loc);
 }
 
 void SFileTrackPostRequest::Write(const void* buf,
@@ -358,48 +276,6 @@ void SFileTrackPostRequest::FinishUpload()
 
     if (filetrack_file_id != unique_key) {
         RenameFile(filetrack_file_id, unique_key, kAuthHeader, m_Config.token);
-    }
-}
-
-void SFileTrackPostRequestOld::FinishUpload()
-{
-    static const STimeout kZeroTimeout = {0};
-
-    m_HTTPStream << "\r\n";
-
-    string unique_key = m_ObjectLoc.GetUniqueKey();
-
-    SendFormInput("expires", kEmptyStr);
-    SendFormInput("owner_id", kEmptyStr);
-    SendFormInput("file_id", unique_key);
-    SendFormInput("editable", "true");
-    SendEndOfFormData();
-
-    try {
-        EIO_Status status = CONN_Wait(m_HTTPStream.GetCONN(),
-                eIO_Read, &kZeroTimeout);
-        if (status != eIO_Success) {
-            if (status != eIO_Timeout ||
-                    (status = m_HTTPStream.Status(eIO_Write)) != eIO_Success) {
-                THROW_IO_EXCEPTION(eWrite,
-                        "Error while sending HTTP request to " <<
-                        m_URL << ": ", status);
-            }
-        }
-    }
-    catch (CException& e) {
-        NCBI_RETHROW_FMT(e, CNetStorageException, eIOError,
-                "Error while uploading \"" << m_ObjectLoc.GetLocator() <<
-                "\" (storage key \"" << m_ObjectLoc.GetUniqueKey() <<
-                "\"); HTTP status " << m_HTTPStatus);
-    }
-
-    CJsonNode upload_result = ReadJsonResponse();
-
-    string filetrack_file_id = upload_result.GetAt(0).GetString("file_id");
-
-    if (filetrack_file_id != unique_key) {
-        RenameFile(filetrack_file_id, unique_key, CHttpHeaders::eCookie, m_Cookie);
     }
 }
 
@@ -570,63 +446,6 @@ void SFileTrackRequest::FinishDownload()
 SFileTrackAPI::SFileTrackAPI(const SFileTrackConfig& c)
     : config(c)
 {
-    m_Random.Randomize();
-}
-
-static EHTTP_HeaderParse s_HTTPParseHeader_GetSID(const char* http_header,
-        void* user_data, int /*server_error*/)
-{
-    const char* sid_begin = strstr(http_header, FILETRACK_SIDCOOKIE);
-
-    if (sid_begin != NULL) {
-        sid_begin += sizeof(FILETRACK_SIDCOOKIE) - 1;
-        while (*sid_begin == '=' || *sid_begin == ' ')
-            ++sid_begin;
-        const char* sid_end = sid_begin;
-        while (*sid_end != '\0' && *sid_end != ';' &&
-                *sid_end != '\r' && *sid_end != '\n' &&
-                *sid_end != ' ' && *sid_end != '\t')
-            ++sid_end;
-        static_cast<string*>(user_data)->assign(sid_begin, sid_end);
-    }
-
-    return eHTTP_HeaderComplete;
-}
-
-string SFileTrackAPI::LoginAndGetSessionKey(const CNetStorageObjectLoc& object_loc)
-{
-    string api_key(config.key);
-
-    // Nocreate mode
-    if (api_key.empty()) {
-        NCBI_THROW_FMT(CNetStorageException, eAuthError,
-                "Not allowed in nocreate mode (no FT API key provided).");
-    }
-
-    const string url(s_GetURL(object_loc, "/accounts/api_login?key=") + api_key);
-    string session_key;
-
-    CConn_HttpStream http_stream(url,
-            NULL, kEmptyStr, s_HTTPParseHeader_GetSID, &session_key, NULL, NULL,
-            fHTTP_AutoReconnect, &config.comm_timeout);
-
-    string dummy;
-    http_stream >> dummy;
-
-    if (session_key.empty()) {
-        // Server will report this exception to clients, so API key needs jamming
-        const size_t kSize = 8;
-        if (api_key.size() > kSize) {
-            api_key.replace(kSize / 2, api_key.size() - kSize, "...");
-        }
-
-        NCBI_THROW_FMT(CNetStorageException, eAuthError,
-                "Error while uploading data to FileTrack: "
-                "authentication error (API key = " << api_key <<
-                ", " << s_GetURL(object_loc, "") << ").");
-    }
-
-    return FILETRACK_SIDCOOKIE "=" + session_key;
 }
 
 CJsonNode SFileTrackAPI::GetFileInfo(const CNetStorageObjectLoc& object_loc)
@@ -636,24 +455,6 @@ CJsonNode SFileTrackAPI::GetFileInfo(const CNetStorageObjectLoc& object_loc)
     SFileTrackRequest request(config, object_loc, url);
 
     return request.ReadJsonResponse();
-}
-
-string SFileTrackPostRequestOld::GenerateUniqueBoundary(CRandom& random)
-{
-    string boundary("FileTrack-" + NStr::NumericToString(time(NULL)));
-    boundary += '-';
-    boundary += NStr::NumericToString(random.GetRandUint8());
-
-    return boundary;
-}
-
-string SFileTrackPostRequestOld::MakeMutipartFormDataHeader(const string& boundary)
-{
-    string header("Content-Type: multipart/form-data; boundary=" + boundary);
-
-    header.append("\r\n", 2);
-
-    return header;
 }
 
 string SFileTrackAPI::GetPath(const CNetStorageObjectLoc& object_loc)
@@ -668,13 +469,7 @@ string SFileTrackAPI::GetPath(const CNetStorageObjectLoc& object_loc)
 
     CHttpHeaders& headers = req.Headers();
     headers.SetValue(CHttpHeaders::eContentType, "application/json");
-
-    if (config.token.size()) {
-        headers.SetValue(kAuthHeader, config.token);
-    } else {
-        headers.SetValue(CHttpHeaders::eCookie,
-                LoginAndGetSessionKey(object_loc));
-    }
+    headers.SetValue(kAuthHeader, config.token);
 
     req.ContentStream() << "{\"file_key\": \"" <<
             object_loc.GetUniqueKey() << "\"}";
@@ -755,8 +550,6 @@ SFileTrackConfig::SFileTrackConfig(EVoid) :
 SFileTrackConfig::SFileTrackConfig(const IRegistry& reg, const string& section) :
     enabled(true),
     site(GetSite(reg.GetString(s_GetSection(section), "site", "prod"))),
-    key(reg.GetEncryptedString(s_GetSection(section), "api_key",
-                IRegistry::fPlaintextAllowed)),
     token(reg.GetEncryptedString(s_GetSection(section), "token",
                 IRegistry::fPlaintextAllowed)),
     comm_timeout(s_GetDefaultTimeout(reg.GetInt(
@@ -769,8 +562,6 @@ bool SFileTrackConfig::ParseArg(const string& name, const string& value)
 {
     if (name == "ft_site") {
         site = SFileTrackConfig::GetSite(value);
-    } else if (name == "ft_key") {
-        key = NStr::URLDecode(s_GetDecryptedKey(value));
     } else if (name == "ft_token") {
         token = kAuthPrefix + NStr::URLDecode(s_GetDecryptedKey(value));
     } else {
