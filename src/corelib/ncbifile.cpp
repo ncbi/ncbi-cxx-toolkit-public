@@ -186,7 +186,7 @@ NCBI_PARAM_DEF_EX(bool, NCBI, FileAPILogging, DEFAULT_LOGGING_VALUE,
         int saved_error = errno; \
         if (NCBI_PARAM_TYPE(NCBI, FileAPILogging)::GetDefault()) { \
             ERR_POST(log_message << ": " << _T_STDSTRING(NcbiSys_strerror(saved_error))); \
-        } \
+                } \
         errno = saved_error; \
     }
 
@@ -194,7 +194,7 @@ NCBI_PARAM_DEF_EX(bool, NCBI, FileAPILogging, DEFAULT_LOGGING_VALUE,
     { \
         if (NCBI_PARAM_TYPE(NCBI, FileAPILogging)::GetDefault()) { \
             ERR_POST(log_message); \
-        } \
+                } \
         return false; \
     }
 
@@ -202,7 +202,7 @@ NCBI_PARAM_DEF_EX(bool, NCBI, FileAPILogging, DEFAULT_LOGGING_VALUE,
     { \
         if (NCBI_PARAM_TYPE(NCBI, FileAPILogging)::GetDefault()) { \
             ERR_POST(log_message); \
-        } \
+                } \
         CNcbiError::Set(ncbierr, log_message); \
         return false; \
     }
@@ -211,18 +211,19 @@ NCBI_PARAM_DEF_EX(bool, NCBI, FileAPILogging, DEFAULT_LOGGING_VALUE,
     { \
         if (NCBI_PARAM_TYPE(NCBI, FileAPILogging)::GetDefault()) { \
             ERR_POST(log_message); \
-        } \
+                } \
         CNcbiError::SetFromWindowsError(log_message); \
         return false; \
     }
 
 #define LOG_ERROR_AND_RETURN_ERRNO(log_message) \
     { \
+        CTempString log_message_cts(log_message); \
         int saved_error = errno; \
         if (NCBI_PARAM_TYPE(NCBI, FileAPILogging)::GetDefault()) { \
             ERR_POST(log_message << ": " << _T_STDSTRING(NcbiSys_strerror(saved_error))); \
         } \
-        CNcbiError::SetErrno(saved_error, log_message); \
+        CNcbiError::SetErrno(saved_error, log_message_cts); \
         errno = saved_error; \
         return false; \
     }
@@ -1735,7 +1736,8 @@ bool CDirEntry::CheckAccess(TMode access_mode) const
     // Use euidaccess() where possible
 #  if defined(HAVE_EUIDACCESS)
     if (euidaccess(path, mode) != 0) {
-        CNcbiError::SetFromErrno(path);
+        CTempString path_cts(path);
+        CNcbiError::SetFromErrno(path_cts);
         return false;
     }
     return true;
@@ -3219,16 +3221,18 @@ static bool s_CopyFile(const char* src, const char* dst, size_t buf_size)
     int fd;  // destination file descriptor
     
     if ((fs = open(src, O_RDONLY)) == -1) {
-        CNcbiError::SetFromErrno(src);
+        CTempString src_cts(src);
+        CNcbiError::SetFromErrno(src_cts);
         return false;
     }
 
     struct stat st;
     if (fstat(fs, &st) != 0  ||
         (fd = open(dst, O_WRONLY|O_CREAT|O_TRUNC, st.st_mode & 0777)) == -1) {
+        CTempString src_cts(src);
         int x_errno = errno;
         s_CloseFile(fs);
-        CNcbiError::SetErrno(errno = x_errno, src);
+        CNcbiError::SetErrno(errno = x_errno, src_cts);
         return false;
     }
 
@@ -3302,7 +3306,8 @@ static bool s_CopyFile(const char* src, const char* dst, size_t buf_size)
         delete [] buf;
     }
     if (x_errno != 0) {
-        CNcbiError::SetErrno(errno = x_errno, src);
+        CTempString src_cts(src);
+        CNcbiError::SetErrno(errno = x_errno, src_cts);
         return false;
     }
     return true;
