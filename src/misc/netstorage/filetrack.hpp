@@ -72,18 +72,18 @@ struct SFileTrackRequest : public CObject
     CJsonNode ReadJsonResponse();
 
     ERW_Result Read(void* buf, size_t count, size_t* bytes_read);
+    bool Eof() const;
     void FinishDownload();
 
     void CheckIOStatus();
+    void RemoveFile();
 
 protected:
     const SFileTrackConfig& m_Config;
-
-public:
     const CNetStorageObjectLoc& m_ObjectLoc;
     string m_URL;
     CConn_HttpStream m_HTTPStream;
-    bool m_FirstRead = false;
+    bool m_FirstRead = true;
 };
 
 struct SFileTrackUpload : public SFileTrackRequest

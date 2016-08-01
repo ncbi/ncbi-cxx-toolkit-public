@@ -324,12 +324,8 @@ CRef<SFileTrackRequest> SFileTrackAPI::StartDownload(
 {
     const string url(s_GetURL(object_loc, "/ft/byid/", "/contents"));
 
-    CRef<SFileTrackRequest> new_request(new SFileTrackRequest(config, object_loc,
-            url));
-
-    new_request->m_FirstRead = true;
-
-    return new_request;
+    return CRef<SFileTrackRequest>(
+            new SFileTrackRequest(config, object_loc, url));
 }
 
 void SFileTrackAPI::Remove(const CNetStorageObjectLoc& object_loc)
@@ -337,16 +333,20 @@ void SFileTrackAPI::Remove(const CNetStorageObjectLoc& object_loc)
     const string url(s_GetURL(object_loc, "/ftmeta/files/", "/__delete__"));
 
     SFileTrackRequest new_request(config, object_loc, url);
+    new_request.RemoveFile();
+}
 
-    new_request.m_HTTPStream << NcbiEndl;
+void SFileTrackRequest::RemoveFile()
+{
+    m_HTTPStream << NcbiEndl;
 
     ostringstream null_stream; // Not used
-    NcbiStreamCopy(null_stream, new_request.m_HTTPStream);
+    NcbiStreamCopy(null_stream, m_HTTPStream);
 
-    if (new_request.m_HTTPStream.GetStatusCode() == CRequestStatus::e404_NotFound) {
+    if (m_HTTPStream.GetStatusCode() == CRequestStatus::e404_NotFound) {
         NCBI_THROW_FMT(CNetStorageException, eNotExists,
-                "Cannot remove \"" << new_request.m_ObjectLoc.GetLocator() <<
-                "\" (HTTP status " << new_request.m_HTTPStream.GetStatusCode() << ").");
+                "Cannot remove \"" << m_ObjectLoc.GetLocator() <<
+                "\" (HTTP status " << m_HTTPStream.GetStatusCode() << ").");
     }
 }
 
@@ -377,6 +377,11 @@ ERW_Result SFileTrackRequest::Read(void* buf, size_t count, size_t* bytes_read)
         *bytes_read = (size_t) m_HTTPStream.gcount();
 
     return m_HTTPStream.eof() ? eRW_Eof : eRW_Success;
+}
+
+bool SFileTrackRequest::Eof() const
+{
+    return m_HTTPStream.eof();
 }
 
 void SFileTrackRequest::FinishDownload()

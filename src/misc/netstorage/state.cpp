@@ -400,7 +400,7 @@ ERW_Result CROFileTrack::ReadImpl(void* buf, size_t count, size_t* bytes_read)
 
 bool CROFileTrack::EofImpl()
 {
-    return m_Request->m_HTTPStream.eof();
+    return m_Request->Eof();
 }
 
 
