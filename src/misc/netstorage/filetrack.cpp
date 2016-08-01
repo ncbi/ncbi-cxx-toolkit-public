@@ -91,14 +91,6 @@ string s_GetURL(const CNetStorageObjectLoc& object_loc,
     return url;
 }
 
-SConnNetInfo* SFileTrackRequest::GetNetInfo() const
-{
-    SConnNetInfo* net_info(ConnNetInfo_Create(0));
-    net_info->version = 1;
-    net_info->req_method = eReqMethod_Post;
-    return net_info;
-}
-
 string SFileTrackRequest::GetURL() const
 {
     return s_GetURL(m_ObjectLoc, "/api/2.0/uploads/binary/");
@@ -125,12 +117,11 @@ SFileTrackRequest::SFileTrackRequest(
         const SFileTrackConfig& config,
         const CNetStorageObjectLoc& object_loc,
         const string& user_header,
-        int) :
+        SConnNetInfo* net_info) :
     m_Config(config),
-    m_NetInfo(GetNetInfo()),
     m_ObjectLoc(object_loc),
     m_URL(GetURL()),
-    m_HTTPStream(m_URL, m_NetInfo.get(), user_header,
+    m_HTTPStream(m_URL, net_info, user_header,
             s_HTTPParseHeader_SaveStatus, this, NULL, NULL, GetUploadFlags(),
             &m_Config.comm_timeout)
 {
@@ -139,8 +130,9 @@ SFileTrackRequest::SFileTrackRequest(
 SFileTrackUpload::SFileTrackUpload(
         const SFileTrackConfig& config,
         const CNetStorageObjectLoc& object_loc,
-        const string& user_header) :
-    SFileTrackRequest(config, object_loc, user_header, 0)
+        const string& user_header,
+        SConnNetInfo* net_info) :
+    SFileTrackRequest(config, object_loc, user_header, net_info)
 {
 }
 
@@ -216,8 +208,12 @@ CRef<SFileTrackUpload> SFileTrackAPI::StartUpload(
         user_header.append("\r\n");
     });
 
+    AutoPtr<SConnNetInfo, CDeleter<SConnNetInfo> > net_info(ConnNetInfo_Create(0));
+    net_info->version = 1;
+    net_info->req_method = eReqMethod_Post;
+
     return CRef<SFileTrackUpload>(
-            new SFileTrackUpload(config, object_loc, user_header));
+            new SFileTrackUpload(config, object_loc, user_header, net_info.get()));
 }
 
 void SFileTrackUpload::Write(const void* buf,

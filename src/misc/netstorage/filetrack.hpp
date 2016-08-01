@@ -76,16 +76,13 @@ struct SFileTrackRequest : public CObject
 protected:
     SFileTrackRequest(const SFileTrackConfig& config,
             const CNetStorageObjectLoc& object_loc,
-            const string& user_header, int not_used);
+            const string& user_header, SConnNetInfo* net_info);
 
     const SFileTrackConfig& m_Config;
 
 private:
-    SConnNetInfo* GetNetInfo() const;
     string GetURL() const;
     THTTP_Flags GetUploadFlags() const;
-
-    AutoPtr<SConnNetInfo, CDeleter<SConnNetInfo> > m_NetInfo;
 
 public:
     const CNetStorageObjectLoc& m_ObjectLoc;
@@ -101,7 +98,7 @@ struct SFileTrackUpload : public SFileTrackRequest
 
     SFileTrackUpload(const SFileTrackConfig& config,
             const CNetStorageObjectLoc& object_loc,
-            const string& user_header);
+            const string& user_header, SConnNetInfo* net_info);
 
 private:
     void RenameFile(const string& from, const string& to,
