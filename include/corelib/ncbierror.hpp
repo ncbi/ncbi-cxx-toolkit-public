@@ -295,8 +295,8 @@ protected:
     CNcbiError(void);
 
 private:
-    static CNcbiError* x_Init(int err_code, string&& extra);
-    static CNcbiError* x_Init(int err_code, const CTempString& extra);
+    template<class Ty>
+    static CNcbiError* x_Init(int err_code, Ty extra);
     mutable ECode m_Code;
     ECategory     m_Category;
     int           m_Native;

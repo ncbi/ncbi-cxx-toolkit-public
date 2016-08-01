@@ -140,24 +140,14 @@ CNcbiError::ECode CNcbiError::Code(void) const
 }
 
 
-CNcbiError* CNcbiError::x_Init(int err_code, const CTempString& extra)
+template<class Ty> 
+CNcbiError* CNcbiError::x_Init(int err_code, Ty extra)
 {
     CNcbiError* e = NcbiError_GetOrCreate();
     e->m_Code     = ECode(err_code);
     e->m_Category = err_code < eUnknown ? eGeneric : eNcbi;
     e->m_Native   = err_code;
     e->m_Extra    = extra;
-    return e;
-}
-
-
-CNcbiError* CNcbiError::x_Init(int err_code, string&& extra)
-{
-    CNcbiError* e = NcbiError_GetOrCreate();
-    e->m_Code     = ECode(err_code);
-    e->m_Category = err_code < eUnknown ? eGeneric : eNcbi;
-    e->m_Native   = err_code;
-    e->m_Extra    = move(extra);
     return e;
 }
 
