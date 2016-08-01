@@ -164,6 +164,18 @@ void  CNcbiError::Set(ECode code, string&& extra)
 }
 
 
+void CNcbiError::Set(ECode code, const string& extra)
+{
+    x_Init((int)code, extra);
+}
+
+
+void CNcbiError::Set(ECode code, const char* extra)
+{
+    x_Init((int)code, extra);
+}
+
+
 void  CNcbiError::SetErrno(int native_err_code, const CTempString& extra)
 {
     x_Init(native_err_code, extra);
@@ -171,6 +183,18 @@ void  CNcbiError::SetErrno(int native_err_code, const CTempString& extra)
 
 
 void  CNcbiError::SetErrno(int native_err_code, string&& extra)
+{
+    x_Init(native_err_code, extra);
+}
+
+
+void CNcbiError::SetErrno(int native_err_code, const string& extra)
+{
+    x_Init(native_err_code, extra);
+}
+
+
+void CNcbiError::SetErrno(int native_err_code, const char* extra)
 {
     x_Init(native_err_code, extra);
 }
@@ -188,26 +212,52 @@ void  CNcbiError::SetFromErrno(string&& extra)
 }
 
 
+void CNcbiError::SetFromErrno(const string& extra)
+{
+    SetErrno(errno, extra);
+}
+
+
+void CNcbiError::SetFromErrno(const char* extra)
+{
+    SetErrno(errno, extra);
+}
+
 #if defined(NCBI_OS_MSWIN)
+
+void CNcbiError::x_SetWindowsCodeCategory(CNcbiError* e)
+{
+    e->m_Code = eNotSet;
+    e->m_Category = eMsWindows;
+}
+
+
 void  CNcbiError::SetWindowsError(int                native_err_code,
                                   const CTempString& extra)
 {
-    CNcbiError* e = x_Init(native_err_code, extra);
-    e->m_Code     = eNotSet;
-    e->m_Category = eMsWindows;
+    x_SetWindowsCodeCategory( x_Init(native_err_code, extra) );
 }
 
 
 void  CNcbiError::SetWindowsError(int      native_err_code,
                                   string&& extra)
 {
-    CNcbiError* e = x_Init(native_err_code, extra);
-    e->m_Code = eNotSet;
-    e->m_Category = eMsWindows;
+    x_SetWindowsCodeCategory( x_Init(native_err_code, extra) );
 }
 
 
-void  CNcbiError::SetFromWindowsError( const CTempString& extra)
+void CNcbiError::SetWindowsError(int native_err_code, const string& extra)
+{
+    x_SetWindowsCodeCategory( x_Init(native_err_code, extra) );
+}
+
+
+void CNcbiError::SetWindowsError(int native_err_code, const char* extra)
+{
+    x_SetWindowsCodeCategory( x_Init(native_err_code, extra) );
+}
+
+void  CNcbiError::SetFromWindowsError(const CTempString& extra)
 {
     SetWindowsError( GetLastError(), extra );
 }
@@ -215,9 +265,20 @@ void  CNcbiError::SetFromWindowsError( const CTempString& extra)
 
 void  CNcbiError::SetFromWindowsError(string&& extra)
 {
-    SetWindowsError(GetLastError(), extra);
+    SetWindowsError( GetLastError(), extra );
 }
 
+
+void CNcbiError::SetFromWindowsError(const string& extra)
+{
+    SetWindowsError( GetLastError(), extra );
+}
+
+
+void CNcbiError::SetFromWindowsError(const char* extra)
+{
+    SetWindowsError( GetLastError(), extra );
+}
 
 #endif
 

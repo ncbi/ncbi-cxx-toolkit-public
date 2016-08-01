@@ -203,15 +203,12 @@ public:
     /// @param extra
     ///   Additional information
     static void Set(ECode code, const CTempString& extra = CTempString());
-
-    /// Set last error using native error code enum
-    ///
-    /// @param code
-    ///   Error code
-    /// @param extra
-    ///   Additional information. Argument will be move()'d into the object
-    ///   and will not be reusable.
-    static void Set(ECode code, string&& extra);
+    /// @copydoc CNcbiError::Set(ECode,const CTempString&)
+    static void Set(ECode code, const char*        extra);
+    /// @copydoc CNcbiError::Set(ECode,const CTempString&)
+    static void Set(ECode code, const string&      extra);
+    /// @copydoc CNcbiError::Set(ECode,const CTempString&)
+    static void Set(ECode code, string&&           extra);
 
     /// Set last error using errno code
     ///
@@ -219,30 +216,25 @@ public:
     ///   "errno" code
     /// @param extra
     ///   Additional information
-    static void SetErrno(int                errno_code,
+    static void SetErrno(int errno_code,
                          const CTempString& extra = CTempString());
-
-    /// Set last error using errno code
-    ///
-    /// @param errno_code
-    ///   "errno" code
-    /// @param extra
-    ///   Additional information. Argument will be move()'d into the object
-    ///   and will not be reusable.
-    static void SetErrno(int                errno_code,
-                         string&&           extra);
+    /// @copydoc CNcbiError::SetErrno(int,const CTempString&)
+    static void SetErrno(int errno_code, const string& extra);
+    /// @copydoc CNcbiError::SetErrno(int,const CTempString&)
+    static void SetErrno(int errno_code, const char*   extra);
+    /// @copydoc CNcbiError::SetErrno(int,const CTempString&)
+    static void SetErrno(int errno_code, string&&      extra);
 
     /// Set last error using current "errno" code
     ///
     /// @param extra
     ///   Additional information
     static void SetFromErrno(const CTempString& extra = CTempString());
-
-    /// Set last error using current "errno" code
-    ///
-    /// @param extra
-    ///   Additional information. Argument will be move()'d into the object
-    ///   and will not be reusable.
+    /// @copydoc CNcbiError::SetFromErrno(const CTempString&)
+    static void SetFromErrno(const string& extra);
+    /// @copydoc CNcbiError::SetFromErrno(const CTempString&)
+    static void SetFromErrno(const char*   extra);
+    /// @copydoc CNcbiError::SetFromErrno(const CTempString&)
     static void SetFromErrno(string&&       extra);
 
 #if defined(NCBI_OS_MSWIN)
@@ -257,18 +249,12 @@ public:
     ///   In this case, Code() will return 'eUnknown'
     static void SetWindowsError(int                native_err_code,
                                 const CTempString& extra = CTempString());
-    /// Set last error using Windows-specific error code
-    ///
-    /// @param native_err_code
-    ///   Windows-specific error code
-    /// @param extra
-    ///   Additional information. Argument will be move()'d into the object
-    ///   and will not be reusable.
-    /// @note
-    ///   Not all Windows errors can be translated into ECode enum.
-    ///   In this case, Code() will return 'eUnknown'
-    static void SetWindowsError(int                native_err_code,
-                                string&&           extra);
+    /// @copydoc CNcbiError::SetWindowsError(int, const CTempString&)
+    static void SetWindowsError(int native_err_code, const string& extra);
+    /// @copydoc CNcbiError::SetWindowsError(const CTempString&)
+    static void SetWindowsError(int native_err_code, const char*   extra);
+    /// @copydoc CNcbiError::SetWindowsError(const CTempString&)
+    static void SetWindowsError(int native_err_code, string&& extra);
 
     /// Set last error on MS Windows using GetLastError()
     ///
@@ -278,15 +264,11 @@ public:
     ///   Not all Windows errors can be translated into ECode enum.
     ///   In this case, Code() will return 'eUnknown'
     static void SetFromWindowsError(const CTempString& extra = CTempString());
-
-    /// Set last error on MS Windows using GetLastError()
-    ///
-    /// @param extra
-    ///   Additional information. Argument will be move()'d into the object
-    ///   and will not be reusable.
-    /// @note
-    ///   Not all Windows errors can be translated into ECode enum.
-    ///   In this case, Code() will return 'eUnknown'
+    /// @copydoc CNcbiError::SetWindowsError(const CTempString&)
+    static void SetFromWindowsError(const string&      extra);
+    /// @copydoc CNcbiError::SetWindowsError(const CTempString&)
+    static void SetFromWindowsError(const char*        extra);
+    /// @copydoc CNcbiError::SetWindowsError(const CTempString&)
     static void SetFromWindowsError(string&& extra);
 #endif  /* NCBI_OS_MSWIN */
 
@@ -297,6 +279,9 @@ protected:
 private:
     template<class Ty>
     static CNcbiError* x_Init(int err_code, Ty extra);
+#ifdef NCBI_OS_MSWIN
+    static void x_SetWindowsCodeCategory(CNcbiError* e);
+#endif
     mutable ECode m_Code;
     ECategory     m_Category;
     int           m_Native;

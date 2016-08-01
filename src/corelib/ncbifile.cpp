@@ -218,12 +218,11 @@ NCBI_PARAM_DEF_EX(bool, NCBI, FileAPILogging, DEFAULT_LOGGING_VALUE,
 
 #define LOG_ERROR_AND_RETURN_ERRNO(log_message) \
     { \
-        CTempString log_message_cts(log_message); \
         int saved_error = errno; \
         if (NCBI_PARAM_TYPE(NCBI, FileAPILogging)::GetDefault()) { \
             ERR_POST(log_message << ": " << _T_STDSTRING(NcbiSys_strerror(saved_error))); \
         } \
-        CNcbiError::SetErrno(saved_error, log_message_cts); \
+        CNcbiError::SetErrno(saved_error, log_message); \
         errno = saved_error; \
         return false; \
     }
@@ -1736,8 +1735,7 @@ bool CDirEntry::CheckAccess(TMode access_mode) const
     // Use euidaccess() where possible
 #  if defined(HAVE_EUIDACCESS)
     if (euidaccess(path, mode) != 0) {
-        CTempString path_cts(path);
-        CNcbiError::SetFromErrno(path_cts);
+        CNcbiError::SetFromErrno(path);
         return false;
     }
     return true;
@@ -2508,16 +2506,17 @@ bool CDirEntry::Rename(const string& newname, TRenameFlags flags)
         // Can rename entries with different types?
         if ( F_ISSET(flags, fRF_EqualTypes)  &&  (src_type != dst_type) ) {
             LOG_ERROR_AND_RETURN_NCBI("CDirEntry::Rename():"
-                                 " Both source and destination exist"
-                                 " and have different types: "
-                                 + src.GetPath() + " and " + dst.GetPath(),
-                                 CNcbiError::eOperationNotPermitted);
+                                      " Both source and destination exist"
+                                      " and have different types: "
+                                      + src.GetPath() + " and " + dst.GetPath(),
+                                      CNcbiError::eOperationNotPermitted);
         }
         // Can overwrite entry?
         if ( !F_ISSET(flags, fRF_Overwrite) ) {
             LOG_ERROR_AND_RETURN_NCBI("CDirEntry::Rename():"
-                                 " Destination path already exists: "
-                                 + dst.GetPath(), CNcbiError::eOperationNotPermitted);
+                                      " Destination path already exists: "
+                                      + dst.GetPath(), 
+                                      CNcbiError::eOperationNotPermitted);
         }
         // Rename only if destination is older, otherwise just remove source
         if ( F_ISSET(flags, fRF_Update)  &&  !src.IsNewer(dst.GetPath(), 0)) {
@@ -2971,7 +2970,7 @@ fstream* CDirEntry::CreateTmpFile(const string& filename,
 #if defined(NCBI_OS_MSWIN)
     // Open file manually, because we cannot say to fstream
     // to use some specific flags for file opening.
-    // MS Windows should delete created file automaticaly
+    // MS Windows should delete created file automatically
     // after closing all opened file descriptors.
 
     // We cannot enable "only write" mode here,
@@ -3221,18 +3220,16 @@ static bool s_CopyFile(const char* src, const char* dst, size_t buf_size)
     int fd;  // destination file descriptor
     
     if ((fs = open(src, O_RDONLY)) == -1) {
-        CTempString src_cts(src);
-        CNcbiError::SetFromErrno(src_cts);
+        CNcbiError::SetFromErrno(src);
         return false;
     }
 
     struct stat st;
     if (fstat(fs, &st) != 0  ||
         (fd = open(dst, O_WRONLY|O_CREAT|O_TRUNC, st.st_mode & 0777)) == -1) {
-        CTempString src_cts(src);
         int x_errno = errno;
         s_CloseFile(fs);
-        CNcbiError::SetErrno(errno = x_errno, src_cts);
+        CNcbiError::SetErrno(errno = x_errno, src);
         return false;
     }
 
@@ -3306,8 +3303,7 @@ static bool s_CopyFile(const char* src, const char* dst, size_t buf_size)
         delete [] buf;
     }
     if (x_errno != 0) {
-        CTempString src_cts(src);
-        CNcbiError::SetErrno(errno = x_errno, src_cts);
+        CNcbiError::SetErrno(errno = x_errno, src);
         return false;
     }
     return true;
