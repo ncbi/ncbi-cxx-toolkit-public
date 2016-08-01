@@ -199,8 +199,7 @@ static void s_ApplyMyNcbiId(function<void(const string&)> apply)
     if (!my_ncbi_id.empty()) apply(my_ncbi_id);
 }
 
-CRef<SFileTrackPostRequest> SFileTrackPostRequest::Create(
-        const SFileTrackConfig& config,
+CRef<SFileTrackPostRequest> SFileTrackAPI::StartUpload(
         const CNetStorageObjectLoc& object_loc)
 {
     string user_header;
@@ -219,12 +218,6 @@ CRef<SFileTrackPostRequest> SFileTrackPostRequest::Create(
 
     return CRef<SFileTrackPostRequest>(
             new SFileTrackPostRequest(config, object_loc, user_header));
-}
-
-CRef<SFileTrackPostRequest> SFileTrackAPI::StartUpload(
-        const CNetStorageObjectLoc& object_loc)
-{
-    return SFileTrackPostRequest::Create(config, object_loc);
 }
 
 void SFileTrackPostRequest::Write(const void* buf,

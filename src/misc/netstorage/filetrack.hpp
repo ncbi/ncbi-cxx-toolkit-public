@@ -99,18 +99,14 @@ struct SFileTrackPostRequest : public SFileTrackRequest
     void Write(const void* buf, size_t count, size_t* bytes_written);
     virtual void FinishUpload();
 
-    static CRef<SFileTrackPostRequest> Create(const SFileTrackConfig& config,
-            const CNetStorageObjectLoc& object_loc);
-
-protected:
     SFileTrackPostRequest(const SFileTrackConfig& config,
             const CNetStorageObjectLoc& object_loc,
             const string& user_header);
 
+private:
     void RenameFile(const string& from, const string& to,
             CHttpHeaders::CHeaderNameConverter header, const string& value);
 
-private:
     SFileTrackPostRequest();
 };
 
