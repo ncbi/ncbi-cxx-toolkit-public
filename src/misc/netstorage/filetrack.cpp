@@ -50,36 +50,12 @@
 #include <sstream>
 #include <functional>
 
-#define FILETRACK_SIDCOOKIE "SubmissionPortalSID"
 #define DELEGATED_FROM_MYNCBI_ID_HEADER "Delegated-From-MyNCBI-ID"
 
 BEGIN_NCBI_SCOPE
 
 #define THROW_IO_EXCEPTION(err_code, message, status) \
         NCBI_THROW_FMT(CIOException, err_code, message << IO_StatusStr(status));
-
-namespace { // Anonymous namespace for CNullWriter
-
-class CNullWriter : public IWriter
-{
-public:
-    virtual ERW_Result Write(const void* buf, size_t count, size_t* written);
-    virtual ERW_Result Flush();
-};
-
-ERW_Result CNullWriter::Write(const void*, size_t count, size_t* written)
-{
-    if (written)
-        *written = count;
-    return eRW_Success;
-}
-
-ERW_Result CNullWriter::Flush()
-{
-    return eRW_Success;
-}
-
-} // Anonymous namespace for CNullWriter ends here.
 
 static EHTTP_HeaderParse s_HTTPParseHeader_SaveStatus(
         const char* /*http_header*/, void* user_data, int server_error)
@@ -397,9 +373,7 @@ void SFileTrackAPI::Remove(const CNetStorageObjectLoc& object_loc)
 
     new_request.m_HTTPStream << NcbiEndl;
 
-    CNullWriter null_writer;
-    CWStream null_stream(&null_writer);
-
+    ostringstream null_stream; // Not used
     NcbiStreamCopy(null_stream, new_request.m_HTTPStream);
 
     if (new_request.m_HTTPStatus == CRequestStatus::e404_NotFound) {
