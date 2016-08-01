@@ -2120,5 +2120,31 @@ DISCREPANCY_AUTOFIX(SHORT_CONTIG)
 }
 
 
+// RNA_PROVIRAL
+
+const string kRnaProviral = "[n] RNA bioseq[s] [is] proviral";
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(RNA_PROVIRAL, CSeq_inst, eOncaller, "RNA bioseqs are proviral")
+//  ----------------------------------------------------------------------------
+{
+    if (obj.IsSetMol() && obj.GetMol() == CSeq_inst::eMol_rna) {
+
+        const CBioSource* bio_src = context.GetCurrentBiosource();
+        if (bio_src && bio_src->IsSetOrg() && bio_src->IsSetGenome() && bio_src->GetGenome() == CBioSource::eGenome_proviral) {
+            m_Objs[kRnaProviral].Add(*context.NewDiscObj(context.GetCurrentBioseq()), false);
+        }
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(RNA_PROVIRAL)
+//  ----------------------------------------------------------------------------
+{
+    m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
+}
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
