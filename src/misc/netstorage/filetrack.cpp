@@ -91,39 +91,18 @@ string s_GetURL(const CNetStorageObjectLoc& object_loc,
     return url;
 }
 
-string SFileTrackRequest::GetURL() const
-{
-    return s_GetURL(m_ObjectLoc, "/api/2.0/uploads/binary/");
-}
-
-THTTP_Flags SFileTrackRequest::GetUploadFlags() const
-{
-    return kDefaultHttpFlags | fHTTP_WriteThru;
-}
-
 SFileTrackRequest::SFileTrackRequest(
         const SFileTrackConfig& config,
         const CNetStorageObjectLoc& object_loc,
-        const string& url) :
+        const string& url,
+        SConnNetInfo* net_info,
+        const string& user_header,
+        THTTP_Flags flags) :
     m_Config(config),
     m_ObjectLoc(object_loc),
     m_URL(url),
-    m_HTTPStream(url, NULL, kEmptyStr, s_HTTPParseHeader_SaveStatus,
-            this, NULL, NULL, kDefaultHttpFlags, &m_Config.comm_timeout)
-{
-}
-
-SFileTrackRequest::SFileTrackRequest(
-        const SFileTrackConfig& config,
-        const CNetStorageObjectLoc& object_loc,
-        const string& user_header,
-        SConnNetInfo* net_info) :
-    m_Config(config),
-    m_ObjectLoc(object_loc),
-    m_URL(GetURL()),
-    m_HTTPStream(m_URL, net_info, user_header,
-            s_HTTPParseHeader_SaveStatus, this, NULL, NULL, GetUploadFlags(),
-            &m_Config.comm_timeout)
+    m_HTTPStream(url, net_info, user_header, s_HTTPParseHeader_SaveStatus,
+            NULL, NULL, NULL, kDefaultHttpFlags | flags, &m_Config.comm_timeout)
 {
 }
 
@@ -132,7 +111,9 @@ SFileTrackUpload::SFileTrackUpload(
         const CNetStorageObjectLoc& object_loc,
         const string& user_header,
         SConnNetInfo* net_info) :
-    SFileTrackRequest(config, object_loc, user_header, net_info)
+    SFileTrackRequest(config, object_loc,
+            s_GetURL(object_loc, "/api/2.0/uploads/binary/"),
+            net_info, user_header, fHTTP_WriteThru)
 {
 }
 

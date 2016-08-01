@@ -64,7 +64,10 @@ struct SFileTrackRequest : public CObject
 {
     SFileTrackRequest(const SFileTrackConfig& config,
             const CNetStorageObjectLoc& object_loc,
-            const string& url);
+            const string& url,
+            SConnNetInfo* net_info = NULL,
+            const string& user_header = kEmptyStr,
+            THTTP_Flags flags = 0);
 
     CJsonNode ReadJsonResponse();
 
@@ -74,15 +77,7 @@ struct SFileTrackRequest : public CObject
     void CheckIOStatus();
 
 protected:
-    SFileTrackRequest(const SFileTrackConfig& config,
-            const CNetStorageObjectLoc& object_loc,
-            const string& user_header, SConnNetInfo* net_info);
-
     const SFileTrackConfig& m_Config;
-
-private:
-    string GetURL() const;
-    THTTP_Flags GetUploadFlags() const;
 
 public:
     const CNetStorageObjectLoc& m_ObjectLoc;
