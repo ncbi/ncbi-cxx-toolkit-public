@@ -91,7 +91,6 @@ public:
     const CNetStorageObjectLoc& m_ObjectLoc;
     string m_URL;
     CConn_HttpStream m_HTTPStream;
-    int m_HTTPStatus = 0;
     bool m_FirstRead = false;
 };
 

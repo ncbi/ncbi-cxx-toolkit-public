@@ -58,12 +58,9 @@ BEGIN_NCBI_SCOPE
         NCBI_THROW_FMT(CIOException, err_code, message << IO_StatusStr(status));
 
 static EHTTP_HeaderParse s_HTTPParseHeader_SaveStatus(
-        const char* /*http_header*/, void* user_data, int server_error)
+        const char*, void*, int)
 {
-    static_cast<SFileTrackRequest*>(
-            user_data)->m_HTTPStatus = server_error;
-
-    return eHTTP_HeaderComplete;
+    return eHTTP_HeaderContinue;
 }
 
 const THTTP_Flags kDefaultHttpFlags =
@@ -313,25 +310,25 @@ CJsonNode SFileTrackRequest::ReadJsonResponse()
         NCBI_RETHROW_FMT(e, CNetStorageException, eIOError,
                 "Error while accessing \"" << m_ObjectLoc.GetLocator() <<
                 "\" (storage key \"" << m_ObjectLoc.GetUniqueKey() <<
-                "\"); HTTP status " << m_HTTPStatus);
+                "\"); HTTP status " << m_HTTPStream.GetStatusCode());
     }
 
-    if (m_HTTPStatus == CRequestStatus::e404_NotFound) {
+    if (m_HTTPStream.GetStatusCode() == CRequestStatus::e404_NotFound) {
         NCBI_THROW_FMT(CNetStorageException, eNotExists,
                 "Error while accessing \"" << m_ObjectLoc.GetLocator() <<
                 "\" (storage key \"" << m_ObjectLoc.GetUniqueKey() << "\")");
 
-    } else if (m_HTTPStatus == CRequestStatus::e403_Forbidden) {
+    } else if (m_HTTPStream.GetStatusCode() == CRequestStatus::e403_Forbidden) {
         NCBI_THROW_FMT(CNetStorageException, eAuthError,
                 "Error while accessing \"" << m_ObjectLoc.GetLocator() <<
                 "\" (storage key \"" << m_ObjectLoc.GetUniqueKey() << "\")");
 
-    } else if (m_HTTPStatus >= CRequestStatus::e500_InternalServerError &&
-            m_HTTPStatus <= CRequestStatus::e505_HTTPVerNotSupported) {
+    } else if (m_HTTPStream.GetStatusCode() >= CRequestStatus::e500_InternalServerError &&
+            m_HTTPStream.GetStatusCode() <= CRequestStatus::e505_HTTPVerNotSupported) {
         NCBI_THROW_FMT(CNetStorageException, eUnknown,
                 "Error while accessing \"" << m_ObjectLoc.GetLocator() <<
                 "\" (storage key \"" << m_ObjectLoc.GetUniqueKey() << "\"): " <<
-                " (HTTP status " << m_HTTPStatus << ')');
+                " (HTTP status " << m_HTTPStream.GetStatusCode() << ')');
     }
 
     CJsonNode root;
@@ -344,7 +341,7 @@ CJsonNode SFileTrackRequest::ReadJsonResponse()
                 "Error while accessing \"" << m_ObjectLoc.GetLocator() <<
                 "\" (storage key \"" << m_ObjectLoc.GetUniqueKey() << "\"): " <<
                 s_RemoveHTMLTags(http_response.c_str()) <<
-                " (HTTP status " << m_HTTPStatus << ')');
+                " (HTTP status " << m_HTTPStream.GetStatusCode() << ')');
     }
 
     CheckIOStatus();
@@ -376,10 +373,10 @@ void SFileTrackAPI::Remove(const CNetStorageObjectLoc& object_loc)
     ostringstream null_stream; // Not used
     NcbiStreamCopy(null_stream, new_request.m_HTTPStream);
 
-    if (new_request.m_HTTPStatus == CRequestStatus::e404_NotFound) {
+    if (new_request.m_HTTPStream.GetStatusCode() == CRequestStatus::e404_NotFound) {
         NCBI_THROW_FMT(CNetStorageException, eNotExists,
                 "Cannot remove \"" << new_request.m_ObjectLoc.GetLocator() <<
-                "\" (HTTP status " << new_request.m_HTTPStatus << ").");
+                "\" (HTTP status " << new_request.m_HTTPStream.GetStatusCode() << ").");
     }
 }
 
@@ -391,17 +388,17 @@ ERW_Result SFileTrackRequest::Read(void* buf, size_t count, size_t* bytes_read)
     }
 
     if (m_FirstRead) {
-        if (m_HTTPStatus >= 400) {
+        if (m_HTTPStream.GetStatusCode() >= 400) {
             // Cannot use anything except EErrCode value as the second argument
             // (as exception is added to it inside macro), so had to copy-paste
-            if (m_HTTPStatus == CRequestStatus::e404_NotFound) {
+            if (m_HTTPStream.GetStatusCode() == CRequestStatus::e404_NotFound) {
                 NCBI_THROW_FMT(CNetStorageException, eNotExists,
                         "Cannot open \"" << m_ObjectLoc.GetLocator() <<
-                        "\" for reading (HTTP status " << m_HTTPStatus << ").");
+                        "\" for reading (HTTP status " << m_HTTPStream.GetStatusCode() << ").");
             }
             NCBI_THROW_FMT(CNetStorageException, eIOError,
                     "Cannot open \"" << m_ObjectLoc.GetLocator() <<
-                    "\" for reading (HTTP status " << m_HTTPStatus << ").");
+                    "\" for reading (HTTP status " << m_HTTPStream.GetStatusCode() << ").");
         }
         m_FirstRead = false;
     }
