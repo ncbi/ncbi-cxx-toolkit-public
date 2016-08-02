@@ -1,0 +1,65 @@
+Discrepancy Report Results
+
+Summary
+COUNT_RRNAS: 28 sequences have 1 rRNA feature
+
+Detailed Report
+
+COUNT_RRNAS: 28 sequences have 1 rRNA feature
+test-data/rrnacount.asn:KU257641 (length 696)
+test-data/rrnacount.asn:KU257642 (length 639)
+test-data/rrnacount.asn:KU257643 (length 791)
+test-data/rrnacount.asn:KU257644 (length 472)
+test-data/rrnacount.asn:KU257645 (length 784)
+test-data/rrnacount.asn:KU257646 (length 519)
+test-data/rrnacount.asn:KU257647 (length 326)
+test-data/rrnacount.asn:KU257648 (length 650)
+test-data/rrnacount.asn:KU257649 (length 672)
+test-data/rrnacount.asn:KU257650 (length 942)
+test-data/rrnacount.asn:KU257651 (length 1015)
+test-data/rrnacount.asn:KU257652 (length 316)
+test-data/rrnacount.asn:KU257653 (length 739)
+test-data/rrnacount.asn:KU257654 (length 480)
+test-data/rrnacount.asn:KU257655 (length 486)
+test-data/rrnacount.asn:KU257656 (length 616)
+test-data/rrnacount.asn:KU257657 (length 675)
+test-data/rrnacount.asn:KU257658 (length 618)
+test-data/rrnacount.asn:KU257659 (length 740)
+test-data/rrnacount.asn:KU257660 (length 852)
+test-data/rrnacount.asn:KU257661 (length 748)
+test-data/rrnacount.asn:KU257662 (length 781)
+test-data/rrnacount.asn:KU257663 (length 907)
+test-data/rrnacount.asn:KU257664 (length 887)
+test-data/rrnacount.asn:KU257665 (length 640)
+test-data/rrnacount.asn:KU257666 (length 588)
+test-data/rrnacount.asn:KU257667 (length 844)
+test-data/rrnacount.asn:KU257668 (length 566)
+test-data/rrnacount.asn:rRNA	16S ribosomal RNA	gb|KU257641|:<1->696	
+test-data/rrnacount.asn:rRNA	16S ribosomal RNA	gb|KU257642|:<1->639	
+test-data/rrnacount.asn:rRNA	16S ribosomal RNA	gb|KU257643|:<1->791	
+test-data/rrnacount.asn:rRNA	16S ribosomal RNA	gb|KU257644|:<1->472	
+test-data/rrnacount.asn:rRNA	16S ribosomal RNA	gb|KU257645|:<1->784	
+test-data/rrnacount.asn:rRNA	16S ribosomal RNA	gb|KU257646|:<1->519	
+test-data/rrnacount.asn:rRNA	16S ribosomal RNA	gb|KU257647|:<1->326	
+test-data/rrnacount.asn:rRNA	16S ribosomal RNA	gb|KU257648|:<1->650	
+test-data/rrnacount.asn:rRNA	16S ribosomal RNA	gb|KU257649|:<1->672	
+test-data/rrnacount.asn:rRNA	16S ribosomal RNA	gb|KU257650|:<1->942	
+test-data/rrnacount.asn:rRNA	16S ribosomal RNA	gb|KU257651|:<1->1015	
+test-data/rrnacount.asn:rRNA	16S ribosomal RNA	gb|KU257652|:<1->316	
+test-data/rrnacount.asn:rRNA	16S ribosomal RNA	gb|KU257653|:<1->739	
+test-data/rrnacount.asn:rRNA	16S ribosomal RNA	gb|KU257654|:<1->480	
+test-data/rrnacount.asn:rRNA	16S ribosomal RNA	gb|KU257655|:<1->486	
+test-data/rrnacount.asn:rRNA	16S ribosomal RNA	gb|KU257656|:<1->616	
+test-data/rrnacount.asn:rRNA	16S ribosomal RNA	gb|KU257657|:<1->675	
+test-data/rrnacount.asn:rRNA	16S ribosomal RNA	gb|KU257658|:<1->618	
+test-data/rrnacount.asn:rRNA	16S ribosomal RNA	gb|KU257659|:<1->740	
+test-data/rrnacount.asn:rRNA	16S ribosomal RNA	gb|KU257660|:<1->852	
+test-data/rrnacount.asn:rRNA	16S ribosomal RNA	gb|KU257661|:<1->748	
+test-data/rrnacount.asn:rRNA	16S ribosomal RNA	gb|KU257662|:<1->781	
+test-data/rrnacount.asn:rRNA	16S ribosomal RNA	gb|KU257663|:<1->907	
+test-data/rrnacount.asn:rRNA	16S ribosomal RNA	gb|KU257664|:<1->887	
+test-data/rrnacount.asn:rRNA	16S ribosomal RNA	gb|KU257665|:<1->640	
+test-data/rrnacount.asn:rRNA	16S ribosomal RNA	gb|KU257666|:<1->588	
+test-data/rrnacount.asn:rRNA	16S ribosomal RNA	gb|KU257667|:<1->844	
+test-data/rrnacount.asn:rRNA	16S ribosomal RNA	gb|KU257668|:<1->566	
+

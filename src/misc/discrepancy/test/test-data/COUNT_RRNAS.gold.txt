@@ -1,0 +1,17 @@
+Discrepancy Report Results
+
+Summary
+COUNT_RRNAS: 1 sequence has 3 rRNA features
+COUNT_RRNAS: 2 rRNA features on KP793690 have the same name (16S ribosomal RNA)
+
+Detailed Report
+
+COUNT_RRNAS: 1 sequence has 3 rRNA features
+test-data/rrna.sqn:KP793690 (length 15904)
+test-data/rrna.sqn:rRNA	12S ribosomal RNA	gb|KP793690|:c14965-14174	
+test-data/rrna.sqn:rRNA	16S ribosomal RNA	gb|KP793690|:c14101-12766	
+
+COUNT_RRNAS: 2 rRNA features on KP793690 have the same name (16S ribosomal RNA)
+test-data/rrna.sqn:rRNA	16S ribosomal RNA	gb|KP793690|:c14101-12766	
+test-data/rrna.sqn:rRNA	16S ribosomal RNA	gb|KP793690|:c14101-12766	
+
