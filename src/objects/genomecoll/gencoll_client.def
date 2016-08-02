@@ -4,6 +4,6 @@ clients        = genomic_collections_cli
 
 [genomic_collections_cli]
 class   = CGenomicCollectionsService
-service = GC_GetAssembly_v3
+service = GC_GetAssembly_v3s
 request = GCClientRequest
 reply   = GCClientResponse
