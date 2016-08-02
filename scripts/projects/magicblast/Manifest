@@ -19,7 +19,7 @@
 # post_build/macosx/ncbi-blast.sh, and post_build/rpm/ncbi-blast.spec
 APP: magicblast makeblastdb
 
-POSTBUILD: $srcdir/scripts/projects/blast/post_build/make_installers.py -v $version $platform $installdir "$tarball" $libdir
+POSTBUILD: $srcdir/scripts/projects/magicblast/post_build/make_installers.py -v $version $platform $installdir "$tarball" $libdir
 
 DEFAULT_CONFIGURE_FLAGS: --without-debug --with-strip --with-openmp --with-mt --with-build-root=$srcdir/ReleaseMT
 
