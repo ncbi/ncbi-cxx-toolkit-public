@@ -38,7 +38,7 @@ def main(): #IGNORE:R0911
 
     if platform.startswith("Win"):
         # copy ncbi-vdb-md.dll
-        shutil.copy(libdir + "\ncbi-vdb-md.dll", installdir)
+        shutil.copy(libdir + "ncbi-vdb-md.dll", installdir)
 #        return launch_win_installer_build(installdir, blast_version)
         return do_nothing(platform)
 
