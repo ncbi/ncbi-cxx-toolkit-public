@@ -3844,30 +3844,14 @@ void CFeatureItem::x_AddRptTypeQual(
 
 static bool s_IsValidRegulatoryClass(const string& type)
 {
-    static const char* const kValidClasses[] = {
-        "attenuator",
-        "CAAT_signal",
-        "enhancer",
-        "enhancer_blocking_element",
-        "GC_signal",
-        "imprinting_control_region",
-        "insulator",
-        "locus_control_region",
-        "minus_10_signal",
-        "minus_35_signal",
-        "other",
-        "polyA_signal_sequence",
-        "promoter",
-        "response_element",
-        "ribosome_binding_site",
-        "silencer",
-        "TATA_box",
-        "terminator"
-    };
-    typedef CStaticArraySet<string, PNocase> TValidRegClass;
-    DEFINE_STATIC_ARRAY_MAP(TValidRegClass, valid_types, kValidClasses);
+    vector<string> valid_types = CSeqFeatData::GetRegulatoryClassList();
 
-    return valid_types.find(type) != valid_types.end();
+    FOR_EACH_STRING_IN_VECTOR (itr, valid_types) {
+        string str = *itr;
+        if (NStr::Equal (str, type)) return true;
+    }
+
+    return false;
 }
 
 //  ----------------------------------------------------------------------------
