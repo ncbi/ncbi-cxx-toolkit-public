@@ -944,13 +944,6 @@ bool CCleanupApp::HandleSeqEntry(CSeq_entry_Handle entry)
         any_changes |= CCleanup::RemoveNcbiCleanupObject(*se);
     }
 
-    if (args["F"]) {
-        any_changes |= x_ProcessFeatureOptions(args["F"].AsString(), entry);
-    }
-    if (args["X"]) {
-        any_changes |= x_ProcessXOptions(args["X"].AsString(), entry);
-    }
-
     bool do_basic = false;
     bool do_extended = false;
     if (args["K"]) {
@@ -964,6 +957,10 @@ bool CCleanupApp::HandleSeqEntry(CSeq_entry_Handle entry)
     }
     else if (args["X"]) {
         do_basic = true;
+        if (NStr::Find(args["X"].AsString(), "w") != string::npos) {
+            //Extended Cleanup is part of -X w
+            do_extended = false;
+        }
     } else {
         if (args["basic"]) {
             do_basic = true;
@@ -979,6 +976,13 @@ bool CCleanupApp::HandleSeqEntry(CSeq_entry_Handle entry)
     }
 
     any_changes |= x_BasicAndExtended(entry, label, do_basic, do_extended, options);
+
+    if (args["F"]) {
+        any_changes |= x_ProcessFeatureOptions(args["F"].AsString(), entry);
+    }
+    if (args["X"]) {
+        any_changes |= x_ProcessXOptions(args["X"].AsString(), entry);
+    }
 
     return true;
 }
