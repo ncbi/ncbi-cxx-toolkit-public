@@ -37,6 +37,7 @@
 
 
 #include <util/qparse/query_parse.hpp>
+#include <corelib/ncbitime.hpp>
 
 #include <vector>
 
@@ -72,6 +73,12 @@ public:
 
 public:
     virtual ~CQueryFunctionBase();
+
+    /// Do we evaluate before visiting the nodes children or after. Visiting
+    /// after can allow us to avoid evaluating some sub-expressions
+    /// @return true if children should all be evaluated before parent for
+    ///         this type of node, otherwise false
+    virtual bool EvaluateChildrenFirst() const { return true; }
     
     /// Query node evaluation function 
     /// (performs actual programmed by the node action)
@@ -162,10 +169,10 @@ public:
     
     /// Run query tree evaluation
     ///
-    void Evaluate(CQueryParseTree& qtree);
+    virtual void Evaluate(CQueryParseTree& qtree);
 
     // Evaluate subtree of 'qtree' beginning from 'node'
-    void Evaluate(CQueryParseTree& qtree, CQueryParseTree::TNode& node);
+    virtual void Evaluate(CQueryParseTree& qtree, CQueryParseTree::TNode& node);
 
     /// If query has an identifier, this will resolve it in an
     /// application-specific way. Returns true if resolved, with the
@@ -212,6 +219,82 @@ protected:
 
     int                            m_ExceptionCount;
     int                            m_QueriedCount;
+};
+
+/// Expression evaluation visitor functor
+///
+class CQueryExecEvalFunc
+{
+public:
+    CQueryExecEvalFunc(CQueryExec& exec)
+        : m_Exec(exec)
+    {}
+
+    ETreeTraverseCode
+        operator()(CTreeNode<CQueryParseNode>& tr, int delta)
+    {
+        CQueryParseNode& qnode = tr.GetValue();
+        CQueryParseNode::EType func_type = qnode.GetType();        
+
+        if ((delta == 0 || delta == 1) && !tr.IsLeaf()) {
+            CQueryFunctionBase* func = m_Exec.GetFunc(func_type);
+
+            // if current query node requires child query nodes to be 
+            // evaluated first, continue depth-first traversal
+            if (func == NULL || func->EvaluateChildrenFirst()) {
+                return eTreeTraverse;
+            }
+            // process query node before processing its children. Allows
+            // node processing to stop early for effciency whenever possible
+            // (specifically for AND and OR nodes)
+            else {
+                CStopWatch sw(CStopWatch::eStart);
+                {{
+                    func->Evaluate(tr);
+                }}
+                qnode.SetElapsed(sw.Elapsed());
+
+                return eTreeTraverseStepOver;
+            }
+        }
+
+        CQueryFunctionBase* func = 0;
+
+        // check if execution env has implicit search configured 
+        // and value node is child of a logical node (AND, OR).
+        // in this case we fire implicit search
+        //
+        if (m_Exec.GetImplicitSearchFunc()) {
+            if (qnode.IsValue()) {
+                CTreeNode<CQueryParseNode>* parent = tr.GetParent();
+                if (parent && parent->GetValue().IsLogic()) {
+                    func = m_Exec.GetImplicitSearchFunc();
+                }
+            }
+        }
+
+        if (!func) {
+            func = m_Exec.GetFunc(func_type);
+        }
+        if (func == 0) { // function not registered
+            // values (string, int, etc) do not require evaluation
+            if (qnode.IsValue()) {
+                return eTreeTraverse;
+            }
+            NCBI_THROW(CQueryParseException, eUnknownFunction,
+                "Query execution failed. Unknown function:" + qnode.GetOrig());
+        }
+
+        CStopWatch sw(CStopWatch::eStart);
+        {{
+            func->Evaluate(tr);
+        }}
+        qnode.SetElapsed(sw.Elapsed());
+
+        return eTreeTraverse;
+    }
+private:
+    CQueryExec& m_Exec;
 };
 
 
