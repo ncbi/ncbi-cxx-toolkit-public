@@ -349,7 +349,7 @@ void CValidError_bioseqset::ValidateNucProtSet
                 if (!NStr::IsBlank(instantiated)) {
                     string generated = defline_generator.GenerateDefline(seq, *m_Scope, sequence::CDeflineGenerator::fIgnoreExisting);
                     if (!NStr::EqualNocase(instantiated, generated)) {
-                        string generated = defline_generator.GenerateDefline(seq, *m_Scope,
+                        generated = defline_generator.GenerateDefline(seq, *m_Scope,
                             sequence::CDeflineGenerator::fIgnoreExisting | sequence::CDeflineGenerator::fAllProteinNames);
                         if (NStr::StartsWith (instantiated, "PREDICTED: ", NStr::eNocase)) {
                             instantiated.erase (0, 11);

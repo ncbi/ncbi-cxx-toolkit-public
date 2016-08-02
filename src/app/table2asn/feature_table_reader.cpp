@@ -610,10 +610,14 @@ CRef<CSeq_entry> CFeatureTableReader::TranslateProtein(CScope& scope, CSeq_entry
 
     CProt_ref& prot_ref = prot_feat.SetData().SetProt();
 
-    if (!prot_ref.IsSetName() || prot_ref.GetName().empty())
+    if (!protein_name.empty())
     {
-        prot_ref.SetName().push_back(protein_name);
+        if (!prot_ref.IsSetName() || prot_ref.GetName().empty())
+        {
+            prot_ref.SetName().push_back(protein_name);
+        }
     }
+
     prot_feat.SetLocation().SetInt().SetFrom(0);
     prot_feat.SetLocation().SetInt().SetTo(protein->GetInst().GetLength() - 1);
     prot_feat.SetLocation().SetInt().SetId().Assign(*GetAccessionId(protein->GetId()));
