@@ -130,6 +130,7 @@ static const TGenomeKey genome_key_to_subtype [] = {
     {  "chloroplast",               CBioSource::eGenome_chloroplast       },
     {  "chromatophore",             CBioSource::eGenome_chromatophore     },
     {  "chromoplast",               CBioSource::eGenome_chromoplast       },
+    {  "chromosome",                CBioSource::eGenome_chromosome        },
     {  "cyanelle",                  CBioSource::eGenome_cyanelle          },
     {  "endogenous_virus",          CBioSource::eGenome_endogenous_virus  },
     {  "extrachrom",                CBioSource::eGenome_extrachrom        },
