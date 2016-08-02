@@ -80,7 +80,6 @@
 #  include <sra/data_loaders/wgs/wgsloader.hpp>
 #endif
 
-
 #include <common/test_assert.h>  /* This header must go last */
 
 using namespace ncbi;
@@ -411,7 +410,7 @@ int CTbl2AsnApp::Run(void)
         m_context.m_HandleAsSet = true;
         m_context.m_feature_links = 'p';
         m_context.m_cleanup += "fU";
-        m_context.m_validate = "v";
+        m_context.m_validate = "v";       
     }
 
     m_reader.reset(new CMultiReader(m_context));
@@ -672,7 +671,7 @@ int CTbl2AsnApp::Run(void)
 
     if (args["Z"])
     {
-        m_context.m_discrepancy_file = &args["Z"].AsOutputFile();
+        m_context.m_discrepancy_file = args["Z"].AsString();
     }
     m_context.m_eukariote = args["euk"].AsBoolean();
 
@@ -953,9 +952,15 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
             m_validator->Validate(submit, entry, m_context.m_validate, GenerateOutputFilename(".val"));
         }
 
-        if (m_context.m_discrepancy_file)
+        string fname;
+        if (!m_context.m_master_genome_flag.empty())
+            fname = GenerateOutputFilename(".dr");
+        else
+            fname = m_context.m_discrepancy_file;
+        if (!fname.empty())
         {
-            m_validator->ReportDiscrepancies(submit.Empty() ? (CSerialObject&)*entry : (CSerialObject&)*submit, *m_context.m_scope, *m_context.m_discrepancy_file);
+            m_validator->ReportDiscrepancies(
+                submit.Empty() ? (CSerialObject&)*entry : (CSerialObject&)*submit, *m_context.m_scope, fname);
         }
     }
 }

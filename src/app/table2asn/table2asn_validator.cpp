@@ -67,7 +67,7 @@ void CTable2AsnValidator::Cleanup(CSeq_entry_Handle& h_entry, const string& flag
     else
     if (flags.find('e') != string::npos)
     {
-        cleanup.ExtendedCleanup(*entry, CCleanup::eClean_SyncGenCodes | CCleanup::eClean_NoNcbiUserObjects);
+        CConstRef<CCleanupChange> changes = cleanup.ExtendedCleanup(*entry, CCleanup::eClean_SyncGenCodes | CCleanup::eClean_NoNcbiUserObjects);
         need_recalculate_index = true;
     }
     else
@@ -160,7 +160,7 @@ void CTable2AsnValidator::ReportErrorStats(CNcbiOstream& out)
     }
 }
 
-void CTable2AsnValidator::ReportDiscrepancies(CSerialObject& obj, CScope& scope, CNcbiOstream& output)
+void CTable2AsnValidator::ReportDiscrepancies(CSerialObject& obj, CScope& scope, const string& fname)
 {
     CRef<NDiscrepancy::CDiscrepancySet> tests = NDiscrepancy::CDiscrepancySet::New(scope);
     vector<string> names = NDiscrepancy::GetDiscrepancyNames(NDiscrepancy::eSubmitter);
@@ -172,6 +172,7 @@ void CTable2AsnValidator::ReportDiscrepancies(CSerialObject& obj, CScope& scope,
 
     tests->Parse(obj);
     tests->Summarize();
+    CNcbiOfstream output(fname);
     tests->OutputText(output, false, false);
 }
 

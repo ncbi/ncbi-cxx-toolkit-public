@@ -62,7 +62,7 @@ public:
     bool   W;
     bool   m_save_bioseq_set;
     string c;
-    CNcbiOstream* m_discrepancy_file;
+    string m_discrepancy_file;
     string zOufFile;
     string X;
     string m_master_genome_flag;

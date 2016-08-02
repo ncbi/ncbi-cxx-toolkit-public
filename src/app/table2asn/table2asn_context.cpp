@@ -111,7 +111,6 @@ CTable2AsnContext::CTable2AsnContext():
     m_delay_genprodset(false),
     m_copy_genid_to_note(false),
     m_save_bioseq_set(false),
-    m_discrepancy_file(0),
     m_flipped_struc_cmt(false),
     m_RemoteTaxonomyLookup(false),
     m_RemotePubLookup(false),
