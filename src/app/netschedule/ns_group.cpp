@@ -452,8 +452,8 @@ unsigned int  CNSGroupsRegistry::x_CreateGroup(const string &  group)
         group_id = x_GetNextGroupID();
     }
 
-    auto_ptr<string>        new_token(new string(group));
-    auto_ptr<SNSGroupJobs>  new_attr(new SNSGroupJobs);
+    unique_ptr<string>        new_token(new string(group));
+    unique_ptr<SNSGroupJobs>  new_attr(new SNSGroupJobs);
 
     new_attr->m_GroupToken = new_token.get();
     new_attr->m_GroupId = group_id;

@@ -634,7 +634,7 @@ private:
     SQueueDbBlock *             m_QueueDbBlock;
     bool                        m_TruncateAtDetach;
 
-    auto_ptr<CBDB_FileCursor>   m_EventsCursor;    // DB cursor for EventsDB
+    unique_ptr<CBDB_FileCursor> m_EventsCursor;    // DB cursor for EventsDB
 
     // Lock for a queue operations
     mutable CFastMutex          m_OperationLock;

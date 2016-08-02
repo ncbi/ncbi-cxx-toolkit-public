@@ -1031,8 +1031,8 @@ CQueueDataBase::x_CreateAndMountQueue(const string &            qname,
                                       const SQueueParameters &  params,
                                       SQueueDbBlock *           queue_db_block)
 {
-    auto_ptr<CQueue>    q(new CQueue(m_Executor, qname,
-                                     params.kind, m_Server, *this));
+    unique_ptr<CQueue>    q(new CQueue(m_Executor, qname,
+                                       params.kind, m_Server, *this));
 
     q->Attach(queue_db_block);
     q->SetParameters(params);

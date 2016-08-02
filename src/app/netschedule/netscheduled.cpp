@@ -119,7 +119,7 @@ void CNetScheduleDApp::Init(void)
 
 
     // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -191,7 +191,7 @@ int CNetScheduleDApp::Run(void)
     params.accept_timeout      = &m_ServerAcceptTimeout;
 
     SOCK_SetIOWaitSysAPI(eSOCK_IOWaitSysAPIPoll);
-    auto_ptr<CNetScheduleServer>    server(new CNetScheduleServer(
+    unique_ptr<CNetScheduleServer>    server(new CNetScheduleServer(
                                                         bdb_params.db_path));
     server->SetCustomThreadSuffix("_h");
     server->SetNSParameters(params, false);
@@ -205,8 +205,8 @@ int CNetScheduleDApp::Run(void)
     bdb_params.max_trans = params.max_threads * 2;
 
     m_Reinit = args[kReinitArgName];
-    auto_ptr<CQueueDataBase>    qdb(new CQueueDataBase(server.get(),
-                                                       bdb_params, m_Reinit));
+    unique_ptr<CQueueDataBase>    qdb(new CQueueDataBase(server.get(),
+                                                         bdb_params, m_Reinit));
 
     if (!args[kNodaemonArgName]) {
         GetDiagContext().Extra()
