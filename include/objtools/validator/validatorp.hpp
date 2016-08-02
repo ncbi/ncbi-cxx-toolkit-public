@@ -722,6 +722,7 @@ private:
     bool ValidateSeqDescrInSeqEntry (const CSeq_entry& se);
 
     void FindEmbeddedScript (const CSerialObject& obj);
+    void FindNonAsciiText (const CSerialObject& obj);
     void FindCollidingSerialNumbers (const CSerialObject& obj);
 
     void x_HandleTaxonomyError(const CT3Error& error,

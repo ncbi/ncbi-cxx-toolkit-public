@@ -1276,6 +1276,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_InvalidResidue)
     expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid residue [253] at position [61]"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "Invalid residue [254] at position [62]"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "InvalidResidue", "More than 10 invalid residues. Checking stopped"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "NonAsciiAsn", "Non-ASCII character '251' found in item"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -15783,6 +15784,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_NotSpliceConsensusDonor)
     expected_errors.push_back (new CExpectedError("nuc", eDiag_Critical, "InvalidResidue", "Invalid residue [251] at position [18]"));
     expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "NotSpliceConsensusDonor", "Splice donor consensus (GT) not found at start of intron, position 17 of lcl|nuc"));
     expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "NotSpliceConsensusDonor", "Bad sequence at splice donor after exon ending at position 16 of lcl|nuc"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Error, "NonAsciiAsn", "Non-ASCII character '251' found in item"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -15794,6 +15796,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_NotSpliceConsensusDonor)
     expected_errors.push_back (new CExpectedError("nuc", eDiag_Critical, "InvalidResidue", "Invalid residue [251] at position [44]"));
     expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "NotSpliceConsensusDonor", "Splice donor consensus (GT) not found at start of intron, position 44 of lcl|nuc"));
     expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "NotSpliceConsensusDonor", "Bad sequence at splice donor after exon ending at position 45 of lcl|nuc"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Error, "NonAsciiAsn", "Non-ASCII character '251' found in item"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -15863,7 +15866,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_NotSpliceConsensusAcceptor)
     nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[45] = '\xFB';
     seh = scope.AddTopLevelSeqEntry(*entry);
     CLEAR_ERRORS
-    expected_errors.push_back (new CExpectedError("nuc", eDiag_Critical, "InvalidResidue", 
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Critical, "InvalidResidue",
                                                   "Invalid residue [251] at position [45]"));
     expected_errors.push_back (new CExpectedError("nuc", eDiag_Critical, "InvalidResidue", 
                                                   "Invalid residue [251] at position [46]"));
@@ -15871,6 +15874,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_NotSpliceConsensusAcceptor)
                                                   "Splice acceptor consensus (AG) not found at end of intron, position 46 of lcl|nuc"));
     expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "NotSpliceConsensusAcceptor", 
                                                   "Bad sequence at splice acceptor before exon starting at position 47 of lcl|nuc"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Error, "NonAsciiAsn", "Non-ASCII character '251' found in item"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -15886,6 +15890,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_NotSpliceConsensusAcceptor)
                                "Splice acceptor consensus (AG) not found at end of intron, position 15 of lcl|nuc"));
     expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "NotSpliceConsensusAcceptor", 
                                "Bad sequence at splice acceptor before exon starting at position 14 of lcl|nuc"));
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Error, "NonAsciiAsn", "Non-ASCII character '251' found in item"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);

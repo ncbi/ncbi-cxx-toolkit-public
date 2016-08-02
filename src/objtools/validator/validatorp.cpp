@@ -1403,6 +1403,7 @@ bool CValidError_imp::Validate
 
 
     FindEmbeddedScript(*(seh.GetCompleteSeq_entry()));
+    FindNonAsciiText(*(seh.GetCompleteSeq_entry()));
     FindCollidingSerialNumbers(*(seh.GetCompleteSeq_entry()));
 
     if (m_FarFetchFailure) {
@@ -1546,6 +1547,7 @@ void CValidError_imp::Validate(
         break;
     }
     FindEmbeddedScript(*(sah.GetCompleteSeq_annot()));
+    FindNonAsciiText(*(sah.GetCompleteSeq_annot()));
     FindCollidingSerialNumbers(*(sah.GetCompleteSeq_annot()));
 }
 
@@ -1573,6 +1575,7 @@ void CValidError_imp::Validate(const CSeq_feat& feat, CScope* scope)
         }
     }
     FindEmbeddedScript(feat);
+    FindNonAsciiText(feat);
     FindCollidingSerialNumbers(feat);
 }
 
@@ -1596,6 +1599,7 @@ void CValidError_imp::Validate(const CBioSource& src, CScope* scope)
         ValidateTaxonomy (src.GetOrg(), src.IsSetGenome() ? src.GetGenome() : CBioSource::eGenome_unknown);
     }
     FindEmbeddedScript(src);
+    FindNonAsciiText(src);
     FindCollidingSerialNumbers(src);
 }
 
@@ -1616,6 +1620,7 @@ void CValidError_imp::Validate(const CPubdesc& pubdesc, CScope* scope)
 
     ValidatePubdesc(pubdesc, pubdesc);
     FindEmbeddedScript(pubdesc);
+    FindNonAsciiText(pubdesc);
     FindCollidingSerialNumbers(pubdesc);
 }
 
@@ -2534,6 +2539,24 @@ void CValidError_imp::ValidateCitations (const CSeq_entry_Handle& seh)
 //                                  Private
 // =============================================================================
 
+
+
+void CValidError_imp::FindNonAsciiText (const CSerialObject& obj)
+{
+    CStdTypeConstIterator<string> it(obj);
+    for( ; it; ++it) {
+        const string& str = *it;
+        FOR_EACH_CHAR_IN_STRING(c_it, str) {
+            const char& ch = *c_it;
+            unsigned char chu = ch;
+            if (ch > 127 || (ch < 20 && ch != '\t' && ch != '\r' && ch != '\n')) {
+                PostErr (eDiag_Error, eErr_GENERIC_NonAsciiAsn,
+                         "Non-ASCII character '" + NStr::NumericToString(chu) + "' found in item", obj);
+                break;
+            }
+        }
+    }
+}
 
 
 void CValidError_imp::FindEmbeddedScript (const CSerialObject& obj)
