@@ -656,7 +656,7 @@ AC_DIVERT_POP
 
 
 if test "$with_gbench" = "yes" ; then
-   m4_foreach(OPT, [dll,mt,gui,exe,serial,objects,algo,glew_mx],
+   m4_foreach(OPT, [dll,mt,gui,exe,serial,objects,algo,glew_mx,wxwidgets,ftgl,sqlite3,bdb],
      [if test "$[with_]OPT" = "no"; then
          AC_MSG_ERROR([incompatible options: --without-]OPT[ but --with-gbench])
       else
@@ -7659,6 +7659,14 @@ if test "$with_gbench" != "no"  -a  -d "$real_srcdir/src/app/gbench"; then
    fi
    if test "$with_opengl" = "no"; then
      reason="$reason${sep}OpenGL"
+     sep=", "
+   fi
+   if test "$with_glew_mx" = "no"; then
+     reason="$reason${sep}GLEWmx"
+     sep=", "
+   fi
+   if test "$with_ftgl" = "no"; then
+     reason="$reason${sep}FTGL"
      sep=", "
    fi
    if test "$with_sqlite3" = "no"; then
