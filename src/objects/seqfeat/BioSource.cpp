@@ -134,6 +134,7 @@ static const TGenomeKey genome_key_to_subtype [] = {
     {  "cyanelle",                  CBioSource::eGenome_cyanelle          },
     {  "endogenous_virus",          CBioSource::eGenome_endogenous_virus  },
     {  "extrachrom",                CBioSource::eGenome_extrachrom        },
+    {  "extrachromosomal",          CBioSource::eGenome_extrachrom        },
     {  "genomic",                   CBioSource::eGenome_genomic           },
     {  "hydrogenosome",             CBioSource::eGenome_hydrogenosome     },
     {  "insertion_seq",             CBioSource::eGenome_insertion_seq     },
