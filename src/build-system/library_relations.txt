@@ -175,7 +175,6 @@ build_config needs bacterial_pipeline_proc
 build_config needs build_config_base
 build_config needs gpipe_xmlutil
 build_config needs reftrack_access
-build_config needs simple_asm
 build_config_base needs gencoll_client
 build_config_base needs gpinit_bag_util
 build_config_base needs gpinit_register
@@ -331,7 +330,6 @@ gc_util_sdbapi needs gencoll_client
 gc_util_sdbapi needs gpipe_common
 gc_utils needs gpipe_objutil
 gcaccess_utils needs $(GPIPE_GENCOLL_LIBS)
-gcaccess_utils needs simple_asm
 gcedit needs agp_lookup
 gcedit needs gc_load_utils
 gcrypt needs3party $(ORIG_LIBS)
@@ -447,9 +445,7 @@ gpipe_jira needs3party $(GSOAP_LIBS)
 gpipe_kmer needs gpipe_objutil
 gpipe_kmer needs sampling
 gpipe_kpi needs xmlwrapp
-gpipe_meta_access needs $(SDBAPI_LIB)
-gpipe_meta_access needs xconnect
-gpipe_meta_access needs xutil
+gpipe_meta_access needs xncbi
 gpipe_object_edit needs xalgoalignutil
 gpipe_objutil needs $(DATA_LOADERS_UTIL_LIB)
 gpipe_objutil needs $(DATA_LOADERS_UTIL_LIBS)
@@ -865,7 +861,6 @@ pn_ctl needs ec_hmm_relation_cd
 pn_ctl needs gpipe_clean_prot_names
 pn_ctl needs gpipe_jira
 pn_ctl needs idload_utils
-pn_ctl needs simple_asm
 png needs $(Z_LIB)
 png needs3party $(ORIG_LIBS)
 png needs3party $(Z_LIBS)
@@ -941,6 +936,7 @@ seqtest needs $(SEQ_LIBS)
 seqtest needs pub
 sequtil needs xncbi
 simple_asm needs gc_load_utils
+simple_asm needs seqgapscan
 smartasn_g needs submit
 smartnet needs3party vibrant
 smartnetclient needs xconnect
@@ -1019,7 +1015,6 @@ sybtcl64 needs3party sybunic64
 sybunic64 needs3party $(ORIG_LIBS)
 tables needs3party $(ORIG_LIBS)
 tax_xml needs $(GPIPE_GENCOLL_LIBS)
-tax_xml needs simple_asm
 taxon needs xser
 taxon1 needs $(SEQ_LIBS)
 taxon1 needs pub
@@ -1105,7 +1100,6 @@ valerr needs xser
 valid needs general
 valid needs xregexp
 validate_regions needs $(GPIPE_GENCOLL_LIBS)
-validate_regions needs simple_asm
 variation needs $(SEQ_LIBS)
 variation needs pub
 variation_utils needs variation
@@ -1350,11 +1344,9 @@ xgencoll needs ncbi_xcache_netcache
 xgencoll needs simple_asm
 xgencollstats needs $(GPIPE_GENCOLL_LIBS)
 xgencollstats needs gencoll_stats
-xgencollstats needs simple_asm
 xgp_manifest needs xser
 xgpgcreport needs $(GPIPE_GENCOLL_LIBS)
 xgpgcreport needs gencoll_release_report
-xgpgcreport needs simple_asm
 xgpp_console needs dbapi
 xgpp_console_access needs xgpp_console_commands
 xgpp_console_commands needs gpipe_common
