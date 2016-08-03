@@ -742,7 +742,7 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
             if(!(sdl->id->AsFastaString().find("gnl|BL_ORD_ID") != string::npos || 
 		sdl->id->AsFastaString().find("lcl|Subject_") != string::npos)){
                 string idStr;
-                if (env.Get("NEW_SEQID_FORMAT").empty()) {
+                if (!env.Get("OLD_SEQID").empty()) {
                     idStr = sdl->id->AsFastaString();
                 }
                 else {

@@ -2312,7 +2312,7 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_
                 if (strncmp(alnDispParams->seqID->AsFastaString().c_str(), "lcl|", 4) == 0) 
                          out << alnDispParams->label;
                 else {
-                    if (env.Get("NEW_SEQID_FORMAT").empty()) {
+                    if (!env.Get("OLD_SEQID").empty()) {
                         alnDispParams->seqID->WriteAsFasta(out);
                     }
                     else {
@@ -2395,7 +2395,7 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_
                             out << alnDispParams->label;
                     	}
                     	else {
-                            if (env.Get("NEW_SEQID_FORMAT").empty()) {
+                            if (!env.Get("OLD_SEQID").empty()) {
                                 alnDispParams->seqID->WriteAsFasta(out);
                             }
                             else {
@@ -3671,13 +3671,19 @@ CDisplaySeqalign::x_MapDefLine(SAlnDispParams *alnDispParams,bool isFirst, bool 
 	string alnDefLine  = CAlignFormatUtil::MapTemplate(m_AlignTemplates->alnDefLineTmpl,"alnSeqSt",firstSeqClassInfo);
 	*/
     string alnDefLine = m_AlignTemplates->alnDefLineTmpl;
+    CNcbiEnvironment env;
 
 	string alnGi = (m_AlignOption&eShowGi && alnDispParams->gi > ZERO_GI) ?
         "gi|" + NStr::NumericToString(alnDispParams->gi) + "|" : "";
 	string seqid;					
     if(!(alnDispParams->seqID->AsFastaString().find("gnl|BL_ORD_ID") != string::npos) || 
 	alnDispParams->seqID->AsFastaString().find("lcl|Subject_") != string::npos){							 
-		seqid = alnDispParams->seqID->AsFastaString();        
+        if (!env.Get("OLD_SEQID").empty()) {
+            seqid = alnDispParams->seqID->AsFastaString();
+        }
+        else {
+            seqid = CAlignFormatUtil::GetBareId(*alnDispParams->seqID);
+        }
     }
 	
 	if(alnDispParams->id_url != NcbiEmptyString) {
@@ -3727,6 +3733,7 @@ CDisplaySeqalign::x_InitDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo
 {
     string deflines;	
     string firstDefline;
+    CNcbiEnvironment env;
 	list<TGi>& use_this_gi = aln_vec_info->use_this_gi;    
     if(bsp_handle){        
         const CRef<CBlast_def_line_set> bdlRef =  CSeqDB::ExtractBlastDefline(bsp_handle);        
@@ -3745,7 +3752,13 @@ CDisplaySeqalign::x_InitDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo
 			string alnDefLine = x_MapDefLine(alnDispParams,isFirst,false,false,seqLength);
 		    m_CurrAlnID_Lbl = (alnDispParams->gi != ZERO_GI) ?
                 NStr::NumericToString(alnDispParams->gi) : alnDispParams->label;			
-            m_CurrAlnAccession = alnDispParams->seqID->AsFastaString();
+            if (!env.Get("OLD_SEQID").empty()) {
+                m_CurrAlnAccession = alnDispParams->seqID->AsFastaString();
+            }
+            else {
+                m_CurrAlnAccession = CAlignFormatUtil::GetBareId(
+                                                   *alnDispParams->seqID);
+            }
             if(m_AlignTemplates != NULL) {
                 x_InitAlignLinks(alnDispParams->seqUrlInfo,bdl,alnDispParams->seqID,eDisplayResourcesLinks);
             }
@@ -3777,7 +3790,15 @@ CDisplaySeqalign::x_InitDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo
                         firstGi = alnGi;
 						
                         //This should probably change on dispId
-                        m_CurrAlnAccession = alnDispParams->seqID->AsFastaString();
+                        if (!env.Get("OLD_SEQID").empty()) {
+                            m_CurrAlnAccession =
+                                alnDispParams->seqID->AsFastaString();
+                        }
+                        else {
+                            m_CurrAlnAccession =
+                                CAlignFormatUtil::GetBareId(
+                                                      *alnDispParams->seqID);
+                        }
                         if(m_CurrAlnAccession.find("gnl|BL_ORD_ID") != string::npos ||
 				m_CurrAlnAccession.find("lcl|Subject_") != string::npos){ 
 							///Get first token of the title

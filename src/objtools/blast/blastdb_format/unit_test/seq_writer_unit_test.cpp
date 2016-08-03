@@ -131,7 +131,7 @@ BOOST_AUTO_TEST_CASE(TestRequestGiOidLength)
 BOOST_AUTO_TEST_CASE(TestRequestSeqId)
 {
     const int kGi(43123516);
-    const string kSeqId("gb|EAC27631.1|");
+    const string kSeqId("EAC27631.1");
     CTmpFile tmpfile;
     const string& fname = tmpfile.GetFileName();
     CSeqDB db("data/seqp", CSeqDB::eProtein);

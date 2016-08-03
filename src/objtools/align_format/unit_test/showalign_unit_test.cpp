@@ -135,14 +135,26 @@ bool TestSimpleAlignment(CBlastOM::ELocation location)
     ds.SetDbName(kDbName);
     ds.SetDbType((kDbType == CBlastDbDataLoader::eNucleotide));
     int flags = CDisplaySeqalign::eShowBlastInfo |
-        CDisplaySeqalign::eShowGi | 
         CDisplaySeqalign::eShowBlastStyleId;
+    bool bare_accessions = true;
+    CNcbiEnvironment env;
+    if (env.Get("OLD_SEQID").empty() == false) {
+        bare_accessions = false;
+    }
+    if (!bare_accessions) {
+        flags |= CDisplaySeqalign::eShowGi;
+    }
     ds.SetAlignOption(flags);
     ds.SetSeqLocChar(CDisplaySeqalign::eLowerCase);
     CNcbiOstrstream output_stream;
     ds.DisplaySeqalign(output_stream);
     string output = CNcbiOstrstreamToString(output_stream);    
-    BOOST_REQUIRE(output.find(">gi|1788470|gb|AE000304.1|AE000304 ") != NPOS);
+    if (bare_accessions) {
+        BOOST_REQUIRE(output.find(">AE000304.1 ") != NPOS);
+    }
+    else {
+        BOOST_REQUIRE(output.find(">gi|1788470|gb|AE000304.1|AE000304 ") != NPOS);
+    }
     BOOST_REQUIRE(output.find("Escherichia coli K-12 MG1655 section 9 of 400 of ") != NPOS ||
                   output.find("Escherichia coli K12 MG1655 section 9 of 400 of ") != NPOS);
     BOOST_REQUIRE(output.find("Sbjct  259   GCCTGATGCGACGCTGGCGCGTCTTATCAGGCCTAC  294") != NPOS);

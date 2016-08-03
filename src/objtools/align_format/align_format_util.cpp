@@ -505,7 +505,7 @@ CAlignFormatUtil::GetSeqIdString(const list<CRef<CSeq_id> > & ids, bool believe_
     CRef<CSeq_id> wid = FindBestChoice(ids, CSeq_id::WorstRank);
 
     CNcbiEnvironment env;
-    if (!env.Get("NEW_SEQID_FORMAT").empty()) {
+    if (env.Get("OLD_SEQID").empty()) {
         return GetBareId(*wid);
     }
 

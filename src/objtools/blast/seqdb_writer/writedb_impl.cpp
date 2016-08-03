@@ -655,9 +655,9 @@ static bool s_UseFastaReaderDeflines(CConstRef<CBioseq> & bioseq, CConstRef<CBla
        // This is to parse bare ids as local ones. The bare pdb ids are pdb in
        // bioseq (parsed by CFastaReader), but local in deflines (parsed by
        // CSeq_id).
-       (!env.Get("NEW_SEQID_FORMAT").empty() && (bioseq_id->IsPdb() ||
-                                                 bioseq_id->IsPrf() ||
-                                                 bioseq_id->IsPir()))) {
+       (env.Get("OLD_SEQID").empty() && (bioseq_id->IsPdb() ||
+                                         bioseq_id->IsPrf() ||
+                                         bioseq_id->IsPir()))) {
         return true;
        }
 
@@ -1687,14 +1687,14 @@ x_GetFastaReaderDeflines(const CBioseq                  & bioseq,
 
             // Parse '|' seperated ids.
             list< CRef<CSeq_id> > seqids;
-            if ( (ids.find('|') == NPOS && env.Get("NEW_SEQID_FORMAT").empty())
+            if ( (ids.find('|') == NPOS && !env.Get("OLD_SEQID").empty())
                  || !isalpha((unsigned char)(ids[0]))) {
 
                  seqids.push_back(CRef<CSeq_id> (new CSeq_id(CSeq_id::e_Local, ids)));
             } else {
                  CSeq_id::ParseFastaIds(seqids, ids);
 
-                 if (!env.Get("NEW_SEQID_FORMAT").empty()) {
+                 if (env.Get("OLD_SEQID").empty()) {
 
                      // If accession's molecule type is different than
                      // expected, change sequence id to local. CFastaReader

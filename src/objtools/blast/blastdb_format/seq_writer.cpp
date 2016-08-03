@@ -298,7 +298,7 @@ void CSeqFormatter::DumpAll(CSeqDB& blastdb, CSeqFormatterConfig config)
              fasta.WriteSequence(scope.AddBioseq(*bioseq));
 //	     continue;
          }
-         else if (env.Get("NEW_SEQID_FORMAT").empty()) {
+         else if (!env.Get("OLD_SEQID").empty()) {
 
              if (config.m_UseCtrlA) {
                  s_ReplaceCtrlAsInTitle(bioseq);

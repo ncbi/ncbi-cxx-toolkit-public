@@ -715,7 +715,7 @@ CFastaBioseqSource::CFastaBioseqSource(CNcbiIstream & fasta_file,
     if (parse_ids) {
         iflags |= CFastaReader::fAllSeqIds | CFastaReader::fRequireID;
         // parse bare accessions
-        if (!env.Get("NEW_SEQID_FORMAT").empty()) {
+        if (env.Get("OLD_SEQID").empty()) {
             iflags |= CFastaReader::fParseRawID;
         }
     } else {
@@ -798,7 +798,7 @@ bool CBuildDatabase::AddSequences(IBioseqSource & src, bool add_pig)
                 bioseq_id.assign(ids.front()->AsFastaString());
             }
 
-            if (!env.Get("NEW_SEQID_FORMAT").empty()) {
+            if (env.Get("OLD_SEQID").empty()) {
 
                 // If accession's molecule type is different than expected,
                 // change sequence id to local. CFastaReader cannot distingush
