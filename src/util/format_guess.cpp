@@ -1841,12 +1841,12 @@ size_t s_GetPrecedingFslashCount(const string& input, const size_t pos)
     }
 
     int current_pos = pos-1;
-    size_t num_flsash = 0;
+    size_t num_fslash = 0;
     while  ( current_pos >= 0 && input[current_pos] == '\\' ) {
-        ++num_flsash;
+        ++num_fslash;
         --current_pos;
     }
-    return num_flsash;
+    return num_fslash;
 }
 
 
