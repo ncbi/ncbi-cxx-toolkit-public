@@ -2858,12 +2858,21 @@ void CFastaOstream::x_GetMaskingStates(TMSMap& masking_state,
 
     if (m_SoftMask.NotEmpty()  ||  m_HardMask.NotEmpty()) {
         _ASSERT(base_seq_id);
-        CSeq_loc whole;
-        whole.SetWhole().Assign(*base_seq_id);
         if (location) {
-            mapper.Reset(new CSeq_loc_Mapper(*location, whole, scope));
+            CSeq_loc loc2;
+            try {
+                TSeqPos length = sequence::GetLength(*location, scope);
+                loc2.SetInt().SetId().Assign(*base_seq_id);
+                loc2.SetInt().SetFrom(0);
+                loc2.SetInt().SetTo(length - 1);
+            } catch (exception&) {
+                loc2.SetWhole().Assign(*base_seq_id);
+            }
+            mapper.Reset(new CSeq_loc_Mapper(*location, loc2, scope));
         } else {
             // still useful for filtering out locations on other sequences
+            CSeq_loc whole;
+            whole.SetWhole().Assign(*base_seq_id);
             mapper.Reset(new CSeq_loc_Mapper(whole, whole, scope));
         }
         mapper->SetMergeAll();
