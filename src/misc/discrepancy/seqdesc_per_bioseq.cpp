@@ -367,6 +367,31 @@ DISCREPANCY_SUMMARIZE(MISMATCHED_COMMENTS)
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
+DISCREPANCY_AUTOFIX(MISMATCHED_COMMENTS)
+{
+    TReportObjectList list = item->GetDetails();
+    unsigned int n = 0;
+
+    string comment;
+
+    NON_CONST_ITERATE(TReportObjectList, it, list) {
+        const CSeqdesc* desc = dynamic_cast<const CSeqdesc*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
+        if (desc) {
+
+            if (comment.empty()) {
+                comment = desc->GetComment();
+            }
+            else {
+                CSeqdesc* desc_handle = const_cast<CSeqdesc*>(desc); // Is there a way to do this without const_cast???
+                desc_handle->SetComment(comment);
+
+                n++;
+            }
+        }
+    }
+
+    return CRef<CAutofixReport>(n ? new CAutofixReport("MISMATCHED_COMMENTS: Replaced [n] coment[s] with " + comment, n) : 0);
+}
 
 
 END_SCOPE(NDiscrepancy)
