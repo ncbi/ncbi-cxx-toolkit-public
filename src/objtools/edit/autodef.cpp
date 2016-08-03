@@ -1039,7 +1039,10 @@ string CAutoDef::GetOneFeatureClauseList(CBioseq_Handle bh, unsigned int genome_
     string feature_clauses = "";
     if (m_Options.GetFeatureListType() == CAutoDefOptions::eListAllFeatures ||
         (IsBioseqmRNA(bh) && IsInGenProdSet(bh))) {
-        feature_clauses = " " + x_GetFeatureClauses(bh);
+        feature_clauses = x_GetFeatureClauses(bh);
+        if (!NStr::IsBlank(feature_clauses)) {
+            feature_clauses = " " + feature_clauses;
+        }
         string ending = x_GetFeatureClauseProductEnding(feature_clauses, bh);
         if (m_Options.GetAltSpliceFlag()) {
             if (NStr::IsBlank(ending)) {
