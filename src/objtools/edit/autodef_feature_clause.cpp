@@ -785,6 +785,9 @@ bool CAutoDefFeatureClause::x_GetDescription(string &description)
             description = m_MainFeat.GetNamedQual("rpt_family");
             if (NStr::IsBlank(description) && m_MainFeat.IsSetComment()) {
                 description = m_MainFeat.GetComment();
+                if (IsLTR() && NStr::EndsWith(description, " LTR")) {
+                    description = description.substr(0, description.length() - 4);
+                }
             }
             return true;
         }
