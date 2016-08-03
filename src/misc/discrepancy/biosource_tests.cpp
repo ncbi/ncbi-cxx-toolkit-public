@@ -184,23 +184,15 @@ static bool DoInfluenzaStrainAndCollectionDateMisMatch(const CBioSource& src)
 
 
 const string kInfluenzaDateMismatch = "[n] influenza strain[s] conflict with collection date";
-//  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(INFLUENZA_DATE_MISMATCH, CBioSource, eOncaller, "Influenza Strain/Collection Date Mismatch")
-//  ----------------------------------------------------------------------------
 {
     if (DoInfluenzaStrainAndCollectionDateMisMatch(obj)) {
-        if (context.GetCurrentSeqdesc() != NULL) {
-            m_Objs[kInfluenzaDateMismatch].Add(*context.NewDiscObj(context.GetCurrentSeqdesc()), false).Fatal();
-        } else if (context.GetCurrentSeq_feat() != NULL) {
-            m_Objs[kInfluenzaDateMismatch].Add(*context.NewDiscObj(context.GetCurrentSeq_feat()), false).Fatal();
-        }
+        m_Objs[kInfluenzaDateMismatch].Add(*context.NewFeatOrDescObj(), false).Fatal();
     }
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(INFLUENZA_DATE_MISMATCH)
-//  ----------------------------------------------------------------------------
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
@@ -227,23 +219,15 @@ static bool HasUnculturedNotes(const CBioSource& src)
 
 const string kUnculturedNotes = "[n] bio-source[s] [has] uncultured note[s]";
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(UNCULTURED_NOTES, CBioSource, eOncaller, "Uncultured Notes")
-//  ----------------------------------------------------------------------------
 {
     if (HasUnculturedNotes(obj)) {
-        if (context.GetCurrentSeqdesc() != NULL) {
-            m_Objs[kUnculturedNotes].Add(*context.NewDiscObj(context.GetCurrentSeqdesc()), false).Fatal();
-        } else if (context.GetCurrentSeq_feat() != NULL) {
-            m_Objs[kUnculturedNotes].Add(*context.NewDiscObj(context.GetCurrentSeq_feat()), false).Fatal();
-        }
+        m_Objs[kUnculturedNotes].Add(*context.NewFeatOrDescObj(), false).Fatal();
     }
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(UNCULTURED_NOTES)
-//  ----------------------------------------------------------------------------
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
@@ -256,9 +240,7 @@ const string kMissingViralQualsCollectionDate = "[n] virus organism[s] [is] miss
 const string kMissingViralQualsCountry = "[n] virus organism[s] [is] missing suggested qualifier country";
 const string kMissingViralQualsSpecificHost = "[n] virus organism[s] [is] missing suggested qualifier specific-host";
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(MISSING_VIRAL_QUALS, CBioSource, eOncaller, "Viruses should specify collection-date, country, and specific-host")
-//  ----------------------------------------------------------------------------
 {
     if (!CDiscrepancyContext::HasLineage(obj, context.GetLineage(), "Viruses")) {
         return;
@@ -288,34 +270,20 @@ DISCREPANCY_CASE(MISSING_VIRAL_QUALS, CBioSource, eOncaller, "Viruses should spe
         }
     }
     if (!has_collection_date || !has_country || !has_specific_host) {
-        if (context.GetCurrentSeqdesc() != NULL) {
-            if (!has_collection_date) {
-                m_Objs[kMissingViralQualsTop][kMissingViralQualsCollectionDate].Ext().Add(*context.NewDiscObj(context.GetCurrentSeqdesc()), false);
-            }
-            if (!has_country) {
-                m_Objs[kMissingViralQualsTop][kMissingViralQualsCountry].Ext().Add(*context.NewDiscObj(context.GetCurrentSeqdesc()), false);
-            }
-            if (!has_specific_host) {
-                m_Objs[kMissingViralQualsTop][kMissingViralQualsSpecificHost].Ext().Add(*context.NewDiscObj(context.GetCurrentSeqdesc()), false);
-            }
-        } else if (context.GetCurrentSeq_feat() != NULL) {
-            if (!has_collection_date) {
-                m_Objs[kMissingViralQualsTop][kMissingViralQualsCollectionDate].Ext().Add(*context.NewDiscObj(context.GetCurrentSeq_feat()), false);
-            }
-            if (!has_country) {
-                m_Objs[kMissingViralQualsTop][kMissingViralQualsCountry].Ext().Add(*context.NewDiscObj(context.GetCurrentSeq_feat()), false);
-            }
-            if (!has_specific_host) {
-                m_Objs[kMissingViralQualsTop][kMissingViralQualsSpecificHost].Ext().Add(*context.NewDiscObj(context.GetCurrentSeq_feat()), false);
-            }
+        if (!has_collection_date) {
+            m_Objs[kMissingViralQualsTop][kMissingViralQualsCollectionDate].Ext().Add(*context.NewFeatOrDescObj(), false);
+        }
+        if (!has_country) {
+            m_Objs[kMissingViralQualsTop][kMissingViralQualsCountry].Ext().Add(*context.NewFeatOrDescObj(), false);
+        }
+        if (!has_specific_host) {
+            m_Objs[kMissingViralQualsTop][kMissingViralQualsSpecificHost].Ext().Add(*context.NewFeatOrDescObj(), false);
         }
     }
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(MISSING_VIRAL_QUALS)
-//  ----------------------------------------------------------------------------
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
