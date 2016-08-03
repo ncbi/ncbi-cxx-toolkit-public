@@ -311,7 +311,8 @@ int CIgBlastnApp::Run(void)
             } else {
             */
             
-            BlastFormatter_PreFetchSequenceData(*results, scope);
+            BlastFormatter_PreFetchSequenceData(*results, scope,
+            									fmt_args->GetFormattedOutputChoice());
             ITERATE(CSearchResultSet, result, *results) {
                 CBlastFormat::SClone clone_info;
                 SCloneNuc clone_nuc;

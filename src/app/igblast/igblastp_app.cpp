@@ -215,7 +215,8 @@ int CIgBlastpApp::Run(void)
                 formatter.WriteArchive(*qf, *opts_hndl, *results);
             } else {
             */
-            BlastFormatter_PreFetchSequenceData(*results, scope);
+            BlastFormatter_PreFetchSequenceData(*results, scope,
+            									fmt_args->GetFormattedOutputChoice());
             ITERATE(CSearchResultSet, result, *results) {
                 CBlastFormat::SClone clone_info;
                 CIgBlastResults &ig_result = *const_cast<CIgBlastResults *>

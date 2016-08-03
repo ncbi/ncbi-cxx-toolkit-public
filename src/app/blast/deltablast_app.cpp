@@ -352,9 +352,11 @@ int CDeltaBlastApp::Run(void)
                     formatter.WriteArchive(*queries, *opts_hndl, *results, 0, m_bah.GetMessages());
                     m_bah.ResetMessages();
                 } else {
-                    BlastFormatter_PreFetchSequenceData(*results, scope);
+                    BlastFormatter_PreFetchSequenceData(*results, scope,
+                    		                            fmt_args->GetFormattedOutputChoice());
                     if (m_CmdLineArgs->GetShowDomainHits()) {
-                        BlastFormatter_PreFetchSequenceData(*results, scope);
+                        BlastFormatter_PreFetchSequenceData(*domain_results, scope,
+                        		                            fmt_args->GetFormattedOutputChoice());
                     }
                     ITERATE(blast::CSearchResultSet, result, *results) {
                         if (m_CmdLineArgs->GetShowDomainHits()) {
@@ -472,7 +474,8 @@ CDeltaBlastApp::DoPsiBlastIterations(CRef<CBlastOptionsHandle> opts_hndl,
 
     CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(*query));
 
-    BlastFormatter_PreFetchSequenceData(*results, scope);
+    BlastFormatter_PreFetchSequenceData(*results, scope,
+    		 m_CmdLineArgs->GetFormattingArgs()->GetFormattedOutputChoice());
     if (CFormattingArgs::eArchiveFormat ==
         m_CmdLineArgs->GetFormattingArgs()->GetFormattedOutputChoice()) {
         formatter.WriteArchive(*query_factory, *opts_hndl, *results,
@@ -519,7 +522,8 @@ CDeltaBlastApp::DoPsiBlastIterations(CRef<CBlastOptionsHandle> opts_hndl,
         psiblast->SetNumberOfThreads(m_CmdLineArgs->GetNumThreads());
         results = psiblast->Run();
 
-        BlastFormatter_PreFetchSequenceData(*results, scope);
+        BlastFormatter_PreFetchSequenceData(*results, scope,
+        		m_CmdLineArgs->GetFormattingArgs()->GetFormattedOutputChoice());
         if (CFormattingArgs::eArchiveFormat ==
             m_CmdLineArgs->GetFormattingArgs()->GetFormattedOutputChoice()) {
             formatter.WriteArchive(*pssm, *opts_hndl, *results,

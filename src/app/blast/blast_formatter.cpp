@@ -348,7 +348,8 @@ int CBlastFormatterApp::PrintFormattedOutput(void)
     } else {
         while (1)
 	{
-        	BlastFormatter_PreFetchSequenceData(*results, scope);
+        	BlastFormatter_PreFetchSequenceData(*results, scope,
+                		                        fmt_args.GetFormattedOutputChoice());
     		ITERATE(CSearchResultSet, result, *results) {
     			if(isPsiBlast)
     			{

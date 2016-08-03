@@ -699,14 +699,30 @@ s_IsUsingRemoteBlastDbDataLoader()
 }
 
 static bool
-s_PreFetchSeqs(const blast::CSearchResultSet& results)
+s_IsPrefetchFormat(blast::CFormattingArgs::EOutputFormat format_type)
 {
-	if(!s_IsUsingRemoteBlastDbDataLoader()) {
+	if ((format_type == CFormattingArgs::eAsnText) ||
+	    (format_type == CFormattingArgs::eAsnBinary) ||
+	    (format_type == CFormattingArgs::eArchiveFormat)||
+	    (format_type == CFormattingArgs::eJsonSeqalign)) {
+		return false;
+	}
+	return true;
+}
+
+static bool
+s_PreFetchSeqs(const blast::CSearchResultSet& results,
+		       blast::CFormattingArgs::EOutputFormat format_type)
+{
+	{
 		char * pre_fetch_limit_str = getenv("PRE_FETCH_SEQS_LIMIT");
 		if (pre_fetch_limit_str) {
 			int pre_fetch_limit = NStr::StringToInt(pre_fetch_limit_str);
 			if(pre_fetch_limit == 0) {
 				return false;
+			}
+			if(pre_fetch_limit == INT_MAX){
+				return true;
 			}
 			int num_of_seqs = 0;
 			for(unsigned int i=0; i < results.GetNumResults(); i++) {
@@ -719,17 +735,19 @@ s_PreFetchSeqs(const blast::CSearchResultSet& results)
 			}
 		}
 	}
-	return true;
+
+	return s_IsPrefetchFormat(format_type);
 }
 
-void BlastFormatter_PreFetchSequenceData(const blast::CSearchResultSet&
-                                         results, CRef<CScope> scope)
+void BlastFormatter_PreFetchSequenceData(const blast::CSearchResultSet& results,
+		                                 CRef<CScope> scope,
+		                                 blast::CFormattingArgs::EOutputFormat format_type)
 {
     _ASSERT(scope.NotEmpty());
     if (results.size() == 0) {
         return;
     }
-    if(!s_PreFetchSeqs(results)){
+    if(!s_PreFetchSeqs(results, format_type)){
     	return;
     }
     try {

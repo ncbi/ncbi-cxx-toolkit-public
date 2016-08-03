@@ -269,9 +269,11 @@ SaveSearchStrategy(const CArgs& args,
 /// @param results BLAST results [in]
 /// @param scope CScope object from which the sequence data will be fetched
 /// [in]
+/// @param format_type  Blast output fomat type
 void 
 BlastFormatter_PreFetchSequenceData(const blast::CSearchResultSet&
-                                    results, CRef<CScope> scope);
+                                    results, CRef<CScope> scope,
+                                    blast::CFormattingArgs::EOutputFormat format_type);
 
 /// Auxiliary function to extract the ancillary data from the PSSM.
 /// Used in PSI-BLAST and DELTA-BLAST

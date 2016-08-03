@@ -208,7 +208,8 @@ int CBlastnApp::Run(void)
                 formatter.WriteArchive(*queries, *opts_hndl, *results, 0, bah.GetMessages());
                 bah.ResetMessages();
             } else {
-                BlastFormatter_PreFetchSequenceData(*results, scope);
+                BlastFormatter_PreFetchSequenceData(*results, scope,
+                			                        fmt_args->GetFormattedOutputChoice());
                 ITERATE(CSearchResultSet, result, *results) {
                     formatter.PrintOneResultSet(**result, query_batch);
                 }

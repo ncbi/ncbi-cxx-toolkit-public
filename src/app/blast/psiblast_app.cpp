@@ -244,13 +244,15 @@ CPsiBlastApp::x_RunLocalPsiBlastIterations(CRef<CBlastQueryVector> query,
                    CLocalBlast lcl_blast(query_factory, CRef<CBlastOptionsHandle>(phi_opts), db_adapter);
                    lcl_blast.SetNumberOfThreads(m_CmdLineArgs->GetNumThreads());
                    results = lcl_blast.Run();
-                   BlastFormatter_PreFetchSequenceData(*results, scope);
+                   BlastFormatter_PreFetchSequenceData(*results, scope,
+                		   m_CmdLineArgs->GetFormattingArgs()->GetFormattedOutputChoice());
                    formatter.PrintPhiResult(*results, query, itr.GetIterationNumber(),  itr.GetPreviouslyFoundSeqIds());
                 }
                 else
                 {
                    results = psiblast->Run();
-                   BlastFormatter_PreFetchSequenceData(*results, scope);
+                   BlastFormatter_PreFetchSequenceData(*results, scope,
+                		   m_CmdLineArgs->GetFormattingArgs()->GetFormattedOutputChoice());
                    if(CFormattingArgs::eArchiveFormat ==
                 	  m_CmdLineArgs->GetFormattingArgs()->GetFormattedOutputChoice())
                    {
@@ -355,7 +357,8 @@ CPsiBlastApp::DoIterations(CRef<CBlastOptionsHandle> opts_hndl,
         }
         else
         {
-            BlastFormatter_PreFetchSequenceData(*results, scope);
+            BlastFormatter_PreFetchSequenceData(*results, scope,
+            		m_CmdLineArgs->GetFormattingArgs()->GetFormattedOutputChoice());
             ITERATE(CSearchResultSet, result, *results) {
                 formatter.PrintOneResultSet(**result, query);
             }
