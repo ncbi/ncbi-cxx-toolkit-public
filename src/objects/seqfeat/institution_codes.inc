@@ -4348,6 +4348,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "NHMR<HRV>	s	Natural History Museum Rijeka",
 "NHMR<ISL>	s	Natural History Museum, Reykjavik",
 "NHMR<NLD>	s	Natuurhistorisch Museum",
+"NHMTU	s	Natural History Museum, Tribhuvan University",
 "NHMUK	sb	Natural History Museum, London",
 "NHMUK<PAK>	s	Natural History Museum, Karachi",
 "NHMW	s	Naturhistorisches Museum, Wien",
