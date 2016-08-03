@@ -1898,15 +1898,40 @@ bool CFormatGuess::x_IsBlankOrNumbers(const string& testString) const
 
 
 //  ----------------------------------------------------------------------------
-void CFormatGuess::x_StripJsonPunctuation(string& testString) const 
+bool CFormatGuess::x_CheckStripJsonPunctuation(string& testString) const 
 //  ----------------------------------------------------------------------------
 {
+    // Parentheses are prohibited
+    if (testString.find_first_of("()") != string::npos) {
+        return false;
+    }
+
+    const size_t punctuation_threshold = 4;
+
+    // Reject if the number of punctuation characters falls below some threshold value.
+    // In this case, the threshold is hardcoded to 4.
+    if (x_StripJsonPunctuation(testString) < punctuation_threshold) {
+        return false;
+    }
+
+    return true;
+}
+
+
+//  ----------------------------------------------------------------------------
+size_t CFormatGuess::x_StripJsonPunctuation(string& testString) const 
+//  ----------------------------------------------------------------------------
+{
+    size_t initial_len = testString.size();
+
     NStr::ReplaceInPlace(testString, "{", "");
     NStr::ReplaceInPlace(testString, "}", "");
     NStr::ReplaceInPlace(testString, "[", "");
     NStr::ReplaceInPlace(testString, "]", "");
     NStr::ReplaceInPlace(testString, ":", "");
     NStr::ReplaceInPlace(testString, ",", "");
+
+    return testString.size() - initial_len;
 }
 
 
@@ -1937,11 +1962,9 @@ bool CFormatGuess::TestFormatJson(
 
     x_StripJsonStrings(testString);
 
-    if (testString.find_first_of("()") != string::npos) {
+    if ( !x_CheckStripJsonPunctuation(testString) ) {
         return false;
     }
-
-    x_StripJsonPunctuation(testString);
 
     x_StripJsonKeywords(testString);
 

@@ -330,17 +330,22 @@ private:
     // ' ' ' \t' '\t' ',' '|'
     bool x_TestTableDelimiter(const string& delims);
 
+
+    // In-place deletion of JSON strings
+    void x_StripJsonStrings(string& testString) const;
+
     // Starting at from_pos, find the next set of double quotes 
     // indicating the end of a JSON string
     size_t x_FindNextJsonStringStop(const string& input, const size_t from_pos) const;
 
     void x_FindJsonStringLimits(const string& testString, list<size_t>& limits) const;
 
-    // In-place deletion of JSON strings
-    void x_StripJsonStrings(string& testString) const;
+    // Checks and removes punctuation from testString
+    bool x_CheckStripJsonPunctuation(string& testString) const;
 
     // In-place deletion of JSON punctuation
-    void x_StripJsonPunctuation(string& testString) const;
+    // Returns the number of characters deleted.
+    size_t x_StripJsonPunctuation(string& testString) const;
 
     // In-place deletion of JSON keywords: true, false, null
     void x_StripJsonKeywords(string& testString) const;
