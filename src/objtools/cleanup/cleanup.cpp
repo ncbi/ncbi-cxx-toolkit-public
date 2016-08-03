@@ -1476,7 +1476,7 @@ bool CCleanup::UpdateECNumbers(CProt_ref::TEc & ec_num_list)
 }
 
 
-bool CCleanup::UpdateDeletedECNumbers(CProt_ref::TEc & ec_num_list)
+bool CCleanup::RemoveBadECNumbers(CProt_ref::TEc & ec_num_list)
 {
     bool changed = false;
     CProt_ref::TEc::iterator ec_num_iter = ec_num_list.begin();
@@ -1487,7 +1487,8 @@ bool CCleanup::UpdateDeletedECNumbers(CProt_ref::TEc & ec_num_list)
         if (tlen != ec_num.length()) {
             changed = true;
         }
-        if (CProt_ref::GetECNumberStatus(ec_num) == CProt_ref::eEC_deleted) {
+        CProt_ref::EECNumberStatus ec_status = CProt_ref::GetECNumberStatus(ec_num);
+        if (ec_status == CProt_ref::eEC_deleted || ec_status == CProt_ref::eEC_unknown || CProt_ref::IsECNumberSplit(ec_num)) {
             ec_num_iter = ec_num_list.erase(ec_num_iter);
             changed = true;
         } else {
@@ -1509,7 +1510,7 @@ bool CCleanup::FixECNumbers(CSeq_entry_Handle entry)
             CRef<CSeq_feat> new_feat(new CSeq_feat());
             new_feat->Assign(*(f->GetSeq_feat()));
             this_change = UpdateECNumbers(new_feat->SetData().SetProt().SetEc());
-            this_change |= UpdateDeletedECNumbers(new_feat->SetData().SetProt().SetEc());
+            this_change |= RemoveBadECNumbers(new_feat->SetData().SetProt().SetEc());
             if (new_feat->GetData().GetProt().GetEc().empty()) {
                 new_feat->SetData().SetProt().ResetEc();
                 this_change = true;

@@ -247,7 +247,7 @@ public:
 /// Delete EC numbers
 /// @param ec_num_list Prot-ref ec number list to clean
 /// @return Boolean value indicates whether any changes were made
-    static bool UpdateDeletedECNumbers(CProt_ref::TEc & ec_num_list);
+    static bool RemoveBadECNumbers(CProt_ref::TEc & ec_num_list);
 
 /// Fix EC numbers
 /// @param entry Seq-entry-handle to clean
