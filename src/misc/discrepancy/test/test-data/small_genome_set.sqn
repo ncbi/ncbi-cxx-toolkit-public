@@ -1,0 +1,3546 @@
+Seq-entry ::= set {
+  class genbank ,
+  seq-set {
+    set {
+      class small-genome-set ,
+      descr {
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 1 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2016 } } } } ,
+      seq-set {
+        set {
+          class nuc-prot ,
+          descr {
+            source {
+              genome genomic ,
+              org {
+                taxname "Influenza A virus
+ (A/goose/Karachi/NARC-13N-969/2014(H14N3))" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 1882683 } } ,
+                orgname {
+                  name
+                    virus "Influenza A virus
+ (A/goose/Karachi/NARC-13N-969/2014(H14N3))" ,
+                  mod {
+                    {
+                      subtype serotype ,
+                      subname "H14N3" } ,
+                    {
+                      subtype isolate ,
+                      subname "A/goose/Karachi-Pakistan/NARC-1N-969/2014" } ,
+                    {
+                      subtype nat-host ,
+                      subname "goose" } } ,
+                  lineage "Viruses; ssRNA viruses; ssRNA negative-strand
+ viruses; Orthomyxoviridae; Influenzavirus A" ,
+                  gcode 1 ,
+                  div "VRL" } } ,
+              subtype {
+                {
+                  subtype country ,
+                  name "Pakistan" } ,
+                {
+                  subtype segment ,
+                  name "1" } ,
+                {
+                  subtype isolation-source ,
+                  name "Tissues" } ,
+                {
+                  subtype collection-date ,
+                  name "03-Jan-2014" } ,
+                {
+                  subtype other ,
+                  name "[virus wizard]; passage details: P1" } } } ,
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished" ,
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Siddique" ,
+                              first "Naila" ,
+                              initials "N." } } ,
+                        {
+                          name
+                            name {
+                              last "Abbas" ,
+                              first "Muhammad" ,
+                              initials "M.A." } } ,
+                        {
+                          name
+                            name {
+                              last "Rafique" ,
+                              first "Saba" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Farooq" ,
+                              first "Rashid" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Naeem" ,
+                              first "Khalid" ,
+                              initials "K." } } } ,
+                    affil
+                      std {
+                        affil "Animal Scineces Institute" ,
+                        div "National Reference Laboratory for Poultry
+ Diseases" ,
+                        city "Islamabad" ,
+                        sub "ICT" ,
+                        country "Pakistan" ,
+                        street "National Agricutural Research Centre, Park
+ Road" ,
+                        postal-code "45500" } } ,
+                  title "Sequence Analysis of Low Pathogenic Avian Influenza
+ H14N3 isolated from Live Bird Market at Karachi, Pakistan." } } } ,
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Siddique" ,
+                              first "Naila" ,
+                              initials "N." } } ,
+                        {
+                          name
+                            name {
+                              last "Abbas" ,
+                              first "Muhammad" ,
+                              initials "M.A." } } ,
+                        {
+                          name
+                            name {
+                              last "Rafique" ,
+                              first "Saba" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Farooq" ,
+                              first "Rashid" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Naeem" ,
+                              first "Khalid" ,
+                              initials "K." } } } ,
+                    affil
+                      std {
+                        affil "Animal Scineces Institute" ,
+                        div "National Reference Laboratory for Poultry
+ Diseases" ,
+                        city "Islamabad" ,
+                        sub "ICT" ,
+                        country "Pakistan" ,
+                        street "National Agricutural Research Centre, Park
+ Road" ,
+                        postal-code "45500" } } ,
+                  date
+                    std {
+                      year 2016 ,
+                      month 7 ,
+                      day 25 } } } } ,
+            user {
+              class "SMART_V1.0" ,
+              type
+                id 1 ,
+              data {
+                {
+                  label
+                    id 1 ,
+                  num 1 ,
+                  data
+                    int 10679163 } } } ,
+            create-date
+              std {
+                year 2016 ,
+                month 7 ,
+                day 25 } ,
+            update-date
+              std {
+                year 2016 ,
+                month 7 ,
+                day 26 } } ,
+          seq-set {
+            seq {
+              id {
+                local
+                  str "1-1" ,
+                general {
+                  db "NCBIFILE" ,
+                  tag
+                    str "AIV-H14N3_NS_969-14_2016-07-25_FINAL_SEQ/1-1" } ,
+                general {
+                  db "TMSMART" ,
+                  tag
+                    id 69438649 } ,
+                genbank {
+                  accession "KX602665" } } ,
+              descr {
+                title "Influenza A virus
+ (A/goose/Karachi/NARC-13N-969/2014(H14N3)) segment 1 cRNA sequence" ,
+                molinfo {
+                  biomol cRNA } ,
+                user {
+                  type
+                    str "StructuredComment" ,
+                  data {
+                    {
+                      label
+                        str "StructuredCommentPrefix" ,
+                      data
+                        str "##Assembly-Data-START##" } ,
+                    {
+                      label
+                        str "Assembly Method" ,
+                      data
+                        str "DNAStar Lasergene v. 12.1.0" } ,
+                    {
+                      label
+                        str "Sequencing Technology" ,
+                      data
+                        str "Sanger dideoxy sequencing" } ,
+                    {
+                      label
+                        str "StructuredCommentSuffix" ,
+                      data
+                        str "##Assembly-Data-END##" } } } ,
+                user {
+                  class "1.0" ,
+                  type
+                    str "AutodefOptions" ,
+                  data {
+                    {
+                      label
+                        str "SpecifyNuclearProduct" ,
+                      data
+                        bool TRUE } ,
+                    {
+                      label
+                        str "MiscFeatRule" ,
+                      data
+                        str "NoncodingProductFeat" } ,
+                    {
+                      label
+                        str "FeatureListType" ,
+                      data
+                        str "Sequence" } ,
+                    {
+                      label
+                        str "ModifierList" ,
+                      data
+                        fields {
+                          {
+                            label
+                              str "SubSources" ,
+                            num 1 ,
+                            data
+                              strs {
+                                "Segment" } } } } ,
+                    {
+                      label
+                        str "HIVRule" ,
+                      data
+                        str "WantBoth" } ,
+                    {
+                      label
+                        str "DoNotApplyToSp" ,
+                      data
+                        bool TRUE } ,
+                    {
+                      label
+                        str "LeaveParenthetical" ,
+                      data
+                        bool TRUE } ,
+                    {
+                      label
+                        str "MaxMods" ,
+                      data
+                        int -99 } ,
+                    {
+                      label
+                        str "UseLabels" ,
+                      data
+                        bool TRUE } } } ,
+                user {
+                  type
+                    str "OriginalID" ,
+                  data {
+                    {
+                      label
+                        str "LocalId" ,
+                      data
+                        str "1-1" } } } } ,
+              inst {
+                repr raw ,
+                mol rna ,
+                length 2280 ,
+                seq-data
+                  ncbi2na '3A220C0207088FE3B64B764766231E102147BA14CE94C342033
+134A084A20835E47CA380E8E3A4382CD63C492100A30E88E3D78080E242B4857FA2401038E7A34
+848B8EBB45DE9EE1BAE83203A141042C4B53CD40ADC40171FE00AF80AF024E817DA57B53FD80D2
+BC231964ABE13015A94E48DD2E702091086D34E8ADBFD50182DA2528CF84D22D127043040A0082
+8A27D287B08F957F0EBA4C4EFA02207AF640148F5E52C9E9A84249BB3362BBE47E1D0A85E7A812
+3B1196A2882E2838E1BE348BF0F3E79CA0CDBCA22412CD24854FA7D9D7A23B94CB1103E9A8C20E
+B2135F21205412089096E8CCE409243AB70834BD35F49FE8AFD1FD00A10BAB4DED00882282E745
+A4175013E00C22E4E0AB38A0F443AFA982241253DC28090520A78D43E32C2E8221892D0D96098D
+32E90EBBDD508A3E4E30092C6AB8FE0FDB432260D269D0D739349D78A4FD4828E402C7BD401EA8
+3E054F843B4EA8E32833E5E33845491223B6708A2E22D2C03A8BA3833D4B1E22AEB6E0CF8DBF7E
+2AD621488A81B9D7B75E08AF3E0112A04982382304CF7D37FCEEA03C3A56834BBC3C113143A34F
+201EA01EC08F4BAD528D710E7310423A2FE257F4B5FAE5C29E52294B32E8FEE28673D49239B8EE
+7AA17F847B5230C09C7D4FE49255168122CA390F75DDC1EC06C22BD2838831FB88A41D57BBD073
+04290508A7C4B5FA028E4AE4F048215238AA1A4A2E8B79ACF08ABD70F7A9020840233A1493E24D
+0E0F890DF982AA20A706EF8CA90A21BAEFAE3806806A1DC931F1E125212614020F68E94D0F2'H } ,
+              annot {
+                {
+                  data
+                    ftable {
+                      {
+                        data
+                          gene {
+                            locus "PB2" } ,
+                        location
+                          int {
+                            from 0 ,
+                            to 2279 ,
+                            strand plus ,
+                            id
+                              local
+                                str "1-1" } } } } } } ,
+            seq {
+              id {
+                local
+                  str "1-1p1" ,
+                general {
+                  db "NCBIFILE" ,
+                  tag
+                    str "AIV-H14N3_NS_969-14_2016-07-25_FINAL_SEQ/1-1p1" } ,
+                general {
+                  db "TMSMART" ,
+                  tag
+                    id 69438650 } } ,
+              descr {
+                title "polymerase PB2 [Influenza A virus
+ (A/goose/Karachi/NARC-13N-969/2014(H14N3))]" ,
+                molinfo {
+                  biomol peptide ,
+                  tech concept-trans } ,
+                user {
+                  type
+                    str "OriginalID" ,
+                  data {
+                    {
+                      label
+                        str "LocalId" ,
+                      data
+                        str "1-1p1" } } } } ,
+              inst {
+                repr raw ,
+                mol aa ,
+                length 759 ,
+                seq-data
+                  ncbieaa "MERIKELRDLMSQSRTREILTKTTVDHMAIIKKYTSGRQEKNPALRMKWMM
+AMKYPITADKRIMEMIPERNEQGQTLWSKTNDAGSDRVMVSPLAVTWWNRNGPTTSTVHYPKVYKTYFEKVERLKHGT
+FGPVHFRNQVKIRRRVDINPGHADLSAKEAQDVIMEVVFPNEVGARILTSESQLTITKEKKEELQDCKIAPLMVAYML
+ERELVRKTRFLPVAGGTSSVYIEVLHLTQGTCWEQMYTPGGEVRNDDVDQSLIIAARNIVRRATVSADPLASLLEMCH
+STQIGGIRMVDILRQNPTEEQAVDICKAAMGLRISSSFSFGGFTFKRTSGSSVKREEEVLTGNLQTLKIRVHEGYEEF
+TMVGRRATAILRKATRRLIQLIVSGRDEQSIAEAIIVAMVFSQEDCMIKAVRGDLNFVNRANQRLNPMHQLLRHFQKD
+AKVLFQNWGIEPIDNVMGMIGILPDMTPSTEMSLRGVRVSKMGVDEYSSTERVVVNIDRFLRVRDQRGNVLLSPEEVI
+ETQGTAKMKITYSSSFMWEINGPESVLINTYQWIIRNWETVKIQWSQDPTMLYNKMEFEPFQSLVPKAARGQYSGFVR
+TLFQQMRDVLGTFDTVQIIKLLPFAAAPPEQSRMQFSSLTVNVRGSGMRILVRGNSPVFNYNKATKRLTVLGKDAGAL
+TEDPDEGTAGVESAVLRGFLILGKEDKRYGPALSINELSNLAKGEKANVLIGQGDVVLVMKRKRDSSILTDSQTATKR
+IRMAIN" } ,
+              annot {
+                {
+                  data
+                    ftable {
+                      {
+                        data
+                          prot {
+                            name {
+                              "polymerase PB2" } } ,
+                        location
+                          int {
+                            from 0 ,
+                            to 758 ,
+                            id
+                              local
+                                str "1-1p1" } } } } } } } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      cdregion {
+                        frame one ,
+                        code {
+                          id 1 } } ,
+                    product
+                      whole
+                        local
+                          str "1-1p1" ,
+                    location
+                      int {
+                        from 0 ,
+                        to 2279 ,
+                        strand plus ,
+                        id
+                          local
+                            str "1-1" } } } } } } ,
+        set {
+          class nuc-prot ,
+          descr {
+            source {
+              genome genomic ,
+              org {
+                taxname "Influenza A virus
+ (A/goose/Karachi/NARC-13N-969/2014(H14N3))" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 1882683 } } ,
+                orgname {
+                  name
+                    virus "Influenza A virus
+ (A/goose/Karachi/NARC-13N-969/2014(H14N3))" ,
+                  mod {
+                    {
+                      subtype serotype ,
+                      subname "H14N3" } ,
+                    {
+                      subtype isolate ,
+                      subname "A/goose/Karachi-Pakistan/NARC-13N-969/2014" } ,
+                    {
+                      subtype nat-host ,
+                      subname "goose" } } ,
+                  lineage "Viruses; ssRNA viruses; ssRNA negative-strand
+ viruses; Orthomyxoviridae; Influenzavirus A" ,
+                  gcode 1 ,
+                  div "VRL" } } ,
+              subtype {
+                {
+                  subtype country ,
+                  name "Pakistan" } ,
+                {
+                  subtype segment ,
+                  name "2" } ,
+                {
+                  subtype isolation-source ,
+                  name "Tissues" } ,
+                {
+                  subtype collection-date ,
+                  name "03-Jan-2014" } ,
+                {
+                  subtype other ,
+                  name "[virus wizard]; passage details: P1" } } } ,
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished" ,
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Siddique" ,
+                              first "Naila" ,
+                              initials "N." } } ,
+                        {
+                          name
+                            name {
+                              last "Abbas" ,
+                              first "Muhammad" ,
+                              initials "M.A." } } ,
+                        {
+                          name
+                            name {
+                              last "Rafique" ,
+                              first "Saba" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Farooq" ,
+                              first "Rashid" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Naeem" ,
+                              first "Khalid" ,
+                              initials "K." } } } ,
+                    affil
+                      std {
+                        affil "Animal Scineces Institute" ,
+                        div "National Reference Laboratory for Poultry
+ Diseases" ,
+                        city "Islamabad" ,
+                        sub "ICT" ,
+                        country "Pakistan" ,
+                        street "National Agricutural Research Centre, Park
+ Road" ,
+                        postal-code "45500" } } ,
+                  title "Sequence Analysis of Low Pathogenic Avian Influenza
+ H14N3 isolated from Live Bird Market at Karachi, Pakistan." } } } ,
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Siddique" ,
+                              first "Naila" ,
+                              initials "N." } } ,
+                        {
+                          name
+                            name {
+                              last "Abbas" ,
+                              first "Muhammad" ,
+                              initials "M.A." } } ,
+                        {
+                          name
+                            name {
+                              last "Rafique" ,
+                              first "Saba" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Farooq" ,
+                              first "Rashid" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Naeem" ,
+                              first "Khalid" ,
+                              initials "K." } } } ,
+                    affil
+                      std {
+                        affil "Animal Scineces Institute" ,
+                        div "National Reference Laboratory for Poultry
+ Diseases" ,
+                        city "Islamabad" ,
+                        sub "ICT" ,
+                        country "Pakistan" ,
+                        street "National Agricutural Research Centre, Park
+ Road" ,
+                        postal-code "45500" } } ,
+                  date
+                    std {
+                      year 2016 ,
+                      month 7 ,
+                      day 25 } } } } ,
+            user {
+              class "SMART_V1.0" ,
+              type
+                id 1 ,
+              data {
+                {
+                  label
+                    id 1 ,
+                  num 1 ,
+                  data
+                    int 10679164 } } } ,
+            create-date
+              std {
+                year 2016 ,
+                month 7 ,
+                day 25 } ,
+            update-date
+              std {
+                year 2016 ,
+                month 7 ,
+                day 26 } } ,
+          seq-set {
+            seq {
+              id {
+                local
+                  str "1-2" ,
+                general {
+                  db "NCBIFILE" ,
+                  tag
+                    str "AIV-H14N3_NS_969-14_2016-07-25_FINAL_SEQ/1-2" } ,
+                general {
+                  db "TMSMART" ,
+                  tag
+                    id 69438651 } ,
+                genbank {
+                  accession "KX602666" } } ,
+              descr {
+                title "Influenza A virus
+ (A/goose/Karachi/NARC-13N-969/2014(H14N3)) segment 2 cRNA sequence" ,
+                molinfo {
+                  biomol cRNA } ,
+                user {
+                  type
+                    str "StructuredComment" ,
+                  data {
+                    {
+                      label
+                        str "StructuredCommentPrefix" ,
+                      data
+                        str "##Assembly-Data-START##" } ,
+                    {
+                      label
+                        str "Assembly Method" ,
+                      data
+                        str "DNAStar Lasergene v. 12.1.0" } ,
+                    {
+                      label
+                        str "Sequencing Technology" ,
+                      data
+                        str "Sanger dideoxy sequencing" } ,
+                    {
+                      label
+                        str "StructuredCommentSuffix" ,
+                      data
+                        str "##Assembly-Data-END##" } } } ,
+                user {
+                  class "1.0" ,
+                  type
+                    str "AutodefOptions" ,
+                  data {
+                    {
+                      label
+                        str "SpecifyNuclearProduct" ,
+                      data
+                        bool TRUE } ,
+                    {
+                      label
+                        str "MiscFeatRule" ,
+                      data
+                        str "NoncodingProductFeat" } ,
+                    {
+                      label
+                        str "FeatureListType" ,
+                      data
+                        str "Sequence" } ,
+                    {
+                      label
+                        str "ModifierList" ,
+                      data
+                        fields {
+                          {
+                            label
+                              str "SubSources" ,
+                            num 1 ,
+                            data
+                              strs {
+                                "Segment" } } } } ,
+                    {
+                      label
+                        str "HIVRule" ,
+                      data
+                        str "WantBoth" } ,
+                    {
+                      label
+                        str "DoNotApplyToSp" ,
+                      data
+                        bool TRUE } ,
+                    {
+                      label
+                        str "LeaveParenthetical" ,
+                      data
+                        bool TRUE } ,
+                    {
+                      label
+                        str "MaxMods" ,
+                      data
+                        int -99 } ,
+                    {
+                      label
+                        str "UseLabels" ,
+                      data
+                        bool TRUE } } } ,
+                user {
+                  type
+                    str "OriginalID" ,
+                  data {
+                    {
+                      label
+                        str "LocalId" ,
+                      data
+                        str "1-2" } } } } ,
+              inst {
+                repr raw ,
+                mol rna ,
+                length 2274 ,
+                seq-data
+                  ncbi2na '3A3B43587F1FF7C02E5264039CC2C713D5F11E88D7531253A04
+A04A3114E844B412044D0C74882A82E8410112216A91541D0543E3A14F148A1062509A33910123
+E6EFA090E9FD7E0835454A8DFE0077EDF8063A0B6F490108BA101C152AD9487CE1E84781201414
+9E41E7FA5047322BBD23E0EB7849438B6A8870C8FD7428EE3A0D0E8C08203A2304113F52202208
+B8A8413850823AD11020432808209229E0C228BC7C30891E11E0C438502392022903E0886A43E4
+115A8E48F228F6EC7FB6011C98A24FEE201D890DE8757BE8A838820A703E903B6E20038E1C1D10
+8C489DD7F10F1E8841140E838834015DA3BFFA438C13134420141583AFC80EDF893655CC3BDD01
+00EA08F28028C4EFE02C224E09C28440C5A488E7E404F8FE033F4183418808036200C21779E3E3
+A4497478B5E838E3A93BD0CE78912CF2AB7435E0DFA9008AC45005133EBA8E8750D778E3F6774C
+B839160D38AA310928BA32BDCCA17901EBEA3413890020B7C4C05A12813F8BD10BFFDC59CE8FEC
+9C1F4B3A0F1527FA2EDE83438369E13893E8BC4B8C0810CE3010E17E852612740E9DF49CF4D0A1
+CCAC46C58E512AB8C440F406288D3F89E0827BA89215BD029287BEB348E8A1405CC413DA0DD44D
+522B79F82EA278E8E087142929EEC35DE056FED2D30A03E2D6C0439EEB0E5254E9525089320CE3
+9EF987111DBA3D708A05BD4F74314940AA0F7E28E240EC520B9ECB73D880F7D5492F4C4A294BE8
+3F524EBA294EBB72A560F8E464F8FD837A0A3C20208BF9E234E08DEF514F8227486900320'H } ,
+              annot {
+                {
+                  data
+                    ftable {
+                      {
+                        data
+                          gene {
+                            locus "PB1" } ,
+                        location
+                          int {
+                            from 0 ,
+                            to 2273 ,
+                            strand plus ,
+                            id
+                              local
+                                str "1-2" } } ,
+                      {
+                        data
+                          gene {
+                            locus "PB1-F2" } ,
+                        location
+                          int {
+                            from 94 ,
+                            to 366 ,
+                            strand plus ,
+                            id
+                              local
+                                str "1-2" } } } } } } ,
+            seq {
+              id {
+                local
+                  str "1-2p1" ,
+                general {
+                  db "NCBIFILE" ,
+                  tag
+                    str "AIV-H14N3_NS_969-14_2016-07-25_FINAL_SEQ/1-2p1" } ,
+                general {
+                  db "TMSMART" ,
+                  tag
+                    id 69438652 } } ,
+              descr {
+                title "polymerase PB1 [Influenza A virus
+ (A/goose/Karachi/NARC-13N-969/2014(H14N3))]" ,
+                molinfo {
+                  biomol peptide ,
+                  tech concept-trans } ,
+                user {
+                  type
+                    str "OriginalID" ,
+                  data {
+                    {
+                      label
+                        str "LocalId" ,
+                      data
+                        str "1-2p1" } } } } ,
+              inst {
+                repr raw ,
+                mol aa ,
+                length 757 ,
+                seq-data
+                  ncbieaa "MDVNPTLLFLKVPAQNAISTTFPYTGDPPYSHGTGTGYTMDTVNRTHQYSE
+KGKWTTNTETGAPQLNPIDGPLPEDNEPSGYAQTDCVLEAMAFLEESHPGIFENSCLETMEVVQQTRVDKLTQGRQTY
+DWTLNRNQPAATALANTIEVFRLNGLTANESGRLIDFLKDVMESMDKEEMEITTHFQRKRRVRDNMTKKMVTQRTIGK
+KKQRLNKRSYLIRALTLNTMTKDAERGKLKRRAIATPGMQIRGFVYFVETLARSICEKLEQSGLPVGGNEKKAKLANV
+VRKMMTNSQDTELSFTITGDNTKWNENQNPRMFLAMITYITRNQPEWFRNVLSIAPIMFSNKMGRLGKGYMFESKSMK
+LRTQIPAEMLANIDLKYFNESTRKKIEKIRPLLIDGTASLSPGMMMGMFNMLSTVLGVSILNLGQKRYTKTTYWWDGL
+QSSDDFALIVNAPNHEGIQAGVDRFYRTCKLVGINMSKKKSYINRTGTFEFTSFFYRYGFVANFSMELPSFGVSGINE
+SADMSIGVTVIKNNMINNDLGPATAQMALQLFIKDYRYTYRCHRGDTQIQTRRSFELKKLWEQTRSKAGLLVSDGGPN
+LYNIRNLHIPEVCLKWELMDEDYQGRLCNPLNPFVSHKEIESVNNAVVMPAHGPAKSIEYDAVATTHSWIPKRNRSIL
+NTSQRGILEDEQMYQKCCSLFEKFFPSSSYRRPVGISSMVEAMVSRARIDARIDFESGRIKKEEFAEIMKICSTIEEL
+RRQK" } ,
+              annot {
+                {
+                  data
+                    ftable {
+                      {
+                        data
+                          prot {
+                            name {
+                              "polymerase PB1" } } ,
+                        location
+                          int {
+                            from 0 ,
+                            to 756 ,
+                            id
+                              local
+                                str "1-2p1" } } } } } } ,
+            seq {
+              id {
+                local
+                  str "1-2p2" ,
+                general {
+                  db "NCBIFILE" ,
+                  tag
+                    str "AIV-H14N3_NS_969-14_2016-07-25_FINAL_SEQ/1-2p2" } ,
+                general {
+                  db "TMSMART" ,
+                  tag
+                    id 69438653 } } ,
+              descr {
+                title "PB1-F2 protein [Influenza A virus
+ (A/goose/Karachi/NARC-13N-969/2014(H14N3))]" ,
+                molinfo {
+                  biomol peptide ,
+                  tech concept-trans } ,
+                user {
+                  type
+                    str "OriginalID" ,
+                  data {
+                    {
+                      label
+                        str "LocalId" ,
+                      data
+                        str "1-2p2" } } } } ,
+              inst {
+                repr raw ,
+                mol aa ,
+                length 90 ,
+                seq-data
+                  ncbieaa "MEQEQDTPWTQSTEHINTQRRGSGQQTQRPGHPNSTQLMDHYQRTTSQADM
+HKQIACWKQWLSLKNPTQGSLKTLVLKRWKSFSKQEWTN" } ,
+              annot {
+                {
+                  data
+                    ftable {
+                      {
+                        data
+                          prot {
+                            name {
+                              "PB1-F2 protein" } } ,
+                        location
+                          int {
+                            from 0 ,
+                            to 89 ,
+                            id
+                              local
+                                str "1-2p2" } } } } } } } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      cdregion {
+                        frame one ,
+                        code {
+                          id 1 } } ,
+                    product
+                      whole
+                        local
+                          str "1-2p1" ,
+                    location
+                      int {
+                        from 0 ,
+                        to 2273 ,
+                        strand plus ,
+                        id
+                          local
+                            str "1-2" } } ,
+                  {
+                    data
+                      cdregion {
+                        frame one ,
+                        code {
+                          id 1 } } ,
+                    product
+                      whole
+                        local
+                          str "1-2p2" ,
+                    location
+                      int {
+                        from 94 ,
+                        to 366 ,
+                        strand plus ,
+                        id
+                          local
+                            str "1-2" } } } } } } ,
+        set {
+          class nuc-prot ,
+          descr {
+            source {
+              genome genomic ,
+              org {
+                taxname "Influenza A virus
+ (A/goose/Karachi/NARC-13N-969/2014(H14N3))" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 1882683 } } ,
+                orgname {
+                  name
+                    virus "Influenza A virus
+ (A/goose/Karachi/NARC-13N-969/2014(H14N3))" ,
+                  mod {
+                    {
+                      subtype serotype ,
+                      subname "H14N3" } ,
+                    {
+                      subtype isolate ,
+                      subname "A/goose/Karachi-Pakistan/NARC-13N-969/2014" } ,
+                    {
+                      subtype nat-host ,
+                      subname "goose" } } ,
+                  lineage "Viruses; ssRNA viruses; ssRNA negative-strand
+ viruses; Orthomyxoviridae; Influenzavirus A" ,
+                  gcode 1 ,
+                  div "VRL" } } ,
+              subtype {
+                {
+                  subtype country ,
+                  name "Pakistan" } ,
+                {
+                  subtype segment ,
+                  name "3" } ,
+                {
+                  subtype isolation-source ,
+                  name "Tissues" } ,
+                {
+                  subtype collection-date ,
+                  name "03-Jan-2014" } ,
+                {
+                  subtype other ,
+                  name "[virus wizard]; passage details: P1" } } } ,
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished" ,
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Siddique" ,
+                              first "Naila" ,
+                              initials "N." } } ,
+                        {
+                          name
+                            name {
+                              last "Abbas" ,
+                              first "Muhammad" ,
+                              initials "M.A." } } ,
+                        {
+                          name
+                            name {
+                              last "Rafique" ,
+                              first "Saba" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Farooq" ,
+                              first "Rashid" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Naeem" ,
+                              first "Khalid" ,
+                              initials "K." } } } ,
+                    affil
+                      std {
+                        affil "Animal Scineces Institute" ,
+                        div "National Reference Laboratory for Poultry
+ Diseases" ,
+                        city "Islamabad" ,
+                        sub "ICT" ,
+                        country "Pakistan" ,
+                        street "National Agricutural Research Centre, Park
+ Road" ,
+                        postal-code "45500" } } ,
+                  title "Sequence Analysis of Low Pathogenic Avian Influenza
+ H14N3 isolated from Live Bird Market at Karachi, Pakistan." } } } ,
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Siddique" ,
+                              first "Naila" ,
+                              initials "N." } } ,
+                        {
+                          name
+                            name {
+                              last "Abbas" ,
+                              first "Muhammad" ,
+                              initials "M.A." } } ,
+                        {
+                          name
+                            name {
+                              last "Rafique" ,
+                              first "Saba" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Farooq" ,
+                              first "Rashid" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Naeem" ,
+                              first "Khalid" ,
+                              initials "K." } } } ,
+                    affil
+                      std {
+                        affil "Animal Scineces Institute" ,
+                        div "National Reference Laboratory for Poultry
+ Diseases" ,
+                        city "Islamabad" ,
+                        sub "ICT" ,
+                        country "Pakistan" ,
+                        street "National Agricutural Research Centre, Park
+ Road" ,
+                        postal-code "45500" } } ,
+                  date
+                    std {
+                      year 2016 ,
+                      month 7 ,
+                      day 25 } } } } ,
+            user {
+              class "SMART_V1.0" ,
+              type
+                id 1 ,
+              data {
+                {
+                  label
+                    id 1 ,
+                  num 1 ,
+                  data
+                    int 10679165 } } } ,
+            create-date
+              std {
+                year 2016 ,
+                month 7 ,
+                day 25 } ,
+            update-date
+              std {
+                year 2016 ,
+                month 7 ,
+                day 26 } } ,
+          seq-set {
+            seq {
+              id {
+                local
+                  str "1-3" ,
+                general {
+                  db "NCBIFILE" ,
+                  tag
+                    str "AIV-H14N3_NS_969-14_2016-07-25_FINAL_SEQ/1-3" } ,
+                general {
+                  db "TMSMART" ,
+                  tag
+                    id 69438654 } ,
+                genbank {
+                  accession "KX602667" } } ,
+              descr {
+                title "Influenza A virus
+ (A/goose/Karachi/NARC-13N-969/2014(H14N3)) segment 3 cRNA sequence" ,
+                molinfo {
+                  biomol cRNA } ,
+                user {
+                  type
+                    str "StructuredComment" ,
+                  data {
+                    {
+                      label
+                        str "StructuredCommentPrefix" ,
+                      data
+                        str "##Assembly-Data-START##" } ,
+                    {
+                      label
+                        str "Assembly Method" ,
+                      data
+                        str "DNAStar Lasergene v. 12.1.0" } ,
+                    {
+                      label
+                        str "Sequencing Technology" ,
+                      data
+                        str "Sanger dideoxy sequencing" } ,
+                    {
+                      label
+                        str "StructuredCommentSuffix" ,
+                      data
+                        str "##Assembly-Data-END##" } } } ,
+                user {
+                  class "1.0" ,
+                  type
+                    str "AutodefOptions" ,
+                  data {
+                    {
+                      label
+                        str "SpecifyNuclearProduct" ,
+                      data
+                        bool TRUE } ,
+                    {
+                      label
+                        str "MiscFeatRule" ,
+                      data
+                        str "NoncodingProductFeat" } ,
+                    {
+                      label
+                        str "FeatureListType" ,
+                      data
+                        str "Sequence" } ,
+                    {
+                      label
+                        str "ModifierList" ,
+                      data
+                        fields {
+                          {
+                            label
+                              str "SubSources" ,
+                            num 1 ,
+                            data
+                              strs {
+                                "Segment" } } } } ,
+                    {
+                      label
+                        str "HIVRule" ,
+                      data
+                        str "WantBoth" } ,
+                    {
+                      label
+                        str "DoNotApplyToSp" ,
+                      data
+                        bool TRUE } ,
+                    {
+                      label
+                        str "LeaveParenthetical" ,
+                      data
+                        bool TRUE } ,
+                    {
+                      label
+                        str "MaxMods" ,
+                      data
+                        int -99 } ,
+                    {
+                      label
+                        str "UseLabels" ,
+                      data
+                        bool TRUE } } } ,
+                user {
+                  type
+                    str "OriginalID" ,
+                  data {
+                    {
+                      label
+                        str "LocalId" ,
+                      data
+                        str "1-3" } } } } ,
+              inst {
+                repr raw ,
+                mol rna ,
+                length 2151 ,
+                seq-data
+                  ncbi2na '3A087FB98439F4350E3ED89F9A00A4382833AA08D400D804040
+FE590CE4447C82DEFD3B3DA3F51F4F8E062983430FB20DE98D606473E01163F88C3E0A8885810E
+97A12EB032CDE41144A2D8C25C0F5D523FB38F10220D8F4F80FA2E1982A0BD3331CDC80094108C
+0348821113D133DD3D1E88A03A51409A3C457E382224890830014A7BD1CC21088E94B2AB73A8F5
+FDB4B5888A608843E0808FE0344A0539929F96140B754581F7525F801FC8973BA3A3D816069E4F
+8A909FDD03B4020B819483E253F7821045195DD23C5E3A17579DD26B603DF9E3A395F03C24D821
+5894E2AA0ACC59CCE390D03938013FF69E8089504FB00511800A4C0550F375E9FA092BBE920750
+8CF8038A200F50010204E08010943E0BA91FAE20CE914880B21FE2879023BCB8DC212CE12E1814
+89723672427A3522E0F410A4E60F848762FA3E07E380CAA08EF9D43E244F98B388201CFD12682C
+D53E4A9C783130E0A8BB13011257BE0E4D7B9253A387D41E3D438C242E4814082821A0840DECE8
+F4F300A0AD53F880E1163B2C07FB893A0F7774785629E894440EA00B1EEF7E232884E75C68790C
+A50BB42953BD7B3B88143A87D42340380EA83A238A6397DF4B57D040F88938F8A5837DED0220A1
+3850A0F7F801034806E943EA834540AAE8A0A753EA0AEE4813C7240B7BBD049733937512762A3F
+D27834200F9F74FBD291F2A105E817A05F637EAA9CCE090F8A2E5E3C18D5EAFF9F0E6DFAF41D7D
+7444E4F80C8'H } ,
+              annot {
+                {
+                  data
+                    ftable {
+                      {
+                        data
+                          gene {
+                            locus "PA" } ,
+                        location
+                          int {
+                            from 0 ,
+                            to 2150 ,
+                            strand plus ,
+                            id
+                              local
+                                str "1-3" } } ,
+                      {
+                        data
+                          gene {
+                            locus "PA-X" } ,
+                        location
+                          int {
+                            from 0 ,
+                            to 759 ,
+                            strand plus ,
+                            id
+                              local
+                                str "1-3" } } } } } } ,
+            seq {
+              id {
+                local
+                  str "1-3p1" ,
+                general {
+                  db "NCBIFILE" ,
+                  tag
+                    str "AIV-H14N3_NS_969-14_2016-07-25_FINAL_SEQ/1-3p1" } ,
+                general {
+                  db "TMSMART" ,
+                  tag
+                    id 69438655 } } ,
+              descr {
+                title "polymerase PA [Influenza A virus
+ (A/goose/Karachi/NARC-13N-969/2014(H14N3))]" ,
+                molinfo {
+                  biomol peptide ,
+                  tech concept-trans } ,
+                user {
+                  type
+                    str "OriginalID" ,
+                  data {
+                    {
+                      label
+                        str "LocalId" ,
+                      data
+                        str "1-3p1" } } } } ,
+              inst {
+                repr raw ,
+                mol aa ,
+                length 716 ,
+                seq-data
+                  ncbieaa "MEDFVRQCFNPMIVELAEKAMKEYGEDPKIETNKFAAICTHLEVCFMYSDF
+HFIDERGESIIVESGDPNALLKHRFEIIEGRDRTMAWTVVNSICNTTGVDKPKFLPDLYDYKENRFIEIGVTRREVHI
+YYLEKANKIKSEKTHIHIFSFTGEEMATKADYTLDEESRARIKTRLFTIRQEMASRGLWDSFRQSERGEETIEERFEI
+TGTMRRLADQSLPPNFSSLENFRAYVDGFEPNGCIEGKLSQMSKEVNARIEPFLKTTPRPLRLPDGPPCSQRSKFLLM
+DALKLSIEDPSHEGEGIPLYDAIKCMKTFFGWKEPNIVKPHEKGINPNYLLAWKQVLAELQDIENEEKIPKTKNMKKT
+SQLKWALGENMAPEKVDFEDCKDVSDLRQYDSDEPEPRSLASWIQSEFNKACELTDSSWIELDEIGEDVAPIEHIASM
+RRNYFTAEVSHCRATEYIMKGVYINTALLNASCAAMDDFQLIPMISKCRTKEGRRKTNLYGFIIKGRSHLRNDTDVVN
+FVSMEFSLTDPRLEPHKWEKYCVLEIGDMLLRTAIGQVSRPMFLYVRTNGTSKIKMKWGMEMRRCLLQSLQQIESMIE
+AESSVKEKDMTKEFFENKSETWPIGESPKGVEEGSIGKVCRTLLAKSVFNSLYASPQLEGFSAESRKLLLIVQALRDN
+LEPGTFDLGGLYEAIEECLINDPWVLLNASWFNSFLTHALK" } ,
+              annot {
+                {
+                  data
+                    ftable {
+                      {
+                        data
+                          prot {
+                            name {
+                              "polymerase PA" } } ,
+                        location
+                          int {
+                            from 0 ,
+                            to 715 ,
+                            id
+                              local
+                                str "1-3p1" } } } } } } ,
+            seq {
+              id {
+                local
+                  str "1-3p2" ,
+                general {
+                  db "NCBIFILE" ,
+                  tag
+                    str "AIV-H14N3_NS_969-14_2016-07-25_FINAL_SEQ/1-3p2" } ,
+                general {
+                  db "TMSMART" ,
+                  tag
+                    id 69438656 } } ,
+              descr {
+                title "PA-X protein [Influenza A virus
+ (A/goose/Karachi/NARC-13N-969/2014(H14N3))]" ,
+                molinfo {
+                  biomol peptide ,
+                  tech concept-trans } ,
+                user {
+                  type
+                    str "OriginalID" ,
+                  data {
+                    {
+                      label
+                        str "LocalId" ,
+                      data
+                        str "1-3p2" } } } } ,
+              inst {
+                repr raw ,
+                mol aa ,
+                length 252 ,
+                seq-data
+                  ncbieaa "MEDFVRQCFNPMIVELAEKAMKEYGEDPKIETNKFAAICTHLEVCFMYSDF
+HFIDERGESIIVESGDPNALLKHRFEIIEGRDRTMAWTVVNSICNTTGVDKPKFLPDLYDYKENRFIEIGVTRREVHI
+YYLEKANKIKSEKTHIHIFSFTGEEMATKADYTLDEESRARIKTRLFTIRQEMASRGLWDSFVSPREAKRQLKKDLKS
+QEPCAGLPTKVSHRTSPALKTLEPMWMDSNRTAALRASFLKCQKK" } ,
+              annot {
+                {
+                  data
+                    ftable {
+                      {
+                        data
+                          prot {
+                            name {
+                              "PA-X protein" } } ,
+                        location
+                          int {
+                            from 0 ,
+                            to 251 ,
+                            id
+                              local
+                                str "1-3p2" } } } } } } } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      cdregion {
+                        frame one ,
+                        code {
+                          id 1 } } ,
+                    product
+                      whole
+                        local
+                          str "1-3p1" ,
+                    location
+                      int {
+                        from 0 ,
+                        to 2150 ,
+                        strand plus ,
+                        id
+                          local
+                            str "1-3" } } ,
+                  {
+                    data
+                      cdregion {
+                        frame one ,
+                        code {
+                          id 1 } } ,
+                    except TRUE ,
+                    product
+                      whole
+                        local
+                          str "1-3p2" ,
+                    location
+                      mix {
+                        int {
+                          from 0 ,
+                          to 569 ,
+                          strand plus ,
+                          id
+                            local
+                              str "1-3" } ,
+                        int {
+                          from 571 ,
+                          to 759 ,
+                          strand plus ,
+                          id
+                            local
+                              str "1-3" } } ,
+                    except-text "ribosomal slippage" } } } } } ,
+        set {
+          class nuc-prot ,
+          descr {
+            source {
+              genome genomic ,
+              org {
+                taxname "Influenza A virus
+ (A/goose/Karachi/NARC-13N-969/2014(H14N3))" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 1882683 } } ,
+                orgname {
+                  name
+                    virus "Influenza A virus
+ (A/goose/Karachi/NARC-13N-969/2014(H14N3))" ,
+                  mod {
+                    {
+                      subtype serotype ,
+                      subname "H14N3" } ,
+                    {
+                      subtype isolate ,
+                      subname "A/goose/Karachi-Pakistan/NARC-13N-969/2014" } ,
+                    {
+                      subtype nat-host ,
+                      subname "goose" } } ,
+                  lineage "Viruses; ssRNA viruses; ssRNA negative-strand
+ viruses; Orthomyxoviridae; Influenzavirus A" ,
+                  gcode 1 ,
+                  div "VRL" } } ,
+              subtype {
+                {
+                  subtype country ,
+                  name "Pakistan" } ,
+                {
+                  subtype segment ,
+                  name "4" } ,
+                {
+                  subtype isolation-source ,
+                  name "Tissues" } ,
+                {
+                  subtype collection-date ,
+                  name "03-Jan-2014" } ,
+                {
+                  subtype other ,
+                  name "[virus wizard]; passage details: P1" } } } ,
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished" ,
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Siddique" ,
+                              first "Naila" ,
+                              initials "N." } } ,
+                        {
+                          name
+                            name {
+                              last "Abbas" ,
+                              first "Muhammad" ,
+                              initials "M.A." } } ,
+                        {
+                          name
+                            name {
+                              last "Rafique" ,
+                              first "Saba" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Farooq" ,
+                              first "Rashid" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Naeem" ,
+                              first "Khalid" ,
+                              initials "K." } } } ,
+                    affil
+                      std {
+                        affil "Animal Scineces Institute" ,
+                        div "National Reference Laboratory for Poultry
+ Diseases" ,
+                        city "Islamabad" ,
+                        sub "ICT" ,
+                        country "Pakistan" ,
+                        street "National Agricutural Research Centre, Park
+ Road" ,
+                        postal-code "45500" } } ,
+                  title "Sequence Analysis of Low Pathogenic Avian Influenza
+ H14N3 isolated from Live Bird Market at Karachi, Pakistan." } } } ,
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Siddique" ,
+                              first "Naila" ,
+                              initials "N." } } ,
+                        {
+                          name
+                            name {
+                              last "Abbas" ,
+                              first "Muhammad" ,
+                              initials "M.A." } } ,
+                        {
+                          name
+                            name {
+                              last "Rafique" ,
+                              first "Saba" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Farooq" ,
+                              first "Rashid" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Naeem" ,
+                              first "Khalid" ,
+                              initials "K." } } } ,
+                    affil
+                      std {
+                        affil "Animal Scineces Institute" ,
+                        div "National Reference Laboratory for Poultry
+ Diseases" ,
+                        city "Islamabad" ,
+                        sub "ICT" ,
+                        country "Pakistan" ,
+                        street "National Agricutural Research Centre, Park
+ Road" ,
+                        postal-code "45500" } } ,
+                  date
+                    std {
+                      year 2016 ,
+                      month 7 ,
+                      day 25 } } } } ,
+            user {
+              class "SMART_V1.0" ,
+              type
+                id 1 ,
+              data {
+                {
+                  label
+                    id 1 ,
+                  num 1 ,
+                  data
+                    int 10679166 } } } ,
+            create-date
+              std {
+                year 2016 ,
+                month 7 ,
+                day 25 } ,
+            update-date
+              std {
+                year 2016 ,
+                month 7 ,
+                day 26 } } ,
+          seq-set {
+            seq {
+              id {
+                local
+                  str "1-4" ,
+                general {
+                  db "NCBIFILE" ,
+                  tag
+                    str "AIV-H14N3_NS_969-14_2016-07-25_FINAL_SEQ/1-4" } ,
+                general {
+                  db "TMSMART" ,
+                  tag
+                    id 69438657 } ,
+                genbank {
+                  accession "KX602668" } } ,
+              descr {
+                title "Influenza A virus
+ (A/goose/Karachi/NARC-13N-969/2014(H14N3)) segment 4 cRNA sequence" ,
+                molinfo {
+                  biomol cRNA } ,
+                user {
+                  type
+                    str "StructuredComment" ,
+                  data {
+                    {
+                      label
+                        str "StructuredCommentPrefix" ,
+                      data
+                        str "##Assembly-Data-START##" } ,
+                    {
+                      label
+                        str "Assembly Method" ,
+                      data
+                        str "DNAStar Lasergene v. 12.1.0" } ,
+                    {
+                      label
+                        str "Sequencing Technology" ,
+                      data
+                        str "Sanger dideoxy sequencing" } ,
+                    {
+                      label
+                        str "StructuredCommentSuffix" ,
+                      data
+                        str "##Assembly-Data-END##" } } } ,
+                user {
+                  class "1.0" ,
+                  type
+                    str "AutodefOptions" ,
+                  data {
+                    {
+                      label
+                        str "SpecifyNuclearProduct" ,
+                      data
+                        bool TRUE } ,
+                    {
+                      label
+                        str "MiscFeatRule" ,
+                      data
+                        str "NoncodingProductFeat" } ,
+                    {
+                      label
+                        str "FeatureListType" ,
+                      data
+                        str "Sequence" } ,
+                    {
+                      label
+                        str "ModifierList" ,
+                      data
+                        fields {
+                          {
+                            label
+                              str "SubSources" ,
+                            num 1 ,
+                            data
+                              strs {
+                                "Segment" } } } } ,
+                    {
+                      label
+                        str "HIVRule" ,
+                      data
+                        str "WantBoth" } ,
+                    {
+                      label
+                        str "DoNotApplyToSp" ,
+                      data
+                        bool TRUE } ,
+                    {
+                      label
+                        str "LeaveParenthetical" ,
+                      data
+                        bool TRUE } ,
+                    {
+                      label
+                        str "MaxMods" ,
+                      data
+                        int -99 } ,
+                    {
+                      label
+                        str "UseLabels" ,
+                      data
+                        bool TRUE } } } ,
+                user {
+                  type
+                    str "OriginalID" ,
+                  data {
+                    {
+                      label
+                        str "LocalId" ,
+                      data
+                        str "1-4" } } } } ,
+              inst {
+                repr raw ,
+                mol rna ,
+                length 1707 ,
+                seq-data
+                  ncbi2na '38F93D32E3E47A77094471F1D523440E8344A035EF339FA9453
+92E803A44DEF0047848434EC8AFB369C883EBE21014478E073B5095DE09D3E3A9007985D343AE6
+F2A2D4A7B851F108471FA8EFF4F80A58692C846EF353D8EF5E3C522DF28937C9092EA2DE8BD3E5
+810F47EABA6D02F868D092E7EFE2A8AD90E9F7DD58781E9C1409040EA073A953C3BC4020046A37
+CED29DC5DEA8B934D4D0B8D08101A37F102F906A08B06BB71D9D2348D2CFBD70CCA8B21422E281
+489A48309371E8772C0D4AA3D4F3FF04B3E807C3E450AA51C4032B017102247B9F20B84008FA34
+E44257E7E16302BD8D40B8405FF483B3528D94CA01E560B3B8042AD1E3BE907A0E6413578424A4
+0A9F3FA243E7AFD3E00EBE90A7EBE3ABACEAF4A4500E78A81281E79A3F80D874A494F850303A40
+78123C3220840E0033452360022FE042F82820C4217E2033BE284708F87EEB4C4396073CBA5FA0
+0D2446323BC487588E0C07FF80AB882107888039228D0A41A7BF6233D4D0EE1043ECC8093C80E8
+1738D104DC4A8E094F04368F00C0D5B03F863ABC4284C35EE8FDFDD4ED39FEDF6E91E37EABFBDF
+EA7ED206804D63940FECCC0'H } ,
+              annot {
+                {
+                  data
+                    ftable {
+                      {
+                        data
+                          gene {
+                            locus "HA" } ,
+                        location
+                          int {
+                            from 0 ,
+                            to 1706 ,
+                            strand plus ,
+                            id
+                              local
+                                str "1-4" } } } } } } ,
+            seq {
+              id {
+                local
+                  str "1-4p1" ,
+                general {
+                  db "NCBIFILE" ,
+                  tag
+                    str "AIV-H14N3_NS_969-14_2016-07-25_FINAL_SEQ/1-4p1" } ,
+                general {
+                  db "TMSMART" ,
+                  tag
+                    id 69438658 } } ,
+              descr {
+                title "hemagglutinin [Influenza A virus
+ (A/goose/Karachi/NARC-13N-969/2014(H14N3))]" ,
+                molinfo {
+                  biomol peptide ,
+                  tech concept-trans } ,
+                user {
+                  type
+                    str "OriginalID" ,
+                  data {
+                    {
+                      label
+                        str "LocalId" ,
+                      data
+                        str "1-4p1" } } } } ,
+              inst {
+                repr raw ,
+                mol aa ,
+                length 568 ,
+                seq-data
+                  ncbieaa "MIAFIVIALALSHTTYSQITNGITGNPVICLGHHAVENGTSVKTLTDNHVE
+VVSARELVETNHTDELCPSPLKLIDGQNCDLINGALGSPGCDHLQDTTWDVFIERPTAVDTCYPFDVPDYQSLRSILA
+SSGSLEFIAEQFTWGGVKVDGSSSACLRGGRNGFFSRLNWLTKATNGNYGPINVTKENTGSYVRLYLWGVHHPSSDQE
+QTDLYKVATGRVTVSTRSDQISIVPNIGSRPRVRNQSGRISIYWTLVNPGDSIIFNSIGNLIAPRGHYKIGKPTKSTV
+LRSDKKIGSCTSPCLTDKGSIQSDKPFQNVSRIAIGNCPKYVKQGSLMLATGMRNIPDKQAKGLFGAIAGFIENGWQG
+LVDGWYGFRHQNAEGTGTAADLKSTQAAIDQINGKLNRLIEKTNEKYHQIEKEFEQVEGRIQDLEKYVEDTKIDLWSY
+NAELLVALENQHTIDVTDSEMNKLFERVRRQLRENAEDQGNGCFEIFHQCDNNCIESIRNGTYDHNIYRDEAINNRIK
+INPVNLTMGYKDIILWISFSMSCFVFVALILGFVLWACQNGNIRCQICI" } ,
+              annot {
+                {
+                  data
+                    ftable {
+                      {
+                        data
+                          prot {
+                            name {
+                              "hemagglutinin" } ,
+                            activity {
+                              "receptor binding and fusion protein" } } ,
+                        location
+                          int {
+                            from 0 ,
+                            to 567 ,
+                            id
+                              local
+                                str "1-4p1" } } ,
+                      {
+                        data
+                          prot {
+                            processed signal-peptide } ,
+                        location
+                          int {
+                            from 0 ,
+                            to 16 ,
+                            id
+                              local
+                                str "1-4p1" } } ,
+                      {
+                        data
+                          prot {
+                            name {
+                              "HA1" } ,
+                            processed mature } ,
+                        location
+                          int {
+                            from 17 ,
+                            to 346 ,
+                            id
+                              local
+                                str "1-4p1" } } ,
+                      {
+                        data
+                          prot {
+                            name {
+                              "HA2" } ,
+                            processed mature } ,
+                        location
+                          int {
+                            from 347 ,
+                            to 567 ,
+                            id
+                              local
+                                str "1-4p1" } } } } } } } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      cdregion {
+                        frame one ,
+                        code {
+                          id 1 } } ,
+                    product
+                      whole
+                        local
+                          str "1-4p1" ,
+                    location
+                      int {
+                        from 0 ,
+                        to 1706 ,
+                        strand plus ,
+                        id
+                          local
+                            str "1-4" } } } } } } ,
+        set {
+          class nuc-prot ,
+          descr {
+            source {
+              genome genomic ,
+              org {
+                taxname "Influenza A virus
+ (A/goose/Karachi/NARC-13N-969/2014(H14N3))" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 1882683 } } ,
+                orgname {
+                  name
+                    virus "Influenza A virus
+ (A/goose/Karachi/NARC-13N-969/2014(H14N3))" ,
+                  mod {
+                    {
+                      subtype serotype ,
+                      subname "H14N3" } ,
+                    {
+                      subtype isolate ,
+                      subname "A/goose/Karachi-Pakistan/NARC-13N-969/2014" } ,
+                    {
+                      subtype nat-host ,
+                      subname "goose" } } ,
+                  lineage "Viruses; ssRNA viruses; ssRNA negative-strand
+ viruses; Orthomyxoviridae; Influenzavirus A" ,
+                  gcode 1 ,
+                  div "VRL" } } ,
+              subtype {
+                {
+                  subtype country ,
+                  name "Pakistan" } ,
+                {
+                  subtype segment ,
+                  name "5" } ,
+                {
+                  subtype isolation-source ,
+                  name "Tissues" } ,
+                {
+                  subtype collection-date ,
+                  name "03-Jan-2014" } ,
+                {
+                  subtype other ,
+                  name "[virus wizard]; passage details: P1" } } } ,
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished" ,
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Siddique" ,
+                              first "Naila" ,
+                              initials "N." } } ,
+                        {
+                          name
+                            name {
+                              last "Abbas" ,
+                              first "Muhammad" ,
+                              initials "M.A." } } ,
+                        {
+                          name
+                            name {
+                              last "Rafique" ,
+                              first "Saba" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Farooq" ,
+                              first "Rashid" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Naeem" ,
+                              first "Khalid" ,
+                              initials "K." } } } ,
+                    affil
+                      std {
+                        affil "Animal Scineces Institute" ,
+                        div "National Reference Laboratory for Poultry
+ Diseases" ,
+                        city "Islamabad" ,
+                        sub "ICT" ,
+                        country "Pakistan" ,
+                        street "National Agricutural Research Centre, Park
+ Road" ,
+                        postal-code "45500" } } ,
+                  title "Sequence Analysis of Low Pathogenic Avian Influenza
+ H14N3 isolated from Live Bird Market at Karachi, Pakistan." } } } ,
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Siddique" ,
+                              first "Naila" ,
+                              initials "N." } } ,
+                        {
+                          name
+                            name {
+                              last "Abbas" ,
+                              first "Muhammad" ,
+                              initials "M.A." } } ,
+                        {
+                          name
+                            name {
+                              last "Rafique" ,
+                              first "Saba" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Farooq" ,
+                              first "Rashid" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Naeem" ,
+                              first "Khalid" ,
+                              initials "K." } } } ,
+                    affil
+                      std {
+                        affil "Animal Scineces Institute" ,
+                        div "National Reference Laboratory for Poultry
+ Diseases" ,
+                        city "Islamabad" ,
+                        sub "ICT" ,
+                        country "Pakistan" ,
+                        street "National Agricutural Research Centre, Park
+ Road" ,
+                        postal-code "45500" } } ,
+                  date
+                    std {
+                      year 2016 ,
+                      month 7 ,
+                      day 25 } } } } ,
+            user {
+              class "SMART_V1.0" ,
+              type
+                id 1 ,
+              data {
+                {
+                  label
+                    id 1 ,
+                  num 1 ,
+                  data
+                    int 10679167 } } } ,
+            create-date
+              std {
+                year 2016 ,
+                month 7 ,
+                day 25 } ,
+            update-date
+              std {
+                year 2016 ,
+                month 7 ,
+                day 26 } } ,
+          seq-set {
+            seq {
+              id {
+                local
+                  str "1-5" ,
+                general {
+                  db "NCBIFILE" ,
+                  tag
+                    str "AIV-H14N3_NS_969-14_2016-07-25_FINAL_SEQ/1-5" } ,
+                general {
+                  db "TMSMART" ,
+                  tag
+                    id 69438659 } ,
+                genbank {
+                  accession "KX602669" } } ,
+              descr {
+                title "Influenza A virus
+ (A/goose/Karachi/NARC-13N-969/2014(H14N3)) segment 5 cRNA sequence" ,
+                molinfo {
+                  biomol cRNA } ,
+                user {
+                  type
+                    str "StructuredComment" ,
+                  data {
+                    {
+                      label
+                        str "StructuredCommentPrefix" ,
+                      data
+                        str "##Assembly-Data-START##" } ,
+                    {
+                      label
+                        str "Assembly Method" ,
+                      data
+                        str "DNAStar Lasergene v. 12.1.0" } ,
+                    {
+                      label
+                        str "Sequencing Technology" ,
+                      data
+                        str "Sanger dideoxy sequencing" } ,
+                    {
+                      label
+                        str "StructuredCommentSuffix" ,
+                      data
+                        str "##Assembly-Data-END##" } } } ,
+                user {
+                  class "1.0" ,
+                  type
+                    str "AutodefOptions" ,
+                  data {
+                    {
+                      label
+                        str "SpecifyNuclearProduct" ,
+                      data
+                        bool TRUE } ,
+                    {
+                      label
+                        str "MiscFeatRule" ,
+                      data
+                        str "NoncodingProductFeat" } ,
+                    {
+                      label
+                        str "FeatureListType" ,
+                      data
+                        str "Sequence" } ,
+                    {
+                      label
+                        str "ModifierList" ,
+                      data
+                        fields {
+                          {
+                            label
+                              str "SubSources" ,
+                            num 1 ,
+                            data
+                              strs {
+                                "Segment" } } } } ,
+                    {
+                      label
+                        str "HIVRule" ,
+                      data
+                        str "WantBoth" } ,
+                    {
+                      label
+                        str "DoNotApplyToSp" ,
+                      data
+                        bool TRUE } ,
+                    {
+                      label
+                        str "LeaveParenthetical" ,
+                      data
+                        bool TRUE } ,
+                    {
+                      label
+                        str "MaxMods" ,
+                      data
+                        int -99 } ,
+                    {
+                      label
+                        str "UseLabels" ,
+                      data
+                        bool TRUE } } } ,
+                user {
+                  type
+                    str "OriginalID" ,
+                  data {
+                    {
+                      label
+                        str "LocalId" ,
+                      data
+                        str "1-5" } } } } ,
+              inst {
+                repr raw ,
+                mol rna ,
+                length 1497 ,
+                seq-data
+                  ncbi2na '3A6DD0A45018DF38123A01EBA206520E51E0348937BE820EBEB
+A0FA8AFF13123B91E074074987382A29E3520C930432220EBDDDE4FE380A2810317A081154B9EA
+0A3582007A2B50FCD820A86A03A38889E3DECE102288D28837A6D09830E88219079EB74745E38D
+E93D417038E51314881489DDB991EA3A15483B9DDE390A341DD58A237A279E9924B02A2DA063AE
+3A072F68E30062A3C38DA0FDE88A620E868810A3E4CE228EE4135D02A03D40492440890E3A142E
+6202480D7A839E03E08DD37D7A46B799D35E228D2E9530B5E5F5E7EEEC6A7E7BA52EACE1FE2222
+AB1DDCBEA3235FD6DE7D204942DF4B74F2140E205491108B43EBBA3A4E53DE493F8A1788B742FD
+348A8432CB5422841CD45228BD03E5D038813A010E8752477E078A248CFA9CC28528BA28045050
+48893792848D2EC49717DDAC4880DF57D8089853CE9A4F44A031E2A4813784E28780D30838E80B
+9485208EED7D4AA6A8B7D89DDA180290605636E5F5FE138B0E0A37CFDF688439228B3843C00'H } ,
+              annot {
+                {
+                  data
+                    ftable {
+                      {
+                        data
+                          gene {
+                            locus "NP" } ,
+                        location
+                          int {
+                            from 0 ,
+                            to 1496 ,
+                            strand plus ,
+                            id
+                              local
+                                str "1-5" } } } } } } ,
+            seq {
+              id {
+                local
+                  str "1-5p1" ,
+                general {
+                  db "NCBIFILE" ,
+                  tag
+                    str "AIV-H14N3_NS_969-14_2016-07-25_FINAL_SEQ/1-5p1" } ,
+                general {
+                  db "TMSMART" ,
+                  tag
+                    id 69438660 } } ,
+              descr {
+                title "nucleocapsid protein [Influenza A virus
+ (A/goose/Karachi/NARC-13N-969/2014(H14N3))]" ,
+                molinfo {
+                  biomol peptide ,
+                  tech concept-trans } ,
+                user {
+                  type
+                    str "OriginalID" ,
+                  data {
+                    {
+                      label
+                        str "LocalId" ,
+                      data
+                        str "1-5p1" } } } } ,
+              inst {
+                repr raw ,
+                mol aa ,
+                length 498 ,
+                seq-data
+                  ncbieaa "MASQGTKRSYEQMETGGERQNATEIRASVGRMVGGIGRFYIQMCTELKLSD
+YEGRLIQNSITIERMVLSAFDERRNKYLEEHPSAGKDPKKTGGPIYRRRDGKWMRELILYDKEEIRRIWRQANNGEDA
+TAGLTHLMIWHSNLNDATYQRTRALVRTGMDPRMCSLMQGSTLPRRSGAAGAAVKGVGTMVMELVRMIKRGINDRNFW
+RGENGRRTRIAYERMCNILKGKFQTAAQRAMMDQVRESRNPGNAEIEDLIFLARSALILRGSVAHKSCLPACVYGLAV
+ASGYDFEREGYSLVGIDPFRLLQNSQVFSLIRPNENPAHKSQLVWMACHSAAFEDLRVSSFIRGTIVVPRGQLSTRGV
+QIASNENMETMDSSTLELRSRYWAIRTRSGGNTNQQRASAGQISVQPTFSVQRNLPFERATIMAAFTGNTEGRTSDMR
+TEIIRMMESARPEDVSFQGRGVFELSDEKATNPIVPSFDMSNEGSYFFGDNAEEYDN" } ,
+              annot {
+                {
+                  data
+                    ftable {
+                      {
+                        data
+                          prot {
+                            name {
+                              "nucleocapsid protein" } } ,
+                        location
+                          int {
+                            from 0 ,
+                            to 497 ,
+                            id
+                              local
+                                str "1-5p1" } } } } } } } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      cdregion {
+                        frame one ,
+                        code {
+                          id 1 } } ,
+                    product
+                      whole
+                        local
+                          str "1-5p1" ,
+                    location
+                      int {
+                        from 0 ,
+                        to 1496 ,
+                        strand plus ,
+                        id
+                          local
+                            str "1-5" } } } } } } ,
+        set {
+          class nuc-prot ,
+          descr {
+            source {
+              genome genomic ,
+              org {
+                taxname "Influenza A virus
+ (A/goose/Karachi/NARC-13N-969/2014(H14N3))" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 1882683 } } ,
+                orgname {
+                  name
+                    virus "Influenza A virus
+ (A/goose/Karachi/NARC-13N-969/2014(H14N3))" ,
+                  mod {
+                    {
+                      subtype serotype ,
+                      subname "H14N3" } ,
+                    {
+                      subtype isolate ,
+                      subname "A/goose/Karachi-Pakistan/NARC-13N-969/2014" } ,
+                    {
+                      subtype nat-host ,
+                      subname "goose" } } ,
+                  lineage "Viruses; ssRNA viruses; ssRNA negative-strand
+ viruses; Orthomyxoviridae; Influenzavirus A" ,
+                  gcode 1 ,
+                  div "VRL" } } ,
+              subtype {
+                {
+                  subtype country ,
+                  name "Pakistan" } ,
+                {
+                  subtype segment ,
+                  name "6" } ,
+                {
+                  subtype isolation-source ,
+                  name "Tissues" } ,
+                {
+                  subtype collection-date ,
+                  name "03-Jan-2014" } ,
+                {
+                  subtype other ,
+                  name "[virus wizard]; passage details: P1" } } } ,
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished" ,
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Siddique" ,
+                              first "Naila" ,
+                              initials "N." } } ,
+                        {
+                          name
+                            name {
+                              last "Abbas" ,
+                              first "Muhammad" ,
+                              initials "M.A." } } ,
+                        {
+                          name
+                            name {
+                              last "Rafique" ,
+                              first "Saba" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Farooq" ,
+                              first "Rashid" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Naeem" ,
+                              first "Khalid" ,
+                              initials "K." } } } ,
+                    affil
+                      std {
+                        affil "Animal Scineces Institute" ,
+                        div "National Reference Laboratory for Poultry
+ Diseases" ,
+                        city "Islamabad" ,
+                        sub "ICT" ,
+                        country "Pakistan" ,
+                        street "National Agricutural Research Centre, Park
+ Road" ,
+                        postal-code "45500" } } ,
+                  title "Sequence Analysis of Low Pathogenic Avian Influenza
+ H14N3 isolated from Live Bird Market at Karachi, Pakistan." } } } ,
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Siddique" ,
+                              first "Naila" ,
+                              initials "N." } } ,
+                        {
+                          name
+                            name {
+                              last "Abbas" ,
+                              first "Muhammad" ,
+                              initials "M.A." } } ,
+                        {
+                          name
+                            name {
+                              last "Rafique" ,
+                              first "Saba" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Farooq" ,
+                              first "Rashid" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Naeem" ,
+                              first "Khalid" ,
+                              initials "K." } } } ,
+                    affil
+                      std {
+                        affil "Animal Scineces Institute" ,
+                        div "National Reference Laboratory for Poultry
+ Diseases" ,
+                        city "Islamabad" ,
+                        sub "ICT" ,
+                        country "Pakistan" ,
+                        street "National Agricutural Research Centre, Park
+ Road" ,
+                        postal-code "45500" } } ,
+                  date
+                    std {
+                      year 2016 ,
+                      month 7 ,
+                      day 25 } } } } ,
+            user {
+              class "SMART_V1.0" ,
+              type
+                id 1 ,
+              data {
+                {
+                  label
+                    id 1 ,
+                  num 1 ,
+                  data
+                    int 10679168 } } } ,
+            create-date
+              std {
+                year 2016 ,
+                month 7 ,
+                day 25 } ,
+            update-date
+              std {
+                year 2016 ,
+                month 7 ,
+                day 26 } } ,
+          seq-set {
+            seq {
+              id {
+                local
+                  str "1-6" ,
+                general {
+                  db "NCBIFILE" ,
+                  tag
+                    str "AIV-H14N3_NS_969-14_2016-07-25_FINAL_SEQ/1-6" } ,
+                general {
+                  db "TMSMART" ,
+                  tag
+                    id 69438661 } ,
+                genbank {
+                  accession "KX602670" } } ,
+              descr {
+                title "Influenza A virus
+ (A/goose/Karachi/NARC-13N-969/2014(H14N3)) segment 6 cRNA sequence" ,
+                molinfo {
+                  biomol cRNA } ,
+                user {
+                  type
+                    str "StructuredComment" ,
+                  data {
+                    {
+                      label
+                        str "StructuredCommentPrefix" ,
+                      data
+                        str "##Assembly-Data-START##" } ,
+                    {
+                      label
+                        str "Assembly Method" ,
+                      data
+                        str "DNAStar Lasergene v. 12.1.0" } ,
+                    {
+                      label
+                        str "Sequencing Technology" ,
+                      data
+                        str "Sanger dideoxy sequencing" } ,
+                    {
+                      label
+                        str "StructuredCommentSuffix" ,
+                      data
+                        str "##Assembly-Data-END##" } } } ,
+                user {
+                  class "1.0" ,
+                  type
+                    str "AutodefOptions" ,
+                  data {
+                    {
+                      label
+                        str "SpecifyNuclearProduct" ,
+                      data
+                        bool TRUE } ,
+                    {
+                      label
+                        str "MiscFeatRule" ,
+                      data
+                        str "NoncodingProductFeat" } ,
+                    {
+                      label
+                        str "FeatureListType" ,
+                      data
+                        str "Sequence" } ,
+                    {
+                      label
+                        str "ModifierList" ,
+                      data
+                        fields {
+                          {
+                            label
+                              str "SubSources" ,
+                            num 1 ,
+                            data
+                              strs {
+                                "Segment" } } } } ,
+                    {
+                      label
+                        str "HIVRule" ,
+                      data
+                        str "WantBoth" } ,
+                    {
+                      label
+                        str "DoNotApplyToSp" ,
+                      data
+                        bool TRUE } ,
+                    {
+                      label
+                        str "LeaveParenthetical" ,
+                      data
+                        bool TRUE } ,
+                    {
+                      label
+                        str "MaxMods" ,
+                      data
+                        int -99 } ,
+                    {
+                      label
+                        str "UseLabels" ,
+                      data
+                        bool TRUE } } } ,
+                user {
+                  type
+                    str "OriginalID" ,
+                  data {
+                    {
+                      label
+                        str "LocalId" ,
+                      data
+                        str "1-6" } } } } ,
+              inst {
+                repr raw ,
+                mol rna ,
+                length 1410 ,
+                seq-data
+                  ncbi2na '38350348230C10FAECB831C773410C95F7EFAAFA8378FF411ED
+313880328851407BACF5410C1A55AEB940792E114C344C41046BAC0C330418430C1E09A0091F42
+5F67947B957F42BF7D57F44284398C63EAE204286C32D10A897CED27B8438C3E7ADFF9DD950AA5
+71EA07011241A05342848116CC8D9E35AF543289275AC7AA0F102233BBE7EB42C92F9F63A0283A
+391BF9387A018438E42E940C33392A00E121D4F034E880A331C207422DE2ED2E4F86A17BBEC9EF
+123AD79A70CB9634583F1E8C220A82B2C0B380135508408C413FA28BBD79CEC84D8EEC7933B2A1
+0FA02BD43217E8E28D24388531C804AB3B3B240F53D231552149615F412CD3B8F550B06D0E8A17
+A2D028FE9F401AB8E1B3A7A8287BB41CBA0AD29FE234D02D122ABA3C1D550D3940D2F11013CBB4
+0438FAD2BCF4A8BF4FBE20C3879F5257BF733E07CC6AA29504206386FDFA10904B32F1FDEE8721
+0E05E8DA80FA5E3AF504FABF3950B00'H } ,
+              annot {
+                {
+                  data
+                    ftable {
+                      {
+                        data
+                          gene {
+                            locus "NA" } ,
+                        location
+                          int {
+                            from 0 ,
+                            to 1409 ,
+                            strand plus ,
+                            id
+                              local
+                                str "1-6" } } } } } } ,
+            seq {
+              id {
+                local
+                  str "1-6p1" ,
+                general {
+                  db "NCBIFILE" ,
+                  tag
+                    str "AIV-H14N3_NS_969-14_2016-07-25_FINAL_SEQ/1-6p1" } ,
+                general {
+                  db "TMSMART" ,
+                  tag
+                    id 69438662 } } ,
+              descr {
+                title "neuraminidase [Influenza A virus
+ (A/goose/Karachi/NARC-13N-969/2014(H14N3))]" ,
+                molinfo {
+                  biomol peptide ,
+                  tech concept-trans } ,
+                user {
+                  type
+                    str "OriginalID" ,
+                  data {
+                    {
+                      label
+                        str "LocalId" ,
+                      data
+                        str "1-6p1" } } } } ,
+              inst {
+                repr raw ,
+                mol aa ,
+                length 469 ,
+                seq-data
+                  ncbieaa "MNPNQKIITIGVVNTTLSTIALLVGVGNLIFNTVIHEKIGDHQTVVFPTIT
+APVVPNCSDTIITYNNTVVNNITTTIITEAEKHFKPSLPLCPFQGFFPFHKDNAIRLGENKDVIVTREPYVSCDNDNC
+WSFALAQGALLGTKHSNGTIKDRTPYRSLIRFPIGAAPVLGNYKEICVAWSSSSCFDGKEWMHVCMTGNDNDASGQII
+YAGKMTDSIKSWRKDILRTQESECQCIDGTCVVAVTDGPAANSADHRIYWIREGKVVKYENIPKTKIQHLEECSCYVD
+IDVYCICRDNWKGSNRPWMRISNETILETGYVCSKFHSDTPRPADPSTVSCDSPSNVNGGPGVKGFGFKTGDDVWLGR
+TVSTSGRSGFEIIKVTEGWINSPNHAKSVTQTLVSNNDWSGYSGSFIVENNDCFQPCFYIELIRGRPNKNDDVSWTSN
+SIVTFCGLDNEPGSGNWPDGSNIGFMPK" } ,
+              annot {
+                {
+                  data
+                    ftable {
+                      {
+                        data
+                          prot {
+                            name {
+                              "neuraminidase" } } ,
+                        location
+                          int {
+                            from 0 ,
+                            to 468 ,
+                            id
+                              local
+                                str "1-6p1" } } } } } } } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      cdregion {
+                        frame one ,
+                        code {
+                          id 1 } } ,
+                    product
+                      whole
+                        local
+                          str "1-6p1" ,
+                    location
+                      int {
+                        from 0 ,
+                        to 1409 ,
+                        strand plus ,
+                        id
+                          local
+                            str "1-6" } } } } } } ,
+        set {
+          class nuc-prot ,
+          descr {
+            source {
+              genome genomic ,
+              org {
+                taxname "Influenza A virus
+ (A/goose/Karachi/NARC-13N-969/2014(H14N3))" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 1882683 } } ,
+                orgname {
+                  name
+                    virus "Influenza A virus
+ (A/goose/Karachi/NARC-13N-969/2014(H14N3))" ,
+                  mod {
+                    {
+                      subtype serotype ,
+                      subname "H14N3" } ,
+                    {
+                      subtype isolate ,
+                      subname "A/goose/Karachi-Pakistan/NARC-13N-969/2014" } ,
+                    {
+                      subtype nat-host ,
+                      subname "goose" } } ,
+                  lineage "Viruses; ssRNA viruses; ssRNA negative-strand
+ viruses; Orthomyxoviridae; Influenzavirus A" ,
+                  gcode 1 ,
+                  div "VRL" } } ,
+              subtype {
+                {
+                  subtype country ,
+                  name "Pakistan" } ,
+                {
+                  subtype segment ,
+                  name "7" } ,
+                {
+                  subtype isolation-source ,
+                  name "Tissues" } ,
+                {
+                  subtype collection-date ,
+                  name "03-Jan-2014" } ,
+                {
+                  subtype other ,
+                  name "[virus wizard]; passage details: P1" } } } ,
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished" ,
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Siddique" ,
+                              first "Naila" ,
+                              initials "N." } } ,
+                        {
+                          name
+                            name {
+                              last "Abbas" ,
+                              first "Muhammad" ,
+                              initials "M.A." } } ,
+                        {
+                          name
+                            name {
+                              last "Rafique" ,
+                              first "Saba" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Farooq" ,
+                              first "Rashid" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Naeem" ,
+                              first "Khalid" ,
+                              initials "K." } } } ,
+                    affil
+                      std {
+                        affil "Animal Scineces Institute" ,
+                        div "National Reference Laboratory for Poultry
+ Diseases" ,
+                        city "Islamabad" ,
+                        sub "ICT" ,
+                        country "Pakistan" ,
+                        street "National Agricutural Research Centre, Park
+ Road" ,
+                        postal-code "45500" } } ,
+                  title "Sequence Analysis of Low Pathogenic Avian Influenza
+ H14N3 isolated from Live Bird Market at Karachi, Pakistan." } } } ,
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Siddique" ,
+                              first "Naila" ,
+                              initials "N." } } ,
+                        {
+                          name
+                            name {
+                              last "Abbas" ,
+                              first "Muhammad" ,
+                              initials "M.A." } } ,
+                        {
+                          name
+                            name {
+                              last "Rafique" ,
+                              first "Saba" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Farooq" ,
+                              first "Rashid" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Naeem" ,
+                              first "Khalid" ,
+                              initials "K." } } } ,
+                    affil
+                      std {
+                        affil "Animal Scineces Institute" ,
+                        div "National Reference Laboratory for Poultry
+ Diseases" ,
+                        city "Islamabad" ,
+                        sub "ICT" ,
+                        country "Pakistan" ,
+                        street "National Agricutural Research Centre, Park
+ Road" ,
+                        postal-code "45500" } } ,
+                  date
+                    std {
+                      year 2016 ,
+                      month 7 ,
+                      day 25 } } } } ,
+            user {
+              class "SMART_V1.0" ,
+              type
+                id 1 ,
+              data {
+                {
+                  label
+                    id 1 ,
+                  num 1 ,
+                  data
+                    int 10679169 } } } ,
+            create-date
+              std {
+                year 2016 ,
+                month 7 ,
+                day 25 } ,
+            update-date
+              std {
+                year 2016 ,
+                month 7 ,
+                day 26 } } ,
+          seq-set {
+            seq {
+              id {
+                local
+                  str "1-7" ,
+                general {
+                  db "NCBIFILE" ,
+                  tag
+                    str "AIV-H14N3_NS_969-14_2016-07-25_FINAL_SEQ/1-7" } ,
+                general {
+                  db "TMSMART" ,
+                  tag
+                    id 69438663 } ,
+                genbank {
+                  accession "KX602671" } } ,
+              descr {
+                title "Influenza A virus
+ (A/goose/Karachi/NARC-13N-969/2014(H14N3)) segment 7 cRNA sequence" ,
+                molinfo {
+                  biomol cRNA } ,
+                user {
+                  type
+                    str "StructuredComment" ,
+                  data {
+                    {
+                      label
+                        str "StructuredCommentPrefix" ,
+                      data
+                        str "##Assembly-Data-START##" } ,
+                    {
+                      label
+                        str "Assembly Method" ,
+                      data
+                        str "DNAStar Lasergene v. 12.1.0" } ,
+                    {
+                      label
+                        str "Sequencing Technology" ,
+                      data
+                        str "Sanger dideoxy sequencing" } ,
+                    {
+                      label
+                        str "StructuredCommentSuffix" ,
+                      data
+                        str "##Assembly-Data-END##" } } } ,
+                user {
+                  class "1.0" ,
+                  type
+                    str "AutodefOptions" ,
+                  data {
+                    {
+                      label
+                        str "SpecifyNuclearProduct" ,
+                      data
+                        bool TRUE } ,
+                    {
+                      label
+                        str "MiscFeatRule" ,
+                      data
+                        str "NoncodingProductFeat" } ,
+                    {
+                      label
+                        str "FeatureListType" ,
+                      data
+                        str "Sequence" } ,
+                    {
+                      label
+                        str "ModifierList" ,
+                      data
+                        fields {
+                          {
+                            label
+                              str "SubSources" ,
+                            num 1 ,
+                            data
+                              strs {
+                                "Segment" } } } } ,
+                    {
+                      label
+                        str "HIVRule" ,
+                      data
+                        str "WantBoth" } ,
+                    {
+                      label
+                        str "DoNotApplyToSp" ,
+                      data
+                        bool TRUE } ,
+                    {
+                      label
+                        str "LeaveParenthetical" ,
+                      data
+                        bool TRUE } ,
+                    {
+                      label
+                        str "MaxMods" ,
+                      data
+                        int -99 } ,
+                    {
+                      label
+                        str "UseLabels" ,
+                      data
+                        bool TRUE } } } ,
+                user {
+                  type
+                    str "OriginalID" ,
+                  data {
+                    {
+                      label
+                        str "LocalId" ,
+                      data
+                        str "1-7" } } } } ,
+              inst {
+                repr raw ,
+                mol rna ,
+                length 1002 ,
+                seq-data
+                  ncbi2na '38B7DC162B601B1BDDDCDB56D2955D02588D99221F823B7F92A
+08112376295D3A0EBC08421435ED177870AA3FCA3FBBD19D16E54B898A1E49B219FED4039DC0EA
+0E88540C13A12A7B427F3282780222304F53AA50A2B2474BC7416B91F949E4EADD3310CA3A81AC
+14482E9FFA5CBBB947EE248F9E3D124DADD12123AE14714151C3484E00483AC7A52C71A70A73A2
+48E9E8D8B8929248A53A2BE72D29CA48EB9290E2843E81D35C9D4B96B7808E37DF803F92971480
+68EA2E40E498F42E35DD3CF9642CD3EA37E47E33EE8F7E36DFF7D03B3F36D97C0C6BF8022A5F71
+A0A2E5E2DCE2A083361281248B9EE8EF863AD3FED04C89E8B000717EFDC70'H } ,
+              annot {
+                {
+                  data
+                    ftable {
+                      {
+                        data
+                          gene {
+                            locus "M1" } ,
+                        location
+                          int {
+                            from 0 ,
+                            to 758 ,
+                            strand plus ,
+                            id
+                              local
+                                str "1-7" } } ,
+                      {
+                        data
+                          gene {
+                            locus "M2" } ,
+                        location
+                          int {
+                            from 0 ,
+                            to 981 ,
+                            strand plus ,
+                            id
+                              local
+                                str "1-7" } } } } } } ,
+            seq {
+              id {
+                local
+                  str "1-7p1" ,
+                general {
+                  db "NCBIFILE" ,
+                  tag
+                    str "AIV-H14N3_NS_969-14_2016-07-25_FINAL_SEQ/1-7p1" } ,
+                general {
+                  db "TMSMART" ,
+                  tag
+                    id 69438664 } } ,
+              descr {
+                title "matrix protein 1 [Influenza A virus
+ (A/goose/Karachi/NARC-13N-969/2014(H14N3))]" ,
+                molinfo {
+                  biomol peptide ,
+                  tech concept-trans } ,
+                user {
+                  type
+                    str "OriginalID" ,
+                  data {
+                    {
+                      label
+                        str "LocalId" ,
+                      data
+                        str "1-7p1" } } } } ,
+              inst {
+                repr raw ,
+                mol aa ,
+                length 252 ,
+                seq-data
+                  ncbieaa "MSLLTEVETYVLSIVPSGPLKAEIAQRLEDVFAGKNTDLEALMEWLKTRPI
+LSPLTKGILGFVFTLTVPSERGLQRRRFVQNALNGNGDPNNMDRAVKLYRKLKREITFHGAKEVALSYSTGALASCMG
+LIYNRMGTVTTEVAFGLVCATCEQIADSQHRSHRQMVTTTNPLIRHENRMVLASTTAKAMEQMAGSSEQAAEAMEVAS
+QARQMVQAMRTIGTHPSSSAGLKDDLLENLQAYQKRMGVQMQRFK" } ,
+              annot {
+                {
+                  data
+                    ftable {
+                      {
+                        data
+                          prot {
+                            name {
+                              "matrix protein 1" } } ,
+                        location
+                          int {
+                            from 0 ,
+                            to 251 ,
+                            id
+                              local
+                                str "1-7p1" } } } } } } ,
+            seq {
+              id {
+                local
+                  str "1-7p2" ,
+                general {
+                  db "NCBIFILE" ,
+                  tag
+                    str "AIV-H14N3_NS_969-14_2016-07-25_FINAL_SEQ/1-7p2" } ,
+                general {
+                  db "TMSMART" ,
+                  tag
+                    id 69438665 } } ,
+              descr {
+                title "matrix protein 2 [Influenza A virus
+ (A/goose/Karachi/NARC-13N-969/2014(H14N3))]" ,
+                molinfo {
+                  biomol peptide ,
+                  tech concept-trans } ,
+                user {
+                  type
+                    str "OriginalID" ,
+                  data {
+                    {
+                      label
+                        str "LocalId" ,
+                      data
+                        str "1-7p2" } } } } ,
+              inst {
+                repr raw ,
+                mol aa ,
+                length 97 ,
+                seq-data
+                  ncbieaa "MSLLTEVETPTRNGWECKCSDSSDPLIIAASIIGILHLILWILDRLFFKCI
+YRRLKYGLKRGPSTEGVPESMREEYRQEQQSAVDVDDGHFVNIELE" } ,
+              annot {
+                {
+                  data
+                    ftable {
+                      {
+                        data
+                          prot {
+                            name {
+                              "matrix protein 2" } } ,
+                        location
+                          int {
+                            from 0 ,
+                            to 96 ,
+                            id
+                              local
+                                str "1-7p2" } } } } } } } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      cdregion {
+                        frame one ,
+                        code {
+                          id 1 } } ,
+                    product
+                      whole
+                        local
+                          str "1-7p1" ,
+                    location
+                      int {
+                        from 0 ,
+                        to 758 ,
+                        strand plus ,
+                        id
+                          local
+                            str "1-7" } } ,
+                  {
+                    data
+                      cdregion {
+                        frame one ,
+                        code {
+                          id 1 } } ,
+                    product
+                      whole
+                        local
+                          str "1-7p2" ,
+                    location
+                      mix {
+                        int {
+                          from 0 ,
+                          to 25 ,
+                          strand plus ,
+                          id
+                            local
+                              str "1-7" } ,
+                        int {
+                          from 714 ,
+                          to 981 ,
+                          strand plus ,
+                          id
+                            local
+                              str "1-7" } } } } } } } ,
+        set {
+          class nuc-prot ,
+          descr {
+            source {
+              genome genomic ,
+              org {
+                taxname "Influenza A virus
+ (A/goose/Karachi/NARC-13N-969/2014(H14N3))" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 1882683 } } ,
+                orgname {
+                  name
+                    virus "Influenza A virus
+ (A/goose/Karachi/NARC-13N-969/2014(H14N3))" ,
+                  mod {
+                    {
+                      subtype serotype ,
+                      subname "H14N3" } ,
+                    {
+                      subtype isolate ,
+                      subname "A/goose/Karachi-Pakistan/NARC-13N-969/2014" } ,
+                    {
+                      subtype nat-host ,
+                      subname "goose" } } ,
+                  lineage "Viruses; ssRNA viruses; ssRNA negative-strand
+ viruses; Orthomyxoviridae; Influenzavirus A" ,
+                  gcode 1 ,
+                  div "VRL" } } ,
+              subtype {
+                {
+                  subtype country ,
+                  name "Pakistan" } ,
+                {
+                  subtype segment ,
+                  name "8" } ,
+                {
+                  subtype isolation-source ,
+                  name "Tissues" } ,
+                {
+                  subtype collection-date ,
+                  name "03-Jan-2014" } ,
+                {
+                  subtype other ,
+                  name "[virus wizard]; passage details: P1" } } } ,
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished" ,
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Siddique" ,
+                              first "Naila" ,
+                              initials "N." } } ,
+                        {
+                          name
+                            name {
+                              last "Abbas" ,
+                              first "Muhammad" ,
+                              initials "M.A." } } ,
+                        {
+                          name
+                            name {
+                              last "Rafique" ,
+                              first "Saba" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Farooq" ,
+                              first "Rashid" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Naeem" ,
+                              first "Khalid" ,
+                              initials "K." } } } ,
+                    affil
+                      std {
+                        affil "Animal Scineces Institute" ,
+                        div "National Reference Laboratory for Poultry
+ Diseases" ,
+                        city "Islamabad" ,
+                        sub "ICT" ,
+                        country "Pakistan" ,
+                        street "National Agricutural Research Centre, Park
+ Road" ,
+                        postal-code "45500" } } ,
+                  title "Sequence Analysis of Low Pathogenic Avian Influenza
+ H14N3 isolated from Live Bird Market at Karachi, Pakistan." } } } ,
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Siddique" ,
+                              first "Naila" ,
+                              initials "N." } } ,
+                        {
+                          name
+                            name {
+                              last "Abbas" ,
+                              first "Muhammad" ,
+                              initials "M.A." } } ,
+                        {
+                          name
+                            name {
+                              last "Rafique" ,
+                              first "Saba" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Farooq" ,
+                              first "Rashid" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Naeem" ,
+                              first "Khalid" ,
+                              initials "K." } } } ,
+                    affil
+                      std {
+                        affil "Animal Scineces Institute" ,
+                        div "National Reference Laboratory for Poultry
+ Diseases" ,
+                        city "Islamabad" ,
+                        sub "ICT" ,
+                        country "Pakistan" ,
+                        street "National Agricutural Research Centre, Park
+ Road" ,
+                        postal-code "45500" } } ,
+                  date
+                    std {
+                      year 2016 ,
+                      month 7 ,
+                      day 25 } } } } ,
+            user {
+              class "SMART_V1.0" ,
+              type
+                id 1 ,
+              data {
+                {
+                  label
+                    id 1 ,
+                  num 1 ,
+                  data
+                    int 10679170 } } } ,
+            create-date
+              std {
+                year 2016 ,
+                month 7 ,
+                day 25 } ,
+            update-date
+              std {
+                year 2016 ,
+                month 7 ,
+                day 26 } } ,
+          seq-set {
+            seq {
+              id {
+                local
+                  str "1-8" ,
+                general {
+                  db "NCBIFILE" ,
+                  tag
+                    str "AIV-H14N3_NS_969-14_2016-07-25_FINAL_SEQ/1-8" } ,
+                general {
+                  db "TMSMART" ,
+                  tag
+                    id 69438666 } ,
+                genbank {
+                  accession "KX602672" } } ,
+              descr {
+                title "Influenza A virus
+ (A/goose/Karachi/NARC-13N-969/2014(H14N3)) segment 8 cRNA sequence" ,
+                molinfo {
+                  biomol cRNA } ,
+                user {
+                  type
+                    str "StructuredComment" ,
+                  data {
+                    {
+                      label
+                        str "StructuredCommentPrefix" ,
+                      data
+                        str "##Assembly-Data-START##" } ,
+                    {
+                      label
+                        str "Assembly Method" ,
+                      data
+                        str "DNAStar Lasergene v. 12.1.0" } ,
+                    {
+                      label
+                        str "Sequencing Technology" ,
+                      data
+                        str "Sanger dideoxy sequencing" } ,
+                    {
+                      label
+                        str "StructuredCommentSuffix" ,
+                      data
+                        str "##Assembly-Data-END##" } } } ,
+                user {
+                  class "1.0" ,
+                  type
+                    str "AutodefOptions" ,
+                  data {
+                    {
+                      label
+                        str "SpecifyNuclearProduct" ,
+                      data
+                        bool TRUE } ,
+                    {
+                      label
+                        str "MiscFeatRule" ,
+                      data
+                        str "NoncodingProductFeat" } ,
+                    {
+                      label
+                        str "FeatureListType" ,
+                      data
+                        str "Sequence" } ,
+                    {
+                      label
+                        str "ModifierList" ,
+                      data
+                        fields {
+                          {
+                            label
+                              str "SubSources" ,
+                            num 1 ,
+                            data
+                              strs {
+                                "Segment" } } } } ,
+                    {
+                      label
+                        str "HIVRule" ,
+                      data
+                        str "WantBoth" } ,
+                    {
+                      label
+                        str "DoNotApplyToSp" ,
+                      data
+                        bool TRUE } ,
+                    {
+                      label
+                        str "LeaveParenthetical" ,
+                      data
+                        bool TRUE } ,
+                    {
+                      label
+                        str "MaxMods" ,
+                      data
+                        int -99 } ,
+                    {
+                      label
+                        str "UseLabels" ,
+                      data
+                        bool TRUE } } } ,
+                user {
+                  type
+                    str "OriginalID" ,
+                  data {
+                    {
+                      label
+                        str "LocalId" ,
+                      data
+                        str "1-8" } } } } ,
+              inst {
+                repr raw ,
+                mol rna ,
+                length 864 ,
+                seq-data
+                  ncbi2na '3A3D411EED09FD2B21E7F7FA4ED64063F9214207AB8E553D7E1
+69F6588D20B5708A08A491DFADE84D8849C76E6A0248CBA268F7A08A0DE38A47C03873E7D2E5A7
+D19C5C1E13877E088ED0A87AF4E74E540480BA4AF57F93483A14A430E8C004D33E02407D2EE3FF
+85A7A215C31C7C89FD12082890FBA880DD16F17DDF5284C78E28ED00390FAAD74DA287E0E838C1
+12F62DDE01DC488F67E8824B0E28EA21751D5D409201A00E98810F8B482FE080C23A78F820B984
+C8F823C488127D812306FCE425F1073E7E0BA24223081FDDBF49F3F0E3000457EFDC7'H } ,
+              annot {
+                {
+                  data
+                    ftable {
+                      {
+                        data
+                          gene {
+                            locus "NS1" } ,
+                        location
+                          int {
+                            from 0 ,
+                            to 692 ,
+                            strand plus ,
+                            id
+                              local
+                                str "1-8" } } ,
+                      {
+                        data
+                          gene {
+                            locus "NEP" ,
+                            syn {
+                              "NS2" } } ,
+                        location
+                          int {
+                            from 0 ,
+                            to 837 ,
+                            strand plus ,
+                            id
+                              local
+                                str "1-8" } } } } } } ,
+            seq {
+              id {
+                local
+                  str "1-8p1" ,
+                general {
+                  db "NCBIFILE" ,
+                  tag
+                    str "AIV-H14N3_NS_969-14_2016-07-25_FINAL_SEQ/1-8p1" } ,
+                general {
+                  db "TMSMART" ,
+                  tag
+                    id 69438667 } } ,
+              descr {
+                title "nonstructural protein 1 [Influenza A virus
+ (A/goose/Karachi/NARC-13N-969/2014(H14N3))]" ,
+                molinfo {
+                  biomol peptide ,
+                  tech concept-trans } ,
+                user {
+                  type
+                    str "OriginalID" ,
+                  data {
+                    {
+                      label
+                        str "LocalId" ,
+                      data
+                        str "1-8p1" } } } } ,
+              inst {
+                repr raw ,
+                mol aa ,
+                length 230 ,
+                seq-data
+                  ncbieaa "MDSNTVSSFQVDCFLWHVRKRFADQELGDAPFLDRLRRDQKSLRGRGSTLG
+LDIETATRAGKQIVERILEEESDEALKMTIASVPASRYLTDMTLEEMSRDWFMLMPKQKVAGSLCIRMDQAIMDKNII
+LKANFSVIFDRLETLILLRAFTEEGAIVGEISPLPSLPGHTDEDVKNAIGVLIGGLEWNDNTVRVSETLQRFAWRSSN
+EDGRPPLPPKQKRKMARTIESEV" } ,
+              annot {
+                {
+                  data
+                    ftable {
+                      {
+                        data
+                          prot {
+                            name {
+                              "nonstructural protein 1" } } ,
+                        location
+                          int {
+                            from 0 ,
+                            to 229 ,
+                            id
+                              local
+                                str "1-8p1" } } } } } } ,
+            seq {
+              id {
+                local
+                  str "1-8p2" ,
+                general {
+                  db "NCBIFILE" ,
+                  tag
+                    str "AIV-H14N3_NS_969-14_2016-07-25_FINAL_SEQ/1-8p2" } ,
+                general {
+                  db "TMSMART" ,
+                  tag
+                    id 69438668 } } ,
+              descr {
+                title "nuclear export protein [Influenza A virus
+ (A/goose/Karachi/NARC-13N-969/2014(H14N3))]" ,
+                molinfo {
+                  biomol peptide ,
+                  tech concept-trans } ,
+                user {
+                  type
+                    str "OriginalID" ,
+                  data {
+                    {
+                      label
+                        str "LocalId" ,
+                      data
+                        str "1-8p2" } } } } ,
+              inst {
+                repr raw ,
+                mol aa ,
+                length 121 ,
+                seq-data
+                  ncbieaa "MDSNTVSSFQDILMRMSKMQLGSSSEDLNGMITQFESLKLYRDSLGEAVMR
+MGDLHSLQSRNGKWREQLSQKFEEIRWLIEEVRHRLKITENSFEQITFMQALQLLLEVEQEIRTFSFQLI" } ,
+              annot {
+                {
+                  data
+                    ftable {
+                      {
+                        data
+                          prot {
+                            name {
+                              "nuclear export protein" } } ,
+                        location
+                          int {
+                            from 0 ,
+                            to 120 ,
+                            id
+                              local
+                                str "1-8p2" } } } } } } } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      cdregion {
+                        frame one ,
+                        code {
+                          id 1 } } ,
+                    product
+                      whole
+                        local
+                          str "1-8p1" ,
+                    location
+                      int {
+                        from 0 ,
+                        to 692 ,
+                        strand plus ,
+                        id
+                          local
+                            str "1-8" } } ,
+                  {
+                    data
+                      cdregion {
+                        frame one ,
+                        code {
+                          id 1 } } ,
+                    comment "nonstructural protein 2" ,
+                    product
+                      whole
+                        local
+                          str "1-8p2" ,
+                    location
+                      mix {
+                        int {
+                          from 0 ,
+                          to 29 ,
+                          strand plus ,
+                          id
+                            local
+                              str "1-8" } ,
+                        int {
+                          from 502 ,
+                          to 837 ,
+                          strand plus ,
+                          id
+                            local
+                              str "1-8" } } } } } } } } } } }

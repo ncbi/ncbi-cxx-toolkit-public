@@ -42,12 +42,13 @@
 #include <objects/seq/seqport_util.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
+#include <objects/seqfeat/OrgMod.hpp>
+#include <objects/seqfeat/SubSource.hpp>
 #include <objects/pub/Pub.hpp>
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/biblio/Auth_list.hpp>
 #include <objects/biblio/Author.hpp>
 #include <objects/general/Person_id.hpp>
-
 
 #include "discrepancy_core.hpp"
 #include "utils.hpp"
@@ -2140,6 +2141,158 @@ DISCREPANCY_CASE(RNA_PROVIRAL, CSeq_inst, eOncaller, "RNA bioseqs are proviral")
 
 //  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(RNA_PROVIRAL)
+//  ----------------------------------------------------------------------------
+{
+    m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
+}
+
+
+// SMALL_GENOME_SET_PROBLEM
+
+typedef list<const CSeqdesc*> TBioSourcesList;
+
+static void GetBioSourceFromDescr(const CSeq_descr& descrs, TBioSourcesList& bio_srcs)
+{
+    ITERATE(CSeq_descr::Tdata, descr, descrs.Get()) {
+        if ((*descr)->IsSource()) {
+            bio_srcs.push_back(*descr);
+            return;
+        }
+    }
+}
+
+static void CollectBioSources(const CBioseq_set& bio_set, TBioSourcesList& bio_srcs)
+{
+    if (bio_set.IsSetDescr()) {
+        GetBioSourceFromDescr(bio_set.GetDescr(), bio_srcs);
+    }
+
+    ITERATE(CBioseq_set::TSeq_set, entry, bio_set.GetSeq_set()) {
+        if ((*entry)->IsSet()) {
+            CollectBioSources((*entry)->GetSet(), bio_srcs);
+        }
+        else {
+
+            if ((*entry)->GetSeq().IsSetDescr()) {
+                GetBioSourceFromDescr((*entry)->GetSeq().GetDescr(), bio_srcs);
+            }
+        }
+    }
+}
+
+typedef bool (CBioSource::*FnIsSet)() const;
+typedef const string& (CBioSource::*FnGet)() const;
+
+static bool CompareOrGetString(const CBioSource& bio_src, FnIsSet is_set_fn, FnGet get_fn, string& val)
+{
+    bool ret = true;
+    if ((bio_src.*is_set_fn)()) {
+        if (val.empty()) {
+            val = (bio_src.*get_fn)();
+        }
+        else if (val != (bio_src.*get_fn)()) {
+            ret = false;
+        }
+    }
+
+    return ret;
+}
+
+static bool CompareOrgModValue(const CBioSource& bio_src, COrgMod::TSubtype subtype, string& val)
+{
+    bool ret = true;
+    if (bio_src.IsSetOrgMod()) {
+
+        ITERATE(COrgName::TMod, mod, bio_src.GetOrgname().GetMod()) {
+            if ((*mod)->IsSetSubtype() && (*mod)->GetSubtype() == subtype && (*mod)->IsSetSubname()) {
+
+                if (val.empty()) {
+                    val = (*mod)->GetSubname();
+                }
+                else {
+                    if ((*mod)->GetSubname() != val) {
+                        ret = false;
+                    }
+                }
+
+                break;
+            }
+        }
+    }
+    return ret;
+}
+
+static bool IsSegmentSubtype(const CBioSource& bio_src)
+{
+    bool ret = false;
+
+    if (bio_src.IsSetSubtype()) {
+        ITERATE(CBioSource::TSubtype, subtype, bio_src.GetSubtype()) {
+            if ((*subtype)->IsSetSubtype() && (*subtype)->GetSubtype() == CSubSource::eSubtype_segment) {
+                ret = true;
+                break;
+            }
+        }
+    }
+    return ret;
+}
+
+static const string kMissingSegment = "[n] biosource[s] should have segment qualifier but [does] not";
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(SMALL_GENOME_SET_PROBLEM, CBioseq_set, eOncaller, "Problems with small genome sets")
+//  ----------------------------------------------------------------------------
+{
+    if (obj.IsSetClass() && obj.GetClass() == CBioseq_set::eClass_small_genome_set) {
+
+        TBioSourcesList bio_srcs;
+        CollectBioSources(obj, bio_srcs);
+
+        string taxname,
+               isolate,
+               strain;
+
+        bool all_taxname_same = true,
+             all_isolate_same = true,
+             all_strain_same = true;
+
+        ITERATE(TBioSourcesList, descr_bio_src, bio_srcs) {
+
+            const CBioSource& bio_src = (*descr_bio_src)->GetSource();
+            if (context.HasLineage(bio_src, "", "Viruses")) {
+                if (!IsSegmentSubtype(bio_src)) {
+                    m_Objs[kMissingSegment].Add(*context.NewDiscObj(CConstRef<CSeqdesc>(*descr_bio_src)), false);
+                }
+            }
+
+            if (all_taxname_same) {
+                all_taxname_same = CompareOrGetString(bio_src, &CBioSource::IsSetTaxname, &CBioSource::GetTaxname, taxname);
+            }
+
+            if (all_isolate_same) {
+                all_isolate_same = CompareOrgModValue(bio_src, COrgMod::eSubtype_isolate, isolate);
+            }
+
+            if (all_strain_same) {
+                all_strain_same = CompareOrgModValue(bio_src, COrgMod::eSubtype_strain, strain);
+            }
+        }
+
+        if (!all_taxname_same) {
+            m_Objs["Not all biosources have same taxname"];
+        }
+        if (!all_isolate_same) {
+            m_Objs["Not all biosources have same isolate"];
+        }
+        if (!all_strain_same) {
+            m_Objs["Not all biosources have same strain"];
+        }
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(SMALL_GENOME_SET_PROBLEM)
 //  ----------------------------------------------------------------------------
 {
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
