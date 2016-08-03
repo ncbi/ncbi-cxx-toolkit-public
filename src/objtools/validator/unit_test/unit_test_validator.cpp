@@ -1879,6 +1879,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadDeltaSeq)
                  expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "SeqGapProblem", "TSA Seq_gap NULL"));
                  expected_errors.push_back(new CExpectedError("good", eDiag_Error, "ConflictingBiomolTech", "TSA sequence should not be DNA"));
                  expected_errors.push_back(new CExpectedError("good", eDiag_Error, "WrongBiomolForTechnique", "Biomol \"genomic\" is not appropriate for sequences that use the TSA technique."));
+                 expected_errors.push_back(new CExpectedError("good", eDiag_Error, "SeqGapProblem", "TSA submission includes wrong gap type. Gaps for TSA should be Assembly Gaps with linkage evidence."));
              } else if (i == CMolInfo::eTech_wgs) {
                  expected_errors.push_back(new CExpectedError("good", eDiag_Error, "SeqGapProblem", "WGS submission includes wrong gap type. Gaps for WGS genomes should be Assembly Gaps with linkage evidence."));
              }

@@ -2527,6 +2527,24 @@ void CValidError_bioseq::ReportBadWGSGap(const CBioseq& seq)
 }
 
 
+void CValidError_bioseq::ReportBadTSAGap(const CBioseq& seq)
+{
+    if (HasBadWGSGap(seq)) {
+        PostErr(eDiag_Error, eErr_SEQ_INST_SeqGapProblem,
+            "TSA submission includes wrong gap type. Gaps for TSA should be Assembly Gaps with linkage evidence.", seq);
+    }
+}
+
+
+void CValidError_bioseq::ReportBadGenomeGap(const CBioseq& seq)
+{
+    if (HasBadWGSGap(seq)) {
+        PostErr(eDiag_Error, eErr_SEQ_INST_SeqGapProblem,
+            "Genome submission includes wrong gap type. Gaps for genomes should be Assembly Gaps with linkage evidence.", seq);
+    }
+}
+
+
 static EDiagSev GetBioseqEndWarning (bool is_NC, bool isPatent, bool only_local, bool is_circular, EBioseqEndIsType end_is_char)
 {
     EDiagSev sev;
@@ -2787,8 +2805,14 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
             }
         }
 
-        if (IsWGS(bsh) && !IsRefSeq(seq) && !IsEmblOrDdbj(seq)) {
-            ReportBadWGSGap(seq);
+        if (!IsRefSeq(seq) && !IsEmblOrDdbj(seq)) {
+            if (IsWGS(bsh)) {
+                ReportBadWGSGap(seq);
+            } else if (IsBioseqTSA(seq, m_Scope)) {
+                ReportBadTSAGap(seq);
+            } else if (m_Imp.IsGenomeSubmission()) {
+                ReportBadGenomeGap(seq);
+            }
         }
     } catch ( exception& ) {
         // just ignore, and continue with the validation process.
