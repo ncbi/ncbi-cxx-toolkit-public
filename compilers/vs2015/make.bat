@@ -63,8 +63,8 @@ set arch=%~4
 
 set archw=Win32
 set archwc=x86
-if _%arch%_ == _64_  set archw=x64 
-if _%arch%_ == _64_  set archwc=x64 
+if _%arch%_ == _64_  set archw=x64
+if _%arch%_ == _64_  set archwc=x64
 
 shift
 shift
