@@ -1,0 +1,46 @@
+Discrepancy Report Results
+
+Summary
+MISMATCHED_COMMENTS: Mismatched comments were found
+
+Detailed Report
+
+MISMATCHED_COMMENTS: Mismatched comments were found
+test-data/VR-154.sqn:PRJNA264742:contig0001 (36 components):Annotation was added by the NCBI Prokaryotic Genome Annotation Pipeline (released 2013). Information about the Pipeline can be found here: http://www.ncbi.nlm.nih.gov/genome/annotation_prok/
+test-data/VR-154.sqn:gnl|PRJNA264742|contig0001:Source DNA available from Alex Hoffmaster, CDC/OID/NCEZID
+test-data/VR-154.sqn:gnl|PRJNA264742|contig0002:Source DNA available from Alex Hoffmaster, CDC/OID/NCEZID
+test-data/VR-154.sqn:gnl|PRJNA264742|contig0003:Source DNA available from Alex Hoffmaster, CDC/OID/NCEZID
+test-data/VR-154.sqn:gnl|PRJNA264742|contig0004:Source DNA available from Alex Hoffmaster, CDC/OID/NCEZID
+test-data/VR-154.sqn:gnl|PRJNA264742|contig0005:Source DNA available from Alex Hoffmaster, CDC/OID/NCEZID
+test-data/VR-154.sqn:gnl|PRJNA264742|contig0006:Source DNA available from Alex Hoffmaster, CDC/OID/NCEZID
+test-data/VR-154.sqn:gnl|PRJNA264742|contig0007:Source DNA available from Alex Hoffmaster, CDC/OID/NCEZID
+test-data/VR-154.sqn:gnl|PRJNA264742|contig0008:Source DNA available from Alex Hoffmaster, CDC/OID/NCEZID
+test-data/VR-154.sqn:gnl|PRJNA264742|contig0009:Source DNA available from Alex Hoffmaster, CDC/OID/NCEZID
+test-data/VR-154.sqn:gnl|PRJNA264742|contig0010:Source DNA available from Alex Hoffmaster, CDC/OID/NCEZID
+test-data/VR-154.sqn:gnl|PRJNA264742|contig0011:Source DNA available from Alex Hoffmaster, CDC/OID/NCEZID
+test-data/VR-154.sqn:gnl|PRJNA264742|contig0014:Source DNA available from Alex Hoffmaster, CDC/OID/NCEZID
+test-data/VR-154.sqn:gnl|PRJNA264742|contig0015:Source DNA available from Alex Hoffmaster, CDC/OID/NCEZID
+test-data/VR-154.sqn:gnl|PRJNA264742|contig0016:Source DNA available from Alex Hoffmaster, CDC/OID/NCEZID
+test-data/VR-154.sqn:gnl|PRJNA264742|contig0019:Source DNA available from Alex Hoffmaster, CDC/OID/NCEZID
+test-data/VR-154.sqn:gnl|PRJNA264742|contig0020:Source DNA available from Alex Hoffmaster, CDC/OID/NCEZID
+test-data/VR-154.sqn:gnl|PRJNA264742|contig0021:Source DNA available from Alex Hoffmaster, CDC/OID/NCEZID
+test-data/VR-154.sqn:gnl|PRJNA264742|contig0023:Source DNA available from Alex Hoffmaster, CDC/OID/NCEZID
+test-data/VR-154.sqn:gnl|PRJNA264742|contig0026:Source DNA available from Alex Hoffmaster, CDC/OID/NCEZID
+test-data/VR-154.sqn:gnl|PRJNA264742|contig0032:Source DNA available from Alex Hoffmaster, CDC/OID/NCEZID
+test-data/VR-154.sqn:gnl|PRJNA264742|contig0035:Source DNA available from Alex Hoffmaster, CDC/OID/NCEZID
+test-data/VR-154.sqn:gnl|PRJNA264742|contig0040:Source DNA available from Alex Hoffmaster, CDC/OID/NCEZID
+test-data/VR-154.sqn:gnl|PRJNA264742|contig0044:Source DNA available from Alex Hoffmaster, CDC/OID/NCEZID
+test-data/VR-154.sqn:gnl|PRJNA264742|contig0045:Source DNA available from Alex Hoffmaster, CDC/OID/NCEZID
+test-data/VR-154.sqn:gnl|PRJNA264742|contig0059:Source DNA available from Alex Hoffmaster, CDC/OID/NCEZID
+test-data/VR-154.sqn:gnl|PRJNA264742|contig0071:Source DNA available from Alex Hoffmaster, CDC/OID/NCEZID
+test-data/VR-154.sqn:gnl|PRJNA264742|contig0085:Source DNA available from Alex Hoffmaster, CDC/OID/NCEZID
+test-data/VR-154.sqn:gnl|PRJNA264742|contig0086:Source DNA available from Alex Hoffmaster, CDC/OID/NCEZID
+test-data/VR-154.sqn:gnl|PRJNA264742|contig0116:Source DNA available from Alex Hoffmaster, CDC/OID/NCEZID
+test-data/VR-154.sqn:gnl|PRJNA264742|contig0121:Source DNA available from Alex Hoffmaster, CDC/OID/NCEZID
+test-data/VR-154.sqn:gnl|PRJNA264742|contig0130:Source DNA available from Alex Hoffmaster, CDC/OID/NCEZID
+test-data/VR-154.sqn:gnl|PRJNA264742|contig0141:Source DNA available from Alex Hoffmaster, CDC/OID/NCEZID
+test-data/VR-154.sqn:gnl|PRJNA264742|contig0165:Source DNA available from Alex Hoffmaster, CDC/OID/NCEZID
+test-data/VR-154.sqn:gnl|PRJNA264742|contig0167:Source DNA available from Alex Hoffmaster, CDC/OID/NCEZID
+test-data/VR-154.sqn:gnl|PRJNA264742|contig0170:Source DNA available from Alex Hoffmaster, CDC/OID/NCEZID
+test-data/VR-154.sqn:gnl|PRJNA264742|contig0176:Source DNA available from Alex Hoffmaster, CDC/OID/NCEZID
+
