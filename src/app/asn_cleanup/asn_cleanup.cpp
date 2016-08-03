@@ -203,7 +203,8 @@ void CCleanupApp::Init(void)
         arg_desc->AddOptionalKey("F", "Feature", "Feature Cleaning Options\n"
                                  "\tr Remove Redundant Gene xref\n"
                                  "\ta Adjust for Missing Stop Codon\n"
-                                 "\tp Clear internal partials\n",
+                                 "\tp Clear internal partials\n"
+                                 "\tz Delete or Update EC Numbers\n",
                                   CArgDescriptions::eString);
 
         arg_desc->AddOptionalKey("X", "Miscellaneous", "Other Cleaning Options",
@@ -243,7 +244,7 @@ void CCleanupApp::x_FeatureOptionsValid(const string& opt)
     string::const_iterator s = opt.begin();
     while (s != opt.end()) {
         if (!isspace(*s)) {
-            if (*s != 'r' && *s != 'a' && *s != 'p') {
+            if (*s != 'r' && *s != 'a' && *s != 'p' && *s != 'z') {
                 unrecognized += *s;
             }
         }
@@ -708,6 +709,9 @@ bool CCleanupApp::x_ProcessFeatureOptions(const string& opt, CSeq_entry_Handle s
     if (NStr::Find(opt, "p") != string::npos) {
         any_changes |= CCleanup::ClearInternalPartials(seh);
     }
+    if (NStr::Find(opt, "z") != string::npos) {
+        any_changes |= CCleanup::FixECNumbers(seh);
+    }
     return any_changes;
 }
 
@@ -961,6 +965,8 @@ bool CCleanupApp::HandleSeqEntry(CSeq_entry_Handle entry)
             //Extended Cleanup is part of -X w
             do_extended = false;
         }
+    } else if (args["F"]) {
+        do_basic = true;
     } else {
         if (args["basic"]) {
             do_basic = true;

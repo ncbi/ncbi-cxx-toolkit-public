@@ -1475,6 +1475,56 @@ bool CCleanup::UpdateECNumbers(CProt_ref::TEc & ec_num_list)
     return changed;
 }
 
+
+bool CCleanup::UpdateDeletedECNumbers(CProt_ref::TEc & ec_num_list)
+{
+    bool changed = false;
+    CProt_ref::TEc::iterator ec_num_iter = ec_num_list.begin();
+    while (ec_num_iter != ec_num_list.end()) {
+        string & ec_num = *ec_num_iter;
+        size_t tlen = ec_num.length();
+        CleanVisStringJunk(ec_num);
+        if (tlen != ec_num.length()) {
+            changed = true;
+        }
+        if (CProt_ref::GetECNumberStatus(ec_num) == CProt_ref::eEC_deleted) {
+            ec_num_iter = ec_num_list.erase(ec_num_iter);
+            changed = true;
+        } else {
+            ++ec_num_iter;
+        }
+
+    }
+    return changed;
+}
+
+
+bool CCleanup::FixECNumbers(CSeq_entry_Handle entry)
+{
+    bool any_change = false;
+    CFeat_CI f(entry, CSeqFeatData::e_Prot);
+    while (f) {
+        if (f->GetData().GetProt().IsSetEc()) {
+            bool this_change = false;
+            CRef<CSeq_feat> new_feat(new CSeq_feat());
+            new_feat->Assign(*(f->GetSeq_feat()));
+            this_change = UpdateECNumbers(new_feat->SetData().SetProt().SetEc());
+            this_change |= UpdateDeletedECNumbers(new_feat->SetData().SetProt().SetEc());
+            if (new_feat->GetData().GetProt().GetEc().empty()) {
+                new_feat->SetData().SetProt().ResetEc();
+                this_change = true;
+            }
+            if (this_change) {
+                CSeq_feat_EditHandle efh(*f);
+                efh.Replace(*new_feat);
+            }
+        }
+        ++f;
+    }
+    return any_change;
+}
+
+
 bool CCleanup::SetGenePartialByLongestContainedFeature(CSeq_feat& gene, CScope& scope)
 {
     CBioseq_Handle bh = scope.GetBioseqHandle(gene.GetLocation());

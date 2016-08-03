@@ -244,6 +244,16 @@ public:
 /// @return Boolean value indicates whether any changes were made
     static bool UpdateECNumbers(CProt_ref::TEc & ec_num_list);
 
+/// Delete EC numbers
+/// @param ec_num_list Prot-ref ec number list to clean
+/// @return Boolean value indicates whether any changes were made
+    static bool UpdateDeletedECNumbers(CProt_ref::TEc & ec_num_list);
+
+/// Fix EC numbers
+/// @param entry Seq-entry-handle to clean
+/// @return Boolean value indicates whether any changes were made
+    static bool FixECNumbers(CSeq_entry_Handle entry);
+
 /// Set partialness of gene to match longest feature contained in gene
 /// @param gene  Seq-feat to edit
 /// @param scope Scope in which to find gene
