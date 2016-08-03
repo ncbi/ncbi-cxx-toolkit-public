@@ -36,6 +36,7 @@ noops="\
  --with-plugin-auto-load \
  --with-bin-release \
  --with-mt \
+ --with-64 \
  --without-exe \
  --with-runpath \
  --with-lfs \
