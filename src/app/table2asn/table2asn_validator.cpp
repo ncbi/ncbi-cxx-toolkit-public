@@ -172,7 +172,7 @@ void CTable2AsnValidator::ReportDiscrepancies(CSerialObject& obj, CScope& scope,
 
     tests->Parse(obj);
     tests->Summarize();
-    CNcbiOfstream output(fname);
+    CNcbiOfstream output(fname.c_str());
     tests->OutputText(output, false, false);
 }
 
