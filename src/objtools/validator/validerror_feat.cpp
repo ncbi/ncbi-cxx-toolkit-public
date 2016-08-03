@@ -4205,6 +4205,33 @@ void CValidError_feat::ValidateImp(
     case CSeqFeatData::eSubtype_intron:
         ValidateIntron (feat);
         break;
+    case CSeqFeatData::eSubtype_regulatory:
+        {
+            vector<string> valid_types = CSeqFeatData::GetRegulatoryClassList();
+            FOR_EACH_GBQUAL_ON_FEATURE (gbqual, feat) {
+                if ( NStr::CompareNocase( (*gbqual)->GetQual(), "regulatory_class") != 0 ) continue;
+                const string& val = (*gbqual)->GetVal();
+                bool missing = true;
+                FOR_EACH_STRING_IN_VECTOR (itr, valid_types) {
+                    string str = *itr;
+                    if ( NStr::Equal (str, val) ) {
+                        missing = false;
+                    }
+                }
+                if ( missing ) {
+                    if ( NStr::Equal (val, "other") ) {
+                        PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
+                            "The regulatory_class value should not be '" + val + "'", feat);
+                    } else {
+                        /*
+                        PostErr(eDiag_Info, eErr_SEQ_FEAT_InvalidQualifierValue,
+                            "The regulatory_class value should not be 'other'", feat);
+                        */
+                    }
+                }
+            }
+        }
+        break;
     case CSeqFeatData::eSubtype_assembly_gap:
         {
             bool is_far_delta = false;
