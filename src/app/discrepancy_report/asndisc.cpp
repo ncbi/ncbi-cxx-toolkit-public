@@ -74,6 +74,7 @@ protected:
     vector<string> m_Files;
     vector<string> m_Tests;
     bool m_Ext;
+    bool m_Fat;
     bool m_AutoFix;
     bool m_Macro;
     bool m_Xml;
@@ -81,7 +82,7 @@ protected:
 };
 
 
-CDiscRepApp::CDiscRepApp(void) : m_Scope(*CObjectManager::GetInstance()), m_Ext(false), m_AutoFix(false), m_Macro(false), m_Xml(false), m_Print(false)
+CDiscRepApp::CDiscRepApp(void) : m_Scope(*CObjectManager::GetInstance()), m_Ext(false), m_Fat(false), m_AutoFix(false), m_Macro(false), m_Xml(false), m_Print(false)
 {
 }
 
@@ -146,13 +147,12 @@ void CDiscRepApp::Init(void)
     arg_desc->AddFlag("XML", "Generate XML output");
     arg_desc->AddFlag("STDOUT", "Copy the output to STDOUT");
 
+    arg_desc->AddOptionalKey("P", "ReportType", "Report type: g - Genome, b - Big Sequence, m - MegaReport, t - Include FATAL Tag, s - FATAL Tag for Superuser", CArgDescriptions::eString);
+
 /*
     arg_desc->AddOptionalKey("M", "MessageLevel", 
         "Output message level: 'a': add FATAL tags and output all messages, 'f': add FATAL tags and output FATAL messages only",
                                 CArgDescriptions::eString);
-    arg_desc->AddOptionalKey("P", "ReportType",
-                   "Report type: g - Genome, b - Big Sequence, m - MegaReport, t - Include FATAL Tag, s - FATAL Tag for Superuser, x - XML format",
-                   CArgDescriptions::eString);
     arg_desc->AddDefaultKey("R", "Remote", 
                           "Allow GenBank data loader: 'T' = true, 'F' = false",
                            CArgDescriptions::eBoolean, "T");
@@ -304,7 +304,7 @@ void CDiscRepApp::x_ProcessFile(const string& fname)
     }
     m_Xml ? x_OutputXml(x_ConstructOutputName(fname), *Tests) : x_Output(x_ConstructOutputName(fname), *Tests);
     if (m_Print) {
-        m_Xml ? Tests->OutputXML(cout) : Tests->OutputText(cout);
+        m_Xml ? Tests->OutputXML(cout) : Tests->OutputText(cout, m_Fat);
     }
 }
 
@@ -341,7 +341,7 @@ void CDiscRepApp::x_ProcessAll(const string& outname)
     }
     m_Xml ? x_OutputXml(outname, *Tests) : x_Output(outname, *Tests);
     if (m_Print) {
-        m_Xml ? Tests->OutputXML(cout) : Tests->OutputText(cout);
+        m_Xml ? Tests->OutputXML(cout) : Tests->OutputText(cout, m_Fat);
     }
 }
 
@@ -350,7 +350,7 @@ void CDiscRepApp::x_Output(const string& filename, CDiscrepancySet& tests)
 {
     bool summary = GetArgs()["S"].AsBoolean();
     CNcbiOfstream out(filename.c_str(), ofstream::out);
-    tests.OutputText(out, summary, this->m_Ext);
+    tests.OutputText(out, m_Fat, summary, m_Ext);
 }
 
 
@@ -476,6 +476,24 @@ int CDiscRepApp::Run(void)
     if (args["R"]) m_Macro = args["R"].AsBoolean();
     if (args["XML"]) m_Xml = args["XML"].AsBoolean();
     if (args["STDOUT"]) m_Print = args["STDOUT"].AsBoolean();
+
+    if (args["P"]) {
+        const string& s = args["P"].AsString();
+        for (size_t i = 0; i < s.length(); i++) {
+            if (s[i] == 't') {
+                m_Fat = true;
+            }
+            else if (s[i] == 's') {
+                m_Ext = true;
+                m_Fat = true;
+            }
+            else {
+                ERR_POST(string("Unrecognized character in -P argument: ") + s[i]);
+                return 1;
+            }
+        }
+    }
+
 
     // run tests
     if (args["o"]) {

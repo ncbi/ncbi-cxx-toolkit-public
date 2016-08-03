@@ -341,8 +341,8 @@ public:
     void Parse(const CSerialObject& root);
     void Summarize(void);
     const TDiscrepancyCaseMap& GetTests(void){ return m_Tests; }
-    void OutputText(ostream& out, bool summary, bool ext);  // ugly!
-    void OutputXML(ostream& out, bool ext);                 // ugly!
+    void OutputText(ostream& out, bool fatal, bool summary, bool ext);
+    void OutputXML(ostream& out, bool ext);
 
     template<typename T> void Call(CDiscrepancyVisitor<T>& disc, const T& obj){ disc.Call(obj, *this);}
 

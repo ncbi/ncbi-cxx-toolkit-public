@@ -173,7 +173,8 @@ void CTable2AsnValidator::ReportDiscrepancies(CSerialObject& obj, CScope& scope,
     tests->Parse(obj);
     tests->Summarize();
     CNcbiOfstream output(fname.c_str());
-    tests->OutputText(output, false, false);
+    bool print_fatal = false; // set it yourself...
+    tests->OutputText(output, print_fatal, false, false);
 }
 
 void CTable2AsnValidator::UpdateECNumbers(objects::CSeq_entry_Handle seh, const string& fname, auto_ptr<CNcbiOfstream>& ostream)

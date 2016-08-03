@@ -37,16 +37,19 @@ USING_SCOPE(objects);
 // THIS WHOLE THING IS EVIL!
 // DATA LAYER IS MIXED WITH PRESENTATION LAYER :(
 
-static void RecursiveText(ostream& out, const TReportItemList& list, bool ext)
+static void RecursiveText(ostream& out, const TReportItemList& list, bool fatal, bool ext)
 {
     ITERATE (TReportItemList, it, list) {
         if ((*it)->IsExtended() && !ext) {
             continue;
         }
+        if (fatal && (*it)->IsFatal()) {
+            out << "FATAL: ";
+        }
         out << (*it)->GetTitle() << ": " << (*it)->GetMsg() << "\n";
         TReportItemList subs = (*it)->GetSubitems();
         if (!subs.empty() && (ext || !subs[0]->IsExtended()) && !subs[0]->IsSummary()) {
-            RecursiveText(out, subs, ext);
+            RecursiveText(out, subs, fatal, ext);
         }
         else {
             TReportObjectList det = (*it)->GetDetails();
@@ -59,10 +62,13 @@ static void RecursiveText(ostream& out, const TReportItemList& list, bool ext)
 }
 
 
-static void RecursiveSummary(ostream& out, const TReportItemList& list, size_t level = 0)
+static void RecursiveSummary(ostream& out, const TReportItemList& list, bool fatal, size_t level = 0)
 {
     ITERATE (TReportItemList, it, list) {
         if (!level) {
+            if (fatal && (*it)->IsFatal()) {
+                out << "FATAL: ";
+            }
             out << (*it)->GetTitle() << ": " << (*it)->GetMsg() << "\n";
         }
         else if ((*it)->IsSummary()) {
@@ -75,12 +81,12 @@ static void RecursiveSummary(ostream& out, const TReportItemList& list, size_t l
             continue;
         }
         TReportItemList subs = (*it)->GetSubitems();
-        RecursiveSummary(out, subs, level + 1);
+        RecursiveSummary(out, subs, fatal, level + 1);
     }
 }
 
 
-void CDiscrepancyContext::OutputText(ostream& out, bool summary, bool ext)
+void CDiscrepancyContext::OutputText(ostream& out, bool fatal, bool summary, bool ext)
 {
     const TDiscrepancyCaseMap& tests = GetTests();
     out << "Discrepancy Report Results\n\n";
@@ -88,14 +94,14 @@ void CDiscrepancyContext::OutputText(ostream& out, bool summary, bool ext)
     out << "Summary\n";
     ITERATE(TDiscrepancyCaseMap, tst, tests) {
         TReportItemList rep = tst->second->GetReport();
-        RecursiveSummary(out, rep);
+        RecursiveSummary(out, rep, fatal);
     }
     if (summary) return;
 
     out << "\nDetailed Report\n\n";
     ITERATE(TDiscrepancyCaseMap, tst, tests) {
         TReportItemList rep = tst->second->GetReport();
-        RecursiveText(out, rep, ext);
+        RecursiveText(out, rep, fatal, ext);
     }
 }
 

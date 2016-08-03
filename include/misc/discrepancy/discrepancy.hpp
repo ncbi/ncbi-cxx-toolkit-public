@@ -113,8 +113,8 @@ public:
     virtual void Parse(const CSerialObject& root) = 0;
     virtual void Summarize(void) = 0;
     virtual const TDiscrepancyCaseMap& GetTests(void) = 0;
-    virtual void OutputText(CNcbiOstream& out, bool summary = false, bool ext = false) = 0;  // ugly!
-    virtual void OutputXML(CNcbiOstream& out, bool ext = false) = 0;                         // ugly!
+    virtual void OutputText(CNcbiOstream& out, bool fatal = false, bool summary = false, bool ext = false) = 0;
+    virtual void OutputXML(CNcbiOstream& out, bool ext = false) = 0;
 
     const string& GetFile(void) const { return m_File;}
     const string& GetLineage(void) const { return m_Lineage; }
