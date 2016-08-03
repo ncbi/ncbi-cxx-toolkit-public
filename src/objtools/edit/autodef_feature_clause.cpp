@@ -1959,7 +1959,13 @@ CAutoDefMiscCommentClause::CAutoDefMiscCommentClause(CBioseq_Handle bh, const CS
         }
         m_DescriptionChosen = true;
     }
-    x_TypewordFromSequence();
+    if (NStr::EndsWith(m_Description, " sequence")) {
+        m_Description = m_Description.substr(0, m_Description.length() - 9);
+        m_Typeword = "sequence";
+        m_TypewordChosen = true;
+    } else {
+        x_TypewordFromSequence();
+    }
     m_Interval = "";
 }
 
