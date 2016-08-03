@@ -344,12 +344,9 @@ private:
 
     // In-place deletion of JSON keywords: true, false, null
     void x_StripJsonKeywords(string& testString) const;
-   
-    bool x_AreJsonNumericChars(const string& testString) const;
 
-    // Is character one of the allowed Json numeric characters 
-    bool x_IsJsonNumericChar(const char& c) const;
-
+    // Return true if the string is blank or a list of space-delimited numbers
+    bool x_IsBlankOrNumbers(const string& testString) const;
 
     // data:
     static const char* const sm_FormatNames[eFormat_max];

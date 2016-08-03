@@ -1873,28 +1873,27 @@ size_t CFormatGuess::x_FindNextJsonStringStop(const string& input, const size_t 
 
 
 //  ----------------------------------------------------------------------------
-bool CFormatGuess::x_AreJsonNumericChars(const string& testString) const 
+bool CFormatGuess::x_IsBlankOrNumbers(const string& testString) const 
 //  ----------------------------------------------------------------------------
 {
-    for (const auto c : testString) {
-        if (!x_IsJsonNumericChar(c)) {
+    if (NStr::IsBlank(testString)) {
+        return true;
+    }
+
+    list<string> numStrings;
+    // Split on white space
+    NStr::Split(testString, " \t\n", numStrings, NStr::fSplit_MergeDelims);
+
+    for (auto numString : numStrings) {
+        try {
+            NStr::StringToDouble(numString); 
+        }
+        catch (...) {
             return false;
         }
     }
+
     return true;
-}
-
-
-//  ----------------------------------------------------------------------------
-bool CFormatGuess::x_IsJsonNumericChar(const char& c) const 
-//  ----------------------------------------------------------------------------
-{
-    if ( isdigit(c) || c == '.' ||
-         c == 'E' || c == 'e' ||
-         c == '+' || c == '-' ) {
-        return true;
-    }
-    return false;
 }
 
 
@@ -1929,10 +1928,7 @@ bool CFormatGuess::TestFormatJson(
     // Convert the test-buffer character array to a string
     string testString(m_pTestBuffer, m_iTestDataSize);
 
-    // Strip white spaces from testString
-    testString.erase(remove_if(testString.begin(), testString.end(), 
-                               [](char c) { return isspace(c); } ), 
-                     testString.end());
+    NStr::TruncateSpacesInPlace(testString, NStr::eTrunc_Begin);
 
     // testString should begin with a left brace or bracket.
     if (testString.find_first_of("{[") != 0 ) {
@@ -1949,7 +1945,7 @@ bool CFormatGuess::TestFormatJson(
 
     x_StripJsonKeywords(testString);
 
-    return x_AreJsonNumericChars(testString);
+    return x_IsBlankOrNumbers(testString);
 }
 
 
