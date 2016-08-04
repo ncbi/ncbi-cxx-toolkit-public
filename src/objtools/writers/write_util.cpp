@@ -678,6 +678,33 @@ bool CWriteUtil::GetBestId(
     return  GetBestId(idh, mf.GetScope(), best_id);
 }
 
+
+//  ----------------------------------------------------------------------------
+bool CWriteUtil::GetLocationId(
+    const CMappedFeat& mf,
+    string& loc_id)
+//  ----------------------------------------------------------------------------
+{
+    CSeq_id_Handle idh = mf.GetLocationId();
+    if (!idh) {
+        const CSeq_loc& loc = mf.GetLocation();
+        idh = sequence::GetIdHandle(loc, &mf.GetScope());
+        if (!idh) {
+            return false;
+        }
+    }
+
+    string backup = loc_id;
+    try {
+        idh.GetSeqId()->GetLabel(&loc_id, CSeq_id::eContent);
+    } catch (...) {
+        loc_id = backup;
+        return false;
+    }
+    return true;
+}
+
+
 //  ----------------------------------------------------------------------------
 bool CWriteUtil::IsNucProtSet(
     CSeq_entry_Handle seh)

@@ -114,9 +114,10 @@ CConstRef<CUser_object> s_GetUserObjectByType(
 //  ----------------------------------------------------------------------------
 CGff3WriteRecordFeature::CGff3WriteRecordFeature(
     CGffFeatureContext& fc,
-    const string& id )
+    const string& id,
+    bool replaceSeqIds)
 //  ----------------------------------------------------------------------------
-    : CGffWriteRecordFeature(fc, id)
+    : CGffWriteRecordFeature(fc, id, replaceSeqIds)
 {
 };
 
@@ -146,7 +147,7 @@ bool CGff3WriteRecordFeature::AssignFromAsnLinear(
 //  ----------------------------------------------------------------------------
 bool CGff3WriteRecordFeature::AssignFromAsn(
     CMappedFeat mf,
-    unsigned int flags )
+    unsigned int flags)
 //  ----------------------------------------------------------------------------
 {
     m_pLoc.Reset( new CSeq_loc( CSeq_loc::e_Mix ) );
@@ -952,7 +953,13 @@ bool CGff3WriteRecordFeature::x_AssignAttributeProduct(
             }
             
             string product;
-            if (CWriteUtil::GetBestId(mf.GetProductId(), mf.GetScope(), product)) {
+            if (m_ReplaceSeqIds) {
+                CWriteUtil::GetBestId(mf.GetProductId(), mf.GetScope(), product);
+            } 
+            else if (mf.GetProductId()) {
+                product = mf.GetProductId().AsString();
+            }
+            if (!product.empty()) {
                 SetAttribute("product", product);
                 return true;
             }
@@ -1152,9 +1159,16 @@ bool CGff3WriteRecordFeature::x_AssignAttributeTranscriptId(
 
     if ( mf.IsSetProduct() ) {
         string transcript_id;
-        if (CWriteUtil::GetBestId(mf.GetProductId(), mf.GetScope(), transcript_id)) {
+        if (m_ReplaceSeqIds) {
+            CWriteUtil::GetBestId(mf.GetProductId(), mf.GetScope(), transcript_id);
+        } 
+        else if (mf.GetProductId()) {
+            transcript_id = mf.GetProductId().AsString();
+        }
+
+        // Set attribute
+        if (!transcript_id.empty()) {
             SetAttribute("transcript_id", transcript_id);
-            return true;
         }
     }
     return true;
@@ -1169,9 +1183,14 @@ bool CGff3WriteRecordFeature::x_AssignAttributeProteinId(
         return true;
     }
     string protein_id;
-    if (CWriteUtil::GetBestId(mf.GetProductId(), mf.GetScope(), protein_id)) {
+    if (m_ReplaceSeqIds) {
+        CWriteUtil::GetBestId(mf.GetProductId(), mf.GetScope(), protein_id);
+    } 
+    else if (mf.GetProductId()) {
+        protein_id = mf.GetProductId().AsString();
+    }
+    if (!protein_id.empty()) {
         SetAttribute("protein_id", protein_id);
-        return true;
     }
     return true;
 }

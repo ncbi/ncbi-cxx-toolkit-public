@@ -53,7 +53,8 @@ public:
 public:
     CGff3WriteRecordFeature(
         CGffFeatureContext&,
-        const string& id=""
+        const string& id="",
+        bool replaceSeqIds=true
     );
 
     CGff3WriteRecordFeature(

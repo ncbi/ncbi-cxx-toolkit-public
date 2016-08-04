@@ -48,8 +48,9 @@ class CGtfRecord
 public: 
     CGtfRecord(
         CGffFeatureContext& fc,
-        bool bNoExonNumbers = false ) :
-    CGffWriteRecordFeature(fc), 
+        bool bNoExonNumbers = false, 
+        bool replaceSeqIds = true) :
+    CGffWriteRecordFeature(fc, "", replaceSeqIds), 
     m_bNoExonNumbers(bNoExonNumbers) {};
 
     ~CGtfRecord() {};

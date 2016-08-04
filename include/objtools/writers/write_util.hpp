@@ -107,6 +107,11 @@ public:
         const CMappedFeat&,
         string& );
 
+    static bool GetLocationId(
+        const CMappedFeat&,
+        string& );
+
+
     static bool GetTrnaCodons(
         const CTrna_ext&,
         string& );

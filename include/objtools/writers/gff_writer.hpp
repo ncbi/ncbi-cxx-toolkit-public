@@ -78,11 +78,13 @@ public:
     ///   stream objects should be written to.
     /// @param flags
     ///   any output customization flags.
-    ///
+    /// @param replaceSeqIds
+    ///   replace Seq-ids by best id.
     CGff2Writer(
         CScope& scope,
         CNcbiOstream& ostr,
-        unsigned int flags=fNormal );
+        unsigned int flags=fNormal,
+        bool replaceSeqIds=true );
 
     /// Constructor.
     /// Scopeless version. A scope will be allocated internally.
@@ -90,10 +92,12 @@ public:
     ///   stream objects should be written to.
     /// @param flags
     ///   any output customization flags.
-    ///
+    /// @param replaceSeqIds
+    ///   replace Seq-ids by best id.
     CGff2Writer(
         CNcbiOstream&,
-        unsigned int = fNormal );
+        unsigned int = fNormal,
+        bool replaceSeqIds=true );
 
     virtual ~CGff2Writer();
 
@@ -235,6 +239,7 @@ protected:
     CRef<CScope> m_pScope;
     bool m_bHeaderWritten;
     auto_ptr<SAnnotSelector> m_Selector;
+    bool m_ReplaceSeqIds;
 };
 
 END_objects_SCOPE
