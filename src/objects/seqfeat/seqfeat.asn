@@ -1310,7 +1310,8 @@ Prot-ref ::= SEQUENCE {
        preprotein (1) ,
        mature (2) ,
        signal-peptide (3) ,
-       transit-peptide (4) } DEFAULT not-set }
+       transit-peptide (4) ,
+       propeptide (5) } DEFAULT not-set }
 
 END
 --********************************************************************
