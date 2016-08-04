@@ -330,6 +330,8 @@ private:
     // ' ' ' \t' '\t' ',' '|'
     bool x_TestTableDelimiter(const string& delims);
 
+    // Check that the beginning of testString looks like JSON
+    bool x_CheckJsonStart(const string& testString) const;
 
     // In-place deletion of JSON strings
     void x_StripJsonStrings(string& testString) const;

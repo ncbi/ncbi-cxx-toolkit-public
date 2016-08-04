@@ -1775,6 +1775,14 @@ void CFormatGuess::x_StripJsonStrings(string& testString) const
         return;
     }
 
+    if (limits.size()%2 == 1) { 
+        // Perhaps testString ends on an open string 
+        // Tack on an additional set of quotes at the end
+        testString += "\"";
+        limits.push_back(testString.size()-1);       
+    }
+    // The length of the limits container is now even
+
     // Iterate over string start and stop sites
     // Strip strings and copy what remains to complement
     string complement = "";
@@ -1787,17 +1795,12 @@ void CFormatGuess::x_StripJsonStrings(string& testString) const
             const size_t comp_interval_length = string_start-comp_interval_start;
             complement += testString.substr(comp_interval_start, comp_interval_length);
         }
-        // No stop double quotes.
-        // Everything following the last set of start quotes is
-        // regarded as being part of a string
-        if (it == limits.end()) {
-            break;
-        }
+
         const size_t string_stop = *it++;
         comp_interval_start = string_stop+1;
     }
 
-    if ((limits.size()%2 == 0) && comp_interval_start < testString.size()) {
+    if (comp_interval_start < testString.size()) {
         complement += testString.substr(comp_interval_start);
     }
 
@@ -1882,7 +1885,7 @@ bool CFormatGuess::x_IsBlankOrNumbers(const string& testString) const
 
     list<string> numStrings;
     // Split on white space
-    NStr::Split(testString, " \t\n", numStrings, NStr::fSplit_MergeDelims);
+    NStr::Split(testString, " \r\t\n", numStrings, NStr::fSplit_MergeDelims);
 
     for (auto numString : numStrings) {
         try {
@@ -1946,6 +1949,25 @@ void CFormatGuess::x_StripJsonKeywords(string& testString) const
 
 
 //  ----------------------------------------------------------------------------
+bool CFormatGuess::x_CheckJsonStart(const string& testString) const 
+//  ----------------------------------------------------------------------------
+{
+    if (NStr::StartsWith(testString, "{")) {
+        const auto next_pos = testString.find_first_not_of("( \t\r\n",1); // Next character must begin a string
+        if (next_pos != NPOS && testString[next_pos] == '\"') {
+            return true;
+        }
+    } 
+    else
+    if (NStr::StartsWith(testString, "[")) {
+        return true;
+    }
+
+    return false;
+}
+
+
+//  ----------------------------------------------------------------------------
 bool CFormatGuess::TestFormatJson(
         EMode)
 //  ----------------------------------------------------------------------------
@@ -1953,10 +1975,13 @@ bool CFormatGuess::TestFormatJson(
     // Convert the test-buffer character array to a string
     string testString(m_pTestBuffer, m_iTestDataSize);
 
+    if ( NStr::IsBlank(testString) ) {
+        return false;
+    }
+
     NStr::TruncateSpacesInPlace(testString, NStr::eTrunc_Begin);
 
-    // testString should begin with a left brace or bracket.
-    if (testString.find_first_of("{[") != 0 ) {
+    if (!x_CheckJsonStart(testString)) {
         return false;
     }
 
