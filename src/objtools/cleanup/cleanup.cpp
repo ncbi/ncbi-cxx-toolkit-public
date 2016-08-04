@@ -1670,25 +1670,13 @@ bool CCleanup::AddProteinTitle(CBioseq_Handle bsh)
     }
 
     string new_defline = sequence::CDeflineGenerator().GenerateDefline(bsh, sequence::CDeflineGenerator::fIgnoreExisting);
-    if (bsh.IsSetDescr()) {
-        ITERATE(CBioseq_set::TDescr::Tdata, title_d, bsh.GetDescr().Get()) {
-            if ((*title_d)->IsTitle()) {
-                if (!NStr::Equal((*title_d)->GetTitle(), new_defline)) {
-                    CSeqdesc* d = const_cast<CSeqdesc*>(title_d->GetPointer());
-                    d->SetTitle(new_defline);
-                    return true;
-                } else {
-                    return false;
-                }
-            }
-        }
-    }
 
-    CRef<CSeqdesc> t(new CSeqdesc());
-    t->SetTitle(new_defline);
-    CBioseq_EditHandle eh = bsh.GetEditHandle();
-    eh.AddSeqdesc(*t);
-    return true;
+    CAutoAddDesc title_desc(bsh.GetEditHandle().SetDescr(), CSeqdesc::e_Title);
+
+    bool modified = title_desc.Set().SetTitle() != new_defline; // get or create a title
+    if (modified)
+      title_desc.Set().SetTitle().swap(new_defline);
+    return modified;
 }
 
 
@@ -1886,7 +1874,7 @@ CRef<CSeq_entry> AddProtein(const CSeq_feat& cds, CScope& scope)
 }
 
 
-CRef<objects::CSeq_id> GetNewProteinId(objects::CSeq_entry_Handle seh, objects::CBioseq_Handle bsh)
+CRef<objects::CSeq_id> GetNewProteinId(size_t& offset, objects::CSeq_entry_Handle seh, objects::CBioseq_Handle bsh)
 {
     string id_base;
     objects::CSeq_id_Handle hid;
@@ -1899,17 +1887,15 @@ CRef<objects::CSeq_id> GetNewProteinId(objects::CSeq_entry_Handle seh, objects::
 
     hid.GetSeqId()->GetLabel(&id_base, objects::CSeq_id::eContent);
 
-    int offset = 1;
-    string id_label = id_base + "_" + NStr::NumericToString(offset);
     CRef<objects::CSeq_id> id(new objects::CSeq_id());
-    id->SetLocal().SetStr(id_label);
-    objects::CBioseq_Handle b_found = seh.GetBioseqHandle(*id);
-    while (b_found) {
-        offset++;
-        id_label = id_base + "_" + NStr::NumericToString(offset);
-        id->SetLocal().SetStr(id_label);
+    string& id_label = id->SetLocal().SetStr();
+    objects::CBioseq_Handle b_found;
+    do
+    {
+        id_label = id_base + "_" + NStr::NumericToString(offset++);
         b_found = seh.GetBioseqHandle(*id);
-    }
+    } while (b_found);
+
     return id;
 }
 
@@ -2275,6 +2261,7 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry)
 {
     bool any_changes = false;
 
+    size_t protein_id_counter = 1;
     SAnnotSelector sel(CSeqFeatData::e_Cdregion);
     for (CFeat_CI cds_it(entry, sel); cds_it; ++cds_it) {
         bool change_this_cds = false;
@@ -2293,7 +2280,7 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry)
             } else {
                 // need to set product if not set
                 if (!new_cds->IsSetProduct() && !IsPseudo(*new_cds, entry.GetScope())) {
-                    CRef<CSeq_id> new_id = GetNewProteinId(entry, entry.GetScope().GetBioseqHandle(new_cds->GetLocation()));
+                    CRef<CSeq_id> new_id = GetNewProteinId(protein_id_counter, entry, entry.GetScope().GetBioseqHandle(new_cds->GetLocation()));
                     if (new_id) {
                         new_cds->SetProduct().SetWhole().Assign(*new_id);
                         change_this_cds = true;
