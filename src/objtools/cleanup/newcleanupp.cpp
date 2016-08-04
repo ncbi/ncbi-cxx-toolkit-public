@@ -173,7 +173,8 @@ CNewCleanup_imp::CNewCleanup_imp (CRef<CCleanupChange> changes, Uint4 options)
       m_IsGpipe(false),
       m_SyncGenCodes(false),
       m_StripSerial(true),
-      m_IsEmblOrDdbj(false)
+      m_IsEmblOrDdbj(false),
+      m_KeepTopNestedSet(false)
 {
     if (options & CCleanup::eClean_GpipeMode) {
         m_IsGpipe = true;
@@ -181,6 +182,10 @@ CNewCleanup_imp::CNewCleanup_imp (CRef<CCleanupChange> changes, Uint4 options)
 
     if (options & CCleanup::eClean_SyncGenCodes) {
         m_SyncGenCodes = true;
+    }
+
+    if (options & CCleanup::eClean_KeepTopSet) {
+        m_KeepTopNestedSet = true;
     }
 
     m_Objmgr = CObjectManager::GetInstance ();
@@ -12013,6 +12018,7 @@ void CNewCleanup_imp::x_RemoveNestedGenBankSet(CBioseq_set & bioseq_set)
         bioseq_set.GetSeq_set().front()->IsSet() &&
         bioseq_set.GetSeq_set().front()->GetSet().IsSetClass() &&
         bioseq_set.GetSeq_set().front()->GetSet().GetClass() == CBioseq_set::eClass_genbank) {
+        if (bioseq_set.GetParentSet() != NULL || !m_KeepTopNestedSet) 
         x_CollapseSet(bioseq_set);
     }
     

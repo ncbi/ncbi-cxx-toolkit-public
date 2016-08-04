@@ -821,3 +821,27 @@ BOOST_AUTO_TEST_CASE(Test_ClearInternalPartials)
     BOOST_CHECK_EQUAL(CCleanup::ClearInternalPartials(*loc_pint), false);
 
 }
+
+
+BOOST_AUTO_TEST_CASE(TEST_RemoveNestedSet)
+{
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    cleanup.SetScope(scope);
+
+    CRef<CSeq_entry> sub1 = BuildGoodEcoSet();
+    sub1->SetSet().SetClass(CBioseq_set::eClass_genbank);
+    CRef<CSeq_entry> entry(new CSeq_entry());
+    entry->SetSet().SetSeq_set().push_back(sub1);
+    entry->Parentize();
+
+    changes = cleanup.ExtendedCleanup(*entry, CCleanup::eClean_NoNcbiUserObjects | CCleanup::eClean_KeepTopSet);
+    BOOST_CHECK_EQUAL(changes->IsChanged(CCleanupChange::eCollapseSet), false);
+
+    changes = cleanup.ExtendedCleanup(*entry, CCleanup::eClean_NoNcbiUserObjects);
+    BOOST_CHECK_EQUAL(changes->IsChanged(CCleanupChange::eCollapseSet), true);
+
+
+}
