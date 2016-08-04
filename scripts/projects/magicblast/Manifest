@@ -21,7 +21,7 @@ APP: magicblast makeblastdb
 
 POSTBUILD: $srcdir/scripts/projects/magicblast/post_build/make_installers.py -v $version $platform $installdir "$tarball" $bindir
 
-DEFAULT_CONFIGURE_FLAGS: --without-debug --with-strip --with-openmp --with-mt --with-build-root=$srcdir/ReleaseMT
+DEFAULT_CONFIGURE_FLAGS: --without-debug --with-strip --with-openmp --with-mt --with-build-root=$srcdir/ReleaseMT --with-downloaded-vdb --with-static-vdb
 
 # Each line describes a single configuration
 # The format is as follows:
