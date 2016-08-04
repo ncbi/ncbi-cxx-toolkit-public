@@ -73,9 +73,8 @@ alndb_query needs $(SEQ_LIBS)
 alndb_query needs pub
 alndbaccess needs alndb_query
 alndbaccess needs generic_db_core
-an_core needs $(GPIPE_COMMON_LIBS)
+an_core needs $(GPIPE_GENCOLL_LIBS)
 an_core needs 16S_common
-an_core needs gc_util_sdbapi
 an_core needs gpinit_bag_util
 an_core needs gpipe_an_base
 an_core needs gpipe_kmer
@@ -317,7 +316,7 @@ ftgl needs3party $(ORIG_LIBS)
 gbproj needs submit
 gbproj needs xconnect
 gbseq needs xser
-gc_assm_rpt needs gcaccess_utils
+gc_assm_rpt needs $(GPIPE_GENCOLL_LIBS)
 gc_common needs xser
 gc_load_utils needs $(GPIPE_COMMON_LIBS)
 gc_load_utils needs gc_common
@@ -326,10 +325,7 @@ gc_load_utils needs gc_utils
 gc_organism needs gpipe_attr
 gc_organism needs taxon1
 gc_schedule needs xconnserv
-gc_util_sdbapi needs gencoll_client
-gc_util_sdbapi needs gpipe_common
 gc_utils needs gpipe_objutil
-gcaccess_utils needs $(GPIPE_GENCOLL_LIBS)
 gcedit needs agp_lookup
 gcedit needs gc_load_utils
 gcrypt needs3party $(ORIG_LIBS)
@@ -426,13 +422,13 @@ gpipe_common needs xregexp
 gpipe_curl needs xncbi
 gpipe_curl needs3party $(CURL_LIBS)
 gpipe_dateutil needs xregexp
-gpipe_ftp needs gcaccess_utils
+gpipe_ftp needs $(GPIPE_GENCOLL_LIBS)
 gpipe_ftp needs gpinit
 gpipe_ftp needs gpipe_alnutil
 gpipe_ftp needs xalgoalignutil
 gpipe_ftp needs xobjwrite
 gpipe_ftp needs xrepeatdb
-gpipe_ftp_new needs gcaccess_utils
+gpipe_ftp_new needs $(GPIPE_GENCOLL_LIBS)
 gpipe_ftp_new needs gpinit
 gpipe_ftp_new needs gpipe_alnutil
 gpipe_ftp_new needs xalgoalignutil
@@ -1275,7 +1271,6 @@ xasmcompare needs $(SEQ_LIBS)
 xasmcompare needs pub
 xasn needs xhtml
 xasn needs3party $(NCBI_C_ncbi)
-xassembly_svc needs gcaccess_utils
 xassembly_svc needs xgencollstats
 xbiosample_util needs $(OBJEDIT_LIBS)
 xbiosample_util needs $(XFORMAT_LIBS)
