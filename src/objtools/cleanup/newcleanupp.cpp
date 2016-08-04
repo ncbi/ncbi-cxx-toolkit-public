@@ -2262,7 +2262,7 @@ void CNewCleanup_imp::DbtagBC (
 
     if (FIELD_IS (oid, Id)) {
         const string& db = dbtag.GetDb();
-        if (NStr::EqualNocase (db, "HGNC") || NStr::EqualNocase (db, "MGI") ) {
+        if (NStr::EqualNocase (db, "HGNC") || NStr::EqualNocase (db, "VGNC") || NStr::EqualNocase (db, "MGI") ) {
             int val = dbtag.GetTag().GetId();
             string str = db + ":" + NStr::IntToString(val);
             dbtag.SetTag().SetStr(str);
@@ -2302,6 +2302,16 @@ void CNewCleanup_imp::DbtagBC (
     } else if (NStr::EqualNocase (db, "HGNC") ) {
         if(! NStr::StartsWith (str, "HGNC:")) {
             string newstr = "HGNC:" + str;
+            dbtag.SetTag().SetStr(newstr);
+            ChangeMade(CCleanupChange::eChangeDbxrefs);
+            /*
+            dbtag.SetTag().SetStr (dbtag.GetTag().GetStr().substr (5));
+            ChangeMade(CCleanupChange::eChangeDbxrefs);
+            */
+        }
+    } else if (NStr::EqualNocase (db, "VGNC") ) {
+        if(! NStr::StartsWith (str, "VGNC:")) {
+            string newstr = "VGNC:" + str;
             dbtag.SetTag().SetStr(newstr);
             ChangeMade(CCleanupChange::eChangeDbxrefs);
             /*
@@ -5785,7 +5795,7 @@ void CNewCleanup_imp::x_SplitDbtag( CDbtag &dbt, vector< CRef< CDbtag > > & out_
     // check if we're trying to split something we shouldn't
     if (dbt.IsSetDb()) {
         string db = dbt.GetDb();
-        if (NStr::Equal(db, "MGD") || NStr::Equal(db, "MGI") || NStr::Equal(db, "HGNC")) {
+        if (NStr::Equal(db, "MGD") || NStr::Equal(db, "MGI") || NStr::Equal(db, "HGNC") || NStr::Equal(db, "VGNC")) {
             return;
         }
     }
