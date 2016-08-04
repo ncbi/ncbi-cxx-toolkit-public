@@ -36,7 +36,7 @@ BEGIN_SCOPE(align_format)
 const string kArgOutputFormat("outfmt");
 const int kDfltArgOutputFormat = 0;
 string kDfltArgTabularOutputFmt =
-    "qseqid sseqid pident length mismatch gapopen qstart qend sstart send "
+    "qacc sacc pident length mismatch gapopen qstart qend sstart send "
     "evalue bitscore";
 const string kDfltArgTabularOutputFmtTag("std");
 

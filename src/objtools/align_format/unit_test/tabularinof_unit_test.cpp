@@ -96,8 +96,8 @@ BOOST_AUTO_TEST_CASE(StandardOutput) {
 
     string output = CNcbiOstrstreamToString(output_stream);
 
-    BOOST_REQUIRE(output.find("gi|1786181|gb|AE000111.1|AE000111	gi|1786181|gb|AE000111.1|AE000111	100.000	10596	0	0	1	10596") != NPOS);
-    BOOST_REQUIRE(output.find("gi|1786181|gb|AE000111.1|AE000111	gi|1787084|gb|AE000188.1|AE000188	97.059	34	1	0	5567	5600	1088") != NPOS);
+    BOOST_REQUIRE(output.find("AE000111	AE000111	100.000	10596	0	0	1	10596") != NPOS);
+    BOOST_REQUIRE(output.find("AE000111	AE000188	97.059	34	1	0	5567	5600	1088") != NPOS);
     BOOST_REQUIRE(output.find("# BLAST processed 1 queries") != NPOS);
 }
 
