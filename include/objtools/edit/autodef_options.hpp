@@ -94,6 +94,7 @@ public:
         eOptionFieldType_ModifierList,
         eOptionFieldType_TargetedLocusName,
         eOptionFieldType_SuppressMiscFeatureSubfeatures,
+        eOptionFieldType_CustomFeatureClause,
         eOptionFieldMax
     };
 
@@ -225,6 +226,9 @@ public:
     string GetTargetedLocusName() const { return m_TargetedLocusName;  }
     void SetTargetedLocusName(const string& tls) { m_TargetedLocusName = tls; }
 
+    string GetCustomFeatureClause() const { return m_CustomFeatureClause; }
+    void SetCustomFeatureClause(const string& val) { m_CustomFeatureClause = val; }
+
 private:
 
     bool m_BooleanFlags[eOptionFieldMax];
@@ -237,6 +241,7 @@ private:
     typedef vector<CSeqFeatData::ESubtype> TSuppressedFeatureSubtypes;
     TSuppressedFeatureSubtypes m_SuppressedFeatureSubtypes;
     string m_TargetedLocusName;
+    string m_CustomFeatureClause;
 
     TOrgMods m_OrgMods;
     TSubSources m_SubSources;
@@ -259,6 +264,7 @@ private:
 
     CRef<CUser_field> x_MakeMaxMods() const;
     CRef<CUser_field> x_MakeTargetedLocusName() const;
+    CRef<CUser_field> x_MakeCustomFeatureClause() const;
 
 #define AUTODEFENUMFIELD(Fieldname) \
     CRef<CUser_field> x_Make##Fieldname() const { \

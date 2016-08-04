@@ -318,6 +318,9 @@ void CheckAutoDefOptions
     if (opts.GetKeepMiscRecomb()) {
         expected_num_fields++;
     }
+    if (!NStr::IsBlank(opts.GetCustomFeatureClause())) {
+        expected_num_fields++;
+    }
 
     BOOST_CHECK_EQUAL(user.GetObjectType(), CUser_object::eObjectType_AutodefOptions);
     BOOST_CHECK_EQUAL(user.GetData().size(), expected_num_fields);
@@ -347,6 +350,9 @@ void CheckAutoDefOptions
     BOOST_CHECK_EQUAL(HasStringField(user, "MiscFeatRule", opts.GetMiscFeatRule(opts.GetMiscFeatRule())) , 1);
     BOOST_CHECK_EQUAL(HasStringField(user, "FeatureListType", opts.GetFeatureListType(opts.GetFeatureListType())), 1);
     BOOST_CHECK_EQUAL(HasStringField(user, "HIVRule", "WantBoth"), 1);
+    if (!NStr::IsBlank(opts.GetCustomFeatureClause())) {
+        BOOST_CHECK_EQUAL(HasStringField(user, "CustomFeatureClause", opts.GetCustomFeatureClause()), 1);
+    }
     BOOST_CHECK_EQUAL(HasIntField(user, "MaxMods", -99), 1);
     if (user.GetData().size() != expected_num_fields) {
         int field_num = 1;
@@ -1957,6 +1963,22 @@ BOOST_AUTO_TEST_CASE(Test_GB_5793)
     TestForRecomb(entry, "Sebaea microphylla mitotic_recombination genomic sequence.");
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_GB_5765)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    CRef<CSeq_feat> m = unit_test_util::AddMiscFeature(entry);
+    AddTitle(entry, "Sebaea microphylla special flower.");
+    objects::CAutoDef autodef;
+    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+    CRef<CScope> scope(new CScope(*object_manager));
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    autodef.AddSources(seh);
+    CRef<CAutoDefModifierCombo> mod_combo(new CAutoDefModifierCombo());
+    autodef.SetFeatureListType(CAutoDefOptions::eListAllFeatures);
+    autodef.SetCustomFeatureClause("special flower");
+    CheckDeflineMatches(seh, autodef, mod_combo);
+}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

@@ -74,6 +74,9 @@ CRef<CUser_object> CAutoDefOptions::MakeUserObject() const
     if (!NStr::IsBlank(m_TargetedLocusName)) {
         user->SetData().push_back(x_MakeTargetedLocusName());
     }
+    if (!NStr::IsBlank(m_CustomFeatureClause)) {
+        user->SetData().push_back(x_MakeCustomFeatureClause());
+    }
 
     return user;
 }
@@ -132,6 +135,10 @@ void CAutoDefOptions::InitFromUserObject(const CUser_object& obj)
                 if ((*it)->IsSetData() && (*it)->GetData().IsStr()) {
                     m_TargetedLocusName = (*it)->GetString();
                 }
+            } else if (field_type == eOptionFieldType_CustomFeatureClause) {
+                if ((*it)->IsSetData() && (*it)->GetData().IsStr()) {
+                    m_CustomFeatureClause = (*it)->GetString();
+                }
             }
         }
     }
@@ -161,6 +168,7 @@ typedef SStaticPair<const char *, unsigned int> TNameValPair;
 const TNameValPair sc_FieldTypes[] = {
         { "AllowModAtEndOfTaxname", CAutoDefOptions::eOptionFieldType_AllowModAtEndOfTaxname },
         { "AltSpliceFlag", CAutoDefOptions::eOptionFieldType_AltSpliceFlag },
+        { "CustomFeatureClause", CAutoDefOptions::eOptionFieldType_CustomFeatureClause },
         { "DoNotApplyToAff", CAutoDefOptions::eOptionFieldType_DoNotApplyToAff },
         { "DoNotApplyToCf", CAutoDefOptions::eOptionFieldType_DoNotApplyToCf },
         { "DoNotApplyToNr", CAutoDefOptions::eOptionFieldType_DoNotApplyToNr },
@@ -294,6 +302,7 @@ bool CAutoDefOptions::x_IsBoolean(TFieldType field_type) const
         case eOptionFieldType_ModifierList:
         case eOptionFieldType_MaxMods:
         case eOptionFieldType_TargetedLocusName:
+        case eOptionFieldType_CustomFeatureClause:
             rval = false;
             break;
         default:
@@ -493,6 +502,15 @@ CRef<CUser_field> CAutoDefOptions::x_MakeTargetedLocusName() const
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(GetFieldType(eOptionFieldType_TargetedLocusName));
     field->SetData().SetStr(m_TargetedLocusName);
+    return field;
+}
+
+
+CRef<CUser_field> CAutoDefOptions::x_MakeCustomFeatureClause() const
+{
+    CRef<CUser_field> field(new CUser_field());
+    field->SetLabel().SetStr(GetFieldType(eOptionFieldType_CustomFeatureClause));
+    field->SetData().SetStr(m_CustomFeatureClause);
     return field;
 }
 

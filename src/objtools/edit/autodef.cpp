@@ -627,6 +627,11 @@ bool s_HasPromoter(CBioseq_Handle bh)
 
 string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh)
 {
+    const string& custom = m_Options.GetCustomFeatureClause();
+    if (!NStr::IsBlank(custom)) {
+        return custom;
+    }
+
     CAutoDefFeatureClause_Base main_clause;
     CAutoDefFeatureClause *new_clause;
     CRange<TSeqPos> range;

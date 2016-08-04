@@ -109,6 +109,7 @@ public:
     void SetKeepMiscRecomb(bool keep);
 	void SetUseNcRNAComment (bool use_comment);
     void SetUseFakePromoters (bool use_fake);
+    void SetCustomFeatureClause(const string& custom_feature_clause);
     
     void SuppressFeature(objects::CFeatListItem feat); 
     void SuppressFeature(objects::CSeqFeatData::ESubtype subtype);
@@ -331,6 +332,11 @@ void CAutoDef::SetUseFakePromoters(bool use_fake)
 }
 
 
+inline
+void CAutoDef::SetCustomFeatureClause(const string& custom_feature_clause)
+{
+    m_Options.SetCustomFeatureClause(custom_feature_clause);
+}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
