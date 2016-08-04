@@ -525,7 +525,6 @@ static CTempString x_GetDivisionProc(const CBioseq_Handle& bsh, bool is_prot,
             tech == CMolInfo::eTech_standard ||
             tech == CMolInfo::eTech_htgs_3   ||
             tech == CMolInfo::eTech_wgs      ||
-            tech == CMolInfo::eTech_tsa      ||
             tech == CMolInfo::eTech_other) {
             division = "ENV";
         }
