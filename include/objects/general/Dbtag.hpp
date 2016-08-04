@@ -213,7 +213,8 @@ public:
         eDbtagType_I5KNAL,
         eDbtagType_VISTA,
         eDbtagType_BEI,
-        eDbtagType_Araport
+        eDbtagType_Araport,
+        eDbtagType_VGNC
     };
 
     enum EDbtagGroup {

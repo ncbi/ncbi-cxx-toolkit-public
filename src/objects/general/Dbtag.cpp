@@ -161,6 +161,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     { "UniProtKB/TrEMBL", CDbtag::eDbtagType_UniProt_TrEMBL },
     { "UniSTS", CDbtag::eDbtagType_UniSTS },
     { "VBASE2", CDbtag::eDbtagType_VBASE2 },
+    { "VGNC", CDbtag::eDbtagType_VGNC },
     { "VISTA", CDbtag::eDbtagType_VISTA },
     { "VectorBase", CDbtag::eDbtagType_VectorBase },
     { "Vega", CDbtag::eDbtagType_Vega },
@@ -692,6 +693,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_VISTA, "http://enhancer.lbl.gov/cgi-bin/dbxref.pl?id=" }, // https not available tested 7/13/2016
     { CDbtag::eDbtagType_BEI, "https://www.beiresources.org/Catalog/animalViruses/" },
     { CDbtag::eDbtagType_Araport, "https://www.araport.org/locus/" },
+    { CDbtag::eDbtagType_VGNC, "http://vertebrate.genenames.org/data/gene-symbol-report/#!/vgnc_id/" }, // https not available tested 7/13/2016
 };
 
 typedef CStaticPairArrayMap<CDbtag::EDbtagType, const char*> TUrlPrefixMap;
@@ -817,6 +819,12 @@ string CDbtag::GetUrl(const string & genus,
 
     case eDbtagType_HGNC:
         if (NStr::StartsWith(tag, "HGNC:", NStr::eNocase)) {
+            tag = tag.substr(5);
+        }
+        break;
+
+    case eDbtagType_VGNC:
+        if (NStr::StartsWith(tag, "VGNC:", NStr::eNocase)) {
             tag = tag.substr(5);
         }
         break;
