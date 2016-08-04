@@ -424,7 +424,7 @@ void SGridWorkerNodeImpl::x_WNCoreInit()
 
     {{
         string memlimitstr(reg.GetString(kServerSec,
-                "total_memory_limit", kEmptyStr, IRegistry::eReturn));
+                "total_memory_limit", kEmptyStr));
 
         if (!memlimitstr.empty())
             m_TotalMemoryLimit = NStr::StringToUInt8_DataSize(memlimitstr);
