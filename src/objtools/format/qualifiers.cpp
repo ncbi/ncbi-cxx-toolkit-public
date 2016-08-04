@@ -1387,6 +1387,10 @@ void CFlatXrefQVal::Format(TFlatQuals& q, const CTempString& name,
             if (!NStr::StartsWith(id, "HGNC:", NStr::eNocase)) {
                 id = "HGNC:" + id;
             }
+        } else if (NStr::EqualNocase(db, "VGNC")) {
+            if (!NStr::StartsWith(id, "VGNC:", NStr::eNocase)) {
+                id = "VGNC:" + id;
+            }
         } else if (NStr::EqualNocase(db, "MGI")) {
             if (!NStr::StartsWith(id, "MGI:", NStr::eNocase)) {
                 id = "MGI:" + id;
