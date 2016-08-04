@@ -313,7 +313,7 @@ static const char* kData_Hgvs =
 static const char* kData_NotHgvs = 
     "Seq-annot ::= {desc {name Primer.\n";
 
-static const char* kData_JSON = 
+static const char* kData_JSON1 = 
     R"( { )"
     R"(    "Search": { )"
     R"(     "query\"_id": "lcl|1", )"
@@ -325,6 +325,17 @@ static const char* kData_JSON =
     R"(        "test false": false, )"
     R"(        "test null": null, )"
     R"(        "test open\\\" string )";
+
+
+static const char* kData_JSON2 = 
+    R"( { )"
+    R"(    "Search": { )"
+    R"(     "truncated boolean": fal )";
+
+static const char* kData_JSON3 = 
+    R"( { )"
+    R"(    "Search": { )"
+    R"(     "truncated number": 1.7E- )";
 
 // Missing starting brace
 static const char* kData_NotJSON1 = 
@@ -683,13 +694,28 @@ BOOST_AUTO_TEST_CASE(TestBam)
 }
 
 
-BOOST_AUTO_TEST_CASE(TestJSON)
+BOOST_AUTO_TEST_CASE(TestJSON1)
 {
-    CNcbiIstrstream str(kData_JSON);
+    CNcbiIstrstream str(kData_JSON1);
     CFormatGuess guess(str);
     BOOST_CHECK_EQUAL(guess.GuessFormat(), CFormatGuess::eJSON);
 }
 
+
+BOOST_AUTO_TEST_CASE(TestJSON2)
+{
+    CNcbiIstrstream str(kData_JSON2);
+    CFormatGuess guess(str);
+    BOOST_CHECK_EQUAL(guess.GuessFormat(), CFormatGuess::eJSON);
+}
+
+
+BOOST_AUTO_TEST_CASE(TestJSON3)
+{
+    CNcbiIstrstream str(kData_JSON3);
+    CFormatGuess guess(str);
+    BOOST_CHECK_EQUAL(guess.GuessFormat(), CFormatGuess::eJSON);
+}
 
 BOOST_AUTO_TEST_CASE(TestNotJSON1)
 {
