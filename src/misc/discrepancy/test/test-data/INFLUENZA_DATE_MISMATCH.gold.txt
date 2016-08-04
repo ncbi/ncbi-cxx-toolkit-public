@@ -1,0 +1,11 @@
+Discrepancy Report Results
+
+Summary
+INFLUENZA_DATE_MISMATCH: 2 influenza strains conflict with collection date
+
+Detailed Report
+
+INFLUENZA_DATE_MISMATCH: 2 influenza strains conflict with collection date
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\flu_date.sqn:KX264375 (3 components):Influenza A virus (A/yellow-billed teal/Chile/12/2014(H7N3))
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\flu_date.sqn:KX264379 (3 components):Influenza A virus (A/yellow-billed pintail/Chile/11/2014(H7N3))
+
