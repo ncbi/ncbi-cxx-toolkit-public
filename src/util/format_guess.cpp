@@ -1744,7 +1744,6 @@ bool CFormatGuess::TestFormatBam(EMode mode)
 //  ----------------------------------------------------------------------------
 bool CFormatGuess::TestFormatVcf(
     EMode)
-//  ----------------------------------------------------------------------------
 {
     // Currently, only look for the header line identifying the VCF version.
     // Waive requirement this be the first line, but still expect it to by
@@ -1760,12 +1759,11 @@ bool CFormatGuess::TestFormatVcf(
     }
     return false;
 }
-
+//  ----------------------------------------------------------------------------
 
 
 //  ----------------------------------------------------------------------------
 void CFormatGuess::x_StripJsonStrings(string& testString) const
-//  ----------------------------------------------------------------------------
 {
     list<size_t> limits;
     x_FindJsonStringLimits(testString, limits);
@@ -1807,12 +1805,11 @@ void CFormatGuess::x_StripJsonStrings(string& testString) const
     testString = complement;
     return;
 }
-
+//  ----------------------------------------------------------------------------
 
 
 //  ----------------------------------------------------------------------------
 void CFormatGuess::x_FindJsonStringLimits(const string& input, list<size_t>& limits) const
-//  ----------------------------------------------------------------------------
 {
     limits.clear();
     const string& double_quotes = R"(")";
@@ -1830,11 +1827,11 @@ void CFormatGuess::x_FindJsonStringLimits(const string& input, list<size_t>& lim
         is_start = !is_start;
     }
 }
+//  ----------------------------------------------------------------------------
 
 
 //  ----------------------------------------------------------------------------
 size_t s_GetPrecedingFslashCount(const string& input, const size_t pos)
-//  ----------------------------------------------------------------------------
 {
     if (pos == 0 ||
         pos >= input.size() ||
@@ -1851,11 +1848,11 @@ size_t s_GetPrecedingFslashCount(const string& input, const size_t pos)
     }
     return num_fslash;
 }
+//  ----------------------------------------------------------------------------
 
 
 //  ----------------------------------------------------------------------------
 size_t CFormatGuess::x_FindNextJsonStringStop(const string& input, const size_t from_pos) const
-//  ----------------------------------------------------------------------------
 {
     const string& double_quotes = R"(")";
     size_t pos = NStr::Find(input, double_quotes, from_pos);
@@ -1873,11 +1870,98 @@ size_t CFormatGuess::x_FindNextJsonStringStop(const string& input, const size_t 
     }   
     return pos;
 }
+//  ----------------------------------------------------------------------------
+
+
+//  ----------------------------------------------------------------------------
+bool CFormatGuess::x_CheckStripJsonNumbers(string& testString) const
+{
+    if (NStr::IsBlank(testString)) {
+        return true;
+    }
+
+    list<string> subStrings;
+    // Split on white space
+    NStr::Split(testString, " \r\t\n", subStrings, NStr::fSplit_MergeDelims);
+
+    for (auto it = subStrings.cbegin(); it != subStrings.cend(); ++it) {
+        const string subString = *it;
+
+        if (!x_IsNumber(subString)) { // The last substring might be a truncated number or keyword
+           ++it;
+           if (it == subStrings.cend()) {
+               testString = subString;
+               return true;
+           }
+           return false;
+        }
+    }
+
+    testString.clear();
+    return true;
+}
+//  ----------------------------------------------------------------------------
+
+
+// -----------------------------------------------------------------------------
+bool CFormatGuess::x_IsTruncatedJsonNumber(const string& testString) const
+{
+    // Truncation of a JSON number may result strings of the following type:
+    //  1.1e
+    //  1.1E
+    //  1.7E-
+    //  +
+    //  -
+    // NStr::StringToDouble cannot handle such truncations, but we can "fix"
+    // the truncation by appending zero ("0") to the truncated string
+
+    const string extendedString = testString + "0"; 
+
+    return x_IsNumber(extendedString);
+}
+// -----------------------------------------------------------------------------
+
+
+// -----------------------------------------------------------------------------
+bool CFormatGuess::x_IsNumber(const string& testString) const 
+{
+    try {
+        NStr::StringToDouble(testString);
+    } 
+    catch (...) {
+        return false;
+    }
+    return true;
+}
+// -----------------------------------------------------------------------------
+
+
+// -----------------------------------------------------------------------------
+bool CFormatGuess::x_IsTruncatedJsonKeyword(const string& testString) const
+{
+    const size_t stringSize = testString.size();
+    // nul, tru, fals
+    if (stringSize > 4) {
+        return false;
+    }
+
+    const string nullString("null");
+    const string trueString("true");
+    const string falseString("false");
+
+    if (testString == nullString.substr(0, stringSize) ||
+        testString == trueString.substr(0, stringSize) ||
+        testString == falseString.substr(0, stringSize)) {
+        return true;
+    }
+
+    return false;
+}
+// -----------------------------------------------------------------------------
 
 
 //  ----------------------------------------------------------------------------
 bool CFormatGuess::x_IsBlankOrNumbers(const string& testString) const 
-//  ----------------------------------------------------------------------------
 {
     if (NStr::IsBlank(testString)) {
         return true;
@@ -1888,21 +1972,18 @@ bool CFormatGuess::x_IsBlankOrNumbers(const string& testString) const
     NStr::Split(testString, " \r\t\n", numStrings, NStr::fSplit_MergeDelims);
 
     for (auto numString : numStrings) {
-        try {
-            NStr::StringToDouble(numString); 
-        }
-        catch (...) {
+        if (!x_IsNumber(numString)) {
             return false;
         }
     }
 
     return true;
 }
+//  ----------------------------------------------------------------------------
 
 
 //  ----------------------------------------------------------------------------
 bool CFormatGuess::x_CheckStripJsonPunctuation(string& testString) const 
-//  ----------------------------------------------------------------------------
 {
     // Parentheses are prohibited
     if (testString.find_first_of("()") != string::npos) {
@@ -1919,11 +2000,11 @@ bool CFormatGuess::x_CheckStripJsonPunctuation(string& testString) const
 
     return true;
 }
+//  ----------------------------------------------------------------------------
 
 
 //  ----------------------------------------------------------------------------
 size_t CFormatGuess::x_StripJsonPunctuation(string& testString) const 
-//  ----------------------------------------------------------------------------
 {
     size_t initial_len = testString.size();
 
@@ -1936,24 +2017,25 @@ size_t CFormatGuess::x_StripJsonPunctuation(string& testString) const
 
     return testString.size() - initial_len;
 }
+//  ----------------------------------------------------------------------------
 
 
 //  ----------------------------------------------------------------------------
 void CFormatGuess::x_StripJsonKeywords(string& testString) const 
-//  ----------------------------------------------------------------------------
 {
     NStr::ReplaceInPlace(testString, "true", "");
     NStr::ReplaceInPlace(testString, "false", "");
     NStr::ReplaceInPlace(testString, "null", "");
 }
+//  ----------------------------------------------------------------------------
 
 
 //  ----------------------------------------------------------------------------
 bool CFormatGuess::x_CheckJsonStart(const string& testString) const 
-//  ----------------------------------------------------------------------------
 {
     if (NStr::StartsWith(testString, "{")) {
-        const auto next_pos = testString.find_first_not_of("( \t\r\n",1); // Next character must begin a string
+        // Next character must begin a string
+        const auto next_pos = testString.find_first_not_of("( \t\r\n",1); 
         if (next_pos != NPOS && testString[next_pos] == '\"') {
             return true;
         }
@@ -1965,13 +2047,14 @@ bool CFormatGuess::x_CheckJsonStart(const string& testString) const
 
     return false;
 }
+//  ----------------------------------------------------------------------------
 
 
 //  ----------------------------------------------------------------------------
 bool CFormatGuess::TestFormatJson(
         EMode)
-//  ----------------------------------------------------------------------------
 {
+
     // Convert the test-buffer character array to a string
     string testString(m_pTestBuffer, m_iTestDataSize);
 
@@ -1993,8 +2076,20 @@ bool CFormatGuess::TestFormatJson(
 
     x_StripJsonKeywords(testString);
 
-    return x_IsBlankOrNumbers(testString);
+    if (!x_CheckStripJsonNumbers(testString)) {
+        return false;
+    }
+
+    if ( NStr::IsBlank(testString) ) {
+        return true;
+    }
+
+    // What remains is either a truncated number
+    // or a truncated keyword
+    return x_IsTruncatedJsonNumber(testString) | 
+           x_IsTruncatedJsonKeyword(testString);
 }
+//  ----------------------------------------------------------------------------
 
 
 //  ----------------------------------------------------------------------------
@@ -2772,6 +2867,7 @@ CFormatGuess::IsAsnComment(
 }
 
 //  ----------------------------------------------------------------------------
+
 bool
 CFormatGuess::EnsureSplitLines()
 //  ----------------------------------------------------------------------------

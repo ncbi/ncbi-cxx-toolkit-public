@@ -352,6 +352,15 @@ private:
     // In-place deletion of JSON keywords: true, false, null
     void x_StripJsonKeywords(string& testString) const;
 
+    bool x_CheckStripJsonNumbers(string& testString) const;
+
+    bool x_IsTruncatedJsonNumber(const string& testString) const;
+
+    // Is a truncation of true, false, or null
+    bool x_IsTruncatedJsonKeyword(const string& testString) const;
+
+    bool x_IsNumber(const string& testString) const;
+
     // Return true if the string is blank or a list of space-delimited numbers
     bool x_IsBlankOrNumbers(const string& testString) const;
 
