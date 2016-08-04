@@ -195,6 +195,8 @@ void CUCSCRegionReader::xSmartFieldSplit(vector<string>& fields, CTempString lin
             fields[0] += line[len];
             fields[0] += fields[1];
             fields.erase(fields.begin()+1);
+        } else {
+            break;
         }
     }
 }
