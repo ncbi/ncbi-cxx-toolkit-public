@@ -73,8 +73,13 @@ public:
         eClean_KeepTopSet        = 0x20
     };
 
+    enum EScopeOptions {
+        eScope_Copy,
+        eScope_UseInPlace
+    };
+
     // Construtor / Destructor
-    CCleanup(CScope* scope = NULL);
+    CCleanup(CScope* scope = NULL, EScopeOptions scope_handling = eScope_Copy);
     ~CCleanup();
 
     void SetScope(CScope* scope);

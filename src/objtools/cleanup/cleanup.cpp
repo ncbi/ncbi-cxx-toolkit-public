@@ -80,11 +80,16 @@ enum EChangeType {
 // *********************** CCleanup implementation **********************
 
 
-CCleanup::CCleanup(CScope* scope) 
+CCleanup::CCleanup(CScope* scope, EScopeOptions scope_handling)
 {
-    m_Scope = new CScope(*(CObjectManager::GetInstance()));
-    if (scope) {
-        m_Scope->AddScope(*scope);
+    if (scope && scope_handling == eScope_UseInPlace) {
+        m_Scope = scope;
+    }
+    else {
+        m_Scope = new CScope(*(CObjectManager::GetInstance()));
+        if (scope) {
+            m_Scope->AddScope(*scope);
+        }
     }
 }
 
