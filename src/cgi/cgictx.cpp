@@ -308,8 +308,13 @@ const string& CCgiContext::GetSelfURL(void) const
         return kEmptyStr;
     }
 
-    bool secure = AStrEquiv(GetRequest().GetRandomProperty("HTTPS",
-        false), "on", PNocase());
+    bool secure
+        =   AStrEquiv
+        (GetRequest().GetRandomProperty("HTTPS", false), "on",
+         PNocase())
+        ||  AStrEquiv
+        (GetRequest().GetRandomProperty("X_FORWARDED_PROTO"), "https",
+         PNocase());
     m_SecureMode = secure ? eSecure_On : eSecure_Off;
     m_SelfURL = secure ? "https://" : "http://";
     m_SelfURL += server;
@@ -347,7 +352,7 @@ bool CCgiContext::IsSecure(void) const
     if (m_SecureMode == eSecure_NotSet) {
         m_SecureMode
             =   NStr::EqualNocase
-            (CTempStringEx(GetSelfURL(), 8), "https://")
+            (CTempStringEx(GetSelfURL(), 0, 8), "https://")
             ||  NStr::EqualNocase
             (GetRequest().GetRandomProperty("HTTPS", false), "on")
             ||  NStr::EqualNocase
