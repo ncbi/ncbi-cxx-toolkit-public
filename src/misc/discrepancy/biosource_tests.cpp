@@ -808,7 +808,7 @@ DISCREPANCY_CASE(STRAIN_TAXNAME_MISMATCH, CBioSource, eDisc | eOncaller, "BioSou
     ITERATE(COrgName::TMod, om, obj.GetOrg().GetOrgname().GetMod()) {
         if ((*om)->IsSetSubtype() && (*om)->GetSubtype() == COrgMod::eSubtype_strain &&
             (*om)->IsSetSubname() && !NStr::IsBlank((*om)->GetSubname())) {
-            m_Objs["[n] biosource[s] have strain " + (*om)->GetSubname() + " but do not have the same taxnames"].Add(*context.NewFeatOrDescObj(eKeepRef));
+            m_Objs["[n] biosource[s] have strain " + (*om)->GetSubname() + " but do not have the same taxnames"].Add(*context.NewFeatOrDescObj(eKeepRef)); // should be optimized!!!
         }
     }
 }
@@ -1675,6 +1675,59 @@ DISCREPANCY_SUMMARIZE(TAX_LOOKUP_MISSING)
     }
 
     GetMismatchOrMissingOrgRefReport(context, m_Objs, kTaxlookupMissing, false);
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+// UNNECESSARY_ENVIRONMENTAL
+
+DISCREPANCY_CASE(UNNECESSARY_ENVIRONMENTAL, CBioSource, eOncaller, "Unnecessary environmental qualifier present")
+{
+    if (!obj.IsSetSubtype()) {
+        return;
+    }
+    bool found = false;
+    ITERATE(CBioSource::TSubtype, subtype, obj.GetSubtype()) {
+        if ((*subtype)->IsSetSubtype()) {
+            CSubSource::TSubtype st = (*subtype)->GetSubtype();
+            if (st == CSubSource::eSubtype_metagenomic) {
+                return;
+            }
+            else if (st == CSubSource::eSubtype_other && NStr::FindNoCase((*subtype)->GetName(), "amplified with species-specific primers") != NPOS) {
+                return;
+            }
+            else if (st == CSubSource::eSubtype_environmental_sample) {
+                found = true;
+            }
+        }
+    }
+    if (!found) {
+        return;
+    }
+    if (obj.IsSetOrg()) {
+        if (obj.GetOrg().IsSetTaxname()) {
+            const string& s = obj.GetOrg().GetTaxname();
+            if (NStr::FindNoCase(s, "uncultured") != NPOS
+                    || NStr::FindNoCase(s, "enrichment culture") != NPOS || NStr::FindNoCase(s, "metagenome") != NPOS
+                    || NStr::FindNoCase(s, "environmental") != NPOS || NStr::FindNoCase(s, "unidentified") != NPOS) {
+                return;
+            }
+        }
+        if (obj.GetOrg().IsSetOrgname() && obj.GetOrg().GetOrgname().IsSetMod()) {
+            ITERATE(COrgName::TMod, it, obj.GetOrg().GetOrgname().GetMod()) {
+                if ((*it)->IsSetSubtype() && (*it)->GetSubtype() == COrgMod::eSubtype_other
+                        && (*it)->IsSetSubname() && NStr::FindNoCase((*it)->GetSubname(), "amplified with species-specific primers") != NPOS) {
+                    return;
+                }
+            }
+        }
+    }
+    m_Objs["[n] biosource[s] [has] unnecessary environmental qualifier"].Add(*context.NewFeatOrDescObj());
+}
+
+
+DISCREPANCY_SUMMARIZE(UNNECESSARY_ENVIRONMENTAL)
+{
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
