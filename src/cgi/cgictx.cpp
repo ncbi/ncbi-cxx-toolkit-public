@@ -339,7 +339,7 @@ const string& CCgiContext::GetSelfURL(void) const
     // Remove args if any
     size_t arg_pos = script_uri.find('?');
     if (arg_pos != NPOS) {
-        script_uri = script_uri.substr(0, arg_pos);
+        script_uri.resize(arg_pos);
     }
     m_SelfURL += NStr::Replace(script_uri, "//", "/");
 
