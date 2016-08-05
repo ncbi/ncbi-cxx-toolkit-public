@@ -316,21 +316,19 @@ const string& CCgiContext::GetSelfURL(void) const
         (GetRequest().GetRandomProperty("X_FORWARDED_PROTO"), "https",
          PNocase());
     m_SecureMode = secure ? eSecure_On : eSecure_Off;
-    m_SelfURL = secure ? "https://" : "http://";
+    m_SelfURL    = secure ? "https://" : "http://";
     m_SelfURL += server;
     string port = GetRequest().GetProperty(eCgi_ServerPort);
     // Skip port if it's default for the selected scheme
     if ((secure  &&  port == "443")  ||  (!secure  &&  port == "80")
-	||  (server.size() >= port.size() + 2  &&  NStr::EndsWith(server, port)
-	     &&  server[server.size() - port.size() - 1] == ':')) {
-        port = kEmptyStr;
+        ||  (server.size() >= port.size() + 2  &&  NStr::EndsWith(server, port)
+             &&  server[server.size() - port.size() - 1] == ':')) {
+        port.erase();
     }
     if ( !port.empty() ) {
         m_SelfURL += ':';
         m_SelfURL += port;
     }
-    // (replace adjacent '//' to work around a bug in the "www.ncbi" proxy;
-    //  it should not hurt, and may help with similar proxies outside NCBI)
     string script_uri;
     script_uri = GetRequest().GetRandomProperty("SCRIPT_URL", false);
     if ( script_uri.empty() ) {
@@ -341,7 +339,9 @@ const string& CCgiContext::GetSelfURL(void) const
     if (arg_pos != NPOS) {
         script_uri.resize(arg_pos);
     }
-    m_SelfURL += NStr::Replace(script_uri, "//", "/");
+    // (replace adjacent '//' to work around a bug in the "www.ncbi" proxy;
+    //  it should not hurt, and may help with similar proxies outside NCBI)
+    m_SelfURL += NStr::ReplaceInPlace(script_uri, "//", "/");
 
     return m_SelfURL;
 }
