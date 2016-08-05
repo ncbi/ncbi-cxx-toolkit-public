@@ -53,7 +53,7 @@ Win32         : plain : static  32  ReleaseMT
 Win64         : plain : static  64  ReleaseMT <ENV>NCBI_CONFIG____ENABLEDUSERREQUESTS__NCBI-INT8-GI=1</ENV>
 
 #IntelMAC            : gcc : GCC.sh   --with-bin-release --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-ncbi-public --with-experimental=Int8GI --without-vdb
-IntelMAC    : clang : Clang.sh --with-bin-release --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-ncbi-public --with-experimental=Int8GI --without-vdb
+IntelMAC    : clang : Clang.sh --with-bin-release --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-ncbi-public --with-experimental=Int8GI --without-vdb --with-gnutls=/netopt/ncbi_tools/gnutls-3.4.0 --without-gcrypt
 #IntelMAC-Clang36    : clang     : Clang.sh --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-ncbi-public --without-vdb
 
 USE_COMPONENTS
