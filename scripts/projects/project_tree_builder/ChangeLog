@@ -306,3 +306,7 @@ Added support for VS2015
 May 11, 2016
 version 4.1.4, CXX-8128
 Implemented library order analysis and generation.
+
+August 05, 2016
+version 4.1.5, CXX-8435
+Bug fixes.
