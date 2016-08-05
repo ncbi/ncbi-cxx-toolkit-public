@@ -347,7 +347,7 @@ bool CCgiContext::IsSecure(void) const
     if (m_SecureMode == eSecure_NotSet) {
         m_SecureMode
             =   NStr::EqualNocase
-            (CTempStringEx(GetSelfURL(), 5), "https")
+            (CTempStringEx(GetSelfURL(), 8), "https://")
             ||  NStr::EqualNocase
             (GetRequest().GetRandomProperty("HTTPS", false), "on")
             ||  NStr::EqualNocase
