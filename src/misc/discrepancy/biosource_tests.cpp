@@ -1530,7 +1530,7 @@ DISCREPANCY_CASE(TAX_LOOKUP_MISMATCH, CBioSource, eDisc, "Find Tax Lookup Mismat
         return;
     }
 
-    m_Objs[kOgRefs].Add(*context.NewFeatOrDescOrSubmitBlockObj(eKeepRef, false, const_cast<CBioSource*>(&obj)));
+    m_Objs[kOgRefs].Add(*context.NewFeatOrDescObj(eKeepRef, false, const_cast<CBioSource*>(&obj)));
 }
 
 static void GetOrgRefs(TReportObjectList& objs, vector<CRef<COrg_ref>>& org_refs)
@@ -1590,16 +1590,10 @@ static CRef<CTaxon3_reply> GetOrgRefs(vector<CRef<COrg_ref>>& orgs)
     return reply;
 }
 
-//  ----------------------------------------------------------------------------
-DISCREPANCY_SUMMARIZE(TAX_LOOKUP_MISMATCH)
-//  ----------------------------------------------------------------------------
+static void GetMismatchOrMissingOrgRefReport(CDiscrepancyContext& context, CReportNode& objs_node, const string& subitem, bool is_mismatch)
 {
-    if (m_Objs.empty()) {
-        return;
-    }
-
     vector<CRef<COrg_ref>> org_refs;
-    GetOrgRefs(m_Objs[kOgRefs].GetObjects(), org_refs);
+    GetOrgRefs(objs_node[kOgRefs].GetObjects(), org_refs);
 
     if (!org_refs.empty()) {
 
@@ -1608,11 +1602,20 @@ DISCREPANCY_SUMMARIZE(TAX_LOOKUP_MISMATCH)
 
             vector<CRef<COrg_ref>>::const_iterator org_ref = org_refs.begin();
 
-            TReportObjectList& objs = m_Objs[kOgRefs].GetObjects();
+            TReportObjectList& objs = objs_node[kOgRefs].GetObjects();
             TReportObjectList::iterator obj_it = objs.begin();
 
             ITERATE(CTaxon3_reply::TReply, item, reply->GetReply()) {
-                if ((*item)->IsData() && IsOrgDiffers(**org_ref, (*item)->GetData().GetOrg())) {
+
+                bool report = false;
+                if (is_mismatch) {
+                    report = (*item)->IsData() && IsOrgDiffers(**org_ref, (*item)->GetData().GetOrg());
+                }
+                else {
+                    report = !(*item)->IsData() || (*item)->IsError();
+                }
+
+                if (report) {
 
                     CDiscrepancyObject* dobj = dynamic_cast<CDiscrepancyObject*>(obj_it->GetPointer());
 
@@ -1620,10 +1623,10 @@ DISCREPANCY_SUMMARIZE(TAX_LOOKUP_MISMATCH)
                     CConstRef<CSeq_feat> feat(dynamic_cast<const CSeq_feat*>(dobj->GetObject().GetPointer()));
 
                     if (desc.Empty()) {
-                        m_Objs[kTaxnameMismatch].Add(*context.NewDiscObj(feat));
+                        objs_node[subitem].Add(*context.NewDiscObj(feat));
                     }
                     else {
-                        m_Objs[kTaxnameMismatch].Add(*context.NewDiscObj(desc));
+                        objs_node[subitem].Add(*context.NewDiscObj(desc));
                     }
                 }
 
@@ -1631,10 +1634,48 @@ DISCREPANCY_SUMMARIZE(TAX_LOOKUP_MISMATCH)
                 ++obj_it;
             }
         }
-
-        m_Objs.GetMap().erase(kOgRefs);
-        m_ReportItems = m_Objs.Export(*this)->GetSubitems();
     }
+
+    objs_node.GetMap().erase(kOgRefs);
+}
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(TAX_LOOKUP_MISMATCH)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+
+    GetMismatchOrMissingOrgRefReport(context, m_Objs, kTaxnameMismatch, true);
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+// TAX_LOOKUP_MISSING
+static const string kTaxlookupMissing = "[n] tax name[s] [is] missing in taxonomy lookup";
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(TAX_LOOKUP_MISSING, CBioSource, eDisc, "Find Missing Tax Lookup")
+//  ----------------------------------------------------------------------------
+{
+    if (!obj.IsSetOrg()) {
+        return;
+    }
+
+    m_Objs[kOgRefs].Add(*context.NewFeatOrDescObj(eKeepRef, false, const_cast<CBioSource*>(&obj)));
+}
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(TAX_LOOKUP_MISSING)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+
+    GetMismatchOrMissingOrgRefReport(context, m_Objs, kTaxlookupMissing, false);
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 

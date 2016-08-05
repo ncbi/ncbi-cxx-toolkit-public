@@ -1,0 +1,11 @@
+Discrepancy Report Results
+
+Summary
+TAX_LOOKUP_MISSING: 2 tax names are missing in taxonomy lookup
+
+Detailed Report
+
+TAX_LOOKUP_MISSING: 2 tax names are missing in taxonomy lookup
+test-data/asnfail_all.sqn:lcl|TW-10_2:Heterocrticum arcuatum
+test-data/asnfail_all.sqn:lcl|BG-1:Heterocrticum exiguum
+
