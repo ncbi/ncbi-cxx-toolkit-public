@@ -273,7 +273,10 @@ void CSeqFormatter::DumpAll(CSeqDB& blastdb, CSeqFormatterConfig config)
     fasta.SetWidth(config.m_LineWidth);
     fasta.SetAllFlags(CFastaOstream::fKeepGTSigns|CFastaOstream::fNoExpensiveOps);
 
-    CNcbiEnvironment env;
+    CMetaRegistry::SEntry sentry =
+        CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
+    bool long_seqids = sentry.registry ?
+        sentry.registry->HasEntry("BLAST", "LONG_SEQID") : false;
 
     CRef<CBioseq> bioseq;
     for (int i=0; blastdb.CheckOrFindOID(i); i++) {
@@ -288,7 +291,6 @@ void CSeqFormatter::DumpAll(CSeqDB& blastdb, CSeqFormatterConfig config)
              m_Out << ">" << s_GetTitle(bioseq) << '\n';
              CScope scope(*CObjectManager::GetInstance());
              fasta.WriteSequence(scope.AddBioseq(*bioseq));
-//             continue;
          }
          else if (id->IsLocal()) {
 	     string lcl_tmp = id->AsFastaString();
@@ -296,9 +298,8 @@ void CSeqFormatter::DumpAll(CSeqDB& blastdb, CSeqFormatterConfig config)
 	     m_Out << ">" << lcl_tmp << " " << s_GetTitle(bioseq) << '\n';
              CScope scope(*CObjectManager::GetInstance());
              fasta.WriteSequence(scope.AddBioseq(*bioseq));
-//	     continue;
          }
-         else if (!env.Get("OLD_SEQID").empty()) {
+         else if (long_seqids) {
 
              if (config.m_UseCtrlA) {
                  s_ReplaceCtrlAsInTitle(bioseq);

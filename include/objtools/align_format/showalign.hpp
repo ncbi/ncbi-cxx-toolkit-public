@@ -670,6 +670,9 @@ protected:
     ///result position index for multiple query case
     int m_ResultPositionIndex;
 
+    /// print long sequence ids (with gi and accession with database source)
+    bool m_UseLongSeqIds;
+
     string x_PrintDynamicFeatures(void); 
     ///Display the current alnvec
     ///@param out: stream for display

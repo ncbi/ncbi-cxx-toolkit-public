@@ -41,6 +41,7 @@
 #include <corelib/ncbiutil.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbifile.hpp>
+#include <corelib/metareg.hpp>
 #include <html/htmlhelper.hpp>
 #include <cgi/cgictx.hpp>
 #include <util/tables/raw_scoremat.h>
@@ -504,8 +505,13 @@ CAlignFormatUtil::GetSeqIdString(const list<CRef<CSeq_id> > & ids, bool believe_
     string all_id_str = NcbiEmptyString;
     CRef<CSeq_id> wid = FindBestChoice(ids, CSeq_id::WorstRank);
 
-    CNcbiEnvironment env;
-    if (env.Get("OLD_SEQID").empty()) {
+    CMetaRegistry::SEntry sentry =
+        CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
+
+    bool use_long_seqids = sentry.registry ?
+        sentry.registry->HasEntry("BLAST", "LONG_SEQID") : false;
+
+    if (!use_long_seqids) {
         return GetBareId(*wid);
     }
 

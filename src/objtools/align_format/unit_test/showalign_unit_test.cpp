@@ -113,7 +113,7 @@ BOOST_AUTO_TEST_CASE(TestTGIConversion)
     BOOST_REQUIRE(output.find("gi|385145539") != NPOS);        
 }
 
-bool TestSimpleAlignment(CBlastOM::ELocation location)
+bool TestSimpleAlignment(CBlastOM::ELocation location, bool long_seqids)
 {
     const string seqAlignFileName_in = "data/blastn.vs.ecoli.asn";
     CRef<CSeq_annot> san(new CSeq_annot);
@@ -136,12 +136,7 @@ bool TestSimpleAlignment(CBlastOM::ELocation location)
     ds.SetDbType((kDbType == CBlastDbDataLoader::eNucleotide));
     int flags = CDisplaySeqalign::eShowBlastInfo |
         CDisplaySeqalign::eShowBlastStyleId;
-    bool bare_accessions = true;
-    CNcbiEnvironment env;
-    if (env.Get("OLD_SEQID").empty() == false) {
-        bare_accessions = false;
-    }
-    if (!bare_accessions) {
+    if (long_seqids) {
         flags |= CDisplaySeqalign::eShowGi;
     }
     ds.SetAlignOption(flags);
@@ -149,7 +144,7 @@ bool TestSimpleAlignment(CBlastOM::ELocation location)
     CNcbiOstrstream output_stream;
     ds.DisplaySeqalign(output_stream);
     string output = CNcbiOstrstreamToString(output_stream);    
-    if (bare_accessions) {
+    if (!long_seqids) {
         BOOST_REQUIRE(output.find(">AE000304.1 ") != NPOS);
     }
     else {
@@ -183,12 +178,58 @@ NCBITEST_AUTO_INIT()
 
 BOOST_AUTO_TEST_CASE(TestSimpleAlignment_LocalBlastDBLoader)
 {
-    BOOST_REQUIRE(TestSimpleAlignment(CBlastOM::eLocal));
+    CMetaRegistry::SEntry sentry =
+        CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
+
+    string old_value;
+    bool had_entry = sentry.registry->HasEntry("BLAST", "LONG_SEQID");
+    if (had_entry) {
+        old_value = sentry.registry->Get("BLAST", "LONG_SEQID");
+    }
+
+    sentry.registry->Unset("BLAST", "LONG_SEQID", IRWRegistry::fPersistent);
+    BOOST_REQUIRE(sentry.registry->HasEntry("BLAST", "LONG_SEQID") == false);
+    BOOST_REQUIRE(TestSimpleAlignment(CBlastOM::eLocal, false));
+
+    sentry.registry->Set("BLAST", "LONG_SEQID", "1", IRWRegistry::fPersistent);
+    BOOST_REQUIRE(sentry.registry->HasEntry("BLAST", "LONG_SEQID") == true);
+    BOOST_REQUIRE(TestSimpleAlignment(CBlastOM::eLocal, true));
+    
+    if (had_entry) {
+        sentry.registry->Set("BLAST", "LONG_SEQID", old_value,
+                             IRWRegistry::fPersistent);
+    }
+    else {
+        sentry.registry->Unset("BLAST", "LONG_SEQID", IRWRegistry::fPersistent);
+    }
 }
 
 BOOST_AUTO_TEST_CASE(TestSimpleAlignment_RmtBlastDBLoader)
 {
-   BOOST_REQUIRE(TestSimpleAlignment(CBlastOM::eRemote));
+    CMetaRegistry::SEntry sentry =
+        CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
+
+    string old_value;
+    bool had_entry = sentry.registry->HasEntry("BLAST", "LONG_SEQID");
+    if (had_entry) {
+        old_value = sentry.registry->Get("BLAST", "LONG_SEQID");
+    }
+
+    sentry.registry->Unset("BLAST", "LONG_SEQID", IRWRegistry::fPersistent);
+    BOOST_REQUIRE(sentry.registry->HasEntry("BLAST", "LONG_SEQID") == false);
+    BOOST_REQUIRE(TestSimpleAlignment(CBlastOM::eRemote, false));
+
+    sentry.registry->Set("BLAST", "LONG_SEQID", "1", IRWRegistry::fPersistent);
+    BOOST_REQUIRE(sentry.registry->HasEntry("BLAST", "LONG_SEQID") == true);
+    BOOST_REQUIRE(TestSimpleAlignment(CBlastOM::eRemote, true));
+
+    if (had_entry) {
+        sentry.registry->Set("BLAST", "LONG_SEQID", old_value,
+                             IRWRegistry::fPersistent);
+    }
+    else {
+        sentry.registry->Unset("BLAST", "LONG_SEQID", IRWRegistry::fPersistent);
+    }
 }
 
 BOOST_AUTO_TEST_SUITE_END()

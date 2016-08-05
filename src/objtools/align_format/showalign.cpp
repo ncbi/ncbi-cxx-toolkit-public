@@ -210,6 +210,12 @@ CDisplaySeqalign::CDisplaySeqalign(const CSeq_align_set& seqalign,
             }
         }
     }
+
+    CMetaRegistry::SEntry sentry =
+        CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
+
+    m_UseLongSeqIds = sentry.registry ?
+        sentry.registry->HasEntry("BLAST", "LONG_SEQID") : false;
 }
 
 
@@ -2312,7 +2318,7 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_
                 if (strncmp(alnDispParams->seqID->AsFastaString().c_str(), "lcl|", 4) == 0) 
                          out << alnDispParams->label;
                 else {
-                    if (!env.Get("OLD_SEQID").empty()) {
+                    if (m_UseLongSeqIds) {
                         alnDispParams->seqID->WriteAsFasta(out);
                     }
                     else {
@@ -2395,7 +2401,7 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_
                             out << alnDispParams->label;
                     	}
                     	else {
-                            if (!env.Get("OLD_SEQID").empty()) {
+                            if (m_UseLongSeqIds) {
                                 alnDispParams->seqID->WriteAsFasta(out);
                             }
                             else {
@@ -3678,7 +3684,7 @@ CDisplaySeqalign::x_MapDefLine(SAlnDispParams *alnDispParams,bool isFirst, bool 
 	string seqid;					
     if(!(alnDispParams->seqID->AsFastaString().find("gnl|BL_ORD_ID") != string::npos) || 
 	alnDispParams->seqID->AsFastaString().find("lcl|Subject_") != string::npos){							 
-        if (!env.Get("OLD_SEQID").empty()) {
+        if (m_UseLongSeqIds) {
             seqid = alnDispParams->seqID->AsFastaString();
         }
         else {
@@ -3752,7 +3758,7 @@ CDisplaySeqalign::x_InitDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo
 			string alnDefLine = x_MapDefLine(alnDispParams,isFirst,false,false,seqLength);
 		    m_CurrAlnID_Lbl = (alnDispParams->gi != ZERO_GI) ?
                 NStr::NumericToString(alnDispParams->gi) : alnDispParams->label;			
-            if (!env.Get("OLD_SEQID").empty()) {
+            if (m_UseLongSeqIds) {
                 m_CurrAlnAccession = alnDispParams->seqID->AsFastaString();
             }
             else {
@@ -3790,7 +3796,7 @@ CDisplaySeqalign::x_InitDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo
                         firstGi = alnGi;
 						
                         //This should probably change on dispId
-                        if (!env.Get("OLD_SEQID").empty()) {
+                        if (m_UseLongSeqIds) {
                             m_CurrAlnAccession =
                                 alnDispParams->seqID->AsFastaString();
                         }

@@ -698,7 +698,10 @@ CFastaBioseqSource::CFastaBioseqSource(CNcbiIstream & fasta_file,
     : m_FastaReader(NULL)
 {
     m_LineReader.Reset(new CBufferedLineReader(fasta_file));
-    CNcbiEnvironment env;
+    CMetaRegistry::SEntry sentry =
+        CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
+    bool long_seqids = sentry.registry ?
+        sentry.registry->HasEntry("BLAST", "LONG_SEQID") : false;
 
     typedef CFastaReader::EFlags TFlags;
 
@@ -715,7 +718,7 @@ CFastaBioseqSource::CFastaBioseqSource(CNcbiIstream & fasta_file,
     if (parse_ids) {
         iflags |= CFastaReader::fAllSeqIds | CFastaReader::fRequireID;
         // parse bare accessions
-        if (env.Get("OLD_SEQID").empty()) {
+        if (!long_seqids) {
             iflags |= CFastaReader::fParseRawID;
         }
     } else {
@@ -785,7 +788,10 @@ bool CBuildDatabase::AddSequences(IBioseqSource & src, bool add_pig)
     CStopWatch sw(CStopWatch::eStart);
     int count = 0;
 
-    CNcbiEnvironment env;
+    CMetaRegistry::SEntry sentry =
+        CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
+    bool long_seqids = sentry.registry ?
+        sentry.registry->HasEntry("BLAST", "LONG_SEQID") : false;
 
     CConstRef<CBioseq> bs = src.GetNext();
 
@@ -798,7 +804,7 @@ bool CBuildDatabase::AddSequences(IBioseqSource & src, bool add_pig)
                 bioseq_id.assign(ids.front()->AsFastaString());
             }
 
-            if (env.Get("OLD_SEQID").empty()) {
+            if (!long_seqids) {
 
                 // If accession's molecule type is different than expected,
                 // change sequence id to local. CFastaReader cannot distingush

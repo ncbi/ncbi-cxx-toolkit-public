@@ -287,8 +287,6 @@ void CBlastDBExtractor::x_SetGi2SeqIdMap()
 	if (m_Gi2SeqIdMap.first == m_Oid)
 		return;
 
-    CNcbiEnvironment env;
-
 	map<TGi, string> gi2id;
     x_InitDefline();
     ITERATE(CBlast_def_line_set::Tdata, bd, m_Defline->Get()) {
@@ -301,7 +299,7 @@ void CBlastDBExtractor::x_SetGi2SeqIdMap()
         }
         CRef<CSeq_id> theId = FindBestChoice((*bd)->GetSeqid(), CSeq_id::WorstRank);
         if (gi != INVALID_GI) {
-            if (!env.Get("OLD_SEQID").empty()) {
+            if (m_UseLongSeqIds) {
                 gi2id[gi] = theId->AsFastaString();
             }
             else {
@@ -367,8 +365,7 @@ string CBlastDBExtractor::ExtractSeqId() {
     }
     string retval;
 
-    CNcbiEnvironment env;
-    if (!env.Get("OLD_SEQID").empty()) {
+    if (m_UseLongSeqIds) {
         retval = theId->AsFastaString();
 
         // Remove "lcl|" on local ID.
@@ -659,11 +656,9 @@ string CBlastDBExtractor::ExtractFasta(const CBlastDBSeqId &id) {
     fasta.SetWidth(m_LineWidth);
     fasta.SetAllFlags(CFastaOstream::fKeepGTSigns);
 
-    CNcbiEnvironment env;
-
     SetSeqId(id, true);
 
-    if (m_UseCtrlA && !env.Get("OLD_SEQID").empty()) {
+    if (m_UseCtrlA && m_UseLongSeqIds) {
         s_ReplaceCtrlAsInTitle(m_Bioseq);
     }
 
@@ -696,7 +691,7 @@ string CBlastDBExtractor::ExtractFasta(const CBlastDBSeqId &id) {
     }
 
     try { 
-        if (!env.Get("OLD_SEQID").empty()) {
+        if (m_UseLongSeqIds) {
             if (seqid->IsLocal()) {
                 string lcl_tmp = seqid->AsFastaString();
                 lcl_tmp = lcl_tmp.erase(0, 4);

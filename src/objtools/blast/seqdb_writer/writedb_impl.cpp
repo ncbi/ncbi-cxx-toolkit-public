@@ -643,7 +643,10 @@ x_SetDeflinesFromBinary(const string                   & bin_hdr,
 
 static bool s_UseFastaReaderDeflines(CConstRef<CBioseq> & bioseq, CConstRef<CBlast_def_line_set> & deflines)
 {
-    CNcbiEnvironment env;
+    CMetaRegistry::SEntry sentry =
+        CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
+    bool long_seqid = sentry.registry ?
+        sentry.registry->HasEntry("BLAST", "LONG_SEQID") : false;
 
 	if(deflines.Empty())
 		return false;
@@ -655,9 +658,9 @@ static bool s_UseFastaReaderDeflines(CConstRef<CBioseq> & bioseq, CConstRef<CBla
        // This is to parse bare ids as local ones. The bare pdb ids are pdb in
        // bioseq (parsed by CFastaReader), but local in deflines (parsed by
        // CSeq_id).
-       (env.Get("OLD_SEQID").empty() && (bioseq_id->IsPdb() ||
-                                         bioseq_id->IsPrf() ||
-                                         bioseq_id->IsPir()))) {
+       (!long_seqid && (bioseq_id->IsPdb() ||
+                        bioseq_id->IsPrf() ||
+                        bioseq_id->IsPir()))) {
         return true;
        }
 
@@ -1567,7 +1570,11 @@ x_GetFastaReaderDeflines(const CBioseq                  & bioseq,
         return;
     }
 
-    CNcbiEnvironment env;
+    CMetaRegistry::SEntry sentry =
+        CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
+    bool long_seqids = sentry.registry ?
+        sentry.registry->HasEntry("BLAST", "LONG_SEQID") : false;
+
     string fasta;
 
     // Scan the CBioseq for the CFastaReader user object.
@@ -1687,14 +1694,14 @@ x_GetFastaReaderDeflines(const CBioseq                  & bioseq,
 
             // Parse '|' seperated ids.
             list< CRef<CSeq_id> > seqids;
-            if ( (ids.find('|') == NPOS && !env.Get("OLD_SEQID").empty())
+            if ( (ids.find('|') == NPOS && long_seqids)
                  || !isalpha((unsigned char)(ids[0]))) {
 
                  seqids.push_back(CRef<CSeq_id> (new CSeq_id(CSeq_id::e_Local, ids)));
             } else {
                  CSeq_id::ParseFastaIds(seqids, ids);
 
-                 if (env.Get("OLD_SEQID").empty()) {
+                 if (!long_seqids) {
 
                      // If accession's molecule type is different than
                      // expected, change sequence id to local. CFastaReader

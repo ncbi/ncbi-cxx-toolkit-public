@@ -34,6 +34,7 @@
 #include <corelib/ncbiutil.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbireg.hpp>
+#include <corelib/metareg.hpp>
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
@@ -636,7 +637,11 @@ void CShowBlastDefline::x_InitDefline(void)
 
 void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
 {
-    CNcbiEnvironment env;
+    CMetaRegistry::SEntry sentry =
+        CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
+
+    bool use_long_seqids = sentry.registry ?
+        sentry.registry->HasEntry("BLAST", "LONG_SEQID") : false;
 
     if(!(m_Option & eNoShowHeader)) {
         if((m_PsiblastStatus == eFirstPass) ||
@@ -742,7 +747,7 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
             if(!(sdl->id->AsFastaString().find("gnl|BL_ORD_ID") != string::npos || 
 		sdl->id->AsFastaString().find("lcl|Subject_") != string::npos)){
                 string idStr;
-                if (!env.Get("OLD_SEQID").empty()) {
+                if (use_long_seqids) {
                     idStr = sdl->id->AsFastaString();
                 }
                 else {

@@ -130,6 +130,17 @@ BOOST_AUTO_TEST_CASE(TestRequestGiOidLength)
 
 BOOST_AUTO_TEST_CASE(TestRequestSeqId)
 {
+    CMetaRegistry::SEntry sentry =
+        CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
+
+    string old_value;
+    bool had_entry = sentry.registry->HasEntry("BLAST", "LONG_SEQID");
+    if (had_entry) {
+        old_value = sentry.registry->Get("BLAST", "LONG_SEQID");
+    }
+    sentry.registry->Unset("BLAST", "LONG_SEQID", IRWRegistry::fPersistent);
+    BOOST_REQUIRE(sentry.registry->HasEntry("BLAST", "LONG_SEQID") == false);
+
     const int kGi(43123516);
     const string kSeqId("EAC27631.1");
     CTmpFile tmpfile;
@@ -150,6 +161,58 @@ BOOST_AUTO_TEST_CASE(TestRequestSeqId)
     NStr::Split(string(buffer), " ", tokens);
 
     BOOST_REQUIRE_EQUAL(tokens[0], kSeqId);
+
+    if (had_entry) {
+        sentry.registry->Set("BLAST", "LONG_SEQID", old_value,
+                             IRWRegistry::fPersistent);
+    }
+    else {
+        sentry.registry->Unset("BLAST", "LONG_SEQID", IRWRegistry::fPersistent);
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(TestRequestSeqIdLong)
+{
+    CMetaRegistry::SEntry sentry =
+        CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
+
+    string old_value;
+    bool had_entry = sentry.registry->HasEntry("BLAST", "LONG_SEQID");
+    if (had_entry) {
+        old_value = sentry.registry->Get("BLAST", "LONG_SEQID");
+    }
+    sentry.registry->Set("BLAST", "LONG_SEQID", "1", IRWRegistry::fPersistent);
+    BOOST_REQUIRE(sentry.registry->HasEntry("BLAST", "LONG_SEQID") == true);
+
+    const int kGi(43123516);
+    const string kSeqId("gb|EAC27631.1|");
+    CTmpFile tmpfile;
+    const string& fname = tmpfile.GetFileName();
+    CSeqDB db("data/seqp", CSeqDB::eProtein);
+    const string format_spec("%i");
+    ofstream out(fname.c_str());
+    CSeqFormatter f(format_spec, db, out);
+    CBlastDBSeqId id(NStr::IntToString(kGi));
+    f.Write(id);
+    out.close();
+
+    ifstream in(fname.c_str());
+    char buffer[256] = { '\0' };
+    in.getline(buffer, sizeof(buffer));
+
+    vector<string> tokens;
+    NStr::Split(string(buffer), " ", tokens);
+
+    BOOST_REQUIRE_EQUAL(tokens[0], kSeqId);
+
+    if (had_entry) {
+        sentry.registry->Set("BLAST", "LONG_SEQID", old_value,
+                             IRWRegistry::fPersistent);
+    }
+    else {
+        sentry.registry->Unset("BLAST", "LONG_SEQID", IRWRegistry::fPersistent);
+    }
 }
 
 

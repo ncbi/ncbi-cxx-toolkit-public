@@ -660,7 +660,45 @@ static void s_NuclBioseqDupSwitch(int cutpoint)
     BOOST_REQUIRE_CUTPOINT(14);
 }
 
-BOOST_AUTO_TEST_SUITE(writedb)
+/// Fixture class initialized for each writedb test
+class CWriteDbFixture
+{
+public:
+    bool m_HasEntry;
+    string m_Value;
+
+    CWriteDbFixture(void)
+    {
+        // save registry value for LONG_SEQID
+        CMetaRegistry::SEntry entry =
+            CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
+
+        m_HasEntry = entry.registry->HasEntry("BLAST", "LONG_SEQID");
+        if (m_HasEntry) {
+            m_Value = entry.registry->Get("BLAST", "LONG_SEQID");
+        }
+    }
+
+
+    ~CWriteDbFixture()
+    {
+        // recreate regirty value for LONG_SEQID, as some tests changed it
+        CMetaRegistry::SEntry entry =
+            CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
+
+        if (m_HasEntry) {
+            entry.registry->Set("BLAST", "LONG_SEQID", m_Value,
+                                IRWRegistry::fPersistent);
+        }
+        else {
+            entry.registry->Unset("BLAST", "LONG_SEQID",
+                                  IRWRegistry::fPersistent);
+        }
+    }
+};
+
+
+BOOST_FIXTURE_TEST_SUITE(writedb, CWriteDbFixture)
 
 #if 0
 BOOST_AUTO_TEST_CASE(NuclBioseqDupZ)
@@ -2899,6 +2937,13 @@ BOOST_AUTO_TEST_CASE(CSeqDBIsam_32bit_GI)
 
 BOOST_AUTO_TEST_CASE(ReadBareIDProtein)
 {
+    // bare vs. long sequence id is determined by registry entry
+    CMetaRegistry::SEntry entry =
+        CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
+
+    entry.registry->Unset("BLAST", "LONG_SEQID", IRWRegistry::fPersistent);
+    BOOST_REQUIRE(entry.registry->HasEntry("BLAST", "LONG_SEQID") == false);
+
     // create a FASTA file with bare and legacy IDs
     CTmpFile tmpfile;
     CNcbiOfstream ostr(tmpfile.GetFileName().c_str());
@@ -2929,16 +2974,12 @@ BOOST_AUTO_TEST_CASE(ReadBareIDProtein)
     }
     ostr.close();
 
-    CNcbiEnvironment env;
-
     // create a database from the fasta file
     CNcbiIstream& istr = tmpfile.AsInputFile(CTmpFile::eIfExists_Throw);
     BOOST_REQUIRE(istr);
     string dbname = "data/bare_id_test_prot";
     string title = "Temporary unit test db";
     ostringstream log;
-
-    BOOST_REQUIRE(env.Get("OLD_SEQID").empty());
     CBuildDatabase db(dbname, title, true, false, true, false, &log);
 
     db.StartBuild();
@@ -2971,6 +3012,12 @@ BOOST_AUTO_TEST_CASE(ReadBareIDProtein)
 
 BOOST_AUTO_TEST_CASE(ReadMultipleBareIDs)
 {
+    CMetaRegistry::SEntry entry =
+        CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
+
+    entry.registry->Unset("BLAST", "LONG_SEQID", IRWRegistry::fPersistent);
+    BOOST_REQUIRE(entry.registry->HasEntry("BLAST", "LONG_SEQID") == false);
+
     // create a FASTA file with bare and legacy IDs
     CTmpFile tmpfile;
     CNcbiOfstream ostr(tmpfile.GetFileName().c_str());
@@ -2993,16 +3040,12 @@ BOOST_AUTO_TEST_CASE(ReadMultipleBareIDs)
     ostr << endl << sequence << endl;
     ostr.close();
 
-    CNcbiEnvironment env;
-
     // create a database from the fasta file
     CNcbiIstream& istr = tmpfile.AsInputFile(CTmpFile::eIfExists_Throw);
     BOOST_REQUIRE(istr);
     string dbname = "data/bare_id_test_prot2";
     string title = "Temporary unit test db";
     ostringstream log;
-
-    BOOST_REQUIRE(env.Get("OLD_SEQID").empty());
     CBuildDatabase db(dbname, title, true, false, true, false, &log);
 
     db.StartBuild();
@@ -3037,6 +3080,12 @@ BOOST_AUTO_TEST_CASE(ReadMultipleBareIDs)
 
 BOOST_AUTO_TEST_CASE(ReadBareIDNucleotide)
 {
+    CMetaRegistry::SEntry entry =
+        CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
+
+    entry.registry->Unset("BLAST", "LONG_SEQID", IRWRegistry::fPersistent);
+    BOOST_REQUIRE(entry.registry->HasEntry("BLAST", "LONG_SEQID") == false);
+
     // create a FASTA file with bare and legacy IDs
     CTmpFile tmpfile;
     CNcbiOfstream ostr(tmpfile.GetFileName().c_str());
@@ -3057,16 +3106,12 @@ BOOST_AUTO_TEST_CASE(ReadBareIDNucleotide)
     }
     ostr.close();
 
-    CNcbiEnvironment env;
-
     // create a database from the fasta file
     CNcbiIstream& istr = tmpfile.AsInputFile(CTmpFile::eIfExists_Throw);
     BOOST_REQUIRE(istr);
     string dbname = "data/bare_id_test_nucl";
     string title = "Temporary unit test db";
     ostringstream log;
-
-    BOOST_REQUIRE(env.Get("OLD_SEQID").empty());
     CBuildDatabase db(dbname, title, false, false, true, false, &log);
 
     db.StartBuild();
@@ -3097,8 +3142,14 @@ BOOST_AUTO_TEST_CASE(ReadBareIDNucleotide)
 }
 
 
-BOOST_AUTO_TEST_CASE(ReadLegacyIDProtein)
+BOOST_AUTO_TEST_CASE(ReadLongIDProtein)
 {
+    CMetaRegistry::SEntry entry =
+        CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
+
+    entry.registry->Set("BLAST", "LONG_SEQID", "1", IRWRegistry::fPersistent);
+    BOOST_REQUIRE(entry.registry->HasEntry("BLAST", "LONG_SEQID") == true);
+
     // create a FASTA file with bare and legacy IDs
     CTmpFile tmpfile;
     CNcbiOfstream ostr(tmpfile.GetFileName().c_str());
@@ -3130,17 +3181,12 @@ BOOST_AUTO_TEST_CASE(ReadLegacyIDProtein)
     }
     ostr.close();
 
-    CNcbiEnvironment env;
-    env.Set("OLD_SEQID", "1");
-
     // create a database from the fasta file
     CNcbiIstream& istr = tmpfile.AsInputFile(CTmpFile::eIfExists_Throw);
     BOOST_REQUIRE(istr);
     string dbname = "data/bare_id_test_prot_legacy";
     string title = "Temporary unit test db";
     ostringstream log;
-
-    BOOST_REQUIRE(env.Get("OLD_SEQID").empty() == false);
     CBuildDatabase db(dbname, title, true, false, true, false, &log);
 
     db.StartBuild();
@@ -3168,14 +3214,17 @@ BOOST_AUTO_TEST_CASE(ReadLegacyIDProtein)
                               + ")");
     }
     BOOST_REQUIRE_EQUAL(index, (int)fasta_ids.size());
-
-    env.Unset("OLD_SEQID");
-    BOOST_REQUIRE(env.Get("OLD_SEQID").empty());
 }
 
 
-BOOST_AUTO_TEST_CASE(ReadMultipleLegacyIDs)
+BOOST_AUTO_TEST_CASE(ReadMultipleLongIDs)
 {
+    CMetaRegistry::SEntry entry =
+        CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
+
+    entry.registry->Set("BLAST", "LONG_SEQID", "1", IRWRegistry::fPersistent);
+    BOOST_REQUIRE(entry.registry->HasEntry("BLAST", "LONG_SEQID") == true);
+
     // create a FASTA file with bare and legacy IDs
     CTmpFile tmpfile;
     CNcbiOfstream ostr(tmpfile.GetFileName().c_str());
@@ -3197,8 +3246,6 @@ BOOST_AUTO_TEST_CASE(ReadMultipleLegacyIDs)
     }
     ostr << endl << sequence << endl;
     ostr.close();
-    CNcbiEnvironment env;
-    env.Set("OLD_SEQID", "1");
 
     // create a database from the fasta file
     CNcbiIstream& istr = tmpfile.AsInputFile(CTmpFile::eIfExists_Throw);
@@ -3206,8 +3253,6 @@ BOOST_AUTO_TEST_CASE(ReadMultipleLegacyIDs)
     string dbname = "data/bare_id_test_legacy_prot2";
     string title = "Temporary unit test db";
     ostringstream log;
-
-    BOOST_REQUIRE(env.Get("OLD_SEQID").empty() == false);
     CBuildDatabase db(dbname, title, true, false, true, false, &log);
 
     db.StartBuild();
@@ -3237,14 +3282,17 @@ BOOST_AUTO_TEST_CASE(ReadMultipleLegacyIDs)
         ++seqdb_id;
     }
     BOOST_REQUIRE(seqdb_id == ids.end());
-
-    env.Unset("OLD_SEQID");
-    BOOST_REQUIRE(env.Get("OLD_SEQID").empty());
 }
 
 
-BOOST_AUTO_TEST_CASE(ReadLegacyIDNucleotide)
+BOOST_AUTO_TEST_CASE(ReadLongIDNucleotide)
 {
+    CMetaRegistry::SEntry entry =
+        CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
+
+    entry.registry->Set("BLAST", "LONG_SEQID", "1", IRWRegistry::fPersistent);
+    BOOST_REQUIRE(entry.registry->HasEntry("BLAST", "LONG_SEQID") == true);
+
     // create a FASTA file with bare and legacy IDs
     CTmpFile tmpfile;
     CNcbiOfstream ostr(tmpfile.GetFileName().c_str());
@@ -3263,17 +3311,12 @@ BOOST_AUTO_TEST_CASE(ReadLegacyIDNucleotide)
     }
     ostr.close();
 
-    CNcbiEnvironment env;
-    env.Set("OLD_SEQID", "1");
-
     // create a database from the fasta file
     CNcbiIstream& istr = tmpfile.AsInputFile(CTmpFile::eIfExists_Throw);
     BOOST_REQUIRE(istr);
     string dbname = "data/bare_id_test_nucl_legacy";
     string title = "Temporary unit test db";
     ostringstream log;
-
-    BOOST_REQUIRE(env.Get("OLD_SEQID").empty() == false);
     CBuildDatabase db(dbname, title, false, false, true, false, &log);
 
     db.StartBuild();
@@ -3296,9 +3339,6 @@ BOOST_AUTO_TEST_CASE(ReadLegacyIDNucleotide)
         BOOST_REQUIRE_EQUAL(ids.front()->Which(), it.second);
     }
     BOOST_REQUIRE_EQUAL(index, (int)fasta_ids.size());
-
-    env.Unset("OLD_SEQID");
-    BOOST_REQUIRE(env.Get("OLD_SEQID").empty());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

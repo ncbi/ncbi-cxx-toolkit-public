@@ -74,6 +74,11 @@ public:
 	m_Gi2TitleMap.first = -1;
 	m_Oid2Pig.first = -1;
 	m_Gi2SeqIdMap.first = -1;
+
+        CMetaRegistry::SEntry sentry =
+            CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
+        m_UseLongSeqIds = sentry.registry ?
+            sentry.registry->HasEntry("BLAST", "LONG_SEQID") : false;
     }
 
     /// Setting seqid
@@ -146,6 +151,8 @@ protected:
     pair<TOID, CSeqDB::TPIG> m_Oid2Pig;
     // Pair with a gi2seqid for one Oid.
     pair<TOID, map<TGi, string> > m_Gi2SeqIdMap;
+    /// Use long sequence ids (with gi and accessions with database source)
+    bool m_UseLongSeqIds;
 private:
     void x_ExtractMaskingData(CSeqDB::TSequenceRanges &ranges, int algo_id);
     int x_ExtractTaxId();
