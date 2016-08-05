@@ -345,7 +345,13 @@ const string& CCgiContext::GetSelfURL(void) const
 bool CCgiContext::IsSecure(void) const
 {
     if (m_SecureMode == eSecure_NotSet) {
-        m_SecureMode = NStr::EqualNocase(CTempStringEx(GetSelfURL(), 5), "https")
+        m_SecureMode
+            =   NStr::EqualNocase
+            (CTempStringEx(GetSelfURL(), 5), "https")
+            ||  NStr::EqualNocase
+            (GetRequest().GetRandomProperty("HTTPS", false), "on")
+            ||  NStr::EqualNocase
+            (GetRequest().GetRandomProperty("X_FORWARDED_PROTO"), "https")
             ? eSecure_On : eSecure_Off;
     }
     return m_SecureMode == eSecure_On;
