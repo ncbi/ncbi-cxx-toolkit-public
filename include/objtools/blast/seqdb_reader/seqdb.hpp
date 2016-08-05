@@ -1612,37 +1612,6 @@ CSeqDB::ESeqType ParseMoleculeTypeString(const string& str);
 NCBI_XOBJREAD_EXPORT
 bool DeleteBlastDb(const string& dbpath, CSeqDB::ESeqType seq_type);
 
-/// Class to facilitate trimming down the list of WGS BLAST DBs so to those
-/// relevant to the GIs provided. (WB-1206, WB-1069)
-/// @note this class relies on the environment variable WGS_GILIST_DIR
-class NCBI_XOBJREAD_EXPORT CWgsDbTrimmer {
-public:
-    /// Constructor which takes a space separated list of WGS BLAST DBs
-    CWgsDbTrimmer(const string& wgs_db_list);
-    /// Add a gi that appears in the BLAST results, so that the resulting
-    /// WGS BLAST DB list can be trimmed on the basis of this
-    void AddGi(TGi gi) { m_Gis.insert(gi); }
-    /// Builds a space separated, trimmed list of WGS BLAST DBs which contain
-    /// all of the GIs, provided to this object until this method is called.
-    /// Those GIs that aren't found in the original list of WGS BLASTDBs
-    /// provided in the constructor are silently ignored.
-    /// @note the list of BLAST DBs will be returned in alphabetical order
-    string GetDbList();
-    /// Returns the BLASTDB list originally provided in the constructor
-    string GetOrigDbList() const { return m_OrigWgsList; }
-private:
-    typedef map<string, vector<TGi> > TGiLists;
-    /// Reads the gi lists for each of the BLAST DBs provided in the
-    /// constructor, ignoring those that can't be found
-    TGiLists x_ReadGiListsForDbs();
-    /// Returns the WGS BLAST DBs provided in the constructor into a set
-    set<string> x_ExtractOriginalWgsDbs();
-    string m_OrigWgsList;
-    set<TGi> m_Gis;
-    /// Path where the WGS GI list files are cached (pointed to by WGS_GILIST_DIR)
-    string m_Path;
-};
-
 END_NCBI_SCOPE
 
 #endif // OBJTOOLS_BLAST_SEQDB_READER___SEQDB__HPP
