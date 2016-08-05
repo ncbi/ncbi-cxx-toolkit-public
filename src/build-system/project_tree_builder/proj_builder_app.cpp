@@ -405,7 +405,7 @@ struct PIsExcludedByDisuse
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(4,1,4) );
+    SetVersion( CVersionInfo(4,1,5) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -2820,7 +2820,7 @@ bool  CProjBulderApp::InsertDep(vector< set<string> >& graph, const string& dep,
             PTB_ERROR_EX(m_Root, ePTB_ConfigurationError,
                     "Library dependency cycle found: " << NStr::Join(done, " - "));
             done.pop_back();
-            m_GraphDepPrecedes.erase(*d);
+            //m_GraphDepPrecedes.erase(*d);
             return false;
         }
         done.push_back(*d);
