@@ -399,7 +399,7 @@ static VPath* sx_GetVPath(const string& path)
     }
     
     VPath* kpath;
-    if ( rc_t rc = VFSManagerMakeSysPath ( mgr, &kpath, c_path ) ) {
+    if ( rc_t rc = VFSManagerMakePath ( mgr, &kpath, c_path ) ) {
         NCBI_THROW2(CBamException, eInitFailed,
                     "Cannot create VPath object", rc);
     }
