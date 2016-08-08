@@ -2040,8 +2040,10 @@ CNetStorageHandler::x_ProcessGetClientObjects(
                    "DB access is restricted in HELLO");
 
     if (m_MetadataOption == eMetadataNotSpecified ||
-        m_MetadataOption == eMetadataRequired)
-        x_ValidateWriteMetaDBAccess(message);
+        m_MetadataOption == eMetadataRequired) {
+        // false => do not expect an object
+        x_ValidateWriteMetaDBAccess(message, false);
+    }
 
     if (m_MetadataOption != eMetadataMonitoring)
         x_CreateClient();
@@ -2124,8 +2126,10 @@ CNetStorageHandler::x_ProcessGetUserObjects(
                    "DB access is restricted in HELLO");
 
     if (m_MetadataOption == eMetadataNotSpecified ||
-        m_MetadataOption == eMetadataRequired)
-        x_ValidateWriteMetaDBAccess(message);
+        m_MetadataOption == eMetadataRequired) {
+        // false => do not expect an object
+        x_ValidateWriteMetaDBAccess(message, false);
+    }
 
     if (m_MetadataOption != eMetadataMonitoring)
         x_CreateClient();
@@ -3709,9 +3713,10 @@ CNetStorageHandler::x_ConvertMetadataArgument(const CJsonNode &  message) const
 
 void
 CNetStorageHandler::x_ValidateWriteMetaDBAccess(
-                                            const CJsonNode &  message) const
+                                            const CJsonNode &  message,
+                                            bool  expect_object) const
 {
-    if (message.HasKey("ObjectLoc")) {
+    if (expect_object && message.HasKey("ObjectLoc")) {
         // Object locator has a metadata flag and a service name
         string  object_loc = message.GetString("ObjectLoc");
         x_CheckObjectLoc(object_loc);
@@ -3753,12 +3758,14 @@ CNetStorageHandler::x_ValidateWriteMetaDBAccess(
         return;
     }
 
-    // This is user key identification
-    TNetStorageFlags    flags = ExtractStorageFlags(message);
-    if (flags & fNST_NoMetaData) {
-        NCBI_THROW(CNetStorageServerException, eInvalidArgument,
-                   "Storage flags forbid access to the metainfo DB. "
-                   "Metainfo DB access declined.");
+    if (expect_object) {
+        // This is user key identification
+        TNetStorageFlags    flags = ExtractStorageFlags(message);
+        if (flags & fNST_NoMetaData) {
+            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                       "Storage flags forbid access to the metainfo DB. "
+                       "Metainfo DB access declined.");
+        }
     }
 
     // There is no knowledge of the service and metadata request from the

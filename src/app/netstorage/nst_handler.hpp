@@ -314,7 +314,8 @@ private:
                     TNetStorageFlags         flags);
     EIO_Status x_SendOverUTTP();
     EMetadataOption x_ConvertMetadataArgument(const CJsonNode &  message) const;
-    void x_ValidateWriteMetaDBAccess(const CJsonNode &  message) const;
+    void x_ValidateWriteMetaDBAccess(const CJsonNode &  message,
+                                     bool  expect_object = true) const;
     bool x_DetectMetaDBNeedUpdate(const CJsonNode &  message,
                                   CNSTServiceProperties &  props) const;
     bool x_DetectMetaDBNeedOnCreate(TNetStorageFlags  flags);
