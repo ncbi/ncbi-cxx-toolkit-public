@@ -30,6 +30,7 @@
 #include <ncbi_pch.hpp>
 #include "msvc_configure.hpp"
 #include "proj_builder_app.hpp"
+#include "util/random_gen.hpp"
 
 #include "ptb_err_codes.hpp"
 #ifdef NCBI_XCODE_BUILD
@@ -164,6 +165,7 @@ void CMsvcConfigure::CreateConfH(
     const list<SConfigInfo>& configs,
     const string& root_dir)
 {
+    WriteExtraDefines( site, root_dir);
     if (CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eUnix ||
         GetApp().IsCMakeMode()) {
         return;
@@ -237,6 +239,44 @@ bool CMsvcConfigure::ProcessDefine(const string& define,
         }
     }
     return true;
+}
+
+void CMsvcConfigure::WriteExtraDefines(CMsvcSite&  site, const string& root_dir)
+{
+    string cfg = CMsvc7RegSettings::GetConfigNameKeyword();
+    string cfg_root_inc(root_dir);
+    if (!cfg.empty()) {
+        NStr::ReplaceInPlace(cfg_root_inc,cfg,kEmptyStr);
+    }
+    string extra = site.GetConfigureEntry("ExtraDefines");
+    string filename = CDirEntry::ConcatPath(cfg_root_inc, extra);
+    int random_count = NStr::StringToInt(site.GetConfigureEntry("RandomValueCount"));
+
+    if (extra.empty() || random_count <= 0 || CFile(filename).Exists()) {
+        return;
+    }
+
+    string dir;
+    CDirEntry::SplitPath(filename, &dir);
+    CDir(dir).CreatePath();
+
+    CNcbiOfstream  ofs(filename.c_str(), IOS_BASE::out | IOS_BASE::trunc );
+    if ( !ofs )
+	    NCBI_THROW(CProjBulderAppException, eFileCreation, filename);
+
+    WriteNcbiconfHeader(ofs);
+
+    CRandom rnd(CRandom::eGetRand_Sys);
+    string prefix("#define NCBI_RANDOM_VALUE_");
+    ofs << prefix << "TYPE   Uint4" << endl;
+    ofs << prefix << "MIN    0" << endl;
+    ofs << prefix << "MAX    "  << std::hex 
+        << std::showbase << rnd.GetMax() << endl << endl;
+    for (int i = 0; i < random_count; ++i) {
+        ofs << prefix  << std::noshowbase << i 
+            << setw(16) << std::showbase << rnd.GetRand() << endl;
+    }
+    ofs << endl;
 }
 
 void CMsvcConfigure::AnalyzeDefines(
@@ -331,14 +371,8 @@ void CMsvcConfigure::AnalyzeDefines(
     }
 }
 
-void CMsvcConfigure::WriteNcbiconfMsvcSite(
-    const string& full_path, const string& signature) const
+CNcbiOfstream& CMsvcConfigure::WriteNcbiconfHeader(CNcbiOfstream& ofs) const
 {
-    CNcbiOfstream  ofs(full_path.c_str(), 
-                       IOS_BASE::out | IOS_BASE::trunc );
-    if ( !ofs )
-	    NCBI_THROW(CProjBulderAppException, eFileCreation, full_path);
-
     ofs << endl;
 
     ofs <<"/* $" << "Id" << "$" << endl;
@@ -377,7 +411,18 @@ void CMsvcConfigure::WriteNcbiconfMsvcSite(
     ofs <<"*/" << endl;
     ofs << endl;
     ofs << endl;
+    return ofs;
+}
 
+void CMsvcConfigure::WriteNcbiconfMsvcSite(
+    const string& full_path, const string& signature) const
+{
+    CNcbiOfstream  ofs(full_path.c_str(), 
+                       IOS_BASE::out | IOS_BASE::trunc );
+    if ( !ofs )
+	    NCBI_THROW(CProjBulderAppException, eFileCreation, full_path);
+
+    WriteNcbiconfHeader(ofs);
 
     ITERATE(TConfigSite, p, m_ConfigSite) {
         if (p->second == '1') {
