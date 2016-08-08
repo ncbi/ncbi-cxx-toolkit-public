@@ -230,7 +230,8 @@ public:
         eSubtype_telomere           = 101,
         eSubtype_assembly_gap       = 102,
         eSubtype_regulatory         = 103,
-        eSubtype_max                = 104,
+        eSubtype_propeptide         = 104,  // Prot-ref propeptide
+        eSubtype_max                = 105,
         eSubtype_any                = 255
     };
     ESubtype GetSubtype(void) const;

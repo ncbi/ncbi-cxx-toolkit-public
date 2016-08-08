@@ -123,6 +123,7 @@ static const SImportEntry kImportTable[] = {
     { "prim_transcript",     CSeqFeatData::eSubtype_prim_transcript },
     { "primer_bind",         CSeqFeatData::eSubtype_primer_bind },
     { "promoter",            CSeqFeatData::eSubtype_promoter },
+    { "propeptide",          CSeqFeatData::eSubtype_propeptide },
     { "protein_bind",        CSeqFeatData::eSubtype_protein_bind },
     { "regulatory",          CSeqFeatData::eSubtype_regulatory },
     { "rep_origin",          CSeqFeatData::eSubtype_rep_origin },
@@ -188,7 +189,8 @@ static const TProtInfoPair kProtInfoPairs[] = {
     PROT_INFO_PAIR(preprotein, preprotein, "Prot", "proprotein"),
     PROT_INFO_PAIR(mature, mat_peptide_aa, "Prot", "mat_peptide"),
     PROT_INFO_PAIR(signal_peptide, sig_peptide_aa, "Prot", "sig_peptide"),
-    PROT_INFO_PAIR(transit_peptide, transit_peptide_aa, "Prot", "transit_peptide")
+    PROT_INFO_PAIR(transit_peptide, transit_peptide_aa, "Prot", "transit_peptide"),
+    PROT_INFO_PAIR(propeptide, propeptide, "Prot", "propeptide")
 };
 
 typedef CStaticPairArrayMap<CProt_ref::EProcessed,
@@ -476,6 +478,7 @@ static const TFeatKey feat_key_to_subtype [] = {
     {  "prim_transcript",    CSeqFeatData::eSubtype_prim_transcript     },
     {  "primer_bind",        CSeqFeatData::eSubtype_primer_bind         },
     {  "promoter",           CSeqFeatData::eSubtype_promoter            },
+    {  "propeptide",         CSeqFeatData::eSubtype_propeptide          },
     {  "proprotein",         CSeqFeatData::eSubtype_preprotein          },
     {  "protein_bind",       CSeqFeatData::eSubtype_protein_bind        },
     {  "rRNA",               CSeqFeatData::eSubtype_rRNA                },
@@ -723,7 +726,8 @@ static const SSubtypeInfo s_subtype_info[] = {
     SUBTYPE_INFO(               e_Imp,              eSubtype_telomere, 101),
     SUBTYPE_INFO(               e_Imp,          eSubtype_assembly_gap, 102),
     SUBTYPE_INFO(               e_Imp,            eSubtype_regulatory, 103),
-    SUBTYPE_INFO(           e_not_set,                   eSubtype_max, 104),
+    SUBTYPE_INFO(              e_Prot,            eSubtype_propeptide, 104),
+    SUBTYPE_INFO(           e_not_set,                   eSubtype_max, 105),
     SUBTYPE_INFO(           e_not_set,                   eSubtype_any, 255)
 };
 static const size_t s_subtype_count =
@@ -765,6 +769,7 @@ void CSeqFeatData::s_InitSubtypesTable(void)
     for (int sub = eSubtype_prot; sub <= eSubtype_transit_peptide_aa; ++sub) {
         table[ESubtype(sub)] = e_Prot;
     }
+    table[eSubtype_propeptide] = e_Prot;
     for (int sub = eSubtype_preRNA; sub <= eSubtype_otherRNA; ++sub) {
         table[ESubtype(sub)] = e_Rna;
     }
@@ -776,6 +781,7 @@ void CSeqFeatData::s_InitSubtypesTable(void)
     for ( const SImportEntry* p = kImportTable; p != kImportTableEnd; ++p ) {
         table[p->m_Subtype] = e_Imp;
     }
+    table[eSubtype_propeptide] = e_Prot;
 
     sx_SubtypesTableInitialized = true;
 
@@ -805,7 +811,6 @@ void CSeqFeatData::s_InitSubtypesTable(void)
     // check if type/subtype values didn't change
     for ( size_t i = 0; i < s_subtype_count; ++i ) {
         const SSubtypeInfo& info = s_subtype_info[i];
-        _ASSERT(info.m_Subtype == info.m_Value);
         _ASSERT(info.m_Type == GetTypeFromSubtype(info.m_Subtype));
     }
 #endif    
@@ -2808,74 +2813,74 @@ START_SUBTYPE(mobile_element)
 END_SUBTYPE
 
 START_SUBTYPE(biosrc)
-ADD_QUAL(PCR_primers);
-ADD_QUAL(altitude);
-ADD_QUAL(bio_material);
-ADD_QUAL(cell_line);
-ADD_QUAL(cell_type);
-ADD_QUAL(chloroplast);
-ADD_QUAL(chromoplast);
-ADD_QUAL(chromosome);
-ADD_QUAL(citation);
-ADD_QUAL(clone);
-ADD_QUAL(clone_lib);
-ADD_QUAL(collected_by);
-ADD_QUAL(collection_date);
-ADD_QUAL(country);
-ADD_QUAL(cultivar);
-ADD_QUAL(culture_collection);
-ADD_QUAL(cyanelle);
-ADD_QUAL(db_xref);
-ADD_QUAL(dev_stage);
-ADD_QUAL(ecotype);
-ADD_QUAL(environmental_sample);
-ADD_QUAL(exception);
-ADD_QUAL(focus);
-ADD_QUAL(frequency);
-ADD_QUAL(germline);
-ADD_QUAL(haplogroup);
-ADD_QUAL(haplotype);
-ADD_QUAL(host);
-ADD_QUAL(identified_by);
-ADD_QUAL(isolate);
-ADD_QUAL(isolation_source);
-ADD_QUAL(kinetoplast);
-ADD_QUAL(lab_host);
-ADD_QUAL(label);
-ADD_QUAL(lat_lon);
-ADD_QUAL(linkage_group);
-ADD_QUAL(macronuclear);
-ADD_QUAL(map);
-ADD_QUAL(mating_type);
-ADD_QUAL(metagenomic);
-ADD_QUAL(mitochondrion);
-ADD_QUAL(mol_type);
-ADD_QUAL(note);
-ADD_QUAL(organelle);
-ADD_QUAL(organism);
-ADD_QUAL(plasmid);
-ADD_QUAL(pop_variant);
-ADD_QUAL(proviral);
-ADD_QUAL(rearranged);
-ADD_QUAL(segment);
-ADD_QUAL(sequenced_mol);
-ADD_QUAL(serotype);
-ADD_QUAL(serovar);
-ADD_QUAL(sex);
-ADD_QUAL(specimen_voucher);
-ADD_QUAL(strain);
-ADD_QUAL(sub_clone);
-ADD_QUAL(sub_species);
-ADD_QUAL(sub_strain);
-ADD_QUAL(tissue_lib);
-ADD_QUAL(tissue_type);
-ADD_QUAL(transgenic);
-ADD_QUAL(transposon);
-ADD_QUAL(type_material);
-ADD_QUAL(usedin);
-ADD_QUAL(variety);
-ADD_QUAL(virion);
-ADD_QUAL(whole_replicon);
+    ADD_QUAL(PCR_primers);
+    ADD_QUAL(altitude);
+    ADD_QUAL(bio_material);
+    ADD_QUAL(cell_line);
+    ADD_QUAL(cell_type);
+    ADD_QUAL(chloroplast);
+    ADD_QUAL(chromoplast);
+    ADD_QUAL(chromosome);
+    ADD_QUAL(citation);
+    ADD_QUAL(clone);
+    ADD_QUAL(clone_lib);
+    ADD_QUAL(collected_by);
+    ADD_QUAL(collection_date);
+    ADD_QUAL(country);
+    ADD_QUAL(cultivar);
+    ADD_QUAL(culture_collection);
+    ADD_QUAL(cyanelle);
+    ADD_QUAL(db_xref);
+    ADD_QUAL(dev_stage);
+    ADD_QUAL(ecotype);
+    ADD_QUAL(environmental_sample);
+    ADD_QUAL(exception);
+    ADD_QUAL(focus);
+    ADD_QUAL(frequency);
+    ADD_QUAL(germline);
+    ADD_QUAL(haplogroup);
+    ADD_QUAL(haplotype);
+    ADD_QUAL(host);
+    ADD_QUAL(identified_by);
+    ADD_QUAL(isolate);
+    ADD_QUAL(isolation_source);
+    ADD_QUAL(kinetoplast);
+    ADD_QUAL(lab_host);
+    ADD_QUAL(label);
+    ADD_QUAL(lat_lon);
+    ADD_QUAL(linkage_group);
+    ADD_QUAL(macronuclear);
+    ADD_QUAL(map);
+    ADD_QUAL(mating_type);
+    ADD_QUAL(metagenomic);
+    ADD_QUAL(mitochondrion);
+    ADD_QUAL(mol_type);
+    ADD_QUAL(note);
+    ADD_QUAL(organelle);
+    ADD_QUAL(organism);
+    ADD_QUAL(plasmid);
+    ADD_QUAL(pop_variant);
+    ADD_QUAL(proviral);
+    ADD_QUAL(rearranged);
+    ADD_QUAL(segment);
+    ADD_QUAL(sequenced_mol);
+    ADD_QUAL(serotype);
+    ADD_QUAL(serovar);
+    ADD_QUAL(sex);
+    ADD_QUAL(specimen_voucher);
+    ADD_QUAL(strain);
+    ADD_QUAL(sub_clone);
+    ADD_QUAL(sub_species);
+    ADD_QUAL(sub_strain);
+    ADD_QUAL(tissue_lib);
+    ADD_QUAL(tissue_type);
+    ADD_QUAL(transgenic);
+    ADD_QUAL(transposon);
+    ADD_QUAL(type_material);
+    ADD_QUAL(usedin);
+    ADD_QUAL(variety);
+    ADD_QUAL(virion);
+    ADD_QUAL(whole_replicon);
 END_SUBTYPE
 
 //START_SUBTYPE(clone)
@@ -2949,6 +2954,34 @@ START_SUBTYPE(regulatory)
     ADD_QUAL(pseudogene);
     ADD_QUAL(regulatory_class);
     ADD_QUAL(standard_name);
+END_SUBTYPE
+
+START_SUBTYPE(propeptide)
+    ADD_QUAL(EC_number);
+    ADD_QUAL(allele);
+    ADD_QUAL(calculated_mol_wt);
+    ADD_QUAL(citation);
+    ADD_QUAL(db_xref);
+    ADD_QUAL(derived_from);
+    ADD_QUAL(evidence);
+    ADD_QUAL(exception);
+    ADD_QUAL(experiment);
+    ADD_QUAL(function);
+    ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
+    ADD_QUAL(inference);
+    ADD_QUAL(label);
+    ADD_QUAL(locus_tag);
+    ADD_QUAL(map);
+    ADD_QUAL(name);
+    ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
+    ADD_QUAL(product);
+    ADD_QUAL(protein_id);
+    ADD_QUAL(pseudo);
+    ADD_QUAL(pseudogene);
+    ADD_QUAL(standard_name);
+    ADD_QUAL(usedin);
 END_SUBTYPE
 
 #undef START_SUBTYPE
@@ -3437,6 +3470,7 @@ static const SFeatListItem sc_ConfigItemInit[] = {
     {  CSeqFeatData::e_Prot,     CSeqFeatData::eSubtype_mat_peptide_aa,    "Mature Peptide AA", "Mat-Peptide AA"  },
     {  CSeqFeatData::e_Prot,     CSeqFeatData::eSubtype_sig_peptide_aa,    "Signal Peptide AA", "Sig-Peptide AA"  },
     {  CSeqFeatData::e_Prot,     CSeqFeatData::eSubtype_transit_peptide_aa,    "Transit Peptide AA", "Transit-Peptide AA"  },
+    {  CSeqFeatData::e_Prot,     CSeqFeatData::eSubtype_propeptide,    "ProPeptide", "ProPeptide"  },
 
     {  CSeqFeatData::e_Rna,     CSeqFeatData::eSubtype_any,   "RNA, All" , "RNA Master"  },
     {  CSeqFeatData::e_Rna,     CSeqFeatData::eSubtype_preRNA,  "precursor_RNA",   "precursor_RNA"  },
@@ -3853,6 +3887,7 @@ CSeqFeatData::EFeatureLocationAllowed CSeqFeatData::AllowedFeatureLocation(ESubt
         case eSubtype_mat_peptide_aa:
         case eSubtype_sig_peptide_aa:
         case eSubtype_transit_peptide_aa:
+        case eSubtype_propeptide:
         case eSubtype_bond:
         case eSubtype_psec_str:
             rval = eFeatureLocationAllowed_ProtOnly;
@@ -3946,10 +3981,10 @@ bool CSeqFeatData::AllowAdjacentIntervals(CSeqFeatData::ESubtype feat_subtype)
 
 bool CSeqFeatData::ShouldRepresentAsGbqual (CSeqFeatData::ESubtype feat_subtype, CSeqFeatData::EQualifier qual_type)
 {
-	// experiment and inference get their own panels
-	if (qual_type == CSeqFeatData::eQual_experiment || qual_type == CSeqFeatData::eQual_inference) {
-		return false;
-	}
+    // experiment and inference get their own panels
+    if (qual_type == CSeqFeatData::eQual_experiment || qual_type == CSeqFeatData::eQual_inference) {
+        return false;
+    }
     // pseudo and pseudogene are handled separately
     if (qual_type == CSeqFeatData::eQual_pseudogene || qual_type == CSeqFeatData::eQual_pseudo) {
         return false;
@@ -4045,10 +4080,10 @@ bool CSeqFeatData::ShouldRepresentAsGbqual (CSeqFeatData::ESubtype feat_subtype,
 
 bool CSeqFeatData::ShouldRepresentAsGbqual (CSeqFeatData::ESubtype feat_subtype, const CGb_qual& qual)
 {
-	if (!qual.IsSetQual()) {
-		return false;
-	}
-	return ShouldRepresentAsGbqual(feat_subtype, CSeqFeatData::GetQualifierType(qual.GetQual()));
+    if (!qual.IsSetQual()) {
+        return false;
+    }
+    return ShouldRepresentAsGbqual(feat_subtype, CSeqFeatData::GetQualifierType(qual.GetQual()));
 }
 
 END_objects_SCOPE // namespace ncbi::objects::
