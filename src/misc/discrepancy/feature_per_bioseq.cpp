@@ -206,7 +206,15 @@ DISCREPANCY_SUMMARIZE(COUNT_TRNAS)
 
     CNcbiOstrstream ss;
     ss << " [n] sequence[s] [has] " << total << " tRNA feature" << (total == 1 ? kEmptyStr : "s");
-    m_Objs[kEmptyStr][CNcbiOstrstreamToString(ss)].Add(*bioseq);
+    string subitem = CNcbiOstrstreamToString(ss);
+    m_Objs[kEmptyStr][subitem].Add(*bioseq);
+
+    string trna_on_bioseq = "[n] tRNA feature[s] found on " + short_name;
+    NON_CONST_ITERATE(CReportNode::TNodeMap, it, map) {
+        if (!NStr::IsBlank(it->first)) {
+            m_Objs[kEmptyStr][subitem][trna_on_bioseq].Ext().Add(it->second->GetObjects());
+        }
+    }
 
     // extra tRNAs
     for (size_t i = 0; i < sizeof(desired_aaList) / sizeof(desired_aaList[0]); i++) {

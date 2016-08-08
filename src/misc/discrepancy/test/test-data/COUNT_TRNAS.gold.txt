@@ -1,0 +1,93 @@
+Discrepancy Report Results
+
+Summary
+COUNT_TRNAS: 2 sequences have 2 tRNA features
+COUNT_TRNAS: Sequence LocusCollidesWithLocusTag has 2 trna-Phe features
+COUNT_TRNAS: Sequence LocusCollidesWithLocusTag is missing trna-Ala
+COUNT_TRNAS: Sequence LocusCollidesWithLocusTag is missing trna-Arg
+COUNT_TRNAS: Sequence LocusCollidesWithLocusTag is missing trna-Asn
+COUNT_TRNAS: Sequence LocusCollidesWithLocusTag is missing trna-Asp
+COUNT_TRNAS: Sequence LocusCollidesWithLocusTag is missing trna-Cys
+COUNT_TRNAS: Sequence LocusCollidesWithLocusTag is missing trna-Gln
+COUNT_TRNAS: Sequence LocusCollidesWithLocusTag is missing trna-Glu
+COUNT_TRNAS: Sequence LocusCollidesWithLocusTag is missing trna-Gly
+COUNT_TRNAS: Sequence LocusCollidesWithLocusTag is missing trna-His
+COUNT_TRNAS: Sequence LocusCollidesWithLocusTag is missing trna-Ile
+COUNT_TRNAS: Sequence LocusCollidesWithLocusTag is missing trna-Leu
+COUNT_TRNAS: Sequence LocusCollidesWithLocusTag is missing trna-Lys
+COUNT_TRNAS: Sequence LocusCollidesWithLocusTag is missing trna-Met
+COUNT_TRNAS: Sequence LocusCollidesWithLocusTag is missing trna-Pro
+COUNT_TRNAS: Sequence LocusCollidesWithLocusTag is missing trna-Ser
+COUNT_TRNAS: Sequence LocusCollidesWithLocusTag is missing trna-Thr
+COUNT_TRNAS: Sequence LocusCollidesWithLocusTag is missing trna-Trp
+COUNT_TRNAS: Sequence LocusCollidesWithLocusTag is missing trna-Tyr
+COUNT_TRNAS: Sequence LocusCollidesWithLocusTag is missing trna-Val
+
+Detailed Report
+
+COUNT_TRNAS: 2 sequences have 2 tRNA features
+test-data/FIND_DUP_TRNAS.sqn:LocusCollidesWithLocusTag (length 24, 4 other)
+test-data/FIND_DUP_TRNAS.sqn:tRNA	Phe	lcl|LocusCollidesWithLocusTag:1-11	
+
+COUNT_TRNAS: Sequence LocusCollidesWithLocusTag has 2 trna-Phe features
+test-data/FIND_DUP_TRNAS.sqn:LocusCollidesWithLocusTag (length 24, 4 other)
+test-data/FIND_DUP_TRNAS.sqn:tRNA	Phe	lcl|LocusCollidesWithLocusTag:1-11	
+test-data/FIND_DUP_TRNAS.sqn:tRNA	Phe	lcl|LocusCollidesWithLocusTag:1-11	
+
+COUNT_TRNAS: Sequence LocusCollidesWithLocusTag is missing trna-Ala
+test-data/FIND_DUP_TRNAS.sqn:LocusCollidesWithLocusTag (length 24, 4 other)
+
+COUNT_TRNAS: Sequence LocusCollidesWithLocusTag is missing trna-Arg
+test-data/FIND_DUP_TRNAS.sqn:LocusCollidesWithLocusTag (length 24, 4 other)
+
+COUNT_TRNAS: Sequence LocusCollidesWithLocusTag is missing trna-Asn
+test-data/FIND_DUP_TRNAS.sqn:LocusCollidesWithLocusTag (length 24, 4 other)
+
+COUNT_TRNAS: Sequence LocusCollidesWithLocusTag is missing trna-Asp
+test-data/FIND_DUP_TRNAS.sqn:LocusCollidesWithLocusTag (length 24, 4 other)
+
+COUNT_TRNAS: Sequence LocusCollidesWithLocusTag is missing trna-Cys
+test-data/FIND_DUP_TRNAS.sqn:LocusCollidesWithLocusTag (length 24, 4 other)
+
+COUNT_TRNAS: Sequence LocusCollidesWithLocusTag is missing trna-Gln
+test-data/FIND_DUP_TRNAS.sqn:LocusCollidesWithLocusTag (length 24, 4 other)
+
+COUNT_TRNAS: Sequence LocusCollidesWithLocusTag is missing trna-Glu
+test-data/FIND_DUP_TRNAS.sqn:LocusCollidesWithLocusTag (length 24, 4 other)
+
+COUNT_TRNAS: Sequence LocusCollidesWithLocusTag is missing trna-Gly
+test-data/FIND_DUP_TRNAS.sqn:LocusCollidesWithLocusTag (length 24, 4 other)
+
+COUNT_TRNAS: Sequence LocusCollidesWithLocusTag is missing trna-His
+test-data/FIND_DUP_TRNAS.sqn:LocusCollidesWithLocusTag (length 24, 4 other)
+
+COUNT_TRNAS: Sequence LocusCollidesWithLocusTag is missing trna-Ile
+test-data/FIND_DUP_TRNAS.sqn:LocusCollidesWithLocusTag (length 24, 4 other)
+
+COUNT_TRNAS: Sequence LocusCollidesWithLocusTag is missing trna-Leu
+test-data/FIND_DUP_TRNAS.sqn:LocusCollidesWithLocusTag (length 24, 4 other)
+
+COUNT_TRNAS: Sequence LocusCollidesWithLocusTag is missing trna-Lys
+test-data/FIND_DUP_TRNAS.sqn:LocusCollidesWithLocusTag (length 24, 4 other)
+
+COUNT_TRNAS: Sequence LocusCollidesWithLocusTag is missing trna-Met
+test-data/FIND_DUP_TRNAS.sqn:LocusCollidesWithLocusTag (length 24, 4 other)
+
+COUNT_TRNAS: Sequence LocusCollidesWithLocusTag is missing trna-Pro
+test-data/FIND_DUP_TRNAS.sqn:LocusCollidesWithLocusTag (length 24, 4 other)
+
+COUNT_TRNAS: Sequence LocusCollidesWithLocusTag is missing trna-Ser
+test-data/FIND_DUP_TRNAS.sqn:LocusCollidesWithLocusTag (length 24, 4 other)
+
+COUNT_TRNAS: Sequence LocusCollidesWithLocusTag is missing trna-Thr
+test-data/FIND_DUP_TRNAS.sqn:LocusCollidesWithLocusTag (length 24, 4 other)
+
+COUNT_TRNAS: Sequence LocusCollidesWithLocusTag is missing trna-Trp
+test-data/FIND_DUP_TRNAS.sqn:LocusCollidesWithLocusTag (length 24, 4 other)
+
+COUNT_TRNAS: Sequence LocusCollidesWithLocusTag is missing trna-Tyr
+test-data/FIND_DUP_TRNAS.sqn:LocusCollidesWithLocusTag (length 24, 4 other)
+
+COUNT_TRNAS: Sequence LocusCollidesWithLocusTag is missing trna-Val
+test-data/FIND_DUP_TRNAS.sqn:LocusCollidesWithLocusTag (length 24, 4 other)
+
