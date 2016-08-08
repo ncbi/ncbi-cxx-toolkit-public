@@ -5548,7 +5548,8 @@ void CValidError_bioseq::ValidateSeqFeatContext(
                                 if ( (range.IsWhole()  ||
                                       (range.GetFrom() == 0  &&  range.GetTo() == len - 1)) &&
                                      (!feat.GetData().GetProt().IsSetProcessed() ||
-                                      feat.GetData().GetProt().GetProcessed() == CProt_ref::eProcessed_not_set) ){
+                                      (feat.GetData().GetProt().GetProcessed() == CProt_ref::eProcessed_not_set) ||
+                                      (feat.GetData().GetProt().GetProcessed() == CProt_ref::eProcessed_preprotein))){
                                      num_full_length_prot_ref++;
                                 }
                             }
@@ -5714,7 +5715,8 @@ void CValidError_bioseq::ValidateSeqFeatContext(
                         if ( (range.IsWhole()  ||
                               (range.GetFrom() == 0  &&  range.GetTo() == parent_len - 1) ) &&
                              (!prot_feat.GetData().GetProt().IsSetProcessed() ||
-                              prot_feat.GetData().GetProt().GetProcessed() == CProt_ref::eProcessed_not_set)){
+                              (prot_feat.GetData().GetProt().GetProcessed() == CProt_ref::eProcessed_not_set) ||
+                              prot_feat.GetData().GetProt().GetProcessed() == CProt_ref::eProcessed_preprotein)){
                             num_full_length_prot_ref ++;
                         }
                     } catch ( const exception& ) {
@@ -5722,7 +5724,8 @@ void CValidError_bioseq::ValidateSeqFeatContext(
                         if ( (range.IsWhole()  ||
                               (range.GetFrom() == 0  &&  range.GetTo() == parent_len - 1) ) &&
                              (!it->GetData().GetProt().IsSetProcessed() ||
-                              it->GetData().GetProt().GetProcessed() == CProt_ref::eProcessed_not_set)){
+                              (it->GetData().GetProt().GetProcessed() == CProt_ref::eProcessed_not_set ||
+                              it->GetData().GetProt().GetProcessed() == CProt_ref::eProcessed_preprotein))){
                             num_full_length_prot_ref ++;
                         }
                     }
