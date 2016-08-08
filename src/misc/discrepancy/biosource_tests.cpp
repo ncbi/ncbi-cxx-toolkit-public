@@ -1731,6 +1731,78 @@ DISCREPANCY_SUMMARIZE(UNNECESSARY_ENVIRONMENTAL)
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
+// END_COLON_IN_COUNTRY
+
+DISCREPANCY_CASE(END_COLON_IN_COUNTRY, CBioSource, eOncaller, "Country name end with colon")
+{
+    if (!obj.IsSetSubtype()) {
+        return;
+    }
+    ITERATE(CBioSource::TSubtype, subtype, obj.GetSubtype()) {
+        if ((*subtype)->IsSetSubtype() && (*subtype)->GetSubtype() == CSubSource::eSubtype_country) {
+            const string& s = (*subtype)->GetName();
+            if (s.length() && s[s.length()-1] == ':') {
+                m_Objs["[n] country source[s] end[S] with a colon."].Add(*context.NewFeatOrDescObj(eNoRef, true));
+            }
+        }
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(END_COLON_IN_COUNTRY)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+static bool RemoveCountryColon(CBioSource& src)
+{
+    if (!src.IsSetSubtype()) {
+        return false;
+    }
+    ITERATE (CBioSource::TSubtype, subtype, src.GetSubtype()) {
+        if ((*subtype)->IsSetSubtype() && (*subtype)->GetSubtype() == CSubSource::eSubtype_country) {
+            CSubSource& ss = const_cast<CSubSource&>(**subtype);
+            string& s = ss.SetName();
+            while (s.length() && s[s.length()-1] == ':') {
+                s.resize(s.length()-1);
+            }
+        }
+    }
+    return false;
+}
+
+
+DISCREPANCY_AUTOFIX(END_COLON_IN_COUNTRY)
+{
+    TReportObjectList list = item->GetDetails();
+    unsigned int n = 0;
+    NON_CONST_ITERATE(TReportObjectList, it, list) {
+        const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
+        const CSeqdesc* csd = dynamic_cast<const CSeqdesc*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
+        if (sf) {
+            if (sf->IsSetData() && sf->GetData().IsBiosrc()) {
+                CRef<CSeq_feat> new_feat(new CSeq_feat());
+                new_feat->Assign(*sf);
+                if (RemoveCountryColon(new_feat->SetData().SetBiosrc())) {
+                    CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(*sf));
+                    feh.Replace(*new_feat);
+                    n++;
+                }
+            }
+        }
+        else if (csd) {
+            if (csd->IsSource()) {
+                CSeqdesc* sd = const_cast<CSeqdesc*>(csd);
+                if (RemoveCountryColon(sd->SetSource())) {
+                    n++;
+                }
+            }
+        }
+    }
+    return CRef<CAutofixReport>(n ? new CAutofixReport("END_COLON_IN_COUNTRY: [n] country name[s] fixed", n) : 0);
+}
+
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
