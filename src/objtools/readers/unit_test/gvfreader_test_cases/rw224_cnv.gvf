@@ -1,0 +1,13 @@
+##gff-version 3
+##gvf-version 1.07
+##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=9606
+##genome-build NCBI GRCh37
+##file-date 2016-07-13
+# assembly-name GRCh37  (hg19)
+# assembly-accession GCF_000001405.13
+# Study_accession: Combined studies on GRCh37
+# Display_name: Combined studies on GRCh37
+# Study_description: Combined studies on GRCh37
+NC_000007.13	dbVar	copy_number_loss	108250854	108257413	.	.	.	ID=1082893;Name=essv2585108;Alias=IgH3.1214SSV1;parent=esv275371;Dbxref=URL:www.ncbi.nlm.nih.gov/dbvar/variants/esv275371;var_origin=Not tested;Start_range=108250854,108254593;End_range=108254739,108257413;remapScore=1;sample_name=Unknown;phenotype=not_reported;Variant_seq=-,.;Reference_seq=~
+NC_000010.10	dbVar	copy_number_variation	124353507	124369824	.	.	.	ID=13283333;Name=nssv7476350;Alias=890;parent=nsv1197370;Dbxref=URL:www.ncbi.nlm.nih.gov/dbvar/variants/nsv1197370;copy_number=8;sample_name=0282CD;phenotype=Crohn's disease;phenotype_id=HP:0100280,MedGen:CN117176;gender=F;Variant_seq=~,.;Reference_seq=~
+NC_000011.9	dbVar	copy_number_gain	26663394	26667813	.	.	.	ID=1082894;Name=essv2585109;Alias=IgH3.1743SSV1;parent=esv275492;Dbxref=URL:www.ncbi.nlm.nih.gov/dbvar/variants/esv275492;var_origin=Not tested;Start_range=26663394,26666229;End_range=26667484,26667813;remapScore=1;sample_name=Unknown;phenotype=not_reported;Variant_seq=~,.;Reference_seq=-

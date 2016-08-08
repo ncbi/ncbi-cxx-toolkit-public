@@ -1,0 +1,12 @@
+##gff-version 3
+##gvf-version 1.07
+##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=9606
+##genome-build NCBI GRCh37
+##file-date 2016-07-13
+# assembly-name GRCh37  (hg19)
+# assembly-accession GCF_000001405.13
+# Study_accession: Combined studies on GRCh37
+# Display_name: Combined studies on GRCh37
+# Study_description: Combined studies on GRCh37
+NC_000001.10	dbVar	complex_chromosomal_rearrangement	57028838	57028858	.	.	.	ID=1;Name=esv3754685;Alias=COST129090;Dbxref=URL:www.ncbi.nlm.nih.gov/dbvar/variants/esv3754685;Start_range=57028838,57028858;End_range=57028838,57028858;Variant_seq=-;Reference_seq=-
+NC_000015.9	dbVar	complex_substitution	45977360	45980534	.	.	.	ID=1082219;Name=esv274920;Alias=IgH3.2135;Dbxref=URL:www.ncbi.nlm.nih.gov/dbvar/variants/esv274920;Start_range=45977360,45979927;End_range=45980392,45980534;remapScore=1;Variant_seq=~,.;Reference_seq=~

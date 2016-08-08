@@ -1,0 +1,14 @@
+##gff-version 3
+##gvf-version 1.07
+##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=9606
+##genome-build NCBI GRCh37
+##file-date 2016-07-13
+# assembly-name GRCh37  (hg19)
+# assembly-accession GCF_000001405.13
+# Study_accession: Combined studies on GRCh37
+# Display_name: Combined studies on GRCh37
+# Study_description: Combined studies on GRCh37
+NC_000001.10	dbVar	deletion	108852681	108912803	.	.	.	ID=22599;Name=nssv1676717;Alias=LS-Del-1630;parent=nsv946225;Dbxref=URL:www.ncbi.nlm.nih.gov/dbvar/variants/nsv946225;Start_range=.,108852681;End_range=108912803,.;remapScore=1;validated=Pass;sample_name=Pan_troglodytes_ellioti-Kopongo;phenotype=not_reported;gender=F;Variant_seq=-,.;Reference_seq=~
+NC_000002.11	dbVar	Alu_deletion	195477628	195477734	.	.	.	ID=2;Name=essv18031977;Alias=DEL_pindel_5902_HG00743;parent=esv3827638;Dbxref=URL:www.ncbi.nlm.nih.gov/dbvar/variants/esv3827638;Zygosity=heterozygous;sample_name=HG00743;phenotype=not_reported;gender=F;Variant_seq=-,.;Reference_seq=~
+NC_000002.11	dbVar	LINE1_deletion	196051815	196052084	.	.	.	ID=3;Name=essv18038247;Alias=DEL_pindel_5916_HG00096;parent=esv3827661;Dbxref=URL:www.ncbi.nlm.nih.gov/dbvar/variants/esv3827661;Zygosity=homozygous;sample_name=HG00096;phenotype=not_reported;gender=M;Variant_seq=-,.;Reference_seq=~
+NC_000005.9	dbVar	HERV_deletion	156084730	156093914	.	.	.	ID=4;Name=essv19823527;Alias=BI_GS_DEL1_B5_P1042_111_HG03270;parent=esv3842807;Dbxref=URL:www.ncbi.nlm.nih.gov/dbvar/variants/esv3842807;Zygosity=heterozygous;cipos=-9,10;ciend=-9,10;sample_name=HG03270;phenotype=not_reported;gender=F;Variant_seq=-,.;Reference_seq=~

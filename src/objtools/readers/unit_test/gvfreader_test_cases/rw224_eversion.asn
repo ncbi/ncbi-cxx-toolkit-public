@@ -1,0 +1,110 @@
+Seq-annot ::= {
+  id {
+    local str "NC_000003.11"
+  },
+  desc {
+    user {
+      type str "gvf-import-pragmas",
+      data {
+        {
+          label str "gff-version",
+          data str "3"
+        },
+        {
+          label str "gvf-version",
+          data str "1.07"
+        },
+        {
+          label str "species",
+          data str "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?i
+d=9606"
+        },
+        {
+          label str "genome-build",
+          data str "NCBI GRCh37"
+        },
+        {
+          label str "file-date",
+          data str "2016-07-13"
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      data variation {
+        id {
+          db "dbVar",
+          tag str "4625786"
+        },
+        name "esv3302440",
+        data instance {
+          type everted-copy,
+          delta {
+            {
+              seq loc null NULL
+            }
+          }
+        }
+      },
+      location int {
+        from 147685293,
+        to 147685503,
+        strand both,
+        id other {
+          accession "NC_000003",
+          version 11
+        }
+      },
+      ext {
+        type str "GvfAttributes",
+        data {
+          {
+            label str "orig-var-type",
+            data str "tandem_duplication"
+          },
+          {
+            label str "source",
+            data str "dbVar"
+          },
+          {
+            label str "custom-Alias",
+            data str "P2_PM_3_3801_TD"
+          },
+          {
+            label str "custom-Dbxref",
+            data str "URL:www.ncbi.nlm.nih.gov/dbvar/variants/esv3302440"
+          },
+          {
+            label str "id",
+            data str "4625786"
+          },
+          {
+            label str "name",
+            data str "esv3302440"
+          },
+          {
+            label str "custom-Reference_seq",
+            data str "~"
+          },
+          {
+            label str "custom-Variant_seq",
+            data str "~,."
+          },
+          {
+            label str "custom-ciend",
+            data str "-100,100"
+          },
+          {
+            label str "custom-cipos",
+            data str "-100,100"
+          },
+          {
+            label str "custom-remapScore",
+            data str "1"
+          }
+        }
+      }
+    }
+  }
+}

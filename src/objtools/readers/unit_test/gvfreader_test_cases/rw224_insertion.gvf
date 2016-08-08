@@ -1,0 +1,16 @@
+##gff-version 3
+##gvf-version 1.07
+##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=9606
+##genome-build NCBI GRCh37
+##file-date 2016-07-13
+# assembly-name GRCh37  (hg19)
+# assembly-accession GCF_000001405.13
+# Study_accession: Combined studies on GRCh37
+# Display_name: Combined studies on GRCh37
+# Study_description: Combined studies on GRCh37
+NC_000001.10	dbVar	Alu_insertion	93167530	93167530	.	.	.	ID=2847531;Name=essv10018516;Alias=ALU_umary_ALU_356_A1_HG04216;parent=esv3586815;Dbxref=URL:www.ncbi.nlm.nih.gov/dbvar/variants/esv3586815;Zygosity=heterozygous;sample_name=HG04216;phenotype=not_reported;gender=F;Variant_seq=~,.;Reference_seq=-
+NC_000001.10	dbVar	LINE1_insertion	87541506	87541506	.	.	.	ID=2837460;Name=essv10008445;Alias=L1_umary_LINE1_80_A1_HG01956;parent=esv3586714;Dbxref=URL:www.ncbi.nlm.nih.gov/dbvar/variants/esv3586714;Zygosity=heterozygous;sample_name=HG01956;phenotype=not_reported;gender=F;Variant_seq=~,.;Reference_seq=-
+NC_000001.10	dbVar	SVA_insertion	88508803	88508803	.	.	.	ID=2837593;Name=essv10008578;Alias=SVA_umary_SVA_42_A1_HG01372;parent=esv3586726;Dbxref=URL:www.ncbi.nlm.nih.gov/dbvar/variants/esv3586726;Zygosity=heterozygous;sample_name=HG01372;phenotype=not_reported;gender=F;Variant_seq=~,.;Reference_seq=-
+NC_000006.11	dbVar	insertion	8054167	8054167	.	.	.	ID=1083970;Name=esv987517;Alias=sv19078;Dbxref=URL:www.ncbi.nlm.nih.gov/dbvar/variants/esv987517;remapScore=1;Variant_seq=~,.;Reference_seq=-
+NC_000008.10	dbVar	novel_sequence_insertion	136203039	136203039	.	.	.	ID=4633762;Name=esv3310418;Alias=NS98;Dbxref=URL:www.ncbi.nlm.nih.gov/dbvar/variants/esv3310418;Start_range=136203039,136203039;End_range=136203039,136203039;remapScore=1;Variant_seq=~,.;Reference_seq=-
+NC_000015.9	dbVar	mobile_element_insertion	55616763	55616764	.	.	.	ID=4626449;Name=esv3303103;Alias=P1_MEI_4502;Dbxref=URL:www.ncbi.nlm.nih.gov/dbvar/variants/esv3303103;cipos=-23,23;ciend=-23,23;remapScore=1;Variant_seq=~,.;Reference_seq=-

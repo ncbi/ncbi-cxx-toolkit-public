@@ -1,0 +1,104 @@
+Seq-annot ::= {
+  id {
+    local str "NC_000012.11"
+  },
+  desc {
+    user {
+      type str "gvf-import-pragmas",
+      data {
+        {
+          label str "gff-version",
+          data str "3"
+        },
+        {
+          label str "gvf-version",
+          data str "1.07"
+        },
+        {
+          label str "species",
+          data str "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?i
+d=9606"
+        },
+        {
+          label str "genome-build",
+          data str "NCBI GRCh37"
+        },
+        {
+          label str "file-date",
+          data str "2016-07-13"
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      data variation {
+        id {
+          db "dbVar",
+          tag str "1084014"
+        },
+        name "esv987561",
+        data instance {
+          type inverted-copy,
+          delta {
+            {
+              seq loc null NULL
+            }
+          }
+        }
+      },
+      location int {
+        from 87238805,
+        to 87254007,
+        strand both,
+        id other {
+          accession "NC_000012",
+          version 11
+        },
+        fuzz-from lim gt,
+        fuzz-to lim lt
+      },
+      ext {
+        type str "GvfAttributes",
+        data {
+          {
+            label str "orig-var-type",
+            data str "inversion"
+          },
+          {
+            label str "source",
+            data str "dbVar"
+          },
+          {
+            label str "custom-Alias",
+            data str "sv518"
+          },
+          {
+            label str "custom-Dbxref",
+            data str "URL:www.ncbi.nlm.nih.gov/dbvar/variants/esv987561"
+          },
+          {
+            label str "id",
+            data str "1084014"
+          },
+          {
+            label str "name",
+            data str "esv987561"
+          },
+          {
+            label str "custom-Reference_seq",
+            data str "~"
+          },
+          {
+            label str "custom-Variant_seq",
+            data str "~,."
+          },
+          {
+            label str "custom-remapScore",
+            data str "1"
+          }
+        }
+      }
+    }
+  }
+}

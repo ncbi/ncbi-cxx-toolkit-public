@@ -1,0 +1,202 @@
+Seq-annot ::= {
+  id {
+    local str "NC_000015.9"
+  },
+  desc {
+    user {
+      type str "gvf-import-pragmas",
+      data {
+        {
+          label str "gff-version",
+          data str "3"
+        },
+        {
+          label str "gvf-version",
+          data str "1.07"
+        },
+        {
+          label str "species",
+          data str "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?i
+d=9606"
+        },
+        {
+          label str "genome-build",
+          data str "NCBI GRCh37"
+        },
+        {
+          label str "file-date",
+          data str "2016-07-13"
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      data variation {
+        id {
+          db "dbVar",
+          tag str "1082219"
+        },
+        name "esv274920",
+        data complex NULL
+      },
+      location int {
+        from 45977359,
+        to 45980533,
+        strand both,
+        id other {
+          accession "NC_000015",
+          version 9
+        },
+        fuzz-from range {
+          max 45979926,
+          min 45977359
+        },
+        fuzz-to range {
+          max 45980533,
+          min 45980391
+        }
+      },
+      ext {
+        type str "GvfAttributes",
+        data {
+          {
+            label str "orig-var-type",
+            data str "complex_substitution"
+          },
+          {
+            label str "source",
+            data str "dbVar"
+          },
+          {
+            label str "custom-Alias",
+            data str "IgH3.2135"
+          },
+          {
+            label str "custom-Dbxref",
+            data str "URL:www.ncbi.nlm.nih.gov/dbvar/variants/esv274920"
+          },
+          {
+            label str "id",
+            data str "1082219"
+          },
+          {
+            label str "name",
+            data str "esv274920"
+          },
+          {
+            label str "custom-Reference_seq",
+            data str "~"
+          },
+          {
+            label str "custom-Variant_seq",
+            data str "~,."
+          },
+          {
+            label str "custom-remapScore",
+            data str "1"
+          }
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  id {
+    local str "NC_000001.10"
+  },
+  desc {
+    user {
+      type str "gvf-import-pragmas",
+      data {
+        {
+          label str "gff-version",
+          data str "3"
+        },
+        {
+          label str "gvf-version",
+          data str "1.07"
+        },
+        {
+          label str "species",
+          data str "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?i
+d=9606"
+        },
+        {
+          label str "genome-build",
+          data str "NCBI GRCh37"
+        },
+        {
+          label str "file-date",
+          data str "2016-07-13"
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      data variation {
+        id {
+          db "dbVar",
+          tag str "1"
+        },
+        name "esv3754685",
+        data complex NULL
+      },
+      location int {
+        from 57028837,
+        to 57028857,
+        strand both,
+        id other {
+          accession "NC_000001",
+          version 10
+        },
+        fuzz-from range {
+          max 57028857,
+          min 57028837
+        },
+        fuzz-to range {
+          max 57028857,
+          min 57028837
+        }
+      },
+      ext {
+        type str "GvfAttributes",
+        data {
+          {
+            label str "orig-var-type",
+            data str "complex_chromosomal_rearrangement"
+          },
+          {
+            label str "source",
+            data str "dbVar"
+          },
+          {
+            label str "custom-Alias",
+            data str "COST129090"
+          },
+          {
+            label str "custom-Dbxref",
+            data str "URL:www.ncbi.nlm.nih.gov/dbvar/variants/esv3754685"
+          },
+          {
+            label str "id",
+            data str "1"
+          },
+          {
+            label str "name",
+            data str "esv3754685"
+          },
+          {
+            label str "custom-Reference_seq",
+            data str "-"
+          },
+          {
+            label str "custom-Variant_seq",
+            data str "-"
+          }
+        }
+      }
+    }
+  }
+}

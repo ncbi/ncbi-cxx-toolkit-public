@@ -1,0 +1,118 @@
+Seq-annot ::= {
+  id {
+    local str "NC_000001.10"
+  },
+  desc {
+    user {
+      type str "gvf-import-pragmas",
+      data {
+        {
+          label str "gff-version",
+          data str "3"
+        },
+        {
+          label str "gvf-version",
+          data str "1.07"
+        },
+        {
+          label str "species",
+          data str "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?i
+d=9606"
+        },
+        {
+          label str "genome-build",
+          data str "NCBI GRCh37"
+        },
+        {
+          label str "file-date",
+          data str "2016-07-13"
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      data variation {
+        id {
+          db "dbVar",
+          tag str "2844978"
+        },
+        parent-id {
+          db "dbVar",
+          tag str "esv3586808"
+        },
+        name "essv10015963",
+        data instance {
+          type delins,
+          delta {
+          }
+        }
+      },
+      location pnt {
+        point 92681353,
+        strand both,
+        id other {
+          accession "NC_000001",
+          version 10
+        }
+      },
+      ext {
+        type str "GvfAttributes",
+        data {
+          {
+            label str "orig-var-type",
+            data str "indel"
+          },
+          {
+            label str "source",
+            data str "dbVar"
+          },
+          {
+            label str "custom-Alias",
+            data str "PHASE3_V1_SV_65_A1_HG03006"
+          },
+          {
+            label str "custom-Dbxref",
+            data str "URL:www.ncbi.nlm.nih.gov/dbvar/variants/esv3586808"
+          },
+          {
+            label str "id",
+            data str "2844978"
+          },
+          {
+            label str "name",
+            data str "essv10015963"
+          },
+          {
+            label str "parent",
+            data str "esv3586808"
+          },
+          {
+            label str "custom-Reference_seq",
+            data str "~"
+          },
+          {
+            label str "custom-Variant_seq",
+            data str "~,."
+          },
+          {
+            label str "custom-Zygosity",
+            data str "homozygous"
+          },
+          {
+            label str "custom-gender",
+            data str "M"
+          },
+          {
+            label str "custom-phenotype",
+            data str "not_reported"
+          },
+          {
+            label str "custom-sample_name",
+            data str "HG03006"
+          }
+        }
+      }
+    }
+  }
+}

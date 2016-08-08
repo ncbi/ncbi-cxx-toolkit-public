@@ -1,0 +1,125 @@
+Seq-annot ::= {
+  id {
+    local str "NC_000001.10"
+  },
+  desc {
+    user {
+      type str "gvf-import-pragmas",
+      data {
+        {
+          label str "gff-version",
+          data str "3"
+        },
+        {
+          label str "gvf-version",
+          data str "1.07"
+        },
+        {
+          label str "species",
+          data str "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?i
+d=9606"
+        },
+        {
+          label str "genome-build",
+          data str "NCBI GRCh37"
+        },
+        {
+          label str "file-date",
+          data str "2016-07-13"
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      data variation {
+        id {
+          db "dbVar",
+          tag str "93434"
+        },
+        parent-id {
+          db "dbVar",
+          tag str "nsv945717"
+        },
+        name "nssv1748170",
+        data instance {
+          type cnv,
+          delta {
+            {
+              seq this NULL,
+              multiplier-fuzz lim gt
+            }
+          }
+        }
+      },
+      location int {
+        from 459943,
+        to 463639,
+        strand both,
+        id other {
+          accession "NC_000001",
+          version 10
+        },
+        fuzz-from lim lt,
+        fuzz-to lim gt
+      },
+      ext {
+        type str "GvfAttributes",
+        data {
+          {
+            label str "orig-var-type",
+            data str "duplication"
+          },
+          {
+            label str "source",
+            data str "dbVar"
+          },
+          {
+            label str "custom-Alias",
+            data str "LS-Dup-1000"
+          },
+          {
+            label str "custom-Dbxref",
+            data str "URL:www.ncbi.nlm.nih.gov/dbvar/variants/nsv945717"
+          },
+          {
+            label str "id",
+            data str "93434"
+          },
+          {
+            label str "name",
+            data str "nssv1748170"
+          },
+          {
+            label str "parent",
+            data str "nsv945717"
+          },
+          {
+            label str "custom-Reference_seq",
+            data str "-"
+          },
+          {
+            label str "custom-Variant_seq",
+            data str "~,."
+          },
+          {
+            label str "custom-gender",
+            data str "F"
+          },
+          {
+            label str "custom-phenotype",
+            data str "not_reported"
+          },
+          {
+            label str "custom-remapScore",
+            data str "1"
+          },
+          {
+            label str "custom-sample_name",
+            data str "Pan_troglodytes_troglodytes-A960_Clara"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,885 @@
+Seq-annot ::= {
+  id {
+    local str "NC_000015.9"
+  },
+  desc {
+    user {
+      type str "gvf-import-pragmas",
+      data {
+        {
+          label str "gff-version",
+          data str "3"
+        },
+        {
+          label str "gvf-version",
+          data str "1.07"
+        },
+        {
+          label str "species",
+          data str "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?i
+d=9606"
+        },
+        {
+          label str "genome-build",
+          data str "NCBI GRCh37"
+        },
+        {
+          label str "file-date",
+          data str "2016-07-13"
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      data variation {
+        id {
+          db "dbVar",
+          tag str "4626449"
+        },
+        name "esv3303103",
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq this NULL
+                  }
+                },
+                observation asserted
+              }
+            },
+            {
+              variant-prop {
+                version 5,
+                allele-state heterozygous
+              },
+              data instance {
+                type ins,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "."
+                    },
+                    action ins-before
+                  }
+                },
+                observation variant
+              }
+            },
+            {
+              variant-prop {
+                version 5,
+                allele-state heterozygous
+              },
+              data instance {
+                type ins,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "~"
+                    },
+                    action ins-before
+                  }
+                },
+                observation variant
+              }
+            }
+          }
+        }
+      },
+      location int {
+        from 55616762,
+        to 55616763,
+        strand both,
+        id other {
+          accession "NC_000015",
+          version 9
+        }
+      },
+      ext {
+        type str "GvfAttributes",
+        data {
+          {
+            label str "orig-var-type",
+            data str "mobile_element_insertion"
+          },
+          {
+            label str "source",
+            data str "dbVar"
+          },
+          {
+            label str "custom-Alias",
+            data str "P1_MEI_4502"
+          },
+          {
+            label str "custom-Dbxref",
+            data str "URL:www.ncbi.nlm.nih.gov/dbvar/variants/esv3303103"
+          },
+          {
+            label str "id",
+            data str "4626449"
+          },
+          {
+            label str "name",
+            data str "esv3303103"
+          },
+          {
+            label str "custom-Reference_seq",
+            data str "-"
+          },
+          {
+            label str "custom-Variant_seq",
+            data str "~,."
+          },
+          {
+            label str "custom-ciend",
+            data str "-23,23"
+          },
+          {
+            label str "custom-cipos",
+            data str "-23,23"
+          },
+          {
+            label str "custom-remapScore",
+            data str "1"
+          }
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  id {
+    local str "NC_000008.10"
+  },
+  desc {
+    user {
+      type str "gvf-import-pragmas",
+      data {
+        {
+          label str "gff-version",
+          data str "3"
+        },
+        {
+          label str "gvf-version",
+          data str "1.07"
+        },
+        {
+          label str "species",
+          data str "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?i
+d=9606"
+        },
+        {
+          label str "genome-build",
+          data str "NCBI GRCh37"
+        },
+        {
+          label str "file-date",
+          data str "2016-07-13"
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      data variation {
+        id {
+          db "dbVar",
+          tag str "4633762"
+        },
+        name "esv3310418",
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq this NULL
+                  }
+                },
+                observation asserted
+              }
+            },
+            {
+              variant-prop {
+                version 5,
+                allele-state heterozygous
+              },
+              data instance {
+                type ins,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "."
+                    },
+                    action ins-before
+                  }
+                },
+                observation variant
+              }
+            },
+            {
+              variant-prop {
+                version 5,
+                allele-state heterozygous
+              },
+              data instance {
+                type ins,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "~"
+                    },
+                    action ins-before
+                  }
+                },
+                observation variant
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 136203038,
+        strand both,
+        id other {
+          accession "NC_000008",
+          version 10
+        },
+        fuzz range {
+          max 136203038,
+          min 136203038
+        }
+      },
+      ext {
+        type str "GvfAttributes",
+        data {
+          {
+            label str "orig-var-type",
+            data str "novel_sequence_insertion"
+          },
+          {
+            label str "source",
+            data str "dbVar"
+          },
+          {
+            label str "custom-Alias",
+            data str "NS98"
+          },
+          {
+            label str "custom-Dbxref",
+            data str "URL:www.ncbi.nlm.nih.gov/dbvar/variants/esv3310418"
+          },
+          {
+            label str "id",
+            data str "4633762"
+          },
+          {
+            label str "name",
+            data str "esv3310418"
+          },
+          {
+            label str "custom-Reference_seq",
+            data str "-"
+          },
+          {
+            label str "custom-Variant_seq",
+            data str "~,."
+          },
+          {
+            label str "custom-remapScore",
+            data str "1"
+          }
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  id {
+    local str "NC_000006.11"
+  },
+  desc {
+    user {
+      type str "gvf-import-pragmas",
+      data {
+        {
+          label str "gff-version",
+          data str "3"
+        },
+        {
+          label str "gvf-version",
+          data str "1.07"
+        },
+        {
+          label str "species",
+          data str "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?i
+d=9606"
+        },
+        {
+          label str "genome-build",
+          data str "NCBI GRCh37"
+        },
+        {
+          label str "file-date",
+          data str "2016-07-13"
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      data variation {
+        id {
+          db "dbVar",
+          tag str "1083970"
+        },
+        name "esv987517",
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq this NULL
+                  }
+                },
+                observation asserted
+              }
+            },
+            {
+              variant-prop {
+                version 5,
+                allele-state heterozygous
+              },
+              data instance {
+                type ins,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "."
+                    },
+                    action ins-before
+                  }
+                },
+                observation variant
+              }
+            },
+            {
+              variant-prop {
+                version 5,
+                allele-state heterozygous
+              },
+              data instance {
+                type ins,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "~"
+                    },
+                    action ins-before
+                  }
+                },
+                observation variant
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 8054167,
+        strand both,
+        id other {
+          accession "NC_000006",
+          version 11
+        }
+      },
+      ext {
+        type str "GvfAttributes",
+        data {
+          {
+            label str "orig-var-type",
+            data str "insertion"
+          },
+          {
+            label str "source",
+            data str "dbVar"
+          },
+          {
+            label str "custom-Alias",
+            data str "sv19078"
+          },
+          {
+            label str "custom-Dbxref",
+            data str "URL:www.ncbi.nlm.nih.gov/dbvar/variants/esv987517"
+          },
+          {
+            label str "id",
+            data str "1083970"
+          },
+          {
+            label str "name",
+            data str "esv987517"
+          },
+          {
+            label str "custom-Reference_seq",
+            data str "-"
+          },
+          {
+            label str "custom-Variant_seq",
+            data str "~,."
+          },
+          {
+            label str "custom-remapScore",
+            data str "1"
+          }
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  id {
+    local str "NC_000001.10"
+  },
+  desc {
+    user {
+      type str "gvf-import-pragmas",
+      data {
+        {
+          label str "gff-version",
+          data str "3"
+        },
+        {
+          label str "gvf-version",
+          data str "1.07"
+        },
+        {
+          label str "species",
+          data str "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?i
+d=9606"
+        },
+        {
+          label str "genome-build",
+          data str "NCBI GRCh37"
+        },
+        {
+          label str "file-date",
+          data str "2016-07-13"
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      data variation {
+        id {
+          db "dbVar",
+          tag str "2847531"
+        },
+        parent-id {
+          db "dbVar",
+          tag str "esv3586815"
+        },
+        name "essv10018516",
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq this NULL
+                  }
+                },
+                observation asserted
+              }
+            },
+            {
+              variant-prop {
+                version 5,
+                allele-state heterozygous
+              },
+              data instance {
+                type ins,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "."
+                    },
+                    action ins-before
+                  }
+                },
+                observation variant
+              }
+            },
+            {
+              variant-prop {
+                version 5,
+                allele-state heterozygous
+              },
+              data instance {
+                type ins,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "~"
+                    },
+                    action ins-before
+                  }
+                },
+                observation variant
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 93167529,
+        strand both,
+        id other {
+          accession "NC_000001",
+          version 10
+        }
+      },
+      ext {
+        type str "GvfAttributes",
+        data {
+          {
+            label str "orig-var-type",
+            data str "Alu_insertion"
+          },
+          {
+            label str "source",
+            data str "dbVar"
+          },
+          {
+            label str "custom-Alias",
+            data str "ALU_umary_ALU_356_A1_HG04216"
+          },
+          {
+            label str "custom-Dbxref",
+            data str "URL:www.ncbi.nlm.nih.gov/dbvar/variants/esv3586815"
+          },
+          {
+            label str "id",
+            data str "2847531"
+          },
+          {
+            label str "name",
+            data str "essv10018516"
+          },
+          {
+            label str "parent",
+            data str "esv3586815"
+          },
+          {
+            label str "custom-Reference_seq",
+            data str "-"
+          },
+          {
+            label str "custom-Variant_seq",
+            data str "~,."
+          },
+          {
+            label str "custom-Zygosity",
+            data str "heterozygous"
+          },
+          {
+            label str "custom-gender",
+            data str "F"
+          },
+          {
+            label str "custom-phenotype",
+            data str "not_reported"
+          },
+          {
+            label str "custom-sample_name",
+            data str "HG04216"
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "dbVar",
+          tag str "2837460"
+        },
+        parent-id {
+          db "dbVar",
+          tag str "esv3586714"
+        },
+        name "essv10008445",
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq this NULL
+                  }
+                },
+                observation asserted
+              }
+            },
+            {
+              variant-prop {
+                version 5,
+                allele-state heterozygous
+              },
+              data instance {
+                type ins,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "."
+                    },
+                    action ins-before
+                  }
+                },
+                observation variant
+              }
+            },
+            {
+              variant-prop {
+                version 5,
+                allele-state heterozygous
+              },
+              data instance {
+                type ins,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "~"
+                    },
+                    action ins-before
+                  }
+                },
+                observation variant
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 87541505,
+        strand both,
+        id other {
+          accession "NC_000001",
+          version 10
+        }
+      },
+      ext {
+        type str "GvfAttributes",
+        data {
+          {
+            label str "orig-var-type",
+            data str "LINE1_insertion"
+          },
+          {
+            label str "source",
+            data str "dbVar"
+          },
+          {
+            label str "custom-Alias",
+            data str "L1_umary_LINE1_80_A1_HG01956"
+          },
+          {
+            label str "custom-Dbxref",
+            data str "URL:www.ncbi.nlm.nih.gov/dbvar/variants/esv3586714"
+          },
+          {
+            label str "id",
+            data str "2837460"
+          },
+          {
+            label str "name",
+            data str "essv10008445"
+          },
+          {
+            label str "parent",
+            data str "esv3586714"
+          },
+          {
+            label str "custom-Reference_seq",
+            data str "-"
+          },
+          {
+            label str "custom-Variant_seq",
+            data str "~,."
+          },
+          {
+            label str "custom-Zygosity",
+            data str "heterozygous"
+          },
+          {
+            label str "custom-gender",
+            data str "F"
+          },
+          {
+            label str "custom-phenotype",
+            data str "not_reported"
+          },
+          {
+            label str "custom-sample_name",
+            data str "HG01956"
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "dbVar",
+          tag str "2837593"
+        },
+        parent-id {
+          db "dbVar",
+          tag str "esv3586726"
+        },
+        name "essv10008578",
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq this NULL
+                  }
+                },
+                observation asserted
+              }
+            },
+            {
+              variant-prop {
+                version 5,
+                allele-state heterozygous
+              },
+              data instance {
+                type ins,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "."
+                    },
+                    action ins-before
+                  }
+                },
+                observation variant
+              }
+            },
+            {
+              variant-prop {
+                version 5,
+                allele-state heterozygous
+              },
+              data instance {
+                type ins,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "~"
+                    },
+                    action ins-before
+                  }
+                },
+                observation variant
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 88508802,
+        strand both,
+        id other {
+          accession "NC_000001",
+          version 10
+        }
+      },
+      ext {
+        type str "GvfAttributes",
+        data {
+          {
+            label str "orig-var-type",
+            data str "SVA_insertion"
+          },
+          {
+            label str "source",
+            data str "dbVar"
+          },
+          {
+            label str "custom-Alias",
+            data str "SVA_umary_SVA_42_A1_HG01372"
+          },
+          {
+            label str "custom-Dbxref",
+            data str "URL:www.ncbi.nlm.nih.gov/dbvar/variants/esv3586726"
+          },
+          {
+            label str "id",
+            data str "2837593"
+          },
+          {
+            label str "name",
+            data str "essv10008578"
+          },
+          {
+            label str "parent",
+            data str "esv3586726"
+          },
+          {
+            label str "custom-Reference_seq",
+            data str "-"
+          },
+          {
+            label str "custom-Variant_seq",
+            data str "~,."
+          },
+          {
+            label str "custom-Zygosity",
+            data str "heterozygous"
+          },
+          {
+            label str "custom-gender",
+            data str "F"
+          },
+          {
+            label str "custom-phenotype",
+            data str "not_reported"
+          },
+          {
+            label str "custom-sample_name",
+            data str "HG01372"
+          }
+        }
+      }
+    }
+  }
+}

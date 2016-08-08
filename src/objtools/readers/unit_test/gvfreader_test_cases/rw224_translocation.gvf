@@ -1,0 +1,15 @@
+##gff-version 3
+##gvf-version 1.07
+##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=9606
+##genome-build NCBI GRCh37
+##file-date 2016-07-13
+# assembly-name GRCh37  (hg19)
+# assembly-accession GCF_000001405.13
+# Study_accession: Combined studies on GRCh37
+# Display_name: Combined studies on GRCh37
+# Study_description: Combined studies on GRCh37
+NC_000001.10	dbVar	intrachromosomal_translocation	55185032	55185032	.	.	.	ID=13538344;Name=nssv3761984;Alias=10269;parent=nsv1068006;Dbxref=URL:www.ncbi.nlm.nih.gov/dbvar/variants/nsv1068006;sample_name=KWP1;phenotype=not_reported;gender=M;Variant_seq=-;Reference_seq=-
+NC_000001.10	dbVar	intrachromosomal_translocation	55185092	55185092	.	.	.	ID=13538345;Name=nssv3761984;Alias=10269;parent=nsv1068006;Dbxref=URL:www.ncbi.nlm.nih.gov/dbvar/variants/nsv1068006;sample_name=KWP1;phenotype=not_reported;gender=M;Variant_seq=-;Reference_seq=-
+NC_000010.10	dbVar	translocation	20835053	20835053	.	.	.	ID=11;Name=nsv1067937;Alias=10048;Dbxref=URL:www.ncbi.nlm.nih.gov/dbvar/variants/nsv1067937;Variant_seq=-;Reference_seq=-
+NC_000012.11	dbVar	interchromosomal_translocation	30273007	30273007	.	.	.	ID=13538418;Name=nssv3762047;Alias=10652;parent=nsv1068099;Dbxref=URL:www.ncbi.nlm.nih.gov/dbvar/variants/nsv1068099;sample_name=KWP1;phenotype=not_reported;gender=M;Variant_seq=-;Reference_seq=-
+NC_000018.9	dbVar	interchromosomal_translocation	34178041	34178041	.	.	.	ID=13538417;Name=nssv3762047;Alias=10652;parent=nsv1068099;Dbxref=URL:www.ncbi.nlm.nih.gov/dbvar/variants/nsv1068099;sample_name=KWP1;phenotype=not_reported;gender=M;Variant_seq=-;Reference_seq=-
