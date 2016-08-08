@@ -1760,16 +1760,18 @@ static bool RemoveCountryColon(CBioSource& src)
     if (!src.IsSetSubtype()) {
         return false;
     }
+    bool fixed = false;
     ITERATE (CBioSource::TSubtype, subtype, src.GetSubtype()) {
         if ((*subtype)->IsSetSubtype() && (*subtype)->GetSubtype() == CSubSource::eSubtype_country) {
             CSubSource& ss = const_cast<CSubSource&>(**subtype);
             string& s = ss.SetName();
             while (s.length() && s[s.length()-1] == ':') {
                 s.resize(s.length()-1);
+                fixed = true;
             }
         }
     }
-    return false;
+    return fixed;
 }
 
 
@@ -1801,6 +1803,94 @@ DISCREPANCY_AUTOFIX(END_COLON_IN_COUNTRY)
         }
     }
     return CRef<CAutofixReport>(n ? new CAutofixReport("END_COLON_IN_COUNTRY: [n] country name[s] fixed", n) : 0);
+}
+
+
+// COUNTRY_COLON
+
+DISCREPANCY_CASE(COUNTRY_COLON, CBioSource, eOncaller, "Country description should only have 1 colon")
+{
+    if (!obj.IsSetSubtype()) {
+        return;
+    }
+    ITERATE(CBioSource::TSubtype, subtype, obj.GetSubtype()) {
+        if ((*subtype)->IsSetSubtype() && (*subtype)->GetSubtype() == CSubSource::eSubtype_country) {
+            const string& s = (*subtype)->GetName();
+            int count = 0;
+            for (size_t i = 0; i < s.length(); i++) {
+                if (s[i] == ':') {
+                    count++;
+                    if (count > 1) {
+                        m_Objs["[n] country source[s] [has] more than 1 colon."].Add(*context.NewFeatOrDescObj(eNoRef, true));
+                        break;
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(COUNTRY_COLON)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+static bool ChangeCountryColonToComma(CBioSource& src)
+{
+    if (!src.IsSetSubtype()) {
+        return false;
+    }
+    bool fixed = false;
+    ITERATE (CBioSource::TSubtype, subtype, src.GetSubtype()) {
+        if ((*subtype)->IsSetSubtype() && (*subtype)->GetSubtype() == CSubSource::eSubtype_country) {
+            CSubSource& ss = const_cast<CSubSource&>(**subtype);
+            string& s = ss.SetName();
+            int count = 0;
+            for (size_t i = 0; i < s.length(); i++) {
+                if (s[i] = ':') {
+                    count++;
+                    if (count > 1) {
+                        s[i] = ',';
+                        fixed = true;
+                    }
+                }
+            }
+        }
+    }
+    return fixed;
+}
+
+
+DISCREPANCY_AUTOFIX(COUNTRY_COLON)
+{
+    TReportObjectList list = item->GetDetails();
+    unsigned int n = 0;
+    NON_CONST_ITERATE(TReportObjectList, it, list) {
+        const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
+        const CSeqdesc* csd = dynamic_cast<const CSeqdesc*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
+        if (sf) {
+            if (sf->IsSetData() && sf->GetData().IsBiosrc()) {
+                CRef<CSeq_feat> new_feat(new CSeq_feat());
+                new_feat->Assign(*sf);
+                if (ChangeCountryColonToComma(new_feat->SetData().SetBiosrc())) {
+                    CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(*sf));
+                    feh.Replace(*new_feat);
+                    n++;
+                }
+            }
+        }
+        else if (csd) {
+            if (csd->IsSource()) {
+                CSeqdesc* sd = const_cast<CSeqdesc*>(csd);
+                if (ChangeCountryColonToComma(sd->SetSource())) {
+                    n++;
+                }
+            }
+        }
+    }
+    return CRef<CAutofixReport>(n ? new CAutofixReport("COUNTRY_COLON: [n] country name[s] fixed", n) : 0);
 }
 
 
