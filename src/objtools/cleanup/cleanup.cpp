@@ -453,6 +453,8 @@ CProt_ref::EProcessed s_ProcessedFromKey(const string& key)
         return CProt_ref::eProcessed_transit_peptide;
     } else if (NStr::Equal(key, "preprotein") || NStr::Equal(key, "proprotein")) {
         return CProt_ref::eProcessed_preprotein;
+    } else if (NStr::Equal(key, "propeptide")) {
+        return CProt_ref::eProcessed_propeptide;
     } else {
         return CProt_ref::eProcessed_not_set;
     }
@@ -472,6 +474,9 @@ string s_KeyFromProcessed(CProt_ref::EProcessed processed)
         break;
     case CProt_ref::eProcessed_transit_peptide:
         return "transit_peptide";
+        break;
+    case CProt_ref::eProcessed_propeptide:
+        return "propeptide";
         break;
     case CProt_ref::eProcessed_not_set:
         return kEmptyStr;

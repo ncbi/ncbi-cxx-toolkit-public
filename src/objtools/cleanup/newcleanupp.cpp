@@ -3181,6 +3181,8 @@ void CNewCleanup_imp::ImpFeatBC( CSeq_feat& feat )
                 processed = NCBI_PROTREF(signal_peptide);
             } else if ( key == "transit_peptide" ) {
                 processed = NCBI_PROTREF(transit_peptide);
+            } else if ( key == "propeptide" ) {
+                processed = NCBI_PROTREF(propeptide);
             }
             if (processed != NCBI_PROTREF(not_set) || key == "Protein" ) {
                 const CSeq_id* location_seq_id = ( feat.IsSetLocation() ? feat.GetLocation().GetId() : NULL );
@@ -3635,6 +3637,8 @@ const char *s_FindKeyFromFeatDefType( const CSeq_feat &feat )
                     return "sig_peptide";
                 case NCBI_PROTREF(transit_peptide):
                     return "transit_peptide";
+                case NCBI_PROTREF(propeptide):
+                    return "propeptide";
                 default:
                     return kFeatBad;
                 }
