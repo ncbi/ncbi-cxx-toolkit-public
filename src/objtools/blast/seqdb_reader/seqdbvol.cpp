@@ -774,8 +774,11 @@ s_SeqDBRebuildDNA_NA8(char               * seq,
 
         if (new_format) ++i;
 
-        if (position + row_len <= region.begin || position >= region.end)
+        if (position + row_len <= region.begin)
             continue;
+
+        if(position >= region.end)
+        	break;
 
         for (int j = 0; j < row_len; ++j, ++position)
             if ( position >= region.begin  && position < region.end)
