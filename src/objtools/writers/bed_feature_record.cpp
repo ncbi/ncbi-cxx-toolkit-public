@@ -175,12 +175,15 @@ bool CBedFeatureRecord::AssignLocation(
 //  ----------------------------------------------------------------------------
 {
     if ( interval.CanGetId() ) {
+
         m_strChrom = interval.GetId().GetSeqIdString(true);
+
         if (getBestId) {
+
             try {
                 string bestId;
                 CWriteUtil::GetBestId(
-                    CSeq_id_Handle::GetHandle(m_strChrom), scope, bestId);
+                    CSeq_id_Handle::GetHandle(interval.GetId()), scope, bestId);
                 m_strChrom = bestId;
                 // its OK for this to silently fail. 
                 // Seq-ids that dont look up are just meant to be output directly
