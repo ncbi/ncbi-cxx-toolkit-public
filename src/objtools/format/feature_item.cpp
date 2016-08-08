@@ -996,7 +996,8 @@ string CFeatureItem::GetKey(void) const
             if ( subtype == CSeqFeatData::eSubtype_preprotein         ||
                  subtype == CSeqFeatData::eSubtype_mat_peptide_aa     ||
                 subtype == CSeqFeatData::eSubtype_sig_peptide_aa     ||
-                subtype == CSeqFeatData::eSubtype_transit_peptide_aa ) {
+                subtype == CSeqFeatData::eSubtype_transit_peptide_aa     ||
+                subtype == CSeqFeatData::eSubtype_propeptide ) {
                 return "Precursor";
             } 
         }
@@ -3203,7 +3204,8 @@ void CFeatureItem::x_AddQualsProt(
     if ( !pseudo  &&  ctx.Config().ShowPeptides() ) {
         if ( processed == CProt_ref::eProcessed_mature          ||
              processed == CProt_ref::eProcessed_signal_peptide  ||
-             processed == CProt_ref::eProcessed_transit_peptide ) {
+             processed == CProt_ref::eProcessed_transit_peptide  ||
+             processed == CProt_ref::eProcessed_propeptide ) {
             CSeqVector pep(m_Feat.GetLocation(), ctx.GetScope());
             pep.SetCoding(CSeq_data::e_Ncbieaa);
             string peptide;

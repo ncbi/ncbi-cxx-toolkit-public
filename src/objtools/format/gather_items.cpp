@@ -2975,7 +2975,8 @@ SAnnotSelector s_GetCdsProductSel(CBioseqContext& ctx)
         .IncludeFeatSubtype(CSeqFeatData::eSubtype_mat_peptide_aa)
         .IncludeFeatSubtype(CSeqFeatData::eSubtype_sig_peptide_aa)
         .IncludeFeatSubtype(CSeqFeatData::eSubtype_transit_peptide_aa)
-        .IncludeFeatSubtype(CSeqFeatData::eSubtype_preprotein);
+        .IncludeFeatSubtype(CSeqFeatData::eSubtype_preprotein)
+        .IncludeFeatSubtype(CSeqFeatData::eSubtype_propeptide);
     return sel;
 }
 
