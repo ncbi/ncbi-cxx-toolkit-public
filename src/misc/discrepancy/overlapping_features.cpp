@@ -39,26 +39,61 @@ DISCREPANCY_MODULE(overlapping_features);
 
 // CDS_TRNA_OVERLAP
 
+static const string kCDSoverlapTRNA = "[n] Bioseq[s] [has] coding regions that overlap tRNAs";
+
 DISCREPANCY_CASE(CDS_TRNA_OVERLAP, COverlappingFeatures, eDisc | eSubmitter | eSmart, "CDS tRNA Overlap")
 {
     const vector<CConstRef<CSeq_feat> >& cds = context.FeatCDS();
     const vector<CConstRef<CSeq_feat> >& trnas = context.FeatTRNAs();
+
     bool increase_count = false;
+    
+    string cur_bioseq_number = NStr::SizetToString(context.GetCountBioseq());
+    string report_item_str("[n] coding region[s] [has] overlapping tRNAs");
+    report_item_str += "[*" + cur_bioseq_number + "*]";
+
+    string report_cds_trna_pair_str("Coding region overlaps tRNAs");
+
     for (size_t i = 0; i < cds.size(); i++) {
+
         const CSeq_loc& loc_i = cds[i]->GetLocation();
+        bool has_overlap = false;
+
+        string cur_idx_str = NStr::SizetToString(i);
+        string cur_report_cds_trna_pair_str = report_cds_trna_pair_str + "[*" + cur_idx_str + "*]";
+
+        ENa_strand cds_strand = loc_i.IsSetStrand() ? loc_i.GetStrand() : eNa_strand_unknown;
         for (size_t j = 0; j < trnas.size(); j++) {
+
             const CSeq_loc& loc_j = trnas[j]->GetLocation();
-            sequence::ECompare ovlp = sequence::Compare(loc_i, loc_j, &context.GetScope(), sequence::fCompareOverlapping);
+            sequence::ECompare ovlp = sequence::eNoOverlap;
+            ENa_strand trna_strand = loc_j.IsSetStrand() ? loc_j.GetStrand() : eNa_strand_unknown;
+
+            bool need_to_compare = !(cds_strand == eNa_strand_plus && trna_strand == eNa_strand_minus ||
+                                     cds_strand == eNa_strand_minus && trna_strand == eNa_strand_plus);
+
+            if (need_to_compare) {
+                ovlp = sequence::Compare(loc_i, loc_j, &context.GetScope(), sequence::fCompareOverlapping);
+            }
+
             if (ovlp != sequence::eNoOverlap) {
                 increase_count = true;
-                CReportNode& out = m_Objs["[n] Bioseq[s] [has] coding regions that overlap tRNAs"];
-                out["[n] coding region[s] [has] overlapping tRNAs"].Incr().Ext().Add(*context.NewDiscObj(cds[i])).Add(*context.NewDiscObj(trnas[j]));
-                break;
+
+                CReportNode& out = m_Objs[kCDSoverlapTRNA][report_item_str].Ext();
+                CReportNode& subitem = out[cur_report_cds_trna_pair_str];
+
+                if (!has_overlap) {
+                    out.Incr();
+                    has_overlap = true;
+                    subitem.Ext().Add(*context.NewDiscObj(cds[i]));
+                }
+                
+                subitem.Ext().Add(*context.NewDiscObj(trnas[j]));
             }
         }
     }
     if (increase_count) {
-        m_Objs["[n] Bioseq[s] [has] coding regions that overlap tRNAs"].Incr();
+        m_Objs[kCDSoverlapTRNA].Incr();
     }
 }
 
