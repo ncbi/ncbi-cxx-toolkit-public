@@ -1585,14 +1585,22 @@ void CGenbankFormatter::FormatFeature
     }
 
 	const string& strKey = feat->GetKey();
+  string fkey = strKey;
+	if (NStr::EqualNocase (fkey, "propeptide")) {
+      if (f.GetContext()->IsProt()) {
+      } else if (f.GetContext()->IsRefSeq()) {
+      } else if (f.GetContext()->Config().IsModeEntrez() || f.GetContext()->Config().IsModeRelease()) {
+	        fkey = "misc_feature";
+	    }
+	}
 	// write <span...> and <script...> in HTML mode
 	if (bHtml && f.GetContext()->Config().IsModeEntrez() && f.GetContext()->Config().ShowSeqSpans()) {
-		x_GetFeatureSpanAndScriptStart(*text_os, strKey, f.GetLoc(), *f.GetContext());
+		x_GetFeatureSpanAndScriptStart(*text_os, fkey, f.GetLoc(), *f.GetContext());
 	}
 
 #if 1
 	list<string>        l;
-    Wrap(l, strKey, feat->GetLoc().GetString(), eFeat );
+    Wrap(l, fkey, feat->GetLoc().GetString(), eFeat );
 
     // In HTML mode, if not taking a "slice" (i.e. -from and -to args )
     // we need to add a link
@@ -1601,12 +1609,12 @@ void CGenbankFormatter::FormatFeature
         // negative padding means we need to remove spaces.
         // const int padding_needed = (int)strDummy.length() - (int)feat->GetKey().length();
 		string strFeatKey;
-		if (s_GetLinkFeatureKey(f, *feat, strKey, strFeatKey, m_uFeatureCount))
+		if (s_GetLinkFeatureKey(f, *feat, fkey, strFeatKey, m_uFeatureCount))
 		{
 			// strFeatKey += string( padding_needed, ' ' );
 			NON_CONST_ITERATE(list<string>, it, l) {
 				// string::size_type dummy_loc = (*it).find(strDummy);
-				NStr::ReplaceInPlace( *it, strKey, strFeatKey );
+				NStr::ReplaceInPlace( *it, fkey, strFeatKey );
 			}
 		}
     }
