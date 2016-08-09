@@ -986,13 +986,13 @@ DISCREPANCY_AUTOFIX(ORDERED_LOCATION)
 
 const string kHasLocusTags = "has locus tags";
 
-DISCREPANCY_CASE(MISSING_LOCUS_TAGS, CSeqFeatData, eDisc | eSubmitter | eSmart, "Missing locus tags")
+DISCREPANCY_CASE(MISSING_LOCUS_TAGS, CSeq_feat, eDisc | eSubmitter | eSmart, "Missing locus tags")
 {
-    if (obj.Which() != CSeqFeatData::e_Gene) {
+    if (!obj.IsSetData() || !obj.GetData().IsGene()) {
         return;
     }
 
-    const CGene_ref& gene_ref = obj.GetGene();
+    const CGene_ref& gene_ref = obj.GetData().GetGene();
 
     // Skip pseudo-genes
     if (gene_ref.CanGetPseudo() && gene_ref.GetPseudo() == true) {
@@ -1001,9 +1001,9 @@ DISCREPANCY_CASE(MISSING_LOCUS_TAGS, CSeqFeatData, eDisc | eSubmitter | eSmart, 
 
     // Report missing or empty locus tags
     if (!gene_ref.CanGetLocus_tag() || NStr::TruncateSpaces(gene_ref.GetLocus_tag()).empty()) {
-        m_Objs["[n] gene[s] [has] no locus tag[s]."].Add(*context.NewDiscObj(context.GetCurrentSeq_feat()));
+        m_Objs["[n] gene[s] [has] no locus tag[s]."].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
     } else if (!m_Objs.Exist(kHasLocusTags)) {
-        m_Objs[kHasLocusTags].Add(*context.NewDiscObj(context.GetCurrentSeq_feat()));
+        m_Objs[kHasLocusTags].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
     }
 }
 
