@@ -1742,6 +1742,8 @@ AC_CACHE_CHECK([how to enable C++ '11 features in $CXX],
        CXX=$orig_CXX])
 if test "$ncbi_cv_prog_cxx_11" = no; then
    AC_MSG_ERROR([Please upgrade to a compiler supporting C++ '11, such as GCC 4.8 or newer.])
+else
+   CXX="$CXX $ncbi_cv_prog_cxx_11"
 fi
 
 AC_LANG_PUSH(C)

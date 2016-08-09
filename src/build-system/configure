@@ -8857,6 +8857,8 @@ if test "$ncbi_cv_prog_cxx_11" = no; then
    { { echo "$as_me:$LINENO: error: Please upgrade to a compiler supporting C++ '11, such as GCC 4.8 or newer." >&5
 echo "$as_me: error: Please upgrade to a compiler supporting C++ '11, such as GCC 4.8 or newer." >&2;}
    { (exit 1); exit 1; }; }
+else
+   CXX="$CXX $ncbi_cv_prog_cxx_11"
 fi
 
 ac_ext=c
