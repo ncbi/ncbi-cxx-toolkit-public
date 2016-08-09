@@ -63,7 +63,7 @@ DISCREPANCY_CASE(MAP_CHROMOSOME_CONFLICT, CSeqdesc, eDisc | eOncaller | eSmart, 
     bool has_map = false;
     bool has_chromosome = false;
 
-    ITERATE(CBioSource::TSubtype, it, obj.GetSource().GetSubtype()) {
+    ITERATE (CBioSource::TSubtype, it, obj.GetSource().GetSubtype()) {
         if ((*it)->IsSetSubtype()) {
             if ((*it)->GetSubtype() == CSubSource::eSubtype_map) {
                 has_map = true;
@@ -160,7 +160,7 @@ static bool DoInfluenzaStrainAndCollectionDateMisMatch(const CBioSource& src)
     }
 
     if (year > 0 && src.IsSetSubtype()) {
-        ITERATE(CBioSource::TSubtype, it, src.GetSubtype()) {
+        ITERATE (CBioSource::TSubtype, it, src.GetSubtype()) {
             if ((*it)->IsSetSubtype() &&
                 (*it)->GetSubtype() == CSubSource::eSubtype_collection_date &&
                 (*it)->IsSetName()) {
@@ -205,7 +205,7 @@ static bool HasUnculturedNotes(const CBioSource& src)
     if (!src.IsSetSubtype()) {
         return false;
     }
-    ITERATE(CBioSource::TSubtype, it, src.GetSubtype()) {
+    ITERATE (CBioSource::TSubtype, it, src.GetSubtype()) {
         if ((*it)->IsSetSubtype() &&
             (*it)->GetSubtype() == CSubSource::eSubtype_other &&
             (*it)->IsSetName() &&
@@ -249,7 +249,7 @@ DISCREPANCY_CASE(MISSING_VIRAL_QUALS, CBioSource, eOncaller, "Viruses should spe
     bool has_country = false;
     bool has_specific_host = false;
     if (obj.IsSetSubtype()) {
-        ITERATE(CBioSource::TSubtype, it, obj.GetSubtype()) {
+        ITERATE (CBioSource::TSubtype, it, obj.GetSubtype()) {
             if ((*it)->IsSetSubtype()) {
                 if ((*it)->GetSubtype() == CSubSource::eSubtype_collection_date) {
                     has_collection_date = true;
@@ -263,7 +263,7 @@ DISCREPANCY_CASE(MISSING_VIRAL_QUALS, CBioSource, eOncaller, "Viruses should spe
         }
     }
     if (obj.IsSetOrg() && obj.GetOrg().IsSetOrgname() && obj.GetOrg().GetOrgname().IsSetMod()) {
-        ITERATE(COrgName::TMod, it, obj.GetOrg().GetOrgname().GetMod()) {
+        ITERATE (COrgName::TMod, it, obj.GetOrg().GetOrgname().GetMod()) {
             if ((*it)->IsSetSubtype() && (*it)->GetSubtype() == COrgMod::eSubtype_nat_host) {
                 has_specific_host = true;
             }
@@ -298,7 +298,7 @@ bool HasCultureCollectionForATCCStrain(const COrgName::TMod& mods, const string&
 
     bool found = false;
 
-    ITERATE(COrgName::TMod, m, mods) {
+    ITERATE (COrgName::TMod, m, mods) {
         if ((*m)->IsSetSubtype() &&
             (*m)->GetSubtype() == COrgMod::eSubtype_culture_collection &&
             (*m)->IsSetSubname() &&
@@ -328,7 +328,7 @@ bool HasStrainForATCCCultureCollection(const COrgName::TMod& mods, const string&
 
     bool found = false;
 
-    ITERATE(COrgName::TMod, m, mods) {
+    ITERATE (COrgName::TMod, m, mods) {
         if ((*m)->IsSetSubtype() &&
             (*m)->GetSubtype() == COrgMod::eSubtype_strain &&
             (*m)->IsSetSubname() &&
@@ -362,7 +362,7 @@ DISCREPANCY_CASE(ATCC_CULTURE_CONFLICT, CBioSource, eDisc | eOncaller, "ATCC str
 
     bool report = false;
 
-    ITERATE(COrgName::TMod, m, obj.GetOrg().GetOrgname().GetMod()) {
+    ITERATE (COrgName::TMod, m, obj.GetOrg().GetOrgname().GetMod()) {
         if ((*m)->IsSetSubtype() && 
             (*m)->IsSetSubname()) {
             if ((*m)->GetSubtype() == COrgMod::eSubtype_strain &&
@@ -399,7 +399,7 @@ static bool SetCultureCollectionFromStrain(CBioSource& src)
     }
 
     vector<string> add;
-    ITERATE(COrgName::TMod, m, src.GetOrg().GetOrgname().GetMod()) {
+    ITERATE (COrgName::TMod, m, src.GetOrg().GetOrgname().GetMod()) {
         if ((*m)->IsSetSubtype() &&
             (*m)->IsSetSubname()) {
             if ((*m)->GetSubtype() == COrgMod::eSubtype_strain &&
@@ -410,7 +410,7 @@ static bool SetCultureCollectionFromStrain(CBioSource& src)
         }
     }
     if (!add.empty()) {
-        ITERATE(vector<string>, s, add) {
+        ITERATE (vector<string>, s, add) {
             CRef<COrgMod> m(new COrgMod(COrgMod::eSubtype_culture_collection, *s));
             src.SetOrg().SetOrgname().SetMod().push_back(m);
         }
@@ -424,7 +424,7 @@ DISCREPANCY_AUTOFIX(ATCC_CULTURE_CONFLICT)
 {
     TReportObjectList list = item->GetDetails();
     unsigned int n = 0;
-    NON_CONST_ITERATE(TReportObjectList, it, list) {
+    NON_CONST_ITERATE (TReportObjectList, it, list) {
         const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
         if (sf && sf->IsSetData() && sf->GetData().IsBiosrc()) {
             CRef<CSeq_feat> new_feat(new CSeq_feat());
@@ -478,7 +478,7 @@ DISCREPANCY_CASE(BACTERIA_MISSING_STRAIN, CBioSource, eDisc | eOncaller | eSubmi
     string cmp = obj.GetOrg().GetTaxname().substr(pos + 5);
     
     if (obj.IsSetOrg() && obj.GetOrg().IsSetOrgname() && obj.GetOrgname().IsSetMod()) {
-        ITERATE(COrgName::TMod, m, obj.GetOrg().GetOrgname().GetMod()) {
+        ITERATE (COrgName::TMod, m, obj.GetOrg().GetOrgname().GetMod()) {
             if ((*m)->IsSetSubtype() &&
                 (*m)->GetSubtype() == COrgMod::eSubtype_strain &&
                 (*m)->IsSetSubname() &&
@@ -506,7 +506,7 @@ const string kAmplifiedWithSpeciesSpecificPrimers = "amplified with species-spec
 bool HasAmplifiedWithSpeciesSpecificPrimerNote(const CBioSource& src)
 {
     if (src.IsSetSubtype()) {
-        ITERATE(CBioSource::TSubtype, s, src.GetSubtype()) {
+        ITERATE (CBioSource::TSubtype, s, src.GetSubtype()) {
             if ((*s)->IsSetSubtype() && (*s)->GetSubtype() == CSubSource::eSubtype_other &&
                 (*s)->IsSetName() && NStr::Equal((*s)->GetName(), kAmplifiedWithSpeciesSpecificPrimers)) {
                 return true;
@@ -515,7 +515,7 @@ bool HasAmplifiedWithSpeciesSpecificPrimerNote(const CBioSource& src)
     }
 
     if (src.IsSetOrg() && src.GetOrg().IsSetOrgname() && src.GetOrg().GetOrgname().IsSetMod()) {
-        ITERATE(COrgName::TMod, m, src.GetOrg().GetOrgname().GetMod()) {
+        ITERATE (COrgName::TMod, m, src.GetOrg().GetOrgname().GetMod()) {
             if ((*m)->IsSetSubtype() && (*m)->GetSubtype() == CSubSource::eSubtype_other &&
                 (*m)->IsSetSubname() && NStr::Equal((*m)->GetSubname(), kAmplifiedWithSpeciesSpecificPrimers)) {
                 return true;
@@ -540,7 +540,7 @@ DISCREPANCY_CASE(BACTERIA_SHOULD_NOT_HAVE_ISOLATE, CBioSource, eOncaller, "Bacte
 
     bool has_bad_isolate = false;
     if (obj.IsSetOrg() && obj.GetOrg().IsSetOrgname() && obj.GetOrg().GetOrgname().IsSetMod()) {
-        ITERATE(COrgName::TMod, m, obj.GetOrg().GetOrgname().GetMod()) {
+        ITERATE (COrgName::TMod, m, obj.GetOrg().GetOrgname().GetMod()) {
             if ((*m)->IsSetSubtype() && (*m)->GetSubtype() == COrgMod::eSubtype_isolate &&
                 (*m)->IsSetSubname() && 
                 !NStr::StartsWith((*m)->GetSubname(), "DGGE gel band") &&
@@ -575,7 +575,7 @@ DISCREPANCY_CASE(MULTISRC, CBioSource, eDisc | eOncaller, "Comma or semicolon ap
     }
 
     bool report = false;
-    ITERATE(COrgName::TMod, m, obj.GetOrg().GetOrgname().GetMod()) {
+    ITERATE (COrgName::TMod, m, obj.GetOrg().GetOrgname().GetMod()) {
         if ((*m)->IsSetSubtype() &&
             ((*m)->GetSubtype() == COrgMod::eSubtype_isolate || (*m)->GetSubtype() == COrgMod::eSubtype_strain) &&
             (*m)->IsSetSubname() &&
@@ -623,7 +623,7 @@ DISCREPANCY_CASE(FIND_STRAND_TRNAS, CBioSource, eDisc, "Find tRNAs on the same s
     }
 
     const CSeq_annot* annot = nullptr;
-    ITERATE(CBioseq::TAnnot, annot_it, bioseq->GetAnnot()) {
+    ITERATE (CBioseq::TAnnot, annot_it, bioseq->GetAnnot()) {
         if ((*annot_it)->IsFtable()) {
             annot = *annot_it;
             break;
@@ -637,7 +637,7 @@ DISCREPANCY_CASE(FIND_STRAND_TRNAS, CBioSource, eDisc, "Find tRNAs on the same s
         ENa_strand strand = eNa_strand_unknown;
 
         list< CConstRef< CSeq_feat > > trnas;
-        ITERATE(CSeq_annot::TData::TFtable, feat, annot->GetData().GetFtable()) {
+        ITERATE (CSeq_annot::TData::TFtable, feat, annot->GetData().GetFtable()) {
 
             if ((*feat)->IsSetLocation() && (*feat)->IsSetData() && (*feat)->GetData().IsRna()) {
 
@@ -699,7 +699,7 @@ static bool IsMissingRequiredClone(const CBioSource& biosource)
 
     if (biosource.IsSetSubtype()) {
 
-        ITERATE(CBioSource::TSubtype, subtype_it, biosource.GetSubtype())
+        ITERATE (CBioSource::TSubtype, subtype_it, biosource.GetSubtype())
         {
             if ((*subtype_it)->IsSetSubtype()) {
 
@@ -721,7 +721,7 @@ static bool IsMissingRequiredClone(const CBioSource& biosource)
         bool has_gel_band_isolate = false;
         if (biosource.IsSetOrg() && biosource.GetOrg().IsSetOrgname() && biosource.GetOrg().GetOrgname().IsSetMod()) {
 
-            ITERATE(COrgName::TMod, mod_it, biosource.GetOrg().GetOrgname().GetMod()) {
+            ITERATE (COrgName::TMod, mod_it, biosource.GetOrg().GetOrgname().GetMod()) {
 
                 if ((*mod_it)->IsSetSubtype() && (*mod_it)->GetSubtype() == COrgMod::eSubtype_isolate) {
                     if ((*mod_it)->IsSetSubname() && NStr::FindNoCase((*mod_it)->GetSubname(), "gel band") != NPOS) {
@@ -805,7 +805,7 @@ DISCREPANCY_CASE(STRAIN_TAXNAME_MISMATCH, CBioSource, eDisc | eOncaller, "BioSou
     if (!obj.IsSetOrg() || !obj.GetOrg().IsSetOrgname() || !obj.GetOrg().GetOrgname().IsSetMod()) {
         return;
     }
-    ITERATE(COrgName::TMod, om, obj.GetOrg().GetOrgname().GetMod()) {
+    ITERATE (COrgName::TMod, om, obj.GetOrg().GetOrgname().GetMod()) {
         if ((*om)->IsSetSubtype() && (*om)->GetSubtype() == COrgMod::eSubtype_strain &&
             (*om)->IsSetSubname() && !NStr::IsBlank((*om)->GetSubname())) {
             m_Objs["[n] biosource[s] have strain " + (*om)->GetSubname() + " but do not have the same taxnames"].Add(*context.NewFeatOrDescObj(eKeepRef)); // should be optimized!!!
@@ -832,14 +832,14 @@ void SummarizeTaxnameConflict(CReportNode& m_Objs, const string& qual_name)
     if (m_Objs.GetMap().size() > 1) {
         // add top level category
         size_t num_biosources = 0;
-        NON_CONST_ITERATE(CReportNode::TNodeMap, it, m_Objs.GetMap()) {
+        NON_CONST_ITERATE (CReportNode::TNodeMap, it, m_Objs.GetMap()) {
             num_biosources += it->second->GetObjects().size();
         }
         string new_label = NStr::NumericToString(num_biosources) +
             " BioSources have " + qual_name + "/taxname conflicts";
 
-        NON_CONST_ITERATE(CReportNode::TNodeMap, it, m_Objs.GetMap()) {
-            NON_CONST_ITERATE(TReportObjectList, q, it->second->GetObjects()) {
+        NON_CONST_ITERATE (CReportNode::TNodeMap, it, m_Objs.GetMap()) {
+            NON_CONST_ITERATE (TReportObjectList, q, it->second->GetObjects()) {
                 m_Objs[new_label][it->first].Add(**q).Ext();
             }
         }
@@ -876,7 +876,7 @@ DISCREPANCY_CASE(SPECVOUCHER_TAXNAME_MISMATCH, CBioSource, eOncaller | eSmart, "
     if (!obj.IsSetOrg() || !obj.GetOrg().IsSetOrgname() || !obj.GetOrg().GetOrgname().IsSetMod()) {
         return;
     }
-    ITERATE(COrgName::TMod, om, obj.GetOrg().GetOrgname().GetMod()) {
+    ITERATE (COrgName::TMod, om, obj.GetOrg().GetOrgname().GetMod()) {
         if ((*om)->IsSetSubtype() && (*om)->GetSubtype() == COrgMod::eSubtype_specimen_voucher &&
             (*om)->IsSetSubname() && !NStr::IsBlank((*om)->GetSubname())) {
             m_Objs["[n] biosource[s] have specimen voucher " + (*om)->GetSubname() + " but do not have the same taxnames"].Add(*context.NewFeatOrDescObj(eKeepRef));
@@ -906,7 +906,7 @@ DISCREPANCY_CASE(CULTURE_TAXNAME_MISMATCH, CBioSource, eOncaller, "Test BioSourc
     if (!obj.IsSetOrg() || !obj.GetOrg().IsSetOrgname() || !obj.GetOrg().GetOrgname().IsSetMod()) {
         return;
     }
-    ITERATE(COrgName::TMod, om, obj.GetOrg().GetOrgname().GetMod()) {
+    ITERATE (COrgName::TMod, om, obj.GetOrg().GetOrgname().GetMod()) {
         if ((*om)->IsSetSubtype() && (*om)->GetSubtype() == COrgMod::eSubtype_culture_collection &&
             (*om)->IsSetSubname() && !NStr::IsBlank((*om)->GetSubname())) {
             m_Objs["[n] biosource[s] have culture collection " + (*om)->GetSubname() + " but do not have the same taxnames"].Add(*context.NewFeatOrDescObj(eKeepRef));
@@ -936,7 +936,7 @@ DISCREPANCY_CASE(BIOMATERIAL_TAXNAME_MISMATCH, CBioSource, eOncaller | eSmart, "
     if (!obj.IsSetOrg() || !obj.GetOrg().IsSetOrgname() || !obj.GetOrg().GetOrgname().IsSetMod()) {
         return;
     }
-    ITERATE(COrgName::TMod, om, obj.GetOrg().GetOrgname().GetMod()) {
+    ITERATE (COrgName::TMod, om, obj.GetOrg().GetOrgname().GetMod()) {
         if ((*om)->IsSetSubtype() && (*om)->GetSubtype() == COrgMod::eSubtype_bio_material &&
             (*om)->IsSetSubname() && !NStr::IsBlank((*om)->GetSubname())) {
             m_Objs["[n] biosource[s] have biomaterial " + (*om)->GetSubname() + " but do not have the same taxnames"].Add(*context.NewFeatOrDescObj(eKeepRef));
@@ -975,7 +975,7 @@ DISCREPANCY_CASE(ORGANELLE_ITS, CBioSource, eOncaller, "Test Bioseqs for suspect
     }
 
     const CSeq_annot* annot = nullptr;
-    ITERATE(CBioseq::TAnnot, annot_it, bioseq->GetAnnot()) {
+    ITERATE (CBioseq::TAnnot, annot_it, bioseq->GetAnnot()) {
         if ((*annot_it)->IsFtable()) {
             annot = *annot_it;
             break;
@@ -986,7 +986,7 @@ DISCREPANCY_CASE(ORGANELLE_ITS, CBioSource, eOncaller, "Test Bioseqs for suspect
 
     if (annot) {
 
-        ITERATE(CSeq_annot::TData::TFtable, feat, annot->GetData().GetFtable()) {
+        ITERATE (CSeq_annot::TData::TFtable, feat, annot->GetData().GetFtable()) {
 
             if ((*feat)->IsSetData() && (*feat)->GetData().IsRna()) {
 
@@ -1039,7 +1039,7 @@ DISCREPANCY_CASE(HAPLOTYPE_MISMATCH, CBioSource, eOncaller, "Sequences with the 
         return;
     }
 
-    ITERATE(CBioSource::TSubtype, subtype, obj.GetSubtype()) {
+    ITERATE (CBioSource::TSubtype, subtype, obj.GetSubtype()) {
         if ((*subtype)->IsSetSubtype() && (*subtype)->GetSubtype() == CSubSource::eSubtype_haplotype) {
             m_Objs[kTaxnameAndHaplotype].Add(*context.NewDiscObj(context.GetCurrentBioseq(), eKeepRef), true);
             break;
@@ -1053,7 +1053,7 @@ typedef map<pair<string, string>, TBioseqHandleList> THaplotypeMap;
 static string GetHaplotype(const CBioSource& biosource)
 {
     string res;
-    ITERATE(CBioSource::TSubtype, subtype, biosource.GetSubtype()) {
+    ITERATE (CBioSource::TSubtype, subtype, biosource.GetSubtype()) {
         if ((*subtype)->IsSetSubtype() && (*subtype)->GetSubtype() == CSubSource::eSubtype_haplotype && (*subtype)->IsSetName()) {
             res = (*subtype)->GetName();
             break;
@@ -1065,7 +1065,7 @@ static string GetHaplotype(const CBioSource& biosource)
 
 static void CollectBioseqsByTaxnameAndHaplotype(CDiscrepancyContext& context, TReportObjectList& bioseqs, THaplotypeMap& haplotypes)
 {
-    NON_CONST_ITERATE(TReportObjectList, bioseq, bioseqs) {
+    NON_CONST_ITERATE (TReportObjectList, bioseq, bioseqs) {
 
         const CDiscrepancyObject* dobj = dynamic_cast<const CDiscrepancyObject*>(bioseq->GetPointer());
         if (dobj) {
@@ -1152,7 +1152,7 @@ static bool IsSeqEqualOrOverlap(const CBioseq_Handle& bioseq1, const CBioseq_Han
 
 static EHaplotypeProblem CheckForHaplotypeProblems(const TBioseqHandleList& bioseqs)
 {
-    ITERATE(TBioseqHandleList, cur_bioseq, bioseqs) {
+    ITERATE (TBioseqHandleList, cur_bioseq, bioseqs) {
         TBioseqHandleList::const_iterator next_bioseq = cur_bioseq;
         for (++next_bioseq; next_bioseq != bioseqs.end(); ++next_bioseq) {
 
@@ -1182,7 +1182,7 @@ static void AddHaplotypeProblems(CDiscrepancyContext& context, CReportNode& repo
 {
     string sub_subtype = "[n] sequences have organism " + bioseqs->first.first + " haplotype " + bioseqs->first.second + " but the sequences do not match " + match_descr;
 
-    ITERATE(TBioseqHandleList, bioseq_h, bioseqs->second) {
+    ITERATE (TBioseqHandleList, bioseq_h, bioseqs->second) {
 
         report[kHaplotypeReport][subtype][sub_subtype].Add(*(context.NewDiscObj(bioseq_h->GetBioseqCore())), false);
     }
@@ -1202,7 +1202,7 @@ DISCREPANCY_SUMMARIZE(HAPLOTYPE_MISMATCH)
     CollectBioseqsByTaxnameAndHaplotype(context, m_Objs[kTaxnameAndHaplotype].GetObjects(), haplotypes);
 
     CReportNode report;
-    ITERATE(THaplotypeMap, cur, haplotypes) {
+    ITERATE (THaplotypeMap, cur, haplotypes) {
         if (cur->second.size() > 1) {
 
             EHaplotypeProblem res = CheckForHaplotypeProblems(cur->second);
@@ -1453,7 +1453,7 @@ typedef list<pair<const CBioSource*, list<TBioseqSeqdesc>>> TItemsByBioSource;
 
 static void GetItemsByBiosource(TReportObjectList& objs, TItemsByBioSource& items)
 {
-    NON_CONST_ITERATE(TReportObjectList, obj, objs) {
+    NON_CONST_ITERATE (TReportObjectList, obj, objs) {
 
         CDiscrepancyObject* dobj = dynamic_cast<CDiscrepancyObject*>(obj->GetPointer());
         if (dobj) {
@@ -1462,7 +1462,7 @@ static void GetItemsByBiosource(TReportObjectList& objs, TItemsByBioSource& item
             const CBioSource& cur_biosrc = cur_seqdesc->GetSource();
 
             bool found = false;
-            NON_CONST_ITERATE(TItemsByBioSource, item, items) {
+            NON_CONST_ITERATE (TItemsByBioSource, item, items) {
                 if (item->first->Equals(cur_biosrc)) {
                     found = true;
                     item->second.push_back(make_pair(cur_bioseq, cur_seqdesc));
@@ -1506,8 +1506,8 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_BIOSOURCE)
             subtype += " (" + diff_str + ")";
         }
 
-        ITERATE(TItemsByBioSource, item, items) {
-            ITERATE(list<TBioseqSeqdesc>, bioseq_desc, item->second) {
+        ITERATE (TItemsByBioSource, item, items) {
+            ITERATE (list<TBioseqSeqdesc>, bioseq_desc, item->second) {
                 m_Objs[subtype].Add(*context.NewDiscObj(CConstRef<CSeqdesc>(bioseq_desc->second)), false);
                 m_Objs[subtype].Add(*context.NewDiscObj(CConstRef<CBioseq>(bioseq_desc->first)), false);
             }
@@ -1535,7 +1535,7 @@ DISCREPANCY_CASE(TAX_LOOKUP_MISMATCH, CBioSource, eDisc, "Find Tax Lookup Mismat
 
 static void GetOrgRefs(TReportObjectList& objs, vector<CRef<COrg_ref>>& org_refs)
 {
-    NON_CONST_ITERATE(TReportObjectList, obj, objs) {
+    NON_CONST_ITERATE (TReportObjectList, obj, objs) {
 
         CDiscrepancyObject* dobj = dynamic_cast<CDiscrepancyObject*>(obj->GetPointer());
         if (dobj) {
@@ -1553,7 +1553,7 @@ static const CDbtag* GetTaxonTag(const COrg_ref& org)
 {
     const CDbtag* ret = nullptr;
     if (org.IsSetDb()) {
-        ITERATE(COrg_ref::TDb, db, org.GetDb()) {
+        ITERATE (COrg_ref::TDb, db, org.GetDb()) {
             if ((*db)->IsSetDb() && NStr::EqualNocase((*db)->GetDb(), "taxon")) {
                 ret = *db;
                 break;
@@ -1605,7 +1605,7 @@ static void GetMismatchOrMissingOrgRefReport(CDiscrepancyContext& context, CRepo
             TReportObjectList& objs = objs_node[kOgRefs].GetObjects();
             TReportObjectList::iterator obj_it = objs.begin();
 
-            ITERATE(CTaxon3_reply::TReply, item, reply->GetReply()) {
+            ITERATE (CTaxon3_reply::TReply, item, reply->GetReply()) {
 
                 bool report = false;
                 if (is_mismatch) {
@@ -1687,7 +1687,7 @@ DISCREPANCY_CASE(UNNECESSARY_ENVIRONMENTAL, CBioSource, eOncaller, "Unnecessary 
         return;
     }
     bool found = false;
-    ITERATE(CBioSource::TSubtype, subtype, obj.GetSubtype()) {
+    ITERATE (CBioSource::TSubtype, subtype, obj.GetSubtype()) {
         if ((*subtype)->IsSetSubtype()) {
             CSubSource::TSubtype st = (*subtype)->GetSubtype();
             if (st == CSubSource::eSubtype_metagenomic) {
@@ -1714,7 +1714,7 @@ DISCREPANCY_CASE(UNNECESSARY_ENVIRONMENTAL, CBioSource, eOncaller, "Unnecessary 
             }
         }
         if (obj.GetOrg().IsSetOrgname() && obj.GetOrg().GetOrgname().IsSetMod()) {
-            ITERATE(COrgName::TMod, it, obj.GetOrg().GetOrgname().GetMod()) {
+            ITERATE (COrgName::TMod, it, obj.GetOrg().GetOrgname().GetMod()) {
                 if ((*it)->IsSetSubtype() && (*it)->GetSubtype() == COrgMod::eSubtype_other
                         && (*it)->IsSetSubname() && NStr::FindNoCase((*it)->GetSubname(), "amplified with species-specific primers") != NPOS) {
                     return;
@@ -1738,7 +1738,7 @@ DISCREPANCY_CASE(END_COLON_IN_COUNTRY, CBioSource, eOncaller, "Country name end 
     if (!obj.IsSetSubtype()) {
         return;
     }
-    ITERATE(CBioSource::TSubtype, subtype, obj.GetSubtype()) {
+    ITERATE (CBioSource::TSubtype, subtype, obj.GetSubtype()) {
         if ((*subtype)->IsSetSubtype() && (*subtype)->GetSubtype() == CSubSource::eSubtype_country) {
             const string& s = (*subtype)->GetName();
             if (s.length() && s[s.length()-1] == ':') {
@@ -1779,7 +1779,7 @@ DISCREPANCY_AUTOFIX(END_COLON_IN_COUNTRY)
 {
     TReportObjectList list = item->GetDetails();
     unsigned int n = 0;
-    NON_CONST_ITERATE(TReportObjectList, it, list) {
+    NON_CONST_ITERATE (TReportObjectList, it, list) {
         const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
         const CSeqdesc* csd = dynamic_cast<const CSeqdesc*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
         if (sf) {
@@ -1813,7 +1813,7 @@ DISCREPANCY_CASE(COUNTRY_COLON, CBioSource, eOncaller, "Country description shou
     if (!obj.IsSetSubtype()) {
         return;
     }
-    ITERATE(CBioSource::TSubtype, subtype, obj.GetSubtype()) {
+    ITERATE (CBioSource::TSubtype, subtype, obj.GetSubtype()) {
         if ((*subtype)->IsSetSubtype() && (*subtype)->GetSubtype() == CSubSource::eSubtype_country) {
             const string& s = (*subtype)->GetName();
             int count = 0;
@@ -1849,7 +1849,7 @@ static bool ChangeCountryColonToComma(CBioSource& src)
             string& s = ss.SetName();
             int count = 0;
             for (size_t i = 0; i < s.length(); i++) {
-                if (s[i] = ':') {
+                if (s[i] == ':') {
                     count++;
                     if (count > 1) {
                         s[i] = ',';
@@ -1867,7 +1867,7 @@ DISCREPANCY_AUTOFIX(COUNTRY_COLON)
 {
     TReportObjectList list = item->GetDetails();
     unsigned int n = 0;
-    NON_CONST_ITERATE(TReportObjectList, it, list) {
+    NON_CONST_ITERATE (TReportObjectList, it, list) {
         const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
         const CSeqdesc* csd = dynamic_cast<const CSeqdesc*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
         if (sf) {
@@ -1891,6 +1891,48 @@ DISCREPANCY_AUTOFIX(COUNTRY_COLON)
         }
     }
     return CRef<CAutofixReport>(n ? new CAutofixReport("COUNTRY_COLON: [n] country name[s] fixed", n) : 0);
+}
+
+
+// CHECK_AUTHORITY
+
+DISCREPANCY_CASE(CHECK_AUTHORITY, CBioSource, eDisc | eOncaller, "Authority and Taxname should match first two words")
+{
+    if (!obj.IsSetOrg() || !obj.GetOrg().CanGetOrgname() || !obj.GetOrg().GetOrgname().CanGetMod() || !obj.GetOrg().CanGetTaxname() || !obj.GetOrg().GetTaxname().length()) {
+        return;
+    }
+    ITERATE (COrgName::TMod, it, obj.GetOrg().GetOrgname().GetMod()) {
+        if ((*it)->CanGetSubtype() && (*it)->GetSubtype() == COrgMod::eSubtype_authority) {
+        }
+    }
+
+    //m_Objs["[n] country source[s] [has] more than 1 colon."].Add(*context.NewFeatOrDescObj(eNoRef, true));
+}
+
+
+DISCREPANCY_SUMMARIZE(CHECK_AUTHORITY)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+// DUPLICATE_PRIMER_SET
+
+DISCREPANCY_CASE(DUPLICATE_PRIMER_SET, CBioSource, eOncaller, "Duplicate PCR primer pair")
+{
+    if (!obj.CanGetPcr_primers() || !obj.GetPcr_primers().CanGet()) {
+        return;
+    }
+    ITERATE (CPCRReactionSet::Tdata, pr, obj.GetPcr_primers().Get()) {
+        //(*pr)->
+    }
+    //m_Objs["[n] country source[s] [has] more than 1 colon."].Add(*context.NewFeatOrDescObj(eNoRef, true));
+}
+
+
+DISCREPANCY_SUMMARIZE(DUPLICATE_PRIMER_SET)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
