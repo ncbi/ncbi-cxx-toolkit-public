@@ -267,11 +267,9 @@ protected:
 
 private:
     mutable CMutex  m_DefaultCtxMtx;
-#ifdef NCBI_THREADS
     CSemaphore      m_PoolSem;
     string          m_PoolSemSubject;
     CConnection*    m_PoolSemConn;
-#endif
 
     unsigned int    m_LoginTimeout; //< Login timeout.
     unsigned int    m_Timeout;      //< Connection timeout.

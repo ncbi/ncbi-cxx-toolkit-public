@@ -63,9 +63,7 @@ namespace impl
 //
 
 CDriverContext::CDriverContext(void) :
-#ifdef NCBI_THREADS
     m_PoolSem(0, 1),
-#endif
     m_LoginTimeout(0),
     m_Timeout(0),
     m_CancelTimeout(0),
