@@ -574,9 +574,7 @@ DISCREPANCY_SUMMARIZE(BACTERIA_SHOULD_NOT_HAVE_ISOLATE)
 
 // MULTISRC
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(MULTISRC, CBioSource, eDisc | eOncaller, "Comma or semicolon appears in strain or isolate")
-//  ----------------------------------------------------------------------------
 {
     if (!obj.IsSetOrg() || !obj.GetOrg().IsSetOrgname() || !obj.GetOrg().GetOrgname().IsSetMod()) {
         return;
@@ -599,9 +597,34 @@ DISCREPANCY_CASE(MULTISRC, CBioSource, eDisc | eOncaller, "Comma or semicolon ap
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(MULTISRC)
-//  ----------------------------------------------------------------------------
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+// MULTIPLE_CULTURE_COLLECTION
+
+DISCREPANCY_CASE(MULTIPLE_CULTURE_COLLECTION, CBioSource, eDisc | eOncaller, "Comma or semicolon appears in strain or isolate")
+{
+    if (!obj.IsSetOrg() || !obj.GetOrg().IsSetOrgname() || !obj.GetOrg().GetOrgname().IsSetMod()) {
+        return;
+    }
+
+    bool found = false;
+    ITERATE (COrgName::TMod, m, obj.GetOrg().GetOrgname().GetMod()) {
+        if ((*m)->IsSetSubtype() && (*m)->GetSubtype() == COrgMod::eSubtype_culture_collection) {
+            if (found) {
+                m_Objs["[n] organism[s] [has] multiple culture-collection qualifiers"].Add(*context.NewFeatOrDescObj());
+                return;
+            }
+            found = true;
+        }
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(MULTIPLE_CULTURE_COLLECTION)
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
