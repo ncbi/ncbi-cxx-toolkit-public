@@ -634,7 +634,6 @@ DISCREPANCY_CASE(REQUIRED_STRAIN, CBioSource, eDisc, "Bacteria should have strai
     if (!obj.IsSetOrg() || !obj.GetOrg().IsSetOrgname() || !obj.GetOrg().GetOrgname().IsSetMod() || !CDiscrepancyContext::HasLineage(obj, context.GetLineage(), "Bacteria")) {
         return;
     }
-    bool found = false;
     ITERATE (COrgName::TMod, m, obj.GetOrg().GetOrgname().GetMod()) {
         if ((*m)->IsSetSubtype() && (*m)->GetSubtype() == COrgMod::eSubtype_strain) {
             return;
@@ -645,6 +644,26 @@ DISCREPANCY_CASE(REQUIRED_STRAIN, CBioSource, eDisc, "Bacteria should have strai
 
 
 DISCREPANCY_SUMMARIZE(REQUIRED_STRAIN)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+// SP_NOT_UNCULTURED
+
+DISCREPANCY_CASE(SP_NOT_UNCULTURED, CBioSource, eOncaller, "Organism ending in sp. needs tax consult")
+{
+    if (!obj.IsSetOrg() || !obj.GetOrg().CanGetTaxname()) {
+        return;
+    }
+    const string& s = obj.GetOrg().GetTaxname();
+    if (s.length() > 4 && s.substr(s.length() - 4) == " sp." && s.substr(0, 11) != "uncultured ") {
+        m_Objs["[n] biosource[s] [has] taxname[s] that end[S] with \' sp.\' but [does] not start with \'uncultured\'"].Add(*context.NewFeatOrDescObj());
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(SP_NOT_UNCULTURED)
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
