@@ -1,0 +1,8936 @@
+Seq-annot ::= {
+  id {
+    local str "18"
+  },
+  data ftable {
+    {
+      id local id 1,
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 3399865,
+          to 3399983,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 3405682,
+          to 3405784,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 3414127,
+          to 3414221,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 3417532,
+          to 3417637,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 3418561,
+          to 3418643,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 3419344,
+          to 3419440,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 3419529,
+          to 3419639,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 3421200,
+          to 3421362,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 3423466,
+          to 3423590,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 3424447,
+          to 3424554,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 3425509,
+          to 3425568,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 3426092,
+          to 3426220,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 3426314,
+          to 3426400,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 3426755,
+          to 3426907,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 3427160,
+          to 3427237,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 3429567,
+          to 3429633,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 3430909,
+          to 3431111,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 3431481,
+          to 3431582,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 3433991,
+          to 3434107,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 3434841,
+          to 3434969,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 3508207,
+          to 3508282,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 3511254,
+          to 3511541,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 3511979,
+          to 3512394,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 4168519,
+          to 4168657,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 4169134,
+          to 4169292,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 4181111,
+          to 4181189,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 4181902,
+          to 4181968,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 4375619,
+          to 4375775,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 4379566,
+          to 4379738,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 4380651,
+          to 4380884,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 4383186,
+          to 4383410,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 4386168,
+          to 4386379,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 4386950,
+          to 4387176,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 4394971,
+          to 4395063,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 4395153,
+          to 4395226,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 4396102,
+          to 4396461,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 4649128,
+          to 4649402,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 4672512,
+          to 4676164,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 4680223,
+          to 4680254,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5046636,
+          to 5046643,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5046761,
+          to 5046912,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5048882,
+          to 5049491,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5054015,
+          to 5054095,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5055977,
+          to 5056846,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5057272,
+          to 5057436,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5058122,
+          to 5058156,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5058660,
+          to 5058666,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5058710,
+          to 5058771,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5059227,
+          to 5059366,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5060512,
+          to 5060607,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5062159,
+          to 5062402,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5063191,
+          to 5063767,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5064468,
+          to 5064687,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5073878,
+          to 5074001,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5082780,
+          to 5082927,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5086532,
+          to 5086621,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5086707,
+          to 5086793,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5088634,
+          to 5088811,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5090784,
+          to 5090956,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5092842,
+          to 5092997,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5094535,
+          to 5094671,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5095169,
+          to 5095316,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5095433,
+          to 5095578,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5097424,
+          to 5097599,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5098905,
+          to 5099049,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5099431,
+          to 5099707,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5103572,
+          to 5103723,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5105763,
+          to 5105868,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5106661,
+          to 5106868,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5108572,
+          to 5108705,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5114505,
+          to 5114683,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5115975,
+          to 5116118,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5116970,
+          to 5117094,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5118097,
+          to 5118252,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5118343,
+          to 5118426,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5591907,
+          to 5591964,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5593900,
+          to 5593916,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5594370,
+          to 5594469,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5641379,
+          to 5641456,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5705040,
+          to 5705241,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5745647,
+          to 5745697,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5748691,
+          to 5748852,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5758962,
+          to 5759181,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5761325,
+          to 5761430,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5766218,
+          to 5768022,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5770381,
+          to 5770561,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 5772426,
+          to 5773060,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 6332629,
+          to 6333036,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 6619376,
+          to 6619407,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 6620101,
+          to 6620242,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 6623463,
+          to 6623521,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 6623951,
+          to 6624050,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 6626320,
+          to 6626528,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 6629478,
+          to 6629688,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 6630050,
+          to 6630162,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 6635812,
+          to 6635941,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 6638596,
+          to 6638913,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 6765262,
+          to 6765329,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 6770051,
+          to 6770106,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 6778492,
+          to 6778553,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 6783117,
+          to 6783189,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 6784567,
+          to 6784685,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 6784936,
+          to 6785002,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 6788477,
+          to 6788649,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 7869572,
+          to 7869612,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 7869988,
+          to 7870024,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 7871528,
+          to 7871741,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 7901493,
+          to 7901599,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 7905397,
+          to 7905512,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 7905929,
+          to 7906041,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 7910513,
+          to 7910821,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 7916028,
+          to 7916294,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 7917550,
+          to 7917672,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 7918430,
+          to 7918578,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 7920129,
+          to 7920247,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 7921419,
+          to 7921605,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 7921853,
+          to 7921980,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 7926067,
+          to 7926133,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 7973502,
+          to 7973544,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 8694074,
+          to 8694535,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 9212917,
+          to 9214971,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 9707750,
+          to 9707756,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 9720918,
+          to 9720968,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 9840236,
+          to 9840358,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 9846784,
+          to 9846882,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 9848101,
+          to 9849147,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 9858543,
+          to 9859031,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 9859835,
+          to 9859971,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 9866741,
+          to 9866850,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 9874786,
+          to 9874931,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 9876985,
+          to 9877001,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 9916892,
+          to 9917752,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 9958190,
+          to 9958243,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 9959095,
+          to 9959168,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 9959252,
+          to 9959312,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 9960483,
+          to 9960549,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 9962370,
+          to 9962488,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 9963260,
+          to 9963308,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 9963820,
+          to 9963915,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 9968748,
+          to 9968830,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 9970252,
+          to 9970325,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 9975596,
+          to 9975704,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 9977844,
+          to 9977975,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 9984431,
+          to 9984531,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 9986286,
+          to 9986352,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 9986550,
+          to 9986600,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 9986688,
+          to 9986758,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 9987067,
+          to 9987162,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 9987596,
+          to 9987661,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 9989688,
+          to 9989771,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 9992125,
+          to 9992272,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 9992829,
+          to 9992904,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 9993318,
+          to 9993610,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10458222,
+          to 10458378,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10458575,
+          to 10458772,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10469339,
+          to 10469515,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10474216,
+          to 10474392,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10476663,
+          to 10476785,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10498948,
+          to 10499064,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10499881,
+          to 10500000,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10500938,
+          to 10501075,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10503155,
+          to 10503340,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10509080,
+          to 10509406,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10510625,
+          to 10510753,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10511326,
+          to 10511460,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10515191,
+          to 10515388,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10522085,
+          to 10522265,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10523204,
+          to 10523396,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10529573,
+          to 10529703,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10532792,
+          to 10533131,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10537061,
+          to 10537176,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10538129,
+          to 10538373,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10541640,
+          to 10542187,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10542340,
+          to 10542442,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10544444,
+          to 10544599,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10544866,
+          to 10545005,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10547007,
+          to 10547168,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10547278,
+          to 10547482,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10553700,
+          to 10553865,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10554821,
+          to 10555048,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10555883,
+          to 10556024,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10557237,
+          to 10557437,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10558783,
+          to 10558921,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10560317,
+          to 10560477,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10617910,
+          to 10617923,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10623628,
+          to 10623704,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10626823,
+          to 10627014,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10627791,
+          to 10627864,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10726302,
+          to 10726530,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10740980,
+          to 10741151,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10743266,
+          to 10743395,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10747353,
+          to 10747457,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10749320,
+          to 10749386,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10751820,
+          to 10752024,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10755501,
+          to 10755684,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10760801,
+          to 10760945,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10763186,
+          to 10763319,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10768121,
+          to 10768228,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10775526,
+          to 10775723,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10778146,
+          to 10778297,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10792892,
+          to 10793024,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10794475,
+          to 10794561,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10795687,
+          to 10795848,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10798349,
+          to 10798530,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10800053,
+          to 10800245,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10802258,
+          to 10802336,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10804684,
+          to 10804797,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10808031,
+          to 10808131,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 10811982,
+          to 10812119,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 11054070,
+          to 11055186,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 11059049,
+          to 11059215,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 11063015,
+          to 11063140,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 11064507,
+          to 11064594,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 11064685,
+          to 11064788,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 11084312,
+          to 11084476,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 11819341,
+          to 11819449,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 11831090,
+          to 11831132,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 11836103,
+          to 11836198,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 11851520,
+          to 11851632,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 11855251,
+          to 11855317,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 11864200,
+          to 11864375,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 11874242,
+          to 11874346,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 11877341,
+          to 11877438,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 11879053,
+          to 11879165,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 11880148,
+          to 11881033,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 11881112,
+          to 11881238,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 11883915,
+          to 11884003,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 11885681,
+          to 11885792,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 11890698,
+          to 11890838,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 11892984,
+          to 11893053,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 11897081,
+          to 11897177,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 11899434,
+          to 11899575,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 11901124,
+          to 11901218,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 11998314,
+          to 11999041,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12041222,
+          to 12041293,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12047245,
+          to 12047337,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12064433,
+          to 12064510,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12081868,
+          to 12081964,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12083323,
+          to 12083479,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12084769,
+          to 12084872,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12098227,
+          to 12098333,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12099688,
+          to 12099895,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12102969,
+          to 12103106,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12287419,
+          to 12287481,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12294360,
+          to 12294475,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12295201,
+          to 12295346,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12295436,
+          to 12295543,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12295748,
+          to 12295857,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12297825,
+          to 12297968,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12301444,
+          to 12301571,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12307299,
+          to 12307496,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12308027,
+          to 12308186,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12311307,
+          to 12311387,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12311479,
+          to 12311568,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12312421,
+          to 12312528,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12313728,
+          to 12313832,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12327309,
+          to 12327410,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12327741,
+          to 12327817,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12330057,
+          to 12330141,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12334645,
+          to 12334701,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12336696,
+          to 12336782,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12337621,
+          to 12337761,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12337997,
+          to 12338100,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12338993,
+          to 12339082,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12339174,
+          to 12339279,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12340092,
+          to 12340203,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12342487,
+          to 12342531,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12342717,
+          to 12342770,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12343400,
+          to 12343528,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12344157,
+          to 12344263,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12346717,
+          to 12346836,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12347068,
+          to 12347145,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12347328,
+          to 12347432,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12347521,
+          to 12347589,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12347668,
+          to 12347893,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12348314,
+          to 12348390,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12492532,
+          to 12492816,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12527960,
+          to 12528112,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12560543,
+          to 12560660,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12561303,
+          to 12561421,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12562483,
+          to 12562653,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12565995,
+          to 12566086,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12570048,
+          to 12570163,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12572247,
+          to 12572365,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12577674,
+          to 12577764,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12578305,
+          to 12578436,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12579645,
+          to 12579707,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12588389,
+          to 12588523,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12597842,
+          to 12597979,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12599603,
+          to 12599649,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12606773,
+          to 12606872,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12608040,
+          to 12608092,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12608319,
+          to 12608424,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12608903,
+          to 12609002,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12612228,
+          to 12612384,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12615218,
+          to 12615350,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12618190,
+          to 12618332,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12620646,
+          to 12620743,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12621193,
+          to 12621346,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12623869,
+          to 12624029,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12626760,
+          to 12626868,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12628361,
+          to 12628458,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12630690,
+          to 12630825,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12635835,
+          to 12635961,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12636044,
+          to 12636183,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12638263,
+          to 12638378,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12639394,
+          to 12639605,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12640451,
+          to 12640655,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12649427,
+          to 12649571,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12649980,
+          to 12650120,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12653774,
+          to 12653935,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12656393,
+          to 12656491,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12658995,
+          to 12659078,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12661442,
+          to 12661672,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12662733,
+          to 12662903,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12665429,
+          to 12665542,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12668958,
+          to 12669067,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12672152,
+          to 12672232,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12674990,
+          to 12675096,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12677245,
+          to 12677295,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12678367,
+          to 12678518,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12683014,
+          to 12683124,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12683234,
+          to 12683345,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12683518,
+          to 12683685,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12684292,
+          to 12684488,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12686057,
+          to 12686173,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12686803,
+          to 12686957,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12687221,
+          to 12687362,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12688014,
+          to 12688116,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12690343,
+          to 12690456,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12690542,
+          to 12690721,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12692469,
+          to 12692611,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12696195,
+          to 12696365,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12698177,
+          to 12698328,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12698470,
+          to 12698632,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12699043,
+          to 12699176,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12700816,
+          to 12700960,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12705850,
+          to 12705969,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12707700,
+          to 12707833,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12711286,
+          to 12711403,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12711673,
+          to 12711813,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12715135,
+          to 12715274,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12716179,
+          to 12716310,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12720205,
+          to 12720358,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12726174,
+          to 12726340,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12730408,
+          to 12730591,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12732722,
+          to 12732862,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12736260,
+          to 12736419,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12736522,
+          to 12736652,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12738794,
+          to 12738887,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12740201,
+          to 12740320,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12741026,
+          to 12741168,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12802394,
+          to 12802551,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12843345,
+          to 12843393,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12845460,
+          to 12845588,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12848281,
+          to 12848395,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12853744,
+          to 12854098,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12856399,
+          to 12856567,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12878458,
+          to 12878551,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12883447,
+          to 12883554,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12887128,
+          to 12887237,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12888502,
+          to 12888625,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12891466,
+          to 12891563,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12893395,
+          to 12893499,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12894488,
+          to 12894526,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12895182,
+          to 12895268,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12903025,
+          to 12903172,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12903264,
+          to 12903317,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12909168,
+          to 12910324,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 12912369,
+          to 12912964,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 13130845,
+          to 13130880,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 13133221,
+          to 13133349,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 13134487,
+          to 13134539,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 13134977,
+          to 13135039,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 13140598,
+          to 13140683,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 13142747,
+          to 13142872,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 13143727,
+          to 13143824,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 13144832,
+          to 13144905,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 13146803,
+          to 13146893,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 13148253,
+          to 13148387,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 13149001,
+          to 13149063,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 13165558,
+          to 13165750,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 13174284,
+          to 13174447,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 13179568,
+          to 13179633,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 13180271,
+          to 13181086,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 14582158,
+          to 14582218,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 14583374,
+          to 14583816,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 14728655,
+          to 14729143,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 14864739,
+          to 14864840,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 14879675,
+          to 14879801,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 14885012,
+          to 14885136,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 14889487,
+          to 14889609,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 14915002,
+          to 14915019,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 14915790,
+          to 14915909,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 14916130,
+          to 14916192,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 14919855,
+          to 14919944,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 14942103,
+          to 14942442,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 14955421,
+          to 14955566,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 14957587,
+          to 14957694,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 14962974,
+          to 14963135,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 14963225,
+          to 14963347,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 14965853,
+          to 14965942,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 14971599,
+          to 14972198,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 14979946,
+          to 14980078,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 14980602,
+          to 14980713,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 14988527,
+          to 14988696,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 14994300,
+          to 14994430,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 15000120,
+          to 15000128,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 15000413,
+          to 15000538,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 15002922,
+          to 15002978,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 15017680,
+          to 15017784,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 15056472,
+          to 15056633,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 15991302,
+          to 15991835,
+          strand plus,
+          id local id 18
+        },
+        int {
+          from 16966843,
+          to 16966902,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 16933016,
+          to 16933127,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 16808780,
+          to 16809006,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 16806995,
+          to 16807141,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 16804980,
+          to 16805135,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 16802438,
+          to 16802582,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 16798930,
+          to 16799102,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 16791516,
+          to 16791653,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 16433159,
+          to 16433452,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 15876416,
+          to 15876515,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 15772190,
+          to 15772228,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 15656665,
+          to 15656678,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 15653798,
+          to 15653835,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 15610774,
+          to 15611835,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 15562108,
+          to 15562139,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 15561453,
+          to 15561500,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 15561167,
+          to 15561246,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 15558096,
+          to 15558510,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 15556599,
+          to 15556763,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 15556087,
+          to 15556167,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 15555840,
+          to 15555941,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 15551962,
+          to 15552237,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 15309824,
+          to 15309832,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 15220276,
+          to 15222072,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 15166675,
+          to 15166680,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 15166204,
+          to 15166382,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 15148587,
+          to 15148609,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 15144844,
+          to 15144988,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 15132488,
+          to 15132793,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 15128048,
+          to 15128203,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 14841175,
+          to 14841258,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 14837895,
+          to 14837971,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 14828817,
+          to 14828901,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 14813535,
+          to 14813688,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 14809531,
+          to 14809752,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 14799464,
+          to 14799631,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 14798765,
+          to 14798869,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 14795900,
+          to 14795992,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 14795004,
+          to 14795126,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 14792051,
+          to 14792184,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 14785796,
+          to 14785819,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 14129872,
+          to 14129911,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 14097470,
+          to 14097649,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 14002290,
+          to 14005642,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 13975746,
+          to 13975830,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 13876124,
+          to 13876255,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 13873649,
+          to 13873764,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 13865662,
+          to 13865691,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 13847506,
+          to 13847532,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 13092088,
+          to 13092208,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 13087516,
+          to 13087601,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 13086769,
+          to 13086843,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 13073010,
+          to 13073121,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 13069585,
+          to 13069670,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 13068366,
+          to 13068510,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 13065396,
+          to 13065457,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 13064479,
+          to 13064523,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 13063702,
+          to 13063775,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 13063531,
+          to 13063594,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 13056666,
+          to 13056809,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 13050675,
+          to 13050797,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 13040704,
+          to 13040785,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 13029562,
+          to 13029692,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 13027545,
+          to 13027574,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12999692,
+          to 12999854,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12978013,
+          to 12978169,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12946828,
+          to 12946903,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12932737,
+          to 12932775,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12929807,
+          to 12929941,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12927046,
+          to 12927143,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12925311,
+          to 12925493,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12921990,
+          to 12922097,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12921417,
+          to 12921506,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12921074,
+          to 12921200,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12917907,
+          to 12918023,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12917275,
+          to 12917398,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12916116,
+          to 12916206,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12914716,
+          to 12914815,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12657196,
+          to 12657636,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12464119,
+          to 12464139,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12454387,
+          to 12454497,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12449225,
+          to 12449323,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12440811,
+          to 12440909,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12438198,
+          to 12438296,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12434214,
+          to 12434312,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12426958,
+          to 12427056,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12420620,
+          to 12420715,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12419442,
+          to 12419540,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12413105,
+          to 12413209,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12394689,
+          to 12394745,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12381541,
+          to 12381663,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12380314,
+          to 12380420,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12377686,
+          to 12377861,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12372839,
+          to 12373006,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12371765,
+          to 12372014,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12370703,
+          to 12370776,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12369994,
+          to 12370364,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12368890,
+          to 12369116,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12366815,
+          to 12366915,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12363279,
+          to 12363381,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12360629,
+          to 12360818,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12360072,
+          to 12360254,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12359286,
+          to 12359400,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12358107,
+          to 12358234,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12357881,
+          to 12358021,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12357016,
+          to 12357105,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12356467,
+          to 12356657,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12355690,
+          to 12355805,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12354992,
+          to 12355121,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12353517,
+          to 12353717,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12352571,
+          to 12352802,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12351802,
+          to 12351915,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12350192,
+          to 12350354,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12349431,
+          to 12349510,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12348510,
+          to 12348538,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12279889,
+          to 12279960,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12276912,
+          to 12276958,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12271903,
+          to 12271980,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12264362,
+          to 12264511,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12262607,
+          to 12262688,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12242500,
+          to 12242577,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12233126,
+          to 12233151,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12228588,
+          to 12228639,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12226806,
+          to 12226854,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12225568,
+          to 12225613,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12225182,
+          to 12225215,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12222712,
+          to 12222747,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12217434,
+          to 12217468,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12206073,
+          to 12206142,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12201722,
+          to 12201815,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12152072,
+          to 12152136,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 12142041,
+          to 12142101,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10706527,
+          to 10706688,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10705998,
+          to 10706161,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10704545,
+          to 10704727,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10682066,
+          to 10682111,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10658777,
+          to 10658889,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10652185,
+          to 10652358,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10647967,
+          to 10648015,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10647723,
+          to 10647888,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10645057,
+          to 10645232,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10596336,
+          to 10596377,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10595673,
+          to 10595751,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10593743,
+          to 10595281,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10588436,
+          to 10588547,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10585975,
+          to 10586038,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10584245,
+          to 10584359,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10582052,
+          to 10582183,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10577649,
+          to 10577756,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10576998,
+          to 10577087,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10574872,
+          to 10575015,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10571952,
+          to 10572139,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10567499,
+          to 10567643,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10483083,
+          to 10483463,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10181222,
+          to 10181314,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10150232,
+          to 10150313,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10140785,
+          to 10140885,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10140173,
+          to 10140310,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10136093,
+          to 10136268,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10134413,
+          to 10134497,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10132125,
+          to 10132269,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10131527,
+          to 10131665,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10129302,
+          to 10129393,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10122606,
+          to 10122765,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10119882,
+          to 10119942,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10116771,
+          to 10116859,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10112341,
+          to 10112389,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10106319,
+          to 10106454,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10104415,
+          to 10104506,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10104071,
+          to 10104317,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10100919,
+          to 10101025,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10099254,
+          to 10099404,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10097480,
+          to 10097640,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10095410,
+          to 10095594,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10093905,
+          to 10093974,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10092126,
+          to 10092220,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10090810,
+          to 10090975,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10084315,
+          to 10084408,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10083119,
+          to 10083207,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10080348,
+          to 10080536,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10079112,
+          to 10079271,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10073112,
+          to 10073182,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10072829,
+          to 10072917,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10070619,
+          to 10070697,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10070216,
+          to 10070477,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10067468,
+          to 10067675,
+          strand minus,
+          id local id 18
+        },
+        pnt {
+          point 10066048,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10029910,
+          to 10029925,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10024531,
+          to 10024676,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10022815,
+          to 10022847,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10017988,
+          to 10018092,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10016538,
+          to 10016641,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10012210,
+          to 10012268,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10009949,
+          to 10010079,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10007764,
+          to 10007844,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10005627,
+          to 10005712,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10004893,
+          to 10005007,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10002365,
+          to 10002430,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10001768,
+          to 10001860,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 10000492,
+          to 10000620,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 9997714,
+          to 9997771,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 9997170,
+          to 9997277,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 9996097,
+          to 9996245,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 9726197,
+          to 9726667,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 9618901,
+          to 9619416,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 9449515,
+          to 9449668,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 9386732,
+          to 9386806,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 9377791,
+          to 9377825,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 9353404,
+          to 9353504,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 9349385,
+          to 9349420,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 9345411,
+          to 9345468,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 9345191,
+          to 9345310,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 9332781,
+          to 9332947,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 9319406,
+          to 9319568,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 9316556,
+          to 9316669,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 9282552,
+          to 9282615,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 9279982,
+          to 9281009,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 7561723,
+          to 7561759,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 7512941,
+          to 7513059,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 7461635,
+          to 7461712,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 7458929,
+          to 7459009,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 7443971,
+          to 7444102,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 7442790,
+          to 7442871,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 7441550,
+          to 7441635,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 7440429,
+          to 7440503,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 7440080,
+          to 7440276,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 7439566,
+          to 7439630,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 7430392,
+          to 7430412,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 7430258,
+          to 7430269,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 7429281,
+          to 7429321,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 7403183,
+          to 7403353,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 7379986,
+          to 7380066,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 7356139,
+          to 7356232,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 7355015,
+          to 7355123,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 7353151,
+          to 7353294,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 7350965,
+          to 7351141,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 7294385,
+          to 7294608,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 7288481,
+          to 7288638,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 7286658,
+          to 7286844,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 7285683,
+          to 7285789,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 7285344,
+          to 7285480,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 7273156,
+          to 7273272,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 7268397,
+          to 7268584,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 7266880,
+          to 7266978,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 7264998,
+          to 7265145,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 7223527,
+          to 7223673,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 7222543,
+          to 7222752,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 7217745,
+          to 7217987,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 7216932,
+          to 7217042,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 7214566,
+          to 7214720,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 7211396,
+          to 7211638,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 7181731,
+          to 7181845,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 7129396,
+          to 7129584,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 7127209,
+          to 7127430,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 7088454,
+          to 7088564,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 7002354,
+          to 7002541,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 7000590,
+          to 7000749,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6992775,
+          to 6992931,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6992035,
+          to 6992370,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6937165,
+          to 6937198,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6936865,
+          to 6937051,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6515862,
+          to 6515864,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6490460,
+          to 6490612,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6489298,
+          to 6489327,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6462829,
+          to 6462988,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6455186,
+          to 6455331,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6454184,
+          to 6454390,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6453506,
+          to 6453654,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6452230,
+          to 6452389,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6450463,
+          to 6450636,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6450294,
+          to 6450383,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6450066,
+          to 6450214,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6448902,
+          to 6449254,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6441119,
+          to 6441240,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6440046,
+          to 6440187,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6439589,
+          to 6439952,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6437235,
+          to 6437304,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6240979,
+          to 6241104,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6234812,
+          to 6234899,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6227585,
+          to 6227658,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6226861,
+          to 6226965,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6226379,
+          to 6226427,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6225765,
+          to 6225820,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6225594,
+          to 6225681,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6225315,
+          to 6225439,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6223968,
+          to 6224072,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6223543,
+          to 6223688,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6222716,
+          to 6222864,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6220799,
+          to 6220992,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6220221,
+          to 6220289,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6216738,
+          to 6216944,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6216220,
+          to 6216363,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6214509,
+          to 6214697,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6213967,
+          to 6214084,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6213390,
+          to 6213451,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6213184,
+          to 6213293,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6212514,
+          to 6212615,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6211189,
+          to 6211249,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6211021,
+          to 6211092,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6210697,
+          to 6210801,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6208997,
+          to 6209213,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6208205,
+          to 6208332,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6111682,
+          to 6112359,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6069828,
+          to 6070088,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6065702,
+          to 6065842,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6064338,
+          to 6064418,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6061844,
+          to 6061969,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6057514,
+          to 6057588,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6052859,
+          to 6052920,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6049274,
+          to 6049355,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6039351,
+          to 6039452,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6037015,
+          to 6037113,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6034447,
+          to 6034549,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6033138,
+          to 6033254,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6031727,
+          to 6031825,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6028191,
+          to 6028268,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6027957,
+          to 6028091,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6027572,
+          to 6027674,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 6026556,
+          to 6026727,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 5592157,
+          to 5592436,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 5583710,
+          to 5583793,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 5583009,
+          to 5583130,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 5574982,
+          to 5575408,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 5567423,
+          to 5567587,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 5540603,
+          to 5540675,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 5525293,
+          to 5525386,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 5245383,
+          to 5245419,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 5213116,
+          to 5214916,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 5210640,
+          to 5211195,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 4348978,
+          to 4349313,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 4343019,
+          to 4343186,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 4340544,
+          to 4340805,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 4339494,
+          to 4339600,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 4334614,
+          to 4334766,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 4333815,
+          to 4334061,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 4332306,
+          to 4332433,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 3327491,
+          to 3327534,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 3325358,
+          to 3325475,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 3309979,
+          to 3309984,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 3309643,
+          to 3309720,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 3299447,
+          to 3299449,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 3299159,
+          to 3299305,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 3295319,
+          to 3295413,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 3295017,
+          to 3295179,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 3287901,
+          to 3288089,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 3281685,
+          to 3281709,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 3276691,
+          to 3276748,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 3273606,
+          to 3273622,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 3273419,
+          to 3273600,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 3267985,
+          to 3268126,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 3267588,
+          to 3267729,
+          strand minus,
+          id local id 18
+        },
+        int {
+          from 3122494,
+          to 3123411,
+          strand minus,
+          id local id 18
+        }
+      }
+    },
+    {
+      id local id 2,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 3123409,
+        to 3123411,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 3,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 3122491,
+        to 3122493,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 4,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 3327532,
+        to 3327534,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 5,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 3267585,
+        to 3267587,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 6,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 3327532,
+        to 3327534,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 7,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 3267585,
+        to 3267587,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 8,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 3325469,
+        to 3325471,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 9,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 3267982,
+        to 3267984,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 10,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 3327532,
+        to 3327534,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 11,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 3267982,
+        to 3267984,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 12,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 3327532,
+        to 3327534,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 13,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 3267982,
+        to 3267984,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 14,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 3299447,
+        to 3299449,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 15,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 3267585,
+        to 3267587,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 16,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 3327532,
+        to 3327534,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 17,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 3267982,
+        to 3267984,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 18,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 3327532,
+        to 3327534,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 19,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 3267982,
+        to 3267984,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 20,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 3281707,
+        to 3281709,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 21,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 3267585,
+        to 3267587,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 22,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 3327532,
+        to 3327534,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 23,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 3267982,
+        to 3267984,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 24,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 3299447,
+        to 3299449,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 25,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 3267585,
+        to 3267587,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 26,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 3281707,
+        to 3281709,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 27,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 3267982,
+        to 3267984,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 28,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 3267982,
+        to 3267984,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 29,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 3325469,
+        to 3325471,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 30,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 3267585,
+        to 3267587,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 31,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 3276695,
+        to 3276697,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 32,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 3267982,
+        to 3267984,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 33,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 3276746,
+        to 3276748,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 34,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 3267982,
+        to 3267984,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 35,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 3267585,
+        to 3267587,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 36,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 3281707,
+        to 3281709,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 37,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 3267585,
+        to 3267587,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 38,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 3325469,
+        to 3325471,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 39,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 3267982,
+        to 3267984,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 40,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 3267982,
+        to 3267984,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 41,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 3267982,
+        to 3267984,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 42,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 3327532,
+        to 3327534,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 43,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 3309976,
+        to 3309978,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 44,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 3267585,
+        to 3267587,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 45,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 3267982,
+        to 3267984,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 46,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 3309718,
+        to 3309720,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 47,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 3267585,
+        to 3267587,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 48,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 3325469,
+        to 3325471,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 49,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 3267585,
+        to 3267587,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 50,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 3309718,
+        to 3309720,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 51,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 3267585,
+        to 3267587,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 52,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 3309718,
+        to 3309720,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 53,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 3267585,
+        to 3267587,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 54,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 3273559,
+        to 3273561,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 55,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 3267982,
+        to 3267984,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 56,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 3325469,
+        to 3325471,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 57,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 3273507,
+        to 3273509,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 58,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 3281707,
+        to 3281709,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 59,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 3267982,
+        to 3267984,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 60,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 3309718,
+        to 3309720,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 61,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 3267982,
+        to 3267984,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 62,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 3299447,
+        to 3299449,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 63,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 3267982,
+        to 3267984,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 64,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 3325469,
+        to 3325471,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 65,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 3267982,
+        to 3267984,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 66,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 3325469,
+        to 3325471,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 67,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 3295014,
+        to 3295016,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 68,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 3325469,
+        to 3325471,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 69,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 3295014,
+        to 3295016,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 70,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 3399865,
+        to 3399867,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 71,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 3434970,
+        to 3434972,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 72,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 3399865,
+        to 3399867,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 73,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 3414219,
+        to 3414221,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 74,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 3399865,
+        to 3399867,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 75,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 3434970,
+        to 3434972,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 76,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 3399865,
+        to 3399867,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 77,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 3434970,
+        to 3434972,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 78,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 3399865,
+        to 3399867,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 79,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 3508207,
+        to 3508209,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 80,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 3512395,
+        to 3512397,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 81,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 4168519,
+        to 4168521,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 82,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 4181969,
+        to 4181971,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 83,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 4169142,
+        to 4169144,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 84,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 4181969,
+        to 4181971,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 85,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 4349311,
+        to 4349313,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 86,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 4332303,
+        to 4332305,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 87,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 4349311,
+        to 4349313,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 88,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 4339559,
+        to 4339561,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 89,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 4375619,
+        to 4375621,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 90,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 4396462,
+        to 4396464,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 91,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 4649128,
+        to 4649130,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 92,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 4680255,
+        to 4680257,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 93,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 5046636,
+        to 5046638,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 94,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 5118427,
+        to 5118429,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 95,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 5046636,
+        to 5046638,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 96,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 5118427,
+        to 5118429,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 97,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 5046636,
+        to 5046638,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 98,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 5118427,
+        to 5118429,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 99,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 5046636,
+        to 5046638,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 100,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 5118427,
+        to 5118429,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 101,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 5046636,
+        to 5046638,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 102,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 5046636,
+        to 5046638,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 103,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 5118427,
+        to 5118429,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 104,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 5046636,
+        to 5046638,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 105,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 5118427,
+        to 5118429,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 106,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 5046636,
+        to 5046638,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 107,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 5116044,
+        to 5116046,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 108,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 5106715,
+        to 5106717,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 109,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 5245417,
+        to 5245419,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 110,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 5210637,
+        to 5210639,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 111,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 5525290,
+        to 5525292,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 112,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 5567420,
+        to 5567422,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 113,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 5567420,
+        to 5567422,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 114,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 5591907,
+        to 5591909,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 115,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 5773061,
+        to 5773063,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 116,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 5591907,
+        to 5591909,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 117,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 5705082,
+        to 5705084,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 118,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 5748691,
+        to 5748693,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 119,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 5593910,
+        to 5593912,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 120,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 5705150,
+        to 5705152,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 121,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 5591907,
+        to 5591909,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 122,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 5773061,
+        to 5773063,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 123,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 5705082,
+        to 5705084,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 124,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 5593900,
+        to 5593902,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 125,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 5705082,
+        to 5705084,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 126,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 5705242,
+        to 5705244,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 127,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 5705082,
+        to 5705084,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 128,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 5705082,
+        to 5705084,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 129,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 5705242,
+        to 5705244,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 130,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 5759135,
+        to 5759137,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 131,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 6112357,
+        to 6112359,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 132,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 6026553,
+        to 6026555,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 133,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 6039390,
+        to 6039392,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 134,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 6026553,
+        to 6026555,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 135,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 6112357,
+        to 6112359,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 136,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 6026553,
+        to 6026555,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 137,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 6241102,
+        to 6241104,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 138,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 6208202,
+        to 6208204,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 139,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 6241102,
+        to 6241104,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 140,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 6332629,
+        to 6332631,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 141,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 6333037,
+        to 6333039,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 142,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 6515862,
+        to 6515864,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 143,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 6437232,
+        to 6437234,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 144,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 6490610,
+        to 6490612,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 145,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 6437232,
+        to 6437234,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 146,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 6441191,
+        to 6441193,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 147,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 6490610,
+        to 6490612,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 148,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 6489295,
+        to 6489297,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 149,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 6619376,
+        to 6619378,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 150,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 6638914,
+        to 6638916,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 151,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 6619376,
+        to 6619378,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 152,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 6638914,
+        to 6638916,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 153,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 6765262,
+        to 6765264,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 154,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 6788650,
+        to 6788652,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 155,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 7002539,
+        to 7002541,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 156,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 6936862,
+        to 6936864,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 157,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 7294606,
+        to 7294608,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 158,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 7088451,
+        to 7088453,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 159,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 7561757,
+        to 7561759,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 160,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 7350962,
+        to 7350964,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 161,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 7561724,
+        to 7561726,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 162,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 7871603,
+        to 7871605,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 163,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 7926134,
+        to 7926136,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 164,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 7871603,
+        to 7871605,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 165,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 7871603,
+        to 7871605,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 166,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 7926134,
+        to 7926136,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 167,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 7871603,
+        to 7871605,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 168,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 7926134,
+        to 7926136,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 169,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 7871603,
+        to 7871605,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 170,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 7869572,
+        to 7869574,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 171,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 7926134,
+        to 7926136,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 172,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 7869572,
+        to 7869574,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 173,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 7926134,
+        to 7926136,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 174,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 7871603,
+        to 7871605,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 175,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 7926134,
+        to 7926136,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 176,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 7869572,
+        to 7869574,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 177,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 7871603,
+        to 7871605,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 178,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 7871603,
+        to 7871605,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 179,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 7916286,
+        to 7916288,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 180,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 8694074,
+        to 8694076,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 181,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 8694536,
+        to 8694538,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 182,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 9212917,
+        to 9212919,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 183,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 9214972,
+        to 9214974,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 184,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 9282613,
+        to 9282615,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 185,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 9279979,
+        to 9279981,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 186,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 9449666,
+        to 9449668,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 187,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 9316553,
+        to 9316555,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 188,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 9449666,
+        to 9449668,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 189,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 9316553,
+        to 9316555,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 190,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 9619414,
+        to 9619416,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 191,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 9618898,
+        to 9618900,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 192,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 9707750,
+        to 9707752,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 193,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 9877002,
+        to 9877004,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 194,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 9726194,
+        to 9726196,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 195,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 9958190,
+        to 9958192,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 196,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 9993611,
+        to 9993613,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 197,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 10029923,
+        to 10029925,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 198,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 9996094,
+        to 9996096,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 199,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 10029923,
+        to 10029925,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 200,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 9996094,
+        to 9996096,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 201,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 10181312,
+        to 10181314,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 202,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 10066045,
+        to 10066047,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 203,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 10458222,
+        to 10458224,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 204,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 10560478,
+        to 10560480,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 205,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 10458222,
+        to 10458224,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 206,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 10523206,
+        to 10523208,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 207,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 10483461,
+        to 10483463,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 208,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 10483080,
+        to 10483082,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 209,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 10595749,
+        to 10595751,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 210,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 10567496,
+        to 10567498,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 211,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 10596375,
+        to 10596377,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 212,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 10567496,
+        to 10567498,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 213,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 10595749,
+        to 10595751,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 214,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 10567496,
+        to 10567498,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 215,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 10595279,
+        to 10595281,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 216,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 10567496,
+        to 10567498,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 217,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 10595279,
+        to 10595281,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 218,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 10577646,
+        to 10577648,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 219,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 10617910,
+        to 10617912,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 220,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 10627865,
+        to 10627867,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 221,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 10706671,
+        to 10706673,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 222,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 10645054,
+        to 10645056,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 223,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 10706671,
+        to 10706673,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 224,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 10645054,
+        to 10645056,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 225,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 10706686,
+        to 10706688,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 226,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 10645054,
+        to 10645056,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 227,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 10645054,
+        to 10645056,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 228,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 10726302,
+        to 10726304,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 229,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 10812120,
+        to 10812122,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 230,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 10726302,
+        to 10726304,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 231,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 10812120,
+        to 10812122,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 232,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 10812120,
+        to 10812122,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 233,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 10812120,
+        to 10812122,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 234,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 11054070,
+        to 11054072,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 235,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 11084477,
+        to 11084479,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 236,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 11819341,
+        to 11819343,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 237,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 11901219,
+        to 11901221,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 238,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 11819341,
+        to 11819343,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 239,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 11819341,
+        to 11819343,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 240,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 11901219,
+        to 11901221,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 241,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 11998314,
+        to 11998316,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 242,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 12103107,
+        to 12103109,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 243,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 11998314,
+        to 11998316,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 244,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 12103107,
+        to 12103109,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 245,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 12279958,
+        to 12279960,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 246,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 12142038,
+        to 12142040,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 247,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 12279958,
+        to 12279960,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 248,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 12279958,
+        to 12279960,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 249,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 12225179,
+        to 12225181,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 250,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 12287419,
+        to 12287421,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 251,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 12313833,
+        to 12313835,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 252,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 12327309,
+        to 12327311,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 253,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 12348391,
+        to 12348393,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 254,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 12343421,
+        to 12343423,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 255,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 12343455,
+        to 12343457,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 256,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 12394743,
+        to 12394745,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 257,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 12349428,
+        to 12349430,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 258,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 12394743,
+        to 12394745,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 259,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 12348507,
+        to 12348509,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 260,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 12464137,
+        to 12464139,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 261,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 12413102,
+        to 12413104,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 262,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 12464137,
+        to 12464139,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 263,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 12413102,
+        to 12413104,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 264,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 12464137,
+        to 12464139,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 265,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 12492532,
+        to 12492534,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 266,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 12741169,
+        to 12741171,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 267,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 12662733,
+        to 12662735,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 268,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 12741169,
+        to 12741171,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 269,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 12662771,
+        to 12662773,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 270,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 12741169,
+        to 12741171,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 271,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 12657193,
+        to 12657195,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 272,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 12843361,
+        to 12843363,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 273,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 12895269,
+        to 12895271,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 274,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 12802394,
+        to 12802396,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 275,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 12895269,
+        to 12895271,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 276,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 12903025,
+        to 12903027,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 277,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 12910325,
+        to 12910327,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 278,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 12903025,
+        to 12903027,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 279,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 12910325,
+        to 12910327,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 280,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 12903025,
+        to 12903027,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 281,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 12912965,
+        to 12912967,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 282,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 12903025,
+        to 12903027,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 283,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 12912965,
+        to 12912967,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 284,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 12903025,
+        to 12903027,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 285,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 12910325,
+        to 12910327,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 286,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 13092206,
+        to 13092208,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 287,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 12914713,
+        to 12914715,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 288,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 12978072,
+        to 12978074,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 289,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 12914713,
+        to 12914715,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 290,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 12978072,
+        to 12978074,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 291,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 12914713,
+        to 12914715,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 292,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 12978072,
+        to 12978074,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 293,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 12914713,
+        to 12914715,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 294,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 12978072,
+        to 12978074,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 295,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 12914713,
+        to 12914715,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 296,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 12946882,
+        to 12946884,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 297,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 12914713,
+        to 12914715,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 298,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 12978072,
+        to 12978074,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 299,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 12914713,
+        to 12914715,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 300,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 12932773,
+        to 12932775,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 301,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 12914713,
+        to 12914715,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 302,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 13029688,
+        to 13029690,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 303,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 12914713,
+        to 12914715,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 304,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 12978072,
+        to 12978074,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 305,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 13027572,
+        to 13027574,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 306,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 12978072,
+        to 12978074,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 307,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 13092206,
+        to 13092208,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 308,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 13029559,
+        to 13029561,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 309,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 13092206,
+        to 13092208,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 310,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 13056663,
+        to 13056665,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 311,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 13092206,
+        to 13092208,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 312,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 13087518,
+        to 13087520,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 313,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 13130845,
+        to 13130847,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 314,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 13149064,
+        to 13149066,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 315,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 13165558,
+        to 13165560,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 316,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 13181087,
+        to 13181089,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 317,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 13180301,
+        to 13180303,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 318,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 13181087,
+        to 13181089,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 319,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 13165558,
+        to 13165560,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 320,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 13179634,
+        to 13179636,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 321,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 14129909,
+        to 14129911,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 322,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 13847503,
+        to 13847505,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 323,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 14129909,
+        to 14129911,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 324,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 14583817,
+        to 14583819,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 325,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 14728655,
+        to 14728657,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 326,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 14729144,
+        to 14729146,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 327,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 14841241,
+        to 14841243,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 328,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 14785793,
+        to 14785795,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 329,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 14841241,
+        to 14841243,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 330,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 14785793,
+        to 14785795,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 331,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 14841241,
+        to 14841243,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 332,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 14785793,
+        to 14785795,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 333,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 14785793,
+        to 14785795,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 334,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 14864739,
+        to 14864741,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 335,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 14919945,
+        to 14919947,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 336,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 14864739,
+        to 14864741,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 337,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 14919945,
+        to 14919947,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 338,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 14919945,
+        to 14919947,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 339,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 14942103,
+        to 14942105,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 340,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 15056634,
+        to 15056636,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 341,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 15056634,
+        to 15056636,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 342,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 15128045,
+        to 15128047,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 343,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 15128045,
+        to 15128047,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 344,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 15222070,
+        to 15222072,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 345,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 15128045,
+        to 15128047,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 346,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 15309830,
+        to 15309832,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 347,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 15128045,
+        to 15128047,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 348,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 15561498,
+        to 15561500,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 349,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 15551959,
+        to 15551961,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 350,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 15562137,
+        to 15562139,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 351,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 15551959,
+        to 15551961,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 352,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 15562137,
+        to 15562139,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 353,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 15555837,
+        to 15555839,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 354,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 15876513,
+        to 15876515,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 355,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 15656662,
+        to 15656664,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 356,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 15876513,
+        to 15876515,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 357,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 15610771,
+        to 15610773,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 358,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 15991302,
+        to 15991304,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 359,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 15991836,
+        to 15991838,
+        strand plus,
+        id local id 18
+      }
+    },
+    {
+      id local id 360,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 16433450,
+        to 16433452,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 361,
+      data imp {
+        key "stop_codon"
+      },
+      location int {
+        from 16433156,
+        to 16433158,
+        strand minus,
+        id local id 18
+      }
+    },
+    {
+      id local id 362,
+      data imp {
+        key "start_codon"
+      },
+      location int {
+        from 16966900,
+        to 16966902,
+        strand minus,
+        id local id 18
+      }
+    }
+  }
+}
