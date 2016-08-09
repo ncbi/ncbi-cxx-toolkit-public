@@ -276,10 +276,9 @@ bool sFeatureHasChildOfSubtype(
 CGff3Writer::CGff3Writer(
     CScope& scope, 
     CNcbiOstream& ostr,
-    unsigned int uFlags,
-    bool replaceSeqIds) :
+    unsigned int uFlags ) :
 //  ----------------------------------------------------------------------------
-    CGff2Writer( scope, ostr, uFlags, replaceSeqIds ),
+    CGff2Writer( scope, ostr, uFlags ),
     m_sDefaultMethod("")
 {
     m_uRecordId = 1;
@@ -294,10 +293,9 @@ CGff3Writer::CGff3Writer(
 //  ----------------------------------------------------------------------------
 CGff3Writer::CGff3Writer(
     CNcbiOstream& ostr,
-    unsigned int uFlags,
-    bool replaceSeqIds) :
+    unsigned int uFlags ) :
 //  ----------------------------------------------------------------------------
-    CGff2Writer( ostr, uFlags, replaceSeqIds )
+    CGff2Writer( ostr, uFlags )
 {
     m_uRecordId = 1;
     m_uPendingGeneId = 0;
@@ -1079,15 +1077,7 @@ bool CGff3Writer::xWriteSequenceHeader(
 //  ----------------------------------------------------------------------------
 {
     string id;
-
-    if (m_ReplaceSeqIds) {
-        CWriteUtil::GetBestId(idh, *m_pScope, id);
-    } 
-    else if (idh) {
-        id = idh.AsString();
-    }
-
-    if (id.empty()) {
+    if (!CWriteUtil::GetBestId(idh, *m_pScope, id)) {
         id = "<unknown>";
     }
     m_Os << "##sequence-region " << id << '\n';
@@ -1343,19 +1333,11 @@ bool CGff3Writer::xAssignFeatureSeqId(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    string id;
-
-    if (m_ReplaceSeqIds) {
-        CWriteUtil::GetBestId(mf, id);
+    string bestId;
+    if (!CWriteUtil::GetBestId(mf, bestId)) {
+        bestId = ".";
     }
-    else {
-        CWriteUtil::GetLocationId(mf, id); 
-    } 
-
-    if (id.empty()) {
-        id = ".";
-    }
-    record.SetSeqId(id);
+    record.SetSeqId(bestId);
     return true;
 }
 
@@ -1882,16 +1864,9 @@ bool CGff3Writer::xAssignFeatureAttributeTranscriptId(
 
     if (mf.IsSetProduct()) {
         string transcript_id;
-
-        if (m_ReplaceSeqIds) {
-            CWriteUtil::GetBestId(mf.GetProductId(), mf.GetScope(), transcript_id);
-        }
-        else if (mf.GetProductId()) {
-            transcript_id = mf.GetProductId().AsString();
-        }
-
-        if (!transcript_id.empty()) {
+        if (CWriteUtil::GetBestId(mf.GetProductId(), mf.GetScope(), transcript_id)) {
             record.SetAttribute("transcript_id", transcript_id);
+            return true;
         }
     }
     return true; 
@@ -2103,16 +2078,9 @@ bool CGff3Writer::xAssignFeatureAttributeProteinId(
         return true;
     }
     string protein_id;
-
-    if (m_ReplaceSeqIds) {
-        CWriteUtil::GetBestId(mf.GetProductId(), mf.GetScope(), protein_id);
-    } 
-    else if (mf.GetProductId()) {
-        protein_id = mf.GetProductId().AsString();
-    }
-
-    if (!protein_id.empty()) {
+    if (CWriteUtil::GetBestId(mf.GetProductId(), mf.GetScope(), protein_id)) {
         record.SetAttribute("protein_id", protein_id);
+        return true;
     }
     return true; 
 }
@@ -2209,15 +2177,7 @@ bool CGff3Writer::xAssignFeatureAttributeProduct(
             }
             
             string product;
-
-            if (m_ReplaceSeqIds) {
-                CWriteUtil::GetBestId(mf.GetProductId(), mf.GetScope(), product);
-            } 
-            else if (mf.GetProductId()){
-                product = mf.GetProductId().AsString();
-            }
-
-            if (!product.empty()) {
+            if (CWriteUtil::GetBestId(mf.GetProductId(), mf.GetScope(), product)) {
                 record.SetAttribute("product", product);
                 return true;
             }

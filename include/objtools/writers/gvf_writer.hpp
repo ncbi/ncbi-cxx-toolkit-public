@@ -55,12 +55,10 @@ public:
     CGvfWriter(
         CScope&,
         CNcbiOstream&,
-        unsigned int = fNormal,
-        bool replaceSeqIds = true );
+        unsigned int = fNormal );
     CGvfWriter(
         CNcbiOstream&,
-        unsigned int = fNormal, 
-        bool replaceSeqIds = true );
+        unsigned int = fNormal );
     virtual ~CGvfWriter();
 
     virtual bool WriteHeader();

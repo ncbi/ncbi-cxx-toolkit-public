@@ -48,8 +48,7 @@ class CGvfWriteRecord
 {
 public:
     CGvfWriteRecord(
-        CGffFeatureContext&,
-        bool replaceSeqIds=true
+        CGffFeatureContext&
     );
     CGvfWriteRecord(
         const CGff3WriteRecordFeature&

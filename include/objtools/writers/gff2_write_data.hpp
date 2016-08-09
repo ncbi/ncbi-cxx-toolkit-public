@@ -57,12 +57,9 @@ public:
 public:
     CGffWriteRecord( 
         CGffFeatureContext& fc,
-        const string& id="",
-        bool replaceSeqIds=true);
-
+        const string& id="" );
     CGffWriteRecord(
-        const CGffWriteRecord&);
-
+        const CGffWriteRecord& );
     virtual ~CGffWriteRecord();
 
     //
@@ -135,7 +132,6 @@ protected:
     unsigned int* m_puPhase;
     string m_strAttributes;    
     TAttributes m_Attributes;
-    bool m_ReplaceSeqIds;
 
     static const char* ATTR_SEPARATOR;
 };
@@ -148,8 +144,7 @@ class CGffWriteRecordFeature
 public:
     CGffWriteRecordFeature(
         CGffFeatureContext& fc,
-        const string& id="",
-        bool replaceSeqIds=true): CGffWriteRecord(fc, id, replaceSeqIds){};
+        const string& id="" ): CGffWriteRecord(fc, id){};
 
     virtual bool AssignFromAsn(
         CMappedFeat,

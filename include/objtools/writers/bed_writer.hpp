@@ -65,15 +65,12 @@ public:
     ///   extend all records to colCount output columns.
     /// @param flags
     ///   any output customization flags.
-    /// @param getBestId
-    ///   whether to replace the supplied sequence IDs with preferred
-    ///   equivalents.
+    ///
     CBedWriter(
         CScope& scope,
         CNcbiOstream& ostr,
         unsigned int colCount=12,
-        unsigned int flags=fNormal,
-        bool getBestId=true);
+        unsigned int flags=fNormal );
 
     virtual ~CBedWriter();
 
@@ -111,7 +108,6 @@ protected:
     virtual SAnnotSelector xGetAnnotSelector();
 
     CScope& m_Scope;
-    bool m_GetBestId;
     unsigned int m_colCount;
 };
 

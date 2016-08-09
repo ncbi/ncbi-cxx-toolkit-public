@@ -67,12 +67,10 @@ public:
     CGff3Writer(
         CScope&,
         CNcbiOstream&,
-        unsigned int = fNormal, 
-        bool replaceSeqIds=true);
+        unsigned int = fNormal );
     CGff3Writer(
         CNcbiOstream&,
-        unsigned int = fNormal,
-        bool replaceSeqIds=true);
+        unsigned int = fNormal );
     virtual ~CGff3Writer();
 
     void SetDefaultMethod(

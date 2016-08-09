@@ -66,12 +66,10 @@ USING_SCOPE(objects);
 CGff2Writer::CGff2Writer(
     CScope& scope,
     CNcbiOstream& ostr,
-    unsigned int uFlags,
-    bool replaceSeqIds ) :
+    unsigned int uFlags ) :
 //  ----------------------------------------------------------------------------
     CWriterBase( ostr, uFlags ),
-    m_bHeaderWritten(false),
-    m_ReplaceSeqIds(replaceSeqIds)
+    m_bHeaderWritten(false)
 {
     m_pScope.Reset( &scope );
     GetAnnotSelector();
@@ -80,12 +78,10 @@ CGff2Writer::CGff2Writer(
 //  ----------------------------------------------------------------------------
 CGff2Writer::CGff2Writer(
     CNcbiOstream& ostr,
-    unsigned int uFlags,
-    bool replaceSeqIds ) :
+    unsigned int uFlags ) :
 //  ----------------------------------------------------------------------------
     CWriterBase( ostr, uFlags ),
-    m_bHeaderWritten(false),
-    m_ReplaceSeqIds(replaceSeqIds)
+    m_bHeaderWritten(false)
 {
     m_pScope.Reset( new CScope( *CObjectManager::GetInstance() ) );
     m_pScope->AddDefaults();
@@ -281,8 +277,7 @@ bool CGff2Writer::xWriteFeature(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    CRef<CGffWriteRecordFeature> pParent(
-            new CGffWriteRecordFeature(context, "", m_ReplaceSeqIds));
+    CRef<CGffWriteRecordFeature> pParent(new CGffWriteRecordFeature(context));
     if ( ! pParent->AssignFromAsn( mf, m_uFlags ) ) {
         return false;
     }

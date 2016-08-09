@@ -372,20 +372,17 @@ CBedWriter::CBedWriter(
     CScope& scope,
     CNcbiOstream& ostr,
     unsigned int colCount,
-    unsigned int uFlags,
-    bool getBestId ) :
+    unsigned int uFlags ) :
 //  ----------------------------------------------------------------------------
     CWriterBase(ostr, uFlags),
     m_Scope(scope),
-    m_colCount(colCount),
-    m_GetBestId(getBestId)
+    m_colCount(colCount)
 {
     // the first three columns are mandatory
     if (m_colCount < 3) {
         m_colCount = 3;
     }
 };
-
 
 //  ----------------------------------------------------------------------------
 CBedWriter::~CBedWriter()
@@ -524,7 +521,7 @@ bool CBedWriter::xWriteFeature(
     const list<CRef<CSeq_interval> >& sublocs = pPackedInt->GetPacked_int().Get();
     list<CRef<CSeq_interval> >::const_iterator it;
     for (it = sublocs.begin(); it != sublocs.end(); ++it ) {
-        if (!record.AssignLocation(m_Scope, **it, m_GetBestId)  ||  !record.Write(m_Os, m_colCount)) {
+        if (!record.AssignLocation(m_Scope, **it)  ||  !record.Write(m_Os, m_colCount)) {
             return false;
         }
     }

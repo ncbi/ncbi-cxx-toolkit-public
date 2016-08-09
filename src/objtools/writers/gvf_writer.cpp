@@ -85,10 +85,9 @@ bool s_ExtractPragma(
 CGvfWriter::CGvfWriter(
     CScope& scope,
     CNcbiOstream& ostr,
-    unsigned int uFlags,
-    bool replaceSeqIds ) :
+    unsigned int uFlags ) :
 //  ----------------------------------------------------------------------------
-    CGff3Writer( scope, ostr, uFlags, replaceSeqIds )
+    CGff3Writer( scope, ostr, uFlags )
 {
     m_uRecordId = 1;
     m_uPendingGeneId = 0;
@@ -98,10 +97,9 @@ CGvfWriter::CGvfWriter(
 //  ----------------------------------------------------------------------------
 CGvfWriter::CGvfWriter(
     CNcbiOstream& ostr,
-    unsigned int uFlags,
-    bool replaceSeqIds ) :
+    unsigned int uFlags ) :
 //  ----------------------------------------------------------------------------
-    CGff3Writer( ostr, uFlags, replaceSeqIds )
+    CGff3Writer( ostr, uFlags )
 {
     m_uRecordId = 1;
     m_uPendingGeneId = 0;
@@ -205,7 +203,7 @@ bool CGvfWriter::xWriteFeatureVariationRef(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    CRef<CGvfWriteRecord> pRecord( new CGvfWriteRecord( fc, m_ReplaceSeqIds ) );
+    CRef<CGvfWriteRecord> pRecord( new CGvfWriteRecord( fc ) );
 
     if ( ! pRecord->AssignFromAsn( mf ) ) {
         return false;

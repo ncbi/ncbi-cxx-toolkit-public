@@ -68,10 +68,9 @@ string CGvfWriteRecord::s_UniqueId()
 
 //  ----------------------------------------------------------------------------
 CGvfWriteRecord::CGvfWriteRecord(
-    CGffFeatureContext& fc, 
-    bool replaceSeqIds )
+    CGffFeatureContext& fc )
 //  ----------------------------------------------------------------------------
-    : CGff3WriteRecordFeature( fc, "", replaceSeqIds )
+    : CGff3WriteRecordFeature( fc )
 {
 };
 

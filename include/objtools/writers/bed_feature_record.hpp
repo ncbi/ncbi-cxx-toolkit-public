@@ -49,7 +49,7 @@ public:
 
     ~CBedFeatureRecord();
 
-    bool AssignLocation(CScope&, const CSeq_interval&, bool getBestId=true);
+    bool AssignLocation(CScope&, const CSeq_interval&);
     bool AssignDisplayData(const CMappedFeat&, bool);
     bool Write(CNcbiOstream&, unsigned int);
 

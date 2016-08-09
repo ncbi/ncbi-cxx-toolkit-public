@@ -68,8 +68,7 @@ string CGffWriteRecord::StrSource() const
 //  ----------------------------------------------------------------------------
 CGffWriteRecord::CGffWriteRecord(
     CGffFeatureContext& fc,
-    const string& id,
-    const bool replaceSeqIds):
+    const string& id ):
     m_fc(fc),
     m_strId( "" ),
     m_uSeqStart( 0 ),
@@ -78,8 +77,7 @@ CGffWriteRecord::CGffWriteRecord(
     m_strType( "." ),
     m_pScore( 0 ),
     m_peStrand( 0 ),
-    m_puPhase( 0 ),
-    m_ReplaceSeqIds(replaceSeqIds)
+    m_puPhase( 0 )
 //  ----------------------------------------------------------------------------
 {
     if (!id.empty()) {
@@ -98,8 +96,7 @@ CGffWriteRecord::CGffWriteRecord(
     m_strType( other.m_strType ),
     m_pScore( 0 ),
     m_peStrand( 0 ),
-    m_puPhase( 0 ),
-    m_ReplaceSeqIds(other.m_ReplaceSeqIds)
+    m_puPhase( 0 )
 //  ----------------------------------------------------------------------------
 {
     if ( other.m_pScore ) {
@@ -399,15 +396,9 @@ bool CGffWriteRecordFeature::x_AssignSeqId(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    if (m_ReplaceSeqIds) {
-        if (CWriteUtil::GetBestId(mf, m_strId)) {
-            return true;
-        }
-    } else // !m_ReplaceSeqIds
-    if (CWriteUtil::GetLocationId(mf, m_strId)) {
+    if (CWriteUtil::GetBestId(mf, m_strId)) {
         return true;
     }
-
     m_strId = ".";
     return true;
 }
