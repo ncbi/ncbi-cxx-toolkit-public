@@ -1901,12 +1901,37 @@ DISCREPANCY_CASE(CHECK_AUTHORITY, CBioSource, eDisc | eOncaller, "Authority and 
     if (!obj.IsSetOrg() || !obj.GetOrg().CanGetOrgname() || !obj.GetOrg().GetOrgname().CanGetMod() || !obj.GetOrg().CanGetTaxname() || !obj.GetOrg().GetTaxname().length()) {
         return;
     }
+    string tax1, tax2;
     ITERATE (COrgName::TMod, it, obj.GetOrg().GetOrgname().GetMod()) {
         if ((*it)->CanGetSubtype() && (*it)->GetSubtype() == COrgMod::eSubtype_authority) {
+            if (tax1.empty()) {
+                list<CTempString> tmp;
+                NStr::Split(obj.GetOrg().GetTaxname(), " ", tmp);
+                list<CTempString>::iterator p = tmp.begin();
+                if (p != tmp.end()) {
+                    tax1 = *p;
+                    p++;
+                    if (p != tmp.end()) {
+                        tax2 = *p;
+                    }
+                }
+            }
+            string aut1, aut2;
+            list<CTempString> tmp;
+            NStr::Split((*it)->GetSubname(), " ", tmp);
+            list<CTempString>::iterator p = tmp.begin();
+            if (p != tmp.end()) {
+                aut1 = *p;
+                p++;
+                if (p != tmp.end()) {
+                    aut2 = *p;
+                }
+            }
+            if (aut1 != tax1 || aut2 != tax2) {
+                m_Objs["[n] biosource[s] [has] taxname/authority conflict"].Add(*context.NewFeatOrDescObj(eNoRef, true));
+            }
         }
     }
-
-    //m_Objs["[n] country source[s] [has] more than 1 colon."].Add(*context.NewFeatOrDescObj(eNoRef, true));
 }
 
 
