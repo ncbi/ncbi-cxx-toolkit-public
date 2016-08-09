@@ -46,6 +46,35 @@ USING_SCOPE(objects);
 
 DISCREPANCY_MODULE(biosource_tests);
 
+static unsigned int AutofixBiosrc(TReportObjectList& list, CScope& scope, bool (*call)(CBioSource& src))
+{
+    unsigned int n = 0;
+    NON_CONST_ITERATE (TReportObjectList, it, list) {
+        const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
+        const CSeqdesc* csd = dynamic_cast<const CSeqdesc*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
+        if (sf) {
+            if (sf->IsSetData() && sf->GetData().IsBiosrc()) {
+                CRef<CSeq_feat> new_feat(new CSeq_feat());
+                new_feat->Assign(*sf);
+                if (call(new_feat->SetData().SetBiosrc())) {
+                    CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(*sf));
+                    feh.Replace(*new_feat);
+                    n++;
+                }
+            }
+        }
+        else if (csd) {
+            if (csd->IsSource()) {
+                CSeqdesc* sd = const_cast<CSeqdesc*>(csd);
+                if (call(sd->SetSource())) {
+                    n++;
+                }
+            }
+        }
+    }
+    return n;
+}
+
 
 // MAP_CHROMOSOME_CONFLICT
 
@@ -422,28 +451,7 @@ static bool SetCultureCollectionFromStrain(CBioSource& src)
 
 DISCREPANCY_AUTOFIX(ATCC_CULTURE_CONFLICT)
 {
-    TReportObjectList list = item->GetDetails();
-    unsigned int n = 0;
-    NON_CONST_ITERATE (TReportObjectList, it, list) {
-        const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
-        if (sf && sf->IsSetData() && sf->GetData().IsBiosrc()) {
-            CRef<CSeq_feat> new_feat(new CSeq_feat());
-            new_feat->Assign(*sf);
-            if (SetCultureCollectionFromStrain(new_feat->SetData().SetBiosrc())) {
-                CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(*sf));
-                feh.Replace(*new_feat);
-                n++;
-            }
-        } else {
-            const CSeqdesc* csd = dynamic_cast<const CSeqdesc*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
-            if (csd && csd->IsSource()) {
-                CSeqdesc* sd = const_cast<CSeqdesc*>(csd);
-                if (SetCultureCollectionFromStrain(sd->SetSource())) {
-                    n++;
-                }
-            }
-        }
-    }
+    unsigned int n = AutofixBiosrc(item->GetDetails(), scope, SetCultureCollectionFromStrain);
     return CRef<CAutofixReport>(n ? new CAutofixReport("ATCC_CULTURE_CONFLICT: Set culture collection for [n] source[s]", n) : 0);
 }
 
@@ -1777,31 +1785,7 @@ static bool RemoveCountryColon(CBioSource& src)
 
 DISCREPANCY_AUTOFIX(END_COLON_IN_COUNTRY)
 {
-    TReportObjectList list = item->GetDetails();
-    unsigned int n = 0;
-    NON_CONST_ITERATE (TReportObjectList, it, list) {
-        const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
-        const CSeqdesc* csd = dynamic_cast<const CSeqdesc*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
-        if (sf) {
-            if (sf->IsSetData() && sf->GetData().IsBiosrc()) {
-                CRef<CSeq_feat> new_feat(new CSeq_feat());
-                new_feat->Assign(*sf);
-                if (RemoveCountryColon(new_feat->SetData().SetBiosrc())) {
-                    CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(*sf));
-                    feh.Replace(*new_feat);
-                    n++;
-                }
-            }
-        }
-        else if (csd) {
-            if (csd->IsSource()) {
-                CSeqdesc* sd = const_cast<CSeqdesc*>(csd);
-                if (RemoveCountryColon(sd->SetSource())) {
-                    n++;
-                }
-            }
-        }
-    }
+    unsigned int n = AutofixBiosrc(item->GetDetails(), scope, RemoveCountryColon);
     return CRef<CAutofixReport>(n ? new CAutofixReport("END_COLON_IN_COUNTRY: [n] country name[s] fixed", n) : 0);
 }
 
@@ -1865,32 +1849,53 @@ static bool ChangeCountryColonToComma(CBioSource& src)
 
 DISCREPANCY_AUTOFIX(COUNTRY_COLON)
 {
-    TReportObjectList list = item->GetDetails();
-    unsigned int n = 0;
-    NON_CONST_ITERATE (TReportObjectList, it, list) {
-        const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
-        const CSeqdesc* csd = dynamic_cast<const CSeqdesc*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
-        if (sf) {
-            if (sf->IsSetData() && sf->GetData().IsBiosrc()) {
-                CRef<CSeq_feat> new_feat(new CSeq_feat());
-                new_feat->Assign(*sf);
-                if (ChangeCountryColonToComma(new_feat->SetData().SetBiosrc())) {
-                    CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(*sf));
-                    feh.Replace(*new_feat);
-                    n++;
-                }
-            }
-        }
-        else if (csd) {
-            if (csd->IsSource()) {
-                CSeqdesc* sd = const_cast<CSeqdesc*>(csd);
-                if (ChangeCountryColonToComma(sd->SetSource())) {
-                    n++;
-                }
-            }
+    unsigned int n = AutofixBiosrc(item->GetDetails(), scope, ChangeCountryColonToComma);
+    return CRef<CAutofixReport>(n ? new CAutofixReport("COUNTRY_COLON: [n] country name[s] fixed", n) : 0);
+}
+
+
+// HUMAN_HOST
+
+DISCREPANCY_CASE(HUMAN_HOST, CBioSource, eDisc | eOncaller, "\'Human\' in host should be \'Homo sapiens\'")
+{
+    if (!obj.IsSetOrg() || !obj.GetOrg().CanGetOrgname() || !obj.GetOrg().GetOrgname().CanGetMod()) {
+        return;
+    }
+    ITERATE (COrgName::TMod, it, obj.GetOrg().GetOrgname().GetMod()) {
+        if ((*it)->CanGetSubtype() && (*it)->GetSubtype() == COrgMod::eSubtype_nat_host && NStr::FindNoCase((*it)->GetSubname(), "human") != NPOS) {
+            m_Objs["[n] organism[s] [has] \'human\' host qualifiers"].Add(*context.NewFeatOrDescObj(eNoRef, true));
         }
     }
-    return CRef<CAutofixReport>(n ? new CAutofixReport("COUNTRY_COLON: [n] country name[s] fixed", n) : 0);
+}
+
+
+DISCREPANCY_SUMMARIZE(HUMAN_HOST)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+static bool FixHumanHost(CBioSource& src)
+{
+    if (!src.IsSetOrg()) {
+        return false;
+    }
+    bool fixed = false;
+    ITERATE (COrgName::TMod, it, src.GetOrg().GetOrgname().GetMod()) {
+        if ((*it)->CanGetSubtype() && (*it)->GetSubtype() == COrgMod::eSubtype_nat_host && NStr::FindNoCase((*it)->GetSubname(), "human") != NPOS) {
+            COrgMod& om = const_cast<COrgMod&>(**it);
+            NStr::ReplaceInPlace(om.SetSubname(), "human", "Homo sapiens");
+            fixed = true;
+        }
+    }
+    return fixed;
+}
+
+
+DISCREPANCY_AUTOFIX(HUMAN_HOST)
+{
+    unsigned int n = AutofixBiosrc(item->GetDetails(), scope, FixHumanHost);
+    return CRef<CAutofixReport>(n ? new CAutofixReport("HUMAN_HOST: [n] host qualifier[s] fixed", n) : 0);
 }
 
 
@@ -1928,7 +1933,7 @@ DISCREPANCY_CASE(CHECK_AUTHORITY, CBioSource, eDisc | eOncaller, "Authority and 
                 }
             }
             if (aut1 != tax1 || aut2 != tax2) {
-                m_Objs["[n] biosource[s] [has] taxname/authority conflict"].Add(*context.NewFeatOrDescObj(eNoRef, true));
+                m_Objs["[n] biosource[s] [has] taxname/authority conflict"].Add(*context.NewFeatOrDescObj());
             }
         }
     }
