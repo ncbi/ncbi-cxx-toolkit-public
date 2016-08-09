@@ -535,9 +535,8 @@ bool HasAmplifiedWithSpeciesSpecificPrimerNote(const CBioSource& src)
     return false;
 }
 
-//  ----------------------------------------------------------------------------
+
 DISCREPANCY_CASE(BACTERIA_SHOULD_NOT_HAVE_ISOLATE, CBioSource, eOncaller, "Bacterial sources should not have isolate")
-//  ----------------------------------------------------------------------------
 {
     // only looking for bacteria
     if (!CDiscrepancyContext::HasLineage(obj, context.GetLineage(), "Bacteria")) {
@@ -565,9 +564,8 @@ DISCREPANCY_CASE(BACTERIA_SHOULD_NOT_HAVE_ISOLATE, CBioSource, eOncaller, "Bacte
     }
 }
 
-//  ----------------------------------------------------------------------------
+
 DISCREPANCY_SUMMARIZE(BACTERIA_SHOULD_NOT_HAVE_ISOLATE)
-//  ----------------------------------------------------------------------------
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
@@ -580,7 +578,6 @@ DISCREPANCY_CASE(MULTISRC, CBioSource, eDisc | eOncaller, "Comma or semicolon ap
     if (!obj.IsSetOrg() || !obj.GetOrg().IsSetOrgname() || !obj.GetOrg().GetOrgname().IsSetMod()) {
         return;
     }
-
     bool report = false;
     ITERATE (COrgName::TMod, m, obj.GetOrg().GetOrgname().GetMod()) {
         if ((*m)->IsSetSubtype() &&
@@ -606,12 +603,11 @@ DISCREPANCY_SUMMARIZE(MULTISRC)
 
 // MULTIPLE_CULTURE_COLLECTION
 
-DISCREPANCY_CASE(MULTIPLE_CULTURE_COLLECTION, CBioSource, eDisc | eOncaller, "Comma or semicolon appears in strain or isolate")
+DISCREPANCY_CASE(MULTIPLE_CULTURE_COLLECTION, CBioSource, eOncaller, "Multiple culture-collection quals")
 {
     if (!obj.IsSetOrg() || !obj.GetOrg().IsSetOrgname() || !obj.GetOrg().GetOrgname().IsSetMod()) {
         return;
     }
-
     bool found = false;
     ITERATE (COrgName::TMod, m, obj.GetOrg().GetOrgname().GetMod()) {
         if ((*m)->IsSetSubtype() && (*m)->GetSubtype() == COrgMod::eSubtype_culture_collection) {
@@ -626,6 +622,29 @@ DISCREPANCY_CASE(MULTIPLE_CULTURE_COLLECTION, CBioSource, eDisc | eOncaller, "Co
 
 
 DISCREPANCY_SUMMARIZE(MULTIPLE_CULTURE_COLLECTION)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+// REQUIRED_STRAIN
+
+DISCREPANCY_CASE(REQUIRED_STRAIN, CBioSource, eDisc, "Bacteria should have strain")
+{
+    if (!obj.IsSetOrg() || !obj.GetOrg().IsSetOrgname() || !obj.GetOrg().GetOrgname().IsSetMod() || !CDiscrepancyContext::HasLineage(obj, context.GetLineage(), "Bacteria")) {
+        return;
+    }
+    bool found = false;
+    ITERATE (COrgName::TMod, m, obj.GetOrg().GetOrgname().GetMod()) {
+        if ((*m)->IsSetSubtype() && (*m)->GetSubtype() == COrgMod::eSubtype_strain) {
+            return;
+        }
+    }
+    m_Objs["[n] biosource[s] [is] missing required strain value"].Add(*context.NewFeatOrDescObj());
+}
+
+
+DISCREPANCY_SUMMARIZE(REQUIRED_STRAIN)
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
