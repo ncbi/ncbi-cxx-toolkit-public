@@ -56,46 +56,46 @@ struct SSeqDB_SeqSrc_Data {
         : copied(false)
     {
     }
-    
+
     /// Constructor.
     SSeqDB_SeqSrc_Data(CSeqDB * ptr, int id, ESubjectMaskingType type)
-        : seqdb((CSeqDBExpert*) ptr), 
+        : seqdb((CSeqDBExpert*) ptr),
           mask_algo_id(id),
           mask_type(type),
           copied(false),
           isProtein(seqdb->GetSequenceType() == CSeqDB::eProtein)
     {
     }
-    
+
     /// Make a copy of this object, sharing the same SeqDB object.
     SSeqDB_SeqSrc_Data * clone()
     {
         return new SSeqDB_SeqSrc_Data(&* seqdb, mask_algo_id, mask_type);
     }
-    
+
     /// Convenience to allow datap->method to use SeqDB methods.
     CSeqDBExpert * operator->()
     {
         _ASSERT(! seqdb.Empty());
         return &*seqdb;
     }
-    
+
     /// Convenience to allow datap->method to use SeqDB methods.
     CSeqDBExpert & operator*()
     {
         _ASSERT(! seqdb.Empty());
         return *seqdb;
     }
-    
+
     /// SeqDB object.
     CRef<CSeqDBExpert> seqdb;
-    
+
     /// Algorithm ID and type for mask data fetching.
     int mask_algo_id;
     ESubjectMaskingType mask_type;
     bool copied;
     bool isProtein;
-    
+
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
     /// Ranges of the sequence to include (for masking).
@@ -113,9 +113,9 @@ static Blast_GiList*
 s_SeqDbGetGiList(void* seqdb_handle, void* args)
 {
     CSeqDB & seqdb = **(TSeqDBData *) seqdb_handle;
-    
+
     Int4* oid = (Int4*) args;
-    
+
     if (!datap || !oid)
        return NULL;
 
@@ -133,7 +133,7 @@ s_SeqDbGetGiList(void* seqdb_handle, void* args)
 
 /// Retrieves the length of the longest sequence in the BlastSeqSrc.
 /// @param seqdb_handle Pointer to initialized CSeqDB object [in]
-static Int4 
+static Int4
 s_SeqDbGetMaxLength(void* seqdb_handle, void*)
 {
     CSeqDB & seqdb = **(TSeqDBData *) seqdb_handle;
@@ -142,7 +142,7 @@ s_SeqDbGetMaxLength(void* seqdb_handle, void*)
 
 /// Retrieves the length of the shortest sequence in the BlastSeqSrc.
 /// @param seqdb_handle Pointer to initialized CSeqDB object [in]
-static Int4 
+static Int4
 s_SeqDbGetMinLength(void* seqdb_handle, void*)
 {
     CSeqDB & seqdb = **(TSeqDBData *) seqdb_handle;
@@ -160,7 +160,7 @@ s_SeqDbSetNumberOfThreads(void* seqdb_handle, int n)
 
 /// Retrieves the number of sequences in the BlastSeqSrc.
 /// @param seqdb_handle Pointer to initialized CSeqDB object [in]
-static Int4 
+static Int4
 s_SeqDbGetNumSeqs(void* seqdb_handle, void*)
 {
     CSeqDB & seqdb = **(TSeqDBData *) seqdb_handle;
@@ -170,7 +170,7 @@ s_SeqDbGetNumSeqs(void* seqdb_handle, void*)
 /// Retrieves the number of sequences from alias file to be used for
 //  search-space calculations.
 /// @param seqdb_handle Pointer to initialized CSeqDB object [in]
-static Int4 
+static Int4
 s_SeqDbGetNumSeqsStats(void* seqdb_handle, void*)
 {
     CSeqDB & seqdb = **(TSeqDBData *) seqdb_handle;
@@ -179,7 +179,7 @@ s_SeqDbGetNumSeqsStats(void* seqdb_handle, void*)
 
 /// Retrieves the total length of all sequences in the BlastSeqSrc.
 /// @param seqdb_handle Pointer to initialized CSeqDB object [in]
-static Int8 
+static Int8
 s_SeqDbGetTotLen(void* seqdb_handle, void*)
 {
     CSeqDB & seqdb = **(TSeqDBData *) seqdb_handle;
@@ -189,17 +189,17 @@ s_SeqDbGetTotLen(void* seqdb_handle, void*)
 /// Retrieves the total length of all sequences from alias file
 // to be used for search space calculations.
 /// @param seqdb_handle Pointer to initialized CSeqDB object [in]
-static Int8 
+static Int8
 s_SeqDbGetTotLenStats(void* seqdb_handle, void*)
 {
     CSeqDB & seqdb = **(TSeqDBData *) seqdb_handle;
-    return seqdb.GetTotalLengthStats();  
+    return seqdb.GetTotalLengthStats();
 }
 
 /// Retrieves the average length of sequences in the BlastSeqSrc.
 /// @param seqdb_handle Pointer to initialized CSeqDB object [in]
 /// @param ignoreme Unused by this implementation [in]
-static Int4 
+static Int4
 s_SeqDbGetAvgLength(void* seqdb_handle, void* ignoreme)
 {
    Int8 total_length = s_SeqDbGetTotLen(seqdb_handle, ignoreme);
@@ -210,7 +210,7 @@ s_SeqDbGetAvgLength(void* seqdb_handle, void* ignoreme)
 
 /// Retrieves the name of the BLAST database.
 /// @param seqdb_handle Pointer to initialized CSeqDB object [in]
-static const char* 
+static const char*
 s_SeqDbGetName(void* seqdb_handle, void*)
 {
     CSeqDB & seqdb = **(TSeqDBData *) seqdb_handle;
@@ -220,7 +220,7 @@ s_SeqDbGetName(void* seqdb_handle, void*)
 /// Checks whether database is protein or nucleotide.
 /// @param seqdb_handle Pointer to initialized CSeqDB object [in]
 /// @return TRUE if database is protein, FALSE if nucleotide.
-static Boolean 
+static Boolean
 s_SeqDbGetIsProt(void* seqdb_handle, void*)
 {
     TSeqDBData * datap = (TSeqDBData *) seqdb_handle;
@@ -231,10 +231,10 @@ s_SeqDbGetIsProt(void* seqdb_handle, void*)
 /// Determine if partial fetching should be enabled
 /// @param seqdb_handle Pointer to initialized CSeqDB object [in]
 static Boolean
-s_SeqDbGetSupportsPartialFetching(void* seqdb_handle, void*) 
+s_SeqDbGetSupportsPartialFetching(void* seqdb_handle, void*)
 {
     TSeqDBData * datap = (TSeqDBData *) seqdb_handle;
-    
+
     if (datap->isProtein == true) {
        // don't bother doing this for proteins as the sequences are
        // never long enough to cause performance degredation
@@ -270,7 +270,7 @@ s_SeqDbSetRanges(void* seqdb_handle, BlastSeqSrcSetRangesArg* args)
     if (!seqdb_handle || !args) return;
 
     CSeqDB & seqdb = **(TSeqDBData *) seqdb_handle;
-        
+
     CSeqDB::TRangeList ranges;
     for (int i=0; i< args->num_ranges; ++i) {
         ranges.insert(pair<int,int> (args->ranges[i*2], args->ranges[i*2+1]));
@@ -283,117 +283,117 @@ s_SeqDbSetRanges(void* seqdb_handle, BlastSeqSrcSetRangesArg* args)
 /// @param seqdb_handle Pointer to initialized CSeqDB object [in]
 /// @param args Pointer to BlastSeqSrcGetSeqArg structure [in]
 /// @return return codes defined in blast_seqsrc.h
-static Int2 
+static Int2
 s_SeqDbGetSequence(void* seqdb_handle, BlastSeqSrcGetSeqArg* args)
 {
     Int4 oid = -1, len = 0;
     Boolean has_sentinel_byte;
-    
+
     if (!seqdb_handle || !args)
         return BLAST_SEQSRC_ERROR;
-    
+
     TSeqDBData * datap = (TSeqDBData *) seqdb_handle;
-    
+
     CSeqDBExpert & seqdb = **datap;
-    
+
     oid = args->oid;
 
     // If we are asked to check for OID exclusion, and if the database
     // has a GI list, then we check whether all the seqids have been
     // removed by filtering.  If so we return an error.  The traceback
     // code will exclude this HSP list.
-    
+
     if (args->check_oid_exclusion) {
         if (! seqdb.GetIdSet().Blank()) {
             list< CRef<CSeq_id> > seqids = seqdb.GetSeqIDs(oid);
-            
+
             if (seqids.empty()) {
                 return BLAST_SEQSRC_EXCLUDED;
             }
         }
     }
-    
+
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
-    if (datap->mask_type != eNoSubjMasking) { 
+    if (datap->mask_type != eNoSubjMasking) {
         ASSERT(datap->mask_algo_id != -1);
         seqdb.GetMaskData(oid, datap->mask_algo_id, datap->seq_ranges);
     }
 #endif
 
     datap->copied = false;
-    
-    if ( args->encoding == eBlastEncodingNucleotide 
-      || args->encoding == eBlastEncodingNcbi4na 
-      || (datap->mask_type == eHardSubjMasking 
+
+    if ( args->encoding == eBlastEncodingNucleotide
+      || args->encoding == eBlastEncodingNcbi4na
+      || (datap->mask_type == eHardSubjMasking
               && !(datap->seq_ranges.empty())
               && args->check_oid_exclusion))  datap->copied = true;
 
     has_sentinel_byte = (args->encoding == eBlastEncodingNucleotide);
-    
+
     /* free buffers if necessary */
     if (args->seq) BlastSequenceBlkClean(args->seq);
-    
+
     /* This occurs if the pre-selected partial sequence in the traceback stage
      * was too small to perform the traceback. Only do this for nucleotide
      * sequences as proteins are not long enough to be of significance */
     if (args->reset_ranges && datap->isProtein == false)
         seqdb.RemoveOffsetRanges(oid);
-    
+
     const char *buf;
-    len = (datap->copied) 
+    len = (datap->copied)
            /* This will consume and clear datap->seq_ranges */
-        ?  seqdb.GetAmbigSeqAlloc(oid, 
-                                  const_cast<char **>(&buf), 
-                                  has_sentinel_byte, 
+        ?  seqdb.GetAmbigSeqAlloc(oid,
+                                  const_cast<char **>(&buf),
+                                  has_sentinel_byte,
                                   eMalloc,
                                   ((datap->mask_type == eHardSubjMasking) ?
                                        &(datap->seq_ranges) : NULL))
         :  seqdb.GetSequence(oid, &buf);
-    
+
     if (len <= 0) return BLAST_SEQSRC_ERROR;
-    
+
     BlastSetUp_SeqBlkNew((Uint1*)buf, len, &args->seq, datap->copied);
-    
+
     /* If there is no sentinel byte, and buffer is allocated, i.e. this is
-       the traceback stage of a translated search, set "sequence" to the same 
+       the traceback stage of a translated search, set "sequence" to the same
        position as "sequence_start". */
     if (datap->copied && !has_sentinel_byte)
         args->seq->sequence = args->seq->sequence_start;
-    
+
     /* For preliminary stage, even though sequence buffer points to a memory
        mapped location, we still need to call ReleaseSequence. This can only be
        guaranteed by making the engine believe tat sequence is allocated.
     */
     if (!datap->copied) args->seq->sequence_allocated = TRUE;
-    
+
     args->seq->oid = oid;
 
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
     /* If masks have not been consumed (scanning phase), pass on to engine */
     if (datap->mask_type != eNoSubjMasking) {
-        if (BlastSeqBlkSetSeqRanges(args->seq, 
+        if (BlastSeqBlkSetSeqRanges(args->seq,
                                 (SSeqRange*) datap->seq_ranges.get_data(),
                                 datap->seq_ranges.size() + 1, false, datap->mask_type) != 0) {
             return BLAST_SEQSRC_ERROR;
         }
     }
 #endif
-    
+
     return BLAST_SEQSRC_SUCCESS;
 }
 
-/// Returns the memory allocated for the sequence buffer to the CSeqDB 
+/// Returns the memory allocated for the sequence buffer to the CSeqDB
 /// interface.
 /// @param seqdb_handle Pointer to initialized CSeqDB object [in]
-/// @param args Pointer to the BlastSeqSrcGetSeqArgs structure, 
+/// @param args Pointer to the BlastSeqSrcGetSeqArgs structure,
 /// containing sequence block with the buffer that needs to be deallocated. [in]
 static void
 s_SeqDbReleaseSequence(void* seqdb_handle, BlastSeqSrcGetSeqArg* args)
 {
     TSeqDBData * datap = (TSeqDBData *) seqdb_handle;
-    
+
     CSeqDB & seqdb = **(TSeqDBData *) seqdb_handle;
 
     _ASSERT(seqdb_handle);
@@ -401,8 +401,7 @@ s_SeqDbReleaseSequence(void* seqdb_handle, BlastSeqSrcGetSeqArg* args)
     _ASSERT(args->seq);
 
     if (args->seq->sequence_start_allocated) {
-        ASSERT (datap->copied);
-        sfree(args->seq->sequence_start);
+        if (datap->copied) sfree(args->seq->sequence_start);
         args->seq->sequence_start_allocated = FALSE;
         args->seq->sequence_start = NULL;
     }
@@ -418,7 +417,7 @@ s_SeqDbReleaseSequence(void* seqdb_handle, BlastSeqSrcGetSeqArg* args)
 /// @param seqdb_handle Pointer to initialized CSeqDB object [in]
 /// @param args Pointer to integer indicating ordinal id [in]
 /// @return Length of the database sequence or BLAST_SEQSRC_ERROR.
-static Int4 
+static Int4
 s_SeqDbGetSeqLen(void* seqdb_handle, void* args)
 {
     Int4* oid = (Int4*) args;
@@ -431,23 +430,23 @@ s_SeqDbGetSeqLen(void* seqdb_handle, void* args)
 }
 
 /// Assigns next chunk of the database to the sequence source iterator.
-/// @param seqdb_handle Reference to the database object, cast to void* to 
+/// @param seqdb_handle Reference to the database object, cast to void* to
 ///                     satisfy the signature requirement. [in]
 /// @param itr Iterator over the database sequence source. [in|out]
-static Int2 
+static Int2
 s_SeqDbGetNextChunk(void* seqdb_handle, BlastSeqSrcIterator* itr)
 {
     if (!seqdb_handle || !itr)
         return BLAST_SEQSRC_ERROR;
-    
+
     CSeqDB & seqdb = **(TSeqDBData *) seqdb_handle;
-    
+
     vector<int> oid_list;
 
-    CSeqDB::EOidListType chunk_type = 
-        seqdb.GetNextOIDChunk(itr->oid_range[0], itr->oid_range[1], 
+    CSeqDB::EOidListType chunk_type =
+        seqdb.GetNextOIDChunk(itr->oid_range[0], itr->oid_range[1],
                               itr->chunk_sz, oid_list);
-    
+
     if (itr->oid_range[1] <= itr->oid_range[0])
         return BLAST_SEQSRC_EOF;
 
@@ -460,7 +459,7 @@ s_SeqDbGetNextChunk(void* seqdb_handle, BlastSeqSrcIterator* itr)
         if (new_sz > 0) {
             itr->current_pos = 0;
             Uint4 index;
-            if (itr->chunk_sz < new_sz) { 
+            if (itr->chunk_sz < new_sz) {
                 sfree(itr->oid_list);
                 itr->oid_list = (int *) malloc (new_sz * sizeof(int));
             }
@@ -476,11 +475,11 @@ s_SeqDbGetNextChunk(void* seqdb_handle, BlastSeqSrcIterator* itr)
 }
 
 /// Finds the next not searched ordinal id in the iteration over BLAST database.
-/// @param seqdb_handle Reference to the database object, cast to void* to 
+/// @param seqdb_handle Reference to the database object, cast to void* to
 ///                     satisfy the signature requirement. [in]
 /// @param itr Iterator of the BlastSeqSrc pointed by ptr. [in]
 /// @return Next ordinal id.
-static Int4 
+static Int4
 s_SeqDbIteratorNext(void* seqdb_handle, BlastSeqSrcIterator* itr)
 {
     Int4 retval = BLAST_SEQSRC_EOF;
@@ -489,7 +488,7 @@ s_SeqDbIteratorNext(void* seqdb_handle, BlastSeqSrcIterator* itr)
     _ASSERT(seqdb_handle);
     _ASSERT(itr);
 
-    /* If internal iterator is uninitialized/invalid, retrieve the next chunk 
+    /* If internal iterator is uninitialized/invalid, retrieve the next chunk
        from the BlastSeqSrc */
     if (itr->current_pos == UINT4_MAX) {
         status = s_SeqDbGetNextChunk(seqdb_handle, itr);
@@ -521,7 +520,7 @@ s_SeqDbIteratorNext(void* seqdb_handle, BlastSeqSrcIterator* itr)
 }
 
 /// Resets CSeqDB's internal chunk bookmark
-/// @param seqdb_handle Reference to the database object, cast to void* to 
+/// @param seqdb_handle Reference to the database object, cast to void* to
 ///                     satisfy the signature requirement. [in]
 static void
 s_SeqDbResetChunkIterator(void* seqdb_handle)
@@ -544,9 +543,9 @@ public:
     /// Constructor
     CSeqDbSrcNewArgs(const string& db, bool is_prot,
                      Uint4 first_oid = 0, Uint4 final_oid = 0,
-                     Int4 mask_algo_id = -1, 
+                     Int4 mask_algo_id = -1,
                      ESubjectMaskingType mask_type = eNoSubjMasking)
-        : m_DbName(db), m_IsProtein(is_prot), 
+        : m_DbName(db), m_IsProtein(is_prot),
           m_FirstDbSeq(first_oid), m_FinalDbSeq(final_oid),
           m_MaskAlgoId(mask_algo_id), m_MaskType(mask_type)
     {}
@@ -579,15 +578,15 @@ extern "C" {
 /// SeqDb sequence source destructor: frees its internal data structure
 /// @param seq_src BlastSeqSrc structure to free [in]
 /// @return NULL
-static BlastSeqSrc* 
+static BlastSeqSrc*
 s_SeqDbSrcFree(BlastSeqSrc* seq_src)
 {
-    if (!seq_src) 
+    if (!seq_src)
         return NULL;
-    
+
     TSeqDBData * datap = static_cast<TSeqDBData*>
         (_BlastSeqSrcImpl_GetDataStructure(seq_src));
-    
+
     delete datap;
     return NULL;
 }
@@ -596,30 +595,30 @@ s_SeqDbSrcFree(BlastSeqSrc* seq_src)
 /// and copies the rest of the BlastSeqSrc structure.
 /// @param seq_src BlastSeqSrc structure to copy [in]
 /// @return Pointer to the new BlastSeqSrc.
-static BlastSeqSrc* 
+static BlastSeqSrc*
 s_SeqDbSrcCopy(BlastSeqSrc* seq_src)
 {
-    if (!seq_src) 
+    if (!seq_src)
         return NULL;
-    
+
     TSeqDBData * datap = static_cast<TSeqDBData*>
         (_BlastSeqSrcImpl_GetDataStructure(seq_src));
-    
+
     _BlastSeqSrcImpl_SetDataStructure(seq_src, (void*) datap->clone());
-    
+
     return seq_src;
 }
 
-/// Initializes the data structure and function pointers in a SeqDb based 
+/// Initializes the data structure and function pointers in a SeqDb based
 /// BlastSeqSrc.
 /// @param retval Structure to populate [in] [out]
 /// @param seqdb Reference to a CSeqDB object [in]
-static void 
+static void
 s_InitNewSeqDbSrc(BlastSeqSrc* retval, TSeqDBData * datap)
 {
     _ASSERT(retval);
     _ASSERT(datap);
-    
+
     /* Initialize the BlastSeqSrc structure fields with user-defined function
      * pointers and seqdb */
     _BlastSeqSrcImpl_SetDeleteFnPtr   (retval, & s_SeqDbSrcFree);
@@ -647,51 +646,51 @@ s_InitNewSeqDbSrc(BlastSeqSrc* retval, TSeqDBData * datap)
 #endif /* KAPPA_PRINT_DIAGNOSTICS */
 }
 
-/// Populates a BlastSeqSrc, creating a new reference to the already existing 
+/// Populates a BlastSeqSrc, creating a new reference to the already existing
 /// SeqDb object.
 /// @param retval Original BlastSeqSrc [in]
 /// @param args Pointer to a reference to CSeqDB object [in]
 /// @return retval
-static BlastSeqSrc* 
+static BlastSeqSrc*
 s_SeqDbSrcSharedNew(BlastSeqSrc* retval, void* args)
 {
     _ASSERT(retval);
     _ASSERT(args);
-    
+
     TSeqDBData * datap = (TSeqDBData *) args;
-    
+
     s_InitNewSeqDbSrc(retval, datap->clone());
-    
+
     return retval;
 }
 
-/// SeqDb sequence source constructor 
+/// SeqDb sequence source constructor
 /// @param retval BlastSeqSrc structure (already allocated) to populate [in]
 /// @param args Pointer to internal CSeqDbSrcNewArgs structure (@sa
 /// CSeqDbSrcNewArgs) [in]
 /// @return Updated seq_src structure (with all function pointers initialized
-static BlastSeqSrc* 
+static BlastSeqSrc*
 s_SeqDbSrcNew(BlastSeqSrc* retval, void* args)
 {
     _ASSERT(retval);
     _ASSERT(args);
-    
+
     CSeqDbSrcNewArgs* seqdb_args = (CSeqDbSrcNewArgs*) args;
     _ASSERT(seqdb_args);
-    
+
     TSeqDBData * datap = new TSeqDBData;
-    
+
     try {
         bool is_protein = (seqdb_args->GetDbType() == 'p');
-        
+
         datap->seqdb.Reset(new CSeqDBExpert(seqdb_args->GetDbName(),
                                             (is_protein
                                              ? CSeqDB::eProtein
                                              : CSeqDB::eNucleotide)));
-        
+
         datap->seqdb->SetIterationRange(seqdb_args->GetFirstOid(),
                                         seqdb_args->GetFinalOid());
-        
+
         datap->mask_algo_id = seqdb_args->GetMaskAlgoId();
         datap->mask_type = seqdb_args->GetMaskType();
         datap->isProtein = is_protein;
@@ -705,8 +704,8 @@ s_SeqDbSrcNew(BlastSeqSrc* retval, void* args)
                      datap->mask_algo_id) == supported_algorithms.end()) {
                 CNcbiOstrstream oss;
                 oss << "Masking algorithm ID " << datap->mask_algo_id << " is "
-                    << "not supported in " << 
-                    (is_protein ? "protein" : "nucleotide") << " '" 
+                    << "not supported in " <<
+                    (is_protein ? "protein" : "nucleotide") << " '"
                     << seqdb_args->GetDbName() << "' BLAST database";
                 string msg = CNcbiOstrstreamToString(oss);
                 throw runtime_error(msg);
@@ -714,27 +713,27 @@ s_SeqDbSrcNew(BlastSeqSrc* retval, void* args)
         }
 
     } catch (const ncbi::CException& e) {
-        _BlastSeqSrcImpl_SetInitErrorStr(retval, 
+        _BlastSeqSrcImpl_SetInitErrorStr(retval,
                         strdup(e.ReportThis(eDPF_ErrCodeExplanation).c_str()));
     } catch (const std::exception& e) {
         _BlastSeqSrcImpl_SetInitErrorStr(retval, strdup(e.what()));
     } catch (...) {
-        _BlastSeqSrcImpl_SetInitErrorStr(retval, 
+        _BlastSeqSrcImpl_SetInitErrorStr(retval,
              strdup("Caught unknown exception from CSeqDB constructor"));
     }
-    
+
     /* Initialize the BlastSeqSrc structure fields with user-defined function
      * pointers and seqdb */
-    
+
     s_InitNewSeqDbSrc(retval, datap);
-    
+
     return retval;
 }
 
 }
 
-BlastSeqSrc* 
-SeqDbBlastSeqSrcInit(const string& dbname, bool is_prot, 
+BlastSeqSrc*
+SeqDbBlastSeqSrcInit(const string& dbname, bool is_prot,
                  Uint4 first_seq, Uint4 last_seq,
                  Int4 mask_algo_id, ESubjectMaskingType mask_type)
 {
@@ -749,7 +748,7 @@ SeqDbBlastSeqSrcInit(const string& dbname, bool is_prot,
     return seq_src;
 }
 
-BlastSeqSrc* 
+BlastSeqSrc*
 SeqDbBlastSeqSrcInit(CSeqDB * seqdb,
                      Int4 mask_algo_id,
                      ESubjectMaskingType mask_type)

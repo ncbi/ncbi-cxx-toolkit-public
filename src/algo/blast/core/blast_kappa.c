@@ -482,10 +482,14 @@ s_ComputeNumIdentities(const BLAST_SequenceBlk* query_blk,
 
         if (program_number == eBlastTypeTblastn) {
             subject_blk = seq_arg.seq;
-    	BlastTargetTranslationNew(subject_blk, gen_code_string, eBlastTypeTblastn,
-                kIsOutOfFrame, &target_t);
-        }
-        else {
+            BlastTargetTranslationNew(
+                    subject_blk,
+                    gen_code_string,
+                    eBlastTypeTblastn,
+                    kIsOutOfFrame,
+                    &target_t
+            );
+        } else {
             subject = seq_arg.seq->sequence;
         }
     } else {
@@ -1901,6 +1905,7 @@ s_RedoOneAlignment(BlastCompo_Alignment * in_align,
     BlastGapAlignStruct* gapAlign = context->gap_align;
     /* The preliminary gapped HSP that were are recomputing */
     BlastHSP * hsp = in_align->context;
+    Boolean fence_hit = FALSE;
 
     /* suppress unused parameter warnings; this is a callback
        function, so these parameter cannot be deleted */
@@ -1913,6 +1918,10 @@ s_RedoOneAlignment(BlastCompo_Alignment * in_align,
 
     gapAlign->gap_x_dropoff = gapping_params->x_dropoff;
 
+    /*
+     * Previously, last argument was NULL which could cause problems for
+     * tblastn.
+     */
     status =
         BLAST_GappedAlignmentWithTraceback(context->prog_number,
                                            query_data->data,
@@ -1921,7 +1930,7 @@ s_RedoOneAlignment(BlastCompo_Alignment * in_align,
                                            q_start, s_start,
                                            query_data->length,
                                            subject_data->length,
-                                           NULL);
+                                           &fence_hit);
     if (status == 0) {
         return s_NewAlignmentFromGapAlign(gapAlign, &gapAlign->edit_script,
                                           query_range, subject_range,
@@ -3015,7 +3024,10 @@ Blast_RedoAlignmentCore_MT(EBlastProgramType program_number,
     BlastHSPResults* local_results = NULL;
 
     BlastCompo_QueryInfo** query_info_tld = NULL;
+    int* numContexts_tld = NULL;
+    int* compositionTestIndex_tld = NULL;
     Blast_RedoAlignParams** redo_align_params_tld = NULL;
+    BLAST_SequenceBlk** subjectBlk_tld = NULL;
     Boolean positionBased = (Boolean) (sbp->psi_matrix != NULL);
     ECompoAdjustModes compo_adjust_mode =
         (ECompoAdjustModes) extendParams->options->compositionBasedStats;
@@ -3164,6 +3176,11 @@ Blast_RedoAlignmentCore_MT(EBlastProgramType program_number,
                     sizeof(Blast_CompositionWorkspace*)
             );
 
+    subjectBlk_tld =
+            (BLAST_SequenceBlk**) calloc(
+                    actual_num_threads,
+                    sizeof(BLAST_SequenceBlk*)
+            );
     redo_align_params_tld =
             (Blast_RedoAlignParams**) calloc(
                     actual_num_threads,
@@ -3204,6 +3221,16 @@ Blast_RedoAlignmentCore_MT(EBlastProgramType program_number,
                     actual_num_threads,
                     sizeof(BlastCompo_QueryInfo*)
             );
+    numContexts_tld =
+            (int*) calloc(
+                    actual_num_threads,
+                    sizeof(int)
+            );
+    compositionTestIndex_tld =
+            (int*) calloc(
+                    actual_num_threads,
+                    sizeof(int)
+            );
 
     int i;
     for (i = 0; i < actual_num_threads; ++i) {
@@ -3224,12 +3251,16 @@ Blast_RedoAlignmentCore_MT(EBlastProgramType program_number,
                 sbp->number_of_contexts
         );
 
-        seqsrc_tld[i]         = (BlastSeqSrc*) seqSrc;
-        gap_align_tld[i]      =
+        numContexts_tld[i]          = numContexts;
+        compositionTestIndex_tld[i] = compositionTestIndex;
+        seqsrc_tld[i]               = BlastSeqSrcCopy(seqSrc);
+        gap_align_tld[i]            =
                 s_BlastGapAlignStruct_Copy(gapAlign, sbp_tld[i]);
-        score_params_tld[i]   = scoringParams;
-        hit_params_tld[i]     = (BlastHitSavingParameters*) hitParams;
-        results_tld[i]        = Blast_HSPResultsNew(queryInfo->num_queries);
+        score_params_tld[i]         = scoringParams;
+        hit_params_tld[i]           = (BlastHitSavingParameters*) hitParams;
+        results_tld[i]              =
+                Blast_HSPResultsNew(queryInfo->num_queries);
+        subjectBlk_tld[i]           = subjectBlk;
 
         redoneMatches_tld[i] =
                 (BlastCompo_Heap*) calloc(numQueries, sizeof(BlastCompo_Heap));
@@ -3386,11 +3417,11 @@ Blast_RedoAlignmentCore_MT(EBlastProgramType program_number,
         gap_align_tld, results_tld, \
         redoneMatches_tld, \
         numQueries, numMatches, theseMatches, \
-        numFrames, program_number, subjectBlk, positionBased, \
+        numFrames, program_number, subjectBlk_tld, positionBased, \
         default_db_genetic_code, localScalingFactor, queryInfo, \
-        sbp, smithWaterman, compositionTestIndex, forbidden, \
+        sbp, smithWaterman, compositionTestIndex_tld, forbidden, \
         NRrecord_tld, actual_num_threads, sbp_tld, \
-        matrix_tld, query_info_tld, numContexts, \
+        matrix_tld, query_info_tld, numContexts_tld, \
         genetic_code_string, queryBlk, compo_adjust_mode, \
         alignments_tld, incoming_align_set_tld, savedParams_tld, \
         scoringParams, redo_align_params_tld, \
@@ -3421,6 +3452,9 @@ Blast_RedoAlignmentCore_MT(EBlastProgramType program_number,
             BlastHitSavingParameters* hitParams;
             BlastCompo_Heap* redoneMatches;
             BlastScoreBlk* sbp;
+            BLAST_SequenceBlk* subjectBlk;
+            int numContexts;
+            int compositionTestIndex;
             /* existing alignments for a match */
             Int4** matrix;                   /* score matrix */
             int* pStatusCode;
@@ -3432,18 +3466,21 @@ Blast_RedoAlignmentCore_MT(EBlastProgramType program_number,
 #ifdef _OPENMP
             tid = omp_get_thread_num();
 #endif
-            seqSrc             = seqsrc_tld[tid];
-            scoringParams      = score_params_tld[tid];
-            hitParams          = hit_params_tld[tid];
-            redoneMatches      = redoneMatches_tld[tid];
-            alignments         = alignments_tld[tid];
-            incoming_align_set = incoming_align_set_tld[tid];
-            NRrecord           = NRrecord_tld[tid];
-            sbp                = sbp_tld[tid];
-            redo_align_params  = redo_align_params_tld[tid];
-            matrix             = matrix_tld[tid];
-            pStatusCode        = &status_code_tld[tid];
-            query_info         = query_info_tld[tid];
+            seqSrc               = seqsrc_tld[tid];
+            scoringParams        = score_params_tld[tid];
+            hitParams            = hit_params_tld[tid];
+            redoneMatches        = redoneMatches_tld[tid];
+            alignments           = alignments_tld[tid];
+            incoming_align_set   = incoming_align_set_tld[tid];
+            NRrecord             = NRrecord_tld[tid];
+            sbp                  = sbp_tld[tid];
+            redo_align_params    = redo_align_params_tld[tid];
+            matrix               = matrix_tld[tid];
+            pStatusCode          = &status_code_tld[tid];
+            query_info           = query_info_tld[tid];
+            numContexts          = numContexts_tld[tid];
+            compositionTestIndex = compositionTestIndex_tld[tid];
+            subjectBlk           = subjectBlk_tld[tid];
 
             BlastHSPList* localMatch = theseMatches[b];
 
@@ -3559,15 +3596,15 @@ Blast_RedoAlignmentCore_MT(EBlastProgramType program_number,
                                     incoming_aligns,        // thread-local
                                     numAligns[frame_index], // local
                                     kbp->Lambda,            // thread-local
-                                    &matchingSeq,           // local
+                                    &matchingSeq,           // thread-local
                                     -1,                     // const
                                     query_info,             // thread-local
-                                    numContexts,            // shared
+                                    numContexts,            // thread-local
                                     matrix,                 // thread-local
                                     BLASTAA_SIZE,           // const
                                     NRrecord,               // thread-local
                                     &pvalueForThisPair,     // local
-                                    compositionTestIndex,   // shared
+                                    compositionTestIndex,   // thread-local
                                     &LambdaRatio            // local
                             );
                 }
