@@ -322,6 +322,7 @@ gc_load_utils needs $(GPIPE_COMMON_LIBS)
 gc_load_utils needs gc_common
 gc_load_utils needs gc_organism
 gc_load_utils needs gc_utils
+gc_load_utils needs xid_utils
 gc_organism needs gpipe_attr
 gc_organism needs taxon1
 gc_schedule needs xconnserv
