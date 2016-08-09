@@ -451,7 +451,8 @@ static bool SetCultureCollectionFromStrain(CBioSource& src)
 
 DISCREPANCY_AUTOFIX(ATCC_CULTURE_CONFLICT)
 {
-    unsigned int n = AutofixBiosrc(item->GetDetails(), scope, SetCultureCollectionFromStrain);
+    TReportObjectList list = item->GetDetails();
+    unsigned int n = AutofixBiosrc(list, scope, SetCultureCollectionFromStrain);
     return CRef<CAutofixReport>(n ? new CAutofixReport("ATCC_CULTURE_CONFLICT: Set culture collection for [n] source[s]", n) : 0);
 }
 
@@ -1808,7 +1809,8 @@ static bool RemoveCountryColon(CBioSource& src)
 
 DISCREPANCY_AUTOFIX(END_COLON_IN_COUNTRY)
 {
-    unsigned int n = AutofixBiosrc(item->GetDetails(), scope, RemoveCountryColon);
+    TReportObjectList list = item->GetDetails();
+    unsigned int n = AutofixBiosrc(list, scope, RemoveCountryColon);
     return CRef<CAutofixReport>(n ? new CAutofixReport("END_COLON_IN_COUNTRY: [n] country name[s] fixed", n) : 0);
 }
 
@@ -1872,7 +1874,8 @@ static bool ChangeCountryColonToComma(CBioSource& src)
 
 DISCREPANCY_AUTOFIX(COUNTRY_COLON)
 {
-    unsigned int n = AutofixBiosrc(item->GetDetails(), scope, ChangeCountryColonToComma);
+    TReportObjectList list = item->GetDetails();
+    unsigned int n = AutofixBiosrc(list, scope, ChangeCountryColonToComma);
     return CRef<CAutofixReport>(n ? new CAutofixReport("COUNTRY_COLON: [n] country name[s] fixed", n) : 0);
 }
 
@@ -1917,7 +1920,8 @@ static bool FixHumanHost(CBioSource& src)
 
 DISCREPANCY_AUTOFIX(HUMAN_HOST)
 {
-    unsigned int n = AutofixBiosrc(item->GetDetails(), scope, FixHumanHost);
+    TReportObjectList list = item->GetDetails();
+    unsigned int n = AutofixBiosrc(list, scope, FixHumanHost);
     return CRef<CAutofixReport>(n ? new CAutofixReport("HUMAN_HOST: [n] host qualifier[s] fixed", n) : 0);
 }
 
