@@ -664,13 +664,14 @@ void CNetStorageHandler::x_OnData(const void* data, size_t data_size)
             m_CmdContext->SetBytesWr(m_ObjectSize);
     }
     catch (const exception &  ex) {
-        string  message = "Error writing " + NStr::NumericToString(data_size) +
-                          " bytes into " + m_ObjectBeingWritten.GetLoc() +
-                          ": " + ex.what();
         if (double(start) != 0.0 && m_Server->IsLogTimingNSTAPI())
             m_Timing.Append("NetStorageAPI writing error (" +
                             NStr::NumericToString(data_size) +
                             " bytes to write)", start);
+
+        string  message = "Error writing " + NStr::NumericToString(data_size) +
+                          " bytes into " + m_ObjectBeingWritten.GetLoc() +
+                          ": " + ex.what();
 
         if (m_WriteCreateNeedMetaDBUpdate && !m_CreateRequest) {
             // Prolong makes sense only for the WRITE operation
@@ -703,13 +704,14 @@ void CNetStorageHandler::x_OnData(const void* data, size_t data_size)
         x_SendSyncMessage(response);
 
     } catch (...) {
-        string  message = "Unknown exception while writing " +
-                          NStr::NumericToString(data_size) +
-                          " bytes into " + m_ObjectBeingWritten.GetLoc();
         if (double(start) != 0.0 && m_Server->IsLogTimingNSTAPI())
             m_Timing.Append("NetStorageAPI writing error (" +
                             NStr::NumericToString(data_size) +
                             " bytes to write)", start);
+
+        string  message = "Unknown exception while writing " +
+                          NStr::NumericToString(data_size) +
+                          " bytes into " + m_ObjectBeingWritten.GetLoc();
 
         if (m_WriteCreateNeedMetaDBUpdate && !m_CreateRequest) {
             // Prolong makes sense only for the WRITE operation
@@ -757,9 +759,10 @@ void CNetStorageHandler::x_SendWriteConfirmation()
         if (m_Server->IsLogTimingNSTAPI())
             m_Timing.Append("NetStorageAPI closing", start);
     } catch (const exception &  ex) {
-        x_SetCmdRequestStatus(eStatus_ServerError);
         if (m_Server->IsLogTimingNSTAPI())
             m_Timing.Append("NetStorageAPI finalizing error", start);
+
+        x_SetCmdRequestStatus(eStatus_ServerError);
 
         string  message = "Error while finalizing " +
                           m_ObjectBeingWritten.GetLoc() + ": " + ex.what();
@@ -1824,6 +1827,9 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
         }
         remote_info_error = false;
     } catch (const exception &  ex) {
+        if (double(start) != 0.0 && m_Server->IsLogTimingNSTAPI())
+            m_Timing.Append("NetStorageAPI GetInfo exception", start);
+
         ERR_POST(ex);
 
         string          error_scope;
@@ -1837,16 +1843,15 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
         AppendError(reply, error_code,
                     "Error while getting remote object info: " +
                     string(ex.what()), error_scope, error_sub_code);
+    } catch (...) {
         if (double(start) != 0.0 && m_Server->IsLogTimingNSTAPI())
             m_Timing.Append("NetStorageAPI GetInfo exception", start);
-    } catch (...) {
+
         string          msg = "Unknown error while getting remote object info";
 
         ERR_POST(msg);
         AppendError(reply, NCBI_ERRCODE_X_NAME(NetStorageServer_ErrorCode),
                     msg, kScopeUnknownException, eRemoteObjectInfoWarning);
-        if (double(start) != 0.0 && m_Server->IsLogTimingNSTAPI())
-            m_Timing.Append("NetStorageAPI GetInfo exception", start);
     }
 
     bool        need_client_update = false;
@@ -2606,6 +2611,8 @@ CNetStorageHandler::x_ProcessRead(
 
         reply = CreateResponseMessage(common_args.m_SerialNumber);
     } catch (const exception &  ex) {
+        if (double(start) != 0.0 && m_Server->IsLogTimingNSTAPI())
+            m_Timing.Append("NetStorageAPI read (exception)", start);
 
         string          error_scope;
         Int8            error_code;
@@ -2619,8 +2626,6 @@ CNetStorageHandler::x_ProcessRead(
         reply = CreateErrorResponseMessage(common_args.m_SerialNumber,
                         error_code, message, error_scope, error_sub_code);
         ERR_POST(message);
-        if (double(start) != 0.0 && m_Server->IsLogTimingNSTAPI())
-            m_Timing.Append("NetStorageAPI read (exception)", start);
 
         if (need_meta_db_update)
             x_ProlongObjectOnFailure(eReadOp, object_key, service_properties);
@@ -3068,6 +3073,8 @@ CNetStorageHandler::x_ProcessExists(
                                     m_Service, m_Server->GetCompoundIDPool());
             exists = storage.Exists(locator_from_db,
                                     message.GetString("ObjectLoc"));
+            if (m_Server->IsLogTimingNSTAPI())
+                m_Timing.Append("NetStorageAPI Exists", start);
         } else {
             SICacheSettings     icache_settings;
             SUserKey            user_key;
@@ -3082,6 +3089,8 @@ CNetStorageHandler::x_ProcessExists(
 
             exists = storage.Exists(locator_from_db,
                                     user_key.m_UniqueID, flags);
+            if (m_Server->IsLogTimingNSTAPI())
+                m_Timing.Append("NetStorageAPI Exists", start);
         }
     } catch (...) {
         if (m_Server->IsLogTimingNSTAPI())
