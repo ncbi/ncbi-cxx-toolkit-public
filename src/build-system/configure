@@ -8786,7 +8786,7 @@ if test "${ncbi_cv_prog_cxx_11+set}" = set; then
 else
   orig_CXX=$CXX
     ncbi_cv_prog_cxx_11=no
-    for x in -std=gnu++11 -std=gnu++0x; do
+    for x in -std=gnu++11 -std=gnu++0x ''; do
        CXX="$orig_CXX $x"
        cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
@@ -8794,11 +8794,11 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-
+#include <memory>
 int
 main ()
 {
-
+std::unique_ptr<int> x;
   ;
   return 0;
 }
@@ -8853,7 +8853,11 @@ rm -f core conftest.err conftest.$ac_objext \
 fi
 { echo "$as_me:$LINENO: result: $ncbi_cv_prog_cxx_11" >&5
 echo "${ECHO_T}$ncbi_cv_prog_cxx_11" >&6; }
-test "$ncbi_cv_prog_cxx_11" = no  ||  CXX="$CXX $ncbi_cv_prog_cxx_11"
+if test "$ncbi_cv_prog_cxx_11" = no; then
+   { { echo "$as_me:$LINENO: error: Please upgrade to a compiler supporting C++ '11, such as GCC 4.8 or newer." >&5
+echo "$as_me: error: Please upgrade to a compiler supporting C++ '11, such as GCC 4.8 or newer." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'

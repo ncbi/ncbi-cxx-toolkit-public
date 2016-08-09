@@ -1732,14 +1732,17 @@ AC_CACHE_CHECK([how to enable C++ '11 features in $CXX],
    ncbi_cv_prog_cxx_11,
    [orig_CXX=$CXX
     ncbi_cv_prog_cxx_11=no
-    for x in -std=gnu++11 -std=gnu++0x; do
+    for x in -std=gnu++11 -std=gnu++0x ''; do
        CXX="$orig_CXX $x"
-       AC_LINK_IFELSE([AC_LANG_PROGRAM([], [])],
+       AC_LINK_IFELSE([AC_LANG_PROGRAM([#include <memory>],
+          [std::unique_ptr<int> x;])],
           [ncbi_cv_prog_cxx_11=$x])
           test "x$ncbi_cv_prog_cxx_11" = "xno"  ||  break
        done
        CXX=$orig_CXX])
-test "$ncbi_cv_prog_cxx_11" = no  ||  CXX="$CXX $ncbi_cv_prog_cxx_11"
+if test "$ncbi_cv_prog_cxx_11" = no; then
+   AC_MSG_ERROR([Please upgrade to a compiler supporting C++ '11, such as GCC 4.8 or newer.])
+fi
 
 AC_LANG_PUSH(C)
 AC_CACHE_CHECK([how to enable C '11 or at least '99 features in $CC],
