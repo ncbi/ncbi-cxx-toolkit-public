@@ -437,8 +437,6 @@ string SFileTrackAPI::GetPath(const CNetStorageObjectLoc& object_loc)
                 response.GetStatusText());
     }
 
-// Enable this code if FileTrack starts to send "path" in response to lock
-#if 0
     ostringstream oss;
     oss << response.ContentStream().rdbuf();
 
@@ -455,15 +453,11 @@ string SFileTrackAPI::GetPath(const CNetStorageObjectLoc& object_loc)
                 "Error while locking path for \"" << object_loc.GetLocator() <<
                 "\" in FileTrack: Failed to parse response.");
     }
-#endif
 
-    if (CJsonNode root = GetFileInfo(object_loc)) {
-        if (CJsonNode path = root.GetByKeyOrNull("path")) {
-            return path.AsString();
-        }
-    }
-
-    return string();
+    NCBI_THROW_FMT(CNetStorageException, eUnknown,
+            "Error while locking path for \"" << object_loc.GetLocator() <<
+            "\" in FileTrack: no path in response");
+    return string(); // Not reached
 }
 
 const string s_GetSection(const string& section)
