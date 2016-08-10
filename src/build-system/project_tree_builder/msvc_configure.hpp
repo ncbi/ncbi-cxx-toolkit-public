@@ -66,7 +66,9 @@ private:
                         const string&      root_dir,
                         const SConfigInfo& config,
                         const CBuildType&  build_type);
-    void WriteExtraDefines(CMsvcSite&      site, const string& root_dir);
+    void WriteExtraDefines(CMsvcSite&      site,
+                           const string& root_dir,
+                           const SConfigInfo& config);
     CNcbiOfstream& WriteNcbiconfHeader(CNcbiOfstream& ofs) const;
     void WriteNcbiconfMsvcSite(const string& full_path,
                                const string& signature) const;

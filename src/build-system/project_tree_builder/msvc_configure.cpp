@@ -165,7 +165,9 @@ void CMsvcConfigure::CreateConfH(
     const list<SConfigInfo>& configs,
     const string& root_dir)
 {
-    WriteExtraDefines( site, root_dir);
+    ITERATE(list<SConfigInfo>, p, configs) {
+        WriteExtraDefines( site, root_dir, *p);
+    }
     if (CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eUnix ||
         GetApp().IsCMakeMode()) {
         return;
@@ -241,12 +243,12 @@ bool CMsvcConfigure::ProcessDefine(const string& define,
     return true;
 }
 
-void CMsvcConfigure::WriteExtraDefines(CMsvcSite&  site, const string& root_dir)
+void CMsvcConfigure::WriteExtraDefines(CMsvcSite&  site, const string& root_dir, const SConfigInfo& config)
 {
     string cfg = CMsvc7RegSettings::GetConfigNameKeyword();
     string cfg_root_inc(root_dir);
     if (!cfg.empty()) {
-        NStr::ReplaceInPlace(cfg_root_inc,cfg,kEmptyStr);
+        NStr::ReplaceInPlace(cfg_root_inc,cfg,config.GetConfigFullName());
     }
     string extra = site.GetConfigureEntry("ExtraDefines");
     string filename = CDirEntry::ConcatPath(cfg_root_inc, extra);
