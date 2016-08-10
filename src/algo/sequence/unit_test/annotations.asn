@@ -10554,7 +10554,7 @@ Seq-annot ::= {
     {
       data gene {
         locus "IGF2",
-        desc "insulin-like growth factor 2",
+        desc "insulin like growth factor 2",
         syn {
           "IGF-II"
         }
@@ -10577,7 +10577,7 @@ Seq-annot ::= {
     {
       data rna {
         type mRNA,
-        ext name "insulin-like growth factor 2"
+        ext name "insulin like growth factor 2"
       },
       partial TRUE,
       except TRUE,
