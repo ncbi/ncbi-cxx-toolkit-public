@@ -1,0 +1,2007 @@
+Seq-entry ::= set {
+  class genbank ,
+  seq-set {
+    set {
+      class phy-set ,
+      descr {
+        title "Xylariales 18S ribosomal RNA gene, partial sequence; internal
+ transcribed spacer 1, 5.8S ribosomal RNA gene, and internal transcribed
+ spacer 2, complete sequence; and 28S ribosomal RNA gene, partial sequence." ,
+        pub {
+          pub {
+            gen {
+              cit "Unpublished" ,
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Rajeshkumar" ,
+                          first "Kunhiraman" ,
+                          initials "K.C." } } ,
+                    {
+                      name
+                        name {
+                          last "Crous" ,
+                          first "Pedro" ,
+                          initials "P.W." } } ,
+                    {
+                      name
+                        name {
+                          last "Groenewald" ,
+                          first "Johannes" ,
+                          initials "J.Z." } } ,
+                    {
+                      name
+                        name {
+                          last "Seifert" ,
+                          first "Keith" ,
+                          initials "K.A." } } } ,
+                affil
+                  std {
+                    affil "CBS-KNAW Fungal Biodiversity Centre" ,
+                    div "Evolutionary Phytopathology" ,
+                    city "Utrecht" ,
+                    sub "UT" ,
+                    country "The Netherlands" ,
+                    street "Uppsalalaan 8" ,
+                    postal-code "3584 CT" } } ,
+              title "Resolving the phylogenetic placement of Porobeltraniella
+ and allied genera in the family Beltraniaceae" } } } ,
+        pub {
+          pub {
+            sub {
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Rajeshkumar" ,
+                          first "Kunhiraman" ,
+                          initials "K.C." } } ,
+                    {
+                      name
+                        name {
+                          last "Crous" ,
+                          first "Pedro" ,
+                          initials "P.W." } } ,
+                    {
+                      name
+                        name {
+                          last "Groenewald" ,
+                          first "Johannes" ,
+                          initials "J.Z." } } ,
+                    {
+                      name
+                        name {
+                          last "Seifert" ,
+                          first "Keith" ,
+                          initials "K.A." } } } ,
+                affil
+                  std {
+                    affil "CBS-KNAW Fungal Biodiversity Centre" ,
+                    div "Evolutionary Phytopathology" ,
+                    city "Utrecht" ,
+                    sub "UT" ,
+                    country "The Netherlands" ,
+                    street "Uppsalalaan 8" ,
+                    postal-code "3584 CT" } } ,
+              date
+                std {
+                  year 2016 ,
+                  month 7 ,
+                  day 7 } } } } ,
+        user {
+          class "SMART_V1.0" ,
+          type
+            id 1 ,
+          data {
+            {
+              label
+                id 1 ,
+              num 1 ,
+              data
+                int 10620399 } } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 10 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2016 } } } ,
+        update-date
+          std {
+            year 2016 ,
+            month 7 ,
+            day 12 } } ,
+      seq-set {
+        seq {
+          id {
+            genbank {
+              accession "KX519515" } ,
+            gi 1043348811 ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 67595101 } } ,
+          descr {
+            title "Beltrania rhombica strain CPC 27482 18S ribosomal RNA gene,
+ partial sequence; internal transcribed spacer 1, 5.8S ribosomal RNA gene, and
+ internal transcribed spacer 2, complete sequence; and 28S ribosomal RNA gene,
+ partial sequence." ,
+            source {
+              genome genomic ,
+              org {
+                taxname "Beltrania rhombica" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 638364 } } ,
+                orgname {
+                  name
+                    binomial {
+                      genus "Beltrania" ,
+                      species "rhombica" } ,
+                  mod {
+                    {
+                      subtype strain ,
+                      subname "CPC 27482" } ,
+                    {
+                      subtype culture-collection ,
+                      subname "CBS:141507" } ,
+                    {
+                      subtype culture-collection ,
+                      subname "CPC:27482" } } ,
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Pezizomycotina; Sordariomycetes; Xylariomycetidae; Xylariales; Beltraniaceae;
+ Beltrania" ,
+                  gcode 1 ,
+                  mgcode 4 ,
+                  div "PLN" } } ,
+              subtype {
+                {
+                  subtype country ,
+                  name "Malaysia" } ,
+                {
+                  subtype isolation-source ,
+                  name "Acacia crassipes leaves" } ,
+                {
+                  subtype collected-by ,
+                  name "M.J. Wingfield" } } } ,
+            molinfo {
+              biomol genomic } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              class "1.0" ,
+              type
+                str "AutodefOptions" ,
+              data {
+                {
+                  label
+                    str "SpecifyNuclearProduct" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MiscFeatRule" ,
+                  data
+                    str "NoncodingProductFeat" } ,
+                {
+                  label
+                    str "FeatureListType" ,
+                  data
+                    str "List All Features" } ,
+                {
+                  label
+                    str "ModifierList" ,
+                  data
+                    fields {
+                      {
+                        label
+                          str "OrgMods" ,
+                        num 1 ,
+                        data
+                          strs {
+                            "Strain" } } } } ,
+                {
+                  label
+                    str "HIVRule" ,
+                  data
+                    str "WantBoth" } ,
+                {
+                  label
+                    str "DoNotApplyToSp" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "LeaveParenthetical" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MaxMods" ,
+                  data
+                    int -99 } ,
+                {
+                  label
+                    str "UseLabels" ,
+                  data
+                    bool TRUE } } } ,
+            user {
+              type
+                str "SMART-SMUPD" ,
+              data {
+                {
+                  label
+                    str "Satellite" ,
+                  data
+                    int 20 } ,
+                {
+                  label
+                    str "Sat-key" ,
+                  data
+                    int 25081078 } ,
+                {
+                  label
+                    str "UpdateDate" ,
+                  data
+                    str "Jul 12 2016 2:45:18PM" } ,
+                {
+                  label
+                    str "IDHUP-date" ,
+                  data
+                    str "31-JUL-2017" } } } ,
+            create-date
+              std {
+                year 2016 ,
+                month 7 ,
+                day 12 } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 579 ,
+            seq-data
+              ncbi2na '5BEB8149A2A34F122FF501D50153B81F14FBE5DA689715EC9C5730A
+E9C57B265596BA3FD01DFBCFC4B0DE22DF3FC0C2D007F41068DDFAF7A4D8E0819260398C2C3B83
+E483D2E0D360DFE0644F9953CB3DCBA9397BD89B4FD057C25C9F2EFA8B718BA946715EC9BAF15E
+CBD780341A68FC4B35DE26CB0F7F3767DEFCAE7B87DA59C05543FFEEBE1768D2B283159E07C24C
+C'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      rna {
+                        type rRNA ,
+                        ext
+                          name "18S ribosomal RNA" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 28 ,
+                        strand plus ,
+                        id
+                          gi 1043348811 ,
+                        fuzz-from
+                          lim lt } } ,
+                  {
+                    data
+                      rna {
+                        type miscRNA ,
+                        ext
+                          gen {
+                            product "internal transcribed spacer 1" } } ,
+                    location
+                      int {
+                        from 29 ,
+                        to 192 ,
+                        strand plus ,
+                        id
+                          gi 1043348811 } } ,
+                  {
+                    data
+                      rna {
+                        type rRNA ,
+                        ext
+                          name "5.8S ribosomal RNA" } ,
+                    location
+                      int {
+                        from 193 ,
+                        to 350 ,
+                        strand plus ,
+                        id
+                          gi 1043348811 } } ,
+                  {
+                    data
+                      rna {
+                        type miscRNA ,
+                        ext
+                          gen {
+                            product "internal transcribed spacer 2" } } ,
+                    location
+                      int {
+                        from 351 ,
+                        to 533 ,
+                        strand plus ,
+                        id
+                          gi 1043348811 } } ,
+                  {
+                    data
+                      rna {
+                        type rRNA ,
+                        ext
+                          name "28S ribosomal RNA" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 534 ,
+                        to 578 ,
+                        strand plus ,
+                        id
+                          gi 1043348811 ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            genbank {
+              accession "KX519516" } ,
+            gi 1043348812 ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 67595102 } } ,
+          descr {
+            title "Beltraniella portoricensis strain NFCCI 3993 18S ribosomal
+ RNA gene, partial sequence; internal transcribed spacer 1, 5.8S ribosomal RNA
+ gene, and internal transcribed spacer 2, complete sequence; and 28S ribosomal
+ RNA gene, partial sequence." ,
+            source {
+              genome genomic ,
+              org {
+                taxname "Beltraniella portoricensis" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 752566 } } ,
+                orgname {
+                  name
+                    binomial {
+                      genus "Beltraniella" ,
+                      species "portoricensis" } ,
+                  mod {
+                    {
+                      subtype strain ,
+                      subname "NFCCI 3993" } ,
+                    {
+                      subtype culture-collection ,
+                      subname "NFCCI:3993" } } ,
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Pezizomycotina; Sordariomycetes; Xylariomycetidae; Xylariales; Beltraniaceae;
+ Beltraniella" ,
+                  gcode 1 ,
+                  mgcode 4 ,
+                  div "PLN" } } ,
+              subtype {
+                {
+                  subtype country ,
+                  name "India: Kerala, Kasaragod, Karadka" } ,
+                {
+                  subtype isolation-source ,
+                  name "Mangifera indica fallen leaves" } ,
+                {
+                  subtype collected-by ,
+                  name "K.C. Rajeshkumar" } } } ,
+            molinfo {
+              biomol genomic } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              class "1.0" ,
+              type
+                str "AutodefOptions" ,
+              data {
+                {
+                  label
+                    str "SpecifyNuclearProduct" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MiscFeatRule" ,
+                  data
+                    str "NoncodingProductFeat" } ,
+                {
+                  label
+                    str "FeatureListType" ,
+                  data
+                    str "List All Features" } ,
+                {
+                  label
+                    str "ModifierList" ,
+                  data
+                    fields {
+                      {
+                        label
+                          str "OrgMods" ,
+                        num 1 ,
+                        data
+                          strs {
+                            "Strain" } } } } ,
+                {
+                  label
+                    str "HIVRule" ,
+                  data
+                    str "WantBoth" } ,
+                {
+                  label
+                    str "DoNotApplyToSp" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "LeaveParenthetical" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MaxMods" ,
+                  data
+                    int -99 } ,
+                {
+                  label
+                    str "UseLabels" ,
+                  data
+                    bool TRUE } } } ,
+            user {
+              type
+                str "SMART-SMUPD" ,
+              data {
+                {
+                  label
+                    str "Satellite" ,
+                  data
+                    int 20 } ,
+                {
+                  label
+                    str "Sat-key" ,
+                  data
+                    int 25081078 } ,
+                {
+                  label
+                    str "UpdateDate" ,
+                  data
+                    str "Jul 12 2016 2:45:18PM" } ,
+                {
+                  label
+                    str "IDHUP-date" ,
+                  data
+                    str "31-JUL-2017" } } } ,
+            create-date
+              std {
+                year 2016 ,
+                month 7 ,
+                day 12 } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 568 ,
+            seq-data
+              ncbi2na 'A2A34F322FFC1D50153B81F14FBE5DA689715EC9C57B2AEBC57B265
+596BA3FD01DFBCFFCB0DE22DF3FC0C2D007F41068DDFAF7A4D8E0819260398C2C3B83E483D2E0D
+360DFE0644F9953CB3DCBA9397BD89B4FD057C25C9F2EFA8373BBA546F15EC9BAF15ECBD780341
+A68FCCB35DE26CB0FFFCDD9F7BF2B9EC8FF96701550FFFBAF85DA34ACA0C56781F0933430'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      rna {
+                        type rRNA ,
+                        ext
+                          name "18S ribosomal RNA" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 12 ,
+                        strand plus ,
+                        id
+                          gi 1043348812 ,
+                        fuzz-from
+                          lim lt } } ,
+                  {
+                    data
+                      rna {
+                        type miscRNA ,
+                        ext
+                          gen {
+                            product "internal transcribed spacer 1" } } ,
+                    location
+                      int {
+                        from 13 ,
+                        to 174 ,
+                        strand plus ,
+                        id
+                          gi 1043348812 } } ,
+                  {
+                    data
+                      rna {
+                        type rRNA ,
+                        ext
+                          name "5.8S ribosomal RNA" } ,
+                    location
+                      int {
+                        from 175 ,
+                        to 332 ,
+                        strand plus ,
+                        id
+                          gi 1043348812 } } ,
+                  {
+                    data
+                      rna {
+                        type miscRNA ,
+                        ext
+                          gen {
+                            product "internal transcribed spacer 2" } } ,
+                    location
+                      int {
+                        from 333 ,
+                        to 516 ,
+                        strand plus ,
+                        id
+                          gi 1043348812 } } ,
+                  {
+                    data
+                      rna {
+                        type rRNA ,
+                        ext
+                          name "28S ribosomal RNA" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 517 ,
+                        to 567 ,
+                        strand plus ,
+                        id
+                          gi 1043348812 ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            genbank {
+              accession "KX519517" } ,
+            gi 1043348813 ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 67595103 } } ,
+          descr {
+            title "Hemibeltrania cinnamomi strain NFCCI 3997 18S ribosomal RNA
+ gene, partial sequence; internal transcribed spacer 1, 5.8S ribosomal RNA
+ gene, and internal transcribed spacer 2, complete sequence; and 28S ribosomal
+ RNA gene, partial sequence." ,
+            source {
+              genome genomic ,
+              org {
+                taxname "Hemibeltrania cinnamomi" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 1809283 } } ,
+                orgname {
+                  name
+                    binomial {
+                      genus "Hemibeltrania" ,
+                      species "cinnamomi" } ,
+                  mod {
+                    {
+                      subtype strain ,
+                      subname "NFCCI 3997" } ,
+                    {
+                      subtype culture-collection ,
+                      subname "NFCCI:3997" } } ,
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Pezizomycotina; Sordariomycetes; Xylariomycetidae; Xylariales; Xylariales
+ incertae sedis; Hemibeltrania" ,
+                  gcode 1 ,
+                  mgcode 4 ,
+                  div "PLN" } } ,
+              subtype {
+                {
+                  subtype country ,
+                  name "India: Kerala, Kaladi" } ,
+                {
+                  subtype isolation-source ,
+                  name "Cinnamomum malabatrum leaves" } ,
+                {
+                  subtype collected-by ,
+                  name "K.C. Rajeshkumar and K. Madhusudhanan" } } } ,
+            molinfo {
+              biomol genomic } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              class "1.0" ,
+              type
+                str "AutodefOptions" ,
+              data {
+                {
+                  label
+                    str "SpecifyNuclearProduct" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MiscFeatRule" ,
+                  data
+                    str "NoncodingProductFeat" } ,
+                {
+                  label
+                    str "FeatureListType" ,
+                  data
+                    str "List All Features" } ,
+                {
+                  label
+                    str "ModifierList" ,
+                  data
+                    fields {
+                      {
+                        label
+                          str "OrgMods" ,
+                        num 1 ,
+                        data
+                          strs {
+                            "Strain" } } } } ,
+                {
+                  label
+                    str "HIVRule" ,
+                  data
+                    str "WantBoth" } ,
+                {
+                  label
+                    str "DoNotApplyToSp" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "LeaveParenthetical" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MaxMods" ,
+                  data
+                    int -99 } ,
+                {
+                  label
+                    str "UseLabels" ,
+                  data
+                    bool TRUE } } } ,
+            user {
+              type
+                str "SMART-SMUPD" ,
+              data {
+                {
+                  label
+                    str "Satellite" ,
+                  data
+                    int 20 } ,
+                {
+                  label
+                    str "Sat-key" ,
+                  data
+                    int 25081078 } ,
+                {
+                  label
+                    str "UpdateDate" ,
+                  data
+                    str "Jul 12 2016 2:45:18PM" } ,
+                {
+                  label
+                    str "IDHUP-date" ,
+                  data
+                    str "31-JUL-2017" } } } ,
+            create-date
+              std {
+                year 2016 ,
+                month 7 ,
+                day 12 } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 556 ,
+            seq-data
+              ncbi2na 'A2A34F122F370754054EE07C533BE5DA689715EC9B9715EC99565A6
+8FF41DFBFFF3BCDE26DF3FC30B401FD041A377EBDE936382064980E630B0EE0F920F4B834D837F
+81913E654F2CF72EA4E5EF626D3F415F09727CBBEA05C4DA9509C57B26EBC57B275E033069A3B3
+2F35DE26CB0FCF3767FED2B9CC7DF9670155C3FF7EBE1768D2B283159E07C24CD0C'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      rna {
+                        type rRNA ,
+                        ext
+                          name "18S ribosomal RNA" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 12 ,
+                        strand plus ,
+                        id
+                          gi 1043348813 ,
+                        fuzz-from
+                          lim lt } } ,
+                  {
+                    data
+                      rna {
+                        type miscRNA ,
+                        ext
+                          gen {
+                            product "internal transcribed spacer 1" } } ,
+                    location
+                      int {
+                        from 13 ,
+                        to 163 ,
+                        strand plus ,
+                        id
+                          gi 1043348813 } } ,
+                  {
+                    data
+                      rna {
+                        type rRNA ,
+                        ext
+                          name "5.8S ribosomal RNA" } ,
+                    location
+                      int {
+                        from 164 ,
+                        to 321 ,
+                        strand plus ,
+                        id
+                          gi 1043348813 } } ,
+                  {
+                    data
+                      rna {
+                        type miscRNA ,
+                        ext
+                          gen {
+                            product "internal transcribed spacer 2" } } ,
+                    location
+                      int {
+                        from 322 ,
+                        to 505 ,
+                        strand plus ,
+                        id
+                          gi 1043348813 } } ,
+                  {
+                    data
+                      rna {
+                        type rRNA ,
+                        ext
+                          name "28S ribosomal RNA" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 506 ,
+                        to 555 ,
+                        strand plus ,
+                        id
+                          gi 1043348813 ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            genbank {
+              accession "KX519518" } ,
+            gi 1043348814 ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 67595104 } } ,
+          descr {
+            title "Porobeltraniella porosa strain NFCCI 3994 18S ribosomal RNA
+ gene, partial sequence; internal transcribed spacer 1, 5.8S ribosomal RNA
+ gene, and internal transcribed spacer 2, complete sequence; and 28S ribosomal
+ RNA gene, partial sequence." ,
+            source {
+              genome genomic ,
+              org {
+                taxname "Porobeltraniella porosa" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 1873437 } } ,
+                orgname {
+                  name
+                    binomial {
+                      genus "Porobeltraniella" ,
+                      species "porosa" } ,
+                  mod {
+                    {
+                      subtype strain ,
+                      subname "NFCCI 3994" } ,
+                    {
+                      subtype culture-collection ,
+                      subname "NFCCI:3994" } } ,
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Pezizomycotina; Sordariomycetes; Xylariomycetidae; Xylariales; Beltraniaceae;
+ Porobeltraniella" ,
+                  gcode 1 ,
+                  mgcode 4 ,
+                  div "PLN" } } ,
+              subtype {
+                {
+                  subtype country ,
+                  name "India: Maharashtra, Mulshi" } ,
+                {
+                  subtype isolation-source ,
+                  name "Leaf litter" } ,
+                {
+                  subtype collected-by ,
+                  name "K.C. Rajeshkumar" } } } ,
+            molinfo {
+              biomol genomic } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              class "1.0" ,
+              type
+                str "AutodefOptions" ,
+              data {
+                {
+                  label
+                    str "SpecifyNuclearProduct" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MiscFeatRule" ,
+                  data
+                    str "NoncodingProductFeat" } ,
+                {
+                  label
+                    str "FeatureListType" ,
+                  data
+                    str "List All Features" } ,
+                {
+                  label
+                    str "ModifierList" ,
+                  data
+                    fields {
+                      {
+                        label
+                          str "OrgMods" ,
+                        num 1 ,
+                        data
+                          strs {
+                            "Strain" } } } } ,
+                {
+                  label
+                    str "HIVRule" ,
+                  data
+                    str "WantBoth" } ,
+                {
+                  label
+                    str "DoNotApplyToSp" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "LeaveParenthetical" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MaxMods" ,
+                  data
+                    int -99 } ,
+                {
+                  label
+                    str "UseLabels" ,
+                  data
+                    bool TRUE } } } ,
+            user {
+              type
+                str "SMART-SMUPD" ,
+              data {
+                {
+                  label
+                    str "Satellite" ,
+                  data
+                    int 20 } ,
+                {
+                  label
+                    str "Sat-key" ,
+                  data
+                    int 25081078 } ,
+                {
+                  label
+                    str "UpdateDate" ,
+                  data
+                    str "Jul 12 2016 2:45:18PM" } ,
+                {
+                  label
+                    str "IDHUP-date" ,
+                  data
+                    str "31-JUL-2017" } } } ,
+            create-date
+              std {
+                year 2016 ,
+                month 7 ,
+                day 12 } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 555 ,
+            seq-data
+              ncbi2na 'A2A34F122F370754054EE07C533BE5DA689715EC939715ECB9565A6
+87FC001DFBCFFCE13789B7CFF030B401FD041A377EBDE936382064980E630B0EE0F920F4B834D8
+37F81913E654F2CF72EA4E5EF626D3F415F09727CBBEA05C6FA9509C57B26EBC57B275E031069A
+3F32F35DE26CB0FCF3767FEF2B9EC1D796701550FFD0EBE1768D2B283159E07C24C'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      rna {
+                        type rRNA ,
+                        ext
+                          name "18S ribosomal RNA" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 12 ,
+                        strand plus ,
+                        id
+                          gi 1043348814 ,
+                        fuzz-from
+                          lim lt } } ,
+                  {
+                    data
+                      rna {
+                        type miscRNA ,
+                        ext
+                          gen {
+                            product "internal transcribed spacer 1" } } ,
+                    location
+                      int {
+                        from 13 ,
+                        to 169 ,
+                        strand plus ,
+                        id
+                          gi 1043348814 } } ,
+                  {
+                    data
+                      rna {
+                        type rRNA ,
+                        ext
+                          name "5.8S ribosomal RNA" } ,
+                    location
+                      int {
+                        from 170 ,
+                        to 327 ,
+                        strand plus ,
+                        id
+                          gi 1043348814 } } ,
+                  {
+                    data
+                      rna {
+                        type miscRNA ,
+                        ext
+                          gen {
+                            product "internal transcribed spacer 2" } } ,
+                    location
+                      int {
+                        from 328 ,
+                        to 511 ,
+                        strand plus ,
+                        id
+                          gi 1043348814 } } ,
+                  {
+                    data
+                      rna {
+                        type rRNA ,
+                        ext
+                          name "28S ribosomal RNA" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 512 ,
+                        to 554 ,
+                        strand plus ,
+                        id
+                          gi 1043348814 ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            genbank {
+              accession "KX519519" } ,
+            gi 1043348815 ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 67595105 } } ,
+          descr {
+            title "Porobeltraniella porosa strain NFCCI 3995 18S ribosomal RNA
+ gene, partial sequence; internal transcribed spacer 1, 5.8S ribosomal RNA
+ gene, and internal transcribed spacer 2, complete sequence; and 28S ribosomal
+ RNA gene, partial sequence." ,
+            source {
+              genome genomic ,
+              org {
+                taxname "Porobeltraniella porosa" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 1873437 } } ,
+                orgname {
+                  name
+                    binomial {
+                      genus "Porobeltraniella" ,
+                      species "porosa" } ,
+                  mod {
+                    {
+                      subtype strain ,
+                      subname "NFCCI 3995" } ,
+                    {
+                      subtype culture-collection ,
+                      subname "NFCCI:3995" } } ,
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Pezizomycotina; Sordariomycetes; Xylariomycetidae; Xylariales; Beltraniaceae;
+ Porobeltraniella" ,
+                  gcode 1 ,
+                  mgcode 4 ,
+                  div "PLN" } } ,
+              subtype {
+                {
+                  subtype country ,
+                  name "India: Maharashtra, Mulshi" } ,
+                {
+                  subtype isolation-source ,
+                  name "Leaf litter" } ,
+                {
+                  subtype collected-by ,
+                  name "K.C. Rajeshkumar" } } } ,
+            molinfo {
+              biomol genomic } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              class "1.0" ,
+              type
+                str "AutodefOptions" ,
+              data {
+                {
+                  label
+                    str "SpecifyNuclearProduct" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MiscFeatRule" ,
+                  data
+                    str "NoncodingProductFeat" } ,
+                {
+                  label
+                    str "FeatureListType" ,
+                  data
+                    str "List All Features" } ,
+                {
+                  label
+                    str "ModifierList" ,
+                  data
+                    fields {
+                      {
+                        label
+                          str "OrgMods" ,
+                        num 1 ,
+                        data
+                          strs {
+                            "Strain" } } } } ,
+                {
+                  label
+                    str "HIVRule" ,
+                  data
+                    str "WantBoth" } ,
+                {
+                  label
+                    str "DoNotApplyToSp" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "LeaveParenthetical" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MaxMods" ,
+                  data
+                    int -99 } ,
+                {
+                  label
+                    str "UseLabels" ,
+                  data
+                    bool TRUE } } } ,
+            user {
+              type
+                str "SMART-SMUPD" ,
+              data {
+                {
+                  label
+                    str "Satellite" ,
+                  data
+                    int 20 } ,
+                {
+                  label
+                    str "Sat-key" ,
+                  data
+                    int 25081078 } ,
+                {
+                  label
+                    str "UpdateDate" ,
+                  data
+                    str "Jul 12 2016 2:45:18PM" } ,
+                {
+                  label
+                    str "IDHUP-date" ,
+                  data
+                    str "31-JUL-2017" } } } ,
+            create-date
+              std {
+                year 2016 ,
+                month 7 ,
+                day 12 } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 562 ,
+            seq-data
+              ncbi2na 'A2A34F122F370754054EE07C533BE5DA689715EC939715ECB9565A6
+87FC001DFBCFFCE13789B7CFF030B401FD041A377EBDE936382064980E630B0EE0F920F4B834D8
+37F81913E654F2CF72EA4E5EF626D3F415F09727CBBEA05C6FA9509C57B26EBC57B275E031069A
+3F32F35DE26CB0FCF3767FEF2B9EC1D796701550FFD0EBE1768D2B283159E07C24CD0C0'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      rna {
+                        type rRNA ,
+                        ext
+                          name "18S ribosomal RNA" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 12 ,
+                        strand plus ,
+                        id
+                          gi 1043348815 ,
+                        fuzz-from
+                          lim lt } } ,
+                  {
+                    data
+                      rna {
+                        type miscRNA ,
+                        ext
+                          gen {
+                            product "internal transcribed spacer 1" } } ,
+                    location
+                      int {
+                        from 13 ,
+                        to 169 ,
+                        strand plus ,
+                        id
+                          gi 1043348815 } } ,
+                  {
+                    data
+                      rna {
+                        type rRNA ,
+                        ext
+                          name "5.8S ribosomal RNA" } ,
+                    location
+                      int {
+                        from 170 ,
+                        to 327 ,
+                        strand plus ,
+                        id
+                          gi 1043348815 } } ,
+                  {
+                    data
+                      rna {
+                        type miscRNA ,
+                        ext
+                          gen {
+                            product "internal transcribed spacer 2" } } ,
+                    location
+                      int {
+                        from 328 ,
+                        to 511 ,
+                        strand plus ,
+                        id
+                          gi 1043348815 } } ,
+                  {
+                    data
+                      rna {
+                        type rRNA ,
+                        ext
+                          name "28S ribosomal RNA" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 512 ,
+                        to 561 ,
+                        strand plus ,
+                        id
+                          gi 1043348815 ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            genbank {
+              accession "KX519520" } ,
+            gi 1043348816 ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 67595106 } } ,
+          descr {
+            title "Porobeltraniella porosa strain NFCCI 3996 18S ribosomal RNA
+ gene, partial sequence; internal transcribed spacer 1, 5.8S ribosomal RNA
+ gene, and internal transcribed spacer 2, complete sequence; and 28S ribosomal
+ RNA gene, partial sequence." ,
+            source {
+              genome genomic ,
+              org {
+                taxname "Porobeltraniella porosa" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 1873437 } } ,
+                orgname {
+                  name
+                    binomial {
+                      genus "Porobeltraniella" ,
+                      species "porosa" } ,
+                  mod {
+                    {
+                      subtype strain ,
+                      subname "NFCCI 3996" } ,
+                    {
+                      subtype culture-collection ,
+                      subname "NFCCI:3996" } } ,
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Pezizomycotina; Sordariomycetes; Xylariomycetidae; Xylariales; Beltraniaceae;
+ Porobeltraniella" ,
+                  gcode 1 ,
+                  mgcode 4 ,
+                  div "PLN" } } ,
+              subtype {
+                {
+                  subtype country ,
+                  name "India: Maharashtra, Mulshi" } ,
+                {
+                  subtype isolation-source ,
+                  name "Leaf litter" } ,
+                {
+                  subtype collected-by ,
+                  name "K.C. Rajeshkumar" } } } ,
+            molinfo {
+              biomol genomic } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              class "1.0" ,
+              type
+                str "AutodefOptions" ,
+              data {
+                {
+                  label
+                    str "SpecifyNuclearProduct" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MiscFeatRule" ,
+                  data
+                    str "NoncodingProductFeat" } ,
+                {
+                  label
+                    str "FeatureListType" ,
+                  data
+                    str "List All Features" } ,
+                {
+                  label
+                    str "ModifierList" ,
+                  data
+                    fields {
+                      {
+                        label
+                          str "OrgMods" ,
+                        num 1 ,
+                        data
+                          strs {
+                            "Strain" } } } } ,
+                {
+                  label
+                    str "HIVRule" ,
+                  data
+                    str "WantBoth" } ,
+                {
+                  label
+                    str "DoNotApplyToSp" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "LeaveParenthetical" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MaxMods" ,
+                  data
+                    int -99 } ,
+                {
+                  label
+                    str "UseLabels" ,
+                  data
+                    bool TRUE } } } ,
+            user {
+              type
+                str "SMART-SMUPD" ,
+              data {
+                {
+                  label
+                    str "Satellite" ,
+                  data
+                    int 20 } ,
+                {
+                  label
+                    str "Sat-key" ,
+                  data
+                    int 25081078 } ,
+                {
+                  label
+                    str "UpdateDate" ,
+                  data
+                    str "Jul 12 2016 2:45:18PM" } ,
+                {
+                  label
+                    str "IDHUP-date" ,
+                  data
+                    str "31-JUL-2017" } } } ,
+            create-date
+              std {
+                year 2016 ,
+                month 7 ,
+                day 12 } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 555 ,
+            seq-data
+              ncbi2na 'A2A34F122F370754054EE07C533BE5DA689715EC939715ECB9565A6
+87FC001DFBCFFCE13789B7CFF030B401FD041A377EBDE936382064980E630B0EE0F920F4B834D8
+37F81913E654F2CF72EA4E5EF626D3F415F09727CBBEA05C6FA9509C57B26EBC57B275E031069A
+3F32F35DE26CB0FCF3767FEF2B9EC1D796701550FFD0EBE1768D2B283159E07C24C'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      rna {
+                        type rRNA ,
+                        ext
+                          name "18S ribosomal RNA" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 12 ,
+                        strand plus ,
+                        id
+                          gi 1043348816 ,
+                        fuzz-from
+                          lim lt } } ,
+                  {
+                    data
+                      rna {
+                        type miscRNA ,
+                        ext
+                          gen {
+                            product "internal transcribed spacer 1" } } ,
+                    location
+                      int {
+                        from 13 ,
+                        to 169 ,
+                        strand plus ,
+                        id
+                          gi 1043348816 } } ,
+                  {
+                    data
+                      rna {
+                        type rRNA ,
+                        ext
+                          name "5.8S ribosomal RNA" } ,
+                    location
+                      int {
+                        from 170 ,
+                        to 327 ,
+                        strand plus ,
+                        id
+                          gi 1043348816 } } ,
+                  {
+                    data
+                      rna {
+                        type miscRNA ,
+                        ext
+                          gen {
+                            product "internal transcribed spacer 2" } } ,
+                    location
+                      int {
+                        from 328 ,
+                        to 511 ,
+                        strand plus ,
+                        id
+                          gi 1043348816 } } ,
+                  {
+                    data
+                      rna {
+                        type rRNA ,
+                        ext
+                          name "28S ribosomal RNA" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 512 ,
+                        to 554 ,
+                        strand plus ,
+                        id
+                          gi 1043348816 ,
+                        fuzz-to
+                          lim gt } } } } } } } ,
+      annot {
+        {
+          data
+            align {
+              {
+                type partial ,
+                dim 6 ,
+                segs
+                  denseg {
+                    dim 6 ,
+                    numseg 29 ,
+                    ids {
+                      gi 1043348811 ,
+                      gi 1043348812 ,
+                      gi 1043348813 ,
+                      gi 1043348814 ,
+                      gi 1043348815 ,
+                      gi 1043348816 } ,
+                    starts {
+                      0 ,
+                      -1 ,
+                      -1 ,
+                      -1 ,
+                      -1 ,
+                      -1 ,
+                      16 ,
+                      0 ,
+                      0 ,
+                      0 ,
+                      0 ,
+                      0 ,
+                      40 ,
+                      -1 ,
+                      24 ,
+                      24 ,
+                      24 ,
+                      24 ,
+                      41 ,
+                      -1 ,
+                      -1 ,
+                      -1 ,
+                      -1 ,
+                      -1 ,
+                      42 ,
+                      24 ,
+                      25 ,
+                      25 ,
+                      25 ,
+                      25 ,
+                      -1 ,
+                      -1 ,
+                      52 ,
+                      52 ,
+                      52 ,
+                      52 ,
+                      69 ,
+                      51 ,
+                      53 ,
+                      53 ,
+                      53 ,
+                      53 ,
+                      98 ,
+                      80 ,
+                      -1 ,
+                      -1 ,
+                      -1 ,
+                      -1 ,
+                      109 ,
+                      91 ,
+                      82 ,
+                      82 ,
+                      82 ,
+                      82 ,
+                      -1 ,
+                      -1 ,
+                      -1 ,
+                      117 ,
+                      117 ,
+                      117 ,
+                      144 ,
+                      126 ,
+                      -1 ,
+                      120 ,
+                      120 ,
+                      120 ,
+                      145 ,
+                      127 ,
+                      117 ,
+                      121 ,
+                      121 ,
+                      121 ,
+                      155 ,
+                      137 ,
+                      -1 ,
+                      131 ,
+                      131 ,
+                      131 ,
+                      156 ,
+                      138 ,
+                      127 ,
+                      132 ,
+                      132 ,
+                      132 ,
+                      -1 ,
+                      -1 ,
+                      133 ,
+                      138 ,
+                      138 ,
+                      138 ,
+                      162 ,
+                      144 ,
+                      134 ,
+                      139 ,
+                      139 ,
+                      139 ,
+                      183 ,
+                      165 ,
+                      -1 ,
+                      160 ,
+                      160 ,
+                      160 ,
+                      184 ,
+                      166 ,
+                      155 ,
+                      161 ,
+                      161 ,
+                      161 ,
+                      -1 ,
+                      -1 ,
+                      424 ,
+                      430 ,
+                      430 ,
+                      430 ,
+                      453 ,
+                      435 ,
+                      425 ,
+                      431 ,
+                      431 ,
+                      431 ,
+                      -1 ,
+                      454 ,
+                      -1 ,
+                      -1 ,
+                      -1 ,
+                      -1 ,
+                      472 ,
+                      455 ,
+                      444 ,
+                      450 ,
+                      450 ,
+                      450 ,
+                      490 ,
+                      473 ,
+                      -1 ,
+                      -1 ,
+                      -1 ,
+                      -1 ,
+                      491 ,
+                      474 ,
+                      462 ,
+                      468 ,
+                      468 ,
+                      468 ,
+                      -1 ,
+                      -1 ,
+                      502 ,
+                      508 ,
+                      508 ,
+                      508 ,
+                      531 ,
+                      514 ,
+                      503 ,
+                      509 ,
+                      509 ,
+                      509 ,
+                      577 ,
+                      560 ,
+                      549 ,
+                      -1 ,
+                      555 ,
+                      -1 ,
+                      -1 ,
+                      562 ,
+                      551 ,
+                      -1 ,
+                      557 ,
+                      -1 ,
+                      -1 ,
+                      567 ,
+                      -1 ,
+                      -1 ,
+                      -1 ,
+                      -1 } ,
+                    lens {
+                      16 ,
+                      24 ,
+                      1 ,
+                      1 ,
+                      27 ,
+                      1 ,
+                      29 ,
+                      11 ,
+                      35 ,
+                      3 ,
+                      1 ,
+                      10 ,
+                      1 ,
+                      6 ,
+                      1 ,
+                      21 ,
+                      1 ,
+                      269 ,
+                      1 ,
+                      19 ,
+                      1 ,
+                      18 ,
+                      1 ,
+                      40 ,
+                      1 ,
+                      46 ,
+                      2 ,
+                      5 ,
+                      1 } ,
+                    strands {
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus ,
+                      plus } } } } } } } } }
