@@ -113,6 +113,7 @@ int main(int argc, const char* argv[])
 
     /* bad args? -- Usage */
     if (!*net_info->host  ||  !net_info->port) {
+        ConnNetInfo_Destroy(net_info);
         fprintf(stderr,
                 "Usage: %s <host> <port> [max_try [timeout]]\n\n",
                 argv[0]);
