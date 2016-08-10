@@ -139,6 +139,7 @@ int main(int argc, const char* argv[])
     if (n_cycle <= 0) {
         fprintf(stderr,    "Usage: %s <port> [n_cycle]\n\n", argv[0]);
         fprintf(s_LogFile, "Usage: %s <port> [n_cycle]\n\n", argv[0]);
+        ConnNetInfo_Destroy(net_info);
         return 1/*error*/;
     }
 
