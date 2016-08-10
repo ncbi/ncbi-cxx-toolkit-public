@@ -1270,7 +1270,7 @@ const string kShortIntronExcept = "[n] intron[s] [is] shorter than 11 nt and [ha
 DISCREPANCY_CASE(SHORT_INTRON, CSeq_feat, eDisc | eOncaller | eSubmitter | eSmart, "Introns shorter than 10 nt")
 //  ----------------------------------------------------------------------------
 {
-    if (!obj.IsSetData() || !obj.GetData().IsCdregion() || !obj.IsSetLocation()) {
+    if (!obj.IsSetData() || !obj.GetData().IsCdregion() || !obj.IsSetLocation() || obj.IsSetExcept()) {
         return;
     }
     if (CCleanup::IsPseudo(obj, context.GetScope())) {
@@ -2064,8 +2064,6 @@ DISCREPANCY_SUMMARIZE(SUSPECT_PHRASES)
 }
 
 
-
-
 // UNUSUAL_MISC_RNA
 
 const string kUnusualMiscRNA = "[n] unexpected misc_RNA feature[s] found.  misc_RNAs are unusual in a genome, consider using ncRNA, misc_binding, or misc_feature as appropriate";
@@ -2317,6 +2315,7 @@ DISCREPANCY_SUMMARIZE(MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS)
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
+
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
