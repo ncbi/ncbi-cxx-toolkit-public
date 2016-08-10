@@ -1933,9 +1933,6 @@ DISCREPANCY_CASE(FEATURE_LOCATION_CONFLICT, CSeq_feat_BY_BIOSEQ, eDisc | eSubmit
     if (!handle_feat) {
         return;
     }
-    if (obj.GetLocation().GetStart(eExtreme_Biological) == 133568) {
-        handle_feat = true;
-    }
 
     const CGene_ref* gx = obj.GetGeneXref();
     if (gx) {
