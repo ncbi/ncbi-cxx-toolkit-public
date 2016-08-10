@@ -2011,6 +2011,37 @@ DISCREPANCY_SUMMARIZE(CHECK_AUTHORITY)
 }
 
 
+// MISSING_PRIMER
+
+DISCREPANCY_CASE(MISSING_PRIMER, CBioSource, eOncaller, "Missing values in primer set")
+{
+    if (!obj.CanGetPcr_primers() || !obj.GetPcr_primers().CanGet()) {
+        return;
+    }
+    ITERATE (CPCRReactionSet::Tdata, pr, obj.GetPcr_primers().Get()) {
+        const CPCRPrimerSet& fwdset = (*pr)->GetForward();
+        const CPCRPrimerSet& revset = (*pr)->GetReverse();
+        CPCRPrimerSet::Tdata::const_iterator fwd = fwdset.Get().begin();
+        CPCRPrimerSet::Tdata::const_iterator rev = revset.Get().begin();
+        while (fwd != fwdset.Get().end() && rev != revset.Get().end()) {
+            if (((*fwd)->CanGetName() && (*fwd)->GetName().Get().empty()) != ((*rev)->CanGetName() && (*rev)->GetName().Get().empty())
+                    || ((*fwd)->CanGetSeq() && (*fwd)->GetSeq().Get().empty()) != ((*rev)->CanGetSeq() && (*rev)->GetSeq().Get().empty())) {
+                m_Objs["[n] biosource[s] [has] primer set[s] with missing values"].Add(*context.NewFeatOrDescObj(eNoRef, true));
+                return;
+            }
+            fwd++;
+            rev++;
+        }
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(MISSING_PRIMER)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
 // DUPLICATE_PRIMER_SET
 
 DISCREPANCY_CASE(DUPLICATE_PRIMER_SET, CBioSource, eOncaller, "Duplicate PCR primer pair")
