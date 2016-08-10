@@ -515,7 +515,7 @@ CSeqFeatData::SubtypeNameToValue(const string & sName)
     // if this assertion fails, it means this function might be out
     // of date.  Don't just fix the assert, make sure the function is
     // up to date.
-    _ASSERT( 104 == CSeqFeatData::eSubtype_max );
+    _ASSERT( 105 == CSeqFeatData::eSubtype_max );
 
     TFeatMap::const_iterator find_iter =
         sm_FeatKeys.find(sName.c_str());
