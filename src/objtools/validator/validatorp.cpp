@@ -432,6 +432,7 @@ static const EErrType sc_ValidGenomeRaise[] = {
     eErr_SEQ_DESCR_WrongVoucherType,
     eErr_SEQ_DESCR_UserObjectProblem,
     eErr_SEQ_DESCR_BadKeyword,
+    eErr_SEQ_DESCR_BioSourceNeedsChromosome,
     eErr_SEQ_DESCR_MolInfoConflictsWithBioSource,
     eErr_SEQ_DESCR_TaxonomyIsSpeciesProblem,
     eErr_GENERIC_MissingPubInfo,
