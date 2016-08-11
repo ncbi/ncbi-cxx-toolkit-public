@@ -3806,6 +3806,7 @@ static bool s_IsValidRptType(const string& type)
         "flanking",
         "inverted",
         "long_terminal_repeat",
+        "nested",
         "non_LTR_retrotransposon_polymeric_tract",
         "other",
         "tandem",
