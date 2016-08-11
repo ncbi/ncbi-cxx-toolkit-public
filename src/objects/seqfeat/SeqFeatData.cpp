@@ -540,7 +540,7 @@ static TSubtypeValueToNameMap* s_CreateSubtypeValueToNameMap(void)
     // if this assertion fails, it means this function might be out
     // of date.  Don't just fix the assert, make sure the function is
     // up to date.
-    _ASSERT( 104 == CSeqFeatData::eSubtype_max );
+    _ASSERT( 105 == CSeqFeatData::eSubtype_max );
 
     auto_ptr<TSubtypeValueToNameMap> pAnswerMap( new TSubtypeValueToNameMap );
     // created from inverse of sm_FeatKeys
