@@ -120,6 +120,7 @@ protected:
                                     string& defline) const;
 
     void x_AddTranslationExceptionAttribute(const CSeq_feat& feat,
+                                            CScope& scope,
                                             string& defline) const;
 
     void x_AddLocationAttribute(const CSeq_feat& feat,

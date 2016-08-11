@@ -226,7 +226,7 @@ void CFastaOstreamEx::x_WriteFeatureAttributes(const CSeq_feat& feat,
 
     x_AddPartialAttribute(feat, scope, defline);
 
-    x_AddTranslationExceptionAttribute(feat, defline);
+    x_AddTranslationExceptionAttribute(feat, scope, defline);
 
     x_AddExceptionAttribute(feat, defline);
 
@@ -642,8 +642,87 @@ void CFastaOstreamEx::x_AddPartialAttribute(const CSeq_feat& feat,
     x_AddDeflineAttribute("partial", partial_string, defline);
 }
 
+//*********************************************************************
+
+bool s_GetCodeBreak(const CSeq_feat& feat, const CCode_break& cb, CScope& scope, string& cbString)
+{
+ string cb_str = ("(pos:");
+ if ( cb.IsSetLoc() ) {
+     const CCode_break::TLoc& loc = cb.GetLoc();
+
+
+     TSeqPos seq_pos = sequence::LocationOffset(feat.GetLocation(), loc,
+                                                sequence::eOffset_FromStart,
+                                                &scope);
+      
+     
+     int frame = 0; 
+     if (feat.GetData().IsCdregion()) {
+         const CCdregion& cdr = feat.GetData().GetCdregion();
+         if (cdr.IsSetFrame()) {
+             switch (cdr.GetFrame()) {
+             case CCdregion::eFrame_two: 
+                 frame = 1;
+                 break;
+             case CCdregion::eFrame_three:
+                 frame = 2;
+                 break;
+             default:
+                 break;
+             }
+         }
+     }     
+
+     seq_pos -= frame;
+
+     switch( loc.Which() ) {
+         default: {
+             int width = 1 + loc.GetStop(eExtreme_Positional) - loc.GetStart(eExtreme_Positional);
+             cb_str += NStr::IntToString(seq_pos + 1);
+             cb_str += "..";
+             cb_str += NStr::IntToString(seq_pos + width);
+             break;
+         }
+         case CSeq_loc::e_Int: {
+             cout << "Interval\n";
+             const CSeq_interval& intv = loc.GetInt();
+
+             int width =  1 + intv.GetTo() - intv.GetFrom();
+
+             string intv_str = "";
+             intv_str += NStr::IntToString( seq_pos + 1);
+             intv_str += "..";
+             intv_str += NStr::IntToString( seq_pos + width);
+             if ( intv.IsSetStrand()  &&  intv.GetStrand() == eNa_strand_minus ) {
+                      intv_str = "complement(" + intv_str + ")";
+             }
+             cb_str += intv_str;
+             break;
+              
+         }
+     }
+     cb_str += ",aa:";
+     string aaName;
+     if (!CWriteUtil::GetAaName(cb, aaName)) {
+         return false;
+     }
+     cb_str += aaName + ")";
+     cbString = cb_str;
+     return true;
+ }
+ return false;
+}
+
+
+
+//*********************************************************************
+
+
+
+
 
 void CFastaOstreamEx::x_AddTranslationExceptionAttribute(const CSeq_feat& feat,
+                                                         CScope& scope,
                                                          string& defline) const
 {
     if (!feat.IsSetData() ||
@@ -657,6 +736,7 @@ void CFastaOstreamEx::x_AddTranslationExceptionAttribute(const CSeq_feat& feat,
     string transl_exception = "";
     for (auto && code_break : code_breaks) {
         string cb_string = "";
+        //if (s_GetCodeBreak(feat, *code_break, scope, cb_string)) {
         if (CWriteUtil::GetCodeBreak(*code_break, cb_string)) {
             if (!transl_exception.empty()) {
                 transl_exception += ",";
