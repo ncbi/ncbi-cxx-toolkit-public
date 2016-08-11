@@ -276,12 +276,16 @@ public:
         /// errno to non-zero instead of throwing an exception (the default).
         /// We recommend the following technique to check against errors
         /// with minimum overhead when this flag is used:
+        /// @code
         ///     if (!retval  &&  errno != 0)
         ///        ERROR;
+        /// @endcode
         /// And for StringToDouble*() variants:
+        /// @code
         ///     if (retval == HUGE_VAL  ||  retval == -HUGE_VAL  ||  
         ///        !retval  &&  errno != 0)
         ///        ERROR;
+        /// @endcode
         
         fMandatorySign        = (1 << 17),   ///< See 'fWithSign'
         fAllowCommas          = (1 << 18),   ///< See 'fWithCommas'
@@ -1914,15 +1918,25 @@ public:
     /// @sa FindCase, FindNoCase, FindWord
     ///
     /// @deprecated
-    ///   Use Find(str, pattern, [use_case], [direction], [occurrence]) method instead.
+    ///   Use
+    ///   @code
+    ///       Find(str, pattern, [use_case], [direction], [occurrence])
+    ///   @endcode
+    ///   method instead.
     ///   For example:
+    ///   @code
     ///       Find(str, pattern, 0, NPOS, eLast, eCase)
+    ///   @endcode
     ///   can be replaced by 
+    ///   @code
     ///       Find(str, pattern, eCase, eReverseSearch, /* 0 */)
+    ///   @endcode
     ///   If you doing a search on a substring of the 'str' and ["start", "end"] search
     ///   interval is not a default [0, NPOS], that mean a whole 'str' string, you may
     ///   need to pass a substring instead of 'str', like 
+    ///   @code
     ///       Find(CTempString(str, start, len), pattern, ....)
+    ///   @endcode
     ///  and after checking search result on NPOS, adjust it by 'start' yourself.
     NCBI_DEPRECATED
     static SIZE_TYPE Find(const CTempString str,
@@ -1965,18 +1979,28 @@ public:
     ///   Use Find() method without [start:end] range.
     /// @deprecated
     ///   Use one of the next methods instead:
+    ///   @code
     ///       Find(str, pattern, [use_case], [direction], [occurrence])
     ///       FindCase(str, pattern, [start])
+    ///   @endcode
     ///   For example:
+    ///   @code
     ///       FindCase(str, pattern, 0, NPOS, eLast)
+    ///   @endcode
     ///   can be replaced by 
+    ///   @code
     ///       Find(str, pattern, eCase, eReverseSearch, /* 0 */)
+    ///   @endcode
     ///   For simpler cases without range, or with default [0, NPOS] please use 
+    ///   @code
     ///       FindCase(str, pattern, [start])
+    ///   @endcode
     ///   But if you doing a search on a substring of the 'str' and ["start", "end"] search
     ///   interval is not a default [0, NPOS], that mean a whole 'str' string, you may
     ///   need to pass a substring instead of 'str', like 
+    ///   @code
     ///       FindCase(CTempString(str, start, len), pattern, ....)
+    ///   @endcode
     ///  and after checking search result on NPOS, adjust it by 'start' yourself.
     NCBI_DEPRECATED
     static SIZE_TYPE FindCase(const CTempString str, 
@@ -2014,18 +2038,28 @@ public:
     ///
     /// @deprecated
     ///   Use one of the next methods instead:
+    ///   @code
     ///       Find(str, pattern, [use_case], [direction], [occurrence])
     ///       FindNoCase(str, pattern, [start])
+    ///   @endcode
     ///   For example:
+    ///   @code
     ///       FindNoCase(str, pattern, 0, NPOS, eLast)
+    ///   @endcode
     ///   can be replaced by 
+    ///   @code
     ///       Find(str, pattern, eNocase, eReverseSearch, /* 0 */)
+    ///   @endcode
     ///   For simpler cases without range, or with default [0, NPOS] please use 
+    ///   @code
     ///       FindNoCase(str, pattern, [start])
+    ///   @endcode
     ///   But if you doing a search on a substring of the 'str' and ["start", "end"] search
     ///   interval is not a default [0, NPOS], that mean a whole 'str' string, you may
     ///   need to pass a substring instead of 'str', like 
+    ///   @code
     ///       FindNoCase(CTempString(str, start, len), pattern, ....)
+    ///   @endcode
     ///  and after checking search result on NPOS, adjust it by 'start' yourself.
     NCBI_DEPRECATED
     static SIZE_TYPE FindNoCase(const CTempString str,
@@ -2106,7 +2140,9 @@ public:
     /// @sa Find
     /// @deprecated
     ///   Use FindWord() variant with EDirection parameter:
+    ///   @code
     ///       FindWord(str, word, [use_case], [direction])
+    ///   @endcode
     inline
     NCBI_DEPRECATED
     static SIZE_TYPE FindWord(const CTempString str,
@@ -2326,7 +2362,7 @@ public:
         fSplit_Truncate_End    = 1 << 2,  ///< Truncate trailing delimiters
         fSplit_Truncate        = fSplit_Truncate_Begin | fSplit_Truncate_End,
         fSplit_ByPattern       = 1 << 3,  ///< Require full delimiter strings
-        fSplit_CanEscape       = 1 << 4,  ///< Allow \... escaping
+        fSplit_CanEscape       = 1 << 4,  ///< Allow \\... escaping
         fSplit_CanSingleQuote  = 1 << 5,  ///< Allow '...' quoting
         fSplit_CanDoubleQuote  = 1 << 6,  ///< Allow "..." quoting
         fSplit_CanQuote        = fSplit_CanSingleQuote | fSplit_CanDoubleQuote,
@@ -2690,7 +2726,7 @@ public:
     /// Get a printable version of the specified string. 
     ///
     /// All non-printable characters will be represented as "\r", "\n", "\v",
-    /// "\t", "\"", "\\", etc, or "\ooo" where 'ooo' is an octal code of the
+    /// "\t", "\"", "\\\\", etc, or "\\ooo" where 'ooo' is an octal code of the
     /// character.  The resultant string is a well-formed C string literal,
     /// which, without alterations, can be compiled by a C/C++ compiler.
     /// In many instances, octal representations of non-printable characters
