@@ -1426,7 +1426,7 @@ void
 CMappingArgs::ExtractAlgorithmOptions(const CArgs& args,
                                       CBlastOptions& opt)
 {
-    if (args.Exist(kArgScore) and (args[kArgScore])) {
+    if (args.Exist(kArgScore) && args[kArgScore]) {
         opt.SetCutoffScore(args[kArgScore].AsInteger());
     }
 
