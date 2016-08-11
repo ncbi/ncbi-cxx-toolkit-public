@@ -81,9 +81,7 @@ def create_new_tarball_name(platform, version):
     """
     
     retval = "ncbi-blast-" + version + "+"
-    if platform.startswith("Win32"):
-        retval += "-ia32-win32"
-    elif platform.startswith("Win64"):
+    if platform.startswith("Win"):
         retval += "-x64-win64"
     elif platform.startswith("Linux32"):
         retval += "-ia32-linux"
