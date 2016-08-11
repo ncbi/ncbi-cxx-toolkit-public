@@ -456,6 +456,8 @@ gpipe_objutil needs xalnmgr
 gpipe_objutil needs3party $(UUID_LIBS)
 gpipe_prodigal needs bacterial_pipeline_proc
 gpipe_property needs gpipe_common
+gpipe_remap needs $(SDBAPI_LIB)
+gpipe_remap needs xconnect
 gpipe_remap needs xobjreadex
 gpipe_resource_req needs xncbi
 gpipe_sadb needs $(COMPRESS_LIBS)
