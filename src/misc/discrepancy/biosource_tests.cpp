@@ -2060,7 +2060,7 @@ DISCREPANCY_CASE(MISSING_PRIMER, CBioSource, eOncaller, "Missing values in prime
         while (fwd != fwdset.Get().end() && rev != revset.Get().end()) {
             if (((*fwd)->CanGetName() && (*fwd)->GetName().Get().empty()) != ((*rev)->CanGetName() && (*rev)->GetName().Get().empty())
                     || ((*fwd)->CanGetSeq() && (*fwd)->GetSeq().Get().empty()) != ((*rev)->CanGetSeq() && (*rev)->GetSeq().Get().empty())) {
-                m_Objs["[n] biosource[s] [has] primer set[s] with missing values"].Add(*context.NewFeatOrDescObj(eNoRef, true));
+                m_Objs["[n] biosource[s] [has] primer set[s] with missing values"].Add(*context.NewFeatOrDescObj());
                 return;
             }
             fwd++;
@@ -2078,15 +2078,59 @@ DISCREPANCY_SUMMARIZE(MISSING_PRIMER)
 
 // DUPLICATE_PRIMER_SET
 
+static bool EqualPrimerSets(const CPCRPrimerSet::Tdata& a, const CPCRPrimerSet::Tdata& b)
+{
+    size_t count_a = 0;
+    size_t count_b = 0;
+    for (CPCRPrimerSet::Tdata::const_iterator it = a.begin(); it != a.end(); it++) {
+        count_a++;
+    }
+    for (CPCRPrimerSet::Tdata::const_iterator jt = b.begin(); jt != b.end(); jt++) {
+        count_b++;
+    }
+    if (count_a != count_b) {
+        return false;
+    }
+    for (CPCRPrimerSet::Tdata::const_iterator it = a.begin(); it != a.end(); it++) {
+        CPCRPrimerSet::Tdata::const_iterator jt = b.begin();
+        for (; jt != b.end(); jt++) {
+            if ((*it)->CanGetName() == (*jt)->CanGetName() && (*it)->CanGetSeq() == (*jt)->CanGetSeq()
+                    && (!(*it)->CanGetName() || (*it)->GetName().Get() == (*jt)->GetName().Get())
+                    && (!(*it)->CanGetSeq() || (*it)->GetSeq().Get() == (*jt)->GetSeq().Get())) {
+                break;
+            }
+        }
+        if (jt != b.end()) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
+static bool inline FindDuplicatePrimers(const CPCRReaction& a, const CPCRReaction& b)
+{
+    return a.CanGetForward() == b.CanGetForward() && a.CanGetReverse() == b.CanGetReverse()
+        && (!a.CanGetForward() || EqualPrimerSets(a.GetForward().Get(), b.GetForward().Get()))
+        && (!a.CanGetReverse() || EqualPrimerSets(a.GetReverse().Get(), b.GetReverse().Get()));
+}
+
+
 DISCREPANCY_CASE(DUPLICATE_PRIMER_SET, CBioSource, eOncaller, "Duplicate PCR primer pair")
 {
     if (!obj.CanGetPcr_primers() || !obj.GetPcr_primers().CanGet()) {
         return;
     }
-    ITERATE (CPCRReactionSet::Tdata, pr, obj.GetPcr_primers().Get()) {
-        //(*pr)->
+    const CPCRReactionSet::Tdata data = obj.GetPcr_primers().Get();
+    for (CPCRReactionSet::Tdata::const_iterator it = data.begin(); it != data.end(); it++) {
+        CPCRReactionSet::Tdata::const_iterator jt = it;
+        for (jt++; jt != data.end(); jt++) {
+            if (FindDuplicatePrimers(**it, **jt)) {
+                m_Objs["[n] BioSource[s] [has] duplicate primer pairs."].Add(*context.NewFeatOrDescObj(eNoRef, true));
+                return;
+            }
+        }
     }
-    //m_Objs["[n] country source[s] [has] more than 1 colon."].Add(*context.NewFeatOrDescObj(eNoRef, true));
 }
 
 
