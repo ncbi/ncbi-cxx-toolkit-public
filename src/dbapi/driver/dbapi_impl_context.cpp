@@ -270,7 +270,7 @@ void CDriverContext::ResetEnvSybase(void)
 
 void CDriverContext::x_Recycle(CConnection* conn, bool conn_reusable)
 {
-    CMutexGuard mg(x_GetCtxMtx());
+    CMutexGuard mg(m_PoolMutex);
 
     TConnPool::iterator it = find(m_InUse.begin(), m_InUse.end(), conn);
 
@@ -310,7 +310,7 @@ void CDriverContext::x_Recycle(CConnection* conn, bool conn_reusable)
 void CDriverContext::CloseUnusedConnections(const string&   srv_name,
                                              const string&   pool_name)
 {
-    CMutexGuard mg(x_GetCtxMtx());
+    CMutexGuard mg(m_PoolMutex);
 
     TConnPool::value_type con;
 
@@ -318,7 +318,9 @@ void CDriverContext::CloseUnusedConnections(const string&   srv_name,
     NON_CONST_ITERATE(TConnPool, it, m_NotInUse) {
         con = *it;
 
-        if((!srv_name.empty()) && srv_name.compare(con->ServerName())) continue;
+        if ( !srv_name.empty()  && srv_name != con->ServerName()
+            &&  srv_name != con->GetRequestedServer() )
+            continue;
         if((!pool_name.empty()) && pool_name.compare(con->PoolName())) continue;
 
         it = m_NotInUse.erase(it);
@@ -330,7 +332,7 @@ void CDriverContext::CloseUnusedConnections(const string&   srv_name,
 unsigned int CDriverContext::NofConnections(const TSvrRef& svr_ref,
                                             const string& pool_name) const
 {
-    CMutexGuard mg(x_GetCtxMtx());
+    CMutexGuard mg(m_PoolMutex);
 
     if ((!svr_ref  ||  !svr_ref->IsValid())  &&  pool_name.empty()) {
         return static_cast<unsigned int>(m_InUse.size() + m_NotInUse.size());
@@ -352,7 +354,8 @@ unsigned int CDriverContext::NofConnections(const TSvrRef& svr_ref,
         ITERATE(TConnPool, it, (*pools[i])) {
             TConnPool::value_type con = *it;
             if(!server.empty()) {
-                if (server.compare(con->ServerName()))
+                if (server != con->ServerName()
+                    &&  server != con->GetRequestedServer())
                     continue;
             }
             else if (host != 0) {
@@ -377,6 +380,7 @@ unsigned int CDriverContext::NofConnections(const string& srv_name,
 CDB_Connection* CDriverContext::MakeCDBConnection(CConnection* connection)
 {
     connection->m_CleanupTime.Clear();
+    CMutexGuard mg(m_PoolMutex);
     m_InUse.push_back(connection);
 
     return new CDB_Connection(connection);
@@ -403,7 +407,7 @@ CDB_Connection*
 CDriverContext::MakePooledConnection(const CDBConnParams& params)
 {
     if (params.GetParam("is_pooled") == "true") {
-        CMutexGuard mg(x_GetCtxMtx());
+        CMutexGuard mg(m_PoolMutex);
 
         string pool_name(params.GetParam("pool_name"));
         if (!m_NotInUse.empty()) {
@@ -434,8 +438,8 @@ CDriverContext::MakePooledConnection(const CDBConnParams& params)
                 }
             }
             else {
-
-                if ( params.GetServerName().empty() ) {
+                string server_name = params.GetServerName();
+                if ( server_name.empty() ) {
                     return NULL;
                 }
 
@@ -443,7 +447,8 @@ CDriverContext::MakePooledConnection(const CDBConnParams& params)
                 ERASE_ITERATE(TConnPool, it, m_NotInUse) {
                     CConnection* t_con(*it);
 
-                    if (params.GetServerName() == t_con->ServerName()) {
+                    if (server_name == t_con->ServerName()
+                        ||  server_name == t_con->GetRequestedServer()) {
                         it = m_NotInUse.erase(it);
                         if (t_con->Refresh()) {
                             /* Future development ...
@@ -487,7 +492,7 @@ CDriverContext::MakePooledConnection(const CDBConnParams& params)
                     m_PoolSemSubject = pool_name;
                     mg.Release();
                     if (m_PoolSem.TryWait(timeout)) {
-                        mg.Guard(x_GetCtxMtx());
+                        mg.Guard(m_PoolMutex);
                         CConnection* t_con = NULL;
                         NON_CONST_REVERSE_ITERATE(TConnPool, it, m_NotInUse) {
                             if (*it == m_PoolSemConn) {
@@ -546,6 +551,7 @@ CDriverContext::MakePooledConnection(const CDBConnParams& params)
 void
 CDriverContext::CloseAllConn(void)
 {
+    CMutexGuard mg(m_PoolMutex);
     // close all connections first
     ITERATE(TConnPool, it, m_NotInUse) {
         delete *it;
@@ -560,6 +566,7 @@ CDriverContext::CloseAllConn(void)
 void
 CDriverContext::DeleteAllConn(void)
 {
+    CMutexGuard mg(m_PoolMutex);
     // close all connections first
     ITERATE(TConnPool, it, m_NotInUse) {
         delete *it;
@@ -876,7 +883,7 @@ CDriverContext::ReadDBConfParams(const string&  service_name,
 bool
 CDriverContext::SatisfyPoolMinimum(const CDBConnParams& params)
 {
-    CMutexGuard mg(x_GetCtxMtx());
+    CMutexGuard mg(m_PoolMutex);
 
     string pool_min_str = params.GetParam("pool_minsize");
     if (pool_min_str.empty()  ||  pool_min_str == "default")
@@ -1099,7 +1106,7 @@ CDriverContext::MakeConnection(const CDBConnParams& params)
 
 void CDriverContext::CloseConnsForPool(const string& pool_name)
 {
-    CMutexGuard mg(x_GetCtxMtx());
+    CMutexGuard mg(m_PoolMutex);
 
     ITERATE(TConnPool, it, m_InUse) {
         CConnection* t_con(*it);
@@ -1120,6 +1127,7 @@ void CDriverContext::CloseConnsForPool(const string& pool_name)
 void CDriverContext::CloseOldIdleConns(unsigned int max_closings,
                                        const string& pool_name)
 {
+    CMutexGuard mg(m_PoolMutex);
     if (max_closings == 0) {
         return;
     }

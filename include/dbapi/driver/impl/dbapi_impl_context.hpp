@@ -267,6 +267,7 @@ protected:
 
 private:
     mutable CMutex  m_DefaultCtxMtx;
+    mutable CMutex  m_PoolMutex; //< for m_PoolSem* and m_(Not)InUse
     CSemaphore      m_PoolSem;
     string          m_PoolSemSubject;
     CConnection*    m_PoolSemConn;

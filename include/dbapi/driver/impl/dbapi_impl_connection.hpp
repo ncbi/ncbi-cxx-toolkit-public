@@ -120,6 +120,11 @@ public:
         return *m_ExceptionContext;
     }
 
+    const string& GetRequestedServer(void) const
+    {
+        return m_RequestedServer;
+    }
+
 public:
     /// Check out if connection is alive (this function doesn't ping the server,
     /// it just checks the status of connection which was set by the last
@@ -328,6 +333,7 @@ private:
     CDBConnParams::EServerType      m_ServerType;
     bool                            m_ServerTypeIsKnown;
 
+    const string   m_RequestedServer;
     Uint4          m_Host;
     Uint2          m_Port;
     const string   m_Passwd;

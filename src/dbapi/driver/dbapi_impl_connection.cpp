@@ -98,6 +98,7 @@ CConnection::CConnection(CDriverContext& dc,
 , m_ExceptionContext(new TDbgInfo(params))
 , m_ServerType(params.GetServerType())
 , m_ServerTypeIsKnown(false)
+, m_RequestedServer(params.GetServerName())
 , m_Host(params.GetHost())
 , m_Port(params.GetPort())
 , m_Passwd(params.GetPassword())
