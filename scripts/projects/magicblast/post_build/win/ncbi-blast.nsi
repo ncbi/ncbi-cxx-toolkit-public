@@ -21,7 +21,7 @@ FunctionEnd
 
   ;Name and file
   Name "NCBI Magic-BLAST BLAST_VERSION"
-  OutFile "ncbi-magiclast-BLAST_VERSION.exe"
+  OutFile "ncbi-magicblast-BLAST_VERSION.exe"
   ; Install/uninstall icons
   !define MUI_ICON "ncbilogo.ico"
   !define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\nsis1-uninstall.ico"
