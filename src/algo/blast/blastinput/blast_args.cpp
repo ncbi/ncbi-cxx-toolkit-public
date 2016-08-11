@@ -1426,20 +1426,8 @@ void
 CMappingArgs::ExtractAlgorithmOptions(const CArgs& args,
                                       CBlastOptions& opt)
 {
-    if (args.Exist(kArgScore)) {
-        if (args[kArgScore]) {
-            opt.SetCutoffScore(args[kArgScore].AsInteger());
-        }
-        else {
-            // if not present in command line, cutoff score is equal to word
-            // size
-            if (args.Exist(kArgWordSize) && args[kArgWordSize]) {
-                opt.SetCutoffScore(args[kArgWordSize].AsInteger());
-            }
-            else {
-                opt.SetCutoffScore(opt.GetWordSize());
-            }
-        }
+    if (args.Exist(kArgScore) and (args[kArgScore])) {
+        opt.SetCutoffScore(args[kArgScore].AsInteger());
     }
 
     if (args.Exist(kArgSplice) && args[kArgSplice]) {
