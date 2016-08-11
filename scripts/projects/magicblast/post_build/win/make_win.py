@@ -63,7 +63,7 @@ def main():
     readme_file = os.path.join(SCRIPT_DIR, "..", "..", "README")
     shutil.copy(readme_file, cwd)    
 
-    for aux_file in ("EnvVarUpdate.nsh", "ncbilogo.ico"):
+    for aux_file in ("EnvVarUpdate.nsh", "ncbilogo.ico", "unix2dos.nsh"):
         src = os.path.join(SCRIPT_DIR, aux_file)
         if VERBOSE:
             print("Copying", src, "to", cwd)
