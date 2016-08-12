@@ -400,10 +400,11 @@ string CConnection::GetDriverName(void) const
 
 void CConnection::x_RecordServer(const CDBServer& server)
 {
+    string new_name = ServerName().substr(0, ServerName().find(':'))
+        + '@' + server.GetName();
     _TRACE("Updating server metadata from " << ServerName() << '@'
-           << ConvertN2A(m_Host) << ':' << m_Port << " to " << server.GetName()
-           << '@' << ConvertN2A(server.GetHost()) << ':' << server.GetPort());
-    m_ExceptionContext->server_name = server.GetName();
+           << ConvertN2A(m_Host) << ':' << m_Port << " to " << new_name);
+    m_ExceptionContext->server_name = new_name;
     m_Host = server.GetHost();
     m_Port = server.GetPort();
 }
