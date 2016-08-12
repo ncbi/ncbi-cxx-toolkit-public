@@ -282,7 +282,6 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
         diagnosis += ", ";
         diagnosis += uniq == num ? "all unique" : bins == 1 ? "all same" : "some duplicates";
         diagnosis += mul ? ", some multi)" : ")";
-cout << "DIAG: {" + diagnosis + "}\n";
         report[diagnosis];
         if ((num != total || bins != 1) && (it->first == "collection-date" || it->first == "country" || it->first == "isolation-source" || it->first == "strain")) {
             report[diagnosis].Fatal();
