@@ -176,7 +176,7 @@ int CNetCacheBlobFetchApp::OnException(std::exception& e, CNcbiOstream& os)
         os << "Status: " << status_str << HTTP_EOL <<
                 "Content-Type: text/plain" HTTP_EOL HTTP_EOL <<
                 "ERROR:  " << status_str << " " HTTP_EOL HTTP_EOL <<
-                message << HTTP_EOL;
+                NStr::HtmlEncode(message) << HTTP_EOL;
 
         // Check for problems in sending the response
         if (!os.good()) {
