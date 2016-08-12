@@ -67,15 +67,31 @@ USING_SCOPE(blast);
 USING_SCOPE(objects);
 #endif
 
+static const int   kMajorVersion = 1;
+static const int   kMinorVersion = 0;
+static const int   kPatchVersion = 0;
+static const char* kReleaseDate = "September-09-2016";
+
+class CMagicBlastVersion : public CVersionInfo
+{
+public:
+    CMagicBlastVersion() : CVersionInfo(kMajorVersion,
+                                        kMinorVersion,
+                                        kPatchVersion,
+                                        kReleaseDate)
+    {}
+};
+
+
 class CMagicBlastApp : public CNcbiApplication
 {
 public:
     /** @inheritDoc */
     CMagicBlastApp()
     {
-//        CRef<CVersion> version(new CVersion());
-//        version->SetVersionInfo(new CBlastVersion());
-//        SetFullVersion(version);
+        CRef<CVersion> version(new CVersion());
+        version->SetVersionInfo(new CMagicBlastVersion());
+        SetFullVersion(version);
     }
 private:
     /** @inheritDoc */
@@ -99,9 +115,9 @@ void CMagicBlastApp::Init()
 
     CArgDescriptions* arg_desc = m_CmdLineArgs->SetCommandLine();
     arg_desc->SetCurrentGroup("Mapping options");
-    arg_desc->AddDefaultKey("batch_size", "num", "Number of query sequences "
-                            "read in a single batch",
-                            CArgDescriptions::eInteger, "1000000");
+    arg_desc->AddOptionalKey("batch_size", "num", "Number of query sequences "
+                             "read in a single batch",
+                             CArgDescriptions::eInteger);
     SetupArgDescriptions(arg_desc);
 }
 
@@ -1137,20 +1153,25 @@ int CMagicBlastApp::Run(void)
         // message.
         int num_query_threads = 1;
         int num_db_threads = 1;
+        int batch_size = 0;
 
         // we thread searches against smaller databases by queries and against
         // larger database by database
         Uint8 db_size = s_GetDbSize(db_adapter);
         if (db_size < kLargeDb) {
             num_query_threads = m_CmdLineArgs->GetNumThreads();
+            batch_size = 500000;
         }
         else {
             num_db_threads = m_CmdLineArgs->GetNumThreads();
+            batch_size = 1000000;
         }
 
         /*** Process the input ***/
 //        int batch_size = m_CmdLineArgs->GetQueryBatchSize() / num_query_threads;
-        int batch_size = args["batch_size"].AsInteger() / num_query_threads;
+        if (args["batch_size"]) {
+            batch_size = args["batch_size"].AsInteger();
+        }
         CRef<CBlastInputSourceOMF> fasta = s_CreateInputSource(query_opts,
                                                                m_CmdLineArgs,
                                                                batch_size);
