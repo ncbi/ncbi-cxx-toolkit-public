@@ -303,6 +303,7 @@ static int s_Client(int x_port, unsigned int max_try)
         if (n != msglen) {
             CORE_LOGF(eLOG_Error, ("[Client]  Received message of wrong size: "
                                    "%lu", (unsigned long) n));
+            SOCK_Close(client);
             return 1;
         }
 
@@ -323,6 +324,7 @@ static int s_Client(int x_port, unsigned int max_try)
         break;
     }
     if (m > max_try)
+        SOCK_Close(client);
         return 1;
 
     for (n = sizeof(unsigned long);  n < msglen - 10;  n++) {
@@ -333,6 +335,7 @@ static int s_Client(int x_port, unsigned int max_try)
     if (n < msglen - 10) {
         CORE_LOGF(eLOG_Error, ("[Client]  Bounced message corrupted, off=%lu",
                                (unsigned long) n));
+        SOCK_Close(client);
         return 1;
     }
 
