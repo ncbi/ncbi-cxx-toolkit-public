@@ -1,0 +1,264 @@
+Seq-entry ::= set {
+  class genbank ,
+  seq-set {
+    seq {
+      id {
+        local
+          str "BankIt1890853" ,
+        general {
+          db "BankIt" ,
+          tag
+            str "1890853" } ,
+        general {
+          db "TMSMART" ,
+          tag
+            id 62619130 } ,
+        genbank {
+          accession "KU664323" } } ,
+      descr {
+        title "Enterococcus faecium strain E7 16S ribosomal RNA gene, partial
+ sequence." ,
+        source {
+          genome genomic ,
+          org {
+            taxname "Enterococcus faecium" ,
+            db {
+              {
+                db "taxon" ,
+                tag
+                  id 1352 } } ,
+            orgname {
+              name
+                binomial {
+                  genus "Enterococcus" ,
+                  species "faecium" } ,
+              mod {
+                {
+                  subtype strain ,
+                  subname "E7" } ,
+                {
+                  subtype nat-host ,
+                  subname "Homo sapiens" } } ,
+              lineage "Bacteria; Firmicutes; Bacilli; Lactobacillales;
+ Enterococcaceae; Enterococcus" ,
+              gcode 11 ,
+              div "BCT" } } ,
+          subtype {
+            {
+              subtype other ,
+              name "[amplified with species-specific primers]" } } } ,
+        molinfo {
+          biomol genomic ,
+          completeness partial } ,
+        pub {
+          pub {
+            gen {
+              cit "Unpublished" ,
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Liu" ,
+                          first "Wei" ,
+                          initials "W." } } } } ,
+              title "Isolation and identification of a strain of Veillonella
+ in human intestine gut and its metabolic traits" } } } ,
+        pub {
+          pub {
+            sub {
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Liu" ,
+                          first "Wei" ,
+                          initials "W." } } } ,
+                affil
+                  std {
+                    affil "Shanxi Medical University Fenyang College" ,
+                    div "The Center of Science and Technology" ,
+                    city "Fenyang" ,
+                    sub "Shanxi" ,
+                    country "China" ,
+                    street "Xueyuan BeiLu 16" ,
+                    postal-code "032200" } } ,
+              medium email ,
+              date
+                std {
+                  year 2016 ,
+                  month 1 ,
+                  day 30 } } } } ,
+        user {
+          class "SMART_V1.0" ,
+          type
+            id 1 ,
+          data {
+            {
+              label
+                id 1 ,
+              num 1 ,
+              data
+                int 10189276 } } } ,
+        user {
+          type
+            str "Submission" ,
+          data {
+            {
+              label
+                str "SmartComment" ,
+              data
+                str "ALT EMAIL:weilxmx@gmail.com" } ,
+            {
+              label
+                str "AdditionalComment" ,
+              data
+                str "BankIt1890853" } } } ,
+        user {
+          type
+            str "Submission" ,
+          data {
+            {
+              label
+                str "SmartComment" ,
+              data
+                str "TOTAL # OF SEQS:1" } } } ,
+        user {
+          type
+            str "Submission" ,
+          data {
+            {
+              label
+                str "AdditionalComment" ,
+              data
+                str "LocalID:BankIt1890853" } } } ,
+        user {
+          class "1.0" ,
+          type
+            str "AutodefOptions" ,
+          data {
+            {
+              label
+                str "SpecifyNuclearProduct" ,
+              data
+                bool TRUE } ,
+            {
+              label
+                str "MiscFeatRule" ,
+              data
+                str "NoncodingProductFeat" } ,
+            {
+              label
+                str "FeatureListType" ,
+              data
+                str "List All Features" } ,
+            {
+              label
+                str "ModifierList" ,
+              data
+                fields {
+                  {
+                    label
+                      str "OrgMods" ,
+                    num 1 ,
+                    data
+                      strs {
+                        "Strain" } } } } ,
+            {
+              label
+                str "HIVRule" ,
+              data
+                str "WantBoth" } ,
+            {
+              label
+                str "DoNotApplyToSp" ,
+              data
+                bool TRUE } ,
+            {
+              label
+                str "LeaveParenthetical" ,
+              data
+                bool TRUE } ,
+            {
+              label
+                str "MaxMods" ,
+              data
+                int -99 } ,
+            {
+              label
+                str "UseLabels" ,
+              data
+                bool TRUE } } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 11 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2016 } } } ,
+        update-date
+          std {
+            year 2016 ,
+            month 8 ,
+            day 3 } } ,
+      inst {
+        repr raw ,
+        mol dna ,
+        length 960 ,
+        strand ds ,
+        seq-data
+          ncbi2na 'AA80C2A08470E4B619F7FF51689F9D45A00228BA606AE2C11BAB05E54D2
+0AA3047E804AE70C5B304340164EBFE3F80A67F6AED9E3A3A159AE4F272FAE2B069D1429463932
+585E22AE36944FA8788469501D71A8A492CA837DA43A180B785890659B8B820AFF68DB0077BEF2
+20810A388B07BD357E1ACDC14809469C1C6E524966B0C6CAE909BED68FCFA9B026264A6BF7C2DE
+3B80955A7416A8AB4FA01EA21F8B9208A22E83D4EEC9AE039B2333A28114BA60A69DDEB7B07867
+8A76026EA890128F2315EB2D465B018E2E70BBE8ABF595F4B9E49C193C247597AA2C61642BE01D
+0283E1AAA564426BA24EEBF0F609066'H } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  rna {
+                    type rRNA ,
+                    ext
+                      name "16S ribosomal RNA" } ,
+                partial TRUE ,
+                location
+                  int {
+                    from 0 ,
+                    to 959 ,
+                    strand plus ,
+                    id
+                      genbank {
+                        accession "KU664323" } ,
+                    fuzz-from
+                      lim lt ,
+                    fuzz-to
+                      lim gt } } } } } } } }

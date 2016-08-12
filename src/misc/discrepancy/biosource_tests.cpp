@@ -2011,6 +2011,61 @@ DISCREPANCY_SUMMARIZE(CHECK_AUTHORITY)
 }
 
 
+// TRINOMIAL_SHOULD_HAVE_QUALIFIER
+
+static const pair<int, string> srcqual_keywords[] = {
+    { COrgMod::eSubtype_forma_specialis, " f. sp." } ,
+    { COrgMod::eSubtype_forma, " f." } ,
+    { COrgMod::eSubtype_sub_species, " subsp." } ,
+    { COrgMod::eSubtype_variety, " var." } ,
+    { COrgMod::eSubtype_pathovar, " pv." }
+};
+
+static const size_t srcqual_keywords_sz = sizeof(srcqual_keywords) / sizeof(srcqual_keywords[0]);
+
+static string GetSrcQual(const CBioSource& bs, int qual)
+{
+    ITERATE (COrgName::TMod, it, bs.GetOrg().GetOrgname().GetMod()) {
+        if ((*it)->CanGetSubtype() && (*it)->GetSubtype() == qual) {
+            return (*it)->GetSubname();
+        }
+    }
+    return kEmptyStr;
+}
+
+
+DISCREPANCY_CASE(TRINOMIAL_SHOULD_HAVE_QUALIFIER, CBioSource, eDisc | eOncaller | eSmart, "Trinomial sources should have corresponding qualifier")
+{
+    if (!obj.IsSetOrg() || !obj.GetOrg().CanGetTaxname() || !obj.GetOrg().GetTaxname().length() || NStr::FindNoCase(obj.GetOrg().GetTaxname(), " x ") != NPOS 
+            || CDiscrepancyContext::HasLineage(obj, context.GetLineage(), "Viruses")) {
+        return;
+    }
+    const string& taxname = obj.GetOrg().GetTaxname();
+    for (size_t i = 0; i < srcqual_keywords_sz; i++) {
+        size_t n = NStr::FindNoCase(taxname, srcqual_keywords[i].second);
+        if (n != NPOS) {
+            for (n+= srcqual_keywords[i].second.length(); n < taxname.length(); n++) {
+                if (taxname[n] != ' ') {
+                    break;
+                }
+            }
+            if (n < taxname.length()) {
+                string s = taxname.substr(n);
+                if (NStr::CompareNocase(s, GetSrcQual(obj, srcqual_keywords[i].first))) {
+                    m_Objs["[n] trinomial source[s] lack[S] corresponding qualifier"].Add(*context.NewFeatOrDescObj());
+                }
+            }
+        }
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(TRINOMIAL_SHOULD_HAVE_QUALIFIER)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
 // AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE
 
 static const string kAmplifiedPrimers = "[n] biosource[s] [has] \'amplified with species-specific primers\' note but no environmental-sample qualifier.";
@@ -2137,6 +2192,25 @@ DISCREPANCY_CASE(DUPLICATE_PRIMER_SET, CBioSource, eOncaller, "Duplicate PCR pri
 DISCREPANCY_SUMMARIZE(DUPLICATE_PRIMER_SET)
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+static bool FixDuplicatePrimerSet(CBioSource& src)
+{
+    if (!src.CanGetPcr_primers() || !src.GetPcr_primers().CanGet()) {
+        return false;
+    }
+    bool fixed = false;
+    // todo
+    return fixed;
+}
+
+
+DISCREPANCY_AUTOFIX(DUPLICATE_PRIMER_SET)
+{
+    TReportObjectList list = item->GetDetails();
+    unsigned int n = AutofixBiosrc(list, scope, FixDuplicatePrimerSet);
+    return CRef<CAutofixReport>(n ? new CAutofixReport("DUPLICATE_PRIMER_SET: [n] PCR primer set[s] removed", n) : 0);
 }
 
 
