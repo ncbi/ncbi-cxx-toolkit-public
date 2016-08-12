@@ -253,6 +253,7 @@ static int s_Client(int x_port, unsigned int max_try)
     if (!(buf = (char*) malloc(2 * msglen))) {
         CORE_LOG_ERRNO(eLOG_Error, errno,
                        "[Client]  Cannot allocate message buffer");
+        SOCK_Close(client);
         return 1;
     }
 
@@ -276,6 +277,7 @@ static int s_Client(int x_port, unsigned int max_try)
             != eIO_Success) {
             CORE_LOGF(eLOG_Error, ("[Client]  Cannot send to DSOCK: %s",
                                    IO_StatusStr(status)));
+            SOCK_Close(client);
             return 1;
         }
 
@@ -285,6 +287,7 @@ static int s_Client(int x_port, unsigned int max_try)
             != eIO_Success) {
             CORE_LOGF(eLOG_Error, ("[Client]  Cannot set read timeout: %s",
                                    IO_StatusStr(status)));
+            SOCK_Close(client);
             return 1;
         }
 
@@ -336,6 +339,7 @@ static int s_Client(int x_port, unsigned int max_try)
     if (strcmp(buf + msglen*2 - 10, "--Reply--") != 0) {
         CORE_LOGF(eLOG_Error, ("[Client]  No signature in the message: %.9s",
                                buf + msglen*2 - 10));
+        SOCK_Close(client);
         return 1;
     }
 
