@@ -1,6 +1,6 @@
 # $Id$
 
-LIB_PROJ = ncbi_xreader_gicache
+# LIB_PROJ = ncbi_xreader_gicache
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

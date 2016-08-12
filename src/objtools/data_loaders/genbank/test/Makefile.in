@@ -4,9 +4,10 @@
 #################################
 
 APP_PROJ = \
-	test_reader_id1 test_reader_pubseq test_reader_gicache \
+	test_reader_id1 test_reader_pubseq \
 	test_objmgr_gbloader test_objmgr_gbloader_mt \
 	test_bulkinfo test_bulkinfo_mt
+# test_reader_gicache
 
 PROJ_TAG = test
 
