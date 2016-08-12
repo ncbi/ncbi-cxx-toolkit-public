@@ -1715,6 +1715,24 @@ bool s_IsBioSample(const CBioseq_Handle& bsh)
 }
 
 
+static bool s_HasBadPlasmidChromLinkName(const string& name, const string& taxname)
+
+{
+    if (name.length() < 1) return false;
+
+    if (name.length() > 33) return true;
+
+    if (NStr::FindNoCase(name, "plasmid") != NPOS) return true;
+    if (NStr::FindNoCase(name, "chromosome") != NPOS) return true;
+    if (NStr::FindNoCase(name, "linkage group") != NPOS) return true;
+    if (NStr::FindNoCase(name, "chr") != NPOS) return true;
+
+    if (taxname.length() > 0 && NStr::FindNoCase(name, taxname) != NPOS) return true;
+
+    return false;
+}
+
+
 void CValidError_imp::ValidateBioSourceForSeq
 (const CBioSource&    source,
 const CSerialObject& obj,
@@ -1841,6 +1859,18 @@ const CBioseq_Handle& bsh)
                 } else {
                     PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
                         "cRNA note redundant with molecule type",
+                        obj, ctx);
+                }
+            }
+            break;
+        case CSubSource::eSubtype_chromosome:
+        case CSubSource::eSubtype_plasmid_name:
+        case CSubSource::eSubtype_linkage_group:
+            if ((*it)->IsSetName() && source.IsSetOrg() && source.GetOrg().IsSetTaxname()) {
+                const string& name = (*it)->GetName();
+                if (s_HasBadPlasmidChromLinkName (name, source.GetOrg().GetTaxname())) {
+                    PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BioSourceInconsistency,
+                        "Problematic plasmid/chromosome/linkage group name '" + name + "'",
                         obj, ctx);
                 }
             }
