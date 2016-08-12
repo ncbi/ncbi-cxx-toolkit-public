@@ -54,8 +54,11 @@ static string OrderQual(const string& s)
 {
     static string names[] = {
         "collected-by",
+        "collection-date",
         "country",
         "identified-by",
+        "isolate",
+        "isolation-source",
         "host",
         "fwd-primer-name",
         "fwd-primer-seq",
@@ -71,6 +74,7 @@ static string OrderQual(const string& s)
         "taxname",
         "tissue-type",
         "taxid",
+        "altitude",
         "location"
     };
     const size_t sz = sizeof(names) / sizeof(names[0]);
@@ -278,6 +282,7 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
         diagnosis += ", ";
         diagnosis += uniq == num ? "all unique" : bins == 1 ? "all same" : "some duplicates";
         diagnosis += mul ? ", some multi)" : ")";
+cout << "DIAG: {" + diagnosis + "}\n";
         report[diagnosis];
         if ((num != total || bins != 1) && (it->first == "collection-date" || it->first == "country" || it->first == "isolation-source" || it->first == "strain")) {
             report[diagnosis].Fatal();
