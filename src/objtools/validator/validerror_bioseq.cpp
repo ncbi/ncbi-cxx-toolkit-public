@@ -137,6 +137,182 @@ BEGIN_SCOPE(validator)
 USING_SCOPE(sequence);
 USING_SCOPE(feature);
 
+class CMatchCDS;
+
+class CMatchFeat : public CObject
+{
+public:
+    CMatchFeat(const CMappedFeat &feat);
+    ~CMatchFeat(void) {};
+
+    const CSeq_feat& GetFeat() const
+    {
+        return *m_feat;
+    }
+    bool operator < (const CMatchFeat& o) const
+    {
+        const CMatchFeat& l = *this;
+        const CMatchFeat& r = o;
+
+        const CSeq_feat& lf = l.GetFeat();
+        const CSeq_feat& rf = r.GetFeat();
+
+        if (l.m_pos_start != r.m_pos_start)
+            return l.m_pos_start < r.m_pos_start;
+
+        if (l.m_pos_stop != r.m_pos_stop)
+            return l.m_pos_stop < r.m_pos_stop;
+
+        if (lf.Compare(rf) < 0)
+            return true;
+
+        return false;
+    }
+
+    bool FastMatchX(const CMatchFeat& o) const
+    {
+        if (m_pos_start <= o.m_pos_start && o.m_pos_start <= m_pos_stop)
+            return true;
+
+        if (o.m_pos_start <= m_pos_stop && m_pos_stop <= o.m_pos_stop)
+            return true;
+
+        if (m_pos_start < o.m_pos_start && o.m_pos_stop < m_pos_stop)
+            return true;
+
+        if (o.m_pos_start < m_pos_start && m_pos_stop < o.m_pos_stop)
+            return true;
+
+        return false;
+    }
+    TSeqPos minpos() const
+    {
+        //return min(m_pos_start, m_pos_stop);
+        return m_pos_start;
+    }
+    TSeqPos maxpos() const
+    {
+        //return max(m_pos_start, m_pos_stop);
+        return m_pos_stop;
+    }
+protected:
+    CConstRef<CSeq_feat> m_feat;
+private:
+    TSeqPos m_pos_start;
+    TSeqPos m_pos_stop;
+};
+
+
+class CMatchmRNA : public CMatchFeat
+{
+public:
+    CMatchmRNA(const CMappedFeat &mrna) : CMatchFeat(mrna), m_AccountedFor(false) {};
+    ~CMatchmRNA(void) {};
+
+    void SetCDS(const CSeq_feat& cds) 
+        {
+            m_Cds = Ref(&cds);
+            m_AccountedFor = true;
+        }
+
+    void AddCDS(CMatchCDS& cds) { m_UnderlyingCDSs.push_back(Ref(&cds)); }
+    bool IsAccountedFor(void) const { return m_AccountedFor; }
+    void SetAccountedFor(bool val) { m_AccountedFor = val; }
+    bool MatchesUnderlyingCDS(unsigned int partial_type) const;
+    bool MatchAnyUnderlyingCDS(unsigned int partial_type) const;
+    bool HasCDSMatch(void);
+
+private:
+    CConstRef<CSeq_feat> m_Cds;
+    vector < CRef<CMatchCDS> > m_UnderlyingCDSs;
+    bool m_AccountedFor;
+};
+
+
+class CMatchCDS : public CMatchFeat
+{
+public:
+    CMatchCDS(const CMappedFeat &cds) :
+        CMatchFeat(cds),
+        m_AssignedMrna(NULL),
+        m_XrefMatch(false),
+        m_NeedsmRNA(true)
+    {};
+
+    ~CMatchCDS(void) {};
+
+    void AddmRNA(CMatchmRNA& mrna) { m_OverlappingmRNAs.push_back(Ref(&mrna)); }
+    void SetXrefMatch(CMatchmRNA& mrna) { m_XrefMatch = true; m_AssignedMrna = &mrna; }
+    bool IsXrefMatch(void) { return m_XrefMatch; }
+    bool HasmRNA(void) const { return m_AssignedMrna != NULL; };
+
+    bool NeedsmRNA(void) { return m_NeedsmRNA; }
+    void SetNeedsmRNA(bool val) { m_NeedsmRNA = val; }
+    void AssignSinglemRNA(void);
+    int GetNummRNA(bool &loc_unique);
+
+    const CRef<CMatchmRNA> & GetmRNA(void) { return m_AssignedMrna; }
+
+private:
+    vector < CRef<CMatchmRNA> > m_OverlappingmRNAs;
+    CRef<CMatchmRNA> m_AssignedMrna;
+    bool m_XrefMatch;
+    bool m_NeedsmRNA;
+};
+
+
+class CCdsMatchInfo;
+
+class CMrnaMatchInfo : public CObject {
+public:
+    CMrnaMatchInfo(const CSeq_feat& mrna, CScope* scope);
+    const CSeq_feat& GetSeqfeat(void) const;
+    bool Overlaps(const CSeq_feat& cds) const;
+    void SetMatch(CCdsMatchInfo& match);
+    bool HasMatch(void) const;
+
+private:
+    CConstRef<CSeq_feat> m_Mrna;
+    CRef<CCdsMatchInfo> m_Match;
+
+    CScope* m_Scope;
+    bool m_HasMatch;
+};
+
+
+class CCdsMatchInfo : public CObject {
+public:
+    CCdsMatchInfo(const CSeq_feat& cds, CScope* scope);
+    const CSeq_feat& GetSeqfeat(void) const;
+    bool Overlaps(const CSeq_feat& mrna) const;
+    bool AssignXrefMatch(list<CRef<CMrnaMatchInfo>>& unmatched_mrnas);
+    bool AssignOverlapMatch(list<CRef<CMrnaMatchInfo>>& unmatched_mrnas);
+    bool HasMatch(void) const;
+    void NeedsMatch(bool needs_match);
+    bool NeedsMatch(void) const;
+    const CMrnaMatchInfo& GetMatch(void) const;
+    bool IsPseudo(void) const;
+    void SetPseudo(void);
+
+    enum EMatchType {
+        eMatch_Xref,
+        eMatch_Overlap,
+        eMatch_None
+    };
+    EMatchType GetMatchType(void) const;
+
+private:
+    CConstRef<CSeq_feat> m_Cds;
+    CRef<CMrnaMatchInfo> m_BestMatch;
+
+    sequence::EOverlapType m_OverlapType;
+    CScope* m_Scope;
+    bool m_IsPseudo;
+    bool m_NeedsMatch;
+    EMatchType m_MatchType;
+};
+
+
 // =============================================================================
 //                                     Public
 // =============================================================================
@@ -6037,20 +6213,10 @@ bool CValidError_bioseq::x_IdXrefsAreReciprocal (const CSeq_feat &cds, const CSe
     return s_IdXrefsAreReciprocal(cds, mrna);
 }
 
-
-CMatchmRNA::CMatchmRNA(const CMappedFeat &mrna) : m_Mrna(mrna.GetSeq_feat()), m_AccountedFor(false)
+CMatchFeat::CMatchFeat(const CMappedFeat &feat) : m_feat(feat.GetSeq_feat())
 {
-}
-
-CMatchmRNA::~CMatchmRNA(void)
-{
-}
-
-
-void CMatchmRNA::SetCDS(CConstRef<CSeq_feat> cds)
-{
-    m_Cds = cds;
-    m_AccountedFor = true;
+    m_pos_start = m_feat->GetLocation().GetStart(eExtreme_Positional);
+    m_pos_stop = m_feat->GetLocation().GetStop(eExtreme_Positional);
 }
 
 
@@ -6078,8 +6244,8 @@ bool CMatchmRNA::MatchesUnderlyingCDS (unsigned int partial_type) const
 {
     bool rval = false;
 
-    TSeqPos mrna_start = m_Mrna->GetLocation().GetStart(eExtreme_Biological);
-    TSeqPos mrna_stop = m_Mrna->GetLocation().GetStop(eExtreme_Biological);
+    TSeqPos mrna_start = m_feat->GetLocation().GetStart(eExtreme_Biological);
+    TSeqPos mrna_stop = m_feat->GetLocation().GetStop(eExtreme_Biological);
 
     if (m_Cds) {
         if (partial_type == eSeqlocPartial_Nostart) {
@@ -6124,24 +6290,24 @@ bool CMatchmRNA::MatchesUnderlyingCDS (unsigned int partial_type) const
 }
 
 
-bool CMatchmRNA::MatchAnyUnderlyingCDS (unsigned int partial_type)
+bool CMatchmRNA::MatchAnyUnderlyingCDS (unsigned int partial_type) const
 {
     bool rval = false;
 
-    TSeqPos mrna_start = m_Mrna->GetLocation().GetStart(eExtreme_Biological);
-    TSeqPos mrna_stop = m_Mrna->GetLocation().GetStop(eExtreme_Biological);
+    TSeqPos mrna_start = m_feat->GetLocation().GetStart(eExtreme_Biological);
+    TSeqPos mrna_stop = m_feat->GetLocation().GetStop(eExtreme_Biological);
 
     // iterate through underlying cdss that aren't accounted for
-    vector < CRef<CMatchCDS> >::iterator cds_it = m_UnderlyingCDSs.begin();
+    vector < CRef<CMatchCDS> >::const_iterator cds_it = m_UnderlyingCDSs.begin();
     while (cds_it != m_UnderlyingCDSs.end() && !rval) {
         if (partial_type == eSeqlocPartial_Nostart) {
-            if ((*cds_it)->m_Cds->GetLocation().GetStart(eExtreme_Biological) == mrna_start) {
+            if ((*cds_it)->GetFeat().GetLocation().GetStart(eExtreme_Biological) == mrna_start) {
                 rval = true;
             } else {
                 rval = false;
             }
         } else if (partial_type == eSeqlocPartial_Nostop) {            
-            if ((*cds_it)->m_Cds->GetLocation().GetStop(eExtreme_Biological) == mrna_stop) {
+            if ((*cds_it)->GetFeat().GetLocation().GetStop(eExtreme_Biological) == mrna_stop) {
                 rval = true;
             } else {
                 rval = false;
@@ -6150,19 +6316,6 @@ bool CMatchmRNA::MatchAnyUnderlyingCDS (unsigned int partial_type)
         ++cds_it;
     }
     return rval;
-}
-
-
-CMatchCDS::CMatchCDS(const CMappedFeat &cds) 
-  : m_Cds(cds.GetSeq_feat()),
-    m_AssignedMrna (NULL),
-    m_XrefMatch (false),
-    m_NeedsmRNA (true)
-{
-}
-
-CMatchCDS::~CMatchCDS(void)
-{
 }
 
 
@@ -6187,7 +6340,7 @@ void CMatchCDS::AssignSinglemRNA(void)
     }
     if (match != NULL) {
         m_AssignedMrna = match;
-        match->SetCDS(m_Cds);
+        match->SetCDS(*m_feat);
     }
 }
 
@@ -6207,9 +6360,9 @@ int CMatchCDS::GetNummRNA(bool &loc_unique)
     while (mrna_it != m_OverlappingmRNAs.end()) {
         if (!(*mrna_it)->IsAccountedFor()) {
             // count overlapping unassigned mRNAS
-            if ((*mrna_it)->m_Mrna->IsSetProduct()) {
+            if ((*mrna_it)->GetFeat().IsSetProduct()) {
                 string label = "";
-                (*mrna_it)->m_Mrna->GetProduct().GetLabel(&label);
+                (*mrna_it)->GetFeat().GetProduct().GetLabel(&label);
                 product_list.push_back (label);
             }
             num++;
@@ -6608,26 +6761,16 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq,
 }
 
 
-struct SFeatIdLocalRefLess
-{
-    bool operator()(const CConstRef<CFeat_id::TLocal> & id1,
-                    const CConstRef<CFeat_id::TLocal> & id2)
-{
-        return *id1 < *id2;
-    }
-};
-
-
 enum ENoteCDS {
     eNoteCDS_No,
     eNoteCDS_Yes
 };
 
 template<typename TFeatList>
-void s_SetUpXrefPairs(
+void s_SetUpXrefPairsSlow(
     vector < CRef<CMatchCDS> > & cds_list,
     vector < CRef<CMatchmRNA> > & mrna_list,
-    const TFeatList & feat_list, CScope * scope, ENoteCDS eNoteCDS,
+    const TFeatList & feat_list, CBioseq_Handle bioseq, ENoteCDS eNoteCDS,
     CCacheImpl & cache)
 {
     // map each mrna feat to its CMatchmRNA
@@ -6662,18 +6805,18 @@ void s_SetUpXrefPairs(
     // (Note: potentially quadric time in worst case: O(num_cds * num_mrna))
     vector < CRef<CMatchCDS> >::iterator cds_it = cds_list.begin();
     for ( ; cds_it != cds_list.end(); ++cds_it) {
-        CConstRef<CSeq_feat> cds = (*cds_it)->m_Cds;
+        const CSeq_feat& cds = (*cds_it)->GetFeat();
 
         EOverlapType overlap_type = eOverlap_CheckIntRev;
-        if (cds->IsSetExcept_text()
-            && (NStr::FindNoCase (cds->GetExcept_text(), "ribosomal slippage") != string::npos
-                || NStr::FindNoCase (cds->GetExcept_text(), "trans-splicing") != string::npos)) {
+        if (cds.IsSetExcept_text()
+            && (NStr::FindNoCase (cds.GetExcept_text(), "ribosomal slippage") != string::npos
+                || NStr::FindNoCase (cds.GetExcept_text(), "trans-splicing") != string::npos)) {
             overlap_type = eOverlap_SubsetRev;
         }
 
         // try to make the CFeat_CI for mrnas as restricted as we can
         SAnnotSelector sel(CSeqFeatData::eSubtype_mRNA);
-        CFeat_CI possible_mrna_it(*scope, cds->GetLocation(), sel);
+        CFeat_CI possible_mrna_it(bioseq.GetScope(), cds.GetLocation(), sel);
         for( ; possible_mrna_it; ++possible_mrna_it ) {
             const CMappedFeat & feat_h = *possible_mrna_it;
             TMrnaToMatch::iterator find_iter = mrnaToMatch.find(feat_h);
@@ -6684,14 +6827,14 @@ void s_SetUpXrefPairs(
 
             CRef<CMatchmRNA> match_rna = find_iter->second;
             if (! match_rna->IsAccountedFor()) {
-                CConstRef<CSeq_feat> mrna = match_rna->m_Mrna;
-                if (TestForOverlapEx (cds->GetLocation(), mrna->GetLocation(), overlap_type, scope) >= 0) {
-                    (*cds_it)->AddmRNA(match_rna);
+                const CSeq_feat& mrna = match_rna->GetFeat();
+                if (TestForOverlapEx (cds.GetLocation(), mrna.GetLocation(), overlap_type, &bioseq.GetScope()) >= 0) {
+                    (*cds_it)->AddmRNA(*match_rna);
                     if( eNoteCDS == eNoteCDS_No ) {
-                        match_rna->AddCDS(*cds_it);
+                        match_rna->AddCDS(**cds_it);
                     }
-                    if (s_IdXrefsAreReciprocal(*cds, *mrna)) {
-                        (*cds_it)->SetXrefMatch(match_rna);
+                    if (s_IdXrefsAreReciprocal(cds, mrna)) {
+                        (*cds_it)->SetXrefMatch(*match_rna);
                         if( eNoteCDS == eNoteCDS_No ) {
                             match_rna->SetCDS(cds);
                         } else {
@@ -6710,6 +6853,108 @@ void s_SetUpXrefPairs(
             (*cds_it)->AssignSinglemRNA();
         }
     }
+}
+
+struct feat_loc_compare
+{
+    template<class _T>
+    bool operator()(const CRef<_T>& l, const CRef<_T>& r) const
+    {
+        return *l < *r;
+    }
+};
+
+template<typename TFeatList>
+void s_SetUpXrefPairs(
+    vector < CRef<CMatchCDS> > & cds_list,
+    vector < CRef<CMatchmRNA> > & mrna_list,
+    const TFeatList & feat_list, CBioseq_Handle bioseq, ENoteCDS eNoteCDS,
+    CCacheImpl & cache)
+{
+    // predict the size of the final arrays
+    cds_list.reserve(feat_list.size() / 2);
+    mrna_list.reserve(feat_list.size() / 2);
+
+    // fill in cds_list, mrna_list
+    for (auto& feat_it : feat_list) {
+        const CSeq_feat& feature = feat_it.GetOriginalFeature();
+        if (feature.IsSetData()) {
+            if (feature.GetData().IsCdregion()) {
+                cds_list.push_back(Ref(new CMatchCDS(feat_it)));
+            }
+            else 
+            if (feature.GetData().IsRna() &&
+                feature.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
+                mrna_list.push_back(Ref(new CMatchmRNA(feat_it)));
+            }
+        }
+    }
+
+// sort them
+    sort(cds_list.begin(), cds_list.end(), feat_loc_compare());
+    sort(mrna_list.begin(), mrna_list.end(), feat_loc_compare());
+
+    if (cds_list.empty() || mrna_list.empty())
+        return;
+
+    auto mrna_begin = mrna_list.begin();
+
+    size_t compare_attempts = 0;
+    for (auto& cds_it : cds_list) 
+    {
+        CMatchCDS& cds_match = *cds_it;
+        const CSeq_feat& cds = cds_match.GetFeat();
+
+        EOverlapType overlap_type = eOverlap_CheckIntRev;
+        if (cds.IsSetExcept_text()
+            && (NStr::FindNoCase(cds.GetExcept_text(), "ribosomal slippage") != string::npos
+            || NStr::FindNoCase(cds.GetExcept_text(), "trans-splicing") != string::npos)) {
+            overlap_type = eOverlap_SubsetRev;
+        }
+
+
+        while (mrna_begin != mrna_list.end() && 
+            (**mrna_begin).maxpos() < cds_match.minpos())
+            mrna_begin++;
+        
+        for (auto mrna_it = mrna_begin; 
+            mrna_it != mrna_list.end() &&
+            (**mrna_it).minpos() <= cds_match.maxpos() &&
+            cds_match.minpos() <= (**mrna_it).maxpos();
+            ++mrna_it)
+        {
+            CMatchmRNA& mrna_match = **mrna_it;
+            const CSeq_feat& mrna = mrna_match.GetFeat();
+            if (!mrna_match.IsAccountedFor()) {
+                compare_attempts++;
+                if (TestForOverlapEx(cds.GetLocation(), mrna.GetLocation(), overlap_type, &bioseq.GetScope()) >= 0) {
+                    cds_match.AddmRNA(mrna_match);
+                    if (eNoteCDS == eNoteCDS_No) {
+                        mrna_match.AddCDS(cds_match);
+                    }
+                    if (s_IdXrefsAreReciprocal(cds, mrna)) {
+                        cds_match.SetXrefMatch(mrna_match);
+                        if (eNoteCDS == eNoteCDS_No) {
+                            mrna_match.SetCDS(cds);
+                        }
+                        else {
+                            mrna_match.SetAccountedFor(true);
+                        }
+                        mrna_match.SetCDS(cds);
+                    }
+                }
+                else
+                {
+                    //cout << "problem" << endl;
+                }
+            }
+        }
+
+        if (!cds_match.HasmRNA()) {
+            cds_match.AssignSinglemRNA();
+        }
+    }
+    cout << "Totals CDS, mRNAs, compare attempts:" << cds_list.size() << " " << mrna_list.size() << " " << compare_attempts << endl;
 }
 
 
@@ -6738,9 +6983,8 @@ void CmRNAAndCDSIndex::SetBioseq(
     }
 
     s_SetUpXrefPairs(
-        m_CdsList, m_mRNAList, *feat_list, &bioseq.GetScope(), eNoteCDS_Yes,
+        m_CdsList, m_mRNAList, *feat_list, bioseq, eNoteCDS_Yes,
         cache);
-
 }
 
 
@@ -6748,7 +6992,7 @@ CRef<CMatchmRNA> CmRNAAndCDSIndex::FindMatchmRNA (const CMappedFeat& mrna)
 {
     vector < CRef<CMatchmRNA> >::iterator mrna_it = m_mRNAList.begin();
     for (; mrna_it != m_mRNAList.end(); ++mrna_it) {
-        if (mrna.GetOriginalFeature().Equals(*((*mrna_it)->m_Mrna))) {
+        if (mrna.GetOriginalFeature().Equals((*mrna_it)->GetFeat())) {
             return (*mrna_it);
         }
     }
@@ -8521,7 +8765,7 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
                         } else if (seq.IsAa()) {
                             taxname = "[" + taxname + "]";
                             if (!NStr::EndsWith(title, taxname, NStr::eNocase)) {
-                                if (! IsWp(bsh) || NStr::FindNoCase(title, taxname, 0, NPOS, NStr::eLast) == NPOS) {
+                                if (! IsWp(bsh) || NStr::FindNoCase(title, taxname) == NPOS) {
                                     PostErr(eDiag_Error, eErr_SEQ_DESCR_NoOrganismInTitle,
                                             "RefSeq protein title does not end with organism name",
                                             ctx, desc);

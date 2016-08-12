@@ -1314,124 +1314,29 @@ private:
 
 // =============================  Validate Bioseq  =============================
 
-class CMatchCDS;
-
-class CMatchmRNA : public CObject
-{
-public:
-    CMatchmRNA(const CMappedFeat &mrna);
-    ~CMatchmRNA(void);
-
-    void SetCDS(CConstRef<CSeq_feat> cds);
-    void AddCDS (CRef<CMatchCDS> cds) { m_UnderlyingCDSs.push_back (cds); }
-    bool IsAccountedFor(void) { return m_AccountedFor; }
-    void SetAccountedFor (bool val) { m_AccountedFor = val; }
-    bool MatchesUnderlyingCDS (unsigned int partial_type) const;
-    bool MatchAnyUnderlyingCDS (unsigned int partial_type);
-    bool HasCDSMatch(void);
-
-    CConstRef<CSeq_feat> m_Mrna;
-
-private:
-    CConstRef<CSeq_feat> m_Cds;
-    vector < CRef<CMatchCDS> > m_UnderlyingCDSs;
-    bool m_AccountedFor;
-};
-
-
-class CMatchCDS : public CObject
-{
-public:
-    CMatchCDS(const CMappedFeat &cds);
-    ~CMatchCDS(void);
-
-    void AddmRNA (CRef<CMatchmRNA> mrna) { m_OverlappingmRNAs.push_back (mrna); }
-    void SetXrefMatch (CRef<CMatchmRNA> mrna) { m_XrefMatch = true; m_AssignedMrna = mrna; }
-    bool IsXrefMatch (void) { return m_XrefMatch; }
-    bool HasmRNA(void) const { return m_AssignedMrna != NULL; };
-
-    bool NeedsmRNA(void) { return m_NeedsmRNA; }
-    void SetNeedsmRNA(bool val) { m_NeedsmRNA = val; }
-    void AssignSinglemRNA (void);
-    int GetNummRNA(bool &loc_unique);
-
-    CConstRef<CSeq_feat> m_Cds;
-    const CRef<CMatchmRNA> & GetmRNA(void) { return m_AssignedMrna; }
-
-private:
-    vector < CRef<CMatchmRNA> > m_OverlappingmRNAs;
-    CRef<CMatchmRNA> m_AssignedMrna;
-    bool m_XrefMatch;
-    bool m_NeedsmRNA;
-};
-
-
+// internal structures
 class CCdsMatchInfo;
+class CMrnaMatchInfo;
+class CMatchmRNA;
+class CMatchCDS;
+class CMatchmRNA;
 
-class CMrnaMatchInfo : public CObject {
-public:
-    CMrnaMatchInfo(const CSeq_feat& mrna, CScope* scope);
-    const CSeq_feat& GetSeqfeat(void) const;
-    bool Overlaps(const CSeq_feat& cds) const;
-    void SetMatch(CCdsMatchInfo& match);
-    bool HasMatch(void) const;
-
-private:
-    CConstRef<CSeq_feat> m_Mrna;
-    CRef<CCdsMatchInfo> m_Match;
-
-    CScope* m_Scope;
-    bool m_HasMatch;
-};
-
-
-class CCdsMatchInfo : public CObject {
-public:
-    CCdsMatchInfo(const CSeq_feat& cds, CScope* scope);
-    const CSeq_feat& GetSeqfeat(void) const;
-    bool Overlaps(const CSeq_feat& mrna) const;
-    bool AssignXrefMatch(list<CRef<CMrnaMatchInfo>>& unmatched_mrnas);
-    bool AssignOverlapMatch(list<CRef<CMrnaMatchInfo>>& unmatched_mrnas);
-    bool HasMatch(void) const;
-    void NeedsMatch(bool needs_match);
-    bool NeedsMatch(void) const;
-    const CMrnaMatchInfo& GetMatch(void) const;
-    bool IsPseudo(void) const;
-    void SetPseudo(void);
-
-    enum EMatchType {
-        eMatch_Xref,
-        eMatch_Overlap,
-        eMatch_None
-    };
-    EMatchType GetMatchType(void) const;
-
-private:
-    CConstRef<CSeq_feat> m_Cds;
-    CRef<CMrnaMatchInfo> m_BestMatch;
-
-    sequence::EOverlapType m_OverlapType;
-    CScope* m_Scope;
-    bool m_IsPseudo;
-    bool m_NeedsMatch;
-    EMatchType m_MatchType;
-};
-
-
-class CmRNAAndCDSIndex 
+class CmRNAAndCDSIndex
 {
 public:
     CmRNAAndCDSIndex();
     ~CmRNAAndCDSIndex();
     void SetBioseq(const CCacheImpl::TFeatValue * feat_list, const CBioseq_Handle & bioseq, CCacheImpl & cache);
-    CRef<CMatchmRNA> FindMatchmRNA (const CMappedFeat& mrna);
-    bool MatchmRNAToCDSEnd (const CMappedFeat& mrna, unsigned int partial_type);
+    CRef<CMatchmRNA> FindMatchmRNA(const CMappedFeat& mrna);
+    bool MatchmRNAToCDSEnd(const CMappedFeat& mrna, unsigned int partial_type);
 
 private:
     vector < CRef<CMatchCDS> > m_CdsList;
     vector < CRef<CMatchmRNA> > m_mRNAList;
 
 };
+
+
 
 class CValidError_bioseq : private CValidError_base
 {
