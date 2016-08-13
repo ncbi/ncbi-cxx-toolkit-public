@@ -33,7 +33,6 @@ GMC needs softparse
 GMC needs xgridcgi
 OSMesa needs3party $(OPENGL_LIBS)
 OSMesa needs3party $(ORIG_LIBS)
-TxPubmedBackend needs txserv
 VDBUtils needs bdbasncli
 VDBUtils needs ncbi_xloader_csra
 VDBUtils needs ncbi_xloader_wgs
@@ -172,7 +171,6 @@ boost_unit_test_framework-gcc48-mt-d-64 needs3party $(ORIG_LIBS)
 build_config needs $(GPIPE_GENCOLL_LIBS)
 build_config needs bacterial_pipeline_proc
 build_config needs build_config_base
-build_config needs gpipe_xmlutil
 build_config needs reftrack_access
 build_config_base needs gencoll_client
 build_config_base needs gpinit_bag_util
@@ -456,8 +454,6 @@ gpipe_objutil needs xalnmgr
 gpipe_objutil needs3party $(UUID_LIBS)
 gpipe_prodigal needs bacterial_pipeline_proc
 gpipe_property needs gpipe_common
-gpipe_remap needs $(SDBAPI_LIB)
-gpipe_remap needs xconnect
 gpipe_remap needs xobjreadex
 gpipe_resource_req needs xncbi
 gpipe_sadb needs $(COMPRESS_LIBS)
@@ -486,9 +482,7 @@ gpipe_xml needs $(SEQ_LIBS)
 gpipe_xml needs gpipe_attr
 gpipe_xml needs gpipe_dateutil
 gpipe_xml needs pub
-gpipe_xmlutil needs xutil
-gpipe_xmlutil needs3party $(LIBXML_LIBS)
-gpipe_xmlutil needs3party $(LIBXSLT_LIBS)
+gpipe_xmlutil needs xmlwrapp
 gpxapi needs general
 gpxapi needs xconnect
 gpxlib needs $(COMPRESS_LIBS)
@@ -887,12 +881,8 @@ refseq_ctl needs bag_access
 refseq_ctl needs gpinit_access
 refseq_ctl needs process_annotation_stats
 refseq_ctl needs xid_utils
-reftrack_access needs $(SDBAPI_LIB)
-reftrack_access needs xconnect
-reftrack_access needs xutil
-reftrack_admin needs $(SDBAPI_LIB)
-reftrack_admin needs xconnect
-reftrack_admin needs xutil
+reftrack_access needs xncbi
+reftrack_admin needs xncbi
 remap needs $(SEQ_LIBS)
 remap needs pub
 remapcli needs remap
