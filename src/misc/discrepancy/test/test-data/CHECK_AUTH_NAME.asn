@@ -1,0 +1,410 @@
+Seq-entry ::= set {
+  class nuc-prot,
+  descr {
+    source {
+      genome genomic,
+      org {
+        taxname "Lutjanus peru",
+        common "Pacific red snapper",
+        db {
+          {
+            db "taxon",
+            tag id 290247
+          }
+        },
+        syn {
+          "Neomaenis peru",
+          "Lutjanus peru (Nichols & Murphy, 1922)"
+        },
+        orgname {
+          name binomial {
+            genus "Lutjanus",
+            species "peru"
+          },
+          lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
+ Euteleostomi; Actinopterygii; Neopterygii; Teleostei; Neoteleostei;
+ Acanthomorphata; Eupercaria; Lutjanidae; Lutjanus",
+          gcode 1,
+          mgcode 2,
+          div "VRT"
+        }
+      }
+    },
+    pub {
+      pub {
+        gen {
+          cit "Unpublished",
+          authors {
+            names std {
+              {
+                name name {
+                  last "Reyes-Becerril",
+                  first "Martha",
+                  initials "M."
+                }
+              },
+              {
+                name name {
+                  last "Maldonado",
+                  first "Minerva",
+                  initials "M."
+                }
+              },
+              {
+                name name {
+                  last "Guluarte",
+                  first "Crystal",
+                  initials "C."
+                }
+              },
+              {
+                name name {
+                  last "Rosales",
+                  first "Sergio",
+                  initials "S."
+                }
+              },
+              {
+                name name {
+                  last "Ascencio",
+                  first "Felipe",
+                  initials "F."
+                }
+              },
+              {
+                name name {
+                  last "Angulo",
+                  first "Carlos",
+                  initials "C."
+                }
+              }
+            }
+          },
+          title "Evaluation of ToxA and lysate Vibrio parahaemolyticus on
+ humoral immune response in mucus and serum and immune-related genes in
+ Pacific red snapper"
+        }
+      }
+    },
+    pub {
+      pub {
+        sub {
+          authors {
+            names std {
+              {
+                name name {
+                  last "Reyes-Becerril",
+                  first "Martha",
+                  initials "M."
+                }
+              },
+              {
+                name name {
+                  last "Maldonado",
+                  first "Minerva",
+                  initials "M."
+                }
+              },
+              {
+                name name {
+                  last "Guluarte",
+                  first "Crystal",
+                  initials "C."
+                }
+              },
+              {
+                name name {
+                  last "Rosales",
+                  first "Sergio",
+                  initials "S."
+                }
+              },
+              {
+                name name {
+                  last "Ascencio",
+                  first "Felipe",
+                  initials "F."
+                }
+              },
+              {
+                name name {
+                  last "Angulo",
+                  first "Carlos",
+                  initials "C."
+                }
+              }
+            },
+            affil std {
+              affil "Centro de Investigaciones Biologicas del Noroeste",
+              div "Marine Pathology Unit",
+              city "La Paz",
+              sub "B.C.S.",
+              country "Mexico",
+              street "Instituto Politecnico Nacional 195, Playa Palo de Santa
+ Rita Sur",
+              postal-code "23096"
+            }
+          },
+          medium email,
+          date std {
+            year 2016,
+            month 4,
+            day 25
+          }
+        }
+      }
+    },
+    user {
+      type str "Submission",
+      data {
+        {
+          label str "SmartComment",
+          data str "ALT EMAIL:kalinwild@hotmail.com"
+        },
+        {
+          label str "AdditionalComment",
+          data str "BankIt1913578"
+        }
+      }
+    },
+    user {
+      type str "StructuredComment",
+      data {
+        {
+          label str "StructuredCommentPrefix",
+          data str "##Assembly-Data-START##"
+        },
+        {
+          label str "Sequencing Technology",
+          data str "Sanger dideoxy sequencing"
+        },
+        {
+          label str "StructuredCommentSuffix",
+          data str "##Assembly-Data-END##"
+        }
+      }
+    },
+    user {
+      type str "Submission",
+      data {
+        {
+          label str "SmartComment",
+          data str "TOTAL # OF SEQS:3"
+        }
+      }
+    },
+    user {
+      type str "NcbiCleanup",
+      data {
+        {
+          label str "method",
+          data str "ExtendedSeqEntryCleanup"
+        },
+        {
+          label str "version",
+          data int 1
+        },
+        {
+          label str "month",
+          data int 7
+        },
+        {
+          label str "day",
+          data int 12
+        },
+        {
+          label str "year",
+          data int 2016
+        }
+      }
+    },
+    update-date std {
+      year 2016,
+      month 4,
+      day 25,
+      hour 16,
+      minute 7,
+      second 8
+    }
+  },
+  seq-set {
+    seq {
+      id {
+        local str "Seq1_1",
+        general {
+          db "BankIt",
+          tag str "1913578/Seq1"
+        },
+        general {
+          db "TMSMART",
+          tag id 65447597
+        },
+        genbank {
+          accession "KX137831"
+        }
+      },
+      descr {
+        title "Lutjanus peru interleukin 1 beta (IL-1b) mRNA, complete cds.",
+        molinfo {
+          biomol mRNA,
+          completeness partial
+        },
+        user {
+          type str "Submission",
+          data {
+            {
+              label str "AdditionalComment",
+              data str "LocalID:Seq1"
+            }
+          }
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "LocalId",
+              data str "Seq1"
+            }
+          }
+        },
+        user {
+          class "1.0",
+          type str "AutodefOptions",
+          data {
+            {
+              label str "UseLabels",
+              data bool TRUE
+            },
+            {
+              label str "LeaveParenthetical",
+              data bool TRUE
+            },
+            {
+              label str "SpecifyNuclearProduct",
+              data bool TRUE
+            },
+            {
+              label str "MaxMods",
+              data int 0
+            },
+            {
+              label str "FeatureListType",
+              data str "List All Features"
+            },
+            {
+              label str "MiscFeatRule",
+              data str "Delete"
+            },
+            {
+              label str "HIVRule",
+              data str "WantBoth"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol rna,
+        length 766,
+        strand ss,
+        seq-data ncbi2na '60411E12700437E0DC787F089DFDFCF48008E83788E13906E222
+3BA29508E562A9E84C88F1524D478438226EB8174D3653A229E0A9246D22D1E6A9162F4A8E005E
+74938E7A224DBA08908AEDE0E5BD2792B4B128AA17B9981126E16126204A47DBD2B540493A0751
+92E29E4A8A4B820DC102B0E1E348348EAC8FFFFDFDCBB2FE9C7B5347917BB275E3E381E8C48FE0
+7F0393324C107F02DD57BF8DCBFCB5EF1302D23B17F2E03C120093F1F8E122DE11EDFD27F4F00E
+05ECD77BDDDF4BD17810'H
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data gene {
+                locus "IL-1b"
+              },
+              location int {
+                from 0,
+                to 765,
+                strand plus,
+                id genbank {
+                  accession "KX137831"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        local str "Seq1_prot_1_1",
+        general {
+          db "TMSMART",
+          tag id 65447598
+        }
+      },
+      descr {
+        title "interleukin 1 beta [Lutjanus peru]",
+        molinfo {
+          biomol peptide
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "LocalId",
+              data str "Seq1_prot_1"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 131,
+        seq-data ncbieaa "MESEMTCNVREMWRPKMPEGLDIEITQHPLTMKSVVNLIIAMERLKGSTSES
+LRGTEFRDENLLSMMLESIVEEQEVSECRSAAGQYRRGPVREHSVTDSENRHFVQVPNSMELHAVRLQGGSEESNKGND"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "interleukin 1 beta"
+                }
+              },
+              location int {
+                from 0,
+                to 130,
+                id local str "Seq1_prot_1_1"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  annot {
+    {
+      data ftable {
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 1
+            }
+          },
+          product whole local str "Seq1_prot_1_1",
+          location int {
+            from 71,
+            to 466,
+            strand plus,
+            id genbank {
+              accession "KX137831"
+            }
+          }
+        }
+      }
+    }
+  }
+}

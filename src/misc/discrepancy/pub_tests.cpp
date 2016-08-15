@@ -778,7 +778,7 @@ DISCREPANCY_CASE(CHECK_AUTH_NAME, CAuth_list, eDisc | eOncaller | eSubmitter | e
             ITERATE (CAuth_list::C_Names::TStd, auth, obj.GetNames().GetStd()) {
                 if (!(*auth)->IsSetName() || !(*auth)->GetName().IsName()
                         || !(*auth)->GetName().GetName().CanGetFirst() || !(*auth)->GetName().GetName().CanGetLast()
-                        || !(*auth)->GetName().GetName().GetFirst().empty() || !(*auth)->GetName().GetName().GetFirst().empty()) {
+                        || (*auth)->GetName().GetName().GetFirst().empty() || (*auth)->GetName().GetName().GetLast().empty()) {
                     m_Objs[kMissingAuthorsName].Add(*context.NewFeatOrDescOrSubmitBlockObj());
                     break;
                 }

@@ -1,0 +1,377 @@
+Seq-entry ::= set {
+  class nuc-prot,
+  descr {
+    source {
+      org {
+        taxname "Brassica napus",
+        common "rape",
+        db {
+          {
+            db "taxon",
+            tag id 3708
+          }
+        },
+        syn {
+          "rapeseeds",
+          "oilseed rape"
+        },
+        orgname {
+          name binomial {
+            genus "Brassica",
+            species "napus"
+          },
+          mod {
+            {
+              subtype cultivar,
+              subname "Xiangyou 15"
+            }
+          },
+          lineage "Eukaryota; Viridiplantae; Streptophyta; Embryophyta;
+ Tracheophyta; Spermatophyta; Magnoliophyta; eudicotyledons; Gunneridae;
+ Pentapetalae; rosids; malvids; Brassicales; Brassicaceae; Brassiceae; Brassica",
+          gcode 1,
+          mgcode 1,
+          div "PLN",
+          pgcode 11
+        }
+      }
+    },
+    pub {
+      pub {
+        gen {
+          cit "Unpublished",
+          authors {
+            names std {
+              {
+                name name {
+                  last "Xing",
+                  first "Man",
+                  initials "M."
+                }
+              },
+              {
+                name name {
+                  last "Liu",
+                  first "S",
+                  initials "S.F."
+                }
+              },
+              {
+                name name {
+                  last "Xiong",
+                  first "X",
+                  initials "X.H."
+                }
+              }
+            }
+          },
+          title "Cloning and Functional Analysis of GPAT9 in Rapeseed
+ (Brassica napus L.)"
+        }
+      }
+    },
+    pub {
+      pub {
+        sub {
+          authors {
+            names std {
+              {
+                name name {
+                  last "Xing",
+                  first "Man",
+                  initials "M."
+                }
+              },
+              {
+                name name {
+                  last "Liu",
+                  first "S",
+                  initials "S.F."
+                }
+              },
+              {
+                name name {
+                  last "Xiong",
+                  first "X",
+                  initials "X.H."
+                }
+              }
+            },
+            affil std {
+              affil "Hunan Agricultural University",
+              div "School of Biological Science and Technology",
+              city "Changsha",
+              sub "Hunan",
+              country "China",
+              street "Nongda Road",
+              postal-code "410128"
+            }
+          },
+          medium email,
+          date std {
+            year 2016,
+            month 5,
+            day 27
+          }
+        }
+      }
+    },
+    user {
+      type str "Submission",
+      data {
+        {
+          label str "SmartComment",
+          data str "TOTAL # OF SEQS:1"
+        },
+        {
+          label str "AdditionalComment",
+          data str "BankIt1923459"
+        }
+      }
+    },
+    user {
+      type str "NcbiAutofix",
+      data {
+      }
+    },
+    user {
+      type str "NcbiCleanup",
+      data {
+        {
+          label str "method",
+          data str "ExtendedSeqEntryCleanup"
+        },
+        {
+          label str "version",
+          data int 1
+        },
+        {
+          label str "month",
+          data int 7
+        },
+        {
+          label str "day",
+          data int 13
+        },
+        {
+          label str "year",
+          data int 2016
+        }
+      }
+    },
+    update-date std {
+      year 2016,
+      month 7,
+      day 13
+    }
+  },
+  seq-set {
+    seq {
+      id {
+        local str "BSeq#1",
+        general {
+          db "BankIt",
+          tag str "1923459/BSeq#1"
+        },
+        general {
+          db "TMSMART",
+          tag id 66449301
+        },
+        genbank {
+          accession "KX344511"
+        }
+      },
+      descr {
+        title "Brassica napus glycerol-3-phosphate acyltransferase (GPAT9)
+ mRNA, complete cds.",
+        molinfo {
+          biomol mRNA
+        },
+        user {
+          type str "StructuredComment",
+          data {
+            {
+              label str "StructuredCommentPrefix",
+              data str "##Assembly-Data-START##"
+            },
+            {
+              label str "Sequencing Technology",
+              data str "Sanger dideoxy sequencing"
+            },
+            {
+              label str "StructuredCommentSuffix",
+              data str "##Assembly-Data-END##"
+            }
+          }
+        },
+        user {
+          type str "Submission",
+          data {
+            {
+              label str "AdditionalComment",
+              data str "LocalID:BSeq#1"
+            }
+          }
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "LocalId",
+              data str "BSeq#1"
+            }
+          }
+        },
+        user {
+          class "1.0",
+          type str "AutodefOptions",
+          data {
+            {
+              label str "UseLabels",
+              data bool TRUE
+            },
+            {
+              label str "LeaveParenthetical",
+              data bool TRUE
+            },
+            {
+              label str "SpecifyNuclearProduct",
+              data bool TRUE
+            },
+            {
+              label str "MaxMods",
+              data int 0
+            },
+            {
+              label str "FeatureListType",
+              data str "List All Features"
+            },
+            {
+              label str "MiscFeatRule",
+              data str "Delete"
+            },
+            {
+              label str "HIVRule",
+              data str "WantBoth"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol rna,
+        length 1131,
+        strand ss,
+        seq-data ncbi2na '38924692A08EB87D08D627E0FA345504D823C5F5F5AF5D4D0625
+DBA4275979B8FE7213F75067478279EB94FBE3874F476BBF42D835D4897E81E81371FBF5BCEB9E
+EBBEFBC8C7B7DDFD5F8AE4D1FC9FFA3AFCFF5FD06FCD5EC47775E02B4A32BE28008F888B7EBA03
+8CE49F7FBA5D3A128BEF2B146A59A5C935B5C24AFCEF9C14C7D8E3E1F4CB7E8923849FF9EF30E4
+824D7AFABEA7DE40910CF2226FA3937AF436F58A70A36E03EC9080BC2814EF4281E10C15DF7CCF
+D78AA1FBB030C3C47B8EFC20AB9FF83E8791EFED43653C0C4308DFEF865F7A0492004B4F47393F
+1E41D384DBA9EEBBB8AEEB1FA055010C297AE01243E2FE488AB4884E3374CA92B7400AD5FA8E8C
+7E0B3D8A50BD424CB81909048BFE48B635E9C8FA0842E0'H
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data gene {
+                locus "GPAT9"
+              },
+              comment "BnGPAT9",
+              location int {
+                from 0,
+                to 1130,
+                strand plus,
+                id genbank {
+                  accession "KX344511"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        local str "BSeq#1_prot_1",
+        general {
+          db "TMSMART",
+          tag id 66449302
+        }
+      },
+      descr {
+        title "glycerol-3-phosphate acyltransferase [Brassica napus]",
+        molinfo {
+          biomol peptide
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "LocalId",
+              data str "BSeq#1_prot_1"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 376,
+        seq-data ncbieaa "MSSTAGKMVTSRSELELDHPNIEDYLPSGSSINEPRGKLRLRDLLDISPTLT
+EAAGAIVDDSFTRCFKSNPPEPWNWNIYLFPLWCCGVVVRYCLLFPLRCITLAFGWFIFLSTFIPVHSLLKGQDRLRK
+KIERVLVEMICSFFVASWTGVVRYHGPRPSIRPKQVYVANHTSMIDFIVLEQMTAFAVIMQKHPGWVGLLQSTILESV
+GCIWFNRSEAKDREIVARKLRNHVQGTDNNPLLIFPEGTCVNNNYTVMFKKGAFELDCTVCPIAIKYNKIFVDAFWNS
+RKQSFTMHLLQLMTSWAVVCEVWYLEPQTIRPGETAIEFAERVRDMISHRAGLKKVPWDGYLKYSRPSSKHSERKQQS
+FAESILARLEDK"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "glycerol-3-phosphate acyltransferase"
+                },
+                activity {
+                  "catalyzes the first step in the synthesis of various types
+ of glycerolipids including membrane lipids and triacylglycerol (TAG)"
+                }
+              },
+              location int {
+                from 0,
+                to 375,
+                id local str "BSeq#1_prot_1"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  annot {
+    {
+      data ftable {
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 1
+            }
+          },
+          comment "involved in fat metabolism",
+          product whole local str "BSeq#1_prot_1",
+          location int {
+            from 0,
+            to 1130,
+            strand plus,
+            id genbank {
+              accession "KX344511"
+            }
+          }
+        }
+      }
+    }
+  }
+}
