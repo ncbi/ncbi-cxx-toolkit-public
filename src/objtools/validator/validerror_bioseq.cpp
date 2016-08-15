@@ -2675,7 +2675,8 @@ bool CValidError_bioseq::HasBadWGSGap(const CBioseq& seq)
     if (inst.CanGetRepr() && inst.GetRepr() == CSeq_inst::eRepr_delta && inst.CanGetExt() && inst.GetExt().IsDelta()) {
         ITERATE(CDelta_ext::Tdata, sg, inst.GetExt().GetDelta().Get()) {
             if (!(*sg)) continue;
-            if ((**sg).Which() != CDelta_seq::e_Literal) continue;
+             // CON division - far delta - suppresses errors
+            if ((**sg).Which() != CDelta_seq::e_Literal) /* continue */ return false;
             const CSeq_literal& lit = (*sg)->GetLiteral();
             if (!lit.IsSetSeq_data()) {
                 return true;
