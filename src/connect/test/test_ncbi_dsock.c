@@ -323,9 +323,10 @@ static int s_Client(int x_port, unsigned int max_try)
         assert(SOCK_Read(client, 0, 1, &n, eIO_ReadPlain) == eIO_Closed);
         break;
     }
-    if (m > max_try)
+    if (m > max_try) {
         SOCK_Close(client);
         return 1;
+    }
 
     for (n = sizeof(unsigned long);  n < msglen - 10;  n++) {
         if (buf[n] != buf[msglen + n])
