@@ -203,6 +203,7 @@ protected:
         eMiscRnaWordType_RNAIntergenicSpacer,
         eMiscRnaWordType_RNA,
         eMiscRnaWordType_IntergenicSpacer,
+        eMiscRnaWordType_tRNA,
         eMiscRnaWordType_Unrecognized
     } ERnaMiscWord;
     static bool x_AddOneMiscWordElement(const string& phrase, vector<string>& elements);

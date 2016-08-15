@@ -1980,5 +1980,17 @@ BOOST_AUTO_TEST_CASE(Test_GB_5765)
     CheckDeflineMatches(seh, autodef, mod_combo);
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_SQD_3914)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    CRef<CSeq_feat> m = unit_test_util::AddMiscFeature(entry);
+    m->SetData().SetRna().SetType(CRNA_ref::eType_miscRNA);
+    m->SetComment("contains 16S-23S ribosomal RNA intergenic spacer, tRNA-Ile(trnI), and tRNA-Ala(trnA)");
+    AddTitle(entry, "Sebaea microphylla 16S-23S ribosomal RNA intergenic spacer, tRNA-Ile (trnI) and tRNA-Ala (trnA) genes, complete sequence.");
+    CheckDeflineMatches(entry);
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

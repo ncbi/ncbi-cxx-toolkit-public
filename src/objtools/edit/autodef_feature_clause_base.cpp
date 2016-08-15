@@ -1724,7 +1724,8 @@ static string kRNAMiscWords[] = {
     "external transcribed spacer",
     "ribosomal RNA intergenic spacer",
     "ribosomal RNA",
-    "intergenic spacer"
+    "intergenic spacer",
+    "tRNA-"
 };
 
 CAutoDefFeatureClause_Base::ERnaMiscWord CAutoDefFeatureClause_Base::x_GetRnaMiscWordType(const string& phrase)

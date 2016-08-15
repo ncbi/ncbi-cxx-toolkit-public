@@ -1887,6 +1887,23 @@ void CAutoDefParsedClause::SetMiscRNAWord(const string& phrase)
         }
         SetTypeword("gene");
         SetTypewordFirst(false);
+    } else if (word_type == eMiscRnaWordType_tRNA) {
+        string gene_name;
+        string product_name;
+        if (CAutoDefParsedtRNAClause::ParseString(phrase, gene_name, product_name)) {
+            m_TypewordChosen = true;
+            m_GeneName = gene_name;
+            if (!NStr::IsBlank(m_GeneName)) {
+                m_HasGene = true;
+            }
+            m_ProductName = product_name;
+            m_ProductNameChosen = true;
+            x_GetDescription(m_Description);
+        } else {
+            m_Description = phrase;
+        }
+        SetTypeword("gene");
+        SetTypewordFirst(false);
     }
     NStr::TruncateSpacesInPlace(m_Description);
     m_DescriptionChosen = true;
