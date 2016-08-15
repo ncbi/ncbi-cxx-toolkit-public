@@ -1362,7 +1362,8 @@ bool CGff2Reader::IsAlignmentData(
     if (columns.size() < 9) {
         return false;
     }
-    if (NStr::StartsWith(columns[2], "match")) {
+    if (NStr::StartsWith(columns[2], "match") || 
+        NStr::EndsWith(columns[2], "_match")) {
         return true;
     }
     return false;

@@ -100,7 +100,8 @@ public:
         return m_pePhase != 0; 
     };
     bool IsAlignmentRecord() const {
-        if (NStr::StartsWith(Type(), "match")) {
+        if (NStr::StartsWith(Type(), "match") ||
+            NStr::EndsWith(Type(), "_match")) {
             return true;
         }
         return false;
