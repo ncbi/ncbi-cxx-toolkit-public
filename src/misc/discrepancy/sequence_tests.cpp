@@ -2331,7 +2331,7 @@ static bool IsMicroSatellite(const CSeq_feat_Handle& feat)
 
             ITERATE(CSeq_feat::TQual, qual, feat.GetQual()) {
                 if ((*qual)->IsSetQual() && (*qual)->IsSetVal() &&
-                    NStr::EqualNocase("satellite", (*qual)->GetQual()) && NStr::EqualNocase("microsatellite", (*qual)->GetVal())) {
+                    NStr::EqualNocase("satellite", (*qual)->GetQual()) && NStr::StartsWith((*qual)->GetVal(), "microsatellite", NStr::eNocase)) {
 
                     ret = true;
                     break;

@@ -1,0 +1,5427 @@
+Seq-entry ::= set {
+  class genbank ,
+  seq-set {
+    set {
+      class phy-set ,
+      descr {
+        title "Olea europaea subsp. europaea microsatellite OLEST1 sequence." ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 15 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2016 } } } } ,
+      seq-set {
+        seq {
+          id {
+            genbank {
+              accession "KT281452" ,
+              version 1 } ,
+            gi 885481036 } ,
+          descr {
+            title "Olea europaea subsp. europaea microsatellite OLEST1
+ sequence." ,
+            source {
+              genome genomic ,
+              org {
+                taxname "Olea europaea subsp. europaea" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 158383 } } ,
+                orgname {
+                  name
+                    binomial {
+                      genus "Olea" ,
+                      species "europaea" ,
+                      subspecies "europaea" } ,
+                  mod {
+                    {
+                      subtype cultivar ,
+                      subname "Leccino" } ,
+                    {
+                      subtype sub-species ,
+                      subname "europaea" } } ,
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Tracheophyta; Spermatophyta; Magnoliophyta; eudicotyledons;
+ Gunneridae; Pentapetalae; asterids; lamiids; Lamiales; Oleaceae; Oleeae;
+ Olea" ,
+                  gcode 1 ,
+                  mgcode 1 ,
+                  div "PLN" ,
+                  pgcode 11 } } } ,
+            molinfo {
+              biomol genomic ,
+              completeness partial } ,
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Baldoni" ,
+                              first "Luciana" ,
+                              initials "L." } } ,
+                        {
+                          name
+                            name {
+                              last "Mariotti" ,
+                              first "Roberto" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Cultrera" ,
+                              first "Nicolo" ,
+                              initials "N.G.M." } } ,
+                        {
+                          name
+                            name {
+                              last "Mousavi" ,
+                              first "Soraya" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Rossi" ,
+                              first "Martina" ,
+                              initials "M." } } } ,
+                    affil
+                      std {
+                        affil "National Research Council (CNR)" ,
+                        div "Institute of Bioscences and Bioresources" ,
+                        city "Perugia" ,
+                        sub "PG" ,
+                        country "Italy" ,
+                        street "Via Madonna Alta, 130" ,
+                        postal-code "06128" } } ,
+                  medium email ,
+                  date
+                    std {
+                      year 2015 ,
+                      month 7 ,
+                      day 13 } } } } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              class "SMART_V1.0" ,
+              type
+                id 1 ,
+              data {
+                {
+                  label
+                    id 1 ,
+                  data
+                    int 24 } } } ,
+            user {
+              class "1.0" ,
+              type
+                str "AutodefOptions" ,
+              data {
+                {
+                  label
+                    str "SpecifyNuclearProduct" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MiscFeatRule" ,
+                  data
+                    str "NoncodingProductFeat" } ,
+                {
+                  label
+                    str "FeatureListType" ,
+                  data
+                    str "List All Features" } ,
+                {
+                  label
+                    str "HIVRule" ,
+                  data
+                    str "WantBoth" } ,
+                {
+                  label
+                    str "DoNotApplyToSp" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "LeaveParenthetical" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MaxMods" ,
+                  data
+                    int -99 } ,
+                {
+                  label
+                    str "UseLabels" ,
+                  data
+                    bool TRUE } } } ,
+            create-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } ,
+            update-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 245 ,
+            strand ds ,
+            seq-data
+              ncbi2na 'E7F9F7D73C1E354830C8CDFDC7A7FD09AF4713D0FD603E0BBA0A2A2
+7D7DF7DF7DF3DF7DF7DF433EF804CFB93FF2C8FC824D0D0E103A03F732F0582283E80'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      imp {
+                        key "repeat_region" } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 244 ,
+                        strand plus ,
+                        id
+                          gi 885481036 } ,
+                    qual {
+                      {
+                        qual "rpt_type" ,
+                        val "tandem" } ,
+                      {
+                        qual "satellite" ,
+                        val "microsatellite:OLEST1" } } } } } } } ,
+        seq {
+          id {
+            genbank {
+              accession "KT281453" ,
+              version 1 } ,
+            gi 885481037 } ,
+          descr {
+            title "Olea europaea subsp. europaea microsatellite OLEST2
+ sequence." ,
+            source {
+              genome genomic ,
+              org {
+                taxname "Olea europaea subsp. europaea" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 158383 } } ,
+                orgname {
+                  name
+                    binomial {
+                      genus "Olea" ,
+                      species "europaea" ,
+                      subspecies "europaea" } ,
+                  mod {
+                    {
+                      subtype cultivar ,
+                      subname "Leccino" } ,
+                    {
+                      subtype sub-species ,
+                      subname "europaea" } } ,
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Tracheophyta; Spermatophyta; Magnoliophyta; eudicotyledons;
+ Gunneridae; Pentapetalae; asterids; lamiids; Lamiales; Oleaceae; Oleeae;
+ Olea" ,
+                  gcode 1 ,
+                  mgcode 1 ,
+                  div "PLN" ,
+                  pgcode 11 } } } ,
+            molinfo {
+              biomol genomic ,
+              completeness partial } ,
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Baldoni" ,
+                              first "Luciana" ,
+                              initials "L." } } ,
+                        {
+                          name
+                            name {
+                              last "Mariotti" ,
+                              first "Roberto" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Cultrera" ,
+                              first "Nicolo" ,
+                              initials "N.G.M." } } ,
+                        {
+                          name
+                            name {
+                              last "Mousavi" ,
+                              first "Soraya" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Rossi" ,
+                              first "Martina" ,
+                              initials "M." } } } ,
+                    affil
+                      std {
+                        affil "National Research Council (CNR)" ,
+                        div "Institute of Bioscences and Bioresources" ,
+                        city "Perugia" ,
+                        sub "PG" ,
+                        country "Italy" ,
+                        street "Via Madonna Alta, 130" ,
+                        postal-code "06128" } } ,
+                  medium email ,
+                  date
+                    std {
+                      year 2015 ,
+                      month 7 ,
+                      day 10 } } } } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              class "SMART_V1.0" ,
+              type
+                id 1 ,
+              data {
+                {
+                  label
+                    id 1 ,
+                  data
+                    int 25 } } } ,
+            user {
+              class "1.0" ,
+              type
+                str "AutodefOptions" ,
+              data {
+                {
+                  label
+                    str "SpecifyNuclearProduct" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MiscFeatRule" ,
+                  data
+                    str "NoncodingProductFeat" } ,
+                {
+                  label
+                    str "FeatureListType" ,
+                  data
+                    str "List All Features" } ,
+                {
+                  label
+                    str "HIVRule" ,
+                  data
+                    str "WantBoth" } ,
+                {
+                  label
+                    str "DoNotApplyToSp" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "LeaveParenthetical" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MaxMods" ,
+                  data
+                    int -99 } ,
+                {
+                  label
+                    str "UseLabels" ,
+                  data
+                    bool TRUE } } } ,
+            create-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } ,
+            update-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 201 ,
+            strand ds ,
+            seq-data
+              ncbi2na '2C7471AE832AF28237AEBAEBA179DF52C4E364FB06A9A5EBAEBAD40
+141140E82E9FA8FEBAD47D4B2310FB485DA805757717500'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      imp {
+                        key "repeat_region" } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 200 ,
+                        strand plus ,
+                        id
+                          gi 885481037 } ,
+                    qual {
+                      {
+                        qual "rpt_type" ,
+                        val "tandem" } ,
+                      {
+                        qual "satellite" ,
+                        val "microsatellite:OLEST2" } } } } } } } ,
+        seq {
+          id {
+            genbank {
+              accession "KT281454" ,
+              version 1 } ,
+            gi 885481038 } ,
+          descr {
+            title "Olea europaea subsp. europaea microsatellite OLEST3
+ sequence." ,
+            source {
+              genome genomic ,
+              org {
+                taxname "Olea europaea subsp. europaea" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 158383 } } ,
+                orgname {
+                  name
+                    binomial {
+                      genus "Olea" ,
+                      species "europaea" ,
+                      subspecies "europaea" } ,
+                  mod {
+                    {
+                      subtype cultivar ,
+                      subname "Leccino" } ,
+                    {
+                      subtype sub-species ,
+                      subname "europaea" } } ,
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Tracheophyta; Spermatophyta; Magnoliophyta; eudicotyledons;
+ Gunneridae; Pentapetalae; asterids; lamiids; Lamiales; Oleaceae; Oleeae;
+ Olea" ,
+                  gcode 1 ,
+                  mgcode 1 ,
+                  div "PLN" ,
+                  pgcode 11 } } } ,
+            molinfo {
+              biomol genomic ,
+              completeness partial } ,
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Baldoni" ,
+                              first "Luciana" ,
+                              initials "L." } } ,
+                        {
+                          name
+                            name {
+                              last "Mariotti" ,
+                              first "Roberto" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Cultrera" ,
+                              first "Nicolo" ,
+                              initials "N.G.M." } } ,
+                        {
+                          name
+                            name {
+                              last "Mousavi" ,
+                              first "Soraya" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Rossi" ,
+                              first "Martina" ,
+                              initials "M." } } } ,
+                    affil
+                      std {
+                        affil "National Research Council (CNR)" ,
+                        div "Institute of Bioscences and Bioresources" ,
+                        city "Perugia" ,
+                        sub "PG" ,
+                        country "Italy" ,
+                        street "Via Madonna Alta, 130" ,
+                        postal-code "06128" } } ,
+                  medium email ,
+                  date
+                    std {
+                      year 2015 ,
+                      month 7 ,
+                      day 13 } } } } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              class "SMART_V1.0" ,
+              type
+                id 1 ,
+              data {
+                {
+                  label
+                    id 1 ,
+                  data
+                    int 26 } } } ,
+            user {
+              class "1.0" ,
+              type
+                str "AutodefOptions" ,
+              data {
+                {
+                  label
+                    str "SpecifyNuclearProduct" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MiscFeatRule" ,
+                  data
+                    str "NoncodingProductFeat" } ,
+                {
+                  label
+                    str "FeatureListType" ,
+                  data
+                    str "List All Features" } ,
+                {
+                  label
+                    str "HIVRule" ,
+                  data
+                    str "WantBoth" } ,
+                {
+                  label
+                    str "DoNotApplyToSp" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "LeaveParenthetical" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MaxMods" ,
+                  data
+                    int -99 } ,
+                {
+                  label
+                    str "UseLabels" ,
+                  data
+                    bool TRUE } } } ,
+            create-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } ,
+            update-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 255 ,
+            strand ds ,
+            seq-data
+              ncbi2na 'C49FBABF928DD5024237D76800D2404295A410410430CA4FA903A1B
+67235739F110F2F33D39F627F442F85C8AE803BDB83DD4FCFFB782793DCF8FF420082496C'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      imp {
+                        key "repeat_region" } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 254 ,
+                        strand plus ,
+                        id
+                          gi 885481038 } ,
+                    qual {
+                      {
+                        qual "rpt_type" ,
+                        val "tandem" } ,
+                      {
+                        qual "satellite" ,
+                        val "microsatellite:OLEST3" } } } } } } } ,
+        seq {
+          id {
+            genbank {
+              accession "KT281455" ,
+              version 1 } ,
+            gi 885481039 } ,
+          descr {
+            title "Olea europaea subsp. europaea microsatellite OLEST4
+ sequence." ,
+            source {
+              genome genomic ,
+              org {
+                taxname "Olea europaea subsp. europaea" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 158383 } } ,
+                orgname {
+                  name
+                    binomial {
+                      genus "Olea" ,
+                      species "europaea" ,
+                      subspecies "europaea" } ,
+                  mod {
+                    {
+                      subtype cultivar ,
+                      subname "Leccino" } ,
+                    {
+                      subtype sub-species ,
+                      subname "europaea" } } ,
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Tracheophyta; Spermatophyta; Magnoliophyta; eudicotyledons;
+ Gunneridae; Pentapetalae; asterids; lamiids; Lamiales; Oleaceae; Oleeae;
+ Olea" ,
+                  gcode 1 ,
+                  mgcode 1 ,
+                  div "PLN" ,
+                  pgcode 11 } } } ,
+            molinfo {
+              biomol genomic ,
+              completeness partial } ,
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Baldoni" ,
+                              first "Luciana" ,
+                              initials "L." } } ,
+                        {
+                          name
+                            name {
+                              last "Mariotti" ,
+                              first "Roberto" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Cultrera" ,
+                              first "Nicolo" ,
+                              initials "N.G.M." } } ,
+                        {
+                          name
+                            name {
+                              last "Mousavi" ,
+                              first "Soraya" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Rossi" ,
+                              first "Martina" ,
+                              initials "M." } } } ,
+                    affil
+                      std {
+                        affil "National Research Council (CNR)" ,
+                        div "Institute of Bioscences and Bioresources" ,
+                        city "Perugia" ,
+                        sub "PG" ,
+                        country "Italy" ,
+                        street "Via Madonna Alta, 130" ,
+                        postal-code "06128" } } ,
+                  medium email ,
+                  date
+                    std {
+                      year 2015 ,
+                      month 7 ,
+                      day 13 } } } } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              class "SMART_V1.0" ,
+              type
+                id 1 ,
+              data {
+                {
+                  label
+                    id 1 ,
+                  data
+                    int 27 } } } ,
+            user {
+              class "1.0" ,
+              type
+                str "AutodefOptions" ,
+              data {
+                {
+                  label
+                    str "SpecifyNuclearProduct" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MiscFeatRule" ,
+                  data
+                    str "NoncodingProductFeat" } ,
+                {
+                  label
+                    str "FeatureListType" ,
+                  data
+                    str "List All Features" } ,
+                {
+                  label
+                    str "HIVRule" ,
+                  data
+                    str "WantBoth" } ,
+                {
+                  label
+                    str "DoNotApplyToSp" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "LeaveParenthetical" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MaxMods" ,
+                  data
+                    int -99 } ,
+                {
+                  label
+                    str "UseLabels" ,
+                  data
+                    bool TRUE } } } ,
+            create-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } ,
+            update-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 233 ,
+            strand ds ,
+            seq-data
+              ncbi2na 'F822083A886280EFA0080289FD8AD222FD234FD940F534DD4DDE33E
+82B380088BA3E4E280094F2E7E38E38E3C4B8A34E43A520127D34A18C0A8900'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      imp {
+                        key "repeat_region" } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 232 ,
+                        strand plus ,
+                        id
+                          gi 885481039 } ,
+                    qual {
+                      {
+                        qual "rpt_type" ,
+                        val "tandem" } ,
+                      {
+                        qual "satellite" ,
+                        val "microsatellite:OLEST4" } } } } } } } ,
+        seq {
+          id {
+            genbank {
+              accession "KT281456" ,
+              version 1 } ,
+            gi 885481040 } ,
+          descr {
+            title "Olea europaea subsp. europaea microsatellite OLEST5
+ sequence." ,
+            source {
+              genome genomic ,
+              org {
+                taxname "Olea europaea subsp. europaea" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 158383 } } ,
+                orgname {
+                  name
+                    binomial {
+                      genus "Olea" ,
+                      species "europaea" ,
+                      subspecies "europaea" } ,
+                  mod {
+                    {
+                      subtype cultivar ,
+                      subname "Leccino" } ,
+                    {
+                      subtype sub-species ,
+                      subname "europaea" } } ,
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Tracheophyta; Spermatophyta; Magnoliophyta; eudicotyledons;
+ Gunneridae; Pentapetalae; asterids; lamiids; Lamiales; Oleaceae; Oleeae;
+ Olea" ,
+                  gcode 1 ,
+                  mgcode 1 ,
+                  div "PLN" ,
+                  pgcode 11 } } } ,
+            molinfo {
+              biomol genomic ,
+              completeness partial } ,
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Baldoni" ,
+                              first "Luciana" ,
+                              initials "L." } } ,
+                        {
+                          name
+                            name {
+                              last "Mariotti" ,
+                              first "Roberto" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Cultrera" ,
+                              first "Nicolo" ,
+                              initials "N.G.M." } } ,
+                        {
+                          name
+                            name {
+                              last "Mousavi" ,
+                              first "Soraya" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Rossi" ,
+                              first "Martina" ,
+                              initials "M." } } } ,
+                    affil
+                      std {
+                        affil "National Research Council (CNR)" ,
+                        div "Institute of Bioscences and Bioresources" ,
+                        city "Perugia" ,
+                        sub "PG" ,
+                        country "Italy" ,
+                        street "Via Madonna Alta, 130" ,
+                        postal-code "06128" } } ,
+                  medium email ,
+                  date
+                    std {
+                      year 2015 ,
+                      month 7 ,
+                      day 13 } } } } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              class "SMART_V1.0" ,
+              type
+                id 1 ,
+              data {
+                {
+                  label
+                    id 1 ,
+                  data
+                    int 28 } } } ,
+            user {
+              class "1.0" ,
+              type
+                str "AutodefOptions" ,
+              data {
+                {
+                  label
+                    str "SpecifyNuclearProduct" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MiscFeatRule" ,
+                  data
+                    str "NoncodingProductFeat" } ,
+                {
+                  label
+                    str "FeatureListType" ,
+                  data
+                    str "List All Features" } ,
+                {
+                  label
+                    str "HIVRule" ,
+                  data
+                    str "WantBoth" } ,
+                {
+                  label
+                    str "DoNotApplyToSp" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "LeaveParenthetical" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MaxMods" ,
+                  data
+                    int -99 } ,
+                {
+                  label
+                    str "UseLabels" ,
+                  data
+                    bool TRUE } } } ,
+            create-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } ,
+            update-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 331 ,
+            strand ds ,
+            seq-data
+              ncbi2na '4288A2057C0F08813F32003A74BCFCC3BF7DF95FBEC9D3904908BEE
+5EF842ADE0E240204D546F69A4DAEBAEBAEBAFEAA7A24AE4BE9ADFA4FA6DAEC76BADFAABB0FA04
+AA87E9AEFAE00EBA7FA6BA0FAC3A7CAE8'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      imp {
+                        key "repeat_region" } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 330 ,
+                        strand plus ,
+                        id
+                          gi 885481040 } ,
+                    qual {
+                      {
+                        qual "rpt_type" ,
+                        val "tandem" } ,
+                      {
+                        qual "satellite" ,
+                        val "microsatellite:OLEST5" } } } } } } } ,
+        seq {
+          id {
+            genbank {
+              accession "KT281457" ,
+              version 1 } ,
+            gi 885481041 } ,
+          descr {
+            title "Olea europaea subsp. europaea microsatellite OLEST6
+ sequence." ,
+            source {
+              genome genomic ,
+              org {
+                taxname "Olea europaea subsp. europaea" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 158383 } } ,
+                orgname {
+                  name
+                    binomial {
+                      genus "Olea" ,
+                      species "europaea" ,
+                      subspecies "europaea" } ,
+                  mod {
+                    {
+                      subtype cultivar ,
+                      subname "Leccino" } ,
+                    {
+                      subtype sub-species ,
+                      subname "europaea" } } ,
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Tracheophyta; Spermatophyta; Magnoliophyta; eudicotyledons;
+ Gunneridae; Pentapetalae; asterids; lamiids; Lamiales; Oleaceae; Oleeae;
+ Olea" ,
+                  gcode 1 ,
+                  mgcode 1 ,
+                  div "PLN" ,
+                  pgcode 11 } } } ,
+            molinfo {
+              biomol genomic ,
+              completeness partial } ,
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Baldoni" ,
+                              first "Luciana" ,
+                              initials "L." } } ,
+                        {
+                          name
+                            name {
+                              last "Mariotti" ,
+                              first "Roberto" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Cultrera" ,
+                              first "Nicolo" ,
+                              initials "N.G.M." } } ,
+                        {
+                          name
+                            name {
+                              last "Mousavi" ,
+                              first "Soraya" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Rossi" ,
+                              first "Martina" ,
+                              initials "M." } } } ,
+                    affil
+                      std {
+                        affil "National Research Council (CNR)" ,
+                        div "Institute of Bioscences and Bioresources" ,
+                        city "Perugia" ,
+                        sub "PG" ,
+                        country "Italy" ,
+                        street "Via Madonna Alta, 130" ,
+                        postal-code "06128" } } ,
+                  medium email ,
+                  date
+                    std {
+                      year 2015 ,
+                      month 7 ,
+                      day 13 } } } } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              class "SMART_V1.0" ,
+              type
+                id 1 ,
+              data {
+                {
+                  label
+                    id 1 ,
+                  data
+                    int 29 } } } ,
+            user {
+              class "1.0" ,
+              type
+                str "AutodefOptions" ,
+              data {
+                {
+                  label
+                    str "SpecifyNuclearProduct" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MiscFeatRule" ,
+                  data
+                    str "NoncodingProductFeat" } ,
+                {
+                  label
+                    str "FeatureListType" ,
+                  data
+                    str "List All Features" } ,
+                {
+                  label
+                    str "HIVRule" ,
+                  data
+                    str "WantBoth" } ,
+                {
+                  label
+                    str "DoNotApplyToSp" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "LeaveParenthetical" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MaxMods" ,
+                  data
+                    int -99 } ,
+                {
+                  label
+                    str "UseLabels" ,
+                  data
+                    bool TRUE } } } ,
+            create-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } ,
+            update-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 336 ,
+            strand ds ,
+            seq-data
+              ncbi2na 'E88F1227A208E38E0AE78208E80EB8E3CCF8E38CF828CFF0DA8F34E
+0528046D07AE8890B4130320BD2322BD20D34D34DE3CCBCF0CD0E321348237B07BA8822B0239DE
+79C13A3F4CF20177B307BECFEE80D14BCD1'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      imp {
+                        key "repeat_region" } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 335 ,
+                        strand plus ,
+                        id
+                          gi 885481041 } ,
+                    qual {
+                      {
+                        qual "rpt_type" ,
+                        val "tandem" } ,
+                      {
+                        qual "satellite" ,
+                        val "microsatellite:OLEST6" } } } } } } } ,
+        seq {
+          id {
+            genbank {
+              accession "KT281458" ,
+              version 1 } ,
+            gi 885481042 } ,
+          descr {
+            title "Olea europaea subsp. europaea microsatellite OLEST7
+ sequence." ,
+            source {
+              genome genomic ,
+              org {
+                taxname "Olea europaea subsp. europaea" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 158383 } } ,
+                orgname {
+                  name
+                    binomial {
+                      genus "Olea" ,
+                      species "europaea" ,
+                      subspecies "europaea" } ,
+                  mod {
+                    {
+                      subtype cultivar ,
+                      subname "Leccino" } ,
+                    {
+                      subtype sub-species ,
+                      subname "europaea" } } ,
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Tracheophyta; Spermatophyta; Magnoliophyta; eudicotyledons;
+ Gunneridae; Pentapetalae; asterids; lamiids; Lamiales; Oleaceae; Oleeae;
+ Olea" ,
+                  gcode 1 ,
+                  mgcode 1 ,
+                  div "PLN" ,
+                  pgcode 11 } } } ,
+            molinfo {
+              biomol genomic ,
+              completeness partial } ,
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Baldoni" ,
+                              first "Luciana" ,
+                              initials "L." } } ,
+                        {
+                          name
+                            name {
+                              last "Mariotti" ,
+                              first "Roberto" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Cultrera" ,
+                              first "Nicolo" ,
+                              initials "N.G.M." } } ,
+                        {
+                          name
+                            name {
+                              last "Mousavi" ,
+                              first "Soraya" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Rossi" ,
+                              first "Martina" ,
+                              initials "M." } } } ,
+                    affil
+                      std {
+                        affil "National Research Council (CNR)" ,
+                        div "Institute of Bioscences and Bioresources" ,
+                        city "Perugia" ,
+                        sub "PG" ,
+                        country "Italy" ,
+                        street "Via Madonna Alta, 130" ,
+                        postal-code "06128" } } ,
+                  medium email ,
+                  date
+                    std {
+                      year 2015 ,
+                      month 7 ,
+                      day 13 } } } } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              class "SMART_V1.0" ,
+              type
+                id 1 ,
+              data {
+                {
+                  label
+                    id 1 ,
+                  data
+                    int 30 } } } ,
+            user {
+              class "1.0" ,
+              type
+                str "AutodefOptions" ,
+              data {
+                {
+                  label
+                    str "SpecifyNuclearProduct" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MiscFeatRule" ,
+                  data
+                    str "NoncodingProductFeat" } ,
+                {
+                  label
+                    str "FeatureListType" ,
+                  data
+                    str "List All Features" } ,
+                {
+                  label
+                    str "HIVRule" ,
+                  data
+                    str "WantBoth" } ,
+                {
+                  label
+                    str "DoNotApplyToSp" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "LeaveParenthetical" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MaxMods" ,
+                  data
+                    int -99 } ,
+                {
+                  label
+                    str "UseLabels" ,
+                  data
+                    bool TRUE } } } ,
+            create-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } ,
+            update-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 263 ,
+            strand ds ,
+            seq-data
+              ncbi2na '4AE8A8E36C8DE5FEBAEBAEBA562B51FAD372036EAE2E2FEE3F2A77C
+C43C33FF493D8B9EFE3BDEAF9B4D71F5EDFBBBEAF3F5C0FF83FEAF2E7E03FE70A5FF65F7A31D0'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      imp {
+                        key "repeat_region" } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 262 ,
+                        strand plus ,
+                        id
+                          gi 885481042 } ,
+                    qual {
+                      {
+                        qual "rpt_type" ,
+                        val "tandem" } ,
+                      {
+                        qual "satellite" ,
+                        val "microsatellite:OLEST7" } } } } } } } ,
+        seq {
+          id {
+            genbank {
+              accession "KT281459" ,
+              version 1 } ,
+            gi 885481043 } ,
+          descr {
+            title "Olea europaea subsp. europaea microsatellite OLEST8
+ sequence." ,
+            source {
+              genome genomic ,
+              org {
+                taxname "Olea europaea subsp. europaea" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 158383 } } ,
+                orgname {
+                  name
+                    binomial {
+                      genus "Olea" ,
+                      species "europaea" ,
+                      subspecies "europaea" } ,
+                  mod {
+                    {
+                      subtype cultivar ,
+                      subname "Leccino" } ,
+                    {
+                      subtype sub-species ,
+                      subname "europaea" } } ,
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Tracheophyta; Spermatophyta; Magnoliophyta; eudicotyledons;
+ Gunneridae; Pentapetalae; asterids; lamiids; Lamiales; Oleaceae; Oleeae;
+ Olea" ,
+                  gcode 1 ,
+                  mgcode 1 ,
+                  div "PLN" ,
+                  pgcode 11 } } } ,
+            molinfo {
+              biomol genomic ,
+              completeness partial } ,
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Baldoni" ,
+                              first "Luciana" ,
+                              initials "L." } } ,
+                        {
+                          name
+                            name {
+                              last "Mariotti" ,
+                              first "Roberto" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Cultrera" ,
+                              first "Nicolo" ,
+                              initials "N.G.M." } } ,
+                        {
+                          name
+                            name {
+                              last "Mousavi" ,
+                              first "Soraya" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Rossi" ,
+                              first "Martina" ,
+                              initials "M." } } } ,
+                    affil
+                      std {
+                        affil "National Research Council (CNR)" ,
+                        div "Institute of Bioscences and Bioresources" ,
+                        city "Perugia" ,
+                        sub "PG" ,
+                        country "Italy" ,
+                        street "Via Madonna Alta, 130" ,
+                        postal-code "06128" } } ,
+                  medium email ,
+                  date
+                    std {
+                      year 2015 ,
+                      month 7 ,
+                      day 13 } } } } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              class "SMART_V1.0" ,
+              type
+                id 1 ,
+              data {
+                {
+                  label
+                    id 1 ,
+                  data
+                    int 31 } } } ,
+            user {
+              class "1.0" ,
+              type
+                str "AutodefOptions" ,
+              data {
+                {
+                  label
+                    str "SpecifyNuclearProduct" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MiscFeatRule" ,
+                  data
+                    str "NoncodingProductFeat" } ,
+                {
+                  label
+                    str "FeatureListType" ,
+                  data
+                    str "List All Features" } ,
+                {
+                  label
+                    str "HIVRule" ,
+                  data
+                    str "WantBoth" } ,
+                {
+                  label
+                    str "DoNotApplyToSp" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "LeaveParenthetical" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MaxMods" ,
+                  data
+                    int -99 } ,
+                {
+                  label
+                    str "UseLabels" ,
+                  data
+                    bool TRUE } } } ,
+            create-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } ,
+            update-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 331 ,
+            strand ds ,
+            seq-data
+              ncbi2na '79C783A9108868FF5E3E9F8DA4CFDE3DE0FF34202422BAD354544DF
+DF4BD37F4834214F11204DF6CD789249249D491CE72E25CFF3E512D37FC7D7F5965A8DD0417DFE
+8C3F134DF0FE5777772A80D2D15F779D4'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      imp {
+                        key "repeat_region" } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 330 ,
+                        strand plus ,
+                        id
+                          gi 885481043 } ,
+                    qual {
+                      {
+                        qual "rpt_type" ,
+                        val "tandem" } ,
+                      {
+                        qual "satellite" ,
+                        val "microsatellite:OLEST8" } } } } } } } ,
+        seq {
+          id {
+            genbank {
+              accession "KT281460" ,
+              version 1 } ,
+            gi 885481044 } ,
+          descr {
+            title "Olea europaea subsp. europaea microsatellite OLEST9
+ sequence." ,
+            source {
+              genome genomic ,
+              org {
+                taxname "Olea europaea subsp. europaea" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 158383 } } ,
+                orgname {
+                  name
+                    binomial {
+                      genus "Olea" ,
+                      species "europaea" ,
+                      subspecies "europaea" } ,
+                  mod {
+                    {
+                      subtype cultivar ,
+                      subname "Leccino" } ,
+                    {
+                      subtype sub-species ,
+                      subname "europaea" } } ,
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Tracheophyta; Spermatophyta; Magnoliophyta; eudicotyledons;
+ Gunneridae; Pentapetalae; asterids; lamiids; Lamiales; Oleaceae; Oleeae;
+ Olea" ,
+                  gcode 1 ,
+                  mgcode 1 ,
+                  div "PLN" ,
+                  pgcode 11 } } } ,
+            molinfo {
+              biomol genomic ,
+              completeness partial } ,
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Baldoni" ,
+                              first "Luciana" ,
+                              initials "L." } } ,
+                        {
+                          name
+                            name {
+                              last "Mariotti" ,
+                              first "Roberto" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Cultrera" ,
+                              first "Nicolo" ,
+                              initials "N.G.M." } } ,
+                        {
+                          name
+                            name {
+                              last "Mousavi" ,
+                              first "Soraya" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Rossi" ,
+                              first "Martina" ,
+                              initials "M." } } } ,
+                    affil
+                      std {
+                        affil "National Research Council (CNR)" ,
+                        div "Institute of Bioscences and Bioresources" ,
+                        city "Perugia" ,
+                        sub "PG" ,
+                        country "Italy" ,
+                        street "Via Madonna Alta, 130" ,
+                        postal-code "06128" } } ,
+                  medium email ,
+                  date
+                    std {
+                      year 2015 ,
+                      month 7 ,
+                      day 13 } } } } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              class "SMART_V1.0" ,
+              type
+                id 1 ,
+              data {
+                {
+                  label
+                    id 1 ,
+                  data
+                    int 32 } } } ,
+            user {
+              class "1.0" ,
+              type
+                str "AutodefOptions" ,
+              data {
+                {
+                  label
+                    str "SpecifyNuclearProduct" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MiscFeatRule" ,
+                  data
+                    str "NoncodingProductFeat" } ,
+                {
+                  label
+                    str "FeatureListType" ,
+                  data
+                    str "List All Features" } ,
+                {
+                  label
+                    str "HIVRule" ,
+                  data
+                    str "WantBoth" } ,
+                {
+                  label
+                    str "DoNotApplyToSp" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "LeaveParenthetical" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MaxMods" ,
+                  data
+                    int -99 } ,
+                {
+                  label
+                    str "UseLabels" ,
+                  data
+                    bool TRUE } } } ,
+            create-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } ,
+            update-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 346 ,
+            strand ds ,
+            seq-data
+              ncbi2na '85741FEBBA63579E85DF2BA6594506456FEE9A698E8B4790A855DC2
+D65A77D7D009A4C3B68A2AE8AC2AEBA61A3FBF5966D29A285029AE3EEC74EA8F4540228DA2A8AB
+8E1F4D3BDF96F433AA698BAEBAAA798B8EBE6B830'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      imp {
+                        key "repeat_region" } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 345 ,
+                        strand plus ,
+                        id
+                          gi 885481044 } ,
+                    qual {
+                      {
+                        qual "rpt_type" ,
+                        val "tandem" } ,
+                      {
+                        qual "satellite" ,
+                        val "microsatellite:OLEST9" } } } } } } } ,
+        seq {
+          id {
+            genbank {
+              accession "KT281461" ,
+              version 1 } ,
+            gi 885481045 } ,
+          descr {
+            title "Olea europaea subsp. europaea microsatellite OLEST10
+ sequence." ,
+            source {
+              genome genomic ,
+              org {
+                taxname "Olea europaea subsp. europaea" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 158383 } } ,
+                orgname {
+                  name
+                    binomial {
+                      genus "Olea" ,
+                      species "europaea" ,
+                      subspecies "europaea" } ,
+                  mod {
+                    {
+                      subtype cultivar ,
+                      subname "Leccino" } ,
+                    {
+                      subtype sub-species ,
+                      subname "europaea" } } ,
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Tracheophyta; Spermatophyta; Magnoliophyta; eudicotyledons;
+ Gunneridae; Pentapetalae; asterids; lamiids; Lamiales; Oleaceae; Oleeae;
+ Olea" ,
+                  gcode 1 ,
+                  mgcode 1 ,
+                  div "PLN" ,
+                  pgcode 11 } } } ,
+            molinfo {
+              biomol genomic ,
+              completeness partial } ,
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Baldoni" ,
+                              first "Luciana" ,
+                              initials "L." } } ,
+                        {
+                          name
+                            name {
+                              last "Mariotti" ,
+                              first "Roberto" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Cultrera" ,
+                              first "Nicolo" ,
+                              initials "N.G.M." } } ,
+                        {
+                          name
+                            name {
+                              last "Mousavi" ,
+                              first "Soraya" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Rossi" ,
+                              first "Martina" ,
+                              initials "M." } } } ,
+                    affil
+                      std {
+                        affil "National Research Council (CNR)" ,
+                        div "Institute of Bioscences and Bioresources" ,
+                        city "Perugia" ,
+                        sub "PG" ,
+                        country "Italy" ,
+                        street "Via Madonna Alta, 130" ,
+                        postal-code "06128" } } ,
+                  medium email ,
+                  date
+                    std {
+                      year 2015 ,
+                      month 7 ,
+                      day 13 } } } } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              class "SMART_V1.0" ,
+              type
+                id 1 ,
+              data {
+                {
+                  label
+                    id 1 ,
+                  data
+                    int 33 } } } ,
+            user {
+              class "1.0" ,
+              type
+                str "AutodefOptions" ,
+              data {
+                {
+                  label
+                    str "SpecifyNuclearProduct" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MiscFeatRule" ,
+                  data
+                    str "NoncodingProductFeat" } ,
+                {
+                  label
+                    str "FeatureListType" ,
+                  data
+                    str "List All Features" } ,
+                {
+                  label
+                    str "HIVRule" ,
+                  data
+                    str "WantBoth" } ,
+                {
+                  label
+                    str "DoNotApplyToSp" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "LeaveParenthetical" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MaxMods" ,
+                  data
+                    int -99 } ,
+                {
+                  label
+                    str "UseLabels" ,
+                  data
+                    bool TRUE } } } ,
+            create-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } ,
+            update-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 230 ,
+            strand ds ,
+            seq-data
+              ncbi2na '8940D08BCD253FDDC7F50420745AE15FC97B1A5D209E04A14D15759
+65945105D69A6B8BB2550208208238C93C0B0F21175D825DE38627E835700'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      imp {
+                        key "repeat_region" } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 229 ,
+                        strand plus ,
+                        id
+                          gi 885481045 } ,
+                    qual {
+                      {
+                        qual "rpt_type" ,
+                        val "tandem" } ,
+                      {
+                        qual "satellite" ,
+                        val "microsatellite:OLEST10" } } } } } } } ,
+        seq {
+          id {
+            genbank {
+              accession "KT281462" ,
+              version 1 } ,
+            gi 885481049 } ,
+          descr {
+            title "Olea europaea subsp. europaea microsatellite OLEST11
+ sequence." ,
+            source {
+              genome genomic ,
+              org {
+                taxname "Olea europaea subsp. europaea" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 158383 } } ,
+                orgname {
+                  name
+                    binomial {
+                      genus "Olea" ,
+                      species "europaea" ,
+                      subspecies "europaea" } ,
+                  mod {
+                    {
+                      subtype cultivar ,
+                      subname "Leccino" } ,
+                    {
+                      subtype sub-species ,
+                      subname "europaea" } } ,
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Tracheophyta; Spermatophyta; Magnoliophyta; eudicotyledons;
+ Gunneridae; Pentapetalae; asterids; lamiids; Lamiales; Oleaceae; Oleeae;
+ Olea" ,
+                  gcode 1 ,
+                  mgcode 1 ,
+                  div "PLN" ,
+                  pgcode 11 } } } ,
+            molinfo {
+              biomol genomic ,
+              completeness partial } ,
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Baldoni" ,
+                              first "Luciana" ,
+                              initials "L." } } ,
+                        {
+                          name
+                            name {
+                              last "Mariotti" ,
+                              first "Roberto" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Cultrera" ,
+                              first "Nicolo" ,
+                              initials "N.G.M." } } ,
+                        {
+                          name
+                            name {
+                              last "Mousavi" ,
+                              first "Soraya" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Rossi" ,
+                              first "Martina" ,
+                              initials "M." } } } ,
+                    affil
+                      std {
+                        affil "National Research Council (CNR)" ,
+                        div "Institute of Bioscences and Bioresources" ,
+                        city "Perugia" ,
+                        sub "PG" ,
+                        country "Italy" ,
+                        street "Via Madonna Alta, 130" ,
+                        postal-code "06128" } } ,
+                  medium email ,
+                  date
+                    std {
+                      year 2015 ,
+                      month 7 ,
+                      day 13 } } } } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              class "SMART_V1.0" ,
+              type
+                id 1 ,
+              data {
+                {
+                  label
+                    id 1 ,
+                  data
+                    int 34 } } } ,
+            user {
+              class "1.0" ,
+              type
+                str "AutodefOptions" ,
+              data {
+                {
+                  label
+                    str "SpecifyNuclearProduct" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MiscFeatRule" ,
+                  data
+                    str "NoncodingProductFeat" } ,
+                {
+                  label
+                    str "FeatureListType" ,
+                  data
+                    str "List All Features" } ,
+                {
+                  label
+                    str "HIVRule" ,
+                  data
+                    str "WantBoth" } ,
+                {
+                  label
+                    str "DoNotApplyToSp" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "LeaveParenthetical" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MaxMods" ,
+                  data
+                    int -99 } ,
+                {
+                  label
+                    str "UseLabels" ,
+                  data
+                    bool TRUE } } } ,
+            create-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } ,
+            update-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 253 ,
+            strand ds ,
+            seq-data
+              ncbi2na 'B928930424A503403E43F71BBAD0A880542FBE7AC50F109EBCDDE60
+A3AA6B96443CE29AFBFA88253A880F4A01D1F5F6083E02BC3C3C3C3F00C3A73BB0A37CEC0'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      imp {
+                        key "repeat_region" } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 252 ,
+                        strand plus ,
+                        id
+                          gi 885481049 } ,
+                    qual {
+                      {
+                        qual "rpt_type" ,
+                        val "tandem" } ,
+                      {
+                        qual "satellite" ,
+                        val "microsatellite:OLEST11" } } } } } } } ,
+        seq {
+          id {
+            genbank {
+              accession "KT281463" ,
+              version 1 } ,
+            gi 885481085 } ,
+          descr {
+            title "Olea europaea subsp. europaea microsatellite OLEST12
+ sequence." ,
+            source {
+              genome genomic ,
+              org {
+                taxname "Olea europaea subsp. europaea" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 158383 } } ,
+                orgname {
+                  name
+                    binomial {
+                      genus "Olea" ,
+                      species "europaea" ,
+                      subspecies "europaea" } ,
+                  mod {
+                    {
+                      subtype cultivar ,
+                      subname "Leccino" } ,
+                    {
+                      subtype sub-species ,
+                      subname "europaea" } } ,
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Tracheophyta; Spermatophyta; Magnoliophyta; eudicotyledons;
+ Gunneridae; Pentapetalae; asterids; lamiids; Lamiales; Oleaceae; Oleeae;
+ Olea" ,
+                  gcode 1 ,
+                  mgcode 1 ,
+                  div "PLN" ,
+                  pgcode 11 } } } ,
+            molinfo {
+              biomol genomic ,
+              completeness partial } ,
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Baldoni" ,
+                              first "Luciana" ,
+                              initials "L." } } ,
+                        {
+                          name
+                            name {
+                              last "Mariotti" ,
+                              first "Roberto" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Cultrera" ,
+                              first "Nicolo" ,
+                              initials "N.G.M." } } ,
+                        {
+                          name
+                            name {
+                              last "Mousavi" ,
+                              first "Soraya" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Rossi" ,
+                              first "Martina" ,
+                              initials "M." } } } ,
+                    affil
+                      std {
+                        affil "National Research Council (CNR)" ,
+                        div "Institute of Bioscences and Bioresources" ,
+                        city "Perugia" ,
+                        sub "PG" ,
+                        country "Italy" ,
+                        street "Via Madonna Alta, 130" ,
+                        postal-code "06128" } } ,
+                  medium email ,
+                  date
+                    std {
+                      year 2015 ,
+                      month 7 ,
+                      day 13 } } } } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              class "SMART_V1.0" ,
+              type
+                id 1 ,
+              data {
+                {
+                  label
+                    id 1 ,
+                  data
+                    int 35 } } } ,
+            user {
+              class "1.0" ,
+              type
+                str "AutodefOptions" ,
+              data {
+                {
+                  label
+                    str "SpecifyNuclearProduct" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MiscFeatRule" ,
+                  data
+                    str "NoncodingProductFeat" } ,
+                {
+                  label
+                    str "FeatureListType" ,
+                  data
+                    str "List All Features" } ,
+                {
+                  label
+                    str "HIVRule" ,
+                  data
+                    str "WantBoth" } ,
+                {
+                  label
+                    str "DoNotApplyToSp" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "LeaveParenthetical" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MaxMods" ,
+                  data
+                    int -99 } ,
+                {
+                  label
+                    str "UseLabels" ,
+                  data
+                    bool TRUE } } } ,
+            create-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } ,
+            update-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 168 ,
+            strand ds ,
+            seq-data
+              ncbi2na 'DD03F44C507564F7DF7DF7DF7DF7DD23D07114B0331313000888886
+00BEB6578F04BF3C0337AB83FD122'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      imp {
+                        key "repeat_region" } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 167 ,
+                        strand plus ,
+                        id
+                          gi 885481085 } ,
+                    qual {
+                      {
+                        qual "rpt_type" ,
+                        val "tandem" } ,
+                      {
+                        qual "satellite" ,
+                        val "microsatellite:OLEST12" } } } } } } } ,
+        seq {
+          id {
+            genbank {
+              accession "KT281464" ,
+              version 1 } ,
+            gi 885481157 } ,
+          descr {
+            title "Olea europaea subsp. europaea microsatellite OLEST13
+ sequence." ,
+            source {
+              genome genomic ,
+              org {
+                taxname "Olea europaea subsp. europaea" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 158383 } } ,
+                orgname {
+                  name
+                    binomial {
+                      genus "Olea" ,
+                      species "europaea" ,
+                      subspecies "europaea" } ,
+                  mod {
+                    {
+                      subtype cultivar ,
+                      subname "Leccino" } ,
+                    {
+                      subtype sub-species ,
+                      subname "europaea" } } ,
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Tracheophyta; Spermatophyta; Magnoliophyta; eudicotyledons;
+ Gunneridae; Pentapetalae; asterids; lamiids; Lamiales; Oleaceae; Oleeae;
+ Olea" ,
+                  gcode 1 ,
+                  mgcode 1 ,
+                  div "PLN" ,
+                  pgcode 11 } } } ,
+            molinfo {
+              biomol genomic ,
+              completeness partial } ,
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Baldoni" ,
+                              first "Luciana" ,
+                              initials "L." } } ,
+                        {
+                          name
+                            name {
+                              last "Mariotti" ,
+                              first "Roberto" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Cultrera" ,
+                              first "Nicolo" ,
+                              initials "N.G.M." } } ,
+                        {
+                          name
+                            name {
+                              last "Mousavi" ,
+                              first "Soraya" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Rossi" ,
+                              first "Martina" ,
+                              initials "M." } } } ,
+                    affil
+                      std {
+                        affil "National Research Council (CNR)" ,
+                        div "Institute of Bioscences and Bioresources" ,
+                        city "Perugia" ,
+                        sub "PG" ,
+                        country "Italy" ,
+                        street "Via Madonna Alta, 130" ,
+                        postal-code "06128" } } ,
+                  medium email ,
+                  date
+                    std {
+                      year 2015 ,
+                      month 7 ,
+                      day 13 } } } } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              class "SMART_V1.0" ,
+              type
+                id 1 ,
+              data {
+                {
+                  label
+                    id 1 ,
+                  data
+                    int 36 } } } ,
+            user {
+              class "1.0" ,
+              type
+                str "AutodefOptions" ,
+              data {
+                {
+                  label
+                    str "SpecifyNuclearProduct" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MiscFeatRule" ,
+                  data
+                    str "NoncodingProductFeat" } ,
+                {
+                  label
+                    str "FeatureListType" ,
+                  data
+                    str "List All Features" } ,
+                {
+                  label
+                    str "HIVRule" ,
+                  data
+                    str "WantBoth" } ,
+                {
+                  label
+                    str "DoNotApplyToSp" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "LeaveParenthetical" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MaxMods" ,
+                  data
+                    int -99 } ,
+                {
+                  label
+                    str "UseLabels" ,
+                  data
+                    bool TRUE } } } ,
+            create-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } ,
+            update-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 245 ,
+            strand ds ,
+            seq-data
+              ncbi2na '7ED21F920F02AEFEA3907EFE822C8038820803EAF92082082083C48
+AEE292296EA803A9A688C2A15190A6988BBA7AB1FF4869A28E494A9F38C29A73E2F40'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      imp {
+                        key "repeat_region" } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 244 ,
+                        strand plus ,
+                        id
+                          gi 885481157 } ,
+                    qual {
+                      {
+                        qual "rpt_type" ,
+                        val "tandem" } ,
+                      {
+                        qual "satellite" ,
+                        val "microsatellite:OLEST13" } } } } } } } ,
+        seq {
+          id {
+            genbank {
+              accession "KT281465" ,
+              version 1 } ,
+            gi 885481251 } ,
+          descr {
+            title "Olea europaea subsp. europaea microsatellite OLEST14
+ sequence." ,
+            source {
+              genome genomic ,
+              org {
+                taxname "Olea europaea subsp. europaea" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 158383 } } ,
+                orgname {
+                  name
+                    binomial {
+                      genus "Olea" ,
+                      species "europaea" ,
+                      subspecies "europaea" } ,
+                  mod {
+                    {
+                      subtype cultivar ,
+                      subname "Leccino" } ,
+                    {
+                      subtype sub-species ,
+                      subname "europaea" } } ,
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Tracheophyta; Spermatophyta; Magnoliophyta; eudicotyledons;
+ Gunneridae; Pentapetalae; asterids; lamiids; Lamiales; Oleaceae; Oleeae;
+ Olea" ,
+                  gcode 1 ,
+                  mgcode 1 ,
+                  div "PLN" ,
+                  pgcode 11 } } } ,
+            molinfo {
+              biomol genomic ,
+              completeness partial } ,
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Baldoni" ,
+                              first "Luciana" ,
+                              initials "L." } } ,
+                        {
+                          name
+                            name {
+                              last "Mariotti" ,
+                              first "Roberto" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Cultrera" ,
+                              first "Nicolo" ,
+                              initials "N.G.M." } } ,
+                        {
+                          name
+                            name {
+                              last "Mousavi" ,
+                              first "Soraya" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Rossi" ,
+                              first "Martina" ,
+                              initials "M." } } } ,
+                    affil
+                      std {
+                        affil "National Research Council (CNR)" ,
+                        div "Institute of Bioscences and Bioresources" ,
+                        city "Perugia" ,
+                        sub "PG" ,
+                        country "Italy" ,
+                        street "Via Madonna Alta, 130" ,
+                        postal-code "06128" } } ,
+                  medium email ,
+                  date
+                    std {
+                      year 2015 ,
+                      month 7 ,
+                      day 13 } } } } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              class "SMART_V1.0" ,
+              type
+                id 1 ,
+              data {
+                {
+                  label
+                    id 1 ,
+                  data
+                    int 37 } } } ,
+            user {
+              class "1.0" ,
+              type
+                str "AutodefOptions" ,
+              data {
+                {
+                  label
+                    str "SpecifyNuclearProduct" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MiscFeatRule" ,
+                  data
+                    str "NoncodingProductFeat" } ,
+                {
+                  label
+                    str "FeatureListType" ,
+                  data
+                    str "List All Features" } ,
+                {
+                  label
+                    str "HIVRule" ,
+                  data
+                    str "WantBoth" } ,
+                {
+                  label
+                    str "DoNotApplyToSp" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "LeaveParenthetical" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MaxMods" ,
+                  data
+                    int -99 } ,
+                {
+                  label
+                    str "UseLabels" ,
+                  data
+                    bool TRUE } } } ,
+            create-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } ,
+            update-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 296 ,
+            strand ds ,
+            seq-data
+              ncbi2na 'FF6060FA0A0BD0E97F2E0B38A79A4F7F352D8FF7DF7DFFDF7DB7DB7
+FFD717F13C02228E548D1CF4DF8A40AFD13F0FAF7DCF3F3F01F0822DD2C2853CFB2B27FEBD3816
+C1F4F6D4FD7F3A2'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      imp {
+                        key "repeat_region" } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 295 ,
+                        strand plus ,
+                        id
+                          gi 885481251 } ,
+                    qual {
+                      {
+                        qual "rpt_type" ,
+                        val "tandem" } ,
+                      {
+                        qual "satellite" ,
+                        val "microsatellite:OLEST14" } } } } } } } ,
+        seq {
+          id {
+            genbank {
+              accession "KT281466" ,
+              version 1 } ,
+            gi 885481328 } ,
+          descr {
+            title "Olea europaea subsp. europaea microsatellite OLEST15
+ sequence." ,
+            source {
+              genome genomic ,
+              org {
+                taxname "Olea europaea subsp. europaea" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 158383 } } ,
+                orgname {
+                  name
+                    binomial {
+                      genus "Olea" ,
+                      species "europaea" ,
+                      subspecies "europaea" } ,
+                  mod {
+                    {
+                      subtype cultivar ,
+                      subname "Leccino" } ,
+                    {
+                      subtype sub-species ,
+                      subname "europaea" } } ,
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Tracheophyta; Spermatophyta; Magnoliophyta; eudicotyledons;
+ Gunneridae; Pentapetalae; asterids; lamiids; Lamiales; Oleaceae; Oleeae;
+ Olea" ,
+                  gcode 1 ,
+                  mgcode 1 ,
+                  div "PLN" ,
+                  pgcode 11 } } } ,
+            molinfo {
+              biomol genomic ,
+              completeness partial } ,
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Baldoni" ,
+                              first "Luciana" ,
+                              initials "L." } } ,
+                        {
+                          name
+                            name {
+                              last "Mariotti" ,
+                              first "Roberto" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Cultrera" ,
+                              first "Nicolo" ,
+                              initials "N.G.M." } } ,
+                        {
+                          name
+                            name {
+                              last "Mousavi" ,
+                              first "Soraya" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Rossi" ,
+                              first "Martina" ,
+                              initials "M." } } } ,
+                    affil
+                      std {
+                        affil "National Research Council (CNR)" ,
+                        div "Institute of Bioscences and Bioresources" ,
+                        city "Perugia" ,
+                        sub "PG" ,
+                        country "Italy" ,
+                        street "Via Madonna Alta, 130" ,
+                        postal-code "06128" } } ,
+                  medium email ,
+                  date
+                    std {
+                      year 2015 ,
+                      month 7 ,
+                      day 13 } } } } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              class "SMART_V1.0" ,
+              type
+                id 1 ,
+              data {
+                {
+                  label
+                    id 1 ,
+                  data
+                    int 38 } } } ,
+            user {
+              class "1.0" ,
+              type
+                str "AutodefOptions" ,
+              data {
+                {
+                  label
+                    str "SpecifyNuclearProduct" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MiscFeatRule" ,
+                  data
+                    str "NoncodingProductFeat" } ,
+                {
+                  label
+                    str "FeatureListType" ,
+                  data
+                    str "List All Features" } ,
+                {
+                  label
+                    str "HIVRule" ,
+                  data
+                    str "WantBoth" } ,
+                {
+                  label
+                    str "DoNotApplyToSp" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "LeaveParenthetical" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MaxMods" ,
+                  data
+                    int -99 } ,
+                {
+                  label
+                    str "UseLabels" ,
+                  data
+                    bool TRUE } } } ,
+            create-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } ,
+            update-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 171 ,
+            strand ds ,
+            seq-data
+              ncbi2na 'A2F5E9E048967EBAE8A7D928A28AE91EBA68A1E9A7494BDEB38D98C
+596210F9DB82C3CF7396002E8F75E58'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      imp {
+                        key "repeat_region" } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 170 ,
+                        strand plus ,
+                        id
+                          gi 885481328 } ,
+                    qual {
+                      {
+                        qual "rpt_type" ,
+                        val "tandem" } ,
+                      {
+                        qual "satellite" ,
+                        val "microsatellite:OLEST15" } } } } } } } ,
+        seq {
+          id {
+            genbank {
+              accession "KT281467" ,
+              version 1 } ,
+            gi 885481448 } ,
+          descr {
+            title "Olea europaea subsp. europaea microsatellite OLEST16
+ sequence." ,
+            source {
+              genome genomic ,
+              org {
+                taxname "Olea europaea subsp. europaea" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 158383 } } ,
+                orgname {
+                  name
+                    binomial {
+                      genus "Olea" ,
+                      species "europaea" ,
+                      subspecies "europaea" } ,
+                  mod {
+                    {
+                      subtype cultivar ,
+                      subname "Leccino" } ,
+                    {
+                      subtype sub-species ,
+                      subname "europaea" } } ,
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Tracheophyta; Spermatophyta; Magnoliophyta; eudicotyledons;
+ Gunneridae; Pentapetalae; asterids; lamiids; Lamiales; Oleaceae; Oleeae;
+ Olea" ,
+                  gcode 1 ,
+                  mgcode 1 ,
+                  div "PLN" ,
+                  pgcode 11 } } } ,
+            molinfo {
+              biomol genomic ,
+              completeness partial } ,
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Baldoni" ,
+                              first "Luciana" ,
+                              initials "L." } } ,
+                        {
+                          name
+                            name {
+                              last "Mariotti" ,
+                              first "Roberto" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Cultrera" ,
+                              first "Nicolo" ,
+                              initials "N.G.M." } } ,
+                        {
+                          name
+                            name {
+                              last "Mousavi" ,
+                              first "Soraya" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Rossi" ,
+                              first "Martina" ,
+                              initials "M." } } } ,
+                    affil
+                      std {
+                        affil "National Research Council (CNR)" ,
+                        div "Institute of Bioscences and Bioresources" ,
+                        city "Perugia" ,
+                        sub "PG" ,
+                        country "Italy" ,
+                        street "Via Madonna Alta, 130" ,
+                        postal-code "06128" } } ,
+                  medium email ,
+                  date
+                    std {
+                      year 2015 ,
+                      month 7 ,
+                      day 14 } } } } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              class "SMART_V1.0" ,
+              type
+                id 1 ,
+              data {
+                {
+                  label
+                    id 1 ,
+                  data
+                    int 39 } } } ,
+            user {
+              class "1.0" ,
+              type
+                str "AutodefOptions" ,
+              data {
+                {
+                  label
+                    str "SpecifyNuclearProduct" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MiscFeatRule" ,
+                  data
+                    str "NoncodingProductFeat" } ,
+                {
+                  label
+                    str "FeatureListType" ,
+                  data
+                    str "List All Features" } ,
+                {
+                  label
+                    str "HIVRule" ,
+                  data
+                    str "WantBoth" } ,
+                {
+                  label
+                    str "DoNotApplyToSp" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "LeaveParenthetical" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MaxMods" ,
+                  data
+                    int -99 } ,
+                {
+                  label
+                    str "UseLabels" ,
+                  data
+                    bool TRUE } } } ,
+            create-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } ,
+            update-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 176 ,
+            strand ds ,
+            seq-data
+              ncbi2na '83391A7E77714FB2F82082082082082082CA971EAAC7F7FFB4D03DE
+87E3FAE8ABBA496BA6920CE6BAE80E8A0'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      imp {
+                        key "repeat_region" } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 175 ,
+                        strand plus ,
+                        id
+                          gi 885481448 } ,
+                    qual {
+                      {
+                        qual "rpt_type" ,
+                        val "tandem" } ,
+                      {
+                        qual "satellite" ,
+                        val "microsatellite:OLEST16" } } } } } } } ,
+        seq {
+          id {
+            genbank {
+              accession "KT281468" ,
+              version 1 } ,
+            gi 885481558 } ,
+          descr {
+            title "Olea europaea subsp. europaea microsatellite OLEST17
+ sequence." ,
+            source {
+              genome genomic ,
+              org {
+                taxname "Olea europaea subsp. europaea" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 158383 } } ,
+                orgname {
+                  name
+                    binomial {
+                      genus "Olea" ,
+                      species "europaea" ,
+                      subspecies "europaea" } ,
+                  mod {
+                    {
+                      subtype cultivar ,
+                      subname "Leccino" } ,
+                    {
+                      subtype sub-species ,
+                      subname "europaea" } } ,
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Tracheophyta; Spermatophyta; Magnoliophyta; eudicotyledons;
+ Gunneridae; Pentapetalae; asterids; lamiids; Lamiales; Oleaceae; Oleeae;
+ Olea" ,
+                  gcode 1 ,
+                  mgcode 1 ,
+                  div "PLN" ,
+                  pgcode 11 } } } ,
+            molinfo {
+              biomol genomic ,
+              completeness partial } ,
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Baldoni" ,
+                              first "Luciana" ,
+                              initials "L." } } ,
+                        {
+                          name
+                            name {
+                              last "Mariotti" ,
+                              first "Roberto" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Cultrera" ,
+                              first "Nicolo" ,
+                              initials "N.G.M." } } ,
+                        {
+                          name
+                            name {
+                              last "Mousavi" ,
+                              first "Soraya" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Rossi" ,
+                              first "Martina" ,
+                              initials "M." } } } ,
+                    affil
+                      std {
+                        affil "National Research Council (CNR)" ,
+                        div "Institute of Bioscences and Bioresources" ,
+                        city "Perugia" ,
+                        sub "PG" ,
+                        country "Italy" ,
+                        street "Via Madonna Alta, 130" ,
+                        postal-code "06128" } } ,
+                  medium email ,
+                  date
+                    std {
+                      year 2015 ,
+                      month 7 ,
+                      day 14 } } } } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              class "SMART_V1.0" ,
+              type
+                id 1 ,
+              data {
+                {
+                  label
+                    id 1 ,
+                  data
+                    int 40 } } } ,
+            user {
+              class "1.0" ,
+              type
+                str "AutodefOptions" ,
+              data {
+                {
+                  label
+                    str "SpecifyNuclearProduct" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MiscFeatRule" ,
+                  data
+                    str "NoncodingProductFeat" } ,
+                {
+                  label
+                    str "FeatureListType" ,
+                  data
+                    str "List All Features" } ,
+                {
+                  label
+                    str "HIVRule" ,
+                  data
+                    str "WantBoth" } ,
+                {
+                  label
+                    str "DoNotApplyToSp" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "LeaveParenthetical" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MaxMods" ,
+                  data
+                    int -99 } ,
+                {
+                  label
+                    str "UseLabels" ,
+                  data
+                    bool TRUE } } } ,
+            create-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } ,
+            update-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 209 ,
+            strand ds ,
+            seq-data
+              ncbi2na 'F4D3FBF44D4222B8A88D50F8AE0A3AC1A17DEB4B7AC79D730F823B7
+78079134E952035BA87B443A38618618618410E88F3B540C440'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      imp {
+                        key "repeat_region" } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 208 ,
+                        strand plus ,
+                        id
+                          gi 885481558 } ,
+                    qual {
+                      {
+                        qual "rpt_type" ,
+                        val "tandem" } ,
+                      {
+                        qual "satellite" ,
+                        val "microsatellite:OLEST17" } } } } } } } ,
+        seq {
+          id {
+            genbank {
+              accession "KT281469" ,
+              version 1 } ,
+            gi 885481638 } ,
+          descr {
+            title "Olea europaea subsp. europaea microsatellite OLEST18
+ sequence." ,
+            source {
+              genome genomic ,
+              org {
+                taxname "Olea europaea subsp. europaea" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 158383 } } ,
+                orgname {
+                  name
+                    binomial {
+                      genus "Olea" ,
+                      species "europaea" ,
+                      subspecies "europaea" } ,
+                  mod {
+                    {
+                      subtype cultivar ,
+                      subname "Leccino" } ,
+                    {
+                      subtype sub-species ,
+                      subname "europaea" } } ,
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Tracheophyta; Spermatophyta; Magnoliophyta; eudicotyledons;
+ Gunneridae; Pentapetalae; asterids; lamiids; Lamiales; Oleaceae; Oleeae;
+ Olea" ,
+                  gcode 1 ,
+                  mgcode 1 ,
+                  div "PLN" ,
+                  pgcode 11 } } } ,
+            molinfo {
+              biomol genomic ,
+              completeness partial } ,
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Baldoni" ,
+                              first "Luciana" ,
+                              initials "L." } } ,
+                        {
+                          name
+                            name {
+                              last "Mariotti" ,
+                              first "Roberto" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Cultrera" ,
+                              first "Nicolo" ,
+                              initials "N.G.M." } } ,
+                        {
+                          name
+                            name {
+                              last "Mousavi" ,
+                              first "Soraya" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Rossi" ,
+                              first "Martina" ,
+                              initials "M." } } } ,
+                    affil
+                      std {
+                        affil "National Research Council (CNR)" ,
+                        div "Institute of Bioscences and Bioresources" ,
+                        city "Perugia" ,
+                        sub "PG" ,
+                        country "Italy" ,
+                        street "Via Madonna Alta, 130" ,
+                        postal-code "06128" } } ,
+                  medium email ,
+                  date
+                    std {
+                      year 2015 ,
+                      month 7 ,
+                      day 14 } } } } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              class "SMART_V1.0" ,
+              type
+                id 1 ,
+              data {
+                {
+                  label
+                    id 1 ,
+                  data
+                    int 41 } } } ,
+            user {
+              class "1.0" ,
+              type
+                str "AutodefOptions" ,
+              data {
+                {
+                  label
+                    str "SpecifyNuclearProduct" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MiscFeatRule" ,
+                  data
+                    str "NoncodingProductFeat" } ,
+                {
+                  label
+                    str "FeatureListType" ,
+                  data
+                    str "List All Features" } ,
+                {
+                  label
+                    str "HIVRule" ,
+                  data
+                    str "WantBoth" } ,
+                {
+                  label
+                    str "DoNotApplyToSp" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "LeaveParenthetical" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MaxMods" ,
+                  data
+                    int -99 } ,
+                {
+                  label
+                    str "UseLabels" ,
+                  data
+                    bool TRUE } } } ,
+            create-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } ,
+            update-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 332 ,
+            strand ds ,
+            seq-data
+              ncbi2na '5E43F3FDE2F8730E0F612AFB7A1F7DF7DF7DF7DC77D043A20D1298C
+3421DF5ABCF6A477D6F4272016AF2F5F4FFFD5FFAC4FBDFC9FE108FF07FAFD3BF00E3E32313E9B
+A88038A0B1073DC73F7F8368290D788E8'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      imp {
+                        key "repeat_region" } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 331 ,
+                        strand plus ,
+                        id
+                          gi 885481638 } ,
+                    qual {
+                      {
+                        qual "rpt_type" ,
+                        val "tandem" } ,
+                      {
+                        qual "satellite" ,
+                        val "microsatellite:OLEST18" } } } } } } } ,
+        seq {
+          id {
+            genbank {
+              accession "KT281470" ,
+              version 1 } ,
+            gi 885481757 } ,
+          descr {
+            title "Olea europaea subsp. europaea microsatellite OLEST19
+ sequence." ,
+            source {
+              genome genomic ,
+              org {
+                taxname "Olea europaea subsp. europaea" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 158383 } } ,
+                orgname {
+                  name
+                    binomial {
+                      genus "Olea" ,
+                      species "europaea" ,
+                      subspecies "europaea" } ,
+                  mod {
+                    {
+                      subtype cultivar ,
+                      subname "Leccino" } ,
+                    {
+                      subtype sub-species ,
+                      subname "europaea" } } ,
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Tracheophyta; Spermatophyta; Magnoliophyta; eudicotyledons;
+ Gunneridae; Pentapetalae; asterids; lamiids; Lamiales; Oleaceae; Oleeae;
+ Olea" ,
+                  gcode 1 ,
+                  mgcode 1 ,
+                  div "PLN" ,
+                  pgcode 11 } } } ,
+            molinfo {
+              biomol genomic ,
+              completeness partial } ,
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Baldoni" ,
+                              first "Luciana" ,
+                              initials "L." } } ,
+                        {
+                          name
+                            name {
+                              last "Mariotti" ,
+                              first "Roberto" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Cultrera" ,
+                              first "Nicolo" ,
+                              initials "N.G.M." } } ,
+                        {
+                          name
+                            name {
+                              last "Mousavi" ,
+                              first "Soraya" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Rossi" ,
+                              first "Martina" ,
+                              initials "M." } } } ,
+                    affil
+                      std {
+                        affil "National Research Council (CNR)" ,
+                        div "Institute of Bioscences and Bioresources" ,
+                        city "Perugia" ,
+                        sub "PG" ,
+                        country "Italy" ,
+                        street "Via Madonna Alta, 130" ,
+                        postal-code "06128" } } ,
+                  medium email ,
+                  date
+                    std {
+                      year 2015 ,
+                      month 7 ,
+                      day 14 } } } } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              class "SMART_V1.0" ,
+              type
+                id 1 ,
+              data {
+                {
+                  label
+                    id 1 ,
+                  data
+                    int 42 } } } ,
+            user {
+              class "1.0" ,
+              type
+                str "AutodefOptions" ,
+              data {
+                {
+                  label
+                    str "SpecifyNuclearProduct" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MiscFeatRule" ,
+                  data
+                    str "NoncodingProductFeat" } ,
+                {
+                  label
+                    str "FeatureListType" ,
+                  data
+                    str "List All Features" } ,
+                {
+                  label
+                    str "HIVRule" ,
+                  data
+                    str "WantBoth" } ,
+                {
+                  label
+                    str "DoNotApplyToSp" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "LeaveParenthetical" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MaxMods" ,
+                  data
+                    int -99 } ,
+                {
+                  label
+                    str "UseLabels" ,
+                  data
+                    bool TRUE } } } ,
+            create-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } ,
+            update-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 219 ,
+            strand ds ,
+            seq-data
+              ncbi2na '9744D39DF4A294781CD24924924A00529EA8013AF942A38F5F9D2BF
+D47FDE1B78FB3EF9DD309D3F79C80E254FF38203FBBDEA20ED20BBC'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      imp {
+                        key "repeat_region" } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 218 ,
+                        strand plus ,
+                        id
+                          gi 885481757 } ,
+                    qual {
+                      {
+                        qual "rpt_type" ,
+                        val "tandem" } ,
+                      {
+                        qual "satellite" ,
+                        val "microsatellite:OLEST19" } } } } } } } ,
+        seq {
+          id {
+            genbank {
+              accession "KT281471" ,
+              version 1 } ,
+            gi 885482069 } ,
+          descr {
+            title "Olea europaea subsp. europaea microsatellite OLEST20
+ sequence." ,
+            source {
+              genome genomic ,
+              org {
+                taxname "Olea europaea subsp. europaea" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 158383 } } ,
+                orgname {
+                  name
+                    binomial {
+                      genus "Olea" ,
+                      species "europaea" ,
+                      subspecies "europaea" } ,
+                  mod {
+                    {
+                      subtype cultivar ,
+                      subname "Leccino" } ,
+                    {
+                      subtype sub-species ,
+                      subname "europaea" } } ,
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Tracheophyta; Spermatophyta; Magnoliophyta; eudicotyledons;
+ Gunneridae; Pentapetalae; asterids; lamiids; Lamiales; Oleaceae; Oleeae;
+ Olea" ,
+                  gcode 1 ,
+                  mgcode 1 ,
+                  div "PLN" ,
+                  pgcode 11 } } } ,
+            molinfo {
+              biomol genomic ,
+              completeness partial } ,
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Baldoni" ,
+                              first "Luciana" ,
+                              initials "L." } } ,
+                        {
+                          name
+                            name {
+                              last "Mariotti" ,
+                              first "Roberto" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Cultrera" ,
+                              first "Nicolo" ,
+                              initials "N.G.M." } } ,
+                        {
+                          name
+                            name {
+                              last "Mousavi" ,
+                              first "Soraya" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Rossi" ,
+                              first "Martina" ,
+                              initials "M." } } } ,
+                    affil
+                      std {
+                        affil "National Research Council (CNR)" ,
+                        div "Institute of Bioscences and Bioresources" ,
+                        city "Perugia" ,
+                        sub "PG" ,
+                        country "Italy" ,
+                        street "Via Madonna Alta, 130" ,
+                        postal-code "06128" } } ,
+                  medium email ,
+                  date
+                    std {
+                      year 2015 ,
+                      month 7 ,
+                      day 14 } } } } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              class "SMART_V1.0" ,
+              type
+                id 1 ,
+              data {
+                {
+                  label
+                    id 1 ,
+                  data
+                    int 43 } } } ,
+            user {
+              class "1.0" ,
+              type
+                str "AutodefOptions" ,
+              data {
+                {
+                  label
+                    str "SpecifyNuclearProduct" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MiscFeatRule" ,
+                  data
+                    str "NoncodingProductFeat" } ,
+                {
+                  label
+                    str "FeatureListType" ,
+                  data
+                    str "List All Features" } ,
+                {
+                  label
+                    str "HIVRule" ,
+                  data
+                    str "WantBoth" } ,
+                {
+                  label
+                    str "DoNotApplyToSp" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "LeaveParenthetical" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MaxMods" ,
+                  data
+                    int -99 } ,
+                {
+                  label
+                    str "UseLabels" ,
+                  data
+                    bool TRUE } } } ,
+            create-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } ,
+            update-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 232 ,
+            strand ds ,
+            seq-data
+              ncbi2na '52F3ED7E5031CE9C5E3FEBE79E79E7B423F8A7DEDF710F2F7928EF8
+CE1548BE7DF73B3905DDBF9E7D74F1FADFF5EA0CFDEC4373CDDE39080E5FD'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      imp {
+                        key "repeat_region" } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 231 ,
+                        strand plus ,
+                        id
+                          gi 885482069 } ,
+                    qual {
+                      {
+                        qual "rpt_type" ,
+                        val "tandem" } ,
+                      {
+                        qual "satellite" ,
+                        val "microsatellite:OLEST20" } } } } } } } ,
+        seq {
+          id {
+            genbank {
+              accession "KT281472" ,
+              version 1 } ,
+            gi 885482184 } ,
+          descr {
+            title "Olea europaea subsp. europaea microsatellite OLEST21
+ sequence." ,
+            source {
+              genome genomic ,
+              org {
+                taxname "Olea europaea subsp. europaea" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 158383 } } ,
+                orgname {
+                  name
+                    binomial {
+                      genus "Olea" ,
+                      species "europaea" ,
+                      subspecies "europaea" } ,
+                  mod {
+                    {
+                      subtype cultivar ,
+                      subname "Leccino" } ,
+                    {
+                      subtype sub-species ,
+                      subname "europaea" } } ,
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Tracheophyta; Spermatophyta; Magnoliophyta; eudicotyledons;
+ Gunneridae; Pentapetalae; asterids; lamiids; Lamiales; Oleaceae; Oleeae;
+ Olea" ,
+                  gcode 1 ,
+                  mgcode 1 ,
+                  div "PLN" ,
+                  pgcode 11 } } } ,
+            molinfo {
+              biomol genomic ,
+              completeness partial } ,
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Baldoni" ,
+                              first "Luciana" ,
+                              initials "L." } } ,
+                        {
+                          name
+                            name {
+                              last "Mariotti" ,
+                              first "Roberto" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Cultrera" ,
+                              first "Nicolo" ,
+                              initials "N.G.M." } } ,
+                        {
+                          name
+                            name {
+                              last "Mousavi" ,
+                              first "Soraya" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Rossi" ,
+                              first "Martina" ,
+                              initials "M." } } } ,
+                    affil
+                      std {
+                        affil "National Research Council (CNR)" ,
+                        div "Institute of Bioscences and Bioresources" ,
+                        city "Perugia" ,
+                        sub "PG" ,
+                        country "Italy" ,
+                        street "Via Madonna Alta, 130" ,
+                        postal-code "06128" } } ,
+                  medium email ,
+                  date
+                    std {
+                      year 2015 ,
+                      month 7 ,
+                      day 14 } } } } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              class "SMART_V1.0" ,
+              type
+                id 1 ,
+              data {
+                {
+                  label
+                    id 1 ,
+                  data
+                    int 44 } } } ,
+            user {
+              class "1.0" ,
+              type
+                str "AutodefOptions" ,
+              data {
+                {
+                  label
+                    str "SpecifyNuclearProduct" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MiscFeatRule" ,
+                  data
+                    str "NoncodingProductFeat" } ,
+                {
+                  label
+                    str "FeatureListType" ,
+                  data
+                    str "List All Features" } ,
+                {
+                  label
+                    str "HIVRule" ,
+                  data
+                    str "WantBoth" } ,
+                {
+                  label
+                    str "DoNotApplyToSp" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "LeaveParenthetical" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MaxMods" ,
+                  data
+                    int -99 } ,
+                {
+                  label
+                    str "UseLabels" ,
+                  data
+                    bool TRUE } } } ,
+            create-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } ,
+            update-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 335 ,
+            strand ds ,
+            seq-data
+              ncbi2na '809798802752635249DEC2F9D303FCF7C3CDE4E4CC0FF3BD33BFCDA
+8EF08FFD3D3E3FFD92D8B8E2820BA0A28A220820820030ABF82880342882B37AE38428208803E2
+0B183F814B2203B8E0314BD3820DE2082A4'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      imp {
+                        key "repeat_region" } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 334 ,
+                        strand plus ,
+                        id
+                          gi 885482184 } ,
+                    qual {
+                      {
+                        qual "rpt_type" ,
+                        val "tandem" } ,
+                      {
+                        qual "satellite" ,
+                        val "microsatellite:OLEST21" } } } } } } } ,
+        seq {
+          id {
+            genbank {
+              accession "KT281473" ,
+              version 1 } ,
+            gi 885482327 } ,
+          descr {
+            title "Olea europaea subsp. europaea microsatellite OLEST22
+ sequence." ,
+            source {
+              genome genomic ,
+              org {
+                taxname "Olea europaea subsp. europaea" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 158383 } } ,
+                orgname {
+                  name
+                    binomial {
+                      genus "Olea" ,
+                      species "europaea" ,
+                      subspecies "europaea" } ,
+                  mod {
+                    {
+                      subtype cultivar ,
+                      subname "Leccino" } ,
+                    {
+                      subtype sub-species ,
+                      subname "europaea" } } ,
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Tracheophyta; Spermatophyta; Magnoliophyta; eudicotyledons;
+ Gunneridae; Pentapetalae; asterids; lamiids; Lamiales; Oleaceae; Oleeae;
+ Olea" ,
+                  gcode 1 ,
+                  mgcode 1 ,
+                  div "PLN" ,
+                  pgcode 11 } } } ,
+            molinfo {
+              biomol genomic ,
+              completeness partial } ,
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Baldoni" ,
+                              first "Luciana" ,
+                              initials "L." } } ,
+                        {
+                          name
+                            name {
+                              last "Mariotti" ,
+                              first "Roberto" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Cultrera" ,
+                              first "Nicolo" ,
+                              initials "N.G.M." } } ,
+                        {
+                          name
+                            name {
+                              last "Mousavi" ,
+                              first "Soraya" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Rossi" ,
+                              first "Martina" ,
+                              initials "M." } } } ,
+                    affil
+                      std {
+                        affil "National Research Council (CNR)" ,
+                        div "Institute of Bioscences and Bioresources" ,
+                        city "Perugia" ,
+                        sub "PG" ,
+                        country "Italy" ,
+                        street "Via Madonna Alta, 130" ,
+                        postal-code "06128" } } ,
+                  medium email ,
+                  date
+                    std {
+                      year 2015 ,
+                      month 7 ,
+                      day 14 } } } } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              class "SMART_V1.0" ,
+              type
+                id 1 ,
+              data {
+                {
+                  label
+                    id 1 ,
+                  data
+                    int 45 } } } ,
+            user {
+              class "1.0" ,
+              type
+                str "AutodefOptions" ,
+              data {
+                {
+                  label
+                    str "SpecifyNuclearProduct" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MiscFeatRule" ,
+                  data
+                    str "NoncodingProductFeat" } ,
+                {
+                  label
+                    str "FeatureListType" ,
+                  data
+                    str "List All Features" } ,
+                {
+                  label
+                    str "HIVRule" ,
+                  data
+                    str "WantBoth" } ,
+                {
+                  label
+                    str "DoNotApplyToSp" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "LeaveParenthetical" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MaxMods" ,
+                  data
+                    int -99 } ,
+                {
+                  label
+                    str "UseLabels" ,
+                  data
+                    bool TRUE } } } ,
+            create-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } ,
+            update-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 249 ,
+            strand ds ,
+            seq-data
+              ncbi2na '8A8904904D04124934D0490DD049440751249139239249FF3E48A42
+74924924924129104904244922988E8551583ACE9C3A0FBE80E3DDD388483DEA1E72640'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      imp {
+                        key "repeat_region" } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 248 ,
+                        strand plus ,
+                        id
+                          gi 885482327 } ,
+                    qual {
+                      {
+                        qual "rpt_type" ,
+                        val "tandem" } ,
+                      {
+                        qual "satellite" ,
+                        val "microsatellite:OLEST22" } } } } } } } ,
+        seq {
+          id {
+            genbank {
+              accession "KT281474" ,
+              version 1 } ,
+            gi 885482403 } ,
+          descr {
+            title "Olea europaea subsp. europaea microsatellite OLEST23
+ sequence." ,
+            source {
+              genome genomic ,
+              org {
+                taxname "Olea europaea subsp. europaea" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 158383 } } ,
+                orgname {
+                  name
+                    binomial {
+                      genus "Olea" ,
+                      species "europaea" ,
+                      subspecies "europaea" } ,
+                  mod {
+                    {
+                      subtype cultivar ,
+                      subname "Leccino" } ,
+                    {
+                      subtype sub-species ,
+                      subname "europaea" } } ,
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Tracheophyta; Spermatophyta; Magnoliophyta; eudicotyledons;
+ Gunneridae; Pentapetalae; asterids; lamiids; Lamiales; Oleaceae; Oleeae;
+ Olea" ,
+                  gcode 1 ,
+                  mgcode 1 ,
+                  div "PLN" ,
+                  pgcode 11 } } } ,
+            molinfo {
+              biomol genomic ,
+              completeness partial } ,
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Baldoni" ,
+                              first "Luciana" ,
+                              initials "L." } } ,
+                        {
+                          name
+                            name {
+                              last "Mariotti" ,
+                              first "Roberto" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Cultrera" ,
+                              first "Nicolo" ,
+                              initials "N.G.M." } } ,
+                        {
+                          name
+                            name {
+                              last "Mousavi" ,
+                              first "Soraya" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Rossi" ,
+                              first "Martina" ,
+                              initials "M." } } } ,
+                    affil
+                      std {
+                        affil "National Research Council (CNR)" ,
+                        div "Institute of Bioscences and Bioresources" ,
+                        city "Perugia" ,
+                        sub "PG" ,
+                        country "Italy" ,
+                        street "Via Madonna Alta, 130" ,
+                        postal-code "06128" } } ,
+                  medium email ,
+                  date
+                    std {
+                      year 2015 ,
+                      month 7 ,
+                      day 14 } } } } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              class "SMART_V1.0" ,
+              type
+                id 1 ,
+              data {
+                {
+                  label
+                    id 1 ,
+                  data
+                    int 46 } } } ,
+            user {
+              class "1.0" ,
+              type
+                str "AutodefOptions" ,
+              data {
+                {
+                  label
+                    str "SpecifyNuclearProduct" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MiscFeatRule" ,
+                  data
+                    str "NoncodingProductFeat" } ,
+                {
+                  label
+                    str "FeatureListType" ,
+                  data
+                    str "List All Features" } ,
+                {
+                  label
+                    str "HIVRule" ,
+                  data
+                    str "WantBoth" } ,
+                {
+                  label
+                    str "DoNotApplyToSp" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "LeaveParenthetical" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MaxMods" ,
+                  data
+                    int -99 } ,
+                {
+                  label
+                    str "UseLabels" ,
+                  data
+                    bool TRUE } } } ,
+            create-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } ,
+            update-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 210 ,
+            strand ds ,
+            seq-data
+              ncbi2na '20A01FF8922B3E35041D12943438149108071043F7FEF9E4047BC08
+208209204403479EA3F50408203CD5A3F837E27C83495D7ED00'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      imp {
+                        key "repeat_region" } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 209 ,
+                        strand plus ,
+                        id
+                          gi 885482403 } ,
+                    qual {
+                      {
+                        qual "rpt_type" ,
+                        val "tandem" } ,
+                      {
+                        qual "satellite" ,
+                        val "microsatellite:OLEST23" } } } } } } } ,
+        seq {
+          id {
+            genbank {
+              accession "KT281475" ,
+              version 1 } ,
+            gi 885482561 } ,
+          descr {
+            title "Olea europaea subsp. europaea microsatellite OLEST24
+ sequence." ,
+            source {
+              genome genomic ,
+              org {
+                taxname "Olea europaea subsp. europaea" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 158383 } } ,
+                orgname {
+                  name
+                    binomial {
+                      genus "Olea" ,
+                      species "europaea" ,
+                      subspecies "europaea" } ,
+                  mod {
+                    {
+                      subtype cultivar ,
+                      subname "Leccino" } ,
+                    {
+                      subtype sub-species ,
+                      subname "europaea" } } ,
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Tracheophyta; Spermatophyta; Magnoliophyta; eudicotyledons;
+ Gunneridae; Pentapetalae; asterids; lamiids; Lamiales; Oleaceae; Oleeae;
+ Olea" ,
+                  gcode 1 ,
+                  mgcode 1 ,
+                  div "PLN" ,
+                  pgcode 11 } } } ,
+            molinfo {
+              biomol genomic ,
+              completeness partial } ,
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Baldoni" ,
+                              first "Luciana" ,
+                              initials "L." } } ,
+                        {
+                          name
+                            name {
+                              last "Mariotti" ,
+                              first "Roberto" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Cultrera" ,
+                              first "Nicolo" ,
+                              initials "N.G.M." } } ,
+                        {
+                          name
+                            name {
+                              last "Mousavi" ,
+                              first "Soraya" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Rossi" ,
+                              first "Martina" ,
+                              initials "M." } } } ,
+                    affil
+                      std {
+                        affil "National Research Council (CNR)" ,
+                        div "Institute of Bioscences and Bioresources" ,
+                        city "Perugia" ,
+                        sub "PG" ,
+                        country "Italy" ,
+                        street "Via Madonna Alta, 130" ,
+                        postal-code "06128" } } ,
+                  medium email ,
+                  date
+                    std {
+                      year 2015 ,
+                      month 7 ,
+                      day 14 } } } } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              class "SMART_V1.0" ,
+              type
+                id 1 ,
+              data {
+                {
+                  label
+                    id 1 ,
+                  data
+                    int 47 } } } ,
+            user {
+              class "1.0" ,
+              type
+                str "AutodefOptions" ,
+              data {
+                {
+                  label
+                    str "SpecifyNuclearProduct" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MiscFeatRule" ,
+                  data
+                    str "NoncodingProductFeat" } ,
+                {
+                  label
+                    str "FeatureListType" ,
+                  data
+                    str "List All Features" } ,
+                {
+                  label
+                    str "HIVRule" ,
+                  data
+                    str "WantBoth" } ,
+                {
+                  label
+                    str "DoNotApplyToSp" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "LeaveParenthetical" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MaxMods" ,
+                  data
+                    int -99 } ,
+                {
+                  label
+                    str "UseLabels" ,
+                  data
+                    bool TRUE } } } ,
+            create-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } ,
+            update-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 208 ,
+            strand ds ,
+            seq-data
+              ncbi2na 'CABED83B92034BA28AF7F8752FFF7FC30DFB0A880317FF3F3CF3CF3
+CFFDBB4FCEC0862ECF2605FF2F381B777BF73ACE330F80ED4'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      imp {
+                        key "repeat_region" } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 207 ,
+                        strand plus ,
+                        id
+                          gi 885482561 } ,
+                    qual {
+                      {
+                        qual "rpt_type" ,
+                        val "tandem" } ,
+                      {
+                        qual "satellite" ,
+                        val "microsatellite:OLEST24" } } } } } } } ,
+        seq {
+          id {
+            genbank {
+              accession "KT281476" ,
+              version 1 } ,
+            gi 885482642 } ,
+          descr {
+            title "Olea europaea subsp. europaea microsatellite OLEST25
+ sequence." ,
+            source {
+              genome genomic ,
+              org {
+                taxname "Olea europaea subsp. europaea" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 158383 } } ,
+                orgname {
+                  name
+                    binomial {
+                      genus "Olea" ,
+                      species "europaea" ,
+                      subspecies "europaea" } ,
+                  mod {
+                    {
+                      subtype cultivar ,
+                      subname "Leccino" } ,
+                    {
+                      subtype sub-species ,
+                      subname "europaea" } } ,
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Tracheophyta; Spermatophyta; Magnoliophyta; eudicotyledons;
+ Gunneridae; Pentapetalae; asterids; lamiids; Lamiales; Oleaceae; Oleeae;
+ Olea" ,
+                  gcode 1 ,
+                  mgcode 1 ,
+                  div "PLN" ,
+                  pgcode 11 } } } ,
+            molinfo {
+              biomol genomic ,
+              completeness partial } ,
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Baldoni" ,
+                              first "Luciana" ,
+                              initials "L." } } ,
+                        {
+                          name
+                            name {
+                              last "Mariotti" ,
+                              first "Roberto" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Cultrera" ,
+                              first "Nicolo" ,
+                              initials "N.G.M." } } ,
+                        {
+                          name
+                            name {
+                              last "Mousavi" ,
+                              first "Soraya" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Rossi" ,
+                              first "Martina" ,
+                              initials "M." } } } ,
+                    affil
+                      std {
+                        affil "National Research Council (CNR)" ,
+                        div "Institute of Bioscences and Bioresources" ,
+                        city "Perugia" ,
+                        sub "PG" ,
+                        country "Italy" ,
+                        street "Via Madonna Alta, 130" ,
+                        postal-code "06128" } } ,
+                  medium email ,
+                  date
+                    std {
+                      year 2015 ,
+                      month 7 ,
+                      day 14 } } } } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              class "SMART_V1.0" ,
+              type
+                id 1 ,
+              data {
+                {
+                  label
+                    id 1 ,
+                  data
+                    int 48 } } } ,
+            user {
+              class "1.0" ,
+              type
+                str "AutodefOptions" ,
+              data {
+                {
+                  label
+                    str "SpecifyNuclearProduct" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MiscFeatRule" ,
+                  data
+                    str "NoncodingProductFeat" } ,
+                {
+                  label
+                    str "FeatureListType" ,
+                  data
+                    str "List All Features" } ,
+                {
+                  label
+                    str "HIVRule" ,
+                  data
+                    str "WantBoth" } ,
+                {
+                  label
+                    str "DoNotApplyToSp" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "LeaveParenthetical" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MaxMods" ,
+                  data
+                    int -99 } ,
+                {
+                  label
+                    str "UseLabels" ,
+                  data
+                    bool TRUE } } } ,
+            create-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } ,
+            update-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 242 ,
+            strand ds ,
+            seq-data
+              ncbi2na 'E7B83AB34BFFD3C525253A6BF6507A1B5AF7B1F63597520C5A7811A
+69AF47F541249A69A6748B8F78F7DF7BEF8E20D233310222FFA3FE37C37145E53A0'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      imp {
+                        key "repeat_region" } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 241 ,
+                        strand plus ,
+                        id
+                          gi 885482642 } ,
+                    qual {
+                      {
+                        qual "rpt_type" ,
+                        val "tandem" } ,
+                      {
+                        qual "satellite" ,
+                        val "microsatellite:OLEST25" } } } } } } } ,
+        seq {
+          id {
+            genbank {
+              accession "KT281477" ,
+              version 1 } ,
+            gi 885482751 } ,
+          descr {
+            title "Olea europaea subsp. europaea microsatellite OLEST26
+ sequence." ,
+            source {
+              genome genomic ,
+              org {
+                taxname "Olea europaea subsp. europaea" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 158383 } } ,
+                orgname {
+                  name
+                    binomial {
+                      genus "Olea" ,
+                      species "europaea" ,
+                      subspecies "europaea" } ,
+                  mod {
+                    {
+                      subtype cultivar ,
+                      subname "Leccino" } ,
+                    {
+                      subtype sub-species ,
+                      subname "europaea" } } ,
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Tracheophyta; Spermatophyta; Magnoliophyta; eudicotyledons;
+ Gunneridae; Pentapetalae; asterids; lamiids; Lamiales; Oleaceae; Oleeae;
+ Olea" ,
+                  gcode 1 ,
+                  mgcode 1 ,
+                  div "PLN" ,
+                  pgcode 11 } } } ,
+            molinfo {
+              biomol genomic ,
+              completeness partial } ,
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names
+                      std {
+                        {
+                          name
+                            name {
+                              last "Baldoni" ,
+                              first "Luciana" ,
+                              initials "L." } } ,
+                        {
+                          name
+                            name {
+                              last "Mariotti" ,
+                              first "Roberto" ,
+                              initials "R." } } ,
+                        {
+                          name
+                            name {
+                              last "Cultrera" ,
+                              first "Nicolo" ,
+                              initials "N.G.M." } } ,
+                        {
+                          name
+                            name {
+                              last "Mousavi" ,
+                              first "Soraya" ,
+                              initials "S." } } ,
+                        {
+                          name
+                            name {
+                              last "Rossi" ,
+                              first "Martina" ,
+                              initials "M." } } } ,
+                    affil
+                      std {
+                        affil "National Research Council (CNR)" ,
+                        div "Institute of Bioscences and Bioresources" ,
+                        city "Perugia" ,
+                        sub "PG" ,
+                        country "Italy" ,
+                        street "Via Madonna Alta, 130" ,
+                        postal-code "06128" } } ,
+                  medium email ,
+                  date
+                    std {
+                      year 2015 ,
+                      month 7 ,
+                      day 14 } } } } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              class "SMART_V1.0" ,
+              type
+                id 1 ,
+              data {
+                {
+                  label
+                    id 1 ,
+                  data
+                    int 49 } } } ,
+            user {
+              class "1.0" ,
+              type
+                str "AutodefOptions" ,
+              data {
+                {
+                  label
+                    str "SpecifyNuclearProduct" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MiscFeatRule" ,
+                  data
+                    str "NoncodingProductFeat" } ,
+                {
+                  label
+                    str "FeatureListType" ,
+                  data
+                    str "List All Features" } ,
+                {
+                  label
+                    str "HIVRule" ,
+                  data
+                    str "WantBoth" } ,
+                {
+                  label
+                    str "DoNotApplyToSp" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "LeaveParenthetical" ,
+                  data
+                    bool TRUE } ,
+                {
+                  label
+                    str "MaxMods" ,
+                  data
+                    int -99 } ,
+                {
+                  label
+                    str "UseLabels" ,
+                  data
+                    bool TRUE } } } ,
+            create-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } ,
+            update-date
+              std {
+                year 2016 ,
+                month 8 ,
+                day 13 } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 295 ,
+            strand ds ,
+            seq-data
+              ncbi2na '5C035FB947B0C5D30342EFF33CCC064303C08F807B0FC8054FD05F5
+F5FD0670DF10CCCFC7C054000C2104C7C44C4DDC0D26880F8203A205427E00547DF7DF7FDFF7DD
+FDDD837D5E70FFC'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      imp {
+                        key "repeat_region" } ,
+                    location
+                      int {
+                        from 0 ,
+                        to 294 ,
+                        strand plus ,
+                        id
+                          gi 885482751 } ,
+                    qual {
+                      {
+                        qual "rpt_type" ,
+                        val "tandem" } ,
+                      {
+                        qual "satellite" ,
+                        val "microsatellite:OLEST26" } } } } } } } } } } }
