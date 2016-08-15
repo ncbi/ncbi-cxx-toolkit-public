@@ -1531,7 +1531,12 @@ bool CSeqMap::x_DoUpdateSeq_inst(CSeq_inst& inst)
             CSeq_literal& lit = dseq.SetLiteral();
             lit.SetLength(x_GetSegmentLength(index, 0));
             lit.ResetSeq_data();
-            lit.ResetFuzz();
+            if ( seg.m_UnknownLength ) {
+                lit.SetFuzz().SetLim(CInt_fuzz::eLim_unk);
+            }
+            else {
+                lit.ResetFuzz();
+            }
         }
         else {
             _ASSERT(seg.m_SegType == eSeqRef);
