@@ -649,11 +649,11 @@ bool CFastaOstreamEx::x_GetCodeBreak(const CSeq_feat& feat, const CCode_break& c
  if ( cb.IsSetLoc() ) {
      const CCode_break::TLoc& loc = cb.GetLoc();
 
-     TSeqPos seq_pos = sequence::LocationOffset(feat.GetLocation(), loc,
+     TSeqPos offset = sequence::LocationOffset(feat.GetLocation(), loc,
                                                 sequence::eOffset_FromStart,
                                                 &scope);
       
-     int frame = 0; 
+     TSeqPos frame = 0; 
      if (feat.GetData().IsCdregion()) {
          const CCdregion& cdr = feat.GetData().GetCdregion();
          if (cdr.IsSetFrame()) {
@@ -670,23 +670,28 @@ bool CFastaOstreamEx::x_GetCodeBreak(const CSeq_feat& feat, const CCode_break& c
          }
      }     
 
-     seq_pos -= frame;
+     if (frame > offset) {
+        string err_msg = "Negative offset not permitted";
+        NCBI_THROW(CObjWriterException, eInternal, err_msg);
+     }
+
+     offset -= frame;
 
      switch( loc.Which() ) {
          default: {
              int width = 1 + loc.GetStop(eExtreme_Positional) - loc.GetStart(eExtreme_Positional);
-             cb_str += NStr::IntToString(seq_pos + 1);
+             cb_str += NStr::IntToString(offset + 1);
              cb_str += "..";
-             cb_str += NStr::IntToString(seq_pos + width);
+             cb_str += NStr::IntToString(offset + width);
              break;
          }
          case CSeq_loc::e_Int: {
              const CSeq_interval& intv = loc.GetInt();
              int width =  1 + intv.GetTo() - intv.GetFrom();
              string intv_str = "";
-             intv_str += NStr::IntToString(seq_pos+1);
+             intv_str += NStr::IntToString(offset+1);
              intv_str += "..";
-             intv_str += NStr::IntToString(seq_pos+width);
+             intv_str += NStr::IntToString(offset+width);
              cb_str += intv_str;
              break;
               
