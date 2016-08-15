@@ -168,7 +168,7 @@ public:
         m_pInterval.Reset(new CSeq_interval());
         m_pInterval->SetId(id);
         m_pInterval->SetFrom(start-1);
-        m_pInterval->SetTo(start+span-1);
+        m_pInterval->SetTo(start-1+span-1);
         m_value = value;
     };
     
