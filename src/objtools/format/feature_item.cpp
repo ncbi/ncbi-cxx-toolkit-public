@@ -65,6 +65,7 @@
 #include <objects/seqfeat/PCRReactionSet.hpp>
 #include <objects/seqfeat/Code_break.hpp>
 #include <objects/seqfeat/Delta_item.hpp>
+#include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqfeat/Gene_nomenclature.hpp>
 #include <objects/seqfeat/Genetic_code.hpp>
 #include <objects/seqfeat/Genetic_code_table.hpp>
@@ -3796,31 +3797,6 @@ void CFeatureItem::x_AddRptUnitQual(
 }
 
 
-static bool s_IsValidRptType(const string& type)
-{
-    static const char* const valid_rpt[] = {
-        "centromeric_repeat",
-        "direct",
-        "dispersed",
-        "engineered_foreign_repetitive_element",
-        "flanking",
-        "inverted",
-        "long_terminal_repeat",
-        "nested",
-        "non_LTR_retrotransposon_polymeric_tract",
-        "other",
-        "tandem",
-        "telomeric_repeat",
-        "terminal",
-        "X_element_combinatorial_repeat",
-        "Y_prime_element"
-    };
-    typedef CStaticArraySet<string, PNocase> TValidRptTypes;
-    DEFINE_STATIC_ARRAY_MAP(TValidRptTypes, valid_types, valid_rpt);
-
-    return valid_types.find(type) != valid_types.end();
-}
-
 //  ----------------------------------------------------------------------------
 void CFeatureItem::x_AddRptTypeQual(
     const string& rpt_type, 
@@ -3838,7 +3814,7 @@ void CFeatureItem::x_AddRptTypeQual(
     s_SplitCommaSeparatedStringInParens( pieces, value );
 
     ITERATE( vector<string>, it, pieces ) {
-        if ( ! check_qual_syntax || s_IsValidRptType( *it ) ) {
+        if ( ! check_qual_syntax || CGb_qual::IsValidRptTypeValue( *it ) ) {
             x_AddQual( eFQ_rpt_type, new CFlatStringQVal( *it, CFormatQual::eUnquoted ) );
         }
     }
