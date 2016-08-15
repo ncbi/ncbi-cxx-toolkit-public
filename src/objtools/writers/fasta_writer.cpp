@@ -200,7 +200,7 @@ void CFastaOstreamEx::x_WriteTranslatedCds(const CSeq_feat& cds, CScope& scope)
 
 
 void CFastaOstreamEx::x_WriteFeatureAttributes(const CSeq_feat& feat,
-                                               CScope& scope)
+                                               CScope& scope) const
 {
 
     string defline = "";
@@ -642,20 +642,17 @@ void CFastaOstreamEx::x_AddPartialAttribute(const CSeq_feat& feat,
     x_AddDeflineAttribute("partial", partial_string, defline);
 }
 
-//*********************************************************************
 
-bool s_GetCodeBreak(const CSeq_feat& feat, const CCode_break& cb, CScope& scope, string& cbString)
+bool CFastaOstreamEx::x_GetCodeBreak(const CSeq_feat& feat, const CCode_break& cb, CScope& scope, string& cbString) const
 {
  string cb_str = ("(pos:");
  if ( cb.IsSetLoc() ) {
      const CCode_break::TLoc& loc = cb.GetLoc();
 
-
      TSeqPos seq_pos = sequence::LocationOffset(feat.GetLocation(), loc,
                                                 sequence::eOffset_FromStart,
                                                 &scope);
       
-     
      int frame = 0; 
      if (feat.GetData().IsCdregion()) {
          const CCdregion& cdr = feat.GetData().GetCdregion();
@@ -684,18 +681,12 @@ bool s_GetCodeBreak(const CSeq_feat& feat, const CCode_break& cb, CScope& scope,
              break;
          }
          case CSeq_loc::e_Int: {
-             cout << "Interval\n";
              const CSeq_interval& intv = loc.GetInt();
-
              int width =  1 + intv.GetTo() - intv.GetFrom();
-
              string intv_str = "";
-             intv_str += NStr::IntToString( seq_pos + 1);
+             intv_str += NStr::IntToString(seq_pos+1);
              intv_str += "..";
-             intv_str += NStr::IntToString( seq_pos + width);
-             if ( intv.IsSetStrand()  &&  intv.GetStrand() == eNa_strand_minus ) {
-                      intv_str = "complement(" + intv_str + ")";
-             }
+             intv_str += NStr::IntToString(seq_pos+width);
              cb_str += intv_str;
              break;
               
@@ -715,11 +706,6 @@ bool s_GetCodeBreak(const CSeq_feat& feat, const CCode_break& cb, CScope& scope,
 
 
 
-//*********************************************************************
-
-
-
-
 
 void CFastaOstreamEx::x_AddTranslationExceptionAttribute(const CSeq_feat& feat,
                                                          CScope& scope,
@@ -736,8 +722,8 @@ void CFastaOstreamEx::x_AddTranslationExceptionAttribute(const CSeq_feat& feat,
     string transl_exception = "";
     for (auto && code_break : code_breaks) {
         string cb_string = "";
-        //if (s_GetCodeBreak(feat, *code_break, scope, cb_string)) {
-        if (CWriteUtil::GetCodeBreak(*code_break, cb_string)) {
+        if (x_GetCodeBreak(feat, *code_break, scope, cb_string)) {
+     //   if (CWriteUtil::GetCodeBreak(*code_break, cb_string)) {
             if (!transl_exception.empty()) {
                 transl_exception += ",";
             }

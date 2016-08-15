@@ -73,7 +73,7 @@ protected:
                               CScope& scope);
 
     void x_WriteFeatureAttributes(const CSeq_feat& feat, 
-                                  CScope& scope);
+                                  CScope& scope) const;
 
     void x_AddGeneAttributes(const CSeq_feat& feat,
                              CScope& scope,
@@ -122,6 +122,11 @@ protected:
     void x_AddTranslationExceptionAttribute(const CSeq_feat& feat,
                                             CScope& scope,
                                             string& defline) const;
+
+    bool x_GetCodeBreak(const CSeq_feat& feat, 
+                        const CCode_break& code_break,
+                        CScope& scope, 
+                        string& cbstring) const;
 
     void x_AddLocationAttribute(const CSeq_feat& feat,
                                 CScope& scope,
