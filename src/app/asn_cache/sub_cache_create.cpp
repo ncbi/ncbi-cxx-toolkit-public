@@ -131,7 +131,7 @@ struct SSeqIdIndex {
 struct SBlobLocator
 {
     SBlobLocator(CSeq_id_Handle idh, const CDir &root_cache)
-    : m_Idh(idh), m_CacheRoot(root_cache)
+    : m_Idh(idh), m_CacheRoot(&root_cache)
     {}
 
     SBlobLocator &operator=(const CAsnIndex &main_index)
@@ -143,8 +143,8 @@ struct SBlobLocator
 
     bool operator<(const SBlobLocator& k2) const
     {
-        if (m_CacheRoot.GetPath() < k2.m_CacheRoot.GetPath()) { return true;  }
-        if (k2.m_CacheRoot.GetPath() < m_CacheRoot.GetPath()) { return false; }
+        if (m_CacheRoot->GetPath() < k2.m_CacheRoot->GetPath()) { return true;  }
+        if (k2.m_CacheRoot->GetPath() < m_CacheRoot->GetPath()) { return false; }
         if (m_ChunkId < k2.m_ChunkId) { return true;  }
         if (k2.m_ChunkId < m_ChunkId) { return false; }
 
@@ -153,12 +153,12 @@ struct SBlobLocator
 
     bool operator==(const SBlobLocator& k2) const
     {
-        return m_CacheRoot.GetPath() == k2.m_CacheRoot.GetPath()
+        return m_CacheRoot->GetPath() == k2.m_CacheRoot->GetPath()
             && m_ChunkId == k2.m_ChunkId && m_Offset == k2.m_Offset;
     }
 
     CSeq_id_Handle          m_Idh;
-    CDir                    m_CacheRoot;
+    const CDir *            m_CacheRoot;
     CAsnIndex::TChunkId     m_ChunkId;
     CAsnIndex::TOffset      m_Offset;
 };
@@ -197,12 +197,12 @@ struct SSubcacheIndexData
     CAsnIndex::TTaxId       m_TaxId;
 };
 
-typedef list<SSubcacheIndexData> TBlobLocationList;
-typedef TBlobLocationList::iterator TBlobLocationEntry;
+typedef deque<SSubcacheIndexData> TBlobLocationList;
+typedef SSubcacheIndexData *TBlobLocationEntry;
 typedef map<SSeqIdIndex, TBlobLocationEntry> TIndexMapById;
 typedef TIndexMapById::iterator TIndexRef;
 typedef list<TIndexRef> TIndexRefList;
-typedef multimap<SBlobLocator, TBlobLocationEntry> TIndexMapByBlob;
+typedef vector< pair<SBlobLocator, TBlobLocationEntry> > TIndexMapByBlob;
 typedef set<CSeq_id_Handle, CSeq_id_Handle::PLessOrdered>  TCachedSeqIds;
 
 
@@ -398,7 +398,7 @@ struct SBlobCopier
             m_Buffer.clear();
             m_Buffer.resize( sub_cache_locator.m_BlobSize );
 
-            m_InputChunk.OpenForRead( main_cache_locator.m_CacheRoot.GetPath(),
+            m_InputChunk.OpenForRead( main_cache_locator.m_CacheRoot->GetPath(),
                                       main_cache_locator.m_ChunkId );
             m_InputChunk.RawRead( main_cache_locator.m_Offset,
                                   &m_Buffer[0], m_Buffer.size());
@@ -748,7 +748,7 @@ static void s_ReadIdsFromFile(CNcbiIstream&  istr,
             /// until we look up the data
             index_map.insert(TIndexMapById::value_type
                              (CSeq_id_Handle::GetHandle(line),
-                              blob_locations.begin()));
+                              &blob_locations.front()));
             cached_seq_ids.insert(CSeq_id_Handle::GetHandle(line));
         }
         catch (CException&) {
@@ -874,6 +874,13 @@ int CAsnCacheApplication::Run(void)
     LOG_POST(Error << "total records requested:      " << m_TotalRecords);
     LOG_POST(Error << "total records not found:      " << m_RecordsNotInMainCache);
     LOG_POST(Error << "total records already cached: " << m_RecordsInSubCache);
+                size_t total_mem = 0;
+                size_t resident_mem = 0;
+                size_t shared_mem = 0;
+                GetMemoryUsage(&total_mem,
+                                   &resident_mem,
+                                   &shared_mem);
+    LOG_POST(Error << "total memory consumed: " << total_mem);
     if (fetch_missing) {
         LOG_POST(Error << "total record retrieval failures: " << m_RecordsNotFound);
         LOG_POST(Error << "total records withdrawn:         " << m_RecordsWithdrawn);
@@ -1021,7 +1028,7 @@ size_t CAsnCacheApplication::WriteBlobsInSubCache(const vector<CDir>& main_cache
          ITERATE (vector<CSeq_id_Handle>, it, blob_writer.extra_ids) {
              SSeqIdIndex new_id(*it);
              if (!index_map.count(new_id)) {
-                 extra_ids.insert(TIndexMapById::value_type(new_id, blob_locations.begin()));
+                 extra_ids.insert(TIndexMapById::value_type(new_id, &blob_locations.front()));
              }
          }
 
@@ -1111,12 +1118,11 @@ CAsnCacheApplication::x_FetchMissingBlobs(TIndexMapById& index_map,
 
             ITERATE (vector<SSubcacheIndexData>, blob_it, index_data) {
                 /// Insert index data in blob locations list and in index map
-                TBlobLocationEntry new_entry =
-                    blob_locations.insert(blob_locations.end(), *blob_it);
+                blob_locations.push_back(*blob_it);
 
                 /// Add all biodeq's ids to index map, pointing to same blob
                 ITERATE (vector<CSeq_id_Handle>, id_it, blob_it->m_Ids) {
-                    index_map[*id_it] = new_entry;
+                    index_map[*id_it] = &blob_locations.back();;
                 }
             }
         }
@@ -1124,7 +1130,7 @@ CAsnCacheApplication::x_FetchMissingBlobs(TIndexMapById& index_map,
         ITERATE (vector<CSeq_id_Handle>, it, inserter.extra_ids) {
             SSeqIdIndex new_id(*it);
             if (!index_map.count(new_id)) {
-                extra_ids.insert(TIndexMapById::value_type(new_id, blob_locations.begin()));
+                extra_ids.insert(TIndexMapById::value_type(new_id, &blob_locations.front()));
             }
         }
     }
@@ -1192,11 +1198,10 @@ void CAsnCacheApplication::x_LocateBlobsInCache(TIndexMapById& index_map,
                 if (sub_cache_index_data) {
                     /// Found a blob in the main cache. Insert in blob_locations list, and enter
                     /// into two maps
-                    TBlobLocationEntry new_entry = 
-                        blob_locations.insert(blob_locations.end(), sub_cache_index_data);
-                    (*iter)->second = new_entry;
-                    index_map_by_blob.insert(
-                        TIndexMapByBlob::value_type(main_cache_locator, new_entry));
+                    blob_locations.push_back(sub_cache_index_data);
+                    (*iter)->second = &blob_locations.back();
+                    index_map_by_blob.push_back(
+                        TIndexMapByBlob::value_type(main_cache_locator, &blob_locations.back()));
                     iter = missing_ids.erase(iter);
                     --m_RecordsNotInMainCache;
                 } else {
@@ -1237,11 +1242,10 @@ void CAsnCacheApplication::x_LocateBlobsInCache(TIndexMapById& index_map,
                 if (sub_cache_index_data) {
                     /// Found a blob in the main cache. Insert in blob_locations list, and enter
                     /// into two maps
-                    TBlobLocationEntry new_entry = 
-                        blob_locations.insert(blob_locations.end(), sub_cache_index_data);
-                    (*iter)->second = new_entry;
-                    index_map_by_blob.insert(
-                        TIndexMapByBlob::value_type(main_cache_locator, new_entry));
+                    blob_locations.push_back(sub_cache_index_data);
+                    (*iter)->second = &blob_locations.back();
+                    index_map_by_blob.push_back(
+                        TIndexMapByBlob::value_type(main_cache_locator, &blob_locations.back()));
                     iter = missing_ids.erase(iter);
                     --m_RecordsNotInMainCache;
                 } else {
@@ -1251,6 +1255,8 @@ void CAsnCacheApplication::x_LocateBlobsInCache(TIndexMapById& index_map,
         }
       }
     }
+
+    sort(index_map_by_blob.begin(), index_map_by_blob.end());
 }
 
 
