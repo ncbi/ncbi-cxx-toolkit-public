@@ -34,6 +34,7 @@
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/seq_vector.hpp>
+#include <objmgr/bioseq_ci.hpp>
 #include <objtools/cleanup/cleanup.hpp>
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Delta_ext.hpp>
@@ -44,6 +45,7 @@
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/OrgMod.hpp>
 #include <objects/seqfeat/SubSource.hpp>
+#include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/pub/Pub.hpp>
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/biblio/Auth_list.hpp>
@@ -2293,6 +2295,112 @@ DISCREPANCY_CASE(SMALL_GENOME_SET_PROBLEM, CBioseq_set, eOncaller, "Problems wit
 
 //  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(SMALL_GENOME_SET_PROBLEM)
+//  ----------------------------------------------------------------------------
+{
+    m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
+}
+
+
+// UNWANTED_SET_WRAPPER
+// TODO: find sample files to test this case
+
+static const string kUnwantedSetWrapper = "[n] unwanted set wrapper[s]";
+
+static const CBioSource* GetBioSource(const CBioseq_Handle& bioseq)
+{
+    const CBioSource* ret = nullptr;
+
+    if (bioseq.IsSetDescr()) {
+        ITERATE(CSeq_descr::Tdata, descr, bioseq.GetDescr().Get()) {
+            if ((*descr)->IsSource()) {
+                ret = &(*descr)->GetSource();
+                break;
+            }
+        }
+    }
+
+    return ret;
+}
+
+static bool IsMicroSatellite(const CSeq_feat_Handle& feat)
+{
+    bool ret = false;
+    if (feat.GetFeatSubtype() == CSeqFeatData::eSubtype_repeat_region) {
+
+        if (feat.IsSetQual()) {
+
+            ITERATE(CSeq_feat::TQual, qual, feat.GetQual()) {
+                if ((*qual)->IsSetQual() && (*qual)->IsSetVal() &&
+                    NStr::EqualNocase("satellite", (*qual)->GetQual()) && NStr::EqualNocase("microsatellite", (*qual)->GetVal())) {
+
+                    ret = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    return ret;
+}
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(UNWANTED_SET_WRAPPER, CBioseq_set, eOncaller, "Set wrapper on microsatellites or rearranged genes")
+//  ----------------------------------------------------------------------------
+{
+    if (obj.IsSetClass()) {
+
+        CBioseq_set::EClass bio_set_class = obj.GetClass();
+        if (bio_set_class == CBioseq_set::eClass_eco_set ||
+            bio_set_class == CBioseq_set::eClass_mut_set ||
+            bio_set_class == CBioseq_set::eClass_phy_set ||
+            bio_set_class == CBioseq_set::eClass_pop_set) {
+
+            bool has_rearranged = false;
+            bool has_sat_feat = false;
+            bool has_non_sat_feat = false;
+
+            CBioseq_set_Handle bio_set_handle = context.GetScope().GetBioseq_setHandle(obj);
+            for (CBioseq_CI bioseq(bio_set_handle); bioseq; ++bioseq) {
+
+                if (!has_rearranged) {
+                    const CBioSource* bio_src = GetBioSource(*bioseq);
+                    if (bio_src != nullptr && bio_src->IsSetSubtype()) {
+
+                        ITERATE(CBioSource::TSubtype, subtype, bio_src->GetSubtype()) {
+                            if ((*subtype)->IsSetSubtype() && (*subtype)->GetSubtype() == CSubSource::eSubtype_rearranged) {
+                                has_rearranged = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (!has_sat_feat || !has_non_sat_feat) {
+                    for (CFeat_CI feat(*bioseq); feat; ++feat) {
+                        if (IsMicroSatellite(*feat)) {
+                            has_sat_feat = true;
+                        }
+                        else {
+                            has_non_sat_feat = true;
+                        }
+                    }
+                }
+
+                if (has_rearranged && has_sat_feat && has_non_sat_feat) {
+                    break;
+                }
+            }
+
+            if (has_rearranged || (has_sat_feat && !has_non_sat_feat)) {
+                m_Objs[kUnwantedSetWrapper].Add(*context.NewDiscObj(CConstRef<CBioseq_set>(&obj)), false);
+            }
+        }
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(UNWANTED_SET_WRAPPER)
 //  ----------------------------------------------------------------------------
 {
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
