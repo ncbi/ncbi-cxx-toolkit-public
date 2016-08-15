@@ -1005,7 +1005,7 @@ int CCgiApplication::OnException(exception& e, CNcbiOstream& os)
 
         // Message
         os << "ERROR:  " << status_str << " " HTTP_EOL HTTP_EOL;
-        os << message;
+        os << NStr::HtmlEncode(message);
 
         if ( dynamic_cast<CArgException*> (&e) ) {
             string ustr;
