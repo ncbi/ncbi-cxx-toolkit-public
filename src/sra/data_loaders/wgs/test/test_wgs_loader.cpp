@@ -439,6 +439,8 @@ bool sx_Equal(const CBioseq_Handle& bh1, const CBioseq_Handle& bh2)
         if ( !descr1->Equals(*descr2) ) {
             has_descr_error = true;
         }
+    }
+    if ( 0 ) {
         if ( !annot1->Equals(*annot2) ) {
             has_annot_error = true;
         }
@@ -1357,6 +1359,38 @@ BOOST_AUTO_TEST_CASE(FetchProt17)
 }
 
 
+BOOST_AUTO_TEST_CASE(FetchProt17a)
+{
+    // WGS VDB with proteins with new WGS repository
+    if ( !CDirEntry(s_NewWGSPath).Exists() ) {
+        return;
+    }
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr, "AIDX01.1");
+
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+
+    string acc = "AIDX01000002.1";
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(acc);
+    CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
+    sx_ReportState(bsh, idh);
+    BOOST_REQUIRE(bsh);
+    {
+        CFeat_CI feat_it(bsh);
+        BOOST_CHECK_EQUAL(feat_it.GetSize(), 1859u);
+    }
+
+    CSeq_id_Handle prot_id = CSeq_id_Handle::GetHandle("EIQ82083");
+    CBioseq_Handle prot_bh = bsh.GetTSE_Handle().GetBioseqHandle(prot_id);
+    BOOST_REQUIRE(prot_bh);
+    {
+        CFeat_CI feat_it(prot_bh, SAnnotSelector().SetByProduct());
+        BOOST_CHECK_EQUAL(feat_it.GetSize(), 1u);
+        BOOST_CHECK_EQUAL(scope->GetBioseqHandle(feat_it->GetLocation()), bsh);
+    }
+}
+
+
 BOOST_AUTO_TEST_CASE(FetchProt18)
 {
     // WGS VDB with proteins with new WGS repository
@@ -1365,6 +1399,38 @@ BOOST_AUTO_TEST_CASE(FetchProt18)
     }
     CRef<CObjectManager> om =
         sx_InitOM(eWithMasterDescr, s_NewWGSPath+"/WGS/AI/DX/AIDX01.2");
+
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+
+    string acc = "AIDX01000002.1";
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(acc);
+    CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
+    sx_ReportState(bsh, idh);
+    BOOST_REQUIRE(bsh);
+    {
+        CFeat_CI feat_it(bsh);
+        BOOST_CHECK_EQUAL(feat_it.GetSize(), 1859u);
+    }
+
+    CSeq_id_Handle prot_id = CSeq_id_Handle::GetHandle("EIQ82083");
+    CBioseq_Handle prot_bh = bsh.GetTSE_Handle().GetBioseqHandle(prot_id);
+    BOOST_REQUIRE(prot_bh);
+    {
+        CFeat_CI feat_it(prot_bh, SAnnotSelector().SetByProduct());
+        BOOST_CHECK_EQUAL(feat_it.GetSize(), 1u);
+        BOOST_CHECK_EQUAL(scope->GetBioseqHandle(feat_it->GetLocation()), bsh);
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(FetchProt18a)
+{
+    // WGS VDB with proteins with new WGS repository
+    if ( !CDirEntry(s_NewWGSPath).Exists() ) {
+        return;
+    }
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr, "AIDX01.2");
 
     CRef<CScope> scope(new CScope(*om));
     scope->AddDefaults();
@@ -1424,6 +1490,39 @@ BOOST_AUTO_TEST_CASE(FetchProt19)
 }
 
 
+BOOST_AUTO_TEST_CASE(FetchProt19a)
+{
+    // WGS VDB with proteins with new WGS repository
+    if ( !CDirEntry(s_NewWGSPath).Exists() ) {
+        return;
+    }
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr, "AIDX01.1");
+
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+
+    string acc = "EIQ82083";
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(acc);
+    CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
+    sx_ReportState(bsh, idh);
+    BOOST_REQUIRE(bsh);
+
+    {
+        CFeat_CI feat_it(bsh);
+        BOOST_REQUIRE_EQUAL(feat_it.GetSize(), 1u);
+        BOOST_CHECK_EQUAL(feat_it->GetFeatType(), CSeqFeatData::e_Prot);
+    }
+    {
+        CFeat_CI feat_it(bsh, SAnnotSelector().SetByProduct());
+        BOOST_REQUIRE_EQUAL(feat_it.GetSize(), 1u);
+        BOOST_CHECK_EQUAL(feat_it->GetFeatType(), CSeqFeatData::e_Cdregion);
+        const CSeq_id* contig_id = feat_it->GetLocation().GetId();
+        BOOST_REQUIRE(contig_id);
+        BOOST_CHECK_EQUAL(contig_id->AsFastaString(), "gb|AIDX01000001|");
+    }
+}
+
+
 BOOST_AUTO_TEST_CASE(FetchProt20)
 {
     // WGS VDB with proteins with new WGS repository
@@ -1432,6 +1531,40 @@ BOOST_AUTO_TEST_CASE(FetchProt20)
     }
     CRef<CObjectManager> om =
         sx_InitOM(eWithMasterDescr, s_NewWGSPath+"/WGS/AI/DX/AIDX01.2");
+
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+
+    string acc = "EIQ82083";
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(acc);
+    CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
+    sx_ReportState(bsh, idh);
+    BOOST_REQUIRE(bsh);
+
+
+    {
+        CFeat_CI feat_it(bsh);
+        BOOST_REQUIRE_EQUAL(feat_it.GetSize(), 1u);
+        BOOST_CHECK_EQUAL(feat_it->GetFeatType(), CSeqFeatData::e_Prot);
+    }
+    {
+        CFeat_CI feat_it(bsh, SAnnotSelector().SetByProduct());
+        BOOST_REQUIRE_EQUAL(feat_it.GetSize(), 1u);
+        BOOST_CHECK_EQUAL(feat_it->GetFeatType(), CSeqFeatData::e_Cdregion);
+        const CSeq_id* contig_id = feat_it->GetLocation().GetId();
+        BOOST_REQUIRE(contig_id);
+        BOOST_CHECK_EQUAL(contig_id->AsFastaString(), "gb|AIDX01000002|");
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(FetchProt20a)
+{
+    // WGS VDB with proteins with new WGS repository
+    if ( !CDirEntry(s_NewWGSPath).Exists() ) {
+        return;
+    }
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr, "AIDX01.2");
 
     CRef<CScope> scope(new CScope(*om));
     scope->AddDefaults();
@@ -1808,6 +1941,48 @@ BOOST_AUTO_TEST_CASE(FetchNoSeq5)
     CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*seqid);
     CBioseq_Handle bh = scope.GetBioseqHandle(idh);
     BOOST_REQUIRE(!bh);
+}
+
+
+BOOST_AUTO_TEST_CASE(FetchMinorVer1)
+{
+    CRef<CObjectManager> om = sx_GetEmptyOM();
+    string loader_name =
+        CWGSDataLoader::RegisterInObjectManager(*om, "", vector<string>(1, "AAAB01.4")).GetLoader()->GetName();
+
+    string id = "AAAB01000034";
+    CScope scope(*om);
+    scope.AddDataLoader(loader_name);
+
+    CRef<CSeq_id> seqid(new CSeq_id(id));
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*seqid);
+    CBioseq_Handle bh = scope.GetBioseqHandle(idh);
+    BOOST_REQUIRE(bh);
+    CSeqdesc_CI it(bh, CSeqdesc::e_Source);
+    BOOST_REQUIRE(it);
+    ++it;
+    BOOST_REQUIRE(it);
+}
+
+
+BOOST_AUTO_TEST_CASE(FetchMinorVer2)
+{
+    CRef<CObjectManager> om = sx_GetEmptyOM();
+    string loader_name =
+        CWGSDataLoader::RegisterInObjectManager(*om, "", vector<string>(1, "AAAB01.5")).GetLoader()->GetName();
+
+    string id = "AAAB01000034";
+    CScope scope(*om);
+    scope.AddDataLoader(loader_name);
+
+    CRef<CSeq_id> seqid(new CSeq_id(id));
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*seqid);
+    CBioseq_Handle bh = scope.GetBioseqHandle(idh);
+    BOOST_REQUIRE(bh);
+    CSeqdesc_CI it(bh, CSeqdesc::e_Source);
+    BOOST_REQUIRE(it);
+    ++it;
+    BOOST_REQUIRE(!it);
 }
 
 
