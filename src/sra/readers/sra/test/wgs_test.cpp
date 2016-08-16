@@ -240,6 +240,19 @@ void* read_thread_func(void* arg)
 
 int LowLevelTest(void)
 {
+    if ( 1 ) {
+        cout << "LowLevelTest for AAAD01 opening..." << endl;
+        const VDBManager* mgr = 0;
+        CALL(VDBManagerMakeRead(&mgr, 0));
+        
+        const VDatabase* db = 0;
+        CALL(VDBManagerOpenDBRead(mgr, &db, 0, "AAAD01"));
+        
+        CALL(VDatabaseRelease(db));
+        CALL(VDBManagerRelease(mgr));
+        return 0;
+    }
+
     if ( 0 ) {
         cout << "LowLevelTest for multiple cursor opening..." << endl;
         for ( int i = 0; i < 10; ++i ) {
@@ -772,7 +785,7 @@ int CWGSTestApp::Run(void)
         limit_count = size_t(args["limit_count"].AsInteger());
     }
 
-    CNcbiOstream& out = cout;
+    CNcbiOstream& out = args["o"].AsOutputFile();
 
     if ( args["make-all-ranges"] ) {
         MakeAllRanges(args["max-gap"].AsInteger());
@@ -1019,9 +1032,9 @@ int CWGSTestApp::Run(void)
     bool check_non_empty_lookup = args["check_non_empty_lookup"];
     if ( args["gi"] ) {
         TGi gi = TIntId(args["gi"].AsInt8());
-        CWGSResolver_VDB resolver(mgr);
-        if ( resolver.IsValid() ) {
-            CWGSResolver::TWGSPrefixes prefixes = resolver.GetPrefixes(gi);
+        CRef<CWGSResolver> resolver = CWGSResolver_VDB::CreateResolver(mgr);
+        if ( resolver ) {
+            CWGSResolver::TWGSPrefixes prefixes = resolver->GetPrefixes(gi);
             if ( prefixes.empty() ) {
                 out << "No WGS accessions with gi "<<gi<<NcbiEndl;
             }
@@ -1032,8 +1045,8 @@ int CWGSTestApp::Run(void)
             }
         }
         else {
-            CWGSResolver_GiRangeFile resolver;
-            CWGSResolver::TWGSPrefixes prefixes = resolver.GetPrefixes(gi);
+            resolver = CWGSResolver_RangeFiles::CreateResolver();
+            CWGSResolver::TWGSPrefixes prefixes = resolver->GetPrefixes(gi);
             if ( prefixes.empty() ) {
                 out << "No WGS accessions with gi "<<gi<<NcbiEndl;
             }
@@ -1172,9 +1185,9 @@ int CWGSTestApp::Run(void)
     }
     if ( args["protein_acc"] ) {
         string name = args["protein_acc"].AsString();
-        CWGSResolver_VDB resolver(mgr);
-        if ( resolver.IsValid() ) {
-            CWGSResolver::TWGSPrefixes prefixes = resolver.GetPrefixes(name);
+        CRef<CWGSResolver> resolver = CWGSResolver_VDB::CreateResolver(mgr);
+        if ( resolver ) {
+            CWGSResolver::TWGSPrefixes prefixes = resolver->GetPrefixes(name);
             if ( prefixes.empty() ) {
                 out << "No WGS accessions with protein acc "<<name<<NcbiEndl;
             }
@@ -1185,8 +1198,8 @@ int CWGSTestApp::Run(void)
             }
         }
         else {
-            CWGSResolver_AccRangeFile resolver;
-            CWGSResolver::TWGSPrefixes prefixes = resolver.GetPrefixes(name);
+            resolver = CWGSResolver_RangeFiles::CreateResolver();
+            CWGSResolver::TWGSPrefixes prefixes = resolver->GetPrefixes(name);
             if ( prefixes.empty() ) {
                 out << "No WGS accessions with protein acc "<<name<<NcbiEndl;
             }

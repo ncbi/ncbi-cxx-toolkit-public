@@ -61,8 +61,9 @@ BEGIN_NAMESPACE(objects);
 //#define DEFAULT_WGS_INDEX_PATH "WGS_INDEX"
 //#define DEFAULT_WGS_INDEX_PATH "AAAA00"
 #define WGS_INDEX_ACC "ZZZZ99"
-#define DEFAULT_WGS_INDEX_PATH1 NCBI_TRACES04_PATH "/wgs01/WGS/WGS_INDEX"
-#define DEFAULT_WGS_INDEX_PATH2 NCBI_TRACES04_PATH "/wgs01/NEW/WGS/WGS_INDEX"
+#define DEFAULT_WGS_INDEX_PATH1 NCBI_TRACES04_PATH "/wgs03/WGS/ZZ/ZZ/ZZZZ99"
+#define DEFAULT_WGS_INDEX_PATH2 NCBI_TRACES04_PATH "/wgs01/WGS/WGS_INDEX"
+#define DEFAULT_WGS_INDEX_PATH3 NCBI_TRACES04_PATH "/wgs01/NEW/WGS/WGS_INDEX"
 
 #define DEFAULT_GI_INDEX_PATH                                   \
     NCBI_TRACES04_PATH "/wgs01/wgs_aux/list.wgs_gi_ranges"
@@ -164,9 +165,57 @@ CWGSResolver_VDB::SAccIdxTableCursor::SAccIdxTableCursor(const CVDBTable& table)
 }
 
 
+string CWGSResolver_VDB::GetDefaultWGSIndexPath(void)
+{
+    return NCBI_PARAM_TYPE(WGS, WGS_INDEX)::GetDefault();
+}
+
+
+static
+string GetDirectWGSIndexPath(void)
+{
+    string path;
+    if ( NCBI_PARAM_TYPE(WGS, RESOLVER_DIRECT_WGS_INDEX)::GetDefault() ) {
+        if ( CDirEntry(DEFAULT_WGS_INDEX_PATH1).Exists() ) {
+            path = DEFAULT_WGS_INDEX_PATH1;
+        }
+        else if ( CDirEntry(DEFAULT_WGS_INDEX_PATH2).Exists() ) {
+            path = DEFAULT_WGS_INDEX_PATH2;
+        }
+        else if ( CDirEntry(DEFAULT_WGS_INDEX_PATH3).Exists() ) {
+            path = DEFAULT_WGS_INDEX_PATH3;
+        }
+    }
+    return path;
+}
+
+
 CWGSResolver_VDB::CWGSResolver_VDB(const CVDBMgr& mgr)
 {
-    Open(mgr, GetDefaultWGSIndexPath());
+    string path = GetDefaultWGSIndexPath();
+    if ( path.empty() ) {
+        // no user-defined index path, try default locations
+        // first try to open index by predefined accession, maybe remotely
+        Open(mgr, WGS_INDEX_ACC);
+        if ( IsValid() ) {
+            // opened
+            return;
+        }
+        // then try to open index by direct file acces, only locally
+        path = GetDirectWGSIndexPath();
+        if ( path.empty() ) {
+            // VDB index is not available
+            return;
+        }
+    }
+    if ( path.find_first_of("\\/") != NPOS && !CDirEntry(path).Exists() ) {
+        // not an accession (has directory separators) and not a file
+        if ( s_DebugEnabled(eDebug_error) ) {
+            ERR_POST_X(9, "CWGSResolver_VDB: cannot find index file: "<<path);
+        }
+        return;
+    }
+    Open(mgr, path);
 }
 
 
@@ -184,17 +233,7 @@ CWGSResolver_VDB::~CWGSResolver_VDB(void)
 
 CRef<CWGSResolver> CWGSResolver_VDB::CreateResolver(const CVDBMgr& mgr)
 {
-    string path = GetDefaultWGSIndexPath();
-    if ( path.empty() ) {
-        path = WGS_INDEX_ACC;
-    }
-    if ( path.find_first_of("\\/") != NPOS && !CDirEntry(path).Exists() ) {
-        if ( s_DebugEnabled(eDebug_error) ) {
-            ERR_POST_X(9, "CWGSResolver_VDB: cannot find index file: "<<path);
-        }
-        return null;
-    }
-    CRef<CWGSResolver_VDB> ret(new CWGSResolver_VDB(mgr, path));
+    CRef<CWGSResolver_VDB> ret(new CWGSResolver_VDB(mgr));
     if ( !ret->IsValid() ) {
         return null;
     }
@@ -258,22 +297,6 @@ bool CWGSResolver_VDB::Update(void)
     }
     Reopen();
     return true;
-}
-
-
-string CWGSResolver_VDB::GetDefaultWGSIndexPath(void)
-{
-    string path = NCBI_PARAM_TYPE(WGS, WGS_INDEX)::GetDefault();
-    if ( path.empty() &&
-         NCBI_PARAM_TYPE(WGS, RESOLVER_DIRECT_WGS_INDEX)::GetDefault() ) {
-        if ( CDirEntry(DEFAULT_WGS_INDEX_PATH1).Exists() ) {
-            path = DEFAULT_WGS_INDEX_PATH1;
-        }
-        else if ( CDirEntry(DEFAULT_WGS_INDEX_PATH2).Exists() ) {
-            path = DEFAULT_WGS_INDEX_PATH2;
-        }
-    }
-    return path;
 }
 
 
