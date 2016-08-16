@@ -259,13 +259,13 @@ public:
             return *GetPointer();
         }
 
+public:
     void SetReferencedPointer(TObject* ptr)
         {
             Release();
             m_Object = ptr;
         }
 
-protected:
     TObject** x_InitPtr(void)
         {
             Release();

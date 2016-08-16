@@ -377,6 +377,56 @@ CBamMgr::CBamMgr(void)
     }
 }
 
+
+SPECIALIZE_BAM_REF_TRAITS(VFSManager, );
+
+
+#ifdef NCBI_OS_MSWIN
+static inline
+bool s_HasWindowsDriveLetter(const string& s)
+{
+    // first symbol is letter, and second symbol is colon (':')
+    return s.length() >= 2 && isalpha(Uchar(s[0])) && s[1] == ':';
+}
+
+
+static
+bool s_IsSysPath(const string& s)
+{
+    if ( s_HasWindowsDriveLetter(s) ) {
+        return true;
+    }
+    if ( s.find_first_of("/\\") == NPOS ) {
+        // may be plain accession or local file
+        if ( CDirEntry(s).Exists() ) {
+            // file -> sys path
+            return true;
+        }
+        else {
+            // accession
+            return false;
+        }
+    }
+    else {
+        // may be path or URI
+        if ( s[0] == 'h' &&
+             (NStr::StartsWith(s, "http://") ||
+              NStr::StartsWith(s, "https://")) ) {
+            // URI
+            return false;
+        }
+        if ( s[0] == 'f' &&
+             NStr::StartsWith(s, "ftp://") ) {
+            // URI
+            return false;
+        }
+        // path
+        return true;
+    }
+}
+#endif
+
+
 static VPath* sx_GetVPath(const string& path)
 {
 #ifdef NCBI_OS_MSWIN
@@ -384,54 +434,38 @@ static VPath* sx_GetVPath(const string& path)
     // \\host\share\dir\file
     // As a workaroung we'll replace backslashes with forward slashes.
     string fixed_path = path;
-    if ( path.find('\\') != NPOS && CFile(path).Exists() ) {
+    if ( s_IsSysPath(path) ) {
+        try {
+            fixed_path = CDirEntry::CreateAbsolutePath(path);
+        }
+        catch (exception&) {
+            // CDirEntry::CreateAbsolutePath() can fail on remote access URL
+            return path;
+        }
         replace(fixed_path.begin(), fixed_path.end(), '\\', '/');
+        if ( s_HasWindowsDriveLetter(fixed_path) ) {
+            // move drive letter from first symbol to second (in place of ':')
+            fixed_path[1] = toupper(Uchar(fixed_path[0]));
+            // add leading slash
+            fixed_path[0] = '/';
+        }
     }
     const char* c_path = fixed_path.c_str();
 #else
     const char* c_path = path.c_str();
 #endif
 
-    VFSManager* mgr;
-    if ( rc_t rc = VFSManagerMake(&mgr)) {
+    CBamRef<VFSManager> mgr;
+    if ( rc_t rc = VFSManagerMake(mgr.x_InitPtr())) {
         NCBI_THROW2(CBamException, eInitFailed,
                     "Cannot create VFSManager object", rc);
     }
     
     VPath* kpath;
-    if ( rc_t rc = VFSManagerMakePath ( mgr, &kpath, c_path ) ) {
+    if ( rc_t rc = VFSManagerMakePath(mgr, &kpath, c_path) ) {
         NCBI_THROW2(CBamException, eInitFailed,
                     "Cannot create VPath object", rc);
     }
-    
-    VFSManagerRelease(mgr);
-    
-#if 0
-    VPath* kpath;
-    if ( rc_t rc = VPathMakeSysPath(&kpath, c_path) ) {
-        NCBI_THROW2(CBamException, eInitFailed,
-                    "Cannot create VPath object", rc);
-    }
-    String s;
-    if ( rc_t rc = VPathGetScheme(kpath, &s) ) {
-        NCBI_THROW2(CBamException, eInitFailed,
-                    "Cannot get VPath scheme", rc);
-    }
-    if ( s.size == 1 ) {
-        string fixed(s.addr, s.size);
-        fixed = '/'+fixed;
-        if ( rc_t rc = VPathGetPath(kpath, &s) ) {
-            NCBI_THROW2(CBamException, eInitFailed,
-                        "Cannot get VPath path", rc);
-        }
-        fixed += string(s.addr, s.size);
-        VPathRelease(kpath);
-        if ( rc_t rc = VPathMake(&kpath, fixed.c_str()) ) {
-            NCBI_THROW2(CBamException, eInitFailed,
-                        "Cannot create fixed VPath object", rc);
-        }
-    }
-#endif    
     return kpath;
 }
 
@@ -504,13 +538,11 @@ TSeqPos CBamDb::GetRefSeqLength(const string& id) const
 
 string CBamDb::GetHeaderText(void) const
 {
-    const BAMFile* file;
-    if ( rc_t rc = AlignAccessDBExportBAMFile(*this, &file) ) {
+    CBamRef<const BAMFile> file;
+    if ( rc_t rc = AlignAccessDBExportBAMFile(*this, file.x_InitPtr()) ) {
         NCBI_THROW2(CBamException, eOtherError,
                     "Cannot get BAMFile pointer", rc);
     }
-    CBamRef<const BAMFile> file_ref;
-    file_ref.SetReferencedPointer(file);
     const char* header;
     size_t size;
     if ( rc_t rc = BAMFileGetHeaderText(file, &header, &size) ) {
