@@ -1,0 +1,98 @@
+Seq-annot ::= {
+  id {
+    local str "Scaffold7"
+  },
+  data ftable {
+    {
+      id local id 1,
+      data gene {
+        locus-tag "LT_000001"
+      },
+      comment "Gap in scaffold at 5 end of conserved domain,Partial GTPX
+ conserved domain at 5 end of model near gap in scaffold. Premature
+ stop-codons are probably remnants of the pseudogene.",
+      location int {
+        from 12504878,
+        to 12518543,
+        strand plus,
+        id local str "Scaffold7"
+      },
+      xref {
+        {
+          id local id 3
+        },
+        {
+          id local id 2
+        }
+      },
+      pseudo TRUE
+    },
+    {
+      id local id 2,
+      data rna {
+        type mRNA
+      },
+      comment "Gap in scaffold at 5 end of conserved domain,Partial GTPX
+ conserved domain at 5 end of model near gap in scaffold. Premature
+ stop-codons are probably remnants of the pseudogene.",
+      location mix {
+        int {
+          from 12504878,
+          to 12518543,
+          strand plus,
+          id local str "Scaffold7"
+        }
+      },
+      qual {
+        {
+          qual "protein_id",
+          val "gnl|LT|LT_000001"
+        },
+        {
+          qual "transcript_id",
+          val "gnl|LT|mrna.LT_000001"
+        }
+      },
+      xref {
+        {
+          id local id 3
+        },
+        {
+          id local id 1
+        }
+      },
+      pseudo TRUE
+    },
+    {
+      id local id 3,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 12504878,
+        to 12518543,
+        strand plus,
+        id local str "Scaffold7"
+      },
+      qual {
+        {
+          qual "protein_id",
+          val "gnl|LT|LT_000001"
+        },
+        {
+          qual "transcript_id",
+          val "gnl|LT|mrna.LT_000001"
+        }
+      },
+      xref {
+        {
+          id local id 2
+        },
+        {
+          id local id 1
+        }
+      },
+      pseudo TRUE
+    }
+  }
+}

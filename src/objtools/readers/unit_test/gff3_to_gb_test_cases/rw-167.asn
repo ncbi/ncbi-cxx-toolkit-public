@@ -1,0 +1,296 @@
+Seq-annot ::= {
+  id {
+    local str "U00096.3"
+  },
+  data ftable {
+    {
+      id local id 1,
+      data gene {
+        locus "thrL",
+        syn {
+          "ECK0001",
+          "JW4367"
+        },
+        locus-tag "LT_000001"
+      },
+      location int {
+        from 189,
+        to 254,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      xref {
+        {
+          id local id 2
+        },
+        {
+          id local id 3
+        },
+        {
+          id local id 4
+        },
+        {
+          id local id 5
+        },
+        {
+          id local id 6
+        },
+        {
+          id local id 7
+        },
+        {
+          id local id 8
+        },
+        {
+          id local id 9
+        },
+        {
+          id local id 10
+        }
+      },
+      dbxref {
+        {
+          db "EcoGene",
+          tag str "EG11277"
+        }
+      }
+    },
+    {
+      id local id 2,
+      data imp {
+        key "regulatory"
+      },
+      location int {
+        from 300,
+        to 309,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "regulatory_class",
+          val "attenuator"
+        }
+      },
+      xref {
+        {
+          id local id 1
+        }
+      }
+    },
+    {
+      id local id 3,
+      data imp {
+        key "regulatory"
+      },
+      location int {
+        from 320,
+        to 329,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "regulatory_class",
+          val "enhancer"
+        }
+      },
+      xref {
+        {
+          id local id 1
+        }
+      }
+    },
+    {
+      id local id 4,
+      data imp {
+        key "regulatory"
+      },
+      location int {
+        from 370,
+        to 379,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "regulatory_class",
+          val "minus_35_signal"
+        }
+      },
+      xref {
+        {
+          id local id 1
+        }
+      }
+    },
+    {
+      id local id 5,
+      data imp {
+        key "regulatory"
+      },
+      location int {
+        from 380,
+        to 389,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "regulatory_class",
+          val "minus_10_signal"
+        }
+      },
+      xref {
+        {
+          id local id 1
+        }
+      }
+    },
+    {
+      id local id 6,
+      data imp {
+        key "regulatory"
+      },
+      location int {
+        from 390,
+        to 399,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "regulatory_class",
+          val "polyA_signal_sequence"
+        }
+      },
+      xref {
+        {
+          id local id 1
+        }
+      }
+    },
+    {
+      id local id 7,
+      data imp {
+        key "regulatory"
+      },
+      location int {
+        from 400,
+        to 409,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "regulatory_class",
+          val "promoter"
+        }
+      },
+      xref {
+        {
+          id local id 1
+        }
+      }
+    },
+    {
+      id local id 8,
+      data imp {
+        key "regulatory"
+      },
+      location int {
+        from 440,
+        to 449,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "regulatory_class",
+          val "TATA_box"
+        }
+      },
+      xref {
+        {
+          id local id 1
+        }
+      }
+    },
+    {
+      id local id 9,
+      data imp {
+        key "regulatory"
+      },
+      location int {
+        from 450,
+        to 459,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "regulatory_class",
+          val "other"
+        }
+      },
+      xref {
+        {
+          id local id 1
+        }
+      }
+    },
+    {
+      id local id 10,
+      data imp {
+        key "regulatory"
+      },
+      location int {
+        from 460,
+        to 469,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "regulatory_class",
+          val "terminator"
+        }
+      },
+      xref {
+        {
+          id local id 1
+        }
+      }
+    }
+  }
+}
