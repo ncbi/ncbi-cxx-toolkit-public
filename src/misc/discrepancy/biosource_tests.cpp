@@ -2214,5 +2214,47 @@ DISCREPANCY_AUTOFIX(DUPLICATE_PRIMER_SET)
 }
 
 
+// METAGENOMIC
+
+DISCREPANCY_CASE(METAGENOMIC, CBioSource, eDisc | eOncaller | eSmart, "Source has metagenomic qualifier")
+{
+    if (obj.CanGetSubtype()) {
+        ITERATE (CBioSource::TSubtype, it, obj.GetSubtype()) {
+            if ((*it)->GetSubtype() == CSubSource::eSubtype_metagenomic) {
+                m_Objs["[n] biosource[s] [has] metagenomic qualifier"].Add(*context.NewFeatOrDescObj());
+                return;
+            }
+        }
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(METAGENOMIC)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+// METAGENOME_SOURCE
+
+DISCREPANCY_CASE(METAGENOME_SOURCE, CBioSource, eDisc | eOncaller | eSmart, "Source has metagenome_source qualifier")
+{
+    if (obj.IsSetOrg() && obj.GetOrg().CanGetOrgname() && obj.GetOrg().GetOrgname().CanGetMod() && obj.GetOrg().IsSetTaxname() && !obj.GetOrg().GetTaxname().empty()) {
+        ITERATE (COrgName::TMod, it, obj.GetOrg().GetOrgname().GetMod()) {
+            if ((*it)->CanGetSubtype() && (*it)->GetSubtype() == COrgMod::eSubtype_metagenome_source) {
+                m_Objs["[n] biosource[s] [has] metagenome_source qualifier"].Add(*context.NewFeatOrDescObj());
+                return;
+            }
+        }
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(METAGENOME_SOURCE)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
