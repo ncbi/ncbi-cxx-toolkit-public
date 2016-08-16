@@ -347,36 +347,55 @@ bool NStr::IsUpper(const CTempString str)
 }
 
 
-int NStr::StringToNonNegativeInt(const string& str)
+int NStr::StringToNonNegativeInt(const CTempString str, TStringToNumFlags flags)
 {
-    int& errno_ref = errno;
-    if ( str.empty() ) {
-        CNcbiError::SetErrno(errno_ref = EINVAL, str);
-        return -1;
+    int error = 0, ret = -1;
+    size_t len = str.size();
+
+    if (!len) {
+        error = EINVAL;
+    } else {
+        size_t i = 0;
+        // skip leading '+' if any
+        if (str.data()[0] == '+'  &&  len > 1) {
+            ++i;
+        }
+        unsigned v = 0;
+        for (; i < len; ++i) {
+            unsigned d = str.data()[i] - '0';
+            if (d > 9) {
+                error = EINVAL;
+                break;
+            }
+            unsigned nv = v * 10 + d;
+            const unsigned kOverflowLimit = (INT_MAX - 9) / 10 + 1;
+            if (v >= kOverflowLimit) {
+                // possible overflow
+                if (v > kOverflowLimit || nv > INT_MAX) {
+                    error = ERANGE;
+                    break;
+                }
+            }
+            v = nv;
+        }
+        if (!error) {
+            ret = static_cast<int>(v);
+        }
     }
-    char ch = str[0];
-    if ( !isdigit((unsigned char)ch) &&  (ch != '+') ) {
-        CNcbiError::SetErrno(errno_ref = EINVAL, str);
-        return -1;
+/*
+    if (flags & fConvErr_NoErrno) {
+        return ret;
     }
-    char* endptr = 0;
-    const char* begptr = str.c_str();
-    errno_ref = 0;
-    unsigned long value = strtoul(begptr, &endptr, 10);
-    if ( errno_ref ) {
-        CNcbiError::SetErrno(errno_ref, str);
-        return -1;
+*/
+    errno = error;
+    if (error) {
+        if (flags & fConvErr_NoErrnoMessage) {
+            CNcbiError::SetErrno(error);
+        } else {
+            CNcbiError::SetErrno(error, str);
+        }
     }
-    else if ( !endptr  ||  endptr == begptr  ||  *endptr ) {
-        CNcbiError::SetErrno(errno_ref = EINVAL, str);
-        return -1;
-    }
-    else if ( value > (unsigned long) kMax_Int ) {
-        CNcbiError::SetErrno(errno_ref = ERANGE, str);
-        return -1;
-    }
-    errno_ref = 0;
-    return (int) value;
+    return ret;
 }
 
 
@@ -388,15 +407,18 @@ class CS2N_Guard
 {
 public:
     CS2N_Guard(NStr::TStringToNumFlags flags, bool skip_if_zero) :
+        m_NoErrno(false),     // m_NoErrno((flags & NStr::fConvErr_NoErrno) > 0),
         m_NoThrow((flags & NStr::fConvErr_NoThrow) > 0), 
         m_SkipIfZero(skip_if_zero), 
         m_Errno(0)
     {}
     ~CS2N_Guard(void)  {
-        // Does the guard is used against the code that already set an errno?
-        // If the error code is not defined here, do not even try to check/set it.
-        if (!m_SkipIfZero  ||  m_Errno) {
-            errno = m_Errno;
+        if (!m_NoErrno) {
+            // Does the guard is used against the code that already set an errno?
+            // If the error code is not defined here, do not even try to check/set it.
+            if (!m_SkipIfZero  ||  m_Errno) {
+                errno = m_Errno;
+            }
         }
     }
     void Set(int errcode)    { m_Errno = errcode; }
@@ -410,6 +432,7 @@ public:
     string Message(const CTempString str, const char* to_type, const CTempString msg);
 
 private:
+    bool m_NoErrno;    // do not set errno at all
     bool m_NoThrow;    // do not throw an exception if TRUE
     bool m_SkipIfZero; // do not set errno if TRUE and m_Errno == 0
     int  m_Errno;      // errno value to set
@@ -447,8 +470,18 @@ string CS2N_Guard::Message(const CTempString str, const char* to_type, const CTe
             NCBI_THROW2(CStringException, eConvert,                   \
                         err_guard.Message(str, #to_type, msg), pos);  \
         } else {                                                      \
-            CNcbiError::SetErrno(err_guard.Errno(),                   \
-                err_guard.Message(str, #to_type, msg));               \
+/* \
+            if (flags & NStr::fConvErr_NoErrno) {                     \
+                / Error, but forced to return 0 /                   \
+                return 0;                                             \
+            }                                                         \
+*/ \
+            if (flags & NStr::fConvErr_NoErrnoMessage) {              \
+                CNcbiError::SetErrno(err_guard.Errno());              \
+            } else {                                                  \
+                CNcbiError::SetErrno(err_guard.Errno(),               \
+                            err_guard.Message(str, #to_type, msg));   \
+            }                                                         \
             return 0;                                                 \
         }                                                             \
     } while (false)
@@ -495,7 +528,7 @@ string CS2N_Guard::Message(const CTempString str, const char* to_type, const CTe
     }
 
 
-int NStr::StringToInt(const CTempString str, TStringToNumFlags flags,int base)
+int NStr::StringToInt(const CTempString str, TStringToNumFlags flags, int base)
 {
     S2N_CONVERT_GUARD_EX(flags);
     Int8 value = StringToInt8(str, flags, base);
@@ -518,8 +551,7 @@ NStr::StringToUInt(const CTempString str, TStringToNumFlags flags, int base)
 }
 
 
-long NStr::StringToLong(const CTempString str, TStringToNumFlags flags,
-                        int base)
+long NStr::StringToLong(const CTempString str, TStringToNumFlags flags, int base)
 {
     S2N_CONVERT_GUARD_EX(flags);
     Int8 value = StringToInt8(str, flags, base);
@@ -626,7 +658,6 @@ void s_SkipAllowedSymbols(const CTempString  str,
 // Check radix base. If it is zero, determine base using first chars
 // of the string. Update 'base' value.
 // Update 'ptr' to current position in the string.
-
 static inline
 bool s_CheckRadix(const CTempString str, SIZE_TYPE& pos, int& base)
 {
@@ -660,10 +691,8 @@ bool s_CheckRadix(const CTempString str, SIZE_TYPE& pos, int& base)
 }
 
 
-Int8 NStr::StringToInt8(const CTempString str, TStringToNumFlags flags,
-                        int base)
+Int8 NStr::StringToInt8(const CTempString str, TStringToNumFlags flags, int base)
 {
-    _ASSERT(flags == 0  ||  flags > 32);
     S2N_CONVERT_GUARD(flags);
 
     // Current position in the string
@@ -737,6 +766,7 @@ Int8 NStr::StringToInt8(const CTempString str, TStringToNumFlags flags,
     // Assign sign before the end pointer check
     n = sign ? -n : n;
     CHECK_ENDPTR(Int8);
+
     return n;
 }
 
@@ -744,13 +774,12 @@ Int8 NStr::StringToInt8(const CTempString str, TStringToNumFlags flags,
 Uint8 NStr::StringToUInt8(const CTempString str,
                           TStringToNumFlags flags, int base)
 {
-    _ASSERT(flags == 0  ||  flags > 32);
     S2N_CONVERT_GUARD(flags);
 
     const TStringToNumFlags slow_flags =
         fMandatorySign|fAllowCommas|fAllowLeadingSymbols|fAllowTrailingSymbols;
 
-    if ( base == 10 && (flags & slow_flags) == 0 ) {
+    if ( base == 10  &&  (flags & slow_flags) == 0 ) {
         // fast conversion
 
         // Current position in the string
@@ -1154,7 +1183,6 @@ double NStr::StringToDoublePosix(const char* ptr, char** endptr, TStringToNumFla
 static double s_StringToDouble(const char* str, size_t size,
                                NStr::TStringToNumFlags flags)
 {
-    _ASSERT(flags == 0  ||  flags > 32);
     _ASSERT(str[size] == '\0');
     if ((flags & NStr::fDecimalPosix) && (flags & NStr::fDecimalPosixOrLocal)) {
         NCBI_THROW2(CStringException, eBadArgs,
@@ -1336,7 +1364,6 @@ Uint8 NStr::StringToUInt8_DataSize(const CTempString str,
                                    int               base)
 {
     // We have a limited base range here
-    _ASSERT(flags == 0  ||  flags > 20);
     if ( base < 2  ||  base > 16 ) {
         NCBI_THROW2(CStringException, eConvert,  
                     "Bad numeric base '" + NStr::IntToString(base)+ "'", 0);
@@ -1713,7 +1740,6 @@ static void s_SignedToString(string&                 out_str,
 void NStr::IntToString(string& out_str, int svalue,
                        TNumToStringFlags flags, int base)
 {
-    _ASSERT(flags == 0  ||  flags > 32);
     if ( base < 2  ||  base > 36 ) {
         CNcbiError::SetErrno(errno = EINVAL);
         return;
@@ -1731,7 +1757,6 @@ void NStr::IntToString(string& out_str, int svalue,
 void NStr::LongToString(string& out_str, long svalue,
                        TNumToStringFlags flags, int base)
 {
-    _ASSERT(flags == 0  ||  flags > 32);
     if ( base < 2  ||  base > 36 ) {
         CNcbiError::SetErrno(errno = EINVAL);
         return;
@@ -1751,12 +1776,10 @@ void NStr::ULongToString(string&          out_str,
                         TNumToStringFlags flags,
                         int               base)
 {
-    _ASSERT(flags == 0  ||  flags > 32);
     if ( base < 2  ||  base > 36 ) {
         CNcbiError::SetErrno(errno = EINVAL);
         return;
     }
-
     const SIZE_TYPE kBufSize = CHAR_BIT * sizeof(value);
     char  buffer[kBufSize];
     char* pos = buffer + kBufSize;
@@ -1912,7 +1935,6 @@ static char* s_PrintUint8(char*                   pos,
 void NStr::Int8ToString(string& out_str, Int8 svalue,
                         TNumToStringFlags flags, int base)
 {
-    _ASSERT(flags == 0  ||  flags > 32);
     if ( base < 2  ||  base > 36 ) {
         CNcbiError::SetErrno(errno = EINVAL);
         return;
@@ -1942,7 +1964,6 @@ void NStr::Int8ToString(string& out_str, Int8 svalue,
 void NStr::UInt8ToString(string& out_str, Uint8 value,
                          TNumToStringFlags flags, int base)
 {
-    _ASSERT(flags == 0  ||  flags > 32);
     if ( base < 2  ||  base > 36 ) {
         CNcbiError::SetErrno(errno = EINVAL);
         return;
@@ -2232,7 +2253,6 @@ void NStr::DoubleToString(string& out_str, double value,
     out_str = buffer;
     errno = 0;
 }
-
 
 
 SIZE_TYPE NStr::DoubleToString(double value, unsigned int precision,

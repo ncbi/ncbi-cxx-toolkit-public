@@ -169,17 +169,20 @@ public:
 
     /// Copy constructor
     CNcbiError(const CNcbiError& err)
-        : m_Code(err.m_Code), m_Category(err.m_Category)
-        , m_Native(err.m_Native), m_Extra(err.m_Extra) {}
+        : m_Code(err.m_Code), 
+          m_Category(err.m_Category),
+          m_Native(err.m_Native),
+          m_Extra(err.m_Extra) 
+    {}
 
-    ~CNcbiError(void){}
+    ~CNcbiError(void) {}
 
     /// Assignment.
     CNcbiError& operator= (const CNcbiError& err) {
-        m_Code    = err.m_Code;
-        m_Category= err.m_Category;
-        m_Native  = err.m_Native;
-        m_Extra   = err.m_Extra;
+        m_Code     = err.m_Code;
+        m_Category = err.m_Category;
+        m_Native   = err.m_Native;
+        m_Extra    = err.m_Extra;
         return *this;
     }
 
@@ -202,13 +205,15 @@ public:
     ///   Error code
     /// @param extra
     ///   Additional information
-    static void Set(ECode code, const CTempString& extra = CTempString());
-    /// @copydoc CNcbiError::Set(ECode,const CTempString&)
-    static void Set(ECode code, const char*        extra);
-    /// @copydoc CNcbiError::Set(ECode,const CTempString&)
-    static void Set(ECode code, const string&      extra);
-    /// @copydoc CNcbiError::Set(ECode,const CTempString&)
-    static void Set(ECode code, string&&           extra);
+    static void Set(ECode code);
+    /// @copydoc CNcbiError::Set(ECode)
+    static void Set(ECode code, const CTempString extra);
+    /// @copydoc CNcbiError::Set(ECode)
+    static void Set(ECode code, const char* extra);
+    /// @copydoc CNcbiError::Set(ECode)
+    static void Set(ECode code, const string& extra);
+    /// @copydoc CNcbiError::Set(ECode)
+    static void Set(ECode code, string&& extra);
 
     /// Set last error using errno code
     ///
@@ -216,26 +221,29 @@ public:
     ///   "errno" code
     /// @param extra
     ///   Additional information
-    static void SetErrno(int errno_code,
-                         const CTempString& extra = CTempString());
-    /// @copydoc CNcbiError::SetErrno(int,const CTempString&)
+    static void SetErrno(int errno_code);
+    /// @copydoc CNcbiError::SetErrno(int)
+    static void SetErrno(int errno_code, const CTempString extra);
+    /// @copydoc CNcbiError::SetErrno(int)
     static void SetErrno(int errno_code, const string& extra);
-    /// @copydoc CNcbiError::SetErrno(int,const CTempString&)
-    static void SetErrno(int errno_code, const char*   extra);
-    /// @copydoc CNcbiError::SetErrno(int,const CTempString&)
-    static void SetErrno(int errno_code, string&&      extra);
+    /// @copydoc CNcbiError::SetErrno(int)
+    static void SetErrno(int errno_code, const char* extra);
+    /// @copydoc CNcbiError::SetErrno(int)
+    static void SetErrno(int errno_code, string&& extra);
 
     /// Set last error using current "errno" code
     ///
     /// @param extra
     ///   Additional information
-    static void SetFromErrno(const CTempString& extra = CTempString());
-    /// @copydoc CNcbiError::SetFromErrno(const CTempString&)
+    static void SetFromErrno(void);
+    /// @copydoc CNcbiError::SetFromErrno(void)
+    static void SetFromErrno(const CTempString extra);
+    /// @copydoc CNcbiError::SetFromErrno(void)
     static void SetFromErrno(const string& extra);
-    /// @copydoc CNcbiError::SetFromErrno(const CTempString&)
-    static void SetFromErrno(const char*   extra);
-    /// @copydoc CNcbiError::SetFromErrno(const CTempString&)
-    static void SetFromErrno(string&&       extra);
+    /// @copydoc CNcbiError::SetFromErrno(void)
+    static void SetFromErrno(const char* extra);
+    /// @copydoc CNcbiError::SetFromErrno(void)
+    static void SetFromErrno(string&& extra);
 
 #if defined(NCBI_OS_MSWIN)
     /// Set last error using Windows-specific error code
@@ -247,13 +255,14 @@ public:
     /// @note
     ///   Not all Windows errors can be translated into ECode enum.
     ///   In this case, Code() will return 'eUnknown'
-    static void SetWindowsError(int                native_err_code,
-                                const CTempString& extra = CTempString());
-    /// @copydoc CNcbiError::SetWindowsError(int, const CTempString&)
+    static void SetWindowsError(int native_err_code);
+    /// @copydoc CNcbiError::SetWindowsError(int)
+    static void SetWindowsError(int native_err_code, const CTempString extra);
+    /// @copydoc CNcbiError::SetWindowsError(int)
     static void SetWindowsError(int native_err_code, const string& extra);
-    /// @copydoc CNcbiError::SetWindowsError(const CTempString&)
-    static void SetWindowsError(int native_err_code, const char*   extra);
-    /// @copydoc CNcbiError::SetWindowsError(const CTempString&)
+    /// @copydoc CNcbiError::SetWindowsError(int)
+    static void SetWindowsError(int native_err_code, const char* extra);
+    /// @copydoc CNcbiError::SetWindowsError(int)
     static void SetWindowsError(int native_err_code, string&& extra);
 
     /// Set last error on MS Windows using GetLastError()
@@ -263,12 +272,14 @@ public:
     /// @note
     ///   Not all Windows errors can be translated into ECode enum.
     ///   In this case, Code() will return 'eUnknown'
-    static void SetFromWindowsError(const CTempString& extra = CTempString());
-    /// @copydoc CNcbiError::SetWindowsError(const CTempString&)
-    static void SetFromWindowsError(const string&      extra);
-    /// @copydoc CNcbiError::SetWindowsError(const CTempString&)
-    static void SetFromWindowsError(const char*        extra);
-    /// @copydoc CNcbiError::SetWindowsError(const CTempString&)
+    static void SetFromWindowsError(void);
+    /// @copydoc CNcbiError::SetFromWindowsError(void)
+    static void SetFromWindowsError(const CTempString extra);
+    /// @copydoc CNcbiError::SetFromWindowsError(void)
+    static void SetFromWindowsError(const string& extra);
+    /// @copydoc CNcbiError::SetFromWindowsError(void)
+    static void SetFromWindowsError(const char* extra);
+    /// @copydoc CNcbiError::SetFromWindowsError(void)
     static void SetFromWindowsError(string&& extra);
 #endif  /* NCBI_OS_MSWIN */
 
@@ -277,11 +288,14 @@ protected:
     CNcbiError(void);
 
 private:
+    static CNcbiError* x_Init(int err_code);
     template<class Ty>
     static CNcbiError* x_Init(int err_code, Ty extra);
 #ifdef NCBI_OS_MSWIN
     static void x_SetWindowsCodeCategory(CNcbiError* e);
 #endif
+
+private:
     mutable ECode m_Code;
     ECategory     m_Category;
     int           m_Native;

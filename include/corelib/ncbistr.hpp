@@ -232,48 +232,11 @@ enum class EEncoding {
 class NCBI_XNCBI_EXPORT NStr
 {
 public:
-    /// Convert string to non-negative integer value.
-    ///
-    /// @param str
-    ///   String containing only digits, representing non-negative 
-    ///   decimal value in the int range: [0..kMax_Int].
-    /// @return
-    ///   - If conversion succeeds, set errno to zero and return the
-    ///     converted value.
-    ///   - Otherwise, set errno to non-zero and return -1.
-    static int StringToNonNegativeInt(const string& str);
-
-    /// @deprecated
-    ///   Use template-based StringToNumeric<> or StringToNonNegativeInt() instead.
-    NCBI_DEPRECATED
-    static int StringToNumeric(const string& str) {
-        return StringToNonNegativeInt(str);
-    }
-
-    /// Number to string conversion flags.
-    ///
-    /// NOTE: 
-    ///   If specified base in the *ToString() methods is not default 10,
-    ///   that some flags like fWithSign and fWithCommas will be ignored.
-    enum ENumToStringFlags {
-        fWithSign        = (1 <<  6), ///< Prefix the output value with a sign
-        fWithCommas      = (1 <<  7), ///< Use commas as thousands separator
-        fDoubleFixed     = (1 <<  8), ///< Use n.nnnn format for double
-        fDoubleScientific= (1 <<  9), ///< Use scientific format for double
-        fDoublePosix     = (1 << 10), ///< Use C locale
-        fDoubleGeneral   = fDoubleFixed | fDoubleScientific,
-        fDS_Binary               = (1 << 11),
-        fDS_NoDecimalPoint       = (1 << 12),
-        fDS_PutSpaceBeforeSuffix = (1 << 13),
-        fDS_ShortSuffix          = (1 << 14),
-        fDS_PutBSuffixToo        = (1 << 15)
-    };
-    typedef int TNumToStringFlags;    ///< Bitwise OR of "ENumToStringFlags"
-
-    /// String to number conversion flags.
-    enum EStringToNumFlags {
-        fConvErr_NoThrow      = (1 << 16),   ///< On error, return zero and set
-        /// errno to non-zero instead of throwing an exception (the default).
+    /// Common conversion flags.
+    enum EConvErrFlags {
+        /// Do not throw an exception on error.
+        /// Could be used with methods throwing an exception by default, ignored otherwise.
+        /// Just return zero and set errno to non-zero instead of throwing an exception.
         /// We recommend the following technique to check against errors
         /// with minimum overhead when this flag is used:
         /// @code
@@ -286,28 +249,58 @@ public:
         ///        !retval  &&  errno != 0)
         ///        ERROR;
         /// @endcode
-        
-        fMandatorySign        = (1 << 17),   ///< See 'fWithSign'
-        fAllowCommas          = (1 << 18),   ///< See 'fWithCommas'
-        fAllowLeadingSpaces   = (1 << 19),   ///< Can have leading spaces
-        fAllowLeadingSymbols  = (1 << 20) | fAllowLeadingSpaces,
-                                             ///< Can have leading non-nums
-        fAllowTrailingSpaces  = (1 << 21),   ///< Can have trailing spaces
-        fAllowTrailingSymbols = (1 << 22) | fAllowTrailingSpaces,
-                                             ///< Can have trailing non-nums
-        fDecimalPosix         = (1 << 23),   ///< For decimal point, use C locale
-        fDecimalPosixOrLocal  = (1 << 24),   ///< For decimal point, try both C and current locale
-        fDecimalPosixFinite   = (1 << 25),   ///< keep result finite and normalized
-        /// if DBL_MAX < result < INF,     result becomes DBL_MAX
-        /// if       0 < result < DBL_MIN, result becomes DBL_MIN
+        fConvErr_NoThrow        = (1 <<  0),
+        /*
+        fConvErr_NoErrno        = (1 <<  1),  ///< Do not set errno at all.
+                                              ///< If used together with fConvErr_NoThrow flag
+                                              ///< returns 0 on error (-1 for StringToNonNegativeInt).
+        */
+        fConvErr_NoErrnoMessage = (1 <<  2)  ///< Set errno, but do not set CNcbiError message on error
+    };
+    typedef int TConvErrFlags;    ///< Bitwise OR of "EConvErrFlags"
 
-        fDS_ForceBinary       = (1 << 26),
-        fDS_ProhibitFractions = (1 << 27),
+    /// Number to string conversion flags.
+    ///
+    /// NOTE: 
+    ///   If specified base in the *ToString() methods is not default 10,
+    ///   that some flags like fWithSign and fWithCommas will be ignored.
+    enum ENumToStringFlags {
+        fWithSign                = (1 <<  6),  ///< Prefix the output value with a sign
+        fWithCommas              = (1 <<  7),  ///< Use commas as thousands separator
+        fDoubleFixed             = (1 <<  8),  ///< Use n.nnnn format for double
+        fDoubleScientific        = (1 <<  9),  ///< Use scientific format for double
+        fDoublePosix             = (1 << 10),  ///< Use C locale
+        fDoubleGeneral           = fDoubleFixed | fDoubleScientific,
+        // Additional flags to convert "software" qualifiers (see UInt8ToString_DataSize)
+        fDS_Binary               = (1 << 11),
+        fDS_NoDecimalPoint       = (1 << 12),
+        fDS_PutSpaceBeforeSuffix = (1 << 13),
+        fDS_ShortSuffix          = (1 << 14),
+        fDS_PutBSuffixToo        = (1 << 15)
+    };
+    typedef int TNumToStringFlags;    ///< Bitwise OR of "ENumToStringFlags"
+
+    /// String to number conversion flags.
+    enum EStringToNumFlags {
+        fMandatorySign           = (1 << 17),  ///< See 'ENumToStringFlags::fWithSign'
+        fAllowCommas             = (1 << 18),  ///< See 'ENumToStringFlags::fWithCommas'
+        fAllowLeadingSpaces      = (1 << 19),  ///< Can have leading spaces
+        fAllowLeadingSymbols     = (1 << 20) | fAllowLeadingSpaces,
+                                               ///< Can have leading non-nums
+        fAllowTrailingSpaces     = (1 << 21),  ///< Can have trailing spaces
+        fAllowTrailingSymbols    = (1 << 22) | fAllowTrailingSpaces,
+                                               ///< Can have trailing non-nums
+        fDecimalPosix            = (1 << 23),  ///< For decimal point, use C locale
+        fDecimalPosixOrLocal     = (1 << 24),  ///< For decimal point, try both C and current locale
+        fDecimalPosixFinite      = (1 << 25),  ///< Keep result finite and normalized:
+                                               ///< if DBL_MAX < result < INF,     result becomes DBL_MAX
+                                               ///< if       0 < result < DBL_MIN, result becomes DBL_MIN
+        // Additional flags to convert "software" qualifiers (see StringToUInt8_DataSize)
+        fDS_ForceBinary          = (1 << 26),
+        fDS_ProhibitFractions    = (1 << 27),
         fDS_ProhibitSpaceBeforeSuffix = (1 << 28)
-
     };
     typedef int TStringToNumFlags;   ///< Bitwise OR of "EStringToNumFlags"
-
 
     /// Convert string to a numeric value.
     ///
@@ -352,6 +345,27 @@ public:
                                 TNumeric*         value, /*[out]*/ 
                                 TStringToNumFlags flags = 0,
                                 int               base  = 10);
+
+    /// Convert string to non-negative integer value.
+    ///
+    /// @param str
+    ///   String containing only digits, representing non-negative 
+    ///   decimal value in the int range: [0..kMax_Int].
+    /// @param flags
+    ///   How to convert string to value.
+    ///   Only fConvErr_NoErrnoMessage flag is supported here.
+    /// @return
+    ///   - If conversion succeeds, set errno to zero and return the converted value.
+    ///   - Otherwise, set errno to non-zero and return -1.
+    static int StringToNonNegativeInt(const CTempString str, TConvErrFlags flags = 0);
+
+    /// @deprecated
+    ///   Use template-based StringToNumeric<> or StringToNonNegativeInt() instead.
+    NCBI_DEPRECATED
+    static int StringToNumeric(const string& str)
+    {
+        return StringToNonNegativeInt(str);
+    }
 
     /// Convert string to int.
     ///
@@ -4414,7 +4428,13 @@ char NStr::StringToNumeric(const CTempString str,
     int n = StringToInt(str, flags, base);
     if (n < numeric_limits<char>::min()  ||  n > numeric_limits<char>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
-            CNcbiError::SetErrno(errno = ERANGE, str);
+//            if ((flags & fConvErr_NoErrno) == 0) {
+                if (flags & fConvErr_NoErrnoMessage) {
+                    CNcbiError::SetErrno(errno = ERANGE);
+                } else {
+                    CNcbiError::SetErrno(errno = ERANGE, str);
+                }
+//            }
             return 0;
         } else {
             NCBI_THROW2(CStringException, eConvert, 
@@ -4431,7 +4451,13 @@ unsigned char NStr::StringToNumeric(const CTempString str,
     unsigned int n = StringToUInt(str, flags, base);
     if (n > numeric_limits<unsigned char>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
-            CNcbiError::SetErrno(errno = ERANGE,str);
+//            if ((flags & fConvErr_NoErrno) == 0) {
+                if (flags & fConvErr_NoErrnoMessage) {
+                    CNcbiError::SetErrno(errno = ERANGE);
+                } else {
+                    CNcbiError::SetErrno(errno = ERANGE, str);
+                }
+//            }
             return 0;
         } else {
             NCBI_THROW2(CStringException, eConvert, 
@@ -4452,7 +4478,13 @@ bool NStr::StringToNumeric(const CTempString str,
     }
     if (n < numeric_limits<char>::min()  ||  n > numeric_limits<char>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
-            CNcbiError::SetErrno(errno = ERANGE, str);
+//            if ((flags & fConvErr_NoErrno) == 0) {
+                if (flags & fConvErr_NoErrnoMessage) {
+                    CNcbiError::SetErrno(errno = ERANGE);
+                } else {
+                    CNcbiError::SetErrno(errno = ERANGE, str);
+                }
+//            }
             return false;
         } else {
             NCBI_THROW2(CStringException, eConvert, 
@@ -4474,7 +4506,13 @@ bool NStr::StringToNumeric(const CTempString str,
     }
     if (n > numeric_limits<unsigned char>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
-            CNcbiError::SetErrno(errno = ERANGE,str);
+//            if ((flags & fConvErr_NoErrno) == 0) {
+                if (flags & fConvErr_NoErrnoMessage) {
+                    CNcbiError::SetErrno(errno = ERANGE);
+                } else {
+                    CNcbiError::SetErrno(errno = ERANGE, str);
+                }
+//            }
             return false;
         } else {
             NCBI_THROW2(CStringException, eConvert, 
@@ -4508,7 +4546,13 @@ wchar_t NStr::StringToNumeric(const CTempString str,
     int n = StringToInt(str, flags, base);
     if (n < numeric_limits<wchar_t>::min()  ||  n > numeric_limits<wchar_t>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
-            CNcbiError::SetErrno(errno = ERANGE, str);;
+//            if ((flags & fConvErr_NoErrno) == 0) {
+                if (flags & fConvErr_NoErrnoMessage) {
+                    CNcbiError::SetErrno(errno = ERANGE);
+                } else {
+                    CNcbiError::SetErrno(errno = ERANGE, str);
+                }
+//            }
             return 0;
         } else {
             NCBI_THROW2(CStringException, eConvert, 
@@ -4529,7 +4573,13 @@ bool NStr::StringToNumeric(const CTempString str,
     }
     if (n < numeric_limits<wchar_t>::min()  ||  n > numeric_limits<wchar_t>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
-            CNcbiError::SetErrno(errno = ERANGE, str);
+//            if ((flags & fConvErr_NoErrno) == 0) {
+                if (flags & fConvErr_NoErrnoMessage) {
+                    CNcbiError::SetErrno(errno = ERANGE);
+                } else {
+                    CNcbiError::SetErrno(errno = ERANGE, str);
+                }
+//            }
             return false;
         } else {
             NCBI_THROW2(CStringException, eConvert, 
@@ -4577,7 +4627,13 @@ short NStr::StringToNumeric(const CTempString str,
     int n = StringToInt(str, flags, base);
     if (n < numeric_limits<short>::min()  ||  n > numeric_limits<short>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
-            CNcbiError::SetErrno(errno = ERANGE, str);
+//            if ((flags & fConvErr_NoErrno) == 0) {
+                if (flags & fConvErr_NoErrnoMessage) {
+                    CNcbiError::SetErrno(errno = ERANGE);
+                } else {
+                    CNcbiError::SetErrno(errno = ERANGE, str);
+                }
+//            }
             return 0;
         } else {
             NCBI_THROW2(CStringException, eConvert, 
@@ -4594,7 +4650,13 @@ unsigned short NStr::StringToNumeric(const CTempString str,
     unsigned int n = StringToUInt(str, flags, base);
     if (n > numeric_limits<unsigned short>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
-            CNcbiError::SetErrno(errno = ERANGE, str);
+//            if ((flags & fConvErr_NoErrno) == 0) {
+                if (flags & fConvErr_NoErrnoMessage) {
+                    CNcbiError::SetErrno(errno = ERANGE);
+                } else {
+                    CNcbiError::SetErrno(errno = ERANGE, str);
+                }
+//            }
             return 0;
         } else {
             NCBI_THROW2(CStringException, eConvert, 
@@ -4615,7 +4677,13 @@ bool NStr::StringToNumeric(const CTempString str,
     }
     if (n < numeric_limits<short>::min()  ||  n > numeric_limits<short>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
-            CNcbiError::SetErrno(errno = ERANGE, str);
+//            if ((flags & fConvErr_NoErrno) == 0) {
+                if (flags & fConvErr_NoErrnoMessage) {
+                    CNcbiError::SetErrno(errno = ERANGE);
+                } else {
+                    CNcbiError::SetErrno(errno = ERANGE, str);
+                }
+//            }
             return false;
         } else {
             NCBI_THROW2(CStringException, eConvert, 
@@ -4637,7 +4705,13 @@ bool NStr::StringToNumeric(const CTempString str,
     }
     if (n > numeric_limits<unsigned short>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
-            CNcbiError::SetErrno(errno = ERANGE, str);
+//            if ((flags & fConvErr_NoErrno) == 0) {
+                if (flags & fConvErr_NoErrnoMessage) {
+                    CNcbiError::SetErrno(errno = ERANGE);
+                } else {
+                    CNcbiError::SetErrno(errno = ERANGE, str);
+                }
+//            }
             return false;
         } else {
             NCBI_THROW2(CStringException, eConvert, 
@@ -4914,7 +4988,13 @@ float NStr::StringToNumeric(const CTempString str,
     // dont use ::min() for float types, it returns positive value
     if (n < -numeric_limits<float>::max()  ||  n > numeric_limits<float>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
-            CNcbiError::SetErrno(errno = ERANGE, str);
+//            if ((flags & fConvErr_NoErrno) == 0) {
+                if (flags & fConvErr_NoErrnoMessage) {
+                    CNcbiError::SetErrno(errno = ERANGE);
+                } else {
+                    CNcbiError::SetErrno(errno = ERANGE, str);
+                }
+//            }
             return 0;
         } else {
             NCBI_THROW2(CStringException, eConvert, 
@@ -4936,7 +5016,13 @@ bool NStr::StringToNumeric(const CTempString str,
     // dont use ::min() for float types, it returns positive value
     if (n < -numeric_limits<float>::max() || n > numeric_limits<float>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
-            CNcbiError::SetErrno(errno = ERANGE, str);
+//            if ((flags & fConvErr_NoErrno) == 0) {
+                if (flags & fConvErr_NoErrnoMessage) {
+                    CNcbiError::SetErrno(errno = ERANGE);
+                } else {
+                    CNcbiError::SetErrno(errno = ERANGE, str);
+                }
+//            }
             return false;
         } else {
             NCBI_THROW2(CStringException, eConvert, 
