@@ -440,7 +440,6 @@ static VPath* sx_GetVPath(const string& path)
         }
         catch (exception&) {
             // CDirEntry::CreateAbsolutePath() can fail on remote access URL
-            return path;
         }
         replace(fixed_path.begin(), fixed_path.end(), '\\', '/');
         if ( s_HasWindowsDriveLetter(fixed_path) ) {
