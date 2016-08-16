@@ -2105,6 +2105,7 @@ GTM	s	Grantham Museum
 GTNP	s	Grand Teton National Park
 GTV	s	Gregorio T. Velasquez Phycological Herbarium
 GU	s	Gotland University, Department of Biology
+GU-IITG	s	for Gauhati University- Indian Institute of Technology Guwahati
 GUA	s	DIVEA, DEP, FEEMA, FEEMA
 GUAD	s	Institut National de la Recherche Agronomique and Parc National de Guadeloupe
 GUADA	s	Universidad Autonoma de Guadalajara
