@@ -9,7 +9,7 @@
 1000000	GenInfo	mRNA	5001	9001	.	+	.	ID=rna1;Parent=gene0;gbkey=mRNA;gene=MSS-346
 1000000	GenInfo	exon	5001	9001	.	+	.	ID=id1;Parent=rna1;gbkey=mRNA;gene=MSS-346
 1000000	GenInfo	CDS	5001	9001	.	+	0	ID=cds1;Parent=rna1;Dbxref=NCBI_gi:1000000;Name=1000000;gbkey=CDS;gene=MSS-346;product=1000000;protein_id=1000000
-1000000	GenInfo	gene	10001	20001	.	+	.	ID=gene1;Name=MSS-346;gbkey=Gene;gene=MSS-346;gene_biotype=ncRNA
+1000000	GenInfo	gene	10001	20001	.	+	.	ID=gene1;Name=MSS-346;gbkey=Gene;gene=MSS-346;gene_biotype=classRNA
 1000000	GenInfo	mRNA	10001	14001	.	+	.	ID=rna2;Parent=gene1;gbkey=mRNA;gene=MSS-346
 1000000	GenInfo	exon	10001	14001	.	+	.	ID=id2;Parent=rna2;gbkey=mRNA;gene=MSS-346
 1000000	GenInfo	CDS	10001	14001	.	+	0	ID=cds2;Parent=rna2;Dbxref=NCBI_gi:1000000;Name=1000000;gbkey=CDS;gene=MSS-346;product=1000000;protein_id=1000000;pseudo=true

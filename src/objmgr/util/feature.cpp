@@ -3872,6 +3872,8 @@ bool sGetFeatureGeneBiotypeWrapper(
                 biotype = "ncRNA";
                 return true;
             }
+            biotype = rnaClass;
+            return true;
         }
         else {
             biotype = "ncRNA";
