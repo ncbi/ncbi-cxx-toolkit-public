@@ -495,14 +495,16 @@ CBioseq_Base_Info::TDescTypeMask
 CBioseq_Base_Info::x_GetExistingDescrMask(void) const
 {
     TDescTypeMask mask = 0;
-    try {
-        // collect already set descr bits
-        for ( auto& i : x_GetDescr().Get() ) {
-            mask |= 1 << i->Which();
+    if ( x_CanGetDescr() ) {
+        try {
+            // collect already set descr bits
+            for ( auto& i : x_GetDescr().Get() ) {
+                mask |= 1 << i->Which();
+            }
         }
-    }
-    catch ( exception& ) {
-        // ignore
+        catch ( exception& ) {
+            // ignore
+        }
     }
     // add descr mask from chunks
     for ( auto& i : m_DescrTypeMasks ) {
