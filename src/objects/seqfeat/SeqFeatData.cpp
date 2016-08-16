@@ -3386,6 +3386,7 @@ vector<string> CSeqFeatData::GetRegulatoryClassList()
     choices.push_back("imprinting_control_region");
     choices.push_back("insulator");
     choices.push_back("locus_control_region");
+    choices.push_back("LTR");
     choices.push_back("matrix_attachment_region");
     choices.push_back("minus_10_signal");
     choices.push_back("minus_35_signal");
@@ -3413,6 +3414,7 @@ bool CSeqFeatData::IsDiscouragedSubtype(ESubtype subtype)
         case eSubtype_conflict:
         case eSubtype_enhancer:
         case eSubtype_GC_signal:
+        case eSubtype_LTR:
         case eSubtype_misc_binding:
         case eSubtype_mutation:
         case eSubtype_polyA_signal:
@@ -3861,6 +3863,7 @@ CSeqFeatData::GetSetOfRegulatorySubtypes(void)
         eSubtype_CAAT_signal,
         eSubtype_enhancer,
         eSubtype_GC_signal,
+        eSubtype_LTR,
         eSubtype_misc_signal,
         eSubtype_polyA_signal,
         eSubtype_promoter,
