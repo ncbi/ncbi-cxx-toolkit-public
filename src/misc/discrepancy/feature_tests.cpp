@@ -228,7 +228,7 @@ bool ReportGeneMissing(const CSeq_feat& f)
 
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(MISSING_GENES, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller | eSubmitter | eSmart, "Missing Genes")
+DISCREPANCY_CASE(MISSING_GENES, CSeq_feat_BY_BIOSEQ, eDisc | eSubmitter | eSmart, "Missing Genes")
 //  ----------------------------------------------------------------------------
 {
     if (!ReportGeneMissing(obj)) {
