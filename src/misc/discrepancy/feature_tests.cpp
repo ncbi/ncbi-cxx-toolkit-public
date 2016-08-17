@@ -2314,5 +2314,34 @@ DISCREPANCY_SUMMARIZE(MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS)
 }
 
 
+// FEATURE_LIST
+
+static const string kFeatureList = "Feature List";
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(FEATURE_LIST, CSeq_feat, eDisc, "Feature List")
+//  ----------------------------------------------------------------------------
+{
+    if (obj.IsSetData()) {
+        
+        CSeqFeatData::ESubtype subtype = obj.GetData().GetSubtype();
+
+        if (subtype != CSeqFeatData::eSubtype_gap && subtype != CSeqFeatData::eSubtype_prot) {
+            string subitem = "[n] " + obj.GetData().GetKey();
+            subitem += " feature[s]";
+            m_Objs[kFeatureList][subitem].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
+        }
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(FEATURE_LIST)
+//  ----------------------------------------------------------------------------
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
