@@ -760,9 +760,9 @@ SNetStorageRPC::SNetStorageRPC(SNetServerInPool* server,
     m_Config(parent->m_Config),
     m_CompoundIDPool(parent->m_CompoundIDPool),
     m_NetCacheAPI(parent->m_NetCacheAPI),
-    m_ServiceMap(parent->m_ServiceMap),
+    m_ServiceMap(parent->m_ServiceMap)
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-    m_AllowXSiteConnections(parent->m_AllowXSiteConnections)
+    , m_AllowXSiteConnections(parent->m_AllowXSiteConnections)
 #endif
 {
 }
