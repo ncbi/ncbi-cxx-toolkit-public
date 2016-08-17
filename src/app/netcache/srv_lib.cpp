@@ -97,12 +97,28 @@ public:
 
 #if 1
 
-void  ncbi::CNcbiError::Set(ncbi::CNcbiError::ECode, const ncbi::CTempString&) {}
-void  ncbi::CNcbiError::SetErrno(int, const ncbi::CTempString&)                {}
-void  ncbi::CNcbiError::SetFromErrno(const ncbi::CTempString& )                {}
+void  ncbi::CNcbiError::Set( ncbi::CNcbiError::ECode )                          {}
+void  ncbi::CNcbiError::Set( ncbi::CNcbiError::ECode, const ncbi::CTempString ) {}
+void  ncbi::CNcbiError::Set( ncbi::CNcbiError::ECode, string&& )                {}
+void  ncbi::CNcbiError::Set( ncbi::CNcbiError::ECode, const string& )           {}
+void  ncbi::CNcbiError::SetFromErrno( const ncbi::CTempString )                 {}
+void  ncbi::CNcbiError::SetFromErrno( void )                                    {}
+void  ncbi::CNcbiError::SetFromErrno( const char* )                             {}
+void  ncbi::CNcbiError::SetFromErrno( const string& )                           {}
+void  ncbi::CNcbiError::SetErrno( int )                                         {}
+void  ncbi::CNcbiError::SetErrno( int, string&& )                               {}
+void  ncbi::CNcbiError::SetErrno( int, const char* )                            {}
+void  ncbi::CNcbiError::SetErrno( int, const string& )                          {}
+void  ncbi::CNcbiError::SetErrno( int, const ncbi::CTempString )                {}
 #if defined(NCBI_OS_MSWIN)
-void  ncbi::CNcbiError::SetWindowsError( int, const ncbi::CTempString&)        {}
-void  ncbi::CNcbiError::SetFromWindowsError( const ncbi::CTempString&)         {}
+void  ncbi::CNcbiError::SetWindowsError( int, const char* )                     {}
+void  ncbi::CNcbiError::SetWindowsError( int, const string& )                   {}
+void  ncbi::CNcbiError::SetWindowsError( int, string&& )                        {}
+void  ncbi::CNcbiError::SetWindowsError( int, const ncbi::CTempString )         {}
+void  ncbi::CNcbiError::SetFromWindowsError( const string& )                    {}
+void  ncbi::CNcbiError::SetFromWindowsError( string&& )                         {}
+void  ncbi::CNcbiError::SetFromWindowsError( const char* )                      {}
+void  ncbi::CNcbiError::SetFromWindowsError( const ncbi::CTempString )          {}
 #endif
 
 #else
