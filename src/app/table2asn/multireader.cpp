@@ -401,6 +401,7 @@ void CMultiReader::xSetFormat(CNcbiIstream& istr )
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eBinaryASN);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eFasta);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eTextASN);
+    FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eGffAugustus);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eGff3);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eGff2);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eGtf);
@@ -1230,6 +1231,7 @@ bool CMultiReader::xGetAnnotLoader(CAnnotationLoader& loader, CNcbiIstream& in)
         entry = xReadGFF3(in);
         break;
     case CFormatGuess::eGtf:
+    case CFormatGuess::eGffAugustus:
         entry = xReadGTF(in);
         break;
     default:
