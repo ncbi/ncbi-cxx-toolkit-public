@@ -175,6 +175,17 @@ bool SNetStorageServerAutomationObject::Call(const string& method,
         CJsonNode response(m_NetStorageAdmin.ExchangeJson(request));
         s_RemoveStdReplyFields(response);
         reply.Append(response);
+    } else if (method == "ackalert") {
+        string name(arg_array.NextString());
+        string user(arg_array.NextString());
+
+        CJsonNode request(m_NetStorageAdmin.MkNetStorageRequest("ACKALERT"));
+        request.SetString("Name", name);
+        request.SetString("User", user);
+
+        CJsonNode response(m_NetStorageAdmin.ExchangeJson(request));
+        s_RemoveStdReplyFields(response);
+        reply.Append(response);
     } else
         return SNetStorageServiceAutomationObject::Call(method, arg_array, reply);
 
