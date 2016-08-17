@@ -581,7 +581,7 @@ void CMultiReaderApp::Init(void)
         "STRING",
         "Alignment alphabet",
         CArgDescriptions::eString, 
-        "nuc");
+        "prot");
     arg_desc->SetConstraint(
         "aln-alphabet", 
         &(*new CArgAllow_Strings, 
@@ -1122,9 +1122,9 @@ void CMultiReaderApp::xProcessAlignment(
 {
     CAlnReader reader(istr);
     reader.SetAllGap(args["aln-gapchar"].AsString());
-    reader.SetAlphabet(CAlnReader::eAlpha_Nucleotide);
-    if (args["aln-alphabet"].AsString() == "prot") {
-        reader.SetAlphabet(CAlnReader::eAlpha_Protein);
+    reader.SetAlphabet(CAlnReader::eAlpha_Protein);
+    if (args["aln-alphabet"].AsString() == "nuc") {
+        reader.SetAlphabet(CAlnReader::eAlpha_Nucleotide);
     }
     reader.Read(false, args["force-local-ids"]);
     CRef<CSeq_align> pAlign = reader.GetSeqAlign();
