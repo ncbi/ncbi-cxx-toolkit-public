@@ -982,7 +982,7 @@ CNetCacheAPI CNetCacheAPI::GetServer(CNetServer::TInstance server)
 
 void CNetCacheAPI::SetEventHandler(INetEventHandler* event_handler)
 {
-    m_Impl->GetListener()->m_EventHandler = event_handler;
+    m_Impl->m_Service->SetEventHandler(event_handler);
 }
 
 CCompoundIDPool CNetCacheAPI::GetCompoundIDPool()

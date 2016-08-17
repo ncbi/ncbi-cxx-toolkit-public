@@ -69,7 +69,6 @@ public:
             SNetServerImpl* server_impl);
 
     string m_Auth;
-    CRef<INetEventHandler> m_EventHandler;
 };
 
 struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
@@ -118,12 +117,6 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
         SNetServiceImpl::EServerErrorHandling error_handling =
             SNetServiceImpl::eRethrowServerErrors,
         INetServerConnectionListener* conn_listener = NULL);
-
-    CNetCacheServerListener* GetListener()
-    {
-        return static_cast<CNetCacheServerListener*>(
-                m_Service->m_Listener.GetPointer());
-    }
 
     CNetService m_Service;
 

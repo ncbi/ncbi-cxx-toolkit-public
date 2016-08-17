@@ -336,6 +336,13 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
 
     const string& GetClientName() const { return m_ClientName; }
 
+    CRef<INetEventHandler> SetEventHandler(INetEventHandler* new_handler)
+    {
+        CRef<INetEventHandler> old_handler(m_Listener->m_EventHandler.ReleaseOrNull());
+        m_Listener->m_EventHandler.Reset(new_handler);
+        return old_handler;
+    }
+
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     void AllowXSiteConnections();
 

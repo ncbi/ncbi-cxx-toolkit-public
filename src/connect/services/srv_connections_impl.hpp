@@ -85,6 +85,8 @@ public:
     virtual void OnConnected(CNetServerConnection& connection) = 0;
     virtual void OnError(const string& err_msg, CNetServer& server) = 0;
     virtual void OnWarning(const string& warn_msg, CNetServer& server) = 0;
+
+    CRef<INetEventHandler> m_EventHandler;
 };
 
 struct SNetServerConnectionImpl : public CObject

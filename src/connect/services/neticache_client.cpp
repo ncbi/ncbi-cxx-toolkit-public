@@ -1102,7 +1102,7 @@ bool CNetICacheClient::SameCacheParams(const TCacheParams* params) const
 
 void CNetICacheClient::SetEventHandler(INetEventHandler* event_handler)
 {
-    m_Impl->GetListener()->m_EventHandler = event_handler;
+    m_Impl->m_Service->SetEventHandler(event_handler);
 }
 
 void CNetICacheClientExt::ProlongBlobLifetime(const string& key,

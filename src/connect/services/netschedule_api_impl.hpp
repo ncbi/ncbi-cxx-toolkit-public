@@ -184,7 +184,6 @@ public:
     virtual void OnWarning(const string& warn_msg, CNetServer& server);
 
     string m_Auth;
-    CRef<INetEventHandler> m_EventHandler;
 
     CFastMutex m_ServerByNodeMutex;
     typedef map<string, SNetServerInPool*> TServerByNode;

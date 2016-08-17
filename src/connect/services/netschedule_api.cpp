@@ -382,9 +382,7 @@ public:
         m_ApiImpl(api_impl)
     {
         if (m_ApiImpl) {
-            THandlerRef& handler = m_ApiImpl->GetListener()->m_EventHandler;
-            m_OriginalHandler = handler;
-            handler = new SHandler;
+            m_OriginalHandler = m_ApiImpl->m_Service->SetEventHandler(new SHandler);
             m_MaxRetries = TServConn_ConnMaxRetries::GetDefault();
             TServConn_ConnMaxRetries::SetDefault(0);
         }
@@ -393,7 +391,7 @@ public:
     ~CErrorSuppressor()
     {
         if (m_ApiImpl) {
-            m_ApiImpl->GetListener()->m_EventHandler = m_OriginalHandler;
+            m_ApiImpl->m_Service->SetEventHandler(m_OriginalHandler);
             TServConn_ConnMaxRetries::SetDefault(m_MaxRetries);
         }
     }
@@ -1519,7 +1517,7 @@ void CNetScheduleAPIExt::UseOldStyleAuth()
 
 void CNetScheduleAPIExt::SetEventHandler(INetEventHandler* event_handler)
 {
-    m_Impl->GetListener()->m_EventHandler = event_handler;
+    m_Impl->m_Service->SetEventHandler(event_handler);
 }
 
 CCompoundIDPool CNetScheduleAPIExt::GetCompoundIDPool()
