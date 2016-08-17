@@ -279,6 +279,13 @@ struct SIssue
         return os << " (" << message << ')';
     }
 
+    operator string() const
+    {
+        ostringstream oss;
+        Print<ostream>(oss);
+        return oss.str();
+    }
+
     struct SBuilder
     {
         SBuilder(const CJsonNode& node) :
@@ -366,7 +373,9 @@ void s_ThrowError(Int8 code, Int8 sub_code, const string& err_msg)
 
 static void s_TrapErrors(const CJsonNode& request,
         const CJsonNode& reply, CSocket& sock,
-        SNetStorage::SConfig::EErrMode err_mode)
+        SNetStorage::SConfig::EErrMode err_mode,
+        INetServerConnectionListener& listener,
+        CNetServer& server)
 {
     const string server_address(sock.GetPeerAddress());
     CJsonNode issues(reply.GetByKeyOrNull("Warnings"));
@@ -374,8 +383,7 @@ static void s_TrapErrors(const CJsonNode& request,
     if (issues) {
         for (CJsonIterator it = issues.Iterate(); it; ++it) {
             const SIssue issue(*it);
-            LOG_POST(Warning << "NetStorage server " << server_address <<
-                    " issued warning " << issue);
+            listener.OnWarning(issue, server);
         }
     }
 
@@ -389,8 +397,7 @@ static void s_TrapErrors(const CJsonNode& request,
             if (err_mode == SNetStorage::SConfig::eLog) {
                 for (CJsonIterator it = issues.Iterate(); it; ++it) {
                     const SIssue issue(*it);
-                    LOG_POST(Error << "NetStorage server " << server_address <<
-                            " issued error " << issue);
+                    listener.OnError(issue, server);
                 }
             }
         } else {
@@ -477,17 +484,27 @@ void CNetStorageServerListener::OnConnected(
 
     CJsonNode reply(message_reader.ReadMessage(sock));
 
-    s_TrapErrors(m_Hello, reply, sock, m_ErrMode);
+    s_TrapErrors(m_Hello, reply, sock, m_ErrMode, *this, connection->m_Server);
 }
 
-void CNetStorageServerListener::OnError(const string& /*err_msg*/,
-        CNetServer& /*server*/)
+void CNetStorageServerListener::OnError(const string& err_msg,
+        CNetServer& server)
 {
+    LOG_POST(Error << "NetStorage server " <<
+            server->m_ServerInPool->m_Address.AsString() <<
+            " issued error " << err_msg);
 }
 
 void CNetStorageServerListener::OnWarning(const string& warn_msg,
-        CNetServer& /*server*/)
+        CNetServer& server)
 {
+    if (m_EventHandler)
+        m_EventHandler->OnWarning(warn_msg, server);
+    else {
+        LOG_POST(Warning << "NetStorage server " <<
+                server->m_ServerInPool->m_Address.AsString() <<
+                " issued warning " << warn_msg);
+    }
 }
 
 struct SNetStorageObjectRPC : public SNetStorageObjectImpl
@@ -913,7 +930,8 @@ CJsonNode SNetStorageRPC::Exchange(CNetService service,
 
     CJsonNode reply(message_reader.ReadMessage(sock));
 
-    s_TrapErrors(request, reply, sock, m_Config.err_mode);
+    s_TrapErrors(request, reply, sock, m_Config.err_mode, *service->m_Listener,
+            server);
 
     return reply;
 }
@@ -1063,7 +1081,8 @@ void SNetStorageObjectRPC::ReadConfirmation()
     }
 
     s_TrapErrors(m_OriginalRequest, json_reader.GetMessage(), sock,
-            m_NetStorageRPC->m_Config.err_mode);
+            m_NetStorageRPC->m_Config.err_mode,
+            *m_NetStorageRPC->m_Service->m_Listener, m_Connection->m_Server);
 }
 
 ERW_Result SNetStorageObjectRPC::Read(void* buffer, size_t buf_size,
@@ -1108,7 +1127,8 @@ ERW_Result SNetStorageObjectRPC::Read(void* buffer, size_t buf_size,
         }
 
         s_TrapErrors(m_OriginalRequest, json_reader.GetMessage(), sock,
-            m_NetStorageRPC->m_Config.err_mode);
+            m_NetStorageRPC->m_Config.err_mode,
+            *m_NetStorageRPC->m_Service->m_Listener, m_Connection->m_Server);
 
         m_Connection = json_over_uttp_sender.GetConnection();
 
@@ -1387,7 +1407,8 @@ void SNetStorageObjectRPC::Close()
 
         s_TrapErrors(m_OriginalRequest,
                 message_reader.ReadMessage(sock), sock,
-                m_NetStorageRPC->m_Config.err_mode);
+                m_NetStorageRPC->m_Config.err_mode,
+                *m_NetStorageRPC->m_Service->m_Listener, m_Connection->m_Server);
     }
 }
 
@@ -1573,6 +1594,11 @@ CJsonNode CNetStorageAdmin::ExchangeJson(const CJsonNode& request,
 CNetStorageAdmin CNetStorageAdmin::GetServer(CNetServer::TInstance server)
 {
     return new SNetStorageRPC(server->m_ServerInPool, m_Impl->m_NetStorageRPC);
+}
+
+void CNetStorageAdmin::SetEventHandler(INetEventHandler* event_handler)
+{
+    m_Impl->m_NetStorageRPC->m_Service->SetEventHandler(event_handler);
 }
 
 SNetStorageImpl* SNetStorage::CreateImpl(const SConfig& config,

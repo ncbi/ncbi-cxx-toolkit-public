@@ -277,6 +277,8 @@ class NCBI_XCONNECT_EXPORT CNetStorageAdmin
             CNetServerConnection* conn = NULL);
 
     CNetStorageAdmin GetServer(CNetServer::TInstance server);
+
+    void SetEventHandler(INetEventHandler* event_handler);
 };
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
