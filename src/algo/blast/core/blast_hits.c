@@ -3255,9 +3255,12 @@ BlastHSPResults* Blast_HSPResultsFree(BlastHSPResults* results)
    if (!results)
        return NULL;
 
-   for (index = 0; index < results->num_queries; ++index)
-      Blast_HitListFree(results->hitlist_array[index]);
-   sfree(results->hitlist_array);
+   if (results->hitlist_array)
+   {
+   	for (index = 0; index < results->num_queries; ++index)
+      		Blast_HitListFree(results->hitlist_array[index]);
+   	sfree(results->hitlist_array);
+   }
    sfree(results);
    return NULL;
 }

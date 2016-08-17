@@ -938,6 +938,8 @@ Int2 BLAST_CreateMixedFrameDNATranslation(BLAST_SequenceBlk* query_blk,
 
    /* Allocate 1 extra byte for a final sentinel. */ 
    buffer = (Uint1*) malloc(total_length+1);
+   if (!buffer)
+	return -1;
 
    for (index = 0; index <= query_info->last_context; index += CODON_LENGTH) {
       int i;
@@ -966,7 +968,8 @@ Int2 BLAST_CreateMixedFrameDNATranslation(BLAST_SequenceBlk* query_blk,
       }
    }
    /* Add a sentinel null byte at the end. */
-   *seq = NULLB;
+   if (seq)
+   	*seq = NULLB;
 
    /* The mixed-frame protein sequence buffer will be saved in 
       'sequence_start' */

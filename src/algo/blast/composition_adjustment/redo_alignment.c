@@ -655,10 +655,10 @@ s_WindowsFromTranslatedAligns(BlastCompo_Alignment * alignments,
                                          alignment in the main loop */
     *nWindows = 0;
     windows = *pwindows = calloc(hspcnt, sizeof(s_WindowInfo*));
-    *nWindows = hspcnt;
     if (windows == NULL)
         goto error_return;
 
+    *nWindows = hspcnt;
     for (align = alignments, k = 0;
          align != NULL;
          align = align->next, k++) {
@@ -750,11 +750,14 @@ s_WindowsFromTranslatedAligns(BlastCompo_Alignment * alignments,
     return 0; /* normal return */
 
 error_return:
-    for (k = 0; k < *nWindows; k++) {
-        if (windows[k] != NULL)
-            s_WindowInfoFree(&windows[k]);
+    if (windows)
+    {
+    	for (k = 0; k < *nWindows; k++) {
+       	 if (windows[k] != NULL)
+       	     s_WindowInfoFree(&windows[k]);
+    	}
+    	free(windows);
     }
-    free(windows);
     *pwindows = NULL;
     return -1;
 }
