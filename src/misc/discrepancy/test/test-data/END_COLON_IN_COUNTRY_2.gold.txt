@@ -1,0 +1,10 @@
+Discrepancy Report Results
+
+Summary
+END_COLON_IN_COUNTRY: 1 country source ends with a colon.
+
+Detailed Report
+
+END_COLON_IN_COUNTRY: 1 country source ends with a colon.
+D:\toolkit\src\misc\discrepancy\test\test-data\END_COLON_IN_COUNTRY.asn:lcl|ex1:ex1
+
