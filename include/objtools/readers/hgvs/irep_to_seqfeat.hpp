@@ -22,8 +22,10 @@ public:
                     m_MethodUnknown(CVariation_ref::eMethod_E_unknown) {}
 
     virtual ~CHgvsIrepReader(void) {}
-
+// Virtual methods most be excluded from code-coverage analysis
+// LCOV_EXCL_START
     virtual CRef<CSeq_feat> CreateSeqfeat(const CVariantExpression& variant_expr) const = 0;
+// LCOV_EXCL_STOP
 protected:
     void x_SetMethod(CRef<CVariation_ref> var_ref, CVariation_ref::EMethod_E method) const 
     {
