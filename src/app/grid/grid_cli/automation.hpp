@@ -285,8 +285,6 @@ private:
 
     IMessageSender* m_MessageSender;
 
-    Int8 m_Pid;
-
     vector<TAutomationObjectRef> m_ObjectByIndex;
     typedef map<const void*, TAutomationObjectRef> TPtrToObjectRefMap;
     TPtrToObjectRefMap m_ObjectByPointer;
@@ -298,7 +296,7 @@ private:
 
 inline TObjectID CAutomationProc::AddObject(TAutomationObjectRef new_object)
 {
-    TObjectID new_object_id = m_Pid + m_ObjectByIndex.size();
+    TObjectID new_object_id = m_ObjectByIndex.size();
     new_object->SetID(new_object_id);
     m_ObjectByIndex.push_back(new_object);
     return new_object_id;

@@ -118,7 +118,6 @@ bool SNetServiceAutomationObject::Call(const string& method,
 
 CAutomationProc::CAutomationProc(IMessageSender* message_sender) :
     m_MessageSender(message_sender),
-    m_Pid((Int8) CProcess::GetCurrentPid()),
     m_OKNode(CJsonNode::NewBooleanNode(true)),
     m_ErrNode(CJsonNode::NewBooleanNode(false)),
     m_WarnNode(CJsonNode::NewStringNode("WARNING"))
@@ -268,7 +267,7 @@ void CAutomationProc::SendError(const CTempString& error_message)
 
 TAutomationObjectRef& CAutomationProc::ObjectIdToRef(TObjectID object_id)
 {
-    size_t index = (size_t) (object_id - m_Pid);
+    size_t index = (size_t) (object_id);
 
     if (index >= m_ObjectByIndex.size() || !m_ObjectByIndex[index]) {
         NCBI_THROW_FMT(CAutomationException, eCommandProcessingError,
