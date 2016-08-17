@@ -4,7 +4,7 @@
 APP = grid_cli
 SRC = grid_cli nc_cmds ns_cmds adm_cmds ns_cmd_impl wn_cmds \
         misc_cmds automation nc_automation ns_automation wn_automation \
-        util nst_cmds
+        nst_automation util nst_cmds
 
 REQUIRES = MT
 

@@ -34,6 +34,7 @@
 #include "nc_automation.hpp"
 #include "ns_automation.hpp"
 #include "wn_automation.hpp"
+#include "nst_automation.hpp"
 
 #include <connect/ncbi_pipe.hpp>
 
@@ -163,6 +164,18 @@ TObjectID CAutomationProc::CreateObject(const string& class_name,
                             wn_address, client_name);
             impl_ptr = wn_object_ptr->m_NetScheduleAPI;
             new_object.Reset(wn_object_ptr);
+        } else if (class_name == "nstsvc") {
+            SNetStorageServiceAutomationObject* nstsvc_object_ptr =
+                    new SNetStorageServiceAutomationObject(this, arg_array);
+            impl_ptr = nstsvc_object_ptr->m_NetStorageAdmin;
+            new_object.Reset(nstsvc_object_ptr);
+#if 0
+        } else if (class_name == "nstsrv") {
+            SNetStorageServerAutomationObject* nstsrv_object_ptr =
+                    new SNetStorageServerAutomationObject(this, arg_array);
+            impl_ptr = nstsrv_object_ptr->m_NetStorageAdmin;
+            new_object.Reset(nstsrv_object_ptr);
+#endif
         } else {
             NCBI_THROW_FMT(CAutomationException, eInvalidInput,
                     "Unknown class '" << class_name << "'");
