@@ -1,0 +1,775 @@
+Seq-submit ::= {
+  sub {
+    contact {
+      contact {
+        name name {
+          last "q",
+          first "q",
+          initials "q"
+        },
+        affil str "q"
+      }
+    },
+    cit {
+      authors {
+        names std {
+          {
+            name name {
+              last "Q",
+              first "Q",
+              initials "Q."
+            }
+          }
+        },
+        affil str "q"
+      },
+      date std {
+        year 2014,
+        month 1,
+        day 8
+      }
+    },
+    subtype new,
+    tool "tbl2asn 22.9 - LINUX UNIX"
+  },
+  data entrys {
+    set {
+      class genbank,
+      seq-set {
+        seq {
+          id {
+            local str "seq_1"
+          },
+          descr {
+            source {
+              org {
+                orgname {
+                  mod {
+                    {
+                      subtype nat-host,
+                      subname "1"
+                    }
+                  }
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished",
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Q",
+                          first "Q",
+                          initials "Q."
+                        }
+                      }
+                    },
+                    affil str "q"
+                  },
+                  title "a"
+                }
+              }
+            },
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished",
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "E",
+                          first "Q",
+                          initials "QW."
+                        }
+                      }
+                    }
+                  },
+                  title "title 1"
+                }
+              }
+            },
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished",
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "D",
+                          first "A",
+                          initials "AS."
+                        }
+                      }
+                    }
+                  },
+                  title "title 1"
+                }
+              }
+            },
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Martin",
+                          first "Steve",
+                          initials "S.F."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Lizard",
+                          first "Eddie",
+                          initials "E."
+                        }
+                      }
+                    }
+                  },
+                  date std {
+                    year 2016,
+                    month 5,
+                    day 19
+                  },
+                  descr "title 2"
+                }
+              }
+            },
+            user {
+              type str "NcbiCleanup",
+              data {
+                {
+                  label str "method",
+                  data str "SequinCleanup"
+                },
+                {
+                  label str "version",
+                  data int 8
+                },
+                {
+                  label str "month",
+                  data int 5
+                },
+                {
+                  label str "day",
+                  data int 17
+                },
+                {
+                  label str "year",
+                  data int 2016
+                }
+              }
+            },
+            create-date std {
+              year 2014,
+              month 1,
+              day 8
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 336,
+            seq-data ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA95
+03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA95
+03FA9503FA9503FA9503FA9503FA9503FA9503FA95'H
+          }
+        },
+        seq {
+          id {
+            local str "seq_2"
+          },
+          descr {
+            source {
+              org {
+                orgname {
+                  mod {
+                    {
+                      subtype nat-host,
+                      subname "2"
+                    }
+                  }
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished",
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Q",
+                          first "Q",
+                          initials "Q."
+                        }
+                      }
+                    },
+                    affil str "q"
+                  },
+                  title "a"
+                }
+              }
+            },
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Martin",
+                          first "Steve",
+                          initials "S.F."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Izzard",
+                          first "Eddie",
+                          initials "E.X."
+                        }
+                      }
+                    }
+                  },
+                  date std {
+                    year 2016,
+                    month 5,
+                    day 19
+                  },
+                  descr "title 2"
+                }
+              }
+            },
+            user {
+              type str "NcbiCleanup",
+              data {
+                {
+                  label str "method",
+                  data str "SequinCleanup"
+                },
+                {
+                  label str "version",
+                  data int 8
+                },
+                {
+                  label str "month",
+                  data int 5
+                },
+                {
+                  label str "day",
+                  data int 17
+                },
+                {
+                  label str "year",
+                  data int 2016
+                }
+              }
+            },
+            create-date std {
+              year 2014,
+              month 1,
+              day 8
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 336,
+            seq-data ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA95
+03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA95
+03FA9503FA9503FA9503FA9503FA9503FA9503FA95'H
+          }
+        },
+        seq {
+          id {
+            local str "seq_3"
+          },
+          descr {
+            source {
+              org {
+                orgname {
+                  mod {
+                    {
+                      subtype nat-host,
+                      subname "3"
+                    }
+                  }
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished",
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Q",
+                          first "Q",
+                          initials "Q."
+                        }
+                      }
+                    },
+                    affil str "q"
+                  },
+                  title "a"
+                }
+              }
+            },
+            pub {
+              pub {
+                pmid 123,
+                article {
+                  title {
+                    name "The importance of an innervated and intact antrum
+ and pylorus in preventing postoperative duodenogastric reflux and gastritis."
+                  },
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Keighley",
+                          first "M",
+                          initials "M.R."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Asquith",
+                          first "P",
+                          initials "P."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Edwards",
+                          first "J",
+                          initials "J.A."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Alexander-Williams",
+                          first "J",
+                          initials "J."
+                        }
+                      }
+                    }
+                  },
+                  from journal {
+                    title {
+                      iso-jta "Br J Surg"
+                    },
+                    imp {
+                      date std {
+                        year 1975,
+                        month 10
+                      },
+                      volume "62",
+                      issue "10",
+                      pages "845-849",
+                      pubstatus ppublish
+                    }
+                  },
+                  ids {
+                    pubmed 123
+                  }
+                }
+              }
+            },
+            user {
+              type str "NcbiCleanup",
+              data {
+                {
+                  label str "method",
+                  data str "SequinCleanup"
+                },
+                {
+                  label str "version",
+                  data int 8
+                },
+                {
+                  label str "month",
+                  data int 5
+                },
+                {
+                  label str "day",
+                  data int 17
+                },
+                {
+                  label str "year",
+                  data int 2016
+                }
+              }
+            },
+            create-date std {
+              year 2014,
+              month 1,
+              day 8
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 336,
+            seq-data ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA95
+03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA95
+03FA9503FA9503FA9503FA9503FA9503FA9503FA95'H
+          }
+        },
+        seq {
+          id {
+            local str "seq_4"
+          },
+          descr {
+            source {
+              org {
+                orgname {
+                  mod {
+                    {
+                      subtype nat-host,
+                      subname "4"
+                    }
+                  }
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished",
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Q",
+                          first "Q",
+                          initials "Q."
+                        }
+                      }
+                    },
+                    affil str "q"
+                  },
+                  title "a"
+                }
+              }
+            },
+            pub {
+              pub {
+                pmid 123,
+                article {
+                  title {
+                    name "The importance of an innervated and intact antrum
+ and pylorus in preventing postoperative duodenogastric reflux and gastritis."
+                  },
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Keighley",
+                          first "M",
+                          initials "M.R."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Asquith",
+                          first "P",
+                          initials "P."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Alexander-Williams",
+                          first "J",
+                          initials "J."
+                        }
+                      }
+                    }
+                  },
+                  from journal {
+                    title {
+                      iso-jta "Br J Surg"
+                    },
+                    imp {
+                      date std {
+                        year 1975,
+                        month 10
+                      },
+                      volume "62",
+                      issue "10",
+                      pages "845-849",
+                      pubstatus ppublish
+                    }
+                  },
+                  ids {
+                    pubmed 123
+                  }
+                }
+              }
+            },
+            user {
+              type str "NcbiCleanup",
+              data {
+                {
+                  label str "method",
+                  data str "SequinCleanup"
+                },
+                {
+                  label str "version",
+                  data int 8
+                },
+                {
+                  label str "month",
+                  data int 5
+                },
+                {
+                  label str "day",
+                  data int 17
+                },
+                {
+                  label str "year",
+                  data int 2016
+                }
+              }
+            },
+            create-date std {
+              year 2014,
+              month 1,
+              day 8
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 336,
+            seq-data ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA95
+03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA95
+03FA9503FA9503FA9503FA9503FA9503FA9503FA95'H
+          }
+        },
+        seq {
+          id {
+            local str "seq_5"
+          },
+          descr {
+            source {
+              org {
+                orgname {
+                  mod {
+                    {
+                      subtype nat-host,
+                      subname "5"
+                    }
+                  }
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished",
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Q",
+                          first "Q",
+                          initials "Q."
+                        }
+                      }
+                    },
+                    affil str "q"
+                  },
+                  title "a"
+                }
+              }
+            },
+            pub {
+              pub {
+                patent {
+                  title "patent title 1",
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "C",
+                          first "A",
+                          initials "AB."
+                        }
+                      }
+                    }
+                  },
+                  country "US",
+                  doc-type "fake"
+                }
+              }
+            },
+            user {
+              type str "NcbiCleanup",
+              data {
+                {
+                  label str "method",
+                  data str "SequinCleanup"
+                },
+                {
+                  label str "version",
+                  data int 8
+                },
+                {
+                  label str "month",
+                  data int 5
+                },
+                {
+                  label str "day",
+                  data int 17
+                },
+                {
+                  label str "year",
+                  data int 2016
+                }
+              }
+            },
+            create-date std {
+              year 2014,
+              month 1,
+              day 8
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 336,
+            seq-data ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA95
+03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA95
+03FA9503FA9503FA9503FA9503FA9503FA9503FA95'H
+          }
+        },
+        seq {
+          id {
+            local str "seq_6"
+          },
+          descr {
+            source {
+              org {
+                orgname {
+                  mod {
+                    {
+                      subtype nat-host,
+                      subname "6"
+                    }
+                  }
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished",
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Q",
+                          first "Q",
+                          initials "Q."
+                        }
+                      }
+                    },
+                    affil str "q"
+                  },
+                  title "a"
+                }
+              }
+            },
+            pub {
+              pub {
+                patent {
+                  title "patent title 1",
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Williams",
+                          first "Hank",
+                          initials "H."
+                        }
+                      }
+                    }
+                  },
+                  country "US",
+                  doc-type "fake"
+                }
+              }
+            },
+            user {
+              type str "NcbiCleanup",
+              data {
+                {
+                  label str "method",
+                  data str "SequinCleanup"
+                },
+                {
+                  label str "version",
+                  data int 8
+                },
+                {
+                  label str "month",
+                  data int 5
+                },
+                {
+                  label str "day",
+                  data int 17
+                },
+                {
+                  label str "year",
+                  data int 2016
+                }
+              }
+            },
+            create-date std {
+              year 2014,
+              month 1,
+              day 8
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 336,
+            seq-data ncbi2na '03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA95
+03FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA9503FA95
+03FA9503FA9503FA9503FA9503FA9503FA9503FA95'H
+          }
+        }
+      }
+    }
+  }
+}

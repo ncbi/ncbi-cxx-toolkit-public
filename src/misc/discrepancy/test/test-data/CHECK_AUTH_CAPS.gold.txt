@@ -1,0 +1,19 @@
+Discrepancy Report Results
+
+Summary
+CHECK_AUTH_CAPS: 10 pubs have incorrect author capitalization
+
+Detailed Report
+
+CHECK_AUTH_CAPS: 10 pubs have incorrect author capitalization
+Cit-sub
+test-data/TITLE_AUTHOR_CONFLICT.sqn:lcl|seq_1:q,q.Unpublished
+test-data/TITLE_AUTHOR_CONFLICT.sqn:lcl|seq_1:e,qw.Unpublished
+test-data/TITLE_AUTHOR_CONFLICT.sqn:lcl|seq_1:d,as.Unpublished
+test-data/TITLE_AUTHOR_CONFLICT.sqn:lcl|seq_2:q,q.Unpublished
+test-data/TITLE_AUTHOR_CONFLICT.sqn:lcl|seq_3:q,q.Unpublished
+test-data/TITLE_AUTHOR_CONFLICT.sqn:lcl|seq_4:q,q.Unpublished
+test-data/TITLE_AUTHOR_CONFLICT.sqn:lcl|seq_5:q,q.Unpublished
+test-data/TITLE_AUTHOR_CONFLICT.sqn:lcl|seq_5:c,ab.
+test-data/TITLE_AUTHOR_CONFLICT.sqn:lcl|seq_6:q,q.Unpublished
+

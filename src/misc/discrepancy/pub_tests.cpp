@@ -1170,5 +1170,214 @@ DISCREPANCY_AUTOFIX(USA_STATE)
     return CRef<CAutofixReport>(n ? new CAutofixReport("USA_STATE: [n] Cit-sub[s] [is] changed to contain a correct US state abbreviation", n) : 0);
 }
 
+
+// CHECK_AUTH_CAPS
+
+static const string kIncorrectCap = "[n] pub[s] [has] incorrect author capitalization";
+
+static bool IsCapNameCorrect(const string& name)
+{
+    static const set<string> kShortNames = {
+        "del",
+        "de",
+        "da",
+        "du",
+        "dos",
+        "la",
+        "le",
+        "van",
+        "von",
+        "der",
+        "den",
+        "di", };
+
+    bool ret = true;
+
+    if (!name.empty()) {
+
+        bool need_cap = true;
+        bool need_lower = false;
+        bool found_lower = true;
+
+        size_t len = name.size();
+        for (size_t i = 0; i < len; ++i) {
+
+            if (isalpha(name[i])) {
+                if (need_cap) {
+
+                    if (islower(name[i])) {
+
+                        // check if it is a short name
+                        string::const_iterator start = name.begin() + i;
+                        string::const_iterator end = start + 1;
+                        while (end != name.end() && *end != ' ') {
+                            ++end;
+                        }
+
+                        string short_name(start, end);
+                        set<string>::const_iterator it = kShortNames.find(short_name);
+                        if (it == kShortNames.end()) {
+                            ret = false;
+                            break;
+                        }
+
+                        i += it->size() - 1;
+                    }
+
+                    need_cap = false;
+                }
+                else {
+
+                    need_lower = true;
+                    found_lower = islower(name[i]) != 0;
+                }
+            }
+            else {
+                need_cap = true;
+            }
+        }
+
+        if (need_lower && !found_lower) {
+            ret = false;
+        }
+    }
+
+    return ret;
+}
+
+static bool IsCapInitialsCorrect(const string& initials)
+{
+    bool ret = true;
+
+    if (!initials.empty()) {
+
+        ITERATE(string, cur, initials) {
+            if (isalpha(*cur) && islower(*cur)) {
+                ret = false;
+                break;
+            }
+        }
+    }
+
+    return ret;
+}
+
+DISCREPANCY_CASE(CHECK_AUTH_CAPS, CAuth_list, eDisc | eOncaller | eSmart, "Check for correct capitalization in author names")
+{
+    if (obj.IsSetNames() && obj.GetNames().IsStd()) {
+
+        ITERATE(CAuth_list::C_Names::TStd, auth, obj.GetNames().GetStd()) {
+
+            if ((*auth)->IsSetName() && (*auth)->GetName().IsName()) {
+
+                const CName_std& name = (*auth)->GetName().GetName();
+
+                bool correct = true;
+                if (name.IsSetLast()) {
+                    correct = IsCapNameCorrect(name.GetLast());
+                }
+
+                if (correct && name.IsSetFirst()) {
+                    correct = IsCapNameCorrect(name.GetFirst());
+                }
+
+                if (correct && name.IsSetInitials()) {
+                    correct = IsCapInitialsCorrect(name.GetInitials());
+                }
+
+                if (!correct) {
+
+                    m_Objs[kIncorrectCap].Add(*context.NewFeatOrDescOrSubmitBlockObj(eNoRef, true, const_cast<CAuth_list*>(&obj)));
+                    break;
+                }
+            }
+        }
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(CHECK_AUTH_CAPS)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+static bool FixCapitalization(string& name, bool apostroph)
+{
+    bool ret = false;
+    bool to_lower = false;
+
+    NON_CONST_ITERATE(string, cur, name) {
+        if (isalpha(*cur)) {
+            if (to_lower && isupper(*cur)) {
+                *cur = tolower(*cur);
+                ret = true;
+            }
+
+            if (!to_lower) {
+
+                if (islower(*cur)) {
+                    *cur = toupper(*cur);
+                    ret = true;
+                }
+                to_lower = true;
+            }
+        }
+        else if (apostroph && *cur == '\'') {
+            to_lower = false;
+        }
+    }
+
+    return ret;
+}
+
+static bool FixCapitalization(CAuth_list* auth_list)
+{
+    bool ret = false;
+    
+    NON_CONST_ITERATE(CAuth_list::C_Names::TStd, auth, auth_list->SetNames().SetStd()) {
+
+        CName_std& name = (*auth)->SetName().SetName();
+
+        if (name.IsSetFirst() && FixCapitalization(name.SetFirst(), false)) {
+            ret = true;
+        }
+
+        if (name.IsSetLast() && FixCapitalization(name.SetLast(), true)) {
+            ret = true;
+        }
+
+        if (name.IsSetInitials()) {
+            NON_CONST_ITERATE(string, cur, name.SetInitials()) {
+                if (isalpha(*cur) && islower(*cur)) {
+                    *cur = toupper(*cur);
+                    ret = true;
+                }
+            }
+        }
+    }
+            
+    return ret;
+}
+
+DISCREPANCY_AUTOFIX(CHECK_AUTH_CAPS)
+{
+    TReportObjectList list = item->GetDetails();
+    unsigned int n = 0;
+    NON_CONST_ITERATE(TReportObjectList, it, list) {
+
+        const CObject* obj = dynamic_cast<CDiscrepancyObject*>(it->GetNCPointer())->GetMoreInfo();
+        if (obj) {
+            CAuth_list* auth_list = dynamic_cast<CAuth_list*>(const_cast<CObject*>(obj));
+            if (FixCapitalization(auth_list)) {
+                ++n;
+            }
+        }
+    }
+
+    return CRef<CAutofixReport>(n ? new CAutofixReport("CHECK_AUTH_CAPS: capitalization of [n] author[s] is fixed", n) : 0);
+}
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
