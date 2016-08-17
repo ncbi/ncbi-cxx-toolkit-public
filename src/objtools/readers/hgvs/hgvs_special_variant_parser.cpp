@@ -9,17 +9,6 @@ using boost::phoenix::bind;
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-template<class T>
-CRef<T> MakeResultIfNull(CRef<T> result)
-{
-    return result.IsNull() ? Ref(new T()) : result;
-}
-
-void s_SimpleAssign(CRef<CVariant>& result)
-{
-    result = MakeResultIfNull(result);
-}
-
 
 SHgvsSpecialVariantGrammar::SHgvsSpecialVariantGrammar(const SHgvsLexer& tok) :
     SHgvsSpecialVariantGrammar::base_type(variant_expression)
