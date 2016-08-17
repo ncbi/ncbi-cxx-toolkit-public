@@ -178,7 +178,15 @@ const string& CCachedAssembly::Blob(CCompressStream::EMethod neededCompression)
 
 const string& CCachedAssembly::Blob()
 {
-    return Blob(CCompressStream::eZip);
+    if (ValidBlob(m_blob.size()))
+        return m_blob;
+
+    if (m_assembly)
+        CompressAssembly(m_blob, m_assembly, CCompressStream::eZip);
+    else
+        m_blob.clear();
+
+    return m_blob;
 }
 
 bool CCachedAssembly::ValidBlob(int blobSize)
