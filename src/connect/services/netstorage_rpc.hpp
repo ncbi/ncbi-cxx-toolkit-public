@@ -43,6 +43,7 @@ BEGIN_NCBI_SCOPE
 struct SNetStorageRPC : public SNetStorageImpl
 {
     SNetStorageRPC(const TConfig& config, TNetStorageFlags default_flags);
+    SNetStorageRPC(SNetServerInPool* server, SNetStorageRPC* parent);
 
     virtual CNetStorageObject Create(TNetStorageFlags flags);
     virtual CNetStorageObject Open(const string& object_loc);

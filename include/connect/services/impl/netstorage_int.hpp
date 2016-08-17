@@ -275,6 +275,8 @@ class NCBI_XCONNECT_EXPORT CNetStorageAdmin
     CJsonNode ExchangeJson(const CJsonNode& request,
             CNetServer::TInstance server_to_use = NULL,
             CNetServerConnection* conn = NULL);
+
+    CNetStorageAdmin GetServer(CNetServer::TInstance server);
 };
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT

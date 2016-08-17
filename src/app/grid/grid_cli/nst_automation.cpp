@@ -86,11 +86,10 @@ const void* SNetStorageServiceAutomationObject::GetImplPtr() const
     return m_NetStorageAdmin;
 }
 
-#if 0
 SNetStorageServerAutomationObject::SNetStorageServerAutomationObject(
         CAutomationProc* automation_proc, CArgArray& arg_array) :
     SNetStorageServiceAutomationObject(automation_proc,
-            CNetStorageAdmin(CNetStorage(s_GetInitString(arg_array)))
+            CNetStorageAdmin(CNetStorage(s_GetInitString(arg_array))))
 {
     if (m_Service.IsLoadBalanced()) {
         NCBI_THROW(CAutomationException, eCommandProcessingError,
@@ -117,17 +116,16 @@ const void* SNetStorageServerAutomationObject::GetImplPtr() const
 }
 
 TAutomationObjectRef CAutomationProc::ReturnNetStorageServerObject(
-        CNetStorageAdmin::TInstance ns_api,
+        CNetStorageAdmin::TInstance nst_api,
         CNetServer::TInstance server)
 {
     TAutomationObjectRef object(FindObjectByPtr(server));
     if (!object) {
-        object = new SNetStorageServerAutomationObject(this, ns_api, server);
+        object = new SNetStorageServerAutomationObject(this, nst_api, server);
         AddObject(object, server);
     }
     return object;
 }
-#endif
 
 bool SNetStorageServiceAutomationObject::Call(const string& method,
         CArgArray& arg_array, CJsonNode& reply)
@@ -158,9 +156,7 @@ bool SNetStorageServiceAutomationObject::Call(const string& method,
         CJsonNode response(m_NetStorageAdmin.ExchangeJson(request));
         s_RemoveStdReplyFields(response);
         reply.Append(response);
-    }
-#if 0
-    if (method == "get_servers") {
+    } else if (method == "get_servers") {
         CJsonNode object_ids(CJsonNode::NewArrayNode());
         for (CNetServiceIterator it = m_NetStorageAdmin.GetService().Iterate(
                 CNetService::eIncludePenalized); it; ++it)
@@ -169,15 +165,21 @@ bool SNetStorageServiceAutomationObject::Call(const string& method,
         reply.Append(object_ids);
     } else
         return SNetServiceAutomationObject::Call(method, arg_array, reply);
-#endif
 
     return true;
 }
 
-#if 0
 bool SNetStorageServerAutomationObject::Call(const string& method,
         CArgArray& arg_array, CJsonNode& reply)
 {
-    return SNetStorageServiceAutomationObject::Call(method, arg_array, reply);
+    if (method == "health") {
+        CJsonNode request(m_NetStorageAdmin.MkNetStorageRequest("HEALTH"));
+
+        CJsonNode response(m_NetStorageAdmin.ExchangeJson(request));
+        s_RemoveStdReplyFields(response);
+        reply.Append(response);
+    } else
+        return SNetStorageServiceAutomationObject::Call(method, arg_array, reply);
+
+    return true;
 }
-#endif

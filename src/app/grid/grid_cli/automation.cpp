@@ -169,13 +169,11 @@ TObjectID CAutomationProc::CreateObject(const string& class_name,
                     new SNetStorageServiceAutomationObject(this, arg_array);
             impl_ptr = nstsvc_object_ptr->m_NetStorageAdmin;
             new_object.Reset(nstsvc_object_ptr);
-#if 0
         } else if (class_name == "nstsrv") {
             SNetStorageServerAutomationObject* nstsrv_object_ptr =
                     new SNetStorageServerAutomationObject(this, arg_array);
             impl_ptr = nstsrv_object_ptr->m_NetStorageAdmin;
             new_object.Reset(nstsrv_object_ptr);
-#endif
         } else {
             NCBI_THROW_FMT(CAutomationException, eInvalidInput,
                     "Unknown class '" << class_name << "'");

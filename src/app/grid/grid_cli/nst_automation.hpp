@@ -78,7 +78,6 @@ protected:
     }
 };
 
-#if 0
 struct SNetStorageServerAutomationObject : public SNetStorageServiceAutomationObject
 {
     SNetStorageServerAutomationObject(CAutomationProc* automation_proc,
@@ -101,7 +100,6 @@ struct SNetStorageServerAutomationObject : public SNetStorageServiceAutomationOb
 
     CNetServer m_NetServer;
 };
-#endif
 
 END_NCBI_SCOPE
 

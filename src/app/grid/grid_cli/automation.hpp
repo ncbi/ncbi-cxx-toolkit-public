@@ -265,6 +265,9 @@ public:
             CNetScheduleAPI::TInstance ns_api,
             CNetServer::TInstance server);
 
+    TAutomationObjectRef ReturnNetStorageServerObject(
+            CNetStorageAdmin::TInstance nst_api,
+            CNetServer::TInstance server);
 private:
     TAutomationObjectRef& ObjectIdToRef(TObjectID object_id);
 

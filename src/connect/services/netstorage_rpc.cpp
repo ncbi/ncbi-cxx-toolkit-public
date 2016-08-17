@@ -736,6 +736,20 @@ SNetStorageRPC::SNetStorageRPC(const TConfig& config,
             NULL, kEmptyStr, s_NetStorageConfigSections);
 }
 
+SNetStorageRPC::SNetStorageRPC(SNetServerInPool* server,
+        SNetStorageRPC* parent) :
+    m_DefaultFlags(parent->m_DefaultFlags),
+    m_Service(new SNetServiceImpl(server, parent->m_Service)),
+    m_Config(parent->m_Config),
+    m_CompoundIDPool(parent->m_CompoundIDPool),
+    m_NetCacheAPI(parent->m_NetCacheAPI),
+    m_ServiceMap(parent->m_ServiceMap),
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
+    m_AllowXSiteConnections(parent->m_AllowXSiteConnections)
+#endif
+{
+}
+
 CNetStorageObject SNetStorageRPC::Create(TNetStorageFlags flags)
 {
     switch (m_Config.default_storage) {
@@ -1554,6 +1568,11 @@ CJsonNode CNetStorageAdmin::ExchangeJson(const CJsonNode& request,
 {
     return m_Impl->m_NetStorageRPC->Exchange(m_Impl->m_NetStorageRPC->m_Service,
             request, conn, server_to_use);
+}
+
+CNetStorageAdmin CNetStorageAdmin::GetServer(CNetServer::TInstance server)
+{
+    return new SNetStorageRPC(server->m_ServerInPool, m_Impl->m_NetStorageRPC);
 }
 
 SNetStorageImpl* SNetStorage::CreateImpl(const SConfig& config,
