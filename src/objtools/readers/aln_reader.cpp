@@ -187,7 +187,7 @@ void CAlnReader::Read(bool guess, bool generate_local_ids)
 
     if (!afp) {
         NCBI_THROW2(CObjReaderParseException, eFormat,
-                   "Error reading alignment", 0);
+                   "Error reading alignment: Invalid input or alphabet", 0);
     }
     
     size_t first_len = strlen (afp->sequences[0]);
