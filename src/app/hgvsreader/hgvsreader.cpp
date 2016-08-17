@@ -7,12 +7,35 @@
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/readers/hgvs/protein_irep_to_seqfeat.hpp>
 #include <objtools/readers/hgvs/na_irep_to_seqfeat.hpp>
-#include <objtools/readers/hgvs/hgvs_validator.hpp>
+//#include <objtools/readers/hgvs/hgvs_validator.hpp>
 #include <objtools/readers/hgvs/hgvs_parser.hpp>
 #include <objtools/readers/hgvs/post_process.hpp>
+#include <corelib/ncbiexpt.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
+
+
+class CHgvsVariantException : public CException
+{
+public:
+    enum EErrCode {
+        eParseError
+    };
+
+    virtual const char* GetErrCodeString(void) const;
+    NCBI_EXCEPTION_DEFAULT(CHgvsVariantException, CException);
+};
+
+
+const char* CHgvsVariantException::GetErrCodeString(void) const 
+{
+    switch( GetErrCode() ) {
+    case eParseError:  return "eParseError";
+    default:           return CException::GetErrCodeString();
+    }
+}
+
 
 class CHgvsToSeqfeatConverter : public CNcbiApplication
 {
@@ -82,9 +105,6 @@ int CHgvsToSeqfeatConverter::Run(void)
     if (!success) {
         NCBI_THROW(CHgvsVariantException, eParseError, "Failed to parse " + hgvs_expression);
     }
-
-
-    CHgvsVariantValidator::Validate(*irep);
 
     if (args["return-irep"]) {
         ostr << MSerial_AsnText << *irep;
