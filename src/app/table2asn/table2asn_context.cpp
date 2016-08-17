@@ -244,11 +244,25 @@ void CTable2AsnContext::ApplyAccession(objects::CSeq_entry& entry) const
     }
 }
 
-CRef<CSerialObject> CTable2AsnContext::CreateSubmitFromTemplate(CRef<CSeq_entry>& object, CRef<CSeq_submit>& submit, const string& toolname) const
+void CTable2AsnContext::UpdateSubmitObject(CRef<objects::CSeq_submit>& submit) const
+{
+    if (!m_HoldUntilPublish.IsEmpty())
+    {
+        submit->SetSub().SetHup(true);
+        CRef<CDate> reldate(new CDate(m_HoldUntilPublish, CDate::ePrecision_day));
+        submit->SetSub().SetReldate(*reldate);
+    }
+
+    string toolname = CNcbiApplication::GetAppName() + " " + CNcbiApplication::Instance()->GetVersion().Print();
+    submit->SetSub().SetSubtype(CSubmit_block::eSubtype_new);
+    submit->SetSub().SetTool(toolname);
+}
+
+CRef<CSerialObject> CTable2AsnContext::CreateSubmitFromTemplate(CRef<CSeq_entry>& object, CRef<CSeq_submit>& submit) const
 {
     if (submit.NotEmpty())
     {
-        submit->SetSub().SetTool(toolname);
+        UpdateSubmitObject(submit);
         return CRef<CSerialObject>(submit);
     }
     else
@@ -256,19 +270,11 @@ CRef<CSerialObject> CTable2AsnContext::CreateSubmitFromTemplate(CRef<CSeq_entry>
     {
         CRef<CSeq_submit> submit(new CSeq_submit);
         submit->Assign(*m_submit_template);
-        if (!m_HoldUntilPublish.IsEmpty())
-        {
-          submit->SetSub().SetHup(true);
-          CRef<CDate> reldate(new CDate(m_HoldUntilPublish, CDate::ePrecision_day));
-          submit->SetSub().SetReldate(*reldate);
-        }
-
 
         submit->SetData().SetEntrys().clear();
         submit->SetData().SetEntrys().push_back(object);
 
-        submit->SetSub().SetSubtype(CSubmit_block::eSubtype_new);
-        submit->SetSub().SetTool(toolname);
+        UpdateSubmitObject(submit);
 
         return CRef<CSerialObject>(submit);
     }

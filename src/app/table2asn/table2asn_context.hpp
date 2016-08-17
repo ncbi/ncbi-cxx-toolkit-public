@@ -121,10 +121,10 @@ public:
     void ApplyFileTracks(objects::CSeq_entry& entry) const;
     CRef<CSerialObject> CreateSubmitFromTemplate(
         CRef<objects::CSeq_entry>& object, 
-        CRef<objects::CSeq_submit>& submit,
-        const string& toolname) const;
+        CRef<objects::CSeq_submit>& submit) const;
     CRef<CSerialObject>
         CreateSeqEntryFromTemplate(CRef<objects::CSeq_entry> object) const;
+    void UpdateSubmitObject(CRef<objects::CSeq_submit>& submit) const;
 
     typedef void (*BioseqVisitorMethod)(CTable2AsnContext& context, objects::CBioseq& bioseq);
     typedef void (*FeatureVisitorMethod)(CTable2AsnContext& context, objects::CSeq_feat& feature);

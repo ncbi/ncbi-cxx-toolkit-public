@@ -75,9 +75,13 @@
 
 #include <objtools/readers/fasta_exception.hpp>
 
+#include <misc/data_loaders_util/data_loaders_util.hpp>
+
+#if 1
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #ifdef HAVE_NCBI_VDB
 #  include <sra/data_loaders/wgs/wgsloader.hpp>
+#endif
 #endif
 
 #include <common/test_assert.h>  /* This header must go last */
@@ -902,7 +906,7 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     if (avoid_submit_block)
         result = m_context.CreateSeqEntryFromTemplate(entry);
     else
-        result = m_context.CreateSubmitFromTemplate(entry, submit, GetAppName() + " " + GetVersion().Print());
+        result = m_context.CreateSubmitFromTemplate(entry, submit);
 
     CSeq_entry_EditHandle entry_edit_handle = m_context.m_scope->AddTopLevelSeqEntry(*entry).GetEditHandle();
 
