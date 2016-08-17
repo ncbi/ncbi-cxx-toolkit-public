@@ -56,7 +56,7 @@ static void s_RemoveStdReplyFields(CJsonNode& server_reply)
 
 SNetStorageServiceAutomationObject::SNetStorageServiceAutomationObject(
         CAutomationProc* automation_proc, CArgArray& arg_array) :
-    SNetServiceAutomationObject(automation_proc,
+    SNetServiceBaseAutomationObject(automation_proc,
             CNetService::eLoadBalancedService),
     m_NetStorageAdmin(CNetStorage(s_GetInitString(arg_array)))
 {
@@ -164,7 +164,7 @@ bool SNetStorageServiceAutomationObject::Call(const string& method,
                     ReturnNetStorageServerObject(m_NetStorageAdmin, *it)->GetID());
         reply.Append(object_ids);
     } else
-        return SNetServiceAutomationObject::Call(method, arg_array, reply);
+        return SNetServiceBaseAutomationObject::Call(method, arg_array, reply);
 
     return true;
 }

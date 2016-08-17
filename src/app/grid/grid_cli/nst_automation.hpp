@@ -36,7 +36,7 @@
 
 BEGIN_NCBI_SCOPE
 
-struct SNetStorageServiceAutomationObject : public SNetServiceAutomationObject
+struct SNetStorageServiceAutomationObject : public SNetServiceBaseAutomationObject
 {
     class CEventHandler : public INetEventHandler
     {
@@ -70,7 +70,7 @@ struct SNetStorageServiceAutomationObject : public SNetServiceAutomationObject
 protected:
     SNetStorageServiceAutomationObject(CAutomationProc* automation_proc,
             const CNetStorageAdmin& nst_server) :
-        SNetServiceAutomationObject(automation_proc,
+        SNetServiceBaseAutomationObject(automation_proc,
                 CNetService::eSingleServerService),
         m_NetStorageAdmin(nst_server)
     {

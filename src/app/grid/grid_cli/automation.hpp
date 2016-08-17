@@ -213,9 +213,9 @@ protected:
     TObjectID m_Id;
 };
 
-struct SNetServiceAutomationObject : public CAutomationObject
+struct SNetServiceBaseAutomationObject : public CAutomationObject
 {
-    SNetServiceAutomationObject(CAutomationProc* automation_proc,
+    SNetServiceBaseAutomationObject(CAutomationProc* automation_proc,
             CNetService::EServiceType actual_service_type) :
         CAutomationObject(automation_proc),
         m_ActualServiceType(actual_service_type)
@@ -227,6 +227,18 @@ struct SNetServiceAutomationObject : public CAutomationObject
 
     CNetService m_Service;
     CNetService::EServiceType m_ActualServiceType;
+};
+
+struct SNetServiceAutomationObject : public SNetServiceBaseAutomationObject
+{
+    SNetServiceAutomationObject(CAutomationProc* automation_proc,
+            CNetService::EServiceType actual_service_type) :
+        SNetServiceBaseAutomationObject(automation_proc, actual_service_type)
+    {
+    }
+
+    virtual bool Call(const string& method,
+            CArgArray& arg_array, CJsonNode& reply);
 };
 
 typedef CRef<CAutomationObject> TAutomationObjectRef;

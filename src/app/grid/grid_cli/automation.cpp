@@ -79,7 +79,7 @@ CJsonNode SServerAddressToJson::ExecOn(CNetServer server)
     return CJsonNode::NewStringNode(server.GetServerAddress());
 }
 
-bool SNetServiceAutomationObject::Call(const string& method,
+bool SNetServiceBaseAutomationObject::Call(const string& method,
         CArgArray& arg_array, CJsonNode& reply)
 {
     if (method == "get_name")
@@ -90,7 +90,16 @@ bool SNetServiceAutomationObject::Call(const string& method,
 
         reply.Append(g_ExecToJson(server_address_proc,
                 m_Service, m_ActualServiceType));
-    } else if (method == "server_info")
+    } else
+        return false;
+
+    return true;
+}
+
+bool SNetServiceAutomationObject::Call(const string& method,
+        CArgArray& arg_array, CJsonNode& reply)
+{
+    if (method == "server_info")
         reply.Append(g_ServerInfoToJson(m_Service, m_ActualServiceType, true));
     else if (method == "exec") {
         string command(arg_array.NextString());
@@ -102,7 +111,7 @@ bool SNetServiceAutomationObject::Call(const string& method,
             m_Service.AllowXSiteConnections();
         else
 #endif
-            return false;
+        return SNetServiceBaseAutomationObject::Call(method, arg_array, reply);
 
     return true;
 }
