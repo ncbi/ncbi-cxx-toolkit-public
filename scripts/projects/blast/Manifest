@@ -41,7 +41,7 @@ DEFAULT_CONFIGURE_FLAGS: --without-debug --with-strip --with-openmp --with-mt --
 # ICC gives us about 10% improvement in the core2 microarchitecture, so prefer
 # that. The build-root is needed so that rpmbuild can find the proper directories
 # to copy the binaries from
-Linux64-Centos     : icc : ICC.sh           --with-bin-release --with-strip --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-experimental=Int8GI --without-vdb --with-gnutls=/netopt/ncbi_tools64/gnutls-3.4.0
+Linux64-Centos     : icc : ICC.sh           --with-bin-release --with-strip --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-experimental=Int8GI --without-vdb --with-gnutls=/netopt/ncbi_tools64/gnutls-3.4.0 --without-gcrypt
 #Linux64-Centos     : gcc : GCC.sh           --with-bin-release --with-strip --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-experimental=Int8GI --without-vdb
 #Linux64-Centos     : gcc-debug : GCC.sh                        --with-strip --with-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-experimental=Int8GI --without-vdb
 
