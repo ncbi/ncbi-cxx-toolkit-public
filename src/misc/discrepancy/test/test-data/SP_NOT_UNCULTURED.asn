@@ -1,0 +1,83 @@
+Seq-entry ::= set {
+  class pop-set ,
+  descr {
+    user {
+      type
+        str "NcbiCleanup" ,
+      data {
+        {
+          label
+            str "method" ,
+          data
+            str "SequinCleanup" } ,
+        {
+          label
+            str "version" ,
+          data
+            int 8 } ,
+        {
+          label
+            str "month" ,
+          data
+            int 8 } ,
+        {
+          label
+            str "day" ,
+          data
+            int 17 } ,
+        {
+          label
+            str "year" ,
+          data
+            int 2016 } } } } ,
+  seq-set {
+    seq {
+      id {
+        local
+          str "ex1" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex1 sp." } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 247 ,
+        seq-data
+          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
+9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } ,
+    seq {
+      id {
+        local
+          str "ex2" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "uncultured ex2 sp." } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 247 ,
+        seq-data
+          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
+9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } ,
+    seq {
+      id {
+        local
+          str "ex3" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex3" ,
+            orgname {
+               } } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 247 ,
+        seq-data
+          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
+9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } } }
