@@ -2025,9 +2025,11 @@ static const size_t srcqual_keywords_sz = sizeof(srcqual_keywords) / sizeof(srcq
 
 static string GetSrcQual(const CBioSource& bs, int qual)
 {
-    ITERATE (COrgName::TMod, it, bs.GetOrg().GetOrgname().GetMod()) {
-        if ((*it)->CanGetSubtype() && (*it)->GetSubtype() == qual) {
-            return (*it)->GetSubname();
+    if (bs.GetOrg().CanGetOrgname() && bs.GetOrg().GetOrgname().CanGetMod()) {
+        ITERATE (COrgName::TMod, it, bs.GetOrg().GetOrgname().GetMod()) {
+            if ((*it)->CanGetSubtype() && (*it)->GetSubtype() == qual) {
+                return (*it)->GetSubname();
+            }
         }
     }
     return kEmptyStr;
@@ -2054,6 +2056,7 @@ DISCREPANCY_CASE(TRINOMIAL_SHOULD_HAVE_QUALIFIER, CBioSource, eDisc | eOncaller 
                 if (NStr::CompareNocase(s, GetSrcQual(obj, srcqual_keywords[i].first))) {
                     m_Objs["[n] trinomial source[s] lack[S] corresponding qualifier"].Add(*context.NewFeatOrDescObj());
                 }
+                break;
             }
         }
     }
