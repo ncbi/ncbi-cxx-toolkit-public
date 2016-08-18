@@ -4205,6 +4205,14 @@ void CValidError_feat::ValidateImp(
     case CSeqFeatData::eSubtype_intron:
         ValidateIntron (feat);
         break;
+    case CSeqFeatData::eSubtype_repeat_region:
+        if ((!feat.IsSetComment() || NStr::IsBlank (feat.GetComment()))
+            && (!feat.IsSetQual() || feat.GetQual().empty())
+            && (!feat.IsSetDbxref() || feat.GetDbxref().empty())) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_NeedsNote,
+                    "repeat_region has no qualifiers", feat);
+        }
+        break;
     case CSeqFeatData::eSubtype_regulatory:
         {
             vector<string> valid_types = CSeqFeatData::GetRegulatoryClassList();
