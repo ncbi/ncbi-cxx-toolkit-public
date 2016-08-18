@@ -1060,7 +1060,8 @@ public:
         eInferenceValidCode_bad_accession,
         eInferenceValidCode_bad_accession_version,
         eInferenceValidCode_accession_version_not_public,
-        eInferenceValidCode_bad_accession_type
+        eInferenceValidCode_bad_accession_type,
+        eInferenceValidCode_unrecognized_database
     };
 
     static vector<string> GetAccessionsFromInferenceString (string inference, string &prefix, string &remainder, bool &same_species);
