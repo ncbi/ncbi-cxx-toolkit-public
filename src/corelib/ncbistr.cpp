@@ -2673,10 +2673,9 @@ void NStr::PtrToString(string& out_str, const void* value)
 }
 
 
-const void* NStr::StringToPtr(const CTempStringEx str)
+const void* NStr::StringToPtr(const CTempStringEx str, TConvErrFlags flags)
 {
-    int& errno_ref = errno;
-    errno_ref = 0;
+    errno = 0;
     void *ptr = NULL;
     int res;
     if ( str.HasZeroAtEnd() ) {
@@ -2685,7 +2684,11 @@ const void* NStr::StringToPtr(const CTempStringEx str)
         res = ::sscanf(string(str).c_str(), "%p", &ptr);
     }
     if (res != 1) {
-        CNcbiError::SetErrno(errno_ref = EINVAL, str);
+        if (flags & fConvErr_NoErrnoMessage) {
+            CNcbiError::SetErrno(errno = EINVAL);
+        } else {
+            CNcbiError::SetErrno(errno = EINVAL, str);
+        }
         return NULL;
     }
     return ptr;
@@ -4783,7 +4786,7 @@ string NStr::ParseEscapes(const CTempString str, EEscSeqRange mode, char user_ch
                                 "' is out of range [0-255]", pos2);
                             break;
                         case eEscSeqRange_Errno:
-                            CNcbiError::SetErrno(errno = ERANGE,str);
+                            CNcbiError::SetErrno(errno = ERANGE, str);
                             is_error = true;
                             continue;
                         case eEscSeqRange_User:

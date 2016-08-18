@@ -619,12 +619,15 @@ public:
     ///
     /// @param str
     ///   String to be converted.
+    /// @param flags
+    ///   How to convert string to value.
+    ///   Only fConvErr_NoErrnoMessage flag is supported here.
     /// @return
     ///   Pointer value corresponding to its string representation.
     ///   - If conversion succeeds, set errno to zero and return the
     ///     converted value.
     ///   - Otherwise, set errno to non-zero and return NULL.
-    static const void* StringToPtr(const CTempStringEx str);
+    static const void* StringToPtr(const CTempStringEx str, TConvErrFlags flags = 0);
 
     /// Convert character to integer.
     ///
