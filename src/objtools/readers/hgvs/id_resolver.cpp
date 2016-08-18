@@ -19,9 +19,11 @@ CSeq_id_Handle CIdResolver::GetAccessionVersion(const string& identifier) const
 {
 
     if (identifier.empty()) {
+// LCOV_EXCL_START - This error will almost certainly be picked up by the parser first
         NCBI_THROW(CVariationValidateException,
                    eIDResolveError,
                    "Empty sequence identifier string");
+// LCOV_EXCL_STOP
     }
 
     CSeq_id_Handle idh;
@@ -56,7 +58,7 @@ CSeq_id_Handle CIdResolver::GetAccessionVersion(const string& identifier) const
 bool CIdResolver::x_TryProcessGenomicLRG(const string& identifier, CSeq_id_Handle& idh) const
 { 
     if (identifier.empty()) {
-        // Throw an exception
+        return false;
     }
 
     if (!x_LooksLikeLRG(identifier)) {
@@ -68,22 +70,15 @@ bool CIdResolver::x_TryProcessGenomicLRG(const string& identifier, CSeq_id_Handl
     try {
         lrg_seqid = Ref(new CSeq_id("gnl|LRG|" + identifier));
     }
+// LCOV_EXCL_START
     catch(...) {
-        // Throw another exception here 
-        // Could not create a valid SeqId from the identifier string
         return false;
     }
+// LCOV_EXCL_START
 
-    try {
-        idh = sequence::GetId(*lrg_seqid, 
-                              m_Scope, 
-                              sequence::eGetId_ForceAcc | sequence::eGetId_ThrowOnError);
-    } 
-    catch(...) { 
-        // Throw another exception here
-        // Could not return a TextSeq-id
-        return false;
-    }
+    idh = sequence::GetId(*lrg_seqid, 
+                          m_Scope, 
+                          sequence::eGetId_ForceAcc | sequence::eGetId_ThrowOnError);
 
     return true;
 }  
@@ -121,9 +116,11 @@ bool CIdResolver::x_TryProcessLRG(const string& identifier, CSeq_id_Handle& idh)
     auto bsh = m_Scope.GetBioseqHandle(genome_idh);
 
     if (!bsh) { // Throw an exception
+// LCOV_EXCL_START - could not find test case to trigger this exception.
         NCBI_THROW(CVariationValidateException,
                    eIDResolveError,
                    "Could not find Bioseq for identifier : " + genome_id);
+// LCOV_EXCL_STOP
     }
 
 
@@ -146,17 +143,21 @@ bool CIdResolver::x_TryProcessLRG(const string& identifier, CSeq_id_Handle& idh)
                                            sequence::eGetId_ForceAcc);
                    return true;          
                 } 
+// LCOV_EXCL_START - could not find test case to trigger the exception
                 catch (...) 
                 {
                     break;
                 }
+// LCOV_EXCL_STOP 
             }
         }
     }
 
+// LCOV_EXCL_START - could not find test case to trigger this exception
     NCBI_THROW(CVariationValidateException,
                eIDResolveError,
                "Could not find SeqId for : " + identifier);
+// LCOV_EXCL_START - could not find test case to trigger this exception
 
     return false;
 }
@@ -196,16 +197,17 @@ CSeq_id_Handle CIdResolver::x_ProcessCCDS(const string& identifier)
 }
 */
 
-
 bool CIdResolver::x_LooksLikeLRG(const string& identifier) const
 {
     return m_LRGregex->IsMatch(identifier);
 }
 
+// LCOV_EXCL_START - exclude from code coverage until CCDS is supported
 bool CIdResolver::x_LooksLikeCCDS(const string& identifier) const
 {
     return  m_CCDSregex->IsMatch(identifier);
 }
+// LCOV_EXCL_STOP 
 
 
 END_SCOPE(objects)
