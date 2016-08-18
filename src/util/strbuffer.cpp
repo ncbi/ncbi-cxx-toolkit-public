@@ -792,7 +792,14 @@ struct STemporarilyClearStreamState
         }
     ~STemporarilyClearStreamState()
         {
-            m_Stream.setstate(m_State);
+            try {
+                m_Stream.setstate(m_State);
+            }
+            catch ( ios_base::failure& /*ignored*/ ) {
+                // stream may throw exception of type failure if instructed so
+                // the exception should've been already thrown
+                // we only restore the stream state
+            }
         }
 
     ios& m_Stream;
