@@ -40,13 +40,6 @@ void AssignSequenceVariant(CRef<CSequenceVariant>& variant, CRef<CVariantExpress
 }
 
 
-void AppendToLocalVariantSeq(CRef<CSimpleVariant>& var_desc, CRef<CSimpleVariantSeq>& result)
-{
-    result = CreateResultIfNull(result);
-    result->SetVariants().push_back(var_desc);
-}
-
-
 void MakeLocalVariantSeqFuzzy(CRef<CSimpleVariantSeq>& seq)
 {
     seq->SetFuzzy(true);
@@ -202,24 +195,6 @@ void AssignCountRange(const string& start, const string& stop, CRef<CCount>& res
 }
 
 
-void AssignMinCount(const string& min_count, CRef<CCount>& result)
-{
-    result = CreateResultIfNull(result);
-    const auto min_val = NStr::StringToNumeric<CCount::TVal>(min_count);
-    result->SetRange().SetStart().SetVal(min_val);
-    result->SetRange().SetStop().SetUnknown();
-}
-
-
-void AssignMaxCount(const string& max_count, CRef<CCount>& result)
-{
-    result = CreateResultIfNull(result);
-    result->SetRange().SetStart().SetUnknown();
-    const auto max_val = NStr::StringToNumeric<CCount::TVal>(max_count);
-    result->SetRange().SetStop().SetVal(max_val);
-}
-
-
 void AssignAaSSR(CRef<CAaLocation>& aa_loc, CRef<CCount>& count, CRef<CSimpleVariant>& result)
 {
     result = CreateResultIfNull(result);
@@ -304,25 +279,12 @@ void AssignFuzzyLocalVariation(CRef<CSimpleVariant>& input, CRef<CSimpleVariant>
 }
 
 
-void AssignFuzzyLocalVariantSeq(CRef<CSimpleVariantSeq>& input, CRef<CSimpleVariantSeq>& result)
-{
-    AssignFuzzy(input, result);
-}
-
-
-void AssignSingleLocalVariation(CRef<CSimpleVariant>& simple_var, CRef<CSequenceVariant>& result)
-{
-    result = CreateResultIfNull(result);
-    CRef<CVariant> variant = Ref(new CVariant());
-    variant->SetSimple(*simple_var);
-    result->SetSubvariants().push_back(variant);
-}
-
 void AssignSimpleVariant(CRef<CSimpleVariant>& simple_var, CRef<CVariant>& result)
 {
     result = CreateResultIfNull(result);
     result->SetSimple(*simple_var);
 }
+
 
 void AssignSpecialVariant(ESpecialVariant special_variant, CRef<CVariant>& result)
 {
@@ -336,41 +298,6 @@ void AssignSingleVariation(CRef<CVariant>& variant, CRef<CSequenceVariant>& resu
     result = CreateResultIfNull(result);
     result->SetSubvariants().push_back(variant);
 }
-
-
-void AssignUnknownChromosomeVariant(CRef<CSimpleVariantSeq>& variant_seq, CRef<CSequenceVariant>& result)
-{
-    result = CreateResultIfNull(result);
-//    result->SetVariants().SetUnknownChromosomeVariant(*variant_seq);
-}
-
-
-void AssignSecondChromosomeVariant(CRef<CSimpleVariantSeq>& variant_seq, CRef<CSequenceVariant>& result)
-{
-    result = CreateResultIfNull(result);
-//    result->SetVariants().SetKnownChromosomeVariant().SetChrom2_variant().SetType().SetSimple_variant_seq(*variant_seq);
-}
-
-
-void AssignSecondChromosomeSpecialVariant(const ESpecialVariant& special_variant, CRef<CSequenceVariant>& result)
-{
-    result = CreateResultIfNull(result);
-//    result->SetVariants().SetKnownChromosomeVariant().SetChrom2_variant().SetType().SetSpecial_variant(special_variant);
-}
-
-
-void AssignChromosomeVariant(CRef<CSimpleVariantSeq>& variant_seq, CRef<CSequenceVariant>& result)
-{
-    result = CreateResultIfNull(result);
-//    result->SetVariants().SetKnownChromosomeVariant().SetChrom1_variant().SetSimple_variant_seq(*variant_seq);
-}
-
-
-//void AssignSpecialVariant(const ESpecialVariant& special_variant, CRef<CSequenceVariant>& result)
-//{
-//result = CreateResultIfNull(result);
-//    result->SetVariants().SetKnownChromosomeVariant().SetChrom1_variant().SetSpecial_variant(special_variant);
-//}
 
 
 void AssignSequenceType(CRef<CSequenceVariant>& result)
@@ -481,8 +408,6 @@ void AssignNtSite(CRef<CNtSite>& nt_site, CRef<CNtLocation>& result)
 void AssignNtInterval(CRef<CNtLocation>& start, CRef<CNtLocation>& stop, CRef<CNtLocation>& result)
 {
     result = CreateResultIfNull(result);
-    // TODO - Need to check that the input arguments 
-    // are nucleotide sites
     if (start->IsSite()) {
         result->SetInt().SetStart().SetSite(start->SetSite()); 
     } 
@@ -497,17 +422,6 @@ void AssignNtInterval(CRef<CNtLocation>& start, CRef<CNtLocation>& stop, CRef<CN
     }
 }
 
-void AssignNtSiteLocation(CRef<CNtSite>& nt_site, CRef<CNtLocation>& result)
-{
-    result = CreateResultIfNull(result);
-    result->SetSite(*nt_site);
-}
-
-void AssignNtIntervalLocation(CRef<CNtInterval>& nt_int, CRef<CNtLocation>& result)
-{
-    result = CreateResultIfNull(result);
-    result->SetInt(*nt_int);
-}
 
 
 void s_SetSequenceInfo(CRef<CNtLocation>& nt_loc, const string& identifier, const EVariantSeqType& seq_type)
@@ -649,13 +563,6 @@ void AssignNtConversion(CRef<CNtLocation>& nt_loc, CRef<CNtLocation>& origin, CR
     result->SetType().SetConv().SetOrigin(origin.GetNCObject());
 }
 
-
-void AssignNtConversion(CRef<CNtLocation>& nt_loc, const string& seq_id, CRef<CNtLocation>& origin, CRef<CSimpleVariant>& result)
-{
-    result = CreateResultIfNull(result);
-    result->SetType().SetConv().SetLoc(nt_loc.GetNCObject());
-    result->SetType().SetConv().SetOrigin(origin.GetNCObject());
-}
 
 
 void AssignNtInsertion(CRef<CNtLocation>& nt_loc, const CInsertion::TSeqinfo::TRaw_seq& raw_seq, CRef<CSimpleVariant>& result)

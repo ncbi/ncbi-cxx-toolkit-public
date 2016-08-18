@@ -84,6 +84,7 @@ void AssignSingleVariation(CRef<CVariant>& variant, CRef<CSequenceVariant>& resu
 
 void AssignSingleLocalVariation(CRef<CSimpleVariant>& local_var, CRef<CSequenceVariant>& result);
 
+/*
 void AssignUnknownChromosomeVariant(CRef<CSimpleVariantSeq>& variant_seq, CRef<CSequenceVariant>& result);
 
 void AssignSecondChromosomeVariant(CRef<CSimpleVariantSeq>& variant_seq, CRef<CSequenceVariant>& result);
@@ -91,25 +92,16 @@ void AssignSecondChromosomeVariant(CRef<CSimpleVariantSeq>& variant_seq, CRef<CS
 void AssignSecondChromosomeSpecialVariant(const ESpecialVariant& special_variant, CRef<CSequenceVariant>& result);
 
 void AssignChromosomeVariant(CRef<CSimpleVariantSeq>& variant_seq, CRef<CSequenceVariant>& result);
+*/
 
-//void AssignSpecialVariant(const ESpecialVariant& special_variant, CRef<CSequenceVariant>& result);
 
 void AssignSequenceType(CRef<CSequenceVariant>& result);
 
-//void AssignIntronNtSite(CRef<CNtSite>& intron_site, CRef<CNtSite>& result);
 
 void AssignFuzzySimpleNtSite(const string& site_index, CRef<CNtSite>& result);
 
 void AssignSimpleNtSite(const string& site_index, CRef<CNtSite>& result);
-/*
-void Assign5primeUTRCodingSite(const string& site_index, CRef<CNtSite>& result);
 
-void Assign5primeUTRIntronSite(CRef<CHgvsIntronSite>& site, CRef<CNtSite>& result);
-
-void Assign3primeUTRCodingSite(const string& site_index, CRef<CNtSite>& result);
-
-void Assign3primeUTRIntronSite(CRef<CHgvsIntronSite>& site, CRef<CNtSite>& result);
-*/
 void Assign3primeUTRSite(CRef<CNtSite>& nt_site, CRef<CNtSite>& result);
 
 void Assign5primeUTRSite(CRef<CNtSite>& nt_site, CRef<CNtSite>& result);
@@ -143,8 +135,6 @@ void AssignNtInv(CRef<CNtLocation>& nt_int, const CInversion::TRaw_seq& raw_seq,
 void AssignNtInvSize(CRef<CNtLocation>& nt_int, string size, CRef<CSimpleVariant>& result);
 
 void AssignNtConversion(CRef<CNtLocation>& src_int, CRef<CNtLocation>& dest_int, CRef<CSimpleVariant>& result);
-
-void AssignNtConversion(CRef<CNtLocation>& src_int, const string& seq_id, CRef<CNtLocation>& dest_int, CRef<CSimpleVariant>& result);
 
 void AssignNtInsertion(CRef<CNtLocation>& nt_int, const CInsertion::TSeqinfo::TRaw_seq& raw_seq, CRef<CSimpleVariant>& result);
 
