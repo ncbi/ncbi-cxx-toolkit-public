@@ -205,6 +205,7 @@ const string kInferenceMessage[] = {
   "bad inference accession version",
   "accession.version not public",
   "bad accession type",
+  "unrecognized database",
 };
 
 
@@ -4885,6 +4886,8 @@ CValidError_feat::EInferenceValidCode CValidError_feat::ValidateInferenceAccessi
             }
         } else if (is_blast && is_similar_to) {
             rsult = eInferenceValidCode_bad_accession_type;
+        } else if (! is_blast) {
+            rsult = eInferenceValidCode_unrecognized_database;
         }
         if (NStr::Find (remainder, " ") != string::npos) {
             rsult = eInferenceValidCode_spaces;
