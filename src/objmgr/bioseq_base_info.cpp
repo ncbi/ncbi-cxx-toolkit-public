@@ -185,6 +185,7 @@ void CBioseq_Base_Info::x_AddDescrChunkId(const TDescTypeMask& types,
 {
     m_DescrChunks.push_back(id);
     m_DescrTypeMasks.push_back(types);
+    x_SetDescr();
     x_SetNeedUpdate(fNeedUpdate_descr);
 }
 
@@ -300,15 +301,7 @@ void CBioseq_Base_Info::AddSeq_descr(const TDescr& v)
 
 const CSeq_descr::Tdata& CBioseq_Base_Info::x_GetDescList(void) const
 {
-    try {
-        return x_GetDescr().Get();
-    }
-    catch ( exception& ) {
-        if ( !x_IsSetDescr() && IsSetDescr() ) {
-            return const_cast<CBioseq_Base_Info*>(this)->x_SetDescr().Get();
-        }
-        throw;
-    }
+    return x_GetDescr().Get();
 }
 
 
@@ -495,15 +488,10 @@ CBioseq_Base_Info::TDescTypeMask
 CBioseq_Base_Info::x_GetExistingDescrMask(void) const
 {
     TDescTypeMask mask = 0;
-    if ( x_CanGetDescr() ) {
-        try {
-            // collect already set descr bits
-            for ( auto& i : x_GetDescr().Get() ) {
-                mask |= 1 << i->Which();
-            }
-        }
-        catch ( exception& ) {
-            // ignore
+    if ( x_IsSetDescr() ) {
+        // collect already set descr bits
+        for ( auto& i : x_GetDescr().Get() ) {
+            mask |= 1 << i->Which();
         }
     }
     // add descr mask from chunks
