@@ -10,6 +10,8 @@ BuildArch:   i686 x86_64
 BuildRoot:   /var/tmp/%{name}-buildroot
 Prefix:      /usr
 
+Requires:    ncbi-blast
+
 %description
 NCBI Magic-BLAST is a specialized variant of BLAST designed for mapping
 next-generation RNA or DNA sequencing runs against a genome or transcriptome.
@@ -25,7 +27,6 @@ cd c++/*/build
 %install
 %__mkdir_p $RPM_BUILD_ROOT/%_bindir
 %__install -m755 c++/*/bin/magicblast $RPM_BUILD_ROOT/%_bindir
-%__install -m755 c++/*/bin/makeblastdb $RPM_BUILD_ROOT/%_bindir
 
 %clean
 rm -rf $RPM_BUILD_ROOT
