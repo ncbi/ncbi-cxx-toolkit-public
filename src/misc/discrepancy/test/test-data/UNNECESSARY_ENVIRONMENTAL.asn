@@ -1,0 +1,416 @@
+Seq-entry ::= set {
+  class pop-set ,
+  seq-set {
+    seq {
+      id {
+        local
+          str "ex1" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex1" ,
+            orgname {
+               } } ,
+          subtype {
+            {
+              subtype environmental-sample ,
+              name "" } } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 247 ,
+        seq-data
+          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
+9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } ,
+    seq {
+      id {
+        local
+          str "ex2" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "invertebrate environmental sample" } ,
+          subtype {
+            {
+              subtype environmental-sample ,
+              name "" } } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 247 ,
+        seq-data
+          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
+9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } ,
+    seq {
+      id {
+        local
+          str "ex3" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex3" } ,
+          subtype {
+            {
+              subtype environmental-sample ,
+              name "" } ,
+            {
+              subtype metagenomic ,
+              name "" } } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 247 ,
+        seq-data
+          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
+9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } ,
+    seq {
+      id {
+        local
+          str "ex4" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "uncultured ex sp." } ,
+          subtype {
+            {
+              subtype environmental-sample ,
+              name "" } } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 247 ,
+        seq-data
+          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
+9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } ,
+    seq {
+      id {
+        local
+          str "ex5" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex enrichment culture" } ,
+          subtype {
+            {
+              subtype environmental-sample ,
+              name "" } } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 247 ,
+        seq-data
+          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
+9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } ,
+    seq {
+      id {
+        local
+          str "ex6" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex metagenome" } ,
+          subtype {
+            {
+              subtype environmental-sample ,
+              name "" } } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 247 ,
+        seq-data
+          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
+9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } ,
+    seq {
+      id {
+        local
+          str "ex7" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "unidentified ex" } ,
+          subtype {
+            {
+              subtype environmental-sample ,
+              name "" } } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 247 ,
+        seq-data
+          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
+9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } ,
+    seq {
+      id {
+        local
+          str "ex8" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex8" } ,
+          subtype {
+            {
+              subtype environmental-sample ,
+              name "" } ,
+            {
+              subtype other ,
+              name "amplified with species-specific primers" } } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 247 ,
+        seq-data
+          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
+9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } ,
+    seq {
+      id {
+        local
+          str "ex9" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex9" ,
+            orgname {
+              mod {
+                {
+                  subtype other ,
+                  subname "amplified with species-specific primers" } } } } ,
+          subtype {
+            {
+              subtype environmental-sample ,
+              name "" } } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 247 ,
+        seq-data
+          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
+9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } ,
+    seq {
+      id {
+        local
+          str "ex10" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex10" } ,
+          subtype {
+            {
+              subtype environmental-sample ,
+              name "" } } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 247 ,
+        seq-data
+          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
+9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } ,
+    seq {
+      id {
+        local
+          str "ex11" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex11" } ,
+          subtype {
+            {
+              subtype environmental-sample ,
+              name "" } } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 247 ,
+        seq-data
+          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
+9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } ,
+    seq {
+      id {
+        local
+          str "ex12" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex12" } ,
+          subtype {
+            {
+              subtype environmental-sample ,
+              name "" } } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 247 ,
+        seq-data
+          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
+9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } ,
+    seq {
+      id {
+        local
+          str "ex13" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex13" } ,
+          subtype {
+            {
+              subtype environmental-sample ,
+              name "" } } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 247 ,
+        seq-data
+          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
+9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } ,
+    seq {
+      id {
+        local
+          str "ex14" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex14" } ,
+          subtype {
+            {
+              subtype environmental-sample ,
+              name "" } } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 247 ,
+        seq-data
+          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
+9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } ,
+    seq {
+      id {
+        local
+          str "ex15" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex15" } ,
+          subtype {
+            {
+              subtype environmental-sample ,
+              name "" } } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 247 ,
+        seq-data
+          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
+9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } ,
+    seq {
+      id {
+        local
+          str "ex16" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex16" } ,
+          subtype {
+            {
+              subtype environmental-sample ,
+              name "" } } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 247 ,
+        seq-data
+          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
+9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } ,
+    seq {
+      id {
+        local
+          str "ex17" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex17" } ,
+          subtype {
+            {
+              subtype environmental-sample ,
+              name "" } } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 247 ,
+        seq-data
+          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
+9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } ,
+    seq {
+      id {
+        local
+          str "ex18" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex18" } ,
+          subtype {
+            {
+              subtype environmental-sample ,
+              name "" } } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 247 ,
+        seq-data
+          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
+9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } ,
+    seq {
+      id {
+        local
+          str "ex19" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex19" } ,
+          subtype {
+            {
+              subtype environmental-sample ,
+              name "" } } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 247 ,
+        seq-data
+          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
+9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } ,
+    seq {
+      id {
+        local
+          str "ex20" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex20" } ,
+          subtype {
+            {
+              subtype environmental-sample ,
+              name "" } } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 247 ,
+        seq-data
+          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
+9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } } }
