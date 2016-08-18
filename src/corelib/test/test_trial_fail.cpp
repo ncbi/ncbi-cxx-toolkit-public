@@ -7,6 +7,9 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_safe_static.hpp>
+#ifdef NCBI_OS_MSWIN
+#   include <ncbi_random_macro.h>
+#endif
 
 #if !(defined(NCBI_STRICT_CTYPE_ARGS) && (defined(isalpha) || defined(NCBI_STRICT_CTYPE_ARGS_ACTIVE)))
 
@@ -68,18 +71,27 @@ int CTestApplication::Run(void)
     _ASSERT(toupper('A') == 'A');
     _ASSERT(std::toupper('A') == 'A');
     _ASSERT(::toupper('A') == 'A');
-#if 1 // should fail
-#ifdef NCBI_INT8_GI
+#if (!defined NCBI_OS_MSWIN || NCBI_RANDOM_VALUE_1 > 0x33333333) && defined NCBI_INT8_GI
     // test only if CStrictGi is on
     TGi gi;
     //gi = 2;
     const TIntId& id = gi;
     gi = GI_CONST(id);
     NcbiCout << "GI = " << gi << NcbiEndl;
-# else
-    _ASSERT(toupper('A'=='A'));
-# endif
 #endif
+
+#if !defined NCBI_OS_MSWIN || NCBI_RANDOM_VALUE_2 > 0x33333333
+    _ASSERT(toupper('A' == 'A'));
+#endif
+
+#if !defined NCBI_OS_MSWIN || NCBI_RANDOM_VALUE_3 > 0x33333333
+    toupper('A' == 'A');
+#endif
+
+#if !defined NCBI_OS_MSWIN || NCBI_RANDOM_VALUE_4 > 0x33333333
+    toupper(1.);
+#endif
+
     NcbiCout << "Passed" << NcbiEndl;
     return 1;
 }
