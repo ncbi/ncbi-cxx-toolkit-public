@@ -153,6 +153,7 @@ void CFlatFileGenerator::Generate
         }
     }
 
+    m_Ctx->SetSGS(false);
     CConstRef<CSeq_entry> topent = entry.GetTopLevelEntry().GetCompleteSeq_entry();
     if (topent && topent->IsSet()) {
         const CBioseq_set& topset = topent->GetSet();
