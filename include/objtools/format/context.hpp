@@ -236,6 +236,7 @@ public:
     const SAnnotSelector* GetAnnotSelector(void) const;
     SAnnotSelector& SetAnnotSelector(void);
     const CSeq_loc* GetMasterLocation(void) const;
+    const bool GetSGS(void) const;
     bool IsGenbankFormat(void) const;
 
     bool HasOperon(void) const;
@@ -443,6 +444,9 @@ public:
     feature::CFeatTree* GetFeatTree(void) { return m_FeatTree; }
     void SetFeatTree(feature::CFeatTree* tree) { m_FeatTree.Reset(tree); }
     
+    const bool GetSGS(void) const { return m_SmallGenomeSet; }
+    void SetSGS(const bool sgs) { m_SmallGenomeSet = sgs; }
+
     void AddSection(TSection& section) { m_Sections.push_back(section); }
 
     void Reset(void);
@@ -456,6 +460,7 @@ private:
     auto_ptr<SAnnotSelector>    m_Selector;
     CConstRef<CSeq_loc>         m_Loc;
     CRef<feature::CFeatTree>    m_FeatTree;
+    bool                        m_SmallGenomeSet;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -675,6 +680,12 @@ const CSeq_loc* CBioseqContext::GetMasterLocation(void) const
 
 
 inline
+const bool CBioseqContext::GetSGS(void) const
+{
+    return m_FFCtx.GetSGS();
+}
+
+inline
 CMolInfo::TTech CBioseqContext::GetTech(void) const
 {
     return m_Molinfo ? m_Molinfo->GetTech() : CMolInfo::eTech_unknown;
@@ -749,6 +760,7 @@ void CFlatFileContext::Reset(void)
     m_Submit.Reset();
     m_Selector.reset();
     m_Loc.Reset();
+    m_SmallGenomeSet = false;
 }
 
 
