@@ -1060,8 +1060,8 @@ TGi CID2WGSProcessor_Impl::GetGi(SWGSSeqInfo& seq)
         return ZERO_GI;
     }
     if ( seq.IsProtein() ) {
-        // proteins have no GIs
-        return ZERO_GI;
+        CWGSProteinIterator it = GetProteinIterator(seq);
+        return it.HasGi()? it.GetGi(): ZERO_GI;
     }
     // master
     return ZERO_GI;
