@@ -123,7 +123,6 @@ static const SImportEntry kImportTable[] = {
     { "prim_transcript",     CSeqFeatData::eSubtype_prim_transcript },
     { "primer_bind",         CSeqFeatData::eSubtype_primer_bind },
     { "promoter",            CSeqFeatData::eSubtype_promoter },
-    { "propeptide",          CSeqFeatData::eSubtype_propeptide },
     { "protein_bind",        CSeqFeatData::eSubtype_protein_bind },
     { "regulatory",          CSeqFeatData::eSubtype_regulatory },
     { "rep_origin",          CSeqFeatData::eSubtype_rep_origin },
