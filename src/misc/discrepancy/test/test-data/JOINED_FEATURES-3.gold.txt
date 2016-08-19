@@ -6,188 +6,188 @@ JOINED_FEATURES: 184 features have joined locations.
 Detailed Report
 
 JOINED_FEATURES: 184 features have joined locations.
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L2	[gb|KT168383|:c82137-81745, c81084-80653]	Cegl_g63
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L2	[gb|KT168383|:132503-132895, 133556-133987]	Cegl_g86
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L2	[gb|KT168384|:c82371-81979, c81318-80887]	Ermi_g63
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L2	[gb|KT168384|:132969-133361, 134022-134453]	Ermi_g86
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L2	[gb|KT168385|:c81854-81462, c80801-80370]	Erte_g63
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L2	[gb|KT168385|:132384-132776, 133437-133868]	Erte_g86
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L2	[gb|KT168386|:c81366-80974, c80313-79882]	Bocu_g63
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L2	[gb|KT168386|:131809-132201, 132862-133293]	Bocu_g86
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L2	[gb|KT168387|:c82289-81897, c81236-80805]	Hice_g63
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L2	[gb|KT168387|:132774-133166, 133827-134258]	Hice_g86
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L2	[gb|KT168388|:c82974-82582, c81921-81490]	Sppe_g63
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L2	[gb|KT168388|:133566-133958, 134619-135050]	Sppe_g86
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L2	[gb|KT168389|:c83270-82878, c82217-81786]	Sphe_g63
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L2	[gb|KT168389|:133041-133433, 134094-134525]	Sphe_g86
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L2	[gb|KT168390|:c83403-83011, c82350-81919]	Zoma_g63
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L2	[gb|KT168390|:133794-134186, 134847-135278]	Zoma_g86
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:Gene	rps12	[gb|KT168383|:c67347-67234, c89337-88537]	Cegl_g44
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S12	[gb|KT168383|:c67347-67234, c89337-89106, c88565-88537]	Cegl_g44
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:Gene	rps12	[gb|KT168383|:c67347-67234, 125303-126103]	Cegl_g82
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S12	[gb|KT168383|:c67347-67234, 125303-125534, 126075-126103]	Cegl_g82
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:Gene	rps12	[gb|KT168384|:c67301-67188, c89604-88804]	Ermi_g44
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S12	[gb|KT168384|:c67301-67188, c89604-89373, c88832-88804]	Ermi_g44
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:Gene	rps12	[gb|KT168384|:c67301-67188, 125736-126536]	Ermi_g82
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S12	[gb|KT168384|:c67301-67188, 125736-125967, 126508-126536]	Ermi_g82
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:Gene	rps12	[gb|KT168385|:c66823-66710, c89091-88291]	Erte_g44
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S12	[gb|KT168385|:c66823-66710, c89091-88860, c88319-88291]	Erte_g44
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:Gene	rps12	[gb|KT168385|:c66823-66710, 125147-125947]	Erte_g82
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S12	[gb|KT168385|:c66823-66710, 125147-125378, 125919-125947]	Erte_g82
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:Gene	rps12	[gb|KT168386|:c66309-66196, c88535-87735]	Bocu_g44
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S12	[gb|KT168386|:c66309-66196, c88535-88304, c87763-87735]	Bocu_g44
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:Gene	rps12	[gb|KT168386|:c66309-66196, c125440-124640]	Bocu_g82
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S12	[gb|KT168386|:c66309-66196, 124640-124871, 125412-125440]	
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:Gene	rps12	[gb|KT168387|:c67316-67203, c89525-88725]	Hice_g44
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S12	[gb|KT168387|:c67316-67203, c89525-89294, c88753-88725]	Hice_g44
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:Gene	rps12	[gb|KT168387|:c67316-67203, 125538-126338]	Hice_g82
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S12	[gb|KT168387|:c67316-67203, 125538-125769, 126310-126338]	Hice_g82
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:Gene	rps12	[gb|KT168388|:c67941-67828, c90201-89401]	Sppe_g44
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S12	[gb|KT168388|:c67941-67828, c90201-89970, c89429-89401]	Sppe_g44
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:Gene	rps12	[gb|KT168388|:c67941-67828, 126339-127139]	Sppe_g82
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S12	[gb|KT168388|:c67941-67828, 126339-126570, 127111-127139]	Sppe_g82
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:Gene	rps12	[gb|KT168389|:c68235-68122, c90107-89306]	Sphe_g44
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S12	[gb|KT168389|:c68235-68122, c90107-89876, c89334-89306]	Sphe_g44
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:Gene	rps12	[gb|KT168389|:c68235-68122, 126204-127005]	Sphe_g82
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S12	[gb|KT168389|:c68235-68122, 126204-126435, 126977-127005]	Sphe_g82
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:Gene	rps12	[gb|KT168390|:c68327-68214, c90633-89833]	Zoma_g44
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S12	[gb|KT168390|:c68327-68214, c90633-90402, c89861-89833]	Zoma_g44
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:Gene	rps12	[gb|KT168390|:c68327-68214, 126564-127364]	Zoma_g82
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S12	[gb|KT168390|:c68327-68214, 126564-126795, 127336-127364]	Zoma_g82
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Lys	[gb|KT168383|:c3945-3908, c1424-1392]	Cegl_t02
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S16	[gb|KT168383|:c5602-5563, c4718-4501]	Cegl_g03
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Gly	[gb|KT168383|:c13796-13774, c13090-13043]	Cegl_t09
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ATP synthase CF0 subunit I	[gb|KT168383|:33833-33991, 34804-35211]	Cegl_g17
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	hypothetical chloroplast RF34	[gb|KT168383|:c44898-44773, c44060-43833, c43098-42940]	Cegl_g22
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Leu	[gb|KT168383|:47178-47212, 47755-47804]	Cegl_t20
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Val	[gb|KT168383|:c51596-51558, c50971-50925]	Cegl_t24
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	cytochrome b6	[gb|KT168383|:71072-71077, 71851-72498]	Cegl_g51
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	cytochrome b6/f complex subunit IV	[gb|KT168383|:72681-72688, 73415-73889]	Cegl_g52
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L16	[gb|KT168383|:c78706-78698, c77847-77446]	
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 2	[gb|KT168383|:c87708-86933, c86220-85464]	Cegl_g65
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ile	[gb|KT168383|:93160-93201, 93912-93946]	Cegl_t32
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ala	[gb|KT168383|:94011-94048, 94859-94893]	Cegl_t34
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 1	[gb|KT168383|:c112374-111826, c110793-110254]	Cegl_g77
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ala	[gb|KT168383|:c120628-120592, c119781-119747]	Cegl_t41
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ile	[gb|KT168383|:c121480-121439, c120728-120694]	Cegl_t42
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 2	[gb|KT168383|:126932-127707, 128420-129176]	Cegl_g84
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Lys	[gb|KT168384|:c3926-3889, c1400-1368]	Ermi_t02
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S16	[gb|KT168384|:c5525-5486, c4654-4437]	Ermi_g03
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Gly	[gb|KT168384|:c13570-13548, c12863-12816]	Ermi_t09
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ATP synthase CF0 subunit I	[gb|KT168384|:33126-33284, 34107-34514]	Ermi_g17
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	hypothetical chloroplast RF34	[gb|KT168384|:c44307-44182, c43434-43207, c42477-42319]	Ermi_g22
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Leu	[gb|KT168384|:47018-47052, 47595-47644]	Ermi_t20
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Val	[gb|KT168384|:c51896-51858, c51272-51226]	Ermi_t24
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	cytochrome b6	[gb|KT168384|:71036-71041, 71830-72477]	Ermi_g51
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	cytochrome b6/f complex subunit IV	[gb|KT168384|:72660-72667, 73407-73881]	Ermi_g52
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L16	[gb|KT168384|:c78944-78936, c77838-77437]	Ermi_g59
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 2	[gb|KT168384|:c87984-87209, c86496-85740]	Ermi_g65
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ile	[gb|KT168384|:93475-93516, 94222-94256]	Ermi_t32
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ala	[gb|KT168384|:94322-94359, 95170-95204]	Ermi_t34
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 1	[gb|KT168384|:c112779-112231, c111201-110662]	Ermi_g77
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ala	[gb|KT168384|:c121018-120981, c120170-120136]	Ermi_t41
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ile	[gb|KT168384|:c121865-121824, c121118-121084]	Ermi_t42
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 2	[gb|KT168384|:127356-128131, 128844-129600]	Ermi_g84
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Lys	[gb|KT168385|:c3930-3893, c1405-1373]	Erte_t02
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S16	[gb|KT168385|:c5530-5491, c4659-4448]	Erte_g03
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Gly	[gb|KT168385|:c13581-13559, c12877-12830]	Erte_t09
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ATP synthase CF0 subunit I	[gb|KT168385|:32879-33037, 33865-34272]	Erte_g17
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	hypothetical chloroplast RF34	[gb|KT168385|:c44060-43935, c43197-42970, c42244-42086]	Erte_g22
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Leu	[gb|KT168385|:46377-46411, 46954-47003]	Erte_t20
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Val	[gb|KT168385|:c51228-51190, c50604-50558]	Erte_t24
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	cytochrome b6	[gb|KT168385|:70558-70563, 71317-71964]	Erte_g51
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	cytochrome b6/f complex subunit IV	[gb|KT168385|:72150-72157, 72897-73371]	Erte_g52
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L16	[gb|KT168385|:c78429-78421, c77325-76924]	Erte_g59
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 2	[gb|KT168385|:c87471-86696, c85983-85227]	Erte_g65
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ile	[gb|KT168385|:92924-92965, 93671-93705]	Erte_t32
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ala	[gb|KT168385|:93771-93808, 94619-94653]	Erte_t34
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 1	[gb|KT168385|:c112230-111682, c110658-110119]	Erte_g77
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ala	[gb|KT168385|:c120467-120430, c119619-119585]	Erte_t41
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ile	[gb|KT168385|:c121314-121273, c120567-120533]	Erte_t42
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 2	[gb|KT168385|:126767-127542, 128255-129011]	Erte_g84
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Lys	[gb|KT168386|:c3911-3874, c1418-1386]	Bocu_t02
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S16	[gb|KT168386|:c5548-5509, c4674-4460]	Bocu_g03
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Gly	[gb|KT168386|:c13574-13552, c12870-12823]	Bocu_t09
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ATP synthase CF0 subunit I	[gb|KT168386|:32708-32866, 33685-34092]	Bocu_g17
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	hypothetical chloroplast RF34	[gb|KT168386|:c43875-43750, c42995-42768, c42055-41897]	Bocu_g22
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Leu	[gb|KT168386|:46140-46174, 46740-46789]	Bocu_t20
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Val	[gb|KT168386|:c50706-50668, c50079-50033]	Bocu_t24
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	cytochrome b6	[gb|KT168386|:70085-70090, 70879-71526]	Bocu_g51
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	cytochrome b6/f complex subunit IV	[gb|KT168386|:71726-71733, 72478-72952]	Bocu_g52
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L16	[gb|KT168386|:c77957-77949, c76877-76476]	Bocu_g59
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 2	[gb|KT168386|:c86907-86132, c85419-84663]	Bocu_g65
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ile	[gb|KT168386|:92375-92416, 93131-93165]	Bocu_t32
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ala	[gb|KT168386|:93231-93268, 94090-94124]	Bocu_t34
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 1	[gb|KT168386|:c111711-111163, c110179-109640]	Bocu_g77
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ala	[gb|KT168386|:c119944-119907, c119085-119051]	Bocu_t41
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ile	[gb|KT168386|:c120800-120759, c120044-120010]	Bocu_t42
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 2	[gb|KT168386|:126268-127043, 127756-128512]	Bocu_g84
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Lys	[gb|KT168387|:c3950-3913, c1415-1383]	Hice_t02
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S16	[gb|KT168387|:c5578-5539, c4717-4500]	Hice_g03
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Gly	[gb|KT168387|:c13610-13588, c12906-12859]	Hice_t09
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ATP synthase CF0 subunit I	[gb|KT168387|:33346-33504, 34328-34735]	Hice_g17
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	hypothetical chloroplast RF34	[gb|KT168387|:c44516-44391, c43657-43430, c42688-42530]	Hice_g22
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Leu	[gb|KT168387|:46918-46952, 47506-47555]	Hice_t20
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Val	[gb|KT168387|:c51769-51731, c51142-51096]	Hice_t24
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	cytochrome b6	[gb|KT168387|:71015-71020, 71807-72454]	Hice_g51
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	cytochrome b6/f complex subunit IV	[gb|KT168387|:72654-72661, 73417-73891]	Hice_g52
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L16	[gb|KT168387|:c78854-78846, c77824-77423]	Hice_g59
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 2	[gb|KT168387|:c87896-87121, c86408-85652]	Hice_g65
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ile	[gb|KT168387|:93388-93429, 94140-94174]	Hice_t32
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ala	[gb|KT168387|:94240-94277, 95091-95125]	Hice_t34
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 1	[gb|KT168387|:c112560-112012, c110994-110455]	Hice_g77
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ala	[gb|KT168387|:c120823-120786, c119972-119938]	Hice_t41
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ile	[gb|KT168387|:c121675-121634, c120923-120889]	Hice_t42
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 2	[gb|KT168387|:127167-127942, 128655-129411]	Hice_g84
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Lys	[gb|KT168388|:c3944-3907, c1415-1383]	Sppe_t02
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S16	[gb|KT168388|:c5575-5536, c4708-4491]	Sppe_g03
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Gly	[gb|KT168388|:c13960-13938, c13254-13207]	Sppe_t09
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ATP synthase CF0 subunit I	[gb|KT168388|:33512-33670, 34493-34900]	Sppe_g17
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	hypothetical chloroplast RF34	[gb|KT168388|:c44608-44483, c43740-43513, c42793-42635]	Sppe_g22
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Leu	[gb|KT168388|:47353-47387, 47942-47991]	Sppe_t20
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Val	[gb|KT168388|:c52123-52085, c51498-51452]	Sppe_t24
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	cytochrome b6	[gb|KT168388|:71682-71687, 72464-73111]	Sppe_g51
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	cytochrome b6/f complex subunit IV	[gb|KT168388|:73287-73294, 74042-74516]	Sppe_g52
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L16	[gb|KT168388|:c79541-79533, c78466-78065]	Sppe_g59
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 2	[gb|KT168388|:c88573-87798, c87085-86329]	Sppe_g65
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ile	[gb|KT168388|:93986-94027, 94728-94762]	Sppe_t32
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ala	[gb|KT168388|:94828-94865, 95676-95710]	Sppe_t34
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 1	[gb|KT168388|:c113448-112900, c111864-111325]	Sppe_g77
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ala	[gb|KT168388|:c121712-121675, c120864-120830]	Sppe_t41
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ile	[gb|KT168388|:c122554-122513, c121812-121778]	Sppe_t42
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 2	[gb|KT168388|:127967-128742, 129455-130211]	Sppe_g84
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Lys	[gb|KT168389|:c3943-3906, c1409-1377]	Sphe_t02
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S16	[gb|KT168389|:c5583-5544, c4712-4495]	Sphe_g03
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Gly	[gb|KT168389|:c13935-13913, c13229-13182]	Sphe_t09
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ATP synthase CF0 subunit I	[gb|KT168389|:33856-34014, 34838-35245]	Sphe_g17
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	hypothetical chloroplast RF34	[gb|KT168389|:c44945-44820, c44074-43847, c43121-42963]	Sphe_g22
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Leu	[gb|KT168389|:47674-47708, 48265-48314]	Sphe_t20
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Val	[gb|KT168389|:c52526-52488, c51896-51850]	Sphe_t24
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	cytochrome b6	[gb|KT168389|:72000-72005, 72790-73437]	Sphe_g51
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	cytochrome b6/f complex subunit IV	[gb|KT168389|:73620-73627, 74378-74852]	Sphe_g52
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L16	[gb|KT168389|:c79835-79827, c78794-78393]	Sphe_g59
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 2	[gb|KT168389|:c88478-87703, c86990-86234]	Sphe_g65
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ile	[gb|KT168389|:93892-93933, 94634-94668]	Sphe_t32
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ala	[gb|KT168389|:94734-94771, 95582-95616]	Sphe_t34
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 1	[gb|KT168389|:c113354-112806, c111771-111232]	Sphe_g77
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ala	[gb|KT168389|:c121577-121540, c120729-120695]	Sphe_t41
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ile	[gb|KT168389|:c122419-122378, c121677-121643]	Sphe_t42
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 2	[gb|KT168389|:127833-128608, 129321-130077]	Sphe_g84
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Lys	[gb|KT168390|:c3935-3898, c1410-1378]	Zoma_t02
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S16	[gb|KT168390|:c5565-5526, c4686-4469]	Zoma_g03
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Gly	[gb|KT168390|:c13878-13856, c13172-13125]	Zoma_t09
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ATP synthase CF0 subunit I	[gb|KT168390|:33913-34071, 34899-35306]	Zoma_g17
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	hypothetical chloroplast RF34	[gb|KT168390|:c45021-44896, c44154-43927, c43197-43039]	Zoma_g22
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Leu	[gb|KT168390|:47748-47782, 48337-48386]	Zoma_t20
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Val	[gb|KT168390|:c52641-52603, c52016-51970]	Zoma_t24
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	cytochrome b6	[gb|KT168390|:72077-72082, 72860-73507]	Zoma_g51
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	cytochrome b6/f complex subunit IV	[gb|KT168390|:73690-73697, 74450-74924]	Zoma_g52
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L16	[gb|KT168390|:c79955-79947, c78870-78469]	Zoma_g59
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 2	[gb|KT168390|:c89004-88229, c87516-86760]	Zoma_g65
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ile	[gb|KT168390|:94424-94465, 95166-95200]	Zoma_t32
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ala	[gb|KT168390|:95266-95303, 96114-96148]	Zoma_t34
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 1	[gb|KT168390|:c113705-113157, c112138-111599]	Zoma_g77
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ala	[gb|KT168390|:c121931-121894, c121083-121049]	Zoma_t41
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ile	[gb|KT168390|:c122773-122732, c122031-121997]	Zoma_t42
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 2	[gb|KT168390|:128193-128968, 129681-130437]	Zoma_g84
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L2	[gb|KT168383|:c82137-81745, c81084-80653]	Cegl_g63
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L2	[gb|KT168383|:132503-132895, 133556-133987]	Cegl_g86
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L2	[gb|KT168384|:c82371-81979, c81318-80887]	Ermi_g63
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L2	[gb|KT168384|:132969-133361, 134022-134453]	Ermi_g86
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L2	[gb|KT168385|:c81854-81462, c80801-80370]	Erte_g63
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L2	[gb|KT168385|:132384-132776, 133437-133868]	Erte_g86
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L2	[gb|KT168386|:c81366-80974, c80313-79882]	Bocu_g63
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L2	[gb|KT168386|:131809-132201, 132862-133293]	Bocu_g86
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L2	[gb|KT168387|:c82289-81897, c81236-80805]	Hice_g63
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L2	[gb|KT168387|:132774-133166, 133827-134258]	Hice_g86
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L2	[gb|KT168388|:c82974-82582, c81921-81490]	Sppe_g63
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L2	[gb|KT168388|:133566-133958, 134619-135050]	Sppe_g86
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L2	[gb|KT168389|:c83270-82878, c82217-81786]	Sphe_g63
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L2	[gb|KT168389|:133041-133433, 134094-134525]	Sphe_g86
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L2	[gb|KT168390|:c83403-83011, c82350-81919]	Zoma_g63
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L2	[gb|KT168390|:133794-134186, 134847-135278]	Zoma_g86
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:Gene	rps12	[gb|KT168383|:c67347-67234, c89337-88537]	Cegl_g44
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S12	[gb|KT168383|:c67347-67234, c89337-89106, c88565-88537]	Cegl_g44
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:Gene	rps12	[gb|KT168383|:c67347-67234, 125303-126103]	Cegl_g82
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S12	[gb|KT168383|:c67347-67234, 125303-125534, 126075-126103]	Cegl_g82
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:Gene	rps12	[gb|KT168384|:c67301-67188, c89604-88804]	Ermi_g44
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S12	[gb|KT168384|:c67301-67188, c89604-89373, c88832-88804]	Ermi_g44
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:Gene	rps12	[gb|KT168384|:c67301-67188, 125736-126536]	Ermi_g82
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S12	[gb|KT168384|:c67301-67188, 125736-125967, 126508-126536]	Ermi_g82
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:Gene	rps12	[gb|KT168385|:c66823-66710, c89091-88291]	Erte_g44
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S12	[gb|KT168385|:c66823-66710, c89091-88860, c88319-88291]	Erte_g44
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:Gene	rps12	[gb|KT168385|:c66823-66710, 125147-125947]	Erte_g82
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S12	[gb|KT168385|:c66823-66710, 125147-125378, 125919-125947]	Erte_g82
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:Gene	rps12	[gb|KT168386|:c66309-66196, c88535-87735]	Bocu_g44
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S12	[gb|KT168386|:c66309-66196, c88535-88304, c87763-87735]	Bocu_g44
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:Gene	rps12	[gb|KT168386|:c66309-66196, c125440-124640]	Bocu_g82
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S12	[gb|KT168386|:c66309-66196, 124640-124871, 125412-125440]	Bocu_g82
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:Gene	rps12	[gb|KT168387|:c67316-67203, c89525-88725]	Hice_g44
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S12	[gb|KT168387|:c67316-67203, c89525-89294, c88753-88725]	Hice_g44
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:Gene	rps12	[gb|KT168387|:c67316-67203, 125538-126338]	Hice_g82
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S12	[gb|KT168387|:c67316-67203, 125538-125769, 126310-126338]	Hice_g82
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:Gene	rps12	[gb|KT168388|:c67941-67828, c90201-89401]	Sppe_g44
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S12	[gb|KT168388|:c67941-67828, c90201-89970, c89429-89401]	Sppe_g44
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:Gene	rps12	[gb|KT168388|:c67941-67828, 126339-127139]	Sppe_g82
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S12	[gb|KT168388|:c67941-67828, 126339-126570, 127111-127139]	Sppe_g82
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:Gene	rps12	[gb|KT168389|:c68235-68122, c90107-89306]	Sphe_g44
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S12	[gb|KT168389|:c68235-68122, c90107-89876, c89334-89306]	Sphe_g44
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:Gene	rps12	[gb|KT168389|:c68235-68122, 126204-127005]	Sphe_g82
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S12	[gb|KT168389|:c68235-68122, 126204-126435, 126977-127005]	Sphe_g82
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:Gene	rps12	[gb|KT168390|:c68327-68214, c90633-89833]	Zoma_g44
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S12	[gb|KT168390|:c68327-68214, c90633-90402, c89861-89833]	Zoma_g44
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:Gene	rps12	[gb|KT168390|:c68327-68214, 126564-127364]	Zoma_g82
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S12	[gb|KT168390|:c68327-68214, 126564-126795, 127336-127364]	Zoma_g82
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Lys	[gb|KT168383|:c3945-3908, c1424-1392]	Cegl_t02
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S16	[gb|KT168383|:c5602-5563, c4718-4501]	Cegl_g03
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Gly	[gb|KT168383|:c13796-13774, c13090-13043]	Cegl_t09
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ATP synthase CF0 subunit I	[gb|KT168383|:33833-33991, 34804-35211]	Cegl_g17
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	hypothetical chloroplast RF34	[gb|KT168383|:c44898-44773, c44060-43833, c43098-42940]	Cegl_g22
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Leu	[gb|KT168383|:47178-47212, 47755-47804]	Cegl_t20
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Val	[gb|KT168383|:c51596-51558, c50971-50925]	Cegl_t24
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	cytochrome b6	[gb|KT168383|:71072-71077, 71851-72498]	Cegl_g51
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	cytochrome b6/f complex subunit IV	[gb|KT168383|:72681-72688, 73415-73889]	Cegl_g52
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L16	[gb|KT168383|:c78706-78698, c77847-77446]	
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 2	[gb|KT168383|:c87708-86933, c86220-85464]	Cegl_g65
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ile	[gb|KT168383|:93160-93201, 93912-93946]	Cegl_t32
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ala	[gb|KT168383|:94011-94048, 94859-94893]	Cegl_t34
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 1	[gb|KT168383|:c112374-111826, c110793-110254]	Cegl_g77
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ala	[gb|KT168383|:c120628-120592, c119781-119747]	Cegl_t41
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ile	[gb|KT168383|:c121480-121439, c120728-120694]	Cegl_t42
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 2	[gb|KT168383|:126932-127707, 128420-129176]	Cegl_g84
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Lys	[gb|KT168384|:c3926-3889, c1400-1368]	Ermi_t02
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S16	[gb|KT168384|:c5525-5486, c4654-4437]	Ermi_g03
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Gly	[gb|KT168384|:c13570-13548, c12863-12816]	Ermi_t09
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ATP synthase CF0 subunit I	[gb|KT168384|:33126-33284, 34107-34514]	Ermi_g17
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	hypothetical chloroplast RF34	[gb|KT168384|:c44307-44182, c43434-43207, c42477-42319]	Ermi_g22
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Leu	[gb|KT168384|:47018-47052, 47595-47644]	Ermi_t20
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Val	[gb|KT168384|:c51896-51858, c51272-51226]	Ermi_t24
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	cytochrome b6	[gb|KT168384|:71036-71041, 71830-72477]	Ermi_g51
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	cytochrome b6/f complex subunit IV	[gb|KT168384|:72660-72667, 73407-73881]	Ermi_g52
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L16	[gb|KT168384|:c78944-78936, c77838-77437]	Ermi_g59
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 2	[gb|KT168384|:c87984-87209, c86496-85740]	Ermi_g65
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ile	[gb|KT168384|:93475-93516, 94222-94256]	Ermi_t32
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ala	[gb|KT168384|:94322-94359, 95170-95204]	Ermi_t34
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 1	[gb|KT168384|:c112779-112231, c111201-110662]	Ermi_g77
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ala	[gb|KT168384|:c121018-120981, c120170-120136]	Ermi_t41
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ile	[gb|KT168384|:c121865-121824, c121118-121084]	Ermi_t42
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 2	[gb|KT168384|:127356-128131, 128844-129600]	Ermi_g84
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Lys	[gb|KT168385|:c3930-3893, c1405-1373]	Erte_t02
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S16	[gb|KT168385|:c5530-5491, c4659-4448]	Erte_g03
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Gly	[gb|KT168385|:c13581-13559, c12877-12830]	Erte_t09
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ATP synthase CF0 subunit I	[gb|KT168385|:32879-33037, 33865-34272]	Erte_g17
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	hypothetical chloroplast RF34	[gb|KT168385|:c44060-43935, c43197-42970, c42244-42086]	Erte_g22
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Leu	[gb|KT168385|:46377-46411, 46954-47003]	Erte_t20
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Val	[gb|KT168385|:c51228-51190, c50604-50558]	Erte_t24
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	cytochrome b6	[gb|KT168385|:70558-70563, 71317-71964]	Erte_g51
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	cytochrome b6/f complex subunit IV	[gb|KT168385|:72150-72157, 72897-73371]	Erte_g52
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L16	[gb|KT168385|:c78429-78421, c77325-76924]	Erte_g59
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 2	[gb|KT168385|:c87471-86696, c85983-85227]	Erte_g65
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ile	[gb|KT168385|:92924-92965, 93671-93705]	Erte_t32
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ala	[gb|KT168385|:93771-93808, 94619-94653]	Erte_t34
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 1	[gb|KT168385|:c112230-111682, c110658-110119]	Erte_g77
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ala	[gb|KT168385|:c120467-120430, c119619-119585]	Erte_t41
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ile	[gb|KT168385|:c121314-121273, c120567-120533]	Erte_t42
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 2	[gb|KT168385|:126767-127542, 128255-129011]	Erte_g84
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Lys	[gb|KT168386|:c3911-3874, c1418-1386]	Bocu_t02
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S16	[gb|KT168386|:c5548-5509, c4674-4460]	Bocu_g03
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Gly	[gb|KT168386|:c13574-13552, c12870-12823]	Bocu_t09
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ATP synthase CF0 subunit I	[gb|KT168386|:32708-32866, 33685-34092]	Bocu_g17
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	hypothetical chloroplast RF34	[gb|KT168386|:c43875-43750, c42995-42768, c42055-41897]	Bocu_g22
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Leu	[gb|KT168386|:46140-46174, 46740-46789]	Bocu_t20
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Val	[gb|KT168386|:c50706-50668, c50079-50033]	Bocu_t24
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	cytochrome b6	[gb|KT168386|:70085-70090, 70879-71526]	Bocu_g51
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	cytochrome b6/f complex subunit IV	[gb|KT168386|:71726-71733, 72478-72952]	Bocu_g52
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L16	[gb|KT168386|:c77957-77949, c76877-76476]	Bocu_g59
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 2	[gb|KT168386|:c86907-86132, c85419-84663]	Bocu_g65
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ile	[gb|KT168386|:92375-92416, 93131-93165]	Bocu_t32
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ala	[gb|KT168386|:93231-93268, 94090-94124]	Bocu_t34
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 1	[gb|KT168386|:c111711-111163, c110179-109640]	Bocu_g77
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ala	[gb|KT168386|:c119944-119907, c119085-119051]	Bocu_t41
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ile	[gb|KT168386|:c120800-120759, c120044-120010]	Bocu_t42
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 2	[gb|KT168386|:126268-127043, 127756-128512]	Bocu_g84
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Lys	[gb|KT168387|:c3950-3913, c1415-1383]	Hice_t02
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S16	[gb|KT168387|:c5578-5539, c4717-4500]	Hice_g03
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Gly	[gb|KT168387|:c13610-13588, c12906-12859]	Hice_t09
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ATP synthase CF0 subunit I	[gb|KT168387|:33346-33504, 34328-34735]	Hice_g17
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	hypothetical chloroplast RF34	[gb|KT168387|:c44516-44391, c43657-43430, c42688-42530]	Hice_g22
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Leu	[gb|KT168387|:46918-46952, 47506-47555]	Hice_t20
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Val	[gb|KT168387|:c51769-51731, c51142-51096]	Hice_t24
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	cytochrome b6	[gb|KT168387|:71015-71020, 71807-72454]	Hice_g51
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	cytochrome b6/f complex subunit IV	[gb|KT168387|:72654-72661, 73417-73891]	Hice_g52
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L16	[gb|KT168387|:c78854-78846, c77824-77423]	Hice_g59
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 2	[gb|KT168387|:c87896-87121, c86408-85652]	Hice_g65
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ile	[gb|KT168387|:93388-93429, 94140-94174]	Hice_t32
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ala	[gb|KT168387|:94240-94277, 95091-95125]	Hice_t34
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 1	[gb|KT168387|:c112560-112012, c110994-110455]	Hice_g77
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ala	[gb|KT168387|:c120823-120786, c119972-119938]	Hice_t41
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ile	[gb|KT168387|:c121675-121634, c120923-120889]	Hice_t42
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 2	[gb|KT168387|:127167-127942, 128655-129411]	Hice_g84
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Lys	[gb|KT168388|:c3944-3907, c1415-1383]	Sppe_t02
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S16	[gb|KT168388|:c5575-5536, c4708-4491]	Sppe_g03
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Gly	[gb|KT168388|:c13960-13938, c13254-13207]	Sppe_t09
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ATP synthase CF0 subunit I	[gb|KT168388|:33512-33670, 34493-34900]	Sppe_g17
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	hypothetical chloroplast RF34	[gb|KT168388|:c44608-44483, c43740-43513, c42793-42635]	Sppe_g22
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Leu	[gb|KT168388|:47353-47387, 47942-47991]	Sppe_t20
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Val	[gb|KT168388|:c52123-52085, c51498-51452]	Sppe_t24
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	cytochrome b6	[gb|KT168388|:71682-71687, 72464-73111]	Sppe_g51
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	cytochrome b6/f complex subunit IV	[gb|KT168388|:73287-73294, 74042-74516]	Sppe_g52
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L16	[gb|KT168388|:c79541-79533, c78466-78065]	Sppe_g59
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 2	[gb|KT168388|:c88573-87798, c87085-86329]	Sppe_g65
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ile	[gb|KT168388|:93986-94027, 94728-94762]	Sppe_t32
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ala	[gb|KT168388|:94828-94865, 95676-95710]	Sppe_t34
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 1	[gb|KT168388|:c113448-112900, c111864-111325]	Sppe_g77
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ala	[gb|KT168388|:c121712-121675, c120864-120830]	Sppe_t41
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ile	[gb|KT168388|:c122554-122513, c121812-121778]	Sppe_t42
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 2	[gb|KT168388|:127967-128742, 129455-130211]	Sppe_g84
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Lys	[gb|KT168389|:c3943-3906, c1409-1377]	Sphe_t02
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S16	[gb|KT168389|:c5583-5544, c4712-4495]	Sphe_g03
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Gly	[gb|KT168389|:c13935-13913, c13229-13182]	Sphe_t09
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ATP synthase CF0 subunit I	[gb|KT168389|:33856-34014, 34838-35245]	Sphe_g17
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	hypothetical chloroplast RF34	[gb|KT168389|:c44945-44820, c44074-43847, c43121-42963]	Sphe_g22
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Leu	[gb|KT168389|:47674-47708, 48265-48314]	Sphe_t20
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Val	[gb|KT168389|:c52526-52488, c51896-51850]	Sphe_t24
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	cytochrome b6	[gb|KT168389|:72000-72005, 72790-73437]	Sphe_g51
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	cytochrome b6/f complex subunit IV	[gb|KT168389|:73620-73627, 74378-74852]	Sphe_g52
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L16	[gb|KT168389|:c79835-79827, c78794-78393]	Sphe_g59
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 2	[gb|KT168389|:c88478-87703, c86990-86234]	Sphe_g65
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ile	[gb|KT168389|:93892-93933, 94634-94668]	Sphe_t32
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ala	[gb|KT168389|:94734-94771, 95582-95616]	Sphe_t34
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 1	[gb|KT168389|:c113354-112806, c111771-111232]	Sphe_g77
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ala	[gb|KT168389|:c121577-121540, c120729-120695]	Sphe_t41
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ile	[gb|KT168389|:c122419-122378, c121677-121643]	Sphe_t42
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 2	[gb|KT168389|:127833-128608, 129321-130077]	Sphe_g84
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Lys	[gb|KT168390|:c3935-3898, c1410-1378]	Zoma_t02
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein S16	[gb|KT168390|:c5565-5526, c4686-4469]	Zoma_g03
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Gly	[gb|KT168390|:c13878-13856, c13172-13125]	Zoma_t09
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ATP synthase CF0 subunit I	[gb|KT168390|:33913-34071, 34899-35306]	Zoma_g17
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	hypothetical chloroplast RF34	[gb|KT168390|:c45021-44896, c44154-43927, c43197-43039]	Zoma_g22
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Leu	[gb|KT168390|:47748-47782, 48337-48386]	Zoma_t20
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Val	[gb|KT168390|:c52641-52603, c52016-51970]	Zoma_t24
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	cytochrome b6	[gb|KT168390|:72077-72082, 72860-73507]	Zoma_g51
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	cytochrome b6/f complex subunit IV	[gb|KT168390|:73690-73697, 74450-74924]	Zoma_g52
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	ribosomal protein L16	[gb|KT168390|:c79955-79947, c78870-78469]	Zoma_g59
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 2	[gb|KT168390|:c89004-88229, c87516-86760]	Zoma_g65
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ile	[gb|KT168390|:94424-94465, 95166-95200]	Zoma_t32
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ala	[gb|KT168390|:95266-95303, 96114-96148]	Zoma_t34
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 1	[gb|KT168390|:c113705-113157, c112138-111599]	Zoma_g77
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ala	[gb|KT168390|:c121931-121894, c121083-121049]	Zoma_t41
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:tRNA	Ile	[gb|KT168390|:c122773-122732, c122031-121997]	Zoma_t42
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:CDS	NADH-plastoquinone oxidoreductase subunit 2	[gb|KT168390|:128193-128968, 129681-130437]	Zoma_g84
 

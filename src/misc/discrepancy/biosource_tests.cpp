@@ -2259,5 +2259,57 @@ DISCREPANCY_SUMMARIZE(METAGENOME_SOURCE)
 }
 
 
+// DUP_SRC_QUAL
+
+DISCREPANCY_CASE(DUP_SRC_QUAL, CBioSource, eOncaller, "Each qualifier on a source should have different value")
+{
+    map<string, size_t> Map;
+    if (obj.CanGetSubtype()) {
+        ITERATE (CBioSource::TSubtype, it, obj.GetSubtype()) {
+            if ((*it)->CanGetName()) {
+                const string& s = (*it)->GetName();
+                if (!s.empty()) {
+                    if (Map.find(s) != Map.end()) {
+                        Map[s]++;
+                    }
+                    else {
+                        Map[s] = 0;
+                    }
+                }
+            }
+        }
+    }
+    if (obj.IsSetOrg() && obj.GetOrg().CanGetOrgname() && obj.GetOrg().GetOrgname().CanGetMod()) {
+        ITERATE (COrgName::TMod, it, obj.GetOrg().GetOrgname().GetMod()) {
+            if ((*it)->IsSetSubname()) {
+                const string& s = (*it)->GetSubname();
+                if (!s.empty()) {
+                    if (Map.find(s) != Map.end()) {
+                        Map[s]++;
+                    }
+                    else {
+                        Map[s] = 0;
+                    }
+                }
+            }
+        }
+    }
+    for (map<string, size_t>::const_iterator it = Map.begin(); it != Map.end(); it++) {
+        if (it->second) {
+            string s = "[n] biosource[s] [has] repeating qualifier value \'";
+            s += it->first;
+            s += "\'";
+            m_Objs[s].Add(*context.NewFeatOrDescObj());
+        }
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(DUP_SRC_QUAL)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

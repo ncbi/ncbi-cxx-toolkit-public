@@ -1,0 +1,18 @@
+Discrepancy Report Results
+
+Summary
+DUP_SRC_QUAL: 1 biosource has repeating qualifier value '10 m'
+DUP_SRC_QUAL: 1 biosource has repeating qualifier value 'aa'
+DUP_SRC_QUAL: 1 biosource has repeating qualifier value 'xx'
+
+Detailed Report
+
+DUP_SRC_QUAL: 1 biosource has repeating qualifier value '10 m'
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\DUP_SRC_QUAL.asn:lcl|ex1:ex1 f. sp. y
+
+DUP_SRC_QUAL: 1 biosource has repeating qualifier value 'aa'
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\DUP_SRC_QUAL.asn:lcl|ex2:ex2 f. z
+
+DUP_SRC_QUAL: 1 biosource has repeating qualifier value 'xx'
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\DUP_SRC_QUAL.asn:lcl|ex3:ex3 subsp. y
+
