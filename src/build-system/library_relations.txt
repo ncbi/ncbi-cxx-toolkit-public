@@ -1041,7 +1041,7 @@ tinyseq needs xser
 tiol needs $(Z_LIB)
 tiol needs3party $(ORIG_LIBS)
 tiol needs3party $(Z_LIBS)
-tracking_utils needs gpipe_attr
+tracking_utils needs gpipe_common
 trackmgr needs $(SEQ_LIBS)
 trackmgr needs pub
 trackmgr_objtools needs $(OBJMGR_LIBS)
