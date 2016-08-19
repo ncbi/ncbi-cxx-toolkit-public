@@ -1177,7 +1177,13 @@ CConstRef <CSeq_feat> CCleanup::GetGeneForFeature(const CSeq_feat& feat, CScope&
             }
         } else return (CConstRef <CSeq_feat>());
     } else {
-        return sequence::GetOverlappingGene(feat.GetLocation(), scope, IsTransSpliced(feat) ? sequence::eTransSplicing_Yes : sequence::eTransSplicing_Auto);
+        CConstRef <CSeq_feat> gf = sequence::GetOverlappingGene(feat.GetLocation(), scope, IsTransSpliced(feat) ? sequence::eTransSplicing_Yes : sequence::eTransSplicing_Auto);
+        if (gf) {
+            sequence::ECompare cmp = sequence::Compare(gf->GetLocation(), feat.GetLocation(), &scope);
+            if (cmp == sequence::eContains || cmp == sequence::eSame) {
+                return gf;
+            }
+        }
     }
 
     return (CConstRef <CSeq_feat>());

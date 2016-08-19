@@ -57,6 +57,7 @@
 #include <objmgr/util/feature.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objtools/edit/apply_object.hpp>
+#include <objtools/cleanup/cleanup.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
@@ -122,11 +123,7 @@ string GetLocusTagForFeature(const CSeq_feat& seq_feat, CScope& scope)
             tag = (gene->CanGetLocus_tag()) ? gene->GetLocus_tag() : kEmptyStr;
         }
         else {
-            CConstRef<CSeq_feat> 
-            gene= sequence::GetBestOverlappingFeat(seq_feat.GetLocation(),
-                                                    CSeqFeatData::e_Gene,
-				                    sequence::eOverlap_Contained,
-                                                    scope);
+            CConstRef<CSeq_feat> gene = CCleanup::GetGeneForFeature(seq_feat, scope);
             if (gene.NotEmpty()) {
                 tag = (gene->GetData().GetGene().CanGetLocus_tag()) ? gene->GetData().GetGene().GetLocus_tag() : kEmptyStr;
             }
