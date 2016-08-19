@@ -389,7 +389,7 @@ int NStr::StringToNonNegativeInt(const CTempString str, TStringToNumFlags flags)
 */
     errno = error;
     if (error) {
-        if (flags & fConvErr_NoErrnoMessage) {
+        if (flags & fConvErr_NoErrMessage) {
             CNcbiError::SetErrno(error);
         } else {
             CNcbiError::SetErrno(error, str);
@@ -476,7 +476,7 @@ string CS2N_Guard::Message(const CTempString str, const char* to_type, const CTe
                 return 0;                                             \
             }                                                         \
 */ \
-            if (flags & NStr::fConvErr_NoErrnoMessage) {              \
+            if (flags & NStr::fConvErr_NoErrMessage) {              \
                 CNcbiError::SetErrno(err_guard.Errno());              \
             } else {                                                  \
                 CNcbiError::SetErrno(err_guard.Errno(),               \
@@ -2684,7 +2684,7 @@ const void* NStr::StringToPtr(const CTempStringEx str, TConvErrFlags flags)
         res = ::sscanf(string(str).c_str(), "%p", &ptr);
     }
     if (res != 1) {
-        if (flags & fConvErr_NoErrnoMessage) {
+        if (flags & fConvErr_NoErrMessage) {
             CNcbiError::SetErrno(errno = EINVAL);
         } else {
             CNcbiError::SetErrno(errno = EINVAL, str);

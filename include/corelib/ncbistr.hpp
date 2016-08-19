@@ -249,13 +249,13 @@ public:
         ///        !retval  &&  errno != 0)
         ///        ERROR;
         /// @endcode
-        fConvErr_NoThrow        = (1 <<  0),
+        fConvErr_NoThrow      = (1 <<  0),
         /*
-        fConvErr_NoErrno        = (1 <<  1),  ///< Do not set errno at all.
-                                              ///< If used together with fConvErr_NoThrow flag
-                                              ///< returns 0 on error (-1 for StringToNonNegativeInt).
+        fConvErr_NoErrno      = (1 <<  1),  ///< Do not set errno at all.
+                                            ///< If used together with fConvErr_NoThrow flag
+                                            ///< returns 0 on error (-1 for StringToNonNegativeInt).
         */
-        fConvErr_NoErrnoMessage = (1 <<  2)  ///< Set errno, but do not set CNcbiError message on error
+        fConvErr_NoErrMessage = (1 <<  2)   ///< Set errno, but do not set CNcbiError message on error
     };
     typedef int TConvErrFlags;    ///< Bitwise OR of "EConvErrFlags"
 
@@ -353,7 +353,7 @@ public:
     ///   decimal value in the int range: [0..kMax_Int].
     /// @param flags
     ///   How to convert string to value.
-    ///   Only fConvErr_NoErrnoMessage flag is supported here.
+    ///   Only fConvErr_NoErrMessage flag is supported here.
     /// @return
     ///   - If conversion succeeds, set errno to zero and return the converted value.
     ///   - Otherwise, set errno to non-zero and return -1.
@@ -621,7 +621,7 @@ public:
     ///   String to be converted.
     /// @param flags
     ///   How to convert string to value.
-    ///   Only fConvErr_NoErrnoMessage flag is supported here.
+    ///   Only fConvErr_NoErrMessage flag is supported here.
     /// @return
     ///   Pointer value corresponding to its string representation.
     ///   - If conversion succeeds, set errno to zero and return the
@@ -4432,7 +4432,7 @@ char NStr::StringToNumeric(const CTempString str,
     if (n < numeric_limits<char>::min()  ||  n > numeric_limits<char>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
 //            if ((flags & fConvErr_NoErrno) == 0) {
-                if (flags & fConvErr_NoErrnoMessage) {
+                if (flags & fConvErr_NoErrMessage) {
                     CNcbiError::SetErrno(errno = ERANGE);
                 } else {
                     CNcbiError::SetErrno(errno = ERANGE, str);
@@ -4455,7 +4455,7 @@ unsigned char NStr::StringToNumeric(const CTempString str,
     if (n > numeric_limits<unsigned char>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
 //            if ((flags & fConvErr_NoErrno) == 0) {
-                if (flags & fConvErr_NoErrnoMessage) {
+                if (flags & fConvErr_NoErrMessage) {
                     CNcbiError::SetErrno(errno = ERANGE);
                 } else {
                     CNcbiError::SetErrno(errno = ERANGE, str);
@@ -4482,7 +4482,7 @@ bool NStr::StringToNumeric(const CTempString str,
     if (n < numeric_limits<char>::min()  ||  n > numeric_limits<char>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
 //            if ((flags & fConvErr_NoErrno) == 0) {
-                if (flags & fConvErr_NoErrnoMessage) {
+                if (flags & fConvErr_NoErrMessage) {
                     CNcbiError::SetErrno(errno = ERANGE);
                 } else {
                     CNcbiError::SetErrno(errno = ERANGE, str);
@@ -4510,7 +4510,7 @@ bool NStr::StringToNumeric(const CTempString str,
     if (n > numeric_limits<unsigned char>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
 //            if ((flags & fConvErr_NoErrno) == 0) {
-                if (flags & fConvErr_NoErrnoMessage) {
+                if (flags & fConvErr_NoErrMessage) {
                     CNcbiError::SetErrno(errno = ERANGE);
                 } else {
                     CNcbiError::SetErrno(errno = ERANGE, str);
@@ -4550,7 +4550,7 @@ wchar_t NStr::StringToNumeric(const CTempString str,
     if (n < numeric_limits<wchar_t>::min()  ||  n > numeric_limits<wchar_t>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
 //            if ((flags & fConvErr_NoErrno) == 0) {
-                if (flags & fConvErr_NoErrnoMessage) {
+                if (flags & fConvErr_NoErrMessage) {
                     CNcbiError::SetErrno(errno = ERANGE);
                 } else {
                     CNcbiError::SetErrno(errno = ERANGE, str);
@@ -4577,7 +4577,7 @@ bool NStr::StringToNumeric(const CTempString str,
     if (n < numeric_limits<wchar_t>::min()  ||  n > numeric_limits<wchar_t>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
 //            if ((flags & fConvErr_NoErrno) == 0) {
-                if (flags & fConvErr_NoErrnoMessage) {
+                if (flags & fConvErr_NoErrMessage) {
                     CNcbiError::SetErrno(errno = ERANGE);
                 } else {
                     CNcbiError::SetErrno(errno = ERANGE, str);
@@ -4631,7 +4631,7 @@ short NStr::StringToNumeric(const CTempString str,
     if (n < numeric_limits<short>::min()  ||  n > numeric_limits<short>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
 //            if ((flags & fConvErr_NoErrno) == 0) {
-                if (flags & fConvErr_NoErrnoMessage) {
+                if (flags & fConvErr_NoErrMessage) {
                     CNcbiError::SetErrno(errno = ERANGE);
                 } else {
                     CNcbiError::SetErrno(errno = ERANGE, str);
@@ -4654,7 +4654,7 @@ unsigned short NStr::StringToNumeric(const CTempString str,
     if (n > numeric_limits<unsigned short>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
 //            if ((flags & fConvErr_NoErrno) == 0) {
-                if (flags & fConvErr_NoErrnoMessage) {
+                if (flags & fConvErr_NoErrMessage) {
                     CNcbiError::SetErrno(errno = ERANGE);
                 } else {
                     CNcbiError::SetErrno(errno = ERANGE, str);
@@ -4681,7 +4681,7 @@ bool NStr::StringToNumeric(const CTempString str,
     if (n < numeric_limits<short>::min()  ||  n > numeric_limits<short>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
 //            if ((flags & fConvErr_NoErrno) == 0) {
-                if (flags & fConvErr_NoErrnoMessage) {
+                if (flags & fConvErr_NoErrMessage) {
                     CNcbiError::SetErrno(errno = ERANGE);
                 } else {
                     CNcbiError::SetErrno(errno = ERANGE, str);
@@ -4709,7 +4709,7 @@ bool NStr::StringToNumeric(const CTempString str,
     if (n > numeric_limits<unsigned short>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
 //            if ((flags & fConvErr_NoErrno) == 0) {
-                if (flags & fConvErr_NoErrnoMessage) {
+                if (flags & fConvErr_NoErrMessage) {
                     CNcbiError::SetErrno(errno = ERANGE);
                 } else {
                     CNcbiError::SetErrno(errno = ERANGE, str);
@@ -4992,7 +4992,7 @@ float NStr::StringToNumeric(const CTempString str,
     if (n < -numeric_limits<float>::max()  ||  n > numeric_limits<float>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
 //            if ((flags & fConvErr_NoErrno) == 0) {
-                if (flags & fConvErr_NoErrnoMessage) {
+                if (flags & fConvErr_NoErrMessage) {
                     CNcbiError::SetErrno(errno = ERANGE);
                 } else {
                     CNcbiError::SetErrno(errno = ERANGE, str);
@@ -5020,7 +5020,7 @@ bool NStr::StringToNumeric(const CTempString str,
     if (n < -numeric_limits<float>::max() || n > numeric_limits<float>::max()) {
         if (flags & NStr::fConvErr_NoThrow) {
 //            if ((flags & fConvErr_NoErrno) == 0) {
-                if (flags & fConvErr_NoErrnoMessage) {
+                if (flags & fConvErr_NoErrMessage) {
                     CNcbiError::SetErrno(errno = ERANGE);
                 } else {
                     CNcbiError::SetErrno(errno = ERANGE, str);
