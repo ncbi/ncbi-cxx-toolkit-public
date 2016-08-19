@@ -4886,8 +4886,19 @@ CValidError_feat::EInferenceValidCode CValidError_feat::ValidateInferenceAccessi
             }
         } else if (is_blast && is_similar_to) {
             rsult = eInferenceValidCode_bad_accession_type;
-        } else if (! is_blast) {
-            rsult = eInferenceValidCode_unrecognized_database;
+        } else if (is_similar_to) {
+            if (NStr::EqualNocase (prefix, "GenBank") ||
+                NStr::EqualNocase (prefix, "EMBL") ||
+                NStr::EqualNocase (prefix, "DDBJ") ||
+                NStr::EqualNocase (prefix, "INSD") ||
+                NStr::EqualNocase (prefix, "RefSeq") ||
+                NStr::EqualNocase (prefix, "UniProt") ||
+                NStr::EqualNocase (prefix, "UniProtKB") ||
+                NStr::EqualNocase (prefix, "SwissProt")) {
+                // recognized database
+            } else {
+                rsult = eInferenceValidCode_unrecognized_database;
+            }
         }
         if (NStr::Find (remainder, " ") != string::npos) {
             rsult = eInferenceValidCode_spaces;
