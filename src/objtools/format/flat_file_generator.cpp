@@ -153,6 +153,17 @@ void CFlatFileGenerator::Generate
         }
     }
 
+    CConstRef<CSeq_entry> topent = entry.GetTopLevelEntry().GetCompleteSeq_entry();
+    if (topent && topent->IsSet()) {
+        const CBioseq_set& topset = topent->GetSet();
+        VISIT_ALL_SEQSETS_WITHIN_SEQSET (itr, topset) {
+            const CBioseq_set& bss = *itr;
+            if (bss.GetClass() == CBioseq_set::eClass_small_genome_set) {
+                    m_Ctx->SetSGS(true);
+            }
+        }
+    }
+
     CRef<CFlatItemOStream> pItemOS( & item_os );
     // If there is a ICancel callback, wrap the item_os so
     // that every call checks it.
