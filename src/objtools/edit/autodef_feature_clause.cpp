@@ -709,12 +709,6 @@ bool CAutoDefFeatureClause::x_GetProductName(string &product_name)
         }
        
         if (!NStr::IsBlank(label)) {
-            string::size_type pos = NStr::Find(label, ";");
-            if (pos != NCBI_NS_STD::string::npos) {
-                label = label.substr(0, pos);
-            }
-        }
-        if (!NStr::IsBlank(label)) {
             product_name = label;
             return true;
         } else {
