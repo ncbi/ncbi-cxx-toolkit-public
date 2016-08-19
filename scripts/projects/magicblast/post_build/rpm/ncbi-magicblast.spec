@@ -36,6 +36,6 @@ rm -rf $RPM_BUILD_ROOT
 %_bindir/*
 
 %changelog
-* Fri Sep 9 2016 <blast-help@ncbi.nlm.nih.gov>
+* Fri Aug 19 2016 <blast-help@ncbi.nlm.nih.gov>
 - See ChangeLog file
 
