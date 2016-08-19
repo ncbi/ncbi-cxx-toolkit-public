@@ -121,7 +121,7 @@ fi
 # Write data about current test into the list file
 for x_cmd in $x_run; do
     x_cmd=`echo "$x_cmd"  | sed -e 's/%gj_s4%/ /g'`
-    x_name=`echo "$x_cmd" | sed -e 's/^.*CHECK_NAME *= *\([A-Za-z0-9_]*\).*/\1/' -e 's/.*CHECK_CMD.*//'`
+    x_name=`echo "$x_cmd" | sed -e 's/^.*CHECK_NAME *= *\([A-Za-z0-9_-]*\).*/\1/' -e 's/.*CHECK_CMD.*//'`
     x_cmd=`echo "$x_cmd"  | sed -e 's/ *\/CHECK_NAME.*//' -e 's/^[^=]*=//' -e 's/^ *//'  -e 's/\"/\\\\"/g'`
     echo "$x_srcdir_rel$x_delim$x_test$x_delim$x_app$x_delim$x_cmd$x_delim$x_name$x_delim$x_files$x_delim$x_timeout$x_delim$x_requires$x_delim$x_watchers" >> $x_out
 done
