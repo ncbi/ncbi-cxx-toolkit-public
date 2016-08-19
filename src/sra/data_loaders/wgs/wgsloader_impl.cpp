@@ -776,6 +776,13 @@ CWGSDataLoader_Impl::GetGi(const CSeq_id_Handle& idh)
                 }
             }
         }
+        else if ( info.IsProtein() ) {
+            if ( CWGSProteinIterator it = info.GetProteinIterator() ) {
+                if ( it.HasGi() ) {
+                    ret.gi = it.GetGi();
+                }
+            }
+        }
     }
     return ret;
 }
