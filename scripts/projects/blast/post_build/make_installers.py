@@ -37,6 +37,16 @@ def main(): #IGNORE:R0911
         print("Lib directory:", libdir)
 
     if platform.startswith("Win"):
+        import glob
+        print("Files in libdir " + libdir + ":")
+        for dll in glob.glob(libdir + "/*"):
+            print(dll)
+        print("Files in install dir " + installdir + ":")
+        for dll in glob.glob(installdir + "/*"):
+            print(dll)
+
+
+    if platform.startswith("Win"):
         shutil.copy(libdir + "libgcc_s_seh-1.dll", installdir + "bin")
         shutil.copy(libdir + "libgmp-10.dll", installdir + "bin")
         shutil.copy(libdir + "libgnutls-30.dll", installdir + "bin")
