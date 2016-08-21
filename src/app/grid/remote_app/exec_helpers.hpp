@@ -32,8 +32,6 @@
  *
  */
 
-#include <util/rangelist.hpp>
-
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbienv.hpp>
 
@@ -44,6 +42,7 @@ BEGIN_NCBI_SCOPE
 class CRemoteAppReaper;
 class CRemoteAppVersion;
 class CRemoteAppTimeoutReporter;
+class CRanges;
 
 class CRemoteAppLauncher
 {
@@ -83,9 +82,6 @@ public:
     static bool CanExec(const CFile& file);
 
 private:
-    // Check whether retries are disabled for the specified exit code.
-    bool MustFailNoRetries(int exit_code) const;
-
     enum ENonZeroExitAction {
         eDoneOnNonZeroExit,
         eFailOnNonZeroExit,
@@ -96,7 +92,6 @@ private:
     CTimeout m_AppRunTimeout;
     CTimeout m_KeepAlivePeriod;
     ENonZeroExitAction m_NonZeroExitAction;
-    CRangeList m_RangeList;
     string m_TempDir;
     bool m_RemoveTempDir;
     bool m_CacheStdOutErr;
@@ -114,6 +109,7 @@ private:
     auto_ptr<CRemoteAppReaper> m_Reaper;
     auto_ptr<CRemoteAppVersion> m_Version;
     auto_ptr<CRemoteAppTimeoutReporter> m_TimeoutReporter;
+    unique_ptr<CRanges> m_MustFailNoRetries;
 };
 
 // This class is for starting CCollector (a separate thread) after Daemonize()

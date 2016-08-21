@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Maxim Didenko, Dmitry Kazimirov
+ * Authors:  Maxim Didenko, Dmitry Kazimirov, Rafael Sadyrov
  *
  * File Description:  NetSchedule worker node sample
  *
@@ -340,6 +340,122 @@ private:
     EMode m_Mode;
 };
 
+/// Class representing (non overlapping) integer ranges.
+///
+class CRanges
+{
+public:
+    /// Reads integer ranges from an input stream.
+    ///
+    /// The data must be in the following format (in ascending order):
+    ///     [!] R1, N2, ..., Rn
+    ///
+    /// Where:
+    ///     !         - negation, makes all provided ranges be excluded
+    ///                 (not included).
+    ///     R1 ... Rn - integer closed ranges specified either as 
+    ///                 FROM - TO (corresponds to [FROM, TO] range) or as
+    ///                 NUMBER (corresponds to [NUMBER, NUMBER] range).
+    /// Example:
+    ///     4, 6 - 9, 16 - 40, 64
+    /// 
+    CRanges(istream& is);
+
+    /// Checks whether provided number belongs to one of the ranges.
+    ///
+    bool Contain(int n) const;
+
+private:
+    vector<int> m_Ranges;
+};
+
+CRanges::CRanges(istream& is)
+{
+    char ch;
+
+    if (!(is >> skipws >> ch)) return; // EoF
+
+    // Char '!' makes provided ranges to be excluded (not included)
+    if (ch == '!') 
+        m_Ranges.push_back(numeric_limits<int>::min());
+    else
+        is.putback(ch);
+
+    bool interval = false;
+
+    do {
+        int n;
+
+        if (!(is >> n)) break;
+        if (!(is >> ch)) ch = ',';
+
+        if (m_Ranges.size()) {
+            int previous =  m_Ranges.back();
+
+            if (n < previous) {
+                ostringstream err;
+                err << n << " is less or equal than previous number, "
+                    "intervals must be sorted and not overlapping";
+                throw invalid_argument(err.str());
+            }
+        }
+
+        if (ch == ',') {
+            // If it's only one number in interval, add both start and end of it
+            if (!interval) m_Ranges.push_back(n);
+
+            m_Ranges.push_back(n + 1);
+            interval = false;
+
+        } else if (ch == '-' && !interval) {
+            interval = true;
+            m_Ranges.push_back(n);
+
+        } else {
+            ostringstream err;
+            err << "Unexpected char '" << ch << "'";
+            throw invalid_argument(err.str());
+        }
+    } while (is);
+
+    if (interval) {
+        ostringstream err;
+        err << "Missing interval end";
+        throw invalid_argument(err.str());
+    }
+
+    if (!is.eof()) {
+        ostringstream err;
+        err << "Not a number near: " << is.rdbuf();
+        throw invalid_argument(err.str());
+    }
+}
+
+bool CRanges::Contain(int n) const
+{
+    auto range = upper_bound(m_Ranges.begin(), m_Ranges.end(), n);
+
+    // Every number starts a range, every second range is excluded
+    return (range - m_Ranges.begin()) % 2;
+}
+
+CRanges* s_ReadRanges(const IRegistry& reg, const string& sec, string param)
+{
+    if (reg.HasEntry(sec, param)) {
+        istringstream iss(reg.GetString(sec, param, kEmptyStr));
+
+        try {
+            return new CRanges(iss);
+        }
+        catch (invalid_argument& ex) {
+            NCBI_THROW_FMT(CInvalidParamException, eInvalidCharacter,
+                "Parameter '" << param << "' parsing error: " << ex.what());
+        }
+    }
+
+    return nullptr;
+}
+
 class CTimer
 {
 public:
@@ -412,11 +528,8 @@ CRemoteAppLauncher::CRemoteAppLauncher(const string& sec_name,
     } else if (sec.Get("fail_on_non_zero_exit", false))
         m_NonZeroExitAction = eFailOnNonZeroExit;
 
-    if (reg.HasEntry(sec_name, "fail_no_retries_if_exit_code")) {
-        m_RangeList.Parse(reg.GetString(sec_name,
-                    "fail_no_retries_if_exit_code",
-                    kEmptyStr).c_str(), "fail_no_retries_if_exit_code");
-    }
+    m_MustFailNoRetries.reset(
+            s_ReadRanges(reg, sec_name, "fail_no_retries_if_exit_code"));
 
     if (sec.Get("run_in_separate_dir", false)) {
         if (reg.HasEntry(sec_name, "tmp_dir"))
@@ -974,7 +1087,8 @@ void CRemoteAppLauncher::FinishJob(bool finished_ok, int ret,
         if (!context.IsJobCommitted())
             context.CommitJobWithFailure("Job has been canceled");
     } else
-        if (MustFailNoRetries(ret))
+        // Check whether retries are disabled for the specified exit code.
+        if (m_MustFailNoRetries && m_MustFailNoRetries->Contain(ret))
             context.CommitJobWithFailure(
                     "Exited with return code " + NStr::IntToString(ret) +
                     " - will not be rerun",
@@ -986,22 +1100,6 @@ void CRemoteAppLauncher::FinishJob(bool finished_ok, int ret,
         else
             context.CommitJobWithFailure(
                     "Exited with return code " + NStr::IntToString(ret));
-}
-
-// Check whether retries are disabled for the specified exit code.
-bool CRemoteAppLauncher::MustFailNoRetries(int exit_code) const
-{
-    const CRangeList::TRangeVector& range = m_RangeList.GetRangeList();
-
-    if (range.empty())
-        return false;
-
-    ITERATE(CRangeList::TRangeVector, it, range) {
-        if (it->first <= exit_code && exit_code <= it->second)
-            return true;
-    }
-
-    return false;
 }
 
 string CRemoteAppLauncher::GetAppVersion(const string& v) const

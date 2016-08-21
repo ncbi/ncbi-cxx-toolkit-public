@@ -742,7 +742,7 @@ const char* CInvalidParamException::GetErrCodeString(void) const
 {
     switch (GetErrCode()) {
     case eUndefined:            return "eUndefined";
-    case eInvalidCharacter:     return "eNullPtr";
+    case eInvalidCharacter:     return "eInvalidCharacter";
     default:                    return CException::GetErrCodeString();
     }
 }
