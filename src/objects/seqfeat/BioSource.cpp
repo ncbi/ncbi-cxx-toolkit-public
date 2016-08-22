@@ -1607,7 +1607,9 @@ bool CBioSource::RemoveNullTerms()
         && GetOrg().GetOrgname().IsSetMod()) {
         COrgName::TMod::iterator m = SetOrg().SetOrgname().SetMod().begin();
         while (m != SetOrg().SetOrgname().SetMod().end()) {
-            if ((*m)->IsSetSubname() && IsStopWord((*m)->GetSubname())) {
+            if ((*m)->IsSetSubname() && 
+                (NStr::EqualNocase((*m)->GetSubname(), "Missing")
+                || NStr::EqualNocase((*m)->GetSubname(), "N/A"))) {
                 m = SetOrg().SetOrgname().SetMod().erase(m);
                 any_change = true;
             } else {
