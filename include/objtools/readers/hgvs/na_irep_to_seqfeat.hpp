@@ -203,6 +203,11 @@ private:
         CRef<CVariation_ref> x_CreateDelinsVarref(const CDelins& delins,
                                                   const CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
 
+        CRef<CVariation_ref> x_CreateDelinsVarref(const CNtLocation& nt_loc, 
+                                                  const string& initial_nt,
+                                                  const string& final_nt,
+                                                  const CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
+
         CRef<CVariation_ref> x_CreateInversionVarref(const CInversion& inv,
                                                      const CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
 

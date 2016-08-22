@@ -40,12 +40,6 @@ void AssignSequenceVariant(CRef<CSequenceVariant>& variant, CRef<CVariantExpress
 }
 
 
-void MakeLocalVariantSeqFuzzy(CRef<CSimpleVariantSeq>& seq)
-{
-    seq->SetFuzzy(true);
-}
-
-
 void AssignMissense(CRef<CAaSite>& initial, 
                     const CProteinSub::TFinal& final, 
                     CRef<CSimpleVariant>& result)
@@ -432,7 +426,6 @@ void s_SetSequenceInfo(CRef<CNtLocation>& nt_loc, const string& identifier, cons
         nt_loc->SetSite().SetSeqid(seq_id);
         nt_loc->SetSite().SetSeqtype(seq_type);
         nt_loc->SetSite().SetStrand_minus(is_minus_strand);
-        // opposite orientation
     } 
     else if (nt_loc->IsRange()) {
         auto start_loc = Ref(new CNtLocation());

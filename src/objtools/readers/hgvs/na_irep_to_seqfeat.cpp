@@ -204,8 +204,18 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateDelinsVarref(const CDelins& deli
                                                              const CVariation_ref::EMethod_E method) const
 {
 
+
+
     const auto& nt_loc = delins.GetLoc().GetNtloc();
 
+    if (delins.IsSetDeleted_raw_seq()) {
+        return x_CreateDelinsVarref(nt_loc, 
+                                    delins.GetDeleted_raw_seq(), 
+                                    delins.GetInserted_seq_info().GetRaw_seq(),
+                                    method);
+    }
+
+/*
     // Construct the CDeltaItem instances specifying the intronic offsets in the limits 
     // of the deleted interval.
     CRef<CDelta_item> start_offset = CIntronOffsetHelper::GetStartIntronOffset(nt_loc);
@@ -213,6 +223,7 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateDelinsVarref(const CDelins& deli
 
     // The insertion is specified by a CSeq_literal instance
     auto inserted_seq = x_CreateNtSeqLiteral(delins.GetInserted_seq_info().GetRaw_seq());
+
 
     // The following code handles the case where the HGVS expression contains the deleted sequence explicitly
     if (delins.IsSetDeleted_raw_seq()) {
@@ -230,11 +241,49 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateDelinsVarref(const CDelins& deli
         }
         return var_ref;
     }
-
-    // The case where the HGVS expression does not show the deleted sequence explicitly
+*/
+    // else the HGVS expression does not show the deleted sequence explicitly
+ 
+    // Construct the CDeltaItem instances specifying the intronic offsets in the limits 
+    // of the deleted interval.
+    CRef<CDelta_item> start_offset = CIntronOffsetHelper::GetStartIntronOffset(nt_loc);
+    CRef<CDelta_item> stop_offset = CIntronOffsetHelper::GetStopIntronOffset(nt_loc);
+    // The insertion is specified by a CSeq_literal instance
+    auto inserted_seq = x_CreateNtSeqLiteral(delins.GetInserted_seq_info().GetRaw_seq());
     return g_CreateDelins(*inserted_seq, m_MethodUnknown, start_offset, stop_offset);
 }
 
+
+CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateDelinsVarref(const CNtLocation& nt_loc,
+                                                             const string& deleted_seq,
+                                                             const string& inserted_seq,
+                                                             const CVariation_ref::EMethod_E method) const
+{
+
+    // Construct the CDeltaItem instances specifying the intronic offsets in the limits 
+    // of the deleted interval.
+    CRef<CDelta_item> start_offset = CIntronOffsetHelper::GetStartIntronOffset(nt_loc);
+    CRef<CDelta_item> stop_offset = CIntronOffsetHelper::GetStopIntronOffset(nt_loc);
+
+    // The insertion is specified by a CSeq_literal instance
+    auto inserted_lit = x_CreateNtSeqLiteral(inserted_seq);
+
+    auto var_ref = Ref(new CVariation_ref());
+    auto& var_set = var_ref->SetData().SetSet();
+    var_set.SetType(CVariation_ref::TData::TSet::eData_set_type_package);
+    {
+            CRef<CVariation_ref> subvar_ref = g_CreateDelins(*inserted_lit, method, start_offset, stop_offset);
+            var_set.SetVariations().push_back(subvar_ref);
+    }
+    {
+            auto deleted_lit = x_CreateNtSeqLiteral(deleted_seq);
+            CRef<CVariation_ref> subvar_ref = g_CreateIdentity(deleted_lit, m_MethodUnknown, start_offset, stop_offset);
+            var_set.SetVariations().push_back(subvar_ref);
+    }
+    return var_ref;
+
+
+}
 
 CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateDuplicationVarref(const CDuplication& dup, 
                                                                   const CVariation_ref::EMethod_E method) const
@@ -328,8 +377,21 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateConversionVarref(const CConversi
     // Construct the Seq-loc for the conversion location. 
     // The code currently assumes that the location is an interval.
     const auto& nt_loc = conv.GetLoc();
-    const string id_string = conv.GetOrigin().GetInt().GetStart().GetSite().GetSeqid(); 
-    auto seq_type = conv.GetOrigin().GetInt().GetStart().GetSite().GetSeqtype();
+
+    string id_string;
+    CSequenceVariant::TSeqtype seq_type;
+
+    const CNtIntLimit& interval_start = conv.GetOrigin().GetInt().GetStart();
+    if (interval_start.IsSite()) {
+        id_string = interval_start.GetSite().GetSeqid();
+        seq_type = interval_start.GetSite().GetSeqtype();
+    }
+    else 
+    if (interval_start.IsRange()) {
+        id_string = interval_start.GetRange().GetStart().GetSeqid();
+        seq_type = interval_start.GetRange().GetStart().GetSeqtype();
+    }
+
 
     CConstRef<CSeq_id> seq_id = m_IdResolver->GetAccessionVersion(id_string).GetSeqId();
 
@@ -388,7 +450,7 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateVarref(const string& var_name,
            var_ref = x_CreateNaIdentityVarref(var_type.GetNa_identity(), method);
            break;
        case CSimpleVariant::TType::e_Na_sub: 
-           { // Check if the substitution actually describes an identity
+           { // Check if the substitution actually describes an identity or a delins
                const auto& na_sub = var_type.GetNa_sub();
                const auto initial_nt = na_sub.GetInitial();
                const auto final_nt = na_sub.GetFinal();
@@ -397,6 +459,13 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateVarref(const string& var_name,
                                                       initial_nt,
                                                       method);
                    break;
+               } else 
+               if (initial_nt.size() != final_nt.size()) {
+                  var_ref = x_CreateDelinsVarref(na_sub.GetLoc(),
+                                                 initial_nt,
+                                                 final_nt,
+                                                 method);
+                  break; 
                }
            }
            // Not identity - non-trivial substitution
@@ -774,9 +843,7 @@ CRef<CSeq_loc> CNaSeqlocHelper::x_CreateSeqloc(const CSeq_id& seq_id,
     if ( (know_start && know_stop) && (start_index > stop_index) ) {
         string err_msg = "Reversed interval limits";
         ERR_POST(Warning << err_msg);
-        const auto temp = start_index;
-        stop_index = start_index;
-        start_index = temp;
+        swap(start_index, stop_index);
     }
 
     if (know_start) { 

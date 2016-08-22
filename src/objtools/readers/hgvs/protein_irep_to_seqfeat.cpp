@@ -105,13 +105,40 @@ CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateDelinsSubvarref(
 }
 
 
+bool s_IntervalLimitsReversed(const CAaInterval& interval)
+{
+    const auto start_index = interval.GetStart().GetIndex();
+    const auto stop_index = interval.GetStop().GetIndex();
+
+    if (stop_index < start_index) {
+        return true;
+    }
+
+    return false;
+}
+
 CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateIdentitySubvarref(
         const CAaLocation& aa_loc) const
 {
     if ( !aa_loc.IsSite() && !aa_loc.IsInt() ) {
         NCBI_THROW(CVariationIrepException, eInvalidLocation, "Unrecognized amino-acid location type");
     }
-    const auto aa_string = x_ConvertToNcbieaa(aa_loc.GetString());
+
+    string aa_string;    
+    if (aa_loc.IsInt() && s_IntervalLimitsReversed(aa_loc.GetInt())) {
+        auto aa_int = Ref(new CAaInterval());
+        auto aa_start = Ref(new CAaSite());
+        auto aa_stop = Ref(new CAaSite());
+        aa_start->Assign(aa_loc.GetInt().GetStop());
+        aa_stop->Assign(aa_loc.GetInt().GetStart());
+        aa_int->SetStart(aa_start.GetNCObject());
+        aa_int->SetStop(aa_stop.GetNCObject());
+
+        aa_string = x_ConvertToNcbieaa(aa_int->GetString());        
+        return  x_CreateIdentitySubvarref(aa_string, aa_int->size());
+    }
+
+    aa_string = x_ConvertToNcbieaa(aa_loc.GetString());
     return  x_CreateIdentitySubvarref(aa_string, aa_loc.size());
 }
 
@@ -243,6 +270,7 @@ CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateProteinDelVarref(const string&
         const CDeletion& del,
         const CVariation_ref::EMethod_E method) const
 {
+
     auto var_ref = Ref(new CVariation_ref());
     auto& var_set = var_ref->SetData().SetSet();
     var_set.SetType(CVariation_ref::TData::TSet::eData_set_type_package); // CVariation_ref needs a SetPackage method, I think.
@@ -504,9 +532,7 @@ CRef<CSeq_loc> CProtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
     if ( start_index > stop_index ) {
         string err_string = "Reversed interval limits";
         ERR_POST(Warning << err_string);
-        const auto temp = start_index;
-        stop_index = start_index;
-        start_index = temp;
+        swap(start_index, stop_index);
     }
 
     auto seq_loc = Ref(new CSeq_loc());

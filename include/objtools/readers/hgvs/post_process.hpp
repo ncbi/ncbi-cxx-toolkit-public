@@ -18,8 +18,6 @@ class CPostProcessUtils
 public:
     CRef<CSeq_literal> GetLiteralAtLoc(const CSeq_loc& loc, CScope& scope) const;
 
-    bool HasIntronOffset(const CVariation_ref& var_ref) const;
-
     bool HasIntronOffset(const CVariation_inst& var_inst) const;
 };
 
@@ -29,12 +27,10 @@ class CNormalizeVariant
 public:
     CNormalizeVariant(CScope& scope) : m_Scope(scope) {}
     CRef<CSeq_feat> GetNormalizedIdentity(const CSeq_feat& seaq_feat) const;
-    CRef<CSeq_feat> GetNormalizedSNP(const CSeq_feat& seq_feat) const;
     void NormalizeIdentityInstance(CVariation_inst& identity_inst, const CSeq_loc& location) const;
 
 private:
     CScope& m_Scope;
-
     CPostProcessUtils utils;
 };
 

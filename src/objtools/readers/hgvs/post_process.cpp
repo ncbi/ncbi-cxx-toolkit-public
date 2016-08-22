@@ -35,12 +35,6 @@ CRef<CSeq_literal> CPostProcessUtils::GetLiteralAtLoc(const CSeq_loc& loc, CScop
 }
 
 
-bool CPostProcessUtils::HasIntronOffset(const CVariation_ref& var_ref) const
-{
-    return false;
-}
-
-
 bool CPostProcessUtils::HasIntronOffset(const CVariation_inst& var_inst) const
 {
     if (!var_inst.IsSetDelta()) {
@@ -73,60 +67,11 @@ CRef<CSeq_feat> CNormalizeVariant::GetNormalizedIdentity(const CSeq_feat& identi
     } 
 
     auto& var_inst = normalized_feat->SetData().SetVariation().SetData().SetInstance();
-/*
-    if (utils.HasIntronOffset(var_inst)) {
-        return normalized_feat;
-    }
-
-    if (var_inst.IsSetDelta()) {
-        auto& delta_item = *var_inst.SetDelta().back();
-        if( delta_item.IsSetSeq() &&
-            delta_item.GetSeq().IsLiteral() &&
-            !delta_item.GetSeq().GetLiteral().IsSetSeq_data()) {
-            auto new_literal = utils.GetLiteralAtLoc(normalized_feat->GetLocation(), m_Scope);
-            delta_item.SetSeq().SetLiteral(*new_literal);
-        }
-    }
-
-    var_inst.SetObservation(CVariation_inst::eObservation_asserted);
-*/
     NormalizeIdentityInstance(var_inst, normalized_feat->GetLocation());
     return normalized_feat;
 }
 
 
-
-
-
-CRef<CSeq_feat> CNormalizeVariant::GetNormalizedSNP(const CSeq_feat& seq_feat) const
-{
-    auto normalized_feat = Ref(new CSeq_feat());
-    normalized_feat->Assign(seq_feat);
-
-    if (!normalized_feat->IsSetData() ||
-        !normalized_feat->GetData().IsVariation() ||
-        !normalized_feat->GetData().GetVariation().IsSetData() ||
-        !normalized_feat->GetData().GetVariation().GetData().IsSet() ||
-        !normalized_feat->GetData().GetVariation().GetData().GetSet().IsSetVariations() ||
-        normalized_feat->GetData().GetVariation().GetData().GetSet().GetVariations().size() != 2) {
-
-        return normalized_feat;
-    }
-
-    const auto& snv_inst = normalized_feat->GetData().GetVariation().GetData().GetSet().GetVariations().front()->GetData().GetInstance();
-
-    if (!snv_inst.IsSetType() ||
-        snv_inst.GetType() != CVariation_inst::eType_identity) 
-    {
-        return normalized_feat;
-    }
-
-    auto& identity_inst = normalized_feat->SetData().SetVariation().SetData().SetSet().SetVariations().back()->SetData().SetInstance();
-
-    NormalizeIdentityInstance(identity_inst, normalized_feat->GetLocation());
-
-    return normalized_feat;
-}
 
 
 void CNormalizeVariant::NormalizeIdentityInstance(CVariation_inst& identity_inst, const CSeq_loc& location) const
@@ -152,7 +97,7 @@ void CNormalizeVariant::NormalizeIdentityInstance(CVariation_inst& identity_inst
     }
 
     if (utils.HasIntronOffset(identity_inst)) {
-        // Post a warning
+        ERR_POST(Warning << "Unable to determine sequence at intronic location");
         return;
     }
 
@@ -181,6 +126,7 @@ CRef<CSeq_feat> g_NormalizeVariationSeqfeat(const CSeq_feat& feat,
     CNormalizeVariant normalizer(*scope);
     return normalizer.GetNormalizedIdentity(feat);
 }
+
 
 
 void s_ValidateSeqLiteral(const CSeq_literal& literal, const CSeq_loc& location, CScope* scope, bool IsCDS=false)

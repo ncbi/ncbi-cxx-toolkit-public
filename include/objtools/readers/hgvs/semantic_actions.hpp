@@ -16,10 +16,6 @@ void TagAsMosaic(CRef<CSequenceVariant>& seq_var);
 
 void AssignSequenceVariant(CRef<CSequenceVariant>& variant, CRef<CVariantExpression>& result);
 
-void AppendToLocalVariantSeq(CRef<CSimpleVariant>& var_desc, CRef<CSimpleVariantSeq>& result);
-
-void MakeLocalVariantSeqFuzzy(CRef<CSimpleVariantSeq>& seq);
-
 void AssignMissense(CRef<CAaSite>& initial, 
                     const CProteinSub::TFinal& final, 
                     CRef<CSimpleVariant>& result);
