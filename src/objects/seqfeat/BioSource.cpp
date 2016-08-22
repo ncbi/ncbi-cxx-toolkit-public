@@ -1589,7 +1589,9 @@ bool CBioSource::RemoveNullTerms()
     if (IsSetSubtype()) {
         CBioSource::TSubtype::iterator s = SetSubtype().begin(); 
         while (s != SetSubtype().end()) {
-            if ((*s)->IsSetName() && IsStopWord((*s)->GetName())) {
+            if ((*s)->IsSetName() &&
+                (NStr::EqualNocase((*s)->GetName(), "Missing") 
+                 || NStr::EqualNocase((*s)->GetName(), "N/A"))) {
                 s = SetSubtype().erase(s);
                 any_change = true;
             } else {
