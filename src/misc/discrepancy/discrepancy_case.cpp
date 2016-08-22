@@ -500,6 +500,7 @@ DISCREPANCY_SUMMARIZE(OVERLAPPING_CDS)
 
 DISCREPANCY_AUTOFIX(OVERLAPPING_CDS)
 {
+    unsigned int n = 0;
     TReportObjectList list = item->GetDetails();
     NON_CONST_ITERATE (TReportObjectList, it, list) {
         const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
@@ -509,9 +510,11 @@ DISCREPANCY_AUTOFIX(OVERLAPPING_CDS)
             if (SetOverlapNote(*new_feat)) {
                 CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(*sf));
                 feh.Replace(*new_feat);
+                ++n;
             }
         }
     }
+    return CRef<CAutofixReport>(n ? new CAutofixReport("OVERLAPPING_CDS: Set note for [n] coding region[s]", n) : 0);
 }
 
 
@@ -747,15 +750,19 @@ DISCREPANCY_SUMMARIZE(CONTAINED_CDS)
 
 DISCREPANCY_AUTOFIX(CONTAINED_CDS)
 {
+    unsigned int n = 0;
     TReportObjectList list = item->GetDetails();
     NON_CONST_ITERATE (TReportObjectList, it, list) {
         if ((*it)->CanAutofix()) {
             const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
             if (sf) {
-                ConvertCDSToMiscFeat(*sf, scope);
+                if (ConvertCDSToMiscFeat(*sf, scope)) {
+                    ++n;
+                }
             }
         }
     }
+    return CRef<CAutofixReport>(n ? new CAutofixReport("CONTAINED_CDS: Converted [n] coding region[s] to misc_feat", n) : 0);
 }
 
 
@@ -803,7 +810,7 @@ DISCREPANCY_CASE(NONWGS_SETS_PRESENT, CBioseq_set, eDisc, "Eco, mut, phy or pop 
     case CBioseq_set::eClass_phy_set:
     case CBioseq_set::eClass_pop_set:
         // non-WGS set found
-        m_Objs["[n] set[s] [is] of type eco, mut, phy or pop"].Add(*context.NewDiscObj(context.GetCurrentBioseq_set()), false);
+        m_Objs["[n] set[s] [is] of type eco, mut, phy or pop"].Add(*context.NewDiscObj(context.GetCurrentBioseq_set(), eNoRef, true), false);
         break;
     default:
         // other types are fine
@@ -818,6 +825,24 @@ DISCREPANCY_SUMMARIZE(NONWGS_SETS_PRESENT)
 }
 
 
+DISCREPANCY_AUTOFIX(NONWGS_SETS_PRESENT)
+{
+    TReportObjectList list = item->GetDetails();
+    unsigned int n = 0;
+    NON_CONST_ITERATE(TReportObjectList, it, list) {
+        const CBioseq_set* set = dynamic_cast<const CBioseq_set*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
+        if (set) {
+            CBioseq_set_Handle set_h = scope.GetBioseq_setHandle(*set);
+            CBioseq_set_EditHandle set_eh(set_h);
+            set_eh.SetClass(CBioseq_set::eClass_genbank);
+            ++n;
+        }
+    }
+    return CRef<CAutofixReport>(n ? new CAutofixReport("NONWGS_SETS_PRESENT: Set class to GenBank for [n] set[s]", n) : 0);
+}
+
+
+//NO_ANNOTATION
 DISCREPANCY_CASE(NO_ANNOTATION, CSeq_inst, eDisc | eOncaller | eSubmitter | eSmart, "No annotation")
 {
     if (context.HasFeatures()) {
