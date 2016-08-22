@@ -46,7 +46,32 @@ Seq-entry ::= set {
  gene produce two different Cap-binding proteins."
           },
           authors {
-            names std {               {                 name name {                   last "Lavoie",                   initials "C.A."                 }               },               {                 name name {                   last "Lachance",                   initials "P.E."                 }               },               {                 name name {                   last "Sonenberg",                   initials "N."                 }               },               {                 name name {                   last "Lasko",                   initials "P."                 }               }             },
+            names std {
+              {
+                name name {
+                  last "Lavoie",
+                  initials "C.A."
+                }
+              },
+              {
+                name name {
+                  last "Lachance",
+                  initials "P.E."
+                }
+              },
+              {
+                name name {
+                  last "Sonenberg",
+                  initials "N."
+                }
+              },
+              {
+                name name {
+                  last "Lasko",
+                  initials "P."
+                }
+              }
+            },
             affil str "Department of Biology, McGill University, Montreal,
  Quebec, Canada H3A 1B1."
           },
@@ -80,7 +105,14 @@ Seq-entry ::= set {
       pub {
         sub {
           authors {
-            names std {               {                 name name {                   last "Lasko",                   initials "P.F."                 }               }             },
+            names std {
+              {
+                name name {
+                  last "Lasko",
+                  initials "P.F."
+                }
+              }
+            },
             affil str "Paul F. Lasko, Biology, McGill University, 1205 Avenue
  Docteur Penfield, Montreal, QC H3A 1B1, Canada"
           },
