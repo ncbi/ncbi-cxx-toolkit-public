@@ -4,6 +4,9 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objtools/readers/hgvs/irep_to_seqfeat_errors.hpp>
 
+// Many of these exceptions will not be triggered by the test set. 
+// Exclude from code-coverage analysis.
+// LCOV_EXCL_START 
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -18,7 +21,6 @@ const char* CVariationIrepException::GetErrCodeString(void) const
         case eInvalidInsertion: return "eInvalidInsertion";
         case eUnknownVariation: return "eUnknownVariation";
         case eInvalidVariation: return "eInvalidVariation";
-        case eNullScope:        return "eNullScope";
         case eInvalidSeqType:   return "eInvalidSeqType";
         case eInvalidSeqId:     return "eInvalidSeqId";
         case eUnsupported:      return "eUnsupported";
@@ -38,6 +40,8 @@ const char* CVariationValidateException::GetErrCodeString(void) const
     default:              return CException::GetErrCodeString();
     }
 }
+
+// LCOV_EXCL_STOP
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

@@ -25,7 +25,7 @@ CRef<CDelta_item> CDeltaHelper::CreateSSR(const CCount& count,
              (range.GetStart().IsUnknown() && range.GetStop().IsUnknown()) 
              )
         {
-            NCBI_THROW(CVariationIrepException, eInvalidCount, "Unknown range");
+            NCBI_THROW(CVariationIrepException, eInvalidCount, "Unknown range"); // LCOV_EXCL_LINE - Doesn't get past parser
         }
 
         const auto& start = range.GetStart();
@@ -45,9 +45,7 @@ CRef<CDelta_item> CDeltaHelper::CreateSSR(const CCount& count,
             if (max < min) { 
                 string err_string = "Reversed range limits";
                 ERR_POST(Warning << err_string);
-                const auto temp = min;
-                min = max;
-                max = temp;
+                swap(max, min);
             }
 
             delta->SetMultiplier() = min;
@@ -65,7 +63,7 @@ CRef<CDelta_item> CDeltaHelper::CreateSSR(const CCount& count,
             delta->SetMultiplier_fuzz().SetLim(CInt_fuzz::eLim_unk); // unknown limit
         }
         if ( multiplier < 1 ) {
-            NCBI_THROW(CVariationIrepException, eInvalidCount, "Multiplier < 1");
+            NCBI_THROW(CVariationIrepException, eInvalidCount, "Multiplier < 1"); // LCOV_EXCL_LINE
         }
         delta->SetMultiplier() = multiplier;
     }

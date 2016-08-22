@@ -20,7 +20,6 @@ public:
         eInvalidCount,
         eUnknownVariation, // Unrecognized variation type
         eInvalidVariation,  // CVarDesc data not consistent with variation type 
-        eNullScope,
         eInvalidSeqType,
         eInvalidSeqId,
         eCDSError,
