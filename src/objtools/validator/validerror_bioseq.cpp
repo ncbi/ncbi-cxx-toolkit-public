@@ -6955,7 +6955,7 @@ void s_SetUpXrefPairs(
             cds_match.AssignSinglemRNA();
         }
     }
-    cout << "Totals CDS, mRNAs, compare attempts:" << cds_list.size() << " " << mrna_list.size() << " " << compare_attempts << endl;
+    // cout << "Totals CDS, mRNAs, compare attempts:" << cds_list.size() << " " << mrna_list.size() << " " << compare_attempts << endl;
 }
 
 
