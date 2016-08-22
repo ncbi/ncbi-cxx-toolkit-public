@@ -77,8 +77,8 @@ CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateInsertionSubvarref(
         var_ref = x_CreateInsertionSubvarref(insert.GetCount().GetVal());
     } 
     else {
-        NCBI_THROW(CVariationIrepException, eInvalidInsertion, "Unrecognized insertion type");
-    }
+        NCBI_THROW(CVariationIrepException, eInvalidInsertion, "Unrecognized insertion type"); // LCOV_EXCL_LINE 
+    }                                                                                          // Not expected to arise
     return var_ref;
 }
 
@@ -98,8 +98,8 @@ CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateDelinsSubvarref(
         seq_literal->SetLength(seq_length);
     } 
     else {
-        NCBI_THROW(CVariationIrepException, eInvalidInsertion, "Unrecognized insertion type");
-    }
+        NCBI_THROW(CVariationIrepException, eInvalidInsertion, "Unrecognized insertion type"); // LCOV_EXCL_LINE
+    }                                                                                          // Not expected to arise
 
     return g_CreateDelins(*seq_literal);
 }
@@ -121,8 +121,8 @@ CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateIdentitySubvarref(
         const CAaLocation& aa_loc) const
 {
     if ( !aa_loc.IsSite() && !aa_loc.IsInt() ) {
-        NCBI_THROW(CVariationIrepException, eInvalidLocation, "Unrecognized amino-acid location type");
-    }
+        NCBI_THROW(CVariationIrepException, eInvalidLocation, "Unrecognized amino-acid location type"); // LCOV_EXCL_LINE
+    }                                                                                                   // Not expected to get past parser
 
     string aa_string;    
     if (aa_loc.IsInt() && s_IntervalLimitsReversed(aa_loc.GetInt())) {
@@ -195,8 +195,8 @@ CRef<CSeq_feat> CHgvsProtIrepReader::CreateSeqfeat(const CVariantExpression& var
     const auto seq_type = sequence_variant.GetSeqtype();
 
     if (seq_type != eVariantSeqType_p) {
-        NCBI_THROW(CVariationIrepException, eInvalidSeqType, "Protein sequence expected");
-    }
+        NCBI_THROW(CVariationIrepException, eInvalidSeqType, "Protein sequence expected"); // LCOV_EXCL_LINE
+    }                                                                                      // Not expected to get past parser
 
 
     if (subvariant->IsSpecial()) {
@@ -230,7 +230,7 @@ CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateVarref(const string& var_name,
 
     switch (var_type.Which())  {
         default: 
-            NCBI_THROW(CVariationIrepException, eUnknownVariation, "Unknown variation type");
+            NCBI_THROW(CVariationIrepException, eUnknownVariation, "Unknown variation type"); // LCOV_EXCL_LINE
         case CSimpleVariant::TType::e_Prot_sub:
             var_ref = x_CreateProteinSubstVarref(identifier, var_type.GetProt_sub(), method);
             break;
@@ -391,7 +391,9 @@ CRef<CVariation_ref> CHgvsProtIrepReader::x_CreateProteinSubstVarref(const strin
         final_aa = "?";
     } 
     else {
+// LCOV_EXCL_START - Not expected to get past parser
         NCBI_THROW(CVariationIrepException, eInvalidVariation, "Unrecognized protein substitution type");
+// LCOV_EXCL_STOP
     }
 
     auto var_ref = Ref(new CVariation_ref());
@@ -452,7 +454,7 @@ CRef<CSeq_loc> CProtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
 
     switch(var_type.Which())  {
         default: 
-            NCBI_THROW(CVariationIrepException, eUnknownVariation, "Unsupported variation type");
+            NCBI_THROW(CVariationIrepException, eUnknownVariation, "Unsupported variation type"); // LCOV_EXCL_LINE
         case CSimpleVariant::TType::e_Prot_sub: 
             seq_loc = CreateSeqloc(seq_id, 
                     var_type.GetProt_sub().GetInitial());
@@ -495,7 +497,7 @@ CRef<CSeq_loc> CProtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
     }
 
     if ( !aa_loc.IsInt() ) {
-        NCBI_THROW(CVariationIrepException, eInvalidLocation, "Invalid protein sequence location");
+        NCBI_THROW(CVariationIrepException, eInvalidLocation, "Invalid protein sequence location"); // LCOV_EXCL_LINE
     }
     return CreateSeqloc(seq_id, aa_loc.GetInt());
 }
@@ -523,7 +525,7 @@ CRef<CSeq_loc> CProtSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
         const CAaInterval& aa_int)
 {
     if ( !aa_int.IsSetStart() || !aa_int.IsSetStop() ) {
-        NCBI_THROW(CVariationIrepException, eInvalidInterval, "Undefined interval limits");
+        NCBI_THROW(CVariationIrepException, eInvalidInterval, "Undefined interval limits"); // LCOV_EXCL_LINE
     }
 
     auto start_index = aa_int.GetStart().GetIndex()-1;

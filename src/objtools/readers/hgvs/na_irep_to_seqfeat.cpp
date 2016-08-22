@@ -67,9 +67,11 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateSubstVarref(const CNtLocation& n
 
     if (!initial_nt.empty() &&
         (initial_nt.size() != final_nt.size())) {
+// LCOV_EXCL_START - This error should never arise. Such cases are interpreted as Indels.
         string err_msg = "Invalid nucleotide substitution.";
         err_msg += " Reference subsequence and variant subsequence differ in length";
         NCBI_THROW(CVariationIrepException, eInvalidVariation, err_msg);
+// LCOV_EXCL_STOP
     }
 
 
@@ -445,7 +447,9 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateVarref(const string& var_name,
 
     switch (var_type.Which()) {
        default:
+// LCOV_EXCL_START - Should not arise
            NCBI_THROW(CVariationIrepException, eUnknownVariation, "Unknown variation type");
+// LCOV_EXCL_STOP
        case CSimpleVariant::TType::e_Na_identity:
            var_ref = x_CreateNaIdentityVarref(var_type.GetNa_identity(), method);
            break;
@@ -598,7 +602,9 @@ CRef<CSeq_loc> CNaSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
     
     switch (var_type.Which()) {
         default:
+// LCOV_EXCL_START - Should never arise
             NCBI_THROW(CVariationIrepException, eUnknownVariation, "Unsupported variation type");
+// LCOV_EXCL_STOP
         case CSimpleVariant::TType::e_Na_identity:  // No change
             seq_loc = CreateSeqloc(seq_id,
                                    var_type.GetNa_identity().GetLoc(),
@@ -685,7 +691,9 @@ CRef<CSeq_loc> CNaSeqlocHelper::CreateSeqloc(const CSeq_id& seq_id,
 
 
     if (!nt_loc.IsInt()) {
+// LCOV_EXCL_START - Should never arise
         NCBI_THROW(CVariationIrepException, eInvalidLocation, "Invalid nucleotide sequence location");
+// LCOV_EXCL_STOP
     }
 
     return x_CreateSeqloc(seq_id,
@@ -741,8 +749,10 @@ CRef<CSeq_loc> CNaSeqlocHelper::x_CreateSeqloc(const CSeq_id& seq_id,
 
     auto seq_loc = Ref(new CSeq_loc());
     if (!know_site) {
+// LCOV_EXCL_START - Not expected to arise
         seq_loc->SetEmpty().Assign(seq_id);
         return seq_loc;
+// LCOV_EXCL_STOP
     }
 
     ENa_strand strand = x_GetStrand(nt_range);
@@ -772,37 +782,18 @@ ENa_strand CNaSeqlocHelper::x_GetStrand(const CNtSite& nt_site)
 ENa_strand CNaSeqlocHelper::x_GetStrand(const CNtSiteRange& nt_range)
 {
     ENa_strand strand = eNa_strand_unknown;
-    if (nt_range.IsSetStart()) {
-        return x_GetStrand(nt_range.GetStart());
-    }
-
-    if (nt_range.IsSetStop()) {
-        strand = x_GetStrand(nt_range.GetStop());
-    }
-    return strand;
+    return x_GetStrand(nt_range.GetStart());
 }
 
 
 ENa_strand CNaSeqlocHelper::x_GetStrand(const CNtInterval& nt_int) 
 {
-    if (nt_int.IsSetStart()) {
-        if (nt_int.GetStart().IsSite()) {
-            return x_GetStrand(nt_int.GetStart().GetSite());
-        }
-
-        if (nt_int.GetStart().IsRange()) {
-            return x_GetStrand(nt_int.GetStart().GetRange());
-        }
+    if (nt_int.GetStart().IsSite()) {
+        return x_GetStrand(nt_int.GetStart().GetSite());
     }
 
-    if (nt_int.IsSetStop()) {
-        if (nt_int.GetStop().IsSite()) {
-            return x_GetStrand(nt_int.GetStop().GetSite());
-        }
-        
-        if (nt_int.GetStop().IsRange()) {
-            return x_GetStrand(nt_int.GetStop().GetRange());
-        }
+    if (nt_int.GetStart().IsRange()) {
+        return x_GetStrand(nt_int.GetStart().GetRange());
     }
 
     return eNa_strand_unknown;
@@ -817,8 +808,8 @@ CRef<CSeq_loc> CNaSeqlocHelper::x_CreateSeqloc(const CSeq_id& seq_id,
 {
 
     if ( !nt_int.IsSetStart() || !nt_int.IsSetStop() ) {
-        NCBI_THROW(CVariationIrepException, eInvalidInterval, "Undefined interval limits");
-    }
+        NCBI_THROW(CVariationIrepException, eInvalidInterval, "Undefined interval limits"); // LCOV_EXCL_LINE
+    }                                                                                       // Not expected to arise
 
 
     auto seq_loc = Ref(new CSeq_loc());
@@ -1080,15 +1071,15 @@ bool CNaSeqlocHelper::x_ComputeSiteIndex(const CSeq_id& seq_id,
 
     site_index = nt_site.GetBase().GetVal();
     if (site_index == 0 ) {
-        NCBI_THROW(CVariationIrepException, eInvalidLocation, "Invalid HGVS site index: 0");
+        NCBI_THROW(CVariationIrepException, eInvalidLocation, "Invalid HGVS site index: 0"); 
     }
 
     // If this is a CDS variant and the referenced site lies 5' of the CDS start codon
     if (nt_site.IsSetUtr() && nt_site.GetUtr().IsFive_prime()) {
         // offset is the NCBI index referring to nucleotide A of the start codon
         if (site_index > offset) {
-           NCBI_THROW(CVariationIrepException, eInvalidLocation, "Error deducing 5' UTR location");
-        }
+           NCBI_THROW(CVariationIrepException, eInvalidLocation, "Error deducing 5' UTR location"); 
+        }                                                                                          
         site_index = offset - site_index;
         return true;
     }
@@ -1280,7 +1271,7 @@ CRef<CDelta_item> CIntronOffsetHelper::GetStartIntronOffset(const CNtInterval& n
              nt_int.GetStart().IsRange()) {
         return CIntronOffsetHelper::GetIntronOffset(nt_int.GetStart().GetRange());
     }
-    return CRef<CDelta_item>();
+    return Ref(new CDelta_item()); // LCOV_EXCL_LINE - Not expected to arise
 }
 
 
@@ -1296,7 +1287,7 @@ CRef<CDelta_item> CIntronOffsetHelper::GetStopIntronOffset(const CNtInterval& nt
              nt_int.GetStop().IsRange()) {
         return CIntronOffsetHelper::GetIntronOffset(nt_int.GetStop().GetRange());
     }
-    return CRef<CDelta_item>();
+    return Ref(new CDelta_item()); // LCOV_EXCL_LINE - Not expected to arise
 }
 
 

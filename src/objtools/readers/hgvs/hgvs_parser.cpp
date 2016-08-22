@@ -63,8 +63,8 @@ SHgvsVariantGrammar::SHgvsVariantGrammar(const SHgvsLexer& tok) :
 // Success failure partial success
 bool CHgvsParser::Apply(const string& hgvs_expression, CRef<CVariantExpression>& variant_irep) const
 {
-    if (hgvs_expression.empty()) {
-        return true;
+    if (NStr::IsBlank(hgvs_expression)) {
+        return false; // LCOV_EXCL_LINE
     }
 
     TLexIterator first = hgvs_expression.c_str();
