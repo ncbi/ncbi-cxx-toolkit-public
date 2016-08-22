@@ -276,6 +276,9 @@ private:
     bool m_IsUnverified;
     CTempString m_TargetedLocus;
 
+    /// comment fields
+    bool m_IsPseudogene;
+
     /// map fields
     string m_rEnzyme;
 
