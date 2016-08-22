@@ -77,24 +77,24 @@ CRef<CSeq_feat> CNormalizeVariant::GetNormalizedIdentity(const CSeq_feat& identi
 void CNormalizeVariant::NormalizeIdentityInstance(CVariation_inst& identity_inst, const CSeq_loc& location) const
 {
 
-    if (!identity_inst.SetType()) {
+    if (!identity_inst.SetType()) { // LCOV_EXCL_START
         ERR_POST(Warning << "CVariation_inst: Type not set");
         return;
-    }
+    } // LCOV_EXCL_STOP
 
     if (identity_inst.GetType() != CVariation_inst::eType_identity)
-    {
+    { // LCOV_EXCL_START
         string message = "CVariation_inst: Invalid type ("
                        + NStr::NumericToString(identity_inst.GetType())
                        + ").";
         ERR_POST(Warning << message);
         return;
-    }
+    } // LCOV_EXCL_STOP
 
-    if (!identity_inst.IsSetDelta()) {
+    if (!identity_inst.IsSetDelta()) { // LCOV_EXCL_START
         ERR_POST(Warning << "CVariation_inst: Delta-item not set");
         return;
-    }
+    } // LCOV_EXCL_STOP
 
     if (utils.HasIntronOffset(identity_inst)) {
         ERR_POST(Warning << "Unable to determine sequence at intronic location");
@@ -104,10 +104,10 @@ void CNormalizeVariant::NormalizeIdentityInstance(CVariation_inst& identity_inst
 
     auto& delta_item = *identity_inst.SetDelta().back();
 
-    if (!delta_item.IsSetSeq()) {
-        ERR_POST(Warning << "CDelta_item: Sequence not set");
+    if (!delta_item.IsSetSeq()) { // LCOV_EXCL_START
+        ERR_POST(Warning << "CDelta_item: Sequence not set"); 
         return;
-    }
+    } // LCOV_EXCL_STOP
 
 
     if (delta_item.IsSetSeq() &&
@@ -159,6 +159,7 @@ void CValidateVariant::ValidateIdentityInst(const CVariation_inst& identity_inst
     if (!identity_inst.IsSetType() ||
          identity_inst.GetType() != CVariation_inst::eType_identity)
     {
+// LCOV_EXCL_START
         string message = "CVariation_inst: ";
         if (!identity_inst.IsSetType()) {
             message += "Type not set. ";
@@ -172,25 +173,32 @@ void CValidateVariant::ValidateIdentityInst(const CVariation_inst& identity_inst
         NCBI_THROW(CVariationValidateException,
                    eInvalidType,
                    message);
+// LCOV_EXCL_STOP
     }
 
     if (!identity_inst.IsSetDelta()) {
+// LCOV_EXCL_START
         NCBI_THROW(CVariationValidateException, 
                    eIncompleteObject,
                    "Delta-item not set");
+// LCOV_EXCL_STOP
     }
 
     auto& delta_item = *identity_inst.GetDelta().back();
     if (!delta_item.IsSetSeq()) {
+// LCOV_EXCL_START
         NCBI_THROW(CVariationValidateException,
                    eIncompleteObject,
                    "Seq not set");
+// LCOV_EXCL_STOP
     }
 
     if (!delta_item.GetSeq().IsLiteral()) {
+// LCOV_EXCL_START
         NCBI_THROW(CVariationValidateException,
                    eInvalidType,
                    "Seq-literal expected");
+// LCOV_EXCL_STOP
     }
 
     const auto& literal = delta_item.GetSeq().GetLiteral();
@@ -206,12 +214,14 @@ void CValidateVariant::ValidateMicrosatelliteInst(const CVariation_inst& ms_inst
 {
     if (!ms_inst.IsSetType())
     {
+// LCOV_EXCL_START
         string message = "CVariation_inst: ";
         message += "Type not set. ";
         
         NCBI_THROW(CVariationValidateException,
                    eInvalidType,
                    message);
+// LCOV_EXCL_STOP
     }
     
     // Only worry about microsatellites here 
@@ -220,16 +230,20 @@ void CValidateVariant::ValidateMicrosatelliteInst(const CVariation_inst& ms_inst
     }
 
     if (!ms_inst.IsSetDelta()) {
+// LCOV_EXCL_START
         NCBI_THROW(CVariationValidateException, 
                    eIncompleteObject,
                    "Delta-item not set");
+// LCOV_EXCL_STOP
     }
     
     auto& delta_item = *ms_inst.GetDelta().back();
     if (!delta_item.IsSetSeq()) {
+// LCOV_EXCL_START
         NCBI_THROW(CVariationValidateException,
                    eIncompleteObject,
                    "Seq not set");
+// LCOV_EXCL_STOP
     }
 
     if (delta_item.GetSeq().IsLiteral()) {
@@ -246,9 +260,11 @@ void g_ValidateVariationSeqfeat(const CSeq_feat& feat, CScope* scope, bool IsCDS
     if (!feat.IsSetData() ||
         !feat.GetData().IsVariation() ||
         !feat.GetData().GetVariation().IsSetData()) {
+// LCOV_EXCL_START
         NCBI_THROW(CVariationValidateException,
                 eIncompleteObject,
                 "Variation feature data not specified" );
+// LCOV_EXCL_STOP
     }
 
     if (feat.GetData().GetVariation().GetData().IsInstance()) {
@@ -268,7 +284,7 @@ void g_ValidateVariationSeqfeat(const CSeq_feat& feat, CScope* scope, bool IsCDS
     if (!data_set.IsSetType() ||
         data_set.GetType() != CVariation_ref::TData::TSet::eData_set_type_package ||
         !data_set.IsSetVariations()) {
-        return;
+        return; // LCOV_EXCL_LINE
     }
 
     // reference to list<CRef<CVariation_ref>> 
@@ -283,21 +299,27 @@ void g_ValidateVariationSeqfeat(const CSeq_feat& feat, CScope* scope, bool IsCDS
 
     if (!assertion->IsSetData() ||
         !reference->IsSetData()) {
+// LCOV_EXCL_START
         NCBI_THROW(CVariationValidateException,
                    eIncompleteObject,
                    "Variation-ref data field not set");
+// LCOV_EXCL_STOP
     }
     // Check the reference Variation-ref
     if (!reference->GetData().IsInstance()) {
+// LCOV_EXCL_START
          NCBI_THROW(CVariationValidateException,
                     eInvalidType, 
                     "Variation-ref does not reference Variation-inst object");
+// LCOV_EXCL_STOP
     }
     const auto& reference_inst = reference->GetData().GetInstance();
     if (!reference_inst.IsSetType()) {
+// LCOV_EXCL_START
         NCBI_THROW(CVariationValidateException,
                    eIncompleteObject,
                    "Variation-inst type not specified");
+// LCOV_EXCL_STOP
     }
 
 
@@ -306,17 +328,21 @@ void g_ValidateVariationSeqfeat(const CSeq_feat& feat, CScope* scope, bool IsCDS
         return;
     }
     if (!assertion->GetData().IsInstance()) {
+// LCOV_EXCL_START
          NCBI_THROW(CVariationValidateException,
                     eInvalidType, 
                     "Variation-ref does not reference Variation-inst object");
+// LCOV_EXCL_STOP
     }
 
     const auto& assertion_inst = assertion->GetData().GetInstance();
 
     if (!assertion_inst.IsSetType()) {
-        NCBI_THROW(CVariationValidateException,
+// LCOV_EXCL_START
+        NCBI_THROW(CVariationValidateException, 
                    eIncompleteObject,
                    "Variation-inst type not specified");
+// LCOV_EXCL_STOP
     }
 
     const auto type = assertion_inst.GetType();
