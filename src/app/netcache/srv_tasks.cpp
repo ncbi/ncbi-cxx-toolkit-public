@@ -60,7 +60,7 @@ TAllTasksSet  s_all_tasks;
 CSrvTask::CSrvTask(void)
     : m_LastThread(0),
       m_TaskFlags(0),
-      m_LastActive(0),
+      m_LastActive(CSrvTime::CurSecs()),
       m_Priority(1),
       m_DiagCtx(NULL),
       m_DiagChain(NULL),
