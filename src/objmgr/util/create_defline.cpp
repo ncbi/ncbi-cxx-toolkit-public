@@ -448,6 +448,7 @@ void CDeflineGenerator::x_SetFlags (
     m_Strain.clear();
 
     m_IsUnverified = false;
+    m_IsPseudogene = false;
     m_TargetedLocus.clear();
 
     m_rEnzyme.clear();
@@ -564,9 +565,10 @@ void CDeflineGenerator::x_SetFlags (
         fGenbank = 1 << 3,
         fEmbl    = 1 << 4,
         fTitle   = 1 << 5,
-        fPdb     = 1 << 6
+        fPdb     = 1 << 6,
+        fComment = 1 << 7
     };
-    int needed_desc_choices = fMolinfo | fUser | fSource | fGenbank | fEmbl;
+    int needed_desc_choices = fMolinfo | fUser | fSource | fGenbank | fEmbl | fComment;
 
     CSeqdesc_CI::TDescChoices desc_choices;
     desc_choices.reserve(7);
@@ -577,6 +579,7 @@ void CDeflineGenerator::x_SetFlags (
     // determining m_HTGTech requires a descriptor scan.
     desc_choices.push_back(CSeqdesc::e_Genbank);
     desc_choices.push_back(CSeqdesc::e_Embl);
+    desc_choices.push_back(CSeqdesc::e_Comment);
     if (! m_Reconstruct) {
         needed_desc_choices |= fTitle;
         desc_choices.push_back(CSeqdesc::e_Title);
@@ -672,6 +675,20 @@ void CDeflineGenerator::x_SetFlags (
                         }
                     }
                 }
+            }
+            break;
+        }
+
+        case CSeqdesc::e_Comment:
+        {
+            // process comment
+            if ((needed_desc_choices & fComment) == 0) {
+                continue; // already covered
+            }
+
+            const string& comment = desc_it->GetComment();
+            if (NStr::Find (comment, "[CAUTION] Could be the product of a pseudogene") != string::npos) {
+                m_IsPseudogene = true;
             }
             break;
         }
@@ -2136,6 +2153,10 @@ void CDeflineGenerator::x_SetPrefix (
         }
     } else if (m_Multispecies && m_IsWP) {
         prefix = "MULTISPECIES: ";
+    } else if (m_IsPseudogene) {
+        if (m_MainTitle.find ("PUTATIVE PSEUDOGENE") == NPOS) {
+            prefix = "PUTATIVE PSEUDOGENE: ";
+        }
     }
 }
 
