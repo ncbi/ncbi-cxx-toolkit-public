@@ -300,13 +300,16 @@ BOOST_AUTO_TEST_CASE(SubjectTitlesOutput) {
 		"X12497	XP_010832415	PREDICTED: interleukin-1 alpha [Bison bison bison]",
 		"X12497	BAE76004	Interleukin-1 alpha [Bubalus carabanensis]",
 		"X12497	XP_006056051	PREDICTED: interleukin-1 alpha [Bubalus bubalis]",
-		"X12497	NP_001277833	interleukin 1, alpha [Bubalus bubalis]"};
+		"X12497	NP_001277833	interleukin-1 alpha [Bubalus bubalis]"};
 
     	string output = CNcbiOstrstreamToString(output_stream);
     	vector<string> results;
     	NStr::Split(output, "\n", results);
     	for(unsigned int i=0; i < 8; i++) {
-    	    BOOST_REQUIRE(results[i].find(ref[i]) != NPOS);
+            CNcbiOstrstream oss;
+            oss << "Failed to find '" << ref[i] << "' in '" << output;
+            string msg = CNcbiOstrstreamToString(oss);
+    	    BOOST_REQUIRE_MESSAGE(results[i].find(ref[i]) != NPOS, msg);
     	}
     }
 
@@ -329,11 +332,14 @@ BOOST_AUTO_TEST_CASE(SubjectTitlesOutput) {
             "PREDICTED: interleukin-1 alpha [Bison bison bison]",
             "Interleukin-1 alpha [Bubalus carabanensis]",
             "PREDICTED: interleukin-1 alpha [Bubalus bubalis]<>interleukin-1 alpha [Bubalus bubalis]<>Interleukin-1 alpha [Bubalus bubalis x Bubalus carabanensis]",
-            "interleukin 1, alpha [Bubalus bubalis]<>Interleukin-1 alpha [Bubalus bubalis]"}; 
+            "interleukin-1 alpha [Bubalus bubalis]<>Interleukin-1 alpha [Bubalus bubalis]"}; 
     	vector<string> results;
     	NStr::Split(output, "\n", results);
     	for(unsigned int i=0; i < 8; i++) {
-    	    BOOST_REQUIRE(results[i].find(ref[i]) != NPOS);
+            CNcbiOstrstream oss;
+            oss << "Failed to find '" << ref[i] << "' in '" << output;
+            string msg = CNcbiOstrstreamToString(oss);
+    	    BOOST_REQUIRE_MESSAGE(results[i].find(ref[i]) != NPOS, msg);
     	}
     }
 }
