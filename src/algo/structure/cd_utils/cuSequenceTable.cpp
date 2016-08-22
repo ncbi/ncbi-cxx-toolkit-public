@@ -47,19 +47,19 @@ void SequenceTable::addSequences(vector< CRef< CBioseq > >& bioseqVec, bool grou
 {
 	if (!grouped)
 	{
-		for (int i = 0; i < bioseqVec.size(); i++)
+		for (unsigned int i = 0; i < bioseqVec.size(); i++)
 		{
 			addSequence(bioseqVec[i]);
 		}
 	}
 	else
 	{
-		for (int i = 0; i < bioseqVec.size(); i++)
+		for (unsigned int i = 0; i < bioseqVec.size(); i++)
 		{
 			list< CRef< CSeq_id > >& seqIds = bioseqVec[i]->SetId();
 			for (list< CRef< CSeq_id > >::iterator it= seqIds.begin(); it != seqIds.end(); it++)
 			{
-				for (int j = 0; j < bioseqVec.size(); j++)
+				for (unsigned int j = 0; j < bioseqVec.size(); j++)
 					m_table.insert(SeqidToBioseqMap::value_type(*it, bioseqVec[j]));
 			}
 		}
@@ -110,7 +110,7 @@ bool SequenceTable::findSequence(CRef< CSeq_id > seqId, CRef< CBioseq >& bioseq)
 	vector< CRef< CBioseq > > bioseqVec;
 	if (findSequencesInTheGroup(seqId, bioseqVec) == 0)
 		return false;
-	for(int i = 0; i < bioseqVec.size(); i++)
+	for (unsigned int i = 0; i < bioseqVec.size(); i++)
 	{
 		const CBioseq::TId& ids = bioseqVec[i]->GetId();
 		CBioseq::TId::const_iterator it = ids.begin(), itend = ids.end();

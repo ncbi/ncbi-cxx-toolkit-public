@@ -489,12 +489,12 @@ void SeqTree::selectByGI(const AlignmentCollection& aligns, const vector<CRef<CS
 {
 	set<int> rows;
 	vector<int> rowsForOne;
-	for (int i = 0; i < gis.size(); i++)
+	for (unsigned int i = 0; i < gis.size(); i++)
 	{
 		CRef<CSeq_id> seqId = gis[i];
 		rowsForOne.clear();
 		aligns.GetRowsWithSeqID(seqId, rowsForOne);
-		for (int k = 0; k < rowsForOne.size(); k++)
+		for (unsigned int k = 0; k < rowsForOne.size(); k++)
 			rows.insert(rowsForOne[k]);
 	}
 	selectByRowID(rows);
@@ -591,7 +591,7 @@ void SeqTree::fixRowNumber(AlignmentCollection& aligns)
 			cursor->rowID--; //make row start at 0
 			vector<RowSource> rss;
 			aligns.GetRowSourceTable().findEntries(cursor->rowID, rss, true);
-			for (int i = 0; i < rss.size(); i++)
+			for (unsigned int i = 0; i < rss.size(); i++)
 			{
 				cursor->selections.insert(SelectionByCd::value_type(rss[i].cd, false));
 			}
@@ -610,7 +610,7 @@ void SeqTree::addSelectionFields(AlignmentCollection& aligns)
 			cursor->selections.clear();
 			vector<RowSource> rss;
 			aligns.GetRowSourceTable().findEntries(cursor->rowID, rss, true);
-			for (int i = 0; i < rss.size(); i++)
+			for (unsigned int i = 0; i < rss.size(); i++)
 			{
 				cursor->selections.insert(SelectionByCd::value_type(rss[i].cd, false));
 			}
@@ -627,7 +627,7 @@ void SeqTree::updateSeqCounts(const AlignmentCollection& aligns)
 		{
 			vector<RowSource> rss;
 			aligns.GetRowSourceTable().findEntries(cursor->rowID, rss, true);
-			for (int i = 0; i < rss.size(); i++)
+			for (unsigned int i = 0; i < rss.size(); i++)
 			{
 				if ((cursor->selections).find(rss[i].cd) == cursor->selections.end())
 					cursor->selections.insert(SelectionByCd::value_type(rss[i].cd, false));
@@ -647,10 +647,10 @@ bool SeqTree::isSequenceCompositionSame(AlignmentCollection& aligns)
 bool SeqTree::compareSequenceCompositions(IntToStringMap& com1, 
 								IntToStringMap& com2)
 {
-	int size = com1.size();
-	if (size != com2.size())
+	unsigned int com1Size = com1.size();
+	if (com1Size != com2.size())
 		return false;
-	for (int i = 0; i < size; i++)
+	for (unsigned int i = 0; i < com1Size; i++)
 	{
 		if (com1[i].compare(com2[i]))
 			return false;

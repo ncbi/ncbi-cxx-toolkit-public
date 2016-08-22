@@ -56,7 +56,7 @@ void SeqSwapper::swapSequences()
 	set<int> structures;
 	LOG_POST("Clustering is done (made " << clusters.size() << " clusters)");
 	LOG_POST("Find replacements by BLAST in each cluster");
-	for (int i = 0; i < clusters.size(); i++)
+	for (unsigned int i = 0; i < clusters.size(); i++)
 	{
 		vector<int>* cluster = clusters[i];
         if (cluster) {
@@ -69,7 +69,7 @@ void SeqSwapper::swapSequences()
 	
 	vector<int> selectedNormalRows;
 	int newMaster = -1;
-	for (int p = 0; p < replacementPairs.size(); p++)
+	for (unsigned int p = 0; p < replacementPairs.size(); p++)
 	{
 		//debug
 		CRef< CSeq_id > seqId;
@@ -127,7 +127,7 @@ void SeqSwapper::makeClusters(int identityThreshold, vector< vector<int> * >& cl
 		double distToRoot = seqtree->getMaxDistanceToRoot() - distTh;
 		vector<SeqTreeIterator> nodes;
 		seqtree->getDistantNodes(distToRoot, nodes);
-		for (int i = 0; i < nodes.size(); i++)
+		for (unsigned int i = 0; i < nodes.size(); i++)
 		{
 			vector<int>* rowids = new vector<int>;
 			seqtree->getSequenceRowid(nodes[i], *rowids);
@@ -145,7 +145,7 @@ void SeqSwapper::findReplacements(vector<int>& cluster, vector< pair<int,int> >&
 	vector<int> normalLocal, normalNonLocal, pending;
 	bool hasNormalPDB = false;
 	set<int> pending3D;
-	for (int i = 0; i < cluster.size(); i++)
+	for (unsigned int i = 0; i < cluster.size(); i++)
 	{
 		if (m_ac.IsPending(cluster[i]))
 		{
@@ -174,7 +174,7 @@ void SeqSwapper::findReplacements(vector<int>& cluster, vector< pair<int,int> >&
 	{
 		vector< pair<int,int> > pairs;
 		findBestPairings(normalLocal, pending, pairs);
-		for (int i = 0; i < pairs.size(); i++)
+		for (unsigned int i = 0; i < pairs.size(); i++)
 		{
 			replacementPairs.push_back(pairs[i]);
 			set<int>::iterator sit = pending3D.find(pairs[i].second);
@@ -215,11 +215,11 @@ void SeqSwapper::findBestPairings(const vector<int>& normal, const vector<int>& 
 	blaster.blast();
 	//for each normal, find the hightest-scoring (in identity), unused and above the threshold pending
 	set<int> usedPendingIndice;
-	for (int n = 0; n < normal.size(); n++)
+	for (int n = 0; n < (int) normal.size(); n++)
 	{
 		int maxId = 0;
 		int maxIdIndex = -1;
-		for (int p = 0; p < pending.size(); p++)
+		for (int p = 0; p < (int) pending.size(); p++)
 		{
 			if (usedPendingIndice.find(p) == usedPendingIndice.end())//this pending has not been used
 			{

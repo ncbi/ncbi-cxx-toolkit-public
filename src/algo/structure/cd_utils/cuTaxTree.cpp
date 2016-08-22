@@ -122,7 +122,7 @@ void TaxTreeData::selectTaxNode(TaxTreeIterator& taxNode, bool select)
 	//deselectAllTaxNodes();
 	vector<TaxTreeIterator> nodes;
 	getAllLeafNodes(taxNode, nodes);
-	for (int i = 0; i < nodes.size(); i++)
+	for (unsigned int i = 0; i < nodes.size(); i++)
 	{
 		selectTaxTreeLeaf(nodes[i], select);
 	}
@@ -146,7 +146,7 @@ int TaxTreeData::getAllLeafNodes(const TaxTreeIterator& taxNode, vector<TaxTreeI
 
 void TaxTreeData::setSelections(const vector<int>& rowIDs, CCdCore* cd)
 {
-	for (int i = 0; i < rowIDs.size(); i ++)
+	for (unsigned int i = 0; i < rowIDs.size(); i ++)
 	{
 		RowToTaxNode::iterator mapIt = m_rowToTaxNode.find(rowIDs[i]);
 		if (mapIt != m_rowToTaxNode.end())
@@ -353,7 +353,7 @@ void TaxTreeData::insertLineage(TaxonomyTree::iterator& pos, stack<TaxNode*>& li
 	m_ac.GetRowSourceTable().findEntries(cursor->rowId, rss, true); //true = scoped only
 	if (rss.size() <= 1)
 		return;
-	for (int i = 0; i < rss.size(); i++)
+	for (unsigned int i = 0; i < rss.size(); i++)
 	{
 		if (m_ac.isCDInScope(rss[i].cd))
 		{
