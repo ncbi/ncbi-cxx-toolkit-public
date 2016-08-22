@@ -37,7 +37,7 @@
 
 BEGIN_NCBI_SCOPE
 
-unsigned CDiscreteDistribution::GetNextValue() const
+unsigned CDiscreteDistributionImpl::GetNextValue() const
 {
     CRandom::TValue random_number = m_RandomGen->GetRand();
 

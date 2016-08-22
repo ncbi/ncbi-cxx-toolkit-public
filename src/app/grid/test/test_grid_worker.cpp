@@ -108,7 +108,7 @@ public:
 
 private:
     CRandom m_Random;
-    CDiscreteDistribution m_SleepTimeDistr;
+    CDiscreteDistributionImpl m_SleepTimeDistr;
 };
 
 class CGridWorkerIdleTask : public IWorkerNodeIdleTask

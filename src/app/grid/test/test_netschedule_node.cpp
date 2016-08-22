@@ -76,8 +76,8 @@ public:
     int Run(void);
 
 private:
-    CDiscreteDistribution m_SizeDistr;
-    CDiscreteDistribution m_TimeDistr;
+    CDiscreteDistributionImpl m_SizeDistr;
+    CDiscreteDistributionImpl m_TimeDistr;
 };
 
 

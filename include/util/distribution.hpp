@@ -43,31 +43,10 @@ BEGIN_NCBI_SCOPE
 
 class CRandom;
 
-/// This class generates a random integer from a series of ranges
-/// defined as follows: 5, 6 - 9, 10 - 50.
-class NCBI_XUTIL_EXPORT CDiscreteDistribution
+/// @warning do not use this internal class, it will be removed.
+class NCBI_XUTIL_EXPORT CDiscreteDistributionImpl
 {
 public:
-    /// Initializes internal structures of this object using
-    /// the specified string. The string must be defined
-    /// in the following format:
-    ///     R1, R2, ..., Rn
-    /// Where R1 ... Rn - integer ranges specified as either
-    /// stand-alone numbers or intervals defined as Nfrom - Nto.
-    /// Example:
-    ///     5, 6 - 9, 10 - 50, 65
-    ///
-    /// @param parameter_name
-    ///     Configuration parameter name. This argument is used
-    ///     only for constructing a CInvalidParamException object
-    ///     should there be a format error in parameter_value.
-    ///
-    /// @param parameter_value
-    ///     Actual initialization string, which must conform
-    ///     to the format described above.
-    ///
-    /// @param random_gen
-    ///     Random number generator for use by this object.
     void InitFromParameter(
         const char* parameter_name,
         const char* parameter_value,
@@ -77,13 +56,16 @@ public:
         CRangeList::ParseImpl(parameter_value, parameter_name, &m_RangeVector);
     }
 
-    /// Returns a random value from the distribution.
     unsigned GetNextValue() const;
 
 private:
     CRandom* m_RandomGen;
     CRangeList::TRangeVector m_RangeVector;
 };
+
+/// @deprecated
+struct NCBI_DEPRECATED NCBI_XUTIL_EXPORT CDiscreteDistribution :
+    CDiscreteDistributionImpl {};
 
 END_NCBI_SCOPE
 

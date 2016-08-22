@@ -69,7 +69,7 @@ public:
 private:
     TRangeVector m_RangeVector;
 
-    friend class CDiscreteDistribution;
+    friend class CDiscreteDistributionImpl;
     static void ParseImpl(const char* init_string,
             const char* config_param_name,
             TRangeVector* range_vector);
