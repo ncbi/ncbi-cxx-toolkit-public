@@ -609,6 +609,86 @@ void CDiscrepancyContext::CollectFeature(const CSeq_feat& feat)
 }
 
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+CRef<CDiscrepancyObject> CDiscrepancyContext::NewDiscObj(CConstRef<CBioseq> obj, EKeepRef keep_ref, bool autofix, CObject* more)
+{
+    bool keep = keep_ref || m_KeepRef;
+    CRef<CDiscrepancyObject> D(new CDiscrepancyObject(obj, *m_Scope, m_File, keep, autofix, more));
+    const CSerialObject* ser = &*obj;
+    if (m_TextMap.find(ser) == m_TextMap.end()) {
+        D->SetText(*m_Scope);
+        m_TextMap[ser] = D->GetText();
+        m_TextMapShort[ser] = D->GetShort();
+    }
+    else {
+        D->SetText(m_TextMap[ser]);
+        D->SetShort(m_TextMapShort[ser]);
+    }
+    if (!keep) {
+        D->DropReference();
+    }
+    return D;
+}
+
+
+CRef<CDiscrepancyObject> CDiscrepancyContext::NewDiscObj(CConstRef<CSeqdesc> obj, EKeepRef keep_ref, bool autofix, CObject* more)
+{
+    bool keep = keep_ref || m_KeepRef;
+    CRef<CDiscrepancyObject> D(new CDiscrepancyObject(obj, *m_Scope, m_File, keep, autofix, more));
+    const CSerialObject* ser = &*obj;
+    if (m_TextMap.find(ser) == m_TextMap.end()) {
+        D->SetText(*m_Scope);
+        m_TextMap[ser] = D->GetText();
+    }
+    else {
+        D->SetText(m_TextMap[ser]);
+    }
+    if (!keep) {
+        D->DropReference();
+    }
+    return D;
+}
+
+
+CRef<CDiscrepancyObject> CDiscrepancyContext::NewDiscObj(CConstRef<CSeq_feat> obj, EKeepRef keep_ref, bool autofix, CObject* more)
+{
+    bool keep = keep_ref || m_KeepRef;
+    CRef<CDiscrepancyObject> D(new CDiscrepancyObject(obj, *m_Scope, m_File, keep, autofix, more));
+    const CSerialObject* ser = &*obj;
+    if (m_TextMap.find(ser) == m_TextMap.end()) {
+        D->SetText(*m_Scope);
+        m_TextMap[ser] = D->GetText();
+    }
+    else {
+        D->SetText(m_TextMap[ser]);
+    }
+    if (!keep) {
+        D->DropReference();
+    }
+    return D;
+}
+
+
+CRef<CDiscrepancyObject> CDiscrepancyContext::NewDiscObj(CConstRef<CBioseq_set> obj, EKeepRef keep_ref, bool autofix, CObject* more)
+{
+    bool keep = keep_ref || m_KeepRef;
+    CRef<CDiscrepancyObject> D(new CDiscrepancyObject(obj, *m_Scope, m_File, keep, autofix, more));
+    const CSerialObject* ser = &*obj;
+    if (m_TextMap.find(ser) == m_TextMap.end()) {
+        D->SetText(*m_Scope);
+        m_TextMap[ser] = D->GetText();
+    }
+    else {
+        D->SetText(m_TextMap[ser]);
+    }
+    if (!keep) {
+        D->DropReference();
+    }
+    return D;
+}
+
+
 CRef<CDiscrepancyObject> CDiscrepancyContext::NewSubmitBlockObj(EKeepRef keep_ref, bool autofix, CObject* more)
 {
     string label;

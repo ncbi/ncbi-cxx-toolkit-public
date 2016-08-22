@@ -73,6 +73,9 @@ public:
     const string& GetXML() const { return m_XML; }
 
     void SetText(CScope& scope);
+    void SetText(const string& str) { m_Text = str; }
+    void SetShort(const string& str) { m_ShortName = str; }
+
     void SetFeatureTable(CScope& scope);
     void SetXML(CScope& scope);
     void Format(CScope& scope);

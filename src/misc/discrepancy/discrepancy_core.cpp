@@ -336,6 +336,8 @@ void CDiscrepancyContext::Parse(const CSerialObject& root)
     // Don't ENABLE_DISCREPANCY_TYPE(CSeq_annot), it is handled separately!
     // Don't ENABLE_DISCREPANCY_TYPE(CBioseq_set), it is handled separately!
 
+    m_TextMap.clear();
+    m_TextMapShort.clear();
     m_Current_Submit_block.Reset();
 
     CSeqdesc_CI::TDescChoices desc_choices = {CSeqdesc::e_Source};

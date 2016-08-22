@@ -106,52 +106,34 @@ protected:
 
 
 /// CDiscrepancyItem and CReportObject
+class CDiscrepancyContext;
 
 class CDiscrepancyObject : public CReportObject
 {
-public:
+protected:
     CDiscrepancyObject(CConstRef<CBioseq> obj, CScope& scope, const string& filename, bool keep_ref, bool autofix = false, CObject* more = 0) : CReportObject(obj, scope), m_Autofix(autofix), m_More(more)
     {
         SetFilename(filename);
-        SetText(scope);
-        if(!keep_ref) {
-            DropReference();
-        }
     }
     CDiscrepancyObject(CConstRef<CSeqdesc> obj, CScope& scope, const string& filename, bool keep_ref, bool autofix = false, CObject* more = 0) : CReportObject(obj, scope), m_Autofix(autofix), m_More(more)
     {
         SetFilename(filename);
-        SetText(scope);
-        if (!keep_ref) {
-            DropReference();
-        }
     }
     CDiscrepancyObject(CConstRef<CSeq_feat> obj, CScope& scope, const string& filename, bool keep_ref, bool autofix = false, CObject* more = 0) : CReportObject(obj, scope), m_Autofix(autofix), m_More(more)
     {
         SetFilename(filename);
-        SetText(scope);
-        if (!keep_ref) {
-            DropReference();
-        }
     }
     CDiscrepancyObject(CConstRef<CSubmit_block> obj, CScope& scope, const string& text, const string& filename, bool keep_ref, bool autofix = false, CObject* more = 0) : CReportObject(obj, scope, text), m_Autofix(autofix), m_More(more)
     {
         SetFilename(filename);
-        //SetText(scope);
-        if (!keep_ref) {
-            DropReference();
-        }
     }
     CDiscrepancyObject(CConstRef<CBioseq_set> obj, CScope& scope, const string& filename, bool keep_ref, bool autofix = false, CObject* more = 0) : CReportObject(obj, scope), m_Autofix(autofix), m_More(more)
     {
         SetFilename(filename);
-        SetText(scope);
-        if(!keep_ref) {
-            DropReference();
-        }
     }
     CDiscrepancyObject(const CDiscrepancyObject& other) : CReportObject(other), m_Autofix(other.m_Autofix), m_Case(other.m_Case), m_More(other.m_More) {}
 
+public:
     bool CanAutofix(void) const { return m_Autofix; }
     CConstRef<CObject> GetMoreInfo() { return m_More; }
     CReportObj* Clone(bool autofixable, CConstRef<CObject> data) const;
@@ -160,6 +142,7 @@ protected:
     bool m_Autofix;
     CRef<CDiscrepancyCase> m_Case;
     CConstRef<CObject> m_More;
+friend class CDiscrepancyContext;
 };
 
 
@@ -197,8 +180,6 @@ friend class CDiscrepancyGroup;
 
 
 /// CDiscrepancyCore and CDiscrepancyVisitor - parents for CDiscrepancyCase_* classes
-
-class CDiscrepancyContext;
 
 struct CReportObjPtr
 {
@@ -398,10 +379,10 @@ public:
     const vector<CConstRef<CSeq_feat> >& FeatTRNAs() { return m_FeatTRNAs; }
     const vector<CConstRef<CSeq_feat> >& Feat_RNAs() { return m_Feat_RNAs; }
 
-    CRef<CDiscrepancyObject> NewDiscObj(CConstRef<CBioseq> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0) { return CRef<CDiscrepancyObject>(new CDiscrepancyObject(obj, *m_Scope, m_File, keep_ref || m_KeepRef, autofix, more)); }
-    CRef<CDiscrepancyObject> NewDiscObj(CConstRef<CSeqdesc> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0) { return CRef<CDiscrepancyObject>(new CDiscrepancyObject(obj, *m_Scope, m_File, keep_ref || m_KeepRef, autofix, more)); }
-    CRef<CDiscrepancyObject> NewDiscObj(CConstRef<CSeq_feat> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0) { return CRef<CDiscrepancyObject>(new CDiscrepancyObject(obj, *m_Scope, m_File, keep_ref || m_KeepRef, autofix, more)); }
-    CRef<CDiscrepancyObject> NewDiscObj(CConstRef<CBioseq_set> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0) { return CRef<CDiscrepancyObject>(new CDiscrepancyObject(obj, *m_Scope, m_File, keep_ref || m_KeepRef, autofix, more)); }
+    CRef<CDiscrepancyObject> NewDiscObj(CConstRef<CBioseq> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
+    CRef<CDiscrepancyObject> NewDiscObj(CConstRef<CSeqdesc> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
+    CRef<CDiscrepancyObject> NewDiscObj(CConstRef<CSeq_feat> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
+    CRef<CDiscrepancyObject> NewDiscObj(CConstRef<CBioseq_set> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
     CRef<CDiscrepancyObject> NewSubmitBlockObj(EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
     CRef<CDiscrepancyObject> NewFeatOrDescObj(EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
     CRef<CDiscrepancyObject> NewFeatOrDescOrSubmitBlockObj(EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
@@ -435,6 +416,8 @@ protected:
     vector<CConstRef<CSeq_feat> > m_FeatRRNAs;
     vector<CConstRef<CSeq_feat> > m_FeatTRNAs;
     vector<CConstRef<CSeq_feat> > m_Feat_RNAs;  // other RNA
+    map<const CSerialObject*, string> m_TextMap;
+    map<const CSerialObject*, string> m_TextMapShort;
 
 #define ADD_DISCREPANCY_TYPE(type) bool m_Enable_##type; vector<CDiscrepancyVisitor<type>* > m_All_##type;
     ADD_DISCREPANCY_TYPE(CSeq_inst)
