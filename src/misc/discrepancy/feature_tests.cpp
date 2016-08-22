@@ -353,7 +353,7 @@ DISCREPANCY_SUMMARIZE(EXTRA_GENES)
 const string kSuperfluousGene = "[n] gene feature[s] [is] not associated with any feature and [is] not pseudo.";
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(SUPERFLUOUS_GENE, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller | eSubmitter | eSmart, "Superfluous Genes")
+DISCREPANCY_CASE(SUPERFLUOUS_GENE, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller, "Superfluous Genes")
 //  ----------------------------------------------------------------------------
 {
     // do not collect if pseudo
