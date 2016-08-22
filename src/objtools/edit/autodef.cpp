@@ -70,6 +70,28 @@ CAutoDef::~CAutoDef()
 }
 
 
+bool s_NeedFeatureClause(const CBioseq& b) 
+{
+    if (!b.IsSetAnnot()) {
+        return true;
+    }
+    size_t num_features = 0;
+
+    ITERATE(CBioseq::TAnnot, a, b.GetAnnot()) {
+        if ((*a)->IsFtable()) {
+            num_features += (*a)->GetData().GetFtable().size();
+            if (num_features > 100) {
+                break;
+            }
+        }
+    }
+    if (num_features < 100) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
 void CAutoDef::AddSources (CSeq_entry_Handle se)
 {
     
@@ -78,7 +100,7 @@ void CAutoDef::AddSources (CSeq_entry_Handle se)
     for ( ; seq_iter; ++seq_iter ) {
         CSeqdesc_CI dit((*seq_iter), CSeqdesc::e_Source);
         if (dit) {
-            string feature_clauses = x_GetFeatureClauses(*seq_iter);
+            string feature_clauses = s_NeedFeatureClause(*(seq_iter->GetCompleteBioseq())) ? x_GetFeatureClauses(*seq_iter) : kEmptyStr;
             const CBioSource& bsrc = dit->GetSource();
             m_OrigModCombo.AddSource(bsrc, feature_clauses);
         }
