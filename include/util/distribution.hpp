@@ -74,7 +74,7 @@ public:
         CRandom* random_gen)
     {
         m_RandomGen = random_gen;
-        CRangeList::Parse(parameter_value, parameter_name, &m_RangeVector);
+        CRangeList::ParseImpl(parameter_value, parameter_name, &m_RangeVector);
     }
 
     /// Returns a random value from the distribution.

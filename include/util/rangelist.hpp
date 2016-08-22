@@ -41,69 +41,38 @@
 
 BEGIN_NCBI_SCOPE
 
-/// Parse and store a list of integer ranges.
-class NCBI_XUTIL_EXPORT CRangeList
+/// @deprecated
+class NCBI_DEPRECATED NCBI_XUTIL_EXPORT CRangeList
 {
 public:
     typedef std::pair<int, int> TIntegerRange;
     typedef std::vector<TIntegerRange> TRangeVector;
 
-    /// Parse a string of integer ranges and initialize this object.
-    ///
-    /// The string must be in the following format:
-    ///     N1, R1, N2, ..., Rn, Nm
-    ///
-    /// Where:
-    ///     N1 ... Nm - stand-alone numbers, which are saved as a
-    ///                 TIntegerRange with equal ends: [Nm, Nm].
-    ///     R1 ... Rn - integer ranges defined as intervals
-    ///                 in the form of Nfrom - Nto.
-    /// Example:
-    ///     4, 6 - 9, 16 - 40, 64
-    ///
-    /// @param init_string
-    ///     Actual initialization string, which must conform
-    ///     to the format described above.
-    ///
-    /// @param config_param_name
-    ///     Configuration parameter name. It is used only for
-    ///     error reporting to specify the source of the error.
-    ///
-    /// @return A reference to the initialized range list.
-    ///
+    NCBI_DEPRECATED
     const TRangeVector& Parse(const char* init_string,
             const char* config_param_name)
     {
-        Parse(init_string, config_param_name, &m_RangeVector);
+        ParseImpl(init_string, config_param_name, &m_RangeVector);
         return m_RangeVector;
     }
 
-    /// Return the previously initialized list.
     const TRangeVector& GetRangeList() const {return m_RangeVector;}
 
-    /// A static variant of Parse(init_string, config_param_name).
-    /// This method can be used to parse the input string into an
-    /// external TRangeVector object.
-    ///
-    /// @param init_string
-    ///     Initialization string.
-    ///
-    /// @param config_param_name
-    ///     Configuration parameter name. It is used only for
-    ///     error reporting to specify the source of the error.
-    ///
-    /// @param range_vector
-    ///     A pointer to the TRangeVector instance for storing
-    ///     the parsed integer ranges.
-    ///
-    /// @see Parse(init_string, config_param_name)
-    ///
+    NCBI_DEPRECATED
     static void Parse(const char* init_string,
             const char* config_param_name,
-            TRangeVector* range_vector);
+            TRangeVector* range_vector)
+    {
+        return ParseImpl(init_string, config_param_name, range_vector);
+    }
 
 private:
     TRangeVector m_RangeVector;
+
+    friend class CDiscreteDistribution;
+    static void ParseImpl(const char* init_string,
+            const char* config_param_name,
+            TRangeVector* range_vector);
 };
 
 END_NCBI_SCOPE
