@@ -7,25 +7,25 @@ Detailed Report
 
 INCONSISTENT_STRUCTURED_COMMENTS: Structured Comment Report (some missing, all same)
 INCONSISTENT_STRUCTURED_COMMENTS: 1 Bioseq is missing Assembly-Data structured comment
-D:\toolkit\src\misc\discrepancy\test\test-data\chloro.sqn:KT153023 (length 156220)
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\chloro.sqn:KT153023 (length 156220)
 
 INCONSISTENT_STRUCTURED_COMMENTS: structured comment field Assembly Method (some missing, all same)
 INCONSISTENT_STRUCTURED_COMMENTS: 1 Assembly-Data structured comment is missing field structured comment field Assembly Method
-D:\toolkit\src\misc\discrepancy\test\test-data\chloro.sqn:KT153023 (length 156220)
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\chloro.sqn:KT153023 (length 156220)
 
 INCONSISTENT_STRUCTURED_COMMENTS: 4 Assembly-Data structured comments have field structured comment field Assembly Method value 'CLC genome assembler v. 4.0 beta'
-D:\toolkit\src\misc\discrepancy\test\test-data\chloro.sqn:gb|KT153019|:StructuredComment
-D:\toolkit\src\misc\discrepancy\test\test-data\chloro.sqn:gb|KT153020|:StructuredComment
-D:\toolkit\src\misc\discrepancy\test\test-data\chloro.sqn:gb|KT153021|:StructuredComment
-D:\toolkit\src\misc\discrepancy\test\test-data\chloro.sqn:gb|KT153022|:StructuredComment
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\chloro.sqn:KT153019:StructuredComment
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\chloro.sqn:KT153020:StructuredComment
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\chloro.sqn:KT153021:StructuredComment
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\chloro.sqn:KT153022:StructuredComment
 
 INCONSISTENT_STRUCTURED_COMMENTS: structured comment field Sequencing Technology (some missing, all same)
 INCONSISTENT_STRUCTURED_COMMENTS: 1 Assembly-Data structured comment is missing field structured comment field Sequencing Technology
-D:\toolkit\src\misc\discrepancy\test\test-data\chloro.sqn:KT153023 (length 156220)
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\chloro.sqn:KT153023 (length 156220)
 
 INCONSISTENT_STRUCTURED_COMMENTS: 4 Assembly-Data structured comments have field structured comment field Sequencing Technology value 'Illumina'
-D:\toolkit\src\misc\discrepancy\test\test-data\chloro.sqn:gb|KT153019|:StructuredComment
-D:\toolkit\src\misc\discrepancy\test\test-data\chloro.sqn:gb|KT153020|:StructuredComment
-D:\toolkit\src\misc\discrepancy\test\test-data\chloro.sqn:gb|KT153021|:StructuredComment
-D:\toolkit\src\misc\discrepancy\test\test-data\chloro.sqn:gb|KT153022|:StructuredComment
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\chloro.sqn:KT153019:StructuredComment
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\chloro.sqn:KT153020:StructuredComment
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\chloro.sqn:KT153021:StructuredComment
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\chloro.sqn:KT153022:StructuredComment
 

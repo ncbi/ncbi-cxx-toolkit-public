@@ -8,29 +8,29 @@ Detailed Report
 INCONSISTENT_STRUCTURED_COMMENTS: Structured Comment Report (all present, inconsistent)
 INCONSISTENT_STRUCTURED_COMMENTS: structured comment field Assembly Method (all present, inconsistent)
 INCONSISTENT_STRUCTURED_COMMENTS: 1 Assembly-Data structured comment has field structured comment field Assembly Method value 'Geneous Pro v. 6.1.7'
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168385|:StructuredComment
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:KT168385:StructuredComment
 
 INCONSISTENT_STRUCTURED_COMMENTS: 5 Assembly-Data structured comments have field structured comment field Assembly Method value 'Velvet v. 1.2.08'
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168384|:StructuredComment
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168386|:StructuredComment
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168387|:StructuredComment
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168389|:StructuredComment
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168390|:StructuredComment
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:KT168384:StructuredComment
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:KT168386:StructuredComment
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:KT168387:StructuredComment
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:KT168389:StructuredComment
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:KT168390:StructuredComment
 
 INCONSISTENT_STRUCTURED_COMMENTS: 2 Assembly-Data structured comments have field structured comment field Assembly Method value 'vELVET v. 1.2.08'
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168383|:StructuredComment
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168388|:StructuredComment
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:KT168383:StructuredComment
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:KT168388:StructuredComment
 
 INCONSISTENT_STRUCTURED_COMMENTS: structured comment field Sequencing Technology (all present, inconsistent)
 INCONSISTENT_STRUCTURED_COMMENTS: 7 Assembly-Data structured comments have field structured comment field Sequencing Technology value 'Illumina'
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168383|:StructuredComment
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168384|:StructuredComment
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168386|:StructuredComment
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168387|:StructuredComment
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168388|:StructuredComment
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168389|:StructuredComment
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168390|:StructuredComment
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:KT168383:StructuredComment
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:KT168384:StructuredComment
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:KT168386:StructuredComment
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:KT168387:StructuredComment
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:KT168388:StructuredComment
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:KT168389:StructuredComment
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:KT168390:StructuredComment
 
 INCONSISTENT_STRUCTURED_COMMENTS: 1 Assembly-Data structured comment has field structured comment field Sequencing Technology value 'Sanger dideoxy sequencing'
-D:\toolkit\src\misc\discrepancy\test\test-data\locustagetc.sqn:gb|KT168385|:StructuredComment
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\locustagetc.sqn:KT168385:StructuredComment
 

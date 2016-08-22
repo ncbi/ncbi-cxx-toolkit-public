@@ -70,7 +70,13 @@ Seq-entry ::= set {
             gen {
               cit "Unpublished",
               authors {
-                names std {                     {                       name                         name {                           last "Liu" ,                           first "Wei" ,                           initials "W." } } }
+                names std {
+                    {
+                      name
+                        name {
+                          last "Liu" ,
+                          first "Wei" ,
+                          initials "W." } } }
               },
               title "Isolation and identification of a strain of Veillonella
  in human intestine gut and its metabolic traits"
@@ -81,7 +87,13 @@ Seq-entry ::= set {
           pub {
             sub {
               authors {
-                names std {                     {                       name                         name {                           last "Liu" ,                           first "Wei" ,                           initials "W." } } },
+                names std {
+                    {
+                      name
+                        name {
+                          last "Liu" ,
+                          first "Wei" ,
+                          initials "W." } } },
                 affil std {
                   affil "Shanxi Medical University Fenyang College",
                   div "The Center of Science and Technology",
