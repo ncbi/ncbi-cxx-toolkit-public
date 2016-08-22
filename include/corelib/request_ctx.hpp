@@ -79,7 +79,7 @@ public:
     }
 
     /// Check if shared counter is used.
-    bool IsShared(void) const { return m_SharedSubHitId; }
+    bool IsShared(void) const { return !m_SharedSubHitId.Empty(); }
 
     /// Get hit id value.
     const string& GetHitId(void) const { return m_HitId; }
