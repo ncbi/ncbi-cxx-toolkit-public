@@ -1491,6 +1491,286 @@ bool CBioSource::RemoveOrgMod(int subtype)
 }
 
 
+bool CBioSource::FixEnvironmentalSample()
+{
+    bool has_env_sample = false;
+    bool has_metagenomic = false;
+    bool any_change = false;
+
+    if (IsSetSubtype()) {
+        ITERATE(CBioSource::TSubtype, s, GetSubtype()) {
+            if ((*s)->IsSetSubtype()) {
+                if ((*s)->GetSubtype() == CSubSource::eSubtype_environmental_sample) {
+                    has_env_sample = true;
+                } else if ((*s)->GetSubtype() == CSubSource::eSubtype_metagenomic) {
+                    has_metagenomic = true;
+                }
+                if (has_env_sample && has_metagenomic) {
+                    break;
+                }
+            }
+        }
+    }
+
+    if (!has_env_sample && 
+        IsSetOrg() &&
+        GetOrg().IsSetTaxname() && 
+        NStr::StartsWith(GetOrg().GetTaxname(), "uncultured ")) {
+        //If taxname starts with uncultured, set environmental - sample to true
+        SetSubtype().push_back(CRef<CSubSource>(new CSubSource(CSubSource::eSubtype_environmental_sample, " ")));
+        has_env_sample = true;
+        any_change = true;
+    }
+    
+    if (has_metagenomic && !has_env_sample) {
+        // If metagenomic, set environmental_sample
+        SetSubtype().push_back(CRef<CSubSource>(new CSubSource(CSubSource::eSubtype_environmental_sample, " ")));
+        has_env_sample = true;
+        any_change = true;
+    }
+       
+    if (!has_env_sample &&
+        IsSetOrg() && GetOrg().IsSetOrgname() &&
+        GetOrg().GetOrgname().IsSetDiv() &&
+        NStr::Equal(GetOrg().GetOrgname().GetDiv(), "ENV")) {
+        // Add environmental_sample to BioSource if BioSource.org.orgname.div == "ENV"
+        SetSubtype().push_back(CRef<CSubSource>(new CSubSource(CSubSource::eSubtype_environmental_sample, " ")));
+        has_env_sample = true;
+        any_change = true;
+    }
+    
+    if (IsSetOrg() && GetOrg().IsSetOrgname() &&
+        GetOrg().GetOrgname().IsSetLineage() &&
+        NStr::Find(GetOrg().GetOrgname().GetLineage(), "metagenomes") != string::npos) {
+        // Add metagenomic(and environmental_sample) if BioSource.org.orgname.lineage contains "metagenomes"
+        if (!has_env_sample) {
+            SetSubtype().push_back(CRef<CSubSource>(new CSubSource(CSubSource::eSubtype_environmental_sample, " ")));
+            has_env_sample = true;
+            any_change = true;
+        }
+        if (!has_metagenomic) {
+            SetSubtype().push_back(CRef<CSubSource>(new CSubSource(CSubSource::eSubtype_metagenomic, " ")));
+            has_metagenomic = true;
+            any_change = true;
+        }
+    }
+
+    if (IsSetOrg() && GetOrg().IsSetOrgname() &&
+        GetOrg().GetOrgname().IsSetMod()) {
+        // Add metagenomic(and environmental_sample) if BioSource has /metagenome_source qualifier
+        bool has_metagenome_source = false;
+        ITERATE(COrgName::TMod, m, GetOrg().GetOrgname().GetMod()) {
+            if ((*m)->IsSetSubtype() && (*m)->GetSubtype() == COrgMod::eSubtype_metagenome_source) {
+                has_metagenome_source = true;
+                break;
+            }
+        }
+        if (has_metagenome_source) {
+            if (!has_env_sample) {
+                SetSubtype().push_back(CRef<CSubSource>(new CSubSource(CSubSource::eSubtype_environmental_sample, " ")));
+                has_env_sample = true;
+                any_change = true;
+            }
+            if (!has_metagenomic) {
+                SetSubtype().push_back(CRef<CSubSource>(new CSubSource(CSubSource::eSubtype_metagenomic, " ")));
+                has_metagenomic = true;
+                any_change = true;
+            }
+        }
+    }
+    return any_change;
+}
+
+
+bool CBioSource::RemoveNullTerms()
+{
+    bool any_change = false;
+
+    if (IsSetSubtype()) {
+        CBioSource::TSubtype::iterator s = SetSubtype().begin(); 
+        while (s != SetSubtype().end()) {
+            if ((*s)->IsSetName() && IsStopWord((*s)->GetName())) {
+                s = SetSubtype().erase(s);
+                any_change = true;
+            } else {
+                ++s;
+            }
+        }
+        if (GetSubtype().empty()) {
+            ResetSubtype();
+            any_change = true;
+        }
+    }
+    if (IsSetOrg() && GetOrg().IsSetOrgname()
+        && GetOrg().GetOrgname().IsSetMod()) {
+        COrgName::TMod::iterator m = SetOrg().SetOrgname().SetMod().begin();
+        while (m != SetOrg().SetOrgname().SetMod().end()) {
+            if ((*m)->IsSetSubname() && IsStopWord((*m)->GetSubname())) {
+                m = SetOrg().SetOrgname().SetMod().erase(m);
+                any_change = true;
+            } else {
+                ++m;
+            }
+        }
+        if (GetOrg().GetOrgname().GetMod().empty()) {
+            SetOrg().SetOrgname().ResetMod();
+            any_change = true;
+        }
+    }
+
+    return any_change;
+}
+
+
+bool CBioSource::IsViral(const string& lineage)
+{
+    if (NStr::StartsWith(lineage, "Viruses; ", NStr::eNocase)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+bool CBioSource::IsViral() const
+{
+    if (IsSetOrg() && GetOrg().IsSetLineage()) {
+        return IsViral(GetOrg().GetLineage());
+    } else {
+        return false;
+    }
+}
+
+
+bool CBioSource::AllowSexQualifier(const string& lineage)
+{
+    bool isViral = IsViral(lineage);
+    bool isBacteria = false;
+    bool isArchaea = false;
+    bool isFungal = false;
+
+    if (NStr::StartsWith(lineage, "Bacteria; ", NStr::eNocase)) {
+        isBacteria = true;
+    } else if (NStr::StartsWith(lineage, "Archaea; ", NStr::eNocase)) {
+        isArchaea = true;
+    } else if (NStr::StartsWith(lineage, "Eukaryota; Fungi; ", NStr::eNocase)) {
+        isFungal = true;
+    }
+
+    if (isViral || isBacteria || isArchaea || isFungal) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+
+bool CBioSource::AllowSexQualifier() const
+{
+    if (!IsSetOrg() || !GetOrg().IsSetOrgname() || !GetOrg().GetOrgname().IsSetLineage()) {
+        return true;
+    } else {
+        return AllowSexQualifier(GetOrg().GetOrgname().GetLineage());
+    }
+}
+
+
+bool CBioSource::AllowMatingTypeQualifier(const string& lineage)
+{
+    bool isViral = IsViral(lineage);
+    bool isAnimal = false;
+    bool isPlant = false;
+
+    if (NStr::StartsWith(lineage, "Eukaryota; Metazoa; ", NStr::eNocase)) {
+        isAnimal = true;
+    } else if (NStr::StartsWith(lineage, "Eukaryota; Viridiplantae; Streptophyta; Embryophyta; ", NStr::eNocase)
+        || NStr::StartsWith(lineage, "Eukaryota; Rhodophyta; ", NStr::eNocase)
+        || NStr::StartsWith(lineage, "Eukaryota; stramenopiles; Phaeophyceae; ", NStr::eNocase)) {
+        isPlant = true;
+    }
+
+    if (isViral || isAnimal || isPlant) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+
+bool CBioSource::AllowMatingTypeQualifier() const
+{
+    if (!IsSetOrg() || !GetOrg().IsSetOrgname() || !GetOrg().GetOrgname().IsSetLineage()) {
+        return true;
+    } else {
+        return AllowMatingTypeQualifier(GetOrg().GetOrgname().GetLineage());
+    }
+}
+
+
+bool CBioSource::FixSexMatingTypeInconsistencies()
+{
+    bool any_change = false;
+    if (!IsSetSubtype()) {
+        return false;
+    }
+    TSubtype::iterator it = SetSubtype().begin();
+    while (it != SetSubtype().end()) {
+        bool remove = false;
+        if ((*it)->IsSetSubtype()) {
+            if ((*it)->GetSubtype() == CSubSource::eSubtype_sex && !AllowSexQualifier()) {
+                remove = true;
+            } else if ((*it)->GetSubtype() == CSubSource::eSubtype_mating_type) {
+                if ((*it)->IsSetName() && AllowSexQualifier()
+                     && CSubSource::IsValidSexQualifierValue((*it)->GetName())) {
+                    (*it)->SetSubtype(CSubSource::eSubtype_sex);
+                    any_change = true;
+                } else if (!AllowMatingTypeQualifier()) {
+                    remove = true;
+                } 
+            }
+        }
+        if (remove) {
+            it = SetSubtype().erase(it);
+            any_change = true;
+        } else {
+            ++it;
+        }
+    }
+
+    if (GetSubtype().size() == 0) {
+        ResetSubtype();
+        any_change = true;
+    }
+
+    return any_change;
+}
+
+
+bool CBioSource::RemoveUnexpectedViralQualifiers()
+{
+    if (!IsViral()  || !IsSetOrg() || !GetOrg().IsSetOrgname() || 
+        !GetOrg().GetOrgname().IsSetMod()) {
+        return false;
+    }
+
+    bool any_change = false;
+    COrgName::TMod::iterator m = SetOrg().SetOrgname().SetMod().begin();
+    while (m != SetOrg().SetOrgname().SetMod().end()){
+        if ((*m)->IsUnexpectedViralOrgModQualifier()) {
+            m = SetOrg().SetOrgname().SetMod().erase(m);
+            any_change = true;
+        } else {
+            ++m;
+        }
+    }
+    if (GetOrg().GetOrgname().GetMod().empty()) {
+        SetOrg().SetOrgname().ResetMod();
+        any_change = true;
+    }
+    return any_change;
+}
+
+
 #define MAKE_COMMON_INT(o1,o2,o3,Field) \
     if (o1.IsSet##Field() && o2.IsSet##Field() && o1.Get##Field() == o2.Get##Field()) o3.Set##Field(o1.Get##Field());
 

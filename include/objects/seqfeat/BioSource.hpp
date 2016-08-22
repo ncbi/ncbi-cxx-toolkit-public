@@ -135,6 +135,36 @@ public:
     bool RemoveSubSource(int subtype);
     bool RemoveOrgMod(int subtype);
 
+    //If taxname starts with uncultured, set environmental-sample to true
+    //If metagenomic, set environmental_sample
+    //    Add environmental_sample to BioSource if BioSource.org.orgname.div == "ENV"
+    //    Add metagenomic(and environmental_sample) if BioSource.org.orgname.lineage contains "metagenomes"
+    //    Add metagenomic(and environmental_sample) if BioSource has / metagenome_source qualifier
+    // returns true if change was made
+    bool FixEnvironmentalSample();
+
+    // Remove null terms from SubSource values and OrgMod values
+    bool RemoveNullTerms();
+
+    // do not allow sex qualifier if virus, bacteria, Archaea, or fungus
+    static bool AllowSexQualifier(const string& lineage);
+    bool AllowSexQualifier() const;
+
+    // do not allow mating_type qualifier if animal, plant, or virus
+    static bool AllowMatingTypeQualifier(const string& lineage);
+    bool AllowMatingTypeQualifier() const;
+
+    //Remove /sex qualifier from virus, bacteria, archaea, fungus organisms
+    //Remove /mating_type qualifier from animal, plant, and virus organisms
+    //Move /mating_type qualifier that is valid /sex qualifier word to /sex qualifier
+    bool FixSexMatingTypeInconsistencies();
+
+    //Remove qualifiers not appropriate for virus organisms from Virus organisms
+    bool RemoveUnexpectedViralQualifiers();
+
+    static bool IsViral(const string& lineage);
+    bool IsViral() const;
+
     CRef<CBioSource> MakeCommon( const CBioSource& other) const;
 
 private:

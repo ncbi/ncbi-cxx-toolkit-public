@@ -917,6 +917,70 @@ bool COrgMod::FuzzyStrainMatch( const string& strain1, const string& strain2 )
 }
 
 
+bool COrgMod::RemoveAbbreviation()
+{
+    bool any_change = false;
+
+    if (IsSetSubtype() && IsSetSubname()) {
+        string& val = SetSubname();
+        switch (GetSubtype()) {
+            case eSubtype_strain:
+            case eSubtype_serovar:
+                if (NStr::StartsWith(val, "subsp. ")) {
+                    val = val.substr(7);
+                    any_change = true;
+                }
+                if (NStr::StartsWith(val, "serovar ")) {
+                    val = val.substr(8);
+                    any_change = true;
+                }
+                break;
+            case eSubtype_sub_species:
+                if (NStr::StartsWith(val, "subsp. ")) {
+                    val = val.substr(7);
+                    any_change = true;
+                }
+                break;
+            default:
+                break;
+        }
+    }
+    return any_change;
+}
+
+
+static const COrgMod::TSubtype sUnexpectedViralOrgModQualifiers[] = {
+    COrgMod::eSubtype_breed,
+    COrgMod::eSubtype_cultivar,
+    COrgMod::eSubtype_specimen_voucher
+};
+
+static const int sNumUnexpectedViralOrgModQualifiers = sizeof(sUnexpectedViralOrgModQualifiers) / sizeof(COrgMod::TSubtype);
+
+bool COrgMod::IsUnexpectedViralOrgModQualifier(COrgMod::TSubtype subtype)
+{
+    int i;
+    bool rval = false;
+
+    for (i = 0; i < sNumUnexpectedViralOrgModQualifiers && !rval; i++) {
+        if (subtype == sUnexpectedViralOrgModQualifiers[i]) {
+            rval = true;
+        }
+    }
+    return rval;
+}
+
+
+bool COrgMod::IsUnexpectedViralOrgModQualifier() const
+{
+    if (IsSetSubtype() && IsUnexpectedViralOrgModQualifier(GetSubtype())) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

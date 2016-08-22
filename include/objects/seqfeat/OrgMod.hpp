@@ -112,6 +112,14 @@ public:
     static string AutoFix(TSubtype subtype, const string& value);
     void AutoFix();
 
+    // Remove "subsp. " and "serovar " from start of strain
+    // Remove "subsp. " and "serovar " from start of serovar
+    // Remove "subsp. " from start of sub-species qualifier
+    bool RemoveAbbreviation();
+
+    static bool IsUnexpectedViralOrgModQualifier(TSubtype subtype);
+    bool IsUnexpectedViralOrgModQualifier() const;
+
     private:
     // Prohibit copy constructor and assignment operator
     COrgMod(const COrgMod& value);

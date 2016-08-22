@@ -1758,6 +1758,19 @@ void CNewCleanup_imp::BiosourceBC (
         }
     }
 
+    if (biosrc.FixEnvironmentalSample()) {
+        ChangeMade(CCleanupChange::eChangeSubsource);
+    }
+    if (biosrc.RemoveNullTerms()) {
+        ChangeMade(CCleanupChange::eChangeBioSourceOther);
+    }
+    if (biosrc.FixSexMatingTypeInconsistencies()) {
+        ChangeMade(CCleanupChange::eChangeSubsource);
+    }
+    if (biosrc.RemoveUnexpectedViralQualifiers()) {
+        ChangeMade(CCleanupChange::eChangeOrgmod);
+    }
+
     x_PostBiosource(biosrc);
     if (biosrc.IsSetOrg()) {
         x_PostOrgRef(biosrc.SetOrg());
@@ -2170,6 +2183,10 @@ void CNewCleanup_imp::OrgmodBC (
                 ChangeMade (CCleanupChange::eTrimSpaces);
             }
         }
+    }
+
+    if (omd.RemoveAbbreviation()) {
+        ChangeMade(CCleanupChange::eCleanOrgmod);
     }
 }
 

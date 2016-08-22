@@ -1360,3 +1360,145 @@ BOOST_AUTO_TEST_CASE(Test_FileTrack)
     BOOST_CHECK_EQUAL(obj->GetData().front()->GetLabel().GetStr(), "BaseModification-FileTrackURL");
     BOOST_CHECK_EQUAL(obj->GetData().front()->GetData().GetStr(), "https://submit.ncbi.nlm.nih.gov/ft/byid/7azalbch/brev2_motif_summary.csv");
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_EnvSampleCleanup)
+{
+    CRef<CBioSource> src(new CBioSource());
+
+    BOOST_CHECK_EQUAL(src->FixEnvironmentalSample(), false);
+    src->SetOrg().SetTaxname("uncultured x");
+    BOOST_CHECK_EQUAL(src->FixEnvironmentalSample(), true);
+    BOOST_CHECK_EQUAL(src->GetSubtype().front()->GetSubtype(), CSubSource::eSubtype_environmental_sample);
+    BOOST_CHECK_EQUAL(src->FixEnvironmentalSample(), false);
+
+    src->ResetSubtype();
+    src->SetOrg().SetTaxname("Homo sapiens");
+    BOOST_CHECK_EQUAL(src->FixEnvironmentalSample(), false);
+    src->SetSubtype().push_back(CRef<CSubSource>(new CSubSource(CSubSource::eSubtype_metagenomic, " ")));
+    BOOST_CHECK_EQUAL(src->FixEnvironmentalSample(), true);
+    BOOST_CHECK_EQUAL(src->GetSubtype().back()->GetSubtype(), CSubSource::eSubtype_environmental_sample);
+    BOOST_CHECK_EQUAL(src->FixEnvironmentalSample(), false);
+
+    src->ResetSubtype();
+    src->SetOrg().SetOrgname().SetDiv("ENV");
+    BOOST_CHECK_EQUAL(src->FixEnvironmentalSample(), true);
+    BOOST_CHECK_EQUAL(src->GetSubtype().front()->GetSubtype(), CSubSource::eSubtype_environmental_sample);
+    BOOST_CHECK_EQUAL(src->FixEnvironmentalSample(), false);
+
+    src->ResetSubtype();
+    src->SetOrg().SetOrgname().ResetDiv();
+    src->SetOrg().SetOrgname().SetLineage("metagenomes");
+    BOOST_CHECK_EQUAL(src->FixEnvironmentalSample(), true);
+    BOOST_CHECK_EQUAL(src->GetSubtype().front()->GetSubtype(), CSubSource::eSubtype_environmental_sample);
+    BOOST_CHECK_EQUAL(src->GetSubtype().back()->GetSubtype(), CSubSource::eSubtype_metagenomic);
+    BOOST_CHECK_EQUAL(src->FixEnvironmentalSample(), false);
+
+    src->ResetSubtype();
+    src->SetOrg().SetOrgname().ResetLineage();
+    src->SetOrg().SetOrgname().SetMod().push_back(CRef<COrgMod>(new COrgMod(COrgMod::eSubtype_metagenome_source, "X")));
+    BOOST_CHECK_EQUAL(src->FixEnvironmentalSample(), true);
+    BOOST_CHECK_EQUAL(src->GetSubtype().front()->GetSubtype(), CSubSource::eSubtype_environmental_sample);
+    BOOST_CHECK_EQUAL(src->GetSubtype().back()->GetSubtype(), CSubSource::eSubtype_metagenomic);
+    BOOST_CHECK_EQUAL(src->FixEnvironmentalSample(), false);
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_RemoveNullTerms)
+{
+    CRef<CBioSource> src(new CBioSource());
+
+    src->SetSubtype().push_back(CRef<CSubSource>(new CSubSource(CSubSource::eSubtype_altitude, "N/A")));
+    src->SetOrg().SetOrgname().SetMod().push_back(CRef<COrgMod>(new COrgMod(COrgMod::eSubtype_acronym, "Missing")));
+    src->SetOrg().SetOrgname().SetMod().push_back(CRef<COrgMod>(new COrgMod(COrgMod::eSubtype_anamorph, "not Missing")));
+
+    BOOST_CHECK_EQUAL(src->RemoveNullTerms(), true);
+    BOOST_CHECK_EQUAL(src->IsSetSubtype(), false);
+    BOOST_CHECK_EQUAL(src->GetOrg().GetOrgname().GetMod().size(), 1);
+    BOOST_CHECK_EQUAL(src->GetOrg().GetOrgname().GetMod().front()->GetSubtype(), COrgMod::eSubtype_anamorph);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_RemoveAbbreviation)
+{
+    CRef<COrgMod> om(new COrgMod(COrgMod::eSubtype_strain, "subsp. x"));
+    BOOST_CHECK_EQUAL(om->RemoveAbbreviation(), true);
+    BOOST_CHECK_EQUAL(om->GetSubname(), "x");
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_FixSexMatingTypeInconsistencies)
+{
+    CRef<CBioSource> src(new CBioSource());
+
+    src->SetOrg().SetOrgname().SetLineage("Viruses; foo");
+    BOOST_CHECK_EQUAL(src->AllowSexQualifier(), false);
+    BOOST_CHECK_EQUAL(src->AllowMatingTypeQualifier(), false);
+    src->SetOrg().SetOrgname().SetLineage("Bacteria; foo");
+    BOOST_CHECK_EQUAL(src->AllowSexQualifier(), false);
+    BOOST_CHECK_EQUAL(src->AllowMatingTypeQualifier(), true);
+    src->SetOrg().SetOrgname().SetLineage("Archaea; foo");
+    BOOST_CHECK_EQUAL(src->AllowSexQualifier(), false);
+    BOOST_CHECK_EQUAL(src->AllowMatingTypeQualifier(), true);
+    src->SetOrg().SetOrgname().SetLineage("Eukaryota; Fungi; foo");
+    BOOST_CHECK_EQUAL(src->AllowSexQualifier(), false);
+    BOOST_CHECK_EQUAL(src->AllowMatingTypeQualifier(), true);
+    src->SetOrg().SetOrgname().SetLineage("Eukaryota; Metazoa; foo");
+    BOOST_CHECK_EQUAL(src->AllowSexQualifier(), true);
+    BOOST_CHECK_EQUAL(src->AllowMatingTypeQualifier(), false);
+    src->SetOrg().SetOrgname().SetLineage("Eukaryota; Viridiplantae; Streptophyta; Embryophyta; foo");
+    BOOST_CHECK_EQUAL(src->AllowSexQualifier(), true);
+    BOOST_CHECK_EQUAL(src->AllowMatingTypeQualifier(), false);
+    src->SetOrg().SetOrgname().SetLineage("Eukaryota; Rhodophyta; foo");
+    BOOST_CHECK_EQUAL(src->AllowSexQualifier(), true);
+    BOOST_CHECK_EQUAL(src->AllowMatingTypeQualifier(), false);
+    src->SetOrg().SetOrgname().SetLineage("Eukaryota; stramenopiles; Phaeophyceae; foo");
+    BOOST_CHECK_EQUAL(src->AllowSexQualifier(), true);
+    BOOST_CHECK_EQUAL(src->AllowMatingTypeQualifier(), false);
+
+    CRef<CSubSource> s(new CSubSource(CSubSource::eSubtype_sex, "f"));
+    src->SetSubtype().push_back(s);
+    BOOST_CHECK_EQUAL(src->FixSexMatingTypeInconsistencies(), false);
+    BOOST_CHECK_EQUAL(src->GetSubtype().size(), 1);
+
+    s->SetSubtype(CSubSource::eSubtype_mating_type);
+    BOOST_CHECK_EQUAL(src->FixSexMatingTypeInconsistencies(), true);
+    BOOST_CHECK_EQUAL(src->GetSubtype().size(), 1);
+    BOOST_CHECK_EQUAL(src->GetSubtype().front()->GetSubtype(), CSubSource::eSubtype_sex);
+
+    s->SetSubtype(CSubSource::eSubtype_mating_type);
+    s->SetName("foo");
+    BOOST_CHECK_EQUAL(src->FixSexMatingTypeInconsistencies(), true);
+    BOOST_CHECK_EQUAL(src->IsSetSubtype(), false);
+
+    src->SetOrg().SetOrgname().SetLineage("Viruses; foo");
+    src->SetSubtype().push_back(s);
+    BOOST_CHECK_EQUAL(src->FixSexMatingTypeInconsistencies(), true);
+    BOOST_CHECK_EQUAL(src->IsSetSubtype(), false);
+
+    s->SetSubtype(CSubSource::eSubtype_sex);
+    src->SetSubtype().push_back(s);
+    BOOST_CHECK_EQUAL(src->FixSexMatingTypeInconsistencies(), true);
+    BOOST_CHECK_EQUAL(src->IsSetSubtype(), false);
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_RemoveUnexpectedViralQualifiers)
+{
+    CRef<CBioSource> src(new CBioSource());
+    
+    src->SetOrg().SetOrgname().SetMod().push_back(CRef<COrgMod>(new COrgMod(COrgMod::eSubtype_breed, "x")));
+    src->SetOrg().SetOrgname().SetMod().push_back(CRef<COrgMod>(new COrgMod(COrgMod::eSubtype_cultivar, "y")));
+    src->SetOrg().SetOrgname().SetMod().push_back(CRef<COrgMod>(new COrgMod(COrgMod::eSubtype_specimen_voucher, "z")));
+    src->SetOrg().SetOrgname().SetMod().push_back(CRef<COrgMod>(new COrgMod(COrgMod::eSubtype_acronym, "a")));
+
+    BOOST_CHECK_EQUAL(src->RemoveUnexpectedViralQualifiers(), false);
+    BOOST_CHECK_EQUAL(src->GetOrg().GetOrgname().GetMod().size(), 4);
+    src->SetOrg().SetOrgname().SetLineage("Viruses; foo");
+    BOOST_CHECK_EQUAL(src->RemoveUnexpectedViralQualifiers(), true);
+    BOOST_CHECK_EQUAL(src->GetOrg().GetOrgname().GetMod().size(), 1);
+    BOOST_CHECK_EQUAL(src->GetOrg().GetOrgname().GetMod().front()->GetSubtype(), COrgMod::eSubtype_acronym);
+
+}
