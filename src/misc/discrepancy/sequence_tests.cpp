@@ -2302,7 +2302,6 @@ DISCREPANCY_SUMMARIZE(SMALL_GENOME_SET_PROBLEM)
 
 
 // UNWANTED_SET_WRAPPER
-// TODO: find sample files to test this case
 
 static const string kUnwantedSetWrapper = "[n] unwanted set wrapper[s]";
 
@@ -2404,6 +2403,224 @@ DISCREPANCY_SUMMARIZE(UNWANTED_SET_WRAPPER)
 //  ----------------------------------------------------------------------------
 {
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
+}
+
+
+// FLATFILE_FIND_ONCALLER
+struct SpellFixData
+{
+    const char* m_misspell;
+    const char* m_correct;
+    bool m_whole_word;
+};
+
+static SpellFixData kSpellFixes[] = {
+    { "Agricultutral", "agricultural", false },
+    { "Bacilllus", "Bacillus", false },
+    { "Enviromental", "Environmental", false },
+    { "Insitiute", "institute", false },
+    { "Instutite", "institute", false },
+    { "Instutute", "Institute", false },
+    { "Instutute", "Institute", false },
+    { "P.R.Chian", "P.R. China", false },
+    { "PRChian", "PR China", false },
+    { "Scieces", "Sciences", false },
+    { "agricultral", "agricultural", false },
+    { "agriculturral", "agricultural", false },
+    { "biotechnlogy", "biotechnology", false },
+    { "Biotechnlogy", "Biotechnology", false },
+    { "biotechnolgy", "biotechnology", false },
+    { "biotechology", "biotechnology", false },
+    { "caputre", "capture", true },
+    { "casette", "cassette", true },
+    { "catalize", "catalyze", false },
+    { "charaterization", "characterization", false },
+    { "clonging", "cloning", false },
+    { "consevered", "conserved", false },
+    { "cotaining", "containing", false },
+    { "cytochome", "cytochrome", true },
+    { "diveristy", "diversity", true },
+    { "enivronment", "environment", false },
+    { "enviroment", "environment", false },
+    { "genone", "genome", true },
+    { "homologue", "homolog", true },
+    { "hypotethical", "hypothetical", false },
+    { "hypotetical", "hypothetical", false },
+    { "hypothetcial", "hypothetical", false },
+    { "hypothteical", "hypothetical", false },
+    { "indepedent", "independent", false },
+    { "insititute", "institute", false },
+    { "insitute", "institute", false },
+    { "institue", "institute", false },
+    { "instute", "institute", false },
+    { "muesum", "museum", true },
+    { "musuem", "museum", true },
+    { "nuclear shutting", "nuclear shuttling", true },
+    { "phylogentic", "phylogenetic", false },
+    { "protien", "protein", false },
+    { "puatative", "putative", false },
+    { "putaitve", "putative", false },
+    { "putaive", "putative", false },
+    { "putataive", "putative", false },
+    { "putatitve", "putative", false },
+    { "putatuve", "putative", false },
+    { "putatvie", "putative", false },
+    { "pylogeny", "phylogeny", false },
+    { "resaerch", "research", false },
+    { "reseach", "research", false },
+    { "reserach", "research", true },
+    { "reserch", "research", false },
+    { "ribosoml", "ribosomal", false },
+    { "ribossomal", "ribosomal", false },
+    { "scencies", "sciences", false },
+    { "scinece", "science", false },
+    { "simmilar", "similar", false },
+    { "structual", "structural", false },
+    { "subitilus", "subtilis", false },
+    { "sulfer", "sulfur", false },
+    { "technlogy", "technology", false },
+    { "technolgy", "technology", false },
+    { "Technlogy", "Technology", false },
+    { "Veterinry", "Veterinary", false },
+    { "Argricultural", "Agricultural", false },
+    { "transcirbed", "transcribed", false },
+    { "transcirption", "transcription", true },
+    { "uiniversity", "university", false },
+    { "uinversity", "university", false },
+    { "univercity", "university", false },
+    { "univerisity", "university", false },
+    { "univeristy", "university", false },
+    { "univesity", "university", false },
+    { "unversity", "university", true },
+    { "uviversity", "university", false },
+    { "anaemia", nullptr, false },
+    { "haem", nullptr, false },
+    { "haemagglutination", nullptr, false },
+    { "heam", nullptr, false },
+    { "mithocon", nullptr, false },
+};
+
+
+class CIdxObject : public CObject
+{
+public:
+    CIdxObject(size_t idx) :
+        m_idx(idx) {}
+
+    size_t GetIdx() const
+    {
+        return m_idx;
+    }
+
+private:
+    size_t m_idx;
+};
+
+static void FindSuspectTextInObject(const CSerialObject& obj, list<size_t>& misspells)
+{
+    for (CStdTypeConstIterator<string> it(obj); it; ++it) {
+
+        for (size_t i = 0; i < sizeof(kSpellFixes) / sizeof(kSpellFixes[0]); ++i) {
+
+            size_t pos = kSpellFixes[i].m_whole_word ? NStr::FindWord(*it, kSpellFixes[i].m_misspell) : NStr::Find(*it, kSpellFixes[i].m_misspell);
+            if (pos != NPOS) {
+                misspells.push_back(i);
+            }
+        }
+    }
+}
+
+template<typename T> void  AddMisspellsToReport(const list<size_t>& misspells, CReportNode& node, const T& obj, CDiscrepancyContext& context)
+{
+    ITERATE(list<size_t>, misspell_idx, misspells) {
+
+        string subitem = string("[n] object[s] contain[S] ") + kSpellFixes[*misspell_idx].m_misspell;
+
+        EKeepRef keep_ref = kSpellFixes[*misspell_idx].m_correct == nullptr ? eNoRef : eKeepRef;
+        bool autofix = kSpellFixes[*misspell_idx].m_correct != nullptr;
+
+        node[subitem].Add(*context.NewDiscObj(CConstRef<T>(&obj), keep_ref, autofix, CRef<CIdxObject>(new CIdxObject(*misspell_idx))));
+    }
+}
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(FLATFILE_FIND_ONCALLER, CSeq_inst, eOncaller, "Flatfile representation of object contains suspect text")
+//  ----------------------------------------------------------------------------
+{
+    CConstRef<CBioseq> bioseq = context.GetCurrentBioseq();
+    CBioseq_Handle bioseq_h = context.GetScope().GetBioseqHandle(*bioseq);
+
+    for (CSeqdesc_CI descr(bioseq_h); descr; ++descr) {
+
+        list<size_t> misspells;
+        FindSuspectTextInObject(*descr, misspells);
+
+        if (!misspells.empty()) {
+            AddMisspellsToReport<CSeqdesc>(misspells, m_Objs, *descr, context);
+        }
+    }
+
+    for (CFeat_CI feat(bioseq_h); feat; ++feat) {
+        list<size_t> misspells;
+        FindSuspectTextInObject(feat->GetMappedFeature(), misspells);
+
+        if (!misspells.empty()) {
+            AddMisspellsToReport<CSeq_feat>(misspells, m_Objs, feat->GetMappedFeature(), context);
+        }
+    }
+}
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(FLATFILE_FIND_ONCALLER)
+//  ----------------------------------------------------------------------------
+{
+    m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
+}
+
+
+static bool FixTextInObject(CSerialObject* obj, size_t misspell_idx)
+{
+    bool ret = false;
+
+    const SpellFixData& fix_data = kSpellFixes[misspell_idx];
+    for (CStdTypeIterator<string> it(*obj); it; ++it) {
+
+        if (NStr::Find(*it, fix_data.m_misspell) != NPOS) {
+            NStr::ReplaceInPlace(*it, fix_data.m_misspell, fix_data.m_correct, 0, -1);
+            ret = true;
+        }
+    }
+
+    return ret;
+}
+
+DISCREPANCY_AUTOFIX(FLATFILE_FIND_ONCALLER)
+{
+    TReportObjectList list = item->GetDetails();
+    unsigned int n = 0;
+    NON_CONST_ITERATE(TReportObjectList, it, list) {
+
+        CDiscrepancyObject* dobj = dynamic_cast<CDiscrepancyObject*>(it->GetPointer());
+
+        const CObject* cur_obj_ptr = dobj->GetObject().GetPointer();
+        const CSeq_feat* feat = dynamic_cast<const CSeq_feat*>(cur_obj_ptr);
+        const CSeqdesc* descr = dynamic_cast<const CSeqdesc*>(cur_obj_ptr);
+
+        size_t misspell_idx = dynamic_cast<const CIdxObject*>(dobj->GetMoreInfo().GetPointer())->GetIdx();
+
+        if (feat) {
+            if (FixTextInObject(const_cast<CSeq_feat*>(feat), misspell_idx)) {
+                ++n;
+            }
+        }
+        else if (descr) {
+            if (FixTextInObject(const_cast<CSeqdesc*>(descr), misspell_idx)) {
+                ++n;
+            }
+        }
+    }
+
+    return CRef<CAutofixReport>(n ? new CAutofixReport("FLATFILE_FIND_ONCALLER: [n] suspect text[s] [is] fixed", n) : 0);
 }
 
 
