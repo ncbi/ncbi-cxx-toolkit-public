@@ -260,7 +260,7 @@ const string kExtraPseudo = "[n] pseudo gene feature[s] [is] not associated with
 const string kExtraGeneNonPseudoNonFrameshift = "[n] non-pseudo gene feature[s] are not associated with a CDS or RNA feature and [does] not have frameshift in the comment.";
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(EXTRA_GENES, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller | eSubmitter | eSmart, "Extra Genes")
+DISCREPANCY_CASE(EXTRA_GENES, CSeq_feat_BY_BIOSEQ, eDisc | eSubmitter | eSmart, "Extra Genes")
 //  ----------------------------------------------------------------------------
 {
     // TODO: Do not collect if mRNA sequence in Gen-prod set
@@ -343,6 +343,46 @@ DISCREPANCY_CASE(EXTRA_GENES, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller | eSubmitte
 
 //  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(EXTRA_GENES)
+//  ----------------------------------------------------------------------------
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+//SUPERFLUOUS_GENE
+const string kSuperfluousGene = "[n] gene feature[s] [is] not associated with any feature and [is] not pseudo.";
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(SUPERFLUOUS_GENE, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller | eSubmitter | eSmart, "Superfluous Genes")
+//  ----------------------------------------------------------------------------
+{
+    // do not collect if pseudo
+    if (!obj.GetData().IsGene()) {
+        return;
+    }
+
+    // Are any "reportable" features under this gene?
+    CFeat_CI fi(context.GetScope(), obj.GetLocation());
+    bool found_reportable = false;
+    while (fi && !found_reportable) {
+        if (!fi->GetData().IsGene()) {
+            CConstRef<CSeq_feat> reported_gene = CCleanup::GetGeneForFeature(*(fi->GetSeq_feat()), fi->GetScope());
+            if (reported_gene.GetPointer() == &obj) {
+                found_reportable = true;
+            }
+        }
+        ++fi;
+    }
+
+    if (!found_reportable) {
+        m_Objs[kSuperfluousGene].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
+    }
+
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(SUPERFLUOUS_GENE)
 //  ----------------------------------------------------------------------------
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();

@@ -1,0 +1,345 @@
+Seq-entry ::= seq {
+  id {
+    local
+      str "Seq1__1" ,
+    general {
+      db "BankIt" ,
+      tag
+        str "1924618/Seq1" } ,
+    general {
+      db "TMSMART" ,
+      tag
+        id 66530683 } ,
+    genbank {
+      accession "KX353908" } } ,
+  descr {
+    title "Helicobacter pylori strain FWDRC-HC138 endopeptidase IV (pspA)
+ gene, partial cds." ,
+    source {
+      genome genomic ,
+      org {
+        taxname "Helicobacter pylori" ,
+        db {
+          {
+            db "taxon" ,
+            tag
+              id 210 } } ,
+        orgname {
+          name
+            binomial {
+              genus "Helicobacter" ,
+              species "pylori" } ,
+          mod {
+            {
+              subtype strain ,
+              subname "FWDRC-HC138" } ,
+            {
+              subtype nat-host ,
+              subname "Homo sapiens" } } ,
+          lineage "Bacteria; Proteobacteria; Epsilonproteobacteria;
+ Campylobacterales; Helicobacteraceae; Helicobacter" ,
+          gcode 11 ,
+          div "BCT" } } ,
+      subtype {
+        {
+          subtype country ,
+          name "Iran" } ,
+        {
+          subtype isolation-source ,
+          name "stomach biopsy" } } } ,
+    molinfo {
+      biomol genomic } ,
+    pub {
+      pub {
+        gen {
+          cit "Unpublished" ,
+          authors {
+            names
+              std {
+                {
+                  name
+                    name {
+                      last "Gharibi" ,
+                      first "Somayyeh" ,
+                      initials "S." } } ,
+                {
+                  name
+                    name {
+                      last "Alebouyeh" ,
+                      first "Masoud" ,
+                      initials "M." } } ,
+                {
+                  name
+                    name {
+                      last "Falsafi" ,
+                      first "Tahereh" ,
+                      initials "T." } } ,
+                {
+                  name
+                    name {
+                      last "Farzi" ,
+                      first "Nastaran" ,
+                      initials "N." } } ,
+                {
+                  name
+                    name {
+                      last "Vaziri" ,
+                      first "Farzam" ,
+                      initials "F." } } ,
+                {
+                  name
+                    name {
+                      last "Zali" ,
+                      first "Mohamad Reza" ,
+                      initials "M.R." } } } ,
+            affil
+              std {
+                affil "Research Institute for Gastroenterology and Liver
+ Diseases, Shahid Beheshti University of Medical Sciences" ,
+                div "Foodborne and Waterborne Disease Research Center" ,
+                city "Tehran" ,
+                country "Iran" ,
+                street "Taleghani Hospital, Chamran Highway, Yaman Avenue,
+ Arabi Avenue" ,
+                postal-code "198571743" } } ,
+          title "Genotypic diversity of protease genes among different H.
+ pylori strains" } } } ,
+    pub {
+      pub {
+        sub {
+          authors {
+            names
+              std {
+                {
+                  name
+                    name {
+                      last "Gharibi" ,
+                      first "Somayyeh" ,
+                      initials "S." } } ,
+                {
+                  name
+                    name {
+                      last "Alebouyeh" ,
+                      first "Masoud" ,
+                      initials "M." } } ,
+                {
+                  name
+                    name {
+                      last "Falsafi" ,
+                      first "Tahereh" ,
+                      initials "T." } } ,
+                {
+                  name
+                    name {
+                      last "Farzi" ,
+                      first "Nastaran" ,
+                      initials "N." } } ,
+                {
+                  name
+                    name {
+                      last "Vaziri" ,
+                      first "Farzam" ,
+                      initials "F." } } ,
+                {
+                  name
+                    name {
+                      last "Zali" ,
+                      first "Mohamad Reza" ,
+                      initials "M.R." } } } ,
+            affil
+              std {
+                affil "Research Institute for Gastroenterology and Liver
+ Diseases, Shahid Beheshti University of Medical Sciences" ,
+                div "Foodborne and Waterborne Disease Research Center" ,
+                city "Tehran" ,
+                country "Iran" ,
+                street "Taleghani Hospital, Chamran Highway, Yaman Avenue,
+ Arabi Avenue" ,
+                postal-code "198571743" } } ,
+          medium email ,
+          date
+            std {
+              year 2016 ,
+              month 6 ,
+              day 1 } } } } ,
+    user {
+      type
+        str "StructuredComment" ,
+      data {
+        {
+          label
+            str "StructuredCommentPrefix" ,
+          data
+            str "##Assembly-Data-START##" } ,
+        {
+          label
+            str "Sequencing Technology" ,
+          data
+            str "Sanger dideoxy sequencing" } ,
+        {
+          label
+            str "StructuredCommentSuffix" ,
+          data
+            str "##Assembly-Data-END##" } } } ,
+    user {
+      type
+        str "Submission" ,
+      data {
+        {
+          label
+            str "AdditionalComment" ,
+          data
+            str "LocalID:Seq1" } } } ,
+    user {
+      type
+        str "OriginalID" ,
+      data {
+        {
+          label
+            str "LocalId" ,
+          data
+            str "Seq1" } } } ,
+    user {
+      class "1.0" ,
+      type
+        str "AutodefOptions" ,
+      data {
+        {
+          label
+            str "SpecifyNuclearProduct" ,
+          data
+            bool TRUE } ,
+        {
+          label
+            str "MiscFeatRule" ,
+          data
+            str "NoncodingProductFeat" } ,
+        {
+          label
+            str "FeatureListType" ,
+          data
+            str "List All Features" } ,
+        {
+          label
+            str "ModifierList" ,
+          data
+            fields {
+              {
+                label
+                  str "OrgMods" ,
+                num 1 ,
+                data
+                  strs {
+                    "Strain" } } } } ,
+        {
+          label
+            str "HIVRule" ,
+          data
+            str "WantBoth" } ,
+        {
+          label
+            str "DoNotApplyToSp" ,
+          data
+            bool TRUE } ,
+        {
+          label
+            str "LeaveParenthetical" ,
+          data
+            bool TRUE } ,
+        {
+          label
+            str "MaxMods" ,
+          data
+            int -99 } ,
+        {
+          label
+            str "UseLabels" ,
+          data
+            bool TRUE } } } ,
+    user {
+      type
+        str "Submission" ,
+      data {
+        {
+          label
+            str "SmartComment" ,
+          data
+            str "TOTAL # OF SEQS:1" } ,
+        {
+          label
+            str "AdditionalComment" ,
+          data
+            str "BankIt1924618" } } } ,
+    user {
+      type
+        str "NcbiAutofix" ,
+      data {
+         } } ,
+    user {
+      type
+        str "NcbiCleanup" ,
+      data {
+        {
+          label
+            str "method" ,
+          data
+            str "SequinCleanup" } ,
+        {
+          label
+            str "version" ,
+          data
+            int 8 } ,
+        {
+          label
+            str "month" ,
+          data
+            int 8 } ,
+        {
+          label
+            str "day" ,
+          data
+            int 2 } ,
+        {
+          label
+            str "year" ,
+          data
+            int 2016 } } } ,
+    update-date
+      std {
+        year 2016 ,
+        month 7 ,
+        day 29 } } ,
+  inst {
+    repr raw ,
+    mol dna ,
+    length 794 ,
+    strand ds ,
+    seq-data
+      ncbi2na 'FCD182CFD0B6FEE7BC74FB3CB7FFC91408091542455150DD9C0773F03AA63FF
+2458A3FE1020BA300D70015724F0A9BFC7FE361DD7AEA9AED2626E83E26000D9E3F82400395BFC
+9B39CAAAF3A626A2F3CE6A4E426260BF39770262FE328D4FAAE3FFDA9983BA00DE74302DA6C947
+429B939A98330203291FD14A93A0150E0020FFE403F2D0E243140EFEE0E3B64025280F219C28F3
+0A3FE782A0ADFC99D0067700F0074F8C034918F0909908DBF0E83E2C2BC0025CFA7200095CE899
+F4F80094643498B0CD34640'H } ,
+  annot {
+    {
+      data
+        ftable {
+          {
+            data
+              gene {
+                locus "pspA" } ,
+            partial TRUE ,
+            comment "HP_1435" ,
+            location
+              int {
+                from 0 ,
+                to 793 ,
+                strand plus ,
+                id
+                  genbank {
+                    accession "KX353908" } ,
+                fuzz-from
+                  lim lt ,
+                fuzz-to
+                  lim gt } } } } } }
