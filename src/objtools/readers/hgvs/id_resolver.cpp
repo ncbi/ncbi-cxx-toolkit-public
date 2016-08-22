@@ -18,7 +18,7 @@ CIdResolver::CIdResolver(CScope& scope)  : m_Scope(scope),
 CSeq_id_Handle CIdResolver::GetAccessionVersion(const string& identifier) const
 {
 
-    if (identifier.empty()) {
+    if (NStr::IsBlank(identifier)) {
 // LCOV_EXCL_START - This error will almost certainly be picked up by the parser first
         NCBI_THROW(CVariationValidateException,
                    eIDResolveError,
@@ -43,7 +43,6 @@ CSeq_id_Handle CIdResolver::GetAccessionVersion(const string& identifier) const
                               sequence::eGetId_ForceAcc | sequence::eGetId_ThrowOnError);
     }
     catch (...) {}
-   
 
     if (!idh) { // Failed to resolve id
         NCBI_THROW(CVariationValidateException,
@@ -57,7 +56,7 @@ CSeq_id_Handle CIdResolver::GetAccessionVersion(const string& identifier) const
 
 bool CIdResolver::x_TryProcessGenomicLRG(const string& identifier, CSeq_id_Handle& idh) const
 { 
-    if (identifier.empty()) {
+    if (NStr::IsBlank(identifier)) {
         return false;
     }
 
