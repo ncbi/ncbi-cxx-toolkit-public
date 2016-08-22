@@ -1817,6 +1817,19 @@ CRef<CBioSource> CBioSource::MakeCommon( const CBioSource& other) const
 }
 
 
+bool CBioSource::HasSubtype(CSubSource::TSubtype subtype) const
+{
+    if (!IsSetSubtype()) {
+        return false;
+    }
+    ITERATE(TSubtype, it, GetSubtype()) {
+        if ((*it)->IsSetSubtype() && (*it)->GetSubtype() == subtype) {
+            return true;
+        }
+    }
+    return false;
+}
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

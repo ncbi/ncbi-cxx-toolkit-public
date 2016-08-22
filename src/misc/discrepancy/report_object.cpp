@@ -374,6 +374,16 @@ string CReportObject::GetTextObjectDescription(const CSeq_feat& seq_feat, CScope
 }
 
 
+string GetIdLabel(const CBioseq& seq)
+{
+    const CSeq_id* wid =
+        FindBestChoice(seq.GetId(), CSeq_id::BestRank).GetPointer();
+    string label;
+    wid->GetLabel(&label, NULL, CSeq_id::eContent);
+    return label;
+}
+
+
 string CReportObject::GetTextObjectDescription(const CSeqdesc& sd, CScope& scope)
 {
     string desc = GetTextObjectDescription(sd);
@@ -383,7 +393,7 @@ string CReportObject::GetTextObjectDescription(const CSeqdesc& sd, CScope& scope
     if (seh) {
         string label;
         if (seh.IsSeq()) {
-            seh.GetSeq().GetCompleteBioseq()->GetLabel(&label, CBioseq::eContent);
+            label = GetIdLabel(*(seh.GetSeq().GetCompleteBioseq()));
         } else if (seh.IsSet()) {
             seh.GetSet().GetCompleteBioseq_set()->GetLabel(&label, CBioseq_set::eContent);
         }

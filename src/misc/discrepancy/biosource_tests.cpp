@@ -2075,24 +2075,28 @@ static const string kAmplifiedPrimers = "[n] biosource[s] [has] \'amplified with
 
 DISCREPANCY_CASE(AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE, CBioSource, eOncaller, "Species-specific primers, no environmental sample")
 {
+    if (obj.HasSubtype(CSubSource::eSubtype_environmental_sample)) {
+        return;
+    }
+    bool has_primer_note = false;
     if (obj.CanGetSubtype()) {
         ITERATE (CBioSource::TSubtype, it, obj.GetSubtype()) {
-            if ((*it)->GetSubtype() == CSubSource::eSubtype_environmental_sample) {
-                return;
-            }
-            else if ((*it)->GetSubtype() == CSubSource::eSubtype_other && NStr::FindNoCase((*it)->GetName(), "amplified with species-specific primers") != NPOS) {
-                m_Objs[kAmplifiedPrimers].Add(*context.NewFeatOrDescObj());
-                return;
+            if ((*it)->GetSubtype() == CSubSource::eSubtype_other && NStr::FindNoCase((*it)->GetName(), "amplified with species-specific primers") != NPOS) {
+                has_primer_note = true;
+                break;
             }
         }
     }
-    if (obj.IsSetOrg() && obj.GetOrg().CanGetOrgname() && obj.GetOrg().GetOrgname().CanGetMod()) {
+    if (!has_primer_note && obj.IsSetOrg() && obj.GetOrg().CanGetOrgname() && obj.GetOrg().GetOrgname().CanGetMod()) {
         ITERATE (COrgName::TMod, it, obj.GetOrg().GetOrgname().GetMod()) {
             if ((*it)->CanGetSubtype() && (*it)->GetSubtype() == COrgMod::eSubtype_other && (*it)->IsSetSubname() && NStr::FindNoCase((*it)->GetSubname(), "amplified with species-specific primers") != NPOS) {
-                m_Objs[kAmplifiedPrimers].Add(*context.NewFeatOrDescObj());
-                return;
+                has_primer_note = true;
+                break;
             }
         }
+    }
+    if (has_primer_note) {
+        m_Objs[kAmplifiedPrimers].Add(*context.NewFeatOrDescObj(eNoRef, true));
     }
 }
 
@@ -2100,6 +2104,37 @@ DISCREPANCY_CASE(AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE, CBioSource, eOncalle
 DISCREPANCY_SUMMARIZE(AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE)
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+static bool SetEnvSampleFixAmplifiedPrimers(CBioSource& src)
+{
+    bool change = false;
+    if (!src.HasSubtype(CSubSource::eSubtype_environmental_sample)) {
+        src.SetSubtype().push_back(CRef<CSubSource>(new CSubSource(CSubSource::eSubtype_environmental_sample, " ")));
+        change = true;
+    }
+    NON_CONST_ITERATE(CBioSource::TSubtype, s, src.SetSubtype()) {
+        if ((*s)->GetSubtype() == CSubSource::eSubtype_other && (*s)->IsSetName()) {
+            string orig = (*s)->GetName();
+            NStr::ReplaceInPlace((*s)->SetName(), "[amplified with species-specific primers", "amplified with species-specific primers");
+            NStr::ReplaceInPlace((*s)->SetName(), "amplified with species-specific primers]", "amplified with species-specific primers");
+            if (!NStr::Equal(orig, (*s)->GetName())) {
+                change = true;
+                break;
+            }
+        }
+    }
+
+    return change;
+}
+
+
+DISCREPANCY_AUTOFIX(AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE)
+{
+    TReportObjectList list = item->GetDetails();
+    unsigned int n = AutofixBiosrc(list, scope, SetEnvSampleFixAmplifiedPrimers);
+    return CRef<CAutofixReport>(n ? new CAutofixReport("AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE: Set environmental_sample, fixed amplified primers note for [n] source[s]", n) : 0);
 }
 
 

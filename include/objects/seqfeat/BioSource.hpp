@@ -40,6 +40,7 @@
 
 // generated includes
 #include <objects/seqfeat/BioSource_.hpp>
+#include <objects/seqfeat/SubSource.hpp>
 
 // generated classes
 
@@ -49,6 +50,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 class COrgName;
 class CFieldDiff;
+class CSubSource;
 
 typedef vector< CRef<CFieldDiff> > TFieldDiffList;
 
@@ -164,6 +166,8 @@ public:
 
     static bool IsViral(const string& lineage);
     bool IsViral() const;
+
+    bool HasSubtype(CSubSource::TSubtype subtype) const;
 
     CRef<CBioSource> MakeCommon( const CBioSource& other) const;
 
