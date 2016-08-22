@@ -62,7 +62,14 @@ def main():
              "blast_formatter.exe",
              "deltablast.exe",
              "legacy_blast.pl",
-             "update_blastdb.pl" ]
+             "update_blastdb.pl",
+             "libgcc_s_seh-1.dll",
+             "libgmp-10.dll",
+             "libgnutls-30.dll",
+             "libhogweed-4-2.dll",
+             "libnettle-6-2.dll",
+             "libp11-kit-0.dll"
+             ]
     
     cwd = os.getcwd()
     for app in apps:
