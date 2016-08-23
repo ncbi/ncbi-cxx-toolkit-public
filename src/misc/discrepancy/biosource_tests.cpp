@@ -2296,7 +2296,7 @@ DISCREPANCY_SUMMARIZE(METAGENOME_SOURCE)
 
 // DUP_SRC_QUAL
 
-DISCREPANCY_CASE(DUP_SRC_QUAL, CBioSource, eOncaller, "Each qualifier on a source should have different value")
+DISCREPANCY_CASE(DUP_SRC_QUAL, CBioSource, eDisc | eOncaller | eSmart, "Each qualifier on a source should have different value")
 {
     map<string, size_t> Map;
     if (obj.CanGetSubtype()) {
@@ -2344,6 +2344,9 @@ DISCREPANCY_SUMMARIZE(DUP_SRC_QUAL)
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
+
+
+DISCREPANCY_ALIAS(DUP_SRC_QUAL, DUP_SRC_QUAL_DATA)
 
 
 END_SCOPE(NDiscrepancy)
