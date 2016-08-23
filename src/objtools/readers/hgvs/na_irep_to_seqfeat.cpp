@@ -567,8 +567,7 @@ CRef<CSeq_feat> CHgvsNaIrepReader::CreateSeqfeat(const CVariantExpression& varia
         seq_type != eVariantSeqType_r &&
         seq_type != eVariantSeqType_m &&
         seq_type != eVariantSeqType_n) {
-
-        NCBI_THROW(CVariationIrepException, eInvalidSeqType, "Nucleotide sequence expected");
+        NCBI_THROW(CVariationIrepException, eInvalidSeqType, "Nucleotide sequence expected"); // LCOV_EXCL_LINE
     }
 
 
