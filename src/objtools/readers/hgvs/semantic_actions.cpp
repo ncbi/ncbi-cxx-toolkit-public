@@ -172,7 +172,7 @@ void AssignCountRange(const string& start, const string& stop, CRef<CCount>& res
 {
     result = CreateResultIfNull(result);
     if ( start == "?" ) {
-        result->SetRange().SetStart().SetUnknown(); 
+        result->SetRange().SetStart().SetUnknown(); // LCOV_EXCL_LINE - No ASN.1 representation
     } 
     else {
         const auto start_val = NStr::StringToNumeric<CCount::TVal>(start);
@@ -331,7 +331,7 @@ void AssignIntronSite(const string& base, const string& offset, CRef<CNtSite>& r
     result = CreateResultIfNull(result);
 
     if (base == "?") {
-        result->SetBase().SetUnknown();
+        result->SetBase().SetUnknown(); // LCOV_EXCL_LINE - Does not parse
     }
     else { 
         const auto base_val = NStr::StringToNumeric<CNtSite::TBase::TVal>(base);
@@ -350,7 +350,7 @@ void AssignIntronSite(const string& base, const string& offset, CRef<CNtSite>& r
 
 
     if (base.front() == '(' && offset.back() == ')') {
-        result->SetFuzzy();
+        result->SetFuzzy(); // LCOV_EXCL_LINE - not represented in ASN.1 Generates the same representation as x+(y)
     }
     else if (offset.size() >= 2 && 
              offset[1] == '(' 
@@ -493,17 +493,13 @@ void AssignNtRemoteLocation(const string& identifier, const string& type_string,
 }
 
 
-void AssignNtRemoteLocation(const string& identifier, CRef<CNtLocation>& nt_loc, CRef<CNtLocation>& result)
-{
-    AssignNtRemoteLocation(identifier, "g.", nt_loc, result);
-}
-
 void AssignNtSSR(CRef<CNtLocation>& nt_loc, CRef<CCount>& count, CRef<CSimpleVariant>& result)
 {
     result = CreateResultIfNull(result);
     result->SetType().SetRepeat().SetLoc().SetNtloc(*nt_loc);
     result->SetType().SetRepeat().SetCount(*count);
 }
+
 
 void AssignNtSSR(CRef<CNtLocation>& nt_loc, const CRepeat::TRaw_seq& raw_seq, CRef<CCount>& count, CRef<CSimpleVariant>& result)
 {
@@ -515,6 +511,7 @@ void AssignNtSSR(CRef<CNtLocation>& nt_loc, const CRepeat::TRaw_seq& raw_seq, CR
     }
     result->SetType().SetRepeat().SetRaw_seq(raw_seq);
 }
+
 
 void AssignNtInv(CRef<CNtLocation>& nt_loc, const CInversion::TRaw_seq& raw_seq, CRef<CSimpleVariant>& result)
 {

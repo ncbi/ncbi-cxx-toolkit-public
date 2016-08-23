@@ -116,7 +116,7 @@ void AssignNtIntervalLocation(CRef<CNtInterval>& nt_int, CRef<CNtLocation>& resu
 
 void AssignNtRemoteLocation(const string& seq_id, const string& seq_type, CRef<CNtLocation>& nt_loc, CRef<CNtLocation>& result);
 
-void AssignNtRemoteLocation(const string& seq_id, CRef<CNtLocation>& nt_loc, CRef<CNtLocation>& result);
+//void AssignNtRemoteLocation(const string& seq_id, CRef<CNtLocation>& nt_loc, CRef<CNtLocation>& result);
 
 void AssignNtSSR(CRef<CNtLocation>& nt_loc, const CRepeat::TRaw_seq& raw_seq, CRef<CCount>& count, CRef<CSimpleVariant>& result);
 

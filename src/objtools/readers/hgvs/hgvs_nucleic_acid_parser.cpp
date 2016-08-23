@@ -63,8 +63,7 @@ SHgvsNucleicAcidGrammar::SHgvsNucleicAcidGrammar(const SHgvsLexer& tok) :
     identity = (nucleotide_site >> nucleotide >> tok.nochange) ACTION2(AssignNtIdentity) |
                (nucleotide_site >> tok.nochange) ACTION1(AssignNtIdentity);
 
-    remote_nucleotide_interval = (tok.identifier >> tok.na_tag >> nucleotide_site_interval) ACTION3(AssignNtRemoteLocation) |
-                                 (tok.identifier >> nucleotide_site_interval) ACTION2(AssignNtRemoteLocation);
+    remote_nucleotide_interval = (tok.identifier >> tok.na_tag >> nucleotide_site_interval) ACTION3(AssignNtRemoteLocation);
 
     nucleotide_location = nucleotide_site_interval |
                           nucleotide_site;
