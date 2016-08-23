@@ -1255,7 +1255,10 @@ Int2 s_RPSComputeTraceback(EBlastProgramType program_number,
       if (ext_params->options->compositionBasedStats > 0) {
          _PSIDeallocateMatrix((void**)sbp->psi_matrix->freq_ratios,
                               seq_arg.seq->length);
-
+      	 if (program_number == eBlastTypeRpsTblastn) {
+         	_PSIDeallocateMatrix((void**)sbp->psi_matrix->pssm->data,
+                              seq_arg.seq->length);
+      	}
       }
       if (hsp_list->hspcnt == 0) {
          hsp_list = Blast_HSPListFree(hsp_list);
