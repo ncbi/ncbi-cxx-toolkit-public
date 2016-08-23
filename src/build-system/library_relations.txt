@@ -1365,8 +1365,6 @@ xid_utils needs xcgi
 xid_utils needs xmlwrapp
 xid_utils_noncorelib needs txclient
 xid_utils_noncorelib needs xid_utils
-xid_wgs needs xncbi
-xid_wgs needs3party $(VDB_LIBS)
 xid_wgsdb needs xid_utils
 ximage needs xncbi
 ximage needs3party $(IMAGE_LIBS)
