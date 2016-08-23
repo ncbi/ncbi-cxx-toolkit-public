@@ -22,9 +22,9 @@ CRef<CSeq_literal> CPostProcessUtils::GetLiteralAtLoc(const CSeq_loc& loc, CScop
         sequence = sequence.front() + ".." + sequence.back(); 
     } // LCOV_EXCL_STOP
 
-    if (seqvec.IsProtein()) {
-        literal->SetSeq_data().SetNcbieaa().Set(sequence);
-    } 
+    if (seqvec.IsProtein()) { // LCOV_EXCL_START - Don't expect amino acids without index. May be needed when validating.
+        literal->SetSeq_data().SetNcbieaa().Set(sequence); 
+    } // LCOV_EXCL_STOP
     else {
         literal->SetSeq_data().SetIupacna().Set(sequence);
     }
