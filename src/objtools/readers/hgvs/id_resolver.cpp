@@ -61,7 +61,7 @@ bool CIdResolver::x_TryProcessGenomicLRG(const string& identifier, CSeq_id_Handl
     }
 
     if (!x_LooksLikeLRG(identifier)) {
-        return false;
+        return false; // LCOV_EXCL_LINE - Don't expect this to occur. 
     }
 
     CRef<CSeq_id> lrg_seqid;
@@ -73,7 +73,7 @@ bool CIdResolver::x_TryProcessGenomicLRG(const string& identifier, CSeq_id_Handl
     catch(...) {
         return false;
     }
-// LCOV_EXCL_START
+// LCOV_EXCL_STOP
 
     idh = sequence::GetId(*lrg_seqid, 
                           m_Scope, 
@@ -126,7 +126,7 @@ bool CIdResolver::x_TryProcessLRG(const string& identifier, CSeq_id_Handle& idh)
     for (CFeat_CI ci(bsh,selector); ci; ++ci) { 
         const auto& mapped_feat = *ci;
         if (!mapped_feat.IsSetDbxref()) {
-            continue;
+            continue; // LCOV_EXCL_LINE 
         }    
         ITERATE(CSeq_feat::TDbxref, it, mapped_feat.GetDbxref()) {
             const auto& dbtag = **it;
@@ -147,19 +147,16 @@ bool CIdResolver::x_TryProcessLRG(const string& identifier, CSeq_id_Handle& idh)
                 {
                     break;
                 }
-// LCOV_EXCL_STOP 
             }
         }
     }
-
-// LCOV_EXCL_START - could not find test case to trigger this exception
     NCBI_THROW(CVariationValidateException,
                eIDResolveError,
                "Could not find SeqId for : " + identifier);
-// LCOV_EXCL_START - could not find test case to trigger this exception
 
     return false;
 }
+// LCOV_EXCL_STOP
 
 
 /*
