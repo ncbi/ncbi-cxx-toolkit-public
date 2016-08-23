@@ -3,6 +3,8 @@
 LIB = eutils_client
 SRC = eutils_client
 
+ASN_DEP = seq
+
 DLL_LIB = xmlwrapp
 
 WATCHERS = grichenk
