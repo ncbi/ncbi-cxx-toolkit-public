@@ -74,6 +74,7 @@ s_GetErrCodeString(CEUtilsException::TErrCode err_code)
 }
 
 template<class T> static void s_FormatIds(ostringstream& osm, const vector<T>& uids) {
+    osm << "&id=";
     if (!uids.empty()) {
         osm << uids.front();
         for (auto it = uids.begin()+1; it != uids.end(); ++it) {
@@ -83,6 +84,7 @@ template<class T> static void s_FormatIds(ostringstream& osm, const vector<T>& u
 }
 
 template<> void s_FormatIds<CSeq_id_Handle>(ostringstream& osm, const vector<CSeq_id_Handle>& uids) {
+    osm << "&id=";
     CSeq_id::E_Choice type = CSeq_id::e_not_set;
     for (auto it = uids.begin(); it != uids.end(); ++it) {
         if (it != uids.begin()) {
@@ -111,6 +113,7 @@ template<> void s_FormatIds<CSeq_id_Handle>(ostringstream& osm, const vector<CSe
 }
 
 template<> void s_FormatIds<string>(ostringstream& osm, const vector<string>& uids) {
+    osm << "&id=";
     if (!uids.empty()) {
         osm << uids.front();
         for (auto it = uids.begin()+1; it != uids.end(); ++it) {
