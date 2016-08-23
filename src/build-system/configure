@@ -1611,7 +1611,7 @@ deactivation makefile-auto-update projects flat-makefile configure-dialog \
 check ncbi-public strip pch caution ccache distcc \
 ncbi-c wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
 geo included-geo vdb downloaded-vdb static-vdb \
-z bz2 lzo pcre gmp gcrypt nettle gnutls openssl krb5 \
+z bz2 lzo pcre gmp gcrypt nettle gnutls static-gnutls openssl krb5 \
 sybase sybase-local sybase-new ftds mysql \
 orbacus freetype ftgl opengl mesa glut glew glew-mx \
 bdb python perl jni sqlite3 icu boost boost-tag \
@@ -1894,6 +1894,7 @@ Optional Packages:
  --without-nettle        do not use Nettle
  --with-gnutls=DIR       use GNUTLS installation in DIR
  --without-gnutls        do not use GNUTLS
+ --with-static-gnutls    link GNUTLS statically if possible
  --with-openssl=DIR      use OpenSSL installation in DIR
  --without-openssl       do not use OpenSSL
  --with-krb5=DIR         use Kerberos 5 installation in DIR
@@ -3390,6 +3391,12 @@ if test "${with_gnutls2+set}" = set; then
 fi
 
 
+# Check whether --with-static-gnutls was given.
+if test "${with_static_gnutls+set}" = set; then
+  withval=$with_static_gnutls;
+fi
+
+
 # Check whether --with-openssl was given.
 if test "${with_openssl+set}" = set; then
   withval=$with_openssl;
@@ -4302,6 +4309,20 @@ echo "$as_me: error: incompatible options: --without-vdb but --with-static-vdb" 
       ;;
    :* )
       with_static_vdb=$with_bin_release
+      ;;
+esac
+
+case "$with_static_gnutls:$with_gnutls" in
+   yes:no )
+      { { echo "$as_me:$LINENO: error: incompatible options: --without-gnutls but --with-static-gnutls" >&5
+echo "$as_me: error: incompatible options: --without-gnutls but --with-static-gnutls" >&2;}
+   { (exit 1); exit 1; }; }
+      ;;
+   yes: )
+      with_gnutls=yes
+      ;;
+   :* )
+      with_static_gnutls=$with_bin_release
       ;;
 esac
 
@@ -29734,6 +29755,28 @@ if test "x$with_gnutls" != xno -a -n "$GNUTLS_CONFIG_LIBS"; then
        *\ -lgcrypt* ) ;;
        *            ) GNUTLS_LIBS="$GNUTLS_LIBS $GCRYPT_LIBS" ;;
    esac
+   if test "$with_static_gnutls" = yes; then
+      dirs=''
+      sep=''
+      static_libs=''
+      for x in $GNUTLS_LIBS; do
+         case $x in
+            -L* ) dirs="$dirs `echo _$x | cut -c4-`" ;;
+            -l* )
+                want=lib`echo _$x | cut -c4-`-static.a
+                for d in $dirs; do
+                   if test -f $d/$want; then
+                      x=$x-static
+                      break
+                   fi
+                done
+                ;;
+         esac
+         static_libs=$static_libs$sep$x
+         sep=' '
+      done
+      GNUTLS_LIBS=$static_libs
+   fi
 fi
 
 if test "$with_openssl" != "no"; then

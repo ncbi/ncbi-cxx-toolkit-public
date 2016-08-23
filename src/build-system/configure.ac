@@ -275,6 +275,8 @@ AC_ARG_WITH(gnutls,
    [ --with-gnutls=DIR       use GNUTLS installation in DIR])
 AC_ARG_WITH(gnutls2,
    [ --without-gnutls        do not use GNUTLS])
+AC_ARG_WITH(static-gnutls,
+   [ --with-static-gnutls    link GNUTLS statically if possible])
 AC_ARG_WITH(openssl,
    [ --with-openssl=DIR      use OpenSSL installation in DIR])
 AC_ARG_WITH(openssl2,
@@ -541,7 +543,7 @@ deactivation makefile-auto-update projects flat-makefile configure-dialog \
 check ncbi-public strip pch caution ccache distcc \
 ncbi-c wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
 geo included-geo vdb downloaded-vdb static-vdb \
-z bz2 lzo pcre gmp gcrypt nettle gnutls openssl krb5 \
+z bz2 lzo pcre gmp gcrypt nettle gnutls static-gnutls openssl krb5 \
 sybase sybase-local sybase-new ftds mysql \
 orbacus freetype ftgl opengl mesa glut glew glew-mx \
 bdb python perl jni sqlite3 icu boost boost-tag \
@@ -723,6 +725,18 @@ case "$with_static_vdb:$with_vdb" in
       ;;
    :* )
       with_static_vdb=$with_bin_release
+      ;;
+esac
+
+case "$with_static_gnutls:$with_gnutls" in
+   yes:no )
+      AC_MSG_ERROR([incompatible options: --without-gnutls but --with-static-gnutls])
+      ;;
+   yes: )
+      with_gnutls=yes
+      ;;
+   :* )
+      with_static_gnutls=$with_bin_release
       ;;
 esac
 
@@ -4389,6 +4403,28 @@ if test "x$with_gnutls" != xno -a -n "$GNUTLS_CONFIG_LIBS"; then
        *\ -lgcrypt* ) ;;
        *            ) GNUTLS_LIBS="$GNUTLS_LIBS $GCRYPT_LIBS" ;;
    esac
+   if test "$with_static_gnutls" = yes; then
+      dirs=''
+      sep=''
+      static_libs=''
+      for x in $GNUTLS_LIBS; do
+         case $x in
+            -L* ) dirs="$dirs `echo _$x | cut -c4-`" ;;
+            -l* )
+                want=lib`echo _$x | cut -c4-`-static.a
+                for d in $dirs; do
+                   if test -f $d/$want; then
+                      x=$x-static
+                      break
+                   fi
+                done
+                ;;
+         esac
+         static_libs=$static_libs$sep$x
+         sep=' '
+      done
+      GNUTLS_LIBS=$static_libs
+   fi
 fi
 
 NCBI_CHECK_THIRD_PARTY_LIB_EX(openssl, OPENSSL, ssl,
