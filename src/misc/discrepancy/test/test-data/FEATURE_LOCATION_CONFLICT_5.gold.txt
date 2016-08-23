@@ -1,0 +1,20 @@
+Discrepancy Report Results
+
+Summary
+FEATURE_LOCATION_CONFLICT: 6 features have inconsistent gene locations.
+
+Detailed Report
+
+FEATURE_LOCATION_CONFLICT: 6 features have inconsistent gene locations.
+test-data/File1fordiscrep.asn:CDS	NADH dehydrogenase subunit 7	[lcl|Scaffold_001:c21584-21442, c20525-20458, c18996-18286, c16544-16284]	
+test-data/File1fordiscrep.asn:Gene	nad7	lcl|Scaffold_001:c25584-16284	
+test-data/File1fordiscrep.asn:CDS	NADH dehydrogenase subunit 5	[lcl|Scaffold_001:82608-82835, 83680-84897, 168803-168823]	
+test-data/File1fordiscrep.asn:Gene	nad5	lcl|Scaffold_001:82608-168824	
+test-data/File1fordiscrep.asn:CDS	hypothetical protein	lcl|Scaffold_001:c88074-87767	
+test-data/File1fordiscrep.asn:mRNA	NADH dehydrogenase subunit 7	[lcl|Scaffold_001:c21584-21442, c20525-20458, c18996-18286, c16544-16284]	
+test-data/File1fordiscrep.asn:Gene	nad7	lcl|Scaffold_001:c25584-16284	
+test-data/File1fordiscrep.asn:mRNA	NADH dehydrogenase subunit 5	[lcl|Scaffold_001:82608-82835, 83680-84897, 168803-168823]	
+test-data/File1fordiscrep.asn:Gene	nad5	lcl|Scaffold_001:82608-168824	
+test-data/File1fordiscrep.asn:tRNA	Cys	lcl|Scaffold_001:87912-87982	
+test-data/File1fordiscrep.asn:Gene	nad5	lcl|Scaffold_001:82608-168824	
+

@@ -1767,7 +1767,7 @@ DISCREPANCY_SUMMARIZE(CHECK_RNA_PRODUCTS_AND_COMMENTS)
 
 // FEATURE_LOCATION_CONFLICT
 
-const string kFeatureLocationConflictTop = "[n/2] feature[s] [has] inconsistent gene location[s].";
+const string kFeatureLocationConflictTop = "[n] feature[s] [has] inconsistent gene location[s].";
 const string kFeatureLocationCodingRegion = "Coding region location does not match gene location";
 const string kFeatureLocationRNA = "RNA feature location does not match gene location";
 
@@ -1977,6 +1977,7 @@ DISCREPANCY_CASE(FEATURE_LOCATION_CONFLICT, CSeq_feat_BY_BIOSEQ, eDisc | eSubmit
     const CGene_ref* gx = obj.GetGeneXref();
     if (gx) {
         if (!gx->IsSuppressed()) {
+            
             CBioseq_Handle bsh = context.GetScope().GetBioseqHandle(*(context.GetCurrentBioseq()));
             CTSE_Handle tse_hl = bsh.GetTSE_Handle();
             CTSE_Handle::TSeq_feat_Handles gene_candidates = tse_hl.GetGenesByRef(*gx);
@@ -1999,10 +2000,11 @@ DISCREPANCY_CASE(FEATURE_LOCATION_CONFLICT, CSeq_feat_BY_BIOSEQ, eDisc | eSubmit
                             m_Objs[kFeatureLocationConflictTop]
                                 [kFeatureLocationRNA + subitem_id]
                             .Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false)
-                            .Add(*context.NewDiscObj(it->GetSeq_feat()), false).Ext();
+                                .Add(*context.NewDiscObj(it->GetSeq_feat()), false).Ext();
                         }
                     }
-                    break;
+
+                    m_Objs[kFeatureLocationConflictTop].Incr();
                 }
             }
 
@@ -2016,6 +2018,7 @@ DISCREPANCY_CASE(FEATURE_LOCATION_CONFLICT, CSeq_feat_BY_BIOSEQ, eDisc | eSubmit
                         ["RNA feature xref gene does not exist"]
                     .Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
                 }
+                m_Objs[kFeatureLocationConflictTop].Incr();
             }
         }
     } else {
@@ -2029,13 +2032,15 @@ DISCREPANCY_CASE(FEATURE_LOCATION_CONFLICT, CSeq_feat_BY_BIOSEQ, eDisc | eSubmit
                     m_Objs[kFeatureLocationConflictTop]
                         [kFeatureLocationCodingRegion + subitem_id]
                     .Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false)
-                    .Add(*context.NewDiscObj(CConstRef<CSeq_feat>(gene)), false).Ext();
+                        .Add(*context.NewDiscObj(CConstRef<CSeq_feat>(gene)), false).Ext();
                 } else {
                     m_Objs[kFeatureLocationConflictTop]
                         [kFeatureLocationRNA + subitem_id]
                     .Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false)
-                    .Add(*context.NewDiscObj(CConstRef<CSeq_feat>(gene)), false).Ext();
+                        .Add(*context.NewDiscObj(CConstRef<CSeq_feat>(gene)), false).Ext();
                 }
+
+                m_Objs[kFeatureLocationConflictTop].Incr();
             }
         }
     }

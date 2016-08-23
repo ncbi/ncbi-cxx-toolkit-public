@@ -1,0 +1,11 @@
+Discrepancy Report Results
+
+Summary
+FEATURE_LOCATION_CONFLICT: 1 feature has inconsistent gene location.
+
+Detailed Report
+
+FEATURE_LOCATION_CONFLICT: 1 feature has inconsistent gene location.
+test-data/locustagetc.sqn:CDS	ribosomal protein S12	[gb|KT168386|:c66309-66196, 124640-124871, 125412-125440]	Bocu_g82
+test-data/locustagetc.sqn:Gene	rps12	[gb|KT168386|:c66309-66196, c125440-124640]	Bocu_g82
+
