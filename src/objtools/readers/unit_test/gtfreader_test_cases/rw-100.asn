@@ -1,0 +1,166 @@
+Seq-annot ::= {
+  id {
+    local str "Contig602"
+  },
+  data ftable {
+    {
+      id local str "gene|20",
+      data gene {
+      },
+      location int {
+        from 0,
+        to 683,
+        strand minus,
+        id local str "Contig602"
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "g15"
+        }
+      }
+    },
+    {
+      id local str "mrna|21",
+      data rna {
+        type mRNA
+      },
+      location mix {
+        int {
+          from 658,
+          to 683,
+          strand minus,
+          id local str "Contig602"
+        },
+        int {
+          from 0,
+          to 441,
+          strand minus,
+          id local str "Contig602"
+        }
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "g15"
+        },
+        {
+          qual "transcript_id",
+          val "g15.t1"
+        }
+      },
+      xref {
+        {
+          id local str "gene|20"
+        }
+      }
+    },
+    {
+      id local str "cds|22",
+      data cdregion {
+      },
+      location mix {
+        int {
+          from 658,
+          to 683,
+          strand minus,
+          id local str "Contig602"
+        },
+        int {
+          from 0,
+          to 441,
+          strand minus,
+          id local str "Contig602"
+        }
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "g15"
+        },
+        {
+          qual "transcript_id",
+          val "g15.t1"
+        }
+      },
+      xref {
+        {
+          id local str "gene|20"
+        },
+        {
+          id local str "mrna|21"
+        }
+      }
+    },
+    {
+      id local str "gene|23",
+      data gene {
+      },
+      location int {
+        from 1398,
+        to 1761,
+        strand plus,
+        id local str "Contig602"
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "g16"
+        }
+      }
+    },
+    {
+      id local str "cds|24",
+      data cdregion {
+      },
+      location int {
+        from 1398,
+        to 1718,
+        strand plus,
+        id local str "Contig602"
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "g16"
+        },
+        {
+          qual "transcript_id",
+          val "g16.t1"
+        }
+      },
+      xref {
+        {
+          id local str "gene|23"
+        }
+      }
+    },
+    {
+      id local str "mrna|25",
+      data rna {
+        type mRNA
+      },
+      location int {
+        from 1398,
+        to 1718,
+        strand plus,
+        id local str "Contig602"
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "g16"
+        },
+        {
+          qual "transcript_id",
+          val "g16.t1"
+        }
+      },
+      xref {
+        {
+          id local str "gene|23"
+        }
+      }
+    }
+  }
+}
