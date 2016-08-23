@@ -479,7 +479,7 @@ EVariantSeqType s_GetSeqType(const string& type_string)
         return eVariantSeqType_n;
     }
 
-    return eVariantSeqType_u; // unknown type
+    return eVariantSeqType_u; // LCOV_EXCL_LINE - unknown type not not occur
 }
 
 
