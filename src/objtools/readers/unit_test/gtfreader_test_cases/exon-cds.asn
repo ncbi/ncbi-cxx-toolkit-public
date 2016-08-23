@@ -29,7 +29,6 @@ Seq-annot ::= {
       data rna {
         type mRNA
       },
-      product whole local str "381.000.1",
       location mix {
         int {
           from 149,

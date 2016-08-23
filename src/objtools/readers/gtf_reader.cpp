@@ -1054,10 +1054,6 @@ bool CGtfReader::x_FeatureSetDataMRNA(
     if (record.GetAttribute("product", strValue)) {
         rna.SetExt().SetName(strValue);
     }
-    if (record.GetAttribute("transcript_id", strValue)) {
-        pFeature->SetProduct().SetWhole(
-            *CReadUtil::AsSeqId(strValue, m_iFlags & fAllIdsAsLocal));
-    }
 
     return true;
 }
