@@ -649,6 +649,62 @@ DISCREPANCY_SUMMARIZE(REQUIRED_STRAIN)
 }
 
 
+// STRAIN_CULTURE_COLLECTION_MISMATCH
+
+static bool MatchExceptSpaceColon(const string& a, const string& b)
+{
+    size_t i = 0;
+    size_t j = 0;
+    while (i < a.length() && j < b.length()) {
+        while (i < a.length() && (a[i] == ':' || a[i] == ' ')) i++;
+        while (j < b.length() && (b[j] == ':' || b[j] == ' ')) j++;
+        if (i == a.length()) {
+            return j == b.length();
+        }
+        if (j == b.length() || a[i] != b[j]) {
+            return false;
+        }
+        i++;
+        j++;
+    }
+    return true;
+}
+
+
+DISCREPANCY_CASE(STRAIN_CULTURE_COLLECTION_MISMATCH, CBioSource, eOncaller | eSmart, "Strain and culture-collection values conflict")
+{
+    if (!obj.IsSetOrg() || !obj.GetOrg().IsSetOrgname() || !obj.GetOrg().GetOrgname().IsSetMod()) {
+        return;
+    }
+    const COrgName::TMod& mod = obj.GetOrg().GetOrgname().GetMod();
+    bool conflict = false;
+    ITERATE (COrgName::TMod, m, mod) {
+        if ((*m)->IsSetSubtype() && (*m)->GetSubtype() == COrgMod::eSubtype_strain) {
+            COrgName::TMod::const_iterator j = m;
+            for (++j; j != mod.end(); ++j) {
+                if ((*j)->IsSetSubtype() && (*j)->GetSubtype() == COrgMod::eSubtype_culture_collection) {
+                    if(MatchExceptSpaceColon((*m)->GetSubname(), (*j)->GetSubname())) {
+                        return;
+                    }
+                    else {
+                        conflict = true;
+                    }
+                }
+            }
+        }
+    }
+    if (conflict) {
+        m_Objs["[n] organism[s] [has] conflicting strain and culture-collection values"].Add(*context.NewFeatOrDescObj());
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(STRAIN_CULTURE_COLLECTION_MISMATCH)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
 // SP_NOT_UNCULTURED
 
 DISCREPANCY_CASE(SP_NOT_UNCULTURED, CBioSource, eOncaller, "Organism ending in sp. needs tax consult")
