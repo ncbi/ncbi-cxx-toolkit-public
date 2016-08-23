@@ -35,6 +35,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbimisc.hpp>
+#include <objects/seq/seq_id_handle.hpp>
 #include <sstream>
 #include <misc/xmlwrapp/xmlwrapp.hpp>
 
@@ -121,6 +122,16 @@ public:
                 vector<int>& uids,
                 string xml_path=kEmptyStr);
 
+    Uint8 Search(const string& db,
+                const string& term,
+                vector<objects::CSeq_id_Handle>& uids,
+                string xml_path=kEmptyStr);
+
+    Uint8 Search(const string& db,
+                const string& term,
+                vector<string>& uids,
+                string xml_path=kEmptyStr);
+
 #ifdef NCBI_INT8_GI
     Uint8 Search(const string& db,
                 const string& term,
@@ -140,11 +151,67 @@ public:
                        int retstart,
                        CNcbiOstream& ostr);
 
+    void SearchHistory(const string& db,
+                       const string& term,
+                       string const& web_env,
+                       objects::CSeq_id_Handle query_key,
+                       int retstart,
+                       CNcbiOstream& ostr);
+
+    void SearchHistory(const string& db,
+                       const string& term,
+                       string const& web_env,
+                       string query_key,
+                       int retstart,
+                       CNcbiOstream& ostr);
+
 
     void Link(const string& db_from,
               const string& db_to,
               const vector<int>& uids_from,
               vector<int>& uids_to,
+              string xml_path=kEmptyStr,
+              const string command="neighbor");
+
+    void Link(const string& db_from,
+              const string& db_to,
+              const vector<int>& uids_from,
+              vector<objects::CSeq_id_Handle>& uids_to,
+              string xml_path=kEmptyStr,
+              const string command="neighbor");
+
+    void Link(const string& db_from,
+              const string& db_to,
+              const vector<objects::CSeq_id_Handle>& uids_from,
+              vector<int>& uids_to,
+              string xml_path=kEmptyStr,
+              const string command="neighbor");
+
+    void Link(const string& db_from,
+              const string& db_to,
+              const vector<objects::CSeq_id_Handle>& uids_from,
+              vector<objects::CSeq_id_Handle>& uids_to,
+              string xml_path=kEmptyStr,
+              const string command="neighbor");
+
+    void Link(const string& db_from,
+              const string& db_to,
+              const vector<int>& uids_from,
+              vector<string>& uids_to,
+              string xml_path=kEmptyStr,
+              const string command="neighbor");
+
+    void Link(const string& db_from,
+              const string& db_to,
+              const vector<string>& uids_from,
+              vector<int>& uids_to,
+              string xml_path=kEmptyStr,
+              const string command="neighbor");
+
+    void Link(const string& db_from,
+              const string& db_to,
+              const vector<string>& uids_from,
+              vector<string>& uids_to,
               string xml_path=kEmptyStr,
               const string command="neighbor");
 
@@ -169,11 +236,37 @@ public:
               vector<int>& uids_to,
               string xml_path=kEmptyStr,
               const string command="neighbor");
+
+    void Link(const string& db_from,
+              const string& db_to,
+              const vector<TGi>& uids_from,
+              vector<objects::CSeq_id_Handle>& uids_to,
+              string xml_path=kEmptyStr,
+              const string command="neighbor");
+
+    void Link(const string& db_from,
+              const string& db_to,
+              const vector<objects::CSeq_id_Handle>& uids_from,
+              vector<TGi>& uids_to,
+              string xml_path=kEmptyStr,
+              const string command="neighbor");
 #endif
 
     void Link(const string& db_from,
               const string& db_to,
               const vector<int>& uids_from,
+              CNcbiOstream& ostr,
+              const string command="neighbor");
+
+    void Link(const string& db_from,
+              const string& db_to,
+              const vector<objects::CSeq_id_Handle>& uids_from,
+              CNcbiOstream& ostr,
+              const string command="neighbor");
+
+    void Link(const string& db_from,
+              const string& db_to,
+              const vector<string>& uids_from,
               CNcbiOstream& ostr,
               const string command="neighbor");
 
@@ -191,10 +284,30 @@ public:
                      Int8 query_key,
                      CNcbiOstream& ostr);
 
+    void LinkHistory(const string& db_from,
+                     const string& db_to,
+                     const string& web_env,
+                     objects::CSeq_id_Handle query_key,
+                     CNcbiOstream& ostr);
 
+    void LinkHistory(const string& db_from,
+                     const string& db_to,
+                     const string& web_env,
+                     string query_key,
+                     CNcbiOstream& ostr);
 
     void Summary(const string& db,
                 const vector<int>& uids,
+                xml::document& docsums,
+                const string version="");
+
+    void Summary(const string& db,
+                const vector<objects::CSeq_id_Handle>& uids,
+                xml::document& docsums,
+                const string version="");
+
+    void Summary(const string& db,
+                const vector<string>& uids,
                 xml::document& docsums,
                 const string version="");
 
@@ -209,11 +322,35 @@ public:
                         const string& web_env,
                         Int8 query_key,
                         int retstart,           // Position within the result set
-                        const string version,   // Version: "" or "2.0" 
+                        const string& version,   // Version: "" or "2.0" 
+                        CNcbiOstream& ostr);
+
+    void SummaryHistory(const string& db,
+                        const string& web_env,
+                        objects::CSeq_id_Handle query_key,
+                        int retstart,           // Position within the result set
+                        const string& version,   // Version: "" or "2.0" 
+                        CNcbiOstream& ostr);
+
+    void SummaryHistory(const string& db,
+                        const string& web_env,
+                        string query_key,
+                        int retstart,           // Position within the result set
+                        const string& version,   // Version: "" or "2.0" 
                         CNcbiOstream& ostr);
 
     void Fetch(const string& db,
                const vector<int>& uids,
+               CNcbiOstream& ostr,
+               const string& retmode="xml");
+
+    void Fetch(const string& db,
+               const vector<objects::CSeq_id_Handle>& uids,
+               CNcbiOstream& ostr,
+               const string& retmode="xml");
+
+    void Fetch(const string& db,
+               const vector<string>& uids,
                CNcbiOstream& ostr,
                const string& retmode="xml");
 
@@ -231,6 +368,20 @@ public:
                       EContentType content_type,
                       CNcbiOstream& ostr);
 
+    void FetchHistory(const string& db,
+                      const string& web_env,
+                      objects::CSeq_id_Handle query_key,
+                      int retstart,
+                      EContentType content_type,
+                      CNcbiOstream& ostr);
+
+    void FetchHistory(const string& db,
+                      const string& web_env,
+                      string query_key,
+                      int retstart,
+                      EContentType content_type,
+                      CNcbiOstream& ostr);
+
 
     const list<string> GetUrl();
     const list<CTime> GetTime();
@@ -239,6 +390,12 @@ protected:
     Uint8 ParseSearchResults(CNcbiIstream& istr,
                              vector<int>& uids);
 
+    Uint8 ParseSearchResults(CNcbiIstream& istr,
+                             vector<objects::CSeq_id_Handle>& uids);
+
+    Uint8 ParseSearchResults(CNcbiIstream& istr,
+                             vector<string>& uids);
+
 #ifdef NCBI_INT8_GI
     Uint8 ParseSearchResults(CNcbiIstream& istr,
                              vector<TGi>& uids);
@@ -246,6 +403,12 @@ protected:
     
     Uint8 ParseSearchResults(const string& xml_file,
                              vector<int>& uids);
+
+    Uint8 ParseSearchResults(const string& xml_file,
+                             vector<objects::CSeq_id_Handle>& uids);
+
+    Uint8 ParseSearchResults(const string& xml_file,
+                             vector<string>& uids);
 
 #ifdef NCBI_INT8_GI
     Uint8 ParseSearchResults(const string& xml_file,
@@ -272,7 +435,6 @@ private:
 
     string x_GetHostName() const;
     void x_Get(string const& path, string const& params, CNcbiOstream& ostr);
-    string x_GetContentType(EContentType content_type);
 
     static string x_BuildUrl(const string& host, const string &path, const string &params);
 

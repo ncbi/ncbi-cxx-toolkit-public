@@ -6,6 +6,7 @@ SRC = unit_test_eutils
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
 LIB = eutils_client \
+      seq \
 	  xmlwrapp \
 	  test_boost \
 	  xconnect \

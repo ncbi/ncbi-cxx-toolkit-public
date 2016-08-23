@@ -144,7 +144,7 @@ BOOST_AUTO_TEST_CASE(TestFetchHistory)
     CEutilsClient cli;
     stringstream content;
    
-    cli.SetMaxReturn(101); 
+    cli.SetMaxReturn(101);
     BOOST_REQUIRE_NO_THROW(cli.Search("pubmed", "asthma", content, CEutilsClient::eUseHistoryEnabled));
     string body = content.str();
     xml::document doc(body.c_str(), body.size(), NULL);

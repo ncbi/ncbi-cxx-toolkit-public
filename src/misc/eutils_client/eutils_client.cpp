@@ -43,10 +43,13 @@
 #include <sstream>
 #include <iterator>
 #include <algorithm>
+#include <type_traits>
 
 #define NCBI_USE_ERRCODE_X Misc_EutilsClient
 
 BEGIN_NCBI_SCOPE
+
+using namespace objects;
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -69,6 +72,69 @@ s_GetErrCodeString(CEUtilsException::TErrCode err_code)
         return "Unknown error";
     }
 }
+
+template<class T> static void s_FormatIds(ostringstream& osm, const vector<T>& uids) {
+    if (!uids.empty()) {
+        osm << uids.front();
+        for (auto it = uids.begin()+1; it != uids.end(); ++it) {
+            osm << ',' << NStr::NumericToString(*it);
+        }
+    }
+}
+
+template<> void s_FormatIds<CSeq_id_Handle>(ostringstream& osm, const vector<CSeq_id_Handle>& uids) {
+    CSeq_id::E_Choice type = CSeq_id::e_not_set;
+    for (auto it = uids.begin(); it != uids.end(); ++it) {
+        if (it != uids.begin()) {
+            osm << ',';
+        }
+        auto& seh = *it;
+        if (seh.Which() == CSeq_id::e_Gi) {
+            if (type != CSeq_id::e_Gi && type != CSeq_id::e_not_set) {
+                NCBI_THROW(CException, eUnknown, "Argument list contains seq-ids of mixed types");
+            }
+            type = CSeq_id::e_Gi;
+            osm << NStr::NumericToString(seh.GetGi());
+        } else {
+            if (type != CSeq_id::e_not_set && type != seh.Which()) {
+                NCBI_THROW(CException, eUnknown, "Argument list contains seq-ids of mixed types");
+            }
+            type = seh.Which();
+            osm << seh.AsString();//maybe CSeq_id::GetSeqIdString(true)
+        }
+    }
+    if (type == CSeq_id::e_Gi) {
+        osm << "&idtype=gi";
+    } else {
+        osm << "&idtype=acc";
+    }        
+}
+
+template<> void s_FormatIds<string>(ostringstream& osm, const vector<string>& uids) {
+    if (!uids.empty()) {
+        osm << uids.front();
+        for (auto it = uids.begin()+1; it != uids.end(); ++it) {
+            osm << ',' << *it;
+        }
+    }
+    osm << "&idtype=acc";
+}
+
+template<class T> T s_ParseId(const string& str)
+{
+    return NStr::StringToNumeric<T>(str);
+}
+
+template<> inline CSeq_id_Handle s_ParseId<CSeq_id_Handle>(const string& str)
+{
+    return CSeq_id_Handle::GetHandle(str);
+}
+
+template<> inline string s_ParseId<string>(const string& str)
+{
+    return str;
+}
+
 
 const char* CEUtilsException::GetErrCodeString(void) const
 {
@@ -262,7 +328,7 @@ protected:
             m_Count = NStr::StringToUInt8(contents);
         }
         else if (x_IsSuffix(m_Path, "/IdList/Id")) {
-            m_Uids.push_back(NStr::StringToNumeric<T>(contents));
+            m_Uids.push_back(s_ParseId<T>(contents));
         }
         else if (x_IsSuffix(m_Path, "/ErrorList/PhraseNotFound")) {
             TMessage message(CEUtilsException::ePhraseNotFound, contents);
@@ -347,7 +413,7 @@ protected:
             }
         }
         else if (m_InLinkSet && NStr::EndsWith(m_Path, "/Link/Id") ) {
-            m_Uids.push_back(NStr::StringToNumeric<T>( GetText() ));
+            m_Uids.push_back(s_ParseId<T>( GetText() ));
         }
         return true;
     }
@@ -513,6 +579,18 @@ Uint8 CEutilsClient::ParseSearchResults(CNcbiIstream& istr,
     return x_ParseSearchResults(istr, uids);
 }
 
+Uint8 CEutilsClient::ParseSearchResults(CNcbiIstream& istr,
+                                        vector<CSeq_id_Handle>& uids)
+{
+    return x_ParseSearchResults(istr, uids);
+}
+
+Uint8 CEutilsClient::ParseSearchResults(CNcbiIstream& istr,
+                                        vector<string>& uids)
+{
+    return x_ParseSearchResults(istr, uids);
+}
+
 #ifdef NCBI_INT8_GI
 Uint8 CEutilsClient::ParseSearchResults(CNcbiIstream& istr,
                                         vector<TGi>& uids)
@@ -554,6 +632,17 @@ Uint8 CEutilsClient::ParseSearchResults(const string& xml_file,
     return x_ParseSearchResults(xml_file, uids);
 }
 
+Uint8 CEutilsClient::ParseSearchResults(const string& xml_file,
+                                        vector<CSeq_id_Handle>& uids)
+{
+    return x_ParseSearchResults(xml_file, uids);
+}
+
+Uint8 CEutilsClient::ParseSearchResults(const string& xml_file,
+                                        vector<string>& uids)
+{
+    return x_ParseSearchResults(xml_file, uids);
+}
 
 #ifdef NCBI_INT8_GI
 Uint8 CEutilsClient::ParseSearchResults(const string& xml_file,
@@ -583,6 +672,23 @@ Uint8 CEutilsClient::Search(const string& db,
 {
     return x_Search(db, term, uids, xml_path);
 }
+
+Uint8 CEutilsClient::Search(const string& db,
+                            const string& term,
+                            vector<CSeq_id_Handle>& uids,
+                            string xml_path)
+{
+    return x_Search(db, term, uids, xml_path);
+}
+
+Uint8 CEutilsClient::Search(const string& db,
+                            const string& term,
+                            vector<string>& uids,
+                            string xml_path)
+{
+    return x_Search(db, term, uids, xml_path);
+}
+
 
 #ifdef NCBI_INT8_GI
 Uint8 CEutilsClient::Search(const string& db,
@@ -691,6 +797,30 @@ void CEutilsClient::Search(const string& db,
     x_Get("/entrez/eutils/esearch.fcgi", oss.str(), ostr);
 }
 
+static void s_SearchHistoryQuery(ostringstream& oss,
+                                const string& db,
+                                const string& term,
+                                const string& web_env,
+                                int retstart,
+                                int retmax)
+{
+    oss << "db=" << NStr::URLEncode(db)
+        << "&term=" << NStr::URLEncode(term)
+        << "&retmode=xml";
+    if ( retstart ) {
+        oss << "&retstart="
+            << retstart;
+    }
+    if (retmax) {
+        oss << "&retmax="
+            << retmax;
+    }
+
+    oss << "&usehistory=y"
+        << "&WebEnv="
+        << web_env;
+}
+
 void CEutilsClient::SearchHistory(const string& db,
                                   const string& term,
                                   const string& web_env,
@@ -699,21 +829,7 @@ void CEutilsClient::SearchHistory(const string& db,
                                   CNcbiOstream& ostr)
 {
     ostringstream oss;
-    oss << "db=" << NStr::URLEncode(db)
-        << "&term=" << NStr::URLEncode(term)
-        << "&retmode=xml";
-    if ( retstart ) {
-        oss << "&retstart="
-            << retstart;
-    }
-    if (m_RetMax) {
-        oss << "&retmax="
-            << m_RetMax;
-    }
-
-    oss << "&usehistory=y"
-        << "&WebEnv="
-        << web_env;
+    s_SearchHistoryQuery(oss, db, term, web_env, retstart, m_RetMax);
     if ( query_key > 0 ) {
         oss << "&query_key="
             << query_key;
@@ -722,6 +838,33 @@ void CEutilsClient::SearchHistory(const string& db,
     x_Get("/entrez/eutils/esearch.fcgi", oss.str(), ostr);
 }
 
+void CEutilsClient::SearchHistory(const string& db,
+                                  const string& term,
+                                  const string& web_env,
+                                  CSeq_id_Handle query_key,
+                                  int retstart,
+                                  CNcbiOstream& ostr)
+{
+    ostringstream oss;
+    s_SearchHistoryQuery(oss, db, term, web_env, retstart, m_RetMax);
+    oss << "&query_key=" << query_key << "idtype=acc";
+
+    x_Get("/entrez/eutils/esearch.fcgi", oss.str(), ostr);
+}
+
+void CEutilsClient::SearchHistory(const string& db,
+                                  const string& term,
+                                  const string& web_env,
+                                  string query_key,
+                                  int retstart,
+                                  CNcbiOstream& ostr)
+{
+    ostringstream oss;
+    s_SearchHistoryQuery(oss, db, term, web_env, retstart, m_RetMax);
+    oss << "&query_key=" << query_key << "idtype=acc";
+
+    x_Get("/entrez/eutils/esearch.fcgi", oss.str(), ostr);
+}
 
 string CEutilsClient::x_GetHostName() const
 {
@@ -810,6 +953,68 @@ void CEutilsClient::Link(const string& db_from,
     x_Link(db_from, db_to, uids_from, uids_to, xml_path, command);
 }
 
+void CEutilsClient::Link(const string& db_from,
+                         const string& db_to,
+                         const vector<int>& uids_from,
+                         vector<CSeq_id_Handle>& uids_to,
+                         string xml_path,
+                         const string command)
+{
+    x_Link(db_from, db_to, uids_from, uids_to, xml_path, command);
+}
+
+
+void CEutilsClient::Link(const string& db_from,
+                         const string& db_to,
+                         const vector<CSeq_id_Handle>& uids_from,
+                         vector<int>& uids_to,
+                         string xml_path,
+                         const string command)
+{
+    x_Link(db_from, db_to, uids_from, uids_to, xml_path, command);
+}
+
+void CEutilsClient::Link(const string& db_from,
+                         const string& db_to,
+                         const vector<CSeq_id_Handle>& uids_from,
+                         vector<CSeq_id_Handle>& uids_to,
+                         string xml_path,
+                         const string command)
+{
+    x_Link(db_from, db_to, uids_from, uids_to, xml_path, command);
+}
+
+void CEutilsClient::Link(const string& db_from,
+                         const string& db_to,
+                         const vector<int>& uids_from,
+                         vector<string>& uids_to,
+                         string xml_path,
+                         const string command)
+{
+    x_Link(db_from, db_to, uids_from, uids_to, xml_path, command);
+}
+
+
+void CEutilsClient::Link(const string& db_from,
+                         const string& db_to,
+                         const vector<string>& uids_from,
+                         vector<int>& uids_to,
+                         string xml_path,
+                         const string command)
+{
+    x_Link(db_from, db_to, uids_from, uids_to, xml_path, command);
+}
+
+void CEutilsClient::Link(const string& db_from,
+                         const string& db_to,
+                         const vector<string>& uids_from,
+                         vector<string>& uids_to,
+                         string xml_path,
+                         const string command)
+{
+    x_Link(db_from, db_to, uids_from, uids_to, xml_path, command);
+}
+
 #ifdef NCBI_INT8_GI
 void CEutilsClient::Link(const string& db_from,
                          const string& db_to,
@@ -840,6 +1045,26 @@ void CEutilsClient::Link(const string& db_from,
 {
     x_Link(db_from, db_to, uids_from, uids_to, xml_path, command);
 }
+
+void CEutilsClient::Link(const string& db_from,
+                         const string& db_to,
+                         const vector<TGi>& uids_from,
+                         vector<CSeq_id_Handle>& uids_to,
+                         string xml_path,
+                         const string command)
+{
+    x_Link(db_from, db_to, uids_from, uids_to, xml_path, command);
+}
+
+void CEutilsClient::Link(const string& db_from,
+                         const string& db_to,
+                         const vector<CSeq_id_Handle>& uids_from,
+                         vector<TGi>& uids_to,
+                         string xml_path,
+                         const string command)
+{
+    x_Link(db_from, db_to, uids_from, uids_to, xml_path, command);
+}
 #endif
 
 template<class T1, class T2>
@@ -855,12 +1080,9 @@ void CEutilsClient::x_Link(const string& db_from,
     oss << "db=" << NStr::URLEncode(db_to)
         << "&dbfrom=" << NStr::URLEncode(db_from)
         << "&retmode=xml"
-        << "&cmd=" + NStr::URLEncode(command)
-        << "&id=";
-    std::copy(uids_from.begin(), uids_from.end(), std::ostream_iterator<T1>(oss, ",") );
+        << "&cmd=" << NStr::URLEncode(command);
+    s_FormatIds(oss, uids_from);
     string params = oss.str();
-    // remove trailing comma
-    params.resize(params.size() - 1);
 
     bool success = false;
     m_Url.clear();
@@ -932,6 +1154,24 @@ void CEutilsClient::Link(const string& db_from,
     x_Link(db_from, db_to, uids_from, ostr, command);
 }
 
+void CEutilsClient::Link(const string& db_from,
+                         const string& db_to,
+                         const vector<CSeq_id_Handle>& uids_from,
+                         CNcbiOstream& ostr,
+                         const string command)
+{
+    x_Link(db_from, db_to, uids_from, ostr, command);
+}
+
+void CEutilsClient::Link(const string& db_from,
+                         const string& db_to,
+                         const vector<string>& uids_from,
+                         CNcbiOstream& ostr,
+                         const string command)
+{
+    x_Link(db_from, db_to, uids_from, ostr, command);
+}
+
 #ifdef NCBI_INT8_GI
 void CEutilsClient::Link(const string& db_from,
                          const string& db_to,
@@ -955,12 +1195,9 @@ void CEutilsClient::x_Link(const string& db_from,
     oss << "db=" << NStr::URLEncode(db_to)
         << "&dbfrom=" << NStr::URLEncode(db_from)
         << "&retmode=xml"
-        << "&cmd=" + NStr::URLEncode(command)
-        << "&id=";
-    std::copy(uids_from.begin(), uids_from.end(), std::ostream_iterator<T>(oss, ",") );
+        << "&cmd=" + NStr::URLEncode(command);
+    s_FormatIds(oss, uids_from);
     string params = oss.str();
-    // remove trailing comma
-    params.resize(params.size() - 1);
 
     bool success = false;
     m_Url.clear();
@@ -1012,8 +1249,60 @@ void CEutilsClient::LinkHistory(const string& db_from,
     x_Get("/entrez/eutils/elink.fcgi", oss.str(), ostr);
 }
 
+void CEutilsClient::LinkHistory(const string& db_from,
+                                const string& db_to,
+                                const string& web_env,
+                                CSeq_id_Handle query_key,
+                                CNcbiOstream& ostr)
+{
+    std::ostringstream oss;
+    
+    oss << "db=" << NStr::URLEncode(db_to)
+        << "&dbfrom=" << NStr::URLEncode(db_from)
+        << "&retmode=xml"
+        << "&WebEnv=" << web_env 
+        << "&query_key=" << query_key
+        << "&idtype=acc";
+
+    x_Get("/entrez/eutils/elink.fcgi", oss.str(), ostr);
+}
+
+void CEutilsClient::LinkHistory(const string& db_from,
+                                const string& db_to,
+                                const string& web_env,
+                                string query_key,
+                                CNcbiOstream& ostr)
+{
+    std::ostringstream oss;
+    
+    oss << "db=" << NStr::URLEncode(db_to)
+        << "&dbfrom=" << NStr::URLEncode(db_from)
+        << "&retmode=xml"
+        << "&WebEnv=" << web_env 
+        << "&query_key=" << query_key
+        << "&idtype=acc";
+
+    x_Get("/entrez/eutils/elink.fcgi", oss.str(), ostr);
+}
+
 void CEutilsClient::Summary(const string& db,
                             const vector<int>& uids,
+                            xml::document& docsums,
+                            const string version)
+{
+    x_Summary(db, uids, docsums, version);
+}
+
+void CEutilsClient::Summary(const string& db,
+                            const vector<CSeq_id_Handle>& uids,
+                            xml::document& docsums,
+                            const string version)
+{
+    x_Summary(db, uids, docsums, version);
+}
+
+void CEutilsClient::Summary(const string& db,
+                            const vector<string>& uids,
                             xml::document& docsums,
                             const string version)
 {
@@ -1043,11 +1332,8 @@ void CEutilsClient::x_Summary(const string& db,
         oss << "&version=" 
             << version;
     } 
-    oss << "&id=";
-    std::copy(uids.begin(), uids.end(), std::ostream_iterator<T>(oss, ",") );
+    s_FormatIds(oss, uids);
     string params = oss.str();
-    // remove trailing comma
-    params.resize(params.size() - 1);
 
     bool success = false;
     m_Url.clear();
@@ -1100,38 +1386,90 @@ void CEutilsClient::x_Summary(const string& db,
     }
 }
 
-void CEutilsClient::SummaryHistory(const string& db,
-                                   const string& web_env,
-                                   Int8 query_key,
-                                   int retstart,
-                                   const string version,
-                                   CNcbiOstream& ostr)
+static inline void s_SummaryHistoryQuery(ostream& oss,
+                                  const string& db,
+                                  const string& web_env,
+                                  int retstart,
+                                  const string version,
+                                  int retmax)
 {
-    ostringstream oss;
     oss << "db=" << NStr::URLEncode(db)
         << "&retmode=xml"
-        << "&WebEnv=" << web_env
-        << "&query_key=" << query_key;
+        << "&WebEnv=" << web_env;
 
     if ( retstart > 0 ) {
         oss << "&retstart=" << retstart;
     }
    
-    if ( m_RetMax ) {
-        oss << "&retmax=" << m_RetMax;
+    if ( retmax ) {
+        oss << "&retmax=" << retmax;
     } 
-
         
     if ( !version.empty() ) {
         oss << "&version=" 
             << version;
     } 
- 
+}
+
+void CEutilsClient::SummaryHistory(const string& db,
+                                   const string& web_env,
+                                   Int8 query_key,
+                                   int retstart,
+                                   const string& version,
+                                   CNcbiOstream& ostr)
+{
+    ostringstream oss;
+    s_SummaryHistoryQuery(oss, db, web_env, retstart, version, m_RetMax);
+    oss << "&query_key=" << query_key;
+    x_Get("/entrez/eutils/esummary.fcgi?", oss.str(), ostr);
+}
+
+void CEutilsClient::SummaryHistory(const string& db,
+                                   const string& web_env,
+                                   CSeq_id_Handle query_key,
+                                   int retstart,
+                                   const string& version,
+                                   CNcbiOstream& ostr)
+{
+    ostringstream oss;
+    s_SummaryHistoryQuery(oss, db, web_env, retstart, version, m_RetMax);
+    oss << "&query_key=" << query_key
+        << "&idtype=acc";
+     x_Get("/entrez/eutils/esummary.fcgi?", oss.str(), ostr);
+}
+
+void CEutilsClient::SummaryHistory(const string& db,
+                                   const string& web_env,
+                                   string query_key,
+                                   int retstart,
+                                   const string& version,
+                                   CNcbiOstream& ostr)
+{
+    ostringstream oss;
+    s_SummaryHistoryQuery(oss, db, web_env, retstart, version, m_RetMax);
+    oss << "&query_key=" << query_key
+        << "&idtype=acc";
     x_Get("/entrez/eutils/esummary.fcgi?", oss.str(), ostr);
 }
 
 void CEutilsClient::Fetch(const string& db,
                           const vector<int>& uids,
+                          CNcbiOstream& ostr,
+                          const string& retmode)
+{
+    x_Fetch(db, uids, ostr, retmode);
+}
+
+void CEutilsClient::Fetch(const string& db,
+                          const vector<CSeq_id_Handle>& uids,
+                          CNcbiOstream& ostr,
+                          const string& retmode)
+{
+    x_Fetch(db, uids, ostr, retmode);
+}
+
+void CEutilsClient::Fetch(const string& db,
+                          const vector<string>& uids,
                           CNcbiOstream& ostr,
                           const string& retmode)
 {
@@ -1154,18 +1492,12 @@ void CEutilsClient::x_Fetch(const string& db,
                             CNcbiOstream& ostr,
                             const string& retmode)
 {
-    string params;
-    params += "db=" + NStr::URLEncode(db);
-    params += "&retmode=" + NStr::URLEncode(retmode);
+    ostringstream oss;
+    oss << "db=" << NStr::URLEncode(db)
+        << "&retmode=" << NStr::URLEncode(retmode);
 
-    string s;
-    ITERATE (typename vector<T>, it, uids) {
-        if ( !s.empty() ) {
-            s += ",";
-        }
-        s += NStr::NumericToString(*it);
-    }
-    params += "&id=" + s;
+    s_FormatIds(oss, uids);
+    string params = oss.str();
 
     bool success = false;
     m_Url.clear();
@@ -1200,6 +1532,45 @@ void CEutilsClient::x_Fetch(const string& db,
     }
 }
 
+static inline string s_GetContentType(CEutilsClient::EContentType content_type)
+{
+    if ( CEutilsClient::eContentType_xml == content_type ) {
+        return "xml";
+    }
+    else if ( CEutilsClient::eContentType_text == content_type ) {
+        return "text";
+    }
+    else if ( CEutilsClient::eContentType_html == content_type ) {
+        return "html";
+    }
+    else if ( CEutilsClient::eContentType_asn1 == content_type ) {
+        return "asn.1";
+    }
+    else {
+        // Default content type
+        return "xml";
+    }
+}
+
+static inline void s_FetchHistoryQuery(ostream& oss,
+                                       const string& db,
+                                       const string& web_env,
+                                       int retstart,
+                                       int retmax,
+                                       CEutilsClient::EContentType content_type)
+{
+    oss << "db=" << NStr::URLEncode(db)
+        << "&retmode=" << s_GetContentType(content_type)
+        << "&WebEnv=" << web_env;
+    if ( retstart > 0 ) {
+        oss << "&retstart=" << retstart;
+    }
+
+    if ( retmax ) {
+        oss << "&retmax=" << retmax;
+    }
+}
+
 void CEutilsClient::FetchHistory(const string& db,
                                  const string& web_env,
                                  Int8 query_key,
@@ -1208,22 +1579,38 @@ void CEutilsClient::FetchHistory(const string& db,
                                  CNcbiOstream& ostr)
 {
     ostringstream oss;
-    oss << "db=" << NStr::URLEncode(db)
-        << "&retmode=" << x_GetContentType(content_type)
-        << "&WebEnv=" << web_env
-        << "&query_key=" << query_key;
-
-    if ( retstart > 0 ) {
-        oss << "&retstart=" << retstart;
-    }
-
-    if ( m_RetMax ) {
-        oss << "&retmax=" << m_RetMax;
-    }
-
+    s_FetchHistoryQuery(oss, db, web_env, retstart, m_RetMax, content_type);
+    oss << "&query_key=" << query_key;
     x_Get("/entrez/eutils/efetch.fcgi", oss.str(), ostr);
 }
 
+void CEutilsClient::FetchHistory(const string& db,
+                                 const string& web_env,
+                                 CSeq_id_Handle query_key,
+                                 int retstart,
+                                 EContentType content_type,
+                                 CNcbiOstream& ostr)
+{
+    ostringstream oss;
+    s_FetchHistoryQuery(oss, db, web_env, retstart, m_RetMax, content_type);
+    oss << "&query_key=" << query_key
+        << "&idtype=acc";
+    x_Get("/entrez/eutils/efetch.fcgi", oss.str(), ostr);
+}
+
+void CEutilsClient::FetchHistory(const string& db,
+                                 const string& web_env,
+                                 string query_key,
+                                 int retstart,
+                                 EContentType content_type,
+                                 CNcbiOstream& ostr)
+{
+    ostringstream oss;
+    s_FetchHistoryQuery(oss, db, web_env, retstart, m_RetMax, content_type);
+    oss << "&query_key=" << query_key
+        << "&idtype=acc";
+    x_Get("/entrez/eutils/efetch.fcgi", oss.str(), ostr);
+}
 
 const list<string> CEutilsClient::GetUrl()
 {
@@ -1243,26 +1630,6 @@ string CEutilsClient::x_BuildUrl(const string& host, const string &path, const s
         url += '?' + params;
     }
     return url;
-}
-
-string CEutilsClient::x_GetContentType(EContentType content_type)
-{
-    if ( eContentType_xml == content_type ) {
-        return "xml";
-    }
-    else if ( eContentType_text == content_type ) {
-        return "text";
-    }
-    else if ( eContentType_html == content_type ) {
-        return "html";
-    }
-    else if ( eContentType_asn1 == content_type ) {
-        return "asn.1";
-    }
-    else {
-        // Default content type
-        return "xml";
-    }
 }
 
 END_NCBI_SCOPE
