@@ -2530,6 +2530,9 @@ static void FindSuspectTextInObject(const CSerialObject& obj, list<size_t>& miss
     }
 }
 
+static const string kFixable = "Fixable";
+static const string kNonFixable = "Non-fixable";
+
 template<typename T> void  AddMisspellsToReport(const list<size_t>& misspells, CReportNode& node, const T& obj, CDiscrepancyContext& context)
 {
     ITERATE(list<size_t>, misspell_idx, misspells) {
@@ -2539,7 +2542,8 @@ template<typename T> void  AddMisspellsToReport(const list<size_t>& misspells, C
         EKeepRef keep_ref = kSpellFixes[*misspell_idx].m_correct == nullptr ? eNoRef : eKeepRef;
         bool autofix = kSpellFixes[*misspell_idx].m_correct != nullptr;
 
-        node[subitem].Add(*context.NewDiscObj(CConstRef<T>(&obj), keep_ref, autofix, CRef<CIdxObject>(new CIdxObject(*misspell_idx))));
+        const string& fixable = (autofix ? kFixable : kNonFixable);
+        node[fixable][subitem].Add(*context.NewDiscObj(CConstRef<T>(&obj), keep_ref, autofix, CRef<CIdxObject>(new CIdxObject(*misspell_idx))));
     }
 }
 
