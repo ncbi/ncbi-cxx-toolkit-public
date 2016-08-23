@@ -792,11 +792,8 @@ ENa_strand CNaSeqlocHelper::x_GetStrand(const CNtInterval& nt_int)
         return x_GetStrand(nt_int.GetStart().GetSite());
     }
 
-    if (nt_int.GetStart().IsRange()) {
-        return x_GetStrand(nt_int.GetStart().GetRange());
-    }
-
-    return eNa_strand_unknown;
+    // else has to be range
+    return x_GetStrand(nt_int.GetStart().GetRange());
 }
 
 
