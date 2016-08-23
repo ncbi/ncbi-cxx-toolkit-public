@@ -358,6 +358,8 @@ CID2WGSProcessor_Impl::GetWGSResolver(CID2ProcessorResolver* resolver)
         CMutexGuard guard(m_Mutex);
         if ( !m_Resolver ) {
             m_Resolver = CWGSResolver::CreateResolver(m_Mgr);
+        }
+        if ( m_Resolver ) {
             m_UpdateThread = new CIndexUpdateThread(m_UpdateDelay, m_Resolver);
             m_UpdateThread->Run();
         }
