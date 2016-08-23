@@ -1770,6 +1770,9 @@ void CNewCleanup_imp::BiosourceBC (
     if (biosrc.RemoveUnexpectedViralQualifiers()) {
         ChangeMade(CCleanupChange::eChangeOrgmod);
     }
+    if (biosrc.FixGenomeForQualifiers()) {
+        ChangeMade(CCleanupChange::eChangeBioSourceGenome);
+    }
 
     x_PostBiosource(biosrc);
     if (biosrc.IsSetOrg()) {

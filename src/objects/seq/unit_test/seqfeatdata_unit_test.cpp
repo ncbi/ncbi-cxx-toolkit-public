@@ -1502,3 +1502,21 @@ BOOST_AUTO_TEST_CASE(Test_RemoveUnexpectedViralQualifiers)
     BOOST_CHECK_EQUAL(src->GetOrg().GetOrgname().GetMod().front()->GetSubtype(), COrgMod::eSubtype_acronym);
 
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_FixGenomeForQualifiers)
+{
+    CRef<CBioSource> src(new CBioSource());
+
+    BOOST_CHECK_EQUAL(src->FixGenomeForQualifiers(), false);
+    src->SetSubtype().push_back(CRef<CSubSource>(new CSubSource(CSubSource::eSubtype_plasmid_name, "X")));
+    BOOST_CHECK_EQUAL(src->FixGenomeForQualifiers(), true);
+    BOOST_CHECK_EQUAL(src->GetGenome(), CBioSource::eGenome_plasmid);
+    BOOST_CHECK_EQUAL(src->FixGenomeForQualifiers(), false);
+    src->SetGenome(CBioSource::eGenome_apicoplast);
+    BOOST_CHECK_EQUAL(src->FixGenomeForQualifiers(), false);
+    BOOST_CHECK_EQUAL(src->GetGenome(), CBioSource::eGenome_apicoplast);
+    src->SetGenome(CBioSource::eGenome_unknown);
+    BOOST_CHECK_EQUAL(src->FixGenomeForQualifiers(), true);
+    BOOST_CHECK_EQUAL(src->GetGenome(), CBioSource::eGenome_plasmid);
+}

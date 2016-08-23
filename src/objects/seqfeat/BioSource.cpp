@@ -1775,6 +1775,17 @@ bool CBioSource::RemoveUnexpectedViralQualifiers()
 }
 
 
+bool CBioSource::FixGenomeForQualifiers()
+{
+    if (HasSubtype(CSubSource::eSubtype_plasmid_name) && (!IsSetGenome() || GetGenome() == eGenome_unknown)) {
+        SetGenome(eGenome_plasmid);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
 #define MAKE_COMMON_INT(o1,o2,o3,Field) \
     if (o1.IsSet##Field() && o2.IsSet##Field() && o1.Get##Field() == o2.Get##Field()) o3.Set##Field(o1.Get##Field());
 

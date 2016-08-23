@@ -164,6 +164,8 @@ public:
     //Remove qualifiers not appropriate for virus organisms from Virus organisms
     bool RemoveUnexpectedViralQualifiers();
 
+    bool FixGenomeForQualifiers();
+
     static bool IsViral(const string& lineage);
     bool IsViral() const;
 
