@@ -1,0 +1,186 @@
+Seq-annot ::= {
+  id {
+    local str "NC_000012"
+  },
+  data ftable {
+    {
+      id local str "gene|26",
+      data gene {
+      },
+      location int {
+        from 9109339,
+        to 9115859,
+        strand minus,
+        id other {
+          accession "NC_000012"
+        }
+      },
+      qual {
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        },
+        {
+          qual "gene_id",
+          val "ENSG00000175899"
+        },
+        {
+          qual "gene_name",
+          val "A2M"
+        },
+        {
+          qual "transcript_name",
+          val "A2M-013"
+        }
+      }
+    },
+    {
+      id local str "mrna|27",
+      data rna {
+        type mRNA
+      },
+      location mix {
+        int {
+          from 9115763,
+          to 9115859,
+          strand minus,
+          id other {
+            accession "NC_000012"
+          }
+        },
+        int {
+          from 9113359,
+          to 9113542,
+          strand minus,
+          id other {
+            accession "NC_000012"
+          }
+        },
+        int {
+          from 9112158,
+          to 9112210,
+          strand minus,
+          id other {
+            accession "NC_000012"
+          }
+        },
+        int {
+          from 9110313,
+          to 9110333,
+          strand minus,
+          id other {
+            accession "NC_000012"
+          }
+        },
+        int {
+          from 9109866,
+          to 9110034,
+          strand minus,
+          id other {
+            accession "NC_000012"
+          }
+        },
+        int {
+          from 9109339,
+          to 9109404,
+          strand minus,
+          id other {
+            accession "NC_000012"
+          }
+        }
+      },
+      qual {
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        },
+        {
+          qual "gene_id",
+          val "ENSG00000175899"
+        },
+        {
+          qual "gene_name",
+          val "A2M"
+        },
+        {
+          qual "transcript_id",
+          val "ENST00000539638"
+        },
+        {
+          qual "transcript_name",
+          val "A2M-013"
+        }
+      },
+      xref {
+        {
+          id local str "gene|26"
+        }
+      }
+    },
+    {
+      id local str "cds|28",
+      data cdregion {
+      },
+      location mix {
+        int {
+          from 9115763,
+          to 9115848,
+          strand minus,
+          id other {
+            accession "NC_000012"
+          }
+        },
+        int {
+          from 9113359,
+          to 9113542,
+          strand minus,
+          id other {
+            accession "NC_000012"
+          }
+        },
+        int {
+          from 9112208,
+          to 9112210,
+          strand minus,
+          id other {
+            accession "NC_000012"
+          }
+        }
+      },
+      qual {
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        },
+        {
+          qual "gene_id",
+          val "ENSG00000175899"
+        },
+        {
+          qual "gene_name",
+          val "A2M"
+        },
+        {
+          qual "protein_id",
+          val "ENSP00000445717"
+        },
+        {
+          qual "transcript_id",
+          val "ENST00000539638"
+        },
+        {
+          qual "transcript_name",
+          val "A2M-013"
+        }
+      },
+      xref {
+        {
+          id local str "gene|26"
+        },
+        {
+          id local str "mrna|27"
+        }
+      }
+    }
+  }
+}
