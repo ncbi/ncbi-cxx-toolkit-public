@@ -89,15 +89,12 @@ SHgvsProteinGrammar::SHgvsProteinGrammar(const SHgvsLexer& tok) :
                  frameshift_short_form;
 
     frameshift_long_form = (aa1_site >> aa1 >> tok.fs >> tok.stop >> (tok.pos_int | tok.unknown_val )) ACTION1(AssignFrameshift) |
-                           (aa3_site >> tok.aa3 >> tok.fs >> tok.stop >> (tok.pos_int | tok.unknown_val)) ACTION1(AssignFrameshift) |
-                           (tok.stop >> (tok.aa3 | aa1) >> tok.fs >> tok.stop >> (tok.pos_int | tok.unknown_val)) ACTION0(AssignFrameshiftFromStopcodon);
+                           (aa3_site >> tok.aa3 >> tok.fs >> tok.stop >> (tok.pos_int | tok.unknown_val)) ACTION1(AssignFrameshift);
 
     frameshift_nonstandard  = (aa1_site >> aa1 >> tok.fs) ACTION1(AssignFrameshift) |
-                              (aa3_site >> tok.aa3 >> tok.fs) ACTION1(AssignFrameshift) |
-                              (tok.stop >> (tok.aa3 | aa1) >> tok.fs) ACTION0(AssignFrameshiftFromStopcodon);
+                              (aa3_site >> tok.aa3 >> tok.fs) ACTION1(AssignFrameshift);
                               
-    frameshift_short_form = (aa_site >> tok.fs) ACTION1(AssignFrameshift) |
-                            (tok.stop >> tok.fs) ACTION0(AssignFrameshiftFromStopcodon);
+    frameshift_short_form = (aa_site >> tok.fs) ACTION1(AssignFrameshift); 
 
     protein_extension = cterm_extension | nterm_extension;
 

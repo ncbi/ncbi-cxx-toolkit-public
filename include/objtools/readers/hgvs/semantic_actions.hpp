@@ -62,8 +62,6 @@ void AssignAaInsertionSize(CRef<CAaInterval>& aa_interval, CRef<CCount>& seq_siz
 
 void AssignFrameshift(CRef<CAaSite>& aa_site, CRef<CSimpleVariant>& result);
 
-void AssignFrameshiftFromStopcodon(CRef<CSimpleVariant>& result);
-
 void AssignAaDelins(CRef<CAaLocation>& aa_loc, const string& raw_seq, CRef<CSimpleVariant>& result);
 
 void AssignAaDelinsSize(CRef<CAaLocation>& aa_loc, CRef<CCount> seq_size, CRef<CSimpleVariant>& result); 

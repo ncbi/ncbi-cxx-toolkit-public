@@ -228,13 +228,6 @@ void AssignFrameshift(CRef<CAaSite>& aa_site, CRef<CSimpleVariant>& result)
 }
 
 
-void AssignFrameshiftFromStopcodon(CRef<CSimpleVariant>& result)
-{
-    result = CreateResultIfNull(result);
-    result->SetType().SetFrameshift().SetStopcodon();
-}
-
-
 void AssignAaDelins(CRef<CAaLocation>& aa_loc, 
                     const CInsertion::TSeqinfo::TRaw_seq& raw_seq, 
                     CRef<CSimpleVariant>& result) 

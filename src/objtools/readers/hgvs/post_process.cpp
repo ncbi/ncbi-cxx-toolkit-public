@@ -18,9 +18,9 @@ CRef<CSeq_literal> CPostProcessUtils::GetLiteralAtLoc(const CSeq_loc& loc, CScop
     string sequence;
     seqvec.GetSeqData(seqvec.begin(), seqvec.end(), sequence);
 
-    if (sequence.size() > 1) {
-        sequence = sequence.front() + ".." + sequence.back();
-    }
+    if (sequence.size() > 1) { // LCOV_EXCL_START - At the moment, only identity instances involving a single base are supported
+        sequence = sequence.front() + ".." + sequence.back(); 
+    } // LCOV_EXCL_STOP
 
     if (seqvec.IsProtein()) {
         literal->SetSeq_data().SetNcbieaa().Set(sequence);
@@ -38,7 +38,11 @@ CRef<CSeq_literal> CPostProcessUtils::GetLiteralAtLoc(const CSeq_loc& loc, CScop
 bool CPostProcessUtils::HasIntronOffset(const CVariation_inst& var_inst) const
 {
     if (!var_inst.IsSetDelta()) {
-        return false;
+// LCOV_EXCL_START
+        NCBI_THROW(CVariationValidateException, 
+                   eIncompleteObject,
+                   "Delta-item not set");
+// LCOV_EXCL_STOP
     }
 
     ITERATE(CVariation_inst::TDelta, it, var_inst.GetDelta()) {
