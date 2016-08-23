@@ -463,9 +463,9 @@ EVariantSeqType s_GetSeqType(const string& type_string)
         return eVariantSeqType_c;
     }
 
-    if (type_string == "p.") {
-        return eVariantSeqType_p;
-    }
+    if (type_string == "p.") { // LCOV_EXCL_START - currently, this function is only used on genomic sequences
+        return eVariantSeqType_p; 
+    } // LCOV_EXCL_STOP
 
     if (type_string == "r.") {
         return eVariantSeqType_r;
