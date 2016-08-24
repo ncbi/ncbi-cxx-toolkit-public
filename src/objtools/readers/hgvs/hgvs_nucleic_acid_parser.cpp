@@ -68,8 +68,7 @@ SHgvsNucleicAcidGrammar::SHgvsNucleicAcidGrammar(const SHgvsLexer& tok) :
     nucleotide_location = nucleotide_site_interval |
                           nucleotide_site;
 
-    nucleotide_site_interval = (nucleotide_site >> "_" >> nucleotide_site) 
-                               ACTION2(AssignNtInterval);
+    nucleotide_site_interval = (nucleotide_site >> "_" >> nucleotide_site) ACTION2(AssignNtInterval);
 
     nucleotide_site =  nucleotide_site_range VALASSIGN | 
                        nucleotide_single_site ACTION1(AssignNtSite) |

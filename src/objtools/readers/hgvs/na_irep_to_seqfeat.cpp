@@ -839,7 +839,7 @@ CRef<CSeq_loc> CNaSeqlocHelper::x_CreateSeqloc(const CSeq_id& seq_id,
         // some uncertainty, or "fuzziness".
         if (nt_int.GetStart().IsSite()) {
             if(nt_int.GetStart().GetSite().IsSetFuzzy() &&
-               nt_int.GetStart().GetSite().GetFuzzy()) {
+               nt_int.GetStart().GetSite().GetFuzzy()) { 
                 seq_loc->SetInt().SetFuzz_from().SetLim(CInt_fuzz::eLim_unk);
             }
         }
@@ -870,7 +870,7 @@ CRef<CSeq_loc> CNaSeqlocHelper::x_CreateSeqloc(const CSeq_id& seq_id,
         // some uncertainty, or "fuzziness".
         if (nt_int.GetStop().IsSite()) {
             if(nt_int.GetStop().GetSite().IsSetFuzzy() &&
-               nt_int.GetStop().GetSite().GetFuzzy()) {
+               nt_int.GetStop().GetSite().GetFuzzy()) { 
                 seq_loc->SetInt().SetFuzz_to().SetLim(CInt_fuzz::eLim_unk);
             }
         }
@@ -1066,16 +1066,16 @@ bool CNaSeqlocHelper::x_ComputeSiteIndex(const CSeq_id& seq_id,
     }
 
     site_index = nt_site.GetBase().GetVal();
-    if (site_index == 0 ) {
+    if (site_index == 0 ) { // LCOV_EXCL_START - Does not parse
         NCBI_THROW(CVariationIrepException, eInvalidLocation, "Invalid HGVS site index: 0"); 
-    }
+    } // LCOV_EXCL_STOP
 
     // If this is a CDS variant and the referenced site lies 5' of the CDS start codon
     if (nt_site.IsSetUtr() && nt_site.GetUtr().IsFive_prime()) {
         // offset is the NCBI index referring to nucleotide A of the start codon
-        if (site_index > offset) {
+        if (site_index > offset) { // LCOV_EXCL_START
            NCBI_THROW(CVariationIrepException, eInvalidLocation, "Error deducing 5' UTR location"); 
-        }                                                                                          
+        } // LCOV_EXCL_STOP                                                                                         
         site_index = offset - site_index;
         return true;
     }

@@ -150,7 +150,7 @@ void AssignCount(const string& count, CRef<CCount>& result)
     result = CreateResultIfNull(result);
 
     if ( count == "?" ) {
-        result->SetUnknown();
+        result->SetUnknown(); // LCOV_EXCL_LINE - Don't know how to represent this in ASN.1
     }
     else {
         const auto val = NStr::StringToNumeric<CCount::TVal>(count);
@@ -444,7 +444,7 @@ void s_SetSequenceInfo(CRef<CNtLocation>& nt_loc, const string& identifier, cons
             stop_loc->SetSite(nt_loc->SetInt().SetStop().SetSite());
         }
         else {
-            stop_loc->SetRange(nt_loc->SetInt().SetStart().SetRange());
+            stop_loc->SetRange(nt_loc->SetInt().SetStop().SetRange());
         }
         s_SetSequenceInfo(stop_loc, identifier, seq_type);
     }

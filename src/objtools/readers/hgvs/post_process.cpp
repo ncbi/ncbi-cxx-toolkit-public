@@ -293,10 +293,15 @@ void g_ValidateVariationSeqfeat(const CSeq_feat& feat, CScope* scope, bool IsCDS
 
     // reference to list<CRef<CVariation_ref>> 
     auto&& variation_list = data_set.GetVariations();
-    if (variation_list.size() != 2) {
-        // Should Throw an exception here
+    if (variation_list.size() < 2) { // LCOV_EXCL_START
+        string err_msg = "2 Variation-refs expected. "
+                       + NStr::NumericToString(variation_list.size()) 
+                       + " found.";
+        NCBI_THROW(CVariationValidateException,
+                   eIncompleteObject,
+                   ""); 
         return;
-     }
+     } // LCOV_EXCL_STOP
 
     auto&& assertion = variation_list.front();
     auto&& reference = variation_list.back();
