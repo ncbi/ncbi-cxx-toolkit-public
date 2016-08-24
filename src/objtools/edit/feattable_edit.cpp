@@ -350,7 +350,8 @@ void CFeatTableEdit::GenerateProteinAndTranscriptIds()
 //  ----------------------------------------------------------------------------
 {
     SAnnotSelector sel;
-    sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_mRNA);
+    //sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_mRNA);
+    sel.IncludeFeatType(CSeqFeatData::e_Rna);
     sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_cdregion);
     for (CFeat_CI it(mHandle, sel); it; ++it){
         CMappedFeat mf = *it;
@@ -466,8 +467,7 @@ void CFeatTableEdit::xFeatureAddProteinId(
 
     switch (mf.GetFeatSubtype()) {
         default:
-            // we do this only for select feature types
-            return;
+            break;
         case CSeqFeatData::eSubtype_mRNA:
             associateFeat = feature::GetBestCdsForMrna(mf, &mTree);
             break;
@@ -505,8 +505,7 @@ void CFeatTableEdit::xFeatureAddTranscriptId(
 
     switch (mf.GetFeatSubtype()) {
     default:
-        // we do this only for select feature types
-        return;
+        break;
     case CSeqFeatData::eSubtype_mRNA:
         associateFeat = feature::GetBestCdsForMrna(mf, &mTree);
         break;
@@ -697,6 +696,7 @@ void CFeatTableEdit::GenerateMissingParentFeatures(
     else {
         GenerateMissingParentFeaturesForProkaryote();
     }
+    mTree = feature::CFeatTree(mHandle);
 }
 
 
