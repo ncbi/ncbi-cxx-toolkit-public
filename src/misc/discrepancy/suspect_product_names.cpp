@@ -5320,7 +5320,7 @@ static string GetRuleMatch(const CSuspect_rule& rule)
                 return string(find.GetString_constraint().GetMatch_location() == eString_location_starts ?  "[n] feature[s] start[S] with \'" : "[n] feature[s] contain[S] \'")
                     + find.GetString_constraint().GetMatch_text()
                     + (rule.CanGetRule_type() && (rule.GetRule_type() == eFix_type_typo || rule.GetRule_type() == eFix_type_quickfix) &&
-                        rule.CanGetReplace() && rule.GetReplace().GetReplace_func().IsSimple_replace()
+                        rule.CanGetReplace() && rule.GetReplace().GetReplace_func().IsSimple_replace() && rule.GetReplace().GetReplace_func().GetSimple_replace().CanGetReplace()
                         ? "\', Replace with \'" + rule.GetReplace().GetReplace_func().GetSimple_replace().GetReplace() : "")
                     + "\'";
             case CSearch_func::e_Contains_plural:
@@ -5363,7 +5363,6 @@ DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData, eDisc | eOncaller | eSubmi
 
     if (prot.IsSetName() && !prot.GetName().empty()) {
         string prot_name = *prot.GetName().begin();
-
         ITERATE(list<CRef<CSuspect_rule> >, rule, rules->Get()) {
             const CSearch_func& find = (*rule)->GetFind();
             if (!MatchesSearchFunc(prot_name, find)) {
