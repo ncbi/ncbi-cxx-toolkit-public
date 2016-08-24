@@ -102,7 +102,7 @@ template<> void s_FormatIds<CSeq_id_Handle>(ostringstream& osm, const vector<CSe
                 NCBI_THROW(CException, eUnknown, "Argument list contains seq-ids of mixed types");
             }
             type = seh.Which();
-            osm << seh.AsString();//maybe CSeq_id::GetSeqIdString(true)
+            osm << seh.GetSeqId()->GetSeqIdString(true);
         }
     }
     if (type == CSeq_id::e_Gi) {
