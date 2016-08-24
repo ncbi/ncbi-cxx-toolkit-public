@@ -6,7 +6,7 @@ SRC = unit_test_eutils
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
 LIB = eutils_client xmlwrapp $(SEQ_LIBS) pub medline biblio general xser \
-      xcgi $(CONNEXT) xconnect xutil xncbi test_boost
+      xcgi $(CONNEXT) xconnect xutil test_boost xncbi
 
 LIBS = $(LIBXSLT_STATIC_LIBS) \
 	   $(LIBXML_STATIC_LIBS) \
