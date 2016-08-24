@@ -90,42 +90,74 @@ static const char kDefaultAnnotName[] = "SNP";
 /////////////////////////////////////////////////////////////////////////////
 
 
-struct CSNPDb_Impl::SSNPTableCursor : public CObject {
-    explicit SSNPTableCursor(const CVDBTable& table);
+struct CSNPDb_Impl::SSeqTableCursor : public CObject {
+    explicit SSeqTableCursor(const CVDBTable& table);
     
     CVDBCursor m_Cursor;
 
     DECLARE_VDB_COLUMN_AS_STRING(ACCESSION);
-    DECLARE_VDB_COLUMN_AS(INSDC_coord_zero, BLOCK_FROM);
-    DECLARE_VDB_COLUMN_AS(Uint4, FEAT_COUNT);
-    DECLARE_VDB_COLUMN_AS_STRING(FEAT_TYPE);
-    DECLARE_VDB_COLUMN_AS(Uint4, FEAT_SUBTYPE);
-    DECLARE_VDB_COLUMN_AS(INSDC_coord_zero, FROM);
     DECLARE_VDB_COLUMN_AS(INSDC_coord_len, LEN);
-    DECLARE_VDB_COLUMN_AS(TVDBRowId, EXTRA_ROW_NUM);
-    DECLARE_VDB_COLUMN_AS(Uint4, FEAT_ID_PREFIX);
-    DECLARE_VDB_COLUMN_AS(Uint8, FEAT_ID_VALUE);
-    DECLARE_VDB_COLUMN_AS(Uint8, BIT_FLAGS);
-    DECLARE_VDB_COLUMN_AS(Uint4, FEAT_ZOOM_COUNT);
 };
 
 
-CSNPDb_Impl::SSNPTableCursor::SSNPTableCursor(const CVDBTable& table)
-    : m_Cursor(table),
-      INIT_VDB_COLUMN(ACCESSION),
-      INIT_VDB_COLUMN(BLOCK_FROM),
-      INIT_VDB_COLUMN(FEAT_COUNT),
-      INIT_VDB_COLUMN(FEAT_TYPE),
-      INIT_VDB_COLUMN(FEAT_SUBTYPE),
-      INIT_VDB_COLUMN(FROM),
-      INIT_VDB_COLUMN(LEN),
-      INIT_VDB_COLUMN(EXTRA_ROW_NUM),
-      INIT_VDB_COLUMN(FEAT_ID_PREFIX),
-      INIT_VDB_COLUMN(FEAT_ID_VALUE),
-      INIT_VDB_COLUMN(BIT_FLAGS),
-      INIT_VDB_COLUMN(FEAT_ZOOM_COUNT)
-{
-}
+struct CSNPDb_Impl::STrackTableCursor : public CObject {
+    explicit STrackTableCursor(const CVDBTable& table);
+    
+    CVDBCursor m_Cursor;
+
+    DECLARE_VDB_COLUMN_AS(Uint8, BITS);
+    DECLARE_VDB_COLUMN_AS(Uint8, MASK);
+    DECLARE_VDB_COLUMN_AS_STRING(NAME);
+};
+
+
+struct CSNPDb_Impl::SGraphTableCursor : public CObject {
+    explicit SGraphTableCursor(const CVDBTable& table);
+    
+    CVDBCursor m_Cursor;
+
+    DECLARE_VDB_COLUMN_AS(TVDBRowId, FILTER_ID_ROW_NUM);
+    DECLARE_VDB_COLUMN_AS(TVDBRowId, SEQ_ID_ROW_NUM);
+    DECLARE_VDB_COLUMN_AS(INSDC_coord_zero, BLOCK_FROM);
+    DECLARE_VDB_COLUMN_AS(Uint4, GR_TOTAL);
+    DECLARE_VDB_COLUMN_AS(Uint4, GR_ZOOM);
+
+    // return { row, seq_pos } if found track page in the range
+    // return { 0, kInvalidSeqPos } if no track page in the range
+    pair<TVDBRowId, TSeqPos> Locate(TVDBRowId seq_row,
+                                    TVDBRowId track_row,
+                                    COpenRange<TSeqPos> range);
+};
+
+
+struct CSNPDb_Impl::SPageTableCursor : public CObject {
+    explicit SPageTableCursor(const CVDBTable& table);
+    
+    CVDBCursor m_Cursor;
+
+    DECLARE_VDB_COLUMN_AS(TVDBRowId, SEQ_ID_ROW_NUM);
+    DECLARE_VDB_COLUMN_AS(INSDC_coord_zero, PAGE_FROM);
+    DECLARE_VDB_COLUMN_AS(TVDBRowId, FEATURE_ROW_FROM);
+    DECLARE_VDB_COLUMN_AS(TVDBRowCount, FEATURE_ROWS_COUNT);
+};
+
+
+struct CSNPDb_Impl::SFeatTableCursor : public CObject {
+    explicit SFeatTableCursor(const CVDBTable& table);
+    
+    CVDBCursor m_Cursor;
+
+    DECLARE_VDB_COLUMN_AS(TVDBRowId, SEQ_ID_ROW_NUM);
+    DECLARE_VDB_COLUMN_AS(INSDC_coord_zero, FROM);
+    DECLARE_VDB_COLUMN_AS(INSDC_coord_len, LEN);
+    DECLARE_VDB_COLUMN_AS_STRING(FEAT_TYPE);
+    DECLARE_VDB_COLUMN_AS(Uint4, FEAT_SUBTYPE);
+    DECLARE_VDB_COLUMN_AS(Uint4, FEAT_ID_PREFIX);
+    DECLARE_VDB_COLUMN_AS(Uint8, FEAT_ID_VALUE);
+    DECLARE_VDB_COLUMN_AS(Uint8, BIT_FLAGS);
+    DECLARE_VDB_COLUMN_AS(TVDBRowId, EXTRA_ROW_FROM);
+    DECLARE_VDB_COLUMN_AS(TVDBRowCount, EXTRA_ROWS_COUNT);
+};
 
 
 struct CSNPDb_Impl::SExtraTableCursor : public CObject {
@@ -133,15 +165,96 @@ struct CSNPDb_Impl::SExtraTableCursor : public CObject {
     
     CVDBCursor m_Cursor;
 
-    DECLARE_VDB_COLUMN_AS_STRING(RS_ALLELES);
+    DECLARE_VDB_COLUMN_AS_STRING(RS_ALLELE);
 };
 
 
-CRef<CSNPDb_Impl::SSNPTableCursor> CSNPDb_Impl::SNP(TVDBRowId row)
+CSNPDb_Impl::SSeqTableCursor::SSeqTableCursor(const CVDBTable& table)
+    : m_Cursor(table),
+      INIT_VDB_COLUMN(ACCESSION),
+      INIT_VDB_COLUMN(LEN)
 {
-    CRef<SSNPTableCursor> curs = m_SNP.Get(row);
+}
+
+
+CSNPDb_Impl::STrackTableCursor::STrackTableCursor(const CVDBTable& table)
+    : m_Cursor(table),
+      INIT_VDB_COLUMN(BITS),
+      INIT_VDB_COLUMN(MASK),
+      INIT_VDB_COLUMN(NAME)
+{
+}
+
+
+CSNPDb_Impl::SGraphTableCursor::SGraphTableCursor(const CVDBTable& table)
+    : m_Cursor(table),
+      INIT_VDB_COLUMN(FILTER_ID_ROW_NUM),
+      INIT_VDB_COLUMN(SEQ_ID_ROW_NUM),
+      INIT_VDB_COLUMN(BLOCK_FROM),
+      INIT_VDB_COLUMN(GR_TOTAL),
+      INIT_VDB_COLUMN(GR_ZOOM)
+{
+}
+
+
+CSNPDb_Impl::SPageTableCursor::SPageTableCursor(const CVDBTable& table)
+    : m_Cursor(table),
+      INIT_VDB_COLUMN(SEQ_ID_ROW_NUM),
+      INIT_VDB_COLUMN(PAGE_FROM),
+      INIT_VDB_COLUMN(FEATURE_ROW_FROM),
+      INIT_VDB_COLUMN(FEATURE_ROWS_COUNT)
+{
+}
+
+
+CSNPDb_Impl::SFeatTableCursor::SFeatTableCursor(const CVDBTable& table)
+    : m_Cursor(table),
+      INIT_VDB_COLUMN(SEQ_ID_ROW_NUM),
+      INIT_VDB_COLUMN(FROM),
+      INIT_VDB_COLUMN(LEN),
+      INIT_VDB_COLUMN(FEAT_TYPE),
+      INIT_VDB_COLUMN(FEAT_SUBTYPE),
+      INIT_VDB_COLUMN(FEAT_ID_PREFIX),
+      INIT_VDB_COLUMN(FEAT_ID_VALUE),
+      INIT_VDB_COLUMN(BIT_FLAGS),
+      INIT_VDB_COLUMN(EXTRA_ROW_FROM),
+      INIT_VDB_COLUMN(EXTRA_ROWS_COUNT)
+{
+}
+
+
+CSNPDb_Impl::SExtraTableCursor::SExtraTableCursor(const CVDBTable& table)
+    : m_Cursor(table),
+      INIT_VDB_COLUMN(RS_ALLELE)
+{
+}
+
+
+CRef<CSNPDb_Impl::SGraphTableCursor> CSNPDb_Impl::Graph(TVDBRowId row)
+{
+    CRef<SGraphTableCursor> curs = m_Graph.Get(row);
     if ( !curs ) {
-        curs = new SSNPTableCursor(SNPTable());
+        curs = new SGraphTableCursor(GraphTable());
+    }
+    return curs;
+}
+
+
+CRef<CSNPDb_Impl::SPageTableCursor> CSNPDb_Impl::Page(TVDBRowId row)
+{
+    CRef<SPageTableCursor> curs = m_Page.Get(row);
+    if ( !curs ) {
+        curs = new SPageTableCursor(PageTable());
+    }
+    return curs;
+}
+
+
+CRef<CSNPDb_Impl::SFeatTableCursor> CSNPDb_Impl::Feat(TVDBRowId row)
+{
+    CRef<SFeatTableCursor> curs = m_Feat.Get(row);
+    if ( !curs ) {
+        curs = new SFeatTableCursor(FeatTable());
     }
     return curs;
 }
@@ -159,9 +272,21 @@ CRef<CSNPDb_Impl::SExtraTableCursor> CSNPDb_Impl::Extra(TVDBRowId row)
 }
 
 
-void CSNPDb_Impl::Put(CRef<SSNPTableCursor>& curs, TVDBRowId row)
+void CSNPDb_Impl::Put(CRef<SGraphTableCursor>& curs, TVDBRowId row)
 {
-    m_SNP.Put(curs, row);
+    m_Graph.Put(curs, row);
+}
+
+
+void CSNPDb_Impl::Put(CRef<SPageTableCursor>& curs, TVDBRowId row)
+{
+    m_Page.Put(curs, row);
+}
+
+
+void CSNPDb_Impl::Put(CRef<SFeatTableCursor>& curs, TVDBRowId row)
+{
+    m_Feat.Put(curs, row);
 }
 
 
@@ -171,18 +296,10 @@ void CSNPDb_Impl::Put(CRef<SExtraTableCursor>& curs, TVDBRowId row)
 }
 
 
-CSNPDb_Impl::SExtraTableCursor::SExtraTableCursor(const CVDBTable& table)
-    : m_Cursor(table),
-      INIT_VDB_COLUMN(RS_ALLELES)
-{
-}
-
-
 CSNPDb_Impl::CSNPDb_Impl(CVDBMgr& mgr,
                          CTempString path_or_acc)
     : m_Mgr(mgr),
-      m_DbPath(path_or_acc),
-      m_ExtraTableIsOpened(false)
+      m_DbPath(path_or_acc)
 {
     // SNP VDB are multi-table VDB objects.
     // However, there could be other VDBs in the same namespace (NA*)
@@ -214,50 +331,96 @@ CSNPDb_Impl::CSNPDb_Impl(CVDBMgr& mgr,
             throw;
         }
     }
-    m_SNPTable = CVDBTable(m_Db, "feature");
-    // only one ref seq
-    if ( CRef<SSNPTableCursor> snp = SNP() ) {
-        SSeqInfo* info = 0;
-        for ( TVDBRowId row = 1, max_row = snp->m_Cursor.GetMaxRowId();
-              row <= max_row; ++row ) {
-            // read range and names
-            CTempString ref_id = *snp->ACCESSION(row);
-            if ( !info || info->m_Name != ref_id ) {
-                m_SeqList.push_back(SSeqInfo());
-                info = &m_SeqList.back();
-                info->m_Name = info->m_SeqId = ref_id;
-                info->m_Seq_ids.assign(1, Ref(new CSeq_id(ref_id)));
-                info->m_Seq_id_Handle =
-                    CSeq_id_Handle::GetHandle(*info->GetMainSeq_id());
-                info->m_Circular = false;
+
+    {
+        // load track list
+        CVDBTable track_table(m_Db, "TRACK_FILTER");
+        STrackTableCursor cur(track_table);
+        size_t track_count = cur.m_Cursor.GetMaxRowId();
+        m_TrackList.resize(track_count);
+        for ( size_t i = 0; i < track_count; ++i ) {
+            STrackInfo& info = m_TrackList[i];
+            TVDBRowId row = i+1;
+            info.m_Name = *cur.NAME(row);
+            NStr::TrimSuffixInPlace(info.m_Name, "\r");
+            info.m_Filter.m_Filter = *cur.BITS(row);
+            info.m_Filter.m_FilterMask = *cur.MASK(row);
+            m_TrackMapByName[info.m_Name] = i;
+        }
+        if ( track_count == 0 ) {
+            // default track without filtering
+            m_TrackList.resize(1);
+        }
+        m_TrackMapByName[""] = 0;
+    }
+
+    {
+        // load sequence list
+        CVDBTable seq_table(m_Db, "SEQUENCE");
+        SSeqTableCursor cur(seq_table);
+        size_t seq_count = cur.m_Cursor.GetMaxRowId();
+        m_SeqList.resize(seq_count);
+        for ( size_t i = 0; i < seq_count; ++i ) {
+            SSeqInfo& info = m_SeqList[i];
+            TVDBRowId row = i+1;
+            CTempString ref_id = *cur.ACCESSION(row);
+            info.m_SeqId = ref_id;
+            info.m_Seq_ids.assign(1, Ref(new CSeq_id(ref_id)));
+            info.m_Seq_id_Handle =
+                CSeq_id_Handle::GetHandle(*info.GetMainSeq_id());
+            info.m_SeqLength = *cur.LEN(row);
+            info.m_Circular = false;
+            // index
+            for ( auto& id : info.m_Seq_ids ) {
+                m_SeqMapBySeq_id[CSeq_id_Handle::GetHandle(*id)] = i;
             }
+        }
+    }
+
+    m_PageTable = CVDBTable(m_Db, "PAGE");
+    {
+        // prepare page index
+        CRef<SPageTableCursor> cur = Page();
+        
+        for ( TVDBRowId row = 1, max_row = cur->m_Cursor.GetMaxRowId();
+              row <= max_row; ++row ) {
+            SSeqInfo& info = m_SeqList.at(size_t(*cur->SEQ_ID_ROW_NUM(row)-1));
             SSeqInfo::SPageSet pset;
-            pset.m_SeqPos = *snp->BLOCK_FROM(row);
+            pset.m_SeqPos = *cur->PAGE_FROM(row);
             pset.m_PageCount = 1;
             pset.m_RowId = row;
-            if ( !info->m_PageSets.empty() ) {
-                SSeqInfo::SPageSet& prev_pset = info->m_PageSets.back();
+            if ( !info.m_PageSets.empty() ) {
+                SSeqInfo::SPageSet& prev_pset = info.m_PageSets.back();
                 if ( prev_pset.GetSeqPosEnd(kPageSize) == pset.m_SeqPos &&
                      prev_pset.GetRowIdEnd() == pset.m_RowId ) {
                     prev_pset.m_PageCount += 1;
                     continue;
                 }
             }
-            info->m_PageSets.push_back(pset);
+            info.m_PageSets.push_back(pset);
         }
-        Put(snp);
+        
+        Put(cur);
     }
 
-    NON_CONST_ITERATE ( TSeqInfoList, it, m_SeqList ) {
-        size_t seq_index = it-m_SeqList.begin();
-        m_SeqMapByName.insert
-            (TSeqInfoMapByName::value_type(it->m_Name, seq_index));
-        ITERATE ( CBioseq::TId, id_it, it->m_Seq_ids ) {
-            CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(**id_it);
-            m_SeqMapBySeq_id.insert
-                (TSeqInfoMapBySeq_id::value_type(idh, seq_index));
+    // update length and graph positions
+    {
+        size_t track_count = m_TrackList.size();
+        TVDBRowId graph_row = 1;
+        for ( auto& info : m_SeqList ) {
+            if ( !info.m_SeqLength ) {
+                info.m_SeqLength = info.m_PageSets.back().GetSeqPosEnd(kPageSize);
+            }
+            info.m_GraphRowId = graph_row;
+            TSeqPos pages = (info.m_SeqLength - 1)/kPageSize + 1;
+            graph_row += pages * track_count;
         }
     }
+
+    // open other tables
+    m_GraphTable = CVDBTable(m_Db, "COVERAGE_GRAPH");
+    m_FeatTable = CVDBTable(m_Db, "FEAT");
+    m_ExtraTable = CVDBTable(m_Db, "EXTRA");
 }
 
 
@@ -266,28 +429,183 @@ CSNPDb_Impl::~CSNPDb_Impl(void)
 }
 
 
-inline
-void CSNPDb_Impl::OpenTable(CVDBTable& table,
-                            const char* table_name,
-                            volatile bool& table_is_opened)
+TSeqPos CSNPDb_Impl::GetPageSize(void) const
 {
-    CFastMutexGuard guard(m_TableMutex);
-    if ( !table_is_opened ) {
-        table = CVDBTable(m_Db, table_name, CVDBTable::eMissing_Allow);
-        table_is_opened = true;
+    return kPageSize;
+}
+
+
+CSNPDb_Impl::TTrackInfoList::const_iterator
+CSNPDb_Impl::FindTrack(const string& name) const
+{
+    TTrackInfoMapByName::const_iterator it = m_TrackMapByName.find(name);
+    if ( it == m_TrackMapByName.end() ) {
+        return m_TrackList.end();
+    }
+    else {
+        return m_TrackList.begin()+it->second;
     }
 }
 
 
-void CSNPDb_Impl::OpenExtraTable(void)
+CSNPDb_Impl::TSeqInfoList::const_iterator
+CSNPDb_Impl::FindSeq(const CSeq_id_Handle& seq_id) const
 {
-    OpenTable(m_ExtraTable, "extra", m_ExtraTableIsOpened);
+    TSeqInfoMapBySeq_id::const_iterator it = m_SeqMapBySeq_id.find(seq_id);
+    if ( it == m_SeqMapBySeq_id.end() ) {
+        return m_SeqList.end();
+    }
+    else {
+        return m_SeqList.begin()+it->second;
+    }
 }
 
 
-TSeqPos CSNPDb_Impl::GetPageSize(void) const
+CRange<TVDBRowId>
+CSNPDb_Impl::x_GetPageVDBRowRange(TSeqInfoList::const_iterator seq)
 {
-    return kPageSize;
+    if ( seq == GetSeqInfoList().end() ) {
+        NCBI_THROW_FMT(CSraException, eInvalidIndex,
+                       "Sequence index is out of bounds: "<<
+                       GetDbPath());
+    }
+    return seq->GetPageVDBRowRange();
+}
+
+
+pair<TVDBRowId, TSeqPos>
+CSNPDb_Impl::SGraphTableCursor::Locate(TVDBRowId seq_row,
+                                       TVDBRowId track_row,
+                                       COpenRange<TSeqPos> range)
+{
+    _ASSERT(seq_row && track_row);
+    TSeqPos seq_page_pos = range.GetFrom()/kPageSize*kPageSize;
+
+    // binary search
+    TVDBRowId a = 1, b = m_Cursor.GetMaxRowId()+1;
+    TSeqPos pos = kInvalidSeqPos;
+    while ( a < b ) {
+        TVDBRowId m = a + (b-a)/2;
+
+        TVDBRowId cur_seq_row = *SEQ_ID_ROW_NUM(m);
+        if ( cur_seq_row != seq_row ) {
+            if ( cur_seq_row < seq_row ) {
+                a = m+1;
+            }
+            else {
+                b = m;
+            }
+            continue;
+        }
+
+        TVDBRowId cur_track_row = *FILTER_ID_ROW_NUM(m);
+        if ( cur_track_row != track_row ) {
+            if ( cur_track_row < track_row ) {
+                a = m+1;
+            }
+            else {
+                b = m;
+            }
+            continue;
+        }
+
+        TSeqPos cur_seq_page_pos = TSeqPos(*BLOCK_FROM(m));
+        if ( cur_seq_page_pos != seq_page_pos ) {
+            if ( cur_seq_page_pos < seq_page_pos ) {
+                a = m+1;
+            }
+            else {
+                if ( cur_seq_page_pos < range.GetToOpen() ) {
+                    pos = cur_seq_page_pos;
+                }
+                b = m;
+            }
+        }
+        else {
+            // exact match
+            a = m;
+            pos = cur_seq_page_pos;
+            break;
+        }
+    }
+    if ( pos == kInvalidSeqPos ) {
+        a = 0;
+    }
+    return make_pair(a, pos);
+}
+
+
+CRange<TVDBRowId>
+CSNPDb_Impl::x_GetGraphVDBRowRange(TSeqInfoList::const_iterator seq,
+                                   TTrackInfoList::const_iterator track)
+{
+    if ( seq == GetSeqInfoList().end() ) {
+        NCBI_THROW_FMT(CSraException, eInvalidIndex,
+                       "Sequence index is out of bounds: "<<
+                       GetDbPath());
+    }
+    if ( track == GetTrackInfoList().end() ) {
+        NCBI_THROW_FMT(CSraException, eInvalidIndex,
+                       "Filter track index is out of bounds: "<<
+                       GetDbPath());
+    }
+    TVDBRowId start = seq->m_GraphRowId;
+    TVDBRowId len = (seq->m_SeqLength-1)/kPageSize + 1;
+    start += (track - GetTrackInfoList().begin())*len;
+    CRange<TVDBRowId> range;
+    range.SetFrom(start);
+    range.SetLength(len);
+    return range;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CSNPDbTrackIterator
+/////////////////////////////////////////////////////////////////////////////
+
+
+CSNPDbTrackIterator::CSNPDbTrackIterator(const CSNPDb& db)
+    : m_Db(db),
+      m_Iter(GetList().begin())
+{
+}
+
+
+CSNPDbTrackIterator::CSNPDbTrackIterator(const CSNPDb& db,
+                                         size_t track_index)
+    : m_Db(db)
+{
+    if ( track_index >= GetList().size() ) {
+        NCBI_THROW_FMT(CSraException, eInvalidIndex,
+                       "Track index is out of bounds: "<<
+                       db->GetDbPath()<<"."<<track_index);
+    }
+    m_Iter = GetList().begin()+track_index;
+}
+
+
+CSNPDbTrackIterator::CSNPDbTrackIterator(const CSNPDb& db,
+                                         const string& name)
+    : m_Db(db),
+      m_Iter(db->FindTrack(name))
+{
+}
+
+
+const CSNPDbTrackIterator::TInfo& CSNPDbTrackIterator::GetInfo(void) const
+{
+    if ( !*this ) {
+        NCBI_THROW(CSraException, eInvalidState,
+                   "CSNPDbTrackIterator is invalid");
+    }
+    return *m_Iter;
+}
+
+
+void CSNPDbTrackIterator::Reset(void)
+{
+    m_Db.Reset();
+    m_Iter = TList::const_iterator();
 }
 
 
@@ -298,37 +616,9 @@ TSeqPos CSNPDb_Impl::GetPageSize(void) const
 
 CSNPDbSeqIterator::CSNPDbSeqIterator(const CSNPDb& db)
     : m_Db(db),
-      m_Iter(db->GetSeqInfoList().begin())
+      m_Iter(db->GetSeqInfoList().begin()),
+      m_TrackIter(db->GetTrackInfoList().begin())
 {
-}
-
-
-CSNPDbSeqIterator::CSNPDbSeqIterator(const CSNPDb& db,
-                                     const string& name,
-                                     EByName)
-{
-    CSNPDb_Impl::TSeqInfoMapByName::const_iterator iter =
-        db->m_SeqMapByName.find(name);
-    if ( iter != db->m_SeqMapByName.end() ) {
-        size_t seq_index = iter->second;
-        _ASSERT(seq_index < db->m_SeqList.size());
-        m_Db = db;
-        m_Iter = db->m_SeqList.begin()+seq_index;
-    }
-}
-
-
-CSNPDbSeqIterator::CSNPDbSeqIterator(const CSNPDb& db,
-                                     const CSeq_id_Handle& seq_id)
-{
-    CSNPDb_Impl::TSeqInfoMapBySeq_id::const_iterator iter =
-        db->m_SeqMapBySeq_id.find(seq_id);
-    if ( iter != db->m_SeqMapBySeq_id.end() ) {
-        size_t seq_index = iter->second;
-        _ASSERT(seq_index < db->m_SeqList.size());
-        m_Db = db;
-        m_Iter = db->m_SeqList.begin()+seq_index;
-    }
 }
 
 
@@ -342,10 +632,26 @@ CSNPDbSeqIterator::CSNPDbSeqIterator(const CSNPDb& db,
     }
     m_Db = db;
     m_Iter = db->m_SeqList.begin()+seq_index;
+    m_TrackIter = db->GetTrackInfoList().begin();
 }
 
 
-const CSNPDb_Impl::SSeqInfo& CSNPDbSeqIterator::GetInfo(void) const
+CSNPDbSeqIterator::CSNPDbSeqIterator(const CSNPDb& db,
+                                     const CSeq_id_Handle& seq_id)
+    : m_Db(db),
+      m_Iter(db->FindSeq(seq_id)),
+      m_TrackIter(db->GetTrackInfoList().begin())
+{
+}
+
+
+void CSNPDbSeqIterator::SetTrack(const CSNPDbTrackIterator& track)
+{
+    m_TrackIter = track.m_Iter;
+}
+
+
+const CSNPDbSeqIterator::TInfo& CSNPDbSeqIterator::GetInfo(void) const
 {
     if ( !*this ) {
         NCBI_THROW(CSraException, eInvalidState,
@@ -357,8 +663,9 @@ const CSNPDb_Impl::SSeqInfo& CSNPDbSeqIterator::GetInfo(void) const
 
 void CSNPDbSeqIterator::Reset(void)
 {
-    m_Db.Reset();
     m_Iter = CSNPDb_Impl::TSeqInfoList::const_iterator();
+    m_TrackIter = CSNPDb_Impl::TTrackInfoList::const_iterator();
+    m_Db.Reset();
 }
 
 
@@ -376,34 +683,19 @@ TSeqPos CSNPDbSeqIterator::GetMaxSNPLength(void) const
 
 Uint8 CSNPDbSeqIterator::GetSNPCount(void) const
 {
-    CRange<TVDBRowId> row_ids = GetVDBRowRange();
-    if ( row_ids.Empty() ) {
-        return 0;
-    }
-    CRef<CSNPDb_Impl::SSNPTableCursor> cur = GetDb().SNP();
-    TVDBRowId extra_first_id = cur->EXTRA_ROW_NUM(row_ids.GetFrom())[0];
-    CVDBValueFor<TVDBRowId> extra_last = cur->EXTRA_ROW_NUM(row_ids.GetTo());
-    TVDBRowId extra_last_id = extra_last[0]+extra_last.size();
+    CRange<TVDBRowId> row_ids = GetPageVDBRowRange();
+    CRef<CSNPDb_Impl::SPageTableCursor> cur = GetDb().Page();
+    TVDBRowId begin = *cur->FEATURE_ROW_FROM(row_ids.GetFrom());
+    TVDBRowId end = *cur->FEATURE_ROW_FROM(row_ids.GetTo());
+    end += *cur->FEATURE_ROWS_COUNT(row_ids.GetTo());
     GetDb().Put(cur);
-    return extra_last_id-extra_first_id;
+    return end - begin;
 }
 
 
 Uint8 CSNPDbSeqIterator::GetSNPCount(CRange<TSeqPos> range) const
 {
     return GetSNPCount();
-    /*
-    CRange<TVDBRowId> row_ids = GetVDBRowRange();
-    if ( row_ids.Empty() ) {
-        return 0;
-    }
-    CRef<CSNPDb_Impl::SSNPTableCursor> cur = GetDb().SNP();
-    TVDBRowId extra_first_id = cur->EXTRA_ROW_NUM(row_ids.GetFrom())[0];
-    CVDBValueFor<TVDBRowId> extra_last = cur->EXTRA_ROW_NUM(row_ids.GetTo());
-    TVDBRowId extra_last_id = extra_last[0]+extra_last.size();
-    GetDb().Put(cur);
-    return extra_last_id-extra_first_id;
-    */
 }
 
 
@@ -415,22 +707,72 @@ CRange<TSeqPos> CSNPDbSeqIterator::GetSNPRange(void) const
 }
 
 
-CRange<TVDBRowId> CSNPDbSeqIterator::GetVDBRowRange(void) const
-{
-    const CSNPDb_Impl::SSeqInfo::TPageSets& psets = GetInfo().m_PageSets;
-    return COpenRange<TVDBRowId>(psets.front().m_RowId,
-                                 psets.back().GetRowIdEnd());
-}
-
-
 BEGIN_LOCAL_NAMESPACE;
 
+/*
+struct SGraphCreator
+{
+    CRef<CSeq_annot> m_Annot;
+    CRef<CSeq_graph> m_Graph;
+    TSeqPos m_Zoom;
+    TSeqPos m_NextSeqPos;
+    size_t m_ZeroCount;
+
+    explicit
+    SGraphCreator(TSeqPos zoom)
+        : m_Zoom(zoom),
+          m_NextSeqPos(0),
+          m_ZeroCount(0)
+        {
+        }
+    
+    void AddZeros(size_t count)
+        {
+            m_NextSeqPos += count*m_Zoom;
+            m_ZeroCount += count;
+        }
+    void AddValues(const COpenRange<TSeqPos>& range,
+                   size_t count, const Uint4* values)
+        {
+            size_t zero_before = 0, zero_after = 0;
+            while ( count && *values == 0 ) {
+                ++zero_before;
+                --count;
+                ++values;
+            }
+            AddZeros(zero_before);
+
+            while ( zero_before < count && values[zero_before] == 0
+            if ( range.GetFrom() != m_NextSeqPos ) {
+                _ASSERT(range.GetFrom() > m_NextSeqPos);
+                _ASSERT((range.GetFrom() - m_NextSeqPos) % m_Zoom == 0);
+                AddZeros((range.GetFrom() - m_NextSeqPos) / m_Zoom);
+            }
+        }
+};
+*/
 
 CRef<CSeq_annot> x_NewAnnot(const string& annot_name = kDefaultAnnotName)
 {
     CRef<CSeq_annot> annot(new CSeq_annot);
     annot->SetNameDesc(annot_name);
     return annot;
+}
+
+
+CRef<CSeq_graph> x_NewOverviewGraph(const CSNPDbSeqIterator& it)
+{
+    CRef<CSeq_graph> graph(new CSeq_graph);
+    graph->SetTitle("SNP Density");
+    graph->SetLoc().SetInt().SetId(const_cast<CSeq_id&>(*it.GetSeqId()));
+    graph->SetComp(kPageSize);
+    graph->SetNumval(0);
+    CByte_graph& data = graph->SetGraph().SetByte();
+    data.SetAxis(0);
+    data.SetMin(0);
+    data.SetMax(0);
+    data.SetValues();
+    return graph;
 }
 
 
@@ -463,18 +805,6 @@ void x_ConvertByteToInt(CSeq_graph& graph)
 }
 
 
-inline TSeqPos x_RoundCoveragePos(TSeqPos pos)
-{
-    return pos - pos%kCoverageZoom;
-}
-
-
-inline TSeqPos x_RoundCoveragePosUp(TSeqPos pos)
-{
-    return x_RoundCoveragePos(pos+kCoverageZoom-1);
-}
-
-
 inline void x_AdjustRange(CRange<TSeqPos>& range,
                           const CSNPDbSeqIterator& it)
 {
@@ -482,20 +812,47 @@ inline void x_AdjustRange(CRange<TSeqPos>& range,
 }
 
 
+inline TSeqPos x_RoundPos(TSeqPos pos, TSeqPos step)
+{
+    return pos - pos%step;
+}
+
+
+inline TSeqPos x_RoundPosUp(TSeqPos pos, TSeqPos step)
+{
+    return x_RoundPos(pos+step-1, step);
+}
+
+
+inline void x_RoundRange(CRange<TSeqPos>& range, TSeqPos step)
+{
+    range.SetFrom(x_RoundPos(range.GetFrom(), step));
+    range.SetToOpen(x_RoundPosUp(range.GetToOpen(), step));
+}
+
+
+inline void x_AdjustOverviewGraphRange(CRange<TSeqPos>& range,
+                                       const CSNPDbSeqIterator& it)
+{
+    x_AdjustRange(range, it);
+    x_RoundRange(range, kPageSize);
+}
+
+
 inline void x_AdjustCoverageGraphRange(CRange<TSeqPos>& range,
                                        const CSNPDbSeqIterator& it)
 {
     x_AdjustRange(range, it);
-    range.SetFrom(x_RoundCoveragePos(range.GetFrom()));
-    range.SetToOpen(x_RoundCoveragePosUp(range.GetToOpen()));
+    x_RoundRange(range, kCoverageZoom);
 }
 
 
-TSeqPos x_AddCoverageLoc(CSeq_graph& graph, TSeqPos pos, TSeqPos end)
+TSeqPos x_AddGraphLoc(CSeq_graph& graph, TSeqPos pos, TSeqPos end,
+                      TSeqPos step)
 {
     _ASSERT(end > pos);
-    _ASSERT((end-pos)%kCoverageZoom == 0);
-    TSeqPos add = (end-pos) / kCoverageZoom;
+    _ASSERT((end-pos)%step == 0);
+    TSeqPos add = (end-pos) / step;
     graph.SetNumval() += add;
     CSeq_interval& interval = graph.SetLoc().SetInt();
     if ( !interval.IsSetFrom() ) {
@@ -509,7 +866,21 @@ TSeqPos x_AddCoverageLoc(CSeq_graph& graph, TSeqPos pos, TSeqPos end)
 }
 
 
-void x_AddCoverageZeroes(CSeq_graph& graph, TSeqPos add)
+inline
+TSeqPos x_AddOverviewLoc(CSeq_graph& graph, TSeqPos pos, TSeqPos end)
+{
+    return x_AddGraphLoc(graph, pos, end, kPageSize);
+}
+
+
+inline
+TSeqPos x_AddCoverageLoc(CSeq_graph& graph, TSeqPos pos, TSeqPos end)
+{
+    return x_AddGraphLoc(graph, pos, end, kCoverageZoom);
+}
+
+
+void x_AddGraphZeroes(CSeq_graph& graph, TSeqPos add)
 {
     CSeq_graph::TGraph& g = graph.SetGraph();
     if ( g.IsByte() ) {
@@ -525,7 +896,7 @@ void x_AddCoverageZeroes(CSeq_graph& graph, TSeqPos add)
 }
 
 
-void x_AddCoverageValues(CSeq_graph& graph, TSeqPos add, const Uint4* ptr)
+void x_AddGraphValues(CSeq_graph& graph, TSeqPos add, const Uint4* ptr)
 {
     CSeq_graph::TGraph& g = graph.SetGraph();
     Uint4 max_value = *max_element(ptr, ptr+add);
@@ -547,21 +918,45 @@ void x_AddCoverageValues(CSeq_graph& graph, TSeqPos add, const Uint4* ptr)
 
 
 inline
+void x_AddEmptyOverview(CSeq_graph& graph, TSeqPos pos, TSeqPos end)
+{
+    TSeqPos add = x_AddOverviewLoc(graph, pos, end);
+    x_AddGraphZeroes(graph, add);
+}
+
+
+inline
 void x_AddEmptyCoverage(CSeq_graph& graph, TSeqPos pos, TSeqPos end)
 {
     TSeqPos add = x_AddCoverageLoc(graph, pos, end);
-    x_AddCoverageZeroes(graph, add);
+    x_AddGraphZeroes(graph, add);
+}
+
+
+inline
+void x_AddOverview(CSeq_graph& graph,
+                   CRange<TSeqPos> range,
+                   CSNPDbGraphIterator& it)
+{
+    Uint4 value = it.GetTotalValue();
+    x_AddOverviewLoc(graph, range.GetFrom(), range.GetToOpen());
+    x_AddGraphValues(graph, 1, &value);
 }
 
 
 inline
 void x_AddCoverage(CSeq_graph& graph,
                    CRange<TSeqPos> range,
-                   CSNPDbPageIterator& page_it)
+                   CSNPDbGraphIterator& it)
 {
+    CVDBValueFor<Uint4> values = it.GetCoverageValues();
+    if ( values.empty() ) {
+        return;
+    }
+    _ASSERT(values.size()*kCoverageZoom == kPageSize);
     TSeqPos add = x_AddCoverageLoc(graph, range.GetFrom(), range.GetToOpen());
-    TSeqPos off = (range.GetFrom()-page_it.GetPagePos())/kCoverageZoom;
-    x_AddCoverageValues(graph, add, page_it.GetCoverageValues().data()+off);
+    TSeqPos off = (range.GetFrom()-it.GetPagePos())/kCoverageZoom;
+    x_AddGraphValues(graph, add, values.data()+off);
 }
 
 
@@ -569,12 +964,82 @@ END_LOCAL_NAMESPACE;
 
 
 CRef<CSeq_graph>
-CSNPDbSeqIterator::GetCoverageGraph(CRange<TSeqPos> range,
-                                    const SFilter& /*filter*/) const
+CSNPDbSeqIterator::GetOverviewGraph(CRange<TSeqPos> range) const
+{
+    // align to page size
+    x_AdjustOverviewGraphRange(range, *this);
+    CSNPDbGraphIterator it(*this, range);
+
+    // skip leading zeros
+    while ( it && it.GetTotalValue() == 0 ) {
+        ++it;
+    }
+    if ( !it ) {
+        return null;
+    }
+    range.SetFrom(it.GetPageRange().GetFrom());
+
+    // collect values
+    vector<Uint4> vv;
+    for ( ; it; ++it ) {
+        vv.push_back(it.GetTotalValue());
+    }
+
+    // skip trailing zeros
+    while ( !vv.empty() && vv.back() == 0 ) {
+        vv.pop_back();
+    }
+    TSeqPos count = vv.size();
+
+    // add values
+    CRef<CSeq_graph> graph = x_NewOverviewGraph(*this);
+    x_AddGraphValues(*graph, count, vv.data());
+
+    // adjust location
+    graph->SetNumval(count);
+    CSeq_interval& interval = graph->SetLoc().SetInt();
+    interval.SetFrom(range.GetFrom());
+    interval.SetTo(range.GetFrom()+count*kPageSize-1);
+
+    return graph;
+}
+
+
+CRef<CSeq_annot>
+CSNPDbSeqIterator::GetOverviewAnnot(CRange<TSeqPos> range,
+                                    const string& annot_name,
+                                    TFlags flags) const
+{
+    CRef<CSeq_annot> annot = x_NewAnnot(annot_name);
+    CSeq_annot::TData::TGraph& graphs = annot->SetData().SetGraph();
+    graphs.push_back(GetOverviewGraph(range));
+    if ( !graphs.back() ) {
+        graphs.pop_back();
+    }
+    if ( graphs.empty() ) {
+        return null;
+    }
+    return annot;
+}
+
+
+CRef<CSeq_annot>
+CSNPDbSeqIterator::GetOverviewAnnot(CRange<TSeqPos> range,
+                                    TFlags flags) const
+{
+    return GetOverviewAnnot(range, kDefaultAnnotName, flags);
+}
+
+
+CRef<CSeq_graph>
+CSNPDbSeqIterator::GetCoverageGraph(CRange<TSeqPos> range) const
 {
     CRef<CSeq_graph> graph = x_NewCoverageGraph(*this);
     x_AdjustCoverageGraphRange(range, *this);
-    for ( CSNPDbPageIterator it(*this, range, eSearchByStart); it; ++it ) {
+    for ( CSNPDbGraphIterator it(*this, range); it; ++it ) {
+        if ( !it.GetTotalValue() ) {
+            continue;
+        }
         CRange<TSeqPos> page_range = range.IntersectionWith(it.GetPageRange());
         _ASSERT(!page_range.Empty());
         if ( page_range.GetFrom() != range.GetFrom() ) {
@@ -593,7 +1058,6 @@ CSNPDbSeqIterator::GetCoverageGraph(CRange<TSeqPos> range,
 CRef<CSeq_annot>
 CSNPDbSeqIterator::GetCoverageAnnot(CRange<TSeqPos> range,
                                     const string& annot_name,
-                                    const SFilter& /*filter*/,
                                     TFlags flags) const
 {
     CRef<CSeq_annot> annot = x_NewAnnot(annot_name);
@@ -601,7 +1065,10 @@ CSNPDbSeqIterator::GetCoverageAnnot(CRange<TSeqPos> range,
     CSeq_annot::TData::TGraph& graphs = annot->SetData().SetGraph();
     CRef<CSeq_graph> graph = x_NewCoverageGraph(*this);
     graphs.push_back(graph);
-    for ( CSNPDbPageIterator it(*this, range, eSearchByStart); it; ++it ) {
+    for ( CSNPDbGraphIterator it(*this, range); it; ++it ) {
+        if ( !it.GetTotalValue() ) {
+            continue;
+        }
         CRange<TSeqPos> page_range = range.IntersectionWith(it.GetPageRange());
         _ASSERT(!page_range.Empty());
         if ( page_range.GetFrom() != range.GetFrom() &&
@@ -624,27 +1091,9 @@ CSNPDbSeqIterator::GetCoverageAnnot(CRange<TSeqPos> range,
 
 CRef<CSeq_annot>
 CSNPDbSeqIterator::GetCoverageAnnot(CRange<TSeqPos> range,
-                                    const string& annot_name,
                                     TFlags flags) const
 {
-    return GetCoverageAnnot(range, annot_name, SFilter(), flags);
-}
-
-
-CRef<CSeq_annot>
-CSNPDbSeqIterator::GetCoverageAnnot(CRange<TSeqPos> range,
-                                    const SFilter& filter,
-                                    TFlags flags) const
-{
-    return GetCoverageAnnot(range, kDefaultAnnotName, filter, flags);
-}
-
-
-CRef<CSeq_annot>
-CSNPDbSeqIterator::GetCoverageAnnot(CRange<TSeqPos> range,
-                                    TFlags flags) const
-{
-    return GetCoverageAnnot(range, SFilter(), flags);
+    return GetCoverageAnnot(range, kDefaultAnnotName, flags);
 }
 
 
@@ -671,7 +1120,7 @@ CRef<CSeq_annot>
 CSNPDbSeqIterator::GetFeatAnnot(CRange<TSeqPos> range,
                                 TFlags flags) const
 {
-    return GetFeatAnnot(range, SFilter(), flags);
+    return GetFeatAnnot(range, x_GetFilter(), flags);
 }
 
 
@@ -1042,24 +1491,17 @@ void SSeqTableContent::Add(const CSNPDbFeatIterator& it)
 {
     TSeqPos from = it.GetSNPPosition();
     TSeqPos len = it.GetSNPLength();
-    CTempString alleles = it.GetAlleles();
-
+    
     col_from.Add(from);
     if ( len != 1 ) {
         col_to.Add(from + len - 1);
         ind_to.Add(m_TableSize);
     }
 
-    SIZE_TYPE pos = 0;
-    for ( int i = 0; ; ++i ) {
+    CSNPDbFeatIterator::TExtraRange range = it.GetExtraRange();
+    for ( size_t i = 0; i < range.second; ++i ) {
         _ASSERT(i < kMaxTableAlleles);
-        SIZE_TYPE end = alleles.find(kAlleleSeparator, pos);
-        SIZE_TYPE len = (end == NPOS? alleles.size(): end) - pos;
-        col_alleles[i].Add(alleles.substr(pos, len));
-        if ( end == NPOS ) {
-            break;
-        }
-        pos = end+1;
+        col_alleles[i].Add(it.GetAllele(range, i));
     }
 
     col_qa.Add(it.GetQualityCodes());
@@ -1180,12 +1622,12 @@ SSeqTableConverter::GetAnnots(const string& annot_name)
 inline
 bool SSeqTableConverter::AddToTable(const CSNPDbFeatIterator& it)
 {
-    CTempString alleles = it.GetAlleles();
-    int last_allele = count(alleles.begin(), alleles.end(), kAlleleSeparator);
-    if ( last_allele >= kMaxTableAlleles ) {
+    CSNPDbFeatIterator::TExtraRange range = it.GetExtraRange();
+    size_t last_index = range.second - 1;
+    if ( last_index >= kMaxTableAlleles ) {
         return false;
     }
-    m_Tables[it.GetSNPLength() != 1][last_allele].Add(it);
+    m_Tables[it.GetSNPLength() != 1][last_index].Add(it);
     return true;
 }
 
@@ -1236,7 +1678,7 @@ CSNPDbSeqIterator::GetTableFeatAnnots(CRange<TSeqPos> range,
                                       const string& annot_name,
                                       TFlags flags) const
 {
-    return GetTableFeatAnnots(range, annot_name, SFilter(), flags);
+    return GetTableFeatAnnots(range, annot_name, x_GetFilter(), flags);
 }
 
 
@@ -1244,7 +1686,7 @@ CSNPDbSeqIterator::TAnnotSet
 CSNPDbSeqIterator::GetTableFeatAnnots(CRange<TSeqPos> range,
                                       TFlags flags) const
 {
-    return GetTableFeatAnnots(range, SFilter(), flags);
+    return GetTableFeatAnnots(range, x_GetFilter(), flags);
 }
 
 
@@ -1273,23 +1715,13 @@ bool x_ParseSNP_Info(SSNP_Info& info,
     info.m_PositionDelta = len-1;
     info.m_ToPosition = it.GetSNPPosition()+len-1;
 
-    CTempString all_alleles = it.GetAlleles();
+    CSNPDbFeatIterator::TExtraRange range = it.GetExtraRange();
+    if ( range.second > info.kMax_AllelesCount ) {
+        return false;
+    }
     size_t index = 0;
-    for ( ; !all_alleles.empty(); ++index ) {
-        if ( index == info.kMax_AllelesCount ) {
-            return false;
-        }
-
-        CTempString allele;
-        SIZE_TYPE div = all_alleles.find(kAlleleSeparator);
-        if ( div == NPOS ) {
-            allele = all_alleles;
-            all_alleles.clear();
-        }
-        else {
-            allele = all_alleles.substr(0, div);
-            all_alleles = all_alleles.substr(div+1);
-        }
+    for ( ; index < range.second; ++index ) {
+        CTempString allele = it.GetAllele(range, index);
         if ( allele.size() > kMax_AlleleLength ) {
             return false;
         }
@@ -1355,7 +1787,7 @@ CSNPDbSeqIterator::TPackedAnnot
 CSNPDbSeqIterator::GetPackedFeatAnnot(CRange<TSeqPos> range,
                                       TFlags flags) const
 {
-    return GetPackedFeatAnnot(range, SFilter(), flags);
+    return GetPackedFeatAnnot(range, x_GetFilter(), flags);
 }
 
 
@@ -1368,6 +1800,10 @@ void CSNPDbPageIterator::Reset(void)
 {
     if ( m_Cur ) {
         GetDb().Put(m_Cur, m_CurrPageRowId);
+        _ASSERT(!m_Cur);
+    }
+    if ( m_GraphCur ) {
+        GetDb().Put(m_GraphCur, m_LastGraphRowId);
         _ASSERT(!m_Cur);
     }
     m_SeqIter.Reset();
@@ -1428,6 +1864,8 @@ CSNPDbPageIterator::operator=(const CSNPDbPageIterator& iter)
         Reset();
         m_SeqIter = iter.m_SeqIter;
         m_Cur = iter.m_Cur;
+        m_GraphCur = iter.m_GraphCur;
+        m_LastGraphRowId = iter.m_LastGraphRowId;
         m_SearchRange = iter.m_SearchRange;
         m_CurrPageSet = iter.m_CurrPageSet;
         m_CurrPageRowId = iter.m_CurrPageRowId;
@@ -1457,7 +1895,7 @@ CSNPDbPageIterator::Select(COpenRange<TSeqPos> ref_range,
     }
     
     if ( !m_Cur ) {
-        m_Cur = GetDb().SNP(m_CurrPageRowId);
+        m_Cur = GetDb().Page(m_CurrPageRowId);
     }
 
     TSeqPos pos = ref_range.GetFrom();
@@ -1506,13 +1944,6 @@ void CSNPDbPageIterator::x_Next(void)
 }
 
 
-CRange<TSeqPos> CSNPDbPageIterator::GetPageRange(void) const
-{
-    TSeqPos pos = GetPagePos();
-    return COpenRange<TSeqPos>(pos, pos+GetPageSize());
-}
-
-
 void CSNPDbPageIterator::x_ReportInvalid(const char* method) const
 {
     NCBI_THROW_FMT(CSraException, eInvalidState,
@@ -1521,24 +1952,144 @@ void CSNPDbPageIterator::x_ReportInvalid(const char* method) const
 }
 
 
-Uint4 CSNPDbPageIterator::GetFeatCount(void) const
+TVDBRowId CSNPDbPageIterator::GetFirstFeatRowId(void) const
+{
+    x_CheckValid("CSNPDbPageIterator::GetFirstFeatRowId");
+    return *Cur().FEATURE_ROW_FROM(GetPageRowId());
+}
+
+
+TVDBRowCount CSNPDbPageIterator::GetFeatCount(void) const
 {
     x_CheckValid("CSNPDbPageIterator::GetFeatCount");
-    return *Cur().FEAT_COUNT(GetPageRowId());
+    return *Cur().FEATURE_ROWS_COUNT(GetPageRowId());
 }
 
 
-CTempString CSNPDbPageIterator::GetFeatType(void) const
+/////////////////////////////////////////////////////////////////////////////
+// CSNPDbGraphIterator
+/////////////////////////////////////////////////////////////////////////////
+
+
+void CSNPDbGraphIterator::Reset(void)
 {
-    x_CheckValid("CSNPDbPageIterator::GetFeatType");
-    return *Cur().FEAT_TYPE(GetPageRowId());
+    if ( m_Cur ) {
+        GetDb().Put(m_Cur, m_CurrPageRowId);
+        _ASSERT(!m_Cur);
+    }
+    m_Db.Reset();
+    m_CurrPagePos = kInvalidSeqPos;
 }
 
 
-CVDBValueFor<Uint4> CSNPDbPageIterator::GetCoverageValues(void) const
+CSNPDbGraphIterator::CSNPDbGraphIterator(void)
+    : m_CurrPageRowId(0),
+      m_CurrPagePos(kInvalidSeqPos)
 {
-    x_CheckValid("CSNPDbPageIterator::GetCoverageValues");
-    return Cur().FEAT_ZOOM_COUNT(GetPageRowId());
+}
+
+
+CSNPDbGraphIterator::CSNPDbGraphIterator(const CSNPDbSeqIterator& seq,
+                                         COpenRange<TSeqPos> ref_range)
+{
+    Select(seq, ref_range);
+}
+
+
+CSNPDbGraphIterator::CSNPDbGraphIterator(const CSNPDbGraphIterator& iter)
+{
+    *this = iter;
+}
+
+
+CSNPDbGraphIterator&
+CSNPDbGraphIterator::operator=(const CSNPDbGraphIterator& iter)
+{
+    if ( this != &iter ) {
+        Reset();
+        m_Db = iter.m_Db;
+        m_Cur = iter.m_Cur;
+        m_SeqRowId = iter.m_SeqRowId;
+        m_TrackRowId = iter.m_TrackRowId;
+        m_SearchRange = iter.m_SearchRange;
+        m_CurrPageRowId = iter.m_CurrPageRowId;
+        m_CurrPagePos = iter.m_CurrPagePos;
+    }
+    return *this;
+}
+
+
+CSNPDbGraphIterator::~CSNPDbGraphIterator(void)
+{
+    Reset();
+}
+
+
+CSNPDbGraphIterator&
+CSNPDbGraphIterator::Select(const CSNPDbSeqIterator& iter,
+                            COpenRange<TSeqPos> ref_range)
+{
+    m_Db = iter.m_Db;
+    m_SeqRowId = m_Db->x_GetSeqVDBRowId(iter.x_GetSeqIter());
+    m_TrackRowId = m_Db->x_GetTrackVDBRowId(iter.x_GetTrackIter());
+    m_SearchRange = ref_range;
+
+    if ( !iter || ref_range.Empty() ) {
+        m_CurrPagePos = kInvalidSeqPos;
+        return *this;
+    }
+    
+    if ( !m_Cur ) {
+        m_Cur = GetDb().Graph(m_CurrPageRowId);
+    }
+
+    TSeqPos pos = ref_range.GetFrom();
+    m_CurrPageRowId = iter.GetGraphVDBRowRange().GetFrom() + pos/kPageSize;
+    m_CurrPagePos = pos;
+    return *this;
+}
+
+
+void CSNPDbGraphIterator::x_Next(void)
+{
+    x_CheckValid("CSNPDbGraphIterator::operator++");
+
+    if ( ++m_CurrPageRowId > m_Cur->m_Cursor.GetMaxRowId() ||
+         *m_Cur->FILTER_ID_ROW_NUM(m_CurrPageRowId) != m_TrackRowId ||
+         *m_Cur->SEQ_ID_ROW_NUM(m_CurrPageRowId) != m_SeqRowId ) {
+        // end of track
+        m_CurrPagePos = kInvalidSeqPos;
+        return;
+    }
+
+    m_CurrPagePos = *m_Cur->BLOCK_FROM(m_CurrPageRowId);
+    if ( m_CurrPagePos >= m_SearchRange.GetToOpen() ) {
+        // out of range
+        m_CurrPagePos = kInvalidSeqPos;
+        return;
+    }
+}
+
+
+void CSNPDbGraphIterator::x_ReportInvalid(const char* method) const
+{
+    NCBI_THROW_FMT(CSraException, eInvalidState,
+                   "CSNPDbGraphIterator::"<<method<<"(): "
+                   "Invalid iterator state");
+}
+
+
+Uint4 CSNPDbGraphIterator::GetTotalValue() const
+{
+    x_CheckValid("CSNPDbGraphIterator::GetTotalValue");
+    return *m_Cur->GR_TOTAL(m_CurrPageRowId);
+}
+
+
+CVDBValueFor<Uint4> CSNPDbGraphIterator::GetCoverageValues() const
+{
+    x_CheckValid("CSNPDbGraphIterator::GetCoverageValues");
+    return m_Cur->GR_ZOOM(m_CurrPageRowId);
 }
 
 
@@ -1552,6 +2103,9 @@ void CSNPDbFeatIterator::Reset(void)
     if ( m_Extra ) {
         GetDb().Put(m_Extra, m_ExtraRowId);
     }
+    if ( m_Feat ) {
+        GetDb().Put(m_Feat, m_CurrFeatId);
+    }
     m_PageIter.Reset();
     m_CurrFeatId = m_FirstBadFeatId = 0;
 }
@@ -1561,7 +2115,17 @@ inline
 void CSNPDbFeatIterator::x_InitPage(void)
 {
     m_CurrFeatId = 0;
-    m_FirstBadFeatId = m_PageIter? *Cur().FEAT_COUNT(GetPageRowId()): 0;
+    m_FirstBadFeatId = 0;
+    if ( m_PageIter ) {
+        if ( !m_Feat ) {
+            m_Feat = GetDb().Feat();
+        }
+        if ( TVDBRowCount count = GetPageIter().GetFeatCount() ) {
+            TVDBRowId first = GetPageIter().GetFirstFeatRowId();
+            m_CurrFeatId = first;
+            m_FirstBadFeatId = first + count;
+        }
+    }
 }
 
 
@@ -1619,13 +2183,18 @@ CSNPDbFeatIterator::operator=(const CSNPDbFeatIterator& iter)
 {
     if ( this != &iter ) {
         Reset();
-        m_PageIter = iter.m_PageIter;
-        m_Extra = iter.m_Extra;
-        m_ExtraRowId = iter.m_ExtraRowId;
-        m_Filter = iter.m_Filter;
+        // params
         m_CurRange = iter.m_CurRange;
+        m_Filter = iter.m_Filter;
+        // page iter
+        m_PageIter = iter.m_PageIter;
+        // feat iter
+        m_Feat = iter.m_Feat;
         m_CurrFeatId = iter.m_CurrFeatId;
         m_FirstBadFeatId = iter.m_FirstBadFeatId;
+        // extra iter
+        m_Extra = iter.m_Extra;
+        m_ExtraRowId = iter.m_ExtraRowId;
     }
     return *this;
 }
@@ -1656,15 +2225,22 @@ CSNPDbFeatIterator::Select(COpenRange<TSeqPos> ref_range,
 }
 
 
+CTempString CSNPDbFeatIterator::GetFeatType(void) const
+{
+    x_CheckValid("CSNPDbFeatIterator::GetFeatType");
+    return *Cur().FEAT_TYPE(m_CurrFeatId);
+}
+
+
 TSeqPos CSNPDbFeatIterator::x_GetFrom(void) const
 {
-    return m_PageIter.GetPagePos()+Cur().FROM(GetPageRowId())[m_CurrFeatId];
+    return *Cur().FROM(m_CurrFeatId);
 }
 
 
 TSeqPos CSNPDbFeatIterator::x_GetLength(void) const
 {
-    return Cur().LEN(GetPageRowId())[m_CurrFeatId];
+    return *Cur().LEN(m_CurrFeatId);
 }
 
 
@@ -1739,42 +2315,45 @@ void CSNPDbFeatIterator::x_ReportInvalid(const char* method) const
 Uint4 CSNPDbFeatIterator::GetFeatIdPrefix(void) const
 {
     x_CheckValid("CSNPDbFeatIterator::GetFeatIdPrefix");
-    return Cur().FEAT_ID_PREFIX(GetPageRowId())[m_CurrFeatId];
+    return *Cur().FEAT_ID_PREFIX(m_CurrFeatId);
 }
 
 
 Uint8 CSNPDbFeatIterator::GetFeatId(void) const
 {
     x_CheckValid("CSNPDbFeatIterator::GetFeatId");
-    return Cur().FEAT_ID_VALUE(GetPageRowId())[m_CurrFeatId];
+    return *Cur().FEAT_ID_VALUE(m_CurrFeatId);
 }
 
 
-TVDBRowId CSNPDbFeatIterator::GetExtraRowId(void) const
+CSNPDbFeatIterator::TExtraRange CSNPDbFeatIterator::GetExtraRange(void) const
 {
-    x_CheckValid("CSNPDbFeatIterator::GetExtraRowId");
-    return Cur().EXTRA_ROW_NUM(GetPageRowId())[m_CurrFeatId];
-}
-
-
-CTempString CSNPDbFeatIterator::GetAlleles(void) const
-{
-    x_CheckValid("CSNPDbFeatIterator::GetAlleles");
-    m_ExtraRowId = GetExtraRowId();
-    if ( !m_Extra ) {
-        m_Extra = GetDb().Extra(m_ExtraRowId);
+    x_CheckValid("CSNPDbFeatIterator::x_GetExtraRange");
+    TVDBRowId first = 0;
+    TVDBRowCount count = *Cur().EXTRA_ROWS_COUNT(m_CurrFeatId);
+    if ( count ) {
+        first = *Cur().EXTRA_ROW_FROM(m_CurrFeatId);
         if ( !m_Extra ) {
-            return CTempString();
+            m_Extra = GetDb().Extra(first);
         }
+        m_ExtraRowId = first + count - 1;
     }
-    return *m_Extra->RS_ALLELES(m_ExtraRowId);
+    return TExtraRange(first, count);
+}
+
+
+CTempString CSNPDbFeatIterator::GetAllele(const TExtraRange& range,
+                                          size_t index) const
+{
+    _ASSERT(index < range.second);
+    return *m_Extra->RS_ALLELE(range.first + index);
 }
 
 
 Uint8 CSNPDbFeatIterator::GetQualityCodes(void) const
 {
     x_CheckValid("CSNPDbFeatIterator::GetQualityCodes");
-    return Cur().BIT_FLAGS(GetPageRowId())[m_CurrFeatId];
+    return *Cur().BIT_FLAGS(m_CurrFeatId);
 }
 
 
@@ -1934,33 +2513,15 @@ CRef<CSeq_feat> CSNPDbFeatIterator::GetSeq_feat(TFlags flags) const
     }}
     if ( flags & fIncludeAlleles ) {
         CSeq_feat::TQual& quals = feat.SetQual();
-        NON_CONST_ITERATE ( CSeq_feat::TQual, it, quals ) {
-            *it = null; // release old references to allow caching
+        pair<TVDBRowId, size_t> range = GetExtraRange();
+        quals.assign(range.second, null);
+        for ( size_t i = 0; i < range.second; ++i ) {
+            CTempString allele = GetAllele(range, i);
+            size_t cache_index = min(i, ArraySize(cache.m_Allele)-1);
+            CGb_qual& qual =
+                cache.GetAllele(cache.m_Allele[cache_index], allele);
+            quals[i] = &qual;
         }
-        CTempString all_alleles = GetAlleles();
-        size_t index = 0;
-        while ( !all_alleles.empty() ) {
-            CTempString allele;
-            SIZE_TYPE div = all_alleles.find(kAlleleSeparator);
-            if ( div == NPOS ) {
-                allele = all_alleles;
-                all_alleles.clear();
-            }
-            else {
-                allele = all_alleles.substr(0, div);
-                all_alleles = all_alleles.substr(div+1);
-            }
-            size_t cache_index = min(index, ArraySize(cache.m_Allele)-1);
-            CGb_qual& qual = cache.GetAllele(cache.m_Allele[cache_index], allele);
-            if ( index < quals.size() ) {
-                quals[index] = &qual;
-            }
-            else {
-                quals.push_back(Ref(&qual));
-            }
-            ++index;
-        }
-        quals.resize(index);
     }
     else {
         feat.ResetQual();

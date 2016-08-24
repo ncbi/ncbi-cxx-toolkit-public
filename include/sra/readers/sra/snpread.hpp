@@ -64,8 +64,10 @@ class CBioseq;
 class CSeq_literal;
 class CSeq_annot_SNP_Info;
 
+class CSNPDbTrackIterator;
 class CSNPDbSeqIterator;
 class CSNPDbPageIterator;
+class CSNPDbGraphIterator;
 class CSNPDbFeatIterator;
 
 struct SSNPDb_Defs
@@ -165,9 +167,12 @@ public:
 
     // SSeqInfo holds cached refseq information - ids, len, rows
     struct SSeqInfo {
-        string m_Name, m_SeqId;
+        string m_SeqId;
         CBioseq::TId m_Seq_ids;
         CSeq_id_Handle m_Seq_id_Handle;
+        TSeqPos m_SeqLength;
+        TVDBRowId m_GraphRowId;
+
         CRef<CSeq_id>& GetMainSeq_id(void) {
             return m_Seq_ids.front();
         }
@@ -189,15 +194,26 @@ public:
                 return m_RowId + m_PageCount;
             }
         };
-
+        CRange<TVDBRowId> GetPageVDBRowRange() const {
+            return COpenRange<TVDBRowId>(m_PageSets.front().m_RowId,
+                                         m_PageSets.back().GetRowIdEnd());
+        }
+        
         typedef vector<SPageSet> TPageSets; // sorted by sequence position
         TPageSets m_PageSets;
         bool m_Circular;
         //vector<TSeqPos> m_AlnOverStarts; // relative to m_RowFirst
     };
     typedef vector<SSeqInfo> TSeqInfoList;
-    typedef map<string, size_t, PNocase> TSeqInfoMapByName;
     typedef map<CSeq_id_Handle, size_t> TSeqInfoMapBySeq_id;
+
+    // STrackInfo holds cached filter track information - name, bits
+    struct STrackInfo {
+        string m_Name;
+        SFilter m_Filter;
+    };
+    typedef vector<STrackInfo> TTrackInfoList;
+    typedef map<string, size_t> TTrackInfoMapByName;
 
     const string& GetDbPath(void) const {
         return m_DbPath;
@@ -206,23 +222,39 @@ public:
     const TSeqInfoList& GetSeqInfoList(void) const {
         return m_SeqList;
     }
-    const TSeqInfoMapByName& GetSeqInfoMapByName(void) const {
-        return m_SeqMapByName;
-    }
     const TSeqInfoMapBySeq_id& GetSeqInfoMapBySeq_id(void) const {
         return m_SeqMapBySeq_id;
     }
 
+    const TTrackInfoList& GetTrackInfoList(void) const {
+        return m_TrackList;
+    }
+    const TTrackInfoMapByName& GetTrackInfoMapByName(void) const {
+        return m_TrackMapByName;
+    }
+
+    TTrackInfoList::const_iterator FindTrack(const string& name) const;
+    TSeqInfoList::const_iterator FindSeq(const CSeq_id_Handle& seq_id) const;
+
     TSeqPos GetPageSize(void) const;
 
 protected:
+    friend class CSNPDbTrackIterator;
     friend class CSNPDbSeqIterator;
     friend class CSNPDbPageIterator;
+    friend class CSNPDbGraphIterator;
     friend class CSNPDbFeatIterator;
 
-    // SSNPTableCursor is helper accessor structure for SNP feature table
-    struct SSNPTableCursor;
-
+    // SSeqTableCursor is helper accessor structure for SEQUENCE table
+    struct SSeqTableCursor;
+    // STrackTableCursor is helper accessor structure for TRACK_FILTER table
+    struct STrackTableCursor;
+    // SPageTableCursor is helper accessor structure for PAGE table
+    struct SPageTableCursor;
+    // SGraphTableCursor is helper accessor structure for COVERAGE_GRAPH table
+    struct SGraphTableCursor;
+    // SFeatTableCursor is helper accessor structure for SNP feature table
+    struct SFeatTableCursor;
     // SExtraTableCursor is helper accessor structure for extra info (alleles)
     struct SExtraTableCursor;
 
@@ -231,45 +263,85 @@ protected:
                    const char* table_name,
                    volatile bool& table_is_opened);
 
-    const CVDBTable& SNPTable(void) {
-        return m_SNPTable;
+    const CVDBTable& GraphTable(void) {
+        return m_GraphTable;
     }
 
-    void OpenExtraTable(void);
+    const CVDBTable& PageTable(void) {
+        return m_PageTable;
+    }
+
+    const CVDBTable& FeatTable(void) {
+        return m_FeatTable;
+    }
 
     const CVDBTable& ExtraTable(void) {
-        if ( !m_ExtraTableIsOpened ) {
-            OpenExtraTable();
-        }
         return m_ExtraTable;
     }
 
     // get table accessor object for exclusive access
-    CRef<SSNPTableCursor> SNP(TVDBRowId row = 0);
+    CRef<SGraphTableCursor> Graph(TVDBRowId row = 0);
     // return table accessor object for reuse
-    void Put(CRef<SSNPTableCursor>& curs, TVDBRowId row = 0);
+    void Put(CRef<SGraphTableCursor>& curs, TVDBRowId row = 0);
+
+    // get table accessor object for exclusive access
+    CRef<SPageTableCursor> Page(TVDBRowId row = 0);
+    // return table accessor object for reuse
+    void Put(CRef<SPageTableCursor>& curs, TVDBRowId row = 0);
+
+    // get table accessor object for exclusive access
+    CRef<SFeatTableCursor> Feat(TVDBRowId row = 0);
+    // return table accessor object for reuse
+    void Put(CRef<SFeatTableCursor>& curs, TVDBRowId row = 0);
 
     // get extra table accessor object for exclusive access
     CRef<SExtraTableCursor> Extra(TVDBRowId row = 0);
     // return table accessor object for reuse
     void Put(CRef<SExtraTableCursor>& curs, TVDBRowId row = 0);
 
+    size_t x_GetSeqVDBIndex(TSeqInfoList::const_iterator seq) const {
+        return seq - GetSeqInfoList().begin();
+    }
+    size_t x_GetTrackVDBIndex(TTrackInfoList::const_iterator track) const {
+        return track - GetTrackInfoList().begin();
+    }
+    TVDBRowId x_GetSeqVDBRowId(TSeqInfoList::const_iterator seq) const {
+        return TVDBRowId(x_GetSeqVDBIndex(seq) + 1);
+    }
+    TVDBRowId x_GetTrackVDBRowId(TTrackInfoList::const_iterator track) const {
+        return TVDBRowId(x_GetTrackVDBIndex(track) + 1);
+    }
+
+    CRange<TVDBRowId>
+    x_GetPageVDBRowRange(TSeqInfoList::const_iterator seq);
+    CRange<TVDBRowId>
+    x_GetGraphVDBRowRange(TSeqInfoList::const_iterator seq,
+                          TTrackInfoList::const_iterator track);
+    /*
+    TVDBRowId x_FindGraphRow(SGraphTableCursor& cur,
+                             TVDBRowId seq_row,
+                             TVDBRowId track_row,
+                             TSeqPos seq_page_pos) const;
+    */
 private:
     CVDBMgr m_Mgr;
     string m_DbPath;
     CVDB m_Db;
-    CVDBTable m_SNPTable;
+    CVDBTable m_GraphTable;
+    CVDBTable m_PageTable;
+    CVDBTable m_FeatTable;
     CVDBTable m_ExtraTable;
 
-    CFastMutex m_TableMutex;
-    bool m_ExtraTableIsOpened;
-
-    CVDBObjectCache<SSNPTableCursor> m_SNP;
+    CVDBObjectCache<SGraphTableCursor> m_Graph;
+    CVDBObjectCache<SPageTableCursor> m_Page;
+    CVDBObjectCache<SFeatTableCursor> m_Feat;
     CVDBObjectCache<SExtraTableCursor> m_Extra;
 
     TSeqInfoList m_SeqList; // list of cached refseqs' information
-    TSeqInfoMapByName m_SeqMapByName; // index for refseq info lookup
     TSeqInfoMapBySeq_id m_SeqMapBySeq_id; // index for refseq info lookup
+
+    TTrackInfoList m_TrackList; // list of cached filter track information
+    TTrackInfoMapByName m_TrackMapByName; // index for track lookup
 };
 
 
@@ -378,35 +450,98 @@ template<class Enum> inline CSafeFlags<Enum> ToFlags(Enum v)
 }
 
 
-class NCBI_SRAREAD_EXPORT CSNPDbSeqIterator : public SSNPDb_Defs
+// iterate filtered tracks in VDB object
+class NCBI_SRAREAD_EXPORT CSNPDbTrackIterator : public SSNPDb_Defs
 {
 public:
-    CSNPDbSeqIterator(void)
+    typedef CSNPDb_Impl::TTrackInfoList TList;
+    typedef TList::value_type TInfo;
+
+    CSNPDbTrackIterator(void)
         {
         }
-    CSNPDbSeqIterator(const CSNPDb& db,
-                      CSNPDb_Impl::TSeqInfoList::const_iterator iter)
-        : m_Db(db),
-          m_Iter(iter)
-        {
-        }
-    explicit CSNPDbSeqIterator(const CSNPDb& db);
-    enum EByName {
-        eByName
-    };
-    CSNPDbSeqIterator(const CSNPDb& db, const string& name, EByName);
-    CSNPDbSeqIterator(const CSNPDb& db, const CSeq_id_Handle& seq_id);
-    CSNPDbSeqIterator(const CSNPDb& db, size_t seq_index);
+    explicit CSNPDbTrackIterator(const CSNPDb& db);
+    CSNPDbTrackIterator(const CSNPDb& db, size_t track_index);
+    CSNPDbTrackIterator(const CSNPDb& db, const string& name);
 
     void Reset(void);
 
-    DECLARE_OPERATOR_BOOL(m_Db && m_Iter != m_Db->GetSeqInfoList().end());
+    DECLARE_OPERATOR_BOOL(m_Db && m_Iter != GetList().end());
 
-    const CSNPDb_Impl::SSeqInfo& GetInfo(void) const;
-    const CSNPDb_Impl::SSeqInfo& operator*(void) const {
+    const TInfo& operator*(void) const {
         return GetInfo();
     }
-    const CSNPDb_Impl::SSeqInfo* operator->(void) const {
+    const TInfo* operator->(void) const {
+        return &GetInfo();
+    }
+
+    TVDBRowId GetVDBRowId(void) const {
+        return GetDb().x_GetTrackVDBRowId(m_Iter);
+    }
+    size_t GetVDBTrackIndex(void) const {
+        return GetDb().x_GetTrackVDBIndex(m_Iter);
+    }
+
+    CSNPDbTrackIterator& operator++(void) {
+        ++m_Iter;
+        return *this;
+    }
+
+    const string& GetName(void) const {
+        return GetInfo().m_Name;
+    }
+    const SFilter& GetFilter(void) const {
+        return GetInfo().m_Filter;
+    }
+    TFilter GetFilterBits(void) const {
+        return GetFilter().m_Filter;
+    }
+    TFilter GetFilterMask(void) const {
+        return GetFilter().m_FilterMask;
+    }
+
+protected:
+    friend class CSNPDbSeqIterator;
+
+    CSNPDb_Impl& GetDb(void) const {
+        return m_Db.GetNCObject();
+    }
+    const TList& GetList() const {
+        return GetDb().GetTrackInfoList();
+    }
+    const TInfo& GetInfo() const;
+
+    friend class CSNPDbPageIterator;
+    friend class CSNPDbGraphIterator;
+
+private:
+    CSNPDb m_Db;
+    TList::const_iterator m_Iter;
+};
+
+
+// iterate sequences in VDB object
+class NCBI_SRAREAD_EXPORT CSNPDbSeqIterator : public SSNPDb_Defs
+{
+public:
+    typedef CSNPDb_Impl::TSeqInfoList TList;
+    typedef TList::value_type TInfo;
+
+    CSNPDbSeqIterator(void)
+        {
+        }
+    explicit CSNPDbSeqIterator(const CSNPDb& db);
+    CSNPDbSeqIterator(const CSNPDb& db, size_t seq_index);
+    CSNPDbSeqIterator(const CSNPDb& db, const CSeq_id_Handle& seq_id);
+
+    void Reset(void);
+
+    DECLARE_OPERATOR_BOOL(m_Db && m_Iter != GetList().end());
+
+    const TInfo& operator*(void) const {
+        return GetInfo();
+    }
+    const TInfo* operator->(void) const {
         return &GetInfo();
     }
 
@@ -428,10 +563,6 @@ public:
         return m_Iter->m_Seq_ids;
     }
 
-    size_t GetVDBSeqIndex(void) const {
-        return m_Iter - m_Db->GetSeqInfoList().begin();
-    }
-
     bool IsCircular(void) const;
 
     TSeqPos GetPageSize(void) const {
@@ -439,28 +570,43 @@ public:
     }
     TSeqPos GetMaxSNPLength(void) const;
 
+    // return count of SNP features that intersect with the range
     Uint8 GetSNPCount(CRange<TSeqPos> range) const;
+    // return count of all SNP features
     Uint8 GetSNPCount(void) const;
     CRange<TSeqPos> GetSNPRange(void) const;
-    CRange<TVDBRowId> GetVDBRowRange(void) const;
+
+    TVDBRowId GetVDBRowId(void) const {
+        return GetDb().x_GetSeqVDBRowId(m_Iter);
+    }
+    size_t GetVDBSeqIndex(void) const {
+        return GetDb().x_GetSeqVDBIndex(m_Iter);
+    }
+    CRange<TVDBRowId> GetPageVDBRowRange(void) const {
+        return GetDb().x_GetPageVDBRowRange(m_Iter);
+    }
+    CRange<TVDBRowId> GetGraphVDBRowRange() const {
+        return GetDb().x_GetGraphVDBRowRange(m_Iter, m_TrackIter);
+    }
 
     enum EFlags {
-        fSingleGraph    = 1<<0,
+        fZoomPage       = 1<<0,
         fDefaultFlags   = 0
     };
     typedef CSafeFlags<EFlags> TFlags;
 
-    CRef<CSeq_graph> GetCoverageGraph(CRange<TSeqPos> range,
-                                      const SFilter& filter = SFilter()) const;
-    CRef<CSeq_annot> GetCoverageAnnot(CRange<TSeqPos> range,
-                                      const string& annot_name,
-                                      const SFilter& filter,
-                                      TFlags flags = fDefaultFlags) const;
-    CRef<CSeq_annot> GetCoverageAnnot(CRange<TSeqPos> range,
+    CRef<CSeq_graph> GetOverviewGraph(CRange<TSeqPos> range) const;
+
+    CRef<CSeq_annot> GetOverviewAnnot(CRange<TSeqPos> range,
                                       const string& annot_name,
                                       TFlags flags = fDefaultFlags) const;
+    CRef<CSeq_annot> GetOverviewAnnot(CRange<TSeqPos> range,
+                                      TFlags flags = fDefaultFlags) const;
+
+    CRef<CSeq_graph> GetCoverageGraph(CRange<TSeqPos> range) const;
+
     CRef<CSeq_annot> GetCoverageAnnot(CRange<TSeqPos> range,
-                                      const SFilter& filter,
+                                      const string& annot_name,
                                       TFlags flags = fDefaultFlags) const;
     CRef<CSeq_annot> GetCoverageAnnot(CRange<TSeqPos> range,
                                       TFlags flags = fDefaultFlags) const;
@@ -494,15 +640,35 @@ public:
         return m_Db.GetNCObject();
     }
 
+    void SetTrack(const CSNPDbTrackIterator& track);
+
 protected:
     friend class CSNPDbPageIterator;
+    friend class CSNPDbGraphIterator;
+
+    const TList& GetList() const {
+        return GetDb().GetSeqInfoList();
+    }
+    const TInfo& GetInfo() const;
+
+    TList::const_iterator x_GetSeqIter() const {
+        return m_Iter;
+    }
+    CSNPDb_Impl::TTrackInfoList::const_iterator x_GetTrackIter() const {
+        return m_TrackIter;
+    }
+    const SFilter& x_GetFilter() const {
+        return x_GetTrackIter()->m_Filter;
+    }
 
 private:
     CSNPDb m_Db;
-    CSNPDb_Impl::TSeqInfoList::const_iterator m_Iter;
+    TList::const_iterator m_Iter;
+    CSNPDb_Impl::TTrackInfoList::const_iterator m_TrackIter;
 };
 
 
+// iterate sequence pages of predefined fixed size
 class NCBI_SRAREAD_EXPORT CSNPDbPageIterator : public SSNPDb_Defs
 {
 public:
@@ -560,7 +726,10 @@ public:
     TSeqPos GetPagePos(void) const {
         return m_CurrPagePos;
     }
-    CRange<TSeqPos> GetPageRange(void) const;
+    CRange<TSeqPos> GetPageRange(void) const {
+        TSeqPos pos = GetPagePos();
+        return COpenRange<TSeqPos>(pos, pos+GetPageSize());
+    }
 
     TVDBRowId GetPageRowId(void) const {
         return m_CurrPageRowId;
@@ -570,11 +739,12 @@ public:
         return m_SeqIter;
     }
 
-    Uint4 GetFeatCount(void) const;
+    TVDBRowId GetFirstFeatRowId(void) const;
+    TVDBRowCount GetFeatCount(void) const;
 
-    CTempString GetFeatType(void) const;
-
-    CVDBValueFor<Uint4> GetCoverageValues(void) const;
+    void SetTrack(const CSNPDbTrackIterator& track) {
+        m_SeqIter.SetTrack(track);
+    }
 
 protected:
     friend class CSNPDbFeatIterator;
@@ -582,9 +752,32 @@ protected:
     CSNPDb_Impl& GetDb(void) const {
         return GetRefIter().GetDb();
     }
-    const CSNPDb_Impl::SSNPTableCursor& Cur(void) const {
+    const CSNPDb_Impl::SPageTableCursor& Cur(void) const {
         return *m_Cur;
     }
+
+    CSNPDb_Impl::TSeqInfoList::const_iterator x_GetSeqIter() const {
+        return GetRefIter().x_GetSeqIter();
+    }
+    CSNPDb_Impl::TTrackInfoList::const_iterator x_GetTrackIter() const {
+        return GetRefIter().x_GetTrackIter();
+    }
+    
+    TVDBRowId x_GetSeqVDBRowId() const {
+        return GetDb().x_GetSeqVDBRowId(x_GetSeqIter());
+    }
+    TVDBRowId x_GetTrackVDBRowId() const {
+        return GetDb().x_GetTrackVDBRowId(x_GetTrackIter());
+    }
+
+    CRange<TVDBRowId> x_GetPageVDBRowRange() const {
+        return GetRefIter().GetPageVDBRowRange();
+    }
+    CRange<TVDBRowId> x_GetGraphVDBRowRange() const {
+        return GetRefIter().GetGraphVDBRowRange();
+    }
+
+    TVDBRowId x_GetGraphRowId() const;
 
     void x_ReportInvalid(const char* method) const;
     void x_CheckValid(const char* method) const {
@@ -594,10 +787,13 @@ protected:
     }
 
     void x_Next(void);
-
+    
 private:
     CSNPDbSeqIterator m_SeqIter; // refseq selector
-    CRef<CSNPDb_Impl::SSNPTableCursor> m_Cur; // SNP table accessor
+
+    CRef<CSNPDb_Impl::SPageTableCursor> m_Cur; // page table accessor
+    mutable CRef<CSNPDb_Impl::SGraphTableCursor> m_GraphCur; // graph table accessor
+    mutable TVDBRowId m_LastGraphRowId;
     
     CRange<TSeqPos> m_SearchRange; // requested refseq range
     
@@ -609,6 +805,85 @@ private:
 };
 
 
+// iterate non-zero pages of predefined fixed size for a sequence/track pair
+class NCBI_SRAREAD_EXPORT CSNPDbGraphIterator : public SSNPDb_Defs
+{
+public:
+    CSNPDbGraphIterator(void);
+
+    explicit
+    CSNPDbGraphIterator(const CSNPDbSeqIterator& iter,
+                        COpenRange<TSeqPos> ref_range);
+    CSNPDbGraphIterator(const CSNPDbGraphIterator& iter);
+    ~CSNPDbGraphIterator(void);
+
+    CSNPDbGraphIterator& operator=(const CSNPDbGraphIterator& iter);
+
+    CSNPDbGraphIterator& Select(const CSNPDbSeqIterator& iter,
+                                COpenRange<TSeqPos> ref_range);
+
+    void Reset(void);
+
+    DECLARE_OPERATOR_BOOL(m_CurrPagePos != kInvalidSeqPos);
+
+    CSNPDbGraphIterator& operator++(void) {
+        x_Next();
+        return *this;
+    }
+
+    const CRange<TSeqPos>& GetSearchRange(void) const {
+        return m_SearchRange;
+    }
+
+    TSeqPos GetPageSize(void) const {
+        return GetDb().GetPageSize();
+    }
+    TSeqPos GetPagePos(void) const {
+        return m_CurrPagePos;
+    }
+    CRange<TSeqPos> GetPageRange(void) const {
+        TSeqPos pos = GetPagePos();
+        return COpenRange<TSeqPos>(pos, pos+GetPageSize());
+    }
+
+    TVDBRowId GetGraphRowId(void) const {
+        return m_CurrPageRowId;
+    }
+
+    Uint4 GetTotalValue(void) const;
+    CVDBValueFor<Uint4> GetCoverageValues(void) const;
+
+protected:
+    CSNPDb_Impl& GetDb(void) const {
+        return m_Db.GetNCObject();
+    }
+    const CSNPDb_Impl::SGraphTableCursor& Cur(void) const {
+        return *m_Cur;
+    }
+
+    void x_ReportInvalid(const char* method) const;
+    void x_CheckValid(const char* method) const {
+        if ( !*this ) {
+            x_ReportInvalid(method);
+        }
+    }
+
+    void x_Next(void);
+    
+private:
+    CSNPDb m_Db;
+    CRef<CSNPDb_Impl::SGraphTableCursor> m_Cur; // graph table accessor
+
+    TVDBRowId m_SeqRowId;
+    TVDBRowId m_TrackRowId;
+    CRange<TSeqPos> m_SearchRange; // requested refseq range
+
+    TVDBRowId m_CurrPageRowId;
+    TSeqPos m_CurrPagePos;
+};
+
+
+// iterate SNP features
 class NCBI_SRAREAD_EXPORT CSNPDbFeatIterator : public SSNPDb_Defs
 {
 public:
@@ -642,7 +917,11 @@ public:
         return *this;
     }
 
-    TVDBRowId GetExtraRowId(void) const;
+    CTempString GetFeatType(void) const;
+
+    typedef pair<TVDBRowId, size_t> TExtraRange;
+    TExtraRange GetExtraRange(void) const;
+    CTempString GetAllele(const TExtraRange& range, size_t index) const;
 
     const CSNPDbPageIterator& GetPageIter(void) const {
         return m_PageIter;
@@ -673,8 +952,6 @@ public:
     TSeqPos GetSNPLength(void) const {
         return m_CurRange.GetLength();
     }
-
-    CTempString GetAlleles(void) const;
 
     enum EFeatIdPrefix {
         eFeatIdPrefix_none = 0,
@@ -707,8 +984,8 @@ protected:
     CSNPDb_Impl& GetDb(void) const {
         return GetPageIter().GetDb();
     }
-    const CSNPDb_Impl::SSNPTableCursor& Cur(void) const {
-        return GetPageIter().Cur();
+    const CSNPDb_Impl::SFeatTableCursor& Cur(void) const {
+        return *m_Feat;
     }
 
     TVDBRowId GetPageRowId(void) const {
@@ -741,6 +1018,7 @@ protected:
 
 private:
     CSNPDbPageIterator m_PageIter;
+    mutable CRef<CSNPDb_Impl::SFeatTableCursor> m_Feat;
     mutable CRef<CSNPDb_Impl::SExtraTableCursor> m_Extra; // for alleles
     mutable TVDBRowId m_ExtraRowId;
 
