@@ -59,7 +59,7 @@ CRef <CSeq_feat> CFindITSParser :: x_ParseLine(const CTempString &line, CSeq_ent
 {
     CRef <CSeq_feat> null_mrna(NULL);
     vector<string> arr;
-    NStr::Tokenize(line,"\t",arr);
+    NStr::Split(line,"\t",arr);
     if (arr.size() != 9)  
     {
         msg = "Unable to parse extractor line ";
@@ -82,27 +82,27 @@ CRef <CSeq_feat> CFindITSParser :: x_ParseLine(const CTempString &line, CSeq_ent
         return null_mrna;
     }
 
-    NStr::Tokenize(ssu,":",arr);
+    NStr::Split(ssu,":",arr);
     ssu = arr.back();
     NStr::TruncateSpacesInPlace(ssu);
     arr.clear();
 
-    NStr::Tokenize(its1,":",arr);
+    NStr::Split(its1,":",arr);
     its1 = arr.back();
     NStr::TruncateSpacesInPlace(its1);
     arr.clear();
 
-    NStr::Tokenize(r58S,":",arr);
+    NStr::Split(r58S,":",arr);
     r58S = arr.back();
     NStr::TruncateSpacesInPlace(r58S);
     arr.clear();
 
-    NStr::Tokenize(its2,":",arr);
+    NStr::Split(its2,":",arr);
     its2 = arr.back();
     NStr::TruncateSpacesInPlace(its2);
     arr.clear();
 
-    NStr::Tokenize(lsu,":",arr);
+    NStr::Split(lsu,":",arr);
     lsu = arr.back();
     NStr::TruncateSpacesInPlace(lsu);
     arr.clear();
