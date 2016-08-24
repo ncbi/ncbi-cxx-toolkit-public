@@ -355,12 +355,16 @@ void CValidError_bioseqset::ValidateNucProtSet
                             instantiated.erase (0, 11);
                         } else if (NStr::StartsWith (instantiated, "UNVERIFIED: ", NStr::eNocase)) {
                             instantiated.erase (0, 12);
+                        } else if (NStr::StartsWith (instantiated, "PUTATIVE PSEUDOGENE: ", NStr::eNocase)) {
+                            instantiated.erase (0, 21);
                         }
                         if (NStr::StartsWith (generated, "PREDICTED: ", NStr::eNocase)) {
                             generated.erase (0, 11);
                         } else if (NStr::StartsWith (generated, "UNVERIFIED: ", NStr::eNocase)) {
                             generated.erase (0, 12);
-                        }
+                         } else if (NStr::StartsWith (generated, "PUTATIVE PSEUDOGENE: ", NStr::eNocase)) {
+                            generated.erase (0, 21);
+                       }
                         //okay if instantiated title has single trailing period
                         if (instantiated.length() == generated.length() + 1 && NStr::EndsWith(instantiated, ".")
                             && !NStr::EndsWith(instantiated, "..")) {
