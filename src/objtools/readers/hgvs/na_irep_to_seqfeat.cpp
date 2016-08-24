@@ -908,6 +908,7 @@ CRef<CInt_fuzz> CNaSeqlocHelper::x_CreateIntFuzz(const CSeq_id& seq_id,
                                                  const CSequenceVariant::TSeqtype& seq_type,
                                                  CScope& scope)
 {
+
     auto int_fuzz = Ref(new CInt_fuzz());
     TSeqPos start_index = 0;
     bool know_start = x_ComputeSiteIndex(seq_id,
@@ -929,14 +930,13 @@ CRef<CInt_fuzz> CNaSeqlocHelper::x_CreateIntFuzz(const CSeq_id& seq_id,
     }
     else if (!know_start && know_stop) {
         int_fuzz->SetLim(CInt_fuzz::eLim_lt);
-
     } 
     else if (know_start && !know_stop) {
         int_fuzz->SetLim(CInt_fuzz::eLim_gt);
     }
     else {
-        int_fuzz->SetLim(CInt_fuzz::eLim_other);
-    }
+        int_fuzz->SetLim(CInt_fuzz::eLim_other); // LCOV_EXCL_LINE - Possible, but extremely unlikely. Should probably be forbidden.
+    }                                            // No reason to have a range with two unknown limits.
 
     return int_fuzz;
 }
