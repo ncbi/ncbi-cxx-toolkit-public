@@ -831,6 +831,8 @@ GMOCK_INCLUDE
 GMOCK_LIBS
 LAPACK_INCLUDE
 LAPACK_LIBS
+LMDB_INCLUDE
+LMDB_LIBS
 signature
 build_root
 top_srcdir
@@ -1618,7 +1620,7 @@ bdb python perl jni sqlite3 icu boost boost-tag \
 sp expat sablot libxml libxslt libexslt xerces xalan zorba \
 oechem sge muparser hdf5 \
 gif jpeg tiff png xpm \
-magic curl mimetic gsoap avro cereal sasl2 mongodb gmock lapack 3psw \
+magic curl mimetic gsoap avro cereal sasl2 mongodb gmock lapack lmdb 3psw \
 local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
@@ -1688,7 +1690,7 @@ for x_arg in "$@" ; do
       | --with-jpeg=* | --with-png=* | --with-tiff=* | --with-xpm=* \
       | --with-magic=* | --with-curl=* | --with-mimetic=* | --with-gsoap=* \
       | --with-avro=* | --with-cereal=* | --with-sasl2=* | --with-mongodb=* \
-      | --with-gmock=* | --with-lapack=* )
+      | --with-gmock=* | --with-lapack=* | --with-lmdb=* )
       # Confirm that the specified directory exists and is readable.
       dir=`echo $x_arg | sed -e 's/^[^=]*=//'`
       case "$x_arg" in
@@ -2001,6 +2003,8 @@ Optional Packages:
  --without-gmock         do not use Google Mock
  --with-lapack=DIR       use LAPACK installation in DIR
  --without-lapack        do not use LAPACK
+ --with-lmdb=DIR         use LMDB installation in DIR
+ --without-lmdb          do not use LMDB
  --with-3psw=std:netopt  favor standard (system) builds of the above pkgs.
  --without-3psw          do not use any of the above packages
  --without-local-lbsm    turn off support for IPC with locally running LBSMD
@@ -2259,6 +2263,12 @@ case "$with_3psw" in
    { (exit 1); exit 1; }; }
          else
             with_boost=no
+         fi
+        if test "${with_lmdb-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-lmdb but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_lmdb=no
          fi
         if test "${with_sybase-no}" != "no"; then
             { echo "$as_me: error: incompatible options: --with-sybase but --without-3psw" >&2
@@ -4030,6 +4040,18 @@ fi
 # Check whether --with-lapack2 was given.
 if test "${with_lapack2+set}" = set; then
   withval=$with_lapack2;
+fi
+
+
+# Check whether --with-lmdb was given.
+if test "${with_lmdb+set}" = set; then
+  withval=$with_lmdb;
+fi
+
+
+# Check whether --with-lmdb was given.
+if test "${with_lmdb+set}" = set; then
+  withval=$with_lmdb;
 fi
 
 
@@ -45970,6 +45992,182 @@ _ACEOF
 
 
 
+# LMDB
+if test "$with_lmdb" != "no"; then
+    case "$with_lmdb" in
+       yes | "" ) ;;
+       *        ) LMDB_PATH=$with_lmdb ;;
+    esac
+    if test "$LMDB_PATH" != /usr -a -d "$LMDB_PATH"; then
+       in_path=" in $LMDB_PATH"
+       if test -z "$LMDB_INCLUDE" -a -d "$LMDB_PATH/include"; then
+          LMDB_INCLUDE="-I$LMDB_PATH/include"
+       fi
+       if test -n "$LMDB_LIBPATH"; then
+          :
+       elif test -d "$LMDB_PATH/lib${bit64_sfx}"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $LMDB_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    LMDB_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $LMDB_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    LMDB_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       elif test -d "$LMDB_PATH/lib"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $LMDB_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    LMDB_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $LMDB_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    LMDB_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       fi
+       LMDB_LIBS="$LMDB_LIBPATH -llmdb "
+    else
+       LMDB_INCLUDE=""
+       LMDB_LIBS="-llmdb "
+       in_path=
+    fi
+    { echo "$as_me:$LINENO: checking for liblmdb$in_path" >&5
+echo $ECHO_N "checking for liblmdb$in_path... $ECHO_C" >&6; }
+if test "${ncbi_cv_lib_lmdb+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  CPPFLAGS=" $LMDB_INCLUDE $orig_CPPFLAGS"
+       LIBS="$LMDB_LIBS  $orig_LIBS"
+       cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <lmdb.h>
+int
+main ()
+{
+MDB_env *env; return mdb_env_create(&env);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag" || test ! -s conftest.err'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_lmdb=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ncbi_cv_lib_lmdb=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ncbi_cv_lib_lmdb" >&5
+echo "${ECHO_T}$ncbi_cv_lib_lmdb" >&6; }
+    if test "$ncbi_cv_lib_lmdb" = "no"; then
+       if test "${with_lmdb:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-lmdb explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-lmdb explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+    fi
+ fi
+ if test "$with_lmdb" = "no"; then
+    LMDB_PATH="No_LMDB"
+    LMDB_INCLUDE=
+    LMDB_LIBS=
+ else
+              WithPackages="$WithPackages${WithPackagesSep}LMDB"; WithPackagesSep=" "
+    LMDB_INCLUDE=" $LMDB_INCLUDE"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBLMDB 1
+_ACEOF
+
+ fi
+
+
+
+
 ### Restore original compiler/linker flags
 LIBS="$orig_LIBS"
 CPPFLAGS="$orig_CPPFLAGS"
@@ -46410,7 +46608,7 @@ for x in ChaosMonkey Int8GI StrictGI GCC KCC ICC VisualAge CompaqCompiler Cray W
           ;;
       esac
    done
-  for x in UUID FUSE Iconv Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF UNGIF GIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB GMOCK LAPACK; do
+  for x in UUID FUSE Iconv Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF UNGIF GIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB GMOCK LAPACK LMDB; do
       case " $WithPackages " in
          *" $x "*) ;;
          *) WithoutPackages="$WithoutPackages$WithoutPackagesSep$x"
@@ -47784,6 +47982,8 @@ GMOCK_INCLUDE!$GMOCK_INCLUDE$ac_delim
 GMOCK_LIBS!$GMOCK_LIBS$ac_delim
 LAPACK_INCLUDE!$LAPACK_INCLUDE$ac_delim
 LAPACK_LIBS!$LAPACK_LIBS$ac_delim
+LMDB_INCLUDE!$LMDB_INCLUDE$ac_delim
+LMDB_LIBS!$LMDB_LIBS$ac_delim
 signature!$signature$ac_delim
 build_root!$build_root$ac_delim
 top_srcdir!$top_srcdir$ac_delim
@@ -47850,8 +48050,6 @@ lib_pre!$lib_pre$ac_delim
 lib_l_pre!$lib_l_pre$ac_delim
 lib_ext!$lib_ext$ac_delim
 dll_ext!$dll_ext$ac_delim
-loadable_ext!$loadable_ext$ac_delim
-lib_l_ext!$lib_l_ext$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -47893,6 +48091,8 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+loadable_ext!$loadable_ext$ac_delim
+lib_l_ext!$lib_l_ext$ac_delim
 exe_ext!$exe_ext$ac_delim
 f_compile!$f_compile$ac_delim
 f_outobj!$f_outobj$ac_delim
@@ -47988,8 +48188,6 @@ GLEW_STATIC_LIBS!$GLEW_STATIC_LIBS$ac_delim
 WXWIDGETS_INCLUDE!$WXWIDGETS_INCLUDE$ac_delim
 WXWIDGETS_LIBS!$WXWIDGETS_LIBS$ac_delim
 WXWIDGETS_STATIC_LIBS!$WXWIDGETS_STATIC_LIBS$ac_delim
-WXWIDGETS_GL_LIBS!$WXWIDGETS_GL_LIBS$ac_delim
-WXWIDGETS_GL_STATIC_LIBS!$WXWIDGETS_GL_STATIC_LIBS$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -48031,6 +48229,8 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+WXWIDGETS_GL_LIBS!$WXWIDGETS_GL_LIBS$ac_delim
+WXWIDGETS_GL_STATIC_LIBS!$WXWIDGETS_GL_STATIC_LIBS$ac_delim
 WXWIDGETS_POST_LINK!$WXWIDGETS_POST_LINK$ac_delim
 FASTCGI_INCLUDE!$FASTCGI_INCLUDE$ac_delim
 FASTCGI_LIBS!$FASTCGI_LIBS$ac_delim
@@ -48128,7 +48328,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 95; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
@@ -48147,7 +48347,7 @@ fi
 
 cat >>$CONFIG_STATUS <<_ACEOF
 cat >"\$tmp/subs-5.sed" <<\CEOF$ac_eof
-/@[a-zA-Z_][a-zA-Z_0-9]*@/!b end
+/@[a-zA-Z_][a-zA-Z_0-9]*@/!b
 _ACEOF
 sed '
 s/[,\\&]/\\&/g; s/@/@|#_!!_#|/g
@@ -48160,8 +48360,6 @@ N; s/^.*\n//; s/[,\\&]/\\&/g; s/@/@|#_!!_#|/g; b n
 ' >>$CONFIG_STATUS <conf$$subs.sed
 rm -f conf$$subs.sed
 cat >>$CONFIG_STATUS <<_ACEOF
-:end
-s/|#_!!_#|//g
 CEOF$ac_eof
 _ACEOF
 
@@ -48451,7 +48649,7 @@ s&@abs_builddir@&$ac_abs_builddir&;t t
 s&@abs_top_builddir@&$ac_abs_top_builddir&;t t
 s&@INSTALL@&$ac_INSTALL&;t t
 $ac_datarootdir_hack
-" $ac_file_inputs | sed -f "$tmp/subs-1.sed" | sed -f "$tmp/subs-2.sed" | sed -f "$tmp/subs-3.sed" | sed -f "$tmp/subs-4.sed" | sed -f "$tmp/subs-5.sed" >$tmp/out
+" $ac_file_inputs | sed -f "$tmp/subs-1.sed" | sed -f "$tmp/subs-2.sed" | sed -f "$tmp/subs-3.sed" | sed -f "$tmp/subs-4.sed" | sed -f "$tmp/subs-5.sed" | sed 's/|#_!!_#|//g' >$tmp/out
 
 test -z "$ac_datarootdir_hack$ac_datarootdir_seen" &&
   { ac_out=`sed -n '/\${datarootdir}/p' "$tmp/out"`; test -n "$ac_out"; } &&

@@ -308,6 +308,9 @@
 /* Define to 1 if liblapack is available. */
 #undef HAVE_LIBLAPACK
 
+/* Define to 1 if liblmdb is available. */
+#undef HAVE_LIBLMDB
+
 /* Define to 1 if liblzo2 is available. */
 #undef HAVE_LIBLZO
 

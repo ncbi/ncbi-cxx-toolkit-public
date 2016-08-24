@@ -55,6 +55,7 @@ try_local() {
         test -f "$d/include/jpeglib.h"     &&  : ${JPEG_PATH=$d}
         test -x "$d/bin/krb5-config"       &&  : ${KRB5_PATH=$d}
         test -d "$d/include/libxslt"       &&  : ${LIBXML_PATH=$d}
+        test -f "$d/include/lmdb.h"        &&  : ${LMDB_PATH=$d}
         test -f "$d/include/lzo/lzo1.h"    &&  : ${LZO_PATH=$d}
         test -d "$d/include/mimetic"       &&  : ${MIMETIC_PATH=$d}
         test -d "$d/include/mongo"         &&  : ${MONGODB_PATH=$d}
@@ -192,6 +193,8 @@ case "$ncbi_platform" in
 esac
 
 : ${LIBXML_PATH=$NCBI/libxml-2.7.8}
+
+: ${LMDB_PATH=$NCBI/lmdb-0.9.18}
 
 case "$ncbi_platform" in
     FreeBSD64* ) : ${LZO_PATH=$NCBI/lzo-2.09} ;;

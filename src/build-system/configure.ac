@@ -65,7 +65,7 @@ case "$with_3psw" in
          with_ncbi_c=no
       fi
       m4_foreach(X, [sss, sssutils, sssdb, vdb, z, bz2, lzo, pcre,
-                     gmp, gcrypt, nettle, gnutls, openssl, krb5, boost,
+                     gmp, gcrypt, nettle, gnutls, openssl, krb5, boost, lmdb,
                      sybase, ftds, mysql, opengl, mesa, glut, glew,
                      wxwidgets, freetype, ftgl, fastcgi, bdb, orbacus, odbc,
                      python, perl, jni, sqlite3, mimetic, sge, icu, sp, expat,
@@ -489,6 +489,10 @@ AC_ARG_WITH(lapack,
    [ --with-lapack=DIR       use LAPACK installation in DIR])
 AC_ARG_WITH(lapack2,
    [ --without-lapack        do not use LAPACK])
+AC_ARG_WITH(lmdb,
+   [ --with-lmdb=DIR         use LMDB installation in DIR])
+AC_ARG_WITH(lmdb,
+   [ --without-lmdb          do not use LMDB])
 AC_ARG_WITH(3psw,
    [ --with-3psw=std:netopt  favor standard (system) builds of the above pkgs.])
 AC_ARG_WITH(3psw2,
@@ -550,7 +554,7 @@ bdb python perl jni sqlite3 icu boost boost-tag \
 sp expat sablot libxml libxslt libexslt xerces xalan zorba \
 oechem sge muparser hdf5 \
 gif jpeg tiff png xpm \
-magic curl mimetic gsoap avro cereal sasl2 mongodb gmock lapack 3psw \
+magic curl mimetic gsoap avro cereal sasl2 mongodb gmock lapack lmdb 3psw \
 local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
@@ -619,7 +623,7 @@ for x_arg in "$@" ; do
       | --with-jpeg=* | --with-png=* | --with-tiff=* | --with-xpm=* \
       | --with-magic=* | --with-curl=* | --with-mimetic=* | --with-gsoap=* \
       | --with-avro=* | --with-cereal=* | --with-sasl2=* | --with-mongodb=* \
-      | --with-gmock=* | --with-lapack=* )
+      | --with-gmock=* | --with-lapack=* | --with-lmdb=* )
       # Confirm that the specified directory exists and is readable.
       dir=`echo $x_arg | sed -e 's/^[[^=]]*=//'`
       case "$x_arg" in
@@ -7413,6 +7417,11 @@ NCBI_CHECK_THIRD_PARTY_LIB(lapack,
    [AC_LANG_PROGRAM([[extern "C" int dsyev_();]],
       [[return dsyev_();]])],
    [-lblas])
+
+# LMDB
+NCBI_CHECK_THIRD_PARTY_LIB(lmdb,
+   [AC_LANG_PROGRAM([[#include <lmdb.h>]],
+      [[MDB_env *env; return mdb_env_create(&env);]])])
 
 ### Restore original compiler/linker flags
 LIBS="$orig_LIBS"
