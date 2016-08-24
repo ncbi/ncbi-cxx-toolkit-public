@@ -618,7 +618,7 @@ for x_arg in "$@" ; do
       | --with-sge=* | --with-muparser=* | --with-hdf5=* | --with-gif=* \
       | --with-jpeg=* | --with-png=* | --with-tiff=* | --with-xpm=* \
       | --with-magic=* | --with-curl=* | --with-mimetic=* | --with-gsoap=* \
-      | --with-avro=* | --with-cereal=* | --with-sasl2* | --with-mongodb=* \
+      | --with-avro=* | --with-cereal=* | --with-sasl2=* | --with-mongodb=* \
       | --with-gmock=* | --with-lapack=* )
       # Confirm that the specified directory exists and is readable.
       dir=`echo $x_arg | sed -e 's/^[[^=]]*=//'`
