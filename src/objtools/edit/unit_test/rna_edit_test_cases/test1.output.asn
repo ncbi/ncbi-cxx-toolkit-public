@@ -3,8 +3,9 @@ Seq-feat ::= {
     type miscRNA
   },
   partial TRUE,
-  comment "contains 18S ribosomal RNA, internal transcribed spacer 1, 5.8S
- ribosomal RNA, internal transcribed spacer 2, and 28S ribosomal RNA",
+  comment "contains small subunit ribosomal RNA, internal transcribed spacer
+ 1, 5.8S ribosomal RNA, internal transcribed spacer 2, and large subunit
+ ribosomal RNA",
   location int {
     from 0,
     to 558,
@@ -21,8 +22,9 @@ Seq-feat ::= {
     type miscRNA
   },
   partial TRUE,
-  comment "contains 18S ribosomal RNA, internal transcribed spacer 1, 5.8S
- ribosomal RNA, internal transcribed spacer 2, and 28S ribosomal RNA",
+  comment "contains small subunit ribosomal RNA, internal transcribed spacer
+ 1, 5.8S ribosomal RNA, internal transcribed spacer 2, and large subunit
+ ribosomal RNA",
   location int {
     from 0,
     to 558,
