@@ -967,6 +967,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CFB	s	Northern Forestry Centre, Canadian Forest Service",
 "CFBH	s	Celio F.B. Haddad Herpetological Collection, Departamento de  Zoologia, Universidade Estadual Paulista",
 "CFBP	c	Collection Francaise des Bacteries Phytopathogenes",
+"CFCC	b	China Forestry Culture Collection Center",
 "CFI	s	Genetic Resources and Biotechnology (CENARGEN), EMBRAPA",
 "CFMR	sc	Center for Forest Mycology Research",
 "CFN	s	Clifton College, Biology Department",
