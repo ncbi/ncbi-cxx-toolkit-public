@@ -33,6 +33,7 @@
 #include <misc/discrepancy/discrepancy.hpp>
 #include <misc/discrepancy/report_object.hpp>
 #include <objects/biblio/Auth_list.hpp>
+#include <objects/general/Person_id.hpp>
 #include <objects/macro/Suspect_rule_set.hpp>
 #include <objects/pub/Pub.hpp>
 #include <objects/pub/Pub_equiv.hpp>
@@ -315,6 +316,7 @@ public:
             INIT_DISCREPANCY_TYPE(CSeq_annot),
             INIT_DISCREPANCY_TYPE(CPubdesc),
             INIT_DISCREPANCY_TYPE(CAuth_list),
+            INIT_DISCREPANCY_TYPE(CPerson_id),
             INIT_DISCREPANCY_TYPE(CBioseq_set)
         {}
     bool AddTest(const string& name);
@@ -433,6 +435,7 @@ protected:
     ADD_DISCREPANCY_TYPE(CSeq_annot)
     ADD_DISCREPANCY_TYPE(CPubdesc)
     ADD_DISCREPANCY_TYPE(CAuth_list)
+    ADD_DISCREPANCY_TYPE(CPerson_id)
     // CBioseq_set should be used only for examining top-level
     // features of the set, and never to subvert the visitor pattern
     // by iterating over the contents oneself
