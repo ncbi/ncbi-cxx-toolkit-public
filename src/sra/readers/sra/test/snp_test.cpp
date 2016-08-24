@@ -190,7 +190,7 @@ CRef<CSeq_table> sx_ConvertToTable(const CSeq_annot_SNP_Info& annot)
     CRef<CSeq_table> table(new CSeq_table);
     table->SetFeat_type(CSeqFeatData::e_Imp);
     table->SetFeat_subtype(CSeqFeatData::eSubtype_variation);
-    table->SetNum_rows(annot.size());
+    table->SetNum_rows(int(annot.size()));
 
     CRef<CSeqTable_column> col_imp =
         sx_MakeColumn(CSeqTable_column_info::eField_id_data_imp_key);
@@ -233,7 +233,7 @@ CRef<CSeq_table> sx_ConvertToTable(const CSeq_annot_SNP_Info& annot)
         arr_from.push_back(from);
         TSeqPos to = it->GetTo();
         if ( to != from ) {
-            ind_to.push_back(arr_to.size());
+            ind_to.push_back(int(arr_to.size()));
             arr_to.push_back(to);
         }
         arr_qa.push_back(it->GetQualityCodesOsIndex());

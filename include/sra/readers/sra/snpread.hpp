@@ -1025,7 +1025,7 @@ private:
     COpenRange<TSeqPos> m_CurRange; // current SNP refseq range
     SFilter m_Filter;
 
-    Uint4 m_CurrFeatId, m_FirstBadFeatId;
+    TVDBRowId m_CurrFeatId, m_FirstBadFeatId;
 
     typedef CRef<CObject_id> TObjectIdCache;
     typedef map<CTempString, CRef<CUser_field> > TUserFieldCache;

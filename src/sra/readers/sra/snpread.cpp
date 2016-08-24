@@ -989,7 +989,7 @@ CSNPDbSeqIterator::GetOverviewGraph(CRange<TSeqPos> range) const
     while ( !vv.empty() && vv.back() == 0 ) {
         vv.pop_back();
     }
-    TSeqPos count = vv.size();
+    TSeqPos count = TSeqPos(vv.size());
 
     // add values
     CRef<CSeq_graph> graph = x_NewOverviewGraph(*this);
@@ -1391,7 +1391,9 @@ struct SCommon8Bytes : public SColumn
                                      reinterpret_cast<const char*>(&val+1));
                 values->push_back(data);
             }
-            indexes->push_back(ins.first->second);
+            size_t value_index = ins.first->second;
+            _ASSERT(int(value_index) == value_index);
+            indexes->push_back(int(value_index));
         }
 
     void Attach(CSeq_table& table)
@@ -1742,7 +1744,9 @@ bool x_ParseSNP_Info(SSNP_Info& info,
         return false;
     }
 
-    info.m_SNP_Id = it.GetFeatId();
+    auto feat_id = it.GetFeatId();
+    _ASSERT(SSNP_Info::TSNPId(feat_id) == feat_id);
+    info.m_SNP_Id = SSNP_Info::TSNPId(feat_id);
 
     packed.x_AddSNP(info);
     return true;
