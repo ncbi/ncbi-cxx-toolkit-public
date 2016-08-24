@@ -111,6 +111,9 @@ CRef <CSeq_feat> CFindITSParser :: x_ParseLine(const CTempString &line, CSeq_ent
     bool ssu_too_large(false);
     bool lsu_too_large(false);
     bool r58S_too_large(false);
+    bool its1_span(false);
+    bool its2_span(false);
+   
     vector<string> comments;
     if (ssu != "Not found")
     {
@@ -119,14 +122,24 @@ CRef <CSeq_feat> CFindITSParser :: x_ParseLine(const CTempString &line, CSeq_ent
         ssu_too_large = IsLengthTooLarge(ssu, 2200);
     }
     if (its1 != "Not found")
+    {
         comments.push_back("internal transcribed spacer 1");
+        NStr::Split(its1,"-",arr);
+        its1_span =  (arr.size() == 2);
+        arr.clear();
+    }
     if (r58S != "Not found")
     {
         comments.push_back("5.8S ribosomal RNA");
         r58S_too_large = IsLengthTooLarge(r58S, 200);
     }
     if (its2 != "Not found")
+    {
         comments.push_back("internal transcribed spacer 2");
+        NStr::Split(its2,"-",arr);
+        its2_span =  (arr.size() == 2);
+        arr.clear();
+    }
     if (lsu != "Not found")
     {
         comments.push_back("large subunit ribosomal RNA");
@@ -134,6 +147,11 @@ CRef <CSeq_feat> CFindITSParser :: x_ParseLine(const CTempString &line, CSeq_ent
         lsu_too_large = IsLengthTooLarge(lsu, 5100);
     }
 
+    if (its1_span && its2_span && (r58S == "Not found" || r58S == "No end" || r58S == "No start"))
+    {
+        msg = "5.8S is not found while ITS1 and ITS2 spans exist in: "+accession;
+        return null_mrna;
+    }
     if (ssu_too_large)
     {
         msg = "SSU too large in: "+accession;
@@ -149,6 +167,7 @@ CRef <CSeq_feat> CFindITSParser :: x_ParseLine(const CTempString &line, CSeq_ent
         msg = "5.8S too large in: "+accession;
         return null_mrna;
     }
+    
 
     string comment;
     switch(comments.size())
