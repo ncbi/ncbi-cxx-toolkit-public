@@ -62,8 +62,7 @@ CRef <CSeq_feat> CFindITSParser :: x_ParseLine(const CTempString &line, CSeq_ent
     NStr::Split(line,"\t",arr);
     if (arr.size() != 9)  
     {
-        msg = "Unable to parse extractor line ";
-        msg += line;
+        msg = "Unable to parse extractor line(s)";
         return null_mrna;
     }
     string accession = arr[0];
@@ -109,22 +108,46 @@ CRef <CSeq_feat> CFindITSParser :: x_ParseLine(const CTempString &line, CSeq_ent
 
     bool ssu_present(false);
     bool lsu_present(false);
+    bool ssu_too_large(false);
+    bool lsu_too_large(false);
+    bool r58S_too_large(false);
     vector<string> comments;
     if (ssu != "Not found")
     {
         comments.push_back("small subunit ribosomal RNA");
         ssu_present = true;
+        ssu_too_large = IsLengthTooLarge(ssu, 2200);
     }
     if (its1 != "Not found")
         comments.push_back("internal transcribed spacer 1");
     if (r58S != "Not found")
+    {
         comments.push_back("5.8S ribosomal RNA");
+        r58S_too_large = IsLengthTooLarge(r58S, 200);
+    }
     if (its2 != "Not found")
         comments.push_back("internal transcribed spacer 2");
     if (lsu != "Not found")
     {
         comments.push_back("large subunit ribosomal RNA");
         lsu_present = true;
+        lsu_too_large = IsLengthTooLarge(lsu, 5100);
+    }
+
+    if (ssu_too_large)
+    {
+        msg = "SSU too large in: "+accession;
+        return null_mrna;
+    }
+    if (lsu_too_large)
+    {
+        msg = "LSU too large in: "+accession;
+        return null_mrna;
+    }
+    if (r58S_too_large)
+    {
+        msg = "5.8S too large in: "+accession;
+        return null_mrna;
     }
 
     string comment;
@@ -150,6 +173,19 @@ CRef <CSeq_feat> CFindITSParser :: x_ParseLine(const CTempString &line, CSeq_ent
     return x_CreateMiscRna(comment,bsh);
 }
 
+bool CFindITSParser :: IsLengthTooLarge(const string& str, int max_length)
+{
+    vector<string> arr;
+    NStr::Split(str,"-",arr);
+    if (arr.size() == 2)
+    {
+        int start = NStr::StringToInt(arr.front(), NStr::fConvErr_NoThrow);
+        int end = NStr::StringToInt(arr.back(), NStr::fConvErr_NoThrow);
+        int length = end - start + 1;
+        return length > max_length;
+    }
+    return false;
+}
 
 CRef <CSeq_feat> CFindITSParser :: x_CreateMiscRna(const string &comment, CBioseq_Handle bsh)
 {
