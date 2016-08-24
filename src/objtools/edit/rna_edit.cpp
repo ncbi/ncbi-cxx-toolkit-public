@@ -107,9 +107,14 @@ CRef <CSeq_feat> CFindITSParser :: x_ParseLine(const CTempString &line, CSeq_ent
     NStr::TruncateSpacesInPlace(lsu);
     arr.clear();
 
+    bool ssu_present(false);
+    bool lsu_present(false);
     vector<string> comments;
     if (ssu != "Not found")
+    {
         comments.push_back("small subunit ribosomal RNA");
+        ssu_present = true;
+    }
     if (its1 != "Not found")
         comments.push_back("internal transcribed spacer 1");
     if (r58S != "Not found")
@@ -117,31 +122,36 @@ CRef <CSeq_feat> CFindITSParser :: x_ParseLine(const CTempString &line, CSeq_ent
     if (its2 != "Not found")
         comments.push_back("internal transcribed spacer 2");
     if (lsu != "Not found")
-        comments.push_back("large subunit ribosomal RNA");
-
-/*    if ((r58S == "Not found"  || r58S == "No start" || r58S == "No end")&& 
-        (ssu  != "Not found" || its1  != "Not found" || its2  != "Not found" || lsu  != "Not found"))
     {
-        msg = "5.8S not found, but flanking regions have been found.";
-        return null_mrna;
+        comments.push_back("large subunit ribosomal RNA");
+        lsu_present = true;
     }
-    */
+
     string comment;
     switch(comments.size())
     {
     case 0 : comment = "does not contain rna label";break;
-    case 1 : comment = "contains "+comments.front();break;
+    case 1 : 
+    {
+        if (!ssu_present && !lsu_present) 
+        {
+            comment = "contains "+comments.front();
+        } 
+    }
+    break;
     case 2 : comment = "contains " + comments[0]+" and "+comments[1];break;
     default : comment = "contains "+comments[0]; for (unsigned int j=1; j<comments.size()-1;j++) comment += ", "+comments[j]; comment += ", and "+comments.back();break;
     }
     negative = strand == "1";
     bsh = x_GetBioseqHandleFromIdGuesser(accession,tse);
     if (!bsh) return null_mrna;
-    return x_CreateMiscRna(accession,comment,bsh);
+    if (comments.size() == 1 && (ssu_present || lsu_present))
+        return x_CreateRRna(comment, bsh);
+    return x_CreateMiscRna(comment,bsh);
 }
 
 
-CRef <CSeq_feat> CFindITSParser :: x_CreateMiscRna(const string &accession, const string &comment, CBioseq_Handle bsh)
+CRef <CSeq_feat> CFindITSParser :: x_CreateMiscRna(const string &comment, CBioseq_Handle bsh)
 {
     CRef <CSeq_feat> new_mrna (new CSeq_feat());
     new_mrna->SetData().SetRna().SetType(CRNA_ref::eType_miscRNA);
@@ -158,6 +168,25 @@ CRef <CSeq_feat> CFindITSParser :: x_CreateMiscRna(const string &accession, cons
     
     new_mrna->SetPartial(true);
     return new_mrna;
+}
+
+CRef <CSeq_feat> CFindITSParser :: x_CreateRRna(const string &comment, CBioseq_Handle bsh)
+{
+    CRef <CSeq_feat> new_rrna (new CSeq_feat());
+    new_rrna->SetData().SetRna().SetType(CRNA_ref::eType_rRNA);
+    string remainder;
+    new_rrna->SetData().SetRna().SetRnaProductName(comment, remainder);
+    CRef<CSeq_loc> loc(new CSeq_loc());
+    loc->SetInt().SetFrom(0);
+    loc->SetInt().SetTo(bsh.GetBioseqLength()-1);
+    loc->SetInt().SetStrand(eNa_strand_plus);
+    loc->SetPartialStart(true, eExtreme_Positional); 
+    loc->SetPartialStop(true, eExtreme_Positional); 
+    loc->SetId(*bsh.GetSeqId());
+    new_rrna->SetLocation(*loc);
+    
+    new_rrna->SetPartial(true);
+    return new_rrna;
 }
 
 CBioseq_Handle CFindITSParser :: x_GetBioseqHandleFromIdGuesser(const string &id_str, objects::CSeq_entry_Handle tse)
