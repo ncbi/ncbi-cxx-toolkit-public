@@ -975,8 +975,8 @@ bool CNaSeqlocHelper::x_ComputeSiteIndex(const CSeq_id& seq_id,
     const auto& nt_site = nt_range.GetStart().GetBase().IsVal() ? nt_range.GetStart() : nt_range.GetStop();
 
     if (!nt_site.GetBase().IsVal()) {
-        return false;
-    }
+        return false; // LCOV_EXCL_LINE
+    }                 // In principle, possible, but extremely unlikely to ever arise in practice
 
     return x_ComputeSiteIndex(seq_id,
                               nt_site,
