@@ -60,7 +60,7 @@ public:
 
 /// Class for querying via E-Utils.
 /// NOTE:
-/// TGi will be replaced with TEntrezId in all parameter types the future.
+/// TGi will be replaced with TEntrezId in all parameter types in the future.
 class CEutilsClient
 {
 public:
