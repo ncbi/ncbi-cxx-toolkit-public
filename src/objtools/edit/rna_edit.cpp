@@ -109,7 +109,7 @@ CRef <CSeq_feat> CFindITSParser :: x_ParseLine(const CTempString &line, CSeq_ent
 
     vector<string> comments;
     if (ssu != "Not found")
-        comments.push_back("18S ribosomal RNA");
+        comments.push_back("small subunit ribosomal RNA");
     if (its1 != "Not found")
         comments.push_back("internal transcribed spacer 1");
     if (r58S != "Not found")
@@ -117,7 +117,7 @@ CRef <CSeq_feat> CFindITSParser :: x_ParseLine(const CTempString &line, CSeq_ent
     if (its2 != "Not found")
         comments.push_back("internal transcribed spacer 2");
     if (lsu != "Not found")
-        comments.push_back("28S ribosomal RNA");
+        comments.push_back("large subunit ribosomal RNA");
 
 /*    if ((r58S == "Not found"  || r58S == "No start" || r58S == "No end")&& 
         (ssu  != "Not found" || its1  != "Not found" || its2  != "Not found" || lsu  != "Not found"))
