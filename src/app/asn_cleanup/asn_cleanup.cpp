@@ -103,8 +103,13 @@ public:
 private:
     // types
 
-    CObjectIStream* x_OpenIStream(const CArgs& args);
+    CObjectIStream* x_OpenIStream(const CArgs& args, const string& filename);
+    void x_OpenOStream(const string& filename, const string& dir = kEmptyStr, bool remove_orig_dir = true);
+    void x_CloseOStream();
     bool x_ProcessSeqSubmit(auto_ptr<CObjectIStream>& is);
+    void x_ProcessOneFile(auto_ptr<CObjectIStream> is, bool batch, const string& asn_type, bool first_only);
+    void x_ProcessOneFile(const string& filename);
+    void x_ProcessOneDirectory(const string& dirname, const string& suffix);
 
     TGi x_SeqIdToGiNumber( const string& seq_id, const string database );
 
@@ -131,6 +136,7 @@ private:
     CRef<CObjectManager>        m_Objmgr;       // Object Manager
     CRef<CScope>                m_Scope;
     CRef<CFlatFileGenerator>    m_FFGenerator;  // Flat-file generator
+    auto_ptr<CObjectOStream>    m_Out;          // output
 };
 
 
@@ -153,7 +159,6 @@ void CCleanupApp::Init(void)
             CArgDescriptions::eString);
         arg_desc->SetConstraint("serial", &(*new CArgAllow_Strings,
             "text", "binary", "XML"));
-        arg_desc->AddFlag("sub", "Submission");
         // id
         arg_desc->AddOptionalKey("id", "ID", 
             "Specific ID to display", CArgDescriptions::eString);
@@ -164,6 +169,15 @@ void CCleanupApp::Init(void)
         arg_desc->SetConstraint( "type", 
             &( *new CArgAllow_Strings, "any", "seq-entry", "bioseq", "bioseq-set", "seq-submit" ) );
         
+        // path
+        arg_desc->AddOptionalKey("p", "path", "Path to files", CArgDescriptions::eDirectory);
+        
+        // suffix
+        arg_desc->AddDefaultKey("x", "suffix", "File Selection Suffix", CArgDescriptions::eString, ".ent");
+
+        // results
+        arg_desc->AddOptionalKey("r", "results", "Path for Results", CArgDescriptions::eDirectory);
+
     }}
 
     // batch processing
@@ -171,8 +185,6 @@ void CCleanupApp::Init(void)
         arg_desc->AddFlag("batch", "Process NCBI release file");
         // compression
         arg_desc->AddFlag("c", "Compressed file");
-        // propogate top descriptors
-        arg_desc->AddFlag("p", "Propogate top descriptors");
 
         // imitate limitation of C Toolkit version
         arg_desc->AddFlag("firstonly", "Process only first element");
@@ -357,8 +369,6 @@ static std::string GetOutputFileName(const CArgs& args)
 // returns false if fails to read object of expected type, throws for all other errors
 bool CCleanupApp::x_ProcessSeqSubmit(auto_ptr<CObjectIStream>& is)
 {
-    std::string outFileName = GetOutputFileName(GetArgs());
-
     CRef<CSeq_submit> sub(new CSeq_submit);
     if (sub.Empty()) {
         NCBI_THROW(CFlatException, eInternal,
@@ -366,25 +376,21 @@ bool CCleanupApp::x_ProcessSeqSubmit(auto_ptr<CObjectIStream>& is)
     }
     try {
 
-        CTmpFile tmpFile;
-        auto_ptr<CObjectOStream> out(CreateTmpOStream(outFileName, tmpFile.GetFileName()));
+        //CTmpFile tmpFile;
+        //auto_ptr<CObjectOStream> out(CreateTmpOStream(outFileName, tmpFile.GetFileName()));
 
         CObjectTypeInfoMI submitBlockObj = GetSubmitBlockTypeInfo();
-        submitBlockObj.SetLocalReadHook(*is, new CReadSubmitBlockHook(*out));
+        submitBlockObj.SetLocalReadHook(*is, new CReadSubmitBlockHook(*m_Out));
 
         auto_ptr<CObjectTypeInfo> entryObj = GetEntryTypeInfo();
-        entryObj->SetLocalReadHook(*is, new CReadEntryHook(*this, *out));
+        entryObj->SetLocalReadHook(*is, new CReadEntryHook(*this, *m_Out));
 
         *is >> *sub;
 
         entryObj->ResetLocalReadHook(*is);
         submitBlockObj.ResetLocalReadHook(*is);
 
-        CompleteOutputFile(*out);
-        out.reset();
-
-        if (!outFileName.empty())
-            CDirEntry(tmpFile.GetFileName()).Rename(outFileName, CDirEntry::fRF_Overwrite);
+        CompleteOutputFile(*m_Out);
     }
     catch (...) {
         return false;
@@ -400,126 +406,55 @@ bool CCleanupApp::x_ProcessSeqSubmit(auto_ptr<CObjectIStream>& is)
     return true;
 }
 
-int CCleanupApp::Run(void)
+
+void CCleanupApp::x_ProcessOneFile(auto_ptr<CObjectIStream> is, bool batch, const string& asn_type, bool first_only)
 {
-	// initialize conn library
-	CONNECT_Init(&GetConfig());
-
-    const CArgs&   args = GetArgs();
-
-    // flag validation
-    if (args["F"]) {
-        x_FeatureOptionsValid(args["F"].AsString());
-    }
-    if (args["K"]) {
-        x_KOptionsValid(args["K"].AsString());
-    }
-
-    // create object manager
-    m_Objmgr = CObjectManager::GetInstance();
-    if ( !m_Objmgr ) {
-        NCBI_THROW(CFlatException, eInternal, "Could not create object manager");
-    }
-
-    m_Scope.Reset(new CScope(*m_Objmgr));
-    if (args["gbload"] || args["R"]) {
-#ifdef HAVE_PUBSEQ_OS
-        // we may require PubSeqOS readers at some point, so go ahead and make
-        // sure they are properly registered
-        GenBankReaders_Register_Pubseq();
-        GenBankReaders_Register_Pubseq2();
-        DBAPI_RegisterDriver_FTDS();
-#endif
-
-        CGBDataLoader::RegisterInObjectManager(*m_Objmgr);
-#ifdef HAVE_NCBI_VDB
-        CWGSDataLoader::RegisterInObjectManager(*m_Objmgr,
-                                            CObjectManager::eDefault,
-                                            88);
-#endif
-
-    }
-    m_Scope->AddDefaults();
-
-    auto_ptr<CObjectIStream> is;
-    is.reset( x_OpenIStream( args ) );
-    if (is.get() == NULL) {
-        string msg = args["i"]? "Unable to open input file" + args["i"].AsString() :
-                        "Unable to read data from stdin";
-        NCBI_THROW(CFlatException, eInternal, msg);
-    }
-    
-    if ( args["batch"] ) {
+    if (batch) {
         CGBReleaseFile in(*is.release());
         in.RegisterHandler(this);
         in.Read();  // HandleSeqEntry will be called from this function
-    } 
-    else {
-        
-        string asn_type = args["type"].AsString();
-        if (args["sub"] || asn_type == "seq-submit") {  // submission
+    } else {
+        if (asn_type == "seq-submit") {  // submission
             if (!x_ProcessSeqSubmit(is)) {
                 NCBI_THROW(CFlatException, eInternal, "Unable to read Seq-submit");
             }
-        } else if ( args["id"] ) {
-        
-            //
-            //  Implies gbload; otherwise this feature would be pretty 
-            //  useless...
-            //
-            if ( ! args[ "gbload" ] && !args["R"] ) {
-                CGBDataLoader::RegisterInObjectManager(*m_Objmgr);
-#ifdef HAVE_NCBI_VDB
-                CWGSDataLoader::RegisterInObjectManager(*m_Objmgr,
-                                            CObjectManager::eDefault,
-                                            88);
-#endif
-                m_Scope->AddDefaults();
-            }   
-
-            string seqID = args["id"].AsString();
-            HandleSeqID( seqID );
-            
         } else {
             CRef<CSeq_entry> se(new CSeq_entry);
-            
-            if ( asn_type == "seq-entry" ) {
+
+            if (asn_type == "seq-entry") {
                 //
                 //  Straight through processing: Read a seq_entry, then process
                 //  a seq_entry:
                 //
-                if ( ! ObtainSeqEntryFromSeqEntry( is, se ) ) {
-                    NCBI_THROW( 
-                        CFlatException, eInternal, "Unable to construct Seq-entry object" );
+                if (!ObtainSeqEntryFromSeqEntry(is, se)) {
+                    NCBI_THROW(
+                        CFlatException, eInternal, "Unable to construct Seq-entry object");
                 }
                 HandleSeqEntry(se);
                 x_WriteToFile(*se);
-			}
-			else if ( asn_type == "bioseq" ) {				
-				//
-				//  Read object as a bioseq, wrap it into a seq_entry, then process
-				//  the wrapped bioseq as a seq_entry:
-				//
-                if ( ! ObtainSeqEntryFromBioseq( is, se ) ) {
-                    NCBI_THROW( 
-                        CFlatException, eInternal, "Unable to construct Seq-entry object" );
+            } else if (asn_type == "bioseq") {
+                //
+                //  Read object as a bioseq, wrap it into a seq_entry, then process
+                //  the wrapped bioseq as a seq_entry:
+                //
+                if (!ObtainSeqEntryFromBioseq(is, se)) {
+                    NCBI_THROW(
+                        CFlatException, eInternal, "Unable to construct Seq-entry object");
                 }
-                HandleSeqEntry( se );
+                HandleSeqEntry(se);
                 x_WriteToFile(se->GetSeq());
-			}
-			else if ( asn_type == "bioseq-set" ) {
-				//
-				//  Read object as a bioseq_set, wrap it into a seq_entry, then 
-				//  process the wrapped bioseq_set as a seq_entry:
-				//
-                if ( ! ObtainSeqEntryFromBioseqSet( is, se ) ) {
-                    NCBI_THROW( 
-                        CFlatException, eInternal, "Unable to construct Seq-entry object" );
+            } else if (asn_type == "bioseq-set") {
+                //
+                //  Read object as a bioseq_set, wrap it into a seq_entry, then 
+                //  process the wrapped bioseq_set as a seq_entry:
+                //
+                if (!ObtainSeqEntryFromBioseqSet(is, se)) {
+                    NCBI_THROW(
+                        CFlatException, eInternal, "Unable to construct Seq-entry object");
                 }
-                HandleSeqEntry( se );
+                HandleSeqEntry(se);
                 x_WriteToFile(se->GetSet());
-			}
-            else if ( asn_type == "any" ) {
+            } else if (asn_type == "any") {
                 size_t num_cleaned = 0;
                 while (true) {
                     CNcbiStreampos start = is->GetStreamPos();
@@ -548,8 +483,7 @@ int CCleanupApp::Run(void)
                                             CFlatException, eInternal,
                                             "Unable to construct Seq-entry object"
                                             );
-                                    }
-                                    else {
+                                    } else {
                                         break;
                                     }
                                 }
@@ -557,7 +491,7 @@ int CCleanupApp::Run(void)
                         }
                     }
                     num_cleaned++;
-                    if (args["firstonly"]) {
+                    if (first_only) {
                         break;
                     }
                 }
@@ -566,7 +500,137 @@ int CCleanupApp::Run(void)
     }
 
 
+}
+
+
+void CCleanupApp::x_ProcessOneFile(const string& filename)
+{
+    const CArgs&   args = GetArgs();
+
+    auto_ptr<CObjectIStream> is;
+
+    // open file
+    is.reset(x_OpenIStream(args, filename));
+    if (is.get() == NULL) {
+        string msg = NStr::IsBlank(filename) ? "Unable to read data from stdin" : "Unable to open input file" + filename;
+        NCBI_THROW(CFlatException, eInternal, msg);
+    }
+
+    // need to set output if -o not specified
+    bool opened_output = false;
+
+    if (!args["o"] && args["r"]) {
+        x_OpenOStream(filename, args["r"].AsString(), true);
+        opened_output = true;
+    }
+
+    x_ProcessOneFile(is, args["batch"], args["type"].AsString(), args["firstonly"]);
+
     is.reset();
+    if (opened_output) {
+        // close output file if we opened one
+        x_CloseOStream();
+    }
+}
+
+
+void CCleanupApp::x_ProcessOneDirectory(const string& dirname, const string& suffix)
+{
+    const CArgs& args = GetArgs();
+
+    CDir dir(dirname);
+
+    string mask = "*" + suffix;
+    size_t num_files = 0;
+
+    CDir::TEntries files(dir.GetEntries(mask, CDir::eFile));
+    ITERATE(CDir::TEntries, ii, files) {
+        string fname = (*ii)->GetName();
+        if ((*ii)->IsFile()) {
+            string fname = CDirEntry::MakePath(dirname, (*ii)->GetName());
+            x_ProcessOneFile(fname);
+            num_files++;
+        }
+    }
+    if (num_files == 0) {
+        NCBI_THROW(CFlatException, eInternal, "No files found!");
+    }
+}
+
+
+int CCleanupApp::Run(void)
+{
+	// initialize conn library
+	CONNECT_Init(&GetConfig());
+
+    const CArgs&   args = GetArgs();
+
+    // flag validation
+    if (args["F"]) {
+        x_FeatureOptionsValid(args["F"].AsString());
+    }
+    if (args["K"]) {
+        x_KOptionsValid(args["K"].AsString());
+    }
+
+    // create object manager
+    m_Objmgr = CObjectManager::GetInstance();
+    if ( !m_Objmgr ) {
+        NCBI_THROW(CFlatException, eInternal, "Could not create object manager");
+    }
+
+    m_Scope.Reset(new CScope(*m_Objmgr));
+    if (args["gbload"] || args["R"] || args["id"]) {
+#ifdef HAVE_PUBSEQ_OS
+        // we may require PubSeqOS readers at some point, so go ahead and make
+        // sure they are properly registered
+        GenBankReaders_Register_Pubseq();
+        GenBankReaders_Register_Pubseq2();
+        DBAPI_RegisterDriver_FTDS();
+#endif
+
+        CGBDataLoader::RegisterInObjectManager(*m_Objmgr);
+#ifdef HAVE_NCBI_VDB
+        CWGSDataLoader::RegisterInObjectManager(*m_Objmgr,
+                                            CObjectManager::eDefault,
+                                            88);
+#endif
+
+    }
+    m_Scope->AddDefaults();
+
+    // need to set output (-o) if specified, if not -o and not -r need to use standard output
+    bool opened_output = false;
+    if (args["o"]) {
+        x_OpenOStream(args["o"].AsString(),
+                      args["r"] ? args["r"].AsString() : kEmptyStr,
+                      false);
+        opened_output = true;
+    } else if (!args["r"] || args["id"]) {
+        x_OpenOStream(kEmptyStr);
+        opened_output = true;
+    }
+
+    if (args["id"]) {
+        string seqID = args["id"].AsString();
+        HandleSeqID(seqID);
+    } else if (args["i"]) {
+        if (args["p"]) {
+            string fname = CDirEntry::MakePath(args["p"].AsString(), args["i"].AsString());
+            x_ProcessOneFile(fname);
+        } else {
+            x_ProcessOneFile(args["i"].AsString());
+        }
+    } else if (args["r"]) {
+        x_ProcessOneDirectory(args["p"].AsString(), args["x"].AsString());
+    } else {
+        x_ProcessOneFile("");
+    }
+
+    if (opened_output) {
+        // close output file if we opened one
+        x_CloseOStream();
+    }
     return 0;
 }
 
@@ -1021,20 +1085,13 @@ bool CCleanupApp::HandleSeqEntry(CRef<CSeq_entry>& se)
 
 template<typename T>void CCleanupApp::x_WriteToFile(const T& obj)
 {
-    const CArgs& args = GetArgs();
-    ESerialDataFormat outFormat = eSerial_AsnText;
-
-    auto_ptr<CObjectOStream> out(!args["o"] ? CObjectOStream::Open(outFormat, cout) :
-        CObjectOStream::Open(outFormat, args["o"].AsString(),
-        eSerial_StdWhenAny));
-
-    *out << obj;
+    *m_Out << obj;
 
     fflush(NULL);
 }
 
 
-CObjectIStream* CCleanupApp::x_OpenIStream(const CArgs& args)
+CObjectIStream* CCleanupApp::x_OpenIStream(const CArgs& args, const string& filename)
 {
     
     // determine the file serialization format.
@@ -1050,13 +1107,13 @@ CObjectIStream* CCleanupApp::x_OpenIStream(const CArgs& args)
             serial = eSerial_Xml;
         }
     }
-    
+
     // make sure of the underlying input stream. If -i was given on the command line 
     // then the input comes from a file. Otherwise, it comes from stdin:
     CNcbiIstream* pInputStream = &NcbiCin;
     bool bDeleteOnClose = false;
-    if ( args["i"] ) {
-        pInputStream = new CNcbiIfstream( args["i"].AsString().c_str(), ios::binary  );
+    if ( !NStr::IsBlank(filename)) {
+        pInputStream = new CNcbiIfstream(filename.c_str(), ios::binary  );
         bDeleteOnClose = true;
     }
         
@@ -1079,6 +1136,37 @@ CObjectIStream* CCleanupApp::x_OpenIStream(const CArgs& args)
         pI->SetDelayBufferParsingPolicy(CObjectIStream::eDelayBufferPolicyAlwaysParse);
     }
     return pI;
+}
+
+
+void CCleanupApp::x_OpenOStream(const string& filename, const string& dir, bool remove_orig_dir)
+{
+    ESerialDataFormat outFormat = eSerial_AsnText;
+    if (NStr::IsBlank(filename)) {
+        m_Out.reset(CObjectOStream::Open(outFormat, cout));
+    } else if (!NStr::IsBlank(dir)) {
+        string base = filename;
+        if (remove_orig_dir) {
+            char buf[2];
+            buf[1] = 0;
+            buf[0] = CDirEntry::GetPathSeparator();
+            size_t pos = NStr::Find(base, buf, 0, base.length(), NStr::eLast);
+            if (pos != string::npos) {
+                base = base.substr(pos + 1);
+            }
+        }
+        string fname = CDirEntry::MakePath(dir, base);
+        m_Out.reset(CObjectOStream::Open(outFormat, fname, eSerial_StdWhenAny));
+    } else {
+        m_Out.reset(CObjectOStream::Open(outFormat, filename, eSerial_StdWhenAny));
+    }
+}
+
+
+void CCleanupApp::x_CloseOStream()
+{
+    m_Out->Close();
+    m_Out.reset(NULL);
 }
 
 
