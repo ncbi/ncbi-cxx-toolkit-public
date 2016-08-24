@@ -1,0 +1,168 @@
+Seq-submit ::= {
+  sub {
+    contact {
+      contact {
+        name
+          name {
+            last "q" ,
+            first "q" ,
+            initials "qq" } ,
+        affil
+          str "NCBI" } } ,
+    cit {
+      authors {
+        names
+          std {
+            {
+              name
+                name {
+                  last "q" ,
+                  first "q" ,
+                  initials "qq." } } } ,
+        affil
+          str "NCBI" } ,
+      date
+        std {
+          year 2016 ,
+          month 8 ,
+          day 24 } } ,
+    subtype new ,
+    tool "Sequin 15.30 - MS WINDOWS VISTA" } ,
+  data
+    entrys {
+      set {
+        class pop-set ,
+        descr {
+          pub {
+            pub {
+              gen {
+                cit "Unpublished" ,
+                authors {
+                  names
+                    std {
+                      {
+                        name
+                          name {
+                            last "q" ,
+                            first "q" ,
+                            initials "qq." } } } ,
+                  affil
+                    str "NCBI" } ,
+                title "abc" } } } ,
+          user {
+            type
+              str "NcbiCleanup" ,
+            data {
+              {
+                label
+                  str "method" ,
+                data
+                  str "SequinCleanup" } ,
+              {
+                label
+                  str "version" ,
+                data
+                  int 8 } ,
+              {
+                label
+                  str "month" ,
+                data
+                  int 8 } ,
+              {
+                label
+                  str "day" ,
+                data
+                  int 24 } ,
+              {
+                label
+                  str "year" ,
+                data
+                  int 2016 } } } ,
+          create-date
+            std {
+              year 2016 ,
+              month 8 ,
+              day 24 } } ,
+        seq-set {
+          seq {
+            id {
+              local
+                str "SeqID1" } ,
+            descr {
+              source {
+                genome genomic ,
+                org {
+                  taxname "Acanthamoeba castellanii" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "x123" } ,
+                      {
+                        subtype culture-collection ,
+                        subname "x:123" } } ,
+                    lineage "Eukaryota; Acanthamoebidae; Acanthamoeba" ,
+                    gcode 1 ,
+                    div "INV" } } } ,
+              molinfo {
+                biomol genomic } } ,
+            inst {
+              repr raw ,
+              mol dna ,
+              length 180 ,
+              seq-data
+                ncbi2na '168E9168E9168E9168E9168E9C5A3A45A3A45A3A45A3A45A3AA16
+8E9168E9168E9168E9168E168E9168E9168E9'H } } ,
+          seq {
+            id {
+              local
+                str "SeqID2" } ,
+            descr {
+              source {
+                genome genomic ,
+                org {
+                  taxname "Acanthoscurria gomesiana" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype strain ,
+                        subname "y123" } ,
+                      {
+                        subtype culture-collection ,
+                        subname "y:456" } } ,
+                    lineage "Eukaryota; Metazoa; Arthropoda; Chelicerata;
+ Arachnida; Araneae; Mygalomorphae; Theraphosidae; Acanthoscurria" ,
+                    gcode 1 ,
+                    div "INV" } } } ,
+              molinfo {
+                biomol genomic } } ,
+            inst {
+              repr raw ,
+              mol dna ,
+              length 180 ,
+              seq-data
+                ncbi2na '168E9168E9168E9168E9168E905A3A45A3A45A3A45A3A45A3BF16
+8E9168E9168E9168E9168E168E9168E9168E9'H } } ,
+          seq {
+            id {
+              local
+                str "SeqID3" } ,
+            descr {
+              source {
+                genome genomic ,
+                org {
+                  taxname "Acetabularia acetabulum" ,
+                  orgname {
+                    lineage "Eukaryota; Viridiplantae; Chlorophyta;
+ Ulvophyceae; Dasycladales; Polyphysaceae; Acetabularia" ,
+                    gcode 6 ,
+                    div "PLN" } } } ,
+              molinfo {
+                biomol genomic } } ,
+            inst {
+              repr raw ,
+              mol dna ,
+              length 183 ,
+              seq-data
+                ncbi2na '168E9168E9168E9168E9168E905A3A45A3A45A3A45A3A45A3BF16
+8E9168E9168E9168E9168E168E9168E9168E900'H } } } } } }
