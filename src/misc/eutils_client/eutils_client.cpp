@@ -576,11 +576,13 @@ Uint8 CEutilsClient::Count(const string& db,
 }
 
 
+#ifdef NCBI_INT8_GI
 Uint8 CEutilsClient::ParseSearchResults(CNcbiIstream& istr,
                                         vector<int>& uids)
 {
     return x_ParseSearchResults(istr, uids);
 }
+#endif
 
 Uint8 CEutilsClient::ParseSearchResults(CNcbiIstream& istr,
                                         vector<CSeq_id_Handle>& uids)
@@ -594,13 +596,11 @@ Uint8 CEutilsClient::ParseSearchResults(CNcbiIstream& istr,
     return x_ParseSearchResults(istr, uids);
 }
 
-#ifdef NCBI_INT8_GI
 Uint8 CEutilsClient::ParseSearchResults(CNcbiIstream& istr,
                                         vector<TGi>& uids)
 {
     return x_ParseSearchResults(istr, uids);
 }
-#endif
 
 template<class T>
 Uint8 CEutilsClient::x_ParseSearchResults(CNcbiIstream& istr,
@@ -629,11 +629,13 @@ Uint8 CEutilsClient::x_ParseSearchResults(CNcbiIstream& istr,
 }
 
 
+#ifdef NCBI_INT8_GI
 Uint8 CEutilsClient::ParseSearchResults(const string& xml_file,
                                         vector<int>& uids)
 {
     return x_ParseSearchResults(xml_file, uids);
 }
+#endif
 
 Uint8 CEutilsClient::ParseSearchResults(const string& xml_file,
                                         vector<CSeq_id_Handle>& uids)
@@ -647,13 +649,11 @@ Uint8 CEutilsClient::ParseSearchResults(const string& xml_file,
     return x_ParseSearchResults(xml_file, uids);
 }
 
-#ifdef NCBI_INT8_GI
 Uint8 CEutilsClient::ParseSearchResults(const string& xml_file,
                                         vector<TGi>& uids)
 {
     return x_ParseSearchResults(xml_file, uids);
 }
-#endif
 
 template<class T>
 Uint8 CEutilsClient::x_ParseSearchResults(const string& xml_file,
@@ -667,7 +667,7 @@ Uint8 CEutilsClient::x_ParseSearchResults(const string& xml_file,
     return ParseSearchResults(istr, uids);
 }
 
-
+#ifdef NCBI_INT8_GI
 Uint8 CEutilsClient::Search(const string& db,
                            const string& term,
                            vector<int>& uids,
@@ -675,6 +675,7 @@ Uint8 CEutilsClient::Search(const string& db,
 {
     return x_Search(db, term, uids, xml_path);
 }
+#endif
 
 Uint8 CEutilsClient::Search(const string& db,
                             const string& term,
@@ -693,7 +694,6 @@ Uint8 CEutilsClient::Search(const string& db,
 }
 
 
-#ifdef NCBI_INT8_GI
 Uint8 CEutilsClient::Search(const string& db,
                             const string& term,
                             vector<TGi>& uids,
@@ -701,7 +701,6 @@ Uint8 CEutilsClient::Search(const string& db,
 {
     return x_Search(db, term, uids, xml_path);
 }
-#endif
 
 template<class T>
 Uint8 CEutilsClient::x_Search(const string& db,
@@ -944,7 +943,7 @@ void CEutilsClient::x_Get(string const& path,
 
 //////////////////////////////////////////////////////////////////////////////
 
-
+#ifdef NCBI_INT8_GI
 void CEutilsClient::Link(const string& db_from,
                          const string& db_to,
                          const vector<int>& uids_from,
@@ -955,27 +954,7 @@ void CEutilsClient::Link(const string& db_from,
 {
     x_Link(db_from, db_to, uids_from, uids_to, xml_path, command);
 }
-
-void CEutilsClient::Link(const string& db_from,
-                         const string& db_to,
-                         const vector<int>& uids_from,
-                         vector<CSeq_id_Handle>& uids_to,
-                         string xml_path,
-                         const string command)
-{
-    x_Link(db_from, db_to, uids_from, uids_to, xml_path, command);
-}
-
-
-void CEutilsClient::Link(const string& db_from,
-                         const string& db_to,
-                         const vector<CSeq_id_Handle>& uids_from,
-                         vector<int>& uids_to,
-                         string xml_path,
-                         const string command)
-{
-    x_Link(db_from, db_to, uids_from, uids_to, xml_path, command);
-}
+#endif
 
 void CEutilsClient::Link(const string& db_from,
                          const string& db_to,
@@ -989,19 +968,8 @@ void CEutilsClient::Link(const string& db_from,
 
 void CEutilsClient::Link(const string& db_from,
                          const string& db_to,
-                         const vector<int>& uids_from,
-                         vector<string>& uids_to,
-                         string xml_path,
-                         const string command)
-{
-    x_Link(db_from, db_to, uids_from, uids_to, xml_path, command);
-}
-
-
-void CEutilsClient::Link(const string& db_from,
-                         const string& db_to,
                          const vector<string>& uids_from,
-                         vector<int>& uids_to,
+                         vector<string>& uids_to,
                          string xml_path,
                          const string command)
 {
@@ -1010,8 +978,8 @@ void CEutilsClient::Link(const string& db_from,
 
 void CEutilsClient::Link(const string& db_from,
                          const string& db_to,
-                         const vector<string>& uids_from,
-                         vector<string>& uids_to,
+                         const vector<TGi>& uids_from,
+                         vector<TGi>& uids_to,
                          string xml_path,
                          const string command)
 {
@@ -1021,16 +989,6 @@ void CEutilsClient::Link(const string& db_from,
 #ifdef NCBI_INT8_GI
 void CEutilsClient::Link(const string& db_from,
                          const string& db_to,
-                         const vector<TGi>& uids_from,
-                         vector<TGi>& uids_to,
-                         string xml_path,
-                         const string command)
-{
-    x_Link(db_from, db_to, uids_from, uids_to, xml_path, command);
-}
-
-void CEutilsClient::Link(const string& db_from,
-                         const string& db_to,
                          const vector<int>& uids_from,
                          vector<TGi>& uids_to,
                          string xml_path,
@@ -1048,6 +1006,7 @@ void CEutilsClient::Link(const string& db_from,
 {
     x_Link(db_from, db_to, uids_from, uids_to, xml_path, command);
 }
+#endif
 
 void CEutilsClient::Link(const string& db_from,
                          const string& db_to,
@@ -1068,7 +1027,6 @@ void CEutilsClient::Link(const string& db_from,
 {
     x_Link(db_from, db_to, uids_from, uids_to, xml_path, command);
 }
-#endif
 
 template<class T1, class T2>
 void CEutilsClient::x_Link(const string& db_from,
@@ -1148,6 +1106,7 @@ void CEutilsClient::x_Link(const string& db_from,
     }
 }
 
+#ifdef NCBI_INT8_GI
 void CEutilsClient::Link(const string& db_from,
                          const string& db_to,
                          const vector<int>& uids_from,
@@ -1156,6 +1115,7 @@ void CEutilsClient::Link(const string& db_from,
 {
     x_Link(db_from, db_to, uids_from, ostr, command);
 }
+#endif
 
 void CEutilsClient::Link(const string& db_from,
                          const string& db_to,
@@ -1175,7 +1135,6 @@ void CEutilsClient::Link(const string& db_from,
     x_Link(db_from, db_to, uids_from, ostr, command);
 }
 
-#ifdef NCBI_INT8_GI
 void CEutilsClient::Link(const string& db_from,
                          const string& db_to,
                          const vector<TGi>& uids_from,
@@ -1184,7 +1143,6 @@ void CEutilsClient::Link(const string& db_from,
 {
     x_Link(db_from, db_to, uids_from, ostr, command);
 }
-#endif
 
 template<class T>
 void CEutilsClient::x_Link(const string& db_from,
@@ -1288,6 +1246,7 @@ void CEutilsClient::LinkHistory(const string& db_from,
     x_Get("/entrez/eutils/elink.fcgi", oss.str(), ostr);
 }
 
+#ifdef NCBI_INT8_GI
 void CEutilsClient::Summary(const string& db,
                             const vector<int>& uids,
                             xml::document& docsums,
@@ -1295,6 +1254,7 @@ void CEutilsClient::Summary(const string& db,
 {
     x_Summary(db, uids, docsums, version);
 }
+#endif
 
 void CEutilsClient::Summary(const string& db,
                             const vector<CSeq_id_Handle>& uids,
@@ -1312,7 +1272,6 @@ void CEutilsClient::Summary(const string& db,
     x_Summary(db, uids, docsums, version);
 }
 
-#ifdef NCBI_INT8_GI
 void CEutilsClient::Summary(const string& db,
                             const vector<TGi>& uids,
                             xml::document& docsums,
@@ -1320,7 +1279,6 @@ void CEutilsClient::Summary(const string& db,
 {
     x_Summary(db, uids, docsums, version);
 }
-#endif
 
 template<class T>
 void CEutilsClient::x_Summary(const string& db,
@@ -1455,6 +1413,7 @@ void CEutilsClient::SummaryHistory(const string& db,
     x_Get("/entrez/eutils/esummary.fcgi?", oss.str(), ostr);
 }
 
+#ifdef NCBI_INT8_GI
 void CEutilsClient::Fetch(const string& db,
                           const vector<int>& uids,
                           CNcbiOstream& ostr,
@@ -1462,6 +1421,7 @@ void CEutilsClient::Fetch(const string& db,
 {
     x_Fetch(db, uids, ostr, retmode);
 }
+#endif
 
 void CEutilsClient::Fetch(const string& db,
                           const vector<CSeq_id_Handle>& uids,
@@ -1479,7 +1439,6 @@ void CEutilsClient::Fetch(const string& db,
     x_Fetch(db, uids, ostr, retmode);
 }
 
-#ifdef NCBI_INT8_GI
 void CEutilsClient::Fetch(const string& db,
                           const vector<TGi>& uids,
                           CNcbiOstream& ostr,
@@ -1487,7 +1446,6 @@ void CEutilsClient::Fetch(const string& db,
 {
     x_Fetch(db, uids, ostr, retmode);
 }
-#endif
 
 template<class T>
 void CEutilsClient::x_Fetch(const string& db,
