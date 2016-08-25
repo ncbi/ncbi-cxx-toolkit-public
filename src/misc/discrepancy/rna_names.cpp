@@ -70,12 +70,7 @@ DISCREPANCY_CASE(RRNA_NAME_CONFLICTS, CSeqFeatData, eDisc | eSubmitter | eSmart,
     for (size_t i = 0; i < ArraySize(rrna_standard_name); i++) {
         // ??? do you really need this?
         // It is the same as NStr::EqualNocase() below.
-        if (name == rrna_standard_name[i]) {
-            return;
-        }
-        else if (NStr::EqualNocase(name, rrna_standard_name[i])) {
-            CReportNode& node = m_Objs[rrna_name_conflicts_complain.Get()];
-            node.Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eNoRef, true)).Fatal();
+        if (NStr::EqualNocase(name, rrna_standard_name[i])) {
             return;
         }
     }
