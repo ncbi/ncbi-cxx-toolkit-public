@@ -1089,7 +1089,7 @@ size_t s_GetRelocateChunk(const IRegistry& registry, const string& service,
 {
     const string param_name = "relocate_chunk";
     const string service_section = s_GetSection(registry, service, param_name);
-    return registry.GetInt(service_section, param_name, default_value);
+    return registry.GetInt(service_section, param_name, static_cast<int>(default_value));
 }
 
 
