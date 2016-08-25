@@ -84,13 +84,7 @@ bool CIStreamBuffer::SkipExpectedChar(char c, size_t offset)
 inline
 bool CIStreamBuffer::SkipExpectedChars(char c1, char c2, size_t offset)
 {
-    const char* pos = m_CurrentPos+offset+1;
-    if ( pos >= m_DataEndPos )
-        pos = FillBuffer(pos);
-    if ( pos[-1] != c1 || pos[0] != c2 )
-        return false;
-    m_CurrentPos = pos+1;
-    return true;
+    return SkipExpectedChar(c1, offset) && SkipExpectedChar(c2, 0);
 }
 
 inline
