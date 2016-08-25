@@ -342,7 +342,13 @@ bool CNcbiEnvRegMapper::EnvToReg(const string& env, string& section,
     if (env.size() <= kPfxLen  ||  !NStr::StartsWith(env, sm_Prefix) ) {
         return false;
     }
-    SIZE_TYPE uu_pos = env.find("__", kPfxLen + 1);
+    // Make an offset until the first symbol that could be section name
+    // (alphanumeric character)
+    unsigned int section_start_pos = kPfxLen;
+    for (  ; section_start_pos < env.size(); section_start_pos++) {
+        if (isalnum(env[section_start_pos])) break;
+    }
+    SIZE_TYPE uu_pos = env.find("__", section_start_pos + 1);
     if (uu_pos == NPOS  ||  uu_pos == env.size() - 2) {
         return false;
     }
