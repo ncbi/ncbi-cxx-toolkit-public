@@ -891,7 +891,7 @@ string CEutilsClient::x_GetHostName() const
         const char* web = ConnNetInfo_GetValue(kEutilsLB, REG_CONN_HOST,
                                                buf, sizeof(buf), kEutils);
         host = string(web  &&  *web ? web : kEutils);
-            scheme = "https";
+        scheme = "https";
     }
     else {
         scheme = "http";
