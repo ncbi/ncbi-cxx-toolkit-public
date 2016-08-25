@@ -62,7 +62,6 @@ CRef <CSeq_feat> CFindITSParser :: x_ParseLine(const CTempString &line, CSeq_ent
     NStr::Split(line,"\t",arr);
     if (arr.size() != 9)  
     {
-        msg = "Unable to parse extractor line(s)";
         return null_mrna;
     }
     string accession = arr[0];
@@ -73,6 +72,13 @@ CRef <CSeq_feat> CFindITSParser :: x_ParseLine(const CTempString &line, CSeq_ent
     string lsu = arr[6];
     string error = arr[7];  
     string strand = arr[8]; 
+
+    bsh = x_GetBioseqHandleFromIdGuesser(accession,tse);
+    if (!bsh) 
+    {
+        return null_mrna;
+    }
+
     arr.clear();
     NStr::TruncateSpacesInPlace(error);  
     if (!error.empty() && error !=  "Broken or partial sequence, no 5.8S!" && error !=  "Broken or partial sequence, only partial 5.8S!")
@@ -185,10 +191,8 @@ CRef <CSeq_feat> CFindITSParser :: x_ParseLine(const CTempString &line, CSeq_ent
     default : comment = "contains "+comments[0]; for (unsigned int j=1; j<comments.size()-1;j++) comment += ", "+comments[j]; comment += ", and "+comments.back();break;
     }
     negative = strand == "1";
-    bsh = x_GetBioseqHandleFromIdGuesser(accession,tse);
-    if (!bsh) return null_mrna;
     if (comments.size() == 1 && (ssu_present || lsu_present))
-        return x_CreateRRna(comment, bsh);
+        return x_CreateRRna(comments.front(), bsh);
     return x_CreateMiscRna(comment,bsh);
 }
 
@@ -231,6 +235,7 @@ CRef <CSeq_feat> CFindITSParser :: x_CreateRRna(const string &comment, CBioseq_H
     new_rrna->SetData().SetRna().SetType(CRNA_ref::eType_rRNA);
     string remainder;
     new_rrna->SetData().SetRna().SetRnaProductName(comment, remainder);
+  
     CRef<CSeq_loc> loc(new CSeq_loc());
     loc->SetInt().SetFrom(0);
     loc->SetInt().SetTo(bsh.GetBioseqLength()-1);
