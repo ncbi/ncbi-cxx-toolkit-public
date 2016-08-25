@@ -2205,8 +2205,8 @@ string CSeqDBImpl::GetAvailableMaskAlgorithmDescriptions()
            << "Available filtering algorithms applied to database sequences:"
            << endl << endl;
 
-    retval << setw(14) << left << "Algorithm ID"
-           << setw(20) << left << "Algorithm name"
+    retval << setw(13) << left << "Algorithm ID"
+           << setw(40) << left << "Algorithm name"
            << setw(40) << left << "Algorithm options" << endl;
     ITERATE(vector<int>, algo_id, algorithms) {
         string algo, algo_opts, algo_name;
@@ -2215,13 +2215,13 @@ string CSeqDBImpl::GetAvailableMaskAlgorithmDescriptions()
             algo_opts.assign("default options used");
         }
         if (s_IsNumericId(algo)) {
-            retval << setw(14) << left << (*algo_id)
-               << setw(20) << left << algo_name
-               << setw(40) << left << algo_opts << endl;
+            retval << setw(13) << left << (*algo_id)
+                   << setw(40) << left << algo_name
+                   << setw(40) << left << algo_opts << endl;
         } else {
-            retval << setw(14) << left << algo
-               << setw(20) << left << algo_name
-               << setw(40) << left << algo_opts << endl;
+            retval << setw(13) << left << (*algo_id)
+                   << setw(40) << left << algo
+                   << setw(40) << left << algo_opts << endl;
         }
     }
     return CNcbiOstrstreamToString(retval);
