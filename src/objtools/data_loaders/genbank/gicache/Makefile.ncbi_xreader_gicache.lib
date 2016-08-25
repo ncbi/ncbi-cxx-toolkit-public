@@ -9,8 +9,11 @@ LIB = ncbi_xreader_gicache
 # Build shared version when possible
 LIB_OR_DLL = both
 
+CPPFLAGS = $(LMDB_INCLUDE) $(ORIG_CPPFLAGS)
+
 # Dependencies for shared library
 DLL_LIB = ncbi_xreader$(DLL)
+LIBS = $(LMDB_LIBS)
 
 WATCHERS = vasilche
 
