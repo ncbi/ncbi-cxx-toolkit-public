@@ -49,6 +49,59 @@ Seq-annot ::= {
           val "gene0"
         }
       },
+      xref {
+        {
+          id local id 3
+        },
+        {
+          id local id 4
+        },
+        {
+          id local id 5
+        },
+        {
+          id local id 6
+        },
+        {
+          id local id 7
+        },
+        {
+          id local id 8
+        },
+        {
+          id local id 9
+        },
+        {
+          id local id 10
+        },
+        {
+          id local id 11
+        },
+        {
+          id local id 12
+        },
+        {
+          id local id 13
+        },
+        {
+          id local id 14
+        },
+        {
+          id local id 15
+        },
+        {
+          id local id 16
+        },
+        {
+          id local id 17
+        },
+        {
+          id local id 18
+        },
+        {
+          id local id 19
+        }
+      },
       dbxref {
         {
           db "EcoGene",
@@ -83,6 +136,11 @@ Seq-annot ::= {
           qual "ID",
           val "id1"
         }
+      },
+      xref {
+        {
+          id local id 2
+        }
       }
     },
     {
@@ -107,6 +165,11 @@ Seq-annot ::= {
         {
           qual "ID",
           val "id2"
+        }
+      },
+      xref {
+        {
+          id local id 2
         }
       }
     },
@@ -137,6 +200,11 @@ Seq-annot ::= {
           qual "ID",
           val "id3"
         }
+      },
+      xref {
+        {
+          id local id 2
+        }
       }
     },
     {
@@ -165,6 +233,11 @@ Seq-annot ::= {
         {
           qual "ID",
           val "id4"
+        }
+      },
+      xref {
+        {
+          id local id 2
         }
       }
     },
@@ -195,6 +268,11 @@ Seq-annot ::= {
           qual "ID",
           val "id5"
         }
+      },
+      xref {
+        {
+          id local id 2
+        }
       }
     },
     {
@@ -223,6 +301,11 @@ Seq-annot ::= {
         {
           qual "ID",
           val "id6"
+        }
+      },
+      xref {
+        {
+          id local id 2
         }
       }
     },
@@ -253,6 +336,11 @@ Seq-annot ::= {
           qual "ID",
           val "id7"
         }
+      },
+      xref {
+        {
+          id local id 2
+        }
       }
     },
     {
@@ -281,6 +369,11 @@ Seq-annot ::= {
         {
           qual "ID",
           val "id8"
+        }
+      },
+      xref {
+        {
+          id local id 2
         }
       }
     },
@@ -311,6 +404,11 @@ Seq-annot ::= {
           qual "ID",
           val "id9"
         }
+      },
+      xref {
+        {
+          id local id 2
+        }
       }
     },
     {
@@ -339,6 +437,11 @@ Seq-annot ::= {
         {
           qual "ID",
           val "id10"
+        }
+      },
+      xref {
+        {
+          id local id 2
         }
       }
     },
@@ -369,6 +472,11 @@ Seq-annot ::= {
           qual "ID",
           val "id11"
         }
+      },
+      xref {
+        {
+          id local id 2
+        }
       }
     },
     {
@@ -397,6 +505,11 @@ Seq-annot ::= {
         {
           qual "ID",
           val "id12"
+        }
+      },
+      xref {
+        {
+          id local id 2
         }
       }
     },
@@ -427,6 +540,11 @@ Seq-annot ::= {
           qual "ID",
           val "id13"
         }
+      },
+      xref {
+        {
+          id local id 2
+        }
       }
     },
     {
@@ -455,6 +573,11 @@ Seq-annot ::= {
         {
           qual "ID",
           val "id14"
+        }
+      },
+      xref {
+        {
+          id local id 2
         }
       }
     },
@@ -485,6 +608,11 @@ Seq-annot ::= {
           qual "ID",
           val "id15"
         }
+      },
+      xref {
+        {
+          id local id 2
+        }
       }
     },
     {
@@ -514,6 +642,11 @@ Seq-annot ::= {
           qual "ID",
           val "id16"
         }
+      },
+      xref {
+        {
+          id local id 2
+        }
       }
     },
     {
@@ -542,6 +675,11 @@ Seq-annot ::= {
         {
           qual "ID",
           val "id17"
+        }
+      },
+      xref {
+        {
+          id local id 2
         }
       }
     }

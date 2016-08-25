@@ -44,6 +44,14 @@ Seq-annot ::= {
           qual "Name",
           val "maker-scaffold01-pred_gff_GeneMark.hmm-gene-0.40"
         }
+      },
+      xref {
+        {
+          id local id 3
+        },
+        {
+          id local id 4
+        }
       }
     },
     {
@@ -84,6 +92,9 @@ Seq-annot ::= {
       xref {
         {
           id local id 4
+        },
+        {
+          id local id 2
         }
       }
     },
@@ -111,6 +122,9 @@ Seq-annot ::= {
       xref {
         {
           id local id 3
+        },
+        {
+          id local id 2
         }
       }
     }

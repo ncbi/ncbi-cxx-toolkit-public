@@ -28,6 +28,17 @@ Seq-annot ::= {
           val "gene0"
         }
       },
+      xref {
+        {
+          id local id 2
+        },
+        {
+          id local id 3
+        },
+        {
+          id local id 4
+        }
+      },
       dbxref {
         {
           db "EcoGene",
@@ -65,6 +76,11 @@ Seq-annot ::= {
           qual "function",
           val "component of addiction module"
         }
+      },
+      xref {
+        {
+          id local id 1
+        }
       }
     },
     {
@@ -97,6 +113,11 @@ Seq-annot ::= {
           qual "function",
           val "component of addiction module"
         }
+      },
+      xref {
+        {
+          id local id 1
+        }
       }
     },
     {
@@ -128,6 +149,11 @@ Seq-annot ::= {
         {
           qual "function",
           val "component of addiction module"
+        }
+      },
+      xref {
+        {
+          id local id 1
         }
       }
     }

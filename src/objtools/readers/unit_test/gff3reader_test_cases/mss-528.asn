@@ -49,6 +49,14 @@ Seq-annot ::= {
           val "gene0"
         }
       },
+      xref {
+        {
+          id local id 3
+        },
+        {
+          id local id 4
+        }
+      },
       dbxref {
         {
           db "EcoGene",
@@ -85,6 +93,9 @@ Seq-annot ::= {
       xref {
         {
           id local id 4
+        },
+        {
+          id local id 2
         }
       }
     },
@@ -131,6 +142,9 @@ Seq-annot ::= {
       xref {
         {
           id local id 3
+        },
+        {
+          id local id 2
         }
       },
       dbxref {
@@ -173,6 +187,14 @@ Seq-annot ::= {
           val "gene1"
         }
       },
+      xref {
+        {
+          id local id 6
+        },
+        {
+          id local id 7
+        }
+      },
       dbxref {
         {
           db "EcoGene",
@@ -209,6 +231,9 @@ Seq-annot ::= {
       xref {
         {
           id local id 7
+        },
+        {
+          id local id 5
         }
       }
     },
@@ -281,6 +306,9 @@ Seq-annot ::= {
       xref {
         {
           id local id 6
+        },
+        {
+          id local id 5
         }
       },
       dbxref {
@@ -368,6 +396,11 @@ Seq-annot ::= {
           val "gene17"
         }
       },
+      xref {
+        {
+          id local id 11
+        }
+      },
       dbxref {
         {
           db "EcoGene",
@@ -413,6 +446,11 @@ Seq-annot ::= {
  translation"
         }
       },
+      xref {
+        {
+          id local id 10
+        }
+      },
       dbxref {
         {
           db "ASAP",
@@ -444,6 +482,11 @@ Seq-annot ::= {
         {
           qual "ID",
           val "gene2687"
+        }
+      },
+      xref {
+        {
+          id local id 13
         }
       },
       dbxref {
@@ -507,6 +550,11 @@ Seq-annot ::= {
           val "tmRNA, 10Sa RNA"
         }
       },
+      xref {
+        {
+          id local id 12
+        }
+      },
       dbxref {
         {
           db "ASAP",
@@ -561,6 +609,11 @@ Seq-annot ::= {
           val "gene2717"
         }
       },
+      xref {
+        {
+          id local id 16
+        }
+      },
       dbxref {
         {
           db "EcoGene",
@@ -599,6 +652,11 @@ Seq-annot ::= {
           val "tRNA-Ile"
         }
       },
+      xref {
+        {
+          id local id 15
+        }
+      },
       dbxref {
         {
           db "ASAP",
@@ -631,6 +689,11 @@ Seq-annot ::= {
         {
           qual "ID",
           val "gene3334"
+        }
+      },
+      xref {
+        {
+          id local id 18
         }
       },
       dbxref {
@@ -668,6 +731,11 @@ Seq-annot ::= {
         {
           qual "product",
           val "5S ribosomal RNA of rrnD operon"
+        }
+      },
+      xref {
+        {
+          id local id 17
         }
       },
       dbxref {

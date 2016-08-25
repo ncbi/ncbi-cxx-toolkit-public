@@ -34,6 +34,11 @@ Seq-annot ::= {
           qual "old_locus_tag",
           val "BMA10229_A0702"
         }
+      },
+      xref {
+        {
+          id local id 2
+        }
       }
     },
     {
@@ -65,6 +70,11 @@ Seq-annot ::= {
           qual "product",
           val "16S ribosomal RNA"
         }
+      },
+      xref {
+        {
+          id local id 1
+        }
       }
     },
     {
@@ -94,6 +104,11 @@ Seq-annot ::= {
         {
           qual "gene_biotype",
           val "misc_RNA"
+        }
+      },
+      xref {
+        {
+          id local id 4
         }
       }
     },
@@ -130,6 +145,11 @@ Seq-annot ::= {
           qual "product",
           val "10Sa RNA (tmRNA)"
         }
+      },
+      xref {
+        {
+          id local id 3
+        }
       }
     },
     {
@@ -158,6 +178,11 @@ Seq-annot ::= {
         {
           qual "gene_biotype",
           val "RNase_P_RNA"
+        }
+      },
+      xref {
+        {
+          id local id 6
         }
       }
     },
@@ -192,6 +217,11 @@ Seq-annot ::= {
         {
           qual "product",
           val "bacterial RNase P"
+        }
+      },
+      xref {
+        {
+          id local id 5
         }
       }
     }

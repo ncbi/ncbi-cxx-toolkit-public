@@ -39,6 +39,14 @@ Seq-annot ::= {
           val "GTPX 2-Pseudogene"
         }
       },
+      xref {
+        {
+          id local id 2
+        },
+        {
+          id local id 3
+        }
+      },
       pseudo TRUE
     },
     {
@@ -90,6 +98,9 @@ Seq-annot ::= {
       xref {
         {
           id local id 3
+        },
+        {
+          id local id 1
         }
       },
       pseudo TRUE
@@ -118,6 +129,9 @@ Seq-annot ::= {
       xref {
         {
           id local id 2
+        },
+        {
+          id local id 1
         }
       },
       pseudo TRUE

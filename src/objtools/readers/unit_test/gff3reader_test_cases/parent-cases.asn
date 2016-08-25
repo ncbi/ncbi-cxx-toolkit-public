@@ -22,6 +22,32 @@ Seq-annot ::= {
           qual "Name",
           val "EDEN"
         }
+      },
+      xref {
+        {
+          id local id 2
+        },
+        {
+          id local id 3
+        },
+        {
+          id local id 4
+        },
+        {
+          id local id 5
+        },
+        {
+          id local id 6
+        },
+        {
+          id local id 7
+        },
+        {
+          id local id 8
+        },
+        {
+          id local id 9
+        }
       }
     },
     {
@@ -39,6 +65,11 @@ Seq-annot ::= {
         {
           qual "Parent",
           val "gene00001"
+        }
+      },
+      xref {
+        {
+          id local id 1
         }
       }
     },
@@ -81,6 +112,11 @@ Seq-annot ::= {
         {
           qual "ID",
           val "mRNA00001"
+        }
+      },
+      xref {
+        {
+          id local id 1
         }
       }
     },
@@ -128,6 +164,9 @@ Seq-annot ::= {
       xref {
         {
           id local id 7
+        },
+        {
+          id local id 1
         }
       }
     },
@@ -169,6 +208,9 @@ Seq-annot ::= {
       xref {
         {
           id local id 8
+        },
+        {
+          id local id 1
         }
       }
     },
@@ -198,6 +240,9 @@ Seq-annot ::= {
       xref {
         {
           id local id 9
+        },
+        {
+          id local id 1
         }
       }
     },
@@ -245,6 +290,9 @@ Seq-annot ::= {
       xref {
         {
           id local id 4
+        },
+        {
+          id local id 1
         }
       }
     },
@@ -286,6 +334,9 @@ Seq-annot ::= {
       xref {
         {
           id local id 5
+        },
+        {
+          id local id 1
         }
       }
     },
@@ -313,6 +364,9 @@ Seq-annot ::= {
       xref {
         {
           id local id 6
+        },
+        {
+          id local id 1
         }
       }
     }

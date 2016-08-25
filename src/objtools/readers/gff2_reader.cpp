@@ -316,7 +316,10 @@ bool CGff2Reader::x_ParseDataGff(
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
-    if ( CGff2Reader::IsAlignmentData(strLine) ) {
+    if (CGff2Reader::IsAlignmentData(strLine)) {
+        if (m_iFlags&fGenbankMode) {
+            return true;
+        }
         return x_ParseAlignmentGff(strLine, annots);
     }
     return x_ParseFeatureGff(strLine, annots, pEC);
@@ -847,6 +850,14 @@ bool CGff2Reader::x_FeatureTrimQualifiers(
             it++;
             continue;
         }
+        //if (qualKey == "product") {
+        //    it++;
+        //    continue;
+        //}
+        //if (qualKey == "protein_id") {
+        //    it++;
+        //    continue;
+        //}
         const string& qualVal = (*it)->GetVal();
         string attrVal;
         if (!record.GetAttribute(qualKey, attrVal)) {
@@ -1252,7 +1263,7 @@ bool CGff2Reader::xGenerateParentChildXrefs(
     typedef list<CRef<CSeq_feat> > FTABLE;
     typedef list<string> PARENTS;
 
-    if (!(m_iFlags & CGff2Reader::fGenbankMode)) {
+    if (!pAnnot->IsFtable()) {
         return true;
     }
     FTABLE& ftable = pAnnot->SetData().SetFtable();
