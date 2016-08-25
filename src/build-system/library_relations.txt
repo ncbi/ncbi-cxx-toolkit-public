@@ -367,6 +367,8 @@ gnomon_asn_proc needs xobjutil
 gnutls needs3party $(GMP_LIBS)
 gnutls needs3party $(NETTLE_LIBS)
 gnutls needs3party $(ORIG_LIBS)
+gp_assm2xml needs gencoll_client
+gp_assm2xml needs xmlwrapp
 gpcgi needs $(SDBAPI_LIB)
 gpcgi needs xcgi
 gpcgi needs xmlwrapp
