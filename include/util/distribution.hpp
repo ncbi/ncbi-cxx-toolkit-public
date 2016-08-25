@@ -53,14 +53,14 @@ public:
         CRandom* random_gen)
     {
         m_RandomGen = random_gen;
-        CRangeList::ParseImpl(parameter_value, parameter_name, &m_RangeVector);
+        CRangeListImpl::Parse(parameter_value, parameter_name, &m_RangeVector);
     }
 
     unsigned GetNextValue() const;
 
 private:
     CRandom* m_RandomGen;
-    CRangeList::TRangeVector m_RangeVector;
+    CRangeListImpl::TRangeVector m_RangeVector;
 };
 
 /// @deprecated

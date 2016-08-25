@@ -41,39 +41,32 @@
 
 BEGIN_NCBI_SCOPE
 
-/// @deprecated
-class NCBI_DEPRECATED NCBI_XUTIL_EXPORT CRangeList
+/// @warning do not use this internal class, it will be removed.
+class NCBI_XUTIL_EXPORT CRangeListImpl
 {
 public:
     typedef std::pair<int, int> TIntegerRange;
     typedef std::vector<TIntegerRange> TRangeVector;
 
-    NCBI_DEPRECATED
     const TRangeVector& Parse(const char* init_string,
             const char* config_param_name)
     {
-        ParseImpl(init_string, config_param_name, &m_RangeVector);
+        Parse(init_string, config_param_name, &m_RangeVector);
         return m_RangeVector;
     }
 
     const TRangeVector& GetRangeList() const {return m_RangeVector;}
 
-    NCBI_DEPRECATED
     static void Parse(const char* init_string,
             const char* config_param_name,
-            TRangeVector* range_vector)
-    {
-        return ParseImpl(init_string, config_param_name, range_vector);
-    }
+            TRangeVector* range_vector);
 
 private:
     TRangeVector m_RangeVector;
-
-    friend class CDiscreteDistributionImpl;
-    static void ParseImpl(const char* init_string,
-            const char* config_param_name,
-            TRangeVector* range_vector);
 };
+
+/// @deprecated
+struct NCBI_DEPRECATED NCBI_XUTIL_EXPORT CRangeList : CRangeListImpl {};
 
 END_NCBI_SCOPE
 

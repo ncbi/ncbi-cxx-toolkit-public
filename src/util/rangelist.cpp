@@ -44,7 +44,7 @@ static const char* s_SkipSpaces(const char* input_string)
     return input_string;
 }
 
-void CRangeList::ParseImpl(const char* init_string,
+void CRangeListImpl::Parse(const char* init_string,
         const char* config_param_name,
         TRangeVector* range_vector)
 {
