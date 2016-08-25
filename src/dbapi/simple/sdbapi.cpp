@@ -1950,7 +1950,7 @@ CDatabase::NewBookmark(const string& table_name, const string& column_name,
 void CDatabase::x_ConnectAsNeeded(const char* operation)
 {
     if ( !m_Impl->EverConnected() ) {
-        ERR_POST_X(19, Info << operation << ": connecting on demand.");
+        _TRACE(operation << ": connecting on demand.");
         Connect();
     } else if ( !IsConnected(eNoCheck) ) {
         NCBI_THROW(CSDB_Exception, eClosed,
