@@ -1080,11 +1080,6 @@ bool CGtfReader::x_FeatureSetDataCDS(
         pFeature->SetExcept( true );
         pFeature->SetExcept_text( "ribosomal slippage" );
     }
-    if ( record.GetAttribute( "product", strValue ) ) {
-        CRef< CSeqFeatXref > pXref( new CSeqFeatXref );
-        pXref->SetData().SetProt().SetName().push_back( strValue );
-        pFeature->SetXref().push_back( pXref );
-    }
     if ( record.GetAttribute( "transl_table", strValue ) ) {
         CRef< CGenetic_code::C_E > pGc( new CGenetic_code::C_E );
         pGc->SetId( NStr::StringToUInt( strValue ) );
@@ -1150,11 +1145,11 @@ bool CGtfReader::x_ProcessQualifierSpecialCase(
         pFeature->SetPartial( true );
         return true;
     }
-    if (0 == NStr::CompareNocase(it->first, "protein_id")) {
-        if (pFeature->IsSetProduct()) {
-            return true;
-        }
-    }
+    //if (0 == NStr::CompareNocase(it->first, "protein_id")) {
+    //    if (pFeature->IsSetProduct()) {
+    //        return true;
+    //    }
+    //}
 
     return false;
 }  

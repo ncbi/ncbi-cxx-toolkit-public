@@ -850,14 +850,14 @@ bool CGff2Reader::x_FeatureTrimQualifiers(
             it++;
             continue;
         }
-        //if (qualKey == "product") {
-        //    it++;
-        //    continue;
-        //}
-        //if (qualKey == "protein_id") {
-        //    it++;
-        //    continue;
-        //}
+        if (qualKey == "product") {
+            it++;
+            continue;
+        }
+        if (qualKey == "protein_id") {
+            it++;
+            continue;
+        }
         const string& qualVal = (*it)->GetVal();
         string attrVal;
         if (!record.GetAttribute(qualKey, attrVal)) {
