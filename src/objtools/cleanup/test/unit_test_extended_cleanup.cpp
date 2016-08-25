@@ -401,9 +401,8 @@ BOOST_AUTO_TEST_CASE(Test_AddMetaGenomesAndEnvSample)
 	vector<string> changes_str = changes->GetAllDescriptions();
     vector<string> expected;
     expected.push_back("Change Publication");
-    expected.push_back("Change Qualifiers");
+    expected.push_back("Change Subsource");
     expected.push_back("Move Descriptor");
-    expected.push_back("Add BioSource SubSource");
     s_ReportUnexpected(changes_str, expected);
     bool found_src = false;
     ITERATE(CBioseq::TDescr::Tdata, it, entry->GetSeq().GetDescr().Get()) {
@@ -411,8 +410,9 @@ BOOST_AUTO_TEST_CASE(Test_AddMetaGenomesAndEnvSample)
             found_src = true;
             BOOST_CHECK_EQUAL((*it)->GetSource().IsSetSubtype(), true);
             if ((*it)->GetSource().IsSetSubtype()) {
-                BOOST_CHECK_EQUAL((*it)->GetSource().GetSubtype().size(), 1);
-                BOOST_CHECK_EQUAL((*it)->GetSource().GetSubtype().front()->GetSubtype(), CSubSource::eSubtype_metagenomic);
+                BOOST_CHECK_EQUAL((*it)->GetSource().GetSubtype().size(), 2);
+                BOOST_CHECK_EQUAL((*it)->GetSource().GetSubtype().front()->GetSubtype(), CSubSource::eSubtype_environmental_sample);
+                BOOST_CHECK_EQUAL((*it)->GetSource().GetSubtype().back()->GetSubtype(), CSubSource::eSubtype_metagenomic);
             }
         }
     }
@@ -429,8 +429,8 @@ BOOST_AUTO_TEST_CASE(Test_AddMetaGenomesAndEnvSample)
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_environmental_sample, "");
     changes = cleanup.ExtendedCleanup (*entry, CCleanup::eClean_NoNcbiUserObjects);
     changes_str = changes->GetAllDescriptions();
-    expected.push_back("Change Qualifiers");
     expected.push_back("Add BioSource SubSource");
+    expected.push_back("Change BioSource Other");
     s_ReportUnexpected(changes_str, expected);
     found_src = false;
     ITERATE(CBioseq::TDescr::Tdata, it, entry->GetSeq().GetDescr().Get()) {
@@ -453,8 +453,7 @@ BOOST_AUTO_TEST_CASE(Test_AddMetaGenomesAndEnvSample)
     changes = cleanup.ExtendedCleanup (*entry, CCleanup::eClean_NoNcbiUserObjects);
     changes_str = changes->GetAllDescriptions();
     expected.clear();
-    expected.push_back("Change Qualifiers");
-    expected.push_back("Add BioSource SubSource");
+    expected.push_back("Change Subsource");
     s_ReportUnexpected(changes_str, expected);
     found_src = false;
     ITERATE(CBioseq::TDescr::Tdata, it, entry->GetSeq().GetDescr().Get()) {

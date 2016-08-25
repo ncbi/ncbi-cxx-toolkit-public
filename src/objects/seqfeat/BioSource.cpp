@@ -1517,14 +1517,14 @@ bool CBioSource::FixEnvironmentalSample()
         GetOrg().IsSetTaxname() && 
         NStr::StartsWith(GetOrg().GetTaxname(), "uncultured ")) {
         //If taxname starts with uncultured, set environmental - sample to true
-        SetSubtype().push_back(CRef<CSubSource>(new CSubSource(CSubSource::eSubtype_environmental_sample, " ")));
+        SetSubtype().push_back(CRef<CSubSource>(new CSubSource(CSubSource::eSubtype_environmental_sample, "")));
         has_env_sample = true;
         any_change = true;
     }
     
     if (has_metagenomic && !has_env_sample) {
         // If metagenomic, set environmental_sample
-        SetSubtype().push_back(CRef<CSubSource>(new CSubSource(CSubSource::eSubtype_environmental_sample, " ")));
+        SetSubtype().push_back(CRef<CSubSource>(new CSubSource(CSubSource::eSubtype_environmental_sample, "")));
         has_env_sample = true;
         any_change = true;
     }
@@ -1534,7 +1534,7 @@ bool CBioSource::FixEnvironmentalSample()
         GetOrg().GetOrgname().IsSetDiv() &&
         NStr::Equal(GetOrg().GetOrgname().GetDiv(), "ENV")) {
         // Add environmental_sample to BioSource if BioSource.org.orgname.div == "ENV"
-        SetSubtype().push_back(CRef<CSubSource>(new CSubSource(CSubSource::eSubtype_environmental_sample, " ")));
+        SetSubtype().push_back(CRef<CSubSource>(new CSubSource(CSubSource::eSubtype_environmental_sample, "")));
         has_env_sample = true;
         any_change = true;
     }
@@ -1544,12 +1544,12 @@ bool CBioSource::FixEnvironmentalSample()
         NStr::Find(GetOrg().GetOrgname().GetLineage(), "metagenomes") != string::npos) {
         // Add metagenomic(and environmental_sample) if BioSource.org.orgname.lineage contains "metagenomes"
         if (!has_env_sample) {
-            SetSubtype().push_back(CRef<CSubSource>(new CSubSource(CSubSource::eSubtype_environmental_sample, " ")));
+            SetSubtype().push_back(CRef<CSubSource>(new CSubSource(CSubSource::eSubtype_environmental_sample, "")));
             has_env_sample = true;
             any_change = true;
         }
         if (!has_metagenomic) {
-            SetSubtype().push_back(CRef<CSubSource>(new CSubSource(CSubSource::eSubtype_metagenomic, " ")));
+            SetSubtype().push_back(CRef<CSubSource>(new CSubSource(CSubSource::eSubtype_metagenomic, "")));
             has_metagenomic = true;
             any_change = true;
         }
@@ -1567,12 +1567,12 @@ bool CBioSource::FixEnvironmentalSample()
         }
         if (has_metagenome_source) {
             if (!has_env_sample) {
-                SetSubtype().push_back(CRef<CSubSource>(new CSubSource(CSubSource::eSubtype_environmental_sample, " ")));
+                SetSubtype().push_back(CRef<CSubSource>(new CSubSource(CSubSource::eSubtype_environmental_sample, "")));
                 has_env_sample = true;
                 any_change = true;
             }
             if (!has_metagenomic) {
-                SetSubtype().push_back(CRef<CSubSource>(new CSubSource(CSubSource::eSubtype_metagenomic, " ")));
+                SetSubtype().push_back(CRef<CSubSource>(new CSubSource(CSubSource::eSubtype_metagenomic, "")));
                 has_metagenomic = true;
                 any_change = true;
             }
