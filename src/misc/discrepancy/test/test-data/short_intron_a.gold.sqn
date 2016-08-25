@@ -1,0 +1,345 @@
+Seq-entry ::= set {
+  class genbank,
+  seq-set {
+    set {
+      class nuc-prot,
+      descr {
+        source {
+          genome genomic,
+          org {
+            taxname "Lolium perenne",
+            db {
+              {
+                db "taxon",
+                tag id 4522
+              }
+            },
+            orgname {
+              name binomial {
+                genus "Lolium",
+                species "perenne"
+              },
+              lineage "Eukaryota; Viridiplantae; Streptophyta; Embryophyta;
+ Tracheophyta; Spermatophyta; Magnoliophyta; Liliopsida; Poales; Poaceae; BEP
+ clade; Pooideae; Poeae; Loliinae; Lolium",
+              gcode 1,
+              mgcode 1,
+              div "PLN",
+              pgcode 11
+            }
+          },
+          subtype {
+            {
+              subtype tissue-type,
+              name "roots"
+            },
+            {
+              subtype other,
+              name "phosphate transporter"
+            }
+          }
+        },
+        pub {
+          pub {
+            gen {
+              cit "Unpublished",
+              authors {
+                names std {
+                  {
+                    name name {
+                      last "Liu",
+                      first "Qianhe",
+                      initials "Q."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Rasmussen",
+                      first "Susanne",
+                      initials "S."
+                    }
+                  }
+                }
+              },
+              title "Transcriptional regulation of phosphate transporters from
+ Lolium perenne and its mycorrhizal symbionts in response to phosphorus supply"
+            }
+          }
+        },
+        pub {
+          pub {
+            sub {
+              authors {
+                names std {
+                  {
+                    name name {
+                      last "Liu",
+                      first "Qianhe",
+                      initials "Q."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Rasmussen",
+                      first "Susanne",
+                      initials "S."
+                    }
+                  }
+                },
+                affil std {
+                  affil "AgResearch",
+                  div "Grasslands",
+                  city "Palmerston North",
+                  sub "Manuwatu",
+                  country "New Zealand",
+                  street "Tennent Drive",
+                  postal-code "4442"
+                }
+              },
+              medium email,
+              date std {
+                year 2013,
+                month 11,
+                day 3
+              }
+            }
+          }
+        },
+        user {
+          class "SMART_V1.0",
+          type id 1,
+          data {
+            {
+              label id 1,
+              num 1,
+              data int 8183084
+            }
+          }
+        },
+        user {
+          type str "Submission",
+          data {
+            {
+              label str "SmartComment",
+              data str "TOTAL # OF SEQS:1"
+            },
+            {
+              label str "AdditionalComment",
+              data str "BankIt1672444"
+            }
+          }
+        },
+        user {
+          type str "NcbiCleanup",
+          data {
+            {
+              label str "method",
+              data str "SequinCleanup"
+            },
+            {
+              label str "version",
+              data int 7
+            },
+            {
+              label str "month",
+              data int 6
+            },
+            {
+              label str "day",
+              data int 2
+            },
+            {
+              label str "year",
+              data int 2014
+            }
+          }
+        },
+        user {
+          type str "NcbiAutofix",
+          data {
+          }
+        },
+        update-date std {
+          year 2013,
+          month 11,
+          day 3,
+          hour 20,
+          minute 33,
+          second 9
+        }
+      },
+      seq-set {
+        seq {
+          id {
+            local str "Seq1",
+            general {
+              db "BankIt",
+              tag str "1672444/Seq1"
+            },
+            general {
+              db "TMSMART",
+              tag id 40702754
+            },
+            genbank {
+              accession "KF812548"
+            }
+          },
+          descr {
+            title "Putative phosphate transporter mRNA,cds",
+            molinfo {
+              biomol mRNA
+            },
+            user {
+              type str "StructuredComment",
+              data {
+                {
+                  label str "StructuredCommentPrefix",
+                  data str "##Assembly-Data-START##"
+                },
+                {
+                  label str "Sequencing Technology",
+                  data str "Sanger dideoxy sequencing"
+                },
+                {
+                  label str "StructuredCommentSuffix",
+                  data str "##Assembly-Data-END##"
+                }
+              }
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:Seq1"
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol rna,
+            length 1904,
+            strand ss,
+            seq-data ncbi2na '19AA1104202722082C826889D3272E88AD0C1CBE363694E9
+AB812741BBEE0091F852980190EB14FD1A5BAE365A4EA7DF45865C6177DE4DD5DB4729E7AA64DC
+711609E9241896AD1756901BB6965B81A6E9DDE6919D9AA49DF7DA7A76B84276A64226DCEBF467
+4D74EBDDE75366D2A776F6A462942AEE32A1BEEFDFD9F7A769F6BBE9AE1C55F3698534ED62C650
+420046E917D36796DFE5392A7DACD7BDA4536D14FBEDD759BD6819BD526515F71B61906D353EA5
+A2961C6EE9934FB4EF6914D5E599E171C7A64E08E5221662311A674D1590460909469A13B52AE7
+410A13458A28A20AD49F42E975AA11FAA5DF76692F4E25946871179C94510917AF5E7A1B65F712
+5205EF520A137D142B68E8D51690A10E26576289EC593676E54A674D9DFE6916C5A9C7AF45B65F
+4D84D3E92BDE8D49D3ABFE538E14DF4E765365B95C61C5DB4252A451169F6DBDDC69745F7DF650
+7FA95049105F4DB9596237F5A529D6751F946BB7796796B0A5AA634DAE4F6AF5ECE4D128D20825
+6102AC759AB36939906477DB9D9E9141F5EA3E7FDD1E7AE522D00A0AD9D8A23750A20738638641
+4F1579EB972EFF13B3A76EEFE7FE7D7FE7EEEF9476783DBA6DAFE3B59B90F5FFFCBE85F04405CD
+BEEFB393EFDFFBD1420DDCE03438FE3D3B000000000000'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data gene {
+                    locus "LpPT1",
+                    desc "Lolium perenne phosphate"
+                  },
+                  location int {
+                    from 0,
+                    to 1903,
+                    strand plus,
+                    id genbank {
+                      accession "KF812548"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "Seq1_prot_1",
+            general {
+              db "TMSMART",
+              tag id 40702755
+            }
+          },
+          descr {
+            title "LpPT1 [Lolium perenne]",
+            molinfo {
+              biomol peptide
+            }
+          },
+          inst {
+            repr raw,
+            mol aa,
+            length 527,
+            seq-data ncbieaa "MAGEQLNVLKALDQAKTQWYHFTAVVIAGMGFFTDAYDLFCISLVTRL
+LGRIYYTEAGSNEPGHLPANVSAAVNGVALCGTLAGQLFFGWLGDKLGRKSVYGFTLILMVLCSIASGLSFGHEAKGV
+IGTLCFFRFWLGFGVGGDYPLSATIMSEYANKKTRGTFIAAVFAMQGFGILFGTIVTIVVSSAFRNAFPAPPFYVDAT
+SSIGPEADYVWRIIVMFGTIPAALTYYWRMKMPETARYTALITRNTKQATADMSRVLNKDITEEEEKVQLQVASGDTW
+GLFSRQFMSRHGLHLLATTSTWFLLDVAFYSQNLFQKDIFTKVGWIPPARTMSALEELYRIARAQALIALCGTVPGYW
+FTVAFIDIIGRFWIQLMGFAMMTIFMLAIAVPYDYLVKPGHHTGFVVLYGLTFFFANFGPNSTTFIVPAEIFPARLRS
+TCHGVSAAAGKAGAIIGAFGFLYASQDQKKPDKGYSAGIGMRNALFVLAGTNFLGLLFSLLVPESKGRSLEEISKENY
+DDDATITPAGA"
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data prot {
+                    name {
+                      "LpPT1"
+                    },
+                    desc "Lolium perenne phosphate trnasporter 1"
+                  },
+                  location int {
+                    from 0,
+                    to 526,
+                    id local str "Seq1_prot_1"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                frame one,
+                code {
+                  id 1
+                }
+              },
+              except TRUE,
+              comment "putative",
+              product whole local str "Seq1_prot_1",
+              location mix {
+                int {
+                  from 91,
+                  to 117,
+                  strand plus,
+                  id genbank {
+                    accession "KF812548"
+                  }
+                },
+                int {
+                  from 121,
+                  to 1677,
+                  strand plus,
+                  id genbank {
+                    accession "KF812548"
+                  }
+                }
+              },
+              except-text "low-quality sequence region"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -28,11 +28,15 @@
  */
 
 #include <ncbi_pch.hpp>
+
 #include "discrepancy_core.hpp"
+#include "utils.hpp"
+
 #include <objects/general/Dbtag.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/RNA_gen.hpp>
+#include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/seq/Delta_seq.hpp>
@@ -45,7 +49,6 @@
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/tse_handle.hpp>
 #include <objtools/edit/cds_fix.hpp>
-
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
@@ -1344,9 +1347,9 @@ DISCREPANCY_CASE(SHORT_INTRON, CSeq_feat, eDisc | eOncaller | eSubmitter | eSmar
     }
     if (found_short) {
         if (obj.IsSetExcept() && obj.GetExcept()) {
-            m_Objs[kShortIntronTop][kShortIntronExcept].Ext().Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
+            m_Objs[kShortIntronTop][kShortIntronExcept].Ext().Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj), eKeepRef, true), false);
         } else {
-            m_Objs[kShortIntronTop].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
+            m_Objs[kShortIntronTop].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj), eKeepRef, true), false);
         }
     }
 }
@@ -1360,12 +1363,9 @@ DISCREPANCY_SUMMARIZE(SHORT_INTRON)
 }
 
 
-#if 0
-// waiting for clarification from Karen Clark before writing autofix
-const string kPutativeFrameShift = "putative frameshift";
+static const string kPutativeFrameShift = "putative frameshift";
 
-
-void AddException(const CSeq_feat& sf, CScope& scope, const string& exception_text)
+static void AddException(const CSeq_feat& sf, CScope& scope, const string& exception_text)
 {
     CRef<CSeq_feat> new_feat(new CSeq_feat());
     new_feat->Assign(sf);
@@ -1379,14 +1379,80 @@ void AddException(const CSeq_feat& sf, CScope& scope, const string& exception_te
     feh.Replace(*new_feat);
 }
 
+static void AdjustBacterialGeneForCodingRegionWithShortIntron(CSeq_feat& sf, CSeq_feat& gene, bool is_bacterial)
+{
+    if (!sf.IsSetComment() && !NStr::IsBlank(sf.GetComment())) {
+        if (gene.IsSetComment() && !NStr::IsBlank(gene.GetComment())) {
+            gene.SetComment(sf.GetComment() + ';' + gene.GetComment());
+        }
+        else {
+            gene.ResetComment();
 
-bool AddExceptionsToShortIntron(const CSeq_feat& sf, CScope& scope, const string& default_lineage)
+            if (sf.IsSetComment()) {
+                gene.SetComment(sf.GetComment());
+                sf.ResetComment();
+            }
+
+            if (is_bacterial) {
+                sf.SetComment("contains short intron that may represent a frameshift");
+            }
+        }
+    }
+
+    if (!gene.IsSetComment() || NStr::Find(gene.GetComment(), kPutativeFrameShift) == NPOS) {
+        if (gene.IsSetComment() && !NStr::IsBlank(gene.GetComment())) {
+            gene.SetComment(kPutativeFrameShift + ';' + gene.GetComment());
+        }
+        else {
+            gene.ResetComment();
+
+            if (sf.IsSetComment()) {
+                gene.SetComment(sf.GetComment());
+                sf.ResetComment();
+            }
+
+            if (is_bacterial) {
+                sf.SetComment("contains short intron that may represent a frameshift");
+            }
+        }
+    }
+}
+
+static void ConvertToMiscFeature(CSeq_feat& sf, CScope& scope)
+{
+    if (sf.IsSetData()) {
+
+        if (sf.GetData().IsCdregion() || sf.GetData().IsRna()) {
+
+            string prod_name;
+            if (sf.GetData().IsCdregion()) {
+                prod_name = GetProductName(sf, scope);
+                sf.ResetProduct();
+            }
+            else {
+                prod_name = sf.GetData().GetRna().GetRnaProductName();
+            }
+
+            if (!NStr::IsBlank(prod_name)) {
+                if (sf.IsSetComment()) {
+                    sf.SetComment() += ';';
+                }
+                sf.SetComment() += prod_name;
+            }
+
+            sf.ResetData();
+            sf.SetData().SetImp().SetKey("misc_feature");
+        }
+    }
+}
+
+static bool AddExceptionsToShortIntron(const CSeq_feat& sf, CScope& scope, const string& default_lineage)
 {
     bool rval = false;
     CBioseq_Handle bsh;
     try {
         bsh = scope.GetBioseqHandle(sf.GetLocation());
-    } catch (CException& ex) {
+    } catch (CException& ) {
         return false;
     }
     CSeqdesc_CI src(bsh, CSeqdesc::e_Source);
@@ -1394,153 +1460,57 @@ bool AddExceptionsToShortIntron(const CSeq_feat& sf, CScope& scope, const string
     if (src) {
         if (src->GetSource().IsSetGenome() && src->GetSource().GetGenome() == CBioSource::eGenome_mitochondrion) {
             return false;
-        } else if (CDiscrepancyContext::HasLineage(src->GetSource(), default_lineage, "Bacteria") ||
-            CDiscrepancyContext::HasLineage(src->GetSource(), default_lineage, "Archea")) {
-            return false;
+        }
+        
+        bool is_bacterial = CDiscrepancyContext::HasLineage(src->GetSource(), default_lineage, "Bacteria");
+        if (is_bacterial || CDiscrepancyContext::HasLineage(src->GetSource(), default_lineage, "Archea")) {
+
+            CConstRef<CSeq_feat> gene = CCleanup::GetGeneForFeature(sf, scope);
+            if (gene.NotEmpty()) {
+                
+                CSeq_feat* gene_edit = const_cast<CSeq_feat*>(gene.GetPointer());
+                CSeq_feat& sf_edit = const_cast<CSeq_feat&>(sf);
+
+                rval = true;
+
+                gene_edit->SetPseudo(true);
+
+                AdjustBacterialGeneForCodingRegionWithShortIntron(sf_edit, *gene_edit, is_bacterial);
+
+                // Merge gene's location
+                if (gene_edit->IsSetLocation()) {
+                    CRef<CSeq_loc> new_loc = gene_edit->SetLocation().Merge(CSeq_loc::fMerge_All, nullptr);
+                    if (new_loc.NotEmpty()) {
+                        gene_edit->SetLocation().Assign(*new_loc);
+                    }
+                }
+
+                if (sf.IsSetProduct()) {
+                    CBioseq_Handle bioseq_h = scope.GetBioseqHandle(sf.GetProduct());
+                    if (bioseq_h.IsSetInst()) {
+                        sf_edit.ResetProduct();
+                    }
+                }
+
+                if (is_bacterial) {
+                    ConvertToMiscFeature(sf_edit, scope);
+                }
+                else {
+                    // TODO: feature should be removed here
+                    sf_edit.RemoveReference(); // ?????
+                }
+            }
+
+            return rval;
         }
     }
+
     if (!sf.IsSetExcept_text() || NStr::Find(sf.GetExcept_text(), "low-quality sequence region") == string::npos) {
         AddException(sf, scope, "low-quality sequence region");
         rval = true;
     }
     return rval;
 }
-
-
-void AdjustBacterialGeneForCodingRegionWithShortIntron(const CSeq_feat& sf, const CSeq_feat& gene, CScope& scope)
-{
-    bool any_change = false;
-
-    CRef<CSeq_feat> new_gene(new CSeq_feat());
-    new_gene->Assign(gene);
-
-    if (sf.IsSetComment() && !NStr::IsBlank(sf.GetComment())) {
-        if (new_gene->IsSetComment() && !NStr::IsBlank(new_gene->GetComment())) {
-            new_gene->SetComment(new_gene->GetComment() + "; " + sf.GetComment());
-        } else {
-            new_gene->SetComment(sf.GetComment());
-        }
-        any_change = true;
-    }
-    if (!new_gene->IsSetComment()) {
-    }
-
-    if (any_change) {
-
-    }
-}
-
-
-#if 0
-    if (src && CDiscrepancyContext::HasLineage(src->GetSource(), default_lineage, "Bacteria")) {
-
-    }
-
-    for (vnp = item_list; vnp != NULL; vnp = vnp->next) {
-        if (vnp->choice != OBJ_SEQFEAT) continue;
-        sfp = (SeqFeatPtr)vnp->data.ptrvalue;
-        if (sfp == NULL) continue;
-        bsp = BioseqFindFromSeqLoc(sfp->location);
-        if (bsp == NULL) continue;
-
-        sdp = SeqMgrGetNextDescriptor(bsp, NULL, Seq_descr_source, &context);
-        if (sdp != NULL) biop = sdp->data.ptrvalue;
-        if (biop != NULL && IsBacterialBioSource(biop)) {
-            is_bac_src = TRUE;
-        } else is_bac_src = FALSE;
-        if (biop != NULL && biop->genome == GENOME_mitochondrion) {
-            // no change
-        } else if (biop != NULL && (is_bac_src || IsArchaealBioSource(biop))) {
-            if (sfp->idx.subtype == FEATDEF_CDS) {
-                if (is_bac_src) {
-                    ValNodeAddPointerToEnd(&to_convert, OBJ_SEQFEAT, sfp);
-                }
-
-                gene = GetGeneForFeature(sfp);
-                if (gene != NULL) {
-                    gene->pseudo = TRUE;
-                    if (StringDoesHaveText(sfp->comment)) {
-                        if (StringDoesHaveText(gene->comment)) {
-                            len = StringLen(sfp->comment) + StringLen(gene->comment) + 10;
-                            str = (CharPtr)MemNew(sizeof(Char) * len);
-                            if (str != NULL) {
-                                StringCpy(str, sfp->comment);
-                                StringCat(str, "; ");
-                                StringCat(str, gene->comment);
-                                gene->comment = MemFree(gene->comment);
-                                gene->comment = str;
-                            }
-                        } else {
-                            gene->comment = sfp->comment;
-                            sfp->comment = NULL;
-                            if (is_bac_src) {
-                                sfp->comment = StringSave("contains short intron that may represent a frameshift");
-                            }
-                        }
-                    }
-                    if (StringSearch(gene->comment, kPutativeFrameShift) == NULL) {
-                        if (StringDoesHaveText(gene->comment)) {
-                            len = StringLen(kPutativeFrameShift) + StringLen(gene->comment) + 10;
-                            str = (CharPtr)MemNew(sizeof(Char) * len);
-                            if (str != NULL) {
-                                StringCpy(str, kPutativeFrameShift);
-                                StringCat(str, "; ");
-                                StringCat(str, gene->comment);
-                                gene->comment = MemFree(gene->comment);
-                                gene->comment = str;
-                            }
-                        } else {
-                            gene->comment = sfp->comment;
-                            sfp->comment = NULL;
-                            if (is_bac_src) {
-                                sfp->comment = StringSave("contains short intron that may represent a frameshift");
-                            }
-                        }
-                    }
-                    slp = SeqLocMerge(bsp, gene->location, NULL, TRUE, FALSE, FALSE);
-                    if (slp != NULL) {
-                        gene->location = SeqLocFree(gene->location);
-                        gene->location = slp;
-                    }
-                    pbsp = BioseqFindFromSeqLoc(sfp->product);
-                    if (pbsp != NULL) {
-                        pbsp->idx.deleteme = TRUE;
-                    }
-                    if (!is_bac_src) {
-                        sfp->idx.deleteme = TRUE;
-                        ValNodeAddInt(&entityIDList, 0, bsp->idx.entityID);
-                    }
-                }
-            }
-        } else if (StringStr(sfp->except_text, "low-quality sequence region") == NULL) {
-            SetStringValue(&(sfp->except_text), "low-quality sequence region", ExistingTextOption_append_semi);
-            sfp->excpt = TRUE;
-            if (lip != NULL && lip->fp != NULL) {
-                txt = GetDiscrepancyItemText(vnp);
-                fprintf(lip->fp, "Added low-quality sequence region exception to %s\n", txt);
-                txt = MemFree(txt);
-            }
-        }
-    }
-
-    entityIDList = ValNodeSort(entityIDList, SortByIntvalue);
-    ValNodeUnique(&entityIDList, SortByIntvalue, ValNodeFree);
-
-    if (to_convert.head != NULL) {
-        to_convert.head = ValNodeSort(to_convert.head, SortVnpByChoiceAndPtrvalue);
-        ValNodeUnique(&(to_convert.head), SortVnpByChoiceAndPtrvalue, ValNodeFree);
-
-        ConvertListToMiscFeat(to_convert.head, FALSE, lip);
-        if (lip != NULL) {
-            if (lip->fp != NULL) {
-                fprintf(lip->fp, "Converted %d contained coding regions to misc_features\n", ValNodeLen(to_convert.head));
-            }
-            lip->data_in_log = TRUE;
-        }
-
-        to_convert.head = ValNodeFree(to_convert.head);
-    }
-#endif
 
 
 DISCREPANCY_AUTOFIX(SHORT_INTRON)
@@ -1555,7 +1525,6 @@ DISCREPANCY_AUTOFIX(SHORT_INTRON)
     }
     return CRef<CAutofixReport>(n ? new CAutofixReport("SHORT_INTRON: Set exception for [n] feature[s]", n) : 0);
 }
-#endif
 
 
 // UNNECESSARY_VIRUS_GENE
@@ -1848,7 +1817,7 @@ bool StopAbutsGap(const CSeq_loc& loc, CScope& scope)
         if (vec.IsInGap(0)) {
             return true;
         }
-    } catch (CException& ex) {
+    } catch (CException& ) {
         // unable to calculate
     }
     return false;
@@ -1877,7 +1846,7 @@ bool StartAbutsGap(const CSeq_loc& loc, CScope& scope)
         if (vec.IsInGap(0)) {
             return true;
         }
-    } catch (CException& ex) {
+    } catch (CException& ) {
         // unable to calculate
     }
     return false;

@@ -338,7 +338,7 @@ static string GetProductName(const CProt_ref& prot)
 }
 
 
-static string GetProductName(const CSeq_feat& cds, CScope& scope)
+string GetProductName(const CSeq_feat& cds, CScope& scope)
 {
     string prot_nm(kEmptyStr);
     if (cds.IsSetProduct()) {

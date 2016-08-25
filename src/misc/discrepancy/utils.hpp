@@ -35,6 +35,8 @@
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seq/Seq_data.hpp>
+#include <objmgr/scope.hpp>
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
@@ -46,6 +48,7 @@ bool IsAllPunctuation(const string& str);
 string GetTwoFieldSubfield(const string& str, unsigned subfield);
 bool IsmRNASequenceInGenProdSet(CConstRef<objects::CBioseq> bioseq, const vector<CConstRef<objects::CBioseq_set> > &bioseq_set_stack);
 void AddComment(objects::CSeq_feat& feat, const string& comment);
+string GetProductName(const objects::CSeq_feat& cds, objects::CScope& scope);
 
 template <class T> void GetStringsFromObject(const T& obj, vector <string>& strs)
 {
