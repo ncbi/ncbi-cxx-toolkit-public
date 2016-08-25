@@ -5379,7 +5379,10 @@ DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData, eDisc | eOncaller | eSubmi
                 if (!DoesObjectMatchConstraintChoiceSet(context, constr)) continue;
             }
             CReportNode& node = m_Objs["[n] product_name[s] contain[S] suspect phrase[s] or character[s]"][GetRuleText(**rule)].Summ()[GetRuleMatch(**rule)].Summ();
-            node.Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eNoRef, (*rule)->CanGetReplace(), (CObject*)&**rule)).Fatal((*rule)->GetFatal());
+            const CSeq_feat* cds = sequence::GetCDSForProduct(*(context.GetCurrentBioseq()), &(context.GetScope()));
+
+            node.Add(*context.NewDiscObj(cds ? CConstRef<CSeq_feat>(cds) : context.GetCurrentSeq_feat(), 
+                     eNoRef, (*rule)->CanGetReplace(), (CObject*)&**rule)).Fatal((*rule)->GetFatal());
         }
     }
 }
@@ -5411,6 +5414,20 @@ static string ReplaceNoCase(const string& input, const string& search, const str
 }
 
 
+const CSeq_feat* GetProtFeatForCDS(const CSeq_feat& cds, CScope& scope)
+{
+    CBioseq_Handle bsh = scope.GetBioseqHandle(cds.GetProduct());
+    if (!bsh) {
+        return NULL;
+    }
+    CFeat_CI prot(bsh, CSeqFeatData::eSubtype_prot);
+    if (!prot) {
+        return NULL;
+    }
+    return prot->GetSeq_feat().GetPointer();
+}
+
+
 static unsigned int AutofixProductNames(const CDiscrepancyItem* item, CScope& scope) // Same autofix used in 2 tests
 {
     TReportObjectList list = item->GetDetails();
@@ -5418,12 +5435,18 @@ static unsigned int AutofixProductNames(const CDiscrepancyItem* item, CScope& sc
     NON_CONST_ITERATE(TReportObjectList, it, list) {
         CDiscrepancyObject& obj = *dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer());
         const CSuspect_rule* rule = dynamic_cast<const CSuspect_rule*>(obj.GetMoreInfo().GetPointer());
-        const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(obj.GetObject().GetPointer());
-        if (!sf || !rule || !rule->CanGetReplace()) {
+        const CSeq_feat* cds = dynamic_cast<const CSeq_feat*>(obj.GetObject().GetPointer());
+        if (!cds || !rule || !rule->CanGetReplace()) {
             continue;
         }
         string newtext;
         string newnote;
+
+        const CSeq_feat* sf = GetProtFeatForCDS(*cds, scope);
+        if (!sf) {
+            continue;
+        }
+
         string prot_name = *sf->GetData().GetProt().GetName().begin();
         const CReplace_rule& rr = rule->GetReplace();
         const CReplace_func& rf = rr.GetReplace_func();
