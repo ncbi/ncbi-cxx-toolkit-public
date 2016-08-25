@@ -37,6 +37,7 @@
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
+#include <objects/seqalign/Spliced_exon.hpp>
 
 #include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/reader_base.hpp>
@@ -147,6 +148,25 @@ public:
         ILineErrorListener*);
 
     virtual bool x_ParseAlignmentGff(
+        const string& strLine, 
+        list<string>& id_list,
+        multimap<string, CRef<CSeq_align>>& alignments);
+
+    virtual bool x_CreateAlignment(
+        const CGff2Record& gff,
+        CRef<CSeq_align>& pAlign);
+
+    bool x_MergeAlignments(
+            multimap<string, CRef<CSeq_align>>::const_iterator start,
+            size_t count,
+            CRef<CSeq_align>& processed);
+     
+    void x_ProcessAlignmentsGff(const list<string>& id_list,
+                                const multimap<string, CRef<CSeq_align>>& alignments,
+                                TAnnots& annots);
+
+
+    virtual bool x_ParseAlignmentGff(
         const string&,
         TAnnots&);
 
@@ -253,6 +273,21 @@ public:
         CRef<CSeq_annot>);
     virtual bool xGenerateParentChildXrefs(
         CRef<CSeq_annot>);
+
+
+    bool xUpdateSplicedAlignment(const CGff2Record& gff, 
+                                 CRef<CSeq_align> pAlign) const;
+
+    bool xUpdateSplicedSegment(const CGff2Record& gff, 
+                               CSpliced_seg& segment) const;
+
+    bool xSetSplicedExon(
+        const CGff2Record& gff,
+        CRef<CSpliced_exon> pExon) const;
+
+    bool xGetTargetParts(const CGff2Record& gff, 
+                         vector<string>& targetParts) const;
+
 
     bool xAlignmentSetSegment(
         const CGff2Record&,

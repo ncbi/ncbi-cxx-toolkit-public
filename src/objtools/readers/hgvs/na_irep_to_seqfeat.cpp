@@ -12,10 +12,21 @@ BEGIN_SCOPE(objects)
 
 USING_SCOPE(NHgvsTestUtils);
 
+
+CIUPACna CHgvsNaIrepReader::x_CreateIUPACna(const string& na_seq) const
+{
+    string dna_seq = na_seq;
+    NStr::ToUpper(dna_seq);
+    NStr::ReplaceInPlace(dna_seq, "U", "T");
+    return CIUPACna(dna_seq);
+}
+
+
 CRef<CSeq_literal> CHgvsNaIrepReader::x_CreateNtSeqLiteral(const string& raw_seq) const
 {
     auto lit = x_CreateNtSeqLiteral(raw_seq.size());
-    lit->SetSeq_data().SetIupacna(CIUPACna(raw_seq));
+    //lit->SetSeq_data().SetIupacna(CIUPACna(raw_seq));
+    lit->SetSeq_data().SetIupacna(x_CreateIUPACna(raw_seq));
     return lit;
 }
 
@@ -50,7 +61,8 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateNaIdentityVarref(const CNtLocati
 
     nt_literal->SetLength(length);
     if (!nucleotide.empty()) {
-        nt_literal->SetSeq_data().SetIupacna(CIUPACna(nucleotide));
+        //nt_literal->SetSeq_data().SetIupacna(CIUPACna(nucleotide));
+        nt_literal->SetSeq_data().SetIupacna(x_CreateIUPACna(nucleotide));
     }
     auto offset = CIntronOffsetHelper::GetIntronOffset(nt_loc.GetSite());
     CRef<CVariation_ref> var_ref = g_CreateIdentity(nt_literal, method, offset);
@@ -85,7 +97,9 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateSubstVarref(const CNtLocation& n
     }
 
     { 
-        CSeq_data result(final_nt, CSeq_data::e_Iupacna);
+
+        CSeq_data result;
+        result.SetIupacna(x_CreateIUPACna(final_nt));
 
         CRef<CVariation_ref> subvar_ref;
         if (final_nt.size() > 1) {
@@ -419,7 +433,7 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateSSRVarref(const CRepeat& ssr,
         seq_literal = Ref(new CSeq_literal());
         const auto raw_seq = ssr.GetRaw_seq();
         seq_literal->SetLength(raw_seq.size());
-        seq_literal->SetSeq_data().SetIupacna(CIUPACna(raw_seq));
+        seq_literal->SetSeq_data().SetIupacna(x_CreateIUPACna(raw_seq));
     }
 
     const auto& nt_loc = ssr.GetLoc().GetNtloc();

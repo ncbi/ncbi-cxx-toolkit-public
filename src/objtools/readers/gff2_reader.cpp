@@ -96,6 +96,10 @@
 #include <objtools/readers/gff2_data.hpp>
 #include <objtools/error_codes.hpp>
 
+#include <objects/seqalign/Product_pos.hpp>
+#include <objects/seqalign/Spliced_seg.hpp>
+#include <objects/seqalign/Seq_align_set.hpp>
+
 #include <algorithm>
 
 //#include "gff3_data.hpp"
@@ -184,6 +188,11 @@ CGff2Reader::ReadSeqAnnotsNew(
     ILineErrorListener* pEC )
 //  ----------------------------------------------------------------------------
 {
+
+
+    multimap<string, CRef<CSeq_align>> alignments;
+    list<string> id_list;
+
     string line;
     while (xGetLine(lr, line)) {
         if (IsCanceled()) {
@@ -209,6 +218,12 @@ CGff2Reader::ReadSeqAnnotsNew(
             if ( x_ParseTrackLineGff( line, m_CurrentTrackInfo ) ) {
                 continue;
             }
+
+            if ( CGff2Reader::IsAlignmentData(line) && 
+                 x_ParseAlignmentGff(line, id_list, alignments) ) {
+                continue;
+            } 
+
             if ( ! x_ParseDataGff(line, annots, pEC) ) {
                 continue;
             }
@@ -218,6 +233,12 @@ CGff2Reader::ReadSeqAnnotsNew(
             ProcessError(err, pEC);
         }
     }
+
+    if (!alignments.empty()) {
+        x_ProcessAlignmentsGff(id_list, alignments, annots);
+    }
+
+
     for (TAnnots::iterator it = annots.begin(); it != annots.end(); ++it) {
         try {
             xAnnotPostProcess(*it);
@@ -398,6 +419,100 @@ bool CGff2Reader::x_ParseFeatureGff(
     }
     return true; 
 };
+
+bool CGff2Reader::x_ParseAlignmentGff(
+    const string& strLine, 
+    list<string>& id_list, // Add id to alignment
+    multimap<string, CRef<CSeq_align>>& alignments)
+{
+    unique_ptr<CGff2Record> pRecord(x_CreateRecord());
+    if ( !pRecord->AssignFromGff(strLine) ) {
+        return false;
+    }
+
+    const string id = pRecord->Id();
+
+    if (alignments.find(id) == alignments.end()) {
+       id_list.push_back(id);
+    }
+
+    CRef<CSeq_align> alignment;
+    if (!x_CreateAlignment(*pRecord, alignment)) {
+        return false;
+    }
+
+    alignments.insert(make_pair(id, alignment));
+    return true;
+}
+
+bool CGff2Reader::x_MergeAlignments(
+        multimap<string, CRef<CSeq_align>>::const_iterator start,
+        const size_t count,
+        CRef<CSeq_align>& processed)
+{
+    if (count == 0) {
+        return false;
+    }
+
+    if (count == 1) {
+        processed = start->second;
+        return true;
+    }
+
+    processed->SetType(CSeq_align::eType_disc);
+    auto it = start;
+    for (size_t i=0; i<count; ++i) {
+        CRef<CSeq_align> current = it->second;
+        processed->SetSegs().SetDisc().Set().push_back(current);
+        ++it;
+    } 
+    return true;
+}
+
+
+// Should probably have a single annotation for each alignment in this case
+void CGff2Reader::x_ProcessAlignmentsGff(const list<string>& id_list,
+                            const multimap<string, CRef<CSeq_align>>& alignments,
+                            TAnnots& annots) 
+{
+    for (const auto id : id_list) {
+        const auto start = alignments.lower_bound(id);
+        const size_t count = alignments.count(id);
+        CRef<CSeq_align> pAlign = Ref(new CSeq_align());
+        if (x_MergeAlignments(start, count, pAlign)) {
+            auto pAnnot = Ref(new CSeq_annot());
+            // Add id
+            auto pAnnotId = Ref(new CAnnot_id());
+            pAnnotId->SetLocal().SetStr(id);
+            pAnnot->SetId().push_back(pAnnotId);
+
+            // Refactor the following to avoid code repition
+            //
+            // if available, add current browser information
+            if ( m_CurrentBrowserInfo ) {
+                pAnnot->SetDesc().Set().push_back( m_CurrentBrowserInfo );
+            }
+
+            // if available, add current track information
+            if ( m_CurrentTrackInfo ) {
+                pAnnot->SetDesc().Set().push_back( m_CurrentTrackInfo );
+            }
+
+            if ( !m_AnnotName.empty() ) {
+                pAnnot->SetNameDesc(m_AnnotName);
+            }
+
+            if ( !m_AnnotTitle.empty() ) {
+                pAnnot->SetTitleDesc(m_AnnotTitle);
+            }
+            // Add alignment
+            pAnnot->SetData().SetAlign().push_back(pAlign);
+            annots.push_back(pAnnot);
+        }
+    }
+}
+
+
 
 //  ----------------------------------------------------------------------------
 bool CGff2Reader::x_ParseAlignmentGff(
@@ -609,6 +724,28 @@ bool CGff2Reader::x_UpdateAnnotFeature(
     return true;
 }
 
+
+bool CGff2Reader::x_CreateAlignment(
+        const CGff2Record& gff, 
+        CRef<CSeq_align>& pAlign ) 
+{
+    pAlign = Ref(new CSeq_align());
+    pAlign->SetType(CSeq_align::eType_partial);
+    pAlign->SetDim(2);
+
+    //score
+    if (!xAlignmentSetScore(gff, pAlign)) {
+        return false;
+    }
+
+    if (!xAlignmentSetSegment(gff, pAlign)) {
+        return false;
+    }
+
+    return true;
+}
+
+
 //  ----------------------------------------------------------------------------
 bool CGff2Reader::x_UpdateAnnotAlignment(
     const CGff2Record& gff,
@@ -630,22 +767,114 @@ bool CGff2Reader::x_UpdateAnnotAlignment(
     return true;
 }
 
+
+
+bool CGff2Reader::xUpdateSplicedAlignment(const CGff2Record& gff,
+                                          CRef<CSeq_align> pAlign) const
+{
+    if (!pAlign->IsSetType()) {
+        pAlign->SetType(CSeq_align::eType_partial);
+    }
+    // Need to set a whole bunch of things
+
+    if (!xUpdateSplicedSegment(gff, pAlign->SetSegs().SetSpliced())) {
+        return false;
+    }
+
+    return true;
+}
+
+
+
+bool CGff2Reader::xUpdateSplicedSegment(
+        const CGff2Record& gff, 
+        CSpliced_seg& segment) const
+{
+    if (segment.IsSetProduct_type()) {
+        segment.SetProduct_type(CSpliced_seg::eProduct_type_transcript);
+    }
+    
+
+    CRef<CSpliced_exon> pExon = Ref(new CSpliced_exon());
+    if (!xSetSplicedExon(gff, pExon)) {
+        return false;
+    }
+
+   segment.SetExons().push_back(pExon);
+
+    return true;
+}
+
+
+
+//  ----------------------------------------------------------------------------
+bool CGff2Reader::xSetSplicedExon(
+        const CGff2Record& gff, 
+        CRef<CSpliced_exon> pExon) const
+//  ----------------------------------------------------------------------------
+{
+    vector<string> targetParts;
+    if (!xGetTargetParts(gff, targetParts)) {
+        return false;
+    }
+
+
+    pExon->SetGenomic_start(gff.SeqStart()-1);
+    pExon->SetGenomic_end(gff.SeqStop()-1);
+    if (gff.IsSetStrand()) {
+        pExon->SetGenomic_strand(gff.Strand());
+    }
+
+
+    const int product_start = NStr::StringToInt(targetParts[1])-1;
+    const int product_end = NStr::StringToInt(targetParts[2])-1;
+
+    // Check to see that product start and product end are
+    // non-negative and that product_end >= product_start
+
+    pExon->SetProduct_start().SetNucpos(product_start);
+    pExon->SetProduct_end().SetNucpos(product_end);
+
+    ENa_strand targetStrand = eNa_strand_plus;
+    if (targetParts[3] == "-") {
+        targetStrand = eNa_strand_minus;
+    }
+    pExon->SetProduct_strand(targetStrand);
+
+    return true;
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CGff2Reader::xGetTargetParts(const CGff2Record& gff, vector<string>& targetParts) const
+//  ----------------------------------------------------------------------------
+{
+    string targetInfo;
+    if (!gff.GetAttribute("Target", targetInfo)) {
+        return false;
+    }
+
+    NStr::Split(targetInfo, " ", targetParts);
+    if (targetParts.size() != 4) {
+        return false;
+    }
+   
+    return true;
+}
+
+
 //  ----------------------------------------------------------------------------
 bool CGff2Reader::xAlignmentSetSegment(
     const CGff2Record& gff,
     CRef<CSeq_align> pAlign)
 //  ----------------------------------------------------------------------------
 {
-    string targetInfo;
+
     vector<string> targetParts;
-    if (!gff.GetAttribute("Target", targetInfo)) {
+    if (!xGetTargetParts(gff, targetParts)) {
         return false;
     }
-    NStr::Split(targetInfo, " ", targetParts);
-    if (targetParts.size() != 4) {
-        return false;
-    }
-    
+
     string gapInfo;
     vector<string> gapParts;
     if (gff.GetAttribute("Gap", gapInfo)) {
@@ -745,6 +974,8 @@ bool CGff2Reader::xAlignmentSetScore(
         "merge_aligner",
         "rank",
         "reciprocity",
+        "batch_id",
+        "align_id",
     };
 
     const size_t intCount(sizeof(intScores)/sizeof(string));
@@ -768,6 +999,8 @@ bool CGff2Reader::xAlignmentSetScore(
         "pct_coverage_hiqual",
 
         //picked up from real data files
+        "inversion_merge_alignmer",
+        "expansion",
     };
 
     const size_t realCount(sizeof(realScores)/sizeof(string));

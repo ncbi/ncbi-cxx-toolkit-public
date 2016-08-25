@@ -224,6 +224,9 @@ private:
         CRef<CSeq_literal> x_CreateNtSeqLiteral(TSeqPos length) const;
 
         bool x_LooksLikePolymorphism(const CDelins& delins) const;
+
+        CIUPACna x_CreateIUPACna(const string& na_seq) const;
+
 }; // CHgvsNaIrepReader
 
 END_SCOPE(objects)
