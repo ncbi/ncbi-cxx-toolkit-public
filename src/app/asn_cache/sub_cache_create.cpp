@@ -131,7 +131,7 @@ struct SSeqIdIndex {
 struct SBlobLocator
 {
     SBlobLocator(CSeq_id_Handle idh, const CDir &root_cache)
-    : m_Idh(idh), m_CacheRoot(&root_cache)
+    : m_Idh(idh), m_CacheRoot(&root_cache), m_ChunkId(0), m_Offset(0)
     {}
 
     SBlobLocator &operator=(const CAsnIndex &main_index)
