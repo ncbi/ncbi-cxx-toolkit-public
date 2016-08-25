@@ -127,7 +127,20 @@ TAutomationObjectRef CAutomationProc::ReturnNetStorageServerObject(
 bool SNetStorageServiceAutomationObject::Call(const string& method,
         CArgArray& arg_array, CJsonNode& reply)
 {
-    if (method == "client_objects") {
+    map<string, string> no_param_commands =
+    {
+        { "clients_info",   "GETCLIENTSINFO" },
+        { "users_info",     "GETUSERSINFO" },
+    };
+
+    auto found = no_param_commands.find(method);
+    if (found != no_param_commands.end()) {
+        CJsonNode request(m_NetStorageAdmin.MkNetStorageRequest(found->second));
+
+        CJsonNode response(m_NetStorageAdmin.ExchangeJson(request));
+        s_RemoveStdReplyFields(response);
+        reply.Append(response);
+    } else if (method == "client_objects") {
         string client_name(arg_array.NextString());
         string client_ns(arg_array.NextString(kEmptyStr));
         Int8 limit(arg_array.NextInteger(0));
@@ -169,8 +182,18 @@ bool SNetStorageServiceAutomationObject::Call(const string& method,
 bool SNetStorageServerAutomationObject::Call(const string& method,
         CArgArray& arg_array, CJsonNode& reply)
 {
-    if (method == "health") {
-        CJsonNode request(m_NetStorageAdmin.MkNetStorageRequest("HEALTH"));
+    map<string, string> no_param_commands =
+    {
+        { "health",         "HEALTH" },
+        { "info",           "INFO" },
+        { "conf",           "CONFIGURATION" },
+        { "metadata_info",  "GETMETADATAINFO" },
+        { "reconf",         "RECONFIGURE" },
+    };
+
+    auto found = no_param_commands.find(method);
+    if (found != no_param_commands.end()) {
+        CJsonNode request(m_NetStorageAdmin.MkNetStorageRequest(found->second));
 
         CJsonNode response(m_NetStorageAdmin.ExchangeJson(request));
         s_RemoveStdReplyFields(response);
