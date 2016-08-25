@@ -389,6 +389,11 @@ CJsonNode::ENodeType CJsonNode::GetNodeType() const
     return m_Impl->m_NodeType;
 }
 
+string CJsonNode::GetTypeName() const
+{
+    return m_Impl->GetTypeName();
+}
+
 struct SJsonObjectKeyIterator : public SJsonIteratorImpl
 {
     SJsonObjectKeyIterator(SJsonObjectNodeImpl* container) :

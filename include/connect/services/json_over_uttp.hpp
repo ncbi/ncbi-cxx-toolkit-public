@@ -113,6 +113,9 @@ class NCBI_XCONNECT_EXPORT CJsonNode
     /// Return a ENodeType constant identifying the node type.
     ENodeType GetNodeType() const;
 
+    /// Return a string identifying the node type.
+    string GetTypeName() const;
+
     /// Return true for a JSON object. Return false otherwise.
     bool IsObject() const;
 
