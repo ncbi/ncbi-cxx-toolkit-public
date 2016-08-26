@@ -1312,7 +1312,7 @@ static bool ContainsNorMoreSetsOfBracketsOrParentheses(const string& search, con
 static bool PrecededByOkPrefix(const string& start_str)
 {
     for (size_t i=0; i< ArraySize(ok_num_prefix); i++) {
-        if (NStr::StartsWith(start_str, ok_num_prefix[i])) {
+        if (NStr::EndsWith(start_str, ok_num_prefix[i])) {
             return true;
         }
     }
@@ -1400,31 +1400,36 @@ static bool ContainsThreeOrMoreNumbersTogether(const string& search)
 }
 
 
+bool PrecededByUnderscorePrefix(const string& before, size_t p)
+{
+    bool rval = false;
+    if (p >= 3) {
+        string strtmp = CTempString(before).substr(p - 3, 3);
+        if (strtmp == "MFS" || strtmp == "TPR" || strtmp == "AAA") {
+            rval = true;
+        }
+    }
+    return rval;
+}
+
+
 static bool StringContainsUnderscore(const string& search)
 { 
-    if (search.find('_') == string::npos) {
-        return false;
-    }
+    size_t p = 0;
+    string sch_str = search;
 
-    string strtmp;
-    vector <string> arr;
-    arr = NStr::Tokenize(search, "_", arr);
-    for (unsigned i=0; i< arr.size() - 1; i++) {
-        strtmp = arr[i+1];
-        if (FollowedByFamily(strtmp)) {
-            continue; // strtmp was changed in the FollowedByFamily
+    while (!sch_str.empty()) {
+        p = sch_str.find_first_of("_");
+        if (p == string::npos) {
+            break;
         }
-        else if (arr[i].size() < 3 || search[arr[i].size()-1] == ' ') {
+        if (PrecededByUnderscorePrefix(sch_str, p) && (isdigit(sch_str[p + 1]) && !isdigit(sch_str[p + 2]))) {
+            sch_str = sch_str.substr(p + 1);
+            continue;
+        } else if (FollowedByFamily(sch_str)) {
+            continue; // sch_str was changed in the FollowedByFamily
+        } else {
             return true;
-        }
-        else {
-            strtmp = CTempString(arr[i]).substr(arr[i].size()-3);
-            if ((strtmp == "MFS" || strtmp == "TPR" || strtmp == "AAA") && (isdigit(arr[i+1][0]) && !isdigit(arr[i+1][1]))) {
-                continue;
-            }
-            else {
-                return true;
-            }
         }
     }
     return false;
@@ -5313,6 +5318,11 @@ static string GetRuleText(const CSuspect_rule& rule)
 
 static string GetRuleMatch(const CSuspect_rule& rule)
 {
+    if (rule.IsSetDescription()) {
+        string desc = rule.GetDescription();
+        NStr::ReplaceInPlace(desc, "contains", "contain[s]");
+        return "[n] feature[s] " + desc;
+    }
     if (rule.CanGetFind()) {
         const CSearch_func& find = rule.GetFind();
         switch (find.Which()) {
@@ -5346,12 +5356,13 @@ static string GetRuleMatch(const CSuspect_rule& rule)
                 break;
         }
     }
-    return "[n] feature[s] violate[S] some other misterious rule!";
+    return "[n] feature[s] violate[S] some other mysterious rule!";
 }
 
 
 ///////////////////////////////////// SUSPECT_PRODUCT_NAMES
 
+static const string kSuspectProductNames = "[n] product_name[s] contain[S] suspect phrase[s] or character[s]";
 
 DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData, eDisc | eOncaller | eSubmitter | eSmart, "Suspect Product Name")
 {
@@ -5363,7 +5374,10 @@ DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData, eDisc | eOncaller | eSubmi
 
     if (prot.IsSetName() && !prot.GetName().empty()) {
         string prot_name = *prot.GetName().begin();
+        size_t rule_num = 1;
         ITERATE(list<CRef<CSuspect_rule> >, rule, rules->Get()) {
+            string leading_space = "[*" + NStr::NumericToString(rule_num) + "*]";
+            rule_num++;
             const CSearch_func& find = (*rule)->GetFind();
             if (!MatchesSearchFunc(prot_name, find)) {
                 continue;
@@ -5378,7 +5392,14 @@ DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData, eDisc | eOncaller | eSubmi
                 const CConstraint_choice_set& constr = (*rule)->GetFeat_constraint();
                 if (!DoesObjectMatchConstraintChoiceSet(context, constr)) continue;
             }
-            CReportNode& node = m_Objs["[n] product_name[s] contain[S] suspect phrase[s] or character[s]"][GetRuleText(**rule)].Summ()[GetRuleMatch(**rule)].Summ();
+            size_t rule_type = (*rule)->GetRule_type();
+            string rule_num = "[*";
+            if (rule_type < 10) {
+                rule_num += " ";
+            }
+            rule_num += NStr::NumericToString(rule_type) + "*]" + GetRuleText(**rule);
+            string rule_text = leading_space + GetRuleMatch(**rule);
+            CReportNode& node = m_Objs[kSuspectProductNames][rule_num].Summ()[rule_text].Summ().Fatal((*rule)->GetFatal());
             const CSeq_feat* cds = sequence::GetCDSForProduct(*(context.GetCurrentBioseq()), &(context.GetScope()));
 
             node.Add(*context.NewDiscObj(cds ? CConstRef<CSeq_feat>(cds) : context.GetCurrentSeq_feat(), 
