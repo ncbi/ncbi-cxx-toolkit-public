@@ -37,12 +37,6 @@
 
 BEGIN_NCBI_SCOPE
 
-/*
-IBioTreeNode::~IBioTreeNode()
-{}
-*/
-
-
 CBioTreeFeatureList::CBioTreeFeatureList()
 {
 }
@@ -80,6 +74,18 @@ CBioTreeFeatureList::GetFeatureValue(TBioTreeFeatureId id) const
         }
     }
     return kEmptyStr;
+}
+
+bool CBioTreeFeatureList::GetFeatureValue(TBioTreeFeatureId id,
+                                          string& result) const
+{
+    ITERATE(TFeatureList, it, m_FeatureList) {
+        if (it->id == id) {
+            result = it->value;
+            return true;
+        }
+    }
+    return false;
 }
 
 void CBioTreeFeatureList::RemoveFeature(TBioTreeFeatureId id)

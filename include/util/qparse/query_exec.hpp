@@ -143,6 +143,11 @@ protected:
 class NCBI_XUTIL_EXPORT CQueryExec
 {
 public:
+    // Subclasses can optionally pass in a field identifier
+    // to resolve values (faster for trees, tables..)
+    typedef unsigned int TFieldID;
+
+public:
     CQueryExec();
     virtual ~CQueryExec();
     
@@ -176,7 +181,8 @@ public:
 
     /// If query has an identifier, this will resolve it in an
     /// application-specific way. Returns true if resolved, with the
-    /// data item's value in 'value'
+    /// data item's value in 'value'. Using field identifiers, if available,
+    /// such as column numbers or biotree feature IDs will be faster.
     ///
     virtual bool ResolveIdentifier(const std::string& /* identifier */, 
                                    bool& /* value */) { return false; }
@@ -186,7 +192,18 @@ public:
                                    double& /* value */) { return false; }
     virtual bool ResolveIdentifier(const std::string& /* identifier */, 
                                    std::string& /* value */) { return false; }
+
+    virtual bool ResolveIdentifier(const TFieldID& /* id */,
+                                    bool& /* value */) { return false; }
+    virtual bool ResolveIdentifier(const TFieldID& /* id */,
+                                   int& /* value */) { return false; }
+    virtual bool ResolveIdentifier(const TFieldID& /* id */,
+                                   double& /* value */) { return false; }
+    virtual bool ResolveIdentifier(const TFieldID& /* id */,
+                                   std::string& /* value */) { return false; }
+
     virtual bool HasIdentifier(const std::string& /* identifier */) { return false; }
+    virtual TFieldID GetIdentifier(const std::string& /* identifier */) { return TFieldID(-1); }
     
     /// Some applications may know the type of an identifier.  This hook
     /// should be overriden to return an identifier's type, when available.

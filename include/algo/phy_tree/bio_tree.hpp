@@ -76,9 +76,15 @@ struct NCBI_XALGOPHYTREE_EXPORT CBioTreeFeaturePair
       value(fvalue)
     {}
 
+    CBioTreeFeaturePair(TBioTreeFeatureId fid)
+    : id(fid)
+    {}
+
     CBioTreeFeaturePair(void)
     : id(0)
     {}
+
+    bool operator<(const CBioTreeFeaturePair& rhs) const { return (id<rhs.id); }
 };
 
 
@@ -106,6 +112,10 @@ public:
     /// Get feature value by id
     /// @return Feature value or empty string if feature does not exists
     const string& GetFeatureValue(TBioTreeFeatureId id) const;
+
+    /// Place feature value in 'result', if available.
+    /// @return true if feature 'id' is present in the list, false otherwise
+    bool GetFeatureValue(TBioTreeFeatureId id, string& result) const;
 
     /// Remove feature from the list
     void RemoveFeature(TBioTreeFeatureId id);
