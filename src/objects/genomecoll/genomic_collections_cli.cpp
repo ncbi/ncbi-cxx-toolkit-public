@@ -343,8 +343,9 @@ CRef<CGCClient_AssembliesForSequences> CGenomicCollectionsService::FindAssemblie
     CGCClientResponse reply;
 
     for(auto acc : sequence_acc)
-        if(acc.length() > 30)
+        if(acc.length() > 30) {
             NCBI_THROW(CException, eUnknown, "Accession is longer than 30 characters: " + acc);
+        }
 
     req.SetSequence_acc().assign(sequence_acc.begin(), sequence_acc.end());
     req.SetFilter(filter);
