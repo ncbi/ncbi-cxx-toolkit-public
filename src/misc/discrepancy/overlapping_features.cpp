@@ -355,5 +355,24 @@ DISCREPANCY_SUMMARIZE(MRNA_OVERLAPPING_PSEUDO_GENE)
 }
 
 
+// MRNA_OVERLAPPING_PSEUDO_GENE
+
+DISCREPANCY_CASE(EXON_INTRON_CONFLICT, COverlappingFeatures, eOncaller | eSubmitter | eSmart, "Exon and intron locations should abut (unless gene is trans-spliced)")
+{
+    const vector<CConstRef<CSeq_feat> >& genes = context.FeatGenes();
+    const vector<CConstRef<CSeq_feat> >& exons = context.FeatExons();
+    const vector<CConstRef<CSeq_feat> >& introns = context.FeatIntrons();
+    if (exons.empty() || introns.empty()) {
+        return;
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(EXON_INTRON_CONFLICT)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

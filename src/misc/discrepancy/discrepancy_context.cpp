@@ -576,6 +576,8 @@ void CDiscrepancyContext::ClearFeatureList(void)
     m_FeatRRNAs.clear();
     m_FeatTRNAs.clear();
     m_Feat_RNAs.clear();
+    m_FeatExons.clear();
+    m_FeatIntrons.clear();
 }
 
 
@@ -596,6 +598,12 @@ void CDiscrepancyContext::CollectFeature(const CSeq_feat& feat)
             break;
         case CSeqFeatData::eSubtype_rRNA:
             m_FeatRRNAs.push_back(CConstRef<CSeq_feat>(&feat));
+            break;
+        case CSeqFeatData::eSubtype_exon:
+            m_FeatExons.push_back(CConstRef<CSeq_feat>(&feat));
+            break;
+        case CSeqFeatData::eSubtype_intron:
+            m_FeatIntrons.push_back(CConstRef<CSeq_feat>(&feat));
             break;
         default:
             break;
