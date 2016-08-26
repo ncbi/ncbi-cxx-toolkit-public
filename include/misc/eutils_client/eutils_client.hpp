@@ -124,23 +124,23 @@ public:
     Uint8 Search(const string& db,
                 const string& term,
                 vector<int>& uids,
-                string xml_path=kEmptyStr);
+                const string& xml_path = kEmptyStr);
 #endif
 
     Uint8 Search(const string& db,
                 const string& term,
                 vector<objects::CSeq_id_Handle>& uids,
-                string xml_path=kEmptyStr);
+                const string& xml_path = kEmptyStr);
 
     Uint8 Search(const string& db,
                 const string& term,
                 vector<string>& uids,
-                string xml_path=kEmptyStr);
+                const string& xml_path = kEmptyStr);
 
     Uint8 Search(const string& db,
                 const string& term,
                 vector<TGi>& uids,
-                string xml_path=kEmptyStr);
+                const string& xml_path = kEmptyStr);
 
     void Search(const string& db,
                 const string& term,
@@ -149,22 +149,22 @@ public:
 
     void SearchHistory(const string& db,
                        const string& term,
-                       string const& web_env,
+                       const string& web_env,
                        Int8 query_key,
                        int retstart,
                        CNcbiOstream& ostr);
 
     void SearchHistory(const string& db,
                        const string& term,
-                       string const& web_env,
+                       const string& web_env,
                        objects::CSeq_id_Handle query_key,
                        int retstart,
                        CNcbiOstream& ostr);
 
     void SearchHistory(const string& db,
                        const string& term,
-                       string const& web_env,
-                       string query_key,
+                       const string& web_env,
+                       const string& query_key,
                        int retstart,
                        CNcbiOstream& ostr);
 
@@ -174,30 +174,30 @@ public:
               const string& db_to,
               const vector<int>& uids_from,
               vector<int>& uids_to,
-              string xml_path=kEmptyStr,
-              const string command="neighbor");
+              const string& xml_path = kEmptyStr,
+              const string& command = "neighbor");
 #endif
     
     void Link(const string& db_from,
               const string& db_to,
               const vector<objects::CSeq_id_Handle>& uids_from,
               vector<objects::CSeq_id_Handle>& uids_to,
-              string xml_path=kEmptyStr,
-              const string command="neighbor");
+              const string& xml_path = kEmptyStr,
+              const string& command = "neighbor");
 
     void Link(const string& db_from,
               const string& db_to,
               const vector<string>& uids_from,
               vector<string>& uids_to,
-              string xml_path=kEmptyStr,
-              const string command="neighbor");
+              const string& xml_path = kEmptyStr,
+              const string& command = "neighbor");
 
     void Link(const string& db_from,
               const string& db_to,
               const vector<TGi>& uids_from,
               vector<TGi>& uids_to,
-              string xml_path=kEmptyStr,
-              const string command="neighbor");
+              const string& xml_path = kEmptyStr,
+              const string& command = "neighbor");
 
 #ifdef NCBI_INT8_GI
     NCBI_DEPRECATED
@@ -205,31 +205,31 @@ public:
               const string& db_to,
               const vector<int>& uids_from,
               vector<TGi>& uids_to,
-              string xml_path=kEmptyStr,
-              const string command="neighbor");
+              const string& xml_path = kEmptyStr,
+              const string& command = "neighbor");
 
     NCBI_DEPRECATED
     void Link(const string& db_from,
               const string& db_to,
               const vector<TGi>& uids_from,
               vector<int>& uids_to,
-              string xml_path=kEmptyStr,
-              const string command="neighbor");
+              const string& xml_path = kEmptyStr,
+              const string& command = "neighbor");
 #endif
 
     void Link(const string& db_from,
               const string& db_to,
               const vector<TGi>& uids_from,
               vector<objects::CSeq_id_Handle>& uids_to,
-              string xml_path=kEmptyStr,
-              const string command="neighbor");
+              const string& xml_path = kEmptyStr,
+              const string& command ="neighbor");
 
     void Link(const string& db_from,
               const string& db_to,
               const vector<objects::CSeq_id_Handle>& uids_from,
               vector<TGi>& uids_to,
-              string xml_path=kEmptyStr,
-              const string command="neighbor");
+              const string& xml_path = kEmptyStr,
+              const string& command = "neighbor");
 
 #ifdef NCBI_INT8_GI
     NCBI_DEPRECATED
@@ -237,26 +237,26 @@ public:
               const string& db_to,
               const vector<int>& uids_from,
               CNcbiOstream& ostr,
-              const string command="neighbor");
+              const string& command = "neighbor");
 #endif
 
     void Link(const string& db_from,
               const string& db_to,
               const vector<objects::CSeq_id_Handle>& uids_from,
               CNcbiOstream& ostr,
-              const string command="neighbor");
+              const string& command = "neighbor");
 
     void Link(const string& db_from,
               const string& db_to,
               const vector<string>& uids_from,
               CNcbiOstream& ostr,
-              const string command="neighbor");
+              const string& command = "neighbor");
 
     void Link(const string& db_from,
               const string& db_to,
               const vector<TGi>& uids_from,
               CNcbiOstream& ostr,
-              const string command="neighbor");
+              const string& command = "neighbor");
 
     void LinkHistory(const string& db_from,
                      const string& db_to,
@@ -273,7 +273,7 @@ public:
     void LinkHistory(const string& db_from,
                      const string& db_to,
                      const string& web_env,
-                     string query_key,
+                     const string& query_key,
                      CNcbiOstream& ostr);
 
 #ifdef NCBI_INT8_GI
@@ -281,23 +281,23 @@ public:
     void Summary(const string& db,
                 const vector<int>& uids,
                 xml::document& docsums,
-                const string version="");
+                const string& version = "");
 #endif
 
     void Summary(const string& db,
                 const vector<objects::CSeq_id_Handle>& uids,
                 xml::document& docsums,
-                const string version="");
+                const string& version = "");
 
     void Summary(const string& db,
                 const vector<string>& uids,
                 xml::document& docsums,
-                const string version="");
+                const string& version = "");
 
     void Summary(const string& db,
                 const vector<TGi>& uids,
                 xml::document& docsums,
-                const string version="");
+                const string& version = "");
 
     void SummaryHistory(const string& db,
                         const string& web_env,
@@ -315,7 +315,7 @@ public:
 
     void SummaryHistory(const string& db,
                         const string& web_env,
-                        string query_key,
+                        const string& query_key,
                         int retstart,           // Position within the result set
                         const string& version,   // Version: "" or "2.0" 
                         CNcbiOstream& ostr);
@@ -359,14 +359,14 @@ public:
 
     void FetchHistory(const string& db,
                       const string& web_env,
-                      string query_key,
+                      const string& query_key,
                       int retstart,
                       EContentType content_type,
                       CNcbiOstream& ostr);
 
 
-    const list<string> GetUrl();
-    const list<CTime> GetTime();
+    const list<string> GetUrl() const;
+    const list<CTime> GetTime() const;
 
 protected:
 #ifdef NCBI_INT8_GI
@@ -423,26 +423,26 @@ private:
     template<class T> Uint8 x_Search(const string& db,
                                    const string& term,
                                    vector<T>& uids,
-                                   string xml_path=kEmptyStr);
+                                   const string& xml_path = kEmptyStr);
     
 
     template<class T1, class T2> void x_Link(const string& db_from,
                                              const string& db_to,
                                              const vector<T1>& uids_from,
                                              vector<T2>& uids_to,
-                                             string xml_path,
-                                             const string command);
+                                             const string& xml_path,
+                                             const string& command);
 
     template<class T> void x_Link(const string& db_from,
                                   const string& db_to,
                                   const vector<T>& uids_from,
                                   CNcbiOstream& ostr,
-                                  const string command);
+                                  const string& command);
 
     template<class T> void x_Summary(const string& db,
                                      const vector<T>& uids,
                                      xml::document& docsums,
-                                     const string version="");
+                                     const string& version="");
     
 
     template<class T> void x_Fetch(const string& db,
