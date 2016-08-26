@@ -530,8 +530,9 @@ const char* CLBOSException::GetErrCodeString(void) const
         return "Failed to parse LBOS output.";
     /* 550 */
     case eDisabled:
-        return "LBOS functionality is turned OFF. Check config file or "
-               "connection to LBOS.";
+        return "LBOS functionality is turned OFF. "
+               "Check that registry has [CONN]LBOS_ENABLE=1 and "
+               "that connection to LBOS is stable";
     default:
         return "Unknown LBOS error code";
     }
