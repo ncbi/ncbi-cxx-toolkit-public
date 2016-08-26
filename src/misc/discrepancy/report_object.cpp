@@ -91,26 +91,6 @@ void CReportObject::SetText(CScope& scope)
 }
 
 
-void CReportObject::SetFeatureTable(CScope& scope)
-{
-    m_FeatureTable = "feature table format display of object";
-}
-
-
-void CReportObject::SetXML(CScope& scope)
-{
-    m_XML = "xml description of object";
-}
-
-
-void CReportObject::Format(CScope& scope)
-{
-    SetText(scope);
-    SetFeatureTable(scope);
-    SetXML(scope);
-}
-
-
 string GetLocusTagForFeature(const CSeq_feat& seq_feat, CScope& scope)
 {
     string tag(kEmptyStr);
@@ -594,12 +574,6 @@ void CReportObject::DropReference(CScope& scope)
     }
     if (NStr::IsBlank(m_Text)) {
         SetText(scope);
-    }
-    if (NStr::IsBlank(m_FeatureTable)) {
-        SetFeatureTable(scope);
-    }
-    if (NStr::IsBlank(m_XML)) {
-        SetXML(scope);
     }
 }
 

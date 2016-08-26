@@ -183,6 +183,7 @@ sub normalize
   $str=~s/sequences in record$/sequences are present/;
   $str=~s/>/more than/g;
   $str=~s/\.$//;
+  $str=~s/\// /g;
 
   my @words = split(' ', $str);
   for (my $i = 0; $i < scalar @words; $i++){ $words[$i] = normalize_word($words[$i]); }
@@ -202,7 +203,7 @@ sub normalize_word
 sub normalize_detail
 { my $str = shift;
   $str=~s/(\(\S+,\s)(\S+:)/$1/g;
-  $str=~s/^lcl\|//g;
+  $str=~s/\blcl\|//g;
   $str=~s/misc_RNA/RNA/g;
   $str=~s/\/inference=//g;
   # C seems to prefer "()" for seq-loc-mix but C++ seems to prefer "[]"

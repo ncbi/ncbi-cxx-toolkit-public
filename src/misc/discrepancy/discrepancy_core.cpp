@@ -341,6 +341,7 @@ void CDiscrepancyContext::Parse(const CSerialObject& root)
     m_TextMap.clear();
     m_TextMapShort.clear();
     m_Current_Submit_block.Reset();
+    m_Current_Submit_block_StringObj.Reset();
 
     CSeqdesc_CI::TDescChoices desc_choices = {CSeqdesc::e_Source};
 
@@ -353,6 +354,16 @@ void CDiscrepancyContext::Parse(const CSerialObject& root)
             Update_Bioseq_set_Stack(i);
             if (m_Current_Bioseq->GetInst().IsNa()) {
                 m_NaSeqs.push_back(CRef<CReportObj>(NewDiscObj(m_Current_Bioseq)));
+            }
+            if (m_Current_Submit_block_StringObj && m_Current_Submit_block_StringObj->S.empty()) {
+                string label;
+                m_Current_Bioseq->GetLabel(&label, CBioseq::eContent);
+                label = "Cit-sub for Set containing " + label;
+                if (!m_File.empty()) {
+                    label = m_File + ":" + label;
+                }
+                m_Current_Submit_block_StringObj->S = label;
+                m_Current_Submit_block_StringObj.Reset();
             }
             // CSeq_feat_BY_BIOSEQ cycle
             CFeat_CI feat_ci(m_Current_Bioseq_Handle);
@@ -421,6 +432,7 @@ void CDiscrepancyContext::Parse(const CSerialObject& root)
         }
         else if (CType<CSubmit_block>::Match(i)) {
             m_Current_Submit_block.Reset(CType<CSubmit_block>::Get(i));
+            m_Current_Submit_block_StringObj.Reset(new CStringObj);
             m_Current_Pub.Reset();
             m_Current_Pub_equiv.Reset();
         }

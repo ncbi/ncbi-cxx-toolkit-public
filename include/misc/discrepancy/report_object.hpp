@@ -56,8 +56,6 @@ public:
     CReportObject(const CReportObject& other) :
         m_Text(other.m_Text),
         m_ShortName(other.m_ShortName),
-        m_FeatureTable(other.m_FeatureTable),
-        m_XML(other.m_XML),
         m_Bioseq(other.m_Bioseq),
         m_Seq_feat(other.m_Seq_feat),
         m_Seqdesc(other.m_Seqdesc),
@@ -67,18 +65,12 @@ public:
         m_Scope(other.m_Scope) {}
     ~CReportObject() {}
 
-    const string& GetText() const { return m_Text; }
+    virtual const string& GetText() const { return m_Text; }
     const string& GetShort() const { return m_ShortName; }
-    const string& GetFeatureTable() const { return m_FeatureTable; }
-    const string& GetXML() const { return m_XML; }
 
     void SetText(CScope& scope);
     void SetText(const string& str) { m_Text = str; }
     void SetShort(const string& str) { m_ShortName = str; }
-
-    void SetFeatureTable(CScope& scope);
-    void SetXML(CScope& scope);
-    void Format(CScope& scope);
 
     CConstRef<CBioseq> GetBioseq() const { return m_Bioseq; }
     void SetBioseq(CConstRef<CBioseq> obj) { m_Bioseq = obj; }
@@ -96,10 +88,6 @@ public:
     // stored in memory
     void DropReference();
     void DropReference(CScope& scope);
-
-    //static string GetTextObjectDescription(CConstRef<CObject> obj, CScope& scope);
-    //static string GetFeatureTableObjectDescription(CConstRef<CObject> obj, CScope& scope);
-    //static string GetXMLObjectDescription(CConstRef<CObject> obj, CScope& scope);
 
     static string GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope);
     static string GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope, const string& product);  
@@ -134,8 +122,6 @@ public:
 protected:
     string                 m_Text;
     string                 m_ShortName;
-    string                 m_FeatureTable;
-    string                 m_XML;
     CConstRef<CBioseq>     m_Bioseq;
     CConstRef<CSeq_feat>   m_Seq_feat;
     CConstRef<CSeqdesc>    m_Seqdesc;

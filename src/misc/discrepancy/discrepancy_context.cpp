@@ -699,21 +699,7 @@ CRef<CDiscrepancyObject> CDiscrepancyContext::NewDiscObj(CConstRef<CBioseq_set> 
 
 CRef<CDiscrepancyObject> CDiscrepancyContext::NewSubmitBlockObj(EKeepRef keep_ref, bool autofix, CObject* more)
 {
-    string label;
-    if (m_Current_Bioseq) {
-        m_Current_Bioseq->GetLabel(&label, CBioseq::eContent);
-    }
-    else {
-        CConstRef<CBioseq_set> seqset = GetCurrentBioseq_set();
-        if (seqset) {
-            seqset->GetLabel(&label, CBioseq_set::eContent);
-        }
-    }
-    string text = "Cit-sub";
-    if (!label.empty()) {
-        text = text + " for " + label;
-    }
-    return CRef<CDiscrepancyObject>(new CDiscrepancyObject(m_Current_Submit_block, *m_Scope, text, m_File, keep_ref || m_KeepRef, autofix, more));
+    return CRef<CDiscrepancyObject>(new CSubmitBlockDiscObject(m_Current_Submit_block, m_Current_Submit_block_StringObj, *m_Scope, "Cit-sub", m_File, keep_ref || m_KeepRef, autofix, more));
 }
 
 

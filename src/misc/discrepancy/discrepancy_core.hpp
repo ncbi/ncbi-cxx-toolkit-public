@@ -147,6 +147,23 @@ friend class CDiscrepancyContext;
 };
 
 
+struct CStringObj : public CObject
+{
+    string S;
+};
+
+
+class CSubmitBlockDiscObject : public CDiscrepancyObject
+{
+protected:
+    CSubmitBlockDiscObject(CConstRef<CSubmit_block> obj, CRef<CStringObj> label, CScope& scope, const string& text, const string& filename, bool keep_ref, bool autofix = false, CObject* more = 0) : CDiscrepancyObject(obj, scope, text, filename, keep_ref, autofix, more) { m_Label.Reset(label); }
+    CConstRef<CStringObj> m_Label;
+public:
+    virtual const string& GetText() const { return m_Label->S.empty() ? m_Text : m_Label->S; }
+friend class CDiscrepancyContext;
+};
+
+
 class CReportNode;
 
 class CDiscrepancyItem : public CReportItem
@@ -399,6 +416,7 @@ protected:
     CBioseq_Handle m_Current_Bioseq_Handle;
     CConstRef<CBioseq> m_Current_Bioseq;
     CConstRef<CSubmit_block> m_Current_Submit_block;
+    CRef<CStringObj> m_Current_Submit_block_StringObj;
     CConstRef<CSeqdesc> m_Current_Seqdesc;
     CConstRef<CSeq_feat> m_Current_Seq_feat;
     CConstRef<CPub> m_Current_Pub;

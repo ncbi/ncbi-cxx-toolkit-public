@@ -6,14 +6,14 @@ CHECK_AUTH_CAPS: 10 pubs have incorrect author capitalization
 Detailed Report
 
 CHECK_AUTH_CAPS: 10 pubs have incorrect author capitalization
-Cit-sub
-test-data/TITLE_AUTHOR_CONFLICT.sqn:lcl|seq_1:q,q.Unpublished
-test-data/TITLE_AUTHOR_CONFLICT.sqn:lcl|seq_1:e,qw.Unpublished
-test-data/TITLE_AUTHOR_CONFLICT.sqn:lcl|seq_1:d,as.Unpublished
-test-data/TITLE_AUTHOR_CONFLICT.sqn:lcl|seq_2:q,q.Unpublished
-test-data/TITLE_AUTHOR_CONFLICT.sqn:lcl|seq_3:q,q.Unpublished
-test-data/TITLE_AUTHOR_CONFLICT.sqn:lcl|seq_4:q,q.Unpublished
-test-data/TITLE_AUTHOR_CONFLICT.sqn:lcl|seq_5:q,q.Unpublished
-test-data/TITLE_AUTHOR_CONFLICT.sqn:lcl|seq_5:c,ab.
-test-data/TITLE_AUTHOR_CONFLICT.sqn:lcl|seq_6:q,q.Unpublished
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\TITLE_AUTHOR_CONFLICT.sqn:Cit-sub for Set containing lcl|seq_1
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\TITLE_AUTHOR_CONFLICT.sqn:seq_1:q,q.Unpublished
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\TITLE_AUTHOR_CONFLICT.sqn:seq_1:e,qw.Unpublished
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\TITLE_AUTHOR_CONFLICT.sqn:seq_1:d,as.Unpublished
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\TITLE_AUTHOR_CONFLICT.sqn:seq_2:q,q.Unpublished
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\TITLE_AUTHOR_CONFLICT.sqn:seq_3:q,q.Unpublished
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\TITLE_AUTHOR_CONFLICT.sqn:seq_4:q,q.Unpublished
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\TITLE_AUTHOR_CONFLICT.sqn:seq_5:q,q.Unpublished
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\TITLE_AUTHOR_CONFLICT.sqn:seq_5:c,ab.
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\TITLE_AUTHOR_CONFLICT.sqn:seq_6:q,q.Unpublished
 
