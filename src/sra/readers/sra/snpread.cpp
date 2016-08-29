@@ -121,12 +121,6 @@ struct CSNPDb_Impl::SGraphTableCursor : public CObject {
     DECLARE_VDB_COLUMN_AS(INSDC_coord_zero, BLOCK_FROM);
     DECLARE_VDB_COLUMN_AS(Uint4, GR_TOTAL);
     DECLARE_VDB_COLUMN_AS(Uint4, GR_ZOOM);
-
-    // return { row, seq_pos } if found track page in the range
-    // return { 0, kInvalidSeqPos } if no track page in the range
-    pair<TVDBRowId, TSeqPos> Locate(TVDBRowId seq_row,
-                                    TVDBRowId track_row,
-                                    COpenRange<TSeqPos> range);
 };
 
 
@@ -473,68 +467,6 @@ CSNPDb_Impl::x_GetPageVDBRowRange(TSeqInfoList::const_iterator seq)
 }
 
 
-pair<TVDBRowId, TSeqPos>
-CSNPDb_Impl::SGraphTableCursor::Locate(TVDBRowId seq_row,
-                                       TVDBRowId track_row,
-                                       COpenRange<TSeqPos> range)
-{
-    _ASSERT(seq_row && track_row);
-    TSeqPos seq_page_pos = range.GetFrom()/kPageSize*kPageSize;
-
-    // binary search
-    TVDBRowId a = 1, b = m_Cursor.GetMaxRowId()+1;
-    TSeqPos pos = kInvalidSeqPos;
-    while ( a < b ) {
-        TVDBRowId m = a + (b-a)/2;
-
-        TVDBRowId cur_seq_row = *SEQ_ID_ROW_NUM(m);
-        if ( cur_seq_row != seq_row ) {
-            if ( cur_seq_row < seq_row ) {
-                a = m+1;
-            }
-            else {
-                b = m;
-            }
-            continue;
-        }
-
-        TVDBRowId cur_track_row = *FILTER_ID_ROW_NUM(m);
-        if ( cur_track_row != track_row ) {
-            if ( cur_track_row < track_row ) {
-                a = m+1;
-            }
-            else {
-                b = m;
-            }
-            continue;
-        }
-
-        TSeqPos cur_seq_page_pos = TSeqPos(*BLOCK_FROM(m));
-        if ( cur_seq_page_pos != seq_page_pos ) {
-            if ( cur_seq_page_pos < seq_page_pos ) {
-                a = m+1;
-            }
-            else {
-                if ( cur_seq_page_pos < range.GetToOpen() ) {
-                    pos = cur_seq_page_pos;
-                }
-                b = m;
-            }
-        }
-        else {
-            // exact match
-            a = m;
-            pos = cur_seq_page_pos;
-            break;
-        }
-    }
-    if ( pos == kInvalidSeqPos ) {
-        a = 0;
-    }
-    return make_pair(a, pos);
-}
-
-
 CRange<TVDBRowId>
 CSNPDb_Impl::x_GetGraphVDBRowRange(TSeqInfoList::const_iterator seq,
                                    TTrackInfoList::const_iterator track)
@@ -709,48 +641,186 @@ CRange<TSeqPos> CSNPDbSeqIterator::GetSNPRange(void) const
 
 BEGIN_LOCAL_NAMESPACE;
 
-/*
-struct SGraphCreator
-{
-    CRef<CSeq_annot> m_Annot;
-    CRef<CSeq_graph> m_Graph;
-    TSeqPos m_Zoom;
-    TSeqPos m_NextSeqPos;
-    size_t m_ZeroCount;
 
-    explicit
-    SGraphCreator(TSeqPos zoom)
-        : m_Zoom(zoom),
-          m_NextSeqPos(0),
-          m_ZeroCount(0)
+struct SGraphMaker {
+    static const TSeqPos kMinGraphGap = 1000;
+    bool m_SingleGraph;
+    bool m_NoGaps;
+    CRef<CSeq_graph> m_Graph;
+    vector< CRef<CSeq_graph> > m_Graphs;
+    CRef<CSeq_id> m_Id;
+    CRange<TSeqPos> m_Range;
+    TSeqPos m_Comp;
+    TSeqPos m_EmptyCount;
+    Uint4 m_MaxValue;
+    SGraphMaker(CRef<CSeq_id> id,
+                CRange<TSeqPos> range,
+                TSeqPos comp)
+        : m_SingleGraph(false),
+          m_NoGaps(false),
+          m_Id(id),
+          m_Range(range),
+          m_Comp(comp),
+          m_EmptyCount(0)
         {
+            _ASSERT(!range.Empty());
+            _ASSERT(range.GetFrom()%comp == 0);
+            _ASSERT(range.GetToOpen()%comp == 0);
         }
-    
-    void AddZeros(size_t count)
+
+    void x_NewGraph()
         {
-            m_NextSeqPos += count*m_Zoom;
-            m_ZeroCount += count;
+            _ASSERT(!m_Graph);
+            m_Graph = new CSeq_graph();
+            m_Graphs.push_back(m_Graph);
+            m_MaxValue = 0;
         }
-    void AddValues(const COpenRange<TSeqPos>& range,
-                   size_t count, const Uint4* values)
+    void x_EndGraph()
         {
-            size_t zero_before = 0, zero_after = 0;
+            _ASSERT(m_Graph);
+            CSeq_graph& graph = *m_Graph;
+            graph.SetTitle("SNP Density");
+            TSeqPos count;
+            if ( m_MaxValue <= 255 ) {
+                auto& gr = graph.SetGraph().SetByte();
+                gr.SetMin(1);
+                gr.SetMax(m_MaxValue);
+                gr.SetAxis(0);
+                count = gr.GetValues().size();
+            }
+            else {
+                auto& gr = graph.SetGraph().SetInt();
+                gr.SetMin(1);
+                gr.SetMax(m_MaxValue);
+                gr.SetAxis(0);
+                count = gr.GetValues().size();
+            }
+            TSeqPos length = count*m_Comp;
+            CSeq_interval& loc = graph.SetLoc().SetInt();
+            loc.SetId(*m_Id);
+            loc.SetFrom(m_Range.GetFrom());
+            loc.SetTo(m_Range.GetFrom()+length-1);
+            graph.SetComp(m_Comp);
+            graph.SetNumval(count);
+            m_Range.SetFrom(m_Range.GetFrom()+length);
+            m_Graph = null;
+        }
+    CSeq_graph& x_GetGraph()
+        {
+            if ( !m_Graph ) {
+                x_NewGraph();
+            }
+            return *m_Graph;
+        }
+
+    void AddActualGap()
+        {
+            _ASSERT(m_EmptyCount);
+            _ASSERT(!m_NoGaps);
+            if ( m_Graph ) {
+                x_EndGraph();
+            }
+            m_Range.SetFrom(m_Range.GetFrom()+m_EmptyCount*m_Comp);
+            m_EmptyCount = 0;
+        }
+
+    void AddActualZeroes(TSeqPos count)
+        {
+            _ASSERT(count);
+            CSeq_graph& graph = x_GetGraph();
+            if ( m_MaxValue <= 255 ) {
+                auto& vv = graph.SetGraph().SetByte().SetValues();
+                vv.resize(vv.size() + count);
+            }
+            else {
+                auto& vv = graph.SetGraph().SetInt().SetValues();
+                vv.resize(vv.size() + count);
+            }
+        }
+    void AddActualValues(TSeqPos count, const Uint4* values)
+        {
+            _ASSERT(count);
+            if ( m_EmptyCount ) {
+                if ( !m_Graph ||
+                     (!m_SingleGraph && m_EmptyCount >= kMinGraphGap) ) {
+                    AddActualGap();
+                }
+                else {
+                    AddActualZeroes(m_EmptyCount);
+                    m_EmptyCount = 0;
+                }
+            }
+            CSeq_graph& graph = x_GetGraph();
+            m_MaxValue = max(m_MaxValue, *max_element(values, values+count));
+            if ( m_MaxValue <= 255 ) {
+                auto& vv = graph.SetGraph().SetByte().SetValues();
+                vv.insert(vv.end(), values, values+count);
+                return;
+            }
+            if ( graph.GetGraph().IsByte() ) {
+                CConstRef<CByte_graph> old_data(&graph.GetGraph().GetByte());
+                auto& old_vv = old_data->GetValues();
+                auto& vv = graph.SetGraph().SetInt().SetValues();
+                vv.assign(old_vv.begin(), old_vv.end());
+            }
+            auto& vv = graph.SetGraph().SetInt().SetValues();
+            vv.insert(vv.end(), values, values+count);
+        }
+    void AddActualValue(Uint4 value)
+        {
+            AddActualValues(1, &value);
+        }
+
+    void AddEmpty(TSeqPos count)
+        {
+            _ASSERT(count);
+            if ( m_NoGaps ) {
+                AddActualZeroes(count);
+            }
+            else {
+                m_EmptyCount += count;
+            }
+        }
+    void AddValues(TSeqPos count, const Uint4* values)
+        {
+            TSeqPos empty_before = 0;
             while ( count && *values == 0 ) {
-                ++zero_before;
+                ++empty_before;
                 --count;
                 ++values;
             }
-            AddZeros(zero_before);
-
-            while ( zero_before < count && values[zero_before] == 0
-            if ( range.GetFrom() != m_NextSeqPos ) {
-                _ASSERT(range.GetFrom() > m_NextSeqPos);
-                _ASSERT((range.GetFrom() - m_NextSeqPos) % m_Zoom == 0);
-                AddZeros((range.GetFrom() - m_NextSeqPos) / m_Zoom);
+            if ( empty_before ) {
+                AddEmpty(empty_before);
+            }
+            TSeqPos empty_after = 0;
+            while ( count && values[count-1] == 0 ) {
+                ++empty_after;
+                --count;
+            }
+            if ( count ) {
+                AddActualValues(count, values);
+            }
+            if ( empty_after ) {
+                AddEmpty(empty_after);
+            }
+        }
+    void AddValue(Uint4 value)
+        {
+            if ( !value ) {
+                AddEmpty(1);
+            }
+            else {
+                AddActualValue(value);
+            }
+        }
+    void Finish()
+        {
+            if ( m_Graph ) {
+                x_EndGraph();
             }
         }
 };
-*/
+
 
 CRef<CSeq_annot> x_NewAnnot(const string& annot_name = kDefaultAnnotName)
 {
@@ -950,9 +1020,6 @@ void x_AddCoverage(CSeq_graph& graph,
                    CSNPDbGraphIterator& it)
 {
     CVDBValueFor<Uint4> values = it.GetCoverageValues();
-    if ( values.empty() ) {
-        return;
-    }
     _ASSERT(values.size()*kCoverageZoom == kPageSize);
     TSeqPos add = x_AddCoverageLoc(graph, range.GetFrom(), range.GetToOpen());
     TSeqPos off = (range.GetFrom()-it.GetPagePos())/kCoverageZoom;
@@ -1034,24 +1101,37 @@ CSNPDbSeqIterator::GetOverviewAnnot(CRange<TSeqPos> range,
 CRef<CSeq_graph>
 CSNPDbSeqIterator::GetCoverageGraph(CRange<TSeqPos> range) const
 {
-    CRef<CSeq_graph> graph = x_NewCoverageGraph(*this);
     x_AdjustCoverageGraphRange(range, *this);
+    SGraphMaker g(GetSeqId(), range, kCoverageZoom);
+    g.m_SingleGraph = true;
     for ( CSNPDbGraphIterator it(*this, range); it; ++it ) {
+        CRange<TSeqPos> page = it.GetPageRange();
+        TSeqPos skip_beg = 0;
+        if ( range.GetFrom() > page.GetFrom() ) {
+            skip_beg = (range.GetFrom() - page.GetFrom())/kCoverageZoom;
+        }
+        TSeqPos skip_end = 0;
+        if ( range.GetToOpen() < page.GetToOpen() ) {
+            skip_end = (page.GetToOpen() - range.GetToOpen())/kCoverageZoom;
+        }
+        TSeqPos count = kPageSize/kCoverageZoom - skip_beg - skip_end;
         if ( !it.GetTotalValue() ) {
-            continue;
+            g.AddEmpty(count);
         }
-        CRange<TSeqPos> page_range = range.IntersectionWith(it.GetPageRange());
-        _ASSERT(!page_range.Empty());
-        if ( page_range.GetFrom() != range.GetFrom() ) {
-            x_AddEmptyCoverage(*graph, range.GetFrom(), page_range.GetFrom());
+        else {
+            CVDBValueFor<Uint4> values = it.GetCoverageValues();
+            _ASSERT(values.size()*kCoverageZoom == kPageSize);
+            g.AddValues(count, values.data()+skip_beg);
         }
-        x_AddCoverage(*graph, page_range, it);
-        range.SetFrom(page_range.GetToOpen());
     }
-    if ( graph->GetNumval() == 0 ) {
+    g.Finish();
+    if ( g.m_Graphs.empty() ) {
         return null;
     }
-    return graph;
+    else {
+        _ASSERT(g.m_Graphs.size() == 1);
+        return g.m_Graphs[0];
+    }
 }
 
 
@@ -1120,7 +1200,7 @@ CRef<CSeq_annot>
 CSNPDbSeqIterator::GetFeatAnnot(CRange<TSeqPos> range,
                                 TFlags flags) const
 {
-    return GetFeatAnnot(range, x_GetFilter(), flags);
+    return GetFeatAnnot(range, GetFilter(), flags);
 }
 
 
@@ -1391,8 +1471,11 @@ struct SCommon8Bytes : public SColumn
                                      reinterpret_cast<const char*>(&val+1));
                 values->push_back(data);
             }
-            size_t value_index = ins.first->second;
-            _ASSERT(int(value_index) == value_index);
+            auto value_index = ins.first->second;
+            if ( value_index > kMax_Int ) {
+                NCBI_THROW(CSraException, eDataError,
+                           "CSNPDbSeqIterator: common bytes table is too big");
+            }
             indexes->push_back(int(value_index));
         }
 
@@ -1680,7 +1763,7 @@ CSNPDbSeqIterator::GetTableFeatAnnots(CRange<TSeqPos> range,
                                       const string& annot_name,
                                       TFlags flags) const
 {
-    return GetTableFeatAnnots(range, annot_name, x_GetFilter(), flags);
+    return GetTableFeatAnnots(range, annot_name, GetFilter(), flags);
 }
 
 
@@ -1688,7 +1771,7 @@ CSNPDbSeqIterator::TAnnotSet
 CSNPDbSeqIterator::GetTableFeatAnnots(CRange<TSeqPos> range,
                                       TFlags flags) const
 {
-    return GetTableFeatAnnots(range, x_GetFilter(), flags);
+    return GetTableFeatAnnots(range, GetFilter(), flags);
 }
 
 
@@ -1745,7 +1828,10 @@ bool x_ParseSNP_Info(SSNP_Info& info,
     }
 
     auto feat_id = it.GetFeatId();
-    _ASSERT(SSNP_Info::TSNPId(feat_id) == feat_id);
+    if ( feat_id > kMax_Int ) {
+        NCBI_THROW(CSraException, eDataError,
+                   "CSNPDbSeqIterator: FEAT_ID doesn't fit into table SNPId");
+    }
     info.m_SNP_Id = SSNP_Info::TSNPId(feat_id);
 
     packed.x_AddSNP(info);
@@ -1791,7 +1877,7 @@ CSNPDbSeqIterator::TPackedAnnot
 CSNPDbSeqIterator::GetPackedFeatAnnot(CRange<TSeqPos> range,
                                       TFlags flags) const
 {
-    return GetPackedFeatAnnot(range, x_GetFilter(), flags);
+    return GetPackedFeatAnnot(range, GetFilter(), flags);
 }
 
 
@@ -2047,9 +2133,9 @@ CSNPDbGraphIterator::Select(const CSNPDbSeqIterator& iter,
         m_Cur = GetDb().Graph(m_CurrPageRowId);
     }
 
-    TSeqPos pos = ref_range.GetFrom();
-    m_CurrPageRowId = iter.GetGraphVDBRowRange().GetFrom() + pos/kPageSize;
-    m_CurrPagePos = pos;
+    TSeqPos page = ref_range.GetFrom()/kPageSize;
+    m_CurrPageRowId = iter.GetGraphVDBRowRange().GetFrom() + page;
+    m_CurrPagePos = page*kPageSize;
     return *this;
 }
 
@@ -2256,8 +2342,12 @@ CSNPDbFeatIterator::EExcluded CSNPDbFeatIterator::x_Excluded(void)
         // no more
         return ePassedTheRegion;
     }
+    if ( GetSearchMode() == eSearchByStart &&
+         ref_pos < GetSearchRange().GetFrom() ) {
+        return eExluded;
+    }
     TSeqPos ref_len = x_GetLength();
-    if ( !ref_len ) {
+    if ( !ref_len && 0 ) {
         ERR_POST("empty SNP location: "<<
                  m_PageIter.GetPageRowId()<<"."<<m_CurrFeatId<<
                  " at "<<ref_pos<<" rs"<<GetFeatId());

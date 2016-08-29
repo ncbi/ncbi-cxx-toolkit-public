@@ -563,6 +563,10 @@ public:
         return m_Iter->m_Seq_ids;
     }
 
+    TSeqPos GetSeqLength(void) const {
+        return m_Iter->m_SeqLength;
+    }
+
     bool IsCircular(void) const;
 
     TSeqPos GetPageSize(void) const {
@@ -640,6 +644,10 @@ public:
         return m_Db.GetNCObject();
     }
 
+    const SFilter& GetFilter() const {
+        return x_GetTrackIter()->m_Filter;
+    }
+
     void SetTrack(const CSNPDbTrackIterator& track);
 
 protected:
@@ -656,9 +664,6 @@ protected:
     }
     CSNPDb_Impl::TTrackInfoList::const_iterator x_GetTrackIter() const {
         return m_TrackIter;
-    }
-    const SFilter& x_GetFilter() const {
-        return x_GetTrackIter()->m_Filter;
     }
 
 private:

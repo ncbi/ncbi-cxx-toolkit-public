@@ -37,8 +37,9 @@
 #include <sra/readers/sra/snpread.hpp>
 
 #include <objects/general/general__.hpp>
+#include <objects/seqloc/seqloc__.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
-#include <objects/seqres/Seq_graph.hpp>
+#include <objects/seqres/seqres__.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqtable/seqtable__.hpp>
 #include <objmgr/impl/snp_annot_info.hpp>
@@ -134,6 +135,8 @@ void CSNPTestApp::Init(void)
     arg_desc->AddFlag("make_overview_annot", "Make overview annot");
     arg_desc->AddFlag("no_shared_objects", "Do not share created objects");
     arg_desc->AddFlag("print_objects", "Print generated objects");
+
+    arg_desc->AddFlag("test", "Test consistency");
 
     arg_desc->AddDefaultKey("o", "OutputFile",
                             "Output file of ASN.1",
@@ -522,6 +525,104 @@ int CSNPTestApp::Run(void)
         cout << "Found "<<count<<" SNPs in "<<sw.Elapsed()
              << NcbiEndl;
         sw.Restart();
+    }
+
+    if ( args["test"] ) {
+        CSNPDbSeqIterator seq(snp_db, query_idh);
+        seq.SetTrack(track);
+        CSNPDbSeqIterator::SSelector sel(seq.eSearchByStart, seq.GetFilter());
+
+        TSeqPos length = seq.GetSeqLength();
+        COpenRange<TSeqPos> whole(0, length);
+        CStopWatch sw;
+
+        vector<Uint8> c100_0((length-1)/100+1);
+        sw.Restart();
+        {
+            TSeqPos cur = 0;
+            while ( cur < length ) {
+                TSeqPos len = rand()%1000000+1000000;
+                CRange<TSeqPos> range;
+                range.SetFrom(cur);
+                range.SetLength(len);
+                for ( CSNPDbFeatIterator it(seq, range, sel); it; ++it ) {
+                    TSeqPos pos = it.GetSNPPosition();
+                    _ASSERT(pos >= range.GetFrom());
+                    _ASSERT(pos < range.GetToOpen());
+                    c100_0.at(pos/100) += 1;
+                }
+                cur = range.GetToOpen();
+            }
+        }
+        LOG_POST("Collected SNPs in "<<sw.Elapsed());
+
+        vector<Uint8> c100_1((length-1)/100+1);
+        sw.Restart();
+        {
+            TSeqPos cur = 0;
+            while ( cur < length ) {
+                TSeqPos len = rand()%1000000+1000000;
+                len = len/100*100;
+                CRange<TSeqPos> range;
+                range.SetFrom(cur);
+                range.SetLength(len);
+                CRef<CSeq_annot> annot;
+                if ( 0 ) {
+                    LOG_POST(Info<<"Getting graph: "<<range);
+                    CRef<CSeq_graph> graph = seq.GetCoverageGraph(range);
+                    if ( graph ) {
+                        annot = new CSeq_annot();
+                        annot->SetData().SetGraph().push_back(graph);
+                    }
+                }
+                else {
+                    LOG_POST(Info<<"Getting annot: "<<range);
+                    annot = seq.GetCoverageAnnot(range);
+                }
+                if ( annot ) {
+                    for ( auto graph : annot->SetData().SetGraph() ) {
+                        _ASSERT(graph->GetComp() == 100);
+                        size_t count = graph->GetNumval();
+                        TSeqPos pos = graph->GetLoc().GetInt().GetFrom();
+                        _ASSERT(pos % 100 == 0);
+                        size_t off = pos / 100;
+                        TSeqPos end = graph->GetLoc().GetInt().GetTo()+1;
+                        _ASSERT(end > pos && end % 100 == 0);
+                        _ASSERT(end == pos + count*100);
+                        if ( graph->GetGraph().IsByte() ) {
+                            LOG_POST(Info<<"Byte graph: "<<pos<<"-"<<(end-1));
+                            auto& gr = graph->GetGraph().GetByte().GetValues();
+                            _ASSERT(gr.size() == count);
+                            for ( size_t i = 0; i < count; ++i ) {
+                                if ( auto v = Uint1(gr[i]) ) {
+                                    c100_1.at(off+i) += v;
+                                }
+                            }
+                        }
+                        else {
+                            LOG_POST(Info<<"Int graph: "<<pos<<"-"<<(end-1));
+                            auto& gr = graph->GetGraph().GetInt().GetValues();
+                            _ASSERT(gr.size() == count);
+                            for ( size_t i = 0; i < count; ++i ) {
+                                if ( auto v = gr[i] ) {
+                                    c100_1.at(off+i) += v;
+                                }
+                            }
+                        }
+                    }
+                }
+                cur = range.GetToOpen();
+            }
+        }
+        LOG_POST("Collected coverage in "<<sw.Elapsed());
+
+        for ( size_t i = 0; i < c100_0.size(); ++i ) {
+            if ( c100_1[i] != c100_0[i] ) {
+                ERR_POST("Coverage["<<i<<"]: "<<c100_1[i]<<" vs "<<c100_0[i]);
+            }
+        }
+        _ASSERT(c100_1 == c100_0);
+        LOG_POST("Coverage is correct");
     }
 
     cout << "Success." << NcbiEndl;
