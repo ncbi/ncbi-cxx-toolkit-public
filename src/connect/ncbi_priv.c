@@ -58,6 +58,7 @@ FMonkeyRecv         g_MONKEY_Recv            = 0;
 FMonkeyConnect      g_MONKEY_Connect         = 0;
 FMonkeyPoll         g_MONKEY_Poll            = 0;
 FMonkeyClose        g_MONKEY_Close           = 0;
+FSockHasSocket      g_MONKEY_SockHasSocket   = 0;
 #endif /*NCBI_MONKEY*/
 
 

@@ -352,6 +352,13 @@ extern "C" {
     {
         CMonkey::Instance()->Close(sock);
     }
+
+
+    static void s_MonkeySockHasSocket(void* /* SOCK* */ sock, 
+                                      MONKEY_SOCKTYPE socket)
+    {
+        CMonkey::Instance()->SockHasSocket((SOCK)sock, socket);
+    }
 }
 
 
@@ -375,18 +382,20 @@ static void s_SetMonkeyHooks(EMonkeyHookSwitch hook_switch)
     switch (hook_switch)
     {
     case eMonkeyHookSwitch_Disabled:
-        g_MONKEY_Send    = 0;
-        g_MONKEY_Recv    = 0;
-        g_MONKEY_Connect = 0;
-        g_MONKEY_Poll    = 0;
-        g_MONKEY_Close   = 0;
+        g_MONKEY_Send          = 0;
+        g_MONKEY_Recv          = 0;
+        g_MONKEY_Connect       = 0;
+        g_MONKEY_Poll          = 0;
+        g_MONKEY_Close         = 0;
+        g_MONKEY_SockHasSocket = 0;
         break;
     case eMonkeyHookSwitch_Enabled:
-        g_MONKEY_Send    = s_MonkeySend;
-        g_MONKEY_Recv    = s_MonkeyRecv;
-        g_MONKEY_Connect = s_MonkeyConnect;
-        g_MONKEY_Poll    = s_MonkeyPoll;
-        g_MONKEY_Close   = s_MonkeyClose;
+        g_MONKEY_Send          = s_MonkeySend;
+        g_MONKEY_Recv          = s_MonkeyRecv;
+        g_MONKEY_Connect       = s_MonkeyConnect;
+        g_MONKEY_Poll          = s_MonkeyPoll;
+        g_MONKEY_Close         = s_MonkeyClose;
+        g_MONKEY_SockHasSocket = s_MonkeySockHasSocket;
         break;
     default:
         break;

@@ -3214,7 +3214,8 @@ static EIO_Status s_Send(SOCK        sock,
     for (;;) { /* optionally auto-resume if interrupted */
         int error = 0;
 
-        int x_written = send(sock->sock, (void*) data, WIN_INT_CAST size, flag < 0 ? MSG_OOB : 0);
+        int x_written = send(sock->sock, (void*) data, WIN_INT_CAST size, 
+                             flag < 0 ? MSG_OOB : 0);
 
         if (x_written >= 0  ||
             (x_written < 0  &&  ((error = SOCK_ERRNO) == SOCK_EPIPE       ||
@@ -4094,6 +4095,12 @@ static EIO_Status s_Connect_(SOCK            sock,
     sock->eof      = 0/*false*/;
     sock->w_status = eIO_Success;
     assert(sock->w_len == 0);
+#ifdef NCBI_MONKEY
+    /* Bind created x_sock to the sock in Chaos Monkey, this information is 
+     * important to keep rules working */
+    if (g_MONKEY_SockHasSocket != 0)
+        g_MONKEY_SockHasSocket(sock, x_sock);
+#endif /* NCBI_MONKEY */
 
 #ifdef NCBI_OS_MSWIN
     assert(!sock->event);
@@ -6545,21 +6552,19 @@ extern EIO_Status SOCK_Poll(size_t          n,
     /* Copy poll results to the original array. Probably Monkey excluded 
      * some sockets from array, so we need two iterators */
     if (orig_polls != polls) {
-        size_t orig_iter = 0, new_iter = 0;
+        size_t orig_iter, new_iter;
         /* First - initialize events with eIO_Open (no event) */
         for (orig_iter = 0;  orig_iter < orig_n;  orig_iter++) {
             orig_polls[orig_iter].event = eIO_Open /* no event */;
             orig_polls[orig_iter].revent = eIO_Open /* no event */;
         }
-        for (; new_iter < n; new_iter++) {
-            while (orig_iter < orig_n) {
+        for (new_iter = 0;  new_iter < n;  new_iter++) {
+            for (orig_iter = 0;  orig_iter < orig_n;  orig_iter++) {
                 if (orig_polls[orig_iter].sock->sock 
                                            == polls[new_iter].sock->sock) {
-                    orig_polls[orig_iter].event  = polls[new_iter].event;
-                    orig_polls[orig_iter].revent = polls[new_iter].revent;
+                    orig_polls[orig_iter]  = polls[new_iter];
                     break; /* Item found! Now increase new_iter */
                 }
-                orig_iter++;
             }
         }
         free(polls);

@@ -71,6 +71,7 @@
 BEGIN_NCBI_SCOPE
 
 DEFINE_STATIC_FAST_MUTEX(s_ConfigMutex);
+DEFINE_STATIC_FAST_MUTEX(s_NetworkDataCacheMutex);
 DEFINE_STATIC_FAST_MUTEX(s_SeedLogConfigMutex);
 DEFINE_STATIC_FAST_MUTEX(s_SingletonMutex);
 DEFINE_STATIC_FAST_MUTEX(s_KnownConnMutex);
@@ -81,6 +82,14 @@ const  int               kRandCount = 100;
 const string             kMonkeyMainSect = "CHAOS_MONKEY";
 const string             kEnablField     = "enabled";
 const string             kSeedField      = "seed";
+
+#define PARAM_TWICE_EXCEPTION(param)                                        \
+    throw CMonkeyException(CDiagCompileInfo(__FILE__, __LINE__),            \
+                           NULL, CMonkeyException::e_MonkeyInvalidArgs,     \
+                           string("Parameter \"" param "\" is set "         \
+                           "twice in [") + GetSection() + "]" +             \
+                           s_RuleTypeString(GetActionType()));
+
 
 /*/////////////////////////////////////////////////////////////////////////////
 //                              MOCK DEFINITIONS                             //
@@ -119,6 +128,15 @@ void CMonkeyMocks::SetMainMonkeySection(string section)
     MainMonkeySection = section;
 }
 
+
+/*//////////////////////////////////////////////////////////////////////////////
+//                            CMonkeyException                                //
+//////////////////////////////////////////////////////////////////////////////*/
+const char* CMonkeyException::what() const throw()
+{
+
+    return CException::GetMsg().c_str();
+}
 
 
 #   endif /* NCBI_MONKEY_TESTS */
@@ -245,11 +263,11 @@ static void s_MONKEY_GenRandomString(char *s, const size_t len) {
 }
 
 
-static void s_GetSocketDestinations(MONKEY_SOCKTYPE sock,
-                                    string*         fqdn,
-                                    string*         IP,
-                                    unsigned short* my_port,
-                                    unsigned short* peer_port)
+void CMonkey::x_GetSocketDestinations(MONKEY_SOCKTYPE sock,
+                                             string*         fqdn,
+                                             string*         IP,
+                                             unsigned short* my_port,
+                                             unsigned short* peer_port)
 {
     struct sockaddr_in sock_addr;
 #ifdef NCBI_OS_MSWIN
@@ -271,10 +289,11 @@ static void s_GetSocketDestinations(MONKEY_SOCKTYPE sock,
 #else
     u_long addr = sock_addr.sin_addr.S_un.S_addr;
 #endif
+    SFqdnIp&& net_data = x_GetFqdnIp(addr);
     if (fqdn != NULL)
-        *fqdn = CSocketAPI::gethostbyaddr   (addr);
+        *fqdn = net_data.fqdn;
     if (IP != NULL)
-        *IP   = CSocketAPI::HostPortToString(addr, 0);
+        *IP = net_data.ip;
 }
 
 
@@ -338,21 +357,68 @@ const CMonkeySeedKey& CMonkeySeedAccessor::Key()
 
 
 /*//////////////////////////////////////////////////////////////////////////////
-//                            CMonkeyException                                //
+//                             CMonkeyRuleBase                                //
 //////////////////////////////////////////////////////////////////////////////*/
-const char* CMonkeyException::what() const throw()
+static string s_RuleTypeString(EMonkeyActionType type)
 {
-    return m_Message.c_str();
+    switch (type) {
+    case eMonkey_Connect:
+        return "connect";
+    case eMonkey_Poll:
+        return "poll";
+    case eMonkey_Recv:
+        return "read";
+    case eMonkey_Send:
+        return "write";
+    default:
+        throw CMonkeyException(CDiagCompileInfo(__FILE__, __LINE__),
+                               NULL, CMonkeyException::e_MonkeyInvalidArgs,
+                               string("Unknown EMonkeyActionType value"));
+    }
 }
 
 
-/*//////////////////////////////////////////////////////////////////////////////
-//                             CMonkeyRuleBase                                //
-//////////////////////////////////////////////////////////////////////////////*/
+static string s_SocketCallString(EMonkeyActionType action) 
+{
+    switch (action) {
+    case eMonkey_Recv:
+        return "recv()";
+    case eMonkey_Send:
+        return "send()";
+    case eMonkey_Poll:
+        return "poll()";
+    case eMonkey_Connect:
+        return "connect()";
+    default:
+        throw CMonkeyException(CDiagCompileInfo(__FILE__, __LINE__),
+                               NULL, CMonkeyException::e_MonkeyInvalidArgs,
+                               string("Unknown EMonkeyActionType value"));
+    }
+}
+
+
+static string s_EIOStatusString(EIO_Status status)
+{
+    switch (status) {
+    case eIO_Timeout:
+        return "eIO_Timeout";
+    case eIO_Closed:
+        return "eIO_Closed";
+    case eIO_Unknown:
+        return "eIO_Unknown";
+    case eIO_Interrupt:
+        return "eIO_Interrupt";
+    default:
+        break;
+    }
+}
+
+
 CMonkeyRuleBase::CMonkeyRuleBase(EMonkeyActionType     action_type,
+                                 string                section,
                                  const vector<string>& params)
     : m_ReturnStatus(-1), m_RepeatType(eMonkey_RepeatNone), m_Delay (0),
-      m_RunsSize(0), m_ActionType(action_type)
+      m_RunsSize(0), m_ActionType(action_type), m_Section(section)
 {
     /** If there are no-interception runs before repeating the cycle,
     * we know that from m_RunsSize */
@@ -367,26 +433,6 @@ CMonkeyRuleBase::CMonkeyRuleBase(EMonkeyActionType     action_type,
         } else if (name == "delay") {
             m_Delay = NStr::StringToULong(value);
         }
-    }
-}
-
-
-static string s_PrintActionType(EMonkeyActionType action) {
-    switch (action)
-    {
-    case eMonkey_Recv:
-        return "recv()";
-    case eMonkey_Send:
-        return "send()";
-    case eMonkey_Poll:
-        return "poll()";
-    case eMonkey_Connect:
-        return "connect()";
-    default:
-        throw CMonkeyException(
-            CDiagCompileInfo(__FILE__, __LINE__),
-            NULL, CMonkeyException::e_MonkeyInvalidArgs,
-            string("Unknown EMonkeyActionType value"));
     }
 }
 
@@ -407,7 +453,7 @@ bool CMonkeyRuleBase::CheckRun(MONKEY_SOCKTYPE sock,
     int rand_val = CMonkey::Instance()->GetRand(Key()) % 100;
     isRun = (rand_val) < rule_probability * 100 / probability_left;
     LOG_POST(Note << "[CMonkeyRuleBase::CheckRun]  Checking if the rule " 
-                  << "for " << s_PrintActionType(m_ActionType) 
+        << "for " << s_SocketCallString(m_ActionType)
                   << " will be run this time. Random value is " 
                   << rand_val << ", probability threshold is "
                   << rule_probability * 100 / probability_left);
@@ -455,12 +501,19 @@ unsigned short CMonkeyRuleBase::GetProbability(MONKEY_SOCKTYPE sock) const
 
 void CMonkeyRuleBase::x_ReadEIOStatus(const string& eIOStatus_in)
 {
+    /* Check that 'runs' has not been set before */
+    if (m_ReturnStatus != -1) {
+        PARAM_TWICE_EXCEPTION("return_status");
+    }
     string eIOStatus = eIOStatus_in;
     NStr::ToLower(eIOStatus);
     if (eIOStatus == "eio_closed") {
         m_ReturnStatus = eIO_Closed;
     } else if (eIOStatus == "eio_invalidarg") {
-        m_ReturnStatus = eIO_InvalidArg;
+        throw CMonkeyException(
+            CDiagCompileInfo(__FILE__, __LINE__),
+            NULL, CMonkeyException::e_MonkeyInvalidArgs,
+            string("Unsupported 'return_status': ") + eIOStatus_in);
     } else if (eIOStatus == "eio_interrupt") {
         m_ReturnStatus = eIO_Interrupt;
     } else if (eIOStatus == "eio_success") {
@@ -482,14 +535,19 @@ void CMonkeyRuleBase::x_ReadEIOStatus(const string& eIOStatus_in)
 
 void CMonkeyRuleBase::x_ReadRuns(const string& runs)
 {
+    /* Check that 'runs' has not been set before */
+    if (m_RunsSize != 0) {
+        PARAM_TWICE_EXCEPTION("runs");
+    }
     /* We get the string already without whitespaces and only have to
        split it on commas*/
     vector<string> runs_list = s_Monkey_Split(runs, ',');
     if (runs_list.size() == 0)
-        throw CMonkeyException(
-            CDiagCompileInfo(__FILE__, __LINE__),
-            NULL, CMonkeyException::e_MonkeyInvalidArgs,
-            string("\"Runs\" parameter is empty"));
+        throw CMonkeyException(CDiagCompileInfo(__FILE__, __LINE__),
+                               NULL, CMonkeyException::e_MonkeyInvalidArgs,
+                               string("Parameter \"runs\" is empty in [")
+                               + m_Section + "]" +
+                               s_RuleTypeString(m_ActionType));
     m_RunMode = runs_list[0][runs_list[0].length() - 1] == '%'
                 ? eMonkey_RunProbability : eMonkey_RunNumber;
 
@@ -504,10 +562,10 @@ void CMonkeyRuleBase::x_ReadRuns(const string& runs)
 
     ERunFormat run_format = runs_list[0].find_first_of(':') != string::npos ? 
                                                           eMonkey_RunRanges : 
-                                                         eMonkey_RunSequence;
+                                                          eMonkey_RunSequence;
 
     unsigned int end_pos = (m_RepeatType == eMonkey_RepeatNone)
-                                    ? runs_list.size() : runs_list.size() - 1;
+                           ? runs_list.size() : runs_list.size() - 1;
 
     for ( unsigned int i = 0;  i < end_pos;  i++ ) {
         string& run = runs_list[i];
@@ -540,7 +598,8 @@ void CMonkeyRuleBase::x_ReadRuns(const string& runs)
                             "In the string of runs: " + runs + " the first "
                             "element MUST set value for the first run");
                 }
-                prob = NStr::StringToDouble(run.substr(prob_start+1, run.length() - prob_start - 2));
+                prob = NStr::StringToDouble(run.substr(prob_start + 1,
+                                            run.length() - prob_start - 2));
                 for (size_t j = last_step+1; j > 0 && j < step; j++) {
                     m_Runs.push_back(*m_Runs.rbegin());
                 }
@@ -584,6 +643,18 @@ unsigned long CMonkeyRuleBase::GetDelay() const
 }
 
 
+std::string CMonkeyRuleBase::GetSection(void) const
+{
+    return m_Section;
+}
+
+
+EMonkeyActionType CMonkeyRuleBase::GetActionType(void) const
+{
+    return m_ActionType;
+}
+
+
 void CMonkeyRuleBase::IterateRun(MONKEY_SOCKTYPE sock)
 {
     if (m_Runs.empty()) 
@@ -619,9 +690,10 @@ void CMonkeyRuleBase::IterateRun(MONKEY_SOCKTYPE sock)
 /*//////////////////////////////////////////////////////////////////////////////
 //                              CMonkeyRWRuleBase                             //
 //////////////////////////////////////////////////////////////////////////////*/
-CMonkeyRWRuleBase::CMonkeyRWRuleBase(EMonkeyActionType           action_type, 
-                                     const vector<string>& params)
-    : CMonkeyRuleBase(action_type, params)
+CMonkeyRWRuleBase::CMonkeyRWRuleBase(EMonkeyActionType           action_type,
+                                     string                      section,
+                                     const vector<string>&       params)
+    : CMonkeyRuleBase(action_type, section, params)
 {
 }
 
@@ -629,8 +701,8 @@ CMonkeyRWRuleBase::CMonkeyRWRuleBase(EMonkeyActionType           action_type,
 //////////////////////////////////////////////////////////////////////////
 // CMonkeyWriteRule
 //////////////////////////////////////////////////////////////////////////
-CMonkeyWriteRule::CMonkeyWriteRule(const vector<string>& params) 
-    : CMonkeyRWRuleBase(eMonkey_Send, params)
+CMonkeyWriteRule::CMonkeyWriteRule(string section, const vector<string>& params) 
+    : CMonkeyRWRuleBase(eMonkey_Send, section, params)
 {
 }
 
@@ -641,13 +713,15 @@ MONKEY_RETTYPE CMonkeyWriteRule::Run(MONKEY_SOCKTYPE        sock,
                                      int                    flags,
                                      SOCK*                  sock_ptr)
 {
-    IterateRun(sock);
 #ifdef NCBI_MONKEY_TESTS
     g_MonkeyMock_SetInterceptedSend(true);
 #endif /* NCBI_MONKEY_TESTS */
-    LOG_POST(Error << "[CMonkeyWriteRule::Run]  CHAOS MONKEY ENGAGE!!! "
-                      "INTERCEPTED send()");
     int return_status = GetReturnStatus();
+    LOG_POST(Error << "[CMonkeyReadRule::Run]  CHAOS MONKEY ENGAGE!!! "
+                      "INTERCEPTED send(). " << 
+                      (return_status != -1  
+                       ? s_EIOStatusString((EIO_Status)return_status) 
+                       : string()));
     if (return_status != eIO_Success && return_status != -1) {
         switch (return_status) {
         case eIO_Timeout:
@@ -659,7 +733,10 @@ MONKEY_RETTYPE CMonkeyWriteRule::Run(MONKEY_SOCKTYPE        sock,
             return -1;
         case eIO_Unknown:
             MONKEY_SET_SOCKET_ERROR(MONKEY_ENOPROTOOPT);
-            return -1; 
+            return -1;
+        case eIO_Interrupt:
+            MONKEY_SET_SOCKET_ERROR(SOCK_EINTR);
+            return -1;
         default:
             break;
         }
@@ -672,8 +749,8 @@ MONKEY_RETTYPE CMonkeyWriteRule::Run(MONKEY_SOCKTYPE        sock,
 //////////////////////////////////////////////////////////////////////////
 // CMonkeyReadRule
 //////////////////////////////////////////////////////////////////////////
-CMonkeyReadRule::CMonkeyReadRule(const vector<string>& params)
-    : CMonkeyRWRuleBase(eMonkey_Recv, params)
+CMonkeyReadRule::CMonkeyReadRule(string section, const vector<string>& params)
+    : CMonkeyRWRuleBase(eMonkey_Recv, section, params)
 {
     STimeout r_timeout = { 1, 0 };
 }
@@ -685,13 +762,15 @@ MONKEY_RETTYPE CMonkeyReadRule::Run(MONKEY_SOCKTYPE sock,
                                     int             flags,
                                     SOCK*           sock_ptr)
 {
-    IterateRun(sock);
 #ifdef NCBI_MONKEY_TESTS
     g_MonkeyMock_SetInterceptedRecv(true);
 #endif /* NCBI_MONKEY_TESTS */
-    LOG_POST(Error << "[CMonkeyReadRule::Run]  CHAOS MONKEY ENGAGE!!! "
-                      "INTERCEPTED recv()");
     int return_status = GetReturnStatus();
+    LOG_POST(Error << "[CMonkeyReadRule::Run]  CHAOS MONKEY ENGAGE!!! "
+                      "INTERCEPTED recv(). " << 
+                      (return_status != -1  
+                       ? s_EIOStatusString((EIO_Status)return_status) 
+                       : string()));
     if (return_status != eIO_Success && return_status != -1) {
         switch (return_status) {
         case eIO_Timeout:
@@ -704,6 +783,8 @@ MONKEY_RETTYPE CMonkeyReadRule::Run(MONKEY_SOCKTYPE sock,
         case eIO_Unknown:
             MONKEY_SET_SOCKET_ERROR(MONKEY_ENOPROTOOPT);
             return -1;
+        case eIO_Interrupt:
+            MONKEY_SET_SOCKET_ERROR(SOCK_EINTR);
         default:
             break;
         }
@@ -723,17 +804,34 @@ MONKEY_RETTYPE CMonkeyReadRule::Run(MONKEY_SOCKTYPE sock,
 // CMonkeyConnectRule
 //////////////////////////////////////////////////////////////////////////
 
-CMonkeyConnectRule::CMonkeyConnectRule(const vector<string>& params)
-    : CMonkeyRuleBase(eMonkey_Connect, params)
+CMonkeyConnectRule::CMonkeyConnectRule(string                section,
+                                       const vector<string>& params)
+    : CMonkeyRuleBase(eMonkey_Connect, section, params)
 {
+    bool allow_set = false;
     for (unsigned int i = 0; i < params.size(); i++) {
         vector<string> name_value = s_Monkey_Split(params[i], '=');
         string name = name_value[0];
         string value = name_value[1];
         if (name == "allow") {
+            if (allow_set) {
+                throw CMonkeyException(CDiagCompileInfo(__FILE__, __LINE__),
+                                       NULL, 
+                                       CMonkeyException::e_MonkeyInvalidArgs,
+                                       string("Parameter \"allow\" is set "
+                                       "twice in [") + GetSection() + "]" +
+                                       s_RuleTypeString(GetActionType()));
+            }
             m_Allow = ConnNetInfo_Boolean(value.c_str()) == 1;
+            allow_set = true;
         }
     }
+    if (!allow_set)
+        throw CMonkeyException(CDiagCompileInfo(__FILE__, __LINE__),
+                               NULL, CMonkeyException::e_MonkeyInvalidArgs,
+                               string("Parameter \"allow\" not set in [")
+                               + GetSection() + "]" +
+                               s_RuleTypeString(GetActionType()));
 }
 
 
@@ -741,13 +839,15 @@ int CMonkeyConnectRule::Run(MONKEY_SOCKTYPE        sock,
                             const struct sockaddr* name,
                             MONKEY_SOCKLENTYPE     namelen)
 {
-    IterateRun(sock);
 #ifdef NCBI_MONKEY_TESTS
     g_MonkeyMock_SetInterceptedConnect(true);
 #endif /* NCBI_MONKEY_TESTS */
-    LOG_POST(Error << "[CMonkeyConnectRule::Run]  CHAOS MONKEY ENGAGE!!! "
-                      "INTERCEPTED connect()");
     int return_status = GetReturnStatus();
+    LOG_POST(Error << "[CMonkeyReadRule::Run]  CHAOS MONKEY ENGAGE!!! "
+                      "INTERCEPTED connect(). " << 
+                      (return_status != -1  
+                       ? s_EIOStatusString((EIO_Status)return_status) 
+                       : string()));
     if (return_status != eIO_Success && return_status != -1) {
         switch (return_status) {
         case eIO_Timeout:
@@ -792,16 +892,33 @@ int CMonkeyConnectRule::Run(MONKEY_SOCKTYPE        sock,
 //////////////////////////////////////////////////////////////////////////
 // CMonkeyPollRule
 //////////////////////////////////////////////////////////////////////////
-CMonkeyPollRule::CMonkeyPollRule(const vector<string>& params) 
-    : CMonkeyRuleBase(eMonkey_Poll, params)
+CMonkeyPollRule::CMonkeyPollRule(string section, const vector<string>& params)
+    : CMonkeyRuleBase(eMonkey_Poll, section, params)
 {
+    bool ignore_set = false;
     for ( unsigned int i = 0;  i < params.size();  i++ ) {
         vector<string> name_value = s_Monkey_Split(params[i], '=');
         string name  = name_value[0];
         string value = name_value[1];
         if (name == "ignore") {
+            if (ignore_set) {
+                throw CMonkeyException(CDiagCompileInfo(__FILE__, __LINE__),
+                                       NULL,
+                                       CMonkeyException::e_MonkeyInvalidArgs,
+                                       string("Parameter \"ignore\" is set "
+                                       "twice in [") + GetSection() + "]" +
+                                       s_RuleTypeString(GetActionType()));
+            }
             m_Ignore = ConnNetInfo_Boolean(value.c_str()) == 1;
+            ignore_set = true;
         }
+    }
+    if (!ignore_set) {
+        throw CMonkeyException(CDiagCompileInfo(__FILE__, __LINE__),
+                               NULL, CMonkeyException::e_MonkeyInvalidArgs,
+                               string("Parameter \"ignore\" not set in [")
+                               + GetSection() + "]" +
+                               s_RuleTypeString(GetActionType()));
     }
 }
 
@@ -810,12 +927,12 @@ bool CMonkeyPollRule::Run(size_t*     n,
                           SOCK*       sock,
                           EIO_Status* return_status)
 {
-    IterateRun((*sock)->sock);
 #ifdef NCBI_MONKEY_TESTS
     g_MonkeyMock_SetInterceptedPoll(true);
 #endif /* NCBI_MONKEY_TESTS */
-    LOG_POST(Error << "[CMonkeyPollRule::Run]  CHAOS MONKEY ENGAGE!!! "
-                      "INTERCEPTED poll()");
+    LOG_POST(Error << "[CMonkeyReadRule::Run]  CHAOS MONKEY ENGAGE!!! "
+                      "INTERCEPTED poll(). " << 
+                      (m_Ignore ? "Ignoring poll" : "NOT ignoring poll"));
     if (m_Ignore) {
         return true;
     }
@@ -877,14 +994,14 @@ void CMonkeyPlan::x_LoadRules(const string&    section,
     /* If a rule was read - parse it */
     string temp_conf = NStr::Replace(rule_str, string(" "), string(""));
     vector<string> params = s_Monkey_Split(temp_conf, ';');
-    container.push_back(Rule_Ty(params));
+    container.push_back(Rule_Ty(section, params));
     if ( multi_rule ) {
         int rule_num = 2;
         string val_name = rule_type_str + NStr::IntToString(rule_num++);
         while ( (rule_str = config.Get(section, val_name)) != "" ) {
             temp_conf = NStr::Replace(rule_str, string(" "), string(""));
             params = s_Monkey_Split(temp_conf, ';');
-            container.push_back(Rule_Ty(params));
+            container.push_back(Rule_Ty(section, params));
             val_name = rule_type_str+ NStr::IntToString(rule_num++);
         }
     }
@@ -969,29 +1086,19 @@ bool CMonkeyPlan::Match(const string&  sock_host,
                         const string&  sock_url,
                         unsigned short probability_left)
 {
-    /* Regex test just in case */
-    static int regex_works = 1; /* 0 for not working, 1 for working */
-#if 0
-    if (regex_works == -1) {
-        regex  test_regexp("test_regex"); /* should not match "test" */
-        string test_string = "test.*";
-        smatch test_find;
-        if (!regex_match(test_string, test_find, test_regexp)) {
-            regex_works = 0; /* we learn that regex implementation is fake */
-        }
-        regex_works = 1;
-    }
-#endif /* 0 */
-
     /* Check that regex works and that at least one of hostname and IP 
      * is not empty*/
-    if ( regex_works && !m_HostRegex.empty() &&
-            (sock_host.length() + sock_url.length() > 0) ) {
+    if ( !m_HostRegex.empty()  &&
+         (sock_host.length() + sock_url.length() > 0) ) {
 #ifdef NCBI_OS_MSWIN
         regex reg(m_HostRegex);
         smatch find;
         if (!regex_match(sock_host, find, reg) && 
             !regex_match(sock_url,  find, reg)) {
+            LOG_POST(Note << "[CMonkeyPlan::Match]  Plan " << m_Name << " was "
+                          << "NOT matched. Reason: "
+                          << "[host regex mismatch, host=" << sock_host
+                          << ", regex = \"" << m_HostRegex << "\"]");
             return false;
         }
 #else
@@ -1009,6 +1116,10 @@ bool CMonkeyPlan::Match(const string&  sock_host,
             }
         }
         if (!match_found) {
+            LOG_POST(Note << "[CMonkeyPlan::Match]  Plan " << m_Name << " was "
+                          << "NOT matched. Reason: "
+                          << "[host regex mismatch, host=" << sock_host
+                          << ", regex = \"" << m_HostRegex << "\"]");
             return false;
         }
 #endif /* NCBI_OS_MSWIN */
@@ -1049,13 +1160,15 @@ bool CMonkeyPlan::WriteRule(MONKEY_SOCKTYPE        sock,
                             SOCK*                  sock_ptr)
 {
     short probability_left = 100;
+    int res = -1;
     for (unsigned int i = 0;  i < m_WriteRules.size();  i++) {
         m_WriteRules[i].AddSocket(sock);
         unsigned short rule_prob = m_WriteRules[i].GetProbability(sock);
-        if (m_WriteRules[i].CheckRun(sock, probability_left, rule_prob)) {
+        if (m_WriteRules[i].CheckRun(sock, rule_prob, probability_left)) {
             *bytes_written = m_WriteRules[i].Run(sock, data, size, flags, 
                                                  sock_ptr);
-            return true;
+            res = 1;
+            break;
         }
         /* If this rule did not engage, we go to the next rule, and
            remember to normalize probability of next rule */
@@ -1071,7 +1184,15 @@ bool CMonkeyPlan::WriteRule(MONKEY_SOCKTYPE        sock,
         }
     }
     // If no rules engaged, return 0
-    return false;
+    if (res == -1)
+        res = 0;
+
+    // Iterate run in all rules
+    for (unsigned int i = 0;  i < m_WriteRules.size();  i++) {
+        m_WriteRules[i].IterateRun(sock);
+    }
+
+    return res == 0 ? false : true;
 }
 
 
@@ -1083,12 +1204,14 @@ bool CMonkeyPlan::ReadRule(MONKEY_SOCKTYPE        sock,
                            SOCK*                  sock_ptr)
 {
     short probability_left = 100;
+    int res = -1;
     for (unsigned int i = 0;  i < m_ReadRules.size();  i++) {
         m_ReadRules[i].AddSocket(sock);
         unsigned short rule_prob = m_ReadRules[i].GetProbability(sock);
         if (m_ReadRules[i].CheckRun(sock, rule_prob, probability_left)) {
             *bytes_read = m_ReadRules[i].Run(sock, buf, size, flags, sock_ptr);
-            return true;
+            res = 1;
+            break;
         }
         /* If this rule did not engage, we go to the next rule, and
            and remember to normalize probability of next rule */
@@ -1096,14 +1219,23 @@ bool CMonkeyPlan::ReadRule(MONKEY_SOCKTYPE        sock,
         if (probability_left <= 0) {
             stringstream ss;
             ss << "Probability below zero for write rule in plan " << m_Name
-                << ". Check config!";
-            throw CMonkeyException(
-                        CDiagCompileInfo(__FILE__, __LINE__),
-                        NULL, CMonkeyException::e_MonkeyInvalidArgs, 
-                        ss.str());
+               << ". Check config!";
+            throw CMonkeyException(CDiagCompileInfo(__FILE__, __LINE__),
+                                   NULL, CMonkeyException::e_MonkeyInvalidArgs,
+                                   ss.str());
         }
     }
-    return false;
+
+    // If no rules engaged, return 0
+    if (res == -1)
+        res = 0;
+
+    // Iterate run in all rules
+    for (unsigned int i = 0;  i < m_ReadRules.size();  i++) {
+        m_ReadRules[i].IterateRun(sock);
+    }
+
+    return res == 0 ? false : true;
 }
 
 
@@ -1113,17 +1245,22 @@ bool CMonkeyPlan::ConnectRule(MONKEY_SOCKTYPE        sock,
                               int*                   result)
 {
     short probability_left = 100;
+    /* We are fine with losing precision. Just need a unique ID*/
+    MONKEY_SOCKTYPE x_sock = CMonkey::Instance()->GetSockBySocketid(sock);
+    int res = -1;
     for (unsigned int i = 0; i < m_ConnectRules.size(); i++) {
-        m_ConnectRules[i].AddSocket(sock);
-        unsigned short rule_prob = m_ConnectRules[i].GetProbability(sock);
+        m_ConnectRules[i].AddSocket(x_sock);
+        unsigned short rule_prob = 
+            m_ConnectRules[i].GetProbability(x_sock);
         /* Check if the rule will trigger on this run. If not - we go to the 
            next rule in plan */
-        if (m_ConnectRules[i].CheckRun(sock, rule_prob, probability_left)) {
+        if (m_ConnectRules[i].CheckRun(x_sock, rule_prob, probability_left)) {
             /* 'result' is the result of connect() launched in the rule. It can
                even be result of original connect() with real parameters.
                Or, it can be an error code of a failed fake connect() */
             *result = m_ConnectRules[i].Run(sock, name, namelen);
-            return true;
+            res = 1;
+            break;
         }
         /* If this rule did not engage, we go to the next rule, and
            and remember to normalize probability of next rule */
@@ -1133,12 +1270,21 @@ bool CMonkeyPlan::ConnectRule(MONKEY_SOCKTYPE        sock,
             ss << "Probability below zero for write rule in plan " << m_Name
                 << ". Check config!";
             throw CMonkeyException(CDiagCompileInfo(__FILE__, __LINE__),
-                                   NULL, CMonkeyException::e_MonkeyInvalidArgs, 
+                                   NULL, CMonkeyException::e_MonkeyInvalidArgs,
                                    ss.str());
         }
     }
-    // If no rules triggered
-    return false;
+
+    // If no rules engaged, return 0
+    if (res == -1)
+        res = 0;
+
+    // Iterate run in all rules
+    for (unsigned int i = 0;  i < m_ConnectRules.size();  i++) {
+        m_ConnectRules[i].IterateRun(x_sock);
+    }
+
+    return res == 0 ? false : true;
 }
 
 
@@ -1147,11 +1293,14 @@ bool CMonkeyPlan::PollRule(size_t*     n,
                            EIO_Status* return_status)
 {
     short probability_left = 100;
+    int res = -1;
     for (unsigned int i = 0;  i < m_PollRules.size();  i++) {
         m_PollRules[i].AddSocket((*sock)->sock);
         unsigned short rule_prob = m_PollRules[i].GetProbability((*sock)->sock);
-        if (m_PollRules[i].CheckRun((*sock)->sock, rule_prob, probability_left)) {
-            return m_PollRules[i].Run(n, sock, return_status);
+        if (m_PollRules[i].CheckRun((*sock)->sock, rule_prob, probability_left))
+        {
+            res = m_PollRules[i].Run(n, sock, return_status) ? 1 : 0;
+            break;
         }
         LOG_POST(Error << "[CMonkeyPlan::PollRule]  CHAOS MONKEY NOT "
                           "ENGAGED!!! poll() passed");
@@ -1168,9 +1317,19 @@ bool CMonkeyPlan::PollRule(size_t*     n,
                         ss.str());
         }
     }
+
     // If no rules triggered, return 0
-    *return_status = EIO_Status::eIO_Success;
-    return false;
+    if (res == -1) {
+        res = 0;
+        *return_status = EIO_Status::eIO_Success;
+    }
+
+    // Iterate run in all rules
+    for (unsigned int i = 0;  i < m_PollRules.size();  i++) {
+        m_PollRules[i].IterateRun((*sock)->sock);
+    }
+
+    return res == 0 ? false : true;
 }
 
 
@@ -1270,7 +1429,7 @@ void CMonkey::ReloadConfig(const string& config)
     /* If the section does not exist */
     if (find(sections.begin(), sections.end(), monkey_section)
         == sections.end()) {
-        LOG_POST(Error << "[CMonkey::ReloadConfig]  Config section [" << 
+        LOG_POST(Error << "[CMonkey::ReloadConfig]  Config section [" <<
                           monkey_section << "] does not exist, Chaos Monkey "
                           "is NOT active!");
         m_Enabled = false;
@@ -1285,26 +1444,35 @@ void CMonkey::ReloadConfig(const string& config)
     }
     m_Enabled = true;
     LOG_POST(Error << "[CMonkey::ReloadConfig]  Chaos Monkey is active!");
-    string probability = reg.Get(monkey_section, "probability");
-    if (probability != "") {
-        probability = NStr::Replace(probability, " ", "");
-        auto arr = s_Monkey_Split(probability, '=');
+    string prob_str = reg.Get(monkey_section, "probability");
+    if (prob_str != "") {
+        prob_str = NStr::Replace(prob_str, " ", "");
+        int prob;
         try {
-            if (*probability.rbegin() == '%') {
-                probability = probability.substr(0, probability.length() - 1);
-                m_Probability = (unsigned short)NStr::StringToUInt(probability);
+            if (*prob_str.rbegin() == '%') {
+                string prob_tmp = prob_str.substr(0, prob_str.length() - 1);
+                prob = NStr::StringToInt(prob_tmp);
             }
             else {
-                m_Probability = (unsigned short)
-                                      (NStr::StringToDouble(probability) * 100);
+                prob = (int)(NStr::StringToDouble(prob_str) * 100);
             }
+            if (prob < 0 || prob > 100) {
+                throw CMonkeyException(CDiagCompileInfo(__FILE__, __LINE__),
+                                       NULL,
+                                       CMonkeyException::e_MonkeyInvalidArgs,
+                                       "Parameter \"probability\"=" + prob_str
+                                       + " for section [" + monkey_section
+                                       + "] is not a valid value "
+                                       "(valid range is 0%-100% or 0.0-1.0)");
+            }
+            m_Probability = (unsigned short)prob;
         }
         catch (const CStringException&) {
             throw CMonkeyException(CDiagCompileInfo(__FILE__, __LINE__),
                                    NULL, CMonkeyException::e_MonkeyInvalidArgs,
-                                   "Probability \"" + probability
-                                   + "\" for section " + monkey_section
-                                   + " could not be parsed");
+                                   "Parameter \"probability\"=" + prob_str
+                                   + " for section [" + monkey_section
+                                   + "] could not be parsed");
         }
     }
     // Disable hooks while Monkey initializes
@@ -1351,8 +1519,11 @@ MONKEY_RETTYPE CMonkey::Send(MONKEY_SOCKTYPE        sock,
     string host_fqdn, host_IP;
     unsigned short peer_port;
     if (m_Enabled) {
-        s_GetSocketDestinations(sock, &host_fqdn, &host_IP, NULL, &peer_port);
-        CMonkeyPlan* sock_plan = x_FindPlan(sock, host_fqdn, host_IP, peer_port);
+        x_GetSocketDestinations(sock, &host_fqdn, &host_IP, NULL, &peer_port);
+        LOG_POST(Note << "[CMonkey::Send]  For connection with port " 
+                      << peer_port << ", host " << host_IP
+                      << " and hostname " << host_fqdn << ".");
+        CMonkeyPlan* sock_plan = x_FindPlan(sock, host_fqdn,host_IP,peer_port);
 
         if (sock_plan != NULL) {
             MONKEY_RETTYPE bytes_written;
@@ -1375,7 +1546,10 @@ MONKEY_RETTYPE CMonkey::Recv(MONKEY_SOCKTYPE        sock,
     string host_fqdn, host_IP;
     unsigned short peer_port;
     if (m_Enabled) {
-        s_GetSocketDestinations(sock, &host_fqdn, &host_IP, NULL, &peer_port);
+        x_GetSocketDestinations(sock, &host_fqdn, &host_IP, NULL, &peer_port);
+        LOG_POST(Note << "[CMonkey::Recv]  For connection with port " 
+                      << peer_port << ", host " << host_IP
+                      << " and hostname " << host_fqdn << ".");
 
         CMonkeyPlan* sock_plan = x_FindPlan(sock, host_fqdn, host_IP,peer_port);
 
@@ -1406,10 +1580,13 @@ int CMonkey::Connect(MONKEY_SOCKTYPE        sock,
         unsigned int host = addr.in.sin_addr.s_addr;
         string host_fqdn, host_IP;
         unsigned short peer_port = ntohs(addr.in.sin_port);
-        host_fqdn = CSocketAPI::gethostbyaddr(host);
-        host_IP = CSocketAPI::HostPortToString(host, 0);
-
-        CMonkeyPlan* sock_plan = x_FindPlan(sock, host_fqdn, host_IP, peer_port);
+        SFqdnIp&&    net_data = x_GetFqdnIp(host);
+        LOG_POST(Note << "[CMonkey::Connect]  For connection with port " 
+                      << peer_port << ", host " << host_IP
+                      << " and hostname " << host_fqdn << ".");
+        CMonkeyPlan* sock_plan = x_FindPlan(CMonkey::GetSockBySocketid(sock),
+                                            net_data.fqdn, net_data.ip, 
+                                            peer_port);
         if (sock_plan != NULL) {
             int result;
             if ( sock_plan->ConnectRule(sock, name, namelen, &result) )
@@ -1431,13 +1608,20 @@ bool CMonkey::Poll(size_t*      n,
         int polls_count         = 0;
         while (polls_iter < *n) {
             SOCK&        sock      = (*polls)[polls_iter].sock;
-            string       host_fqdn = CSocketAPI::gethostbyaddr(sock->host);
-            string       host_IP   = CSocketAPI::HostPortToString(sock->host,0);
-            CMonkeyPlan* sock_plan = x_FindPlan(sock->id, "", "", sock->myport);
-            if (sock_plan == NULL ||
-                (sock_plan != NULL && !sock_plan->PollRule(n, &sock,
-                                                           return_status)) 
-                ) {
+            LOG_POST(Note << "[CMonkey::Poll]  For connection with port " 
+                          << sock->myport << ", host <empty> and "
+                             "hostname <empty>.");
+            if (sock != nullptr)
+            {
+                CMonkeyPlan* sock_plan = x_FindPlan(sock->id, "", "", 
+                                                    sock->myport);
+                if (sock_plan == NULL ||
+                    (sock_plan != NULL && !sock_plan->PollRule(n, &sock,
+                                                               return_status)) )
+                {
+                    new_polls[polls_count++] = (*polls)[polls_iter];
+                }
+            } else { /* something unreadable by Monkey, but still valid */
                 new_polls[polls_count++] = (*polls)[polls_iter];
             }
             polls_iter++;
@@ -1455,6 +1639,33 @@ void CMonkey::Close(MONKEY_SOCKTYPE sock)
     if (sock_plan != m_KnownSockets.end()) {
         m_KnownSockets.erase(sock_plan);
     }
+    auto sock_iter = m_SocketMemory.begin();
+    for (  ;  sock_iter != m_SocketMemory.end()  ;  )
+    {
+        if (sock_iter->first == sock)
+            m_SocketMemory.erase(sock_iter++);
+        else
+            ++sock_iter;
+    }
+}
+
+
+void CMonkey::SockHasSocket(SOCK sock, MONKEY_SOCKTYPE socket)
+{
+    m_SocketMemory[socket] = sock;
+}
+
+
+MONKEY_SOCKTYPE CMonkey::GetSockBySocketid(MONKEY_SOCKTYPE socket)
+{
+    union SSockSocket
+    {
+        SOCK sock;
+        MONKEY_SOCKTYPE socket;
+    };
+    SSockSocket sock_socket;
+    sock_socket.sock = m_SocketMemory[socket];
+    return sock_socket.socket;
 }
 
 
@@ -1477,7 +1688,9 @@ CMonkeyPlan* CMonkey::x_FindPlan(MONKEY_SOCKTYPE sock,  const string& hostname,
     /* Plan was not found. First roll the dice to know if Monkey will process 
      * current socket */
     int rand_val = CMonkey::Instance()->GetRand(Key()) % 100;
-    LOG_POST(Note << "[CMonkey::x_FindPlan]  Checking if connection will be "
+    LOG_POST(Note << "[CMonkey::x_FindPlan]  Checking if connection "
+                     "with port " << port << ", host " << host_IP
+                  << " and hostname " << hostname << " will be "
                   << "intercepted by Chaos Monkey. Random value is " 
                   << rand_val << ", probability threshold is " 
                   << m_Probability);
@@ -1510,6 +1723,18 @@ CMonkeyPlan* CMonkey::x_FindPlan(MONKEY_SOCKTYPE sock,  const string& hostname,
     /* If no plan triggered, then this socket will be always ignored */
     m_KnownSockets[sock] = NULL;
     return NULL;
+}
+
+
+CMonkey::SFqdnIp CMonkey::x_GetFqdnIp(unsigned int host)
+{
+    CFastMutexGuard guard(s_NetworkDataCacheMutex);
+    auto iter = m_NetworkDataCache.find(host);
+    if (iter != m_NetworkDataCache.end())
+        return iter->second;
+    string       host_fqdn = CSocketAPI::gethostbyaddr(host);
+    string       host_IP = CSocketAPI::HostPortToString(host, 0);
+    return m_NetworkDataCache[host] = SFqdnIp(host_fqdn, host_IP);
 }
 
 

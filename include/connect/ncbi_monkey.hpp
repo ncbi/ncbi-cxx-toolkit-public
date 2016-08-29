@@ -78,9 +78,6 @@ public:
     virtual const char* what(void)  const throw();
 
 private:
-    unsigned short m_StatusCode;
-    string         m_Message;
-
     NCBI_EXCEPTION_DEFAULT(CMonkeyException, CException);
 };
 
@@ -139,23 +136,27 @@ public:
 
     /** Get probability that the rule will run next time */
     unsigned short GetProbability(MONKEY_SOCKTYPE sock) const;
-protected:
-    CMonkeyRuleBase(EMonkeyActionType     action_type,
-                    const vector<string>& name_value);
-    int /* EIO_Status or -1 */ GetReturnStatus(void) const;
-    unsigned long  GetDelay(void) const;
 
     /* Iterate m_Runs */
     void IterateRun(MONKEY_SOCKTYPE sock);
+protected:
+    CMonkeyRuleBase(EMonkeyActionType     action_type,
+                    string                section,
+                    const vector<string>& name_value);
+    int /* EIO_Status or -1 */ GetReturnStatus(void) const;
+    unsigned long              GetDelay(void) const;
+    string                     GetSection(void) const;
+    EMonkeyActionType          GetActionType(void) const;
 private:
     void           x_ReadRuns     (const string& runs);
     void           x_ReadEIOStatus(const string& eIOStatus_str);
     int                          m_ReturnStatus;
     ERepeatType                  m_RepeatType;
-    unsigned long                m_Delay;
-    vector<double>               m_Runs;
     EMonkeyActionType            m_ActionType;
     map<MONKEY_SOCKTYPE, size_t> m_RunPos;
+    unsigned long                m_Delay;
+    string                       m_Section;
+    vector<double>               m_Runs;
     /** If there are no-interception runs before repeating the cycle,
      * we know that from m_RunsSize */
     size_t         m_RunsSize;
@@ -175,7 +176,8 @@ private:
 class CMonkeyRWRuleBase : public CMonkeyRuleBase
 {
 protected:
-    CMonkeyRWRuleBase(EMonkeyActionType           action_type, 
+    CMonkeyRWRuleBase(EMonkeyActionType     action_type,
+                      string                section,
                       const vector<string>& name_value);
     string    GetText     (void) const;
     size_t    GetTextLength(void) const;
@@ -186,7 +188,7 @@ protected:
 class CMonkeyWriteRule : public CMonkeyRWRuleBase
 {
 public:
-    CMonkeyWriteRule(const vector<string>& name_value);
+    CMonkeyWriteRule(string section, const vector<string>& name_value);
 
     MONKEY_RETTYPE  Run(MONKEY_SOCKTYPE        sock,
                         const MONKEY_DATATYPE  data,
@@ -199,7 +201,7 @@ public:
 class CMonkeyReadRule : public CMonkeyRWRuleBase
 {
 public:
-    CMonkeyReadRule(const vector<string>& name_value);
+    CMonkeyReadRule(string section, const vector<string>& name_value);
 
     MONKEY_RETTYPE Run(MONKEY_SOCKTYPE sock,
                        MONKEY_DATATYPE buf,
@@ -215,7 +217,7 @@ private:
 class CMonkeyConnectRule : public CMonkeyRuleBase
 {
 public:
-    CMonkeyConnectRule(const vector<string>& name_value);
+    CMonkeyConnectRule(string section, const vector<string>& name_value);
     
     int Run(MONKEY_SOCKTYPE        sock,
             const struct sockaddr* name,
@@ -228,7 +230,7 @@ private:
 class CMonkeyPollRule : public CMonkeyRuleBase
 {
 public:
-    CMonkeyPollRule(const vector<string>& name_value);
+    CMonkeyPollRule(string section, const vector<string>& name_value);
     
     bool  Run(size_t*     n,
               SOCK*       sock,
@@ -358,9 +360,20 @@ public:
     /* Not a real Chaos Monkey interceptor, just a function to remove the socket 
      * that was closed from m_KnownSockets */
     void Close(MONKEY_SOCKTYPE sock);
+    
+    /* Remember to 'socket' descriptor was created for 'sock' structure */
+    void SockHasSocket(SOCK sock, MONKEY_SOCKTYPE socket);
+
+    MONKEY_SOCKTYPE GetSockBySocketid(MONKEY_SOCKTYPE socket);
 
     static void MonkeyHookSwitchSet(FMonkeyHookSwitch hook_switch_func);
 private:
+    struct SFqdnIp
+    {
+        SFqdnIp(string fqdn="", string ip="") : fqdn(fqdn), ip(ip) {}
+        string fqdn;
+        string ip;
+    };
     /* No one can create a separate instance of CMonkey*/
     CMonkey(void);
     /** Return plan for the socket, new or already assigned one. If the socket
@@ -371,6 +384,12 @@ private:
      *  the check is omitted. */
     CMonkeyPlan* x_FindPlan(MONKEY_SOCKTYPE sock,  const string& hostname,
                             const string& host_IP, unsigned short port);
+    SFqdnIp x_GetFqdnIp(unsigned host);
+    void x_GetSocketDestinations(MONKEY_SOCKTYPE sock,
+                                 string*         fqdn,
+                                 string*         IP,
+                                 unsigned short* my_port,
+                                 unsigned short* peer_port);
     /** Sockets that are already assigned to a plan (or known to be ignored) */
     map<SOCKET, CMonkeyPlan*> m_KnownSockets;
     static CMonkey*           sm_Instance;
@@ -382,8 +401,13 @@ private:
     CRef<CTls<vector<int> > > m_TlsRandList;
     CRef<CTls<int> >          m_TlsRandListPos;
     unsigned int              m_Seed;
+    map<unsigned,SFqdnIp>     m_NetworkDataCache; /* to remember fqdn and IP */
     /** Remember registered tokens for threads to avoid collisions */
     set<int>                  m_RegisteredTokens;
+    /* In case of an unsuccessful connect a new socket descriptor is created,
+     * but to use rules we have to bind all socket descriptors to a SOCK
+     * under which descriptors were created */
+    map<MONKEY_SOCKTYPE, SOCK> m_SocketMemory;
 };
 
 
