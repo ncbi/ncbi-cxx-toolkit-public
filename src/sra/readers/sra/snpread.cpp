@@ -680,7 +680,7 @@ struct SGraphMaker {
             _ASSERT(m_Graph);
             CSeq_graph& graph = *m_Graph;
             graph.SetTitle("SNP Density");
-            TSeqPos count;
+            size_t count;
             if ( m_MaxValue <= 255 ) {
                 auto& gr = graph.SetGraph().SetByte();
                 gr.SetMin(1);
@@ -695,13 +695,13 @@ struct SGraphMaker {
                 gr.SetAxis(0);
                 count = gr.GetValues().size();
             }
-            TSeqPos length = count*m_Comp;
+            TSeqPos length = TSeqPos(count*m_Comp);
             CSeq_interval& loc = graph.SetLoc().SetInt();
             loc.SetId(*m_Id);
             loc.SetFrom(m_Range.GetFrom());
             loc.SetTo(m_Range.GetFrom()+length-1);
             graph.SetComp(m_Comp);
-            graph.SetNumval(count);
+            graph.SetNumval(int(count));
             m_Range.SetFrom(m_Range.GetFrom()+length);
             m_Graph = null;
         }
