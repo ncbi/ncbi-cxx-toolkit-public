@@ -2073,7 +2073,7 @@ CNetStorageHandler::x_ProcessGetClientObjects(
         if (status == -1) {
             // Client is not found
             NCBI_THROW(CNetStorageServerException, eNetStorageClientNotFound,
-                       "NetStorage client is not found");
+                       "NetStorage client '" + client_name + "' is not found");
         } else {
             // Unknown status
             NCBI_THROW(CNetStorageServerException, eInternalError,
