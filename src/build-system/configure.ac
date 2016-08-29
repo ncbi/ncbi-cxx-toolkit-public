@@ -666,7 +666,7 @@ if test "$with_gbench" = "yes" ; then
      [if test "$[with_]OPT" = "no"; then
          AC_MSG_ERROR([incompatible options: --without-]OPT[ but --with-gbench])
       else
-         [with_]OPT=yes
+         : ${[with_]OPT:=yes}
       fi
      ])
    : ${with_projects=scripts/projects/ncbi_gbench.lst}

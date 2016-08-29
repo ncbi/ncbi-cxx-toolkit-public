@@ -4171,84 +4171,84 @@ if test "$with_gbench" = "yes" ; then
 echo "$as_me: error: incompatible options: --without-dll but --with-gbench" >&2;}
    { (exit 1); exit 1; }; }
       else
-         with_dll=yes
+         : ${with_dll:=yes}
       fi
      if test "$with_mt" = "no"; then
          { { echo "$as_me:$LINENO: error: incompatible options: --without-mt but --with-gbench" >&5
 echo "$as_me: error: incompatible options: --without-mt but --with-gbench" >&2;}
    { (exit 1); exit 1; }; }
       else
-         with_mt=yes
+         : ${with_mt:=yes}
       fi
      if test "$with_gui" = "no"; then
          { { echo "$as_me:$LINENO: error: incompatible options: --without-gui but --with-gbench" >&5
 echo "$as_me: error: incompatible options: --without-gui but --with-gbench" >&2;}
    { (exit 1); exit 1; }; }
       else
-         with_gui=yes
+         : ${with_gui:=yes}
       fi
      if test "$with_exe" = "no"; then
          { { echo "$as_me:$LINENO: error: incompatible options: --without-exe but --with-gbench" >&5
 echo "$as_me: error: incompatible options: --without-exe but --with-gbench" >&2;}
    { (exit 1); exit 1; }; }
       else
-         with_exe=yes
+         : ${with_exe:=yes}
       fi
      if test "$with_serial" = "no"; then
          { { echo "$as_me:$LINENO: error: incompatible options: --without-serial but --with-gbench" >&5
 echo "$as_me: error: incompatible options: --without-serial but --with-gbench" >&2;}
    { (exit 1); exit 1; }; }
       else
-         with_serial=yes
+         : ${with_serial:=yes}
       fi
      if test "$with_objects" = "no"; then
          { { echo "$as_me:$LINENO: error: incompatible options: --without-objects but --with-gbench" >&5
 echo "$as_me: error: incompatible options: --without-objects but --with-gbench" >&2;}
    { (exit 1); exit 1; }; }
       else
-         with_objects=yes
+         : ${with_objects:=yes}
       fi
      if test "$with_algo" = "no"; then
          { { echo "$as_me:$LINENO: error: incompatible options: --without-algo but --with-gbench" >&5
 echo "$as_me: error: incompatible options: --without-algo but --with-gbench" >&2;}
    { (exit 1); exit 1; }; }
       else
-         with_algo=yes
+         : ${with_algo:=yes}
       fi
      if test "$with_glew_mx" = "no"; then
          { { echo "$as_me:$LINENO: error: incompatible options: --without-glew_mx but --with-gbench" >&5
 echo "$as_me: error: incompatible options: --without-glew_mx but --with-gbench" >&2;}
    { (exit 1); exit 1; }; }
       else
-         with_glew_mx=yes
+         : ${with_glew_mx:=yes}
       fi
      if test "$with_wxwidgets" = "no"; then
          { { echo "$as_me:$LINENO: error: incompatible options: --without-wxwidgets but --with-gbench" >&5
 echo "$as_me: error: incompatible options: --without-wxwidgets but --with-gbench" >&2;}
    { (exit 1); exit 1; }; }
       else
-         with_wxwidgets=yes
+         : ${with_wxwidgets:=yes}
       fi
      if test "$with_ftgl" = "no"; then
          { { echo "$as_me:$LINENO: error: incompatible options: --without-ftgl but --with-gbench" >&5
 echo "$as_me: error: incompatible options: --without-ftgl but --with-gbench" >&2;}
    { (exit 1); exit 1; }; }
       else
-         with_ftgl=yes
+         : ${with_ftgl:=yes}
       fi
      if test "$with_sqlite3" = "no"; then
          { { echo "$as_me:$LINENO: error: incompatible options: --without-sqlite3 but --with-gbench" >&5
 echo "$as_me: error: incompatible options: --without-sqlite3 but --with-gbench" >&2;}
    { (exit 1); exit 1; }; }
       else
-         with_sqlite3=yes
+         : ${with_sqlite3:=yes}
       fi
      if test "$with_bdb" = "no"; then
          { { echo "$as_me:$LINENO: error: incompatible options: --without-bdb but --with-gbench" >&5
 echo "$as_me: error: incompatible options: --without-bdb but --with-gbench" >&2;}
    { (exit 1); exit 1; }; }
       else
-         with_bdb=yes
+         : ${with_bdb:=yes}
       fi
 
    : ${with_projects=scripts/projects/ncbi_gbench.lst}
