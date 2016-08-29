@@ -220,10 +220,14 @@ public:
                                    ncbi::EDiagSev::eDiagSevMin);
         }
     }
+
+
     void Stop()
     {
         m_RunResponse = false;
     }
+
+
     /* Check if thread has answered all requests */
     bool IsBusy()
     {
@@ -233,30 +237,20 @@ public:
 
     int AcceptIncoming()
     {
-        WRITE_LOG("AnswerResponse() started, m_ListeningSockets has " <<
-                  s_ListeningPorts->size() << " open listening sockets");
         struct timeval accept_time_stop;
-        STimeout       rw_timeout     = { 1, 20000 };
         size_t         n_ready        = 0;
-
+        STimeout       accept_timeout = { 0, 20000 };
+        STimeout       rw_timeout     = { 0, 20000 };
+        STimeout       c_timeout      = { 0, 0 };
+        
+        WRITE_LOG("AcceptIncoming() started, m_ListeningSockets has " <<
+                  s_ListeningPorts->size() << " open listening sockets");
+        WRITE_LOG(__LINE__);
         if (s_GetTimeOfDay(&accept_time_stop) != 0) {
             memset(&accept_time_stop, 0, sizeof(accept_time_stop));
         }
+        WRITE_LOG(__LINE__);
         CSocketAPI::Poll(m_ListeningSockets, &rw_timeout, &n_ready);
-        return n_ready;
-    }
-
-
-    void AnswerResponse()
-    {
-        STimeout       rw_timeout = { 1, 20000 };
-        STimeout       accept_timeout = { 0, 20000 };
-        STimeout       c_timeout = { 0, 0 };
-        int            iters_passed = 0;
-        int            secs_btw_grbg_cllct = 5;/* collect garbage every 5s */
-        int            iters_btw_grbg_cllct = secs_btw_grbg_cllct * 100000 /
-                                              (rw_timeout.sec * 100000 +
-                                              rw_timeout.usec);
 
         auto it = m_ListeningSockets.begin();
         for (; it != m_ListeningSockets.end(); it++) {
@@ -275,7 +269,7 @@ public:
                     if (s_GetTimeOfDay(&accept_time_stop) != 0)
                         memset(&accept_time_stop, 0, sizeof(accept_time_stop));
                     accept_time_elapsed = s_TimeDiff(&accept_time_stop,
-                                                     &accept_time_start);
+                        &accept_time_start);
                     last_accept_time_elapsed = s_TimeDiff(&accept_time_stop,
                                                          &m_LastSuccAcceptTime);
                     WRITE_LOG("response vacant after trying accept for " <<
@@ -284,9 +278,12 @@ public:
                               "s ago");
                     m_Busy = false;
                     delete sock;
-                    return;
+                    continue;
                 }
-
+                WRITE_LOG("Accepted after trying accept() for " << 
+                          accept_time_elapsed << 
+                          "s, last successful accept was " <<
+                          last_accept_time_elapsed << "s ago");
                 if (s_GetTimeOfDay(&accept_time_stop) != 0)
                     memset(&accept_time_stop, 0, sizeof(accept_time_stop));
                 accept_time_elapsed =
@@ -298,75 +295,69 @@ public:
                         sizeof(m_LastSuccAcceptTime));
                 }
 
-                CSocket* my_sock;
                 m_SocketPool.push_back(
-                    CSocketAPI::SPoll(my_sock = sock, eIO_ReadWrite));
-                iters_passed++;
-                m_Busy = true;
-                char buf[4096];
-                size_t n_read = 0;
-                size_t n_written = 0;
-                my_sock->SetTimeout(eIO_ReadWrite, &rw_timeout);
-                my_sock->SetTimeout(eIO_Close, &c_timeout);
-                my_sock->Read(buf, sizeof(buf), &n_read);
-                buf[n_read] = '\0';
-                string request = buf;
-                if (request.length() > 0) {
-                    WRITE_LOG("Get message \"" << request << "\""
-                              " after trying accept for " << 
-                              accept_time_elapsed << "s, "
-                              "last successful accept was " <<
-                              last_accept_time_elapsed << "s ago");
-                }
-                m_LastRequest = request;
-                const char healthy_answer[] =
-                    "HTTP/1.1 200 OK\r\n"
-                    "Content-Length: 4\r\n"
-                    "Content-Type: text/plain;charset=UTF-8\r\n"
-                    "\r\n"
-                    "OK\r\n";
-                my_sock->Write(healthy_answer, sizeof(healthy_answer) - 1,
-                               &n_written);
-
-                if (iters_passed == iters_btw_grbg_cllct) {
-                    iters_passed = 0;
-                    CollectGarbage();
-                }
+                    CSocketAPI::SPoll(sock, eIO_ReadWrite));
             }
         }
+
+
+        return n_ready;
     }
+
+
+    void AnswerResponse()
+    {
+        static int     iters_passed         = 0;
+        STimeout       rw_timeout           = { 0, 20000 };
+        STimeout       c_timeout            = { 0, 0 };
+        int            secs_btw_grbg_cllct  = 5;/* collect garbage every 5s */
+        int            iters_btw_grbg_cllct = secs_btw_grbg_cllct * 100000 /
+                                              (rw_timeout.sec * 100000 +
+                                              rw_timeout.usec);
+        WRITE_LOG("AnswerResponse() started, m_ListeningSockets has " <<
+                  s_ListeningPorts->size() << " open listening sockets");
+
+        auto iter = m_SocketPool.begin();
+        for (; iter != m_SocketPool.end(); iter++) {
+            CSocket* my_sock = (CSocket*)iter->m_Pollable;
+            iters_passed++;
+            m_Busy = true;
+            char buf[4096];
+            size_t n_read = 0;
+            size_t n_written = 0;
+            my_sock->SetTimeout(eIO_ReadWrite, &rw_timeout);
+            my_sock->SetTimeout(eIO_Close, &c_timeout);
+            my_sock->Read(buf, sizeof(buf), &n_read);
+            buf[n_read] = '\0';
+            string request = buf;
+            if (request.length() > 0) {
+                WRITE_LOG("Get message \"" << request << "\"");
+            }
+            m_LastRequest = request;
+            const char healthy_answer[] =
+                "HTTP/1.1 200 OK\r\n"
+                "Content-Length: 4\r\n"
+                "Content-Type: text/plain;charset=UTF-8\r\n"
+                "\r\n"
+                "OK\r\n";
+            my_sock->Write(healthy_answer, sizeof(healthy_answer) - 1,
+                            &n_written);
+
+        }
+    }
+
 
     string GetLastRequest() {
         string temp = m_LastRequest;
         m_LastRequest = "";
         return temp;
     }
-
-protected:
-    // As it is said in ncbithr.hpp, destructor must be protected
-    ~CResponseThread()
-    {
-        WRITE_LOG("~CResponseThread() started");
-        for (unsigned int i = 0; i < m_ListeningSockets.size(); ++i) {
-            CListeningSocket* l_sock = static_cast<CListeningSocket*>
-                (m_ListeningSockets[i].m_Pollable);
-            l_sock->Close();
-            delete l_sock;
-        }
-        for (unsigned int i = 0; i < 100 /* random number */; ++i) {
-            if (!HasGarbage()) break;
-            CollectGarbage();
-        }
-        m_ListeningSockets.clear();
-        WRITE_LOG("~CResponseThread() ended");
-    }
-
-private:
+    
     /* Go through sockets in collection and remove closed ones */
     void CollectGarbage()
     {
         WRITE_LOG("CResponseThread::CollectGarbage() started, size of "
-            "m_SocketPool is " << m_SocketPool.size());
+                  "m_SocketPool is " << m_SocketPool.size());
         size_t   n_ready;
         STimeout rw_timeout = { 1, 20000 };
         CSocketAPI::Poll(m_SocketPool, &rw_timeout, &n_ready);
@@ -387,12 +378,32 @@ private:
                 /* Remove item from vector by swap and pop_back */
                 swap(m_SocketPool[i], m_SocketPool.back());
                 m_SocketPool.pop_back();
+                i--;
             }
         }
         WRITE_LOG("CResponseThread::CollectGarbage() ended, size of "
-            "m_SocketPool is " << m_SocketPool.size());
+                  "m_SocketPool is " << m_SocketPool.size());
+    }
+protected:
+    // As it is said in ncbithr.hpp, destructor must be protected
+    ~CResponseThread()
+    {
+        WRITE_LOG("~CResponseThread() started");
+        for (unsigned int i = 0; i < m_ListeningSockets.size(); ++i) {
+            CListeningSocket* l_sock = static_cast<CListeningSocket*>
+                (m_ListeningSockets[i].m_Pollable);
+            l_sock->Close();
+            delete l_sock;
+        }
+        for (unsigned int i = 0; i < 100 /* random number */; ++i) {
+            if (!HasGarbage()) break;
+            CollectGarbage();
+        }
+        m_ListeningSockets.clear();
+        WRITE_LOG("~CResponseThread() ended");
     }
 
+private:
     bool HasGarbage() {
         return m_SocketPool.size() > 0;
     }
@@ -433,7 +444,7 @@ public:
     {
     }
 
-    bool operator()(const CMonkeyException& ex)
+    bool operator() (const CMonkeyException& ex)
     {
         CMonkeyException::EErrCode err_code = kErrCode; /* for debug */
         if (ex.GetErrCode() != err_code) {
@@ -442,7 +453,6 @@ public:
             return false;
         }
         const char* ex_message = ex.what();
-        ex_message = strstr(ex_message, "Error: ") + strlen("Error: ");
         string message;
         message.append(ex_message);
         if (message != m_ExpectedMessage) {
@@ -501,9 +511,14 @@ NCBITEST_AUTO_INIT()
 }
 
 
-///////////////////////////////////////////////////////////////////////////////
-BOOST_AUTO_TEST_SUITE( MONKEY_BASIC )/////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+///   ///// ////  ////  /////     ///// /  /  ///  /////  ////               ///
+///     /   /     /       /       /     /  /   /     /    /                  ///
+///     /   ///   ////    /       ///// /  /   /     /    ///                ///
+///     /   /        /    /           / /  /   /     /    /                  ///
+///     /   ////  ////    /       ///// ////  ///    /    ////               ///
+////////////////////////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_SUITE( MONKEY_BASIC )
 
 static void s_SetupMonkey(bool   enabled        = true,
                           string section        = "CHAOS_MONKEY",
@@ -516,6 +531,7 @@ static void s_SetupMonkey(bool   enabled        = true,
         config.Set("CHAOS_MONKEY", "config", section);
     CMonkey::Instance()->ReloadConfig(custom_section);
 }
+
 
 /** Basic check routine for test cases 
  *  Make some activity and check that interceptions (not) happened for 
@@ -552,15 +568,9 @@ static void s_CheckInterceptions(bool   interception    = false,
      * for it to be so) */
     if (status != eIO_Success) {
         /* revert enable switch and config so that nothing is intercepted */
-        s_SetupMonkey(false, "CHAOS_MONKEY", "");
-
-        SOCK_Close(sock);
         status = SOCK_Create("msdev101", s_Port(0), &kRWTimeout, &sock);
         /* Only success is possible for the second run */
         NCBITEST_REQUIRE_EQUAL(status, eIO_Success);
-
-        /* set enable switch and config back to tested values*/
-        s_SetupMonkey(enabled, section, custom_section);
     }
 
      /*////////////
@@ -572,15 +582,11 @@ static void s_CheckInterceptions(bool   interception    = false,
      * Monkey. connect() must work for the second time (we configure Monkey
      * for it to be so) */
     if (n_ready != 1) {
-        /* revert enable switch and config so that nothing is intercepted */
-        s_SetupMonkey(false, "CHAOS_MONKEY", "");
-
         n_ready = s_ResponseThread->AcceptIncoming();
         /* Only success is possible for the second run */
         NCBITEST_REQUIRE_EQUAL(n_ready, 1);
 
         /* set enable switch and config back to tested values*/
-        s_SetupMonkey(enabled, section, custom_section);
     }
 
     /*////////////
@@ -589,33 +595,30 @@ static void s_CheckInterceptions(bool   interception    = false,
     string data = "I AM DATA";
     size_t n_written;
     status = SOCK_Write(sock, data.c_str(), data.length(), &n_written,
-                        EIO_WriteMethod::eIO_WritePersist);
-    NCBITEST_REQUIRE_EQUAL(status, interception ? eIO_Closed : eIO_Success);
+                        EIO_WriteMethod::eIO_WritePlain);
+    NCBITEST_REQUIRE_EQUAL(status, interception ? eIO_Timeout : eIO_Success);
 
     /* We try second time if for the first time send was intercepted by 
      * Monkey. send() must work for the second time (we configure Monkey
      * for it to be so) */
     if (status != eIO_Success) {
-        /* revert enable switch and config so that nothing is intercepted */
-        s_SetupMonkey(false, "CHAOS_MONKEY", "");
-        SOCK_Close(sock);
-        status = SOCK_Create("msdev101", s_Port(0), &kRWTimeout, &sock);
+//         /* revert enable switch and config so that nothing is intercepted */
+//         s_SetupMonkey(false, "CHAOS_MONKEY", "");
+//         SOCK_Close(sock);
+//         status = SOCK_Create("msdev101", s_Port(0), &kRWTimeout, &sock);
         status = SOCK_Write(sock, data.c_str(), data.length(), &n_written,
                             EIO_WriteMethod::eIO_WritePersist);
         /* Only success is possible for the second run */
         NCBITEST_REQUIRE_EQUAL(status, eIO_Success);
 
         /* set enable switch and config back to tested values*/
-        s_SetupMonkey(enabled, section, custom_section);
     }
 
     /*////////////
     *  read()
     /*////////////
-    int retries = 0;
-    bool message_received = false;
     string last_request;
-    SleepMilliSec(100);
+
     s_ResponseThread->AnswerResponse();
     last_request = s_ResponseThread->GetLastRequest();
     NCBITEST_REQUIRE_EQUAL(last_request, interception ? string() : data);
@@ -625,13 +628,11 @@ static void s_CheckInterceptions(bool   interception    = false,
      * for it to be so) */
     if (last_request.empty()) {
         /* revert enable switch and config so that nothing is intercepted */
-        s_SetupMonkey(false, "CHAOS_MONKEY", "");
         s_ResponseThread->AnswerResponse();
         last_request = s_ResponseThread->GetLastRequest();
         NCBITEST_REQUIRE_EQUAL(last_request, string(data));
 
         /* set enable switch and config back to tested values*/
-        s_SetupMonkey(enabled, section, custom_section);
     }
 
     SOCK_Close(sock);
@@ -644,6 +645,7 @@ static void s_CheckInterceptions(bool   interception    = false,
 
     /* Cleanup */
     s_SetupMonkey(true, "CHAOS_MONKEY", "");
+    s_ResponseThread->CollectGarbage();
 }
 
 
@@ -657,6 +659,7 @@ static void s_CheckInterceptions(bool   interception    = false,
 BOOST_AUTO_TEST_CASE(NoDefaultConfig__DoesNotIntercept)
 {
    s_CheckInterceptions(false, true, "", "");
+   SleepMilliSec(100);
 }
 
 
@@ -674,6 +677,7 @@ BOOST_AUTO_TEST_CASE(NoDefaultConfigFuncConfig__DoesIntercept)
 {
     s_CheckInterceptions(true, true, "",
                          "NODEFAULTCONFIGFUNCCONFIG__DOESINTERCEPT");
+    SleepMilliSec(100);
 }
 
 
@@ -687,6 +691,7 @@ BOOST_AUTO_TEST_CASE(NoDefaultConfigFuncConfig__DoesIntercept)
 BOOST_AUTO_TEST_CASE(DefaultConfig__DoesIntercept)
 {
     s_CheckInterceptions(true, true, "DEFAULTCONFIG__DOESINTERCEPT", "");
+    SleepMilliSec(100);
 }
 
 
@@ -702,6 +707,7 @@ BOOST_AUTO_TEST_CASE(DefaultConfig__DoesIntercept)
 BOOST_AUTO_TEST_CASE(NoChaosMonkeySection__DoesNotIntercept)
 {
     s_CheckInterceptions(false, true, "doesnotexist", "");
+    SleepMilliSec(100);
 }
 
 
@@ -717,30 +723,31 @@ BOOST_AUTO_TEST_CASE(NoChaosMonkeySection__DoesNotIntercept)
 BOOST_AUTO_TEST_CASE(ChaosMonkeyDisabled__DoesNotIntercept)
 {
     s_CheckInterceptions(false, false, "CHAOS_MONKEY", "");
+    SleepMilliSec(100);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
 
 
-
+////////////////////////////////////////////////////////////////////////////////
+///   ///// ////  ////  /////     ///// /  /  ////  /////  ////              ///
+///     /   /     /       /       /     /  /   /      /    /                 ///
+///     /   ///   ////    /       ///// /  /   /      /    ///               ///
+///     /   /        /    /           / /  /   /      /    /                 ///
+///     /   ////  ////    /       ///// ////  ////    /    ////              ///
+////////////////////////////////////////////////////////////////////////////////
 BOOST_AUTO_TEST_SUITE( CHECK_VARIABLES )
 
-/** 3. Check cases when rules end with semicolon and end without semicolon. 
- * Make both types of rules and run them. Rules should be parsed OK and then 
- * run. We check only final behavior. */
-BOOST_AUTO_TEST_CASE(SemicolonLastInLine__Ok)
+
+static void s_CheckRulesValidity(string section)
 {
-    struct ::timeval start; /**< we will measure time from start
-                                 of test as main measure of when
-                                 to finish */
     double elapsed = 0.0;
-    struct timeval stop;
-    CMonkey::Instance()->ReloadConfig("SEMICOLON_TEST");
+    CMonkey::Instance()->ReloadConfig(section);
     s_ResponseThread->Stop(); /* we receive answers in manual mode */
 
     EIO_Status status = eIO_Timeout;
     SOCK sock;
-    char* data = "I AM DATA";
+    string data = "I AM DATA";
 
     g_MonkeyMock_SetInterceptedRecv   (false);
     g_MonkeyMock_SetInterceptedSend   (false);
@@ -754,130 +761,54 @@ BOOST_AUTO_TEST_CASE(SemicolonLastInLine__Ok)
     /* Cause a chance for Monkey to intercept connect() - if Monkey works */
     unsigned short connect_retries = 0;
     
-
-    /* First run: - recv returns eIO_Interrupt,
-                  - send returns eIO_InvalidArg,
-                  - poll returns eIO_Success after 2 seconds,
-                  - connect returns eIO_Success after 2 seconds */
-    if (s_GetTimeOfDay(&start) != 0) {
-        memset(&start, 0, sizeof(start));
-    }
-    while (status != eIO_Success && connect_retries < 20) {
+    EIO_Status create_status[] = { eIO_Closed, eIO_Unknown, eIO_Success };
+    for (int i = 0; i < 3; i++) {
         status = SOCK_Create("msdev101", s_Port(0), &kRWTimeout, &sock);
-        connect_retries++;
+        NCBITEST_REQUIRE_EQUAL(status, create_status[i]);
     }
-    if (s_GetTimeOfDay(&stop) != 0)
-        memset(&stop, 0, sizeof(stop));
-    elapsed = s_TimeDiff(&stop, &start);
 
-    NCBITEST_CHECK_EQUAL(status, eIO_Success);
-    NCBITEST_CHECK_EQUAL(g_MonkeyMock_GetLastConnectStatus(), eIO_Success);
-    NCBITEST_CHECK_MESSAGE(elapsed > 2, 
-                           "Connected faster than in 2 seconds - "
-                           "Chaos Monkey did not work correctly");
-    NCBITEST_CHECK_EQUAL(status, eIO_Success);
-    /* we should connect from the 3rd try*/
-    NCBITEST_CHECK_EQUAL(connect_retries, 3); 
+    size_t poll_nready[] = { 0, 0, 1 };
+    size_t n_ready;
+    for (int i = 0; i < 3; ++i) {
+        n_ready = s_ResponseThread->AcceptIncoming();
+        NCBITEST_REQUIRE_EQUAL(n_ready, poll_nready[i]);
+    }
+
     /* Cause a chance for Monkey to intercept send() and recv() - if
-     * Monkey works. We know the structure of calls, so we check that it is 
+     * Monkey works. We know the structure of calls, so we check that it is
      * reproduced */
-    
-    /* Cause a chance for Monkey to intercept send() and recv() - if
-     * Monkey works*/
     size_t n_written;
-    SOCK_Write(sock, data, strlen(data), &n_written,
-               EIO_WriteMethod::eIO_WritePersist);
+    EIO_Status send_status[] = { eIO_Unknown, eIO_Timeout, eIO_Success };
+    for (int i = 0; i < 3; i++) {
+        status = SOCK_Write(sock, data.c_str(), data.length(), &n_written,
+                            EIO_WriteMethod::eIO_WritePlain);
+        NCBITEST_CHECK_EQUAL(status, send_status[i]);
+    }
 
-    /* Wait for the response thread to receive a message */
-    int retries = 0;
-    bool message_received = false;
     string last_request;
-    while ((last_request = s_ResponseThread->GetLastRequest()) == "" && 
-        retries++ < 200) {
+    string read_message[] = { "", "", data };
+    for (int i = 0; i < 3; i++) {
         s_ResponseThread->AnswerResponse();
-        SleepMilliSec(20);
+        last_request = s_ResponseThread->GetLastRequest();
+        NCBITEST_REQUIRE_EQUAL(last_request, read_message[i]);
     }
-    NCBITEST_REQUIRE_EQUAL(last_request, string(data));
+}
 
-    SOCK_Close(sock);
 
-    /* Check that interceptions (not) happened */
-    NCBITEST_CHECK_EQUAL(g_MonkeyMock_GetLastRecvStatus(),    eIO_Interrupt);
-    NCBITEST_CHECK_EQUAL(g_MonkeyMock_GetLastSendStatus(),    eIO_InvalidArg);
-    NCBITEST_CHECK_EQUAL(g_MonkeyMock_GetLastPollStatus(),    eIO_Success);
+/** Check cases when rules end with semicolon and end without semicolon.
+ *  Make both types of rules and run them. Rules should be parsed OK and then
+ *  run. We check only final behavior. */
+BOOST_AUTO_TEST_CASE(SemicolonLastInLine__Ok)
+{
+    s_CheckRulesValidity("SEMICOLON_TEST");
+}
 
-    /* Second and third run: - recv returns    eIO_Closed,
-     *                       - send returns    eIO_Interrupt,
-     *                       - poll returns    eIO_Closed after 2 seconds,
-     *                       - connect returns eIO_Closed after 2 seconds */
-    /* Second connect will be unsuccessful, and we go with third connect
-     * right away. */
-    if (s_GetTimeOfDay(&start) != 0) {
-        memset(&start, 0, sizeof(start));
-    }
-    while (status != eIO_Success && connect_retries < 20) {
-        status = SOCK_Create("msdev101", s_Port(0), &kRWTimeout, &sock);
-        connect_retries++;
-    }
-    if (s_GetTimeOfDay(&stop) != 0)
-        memset(&stop, 0, sizeof(stop));
-    elapsed = s_TimeDiff(&stop, &start);
-    NCBITEST_CHECK_EQUAL(status, eIO_Closed);
-    NCBITEST_CHECK_EQUAL(g_MonkeyMock_GetLastConnectStatus(), eIO_Closed);
-    NCBITEST_CHECK_MESSAGE(elapsed > 0.1, 
-                           "Connected faster than in 2 seconds - "
-                           "Chaos Monkey did not work correctly");
-    NCBITEST_CHECK_MESSAGE(elapsed < 0.2, 
-                           "Connected faster than in 2 seconds - "
-                           "Chaos Monkey did not work correctly");
 
-    /* Third connect */
-    if (status != eIO_Success) {
-        if (s_GetTimeOfDay(&start) != 0) {
-            memset(&start, 0, sizeof(start));
-        }
-        status = SOCK_Create("msdev101", s_Port(0), &kRWTimeout, &sock);
-        if (s_GetTimeOfDay(&stop) != 0)
-            memset(&stop, 0, sizeof(stop));
-        elapsed = s_TimeDiff(&stop, &start);
-        NCBITEST_CHECK_EQUAL(status, eIO_Success);
-        NCBITEST_CHECK_MESSAGE(elapsed > 2, 
-                               "Connected faster than in 2 seconds - "
-                               "Chaos Monkey did not work correctly");
-    }
-
-    /* Cause a chance for Monkey to intercept send() and recv() - if
-     * Monkey works*/
-    /* Second run */
-    SOCK_Write(sock, data, strlen(data), &n_written,
-               EIO_WriteMethod::eIO_WritePersist);
-    /* Wait for the response thread to receive a message (that's how we test
-     * SOCK_Read) */
-    while ((last_request = s_ResponseThread->GetLastRequest()) == "" &&
-        retries++ < 200) {
-        s_ResponseThread->AnswerResponse();
-        SleepMilliSec(20);
-    }
-
-    /* Third run */
-    SOCK_Write(sock, data, strlen(data), &n_written,
-               EIO_WriteMethod::eIO_WritePersist);
-    /* Wait for the response thread to receive a message (that's how we test
-     * SOCK_Read) */
-    while ((last_request = s_ResponseThread->GetLastRequest()) == "" && 
-        retries++ < 200) {
-        s_ResponseThread->AnswerResponse();
-        SleepMilliSec(20);
-    }
-    NCBITEST_REQUIRE_EQUAL(last_request, string(data));
-
-    SOCK_Close(sock);
-
-    /* Check that interceptions (not) happened */
-    NCBITEST_CHECK_EQUAL(g_MonkeyMock_GetLastRecvStatus(),    eIO_Closed);
-    NCBITEST_CHECK_EQUAL(g_MonkeyMock_GetLastSendStatus(),    eIO_Interrupt);
-    NCBITEST_CHECK_EQUAL(g_MonkeyMock_GetLastPollStatus(),    eIO_Success);
-    NCBITEST_CHECK_EQUAL(g_MonkeyMock_GetLastConnectStatus(), eIO_Success);
+/** Check cases when rules contain spaces. Rules should be parsed OK and 
+ *  then run. We check only final behavior. */
+BOOST_AUTO_TEST_CASE(SpacesInRules__Ok)
+{
+    s_CheckRulesValidity("SPACES_TEST");
 }
 
 
@@ -886,36 +817,67 @@ BOOST_AUTO_TEST_CASE(SemicolonLastInLine__Ok)
 BOOST_AUTO_TEST_CASE(DuplicateParam__Throw)
 {
     CExceptionComparator<CMonkeyException::e_MonkeyInvalidArgs> comparator(
-                    "Parameter \"runs\" appears twice in "
-                    "[DUPLPARAM_TEST_WRITE_PLAN1]write");
+                    "Parameter \"runs\" is set twice in "
+                    "[DUPLPARAM_TEST_WRITE1_PLAN1]write");
     BOOST_CHECK_EXCEPTION(
-        CMonkey::Instance()->ReloadConfig("DUPLPARAM_TEST_WRITE"),
-        CMonkeyException,
-        comparator);
+        CMonkey::Instance()->ReloadConfig("DUPLPARAM_TEST_WRITE1"),
+        CMonkeyException, comparator);
+ 
 
     comparator = CExceptionComparator<CMonkeyException::e_MonkeyInvalidArgs>(
-                    "Parameter \"runs\" appears twice in "
-                    "[DUPLPARAM_TEST_READ_PLAN1]read");
+                    "Parameter \"return_status\" is set twice in "
+                    "[DUPLPARAM_TEST_WRITE2_PLAN1]write");
     BOOST_CHECK_EXCEPTION(
-        CMonkey::Instance()->ReloadConfig("DUPLPARAM_TEST_READ"), 
-        CMonkeyException,
-        comparator);
+        CMonkey::Instance()->ReloadConfig("DUPLPARAM_TEST_WRITE2"),
+        CMonkeyException, comparator);
+
+
+    comparator = CExceptionComparator<CMonkeyException::e_MonkeyInvalidArgs>(
+                    "Parameter \"runs\" is set twice in "
+                    "[DUPLPARAM_TEST_READ1_PLAN1]read");
+    BOOST_CHECK_EXCEPTION(
+        CMonkey::Instance()->ReloadConfig("DUPLPARAM_TEST_READ1"), 
+        CMonkeyException, comparator);
+
+
+    comparator = CExceptionComparator<CMonkeyException::e_MonkeyInvalidArgs>(
+                    "Parameter \"return_status\" is set twice in "
+                    "[DUPLPARAM_TEST_READ2_PLAN1]read");
+    BOOST_CHECK_EXCEPTION(
+        CMonkey::Instance()->ReloadConfig("DUPLPARAM_TEST_READ2"), 
+        CMonkeyException, comparator);
+
+
+    comparator = CExceptionComparator<CMonkeyException::e_MonkeyInvalidArgs>(
+                    "Parameter \"allow\" is set twice in "
+                    "[DUPLPARAM_TEST_CONNECT1_PLAN1]connect");
+    BOOST_CHECK_EXCEPTION(
+        CMonkey::Instance()->ReloadConfig("DUPLPARAM_TEST_CONNECT1"),
+        CMonkeyException, comparator);
     
-    comparator = CExceptionComparator<CMonkeyException::e_MonkeyInvalidArgs>(
-                    "Parameter \"allow\" appears twice in "
-                    "[DUPLPARAM_TEST_CONNECT_PLAN1]connect");
-    BOOST_CHECK_EXCEPTION(
-        CMonkey::Instance()->ReloadConfig("DUPLPARAM_TEST_CONNECT"),
-        CMonkeyException,
-        comparator);
 
     comparator = CExceptionComparator<CMonkeyException::e_MonkeyInvalidArgs>(
-                    "Parameter \"ignore\" appears twice in "
-                    "[DUPLPARAM_TEST_POLL_PLAN1]poll");
+                    "Parameter \"runs\" is set twice in "
+                    "[DUPLPARAM_TEST_CONNECT2_PLAN1]connect");
     BOOST_CHECK_EXCEPTION(
-        CMonkey::Instance()->ReloadConfig("DUPLPARAM_TEST_POLL"),
-        CMonkeyException,
-        comparator);
+        CMonkey::Instance()->ReloadConfig("DUPLPARAM_TEST_CONNECT2"),
+        CMonkeyException, comparator);
+
+
+    comparator = CExceptionComparator<CMonkeyException::e_MonkeyInvalidArgs>(
+                    "Parameter \"ignore\" is set twice in "
+                    "[DUPLPARAM_TEST_POLL1_PLAN1]poll");
+    BOOST_CHECK_EXCEPTION(
+        CMonkey::Instance()->ReloadConfig("DUPLPARAM_TEST_POLL1"),
+        CMonkeyException, comparator);
+
+
+    comparator = CExceptionComparator<CMonkeyException::e_MonkeyInvalidArgs>(
+                    "Parameter \"runs\" is set twice in "
+                    "[DUPLPARAM_TEST_POLL2_PLAN1]poll");
+    BOOST_CHECK_EXCEPTION(
+        CMonkey::Instance()->ReloadConfig("DUPLPARAM_TEST_POLL2"),
+        CMonkeyException, comparator);
 }
 
 
@@ -924,53 +886,52 @@ BOOST_AUTO_TEST_CASE(DuplicateParam__Throw)
  * Create 1k different connections and then check ratio of intercepted 
  * connections to all connections
  */
-BOOST_AUTO_TEST_CASE(ProbabilityGood__Ok)
+BOOST_AUTO_TEST_CASE(ConfigProbabilityValid__CorrectRatio)
 {
     vector<double> probabilities;
-    probabilities.push_back(0.33);
-    probabilities.push_back(0);
-    probabilities.push_back(0);
-    probabilities.push_back(1);
-    probabilities.push_back(0);
-    probabilities.push_back(0);
-    probabilities.push_back(0.385);
-    probabilities.push_back(1);
-    for (unsigned int i = 0;  i <= 8;  ++i) {
+    probabilities.push_back(-0.0); /* -0%  */
+    probabilities.push_back(0.0);  /*  0%  */
+    probabilities.push_back(0.3);  /* 30%  */
+    probabilities.push_back(1.0);  /* 100% */
+    probabilities.push_back(1.0);  /* <no value> */
+    char* data = "I AM DATA";
+    for (unsigned int i = 0;  i < 5;  ++i) {
         stringstream ss;
         unsigned short repeats = 1000;
         unsigned short interceptions = 0;
-        SOCK sock;
-        EIO_Status status;
-        ss << "PROBABILITYVALID" << i;
+        ss << "STRENGTH_VALID" << i + 1;
         BOOST_CHECK_NO_THROW(CMonkey::Instance()->ReloadConfig(ss.str()));
-
-        for (unsigned short k = 0;  k < repeats;  k++) {
-            /* Cause a chance for Monkey to intercept connect() -
-             * if Monkey works */
+        for (unsigned short k = 0; k < repeats; k++) {
+            SOCK sock;
+            EIO_Status status = eIO_Closed;
             unsigned short connect_retries = 0;
+
             while (status != eIO_Success && connect_retries < 20) {
                 status = SOCK_Create("msdev101", s_Port(0), &kRWTimeout, &sock);
                 connect_retries++;
             }
             NCBITEST_REQUIRE_EQUAL(status, eIO_Success);
-            char* data = "I AM DATA";
+        
+            int n_ready = s_ResponseThread->AcceptIncoming();
+            NCBITEST_REQUIRE_EQUAL(n_ready, 1);
+
+            int retries = 0;
+            bool message_received = false;
+            string last_request;
+            /* Cause a chance for Monkey to intercept connect() -
+             * if Monkey works */
             size_t n_written;
             SOCK_Write(sock, data, strlen(data), &n_written,
                        EIO_WriteMethod::eIO_WritePersist);
 
-            /* Wait for response thread to receive the message */
-            int retries = 0;
-            bool message_received = false;
-            string last_request;
-            while ((last_request = s_ResponseThread->GetLastRequest()) == "" &&
-                retries++ < 20) {
-                SleepSec(1);
-            }
-            if (last_request != "I AM DATA") {
+            s_ResponseThread->AnswerResponse();
+            last_request = s_ResponseThread->GetLastRequest();
 
+            if (last_request != "I AM DATA") {
+                interceptions++;
             }
-            NCBITEST_REQUIRE_EQUAL(s_ResponseThread->GetLastRequest(), 
-                                   string(data));
+            SOCK_Close(sock);
+            s_ResponseThread->CollectGarbage();
         }
         double ratio = (double)interceptions / repeats;
         bool lower_bound = probabilities[i] * 0.9 <= ratio;
@@ -986,19 +947,49 @@ BOOST_AUTO_TEST_CASE(ProbabilityGood__Ok)
 
 /** Check that if probability is set in various invalid formats - an exception 
  * must be thrown */
-BOOST_AUTO_TEST_CASE(ProbabilityInvalid__Throw)
+BOOST_AUTO_TEST_CASE(ConfigProbabilityInvalid__Throw)
 {
-    for (unsigned int i = 0;  i <= 8;  ++i) {
-        stringstream ss;
-        ss << "PROBABILITYINVALID" << i;        
-        CExceptionComparator<CMonkeyException::e_MonkeyInvalidArgs> comparator(
-                        "Parameter \"runs\" appears twice in "
-                        "[DUPLPARAM_TEST_WRITE_PLAN1]write");
-        BOOST_CHECK_EXCEPTION(
-            CMonkey::Instance()->ReloadConfig("DUPLPARAM_TEST_WRITE"),
-            CMonkeyException, 
-            comparator);
-    }
+    CExceptionComparator<CMonkeyException::e_MonkeyInvalidArgs> comparator(
+        "Parameter \"probability\"=-1% for section [CONF_STRENGTH_INVALID1] "
+        "is not a valid value (valid range is 0%-100% or 0.0-1.0)");
+    BOOST_CHECK_EXCEPTION(
+        CMonkey::Instance()->ReloadConfig("CONF_STRENGTH_INVALID1"),
+        CMonkeyException, comparator);
+
+    comparator = CExceptionComparator<CMonkeyException::e_MonkeyInvalidArgs>(
+        "Parameter \"probability\"=-140% for section [CONF_STRENGTH_INVALID2] "
+        "is not a valid value (valid range is 0%-100% or 0.0-1.0)");
+    BOOST_CHECK_EXCEPTION(
+        CMonkey::Instance()->ReloadConfig("CONF_STRENGTH_INVALID2"),
+        CMonkeyException, comparator);
+
+    comparator = CExceptionComparator<CMonkeyException::e_MonkeyInvalidArgs>(
+        "Parameter \"probability\"=140% for section [CONF_STRENGTH_INVALID3] "
+        "is not a valid value (valid range is 0%-100% or 0.0-1.0)");
+    BOOST_CHECK_EXCEPTION(
+        CMonkey::Instance()->ReloadConfig("CONF_STRENGTH_INVALID3"),
+        CMonkeyException, comparator);
+
+    comparator = CExceptionComparator<CMonkeyException::e_MonkeyInvalidArgs>(
+        "Parameter \"probability\"=1,0 for section [CONF_STRENGTH_INVALID4] "
+        "could not be parsed");
+    BOOST_CHECK_EXCEPTION(
+        CMonkey::Instance()->ReloadConfig("CONF_STRENGTH_INVALID4"),
+        CMonkeyException, comparator);
+
+    comparator = CExceptionComparator<CMonkeyException::e_MonkeyInvalidArgs>(
+        "Parameter \"probability\"=1g for section [CONF_STRENGTH_INVALID5] "
+        "could not be parsed");
+    BOOST_CHECK_EXCEPTION(
+        CMonkey::Instance()->ReloadConfig("CONF_STRENGTH_INVALID5"),
+        CMonkeyException, comparator);
+
+    comparator = CExceptionComparator<CMonkeyException::e_MonkeyInvalidArgs>(
+        "Parameter \"probability\"=ff for section [CONF_STRENGTH_INVALID6] "
+        "could not be parsed");
+    BOOST_CHECK_EXCEPTION(
+        CMonkey::Instance()->ReloadConfig("CONF_STRENGTH_INVALID6"),
+        CMonkeyException, comparator);
 }
 
 
@@ -1010,9 +1001,16 @@ BOOST_AUTO_TEST_CASE(TextParamContainsSemicolon__Ok)
 }
 BOOST_AUTO_TEST_SUITE_END()
 
-///////////////////////////////////////////////////////////////////////////////
-BOOST_AUTO_TEST_SUITE( SelfTest ) /////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////////
+///   ///// ////  ////  /////     ///// /  /  ////  /////  ////              ///
+///     /   /     /       /       /     /  /   /      /    /                 ///
+///     /   ///   ////    /       ///// /  /   /      /    ///               ///
+///     /   /        /    /           / /  /   /      /    /                 ///
+///     /   ////  ////    /       ///// ////  ////    /    ////              ///
+////////////////////////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_SUITE( SelfTest )
 /* We know that response thread listens on a specific port. We connect to it 10 
  * times and should experience both success and failure */
 BOOST_AUTO_TEST_CASE(TryWrite__NotWrite)
@@ -1020,7 +1018,7 @@ BOOST_AUTO_TEST_CASE(TryWrite__NotWrite)
     CNcbiRegistry& config = CNcbiApplication::Instance()->GetConfig();
     char user_data[1] = { 0 };
     SConnNetInfo* net_info = ConnNetInfo_Create(NULL);
-    char* url = "http://127.0.0.1:8085/hi";
+    const char* url = "http://127.0.0.1:8085/hi";
     CONN conn = s_ConnectURL(net_info, url, user_data);
     SOCK sock;
     EIO_Status status = eIO_Timeout;
@@ -1031,7 +1029,7 @@ BOOST_AUTO_TEST_CASE(TryWrite__NotWrite)
     }
     WRITE_LOG("Connected from " << retries << " tries.");
     status = SOCK_Status(sock, EIO_Event::eIO_Open);
-    char* data = "I AM DATA";
+    const char* data = "I AM DATA";
     size_t n_written;
     SOCK_Write(sock, data, strlen(data), &n_written, 
                EIO_WriteMethod::eIO_WritePersist);
