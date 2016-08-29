@@ -1381,7 +1381,7 @@ static void AddException(const CSeq_feat& sf, CScope& scope, const string& excep
 
 static void AdjustBacterialGeneForCodingRegionWithShortIntron(CSeq_feat& sf, CSeq_feat& gene, bool is_bacterial)
 {
-    if (!sf.IsSetComment() && !NStr::IsBlank(sf.GetComment())) {
+    if (sf.IsSetComment() && !NStr::IsBlank(sf.GetComment())) {
         if (gene.IsSetComment() && !NStr::IsBlank(gene.GetComment())) {
             gene.SetComment(sf.GetComment() + ';' + gene.GetComment());
         }
@@ -1435,9 +1435,11 @@ static void ConvertToMiscFeature(CSeq_feat& sf, CScope& scope)
 
             if (!NStr::IsBlank(prod_name)) {
                 if (sf.IsSetComment()) {
-                    sf.SetComment() += ';';
+                    sf.SetComment(prod_name + ';' + sf.GetComment());
                 }
-                sf.SetComment() += prod_name;
+                else {
+                    sf.SetComment(prod_name);
+                }
             }
 
             sf.ResetData();
@@ -1446,24 +1448,33 @@ static void ConvertToMiscFeature(CSeq_feat& sf, CScope& scope)
     }
 }
 
-static bool AddExceptionsToShortIntron(const CSeq_feat& sf, CScope& scope, const string& default_lineage)
+static bool AddExceptionsToShortIntron(const CSeq_feat& sf, CScope& scope, std::list<CConstRef<CBioseq>>& to_remove)
 {
     bool rval = false;
-    CBioseq_Handle bsh;
-    try {
-        bsh = scope.GetBioseqHandle(sf.GetLocation());
-    } catch (CException& ) {
-        return false;
-    }
-    CSeqdesc_CI src(bsh, CSeqdesc::e_Source);
 
-    if (src) {
-        if (src->GetSource().IsSetGenome() && src->GetSource().GetGenome() == CBioSource::eGenome_mitochondrion) {
+    const CBioSource* source = nullptr;
+
+    {
+        CBioseq_Handle bsh;
+        try {
+            bsh = scope.GetBioseqHandle(sf.GetLocation());
+        }
+        catch (CException&) {
+            return false;
+        }
+        CSeqdesc_CI src(bsh, CSeqdesc::e_Source);
+        if (src) {
+            source = &src->GetSource();
+        }
+    }
+
+    if (source) {
+        if (source->IsSetGenome() && source->GetGenome() == CBioSource::eGenome_mitochondrion) {
             return false;
         }
         
-        bool is_bacterial = CDiscrepancyContext::HasLineage(src->GetSource(), default_lineage, "Bacteria");
-        if (is_bacterial || CDiscrepancyContext::HasLineage(src->GetSource(), default_lineage, "Archea")) {
+        bool is_bacterial = CDiscrepancyContext::HasLineage(*source, "", "Bacteria");
+        if (is_bacterial || CDiscrepancyContext::HasLineage(*source, "", "Archea")) {
 
             CConstRef<CSeq_feat> gene = CCleanup::GetGeneForFeature(sf, scope);
             if (gene.NotEmpty()) {
@@ -1486,9 +1497,10 @@ static bool AddExceptionsToShortIntron(const CSeq_feat& sf, CScope& scope, const
                 }
 
                 if (sf.IsSetProduct()) {
+                    
                     CBioseq_Handle bioseq_h = scope.GetBioseqHandle(sf.GetProduct());
-                    if (bioseq_h.IsSetInst()) {
-                        sf_edit.ResetProduct();
+                    if (bioseq_h) {
+                        to_remove.push_back(bioseq_h.GetCompleteBioseq());
                     }
                 }
 
@@ -1517,12 +1529,26 @@ DISCREPANCY_AUTOFIX(SHORT_INTRON)
 {
     TReportObjectList list = item->GetDetails();
     unsigned int n = 0;
+
+    std::list<CConstRef<CBioseq>> to_remove;
+
     NON_CONST_ITERATE(TReportObjectList, it, list) {
         const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
-        if (sf && AddExceptionsToShortIntron(*sf, scope, "")) {
+        if (sf && AddExceptionsToShortIntron(*sf, scope, to_remove)) {
             n++;
         }
     }
+
+    ITERATE(std::list<CConstRef<CBioseq>>, bioseq, to_remove) {
+
+        // TODO: the code below is considered to remove a given bioseq,
+        // but it does not
+        CBioseq_Handle bioseq_h = scope.GetBioseqHandle(**bioseq);
+
+        CBioseq_EditHandle bioseq_edit = bioseq_h.GetEditHandle();
+        bioseq_edit.Remove();
+    }
+
     return CRef<CAutofixReport>(n ? new CAutofixReport("SHORT_INTRON: Set exception for [n] feature[s]", n) : 0);
 }
 
