@@ -4978,10 +4978,10 @@ void CFeatureItem::x_AddFTableCdregionQuals(
              id->IsOther() ||
              (id->IsLocal()  &&  !ctx.Config().SuppressLocalId()) ) {
             id_str = id->GetSeqIdString(true);
-        } else if ( id->IsGi() ) {
+        } else if ( id->IsGi() || id->IsGeneral() ) {
             id_str = id->AsFastaString();
         }
-        if (! cfg.HideProteinID()) {
+        if (! cfg.HideProteinID() && !NStr::IsBlank(id_str)) {
             x_AddFTableQual("protein_id", id_str);
         }
     }
