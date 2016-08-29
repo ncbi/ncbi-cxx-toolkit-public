@@ -4321,6 +4321,39 @@ void CValidError_bioseq::CheckSoureDescriptor(
                 *(bsh.GetBioseqCore()));
         }
     }
+
+    if (!bsh.IsSetInst()
+        || !bsh.GetInst().IsSetRepr()
+        || bsh.GetInst().GetRepr() != CSeq_inst::eRepr_delta
+        || !bsh.GetInst().IsSetExt()
+        || !bsh.GetInst().GetExt().IsDelta()
+        || !bsh.GetInst().GetExt().GetDelta().IsSet()) {
+        return;
+    }
+
+    const CBioSource& src = di->GetSource();
+    if (! src.IsSetGenome()) return;
+    CBioSource::TGenome genome = src.GetGenome();
+
+    ITERATE (CDelta_ext::Tdata, it, bsh.GetInst().GetExt().GetDelta().Get()) {
+        if (! (*it)->IsLoc()) continue;
+        CBioseq_Handle hdl = m_Scope->GetBioseqHandle((*it)->GetLoc());
+        if (! hdl) continue;
+        CSeqdesc_CI ci(hdl, CSeqdesc::e_Source);
+        if (! ci) continue;
+        const CBioSource& crc = ci->GetSource();
+        // cout << MSerial_AsnText << crc << endl;
+        if (! crc.CanGetGenome()) continue;
+        // if (! crc.IsSetGenome()) continue;
+        CBioSource::TGenome cgenome = crc.GetGenome();
+        if (genome == cgenome) break;
+        if (genome == CBioSource::eGenome_unknown) break;
+        if (cgenome == CBioSource::eGenome_unknown) break;
+        PostErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentBioSources,
+                "Genome difference between parent and component",
+                *(bsh.GetBioseqCore()));
+        break;
+    }
 }
 
 
