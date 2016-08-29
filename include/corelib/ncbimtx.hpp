@@ -126,6 +126,12 @@ typedef HANDLE TSystemMutex;
 #endif
 
 
+#if defined(NCBI_NO_THREADS)
+#define NCBI_NAMESPACE_MUTEX ncbi_namespace_mutex_st
+#else
+#define NCBI_NAMESPACE_MUTEX ncbi_namespace_mutex_mt
+#endif
+
 
 /// Get the current thread ID.
 static inline TThreadSystemID GetCurrentThreadSystemID(void)
@@ -233,7 +239,11 @@ public:
 //
 
 class CFastMutex;
-
+class CAutoInitializeStaticMutex;
+class CMutex;
+class CAutoInitializeStaticFastMutex;
+class CFastMutex;
+class CSafeStaticPtr_Base;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -244,6 +254,8 @@ class CFastMutex;
 ///
 /// Internal platform-dependent fast mutex implementation to be used by CMutex
 /// and CFastMutex only.
+
+namespace NCBI_NAMESPACE_MUTEX {
 
 struct SSystemFastMutex
 {
@@ -347,12 +359,15 @@ protected:
     void DestroyHandle(void);
 
     friend struct SSystemMutex;
-    friend class CAutoInitializeStaticFastMutex;
-
-    friend class CFastMutex;
-
-    friend class CSafeStaticPtr_Base;
+    friend class ::ncbi::CAutoInitializeStaticFastMutex;
+    friend class ::ncbi::CFastMutex;
+    friend class ::ncbi::CSafeStaticPtr_Base;
 };
+
+}; // NCBI_NAMESPACE_MUTEX
+
+using NCBI_NAMESPACE_MUTEX::SSystemFastMutex;
+
 
 /// typedefs for ease of use
 typedef CGuard<SSystemFastMutex> TFastMutexGuard;
@@ -373,6 +388,8 @@ class CMutex;
 ///
 /// Internal platform-dependent mutex implementation to be used by CMutex
 /// and CFastMutex only.
+
+namespace NCBI_NAMESPACE_MUTEX {
 
 struct SSystemMutex
 {
@@ -437,9 +454,13 @@ protected:
     NCBI_XNCBI_EXPORT
     void Destroy(void);
 
-    friend class CAutoInitializeStaticMutex;
-    friend class CMutex;
+    friend class ::ncbi::CAutoInitializeStaticMutex;
+    friend class ::ncbi::CMutex;
 };
+
+}; // NCBI_NAMESPACE_MUTEX
+
+using NCBI_NAMESPACE_MUTEX::SSystemMutex;
 
 
 /// typedefs for ease of use
