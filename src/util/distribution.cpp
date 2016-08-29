@@ -41,7 +41,7 @@ unsigned CDiscreteDistributionImpl::GetNextValue() const
 {
     CRandom::TValue random_number = m_RandomGen->GetRand();
 
-    CRangeList::TRangeVector::const_iterator random_range =
+    CRangeListImpl::TRangeVector::const_iterator random_range =
         m_RangeVector.begin() + (random_number % m_RangeVector.size());
 
     int diff = random_range->second - random_range->first;
