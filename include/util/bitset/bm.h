@@ -403,10 +403,10 @@ public:
 
     public:
         enumerator() : iterator_base() {}
-        enumerator(const bvector<Alloc>* bvect, int position)
+        enumerator(const bvector<Alloc>* bv, int position)
             : iterator_base()
         { 
-            this->bv_ = const_cast<bvector<Alloc>*>(bvect);
+            this->bv_ = const_cast<bvector<Alloc>*>(bv);
             if (position == 0)
             {
                 go_first();
@@ -874,11 +874,11 @@ public:
 
 #endif
 
-    bvector& operator=(const bvector<Alloc>& bvect)
+    bvector& operator=(const bvector<Alloc>& bv)
     {
         clear(true); // memory free cleaning
-        resize(bvect.size());
-        bit_or(bvect);
+        resize(bv.size());
+        bit_or(bv);
         return *this;
     }
 
@@ -895,54 +895,54 @@ public:
         return get_bit(n);
     }
 
-    void operator &= (const bvector<Alloc>& bvect)
+    void operator &= (const bvector<Alloc>& bv)
     {
-        bit_and(bvect);
+        bit_and(bv);
     }
 
-    void operator ^= (const bvector<Alloc>& bvect)
+    void operator ^= (const bvector<Alloc>& bv)
     {
-        bit_xor(bvect);
+        bit_xor(bv);
     }
 
-    void operator |= (const bvector<Alloc>& bvect)
+    void operator |= (const bvector<Alloc>& bv)
     {
-        bit_or(bvect);
+        bit_or(bv);
     }
 
-    void operator -= (const bvector<Alloc>& bvect)
+    void operator -= (const bvector<Alloc>& bv)
     {
-        bit_sub(bvect);
+        bit_sub(bv);
     }
 
-    bool operator < (const bvector<Alloc>& bvect) const
+    bool operator < (const bvector<Alloc>& bv) const
     {
-        return compare(bvect) < 0;
+        return compare(bv) < 0;
     }
 
-    bool operator <= (const bvector<Alloc>& bvect) const
+    bool operator <= (const bvector<Alloc>& bv) const
     {
-        return compare(bvect) <= 0;
+        return compare(bv) <= 0;
     }
 
-    bool operator > (const bvector<Alloc>& bvect) const
+    bool operator > (const bvector<Alloc>& bv) const
     {
-        return compare(bvect) > 0;
+        return compare(bv) > 0;
     }
 
-    bool operator >= (const bvector<Alloc>& bvect) const
+    bool operator >= (const bvector<Alloc>& bv) const
     {
-        return compare(bvect) >= 0;
+        return compare(bv) >= 0;
     }
 
-    bool operator == (const bvector<Alloc>& bvect) const
+    bool operator == (const bvector<Alloc>& bv) const
     {
-        return compare(bvect) == 0;
+        return compare(bv) == 0;
     }
 
-    bool operator != (const bvector<Alloc>& bvect) const
+    bool operator != (const bvector<Alloc>& bv) const
     {
-        return compare(bvect) != 0;
+        return compare(bv) != 0;
     }
 
     bvector<Alloc> operator~() const
@@ -1868,7 +1868,7 @@ void bvector<Alloc>::optimize(bm::word_t* temp_block,
                          = 0;
         ::memcpy(stat->gap_levels, 
                 blockman_.glen(), sizeof(gap_word_t) * bm::gap_levels);
-        stat->max_serialize_mem = sizeof(id_t) * 4;
+        stat->max_serialize_mem = (unsigned)sizeof(id_t) * 4;
 
     }
 
@@ -1880,7 +1880,7 @@ void bvector<Alloc>::optimize(bm::word_t* temp_block,
         unsigned safe_inc = stat->max_serialize_mem / 10; // 10% increment
         if (!safe_inc) safe_inc = 256;
         stat->max_serialize_mem += safe_inc;
-        stat->memory_used += sizeof(*this) - sizeof(blockman_);
+        stat->memory_used += (unsigned)(sizeof(*this) - sizeof(blockman_));
         stat->memory_used += blockman_.mem_used();
     }
 }
@@ -1922,13 +1922,13 @@ void bvector<Alloc>::set_gap_levels(const gap_word_t* glevel_len)
 // -----------------------------------------------------------------------
 
 template<typename Alloc> 
-int bvector<Alloc>::compare(const bvector<Alloc>& bvect) const
+int bvector<Alloc>::compare(const bvector<Alloc>& bv) const
 {
     int res;
     unsigned bn = 0;
 
     unsigned top_blocks = blockman_.effective_top_block_size();
-    unsigned bvect_top_blocks = bvect.blockman_.effective_top_block_size();
+    unsigned bvect_top_blocks = bv.blockman_.effective_top_block_size();
 
     if (bvect_top_blocks > top_blocks) top_blocks = bvect_top_blocks;
 
@@ -1936,7 +1936,7 @@ int bvector<Alloc>::compare(const bvector<Alloc>& bvect) const
     {
         const bm::word_t* const* blk_blk = blockman_.get_topblock(i);
         const bm::word_t* const* arg_blk_blk = 
-                                bvect.blockman_.get_topblock(i);
+                                bv.blockman_.get_topblock(i);
 
         if (blk_blk == arg_blk_blk) 
         {
@@ -2490,13 +2490,13 @@ bm::id_t bvector<Alloc>::check_or_next_extract(bm::id_t prev)
                     {
                         BMCOUNT_DEC
 
-                        unsigned nbit = 
+                        unsigned nbit1 = 
                             unsigned(prev & bm::set_block_mask); 
                         unsigned nword = 
-                            unsigned(nbit >> bm::set_word_shift);
-                        nbit &= bm::set_word_mask;
+                            unsigned(nbit1 >> bm::set_word_shift);
+                        nbit1 &= bm::set_word_mask;
                         bm::word_t* word = block + nword;
-                        bm::word_t  mask = ((bm::word_t)1) << nbit;
+                        bm::word_t  mask = ((bm::word_t)1) << nbit1;
                         *word &= ~mask;
 
                         return prev;
@@ -2520,7 +2520,7 @@ bm::id_t bvector<Alloc>::check_or_next_extract(bm::id_t prev)
 
 template<class Alloc> 
 void bvector<Alloc>::combine_operation(
-                                  const bm::bvector<Alloc>& bvect, 
+                                  const bm::bvector<Alloc>& bv, 
                                   bm::operation             opcode)
 {
     /*typedef void (*block_bit_op)(bm::word_t*, const bm::word_t*);
@@ -2530,26 +2530,26 @@ void bvector<Alloc>::combine_operation(
                                         const bm::word_t*);*/
 
     unsigned top_blocks = blockman_.top_block_size();
-    unsigned bvect_top_blocks = bvect.blockman_.top_block_size();
+    unsigned bvect_top_blocks = bv.blockman_.top_block_size();
 
-    if (size_ == bvect.size_) 
+    if (size_ == bv.size_) 
     {
         BM_ASSERT(top_blocks >= bvect_top_blocks);
     }
     else
-    if (size_ < bvect.size_) // this vect shorter than the arg.
+    if (size_ < bv.size_) // this vect shorter than the arg.
     {
-        size_ = bvect.size_;
+        size_ = bv.size_;
         // stretch our capacity
         blockman_.reserve_top_blocks(bvect_top_blocks);
         top_blocks = blockman_.top_block_size();
     }
     else 
-    if (size_ > bvect.size_) // this vector larger
+    if (size_ > bv.size_) // this vector larger
     {
         if (opcode == BM_AND) // clear the tail with zeros
         {
-            set_range(bvect.size_, size_ - 1, false);
+            set_range(bv.size_, size_ - 1, false);
             if (bvect_top_blocks < top_blocks)
             {
                 // not to scan blocks we already swiped
@@ -2566,11 +2566,11 @@ void bvector<Alloc>::combine_operation(
 
     // calculate effective top size to avoid overscan
     top_blocks = blockman_.effective_top_block_size();
-    if (top_blocks < bvect.blockman_.effective_top_block_size())
+    if (top_blocks < bv.blockman_.effective_top_block_size())
     {
         if (opcode != BM_AND)
         {
-            top_blocks = bvect.blockman_.effective_top_block_size();
+            top_blocks = bv.blockman_.effective_top_block_size();
         }
     }
 
@@ -2584,7 +2584,7 @@ void bvector<Alloc>::combine_operation(
                 block_idx += bm::set_array_size;
                 continue; 
             }
-            const bm::word_t* const* bvbb = bvect.blockman_.get_topblock(i);
+            const bm::word_t* const* bvbb = bv.blockman_.get_topblock(i);
             if (bvbb == 0) // skip it because 0 OP 0 == 0 
             {
                 block_idx += bm::set_array_size;
@@ -2594,7 +2594,7 @@ void bvector<Alloc>::combine_operation(
             unsigned r = i * bm::set_array_size;
             for (j = 0; j < bm::set_array_size; ++j)//,++block_idx)
             {
-                const bm::word_t* arg_blk = bvect.blockman_.get_block(i, j);
+                const bm::word_t* arg_blk = bv.blockman_.get_block(i, j);
                 if (arg_blk )
                     combine_operation_with_block(r + j,//block_idx, 
                                                  0, 0, 
@@ -2612,7 +2612,7 @@ void bvector<Alloc>::combine_operation(
                 bm::word_t* blk = blk_blk[j];
                 if (blk)
                 {
-                    const bm::word_t* arg_blk = bvect.blockman_.get_block(i, j);            
+                    const bm::word_t* arg_blk = bv.blockman_.get_block(i, j);            
                     if (arg_blk)
                         combine_operation_with_block(r + j,
                                                      BM_IS_GAP(blk), blk, 
@@ -2630,7 +2630,7 @@ void bvector<Alloc>::combine_operation(
             for (j = 0; j < bm::set_array_size; ++j)//, ++block_idx)
             {            
                 bm::word_t* blk = blk_blk[j];
-                const bm::word_t* arg_blk = bvect.blockman_.get_block(i, j);            
+                const bm::word_t* arg_blk = bv.blockman_.get_block(i, j);            
                 if (arg_blk || blk)
                     combine_operation_with_block(r + j, BM_IS_GAP(blk), blk, 
                                                  arg_blk, BM_IS_GAP(arg_blk),

@@ -100,7 +100,7 @@ typedef bm::bvector<> bvect;
 
 
 void SimpleFillSets(test_bitset& bset, 
-                     bvect& bvect,
+                     bvect& bvec,
                        unsigned min, 
                        unsigned max,
                        unsigned fill_factor,
@@ -109,7 +109,7 @@ void SimpleFillSets(test_bitset& bset,
     for (unsigned i = min; i < max; i+=fill_factor)
     {
         bset[i] = set_flag;
-        bvect[i] = set_flag;
+        bvec[i] = set_flag;
     } // for i
 }
 
@@ -120,7 +120,7 @@ void SimpleFillSets(test_bitset& bset,
 //
 
 void FillSetsIntervals(test_bitset& bset, 
-                       bvect& bvect,
+                       bvect& bvec,
                        unsigned min, 
                        unsigned max,
                        unsigned fill_factor,
@@ -148,12 +148,12 @@ void FillSetsIntervals(test_bitset& bset,
             if (set_flag)
             {
                 bset[j] = true;
-                bvect[j]= true;
+                bvec[j]= true;
             }
             else
             {
                 bset[j] = false;
-                bvect[j] = false;
+                bvec[j] = false;
             }
                            
         } // j
@@ -171,12 +171,12 @@ void FillSetsIntervals(test_bitset& bset,
                 if (set_flag)
                 {
                     bset[i] = true;
-                    bvect[i] = true;            
+                    bvec[i] = true;            
                 }
                 else
                 {
                     bset[j] = false;
-                    bvect[j] = false;
+                    bvec[j] = false;
                 }
 
             }
@@ -250,7 +250,7 @@ void BitCountTest()
     TimeTaker tt("BitCount. Random bitvector (STL)", REPEATS*2);
     for (unsigned i = 0; i < REPEATS*2; ++i)
     {    
-        value += bset->count();
+        value += (unsigned)bset->count();
     }
     }
 
@@ -329,7 +329,7 @@ void BitCountSparseTest()
     TimeTaker tt("BitCount: Sparse bitset (STL)", REPEATS*10);
     for (unsigned int i = 0; i < REPEATS*10; ++i)
     {    
-        value += bset->count();
+        value += (unsigned)bset->count();
     }
     }
 
@@ -486,12 +486,12 @@ void EnumeratorTest()
         {
             if (bv.any())
             {
-                unsigned value = bv.get_first();
+                unsigned val = bv.get_first();
                 do
                 {
-                    value = bv.get_next(value);
-                    cnt += value;
-                } while ( value );
+                    val = bv.get_next(val);
+                    cnt += val;
+                } while ( val );
             }
         }
     }
@@ -544,12 +544,12 @@ void EnumeratorTestGAP()
     {
         if (bv->any())
         {
-            unsigned value = bv->get_first();
+            unsigned val = bv->get_first();
             do
             {
-                value = bv->get_next(value);
-                cnt += value;
-            } while ( value );
+                val = bv->get_next(val);
+                cnt += val;
+            } while ( val );
         }
     }
     }
@@ -601,7 +601,7 @@ void SerializationTest()
 	for (unsigned i = 0; i < REPEATS*70000; ++i)
 	{
 		len += bm::serialize(bv_sparse, buf, bm::BM_NO_BYTE_ORDER|bm::BM_NO_GAP_LENGTH);
-		id_size += cnt * sizeof(unsigned);
+		id_size += cnt * (unsigned)sizeof(unsigned);
 	}
 	}
 	
@@ -622,7 +622,7 @@ void SerializationTest()
 	for (unsigned i = 0; i < REPEATS*4; ++i)
 	{
 		len += bm::serialize(*bv, buf, bm::BM_NO_BYTE_ORDER|bm::BM_NO_GAP_LENGTH);
-		id_size += cnt * sizeof(unsigned);		
+		id_size += cnt * (unsigned)sizeof(unsigned);
 	}
 	}
     
@@ -762,7 +762,7 @@ void XorCountTest()
         bset_tmp->reset();
         *bset_tmp |= *bset1;
         *bset_tmp ^= *bset2;
-        test_count += bset_tmp->count();
+        test_count += (unsigned)bset_tmp->count();
     }
     }
 
@@ -906,13 +906,13 @@ void TI_MetricTest()
         bset_tmp->reset();
         *bset_tmp |= *bset1;
         *bset_tmp &= *bset2;
-        test_count += bset_tmp->count();
+        test_count  += (unsigned)bset_tmp->count();
         
-        test_countA += bset1->count();
-        test_countB += bset2->count();
+        test_countA += (unsigned)bset1->count();
+        test_countB += (unsigned)bset2->count();
         
-        test_countA += bset1->count();
-        test_countB += bset2->count();
+        test_countA += (unsigned)bset1->count();
+        test_countB += (unsigned)bset2->count();
         
         test_dice += double(2*test_count) / double(test_countA + test_countB);
     }

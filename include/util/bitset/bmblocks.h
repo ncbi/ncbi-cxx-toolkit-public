@@ -343,7 +343,7 @@ public:
             }
             if (stat_)
             {
-                stat_->max_serialize_mem += sizeof(unsigned) + 1;
+                stat_->max_serialize_mem += (unsigned)sizeof(unsigned) + 1;
             }
         }
         void on_empty_block(unsigned /* block_idx*/ ) { ++empty_; }
@@ -712,11 +712,11 @@ public:
             return bm::set_array_size;
         }
 
-        unsigned top_block_size = (unsigned)
+        unsigned top_block_sz = (unsigned)
             (bits_to_store / (bm::set_block_size * sizeof(bm::word_t) *
                                                 bm::set_array_size * 8));
-        if (top_block_size < bm::set_array_size) ++top_block_size;
-        return top_block_size;
+        if (top_block_sz < bm::set_array_size) ++top_block_sz;
+        return top_block_sz;
     }
 
     /**
@@ -1474,21 +1474,21 @@ public:
 
     unsigned mem_used() const
     {
-        unsigned mem_used = (unsigned)sizeof(*this);
-        mem_used += (unsigned)(temp_block_ ? sizeof(word_t) * bm::set_block_size : 0);
-        mem_used += (unsigned)(sizeof(bm::word_t**) * top_block_size_);
+        unsigned used = (unsigned)sizeof(*this);
+        used += (unsigned)(temp_block_ ? sizeof(word_t) * bm::set_block_size : 0);
+        used += (unsigned)(sizeof(bm::word_t**) * top_block_size_);
 
         #ifdef BM_DISBALE_BIT_IN_PTR
-        mem_used += (unsigned)(gap_flags_.mem_used() - sizeof(gap_flags_));
+        used += (unsigned)(gap_flags_.mem_used() - sizeof(gap_flags_));
         #endif
 
         for (unsigned i = 0; i < top_block_size_; ++i)
         {
-            mem_used += (unsigned)
+            used += (unsigned)
                 (blocks_[i] ? sizeof(void*) * bm::set_array_size : 0);
         }
 
-        return mem_used;
+        return used;
     }
 
     /** Returns true if second level block pointer is 0.

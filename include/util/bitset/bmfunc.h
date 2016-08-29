@@ -775,7 +775,7 @@ void for_each_dgap(const T* gap_buf, Func& func)
     ++pcurr;
     
     T prev = *pcurr;
-    func((T)prev + 1); // first element incremented to avoid 0
+    func((T)(prev + 1)); // first element incremented to avoid 0
     ++pcurr;
     do
     {

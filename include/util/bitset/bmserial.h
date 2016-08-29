@@ -1210,7 +1210,7 @@ unsigned deseriaizer_base<DEC>::read_id_list(decoder_type&   decoder,
             {
                 gap_word_t bit_idx = (gap_word_t)bin.gamma();
                 if (k == 0) --bit_idx; // TODO: optimization
-                bit_idx += prev;
+                bit_idx = (gap_word_t)(bit_idx + prev);
                 prev = bit_idx;
 				dst_arr[k] = bit_idx;
             } // for
