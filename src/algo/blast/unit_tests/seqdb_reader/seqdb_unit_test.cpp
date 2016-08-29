@@ -98,7 +98,10 @@ static void s_TestPartialAmbig(CSeqDB & db, TGi nt_gi)
     int oid(-1);
     bool success = db.GiToOid(nt_gi, oid);
 
-    BOOST_REQUIRE(success);
+    CNcbiOstrstream oss;
+    oss << "GI " << nt_gi << " was not found in nt";
+    string msg = CNcbiOstrstreamToString(oss);
+    BOOST_REQUIRE_MESSAGE(success, msg);
 
     int length = db.GetSeqLength(oid);
 
@@ -2152,7 +2155,7 @@ BOOST_AUTO_TEST_CASE(PartialSequences)
 
     s_TestPartialAmbig(nt, 57340989);
     s_TestPartialAmbig(nt, 24430781);
-    s_TestPartialAmbig(nt, 8885782);
+    s_TestPartialAmbig(nt, 1059791394);
 }
 
 BOOST_AUTO_TEST_CASE(GiListInOidRangeIteration)
