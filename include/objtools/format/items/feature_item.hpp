@@ -257,13 +257,24 @@ protected:
     void x_AddFTableBiosrcQuals(const CBioSource& src);
     void x_AddFTableDbxref(const CSeq_feat::TDbxref& dbxref);
     void x_AddFTableExtQuals(const CSeq_feat::TExt& ext);
-    void x_AddFTableQual(const string& name, const string& val = kEmptyStr, 
-        CFormatQual::ETrim trim = CFormatQual::eTrim_Normal) 
+    const string kProteinId = "protein_id";
+    const string kTranscriptId = "transcript_id";
+    const string& x_GetFtableNameAlias(const string& name)
+    {
+        if (NStr::Equal(name, "orig_protein_id")) {
+            return kProteinId;
+        } else if (NStr::Equal(name, "orig_transcript_id")) {
+            return kTranscriptId;
+        } else {
+            return name;
+        }
+    }
+    void x_AddFTableQual(const string& name, const string& val = kEmptyStr,
+        CFormatQual::ETrim trim = CFormatQual::eTrim_Normal)
     {
         CFormatQual::EStyle style = val.empty() ? CFormatQual::eEmpty : CFormatQual::eQuoted;
-        m_FTableQuals.push_back(CRef<CFormatQual>(new CFormatQual(name, val, style, 0, trim)));
+        m_FTableQuals.push_back(CRef<CFormatQual>(new CFormatQual(x_GetFtableNameAlias(name), val, style, 0, trim)));
     }
-    
     // typdef
     typedef CQualContainer<EFeatureQualifier> TQuals;
     typedef TQuals::iterator                  TQI;
