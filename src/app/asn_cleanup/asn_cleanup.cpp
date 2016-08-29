@@ -942,12 +942,12 @@ bool CCleanupApp::x_BasicAndExtended(CSeq_entry_Handle entry, const string& labe
             CConstRef<CCleanupChange> changes = cleanup.BasicCleanup(entry, options);
             vector<string> changes_str = changes->GetAllDescriptions();
             if (changes_str.size() == 0) {
-                printf("No changes from BasicCleanup\n");
+                LOG_POST(Error << "No changes from BasicCleanup\n");
             }
             else {
                 printf("Changes from BasicCleanup:\n");
                 ITERATE(vector<string>, vit, changes_str) {
-                    printf("%s\n", (*vit).c_str());
+                    LOG_POST(Error << "%s\n", (*vit).c_str());
                 }
                 any_changes = true;
             }
@@ -963,12 +963,12 @@ bool CCleanupApp::x_BasicAndExtended(CSeq_entry_Handle entry, const string& labe
             CConstRef<CCleanupChange> changes = cleanup.ExtendedCleanup(entry, options);
             vector<string> changes_str = changes->GetAllDescriptions();
             if (changes_str.size() == 0) {
-                printf("No changes from ExtendedCleanup\n");
+                LOG_POST(Error << "No changes from ExtendedCleanup\n");
             }
             else {
-                printf("Changes from ExtendedCleanup:\n");
+                LOG_POST(Error << "Changes from ExtendedCleanup:\n");
                 ITERATE(vector<string>, vit, changes_str) {
-                    printf("%s\n", (*vit).c_str());
+                    LOG_POST(Error << "%s\n", (*vit).c_str());
                 }
                 any_changes = true;
             }
