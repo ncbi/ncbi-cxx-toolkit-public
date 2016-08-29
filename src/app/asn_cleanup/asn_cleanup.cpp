@@ -947,7 +947,7 @@ bool CCleanupApp::x_BasicAndExtended(CSeq_entry_Handle entry, const string& labe
             else {
                 printf("Changes from BasicCleanup:\n");
                 ITERATE(vector<string>, vit, changes_str) {
-                    LOG_POST(Error << "%s\n", (*vit).c_str());
+                    LOG_POST(Error << (*vit).c_str());
                 }
                 any_changes = true;
             }
@@ -968,7 +968,7 @@ bool CCleanupApp::x_BasicAndExtended(CSeq_entry_Handle entry, const string& labe
             else {
                 LOG_POST(Error << "Changes from ExtendedCleanup:\n");
                 ITERATE(vector<string>, vit, changes_str) {
-                    LOG_POST(Error << "%s\n", (*vit).c_str());
+                    LOG_POST(Error << (*vit).c_str());
                 }
                 any_changes = true;
             }
