@@ -54,10 +54,16 @@ void CPreprocessUpdateApp::Init(void)
                      "Processed seq-entry output file",
                      CArgDescriptions::eOutputFile);
 
+    arg_desc->AddKey("ogb", 
+                     "OutputFile", 
+                     "GenBank entry output file",
+                     CArgDescriptions::eOutputFile);
+
     arg_desc->AddOptionalKey("og", 
                              "GenomicOutputFile",
                              "Genomic seq-entry output file",
                              CArgDescriptions::eOutputFile);
+
 
     SetupArgDescriptions(arg_desc.release());
 
@@ -74,6 +80,12 @@ int CPreprocessUpdateApp::Run(void)
     CGBDataLoader::RegisterInObjectManager(*obj_mgr);
     CRef<CScope> scope(new CScope(*obj_mgr));
     scope->AddDefaults();
+
+    CRef<CScope> gb_scope(new CScope(*obj_mgr));
+    
+    gb_scope->AddDataLoader("GBLOADER");
+
+
 
     // Set up object input stream
     unique_ptr<CObjectIStream> pInStream(x_InitInputStream(args));
@@ -102,12 +114,31 @@ int CPreprocessUpdateApp::Run(void)
 
     // Seq-entry Handle for the nucleotide sequence
     CSeq_entry_Handle genome_seh = x_GetGenomeSEH(seh);
+
+    CConstRef<CSeq_entry> gbtse;
+    for (auto pNucId : genome_seh.GetSeq().GetCompleteBioseq()->GetId()) {
+        if (pNucId->IsGenbank()) { // May need to use a different scope
+            CBioseq_Handle bsh = gb_scope->GetBioseqHandle(*pNucId); // Do need to use a different scope. Want to fetch from genbank, not local.
+            auto gbtse_handle = bsh.GetTSE_Handle(); // Need to put a check here
+            gbtse = gbtse_handle.GetCompleteTSE();
+            break;
+        }
+    }
+
+    try {
+        args["ogb"].AsOutputFile() << MSerial_Format_AsnBinary() << *gbtse;
+    } catch (CException& e) {
+        NCBI_THROW(CProteinMatchException, 
+                   eOutputError, 
+                   "Failed to write Genbank Seq-entry");
+    }
+
     
 
     CRef<CSeq_id> local_id;
     // Convert product id on annotation into local id
-    if (x_GetSequenceIdFromCDSs(genome_seh, local_id)) {
-        x_UpdateSequenceIds(local_id, genome_seh); // Replace any preexisting ids and replace by local_id
+    if (x_GetSequenceIdFromCDSs(seh, local_id)) {
+        x_UpdateSequenceIds(local_id, genome_seh); // Remove any preexisting ids and replace by local_id
     }
 
     try {
@@ -210,8 +241,10 @@ bool CPreprocessUpdateApp::x_GetSequenceIdFromCDSs(CSeq_entry_Handle& seh, CRef<
             continue;
         }
 
+        int i=0;
         for (CSeq_annot_ftable_CI fi(sah); fi; ++fi) {
             const CSeq_feat_Handle& sfh = *fi;
+
             if (!sfh.IsSetProduct()) { // Skip if product not specified
                 continue;
             }
@@ -229,7 +262,6 @@ bool CPreprocessUpdateApp::x_GetSequenceIdFromCDSs(CSeq_entry_Handle& seh, CRef<
             }
         }
     }
-
 
     if (ids.size() > 1) {
         NCBI_THROW(CProteinMatchException,
