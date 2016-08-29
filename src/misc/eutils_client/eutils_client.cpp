@@ -51,6 +51,7 @@ BEGIN_NCBI_SCOPE
 
 using namespace objects;
 
+
 //////////////////////////////////////////////////////////////////////////////
 
 
@@ -93,26 +94,25 @@ template<> void s_FormatIds<CSeq_id_Handle>(ostream& osm, const vector<CSeq_id_H
         auto& seh = *it;
         if (seh.Which() == CSeq_id::e_Gi) {
             if (type != CSeq_id::e_Gi && type != CSeq_id::e_not_set) {
-                NCBI_THROW(CException, eUnknown, "Argument list contains seq-ids of mixed types");
+                NCBI_THROW(CException, eUnknown,
+                           "Argument list contains seq-ids of mixed types");
             }
             type = CSeq_id::e_Gi;
             osm << seh.GetGi();
         } else {
             if (type != CSeq_id::e_not_set && type != seh.Which()) {
-                NCBI_THROW(CException, eUnknown, "Argument list contains seq-ids of mixed types");
+                NCBI_THROW(CException, eUnknown,
+                           "Argument list contains seq-ids of mixed types");
             }
             type = seh.Which();
             osm << seh.GetSeqId()->GetSeqIdString(true);
         }
     }
-    if (type == CSeq_id::e_Gi) {
-        osm << "&idtype=gi";
-    } else {
-        osm << "&idtype=acc";
-    }        
+    osm << "&idtype=" << (type == CSeq_id::e_Gi ? "gi" : "acc");
 }
 
-template<> void s_FormatIds<string>(ostream& osm, const vector<string>& uids) {
+template<> void s_FormatIds<string>(ostream& osm, const vector<string>& uids)
+{
     osm << "&id=";
     if (!uids.empty()) {
         osm << uids.front();
@@ -144,6 +144,7 @@ const char* CEUtilsException::GetErrCodeString(void) const
     return s_GetErrCodeString(GetErrCode());
 }
 
+
 class CMessageHandlerDefault : public CEutilsClient::CMessageHandler
 {
 public:
@@ -173,6 +174,7 @@ public:
     }
 };
 
+
 class CMessageHandlerThrowOnError : public CEutilsClient::CMessageHandler
 {
 public:
@@ -196,6 +198,7 @@ public:
     }
 };
 
+
 class CEUtilsParser : public xml::event_parser
 {
 public:
@@ -204,11 +207,8 @@ public:
     {
     }
 
-    bool HasError() const { return m_HasError; }
-    void GetErrors(list<string>& errors) const
-    {
-        errors = m_Errors;
-    }
+    bool HasError(void) const            { return m_HasError; }
+    void GetErrors(list<string>& errors) { errors = m_Errors; }
 
 protected:
     bool error(const string& message)
@@ -246,12 +246,9 @@ protected:
         return true;
     }
 
-    virtual bool OnEndElement()
-    {
-        return true;
-    }
+    virtual bool OnEndElement(void) { return true; }
     
-    string GetText() const { return NStr::Join(m_Text_chunks, ""); }
+    string GetText(void) const { return NStr::Join(m_Text_chunks, ""); }
 
 protected:
     string m_Path;
@@ -276,18 +273,14 @@ public:
         : m_MessageHandler(message_handler)
         , m_Count(0)
         , m_Uids(uids)
-    {
-    }
+    { }
 
     ~CESearchParser()
     {
         ProcessMessages();
     }
 
-    Uint8 GetCount() const
-    {
-        return m_Count;
-    }
+    Uint8 GetCount(void) const { return m_Count; }
 
     /// Processes the warning and error messages from
     /// E-Utils, delivering them to the message handler
@@ -295,7 +288,7 @@ public:
     ///
     /// The XML parser does not like exceptions thrown
     /// during the parse, so the messages are queued.
-    void ProcessMessages()
+    void ProcessMessages(void)
     {
         // Process warnings first; it's better to emit
         // as many messages as possible, and errors are
@@ -323,7 +316,7 @@ protected:
     }
 
 
-    bool OnEndElement()
+    bool OnEndElement(void)
     {
         string contents = GetText();
 
@@ -346,7 +339,7 @@ protected:
             m_ResultWarnings.push_back(message);
         }
         else if (x_IsSuffix(m_Path, "/WarningList/QuotedPhraseNotFound")) {
-            TMessage message(CEUtilsException::eQuotedPhraseNotFound, contents);
+            TMessage message(CEUtilsException::eQuotedPhraseNotFound,contents);
             m_ResultWarnings.push_back(message);
         }
         else if (x_IsSuffix(m_Path, "/WarningList/OutputMessage")) {
@@ -408,7 +401,7 @@ protected:
         return true;
     }
 
-    bool OnEndElement()
+    bool OnEndElement(void)
     {
         if ( !m_InLinkSet && NStr::EndsWith(m_Path, "/LinkName") ) {
             if ( GetText() == m_LinkName) {
@@ -427,30 +420,13 @@ private:
     bool m_InLinkSet;
 };
 
-/*
-class CESummaryParser : public CEUtilsParser
-{
-public:
-    CESummaryParser(vector<AutoPtr<xml::node> >& docsums)
-        : m_Docsums(docsums)
-    {
-    }
-
-private:
-    vector<AutoPtr<xml::node> > & m_Docsums;
-}
-*/
 
 
+//////////////////////////////////////////////////////////////////////////////
 
 
-/////////////////////////////////////////////////////////////////////////////
-///
-
-CEutilsClient::
-CEutilsClient()
-    : m_UrlTag("gpipe")
-    , m_RetMax(kMax_Int)
+CEutilsClient::CEutilsClient()
+    : m_RetMax(kMax_Int)
 {
     class CInPlaceConnIniter : protected CConnIniter
     {
@@ -458,10 +434,8 @@ CEutilsClient()
     SetMessageHandlerDefault();
 }
 
-CEutilsClient::
-CEutilsClient(const string& host)
+CEutilsClient::CEutilsClient(const string& host)
     : m_HostName(host)
-    , m_UrlTag("gpipe")
     , m_RetMax(kMax_Int)
 {
     class CInPlaceConnIniter : protected CConnIniter
@@ -470,43 +444,37 @@ CEutilsClient(const string& host)
     SetMessageHandlerDefault();
 }
 
-void CEutilsClient::
-SetMessageHandlerDefault()
+void CEutilsClient::SetMessageHandlerDefault(void)
 {
     m_MessageHandler.Reset(new CMessageHandlerDefault);
 }
 
-void CEutilsClient::
-SetMessageHandlerDiagPost()
+void CEutilsClient::SetMessageHandlerDiagPost(void)
 {
     m_MessageHandler.Reset(new CMessageHandlerDiagPost);
 }
-void CEutilsClient::
-SetMessageHandlerThrowOnError()
+
+void CEutilsClient::SetMessageHandlerThrowOnError(void)
 {
     m_MessageHandler.Reset(new CMessageHandlerThrowOnError);
 }
 
-void CEutilsClient::
-SetMessageHandler(CMessageHandler& message_handler)
+void CEutilsClient::SetMessageHandler(CMessageHandler& message_handler)
 {
     m_MessageHandler.Reset(&message_handler);
 }
 
-void CEutilsClient::
-SetUserTag(const string& tag)
+void CEutilsClient::SetUserTag(const string& tag)
 {
     m_UrlTag = tag;
 }
 
-void CEutilsClient::
-SetLinkName(const string& link_name)
+void CEutilsClient::SetLinkName(const string& link_name)
 {
     m_LinkName = link_name;
 }
 
-void CEutilsClient::
-SetMaxReturn(int ret_max)
+void CEutilsClient::SetMaxReturn(int ret_max)
 {
     m_RetMax = ret_max;
 }
@@ -527,7 +495,7 @@ Uint8 CEutilsClient::Count(const string& db,
     }
 
     Uint8 count = 0;
-    LOG_POST(Trace << " executing: db=" << db << "  query=" << term);
+    LOG_POST(Trace << "Executing: db=" << db << " query=" << term);
     bool success = false;
     m_Url.clear();
     m_Time.clear();
@@ -558,10 +526,10 @@ Uint8 CEutilsClient::Count(const string& db,
         }
         catch (CException& e) {
             ERR_POST_X(1, Warning << "failed on attempt " << retries + 1
-                     << ": " << e);
+                       << ": " << e);
         }
 
-        int sleep_secs = (int)::sqrt((double)retries);
+        int sleep_secs = ::sqrt(retries);
         if (sleep_secs) {
             SleepSec(sleep_secs);
         }
@@ -574,7 +542,6 @@ Uint8 CEutilsClient::Count(const string& db,
 
     return count;
 }
-
 
 #ifdef NCBI_INT8_GI
 Uint8 CEutilsClient::ParseSearchResults(CNcbiIstream& istr,
@@ -627,7 +594,6 @@ Uint8 CEutilsClient::x_ParseSearchResults(CNcbiIstream& istr,
     parser.ProcessMessages();
     return parser.GetCount();
 }
-
 
 #ifdef NCBI_INT8_GI
 Uint8 CEutilsClient::ParseSearchResults(const string& xml_file,
@@ -721,7 +687,7 @@ Uint8 CEutilsClient::x_Search(const string& db,
 
     Uint8 count = 0;
 
-    LOG_POST(Trace << " executing: db=" << db << "  query=" << term);
+    LOG_POST(Trace << "Executing: db=" << db << " query=" << term);
     bool success = false;
     m_Url.clear();
     m_Time.clear();
@@ -735,21 +701,24 @@ Uint8 CEutilsClient::x_Search(const string& db,
             m_Time.push_back(CTime(CTime::eCurrent));
 
             if(!xml_path.empty()) {
-                string xml_file = xml_path + '.'+NStr::NumericToString(retries+1);
-                
+                string xml_file
+                    = xml_path + '.' + NStr::NumericToString(retries + 1);
                 CNcbiOfstream ostr(xml_file.c_str());
                 if (ostr.good()) {
                     NcbiStreamCopy(ostr, istr);
                     ostr.close();
-
-                    if(!ostr || 200 != istr.GetStatusCode()) {
-                        NCBI_THROW(CException, eUnknown, "Failure while writing entrez xml response to file: " + xml_file);
+                    
+                    if(!ostr  ||  200 != istr.GetStatusCode()) {
+                        NCBI_THROW(CException, eUnknown,
+                                   "Failure while writing entrez xml response"
+                                   " to file: " + xml_file);
                     }
 
                     count = ParseSearchResults(xml_file, uids);
                 }
                 else {
-                    LOG_POST(Error << "Unable to open file for writing: " << xml_file);
+                    LOG_POST(Error << "Unable to open file for writing: "
+                             + xml_file);
                     count = ParseSearchResults(istr, uids);
                 }
             }
@@ -762,10 +731,10 @@ Uint8 CEutilsClient::x_Search(const string& db,
         }
         catch (CException& e) {
             ERR_POST_X(2, Warning << "failed on attempt " << retries + 1
-                     << ": " << e);
+                       << ": " << e);
         }
 
-        int sleep_secs = (int)::sqrt((double)retries);
+        int sleep_secs = ::sqrt(retries);
         if (sleep_secs) {
             SleepSec(sleep_secs);
         }
@@ -868,7 +837,7 @@ void CEutilsClient::SearchHistory(const string& db,
     x_Get("/entrez/eutils/esearch.fcgi", oss.str(), ostr);
 }
 
-string CEutilsClient::x_GetHostName() const
+string CEutilsClient::x_GetHostName(void) const
 {
     static const char kEutils[]   = "eutils.ncbi.nlm.nih.gov";
     static const char kEutilsLB[] = "eutils_lb";
@@ -879,22 +848,21 @@ string CEutilsClient::x_GetHostName() const
     SConnNetInfo* net_info = ConnNetInfo_Create(kEutilsLB);
     SSERV_Info*       info = SERV_GetInfo(kEutilsLB, fSERV_Dns,
                                           SERV_ANYHOST, net_info);
-    string host
-        = info  &&  info->host ? CSocketAPI::ntoa(info->host) : kEmptyStr;
+    ConnNetInfo_Destroy(net_info);
+    string host;
     if (info) {
+        if (info->host) {
+            host = CSocketAPI::ntoa(info->host);
+        }
         free(info);
     }
-    ConnNetInfo_Destroy(net_info);
-    string scheme;
+    string scheme("http");
     if (host.empty()) {
         char buf[80];
         const char* web = ConnNetInfo_GetValue(kEutilsLB, REG_CONN_HOST,
                                                buf, sizeof(buf), kEutils);
         host = string(web  &&  *web ? web : kEutils);
-        scheme = "https";
-    }
-    else {
-        scheme = "http";
+        scheme += 's';
     }
     return scheme + "://" + host;
 }
@@ -914,17 +882,17 @@ void CEutilsClient::x_Get(string const& path,
             m_Url.push_back(x_BuildUrl(hostname, path, params));
             istr << params;
             m_Time.push_back(CTime(CTime::eCurrent));
-            if (NcbiStreamCopy(ostr, istr) && 200 == istr.GetStatusCode()) {
+            if (NcbiStreamCopy(ostr, istr)  &&  200 == istr.GetStatusCode()) {
                 success = true;
                 break;
             }
         }
         catch (CException& e) {
             ERR_POST_X(3, Warning << "failed on attempt " << retries + 1
-                     << ": " << e);
+                       << ": " << e);
         }
 
-        int sleep_secs = (int)::sqrt((double)retries);
+        int sleep_secs = ::sqrt(retries);
         if (sleep_secs) {
             SleepSec(sleep_secs);
         }
@@ -1062,7 +1030,8 @@ void CEutilsClient::x_Link(const string& db_from,
             }
             xml::error_messages msgs;
             if(!xml_path.empty()) {
-                string xml_file = xml_path + '.'+NStr::NumericToString(retries+1);
+                string xml_file
+                    = xml_path + '.' + NStr::NumericToString(retries + 1);
                
                 CNcbiOfstream ostr(xml_file.c_str());
                 if(ostr.good()) {
@@ -1070,11 +1039,14 @@ void CEutilsClient::x_Link(const string& db_from,
                     ostr.close();
                     parser.parse_file(xml_file.c_str(), &msgs);
                     if(!ostr || 200 != istr.GetStatusCode()) {
-                        NCBI_THROW(CException, eUnknown, "Failure while writing entrez xml response to file: " + xml_file);
+                        NCBI_THROW(CException, eUnknown,
+                                   "Failure while writing entrez xml response"
+                                   " to file: " + xml_file);
                     }
                 }
                 else {
-                    LOG_POST(Error << "Unable to open file for writing: " << xml_file);
+                    LOG_POST(Error << "Unable to open file for writing: "
+                             + xml_file);
                     parser.parse_stream(istr, &msgs);
                 }
             }
@@ -1091,10 +1063,10 @@ void CEutilsClient::x_Link(const string& db_from,
         }
         catch (CException& e) {
             ERR_POST_X(4, Warning << "failed on attempt " << retries + 1
-                     << ": " << e);
+                       << ": " << e);
         }
 
-        int sleep_secs = (int)::sqrt((double)retries);
+        int sleep_secs = ::sqrt(retries);
         if (sleep_secs) {
             SleepSec(sleep_secs);
         }
@@ -1171,17 +1143,17 @@ void CEutilsClient::x_Link(const string& db_from,
             m_Url.push_back(x_BuildUrl(hostname, path, params));
             istr << params;
             m_Time.push_back(CTime(CTime::eCurrent));
-            if (NcbiStreamCopy(ostr, istr) && 200 == istr.GetStatusCode()) {
+            if (NcbiStreamCopy(ostr, istr)  &&  200 == istr.GetStatusCode()) {
                 success = true;
                 break;
             }
         }
         catch (CException& e) {
             ERR_POST_X(5, Warning << "failed on attempt " << retries + 1
-                     << ": " << e);
+                       << ": " << e);
         }
 
-        int sleep_secs = (int)::sqrt((double)retries);
+        int sleep_secs = ::sqrt(retries);
         if (sleep_secs) {
             SleepSec(sleep_secs);
         }
@@ -1312,7 +1284,7 @@ void CEutilsClient::x_Summary(const string& db,
             // slurp up all the output.
             stringbuf sb;
             istr >> &sb;
-            if ( 200 == istr.GetStatusCode() ) {
+            if (200 == istr.GetStatusCode()) {
                 string docstr(sb.str());
 
                 // LOG_POST(Info << "Raw results: " << docstr );
@@ -1335,7 +1307,7 @@ void CEutilsClient::x_Summary(const string& db,
                      << ": " << e);
         }
 
-        int sleep_secs = (int)::sqrt((double)retries);
+        int sleep_secs = ::sqrt(retries);
         if (sleep_secs) {
             SleepSec(sleep_secs);
         }
@@ -1348,11 +1320,11 @@ void CEutilsClient::x_Summary(const string& db,
 }
 
 static inline void s_SummaryHistoryQuery(ostream& oss,
-                                  const string& db,
-                                  const string& web_env,
-                                  int retstart,
-                                  const string& version,
-                                  int retmax)
+                                         const string& db,
+                                         const string& web_env,
+                                         int retstart,
+                                         const string version,
+                                         int retmax)
 {
     oss << "db=" << NStr::URLEncode(db)
         << "&retmode=xml"
@@ -1471,7 +1443,7 @@ void CEutilsClient::x_Fetch(const string& db,
             m_Url.push_back(x_BuildUrl(hostname, path, params));
             istr << params;
             m_Time.push_back(CTime(CTime::eCurrent));
-            if (NcbiStreamCopy(ostr, istr) && 200 == istr.GetStatusCode()) {
+            if (NcbiStreamCopy(ostr, istr)  &&  200 == istr.GetStatusCode()) {
                 success = true;
                 break;
             }
@@ -1481,7 +1453,7 @@ void CEutilsClient::x_Fetch(const string& db,
                      << ": " << e);
         }
 
-        int sleep_secs = ::sqrt((double)retries);
+        int sleep_secs = ::sqrt(retries);
         if (sleep_secs) {
             SleepSec(sleep_secs);
         }
@@ -1495,22 +1467,20 @@ void CEutilsClient::x_Fetch(const string& db,
 
 static inline string s_GetContentType(CEutilsClient::EContentType content_type)
 {
-    if ( CEutilsClient::eContentType_xml == content_type ) {
+    switch (content_type) {
+    case CEutilsClient::eContentType_xml:
         return "xml";
-    }
-    else if ( CEutilsClient::eContentType_text == content_type ) {
+    case CEutilsClient::eContentType_text:
         return "text";
-    }
-    else if ( CEutilsClient::eContentType_html == content_type ) {
+    case CEutilsClient::eContentType_html:
         return "html";
-    }
-    else if ( CEutilsClient::eContentType_asn1 == content_type ) {
+    case CEutilsClient::eContentType_asn1:
         return "asn.1";
+    default:
+        break;
     }
-    else {
-        // Default content type
-        return "xml";
-    }
+    // Default content type
+    return "xml";
 }
 
 static inline void s_FetchHistoryQuery(ostream& oss,
@@ -1542,6 +1512,7 @@ void CEutilsClient::FetchHistory(const string& db,
     ostringstream oss;
     s_FetchHistoryQuery(oss, db, web_env, retstart, m_RetMax, content_type);
     oss << "&query_key=" << query_key;
+
     x_Get("/entrez/eutils/efetch.fcgi", oss.str(), ostr);
 }
 
@@ -1556,6 +1527,7 @@ void CEutilsClient::FetchHistory(const string& db,
     s_FetchHistoryQuery(oss, db, web_env, retstart, m_RetMax, content_type);
     oss << "&query_key=" << query_key
         << "&idtype=acc";
+
     x_Get("/entrez/eutils/efetch.fcgi", oss.str(), ostr);
 }
 
@@ -1570,6 +1542,7 @@ void CEutilsClient::FetchHistory(const string& db,
     s_FetchHistoryQuery(oss, db, web_env, retstart, m_RetMax, content_type);
     oss << "&query_key=" << query_key
         << "&idtype=acc";
+
     x_Get("/entrez/eutils/efetch.fcgi", oss.str(), ostr);
 }
 
@@ -1583,8 +1556,8 @@ const list<CTime> CEutilsClient::GetTime() const
     return m_Time;
 }
 
-
-string CEutilsClient::x_BuildUrl(const string& host, const string &path, const string &params)
+string CEutilsClient::x_BuildUrl(const string& host, const string &path,
+                                 const string &params)
 {
     string url = host + path;
     if(!params.empty()) {
@@ -1593,5 +1566,5 @@ string CEutilsClient::x_BuildUrl(const string& host, const string &path, const s
     return url;
 }
 
-END_NCBI_SCOPE
 
+END_NCBI_SCOPE

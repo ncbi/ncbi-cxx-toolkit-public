@@ -74,7 +74,7 @@ public:
     class CMessageHandler : public CObject
     {
     public:
-        virtual ~CMessageHandler(void) { }
+        virtual ~CMessageHandler() { }
 
         /// Pure virtual function, to be implemented by subclass.
         virtual void HandleMessage(EDiagSev severity,
@@ -100,13 +100,13 @@ public:
 
     /// Default is to log all messages at informational level.
     /// Equivalent to: LOG_POST(Info << ...).
-    void SetMessageHandlerDefault();
+    void SetMessageHandlerDefault(void);
 
     /// Equivalent to: ERR_POST(Warning|Error << ...).
-    void SetMessageHandlerDiagPost();
+    void SetMessageHandlerDiagPost(void);
 
     /// Equivalent to: NCBI_THROW, ERR_POST, LOG_POST as appropriate.
-    void SetMessageHandlerThrowOnError();
+    void SetMessageHandlerThrowOnError(void);
 
     /// Set custom message handler.
     void SetMessageHandler(CMessageHandler& message_handler);
@@ -302,22 +302,22 @@ public:
     void SummaryHistory(const string& db,
                         const string& web_env,
                         Int8 query_key,
-                        int retstart,           // Position within the result set
-                        const string& version,   // Version: "" or "2.0" 
+                        int retstart,         // Position within the result set
+                        const string& version,// Version: "" or "2.0" 
                         CNcbiOstream& ostr);
 
     void SummaryHistory(const string& db,
                         const string& web_env,
                         objects::CSeq_id_Handle query_key,
-                        int retstart,           // Position within the result set
-                        const string& version,   // Version: "" or "2.0" 
+                        int retstart,         // Position within the result set
+                        const string& version,// Version: "" or "2.0" 
                         CNcbiOstream& ostr);
 
     void SummaryHistory(const string& db,
                         const string& web_env,
                         const string& query_key,
-                        int retstart,           // Position within the result set
-                        const string& version,   // Version: "" or "2.0" 
+                        int retstart,         // Position within the result set
+                        const string& version,// Version: "" or "2.0" 
                         CNcbiOstream& ostr);
 
 #ifdef NCBI_INT8_GI
@@ -365,8 +365,8 @@ public:
                       CNcbiOstream& ostr);
 
 
-    const list<string> GetUrl() const;
-    const list<CTime> GetTime() const;
+    const list<string> GetUrl(void) const;
+    const list<CTime> GetTime(void) const;
 
 protected:
 #ifdef NCBI_INT8_GI
@@ -401,7 +401,7 @@ private:
     CRef<CMessageHandler> m_MessageHandler;
     string m_HostName;
     string m_UrlTag;
-    int m_RetMax;
+    int    m_RetMax;
     string m_LinkName;
 
     //exact url of last request
@@ -415,10 +415,11 @@ private:
     // Execute HTTP GET request.
     // Store received content into the @ostr.
 
-    string x_GetHostName() const;
+    string x_GetHostName(void) const;
     void x_Get(string const& path, string const& params, CNcbiOstream& ostr);
 
-    static string x_BuildUrl(const string& host, const string &path, const string &params);
+    static string x_BuildUrl(const string& host, const string &path,
+                             const string &params);
 
     template<class T> Uint8 x_Search(const string& db,
                                    const string& term,
@@ -455,10 +456,7 @@ private:
 
     template<class T> Uint8 x_ParseSearchResults(CNcbiIstream& istr,
                                                  vector<T>& uids);
-
 };
-
-
 
 
 END_NCBI_SCOPE
