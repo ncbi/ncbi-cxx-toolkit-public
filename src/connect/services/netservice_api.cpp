@@ -419,7 +419,8 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
     m_ServiceName = service_name;
     NStr::TruncateSpacesInPlace(m_ServiceName);
 
-    if (config) {
+    // Do not override explicitly set client name
+    if (config && m_ClientName.empty()) {
         m_ClientName = config->GetString(section, "client_name",
                 CConfig::eErr_NoThrow);
 
