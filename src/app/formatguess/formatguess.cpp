@@ -38,7 +38,7 @@
 
 #include <util/format_guess.hpp>
 
-typedef std::map<unsigned int, std::string> FormatMap;
+typedef std::map<ncbi::CFormatGuess::EFormat, std::string> FormatMap;
 typedef FormatMap::iterator FormatIter;
 
 USING_NCBI_SCOPE;
@@ -68,10 +68,21 @@ void CFormatGuessApp::Init(void)
     //
     //  shared flags and parameters:
     //        
-    arg_desc->AddKey
+    arg_desc->AddDefaultKey
         ("i", "InputFile",
-         "Input File Name",
-         CArgDescriptions::eString);
+         "Input File Name or '-' for stdin.",
+         CArgDescriptions::eInputFile,
+         "-");
+         
+    arg_desc->AddFlag(
+        "canonical-name",
+        "Use the canonical name which is the name of the format as "
+        "given by the underlying C++ format guesser.");
+        
+    arg_desc->AddFlag(
+        "omit-file-name",
+        "When sending output, do not include the name of the input file. "
+        "This has no effect when reading from stdin.");
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -82,51 +93,65 @@ CFormatGuessApp::Run(void)
 //  ============================================================================
 {
     const CArgs& args = GetArgs();
-    const string strFileName = args["i"].AsString();
+    CNcbiIstream & input_stream = args["i"].AsInputFile();
+    const string name_of_input_stream = args["i"].AsString();
 
-    FormatMap FormatStrings;
-    FormatStrings[ CFormatGuess::eUnknown ] = "Format not recognized";
-    FormatStrings[ CFormatGuess::eBinaryASN ] = "Binary ASN.1";
-    FormatStrings[ CFormatGuess::eTextASN ] = "Text ASN.1";
-    FormatStrings[ CFormatGuess::eFasta ] = "FASTA sequence record";
-    FormatStrings[ CFormatGuess::eXml ] = "XML";
-    FormatStrings[ CFormatGuess::eRmo ] = "RepeatMasker Out";
-    FormatStrings[ CFormatGuess::eGlimmer3 ] = "Glimmer3 prediction";
-    FormatStrings[ CFormatGuess::ePhrapAce ] = "Phrap ACE assembly file";
-    FormatStrings[ CFormatGuess::eGtf ] = "GFF/GTF style annotation";
-    FormatStrings[ CFormatGuess::eAgp ] = "AGP format assembly";
-    FormatStrings[ CFormatGuess::eNewick ] = "Newick tree";
-    FormatStrings[ CFormatGuess::eDistanceMatrix ] = "Distance matrix";
-    FormatStrings[ CFormatGuess::eFiveColFeatureTable ] = 
-        "Five column feature table";
-    FormatStrings[ CFormatGuess::eTaxplot ] = "Tax plot";
-    FormatStrings[ CFormatGuess::eTable ] = "Generic table";
-    FormatStrings[ CFormatGuess::eAlignment ] = "Text alignment";
-    FormatStrings[ CFormatGuess::eFlatFileSequence ] = 
-        "Flat file sequence portion";
-    FormatStrings[ CFormatGuess::eSnpMarkers ] = "SNP marker flat file";
-    FormatStrings[ CFormatGuess::eWiggle ] = "UCSC Wiggle file";
-    FormatStrings[ CFormatGuess::eBed ] = "UCSC BED file";
-    FormatStrings[ CFormatGuess::eBed15 ] = "UCSC microarray file";
-    FormatStrings[ CFormatGuess::eHgvs ] = "HGVS Variation file";
-    FormatStrings[ CFormatGuess::eGff2 ] = "GFF2 feature table";
-    FormatStrings[ CFormatGuess::eGff3 ] = "GFF3 feature table";
-    FormatStrings[ CFormatGuess::eGvf ] = "GVF gene variation data";
-    FormatStrings[ CFormatGuess::eVcf ] = "VCF Variant Call Format";
-    CFormatGuess Guesser( strFileName );
-    CFormatGuess::EFormat uFormat = Guesser.GuessFormat();
-
-    cout << strFileName << " :   ";
+    CFormatGuess guesser( input_stream );
+    CFormatGuess::EFormat uFormat = guesser.GuessFormat();
     
-    FormatIter it = FormatStrings.find( uFormat );
-    if ( it == FormatStrings.end() ) {
-        // cout << "Unmapped format [" << uFormat << "]";
-        cout << CFormatGuess::GetFormatName(uFormat);
-    }
-    else {
-        cout << it->second;
+    // include file name in output if it's not stdin
+    if( ! args["omit-file-name"] and
+            ! name_of_input_stream.empty() && name_of_input_stream != "-" ) 
+    {
+        cout << name_of_input_stream << " :   ";
     }
     
+    if( args["canonical-name"] ) {
+        // caller wants to always use the format-guesser's name
+         cout << CFormatGuess::GetFormatName(uFormat);
+    } else {
+        // caller wants special names for some types
+        FormatMap FormatStrings;
+        FormatStrings[ CFormatGuess::eUnknown ] = "Format not recognized";
+        FormatStrings[ CFormatGuess::eBinaryASN ] = "Binary ASN.1";
+        FormatStrings[ CFormatGuess::eTextASN ] = "Text ASN.1";
+        FormatStrings[ CFormatGuess::eFasta ] = "FASTA sequence record";
+        FormatStrings[ CFormatGuess::eXml ] = "XML";
+        FormatStrings[ CFormatGuess::eRmo ] = "RepeatMasker Out";
+        FormatStrings[ CFormatGuess::eGlimmer3 ] = "Glimmer3 prediction";
+        FormatStrings[ CFormatGuess::ePhrapAce ] = "Phrap ACE assembly file";
+        FormatStrings[ CFormatGuess::eGtf ] = "GFF/GTF style annotation";
+        FormatStrings[ CFormatGuess::eAgp ] = "AGP format assembly";
+        FormatStrings[ CFormatGuess::eNewick ] = "Newick tree";
+        FormatStrings[ CFormatGuess::eDistanceMatrix ] = "Distance matrix";
+        FormatStrings[ CFormatGuess::eFiveColFeatureTable ] = 
+            "Five column feature table";
+        FormatStrings[ CFormatGuess::eTaxplot ] = "Tax plot";
+        FormatStrings[ CFormatGuess::eTable ] = "Generic table";
+        FormatStrings[ CFormatGuess::eAlignment ] = "Text alignment";
+        FormatStrings[ CFormatGuess::eFlatFileSequence ] = 
+            "Flat file sequence portion";
+        FormatStrings[ CFormatGuess::eSnpMarkers ] = "SNP marker flat file";
+        FormatStrings[ CFormatGuess::eWiggle ] = "UCSC Wiggle file";
+        FormatStrings[ CFormatGuess::eBed ] = "UCSC BED file";
+        FormatStrings[ CFormatGuess::eBed15 ] = "UCSC microarray file";
+        FormatStrings[ CFormatGuess::eHgvs ] = "HGVS Variation file";
+        FormatStrings[ CFormatGuess::eGff2 ] = "GFF2 feature table";
+        FormatStrings[ CFormatGuess::eGff3 ] = "GFF3 feature table";
+        FormatStrings[ CFormatGuess::eGvf ] = "GVF gene variation data";
+        FormatStrings[ CFormatGuess::eVcf ] = "VCF Variant Call Format";
+            
+        FormatIter it = FormatStrings.find( uFormat );
+        if ( it == FormatStrings.end() ) {
+            // cout << "Unmapped format [" << uFormat << "]";
+            cout << CFormatGuess::GetFormatName(uFormat);
+        }
+        else {
+            cout << it->second;
+        }
+    }
+
+    // end the one line we're printing
     cout << endl;
             
     return 0;
