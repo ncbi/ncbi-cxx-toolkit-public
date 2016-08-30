@@ -588,7 +588,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_Fungorum, "http://www.indexfungorum.org/Names/NamesRecord.asp?RecordID=" }, // https not available tested 7/13/2016
     { CDbtag::eDbtagType_GABI, "https://www.gabipd.org/database/cgi-bin/GreenCards.pl.cgi?Mode=ShowSequence&App=ncbi&SequenceId=" },
     { CDbtag::eDbtagType_GEO, "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=" },
-    { CDbtag::eDbtagType_GO, "https://amigo.geneontology.org/amigo/term/GO:" },
+    { CDbtag::eDbtagType_GO, "http://amigo.geneontology.org/amigo/term/GO:" },
     { CDbtag::eDbtagType_GOA, "https://www.ebi.ac.uk/ego/GProtein?ac=" },
     { CDbtag::eDbtagType_GRIN, "https://www.ars-grin.gov/cgi-bin/npgs/acc/display.pl?" },
     { CDbtag::eDbtagType_GeneDB, "http://old.genedb.org/genedb/Search?organism=All%3A*&name=" }, // https not available tested 7/13/2016                                                                                            
@@ -656,7 +656,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_VBASE2, "http://www.vbase2.org/vgene.php?id=" }, // https not available tested 7/13/2016
     { CDbtag::eDbtagType_VBRC, "http://vbrc.org/query.asp?web_view=curation&web_id=" }, // https not available tested 7/13/2016
     { CDbtag::eDbtagType_VectorBase, "https://www.vectorbase.org/Genome/BRCGene/?feature=" },
-    { CDbtag::eDbtagType_Vega, "https://vega.sanger.ac.uk/id/"  },
+    { CDbtag::eDbtagType_Vega, "http://vega.sanger.ac.uk/id/"  },
     { CDbtag::eDbtagType_WorfDB, "http://worfdb.dfci.harvard.edu/search.pl?form=1&search=" },
     { CDbtag::eDbtagType_WormBase, "https://www.wormbase.org/search/gene/" },
     { CDbtag::eDbtagType_Xenbase, "https://www.xenbase.org/gene/showgene.do?method=display&geneId=" },
