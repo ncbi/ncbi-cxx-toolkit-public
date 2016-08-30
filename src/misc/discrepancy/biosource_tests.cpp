@@ -152,7 +152,7 @@ static int GetYearFromInfluenzaA(const string& taxname)
 
 static int GetYearFromInfluenzaB(const string& taxname)
 {
-    size_t pos = NStr::Find(taxname, "/");
+    size_t pos = taxname.rfind('/');
     if (pos == string::npos) {
         return 0;
     }
