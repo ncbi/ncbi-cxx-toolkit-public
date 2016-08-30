@@ -1184,6 +1184,7 @@ bool CGff3Writer::xWriteFeature(
 //  ----------------------------------------------------------------------------
 {
     //CSeqFeatData::ESubtype s = mf.GetFeatSubtype();
+    //const CSeq_loc& loc = mf.GetLocation();
     //if (s == CSeqFeatData::eSubtype_repeat_region) {
     //    cerr << "";
     //}
@@ -2357,25 +2358,26 @@ bool CGff3Writer::xAssignFeature(
     list< CRef<CSeq_interval> >::iterator it;
     list< CRef<CSeq_interval> >::iterator it_ceil=sublocs.end(); 
     list< CRef<CSeq_interval> >::iterator it_floor=sublocs.end();
-    for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
-        //fix intervals broken in two for crossing the origin to extend
-        //  into virtual space instead
-        CSeq_interval& subint = **it;
-        if (subint.IsSetFrom()  &&  subint.GetFrom() == 0) {
-            it_floor = it;
+    if (sublocs.size() > 1) {
+        for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
+            //fix intervals broken in two for crossing the origin to extend
+            //  into virtual space instead
+            CSeq_interval& subint = **it;
+            if (subint.IsSetFrom()  &&  subint.GetFrom() == 0) {
+                it_floor = it;
+            }
+            if (subint.IsSetTo()  &&  subint.GetTo() == len-1) {
+                it_ceil = it;
+            }
+            if (it_floor != sublocs.end()  &&  it_ceil != sublocs.end()) {
+                break;
+            } 
         }
-        if (subint.IsSetTo()  &&  subint.GetTo() == len-1) {
-            it_ceil = it;
+        if ( it_ceil != sublocs.end()  &&  it_floor != sublocs.end() ) {
+            (*it_ceil)->SetTo( (*it_ceil)->GetTo() + (*it_floor)->GetTo() + 1 );
+            sublocs.erase(it_floor);
         }
-        if (it_floor != sublocs.end()  &&  it_ceil != sublocs.end()) {
-            break;
-        } 
     }
-    if ( it_ceil != sublocs.end()  &&  it_floor != sublocs.end() ) {
-        (*it_ceil)->SetTo( (*it_ceil)->GetTo() + (*it_floor)->GetTo() + 1 );
-        sublocs.erase(it_floor);
-    }
-
     record.InitLocation(*pLoc);
     return xAssignFeatureBasic(record, fc, mf);
 }
