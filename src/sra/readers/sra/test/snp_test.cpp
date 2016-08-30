@@ -536,12 +536,13 @@ int CSNPTestApp::Run(void)
         COpenRange<TSeqPos> whole(0, length);
         CStopWatch sw;
 
+        vector<Uint8> c5000_0((length-1)/5000+1);
         vector<Uint8> c100_0((length-1)/100+1);
         sw.Restart();
         {
             TSeqPos cur = 0;
             while ( cur < length ) {
-                TSeqPos len = rand()%1000000+1000000;
+                TSeqPos len = rand()%1000000+100;
                 CRange<TSeqPos> range;
                 range.SetFrom(cur);
                 range.SetLength(len);
@@ -550,6 +551,7 @@ int CSNPTestApp::Run(void)
                     _ASSERT(pos >= range.GetFrom());
                     _ASSERT(pos < range.GetToOpen());
                     c100_0.at(pos/100) += 1;
+                    c5000_0.at(pos/5000) += 1;
                 }
                 cur = range.GetToOpen();
             }
@@ -559,16 +561,16 @@ int CSNPTestApp::Run(void)
         vector<Uint8> c100_1((length-1)/100+1);
         sw.Restart();
         {
+            const TSeqPos kComp = 100;
             TSeqPos cur = 0;
             while ( cur < length ) {
-                TSeqPos len = rand()%1000000+1000000;
-                len = len/100*100;
+                TSeqPos len = (rand()%(1000000/kComp)+1)*kComp;
                 CRange<TSeqPos> range;
                 range.SetFrom(cur);
                 range.SetLength(len);
                 CRef<CSeq_annot> annot;
-                if ( 0 ) {
-                    LOG_POST(Info<<"Getting graph: "<<range);
+                if ( rand()%2 ) {
+                    LOG_POST(Info<<"Getting cov graph: "<<range);
                     CRef<CSeq_graph> graph = seq.GetCoverageGraph(range);
                     if ( graph ) {
                         annot = new CSeq_annot();
@@ -576,37 +578,38 @@ int CSNPTestApp::Run(void)
                     }
                 }
                 else {
-                    LOG_POST(Info<<"Getting annot: "<<range);
+                    LOG_POST(Info<<"Getting cov annot: "<<range);
                     annot = seq.GetCoverageAnnot(range);
                 }
-                if ( annot ) {
-                    for ( auto graph : annot->SetData().SetGraph() ) {
-                        _ASSERT(graph->GetComp() == 100);
-                        size_t count = graph->GetNumval();
-                        TSeqPos pos = graph->GetLoc().GetInt().GetFrom();
-                        _ASSERT(pos % 100 == 0);
-                        size_t off = pos / 100;
-                        TSeqPos end = graph->GetLoc().GetInt().GetTo()+1;
-                        _ASSERT(end > pos && end % 100 == 0);
-                        _ASSERT(end == pos + count*100);
-                        if ( graph->GetGraph().IsByte() ) {
-                            LOG_POST(Info<<"Byte graph: "<<pos<<"-"<<(end-1));
-                            auto& gr = graph->GetGraph().GetByte().GetValues();
-                            _ASSERT(gr.size() == count);
-                            for ( size_t i = 0; i < count; ++i ) {
-                                if ( auto v = Uint1(gr[i]) ) {
-                                    c100_1.at(off+i) += v;
-                                }
+                if ( !annot ) {
+                    annot = new CSeq_annot();
+                }
+                for ( auto graph : annot->SetData().SetGraph() ) {
+                    _ASSERT(graph->GetComp() == kComp);
+                    size_t count = graph->GetNumval();
+                    TSeqPos pos = graph->GetLoc().GetInt().GetFrom();
+                    _ASSERT(pos % kComp == 0);
+                    size_t off = pos / kComp;
+                    TSeqPos end = graph->GetLoc().GetInt().GetTo()+1;
+                    _ASSERT(end > pos && end % kComp == 0);
+                    _ASSERT(end == pos + count*kComp);
+                    if ( graph->GetGraph().IsByte() ) {
+                        LOG_POST(Info<<"Byte cov graph: "<<pos<<"-"<<(end-1));
+                        auto& gr = graph->GetGraph().GetByte().GetValues();
+                        _ASSERT(gr.size() == count);
+                        for ( size_t i = 0; i < count; ++i ) {
+                            if ( auto v = Uint1(gr[i]) ) {
+                                c100_1.at(off+i) += v;
                             }
                         }
-                        else {
-                            LOG_POST(Info<<"Int graph: "<<pos<<"-"<<(end-1));
-                            auto& gr = graph->GetGraph().GetInt().GetValues();
-                            _ASSERT(gr.size() == count);
-                            for ( size_t i = 0; i < count; ++i ) {
-                                if ( auto v = gr[i] ) {
-                                    c100_1.at(off+i) += v;
-                                }
+                    }
+                    else {
+                        LOG_POST(Info<<"Int cov graph: "<<pos<<"-"<<(end-1));
+                        auto& gr = graph->GetGraph().GetInt().GetValues();
+                        _ASSERT(gr.size() == count);
+                        for ( size_t i = 0; i < count; ++i ) {
+                            if ( auto v = gr[i] ) {
+                                c100_1.at(off+i) += v;
                             }
                         }
                     }
@@ -623,6 +626,75 @@ int CSNPTestApp::Run(void)
         }
         _ASSERT(c100_1 == c100_0);
         LOG_POST("Coverage is correct");
+
+        vector<Uint8> c5000_1((length-1)/5000+1);
+        sw.Restart();
+        {
+            const TSeqPos kComp = 5000;
+            TSeqPos cur = 0;
+            while ( cur < length ) {
+                TSeqPos len = (rand()%(10000000/kComp)+1)*kComp;
+                CRange<TSeqPos> range;
+                range.SetFrom(cur);
+                range.SetLength(len);
+                CRef<CSeq_annot> annot;
+                if ( rand()%2 ) {
+                    LOG_POST(Info<<"Getting over graph: "<<range);
+                    CRef<CSeq_graph> graph = seq.GetOverviewGraph(range);
+                    if ( graph ) {
+                        annot = new CSeq_annot();
+                        annot->SetData().SetGraph().push_back(graph);
+                    }
+                }
+                else {
+                    LOG_POST(Info<<"Getting over annot: "<<range);
+                    annot = seq.GetOverviewAnnot(range);
+                }
+                if ( !annot ) {
+                    annot = new CSeq_annot();
+                }
+                for ( auto graph : annot->SetData().SetGraph() ) {
+                    _ASSERT(graph->GetComp() == kComp);
+                    size_t count = graph->GetNumval();
+                    TSeqPos pos = graph->GetLoc().GetInt().GetFrom();
+                    _ASSERT(pos % kComp == 0);
+                    size_t off = pos / kComp;
+                    TSeqPos end = graph->GetLoc().GetInt().GetTo()+1;
+                    _ASSERT(end > pos && end % kComp == 0);
+                    _ASSERT(end == pos + count*kComp);
+                    if ( graph->GetGraph().IsByte() ) {
+                        LOG_POST(Info<<"Byte over graph: "<<pos<<"-"<<(end-1));
+                        auto& gr = graph->GetGraph().GetByte().GetValues();
+                        _ASSERT(gr.size() == count);
+                        for ( size_t i = 0; i < count; ++i ) {
+                            if ( auto v = Uint1(gr[i]) ) {
+                                c5000_1.at(off+i) += v;
+                            }
+                        }
+                    }
+                    else {
+                        LOG_POST(Info<<"Int over graph: "<<pos<<"-"<<(end-1));
+                        auto& gr = graph->GetGraph().GetInt().GetValues();
+                        _ASSERT(gr.size() == count);
+                        for ( size_t i = 0; i < count; ++i ) {
+                            if ( auto v = gr[i] ) {
+                                c5000_1.at(off+i) += v;
+                            }
+                        }
+                    }
+                }
+                cur = range.GetToOpen();
+            }
+        }
+        LOG_POST("Collected overview in "<<sw.Elapsed());
+
+        for ( size_t i = 0; i < c5000_0.size(); ++i ) {
+            if ( c5000_1[i] != c5000_0[i] ) {
+                ERR_POST("Overview["<<i<<"]: "<<c5000_1[i]<<" vs "<<c5000_0[i]);
+            }
+        }
+        _ASSERT(c5000_1 == c5000_0);
+        LOG_POST("Overview is correct");
     }
 
     cout << "Success." << NcbiEndl;

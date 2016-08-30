@@ -78,6 +78,7 @@ BEGIN_NAMESPACE(objects);
 static const TSeqPos kPageSize = 5000;
 static const TSeqPos kMaxSNPLength = 256;
 static const size_t kFlagsSize = 8;
+static const TSeqPos kOverviewZoom = kPageSize;
 static const TSeqPos kCoverageZoom = 100;
 static const size_t kMax_AlleleLength  = 32;
 static const char kAlleleSeparator = '|';
@@ -642,27 +643,69 @@ CRange<TSeqPos> CSNPDbSeqIterator::GetSNPRange(void) const
 BEGIN_LOCAL_NAMESPACE;
 
 
+inline void x_AdjustRange(CRange<TSeqPos>& range,
+                          const CSNPDbSeqIterator& it)
+{
+    range = range.IntersectionWith(it.GetSNPRange());
+}
+
+
+inline TSeqPos x_RoundPos(TSeqPos pos, TSeqPos step)
+{
+    return pos - pos%step;
+}
+
+
+inline TSeqPos x_RoundPosUp(TSeqPos pos, TSeqPos step)
+{
+    return x_RoundPos(pos+step-1, step);
+}
+
+
+inline void x_RoundRange(CRange<TSeqPos>& range, TSeqPos step)
+{
+    range.SetFrom(x_RoundPos(range.GetFrom(), step));
+    range.SetToOpen(x_RoundPosUp(range.GetToOpen(), step));
+}
+
+
+inline void x_AdjustGraphRange(CRange<TSeqPos>& range,
+                               const CSNPDbSeqIterator& it,
+                               const TSeqPos comp)
+{
+    x_AdjustRange(range, it);
+    x_RoundRange(range, comp);
+}
+
+
 struct SGraphMaker {
     static const TSeqPos kMinGraphGap = 1000;
     bool m_SingleGraph;
     bool m_NoGaps;
     CRef<CSeq_graph> m_Graph;
-    vector< CRef<CSeq_graph> > m_Graphs;
+    typedef list< CRef<CSeq_graph> > TGraphs;
+    TGraphs m_Graphs;
     CRef<CSeq_id> m_Id;
     CRange<TSeqPos> m_Range;
     TSeqPos m_Comp;
     TSeqPos m_EmptyCount;
     Uint4 m_MaxValue;
-    SGraphMaker(CRef<CSeq_id> id,
-                CRange<TSeqPos> range,
-                TSeqPos comp)
-        : m_SingleGraph(false),
-          m_NoGaps(false),
-          m_Id(id),
-          m_Range(range),
-          m_Comp(comp),
-          m_EmptyCount(0)
+
+    void Start(const CSNPDbSeqIterator& it,
+               CRange<TSeqPos>& range,
+               TSeqPos comp,
+               bool single_graph = false)
         {
+            m_SingleGraph = single_graph;
+            m_NoGaps = false;
+            m_Graph = null;
+            m_Graphs.clear();
+            m_Id = it.GetSeqId();
+            x_AdjustGraphRange(range, it, comp);
+            m_Range = range;
+            m_Comp = comp;
+            m_EmptyCount = 0;
+            m_MaxValue = 0;
             _ASSERT(!range.Empty());
             _ASSERT(range.GetFrom()%comp == 0);
             _ASSERT(range.GetToOpen()%comp == 0);
@@ -672,10 +715,9 @@ struct SGraphMaker {
         {
             _ASSERT(!m_Graph);
             m_Graph = new CSeq_graph();
-            m_Graphs.push_back(m_Graph);
             m_MaxValue = 0;
         }
-    void x_EndGraph()
+    void x_EndGraph(bool save = true)
         {
             _ASSERT(m_Graph);
             CSeq_graph& graph = *m_Graph;
@@ -703,6 +745,9 @@ struct SGraphMaker {
             graph.SetComp(m_Comp);
             graph.SetNumval(int(count));
             m_Range.SetFrom(m_Range.GetFrom()+length);
+            if ( save ) {
+                m_Graphs.push_back(m_Graph);
+            }
             m_Graph = null;
         }
     CSeq_graph& x_GetGraph()
@@ -761,7 +806,8 @@ struct SGraphMaker {
                 CConstRef<CByte_graph> old_data(&graph.GetGraph().GetByte());
                 auto& old_vv = old_data->GetValues();
                 auto& vv = graph.SetGraph().SetInt().SetValues();
-                vv.assign(old_vv.begin(), old_vv.end());
+                const Uint1* bb = reinterpret_cast<const Uint1*>(old_vv.data());
+                vv.assign(bb, bb+old_vv.size());
             }
             auto& vv = graph.SetGraph().SetInt().SetValues();
             vv.insert(vv.end(), values, values+count);
@@ -813,11 +859,20 @@ struct SGraphMaker {
                 AddActualValue(value);
             }
         }
-    void Finish()
+    TGraphs& FinishAnnot()
         {
             if ( m_Graph ) {
                 x_EndGraph();
             }
+            return m_Graphs;
+        }
+    CRef<CSeq_graph> FinishGraph()
+        {
+            CRef<CSeq_graph> ret = m_Graph;
+            if ( ret ) {
+                x_EndGraph(false);
+            }
+            return ret;
         }
 };
 
@@ -830,281 +885,25 @@ CRef<CSeq_annot> x_NewAnnot(const string& annot_name = kDefaultAnnotName)
 }
 
 
-CRef<CSeq_graph> x_NewOverviewGraph(const CSNPDbSeqIterator& it)
+void x_CollectOverviewGraph(SGraphMaker& g,
+                            const CSNPDbSeqIterator& seq_it,
+                            CRange<TSeqPos> range,
+                            bool single_graph)
 {
-    CRef<CSeq_graph> graph(new CSeq_graph);
-    graph->SetTitle("SNP Density");
-    graph->SetLoc().SetInt().SetId(const_cast<CSeq_id&>(*it.GetSeqId()));
-    graph->SetComp(kPageSize);
-    graph->SetNumval(0);
-    CByte_graph& data = graph->SetGraph().SetByte();
-    data.SetAxis(0);
-    data.SetMin(0);
-    data.SetMax(0);
-    data.SetValues();
-    return graph;
-}
-
-
-CRef<CSeq_graph> x_NewCoverageGraph(const CSNPDbSeqIterator& it)
-{
-    CRef<CSeq_graph> graph(new CSeq_graph);
-    graph->SetTitle("SNP Density");
-    graph->SetLoc().SetInt().SetId(const_cast<CSeq_id&>(*it.GetSeqId()));
-    graph->SetComp(kCoverageZoom);
-    graph->SetNumval(0);
-    CByte_graph& data = graph->SetGraph().SetByte();
-    data.SetAxis(0);
-    data.SetMin(0);
-    data.SetMax(0);
-    data.SetValues();
-    return graph;
-}
-
-
-void x_ConvertByteToInt(CSeq_graph& graph)
-{
-    CConstRef<CByte_graph> old_data(&graph.GetGraph().GetByte());
-    CInt_graph& data = graph.SetGraph().SetInt();
-    data.SetAxis(0);
-    data.SetMin(0);
-    data.SetMax(old_data->GetMax());
-    const CByte_graph::TValues& old_values = old_data->GetValues();
-    CInt_graph::TValues& values = data.SetValues();
-    values.assign(old_values.begin(), old_values.end());
-}
-
-
-inline void x_AdjustRange(CRange<TSeqPos>& range,
-                          const CSNPDbSeqIterator& it)
-{
-    range = range.IntersectionWith(it.GetSNPRange());
-}
-
-
-inline TSeqPos x_RoundPos(TSeqPos pos, TSeqPos step)
-{
-    return pos - pos%step;
-}
-
-
-inline TSeqPos x_RoundPosUp(TSeqPos pos, TSeqPos step)
-{
-    return x_RoundPos(pos+step-1, step);
-}
-
-
-inline void x_RoundRange(CRange<TSeqPos>& range, TSeqPos step)
-{
-    range.SetFrom(x_RoundPos(range.GetFrom(), step));
-    range.SetToOpen(x_RoundPosUp(range.GetToOpen(), step));
-}
-
-
-inline void x_AdjustOverviewGraphRange(CRange<TSeqPos>& range,
-                                       const CSNPDbSeqIterator& it)
-{
-    x_AdjustRange(range, it);
-    x_RoundRange(range, kPageSize);
-}
-
-
-inline void x_AdjustCoverageGraphRange(CRange<TSeqPos>& range,
-                                       const CSNPDbSeqIterator& it)
-{
-    x_AdjustRange(range, it);
-    x_RoundRange(range, kCoverageZoom);
-}
-
-
-TSeqPos x_AddGraphLoc(CSeq_graph& graph, TSeqPos pos, TSeqPos end,
-                      TSeqPos step)
-{
-    _ASSERT(end > pos);
-    _ASSERT((end-pos)%step == 0);
-    TSeqPos add = (end-pos) / step;
-    graph.SetNumval() += add;
-    CSeq_interval& interval = graph.SetLoc().SetInt();
-    if ( !interval.IsSetFrom() ) {
-        interval.SetFrom(pos);
-    }
-    else {
-        _ASSERT(interval.GetTo()+1 == pos);
-    }
-    interval.SetTo(end-1);
-    return add;
-}
-
-
-inline
-TSeqPos x_AddOverviewLoc(CSeq_graph& graph, TSeqPos pos, TSeqPos end)
-{
-    return x_AddGraphLoc(graph, pos, end, kPageSize);
-}
-
-
-inline
-TSeqPos x_AddCoverageLoc(CSeq_graph& graph, TSeqPos pos, TSeqPos end)
-{
-    return x_AddGraphLoc(graph, pos, end, kCoverageZoom);
-}
-
-
-void x_AddGraphZeroes(CSeq_graph& graph, TSeqPos add)
-{
-    CSeq_graph::TGraph& g = graph.SetGraph();
-    if ( g.IsByte() ) {
-        CByte_graph& data = g.SetByte();
-        CByte_graph::TValues& values = data.SetValues();
-        values.resize(values.size()+add);
-    }
-    else {
-        CInt_graph& data = g.SetInt();
-        CInt_graph::TValues& values = data.SetValues();
-        values.resize(values.size()+add);
+    g.Start(seq_it, range, kOverviewZoom, single_graph);
+    for ( CSNPDbGraphIterator it(seq_it, range); it; ++it ) {
+        g.AddValue(it.GetTotalValue());
     }
 }
 
 
-void x_AddGraphValues(CSeq_graph& graph, TSeqPos add, const Uint4* ptr)
+void x_CollectCoverageGraph(SGraphMaker& g,
+                            const CSNPDbSeqIterator& seq_it,
+                            CRange<TSeqPos> range,
+                            bool single_graph)
 {
-    CSeq_graph::TGraph& g = graph.SetGraph();
-    Uint4 max_value = *max_element(ptr, ptr+add);
-    if ( g.IsByte() ) {
-        if ( max_value <= 255 ) {
-            CByte_graph& data = g.SetByte();
-            data.SetMax(max(data.GetMax(), int(max_value)));
-            CByte_graph::TValues& values = data.SetValues();
-            values.insert(values.end(), ptr, ptr+add);
-            return;
-        }
-        x_ConvertByteToInt(graph);
-    }
-    CInt_graph& data = g.SetInt();
-    data.SetMax(max(data.GetMax(), int(max_value)));
-    CInt_graph::TValues& values = data.SetValues();
-    values.insert(values.end(), ptr, ptr+add);
-}
-
-
-inline
-void x_AddEmptyOverview(CSeq_graph& graph, TSeqPos pos, TSeqPos end)
-{
-    TSeqPos add = x_AddOverviewLoc(graph, pos, end);
-    x_AddGraphZeroes(graph, add);
-}
-
-
-inline
-void x_AddEmptyCoverage(CSeq_graph& graph, TSeqPos pos, TSeqPos end)
-{
-    TSeqPos add = x_AddCoverageLoc(graph, pos, end);
-    x_AddGraphZeroes(graph, add);
-}
-
-
-inline
-void x_AddOverview(CSeq_graph& graph,
-                   CRange<TSeqPos> range,
-                   CSNPDbGraphIterator& it)
-{
-    Uint4 value = it.GetTotalValue();
-    x_AddOverviewLoc(graph, range.GetFrom(), range.GetToOpen());
-    x_AddGraphValues(graph, 1, &value);
-}
-
-
-inline
-void x_AddCoverage(CSeq_graph& graph,
-                   CRange<TSeqPos> range,
-                   CSNPDbGraphIterator& it)
-{
-    CVDBValueFor<Uint4> values = it.GetCoverageValues();
-    _ASSERT(values.size()*kCoverageZoom == kPageSize);
-    TSeqPos add = x_AddCoverageLoc(graph, range.GetFrom(), range.GetToOpen());
-    TSeqPos off = (range.GetFrom()-it.GetPagePos())/kCoverageZoom;
-    x_AddGraphValues(graph, add, values.data()+off);
-}
-
-
-END_LOCAL_NAMESPACE;
-
-
-CRef<CSeq_graph>
-CSNPDbSeqIterator::GetOverviewGraph(CRange<TSeqPos> range) const
-{
-    // align to page size
-    x_AdjustOverviewGraphRange(range, *this);
-    CSNPDbGraphIterator it(*this, range);
-
-    // skip leading zeros
-    while ( it && it.GetTotalValue() == 0 ) {
-        ++it;
-    }
-    if ( !it ) {
-        return null;
-    }
-    range.SetFrom(it.GetPageRange().GetFrom());
-
-    // collect values
-    vector<Uint4> vv;
-    for ( ; it; ++it ) {
-        vv.push_back(it.GetTotalValue());
-    }
-
-    // skip trailing zeros
-    while ( !vv.empty() && vv.back() == 0 ) {
-        vv.pop_back();
-    }
-    TSeqPos count = TSeqPos(vv.size());
-
-    // add values
-    CRef<CSeq_graph> graph = x_NewOverviewGraph(*this);
-    x_AddGraphValues(*graph, count, vv.data());
-
-    // adjust location
-    graph->SetNumval(count);
-    CSeq_interval& interval = graph->SetLoc().SetInt();
-    interval.SetFrom(range.GetFrom());
-    interval.SetTo(range.GetFrom()+count*kPageSize-1);
-
-    return graph;
-}
-
-
-CRef<CSeq_annot>
-CSNPDbSeqIterator::GetOverviewAnnot(CRange<TSeqPos> range,
-                                    const string& annot_name,
-                                    TFlags flags) const
-{
-    CRef<CSeq_annot> annot = x_NewAnnot(annot_name);
-    CSeq_annot::TData::TGraph& graphs = annot->SetData().SetGraph();
-    graphs.push_back(GetOverviewGraph(range));
-    if ( !graphs.back() ) {
-        graphs.pop_back();
-    }
-    if ( graphs.empty() ) {
-        return null;
-    }
-    return annot;
-}
-
-
-CRef<CSeq_annot>
-CSNPDbSeqIterator::GetOverviewAnnot(CRange<TSeqPos> range,
-                                    TFlags flags) const
-{
-    return GetOverviewAnnot(range, kDefaultAnnotName, flags);
-}
-
-
-CRef<CSeq_graph>
-CSNPDbSeqIterator::GetCoverageGraph(CRange<TSeqPos> range) const
-{
-    x_AdjustCoverageGraphRange(range, *this);
-    SGraphMaker g(GetSeqId(), range, kCoverageZoom);
-    g.m_SingleGraph = true;
-    for ( CSNPDbGraphIterator it(*this, range); it; ++it ) {
+    g.Start(seq_it, range, kCoverageZoom, single_graph);
+    for ( CSNPDbGraphIterator it(seq_it, range); it; ++it ) {
         CRange<TSeqPos> page = it.GetPageRange();
         TSeqPos skip_beg = 0;
         if ( range.GetFrom() > page.GetFrom() ) {
@@ -1124,14 +923,48 @@ CSNPDbSeqIterator::GetCoverageGraph(CRange<TSeqPos> range) const
             g.AddValues(count, values.data()+skip_beg);
         }
     }
-    g.Finish();
-    if ( g.m_Graphs.empty() ) {
-        return null;
-    }
-    else {
-        _ASSERT(g.m_Graphs.size() == 1);
-        return g.m_Graphs[0];
-    }
+}
+
+
+END_LOCAL_NAMESPACE;
+
+
+CRef<CSeq_graph>
+CSNPDbSeqIterator::GetOverviewGraph(CRange<TSeqPos> range) const
+{
+    SGraphMaker g;
+    x_CollectOverviewGraph(g, *this, range, true);
+    return g.FinishGraph();
+}
+
+
+CRef<CSeq_annot>
+CSNPDbSeqIterator::GetOverviewAnnot(CRange<TSeqPos> range,
+                                    const string& annot_name,
+                                    TFlags flags) const
+{
+    SGraphMaker g;
+    x_CollectOverviewGraph(g, *this, range, false);
+    CRef<CSeq_annot> annot = x_NewAnnot(annot_name);
+    annot->SetData().SetGraph().swap(g.FinishAnnot());
+    return annot;
+}
+
+
+CRef<CSeq_annot>
+CSNPDbSeqIterator::GetOverviewAnnot(CRange<TSeqPos> range,
+                                    TFlags flags) const
+{
+    return GetOverviewAnnot(range, kDefaultAnnotName, flags);
+}
+
+
+CRef<CSeq_graph>
+CSNPDbSeqIterator::GetCoverageGraph(CRange<TSeqPos> range) const
+{
+    SGraphMaker g;
+    x_CollectCoverageGraph(g, *this, range, true);
+    return g.FinishGraph();
 }
 
 
@@ -1140,31 +973,10 @@ CSNPDbSeqIterator::GetCoverageAnnot(CRange<TSeqPos> range,
                                     const string& annot_name,
                                     TFlags flags) const
 {
+    SGraphMaker g;
+    x_CollectCoverageGraph(g, *this, range, false);
     CRef<CSeq_annot> annot = x_NewAnnot(annot_name);
-    x_AdjustCoverageGraphRange(range, *this);
-    CSeq_annot::TData::TGraph& graphs = annot->SetData().SetGraph();
-    CRef<CSeq_graph> graph = x_NewCoverageGraph(*this);
-    graphs.push_back(graph);
-    for ( CSNPDbGraphIterator it(*this, range); it; ++it ) {
-        if ( !it.GetTotalValue() ) {
-            continue;
-        }
-        CRange<TSeqPos> page_range = range.IntersectionWith(it.GetPageRange());
-        _ASSERT(!page_range.Empty());
-        if ( page_range.GetFrom() != range.GetFrom() &&
-             graph->GetNumval() != 0) {
-            graph = x_NewCoverageGraph(*this);
-            graphs.push_back(graph);
-        }
-        x_AddCoverage(*graph, page_range, it);
-        range.SetFrom(page_range.GetToOpen());
-    }
-    if ( graph->GetNumval() == 0 ) {
-        graphs.pop_back();
-    }
-    if ( graphs.empty() ) {
-        return null;
-    }
+    annot->SetData().SetGraph().swap(g.FinishAnnot());
     return annot;
 }
 
