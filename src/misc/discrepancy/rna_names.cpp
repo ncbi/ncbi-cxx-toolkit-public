@@ -58,6 +58,16 @@ static const char* rrna_standard_name[] = {
     "small subunit ribosomal RNA"
 };
 
+static const pair<const char*, const char*> rrna_name_replace[] = {
+    { "16S rRNA. Bacterial SSU", "16S ribosomal RNA" },
+    { "23S rRNA. Bacterial LSU", "23S ribosomal RNA" },
+    { "5S rRNA. Bacterial TSU", "5S ribosomal RNA" },
+    { "Large Subunit Ribosomal RNA; lsuRNA; 23S ribosomal RNA", "23S ribosomal RNA" },
+    { "Small Subunit Ribosomal RNA; ssuRNA; 16S ribosomal RNA", "16S ribosomal RNA" },
+    { "Small Subunit Ribosomal RNA; ssuRNA; SSU ribosomal RNA", "small subunit ribosomal RNA" },
+    { "Large Subunit Ribosomal RNA; lsuRNA; LSU ribosomal RNA", "large subunit ribosomal RNA" }
+};
+
 SAFE_CONST_STATIC_STRING(rrna_name_conflicts_complain,
                          "[n] rRNA product name[s] [is] not standard. Correct the names to the standard format, eg \"16S ribosomal RNA\"");
 
@@ -75,7 +85,7 @@ DISCREPANCY_CASE(RRNA_NAME_CONFLICTS, CSeqFeatData, eDisc | eSubmitter | eSmart,
         }
     }
     CReportNode& node = m_Objs[rrna_name_conflicts_complain.Get()];
-    node.Add(*context.NewDiscObj(context.GetCurrentSeq_feat())).Fatal();
+    node.Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eKeepRef, true)).Fatal();
 }
 
 
@@ -87,6 +97,7 @@ DISCREPANCY_SUMMARIZE(RRNA_NAME_CONFLICTS)
 
 DISCREPANCY_AUTOFIX(RRNA_NAME_CONFLICTS)
 {
+    unsigned int n = 0;
     TReportObjectList list = item->GetDetails();
     NON_CONST_ITERATE(TReportObjectList, it, list) {
         CDiscrepancyObject& obj = *dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer());
@@ -102,10 +113,25 @@ DISCREPANCY_AUTOFIX(RRNA_NAME_CONFLICTS)
                 new_feat->SetData().SetRna().SetExt().SetName(rrna_standard_name[i]);
                 CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(*sf));
                 feh.Replace(*new_feat);
+                ++n;
+                break;
+            }
+        }
+
+        for (size_t i = 0; i < ArraySize(rrna_name_replace); ++i) {
+            if (NStr::EqualNocase(name, rrna_name_replace[i].first)) {
+                CRef<CSeq_feat> new_feat(new CSeq_feat());
+                new_feat->Assign(*sf);
+                new_feat->SetData().SetRna().SetExt().SetName(rrna_name_replace[i].second);
+                CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(*sf));
+                feh.Replace(*new_feat);
+                ++n;
                 break;
             }
         }
     }
+
+    return CRef<CAutofixReport>(n ? new CAutofixReport("RRNA_NAME_CONFLICTS: [n] rRNA name[s] fixed", n) : 0);
 }
 
 

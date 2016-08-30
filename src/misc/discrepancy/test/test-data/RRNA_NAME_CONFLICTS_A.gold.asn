@@ -1,0 +1,1473 @@
+Seq-entry ::= set {
+  class genbank,
+  seq-set {
+    set {
+      class nuc-prot,
+      descr {
+        source {
+          genome mitochondrion,
+          org {
+            taxname "Simulium aureohirtum",
+            db {
+              {
+                db "taxon",
+                tag id 154798
+              }
+            },
+            orgname {
+              name binomial {
+                genus "Simulium",
+                species "aureohirtum"
+              },
+              lineage "Eukaryota; Metazoa; Ecdysozoa; Arthropoda; Hexapoda;
+ Insecta; Pterygota; Neoptera; Endopterygota; Diptera; Nematocera;
+ Chironomoidea; Simuliidae; Simulium; ruficorne group",
+              gcode 1,
+              mgcode 5,
+              div "INV"
+            }
+          },
+          subtype {
+            {
+              subtype country,
+              name "China Nanfeng Mountian"
+            }
+          }
+        },
+        pub {
+          pub {
+            gen {
+              cit "Unpublished",
+              authors {
+                names std {
+                  {
+                    name name {
+                      last "Wang",
+                      first "Qiang",
+                      initials "Q."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Chen",
+                      first "Lifen",
+                      initials "L."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Ding",
+                      first "Junjie",
+                      initials "J."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Liu",
+                      first "Yangqing",
+                      initials "Y."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Wang",
+                      first "Jianguo",
+                      initials "J."
+                    }
+                  }
+                },
+                affil std {
+                  affil "College of Agricuture, Jiangxi Agricuture University,
+ Nanchang",
+                  div "Department of Plant Protection",
+                  city "Nanchang",
+                  street "Zhimin rode 1225",
+                  postal-code "330045"
+                }
+              },
+              title "Analysis of Complete Mitochondrial Genome of Simulium
+ aureohirtum"
+            }
+          }
+        },
+        pub {
+          pub {
+            sub {
+              authors {
+                names std {
+                  {
+                    name name {
+                      last "Wang",
+                      first "Qiang",
+                      initials "Q."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Chen",
+                      first "Lifen",
+                      initials "L."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Ding",
+                      first "Junjie",
+                      initials "J."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Liu",
+                      first "Yangqing",
+                      initials "Y."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Wang",
+                      first "Jianguo",
+                      initials "J."
+                    }
+                  }
+                },
+                affil std {
+                  affil "College of Agricuture, Jiangxi Agricuture University,
+ Nanchang",
+                  div "Department of Plant Protection",
+                  city "Nanchang",
+                  street "Zhimin rode 1225",
+                  postal-code "330045"
+                }
+              },
+              date std {
+                year 2015,
+                month 2,
+                day 17
+              }
+            }
+          }
+        },
+        user {
+          class "SMART_V1.0",
+          type id 1,
+          data {
+            {
+              label id 1,
+              num 1,
+              data int 9336717
+            }
+          }
+        },
+        user {
+          type str "NcbiCleanup",
+          data {
+            {
+              label str "method",
+              data str "SequinCleanup"
+            },
+            {
+              label str "version",
+              data int 8
+            },
+            {
+              label str "month",
+              data int 6
+            },
+            {
+              label str "day",
+              data int 22
+            },
+            {
+              label str "year",
+              data int 2015
+            }
+          }
+        },
+        user {
+          type str "NcbiAutofix",
+          data {
+          }
+        }
+      },
+      seq-set {
+        seq {
+          id {
+            local str "nuc_1",
+            general {
+              db "TMSMART",
+              tag id 52602075
+            },
+            genbank {
+              accession "KP793690"
+            }
+          },
+          descr {
+            molinfo {
+              biomol genomic,
+              tech standard,
+              completeness complete
+            },
+            user {
+              type str "StructuredComment",
+              data {
+                {
+                  label str "StructuredCommentPrefix",
+                  data str "##Assembly-Data-START##"
+                },
+                {
+                  label str "StructuredCommentSuffix",
+                  data str "##Assembly-Data-END##"
+                },
+                {
+                  label str "Assembly Method",
+                  data str "Standen package v. V1.21"
+                },
+                {
+                  label str "Sequencing Technology",
+                  data str "Sanger dideoxy sequencing"
+                }
+              }
+            },
+            create-date std {
+              year 2015,
+              month 2,
+              day 13
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 15904,
+            topology circular,
+            seq-data ncbi2na '0E2F978C02AF37E328C0F330FFF0F31D3C0405F3F3370C83
+C073F7C0B34007CEE7DB11C0331730F00043C52C2C002FF33002309C3C270E2F4C5533302BFC35
+FF7FF0FFC00DFDC3CFCFFC10670F2281FC377377DC3DF8F289783E8F203C3FBCDFF355F0C3E110
+30FC7351E09F4F00CFFF05424F25DE73FFF3F2F737CFCFF10F03B3FD0C308303D01FCF1FC3CFF3
+5D3C7BC008A279D4FD3FF8F56A2F320A1C078E010DF3FC307E1000F957F0CF07D33EFC0FF0FF3C
+D0CF3CFF343CC3EAD3CA28F03405D3C6C0F0C9FFD343C147CA3831C92430FCC8803F38F08C7FFC
+FC46CDFD3F10D3FF3FF0FCFC3FFF4FC0D033FD3FCC34035FEB00F4873F3F77FCDFEA2B71553FF2
+8F5C500E0CB0F4373490FC0E73FFF3C3EC32CD3F13C3C4F31FF339A3C7CF793F3BC2313203C3E0
+3CC00FF10F0400CC0F811C7FC0FFFF7D0C23C1FC377F1FCFCFCCC2C2BFC2F0FC070C97D0273033
+CBCC77FC25F2CC0CC75FC83E4B70CD3CF873025F038F020820DF4CCC8FC4371C7FCD2D3F0DFFC0
+033E410E3CFF71014C08CFA07F31FCFFE89F892832DA84DFC2CCF0F62783CA115E9DDF3E88E340
+FCC3BCFB449D393FBCC3FFFCCBCC50F30FA28FE8078F2F5DC3BCA25523327F5460C0C3308FFAF3
+C5D7DFC13C73C9CB2CEB209289E812BE04BF15D7777D2A3E54E4AA5D2F8FC90FFF7F13F25A0FDF
+43FCAA7B03FCF1043CF04C6340E83C5FE360C5FCFEDE34B2C3C492C7FCF1CD1F52FF26A243C731
+FF048D80FC0C7D3FFE15E6A28A215CDF31493F3DEBDFEB45782FCCFF0F7D7A3FA0C3F74CF3CB42
+022B002804FE8D3CA0C3F394CF273E873CA3F3EFE2745333F1ECA8C8EC8C7627CFF1F69C730F3E
+7B171283C03FF238F271FC468150F03CCB5E478DE27F28FECFFCF44B28A3C128BECF270F4DCF8C
+FB3E4E3133C6FBE547D473B1DDCCA25B3F9CF324A3FB51E315DFFC4A1F15F055838F009D0FCCB0
+CFCFA2C0FC13FF57413FDCA3C968314698CF48F35E39731E4E03BEFD073E8D043F4FCFA2F73FF7
+CFCF3F880838FDD3607B0FCD43D0F03DF43E0E31403F175248112F39E0F14F3C1C3F70CE923CB9
+0E8FC27DB33028395FF3C8040E904E340FCACC423224D54F0C810F03FFF4634C4F3C3FE3CC3C73
+FCB29CFC31F33CFFF0C0FC70D8FFEF13A1010F80F3FA10FF1798FB3C33F3E7754D7C60FF337FC8
+E03C32D59CF1FC0073EB450E31E0BCE0CF48FFF03F20FE1D333AC5040E0F201C3ABF6DFF23B230
+583EC7D73031D03D837CBC79E48EC7D3DF810D524F28B02B23AC752861F0D0103FFC303614A3CF
+7FA10EF480FEE890144BFCC5CFBFC80B2541C1CFF3C2E0D1273031C3C313C8E1E0242C3ADDF014
+4C32C0F243C7DC380DC1214C003CBC054304F2CED01C03CD01CF8CFFF0D5D03255CF238F07F3F3
+FCFC4BCFFCF7BF0CF303CFFECFBFF1D7DCB8C80008280074BC1D55F5703E00E3040FCFF7BFF854
+2C41CFF037F7F03E3C207FFCA3CF3C3549F7FF870F50763F43F7F80F73DFF07F110A0F401FC7A8
+5C7A530E8207FCFFCFD3CFF430FBBF043FFCA9CFD5CCFFC42042D1F07F05F28F25754F38709FCC
+3F3A38B034C741333F9137EF510A045E4BFC397FCCB3B3E01CF2C3B0D6D7AC4F24BD8F2490330F
+96B4FEFBC15F728045AD7D3CD333CCB37F1C3E89D03E7F3CB3C83492F90F3D2D33B3F9EFF081DF
+CF7220BC3C33DF0ED044740D353F4DCB23C495385FC1EA94FA2430412D2287EC038FD34F38CDD3
+CFE4F2A0FC3C437C10EC50E38621376620A84FD0A1C4C7C54B073E87D8E2830F73F3EFDE03FDFF
+F3F5FFFE27F7D4CB21CD5410D89CA341FA55736A3CF9FF054FD035573C0C490FF3C934A2F1AF1F
+89534657CC828051D1010742873FFC43CFF283F3FC433C424CE0C4F8255FF1CF9E192FCE8D05FF
+F324128F53A9F46FF0FA0413FF3EBFBF0F693B01FD3FF60C14D1FE8FE0924938CF847FBE3B2DE3
+CF5FCCFD0FCF8E2B23037332CC3CB31387D43CE29700BFF2CC8C3FFF07FCF3083CF3FFFCF2C83E
+F32AF27D0F7F700092F3E16200B7D57FE0EE8FE15CD0F4918755FF5F18FFF7CF9CF3FFF0FF63B2
+03E470DF161EF30FFF41740FCB38E0420413CF7F3FF37CF24A1FCD38380D0AE4F03E351703CA8E
+CBC3CC13F8FE4F400B3E8B1437D7C83382E3F3C43CBF61725F238FF4D7CF7FCF0F8250022933C7
+BC38CF3E0C00F50F0A0B388B4280279C1FFF7F0EBF0753F31FF3F332FC3001FC4FF47B003000F3
+FFCC0F1CC3FBDCFC08FC10DDF4937D0A799DC03309CFC0FC0700C14B7C020C9054C0300BCF0303
+FF0BCF3FEC01783008A0F3FF0FB3CC0F3FA5570CFD1F4D7E3401FFC0B7C05513F0E80FC3055C3B
+203CFACC0D1321524000BC3030F20223F30F000C0806F233C8C148009541C0484041BC0FFF0330
+2B0103CF8C482804C1528C20215543C49C03C30D70CC5543CCB00974D3F0EAEC083F73C07552D0
+E00001C0603830404BC15AC8000330000DE0C8FC0FD70C012DDC03C0D7C8300549C002B3544C09
+C0F27B3F010944BC3ACCE301CA55730068CDF883FFCCF3830C9D491330304097C0CC938BC02380
+00943F280D732700F7CF3C15C1EDF02C8C190C3FFFC0D01D00F2550956530332F01780F00B0007
+143FAF171432DCF0160F0C0C05524BC502F820E87027804AACAA49CF924A0B420800A0DE277FFB
+CF9270071C24543C5B4C402D39F4F0B433000CC3F4DF530FC33D090F941000904D543D8F23025B
+C335793CC21FF4FF8030387090C201C15085354D70403DC3C0F2870C3C10CF3E130404F0843CC3
+0163C307F37D27333DFF7B000C1C08203030C70233033C074F4340C002F30633F020F0F7071774
+77000C050F57C3000FC070C00302301C3233C080001C3C040F80FFFC38DC0383074CDFE11440D0
+CFFFF01CFC0FF02D300C429D25FCC3C303F0280D0EC00410C0CF46200573207E4C015DF009FD4E
+F873093303302CC2491C0808C302302C3CFB074A341C10F73F0C0407D170C0FC0B28A279CCF208
+130C00D144080B7EB300FC3055F3C3C30DF6DF5CF6F4C2233F9C04030D58204C053990F3C0B308
+1480D5D332302F3C05E7004357338907860C243CA97F03737964040F2DC1C01D55C70DC3203D01
+00F3D0055DC324380A301D82C15335570FF0431D49C03CF857807AA7D04EE5FEA2D10381C00CFA
+CFF070009003CC440C03034C001E3EF5FC30330DF3200E0C3F3C0C003571C302B0209CB02CC030
+C0C8D525ECC677AF8C5541700F04B02CA0F01F77400103004E0C37437DC0EF0310003C30CC1070
+030033FC000FC3758C055F47E730D3C08103D001F0403C153080F034714030C1C33F300C3F7300
+3CFC030300070F303004F78143430FFFFCC01322834001101C0C2C1F04F8204800BF8030D3F538
+BD83CC8070078085C0955D101DC02F0033CF70003FD32FC203F007D03013003021004303DC07C3
+2EC1430389D8FE03301CF1577C30CC0C0AC303024C0CF34F2FF0CBF04004FADFB03400C0333C3F
+FC0134800229F75FD3CB750070CFF0301CFF780FCFF3CF104F083FF137DCFF4FFCCDD153C9CCA3
+D31CF05407FBE3F73CF1EBF1C20013FE3DDF13FCFCDBBF7E8A0EF2FF3F3F3BC4D1C9740E033F30
+CD0C00731033C30D70C3F720CF0433C3CF8C1FF373423FF9573C8CC21CF078040F4FCF0200C43C
+3F0309CCC3C54103FFC10FBFC3C3CFCFDC1FC3E43EC02C1033FFCE95DF6176C1C3830143D87084
+57F3F00F9C30E572C8DD5275F40CFD0FE38071A34F3CA1CE7C3CF40F9C7ADFFDC9CC4F11258CF8
+3C9FF0CBBC34CFED88EC0F3A38F3C6047D39C1A24DFDFFF3FB3F3F113E86283F1CEAD337F31741
+3870FA2C3CFF3FF2F328924FCCA33B3C5F8A10337F78A271EF3C40FCF3490D533F28BE3F2F438B
+F8A28FE4BE10651DF118FFF1FD47FF0D53F3EC9A490732E47C73FF13404AF40C151CACF0CB06C8
+C0357F535F3FF4FC28CFBE8FCF14CB0CF3CBFCF07F07055CFCF288578C3FCF5270D5F2F1D4B133
+50520E33FFCFE7CE435C6343D70C0F2BA2C3E7F2FF343E437C30D717FC69C12007D8AC743FCD4F
+03404F3FE0B32CA04B0FF3C1383E89D952C8215F33CF1E840FF04BCFCFFDF3CCF3C153CB04438E
+23D3C7E0C0F2F0E27E0C933BFE024C23003CC1FFCF07F31F03C3D1CC03C0E4233027F214303003
+030FC084EAC00DFFD39C0CCF2FCD3060062B02D55B1D030090080C02307F00200301CC0CDE55C0
+00C1040413DF30020F724CF79C000F0240D55DC733DC4F035201C3D21D57D64034028BD8FEFD27
+21F8240D01433C0A008C01CF350830DF80D7700D3E03C0175870003028CF00D0250DC1F4C203EF
+E251E56085570C0930FE0F208D05243CF12CC055C37EC41F0000C015703C020C03F0C030A0C4CF
+40F0C08C00C0800328800CB0804C3C8201E8C2FEF7FEC0C1F0D934700A7AA0D5CF0141FCF2B5FC
+60DE8CC970C7FD9DC102F0009055073C440F1C30C07D4BC0A000C0DCF03D0B1CFCC3FF0F33FF03
+DC0FC291C3794032C0FC320F203C0C00C3FFC0CFEB5FDB1C033FC3F3C08C80505E9F116BF81D23
+4EC20FC02D8121F01FE07DC45403C77C3504D8AD90DFFFB63081DD0000F19EF3570AC1F03F30D0
+C01E8D3F1D303C3BC0C00C02FF323FCFB4550403303030703F000DF0C0F231C7CCC09DCCAB7DDB
+7FC000FD2DFF0700E303D0DFCFFF3804939174D414F4C525F43C021C38F39C5FE44B4031E695F4
+030FD2EA4AD217CC303040084EFFE3012B89100FE583C3CC005050300F0CFF10F003F1C3F0D3CC
+1C0FFC03C03F3FFC3000BC03030C0C3340CC0303C0130F3CF8C9C3DC27C43CF3F0C0CF3F30CFF3
+FC09D357C033C3FF0CF0C3FFC3C0F3C3030037C3C0F0FDF00072333C0018F06FD3F7040F3C30C3
+CF712C1CC30FCF237FF0F6200F03303003CFE3C1DE31108C5F03C02F7FD03000FFD0CCFD0C37FC
+43103F1CC3C03CBFF77300C405F00FC0C03CFFCF000043010300F0C0C00FF43F0BE3F9107347D0
+EC0E031FC74309FC0FB4F720937D631F71CEF187CDD3FC30E2261A98EEE4EFF22730D0301CCF4F
+3FC7FC0D45F00D34FD210FC3B30303F3EC153771C09301E45F85E1343CCFFC0F0803CF1DFF08CF
+78C1A633103E00405F2C2B506A8F363C4A12BD770321C0116503DFC2FE08D3073C71DCB3CF3D13
+FC0C32ACDC35CBF30F00FF727D3C0FC0C3030030F03F00FD1F000FC3F0FF30001040F073C70C0D
+F3FB3CFECC166BE7A4403F1431C0303C703403F7F0FCC33C3C798F0F0C0C033FFC0C0F3C764400
+FC4EC030F3C0423030400C0103CF0DCC05003C300CC0FC0370F0F3F3C043FFFFBFF2180FD543FF
+C0002FC1211243355F00CF5CCF3CC0C00C30300C03C3CF04BF3FC0F0303F2F2FFC04F000CC003F
+0408490CD55F00CF1CCF3CC0C00C30300F0F3C32FCFC0F0303FF200CCF000200BF04912C0D57FC
+30BC4B104CF3FC330C003FF30DFCF3C31411F1FC3C1CCCCCCCCF0CCC0CFCCFC33C3CFC3CF30E3C
+E0F0FCCF03300CF333C303C0CFEECCB0C557FC0F3C40CFBF007D572CB21EF2832D3FBC1ECFC083
+F7CCCFF1FD7F330333333C3030FCCCCCECC3F333B3C3F3FF0FF003F33040000FBF03B00F3C3FC3
+0FFC314DFF00CFF330B30B3000'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type tRNA,
+                    ext tRNA {
+                      aa ncbieaa 73
+                    }
+                  },
+                  location int {
+                    from 0,
+                    to 68,
+                    strand plus,
+                    id local str "nuc_1"
+                  }
+                },
+                {
+                  data rna {
+                    type tRNA,
+                    ext tRNA {
+                      aa ncbieaa 81
+                    }
+                  },
+                  location int {
+                    from 80,
+                    to 148,
+                    strand minus,
+                    id local str "nuc_1"
+                  }
+                },
+                {
+                  data rna {
+                    type tRNA,
+                    ext tRNA {
+                      aa ncbieaa 77,
+                      anticodon pnt {
+                        point 194,
+                        strand plus,
+                        id local str "nuc_1"
+                      }
+                    }
+                  },
+                  location int {
+                    from 194,
+                    to 262,
+                    strand plus,
+                    id local str "nuc_1"
+                  }
+                },
+                {
+                  data rna {
+                    type tRNA,
+                    ext tRNA {
+                      aa ncbieaa 87
+                    }
+                  },
+                  location int {
+                    from 1297,
+                    to 1366,
+                    strand plus,
+                    id local str "nuc_1"
+                  }
+                },
+                {
+                  data rna {
+                    type tRNA,
+                    ext tRNA {
+                      aa ncbieaa 67
+                    }
+                  },
+                  location int {
+                    from 1359,
+                    to 1441,
+                    strand minus,
+                    id local str "nuc_1"
+                  }
+                },
+                {
+                  data rna {
+                    type tRNA,
+                    ext tRNA {
+                      aa ncbieaa 89
+                    }
+                  },
+                  location int {
+                    from 1427,
+                    to 1491,
+                    strand minus,
+                    id local str "nuc_1"
+                  }
+                },
+                {
+                  data rna {
+                    type tRNA,
+                    ext tRNA {
+                      aa ncbieaa 76
+                    }
+                  },
+                  location int {
+                    from 3039,
+                    to 3104,
+                    strand plus,
+                    id local str "nuc_1"
+                  }
+                },
+                {
+                  data rna {
+                    type tRNA,
+                    ext tRNA {
+                      aa ncbieaa 75
+                    }
+                  },
+                  location int {
+                    from 3801,
+                    to 3871,
+                    strand plus,
+                    id local str "nuc_1"
+                  }
+                },
+                {
+                  data rna {
+                    type tRNA,
+                    ext tRNA {
+                      aa ncbieaa 68
+                    }
+                  },
+                  location int {
+                    from 3887,
+                    to 3954,
+                    strand plus,
+                    id local str "nuc_1"
+                  }
+                },
+                {
+                  data rna {
+                    type tRNA,
+                    ext tRNA {
+                      aa ncbieaa 71
+                    }
+                  },
+                  location int {
+                    from 5594,
+                    to 5659,
+                    strand plus,
+                    id local str "nuc_1"
+                  }
+                },
+                {
+                  data rna {
+                    type tRNA,
+                    ext tRNA {
+                      aa ncbieaa 65
+                    }
+                  },
+                  location int {
+                    from 6017,
+                    to 6081,
+                    strand plus,
+                    id local str "nuc_1"
+                  }
+                },
+                {
+                  data rna {
+                    type tRNA,
+                    ext tRNA {
+                      aa ncbieaa 82
+                    }
+                  },
+                  location int {
+                    from 6082,
+                    to 6145,
+                    strand plus,
+                    id local str "nuc_1"
+                  }
+                },
+                {
+                  data rna {
+                    type tRNA,
+                    ext tRNA {
+                      aa ncbieaa 78
+                    }
+                  },
+                  location int {
+                    from 6150,
+                    to 6214,
+                    strand plus,
+                    id local str "nuc_1"
+                  }
+                },
+                {
+                  data rna {
+                    type tRNA,
+                    ext tRNA {
+                      aa ncbieaa 83
+                    }
+                  },
+                  location int {
+                    from 6216,
+                    to 6280,
+                    strand plus,
+                    id local str "nuc_1"
+                  }
+                },
+                {
+                  data rna {
+                    type tRNA,
+                    ext tRNA {
+                      aa ncbieaa 69
+                    }
+                  },
+                  location int {
+                    from 6282,
+                    to 6347,
+                    strand plus,
+                    id local str "nuc_1"
+                  }
+                },
+                {
+                  data rna {
+                    type tRNA,
+                    ext tRNA {
+                      aa ncbieaa 70
+                    }
+                  },
+                  location int {
+                    from 6362,
+                    to 6428,
+                    strand minus,
+                    id local str "nuc_1"
+                  }
+                },
+                {
+                  data rna {
+                    type tRNA,
+                    ext tRNA {
+                      aa ncbieaa 72
+                    }
+                  },
+                  location int {
+                    from 8166,
+                    to 8230,
+                    strand minus,
+                    id local str "nuc_1"
+                  }
+                },
+                {
+                  data rna {
+                    type tRNA,
+                    ext tRNA {
+                      aa ncbieaa 84
+                    }
+                  },
+                  location int {
+                    from 9865,
+                    to 9932,
+                    strand plus,
+                    id local str "nuc_1"
+                  }
+                },
+                {
+                  data rna {
+                    type tRNA,
+                    ext tRNA {
+                      aa ncbieaa 80
+                    }
+                  },
+                  location int {
+                    from 9933,
+                    to 9998,
+                    strand minus,
+                    id local str "nuc_1"
+                  }
+                },
+                {
+                  data rna {
+                    type tRNA,
+                    ext tRNA {
+                      aa ncbieaa 83
+                    }
+                  },
+                  location int {
+                    from 11662,
+                    to 11728,
+                    strand plus,
+                    id local str "nuc_1"
+                  }
+                },
+                {
+                  data rna {
+                    type tRNA,
+                    ext tRNA {
+                      aa ncbieaa 76
+                    }
+                  },
+                  location int {
+                    from 12699,
+                    to 12764,
+                    strand minus,
+                    id local str "nuc_1"
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "16S ribosomal RNA"
+                  },
+                  location int {
+                    from 12765,
+                    to 14100,
+                    strand minus,
+                    id local str "nuc_1"
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "16S ribosomal RNA"
+                  },
+                  location int {
+                    from 12765,
+                    to 14100,
+                    strand minus,
+                    id local str "nuc_1"
+                  }
+                },
+                {
+                  data rna {
+                    type tRNA,
+                    ext tRNA {
+                      aa ncbieaa 86
+                    }
+                  },
+                  location int {
+                    from 14101,
+                    to 14172,
+                    strand minus,
+                    id local str "nuc_1"
+                  }
+                },
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "12S ribosomal RNA"
+                  },
+                  location int {
+                    from 14173,
+                    to 14964,
+                    strand minus,
+                    id local str "nuc_1"
+                  }
+                },
+                {
+                  data imp {
+                    key "D-loop"
+                  },
+                  comment "control region",
+                  location int {
+                    from 14965,
+                    to 15903,
+                    strand plus,
+                    id local str "nuc_1"
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "nuc_1_1",
+            general {
+              db "TMSMART",
+              tag id 52602076
+            }
+          },
+          descr {
+            title "ND2 (mitochondrion) [Simulium aureohirtum]",
+            molinfo {
+              biomol peptide,
+              tech concept-trans-a
+            }
+          },
+          inst {
+            repr raw,
+            mol aa,
+            length 343,
+            seq-data ncbieaa "MFKNLSNYLFLTTLISGTLISISSNSWLGAWIGLEINLLSFIPLMIDT
+NNLLSTEASLKYFLTQALASAIFLFSSILFILQLNVFSMMSMNSNFITLIILSSLLLKSGAAPFHFWFPGVMEGLNWW
+NNLILMTWQKIAPLMLTSYCLNFNFIINIIILSIMIGSLGGLNQTSLRKLMAFSSINHLGWMLAAMIYSENLWLSYFF
+IYTYLSFTIIFIFNLFNFFHLNQMFSFYNQNPLVKFSLFISLLSLGGLPPFLGFLPKWMVIQSISNLNAIFLLIVMVS
+FTLITLYFYMRITYSAFMLSYMEINWNYKNFTINKNMNWTLLLNFFSSMSLTLISLLYLFM"
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data prot {
+                    name {
+                      "ND2"
+                    }
+                  },
+                  location int {
+                    from 0,
+                    to 342,
+                    id local str "nuc_1_1"
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "nuc_1_2",
+            general {
+              db "TMSMART",
+              tag id 52602077
+            }
+          },
+          descr {
+            title "COI (mitochondrion) [Simulium aureohirtum]",
+            molinfo {
+              biomol peptide,
+              tech concept-trans-a
+            }
+          },
+          inst {
+            repr raw,
+            mol aa,
+            length 511,
+            seq-data ncbieaa "MQQWLFSTNHKDIGTLYFIFGAWAGMVGTSLSMLIRAELGHPGSLIGD
+DQIYNVIVTAHAFVMIFFMVMPIMIGGFGNWLVPLMLGAPDMAFPRMNNMSFWLLPPSLTLLLASSMVEAGAGTGWTV
+YPPLSSGIAHAGASVDLAIFSLHLAGISSILGAVNFITTIINMRSNGITFDRMPLFVWSVVITAVLLLLSLPVLAGAI
+TMLLTDRNLNTSFFDPAGGGDPILYQHLFWFFGHPEVYILILPGFGMISHIISQESGKKETFGSLGMIYAMLAIGLLG
+FIVWAHHMFTVGMDVDTRAYFTSATMIIAVPTGIKIFSWLATLHGTQLNYSPALIWALGFVFLFTVGGLTGVVLANSS
+IDIVLHDTYYVVAHFHYVLSMGAVFAIMAGFVHWYPLFTGLTLNPEWLKAQFMVMFIGVNLTFFPQHFLGLAGMPRRY
+SDYPDAYTAWNVVSTIGSTISFIGVLFFLFIIWESMISHRTVIYPIQLNSSIEWYQNLPPAEHSYAELPLLTN"
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data prot {
+                    name {
+                      "COI"
+                    }
+                  },
+                  location int {
+                    from 0,
+                    to 510,
+                    id local str "nuc_1_2"
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "nuc_1_3",
+            general {
+              db "TMSMART",
+              tag id 52602078
+            }
+          },
+          descr {
+            title "COII (mitochondrion) [Simulium aureohirtum]",
+            molinfo {
+              biomol peptide,
+              tech concept-trans-a
+            }
+          },
+          inst {
+            repr raw,
+            mol aa,
+            length 229,
+            seq-data ncbieaa "MATWSNLGMQDSASPLMEQLNFFHDHTLLILIMITILVGYLMLMLFFN
+KFTNRFLLHGQTIEIIWTILPAIVLMFIALPSLRILYLLDEINSPAITLKTIGHQWYWSYEYSDFLNLEFDSYMVPTN
+ELETNGFRLLDVDNRIVLPMNTQIRILVTAADVLHSWTIPALGVKVDGTPGRLNQTNFLMNRPGLFFGQCSEICGANH
+SFMPIVLESSPTNYFIKWITAMNTN"
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data prot {
+                    name {
+                      "COII"
+                    }
+                  },
+                  location int {
+                    from 0,
+                    to 228,
+                    id local str "nuc_1_3"
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "nuc_1_4",
+            general {
+              db "TMSMART",
+              tag id 52602079
+            }
+          },
+          descr {
+            title "ATP8 (mitochondrion) [Simulium aureohirtum]",
+            molinfo {
+              biomol peptide,
+              tech concept-trans-a
+            }
+          },
+          inst {
+            repr raw,
+            mol aa,
+            length 56,
+            seq-data ncbieaa "MPQMAPISWLTLFILFTVIFILFNIMNYFCIVFTPSSDSKKEGKTQLT
+PPSLNWKW"
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data prot {
+                    name {
+                      "ATP8"
+                    }
+                  },
+                  location int {
+                    from 0,
+                    to 55,
+                    id local str "nuc_1_4"
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "nuc_1_5",
+            general {
+              db "TMSMART",
+              tag id 52602080
+            }
+          },
+          descr {
+            title "ATP6 (mitochondrion) [Simulium aureohirtum]",
+            molinfo {
+              biomol peptide,
+              tech concept-trans-a
+            }
+          },
+          inst {
+            repr raw,
+            mol aa,
+            length 225,
+            seq-data ncbieaa "MMTNLFSVFDPSTTILNLSLNWLSTFLGLLLIPASFWLIPTRFQFLWN
+SILLTLHKEFKTLLGPTGHNGSTFIFISLFSMIVFNNFLGLFPYIFTSTSHLTLTLGLALPLWLSFMIYGWVNHTQHM
+FAHLVPQGTPAVLMPFMVCIETISNVIRPGTLAVRLAANMIAGHLLLTLLGNTGPSLSYIMVSLLIGAQIALLVLESA
+VAIIQSYVFAVLSTLYSSEVN"
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data prot {
+                    name {
+                      "ATP6"
+                    }
+                  },
+                  location int {
+                    from 0,
+                    to 224,
+                    id local str "nuc_1_5"
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "nuc_1_6",
+            general {
+              db "TMSMART",
+              tag id 52602081
+            }
+          },
+          descr {
+            title "COIII (mitochondrion) [Simulium aureohirtum]",
+            molinfo {
+              biomol peptide,
+              tech concept-trans-a
+            }
+          },
+          inst {
+            repr raw,
+            mol aa,
+            length 262,
+            seq-data ncbieaa "MSTHSNHPFHLVDYSPWPLTGAIGAMTTVSGLVKWFHHYDISLFALGN
+LITILTMYQWWRDISREGTFQGLHTYPVTIGLRWGMILFIVSEIFFFISFFWAFFHSSLSPTIELGSTWPPIGIIAFN
+PFQIPLLNTAILLASGVTVTWAHHALMEGNHSQTTQGLFFTIILGIYFTMLQAYEYIEAPFTIADAVYGSTFFMATGF
+HGLHVLIGTTFLLVCLIRHVNFHFSNNHHFGFEAAAWYWHFVDVVWLFLYISIYWWGS"
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data prot {
+                    name {
+                      "COIII"
+                    }
+                  },
+                  location int {
+                    from 0,
+                    to 261,
+                    id local str "nuc_1_6"
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "nuc_1_7",
+            general {
+              db "TMSMART",
+              tag id 52602082
+            }
+          },
+          descr {
+            title "ND3 (mitochondrion) [Simulium aureohirtum]",
+            molinfo {
+              biomol peptide,
+              tech concept-trans-a
+            }
+          },
+          inst {
+            repr raw,
+            mol aa,
+            length 117,
+            seq-data ncbieaa "MFLTFIMSIIIFFISSIVMGLASILSKKAVIDREKSSPFECGFDPINS
+ARLPFSLRFFLIAIIFLIFDVEIALILPTVMIFSTSNLVWWTSTTLFFIFILLAGLYHEWNQGALNWST"
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data prot {
+                    name {
+                      "ND3"
+                    }
+                  },
+                  location int {
+                    from 0,
+                    to 116,
+                    id local str "nuc_1_7"
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "nuc_1_8",
+            general {
+              db "TMSMART",
+              tag id 52602083
+            }
+          },
+          descr {
+            title "ND5 (mitochondrion) [Simulium aureohirtum]",
+            molinfo {
+              biomol peptide,
+              tech concept-trans-a
+            }
+          },
+          inst {
+            repr raw,
+            mol aa,
+            length 578,
+            seq-data ncbieaa "MKKISICLISFFSLMSISLSLFFISLNFLLSELVYFLEWEVVSINSLN
+IVMTFLFDWMSLMFMSLVLFISSLVIFYSKEYMAEDKVINRFIMIVLMFVMSMMLLIISPNLISILLGWDGLGLVSYC
+LVIYFQNEKSYNAGMLTALSNRIGDVAFLLAIAWMLNYGSWNYIFYIDLMKHDFCMTVIGCLVVLAAMTKSAQIPFSS
+WLPAAMAAPTPVSALVHSSTLVTAGVYLLIRFNSLLVGNQIGSFLLLISGLTMFMAGLGANFEFDLKKIIALSTLSQL
+GLMMSILAMGFPKLAFFHLLTHAMFKALLFMCAGAIIHNMKNSQDIRFMGGLVYHMPLTVACLNTANLALCGMPFLAG
+FYSKDLILETVLLGNLNLFSFFLYFFSTGLTVCYSFRLVFFSLTGEFNSNSLHPLNDEAFTMIGGMLGLLILAVIGGS
+FLSWVMFPSVSMICLPLYLKNLTLFVCLVGAFSGYLMSNVSLFFNYKSLSNYLLTFFAGSMWFMPMISTLGVIKFPLN
+VGFKTLKSFDQGWSEMLGGQMIYNTIKNNSSFIQVLQNNNLKIYLMTFILWVAILLSLVILV"
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data prot {
+                    name {
+                      "ND5"
+                    }
+                  },
+                  location int {
+                    from 0,
+                    to 577,
+                    id local str "nuc_1_8"
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "nuc_1_9",
+            general {
+              db "TMSMART",
+              tag id 52602084
+            }
+          },
+          descr {
+            title "ND4 (mitochondrion) [Simulium aureohirtum]",
+            molinfo {
+              biomol peptide,
+              tech concept-trans-a
+            }
+          },
+          inst {
+            repr raw,
+            mol aa,
+            length 446,
+            seq-data ncbieaa "MLSYLFSLCFLIPLCFMKKNYWLVQNVLFMISFLFILNNFYSNYFMNI
+SYYFGSDLISYGLILLSFWICSLMIMASEGVYRSLNFFKMFLFLVVMLLIFLYLTFSSLSLFMFYLFFESSLIPTLLL
+ILGWGYQPERMQAGIYLLFYTLLASLPLLVGIFYLMNYSFSMSLYLLKEQSVFYDLFYLCMIFAFLVKMPMFLVHLWL
+PKAHVEAPVSGSMILAGVLLKLGGYGLLRVYPFIAISGVLNNFVWISISLVGGVLVSLICLRQMDLKALIAYSSVAHM
+GIVLAGLMTLSMWGISGSYTLMIAHGLCSSGLFCLANISYERMGSRSLLINKGLLNFMPSLSLWWFLLCSSNMAAPPT
+LNLLGEVCLLNSIVSWSWVTMITLSLLSFFSAAYTLYLYAYSQHGKLLSGFYASSMGFSREYLLLFLHWFPLNLLIMK
+AEPCILWL"
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data prot {
+                    name {
+                      "ND4"
+                    }
+                  },
+                  location int {
+                    from 0,
+                    to 445,
+                    id local str "nuc_1_9"
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "nuc_1_10",
+            general {
+              db "TMSMART",
+              tag id 52602085
+            }
+          },
+          descr {
+            title "ND4L (mitochondrion) [Simulium aureohirtum]",
+            molinfo {
+              biomol peptide,
+              tech concept-trans-a
+            }
+          },
+          inst {
+            repr raw,
+            mol aa,
+            length 98,
+            seq-data ncbieaa "MMMFMLYLLPLFMLLSGVMVYISNRAHLLVTLLSLEFIVLSLFLCLFE
+VLNFLNYENFFSMMFLTFSVCEGALGLSVLVSMIRTHGNDYFQTFSVLQC"
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data prot {
+                    name {
+                      "ND4L"
+                    }
+                  },
+                  location int {
+                    from 0,
+                    to 97,
+                    id local str "nuc_1_10"
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "nuc_1_11",
+            general {
+              db "TMSMART",
+              tag id 52602086
+            }
+          },
+          descr {
+            title "ND6 (mitochondrion) [Simulium aureohirtum]",
+            molinfo {
+              biomol peptide,
+              tech concept-trans-a
+            }
+          },
+          inst {
+            repr raw,
+            mol aa,
+            length 173,
+            seq-data ncbieaa "MYFIITTLSIFTSSIFIFMSHPLAMGFMLLTQTLLISIITGLLSKTFW
+FSYILFIVFLGGMLVLFIYVTSLASNEMFMMSMKTMQMLMILMISSMLTMLIIDNFYLSSFLPLLDMSLLTETNSFIK
+ENTINLNKLYNYPTNFLTIVLINYLFLTLIAIVKVTNIFYGPLRPRN"
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data prot {
+                    name {
+                      "ND6"
+                    }
+                  },
+                  location int {
+                    from 0,
+                    to 172,
+                    id local str "nuc_1_11"
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "nuc_1_12",
+            general {
+              db "TMSMART",
+              tag id 52602087
+            }
+          },
+          descr {
+            title "CytB (mitochondrion) [Simulium aureohirtum]",
+            molinfo {
+              biomol peptide,
+              tech concept-trans-a
+            }
+          },
+          inst {
+            repr raw,
+            mol aa,
+            length 378,
+            seq-data ncbieaa "MNKPIRLSHPLFKIANNALVDLPAPSNISIWWNYGSLLGLCLIIQIAT
+GLFLAMHYTADIELAFNSVNHICRDVNYGWLLRTLHANGASFFFICIYLHIGRGIYYGSYLYTSTWLIGVIILFLVMG
+AAFMGYVLPWGQMSFWGATVITNLLSAIPYLGVDLVQWVWGGFAVDNATLTRFFTFHFLIPFIVAAATMVHLLFLHQT
+GSNNPLGINSNVDKIPFHPYFSFKDIVGFITMVMLLVLLTLTNPYLLGDPDNFIPANPLVTPVHIQPEWYFLFAYAIL
+RSIPNKLGGVIALVLSIAILMILPFTANSKLRGTQFYPLNQTLFWSMVGTVILLTWIGARPVEDPYIITGQILTVIYF
+SYYIINPLVTQWWDSLLE"
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data prot {
+                    name {
+                      "CytB"
+                    }
+                  },
+                  location int {
+                    from 0,
+                    to 377,
+                    id local str "nuc_1_12"
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "nuc_1_13",
+            general {
+              db "TMSMART",
+              tag id 52602088
+            }
+          },
+          descr {
+            title "ND1 (mitochondrion) [Simulium aureohirtum]",
+            molinfo {
+              biomol peptide,
+              tech concept-trans-a
+            }
+          },
+          inst {
+            repr raw,
+            mol aa,
+            length 313,
+            seq-data ncbieaa "MDLFFPLTGSLLLVICVMVGVAFLTLLERKVLGYIQIRKGPNKVGLMG
+IPQPFSDAIKLFTKEQTYPVSSNYVSYYFSPIFSLFLSLLIWMCIPYFIKFYSFNLGVLFFLSCTSLGVYTVMIAGWS
+SNSNYALLGGLRAVAQTISYEVSLALILMSFIFLVGGFNFNDFSGFQDYSWMMVLSFPLMLVWFASSLAETNRTPFDF
+AEGESELVSGFNVEYSSGGFALIFLAEYASILFMSMLFVVIFLGADIYSLFFFLKLSFISFAFIWVRGTLPRFRYDKL
+MYLAWKSFLPMSLNYLFLFIGLKLYILHLIL"
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data prot {
+                    name {
+                      "ND1"
+                    }
+                  },
+                  location int {
+                    from 0,
+                    to 312,
+                    id local str "nuc_1_13"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                code {
+                  id 5
+                }
+              },
+              product whole local str "nuc_1_1",
+              location int {
+                from 263,
+                to 1294,
+                strand plus,
+                id local str "nuc_1"
+              }
+            },
+            {
+              data cdregion {
+                code {
+                  id 5
+                }
+              },
+              product whole local str "nuc_1_2",
+              location int {
+                from 1505,
+                to 3038,
+                strand plus,
+                id local str "nuc_1"
+              }
+            },
+            {
+              data cdregion {
+                code {
+                  id 5
+                }
+              },
+              product whole local str "nuc_1_3",
+              location int {
+                from 3109,
+                to 3798,
+                strand plus,
+                id local str "nuc_1"
+              }
+            },
+            {
+              data cdregion {
+                code {
+                  id 5
+                }
+              },
+              product whole local str "nuc_1_4",
+              location int {
+                from 3955,
+                to 4125,
+                strand plus,
+                id local str "nuc_1"
+              }
+            },
+            {
+              data cdregion {
+                code {
+                  id 5
+                }
+              },
+              product whole local str "nuc_1_5",
+              location int {
+                from 4119,
+                to 4796,
+                strand plus,
+                id local str "nuc_1"
+              }
+            },
+            {
+              data cdregion {
+                code {
+                  id 5
+                }
+              },
+              product whole local str "nuc_1_6",
+              location int {
+                from 4805,
+                to 5593,
+                strand plus,
+                id local str "nuc_1"
+              }
+            },
+            {
+              data cdregion {
+                code {
+                  id 5
+                }
+              },
+              product whole local str "nuc_1_7",
+              location int {
+                from 5660,
+                to 6013,
+                strand plus,
+                id local str "nuc_1"
+              }
+            },
+            {
+              data cdregion {
+                code {
+                  id 5
+                }
+              },
+              product whole local str "nuc_1_8",
+              location int {
+                from 6429,
+                to 8165,
+                strand minus,
+                id local str "nuc_1"
+              }
+            },
+            {
+              data cdregion {
+                code {
+                  id 5
+                }
+              },
+              product whole local str "nuc_1_9",
+              location int {
+                from 8232,
+                to 9572,
+                strand minus,
+                id local str "nuc_1"
+              }
+            },
+            {
+              data cdregion {
+                frame one,
+                code {
+                  id 5
+                }
+              },
+              product whole local str "nuc_1_10",
+              location int {
+                from 9566,
+                to 9862,
+                strand minus,
+                id local str "nuc_1"
+              }
+            },
+            {
+              data cdregion {
+                code {
+                  id 5
+                }
+              },
+              product whole local str "nuc_1_11",
+              location int {
+                from 10001,
+                to 10522,
+                strand plus,
+                id local str "nuc_1"
+              }
+            },
+            {
+              data cdregion {
+                code {
+                  id 5
+                }
+              },
+              product whole local str "nuc_1_12",
+              location int {
+                from 10522,
+                to 11658,
+                strand plus,
+                id local str "nuc_1"
+              }
+            },
+            {
+              data cdregion {
+                code {
+                  id 5
+                }
+              },
+              product whole local str "nuc_1_13",
+              location int {
+                from 11747,
+                to 12688,
+                strand minus,
+                id local str "nuc_1"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
