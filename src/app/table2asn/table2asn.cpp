@@ -152,6 +152,9 @@ private:
 
 CTbl2AsnApp::CTbl2AsnApp(void)
 {
+#if 0
+    SetVersionByBuild(1);
+#else
     int major = 1;
     int minor = 
 #if defined(NCBI_PRODUCTION_VER)
@@ -167,6 +170,7 @@ CTbl2AsnApp::CTbl2AsnApp(void)
 #endif
 
     SetVersion(CVersionInfo(major, minor, build_num));
+#endif
 }
 
 void CTbl2AsnApp::Init(void)
@@ -737,10 +741,7 @@ int CTbl2AsnApp::Run(void)
         }
         if (m_validator->TotalErrors() > 0)
         {
-            string outputfile;
-            if (!m_context.m_ResultsDirectory.empty())
-                outputfile = m_context.m_ResultsDirectory;
-            outputfile += "errorlog.val";
+            string outputfile = GenerateOutputFilename(".stats");
             CNcbiOfstream val_stats(outputfile.c_str());
             m_validator->ReportErrorStats(val_stats);
         }
@@ -985,6 +986,7 @@ string CTbl2AsnApp::GenerateOutputFilename(const CTempString& ext) const
     else
     {
         CDirEntry::SplitPath(m_context.m_output_filename, &dir, &base, 0);
+        outputfile = dir;
     }
     outputfile += base;
     outputfile += ext;
