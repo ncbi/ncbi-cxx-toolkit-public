@@ -550,6 +550,7 @@ void CFeatTableEdit::xGenerateLocusIdsRegenerate()
     //make sure genes got proper locus tags
     SAnnotSelector selGenes;
     selGenes.IncludeFeatSubtype(CSeqFeatData::eSubtype_gene);
+    selGenes.SetSortOrder(SAnnotSelector::eSortOrder_Normal);
     for (CFeat_CI it(mHandle, selGenes); it; ++it) {
         CMappedFeat mf = *it;
         CSeq_feat_EditHandle feh(mf);
