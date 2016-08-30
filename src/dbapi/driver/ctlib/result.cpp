@@ -186,6 +186,9 @@ CTL_RowResult::ConvDataType_Ctlib2DBAPI(const CS_DATAFMT& fmt)
 #ifdef CS_BIGINT_TYPE
     case CS_BIGINT_TYPE:
 #endif
+#ifdef CS_UBIGINT_TYPE
+    case CS_UBIGINT_TYPE:
+#endif
     case CS_LONG_TYPE:          return eDB_BigInt;
 
     case CS_DECIMAL_TYPE:
@@ -387,6 +390,9 @@ static bool s_CanStore(CS_INT src, EDB_Type dst)
 #ifdef CS_BIGINT_TYPE
     case CS_BIGINT_TYPE:
 #endif
+#ifdef CS_UBIGINT_TYPE
+    case CS_UBIGINT_TYPE:
+#endif
     case CS_LONG_TYPE:     return dst == eDB_BigInt;
 
     case CS_REAL_TYPE:  return dst == eDB_Float;
@@ -536,6 +542,9 @@ CDB_Object* CTL_RowResult::GetItemInternal(
 #ifdef CS_BIGINT_TYPE
     case CS_BIGINT_TYPE:
 #endif
+#ifdef CS_UBIGINT_TYPE
+    case CS_UBIGINT_TYPE:
+#endif
     case CS_LONG_TYPE:
     {
         Int8 v = 0;
@@ -547,6 +556,9 @@ CDB_Object* CTL_RowResult::GetItemInternal(
         case CS_BIT_TYPE:      sz = sizeof(CS_BIT);      break;
 #ifdef CS_BIGINT_TYPE
         case CS_BIGINT_TYPE:
+#endif
+#ifdef CS_UBIGINT_TYPE
+    case CS_UBIGINT_TYPE:
 #endif
         case CS_LONG_TYPE:     sz = sizeof(v);           break;
         default:               sz = 0;                   _TROUBLE;
