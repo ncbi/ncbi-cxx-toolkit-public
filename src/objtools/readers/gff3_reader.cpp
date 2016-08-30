@@ -760,6 +760,7 @@ bool CGff3Reader::xIsIgnoredFeatureType(
         "dna_chromosome",
         "EST_match",
         "expressed_sequence_match",
+        "intron",
         "leucoplast_chromosome",
         "macronuclear_chromosome",
         "match",
