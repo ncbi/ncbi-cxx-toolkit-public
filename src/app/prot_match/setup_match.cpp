@@ -15,6 +15,7 @@
 #include <objmgr/seq_annot_ci.hpp>
 #include <objmgr/seq_feat_handle.hpp>
 #include <objects/general/Object_id.hpp>
+#include <objmgr/util/sequence.hpp>
 
 #include "prot_match_exception.hpp"
 
@@ -24,23 +25,47 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
-class CPreprocessUpdateApp : public CNcbiApplication
+class CSetupProtMatchApp : public CNcbiApplication
 {
 public:
     void Init(void);
     int Run(void);
 
 private:
-    CSeq_entry_Handle x_GetGenomeSEH(CSeq_entry_Handle& seh);
+    CSeq_entry_Handle x_GetGenomeSEH(CSeq_entry_Handle seh);
     bool x_GetSequenceIdFromCDSs(CSeq_entry_Handle& seh, CRef<CSeq_id>& prod_id);
     bool x_UpdateSequenceIds(CRef<CSeq_id>& new_id, CSeq_entry_Handle& seh);
-
+    CObjectOStream* x_InitOutputStream(const string& filename, const bool binary) const;
+    bool x_TryReadSeqEntry(CObjectIStream& istr, CSeq_entry& seq_entry) const;
+    bool x_TryReadBioseqSet(CObjectIStream& istr, CSeq_entry& seq_entry) const;
     CObjectIStream* x_InitInputStream(const CArgs& args);
-
 };
 
 
-void CPreprocessUpdateApp::Init(void) 
+CObjectOStream* CSetupProtMatchApp::x_InitOutputStream(const string& filename, 
+                                                         const bool binary) const
+{
+    if (filename.empty()) {
+        NCBI_THROW(CProteinMatchException, 
+                   eOutputError, 
+                   "Output file name not specified");
+    }
+
+    ESerialDataFormat serial = binary ? eSerial_AsnBinary : eSerial_AsnText;
+
+    CObjectOStream* pOstr = CObjectOStream::Open(filename, serial);
+
+    if (!pOstr) {
+        NCBI_THROW(CProteinMatchException, 
+                   eOutputError, 
+                   "Unable to open output file: " + filename);
+    }
+
+    return pOstr;
+}
+
+
+void CSetupProtMatchApp::Init(void) 
 {
     unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions());
 
@@ -51,19 +76,8 @@ void CPreprocessUpdateApp::Init(void)
 
     arg_desc->AddKey("o", 
                      "OutputFile",
-                     "Processed seq-entry output file",
+                     "Output stub",
                      CArgDescriptions::eOutputFile);
-
-    arg_desc->AddKey("ogb", 
-                     "OutputFile", 
-                     "GenBank entry output file",
-                     CArgDescriptions::eOutputFile);
-
-    arg_desc->AddOptionalKey("og", 
-                             "GenomicOutputFile",
-                             "Genomic seq-entry output file",
-                             CArgDescriptions::eOutputFile);
-
 
     SetupArgDescriptions(arg_desc.release());
 
@@ -71,7 +85,38 @@ void CPreprocessUpdateApp::Init(void)
 }
 
 
-int CPreprocessUpdateApp::Run(void) 
+
+bool CSetupProtMatchApp::x_TryReadSeqEntry(CObjectIStream& istr, CSeq_entry& seq_entry) const
+{
+    try {
+        istr.Read(ObjectInfo(seq_entry));
+    }
+    catch (CException&) {
+        return false;
+    }
+
+    return true;
+}
+
+
+
+bool CSetupProtMatchApp::x_TryReadBioseqSet(CObjectIStream& istr, CSeq_entry& seq_entry) const
+{
+
+    CRef<CBioseq_set> seq_set = Ref(new CBioseq_set());
+    try {
+        istr.Read(ObjectInfo(seq_set.GetNCObject()));
+    }
+    catch (CException&) {
+        return false;
+    }
+
+    seq_entry.SetSet(seq_set.GetNCObject());
+    return true;
+}
+
+
+int CSetupProtMatchApp::Run(void) 
 {
     const CArgs& args = GetArgs();
 
@@ -82,20 +127,16 @@ int CPreprocessUpdateApp::Run(void)
     scope->AddDefaults();
 
     CRef<CScope> gb_scope(new CScope(*obj_mgr));
-    
     gb_scope->AddDataLoader("GBLOADER");
-
-
 
     // Set up object input stream
     unique_ptr<CObjectIStream> pInStream(x_InitInputStream(args));
-
     // Attempt to read Seq-entry from input file 
     CSeq_entry seq_entry;
-    try {
-        pInStream->Read(ObjectInfo(seq_entry));
-    }
-    catch (CException&) {
+
+
+    if (!x_TryReadSeqEntry(*pInStream, seq_entry) &&
+        !x_TryReadBioseqSet(*pInStream, seq_entry)) {
         NCBI_THROW(CProteinMatchException, 
                    eInputError, 
                    "Failed to read Seq-entry");
@@ -112,46 +153,74 @@ int CPreprocessUpdateApp::Run(void)
                    "Could not obtain valid seq-entry handle");
     }
 
+    const bool AsBinary = true;
+    const bool AsText = false;
     // Seq-entry Handle for the nucleotide sequence
     CSeq_entry_Handle genome_seh = x_GetGenomeSEH(seh);
 
-    CConstRef<CSeq_entry> gbtse;
+    CConstRef<CSeq_entry> gb_tse;
+    CBioseq_Handle gb_bsh; 
     for (auto pNucId : genome_seh.GetSeq().GetCompleteBioseq()->GetId()) {
         if (pNucId->IsGenbank()) { // May need to use a different scope
-            CBioseq_Handle bsh = gb_scope->GetBioseqHandle(*pNucId); // Do need to use a different scope. Want to fetch from genbank, not local.
-            auto gbtse_handle = bsh.GetTSE_Handle(); // Need to put a check here
-            gbtse = gbtse_handle.GetCompleteTSE();
+            gb_bsh = gb_scope->GetBioseqHandle(*pNucId); // Do need to use a different scope. Want to fetch from genbank, not local.
+            auto gbtse_handle = gb_bsh.GetTSE_Handle(); // Need to put a check here
+            gb_tse = gbtse_handle.GetCompleteTSE();
             break;
         }
     }
 
     try {
-        args["ogb"].AsOutputFile() << MSerial_Format_AsnBinary() << *gbtse;
+        string filename = args["o"].AsString();
+        filename += ".genbank.asn";
+        unique_ptr<CObjectOStream> pOstr(x_InitOutputStream(filename, AsBinary));
+        *pOstr << *gb_tse;
+      //  args["ogb"].AsOutputFile() << MSerial_Format_AsnBinary() << *gb_tse;
     } catch (CException& e) {
         NCBI_THROW(CProteinMatchException, 
                    eOutputError, 
                    "Failed to write Genbank Seq-entry");
     }
 
-    
 
+    if (args["o"]) {
+        CSeq_entry_Handle gb_nuc_seh = x_GetGenomeSEH(gb_bsh.GetSeq_entry_Handle());
+        try {
+
+            string filename = args["o"].AsString();
+            filename += ".genbank_nuc.asn";
+            unique_ptr<CObjectOStream> pOstr(x_InitOutputStream(filename, AsText));
+            *pOstr << *gb_nuc_seh.GetCompleteSeq_entry();
+          //  args["o"].AsOutputFile() << MSerial_Format_AsnText() << *gb_nuc_seh.GetCompleteSeq_entry();
+
+        } catch(CException& e) {
+            NCBI_THROW(CProteinMatchException,
+                       eOutputError,
+                       "Failed to write genomic Seq-entry");
+        }
+    }
+   
     CRef<CSeq_id> local_id;
-    // Convert product id on annotation into local id
     if (x_GetSequenceIdFromCDSs(seh, local_id)) {
         x_UpdateSequenceIds(local_id, genome_seh); // Remove any preexisting ids and replace by local_id
     }
 
     try {
-        args["o"].AsOutputFile() << MSerial_Format_AsnText() << *seh.GetCompleteSeq_entry();
+        string filename = args["o"].AsString();
+        filename += ".local.asn";
+        unique_ptr<CObjectOStream> pOstr(x_InitOutputStream(filename, AsBinary));
+        *pOstr << *seh.GetCompleteSeq_entry();
     } catch(CException& e) {
         NCBI_THROW(CProteinMatchException,
                    eOutputError,
                    "Failed to write processed Seq-entry");
     }
 
-    if (args["og"]) {
+    if (args["o"]) {
         try {
-            args["og"].AsOutputFile() << MSerial_Format_AsnText() << *genome_seh.GetCompleteSeq_entry();
+            string filename = args["o"].AsString();
+            filename += ".local_nuc.asn";
+            unique_ptr<CObjectOStream> pOstr(x_InitOutputStream(filename, AsText));
+            *pOstr << *genome_seh.GetCompleteSeq_entry();
         } catch(CException& e) {
             NCBI_THROW(CProteinMatchException,
                        eOutputError,
@@ -165,7 +234,7 @@ int CPreprocessUpdateApp::Run(void)
 }
 
 
-CObjectIStream* CPreprocessUpdateApp::x_InitInputStream(
+CObjectIStream* CSetupProtMatchApp::x_InitInputStream(
         const CArgs& args) 
 {
     ESerialDataFormat serial = eSerial_AsnText;
@@ -187,7 +256,7 @@ CObjectIStream* CPreprocessUpdateApp::x_InitInputStream(
 
 
 
-CSeq_entry_Handle CPreprocessUpdateApp::x_GetGenomeSEH(CSeq_entry_Handle& seh)
+CSeq_entry_Handle CSetupProtMatchApp::x_GetGenomeSEH(CSeq_entry_Handle seh)
 {
     if (seh.IsSeq()) {
         const CMolInfo* molinfo = sequence::GetMolInfo(seh.GetSeq());
@@ -228,7 +297,7 @@ struct SEquivalentTo
 
 // Search for a unique id in the Seq-locs appearing in CDS features in the sequence annotations. If found,
 // convert to a local ID and return true. Else, return false.
-bool CPreprocessUpdateApp::x_GetSequenceIdFromCDSs(CSeq_entry_Handle& seh, CRef<CSeq_id>& id)
+bool CSetupProtMatchApp::x_GetSequenceIdFromCDSs(CSeq_entry_Handle& seh, CRef<CSeq_id>& id)
 {
     // Set containing distinct product ids
     set<CRef<CSeq_id>> ids;
@@ -241,7 +310,6 @@ bool CPreprocessUpdateApp::x_GetSequenceIdFromCDSs(CSeq_entry_Handle& seh, CRef<
             continue;
         }
 
-        int i=0;
         for (CSeq_annot_ftable_CI fi(sah); fi; ++fi) {
             const CSeq_feat_Handle& sfh = *fi;
 
@@ -289,7 +357,7 @@ bool CPreprocessUpdateApp::x_GetSequenceIdFromCDSs(CSeq_entry_Handle& seh, CRef<
 
 
 // Strip old identifiers on the sequence and annptations and replace with new id
-bool CPreprocessUpdateApp::x_UpdateSequenceIds(CRef<CSeq_id>& new_id, CSeq_entry_Handle& seh) 
+bool CSetupProtMatchApp::x_UpdateSequenceIds(CRef<CSeq_id>& new_id, CSeq_entry_Handle& seh) 
 {
     if (!seh.IsSeq()) {
         return false;
@@ -330,5 +398,5 @@ USING_NCBI_SCOPE;
 
 int main(int argc, const char* argv[])
 {
-    return CPreprocessUpdateApp().AppMain(argc, argv, 0, eDS_ToStderr, 0);
+    return CSetupProtMatchApp().AppMain(argc, argv, 0, eDS_ToStderr, 0);
 }
