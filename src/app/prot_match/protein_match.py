@@ -6,7 +6,6 @@ import argparse, os, subprocess, sys
 # This script can be run as follows:
 # python protein_match.py -u update -id current_entry_id -o outstub -bindir binary_dir -log log_file
 # update is the update Seq-entry file
-# current_entry_id is the id for the old GenBank entry
 # outstub.tab is the resulting protein match table
 # binary_dir is an optional parameter specifying the location of the binaries 
 # executed by the script. If unspecified, binary_dir defaults to the current 
@@ -14,26 +13,22 @@ import argparse, os, subprocess, sys
 # log_file is also optional and defaults to stdout.
 
 # Required binaries:
-#   preprocess_entry 
-#   getfasta
-#   gp_fetch_sequences
+#   setup_match 
 #   assm_assm_blastn
 #   compare_annots
 #   generate_match_table
 
 # Description of binaries:
 #
-#  ### preprocess_entry 
+#  ### setup_match
 #      Reads the update provided by the submitter. 
+#      Reads the GenBank accession from the update.
+#      Fetches the Genbank Seq-entry.
 #      Constructs a local id from CDS feature locations. 
-#      Strips any preexisting IDs on the nucleotide sequence and replace with the local id.
-#      Returns the processed seq-entry and the processed nucleotide seq-entry.
-#
-# ### getfasta 
-#     Given genbank id, fetch sequence in FASTA format
-#
-# ### gp_fetch_sequences
-#     Given genbank id, fetch ASN.1 Seq-entry
+#      Strips any preexisting IDs on the nucleotide sequence and replaces them with the local id.
+#      Returns the GenBank Seq-entry, the processed update Seq-entry and the nucleotide sequences 
+#      for these entries.
+
 #
 # ### assm_assm_blastn
 #     Generates an alignment between the update sequence and the genbank sequence
@@ -60,12 +55,11 @@ class ProteinMatchClass :
         self.tempfile_list = [] # empty list used to keep track of temporary files
         self.log = []
         self.logfile = None
+        self.genbank_id = None
 
     def check_binaries(self):
         self.binary_list = []
-        self.binary_list.append(self.binary_dir + "/preprocess_entry")
-        self.binary_list.append(self.binary_dir + "/getfasta")
-        self.binary_list.append(self.binary_dir + "/gp_fetch_sequences")
+        self.binary_list.append(self.binary_dir + "/setup_match")
         self.binary_list.append(self.binary_dir + "/assm_assm_blastn")
         self.binary_list.append(self.binary_dir + "/compare_annots")
         self.binary_list.append(self.binary_dir + "/generate_match_table")
@@ -76,8 +70,7 @@ class ProteinMatchClass :
 
     def initialize_arg_parser(self):
         self.parser = argparse.ArgumentParser()
-        self.parser.add_argument("-id", required=True, help="GenBank ID") 
-        self.parser.add_argument("-update", required=True, help="Path to update Seq-entry file")
+        self.parser.add_argument("-input", required=True, help="Path to update Seq-entry file")
         self.parser.add_argument("-outstub", required=True, help="Output file stub")
         self.parser.add_argument("-bindir", help="Binaries directory")
         self.parser.add_argument("-log", help="Log file")
@@ -100,58 +93,25 @@ class ProteinMatchClass :
         for tempfile in self.tempfile_list:
             os.remove(tempfile)
  
-    def preprocess_seqentry(self, infile, outfile, gen_outfile):
+    def setup_match(self, infile, outstub):
 
-        """Preprocess a Seq-entry containing a nuc-prot set.
-
-        Replace Seq-ids on nucleotide sequence and CDS feature locations by local ids. 
-        This is done to ensure the sequence and annotations have consistent ids, 
-        so that compare_annots can match annotations and alignments.
-        See the discussion on MSS-566 on 1/28/2016 for further details.
-        Returns the nucleotide-sequence sub-entry needed to generate an alignment.
-        
+        """Preprocess the update Seq-entry so that the nucleotide sequence 
+        and annotations on this sequence have consistent ids 
+        Fetch the current GenBank entry to which this update will be applied.
+        Fetch nucleotide sequences from the update entry and GenBank entries, 
+        which are needed by assm_assm_blastn.
         """
-        cmd = "{}/preprocess_entry -i {} -o {} -og {} ".format(self.binary_dir, infile, outfile, gen_outfile)
+        cmd = "{}/setup_match -i {} -o {}".format(self.binary_dir, infile, outstub)
+
+        print(cmd)
         p = subprocess.Popen(cmd.split(), stdout=self.logfile)
         p.wait()
-        self.log_tempfile(outfile)
-        self.log_tempfile(gen_outfile)
-
-    def make_id_manifest(self, genbank_id):
-        """Write the genbank id to a manifest file."""
-        id_manifest = genbank_id + ".id.mft"
-        with open(id_manifest, 'w') as file:
-            file.write(genbank_id)
-            file.write("\n")
-        self.log_tempfile(id_manifest)
-        return id_manifest
-
-    def fetch_entry(self, id_manifest, outfile):
-        """ Calls gp_fetch_sequences on the id(s) contained in the id_manifest file.
-
-        Fetches the ASN.1 Seq-entry for each id.
-
-        """
-        cmd = "{}/gp_fetch_sequences -i {} -o {} ".format(self.binary_dir, id_manifest, outfile)
-        p = subprocess.Popen(cmd.split(), stdout=self.logfile)
-        p.wait()
-
-    def fetch_fasta(self, id_manifest, outfile):
-        """ Calls getfasta on the id(s) contained in the id_manifest file.
-
-        Fetches the nucleotide sequence in FASTA format.
-        
-        """
-        cmd = "{}/getfasta -i {} -o {} ".format(self.binary_dir, id_manifest, outfile)
-        p = subprocess.Popen(cmd.split(), stdout=self.logfile)
-        p.wait()
-        self.log_tempfile(outfile)
 
     def assm_assm_blastn(self, query_seq, target_seq, output_stub):
 
         """Generate an alignment between two nucleotide sequences.
         
-        The nucleotides sequences are in ASN.1 Seq-entry or FASTA format.
+        The nucleotides sequences are in ASN.1 Seq-entry format.
         Generates an alignment file and a manifest pointing towards this file.
 
         """
@@ -217,24 +177,20 @@ class ProteinMatchClass :
         # Replace Seq-ids on nucleotide sequence and annotations by local ids and save the result 
         # to processed_update. 
         # Save the processed nucleotide sub-entry to processed_update_genome.
-        processed_update = self.args.update + ".proc"
-        processed_update_genome = processed_update + ".gen" 
-        self.preprocess_seqentry(self.args.update, processed_update, processed_update_genome)
+        local_entry = self.args.outstub  + ".local.asn"
+        local_nucseq = self.args.outstub + ".local_nuc.asn" 
+        genbank_entry = self.args.outstub + ".genbank.asn"
+        genbank_nucseq = self.args.outstub + ".genbank_nuc.asn" 
+        self.setup_match(self.args.input, self.args.outstub)
+        self.log_tempfile(local_entry)
+        self.log_tempfile(local_nucseq)
+        self.log_tempfile(genbank_entry)
+        self.log_tempfile(genbank_nucseq)
 
-        # Fetch the current GenBank entry in ASN.1 and the corresponding sequence FASTA file.
-        genbank_entry = self.args.id + ".asn"
-        id_manifest = self.make_id_manifest(self.args.id)
-        self.fetch_entry(id_manifest, genbank_entry) 
-        self.log_tempfile(genbank_entry) 
-        # Fetch the genbank sequence in FASTA format. 
-        # Could equally well pass a Seq-entry, but preprocessing would be required.
-        fasta_file = self.args.id + ".fa" 
-        self.fetch_fasta(id_manifest, fasta_file)
-
-        # Align the nucleotide sequences of the update and current entry.
-        self.assm_assm_blastn(processed_update_genome, fasta_file, self.args.outstub)
+        # Generate an alignment between the nucleotide sequences in the update and current genbank entry.
+        self.assm_assm_blastn(local_nucseq, genbank_nucseq, self.args.outstub)
         # Run compare_annots.
-        self.compare_annots(processed_update, genbank_entry, self.args.outstub)
+        self.compare_annots(local_entry, genbank_entry, self.args.outstub)
         # Convert the Seq-annot file generated by compare_annots to a match table.
         self.make_table(self.args.outstub)
 
