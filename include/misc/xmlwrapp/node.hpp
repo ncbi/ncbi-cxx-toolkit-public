@@ -202,7 +202,7 @@ public:
      * @endcode
      */
     struct text {
-        explicit text (const char *text) : t(text) { }
+        explicit text (const char *txt) : t(txt) { }
         const char *t;
     };
 

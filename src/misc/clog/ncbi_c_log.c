@@ -104,6 +104,11 @@
 #  define VERIFY(expr)  do  { if ( !(expr) )  s_Abort(__LINE__, #expr); }  while ( 0 )
 #endif
 
+#if defined(__GNUC__)
+#  define UNUSED_ARG(x)  x##_UNUSED __attribute__((unused))
+#else
+#  define UNUSED_ARG(x)  x##_UNUSED
+#endif
 
 /* Directory separator */
 #if defined(NCBI_OS_MSWIN)
@@ -199,7 +204,7 @@ static void s_Abort(long line, const char* msg)
 #endif
 
 int/*bool*/ NcbiLog_Default_MTLock_Handler
-    (void*                  user_data, 
+    (void*                  UNUSED_ARG(user_data),
      ENcbiLog_MTLock_Action action
      )
 {
@@ -443,8 +448,8 @@ void s_SleepMicroSec(unsigned long mc_sec)
     Sleep((mc_sec + 500) / 1000);
 #elif defined(NCBI_OS_UNIX)
     struct timeval delay;
-    delay.tv_sec  = mc_sec / 1000000;
-    delay.tv_usec = mc_sec % 1000000;
+    delay.tv_sec  = (long)(mc_sec / 1000000);
+    delay.tv_usec = (long)(mc_sec % 1000000);
     while (select(0, (fd_set*) 0, (fd_set*) 0, (fd_set*) 0, &delay) < 0) {
         break;
     }
@@ -602,7 +607,7 @@ static TNcbiLog_PID s_GetPID(void)
     /* For main thread always force caching of PIDs */
     if ( !sx_PID ) {
 #if defined(NCBI_OS_UNIX)
-        sx_PID = getpid();
+        sx_PID = (TNcbiLog_PID)getpid();
 #elif defined(NCBI_OS_MSWIN)
         sx_PID = GetCurrentProcessId();
 #endif
@@ -707,7 +712,7 @@ static int/*bool*/ s_GetTimeT(time_t* time_sec, unsigned long* time_ns)
         *time_sec = -1;
     } else {
         *time_sec = tp.tv_sec;
-        *time_ns  = (long)((double)tp.tv_usec * 1000);
+        *time_ns  = (unsigned long)((double)tp.tv_usec * 1000);
     }
 #else
     *time_sec = time(0);
@@ -736,8 +741,8 @@ static int/*bool*/ s_GetTime(STime* t)
 static double s_DiffTime(const STime time_start, const STime time_end)
 {
     double ts;
-    ts = (time_end.sec - time_start.sec) + 
-         ((double)time_end.ns - time_start.ns)/1000000000;
+    ts = ((double)time_end.sec - (double)time_start.sec) + 
+         ((double)time_end.ns  - (double)time_start.ns)/1000000000;
     return ts;
 }
 
@@ -874,7 +879,7 @@ extern const char* NcbiLogP_GetHitID_Env(void)
 
 /* The URL-encoding table
  */
-static const char sx_EncodeTable[256][4] = {
+static const unsigned char sx_EncodeTable[256][4] = {
     "%00", "%01", "%02", "%03", "%04", "%05", "%06", "%07",
     "%08", "%09", "%0A", "%0B", "%0C", "%0D", "%0E", "%0F",
     "%10", "%11", "%12", "%13", "%14", "%15", "%16", "%17",
@@ -935,7 +940,7 @@ static void s_URL_Encode
     for ( ;  *src_read != src_size  &&  *dst_written != dst_size;
         (*src_read)++, (*dst_written)++, src++, dst++)
     {
-        const char* subst = sx_EncodeTable[*src];
+        const unsigned char* subst = sx_EncodeTable[*src];
         if (*subst != '%') {
             *dst = *subst;
         } else if (*dst_written < dst_size - 2) {
@@ -981,7 +986,7 @@ static void s_Sanitize
         (*src_read)++, src++, dst++)
     {
         unsigned char c = *src;
-        char subst = 0;
+        unsigned char subst = 0;
 
         switch (c) {
             case '\n':
@@ -1017,11 +1022,11 @@ static void s_Sanitize
             }
             *dst = '\\';
             v = c >> 6;
-            *(++dst) = '0' + v;
+            *(++dst) = (unsigned char)('0' + v);
             v = (c >> 3) & 7;
-            *(++dst) = '0' + v;
+            *(++dst) = (unsigned char)('0' + v);
             v = c & 7;
-            *(++dst) = '0' + v;
+            *(++dst) = (unsigned char)('0' + v);
             *dst_written += 4;
         }
     }
@@ -1469,7 +1474,7 @@ static int /*bool*/ s_SetLogFilesDir(const char* dir, int/*bool*/ is_applog)
         if (nbuf <= 0) {
             return 0;
         }
-        filelen = nbuf;
+        filelen = (size_t)nbuf;
         filename_buf[filelen] = '\0';
         filename = filename_buf;
     }
@@ -1728,7 +1733,7 @@ static char* s_GenerateSID_Str(char* dst)
     if (!sx_Info->guid) {
         sx_Info->guid = s_CreateUID();
     }
-    guid = sx_Info->guid;
+    guid = (TNcbiLog_UInt8)sx_Info->guid;
     hi = (int)((guid >> 32) & 0xFFFFFFFF);
     lo = (int) (guid & 0xFFFFFFFF);
     n = sprintf(dst, "%08X%08X_%04" NCBILOG_UINT8_FORMAT_SPEC "SID", hi, lo, sx_Info->rid);
@@ -1752,10 +1757,10 @@ static char* s_GenerateHitID_Str(char* dst, int /*bool*/ use_logging_api)
         if (!sx_Info->guid) {
             sx_Info->guid = s_CreateUID();
         }
-        hi = sx_Info->guid;
+        hi  = (TNcbiLog_UInt8)sx_Info->guid;
         rid = (TNcbiLog_UInt8)(sx_Info->rid & 0xFFFFFF) << 16;
     } else {
-        hi = s_CreateUID();
+        hi = (TNcbiLog_UInt8)s_CreateUID();
         rid = 0;
     }
     b3  = (unsigned int)((hi >> 32) & 0xFFFFFFFF);
@@ -1819,7 +1824,7 @@ static size_t s_Write(int fd, const void *buf, size_t count)
             }
             return count - n;
         }
-        n   -= n_written;
+        n   -= (size_t)n_written;
         ptr += n_written;
     }
     while (n > 0);
@@ -1837,8 +1842,10 @@ static void s_Post(TNcbiLog_Context ctx, ENcbiLog_DiagFile diag)
     TFileHandle f = kInvalidFileHandle;
 #if NCBILOG_USE_FILE_DESCRIPTORS
     size_t n_write;
-#endif
+    size_t n;
+#else    
     int n;
+#endif
    
     if (sx_Info->destination == eNcbiLog_Disable) {
         return;
@@ -1987,7 +1994,7 @@ static size_t s_PrintCommonPrefix(TNcbiLog_Context ctx)
     if (n <= 0) {
         return 0;  /* error */
     }
-    return n;
+    return (size_t)n;
 }
 
 
@@ -2134,7 +2141,7 @@ static void s_PrintMessage(ENcbiLog_Severity severity, const char* msg)
     /* Severity */
     n = sprintf(buf + pos, "%s: ", sx_SeverityStr[severity]);
     VERIFY(n > 0);
-    pos += n;
+    pos += (size_t)n;
     /* Message */
     s_Sanitize(msg, strlen(msg), &r_len, buf + pos, NCBILOG_ENTRY_MAX - pos, &w_len);
     pos += w_len;
@@ -2923,13 +2930,13 @@ static void s_AppStart(TNcbiLog_Context ctx, const char* argv[])
     /* Event name */
     n = sprintf(buf + pos, "%-13s", "start");
     VERIFY(n > 0);
-    pos += n;
+    pos += (size_t)n;
     /* Walk through list of arguments */
     if (argv) {
         for (i = 0; argv[i] != NULL; ++i) {
             n = sprintf(buf + pos, " %s", argv[i]);
             VERIFY(n > 0);
-            pos += n;
+            pos += (size_t)n;
         }
     }
     /* Post a message */
@@ -3069,10 +3076,10 @@ static size_t s_ReqStart(TNcbiLog_Context ctx)
 
     /* Event name */
     n = sprintf(sx_Info->message + pos, "%-13s ", "request-start");
-    if (pos <= 0) {
+    if (n <= 0) {
         return 0;
     }
-    pos += n;
+    pos += (size_t)n;
 
     /* Return position in the message buffer */
     return pos;
@@ -3081,9 +3088,9 @@ static size_t s_ReqStart(TNcbiLog_Context ctx)
 
 /** Print extra parameters for request start.
  *  Automatically URL encode each key and value.
- *  Return current position in the buffer.
+ *  Return current position in the sx_Info->message buffer.
  */
-static size_t s_PrintReqStartExtraParams(char* dst, size_t pos)
+static size_t s_PrintReqStartExtraParams(size_t pos)
 {
     SNcbiLog_Param ext[3];
     size_t ext_idx = 0;
@@ -3131,7 +3138,7 @@ void NcbiLog_ReqStart(const SNcbiLog_Param* params)
 
     /* Print host role/location -- add it before users parameters */
     prev = pos;
-    pos = s_PrintReqStartExtraParams(sx_Info->message, pos);
+    pos = s_PrintReqStartExtraParams(pos);
     VERIFY(pos);
     if (prev != pos  &&  params  &&  params->key  &&  params->key[0]  &&  pos < NCBILOG_ENTRY_MAX) {
         sx_Info->message[pos++] = '&';
@@ -3162,7 +3169,7 @@ extern void NcbiLogP_ReqStartStr(const char* params)
 
     /* Print host role/location */
     prev = pos;
-    pos = s_PrintReqStartExtraParams(sx_Info->message, pos);
+    pos = s_PrintReqStartExtraParams(pos);
     VERIFY(pos);
     if (prev != pos  &&  params  &&  params[0]  &&  pos < NCBILOG_ENTRY_MAX) {
         sx_Info->message[pos++] = '&';
@@ -3264,7 +3271,7 @@ static void s_Extra(TNcbiLog_Context ctx, const SNcbiLog_Param* params)
     /* Event name */
     n = sprintf(buf + pos, "%-13s ", "extra");
     VERIFY(n > 0);
-    pos += n;
+    pos += (size_t)n;
     /* Parameters */
     pos = s_PrintParams(buf, pos, params);
     VERIFY(pos);
@@ -3286,7 +3293,7 @@ static void s_ExtraStr(TNcbiLog_Context ctx, const char* params)
     /* Event name */
     n = sprintf(buf + pos, "%-13s ", "extra");
     VERIFY(n > 0);
-    pos += n;
+    pos += (size_t)n;
     /* Parameters */
     pos = s_PrintParamsStr(buf, pos, params);
     VERIFY(pos);
@@ -3338,7 +3345,7 @@ extern void NcbiLog_Perf(int status, double timespan,
     /* Print event name, status and timespan */
     n = sprintf(buf + pos, "%-13s %d %f ", "perf", status, timespan);
     VERIFY(n > 0);
-    pos += n;
+    pos += (size_t)n;
 
     /* Parameters */
     pos_prev = pos;
@@ -3387,7 +3394,7 @@ extern void NcbiLogP_PerfStr(int status, double timespan, const char* params)
     /* Print event name, status and timespan */
     n = sprintf(buf + pos, "%-13s %d %f ", "perf", status, timespan);
     VERIFY(n > 0);
-    pos += n;
+    pos += (size_t)n;
 
     /* Parameters */
     pos_prev = pos;
@@ -3455,7 +3462,11 @@ extern void NcbiLogP_Raw(const char* line)
 extern void NcbiLogP_Raw2(const char* line, size_t len)
 {
     TFileHandle f = kInvalidFileHandle;
+#if NCBILOG_USE_FILE_DESCRIPTORS
+    size_t n;
+#else
     int n;
+#endif
 
     assert(line);
     assert(line[len] == '\0');
@@ -3538,7 +3549,7 @@ extern void NcbiLog_UpdateOnFork(TNcbiLog_OnForkFlags flags)
     TNcbiLog_PID old_pid = sx_PID;
 
 #if defined(NCBI_OS_UNIX)
-    TNcbiLog_PID new_pid = getpid();
+    TNcbiLog_PID new_pid = (TNcbiLog_PID)getpid();
 #elif defined(NCBI_OS_MSWIN)
     TNcbiLog_PID new_pid = GetCurrentProcessId();
 #endif

@@ -261,7 +261,7 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
                 // Submit a job
                 try {
                     PrepareJobData(grid_client);
-                    string job_key = grid_client.Submit();
+                    job_key = grid_client.Submit();
                     grid_ctx.SetJobKey(job_key);
 
                     unsigned long wait_time = m_FirstDelay*1000;

@@ -70,7 +70,7 @@ string CCgiSession_NetCache::CreateNewSession()
     return m_SessionId;
 }
 
-void CCgiSession_NetCache::ModifySessionId(const string& new_id)
+void CCgiSession_NetCache::ModifySessionId(const string& /*new_id*/)
 {
     NCBI_THROW(CCgiSessionException, eImplNotSet,
                "This method is not implemented for NetCache service.");

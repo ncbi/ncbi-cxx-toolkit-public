@@ -194,7 +194,7 @@ protected:
     /// This method is called just after a job has been submitted.
     /// Override this method to render information HTML page.
     /// 
-    virtual void OnJobSubmitted(CGridCgiContext& ctx) {}
+    virtual void OnJobSubmitted(CGridCgiContext& /*ctx*/) {}
 
     /// This method is call when a worker node finishes its job and 
     /// result is ready to be retrieved.
@@ -207,22 +207,22 @@ protected:
     /// Override this method to get a error message and render 
     /// a error HTML page.
     ///
-    virtual void OnJobFailed(const string& msg, CGridCgiContext& ctx) {}
+    virtual void OnJobFailed(const string& /*msg*/, CGridCgiContext& /*ctx*/) {}
 
     /// This method is called if job was canceled during its execution.
     /// Override this message to show a job cancellation message.
     ///
-    virtual void OnJobCanceled(CGridCgiContext& ctx) {}
+    virtual void OnJobCanceled(CGridCgiContext& /*ctx*/) {}
 
     /// This method is call when a job is taken by a worker node 
     /// to be processed.
     ///
-    virtual void OnJobRunning(CGridCgiContext& ctx) {}
+    virtual void OnJobRunning(CGridCgiContext& /*ctx*/) {}
 
     /// This method is call when a job is in NetSchedule queue and 
     /// is waiting for a worker node.
     ///
-    virtual void OnJobPending(CGridCgiContext& ctx) {}
+    virtual void OnJobPending(CGridCgiContext& /*ctx*/) {}
 
     /// This method is call at the very end of the request processing
     ///

@@ -52,7 +52,7 @@ namespace xslt
     class exception : public xml::exception
     {
     public:
-        explicit exception(const std::string& what) : xml::exception(what)
+        explicit exception(const std::string& msg) : xml::exception(msg)
         {}
     };
 

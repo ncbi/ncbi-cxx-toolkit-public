@@ -79,7 +79,7 @@ bool CTestRegApp::TestApp_Exit(void)
 }
 
 
-bool CTestRegApp::Thread_Run(int idx)
+bool CTestRegApp::Thread_Run(int /*idx*/)
 {
     for (int i=0; i<kRepeatCount; i++) {
 
@@ -139,7 +139,7 @@ bool CTestRegApp::Thread_Run(int idx)
 }
 
 
-bool CTestRegApp::Thread_Exit(int idx)
+bool CTestRegApp::Thread_Exit(int /*idx*/)
 {
     /* Destroy thread-specific NcbiLog API information */
     NcbiLog_Destroy_Thread();

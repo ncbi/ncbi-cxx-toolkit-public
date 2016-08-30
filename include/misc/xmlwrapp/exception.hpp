@@ -63,7 +63,7 @@ namespace xml
     class exception : public std::runtime_error
     {
     public:
-        explicit exception(const std::string& what) : std::runtime_error(what)
+        explicit exception(const std::string& msg) : std::runtime_error(msg)
         {}
     };
 

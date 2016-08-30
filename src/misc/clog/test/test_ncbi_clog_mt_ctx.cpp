@@ -71,7 +71,7 @@ bool CTestRegApp::TestApp_Exit(void)
 }
 
 
-bool CTestRegApp::Thread_Run(int idx)
+bool CTestRegApp::Thread_Run(int /*idx*/)
 {
     // This call can be skipped, if you don't need to set up an
     // application name. And it is better to make an initialization
