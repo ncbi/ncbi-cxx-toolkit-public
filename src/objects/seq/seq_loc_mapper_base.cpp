@@ -1021,8 +1021,6 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
     // they match each other.
     // NOTE: The actual lengths may change later if trimming at sequence
     // length is enabled.
-    TSeqPos trim_src_incomplete_codons = 0;
-    TSeqPos trim_dst_incomplete_codons = 0;
     bool multiseq_src = !source.GetId();
     bool multiseq_dst = !target.GetId();
     if (src_total_len != kInvalidSeqPos  &&  dst_total_len != kInvalidSeqPos) {
@@ -1040,8 +1038,6 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
                     "Source and destination lengths do not match, "
                     "dropping " << src_total_len % 3 <<
                     " overhanging bases on source location");
-                trim_src_incomplete_codons = src_total_len % 3;
-                src_total_len -= trim_src_incomplete_codons;
             }
             // Allow partial codon mismatch, report more than one codon.
             if (dst_total_len*3 >= src_total_len + 3  ||
@@ -1061,8 +1057,6 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
                     "Source and destination lengths do not match, "
                     "dropping " << dst_total_len % 3 <<
                     " overhanging bases on destination location");
-                trim_dst_incomplete_codons = dst_total_len % 3;
-                dst_total_len -= trim_dst_incomplete_codons;
             }
             // Allow partial codon mismatch
             if (src_total_len*3 >= dst_total_len + 3  ||
@@ -1113,18 +1107,6 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
         src_start = src_it.GetRange().GetFrom()*src_width;
         src_len = x_GetRangeLength(src_it)*src_width;
     }
-    // Trim incomplete codons.
-    if (trim_src_incomplete_codons  &&
-        src_len != kInvalidSeqPos) {
-        if (src_len == src_total_len + trim_src_incomplete_codons) {
-            if (IsReverse(src_it.GetStrand())) {
-                src_start += trim_src_incomplete_codons;
-            }
-            src_len = src_total_len;
-            trim_src_incomplete_codons = 0; // only trim once
-        }
-        src_total_len -= src_len;
-    }
 
     rg = dst_it.GetRange();
     TSeqPos dst_start = kInvalidSeqPos;
@@ -1146,18 +1128,6 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
     else if ( !rg.Empty() ) {
         dst_start = dst_it.GetRange().GetFrom()*dst_width;
         dst_len = x_GetRangeLength(dst_it)*dst_width;
-    }
-    // Trim incomplete codons.
-    if (trim_dst_incomplete_codons  &&
-        dst_len != kInvalidSeqPos) {
-        if (dst_len == dst_total_len + trim_dst_incomplete_codons) {
-            if (IsReverse(dst_it.GetStrand())) {
-                dst_start += trim_dst_incomplete_codons;
-            }
-            dst_len = dst_total_len;
-            trim_dst_incomplete_codons = 0; // only trim once
-        }
-        dst_total_len -= dst_len;
     }
 
     if (src_frame  &&  dst_type == eSeq_prot  &&  src_start != kInvalidSeqPos  &&
@@ -1267,18 +1237,6 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
                 src_start = src_it.GetRange().GetFrom()*src_width;
                 src_len = x_GetRangeLength(src_it)*src_width;
             }
-            // Trim incomplete codons.
-            if (trim_src_incomplete_codons  &&
-                src_len != kInvalidSeqPos) {
-                if (src_len == src_total_len + trim_src_incomplete_codons) {
-                    if (IsReverse(src_it.GetStrand())) {
-                        src_start += trim_src_incomplete_codons;
-                    }
-                    src_len = src_total_len;
-                    trim_src_incomplete_codons = 0; // only trim once
-                }
-                src_total_len -= src_len;
-            }
             if (last_src_id != src_it.GetSeq_id_Handle() ||
                 last_src_reverse != IsReverse(src_it.GetStrand())) {
                 m_CurrentGroup++;
@@ -1307,18 +1265,6 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
             else {
                 dst_start = dst_it.GetRange().GetFrom()*dst_width;
                 dst_len = x_GetRangeLength(dst_it)*dst_width;
-            }
-            // Trim incomplete codons.
-            if (trim_dst_incomplete_codons  &&
-                dst_len != kInvalidSeqPos) {
-                if (dst_len == dst_total_len + trim_dst_incomplete_codons) {
-                    if (IsReverse(dst_it.GetStrand())) {
-                        dst_start += trim_dst_incomplete_codons;
-                    }
-                    dst_len = dst_total_len;
-                    trim_dst_incomplete_codons = 0; // only trim once
-                }
-                dst_total_len -= dst_len;
             }
             if (last_dst_id != dst_it.GetSeq_id_Handle() ||
                 last_dst_reverse != IsReverse(dst_it.GetStrand())) {
