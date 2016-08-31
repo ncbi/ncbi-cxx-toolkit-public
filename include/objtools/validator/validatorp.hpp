@@ -516,6 +516,9 @@ public:
     void ValidateSeqLoc(const CSeq_loc& loc, const CBioseq_Handle& seq, bool report_abutting,
                         const string& prefix, const CSerialObject& obj);
     void ValidateSeqLocIds(const CSeq_loc& loc, const CSerialObject& obj);
+    static bool IsInOrganelleSmallGenomeSet(const CSeq_id& id, CScope& scope);
+    static bool BadMultipleSequenceLocation(const CSeq_loc& loc, CScope& scope);
+    void CheckMultipleIds(const CSeq_loc& loc, const CSerialObject& obj);
     void ValidateDbxref(const CDbtag& xref, const CSerialObject& obj,
     bool biosource = false, const CSeq_entry *ctx = 0);
     void ValidateDbxref(TDbtags& xref_list, const CSerialObject& obj,

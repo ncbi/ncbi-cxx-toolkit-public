@@ -1628,6 +1628,9 @@ same id type" } },
    { eErr_SEQ_FEAT_ColdShockProteinProblem,
    { "ColdShockProteinProblem",
 "A misc_feature containing cspA should not overlap a cold-shock protein CDS." } },
+   { eErr_SEQ_FEAT_BadLocation,
+   { "BadLocation",
+"There is a problem with this feature location." } },
 
 /* SEQ_ALIGN */
 

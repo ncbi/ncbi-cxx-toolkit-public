@@ -2929,6 +2929,64 @@ void CValidError_imp::ValidateSeqLocIds
             }
         }
     } 
+    if (BadMultipleSequenceLocation(loc, *m_Scope)) {
+        PostErr(eDiag_Error, eErr_SEQ_FEAT_BadLocation, 
+            "Feature location intervals should all be on the same sequence", obj);
+    }
+}
+
+
+bool CValidError_imp::IsInOrganelleSmallGenomeSet(const CSeq_id& id, CScope& scope)
+{
+    CBioseq_Handle bsh = scope.GetBioseqHandle(id);
+    if (!bsh) {
+        // can't fetch bioseq, can't tell, assume not
+        return false;
+    }
+    CSeqdesc_CI src(bsh, CSeqdesc::e_Source);
+    if (!src || !src->GetSource().IsSetGenome() || !IsOrganelle(src->GetSource().GetGenome())) {
+        // not an organelle location
+        return false;
+    }
+    CBioseq_set_Handle set = bsh.GetParentBioseq_set();
+    while (set) {
+        if (!set.IsSetClass()) {
+            // class not set - quit
+            break;
+        } else if (set.GetClass() == CBioseq_set::eClass_small_genome_set) {
+            return true;
+        } else if (set.GetClass() == CBioseq_set::eClass_nuc_prot) {
+            // look at parent
+            set = set.GetParentBioseq_set();
+        } else {
+            break;
+        }
+    }
+    return false;
+}
+
+// all ids in a location should point to the same sequence, unless the sequences are
+// in an organelle small genome set
+bool CValidError_imp::BadMultipleSequenceLocation(const CSeq_loc& loc, CScope& scope)
+{
+    CSeq_loc_CI lit(loc);
+    const CSeq_id& id1 = lit.GetSeq_id();
+
+    bool in_organelle_small_genome_set = IsInOrganelleSmallGenomeSet(id1, scope);
+
+    ++lit;
+    while (lit) {
+        const CSeq_id& id2 = lit.GetSeq_id();
+        if (in_organelle_small_genome_set && !IsInOrganelleSmallGenomeSet(id2, scope)) {
+            // if one sequence in small genome set and other not, this is bad
+            return true;
+        }
+        if (!id2.Match(id1) && !IsSameBioseq(id1, id2, &scope) && !in_organelle_small_genome_set) {
+            return true;
+        }
+        ++lit;        
+    }
+    return false;
 }
 
 

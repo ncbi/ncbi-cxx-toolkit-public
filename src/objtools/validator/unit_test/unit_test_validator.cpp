@@ -1499,6 +1499,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_StopInProtein)
 
 BOOST_AUTO_TEST_CASE(Test_SEQ_INST_PartialInconsistent)
 {
+#if 0
+    //We don't care about segmented sets any more
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodProtSeq();
 
     STANDARD_SETUP
@@ -1622,6 +1624,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_PartialInconsistent)
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
+#endif
 }
 
 
@@ -19657,3 +19660,47 @@ BOOST_AUTO_TEST_CASE(Test_VR_616)
     CLEAR_ERRORS
 
 }
+
+BOOST_AUTO_TEST_CASE(Test_BadLocation)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodEcoSet();
+
+    CRef<CSeq_feat> gene(new CSeq_feat());
+    gene->SetData().SetGene().SetLocus("badguy");
+    CRef<CSeq_loc> loc1(new CSeq_loc());
+    loc1->SetInt().SetFrom(0);
+    loc1->SetInt().SetTo(10);
+    loc1->SetInt().SetId().SetLocal().SetStr("good1");    
+    CRef<CSeq_loc> loc2(new CSeq_loc());
+    loc2->SetInt().SetFrom(0);
+    loc2->SetInt().SetTo(10);
+    loc2->SetInt().SetId().SetLocal().SetStr("good2");
+    CRef<CSeq_loc> loc3(new CSeq_loc());
+    loc3->SetInt().SetFrom(0);
+    loc3->SetInt().SetTo(10);
+    loc3->SetInt().SetId().SetLocal().SetStr("good3");
+
+    gene->SetLocation().SetMix().Set().push_back(loc1);
+    gene->SetLocation().SetMix().Set().push_back(loc2);
+    gene->SetLocation().SetMix().Set().push_back(loc3);
+
+    unit_test_util::AddFeat(gene, entry->SetSet().SetSeq_set().front());
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good1", eDiag_Error, "BadLocation", 
+                           "Feature location intervals should all be on the same sequence"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    // error goes away if organelle small genome set
+    entry->SetSet().SetClass(CBioseq_set::eClass_small_genome_set);
+    NON_CONST_ITERATE(CBioseq_set::TSeq_set, s, entry->SetSet().SetSeq_set()) {
+        unit_test_util::SetGenome(*s, CBioSource::eGenome_chloroplast);
+    }
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+}
+
