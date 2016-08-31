@@ -1,0 +1,11 @@
+Discrepancy Report Results
+
+Summary
+UNUSUAL_ITS: 2 Bioseqs have unusual rRNA / ITS
+
+Detailed Report
+
+UNUSUAL_ITS: 2 Bioseqs have unusual rRNA / ITS
+test-data/UNUSUAL_ITS.asn:KJ469978.1 (length 276)
+test-data/UNUSUAL_ITS.asn:KJ469979.1 (length 291)
+

@@ -1,0 +1,391 @@
+Seq-entry ::= set {
+  class genbank ,
+  seq-set {
+    set {
+      class phy-set ,
+      descr {
+        title "Encephalitozoon cuniculi small subunit ribosomal RNA gene,
+ partial sequence; internal transcribed spacer 1, 5.8S ribosomal RNA gene, and
+ internal transcribed spacer 2, complete sequence; and large subunit ribosomal
+ RNA gene, partial sequence." ,
+        pub {
+          pub {
+            pmid 25386754 ,
+            article {
+              title {
+                name "Diversity of Microsporidia, Cryptosporidium and Giardia
+ in Mountain Gorillas (Gorilla beringei beringei) in Volcanoes National Park,
+ Rwanda." } ,
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Sak" ,
+                          first "B" ,
+                          initials "B." } } ,
+                    {
+                      name
+                        name {
+                          last "Petrzelkova" ,
+                          first "K" ,
+                          initials "K.J." } } ,
+                    {
+                      name
+                        name {
+                          last "Kvetonova" ,
+                          first "D" ,
+                          initials "D." } } ,
+                    {
+                      name
+                        name {
+                          last "Mynarova" ,
+                          first "A" ,
+                          initials "A." } } ,
+                    {
+                      name
+                        name {
+                          last "Pomajbikova" ,
+                          first "K" ,
+                          initials "K." } } ,
+                    {
+                      name
+                        name {
+                          last "Modry" ,
+                          first "D" ,
+                          initials "D." } } ,
+                    {
+                      name
+                        name {
+                          last "Cranfield" ,
+                          first "M" ,
+                          initials "M.R." } } ,
+                    {
+                      name
+                        name {
+                          last "Mudakikwa" ,
+                          first "A" ,
+                          initials "A." } } ,
+                    {
+                      name
+                        name {
+                          last "Kvac" ,
+                          first "M" ,
+                          initials "M." } } } } ,
+              from
+                journal {
+                  title {
+                    iso-jta "PLoS ONE" } ,
+                  imp {
+                    date
+                      std {
+                        year 2014 } ,
+                    volume "9" ,
+                    issue "11" ,
+                    pages "E109751" ,
+                    pubstatus epublish } } ,
+              ids {
+                doi "10.1371/journal.pone.0109751" ,
+                pubmed 25386754 } } } } ,
+        pub {
+          pub {
+            sub {
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Kvac" ,
+                          first "Martin" ,
+                          initials "M." } } ,
+                    {
+                      name
+                        name {
+                          last "Sak" ,
+                          first "Bohumil" ,
+                          initials "B." } } } ,
+                affil
+                  std {
+                    affil "Biology Centre, AS CR, v.v.i." ,
+                    div "Institute of Parasitology" ,
+                    city "Ceske Budejovice" ,
+                    country "Czech Republic" ,
+                    street "Branisovska 31" ,
+                    postal-code "37005" } } ,
+              medium other ,
+              date
+                std {
+                  year 2014 ,
+                  month 2 ,
+                  day 17 } } } } ,
+        user {
+          class "SMART_V1.0" ,
+          type
+            id 1 ,
+          data {
+            {
+              label
+                id 1 ,
+              data
+                int 4 } } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 8 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 6 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 21 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2016 } } } ,
+        update-date
+          std {
+            year 2014 ,
+            month 12 ,
+            day 7 } } ,
+      seq-set {
+        seq {
+          id {
+            genbank {
+              accession "KJ469978" ,
+              version 1 } ,
+            gi 671279249 } ,
+          descr {
+            title "Encephalitozoon cuniculi isolate 6025 genotype II small
+ subunit ribosomal RNA gene, partial sequence; internal transcribed spacer 1,
+ 5.8S ribosomal RNA gene, and internal transcribed spacer 2, complete
+ sequence; and large subunit ribosomal RNA gene, partial sequence." ,
+            source {
+              genome genomic ,
+              org {
+                taxname "Encephalitozoon cuniculi" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 6035 } } ,
+                orgname {
+                  name
+                    binomial {
+                      genus "Encephalitozoon" ,
+                      species "cuniculi" } ,
+                  mod {
+                    {
+                      subtype isolate ,
+                      subname "6025" } ,
+                    {
+                      subtype nat-host ,
+                      subname "Gorilla beringei beringei" } } ,
+                  lineage "Eukaryota; Fungi; Microsporidia; Unikaryonidae;
+ Encephalitozoon" ,
+                  gcode 1 ,
+                  mgcode 1 ,
+                  div "PLN" } } ,
+              subtype {
+                {
+                  subtype genotype ,
+                  name "II" } ,
+                {
+                  subtype country ,
+                  name "Rwanda" } ,
+                {
+                  subtype isolation-source ,
+                  name "feces" } } } ,
+            molinfo {
+              biomol genomic } ,
+            create-date
+              std {
+                year 2014 ,
+                month 12 ,
+                day 7 } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 276 ,
+            seq-data
+              ncbi2na 'F44595B6F3708E191E8608DA0ADE2D78BBC8C2330B6C13A79EFA205
+24928D2CEFBEEFF8E8EFEFEEBF77BD1A8F8FA4F2698E0A1B928A18CE6FBEFB86BB783EEE6BB91A
+A157E'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      rna {
+                        type rRNA ,
+                        ext
+                          name "small subunit ribosomal RNA" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 125 ,
+                        strand plus ,
+                        id
+                          gi 671279249 ,
+                        fuzz-from
+                          lim lt } } ,
+                  {
+                    data
+                      rna {
+                        type miscRNA ,
+                        ext
+                          gen {
+                            product "internal transcribed spacer 1" } } ,
+                    location
+                      int {
+                        from 126 ,
+                        to 156 ,
+                        strand plus ,
+                        id
+                          gi 671279249 } } ,
+                  {
+                    data
+                      rna {
+                        type miscRNA } ,
+                    partial TRUE ,
+                    comment "contains 5.8S ribosomal RNA, internal transcribed
+ spacer 2, and large subunit ribosomal RNA" ,
+                    location
+                      int {
+                        from 157 ,
+                        to 275 ,
+                        strand plus ,
+                        id
+                          gi 671279249 ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            genbank {
+              accession "KJ469979" ,
+              version 1 } ,
+            gi 671279250 } ,
+          descr {
+            title "Encephalitozoon cuniculi isolate 6025 genotype I small
+ subunit ribosomal RNA gene, partial sequence; internal transcribed spacer 1,
+ 5.8S ribosomal RNA gene, and internal transcribed spacer 2, complete
+ sequence; and large subunit ribosomal RNA gene, partial sequence." ,
+            source {
+              genome genomic ,
+              org {
+                taxname "Encephalitozoon cuniculi" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 6035 } } ,
+                orgname {
+                  name
+                    binomial {
+                      genus "Encephalitozoon" ,
+                      species "cuniculi" } ,
+                  mod {
+                    {
+                      subtype isolate ,
+                      subname "6025" } ,
+                    {
+                      subtype nat-host ,
+                      subname "Gorilla beringei beringei" } } ,
+                  lineage "Eukaryota; Fungi; Microsporidia; Unikaryonidae;
+ Encephalitozoon" ,
+                  gcode 1 ,
+                  mgcode 1 ,
+                  div "PLN" } } ,
+              subtype {
+                {
+                  subtype genotype ,
+                  name "I" } ,
+                {
+                  subtype country ,
+                  name "Rwanda" } ,
+                {
+                  subtype isolation-source ,
+                  name "feces" } } } ,
+            molinfo {
+              biomol genomic } ,
+            create-date
+              std {
+                year 2014 ,
+                month 12 ,
+                day 7 } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 291 ,
+            seq-data
+              ncbi2na 'D1C7A0F44595B6F3708E191E8608DA0ADE2D78BBC8C2330B6C13A79
+EFA20524928D2CEFBEEFF8E8EFEFEFEEBF77BD1A8F8FA4F2698E0A1B928A18CE6FBEFB86BB783E
+EE6BB91AA157C'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      rna {
+                        type rRNA ,
+                        ext
+                          name "small subunit ribosomal RNA" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 137 ,
+                        strand plus ,
+                        id
+                          gi 671279250 ,
+                        fuzz-from
+                          lim lt } } ,
+                  {
+                    data
+                      rna {
+                        type miscRNA ,
+                        ext
+                          gen {
+                            product "internal transcribed spacer 1" } } ,
+                    location
+                      int {
+                        from 138 ,
+                        to 172 ,
+                        strand plus ,
+                        id
+                          gi 671279250 } } ,
+                  {
+                    data
+                      rna {
+                        type miscRNA } ,
+                    partial TRUE ,
+                    comment "contains 5.8S ribosomal RNA, internal transcribed
+ spacer 2, and large subunit ribosomal RNA" ,
+                    location
+                      int {
+                        from 173 ,
+                        to 290 ,
+                        strand plus ,
+                        id
+                          gi 671279250 ,
+                        fuzz-to
+                          lim gt } } } } } } } } } }

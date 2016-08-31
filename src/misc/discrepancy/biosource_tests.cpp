@@ -2405,5 +2405,63 @@ DISCREPANCY_SUMMARIZE(DUP_SRC_QUAL)
 DISCREPANCY_ALIAS(DUP_SRC_QUAL, DUP_SRC_QUAL_DATA)
 
 
+// UNUSUAL_ITS
+const string kUnusualITS = "[n] Bioseq[s] [has] unusual rRNA / ITS";
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(UNUSUAL_ITS, CBioSource, eDisc | eOncaller, "Test Bioseqs for unusual rRNA / ITS")
+//  ----------------------------------------------------------------------------
+{
+    if (!context.HasLineage(obj, "", "Microsporidia")) {
+        return;
+    }
+
+    CConstRef<CBioseq> bioseq = context.GetCurrentBioseq();
+    if (!bioseq || !bioseq->IsSetAnnot()) {
+        return;
+    }
+
+    const CSeq_annot* annot = nullptr;
+    ITERATE(CBioseq::TAnnot, annot_it, bioseq->GetAnnot()) {
+        if ((*annot_it)->IsFtable()) {
+            annot = *annot_it;
+            break;
+        }
+    }
+
+    bool has_unusual = false;
+
+    if (annot) {
+
+        ITERATE(CSeq_annot::TData::TFtable, feat, annot->GetData().GetFtable()) {
+
+            if ((*feat)->IsSetComment() && (*feat)->IsSetData() && (*feat)->GetData().IsRna()) {
+
+                const CRNA_ref& rna = (*feat)->GetData().GetRna();
+                if (rna.IsSetType() && rna.GetType() == CRNA_ref::eType_miscRNA) {
+
+                    if (NStr::StartsWith((*feat)->GetComment(), "contains", NStr::eNocase)) {
+                        has_unusual = true;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    if (has_unusual) {
+        m_Objs[kUnusualITS].Add(*context.NewDiscObj(bioseq), false);
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(UNUSUAL_ITS)
+//  ----------------------------------------------------------------------------
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

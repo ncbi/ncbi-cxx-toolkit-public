@@ -1508,8 +1508,8 @@ static bool AddExceptionsToShortIntron(const CSeq_feat& sf, CScope& scope, std::
                     ConvertToMiscFeature(sf_edit, scope);
                 }
                 else {
-                    // TODO: feature should be removed here
-                    sf_edit.RemoveReference(); // ?????
+                    CSeq_feat_EditHandle sf_handle(scope.GetSeq_featHandle(sf));
+                    sf_handle.Remove();
                 }
             }
 
