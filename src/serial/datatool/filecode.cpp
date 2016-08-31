@@ -127,7 +127,7 @@ string CFileCode::GetDefineBase(void) const
     ITERATE ( string, i, GetFileBaseName() ) {
         char c = *i;
         if ( c >= 'a' && c <= 'z' )
-            c = c + ('A' - 'a');
+            c = (char)(c + ('A' - 'a'));
         else if ( (c < 'A' || c > 'Z') &&
                   (c < '0' || c > '9') )
             c = '_';

@@ -44,7 +44,7 @@ string Identifier(const string& typeName, bool capitalize)
     string::const_iterator i = typeName.begin();
     if ( i != typeName.end() ) {
         if (isalnum((unsigned char)(*i))) {
-            s += capitalize? toupper((unsigned char)(*i)): *i;
+            s += capitalize? (char)toupper((unsigned char)(*i)) : *i;
         } else {
             string ent(NStr::HtmlEntity((unsigned char)(*i)));
             if (*i != '_' && !ent.empty()) {

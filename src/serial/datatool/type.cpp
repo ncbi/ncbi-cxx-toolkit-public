@@ -196,7 +196,7 @@ void CDataType::PrintSpecDump(CNcbiOstream& out, int indent) const
     }
 }
 
-void CDataType::PrintSpecDumpExtra(CNcbiOstream& out, int indent) const
+void CDataType::PrintSpecDumpExtra(CNcbiOstream& /*out*/, int /*indent*/) const
 {
 }
 
@@ -951,10 +951,10 @@ string CDataType::GetFullName(void) const
                     special = !member->GetType()->IsUniSeq();
                 }
             } else if (IsUniSeq()) {
-                const CDataType* parent = GetParentType();
-                special = parent->GetDataMember() != 0;
-                if (!special && parent->IsContainer()) {
-                    cont = dynamic_cast<const CDataMemberContainerType*>(parent);
+                const CDataType* parent_type = GetParentType();
+                special = parent_type->GetDataMember() != 0;
+                if (!special && parent_type->IsContainer()) {
+                    cont = dynamic_cast<const CDataMemberContainerType*>(parent_type);
                     special = cont->GetMembers().size() == 1;
                 }
             }

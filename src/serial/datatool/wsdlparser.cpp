@@ -83,14 +83,14 @@ void WSDLParser::BuildDataTree(
                 !i->second.IsEmbedded() && !i->second.GetName().empty();
             if (valid) {
                 for (j=i, ++j; j != m_MapElement.end(); ++j) {
-                   DTDElement::EType type = j->second.GetType();
+                    DTDElement::EType tp = j->second.GetType();
                     valid =
-                        type != DTDElement::eUnknown &&
-                        type != DTDElement::eUnknownGroup &&
-                        type != DTDElement::eWsdlUnsupportedEndpoint &&
+                        tp != DTDElement::eUnknown &&
+                        tp != DTDElement::eUnknownGroup &&
+                        tp != DTDElement::eWsdlUnsupportedEndpoint &&
                         !j->second.IsEmbedded();
                     if (valid &&
-                        NStr::CompareNocase(i->second.GetName(),j->second.GetName()) ==0 &&
+                        NStr::CompareNocase(i->second.GetName(),j->second.GetName()) == 0 &&
                         i->second.GetNamespaceName() != j->second.GetNamespaceName()) {
                         clashes[i->second.GetName()].insert(i->second.GetNamespaceName());
                         clashes[j->second.GetName()].insert(j->second.GetNamespaceName());
@@ -446,7 +446,7 @@ void WSDLParser::ParseOperation(DTDElement& node)
     }
 }
 
-void WSDLParser::ParseBody(DTDElement& node)
+void WSDLParser::ParseBody(DTDElement& /*node*/)
 {
     TToken tok = GetRawAttributeSet();
     if (tok == K_CLOSING) {
@@ -646,8 +646,10 @@ string WSDLParser::CreateWsdlName(const string& name, DTDElement::EType type)
 
 string WSDLParser::CreateEmbeddedName(DTDElement& node, DTDElement::EType type)
 {
-    return CreateWsdlName( CreateTmpEmbeddedName(
-        node.GetName(), node.GetContent().size()),type);
+    return CreateWsdlName( 
+               CreateTmpEmbeddedName( node.GetName(), (int)node.GetContent().size() ),
+               type
+           );
 }
 
 DTDElement& WSDLParser::EmbeddedElement(DTDElement& node,
@@ -706,7 +708,7 @@ void WSDLParser::ParseService(void)
 }
 
 AbstractLexer* WSDLParser::CreateEntityLexer(
-    CNcbiIstream& in, const string& name, bool autoDelete /*=true*/)
+    CNcbiIstream& in, const string& name, bool /*autoDelete*/ /*=true*/)
 {
     WSDLEntityLexer* l = new WSDLEntityLexer(in,name);
     l->UseXSDLexer(m_ParsingTypes);

@@ -449,7 +449,7 @@ string DTDElement::CreateEmbeddedName(int depth) const
     list<string>::const_iterator i;
     for ( i = m_Refs.begin(); i != m_Refs.end(); ++i) {
         tmp = i->substr(0,depth);
-        tmp[0] = toupper((unsigned char) tmp[0]);
+        tmp[0] = (char)toupper((unsigned char) tmp[0]);
         name += tmp;
     }
     if (m_Type == eAny) {

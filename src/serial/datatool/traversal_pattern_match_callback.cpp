@@ -229,7 +229,7 @@ CRef<CTraversalNode> CTraversalPatternMatchCallback::x_TranslateArgToNode(
     const CTraversalSpecFileParser::TPattern &extra_arg_pattern )
 {
     // how many levels do we have to climb up to find the extra_arg_pattern?
-    const int levels_to_climb = ( main_pattern.size() - extra_arg_pattern.size() );
+    const int levels_to_climb = (int)(main_pattern.size() - extra_arg_pattern.size());
 
     // climb up
     int level_up = 0;

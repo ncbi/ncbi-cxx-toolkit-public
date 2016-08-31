@@ -562,7 +562,7 @@ string DTDParser::CreateEmbeddedName(const DTDElement& node, int depth) const
             if (!refname.empty()) {
                 string::size_type name = refname.find(':');
                 name = (name != string::npos && (name+1) < refname.size()) ? (name+1) : 0;
-                new_var += toupper((unsigned char) refname[name]);;
+                new_var += (char)toupper((unsigned char) refname[name]);;
 // try to avoid very long names
                 if (new_var.size() > 8) {
                     break;
@@ -732,7 +732,7 @@ bool DTDParser::PopEntityLexer(void)
 }
 
 AbstractLexer* DTDParser::CreateEntityLexer(
-    CNcbiIstream& in, const string& name, bool autoDelete /*=true*/)
+    CNcbiIstream& in, const string& name, bool /*autoDelete*/ /*=true*/)
 {
     return new DTDEntityLexer(in,name);
 }
@@ -1251,16 +1251,16 @@ CDataType* DTDParser::TypesBlock(
                 if (uniseq2 || (optional && refseq)) {
                     refname.insert(0,"E");
                 }
-                AutoPtr<CDataMemberContainerType> container(new CDataSequenceType());
+                AutoPtr<CDataMemberContainerType> type_container(new CDataSequenceType());
                 AutoPtr<CDataMember> member(new CDataMember(refname, type));
-                container->SetSourceLine(type->GetSourceLine());
+                type_container->SetSourceLine(type->GetSourceLine());
                 if (optional) {
                     member->SetOptional();
                 }
                 member->SetNotag();
                 member->SetNoPrefix();
-                container->AddMember(member);
-                type.reset(container.release());
+                type_container->AddMember(member);
+                type.reset(type_container.release());
             }
             else if (uniseq2 && setnil) {
 // the idea is to make it implicit

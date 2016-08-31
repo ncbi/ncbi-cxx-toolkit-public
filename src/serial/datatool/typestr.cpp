@@ -131,7 +131,7 @@ bool CTypeStrings::HaveSpecialRef(void) const
     return !m_SpecialRef.empty();
 }
 
-string CTypeStrings::GetRef(const CNamespace& ns) const
+string CTypeStrings::GetRef(const CNamespace& /*ns*/) const
 {
     return m_SpecialRef;
 }

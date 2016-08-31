@@ -74,6 +74,7 @@ class CNotFoundException : public CDatatoolException
 {
 public:
     enum EErrCode {
+        eInvalid = CException::eInvalid,
         eType,
         eModule
     };
@@ -107,9 +108,8 @@ public:
                      EErrCode err_code, const string& message,
                      const list<CDataType*>& types, 
                      EDiagSev severity = eDiag_Error) THROWS_NONE
-        : CNotFoundException(info, prev_exception,
-            (CNotFoundException::EErrCode) CException::eInvalid,
-            message), m_Types(types)
+        : CNotFoundException(info, prev_exception, CNotFoundException::eInvalid, message),
+          m_Types(types)
     NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(CAmbiguiousTypes, CNotFoundException);
 
 public:

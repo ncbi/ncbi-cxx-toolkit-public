@@ -69,7 +69,7 @@ public:
     bool Call( CTraversalNode& node, const CTraversalNode::TNodeVec &node_path, ECallType is_cyclic ) {
 
         // print indentation
-        const int depth = node_path.size() - 1;
+        const size_t depth = node_path.size() - 1;
         m_Ostream << string( depth * 2, ' ' );
 
         if( node.GetType() == CTraversalNode::eType_Reference ) {
@@ -101,7 +101,7 @@ public:
     CGenerateIncludesCallback( CNcbiOstream& ostream ) 
         : m_Ostream(ostream) { }
 
-    bool Call( CTraversalNode& node, const CTraversalNode::TNodeVec &node_path, ECallType is_cyclic ) {
+    bool Call( CTraversalNode& node, const CTraversalNode::TNodeVec& /*node_path*/, ECallType /*is_cyclic*/ ) {
 
         // We can't generate an include for an unknown type
         if( node.IsTemplate() ) {
@@ -173,7 +173,7 @@ public:
     CGenerateCodeCallback( const string &class_name, CNcbiOstream& ostream, CTraversalNode::EGenerateMode generate_mode ) 
         : m_Ostream(ostream), m_ClassName(class_name), m_GenerateMode(generate_mode) { }
 
-    bool Call( CTraversalNode& node, const CTraversalNode::TNodeVec &node_path, ECallType is_cyclic ) {
+    bool Call( CTraversalNode& node, const CTraversalNode::TNodeVec& /*node_path*/, ECallType /*is_cyclic*/ ) {
 
         // skip functions we've already output
         if( m_NodesSeen.find( node.Ref() ) != m_NodesSeen.end() ) {
@@ -205,7 +205,7 @@ public:
     CAddToNodeSetCallback( CTraversalNode::TNodeSet &set_to_add_to )
         : m_SetToAddTo(set_to_add_to) { }
 
-    bool Call( CTraversalNode& node, const CTraversalNode::TNodeVec &node_path, ECallType is_cyclic ) {
+    bool Call( CTraversalNode& node, const CTraversalNode::TNodeVec& /*node_path*/, ECallType /*is_cyclic*/ ) {
         // we've already seen this node, so don't traverse its "children" again
         if( m_SetToAddTo.find( node.Ref() ) != m_SetToAddTo.end() ) {
             return false;
@@ -227,7 +227,7 @@ public:
     CGenerateStoredArgVariablesCallback( CNcbiOstream& ostream )
         : m_Ostream(ostream) { }
 
-    bool Call( CTraversalNode& node, const CTraversalNode::TNodeVec &node_path, ECallType is_cyclic ) {
+    bool Call( CTraversalNode& node, const CTraversalNode::TNodeVec& /*node_path*/, ECallType /*is_cyclic*/ ) {
         if( node.GetDoStoreArg() ) {
             const string arg_var = node.GetStoredArgVariable();
             if( m_Args_seen.find(arg_var) == m_Args_seen.end() ) {
@@ -251,7 +251,7 @@ public:
     CGenerateStoredArgInitializerCallback( CNcbiOstream& ostream ) 
         : m_Ostream(ostream) { }
 
-    bool Call( CTraversalNode& node, const CTraversalNode::TNodeVec &node_path, ECallType is_cyclic ) {
+    bool Call( CTraversalNode& node, const CTraversalNode::TNodeVec& /*node_path*/, ECallType /*is_cyclic*/ ) {
         if( node.GetDoStoreArg() ) {
             const string arg_var = node.GetStoredArgVariable();
             if( m_Args_seen.find(arg_var) == m_Args_seen.end() ) {
@@ -558,7 +558,7 @@ void CTraversalCodeGenerator::x_GetIncludeGuard( string& include_guard_define, c
 void CTraversalCodeGenerator::x_GenerateSourceFile(
     const std::vector<std::string> & output_class_namespace,
     const string &output_class_name,
-    const string &headerFileName,
+    const string &/*headerFileName*/,
     CNcbiOstream& traversal_source_file,
     vector< CRef<CTraversalNode> > &rootTraversalNodes,
     const std::vector<std::string> &source_includes )
@@ -627,7 +627,7 @@ std::string CTraversalCodeGenerator::x_MemberVarNameToArg(const std::string &mem
     // remove initial m_ and make first letter lowercase
     _ASSERT( NStr::StartsWith(member_var_name, "m_") );
     string result = member_var_name.substr(2);
-    result[0] = tolower(result[0]);
+    result[0] = (char)tolower(result[0]);
     return result;
 }
 

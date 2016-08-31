@@ -181,11 +181,11 @@ TToken XSDLexer::LookupLexeme(void)
     if (c == 0) {
         return T_EOF;
     }
-    if (!isalpha((unsigned char) c)) {
+    if (!isalpha((unsigned char)c)) {
         LexerError("Name must begin with an alphabetic character (alpha)");
     }
     StartToken();
-    for (char c = Char(); c != 0; c = Char()) {
+    for (c = Char(); c != 0; c = Char()) {
         bool space = isspace((unsigned char)c) != 0;
         if (!att && space) {
             for (size_t sp_count=1;; ++sp_count) {

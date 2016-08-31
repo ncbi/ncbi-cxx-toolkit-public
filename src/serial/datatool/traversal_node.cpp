@@ -259,7 +259,7 @@ void CTraversalNode::GenerateCode( const string &func_class_name, CNcbiOstream& 
                 traversal_output_file << "  switch( arg0.Which() ) {" << endl;
                 ITERATE( TNodeCallSet, child_iter, m_Callees ) {
                     string case_name = (*child_iter)->GetVarName();
-                    case_name[0] = toupper(case_name[0]);
+                    case_name[0] = (char)toupper(case_name[0]);
                     NStr::ReplaceInPlace( case_name, "-", "_" );
                     traversal_output_file << "  case " << m_InputClassName << "::e_" << case_name << ":" << endl;;
                     string argString = string("arg0.Set") + case_name + "()";
@@ -275,7 +275,7 @@ void CTraversalNode::GenerateCode( const string &func_class_name, CNcbiOstream& 
             {
                 ITERATE( TNodeCallSet, child_iter, m_Callees ) {
                     string case_name = (*child_iter)->GetVarName();
-                    case_name[0] = toupper(case_name[0]);
+                    case_name[0] = (char)toupper(case_name[0]);
                     NStr::ReplaceInPlace( case_name, "-", "_" );
                     traversal_output_file << "  if( arg0.IsSet" << case_name << "() ) {" << endl;;
                     string argString = string("arg0.Set") + case_name + "()";
@@ -290,7 +290,7 @@ void CTraversalNode::GenerateCode( const string &func_class_name, CNcbiOstream& 
                 CRef<CNodeCall> child_call = *m_Callees.begin();
                 string case_name = child_call->GetVarName();
                 CRef<CTraversalNode> child = child_call->GetNode();
-                case_name[0] = toupper(case_name[0]);
+                case_name[0] = (char)toupper(case_name[0]);
                 NStr::ReplaceInPlace( case_name, "-", "_" );
 
                 // some reference functions pass their argument directly and others
@@ -318,7 +318,7 @@ void CTraversalNode::GenerateCode( const string &func_class_name, CNcbiOstream& 
                 CRef<CNodeCall> child_call = *m_Callees.begin();
                 string case_name = child_call->GetVarName();
                 CRef<CTraversalNode> child = child_call->GetNode();
-                case_name[0] = toupper(case_name[0]);
+                case_name[0] = (char)toupper(case_name[0]);
                 NStr::ReplaceInPlace( case_name, "-", "_" );
                 const char *input_class_prefix = ( m_IsTemplate ? "typename " : kEmptyCStr );
                 traversal_output_file << "  NON_CONST_ITERATE( " << input_class_prefix << m_InputClassName << ", iter, arg0 ) { " << endl;
@@ -632,7 +632,7 @@ void CTraversalNode::x_TemplatizeType( string &type_name )
     }
 
     NStr::ToLower( result );
-    result[0] = toupper(result[0]);
+    result[0] = (char)toupper(result[0]);
 
     type_name.swap( result );
 }
@@ -643,7 +643,7 @@ bool CTraversalNode::x_IsSeqFeat(void)
 }
 
 void 
-CTraversalNode::x_MergeNames( string &result, const string &name1, const string &name2 )
+CTraversalNode::x_MergeNames(string &result, const string& /*name1*/, const string& /*name2*/)
 {
     // the other names are ignored, but maybe in the future, we'll use them
     if( ! NStr::EndsWith(result, "_ETC" ) ) {

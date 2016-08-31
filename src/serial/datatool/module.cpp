@@ -597,7 +597,7 @@ string CDataTypeModule::ToAsnName(const string& name)
         unsigned char u = (unsigned char)(*i);
         if (first) {
             if (isalpha(u)) {
-                asn += toupper(u);
+                asn += (char)toupper(u);
             } else {
                 asn += 'A';
                 if (isdigit(u)) {
@@ -626,7 +626,7 @@ string CDataTypeModule::ToAsnName(const string& name)
 string CDataTypeModule::ToAsnId(const string& name)
 {
     string asn(name);
-    asn[0] = tolower((unsigned char)asn[0]);
+    asn[0] = (char)tolower((unsigned char)asn[0]);
     return asn;
 }
 

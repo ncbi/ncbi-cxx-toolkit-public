@@ -308,8 +308,8 @@ string GetStdPath(const string& path)
 class SSubString
 {
 public:
-    SSubString(const string& value, size_t order)
-        : value(value), order(order)
+    SSubString(const string& val, size_t ord)
+        : value(val), order(ord)
         {
         }
 

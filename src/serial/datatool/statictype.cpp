@@ -61,7 +61,7 @@ void CStaticDataType::PrintASN(CNcbiOstream& out, int /*indent*/) const
 // Marc Dumontier, Blueprint initiative, dumontier@mshri.on.ca
 // modified by Andrei Gourianov, gouriano@ncbi
 void CStaticDataType::PrintXMLSchema(CNcbiOstream& out,
-    int indent, bool contents_only) const
+    int indent, bool /*contents_only*/) const
 {
     string tag( XmlTagName());
     string xsdk("element"), use, form;

@@ -698,7 +698,7 @@ bool XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
     bool hasContents= false;
     TToken tok;
     for ( tok=GetNextToken(); ; tok=GetNextToken()) {
-        emb= node.GetContent().size();
+        emb = (int)node.GetContent().size();
         if (tok != T_EOF &&
             tok != K_ENDOFTAG &&
             tok != K_ANNOTATION) {
@@ -747,7 +747,7 @@ bool XSDParser::ParseContent(DTDElement& node, bool extended /*=false*/)
             }
             break;
         case K_SEQUENCE:
-            emb= node.GetContent().size();
+            emb = (int)node.GetContent().size();
             if (emb != 0 && extended) {
                 node.SetTypeIfUnknown(DTDElement::eSequence);
                 if (node.GetType() != DTDElement::eSequence) {
@@ -1562,7 +1562,7 @@ bool XSDParser::PopEntityLexer(void)
 }
 
 AbstractLexer* XSDParser::CreateEntityLexer(
-    CNcbiIstream& in, const string& name, bool autoDelete /*=true*/)
+    CNcbiIstream& in, const string& name, bool /*autoDelete*/ /*=true*/)
 {
     return new XSDEntityLexer(in,name);
 }

@@ -120,8 +120,7 @@ void CEnumDataType::PrintSpecDumpExtra(CNcbiOstream& out, int indent) const
 // XML schema generator submitted by
 // Marc Dumontier, Blueprint initiative, dumontier@mshri.on.ca
 // modified by Andrei Gourianov, gouriano@ncbi
-void CEnumDataType::PrintXMLSchema(CNcbiOstream& out,
-    int indent, bool contents_only) const
+void CEnumDataType::PrintXMLSchema(CNcbiOstream& out, int indent, bool /*contents_only*/) const
 {
     string tag(XmlTagName());
     string use("required");
@@ -237,7 +236,7 @@ void CEnumDataType::PrintXMLSchema(CNcbiOstream& out,
     m_LastComments.PrintDTD(out, CComments::eMultiline);
 }
 
-void CEnumDataType::PrintDTDElement(CNcbiOstream& out, bool contents_only) const
+void CEnumDataType::PrintDTDElement(CNcbiOstream& out, bool /*contents_only*/) const
 {
     string tag(XmlTagName());
     string content(GetXMLContents());

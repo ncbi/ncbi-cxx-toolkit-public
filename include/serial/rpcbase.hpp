@@ -89,9 +89,9 @@ public:
     const STimeout* GetTimeout(EIO_Event direction = eIO_Read) const;
 
 protected:
-    virtual string GetAffinity(const TRequest& request) const
+    virtual string GetAffinity(const TRequest& /*request*/) const
     {
-        return "";
+        return string();
     }
 
     virtual void x_WriteRequest(CObjectOStream& out, const CSerialObject& request)
@@ -252,9 +252,11 @@ inline
 EHTTP_HeaderParse
 CRPCClient<TRequest, TReply>::sx_ParseHeader(const char* http_header,
                                              void*       user_data,
-                                             int         server_error)
+                                             int         /*server_error*/)
 {
-    if ( !user_data ) return eHTTP_HeaderContinue;
+    if ( !user_data ) {
+        return eHTTP_HeaderContinue;
+    }
     CHttpRetryContext* retry_ctx = reinterpret_cast<CHttpRetryContext*>(user_data);
     _ASSERT(retry_ctx);
     retry_ctx->ParseHeader(http_header);

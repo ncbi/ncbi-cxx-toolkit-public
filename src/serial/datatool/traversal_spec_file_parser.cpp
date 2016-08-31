@@ -256,7 +256,7 @@ void CTraversalSpecFileParser::CDescFileNode::ConvertToMemberMacro(void)
     // transform the member_arg to match how it should be used
     NStr::ReplaceInPlace( member_arg, "-", "_" );
     NStr::ToLower( member_arg );
-    member_arg[0] = toupper(member_arg[0]);
+    member_arg[0] = (char)toupper(member_arg[0]);
 }
 
 bool CTraversalSpecFileParser::CTokenizer::GetNextNoThrow( string& out_next_token )
@@ -617,14 +617,13 @@ void CTraversalSpecFileParser::x_ParseMemberMacro( CTokenizer &tokenizer )
     // membermacro parses similar to "use" clauses, so we use the use-clause
     // parser and then just adjust its output.
 
-    const int old_desc_file_nodes = m_DescFileNodes.size();
+    const int old_desc_file_nodes = (int)m_DescFileNodes.size();
     x_ParseUseClause(tokenizer);
 
     std::vector< CRef<CDescFileNode> >::iterator desc_node_iter = m_DescFileNodes.begin();
     desc_node_iter += old_desc_file_nodes;
     for( ; desc_node_iter != m_DescFileNodes.end(); ++desc_node_iter ) {
         CDescFileNode &file_node = **desc_node_iter;
-        
         file_node.ConvertToMemberMacro();
     }
 }

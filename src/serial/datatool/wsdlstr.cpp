@@ -163,9 +163,9 @@ bool x_IsNullDataType(CWsdlTypeStrings::TMembers::const_iterator i)
 }
 
 void CWsdlTypeStrings::GenerateClassCode(
-    CClassCode& code, CNcbiOstream& setters,
-    const string& methodPrefix, bool haveUserClass,
-    const string& classPrefix) const
+    CClassCode& code, CNcbiOstream& /*setters*/,
+    const string& methodPrefix, bool /*haveUserClass*/,
+    const string& /*classPrefix*/) const
 {
     string ncbiNamespace =
         code.GetNamespace().GetNamespaceRef(CNamespace::KNCBINamespace);
