@@ -401,7 +401,7 @@ void CBGZFStream::x_ReadBlock(CBGZFPos::TFileBlockPos file_pos0)
         NCBI_THROW_FMT(CBGZFException, eFormatError,
                        "Bad BGZF("<<file_pos0<<") DATA SIZE: " << data_size);
     }
-    if ( data_size == 0 ) {
+    if ( data_size == 0 && s_GetDebug() >= 1 ) {
         LOG_POST("Zero BGZF("<<file_pos0<<")");
     }
 
