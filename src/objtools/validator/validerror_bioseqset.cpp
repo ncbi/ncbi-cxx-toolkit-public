@@ -60,6 +60,8 @@
 #include <objmgr/seq_annot_ci.hpp>
 #include <objmgr/seq_entry_ci.hpp>
 
+#include <objtools/cleanup/cleanup.hpp>
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -827,7 +829,7 @@ void CValidError_bioseqset::ValidateGenProdSet(
                         
                     }
                 } // if (cdna == 0)
-            } else {
+            } else if (!CCleanup::IsPseudo(*(fi->GetSeq_feat()), *m_Scope)) {
                 PostErr(eDiag_Warning,
                     eErr_SEQ_PKG_GenomicProductPackagingProblem,
                     "Product of mRNA feature (?) not packaged in "

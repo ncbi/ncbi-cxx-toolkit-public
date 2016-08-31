@@ -9993,6 +9993,33 @@ BOOST_AUTO_TEST_CASE(Test_PKG_GenomicProductPackagingProblem)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     CLEAR_ERRORS
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    // remove product from first mRNA
+    mrna->ResetProduct();
+    // remove second mRNA
+    contig->SetSeq().SetAnnot().front()->SetData().SetFtable().pop_back();
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "FeatureProductInconsistency",
+                 "2 mRNA features have 1 product references"));
+    expected_errors.push_back(new CExpectedError("nuc2", eDiag_Warning, "GenomicProductPackagingProblem",
+                              "Nucleotide bioseq should be product of mRNA feature on contig, but is not"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "GenomicProductPackagingProblem",
+                 "Product of mRNA feature (?) not packaged in genomic product set"));
+    CheckErrors(*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    mrna->SetPseudo(true);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+
+    CLEAR_ERRORS
+    expected_errors.push_back(new CExpectedError("nuc2", eDiag_Warning, "GenomicProductPackagingProblem",
+        "Nucleotide bioseq should be product of mRNA feature on contig, but is not"));
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
 }
 
 
