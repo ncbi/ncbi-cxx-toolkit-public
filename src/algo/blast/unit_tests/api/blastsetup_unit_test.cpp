@@ -741,12 +741,12 @@ BOOST_AUTO_TEST_CASE(GetSequenceProteinWithSelenocysteine) {
     // Check that there are no warning
     BOOST_REQUIRE(warnings.empty());
 
-    // Check that the sequence has its selenocysteine residues replaced by
-    // C's (positions 10 and 15, without counting sentinels);
+    // Check that the sequence has its selenocysteine residues unchanged
+    // U's (positions 10 and 15, without counting sentinels);
     const TSeqPos kReplacedPositions[] = { 10+1, 15+1 };
-    const Uint1 kCresidue = AMINOACID_TO_NCBISTDAA[(int)'C'];
+    const Uint1 kUresidue = AMINOACID_TO_NCBISTDAA[(int)'U'];
     for (TSeqPos i = 0; i < DIM(kReplacedPositions); i++) {
-        BOOST_REQUIRE_EQUAL((int)kCresidue, 
+        BOOST_REQUIRE_EQUAL((int)kUresidue, 
                                 (int)seq.data.get()[kReplacedPositions[i]]);
     }
 

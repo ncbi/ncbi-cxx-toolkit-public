@@ -1173,11 +1173,23 @@ Blast_ReadAaComposition(Blast_AminoAcidComposition * composition,
         prob[i] = 0.0;
     }
     for (i = 0;  i < length;  i++) {
-        if (alphaConvert[sequence[i]] >= 0) {
+        if (alphaConvert[sequence[i]] >= 0 || sequence[i] == eSelenocysteine) {
             prob[sequence[i]]++;
             numTrueAminoAcids++;
         }
     }
+
+    /* Count Selenocysteine (U) as if it was Cysteine (C) to avoid a result
+       where C aligned to U is scored higher than C aligned to C. Otherwise,
+       because U is not counted as a true amino acid, sequences with U would
+       appear more complex than those composed only of the 20 "true" amino
+       acids. Therefore computationally adjusted alignment score would be
+       larger for sequences containing U than for sequences with C. */
+    if (prob[eSelenocysteine] > 0.0) {
+        prob[eCchar] += prob[eSelenocysteine];
+        prob[eSelenocysteine] = 0.0;
+    }
+
     composition->numTrueAminoAcids = numTrueAminoAcids;
     if (numTrueAminoAcids > 0) {
         for (i = 0;  i < alphsize;  i++) {

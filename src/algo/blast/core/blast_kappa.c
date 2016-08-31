@@ -1603,14 +1603,9 @@ s_SequenceGetProteinRange(const BlastCompo_MatchingSequence * self,
     		origData += offsets;
     	}
     }
+    /* Copy the sequence data */
     for (idx = 0;  idx < seqData->length;  idx++) {
-        /* Copy the sequence data, replacing occurrences of amino acid
-         * number 24 (Selenocysteine) with number 3 (Cysteine). */
-        if (origData[idx] != 24) {
-            seqData->data[idx] = origData[idx];
-        } else {
-            seqData->data[idx] = 3;
-        }
+        seqData->data[idx] = origData[idx];
     }
 
     if ( !(KAPPA_BLASTP_NO_SEG_SEQUENCE) ) {
