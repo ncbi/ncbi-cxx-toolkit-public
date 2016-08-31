@@ -5159,11 +5159,7 @@ CNewCleanup_imp::x_ProtGBQualBC(CProt_ref& prot, const CGb_qual& gb_qual, EGBQua
 
     if (NStr::EqualNocase(qual, "product")  ||  NStr::EqualNocase(qual, "standard_name")) {
         if ( opt == eGBQualOpt_CDSMode || !prot.IsSetName()  ||  NStr::IsBlank(prot.GetName().front())) {
-            if( opt == eGBQualOpt_normal ) {
-                prot.SetName().push_back(val);
-            } else {
-                prot.SetName().push_front(val);
-            }
+            CCleanup::SetProteinName(prot, val, false);
             ChangeMade(CCleanupChange::eChangeQualifiers);
         } else {
             return eAction_Nothing;
