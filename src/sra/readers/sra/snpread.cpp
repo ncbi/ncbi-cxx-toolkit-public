@@ -468,9 +468,9 @@ CSNPDb_Impl::x_GetPageVDBRowRange(TSeqInfoList::const_iterator seq)
 }
 
 
-CRange<TVDBRowId>
-CSNPDb_Impl::x_GetGraphVDBRowRange(TSeqInfoList::const_iterator seq,
-                                   TTrackInfoList::const_iterator track)
+TVDBRowId
+CSNPDb_Impl::x_GetGraphVDBRowId(TSeqInfoList::const_iterator seq,
+                                TTrackInfoList::const_iterator track)
 {
     if ( seq == GetSeqInfoList().end() ) {
         NCBI_THROW_FMT(CSraException, eInvalidIndex,
@@ -485,10 +485,7 @@ CSNPDb_Impl::x_GetGraphVDBRowRange(TSeqInfoList::const_iterator seq,
     TVDBRowId start = seq->m_GraphRowId;
     TVDBRowId len = (seq->m_SeqLength-1)/kPageSize + 1;
     start += (track - GetTrackInfoList().begin())*len;
-    CRange<TVDBRowId> range;
-    range.SetFrom(start);
-    range.SetLength(len);
-    return range;
+    return start;
 }
 
 
@@ -641,6 +638,22 @@ CRange<TSeqPos> CSNPDbSeqIterator::GetSNPRange(void) const
 
 
 BEGIN_LOCAL_NAMESPACE;
+
+
+inline unsigned x_SetBitCount(Uint8 v)
+{
+    v = (NCBI_CONST_UINT8(0x5555555555555555) & (v>>1)) +
+        (NCBI_CONST_UINT8(0x5555555555555555) & v);
+    v = (NCBI_CONST_UINT8(0x3333333333333333) & (v>>2)) +
+        (NCBI_CONST_UINT8(0x3333333333333333) & v);
+    v = (NCBI_CONST_UINT8(0x0f0f0f0f0f0f0f0f) & (v>>4)) +
+        (NCBI_CONST_UINT8(0x0f0f0f0f0f0f0f0f) & v);
+    v = (NCBI_CONST_UINT8(0x00ff00ff00ff00ff) & (v>>8)) +
+        (NCBI_CONST_UINT8(0x00ff00ff00ff00ff) & v);
+    v = (NCBI_CONST_UINT8(0x0000ffff0000ffff) & (v>>16)) +
+        (NCBI_CONST_UINT8(0x0000ffff0000ffff) & v);
+    return unsigned(v>>32)+unsigned(v);
+}
 
 
 inline void x_AdjustRange(CRange<TSeqPos>& range,
@@ -1946,7 +1959,7 @@ CSNPDbGraphIterator::Select(const CSNPDbSeqIterator& iter,
     }
 
     TSeqPos page = ref_range.GetFrom()/kPageSize;
-    m_CurrPageRowId = iter.GetGraphVDBRowRange().GetFrom() + page;
+    m_CurrPageRowId = iter.GetGraphVDBRowId() + page;
     m_CurrPagePos = page*kPageSize;
     return *this;
 }
@@ -2002,6 +2015,9 @@ CVDBValueFor<Uint4> CSNPDbGraphIterator::GetCoverageValues() const
 
 void CSNPDbFeatIterator::Reset(void)
 {
+    if ( m_Graph ) {
+        GetDb().Put(m_Graph, x_GetGraphVDBRowId());
+    }
     if ( m_Extra ) {
         GetDb().Put(m_Extra, m_ExtraRowId);
     }
@@ -2019,10 +2035,14 @@ void CSNPDbFeatIterator::x_InitPage(void)
     m_CurrFeatId = 0;
     m_FirstBadFeatId = 0;
     if ( m_PageIter ) {
-        if ( !m_Feat ) {
-            m_Feat = GetDb().Feat();
+        if ( m_Graph && !*m_Graph->GR_TOTAL(x_GetGraphVDBRowId()) ) {
+            // track graph says there's no matching features on current page
+            return;
         }
         if ( TVDBRowCount count = GetPageIter().GetFeatCount() ) {
+            if ( !m_Feat ) {
+                m_Feat = GetDb().Feat();
+            }
             TVDBRowId first = GetPageIter().GetFirstFeatRowId();
             m_CurrFeatId = first;
             m_FirstBadFeatId = first + count;
@@ -2097,6 +2117,9 @@ CSNPDbFeatIterator::operator=(const CSNPDbFeatIterator& iter)
         // extra iter
         m_Extra = iter.m_Extra;
         m_ExtraRowId = iter.m_ExtraRowId;
+        // page track
+        m_Graph = iter.m_Graph;
+        m_GraphBaseRowId = iter.m_GraphBaseRowId;
     }
     return *this;
 }
@@ -2108,10 +2131,43 @@ CSNPDbFeatIterator::~CSNPDbFeatIterator(void)
 }
 
 
+TVDBRowId CSNPDbFeatIterator::x_GetGraphVDBRowId() const
+{
+    return m_GraphBaseRowId + m_PageIter.GetPagePos()/kPageSize;
+}
+
+
 void CSNPDbFeatIterator::x_SetFilter(const SSelector& sel)
 {
     m_Filter = sel.m_Filter;
     m_Filter.Normalize();
+    m_GraphBaseRowId = 0;
+    if ( m_Filter.m_FilterMask ) {
+        // find best track for page filtering
+        Uint8 best_bits_count = 0;
+        CSNPDb_Impl::TTrackInfoList::const_iterator best_track;
+        ITERATE ( CSNPDb_Impl::TTrackInfoList, it, GetDb().GetTrackInfoList() ) {
+            TFilter mask = it->m_Filter.m_FilterMask;
+            if ( mask & ~m_Filter.m_FilterMask ) {
+                // track filter by other bits than requested
+                continue;
+            }
+            if ( !m_Filter.Matches(it->m_Filter.m_Filter) ) {
+                // track's bits differ from requested
+                continue;
+            }
+            Uint8 bits_count = x_SetBitCount(mask);
+            if ( bits_count > best_bits_count ) {
+                best_bits_count = bits_count;
+                best_track = it;
+            }
+        }
+        if ( best_bits_count ) {
+            m_GraphBaseRowId =
+                GetDb().x_GetGraphVDBRowId(x_GetSeqIter(), best_track);
+            m_Graph = GetDb().Graph(x_GetGraphVDBRowId());
+        }
+    }
 }
 
 

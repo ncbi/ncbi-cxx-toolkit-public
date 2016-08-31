@@ -314,15 +314,8 @@ protected:
 
     CRange<TVDBRowId>
     x_GetPageVDBRowRange(TSeqInfoList::const_iterator seq);
-    CRange<TVDBRowId>
-    x_GetGraphVDBRowRange(TSeqInfoList::const_iterator seq,
-                          TTrackInfoList::const_iterator track);
-    /*
-    TVDBRowId x_FindGraphRow(SGraphTableCursor& cur,
-                             TVDBRowId seq_row,
-                             TVDBRowId track_row,
-                             TSeqPos seq_page_pos) const;
-    */
+    TVDBRowId x_GetGraphVDBRowId(TSeqInfoList::const_iterator seq,
+                                 TTrackInfoList::const_iterator track);
 private:
     CVDBMgr m_Mgr;
     string m_DbPath;
@@ -589,8 +582,8 @@ public:
     CRange<TVDBRowId> GetPageVDBRowRange(void) const {
         return GetDb().x_GetPageVDBRowRange(m_Iter);
     }
-    CRange<TVDBRowId> GetGraphVDBRowRange() const {
-        return GetDb().x_GetGraphVDBRowRange(m_Iter, m_TrackIter);
+    TVDBRowId GetGraphVDBRowId() const {
+        return GetDb().x_GetGraphVDBRowId(m_Iter, m_TrackIter);
     }
 
     enum EFlags {
@@ -778,11 +771,9 @@ protected:
     CRange<TVDBRowId> x_GetPageVDBRowRange() const {
         return GetRefIter().GetPageVDBRowRange();
     }
-    CRange<TVDBRowId> x_GetGraphVDBRowRange() const {
-        return GetRefIter().GetGraphVDBRowRange();
+    TVDBRowId x_GetGraphVDBRowId() const {
+        return GetRefIter().GetGraphVDBRowId();
     }
-
-    TVDBRowId x_GetGraphRowId() const;
 
     void x_ReportInvalid(const char* method) const;
     void x_CheckValid(const char* method) const {
@@ -1021,11 +1012,19 @@ protected:
     void x_SetFilter(const SSelector& sel);
     void x_InitPage(void);
 
+    TVDBRowId x_GetGraphVDBRowId() const;
+
+    CSNPDb_Impl::TSeqInfoList::const_iterator x_GetSeqIter() const {
+        return GetPageIter().x_GetSeqIter();
+    }
+
 private:
     CSNPDbPageIterator m_PageIter;
     mutable CRef<CSNPDb_Impl::SFeatTableCursor> m_Feat;
     mutable CRef<CSNPDb_Impl::SExtraTableCursor> m_Extra; // for alleles
     mutable TVDBRowId m_ExtraRowId;
+    mutable CRef<CSNPDb_Impl::SGraphTableCursor> m_Graph; // for page filtering
+    mutable TVDBRowId m_GraphBaseRowId;
 
     COpenRange<TSeqPos> m_CurRange; // current SNP refseq range
     SFilter m_Filter;
