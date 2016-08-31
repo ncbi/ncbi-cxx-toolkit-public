@@ -180,6 +180,11 @@ int32_t s_ReadInt32(CBGZFStream& in)
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+// SBamIndexBinInfo
+/////////////////////////////////////////////////////////////////////////////
+
+
 COpenRange<TSeqPos> SBamIndexBinInfo::GetSeqRange(uint32_t bin)
 {
     uint32_t pos = 0, len = 1<<29, count = 1;
@@ -202,6 +207,11 @@ void SBamIndexBinInfo::Read(CNcbiIstream& in)
         m_Chunks[i_chunk] = s_ReadFileRange(in);
     }
 }
+
+
+/////////////////////////////////////////////////////////////////////////////
+// SBamIndexRefIndex
+/////////////////////////////////////////////////////////////////////////////
 
 
 void SBamIndexRefIndex::Read(CNcbiIstream& in)
@@ -231,6 +241,11 @@ void SBamIndexRefIndex::Read(CNcbiIstream& in)
         m_Intervals[i_intv] = s_ReadFilePos(in);
     }
 }
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CBamIndex
+/////////////////////////////////////////////////////////////////////////////
 
 
 CBamIndex::CBamIndex()
@@ -433,6 +448,11 @@ CBamIndex::MakeEstimatedCoverageAnnot(size_t ref_index,
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+// CBamHeader
+/////////////////////////////////////////////////////////////////////////////
+
+
 CBamHeader::CBamHeader()
 {
 }
@@ -523,6 +543,11 @@ size_t CBamHeader::GetRefIndex(const string& name) const
     }
     return iter->second;
 }
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CBamFileRangeSet
+/////////////////////////////////////////////////////////////////////////////
 
 
 CBamFileRangeSet::CBamFileRangeSet()
@@ -645,6 +670,11 @@ void CBamFileRangeSet::SetRanges(const CBamIndex& index,
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+// CBamRawDb
+/////////////////////////////////////////////////////////////////////////////
+
+
 CBamRawDb::~CBamRawDb()
 {
 }
@@ -657,6 +687,11 @@ void CBamRawDb::Open(const string& bam_path, const string& index_path)
     CBGZFStream stream(*m_File);
     m_Header.Read(stream);
 }
+
+
+/////////////////////////////////////////////////////////////////////////////
+// SBamAlignInfo
+/////////////////////////////////////////////////////////////////////////////
 
 
 string SBamAlignInfo::get_read() const
@@ -728,8 +763,31 @@ void SBamAlignInfo::Read(CBGZFStream& in)
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+// CBamRawAlignIterator
+/////////////////////////////////////////////////////////////////////////////
+
+
+CBamRawAlignIterator::CBamRawAlignIterator(CBamRawDb& bam_db,
+                                           const string& ref_label,
+                                           TSeqPos ref_pos,
+                                           TSeqPos window)
+    : m_Reader(bam_db.GetFile())
+{
+    CRange<TSeqPos> ref_range(ref_pos, ref_pos);
+    if ( window && ref_pos < kInvalidSeqPos-window ) {
+        ref_range.SetToOpen(ref_pos+window);
+    }
+    else {
+        ref_range.SetToOpen(kInvalidSeqPos);
+    }
+    Select(bam_db, ref_label, ref_range);
+}
+
+
 void CBamRawAlignIterator::x_Select(const CBamIndex& index,
-                                    size_t ref_index, CRange<TSeqPos> ref_range)
+                                    size_t ref_index,
+                                    CRange<TSeqPos> ref_range)
 {
     m_RefIndex = ref_index;
     m_RefRange = ref_range;

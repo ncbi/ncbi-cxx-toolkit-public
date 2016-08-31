@@ -34,8 +34,8 @@
 
 #include <corelib/ncbistd.hpp>
 #include <util/range.hpp>
-//#include <util/range_coll.hpp>
 #include <sra/readers/bam/bgzf.hpp>
+#include <objects/seqloc/Na_strand.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -406,6 +406,20 @@ struct NCBI_BAMREAD_EXPORT SBamAlignInfo
         {
             return SBamUtil::MakeUint2(get_record_ptr()+12);
         }
+    enum EFlag {
+        fAlign_WasPaired        = 1 <<  0,
+        fAlign_IsMappedAsPair   = 1 <<  1,
+        fAlign_SelfIsUnmapped   = 1 <<  2,
+        fAlign_MateIsUnmapped   = 1 <<  3,
+        fAlign_SelfIsReverse    = 1 <<  4,
+        fAlign_MateIsReverse    = 1 <<  5,
+        fAlign_IsFirst          = 1 <<  6,
+        fAlign_IsSecond         = 1 <<  7,
+        fAlign_IsNotPrimary     = 1 <<  8,
+        fAlign_IsLowQuality     = 1 <<  9,
+        fAlign_IsDuplicate      = 1 << 10,
+        fAlign_IsSupplementary  = 1 << 11
+    };
     uint16_t get_flag() const
         {
             return SBamUtil::MakeUint2(get_record_ptr()+14);
@@ -491,6 +505,10 @@ public:
         {
             Select(bam_db, ref_label, ref_range);
         }
+    CBamRawAlignIterator(CBamRawDb& bam_db,
+                         const string& ref_label,
+                         TSeqPos ref_pos,
+                         TSeqPos window = 0);
     ~CBamRawAlignIterator()
         {
         }
@@ -523,13 +541,71 @@ public:
             return *this;
         }
 
+    /*
+    CTempString GetRefSeqId() const
+        {
+            return m_RefIndex.GetRefName(m_AlignInfo.get_ref_index());
+        }
+    */
     TSeqPos GetRefSeqPos() const
         {
             return m_AlignInfo.get_ref_pos();
         }
+
+    CTempString GetShortSeqId() const
+        {
+            return CTempString(m_AlignInfo.get_read_name_ptr(),
+                               m_AlignInfo.get_read_name_len());
+        }
+    CTempString GetShortSeqAcc() const;
+    string GetShortSequence() const;
+
+    TSeqPos GetCIGARPos() const;
+    TSeqPos GetCIGARShortSize() const;
     TSeqPos GetCIGARRefSize() const
         {
             return m_AlignInfo.get_cigar_ref_size();
+        }
+    string GetCIGAR() const;
+
+    Uint2 GetFlags() const
+        {
+            return m_AlignInfo.get_flag();
+        }
+    // returns false if BAM flags are not available
+    bool TryGetFlags(Uint2& flags) const
+        {
+            flags = GetFlags();
+            return true;
+        }
+
+    bool IsSetStrand() const
+        {
+            return true;
+        }
+    ENa_strand GetStrand() const
+        {
+            return (GetFlags() & m_AlignInfo.fAlign_SelfIsReverse)?
+                eNa_strand_minus: eNa_strand_plus;
+        }
+
+    Uint1 GetMapQuality() const
+        {
+            return m_AlignInfo.get_map_quality();
+        }
+
+    bool IsPaired() const
+        {
+            return (GetFlags() & (m_AlignInfo.fAlign_WasPaired |
+                                  m_AlignInfo.fAlign_IsMappedAsPair)) != 0;
+        }
+    bool IsFirstInPair() const
+        {
+            return (GetFlags() & m_AlignInfo.fAlign_IsFirst) != 0;
+        }
+    bool IsSecondInPair() const
+        {
+            return (GetFlags() & m_AlignInfo.fAlign_IsSecond) != 0;
         }
 
 protected:
@@ -539,11 +615,8 @@ protected:
     bool x_NextAnnot()
         {
             _ASSERT(*this);
-            if ( !(m_Reader.GetPos() < m_CurrentRangeEnd) ) {
-                if ( !x_UpdateRange() )
-                    return false;
-            }
-            return true;
+            return m_Reader.HaveNextAvailableBytes(m_CurrentRangeEnd) ||
+                x_UpdateRange();
         }
     void x_Stop()
         {

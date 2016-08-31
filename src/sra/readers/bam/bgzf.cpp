@@ -397,9 +397,12 @@ void CBGZFStream::x_ReadBlock(CBGZFPos::TFileBlockPos file_pos0)
     const char* footer = compressed_data + compressed_size;
     CBGZFBlockInfo::TCRC32 crc32 = SBamUtil::MakeUint4(footer);
     CBGZFBlockInfo::TDataSize data_size = SBamUtil::MakeUint4(footer + 4);
-    if ( data_size == 0 || data_size > CBGZFBlockInfo::kMaxDataSize ) {
+    if ( /*data_size == 0 || */data_size > CBGZFBlockInfo::kMaxDataSize ) {
         NCBI_THROW_FMT(CBGZFException, eFormatError,
                        "Bad BGZF("<<file_pos0<<") DATA SIZE: " << data_size);
+    }
+    if ( data_size == 0 ) {
+        LOG_POST("Zero BGZF("<<file_pos0<<")");
     }
 
     // check decompression results
@@ -433,6 +436,19 @@ size_t CBGZFStream::GetNextAvailableBytes()
         x_ReadBlock(m_BlockInfo.GetNextFileBlockPos());
     }
     return avail;
+}
+
+
+bool CBGZFStream::HaveNextDataBlock(CBGZFPos pos)
+{
+    _ASSERT(m_ReadPos == m_BlockInfo.GetDataSize());
+    do {
+        if ( !(CBGZFPos(m_BlockInfo.GetNextFileBlockPos(), 0) < pos) ) {
+            return false;
+        }
+        x_ReadBlock(m_BlockInfo.GetNextFileBlockPos());
+    } while ( m_ReadPos == m_BlockInfo.GetDataSize() );
+    return true;
 }
 
 

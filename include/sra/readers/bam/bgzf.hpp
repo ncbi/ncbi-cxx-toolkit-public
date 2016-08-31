@@ -320,8 +320,20 @@ public:
         }
     void Seek(CBGZFPos pos);
 
-    // return number of available bytes in current decompressed buffer
+    // return non-zero number of available bytes in current decompressed buffer
     size_t GetNextAvailableBytes();
+    // return true if there are more bytes before this position
+    bool HaveNextAvailableBytes(CBGZFPos pos)
+        {
+            if ( m_ReadPos < m_BlockInfo.GetDataSize() ) {
+                return GetPos() < pos;
+            }
+            return HaveNextDataBlock(pos);
+        }
+    // return true if there are more data blocks before this position
+    // current buffer must be read till the end
+    bool HaveNextDataBlock(CBGZFPos pos);
+
     // read up to count bytes into a buffer, may return smaller number
     size_t Read(char* buf, size_t count);
 
