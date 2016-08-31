@@ -1079,8 +1079,16 @@ string s_GetAppDomain(const string& app_domain, CNetICacheClient& nc_client)
     // Since its value does not actually affect anything,
     // we just use cache name from CNetICacheClient.
     // If that is not avaiable, "default" value is used instead.
-    const string cache_name(nc_client ? nc_client.GetCacheName() : kEmptyStr);
-    return cache_name.empty() ? "default" : cache_name;
+
+    if (!app_domain.empty()) return app_domain;
+
+    if (nc_client) {
+        const string cache_name(nc_client.GetCacheName());
+
+        if (!cache_name.empty()) return cache_name;
+    }
+
+    return "default";
 }
 
 
