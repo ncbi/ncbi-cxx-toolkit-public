@@ -401,6 +401,13 @@ static const char kData_Bam[] =
     "\x19\x64\xc4\xbd\x0b\x70\x2c\x6d\x5a\x1e\xd6\xbf\x8e\x8e\x8e\xa4";
     
 
+BOOST_AUTO_TEST_CASE(TestEmptyFile)
+{
+    CNcbiIstrstream str("");
+    CFormatGuess guess(str);
+    BOOST_CHECK_EQUAL(guess.GuessFormat(), CFormatGuess::eUnknown);
+}
+
 BOOST_AUTO_TEST_CASE(TestBinaryAsn)
 {
     CNcbiIstrstream str(kData_AsnBin);

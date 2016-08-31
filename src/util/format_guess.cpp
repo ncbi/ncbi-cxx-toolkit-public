@@ -345,8 +345,9 @@ CFormatGuess::EFormat CFormatGuess::Format(CNcbiIstream& input, EOnError onerror
 
 //  ----------------------------------------------------------------------------
 CFormatGuess::CFormatGuess()
-    : m_Stream( * new CNcbiIfstream )
-    , m_bOwnsStream( true )
+    : m_Stream(* new CNcbiIfstream)
+    , m_bOwnsStream(true)
+    , m_iTestBufferSize(0)
 {
     Initialize();
 }
@@ -389,10 +390,18 @@ CFormatGuess::GuessFormat( EMode )
 CFormatGuess::EFormat
 CFormatGuess::GuessFormat(
     EOnError onerror )
+//  ----------------------------------------------------------------------------
 {
+    //sqd-4036:
+    // make sure we got something to work with
+    //
     if (!x_TestInput(m_Stream, onerror)) {
         return eUnknown;
     }
+    if (!EnsureTestBuffer()) {
+        return eUnknown;
+    }
+
     EMode mode = eQuick;
     size_t uFormatCount = ArraySize(s_CheckOrder);
 
@@ -545,6 +554,7 @@ CFormatGuess::Initialize()
 //  ----------------------------------------------------------------------------
 bool
 CFormatGuess::EnsureTestBuffer()
+//  ----------------------------------------------------------------------------
 {
     if ( m_pTestBuffer ) {
         return true;
@@ -561,9 +571,16 @@ CFormatGuess::EnsureTestBuffer()
     //   or Multiplier hits 1024 
     int Multiplier = 1;
     while(true) {
-        m_pTestBuffer = new char[ Multiplier * s_iTestBufferSize ];
-        m_Stream.read( m_pTestBuffer, Multiplier * s_iTestBufferSize );
+        m_iTestBufferSize = Multiplier * s_iTestBufferGranularity;
+        m_pTestBuffer = new char[ m_iTestBufferSize ];
+        m_Stream.read( m_pTestBuffer, m_iTestBufferSize );
         m_iTestDataSize = m_Stream.gcount();
+        if (m_iTestDataSize == 0) {
+            delete[] m_pTestBuffer;
+            m_pTestBuffer = 0;
+            m_iTestBufferSize = 0;
+            return false; //empty file
+        } 
         m_Stream.clear();  // in case we reached eof
         CStreamUtils::Stepback( m_Stream, m_pTestBuffer, m_iTestDataSize );
         
@@ -571,7 +588,7 @@ CFormatGuess::EnsureTestBuffer()
             Multiplier *= 2;
             delete [] m_pTestBuffer;
             m_pTestBuffer = NULL;
-            if (Multiplier >= 1024 || m_iTestDataSize < ((Multiplier/2) * s_iTestBufferSize) )  {
+            if (Multiplier >= 1024 || m_iTestDataSize < m_iTestBufferSize)  {
                 return false;
             }
             continue;
@@ -586,16 +603,13 @@ CFormatGuess::EnsureTestBuffer()
 //  ----------------------------------------------------------------------------
 bool
 CFormatGuess::EnsureStats()
+//  ----------------------------------------------------------------------------
 {
     if ( m_bStatsAreValid ) {
         return true;
     }
     if ( ! EnsureTestBuffer() ) {
         return false;
-    }
-    if ( m_iTestDataSize == 0 ) {
-        m_bStatsAreValid = true;
-        return true;
     }
 
     CNcbiIstrstream TestBuffer(
@@ -1253,7 +1267,7 @@ CFormatGuess::TestFormatAlignment(
         if (toks.size() != ncols) {
             list<string>::const_iterator it = iter;
             ++it;
-            if (it != m_TestLines.end() || (m_iTestDataSize < s_iTestBufferSize) ) {
+            if (it != m_TestLines.end() || (m_iTestDataSize < m_iTestBufferSize) ) {
                 return false;
             }
         } else {
@@ -2906,12 +2920,17 @@ CFormatGuess::EnsureSplitLines()
     else if ( string::npos != data.find("\r") ) {
         NStr::Split(data, "\r", m_TestLines, NStr::fSplit_Tokenize);
     }
-    else {
-        //single truncated line
+    else if ( m_iTestDataSize == m_iTestBufferSize) {
+        //most likely single truncated line
         return false;
     }
+    else {
+        //test buffer contains the entire file
+        m_TestLines.push_back(data);
+    }
 
-    if ( m_iTestDataSize == s_iTestBufferSize   &&  m_TestLines.size() > 1 ) {
+    if ( m_iTestDataSize == m_iTestBufferSize   &&  m_TestLines.size() > 1 ) {
+        //multiple lines, last likely truncated
         m_TestLines.pop_back();
     }
     return !m_TestLines.empty();

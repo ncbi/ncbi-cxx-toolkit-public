@@ -369,11 +369,12 @@ private:
 protected:
     static int s_CheckOrder[];
     
-    static const streamsize s_iTestBufferSize = 8096;
+    static const streamsize s_iTestBufferGranularity = 8096;
 
     CNcbiIstream& m_Stream;
     bool m_bOwnsStream;
     char* m_pTestBuffer;
+    streamsize m_iTestBufferSize;
     streamsize m_iTestDataSize;
 
     bool m_bStatsAreValid;
