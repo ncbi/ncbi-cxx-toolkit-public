@@ -2406,7 +2406,7 @@ DISCREPANCY_SUMMARIZE(UNWANTED_SET_WRAPPER)
 }
 
 
-// FLATFILE_FIND_ONCALLER
+// FLATFILE_FIND
 struct SpellFixData
 {
     const char* m_misspell;
@@ -2548,7 +2548,7 @@ template<typename T> void  AddMisspellsToReport(const list<size_t>& misspells, C
 }
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(FLATFILE_FIND_ONCALLER, CSeq_inst, eOncaller, "Flatfile representation of object contains suspect text")
+DISCREPANCY_CASE(FLATFILE_FIND, CSeq_inst, eOncaller, "Flatfile representation of object contains suspect text")
 //  ----------------------------------------------------------------------------
 {
     CConstRef<CBioseq> bioseq = context.GetCurrentBioseq();
@@ -2575,7 +2575,7 @@ DISCREPANCY_CASE(FLATFILE_FIND_ONCALLER, CSeq_inst, eOncaller, "Flatfile represe
 }
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_SUMMARIZE(FLATFILE_FIND_ONCALLER)
+DISCREPANCY_SUMMARIZE(FLATFILE_FIND)
 //  ----------------------------------------------------------------------------
 {
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
@@ -2598,7 +2598,8 @@ static bool FixTextInObject(CSerialObject* obj, size_t misspell_idx)
     return ret;
 }
 
-DISCREPANCY_AUTOFIX(FLATFILE_FIND_ONCALLER)
+
+DISCREPANCY_AUTOFIX(FLATFILE_FIND)
 {
     TReportObjectList list = item->GetDetails();
     unsigned int n = 0;
@@ -2624,12 +2625,13 @@ DISCREPANCY_AUTOFIX(FLATFILE_FIND_ONCALLER)
         }
     }
 
-    return CRef<CAutofixReport>(n ? new CAutofixReport("FLATFILE_FIND_ONCALLER: [n] suspect text[s] [is] fixed", n) : 0);
+    return CRef<CAutofixReport>(n ? new CAutofixReport("FLATFILE_FIND: [n] suspect text[s] [is] fixed", n) : 0);
 }
 
 
-DISCREPANCY_ALIAS(FLATFILE_FIND_ONCALLER, FLATFILE_FIND_ONCALLER_UNFIXABLE);
-DISCREPANCY_ALIAS(FLATFILE_FIND_ONCALLER, FLATFILE_FIND_ONCALLER_FIXABLE);
+DISCREPANCY_ALIAS(FLATFILE_FIND, FLATFILE_FIND_ONCALLER);
+DISCREPANCY_ALIAS(FLATFILE_FIND, FLATFILE_FIND_ONCALLER_UNFIXABLE);
+DISCREPANCY_ALIAS(FLATFILE_FIND, FLATFILE_FIND_ONCALLER_FIXABLE);
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

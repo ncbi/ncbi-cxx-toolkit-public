@@ -104,6 +104,7 @@ string GetTwoFieldSubfield(const string& str, unsigned subfield)
     }
 }
 
+
 static bool IsProdBiomol(int biomol)
 {
     if (biomol == objects::CMolInfo::eBiomol_pre_RNA || 
@@ -115,10 +116,12 @@ static bool IsProdBiomol(int biomol)
     return false;
 }
 
+
 static bool x_IsGenProdSet(CConstRef<objects::CBioseq_set> bioseq_set)
 {
     return (bioseq_set && bioseq_set->IsSetClass() && bioseq_set->GetClass() == objects::CBioseq_set::eClass_gen_prod_set);
 }
+
 
 bool IsmRNASequenceInGenProdSet(CConstRef<objects::CBioseq> bioseq, const vector<CConstRef<CBioseq_set> > &bioseq_set_stack)
 {
@@ -148,7 +151,6 @@ bool IsmRNASequenceInGenProdSet(CConstRef<objects::CBioseq> bioseq, const vector
     }
     return res;
 }
-
 
 
 void AddComment(CSeq_feat& feat, const string& comment)

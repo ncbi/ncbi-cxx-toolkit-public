@@ -1,0 +1,14 @@
+Discrepancy Report Results
+
+Summary
+FLATFILE_FIND: Fixable
+
+Detailed Report
+
+FLATFILE_FIND: Fixable
+FLATFILE_FIND: 4 objects contain catalize
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\FLATFILE_FIND.sqn:nuc (2 components):Title on set (a discrepancy should be reported catalize)
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\FLATFILE_FIND.sqn:Gene	gene locus catalize	lcl|nuc:1-27	
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\FLATFILE_FIND.sqn:regulatory	ribosome_binding_site	lcl|nuc:1-11	
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\FLATFILE_FIND.sqn:CDS	fake protein name catalize	lcl|nuc:1-27	
+
