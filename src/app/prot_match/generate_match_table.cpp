@@ -2,8 +2,6 @@
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbienv.hpp> // ??
-#include <corelib/ncbistre.hpp> // ??
 #include <serial/objistr.hpp>
 
 #include <objects/seq/Seq_annot.hpp>
@@ -81,17 +79,17 @@ bool CProteinMatchApp::x_IsCdsComparison(const CSeq_annot& seq_annot) const
         return false;
     }
 
-    const CRef<CSeq_feat>& first = seq_annot.GetData().GetFtable().front();
-    const CRef<CSeq_feat>& second = seq_annot.GetData().GetFtable().back();
-   
+    const CSeq_feat& first = *seq_annot.GetData().GetFtable().front();
+    const CSeq_feat& second = *seq_annot.GetData().GetFtable().back();
+  
 
-    if (!first->IsSetData() ||
-        !first->GetData().IsCdregion()  ||
-        !second->IsSetData() ||
-        !second->GetData().IsCdregion()) {
-        return false;
+    if (first.IsSetData() &&
+        first.GetData().IsCdregion()  &&
+        second.IsSetData() &&
+        second.GetData().IsCdregion()) {
+        return true;
     }
-    return true;
+    return false;
 }
 
 // Check to see if the match is the best global reciprocal match 
@@ -231,13 +229,13 @@ string CProteinMatchApp::x_GetAccessionVersion(const CSeq_annot& seq_annot) cons
 {
     string result = "";
 
-    const CRef<CSeq_feat>& first = seq_annot.GetData().GetFtable().front();
-    const CRef<CSeq_feat>& second = seq_annot.GetData().GetFtable().back();
+    const CSeq_feat& first = *seq_annot.GetData().GetFtable().front();
+    const CSeq_feat& second = *seq_annot.GetData().GetFtable().back();
 
-    result = x_GetAccessionVersion(*first);
+    result = x_GetAccessionVersion(first);
 
     if (result.empty()) {
-        result = x_GetAccessionVersion(*second);
+        result = x_GetAccessionVersion(second);
     }
 
     return result;
@@ -265,13 +263,13 @@ string CProteinMatchApp::x_GetProductGI(const CSeq_annot& seq_annot) const
 {
     string result = "";
 
-    const CRef<CSeq_feat>& first = seq_annot.GetData().GetFtable().front();
-    const CRef<CSeq_feat>& second = seq_annot.GetData().GetFtable().back();
+    const CSeq_feat& first = *seq_annot.GetData().GetFtable().front();
+    const CSeq_feat& second = *seq_annot.GetData().GetFtable().back();
 
-    result = x_GetProductGI(*first);
+    result = x_GetProductGI(first);
 
     if (result.empty()) {
-        result = x_GetProductGI(*second);
+        result = x_GetProductGI(second);
     }
 
     return result;
@@ -301,13 +299,13 @@ string CProteinMatchApp::x_GetLocalID(const CSeq_annot& seq_annot) const
 {
     string result = "";
 
-    const CRef<CSeq_feat>& first = seq_annot.GetData().GetFtable().front();
-    const CRef<CSeq_feat>& second = seq_annot.GetData().GetFtable().back();
+    const CSeq_feat& first = *seq_annot.GetData().GetFtable().front();
+    const CSeq_feat& second = *seq_annot.GetData().GetFtable().back();
 
-    result = x_GetLocalID(*first);
+    result = x_GetLocalID(first);
 
     if (result.empty()) {
-        result = x_GetLocalID(*second);
+        result = x_GetLocalID(second);
     }
 
     return result;
