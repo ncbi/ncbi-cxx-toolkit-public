@@ -2207,8 +2207,8 @@ DISCREPANCY_CASE(MISSING_PRIMER, CBioSource, eOncaller, "Missing values in prime
         CPCRPrimerSet::Tdata::const_iterator fwd = fwdset.Get().begin();
         CPCRPrimerSet::Tdata::const_iterator rev = revset.Get().begin();
         while (fwd != fwdset.Get().end() && rev != revset.Get().end()) {
-            if (((*fwd)->CanGetName() && (*fwd)->GetName().Get().empty()) != ((*rev)->CanGetName() && (*rev)->GetName().Get().empty())
-                    || ((*fwd)->CanGetSeq() && (*fwd)->GetSeq().Get().empty()) != ((*rev)->CanGetSeq() && (*rev)->GetSeq().Get().empty())) {
+            if (((*fwd)->CanGetName() && !(*fwd)->GetName().Get().empty()) != ((*rev)->CanGetName() && !(*rev)->GetName().Get().empty())
+                    || ((*fwd)->CanGetSeq() && !(*fwd)->GetSeq().Get().empty()) != ((*rev)->CanGetSeq() && !(*rev)->GetSeq().Get().empty())) {
                 m_Objs["[n] biosource[s] [has] primer set[s] with missing values"].Add(*context.NewFeatOrDescObj());
                 return;
             }
