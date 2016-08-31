@@ -261,6 +261,7 @@ bool CDiscrepancyContext::AddTest(const string& name)
     REGISTER_DISCREPANCY_TYPE(CSeq_inst)
     REGISTER_DISCREPANCY_TYPE(CSeqdesc)
     REGISTER_DISCREPANCY_TYPE(CSeq_feat)
+    REGISTER_DISCREPANCY_TYPE(CSubmit_block)
     REGISTER_DISCREPANCY_TYPE(CSeqFeatData)
     REGISTER_DISCREPANCY_TYPE(CSeq_feat_BY_BIOSEQ)
     REGISTER_DISCREPANCY_TYPE(CSeqdesc_BY_BIOSEQ)
@@ -342,6 +343,7 @@ void CDiscrepancyContext::Parse(const CSerialObject& root)
     m_TextMapShort.clear();
     m_Current_Submit_block.Reset();
     m_Current_Submit_block_StringObj.Reset();
+    m_Current_Cit_sub_StringObj.Reset();
 
     CSeqdesc_CI::TDescChoices desc_choices = {CSeqdesc::e_Source};
 
@@ -357,13 +359,18 @@ void CDiscrepancyContext::Parse(const CSerialObject& root)
             }
             if (m_Current_Submit_block_StringObj && m_Current_Submit_block_StringObj->S.empty()) {
                 string label;
+                string citsub;
                 m_Current_Bioseq->GetLabel(&label, CBioseq::eContent);
-                label = "Cit-sub for Set containing " + label;
+                citsub = "Cit-sub for Set containing " + label;
+                label = "Set containing " + label;
                 if (!m_File.empty()) {
                     label = m_File + ":" + label;
+                    citsub = m_File + ":" + citsub;
                 }
                 m_Current_Submit_block_StringObj->S = label;
+                m_Current_Cit_sub_StringObj->S = citsub;
                 m_Current_Submit_block_StringObj.Reset();
+                m_Current_Cit_sub_StringObj.Reset();
             }
             // CSeq_feat_BY_BIOSEQ cycle
             CFeat_CI feat_ci(m_Current_Bioseq_Handle);
@@ -404,8 +411,7 @@ void CDiscrepancyContext::Parse(const CSerialObject& root)
             Update_Bioseq_set_Stack(i);
             if (m_Enable_CBioseq_set) {
                 const CBioseq_set & obj = *CType<CBioseq_set>::Get(i);
-                NON_CONST_ITERATE (vector<CDiscrepancyVisitor<CBioseq_set>* >, it, m_All_CBioseq_set)
-                {
+                NON_CONST_ITERATE (vector<CDiscrepancyVisitor<CBioseq_set>* >, it, m_All_CBioseq_set) {
                     Call(**it, obj);
                 }
             }
@@ -433,8 +439,13 @@ void CDiscrepancyContext::Parse(const CSerialObject& root)
         else if (CType<CSubmit_block>::Match(i)) {
             m_Current_Submit_block.Reset(CType<CSubmit_block>::Get(i));
             m_Current_Submit_block_StringObj.Reset(new CStringObj);
+            m_Current_Cit_sub_StringObj.Reset(new CStringObj);
             m_Current_Pub.Reset();
             m_Current_Pub_equiv.Reset();
+            const CSubmit_block & obj = *CType<CSubmit_block>::Get(i);
+            NON_CONST_ITERATE (vector<CDiscrepancyVisitor<CSubmit_block>* >, it, m_All_CSubmit_block) {
+                Call(**it, obj);
+            }
         }
         else if (CType<CPub>::Match(i)) {
             m_Current_Pub.Reset(CType<CPub>::Get(i));

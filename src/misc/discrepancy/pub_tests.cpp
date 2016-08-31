@@ -579,162 +579,73 @@ DISCREPANCY_SUMMARIZE(CITSUBAFFIL_CONFLICT)
 
 // SUBMITBLOCK_CONFLICT
 
-#define COMPARE_STRING_FIELD(Fieldname) \
-    if (!c1.IsSet##Fieldname() && c2.IsSet##Fieldname()) { \
-        return -1;\
-    } else if (c1.IsSet##Fieldname() && !c2.IsSet##Fieldname()) { \
-        return 1; \
-    } else if (c1.IsSet##Fieldname() && c2.IsSet##Fieldname()) { \
-        int cmp = NStr::Compare(c1.Get##Fieldname(), c2.Get##Fieldname()); \
-        if (cmp < 0) { \
-            return -1; \
-        } else if (cmp > 0) { \
-            return 1; \
-        } \
-    }
-
-
-template <typename Type>
-int CompareByAsnString(const Type& c1, const Type& c2)
-{
-    CNcbiOstrstream ostr;
-    ostr << MSerial_AsnText << c1;
-    string l1 = CNcbiOstrstreamToString(ostr);
-
-    ostr << MSerial_AsnText << c2;
-    string l2 = CNcbiOstrstreamToString(ostr);
-
-    return NStr::Compare(l1, l2);
-}
-
-
-#define FIELD_SET_COMPARE(Fieldname) \
-    if (!c1.IsSet##Fieldname() && c2.IsSet##Fieldname()) { \
-        return -1;\
-            } else if (c1.IsSet##Fieldname() && !c2.IsSet##Fieldname()) { \
-        return 1; \
-    } else if (c1.IsSet##Fieldname() && c2.IsSet##Fieldname()) { \
-        int cmp = CompareByAsnString(c1, c2); \
-        if (cmp != 0) { \
-            return cmp; \
-        } \
-    } 
-
-#define FIELD_COMPARE_VAL(Fieldname) \
-    if (!c1.IsSet##Fieldname() && c2.IsSet##Fieldname()) { \
-        return -1;\
-    } else if (c1.IsSet##Fieldname() && !c2.IsSet##Fieldname()) { \
-        return 1; \
-    } else if (c1.IsSet##Fieldname() && c2.IsSet##Fieldname()) { \
-        if (c1.Get##Fieldname() < c2.Get##Fieldname()) { \
-            return -1; \
-        } else if (c1.Get##Fieldname() > c2.Get##Fieldname()) { \
-            return 1; \
-        } \
-    } 
-
-int s_CitSubCompareWithoutDate(const CCit_sub& c1, const CCit_sub& c2)
-{
-    int cmp = 0;
-
-    FIELD_SET_COMPARE(Authors) 
-    FIELD_SET_COMPARE(Imp) 
-    FIELD_COMPARE_VAL(Medium)
-    COMPARE_STRING_FIELD(Descr)
-
-    return 0;
-}
-
-
-int s_SubmitBlockCompare(const CSubmit_block& c1, const CSubmit_block& c2)
-{
-    FIELD_SET_COMPARE(Contact)
-    if (!c1.IsSetCit() && c2.IsSetCit()) {
-        return -1;
-    } else if (c1.IsSetCit() && !c2.IsSetCit()) {
-        return 1;
-    } else if (c1.IsSetCit() && c2.IsSetCit()) {
-        int tmp = s_CitSubCompareWithoutDate(c1.GetCit(), c2.GetCit());
-        if (tmp != 0) {
-            return tmp;
-        }
-    }
-    bool hup1 = (c1.IsSetHup() && c1.GetHup());
-    bool hup2 = (c2.IsSetHup() && c2.GetHup());
-    if (!hup1 && hup2) {
-        return -1;
-    } else if (hup1 && !hup2) {
-        return 1;
-    }
-    FIELD_SET_COMPARE(Reldate)
-    FIELD_COMPARE_VAL(Subtype)
-    COMPARE_STRING_FIELD(Tool)
-    COMPARE_STRING_FIELD(User_tag)
-    COMPARE_STRING_FIELD(Comment)
-    return 0;
-}
-
-static bool s_SortSubmitBlock(CRef<CSubmit_block> sb1, CRef<CSubmit_block> sb2)
-{
-    if (s_SubmitBlockCompare(*sb1, *sb2) < 0) {
-        return true;
-    }
-}
-
-
-//  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(SUBMITBLOCK_CONFLICT, CSubmit_block, eDisc | eOncaller | eSmart, "Records should have identical submit-blocks")
-//  ----------------------------------------------------------------------------
 {
-    // We ask to keep the reference because we do need the actual object to stick around so we can deal with them later.
-//    CRef<CDiscrepancyObject> this_disc_obj(context.NewDiscObj(CConstRef<CSubmit_block>(&obj), eKeepRef));
-//    m_Objs["blocks"].Add(*this_disc_obj, false);
+    m_Objs.Add(*context.NewSubmitBlockObj());
+}
+
+#define COMPARE_FIELD(Field) if (A->CanGet##Field() != B->CanGet##Field() || (A->CanGet##Field() && A->Get##Field() != B->Get##Field())) { return false; }
+#define COMPARE_COMPLEX_FIELD(Field, Func) if (A->CanGet##Field() != B->CanGet##Field() || (A->CanGet##Field() && !Func(&A->Get##Field(), &B->Get##Field()))) { return false; }
+
+static bool ContactInfoMatch(const CContact_info* A, const CContact_info* B)
+{
+    return A->Equals(*B);
 }
 
 
-//  ----------------------------------------------------------------------------
+static bool CitSubMatchExceptDate(const CCit_sub* A, const CCit_sub* B)
+{
+    COMPARE_FIELD(Medium)
+    COMPARE_FIELD(Descr)
+    if (A->CanGetAuthors() != B->CanGetAuthors() || (A->CanGetAuthors() && !A->GetAuthors().SameCitation(B->GetAuthors()))) {
+        return false;
+    }
+    return true;
+}
+
+
+static bool SubmitBlockMatchExceptDate(const CReportObj& a, const CReportObj& b)
+{
+    const CSubmit_block* A = dynamic_cast<const CSubmit_block*>(&*a.GetObject());
+    const CSubmit_block* B = dynamic_cast<const CSubmit_block*>(&*b.GetObject());
+    COMPARE_FIELD(Hup)
+    COMPARE_FIELD(Subtype)
+    COMPARE_FIELD(Comment)
+    COMPARE_FIELD(User_tag)
+    COMPARE_FIELD(Tool)
+    COMPARE_COMPLEX_FIELD(Cit, CitSubMatchExceptDate)
+    COMPARE_COMPLEX_FIELD(Contact, ContactInfoMatch)
+    if (A->GetHup()) {
+        if (A->CanGetReldate() != B->CanGetReldate() || (A->CanGetReldate() && A->GetReldate().Compare(B->GetReldate()) != CDate::eCompare_same))
+        return false;
+    }
+    return true;
+}
+
+
 DISCREPANCY_SUMMARIZE(SUBMITBLOCK_CONFLICT)
-//  ----------------------------------------------------------------------------
 {
     if (m_Objs.empty()) {
         return;
     }
-/*/
-    vector < CConstRef<CSubmit_block> > blocks;
-    CReportNode::TNodeMap::iterator it = m_Objs["blocks"].GetMap().begin();
-    while (it != m_Objs["blocks"].GetMap().end()) {
-        NON_CONST_ITERATE (TReportObjectList, robj, m_Objs["blocks"].GetObjects())
-        {
-            const CDiscrepancyObject* other_disc_obj = dynamic_cast<CDiscrepancyObject*>(robj->GetNCPointer());
-            CConstRef<CSubmit_block> obj(dynamic_cast<const CSubmit_block*>(other_disc_obj->GetObject().GetPointer()));
-            blocks.push_back(obj);
+    CReportNode out;
+    CReportNode& outout = out["SubmitBlock Conflicts"];
+    vector<CReportObj*> V;
+    NON_CONST_ITERATE (TReportObjectList, it, m_Objs.GetObjects()) {
+        size_t n;
+        for (n = 0; n < V.size(); n++) {
+            if (SubmitBlockMatchExceptDate(**it, *V[n])) {
+                break;
+            }
         }
-    }
-    if (blocks.size() < 2) {
-        return;
-    }
-    stable_sort(blocks.begin(), blocks.end(), s_SortSubmitBlock);
-    size_t group_num = 1;
-    string label_start = "[n] records have identical submit-blocks (";
-    string label = label_start + NStr::NumericToString(group_num) + ")";
-    vector < CConstRef<CSubmit_block> >::iterator it1 = blocks.begin();
-//    m_Objs[label].Add(*context.NewDiscObj(*it1), false);
-    vector < CConstRef<CSubmit_block> >::iterator it2 = blocks.begin();
-    ++it2;
-    while (it2 != blocks.end()) {
-        if (s_SubmitBlockCompare(**it1, **it2) != 0) {
-            group_num++;
-            label = label_start + NStr::NumericToString(group_num) + ")";
+        if (n == V.size()) {
+            V.push_back(&**it);
         }
-//        m_Objs["[n] records have identical submit-blocks (" + label + ")"].Add(*context.NewDiscObj(*it2), false);
-        ++it1;
-        ++it2;
+        outout["[*" + NStr::IntToString((int)n) + "*][n] record[s] [has] identical submit-blocks"].Add(**it);
     }
-    m_Objs.GetMap().erase("blocks");
-    if (m_Objs.GetMap().size() > 1) {
-        m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+    if (outout.GetMap().size() > 1) {
+        m_ReportItems = out.Export(*this)->GetSubitems();
     }
-/*/
 }
 
 
@@ -743,7 +654,7 @@ DISCREPANCY_SUMMARIZE(SUBMITBLOCK_CONFLICT)
 DISCREPANCY_CASE(CONSORTIUM, CPerson_id, eOncaller, "Submitter blocks and publications have consortiums")
 {
     if (obj.IsConsortium() && !context.GetCurrentSeq_feat() && !context.GetCurrentSeqdesc()) {
-        m_Objs["[n] publication[s]/submitter block[s] [has] consortium"].Add(*context.NewFeatOrDescOrSubmitBlockObj());
+        m_Objs["[n] publication[s]/submitter block[s] [has] consortium"].Add(*context.NewFeatOrDescOrCitSubObj());
     }
 }
 
@@ -869,6 +780,7 @@ static bool AffilStreetContainsDup(const CAffil& affil)
 
     return ret;
 }
+
 
 DISCREPANCY_CASE(CITSUB_AFFIL_DUP_TEXT, CPubdesc, eOncaller, "Cit-sub affiliation street contains text from other affiliation fields")
 {
@@ -1280,7 +1192,6 @@ DISCREPANCY_CASE(CHECK_AUTH_CAPS, CAuth_list, eDisc | eOncaller | eSmart, "Check
                 }
 
                 if (!correct) {
-
                     m_Objs[kIncorrectCap].Add(*context.NewFeatOrDescOrSubmitBlockObj(eNoRef, true, const_cast<CAuth_list*>(&obj)));
                     break;
                 }

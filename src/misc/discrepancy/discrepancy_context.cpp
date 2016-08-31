@@ -699,7 +699,13 @@ CRef<CDiscrepancyObject> CDiscrepancyContext::NewDiscObj(CConstRef<CBioseq_set> 
 
 CRef<CDiscrepancyObject> CDiscrepancyContext::NewSubmitBlockObj(EKeepRef keep_ref, bool autofix, CObject* more)
 {
-    return CRef<CDiscrepancyObject>(new CSubmitBlockDiscObject(m_Current_Submit_block, m_Current_Submit_block_StringObj, *m_Scope, "Cit-sub", m_File, keep_ref || m_KeepRef, autofix, more));
+    return CRef<CDiscrepancyObject>(new CSubmitBlockDiscObject(m_Current_Submit_block, m_Current_Submit_block_StringObj, *m_Scope, "Submit Block", m_File, keep_ref || m_KeepRef, autofix, more));
+}
+
+
+CRef<CDiscrepancyObject> CDiscrepancyContext::NewCitSubObj(EKeepRef keep_ref, bool autofix, CObject* more)
+{
+    return CRef<CDiscrepancyObject>(new CSubmitBlockDiscObject(m_Current_Submit_block, m_Current_Cit_sub_StringObj, *m_Scope, "Cit-sub", m_File, keep_ref || m_KeepRef, autofix, more));
 }
 
 
@@ -730,6 +736,23 @@ CRef<CDiscrepancyObject> CDiscrepancyContext::NewFeatOrDescOrSubmitBlockObj(EKee
     }
     else {
         return NewSubmitBlockObj(keep_ref, autofix, more);
+    }
+}
+
+
+CRef<CDiscrepancyObject> CDiscrepancyContext::NewFeatOrDescOrCitSubObj(EKeepRef keep_ref, bool autofix, CObject* more)
+{
+    CConstRef<CSeq_feat> feat = GetCurrentSeq_feat();
+    CConstRef<CSeqdesc> desc = GetCurrentSeqdesc();
+    _ASSERT(!feat || !desc);
+    if (feat) {
+        return NewDiscObj(feat, keep_ref, autofix, more);
+    }
+    else if (desc) {
+        return NewDiscObj(desc, keep_ref, autofix, more);
+    }
+    else {
+        return NewCitSubObj(keep_ref, autofix, more);
     }
 }
 

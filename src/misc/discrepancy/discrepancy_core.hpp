@@ -323,6 +323,7 @@ public:
             INIT_DISCREPANCY_TYPE(CSeq_inst),
             INIT_DISCREPANCY_TYPE(CSeqdesc),
             INIT_DISCREPANCY_TYPE(CSeq_feat),
+            INIT_DISCREPANCY_TYPE(CSubmit_block),
             INIT_DISCREPANCY_TYPE(CSeqFeatData),
             INIT_DISCREPANCY_TYPE(CSeq_feat_BY_BIOSEQ),
             INIT_DISCREPANCY_TYPE(CSeqdesc_BY_BIOSEQ),
@@ -405,8 +406,10 @@ public:
     CRef<CDiscrepancyObject> NewDiscObj(CConstRef<CSeq_feat> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
     CRef<CDiscrepancyObject> NewDiscObj(CConstRef<CBioseq_set> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
     CRef<CDiscrepancyObject> NewSubmitBlockObj(EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
+    CRef<CDiscrepancyObject> NewCitSubObj(EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
     CRef<CDiscrepancyObject> NewFeatOrDescObj(EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
     CRef<CDiscrepancyObject> NewFeatOrDescOrSubmitBlockObj(EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
+    CRef<CDiscrepancyObject> NewFeatOrDescOrCitSubObj(EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
 
 protected:
     void Update_Bioseq_set_Stack(CTypesConstIterator& it);
@@ -417,6 +420,7 @@ protected:
     CConstRef<CBioseq> m_Current_Bioseq;
     CConstRef<CSubmit_block> m_Current_Submit_block;
     CRef<CStringObj> m_Current_Submit_block_StringObj;
+    CRef<CStringObj> m_Current_Cit_sub_StringObj;
     CConstRef<CSeqdesc> m_Current_Seqdesc;
     CConstRef<CSeq_feat> m_Current_Seq_feat;
     CConstRef<CPub> m_Current_Pub;
@@ -447,6 +451,7 @@ protected:
     ADD_DISCREPANCY_TYPE(CSeq_inst)
     ADD_DISCREPANCY_TYPE(CSeqdesc)
     ADD_DISCREPANCY_TYPE(CSeq_feat)
+    ADD_DISCREPANCY_TYPE(CSubmit_block)
     ADD_DISCREPANCY_TYPE(CSeqFeatData)
     ADD_DISCREPANCY_TYPE(CSeq_feat_BY_BIOSEQ)
     ADD_DISCREPANCY_TYPE(CSeqdesc_BY_BIOSEQ)

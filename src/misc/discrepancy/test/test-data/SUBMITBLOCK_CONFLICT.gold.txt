@@ -1,0 +1,15 @@
+Discrepancy Report Results
+
+Summary
+SUBMITBLOCK_CONFLICT: SubmitBlock Conflicts
+
+Detailed Report
+
+SUBMITBLOCK_CONFLICT: SubmitBlock Conflicts
+SUBMITBLOCK_CONFLICT: 2 records have identical submit-blocks
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\SUBMITBLOCK_CONFLICT\contig_01.sqn:Set containing lcl|contig_01
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\SUBMITBLOCK_CONFLICT\contig_03.sqn:Set containing lcl|contig_03
+
+SUBMITBLOCK_CONFLICT: 1 record has identical submit-blocks
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\SUBMITBLOCK_CONFLICT\contig_02.sqn:Set containing lcl|contig_02
+
