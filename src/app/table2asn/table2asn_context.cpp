@@ -629,12 +629,20 @@ bool CTable2AsnContext::ApplyCreateUpdateDates(objects::CSeq_entry& entry) const
         break;
     case CSeq_entry::e_Set:
         {
-            NON_CONST_ITERATE(CSeq_entry::TSet::TSeq_set, it, entry.SetSet().SetSeq_set())
+            if (entry.GetSet().IsSetClass() &&
+                entry.GetSet().GetClass() == CBioseq_set::eClass_nuc_prot)
             {
-                need_update |= ApplyCreateUpdateDates(**it);
+                ApplyUpdateDate(entry);
             }
-            if (need_update)
-               ApplyUpdateDate(entry);
+            else
+            {
+                NON_CONST_ITERATE(CSeq_entry::TSet::TSeq_set, it, entry.SetSet().SetSeq_set())
+                {
+                    need_update |= ApplyCreateUpdateDates(**it);
+                }
+                if (need_update)
+                    ApplyUpdateDate(entry);
+            }
         }
         break;
     default:
