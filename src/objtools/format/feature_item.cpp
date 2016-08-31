@@ -3848,7 +3848,12 @@ void CFeatureItem::x_AddRegulatoryClassQual(
         x_AddQual( eFQ_regulatory_class, new CFlatStringQVal(regulatory_class));
     } else {
         x_AddQual( eFQ_regulatory_class, new CFlatStringQVal("other"));
-        x_AddQual( eFQ_seqfeat_note, new CFlatStringQVal(regulatory_class));
+        string tmp = regulatory_class;
+        if (NStr::StartsWith(tmp, "other:")) {
+            NStr::TrimPrefixInPlace(tmp, "other:");
+            NStr::TruncateSpacesInPlace(tmp);
+        }
+        x_AddQual( eFQ_seqfeat_note, new CFlatStringQVal(tmp));
     }
 }
 
