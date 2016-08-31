@@ -153,8 +153,13 @@ void CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class,
     }
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-    if (IsOptionSet(eAllowXSiteConn))
-        g_AllowXSiteConnections(m_NetStorage);
+    if (IsOptionSet(eAllowXSiteConn)) {
+        if (IsOptionSet(eUserKey)) {
+            g_AllowXSiteConnections(m_NetStorageByKey);
+        } else {
+            g_AllowXSiteConnections(m_NetStorage);
+        }
+    }
 #endif
 }
 
