@@ -631,12 +631,15 @@ DISCREPANCY_SUMMARIZE(MULTIPLE_CULTURE_COLLECTION)
 
 DISCREPANCY_CASE(REQUIRED_STRAIN, CBioSource, eDisc, "Bacteria should have strain")
 {
-    if (!obj.IsSetOrg() || !obj.GetOrg().IsSetOrgname() || !obj.GetOrg().GetOrgname().IsSetMod() || !CDiscrepancyContext::HasLineage(obj, context.GetLineage(), "Bacteria")) {
+    if (!obj.IsSetOrg() || !obj.GetOrg().IsSetOrgname() || !CDiscrepancyContext::HasLineage(obj, context.GetLineage(), "Bacteria")) {
         return;
     }
-    ITERATE (COrgName::TMod, m, obj.GetOrg().GetOrgname().GetMod()) {
-        if ((*m)->IsSetSubtype() && (*m)->GetSubtype() == COrgMod::eSubtype_strain) {
-            return;
+
+    if (obj.GetOrg().GetOrgname().IsSetMod()) {
+        ITERATE(COrgName::TMod, m, obj.GetOrg().GetOrgname().GetMod()) {
+            if ((*m)->IsSetSubtype() && (*m)->GetSubtype() == COrgMod::eSubtype_strain) {
+                return;
+            }
         }
     }
     m_Objs["[n] biosource[s] [is] missing required strain value"].Add(*context.NewFeatOrDescObj());
