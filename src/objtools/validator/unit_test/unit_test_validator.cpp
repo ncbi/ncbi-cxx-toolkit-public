@@ -9788,6 +9788,8 @@ BOOST_AUTO_TEST_CASE(Test_PKG_NucProtNotSegSet)
 }
 
 
+#if 0
+// we don't care about segsets any more
 BOOST_AUTO_TEST_CASE(Test_PKG_SegSetNotParts)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSegSet();
@@ -9895,6 +9897,7 @@ BOOST_AUTO_TEST_CASE(Test_PKG_FeaturePackagingProblem)
 
     CLEAR_ERRORS
 }
+#endif
 
 
 BOOST_AUTO_TEST_CASE(Test_PKG_GenomicProductPackagingProblem)
@@ -10056,6 +10059,8 @@ BOOST_AUTO_TEST_CASE(Test_PKG_InconsistentMolInfoBiomols)
     unit_test_util::SetBiomol(parts_set->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_cRNA);
 
     STANDARD_SETUP
+#if 0
+        // we don't care about segsets any more
 
     expected_errors.push_back(new CExpectedError("part1", eDiag_Error, "InconsistentMolTypeBiomol",
                                                  "Molecule type (DNA) does not match biomol (RNA)"));
@@ -10065,6 +10070,7 @@ BOOST_AUTO_TEST_CASE(Test_PKG_InconsistentMolInfoBiomols)
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
+#endif
 
     scope.RemoveTopLevelSeqEntry(seh);
     entry = unit_test_util::BuildGoodEcoSet();
@@ -12220,6 +12226,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FarLocation)
     STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "FarLocation", "Feature has 'far' location - accession not packaged in record"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BadLocation", "Feature location intervals should all be on the same sequence"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
