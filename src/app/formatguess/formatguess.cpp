@@ -100,7 +100,7 @@ CFormatGuessApp::Run(void)
     CFormatGuess::EFormat uFormat = guesser.GuessFormat();
     
     // include file name in output if it's not stdin
-    if( ! args["omit-file-name"] and
+    if( ! args["omit-file-name"] &&
             ! name_of_input_stream.empty() && name_of_input_stream != "-" ) 
     {
         cout << name_of_input_stream << " :   ";
