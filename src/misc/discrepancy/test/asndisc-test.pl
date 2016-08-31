@@ -79,6 +79,7 @@ my $out_c = "$test.c.txt";
 my $out_cpp = $autofix ? "$test.cpp.asn" : "$test.cpp.txt";
 my $gold = File::Spec->catfile($path, 'test-data', $tests{$test}{gold}) if $tests{$test}{gold} ne '' && !$nogold;
 my $data = $tests{$test}{data};
+$data .= '[\\/\\\\]\\S*' if -d $input;
 my $rx = join('|', split(',', $arg.','.$arg0));
 my $ip = -d $input ? 'p' : 'i';
 my $cmd;
@@ -218,7 +219,6 @@ sub compare_output
   my $yy = shift;
   my %x = %$xx;
   my %y = %$yy;
-
   my %kkk;
   foreach my $k (sort keys %{$x{summary}}){ $kkk{$k} = 0; }
   foreach my $k (sort keys %{$y{summary}}){ $kkk{$k} = 0; }
