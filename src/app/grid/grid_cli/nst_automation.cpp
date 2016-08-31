@@ -174,6 +174,11 @@ bool SNetStorageServiceAutomationObject::Call(const string& method,
                     ReturnNetStorageServerObject(m_NetStorageAdmin, *it)->GetID());
         reply.Append(object_ids);
     } else
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
+        if (method == "allow_xsite_connections")
+            g_AllowXSiteConnections(m_NetStorageAdmin);
+        else
+#endif
         return SNetServiceBaseAutomationObject::Call(method, arg_array, reply);
 
     return true;

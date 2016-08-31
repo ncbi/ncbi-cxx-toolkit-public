@@ -1601,6 +1601,13 @@ void CNetStorageAdmin::SetEventHandler(INetEventHandler* event_handler)
     m_Impl->m_NetStorageRPC->m_Service->SetEventHandler(event_handler);
 }
 
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
+void g_AllowXSiteConnections(CNetStorageAdmin& admin)
+{
+    admin->m_NetStorageRPC->AllowXSiteConnections();
+}
+#endif
+
 SNetStorageImpl* SNetStorage::CreateImpl(const SConfig& config,
         TNetStorageFlags default_flags)
 {
