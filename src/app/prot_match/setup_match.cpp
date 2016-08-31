@@ -116,6 +116,7 @@ bool CSetupProtMatchApp::x_TryReadBioseqSet(CObjectIStream& istr, CSeq_entry& se
 }
 
 
+
 int CSetupProtMatchApp::Run(void) 
 {
     const CArgs& args = GetArgs();
@@ -129,18 +130,53 @@ int CSetupProtMatchApp::Run(void)
     CRef<CScope> gb_scope(new CScope(*obj_mgr));
     gb_scope->AddDataLoader("GBLOADER");
 
+
     // Set up object input stream
     unique_ptr<CObjectIStream> pInStream(x_InitInputStream(args));
     // Attempt to read Seq-entry from input file 
     CSeq_entry seq_entry;
 
 
-    if (!x_TryReadSeqEntry(*pInStream, seq_entry) &&
-        !x_TryReadBioseqSet(*pInStream, seq_entry)) {
+    set<TTypeInfo> knownTypes, matchingTypes;
+    knownTypes.insert(CSeq_entry::GetTypeInfo());
+    knownTypes.insert(CBioseq_set::GetTypeInfo());
+    matchingTypes = pInStream->GuessDataType(knownTypes);
+
+
+    if (matchingTypes.empty()) {
         NCBI_THROW(CProteinMatchException, 
                    eInputError, 
-                   "Failed to read Seq-entry");
+                   "Unrecognized input");
     }
+
+    if (matchingTypes.size() > 1){
+        NCBI_THROW(CProteinMatchException, 
+                   eInputError, 
+                   "Ambiguous input");
+    }
+
+    const TTypeInfo typeInfo = *matchingTypes.begin();
+
+    if (typeInfo == CSeq_entry::GetTypeInfo()) {
+        if (!x_TryReadSeqEntry(*pInStream, seq_entry)) {
+            NCBI_THROW(CProteinMatchException, 
+                       eInputError, 
+                       "Failed to read Seq-entry");
+
+        }
+    }
+    else 
+    if (typeInfo == CBioseq_set::GetTypeInfo()) {
+        if (!x_TryReadBioseqSet(*pInStream, seq_entry)) {
+            NCBI_THROW(CProteinMatchException, 
+                       eInputError, 
+                       "Failed to read Bioseq-set");
+        }
+    }
+
+
+
+
 
     // Fetch Seq-entry Handle 
     CSeq_entry_Handle seh;
