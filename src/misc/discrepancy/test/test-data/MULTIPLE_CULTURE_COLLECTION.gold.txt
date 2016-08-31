@@ -1,0 +1,10 @@
+Discrepancy Report Results
+
+Summary
+MULTIPLE_CULTURE_COLLECTION: 1 organism has multiple culture-collection qualifiers
+
+Detailed Report
+
+MULTIPLE_CULTURE_COLLECTION: 1 organism has multiple culture-collection qualifiers
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\MultipleCultureCollections.sqn:1043348811:Beltrania rhombica
+
