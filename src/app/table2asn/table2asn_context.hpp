@@ -97,6 +97,7 @@ public:
     char   m_feature_links;
     bool   m_use_hypothetic_protein;
     bool   m_eukariote;
+    bool   m_di_fasta;
 
     CRef<objects::CSeq_descr>  m_descriptors;
     auto_ptr<objects::edit::CRemoteUpdater>   m_remote_updater;

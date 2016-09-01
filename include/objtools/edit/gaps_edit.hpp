@@ -62,6 +62,10 @@ public:
     void ConvertNs2Gaps(const CSeq_data& data, TSeqPos len, CDelta_ext& ext);
     CRef<CDelta_seq> CreateGap(CBioseq& bioseq, TSeqPos gap_start, TSeqPos gap_length);
 
+    void ConvertBioseqToDelta(CBioseq& bioseq);
+    void AppendGap(CBioseq& bioseq);
+    void AddBioseqAsLiteral(CBioseq& parent, CBioseq& bioseq);
+
 private:
     void x_SetGapParameters(CDelta_seq& gap);
 

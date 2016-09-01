@@ -33,7 +33,8 @@
 
 #include <ncbi_pch.hpp>
 
-#include <objtools/readers/fasta.hpp>
+#include "fasta_ex.hpp"
+
 #include <objtools/readers/gff3_reader.hpp>
 #include <objtools/readers/gtf_reader.hpp>
 
@@ -58,8 +59,6 @@
 #include <objects/general/Date.hpp>
 #include <objects/biblio/Cit_sub.hpp>
 
-#include <objtools/edit/gaps_edit.hpp>
-
 #include <corelib/ncbistre.hpp>
 
 #include <serial/iterator.hpp>
@@ -70,6 +69,8 @@
 #include <objects/seq/Annot_id.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objtools/readers/readfeat.hpp>
+
+#include <util/format_guess.hpp>
 
 //#include <objtools/readers/error_container.hpp>
 
@@ -85,42 +86,6 @@ USING_SCOPE(objects);
 
 namespace
 {
-
-    class CFastaReaderEx : public CFastaReader {
-    protected:
-        CTable2AsnContext& m_context;
-    public:
-        CFastaReaderEx(CTable2AsnContext& context, ILineReader& reader, TFlags flags) : CFastaReader(reader, flags), m_context(context)
-        {
-        };
-        virtual void AssignMolType(ILineErrorListener * pMessageListener)
-        {
-            CFastaReader::AssignMolType(pMessageListener);
-            CSeq_inst& inst = SetCurrentSeq().SetInst();
-            if (!inst.IsSetMol() || inst.GetMol() ==  CSeq_inst::eMol_na)
-                inst.SetMol( CSeq_inst::eMol_dna);
-        }
-        virtual void AssembleSeq (ILineErrorListener * pMessageListener)
-        {
-            CFastaReader::AssembleSeq(pMessageListener);
-
-            CAutoAddDesc molinfo_desc(SetCurrentSeq().SetDescr(), CSeqdesc::e_Molinfo);
-
-            if (!molinfo_desc.Set().SetMolinfo().IsSetBiomol())
-                molinfo_desc.Set().SetMolinfo().SetBiomol(CMolInfo::eBiomol_genomic);
-
-            //if (!m_context.m_HandleAsSet)
-            {
-                CAutoAddDesc create_date_desc(SetCurrentSeq().SetDescr(), CSeqdesc::e_Create_date);
-                if (create_date_desc.IsNull())
-                {
-                    CRef<CDate> date(new CDate(CTime(CTime::eCurrent), CDate::ePrecision_day));
-                    create_date_desc.Set().SetCreate_date(*date);
-                }
-            }
-
-        }
-    };
 
     CRef<CSeq_id> GetSeqIdWithoutVersion(const CSeq_id& id)
     {
@@ -303,7 +268,7 @@ CMultiReader::xReadFasta(CNcbiIstream& instream)
     auto_ptr<CBaseFastaReader> pReader(new CBaseFastaReader(m_iFlags));
 //    auto_ptr<CBaseFastaReader> pReader(new CFastaReaderEx(lr, m_iFlags));
 #else
-    auto_ptr<CFastaReader> pReader(new CFastaReaderEx(m_context, lr, m_iFlags));
+    auto_ptr<CFastaReaderEx> pReader(new CFastaReaderEx(m_context, lr, m_iFlags));
 #endif
     if (!pReader.get()) {
         NCBI_THROW2(CObjReaderParseException, eFormat,
@@ -320,7 +285,7 @@ CMultiReader::xReadFasta(CNcbiIstream& instream)
     }
 
     int max_seqs = kMax_Int;
-    CRef<CSeq_entry> result = pReader->ReadSet(max_seqs, m_context.m_logger);
+    CRef<CSeq_entry> result = m_context.m_di_fasta ? pReader->ReadDIFasta(m_context.m_logger) : pReader->ReadSet(max_seqs, m_context.m_logger);
     if (result->IsSet() && !m_context.m_HandleAsSet)
     {
         m_context.m_logger->PutError(*auto_ptr<CLineError>(

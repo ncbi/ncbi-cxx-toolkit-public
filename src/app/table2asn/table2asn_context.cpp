@@ -135,6 +135,7 @@ CTable2AsnContext::CTable2AsnContext():
     m_feature_links(0),
     m_use_hypothetic_protein(false),
     m_eukariote(false),
+    m_di_fasta(false),
     m_logger(0)
 {
 }
