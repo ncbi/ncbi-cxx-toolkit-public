@@ -77,13 +77,6 @@
 
 #include <misc/data_loaders_util/data_loaders_util.hpp>
 
-#if 1
-#include <objtools/data_loaders/genbank/gbloader.hpp>
-#ifdef HAVE_NCBI_VDB
-#  include <sra/data_loaders/wgs/wgsloader.hpp>
-#endif
-#endif
-
 #include <common/test_assert.h>  /* This header must go last */
 
 using namespace ncbi;
@@ -117,6 +110,7 @@ public:
 
 private:
 
+    static const CDataLoadersUtil::TLoaders default_loaders = CDataLoadersUtil::fGenbank | CDataLoadersUtil::fVDB | CDataLoadersUtil::fGenbankOffByDefault;
     void Setup(const CArgs& args);
 
     string GenerateOutputFilename(const CTempString& ext) const;
@@ -181,12 +175,17 @@ void CTbl2AsnApp::Init(void)
     // Prepare command line descriptions, inherit them from tbl2asn legacy application
 
     arg_desc->AddOptionalKey
-        ("p", "Directory", "Path to input files",
+        ("indir", "Directory", "Path to input files",
         CArgDescriptions::eInputFile);
 
     arg_desc->AddOptionalKey
-        ("r", "Directory", "Path to results",
+        ("outdir", "Directory", "Path to results",
         CArgDescriptions::eOutputFile);
+
+    arg_desc->AddFlag("E", "Recurse");
+
+    arg_desc->AddDefaultKey
+        ("x", "String", "Suffix", CArgDescriptions::eString, ".fsa");
 
     arg_desc->AddOptionalKey
         ("i", "InFile", "Single Input File",
@@ -197,12 +196,8 @@ void CTbl2AsnApp::Init(void)
         CArgDescriptions::eOutputFile);
 
     arg_desc->AddDefaultKey
-        ("x", "String", "Suffix", CArgDescriptions::eString, ".fsa");
-
-    arg_desc->AddDefaultKey
         ("out-suffix", "String", "ASN.1 files suffix", CArgDescriptions::eString, ".sqn");
 
-    arg_desc->AddFlag("E", "Recurse");
     arg_desc->AddOptionalKey("t", "InFile", "Template File",
         CArgDescriptions::eInputFile);
 
@@ -272,7 +267,6 @@ void CTbl2AsnApp::Init(void)
       Begin, Middle, End Gap Characters,\n\
       Missing Characters, Match Characters", CArgDescriptions::eString);
 
-    arg_desc->AddFlag("R", "Remote Sequence Record Fetching from ID"); // done
     arg_desc->AddFlag("S", "Smart Feature Annotation");
 
     arg_desc->AddOptionalKey("Q", "String", "mRNA Title Policy\n\
@@ -365,6 +359,8 @@ void CTbl2AsnApp::Init(void)
     arg_desc->AddOptionalKey("logfile", "LogFile", "Error Log File", CArgDescriptions::eOutputFile);
     arg_desc->AddFlag("split-logs", "Create unique log file for each output file");
 
+    CDataLoadersUtil::AddArgumentDescriptions(*arg_desc, default_loaders);
+
     // Program description
     string prog_description = "Converts files of various formats to ASN.1\n";
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -392,12 +388,6 @@ int CTbl2AsnApp::Run(void)
     m_context.m_logger = m_logger;
     m_logger->m_enable_log = args["W"].AsBoolean();
     m_validator.Reset(new CTable2AsnValidator(m_context));
-
-    // note - the C Toolkit uses 0 for SEV_NONE, but the C++ Toolkit uses 0 for SEV_INFO
-    // adjust here to make the inputs to table2asn match tbl2asn expectations
-    //m_ReportLevel = args["R"].AsInteger() - 1;
-    //m_LowCutoff = static_cast<EDiagSev>(args["Q"].AsInteger() - 1);
-    //m_HighCutoff = static_cast<EDiagSev>(args["P"].AsInteger() - 1);
 
     if (args["c"])
     {
@@ -562,6 +552,11 @@ int CTbl2AsnApp::Run(void)
                 m_context.m_HandleAsSet = true;
                 m_context.m_ecoset = true;
             }
+            else
+            if (a_arg == "di")
+            {
+                m_context.m_di_fasta = true;
+            }
         }
     }
     if (args["gaps-min"])
@@ -661,6 +656,9 @@ int CTbl2AsnApp::Run(void)
     }
 
     // Designate where do we output files: local folder, specified folder or a specific single output file
+    if (args["outdir"])
+            m_context.m_ResultsDirectory = CDir::AddTrailingPathSeparator(args["outdir"].AsString());
+
     if (args["o"])
     {
         m_context.m_output_filename = args["o"].AsString();
@@ -668,10 +666,8 @@ int CTbl2AsnApp::Run(void)
     }
     else
     {
-        if (args["r"])
+        if (args["outdir"])
         {
-            m_context.m_ResultsDirectory = CDir::AddTrailingPathSeparator(args["r"].AsString());
-
             CDir outputdir(m_context.m_ResultsDirectory);
             if (!IsDryRun())
                 if (!outputdir.Exists())
@@ -722,21 +718,21 @@ int CTbl2AsnApp::Run(void)
     try
     {
         // Designate where do we get input: single file or a folder or folder structure
-        if (args["p"])
+        if (args["i"])
         {
-            CDir directory(args["p"].AsString());
+            m_context.m_current_file = args["i"].AsString();
+            ProcessOneFile();
+        }
+        else
+        if (args["indir"])
+        {
+            CDir directory(args["indir"].AsString());
             if (directory.Exists())
             {
                 CMaskFileName masks;
                 masks.Add("*" + args["x"].AsString());
 
                 ProcessOneDirectory(directory, masks, args["E"].AsBoolean());
-            }
-        } else {
-            if (args["i"])
-            {
-                m_context.m_current_file = args["i"].AsString();
-                ProcessOneFile();
             }
         }
         if (m_validator->TotalErrors() > 0)
@@ -986,7 +982,13 @@ string CTbl2AsnApp::GenerateOutputFilename(const CTempString& ext) const
     else
     {
         CDirEntry::SplitPath(m_context.m_output_filename, &dir, &base, 0);
-        outputfile = dir;
+        if (m_context.m_output_filename == "-" || dir == "/dev" ) {
+           CDirEntry::SplitPath(m_context.m_current_file, &dir, &base, 0);
+           outputfile = m_context.m_ResultsDirectory.empty() ? dir : m_context.m_ResultsDirectory;
+        }
+        else {
+          outputfile = dir;
+        }
     }
     outputfile += base;
     outputfile += ext;
@@ -1116,17 +1118,9 @@ void CTbl2AsnApp::Setup(const CArgs& args)
     // Create object manager and scope
 
     m_context.m_ObjMgr = CObjectManager::GetInstance();
+    CDataLoadersUtil::SetupObjectManager(args, *m_context.m_ObjMgr, default_loaders);
 
     m_context.m_scope.Reset(new CScope(*m_context.m_ObjMgr));
-    if (args["R"]) {
-        // Create GenBank data loader and register it with the OM.
-        // The last argument "eDefault" informs the OM that the loader must
-        // be included in scopes during the CScope::AddDefaults() call.
-        CGBDataLoader::RegisterInObjectManager(*m_context.m_ObjMgr);
-#ifdef HAVE_NCBI_VDB
-        CWGSDataLoader::RegisterInObjectManager(*m_context.m_ObjMgr, CObjectManager::eDefault, 88);
-#endif
-    }
     m_context.m_scope->AddDefaults();
 }
 
