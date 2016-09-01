@@ -84,7 +84,7 @@ Seq-annot ::= {
       data region "Pos1",
       location int {
         from 127471196,
-        to 127472363,
+        to 127472362,
         strand plus,
         id local str "chr7"
       },
@@ -162,7 +162,7 @@ Seq-annot ::= {
       data region "Pos2",
       location int {
         from 127472363,
-        to 127473530,
+        to 127473529,
         strand plus,
         id local str "chr7"
       },
@@ -240,7 +240,7 @@ Seq-annot ::= {
       data region "Pos3",
       location int {
         from 127473530,
-        to 127474697,
+        to 127474696,
         strand plus,
         id local str "chr7"
       },
@@ -318,7 +318,7 @@ Seq-annot ::= {
       data region "Pos4",
       location int {
         from 127474697,
-        to 127475864,
+        to 127475863,
         strand plus,
         id local str "chr7"
       },
@@ -396,7 +396,7 @@ Seq-annot ::= {
       data region "Neg1",
       location int {
         from 127475864,
-        to 127477031,
+        to 127477030,
         strand minus,
         id local str "chr7"
       },
@@ -474,7 +474,7 @@ Seq-annot ::= {
       data region "Neg2",
       location int {
         from 127477031,
-        to 127478198,
+        to 127478197,
         strand minus,
         id local str "chr7"
       },
@@ -552,7 +552,7 @@ Seq-annot ::= {
       data region "Neg3",
       location int {
         from 127478198,
-        to 127479365,
+        to 127479364,
         strand minus,
         id local str "chr7"
       },
@@ -630,7 +630,7 @@ Seq-annot ::= {
       data region "Pos5",
       location int {
         from 127479365,
-        to 127480532,
+        to 127480531,
         strand plus,
         id local str "chr7"
       },
@@ -708,7 +708,7 @@ Seq-annot ::= {
       data region "Neg4",
       location int {
         from 127480532,
-        to 127481699,
+        to 127481698,
         strand minus,
         id local str "chr7"
       },

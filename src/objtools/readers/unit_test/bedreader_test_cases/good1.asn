@@ -73,7 +73,7 @@ Seq-annot ::= {
       data region "cloneA",
       location int {
         from 1000,
-        to 5000,
+        to 4999,
         strand plus,
         id local str "chr22"
       },
@@ -112,13 +112,13 @@ Seq-annot ::= {
       location packed-int {
         {
           from 1000,
-          to 1567,
+          to 1566,
           strand plus,
           id local str "chr22"
         },
         {
           from 4512,
-          to 5000,
+          to 4999,
           strand plus,
           id local str "chr22"
         }
@@ -195,7 +195,7 @@ Seq-annot ::= {
       data region "cloneB",
       location int {
         from 2000,
-        to 6000,
+        to 5999,
         strand minus,
         id local str "chr22"
       },
@@ -234,13 +234,13 @@ Seq-annot ::= {
       location packed-int {
         {
           from 5601,
-          to 6000,
+          to 5999,
           strand minus,
           id local str "chr22"
         },
         {
           from 2000,
-          to 2433,
+          to 2432,
           strand minus,
           id local str "chr22"
         }

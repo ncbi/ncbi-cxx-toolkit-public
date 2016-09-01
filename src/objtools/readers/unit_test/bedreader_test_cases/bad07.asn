@@ -105,7 +105,7 @@ Seq-annot ::= {
       data region "Pos2",
       location int {
         from 127472363,
-        to 127473530,
+        to 127473529,
         strand plus,
         id local str "chr7"
       },

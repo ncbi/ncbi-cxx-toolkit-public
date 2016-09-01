@@ -298,7 +298,7 @@ bool CBedFeatureRecord::SetThick(
     if (loc.IsInt()) {
         const CSeq_interval& thickInt = loc.GetInt();
         m_strThickStart = NStr::IntToString(thickInt.GetFrom());
-        m_strThickEnd = NStr::IntToString(thickInt.GetTo());
+        m_strThickEnd = NStr::IntToString(thickInt.GetTo()+1);
         return true;
     }
     if (loc.IsPnt()) {
@@ -330,11 +330,11 @@ bool CBedFeatureRecord::SetBlocks(
             const CSeq_interval& interval = *pInterval;
             if (strand == eNa_strand_minus) {
                 blockStarts.push_front(NStr::NumericToString(interval.GetFrom()-offset));
-                blockSizes.push_front(NStr::NumericToString(interval.GetLength()-1));
+                blockSizes.push_front(NStr::NumericToString(interval.GetLength()));
             }
             else {
                 blockStarts.push_back(NStr::NumericToString(interval.GetFrom()-offset));
-                blockSizes.push_back(NStr::NumericToString(interval.GetLength()-1));
+                blockSizes.push_back(NStr::NumericToString(interval.GetLength()));
             }
         }
         m_strBlockCount = NStr::NumericToString(intervals.size());
