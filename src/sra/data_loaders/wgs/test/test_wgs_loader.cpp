@@ -145,6 +145,27 @@ CRef<CObjectManager> sx_InitOM(EMasterDescrType master_descr_type,
     return om;
 }
 
+bool sx_CanOpen(const string& acc)
+{
+    CVDBMgr mgr;
+    try {
+        CVDB(mgr, acc);
+        return true;
+    }
+    catch ( CSraException& exc ) {
+        if ( exc.GetErrCode() == exc.eNotFoundDb ) {
+            return false;
+        }
+        throw;
+    }
+}
+
+bool sx_HasNewWGSRepository()
+{
+    static bool new_rep = sx_CanOpen("AIDX01.2");
+    return new_rep;
+}
+
 CBioseq_Handle sx_LoadFromGB(const CBioseq_Handle& bh)
 {
     CRef<CObjectManager> om = CObjectManager::GetInstance();
@@ -1362,7 +1383,7 @@ BOOST_AUTO_TEST_CASE(FetchProt17)
 BOOST_AUTO_TEST_CASE(FetchProt17a)
 {
     // WGS VDB with proteins with new WGS repository
-    if ( !CDirEntry(s_NewWGSPath).Exists() ) {
+    if ( !sx_HasNewWGSRepository() ) {
         return;
     }
     CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr, "AIDX01.1");
@@ -1427,7 +1448,7 @@ BOOST_AUTO_TEST_CASE(FetchProt18)
 BOOST_AUTO_TEST_CASE(FetchProt18a)
 {
     // WGS VDB with proteins with new WGS repository
-    if ( !CDirEntry(s_NewWGSPath).Exists() ) {
+    if ( !sx_HasNewWGSRepository() ) {
         return;
     }
     CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr, "AIDX01.2");
@@ -1493,7 +1514,7 @@ BOOST_AUTO_TEST_CASE(FetchProt19)
 BOOST_AUTO_TEST_CASE(FetchProt19a)
 {
     // WGS VDB with proteins with new WGS repository
-    if ( !CDirEntry(s_NewWGSPath).Exists() ) {
+    if ( !sx_HasNewWGSRepository() ) {
         return;
     }
     CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr, "AIDX01.1");
@@ -1561,7 +1582,7 @@ BOOST_AUTO_TEST_CASE(FetchProt20)
 BOOST_AUTO_TEST_CASE(FetchProt20a)
 {
     // WGS VDB with proteins with new WGS repository
-    if ( !CDirEntry(s_NewWGSPath).Exists() ) {
+    if ( !sx_HasNewWGSRepository() ) {
         return;
     }
     CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr, "AIDX01.2");
@@ -1946,6 +1967,10 @@ BOOST_AUTO_TEST_CASE(FetchNoSeq5)
 
 BOOST_AUTO_TEST_CASE(FetchMinorVer1)
 {
+    if ( !sx_HasNewWGSRepository() ) {
+        return;
+    }
+
     CRef<CObjectManager> om = sx_GetEmptyOM();
     string loader_name =
         CWGSDataLoader::RegisterInObjectManager(*om, "", vector<string>(1, "AAAB01.4")).GetLoader()->GetName();
@@ -1967,6 +1992,10 @@ BOOST_AUTO_TEST_CASE(FetchMinorVer1)
 
 BOOST_AUTO_TEST_CASE(FetchMinorVer2)
 {
+    if ( !sx_HasNewWGSRepository() ) {
+        return;
+    }
+
     CRef<CObjectManager> om = sx_GetEmptyOM();
     string loader_name =
         CWGSDataLoader::RegisterInObjectManager(*om, "", vector<string>(1, "AAAB01.5")).GetLoader()->GetName();
