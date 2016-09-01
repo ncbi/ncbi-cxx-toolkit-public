@@ -59,7 +59,7 @@ def main(): #IGNORE:R0911
     if platform == "FreeBSD32" or platform.startswith("SunOS") or \
         platform.startswith("Linux32"):
         return do_nothing(platform)
-    if platform == "IntelMAC":
+    if platform.startswith("IntelMAC"):
         return mac_post_build(installdir, blast_version)
     
     print("Unknown OS identifier:" + platform, file=sys.stderr)
