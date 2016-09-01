@@ -85,12 +85,11 @@ void CGICacheReader::x_Initialize(void)
     string index = m_Path;
     if ( CFile(index).IsDir() ) {
         const char* file;
-        if ( sizeof(void*) == 4 ) {
-            file = DEFAULT_GI_CACHE_PREFIX;
-        }
-        else {
-            file = DEFAULT_GI_CACHE_PREFIX DEFAULT_64BIT_SUFFIX;
-        }
+#if defined(DEFAULT_64BIT_SUFFIX)  &&  SIZEOF_VOIDP > 4
+        file = DEFAULT_GI_CACHE_PREFIX DEFAULT_64BIT_SUFFIX;
+#else
+        file = DEFAULT_GI_CACHE_PREFIX;
+#endif
         index = CFile::MakePath(index, file);
     }
     CMutexGuard guard(m_Mutex);
