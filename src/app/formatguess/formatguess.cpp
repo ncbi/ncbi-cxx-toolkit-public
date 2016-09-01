@@ -38,11 +38,25 @@
 
 #include <util/format_guess.hpp>
 
+#include <serial/objistrasnb.hpp>
+#include <serial/objistrasn.hpp>
+#include <serial/objistrxml.hpp>
+#include <serial/objistrjson.hpp>
+
+#include <objects/seqset/Seq_entry.hpp>
+#include <objects/submit/Seq_submit.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
+#include <objects/seq/Bioseq.hpp>
+
+#include <misc/xmlwrapp/attributes.hpp>
+#include <misc/xmlwrapp/document.hpp>
+#include <misc/xmlwrapp/node.hpp>
+
 typedef std::map<ncbi::CFormatGuess::EFormat, std::string> FormatMap;
 typedef FormatMap::iterator FormatIter;
 
 USING_NCBI_SCOPE;
-//USING_SCOPE(objects);
+USING_SCOPE(objects);
 
 //  ============================================================================
 class CFormatGuessApp
@@ -50,10 +64,30 @@ class CFormatGuessApp
      : public CNcbiApplication
 {
 private:
+    static string guess_object_type(CObjectIStream & obj_istrm);
+
     virtual void Init(void);
     virtual int  Run(void);
     virtual void Exit(void);
 };
+
+//  ============================================================================
+string CFormatGuessApp::guess_object_type(CObjectIStream & obj_istrm)
+//  ============================================================================
+{
+    set<TTypeInfo> known_types = {
+        CType<CSeq_entry>().GetTypeInfo(),
+        CType<CSeq_submit>().GetTypeInfo(),
+        CType<CBioseq_set>().GetTypeInfo(),
+        CType<CBioseq>().GetTypeInfo()
+    };
+
+    set<TTypeInfo> types = obj_istrm.GuessDataType(known_types);
+    if ( types.size() != 1 ) {
+        return "unknown";
+    }
+    return (*types.begin())->GetName();
+}
 
 //  ============================================================================
 void CFormatGuessApp::Init(void)
@@ -80,9 +114,21 @@ void CFormatGuessApp::Init(void)
         "given by the underlying C++ format guesser.");
         
     arg_desc->AddFlag(
-        "omit-file-name",
-        "When sending output, do not include the name of the input file. "
-        "This has no effect when reading from stdin.");
+        "show-object-type",
+        "Make output include the type of the object.   If it cannot be "
+        "determined or does not make sense for the given format then it "
+        "considers it 'unknown'"
+    );
+    
+    arg_desc->AddDefaultKey(
+        "output-format", "OutputFormat",
+        "How this program should send the results of its guesses.",
+        CArgDescriptions::eString,
+        "text"
+    );
+    arg_desc->SetConstraint("output-format", &(*new CArgAllow_Strings,
+                                               "text", "XML"));
+    
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -94,21 +140,18 @@ CFormatGuessApp::Run(void)
 {
     const CArgs& args = GetArgs();
     CNcbiIstream & input_stream = args["i"].AsInputFile();
-    const string name_of_input_stream = args["i"].AsString();
+    string name_of_input_stream = args["i"].AsString();
+    if( name_of_input_stream.empty() || name_of_input_stream == "-" ) {
+        name_of_input_stream = "stdin";
+    }
 
     CFormatGuess guesser( input_stream );
     CFormatGuess::EFormat uFormat = guesser.GuessFormat();
     
-    // include file name in output if it's not stdin
-    if( ! args["omit-file-name"] &&
-            ! name_of_input_stream.empty() && name_of_input_stream != "-" ) 
-    {
-        cout << name_of_input_stream << " :   ";
-    }
-    
+    string format_name;
     if( args["canonical-name"] ) {
         // caller wants to always use the format-guesser's name
-         cout << CFormatGuess::GetFormatName(uFormat);
+        format_name = CFormatGuess::GetFormatName(uFormat);
     } else {
         // caller wants special names for some types
         FormatMap FormatStrings;
@@ -144,16 +187,85 @@ CFormatGuessApp::Run(void)
         FormatIter it = FormatStrings.find( uFormat );
         if ( it == FormatStrings.end() ) {
             // cout << "Unmapped format [" << uFormat << "]";
-            cout << CFormatGuess::GetFormatName(uFormat);
+            format_name = CFormatGuess::GetFormatName(uFormat);
         }
         else {
-            cout << it->second;
+            format_name = it->second;
         }
     }
+    
+    string object_type_to_show;
+    if( args["show-object-type"] ) {
+        AutoPtr<CObjectIStream> obj_istrm;
+        switch( uFormat ) {
+            case CFormatGuess::eBinaryASN:
+                obj_istrm.reset(
+                    new CObjectIStreamAsnBinary(input_stream, eNoOwnership));
+                break;
+            case CFormatGuess::eTextASN:
+                obj_istrm.reset(
+                    new CObjectIStreamAsn(input_stream, eNoOwnership));
+                break;
+            case CFormatGuess::eXml:
+                obj_istrm.reset(
+                    new CObjectIStreamXml(input_stream, eNoOwnership));
+                break;
+            case CFormatGuess::eJSON:
+                obj_istrm.reset(
+                    new CObjectIStreamJson(input_stream, eNoOwnership));
+                break;
+            default:
+                // obj_istrm will be unset
+                break;
+        }
+        
+        if( obj_istrm.get() ) {
+            object_type_to_show = guess_object_type(*obj_istrm);
+        } else {
+            object_type_to_show = "unknown";
+        }
 
-    // end the one line we're printing
-    cout << endl;
-            
+        // If caller requested the object type then it should be set
+        // even if it's unknown
+        _ASSERT( ! object_type_to_show.empty() );
+    }
+    
+    const string output_format = args["output-format"].AsString();
+    
+    if( output_format == "text" ) {
+        cout << name_of_input_stream << " :   ";
+        
+        _ASSERT( ! format_name.empty() ); // should be non-empty even if unknown
+        cout << format_name;
+        
+        // second line is object type line, if applicable.
+        if( ! object_type_to_show.empty() ) {
+            cout << ", object type:   " << object_type_to_show;
+        }
+        
+        cout << endl;
+    } else if( output_format == "XML" ) {
+        
+        xml::node output_node("formatguess");
+        
+        // input_stream_node for each input specified. 
+        // However, there's currently only one so no loop here yet.
+        xml::node input_stream_node("input_stream");
+        xml::attributes & stream_attribs = input_stream_node.get_attributes();
+        stream_attribs.insert("name", name_of_input_stream.c_str());
+        stream_attribs.insert("format_name", format_name.c_str());
+         if( ! object_type_to_show.empty() ) {
+            stream_attribs.insert("object_type", object_type_to_show.c_str());
+         }
+        
+        output_node.push_back(input_stream_node);
+        
+        xml::document output_doc(output_node);
+        output_doc.save_to_stream(cout);
+    } else {
+        _TROUBLE;
+    }
+
     return 0;
 }
 
