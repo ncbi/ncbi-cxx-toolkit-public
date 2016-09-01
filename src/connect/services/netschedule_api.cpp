@@ -375,7 +375,7 @@ private:
 
     struct SHandler : public INetEventHandler
     {
-        bool OnError(CException::TErrCode err_code) { return true; }
+        bool OnError(CException::TErrCode) { return true; }
     };
 public:
     CErrorSuppressor(SNetScheduleAPIImpl* api_impl) :

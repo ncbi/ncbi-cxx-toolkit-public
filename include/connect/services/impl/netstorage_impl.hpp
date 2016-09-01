@@ -169,7 +169,7 @@ struct NCBI_XCONNECT_EXPORT SNetStorage::SLimits
     {
         static string   Name()          { return "Attribute value"; }
         static size_t   MaxLength()     { return 900; }
-        static bool     IsValid(char c) { return true; };
+        static bool     IsValid(char)   { return true; };
     };
 
     struct SClientName

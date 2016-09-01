@@ -253,7 +253,7 @@ CNetServerConnection SNetICacheClientImpl::InitiateWriteCmd(
             false, parameters).conn;
 }
 
-CNetICacheClient::CNetICacheClient(EAppRegistry use_app_reg,
+CNetICacheClient::CNetICacheClient(EAppRegistry,
         const string& conf_section) :
     m_Impl(new SNetICacheClientImpl(NULL, conf_section,
         kEmptyStr, kEmptyStr, kEmptyStr))
@@ -404,13 +404,13 @@ CNetServer::SExecResult SNetICacheClientImpl::ChooseServerAndExec(
     return exec_result;
 }
 
-void CNetICacheClient::RegisterSession(unsigned pid)
+void CNetICacheClient::RegisterSession(unsigned)
 {
     NCBI_THROW(CNetCacheException, eNotImplemented, "SMR is not implemented");
 }
 
 
-void CNetICacheClient::UnRegisterSession(unsigned pid)
+void CNetICacheClient::UnRegisterSession(unsigned)
 {
     NCBI_THROW(CNetCacheException, eNotImplemented, "SMU is not implemented");
 }
@@ -428,9 +428,7 @@ void CNetICacheClient::SetFlags(ICache::TFlags flags)
 }
 
 
-void CNetICacheClient::SetTimeStampPolicy(TTimeStampFlags policy,
-                                          unsigned int    timeout,
-                                          unsigned int    max_timeout)
+void CNetICacheClient::SetTimeStampPolicy(TTimeStampFlags, unsigned, unsigned)
 {
     NCBI_THROW(CNetCacheException, eNotImplemented, "STSP is not implemented");
 }
@@ -454,7 +452,7 @@ bool CNetICacheClient::IsOpen() const
 }
 
 
-void CNetICacheClient::SetVersionRetention(EKeepVersions policy)
+void CNetICacheClient::SetVersionRetention(EKeepVersions)
 {
     NCBI_THROW(CNetCacheException, eNotImplemented, "SVRP is not implemented");
 }
@@ -509,10 +507,8 @@ size_t CNetICacheClient::GetBlobSize(const string& key,
 }
 
 
-void CNetICacheClient::GetBlobOwner(const string&  key,
-                                    int            version,
-                                    const string&  subkey,
-                                    string*        owner)
+void CNetICacheClient::GetBlobOwner(const string&, int, const string&,
+        string* owner)
 {
     ERR_POST("NetCache command 'GBLW' has been phased out");
     *owner = kEmptyStr;
@@ -737,9 +733,7 @@ void CNetICacheClient::RemoveBlob(const string& key,
     m_Impl->ExecStdCmd("REMO", key, version, subkey, &parameters);
 }
 
-time_t CNetICacheClient::GetAccessTime(const string&  key,
-                                       int            version,
-                                       const string&  subkey)
+time_t CNetICacheClient::GetAccessTime(const string&, int, const string&)
 {
     NCBI_THROW(CNetCacheException, eNotImplemented, "GACT is not implemented");
 }
@@ -771,8 +765,7 @@ bool CNetICacheClient::HasBlob(const string& key, const string& subkey,
     }
 }
 
-void CNetICacheClient::Purge(time_t           access_timeout,
-                             EKeepVersions    keep_last_version)
+void CNetICacheClient::Purge(time_t, EKeepVersions)
 {
     NCBI_THROW(CNetCacheException, eNotImplemented, "PRG1 is not implemented");
 }
@@ -1095,7 +1088,7 @@ string CNetICacheClient::GetCacheName(void) const
 }
 
 
-bool CNetICacheClient::SameCacheParams(const TCacheParams* params) const
+bool CNetICacheClient::SameCacheParams(const TCacheParams*) const
 {
     return false;
 }

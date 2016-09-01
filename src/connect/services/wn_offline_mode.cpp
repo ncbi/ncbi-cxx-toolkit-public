@@ -74,8 +74,7 @@ public:
 };
 
 
-void SOfflineJobContextImpl::PutProgressMessage(const string& msg,
-        bool send_immediately, bool overwrite)
+void SOfflineJobContextImpl::PutProgressMessage(const string&, bool, bool)
 {
 }
 
@@ -84,7 +83,7 @@ CNetScheduleAdmin::EShutdownLevel SOfflineJobContextImpl::GetShutdownLevel()
     return CGridGlobals::GetInstance().GetShutdownLevel();
 }
 
-void SOfflineJobContextImpl::JobDelayExpiration(unsigned runtime_inc)
+void SOfflineJobContextImpl::JobDelayExpiration(unsigned)
 {
 }
 

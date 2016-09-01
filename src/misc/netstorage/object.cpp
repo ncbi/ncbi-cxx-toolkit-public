@@ -117,14 +117,14 @@ list<string> CObj::GetAttributeList() const
 }
 
 
-string CObj::GetAttribute(const string& attr_name) const
+string CObj::GetAttribute(const string&) const
 {
     NCBI_THROW(CNetStorageException, eNotSupported,
         "Attribute support is only implemented in NetStorage server.");
 }
 
 
-void CObj::SetAttribute(const string& attr_name, const string& attr_value)
+void CObj::SetAttribute(const string&, const string&)
 {
     NCBI_THROW(CNetStorageException, eNotSupported,
         "Attribute support is only implemented in NetStorage server.");

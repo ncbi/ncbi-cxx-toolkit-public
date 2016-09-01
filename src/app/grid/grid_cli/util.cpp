@@ -359,7 +359,7 @@ void CJobInfoToJSON::ProcessJobMeta(const CNetScheduleKey& key)
         m_JobInfo.SetString("queue_name", UnquoteIfQuoted(key.queue));
 }
 
-void CJobInfoToJSON::BeginJobEvent(const CTempString& event_header)
+void CJobInfoToJSON::BeginJobEvent(const CTempString&)
 {
     if (!m_JobEvents)
         m_JobInfo.SetByKey("events", m_JobEvents = CJsonNode::NewArrayNode());

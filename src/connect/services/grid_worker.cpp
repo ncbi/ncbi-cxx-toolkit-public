@@ -298,7 +298,7 @@ public:
 
     virtual ~CIdleWatcher() {};
 
-    virtual void Notify(const CWorkerNodeJobContext& job, EEvent event)
+    virtual void Notify(const CWorkerNodeJobContext&, EEvent event)
     {
         if (event == eJobStarted) {
             m_RunningJobs.Add(1);

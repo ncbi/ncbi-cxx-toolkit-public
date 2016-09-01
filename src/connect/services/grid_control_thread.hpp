@@ -54,11 +54,11 @@ public:
     public:
         virtual ~IRequestProcessor() {}
 
-        virtual bool Authenticate(const string& host,
-                                  const string& auth,
-                                  const string& queue,
-                                  CNcbiOstream& reply,
-                                  CWorkerNodeControlServer* control_server)
+        virtual bool Authenticate(const string& /*host*/,
+                                  const string& /*auth*/,
+                                  const string& /*queue*/,
+                                  CNcbiOstream& /*reply*/,
+                                  CWorkerNodeControlServer* /*control_server*/)
         {
             return true;
         }

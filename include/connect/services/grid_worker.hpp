@@ -416,7 +416,7 @@ public:
 
     /// Initialize a worker node factory
     ///
-    virtual void Init(const IWorkerNodeInitContext& context) {}
+    virtual void Init(const IWorkerNodeInitContext& /*context*/) {}
 
     /// Get the job version
     ///

@@ -75,7 +75,7 @@ class CAdminCmdProcessor : public CWorkerNodeControlServer::IRequestProcessor
 public:
     virtual bool Authenticate(const string& host,
                               const string& /*auth*/,
-                              const string& queue,
+                              const string& /*queue*/,
                               CNcbiOstream& os,
                               CWorkerNodeControlServer* control_server)
     {
@@ -237,7 +237,7 @@ public:
 class CGetLoadProcessor : public CWorkerNodeControlServer::IRequestProcessor
 {
 public:
-    virtual bool Authenticate(const string& host,
+    virtual bool Authenticate(const string& /*host*/,
                               const string& auth,
                               const string& queue,
                               CNcbiOstream& os,

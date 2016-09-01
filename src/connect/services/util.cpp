@@ -201,7 +201,7 @@ string g_NetService_TryResolveHost(const string& ip_or_hostname)
 #define NOT_ALPHA(c) ((c < 'a' || c > 'z') && (c < 'A' || c > 'Z'))
 #define NOT_DIGIT(c) (c < '0' || c > '9')
 
-bool g_CheckAlphabet(const string& str, const CTempString& param_name,
+bool g_CheckAlphabet(const string& str, const CTempString&,
         ECharacterClass char_class, char* bad_char)
 {
     const char* ch = str.data();

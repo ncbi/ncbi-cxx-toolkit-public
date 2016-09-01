@@ -441,8 +441,7 @@ IState* CNotFound::StartRead(void* buf, size_t count,
 }
 
 
-IState* CNotFound::StartWrite(const void* buf, size_t count,
-        size_t* bytes_written, ERW_Result* result)
+IState* CNotFound::StartWrite(const void*, size_t, size_t*, ERW_Result*)
 {
     NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
             "Object creation is disabled (no backend storages were provided)");
