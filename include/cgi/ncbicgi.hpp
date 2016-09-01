@@ -419,7 +419,8 @@ private:
             : m_Value(value), m_Filename(filename), m_ContentType(type),
               m_Position(position) { }
         SData(const SData& data)
-            : m_Value(data.m_Value), m_Filename(data.m_Filename),
+            : CObject(),
+              m_Value(data.m_Value), m_Filename(data.m_Filename),
               m_ContentType(data.m_ContentType),
               m_Position(data.m_Position)
             { _ASSERT( !data.m_Reader.get() ); }
