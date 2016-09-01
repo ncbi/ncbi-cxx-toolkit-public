@@ -89,7 +89,7 @@ def create_new_tarball_name(platform, program, version):
         retval += "-ia32-linux"
     elif platform.startswith("Linux64"):
         retval += "-x64-linux"
-    elif platform == "IntelMAC":
+    elif platform.startswith("IntelMAC"):
         retval += "-x64-macosx"
     elif platform == "SunOSSparc":
         retval += "-sparc64-solaris"
