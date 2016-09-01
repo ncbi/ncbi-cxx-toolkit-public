@@ -44,12 +44,6 @@
 #include <lmdb.h>
 #include "gicache.h"
 #include "ncbi_toolkit.h"
-#ifdef NCBI_CXX_TOOLKIT
-#include "connect/ncbi_core_cxx.hpp"
-#else
-#include "connect/ncbi_core_c.h"
-#endif
-#include "connect/ncbi_core.h"
 
 #ifdef TEST_RUN
 #  ifdef NDEBUG
@@ -391,6 +385,9 @@ static int x_PutData(SGiDataIndex* data_index, int64_t gi, int64_t gi_len, const
 	int64_t gi64 = 0;
 	int acclen, datalen;
 	uint8_t *gidata = NULL;
+	int gi_len_bytes = 0;
+	int gi_len_neg;
+	uint8_t flags;
 
 	logmsg[0] = 0;
 	acclen = strlen(acc);
@@ -429,8 +426,7 @@ static int x_PutData(SGiDataIndex* data_index, int64_t gi, int64_t gi_len, const
 	gi64 = gi;	
 	key.mv_size = sizeof(gi64);
 	key.mv_data = &gi64;
-	int gi_len_bytes = 0;
-	int gi_len_neg = gi_len < 0;
+	gi_len_neg = gi_len < 0;
 	if (gi_len != 0 && gi_len != -1) {
 		if (gi_len_neg)
 			gi_len = -gi_len;
@@ -441,7 +437,7 @@ static int x_PutData(SGiDataIndex* data_index, int64_t gi, int64_t gi_len, const
 		}
 	}
 	
-	uint8_t flags = (gi_len_bytes & 0x7) | ((gi_len_neg ? 1 : 0) << 3);
+	flags = (gi_len_bytes & 0x7) | ((gi_len_neg ? 1 : 0) << 3);
 
 	datalen =	1 + 			// flags
 				gi_len_bytes +	// gi_len
