@@ -1140,23 +1140,50 @@ bool CGff3Writer::x_WriteBioseqHandle(
         return false;
     }
 
-    SAnnotSelector sel = GetAnnotSelector();
-    CFeat_CI feat_iter(bsh, sel);
+    SAnnotSelector selAll = GetAnnotSelector();
+    CFeat_CI feat_iter(bsh, selAll);
     CGffFeatureContext fc(feat_iter, bsh);
 
     if (!xWriteSource(fc)) {
         return false;
     }
-    for ( ; feat_iter; ++feat_iter) {
-        if (!xWriteFeature(fc, *feat_iter)) {
+
+    vector<CMappedFeat> vRoots = fc.FeatTree().GetRootFeatures();
+    for (auto pit = vRoots.begin(); pit != vRoots.end(); ++pit) {
+        CMappedFeat mRoot = *pit;
+        if (!xWriteFeature(fc, mRoot)) {
+            return false;
+        }
+        if (!xWriteAllChildren(fc, mRoot)) {
             return false;
         }
     }
-    for (CAlign_CI align_it(bsh, sel);  align_it;  ++ align_it) {
+
+    for (CAlign_CI align_it(bsh, selAll);  align_it;  ++ align_it) {
         xWriteAlign(*align_it);
         m_uRecordId++;
     }
+    return true;
+}
 
+//  ----------------------------------------------------------------------------
+bool CGff3Writer::xWriteAllChildren(
+    CGffFeatureContext& fc,
+    CMappedFeat mf)
+//  ----------------------------------------------------------------------------
+{
+    feature::CFeatTree& featTree = fc.FeatTree();
+    vector<CMappedFeat> vChildren;
+    featTree.GetChildrenTo(mf, vChildren);
+    for (auto cit = vChildren.begin(); cit != vChildren.end(); ++cit) {
+        CMappedFeat mChild = *cit;
+        if (!xWriteFeature(fc, mChild)) {
+            return false;
+        }
+        if (!xWriteAllChildren(fc, mChild)) {
+            return false;
+        }
+    }
     return true;
 }
 
@@ -1183,11 +1210,16 @@ bool CGff3Writer::xWriteFeature(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    //CSeqFeatData::ESubtype s = mf.GetFeatSubtype();
-    //const CSeq_loc& loc = mf.GetLocation();
-    //if (s == CSeqFeatData::eSubtype_repeat_region) {
-    //    cerr << "";
-    //}
+    CSeqFeatData::ESubtype s = mf.GetFeatSubtype();
+    const CSeq_feat& sf = mf.GetOriginalFeature();
+    if (s == CSeqFeatData::eSubtype_regulatory) {
+        string rc = sf.GetNamedQual("regulatory_class");
+        cerr << "";
+    }
+    if (s == CSeqFeatData::eSubtype_promoter) {
+        cerr << "";
+    }
+    const CSeq_loc& loc = mf.GetLocation();
     try {
         switch( mf.GetFeatSubtype() ) {
             default:

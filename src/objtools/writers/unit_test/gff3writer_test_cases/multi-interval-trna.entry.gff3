@@ -10,14 +10,13 @@ NC_005213.1	RefSeq	tRNA	35249	35287	.	+	.	ID=rna0;Parent=gene0;Dbxref=GeneID:336
 NC_005213.1	RefSeq	tRNA	3254	3289	.	+	.	ID=rna0;Parent=gene0;Dbxref=GeneID:3362429;exception=trans-splicing;gbkey=tRNA;part=2/2;product=tRNA-Met
 NC_005213.1	RefSeq	exon	35249	35287	.	+	.	ID=id1;Parent=rna0;Dbxref=GeneID:3362429;exception=trans-splicing;gbkey=tRNA;product=tRNA-Met
 NC_005213.1	RefSeq	exon	3254	3289	.	+	.	ID=id2;Parent=rna0;Dbxref=GeneID:3362429;exception=trans-splicing;gbkey=tRNA;product=tRNA-Met
+NC_005213.1	RefSeq	sequence_feature	35289	35301	.	+	.	ID=id3;Dbxref=GeneID:3362429;Note=reverse complementary sequence cleaved during processing of trans-spliced tRNAs;gbkey=misc_feature
 NC_005213.1	RefSeq	gene	490883	491764	.	-	.	ID=gene1;Dbxref=GeneID:2732620;Name=NEQ001;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ001
 NC_005213.1	RefSeq	CDS	490883	491764	.	-	0	ID=cds0;Parent=gene1;Dbxref=Genbank:NP_963295.1,GeneID:2732620;Name=NP_963295.1;Note=COG1583:Uncharacterized ACR%3B IPR001472:Bipartite nuclear localization signal%3B IPR002743: Protein of unknown function DUF57;gbkey=CDS;product=hypothetical protein;protein_id=NP_963295.1;transl_table=11
 NC_005213.1	RefSeq	gene	883	2691	.	+	.	ID=gene2;Dbxref=GeneID:2654355;Name=NEQ003;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ003
 NC_005213.1	RefSeq	CDS	883	2691	.	+	0	ID=cds1;Parent=gene2;Dbxref=Genbank:NP_963296.1,GeneID:2654355;Name=NP_963296.1;Note=COG1201: Lhr-like helicases%3B IPR001410: DEAD/DEAH box helicase%3B IPR001472: Bipartite nuclear localization signal%3B IPR001650: Helicase C-terminal domain%3B IPR003593: AAA ATPase superfamily;gbkey=CDS;product=hypothetical protein;protein_id=NP_963296.1;transl_table=11
 NC_005213.1	RefSeq	gene	2668	3189	.	-	.	ID=gene3;Dbxref=GeneID:2654520;Name=NEQ002;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ002
 NC_005213.1	RefSeq	CDS	2668	3189	.	-	0	ID=cds2;Parent=gene3;Dbxref=Genbank:NP_963297.1,GeneID:2654520;Name=NP_963297.1;Note=COG1047:FKBP-type peptidyl-prolyl cis-trans isomerases 2%3B IPR000931:Adenovirus fibre protein;gbkey=CDS;product=hypothetical protein;protein_id=NP_963297.1;transl_table=11
-NC_005213.1	RefSeq	promoter	3210	3215	.	+	.	ID=id3;Note=archaeal RNA pol III promoter consensus box A motif;gbkey=promoter
-NC_005213.1	RefSeq	sequence_feature	3238	3250	.	+	.	ID=id4;Note=reverse complementary sequence cleaved during processing of trans-spliced tRNAs;gbkey=misc_feature
 NC_005213.1	RefSeq	gene	3290	3748	.	-	.	ID=gene4;Dbxref=GeneID:2654506;Name=NEQ004;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ004
 NC_005213.1	RefSeq	CDS	3290	3748	.	-	0	ID=cds3;Parent=gene4;Dbxref=Genbank:NP_963298.1,GeneID:2654506;Name=NP_963298.1;Note=COG1371: Uncharacterized ACR%3B IPR002804: Protein of unknown function DUF101%3B IPR001472: Bipartite nuclear localization signal;gbkey=CDS;product=hypothetical protein;protein_id=NP_963298.1;transl_table=11
 NC_005213.1	RefSeq	gene	3745	4665	.	-	.	ID=gene5;Dbxref=GeneID:2654304;Name=NEQ005;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ005
@@ -30,7 +29,7 @@ NC_005213.1	RefSeq	gene	5759	7000	.	+	.	ID=gene8;Dbxref=GeneID:2654403;Name=NEQ0
 NC_005213.1	RefSeq	CDS	5759	7000	.	+	0	ID=cds7;Parent=gene8;Dbxref=Genbank:NP_963302.1,GeneID:2654403;Name=NP_963302.1;Note=COG0621: 2-methylthioadenine synthetase%3B IPR001861: Uncharacterized protein family UPF0004;gbkey=CDS;product=hypothetical protein;protein_id=NP_963302.1;transl_table=11
 NC_005213.1	RefSeq	gene	7001	7074	.	-	.	ID=gene9;Dbxref=GeneID:3362468;Name=NEQ_t02;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t02
 NC_005213.1	RefSeq	tRNA	7001	7074	.	-	.	ID=rna1;Parent=gene9;Dbxref=GeneID:3362468;gbkey=tRNA;product=tRNA-Ile
-NC_005213.1	RefSeq	exon	7001	7074	.	-	.	ID=id5;Parent=rna1;Dbxref=GeneID:3362468;gbkey=tRNA;product=tRNA-Ile
+NC_005213.1	RefSeq	exon	7001	7074	.	-	.	ID=id4;Parent=rna1;Dbxref=GeneID:3362468;gbkey=tRNA;product=tRNA-Ile
 NC_005213.1	RefSeq	gene	7105	7401	.	-	.	ID=gene10;Dbxref=GeneID:2654360;Name=NEQ009;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ009
 NC_005213.1	RefSeq	CDS	7105	7401	.	-	0	ID=cds8;Parent=gene10;Dbxref=Genbank:NP_963303.1,GeneID:2654360;Name=NP_963303.1;gbkey=CDS;product=hypothetical protein;protein_id=NP_963303.1;transl_table=11
 NC_005213.1	RefSeq	gene	7398	8423	.	-	.	ID=gene11;Dbxref=GeneID:2654552;Name=NEQ010;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ010
@@ -79,7 +78,7 @@ NC_005213.1	RefSeq	gene	28722	29234	.	-	.	ID=gene32;Dbxref=GeneID:2654469;Name=N
 NC_005213.1	RefSeq	CDS	28722	29234	.	-	0	ID=cds30;Parent=gene32;Dbxref=Genbank:NP_963325.1,GeneID:2654469;Name=NP_963325.1;Note=similar to yeast Dim2p protein that is essential for 40S ribosomal subunit%3B structural studies show binding to 3' end of 16S rRNA in complex with archaeal IF2 alpha;gbkey=CDS;product=putative RNA-processing protein;protein_id=NP_963325.1;transl_table=11
 NC_005213.1	RefSeq	gene	29270	29341	.	-	.	ID=gene33;Dbxref=GeneID:3362467;Name=NEQ_t03;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t03
 NC_005213.1	RefSeq	tRNA	29270	29341	.	-	.	ID=rna2;Parent=gene33;Dbxref=GeneID:3362467;gbkey=tRNA;product=tRNA-Phe
-NC_005213.1	RefSeq	exon	29270	29341	.	-	.	ID=id6;Parent=rna2;Dbxref=GeneID:3362467;gbkey=tRNA;product=tRNA-Phe
+NC_005213.1	RefSeq	exon	29270	29341	.	-	.	ID=id5;Parent=rna2;Dbxref=GeneID:3362467;gbkey=tRNA;product=tRNA-Phe
 NC_005213.1	RefSeq	gene	29432	30583	.	+	.	ID=gene34;Dbxref=GeneID:2732558;Name=NEQ032;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ032
 NC_005213.1	RefSeq	CDS	29432	30583	.	+	0	ID=cds31;Parent=gene34;Dbxref=Genbank:NP_963326.1,GeneID:2732558;Name=NP_963326.1;gbkey=CDS;product=hypothetical protein;protein_id=NP_963326.1;transl_table=11
 NC_005213.1	RefSeq	gene	30576	32363	.	+	.	ID=gene35;Dbxref=GeneID:2654040;Name=NEQ033;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ033
@@ -94,11 +93,9 @@ NC_005213.1	RefSeq	gene	34755	35015	.	+	.	ID=gene39;Dbxref=GeneID:2654042;Name=r
 NC_005213.1	RefSeq	CDS	34755	35015	.	+	0	ID=cds36;Parent=gene39;Dbxref=Genbank:NP_963331.1,GeneID:2654042;Name=NP_963331.1;Note=structural models have indicated that the folded zinc-finger motif interacts mainly with domain III of 23S rRNA%2C whereas the amino-terminal region of L37 interacts primarily with domain II;gbkey=CDS;gene=rpl37ae;product=50S ribosomal protein L37Ae;protein_id=NP_963331.1;transl_table=11
 NC_005213.1	RefSeq	gene	34999	35199	.	-	.	ID=gene40;Dbxref=GeneID:2732559;Name=NEQ037;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ037
 NC_005213.1	RefSeq	CDS	34999	35199	.	-	0	ID=cds37;Parent=gene40;Dbxref=Genbank:NP_963332.1,GeneID:2732559;Name=NP_963332.1;Note=COG1958: Small nuclear ribonucleoprotein (snRNP) homolog%3B IPR001163: Small nuclear ribonucleoprotein (Sm protein);gbkey=CDS;product=hypothetical protein;protein_id=NP_963332.1;transl_table=11
-NC_005213.1	RefSeq	promoter	35223	35228	.	+	.	ID=id7;Note=archaeal RNA pol III promoter consensus box A motif;gbkey=promoter
-NC_005213.1	RefSeq	sequence_feature	35289	35301	.	+	.	ID=id8;Dbxref=GeneID:3362429;Note=reverse complementary sequence cleaved during processing of trans-spliced tRNAs;gbkey=misc_feature
 NC_005213.1	RefSeq	gene	35318	35389	.	-	.	ID=gene41;Dbxref=GeneID:3362466;Name=NEQ_t04;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t04
 NC_005213.1	RefSeq	tRNA	35318	35389	.	-	.	ID=rna3;Parent=gene41;Dbxref=GeneID:3362466;gbkey=tRNA;product=tRNA-Ala
-NC_005213.1	RefSeq	exon	35318	35389	.	-	.	ID=id9;Parent=rna3;Dbxref=GeneID:3362466;gbkey=tRNA;product=tRNA-Ala
+NC_005213.1	RefSeq	exon	35318	35389	.	-	.	ID=id6;Parent=rna3;Dbxref=GeneID:3362466;gbkey=tRNA;product=tRNA-Ala
 NC_005213.1	RefSeq	gene	35478	36131	.	+	.	ID=gene42;Dbxref=GeneID:2654471;Name=NEQ039;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ039
 NC_005213.1	RefSeq	CDS	35478	36131	.	+	0	ID=cds38;Parent=gene42;Dbxref=Genbank:NP_963333.1,GeneID:2654471;Name=NP_963333.1;Note=TFIID%3B binds specifically to the TATA box and functions in transcription;gbkey=CDS;product=transcription factor;protein_id=NP_963333.1;transl_table=11
 NC_005213.1	RefSeq	gene	36124	36771	.	+	.	ID=gene43;Dbxref=GeneID:2654472;Name=NEQ041;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ041
@@ -143,17 +140,17 @@ NC_005213.1	RefSeq	gene	52238	54031	.	+	.	ID=gene62;Dbxref=GeneID:2654456;Name=N
 NC_005213.1	RefSeq	CDS	52238	54031	.	+	0	ID=cds58;Parent=gene62;Dbxref=Genbank:NP_963353.1,GeneID:2654456;Name=NP_963353.1;Note=COG1855: ATPases of the PilT family%3B IPR002716: PIN (PilT N terminus) domain%3B IPR000958: KH domain%3B IPR001687: ATP/GTP-binding site motif A (P-loop)%3B IPR003593: AAA ATPase superfamily;gbkey=CDS;product=ATPase;protein_id=NP_963353.1;transl_table=11
 NC_005213.1	RefSeq	gene	54080	54150	.	-	.	ID=gene63;Dbxref=GeneID:3362465;Name=NEQ_t05;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t05
 NC_005213.1	RefSeq	tRNA	54080	54150	.	-	.	ID=rna4;Parent=gene63;Dbxref=GeneID:3362465;gbkey=tRNA;product=tRNA-Gly
-NC_005213.1	RefSeq	exon	54080	54150	.	-	.	ID=id10;Parent=rna4;Dbxref=GeneID:3362465;gbkey=tRNA;product=tRNA-Gly
+NC_005213.1	RefSeq	exon	54080	54150	.	-	.	ID=id7;Parent=rna4;Dbxref=GeneID:3362465;gbkey=tRNA;product=tRNA-Gly
 NC_005213.1	RefSeq	gene	54182	54736	.	+	.	ID=gene64;Dbxref=GeneID:2732581;Name=NEQ060;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ060
 NC_005213.1	RefSeq	CDS	54182	54736	.	+	0	ID=cds59;Parent=gene64;Dbxref=Genbank:NP_963354.1,GeneID:2732581;Name=NP_963354.1;gbkey=CDS;product=hypothetical protein;protein_id=NP_963354.1;transl_table=11
 NC_005213.1	RefSeq	gene	54744	54817	.	+	.	ID=gene65;Dbxref=GeneID:3362431;Name=NEQ_t06;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t06
 NC_005213.1	RefSeq	tRNA	54744	54817	.	+	.	ID=rna5;Parent=gene65;Dbxref=GeneID:3362431;gbkey=tRNA;product=tRNA-Cys
-NC_005213.1	RefSeq	exon	54744	54817	.	+	.	ID=id11;Parent=rna5;Dbxref=GeneID:3362431;gbkey=tRNA;product=tRNA-Cys
+NC_005213.1	RefSeq	exon	54744	54817	.	+	.	ID=id8;Parent=rna5;Dbxref=GeneID:3362431;gbkey=tRNA;product=tRNA-Cys
 NC_005213.1	RefSeq	gene	55825	56691	.	+	.	ID=gene66;Dbxref=GeneID:2654257;Name=NEQ061;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ061
 NC_005213.1	RefSeq	CDS	55825	56691	.	+	0	ID=cds60;Parent=gene66;Dbxref=Genbank:NP_963355.1,GeneID:2654257;Name=NP_963355.1;Note=COG0472: UDP-N-acetylmuramyl pentapeptide phosphotransferase/UDP-N- acetylglucosamine-1-phosphate transferase%3B IPR000715: Glycosyl transferase%2C family 4;gbkey=CDS;product=hypothetical protein;protein_id=NP_963355.1;transl_table=11
 NC_005213.1	RefSeq	gene	56690	56812	.	+	.	ID=gene67;Dbxref=GeneID:3362471;Name=NEQ_r01;gbkey=Gene;gene_biotype=rRNA;locus_tag=NEQ_r01
 NC_005213.1	RefSeq	rRNA	56690	56812	.	+	.	ID=rna6;Parent=gene67;Dbxref=GeneID:3362471;gbkey=rRNA;product=5S ribosomal RNA
-NC_005213.1	RefSeq	exon	56690	56812	.	+	.	ID=id12;Parent=rna6;Dbxref=GeneID:3362471;gbkey=rRNA;product=5S ribosomal RNA
+NC_005213.1	RefSeq	exon	56690	56812	.	+	.	ID=id9;Parent=rna6;Dbxref=GeneID:3362471;gbkey=rRNA;product=5S ribosomal RNA
 NC_005213.1	RefSeq	gene	56818	58431	.	-	.	ID=gene68;Dbxref=GeneID:2654258;Name=NEQ062;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ062
 NC_005213.1	RefSeq	CDS	56818	58431	.	-	0	ID=cds61;Parent=gene68;Dbxref=Genbank:NP_963356.1,GeneID:2654258;Name=NP_963356.1;Note=IPR001525: C-5 cytosine-specific DNA methylase;gbkey=CDS;product=hypothetical protein;protein_id=NP_963356.1;transl_table=11
 NC_005213.1	RefSeq	gene	58428	59030	.	-	.	ID=gene69;Dbxref=GeneID:2654446;Name=NEQ063;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ063
@@ -190,7 +187,7 @@ NC_005213.1	RefSeq	gene	71224	72033	.	+	.	ID=gene84;Dbxref=GeneID:2654390;Name=N
 NC_005213.1	RefSeq	CDS	71224	72033	.	+	0	ID=cds77;Parent=gene84;Dbxref=Genbank:NP_963372.1,GeneID:2654390;Name=NP_963372.1;gbkey=CDS;product=hypothetical protein;protein_id=NP_963372.1;transl_table=11
 NC_005213.1	RefSeq	gene	72031	72103	.	-	.	ID=gene85;Dbxref=GeneID:3362464;Name=NEQ_t07;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t07
 NC_005213.1	RefSeq	tRNA	72031	72103	.	-	.	ID=rna7;Parent=gene85;Dbxref=GeneID:3362464;gbkey=tRNA;product=tRNA-Gln
-NC_005213.1	RefSeq	exon	72031	72103	.	-	.	ID=id13;Parent=rna7;Dbxref=GeneID:3362464;gbkey=tRNA;product=tRNA-Gln
+NC_005213.1	RefSeq	exon	72031	72103	.	-	.	ID=id10;Parent=rna7;Dbxref=GeneID:3362464;gbkey=tRNA;product=tRNA-Gln
 NC_005213.1	RefSeq	gene	72158	73591	.	+	.	ID=gene86;Dbxref=GeneID:2654271;Name=NEQ078;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ078
 NC_005213.1	RefSeq	CDS	72158	73591	.	+	0	ID=cds78;Parent=gene86;Dbxref=Genbank:NP_963373.1,GeneID:2654271;Name=NP_963373.1;Note=COG1690: Uncharacterized ACR%3B IPR001233: Uncharacterized protein family UPF0027;gbkey=CDS;product=hypothetical protein;protein_id=NP_963373.1;transl_table=11
 NC_005213.1	RefSeq	gene	73896	74843	.	+	.	ID=gene87;Dbxref=GeneID:2654584;Name=NEQ079;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ079
@@ -277,13 +274,9 @@ NC_005213.1	RefSeq	gene	109843	110610	.	-	.	ID=gene127;Dbxref=GeneID:2654167;Nam
 NC_005213.1	RefSeq	CDS	109843	110610	.	-	0	ID=cds119;Parent=gene127;Dbxref=Genbank:NP_963414.1,GeneID:2654167;Name=NP_963414.1;gbkey=CDS;product=hypothetical protein;protein_id=NP_963414.1;transl_table=11
 NC_005213.1	RefSeq	gene	110671	111036	.	+	.	ID=gene128;Dbxref=GeneID:2654168;Name=NEQ121;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ121
 NC_005213.1	RefSeq	CDS	110671	111036	.	+	0	ID=cds120;Parent=gene128;Dbxref=Genbank:NP_963415.1,GeneID:2654168;Name=NP_963415.1;gbkey=CDS;product=hypothetical protein;protein_id=NP_963415.1;transl_table=11
-NC_005213.1	RefSeq	sequence_feature	111051	111551	.	+	.	ID=id14;Note=potential protein location (hypothetical protein NEQ123 [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-G);gbkey=misc_feature
-NC_005213.1	RefSeq	sequence_feature	111051	111551	.	+	.	ID=id15;Note=potential protein location (hypothetical protein NEQ123 [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-G);gbkey=misc_feature
-NC_005213.1	RefSeq	sequence_feature	111051	111551	.	+	.	ID=id16;Note=potential protein location (hypothetical protein NEQ123 [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-G);gbkey=misc_feature
-NC_005213.1	RefSeq	sequence_feature	111051	111551	.	+	.	ID=id17;Note=potential protein location (hypothetical protein NEQ123 [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-G);gbkey=misc_feature
 NC_005213.1	RefSeq	gene	111058	111129	.	+	.	ID=gene129;Dbxref=GeneID:3362432;Name=NEQ_t08;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t08
 NC_005213.1	RefSeq	tRNA	111058	111129	.	+	.	ID=rna8;Parent=gene129;Dbxref=GeneID:3362432;gbkey=tRNA;product=tRNA-Gly
-NC_005213.1	RefSeq	exon	111058	111129	.	+	.	ID=id18;Parent=rna8;Dbxref=GeneID:3362432;gbkey=tRNA;product=tRNA-Gly
+NC_005213.1	RefSeq	exon	111058	111129	.	+	.	ID=id11;Parent=rna8;Dbxref=GeneID:3362432;gbkey=tRNA;product=tRNA-Gly
 NC_005213.1	RefSeq	gene	111540	112301	.	-	.	ID=gene130;Dbxref=GeneID:2654306;Name=NEQ122;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ122
 NC_005213.1	RefSeq	CDS	111540	112301	.	-	0	ID=cds121;Parent=gene130;Dbxref=Genbank:NP_963417.1,GeneID:2654306;Name=NP_963417.1;Note=COG1235: Metal-dependent hydrolases of the beta-lactamase superfamily I;gbkey=CDS;product=hypothetical protein;protein_id=NP_963417.1;transl_table=11
 NC_005213.1	RefSeq	gene	112319	113563	.	-	.	ID=gene131;Dbxref=GeneID:2732622;Name=NEQ124;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ124
@@ -300,7 +293,7 @@ NC_005213.1	RefSeq	gene	117758	118801	.	-	.	ID=gene136;Dbxref=GeneID:2732623;Nam
 NC_005213.1	RefSeq	CDS	117758	118801	.	-	0	ID=cds127;Parent=gene136;Dbxref=Genbank:NP_963423.1,GeneID:2732623;Name=NP_963423.1;Note=COG1524: Uncharacterized proteins of the AP superfamily;gbkey=CDS;product=hypothetical protein;protein_id=NP_963423.1;transl_table=11
 NC_005213.1	RefSeq	gene	118811	118882	.	-	.	ID=gene137;Dbxref=GeneID:3362463;Name=NEQ_t09;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t09
 NC_005213.1	RefSeq	tRNA	118811	118882	.	-	.	ID=rna9;Parent=gene137;Dbxref=GeneID:3362463;gbkey=tRNA;product=tRNA-Thr
-NC_005213.1	RefSeq	exon	118811	118882	.	-	.	ID=id19;Parent=rna9;Dbxref=GeneID:3362463;gbkey=tRNA;product=tRNA-Thr
+NC_005213.1	RefSeq	exon	118811	118882	.	-	.	ID=id12;Parent=rna9;Dbxref=GeneID:3362463;gbkey=tRNA;product=tRNA-Thr
 NC_005213.1	RefSeq	gene	118934	119263	.	+	.	ID=gene138;Dbxref=GeneID:2732624;Name=NEQ130;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ130
 NC_005213.1	RefSeq	CDS	118934	119263	.	+	0	ID=cds128;Parent=gene138;Dbxref=Genbank:NP_963424.1,GeneID:2732624;Name=NP_963424.1;Note=eIF-1A%3B enables maximal rate of protein biosynthesis. Enhances ribosome dissociation into subunits and stabilizes the binding of the initiator Met-tRNA(I) to 40 S ribosomal subunits in eukaryotes;gbkey=CDS;product=translation initiation factor IF-1A;protein_id=NP_963424.1;transl_table=11
 NC_005213.1	RefSeq	gene	119242	120135	.	-	.	ID=gene139;Dbxref=GeneID:2732625;Name=NEQ129;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ129
@@ -309,7 +302,7 @@ NC_005213.1	RefSeq	gene	120161	120718	.	+	.	ID=gene140;Dbxref=GeneID:2654483;Nam
 NC_005213.1	RefSeq	CDS	120161	120718	.	+	0	ID=cds130;Parent=gene140;Dbxref=Genbank:NP_963426.1,GeneID:2654483;Name=NP_963426.1;Note=COG2178: Translin (RNA-binding protein%2C recombination hotspot binding in eukaryotes)%3B IPR002848: Protein of unknown function DUF130%3B IPR001064: Crystallin;gbkey=CDS;product=haloacid dehalogenase superfamily protein;protein_id=NP_963426.1;transl_table=11
 NC_005213.1	RefSeq	gene	120719	120790	.	-	.	ID=gene141;Dbxref=GeneID:3362462;Name=NEQ_t10;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t10
 NC_005213.1	RefSeq	tRNA	120719	120790	.	-	.	ID=rna10;Parent=gene141;Dbxref=GeneID:3362462;gbkey=tRNA;product=tRNA-Ala
-NC_005213.1	RefSeq	exon	120719	120790	.	-	.	ID=id20;Parent=rna10;Dbxref=GeneID:3362462;gbkey=tRNA;product=tRNA-Ala
+NC_005213.1	RefSeq	exon	120719	120790	.	-	.	ID=id13;Parent=rna10;Dbxref=GeneID:3362462;gbkey=tRNA;product=tRNA-Ala
 NC_005213.1	RefSeq	gene	120868	121935	.	+	.	ID=gene142;Dbxref=GeneID:2654484;Name=NEQ133;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ133
 NC_005213.1	RefSeq	CDS	120868	121935	.	+	0	ID=cds131;Parent=gene142;Dbxref=Genbank:NP_963427.1,GeneID:2654484;Name=NP_963427.1;Note=GTPase%3B similar structure to tubulin%3B forms ring-shaped polymers at the site of cell division%3B other proteins such as FtsA%2C ZipA%2C and ZapA%2C interact with and regulate FtsZ function;gbkey=CDS;product=cell division protein FtsZ;protein_id=NP_963427.1;transl_table=11
 NC_005213.1	RefSeq	gene	121928	122527	.	-	.	ID=gene143;Dbxref=GeneID:2732627;Name=NEQ132;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ132
@@ -340,7 +333,7 @@ NC_005213.1	RefSeq	gene	134598	135251	.	-	.	ID=gene155;Dbxref=GeneID:2654357;Nam
 NC_005213.1	RefSeq	CDS	134598	135251	.	-	0	ID=cds144;Parent=gene155;Dbxref=Genbank:NP_963440.1,GeneID:2654357;Name=NP_963440.1;gbkey=CDS;product=hypothetical protein;protein_id=NP_963440.1;transl_table=11
 NC_005213.1	RefSeq	gene	135280	135353	.	-	.	ID=gene156;Dbxref=GeneID:3362461;Name=NEQ_t11;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t11
 NC_005213.1	RefSeq	tRNA	135280	135353	.	-	.	ID=rna11;Parent=gene156;Dbxref=GeneID:3362461;gbkey=tRNA;product=tRNA-Pro
-NC_005213.1	RefSeq	exon	135280	135353	.	-	.	ID=id21;Parent=rna11;Dbxref=GeneID:3362461;gbkey=tRNA;product=tRNA-Pro
+NC_005213.1	RefSeq	exon	135280	135353	.	-	.	ID=id14;Parent=rna11;Dbxref=GeneID:3362461;gbkey=tRNA;product=tRNA-Pro
 NC_005213.1	RefSeq	gene	135374	135775	.	-	.	ID=gene157;Dbxref=GeneID:2732565;Name=NEQ147;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ147
 NC_005213.1	RefSeq	CDS	135374	135775	.	-	0	ID=cds145;Parent=gene157;Dbxref=Genbank:NP_963441.1,GeneID:2732565;Name=NP_963441.1;Note=COG0432: Uncharacterized ACR%3B IPR001602: Uncharacterized protein family UPF0047;gbkey=CDS;product=hypothetical protein;protein_id=NP_963441.1;transl_table=11
 NC_005213.1	RefSeq	gene	135711	137045	.	-	.	ID=gene158;Dbxref=GeneID:2654359;Name=NEQ148;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ148
@@ -353,7 +346,7 @@ NC_005213.1	RefSeq	gene	137891	138193	.	-	.	ID=gene161;Dbxref=GeneID:2732566;Nam
 NC_005213.1	RefSeq	CDS	137891	138193	.	-	0	ID=cds149;Parent=gene161;Dbxref=Genbank:NP_963445.1,GeneID:2732566;Name=NP_963445.1;gbkey=CDS;product=hypothetical protein;protein_id=NP_963445.1;transl_table=11
 NC_005213.1	RefSeq	gene	138224	138297	.	-	.	ID=gene162;Dbxref=GeneID:3362460;Name=NEQ_t12;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t12
 NC_005213.1	RefSeq	tRNA	138224	138297	.	-	.	ID=rna12;Parent=gene162;Dbxref=GeneID:3362460;gbkey=tRNA;product=tRNA-Lys
-NC_005213.1	RefSeq	exon	138224	138297	.	-	.	ID=id22;Parent=rna12;Dbxref=GeneID:3362460;gbkey=tRNA;product=tRNA-Lys
+NC_005213.1	RefSeq	exon	138224	138297	.	-	.	ID=id15;Parent=rna12;Dbxref=GeneID:3362460;gbkey=tRNA;product=tRNA-Lys
 NC_005213.1	RefSeq	gene	138302	139480	.	-	.	ID=gene163;Dbxref=GeneID:2654237;Name=NEQ152;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ152
 NC_005213.1	RefSeq	CDS	138302	139480	.	-	0	ID=cds150;Parent=gene163;Dbxref=Genbank:NP_963446.1,GeneID:2654237;Name=NP_963446.1;Note=catalyzes the addition and repair of the 3'-terminal CCA sequence in tRNA%3B these proteins belong to the CCA-adding enzyme subfamily 2 which does not have phosphohydrolase activity;gbkey=CDS;product=tRNA CCA-pyrophosphorylase;protein_id=NP_963446.1;transl_table=11
 NC_005213.1	RefSeq	gene	139480	139761	.	-	.	ID=gene164;Dbxref=GeneID:2654215;Name=NEQ153;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ153
@@ -386,8 +379,8 @@ NC_005213.1	RefSeq	gene	151349	151945	.	-	.	ID=gene177;Dbxref=GeneID:2654459;Nam
 NC_005213.1	RefSeq	CDS	151349	151945	.	-	0	ID=cds164;Parent=gene177;Dbxref=Genbank:NP_963460.1,GeneID:2654459;Name=NP_963460.1;Note=COG1394: Archaeal/vacuolar-type H+-ATPase subunit D%3B IPR002699: ATP synthase subunit D%3B IPR001472: Bipartite nuclear localization signal;gbkey=CDS;product=hypothetical protein;protein_id=NP_963460.1;transl_table=11
 NC_005213.1	RefSeq	gene	151992	152078	.	+	.	ID=gene178;Dbxref=GeneID:3362433;Name=NEQ_t13;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t13
 NC_005213.1	RefSeq	tRNA	151992	152078	.	+	.	ID=rna13;Parent=gene178;Dbxref=GeneID:3362433;gbkey=tRNA;product=tRNA-Ser
-NC_005213.1	RefSeq	exon	151992	152029	.	+	.	ID=id23;Parent=rna13;Dbxref=GeneID:3362433;gbkey=tRNA;product=tRNA-Ser
-NC_005213.1	RefSeq	exon	152043	152078	.	+	.	ID=id24;Parent=rna13;Dbxref=GeneID:3362433;gbkey=tRNA;product=tRNA-Ser
+NC_005213.1	RefSeq	exon	151992	152029	.	+	.	ID=id16;Parent=rna13;Dbxref=GeneID:3362433;gbkey=tRNA;product=tRNA-Ser
+NC_005213.1	RefSeq	exon	152043	152078	.	+	.	ID=id17;Parent=rna13;Dbxref=GeneID:3362433;gbkey=tRNA;product=tRNA-Ser
 NC_005213.1	RefSeq	gene	152110	153540	.	+	.	ID=gene179;Dbxref=GeneID:2654460;Name=NEQ168;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ168
 NC_005213.1	RefSeq	CDS	152110	153540	.	+	0	ID=cds165;Parent=gene179;Dbxref=Genbank:NP_963461.1,GeneID:2654460;Name=NP_963461.1;Note=Sec61alpha%3B forms heterotrimeric complex in the membrane%3B in archaea the complex is similar to the eukaryotic complex and consists of Sec61alpha which forms the channel pore and Sec61gamma and Sec61beta%3B the beta subunit is not essential;gbkey=CDS;product=preprotein translocase subunit SecY;protein_id=NP_963461.1;transl_table=11
 NC_005213.1	RefSeq	gene	153568	154536	.	+	.	ID=gene180;Dbxref=GeneID:2654461;Name=rfc;gbkey=Gene;gene=rfc;gene_biotype=protein_coding;locus_tag=NEQ170
@@ -408,16 +401,16 @@ NC_005213.1	RefSeq	gene	161733	161918	.	+	.	ID=gene187;Dbxref=GeneID:2654083;Nam
 NC_005213.1	RefSeq	CDS	161733	161918	.	+	0	ID=cds173;Parent=gene187;Dbxref=Genbank:NP_963469.1,GeneID:2654083;Name=NP_963469.1;Note=COG1998: Ribosomal protein S27AE%3B IPR002906: Ribosomal protein S27a;gbkey=CDS;product=hypothetical protein;protein_id=NP_963469.1;transl_table=11
 NC_005213.1	RefSeq	gene	161947	162030	.	+	.	ID=gene188;Dbxref=GeneID:3362434;Name=NEQ_t14;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t14
 NC_005213.1	RefSeq	tRNA	161947	162030	.	+	.	ID=rna14;Parent=gene188;Dbxref=GeneID:3362434;gbkey=tRNA;product=tRNA-Leu
-NC_005213.1	RefSeq	exon	161947	162030	.	+	.	ID=id25;Parent=rna14;Dbxref=GeneID:3362434;gbkey=tRNA;product=tRNA-Leu
+NC_005213.1	RefSeq	exon	161947	162030	.	+	.	ID=id18;Parent=rna14;Dbxref=GeneID:3362434;gbkey=tRNA;product=tRNA-Leu
 NC_005213.1	RefSeq	gene	162031	163932	.	-	.	ID=gene189;Dbxref=GeneID:2732582;Name=NEQ177;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ177
 NC_005213.1	RefSeq	CDS	162031	163932	.	-	0	ID=cds174;Parent=gene189;Dbxref=Genbank:NP_963470.1,GeneID:2732582;Name=NP_963470.1;Note=catalyzes the formation of threonyl-tRNA(Thr) from threonine and tRNA(Thr)%3B catalyzes a two-step reaction%2C first charging a threonine molecule by linking its carboxyl group to the alpha-phosphate of ATP%2C followed by transfer of the aminoacyl-adenylate to its tRNA;gbkey=CDS;product=threonyl-tRNA synthetase;protein_id=NP_963470.1;transl_table=11
 NC_005213.1	RefSeq	gene	163996	164080	.	+	.	ID=gene190;Dbxref=GeneID:3362435;Name=NEQ_t15;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t15
 NC_005213.1	RefSeq	tRNA	163996	164080	.	+	.	ID=rna15;Parent=gene190;Dbxref=GeneID:3362435;gbkey=tRNA;product=tRNA-Tyr
-NC_005213.1	RefSeq	exon	163996	164032	.	+	.	ID=id26;Parent=rna15;Dbxref=GeneID:3362435;gbkey=tRNA;product=tRNA-Tyr
-NC_005213.1	RefSeq	exon	164045	164080	.	+	.	ID=id27;Parent=rna15;Dbxref=GeneID:3362435;gbkey=tRNA;product=tRNA-Tyr
+NC_005213.1	RefSeq	exon	163996	164032	.	+	.	ID=id19;Parent=rna15;Dbxref=GeneID:3362435;gbkey=tRNA;product=tRNA-Tyr
+NC_005213.1	RefSeq	exon	164045	164080	.	+	.	ID=id20;Parent=rna15;Dbxref=GeneID:3362435;gbkey=tRNA;product=tRNA-Tyr
 NC_005213.1	RefSeq	gene	164169	164240	.	-	.	ID=gene191;Dbxref=GeneID:3362459;Name=NEQ_t16;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t16
 NC_005213.1	RefSeq	tRNA	164169	164240	.	-	.	ID=rna16;Parent=gene191;Dbxref=GeneID:3362459;gbkey=tRNA;product=tRNA-Val
-NC_005213.1	RefSeq	exon	164169	164240	.	-	.	ID=id28;Parent=rna16;Dbxref=GeneID:3362459;gbkey=tRNA;product=tRNA-Val
+NC_005213.1	RefSeq	exon	164169	164240	.	-	.	ID=id21;Parent=rna16;Dbxref=GeneID:3362459;gbkey=tRNA;product=tRNA-Val
 NC_005213.1	RefSeq	gene	164310	164654	.	+	.	ID=gene192;Dbxref=GeneID:2654085;Name=NEQ178;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ178
 NC_005213.1	RefSeq	CDS	164310	164654	.	+	0	ID=cds175;Parent=gene192;Dbxref=Genbank:NP_963471.1,GeneID:2654085;Name=NP_963471.1;Note=binds 50S subunit;gbkey=CDS;product=50S ribosomal protein L14e;protein_id=NP_963471.1;transl_table=11
 NC_005213.1	RefSeq	gene	164686	164946	.	+	.	ID=gene193;Dbxref=GeneID:2654086;Name=NEQ179;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ179
@@ -462,7 +455,7 @@ NC_005213.1	RefSeq	gene	177596	178609	.	+	.	ID=gene212;Dbxref=GeneID:2654477;Nam
 NC_005213.1	RefSeq	CDS	177596	178609	.	+	0	ID=cds195;Parent=gene212;Dbxref=Genbank:NP_963491.1,GeneID:2654477;Name=NP_963491.1;Note=COG0668: Small-conductance mechanosensitive channel%3B IPR001880: Uncharacterized protein family UPF0003;gbkey=CDS;product=hypothetical protein;protein_id=NP_963491.1;transl_table=11
 NC_005213.1	RefSeq	gene	179578	179651	.	-	.	ID=gene213;Dbxref=GeneID:3362458;Name=NEQ_t17;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t17
 NC_005213.1	RefSeq	tRNA	179578	179651	.	-	.	ID=rna17;Parent=gene213;Dbxref=GeneID:3362458;gbkey=tRNA;product=tRNA-Arg
-NC_005213.1	RefSeq	exon	179578	179651	.	-	.	ID=id29;Parent=rna17;Dbxref=GeneID:3362458;gbkey=tRNA;product=tRNA-Arg
+NC_005213.1	RefSeq	exon	179578	179651	.	-	.	ID=id22;Parent=rna17;Dbxref=GeneID:3362458;gbkey=tRNA;product=tRNA-Arg
 NC_005213.1	RefSeq	gene	179657	180388	.	-	.	ID=gene214;Dbxref=GeneID:2654479;Name=NEQ199;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ199
 NC_005213.1	RefSeq	CDS	179657	180388	.	-	0	ID=cds196;Parent=gene214;Dbxref=Genbank:NP_963492.1,GeneID:2654479;Name=NP_963492.1;Note=COG1599: Replication factor A large subunit and related ssDNA-binding proteins%3B IPR002309: tRNA synthetases%2C class II (D%2C K and N)%3B IPR001472: Bipartite nuclear localization signal;gbkey=CDS;product=hypothetical protein;protein_id=NP_963492.1;transl_table=11
 NC_005213.1	RefSeq	gene	180381	180923	.	-	.	ID=gene215;Dbxref=GeneID:2732574;Name=NEQ200;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ200
@@ -565,19 +558,21 @@ NC_005213.1	RefSeq	gene	219770	220471	.	+	.	ID=gene263;Dbxref=GeneID:2654068;Nam
 NC_005213.1	RefSeq	CDS	219770	220471	.	+	0	ID=cds245;Parent=gene263;Dbxref=Genbank:NP_963540.1,GeneID:2654068;Name=NP_963540.1;Note=involved in the 3' to 5' degradation of a variety of RNA species%3B forms a trimer of heterodimers (hexamer) with Rrp42%3B Rrp41 is the catalytically active subunit;gbkey=CDS;product=exosome complex exonuclease Rrp41;protein_id=NP_963540.1;transl_table=11
 NC_005213.1	RefSeq	gene	220492	220565	.	+	.	ID=gene264;Dbxref=GeneID:3362436;Name=NEQ_t18;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t18
 NC_005213.1	RefSeq	tRNA	220492	220565	.	+	.	ID=rna18;Parent=gene264;Dbxref=GeneID:3362436;gbkey=tRNA;product=tRNA-Arg
-NC_005213.1	RefSeq	exon	220492	220565	.	+	.	ID=id30;Parent=rna18;Dbxref=GeneID:3362436;gbkey=tRNA;product=tRNA-Arg
+NC_005213.1	RefSeq	exon	220492	220565	.	+	.	ID=id23;Parent=rna18;Dbxref=GeneID:3362436;gbkey=tRNA;product=tRNA-Arg
 NC_005213.1	RefSeq	gene	220568	221104	.	-	.	ID=gene265;Dbxref=GeneID:2732617;Name=NEQ249;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ249
 NC_005213.1	RefSeq	CDS	220568	221104	.	-	0	ID=cds246;Parent=gene265;Dbxref=Genbank:NP_963541.1,GeneID:2732617;Name=NP_963541.1;gbkey=CDS;product=hypothetical protein;protein_id=NP_963541.1;transl_table=11
 NC_005213.1	RefSeq	gene	221225	221737	.	-	.	ID=gene266;Dbxref=GeneID:2654070;Name=NEQ250;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ250
 NC_005213.1	RefSeq	CDS	221225	221737	.	-	0	ID=cds247;Parent=gene266;Dbxref=Genbank:NP_963542.1,GeneID:2654070;Name=NP_963542.1;gbkey=CDS;product=hypothetical protein;protein_id=NP_963542.1;transl_table=11
 NC_005213.1	RefSeq	gene	221768	221842	.	+	.	ID=gene267;Dbxref=GeneID:3362426;Name=NEQ_t19;exception=trans-splicing;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t19;part=1/2
 NC_005213.1	RefSeq	gene	409202	409281	.	+	.	ID=gene267;Dbxref=GeneID:3362426;Name=NEQ_t19;exception=trans-splicing;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t19;part=2/2
-NC_005213.1	RefSeq	promoter	221768	221773	.	+	.	ID=id31;Dbxref=GeneID:3362426;Note=archaeal RNA pol III promoter consensus box A motif;gbkey=promoter
 NC_005213.1	RefSeq	tRNA	221794	221830	.	+	.	ID=rna19;Parent=gene267;Dbxref=GeneID:3362426;exception=trans-splicing;gbkey=tRNA;part=1/2;product=tRNA-His
 NC_005213.1	RefSeq	tRNA	409246	409281	.	+	.	ID=rna19;Parent=gene267;Dbxref=GeneID:3362426;exception=trans-splicing;gbkey=tRNA;part=2/2;product=tRNA-His
-NC_005213.1	RefSeq	exon	221794	221830	.	+	.	ID=id32;Parent=rna19;Dbxref=GeneID:3362426;exception=trans-splicing;gbkey=tRNA;product=tRNA-His
-NC_005213.1	RefSeq	exon	409246	409281	.	+	.	ID=id33;Parent=rna19;Dbxref=GeneID:3362426;exception=trans-splicing;gbkey=tRNA;product=tRNA-His
-NC_005213.1	RefSeq	sequence_feature	221831	221842	.	+	.	ID=id34;Dbxref=GeneID:3362426;Note=reverse complementary sequence cleaved during processing of trans-spliced tRNAs;gbkey=misc_feature
+NC_005213.1	RefSeq	exon	221794	221830	.	+	.	ID=id24;Parent=rna19;Dbxref=GeneID:3362426;exception=trans-splicing;gbkey=tRNA;product=tRNA-His
+NC_005213.1	RefSeq	exon	409246	409281	.	+	.	ID=id25;Parent=rna19;Dbxref=GeneID:3362426;exception=trans-splicing;gbkey=tRNA;product=tRNA-His
+NC_005213.1	RefSeq	sequence_feature	221831	221842	.	+	.	ID=id26;Dbxref=GeneID:3362426;Note=reverse complementary sequence cleaved during processing of trans-spliced tRNAs;gbkey=misc_feature
+NC_005213.1	RefSeq	sequence_feature	409230	409241	.	+	.	ID=id27;Dbxref=GeneID:3362426;Note=reverse complementary sequence cleaved during processing of trans-spliced tRNAs;gbkey=misc_feature
+NC_005213.1	RefSeq	promoter	221768	221773	.	+	.	ID=id28;Dbxref=GeneID:3362426;Note=archaeal RNA pol III promoter consensus box A motif;gbkey=promoter
+NC_005213.1	RefSeq	promoter	409202	409207	.	+	.	ID=id29;Dbxref=GeneID:3362426;Note=archaeal RNA pol III promoter consensus box A motif;gbkey=promoter
 NC_005213.1	RefSeq	gene	221873	224128	.	+	.	ID=gene268;Dbxref=GeneID:2654071;Name=valS;gbkey=Gene;gene=valS;gene_biotype=protein_coding;locus_tag=NEQ252
 NC_005213.1	RefSeq	CDS	221873	224128	.	+	0	ID=cds248;Parent=gene268;Dbxref=Genbank:NP_963543.1,GeneID:2654071;Name=NP_963543.1;Note=valine--tRNA ligase%3B ValRS%3B converts valine ATP and tRNA(Val) to AMP PPi and valyl-tRNA(Val)%3B class-I aminoacyl-tRNA synthetase type 1 subfamily%3B has a posttransfer editing process to hydrolyze mischarged Thr-tRNA(Val) which is done by the editing domain;gbkey=CDS;gene=valS;product=valyl-tRNA synthetase;protein_id=NP_963543.1;transl_table=11
 NC_005213.1	RefSeq	gene	224014	225156	.	+	.	ID=gene269;Dbxref=GeneID:2732618;Name=NEQ254;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ254
@@ -586,8 +581,8 @@ NC_005213.1	RefSeq	gene	225113	225577	.	-	.	ID=gene270;Dbxref=GeneID:2654496;Nam
 NC_005213.1	RefSeq	CDS	225113	225577	.	-	0	ID=cds250;Parent=gene270;Dbxref=Genbank:NP_963545.1,GeneID:2654496;Name=NP_963545.1;gbkey=CDS;product=hypothetical protein;protein_id=NP_963545.1;transl_table=11
 NC_005213.1	RefSeq	gene	225624	225716	.	+	.	ID=gene271;Dbxref=GeneID:3362437;Name=NEQ_t20;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t20
 NC_005213.1	RefSeq	tRNA	225624	225716	.	+	.	ID=rna20;Parent=gene271;Dbxref=GeneID:3362437;gbkey=tRNA;product=tRNA-Ile
-NC_005213.1	RefSeq	exon	225624	225661	.	+	.	ID=id35;Parent=rna20;Dbxref=GeneID:3362437;gbkey=tRNA;product=tRNA-Ile
-NC_005213.1	RefSeq	exon	225681	225716	.	+	.	ID=id36;Parent=rna20;Dbxref=GeneID:3362437;gbkey=tRNA;product=tRNA-Ile
+NC_005213.1	RefSeq	exon	225624	225661	.	+	.	ID=id30;Parent=rna20;Dbxref=GeneID:3362437;gbkey=tRNA;product=tRNA-Ile
+NC_005213.1	RefSeq	exon	225681	225716	.	+	.	ID=id31;Parent=rna20;Dbxref=GeneID:3362437;gbkey=tRNA;product=tRNA-Ile
 NC_005213.1	RefSeq	gene	225745	228105	.	+	.	ID=gene272;Dbxref=GeneID:2654497;Name=NEQ256;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ256
 NC_005213.1	RefSeq	CDS	225745	228105	.	+	0	ID=cds251;Parent=gene272;Dbxref=Genbank:NP_963546.1,GeneID:2654497;Name=NP_963546.1;Note=COG0419: ATPase involved in DNA repair%3B PS50318: LYS_RICH%3B IPR001687: ATP/GTP-binding site motif A (P-loop)%3B PS50313: GLU_RICH%3B IPR003439: ABC transporter%3B IPR001238: RecF protein%3B IPR001472: Bipartite nuclear localization signal;gbkey=CDS;product=hypothetical protein;protein_id=NP_963546.1;transl_table=11
 NC_005213.1	RefSeq	gene	228095	228643	.	-	.	ID=gene273;Dbxref=GeneID:2732619;Name=NEQ255;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ255
@@ -622,7 +617,7 @@ NC_005213.1	RefSeq	gene	244855	245958	.	-	.	ID=gene287;Dbxref=GeneID:2654029;Nam
 NC_005213.1	RefSeq	CDS	244855	245958	.	-	0	ID=cds266;Parent=gene287;Dbxref=Genbank:NP_963561.1,GeneID:2654029;Name=NP_963561.1;gbkey=CDS;product=hypothetical protein;protein_id=NP_963561.1;transl_table=11
 NC_005213.1	RefSeq	gene	245991	246062	.	-	.	ID=gene288;Dbxref=GeneID:3362457;Name=NEQ_t21;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t21
 NC_005213.1	RefSeq	tRNA	245991	246062	.	-	.	ID=rna21;Parent=gene288;Dbxref=GeneID:3362457;gbkey=tRNA;product=tRNA-Thr
-NC_005213.1	RefSeq	exon	245991	246062	.	-	.	ID=id37;Parent=rna21;Dbxref=GeneID:3362457;gbkey=tRNA;product=tRNA-Thr
+NC_005213.1	RefSeq	exon	245991	246062	.	-	.	ID=id32;Parent=rna21;Dbxref=GeneID:3362457;gbkey=tRNA;product=tRNA-Thr
 NC_005213.1	RefSeq	gene	246109	246651	.	+	.	ID=gene289;Dbxref=GeneID:2654030;Name=NEQ273;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ273
 NC_005213.1	RefSeq	CDS	246109	246651	.	+	0	ID=cds267;Parent=gene289;Dbxref=Genbank:NP_963562.1,GeneID:2654030;Name=NP_963562.1;gbkey=CDS;product=hypothetical protein;protein_id=NP_963562.1;transl_table=11
 NC_005213.1	RefSeq	gene	246651	247775	.	+	.	ID=gene290;Dbxref=GeneID:2654031;Name=NEQ275;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ275
@@ -643,7 +638,7 @@ NC_005213.1	RefSeq	gene	252634	253332	.	-	.	ID=gene297;Dbxref=GeneID:2654541;Nam
 NC_005213.1	RefSeq	CDS	252634	253332	.	-	0	ID=cds275;Parent=gene297;Dbxref=Genbank:NP_963570.1,GeneID:2654541;Name=NP_963570.1;gbkey=CDS;product=hypothetical protein;protein_id=NP_963570.1;transl_table=11
 NC_005213.1	RefSeq	gene	253361	253445	.	-	.	ID=gene298;Dbxref=GeneID:3362456;Name=NEQ_t22;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t22
 NC_005213.1	RefSeq	tRNA	253361	253445	.	-	.	ID=rna22;Parent=gene298;Dbxref=GeneID:3362456;gbkey=tRNA;product=tRNA-Ser
-NC_005213.1	RefSeq	exon	253361	253445	.	-	.	ID=id38;Parent=rna22;Dbxref=GeneID:3362456;gbkey=tRNA;product=tRNA-Ser
+NC_005213.1	RefSeq	exon	253361	253445	.	-	.	ID=id33;Parent=rna22;Dbxref=GeneID:3362456;gbkey=tRNA;product=tRNA-Ser
 NC_005213.1	RefSeq	gene	253475	255448	.	-	.	ID=gene299;Dbxref=GeneID:2654542;Name=NEQ282;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ282
 NC_005213.1	RefSeq	CDS	253475	255448	.	-	0	ID=cds276;Parent=gene299;Dbxref=Genbank:NP_963571.1,GeneID:2654542;Name=NP_963571.1;Note=COG1241: Predicted ATPase involved in replication control%2C Cdc46/Mcm family%3B IPR001208: MCM family%3B IPR001472: Bipartite nuclear localization signal%3B IPR003593: AAA ATPase superfamily;gbkey=CDS;product=hypothetical protein;protein_id=NP_963571.1;transl_table=11
 NC_005213.1	RefSeq	gene	255499	256305	.	+	.	ID=gene300;Dbxref=GeneID:2654406;Name=NEQ283;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ283
@@ -656,15 +651,15 @@ NC_005213.1	RefSeq	gene	256970	258790	.	-	.	ID=gene303;Dbxref=GeneID:2654409;Nam
 NC_005213.1	RefSeq	CDS	256970	258790	.	-	0	ID=cds280;Parent=gene303;Dbxref=Genbank:NP_963574.1,GeneID:2654409;Name=NP_963574.1;Note=PS50317: ILE_RICH;gbkey=CDS;product=hypothetical protein;protein_id=NP_963574.1;transl_table=11
 NC_005213.1	RefSeq	gene	259125	259197	.	+	.	ID=gene304;Dbxref=GeneID:3362438;Name=NEQ_t23;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t23
 NC_005213.1	RefSeq	tRNA	259125	259197	.	+	.	ID=rna23;Parent=gene304;Dbxref=GeneID:3362438;gbkey=tRNA;product=tRNA-Asp
-NC_005213.1	RefSeq	exon	259125	259197	.	+	.	ID=id39;Parent=rna23;Dbxref=GeneID:3362438;gbkey=tRNA;product=tRNA-Asp
+NC_005213.1	RefSeq	exon	259125	259197	.	+	.	ID=id34;Parent=rna23;Dbxref=GeneID:3362438;gbkey=tRNA;product=tRNA-Asp
 NC_005213.1	RefSeq	gene	259230	259301	.	-	.	ID=gene305;Dbxref=GeneID:3362455;Name=NEQ_t24;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t24
 NC_005213.1	RefSeq	tRNA	259230	259301	.	-	.	ID=rna24;Parent=gene305;Dbxref=GeneID:3362455;gbkey=tRNA;product=tRNA-Ala
-NC_005213.1	RefSeq	exon	259230	259301	.	-	.	ID=id40;Parent=rna24;Dbxref=GeneID:3362455;gbkey=tRNA;product=tRNA-Ala
+NC_005213.1	RefSeq	exon	259230	259301	.	-	.	ID=id35;Parent=rna24;Dbxref=GeneID:3362455;gbkey=tRNA;product=tRNA-Ala
 NC_005213.1	RefSeq	gene	260106	260354	.	+	.	ID=gene306;Dbxref=GeneID:2654395;Name=NEQ288;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ288
 NC_005213.1	RefSeq	CDS	260106	260354	.	+	0	ID=cds281;Parent=gene306;Dbxref=Genbank:NP_963575.1,GeneID:2654395;Name=NP_963575.1;Note=COG2036: Histones H3 and H4%3B IPR000947: Histone-like transcription factor (CBF/NF-Y) and archaeal histone%2C subunit A%3B IPR000166: Histone-fold/TFIID-TAF/NF-Y domain;gbkey=CDS;product=hypothetical protein;protein_id=NP_963575.1;transl_table=11
 NC_005213.1	RefSeq	gene	260579	260652	.	-	.	ID=gene307;Dbxref=GeneID:3362454;Name=NEQ_t25;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t25
 NC_005213.1	RefSeq	tRNA	260579	260652	.	-	.	ID=rna25;Parent=gene307;Dbxref=GeneID:3362454;gbkey=tRNA;product=tRNA-Arg
-NC_005213.1	RefSeq	exon	260579	260652	.	-	.	ID=id41;Parent=rna25;Dbxref=GeneID:3362454;gbkey=tRNA;product=tRNA-Arg
+NC_005213.1	RefSeq	exon	260579	260652	.	-	.	ID=id36;Parent=rna25;Dbxref=GeneID:3362454;gbkey=tRNA;product=tRNA-Arg
 NC_005213.1	RefSeq	gene	260680	260988	.	+	.	ID=gene308;Dbxref=GeneID:2732595;Name=NEQ290;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ290
 NC_005213.1	RefSeq	CDS	260680	260988	.	+	0	ID=cds282;Parent=gene308;Dbxref=Genbank:NP_963576.1,GeneID:2732595;Name=NP_963576.1;gbkey=CDS;product=hypothetical protein;protein_id=NP_963576.1;transl_table=11
 NC_005213.1	RefSeq	gene	260968	261327	.	-	.	ID=gene309;Dbxref=GeneID:2654398;Name=NEQ289;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ289
@@ -703,7 +698,7 @@ NC_005213.1	RefSeq	gene	278262	278930	.	+	.	ID=gene325;Dbxref=GeneID:2654367;Nam
 NC_005213.1	RefSeq	CDS	278262	278930	.	+	0	ID=cds299;Parent=gene325;Dbxref=Genbank:NP_963593.1,GeneID:2654367;Name=NP_963593.1;Note=COG1028: Dehydrogenases with different specificities (related to short-chain alcohol dehydrogenases)%3B IPR002198: Short-chain dehydrogenase/reductase (SDR) superfamily%3B IPR003560: 2%2C3-dihydro-2%2C3-dihydroxybenzoate dehydrogenase (EntA)%3B IPR002347: Glucose/ribitol dehydrogenase;gbkey=CDS;product=hypothetical protein;protein_id=NP_963593.1;transl_table=11
 NC_005213.1	RefSeq	gene	278931	279015	.	-	.	ID=gene326;Dbxref=GeneID:3362453;Name=NEQ_t26;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t26
 NC_005213.1	RefSeq	tRNA	278931	279015	.	-	.	ID=rna26;Parent=gene326;Dbxref=GeneID:3362453;gbkey=tRNA;product=tRNA-Leu
-NC_005213.1	RefSeq	exon	278931	279015	.	-	.	ID=id42;Parent=rna26;Dbxref=GeneID:3362453;gbkey=tRNA;product=tRNA-Leu
+NC_005213.1	RefSeq	exon	278931	279015	.	-	.	ID=id37;Parent=rna26;Dbxref=GeneID:3362453;gbkey=tRNA;product=tRNA-Leu
 NC_005213.1	RefSeq	gene	279045	279572	.	-	.	ID=gene327;Dbxref=GeneID:2732600;Name=NEQ307;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ307
 NC_005213.1	RefSeq	CDS	279045	279572	.	-	0	ID=cds300;Parent=gene327;Dbxref=Genbank:NP_963594.1,GeneID:2732600;Name=NP_963594.1;Note=catalyzes the formation of nucleoside triphosphate from ATP and nucleoside diphosphate;gbkey=CDS;product=nucleoside diphosphate kinase;protein_id=NP_963594.1;transl_table=11
 NC_005213.1	RefSeq	gene	279649	280062	.	+	.	ID=gene328;Dbxref=GeneID:2654433;Name=NEQ309;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ309
@@ -786,11 +781,7 @@ NC_005213.1	RefSeq	gene	302044	303954	.	-	.	ID=gene366;Dbxref=GeneID:2654092;Nam
 NC_005213.1	RefSeq	CDS	302044	303954	.	-	0	ID=cds339;Parent=gene366;Dbxref=Genbank:NP_963632.1,GeneID:2654092;Name=NP_963632.1;Note=Catalyzes the reduction of nucleoside 5'-triphosphates to 2'-deoxynucleoside 5'-triphosphates;gbkey=CDS;product=anaerobic ribonucleoside triphosphate reductase;protein_id=NP_963632.1;transl_table=11
 NC_005213.1	RefSeq	gene	304059	304142	.	+	.	ID=gene367;Dbxref=GeneID:3362439;Name=NEQ_t27;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t27
 NC_005213.1	RefSeq	tRNA	304059	304142	.	+	.	ID=rna27;Parent=gene367;Dbxref=GeneID:3362439;gbkey=tRNA;product=tRNA-Leu
-NC_005213.1	RefSeq	exon	304059	304142	.	+	.	ID=id43;Parent=rna27;Dbxref=GeneID:3362439;gbkey=tRNA;product=tRNA-Leu
-NC_005213.1	RefSeq	sequence_feature	304107	305006	.	-	.	ID=id44;Note=potential protein location (hypothetical protein NEQ345a [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-L);gbkey=misc_feature
-NC_005213.1	RefSeq	sequence_feature	304107	305006	.	-	.	ID=id45;Note=potential protein location (hypothetical protein NEQ345a [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-L);gbkey=misc_feature
-NC_005213.1	RefSeq	sequence_feature	304107	305006	.	-	.	ID=id46;Note=potential protein location (hypothetical protein NEQ345a [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-L);gbkey=misc_feature
-NC_005213.1	RefSeq	sequence_feature	304107	305006	.	-	.	ID=id47;Note=potential protein location (hypothetical protein NEQ345a [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-L);gbkey=misc_feature
+NC_005213.1	RefSeq	exon	304059	304142	.	+	.	ID=id38;Parent=rna27;Dbxref=GeneID:3362439;gbkey=tRNA;product=tRNA-Leu
 NC_005213.1	RefSeq	gene	304993	305229	.	-	.	ID=gene368;Dbxref=GeneID:2654094;Name=NEQ346;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ346
 NC_005213.1	RefSeq	CDS	304993	305229	.	-	0	ID=cds340;Parent=gene368;Dbxref=Genbank:NP_963634.1,GeneID:2654094;Name=NP_963634.1;Note=COG2157: Ribosomal protein L20A (L18A)%3B IPR002768: Ribosomal LX protein;gbkey=CDS;product=hypothetical protein;protein_id=NP_963634.1;transl_table=11
 NC_005213.1	RefSeq	gene	305259	306059	.	-	.	ID=gene369;Dbxref=GeneID:2654095;Name=NEQ347;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ347
@@ -803,22 +794,23 @@ NC_005213.1	RefSeq	gene	308163	308474	.	-	.	ID=gene372;Dbxref=GeneID:2654098;Nam
 NC_005213.1	RefSeq	CDS	308163	308474	.	-	0	ID=cds344;Parent=gene372;Dbxref=Genbank:NP_963638.1,GeneID:2654098;Name=NP_963638.1;Note=COG2151: Putative aromatic ring hydroxylating enzyme%3B IPR002744: Domain of unknown function DUF59;gbkey=CDS;product=hypothetical protein;protein_id=NP_963638.1;transl_table=11
 NC_005213.1	RefSeq	gene	308534	308618	.	+	.	ID=gene373;Dbxref=GeneID:3362440;Name=NEQ_t28;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t28
 NC_005213.1	RefSeq	tRNA	308534	308618	.	+	.	ID=rna28;Parent=gene373;Dbxref=GeneID:3362440;gbkey=tRNA;product=tRNA-Ser
-NC_005213.1	RefSeq	exon	308534	308618	.	+	.	ID=id48;Parent=rna28;Dbxref=GeneID:3362440;gbkey=tRNA;product=tRNA-Ser
+NC_005213.1	RefSeq	exon	308534	308618	.	+	.	ID=id39;Parent=rna28;Dbxref=GeneID:3362440;gbkey=tRNA;product=tRNA-Ser
 NC_005213.1	RefSeq	gene	308722	308931	.	+	.	ID=gene374;Dbxref=GeneID:2732633;Name=NEQ351;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ351
 NC_005213.1	RefSeq	CDS	308722	308931	.	+	0	ID=cds345;Parent=gene374;Dbxref=Genbank:NP_963639.1,GeneID:2732633;Name=NP_963639.1;Note=COG2522: Predicted transcriptional regulator;gbkey=CDS;product=hypothetical protein;protein_id=NP_963639.1;transl_table=11
 NC_005213.1	RefSeq	gene	308938	309008	.	+	.	ID=gene375;Dbxref=GeneID:3362430;Name=NEQ_t29;exception=trans-splicing;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t29;part=1/2
 NC_005213.1	RefSeq	gene	380329	380414	.	-	.	ID=gene375;Dbxref=GeneID:3362430;Name=NEQ_t29;exception=trans-splicing;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t29;part=2/2
-NC_005213.1	RefSeq	promoter	308938	308943	.	+	.	ID=id49;Dbxref=GeneID:3362430;Note=archaeal RNA pol III promoter consensus box A motif;gbkey=promoter
 NC_005213.1	RefSeq	tRNA	308963	309002	.	+	.	ID=rna29;Parent=gene375;Dbxref=GeneID:3362430;exception=trans-splicing;gbkey=tRNA;part=1/2;product=tRNA-Trp
 NC_005213.1	RefSeq	tRNA	380329	380364	.	-	.	ID=rna29;Parent=gene375;Dbxref=GeneID:3362430;exception=trans-splicing;gbkey=tRNA;part=2/2;product=tRNA-Trp
-NC_005213.1	RefSeq	exon	308963	309002	.	+	.	ID=id50;Parent=rna29;Dbxref=GeneID:3362430;exception=trans-splicing;gbkey=tRNA;product=tRNA-Trp
-NC_005213.1	RefSeq	exon	380329	380364	.	-	.	ID=id51;Parent=rna29;Dbxref=GeneID:3362430;exception=trans-splicing;gbkey=tRNA;product=tRNA-Trp
-NC_005213.1	RefSeq	sequence_feature	309003	309008	.	+	.	ID=id52;Dbxref=GeneID:3362430;Note=reverse complementary sequence cleaved during processing of trans-spliced tRNAs;gbkey=misc_feature
+NC_005213.1	RefSeq	exon	308963	309002	.	+	.	ID=id40;Parent=rna29;Dbxref=GeneID:3362430;exception=trans-splicing;gbkey=tRNA;product=tRNA-Trp
+NC_005213.1	RefSeq	exon	380329	380364	.	-	.	ID=id41;Parent=rna29;Dbxref=GeneID:3362430;exception=trans-splicing;gbkey=tRNA;product=tRNA-Trp
+NC_005213.1	RefSeq	sequence_feature	309003	309008	.	+	.	ID=id42;Dbxref=GeneID:3362430;Note=reverse complementary sequence cleaved during processing of trans-spliced tRNAs;gbkey=misc_feature
+NC_005213.1	RefSeq	sequence_feature	380379	380389	.	-	.	ID=id43;Dbxref=GeneID:3362430;Note=reverse complementary sequence cleaved during processing of trans-spliced tRNAs;gbkey=misc_feature
+NC_005213.1	RefSeq	promoter	308938	308943	.	+	.	ID=id44;Dbxref=GeneID:3362430;Note=archaeal RNA pol III promoter consensus box A motif;gbkey=promoter
 NC_005213.1	RefSeq	gene	309033	309662	.	+	.	ID=gene376;Dbxref=GeneID:2654282;Name=NEQ352;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ352
 NC_005213.1	RefSeq	CDS	309033	309662	.	+	0	ID=cds346;Parent=gene376;Dbxref=Genbank:NP_963640.1,GeneID:2654282;Name=NP_963640.1;Note=COG1967: Predicted membrane proteins%3B IPR002749: Membrane protein of unknown function DUF63;gbkey=CDS;product=hypothetical protein;protein_id=NP_963640.1;transl_table=11
 NC_005213.1	RefSeq	gene	309680	309751	.	+	.	ID=gene377;Dbxref=GeneID:3362441;Name=NEQ_t30;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t30
 NC_005213.1	RefSeq	tRNA	309680	309751	.	+	.	ID=rna30;Parent=gene377;Dbxref=GeneID:3362441;gbkey=tRNA;product=tRNA-Pro
-NC_005213.1	RefSeq	exon	309680	309751	.	+	.	ID=id53;Parent=rna30;Dbxref=GeneID:3362441;gbkey=tRNA;product=tRNA-Pro
+NC_005213.1	RefSeq	exon	309680	309751	.	+	.	ID=id45;Parent=rna30;Dbxref=GeneID:3362441;gbkey=tRNA;product=tRNA-Pro
 NC_005213.1	RefSeq	gene	309789	311573	.	+	.	ID=gene378;Dbxref=GeneID:2654283;Name=NEQ353;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ353
 NC_005213.1	RefSeq	CDS	309789	311573	.	+	0	ID=cds347;Parent=gene378;Dbxref=Genbank:NP_963641.1,GeneID:2654283;Name=NP_963641.1;Note=IPR001472: Bipartite nuclear localization signal;gbkey=CDS;product=hypothetical protein;protein_id=NP_963641.1;transl_table=11
 NC_005213.1	RefSeq	gene	311574	311819	.	-	.	ID=gene379;Dbxref=GeneID:2654284;Name=NEQ354;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ354
@@ -855,7 +847,7 @@ NC_005213.1	RefSeq	gene	321315	322937	.	+	.	ID=gene394;Dbxref=GeneID:2654103;Nam
 NC_005213.1	RefSeq	CDS	321315	322937	.	+	0	ID=cds363;Parent=gene394;Dbxref=Genbank:NP_963657.1,GeneID:2654103;Name=NP_963657.1;Note=COG1061: DNA or RNA helicases of superfamily II%3B IPR001410: DEAD/DEAH box helicase%3B IPR001650: Helicase C-terminal domain;gbkey=CDS;product=hypothetical protein;protein_id=NP_963657.1;transl_table=11
 NC_005213.1	RefSeq	gene	322938	323008	.	-	.	ID=gene395;Dbxref=GeneID:3362452;Name=NEQ_t31;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t31
 NC_005213.1	RefSeq	tRNA	322938	323008	.	-	.	ID=rna31;Parent=gene395;Dbxref=GeneID:3362452;gbkey=tRNA;product=tRNA-Gly
-NC_005213.1	RefSeq	exon	322938	323008	.	-	.	ID=id54;Parent=rna31;Dbxref=GeneID:3362452;gbkey=tRNA;product=tRNA-Gly
+NC_005213.1	RefSeq	exon	322938	323008	.	-	.	ID=id46;Parent=rna31;Dbxref=GeneID:3362452;gbkey=tRNA;product=tRNA-Gly
 NC_005213.1	RefSeq	gene	323064	323609	.	-	.	ID=gene396;Dbxref=GeneID:2654104;Name=NEQ370;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ370
 NC_005213.1	RefSeq	CDS	323064	323609	.	-	0	ID=cds364;Parent=gene396;Dbxref=Genbank:NP_963658.1,GeneID:2654104;Name=NP_963658.1;Note=Participates in both the initiation and recycling phases of transcription;gbkey=CDS;product=DNA-directed RNA polymerase subunit E';protein_id=NP_963658.1;transl_table=11
 NC_005213.1	RefSeq	gene	323644	324240	.	+	.	ID=gene397;Dbxref=GeneID:2654105;Name=NEQ372;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ372
@@ -874,8 +866,8 @@ NC_005213.1	RefSeq	gene	327013	327333	.	+	.	ID=gene403;Dbxref=GeneID:2654110;Nam
 NC_005213.1	RefSeq	CDS	327013	327333	.	+	0	ID=cds371;Parent=gene403;Dbxref=Genbank:NP_963664.1,GeneID:2654110;Name=NP_963664.1;Note=COG1594: DNA-directed RNA polymerase subunit M/Transcription elongation factor TFIIS%3B IPR001222: TFIIS zinc ribbon domain%3B IPR001472: Bipartite nuclear localization signal%3B IPR001529: RNA polymerases M/15 Kd subunits;gbkey=CDS;product=hypothetical protein;protein_id=NP_963664.1;transl_table=11
 NC_005213.1	RefSeq	gene	327362	327500	.	+	.	ID=gene404;Dbxref=GeneID:3362442;Name=NEQ_t32;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t32
 NC_005213.1	RefSeq	tRNA	327362	327500	.	+	.	ID=rna32;Parent=gene404;Dbxref=GeneID:3362442;gbkey=tRNA;product=tRNA-Met
-NC_005213.1	RefSeq	exon	327362	327398	.	+	.	ID=id55;Parent=rna32;Dbxref=GeneID:3362442;gbkey=tRNA;product=tRNA-Met
-NC_005213.1	RefSeq	exon	327465	327500	.	+	.	ID=id56;Parent=rna32;Dbxref=GeneID:3362442;gbkey=tRNA;product=tRNA-Met
+NC_005213.1	RefSeq	exon	327362	327398	.	+	.	ID=id47;Parent=rna32;Dbxref=GeneID:3362442;gbkey=tRNA;product=tRNA-Met
+NC_005213.1	RefSeq	exon	327465	327500	.	+	.	ID=id48;Parent=rna32;Dbxref=GeneID:3362442;gbkey=tRNA;product=tRNA-Met
 NC_005213.1	RefSeq	gene	328225	328872	.	-	.	ID=gene405;Dbxref=GeneID:2654425;Name=NEQ378;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ378
 NC_005213.1	RefSeq	CDS	328225	328872	.	-	0	ID=cds372;Parent=gene405;Dbxref=Genbank:NP_963665.1,GeneID:2654425;Name=NP_963665.1;Note=COG2220: Predicted Zn-dependent hydrolases of the beta-lactamase fold%3B IPR001279: Metallo-beta-lactamase superfamily;gbkey=CDS;product=hypothetical protein;protein_id=NP_963665.1;transl_table=11
 NC_005213.1	RefSeq	gene	328987	329430	.	+	.	ID=gene406;Dbxref=GeneID:2654426;Name=rpl19e;gbkey=Gene;gene=rpl19e;gene_biotype=protein_coding;locus_tag=NEQ379
@@ -886,12 +878,12 @@ NC_005213.1	RefSeq	gene	330966	331703	.	+	.	ID=gene408;Dbxref=GeneID:2654428;Nam
 NC_005213.1	RefSeq	CDS	330966	331703	.	+	0	ID=cds375;Parent=gene408;Dbxref=Genbank:NP_963668.1,GeneID:2654428;Name=NP_963668.1;Note=COG1180: Pyruvate-formate lyase-activating enzyme%3B IPR001989: Radical activating enzymes;gbkey=CDS;product=hypothetical protein;protein_id=NP_963668.1;transl_table=11
 NC_005213.1	RefSeq	gene	331703	331779	.	-	.	ID=gene409;Dbxref=GeneID:3362427;Name=NEQ_t33;exception=trans-splicing;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t33;part=1/2
 NC_005213.1	RefSeq	gene	486988	487064	.	+	.	ID=gene409;Dbxref=GeneID:3362427;Name=NEQ_t33;exception=trans-splicing;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t33;part=2/2
-NC_005213.1	RefSeq	sequence_feature	331703	331716	.	-	.	ID=id57;Dbxref=GeneID:3362427;Note=reverse complementary sequence cleaved during processing of trans-spliced tRNAs;gbkey=misc_feature
 NC_005213.1	RefSeq	tRNA	331719	331758	.	-	.	ID=rna33;Parent=gene409;Dbxref=GeneID:3362427;exception=trans-splicing;gbkey=tRNA;part=1/2;product=tRNA-Glu
 NC_005213.1	RefSeq	tRNA	487030	487064	.	+	.	ID=rna33;Parent=gene409;Dbxref=GeneID:3362427;exception=trans-splicing;gbkey=tRNA;part=2/2;product=tRNA-Glu
-NC_005213.1	RefSeq	exon	331719	331758	.	-	.	ID=id58;Parent=rna33;Dbxref=GeneID:3362427;exception=trans-splicing;gbkey=tRNA;product=tRNA-Glu
-NC_005213.1	RefSeq	exon	487030	487064	.	+	.	ID=id59;Parent=rna33;Dbxref=GeneID:3362427;exception=trans-splicing;gbkey=tRNA;product=tRNA-Glu
-NC_005213.1	RefSeq	promoter	331779	331784	.	-	.	ID=id60;Note=archaeal RNA pol III promoter consensus box A motif;gbkey=promoter
+NC_005213.1	RefSeq	exon	331719	331758	.	-	.	ID=id49;Parent=rna33;Dbxref=GeneID:3362427;exception=trans-splicing;gbkey=tRNA;product=tRNA-Glu
+NC_005213.1	RefSeq	exon	487030	487064	.	+	.	ID=id50;Parent=rna33;Dbxref=GeneID:3362427;exception=trans-splicing;gbkey=tRNA;product=tRNA-Glu
+NC_005213.1	RefSeq	sequence_feature	331703	331716	.	-	.	ID=id51;Dbxref=GeneID:3362427;Note=reverse complementary sequence cleaved during processing of trans-spliced tRNAs;gbkey=misc_feature
+NC_005213.1	RefSeq	sequence_feature	487009	487022	.	+	.	ID=id52;Dbxref=GeneID:3362427;Note=reverse complementary sequence cleaved during processing of trans-spliced tRNAs;gbkey=misc_feature
 NC_005213.1	RefSeq	gene	331796	332881	.	+	.	ID=gene410;Dbxref=GeneID:2654429;Name=NEQ383;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ383
 NC_005213.1	RefSeq	CDS	331796	332881	.	+	0	ID=cds376;Parent=gene410;Dbxref=Genbank:NP_963669.1,GeneID:2654429;Name=NP_963669.1;Note=COG0420: DNA repair exonuclease%3B IPR003701: DNA repair exonuclease%3B IPR000934: Serine/threonine specific protein phosphatase;gbkey=CDS;product=hypothetical protein;protein_id=NP_963669.1;transl_table=11
 NC_005213.1	RefSeq	gene	332847	333908	.	-	.	ID=gene411;Dbxref=GeneID:2732637;Name=NEQ382;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ382
@@ -928,7 +920,7 @@ NC_005213.1	RefSeq	gene	347640	347777	.	+	.	ID=gene426;Dbxref=GeneID:9337604;Nam
 NC_005213.1	RefSeq	CDS	347640	347777	.	+	0	ID=cds392;Parent=gene426;Dbxref=Genbank:YP_003717792.1,GeneID:9337604;Name=YP_003717792.1;Note=RPC10%3B contains C4-type Zn-finger;gbkey=CDS;product=DNA-directed RNA polymerase subunit P;protein_id=YP_003717792.1;transl_table=11
 NC_005213.1	RefSeq	gene	347777	347848	.	-	.	ID=gene427;Dbxref=GeneID:3362451;Name=NEQ_t34;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t34
 NC_005213.1	RefSeq	tRNA	347777	347848	.	-	.	ID=rna34;Parent=gene427;Dbxref=GeneID:3362451;gbkey=tRNA;product=tRNA-Thr
-NC_005213.1	RefSeq	exon	347777	347848	.	-	.	ID=id61;Parent=rna34;Dbxref=GeneID:3362451;gbkey=tRNA;product=tRNA-Thr
+NC_005213.1	RefSeq	exon	347777	347848	.	-	.	ID=id53;Parent=rna34;Dbxref=GeneID:3362451;gbkey=tRNA;product=tRNA-Thr
 NC_005213.1	RefSeq	gene	347905	348897	.	+	.	ID=gene428;Dbxref=GeneID:2654339;Name=NEQ401;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ401
 NC_005213.1	RefSeq	CDS	347905	348897	.	+	0	ID=cds393;Parent=gene428;Dbxref=Genbank:NP_963685.1,GeneID:2654339;Name=NP_963685.1;Note=COG1239: Mg-chelatase subunit ChlI%3B IPR000619: Guanylate kinase%3B IPR001687: ATP/GTP-binding site motif A (P-loop)%3B IPR002078: Sigma-54 factor interaction protein family%3B IPR001939: AAA-protein (ATPases associated with various cellular activities)%3B IPR003593: AAA ATPase superfamily;gbkey=CDS;product=hypothetical protein;protein_id=NP_963685.1;transl_table=11
 NC_005213.1	RefSeq	gene	349065	349715	.	+	.	ID=gene429;Dbxref=GeneID:2654340;Name=NEQ403;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ403
@@ -989,11 +981,6 @@ NC_005213.1	RefSeq	gene	378010	378465	.	-	.	ID=gene456;Dbxref=GeneID:2654065;Nam
 NC_005213.1	RefSeq	CDS	378010	378465	.	-	0	ID=cds421;Parent=gene456;Dbxref=Genbank:NP_963713.1,GeneID:2654065;Name=NP_963713.1;gbkey=CDS;product=hypothetical protein;protein_id=NP_963713.1;transl_table=11
 NC_005213.1	RefSeq	gene	378494	379786	.	+	.	ID=gene457;Dbxref=GeneID:2654066;Name=NEQ430;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ430
 NC_005213.1	RefSeq	CDS	378494	379786	.	+	0	ID=cds422;Parent=gene457;Dbxref=Genbank:NP_963714.1,GeneID:2654066;Name=NP_963714.1;Note=Part of the RFC clamp loader complex which loads the PCNA sliding clamp onto DNA;gbkey=CDS;product=replication factor C large subunit;protein_id=NP_963714.1;transl_table=11
-NC_005213.1	RefSeq	sequence_feature	379770	380366	.	+	.	ID=id62;Note=potential protein location (hypothetical protein NEQ431 [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-W);gbkey=misc_feature
-NC_005213.1	RefSeq	sequence_feature	379770	380366	.	+	.	ID=id63;Note=potential protein location (hypothetical protein NEQ431 [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-W);gbkey=misc_feature
-NC_005213.1	RefSeq	sequence_feature	379770	380366	.	+	.	ID=id64;Note=potential protein location (hypothetical protein NEQ431 [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-W);gbkey=misc_feature
-NC_005213.1	RefSeq	sequence_feature	379770	380366	.	+	.	ID=id65;Note=potential protein location (hypothetical protein NEQ431 [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-W);gbkey=misc_feature
-NC_005213.1	RefSeq	sequence_feature	380379	380389	.	-	.	ID=id66;Dbxref=GeneID:3362430;Note=reverse complementary sequence cleaved during processing of trans-spliced tRNAs;gbkey=misc_feature
 NC_005213.1	RefSeq	gene	380753	381718	.	+	.	ID=gene458;Dbxref=GeneID:2654240;Name=rpl3p;gbkey=Gene;gene=rpl3p;gene_biotype=protein_coding;locus_tag=NEQ433
 NC_005213.1	RefSeq	CDS	380753	381718	.	+	0	ID=cds423;Parent=gene458;Dbxref=Genbank:NP_963716.1,GeneID:2654240;Name=NP_963716.1;Note=binds directly near the 3' end of the 23S rRNA%2C where it nucleates assembly of the 50S subunit%3B essential for peptidyltransferase activity%3B mutations in this gene confer resistance to tiamulin;gbkey=CDS;gene=rpl3p;product=50S ribosomal protein L3P;protein_id=NP_963716.1;transl_table=11
 NC_005213.1	RefSeq	gene	381715	382305	.	-	.	ID=gene459;Dbxref=GeneID:2654241;Name=NEQ432;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ432
@@ -1022,7 +1009,7 @@ NC_005213.1	RefSeq	gene	393310	393882	.	+	.	ID=gene470;Dbxref=GeneID:2654292;Nam
 NC_005213.1	RefSeq	CDS	393310	393882	.	+	0	ID=cds435;Parent=gene470;Dbxref=Genbank:NP_963728.1,GeneID:2654292;Name=NP_963728.1;gbkey=CDS;product=hypothetical protein;protein_id=NP_963728.1;transl_table=11
 NC_005213.1	RefSeq	gene	394002	396863	.	+	.	ID=gene471;Dbxref=GeneID:3362469;Name=NEQ_r02;gbkey=Gene;gene_biotype=rRNA;locus_tag=NEQ_r02
 NC_005213.1	RefSeq	rRNA	394002	396863	.	+	.	ID=rna35;Parent=gene471;Dbxref=GeneID:3362469;gbkey=rRNA;product=23S ribosomal RNA
-NC_005213.1	RefSeq	exon	394002	396863	.	+	.	ID=id67;Parent=rna35;Dbxref=GeneID:3362469;gbkey=rRNA;product=23S ribosomal RNA
+NC_005213.1	RefSeq	exon	394002	396863	.	+	.	ID=id54;Parent=rna35;Dbxref=GeneID:3362469;gbkey=rRNA;product=23S ribosomal RNA
 NC_005213.1	RefSeq	gene	397016	397426	.	+	.	ID=gene472;Dbxref=GeneID:2654294;Name=rps9p;gbkey=Gene;gene=rps9p;gene_biotype=protein_coding;locus_tag=NEQ446
 NC_005213.1	RefSeq	CDS	397016	397426	.	+	0	ID=cds436;Parent=gene472;Dbxref=Genbank:NP_963729.1,GeneID:2654294;Name=NP_963729.1;Note=forms a direct contact with the tRNA during translation;gbkey=CDS;gene=rps9p;product=30S ribosomal protein S9P;protein_id=NP_963729.1;transl_table=11
 NC_005213.1	RefSeq	gene	397402	397779	.	+	.	ID=gene473;Dbxref=GeneID:2732657;Name=NEQ448;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ448
@@ -1051,13 +1038,11 @@ NC_005213.1	RefSeq	gene	406638	407576	.	+	.	ID=gene484;Dbxref=GeneID:2654421;Nam
 NC_005213.1	RefSeq	CDS	406638	407576	.	+	0	ID=cds448;Parent=gene484;Dbxref=Genbank:NP_963741.1,GeneID:2654421;Name=NP_963741.1;gbkey=CDS;product=hypothetical protein;protein_id=NP_963741.1;transl_table=11
 NC_005213.1	RefSeq	gene	407577	407651	.	-	.	ID=gene485;Dbxref=GeneID:3362450;Name=NEQ_t35;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t35
 NC_005213.1	RefSeq	tRNA	407577	407651	.	-	.	ID=rna36;Parent=gene485;Dbxref=GeneID:3362450;gbkey=tRNA;product=tRNA-Pro
-NC_005213.1	RefSeq	exon	407577	407651	.	-	.	ID=id68;Parent=rna36;Dbxref=GeneID:3362450;gbkey=tRNA;product=tRNA-Pro
+NC_005213.1	RefSeq	exon	407577	407651	.	-	.	ID=id55;Parent=rna36;Dbxref=GeneID:3362450;gbkey=tRNA;product=tRNA-Pro
 NC_005213.1	RefSeq	gene	407680	408399	.	-	.	ID=gene486;Dbxref=GeneID:2654422;Name=NEQ459;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ459
 NC_005213.1	RefSeq	CDS	407680	408399	.	-	0	ID=cds449;Parent=gene486;Dbxref=Genbank:NP_963742.1,GeneID:2654422;Name=NP_963742.1;Note=COG0526: Thiol-disulfide isomerase and thioredoxins%3B IPR000063: Thioredoxin;gbkey=CDS;product=hypothetical protein;protein_id=NP_963742.1;transl_table=11
 NC_005213.1	RefSeq	gene	408446	409198	.	+	.	ID=gene487;Dbxref=GeneID:2654423;Name=NEQ460;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ460
 NC_005213.1	RefSeq	CDS	408446	409198	.	+	0	ID=cds450;Parent=gene487;Dbxref=Genbank:NP_963743.1,GeneID:2654423;Name=NP_963743.1;Note=COG1718: Predicted serine/threonine protein kinases%3B IPR000687: RIO1/ZK632.3/MJ0444 family%3B IPR001245: Tyrosine kinase catalytic domain%3B IPR000719: Eukaryotic protein kinase;gbkey=CDS;product=hypothetical protein;protein_id=NP_963743.1;transl_table=11
-NC_005213.1	RefSeq	promoter	409202	409207	.	+	.	ID=id69;Dbxref=GeneID:3362426;Note=archaeal RNA pol III promoter consensus box A motif;gbkey=promoter
-NC_005213.1	RefSeq	sequence_feature	409230	409241	.	+	.	ID=id70;Dbxref=GeneID:3362426;Note=reverse complementary sequence cleaved during processing of trans-spliced tRNAs;gbkey=misc_feature
 NC_005213.1	RefSeq	gene	409289	409771	.	-	.	ID=gene488;Dbxref=GeneID:2654219;Name=NEQ461;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ461
 NC_005213.1	RefSeq	CDS	409289	409771	.	-	0	ID=cds451;Parent=gene488;Dbxref=Genbank:NP_963744.1,GeneID:2654219;Name=NP_963744.1;Note=COG0221: Inorganic pyrophosphatase%3B IPR001596: Inorganic pyrophosphatase;gbkey=CDS;product=hypothetical protein;protein_id=NP_963744.1;transl_table=11
 NC_005213.1	RefSeq	gene	409864	411900	.	+	.	ID=gene489;Dbxref=GeneID:2654220;Name=NEQ462;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ462
@@ -1074,7 +1059,7 @@ NC_005213.1	RefSeq	gene	415810	417006	.	-	.	ID=gene494;Dbxref=GeneID:2732588;Nam
 NC_005213.1	RefSeq	CDS	415810	417006	.	-	0	ID=cds457;Parent=gene494;Dbxref=Genbank:NP_963750.1,GeneID:2732588;Name=NP_963750.1;gbkey=CDS;product=hypothetical protein;protein_id=NP_963750.1;transl_table=11
 NC_005213.1	RefSeq	gene	417025	417098	.	-	.	ID=gene495;Dbxref=GeneID:3362449;Name=NEQ_t36;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t36
 NC_005213.1	RefSeq	tRNA	417025	417098	.	-	.	ID=rna37;Parent=gene495;Dbxref=GeneID:3362449;gbkey=tRNA;product=tRNA-Asn
-NC_005213.1	RefSeq	exon	417025	417098	.	-	.	ID=id71;Parent=rna37;Dbxref=GeneID:3362449;gbkey=tRNA;product=tRNA-Asn
+NC_005213.1	RefSeq	exon	417025	417098	.	-	.	ID=id56;Parent=rna37;Dbxref=GeneID:3362449;gbkey=tRNA;product=tRNA-Asn
 NC_005213.1	RefSeq	gene	417163	417546	.	+	.	ID=gene496;Dbxref=GeneID:2654226;Name=NEQ469;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ469
 NC_005213.1	RefSeq	CDS	417163	417546	.	+	0	ID=cds458;Parent=gene496;Dbxref=Genbank:NP_963751.1,GeneID:2654226;Name=NP_963751.1;Note=COG2007: Ribosomal protein S8E%3B IPR001047: Ribosomal protein S8E%3B IPR001472: Bipartite nuclear localization signal;gbkey=CDS;product=30S ribosomal protein S8e;protein_id=NP_963751.1;transl_table=11
 NC_005213.1	RefSeq	gene	417669	418091	.	-	.	ID=gene497;Dbxref=GeneID:2732589;Name=NEQ470;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ470
@@ -1101,7 +1086,7 @@ NC_005213.1	RefSeq	gene	426979	427401	.	+	.	ID=gene507;Dbxref=GeneID:2732604;Nam
 NC_005213.1	RefSeq	CDS	426979	427401	.	+	0	ID=cds469;Parent=gene507;Dbxref=Genbank:NP_963762.1,GeneID:2732604;Name=NP_963762.1;Note=protein S19 forms a complex with S13 that binds strongly to the 16S ribosomal RNA;gbkey=CDS;gene=rps19p;product=30S ribosomal protein S19P;protein_id=NP_963762.1;transl_table=11
 NC_005213.1	RefSeq	gene	427433	427506	.	+	.	ID=gene508;Dbxref=GeneID:3362443;Name=NEQ_t37;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t37
 NC_005213.1	RefSeq	tRNA	427433	427506	.	+	.	ID=rna38;Parent=gene508;Dbxref=GeneID:3362443;gbkey=tRNA;product=tRNA-Arg
-NC_005213.1	RefSeq	exon	427433	427506	.	+	.	ID=id72;Parent=rna38;Dbxref=GeneID:3362443;gbkey=tRNA;product=tRNA-Arg
+NC_005213.1	RefSeq	exon	427433	427506	.	+	.	ID=id57;Parent=rna38;Dbxref=GeneID:3362443;gbkey=tRNA;product=tRNA-Arg
 NC_005213.1	RefSeq	gene	427595	428305	.	-	.	ID=gene509;Dbxref=GeneID:2654050;Name=NEQ481;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ481
 NC_005213.1	RefSeq	CDS	427595	428305	.	-	0	ID=cds470;Parent=gene509;Dbxref=Genbank:NP_963763.1,GeneID:2654050;Name=NP_963763.1;Note=COG0092: Ribosomal protein S3%3B IPR001351: Ribosomal protein S3;gbkey=CDS;product=hypothetical protein;protein_id=NP_963763.1;transl_table=11
 NC_005213.1	RefSeq	gene	428382	428801	.	+	.	ID=gene510;Dbxref=GeneID:2654051;Name=NEQ482;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ482
@@ -1122,17 +1107,11 @@ NC_005213.1	RefSeq	gene	431924	432085	.	+	.	ID=gene517;Dbxref=GeneID:9337602;Nam
 NC_005213.1	RefSeq	CDS	431924	432085	.	+	0	ID=cds478;Parent=gene517;Dbxref=Genbank:YP_003717793.1,GeneID:9337602;Name=YP_003717793.1;Note=putative function in translation;gbkey=CDS;product=putative Zn-ribbon RNA-binding protein;protein_id=YP_003717793.1;transl_table=11
 NC_005213.1	RefSeq	gene	432326	433720	.	+	.	ID=gene518;Dbxref=GeneID:3362470;Name=NEQ_r03;gbkey=Gene;gene_biotype=rRNA;locus_tag=NEQ_r03
 NC_005213.1	RefSeq	rRNA	432326	433720	.	+	.	ID=rna39;Parent=gene518;Dbxref=GeneID:3362470;Note=end points are not accurate;gbkey=rRNA;product=16S ribosomal RNA
-NC_005213.1	RefSeq	exon	432326	433720	.	+	.	ID=id73;Parent=rna39;Dbxref=GeneID:3362470;Note=end points are not accurate;gbkey=rRNA;product=16S ribosomal RNA
+NC_005213.1	RefSeq	exon	432326	433720	.	+	.	ID=id58;Parent=rna39;Dbxref=GeneID:3362470;Note=end points are not accurate;gbkey=rRNA;product=16S ribosomal RNA
 NC_005213.1	RefSeq	gene	434260	435666	.	+	.	ID=gene519;Dbxref=GeneID:2654208;Name=NEQ490;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ490
 NC_005213.1	RefSeq	CDS	434260	435666	.	+	0	ID=cds479;Parent=gene519;Dbxref=Genbank:NP_963771.1,GeneID:2654208;Name=NP_963771.1;Note=COG0500: SAM-dependent methyltransferases%3B IPR000051: SAM (and some other nucleotide) binding motif%3B IPR000504: RNA-binding region RNP-1  (RNA recognition motif);gbkey=CDS;product=hypothetical protein;protein_id=NP_963771.1;transl_table=11
 NC_005213.1	RefSeq	gene	435677	436618	.	+	.	ID=gene520;Dbxref=GeneID:2654209;Name=NEQ491;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ491
 NC_005213.1	RefSeq	CDS	435677	436618	.	+	0	ID=cds480;Parent=gene520;Dbxref=Genbank:NP_963772.1,GeneID:2654209;Name=NP_963772.1;Note=COG0492: Thioredoxin reductase%3B IPR000759: Adrenodoxin reductase%3B IPR000103: Pyridine nucleotide-disulphide oxidoreductase class-II%3B IPR001687: ATP/GTP-binding site motif A (P-loop)%3B IPR001100: Pyridine nucleotide-disulphide oxidoreductase%2C class I%3B IPR001327: FAD-dependent pyridine nucleotide-disulphide oxidoreductase;gbkey=CDS;product=hypothetical protein;protein_id=NP_963772.1;transl_table=11
-NC_005213.1	RefSeq	sequence_feature	436618	436631	.	-	.	ID=id74;Note=reverse complementary sequence cleaved during processing of trans-spliced tRNAs;gbkey=misc_feature
-NC_005213.1	RefSeq	tRNA	436635	436673	.	-	.	ID=rna40;Note=this trans-spliced tRNA consists of two halves on mixed strands%3B it shares a 3' half with another tRNA;exception=trans-splicing;gbkey=tRNA;part=1/2;product=tRNA-Glu
-NC_005213.1	RefSeq	tRNA	487030	487064	.	+	.	ID=rna40;Note=this trans-spliced tRNA consists of two halves on mixed strands%3B it shares a 3' half with another tRNA;exception=trans-splicing;gbkey=tRNA;part=2/2;product=tRNA-Glu
-NC_005213.1	RefSeq	exon	436635	436673	.	-	.	ID=id75;Parent=rna40;Note=this trans-spliced tRNA consists of two halves on mixed strands%3B it shares a 3' half with another tRNA;exception=trans-splicing;gbkey=tRNA;product=tRNA-Glu
-NC_005213.1	RefSeq	exon	487030	487064	.	+	.	ID=id76;Parent=rna40;Note=this trans-spliced tRNA consists of two halves on mixed strands%3B it shares a 3' half with another tRNA;exception=trans-splicing;gbkey=tRNA;product=tRNA-Glu
-NC_005213.1	RefSeq	promoter	436695	436700	.	-	.	ID=id77;Note=archaeal RNA pol III promoter consensus box A motif;gbkey=promoter
 NC_005213.1	RefSeq	gene	436704	437393	.	-	.	ID=gene521;Dbxref=GeneID:2654210;Name=NEQ492;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ492
 NC_005213.1	RefSeq	CDS	436704	437393	.	-	0	ID=cds481;Parent=gene521;Dbxref=Genbank:NP_963773.1,GeneID:2654210;Name=NP_963773.1;gbkey=CDS;product=hypothetical protein;protein_id=NP_963773.1;transl_table=11
 NC_005213.1	RefSeq	gene	437443	438387	.	-	.	ID=gene522;Dbxref=GeneID:2654211;Name=NEQ493;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ493
@@ -1150,8 +1129,8 @@ NC_005213.1	RefSeq	CDS	443207	443608	.	+	0	ID=cds487;Parent=gene527;Dbxref=Genba
 NC_005213.1	RefSeq	gene	443677	444747	.	+	.	ID=gene528;Dbxref=GeneID:2654139;Name=NEQ500;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ500
 NC_005213.1	RefSeq	CDS	443677	444747	.	+	0	ID=cds488;Parent=gene528;Dbxref=Genbank:NP_963780.1,GeneID:2654139;Name=NP_963780.1;gbkey=CDS;product=hypothetical protein;protein_id=NP_963780.1;transl_table=11
 NC_005213.1	RefSeq	gene	444748	444819	.	-	.	ID=gene529;Dbxref=GeneID:3362448;Name=NEQ_t39;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t39
-NC_005213.1	RefSeq	tRNA	444748	444819	.	-	.	ID=rna41;Parent=gene529;Dbxref=GeneID:3362448;gbkey=tRNA;product=tRNA-Val
-NC_005213.1	RefSeq	exon	444748	444819	.	-	.	ID=id78;Parent=rna41;Dbxref=GeneID:3362448;gbkey=tRNA;product=tRNA-Val
+NC_005213.1	RefSeq	tRNA	444748	444819	.	-	.	ID=rna40;Parent=gene529;Dbxref=GeneID:3362448;gbkey=tRNA;product=tRNA-Val
+NC_005213.1	RefSeq	exon	444748	444819	.	-	.	ID=id59;Parent=rna40;Dbxref=GeneID:3362448;gbkey=tRNA;product=tRNA-Val
 NC_005213.1	RefSeq	gene	444866	445384	.	+	.	ID=gene530;Dbxref=GeneID:2654140;Name=NEQ502;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ502
 NC_005213.1	RefSeq	CDS	444866	445384	.	+	0	ID=cds489;Parent=gene530;Dbxref=Genbank:NP_963781.1,GeneID:2654140;Name=NP_963781.1;Note=COG1514: 2'-5' RNA ligase;gbkey=CDS;product=hypothetical protein;protein_id=NP_963781.1;transl_table=11
 NC_005213.1	RefSeq	gene	445365	445850	.	-	.	ID=gene531;Dbxref=GeneID:2654141;Name=NEQ501;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ501
@@ -1217,11 +1196,11 @@ NC_005213.1	RefSeq	CDS	469788	470759	.	+	0	ID=cds519;Parent=gene560;Dbxref=Genba
 NC_005213.1	RefSeq	gene	470737	471144	.	-	.	ID=gene561;Dbxref=GeneID:2654200;Name=rpl32e;gbkey=Gene;gene=rpl32e;gene_biotype=protein_coding;locus_tag=NEQ530
 NC_005213.1	RefSeq	CDS	470737	471144	.	-	0	ID=cds520;Parent=gene561;Dbxref=Genbank:NP_963811.1,GeneID:2654200;Name=NP_963811.1;Note=contacts helix 25 of domain II of the 23S rRNA;gbkey=CDS;gene=rpl32e;product=50S ribosomal protein L32e;protein_id=NP_963811.1;transl_table=11
 NC_005213.1	RefSeq	gene	471205	471287	.	+	.	ID=gene562;Dbxref=GeneID:3362444;Name=NEQ_t40;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t40
-NC_005213.1	RefSeq	tRNA	471205	471287	.	+	.	ID=rna42;Parent=gene562;Dbxref=GeneID:3362444;gbkey=tRNA;product=tRNA-Ser
-NC_005213.1	RefSeq	exon	471205	471287	.	+	.	ID=id79;Parent=rna42;Dbxref=GeneID:3362444;gbkey=tRNA;product=tRNA-Ser
+NC_005213.1	RefSeq	tRNA	471205	471287	.	+	.	ID=rna41;Parent=gene562;Dbxref=GeneID:3362444;gbkey=tRNA;product=tRNA-Ser
+NC_005213.1	RefSeq	exon	471205	471287	.	+	.	ID=id60;Parent=rna41;Dbxref=GeneID:3362444;gbkey=tRNA;product=tRNA-Ser
 NC_005213.1	RefSeq	gene	471321	471392	.	+	.	ID=gene563;Dbxref=GeneID:3362445;Name=NEQ_t41;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t41
-NC_005213.1	RefSeq	tRNA	471321	471392	.	+	.	ID=rna43;Parent=gene563;Dbxref=GeneID:3362445;gbkey=tRNA;product=tRNA-Val
-NC_005213.1	RefSeq	exon	471321	471392	.	+	.	ID=id80;Parent=rna43;Dbxref=GeneID:3362445;gbkey=tRNA;product=tRNA-Val
+NC_005213.1	RefSeq	tRNA	471321	471392	.	+	.	ID=rna42;Parent=gene563;Dbxref=GeneID:3362445;gbkey=tRNA;product=tRNA-Val
+NC_005213.1	RefSeq	exon	471321	471392	.	+	.	ID=id61;Parent=rna42;Dbxref=GeneID:3362445;gbkey=tRNA;product=tRNA-Val
 NC_005213.1	RefSeq	gene	471450	471731	.	+	.	ID=gene564;Dbxref=GeneID:2654201;Name=NEQ532;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ532
 NC_005213.1	RefSeq	CDS	471450	471731	.	+	0	ID=cds521;Parent=gene564;Dbxref=Genbank:NP_963812.1,GeneID:2654201;Name=NP_963812.1;gbkey=CDS;product=hypothetical protein;protein_id=NP_963812.1;transl_table=11
 NC_005213.1	RefSeq	gene	471728	472072	.	+	.	ID=gene565;Dbxref=GeneID:2654202;Name=NEQ533;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ533
@@ -1237,8 +1216,8 @@ NC_005213.1	RefSeq	CDS	475197	476060	.	+	0	ID=cds526;Parent=gene569;Dbxref=Genba
 NC_005213.1	RefSeq	gene	476047	476811	.	-	.	ID=gene570;Dbxref=GeneID:2732576;Name=NEQ537;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ537
 NC_005213.1	RefSeq	CDS	476047	476811	.	-	0	ID=cds527;Parent=gene570;Dbxref=Genbank:NP_963818.1,GeneID:2732576;Name=NP_963818.1;Note=COG0592: DNA polymerase III beta subunit%3B IPR000730: Proliferating cell nuclear antigen;gbkey=CDS;product=hypothetical protein;protein_id=NP_963818.1;transl_table=11
 NC_005213.1	RefSeq	gene	476845	476928	.	+	.	ID=gene571;Dbxref=GeneID:3362446;Name=NEQ_t42;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t42
-NC_005213.1	RefSeq	tRNA	476845	476928	.	+	.	ID=rna44;Parent=gene571;Dbxref=GeneID:3362446;gbkey=tRNA;product=tRNA-Leu
-NC_005213.1	RefSeq	exon	476845	476928	.	+	.	ID=id81;Parent=rna44;Dbxref=GeneID:3362446;gbkey=tRNA;product=tRNA-Leu
+NC_005213.1	RefSeq	tRNA	476845	476928	.	+	.	ID=rna43;Parent=gene571;Dbxref=GeneID:3362446;gbkey=tRNA;product=tRNA-Leu
+NC_005213.1	RefSeq	exon	476845	476928	.	+	.	ID=id62;Parent=rna43;Dbxref=GeneID:3362446;gbkey=tRNA;product=tRNA-Leu
 NC_005213.1	RefSeq	gene	476929	477558	.	-	.	ID=gene572;Dbxref=GeneID:2654129;Name=NEQ539;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ539
 NC_005213.1	RefSeq	CDS	476929	477558	.	-	0	ID=cds528;Parent=gene572;Dbxref=Genbank:NP_963819.1,GeneID:2654129;Name=NP_963819.1;gbkey=CDS;product=hypothetical protein;protein_id=NP_963819.1;transl_table=11
 NC_005213.1	RefSeq	gene	477562	478089	.	+	.	ID=gene573;Dbxref=GeneID:2732577;Name=nusG;gbkey=Gene;gene=nusG;gene_biotype=protein_coding;locus_tag=NEQ540
@@ -1247,7 +1226,6 @@ NC_005213.1	RefSeq	gene	478090	478401	.	+	.	ID=gene574;Dbxref=GeneID:2654131;Nam
 NC_005213.1	RefSeq	CDS	478090	478401	.	+	0	ID=cds530;Parent=gene574;Dbxref=Genbank:NP_963821.1,GeneID:2654131;Name=NP_963821.1;gbkey=CDS;product=hypothetical protein;protein_id=NP_963821.1;transl_table=11
 NC_005213.1	RefSeq	gene	478433	480664	.	+	.	ID=gene575;Dbxref=GeneID:2654132;Name=fusA;gbkey=Gene;gene=fusA;gene_biotype=protein_coding;gene_synonym=fusA;locus_tag=NEQ543
 NC_005213.1	RefSeq	CDS	478433	480664	.	+	0	ID=cds531;Parent=gene575;Dbxref=Genbank:NP_963822.1,GeneID:2654132;Name=NP_963822.1;Note=EF-2%3B EF-G%3B promotes GTP-dependent translocation of the ribosome during translation;gbkey=CDS;gene=fusA;product=elongation factor EF-2;protein_id=NP_963822.1;transl_table=11
-NC_005213.1	RefSeq	promoter	480409	480414	.	-	.	ID=id82;Note=archaeal RNA pol III promoter consensus box A motif;gbkey=promoter
 NC_005213.1	RefSeq	gene	480661	481740	.	-	.	ID=gene576;Dbxref=GeneID:2654133;Name=NEQ542;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ542
 NC_005213.1	RefSeq	CDS	480661	481740	.	-	0	ID=cds532;Parent=gene576;Dbxref=Genbank:NP_963823.1,GeneID:2654133;Name=NP_963823.1;Note=catalyzes the ATP-dependent breakage%2C passage%2C and rejoining of double-stranded DNA;gbkey=CDS;product=DNA topoisomerase VI subunit A;protein_id=NP_963823.1;transl_table=11
 NC_005213.1	RefSeq	gene	481777	482430	.	+	.	ID=gene577;Dbxref=GeneID:2654134;Name=NEQ545;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ545
@@ -1263,10 +1241,32 @@ NC_005213.1	RefSeq	CDS	484358	485503	.	-	0	ID=cds537;Parent=gene581;Dbxref=Genba
 NC_005213.1	RefSeq	gene	485496	486299	.	-	.	ID=gene582;Dbxref=GeneID:2732579;Name=NEQ549;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ549
 NC_005213.1	RefSeq	CDS	485496	486299	.	-	0	ID=cds538;Parent=gene582;Dbxref=Genbank:NP_963829.1,GeneID:2732579;Name=NP_963829.1;Note=COG1468: RecB family exonuclease;gbkey=CDS;product=hypothetical protein;protein_id=NP_963829.1;transl_table=11
 NC_005213.1	RefSeq	gene	486338	486422	.	+	.	ID=gene583;Dbxref=GeneID:3362447;Name=NEQ_t43;gbkey=Gene;gene_biotype=tRNA;locus_tag=NEQ_t43
-NC_005213.1	RefSeq	tRNA	486338	486422	.	+	.	ID=rna45;Parent=gene583;Dbxref=GeneID:3362447;gbkey=tRNA;product=tRNA-Ser
-NC_005213.1	RefSeq	exon	486338	486422	.	+	.	ID=id83;Parent=rna45;Dbxref=GeneID:3362447;gbkey=tRNA;product=tRNA-Ser
+NC_005213.1	RefSeq	tRNA	486338	486422	.	+	.	ID=rna44;Parent=gene583;Dbxref=GeneID:3362447;gbkey=tRNA;product=tRNA-Ser
+NC_005213.1	RefSeq	exon	486338	486422	.	+	.	ID=id63;Parent=rna44;Dbxref=GeneID:3362447;gbkey=tRNA;product=tRNA-Ser
 NC_005213.1	RefSeq	gene	486423	486962	.	-	.	ID=gene584;Dbxref=GeneID:2732580;Name=NEQ550;gbkey=Gene;gene_biotype=protein_coding;locus_tag=NEQ550
 NC_005213.1	RefSeq	CDS	486423	486962	.	-	0	ID=cds539;Parent=gene584;Dbxref=Genbank:NP_963830.1,GeneID:2732580;Name=NP_963830.1;gbkey=CDS;product=hypothetical protein;protein_id=NP_963830.1;transl_table=11
-NC_005213.1	RefSeq	promoter	486983	486988	.	+	.	ID=id84;Note=archaeal RNA pol III promoter consensus box A motif;gbkey=promoter
-NC_005213.1	RefSeq	sequence_feature	487009	487022	.	+	.	ID=id85;Dbxref=GeneID:3362427;Note=reverse complementary sequence cleaved during processing of trans-spliced tRNAs;gbkey=misc_feature
+NC_005213.1	RefSeq	tRNA	436635	436673	.	-	.	ID=rna45;Note=this trans-spliced tRNA consists of two halves on mixed strands%3B it shares a 3' half with another tRNA;exception=trans-splicing;gbkey=tRNA;part=1/2;product=tRNA-Glu
+NC_005213.1	RefSeq	tRNA	487030	487064	.	+	.	ID=rna45;Note=this trans-spliced tRNA consists of two halves on mixed strands%3B it shares a 3' half with another tRNA;exception=trans-splicing;gbkey=tRNA;part=2/2;product=tRNA-Glu
+NC_005213.1	RefSeq	exon	436635	436673	.	-	.	ID=id64;Parent=rna45;Note=this trans-spliced tRNA consists of two halves on mixed strands%3B it shares a 3' half with another tRNA;exception=trans-splicing;gbkey=tRNA;product=tRNA-Glu
+NC_005213.1	RefSeq	exon	487030	487064	.	+	.	ID=id65;Parent=rna45;Note=this trans-spliced tRNA consists of two halves on mixed strands%3B it shares a 3' half with another tRNA;exception=trans-splicing;gbkey=tRNA;product=tRNA-Glu
+NC_005213.1	RefSeq	sequence_feature	3238	3250	.	+	.	ID=id66;Note=reverse complementary sequence cleaved during processing of trans-spliced tRNAs;gbkey=misc_feature
+NC_005213.1	RefSeq	sequence_feature	111051	111551	.	+	.	ID=id67;Note=potential protein location (hypothetical protein NEQ123 [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-G);gbkey=misc_feature
+NC_005213.1	RefSeq	sequence_feature	111051	111551	.	+	.	ID=id68;Note=potential protein location (hypothetical protein NEQ123 [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-G);gbkey=misc_feature
+NC_005213.1	RefSeq	sequence_feature	111051	111551	.	+	.	ID=id69;Note=potential protein location (hypothetical protein NEQ123 [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-G);gbkey=misc_feature
+NC_005213.1	RefSeq	sequence_feature	111051	111551	.	+	.	ID=id70;Note=potential protein location (hypothetical protein NEQ123 [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-G);gbkey=misc_feature
+NC_005213.1	RefSeq	sequence_feature	304107	305006	.	-	.	ID=id71;Note=potential protein location (hypothetical protein NEQ345a [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-L);gbkey=misc_feature
+NC_005213.1	RefSeq	sequence_feature	304107	305006	.	-	.	ID=id72;Note=potential protein location (hypothetical protein NEQ345a [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-L);gbkey=misc_feature
+NC_005213.1	RefSeq	sequence_feature	304107	305006	.	-	.	ID=id73;Note=potential protein location (hypothetical protein NEQ345a [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-L);gbkey=misc_feature
+NC_005213.1	RefSeq	sequence_feature	304107	305006	.	-	.	ID=id74;Note=potential protein location (hypothetical protein NEQ345a [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-L);gbkey=misc_feature
+NC_005213.1	RefSeq	sequence_feature	379770	380366	.	+	.	ID=id75;Note=potential protein location (hypothetical protein NEQ431 [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-W);gbkey=misc_feature
+NC_005213.1	RefSeq	sequence_feature	379770	380366	.	+	.	ID=id76;Note=potential protein location (hypothetical protein NEQ431 [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-W);gbkey=misc_feature
+NC_005213.1	RefSeq	sequence_feature	379770	380366	.	+	.	ID=id77;Note=potential protein location (hypothetical protein NEQ431 [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-W);gbkey=misc_feature
+NC_005213.1	RefSeq	sequence_feature	379770	380366	.	+	.	ID=id78;Note=potential protein location (hypothetical protein NEQ431 [Nanoarchaeum equitans Kin4-M]) that overlaps RNA (tRNA-W);gbkey=misc_feature
+NC_005213.1	RefSeq	sequence_feature	436618	436631	.	-	.	ID=id79;Note=reverse complementary sequence cleaved during processing of trans-spliced tRNAs;gbkey=misc_feature
+NC_005213.1	RefSeq	promoter	3210	3215	.	+	.	ID=id80;Note=archaeal RNA pol III promoter consensus box A motif;gbkey=promoter
+NC_005213.1	RefSeq	promoter	35223	35228	.	+	.	ID=id81;Note=archaeal RNA pol III promoter consensus box A motif;gbkey=promoter
+NC_005213.1	RefSeq	promoter	331779	331784	.	-	.	ID=id82;Note=archaeal RNA pol III promoter consensus box A motif;gbkey=promoter
+NC_005213.1	RefSeq	promoter	436695	436700	.	-	.	ID=id83;Note=archaeal RNA pol III promoter consensus box A motif;gbkey=promoter
+NC_005213.1	RefSeq	promoter	480409	480414	.	-	.	ID=id84;Note=archaeal RNA pol III promoter consensus box A motif;gbkey=promoter
+NC_005213.1	RefSeq	promoter	486983	486988	.	+	.	ID=id85;Note=archaeal RNA pol III promoter consensus box A motif;gbkey=promoter
 ###

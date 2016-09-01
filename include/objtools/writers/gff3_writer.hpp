@@ -140,6 +140,9 @@ protected:
     virtual bool xWriteFeatureCDJVSegment(
         CGffFeatureContext&,
         CMappedFeat );
+    virtual bool xWriteAllChildren(
+        CGffFeatureContext&,
+        CMappedFeat);
 
     virtual bool xWriteRecord( 
         const CGffBaseRecord& );
