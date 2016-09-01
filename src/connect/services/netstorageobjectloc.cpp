@@ -406,6 +406,8 @@ void CNetStorageObjectLoc::ToJSON(CJsonNode& root) const
     if (m_LocatorFlags & fLF_NetStorageService)
         root.SetString("ServiceName", m_ServiceName);
 
+    root.SetString("ObjectKey", m_UniqueKey);
+
     CJsonNode storage_flags(CJsonNode::NewObjectNode());
 
     storage_flags.SetBoolean("Movable",
