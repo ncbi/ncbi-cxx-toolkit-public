@@ -1520,3 +1520,14 @@ BOOST_AUTO_TEST_CASE(Test_FixGenomeForQualifiers)
     BOOST_CHECK_EQUAL(src->FixGenomeForQualifiers(), true);
     BOOST_CHECK_EQUAL(src->GetGenome(), CBioSource::eGenome_plasmid);
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_AllowXref)
+{
+    BOOST_CHECK_EQUAL(CSeqFeatData::AllowXref(CSeqFeatData::eSubtype_gene, CSeqFeatData::eSubtype_cdregion), true);
+    BOOST_CHECK_EQUAL(CSeqFeatData::AllowXref(CSeqFeatData::eSubtype_cdregion, CSeqFeatData::eSubtype_regulatory), false);
+    BOOST_CHECK_EQUAL(CSeqFeatData::AllowXref(CSeqFeatData::eSubtype_intron, CSeqFeatData::eSubtype_exon), false);
+    BOOST_CHECK_EQUAL(CSeqFeatData::ProhibitXref(CSeqFeatData::eSubtype_gene, CSeqFeatData::eSubtype_cdregion), false);
+    BOOST_CHECK_EQUAL(CSeqFeatData::ProhibitXref(CSeqFeatData::eSubtype_intron, CSeqFeatData::eSubtype_regulatory), false);
+    BOOST_CHECK_EQUAL(CSeqFeatData::ProhibitXref(CSeqFeatData::eSubtype_intron, CSeqFeatData::eSubtype_exon), true);
+}

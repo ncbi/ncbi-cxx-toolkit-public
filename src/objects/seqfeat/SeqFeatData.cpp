@@ -3213,6 +3213,102 @@ CSeqFeatData::EQualifier CSeqFeatData::GetQualifierType(const string& qual, NStr
 }
 
 
+// xref info table
+DEFINE_STATIC_MUTEX(sx_InitXrefTablesMutex);
+typedef vector<CSeqFeatData::ESubtype> TSubtypeVector;
+typedef map<CSeqFeatData::ESubtype, TSubtypeVector> TSubtypeXrefMap;
+
+#define ADD_XREF_PAIR(x, y) \
+    table[eSubtype_##x].push_back(eSubtype_##y); \
+    table[eSubtype_##y].push_back(eSubtype_##x);
+
+static CSafeStatic<TSubtypeXrefMap> sx_XrefAllowedSubtypesTable;
+static bool sx_XrefAllowedSubtypesTableInitialized = false;
+static CSafeStatic<TSubtypeXrefMap> sx_XrefProhibitedSubtypesTable;
+static bool sx_XrefProhibitedSubtypesTableInitialized = false;
+
+
+void CSeqFeatData::s_InitXrefAllowedSubtypesTable(void)
+{
+    if (sx_XrefAllowedSubtypesTableInitialized) {
+        return;
+    }
+    CMutexGuard guard(sx_InitXrefTablesMutex);
+    if (sx_XrefAllowedSubtypesTableInitialized) {
+        return;
+    }
+
+    TSubtypeXrefMap& table = *sx_XrefAllowedSubtypesTable;
+
+    ADD_XREF_PAIR(cdregion, gene)
+    ADD_XREF_PAIR(cdregion, mRNA)
+    ADD_XREF_PAIR(gene, mRNA)
+    ADD_XREF_PAIR(gene, tRNA)
+    ADD_XREF_PAIR(gene, rRNA)
+    ADD_XREF_PAIR(gene, tmRNA)
+    ADD_XREF_PAIR(gene, ncRNA)
+
+    // sort for binary_search
+    NON_CONST_ITERATE(TSubtypeXrefMap, iter, table) {
+        sort(iter->second.begin(), iter->second.end());
+    }
+
+    sx_XrefAllowedSubtypesTableInitialized = true;
+
+
+}
+
+void CSeqFeatData::s_InitXrefProhibitedSubtypesTable(void)
+{
+    if (sx_XrefProhibitedSubtypesTableInitialized) {
+        return;
+    }
+    CMutexGuard guard(sx_InitXrefTablesMutex);
+    if (sx_XrefProhibitedSubtypesTableInitialized) {
+        return;
+    }
+
+    TSubtypeXrefMap& table = *sx_XrefProhibitedSubtypesTable;
+
+    ADD_XREF_PAIR(intron, exon)
+
+    // sort for binary_search
+    NON_CONST_ITERATE(TSubtypeXrefMap, iter, table) {
+        sort(iter->second.begin(), iter->second.end());
+    }
+
+    sx_XrefProhibitedSubtypesTableInitialized = true;
+}
+
+
+bool CSeqFeatData::AllowXref(ESubtype subtype1, ESubtype subtype2)
+{
+    if (!sx_XrefAllowedSubtypesTableInitialized) {
+        s_InitXrefAllowedSubtypesTable();
+    }
+    TSubtypeXrefMap::const_iterator iter = sx_XrefAllowedSubtypesTable->find(subtype1);
+    if (iter == sx_XrefAllowedSubtypesTable->end()) {
+        return false;
+    }
+    const TSubtypeVector& allowed = iter->second;
+    return binary_search(allowed.begin(), allowed.end(), subtype2);
+}
+
+
+bool CSeqFeatData::ProhibitXref(ESubtype subtype1, ESubtype subtype2)
+{
+    if (!sx_XrefProhibitedSubtypesTableInitialized) {
+        s_InitXrefProhibitedSubtypesTable();
+    }
+    TSubtypeXrefMap::const_iterator iter = sx_XrefProhibitedSubtypesTable->find(subtype1);
+    if (iter == sx_XrefProhibitedSubtypesTable->end()) {
+        return false;
+    }
+    const TSubtypeVector& allowed = iter->second;
+    return binary_search(allowed.begin(), allowed.end(), subtype2);
+}
+
+
 /////////////////// end of CSeqFeatData methods
 
 

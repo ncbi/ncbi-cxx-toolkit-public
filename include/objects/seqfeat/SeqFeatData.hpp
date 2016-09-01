@@ -505,6 +505,11 @@ public:
     static bool ShouldRepresentAsGbqual (CSeqFeatData::ESubtype feat_subtype, const CGb_qual& qual);
     static bool ShouldRepresentAsGbqual (CSeqFeatData::ESubtype feat_subtype, CSeqFeatData::EQualifier qual_type);
 
+    static void s_InitXrefAllowedSubtypesTable(void);
+    static void s_InitXrefProhibitedSubtypesTable(void);
+    static bool AllowXref(CSeqFeatData::ESubtype subtype1, CSeqFeatData::ESubtype subtype2);
+    static bool ProhibitXref(CSeqFeatData::ESubtype subtype1, CSeqFeatData::ESubtype subtype2);
+
     // Internal structure to hold additional info
     struct SFeatDataInfo
     {
