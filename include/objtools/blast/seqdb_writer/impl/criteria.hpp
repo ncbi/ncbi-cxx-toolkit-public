@@ -64,7 +64,7 @@ BEGIN_NCBI_SCOPE
 /// Structure which corresponds to format of records in DI files.
 struct SDIRecord {
     int     oid;            /// Ordinal ID
-    int     gi;             /// GenInfo ID
+    TGi     gi;             /// GenInfo ID
     int     taxid;          /// Taxonomy ID
     int     owner;          /// Owner
     string  div;            /// 3-letter division
@@ -75,7 +75,8 @@ struct SDIRecord {
     int     mol;            /// Molecule type, as in Seq-inst::mol
 
     SDIRecord() {
-        oid = gi = taxid = owner = len = hash = sat_key = mol = 0;
+        oid = taxid = owner = len = hash = sat_key = mol = 0;
+        gi = ZERO_GI;
     }
 };
 
@@ -481,7 +482,7 @@ NCBI_XOBJWRITE_EXPORT
 int
 CCriteriaSet_CalculateMemberships(
         const SDIRecord& direcord,      /// DI record data
-        objects::CBlast_def_line& defline   /// The 
+        objects::CBlast_def_line& defline   /// The
 );
 
 
