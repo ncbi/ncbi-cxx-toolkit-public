@@ -57,11 +57,11 @@ static string OrderQual(const string& s)
         "collection-date",
         "country",
         "identified-by",
+        "fwd-primer-name",
+        "fwd-primer-seq",
         "isolate",
         "isolation-source",
         "host",
-        "fwd-primer-name",
-        "fwd-primer-seq",
         "rev-primer-name",
         "rev-primer-seq",
         "culture-collection",
@@ -94,6 +94,16 @@ static string OrderQual(const string& s)
     return r + s;
 }
 
+static void AddObjToQualMap(const string& qual, const string& val, CReportObj& obj, CReportNode& node)
+{
+    if (node["all"][qual].Exist(obj)) {
+        node["all"][qual]["*"].Add(obj, false); // duplicated
+    }
+    else {
+        node["all"][qual].Add(obj, false);
+    }
+    node[qual][val].Add(obj);
+}
 
 DISCREPANCY_CASE(SOURCE_QUALS, CBioSource, eDisc | eOncaller | eSubmitter | eSmart, "Some animals are more equal than others...")
 {
@@ -104,50 +114,27 @@ DISCREPANCY_CASE(SOURCE_QUALS, CBioSource, eDisc | eOncaller | eSubmitter | eSma
     CRef<CDiscrepancyObject> disc_obj(context.NewDiscObj(desc));
     m_Objs["all"].Add(*disc_obj);
     if (obj.CanGetGenome() && obj.GetGenome() != CBioSource::eGenome_unknown) {
-        const string& qual = "location";
-        if (m_Objs["all"][qual].Exist(*disc_obj)) {
-            m_Objs["all"][qual]["*"].Add(*disc_obj, false); // duplicated
-        }
-        else {
-            m_Objs["all"][qual].Add(*disc_obj, false);
-        }
-        m_Objs[qual][context.GetGenomeName(obj.GetGenome())].Add(*disc_obj);
+
+        AddObjToQualMap("location", context.GetGenomeName(obj.GetGenome()), *disc_obj, m_Objs);
     }
     if (obj.CanGetOrg()) {
         const COrg_ref& org_ref = obj.GetOrg();
         if (org_ref.CanGetTaxname()) {
-            const string& qual = "taxname";
-            if (m_Objs["all"][qual].Exist(*disc_obj)) {
-                m_Objs["all"][qual]["*"].Add(*disc_obj, false); // duplicated
-            }
-            else {
-                m_Objs["all"][qual].Add(*disc_obj, false);
-            }
-            m_Objs[qual][org_ref.GetTaxname()].Add(*disc_obj);
+
+            AddObjToQualMap("taxname", org_ref.GetTaxname(), *disc_obj, m_Objs);
         }
         if (org_ref.GetTaxId()) {
-            const string& qual = "taxid";
-            if (m_Objs["all"][qual].Exist(*disc_obj)) {
-                m_Objs["all"][qual]["*"].Add(*disc_obj, false); // duplicated
-            }
-            else {
-                m_Objs["all"][qual].Add(*disc_obj, false);
-            }
-            m_Objs[qual][NStr::IntToString(org_ref.GetTaxId())].Add(*disc_obj);
+
+            AddObjToQualMap("taxid", NStr::IntToString(org_ref.GetTaxId()), *disc_obj, m_Objs);
         }
     }
     if (obj.CanGetSubtype()) {
         ITERATE (CBioSource::TSubtype, it, obj.GetSubtype()) {
             const CSubSource::TSubtype& subtype = (*it)->GetSubtype();
             if ((*it)->CanGetName()) {
+
                 const string& qual = subtype == CSubSource::eSubtype_other ? "note-subsrc" : (*it)->GetSubtypeName(subtype, CSubSource::eVocabulary_raw);
-                if (m_Objs["all"][qual].Exist(*disc_obj)) {
-                    m_Objs["all"][qual]["*"].Add(*disc_obj, false); // duplicated
-                }
-                else {
-                    m_Objs["all"][qual].Add(*disc_obj, false);
-                }
-                m_Objs[qual][(*it)->GetName()].Add(*disc_obj);
+                AddObjToQualMap(qual, (*it)->GetName(), *disc_obj, m_Objs);
             }
         }
     }
@@ -159,14 +146,9 @@ DISCREPANCY_CASE(SOURCE_QUALS, CBioSource, eDisc | eOncaller | eSubmitter | eSma
                 subtype != COrgMod::eSubtype_gb_acronym &&
                 subtype != COrgMod::eSubtype_gb_anamorph &&
                 subtype != COrgMod::eSubtype_gb_synonym) {
+
                 const string& qual = subtype == COrgMod::eSubtype_other ? "note-orgmod" : subtype == COrgMod::eSubtype_nat_host ? "host" : (*it)->GetSubtypeName(subtype, COrgMod::eVocabulary_raw);
-                if (m_Objs["all"][qual].Exist(*disc_obj)) {
-                    m_Objs["all"][qual]["*"].Add(*disc_obj, false); // duplicated
-                }
-                else {
-                    m_Objs["all"][qual].Add(*disc_obj, false);
-                }
-                m_Objs[qual][(*it)->GetSubname()].Add(*disc_obj);
+                AddObjToQualMap(qual, (*it)->GetSubname(), *disc_obj, m_Objs);
             }
         }
     }
@@ -175,48 +157,21 @@ DISCREPANCY_CASE(SOURCE_QUALS, CBioSource, eDisc | eOncaller | eSubmitter | eSma
             if ((*it)->CanGetForward()) {
                 ITERATE (list<CRef<CPCRPrimer> >, pr, (*it)->GetForward().Get()) {
                     if ((*pr)->CanGetName()) {
-                        const string& qual = "fwd-primer-name";
-                        if (m_Objs["all"][qual].Exist(*disc_obj)) {
-                            m_Objs["all"][qual]["*"].Add(*disc_obj, false); // duplicated
-                        }
-                        else {
-                            m_Objs["all"][qual].Add(*disc_obj, false);
-                        }
-                        m_Objs[qual][(*pr)->GetName()].Add(*disc_obj, false);
+                        AddObjToQualMap("fwd-primer-name", (*pr)->GetName(), *disc_obj, m_Objs);
                     }
+
                     if ((*pr)->CanGetSeq()) {
-                        const string& qual = "fwd-primer-seq";
-                        if (m_Objs["all"][qual].Exist(*disc_obj)) {
-                            m_Objs["all"][qual]["*"].Add(*disc_obj, false);
-                        }
-                        else {
-                            m_Objs["all"][qual].Add(*disc_obj, false);
-                        }
-                        m_Objs[qual][(*pr)->GetSeq()].Add(*disc_obj, false);
+                        AddObjToQualMap("fwd-primer-seq", (*pr)->GetSeq(), *disc_obj, m_Objs);
                     }
                 }
             }
             if ((*it)->CanGetReverse()) {
                 ITERATE (list<CRef<CPCRPrimer> >, pr, (*it)->GetReverse().Get()) {
                     if ((*pr)->CanGetName()) {
-                        const string& qual = "rev-primer-name";
-                        if (m_Objs["all"][qual].Exist(*disc_obj)) {
-                            m_Objs["all"][qual]["*"].Add(*disc_obj, false);
-                        }
-                        else {
-                            m_Objs["all"][qual].Add(*disc_obj, false);
-                        }
-                        m_Objs[qual][(*pr)->GetName()].Add(*disc_obj, false);
+                        AddObjToQualMap("rev-primer-name", (*pr)->GetName(), *disc_obj, m_Objs);
                     }
                     if ((*pr)->CanGetSeq()) {
-                        const string& qual = "rev-primer-seq";
-                        if (m_Objs["all"][qual].Exist(*disc_obj)) {
-                            m_Objs["all"][qual]["*"].Add(*disc_obj, false);
-                        }
-                        else {
-                            m_Objs["all"][qual].Add(*disc_obj, false);
-                        }
-                        m_Objs[qual][(*pr)->GetSeq()].Add(*disc_obj, false);
+                        AddObjToQualMap("rev-primer-seq", (*pr)->GetSeq(), *disc_obj, m_Objs);
                     }
                 }
             }
@@ -239,10 +194,72 @@ typedef map<const CReportObj*, CRef<CReportObj> > TReportObjPtrMap;
 typedef map<string, vector<CRef<CReportObj> > > TStringObjVectorMap;
 typedef map<string, TStringObjVectorMap > TStringStringObjVectorMap;
 
+static bool GetSubtypeStr(const string& qual, const string& val, const TReportObjectList& objs, string& subtype)
+{
+    bool unique = objs.size() == 1;
+    if (unique) {
+        subtype = "[n] source[s] [has] unique value[s] for " + qual;
+    }
+    else {
+        subtype = "[n] source[s] [has] " + qual + " = " + val;
+    }
+
+    return unique;
+}
+
+static void AddObjectToReport(const string& subtype, const string& qual, const string& val, bool unique, CReportObj& obj, CReportNode& report)
+{
+    if (unique) {
+        report[subtype]["1 source has " + qual + " = " + val].Add(obj);
+    }
+    else {
+        report[subtype].Add(obj);
+    }
+}
+
+static void AddObjsToReport(const string& diagnosis, CReportNode::TNodeMap& all_objs, const string& qual, CReportNode& report)
+{
+    NON_CONST_ITERATE(CReportNode::TNodeMap, objs, all_objs) {
+
+        string subtype;
+        bool unique = GetSubtypeStr(qual, objs->first, objs->second->GetObjects(), subtype);
+
+        ITERATE(TReportObjectList, obj, objs->second->GetObjects()) {
+
+            AddObjectToReport(subtype, qual, objs->first, unique, obj->GetNCObject(), report[diagnosis]);
+        }
+    }
+}
+
+static void AddObjsToReport(const string& diagnosis, const TStringObjVectorMap& all_objs, const string& qual, CReportNode& report)
+{
+    ITERATE(TStringObjVectorMap, objs, all_objs) {
+
+        string subtype;
+        bool unique = GetSubtypeStr(qual, objs->first, objs->second, subtype);
+
+        ITERATE(TReportObjectList, obj, objs->second) {
+
+            AddObjectToReport(subtype, qual, objs->first, unique, obj->GetNCObject(), report[diagnosis]);
+        }
+    }
+}
+
+static size_t GetNumOfObjects(CReportNode& root)
+{
+    size_t ret = root.GetObjects().size();
+
+    NON_CONST_ITERATE(CReportNode::TNodeMap, child, root.GetMap()) {
+        ret += GetNumOfObjects(*child->second);
+    }
+
+    return ret;
+}
 
 DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
 {
-    CReportNode report;
+    CReportNode report,
+                final_report;
     CReportNode::TNodeMap& the_map = m_Objs.GetMap();
     TReportObjectList& all = m_Objs["all"].GetObjects();
     size_t total = all.size();
@@ -283,37 +300,34 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
         diagnosis += uniq == num ? "all unique" : bins == 1 ? "all same" : "some duplicates";
         diagnosis += mul ? ", some multi)" : ")";
         report[diagnosis];
+
         if ((num != total || bins != 1) && (it->first == "collection-date" || it->first == "country" || it->first == "isolation-source" || it->first == "strain")) {
             report[diagnosis].Fatal();
         }
+
         if ((bins > capital.size() || (num < total && capital.size() == 1))
             && (it->first == "country" || it->first == "collection-date" || it->first == "isolation-source")) { // autofixable
             CRef<CSourseQualsAutofixData> fix;
             if (bins > capital.size()) { // capitalization
                 ITERATE (TStringStringObjVectorMap, cap, capital) {
-                    const TStringObjVectorMap& mmm = cap->second;
-                    if (mmm.size() < 2) {
-                        ITERATE(TStringObjVectorMap, x, mmm) {
-                            const vector<CRef<CReportObj> >& v = x->second;
-                            ITERATE(vector<CRef<CReportObj> >, o, v) {
-                                CRef<CReportObj> r = *o;
-                                report[diagnosis]["[n] source[s] [has] " + it->first + " = " + x->first].Add(*r);
-                            }
-                        }
+                    const TStringObjVectorMap& objs = cap->second;
+                    if (objs.size() < 2) {
+
+                        AddObjsToReport(diagnosis, objs, it->first, report);
                         continue;
                     }
                     size_t best_count = 0;
                     fix.Reset(new CSourseQualsAutofixData);
                     fix->m_Qualifier = it->first;
                     fix->m_User = context.GetUserData();
-                    ITERATE (TStringObjVectorMap, x, mmm) {
+                    ITERATE(TStringObjVectorMap, x, objs) {
                         fix->m_Choice.push_back(x->first);
                         if (best_count < x->second.size()) {
                             best_count = x->second.size();
                             fix->m_Value = x->first;
                         }
                     }
-                    ITERATE (TStringObjVectorMap, x, mmm) {
+                    ITERATE(TStringObjVectorMap, x, objs) {
                         const vector<CRef<CReportObj> >& v = x->second;
                         ITERATE (vector<CRef<CReportObj> >, o, v) {
                             report[diagnosis]["[n] source[s] [has] inconsistent capitalization: " + it->first + " (" + x->first + ")"].Add(*((const CDiscrepancyObject&)**o).Clone(true, CRef<CObject>(fix.GetNCPointer())));
@@ -322,14 +336,9 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
                 }
             }
             else {
-                NON_CONST_ITERATE(CReportNode::TNodeMap, jj, sub) {
-                    TReportObjectList& obj = jj->second->GetObjects();
-                    ITERATE(TReportObjectList, o, obj) {
-                        CRef<CReportObj> r = *o;
-                        report[diagnosis]["[n] source[s] [has] " + it->first + " = " + jj->first].Add(*r);
-                    }
-                }
+                AddObjsToReport(diagnosis, sub, it->first, report);
             }
+
             if (num < total && capital.size() == 1) { // some missing all same
                 if (num / (float)total >= context.GetSesameStreetCutoff()) { // autofixable
                     if (fix.IsNull()) {
@@ -345,20 +354,28 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
             }
         }
         else { // not autofixable
-            NON_CONST_ITERATE (CReportNode::TNodeMap, jj, sub) {
-                TReportObjectList& obj = jj->second->GetObjects();
-                ITERATE (TReportObjectList, o, obj) {
-                    CRef<CReportObj> r = *o;
-                    report[diagnosis]["[n] source[s] [has] " + it->first + " = " + jj->first].Add(*r);
-                }
-            }
+            AddObjsToReport(diagnosis, sub, it->first, report);
+
             ITERATE(TReportObjPtrMap, o, missing) {
                 CRef<CReportObj> r = o->second;
                 report[diagnosis]["[n] source[s] [has] missing " + it->first].Add(*r);
             }
         }
+
+        static const size_t MAX_NUM_STR_LEN = 20;
+        static const size_t CEILING_VALUE = 1000000000;
+
+        NON_CONST_ITERATE(CReportNode::TNodeMap, item, report[diagnosis].GetMap()) {
+
+            // It builds a key for map to be looked like "[*00000000000000000123*]<old_key>" to keep a required sort order
+            string num_of_objs = NStr::SizetToString(CEILING_VALUE - GetNumOfObjects(*item->second));
+            string leading_zeros(MAX_NUM_STR_LEN - num_of_objs.size(), '0');
+            string order_str = "[*" + leading_zeros + num_of_objs + "*]" + item->first;
+
+            final_report[diagnosis][order_str].Copy(item->second);
+        }
     }
-    m_ReportItems = report.Export(*this)->GetSubitems();
+    m_ReportItems = final_report.Export(*this)->GetSubitems();
 }
 
 
