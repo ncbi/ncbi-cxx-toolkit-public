@@ -6750,7 +6750,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "VSM<SVK>	s	Eastern Slovakian (Vychodoslovenske) Museum, Natural History Department",
 "VSRI	s	N.I. Vavilov All-Russian Scientific Research Instiutte of Plant Industry",
 "VSUH	s	Virginia State University, Life Sciences Department",
-"VT	s	University of Vermont, Botany Department",
+"VT	s	Pringle Herbarium, University of Vermont",
 "VTB	c	Banco de Celulas Humanas e Animais Laboratorio de Patologia Celular e Molecular",
 "VTCC	c	Vietnam Type Culture Collection, Center of Biotechnology",
 "VTT	c	VTT Biotechnology, Culture Collection",
