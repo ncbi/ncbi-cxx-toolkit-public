@@ -261,7 +261,17 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
         	}
         	m_GiList = gi_list;
             #elif defined(NCBI_INT8_GI)
-                m_GiList = v.GetBig_integer_list();
+		if(v.IsBig_integer_list()) {
+                	m_GiList = v.GetBig_integer_list();
+		}
+		else {
+			const list<int>& int_list = v.GetInteger_list();
+        		list<TGi> gi_list;
+        		ITERATE ( list<int>, it, int_list ) {
+        			gi_list.push_back(GI_FROM(int, *it));
+        		}
+        		m_GiList = gi_list;
+		}
 	    #else
             m_GiList = v.GetInteger_list();
 	    #endif
@@ -367,7 +377,17 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
         	}
         	m_NegativeGiList = gi_list;
             #elif defined(NCBI_INT8_GI)
-            	m_NegativeGiList = v.GetBig_integer_list();
+		if (v.IsBig_integer_list()) {
+            		m_NegativeGiList = v.GetBig_integer_list();
+		}
+		else {
+			const list<int>& int_list = v.GetInteger_list();
+        		list<TGi> gi_list;
+        		ITERATE ( list<int>, it, int_list ) {
+        			gi_list.push_back(GI_FROM(int, *it));
+        		}
+        		m_NegativeGiList = gi_list;
+		}
 	    #else
             m_NegativeGiList = v.GetInteger_list();
 	    #endif
