@@ -146,25 +146,7 @@ private:
 
 CTbl2AsnApp::CTbl2AsnApp(void)
 {
-#if 0
     SetVersionByBuild(1);
-#else
-    int major = 1;
-    int minor = 
-#if defined(NCBI_PRODUCTION_VER)
-       18
-#else
-       0;
-#endif
-    int build_num = 
-#if defined(NCBI_TEAMCITY_BUILD_NUMBER)
-        NCBI_TEAMCITY_BUILD_NUMBER;
-#else
-        0;
-#endif
-
-    SetVersion(CVersionInfo(major, minor, build_num));
-#endif
 }
 
 void CTbl2AsnApp::Init(void)

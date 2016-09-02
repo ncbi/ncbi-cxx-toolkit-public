@@ -431,6 +431,7 @@ protected:
     /// @sa GetVersion
     void SetVersion(const CVersionInfo& version);
     void SetVersion(const CVersionInfo& version, const SBuildInfo& build_info);
+    void SetVersionByBuild(int major);
 
     /// Set version data for the program.
     ///

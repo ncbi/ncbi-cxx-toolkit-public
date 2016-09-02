@@ -745,6 +745,24 @@ void CNcbiApplication::SetEnvironment(const string& name, const string& value)
     SetEnvironment().Set(name, value);
 }
 
+void CNcbiApplication::SetVersionByBuild(int major)
+{
+    int minor =
+#if defined(NCBI_PRODUCTION_VER)
+        18
+#else
+        0;
+#endif
+    int build_num =
+#if defined(NCBI_TEAMCITY_BUILD_NUMBER)
+        NCBI_TEAMCITY_BUILD_NUMBER;
+#else
+        0;
+#endif
+
+    SetVersion(CVersionInfo(major, minor, build_num));
+}
+
 
 void CNcbiApplication::SetVersion(const CVersionInfo& version)
 {
