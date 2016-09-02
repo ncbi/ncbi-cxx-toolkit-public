@@ -87,7 +87,7 @@ def create_new_tarball_name(platform, version):
         retval += "-ia32-linux"
     elif platform.startswith("Linux64"):
         retval += "-x64-linux"
-    elif platform == "IntelMAC":
+    elif platform.startswith("IntelMAC"):
         retval += "-x64-macosx"
     elif platform == "SunOSSparc":
         retval += "-sparc64-solaris"
@@ -96,6 +96,7 @@ def create_new_tarball_name(platform, version):
     else:
         raise RuntimeError("Unknown platform: " + platform)
     return retval
+
 
 def determine_platform():
     """ Determines the platform (as defined in prepare_release) for the current
