@@ -7928,11 +7928,42 @@ bool CValidError_feat::x_ShouldReportSuspiciousGeneXref(const CSeq_feat& feat, C
 }
 
 
+void CValidError_feat::ValidateGeneFeaturePair(const CSeq_feat& feat, const CSeq_feat& gene)
+{
+    bool bad_strand = s_LocationStrandsIncompatible(gene.GetLocation(), feat.GetLocation(), m_Scope);
+    if (bad_strand) {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_GeneXrefStrandProblem,
+                "Gene cross-reference is not on expected strand", feat);
+    }
+
+}
+
+
 // Check for redundant gene Xref
 // Do not call if feat is gene
 void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
 {
     if (feat.IsSetData() && feat.GetData().IsGene()) {
+        return;
+    }
+
+    // first, look for gene by feature id xref
+    bool has_gene_id_xref = false;
+    if (feat.IsSetXref()) {
+        ITERATE(CSeq_feat::TXref, xref, feat.GetXref()) {
+            if ((*xref)->IsSetId() && (*xref)->GetId().IsLocal()) {
+                CTSE_Handle::TSeq_feat_Handles gene_feats =
+                    m_Imp.GetTSE_Handle().GetFeaturesWithId(CSeqFeatData::eSubtype_gene, (*xref)->GetId().GetLocal());
+                if (gene_feats.size() > 0) {
+                    has_gene_id_xref = true;
+                    ITERATE(CTSE_Handle::TSeq_feat_Handles, gene, gene_feats) {
+                        ValidateGeneFeaturePair(feat, *(gene->GetSeq_feat()));
+                    }
+                }
+            }
+        }
+    }
+    if (has_gene_id_xref) {
         return;
     }
 
@@ -7971,19 +8002,13 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
             gene_it->GetData().GetGene().IsSetLocus() &&
             NStr::Equal(gene_xref->GetLocus(), gene_it->GetData().GetGene().GetLocus())) {
             num_match_by_locus++;
-            if (bad_strand) {
-                PostErr(eDiag_Warning, eErr_SEQ_FEAT_GeneXrefStrandProblem,
-                    "Gene cross-reference is not on expected strand", feat);
-            }
+            ValidateGeneFeaturePair(feat, *(gene_it->GetSeq_feat()));
         }
         if (gene_xref && gene_xref->IsSetLocus_tag() &&
             gene_it->GetData().GetGene().IsSetLocus_tag() &&
             NStr::Equal(gene_xref->GetLocus_tag(), gene_it->GetData().GetGene().GetLocus_tag())) {
             num_match_by_locus_tag++;
-            if (bad_strand) {
-                PostErr(eDiag_Warning, eErr_SEQ_FEAT_GeneXrefStrandProblem,
-                    "Gene cross-reference is not on expected strand", feat);
-            }
+            ValidateGeneFeaturePair(feat, *(gene_it->GetSeq_feat()));
             if ((!gene_xref->IsSetLocus() || NStr::IsBlank(gene_xref->GetLocus())) &&
                 gene_it->GetData().GetGene().IsSetLocus() &&
                 !NStr::IsBlank(gene_it->GetData().GetGene().GetLocus())) {
