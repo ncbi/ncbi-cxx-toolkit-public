@@ -256,6 +256,17 @@ static size_t GetNumOfObjects(CReportNode& root)
     return ret;
 }
 
+static size_t GetSortOrderId(const string& subitem, CReportNode& node)
+{
+    static const size_t CEILING_VALUE = 1000000000;
+
+    size_t ret = NStr::Find(subitem, "[has] missing") != NPOS ||
+                 NStr::Find(subitem, "isolate") != NPOS ?
+                 GetNumOfObjects(node) : CEILING_VALUE - GetNumOfObjects(node);
+
+    return ret;
+}
+
 DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
 {
     CReportNode report,
@@ -339,8 +350,8 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
                 AddObjsToReport(diagnosis, sub, it->first, report);
             }
 
-            if (num < total && capital.size() == 1) { // some missing all same
-                if (num / (float)total >= context.GetSesameStreetCutoff()) { // autofixable
+            if (num < total) { // some missing
+                if (capital.size() == 1 && num / (float)total >= context.GetSesameStreetCutoff()) { // all same and autofixable
                     if (fix.IsNull()) {
                         fix.Reset(new CSourseQualsAutofixData);
                         fix->m_Qualifier = it->first;
@@ -349,6 +360,12 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
                     }
                     ITERATE (TReportObjPtrMap, o, missing) {
                         report[diagnosis]["[n] source[s] [has] missing " + it->first + " (" + sub.begin()->first + ")"].Add(*((const CDiscrepancyObject&)*o->second).Clone(true, CRef<CObject>(fix.GetNCPointer())));
+                    }
+                }
+                else {
+                    ITERATE(TReportObjPtrMap, o, missing) {
+                        CRef<CReportObj> r = o->second;
+                        report[diagnosis]["[n] source[s] [has] missing " + it->first].Add(*r);
                     }
                 }
             }
@@ -363,16 +380,16 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
         }
 
         static const size_t MAX_NUM_STR_LEN = 20;
-        static const size_t CEILING_VALUE = 1000000000;
 
         NON_CONST_ITERATE(CReportNode::TNodeMap, item, report[diagnosis].GetMap()) {
 
             // It builds a key for map to be looked like "[*00000000000000000123*]<old_key>" to keep a required sort order
-            string num_of_objs = NStr::SizetToString(CEILING_VALUE - GetNumOfObjects(*item->second));
-            string leading_zeros(MAX_NUM_STR_LEN - num_of_objs.size(), '0');
-            string order_str = "[*" + leading_zeros + num_of_objs + "*]" + item->first;
+            size_t sort_order_id = GetSortOrderId(item->first, *item->second);
+            string sort_order_str = NStr::SizetToString(sort_order_id);
+            string leading_zeros(MAX_NUM_STR_LEN - sort_order_str.size(), '0');
+            string subitem = "[*" + leading_zeros + sort_order_str + "*]" + item->first;
 
-            final_report[diagnosis][order_str].Copy(item->second);
+            final_report[diagnosis][subitem].Copy(item->second);
         }
     }
     m_ReportItems = final_report.Export(*this)->GetSubitems();
