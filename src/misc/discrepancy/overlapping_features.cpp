@@ -357,6 +357,47 @@ DISCREPANCY_SUMMARIZE(MRNA_OVERLAPPING_PSEUDO_GENE)
 
 // MRNA_OVERLAPPING_PSEUDO_GENE
 
+static bool less(CConstRef<CSeq_feat> A, CConstRef<CSeq_feat> B)
+{
+    unsigned int a = A->GetLocation().GetStart(eExtreme_Positional);
+    unsigned int b = B->GetLocation().GetStart(eExtreme_Positional);
+    if (a != b) {
+        return a < b;
+    }
+    a = A->GetLocation().GetStop(eExtreme_Positional);
+    b = B->GetLocation().GetStop(eExtreme_Positional);
+    return a < b;
+}
+
+static const string kIntronExon = "[n] introns and exons are incorrectly positioned";
+
+static void CollectExonsIntrons(CReportNode& out, CDiscrepancyContext& context, vector<CConstRef<CSeq_feat> >& vex, vector<CConstRef<CSeq_feat> >& vint)
+{
+    sort(vex.begin(), vex.end(), less);
+    sort(vint.begin(), vint.end(), less);
+    vector<CConstRef<CSeq_feat> >::const_iterator Iex = vex.begin();
+    vector<CConstRef<CSeq_feat> >::const_iterator Iint = vint.begin();
+    while (Iex != vex.end() && Iint != vint.end()) {
+        const unsigned int e0 = (*Iex)->GetLocation().GetStart(eExtreme_Positional);
+        const unsigned int e1 = (*Iex)->GetLocation().GetStop(eExtreme_Positional);
+        const unsigned int i0 = (*Iint)->GetLocation().GetStart(eExtreme_Positional);
+        const unsigned int i1 = (*Iint)->GetLocation().GetStop(eExtreme_Positional);
+        if (i0 <= e0) {
+            if (i1 != e0 - 1) {
+                out[kIntronExon].Add(*context.NewDiscObj(*Iint)).Add(*context.NewDiscObj(*Iex));
+            }
+            ++Iint;
+        }
+        else /*if (e0 < i0)*/ {
+            if (e1 != i0 - 1) {
+                out[kIntronExon].Add(*context.NewDiscObj(*Iex)).Add(*context.NewDiscObj(*Iint));
+            }
+            ++Iex;
+        }
+    }
+}
+
+
 DISCREPANCY_CASE(EXON_INTRON_CONFLICT, COverlappingFeatures, eOncaller | eSubmitter | eSmart, "Exon and intron locations should abut (unless gene is trans-spliced)")
 {
     const vector<CConstRef<CSeq_feat> >& genes = context.FeatGenes();
@@ -364,6 +405,35 @@ DISCREPANCY_CASE(EXON_INTRON_CONFLICT, COverlappingFeatures, eOncaller | eSubmit
     const vector<CConstRef<CSeq_feat> >& introns = context.FeatIntrons();
     if (exons.empty() || introns.empty()) {
         return;
+    }
+    if (genes.empty()) {
+        vector<CConstRef<CSeq_feat> > vex;
+        vector<CConstRef<CSeq_feat> > vint;
+        vex.insert(vex.end(), exons.begin(), exons.end());
+        vint.insert(vint.end(), introns.begin(), introns.end());
+        CollectExonsIntrons(m_Objs, context, vex, vint);
+    }
+    else {
+        ITERATE (vector<CConstRef<CSeq_feat> >, gg, genes) {
+            if ((*gg)->CanGetExcept_text() && (*gg)->GetExcept_text() == "trans-splicing") {
+                continue;
+            }
+            const unsigned int g0 = (*gg)->GetLocation().GetStart(eExtreme_Positional);
+            const unsigned int g1 = (*gg)->GetLocation().GetStop(eExtreme_Positional);
+            vector<CConstRef<CSeq_feat> > vex;
+            vector<CConstRef<CSeq_feat> > vint;
+            ITERATE (vector<CConstRef<CSeq_feat> >, ff, exons) {
+                if ((*ff)->GetLocation().GetStart(eExtreme_Positional) <= g1 && (*ff)->GetLocation().GetStop(eExtreme_Positional) >= g0) {
+                    vex.push_back(*ff);
+                }
+            }
+            ITERATE (vector<CConstRef<CSeq_feat> >, ff, introns) {
+                if ((*ff)->GetLocation().GetStart(eExtreme_Positional) <= g1 && (*ff)->GetLocation().GetStop(eExtreme_Positional) >= g0) {
+                    vint.push_back(*ff);
+                }
+            }
+            CollectExonsIntrons(m_Objs, context, vex, vint);
+        }
     }
 }
 
