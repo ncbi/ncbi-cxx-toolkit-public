@@ -203,6 +203,7 @@ crypto needs3party $(Z_LIBS)
 ct_ftds64 needs tds_ftds64
 ct_ftds95 needs tds_ftds95
 ctransition needs xncbi
+ctutils needs3party $(LMDB_LIBS)
 ctutils needs3party $(SYBASE_DLLS)
 ctutils needs3party $(SYBASE_LIBS)
 ctutils needs3party $(VDB_LIBS)
@@ -609,6 +610,7 @@ linkos_utils needs xid_utils
 linkout needs xser
 linkoutdb needs seqdb
 linkoutdb needs sqlitewrapp
+lmdb needs3party $(ORIG_LIBS)
 ls_cli needs $(NCBILS2_LIB)
 ls_cli needs dbloadb
 lzo2 needs3party $(ORIG_LIBS)
@@ -748,6 +750,7 @@ ncbi_xreader needs id2
 ncbi_xreader needs xconnect
 ncbi_xreader_cache needs ncbi_xreader
 ncbi_xreader_gicache needs ncbi_xreader
+ncbi_xreader_gicache needs3party $(LMDB_LIBS)
 ncbi_xreader_id1 needs ncbi_xreader
 ncbi_xreader_id2 needs ncbi_xreader
 ncbi_xreader_pubseqos needs $(XCONNEXT)
