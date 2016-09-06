@@ -76,7 +76,7 @@ CGICacheReader::CGICacheReader(const TPluginManagerParamTree* params,
 CGICacheReader::~CGICacheReader()
 {
     CMutexGuard guard(m_Mutex);
-    GICache_LoadEnd();
+    GICache_ReadEnd();
 }
 
 
