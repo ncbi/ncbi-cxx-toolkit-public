@@ -62,6 +62,10 @@ CRef <CSeq_feat> CFindITSParser :: x_ParseLine(const CTempString &line, CSeq_ent
     NStr::Split(line,"\t",arr);
     if (arr.size() != 9)  
     {
+        if (arr.size() == 1)
+            msg = "No features found for: " + line;
+        else if (!arr.empty())
+            msg = "Malformed line: " + line;
         return null_mrna;
     }
     string accession = arr[0];
@@ -76,6 +80,7 @@ CRef <CSeq_feat> CFindITSParser :: x_ParseLine(const CTempString &line, CSeq_ent
     bsh = x_GetBioseqHandleFromIdGuesser(accession,tse);
     if (!bsh) 
     {
+        msg = "No bioseq found for: " + accession;
         return null_mrna;
     }
 
@@ -120,37 +125,44 @@ CRef <CSeq_feat> CFindITSParser :: x_ParseLine(const CTempString &line, CSeq_ent
     bool its1_span(false);
     bool its2_span(false);
    
+    vector<int> starts;
+    vector<int> stops;
+    vector<bool> spans;
+    int bioseq_length = bsh.GetBioseqLength();
+    GetSpan(ssu, starts, stops, spans);
+    GetSpan(its1, starts, stops, spans);
+    GetSpan(r58S, starts, stops, spans);
+    GetSpan(its2, starts, stops, spans);
+    GetSpan(lsu, starts, stops, spans);
+
+    its1_span = spans[1];
+    its2_span = spans[3];
+  
     vector<string> comments;
     if (ssu != "Not found")
     {
         comments.push_back("small subunit ribosomal RNA");
         ssu_present = true;
-        ssu_too_large = IsLengthTooLarge(ssu, 2200);
+        ssu_too_large = IsLengthTooLarge(ssu, 2200, 0, starts, stops, spans, bioseq_length);
     }
     if (its1 != "Not found")
     {
-        comments.push_back("internal transcribed spacer 1");
-        NStr::Split(its1,"-",arr);
-        its1_span =  (arr.size() == 2);
-        arr.clear();
+        comments.push_back("internal transcribed spacer 1");     
     }
     if (r58S != "Not found")
     {
         comments.push_back("5.8S ribosomal RNA");
-        r58S_too_large = IsLengthTooLarge(r58S, 200);
+        r58S_too_large = IsLengthTooLarge(r58S, 200, 2, starts, stops, spans, bioseq_length);
     }
     if (its2 != "Not found")
     {
-        comments.push_back("internal transcribed spacer 2");
-        NStr::Split(its2,"-",arr);
-        its2_span =  (arr.size() == 2);
-        arr.clear();
+        comments.push_back("internal transcribed spacer 2");      
     }
     if (lsu != "Not found")
     {
         comments.push_back("large subunit ribosomal RNA");
         lsu_present = true;
-        lsu_too_large = IsLengthTooLarge(lsu, 5100);
+        lsu_too_large = IsLengthTooLarge(lsu, 5100, 4, starts, stops, spans, bioseq_length);
     }
 
     if (its1_span && its2_span && (r58S == "Not found" || r58S == "No end" || r58S == "No start"))
@@ -196,14 +208,58 @@ CRef <CSeq_feat> CFindITSParser :: x_ParseLine(const CTempString &line, CSeq_ent
     return x_CreateMiscRna(comment,bsh);
 }
 
-bool CFindITSParser :: IsLengthTooLarge(const string& str, int max_length)
+void CFindITSParser :: GetSpan(const string& str, vector<int>& starts, vector<int>& stops, vector<bool>& spans)
 {
+    int start, stop;
+    bool span(false);
     vector<string> arr;
     NStr::Split(str,"-",arr);
     if (arr.size() == 2)
     {
-        int start = NStr::StringToInt(arr.front(), NStr::fConvErr_NoThrow);
-        int end = NStr::StringToInt(arr.back(), NStr::fConvErr_NoThrow);
+        span = true;
+        start =  NStr::StringToInt(arr.front(), NStr::fConvErr_NoThrow);
+        stop =  NStr::StringToInt(arr.back(), NStr::fConvErr_NoThrow);
+    }
+    starts.push_back(start);
+    stops.push_back(stop);
+    spans.push_back(span);
+}
+
+bool CFindITSParser :: IsLengthTooLarge(const string& str, int max_length, 
+                                        int i,
+                                        const vector<int>& starts,
+                                        const vector<int>& stops,
+                                        const vector<bool>& spans,
+                                        int bioseq_length)
+{
+    if (spans[i])
+    {
+        int start = starts[i];
+        int end = stops[i];
+        int length = end - start + 1;
+        return length > max_length;
+    }
+    if (str == "No end")
+    {
+        int start = 1;
+        for (int j = i - 1; j >= 0; j--)
+        {
+            if (spans[j])
+                start = stops[j] + 1;
+        }
+        int end = bioseq_length;
+        int length = end - start + 1;
+        return length > max_length;
+    }
+    if (str == "No start")
+    {
+        int start = 1;
+        int end = bioseq_length;
+        for (int j = i + 1; j < spans.size(); j++)
+        {
+            if (spans[j])
+                end = starts[j] - 1;
+        }
         int length = end - start + 1;
         return length > max_length;
     }

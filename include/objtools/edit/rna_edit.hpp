@@ -59,7 +59,12 @@ private:
     CRef <CSeq_feat> x_ParseLine(const CTempString &line, CSeq_entry_Handle tse, CBioseq_Handle &bsh, bool &negative, string &msg);
     CRef <CSeq_feat> x_CreateMiscRna(const string &comment, CBioseq_Handle bsh);
     CRef <CSeq_feat> x_CreateRRna(const string &comment, CBioseq_Handle bsh);
-    bool IsLengthTooLarge(const string& str, int max_length);
+    bool IsLengthTooLarge(const string& str, int max_length,  int i,
+                          const vector<int>& starts,
+                          const vector<int>& stops,
+                          const vector<bool>& spans,
+                          int bioseq_length);
+    void GetSpan(const string& str, vector<int>& starts, vector<int>& stops, vector<bool>& spans);
     CBioseq_Handle x_GetBioseqHandleFromIdGuesser(const string &id_str, objects::CSeq_entry_Handle tse);
     CNcbiIfstream m_istr;
     CRef<ILineReader> m_lr;
