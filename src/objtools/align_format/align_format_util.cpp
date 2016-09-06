@@ -88,6 +88,7 @@ const char k_PSymbol[ePMatrixSize+1] =
 "ARNDCQEGHILKMFPSTWYVBZX";
 
 CNcbiRegistry *CAlignFormatUtil::m_Reg = NULL;
+string CAlignFormatUtil::m_Protocol = "";
 bool  CAlignFormatUtil::m_geturl_debug_flag = false;
 auto_ptr<CGeneInfoFileReader> CAlignFormatUtil::m_GeneInfoReader;
 ///Get blast score information
@@ -1979,6 +1980,7 @@ static string s_MapLinkoutGenParam(string &url_link_tmpl,
     url_link = CAlignFormatUtil::MapTemplate(url_link,"lnk_displ",lnk_displ);        
     url_link = CAlignFormatUtil::MapTemplate(url_link,"lnk_tl_info",lnk_tl_info);        
     url_link = CAlignFormatUtil::MapTemplate(url_link,"label",label);    
+    url_link = CAlignFormatUtil::MapProtocol(url_link);
     return url_link;
 }
 static string s_MapDisabledLink(string lnk_displ)
@@ -2026,6 +2028,7 @@ static list<string> s_GetLinkoutUrl(int linkout,
         if(textLink) {
             url_link = CAlignFormatUtil::MapTemplate(kUnigeneDispl,"lnk",url_link);
         }        
+        url_link = CAlignFormatUtil::MapProtocol(url_link);
         linkout_list.push_back(url_link);
     }
     if ((linkout & eStructure) && cdd_rid != "" && cdd_rid != "0"){
@@ -2060,6 +2063,7 @@ static list<string> s_GetLinkoutUrl(int linkout,
         if(textLink) {
             url_link = CAlignFormatUtil::MapTemplate(kStructureDispl,"lnk",url_link);
         }        
+        url_link = CAlignFormatUtil::MapProtocol(url_link);
         linkout_list.push_back(url_link);
     }
     if (linkout & eGeo){
@@ -2076,6 +2080,7 @@ static list<string> s_GetLinkoutUrl(int linkout,
         if(textLink) {
             url_link = CAlignFormatUtil::MapTemplate(kGeoDispl,"lnk",url_link);
         }        
+        url_link = CAlignFormatUtil::MapProtocol(url_link);
         linkout_list.push_back(url_link);
     }
     if(linkout & eGene){
@@ -2100,7 +2105,8 @@ static list<string> s_GetLinkoutUrl(int linkout,
       } 
       if(textLink) {
             url_link = CAlignFormatUtil::MapTemplate(kGeneDispl,"lnk",url_link);
-      }        
+      } 
+      url_link = CAlignFormatUtil::MapProtocol(url_link);
       linkout_list.push_back(url_link);        
     }
 
@@ -2133,6 +2139,7 @@ static list<string> s_GetLinkoutUrl(int linkout,
             if(textLink) {
                 url_link = CAlignFormatUtil::MapTemplate(kMapviwerDispl,"lnk",url_link);
             }
+            url_link = CAlignFormatUtil::MapProtocol(url_link);
             linkout_list.push_back(url_link);
         }
     }
@@ -2149,6 +2156,7 @@ static list<string> s_GetLinkoutUrl(int linkout,
         if(textLink) {
             url_link = CAlignFormatUtil::MapTemplate(kMapviwerDispl,"lnk",url_link);
         }
+        url_link = CAlignFormatUtil::MapProtocol(url_link);
         linkout_list.push_back(url_link);        
     }
     //View Bioassays involving <accession
@@ -2167,6 +2175,7 @@ static list<string> s_GetLinkoutUrl(int linkout,
         if(textLink) {
             url_link = CAlignFormatUtil::MapTemplate(kBioAssayDispl,"lnk",url_link);
         }
+        url_link = CAlignFormatUtil::MapProtocol(url_link);
         linkout_list.push_back(url_link);        
     }
     else if (linkout & eBioAssay && !is_na) {
@@ -2185,6 +2194,7 @@ static list<string> s_GetLinkoutUrl(int linkout,
         if(textLink) {
             url_link = CAlignFormatUtil::MapTemplate(kBioAssayDispl,"lnk",url_link);
         }
+        url_link = CAlignFormatUtil::MapProtocol(url_link);
         linkout_list.push_back(url_link);        
     }
     if(linkout & eReprMicrobialGenomes){
@@ -2201,6 +2211,7 @@ static list<string> s_GetLinkoutUrl(int linkout,
         if(textLink) {
             url_link = CAlignFormatUtil::MapTemplate(kReprMicrobialGenomesDispl,"lnk",url_link);
         }
+        url_link = CAlignFormatUtil::MapProtocol(url_link);
         linkout_list.push_back(url_link);        
     }
     return linkout_list;
@@ -2831,6 +2842,42 @@ CRef<CSeq_align_set> CAlignFormatUtil::ExtractQuerySeqAlign(CRef<CSeq_align_set>
     return new_aln;
 }
 
+
+void CAlignFormatUtil::InitConfig()
+{
+    string l_cfg_file_name;
+    bool   l_dbg = CAlignFormatUtil::m_geturl_debug_flag;
+    if( getenv("GETURL_DEBUG") ) CAlignFormatUtil::m_geturl_debug_flag = l_dbg = true;
+    if( !m_Reg ) {
+        bool cfgExists = true;
+        string l_ncbi_env;
+        string l_fmtcfg_env;
+        if( NULL !=  getenv("NCBI")   ) l_ncbi_env = getenv("NCBI");
+        if( NULL !=  getenv("FMTCFG") ) l_fmtcfg_env = getenv("FMTCFG");
+        // config file name: value of FMTCFG or  default ( .ncbirc ) 
+        if( l_fmtcfg_env.empty()  ) 
+            l_cfg_file_name = ".ncbirc";
+        else 
+            l_cfg_file_name = l_fmtcfg_env;
+        // checkinf existance of configuration file
+        CFile  l_fchecker( l_cfg_file_name );
+        cfgExists = l_fchecker.Exists();
+        if( (!cfgExists) && (!l_ncbi_env.empty()) ) {
+            if( l_ncbi_env.rfind("/") != (l_ncbi_env.length() -1 ))  
+            l_ncbi_env.append("/");
+            l_cfg_file_name = l_ncbi_env + l_cfg_file_name;
+            CFile  l_fchecker2( l_cfg_file_name );
+            cfgExists = l_fchecker2.Exists();            
+        }    
+        if(cfgExists) {
+            CNcbiIfstream l_ConfigFile(l_cfg_file_name.c_str() );
+            m_Reg = new CNcbiRegistry(l_ConfigFile);
+            if( l_dbg ) fprintf(stderr,"REGISTRY: %s\n",l_cfg_file_name.c_str());        
+        }
+    }
+    return;
+}
+
 //
 // get given url from registry file or return corresponding kNAME
 // value as default to preserve compatibility.
@@ -2852,32 +2899,9 @@ string CAlignFormatUtil::GetURLFromRegistry( const string url_name, int index){
   string l_fmt_suffix = "_FORMAT";
   string l_host_port_suffix = "_HOST_PORT";
   string l_subst_pattern;
-  string l_cfg_file_name;
-  bool   l_dbg = CAlignFormatUtil::m_geturl_debug_flag;
-  if( getenv("GETURL_DEBUG") ) CAlignFormatUtil::m_geturl_debug_flag = l_dbg = true;
-
+  
   if( !m_Reg ) {
-    string l_ncbi_env;
-    string l_fmtcfg_env;
-    if( NULL !=  getenv("NCBI")   ) l_ncbi_env = getenv("NCBI");  
-    if( NULL !=  getenv("FMTCFG") ) l_fmtcfg_env = getenv("FMTCFG");
-    // config file name: value of FMTCFG or  default ( .ncbirc ) 
-    if( l_fmtcfg_env.empty()  ) 
-      l_cfg_file_name = ".ncbirc";
-    else 
-      l_cfg_file_name = l_fmtcfg_env;
-    // checkinf existance of configuration file
-    CFile  l_fchecker( l_cfg_file_name );
-    if( (!l_fchecker.Exists()) && (!l_ncbi_env.empty()) ) {
-      if( l_ncbi_env.rfind("/") != (l_ncbi_env.length() -1 ))  
-    l_ncbi_env.append("/");
-      l_cfg_file_name = l_ncbi_env + l_cfg_file_name;
-      CFile  l_fchecker2( l_cfg_file_name );
-      if( !l_fchecker2.Exists() ) return GetURLDefault(url_name,index); // can't find  .ncbrc file
-    }    
-    CNcbiIfstream l_ConfigFile(l_cfg_file_name.c_str() );
-    m_Reg = new CNcbiRegistry(l_ConfigFile);
-    if( l_dbg ) fprintf(stderr,"REGISTRY: %s\n",l_cfg_file_name.c_str());
+    InitConfig();    
   }
   if( !m_Reg ) return GetURLDefault(url_name,index); // can't read .ncbrc file
   string l_base_dir = m_Reg->Get(l_secion_name, "INCLUDE_BASE_DIR");
@@ -2942,7 +2966,10 @@ string  CAlignFormatUtil::GetURLDefault( const string url_name, int index) {
   TTagUrlMap::const_iterator url_it;
   if( index >= 0 ) search_name += "_" + NStr::IntToString( index); // actual name for index value is NAME_{index}
 
-  if( (url_it = sm_TagUrlMap.find( search_name ) ) != sm_TagUrlMap.end()) return url_it->second;
+  if( (url_it = sm_TagUrlMap.find( search_name ) ) != sm_TagUrlMap.end()) {
+      string url_link = CAlignFormatUtil::MapProtocol(url_it->second);
+      return url_link;
+  }
 
   string error_msg = "CAlignFormatUtil::GetURLDefault:no_defualt_for"+url_name;
   if( index != -1 ) error_msg += "_index_"+ NStr::IntToString( index ); 
@@ -3050,6 +3077,8 @@ string CAlignFormatUtil::AddSpaces(string paramVal, unsigned int maxParamValLeng
     return paramVal;
 }
 
+
+
 string CAlignFormatUtil::GetProtocol()
 {
     CNcbiIfstream  config_file(".ncbirc");
@@ -3061,6 +3090,23 @@ string CAlignFormatUtil::GetProtocol()
         }
     }        
     return httpProt;
+}
+
+/*
+if(no config file) protocol = "https:"
+if(no "BLASTFMTUTIL","PROTOCOL" entry in config file) protocol = "https:"
+if(there is entry in config) protocol = entry which could be blank = ""
+*/
+string CAlignFormatUtil::MapProtocol(string url_link)
+{
+    if(m_Protocol.empty()){
+        if(!m_Reg) {
+            InitConfig();
+        }   
+        m_Protocol = (m_Reg && m_Reg->HasEntry("BLASTFMTUTIL","PROTOCOL")) ? m_Protocol = m_Reg->Get("BLASTFMTUTIL","PROTOCOL") : "https:";        
+    }
+    url_link = CAlignFormatUtil::MapTemplate(url_link,"protocol",m_Protocol);
+    return url_link;
 }
 
 static string s_MapCommonUrlParams(string urlTemplate, CAlignFormatUtil::SSeqURLInfo *seqUrlInfo)
@@ -3079,6 +3125,7 @@ static string s_MapCommonUrlParams(string urlTemplate, CAlignFormatUtil::SSeqURL
     url_link = CAlignFormatUtil::MapTemplate(url_link,"log",logstr_moltype + logstr_location);
     url_link = CAlignFormatUtil::MapTemplate(url_link,"blast_rank",seqUrlInfo->blast_rank);
     url_link = CAlignFormatUtil::MapTemplate(url_link,"rid",seqUrlInfo->rid);     
+    url_link = CAlignFormatUtil::MapProtocol(url_link);
     return url_link;
 }
 
@@ -3176,18 +3223,11 @@ string CAlignFormatUtil::GetIDUrlGen(SSeqURLInfo *seqUrlInfo,const CBioseq::TId*
         string l_EntrezUrl = CAlignFormatUtil::GetURLFromRegistry(entrezTag);
         url_link = s_MapCommonUrlParams(l_EntrezUrl, seqUrlInfo);
         
-        if(!seqUrlInfo->useTemplates) {
-            string httpProt = kDefaultProtocol;
-            if(m_Reg && !m_Reg->Empty()) {
-                if(m_Reg->HasEntry("BLASTFMTUTIL","PROTOCOL")) {
-                    httpProt = m_Reg->Get("BLASTFMTUTIL","PROTOCOL");
-                }
-            }                    
+        if(!seqUrlInfo->useTemplates) {            
 			url_link = CAlignFormatUtil::MapTemplate(url_link,"acc",seqUrlInfo->accession);                 
             temp_class_info = (!seqUrlInfo->defline.empty())? CAlignFormatUtil::MapTemplate(temp_class_info,"defline",NStr::JavaScriptEncode(seqUrlInfo->defline)):temp_class_info;
             url_link = CAlignFormatUtil::MapTemplate(url_link,"cssInf",(seqUrlInfo->addCssInfo) ? temp_class_info.c_str() : "");
-            url_link = CAlignFormatUtil::MapTemplate(url_link,"target",seqUrlInfo->new_win ? "TARGET=\"EntrezView\"" : "");
-            url_link = CAlignFormatUtil::MapTemplate(url_link,"protocol",httpProt);
+            url_link = CAlignFormatUtil::MapTemplate(url_link,"target",seqUrlInfo->new_win ? "TARGET=\"EntrezView\"" : "");            
         }	           
             
     } else {//seqid general, dbtag specified		
@@ -3223,6 +3263,7 @@ string CAlignFormatUtil::GetIDUrlGen(SSeqURLInfo *seqUrlInfo,const CBioseq::TId*
             url_link = CAlignFormatUtil::MapTemplate(url_link,"target",seqUrlInfo->new_win ? "TARGET=\"EntrezView\"" : "");
         }
     }
+    url_link = CAlignFormatUtil::MapProtocol(url_link);
     seqUrlInfo->seqUrl = url_link;
 	return url_link;
 }
@@ -3332,6 +3373,7 @@ string CAlignFormatUtil::GetFullIDLink(SSeqURLInfo *seqUrlInfo,const CBioseq::TI
 static string s_MapCustomLink(string linkUrl,string reportType,string accession, string linkText, string linktrg, string linkTitle = kCustomLinkTitle,string linkCls = "")
 {
     string link = CAlignFormatUtil::MapTemplate(kCustomLinkTemplate,"custom_url",linkUrl);         
+    link = CAlignFormatUtil::MapProtocol(link);
     link = CAlignFormatUtil::MapTemplate(link,"custom_title",linkTitle);     
     link = CAlignFormatUtil::MapTemplate(link,"custom_report_type",reportType); 
     link = CAlignFormatUtil::MapTemplate(link,"seqid",accession); 
