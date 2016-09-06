@@ -447,7 +447,6 @@ gpipe_kpi needs xmlwrapp
 gpipe_meta_access needs xncbi
 gpipe_object_edit needs xalgoalignutil
 gpipe_objutil needs $(DATA_LOADERS_UTIL_LIB)
-gpipe_objutil needs $(DATA_LOADERS_UTIL_LIBS)
 gpipe_objutil needs $(OBJEDIT_LIBS)
 gpipe_objutil needs $(OBJMGR_LIBS)
 gpipe_objutil needs $(XFORMAT_LIBS)
@@ -455,6 +454,7 @@ gpipe_objutil needs gpipe_attr
 gpipe_objutil needs taxon1
 gpipe_objutil needs writedb
 gpipe_objutil needs xalnmgr
+gpipe_objutil needs3party $(DATA_LOADERS_UTIL_LIBS)
 gpipe_objutil needs3party $(UUID_LIBS)
 gpipe_prodigal needs bacterial_pipeline_proc
 gpipe_property needs gpipe_common
