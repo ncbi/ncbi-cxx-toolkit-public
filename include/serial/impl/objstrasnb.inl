@@ -81,6 +81,13 @@ CAsnBinaryDefs::GetTagConstructed(TByte tag_byte)
     return ETagConstructed(tag_byte & eTagConstructedMask);
 }
 
+inline
+bool
+CAsnBinaryDefs::IsTagConstructed(TByte tag_byte)
+{
+    return (tag_byte & eTagConstructedMask) != ePrimitive;
+}
+
 inline CAsnBinaryDefs::ETagClass
 CAsnBinaryDefs::GetTagClass(CAsnBinaryDefs::TByte tag_byte)
 {

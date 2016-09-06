@@ -278,7 +278,7 @@ void CObjectIStreamAsnBinary::ExpectIndefiniteLength(void)
 {
     // indefinite length allowed only for constructed tags
 #if CHECK_INSTREAM_LIMITS
-    if ( !GetTagConstructed(m_Input.PeekChar()) )
+    if ( !IsTagConstructed(m_Input.PeekChar()) )
         ThrowError(fIllegalCall, "illegal ExpectIndefiniteLength call");
     _ASSERT(m_CurrentTagLimit == 0);
     // save tag limit

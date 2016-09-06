@@ -146,7 +146,7 @@ void CObjectOStreamAsnBinary::SetTagLength(size_t length)
         (m_CurrentTagLimit != 0 && limit > m_CurrentTagLimit) )
         ThrowError(fIllegalCall, "tag will overflow enclosing tag");
     m_CurrentTagLimit = limit;
-    if ( GetTagConstructed(m_CurrentTagCode) ) // constructed
+    if ( IsTagConstructed(m_CurrentTagCode) ) // constructed
         m_CurrentTagState = eTagStart;
     else
         m_CurrentTagState = eData;
@@ -180,7 +180,7 @@ void CObjectOStreamAsnBinary::WriteByte(Uint1 byte)
                 EndTag();
         }
         else if ( byte == 0x80 ) {
-            if ( !GetTagConstructed(m_CurrentTagCode) ) {
+            if ( !IsTagConstructed(m_CurrentTagCode) ) {
                 ThrowError(fIllegalCall,
                            "cannot use indefinite form for primitive tag");
             }

@@ -1079,7 +1079,7 @@ CObjectIStreamAsnBinary::BeginClassMember(const CClassTypeInfo* classType)
             m_SkipNextTag = false;
             return index;
         }
-        bool need_eoc = GetTagConstructed(first_tag_byte) != ePrimitive;
+        bool need_eoc = IsTagConstructed(first_tag_byte);
         if (need_eoc) {
             ExpectIndefiniteLength();
         }
@@ -1133,7 +1133,7 @@ CObjectIStreamAsnBinary::BeginClassMember(const CClassTypeInfo* classType,
             m_SkipNextTag = false;
             return index;
         }
-        bool need_eoc = GetTagConstructed(first_tag_byte) != ePrimitive;
+        bool need_eoc = IsTagConstructed(first_tag_byte);
         if (need_eoc) {
             ExpectIndefiniteLength();
         }
@@ -1316,7 +1316,7 @@ CObjectIStreamAsnBinary::BeginChoiceVariant(const CChoiceTypeInfo* choiceType)
             m_SkipNextTag = false;
             return index;
         }
-        bool need_eoc = GetTagConstructed(first_tag_byte) != ePrimitive;
+        bool need_eoc = IsTagConstructed(first_tag_byte);
         if (need_eoc) {
             ExpectIndefiniteLength();
         }
@@ -1502,6 +1502,7 @@ void CObjectIStreamAsnBinary::ReadAnyContentObject(CAnyContentObject& )
 
 void CObjectIStreamAsnBinary::SkipAnyContent(void)
 {
+#if 0
     TByte byte = PeekAnyTagFirstByte();
     if ( GetTagConstructed(byte) && PeekIndefiniteLength() ) {
         ExpectIndefiniteLength();
@@ -1537,6 +1538,29 @@ void CObjectIStreamAsnBinary::SkipAnyContent(void)
             }
         }
     }
+#else
+    int depth = 0;
+    do {
+        if ( depth != 0 && !HaveMoreElements() ) {
+            ExpectEndOfContent();
+            --depth;
+        }
+        else {
+            TByte byte = PeekAnyTagFirstByte();
+            if ( IsTagConstructed(byte) && PeekIndefiniteLength() ) {
+                ExpectIndefiniteLength();
+                ++depth;
+            }
+            else {
+                size_t length = ReadLength();
+                if (length) {
+                    SkipBytes(length);
+                }
+                EndOfTag();
+            }
+        }
+    } while (depth != 0);
+#endif
 }
 
 set<TTypeInfo>
@@ -1624,7 +1648,7 @@ void CObjectIStreamAsnBinary::GetTagPattern(vector<int>& pattern, size_t max_len
         pattern.push_back((int)(byte & CAsnBinaryDefs::eTagValueMask));
     }
 
-    if ( GetTagConstructed(byte) && PeekIndefiniteLength() ) {
+    if ( IsTagConstructed(byte) && PeekIndefiniteLength() ) {
         ExpectIndefiniteLength();
     }
     else {
@@ -1663,7 +1687,7 @@ void CObjectIStreamAsnBinary::GetTagPattern(vector<int>& pattern, size_t max_len
             } else {
                 memtag = byte;
             }
-            if ( GetTagConstructed(byte) && PeekIndefiniteLength() ) {
+            if ( IsTagConstructed(byte) && PeekIndefiniteLength() ) {
                 ExpectIndefiniteLength();
                 ++depth;
             }
@@ -2004,7 +2028,7 @@ bool CObjectIStreamAsnBinary::SkipRealValue(void)
          PeekTagByte(1) == eZeroLengthByte )
         return false;
     TByte byte = PeekAnyTagFirstByte();
-    if ( GetTagConstructed(byte) ) {
+    if ( IsTagConstructed(byte) ) {
         // constructed
         ExpectIndefiniteLength();
         while ( SkipRealValue() )

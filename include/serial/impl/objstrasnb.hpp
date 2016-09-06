@@ -161,6 +161,7 @@ public:
     static ETagValue GetTagValue(TByte byte);
     static ETagValue StringTag(EStringType type);
     static ETagConstructed GetTagConstructed(TByte byte);
+    static bool IsTagConstructed(TByte byte);
     static ETagClass GetTagClass(TByte byte);
     static TByte GetTagClassAndConstructed(TByte byte);
 };
