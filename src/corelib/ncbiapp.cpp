@@ -39,7 +39,9 @@
 #include <corelib/syslog.hpp>
 #include <corelib/error_codes.hpp>
 #include <corelib/ncbi_safe_static.hpp>
-#include <common/ncbi_build_ver.h>
+#ifdef HAVE_COMMON_NCBI_BUILD_VER_H
+#  include <common/ncbi_build_ver.h>
+#endif
 #include "ncbisys.hpp"
 
 #if defined(NCBI_OS_MSWIN)
