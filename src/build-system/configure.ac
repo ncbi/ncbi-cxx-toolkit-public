@@ -841,6 +841,17 @@ else
    NCBI_SUBVERSION_REVISION=0
 fi
 
+AC_MSG_CHECKING([NCBI stable components' version])
+scver=`svn info "$proj_topdir" 2>/dev/null |
+ sed -ne ['s,^URL: .*/production/components/[^/]*/\([1-9][0-9]*\)\..*,\1,p']`
+if test -n "$scver"; then
+   AC_MSG_RESULT($scver)
+   NCBI_SC_VERSION=$scver
+else
+   AC_MSG_RESULT(unknown)
+   NCBI_SC_VERSION=0
+fi
+
 AC_DEFINE(HAVE_COMMON_NCBI_BUILD_VER_H, 1,
    [Define to 1 if you have the <common/ncbi_build_ver.h> header file.])
 
@@ -8198,6 +8209,7 @@ AC_SUBST(NCBI_PLATFORM_BITS)
 
 AC_SUBST(NCBI_TEAMCITY_BUILD_NUMBER)
 AC_SUBST(NCBI_SUBVERSION_REVISION)
+AC_SUBST(NCBI_SC_VERSION)
 
 #############################################################################
 ### Create output files and do some post-configuration

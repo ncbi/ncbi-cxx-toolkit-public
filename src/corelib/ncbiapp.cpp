@@ -39,6 +39,7 @@
 #include <corelib/syslog.hpp>
 #include <corelib/error_codes.hpp>
 #include <corelib/ncbi_safe_static.hpp>
+#include <common/ncbi_build_ver.h>
 #include "ncbisys.hpp"
 
 #if defined(NCBI_OS_MSWIN)
@@ -748,8 +749,8 @@ void CNcbiApplication::SetEnvironment(const string& name, const string& value)
 void CNcbiApplication::SetVersionByBuild(int major)
 {
     int minor =
-#if defined(NCBI_PRODUCTION_VER)
-        18
+#if defined(NCBI_SC_VERSION)
+        NCBI_SC_VERSION;
 #else
         0;
 #endif
