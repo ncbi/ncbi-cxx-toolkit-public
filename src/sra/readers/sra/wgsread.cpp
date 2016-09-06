@@ -3105,7 +3105,7 @@ static const TSeqPos kChunk2naSize = 1<<17; // 128Ki bases or 32KiB
 
 // min size of segment to split
 static const TSeqPos kSplit4naSize = kChunk4naSize+kChunk4naSize/4;
-static const TSeqPos kSplit2naSize = kChunk2naSize+kChunk2naSize/4;
+static const TSeqPos kSplit2naSize = kChunk2naSize; //+kChunk2naSize/4;
 
 // end of delta control constants
 /////////////////////////////////////////////////////////////////////////////
