@@ -505,19 +505,19 @@ CAlignFormatUtil::GetSeqIdString(const list<CRef<CSeq_id> > & ids, bool believe_
     string all_id_str = NcbiEmptyString;
     CRef<CSeq_id> wid = FindBestChoice(ids, CSeq_id::WorstRank);
 
-    CMetaRegistry::SEntry sentry =
-        CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
-
-    bool use_long_seqids = sentry.registry ?
-        sentry.registry->HasEntry("BLAST", "LONG_SEQID") : false;
-
-    if (!use_long_seqids) {
-        return GetBareId(*wid);
-    }
-
     if (wid && (wid->Which()!= CSeq_id::e_Local || believe_local_id)){
         TGi gi = FindGi(ids);
-        if (strncmp(wid->AsFastaString().c_str(), "lcl|", 4) == 0) {
+
+        CMetaRegistry::SEntry sentry =
+            CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
+
+        bool use_long_seqids = sentry.registry ?
+            sentry.registry->HasEntry("BLAST", "LONG_SEQID") : false;
+        if (!use_long_seqids) {
+
+            all_id_str = GetBareId(*wid);
+        }
+        else if (strncmp(wid->AsFastaString().c_str(), "lcl|", 4) == 0) {
             if(gi == ZERO_GI){
                 all_id_str =  wid->AsFastaString().substr(4);
             } else {
