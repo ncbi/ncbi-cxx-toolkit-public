@@ -1709,7 +1709,7 @@ x_GetFastaReaderDeflines(const CBioseq                  & bioseq,
                      // nucleotide ids.
                      for (auto& it: seqids) {
                          CSeq_id::EAccessionInfo info = it->IdentifyAccession();
-                         if (!it->IsLocal() &&
+                         if (!it->IsLocal() && !it->IsGi() &&
                              bioseq.IsAa() == !!(info & CSeq_id::fAcc_nuc)) {
 
                              string label = it->GetSeqIdString();

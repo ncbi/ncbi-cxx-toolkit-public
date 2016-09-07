@@ -812,7 +812,7 @@ bool CBuildDatabase::AddSequences(IBioseqSource & src, bool add_pig)
                 CBioseq* bss = const_cast<CBioseq*>(bs.GetNonNullPointer());
                 for (auto& it: bss->SetId()) {
                     CSeq_id::EAccessionInfo info = it->IdentifyAccession();
-                    if (!it->IsLocal() &&
+                    if (!it->IsLocal() && !it->IsGi() &&
                         m_IsProtein == !!(info & CSeq_id::fAcc_nuc)) {
 
                         string label = it->GetSeqIdString();
