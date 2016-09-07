@@ -1870,11 +1870,11 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
 
             need_client_update = true;
         } catch (const exception &  ex) {
-            ERR_POST("Error retrieving client name and "
-                     "client namespace from a remote storage: " << ex);
+            ERR_POST("Error retrieving user name and "
+                     "user namespace from a remote storage: " << ex);
         } catch (...) {
-            ERR_POST("Unknown error retrieving client name and "
-                     "client namespace from a remote storage");
+            ERR_POST("Unknown error retrieving user name and "
+                     "user namespace from a remote storage");
         }
     }
 
