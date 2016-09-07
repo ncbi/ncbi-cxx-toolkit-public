@@ -419,7 +419,7 @@ void CValidError_imp::ValidatePubArticle
                     }
                 }
                 
-                if ( !no_pages ) {
+                if (!no_pages && !is_electronic_journal) {
                     x_ValidatePages(imp.GetPages(), obj, ctx);
                 }
                 if (imp.IsSetDate() && imp.GetDate().Which() != CDate::e_not_set) {
