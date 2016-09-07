@@ -1569,12 +1569,17 @@ int CGridCommandLineInterfaceApp::Run()
                 m_Opts.command = opt_value;
                 break;
             case eInputFile:
-                input_file.open(opt_value, ifstream::binary);
-                if (input_file.fail()) {
-                    fprintf(stderr, "%s: %s\n", opt_value, strerror(errno));
-                    return 2;
+                // If not special value for stdin
+                if (strcmp(opt_value, "-")) {
+                    input_file.open(opt_value, ifstream::binary);
+                    if (input_file.fail()) {
+                        fprintf(stderr, "%s: %s\n", opt_value, strerror(errno));
+                        return 2;
+                    }
+                    m_Opts.input_stream = &input_file;
+                } else {
+                    ReadFromCin();
                 }
-                m_Opts.input_stream = &input_file;
                 break;
             case eRemoteAppArgs:
                 m_Opts.remote_app_args = opt_value;
@@ -1644,10 +1649,7 @@ int CGridCommandLineInterfaceApp::Run()
             m_Opts.auth = GRID_APP_NAME;
 
         if (IsOptionAcceptedButNotSet(eInputFile)) {
-            m_Opts.input_stream = &NcbiCin;
-#ifdef WIN32
-            setmode(fileno(stdin), O_BINARY);
-#endif
+            ReadFromCin();
         } else if (IsOptionSet(eInput) && IsOptionSet(eInputFile)) {
             fprintf(stderr, GRID_APP_NAME ": options '--" INPUT_FILE_OPTION
                 "' and '--" INPUT_OPTION "' are mutually exclusive.\n");
@@ -1822,6 +1824,14 @@ bool CGridCommandLineInterfaceApp::ParseLoginToken(const string& token)
     MarkOptionAsSet(eClientSession);
 
     return true;
+}
+
+void CGridCommandLineInterfaceApp::ReadFromCin()
+{
+    m_Opts.input_stream = &NcbiCin;
+#ifdef WIN32
+    setmode(fileno(stdin), O_BINARY);
+#endif
 }
 
 int main(int argc, const char* argv[])

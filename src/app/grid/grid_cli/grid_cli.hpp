@@ -592,6 +592,8 @@ private:
 
     int Automation_PipeServer();
     int Automation_DebugConsole();
+
+    void ReadFromCin();
 };
 
 END_NCBI_SCOPE
