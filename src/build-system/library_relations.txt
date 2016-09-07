@@ -425,6 +425,8 @@ gpipe_common needs xregexp
 gpipe_curl needs xncbi
 gpipe_curl needs3party $(CURL_LIBS)
 gpipe_dateutil needs xregexp
+gpipe_fileutils needs $(COMPRESS_LIBS)
+gpipe_fileutils needs xutil
 gpipe_ftp needs $(GPIPE_GENCOLL_LIBS)
 gpipe_ftp needs gpinit
 gpipe_ftp needs gpipe_alnutil
