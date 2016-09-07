@@ -452,9 +452,6 @@ struct SOptionDefinition {
     {OPT_DEF(eSwitch, eNoServerCheck),
         "no-server-check", "Disable server check.", {-1}},
 
-    {OPT_DEF(eSwitch, eStdIn),
-        STDIN_OPTION, "Read input from stdin.", {-1}},
-
     /* Options available only with --extended-cli go below. */
 
     {OPT_DEF(eSwitch, eExtendedOptionDelimiter), NULL, NULL, {-1}},
@@ -746,7 +743,11 @@ struct SCommandDefinition {
         "In single job submission mode, unless the '--" INPUT_FILE_OPTION
         "' or '--" INPUT_OPTION "' options are given, job input is read "
         "from the standard input stream, and the rest of attributes are "
-        "taken from their respective command line options. "
+        "taken from their respective command line options. The '--"
+        REMOTE_APP_ARGS_OPTION "' option creates a job for processing "
+        "by the 'remote_app' worker node, in which case either '--"
+        INPUT_OPTION "' or '--" INPUT_FILE_OPTION "' option can be used to "
+        "define the standard input stream of the remote_app job.\n\n"
         "If the '--" WAIT_TIMEOUT_OPTION "' option is given in single "
         "job submission mode, " GRID_APP_NAME " will wait for the job "
         "to terminate, and if the job terminates within the specified "
@@ -787,7 +788,7 @@ struct SCommandDefinition {
         "(primarily for testing or debugging). This mode is enabled by the "
         "'--" JOB_INPUT_DIR_OPTION "' option, which defines the target "
         "directory where input data will be saved.",
-        {eNetSchedule, eQueue, eBatch, eNetCache, eInput, eInputFile, eStdIn,
+        {eNetSchedule, eQueue, eBatch, eNetCache, eInput, eInputFile,
             eRemoteAppArgs, eJobGroup, eAffinity, eExclusiveJob, eOutputFile,
             eWaitTimeout, eLoginToken, eAuth, eClientNode, eClientSession,
             ALLOW_XSITE_CONN_IF_SUPPORTED eDumpNSNotifications,
