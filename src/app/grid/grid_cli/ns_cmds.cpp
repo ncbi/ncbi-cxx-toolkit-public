@@ -458,7 +458,7 @@ void CGridCommandLineInterfaceApp::x_LoadJobInput(
         size_t max_embedded_input_size, CNcbiOstream &job_input_ostream)
 {
     if (IsOptionSet(eRemoteAppArgs)) {
-        if (!IsOptionSet(eInput))
+        if (IsOptionSet(eInputFile) || IsOptionSet(eStdIn))
             PrepareRemoteAppJobInput(max_embedded_input_size,
                     m_Opts.remote_app_args,
                     *m_Opts.input_stream, job_input_ostream);

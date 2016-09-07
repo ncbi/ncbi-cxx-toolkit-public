@@ -124,6 +124,7 @@
 #define FT_API_KEY_OPTION "ft-api-key"
 #define FT_TOKEN_OPTION "ft-token"
 #define DIRECT_MODE_OPTION "direct"
+#define STDIN_OPTION "stdin"
 #define ATTR_VALUE_ARG "ATTR_VALUE"
 
 #define LOGIN_COMMAND "login"
@@ -259,6 +260,7 @@ enum EOption {
     eOptionalNCID,
     eDirectMode,
     eNoServerCheck,
+    eStdIn,
 
     eExtendedOptionDelimiter,
 
