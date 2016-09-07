@@ -3099,7 +3099,9 @@ BOOST_AUTO_TEST_CASE(ReadBareIDNucleotide)
         {"NM_176670.2", CSeq_id::e_Other},
         {"ref|NM_175822.2", CSeq_id::e_Other},
         {"SRR1272186", CSeq_id::e_Local},
-        {"gnl|SRA|SRR342213.1", CSeq_id::e_General}};
+        {"gnl|SRA|SRR342213.1", CSeq_id::e_General},
+        {"gi|971149218", CSeq_id::e_Gi},
+        {"emb|LO018508.1", CSeq_id::e_Embl}};
 
     for (auto it: fasta_ids) {
         ostr << ">" << it.first << endl << sequence << endl;
