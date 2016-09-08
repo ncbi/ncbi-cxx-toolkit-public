@@ -1519,6 +1519,7 @@ CConstRef<CSeq_feat> CDeflineGenerator::x_GetLongestProtein (
     return CConstRef<CSeq_feat> ();
 }
 
+// m_LocalAnnotsOnly test is unnecessary because feature iterator is built on local features only
 CConstRef<CGene_ref> CDeflineGenerator::x_GetGeneRefViaCDS (
     const CMappedFeat& mapped_cds)
 
@@ -1794,9 +1795,8 @@ void CDeflineGenerator::x_SetTitleFromProtein (
                     m_MainTitle.erase (offset);
                 }
             }
-            if ((NStr::EqualNocase (m_MainTitle, "hypothetical protein")  ||
-                 NStr::EqualNocase (m_MainTitle, "uncharacterized protein"))
-                &&  !m_LocalAnnotsOnly ) {
+            if (NStr::EqualNocase (m_MainTitle, "hypothetical protein")  ||
+                 NStr::EqualNocase (m_MainTitle, "uncharacterized protein")) {
                 gene = x_GetGeneRefViaCDS (mapped_cds);
                 if (gene) {
                     const CGene_ref& grp = *gene;
@@ -1823,7 +1823,7 @@ void CDeflineGenerator::x_SetTitleFromProtein (
         }
     }
 
-    if (m_MainTitle.empty()  &&  !m_LocalAnnotsOnly) {
+    if (m_MainTitle.empty()) {
         gene = x_GetGeneRefViaCDS (mapped_cds);
         if (gene) {
             const CGene_ref& grp = *gene;
@@ -1850,17 +1850,15 @@ void CDeflineGenerator::x_SetTitleFromProtein (
 
     if (m_MainTitle.empty()) {
         m_MainTitle = "unnamed protein product";
-        if (!m_LocalAnnotsOnly) {
-            gene = x_GetGeneRefViaCDS (mapped_cds);
-            if (gene) {
-                const CGene_ref& grp = *gene;
-                if (grp.IsSetLocus_tag()) {
-                    locus_tag = grp.GetLocus_tag();
-                }
+        gene = x_GetGeneRefViaCDS (mapped_cds);
+        if (gene) {
+            const CGene_ref& grp = *gene;
+            if (grp.IsSetLocus_tag()) {
+                locus_tag = grp.GetLocus_tag();
             }
-            if (! locus_tag.empty()) {
-                m_MainTitle += " " + string(locus_tag);
-            }
+        }
+        if (! locus_tag.empty()) {
+            m_MainTitle += " " + string(locus_tag);
         }
     }
 
