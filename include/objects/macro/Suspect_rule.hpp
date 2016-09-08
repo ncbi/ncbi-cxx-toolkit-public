@@ -66,10 +66,24 @@ public:
 
     bool ApplyToString(string& val) const;
 
+    string GetRuleTypeName() const;
+    string SummarizeRule() const;
+
 private:
     // Prohibit copy constructor and assignment operator
     CSuspect_rule(const CSuspect_rule& value);
     CSuspect_rule& operator=(const CSuspect_rule& value);
+
+    string SummarizeSearchFunc(const CSearch_func&) const;
+    string SummarizeReplaceRule(const CReplace_rule&) const;
+    string SummarizeStringConstraint(const CString_constraint&) const;
+    string SummarizeConstraintSet(const CConstraint_choice_set&) const;
+    string SummarizeConstraint(const CConstraint_choice&) const;
+    string SummarizeLocationConstraint(const CLocation_constraint&) const;
+    string SummarizeEndDistance(const CLocation_pos_constraint&) const;
+    string SummarizeSourceConstraint(const CSource_constraint&) const;
+    string SummarizeFieldConstraint(const CField_constraint&) const;
+    string SummarizeFieldType(const CField_type&) const;
 };
 
 /////////////////// CSuspect_rule inline methods
