@@ -83,7 +83,7 @@ typedef       char* (*FConnectorDescr)
 /** Open connection.  Used to setup all related data structures,
  * but not necessarily has to actually open the data channel.
  * @note  Regardless of the returned status, the connection is considered open
- *        (so this call does not get repeated) when the call returns.
+ *        (so this call doesn't get re-issued) after this call returns.
  */
 typedef EIO_Status (*FConnectorOpen)
 (CONNECTOR       connector,
@@ -164,6 +164,7 @@ typedef EIO_Status (*FConnectorStatus)
  *        and only if the latter succeeded (returned eIO_Success).
  * @note  FConnectorFlush() gets called before FConnectorClose() automatically.
  * @note  It may return eIO_Closed to indicate an unusual close condition.
+ * @note  The same connector may now be either re-opened / re-used or recylced.
  */
 typedef EIO_Status (*FConnectorClose)
 (CONNECTOR       connector,
@@ -192,12 +193,12 @@ typedef struct {
 } SMetaConnector;
 
 
-#define CONN_TWO2ONE(a, b)   a##b
+#define _CONN_TWO2ONE(a, b)   a##b
 
 #define CONN_SET_METHOD(meta, method, function, connector) \
     do {                                                   \
-        meta->method                  = function;          \
-        meta->CONN_TWO2ONE(c_,method) = connector;         \
+        meta->method                   = function;         \
+        meta->_CONN_TWO2ONE(c_,method) = connector;        \
     } while (0)
 
 
@@ -214,7 +215,7 @@ typedef struct {
 /** Insert a connector in the beginning of the connection's list of connectors.
  * Calls connector's FSetupVTable, which must be defined.
  */
-extern NCBI_XCONNECT_EXPORT EIO_Status METACONN_Add
+extern NCBI_XCONNECT_EXPORT EIO_Status METACONN_Insert
 (SMetaConnector* meta,
  CONNECTOR       connector
  );
@@ -231,6 +232,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status METACONN_Remove
 
 
 /** Upcall on request to setup virtual function table (called from connection).
+ * NB:  May not detect any failures (follow up in Open to fail if necessary).
  */
 typedef void (*FSetupVTable)
 (CONNECTOR       connector

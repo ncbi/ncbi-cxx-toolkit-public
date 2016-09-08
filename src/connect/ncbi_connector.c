@@ -36,25 +36,24 @@
 
 #define NCBI_USE_ERRCODE_X   Connect_Conn
 
-/* Standard logging message
- */
-#define METACONN_LOG(subcode, level, message)                   \
-  CORE_LOGF_X(subcode, level,                                   \
-              ("%s (connector \"%s\", error \"%s\")", message,  \
-               meta->get_type                                   \
-               ? meta->get_type(meta->c_get_type)               \
-               : "UNDEF", IO_StatusStr(status)))
+/* Standardized logging message */
+#define METACONN_LOG(subcode, level, message)                       \
+    CORE_LOGF_X(subcode, level,                                     \
+                ("%s (connector \"%s\", error \"%s\")", message,    \
+                 meta->get_type                                     \
+                 ? meta->get_type(meta->c_get_type)                 \
+                 : "UNDEF", IO_StatusStr(status)))
 
 
 extern EIO_Status METACONN_Remove
 (SMetaConnector* meta,
  CONNECTOR       connector)
 {
+    CONNECTOR x_conn;
+
     assert(meta);
 
     if (connector) {
-        CONNECTOR x_conn;
-        
         for (x_conn = meta->list;  x_conn;  x_conn = x_conn->next) {
             if (x_conn == connector)
                 break;
@@ -68,20 +67,21 @@ extern EIO_Status METACONN_Remove
     }
 
     while (meta->list) {
-        CONNECTOR victim = meta->list;
-        meta->list       = victim->next;
-        victim->meta     = 0;
-        victim->next     = 0;
-        if (victim->destroy)
-            victim->destroy(victim);
-        if (victim == connector)
+        x_conn       = meta->list;
+        meta->list   = x_conn->next;
+        x_conn->meta = 0;
+        x_conn->next = 0;
+        if (x_conn->destroy)
+            x_conn->destroy(x_conn);
+        if (x_conn == connector)
             break;
     }
+
     return eIO_Success;
 }
 
 
-extern EIO_Status METACONN_Add
+extern EIO_Status METACONN_Insert
 (SMetaConnector* meta,
  CONNECTOR       connector)
 {
@@ -90,7 +90,7 @@ extern EIO_Status METACONN_Add
     if (connector->next  ||  !connector->setup) {
         EIO_Status status = eIO_Unknown;
         METACONN_LOG(33, eLOG_Error,
-                     "[METACONN_Add]  Connector is in use/uninitable");
+                     "[METACONN_Insert]  Connector is in use/uninitable");
         return status;
     }
 
@@ -98,5 +98,6 @@ extern EIO_Status METACONN_Add
     connector->setup(connector);
     connector->next = meta->list;
     meta->list = connector;
+
     return eIO_Success;
 }
