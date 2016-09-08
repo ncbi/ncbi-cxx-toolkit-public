@@ -52,10 +52,10 @@ extern "C" {
  * @sa SSendMailInfo
  */
 enum ESendMailOption {
-    fSendMail_LogOn            = eOn,      /**< see: fSOCK_LogOn      */
-    fSendMail_LogOff           = eOff,     /**<      fSOCK_LogDefault */
+    fSendMail_LogOn            = eOn,      /**< see: fSOCK_LogOn             */
+    fSendMail_LogOff           = eOff,     /**<      fSOCK_LogDefault        */
     fSendMail_NoMxHeader       = (1 << 4), /**< Don't add standard mail header,
-                                                just use what user provided */
+                                                just use what user provided  */
     fSendMail_Old822Headers    = (1 << 6), /**< Form "Date:" and "From:" hdrs
                                                 (usually they are defaulted) */
     fSendMail_StripNonFQDNHost = (1 << 8), /**< Strip host part off the "from"
@@ -64,6 +64,8 @@ enum ESendMailOption {
                                                 least two domain name labels
                                                 separated by a dot); leave only
                                                 the username part */
+    fSendMail_ExtendedErrInfo  = (1 << 10) /**< Return extended error info that
+                                                must be free()'d by caller   */
 };
 typedef unsigned short TSendMailOptions;   /**< Bitwise OR of ESendMailOption*/
 
@@ -148,7 +150,8 @@ extern NCBI_XCONNECT_EXPORT SSendMailInfo* SendMailInfo_InitEx
  * @param body
  *  The message body
  * @return
- *  0 on success;  otherwise, a descriptive error message.
+ *  0 on success;  otherwise, a descriptive error message.  The message is
+ *  kept in a static storage and is not to be deallocated by the caller.
  * @sa
  *  SendMailInfo_InitEx, CORE_SendMailEx
  */
@@ -196,7 +199,16 @@ extern NCBI_XCONNECT_EXPORT const char* CORE_SendMail
  * @param info
  *  Communicational and additional protocol parameters
  * @return
- *  0 on success;  otherwise, a descriptive error message.
+ *  0 on success;  otherwise, a descriptive error message.  The message is
+ *  not to be deallocated by the caller unless fSendMail_ExtendedErrInfo is
+ *  specified in SSendMailinfo::mx_options, in which case the message contains
+ *  an explanation string followed by ": " and possibly an RFC821-compliant
+ *  error code (as received from the server) followed by additional error text
+ *  (which in turn may begin with RFC3462-compliant status as
+ *  "class.subject.detail") -- this extended message string must be free()'d by
+ *  the caller when no longer necessary.  If there was an allocation error, the
+ *  string is returned empty ("") and must not be deallocated.  The latter
+ *  makes the caller still aware there was a problem.
  * @sa
  *  SendMailInfo_InitEx
  */
