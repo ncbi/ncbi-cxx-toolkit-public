@@ -59,7 +59,8 @@
  * read error or protocol violations).
  * Return 0 in case of a call error.
  */
-static int s_SockRead(SOCK sock, char* response, size_t max_response_len)
+static int s_SockRead(SOCK sock, char* response, size_t max_response_len,
+                      int/*bool*/ savecode)
 {
     int/*bool*/ done = 0;
     size_t n = 0;
@@ -92,6 +93,14 @@ static int s_SockRead(SOCK sock, char* response, size_t max_response_len)
                 code = (int) strtol(buf, &e, 10);
                 if (errno  ||  code <= 0  ||  e != buf + 3)
                     return SMTP_NOCODE;
+                if (savecode) {
+                    n = 3;
+                    if (n > max_response_len)
+                        n = max_response_len;
+                    memcpy(response, buf, n);
+                    if (n < max_response_len)
+                        response[n++] = ' ';
+                }
             } else if (code != atoi(buf))
                 return SMTP_BADCODE;
         } else
@@ -132,9 +141,10 @@ static int s_SockRead(SOCK sock, char* response, size_t max_response_len)
 
 
 static int/*bool*/ s_SockReadResponse(SOCK sock, int code, int alt_code,
-                                      char* buf, size_t buf_size)
+                                      char* buf, size_t buf_size,
+                                      int/*bool*/ savecode)
 {
-    int c = s_SockRead(sock, buf, buf_size);
+    int c = s_SockRead(sock, buf, buf_size, savecode);
     if (c <= 0) {
         const char* message = 0;
         switch (c) {
@@ -163,7 +173,7 @@ static int/*bool*/ s_SockReadResponse(SOCK sock, int code, int alt_code,
         }
         assert(message);
         strncpy0(buf, message, buf_size - 1);
-    } else if (c == code  ||  (alt_code  &&  c == alt_code))
+    } else if (!code  ||  c == code  ||  (alt_code  &&  c == alt_code))
         return 1/*success*/;
     return 0/*failure*/;
 }
@@ -338,8 +348,13 @@ extern const char* CORE_SendMail(const char* to,
             sock = 0;                                                   \
         }                                                               \
         CORE_LOGF_X(subcode, eLOG_Error, ("[SendMail]  %s", reason));   \
-        if (!sock)                                                      \
+        if (!sock) {                                                    \
+            if (info->mx_options & fSendMail_ExtendedErrInfo) {         \
+                char* retval = strdup(reason);                          \
+                return retval ? retval : "";                            \
+            }                                                           \
             return reason;                                              \
+        }                                                               \
         /*NOTREACHED*/                                                  \
     } while (0)
 
@@ -351,8 +366,21 @@ extern const char* CORE_SendMail(const char* to,
         }                                                               \
         CORE_LOGF_X(subcode, eLOG_Error,                                \
                     ("[SendMail]  %s: %s", reason, explanation));       \
-        if (!sock)                                                      \
+        if (!sock) {                                                    \
+            if (info->mx_options & fSendMail_ExtendedErrInfo) {         \
+                size_t len = strlen(reason);                            \
+                char*  retval = (char*) malloc(len + 3                  \
+                                               + strlen(explanation));  \
+                if (!retval)                                            \
+                    return "";                                          \
+                memcpy(retval, reason, len);                            \
+                retval[len++] = ':';                                    \
+                retval[len++] = ' ';                                    \
+                strcpy(retval + len, explanation);                      \
+                return retval;                                          \
+            }                                                           \
             return reason;                                              \
+        }                                                               \
         /*NOTREACHED*/                                                  \
     } while (0)
 
@@ -361,7 +389,8 @@ static const char* s_SendRcpt(SOCK sock, const char* to,
                               char buf[], size_t buf_size,
                               const char what[],
                               const char write_error[],
-                              const char proto_error[])
+                              const char proto_error[],
+                              const SSendMailInfo* info)
 {
     char c;
     while ((c = *to++) != '\0') {
@@ -399,8 +428,10 @@ static const char* s_SendRcpt(SOCK sock, const char* to,
             !s_SockWrite(sock, ">" MX_CRLF, sizeof(MX_CRLF))) {
             SENDMAIL_RETURN(4, write_error);
         }
-        if (!s_SockReadResponse(sock, 250, 251, buf, buf_size))
+        if (!s_SockReadResponse(sock, 250, 251, buf, buf_size,
+                                info->mx_options & fSendMail_ExtendedErrInfo)){
             SENDMAIL_RETURN2(5, proto_error, buf);
+        }
         if (!c)
             break;
     }
@@ -428,13 +459,15 @@ static size_t s_FromSize(const SSendMailInfo* info)
 }
 
 
-#define SENDMAIL_SENDRCPT(what, list, buffer)                              \
-    s_SendRcpt(sock, list, buffer, sizeof(buffer), what,                   \
-               "Write error in RCPT (" what ") command",                   \
-               "Protocol error in RCPT (" what ") command")
+#define SENDMAIL_SENDRCPT(what, list, buffer)                           \
+    s_SendRcpt(sock, list, buffer, sizeof(buffer), what,                \
+               "Write error in RCPT (" what ") command",                \
+               "Protocol error in RCPT (" what ") command",             \
+               info)
 
-#define SENDMAIL_READ_RESPONSE(code, altcode, buffer)                      \
-    s_SockReadResponse(sock, code, altcode, buffer, sizeof(buffer))
+#define SENDMAIL_READ_RESPONSE(code, buffer)                            \
+    s_SockReadResponse(sock, code, 0, buffer, sizeof(buffer),           \
+                       info->mx_options & fSendMail_ExtendedErrInfo)
 
 
 extern const char* CORE_SendMailEx(const char*          to,
@@ -473,7 +506,7 @@ extern const char* CORE_SendMailEx(const char*          to,
     SOCK_SetTimeout(sock, eIO_Close,     &info->mx_timeout);
 
     /* Follow the protocol conversation, RFC821 */
-    if (!SENDMAIL_READ_RESPONSE(220, 0, buffer))
+    if (!SENDMAIL_READ_RESPONSE(220, buffer))
         SENDMAIL_RETURN2(9, "Protocol error in connection init", buffer);
 
     if ((!(info->mx_options & fSendMail_StripNonFQDNHost)
@@ -486,7 +519,7 @@ extern const char* CORE_SendMailEx(const char*          to,
         !s_SockWrite(sock, MX_CRLF, sizeof(MX_CRLF)-1)) {
         SENDMAIL_RETURN(11, "Write error in HELO command");
     }
-    if (!SENDMAIL_READ_RESPONSE(250, 0, buffer))
+    if (!SENDMAIL_READ_RESPONSE(250, buffer))
         SENDMAIL_RETURN2(12, "Protocol error in HELO command", buffer);
 
     if (!s_SockWrite(sock, "MAIL FROM: <", 12)            ||
@@ -494,7 +527,7 @@ extern const char* CORE_SendMailEx(const char*          to,
         !s_SockWrite(sock, ">" MX_CRLF, sizeof(MX_CRLF))) {
         SENDMAIL_RETURN(13, "Write error in MAIL command");
     }
-    if (!SENDMAIL_READ_RESPONSE(250, 0, buffer))
+    if (!SENDMAIL_READ_RESPONSE(250, buffer))
         SENDMAIL_RETURN2(14, "Protocol error in MAIL command", buffer);
 
     if (to  &&  *to) {
@@ -517,7 +550,7 @@ extern const char* CORE_SendMailEx(const char*          to,
 
     if (!s_SockWrite(sock, "DATA" MX_CRLF, 4 + sizeof(MX_CRLF)-1))
         SENDMAIL_RETURN(15, "Write error in DATA command");
-    if (!SENDMAIL_READ_RESPONSE(354, 0, buffer))
+    if (!SENDMAIL_READ_RESPONSE(354, buffer))
         SENDMAIL_RETURN2(16, "Protocol error in DATA command", buffer);
 
     (void) SOCK_SetCork(sock, eOn);
@@ -598,12 +631,13 @@ extern const char* CORE_SendMailEx(const char*          to,
 
     assert(sizeof(buffer) > sizeof(MX_CRLF)  &&  sizeof(MX_CRLF) >= 3);
 
+    status = eIO_Timeout;
     if (info->header  &&  *info->header) {
         size_t n = 0, m = strlen(info->header);
         int/*bool*/ newline = 0/*false*/;
         while (n < m) {
             size_t k = 0;
-            if (SOCK_Wait(sock, eIO_Read, &zero) != eIO_Timeout)
+            if ((status = SOCK_Wait(sock, eIO_Read, &zero)) != eIO_Timeout)
                 break;
             while (k < sizeof(buffer) - sizeof(MX_CRLF)) {
                 if (info->header[n] == '\n') {
@@ -622,12 +656,20 @@ extern const char* CORE_SendMailEx(const char*          to,
             if (!s_SockWrite(sock, buffer, k))
                 SENDMAIL_RETURN(21, "Write error while sending custom header");
         }
-        if (n < m)
-            SENDMAIL_RETURN(22, "Header write error");
+        if (n < m) {
+            const char* error = "Custom header write error";
+            assert(status != eIO_Timeout);
+            if (status != eIO_Success)
+                strncpy0(buffer, IO_StatusStr(status), sizeof(buffer) - 1);
+            else if (SENDMAIL_READ_RESPONSE(0, buffer))
+                error = "Spurious response while writing custom header";
+            SENDMAIL_RETURN2(22, error, buffer);
+        }
         if (!newline  &&  !s_SockWrite(sock, MX_CRLF, sizeof(MX_CRLF)-1))
-            SENDMAIL_RETURN(23, "Write error while finalizing custom header");
+            SENDMAIL_RETURN(23, "Write error in finalizing custom header");
     }
 
+    assert(status == eIO_Timeout);
     if (body) {
         size_t n = 0, m = info->body_size ? info->body_size : strlen(body);
         int/*bool*/ newline = 0/*false*/;
@@ -637,7 +679,7 @@ extern const char* CORE_SendMailEx(const char*          to,
         }
         while (n < m) {
             size_t k = 0;
-            if (SOCK_Wait(sock, eIO_Read, &zero) != eIO_Timeout)
+            if ((status = SOCK_Wait(sock, eIO_Read, &zero)) != eIO_Timeout)
                 break;
             while (k < sizeof(buffer) - sizeof(MX_CRLF)) {
                 if (body[n] == '\n') {
@@ -661,8 +703,15 @@ extern const char* CORE_SendMailEx(const char*          to,
             if (!s_SockWrite(sock, buffer, k))
                 SENDMAIL_RETURN(25, "Write error while sending message body");
         }
-        if (n < m)
-            SENDMAIL_RETURN(26, "Body write error");
+        if (n < m) {
+            const char* error = "Message body write error";
+            assert(status == eIO_Timeout);
+            if (status != eIO_Success)
+                strncpy0(buffer, IO_StatusStr(status), sizeof(buffer) - 1);
+            else if (SENDMAIL_READ_RESPONSE(0, buffer))
+                error = "Spurious response while writing message body";
+            SENDMAIL_RETURN2(26, error, buffer);
+        }
         if ((!newline  &&  m  &&  !s_SockWrite(sock,MX_CRLF,sizeof(MX_CRLF)-1))
             ||  !s_SockWrite(sock, "." MX_CRLF, sizeof(MX_CRLF))) {
             SENDMAIL_RETURN(27, "Write error while finalizing message body");
@@ -672,12 +721,12 @@ extern const char* CORE_SendMailEx(const char*          to,
 
     (void) SOCK_SetCork(sock, eOff);
 
-    if (!SENDMAIL_READ_RESPONSE(250, 0, buffer))
+    if (!SENDMAIL_READ_RESPONSE(250, buffer))
         SENDMAIL_RETURN2(29, "Protocol error in sending message", buffer);
 
     if (!s_SockWrite(sock, "QUIT" MX_CRLF, 4 + sizeof(MX_CRLF)-1))
         SENDMAIL_RETURN(30, "Write error in QUIT command");
-    if (!SENDMAIL_READ_RESPONSE(221, 0, buffer))
+    if (!SENDMAIL_READ_RESPONSE(221, buffer))
         SENDMAIL_RETURN2(31, "Protocol error in QUIT command", buffer);
 
     SOCK_Close(sock);
