@@ -3702,7 +3702,7 @@ void CDiagBuffer::Flush(void)
             string message = CNcbiOstrstreamToString(*m_Stream);
             // Can not use Reset() without CNcbiDiag.
             m_Stream->rdbuf()->PUBSEEKOFF(0, IOS_BASE::beg, IOS_BASE::out);
-            _TRACE("Discarding junk data from CDiagBuffer: " << message);
+            // _TRACE("Discarding junk data from CDiagBuffer: " << message);
         }
         return;
     }
