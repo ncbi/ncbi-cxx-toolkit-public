@@ -6,7 +6,9 @@
 SRC = validator validatorp valid_biosource valid_pub \
       validerror_align validerror_annot \
       validerror_bioseq  validerror_bioseqset validerror_desc validerror_descr \
-      validerror_feat validerror_graph utilities valid_cmdargs validerror_format
+      validerror_feat validerror_graph utilities valid_cmdargs validerror_format \
+      validator_barcode
+
 LIB = xvalidate
 
 ASN_DEP = general biblio pub seq seqset submit taxon3 valerr

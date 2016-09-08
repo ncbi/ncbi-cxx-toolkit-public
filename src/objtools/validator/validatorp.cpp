@@ -38,6 +38,7 @@
 
 #include <objtools/validator/validatorp.hpp>
 #include <objtools/validator/utilities.hpp>
+#include <objtools/validator/validator_barcode.hpp>
 #include <objtools/cleanup/cleanup.hpp>
 
 #include <serial/iterator.hpp>
@@ -216,6 +217,7 @@ void CValidError_imp::SetOptions(Uint4 options)
     m_IndexerVersion = (options & CValidator::eVal_indexer_version) != 0;
     m_UseEntrez = (options & CValidator::eVal_use_entrez) != 0;
     m_DoTaxLookup = (options & CValidator::eVal_do_tax_lookup) != 0;
+    m_DoBarcodeTests = (options & CValidator::eVal_do_barcode_tests) != 0;
     m_SeqSubmitParent = (options & CValidator::eVal_seqsubmit_parent) != 0;
     m_ValidateInferenceAccessions = (options & CValidator::eVal_inference_accns) != 0;
     m_IgnoreExceptions = (options & CValidator::eVal_ignore_exceptions) != 0;
@@ -1422,6 +1424,10 @@ bool CValidError_imp::Validate
         ValidateCitSub (*cs, *(seh.GetCompleteSeq_entry()), seh.GetCompleteSeq_entry());
     }
 
+    // optional barcode tests
+    if (m_DoBarcodeTests) {
+        x_DoBarcodeTests(seh);
+    }
     return true;
 }
 
@@ -3092,6 +3098,74 @@ ITaxon3* CValidError_imp::x_GetTaxonService()
     return m_taxon;
 }
 
+
+const string kTooShort = "Too Short";
+const string kMissingPrimers = "Missing Primers";
+const string kMissingCountry = "Missing Country";
+const string kMissingVoucher = "Missing Voucher";
+const string kBadCollectionDate = "Bad Collection Date";
+const string kTooManyNs = "Too Many Ns";
+const string kMissingOrderAssignment = "Missing Order Assignment";
+const string kLowTrace = "Low Trace";
+const string kFrameShift = "Frame Shift";
+const string kStructuredVoucher = "Structured Voucher";
+
+#define ADD_BARCODE_ERR(TestName) \
+    PostErr(eDiag_Warning, eErr_GENERIC_Barcode##TestName, k##TestName, sq); \
+    if (!msg.empty()) { \
+        msg += ","; \
+    } \
+    msg += k##TestName;
+
+void CValidError_imp::x_DoBarcodeTests(CSeq_entry_Handle seh)
+{
+    TBarcodeResults results = GetBarcodeValues(seh);
+    ITERATE(TBarcodeResults, r, results) {
+        const CBioseq& sq = *(r->bsh.GetCompleteBioseq());
+        if (BarcodeTestFails(*r)){
+            string msg = kEmptyStr;
+            if (r->length) {
+                ADD_BARCODE_ERR(TooShort)
+            }
+            if (r->primers) {
+                ADD_BARCODE_ERR(MissingPrimers)
+            }
+            if (r->country) {
+                ADD_BARCODE_ERR(MissingCountry)
+            }
+            if (r->voucher) {
+                ADD_BARCODE_ERR(MissingVoucher)
+            }
+            if (!r->percent_n.empty()) {
+                PostErr(eDiag_Warning, eErr_GENERIC_BarcodeTooManyNs, kTooManyNs + ":" + r->percent_n, sq);
+                if (!msg.empty()) {
+                    msg += ",";
+                }
+                msg += kTooManyNs + ":" + r->percent_n;
+            }
+            if (r->collection_date) {
+                ADD_BARCODE_ERR(BadCollectionDate)
+            }
+            if (r->order_assignment) {
+                ADD_BARCODE_ERR(MissingOrderAssignment)
+            }
+            if (r->low_trace) {
+                ADD_BARCODE_ERR(LowTrace)
+            }
+            if (r->frame_shift) {
+                ADD_BARCODE_ERR(FrameShift)
+            }
+            if (!r->structured_voucher) {
+                ADD_BARCODE_ERR(StructuredVoucher)
+            }
+            PostErr(eDiag_Info, eErr_GENERIC_BarcodeTestFails, "FAIL (" + msg + ")", sq);
+        } else {
+            PostErr(eDiag_Info, eErr_GENERIC_BarcodeTestPasses, "PASS", sq);
+        }
+    }
+}
+
+
 // =============================================================================
 //                         CValidError_base Implementation
 // =============================================================================
@@ -3565,6 +3639,7 @@ CCacheImpl::GetBioseqHandleFromLocation(
         return kEmptyBioseqHandle;
     }
 }
+
 
 
 END_SCOPE(validator)

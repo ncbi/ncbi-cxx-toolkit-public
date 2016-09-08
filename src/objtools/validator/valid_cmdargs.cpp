@@ -63,6 +63,7 @@ void CValidatorArgUtil::SetupArgDescriptions(CArgDescriptions* argdescr)
     argdescr->AddFlag("suppress_context", "Suppress context when reporting");
     argdescr->AddFlag("splice_as_error", "Report splice problems as errors");
     argdescr->AddDefaultKey("N", "LatLonStrictness", "Flags for lat-lon tests (1 Test State/Province, 2 Ignore Water Exception)", CArgDescriptions::eInteger, "0"); 
+    argdescr->AddFlag("B", "Do Barcode Validation");
 }
 
 
@@ -134,6 +135,10 @@ int CValidatorArgUtil::ArgsToValidatorOptions(const CArgs& args)
     }
     if (args["N"].AsInteger() & 2) {
         options |= CValidator::eVal_latlon_ignore_water;
+    }
+
+    if (args["B"]) {
+        options |= CValidator::eVal_do_barcode_tests;
     }
 
     return options;

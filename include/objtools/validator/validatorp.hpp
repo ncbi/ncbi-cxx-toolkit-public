@@ -764,6 +764,8 @@ private:
                           const CSerialObject& obj,
                           const CSeq_entry *ctx);
 
+    void x_DoBarcodeTests(CSeq_entry_Handle seh);
+
     CRef<CObjectManager>    m_ObjMgr;
     CRef<CScope>            m_Scope;
     CConstRef<CSeq_entry>   m_TSE;
@@ -796,6 +798,7 @@ private:
     bool m_ValidateInferenceAccessions;  // check that accessions in inferences are valid
     bool m_ReportSpliceAsError;
     bool m_DoTaxLookup;
+    bool m_DoBarcodeTests;
     bool m_SeqSubmitParent; // some errors are suppressed if this is run on a newly created submission
 
     // flags calculated by examining data in record
