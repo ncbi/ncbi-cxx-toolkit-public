@@ -48,8 +48,19 @@
 // generated classes
 
 BEGIN_NCBI_SCOPE
-
 BEGIN_objects_SCOPE // namespace ncbi::objects::
+
+// forward declarations
+class CConstraint_choice;
+class CConstraint_choice_set;
+class CField_constraint;
+class CField_type;
+class CLocation_constraint;
+class CLocation_pos_constraint;
+class CReplace_rule;
+class CSearch_func;
+class CSource_constraint;
+class CString_constraint;
 
 /////////////////////////////////////////////////////////////////////////////
 class CSuspect_rule : public CSuspect_rule_Base
