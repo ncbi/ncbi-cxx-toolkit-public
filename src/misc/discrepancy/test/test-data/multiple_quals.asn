@@ -1,0 +1,710 @@
+Seq-entry ::= set {
+  class pop-set ,
+  descr {
+    user {
+      type
+        str "NcbiCleanup" ,
+      data {
+        {
+          label
+            str "method" ,
+          data
+            str "SequinCleanup" } ,
+        {
+          label
+            str "version" ,
+          data
+            int 8 } ,
+        {
+          label
+            str "month" ,
+          data
+            int 9 } ,
+        {
+          label
+            str "day" ,
+          data
+            int 1 } ,
+        {
+          label
+            str "year" ,
+          data
+            int 2016 } } } } ,
+  seq-set {
+    seq {
+      id {
+        local
+          str "ex1" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex1" ,
+            orgname {
+               } } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 247 ,
+        seq-data
+          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
+9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  imp {
+                    key "exon" } ,
+                location
+                  int {
+                    from 0 ,
+                    to 9 ,
+                    strand plus ,
+                    id
+                      local
+                        str "ex1" } ,
+                qual {
+                  {
+                    qual "number" ,
+                    val "1"
+                  },
+                  {
+                    qual "number" ,
+                    val "3"
+                  } } } ,
+              {
+                data
+                  imp {
+                    key "intron" } ,
+                location
+                  int {
+                    from 11 ,
+                    to 19 ,
+                    strand plus ,
+                    id
+                      local
+                        str "ex1" } } ,
+              {
+                data
+                  imp {
+                    key "exon" } ,
+                location
+                  int {
+                    from 21 ,
+                    to 39 ,
+                    strand plus ,
+                    id
+                      local
+                        str "ex1" } ,
+                qual {
+                  {
+                    qual "number" ,
+                    val "2" } } } } } } } ,
+    seq {
+      id {
+        local
+          str "ex2" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex2" ,
+            orgname {
+               } } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 247 ,
+        seq-data
+          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
+9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  imp {
+                    key "exon" } ,
+                location
+                  int {
+                    from 0 ,
+                    to 14 ,
+                    strand plus ,
+                    id
+                      local
+                        str "ex2" } ,
+                qual {
+                  {
+                    qual "number" ,
+                    val "1" } } } ,
+              {
+                data
+                  imp {
+                    key "intron" } ,
+                location
+                  int {
+                    from 9 ,
+                    to 24 ,
+                    strand plus ,
+                    id
+                      local
+                        str "ex2" } } ,
+              {
+                data
+                  imp {
+                    key "exon" } ,
+                location
+                  int {
+                    from 19 ,
+                    to 29 ,
+                    strand plus ,
+                    id
+                      local
+                        str "ex2" } ,
+                qual {
+                  {
+                    qual "number" ,
+                    val "2" } } } } } } } ,
+    seq {
+      id {
+        local
+          str "ex3" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex3" ,
+            orgname {
+               } } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 247 ,
+        seq-data
+          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
+9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  gene {
+                    locus "gene1" } ,
+                location
+                  int {
+                    from 0 ,
+                    to 49 ,
+                    strand plus ,
+                    id
+                      local
+                        str "ex3" } } ,
+              {
+                data
+                  gene {
+                    locus "gene2" } ,
+                location
+                  int {
+                    from 99 ,
+                    to 246 ,
+                    strand plus ,
+                    id
+                      local
+                        str "ex3" } } ,
+              {
+                data
+                  imp {
+                    key "exon" } ,
+                location
+                  int {
+                    from 0 ,
+                    to 9 ,
+                    strand plus ,
+                    id
+                      local
+                        str "ex3" } ,
+                qual {
+                  {
+                    qual "number" ,
+                    val "1" } } } ,
+              {
+                data
+                  imp {
+                    key "intron" } ,
+                location
+                  int {
+                    from 11 ,
+                    to 19 ,
+                    strand plus ,
+                    id
+                      local
+                        str "ex3" } } ,
+              {
+                data
+                  imp {
+                    key "exon" } ,
+                location
+                  int {
+                    from 21 ,
+                    to 49 ,
+                    strand plus ,
+                    id
+                      local
+                        str "ex3" } ,
+                qual {
+                  {
+                    qual "number" ,
+                    val "2" } } } ,
+              {
+                data
+                  imp {
+                    key "exon" } ,
+                location
+                  int {
+                    from 99 ,
+                    to 119 ,
+                    strand plus ,
+                    id
+                      local
+                        str "ex3" } ,
+                qual {
+                  {
+                    qual "number" ,
+                    val "1" } } } ,
+              {
+                data
+                  imp {
+                    key "intron" } ,
+                location
+                  int {
+                    from 114 ,
+                    to 139 ,
+                    strand plus ,
+                    id
+                      local
+                        str "ex3" } } ,
+              {
+                data
+                  imp {
+                    key "exon" } ,
+                location
+                  int {
+                    from 129 ,
+                    to 246 ,
+                    strand plus ,
+                    id
+                      local
+                        str "ex3" } ,
+                qual {
+                  {
+                    qual "number" ,
+                    val "2" } } } } } } } ,
+    seq {
+      id {
+        local
+          str "ex4" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex4" ,
+            orgname {
+               } } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 247 ,
+        seq-data
+          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
+9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  gene {
+                    locus "gene1" } ,
+                location
+                  int {
+                    from 0 ,
+                    to 49 ,
+                    strand plus ,
+                    id
+                      local
+                        str "ex4" } } ,
+              {
+                data
+                  gene {
+                    locus "gene2" } ,
+                location
+                  int {
+                    from 199 ,
+                    to 246 ,
+                    strand plus ,
+                    id
+                      local
+                        str "ex4" } } ,
+              {
+                data
+                  imp {
+                    key "exon" } ,
+                location
+                  int {
+                    from 0 ,
+                    to 49 ,
+                    strand plus ,
+                    id
+                      local
+                        str "ex4" } } ,
+              {
+                data
+                  imp {
+                    key "intron" } ,
+                location
+                  int {
+                    from 199 ,
+                    to 246 ,
+                    strand plus ,
+                    id
+                      local
+                        str "ex4" } } } } } } ,
+    seq {
+      id {
+        local
+          str "ex5" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex5" } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 247 ,
+        seq-data
+          ncbi2na '94D6B94D6B94D6B94D6B9494D6B94D6B96535AE535AE535AE535AE535AE
+535AE535AE535AE535AE535AE535AE535AE535AE535AE535AE535AE535AE535AD'H } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  imp {
+                    key "exon" } ,
+                location
+                  int {
+                    from 217 ,
+                    to 246 ,
+                    strand minus ,
+                    id
+                      local
+                        str "ex5" } } ,
+              {
+                data
+                  imp {
+                    key "intron" } ,
+                location
+                  int {
+                    from 197 ,
+                    to 212 ,
+                    strand minus ,
+                    id
+                      local
+                        str "ex5" } } ,
+              {
+                data
+                  imp {
+                    key "exon" } ,
+                location
+                  int {
+                    from 0 ,
+                    to 192 ,
+                    strand minus ,
+                    id
+                      local
+                        str "ex5" } } } } } } ,
+    seq {
+      id {
+        local
+          str "ex6" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex6" } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 247 ,
+        seq-data
+          ncbi2na '94D6B94D6B94D6B94D6B9494D6B94D6B96535AE535AE535AE535AE535AE
+535AE535AE535AE535AE535AE535AE535AE535AE535AE535AE535AE535AE535AD'H } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  imp {
+                    key "exon" } ,
+                location
+                  int {
+                    from 222 ,
+                    to 246 ,
+                    strand minus ,
+                    id
+                      local
+                        str "ex6" } } ,
+              {
+                data
+                  imp {
+                    key "intron" } ,
+                location
+                  int {
+                    from 197 ,
+                    to 221 ,
+                    strand minus ,
+                    id
+                      local
+                        str "ex6" } } ,
+              {
+                data
+                  imp {
+                    key "exon" } ,
+                location
+                  int {
+                    from 0 ,
+                    to 196 ,
+                    strand minus ,
+                    id
+                      local
+                        str "ex6" } } } } } } ,
+    seq {
+      id {
+        local
+          str "ex7" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex7" } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 247 ,
+        seq-data
+          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
+9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } ,
+    seq {
+      id {
+        local
+          str "ex8" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex8" } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 247 ,
+        seq-data
+          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
+9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } ,
+    seq {
+      id {
+        local
+          str "ex9" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex9" } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 247 ,
+        seq-data
+          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
+9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } ,
+    seq {
+      id {
+        local
+          str "ex10" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex10" } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 247 ,
+        seq-data
+          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
+9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } ,
+    seq {
+      id {
+        local
+          str "ex11" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex11" } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 247 ,
+        seq-data
+          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
+9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } ,
+    seq {
+      id {
+        local
+          str "ex12" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex12" } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 247 ,
+        seq-data
+          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
+9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } ,
+    seq {
+      id {
+        local
+          str "ex13" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex13" } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 247 ,
+        seq-data
+          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
+9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } ,
+    seq {
+      id {
+        local
+          str "ex14" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex14" } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 247 ,
+        seq-data
+          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
+9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } ,
+    seq {
+      id {
+        local
+          str "ex15" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex15" } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 247 ,
+        seq-data
+          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
+9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } ,
+    seq {
+      id {
+        local
+          str "ex16" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex16" } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 247 ,
+        seq-data
+          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
+9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } ,
+    seq {
+      id {
+        local
+          str "ex17" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex17" } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 247 ,
+        seq-data
+          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
+9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } ,
+    seq {
+      id {
+        local
+          str "ex18" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex18" } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 247 ,
+        seq-data
+          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
+9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } ,
+    seq {
+      id {
+        local
+          str "ex19" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex19" } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 247 ,
+        seq-data
+          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
+9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } ,
+    seq {
+      id {
+        local
+          str "ex20" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "ex20" } } } ,
+      inst {
+        repr raw ,
+        mol na ,
+        length 247 ,
+        seq-data
+          ncbi2na '168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E9168E
+9168E9168E9168E9168E9168E9168E9A45A3A45A3A7A45A3A45A3A45A3A45A3A4'H } } } }

@@ -1,0 +1,10 @@
+Discrepancy Report Results
+
+Summary
+MULTIPLE_QUALS: 1 feature contains multiple /number qualifiers
+
+Detailed Report
+
+MULTIPLE_QUALS: 1 feature contains multiple /number qualifiers
+test-data/multiple_quals.asn:exon	1	lcl|ex1:1-10	
+

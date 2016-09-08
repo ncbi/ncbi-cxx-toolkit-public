@@ -2378,5 +2378,42 @@ DISCREPANCY_SUMMARIZE(FEATURE_LIST)
 }
 
 
+
+// MULTIPLE_QUALS
+
+static const string kMultiQuals = "[n] feature[s] contain[S] multiple /number qualifiers";
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(MULTIPLE_QUALS, CSeq_feat, eDisc, "Multiple qualifiers")
+//  ----------------------------------------------------------------------------
+{
+    if (obj.IsSetQual()) {
+
+        size_t num_of_number_quals = 0;
+        ITERATE(CSeq_feat::TQual, qual, obj.GetQual()) {
+            if ((*qual)->IsSetQual() && (*qual)->GetQual() == "number") {
+                ++num_of_number_quals;
+                if (num_of_number_quals > 1) {
+                    break;
+                }
+            }
+        }
+
+        if (num_of_number_quals > 1) {
+            m_Objs[kMultiQuals].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
+        }
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(MULTIPLE_QUALS)
+//  ----------------------------------------------------------------------------
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
