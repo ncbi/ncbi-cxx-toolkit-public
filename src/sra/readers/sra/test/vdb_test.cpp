@@ -166,6 +166,10 @@ void CCSRATestApp::Init(void)
     arg_desc->AddFlag("count_primary_ids", "Count primary ids");
     arg_desc->AddFlag("count_secondary_ids", "Count secondary ids");
 
+    arg_desc->AddFlag("get-cache", "Get cache root");
+    arg_desc->AddOptionalKey("set-cache", "SetCache",
+                             "Set cache root", CArgDescriptions::eString);
+
     arg_desc->AddDefaultKey("o", "OutputFile",
                             "Output file of ASN.1",
                             CArgDescriptions::eOutputFile,
@@ -273,6 +277,37 @@ string Reverse(const string& s)
     return r;
 }
 
+#include <klib/rc.h>
+#include <klib/writer.h>
+#include <vdb/manager.h>
+#include <vdb/vdb-priv.h>
+#include <kdb/manager.h>
+#include <kdb/kdb-priv.h>
+#include <vfs/manager.h>
+#include <vfs/path.h>
+#ifdef _MSC_VER
+# include <io.h>
+#else
+# include <unistd.h>
+#endif
+
+// low level SRA SDK test
+void CheckRc(rc_t rc, const char* code, const char* file, int line)
+{
+    if ( rc ) {
+        char buffer1[4096];
+        size_t error_len;
+        RCExplain(rc, buffer1, sizeof(buffer1), &error_len);
+        char buffer2[8192];
+        unsigned len = sprintf(buffer2, "%s:%d: %s failed: %#x: %s\n",
+                             file, line, code, rc, buffer1);
+        write(2, buffer2, len);
+        exit(1);
+    }
+}
+
+#define RC_CALL(call) CheckRc((call), #call, __FILE__, __LINE__)
+
 #if 0
 #include <klib/rc.h>
 #include <klib/writer.h>
@@ -292,23 +327,6 @@ CRITICAL_SECTION sdk_mutex;
 # define SDKLock() do{}while(0)
 # define SDKUnlock() do{}while(0)
 #endif
-
-#define CALL(call) CheckRc((call), #call, __FILE__, __LINE__)
-
-// low level SRA SDK test
-void CheckRc(rc_t rc, const char* code, const char* file, int line)
-{
-    if ( rc ) {
-        char buffer1[4096];
-        size_t error_len;
-        RCExplain(rc, buffer1, sizeof(buffer1), &error_len);
-        char buffer2[8192];
-        unsigned len = sprintf(buffer2, "%s:%d: %s failed: %#x: %s\n",
-                             file, line, code, rc, buffer1);
-        write(2, buffer2, len);
-        exit(1);
-    }
-}
 
 #if 1
 int LowLevelTest(void)
@@ -618,6 +636,15 @@ int CCSRATestApp::Run(void)
     bool fasta = args["fasta"];
 
     CVDBMgr mgr;
+    if ( args["get-cache"] ) {
+        cout << "VDB cache: " << mgr.GetCacheRoot() << endl;
+    }
+    if ( args["set-cache"] ) {
+        string path = args["set-cache"].AsString();
+        cout << "setting VDB cache to: " << path << endl;
+        mgr.SetCacheRoot(path);
+        mgr.CommitConfig();
+    }
 
     string acc_or_path = DEFAULT_FILE;
     if ( args["file"] ) {

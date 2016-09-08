@@ -89,6 +89,7 @@ protected:
     typedef CSraRefTraits<Object> TTraits;
 public:
     typedef Object TObject;
+    typedef TObject* TPointer;
 
     CSraRef(void)
         : m_Object(0)
@@ -98,6 +99,13 @@ public:
         : m_Object(s_AddRef(ref))
         {
         }
+    /// Copy constructor from an existing CRef object, 
+    CSraRef(TSelf&& ref)
+        {
+            m_Object = ref.m_Object;
+            ref.m_Object = 0;
+        }
+
     TSelf& operator=(const TSelf& ref)
         {
             if ( this != &ref ) {
@@ -106,6 +114,21 @@ public:
             }
             return *this;
         }
+    TSelf& operator=(TSelf&& ref)
+        {
+#ifdef NCBI_COMPILER_MSVC
+            // extra check on MSVC that doesn't conform to C++ Standard
+            if ( this == &ref ) {
+                // no-op
+                return *this;
+            }
+#endif
+            Release();
+            m_Object = ref.m_Object;
+            ref.m_Object = 0;
+            return *this;
+        }
+
     ~CSraRef(void)
         {
             Release();
@@ -144,6 +167,12 @@ public:
         }
 
 protected:
+    explicit
+    CSraRef(TPointer ptr)
+        : m_Object(ptr)
+        {
+        }
+
     TObject** x_InitPtr(void)
         {
             Release();

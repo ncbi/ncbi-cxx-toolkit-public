@@ -103,8 +103,7 @@ DEFINE_SRA_REF_TRAITS(KConfig, const);
 DEFINE_SRA_REF_TRAITS(KDBManager, const);
 DEFINE_SRA_REF_TRAITS(KNSManager, );
 DEFINE_SRA_REF_TRAITS(VFSManager, );
-DEFINE_SRA_REF_TRAITS(VPath, );
-DEFINE_SRA_REF_TRAITS(VPath, const); // for constant path in CVPathRet
+DEFINE_SRA_REF_TRAITS(VPath, const);
 DEFINE_SRA_REF_TRAITS(VResolver, );
 
 /////////////////////////////////////////////////////////////////////////////
@@ -129,6 +128,15 @@ CKConfig::CKConfig(const CVDBMgr& mgr)
         *x_InitPtr() = 0;
         NCBI_THROW2(CSraException, eInitFailed,
                     "Cannot get reference to KConfig", rc);
+    }
+}
+
+
+void CKConfig::Commit() const
+{
+    if ( rc_t rc = KConfigCommit(const_cast<KConfig*>(GetPointer())) ) {
+        NCBI_THROW2(CSraException, eOtherError,
+                    "CKConfig: Cannot commit config changes", rc);
     }
 }
 
@@ -213,43 +221,40 @@ CVPath::CVPath(const string& path, EType type)
 
 void CVPath::x_Init(const CVFSManager& mgr, const string& path, EType type)
 {
+    VPath* vpath = 0;
     if ( type == eSys ) {
-        if ( rc_t rc = VFSManagerMakeSysPath(mgr, x_InitPtr(), path.c_str()) ) {
+        if ( rc_t rc = VFSManagerMakeSysPath(mgr, &vpath, path.c_str()) ) {
             *x_InitPtr() = 0;
             NCBI_THROW2_FMT(CSraException, eInitFailed,
                             "Cannot create sys VPath: "<<path, rc);
         }
     }
-    else {
-        if ( rc_t rc = VFSManagerMakeAccPath(mgr, x_InitPtr(), path.c_str()) ) {
+    else if ( type == eAcc ) {
+        if ( rc_t rc = VFSManagerMakeAccPath(mgr, &vpath, path.c_str()) ) {
             *x_InitPtr() = 0;
             NCBI_THROW2_FMT(CSraException, eInitFailed,
                             "Cannot create acc VPath: "<<path, rc);
         }
     }
-    if ( rc_t rc = VPathGetPath(*this, &m_Str) ) {
-        NCBI_THROW2_FMT(CSraException, eInitFailed,
-                        "Cannot get path from VPath: "<<path, rc);
+    else {
+        if ( rc_t rc = VFSManagerMakePath(mgr, &vpath, path.c_str()) ) {
+            *x_InitPtr() = 0;
+            NCBI_THROW2_FMT(CSraException, eInitFailed,
+                            "Cannot create VPath: "<<path, rc);
+        }
     }
+    *x_InitPtr() = vpath;
 }
 
 
-CVPathRet::operator string(void) const
+CTempString CVPath::ToString() const
 {
-    string ret;
-    ret.resize(128);
-    size_t size = 0;
-    while ( rc_t rc = VPathReadPath(*this, &ret[0], ret.size(), &size) ) {
-        if ( GetRCState(rc) == rcInsufficient ) {
-            ret.resize(ret.size()*2);
-        }
-        else {
-            NCBI_THROW2(CSraException, eInitFailed,
-                        "Cannot get path string", rc);
-        }
+    String str;
+    if ( rc_t rc = VPathGetPath(*this, &str) ) {
+        NCBI_THROW2(CSraException, eOtherError,
+                    "Cannot get path from VPath", rc);
     }
-    ret.resize(size);
-    return ret;
+    return CTempString(str.addr, str.size);
 }
 
 
@@ -343,21 +348,20 @@ string CVResolver::Resolve(const string& acc_or_path) const
         return acc_or_path;
     }
     CVPath acc(m_Mgr, acc_or_path, CVPath::eAcc);
-    CVPathRet ret;
-    rc_t rc = VResolverLocal(*this, acc, ret.x_InitPtr());
+    const VPath* path;
+    rc_t rc = VResolverLocal(*this, acc, &path);
     if ( rc ) {
-        rc = VResolverRemote(*this, eProtocolHttp, acc, ret.x_InitPtr());
+        rc = VResolverRemote(*this, eProtocolHttp, acc, &path);
     }
     if ( rc ) {
         if ( CDirEntry(acc_or_path).Exists() ) {
             // local file
             return acc_or_path;
         }
-        *ret.x_InitPtr() = 0;
         NCBI_THROW2_FMT(CSraException, eNotFound,
                         "Cannot find acc path: "<<acc_or_path, rc);
     }
-    return ret;
+    return CVPath(path).ToString();
 }
 
 
@@ -468,6 +472,51 @@ void CVDBMgr::x_Init(void)
 }
 
 
+string CVDBMgr::GetCacheRoot() const
+{
+    const VPath* ret;
+    if ( rc_t rc = VDBManagerGetCacheRoot(*this, &ret) ) {
+        if ( GetRCObject(rc) == RCObject(rcPath) &&
+             GetRCState(rc) == rcNotFound ) {
+            return kEmptyStr;
+        }
+        NCBI_THROW2(CSraException, eOtherError,
+                    "CVDBMgr: Cannot get cache root", rc);
+    }
+    return CVPath(ret).ToString();
+}
+
+
+void CVDBMgr::SetCacheRoot(const string& path)
+{
+    CVPath vpath(CVFSManager(*this), path, CVPath::eSys);
+    if ( rc_t rc = VDBManagerSetCacheRoot(*this, vpath) ) {
+        NCBI_THROW2(CSraException, eOtherError,
+                    "CVDBMgr: Cannot set cache root", rc);
+    }
+}
+
+
+void CVDBMgr::DeleteCacheOlderThan(Uint4 days)
+{
+    /*
+    if ( rc_t rc = VDBManagerDeleteCacheOlderThan(*this, days) ) {
+        NCBI_THROW2(CSraException, eOtherError,
+                    "CVDBMgr: Cannot delete old cache files", rc);
+    }
+    */
+}
+
+
+void CVDBMgr::CommitConfig() const
+{
+    CKConfig(*this).Commit();
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CVDB
+
 CVDB::CVDB(const CVDBMgr& mgr, const string& acc_or_path)
     : m_Name(acc_or_path)
 {
@@ -517,6 +566,9 @@ CNcbiOstream& CVDB::PrintFullName(CNcbiOstream& out) const
     return out << GetName();
 }
 
+
+/////////////////////////////////////////////////////////////////////////////
+// CVDBTable
 
 static inline
 CNcbiOstream& operator<<(CNcbiOstream& out, const CVDBTable& obj)
@@ -619,6 +671,9 @@ CNcbiOstream& CVDBTable::PrintFullName(CNcbiOstream& out) const
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+// CVDBTableIndex
+
 static inline
 CNcbiOstream& operator<<(CNcbiOstream& out, const CVDBTableIndex& obj)
 {
@@ -682,6 +737,9 @@ TVDBRowIdRange CVDBTableIndex::Find(const string& value) const
     return range;
 }
 
+
+/////////////////////////////////////////////////////////////////////////////
+// CVDBCursor
 
 static inline
 CNcbiOstream& operator<<(CNcbiOstream& out, const CVDBCursor& obj)
@@ -821,6 +879,9 @@ void CVDBCursor::ReadElements(TVDBRowId row, const CVDBColumn& column,
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+// CVDBObjectCache
+
 static const size_t kCacheSize = 7;
 
 
@@ -896,6 +957,9 @@ void CVDBObjectCacheBase::Put(CObject* obj, TVDBRowId row)
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+// CVDBColumn
+
 static inline
 CNcbiOstream& operator<<(CNcbiOstream& out, const CVDBColumn& column)
 {
@@ -945,6 +1009,9 @@ void CVDBColumn::Init(const CVDBCursor& cursor,
     }
 }
 
+
+/////////////////////////////////////////////////////////////////////////////
+// CVDBValue
 
 CNcbiOstream& CVDBValue::SSaveRef::PrintFullName(CNcbiOstream& out) const
 {

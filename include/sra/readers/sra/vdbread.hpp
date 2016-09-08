@@ -65,8 +65,7 @@ DECLARE_SRA_REF_TRAITS(KConfig, const);
 DECLARE_SRA_REF_TRAITS(KDBManager, const);
 DECLARE_SRA_REF_TRAITS(KNSManager, );
 DECLARE_SRA_REF_TRAITS(VFSManager, );
-DECLARE_SRA_REF_TRAITS(VPath, );
-DECLARE_SRA_REF_TRAITS(VPath, const); // for constant path in CVPathRet
+DECLARE_SRA_REF_TRAITS(VPath, const);
 DECLARE_SRA_REF_TRAITS(VResolver, );
 
 
@@ -85,18 +84,6 @@ typedef int64_t TVDBRowId;
 typedef uint64_t TVDBRowCount;
 typedef pair<TVDBRowId, TVDBRowCount> TVDBRowIdRange;
 typedef uint32_t TVDBColumnIdx;
-
-class NCBI_SRAREAD_EXPORT CKConfig
-    : public CSraRef<const KConfig>
-{
-public:
-    NCBI_DEPRECATED_CTOR(CKConfig(void));
-    explicit CKConfig(const CVDBMgr& mgr);
-    explicit CKConfig(ENull /*null*/)
-        {
-        }
-};
-
 
 class NCBI_SRAREAD_EXPORT CKDBManager
     : public CSraRef<const KDBManager>
@@ -140,33 +127,30 @@ private:
 
 
 class NCBI_SRAREAD_EXPORT CVPath
-    : public CSraRef<VPath>
+    : public CSraRef<const VPath>
 {
+    typedef CSraRef<const VPath> TParent;
 public:
     CVPath(void)
         {
-            m_Str.addr = 0;
-            m_Str.size = 0;
+        }
+    CVPath(ENull /*null*/)
+        {
+        }
+    explicit
+    CVPath(const VPath* path)
+        : TParent(path)
+        {
         }
     enum EType {
-        eSys,
-        eAcc
+        eSys, // OS native filesystem path
+        eAcc, // VDB accession, needs to be resolved to actual path
+        ePath // VDB path string
     };
     CVPath(const CVFSManager& mgr, const string& path, EType type = eSys);
     NCBI_DEPRECATED_CTOR(explicit CVPath(const string& path, EType type = eSys));
 
-    const char* data(void) const
-        {
-            return m_Str.addr;
-        }
-    size_t size(void) const
-        {
-            return m_Str.size;
-        }
-    operator string(void) const
-        {
-            return string(data(), size());
-        }
+    CTempString ToString() const;
 
     // Check if argument string is plain VDB accession,
     // otherwise it's a system path.
@@ -183,28 +167,21 @@ public:
 
 private:
     void x_Init(const CVFSManager& mgr, const string& path, EType type);
-
-    String m_Str;
 };
 
 
-class NCBI_SRAREAD_EXPORT CVPathRet
-    : public CSraRef<const VPath>
+class NCBI_SRAREAD_EXPORT CKConfig
+    : public CSraRef<const KConfig>
 {
 public:
-    CVPathRet(void)
+    NCBI_DEPRECATED_CTOR(CKConfig(void));
+    explicit CKConfig(const CVDBMgr& mgr);
+    explicit CKConfig(ENull /*null*/)
         {
         }
-    
-    operator string() const;
 
-protected:
-    friend class CVResolver;
-
-    TObject** x_InitPtr(void)
-        {
-            return CSraRef<TObject>::x_InitPtr();
-        }
+    // Commit changes made into config file
+    void Commit() const;
 };
 
 
@@ -239,6 +216,20 @@ public:
     void Close(void) {
         *this = CVDBMgr();
     }
+
+
+    // Get VDB cache root OS native filesystem path
+    // returns empty string if no cache is set
+    string GetCacheRoot() const;
+
+    // Set VDB cache root OS native filesystem path
+    void SetCacheRoot(const string& path);
+
+    // Delete old cache files
+    void DeleteCacheOlderThan(Uint4 days);
+
+    // Commit configuration changes into config file
+    void CommitConfig() const;
 
 protected:
     void x_Init(void);
