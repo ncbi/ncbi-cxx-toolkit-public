@@ -43,9 +43,9 @@
  * @{
  */
 
-/** Revision 6.270 */
-#define SERV_CLIENT_REVISION_MAJOR  6
-#define SERV_CLIENT_REVISION_MINOR  270
+/** Revision 7.0 */
+#define SERV_CLIENT_REVISION_MAJOR  7
+#define SERV_CLIENT_REVISION_MINOR  0
 
 /** Special values for the "preferred_host" parameter.
  * @sa
@@ -85,8 +85,8 @@ enum ESERV_TypeSpecial {
     fSERV_IncludeDown       = 0x08000000,
     fSERV_IncludeStandby    = 0x10000000,
     fSERV_IncludeReserved   = 0x20000000,  /**< @note Not yet implemented */
-    fSERV_IncludePenalized  = 0x40000000,
-    fSERV_IncludeSuppressed = 0x70000000,
+    fSERV_IncludeSuppressed = 0x40000000,
+    fSERV_IncludeInactive   = 0x70000000,
     fSERV_Promiscuous       = 0x78000000
 };
 typedef unsigned int   TSERV_Type;      /**<Bitwise OR of ESERV_Type[Special]*/
@@ -125,12 +125,12 @@ typedef unsigned short TSERV_TypeOnly;  /**<Server type only, w/o specials   */
  *  not to return from the search (whose server-infos match the would-be
  *  result).
  * @note However, special additional rules apply to the "skip" elements when
- *       the fSERV_ReverseDns bit is set in the "types":  the result-to-be is
- *       not considered if either
- *    1. There is an fSERV_Dns type entry found in "skip" that matches
- *       host[:port] (any port if 0); or
- *    2. The reverse lookup of the host:port turns up an fSERV_Dns type server
- *       whose name matches an fSERV_Dns type server from "skip".
+ *       the fSERV_ReverseDns bit is set in the "types" parameter:  the
+ *       result-to-be is not considered if either
+ *    1. There is an entry of the fSERV_Dns type found in "skip" array that
+ *       matches the host[:port] (any port if port is 0); or
+ *    2. The reverse lookup of the host:port turns up an fSERV_Dns-type server
+ *       whose name matches an fSERV_Dns-type server in "skip".
  * @param n_skip
  *  Number of entries in the "skip" array.
  * @return
@@ -202,13 +202,15 @@ extern NCBI_XCONNECT_EXPORT SERV_ITER SERV_OpenSimple
  *       may contain 0 in the host field to denote that the name exists but the
  *       service is currently not serving (down / unavailable).
  * @note Only when completing successfully, i.e. returning a non-NULL info,
- *       this call can also provide the host information as follows: if
+ *       this call can also provide host information as the following:  if
  *       "host_info" parameter is passed as a non-NULL pointer, then a copy of
- *       the host information is allocated, and the handle is stored at
- *       "*host_info".  Using this handle, various host parameters like load,
- *       host environment, number of CPUs can be retrieved
- *       (see ncbi_host_info.h).  The returned host information handle has to
- *       be explicitly free()'d when no longer needed.
+ *       host information may be allocated, and the handle is then stored at
+ *       "*host_info" when the host information is available for the host.
+ *       Otherwise, the pointer is updated with a NULL value stored.  Using the
+ *       non-NULL handle returned, various parameters like load, environment,
+ *       number of CPUs, etc can be retrieved (see ncbi_host_info.h).  The
+ *       returned host information handle has to be explicitly free()'d when
+ *       no longer needed.
  * @sa
  *  SERV_Reset, SERV_Close, SERV_GetInfoEx, ncbi_host_info.h
  */
@@ -231,8 +233,8 @@ extern NCBI_XCONNECT_EXPORT SSERV_InfoCPtr SERV_GetNextInfo
  * However, this call is optimized for an application, which only needs
  * a single entry (the first one), and which is not interested in iterating
  * over all available instances.  Both the returned server-info and host
- * information have to be explicitly free()'d by the application when no
- * longer needed.
+ * information (if any) have to be explicitly free()'d by the application when
+ * no longer needed.
  * @param service
  *  A service name (may not be NULL or empty).
  * @param types
@@ -277,7 +279,10 @@ extern NCBI_XCONNECT_EXPORT SSERV_Info* SERV_GetInfo
  const SConnNetInfo*  net_info
  );
 
-/** Same as "SERV_GetInfo(., fSERV_Any, SERV_ANYHOST, ConnNetInfo_Create(service))".
+/** Equivalent to "SERV_GetInfo(., fSERV_Any, SERV_ANYHOST,
+ *                              ConnNetInfo_Create(service))",
+ * but it takes care not to leak its last "net_info" parameter, which it builds
+ * on the fly.
  * @sa
  *  SERV_GetInfo, SERV_OpenSimple
  */

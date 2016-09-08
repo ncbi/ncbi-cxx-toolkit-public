@@ -989,7 +989,7 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
 
         /* Setup the new connector on a temporary meta-connector... */
         memset(&uuu->meta, 0, sizeof(uuu->meta));
-        if ((status = METACONN_Add(&uuu->meta, c)) != eIO_Success) {
+        if ((status = METACONN_Insert(&uuu->meta, c)) != eIO_Success) {
             x_DestroyConnector(c);
             continue;
         }
@@ -1033,15 +1033,13 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
             break;
 
         if (!stateless  &&  (!info  ||  info->type == fSERV_Firewall)) {
-            static const char kFWLink[] = { "http://www.ncbi.nlm.nih.gov"
-                                            "/IEB/ToolBox/NETWORK"
-                                            "/dispatcher.html#Firewalling" };
+            static const char kFWDLink[] = CONN_FWD_LINK;
             CORE_LOGF_X(6, eLOG_Error,
                         ("[%s]  %s connection failure (%s) usually"
                          " indicates possible firewall configuration"
                          " problems; please consult <%s>", uuu->service,
                          !info ? "Firewall" : "Stateful relay",
-                         IO_StatusStr(status), kFWLink));
+                         IO_StatusStr(status), kFWDLink));
         }
 
         s_Close(connector, timeout, 0/*retain*/);
