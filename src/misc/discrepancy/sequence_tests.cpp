@@ -503,27 +503,23 @@ DISCREPANCY_CASE(N_RUNS_14, CSeq_inst, eDisc, "Runs of more than 14 Ns")
 //  ----------------------------------------------------------------------------
 {
     if (obj.IsNa()) {
-
         if (obj.IsSetSeq_data()) {
             vector<CRange<TSeqPos> > runs;
             FindNRuns(runs, obj.GetSeq_data(), 0, MIN_BAD_RUN_LEN);
-
             if (!runs.empty()) {
                 m_Objs[kMoreThan14NRuns].Add(*context.NewDiscObj(context.GetCurrentBioseq()), false);
             }
         }
         else if (obj.IsSetExt() && obj.GetExt().IsDelta()) {
-
             const CSeq_ext::TDelta& deltas = obj.GetExt().GetDelta();
             if (deltas.IsSet()) {
-
                 ITERATE(CDelta_ext::Tdata, delta, deltas.Get()) {
-
                     if ((*delta)->IsLiteral() && (*delta)->GetLiteral().IsSetSeq_data()) {
-
+                        if ((*delta)->GetLiteral().GetSeq_data().Which() == CSeq_data::e_Gap || (*delta)->GetLiteral().GetSeq_data().Which() == CSeq_data::e_not_set) {
+                            continue;
+                        }
                         vector<CRange<TSeqPos> > runs;
                         FindNRuns(runs, (*delta)->GetLiteral().GetSeq_data(), 0, MIN_BAD_RUN_LEN);
-
                         if (!runs.empty()) {
                             m_Objs[kMoreThan14NRuns].Add(*context.NewDiscObj(context.GetCurrentBioseq()), false);
                             break;
@@ -1542,22 +1538,19 @@ static bool ContainsUnusualNucleotide(const CSeq_data& seq_data)
 DISCREPANCY_CASE(UNUSUAL_NT, CSeq_inst, eDisc | eSubmitter | eSmart, "Sequence contains unusual nucleotides")
 {
     if (obj.IsNa()) {
-
         if (obj.IsSetSeq_data()) {
-
             if (ContainsUnusualNucleotide(obj.GetSeq_data())) {
                 m_Objs[kUnusualNT].Add(*context.NewDiscObj(context.GetCurrentBioseq()), false);
             }
         }
         else if (obj.IsSetExt() && obj.GetExt().IsDelta()) {
-
             const CSeq_ext::TDelta& deltas = obj.GetExt().GetDelta();
             if (deltas.IsSet()) {
-
                 ITERATE(CDelta_ext::Tdata, delta, deltas.Get()) {
-
                     if ((*delta)->IsLiteral() && (*delta)->GetLiteral().IsSetSeq_data()) {
-
+                        if ((*delta)->GetLiteral().GetSeq_data().Which() == CSeq_data::e_Gap || (*delta)->GetLiteral().GetSeq_data().Which() == CSeq_data::e_not_set) {
+                            continue;
+                        }
                         if (ContainsUnusualNucleotide((*delta)->GetLiteral().GetSeq_data())) {
                             m_Objs[kMoreThan14NRuns].Add(*context.NewDiscObj(context.GetCurrentBioseq()), false);
                             break;
@@ -1896,21 +1889,19 @@ static bool HasLowQualityRegion(const CSeq_data& seq_data)
 DISCREPANCY_CASE(LOW_QUALITY_REGION, CSeq_inst, eDisc | eSubmitter | eSmart, "Sequence contains regions of low quality")
 {
     if (obj.IsNa()) {
-
         if (obj.IsSetSeq_data()) {
             if (HasLowQualityRegion(obj.GetSeq_data())) {
                 m_Objs[kLowQualityRegion].Add(*context.NewDiscObj(context.GetCurrentBioseq()), false);
             }
         }
         else if (obj.IsSetExt() && obj.GetExt().IsDelta()) {
-
             const CSeq_ext::TDelta& deltas = obj.GetExt().GetDelta();
             if (deltas.IsSet()) {
-
                 ITERATE(CDelta_ext::Tdata, delta, deltas.Get()) {
-
                     if ((*delta)->IsLiteral() && (*delta)->GetLiteral().IsSetSeq_data()) {
-
+                        if ((*delta)->GetLiteral().GetSeq_data().Which() == CSeq_data::e_Gap || (*delta)->GetLiteral().GetSeq_data().Which() == CSeq_data::e_not_set) {
+                            continue;
+                        }
                         if (HasLowQualityRegion((*delta)->GetLiteral().GetSeq_data())) {
                             m_Objs[kLowQualityRegion].Add(*context.NewDiscObj(context.GetCurrentBioseq()), false);
                             break;
