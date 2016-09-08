@@ -1284,8 +1284,8 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
     } else
         http_code = 0/*no server error*/;
 
-    if ((http_code  ||  !x_IsErrorHeader(uuu))
-        &&  uuu->net_info->debug_printout == eDebugPrintout_Some) {
+    if (uuu->net_info->debug_printout == eDebugPrintout_Some
+        &&  (http_code  ||  !x_IsErrorHeader(uuu))) {
         /* HTTP header gets printed as part of data logging when
            uuu->net_info->debug_printout == eDebugPrintout_Data. */
         const char* header_header;
@@ -1339,8 +1339,8 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
 
         if (header_parse == eHTTP_HeaderError) {
             retry->mode = eRetry_None;
-            if (!http_code/*i.e. was okay*/  &&  x_IsErrorHeader(uuu)
-                &&  uuu->net_info->debug_printout == eDebugPrintout_Some) {
+            if (uuu->net_info->debug_printout == eDebugPrintout_Some
+                &&  !http_code/*i.e. was okay*/  &&  x_IsErrorHeader(uuu)) {
                 if (!url)
                     url = ConnNetInfo_URL(uuu->net_info);
                 CORE_DATAF_X(9, eLOG_Note, hdr, size,
