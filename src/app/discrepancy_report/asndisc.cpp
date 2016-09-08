@@ -240,7 +240,7 @@ CRef<CSerialObject> CDiscRepApp::x_ReadFile(const string& fname)
         CRef<CSeq_submit> ss(new CSeq_submit);
         in->Read(ObjectInfo(*ss), CObjectIStream::eNoFileHeader);
         if (ss->IsSetData() && ss->GetData().IsEntrys()) {
-            ITERATE (CSeq_submit::TData::TEntrys, it, ss->GetData().GetEntrys()) {
+            NON_CONST_ITERATE (CSeq_submit::TData::TEntrys, it, ss->SetData().SetEntrys()) {
                 m_Scope.AddTopLevelSeqEntry(**it);
             }
         }

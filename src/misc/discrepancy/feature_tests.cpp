@@ -1345,6 +1345,7 @@ DISCREPANCY_CASE(SHORT_INTRON, CSeq_feat, eDisc | eOncaller | eSubmitter | eSmar
         last_stop = stop;
         ++li;
     }
+
     if (found_short) {
         if (obj.IsSetExcept() && obj.GetExcept()) {
             m_Objs[kShortIntronTop][kShortIntronExcept].Ext().Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj), eKeepRef, true), false);
@@ -1448,7 +1449,7 @@ static void ConvertToMiscFeature(CSeq_feat& sf, CScope& scope)
     }
 }
 
-static bool AddExceptionsToShortIntron(const CSeq_feat& sf, CScope& scope, std::list<CConstRef<CBioseq>>& to_remove)
+static bool AddExceptionsToShortIntron(const CSeq_feat& sf, CScope& scope, std::list<CConstRef<CSeq_loc>>& to_remove)
 {
     bool rval = false;
 
@@ -1498,10 +1499,7 @@ static bool AddExceptionsToShortIntron(const CSeq_feat& sf, CScope& scope, std::
 
                 if (sf.IsSetProduct()) {
                     
-                    CBioseq_Handle bioseq_h = scope.GetBioseqHandle(sf.GetProduct());
-                    if (bioseq_h) {
-                        to_remove.push_back(bioseq_h.GetCompleteBioseq());
-                    }
+                    to_remove.push_back(CConstRef<CSeq_loc>(&sf.GetProduct()));
                 }
 
                 if (is_bacterial) {
@@ -1530,7 +1528,7 @@ DISCREPANCY_AUTOFIX(SHORT_INTRON)
     TReportObjectList list = item->GetDetails();
     unsigned int n = 0;
 
-    std::list<CConstRef<CBioseq>> to_remove;
+    std::list<CConstRef<CSeq_loc>> to_remove;
 
     NON_CONST_ITERATE(TReportObjectList, it, list) {
         const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
@@ -1539,12 +1537,9 @@ DISCREPANCY_AUTOFIX(SHORT_INTRON)
         }
     }
 
-    ITERATE(std::list<CConstRef<CBioseq>>, bioseq, to_remove) {
+    ITERATE(std::list<CConstRef<CSeq_loc>>, loc, to_remove) {
 
-        // TODO: the code below is considered to remove a given bioseq,
-        // but it does not
-        CBioseq_Handle bioseq_h = scope.GetBioseqHandle(**bioseq);
-
+        CBioseq_Handle bioseq_h = scope.GetBioseqHandle(**loc);
         CBioseq_EditHandle bioseq_edit = bioseq_h.GetEditHandle();
         bioseq_edit.Remove();
     }
