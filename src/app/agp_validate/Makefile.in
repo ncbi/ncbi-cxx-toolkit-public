@@ -6,7 +6,7 @@ srcdir = @srcdir@
 include @builddir@/Makefile.meta
 
 TESTS=bad_test test2 acc_test fa_test un_test obj_len_test order_test overlap_test new_test space_test runs_of_ns\
-  chr_scaf_test chr_scaf_test2 chr_scaf_test_bad ver2.0 ver2.0_bad comp_test
+  chr_scaf_test chr_scaf_test2 chr_scaf_test_bad ver2.0 ver2.0_bad comp_test sub_test
 
 .PHONY : noalt test $(TESTS) alt_test
 
@@ -43,6 +43,10 @@ fa_test : agp_validate
 un_test : agp_validate
 	-sh -c "./agp_validate -un $(srcdir)/test/fa_test.fa $(srcdir)/test/un_test.agp >un_test.out 2>&1"
 	diff ${DOPT} -u $(srcdir)/test/un_test.out un_test.out
+
+sub_test : agp_validate
+	-sh -c "./agp_validate -sub -un $(srcdir)/test/fa_test.fa $(srcdir)/test/un_test.agp >sub_test.out 2>&1"
+	diff ${DOPT} -u $(srcdir)/test/sub_test.out sub_test.out
 
 obj_len_test : agp_validate
 	-sh -c "./agp_validate -obj $(srcdir)/test/obj_len_test.fa $(srcdir)/test/obj_len_test.agp >obj_len_test.out 2>&1"

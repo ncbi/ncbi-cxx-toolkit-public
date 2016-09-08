@@ -1193,6 +1193,7 @@ void CAgpErrEx::PrintAllMessages(CNcbiOstream& out)
         "#Error with -sub, warning if no -sub option:\n"
         "#\tcomponent name(s)/object name(s) in FASTA not found in AGP\n"
         "#\tscaffold(s) not found in Chromosome from scaffold AGP\n"
+        "#\tno gap lines\n"
         ;
 }
 

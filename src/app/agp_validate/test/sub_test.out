@@ -1,0 +1,60 @@
+2 component_ids and lengths loaded from FASTA.
+No runs of Ns longer than 10 bp found in FASTA sequences.
+
+14 errors, no warnings.
+  Count Code  Description
+      4  e35  the span overlaps a previous span for this component
+      4  e49  same component_id found on different scaffolds
+      2  e50  in unplaced singleton scaffold, component is not used in full
+      2  e51  in unplaced singleton scaffold, component orientation is not "+"
+      -   -   component name(s) in FASTA not found in AGP
+      -   -   no gap lines
+
+
+Objects                : 5
+- with single component: 5
+
+Scaffolds              : 5
+- with single component: 5
+
+Components                   : 5 (W)
+  orientation +              : 3
+  orientation -              : 1
+  orientation ? (formerly 0) : 0
+  orientation na             : 1
+
+Gaps                   : 0
+
+Object names      :  5
+  singleton_[0..3]:  4
+  singleton_1na   :  1
+
+Component names        :  1 != 2 in the FASTA
+  LACBIscaffold_1_Cont1:  1
+
+ERROR -- 1 component name in FASTA not found in AGP: LACBIscaffold_extra
+
+#Comment line count    : 1
+
+
+===== Details =====
+
+3:singleton_1	1	630	1	W	LACBIscaffold_1_Cont1	1	630	-
+	ERROR: the span overlaps a previous span for this component: 1..630 at line 2
+	ERROR: same component_id found on different scaffolds; previous occurance at line 2, in another object
+	ERROR: in unplaced singleton scaffold, component orientation is not "+"
+
+4:singleton_1na	1	630	1	W	LACBIscaffold_1_Cont1	1	630	na
+	ERROR: the span overlaps a previous span for this component: 1..630 at line 2
+	ERROR: same component_id found on different scaffolds; previous occurance at line 3, in another object
+	ERROR: in unplaced singleton scaffold, component orientation is not "+"
+
+5:singleton_2	1	600	1	W	LACBIscaffold_1_Cont1	1	600	+
+	ERROR: the span overlaps a previous span for this component: 1..630 at line 2
+	ERROR: same component_id found on different scaffolds; previous occurance at line 4, in another object
+	ERROR: in unplaced singleton scaffold, component is not used in full (600 out of 630 bp)
+
+6:singleton_3	1	600	1	W	LACBIscaffold_1_Cont1	31	630	+
+	ERROR: the span overlaps a previous span for this component: 1..630 at line 2
+	ERROR: same component_id found on different scaffolds; previous occurance at line 5, in another object
+	ERROR: in unplaced singleton scaffold, component is not used in full (600 out of 630 bp)

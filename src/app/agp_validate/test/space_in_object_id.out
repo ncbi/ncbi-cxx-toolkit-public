@@ -3,10 +3,11 @@
 	WARNING: space in object name nucleomorph chromosome 2
 	WARNING: all objects are singletons with component_beg=1
 
-No errors, 2 warnings.
+No errors, 3 warnings.
   Count Code  Description
       1  w53  space in object name 
       1  w65  all objects are singletons with component_beg=1
+      -   -   no gap lines
 
 
 Objects                : 3

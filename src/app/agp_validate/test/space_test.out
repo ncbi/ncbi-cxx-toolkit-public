@@ -17,12 +17,13 @@
 10: <<<SPACE!chr LG B01	38255	38256	3	W	AEL G03004297.1	1	2	-
 	ERROR, line skipped: expecting 9 tab-separated columns, found space characters
 
-4 errors, 2 warnings.
+4 errors, 3 warnings.
   Count Code  Description
       4  e01  expecting 9 tab-separated columns
       2  w53  space in object name 
 
 NOTE: 4 invalid lines were skipped (not subjected to all the checks, not included in most of the counts below).
+      -   -   no gap lines
 
 
 Objects                : 3

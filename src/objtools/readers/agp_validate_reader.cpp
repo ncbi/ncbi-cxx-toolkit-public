@@ -848,6 +848,10 @@ void CAgpValidateReader::x_PrintTotals(CNcbiOstream& out, bool use_xml) // witho
   e_count+=m_AgpErr->CountTotals(CAgpErrEx::G_Last);
   int w_count=m_AgpErr->CountTotals(CAgpErrEx::W_Last);
 
+  if(m_GapCount==0) {
+    if(m_AgpErr->m_strict) e_count++; else w_count++;
+  }
+
   if(not_in_agp_msg.size()) {
     if(m_AgpErr->m_strict) e_count++; else w_count++;
   }
@@ -904,6 +908,9 @@ void CAgpValidateReader::x_PrintTotals(CNcbiOstream& out, bool use_xml) // witho
   XPrintTotalsItem xprint(out, use_xml, w);
   if(not_in_agp_msg.size() && !use_xml) {
     out << "      -   -   " << not_in_agp_msg << "\n";
+  }
+  if(m_GapCount==0 && !use_xml) {
+    out << "      -   -   no gap lines\n";
   }
   xprint.line();
 

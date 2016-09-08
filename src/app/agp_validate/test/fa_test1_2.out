@@ -2,9 +2,10 @@
 No runs of Ns longer than 10 bp found in FASTA sequences.
 	WARNING: all objects are singletons with component_beg=1 and component_end = length of sequence
 
-No errors, 1 warning.
+No errors, 2 warnings.
   Count Code  Description
       1  w65  all objects are singletons with component_beg=1
+      -   -   no gap lines
 
 
 Objects                : 2
@@ -32,9 +33,10 @@ Component names        :  2
 No runs of Ns longer than 10 bp found in FASTA sequences.
 	WARNING: all objects are singletons with component_beg=1 (not all component_end = length of sequence)
 
-No errors, 1 warning.
+No errors, 2 warnings.
   Count Code  Description
       1  w65  all objects are singletons with component_beg=1
+      -   -   no gap lines
 
 
 Objects                : 2
