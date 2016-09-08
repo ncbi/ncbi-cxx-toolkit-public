@@ -47,8 +47,6 @@
 #define HELP_EMAIL    (m_Email.empty()                                  \
                        ? string("NCBI Help Desk info@ncbi.nlm.nih.gov") \
                        : m_Email)
-#define NCBI_FWDOC_URL                                                  \
-    "http://www.ncbi.nlm.nih.gov/IEB/ToolBox/NETWORK/firewall.html#Settings"
 
 #define NCBI_FWD_BEMD  "130.14.29.112"
 #define NCBI_FWD_STVA  "165.112.7.12"
@@ -686,7 +684,7 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
             NCBI_FWD_BEMD " and " NCBI_FWD_STVA ".\n"
             "To set that up correctly, please have your network administrator"
             " read the following (if they have not already done so):"
-            " " NCBI_FWDOC_URL "\n";
+            " " CONN_FWD_URL "\n";
     } else {
         temp += "This is an obsolescent mode that requires keeping a wide port"
             " range [4444..4544] (inclusive) open to let through connections"
@@ -1047,7 +1045,7 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
                     temp += n ? "fallback" : "non-conventional";
                     temp += " ports; please see your network administrator";
                     if (!url) {
-                        temp += " and let them read: " NCBI_FWDOC_URL;
+                        temp += " and let them read: " CONN_FWD_URL;
                         url = true;
                     }
                     temp += '\n';
@@ -1058,7 +1056,7 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
                     temp += " please see your network administrator";
                     if (!url) {
                         temp += " and have them read the following: "
-                            NCBI_FWDOC_URL;
+                            CONN_FWD_URL;
                         url = true;
                     }
                     temp += '\n';
@@ -1067,7 +1065,7 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
                         " configuration to use a more narrow"
                         " port range";
                     if (!url) {
-                        temp += " per: " NCBI_FWDOC_URL;
+                        temp += " per: " CONN_FWD_URL;
                         url = true;
                     }
                     temp += '\n';
@@ -1112,7 +1110,7 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
         }
         if (note  &&  status != eIO_Interrupt) {
             temp += "\nYou may want to read this link for more information: "
-                NCBI_FWDOC_URL;
+                CONN_FWD_URL;
         }
     } else {
         temp = "All " + string(m_Firewall
