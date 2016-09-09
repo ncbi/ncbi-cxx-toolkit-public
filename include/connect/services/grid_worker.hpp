@@ -577,7 +577,9 @@ class NCBI_XCONNECT_EXPORT CGridWorkerNode
     const string& GetClientName() const;
 
     string GetAppName() const;
-    const CVersion& GetAppVersion() const;
+
+    typedef array<string, 3> TVersion;
+    TVersion GetAppVersion() const;
 
     const string& GetServiceName() const;
 

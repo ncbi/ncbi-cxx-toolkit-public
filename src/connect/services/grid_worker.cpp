@@ -1083,9 +1083,13 @@ string CGridWorkerNode::GetAppName() const
     return m_Impl->m_JobProcessorFactory->GetAppName();
 }
 
-const CVersion& CGridWorkerNode::GetAppVersion() const
+CGridWorkerNode::TVersion CGridWorkerNode::GetAppVersion() const
 {
-    return m_Impl->m_App.GetFullVersion();
+    const CVersion& version(m_Impl->m_App.GetFullVersion());
+    const CVersionInfo& version_info(version.GetVersionInfo());
+    const SBuildInfo& build_info(version.GetBuildInfo());
+
+    return TVersion{ version_info.Print(), build_info.date, build_info.tag };
 }
 
 CNetCacheAPI CGridWorkerNode::GetNetCacheAPI() const
