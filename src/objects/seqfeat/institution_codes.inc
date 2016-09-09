@@ -5642,6 +5642,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "SMRS	s	Stavropol Museum of Regional Studies",
 "SMS	s	Missouri State University, Department of Biology",
 "SMSM	s	Sarawak Museum",
+"SMTP	s	Swedish Malaise Trap Project",
 "SMTWA	c	School of Medical Technology Western Australia",
 "SMU	s	St. Mary's University",
 "SMU<KOR>	s	Sangmiung University",
