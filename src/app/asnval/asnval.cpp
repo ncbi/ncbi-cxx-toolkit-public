@@ -1001,7 +1001,7 @@ void CAsnvalApp::PrintValidError
 static string s_GetSeverityLabel (EDiagSev sev)
 {
     static const string str_sev[] = {
-        "NOTE", "WARNING", "ERROR", "REJECT", "FATAL", "MAX"
+        "INFO", "WARNING", "ERROR", "REJECT", "FATAL", "MAX"
     };
     if (sev < 0 || sev > eDiagSevMax) {
         return "NONE";
