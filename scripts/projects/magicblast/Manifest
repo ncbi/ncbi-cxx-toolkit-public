@@ -34,17 +34,17 @@ DEFAULT_CONFIGURE_FLAGS: --without-debug --with-strip --with-openmp --with-mt --
 # ICC gives us about 10% improvement in the core2 microarchitecture, so prefer
 # that. The build-root is needed so that rpmbuild can find the proper directories
 # to copy the binaries from
-Linux64-Centos     : icc : ICC.sh           --with-bin-release --with-strip --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-experimental=Int8GI --with-downloaded-vdb --with-static-vdb
+Linux64-Centos     : icc : ICC.sh           --with-bin-release --with-strip --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-experimental=Int8GI --with-downloaded-vdb --with-static-vdb --with-gnutls=/netopt/ncb/gnutls-3.4.0 --without-gcrypt
 #Linux64-Centos     : gcc : GCC.sh           --with-bin-release --with-strip --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-experimental=Int8GI --with-downloaded-vdb --with-static-vdb
 #Linux64-Centos     : gcc-debug : GCC.sh                        --with-strip --with-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-downloaded-vdb
 
 DEFAULT_CONFIGURATIONS: Linux64-Centos:icc
 #DEFAULT_CONFIGURATIONS: Linux64-Centos:gcc
 
-Win64         : plain : static  64  ReleaseMT <ENV>NCBI_CONFIG____ENABLEDUSERREQUESTS__NCBI-INT8-GI=1</ENV>
+Win64         : plain : static  64  ReleaseDLL <ENV>NCBI_CONFIG____ENABLEDUSERREQUESTS__NCBI-INT8-GI=1</ENV>
 
 #IntelMAC            : gcc : GCC.sh   --with-bin-release --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-ncbi-public --with-downloaded-vdb --with-static-vdb
-IntelMAC            : clang     : Clang.sh          --with-bin-release --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-ncbi-public --with-experimental=Int8GI --with-downloaded-vdb --with-static-vdb
-IntelMAC-Clang36    : clang     : Clang.sh 7.0.2    --with-bin-release --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-ncbi-public --with-experimental=Int8GI --with-downloaded-vdb --with-static-vdb
+IntelMAC            : clang     : Clang.sh          --with-bin-release --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-ncbi-public --with-experimental=Int8GI --with-downloaded-vdb --with-static-vdb --with-gnutls=/netopt/ncbi_tools/gnutls-3.4.0 --without-gcrypt
+IntelMAC-Clang36    : clang     : Clang.sh 7.0.2    --with-bin-release --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-ncbi-public --with-experimental=Int8GI --with-downloaded-vdb --with-static-vdb --with-gnutls=/netopt/ncbi_tools/gnutls-3.4.0 --without-gcrypt
 
 USE_COMPONENTS
