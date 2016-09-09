@@ -424,6 +424,8 @@ public:
 
     virtual string GetAppName() const {return GetJobVersion();}
 
+    virtual string GetAppVersion() const { return kEmptyStr; }
+
     /// Get the Idle task
     ///
     virtual IWorkerNodeIdleTask* GetIdleTask() { return NULL; }

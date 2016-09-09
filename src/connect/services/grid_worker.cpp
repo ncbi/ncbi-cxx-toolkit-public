@@ -1089,7 +1089,12 @@ CGridWorkerNode::TVersion CGridWorkerNode::GetAppVersion() const
     const CVersionInfo& version_info(version.GetVersionInfo());
     const SBuildInfo& build_info(version.GetBuildInfo());
 
-    return TVersion{ version_info.Print(), build_info.date, build_info.tag };
+    const auto& job_factory(m_Impl->m_JobProcessorFactory);
+    _ASSERT(job_factory.get());
+    const string job_version(job_factory->GetAppVersion());
+
+    return TVersion{ job_version.empty() ? version_info.Print() : job_version,
+        build_info.date, build_info.tag };
 }
 
 CNetCacheAPI CGridWorkerNode::GetNetCacheAPI() const
