@@ -55,6 +55,8 @@
 #include <corelib/request_control.hpp>
 #include <corelib/request_ctx.hpp>
 
+#include <array>
+
 BEGIN_NCBI_SCOPE
 
 /** @addtogroup NetScheduleClient
