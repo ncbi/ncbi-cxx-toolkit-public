@@ -1093,8 +1093,9 @@ CGridWorkerNode::TVersion CGridWorkerNode::GetAppVersion() const
     _ASSERT(job_factory.get());
     const string job_version(job_factory->GetAppVersion());
 
-    return TVersion{ job_version.empty() ? version_info.Print() : job_version,
-        build_info.date, build_info.tag };
+    // Double braces to suppress erroneous Clang warning (Bug 21629)
+    return TVersion{{ job_version.empty() ? version_info.Print() : job_version,
+        build_info.date, build_info.tag }};
 }
 
 CNetCacheAPI CGridWorkerNode::GetNetCacheAPI() const
