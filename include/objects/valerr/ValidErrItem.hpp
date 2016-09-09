@@ -287,6 +287,7 @@ enum EErrType {
     eErr_GENERIC_BarcodeStructuredVoucher,
     eErr_GENERIC_BarcodeTestFails,
     eErr_GENERIC_BarcodeTestPasses,
+    eErr_GENERIC_InvalidAsn,
     ERR_CODE_END(GENERIC),
 
     ERR_CODE_BEGIN(SEQ_PKG) = 3000,

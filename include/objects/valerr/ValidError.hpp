@@ -91,6 +91,10 @@ public:
                          const int            ver,     // version of object.
                          const int            seq_offset = 0);
 
+     void AddValidErrItem(EDiagSev            sev,     // severity
+                          unsigned int         ec,      // error code
+                          const string&        msg);     // specific error message
+
     // Statistics
     SIZE_TYPE TotalSize(void)    const;
     SIZE_TYPE Size(EDiagSev sev) const;

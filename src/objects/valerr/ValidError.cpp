@@ -114,6 +114,23 @@ void CValidError::AddValidErrItem
 }
 
 
+void CValidError::AddValidErrItem(EDiagSev sev, unsigned int ec, const string& msg)
+{
+    if (ShouldSuppress(ec)) {
+        return;
+    }
+    CRef<CValidErrItem> item(new CValidErrItem());
+    item->SetSev(sev);
+    item->SetErrIndex(ec);
+    item->SetMsg(msg);
+    item->SetErrorName(CValidErrItem::ConvertErrCode(ec));
+    item->SetErrorGroup(CValidErrItem::ConvertErrGroup(ec));
+
+    SetErrs().push_back(item);
+    m_Stats[item->GetSeverity()]++;
+}
+
+
 void CValidError::SuppressError(unsigned int ec)
 {
     m_SuppressionList.push_back(ec);

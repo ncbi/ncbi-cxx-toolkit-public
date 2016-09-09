@@ -139,7 +139,7 @@ private:
     CRef<CBioSource> ReadBioSource(void);
     CRef<CPubdesc> ReadPubdesc(void);
 
-    void ReportReadFailure(void);
+    CRef<CValidError> ReportReadFailure(void);
 
     CRef<CScope> BuildScope(void);
 
@@ -630,18 +630,11 @@ void CAsnvalApp::ProcessReleaseFile
     *m_In >> *seqset;
 }
 
-void CAsnvalApp::ReportReadFailure(void)
+CRef<CValidError> CAsnvalApp::ReportReadFailure(void)
 {
-    CNcbiOstream& os = *m_ValidErrorStream;
-
-    if (m_verbosity == eVerbosity_XML) {
-
-        os << "  <message severity=\"REJECT\" code=\"GENERIC_InvalidAsn\">Unable to read invalid ASN.1</message>";
-
-        return;
-    }
-
-    os << "REJECT: valid [GENERIC.InvalidAsn] Unable to read invalid ASN.1" << endl;
+    CRef<CValidError> errors(new CValidError());
+    errors->AddValidErrItem(eDiag_Fatal, eErr_GENERIC_InvalidAsn, "Unable to read invalid ASN.1");
+    return errors;
 }
 
 
@@ -672,9 +665,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessCatenated(void)
             }
             catch (const CException& e) {
                 ERR_POST(Error << e);
-                ReportReadFailure();
-                CRef<CValidError> errors(new CValidError());
-                return errors;
+                return ReportReadFailure();
             }
             try {
                 CConstRef<CValidError> eval = ProcessSeqEntry(*se);
@@ -700,9 +691,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessCatenated(void)
     }
     catch (const CException& e) {
         ERR_POST(Error << e);
-        ReportReadFailure();
-        CRef<CValidError> errors(new CValidError());
-        return errors;
+        return ReportReadFailure();
     }
 
     return CConstRef<CValidError>();
@@ -742,9 +731,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqEntry(void)
     }
     catch (const CException& e) {
         ERR_POST(Error << e);
-        ReportReadFailure();
-        CRef<CValidError> errors(new CValidError());
-        return errors;
+        return ReportReadFailure();
     }
 
     try
@@ -875,9 +862,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqSubmit(void)
     }
     catch (CException& e) {
         ERR_POST(Error << e);
-        ReportReadFailure();
-        CRef<CValidError> errors(new CValidError());
-        return errors;
+        return ReportReadFailure();
     }
 
     // Validae Seq-submit
@@ -1031,9 +1016,13 @@ void CAsnvalApp::PrintValidErrItem(const CValidErrItem& item)
     CNcbiOstream& os = *m_ValidErrorStream;
     switch (m_verbosity) {
         case eVerbosity_Normal:
-            os << s_GetSeverityLabel(item.GetSeverity()) 
-               << ": valid [" << item.GetErrGroup() << "." << item.GetErrCode() <<"] "
-               << item.GetMsg() << " " << item.GetObjDesc() << endl;
+            os << s_GetSeverityLabel(item.GetSeverity())
+                << ": valid [" << item.GetErrGroup() << "." << item.GetErrCode() << "] "
+                << item.GetMsg();
+            if (item.IsSetObjDesc()) {
+                os << " " << item.GetObjDesc();
+            }
+            os << endl;
             break;
         case eVerbosity_Spaced:
             {
@@ -1086,9 +1075,11 @@ void CValXMLStream::Print(const CValidErrItem& item)
     WriteObject(&item, info);
 #else
     m_Output.PutString("  <message severity=\"");
-       m_Output.PutString(s_GetSeverityLabel(item.GetSeverity()));
-    m_Output.PutString("\" seq-id=\"");
-       WriteString(item.GetAccnver(), eStringTypeVisible);
+    m_Output.PutString(s_GetSeverityLabel(item.GetSeverity()));
+    if (item.IsSetAccnver()) {
+        m_Output.PutString("\" seq-id=\"");
+        WriteString(item.GetAccnver(), eStringTypeVisible);
+    }
 
     if (item.IsSetFeatureId()) {
        m_Output.PutString("\" feat-id=\"");
@@ -1096,9 +1087,9 @@ void CValXMLStream::Print(const CValidErrItem& item)
     }
 
     m_Output.PutString("\" code=\"");
-        WriteString(item.GetErrGroup(), eStringTypeVisible);
-        m_Output.PutString("_");
-        WriteString(item.GetErrCode(), eStringTypeVisible);
+    WriteString(item.GetErrGroup(), eStringTypeVisible);
+    m_Output.PutString("_");
+    WriteString(item.GetErrCode(), eStringTypeVisible);
     m_Output.PutString("\">");
 
     WriteString(item.GetMsg(), eStringTypeVisible);
