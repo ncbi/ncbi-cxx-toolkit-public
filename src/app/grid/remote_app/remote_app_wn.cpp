@@ -248,7 +248,7 @@ public:
     }
     virtual ~CRemoteAppIdleTask() {}
 
-    virtual void Run(CWorkerNodeIdleTaskContext& context)
+    virtual void Run(CWorkerNodeIdleTaskContext&)
     {
         if (!m_AppCmd.empty())
             CExec::System(m_AppCmd.c_str());

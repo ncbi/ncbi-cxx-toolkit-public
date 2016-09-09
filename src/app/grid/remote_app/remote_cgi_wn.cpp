@@ -264,7 +264,7 @@ int CRemoteCgiJob::Do(CWorkerNodeJobContext& context)
     return ret;
 }
 
-CRemoteCgiJob::CRemoteCgiJob(const IWorkerNodeInitContext& context,
+CRemoteCgiJob::CRemoteCgiJob(const IWorkerNodeInitContext&,
         const CRemoteAppLauncher& remote_app_launcher) :
     m_RemoteAppLauncher(remote_app_launcher)
 {
@@ -280,7 +280,7 @@ public:
 
     virtual ~CRemoteCgiIdleTask() {}
 
-    virtual void Run(CWorkerNodeIdleTaskContext& context)
+    virtual void Run(CWorkerNodeIdleTaskContext&)
     {
         if (!m_AppCmd.empty())
             CExec::System(m_AppCmd.c_str());
