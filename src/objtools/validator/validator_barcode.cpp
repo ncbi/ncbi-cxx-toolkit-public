@@ -393,7 +393,7 @@ void RunLowTraceScript(map<string, pair<SBarcode, int> >& trace_lookup, TBarcode
     } else {
         string tmpIn = CFile::GetTmpName();
         {
-            CNcbiOfstream ostr(tmpIn);
+            CNcbiOfstream ostr(tmpIn.c_str());
             for (map<string, pair<SBarcode, int> >::iterator it = trace_lookup.begin(); it != trace_lookup.end(); ++it)
             {
                 ostr << it->first << endl;
@@ -406,7 +406,7 @@ void RunLowTraceScript(map<string, pair<SBarcode, int> >& trace_lookup, TBarcode
         if (!tmpIn.empty()) {
             CFile(tmpIn).Remove();
         }
-        CNcbiIfstream istr(tmpOut);
+        CNcbiIfstream istr(tmpOut.c_str());
         string str;
         while (NcbiGetline(istr, str, "\r\n")) {
             if (NStr::StartsWith(str, "ERROR"))
