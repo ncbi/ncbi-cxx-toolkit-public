@@ -839,23 +839,28 @@ void CEutilsClient::SearchHistory(const string& db,
 
 string CEutilsClient::x_GetHostName(void) const
 {
-    static const char kEutils[]   = "eutils.ncbi.nlm.nih.gov";
-    static const char kEutilsLB[] = "eutils_lb";
-
     if (!m_HostName.empty()) {
         return m_HostName;
     }
+
+    // See also: objtools/eutils/api/eutils.cpp
+    static const char kEutils[]   = "eutils.ncbi.nlm.nih.gov";
+    static const char kEutilsLB[] = "eutils_lb";
+
+    string host;
+#ifdef HAVE_LIBCONNEXT
     SConnNetInfo* net_info = ConnNetInfo_Create(kEutilsLB);
     SSERV_Info*       info = SERV_GetInfo(kEutilsLB, fSERV_Dns,
                                           SERV_ANYHOST, net_info);
     ConnNetInfo_Destroy(net_info);
-    string host;
     if (info) {
         if (info->host) {
             host = CSocketAPI::ntoa(info->host);
         }
         free(info);
     }
+#endif //HAVE_LIBCONNEXT
+
     string scheme("http");
     if (host.empty()) {
         char buf[80];
@@ -864,6 +869,7 @@ string CEutilsClient::x_GetHostName(void) const
         host = string(web  &&  *web ? web : kEutils);
         scheme += 's';
     }
+    _ASSERT(!host.empty());
     return scheme + "://" + host;
 }
 

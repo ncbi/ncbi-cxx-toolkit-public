@@ -90,28 +90,31 @@ string CEUtils_Request::GetBaseURL(void)
 {
     string url = TEUtilsBaseURLParam::GetDefault();
     if ( url.empty() ) {
-        static const char kEutils[] = "eutils.ncbi.nlm.nih.gov";
+        // See also: misc/eutils_client/eutils_client.cpp
+        static const char kEutils[]   = "eutils.ncbi.nlm.nih.gov";
         static const char kEutilsLB[] = "eutils_lb";
 
-        string scheme, host;
+        string host;
+#ifdef HAVE_LIBCONNEXT
         SConnNetInfo* net_info = ConnNetInfo_Create(kEutilsLB);
-        SSERV_Info* info = SERV_GetInfo(kEutilsLB, fSERV_Dns,
-            SERV_ANYHOST, net_info);
-        host = info  &&  info->host ?
-            CSocketAPI::ntoa(info->host) : kEmptyStr;
+        SSERV_Info*       info = SERV_GetInfo(kEutilsLB, fSERV_Dns,
+                                              SERV_ANYHOST, net_info);
+        ConnNetInfo_Destroy(net_info);
         if (info) {
+            if (info->host) {
+                host = CSocketAPI::ntoa(info->host);
+            }
             free(info);
         }
-        ConnNetInfo_Destroy(net_info);
+#endif //HAVE_LIBCONNEXT
+
+        string scheme("http");
         if (host.empty()) {
             char buf[80];
             const char* web = ConnNetInfo_GetValue(kEutilsLB, REG_CONN_HOST,
-                buf, sizeof(buf), kEutils);
+                                                   buf, sizeof(buf), kEutils);
             host = string(web  &&  *web ? web : kEutils);
-            scheme = "https";
-        }
-        else {
-            scheme = "http";
+            scheme += 's';
         }
         _ASSERT(!host.empty());
         url = scheme + "://" + host + kDefaultEUtils_Path;
