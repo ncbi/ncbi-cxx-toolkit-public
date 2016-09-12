@@ -53,7 +53,7 @@
 BEGIN_NCBI_NAMESPACE;
 
 #define NCBI_USE_ERRCODE_X   WGSResolver
-NCBI_DEFINE_ERR_SUBCODE_X(27);
+NCBI_DEFINE_ERR_SUBCODE_X(31);
 
 BEGIN_NAMESPACE(objects);
 
@@ -132,6 +132,7 @@ static inline bool s_DebugEnabled(EDebugLevel level)
 struct CWGSResolver_VDB::SGiIdxTableCursor : public CObject {
     explicit SGiIdxTableCursor(const CVDBTable& table);
 
+    CVDBTable m_Table;
     CVDBCursor m_Cursor;
 
     DECLARE_VDB_COLUMN_AS_STRING(WGS_PREFIX);
@@ -139,7 +140,8 @@ struct CWGSResolver_VDB::SGiIdxTableCursor : public CObject {
 
 
 CWGSResolver_VDB::SGiIdxTableCursor::SGiIdxTableCursor(const CVDBTable& table)
-    : m_Cursor(table),
+    : m_Table(table),
+      m_Cursor(table),
       INIT_VDB_COLUMN(WGS_PREFIX)
 {
 }
@@ -149,6 +151,7 @@ CWGSResolver_VDB::SGiIdxTableCursor::SGiIdxTableCursor(const CVDBTable& table)
 struct CWGSResolver_VDB::SAccIdxTableCursor : public CObject {
     explicit SAccIdxTableCursor(const CVDBTable& table);
 
+    CVDBTable m_Table;
     CVDBCursor m_Cursor;
 
     typedef pair<TVDBRowId, TVDBRowId> row_range_t;
@@ -158,7 +161,8 @@ struct CWGSResolver_VDB::SAccIdxTableCursor : public CObject {
 
 
 CWGSResolver_VDB::SAccIdxTableCursor::SAccIdxTableCursor(const CVDBTable& table)
-    : m_Cursor(table),
+    : m_Table(table),
+      m_Cursor(table),
       INIT_VDB_COLUMN(ACCESSION_ROW_RANGE),
       INIT_VDB_COLUMN(WGS_PREFIX)
 {
@@ -253,8 +257,43 @@ void CWGSResolver_VDB::Close(void)
 }
 
 
-void CWGSResolver_VDB::Open(const CVDBMgr& mgr, const string& path)
+static string s_ResolveAccOrPath(const CVDBMgr& mgr, const string& acc_or_path)
 {
+    string path;
+    if ( CVPath::IsPlainAccession(acc_or_path) ) {
+        // resolve VDB accessions
+        path = mgr.FindAccPath(acc_or_path);
+        if ( s_DebugEnabled(eDebug_open) ) {
+            LOG_POST_X(28, "CWGSResolver_VDB: "
+                       "index accession "<<acc_or_path<<" -> "<<path);
+        }
+    }
+    else {
+        // real path, http:, etc.
+        path = acc_or_path;
+    }
+
+    // resolve symbolic links for correct timestamp and longer-living reference
+    CDirEntry de(path);
+    if ( de.Exists() ) {
+        de.DereferenceLink();
+        if ( de.GetPath() != path ) {
+            path = de.GetPath();
+            if ( s_DebugEnabled(eDebug_open) ) {
+                LOG_POST_X(29, "CWGSResolver_VDB: "
+                           "resolved index link to "<<path);
+            }
+        }
+    }
+    return path;
+}
+
+
+void CWGSResolver_VDB::Open(const CVDBMgr& mgr, const string& acc_or_path)
+{
+    string path = s_ResolveAccOrPath(mgr, acc_or_path);
+
+    // open VDB file
     CMutexGuard guard(m_Mutex);
     Close();
     m_Mgr = mgr;
@@ -267,9 +306,16 @@ void CWGSResolver_VDB::Open(const CVDBMgr& mgr, const string& path)
         }
         throw;
     }
-    m_WGSIndexPath = path;
+
+    // save original argument for possible changes in symbolic links
+    m_WGSIndexPath = acc_or_path;
     if ( !CDirEntry(path).GetTime(&m_Timestamp) ) {
         m_Timestamp = CTime();
+    }
+    else {
+        if ( s_DebugEnabled(eDebug_open) ) {
+            LOG_POST_X(30, "CWGSResolver_VDB: index timestamp: "<<m_Timestamp);
+        }
     }
     m_GiIdxTable = CVDBTable(m_Db, "GI_IDX");
     m_AccIdxTable = CVDBTable(m_Db, "ACC_IDX");
@@ -287,13 +333,18 @@ void CWGSResolver_VDB::Reopen(void)
 
 bool CWGSResolver_VDB::Update(void)
 {
+    string path = s_ResolveAccOrPath(m_Mgr, GetWGSIndexPath());
     CTime timestamp;
     if ( !CDirEntry(GetWGSIndexPath()).GetTime(&timestamp) ) {
+        // cannot get timestamp -> remote reference
         return false;
     }
     if ( timestamp == m_Timestamp ) {
         // same timestamp
         return false;
+    }
+    if ( s_DebugEnabled(eDebug_open) ) {
+        LOG_POST_X(31, "CWGSResolver_VDB: new index timestamp: "<<timestamp);
     }
     Reopen();
     return true;
@@ -303,9 +354,9 @@ bool CWGSResolver_VDB::Update(void)
 inline
 CRef<CWGSResolver_VDB::SGiIdxTableCursor> CWGSResolver_VDB::GiIdx(TIntId row)
 {
+    CMutexGuard guard(m_Mutex);
     CRef<SGiIdxTableCursor> curs = m_GiIdx.Get(row);
     if ( !curs ) {
-        CMutexGuard guard(m_Mutex);
         curs = new SGiIdxTableCursor(GiIdxTable());
     }
     return curs;
@@ -315,9 +366,9 @@ CRef<CWGSResolver_VDB::SGiIdxTableCursor> CWGSResolver_VDB::GiIdx(TIntId row)
 inline
 CRef<CWGSResolver_VDB::SAccIdxTableCursor> CWGSResolver_VDB::AccIdx(void)
 {
+    CMutexGuard guard(m_Mutex);
     CRef<SAccIdxTableCursor> curs = m_AccIdx.Get();
     if ( !curs ) {
-        CMutexGuard guard(m_Mutex);
         curs = new SAccIdxTableCursor(AccIdxTable());
     }
     return curs;
@@ -327,14 +378,20 @@ CRef<CWGSResolver_VDB::SAccIdxTableCursor> CWGSResolver_VDB::AccIdx(void)
 inline
 void CWGSResolver_VDB::Put(CRef<SGiIdxTableCursor>& curs, TIntId row)
 {
-    m_GiIdx.Put(curs, row);
+    CMutexGuard guard(m_Mutex);
+    if ( curs->m_Table == GiIdxTable() ) {
+        m_GiIdx.Put(curs, row);
+    }
 }
 
 
 inline
 void CWGSResolver_VDB::Put(CRef<SAccIdxTableCursor>& curs)
 {
-    m_AccIdx.Put(curs);
+    CMutexGuard guard(m_Mutex);
+    if ( curs->m_Table == AccIdxTable() ) {
+        m_AccIdx.Put(curs);
+    }
 }
 
 
