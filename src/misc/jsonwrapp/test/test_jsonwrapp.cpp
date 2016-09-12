@@ -388,6 +388,23 @@ BOOST_AUTO_TEST_CASE(s_JsonWrapp)
         ci--;
         BOOST_CHECK(ci == ci0);
         BOOST_CHECK(ci0 == ci);
+
+        ci = ci0;
+        ci1 = ci++;
+        BOOST_CHECK(ci1 == ci0);
+        BOOST_CHECK(ci != ci0);
+        ci = ci0;
+        ci1 = ++ci;
+        BOOST_CHECK(ci1 != ci0);
+        BOOST_CHECK(ci1 == ci);
+        ci = ++ci0;
+        ci1 = ci--;
+        BOOST_CHECK(ci1 == ci0);
+        BOOST_CHECK(ci != ci0);
+        ci = ci0;
+        ci1 = --ci;
+        BOOST_CHECK(ci1 != ci0);
+        BOOST_CHECK(ci1 == ci);
     }
     {
         CJson_Object::const_iterator ci;
@@ -407,6 +424,23 @@ BOOST_AUTO_TEST_CASE(s_JsonWrapp)
         ci--;
         BOOST_CHECK(ci == ci0);
         BOOST_CHECK(ci0 == ci);
+
+        ci = ci0;
+        ci1 = ci++;
+        BOOST_CHECK(ci1 == ci0);
+        BOOST_CHECK(ci != ci0);
+        ci = ci0;
+        ci1 = ++ci;
+        BOOST_CHECK(ci1 != ci0);
+        BOOST_CHECK(ci1 == ci);
+        ci = ++ci0;
+        ci1 = ci--;
+        BOOST_CHECK(ci1 == ci0);
+        BOOST_CHECK(ci != ci0);
+        ci = ci0;
+        ci1 = --ci;
+        BOOST_CHECK(ci1 != ci0);
+        BOOST_CHECK(ci1 == ci);
     }
     {
         CJson_Object::const_iterator ci;
@@ -428,6 +462,23 @@ BOOST_AUTO_TEST_CASE(s_JsonWrapp)
         ci--;
         BOOST_CHECK(ci == ci0);
         BOOST_CHECK(ci0 == ci);
+
+        ci = ci0;
+        ci1 = ci++;
+        BOOST_CHECK(ci1 == ci0);
+        BOOST_CHECK(ci != ci0);
+        ci = ci0;
+        ci1 = ++ci;
+        BOOST_CHECK(ci1 != ci0);
+        BOOST_CHECK(ci1 == ci);
+        ci = ++ci0;
+        ci1 = ci--;
+        BOOST_CHECK(ci1 == ci0);
+        BOOST_CHECK(ci != ci0);
+        ci = ci0;
+        ci1 = --ci;
+        BOOST_CHECK(ci1 != ci0);
+        BOOST_CHECK(ci1 == ci);
     }
 
 // --------------------------------------------------------------------------
@@ -541,6 +592,23 @@ BOOST_AUTO_TEST_CASE(s_JsonWrapp)
         ci--;
         BOOST_CHECK(ci == ci0);
         BOOST_CHECK(ci0 == ci);
+
+        ci = ci0;
+        ci1 = ci++;
+        BOOST_CHECK(ci1 == ci0);
+        BOOST_CHECK(ci != ci0);
+        ci = ci0;
+        ci1 = ++ci;
+        BOOST_CHECK(ci1 != ci0);
+        BOOST_CHECK(ci1 == ci);
+        ci = ++ci0;
+        ci1 = ci--;
+        BOOST_CHECK(ci1 == ci0);
+        BOOST_CHECK(ci != ci0);
+        ci = ci0;
+        ci1 = --ci;
+        BOOST_CHECK(ci1 != ci0);
+        BOOST_CHECK(ci1 == ci);
     }
     {
         CJson_Array::const_iterator ci;
@@ -565,6 +633,23 @@ BOOST_AUTO_TEST_CASE(s_JsonWrapp)
         ci--;
         BOOST_CHECK(ci == ci0);
         BOOST_CHECK(ci0 == ci);
+
+        ci = ci0;
+        ci1 = ci++;
+        BOOST_CHECK(ci1 == ci0);
+        BOOST_CHECK(ci != ci0);
+        ci = ci0;
+        ci1 = ++ci;
+        BOOST_CHECK(ci1 != ci0);
+        BOOST_CHECK(ci1 == ci);
+        ci = ++ci0;
+        ci1 = ci--;
+        BOOST_CHECK(ci1 == ci0);
+        BOOST_CHECK(ci != ci0);
+        ci = ci0;
+        ci1 = --ci;
+        BOOST_CHECK(ci1 != ci0);
+        BOOST_CHECK(ci1 == ci);
     }
     {
         CJson_Array::const_iterator ci;
@@ -591,7 +676,24 @@ BOOST_AUTO_TEST_CASE(s_JsonWrapp)
         ci--;
         BOOST_CHECK(ci == ci0);
         BOOST_CHECK(ci0 == ci);
-    }
+    
+        ci = ci0;
+        ci1 = ci++;
+        BOOST_CHECK(ci1 == ci0);
+        BOOST_CHECK(ci != ci0);
+        ci = ci0;
+        ci1 = ++ci;
+        BOOST_CHECK(ci1 != ci0);
+        BOOST_CHECK(ci1 == ci);
+        ci = ++ci0;
+        ci1 = ci--;
+        BOOST_CHECK(ci1 == ci0);
+        BOOST_CHECK(ci != ci0);
+        ci = ci0;
+        ci1 = --ci;
+        BOOST_CHECK(ci1 != ci0);
+        BOOST_CHECK(ci1 == ci);
+}
 
 // --------------------------------------------------------------------------
 // traversing array elements

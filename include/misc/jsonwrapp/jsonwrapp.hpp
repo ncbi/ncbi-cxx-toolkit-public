@@ -359,11 +359,11 @@ public:
 
         /// Increment and decrement
         const_iterator& operator++(void);
-        const_iterator& operator++(int);
+        const_iterator  operator++(int);
         const_iterator& operator+=(int);
         const_iterator  operator+(int) const;
         const_iterator& operator--(void);
-        const_iterator& operator--(int);
+        const_iterator  operator--(int);
         const_iterator& operator-=(int);
         const_iterator  operator-(int) const;
 
@@ -399,8 +399,12 @@ public:
         iterator& operator=(const iterator& vi);
 
         /// Increment and decrement
-        iterator operator+(int) const;
-        iterator operator-(int) const;
+        iterator& operator++(void);
+        iterator  operator++(int);
+        iterator  operator+(int) const;
+        iterator& operator--(void);
+        iterator  operator--(int);
+        iterator  operator-(int) const;
 
         /// Dereference
         CJson_Node& operator*(void) const;
@@ -645,9 +649,9 @@ public:
 
         /// Increment and decrement
         const_iterator& operator++(void);
-        const_iterator& operator++(int);
+        const_iterator  operator++(int);
         const_iterator& operator--(void);
-        const_iterator& operator--(int);
+        const_iterator  operator--(int);
 
         /// Dereference
         const pair& operator*(void) const;
@@ -690,9 +694,9 @@ public:
 
         /// Increment and decrement
         iterator& operator++(void);
-        iterator& operator++(int);
+        iterator  operator++(int);
         iterator& operator--(void);
-        iterator& operator--(int);
+        iterator  operator--(int);
 
         /// Dereference
         pair& operator*(void) const;
@@ -1314,7 +1318,7 @@ CJson_Array::operator=(const CJson_Array& n) {
     CJson_Node::operator=(n); return *this;
 }
 inline void CJson_Array::reserve(size_t count) {
-    m_Impl->Reserve(count, *(m_Impl->GetValueAllocator()));
+    m_Impl->Reserve(rapidjson::SizeType(count), *(m_Impl->GetValueAllocator()));
 }
 inline void CJson_Array::clear(void) {
     m_Impl->Clear();
@@ -1348,10 +1352,10 @@ inline CJson_Node CJson_Array::at(size_t index) {
     return operator[](index);
 }
 inline CJson_ConstNode CJson_ConstArray::operator[](size_t index) const {
-    return CJson_ConstNode(&(m_Impl->operator[](index)));
+    return CJson_ConstNode(&(m_Impl->operator[](rapidjson::SizeType(index))));
 }
 inline CJson_Node CJson_Array::operator[](size_t index) {
-    return CJson_Node(&(m_Impl->operator[](index)));
+    return CJson_Node(&(m_Impl->operator[](rapidjson::SizeType(index))));
 }
 inline CJson_ConstNode CJson_ConstArray::front(void) const {
     return operator[](0);
@@ -1522,9 +1526,9 @@ inline CJson_ConstArray::const_iterator&
 CJson_ConstArray::const_iterator::operator++(void) {
     ++m_vi; return *this;
 }
-inline CJson_ConstArray::const_iterator&
+inline CJson_ConstArray::const_iterator
 CJson_ConstArray::const_iterator::operator++(int) {
-    ++m_vi; return *this;
+    const_iterator tmp(*this); ++m_vi; return tmp;
 }
 inline CJson_ConstArray::const_iterator&
 CJson_ConstArray::const_iterator::operator+=(int i) {
@@ -1538,9 +1542,9 @@ inline CJson_ConstArray::const_iterator&
 CJson_ConstArray::const_iterator::operator--(void) {
     --m_vi; return *this;
 }
-inline CJson_ConstArray::const_iterator&
+inline CJson_ConstArray::const_iterator
 CJson_ConstArray::const_iterator::operator--(int) {
-    --m_vi; return *this;
+    const_iterator tmp(*this); --m_vi; return tmp;
 }
 inline CJson_ConstArray::const_iterator&
 CJson_ConstArray::const_iterator::operator-=(int i) {
@@ -1591,6 +1595,22 @@ CJson_Array::iterator::operator+(int i) const {
 inline CJson_ConstArray::iterator
 CJson_Array::iterator::operator-(int i) const {
     return iterator(m_vi - i);
+}
+inline CJson_ConstArray::iterator&
+CJson_ConstArray::iterator::operator++(void) {
+    ++m_vi; return *this;
+}
+inline CJson_ConstArray::iterator
+CJson_ConstArray::iterator::operator++(int) {
+    iterator tmp(*this); ++m_vi; return tmp;
+}
+inline CJson_ConstArray::iterator&
+CJson_ConstArray::iterator::operator--(void) {
+    --m_vi; return *this;
+}
+inline CJson_ConstArray::iterator
+CJson_ConstArray::iterator::operator--(int) {
+    iterator tmp(*this); --m_vi; return tmp;
 }
 inline CJson_Node&
 CJson_ConstArray::iterator::operator*(void) const {
@@ -1838,17 +1858,17 @@ inline CJson_ConstObject::const_iterator&
 CJson_ConstObject::const_iterator::operator++(void) {
     ++m_vi; return *this;
 }
-inline CJson_ConstObject::const_iterator&
+inline CJson_ConstObject::const_iterator
 CJson_ConstObject::const_iterator::operator++(int) {
-    ++m_vi; return *this;
+    const_iterator tmp(*this); ++m_vi; return tmp;
 }
 inline CJson_ConstObject::const_iterator&
 CJson_ConstObject::const_iterator::operator--(void) {
     --m_vi; return *this;
 }
-inline CJson_ConstObject::const_iterator&
+inline CJson_ConstObject::const_iterator
 CJson_ConstObject::const_iterator::operator--(int) {
-    --m_vi; return *this;
+    const_iterator tmp(*this); --m_vi; return tmp;
 }
 inline CJson_ConstObject::const_iterator&
 CJson_ConstObject::const_iterator::operator=(
@@ -1953,17 +1973,17 @@ inline CJson_ConstObject::iterator&
 CJson_ConstObject::iterator::operator++(void) {
     ++m_vi; return *this;
 }
-inline CJson_ConstObject::iterator&
+inline CJson_ConstObject::iterator
 CJson_ConstObject::iterator::operator++(int) {
-    ++m_vi; return *this;
+    iterator tmp(*this); ++m_vi; return tmp;
 }
 inline CJson_ConstObject::iterator&
 CJson_ConstObject::iterator::operator--(void) {
     --m_vi; return *this;
 }
-inline CJson_ConstObject::iterator&
+inline CJson_ConstObject::iterator
 CJson_ConstObject::iterator::operator--(int) {
-    --m_vi; return *this;
+    iterator tmp(*this); --m_vi; return tmp;
 }
 inline CJson_ConstObject::iterator::pair&
 CJson_ConstObject::iterator::operator*(void) const {
