@@ -1,0 +1,13 @@
+Discrepancy Report Results
+
+Summary
+CONSORTIUM: 4 publications/submitter blocks have consortium
+
+Detailed Report
+
+CONSORTIUM: 4 publications/submitter blocks have consortium
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\consortium.sqn:KX761578 (14 components):Lestari,D.N.Unpublished
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\consortium.sqn:KX761578 (14 components):Lestari,D.N. (8-22-2016) 
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\consortium.sqn:KX761592 (21 components):Lestari,D.N.Unpublished
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\consortium.sqn:KX761592 (21 components):Lestari,D.N. (8-22-2016) 
+
