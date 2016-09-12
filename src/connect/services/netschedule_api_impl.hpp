@@ -150,20 +150,22 @@ private:
     enum EMode {
         fWnCompatible       = (0 << 0),
         fNonWnCompatible    = (1 << 0),
-        fConfigLoading      = (1 << 1) | fNonWnCompatible,
+        fConfigLoading      = (1 << 1),
+        fWorkerNode         = fWnCompatible,
+        fNetSchedule        = fNonWnCompatible,
     };
     typedef int TMode;
 
 public:
     CNetScheduleServerListener() :
         m_ClientType(CNetScheduleAPI::eCT_Auto),
-        m_Mode(fConfigLoading)
+        m_Mode(fNetSchedule | fConfigLoading)
     {
     }
 
     CNetScheduleServerListener(bool wn_compatible) :
         m_ClientType(CNetScheduleAPI::eCT_Auto),
-        m_Mode(wn_compatible ? fWnCompatible : fNonWnCompatible)
+        m_Mode(wn_compatible ? fWorkerNode : fNetSchedule)
     {
     }
 
