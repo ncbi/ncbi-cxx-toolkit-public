@@ -778,7 +778,7 @@ static const TErrTypStrs sc_ErrStrs[] = {
     { "BarcodeTestPasses",
 "Barcode test passes." } },
     { eErr_GENERIC_InvalidAsn,
-    { "eErr_GENERIC_InvalidAsn",
+    { "InvalidAsn",
     "Invalid ASN.1" } },
 
 /* SEQ_PKG */

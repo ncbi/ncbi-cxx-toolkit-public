@@ -633,7 +633,7 @@ void CAsnvalApp::ProcessReleaseFile
 CRef<CValidError> CAsnvalApp::ReportReadFailure(void)
 {
     CRef<CValidError> errors(new CValidError());
-    errors->AddValidErrItem(eDiag_Fatal, eErr_GENERIC_InvalidAsn, "Unable to read invalid ASN.1");
+    errors->AddValidErrItem(eDiag_Critical, eErr_GENERIC_InvalidAsn, "Unable to read invalid ASN.1");
     return errors;
 }
 
