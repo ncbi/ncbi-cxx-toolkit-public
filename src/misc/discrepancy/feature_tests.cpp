@@ -627,7 +627,7 @@ DISCREPANCY_CASE(PARTIAL_PROBLEMS, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller | eSub
         TSeqPos stop = obj.GetLocation().GetStop(eExtreme_Positional);
         if (stop < seq->GetLength() - 1) {
             TSeqPos extend_len = 0;
-            if (!IsExtendableRight(stop, *seq, &(context.GetScope()), extend_len)) {
+            if (IsExtendableRight(stop, *seq, &(context.GetScope()), extend_len)) {
                 add_this = true;
             }
         }
