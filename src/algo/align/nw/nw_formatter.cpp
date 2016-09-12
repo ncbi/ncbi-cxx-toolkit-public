@@ -135,8 +135,14 @@ CRef<CSeq_align> CNWFormatter::AsSeqAlign(
         seqalign->SetScore().push_back(score);
     }
 
-    seqalign->SetSegs().SetDenseg(*AsDenseSeg(query_start, query_strand,
-                                     subj_start, subj_strand, flags));
+    CRef<CDense_seg> rds= AsDenseSeg(query_start, query_strand,
+                                  subj_start, subj_strand, flags);
+
+    if(rds) {
+        seqalign->SetSegs().SetDenseg(*rds);
+    } else {
+        seqalign->SetSegs().SetDendiag();
+    }
 
     return seqalign;
 }
@@ -157,6 +163,25 @@ CRef<CDense_seg> CNWFormatter::AsDenseSeg(
 
     CRef<CDense_seg> rds(new CDense_seg);
     CDense_seg& ds = *rds;
+
+    if( m_aligner->IsSmithWaterman() ) {// check if alignment is empty
+
+        const CNWAligner::TTranscript stranscript = m_aligner->GetTranscript();
+
+        vector<CNWAligner::ETranscriptSymbol>::const_iterator
+            ib = stranscript.begin(),
+            ie = stranscript.end();
+        while( ( ie != ib ) &&
+               ( *ib == CNWAligner::eTS_Insert || *ib == CNWAligner::eTS_Delete || *ib == CNWAligner::eTS_Intron ||
+                 *ib == CNWAligner::eTS_SlackInsert || *ib == CNWAligner::eTS_SlackDelete ) ) {
+            ++ib;
+        }
+        if( ib == ie ) {
+            rds.Reset();
+            return rds;
+        }
+    }
+        
 
     ds.FromTranscript(query_start, query_strand,
                       subj_start,  subj_strand,
@@ -1198,6 +1223,7 @@ void CNWFormatter::AsText(string* output, ETextFormatType type, size_t line_widt
 
 
 // Transform source sequences according to the transcript.
+// cut flank gaps for Smith-Waterman
 // Write the results to v1 and v2 leaving source sequences intact.
 // Return alignment size.
 size_t CNWFormatter::x_ApplyTranscript(vector<char>* pv1, vector<char>* pv2)
@@ -1208,15 +1234,35 @@ size_t CNWFormatter::x_ApplyTranscript(vector<char>* pv1, vector<char>* pv2)
     vector<char>& v1 (*pv1);
     vector<char>& v2 (*pv2);
 
+    v1.clear();
+    v2.clear();
+
+    if(transcript.size() == 0) {
+        return 0;
+    }
+
+
     vector<CNWAligner::ETranscriptSymbol>::const_reverse_iterator
         ib = transcript.rbegin(),
         ie = transcript.rend(),
         ii;
 
+    if( m_aligner->IsSmithWaterman() ) {
+        --ie;
+        while( ( ie != ib ) &&
+               ( *ie == CNWAligner::eTS_Insert || *ie == CNWAligner::eTS_Delete || *ie == CNWAligner::eTS_Intron ||
+                 *ie == CNWAligner::eTS_SlackInsert || *ie == CNWAligner::eTS_SlackDelete ) ) {
+            --ie;
+        }
+    }
+
     const char* iv1 (m_aligner->GetSeq1());
     const char* iv2 (m_aligner->GetSeq2());
-    v1.clear();
-    v2.clear();
+
+    bool sw_ini_gap = false;
+    if( m_aligner->IsSmithWaterman() ) {
+        sw_ini_gap = true;
+    }
 
     for (ii = ib;  ii != ie;  ii++) {
 
@@ -1247,6 +1293,7 @@ size_t CNWFormatter::x_ApplyTranscript(vector<char>* pv1, vector<char>* pv2)
 
         case CNWAligner::eTS_Match:
         case CNWAligner::eTS_Replace:
+            sw_ini_gap = false;
             c1 = *iv1++;
             c2 = *iv2++;
             break;
@@ -1257,12 +1304,14 @@ size_t CNWFormatter::x_ApplyTranscript(vector<char>* pv1, vector<char>* pv2)
             break;
 
         default:
+            sw_ini_gap = false;
             c1 = c2 = '?';
             break;
         }
-
-        v1.push_back(c1);
-        v2.push_back(c2);
+        if( !sw_ini_gap ) {
+            v1.push_back(c1);
+            v2.push_back(c2);
+        }
     }
 
     return v1.size();

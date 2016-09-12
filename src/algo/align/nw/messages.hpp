@@ -37,6 +37,7 @@ const char g_msg_IntronTooLong[] = "Cannot handle introns longer than 1MB";
 
 const char g_msg_NoAlignment[] = "Sequence not aligned yet";
 
+const char g_msg_GapsOnly[] = "Alignment consists of gaps only";
 
 END_NCBI_SCOPE
 
