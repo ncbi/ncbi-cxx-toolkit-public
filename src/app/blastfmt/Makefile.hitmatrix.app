@@ -5,7 +5,7 @@ SRC = blast_hitmatrix cgi_hit_matrix
 
 LIB_ = w_hit_matrix gui_glmesa w_gl w_data w_wx \
            gui_graph gui_print gui_opengl gui_objutils gui_utils \
-	   gencoll_client gbproj \
+	   eutils_client gencoll_client gbproj \
 	   xalgoalignutil ximage xcgi xhtml \
 	   entrez2cli entrez2 valerr gbseq entrezgene biotree \
 	   xconnserv xqueryparse snputil $(EUTILS_LIBS) xmlwrapp \
@@ -16,7 +16,7 @@ LIB = $(LIB_:%=%$(STATIC))
 LIBS = $(OSMESA_LIBS) $(WXWIDGETS_GL_LIBS) $(WXWIDGETS_LIBS) $(GLEW_LIBS) \
        $(FTGL_LIBS) $(OPENGL_LIBS) \
        $(IMAGE_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(LIBXSLT_LIBS) $(LIBXML_LIBS) \
-       $(ORIG_LIBS)
+       $(NETWORK_LIBS) $(ORIG_LIBS)
 
 
 CFLAGS   = $(FAST_CFLAGS)
