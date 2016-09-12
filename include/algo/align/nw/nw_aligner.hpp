@@ -130,7 +130,7 @@ public:
     void SetSmithWaterman(bool SW);
 
     /// Control preference for where to place a gap if there is a choice;
-    /// default is eEarlier, placing the gap as early as possible
+    /// default is eLater, placing the gap as late as possible
     //note: implemented for SNWAligner only so far.
     // Not implemented for the derived classes.
     void SetGapPreference(EGapPreference p);
