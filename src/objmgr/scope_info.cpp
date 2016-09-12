@@ -1455,6 +1455,7 @@ void CTSE_ScopeInfo::RemoveLastInfoLock(CScopeInfo_Base& info)
         return;
     }
     CRef<CTSE_ScopeInfo> self;
+    CUnlockedTSEsGuard guard;
     {{
         CMutexGuard guard(m_TSE_LockMutex);
         if ( info.m_LockCounter.Get() > 0 ) {
