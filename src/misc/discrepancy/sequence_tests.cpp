@@ -2624,5 +2624,37 @@ DISCREPANCY_ALIAS(FLATFILE_FIND, FLATFILE_FIND_ONCALLER);
 DISCREPANCY_ALIAS(FLATFILE_FIND, FLATFILE_FIND_ONCALLER_UNFIXABLE);
 DISCREPANCY_ALIAS(FLATFILE_FIND, FLATFILE_FIND_ONCALLER_FIXABLE);
 
+
+// SEQUENCES_ARE_SHORT
+
+static const string kAllShort = "No sequences longer than 20,000 nt found";
+static const string kLongerFound = "LongSeq";
+static const size_t MIN_SEQUENCE_LEN = 20000;
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(SEQUENCES_ARE_SHORT, CSeq_inst, eOncaller, "Short sequences test")
+//  ----------------------------------------------------------------------------
+{
+    if (obj.GetLength() > MIN_SEQUENCE_LEN) {
+        m_Objs[kLongerFound].Add(*context.NewDiscObj(context.GetCurrentBioseq()), false);
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(SEQUENCES_ARE_SHORT)
+//  ----------------------------------------------------------------------------
+{
+    if (m_Objs.GetMap().find(kLongerFound) == m_Objs.GetMap().end()) {
+        // no sequences longer than 20000 nt
+        m_Objs[kAllShort];
+    }
+    else {
+        m_Objs.GetMap().erase(kLongerFound);
+    }
+    m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
+}
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

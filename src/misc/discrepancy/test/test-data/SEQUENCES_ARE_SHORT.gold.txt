@@ -1,0 +1,9 @@
+Discrepancy Report Results
+
+Summary
+SEQUENCES_ARE_SHORT: No sequences longer than 20,000 nt found
+
+Detailed Report
+
+SEQUENCES_ARE_SHORT: No sequences longer than 20,000 nt found
+
