@@ -3437,6 +3437,7 @@ bool CCleanup::RenormalizeNucProtSets(CSeq_entry_Handle seh)
 
 bool CCleanup::DecodeXMLMarkChanged(std::string & str)
 {
+// return false;
     bool change_made = false;
 
     // This is more complex than you might initially think is necessary
@@ -3521,6 +3522,9 @@ bool CCleanup::DecodeXMLMarkChanged(std::string & str)
         // (if it represents anything)
         int state = searcher.GetInitialState();
         SIZE_TYPE search_pos = (amp + 1);
+        if (str[search_pos] == ' ') {
+            break;
+        }
         for( ; search_pos < str_len ; ++search_pos ) {
             const char ch = str[search_pos];
             if( ch == ';' ) {
