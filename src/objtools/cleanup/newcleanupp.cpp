@@ -1764,12 +1764,6 @@ void CNewCleanup_imp::BiosourceBC (
     if (biosrc.RemoveNullTerms()) {
         ChangeMade(CCleanupChange::eChangeBioSourceOther);
     }
-    if (biosrc.FixSexMatingTypeInconsistencies()) {
-        ChangeMade(CCleanupChange::eChangeSubsource);
-    }
-    if (biosrc.RemoveUnexpectedViralQualifiers()) {
-        ChangeMade(CCleanupChange::eChangeOrgmod);
-    }
     if (biosrc.FixGenomeForQualifiers()) {
         ChangeMade(CCleanupChange::eChangeBioSourceGenome);
     }
