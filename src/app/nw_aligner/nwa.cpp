@@ -73,6 +73,12 @@ void CAppNWA::Init()
          "xxxx");
 
     argdescr->AddDefaultKey
+        ("gp", "gp",
+         "gap preference: earlier or later", 
+         CArgDescriptions::eString,
+         "later");
+
+    argdescr->AddDefaultKey
         ("Wm", "match", "match bonus (nucleotide sequences)",
          CArgDescriptions::eInteger,
          NStr::IntToString(CNWAligner::GetDefaultWm()).c_str());
@@ -101,6 +107,9 @@ void CAppNWA::Init()
          "Band shift in banded alignment "
          "(specify negative value to indicate second sequence)",
          CArgDescriptions::eInteger, "0");
+
+    argdescr->AddFlag("sw",
+                      "run local alignment (Smith-Waterman)");
 
     argdescr->AddFlag("mm",
                       "Use linear-memory alignment algorithm (Myers & Miller)");
@@ -132,6 +141,10 @@ void CAppNWA::Init()
     paa_esf->Allow("zxxx")->Allow("zxxz")->Allow("zxzx")->Allow("zxzz");
     paa_esf->Allow("zzxx")->Allow("zzxz")->Allow("zzzx")->Allow("zzzz");
     argdescr->SetConstraint("esf", paa_esf);
+
+    CArgAllow_Strings* paa_gp = new CArgAllow_Strings;
+    paa_gp->Allow("earlier")->Allow("later");
+    argdescr->SetConstraint("gp", paa_gp);
 
     SetupArgDescriptions(argdescr.release());
 }
@@ -271,6 +284,16 @@ void CAppNWA::x_RunOnPair() const
         aligner->SetEndSpaceFree(L1, R1, L2, R2);
     }}
 
+    aligner->SetSmithWaterman(args["sw"]);
+
+    if( args["gp"].AsString() == "earlier" ) {
+        aligner->SetGapPreference(CNWAligner::eEarlier);
+    } else if (args["gp"].AsString() == "later") {
+        aligner->SetGapPreference(CNWAligner::eLater);
+    } else {
+        NCBI_THROW(CException, eUnknown, "unknown value for \"gp\"");
+    }
+
     int score = aligner->Run();
     cerr << "Score = " << score << endl;
 
@@ -325,6 +348,10 @@ CRef<CSeq_id> CAppNWA::x_ReadFastaFile (const string& filename,
     // read the defline
     string str;
     getline(ifs, str);
+
+    if( str[0] == '>' ) { //cut leading '>'
+        str = str.substr(1);
+    }
 
     CRef<CSeq_id> seqid;
     try {
