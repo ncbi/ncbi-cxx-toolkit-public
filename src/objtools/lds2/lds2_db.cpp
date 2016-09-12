@@ -246,44 +246,44 @@ static const char* s_LDS2_SQL[] = {
     // eSt_GetSynonyms
     "select distinct lds_id from bioseq_id where bioseq_id=?1;",
     // eSt_GetBlobInfo
-    "select distinct blob_id, blob_type, file_id, file_pos "
+    "select blob_id, blob_type, file_id, file_pos "
     "from blob where blob_id=?1;",
     // eSt_GetBioseqForIntId
-    "select distinct blob_id, blob_type, file_id, file_pos "
+    "select blob_id, blob_type, file_id, file_pos "
     "from blob inner join bioseq using(blob_id) "
     "inner join bioseq_id using(bioseq_id) "
     "inner join seq_id using(lds_id) where seq_id.int_id=?1;",
     // eSt_GetBioseqForTxtId
-    "select distinct blob_id, blob_type, file_id, file_pos "
+    "select blob_id, blob_type, file_id, file_pos "
     "from blob inner join bioseq using(blob_id) "
     "inner join bioseq_id using(bioseq_id) "
     "inner join seq_id using(lds_id) where seq_id.txt_id=?1;",
     // eSt_GetAnnotBlobsByIntId
-    "select distinct blob_id, blob_type, file_id, file_pos "
+    "select blob_id, blob_type, file_id, file_pos "
     "from blob inner join annot using(blob_id) "
     "inner join annot_id using(annot_id) "
     "inner join seq_id using(lds_id) where "
     "annot_id.external=?2 and seq_id.int_id=?1;",
     // eSt_GetAnnotBlobsAllByIntId
-    "select distinct blob_id, blob_type, file_id, file_pos "
+    "select blob_id, blob_type, file_id, file_pos "
     "from blob inner join annot using(blob_id) "
     "inner join annot_id using(annot_id) "
     "inner join seq_id using(lds_id) where "
     "seq_id.int_id=?1;",
     // eSt_GetAnnotBlobsByTxtId
-    "select distinct blob_id, blob_type, file_id, file_pos "
+    "select blob_id, blob_type, file_id, file_pos "
     "from blob inner join annot using(blob_id) "
     "inner join annot_id using(annot_id) "
     "inner join seq_id using(lds_id) where "
     "annot_id.external=?2 and seq_id.txt_id=?1;",
     // eSt_GetAnnotBlobsAllByTxtId
-    "select distinct blob_id, blob_type, file_id, file_pos "
+    "select blob_id, blob_type, file_id, file_pos "
     "from blob inner join annot using(blob_id) "
     "inner join annot_id using(annot_id) "
     "inner join seq_id using(lds_id) where "
     "seq_id.txt_id=?1;",
     // eSt_GetAnnotCountForBlob
-    "select count(distinct annot_id) from annot where blob_id=?1;",
+    "select count(annot_id) from annot where blob_id=?1;",
     // eSt_GetAnnotInfosForBlob
     "select annot.annot_id, annot_type, annot_name not null as is_named, "
     " annot_name, lds_id, external, rg_from, rg_to, blob_size, blob_data "
