@@ -103,7 +103,7 @@ void CTrans_table::x_InitFsaTable (void)
     for (i = eBase_gap; i <= eBase_N; i++) {
         ch = charToBase [i];
         sm_BaseToIdx [(int) ch] = i;
-        ch = tolower ((unsigned char) ch);
+        ch = (unsigned char)tolower (ch);
         sm_BaseToIdx [(int) ch] = i;
     }
     sm_BaseToIdx [(int) 'U'] = eBase_T;
@@ -382,8 +382,12 @@ static bool s_ValidCodon(const string& codon)
     if ( codon.length() != 3 ) return false;
     
     for ( int i = 0; i < 3; ++i ) {
-        char ch = toupper((unsigned char) codon[i]);
-        if ( ch != 'A' && ch != 'G' && ch != 'C' && ch != 'T'  && ch != 'U' ) {
+        unsigned char ch = (unsigned char)toupper(codon[i]);
+        if ( ch != 'A' && 
+             ch != 'G' && 
+             ch != 'C' && 
+             ch != 'T' && 
+             ch != 'U' ) {
             return false;
         }
     }

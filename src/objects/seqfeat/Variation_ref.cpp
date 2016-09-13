@@ -629,7 +629,7 @@ const CVariation_ref::TPub& CVariation_ref::GetPub(void) const
 }
 
 
-void CVariation_ref::SetPub(TPub& value)
+void CVariation_ref::SetPub(TPub& /*value*/)
 {
     NCBI_THROW(CException, eUnknown,
                "CVariation_ref::SetPub(): "

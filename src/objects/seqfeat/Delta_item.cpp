@@ -68,7 +68,7 @@ void CDelta_item::SetDuplication(void)
 void CDelta_item::SetInsertion(const CIUPACna& sequence, 
                                const TSeqPos length)
 {
-    const TSeqPos seq_length = length ? length : sequence.Get().size();
+    const TSeqPos seq_length = length ? length : (TSeqPos)sequence.Get().size();
     SetSeq().SetLiteral().SetSeq_data().SetIupacna(sequence);
     SetSeq().SetLiteral().SetLength(seq_length);
     SetAction(eAction_ins_before);

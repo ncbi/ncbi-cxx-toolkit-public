@@ -675,7 +675,7 @@ void s_RestoreNumber(string& str, size_t pos, size_t len, TIntId number)
     char* start = &str[pos];
     char* ptr = start + len;
     while ( number ) {
-        *--ptr = '0' + number % 10;
+        *--ptr = (char)('0' + number % 10);
         number /= 10;
     }
     while ( ptr > start ) {
@@ -1095,10 +1095,10 @@ CSeq_id_Textseq_Tree::x_FindRevMatchByAccPacked(TSeq_id_MatchList& id_list,
             if ( key.IsSetVersion() ) {
                 // no version too
                 key.ResetVersion();
-                TPackedMap_CI it = m_PackedMap.find(key);
-                if ( it != m_PackedMap.end() ) {
+                TPackedMap_CI itm = m_PackedMap.find(key);
+                if ( itm != m_PackedMap.end() ) {
                     TPacked packed = CSeq_id_Textseq_Info::Pack(key, acc);
-                    id_list.insert(CSeq_id_Handle(it->second, packed));
+                    id_list.insert(CSeq_id_Handle(itm->second, packed));
                 }
             }
         }
@@ -1169,9 +1169,9 @@ void CSeq_id_Textseq_Tree::x_FindMatchByName(TSeq_id_MatchList& id_list,
 }
 
 
-void CSeq_id_Textseq_Tree::x_FindRevMatchByName(TSeq_id_MatchList& id_list,
-                                                const string& name,
-                                                const CTextseq_id* tid) const
+void CSeq_id_Textseq_Tree::x_FindRevMatchByName(TSeq_id_MatchList& /*id_list*/,
+                                                const string&      /*name*/,
+                                                const CTextseq_id* /*tid*/) const
 {
     /*
     for ( TStringMapCI vit = m_ByName.find(name);

@@ -68,7 +68,8 @@ CStd_seg::TDim CStd_seg::CheckNumRows() const
                    "CStd_seg::CheckNumRows():"
                    " ids.size is inconsistent with dim");
     }
-    return dim;
+    _ASSERT(dim <= kMax_Int);
+    return (TDim)dim;
 }
 
 

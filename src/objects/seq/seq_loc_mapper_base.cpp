@@ -166,9 +166,9 @@ to packed-ints.
 class CDefault_Mapper_Sequence_Info : public IMapper_Sequence_Info
 {
 public:
-    virtual TSeqType GetSequenceType(const CSeq_id_Handle& idh)
+    virtual TSeqType GetSequenceType(const CSeq_id_Handle&)
         { return CSeq_loc_Mapper_Base::eSeq_unknown; }
-    virtual TSeqPos GetSequenceLength(const CSeq_id_Handle& idh)
+    virtual TSeqPos GetSequenceLength(const CSeq_id_Handle&)
         { return kInvalidSeqPos; }
     virtual void CollectSynonyms(const CSeq_id_Handle& id,
                                  TSynonyms&            synonyms)
@@ -460,7 +460,7 @@ CMappingRanges::AddConversion(CSeq_id_Handle    src_id,
                               ENa_strand        dst_strand,
                               bool              ext_to,
                               int               frame,
-                              TSeqPos           dst_total_len,
+                              TSeqPos           /*dst_total_len*/,
                               TSeqPos           src_bioseq_len,
                               TSeqPos           dst_len)
 {
@@ -1216,12 +1216,12 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
         last_src_id = src_it.GetSeq_id_Handle();
         last_src_reverse = IsReverse(src_it.GetStrand());
         if (src_len == 0  &&  ++src_it) {
-            TRange rg = src_it.GetRange();
-            if ( rg.Empty() ) {
+            TRange r = src_it.GetRange();
+            if ( r.Empty() ) {
                 src_start = kInvalidSeqPos;
                 src_len = 0;
             }
-            else if ( rg.IsWhole() ) {
+            else if ( r.IsWhole() ) {
                 src_start = 0;
                 if ( multiseq_src  ||  m_MapOptions.GetTrimMappedLocation() ) {
                     src_len = GetSequenceLength(src_it.GetSeq_id());
@@ -1245,12 +1245,12 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
         last_dst_id = dst_it.GetSeq_id_Handle();
         last_dst_reverse = IsReverse(dst_it.GetStrand());
         if (dst_len == 0  &&  ++dst_it) {
-            TRange rg = dst_it.GetRange();
-            if ( rg.Empty() ) {
+            TRange r = dst_it.GetRange();
+            if ( r.Empty() ) {
                 dst_start = kInvalidSeqPos;
                 dst_len = 0;
             }
-            else if ( rg.IsWhole() ) {
+            else if ( r.IsWhole() ) {
                 dst_start = 0;
                 if ( multiseq_dst  ||  m_MapOptions.GetTrimMappedLocation() ) {
                     dst_len = GetSequenceLength(dst_it.GetSeq_id());
@@ -3072,9 +3072,9 @@ bool CSeq_loc_Mapper_Base::x_MapInterval(const CSeq_id&   src_id,
     // This should very *rarely* be needed
     if( ! m_Mappings.Empty() ) {
         // get first mapping
-        TRangeIterator rg_it = m_Mappings->BeginMappingRanges(src_idh, 0, 1);
-        if( rg_it && rg_it->second ) {
-            const CMappingRange &mapping = *rg_it->second;
+        TRangeIterator r_it = m_Mappings->BeginMappingRanges(src_idh, 0, 1);
+        if( r_it && r_it->second ) {
+            const CMappingRange &mapping = *r_it->second;
             // try to detect if we hit the case where we couldn't do a frame-shift
             if( ! mapping.m_Reverse && mapping.m_Frame > 1 && mapping.m_Dst_from == 0 &&
                 mapping.m_Dst_len <= static_cast<TSeqPos>(mapping.m_Frame - 1)  )

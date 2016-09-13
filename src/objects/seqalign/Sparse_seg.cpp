@@ -64,7 +64,8 @@ CSparse_seg::TDim CSparse_seg::CheckNumRows(void) const
 {
     size_t dim = GetRows().size();
     _SEQALIGN_ASSERT(IsSetRow_scores() ? GetRow_scores().size() == dim : true);
-    return dim+1; // extra 1 is for the consensus sequence (first-id)
+    _SEQALIGN_ASSERT(dim < kMax_Int);
+    return TDim(dim+1); // extra 1 is for the consensus sequence (first-id)
 }
 
 

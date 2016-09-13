@@ -443,7 +443,7 @@ protected:
     {
     }
 
-    virtual void x_PrepareJob(CNetScheduleJob& job) const
+    virtual void x_PrepareJob(CNetScheduleJob& /*job*/) const
     {
     }
 

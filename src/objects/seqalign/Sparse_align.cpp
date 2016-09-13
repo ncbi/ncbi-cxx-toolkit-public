@@ -51,7 +51,7 @@ CSparse_align::~CSparse_align(void)
 }
 
 
-void CSparse_align::Validate(bool full_test) const
+void CSparse_align::Validate(bool /*full_test*/) const
 {
     CheckNumRows();
     CheckNumSegs();
@@ -65,7 +65,8 @@ CSparse_align::TNumseg CSparse_align::CheckNumSegs(void) const {
     _SEQALIGN_ASSERT(GetLens().size() == numseg);
     _SEQALIGN_ASSERT(IsSetSecond_strands() ? GetSecond_strands().size() == numseg : true);
     _SEQALIGN_ASSERT(IsSetSeg_scores() ? GetSeg_scores().size() == numseg : true);
-    return numseg;
+    _SEQALIGN_ASSERT(numseg <= kMax_Int);
+    return (TNumseg)numseg;
 }    
 
 

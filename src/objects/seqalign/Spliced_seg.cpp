@@ -84,7 +84,7 @@ CSpliced_seg::GetSeqStrand(TDim row) const
     }
 }
 
-void CSpliced_seg::Validate(bool full_test) const
+void CSpliced_seg::Validate(bool /*full_test*/) const
 {
     bool prot = GetProduct_type() == eProduct_type_protein;
 
@@ -358,7 +358,7 @@ s_ExonToDenseg(const CSpliced_exon& exon,
 
     CDense_seg::TLens& lens = ds->SetLens();
     lens.reserve(product_lens.size());
-    for (unsigned int i = 0; i < product_lens.size(); ++i) {
+    for (size_t i = 0; i < product_lens.size(); ++i) {
         lens.push_back(max(product_lens[i], genomic_lens[i]));
     }
 
@@ -381,7 +381,7 @@ s_ExonToDenseg(const CSpliced_exon& exon,
 
     CDense_seg::TStarts& starts = ds->SetStarts();
     starts.reserve(product_starts.size() + genomic_starts.size());
-    for (unsigned int i = 0; i < lens.size(); ++i) {
+    for (size_t i = 0; i < lens.size(); ++i) {
         starts.push_back(product_starts[i]);  // product row first
         starts.push_back(genomic_starts[i]);
     }
@@ -394,13 +394,13 @@ s_ExonToDenseg(const CSpliced_exon& exon,
     if (!(product_strand == eNa_strand_plus
           && genomic_strand == eNa_strand_plus)) {
         CDense_seg::TStrands& strands = ds->SetStrands();
-        for (unsigned int i = 0; i < lens.size(); ++i) {
+        for (size_t i = 0; i < lens.size(); ++i) {
             strands.push_back(product_strand);
             strands.push_back(genomic_strand);
         }
     }
 
-    ds->SetNumseg(lens.size());
+    ds->SetNumseg((CDense_seg::TNumseg)lens.size());
 
     ds->Compact();  // join adjacent match/mismatch/diag parts
 

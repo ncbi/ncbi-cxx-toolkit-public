@@ -56,7 +56,7 @@ namespace
         ITERATE_0_IDX(ii, sValue.length()) {
             const char ch = sValue[ii];
             if (isupper(ch)) {
-                newString.push_back(tolower(ch));
+                newString.push_back((unsigned char)tolower(ch));
             }
             else if (ch == ' ' || ch == '_') {
                 newString.push_back('-');

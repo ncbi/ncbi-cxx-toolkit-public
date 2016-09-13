@@ -76,8 +76,8 @@ bool CTrna_ext::ParseDegenerateCodon(CTrna_ext & tRNA, const string & codon)
         return false;
     }
 
-    int idx = intToChr.find(codon[2]);
-    if (idx == (int)string::npos) return false;
+    size_t idx = intToChr.find(codon[2]);
+    if (idx == string::npos) return false;
 
     const char *expanded_codon_letter = codonLetterExpand[idx];
     const char *iter = expanded_codon_letter;

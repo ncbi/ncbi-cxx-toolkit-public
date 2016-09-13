@@ -955,14 +955,13 @@ static const COrgMod::TSubtype sUnexpectedViralOrgModQualifiers[] = {
     COrgMod::eSubtype_specimen_voucher
 };
 
-static const int sNumUnexpectedViralOrgModQualifiers = sizeof(sUnexpectedViralOrgModQualifiers) / sizeof(COrgMod::TSubtype);
+static const size_t sNumUnexpectedViralOrgModQualifiers = sizeof(sUnexpectedViralOrgModQualifiers) / sizeof(COrgMod::TSubtype);
 
 bool COrgMod::IsUnexpectedViralOrgModQualifier(COrgMod::TSubtype subtype)
 {
-    int i;
     bool rval = false;
 
-    for (i = 0; i < sNumUnexpectedViralOrgModQualifiers && !rval; i++) {
+    for (size_t i = 0; i < sNumUnexpectedViralOrgModQualifiers && !rval; i++) {
         if (subtype == sUnexpectedViralOrgModQualifiers[i]) {
             rval = true;
         }

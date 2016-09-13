@@ -576,17 +576,18 @@ int CSeq_loc::x_CompareSingleId(const CSeq_loc& loc, const CSeq_id* id1,
 }
 
 
-int CSeq_loc::Compare(const CSeq_loc& loc) const
+int CSeq_loc::Compare(const CSeq_loc& loc_arg) const
 {
     // first try fast single-id comparison
     const CSeq_id* id1 = GetId();
-    const CSeq_id* id2 = id1 == NULL ? NULL : loc.GetId();
+    const CSeq_id* id2 = id1 == NULL ? NULL : loc_arg.GetId();
     if (id1 != NULL  &&  id2 != NULL) {
-        return x_CompareSingleId(loc, id1, id2);
+        return x_CompareSingleId(loc_arg, id1, id2);
     }
     // Slow comparison of ranges on each Seq-id separately.
-    CSeq_loc_CI iter1(*this, CSeq_loc_CI::eEmpty_Allow);
-    CSeq_loc_CI iter2(  loc, CSeq_loc_CI::eEmpty_Allow);
+    CSeq_loc_CI iter1(*this,   CSeq_loc_CI::eEmpty_Allow);
+    CSeq_loc_CI iter2(loc_arg, CSeq_loc_CI::eEmpty_Allow);
+    
     for ( ; iter1 && iter2; ) {
         CRef<CSeq_loc> loc1, loc2;
         for ( int k = 0; k < 2; ++k ) {
@@ -4960,7 +4961,7 @@ public:
     CDummyLengthGetter(void) {}
     virtual ~CDummyLengthGetter(void) {}
 
-    virtual TSeqPos GetLength(const CSeq_id& id)
+    virtual TSeqPos GetLength(const CSeq_id&)
         {
             return CSeq_loc::TRange::GetWholeToOpen();
         }

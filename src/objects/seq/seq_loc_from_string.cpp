@@ -60,7 +60,8 @@ namespace {
         virtual unsigned int GetInt() { return 0; }
         virtual string GetString() { return ""; }
 
-        virtual CRef<CSeq_loc> GetLocation(CSeq_id *id, CGetSeqLocFromStringHelper* helper) { return CRef<CSeq_loc>(NULL); }
+        virtual CRef<CSeq_loc> GetLocation(CSeq_id*, CGetSeqLocFromStringHelper*) { return CRef<CSeq_loc>(NULL); }
+        
         enum E_TokenType {
             e_Int = 0,
             e_String,

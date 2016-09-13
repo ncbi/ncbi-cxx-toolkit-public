@@ -90,7 +90,7 @@ CDelta_seq& CDelta_ext::AddLiteral(const CTempString& iupac_seq,
                                    CSeq_inst::EMol mol, bool do_pack)
 {
     CRef<CDelta_seq> seg(new CDelta_seq());
-    seg->SetLiteral().SetLength(iupac_seq.size());
+    seg->SetLiteral().SetLength((CSeq_literal::TLength)iupac_seq.size());
 
     switch (mol) {
     case CSeq_inst::eMol_aa:
@@ -128,7 +128,7 @@ public:
     SIZE_TYPE GetOverhead(TCoding coding) const
         { return coding == CSeqUtil::e_not_set ? 96 : 128; }
     
-    virtual bool GapsOK(TCodingType coding_type) const { return m_GapsOK; }
+    virtual bool GapsOK(TCodingType) const { return m_GapsOK; }
 
     char* NewSegment(TCoding coding, TSeqPos length);
 
