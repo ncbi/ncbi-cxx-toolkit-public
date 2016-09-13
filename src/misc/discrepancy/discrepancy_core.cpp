@@ -505,6 +505,17 @@ void CDiscrepancyContext::Summarize()
 }
 
 
+void CDiscrepancyContext::AutofixAll()
+{
+    NON_CONST_ITERATE (TDiscrepancyCaseMap, it, m_Tests) {
+        const TReportItemList& list = it->second->GetReport();
+        ITERATE (TReportItemList, it, list) {
+            (*it)->Autofix(*m_Scope);
+        }
+    }
+}
+
+
 TReportItemList CDiscrepancyGroup::Collect(TDiscrepancyCaseMap& tests, bool all) const
 {
     TReportItemList out;

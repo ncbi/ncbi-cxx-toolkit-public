@@ -341,6 +341,7 @@ public:
     bool SetAutofixHook(const string& name, TAutofixHook func);
     void Parse(const CSerialObject& root);
     void Summarize(void);
+    void AutofixAll(void);
     const TDiscrepancyCaseMap& GetTests(void){ return m_Tests; }
     void OutputText(ostream& out, bool fatal, bool summary, bool ext);
     void OutputXML(ostream& out, bool ext);
