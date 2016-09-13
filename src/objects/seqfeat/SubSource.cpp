@@ -454,10 +454,6 @@ size_t CSubSource::CheckDateFormat(const string& date_string)
     if (pieces.size() > 2) {
         rval |= eDateFormatFlag_bad_format;
     } else if (pieces.size() == 2) {
-        bool first_bad = false;
-        bool first_future = false;
-        bool second_bad = false;
-        bool second_future = false;
         rval |= CheckDateFormat(pieces[0]);
         rval |= CheckDateFormat(pieces[1]);
         if (rval == eDateFormatFlag_ok) {
@@ -506,9 +502,6 @@ size_t CSubSource::CheckDateFormat(const string& date_string)
 string CSubSource::GetCollectionDateProblem (const string& date_string)
 {
     string problem;
-    bool bad_format = false;
-    bool in_future = false;
-
     size_t rval = CheckDateFormat(date_string);
     if (rval & eDateFormatFlag_bad_format) {
         problem = "Collection_date format is not in DD-Mmm-YYYY format";
@@ -736,7 +729,6 @@ vector<string> CSubSource::x_GetDateTokens(const string& orig_date)
 {
     vector<string> tokens;
     string token_delimiters = " ,-/=_.";
-    size_t i;
 
     string cpy = orig_date;
     NStr::TruncateSpacesInPlace (cpy);
@@ -1268,7 +1260,7 @@ static string s_GetNumFromLatLonToken (string token, const string& default_dir)
     bool last_is_sep = false;
 
     while (pos < token.length()) {
-        char ch = token[pos];
+        ch = token[pos];
         if (ch == ' ' || ch == ':' || ch == '-') {
             if (pos == prev_start) {
                 // too many separators
@@ -1982,7 +1974,7 @@ string CSubSource::ValidateLatLonCountry (const string& input_countryname, strin
                                lat_value, lon_value);
     if (!format_correct) {
         // may have comma and then altitude, so just get lat_lon component */
-        size_t pos = NStr::Find(lat_lon, ",", 0, NPOS, NStr::eLast);
+        size_t pos = NStr::Find(lat_lon, ",", NStr::eNocase, NStr::eReverseSearch);
         if (pos != NPOS) {
             lat_lon = lat_lon.substr(0, pos);
             CSubSource::IsCorrectLatLonFormat (lat_lon, format_correct, precision_correct,
@@ -2052,7 +2044,6 @@ string CSubSource::ValidateLatLonCountry (const string& input_countryname, strin
     }
 
     CLatLonCountryId *id = x_CalculateLatLonId(lat_value, lon_value, country, province);
-
     CLatLonCountryId::TClassificationFlags flags = (id == NULL ? 0 : id->Classify(country, province));
 
     string wguess = id->GetGuessWater();
@@ -3391,7 +3382,7 @@ string CCountries::CapitalizeFirstLetterOfEveryWord (const string &phrase)
     NStr::Split(phrase, " \t\r\n", words, NStr::fSplit_NoMergeDelims);
     for(vector<string>::iterator word = words.begin(); word != words.end(); ++word)
         if (!word->empty() && isalpha(word->at(0)))
-            word->at(0) = toupper(word->at(0));
+            word->at(0) = (unsigned char)toupper(word->at(0));
     return NStr::Join(words," ");
 }
 
@@ -3549,15 +3540,21 @@ vector<string> CCountries::x_Tokenize(const string& val)
 }
 
 
-bool s_ContainsWholeWord(const string& test, const string& word, NStr::ECase case_sense)
+bool s_ContainsWholeWord(const CTempString test, const CTempString word, NStr::ECase case_sense)
 {
-    size_t pos = NStr::Find(test, word, 0, NPOS, NStr::eFirst, case_sense);
+    size_t start = 0;
+    size_t tlen = test.length();
+    size_t wlen = word.length();
+
+    size_t pos = NStr::Find(test, word, case_sense);
     while (pos != NPOS) {
-        if ((pos == 0 || !isalpha((unsigned char)test[pos-1]))
-            && !isalpha((unsigned char)test[pos + word.length()])) {
+        size_t p = start + pos;
+        if ( (p == 0           || !isalpha((unsigned char)test[p - 1]))  && 
+             (p + wlen >= tlen || !isalpha((unsigned char)test[p + wlen])) ) {
             return true;
         }
-        pos = NStr::Find(test, word, pos + 1, NPOS, NStr::eFirst, case_sense);
+        start = p + 1;
+        pos = NStr::Find(CTempString(test, start, tlen - start), word, case_sense);
     }
     return false;
 }
@@ -4630,10 +4627,10 @@ CLatLonCountryId::~CLatLonCountryId(void)
 
 
 #include "lat_lon_country.inc"
-static const int k_NumLatLonCountryText = ArraySize(s_DefaultLatLonCountryText);
+static const size_t k_NumLatLonCountryText = ArraySize(s_DefaultLatLonCountryText);
 
 #include "lat_lon_water.inc"
-static const int k_NumLatLonWaterText = ArraySize(s_DefaultLatLonWaterText);
+static const size_t k_NumLatLonWaterText = ArraySize(s_DefaultLatLonWaterText);
 
 void CLatLonCountryMap::x_InitFromDefaultList(const char * const *list, int num)
 {
