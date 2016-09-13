@@ -157,7 +157,7 @@ DISCREPANCY_CASE(EC_NUMBER_ON_UNKNOWN_PROTEIN, CSeqFeatData, eDisc | eSubmitter 
     NStr::ToLower(str);
     //if (NStr::FindNoCase(*names.begin(), "hypothetical protein") != string::npos || NStr::FindNoCase(*names.begin(), "unknown protein") != string::npos) {
     if (str == "hypothetical protein" || str == "unknown protein") {
-        m_Objs["[n] protein feature[s] [has] an EC number and a protein name of 'unknown protein' or 'hypothetical protein'"].Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eNoRef, true));
+        m_Objs["[n] protein feature[s] [has] an EC number and a protein name of 'unknown protein' or 'hypothetical protein'"].Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eNoRef, true)).Fatal();
     }
 }
 

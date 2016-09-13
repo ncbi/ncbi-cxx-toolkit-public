@@ -102,7 +102,7 @@ DISCREPANCY_CASE(MISSING_PROTEIN_ID, CSeq_inst, eDisc | eSubmitter | eSmart, "Mi
 
     const CSeq_id * protein_id = context.GetProteinId();
     if( ! protein_id ) {
-        m_Objs["[n] protein[s] [has] invalid ID[s]."].Add(*context.NewDiscObj(context.GetCurrentBioseq()), false);
+        m_Objs["[n] protein[s] [has] invalid ID[s]."].Add(*context.NewDiscObj(context.GetCurrentBioseq()), false).Fatal();
     }
 }
 
