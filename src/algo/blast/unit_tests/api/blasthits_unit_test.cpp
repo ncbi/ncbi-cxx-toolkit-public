@@ -145,9 +145,12 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
     const int kNumTests = 6;
     BlastHSP* hsp;
     Blast_HSPInit(1, 2000, 2000, 3000, 1, 2000, 0, 0, -3, 2000, NULL, &hsp);
+    // The following line must match the value in blast_hits.c
+    const int kMaxTranslation = 99;
+    const int kMaxDiv3 = kMaxTranslation / 3;
     // These are values that come out for this case.  kLength could change if
     // heuristic for allocating buffers in Blast_HSPGetTargetTranslation changes.
-    const int kLength[kNumTests] = {3899, 4099, 4300, 4500, 4699, 4899 };
+    const int kLength[kNumTests] = {3199, 3399, 3600, 3800, 3999, 4199};
     const int kValues[2*kNumTests] = {6, 16, 18, 10, 10, 6, 8, 4, 18, 17, 1, 6};
     int index = 0;
     for (index=0; index<kNumTests; index++)
@@ -159,17 +162,17 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
         BOOST_REQUIRE_EQUAL(kValues[2*index], (int) sequence[hsp->subject.offset+5]);
 
         Int4 i, n = 0;
-        for (i = hsp->subject.offset-701; i < hsp->subject.offset - 693; ++i) {
+        for (i = hsp->subject.offset-(kMaxDiv3 + 1); i < hsp->subject.offset - (kMaxDiv3 - 7); ++i) {
             if (sequence[i] == 201) ++n;
         }
         BOOST_REQUIRE(n!=0);
         n = 0;
-        for (; i < hsp->subject.end + 693; ++i) {
+        for (; i < hsp->subject.end + (kMaxDiv3 - 7); ++i) {
             if (sequence[i] == 201) ++n;
         }
         BOOST_REQUIRE(n==0);
         n = 0;
-        for (; i < hsp->subject.end + 701 && n == 0; ++i) {
+        for (; i < hsp->subject.end + (kMaxDiv3 + 1) && n == 0; ++i) {
             if (sequence[i] == 201) ++n;
         }
         BOOST_REQUIRE(n!=0);
@@ -177,21 +180,21 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
         hsp->subject.offset += 200;
         hsp->subject.end += 200;
         sequence = Blast_HSPGetTargetTranslation(target_t, hsp, &length);
-        BOOST_REQUIRE_EQUAL(kLength[index], length);
+        BOOST_REQUIRE_EQUAL(kLength[index] + kMaxDiv3, length);
         BOOST_REQUIRE_EQUAL(kValues[2*index+1], (int) sequence[hsp->subject.offset+5]);
 
         n = 0;
-        for (i = hsp->subject.offset-701; i < hsp->subject.offset - 693; ++i) {
+        for (i = hsp->subject.offset-(kMaxDiv3 + 1); i < hsp->subject.offset - (kMaxDiv3 - 7); ++i) {
             if (sequence[i] == 201) ++n;
         }
         BOOST_REQUIRE(n!=0);
         n = 0;
-        for (; i < hsp->subject.end + 693; ++i) {
+        for (; i < hsp->subject.end + (kMaxDiv3 - 7); ++i) {
             if (sequence[i] == 201) ++n;
         }
         BOOST_REQUIRE(n==0);
         n = 0;
-        for (; i < hsp->subject.end + 701 && n == 0; ++i) {
+        for (; i < hsp->subject.end + (kMaxDiv3 + 1) && n == 0; ++i) {
             if (sequence[i] == 201) ++n;
         }
         BOOST_REQUIRE(n!=0);

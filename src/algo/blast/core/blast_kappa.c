@@ -3404,329 +3404,335 @@ Blast_RedoAlignmentCore_MT(EBlastProgramType program_number,
     }
 
     Boolean interrupt = FALSE;
-    int b;
-#pragma omp parallel for default(none) num_threads(actual_num_threads) \
-        schedule(static) \
-        if(actual_num_threads>1) \
-        shared(interrupt, seqsrc_tld, score_params_tld, hit_params_tld, \
-        gap_align_tld, results_tld, \
-        redoneMatches_tld, \
-        numQueries, numMatches, theseMatches, \
-        numFrames, program_number, subjectBlk_tld, positionBased, \
-        default_db_genetic_code, localScalingFactor, queryInfo, \
-        sbp, smithWaterman, compositionTestIndex_tld, forbidden, \
-        NRrecord_tld, actual_num_threads, sbp_tld, \
-        matrix_tld, query_info_tld, numContexts_tld, \
-        genetic_code_string, queryBlk, compo_adjust_mode, \
-        alignments_tld, incoming_align_set_tld, savedParams_tld, \
-        scoringParams, redo_align_params_tld, \
-        status_code_tld)
-    for (b = 0; b < numMatches; ++b) {
+#pragma omp parallel \
+    default(none) num_threads(actual_num_threads) \
+    if(actual_num_threads>1) \
+    shared(interrupt, seqsrc_tld, score_params_tld, hit_params_tld, \
+    gap_align_tld, results_tld, \
+    redoneMatches_tld, \
+    stderr, \
+    numQueries, numMatches, theseMatches, \
+    numFrames, program_number, subjectBlk_tld, positionBased, \
+    default_db_genetic_code, localScalingFactor, queryInfo, \
+    sbp, smithWaterman, compositionTestIndex_tld, forbidden, \
+    NRrecord_tld, actual_num_threads, sbp_tld, \
+    matrix_tld, query_info_tld, numContexts_tld, \
+    genetic_code_string, queryBlk, compo_adjust_mode, \
+    alignments_tld, incoming_align_set_tld, savedParams_tld, \
+    scoringParams, redo_align_params_tld, \
+    status_code_tld)
+    {
+        int b;
+#pragma omp for schedule(static)
+        for (b = 0; b < numMatches; ++b) {
 #pragma omp flush(interrupt)
-        if (!interrupt) {
-            BlastCompo_Alignment** alignments = NULL;
-            BlastCompo_Alignment** incoming_align_set = NULL;
-            Blast_CompositionWorkspace* NRrecord = NULL;
-            BlastCompo_QueryInfo* query_info = NULL;
+            if (!interrupt) {
+                BlastCompo_Alignment** alignments = NULL;
+                BlastCompo_Alignment** incoming_align_set = NULL;
+                Blast_CompositionWorkspace* NRrecord = NULL;
+                BlastCompo_QueryInfo* query_info = NULL;
 
-            int numAligns[6];
-            Blast_KarlinBlk* kbp = NULL;
-            BlastCompo_MatchingSequence matchingSeq = {0,};
-            BlastHSPList* hsp_list = NULL;
-            BlastCompo_Alignment* incoming_aligns = NULL;
-            Blast_RedoAlignParams* redo_align_params;
-            double best_evalue;
-            Int4 best_score;
-            int query_index;
-            int context_index;
-            int frame_index;
-            void* discarded_aligns = NULL;
-            int tid = 0;
-            BlastSeqSrc* seqSrc;
-            BlastScoringParameters* scoringParams;
-            BlastHitSavingParameters* hitParams;
-            BlastCompo_Heap* redoneMatches;
-            BlastScoreBlk* sbp;
-            BLAST_SequenceBlk* subjectBlk;
-            int numContexts;
-            int compositionTestIndex;
-            /* existing alignments for a match */
-            Int4** matrix;                   /* score matrix */
-            int* pStatusCode;
+                int numAligns[6];
+                Blast_KarlinBlk* kbp = NULL;
+                BlastCompo_MatchingSequence matchingSeq = {0,};
+                BlastHSPList* hsp_list = NULL;
+                BlastCompo_Alignment* incoming_aligns = NULL;
+                Blast_RedoAlignParams* redo_align_params;
+                double best_evalue;
+                Int4 best_score;
+                int query_index;
+                int context_index;
+                int frame_index;
+                void* discarded_aligns = NULL;
+                BlastSeqSrc* seqSrc;
+                BlastScoringParameters* scoringParams;
+                BlastHitSavingParameters* hitParams;
+                BlastCompo_Heap* redoneMatches;
+                BlastScoreBlk* sbp;
+                BLAST_SequenceBlk* subjectBlk;
+                int numContexts;
+                int compositionTestIndex;
+                /* existing alignments for a match */
+                Int4** matrix;                   /* score matrix */
+                int* pStatusCode;
 
-            double pvalueForThisPair = (-1); /* p-value for this match
-                                                for composition; -1 == no adjustment*/
-            double LambdaRatio; /*lambda ratio*/
+                double pvalueForThisPair = (-1); /* p-value for this match
+                                                    for composition; -1 == no adjustment*/
+                double LambdaRatio; /*lambda ratio*/
 
+                int tid = 0;
 #ifdef _OPENMP
-            tid = omp_get_thread_num();
+                tid = omp_get_thread_num();
 #endif
-            seqSrc               = seqsrc_tld[tid];
-            scoringParams        = score_params_tld[tid];
-            hitParams            = hit_params_tld[tid];
-            redoneMatches        = redoneMatches_tld[tid];
-            alignments           = alignments_tld[tid];
-            incoming_align_set   = incoming_align_set_tld[tid];
-            NRrecord             = NRrecord_tld[tid];
-            sbp                  = sbp_tld[tid];
-            redo_align_params    = redo_align_params_tld[tid];
-            matrix               = matrix_tld[tid];
-            pStatusCode          = &status_code_tld[tid];
-            query_info           = query_info_tld[tid];
-            numContexts          = numContexts_tld[tid];
-            compositionTestIndex = compositionTestIndex_tld[tid];
-            subjectBlk           = subjectBlk_tld[tid];
+                seqSrc               = seqsrc_tld[tid];
+                scoringParams        = score_params_tld[tid];
+                hitParams            = hit_params_tld[tid];
+                redoneMatches        = redoneMatches_tld[tid];
+                alignments           = alignments_tld[tid];
+                incoming_align_set   = incoming_align_set_tld[tid];
+                NRrecord             = NRrecord_tld[tid];
+                sbp                  = sbp_tld[tid];
+                redo_align_params    = redo_align_params_tld[tid];
+                matrix               = matrix_tld[tid];
+                pStatusCode          = &status_code_tld[tid];
+                query_info           = query_info_tld[tid];
+                numContexts          = numContexts_tld[tid];
+                compositionTestIndex = compositionTestIndex_tld[tid];
+                subjectBlk           = subjectBlk_tld[tid];
 
-            BlastHSPList* localMatch = theseMatches[b];
+                BlastHSPList* localMatch = theseMatches[b];
 
-            if (localMatch->hsp_array == NULL) {
-                if (seqSrc) {
-                    continue;
-                }
-#pragma omp critical(intrpt)
-                interrupt = TRUE;
-#pragma omp flush(interrupt)
-                continue;
-            }
-
-            if (BlastCompo_EarlyTermination(
-                    localMatch->best_evalue,
-                    redoneMatches,
-                    numQueries
-            )) {
-                Blast_HSPListFree(localMatch);
-                if (seqSrc) {
-                    continue;
-                }
-#pragma omp critical(intrpt)
-                interrupt = TRUE;
-#pragma omp flush(interrupt)
-                continue;
-            }
-
-            query_index = localMatch->query_index;
-            context_index = query_index * numFrames;
-            /* Get the sequence for this match */
-            if (seqSrc && BlastSeqSrcGetSupportsPartialFetching(seqSrc)) {
-                BLAST_SetupPartialFetching(
-                        program_number,
-                        (BlastSeqSrc*) seqSrc,
-                        (const BlastHSPList**)&localMatch,
-                        1
-                );
-            }
-
-            if (subjectBlk) {
-                matchingSeq.length = subjectBlk->length;
-                matchingSeq.index = -1;
-                matchingSeq.local_data = subjectBlk;
-            } else {
-                *pStatusCode = s_MatchingSequenceInitialize(
-                        &matchingSeq,
-                        program_number,
-                        seqSrc,
-                        default_db_genetic_code,
-                        localMatch->oid
-                );
-                if (*pStatusCode != 0) {
-                    /*
-                     * some sequences may have been excluded by membit filtering
-                     * so this is not really an exception
-                     */
-                    *pStatusCode = 0;
-                    goto match_loop_cleanup;
-                }
-            }
-            *pStatusCode = s_ResultHspToDistinctAlign(
-                    incoming_align_set,     /* o */
-                    numAligns,              /* o */
-                    localMatch->hsp_array,  /* i */
-                    localMatch->hspcnt,     /* i */
-                    context_index,          /* i */
-                    queryInfo,              /* i */
-                    localScalingFactor      /* i */
-            );
-            if (*pStatusCode != 0) {
-                goto match_loop_cleanup;
-            }
-
-            hsp_list = Blast_HSPListNew(0);
-            for (frame_index = 0;
-                    frame_index < numFrames;
-                    frame_index++, context_index++) {
-                incoming_aligns = incoming_align_set[frame_index];
-                if (!incoming_aligns) {
-                    continue;
-                }
-                /*
-                 * All alignments in thisMatch should be to the same query
-                 */
-                kbp = sbp->kbp_gap[context_index];
-                if (smithWaterman) {
-                    *pStatusCode =
-                            Blast_RedoOneMatchSmithWaterman(
-                                    alignments,
-                                    redo_align_params,
-                                    incoming_aligns,
-                                    numAligns[frame_index],
-                                    kbp->Lambda,
-                                    kbp->logK,
-                                    &matchingSeq,
-                                    query_info,
-                                    numQueries,
-                                    matrix,
-                                    BLASTAA_SIZE,
-                                    NRrecord,
-                                    &forbidden,
-                                    redoneMatches,
-                                    &pvalueForThisPair,
-                                    compositionTestIndex,
-                                    &LambdaRatio
-                            );
-                } else {
-                    *pStatusCode =
-                            Blast_RedoOneMatch(
-                                    alignments,             // thread-local
-                                    redo_align_params,      // thread-local
-                                    incoming_aligns,        // thread-local
-                                    numAligns[frame_index], // local
-                                    kbp->Lambda,            // thread-local
-                                    &matchingSeq,           // thread-local
-                                    -1,                     // const
-                                    query_info,             // thread-local
-                                    numContexts,            // thread-local
-                                    matrix,                 // thread-local
-                                    BLASTAA_SIZE,           // const
-                                    NRrecord,               // thread-local
-                                    &pvalueForThisPair,     // local
-                                    compositionTestIndex,   // thread-local
-                                    &LambdaRatio            // local
-                            );
-                }
-
-                if (*pStatusCode != 0) {
-                    goto match_loop_cleanup;
-                }
-
-                if (alignments[context_index] != NULL) {
-                    Int2 qframe = frame_index;
-                    if (program_number == eBlastTypeBlastx) {
-                        if (qframe < 3) {
-                            qframe++;
-                        } else {
-                            qframe = 2 - qframe;
-                        }
+                if (localMatch->hsp_array == NULL) {
+                    if (seqSrc) {
+                        continue;
                     }
-                    *pStatusCode =
-                            s_HSPListFromDistinctAlignments(hsp_list,
-                                    &alignments[context_index],
-                                    matchingSeq.index,
-                                    queryInfo, qframe);
-                    if (*pStatusCode) {
+#pragma omp critical(intrpt)
+                    interrupt = TRUE;
+#pragma omp flush(interrupt)
+                    continue;
+                }
+
+                if (BlastCompo_EarlyTermination(
+                        localMatch->best_evalue,
+                        redoneMatches,
+                        numQueries
+                )) {
+                    Blast_HSPListFree(localMatch);
+                    if (seqSrc) {
+                        continue;
+                    }
+#pragma omp critical(intrpt)
+                    interrupt = TRUE;
+#pragma omp flush(interrupt)
+                    continue;
+                }
+
+                query_index = localMatch->query_index;
+                context_index = query_index * numFrames;
+                /* Get the sequence for this match */
+                if (seqSrc && BlastSeqSrcGetSupportsPartialFetching(seqSrc)) {
+                    BLAST_SetupPartialFetching(
+                            program_number,
+                            (BlastSeqSrc*) seqSrc,
+                            (const BlastHSPList**)&localMatch,
+                            1
+                    );
+                }
+
+                if (subjectBlk) {
+                    matchingSeq.length = subjectBlk->length;
+                    matchingSeq.index = -1;
+                    matchingSeq.local_data = subjectBlk;
+                } else {
+                    *pStatusCode = s_MatchingSequenceInitialize(
+                            &matchingSeq,
+                            program_number,
+                            seqSrc,
+                            default_db_genetic_code,
+                            localMatch->oid
+                    );
+                    if (*pStatusCode != 0) {
+                        /*
+                         * some sequences may have been excluded by membit filtering
+                         * so this is not really an exception
+                         */
+                        *pStatusCode = 0;
                         goto match_loop_cleanup;
                     }
                 }
-                BlastCompo_AlignmentsFree(&incoming_aligns, NULL);
-                incoming_align_set[frame_index] = NULL;
-            }
-
-            if (hsp_list->hspcnt > 1) {
-                s_HitlistReapContained(hsp_list->hsp_array,
-                        &hsp_list->hspcnt);
-            }
-            *pStatusCode =
-                    s_HitlistEvaluateAndPurge(&best_score, &best_evalue,
-                            hsp_list,
-                            seqSrc,
-                            matchingSeq.length,
-                            program_number,
-                            queryInfo, context_index,
-                            sbp, hitParams,
-                            pvalueForThisPair, LambdaRatio,
-                            matchingSeq.index);
-            if (*pStatusCode != 0) {
-                goto query_loop_cleanup;
-            }
-            if (best_evalue <= hitParams->options->expect_value) {
-                /* The best alignment is significant */
-                s_HSPListNormalizeScores(hsp_list, kbp->Lambda, kbp->logK,
-                        localScalingFactor);
-                s_ComputeNumIdentities(
-                        queryBlk,
-                        queryInfo,
-                        subjectBlk,
-                        seqSrc,
-                        hsp_list,
-                        scoringParams->options,
-                        genetic_code_string,
-                        sbp
+                *pStatusCode = s_ResultHspToDistinctAlign(
+                        incoming_align_set,     /* o */
+                        numAligns,              /* o */
+                        localMatch->hsp_array,  /* i */
+                        localMatch->hspcnt,     /* i */
+                        context_index,          /* i */
+                        queryInfo,              /* i */
+                        localScalingFactor      /* i */
                 );
-                if (!seqSrc) {
-                    goto query_loop_cleanup;
-                }
-                if (BlastCompo_HeapWouldInsert(
-                        &redoneMatches[query_index],
-                        best_evalue,
-                        best_score,
-                        localMatch->oid
-                )) {
-                    *pStatusCode =
-                            BlastCompo_HeapInsert(
-                                    &redoneMatches[query_index],
-                                    hsp_list,
-                                    best_evalue,
-                                    best_score,
-                                    localMatch->oid,
-                                    &discarded_aligns
-                            );
-                    if (*pStatusCode == 0) {
-                        hsp_list = NULL;
-                    }
-                } else {
-                    hsp_list = Blast_HSPListFree(hsp_list);
+                if (*pStatusCode != 0) {
+                    goto match_loop_cleanup;
                 }
 
-                if (*pStatusCode) {
+                hsp_list = Blast_HSPListNew(0);
+                for (frame_index = 0;
+                        frame_index < numFrames;
+                        frame_index++, context_index++) {
+                    incoming_aligns = incoming_align_set[frame_index];
+                    if (!incoming_aligns) {
+                        continue;
+                    }
+                    /*
+                     * All alignments in thisMatch should be to the same query
+                     */
+                    kbp = sbp->kbp_gap[context_index];
+                    if (smithWaterman) {
+                        *pStatusCode =
+                                Blast_RedoOneMatchSmithWaterman(
+                                        alignments,
+                                        redo_align_params,
+                                        incoming_aligns,
+                                        numAligns[frame_index],
+                                        kbp->Lambda,
+                                        kbp->logK,
+                                        &matchingSeq,
+                                        query_info,
+                                        numQueries,
+                                        matrix,
+                                        BLASTAA_SIZE,
+                                        NRrecord,
+                                        &forbidden,
+                                        redoneMatches,
+                                        &pvalueForThisPair,
+                                        compositionTestIndex,
+                                        &LambdaRatio
+                                );
+                    } else {
+                        *pStatusCode =
+                                Blast_RedoOneMatch(
+                                        alignments,             // thread-local
+                                        redo_align_params,      // thread-local
+                                        incoming_aligns,        // thread-local
+                                        numAligns[frame_index], // local
+                                        kbp->Lambda,            // thread-local
+                                        &matchingSeq,           // thread-local
+                                        -1,                     // const
+                                        query_info,             // thread-local
+                                        numContexts,            // thread-local
+                                        matrix,                 // thread-local
+                                        BLASTAA_SIZE,           // const
+                                        NRrecord,               // thread-local
+                                        &pvalueForThisPair,     // local
+                                        compositionTestIndex,   // thread-local
+                                        &LambdaRatio            // local
+                                );
+                    }
+
+                    if (*pStatusCode != 0) {
+                        goto match_loop_cleanup;
+                    }
+
+                    if (alignments[context_index] != NULL) {
+                        Int2 qframe = frame_index;
+                        if (program_number == eBlastTypeBlastx) {
+                            if (qframe < 3) {
+                                qframe++;
+                            } else {
+                                qframe = 2 - qframe;
+                            }
+                        }
+                        *pStatusCode =
+                                s_HSPListFromDistinctAlignments(hsp_list,
+                                        &alignments[context_index],
+                                        matchingSeq.index,
+                                        queryInfo, qframe);
+                        if (*pStatusCode) {
+                            goto match_loop_cleanup;
+                        }
+                    }
+                    BlastCompo_AlignmentsFree(&incoming_aligns, NULL);
+                    incoming_align_set[frame_index] = NULL;
+                }
+
+                if (hsp_list->hspcnt > 1) {
+                    s_HitlistReapContained(hsp_list->hsp_array,
+                            &hsp_list->hspcnt);
+                }
+                *pStatusCode =
+                        s_HitlistEvaluateAndPurge(&best_score, &best_evalue,
+                                hsp_list,
+                                seqSrc,
+                                matchingSeq.length,
+                                program_number,
+                                queryInfo, context_index,
+                                sbp, hitParams,
+                                pvalueForThisPair, LambdaRatio,
+                                matchingSeq.index);
+                if (*pStatusCode != 0) {
                     goto query_loop_cleanup;
                 }
-                if (discarded_aligns != NULL) {
-                    Blast_HSPListFree(discarded_aligns);
+                if (best_evalue <= hitParams->options->expect_value) {
+                    /* The best alignment is significant */
+                    s_HSPListNormalizeScores(hsp_list, kbp->Lambda, kbp->logK,
+                            localScalingFactor);
+                    s_ComputeNumIdentities(
+                            queryBlk,
+                            queryInfo,
+                            subjectBlk,
+                            seqSrc,
+                            hsp_list,
+                            scoringParams->options,
+                            genetic_code_string,
+                            sbp
+                    );
+                    if (!seqSrc) {
+                        goto query_loop_cleanup;
+                    }
+                    if (BlastCompo_HeapWouldInsert(
+                            &redoneMatches[query_index],
+                            best_evalue,
+                            best_score,
+                            localMatch->oid
+                    )) {
+                        *pStatusCode =
+                                BlastCompo_HeapInsert(
+                                        &redoneMatches[query_index],
+                                        hsp_list,
+                                        best_evalue,
+                                        best_score,
+                                        localMatch->oid,
+                                        &discarded_aligns
+                                );
+                        if (*pStatusCode == 0) {
+                            hsp_list = NULL;
+                        }
+                    } else {
+                        hsp_list = Blast_HSPListFree(hsp_list);
+                    }
+
+                    if (*pStatusCode) {
+                        goto query_loop_cleanup;
+                    }
+                    if (discarded_aligns != NULL) {
+                        Blast_HSPListFree(discarded_aligns);
+                    }
                 }
-            }
 query_loop_cleanup:
 match_loop_cleanup:
-            if (seqSrc) {
-                localMatch = Blast_HSPListFree(localMatch);
-            } else {
-                Blast_HSPListSwap(localMatch, hsp_list);
-                localMatch->oid = hsp_list->oid;
-            }
-            hsp_list = Blast_HSPListFree(hsp_list);
-
-            if (*pStatusCode != 0) {
-                for (context_index = 0;
-                        context_index < numContexts;
-                        context_index++) {
-                    BlastCompo_AlignmentsFree(
-                            &alignments[context_index],
-                            s_FreeEditScript
-                    );
+                if (seqSrc) {
+                    localMatch = Blast_HSPListFree(localMatch);
+                } else {
+                    Blast_HSPListSwap(localMatch, hsp_list);
+                    localMatch->oid = hsp_list->oid;
                 }
-            }
-            s_MatchingSequenceRelease(&matchingSeq);
-            BlastCompo_AlignmentsFree(&incoming_aligns, NULL);
-            if (*pStatusCode != 0 || !seqSrc) {
-#pragma omp critical(intrpt)
-                interrupt = TRUE;
-#pragma omp flush(interrupt)
-                continue;
-            }
+                hsp_list = Blast_HSPListFree(hsp_list);
 
-        } /* end of if(!interrupt) */
+                if (*pStatusCode != 0) {
+                    for (context_index = 0;
+                            context_index < numContexts;
+                            context_index++) {
+                        BlastCompo_AlignmentsFree(
+                                &alignments[context_index],
+                                s_FreeEditScript
+                        );
+                    }
+                }
+                s_MatchingSequenceRelease(&matchingSeq);
+                BlastCompo_AlignmentsFree(&incoming_aligns, NULL);
+                if (*pStatusCode != 0 || !seqSrc) {
+#pragma omp critical(intrpt)
+                    interrupt = TRUE;
+#pragma omp flush(interrupt)
+                    continue;
+                }
+
+            } /* end of if(!interrupt) */
+        }
+#pragma omp barrier
+
+        /*
+         * end of omp parallel section
+         */
     }
-    /*
-     * end of omp parallel section
-     */
 
 function_cleanup:
 
