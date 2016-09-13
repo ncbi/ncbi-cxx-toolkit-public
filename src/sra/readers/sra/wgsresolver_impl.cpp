@@ -262,10 +262,15 @@ static string s_ResolveAccOrPath(const CVDBMgr& mgr, const string& acc_or_path)
     string path;
     if ( CVPath::IsPlainAccession(acc_or_path) ) {
         // resolve VDB accessions
-        path = mgr.FindAccPath(acc_or_path);
-        if ( s_DebugEnabled(eDebug_open) ) {
-            LOG_POST_X(28, "CWGSResolver_VDB: "
-                       "index accession "<<acc_or_path<<" -> "<<path);
+        try {
+            path = mgr.FindAccPath(acc_or_path);
+            if ( s_DebugEnabled(eDebug_open) ) {
+                LOG_POST_X(28, "CWGSResolver_VDB: "
+                           "index accession "<<acc_or_path<<" -> "<<path);
+            }
+        }
+        catch ( CSraException& /*ignored*/ ) {
+            path = acc_or_path;
         }
     }
     else {
