@@ -127,61 +127,46 @@ CAutomationProc::CAutomationProc(IMessageSender* message_sender) :
 TObjectID CAutomationProc::CreateObject(const string& class_name,
         CArgArray& arg_array)
 {
-    const void* impl_ptr;
     TAutomationObjectRef new_object;
     try {
         if (class_name == "ncsvc") {
             string service_name(arg_array.NextString(kEmptyStr));
             string client_name(arg_array.NextString(kEmptyStr));
-            SNetCacheServiceAutomationObject* ncsvc_object_ptr =
+            new_object.Reset(
                     new SNetCacheServiceAutomationObject(this,
-                            service_name, client_name);
-            impl_ptr = ncsvc_object_ptr->m_NetCacheAPI;
-            new_object.Reset(ncsvc_object_ptr);
+                            service_name, client_name));
         } else if (class_name == "ncsrv") {
             string service_name(arg_array.NextString(kEmptyStr));
             string client_name(arg_array.NextString(kEmptyStr));
-            SNetCacheServerAutomationObject* ncsrv_object_ptr =
+            new_object.Reset(
                     new SNetCacheServerAutomationObject(this,
-                            service_name, client_name);
-            impl_ptr = ncsrv_object_ptr->m_NetCacheAPI;
-            new_object.Reset(ncsrv_object_ptr);
+                            service_name, client_name));
         } else if (class_name == "nssvc") {
             string service_name(arg_array.NextString(kEmptyStr));
             string queue_name(arg_array.NextString(kEmptyStr));
             string client_name(arg_array.NextString(kEmptyStr));
-            SNetScheduleServiceAutomationObject* nssvc_object_ptr =
+            new_object.Reset(
                     new SNetScheduleServiceAutomationObject(this,
-                        service_name, queue_name, client_name);
-            impl_ptr = nssvc_object_ptr->m_NetScheduleAPI;
-            new_object.Reset(nssvc_object_ptr);
+                        service_name, queue_name, client_name));
         } else if (class_name == "nssrv") {
             string service_name(arg_array.NextString(kEmptyStr));
             string queue_name(arg_array.NextString(kEmptyStr));
             string client_name(arg_array.NextString(kEmptyStr));
-            SNetScheduleServiceAutomationObject* nssrv_object_ptr =
+            new_object.Reset(
                     new SNetScheduleServerAutomationObject(this,
-                        service_name, queue_name, client_name);
-            impl_ptr = nssrv_object_ptr->m_NetScheduleAPI;
-            new_object.Reset(nssrv_object_ptr);
+                        service_name, queue_name, client_name));
         } else if (class_name == "wn") {
             string wn_address(arg_array.NextString());
             string client_name(arg_array.NextString(kEmptyStr));
-            SWorkerNodeAutomationObject* wn_object_ptr =
+            new_object.Reset(
                     new SWorkerNodeAutomationObject(this,
-                            wn_address, client_name);
-            impl_ptr = wn_object_ptr->m_NetScheduleAPI;
-            new_object.Reset(wn_object_ptr);
+                            wn_address, client_name));
         } else if (class_name == "nstsvc") {
-            SNetStorageServiceAutomationObject* nstsvc_object_ptr =
-                    new SNetStorageServiceAutomationObject(this, arg_array);
-            impl_ptr = nstsvc_object_ptr->m_NetStorageAdmin;
-            new_object.Reset(nstsvc_object_ptr);
+            new_object.Reset(
+                    new SNetStorageServiceAutomationObject(this, arg_array));
         } else if (class_name == "nstsrv") {
-            SNetStorageServerAutomationObject* nstsrv_object_ptr =
-                    new SNetStorageServerAutomationObject(this, arg_array);
-            impl_ptr = nstsrv_object_ptr->m_NetStorageAdmin;
-            new_object.Reset(nstsrv_object_ptr);
+            new_object.Reset(
+                    new SNetStorageServerAutomationObject(this, arg_array));
         } else {
             NCBI_THROW_FMT(CAutomationException, eInvalidInput,
                     "Unknown class '" << class_name << "'");
@@ -191,7 +176,7 @@ TObjectID CAutomationProc::CreateObject(const string& class_name,
         NCBI_THROW_FMT(CAutomationException, eCommandProcessingError,
                 "Error in '" << class_name << "' constructor: " << e.GetMsg());
     }
-    return AddObject(new_object, impl_ptr);
+    return AddObject(new_object, new_object->GetImplPtr());
 }
 
 CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)

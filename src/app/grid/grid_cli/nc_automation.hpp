@@ -73,9 +73,9 @@ struct SNetCacheServiceAutomationObject : public SNetServiceAutomationObject
     virtual bool Call(const string& method,
             CArgArray& arg_array, CJsonNode& reply);
 
+protected:
     CNetCacheAPI m_NetCacheAPI;
 
-protected:
     SNetCacheServiceAutomationObject(CAutomationProc* automation_proc,
             const CNetCacheAPI& nc_server) :
         SNetServiceAutomationObject(automation_proc,
@@ -84,6 +84,8 @@ protected:
     {
         m_Service = m_NetCacheAPI.GetService();
     }
+
+    friend struct SNetCacheBlobAutomationObject;
 };
 
 struct SNetCacheBlobAutomationObject : public CAutomationObject
@@ -130,6 +132,7 @@ struct SNetCacheServerAutomationObject : public SNetCacheServiceAutomationObject
     virtual bool Call(const string& method,
             CArgArray& arg_array, CJsonNode& reply);
 
+private:
     CNetServer m_NetServer;
 };
 

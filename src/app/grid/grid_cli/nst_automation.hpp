@@ -65,9 +65,9 @@ struct SNetStorageServiceAutomationObject : public SNetServiceBaseAutomationObje
     virtual bool Call(const string& method,
             CArgArray& arg_array, CJsonNode& reply);
 
+protected:
     CNetStorageAdmin m_NetStorageAdmin;
 
-protected:
     SNetStorageServiceAutomationObject(CAutomationProc* automation_proc,
             const CNetStorageAdmin& nst_server) :
         SNetServiceBaseAutomationObject(automation_proc,
@@ -98,6 +98,7 @@ struct SNetStorageServerAutomationObject : public SNetStorageServiceAutomationOb
     virtual bool Call(const string& method,
             CArgArray& arg_array, CJsonNode& reply);
 
+private:
     CNetServer m_NetServer;
 };
 
