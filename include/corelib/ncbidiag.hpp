@@ -406,7 +406,7 @@ struct WRONG_USAGE_OF_DEFINE_ERR_SUBCODE_MACRO<errorCode, false> {
         NCBI_NS_NCBI::WRONG_USAGE_OF_DEFINE_ERR_SUBCODE_MACRO <     \
               NCBI_ERRCODE_X_NAME(name),                            \
               NCBI_NS_NCBI::err_code_x::eErrCodeX_Max_##name != 0>  \
-                                                   err_subcode)     \
+                                               /*err_subcode*/)     \
     {}
 
 
