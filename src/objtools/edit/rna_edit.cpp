@@ -245,7 +245,10 @@ bool CFindITSParser :: IsLengthTooLarge(const string& str, int max_length,
         for (int j = i - 1; j >= 0; j--)
         {
             if (spans[j])
+            {
                 start = stops[j] + 1;
+                break;
+            }
         }
         int end = bioseq_length;
         int length = end - start + 1;
@@ -258,7 +261,10 @@ bool CFindITSParser :: IsLengthTooLarge(const string& str, int max_length,
         for (int j = i + 1; j < spans.size(); j++)
         {
             if (spans[j])
+            {
                 end = starts[j] - 1;
+                break;
+            }
         }
         int length = end - start + 1;
         return length > max_length;
