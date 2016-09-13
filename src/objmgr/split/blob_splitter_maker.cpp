@@ -647,8 +647,8 @@ namespace {
     void AddBioseqIds(CID2S_Bioseq_Ids& ret, const set<CSeq_id_Handle>& ids)
     {
         TGiSet gi_set;
-        typedef set<CConstRef<CSeq_id>, SLessSeq_id> TIdSet;
-        TIdSet id_set;
+        typedef set<CConstRef<CSeq_id>, SLessSeq_id> TLessIdSet;
+        TLessIdSet id_set;
         ITERATE ( set<CSeq_id_Handle>, it, ids ) {
             if ( it->IsGi() ) {
                 gi_set.insert(it->GetGi());
@@ -659,7 +659,7 @@ namespace {
         }
         
         ForEachGiRange(gi_set, FAddGiRangeToBioseqIds(ret));
-        ITERATE ( TIdSet, it, id_set ) {
+        ITERATE ( TLessIdSet, it, id_set ) {
             CRef<CID2S_Bioseq_Ids::C_E> elem(new CID2S_Bioseq_Ids::C_E);
             elem->SetSeq_id(const_cast<CSeq_id&>(**it));
             ret.Set().push_back(elem);
@@ -1020,24 +1020,24 @@ void CBlobSplitterImpl::MakeID2Chunk(TChunkId chunk_id, const SChunkInfo& info)
         CRef<CID2S_Chunk_Content> content(new CID2S_Chunk_Content);
         CID2S_Chunk_Content::TFeat_ids& store = content->SetFeat_ids();
         ITERATE ( SFeatIds::TSplitIds, it, feat_ids.m_SplitIds ) {
-            CRef<CID2S_Seq_feat_Ids_Info> info(new CID2S_Seq_feat_Ids_Info);
+            CRef<CID2S_Seq_feat_Ids_Info> info_ids(new CID2S_Seq_feat_Ids_Info);
             if ( !it->first.first.empty() ) {
                 SAllAnnotTypes types;
                 types.Add(it->first.first);
-                types.SetFeatTypes(info->SetFeat_types());
+                types.SetFeatTypes(info_ids->SetFeat_types());
             }
             if ( !it->first.second.empty() ) {
                 SAllAnnotTypes types;
                 types.Add(it->first.second);
-                types.SetFeatTypes(info->SetXref_types());
+                types.SetFeatTypes(info_ids->SetXref_types());
             }
             ITERATE ( SFeatIds::TFeatIdsInt, fit, it->second.first ) {
-                info->SetLocal_ids().push_back(*fit);
+                info_ids->SetLocal_ids().push_back(*fit);
             }
             ITERATE ( SFeatIds::TFeatIdsStr, fit, it->second.second ) {
-                info->SetLocal_str_ids().push_back(*fit);
+                info_ids->SetLocal_str_ids().push_back(*fit);
             }
-            store.push_back(info);
+            store.push_back(info_ids);
         }
         chunk_content.push_back(content);
     }

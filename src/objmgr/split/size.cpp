@@ -50,7 +50,7 @@ CSize::CSize(const CAsnSizer& sizer)
 CSize::CSize(TDataSize asn_size, double ratio)
     : m_Count(1),
       m_AsnSize(asn_size),
-      m_ZipSize(TDataSize(asn_size*ratio+.5))
+      m_ZipSize(TDataSize(double(asn_size)*ratio + .5))
 {
 }
 
@@ -99,8 +99,8 @@ CNcbiOstream& CSize::Print(CNcbiOstream& out) const
     return out <<
         "Cnt:" << setw(5) << m_Count << ", " <<
         setiosflags(ios::fixed) << setprecision(2) <<
-        "Asn:" << setw(8) << GetAsnSize()*(1./1024) << " KB, " <<
-        "Zip:" << setw(8) << GetZipSize()*(1./1024) << " KB, " <<
+        "Asn:" << setw(8) << (double)GetAsnSize()*(1./1024) << " KB, " <<
+        "Zip:" << setw(8) << (double)GetZipSize()*(1./1024) << " KB, " <<
         setprecision(3) <<
         "Ratio: " << GetRatio();
 }

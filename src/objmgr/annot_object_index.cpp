@@ -89,7 +89,7 @@ void SAnnotObjectsIndex::AddInfo(const CAnnotObject_Info& info)
 
 
 void SAnnotObjectsIndex::AddMap(const SAnnotObject_Key& key,
-                                const SAnnotObject_Index& index)
+                                const SAnnotObject_Index& /*index*/)
 {
     m_Keys.push_back(key);
 }

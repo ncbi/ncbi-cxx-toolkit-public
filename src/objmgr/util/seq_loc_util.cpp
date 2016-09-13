@@ -960,7 +960,7 @@ int SeqLocPartialCheck(const CSeq_loc& loc, CScope* scope)
 //  Implementation of SeqLocRevCmpl()
 //
 
-CSeq_loc* SeqLocRevCmpl(const CSeq_loc& loc, CScope* scope)
+CSeq_loc* SeqLocRevCmpl(const CSeq_loc& loc, CScope*)
 {
     CReverseComplementHelper helper;
     return GetReverseComplement( loc, &helper );
@@ -1020,8 +1020,8 @@ void s_SeqLocToRangeInfoMap(const CSeq_loc& loc,
         CSeq_id_Handle id = s_GetSynHandle(it.GetSeq_id_Handle(), syns, scope);
         infos[id].push_back(info);
     }
-    NON_CONST_ITERATE(TRangeInfoMap, it, infos) {
-        it->second.sort();
+    NON_CONST_ITERATE(TRangeInfoMap, info, infos) {
+        info->second.sort();
     }
 }
 
@@ -1331,9 +1331,9 @@ void s_SeqLocToRangeInfoMapByStrand(const CSeq_loc&         loc,
             infos[id].first.push_back(info);
         }
     }
-    NON_CONST_ITERATE(TRangeInfoMapByStrand, it, infos) {
-        it->second.first.sort();
-        it->second.second.sort();
+    NON_CONST_ITERATE(TRangeInfoMapByStrand, info, infos) {
+        info->second.first.sort();
+        info->second.second.sort();
     }
 }
 
@@ -1462,9 +1462,9 @@ void s_SeqLocToTotalRangesInfoMapByStrand(const CSeq_loc&         loc,
             infos[last_id].first.push_back(total_range);
         }
     }
-    NON_CONST_ITERATE(TRangeInfoMapByStrand, it, infos) {
-        it->second.first.sort();
-        it->second.second.sort();
+    NON_CONST_ITERATE(TRangeInfoMapByStrand, info, infos) {
+        info->second.first.sort();
+        info->second.second.sort();
     }
 }
 

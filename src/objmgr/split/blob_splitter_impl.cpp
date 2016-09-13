@@ -489,7 +489,8 @@ void CBlobSplitterImpl::SplitPieces(CAnnotPieces& pieces)
             // calculate maximum piece length
             // how many chunks to make from these annotations
             size_t chunk_count =
-                size_t(double(objs.m_Size.GetZipSize())/m_Params.m_ChunkSize
+                size_t(double(objs.m_Size.GetZipSize()) /
+                       double(m_Params.m_ChunkSize)
                        +.5);
             // length of sequence covered by annotations
             size_t whole_length = objs.m_IdRange.GetLength();

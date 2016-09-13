@@ -277,7 +277,7 @@ size_t CAnnotPieces::CountAnnotObjects(void) const
                 cnt = 1;
             }
             size_t id_refs = p.m_Location.size();
-            ref_count += double(cnt) / id_refs;
+            ref_count += (double)cnt / (double)id_refs;
         }
     }
     return size_t(ref_count + .5);

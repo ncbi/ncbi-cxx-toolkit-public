@@ -118,18 +118,20 @@ double GetProteinWeight(const CSeq_feat& feat, CScope& scope,
     /// find out if the molecule is complete
     CMolInfo::TCompleteness comp = CMolInfo::eCompleteness_unknown;
     const CProt_ref& prot = feat.GetData().GetProt();
+    
     switch (prot.GetProcessed()) {
     case CProt_ref::eProcessed_not_set:
     case CProt_ref::eProcessed_preprotein:
         /// follow the molecule's setting
         break;
-
     case CProt_ref::eProcessed_mature:
     case CProt_ref::eProcessed_signal_peptide:
     case CProt_ref::eProcessed_transit_peptide:
         /// trust the location as-is
         comp = CMolInfo::eCompleteness_partial;
         break;
+    default:
+        ;
     }
 
     if (comp == CMolInfo::eCompleteness_unknown) {

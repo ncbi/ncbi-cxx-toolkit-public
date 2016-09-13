@@ -1027,14 +1027,14 @@ void CSeqTableInfo::UpdateSeq_feat(size_t row,
         feat.SetLocation(*seq_loc);
     }
     if ( m_Product.IsSet() ) {
-        CRef<CSeq_loc> seq_loc;
-        CRef<CSeq_point> seq_pnt;
-        CRef<CSeq_interval> seq_int;
+        CRef<CSeq_loc> s_loc;
+        CRef<CSeq_point> s_pnt;
+        CRef<CSeq_interval> s_int;
         if ( feat.IsSetProduct() ) {
-            seq_loc = &feat.SetProduct();
+            s_loc = &feat.SetProduct();
         }
-        m_Product.UpdateSeq_loc(row, seq_loc, seq_pnt, seq_int);
-        feat.SetProduct(*seq_loc);
+        m_Product.UpdateSeq_loc(row, s_loc, s_pnt, s_int);
+        feat.SetProduct(*s_loc);
     }
     if ( m_Partial ) {
         bool val = false;
@@ -1048,7 +1048,7 @@ void CSeqTableInfo::UpdateSeq_feat(size_t row,
 }
 
 
-bool CSeqTableInfo::HasLabel(size_t index) const
+bool CSeqTableInfo::HasLabel(size_t /*index*/) const
 {
     for ( auto& c : m_ExtraColumns ) {
         const CSeqTable_column& col = *c.first.Get();

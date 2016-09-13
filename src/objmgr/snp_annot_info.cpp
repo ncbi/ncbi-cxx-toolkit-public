@@ -199,7 +199,7 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
                     if ( value < 0 || value > kMax_Weight ) {
                         return eSNP_Complex_WeightBadValue;
                     }
-                    m_Weight |= TWeight(value) << (int)fWeightFlagBits;
+                    m_Weight |= TWeight(TWeight(value) << (int)fWeightFlagBits);
                 }
                 catch ( exception& ) {
                     return eSNP_Complex_WeightBadValue;
@@ -312,15 +312,15 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
                 if ( value < 0 || value > kMax_Weight ) {
                     return eSNP_Complex_WeightBadValue;
                 }
-                m_Weight |= TWeight(value) << (int)fWeightFlagBits;
+                m_Weight |= TWeight(TWeight(value) << (int)fWeightFlagBits);
             }
         }
         else if ( kId_dbSnpQAdata == ext_id_str ) {
-            const CUser_object::TData& data = ext.GetData();
-            if ( data.empty() ) {
+            const CUser_object::TData& snp_data = ext.GetData();
+            if ( snp_data.empty() ) {
                 return eSNP_Complex_BadQAdata;
             }
-            ITERATE ( CUser_object::TData, it, data ) {
+            ITERATE ( CUser_object::TData, it, snp_data ) {
                 const CUser_field& field = **it;
                 const CObject_id& id = field.GetLabel();
                 if ( id.Which() != CObject_id::e_Str ) {

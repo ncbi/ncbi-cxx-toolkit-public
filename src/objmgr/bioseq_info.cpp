@@ -1245,11 +1245,11 @@ const CSeqMap& CBioseq_Info::GetSeqMap(void) const
 int CBioseq_Info::GetTaxId(void) const
 {
     const COrg_ref* org_ref = 0;
-    if ( const CSeqdesc* desc = x_SearchFirstDesc(1<<CSeqdesc::e_Source) ) {
-        org_ref = &desc->GetSource().GetOrg();
+    if ( const CSeqdesc* desc_src = x_SearchFirstDesc(1<<CSeqdesc::e_Source) ) {
+        org_ref = &desc_src->GetSource().GetOrg();
     }
-    else if ( const CSeqdesc* desc = x_SearchFirstDesc(1<<CSeqdesc::e_Org) ) {
-        org_ref = &desc->GetOrg();
+    else if ( const CSeqdesc* desc_org = x_SearchFirstDesc(1<<CSeqdesc::e_Org) ) {
+        org_ref = &desc_org->GetOrg();
     }
     else {
         return 0;

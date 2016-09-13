@@ -742,8 +742,8 @@ void CSeq_loc_Mapper::x_InitGCAssembly(const CGC_Assembly& gc_assembly,
                     x_InitGCSequence(seq.GetSingle(), to_alias);
                 }
                 else {
-                    ITERATE(CGC_Replicon::TSequence::TSet, it, seq.GetSet()) {
-                        x_InitGCSequence(**it, to_alias);
+                    ITERATE(CGC_Replicon::TSequence::TSet, tseq, seq.GetSet()) {
+                        x_InitGCSequence(**tseq, to_alias);
                     }
                 }
             }

@@ -438,7 +438,7 @@ void CUnsupportedEditSaver::Remove(const CSeq_entry_Handle&,
 
 void CUnsupportedEditSaver::Attach(const CBioseq_set_Handle&, 
                             const CSeq_entry_Handle&, 
-                            int Index, ECallMode)
+                            int /*Index*/, ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
@@ -446,7 +446,7 @@ void CUnsupportedEditSaver::Attach(const CBioseq_set_Handle&,
 }
 void CUnsupportedEditSaver::Remove(const CBioseq_set_Handle&, 
                                    const CSeq_entry_Handle&, 
-                                   int Index, ECallMode)
+                                   int /*Index*/, ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,

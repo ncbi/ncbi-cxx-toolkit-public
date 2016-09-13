@@ -214,7 +214,7 @@ void CSeqsRange::Add(const CSeq_align& obj, const CBlobSplitterImpl& impl)
 
 
 void CSeqsRange::Add(const CDense_seg& denseg,
-                     const CBlobSplitterImpl& impl)
+                     const CBlobSplitterImpl& /*impl*/)
 {
     size_t dim    = denseg.GetDim();
     size_t numseg = denseg.GetNumseg();
@@ -246,7 +246,7 @@ void CSeqsRange::Add(const CDense_seg& denseg,
 
 
 void CSeqsRange::Add(const CDense_diag& diag,
-                     const CBlobSplitterImpl& impl)
+                     const CBlobSplitterImpl& /*impl*/)
 {
     size_t dim = diag.GetDim();
     if ( dim != diag.GetIds().size() ) {
@@ -267,7 +267,7 @@ void CSeqsRange::Add(const CDense_diag& diag,
 
 
 void CSeqsRange::Add(const CPacked_seg& packed,
-                     const CBlobSplitterImpl& impl)
+                     const CBlobSplitterImpl& /*impl*/)
 {
     size_t dim    = packed.GetDim();
     size_t numseg = packed.GetNumseg();
@@ -299,7 +299,7 @@ void CSeqsRange::Add(const CPacked_seg& packed,
 
 
 void CSeqsRange::Add(const CSpliced_seg& spliced,
-                     const CBlobSplitterImpl& impl)
+                     const CBlobSplitterImpl& /*impl*/)
 {
     const CSeq_id* gen_id = spliced.IsSetGenomic_id() ?
         &spliced.GetGenomic_id() : 0;
@@ -329,7 +329,7 @@ void CSeqsRange::Add(const CSpliced_seg& spliced,
 
 
 void CSeqsRange::Add(const CSparse_seg& sparse,
-                     const CBlobSplitterImpl& impl)
+                     const CBlobSplitterImpl& /*impl*/)
 {
     size_t row = 0;
     ITERATE ( CSparse_seg::TRows, it, sparse.GetRows() ) {

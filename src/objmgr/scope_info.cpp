@@ -402,7 +402,7 @@ void CDataSource_ScopeInfo::ReleaseTSELock(CTSE_ScopeInfo& tse)
     CUnlockedTSEsGuard guard;
     {{
         CTSE_ScopeInternalLock unlocked;
-        TTSE_LockSetMutex::TWriteLockGuard guard(m_TSE_UnlockQueueMutex);
+        TTSE_LockSetMutex::TWriteLockGuard tse_guard(m_TSE_UnlockQueueMutex);
         if ( tse.m_TSE_LockCounter.Get() > 0 ) {
             // relocked already
             return;
@@ -1457,7 +1457,7 @@ void CTSE_ScopeInfo::RemoveLastInfoLock(CScopeInfo_Base& info)
     CRef<CTSE_ScopeInfo> self;
     CUnlockedTSEsGuard guard;
     {{
-        CMutexGuard guard(m_TSE_LockMutex);
+        CMutexGuard guard_mtx(m_TSE_LockMutex);
         if ( info.m_LockCounter.Get() > 0 ) {
             // already locked again
             return;
@@ -1582,6 +1582,7 @@ void CTSE_ScopeInfo::RemoveAnnot(CSeq_annot_ScopeInfo& info)
 
 
 // Action A7.
+#ifdef _DEBUG
 void CTSE_ScopeInfo::x_CheckAdded(CScopeInfo_Base& parent,
                                   CScopeInfo_Base& child)
 {
@@ -1595,6 +1596,11 @@ void CTSE_ScopeInfo::x_CheckAdded(CScopeInfo_Base& parent,
     _ASSERT(child.m_LockCounter.Get() > 0);
     _ASSERT(x_SameTSE(parent.GetTSE_Handle().x_GetTSE_Info()));
 }
+#else  /* _DEBUG */
+void CTSE_ScopeInfo::x_CheckAdded(CScopeInfo_Base& /*parent*/,
+                                  CScopeInfo_Base& /*child*/)
+{}
+#endif
 
 
 // Action A7.

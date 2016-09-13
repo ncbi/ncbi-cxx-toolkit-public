@@ -935,10 +935,10 @@ void GetOverlappingFeatures(const CSeq_loc& loc,
                 circular_id = 0;
             }
             if ( circular_id ) {
-                CBioseq_Handle bioseq_handle = scope.GetBioseqHandle(*circular_id);
-                if ( bioseq_handle && bioseq_handle.IsSetInst_Topology() &&
-                     bioseq_handle.GetInst_Topology() == CSeq_inst::eTopology_circular ) {
-                    circular_length = bioseq_handle.GetBioseqLength();
+                CBioseq_Handle bseq_handle = scope.GetBioseqHandle(*circular_id);
+                if ( bseq_handle && bseq_handle.IsSetInst_Topology() &&
+                     bseq_handle.GetInst_Topology() == CSeq_inst::eTopology_circular ) {
+                    circular_length = bseq_handle.GetBioseqLength();
                 }
             }
         }
@@ -1651,8 +1651,7 @@ GetBestCdsForMrna(const CSeq_feat& mrna_feat,
             if (obj_iter->IsSetType()  &&
                 obj_iter->GetType().IsStr()  &&
                 obj_iter->GetType().GetStr() == "MrnaProteinLink") {
-                string prot_id_str = obj_iter->GetField("protein seqID")
-                    .GetData().GetStr();
+                prot_id_str = obj_iter->GetField("protein seqID").GetData().GetStr();
                 break;
             }
         }
@@ -1899,9 +1898,6 @@ CConstRef<CSeq_feat> GetBestGeneForCds(const CSeq_feat& cds_feat,
             /// 'suppress' case
             return feat_ref;
         }
-
-        string ref_str;
-        ref->GetLabel(&ref_str);
 
         ITERATE (TFeatScores, feat_it, feats) {
             const CSeq_feat& feat = *feat_it->second;
@@ -3742,27 +3738,27 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
                 sequence::eOffset_FromStart,
                 &scope);
             seq_pos -= frame;
-            string::size_type i = seq_pos / 3;
-            if (i < prot_len) {
+            string::size_type j = seq_pos / 3;
+            if (j < prot_len) {
                 const CCode_break::C_Aa& c_aa = brk->GetAa();
                 if (c_aa.IsNcbieaa()) {
                     CDelta_ext::Tdata::iterator seg_it = prot->SetInst().SetExt().SetDelta().Set().begin();
                     string::size_type offset = 0;
                     while (seg_it != prot->SetInst().SetExt().SetDelta().Set().end()
-                        && offset + (*seg_it)->GetLiteral().GetLength() < i) {
+                        && offset + (*seg_it)->GetLiteral().GetLength() < j) {
                         offset += (*seg_it)->GetLiteral().GetLength();
                         ++seg_it;
                     }
                     if (seg_it != prot->SetInst().SetExt().SetDelta().Set().end()
                         && !(*seg_it)->GetLiteral().GetSeq_data().IsGap()) {
                         if ((*seg_it)->GetLiteral().GetSeq_data().IsIupacaa()) {
-                            (*seg_it)->SetLiteral().SetSeq_data().SetIupacaa().Set()[i - offset] = c_aa.GetNcbieaa();
+                            (*seg_it)->SetLiteral().SetSeq_data().SetIupacaa().Set()[j - offset] = c_aa.GetNcbieaa();
                         } else {
-                            (*seg_it)->SetLiteral().SetSeq_data().SetNcbieaa().Set()[i - offset] = c_aa.GetNcbieaa();
+                            (*seg_it)->SetLiteral().SetSeq_data().SetNcbieaa().Set()[j - offset] = c_aa.GetNcbieaa();
                         }
                     }
                 }
-            } else if (i == prot_len) {
+            } else if (j == prot_len) {
                 // add terminal exception
                 const CCode_break::C_Aa& c_aa = brk->GetAa();
                 if (c_aa.IsNcbieaa() && c_aa.GetNcbieaa() == 42) {
@@ -4059,7 +4055,7 @@ void CCdregion_translate::TranslateCdregion (string& prot,
                                              bool include_stop,
                                              bool remove_trailing_X,
                                              bool* alt_start,
-                                             ETranslationLengthProblemOptions options)
+                                             ETranslationLengthProblemOptions /*options*/)
 {
     CSeq_feat feat;
     feat.SetLocation(const_cast<CSeq_loc&>(loc));
@@ -4069,24 +4065,21 @@ void CCdregion_translate::TranslateCdregion (string& prot,
 }
 
 
-void CCdregion_translate::TranslateCdregion
-(string& prot,
- const CSeq_feat& cds,
- CScope& scope,
- bool include_stop,
- bool remove_trailing_X,
- bool* alt_start,
- ETranslationLengthProblemOptions options)
+void CCdregion_translate::TranslateCdregion (
+        string& prot,
+        const CSeq_feat& cds,
+        CScope& scope,
+        bool include_stop,
+        bool remove_trailing_X,
+        bool* alt_start,
+        ETranslationLengthProblemOptions /*options*/)
 {
     _ASSERT(cds.GetData().IsCdregion());
-
     prot.erase();
-
     CBioseq_Handle bsh = scope.GetBioseqHandle(cds.GetLocation());
     if ( !bsh ) {
         return;
     }
-
     CSeqTranslator::Translate(cds, bsh.GetScope(), prot,
                               include_stop, remove_trailing_X, alt_start);
 }

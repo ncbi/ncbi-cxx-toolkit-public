@@ -360,7 +360,7 @@ namespace {
 
 
 void CSeq_annot_Info::x_SetObject(const CSeq_annot_Info& info,
-                                  TObjectCopyMap* copy_map)
+                                  TObjectCopyMap* /*copy_map*/)
 {
     _ASSERT(!m_SNP_Info && !m_Object);
     m_Object = sx_ShallowCopy(info.x_GetObject());
@@ -714,7 +714,7 @@ void CSeq_annot_Info::x_InitFeatKeys(CTSE_Info& tse)
 {
     _ASSERT(m_ObjectIndex.GetInfos().size() >= m_Object->GetData().GetFtable().size());
     size_t object_count = m_ObjectIndex.GetInfos().size();
-    m_ObjectIndex.ReserveMapSize(size_t(object_count*1.1));
+    m_ObjectIndex.ReserveMapSize(size_t(double(object_count)*1.1));
 
     SAnnotObject_Key key;
     SAnnotObject_Index index;
@@ -756,7 +756,7 @@ void CSeq_annot_Info::x_InitFeatKeys(CTSE_Info& tse)
                     continue;
                 }
                 key.m_Handle = hrit->first;
-                index.m_Flags = hr.GetStrandsFlag();
+                index.m_Flags = (SAnnotObject_Index::TFlags)hr.GetStrandsFlag();
                 if ( multi_id ) {
                     index.SetMultiIdFlag();
                 }
@@ -1030,7 +1030,7 @@ void CSeq_annot_Info::x_InitFeatTableKeys(CTSE_Info& tse)
                 continue;
             }
             key.m_Handle = hrit->first;
-            index.m_Flags = hr.GetStrandsFlag();
+            index.m_Flags = (SAnnotObject_Index::TFlags)hr.GetStrandsFlag();
             if ( multi_id ) {
                 index.SetMultiIdFlag();
             }
@@ -1090,7 +1090,7 @@ void CSeq_annot_Info::x_InitFeatTableKeys(CTSE_Info& tse)
         bool partial = m_Table_Info->IsPartial(row);
         for ( index.m_AnnotLocationIndex = 0;
               index.m_AnnotLocationIndex < 2;
-              index.m_AnnotLocationIndex += 1 ) {
+              index.m_AnnotLocationIndex++ ) {
             // index by location, then by product
             const CSeqTableLocColumns& loc =
                 index.m_AnnotLocationIndex == 0?
@@ -1111,7 +1111,7 @@ void CSeq_annot_Info::x_InitFeatTableKeys(CTSE_Info& tse)
                             continue;
                         }
                         key.m_Handle = hrit->first;
-                        index.m_Flags = hr.GetStrandsFlag();
+                        index.m_Flags = (SAnnotObject_Index::TFlags)hr.GetStrandsFlag();
                         if ( multi_id ) {
                             index.SetMultiIdFlag();
                         }
@@ -1297,7 +1297,7 @@ void CSeq_annot_Info::x_MapAnnotObject(CAnnotObject_Info& info)
                 continue;
             }
             key.m_Handle = hrit->first;
-            index.m_Flags = hr.GetStrandsFlag();
+            index.m_Flags = (SAnnotObject_Index::TFlags)hr.GetStrandsFlag();
             if ( multi_id ) {
                 index.SetMultiIdFlag();
             }

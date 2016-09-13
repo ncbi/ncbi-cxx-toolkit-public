@@ -972,7 +972,7 @@ static string s_TitleFromBioSource(const CBioSource& source,
     string title = NStr::TruncateSpaces(name + strain + chromosome + clone
                                         + map_ + plasmid + sfx);
     if ( !title.empty()  &&  islower((unsigned char) title[0])) {
-        title[0] = toupper((unsigned char) title[0]);
+        title[0] = (char)toupper((unsigned char) title[0]);
     }
 
     return title;
@@ -1179,7 +1179,7 @@ static string s_TitleFromChromosome(const CBioSource& source,
     result = NStr::Replace(result, "Plasmid", "plasmid");
     result = NStr::Replace(result, "Element", "element");
     if (!result.empty()) {
-        result[0] = toupper((unsigned char) result[0]);
+        result[0] = (char)toupper((unsigned char) result[0]);
     }
     return result;
 }

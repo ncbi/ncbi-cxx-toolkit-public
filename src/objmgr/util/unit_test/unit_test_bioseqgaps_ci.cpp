@@ -130,7 +130,7 @@ namespace {
 
         CSeq_inst & seq_inst = pBioseq->SetInst();
         seq_inst.SetRepr( CSeq_inst::eRepr_raw );
-        seq_inst.SetLength( seq.length() );
+        seq_inst.SetLength( (CSeq_inst::TLength)seq.length() );
         seq_inst.SetMol( eMol );
         if( eMol == CSeq_inst::eMol_na ) {
             seq_inst.SetSeq_data().SetIupacna().Set( seq );
@@ -332,8 +332,8 @@ BOOST_AUTO_TEST_CASE(CBioseqGaps_CI_OneBioseqTests)
                 (TSeqPos) kSeparator.length(),
                 (TSeqPos) kGap.length()
             };
-            gap_info.start_pos += 
-                gap_idx * ( kSeparator.length() + kGap.length() );
+            gap_info.start_pos += (TSeqPos)
+                (gap_idx * (kSeparator.length() + kGap.length()));
             expected_gaps.push_back(gap_info);
         }
 
@@ -355,7 +355,7 @@ BOOST_AUTO_TEST_CASE(CBioseqGaps_CI_OneBioseqTests)
         // build expected gaps array
         TGapInfoVec expected_gaps;
         if( *piGapLen > *piMaxGapLenToIgnore ) {
-            expected_gaps.push_back(makeGapInfo(kSeparator.length(), *piGapLen));
+            expected_gaps.push_back(makeGapInfo((TSeqPos)kSeparator.length(), *piGapLen));
         }
 
         // run test

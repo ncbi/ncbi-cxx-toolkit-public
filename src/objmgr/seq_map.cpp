@@ -397,11 +397,11 @@ size_t CSeqMap::x_FindSegment(TSeqPos pos, CScope* scope) const
         return resolved - 1;
     }
     else {
-        TSegments::const_iterator end = m_Segments.begin()+resolved;
+        TSegments::const_iterator itend = m_Segments.begin()+resolved;
         TSegments::const_iterator it = 
-            upper_bound(m_Segments.begin(), end,
+            upper_bound(m_Segments.begin(), itend,
                         pos, SPosLessSegment());
-        if ( it == end ) {
+        if ( it == itend ) {
             return size_t(-1);
         }
         return it - m_Segments.begin();
@@ -845,7 +845,7 @@ bool CSeqMap::HasSegmentOfType(ESegmentType type) const
     if ( m_HasSegments == 0 ) {
         THasSegments flags = 0;
         ITERATE ( TSegments, it, m_Segments ) {
-            flags |= 1<<it->m_SegType;
+            flags = flags | THasSegments(1 << it->m_SegType);
         }
         m_HasSegments = flags;
     }
@@ -1562,7 +1562,7 @@ bool CSeqMap::x_DoUpdateSeq_inst(CSeq_inst& inst)
 }
 
 
-void CSeqMap::SetRepr(CSeq_inst::TRepr repr)
+void CSeqMap::SetRepr(CSeq_inst::TRepr /*repr*/)
 {
 }
 

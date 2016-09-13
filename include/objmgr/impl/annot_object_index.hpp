@@ -129,15 +129,15 @@ struct SAnnotObject_Index
         }
     void SetLocationIsPoint(void)
         {
-            m_Flags = (m_Flags & ~fSimpleLocation_Mask) | fLocation_Point;
+            m_Flags = TFlags((m_Flags & ~fSimpleLocation_Mask) | fLocation_Point);
         }
     void SetLocationIsInterval(void)
         {
-            m_Flags = (m_Flags & ~fSimpleLocation_Mask) | fLocation_Interval;
+            m_Flags = TFlags((m_Flags & ~fSimpleLocation_Mask) | fLocation_Interval);
         }
     void SetLocationIsWhole(void)
         {
-            m_Flags = (m_Flags & ~fSimpleLocation_Mask) | fLocation_Whole;
+            m_Flags = TFlags((m_Flags & ~fSimpleLocation_Mask) | fLocation_Whole);
         }
 
     CAnnotObject_Info*                  m_AnnotObject_Info;

@@ -86,8 +86,8 @@ public:
 class CSeqTableSetQual : public CSeqTableSetFeatField
 {
 public:
-    CSeqTableSetQual(const CTempString& name)
-        : name(name.substr(2))
+    CSeqTableSetQual(const CTempString& name_str)
+        : name(name_str.substr(2))
         {
         }
 
@@ -122,8 +122,8 @@ private:
 class CSeqTableSetDbxref : public CSeqTableSetFeatField
 {
 public:
-    CSeqTableSetDbxref(const CTempString& name)
-        : name(name.substr(2))
+    CSeqTableSetDbxref(const CTempString& name_str)
+        : name(name_str.substr(2))
         {
         }
 

@@ -131,8 +131,8 @@ void CGC_Assembly_Parser::x_ParseGCAssembly(const CGC_Assembly& gc_assembly,
                     x_ParseGCSequence(seq.GetSingle(), NULL, entry, null);
                 }
                 else {
-                    ITERATE(CGC_Replicon::TSequence::TSet, it, seq.GetSet()) {
-                        x_ParseGCSequence(**it, NULL, entry, null);
+                    ITERATE(CGC_Replicon::TSequence::TSet, its, seq.GetSet()) {
+                        x_ParseGCSequence(**its, NULL, entry, null);
                     }
                 }
             }

@@ -187,7 +187,7 @@ void x_CleanAndCompress(string& dest, const CTempString& instr)
     while (left > 0) {
         next = *in++;
 
-        two_chars = (two_chars << 8) | next;
+        two_chars = Uint2((two_chars << 8) | next);
 
         switch (two_chars)
         {

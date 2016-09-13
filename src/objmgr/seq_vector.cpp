@@ -71,7 +71,7 @@ CNcbi2naRandomizer::CNcbi2naRandomizer(CRandom& gen)
             if ( !na4  ||  (na4 & (1 << bit)) ) {
                 bit_count++;
                 bases[bit] = 1;
-                set_bit = bit;
+                set_bit = (char)bit;
             }
             else {
                 bases[bit] = 0;
@@ -95,7 +95,7 @@ CNcbi2naRandomizer::CNcbi2naRandomizer(CRandom& gen)
                     rnd -= bases[base];
                     continue;
                 }
-                m_RandomTable[na4][i] = base;
+                m_RandomTable[na4][i] = (char)base;
                 bases[base]--;
                 break;
             }
@@ -499,7 +499,7 @@ void x_Append8To2(string& dst_str, char& dst_c, TSeqPos dst_pos,
     if ( dst_pos&3 ) {
         char c = dst_c;
         for ( ; count && (dst_pos&3); --count, ++dst_pos ) {
-            c = (c<<2)|*unpacked++;
+            c = char((c<<2)|*unpacked++);
         }
         if ( (dst_pos&3) == 0 ) {
             dst_str += c;
@@ -517,8 +517,8 @@ void x_Append8To2(string& dst_str, char& dst_c, TSeqPos dst_pos,
     char packed_buffer[kBufferSize/4];
     char* packed_end = packed_buffer;
     for ( ; count >= 4; count -= 4, unpacked += 4 ) {
-        *packed_end++ =
-            (unpacked[0]<<6)|(unpacked[1]<<4)|(unpacked[2]<<2)|unpacked[3];
+        *packed_end++ = char(
+            (unpacked[0]<<6)|(unpacked[1]<<4)|(unpacked[2]<<2)|unpacked[3] );
     }
     dst_str.append(packed_buffer, packed_end);
     switch ( count ) {
@@ -526,10 +526,10 @@ void x_Append8To2(string& dst_str, char& dst_c, TSeqPos dst_pos,
         dst_c = unpacked[0];
         break;
     case 2:
-        dst_c = (unpacked[0]<<2)|unpacked[1];
+        dst_c = char((unpacked[0]<<2)|unpacked[1]);
         break;
     case 3:
-        dst_c = (unpacked[0]<<4)|(unpacked[1]<<2)|unpacked[2];
+        dst_c = char((unpacked[0]<<4)|(unpacked[1]<<2)|unpacked[2]);
         break;
     default:
         dst_c = 0;
@@ -571,9 +571,9 @@ void x_Append2To2(string& dst, char& dst_c, TSeqPos dst_pos,
     if ( dst_pos&3 ) {
         // align dst_pos
         TSeqPos add = 4-(dst_pos&3);
-        char c = (dst_c<<(add*2))|(src[src_pos>>2]&((1<<(add*2))-1));
+        char c = char((dst_c<<(add*2))|(src[src_pos>>2]&((1<<(add*2))-1)));
         if ( count < add ) {
-            dst_c = c >> (2*(add-count));
+            dst_c = char(c >> (2*(add-count)));
             return;
         }
         dst += c;
@@ -592,7 +592,7 @@ void x_Append2To2(string& dst, char& dst_c, TSeqPos dst_pos,
     size_t rem = count&3;
     if ( rem ) {
         _ASSERT(!(src_pos&3));
-        dst_c = (src[pos+octets]&255)>>(2*(4-rem));
+        dst_c = char((src[pos+octets]&255)>>(2*(4-rem)));
     }
 }
 

@@ -426,7 +426,7 @@ const CScopeInfo_Base::TIndexIds* CScopeInfo_Base::GetIndexIds(void) const
 }
 
 
-bool CScopeInfo_Base::x_Check(TCheckFlags zero_counter_mode) const
+bool CScopeInfo_Base::x_Check(TCheckFlags /*zero_counter_mode*/) const
 {
     return true;
 /*

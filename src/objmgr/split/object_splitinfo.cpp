@@ -510,7 +510,7 @@ CPlace_SplitInfo::~CPlace_SplitInfo(void)
 
 
 CSeq_descr_SplitInfo::CSeq_descr_SplitInfo(const CPlaceId& place_id,
-                                           TSeqPos seq_length,
+                                           TSeqPos /*seq_length*/,
                                            const CSeq_descr& descr,
                                            const SSplitterParams& params)
     : m_Descr(&descr)

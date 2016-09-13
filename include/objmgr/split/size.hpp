@@ -96,7 +96,7 @@ public:
         }
     double GetRatio(void) const
         {
-            return double(m_ZipSize)/m_AsnSize;
+            return (double)m_ZipSize/(double)m_AsnSize;
         }
 
     CNcbiOstream& Print(CNcbiOstream& out) const;

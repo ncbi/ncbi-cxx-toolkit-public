@@ -53,35 +53,35 @@ CSeqTableSetFeatField::~CSeqTableSetFeatField()
 }
 
 
-void CSeqTableSetFeatField::SetInt(CSeq_feat& feat, int value) const
+void CSeqTableSetFeatField::SetInt(CSeq_feat&, int value) const
 {
     NCBI_THROW_FMT(CAnnotException, eOtherError,
                    "Incompatible Seq-feat field value: "<<value);
 }
 
 
-void CSeqTableSetFeatField::SetInt8(CSeq_feat& feat, Int8 value) const
+void CSeqTableSetFeatField::SetInt8(CSeq_feat&, Int8 value) const
 {
     NCBI_THROW_FMT(CAnnotException, eOtherError,
                    "Incompatible Seq-feat field value: "<<value);
 }
 
 
-void CSeqTableSetFeatField::SetReal(CSeq_feat& feat, double value) const
+void CSeqTableSetFeatField::SetReal(CSeq_feat&, double value) const
 {
     NCBI_THROW_FMT(CAnnotException, eOtherError,
                    "Incompatible Seq-feat field value: "<<value);
 }
 
 
-void CSeqTableSetFeatField::SetString(CSeq_feat& feat, const string& value) const
+void CSeqTableSetFeatField::SetString(CSeq_feat&, const string& value) const
 {
     NCBI_THROW_FMT(CAnnotException, eOtherError,
                    "Incompatible Seq-feat field value: "<<value);
 }
 
 
-void CSeqTableSetFeatField::SetBytes(CSeq_feat& feat, const vector<char>& value) const
+void CSeqTableSetFeatField::SetBytes(CSeq_feat&, const vector<char>& /*value*/) const
 {
     NCBI_THROW_FMT(CAnnotException, eOtherError,
                    "Incompatible Seq-feat field value: vector<char>");
@@ -94,28 +94,28 @@ CSeqTableSetLocField::~CSeqTableSetLocField()
 }
 
 
-void CSeqTableSetLocField::SetInt(CSeq_loc& loc, int value) const
+void CSeqTableSetLocField::SetInt(CSeq_loc&, int value) const
 {
     NCBI_THROW_FMT(CAnnotException, eOtherError,
                    "Incompatible Seq-loc field value: "<<value);
 }
 
 
-void CSeqTableSetLocField::SetInt8(CSeq_loc& loc, Int8 value) const
+void CSeqTableSetLocField::SetInt8(CSeq_loc&, Int8 value) const
 {
     NCBI_THROW_FMT(CAnnotException, eOtherError,
                    "Incompatible Seq-loc field value: "<<value);
 }
 
 
-void CSeqTableSetLocField::SetReal(CSeq_loc& loc, double value) const
+void CSeqTableSetLocField::SetReal(CSeq_loc&, double value) const
 {
     NCBI_THROW_FMT(CAnnotException, eOtherError,
                    "Incompatible Seq-loc field value: "<<value);
 }
 
 
-void CSeqTableSetLocField::SetString(CSeq_loc& loc, const string& value) const
+void CSeqTableSetLocField::SetString(CSeq_loc&, const string& value) const
 {
     NCBI_THROW_FMT(CAnnotException, eOtherError,
                    "Incompatible Seq-loc field value: "<<value);
@@ -195,9 +195,9 @@ CUser_field& CSeqTableSetExt::x_SetField(CSeq_feat& feat) const
         CUser_object::TData* next_data = 0;
         NON_CONST_ITERATE ( CUser_object::TData, it2, *data ) {
             const CObject_id& id = (*it2)->GetLabel();
-            CUser_field::TData& data = (*it2)->SetData();
-            if ( data.IsFields() && id.IsStr() && id.GetStr() == *it ) {
-                next_data = &data.SetFields();
+            CUser_field::TData& data2 = (*it2)->SetData();
+            if ( data2.IsFields() && id.IsStr() && id.GetStr() == *it ) {
+                next_data = &data2.SetFields();
                 break;
             }
         }
@@ -225,7 +225,7 @@ void CSeqTableSetExt::SetInt(CSeq_feat& feat, int value) const
 void CSeqTableSetExt::SetInt8(CSeq_feat& feat, Int8 value) const
 {
     // TODO: Int8 in User-field
-    x_SetField(feat).SetData().SetInt(value);
+    x_SetField(feat).SetData().SetInt((int)value);
 }
 
 

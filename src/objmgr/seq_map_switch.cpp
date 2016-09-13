@@ -550,19 +550,19 @@ void CSeqMapSwitchPoint::ChangeSwitchPoint(TSeqPos pos, TSeqPos add)
     }
     if ( right_add ) { // change right segment first
         TSeqPos len = right.GetLength() + right_add;
-        TSeqPos pos = right.GetRefPosition();
+        TSeqPos p = right.GetRefPosition();
         if ( !m_RightMinusStrand ) {
-            pos -= right_add;
+            p -= right_add;
         }
-        seq_map.SetSegmentRef(right, len, m_RightId, pos, m_RightMinusStrand);
+        seq_map.SetSegmentRef(right, len, m_RightId, p, m_RightMinusStrand);
     }
     if ( left_add ) {
         TSeqPos len = left.GetLength() + left_add;
-        TSeqPos pos = left.GetRefPosition();
+        TSeqPos p   = left.GetRefPosition();
         if ( m_LeftMinusStrand ) {
-            pos -= left_add;
+            p -= left_add;
         }
-        seq_map.SetSegmentRef(left, len, m_LeftId, pos, m_LeftMinusStrand);
+        seq_map.SetSegmentRef(left, len, m_LeftId, p, m_LeftMinusStrand);
     }
 }
 

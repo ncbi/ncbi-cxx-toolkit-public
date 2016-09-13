@@ -245,9 +245,9 @@ void copy_2bit(DstIter dst, size_t count,
         _ASSERT(src >= srcCont.begin() && src < srcCont.end());
         char c3 = *src;
         ++src;
-        char c0 = c3 >> 6;
-        char c1 = c3 >> 4;
-        char c2 = c3 >> 2;
+        char c0 = char(c3 >> 6);
+        char c1 = char(c3 >> 4);
+        char c2 = char(c3 >> 2);
         c0 &= 0x03;
         c1 &= 0x03;
         c2 &= 0x03;
@@ -303,9 +303,9 @@ void copy_2bit_table(DstIter dst, size_t count,
         _ASSERT(src >= srcCont.begin() && src < srcCont.end());
         char c3 = *src;
         ++src;
-        char c0 = c3 >> 6;
-        char c1 = c3 >> 4;
-        char c2 = c3 >> 2;
+        char c0 = char(c3 >> 6);
+        char c1 = char(c3 >> 4);
+        char c2 = char(c3 >> 2);
         c0 = table[c0 & 0x03];
         c1 = table[c1 & 0x03];
         *dst   = c0;
@@ -359,9 +359,9 @@ void copy_2bit_reverse(DstIter dst, size_t count,
     for ( DstIter end = dst + (count & ~3); dst != end; dst += 4 ) {
         _ASSERT(src > srcCont.begin() && src <= srcCont.end());
         char c0 = *--src;
-        char c1 = c0 >> 2;
-        char c2 = c0 >> 4;
-        char c3 = c0 >> 6;
+        char c1 = char(c0 >> 2);
+        char c2 = char(c0 >> 4);
+        char c3 = char(c0 >> 6);
         c0 &= 0x03;
         c1 &= 0x03;
         c2 &= 0x03;
@@ -416,9 +416,9 @@ void copy_2bit_table_reverse(DstIter dst, size_t count,
     for ( DstIter end = dst + (count & ~3); dst != end; dst += 4 ) {
         _ASSERT(src > srcCont.begin() && src <= srcCont.end());
         char c0 = *--src;
-        char c1 = c0 >> 2;
-        char c2 = c0 >> 4;
-        char c3 = c0 >> 6;
+        char c1 = char(c0 >> 2);
+        char c2 = char(c0 >> 4);
+        char c3 = char(c0 >> 6);
         c0 = table[c0 & 0x03];
         c1 = table[c1 & 0x03];
         *dst   = c0;

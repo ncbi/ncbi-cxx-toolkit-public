@@ -163,6 +163,7 @@ DEFCHOOSER(Replace_annot,   ReplaceAnnot);
 
 #undef DEFCHOOSER
 
+
 template<int type> 
 struct SCmdCreator 
 {
@@ -193,6 +194,8 @@ struct SCmdCreator
 
 };
 
+
+
 template<typename THandle>
 static inline void s_AddDescr(const THandle& handle, const CSeq_descr& descr,
                               IEditsDBEngine& engine)
@@ -204,16 +207,18 @@ static inline void s_AddDescr(const THandle& handle, const CSeq_descr& descr,
 }
 
 void CEditsSaver::AddDescr(const CBioseq_Handle& handle, 
-                           const CSeq_descr& descr, ECallMode mode)
+                           const CSeq_descr& descr, ECallMode)
 {
     s_AddDescr(handle, descr, GetDBEngine());
 }
 
 void CEditsSaver::AddDescr(const CBioseq_set_Handle& handle, 
-                           const CSeq_descr& descr, ECallMode mode)
+                           const CSeq_descr& descr, ECallMode)
 {
     s_AddDescr(handle, descr, GetDBEngine());
 }
+
+
 
 template<typename THandle>
 static inline void s_SetDescr(const THandle& handle, const CSeq_descr& descr,
@@ -224,16 +229,20 @@ static inline void s_SetDescr(const THandle& handle, const CSeq_descr& descr,
         .SetSet_descr(const_cast<CSeq_descr&>(descr));
     engine.SaveCommand(*cmd); 
 }
+
 void CEditsSaver::SetDescr(const CBioseq_Handle& handle, 
-                           const CSeq_descr& descr, ECallMode mode)
+                           const CSeq_descr& descr, ECallMode)
 {
     s_SetDescr(handle, descr, GetDBEngine());
 }
+
 void CEditsSaver::SetDescr(const CBioseq_set_Handle& handle, 
-                           const CSeq_descr& descr, ECallMode mode)
+                           const CSeq_descr& descr, ECallMode)
 {
     s_SetDescr(handle, descr, GetDBEngine());
 }
+
+
 
 template<typename THandle>
 static inline void s_ResetDescr(const THandle& handle,
@@ -243,16 +252,18 @@ static inline void s_ResetDescr(const THandle& handle,
     SCmdCreator<CSeqEdit_Cmd::e_Reset_descr>::CreateCmd(handle,cmd);
     engine.SaveCommand(*cmd); 
 }
-void CEditsSaver::ResetDescr(const CBioseq_Handle& handle, 
-                             ECallMode mode)
+
+void CEditsSaver::ResetDescr(const CBioseq_Handle& handle, ECallMode)
 {
     s_ResetDescr(handle, GetDBEngine());
 }
-void CEditsSaver::ResetDescr(const CBioseq_set_Handle& handle, 
-                             ECallMode mode)
+
+void CEditsSaver::ResetDescr(const CBioseq_set_Handle& handle, ECallMode)
 {
     s_ResetDescr(handle, GetDBEngine());
 }
+
+
 
 template<typename THandle>
 static inline void s_AddDesc(const THandle& handle, 
@@ -264,13 +275,15 @@ static inline void s_AddDesc(const THandle& handle,
         SetAdd_desc(const_cast<CSeqdesc&>(desc));
     engine.SaveCommand(*cmd); 
 }
+
 void CEditsSaver::AddDesc(const CBioseq_Handle& handle, 
-                          const CSeqdesc& desc, ECallMode mode)
+                          const CSeqdesc& desc, ECallMode)
 {
     s_AddDesc(handle, desc, GetDBEngine());
 }
+
 void CEditsSaver::AddDesc(const CBioseq_set_Handle& handle, 
-                          const CSeqdesc& desc, ECallMode mode)
+                          const CSeqdesc& desc, ECallMode)
 {
     s_AddDesc(handle, desc, GetDBEngine());
 }
@@ -285,17 +298,22 @@ static inline void s_RemoveDesc(const THandle& handle,
         SetRemove_desc(const_cast<CSeqdesc&>(desc));
     engine.SaveCommand(*cmd); 
 }
+
 void CEditsSaver::RemoveDesc(const CBioseq_Handle& handle, 
-                             const CSeqdesc& desc, ECallMode mode)
+                             const CSeqdesc& desc, ECallMode)
 {
     s_RemoveDesc(handle, desc, GetDBEngine());
 }
+
 void CEditsSaver::RemoveDesc(const CBioseq_set_Handle& handle, 
-                             const CSeqdesc& desc, ECallMode mode)
+                             const CSeqdesc& desc, ECallMode)
 {
     s_RemoveDesc(handle, desc, GetDBEngine());
 }
+
+
 //------------------------------------------------------------------
+
 template<int>
 struct SSeqAttrChanger;
 
@@ -329,74 +347,85 @@ DEFINSTCH(Seq_data);
 #undef DEFINSTCH
 
 void CEditsSaver::SetSeqInst(const CBioseq_Handle& handle, 
-                             const CSeq_inst& value, 
-                             ECallMode mode)
+                             const CSeq_inst& value,
+                             ECallMode)
 {   
     SSeqAttrChanger<CSeqEdit_Cmd_ChangeSeqAttr::TData::e_Inst>::
         CreateCmd(handle,value,GetDBEngine());
 }
 
 void CEditsSaver::SetSeqInstRepr(const CBioseq_Handle& handle, 
-                                 CSeq_inst::TRepr value, ECallMode mode)
+                                 CSeq_inst::TRepr value,
+                                 ECallMode)
 {
     SSeqAttrChanger<CSeqEdit_Cmd_ChangeSeqAttr::TData::e_Repr>::
         CreateCmd(handle,value,GetDBEngine());
 }
+
 void CEditsSaver::SetSeqInstMol(const CBioseq_Handle& handle, 
-                                CSeq_inst::TMol value, ECallMode mode)
+                                CSeq_inst::TMol value,
+                                ECallMode)
 {
     SSeqAttrChanger<CSeqEdit_Cmd_ChangeSeqAttr::TData::e_Mol>::
         CreateCmd(handle,value,GetDBEngine());
 }
+
 void CEditsSaver::SetSeqInstLength(const CBioseq_Handle& handle, 
                                    CSeq_inst::TLength value,
-                                   ECallMode mode)
+                                   ECallMode)
 {
     SSeqAttrChanger<CSeqEdit_Cmd_ChangeSeqAttr::TData::e_Length>::
         CreateCmd(handle,value,GetDBEngine());
 }
+
 void CEditsSaver::SetSeqInstFuzz(const CBioseq_Handle& handle, 
-                                 const CSeq_inst::TFuzz& value, 
-                                 ECallMode mode)
+                                 const CSeq_inst::TFuzz& value,
+                                 ECallMode)
 {
     SSeqAttrChanger<CSeqEdit_Cmd_ChangeSeqAttr::TData::e_Fuzz>::
         CreateCmd(handle,value,GetDBEngine());
 }
+
 void CEditsSaver::SetSeqInstTopology(const CBioseq_Handle& handle, 
                                      CSeq_inst::TTopology value,
-                                     ECallMode mode)
+                                     ECallMode)
 {
     SSeqAttrChanger<CSeqEdit_Cmd_ChangeSeqAttr::TData::e_Topology>::
         CreateCmd(handle,value,GetDBEngine());
 }
+
 void CEditsSaver::SetSeqInstStrand(const CBioseq_Handle& handle, 
                                    CSeq_inst::TStrand value, 
-                                   ECallMode mode)
+                                   ECallMode)
 {
     SSeqAttrChanger<CSeqEdit_Cmd_ChangeSeqAttr::TData::e_Strand>::
         CreateCmd(handle,value,GetDBEngine());
 }
+
 void CEditsSaver::SetSeqInstExt(const CBioseq_Handle& handle, 
                                 const CSeq_inst::TExt& value, 
-                                ECallMode mode)
+                                ECallMode)
 {
     SSeqAttrChanger<CSeqEdit_Cmd_ChangeSeqAttr::TData::e_Ext>::
         CreateCmd(handle,value,GetDBEngine());
 }
+
 void CEditsSaver::SetSeqInstHist(const CBioseq_Handle& handle, 
                                  const CSeq_inst::THist& value, 
-                                 ECallMode mode)
+                                 ECallMode)
 {
     SSeqAttrChanger<CSeqEdit_Cmd_ChangeSeqAttr::TData::e_Hist>::
         CreateCmd(handle,value,GetDBEngine());
 }
+
 void CEditsSaver::SetSeqInstSeq_data(const CBioseq_Handle& handle, 
                                      const CSeq_inst::TSeq_data& value, 
-                                     ECallMode mode)
+                                     ECallMode)
 {
     SSeqAttrChanger<CSeqEdit_Cmd_ChangeSeqAttr::TData::e_Seq_data>::
         CreateCmd(handle,value,GetDBEngine());
 }
+
 
 static inline 
 void s_ResetSeqAttr(const CBioseq_Handle& handle, 
@@ -409,72 +438,63 @@ void s_ResetSeqAttr(const CBioseq_Handle& handle,
     engine.SaveCommand(*cmd); 
 }
     
-void CEditsSaver::ResetSeqInst(const CBioseq_Handle& handle, 
-                               ECallMode mode)
+void CEditsSaver::ResetSeqInst(const CBioseq_Handle& handle, ECallMode)
 {
-    s_ResetSeqAttr(handle, CSeqEdit_Cmd_ResetSeqAttr::eWhat_inst,
-                   GetDBEngine());
+    s_ResetSeqAttr(handle, CSeqEdit_Cmd_ResetSeqAttr::eWhat_inst, GetDBEngine());
 }
-void CEditsSaver::ResetSeqInstRepr(const CBioseq_Handle& handle, 
-                                   ECallMode mode)
+
+void CEditsSaver::ResetSeqInstRepr(const CBioseq_Handle& handle, ECallMode)
 {
-    s_ResetSeqAttr(handle, CSeqEdit_Cmd_ResetSeqAttr::eWhat_repr,
-                   GetDBEngine());
+    s_ResetSeqAttr(handle, CSeqEdit_Cmd_ResetSeqAttr::eWhat_repr, GetDBEngine());
 }
-void CEditsSaver::ResetSeqInstMol(const CBioseq_Handle& handle, 
-                                  ECallMode mode)
+
+void CEditsSaver::ResetSeqInstMol(const CBioseq_Handle& handle, ECallMode)
 {
-    s_ResetSeqAttr(handle, CSeqEdit_Cmd_ResetSeqAttr::eWhat_mol,
-                   GetDBEngine());
+    s_ResetSeqAttr(handle, CSeqEdit_Cmd_ResetSeqAttr::eWhat_mol, GetDBEngine());
 }
-void CEditsSaver::ResetSeqInstLength(const CBioseq_Handle& handle, 
-                                     ECallMode mode)
+
+void CEditsSaver::ResetSeqInstLength(const CBioseq_Handle& handle, ECallMode)
 {
-    s_ResetSeqAttr(handle, CSeqEdit_Cmd_ResetSeqAttr::eWhat_length,
-                    GetDBEngine());
+    s_ResetSeqAttr(handle, CSeqEdit_Cmd_ResetSeqAttr::eWhat_length, GetDBEngine());
 }
-void CEditsSaver::ResetSeqInstFuzz(const CBioseq_Handle& handle, 
-                                   ECallMode mode)
+
+void CEditsSaver::ResetSeqInstFuzz(const CBioseq_Handle& handle, ECallMode)
 {
-    s_ResetSeqAttr(handle, CSeqEdit_Cmd_ResetSeqAttr::eWhat_fuzz,
-                   GetDBEngine());
+    s_ResetSeqAttr(handle, CSeqEdit_Cmd_ResetSeqAttr::eWhat_fuzz, GetDBEngine());
 }
-void CEditsSaver::ResetSeqInstTopology(const CBioseq_Handle& handle, 
-                                       ECallMode mode)
+
+void CEditsSaver::ResetSeqInstTopology(const CBioseq_Handle& handle, ECallMode)
 {
-    s_ResetSeqAttr(handle, CSeqEdit_Cmd_ResetSeqAttr::eWhat_topology,
-                   GetDBEngine());
+    s_ResetSeqAttr(handle, CSeqEdit_Cmd_ResetSeqAttr::eWhat_topology, GetDBEngine());
 }
-void CEditsSaver::ResetSeqInstStrand(const CBioseq_Handle& handle, 
-                                     ECallMode mode)
+
+void CEditsSaver::ResetSeqInstStrand(const CBioseq_Handle& handle, ECallMode)
 {
-    s_ResetSeqAttr(handle, CSeqEdit_Cmd_ResetSeqAttr::eWhat_strand,
-                   GetDBEngine());
+    s_ResetSeqAttr(handle, CSeqEdit_Cmd_ResetSeqAttr::eWhat_strand, GetDBEngine());
 } 
-void CEditsSaver::ResetSeqInstExt(const CBioseq_Handle& handle, 
-                                  ECallMode mode)
+
+void CEditsSaver::ResetSeqInstExt(const CBioseq_Handle& handle, ECallMode)
 {
-    s_ResetSeqAttr(handle, CSeqEdit_Cmd_ResetSeqAttr::eWhat_ext,
-                   GetDBEngine());
+    s_ResetSeqAttr(handle, CSeqEdit_Cmd_ResetSeqAttr::eWhat_ext, GetDBEngine());
 }
-void CEditsSaver::ResetSeqInstHist(const CBioseq_Handle& handle, 
-                                   ECallMode mode)
+
+void CEditsSaver::ResetSeqInstHist(const CBioseq_Handle& handle, ECallMode)
 {
-    s_ResetSeqAttr(handle, CSeqEdit_Cmd_ResetSeqAttr::eWhat_hist,
-                   GetDBEngine());
+    s_ResetSeqAttr(handle, CSeqEdit_Cmd_ResetSeqAttr::eWhat_hist, GetDBEngine());
 }
-void CEditsSaver::ResetSeqInstSeq_data(const CBioseq_Handle& handle, 
-                                       ECallMode mode)
+
+void CEditsSaver::ResetSeqInstSeq_data(const CBioseq_Handle& handle, ECallMode)
 {
-    s_ResetSeqAttr(handle, CSeqEdit_Cmd_ResetSeqAttr::eWhat_seq_data,
-                   GetDBEngine());
+    s_ResetSeqAttr(handle, CSeqEdit_Cmd_ResetSeqAttr::eWhat_seq_data, GetDBEngine());
 
 }
 
-    //----------------------------------------------------------------
+
+//----------------------------------------------------------------
+
 void CEditsSaver::AddId(const CBioseq_Handle& handle, 
                         const CSeq_id_Handle& id, 
-                        ECallMode mode)
+                        ECallMode)
 {
     
     CRef<CSeqEdit_Cmd> cmd;
@@ -483,9 +503,10 @@ void CEditsSaver::AddId(const CBioseq_Handle& handle,
     GetDBEngine().SaveCommand(*cmd); 
     GetDBEngine().NotifyIdChanged(id, cmd->GetBlobId());
 }
+
 void CEditsSaver::RemoveId(const CBioseq_Handle& handle, 
-                                const CSeq_id_Handle& id, 
-                                ECallMode mode)
+                           const CSeq_id_Handle& id, 
+                           ECallMode)
 {
     CRef<CSeqEdit_Cmd> cmd;
     SCmdCreator<CSeqEdit_Cmd::e_Remove_id>::CreateCmd(handle,
@@ -500,9 +521,10 @@ static inline CRef<CSeq_id> s_ConvertId(const CSeq_id_Handle& handle)
 {
     return CRef<CSeq_id>(const_cast<CSeq_id*>(&*handle.GetSeqId()));
 }
+
 void CEditsSaver::ResetIds(const CBioseq_Handle& handle, 
                            const TIds& ids,
-                           ECallMode mode)
+                           ECallMode)
 {
     if (ids.empty())
         return;
@@ -520,7 +542,10 @@ void CEditsSaver::ResetIds(const CBioseq_Handle& handle,
 ;
     }
 }
+
+
 //-------------------------------------------------------
+
 template<int>
 struct SSetAttrChanger;
 
@@ -551,46 +576,52 @@ DEFINSTCH(Date);
 
 void CEditsSaver::SetBioseqSetId(const CBioseq_set_Handle& handle,
                                  const CBioseq_set::TId& value, 
-                                 ECallMode mode)
+                                 ECallMode)
 {
     SSetAttrChanger<CSeqEdit_Cmd_ChangeSetAttr::TData::e_Id>::
         CreateCmd(handle,value,GetDBEngine());
 }
+
 void CEditsSaver::SetBioseqSetColl(const CBioseq_set_Handle& handle,
                                    const CBioseq_set::TColl& value, 
-                                   ECallMode mode)
+                                   ECallMode)
 {
     SSetAttrChanger<CSeqEdit_Cmd_ChangeSetAttr::TData::e_Coll>::
         CreateCmd(handle,value,GetDBEngine());
 }
+
 void CEditsSaver::SetBioseqSetLevel(const CBioseq_set_Handle& handle,
                                     CBioseq_set::TLevel value, 
-                                    ECallMode mode)
+                                    ECallMode)
 {
     SSetAttrChanger<CSeqEdit_Cmd_ChangeSetAttr::TData::e_Level>::
         CreateCmd(handle,value,GetDBEngine());
 }
+
 void CEditsSaver::SetBioseqSetClass(const CBioseq_set_Handle& handle,
                                     CBioseq_set::TClass value, 
-                                    ECallMode mode)
+                                    ECallMode)
 {
     SSetAttrChanger<CSeqEdit_Cmd_ChangeSetAttr::TData::e_Class>::
         CreateCmd(handle,value,GetDBEngine());
 }
+
 void CEditsSaver::SetBioseqSetRelease(const CBioseq_set_Handle& handle,
                                       const CBioseq_set::TRelease& value,  
-                                      ECallMode mode)
+                                      ECallMode)
 {
     SSetAttrChanger<CSeqEdit_Cmd_ChangeSetAttr::TData::e_Release>::
         CreateCmd(handle,value,GetDBEngine());
 }
+
 void CEditsSaver::SetBioseqSetDate(const CBioseq_set_Handle& handle,
                                    const CBioseq_set::TDate& value, 
-                                   ECallMode mode)
+                                   ECallMode)
 {
     SSetAttrChanger<CSeqEdit_Cmd_ChangeSetAttr::TData::e_Date>::
         CreateCmd(handle,value,GetDBEngine());
 }
+
 
 static inline 
 void s_ResetSetAttr(const CBioseq_set_Handle& handle, 
@@ -598,54 +629,47 @@ void s_ResetSetAttr(const CBioseq_set_Handle& handle,
                     IEditsDBEngine& engine)
 {
     CRef<CSeqEdit_Cmd> cmd;
-    SCmdCreator<CSeqEdit_Cmd::e_Reset_setattr>::CreateCmd(handle,cmd).
-        SetWhat(what);
+    SCmdCreator<CSeqEdit_Cmd::e_Reset_setattr>::CreateCmd(handle,cmd).SetWhat(what);
     engine.SaveCommand(*cmd); 
 }
  
-void CEditsSaver::ResetBioseqSetId(const CBioseq_set_Handle& handle, 
-                                   ECallMode mode)
+void CEditsSaver::ResetBioseqSetId(const CBioseq_set_Handle& handle, ECallMode)
 {
-    s_ResetSetAttr(handle, CSeqEdit_Cmd_ResetSetAttr::eWhat_id,
-                   GetDBEngine());
+    s_ResetSetAttr(handle, CSeqEdit_Cmd_ResetSetAttr::eWhat_id, GetDBEngine());
 } 
-void CEditsSaver::ResetBioseqSetColl(const CBioseq_set_Handle& handle, 
-                                     ECallMode mode)
+
+void CEditsSaver::ResetBioseqSetColl(const CBioseq_set_Handle& handle, ECallMode)
 {
-    s_ResetSetAttr(handle, CSeqEdit_Cmd_ResetSetAttr::eWhat_coll,
-                   GetDBEngine());
+    s_ResetSetAttr(handle, CSeqEdit_Cmd_ResetSetAttr::eWhat_coll, GetDBEngine());
 }
-void CEditsSaver::ResetBioseqSetLevel(const CBioseq_set_Handle& handle, 
-                                      ECallMode mode)
+
+void CEditsSaver::ResetBioseqSetLevel(const CBioseq_set_Handle& handle, ECallMode)
 {
-    s_ResetSetAttr(handle, CSeqEdit_Cmd_ResetSetAttr::eWhat_level,
-                   GetDBEngine());
+    s_ResetSetAttr(handle, CSeqEdit_Cmd_ResetSetAttr::eWhat_level, GetDBEngine());
 }
-void CEditsSaver::ResetBioseqSetClass(const CBioseq_set_Handle& handle, 
-                                      ECallMode mode)
+
+void CEditsSaver::ResetBioseqSetClass(const CBioseq_set_Handle& handle, ECallMode)
 {
-    s_ResetSetAttr(handle, CSeqEdit_Cmd_ResetSetAttr::eWhat_class,
-                   GetDBEngine());
+    s_ResetSetAttr(handle, CSeqEdit_Cmd_ResetSetAttr::eWhat_class, GetDBEngine());
 }
-void CEditsSaver::ResetBioseqSetRelease(const CBioseq_set_Handle& handle, 
-                                             ECallMode mode)
+
+void CEditsSaver::ResetBioseqSetRelease(const CBioseq_set_Handle& handle, ECallMode)
 {
-    s_ResetSetAttr(handle, CSeqEdit_Cmd_ResetSetAttr::eWhat_release,
-                   GetDBEngine());
+    s_ResetSetAttr(handle, CSeqEdit_Cmd_ResetSetAttr::eWhat_release, GetDBEngine());
 }
-void CEditsSaver::ResetBioseqSetDate(const CBioseq_set_Handle& handle,
-                                          ECallMode mode)
+
+void CEditsSaver::ResetBioseqSetDate(const CBioseq_set_Handle& handle, ECallMode)
 {
-    s_ResetSetAttr(handle, CSeqEdit_Cmd_ResetSetAttr::eWhat_date,
-                   GetDBEngine());
+    s_ResetSetAttr(handle, CSeqEdit_Cmd_ResetSetAttr::eWhat_date, GetDBEngine());
 }
   
-    //-----------------------------------------------------------------
+
+//-----------------------------------------------------------------
 
 void CEditsSaver::Attach(const CBioObjectId& old_id,
                          const CSeq_entry_Handle& handle,
                          const CBioseq_Handle& bioseq, 
-                         ECallMode mode)
+                         ECallMode)
 {
     CRef<CSeqEdit_Cmd> cmd;
     SCmdCreator<CSeqEdit_Cmd::e_Attach_seq>::CreateCmd(handle, old_id,cmd).
@@ -678,10 +702,11 @@ static void s_CollectSeqIds(const CSeq_entry& entry, IEditSaver::TIds& ids)
         }
     }
 }
+
 void CEditsSaver::Attach(const CBioObjectId& old_id,
                          const CSeq_entry_Handle& handle, 
                          const CBioseq_set_Handle& bioseq_set, 
-                         ECallMode mode)
+                         ECallMode)
 {
     CRef<CSeqEdit_Cmd> cmd;
     const CBioseq_set& bset = *bioseq_set.GetCompleteBioseq_set();
@@ -695,8 +720,9 @@ void CEditsSaver::Attach(const CBioObjectId& old_id,
     }
     
 }
+
 void CEditsSaver::Detach(const CSeq_entry_Handle& entry, 
-                         const CBioseq_Handle& handle, ECallMode mode)
+                         const CBioseq_Handle& handle, ECallMode)
 {
     CRef<CSeqEdit_Cmd> cmd;
     SCmdCreator<CSeqEdit_Cmd::e_Reset_seqentry>
@@ -707,8 +733,9 @@ void CEditsSaver::Detach(const CSeq_entry_Handle& entry,
     }
 
 }
+
 void CEditsSaver::Detach(const CSeq_entry_Handle& entry, 
-                         const CBioseq_set_Handle& handle, ECallMode mode)
+                         const CBioseq_set_Handle& handle, ECallMode)
 {
     CRef<CSeqEdit_Cmd> cmd;
     const CBioseq_set& bset = *handle.GetCompleteBioseq_set();
@@ -723,8 +750,7 @@ void CEditsSaver::Detach(const CSeq_entry_Handle& entry,
 }
 
 void CEditsSaver::Attach(const CSeq_entry_Handle& entry, 
-                         const CSeq_annot_Handle& annot, 
-                         ECallMode mode)
+                         const CSeq_annot_Handle& annot, ECallMode)
 {
     CRef<CSeqEdit_Cmd> cmd;
     SCmdCreator<CSeqEdit_Cmd::e_Attach_annot>::CreateCmd(entry,cmd).
@@ -734,7 +760,7 @@ void CEditsSaver::Attach(const CSeq_entry_Handle& entry,
 
 void CEditsSaver::Attach(const CBioseq_set_Handle& handle, 
                          const CSeq_entry_Handle& entry, 
-                         int index, ECallMode mode)
+                         int index, ECallMode)
 {
     CRef<CSeqEdit_Cmd> cmd;
     const CSeq_entry& sentry = *entry.GetCompleteSeq_entry();
@@ -750,9 +776,10 @@ void CEditsSaver::Attach(const CBioseq_set_Handle& handle,
         GetDBEngine().NotifyIdChanged(*id,cmd->GetBlobId());
     }
 }
+
 void CEditsSaver::Remove(const CBioseq_set_Handle& handle, 
                          const CSeq_entry_Handle& entry, 
-                         int, ECallMode mode)
+                         int, ECallMode)
 {
     CRef<CSeqEdit_Cmd> cmd;
     const CSeq_entry& sentry = *entry.GetCompleteSeq_entry();
@@ -774,7 +801,9 @@ void CEditsSaver::RemoveTSE(const CTSE_Handle& handle,
                "RemoveTSE(const CTSE_Handle&, ECallMode)");
 }
 */
-    //-----------------------------------------------------------------
+
+
+//-----------------------------------------------------------------
 
 template<int type>
 struct SAnnotCmdPreparer {
@@ -806,7 +835,7 @@ struct SAnnotCmdPreparer {
 
 void CEditsSaver::Replace(const CSeq_feat_Handle& handle,
                           const CSeq_feat& old_value, 
-                          ECallMode mode)
+                          ECallMode)
 {                          
     const CSeq_annot_Handle& annot = handle.GetAnnot();
     CRef<CSeqEdit_Cmd> cmd;
@@ -817,9 +846,10 @@ void CEditsSaver::Replace(const CSeq_feat_Handle& handle,
     GetDBEngine().SaveCommand(*cmd);
 
 }
+
 void CEditsSaver::Replace(const CSeq_align_Handle& handle,
                           const CSeq_align& old_value,
-                          ECallMode mode)
+                          ECallMode)
 {
     const CSeq_annot_Handle& annot = handle.GetAnnot();
     CRef<CSeqEdit_Cmd> cmd;
@@ -829,9 +859,10 @@ void CEditsSaver::Replace(const CSeq_align_Handle& handle,
     c.SetData().SetAlign().SetNvalue(const_cast<CSeq_align&>(*handle.GetSeq_align()));
     GetDBEngine().SaveCommand(*cmd);
 }
+
 void CEditsSaver::Replace(const CSeq_graph_Handle& handle,
                           const CSeq_graph& old_value, 
-                          ECallMode mode)
+                          ECallMode)
 {
     const CSeq_annot_Handle& annot = handle.GetAnnot();
     CRef<CSeqEdit_Cmd> cmd;
@@ -911,6 +942,7 @@ void s_SetSearchParam(CSeqEdit_Cmd_AddAnnot& cmd, const T& new_obj,
     }
 }
 
+
 template<typename T> static inline 
 void s_AddAnnot(const CSeq_annot_Handle& handle, const T& value, 
                 IEditsDBEngine& engine)
@@ -927,26 +959,27 @@ void s_AddAnnot(const CSeq_annot_Handle& handle, const T& value,
     engine.SaveCommand(*cmd); 
 }
 
-
 void CEditsSaver::Add(const CSeq_annot_Handle& handle,
                       const CSeq_feat& value, 
-                      ECallMode mode)
+                      ECallMode)
 {
     s_AddAnnot(handle, value, GetDBEngine());
 }
 
 void CEditsSaver::Add(const CSeq_annot_Handle& handle,
                       const CSeq_align& value, 
-                      ECallMode mode)
+                      ECallMode)
 {
     s_AddAnnot(handle, value, GetDBEngine());
 }
+
 void CEditsSaver::Add(const CSeq_annot_Handle& handle,
                       const CSeq_graph& value, 
-                      ECallMode mode)
+                      ECallMode)
 {
     s_AddAnnot(handle, value, GetDBEngine());
 }
+
 
 template<typename T> static inline
 void s_RemoveAnnot(const CSeq_entry_Handle& entry,
@@ -965,22 +998,24 @@ void s_RemoveAnnot(const CSeq_entry_Handle& entry,
 
 
 }
+
 void CEditsSaver::Remove(const CSeq_annot_Handle& handle, 
                          const CSeq_feat& old_value,
-                         ECallMode mode)
+                         ECallMode)
 {
     s_RemoveAnnot(handle.GetParentEntry(), handle, old_value, GetDBEngine());
 }
 
 void CEditsSaver::Remove(const CSeq_annot_Handle& handle, 
                          const CSeq_align& old_value,
-                         ECallMode mode)
+                         ECallMode)
 {
     s_RemoveAnnot(handle.GetParentEntry(), handle, old_value, GetDBEngine());
 }
+
 void CEditsSaver::Remove(const CSeq_annot_Handle& handle, 
                          const CSeq_graph& old_value,
-                         ECallMode mode)
+                         ECallMode)
 {
     s_RemoveAnnot(handle.GetParentEntry(), handle, old_value, GetDBEngine());
 }
@@ -988,7 +1023,7 @@ void CEditsSaver::Remove(const CSeq_annot_Handle& handle,
 
 void CEditsSaver::Remove(const CSeq_entry_Handle& entry, 
                          const CSeq_annot_Handle& annot, 
-                         ECallMode mode)
+                         ECallMode)
 {
     CConstRef<CSeq_annot> annots = annot.GetCompleteSeq_annot();
     switch (annots->GetData().Which()) {
@@ -1020,6 +1055,7 @@ void CEditsSaver::Remove(const CSeq_entry_Handle& entry,
         return;
     }
 }
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

@@ -130,11 +130,11 @@ CConstRef<CBioseq> CTestApp::CreateBioseq(TGi gi,
     CDelta_ext& delta = inst.SetExt().SetDelta();
     int length = 0;
     for ( int seg = 0; seg < segments; ++seg ) {
-        CRef<CDelta_seq> s(new CDelta_seq);
+        CRef<CDelta_seq> ds(new CDelta_seq);
         int len;
         if ( pll.empty() ) {
             len = m_Random.GetRand(0, 2000>>m_Random.GetRand(0, 8));
-            CSeq_literal& lit = s->SetLiteral();
+            CSeq_literal& lit = ds->SetLiteral();
             lit.SetLength(len);
             CSeq_data& data = lit.SetSeq_data();
             if ( protein ) {
@@ -144,7 +144,7 @@ CConstRef<CBioseq> CTestApp::CreateBioseq(TGi gi,
                     string& s = data.SetIupacaa().Set();
                     s.resize(len);
                     const char* BASES = "ABCDEFGHIKLMNPQRSTVWXYZ";
-                    int MAX_BASE = strlen(BASES)-1;
+                    int MAX_BASE = (int)strlen(BASES)-1;
                     NON_CONST_ITERATE ( string, it, s ) {
                         *it = BASES[m_Random.GetRand(0, MAX_BASE)];
                     }
@@ -166,7 +166,7 @@ CConstRef<CBioseq> CTestApp::CreateBioseq(TGi gi,
                     string& s = data.SetNcbieaa().Set();
                     s.resize(len);
                     const char* BASES = "*-ABCDEFGHIKLMNPQRSTUVWXYZ";
-                    int MAX_BASE = strlen(BASES)-1;
+                    int MAX_BASE = (int)strlen(BASES)-1;
                     NON_CONST_ITERATE ( string, it, s ) {
                         *it = BASES[m_Random.GetRand(0, MAX_BASE)];
                     }
@@ -177,7 +177,7 @@ CConstRef<CBioseq> CTestApp::CreateBioseq(TGi gi,
                     vector<char>& s = data.SetNcbistdaa().Set();
                     s.resize(len);
                     NON_CONST_ITERATE ( vector<char>, it, s ) {
-                        *it = m_Random.GetRand(0, 25);
+                        *it = (char)m_Random.GetRand(0, 25);
                     }
                     break;
                 }
@@ -186,7 +186,7 @@ CConstRef<CBioseq> CTestApp::CreateBioseq(TGi gi,
                     vector<char>& s = data.SetNcbi8aa().Set();
                     s.resize(len);
                     NON_CONST_ITERATE ( vector<char>, it, s ) {
-                        *it = m_Random.GetRand(0, 249);
+                        *it = (char)m_Random.GetRand(0, 249);
                     }
                     break;
                 }
@@ -199,7 +199,7 @@ CConstRef<CBioseq> CTestApp::CreateBioseq(TGi gi,
                     string& s = data.SetIupacna().Set();
                     s.resize(len);
                     const char* BASES = "ABCDGHKMNRSTVWY";
-                    int MAX_BASE = strlen(BASES)-1;
+                    int MAX_BASE = (int)strlen(BASES)-1;
                     NON_CONST_ITERATE ( string, it, s ) {
                         *it = BASES[m_Random.GetRand(0, MAX_BASE)];
                     }
@@ -221,7 +221,7 @@ CConstRef<CBioseq> CTestApp::CreateBioseq(TGi gi,
                     vector<char>& s = data.SetNcbi2na().Set();
                     s.resize((len+3)/4);
                     NON_CONST_ITERATE ( vector<char>, it, s ) {
-                        *it = m_Random.GetRand(0, 255);
+                        *it = (char)m_Random.GetRand(0, 255);
                     }
                     break;
                 }
@@ -230,7 +230,7 @@ CConstRef<CBioseq> CTestApp::CreateBioseq(TGi gi,
                     vector<char>& s = data.SetNcbi4na().Set();
                     s.resize((len+1)/2);
                     NON_CONST_ITERATE ( vector<char>, it, s ) {
-                        *it = m_Random.GetRand(0, 255);
+                        *it = (char)m_Random.GetRand(0, 255);
                     }
                     break;
                 }
@@ -239,7 +239,7 @@ CConstRef<CBioseq> CTestApp::CreateBioseq(TGi gi,
                     vector<char>& s = data.SetNcbi8na().Set();
                     s.resize(len);
                     NON_CONST_ITERATE ( vector<char>, it, s ) {
-                        *it = m_Random.GetRand(0, 15);
+                        *it = (char)m_Random.GetRand(0, 15);
                     }
                     break;
                 }
@@ -247,10 +247,10 @@ CConstRef<CBioseq> CTestApp::CreateBioseq(TGi gi,
             }
         }
         else {
-            int index = m_Random.GetRand(0, pll.size()-1);
+            int index = m_Random.GetRand(0, (CRandom::TValue)pll.size()-1);
             TGi ref_gi = pll[index].first;
             int ref_len = pll[index].second;
-            CSeq_interval& interval = s->SetLoc().SetInt();
+            CSeq_interval& interval = ds->SetLoc().SetInt();
             interval.SetId().SetGi(ref_gi);
             interval.SetStrand(m_Random.GetRand(0, 1)?
                                eNa_strand_plus: eNa_strand_minus);
@@ -264,7 +264,7 @@ CConstRef<CBioseq> CTestApp::CreateBioseq(TGi gi,
             interval.SetTo(b-1);
             len = b-a;
         }
-        delta.Set().push_back(s);
+        delta.Set().push_back(ds);
         length += len;
     }
     inst.SetLength(length);
@@ -393,20 +393,20 @@ int CTestApp::Run(void)
                     if ( ncbi2na ) {
                         sv.SetCoding(CSeq_data::e_Ncbi2na);
                     }
-                    for ( int seed = 0; seed <= (ncbi2na? 4: 0); ++seed ) {
-                        if ( seed ) {
-                            sv.SetRandomizeAmbiguities(seed);
+                    for ( int seed1 = 0; seed1 <= (ncbi2na? 4: 0); ++seed1 ) {
+                        if ( seed1 ) {
+                            sv.SetRandomizeAmbiguities(seed1);
                         }
                         string d;
                         sv.GetSeqData(0, sv.size(), d);
                         _ASSERT(d.size() == main.GetBioseqLength());
-                        int key = GetKey(coding, strand, ncbi2na != 0, seed);
+                        int key = GetKey(coding, strand, ncbi2na != 0, seed1);
                         if ( verbose ) {
                             NcbiCerr << "Ref ("
                                      << iupac << " "
                                      << minus << " "
                                      << ncbi2na << " "
-                                     << seed
+                                     << seed1
                                      << ") = " << key << " "
                                      << '"'<<NStr::PrintableString(d)<<'"'
                                      << NcbiEndl;

@@ -838,7 +838,7 @@ void CleanAndCompress(string& dest, const CTempString& instr)
     while (left > 0) {
         next = *in++;
 
-        two_chars = (two_chars << 8) | next;
+        two_chars = Uint2((two_chars << 8) | next);
 
         switch (two_chars)
         {
@@ -1542,8 +1542,9 @@ static const char* kAANames[] = {
 const char* GetAAName(unsigned char aa, bool is_ascii)
 {
     if (is_ascii) {
-        aa = CSeqportUtil::GetMapToIndex
-            (CSeq_data::e_Ncbieaa, CSeq_data::e_Ncbistdaa, aa);
+        aa = (unsigned char)
+             CSeqportUtil::GetMapToIndex(CSeq_data::e_Ncbieaa,
+                                         CSeq_data::e_Ncbistdaa, aa);
     }
     return (aa < sizeof(kAANames)/sizeof(*kAANames)) ? kAANames[aa] : "OTHER";
 }
@@ -1785,7 +1786,7 @@ void TryToSanitizeHtml(string &str)
     string result;
     // The "* 1.1" should keep up efficient in most cases since data tends not to have
     // too many characters that need escaping.
-    result.reserve(1 + (int)(str.length() * 1.1));
+    result.reserve(1 + (int)((double)str.length() * 1.1));
     TryToSanitizeHtml(result, str);
 
     // swap is faster than assignment

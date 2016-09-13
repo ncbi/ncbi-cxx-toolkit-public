@@ -939,8 +939,8 @@ void CScope_Impl::x_ClearCacheOnNewData(const TIds& seq_ids,
         size_t add_count = seq_ids.size();
         size_t old_count = m_Seq_idMap.size();
         size_t scan_time = add_count + old_count;
-        double lookup_time = min(add_count, old_count)*
-            (2. * log(max(add_count, old_count)+2.));
+        double lookup_time = (double)min(add_count, old_count) *
+                             (2. * log((double)max(add_count, old_count)+2.));
         if ( scan_time < lookup_time ) {
             // scan both
             TIds::const_iterator it1 = seq_ids.begin();
@@ -1053,7 +1053,7 @@ void CScope_Impl::x_ClearAnnotCache(void)
 }
 
 
-void CScope_Impl::x_ClearCacheOnNewAnnot(const CTSE_Info& new_tse)
+void CScope_Impl::x_ClearCacheOnNewAnnot(const CTSE_Info& /*new_tse*/)
 {
     //if ( 1 ) return;
     x_ClearAnnotCache();
@@ -1086,7 +1086,7 @@ void CScope_Impl::x_ClearCacheOnNewDS(void)
 }
 
 
-void CScope_Impl::x_ClearCacheOnRemoveData(const CTSE_Info* old_tse)
+void CScope_Impl::x_ClearCacheOnRemoveData(const CTSE_Info* /*old_tse*/)
 {
     // Clear removed bioseq handles
     for ( TSeq_idMap::iterator it = m_Seq_idMap.begin();
@@ -1141,7 +1141,7 @@ void CScope_Impl::x_ClearCacheOnRemoveSeqId(const CSeq_id_Handle& id,
 }
 
 
-void CScope_Impl::x_ClearCacheOnRemoveAnnot(const CTSE_Info& old_tse)
+void CScope_Impl::x_ClearCacheOnRemoveAnnot(const CTSE_Info& /*old_tse*/)
 {
     // Clear annot cache
     x_ClearAnnotCache();

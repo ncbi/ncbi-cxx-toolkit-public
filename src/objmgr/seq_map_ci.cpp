@@ -355,7 +355,7 @@ TSeqPos CSeqMap_CI_SegmentInfo::x_GetTopOffset(void) const
 int CSeqMap_CI_SegmentInfo::x_GetSequenceClass(void) const
 {
     if ( m_SequenceClass == -1 ) {
-        m_SequenceClass = m_SeqMap->x_GetSequenceClass();
+        m_SequenceClass = (Int1)m_SeqMap->x_GetSequenceClass();
     }
     return m_SequenceClass;
 }

@@ -1317,8 +1317,8 @@ namespace {
                 return false;
             }
             CConstRef<CSeq_feat> f = feat.GetSeq_feat();
-            const CSeq_feat::TQual& qual = f->GetQual();
-            ITERATE ( CSeq_feat::TQual, it, qual ) {
+            const CSeq_feat::TQual& quals = f->GetQual();
+            ITERATE ( CSeq_feat::TQual, it, quals ) {
                 if ( (*it)->IsSetVal() ) {
                     const string& qual = (*it)->GetQual();
                     if ( qual == kQual_orig_protein_id ||
@@ -1341,8 +1341,8 @@ namespace {
                 return;
             }
             CConstRef<CSeq_feat> f = feat.GetSeq_feat();
-            const CSeq_feat::TQual& qual = f->GetQual();
-            ITERATE ( CSeq_feat::TQual, it, qual ) {
+            const CSeq_feat::TQual& quals = f->GetQual();
+            ITERATE ( CSeq_feat::TQual, it, quals ) {
                 if ( (*it)->IsSetVal() ) {
                     const string& qual = (*it)->GetQual();
                     if ( qual == kQual_orig_protein_id ) {
@@ -2261,7 +2261,7 @@ static void s_CollectBestOverlaps(CFeatTree::TFeatArray& features,
                         overlap = -1;
                     }
                     if ( overlap >= 0 ) {
-                        ci->m_Best->CheckBest(quality-1, overlap, pc->m_Info);
+                        ci->m_Best->CheckBest((Int1)(quality-1), overlap, pc->m_Info);
                     }
                 }
             }
@@ -3004,7 +3004,7 @@ typedef vector<TMappedFeatScore> TMappedFeatScores;
 
 static
 void GetOverlappingFeatures(CScope& scope, const CSeq_loc& loc,
-                            CSeqFeatData::E_Choice feat_type,
+                            CSeqFeatData::E_Choice /*feat_type*/,
                             CSeqFeatData::ESubtype feat_subtype,
                             sequence::EOverlapType overlap_type,
                             TMappedFeatScores& feats,
@@ -3072,10 +3072,10 @@ void GetOverlappingFeatures(CScope& scope, const CSeq_loc& loc,
                 single_id = 0;
             }
             if ( single_id ) {
-                CBioseq_Handle h = scope.GetBioseqHandle(*single_id);
-                if ( h && h.IsSetInst_Topology() &&
-                     h.GetInst_Topology() == CSeq_inst::eTopology_circular ) {
-                    circular_length = h.GetBioseqLength();
+                CBioseq_Handle h1 = scope.GetBioseqHandle(*single_id);
+                if ( h1 && h1.IsSetInst_Topology() &&
+                     h1.GetInst_Topology() == CSeq_inst::eTopology_circular ) {
+                    circular_length = h1.GetBioseqLength();
                 }
             }
         }
@@ -3466,8 +3466,8 @@ bool PromoteCDSToNucProtSet(objects::CSeq_feat_Handle& orig_feat)
             if (!ftable) {
                 CRef<CSeq_annot> new_annot(new CSeq_annot());
                 new_annot->SetData().SetFtable();
-                CSeq_entry_EditHandle eh = parent_seh.GetEditHandle();
-                ftable = eh.AttachAnnot(*new_annot);
+                CSeq_entry_EditHandle h = parent_seh.GetEditHandle();
+                ftable = h.AttachAnnot(*new_annot);
             }
 
             CSeq_annot_EditHandle old_annot = annot_handle.GetEditHandle();

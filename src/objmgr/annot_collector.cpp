@@ -1957,9 +1957,9 @@ void CAnnot_Collector::x_SearchMaster(const CBioseq_Handle& bh,
                 }
             }
             else {
-                const CBioseq_Handle::TId& syns = bh.GetId();
+                const CBioseq_Handle::TId& syns_id = bh.GetId();
                 bool only_gi = tse_info.OnlyGiAnnotIds();
-                ITERATE ( CBioseq_Handle::TId, syn_it, syns ) {
+                ITERATE ( CBioseq_Handle::TId, syn_it, syns_id ) {
                     if ( !only_gi || syn_it->IsGi() ) {
                         x_SearchTSE(tse_it->second, *syn_it,
                                     master_range, 0, check_adaptive);
@@ -3035,14 +3035,12 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
                     }
 
                     if ( annot_info.GetAnnotIndex() == CSeq_annot_Info::kWholeAnnotIndex ) {
-                        const CSeq_annot_Info& seq_annot =
-                            annot_info.GetSeq_annot_Info();
+                        const CSeq_annot_Info& seq_annot = annot_info.GetSeq_annot_Info();
                         if ( seq_annot.IsSortedTable() ) {
                             sah.x_Set(seq_annot, tseh);
-                            CHandleRange::TRange range =
-                                hr.GetOverlappingRange();
+                            CHandleRange::TRange hrange = hr.GetOverlappingRange();
                             for ( CSeq_annot_SortedIter iter =
-                                      seq_annot.StartSortedIterator(range);
+                                      seq_annot.StartSortedIterator(hrange);
                                   iter; ++iter ) {
 
                                 if (m_Selector->HasBitFilter() &&
@@ -3299,10 +3297,9 @@ bool CAnnot_Collector::x_SearchLoc(const CHandleRangeMap& loc,
                     }
                 }
                 else {
-                    const CBioseq_Handle::TId& syns =
-                        m_Scope->GetIds(idit->first);
+                    const CBioseq_Handle::TId& ids = m_Scope->GetIds(idit->first);
                     bool only_gi = tse_info.OnlyGiAnnotIds();
-                    ITERATE ( CBioseq_Handle::TId, syn_it, syns ) {
+                    ITERATE ( CBioseq_Handle::TId, syn_it, ids ) {
                         if ( !only_gi || syn_it->IsGi() ) {
                             found |= x_SearchTSE(tse_it->second, *syn_it,
                                                  idit->second, cvt, check_adaptive);

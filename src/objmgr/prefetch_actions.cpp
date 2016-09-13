@@ -87,7 +87,7 @@ CPrefetchBioseq::CPrefetchBioseq(const CScopeSource& scope,
 }
 
 
-bool CPrefetchBioseq::Execute(CRef<CPrefetchRequest> token)
+bool CPrefetchBioseq::Execute(CRef<CPrefetchRequest> /*token*/)
 {
     if ( !GetResult() && GetSeq_id() ) {
         m_Result = GetScope().GetBioseqHandle(GetSeq_id());
