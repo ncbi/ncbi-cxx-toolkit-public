@@ -998,13 +998,16 @@ void CAsnvalApp::PrintValidError
 }
 
 
-static string s_GetSeverityLabel (EDiagSev sev)
+static string s_GetSeverityLabel (EDiagSev sev, bool is_xml = false)
 {
     static const string str_sev[] = {
-        "INFO", "WARNING", "ERROR", "REJECT", "FATAL", "MAX"
+        "NOTE", "WARNING", "ERROR", "REJECT", "FATAL", "MAX"
     };
     if (sev < 0 || sev > eDiagSevMax) {
         return "NONE";
+    }
+    if (sev == 0 && is_xml) {
+        return "INFO";
     }
 
     return str_sev[sev];
@@ -1075,7 +1078,7 @@ void CValXMLStream::Print(const CValidErrItem& item)
     WriteObject(&item, info);
 #else
     m_Output.PutString("  <message severity=\"");
-    m_Output.PutString(s_GetSeverityLabel(item.GetSeverity()));
+    m_Output.PutString(s_GetSeverityLabel(item.GetSeverity(), true));
     if (item.IsSetAccnver()) {
         m_Output.PutString("\" seq-id=\"");
         WriteString(item.GetAccnver(), eStringTypeVisible);
@@ -1113,11 +1116,11 @@ void CAsnvalApp::ConstructOutputStreams()
         m_ostr_xml->Flush();
 
         *m_ValidErrorStream << endl << "<asnvalidate version=\"" << ASNVAL_APP_VER << "\" severity_cutoff=\""
-        << s_GetSeverityLabel(m_LowCutoff) << "\">" << endl;
+        << s_GetSeverityLabel(m_LowCutoff, true) << "\">" << endl;
         m_ValidErrorStream->flush();
 #else
         *m_ValidErrorStream << "<asnvalidate version=\"" << ASNVAL_APP_VER << "\" severity_cutoff=\""
-        << s_GetSeverityLabel(m_LowCutoff) << "\">" << endl;
+        << s_GetSeverityLabel(m_LowCutoff, true) << "\">" << endl;
 #endif
     }
 }
