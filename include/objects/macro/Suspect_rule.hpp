@@ -77,8 +77,9 @@ public:
 
     bool ApplyToString(string& val) const;
 
-    string GetRuleTypeName() const;
-    string SummarizeRule() const;
+    string GetRuleTypeName(void) const;
+    string SummarizeRule(void) const;
+    bool IsFatal(void) const { return GetFatal() || GetRule_type() == eFix_type_remove_organism_name || GetRule_type() == eFix_type_inappropriate_symbol;}
 
 private:
     // Prohibit copy constructor and assignment operator

@@ -5399,11 +5399,11 @@ DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData, eDisc | eOncaller | eSubmi
             }
             rule_num += NStr::NumericToString(rule_type) + "*]" + GetRuleText(**rule);
             string rule_text = leading_space + GetRuleMatch(**rule);
-            CReportNode& node = m_Objs[kSuspectProductNames][rule_num].Summ()[rule_text].Summ().Fatal((*rule)->GetFatal());
+            CReportNode& node = m_Objs[kSuspectProductNames][rule_num].Summ()[rule_text].Summ().Fatal((*rule)->IsFatal());
             const CSeq_feat* cds = sequence::GetCDSForProduct(*(context.GetCurrentBioseq()), &(context.GetScope()));
 
             node.Add(*context.NewDiscObj(cds ? CConstRef<CSeq_feat>(cds) : context.GetCurrentSeq_feat(), 
-                     eNoRef, (*rule)->CanGetReplace(), (CObject*)&**rule)).Fatal((*rule)->GetFatal());
+                     eNoRef, (*rule)->CanGetReplace(), (CObject*)&**rule)).Fatal((*rule)->IsFatal());
         }
     }
 }
@@ -5412,6 +5412,12 @@ DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData, eDisc | eOncaller | eSubmi
 DISCREPANCY_SUMMARIZE(SUSPECT_PRODUCT_NAMES)
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+/////////////////
+    size_t count = 0;
+    CConstRef<CSuspect_rule_set> rules = context.GetProductRules();
+    ITERATE(list<CRef<CSuspect_rule> >, rule, rules->Get()) {
+        //cout << "RULE #" << (++count) << ":\t" << (*rule)->SummarizeRule() << "\n";
+    }
 }
 
 
@@ -5558,7 +5564,7 @@ DISCREPANCY_CASE(ORGANELLE_PRODUCTS, CSeqFeatData, eOncaller, "Organelle product
                 const CConstraint_choice_set& constr = (*rule)->GetFeat_constraint();
                 if (!DoesObjectMatchConstraintChoiceSet(context, constr)) continue;
             }
-            m_Objs["[n] suspect product[s] not organelle"].Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eNoRef, (*rule)->CanGetReplace(), (CObject*)&**rule)).Fatal((*rule)->GetFatal());
+            m_Objs["[n] suspect product[s] not organelle"].Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eNoRef, (*rule)->CanGetReplace(), (CObject*)&**rule)).Fatal((*rule)->IsFatal());
         }
     }
 }
