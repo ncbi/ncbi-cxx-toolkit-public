@@ -1528,6 +1528,6 @@ BOOST_AUTO_TEST_CASE(Test_AllowXref)
     BOOST_CHECK_EQUAL(CSeqFeatData::AllowXref(CSeqFeatData::eSubtype_cdregion, CSeqFeatData::eSubtype_regulatory), false);
     BOOST_CHECK_EQUAL(CSeqFeatData::AllowXref(CSeqFeatData::eSubtype_intron, CSeqFeatData::eSubtype_exon), false);
     BOOST_CHECK_EQUAL(CSeqFeatData::ProhibitXref(CSeqFeatData::eSubtype_gene, CSeqFeatData::eSubtype_cdregion), false);
-    BOOST_CHECK_EQUAL(CSeqFeatData::ProhibitXref(CSeqFeatData::eSubtype_intron, CSeqFeatData::eSubtype_regulatory), false);
+    BOOST_CHECK_EQUAL(CSeqFeatData::ProhibitXref(CSeqFeatData::eSubtype_intron, CSeqFeatData::eSubtype_regulatory), true);
     BOOST_CHECK_EQUAL(CSeqFeatData::ProhibitXref(CSeqFeatData::eSubtype_intron, CSeqFeatData::eSubtype_exon), true);
 }
