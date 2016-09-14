@@ -312,33 +312,38 @@ void CSeqFormatter::DumpAll(CSeqDB& blastdb, CSeqFormatterConfig config)
 
             m_Out << '>';
             id = FindBestChoice(bioseq->GetId(), CSeq_id::Score);
-            m_Out << s_GetBareId(*id) << ' ';
+            m_Out << s_GetBareId(*id);
 
             string title = s_GetTitle(bioseq);
-            NStr::ReplaceInPlace(title, " >", "\001");
 
-            vector<string> tokens;
-            NStr::Split(title, "\001", tokens);
-            auto it = tokens.begin();
-            m_Out << *it;
-            ++it;
-            for (; it != tokens.end(); ++it) {
-                size_t pos = it->find (" ");
-                string str_id(*it, 0, pos != NPOS ? pos : it->length());
-                list< CRef<CSeq_id> > seqids;
-                CSeq_id::ParseFastaIds(seqids, str_id);
+            if (!title.empty()) {
+                m_Out << ' ';
 
-                // no valid sequence ids indicates that '>' was within the
-                // defline text
-                if (seqids.empty()) {
-                    m_Out << " >" << *it;
-                    continue;
-                }
-                m_Out << separator;
-                id = FindBestChoice(seqids, CSeq_id::Score);
-                m_Out << s_GetBareId(*id);
-                if (pos != NPOS) {
-                    m_Out << it->substr(pos, it->length() - pos);
+                NStr::ReplaceInPlace(title, " >", "\001");
+
+                vector<string> tokens;
+                NStr::Split(title, "\001", tokens);
+                auto it = tokens.begin();
+                m_Out << *it;
+                ++it;
+                for (; it != tokens.end(); ++it) {
+                    size_t pos = it->find (" ");
+                    string str_id(*it, 0, pos != NPOS ? pos : it->length());
+                    list< CRef<CSeq_id> > seqids;
+                    CSeq_id::ParseFastaIds(seqids, str_id);
+
+                    // no valid sequence ids indicates that '>' was within the
+                    // defline text
+                    if (seqids.empty()) {
+                        m_Out << " >" << *it;
+                        continue;
+                    }
+                    m_Out << separator;
+                    id = FindBestChoice(seqids, CSeq_id::Score);
+                    m_Out << s_GetBareId(*id);
+                    if (pos != NPOS) {
+                        m_Out << it->substr(pos, it->length() - pos);
+                    }
                 }
             }
             m_Out << endl;
