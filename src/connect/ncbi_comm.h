@@ -54,6 +54,7 @@
     "http://www.ncbi.nlm.nih.gov/IEB/ToolBox/NETWORK"
 #define CONN_FWD_LINK           CONN_FWD_BASE "/dispatcher.html#Firewalling"
 #define CONN_FWD_URL            CONN_FWD_BASE "/firewall.html#Settings"
+#define NCBI_EXTERNAL           "NCBI-External"
 
 
 #ifdef __cplusplus
