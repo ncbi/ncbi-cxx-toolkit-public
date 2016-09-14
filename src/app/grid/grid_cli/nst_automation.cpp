@@ -196,7 +196,7 @@ bool SNetStorageServerAutomationObject::Call(const string& method,
     map<string, string> no_param_commands =
     {
         { "health",         "HEALTH" },
-        { "info",           "INFO" },
+        { "server_info",    "INFO" },
         { "conf",           "CONFIGURATION" },
         { "metadata_info",  "GETMETADATAINFO" },
         { "reconf",         "RECONFIGURE" },
