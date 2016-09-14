@@ -90,6 +90,7 @@ an_prok_pipeline needs gpipe_an_base
 an_prok_pipeline needs gpipe_asn_proc
 an_prok_pipeline needs pathogen_connection
 an_prok_pipeline needs tax_xml
+an_prok_pipeline needs xalgophytree
 an_prok_pipeline needs xobjwrite
 an_worker_nodes needs gpipe_an_base
 asn_cache needs $(COMPRESS_LIBS)
