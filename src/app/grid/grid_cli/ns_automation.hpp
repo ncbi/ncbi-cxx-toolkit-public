@@ -68,7 +68,7 @@ struct SNetScheduleServiceAutomationObject : public SNetServiceAutomationObject
                 new CEventHandler(automation_proc, m_NetScheduleAPI));
     }
 
-    virtual const string& GetType() const;
+    virtual const string& GetType() const { return kName; }
 
     virtual const void* GetImplPtr() const;
 
@@ -86,6 +86,9 @@ protected:
     {
         m_Service = m_NetScheduleAPI.GetService();
     }
+
+private:
+    static const string kName;
 };
 
 struct SNetScheduleServerAutomationObject :
@@ -103,7 +106,7 @@ struct SNetScheduleServerAutomationObject :
             const string& service_name, const string& queue_name,
             const string& client_name);
 
-    virtual const string& GetType() const;
+    virtual const string& GetType() const { return kName; }
 
     virtual const void* GetImplPtr() const;
 
@@ -112,6 +115,9 @@ struct SNetScheduleServerAutomationObject :
 
 private:
     CNetServer m_NetServer;
+
+private:
+    static const string kName;
 };
 
 END_NCBI_SCOPE

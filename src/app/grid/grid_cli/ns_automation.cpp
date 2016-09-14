@@ -35,12 +35,8 @@
 
 USING_NCBI_SCOPE;
 
-const string& SNetScheduleServiceAutomationObject::GetType() const
-{
-    static const string object_type("nssvc");
-
-    return object_type;
-}
+const string SNetScheduleServiceAutomationObject::kName = "nssvc";
+const string SNetScheduleServerAutomationObject::kName = "nssrv";
 
 const void* SNetScheduleServiceAutomationObject::GetImplPtr() const
 {
@@ -66,13 +62,6 @@ SNetScheduleServerAutomationObject::SNetScheduleServerAutomationObject(
 
     m_NetScheduleAPI.SetEventHandler(
             new CEventHandler(automation_proc, m_NetScheduleAPI));
-}
-
-const string& SNetScheduleServerAutomationObject::GetType() const
-{
-    static const string object_type("nssrv");
-
-    return object_type;
 }
 
 const void* SNetScheduleServerAutomationObject::GetImplPtr() const

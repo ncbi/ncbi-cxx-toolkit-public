@@ -58,7 +58,7 @@ struct SNetStorageServiceAutomationObject : public SNetServiceBaseAutomationObje
     SNetStorageServiceAutomationObject(CAutomationProc* automation_proc,
             CArgArray& arg_array);
 
-    virtual const string& GetType() const;
+    virtual const string& GetType() const { return kName; }
 
     virtual const void* GetImplPtr() const;
 
@@ -76,6 +76,9 @@ protected:
     {
         m_Service = m_NetStorageAdmin.GetService();
     }
+
+private:
+    static const string kName;
 };
 
 struct SNetStorageServerAutomationObject : public SNetStorageServiceAutomationObject
@@ -91,7 +94,7 @@ struct SNetStorageServerAutomationObject : public SNetStorageServiceAutomationOb
     SNetStorageServerAutomationObject(CAutomationProc* automation_proc,
             CArgArray& arg_array);
 
-    virtual const string& GetType() const;
+    virtual const string& GetType() const { return kName; }
 
     virtual const void* GetImplPtr() const;
 
@@ -100,6 +103,9 @@ struct SNetStorageServerAutomationObject : public SNetStorageServiceAutomationOb
 
 private:
     CNetServer m_NetServer;
+
+private:
+    static const string kName;
 };
 
 END_NCBI_SCOPE

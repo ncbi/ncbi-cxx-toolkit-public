@@ -41,7 +41,7 @@ struct SWorkerNodeAutomationObject : public SNetServiceAutomationObject
     SWorkerNodeAutomationObject(CAutomationProc* automation_proc,
             const string& wn_address, const string& client_name);
 
-    virtual const string& GetType() const;
+    virtual const string& GetType() const { return kName; }
 
     virtual const void* GetImplPtr() const;
 
@@ -51,6 +51,9 @@ struct SWorkerNodeAutomationObject : public SNetServiceAutomationObject
 private:
     CNetScheduleAPI m_NetScheduleAPI;
     CNetServer m_WorkerNode;
+
+private:
+    static const string kName;
 };
 
 END_NCBI_SCOPE

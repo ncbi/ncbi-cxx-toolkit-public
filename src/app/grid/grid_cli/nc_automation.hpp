@@ -66,7 +66,7 @@ struct SNetCacheServiceAutomationObject : public SNetServiceAutomationObject
                 new CEventHandler(automation_proc, m_NetCacheAPI));
     }
 
-    virtual const string& GetType() const;
+    virtual const string& GetType() const { return kName; }
 
     virtual const void* GetImplPtr() const;
 
@@ -86,6 +86,9 @@ protected:
     }
 
     friend struct SNetCacheBlobAutomationObject;
+
+private:
+    static const string kName;
 };
 
 struct SNetCacheBlobAutomationObject : public CAutomationObject
@@ -98,7 +101,7 @@ struct SNetCacheBlobAutomationObject : public CAutomationObject
     {
     }
 
-    virtual const string& GetType() const;
+    virtual const string& GetType() const { return kName; }
 
     virtual const void* GetImplPtr() const;
 
@@ -110,6 +113,9 @@ struct SNetCacheBlobAutomationObject : public CAutomationObject
     size_t m_BlobSize;
     auto_ptr<IReader> m_Reader;
     auto_ptr<IEmbeddedStreamWriter> m_Writer;
+
+private:
+    static const string kName;
 };
 
 struct SNetCacheServerAutomationObject : public SNetCacheServiceAutomationObject
@@ -125,7 +131,7 @@ struct SNetCacheServerAutomationObject : public SNetCacheServiceAutomationObject
     SNetCacheServerAutomationObject(CAutomationProc* automation_proc,
         const string& service_name, const string& client_name);
 
-    virtual const string& GetType() const;
+    virtual const string& GetType() const { return kName; }
 
     virtual const void* GetImplPtr() const;
 
@@ -134,6 +140,9 @@ struct SNetCacheServerAutomationObject : public SNetCacheServiceAutomationObject
 
 private:
     CNetServer m_NetServer;
+
+private:
+    static const string kName;
 };
 
 END_NCBI_SCOPE

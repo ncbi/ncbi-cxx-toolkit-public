@@ -35,6 +35,8 @@
 
 USING_NCBI_SCOPE;
 
+const string SWorkerNodeAutomationObject::kName = "wn";
+
 SWorkerNodeAutomationObject::SWorkerNodeAutomationObject(
         CAutomationProc* automation_proc,
         const string& wn_address, const string& client_name) :
@@ -51,13 +53,6 @@ SWorkerNodeAutomationObject::SWorkerNodeAutomationObject(
                 "WorkerNode constructor: 'wn_address' "
                 "must be a host:port combination");
     }
-}
-
-const string& SWorkerNodeAutomationObject::GetType() const
-{
-    static const string object_type("wn");
-
-    return object_type;
 }
 
 const void* SWorkerNodeAutomationObject::GetImplPtr() const

@@ -35,12 +35,9 @@
 
 USING_NCBI_SCOPE;
 
-const string& SNetCacheBlobAutomationObject::GetType() const
-{
-    static const string object_type("ncblob");
-
-    return object_type;
-}
+const string SNetCacheBlobAutomationObject::kName = "ncblob";
+const string SNetCacheServiceAutomationObject::kName = "ncsvc";
+const string SNetCacheServerAutomationObject::kName = "ncsrv";
 
 const void* SNetCacheBlobAutomationObject::GetImplPtr() const
 {
@@ -116,13 +113,6 @@ void SNetCacheServiceAutomationObject::CEventHandler::OnWarning(
             ReturnNetCacheServerObject(m_NetCacheAPI, server));
 }
 
-const string& SNetCacheServiceAutomationObject::GetType() const
-{
-    static const string object_type("ncsvc");
-
-    return object_type;
-}
-
 const void* SNetCacheServiceAutomationObject::GetImplPtr() const
 {
     return m_NetCacheAPI;
@@ -145,13 +135,6 @@ SNetCacheServerAutomationObject::SNetCacheServerAutomationObject(
 
     m_NetCacheAPI.SetEventHandler(
             new CEventHandler(automation_proc, m_NetCacheAPI));
-}
-
-const string& SNetCacheServerAutomationObject::GetType() const
-{
-    static const string object_type("ncsrv");
-
-    return object_type;
 }
 
 const void* SNetCacheServerAutomationObject::GetImplPtr() const

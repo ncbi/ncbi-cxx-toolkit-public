@@ -35,6 +35,9 @@
 
 USING_NCBI_SCOPE;
 
+const string SNetStorageServiceAutomationObject::kName = "nstsvc";
+const string SNetStorageServerAutomationObject::kName = "nstsrv";
+
 string s_GetInitStringForService(CArgArray& arg_array)
 {
     const string service_name(arg_array.NextString());
@@ -91,13 +94,6 @@ void SNetStorageServiceAutomationObject::CEventHandler::OnWarning(
             ReturnNetStorageServerObject(m_NetStorageAdmin, server));
 }
 
-const string& SNetStorageServiceAutomationObject::GetType() const
-{
-    static const string object_type("nstsvc");
-
-    return object_type;
-}
-
 const void* SNetStorageServiceAutomationObject::GetImplPtr() const
 {
     return m_NetStorageAdmin;
@@ -117,13 +113,6 @@ SNetStorageServerAutomationObject::SNetStorageServerAutomationObject(
     m_NetServer = m_Service.Iterate().GetServer();
     m_NetStorageAdmin.SetEventHandler(
             new CEventHandler(automation_proc, m_NetStorageAdmin));
-}
-
-const string& SNetStorageServerAutomationObject::GetType() const
-{
-    static const string object_type("nstsrv");
-
-    return object_type;
 }
 
 const void* SNetStorageServerAutomationObject::GetImplPtr() const
