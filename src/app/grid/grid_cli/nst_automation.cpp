@@ -161,12 +161,10 @@ bool SNetStorageServiceAutomationObject::Call(const string& method,
         reply.Append(response);
     } else if (method == "client_objects") {
         string client_name(arg_array.NextString());
-        string client_ns(arg_array.NextString(kEmptyStr));
         Int8 limit(arg_array.NextInteger(0));
 
         CJsonNode request(m_NetStorageAdmin.MkNetStorageRequest("GETCLIENTOBJECTS"));
         request.SetString("ClientName", client_name);
-        if (!client_ns.empty()) request.SetString("ClientNamespace", client_ns);
         if (limit) request.SetInteger("Limit", limit);
 
         CJsonNode response(m_NetStorageAdmin.ExchangeJson(request));
