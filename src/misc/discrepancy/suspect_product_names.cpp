@@ -1426,10 +1426,15 @@ static bool StringContainsUnderscore(const string& search)
         if (PrecededByUnderscorePrefix(sch_str, p) && (isdigit(sch_str[p + 1]) && !isdigit(sch_str[p + 2]))) {
             sch_str = sch_str.substr(p + 1);
             continue;
-        } else if (FollowedByFamily(sch_str)) {
-            continue; // sch_str was changed in the FollowedByFamily
-        } else {
-            return true;
+        }
+        else {
+            sch_str = sch_str.substr(p + 1);
+            if (FollowedByFamily(sch_str)) {
+                continue; // sch_str was changed in the FollowedByFamily // -- tsores for tuhes!
+            }
+            else {
+                return true;
+            }
         }
     }
     return false;
