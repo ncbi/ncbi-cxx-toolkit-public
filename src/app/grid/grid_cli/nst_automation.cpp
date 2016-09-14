@@ -35,15 +35,34 @@
 
 USING_NCBI_SCOPE;
 
-string s_GetInitString(CArgArray& arg_array)
+string s_GetInitStringForService(CArgArray& arg_array)
 {
-    const string service_name(arg_array.NextString(kEmptyStr));
+    const string service_name(arg_array.NextString());
     const string domain_name(arg_array.NextString(kEmptyStr));
     const string client_name(arg_array.NextString(kEmptyStr));
     const string metadata(arg_array.NextString(kEmptyStr));
+    const string ticket(arg_array.NextString(kEmptyStr));
 
     return "nst=" + service_name + "&domain=" + domain_name +
-        "&client=" + client_name + "&metadata=" + metadata;
+        "&client=" + client_name + "&metadata=" + metadata +
+        "&ticket=" + ticket;
+}
+
+string s_GetInitStringForServer(CArgArray& arg_array)
+{
+    string server(arg_array.NextString());
+    string service_name(arg_array.NextString(kEmptyStr));
+
+    if (service_name.empty()) swap(server, service_name);
+
+    const string domain_name(arg_array.NextString(kEmptyStr));
+    const string client_name(arg_array.NextString(kEmptyStr));
+    const string metadata(arg_array.NextString(kEmptyStr));
+    const string ticket(arg_array.NextString(kEmptyStr));
+
+    return "nst=" + service_name + "&domain=" + domain_name +
+        "&client=" + client_name + "&metadata=" + metadata +
+        "&ticket=" + ticket + "&server=" + server;
 }
 
 static void s_RemoveStdReplyFields(CJsonNode& server_reply)
@@ -58,7 +77,7 @@ SNetStorageServiceAutomationObject::SNetStorageServiceAutomationObject(
         CAutomationProc* automation_proc, CArgArray& arg_array) :
     SNetServiceBaseAutomationObject(automation_proc,
             CNetService::eLoadBalancedService),
-    m_NetStorageAdmin(CNetStorage(s_GetInitString(arg_array)))
+    m_NetStorageAdmin(CNetStorage(s_GetInitStringForService(arg_array)))
 {
     m_Service = m_NetStorageAdmin.GetService();
     m_NetStorageAdmin.SetEventHandler(
@@ -87,7 +106,7 @@ const void* SNetStorageServiceAutomationObject::GetImplPtr() const
 SNetStorageServerAutomationObject::SNetStorageServerAutomationObject(
         CAutomationProc* automation_proc, CArgArray& arg_array) :
     SNetStorageServiceAutomationObject(automation_proc,
-            CNetStorageAdmin(CNetStorage(s_GetInitString(arg_array))))
+            CNetStorageAdmin(CNetStorage(s_GetInitStringForServer(arg_array))))
 {
     if (m_Service.IsLoadBalanced()) {
         NCBI_THROW(CAutomationException, eCommandProcessingError,

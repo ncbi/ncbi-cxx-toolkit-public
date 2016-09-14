@@ -665,6 +665,10 @@ void SNetStorage::SConfig::ParseArg(const string& name, const string& value)
         client_name = value;
     else if (name == "err_mode")
         err_mode = GetErrMode(value);
+    else if (name == "ticket")
+        ticket = value;
+    else if (name == "server")
+        server = value;
 }
 
 void SNetStorage::SConfig::Validate(const string& init_string)
@@ -745,11 +749,13 @@ SNetStorageRPC::SNetStorageRPC(const TConfig& config,
             hello.SetString("Application", app->GetProgramExecutablePath());
     }}
     hello.SetString("ProtocolVersion", NST_PROTOCOL_VERSION);
+    if (!m_Config.ticket.empty()) hello.SetString("Ticket", m_Config.ticket);
 
     m_Service = new SNetServiceImpl("NetStorageAPI", m_Config.client_name,
             new CNetStorageServerListener(hello, m_Config.err_mode));
 
-    m_Service->Init(this, m_Config.service,
+    m_Service->Init(this,
+            m_Config.server.empty() ? m_Config.service : m_Config.server,
             NULL, kEmptyStr, s_NetStorageConfigSections);
 }
 
