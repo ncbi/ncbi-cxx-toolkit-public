@@ -38,6 +38,8 @@ BEGIN_NCBI_SCOPE
 
 struct SNetStorageServiceAutomationObject : public SNetServiceBaseAutomationObject
 {
+    typedef SNetServiceBaseAutomationObject TBase;
+
     class CEventHandler : public INetEventHandler
     {
     public:
@@ -70,8 +72,7 @@ protected:
 
     SNetStorageServiceAutomationObject(CAutomationProc* automation_proc,
             const CNetStorageAdmin& nst_server) :
-        SNetServiceBaseAutomationObject(automation_proc,
-                CNetService::eSingleServerService),
+        TBase(automation_proc, CNetService::eSingleServerService),
         m_NetStorageAdmin(nst_server)
     {
         m_Service = m_NetStorageAdmin.GetService();
@@ -83,10 +84,11 @@ private:
 
 struct SNetStorageServerAutomationObject : public SNetStorageServiceAutomationObject
 {
+    typedef SNetStorageServiceAutomationObject TBase;
+
     SNetStorageServerAutomationObject(CAutomationProc* automation_proc,
             CNetStorageAdmin nst_api, CNetServer::TInstance server) :
-        SNetStorageServiceAutomationObject(automation_proc,
-                nst_api.GetServer(server)),
+        TBase(automation_proc, nst_api.GetServer(server)),
         m_NetServer(server)
     {
     }

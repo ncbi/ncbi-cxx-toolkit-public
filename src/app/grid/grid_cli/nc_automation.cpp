@@ -169,7 +169,7 @@ bool SNetCacheServiceAutomationObject::Call(const string& method,
                     ReturnNetCacheServerObject(m_NetCacheAPI, *it)->GetID());
         reply.Append(object_ids);
     } else
-        return SNetServiceAutomationObject::Call(method, arg_array, reply);
+        return TBase::Call(method, arg_array, reply);
 
     return true;
 }
@@ -177,5 +177,5 @@ bool SNetCacheServiceAutomationObject::Call(const string& method,
 bool SNetCacheServerAutomationObject::Call(const string& method,
         CArgArray& arg_array, CJsonNode& reply)
 {
-    return SNetCacheServiceAutomationObject::Call(method, arg_array, reply);
+    return TBase::Call(method, arg_array, reply);
 }

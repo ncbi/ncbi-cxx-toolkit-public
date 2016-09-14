@@ -185,7 +185,7 @@ bool SNetStorageServiceAutomationObject::Call(const string& method,
             g_AllowXSiteConnections(m_NetStorageAdmin);
         else
 #endif
-        return SNetServiceBaseAutomationObject::Call(method, arg_array, reply);
+        return TBase::Call(method, arg_array, reply);
 
     return true;
 }
@@ -221,7 +221,7 @@ bool SNetStorageServerAutomationObject::Call(const string& method,
         s_RemoveStdReplyFields(response);
         reply.Append(response);
     } else
-        return SNetStorageServiceAutomationObject::Call(method, arg_array, reply);
+        return TBase::Call(method, arg_array, reply);
 
     return true;
 }

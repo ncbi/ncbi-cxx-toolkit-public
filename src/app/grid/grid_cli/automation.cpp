@@ -111,7 +111,7 @@ bool SNetServiceAutomationObject::Call(const string& method,
             m_Service.AllowXSiteConnections();
         else
 #endif
-        return SNetServiceBaseAutomationObject::Call(method, arg_array, reply);
+        return TBase::Call(method, arg_array, reply);
 
     return true;
 }

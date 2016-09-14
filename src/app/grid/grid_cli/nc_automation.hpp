@@ -38,6 +38,8 @@ BEGIN_NCBI_SCOPE
 
 struct SNetCacheServiceAutomationObject : public SNetServiceAutomationObject
 {
+    typedef SNetServiceAutomationObject TBase;
+
     class CEventHandler : public INetEventHandler
     {
     public:
@@ -57,8 +59,7 @@ struct SNetCacheServiceAutomationObject : public SNetServiceAutomationObject
 
     SNetCacheServiceAutomationObject(CAutomationProc* automation_proc,
             const string& service_name, const string& client_name) :
-        SNetServiceAutomationObject(automation_proc,
-                CNetService::eLoadBalancedService),
+        TBase(automation_proc, CNetService::eLoadBalancedService),
         m_NetCacheAPI(service_name, client_name)
     {
         m_Service = m_NetCacheAPI.GetService();
@@ -78,8 +79,7 @@ protected:
 
     SNetCacheServiceAutomationObject(CAutomationProc* automation_proc,
             const CNetCacheAPI& nc_server) :
-        SNetServiceAutomationObject(automation_proc,
-                CNetService::eSingleServerService),
+        TBase(automation_proc, CNetService::eSingleServerService),
         m_NetCacheAPI(nc_server)
     {
         m_Service = m_NetCacheAPI.GetService();
@@ -120,10 +120,11 @@ private:
 
 struct SNetCacheServerAutomationObject : public SNetCacheServiceAutomationObject
 {
+    typedef SNetCacheServiceAutomationObject TBase;
+
     SNetCacheServerAutomationObject(CAutomationProc* automation_proc,
             CNetCacheAPI nc_api, CNetServer::TInstance server) :
-        SNetCacheServiceAutomationObject(automation_proc,
-                nc_api.GetServer(server)),
+        TBase(automation_proc, nc_api.GetServer(server)),
         m_NetServer(server)
     {
     }

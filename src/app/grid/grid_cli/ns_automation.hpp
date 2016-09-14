@@ -38,6 +38,8 @@ BEGIN_NCBI_SCOPE
 
 struct SNetScheduleServiceAutomationObject : public SNetServiceAutomationObject
 {
+    typedef SNetServiceAutomationObject TBase;
+
     class CEventHandler : public INetEventHandler
     {
     public:
@@ -58,8 +60,7 @@ struct SNetScheduleServiceAutomationObject : public SNetServiceAutomationObject
     SNetScheduleServiceAutomationObject(CAutomationProc* automation_proc,
             const string& service_name, const string& queue_name,
             const string& client_name) :
-        SNetServiceAutomationObject(automation_proc,
-                CNetService::eLoadBalancedService),
+        TBase(automation_proc, CNetService::eLoadBalancedService),
         m_NetScheduleAPI(CNetScheduleAPIExt::CreateNoCfgLoad(
                     service_name, client_name, queue_name))
     {
@@ -80,8 +81,7 @@ protected:
 
     SNetScheduleServiceAutomationObject(CAutomationProc* automation_proc,
             const CNetScheduleAPI::TInstance ns_server) :
-        SNetServiceAutomationObject(automation_proc,
-                CNetService::eSingleServerService),
+        TBase(automation_proc, CNetService::eSingleServerService),
         m_NetScheduleAPI(ns_server)
     {
         m_Service = m_NetScheduleAPI.GetService();
@@ -94,10 +94,11 @@ private:
 struct SNetScheduleServerAutomationObject :
         public SNetScheduleServiceAutomationObject
 {
+    typedef SNetScheduleServiceAutomationObject TBase;
+
     SNetScheduleServerAutomationObject(CAutomationProc* automation_proc,
             CNetScheduleAPIExt ns_api, CNetServer::TInstance server) :
-        SNetScheduleServiceAutomationObject(automation_proc,
-                ns_api.GetServer(server)),
+        TBase(automation_proc, ns_api.GetServer(server)),
         m_NetServer(server)
     {
     }

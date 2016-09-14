@@ -38,6 +38,8 @@ BEGIN_NCBI_SCOPE
 
 struct SWorkerNodeAutomationObject : public SNetServiceAutomationObject
 {
+    typedef SNetServiceAutomationObject TBase;
+
     SWorkerNodeAutomationObject(CAutomationProc* automation_proc,
             const string& wn_address, const string& client_name);
 

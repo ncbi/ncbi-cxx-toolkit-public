@@ -48,8 +48,7 @@ SNetScheduleServerAutomationObject::SNetScheduleServerAutomationObject(
         const string& service_name,
         const string& queue_name,
         const string& client_name) :
-    SNetScheduleServiceAutomationObject(automation_proc,
-            CNetScheduleAPIExt::CreateNoCfgLoad(
+    TBase(automation_proc, CNetScheduleAPIExt::CreateNoCfgLoad(
                 service_name, client_name, queue_name))
 {
     if (m_Service.IsLoadBalanced()) {
@@ -116,8 +115,7 @@ bool SNetScheduleServerAutomationObject::Call(const string& method,
         m_NetScheduleAPI.GetExecutor().ChangePreferredAffinities(
                 &affs_to_add, &affs_to_del);
     } else
-        return SNetScheduleServiceAutomationObject::Call(
-                method, arg_array, reply);
+        return TBase::Call(method, arg_array, reply);
 
     return true;
 }
@@ -192,7 +190,7 @@ bool SNetScheduleServiceAutomationObject::Call(const string& method,
                     GetID());
         reply.Append(object_ids);
     } else
-        return SNetServiceAutomationObject::Call(method, arg_array, reply);
+        return TBase::Call(method, arg_array, reply);
 
     return true;
 }

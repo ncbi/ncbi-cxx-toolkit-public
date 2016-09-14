@@ -40,8 +40,7 @@ const string SWorkerNodeAutomationObject::kName = "wn";
 SWorkerNodeAutomationObject::SWorkerNodeAutomationObject(
         CAutomationProc* automation_proc,
         const string& wn_address, const string& client_name) :
-    SNetServiceAutomationObject(automation_proc,
-            CNetService::eSingleServerService),
+    TBase(automation_proc, CNetService::eSingleServerService),
     m_NetScheduleAPI(CNetScheduleAPIExt::CreateWnCompat(wn_address, client_name))
 {
     m_Service = m_NetScheduleAPI.GetService();
@@ -92,7 +91,7 @@ bool SWorkerNodeAutomationObject::Call(const string& method,
             m_NetScheduleAPI.GetAdmin().ShutdownServer(CNetScheduleAdmin::eDie);
         }
     else
-        return SNetServiceAutomationObject::Call(method, arg_array, reply);
+        return TBase::Call(method, arg_array, reply);
 
     return true;
 }
