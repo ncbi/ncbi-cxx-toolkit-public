@@ -45,7 +45,7 @@ static const char* digit_str = "0123456789";
 bool IsAllCaps(const string& str)
 {
     string up_str = str;
-    if (up_str.find_first_not_of(alpha_str) != string::npos) return false;
+    //if (up_str.find_first_not_of(alpha_str) != string::npos) return false;
     up_str = NStr::ToUpper(up_str);
     if (up_str == str) return true;
     else return false;
@@ -55,7 +55,7 @@ bool IsAllCaps(const string& str)
 bool IsAllLowerCase(const string& str)
 {
     string low_str = str;
-    if (low_str.find_first_not_of(alpha_str) != string::npos) return false;
+    //if (low_str.find_first_not_of(alpha_str) != string::npos) return false;
     low_str = NStr::ToLower(low_str);
     if (low_str == str) return true;
     else return false;

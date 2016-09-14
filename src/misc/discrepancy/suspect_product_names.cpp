@@ -5412,12 +5412,6 @@ DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData, eDisc | eOncaller | eSubmi
 DISCREPANCY_SUMMARIZE(SUSPECT_PRODUCT_NAMES)
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-/////////////////
-    size_t count = 0;
-    CConstRef<CSuspect_rule_set> rules = context.GetProductRules();
-    ITERATE(list<CRef<CSuspect_rule> >, rule, rules->Get()) {
-        //cout << "RULE #" << (++count) << ":\t" << (*rule)->SummarizeRule() << "\n";
-    }
 }
 
 
