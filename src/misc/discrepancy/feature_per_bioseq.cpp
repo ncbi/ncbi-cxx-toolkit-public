@@ -260,35 +260,5 @@ DISCREPANCY_SUMMARIZE(COUNT_TRNAS)
 
 DISCREPANCY_ALIAS(COUNT_TRNAS, FIND_DUP_TRNAS);
 
-
-static CConstRef<CProt_ref> sGetProtRefForFeature(const CSeq_feat& seq_feat, CScope& scope, bool look_xref)
-{
-    CConstRef<CProt_ref> prot_ref(0);
-
-    if (seq_feat.GetData().IsProt()) {
-        prot_ref = CConstRef<CProt_ref> (&(seq_feat.GetData().GetProt()));
-        return prot_ref;
-    }
-
-    if (seq_feat.GetData().IsCdregion()) {
-        if (look_xref) prot_ref.Reset(seq_feat.GetProtXref());
-        if (prot_ref.Empty() && seq_feat.CanGetProduct()) {
-
-            CBioseq_Handle bsh = sequence::GetBioseqFromSeqLoc(seq_feat.GetProduct(), scope);
-            if (bsh) {
-               for (CFeat_CI prot_ci(bsh, CSeqFeatData::e_Prot); prot_ci; ++prot_ci) {
-                   prot_ref.Reset( &(prot_ci->GetOriginalFeature().GetData().GetProt()) );
-                   if (prot_ref->GetProcessed() == CProt_ref::eProcessed_not_set) {
-                       break;
-                   }
-               }
-            }
-        }
-    }
-
-    return prot_ref;
-}
-
-
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
