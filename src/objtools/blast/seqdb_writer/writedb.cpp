@@ -50,6 +50,7 @@ CWriteDB::CWriteDB(const string       & dbname,
                    const string       & title,
                    int                  indices,
                    bool                 parse_ids,
+                   bool                 long_ids,
                    bool                 use_gi_mask)
     : m_Impl(0)
 {
@@ -58,6 +59,7 @@ CWriteDB::CWriteDB(const string       & dbname,
                                title,
                                (EIndexType)indices,
                                parse_ids,
+                               long_ids,
                                use_gi_mask);
 }
 
@@ -116,9 +118,10 @@ void CWriteDB::SetMaxVolumeLetters(Uint8 sz)
 }
 
 CRef<CBlast_def_line_set>
-CWriteDB::ExtractBioseqDeflines(const CBioseq & bs, bool parse_ids)
+CWriteDB::ExtractBioseqDeflines(const CBioseq & bs, bool parse_ids,
+                                bool long_ids)
 {
-    return CWriteDB_Impl::ExtractBioseqDeflines(bs, parse_ids);
+    return CWriteDB_Impl::ExtractBioseqDeflines(bs, parse_ids, long_ids);
 }
 
 void CWriteDB::SetMaskedLetters(const string & masked)

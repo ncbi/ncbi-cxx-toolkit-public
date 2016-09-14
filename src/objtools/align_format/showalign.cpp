@@ -160,7 +160,8 @@ CDisplaySeqalign::CDisplaySeqalign(const CSeq_align_set& seqalign,
       m_Seqloc(mask_seqloc),
       m_QueryFeature(external_feature),
       m_Scope(scope),
-      m_LinkoutDB(NULL)
+      m_LinkoutDB(NULL),
+      m_UseLongSeqIds(false)
 {
     m_AlignOption = 0;
     m_SeqLocChar = eX;
@@ -210,12 +211,6 @@ CDisplaySeqalign::CDisplaySeqalign(const CSeq_align_set& seqalign,
             }
         }
     }
-
-    CMetaRegistry::SEntry sentry =
-        CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
-
-    m_UseLongSeqIds = sentry.registry ?
-        sentry.registry->HasEntry("BLAST", "LONG_SEQID") : false;
 }
 
 

@@ -93,7 +93,8 @@ public:
         eNoShowHeader = (1 << 6),       //defline annotation at the top
         eNewTargetWindow = (1 << 7),    //open url link in a new window
         eShowNewSeqGif = (1 << 8),      //show new sequence gif image
-        eShowPercentIdent = (1 << 9)    //show percent identity column
+        eShowPercentIdent = (1 << 9),   //show percent identity column
+        eLongSeqId = (1 << 10)          //print long sequences id (with bars)
     };
 
     ///Data Representing each defline

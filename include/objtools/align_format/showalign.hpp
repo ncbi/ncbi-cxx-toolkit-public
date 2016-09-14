@@ -416,6 +416,9 @@ class NCBI_ALIGN_FORMAT_EXPORT CDisplaySeqalign {
         m_PreComputedResID = preComputedResID;
     }
 
+    /// Sets usage of long sequence ids (database|accession)
+    void UseLongSequenceIds(void) {m_UseLongSeqIds = true;}
+
     /// static functions
     ///Need to call this if the seqalign is stdseg or dendiag for ungapped
     ///blast alignment display as each stdseg ro dendiag is a distinct

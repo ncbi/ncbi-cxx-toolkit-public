@@ -34,7 +34,6 @@
 #include <corelib/ncbiutil.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbireg.hpp>
-#include <corelib/metareg.hpp>
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
@@ -637,11 +636,7 @@ void CShowBlastDefline::x_InitDefline(void)
 
 void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
 {
-    CMetaRegistry::SEntry sentry =
-        CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
-
-    bool use_long_seqids = sentry.registry ?
-        sentry.registry->HasEntry("BLAST", "LONG_SEQID") : false;
+    bool use_long_seqids = (m_Option & eLongSeqId) != 0;
 
     if(!(m_Option & eNoShowHeader)) {
         if((m_PsiblastStatus == eFirstPass) ||

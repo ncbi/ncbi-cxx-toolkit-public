@@ -144,6 +144,9 @@ public:
     ///   Indicates the type of indices to build if specified. [in]
     /// @param parse_ids
     ///   If true, generate ISAM files [in]
+    /// @param long_ids
+    ///   If true, assume long sequence ids (database|accession) when parsing
+    ///   string ids [in]
     /// @param use_gi_mask
     ///   If true, generate GI-based mask files [in]
     CWriteDB(const string & dbname,
@@ -151,6 +154,7 @@ public:
              const string & title,
              int            itype = eDefault,
              bool           parse_ids = true,
+             bool           long_ids = false,
              bool           use_gi_mask = false);
 
     /// Destructor.
@@ -345,9 +349,11 @@ public:
     ///
     /// @param bs The bioseq from which to extract a defline set. [in]
     /// @param parse_ids If seqid should be parsed [in]
+    /// @param long_ids It true, use long sequence ids (database|accession) [in]
     /// @return A set of deflines for this CBioseq.
     static CRef<CBlast_def_line_set>
-    ExtractBioseqDeflines(const CBioseq & bs, bool parse_ids=true);
+    ExtractBioseqDeflines(const CBioseq & bs, bool parse_ids=true,
+                          bool long_ids=false);
 
     /// Set letters that should not be used in sequences.
     ///

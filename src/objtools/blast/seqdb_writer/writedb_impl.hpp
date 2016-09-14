@@ -72,12 +72,15 @@ public:
     /// @param title Title string for volumes and alias file.
     /// @param indices Type of indexing to do for string IDs.
     /// @param parse_ids If true generate ISAM files
+    /// @param long_ids If true, assume long sequence ids (database|accession)
+    /// when parsing strings ids
     /// @param use_gi_mask If true generate GI-based mask files.
     CWriteDB_Impl(const string     & dbname,
                   bool               protein,
                   const string     & title,
                   EIndexType         indices,
                   bool               parse_ids,
+                  bool               long_ids,
                   bool               use_gi_mask);
 
     /// Destructor.
@@ -213,9 +216,10 @@ public:
     ///
     /// @param bs Bioseq from which to construct the defline set.
     /// @param parse_ids If we should parse seq_ids.
+    /// @param long_seqids If true use long sequence ids (database|accession)
     /// @return The blast defline set.
     static CRef<CBlast_def_line_set>
-    ExtractBioseqDeflines(const CBioseq & bs, bool parse_ids);
+    ExtractBioseqDeflines(const CBioseq & bs, bool parse_ids, bool long_seqids);
 
     /// Set bases that should not be used in sequences.
     ///
@@ -478,6 +482,8 @@ private:
     /// @param pig PIG to attach to a protein sequence. [in]
     /// @param accept_gt Whether greater-than is a delimiter. [in]
     /// @param parse_ids Whether seq_id should not be parsed. [in]
+    /// @param long_seqids If true, use long sequence ids (database|accession)
+    /// [in]
     static void
     x_GetFastaReaderDeflines(const CBioseq                  & bioseq,
                              CConstRef<CBlast_def_line_set> & deflines,
@@ -485,7 +491,8 @@ private:
                              const vector< vector<int> >    & linkout,
                              int                              pig,
                              bool                             accept_gt,
-                             bool                             parse_ids);
+                             bool                             parse_ids,
+                             bool                             long_seqids);
 
     /// Returns true if we have unwritten sequence data.
     bool x_HaveSequence() const;
@@ -520,7 +527,8 @@ private:
                                   const vector< vector<int> >    & linkouts,
                                   int                              pig,
                                   int                              OID=-1,
-                                  bool                             parse_ids=true);
+                                  bool                             parse_ids=true,
+                                  bool                             long_seqid=false);
 
     /// Compute the hash of a (raw) sequence.
     ///
@@ -612,6 +620,10 @@ private:
 
     /// Registry for masking algorithms in this database.
     CMaskInfoRegistry m_MaskAlgoRegistry;
+
+    /// If true, use long sequence id format (database|accession) for all
+    /// acessions
+    bool m_LongSeqId;
 };
 
 END_NCBI_SCOPE

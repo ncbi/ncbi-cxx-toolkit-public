@@ -57,6 +57,7 @@ CWriteDB_Impl::CWriteDB_Impl(const string & dbname,
                              const string & title,
                              EIndexType     indices,
                              bool           parse_ids,
+                             bool           long_ids,
                              bool           use_gi_mask)
     : m_Dbname           (dbname),
       m_Protein          (protein),
@@ -71,7 +72,8 @@ CWriteDB_Impl::CWriteDB_Impl(const string & dbname,
       m_Pig              (0),
       m_Hash             (0),
       m_SeqLength        (0),
-      m_HaveSequence     (false)
+      m_HaveSequence     (false),
+      m_LongSeqId        (long_ids)
 {
     CTime now(CTime::eCurrent);
 
@@ -641,13 +643,8 @@ x_SetDeflinesFromBinary(const string                   & bin_hdr,
 }
 
 
-static bool s_UseFastaReaderDeflines(CConstRef<CBioseq> & bioseq, CConstRef<CBlast_def_line_set> & deflines)
+static bool s_UseFastaReaderDeflines(CConstRef<CBioseq> & bioseq, CConstRef<CBlast_def_line_set> & deflines, bool long_seqid)
 {
-    CMetaRegistry::SEntry sentry =
-        CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
-    bool long_seqid = sentry.registry ?
-        sentry.registry->HasEntry("BLAST", "LONG_SEQID") : false;
-
 	if(deflines.Empty())
 		return false;
 
@@ -684,7 +681,8 @@ CWriteDB_Impl::x_ExtractDeflines(CConstRef<CBioseq>             & bioseq,
                                  const vector< vector<int> >    & linkouts,
                                  int                              pig,
                                  int                              OID,
-                                 bool                             parse_ids)
+                                 bool                             parse_ids,
+                                 bool                             long_ids)
 {
     bool use_bin = (deflines.Empty() && pig == 0);
 
@@ -717,10 +715,11 @@ CWriteDB_Impl::x_ExtractDeflines(CConstRef<CBioseq>             & bioseq,
                                      linkouts,
                                      pig,
                                      false,
-                                     parse_ids);
+                                     parse_ids,
+                                     long_ids);
         }
 
-        if(!s_UseFastaReaderDeflines(bioseq, deflines)) {
+        if(!s_UseFastaReaderDeflines(bioseq, deflines, long_ids)) {
         	deflines.Reset();
         }
 
@@ -807,7 +806,8 @@ void CWriteDB_Impl::x_CookHeader()
                       m_Linkouts,
                       m_Pig,
                       OID,
-                      m_ParseIDs);
+                      m_ParseIDs,
+                      m_LongSeqId);
 }
 
 void CWriteDB_Impl::x_CookIds()
@@ -1423,7 +1423,8 @@ void CWriteDB_Impl::SetMaxVolumeLetters(Uint8 sz)
 }
 
 CRef<CBlast_def_line_set>
-CWriteDB_Impl::ExtractBioseqDeflines(const CBioseq & bs, bool parse_ids)
+CWriteDB_Impl::ExtractBioseqDeflines(const CBioseq & bs, bool parse_ids,
+                                     bool long_seqids)
 {
     // Get information
 
@@ -1432,7 +1433,8 @@ CWriteDB_Impl::ExtractBioseqDeflines(const CBioseq & bs, bool parse_ids)
     vector< vector<int> > v1, v2;
 
     CConstRef<CBioseq> bsref(& bs);
-    x_ExtractDeflines(bsref, deflines, binary_header, v2, v2, 0, -1, parse_ids);
+    x_ExtractDeflines(bsref, deflines, binary_header, v2, v2, 0, -1, parse_ids,
+                      long_seqids);
 
     // Convert to return type
 
@@ -1564,16 +1566,12 @@ x_GetFastaReaderDeflines(const CBioseq                  & bioseq,
                          const vector< vector<int> >    & linkout,
                          int                              pig,
                          bool                             accept_gt,
-                         bool                             parse_ids)
+                         bool                             parse_ids,
+                         bool                             long_seqids)
 {
     if (! bioseq.CanGetDescr()) {
         return;
     }
-
-    CMetaRegistry::SEntry sentry =
-        CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
-    bool long_seqids = sentry.registry ?
-        sentry.registry->HasEntry("BLAST", "LONG_SEQID") : false;
 
     string fasta;
 

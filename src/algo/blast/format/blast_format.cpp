@@ -181,6 +181,12 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& options,
     if (m_FormatType == CFormattingArgs::eSAM) {
     	x_InitSAMFormatter();
     }
+
+    CMetaRegistry::SEntry sentry =
+        CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
+
+    m_LongSeqId = sentry.registry ?
+        sentry.registry->HasEntry("BLAST", "LONG_SEQID") : false;
 }
 
 CBlastFormat::CBlastFormat(const blast::CBlastOptions& opts, 
@@ -282,6 +288,12 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& opts,
     if (m_FormatType == CFormattingArgs::eSAM) {
     	x_InitSAMFormatter();
     }
+
+    CMetaRegistry::SEntry sentry =
+        CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
+
+    m_LongSeqId = sentry.registry ?
+        sentry.registry->HasEntry("BLAST", "LONG_SEQID") : false;
 }
 
 CBlastFormat::~CBlastFormat()
@@ -471,6 +483,9 @@ CBlastFormat::x_ConfigCShowBlastDefline(CShowBlastDefline& showdef,
         flags |= CShowBlastDefline::eShowGi;
     if (num_descriptions_to_show == 0)
         flags |= CShowBlastDefline::eNoShowHeader;
+    if (m_LongSeqId) {
+        flags |= CShowBlastDefline::eLongSeqId;
+    }
 
     showdef.SetOption(flags);
     showdef.SetDbName(m_DbName);
@@ -1159,6 +1174,10 @@ CBlastFormat::PrintOneResultSet(const blast::CSearchResults& results,
     // set the alignment flags
     display.SetAlignOption(flags);
 
+    if (m_LongSeqId) {
+        display.UseLongSequenceIds();
+    }
+
     if (m_Program == "blastn" || m_Program == "megablast") {
             display.SetMiddleLineStyle(CDisplaySeqalign::eBar);
             display.SetAlignType(CDisplaySeqalign::eNuc);
@@ -1415,6 +1434,10 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
     display.SetDbName(m_DbName);
     display.SetDbType(!m_DbIsAA);
     display.SetLineLen(90);
+
+    if (m_LongSeqId) {
+        display.UseLongSequenceIds();
+    }
 
     if (annots->m_FrameInfo[0] >= 0 && m_IgOptions->m_Translate) {
         display.SetTranslatedFrameForLocalSeq((CDisplaySeqalign::TranslatedFrameForLocalSeq) (annots->m_FrameInfo[0]%3)); 
@@ -1686,6 +1709,10 @@ CBlastFormat::PrintPhiResult(const blast::CSearchResultSet& result_set,
 
            // set the alignment flags
            display.SetAlignOption(flags);
+
+           if (m_LongSeqId) {
+               display.UseLongSequenceIds();
+           }
 
            if (m_Program == "blastn" || m_Program == "megablast") {
                display.SetMiddleLineStyle(CDisplaySeqalign::eBar);

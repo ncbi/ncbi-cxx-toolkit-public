@@ -138,6 +138,7 @@ bool TestSimpleAlignment(CBlastOM::ELocation location, bool long_seqids)
         CDisplaySeqalign::eShowBlastStyleId;
     if (long_seqids) {
         flags |= CDisplaySeqalign::eShowGi;
+        ds.UseLongSequenceIds();
     }
     ds.SetAlignOption(flags);
     ds.SetSeqLocChar(CDisplaySeqalign::eLowerCase);
@@ -178,58 +179,14 @@ NCBITEST_AUTO_INIT()
 
 BOOST_AUTO_TEST_CASE(TestSimpleAlignment_LocalBlastDBLoader)
 {
-    CMetaRegistry::SEntry sentry =
-        CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
-
-    string old_value;
-    bool had_entry = sentry.registry->HasEntry("BLAST", "LONG_SEQID");
-    if (had_entry) {
-        old_value = sentry.registry->Get("BLAST", "LONG_SEQID");
-    }
-
-    sentry.registry->Unset("BLAST", "LONG_SEQID", IRWRegistry::fPersistent);
-    BOOST_REQUIRE(sentry.registry->HasEntry("BLAST", "LONG_SEQID") == false);
     BOOST_REQUIRE(TestSimpleAlignment(CBlastOM::eLocal, false));
-
-    sentry.registry->Set("BLAST", "LONG_SEQID", "1", IRWRegistry::fPersistent);
-    BOOST_REQUIRE(sentry.registry->HasEntry("BLAST", "LONG_SEQID") == true);
     BOOST_REQUIRE(TestSimpleAlignment(CBlastOM::eLocal, true));
-    
-    if (had_entry) {
-        sentry.registry->Set("BLAST", "LONG_SEQID", old_value,
-                             IRWRegistry::fPersistent);
-    }
-    else {
-        sentry.registry->Unset("BLAST", "LONG_SEQID", IRWRegistry::fPersistent);
-    }
 }
 
 BOOST_AUTO_TEST_CASE(TestSimpleAlignment_RmtBlastDBLoader)
 {
-    CMetaRegistry::SEntry sentry =
-        CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
-
-    string old_value;
-    bool had_entry = sentry.registry->HasEntry("BLAST", "LONG_SEQID");
-    if (had_entry) {
-        old_value = sentry.registry->Get("BLAST", "LONG_SEQID");
-    }
-
-    sentry.registry->Unset("BLAST", "LONG_SEQID", IRWRegistry::fPersistent);
-    BOOST_REQUIRE(sentry.registry->HasEntry("BLAST", "LONG_SEQID") == false);
     BOOST_REQUIRE(TestSimpleAlignment(CBlastOM::eRemote, false));
-
-    sentry.registry->Set("BLAST", "LONG_SEQID", "1", IRWRegistry::fPersistent);
-    BOOST_REQUIRE(sentry.registry->HasEntry("BLAST", "LONG_SEQID") == true);
     BOOST_REQUIRE(TestSimpleAlignment(CBlastOM::eRemote, true));
-
-    if (had_entry) {
-        sentry.registry->Set("BLAST", "LONG_SEQID", old_value,
-                             IRWRegistry::fPersistent);
-    }
-    else {
-        sentry.registry->Unset("BLAST", "LONG_SEQID", IRWRegistry::fPersistent);
-    }
 }
 
 BOOST_AUTO_TEST_SUITE_END()

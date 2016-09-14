@@ -155,6 +155,7 @@ public:
                    bool                   is_protein,
                    CWriteDB::TIndexType   indexing,
                    bool                   use_gi_mask,
+                   bool                   long_seqids,
                    ostream              * logfile);
 
     // Note -- should deprecate (or just remove) the following one:
@@ -181,8 +182,9 @@ public:
                    bool                   is_protein,
                    bool                   sparse,
                    bool                   parse_seqids,
+                   bool                   long_seqids,
                    bool                   use_gi_mask,
-                   ostream              * logfile);
+                   ostream              * logfil);
 
     ~CBuildDatabase();
 
@@ -620,6 +622,9 @@ private:
 
     /// If true, string IDs found in FASTA input will be parsed as Seq-ids.
     bool m_ParseIDs;
+
+    /// If true, use long sequence ids (database|accession)
+    bool m_LongIDs;
 
     /// If true, there were sequences whose IDs matched those in the provided
     /// masking locations (via SetMaskDataSource). Used to display a warning in

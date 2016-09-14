@@ -389,6 +389,9 @@ private:
 
     string m_Cmdline;
 
+    /// If true, print long sequence ids (database|accession)
+    bool m_LongSeqId;
+
     /// Output the ancillary data for one query that was searched
     /// @param summary The ancillary data to report [in]
     void x_PrintOneQueryFooter(const blast::CBlastAncillaryData& summary);

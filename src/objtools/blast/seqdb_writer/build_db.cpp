@@ -467,7 +467,7 @@ bool CBuildDatabase::x_EditAndAddBioseq(CConstRef<objects::CBioseq>   bs,
                                         bool						  add_pig)
 {
     CRef<CBlast_def_line_set> headers =
-        CWriteDB::ExtractBioseqDeflines(*bs, m_ParseIDs);
+        CWriteDB::ExtractBioseqDeflines(*bs, m_ParseIDs, m_LongIDs);
 
     x_EditHeaders(headers);
 
@@ -681,7 +681,8 @@ class CFastaBioseqSource : public IBioseqSource {
 public:
     CFastaBioseqSource(CNcbiIstream & fasta_file,
                        bool is_protein,
-                       bool parse_ids);
+                       bool parse_ids,
+                       bool long_ids);
 
     ~CFastaBioseqSource();
 
@@ -694,15 +695,11 @@ private:
 
 CFastaBioseqSource::CFastaBioseqSource(CNcbiIstream & fasta_file,
                                        bool is_protein,
-                                       bool parse_ids)
+                                       bool parse_ids,
+                                       bool long_ids)
     : m_FastaReader(NULL)
 {
     m_LineReader.Reset(new CBufferedLineReader(fasta_file));
-    CMetaRegistry::SEntry sentry =
-        CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
-    bool long_seqids = sentry.registry ?
-        sentry.registry->HasEntry("BLAST", "LONG_SEQID") : false;
-
     typedef CFastaReader::EFlags TFlags;
 
     int iflags = CFastaReader::fAllSeqIds |
@@ -718,7 +715,7 @@ CFastaBioseqSource::CFastaBioseqSource(CNcbiIstream & fasta_file,
     if (parse_ids) {
         iflags |= CFastaReader::fAllSeqIds | CFastaReader::fRequireID;
         // parse bare accessions
-        if (!long_seqids) {
+        if (!long_ids) {
             iflags |= CFastaReader::fParseRawID;
         }
     } else {
@@ -788,11 +785,6 @@ bool CBuildDatabase::AddSequences(IBioseqSource & src, bool add_pig)
     CStopWatch sw(CStopWatch::eStart);
     int count = 0;
 
-    CMetaRegistry::SEntry sentry =
-        CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
-    bool long_seqids = sentry.registry ?
-        sentry.registry->HasEntry("BLAST", "LONG_SEQID") : false;
-
     CConstRef<CBioseq> bs = src.GetNext();
 
     while(bs.NotEmpty()) {
@@ -804,7 +796,7 @@ bool CBuildDatabase::AddSequences(IBioseqSource & src, bool add_pig)
                 bioseq_id.assign(ids.front()->AsFastaString());
             }
 
-            if (!long_seqids) {
+            if (!m_LongIDs) {
 
                 // If accession's molecule type is different than expected,
                 // change sequence id to local. CFastaReader cannot distingush
@@ -1034,6 +1026,7 @@ CBuildDatabase::CBuildDatabase(const string         & dbname,
                                bool                   is_protein,
                                CWriteDB::TIndexType   indexing,
                                bool                   use_gi_mask,
+                               bool                   long_seqids,
                                ostream              * logfile)
     : m_IsProtein    (is_protein),
       m_KeepLinks    (false),
@@ -1046,6 +1039,7 @@ CBuildDatabase::CBuildDatabase(const string         & dbname,
       m_OIDCount     (0),
       m_Verbose      (false),
       m_ParseIDs     (((indexing & CWriteDB::eFullIndex) != 0 ? true : false)),
+      m_LongIDs      (long_seqids),
       m_FoundMatchingMasks(false)
 {
     s_CreateDirectories(dbname);
@@ -1070,6 +1064,7 @@ CBuildDatabase::CBuildDatabase(const string         & dbname,
                                   title,
                                   indexing,
                                   m_ParseIDs,
+                                  m_LongIDs,
                                   use_gi_mask));
 
     // Standard 1 GB limit
@@ -1082,6 +1077,7 @@ CBuildDatabase::CBuildDatabase(const string & dbname,
                                bool           is_protein,
                                bool           sparse,
                                bool           parse_seqids,
+                               bool           long_seqids,
                                bool           use_gi_mask,
                                ostream      * logfile)
     : m_IsProtein    (is_protein),
@@ -1095,6 +1091,7 @@ CBuildDatabase::CBuildDatabase(const string & dbname,
       m_OIDCount     (0),
       m_Verbose      (false),
       m_ParseIDs     (parse_seqids),
+      m_LongIDs      (long_seqids),
       m_FoundMatchingMasks(false)
 {
     s_CreateDirectories(dbname);
@@ -1332,7 +1329,8 @@ bool CBuildDatabase::AddFasta(CNcbiIstream & fasta_file)
     if (fasta_file) {
         CFastaBioseqSource fbs(fasta_file,
                                m_IsProtein,
-                               m_ParseIDs);
+                               m_ParseIDs,
+                               m_LongIDs);
 
         try {
             success = AddSequences(fbs);
