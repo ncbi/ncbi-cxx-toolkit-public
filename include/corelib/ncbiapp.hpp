@@ -560,6 +560,15 @@ private:
     ///   Registry to read from. If NULL, use the current registry setting.
     void x_HonorStandardSettings(IRegistry* reg = 0);
 
+    enum ELogOptionsEvent {
+        eStartEvent, ///< right before AppMain()
+        eStopEvent,  ///< right after AppMain()
+        eOtherEvent  ///< general case
+    };
+
+    /// Log environment, registry, command arguments, 
+    void x_LogOptions(ELogOptionsEvent = eOtherEvent);
+    
     /// Setup C++ standard I/O streams' behaviour.
     ///
     /// Called from AppMain() to do compiler-specific optimization
