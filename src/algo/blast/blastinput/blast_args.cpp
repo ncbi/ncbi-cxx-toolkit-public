@@ -127,10 +127,11 @@ CGenericSearchArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                      CArgDescriptions::eDouble,
                      NStr::DoubleToString(1.0));
     } else {
+        //igblastn
         arg_desc.AddDefaultKey(kArgEvalue, "evalue", 
                      "Expectation value (E) threshold for saving hits ",
                      CArgDescriptions::eDouble,
-                     NStr::DoubleToString(1e-15));
+                     NStr::DoubleToString(20.0));
     }
 
     // word size

@@ -137,7 +137,7 @@ CIgBlastnAppArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
     CBlastOptions &opts = retval->SetOptions();
     opts.SetMatchReward(1);
     opts.SetMismatchPenalty(-1);
-    opts.SetWordSize(11);
+    opts.SetWordSize(9);
     opts.SetGapOpeningCost(4);
     opts.SetGapExtensionCost(1);
 

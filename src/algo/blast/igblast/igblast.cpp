@@ -245,6 +245,7 @@ CIgBlast::Run()
     {
         x_SetupVSearch(qf, opts_hndl);
         CLocalBlast blast(qf, opts_hndl, m_IgOptions->m_Db[0]);
+         blast.SetNumberOfThreads(m_NumThreads);
         results[0] = blast.Run();
         if (m_IgOptions->m_ExtendAlign){
             x_ExtendAlign(results[0]);
@@ -259,6 +260,7 @@ CIgBlast::Run()
     {
         opts_hndl->SetHitlistSize(20);  // use a larger number to ensure annotation
         CLocalBlast blast(qf, opts_hndl, m_IgOptions->m_Db[3]);
+        blast.SetNumberOfThreads(m_NumThreads);
         results[3] = blast.Run();
         if (m_IgOptions->m_ExtendAlign){
             x_ExtendAlign(results[3]);
@@ -268,6 +270,9 @@ CIgBlast::Run()
         x_AnnotateDomain(results[0], results[3], annots);
     }
 
+    opts_hndl.Reset(CBlastOptionsFactory
+                     ::Create((m_IgOptions->m_IsProtein)? eBlastp: eBlastn));
+
     /*** search DJ germline */
     int num_genes =  (m_IgOptions->m_IsProtein) ? 1 : 3;
     if (num_genes > 1) {
@@ -276,6 +281,7 @@ CIgBlast::Run()
             x_SetupDJSearch(annots, qf, opts_hndl, gene);
             CLocalBlast blast(qf, opts_hndl, m_IgOptions->m_Db[gene]);
             try {
+                blast.SetNumberOfThreads(m_NumThreads);
                 results[gene] = blast.Run();
                 x_ConvertResultType(results[gene]);
             } catch(...) {
@@ -343,13 +349,13 @@ void CIgBlast::x_SetupVSearch(CRef<IQueryFactory>       &qf,
         int penalty = m_Options->GetOptions().GetMismatchPenalty();
         opts.SetMatchReward(1);
         opts.SetMismatchPenalty(penalty);
-        opts.SetWordSize(9);
+        opts.SetWordSize(m_Options->GetOptions().GetWordSize());
         if (penalty == -1) {
             opts.SetGapOpeningCost(4);
             opts.SetGapExtensionCost(1);
         }
     }
-    opts_hndl->SetEvalueThreshold(20.0);
+    opts_hndl->SetEvalueThreshold(m_Options->GetOptions().GetEvalueThreshold());
     opts_hndl->SetFilterString("F");
     opts_hndl->SetHitlistSize(15+ m_IgOptions->m_NumAlign[0]);
     qf.Reset(new CObjMgr_QueryFactory(*m_Query));
