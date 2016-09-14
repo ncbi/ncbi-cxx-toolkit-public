@@ -1315,7 +1315,7 @@ bool CGff3Writer::xAssignFeatureType(
         "guide_RNA"
         "hammerhead_ribozyme",
         "lncRNA",
-        "miRNA"
+        "miRNA",
         "piRNA",
         "rasiRNA",
         "ribozyme",
