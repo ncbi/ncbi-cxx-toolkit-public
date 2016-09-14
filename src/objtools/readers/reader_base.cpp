@@ -438,29 +438,7 @@ void CReaderBase::xAssignTrackData(
     if (!m_AnnotTitle.empty()) {
         annot->SetTitleDesc(m_AnnotTitle);
     }
-    if (!m_pTrackDefaults->ContainsData()) {
-        return;
-    }
-    CAnnot_descr& desc = annot->SetDesc();
-    CRef<CUser_object> trackdata( new CUser_object() );
-    trackdata->SetType().SetStr( "Track Data" );
-   
-    if ( !m_pTrackDefaults->Description().empty() ) {
-        annot->SetTitleDesc(m_pTrackDefaults->Description());
-    }
-    if ( !m_pTrackDefaults->Name().empty() ) {
-        annot->SetNameDesc(m_pTrackDefaults->Name());
-    }
-    map<const string,string>::const_iterator cit = m_pTrackDefaults->Values().begin();
-    while ( cit != m_pTrackDefaults->Values().end() ) {
-        trackdata->AddField( cit->first, cit->second );
-        ++cit;
-    }
-    if ( trackdata->CanGetData() && ! trackdata->GetData().empty() ) {
-        CRef<CAnnotdesc> user( new CAnnotdesc() );
-        user->SetUser( *trackdata );
-        desc.Set().push_back( user );
-    }
+    m_pTrackDefaults->WriteToAnnot(*annot);
 }
 
 //  ----------------------------------------------------------------------------
@@ -488,17 +466,6 @@ bool CReaderBase::xParseBrowserLine(
 }
 
 //  ----------------------------------------------------------------------------
-void CReaderBase::xSetTrackData(
-    CRef<CSeq_annot>& annot,
-    CRef<CUser_object>& trackdata,
-    const string& strKey,
-    const string& strValue )
-//  ----------------------------------------------------------------------------
-{
-    trackdata->AddField( strKey, strValue );
-}
-
-//  ----------------------------------------------------------------------------
 bool CReaderBase::xParseComment(
     const CTempString& record,
     CRef<CSeq_annot>& annot ) /* throws CObjReaderLineException */
@@ -510,6 +477,14 @@ bool CReaderBase::xParseComment(
     return false;
 }
  
+//  ----------------------------------------------------------------------------
+void CReaderBase::xPostProcessAnnot(
+    CRef<CSeq_annot>& annot,
+    ILineErrorListener *pMessageListener)
+//  ----------------------------------------------------------------------------
+{
+}
+
 //  ----------------------------------------------------------------------------
 void CReaderBase::xAddConversionInfo(
     CRef<CSeq_annot >& annot,

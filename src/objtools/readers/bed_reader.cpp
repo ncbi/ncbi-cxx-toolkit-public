@@ -106,6 +106,7 @@ CBedReader::CBedReader(
     CReaderBase(flags, annotName, annotTitle),
     m_currentId(""),
     m_columncount(0),
+    m_CurrentFeatureCount(0),
     m_usescore(false),
     m_CurBatchSize(0),
     m_MaxBatchSize(10000)
@@ -147,9 +148,11 @@ CBedReader::ReadSeqAnnot(
     annot->SetDesc(*desc);
     CSeq_annot::C_Data::TFtable& tbl = annot->SetData().SetFtable();
 
+    m_CurrentFeatureCount = 0;
     string line;
-    int featureCount = 0;
     while (xGetLine(lr, line)) {
+
+        // interact with calling party
         if (IsCanceled()) {
             AutoPtr<CObjReaderLineException> pErr(
                 CObjReaderLineException::Create(
@@ -161,51 +164,39 @@ CBedReader::ReadSeqAnnot(
             return CRef<CSeq_annot>();
         }
         xReportProgress(pEC);
-        if (xIsTrackLine(line)  &&  featureCount) {
+
+        if (xIsTrackLine(line)) {
+            if (!m_CurrentFeatureCount) {
+                xParseTrackLine(line, pEC);
+                continue;
+            }
             xUngetLine(lr);
             break;
         }
         if (xParseBrowserLine(line, annot, pEC)) {
             continue;
         }
-        if (xParseTrackLine(line, pEC)) {
-            continue;
-        }
-
-	    CTempString record_copy = NStr::TruncateSpaces_Unsafe(line);
-
-        //  parse
-        vector<string> fields;
-        NStr::Split( record_copy, " \t", fields, NStr::eMergeDelims );
-        try {
-            xCleanColumnValues(fields);
-        }
-        catch(CObjReaderLineException& err) {
-            ProcessError(err, pEC);
-            continue;
-        }
-        if (xParseFeature(fields, annot, featureCount, pEC)) {
-            ++featureCount;
+        if (xParseFeature(line, annot, pEC)) {
             continue;
         }
     }
     //  Only return a valid object if there was at least one feature
-    if (0 == featureCount) {
+    if (0 == m_CurrentFeatureCount) {
         return CRef<CSeq_annot>();
     }
-    xAddConversionInfo(annot, pEC);
-    xAssignTrackData( annot );
-
-    if(m_columncount >= 3) {
-        CRef<CUser_object> columnCountUser( new CUser_object() );
-        columnCountUser->SetType().SetStr( "NCBI_BED_COLUMN_COUNT" );
-        columnCountUser->AddField("NCBI_BED_COLUMN_COUNT", int ( m_columncount ) );
-    
-        CRef<CAnnotdesc> userDesc( new CAnnotdesc() );
-        userDesc->SetUser().Assign( *columnCountUser );
-        annot->SetDesc().Set().push_back( userDesc );
-    }
+    xPostProcessAnnot(annot, pEC);
     return annot;
+}
+
+//  ----------------------------------------------------------------------------
+void CBedReader::xPostProcessAnnot(
+    CRef<CSeq_annot>& annot,
+    ILineErrorListener *pEC)
+//  ----------------------------------------------------------------------------
+{
+    xAddConversionInfo(annot, pEC);
+    xAssignTrackData(annot);
+    xAssignBedColumnCount(*annot);
 }
 
 //  ----------------------------------------------------------------------------                
@@ -272,10 +263,36 @@ CBedReader::x_AppendAnnot(
 }    
     
 //  ----------------------------------------------------------------------------
+bool
+CBedReader::xParseFeature(
+    const string& line,
+    CRef<CSeq_annot>& pAnnot,
+    ILineErrorListener* pEC)
+//  ----------------------------------------------------------------------------
+{
+	CTempString record_copy = NStr::TruncateSpaces_Unsafe(line);
+
+    //  parse
+    vector<string> fields;
+    NStr::Split( record_copy, " \t", fields, NStr::eMergeDelims );
+    try {
+        xCleanColumnValues(fields);
+    }
+    catch(CObjReaderLineException& err) {
+        ProcessError(err, pEC);
+        return false;
+    }
+    if (xParseFeature(fields, pAnnot, pEC)) {
+        ++m_CurrentFeatureCount;
+        return false;
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
 bool CBedReader::xParseFeature(
     const vector<string>& fields,
     CRef<CSeq_annot>& annot,
-    unsigned int featureCount,
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
@@ -298,10 +315,10 @@ bool CBedReader::xParseFeature(
     }
 
     if (m_iFlags & CBedReader::fThreeFeatFormat) {
-        return xParseFeatureThreeFeatFormat(fields, annot, 3*featureCount, pEC);
+        return xParseFeatureThreeFeatFormat(fields, annot, pEC);
     }
     else if (m_iFlags & CBedReader::fDirectedFeatureModel) {
-        return xParseFeatureGeneModelFormat(fields, annot, 3*featureCount, pEC);
+        return xParseFeatureGeneModelFormat(fields, annot, pEC);
     }
     else {
         return xParseFeatureUserFormat(fields, annot, pEC);
@@ -312,10 +329,11 @@ bool CBedReader::xParseFeature(
 bool CBedReader::xParseFeatureThreeFeatFormat(
     const vector<string>& fields,
     CRef<CSeq_annot>& annot,
-    unsigned int baseId,
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
+     unsigned int baseId = 3*m_CurrentFeatureCount;
+
     if (!xAppendFeatureChrom(fields, annot, baseId, pEC)) {
         return false;
     }
@@ -334,11 +352,12 @@ bool CBedReader::xParseFeatureThreeFeatFormat(
 bool CBedReader::xParseFeatureGeneModelFormat(
     const vector<string>& fields,
     CRef<CSeq_annot>& annot,
-    unsigned int baseId,
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
-    if (!xAppendFeatureGene(fields, annot, baseId, pEC)) {
+     unsigned int baseId = 3*m_CurrentFeatureCount;
+
+   if (!xAppendFeatureGene(fields, annot, baseId, pEC)) {
         return false;
     }
     if (xContainsCdsFeature(fields)  &&  
@@ -1432,40 +1451,6 @@ void CBedReader::x_SetFeatureLocation(
 }
 
 //  ----------------------------------------------------------------------------
-void CBedReader::xSetTrackData(
-    CRef<CSeq_annot>& annot,
-    CRef<CUser_object>& trackdata,
-    const string& strKey,
-    const string& strValue)
-//  ----------------------------------------------------------------------------
-{
-    CAnnot_descr& desc = annot->SetDesc();
-
-    if (strKey == "useScore") {
-        m_usescore = (1 == NStr::StringToInt(strValue));
-        trackdata->AddField( strKey, NStr::StringToInt(strValue));
-        return;
-    }
-    if (strKey == "name") {
-        CRef<CAnnotdesc> name(new CAnnotdesc());
-        name->SetName(strValue);
-        desc.Set().push_back(name);
-        return;
-    }
-    if (strKey == "description") {
-        CRef<CAnnotdesc> title(new CAnnotdesc());
-        title->SetTitle(strValue);
-        desc.Set().push_back(title);
-        return;
-    }
-    if (strKey == "visibility") {
-        trackdata->AddField(strKey, NStr::StringToInt(strValue));
-        return;
-    }
-    CReaderBase::xSetTrackData(annot, trackdata, strKey, strValue);
-}
-
-//  ----------------------------------------------------------------------------
 bool 
 CBedReader::ReadTrackData(
     ILineReader& lr,
@@ -1754,6 +1739,24 @@ CBedReader::xCleanColumnValues(
         pErr->Throw();
     }
 }
+
+//  ----------------------------------------------------------------------------
+void 
+CBedReader::xAssignBedColumnCount(
+    CSeq_annot& annot)
+//  ----------------------------------------------------------------------------
+{
+    if(m_columncount < 3) {
+        return;
+    }
+    CRef<CUser_object> columnCountUser( new CUser_object() );
+    columnCountUser->SetType().SetStr( "NCBI_BED_COLUMN_COUNT" );
+    columnCountUser->AddField("NCBI_BED_COLUMN_COUNT", int ( m_columncount ) );
+    
+    CRef<CAnnotdesc> userDesc( new CAnnotdesc() );
+    userDesc->SetUser().Assign( *columnCountUser );
+    annot.SetDesc().Set().push_back( userDesc );
+}                   
 
 END_objects_SCOPE
 END_NCBI_SCOPE

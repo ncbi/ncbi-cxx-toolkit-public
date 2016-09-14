@@ -210,11 +210,15 @@ protected:
     virtual bool xParseTrackLine(
         const string&,
         ILineErrorListener*);
-        
+  
+    bool xParseFeature(
+        const string&,
+        CRef<CSeq_annot>&,
+        ILineErrorListener*);
+      
     bool xParseFeature(
         const vector<string>&,
         CRef<CSeq_annot>&,
-        unsigned int,
         ILineErrorListener*);
 
     bool xParseFeatureUserFormat(
@@ -225,7 +229,6 @@ protected:
     bool xParseFeatureThreeFeatFormat(
         const vector<string>&,
         CRef<CSeq_annot>&,
-        unsigned int,
         ILineErrorListener*);
 
     bool xAppendFeatureChrom(
@@ -249,7 +252,6 @@ protected:
     bool xParseFeatureGeneModelFormat(
         const vector<string>&,
         CRef<CSeq_annot>&,
-        unsigned int,
         ILineErrorListener*);
 
     bool xAppendFeatureGene(
@@ -365,15 +367,16 @@ protected:
     ENa_strand xGetStrand(
         const vector<string>&) const;
 
+    virtual void xAssignBedColumnCount(
+        CSeq_annot&);
+                    
     void x_SetFeatureDisplayData(
         CRef<CSeq_feat>&,
         const vector<string>&);
 
-    virtual void xSetTrackData(
+    virtual void xPostProcessAnnot(
         CRef<CSeq_annot>&,
-        CRef<CUser_object>&,
-        const string&,
-        const string&);
+        ILineErrorListener*);
 
     CRef< CSeq_annot > x_AppendAnnot(
         vector< CRef< CSeq_annot > >& );
@@ -400,6 +403,7 @@ protected:
     string m_currentId;
 
     vector<string>::size_type m_columncount;
+    unsigned int m_CurrentFeatureCount;
     bool m_usescore;
     unsigned int m_CurBatchSize;
     const unsigned int m_MaxBatchSize;

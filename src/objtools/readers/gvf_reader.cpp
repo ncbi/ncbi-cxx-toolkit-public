@@ -89,6 +89,7 @@
 
 #include <objtools/readers/read_util.hpp>
 #include <objtools/readers/reader_exception.hpp>
+#include <objtools/readers/track_data.hpp>
 #include <objtools/readers/line_error.hpp>
 #include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/gff3_sofa.hpp>
@@ -227,25 +228,37 @@ CGvfReader::~CGvfReader()
 }
 
 //  ----------------------------------------------------------------------------
-bool CGvfReader::x_ParseFeatureGff(
-    const string& strLine,
-    TAnnots& annots,
-    ILineErrorListener* pMessageListener)
+bool
+CGvfReader::xParseFeature(
+    const string& line,
+    CRef<CSeq_annot>& pAnnot,
+    ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
-    //
-    //  Parse the record and determine which ID the given feature will pertain 
-    //  to:
-    //
     CGvfReadRecord record(m_uLineNumber);
-    if ( ! record.AssignFromGff( strLine ) ) {
+    if (!record.AssignFromGff(line)) {
         return false;
     }
+    if (!x_MergeRecord(record, pAnnot, pEC)) {
+        return false;
+    }
+    ++mCurrentFeatureCount;
+    return true;
+}
 
-    CRef<CSeq_annot> pAnnot = x_GetAnnotById( annots, record.Id() );
-    return x_MergeRecord( record, pAnnot, pMessageListener );
-//    return x_UpdateAnnot( record, pAnnot ); 
-};
+//  ----------------------------------------------------------------------------
+void CGvfReader::xPostProcessAnnot(
+    CRef<CSeq_annot>& pAnnot,
+    ILineErrorListener *pEC)
+//  ----------------------------------------------------------------------------
+{
+    xAddConversionInfo(pAnnot, pEC);
+    xAssignTrackData(pAnnot);
+    xAssignAnnotId(pAnnot);
+    if (m_Pragmas) {
+        pAnnot->SetDesc().Set().push_back(m_Pragmas);
+    }
+}
 
 //  ----------------------------------------------------------------------------
 CRef<CSeq_annot> CGvfReader::x_GetAnnotById(
@@ -283,8 +296,8 @@ CRef<CSeq_annot> CGvfReader::x_GetAnnotById(
     }
 
     // if available, add current track information
-    if ( m_CurrentTrackInfo ) {
-        pNewAnnot->SetDesc().Set().push_back( m_CurrentTrackInfo );
+    if (m_pTrackDefaults->ContainsData()) {
+        xAssignTrackData(pNewAnnot);
     }
 
     if ( !m_AnnotName.empty() ) {
@@ -849,12 +862,11 @@ bool CGvfReader::x_FeatureSetVariation(
 }
   
 //  ----------------------------------------------------------------------------
-bool CGvfReader::x_ParseStructuredCommentGff(
-    const string& strLine,
-    CRef< CAnnotdesc >& pAnnotDesc )
+bool CGvfReader::xParseStructuredComment(
+    const string& strLine)
 //  ----------------------------------------------------------------------------
 {
-    if ( !CGff2Reader::x_ParseStructuredCommentGff( strLine, pAnnotDesc ) ) {
+    if ( !CGff2Reader::xParseStructuredComment( strLine) ) {
         return false;
     }
     if ( ! m_Pragmas ) {

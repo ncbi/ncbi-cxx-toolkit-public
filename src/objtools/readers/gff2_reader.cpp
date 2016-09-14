@@ -135,7 +135,9 @@ CGff2Reader::CGff2Reader(
     const string& title):
 //  ----------------------------------------------------------------------------
     CReaderBase(iFlags, name, title),
-    m_pErrors(0)
+    m_pErrors(0),
+    mCurrentFeatureCount(0),
+    mParsingAlignment(false)
 {
 }
 
@@ -180,21 +182,22 @@ CGff2Reader::ReadSeqAnnots(
     }
 }
 
-//  ---------------------------------------------------------------------------                       
-void
-CGff2Reader::ReadSeqAnnotsNew(
-    TAnnots& annots,
+//  ----------------------------------------------------------------------------                
+CRef<CSeq_annot>
+CGff2Reader::ReadSeqAnnot(
     ILineReader& lr,
-    ILineErrorListener* pEC )
-//  ----------------------------------------------------------------------------
+    ILineErrorListener* pEC ) 
+//  ----------------------------------------------------------------------------                
 {
+    CRef<CSeq_annot> pAnnot;
+    pAnnot.Reset(new CSeq_annot);
 
-
-    multimap<string, CRef<CSeq_align>> alignments;
-    list<string> id_list;
+    mCurrentFeatureCount = 0;
+    mParsingAlignment = false;
 
     string line;
     while (xGetLine(lr, line)) {
+
         if (IsCanceled()) {
             AutoPtr<CObjReaderLineException> pErr(
                 CObjReaderLineException::Create(
@@ -203,51 +206,58 @@ CGff2Reader::ReadSeqAnnotsNew(
                 "Reader stopped by user.",
                 ILineError::eProblem_ProgressInfo));
             ProcessError(*pErr, pEC);
-            annots.clear();
-            return;
+            return pAnnot;
         }
         xReportProgress(pEC);
-
-        try {
-            if ( x_ParseStructuredCommentGff( line, m_CurrentTrackInfo ) ) {
-                continue;
-            }
-            if ( x_ParseBrowserLineGff( line, m_CurrentBrowserInfo ) ) {
-                continue;
-            }
-            if ( x_ParseTrackLineGff( line, m_CurrentTrackInfo ) ) {
-                continue;
-            }
-
-            if ( CGff2Reader::IsAlignmentData(line) && 
-                 x_ParseAlignmentGff(line, id_list, alignments) ) {
-                continue;
-            } 
-
-            if ( ! x_ParseDataGff(line, annots, pEC) ) {
-                continue;
-            }
+        if ( xParseStructuredComment(line) ) {
+            continue;
         }
-        catch( CObjReaderLineException& err ) {
-            err.SetLineNumber( m_uLineNumber );
-            ProcessError(err, pEC);
+        if (xIsTrackLine(line)) {
+            if (!mCurrentFeatureCount) {
+                xParseTrackLine(line, pEC);
+                continue;
+            }
+            xUngetLine(lr);
+            break;
         }
-    }
-
-    if (!alignments.empty()) {
-        x_ProcessAlignmentsGff(id_list, alignments, annots);
-    }
-
-
-    for (TAnnots::iterator it = annots.begin(); it != annots.end(); ++it) {
-        try {
-            xAnnotPostProcess(*it);
+        if (xParseBrowserLine(line, pAnnot, pEC)) {
+            continue;
         }
-        catch(CObjReaderLineException& err) {
-            err.SetLineNumber(m_uLineNumber);
-            ProcessError(err, pEC);
+
+        if (!xIsCurrentDataType(line)) {
+            break;
+        }
+        if (xParseFeature(line, pAnnot, pEC)) {
+            continue;
+        }
+        if (xParseAlignment(line, pAnnot, pEC)) {
+            continue;
         }
     }
+
+    if (!mCurrentFeatureCount) {
+        return CRef<CSeq_annot>();
+    }
+    xPostProcessAnnot(pAnnot, pEC);
+    return pAnnot;
+}
+
+//  ---------------------------------------------------------------------------                       
+void
+CGff2Reader::ReadSeqAnnotsNew(
+    TAnnots& annots,
+    ILineReader& lr,
+    ILineErrorListener* pEC )
+//  ----------------------------------------------------------------------------
+{
+    xProgressInit(lr);
+
+    CRef<CSeq_annot> pAnnot = ReadSeqAnnot(lr, pEC);
+    while (pAnnot) {
+        annots.push_back(pAnnot);
+        pAnnot = ReadSeqAnnot(lr, pEC);
+    }
+    return;
 }
 
 //  ----------------------------------------------------------------------------                
@@ -294,6 +304,52 @@ CGff2Reader::ReadObject(
 }
  
 //  ----------------------------------------------------------------------------
+void CGff2Reader::xPostProcessAnnot(
+    CRef<CSeq_annot>& pAnnot,
+    ILineErrorListener *pEC)
+//  ----------------------------------------------------------------------------
+{
+    xAddConversionInfo(pAnnot, pEC);
+    xAssignTrackData(pAnnot);
+    xAssignAnnotId(pAnnot);
+    xGenerateParentChildXrefs(pAnnot);
+}
+
+//  ----------------------------------------------------------------------------
+void CGff2Reader::xAssignAnnotId(
+    CRef<CSeq_annot>& pAnnot,
+    const string& givenId)
+//  ----------------------------------------------------------------------------
+{
+    string annotId(givenId);
+    if (annotId.empty()  &&  pAnnot->GetData().IsFtable()) {
+        const CSeq_annot::TData::TFtable ftable = pAnnot->GetData().GetFtable();
+        if (ftable.empty()) {
+            return;
+        }
+        const CSeq_feat& front = *ftable.front();
+        annotId = front.GetLocation().GetId()->GetSeqIdString(true);
+    }
+    if (annotId.empty()  &&  pAnnot->GetData().IsAlign()) {
+        const CSeq_annot::TData::TAlign align = pAnnot->GetData().GetAlign();
+        if (align.empty()) {
+            return;
+        }
+        try {
+            const CSeq_align& front = *align.front();
+            annotId = front.GetSegs().GetDenseg().GetIds().back()->
+                GetSeqIdString(true);
+        }
+        catch(exception&) {
+            return;
+        }
+    }
+    CRef< CAnnot_id > pAnnotId(new CAnnot_id);
+    pAnnotId->SetLocal().SetStr(annotId);
+    pAnnot->SetId().push_back(pAnnotId);   
+}
+
+//  ----------------------------------------------------------------------------
 void CGff2Reader::x_SetTrackDataToSeqEntry(
     CRef<CSeq_entry>& entry,
     CRef<CUser_object>& trackdata,
@@ -319,9 +375,8 @@ void CGff2Reader::x_SetTrackDataToSeqEntry(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2Reader::x_ParseStructuredCommentGff(
-    const string& strLine,
-    CRef< CAnnotdesc >& )
+bool CGff2Reader::xParseStructuredComment(
+    const string& strLine)
 //  ----------------------------------------------------------------------------
 {
     if ( ! NStr::StartsWith( strLine, "##" ) ) {
@@ -341,9 +396,104 @@ bool CGff2Reader::x_ParseDataGff(
         if (m_iFlags&fGenbankMode) {
             return true;
         }
-        return x_ParseAlignmentGff(strLine, annots);
+        //return x_ParseAlignmentGff(strLine, annots);
+        return true;
     }
     return x_ParseFeatureGff(strLine, annots, pEC);
+}
+
+//  ----------------------------------------------------------------------------
+bool
+CGff2Reader::xParseFeature(
+    const string& line,
+    CRef<CSeq_annot>& pAnnot,
+    ILineErrorListener* pEC)
+//  ----------------------------------------------------------------------------
+{
+    if (CGff2Reader::IsAlignmentData(line)) {
+        return false;
+    }
+
+    //parse record:
+    auto_ptr<CGff2Record> pRecord(x_CreateRecord());
+    try {
+        if (!pRecord->AssignFromGff(line)) {
+			return false;
+		}
+    }
+    catch(CObjReaderLineException& err) {
+        ProcessError(err, pEC);
+        return false;
+    }
+
+    //make sure we are interested:
+    string ftype = pRecord->Type();
+    if (xIsIgnoredFeatureType(ftype)) {
+        string message = string("GFF3 feature type \"") + ftype + 
+            string("\" not supported- ignored.");
+        AutoPtr<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
+            eDiag_Warning,
+            0,
+            message,
+            ILineError::eProblem_FeatureNameNotAllowed));
+        ProcessError(*pErr, pEC);
+        return true;
+    }
+
+    //append feature to annot:
+    if (!x_UpdateAnnotFeature(*pRecord, pAnnot, pEC)) {
+        return false;
+    }
+
+    ++mCurrentFeatureCount;
+    mParsingAlignment = false;
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool
+CGff2Reader::xParseAlignment(
+    const string& line,
+    CRef<CSeq_annot>& pAnnot,
+    ILineErrorListener* pEC)
+//  ----------------------------------------------------------------------------
+{
+    if (!CGff2Reader::IsAlignmentData(line)) {
+        return false;
+    }
+
+    //parse record:
+    auto_ptr<CGff2Record> pRecord(x_CreateRecord());
+    try {
+        if ( ! pRecord->AssignFromGff(line) ) {
+            return false;
+        }
+    }
+    catch(CObjReaderLineException& err) {
+        ProcessError(err, pEC);
+        return false;
+    }
+
+    if (!x_UpdateAnnotAlignment(*pRecord, pAnnot, pEC)) {
+        return false;
+    }
+
+    ++mCurrentFeatureCount;
+    mParsingAlignment = true;
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool
+CGff2Reader::xIsCurrentDataType(
+    const string& line)
+//  ----------------------------------------------------------------------------
+{
+    if (CGff2Reader::IsAlignmentData(line)) {
+        return (mParsingAlignment  ||  !mCurrentFeatureCount);
+    }
+    return (!mParsingAlignment  ||  !mCurrentFeatureCount);
 }
 
 //  ----------------------------------------------------------------------------
@@ -494,8 +644,8 @@ void CGff2Reader::x_ProcessAlignmentsGff(const list<string>& id_list,
             }
 
             // if available, add current track information
-            if ( m_CurrentTrackInfo ) {
-                pAnnot->SetDesc().Set().push_back( m_CurrentTrackInfo );
+            if (m_pTrackDefaults->ContainsData()) {
+                m_pTrackDefaults->WriteToAnnot(*pAnnot);
             }
 
             if ( !m_AnnotName.empty() ) {
@@ -667,8 +817,8 @@ bool CGff2Reader::x_InitAnnot(
     }
 
     // if available, add current track information
-    if ( m_CurrentTrackInfo ) {
-        pAnnot->SetDesc().Set().push_back( m_CurrentTrackInfo );
+    if (m_pTrackDefaults->ContainsData() ) {
+        m_pTrackDefaults->WriteToAnnot(*pAnnot);
     }
 
     if ( !m_AnnotName.empty() ) {
@@ -749,7 +899,8 @@ bool CGff2Reader::x_CreateAlignment(
 //  ----------------------------------------------------------------------------
 bool CGff2Reader::x_UpdateAnnotAlignment(
     const CGff2Record& gff,
-    CRef< CSeq_annot > pAnnot )
+    CRef< CSeq_annot > pAnnot,
+    ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     CRef<CSeq_align> pAlign( new CSeq_align );

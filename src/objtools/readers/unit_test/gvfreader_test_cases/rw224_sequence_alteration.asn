@@ -1,122 +1,5 @@
 Seq-annot ::= {
   id {
-    local str "NC_000010.10"
-  },
-  desc {
-    user {
-      type str "gvf-import-pragmas",
-      data {
-        {
-          label str "gff-version",
-          data str "3"
-        },
-        {
-          label str "gvf-version",
-          data str "1.07"
-        },
-        {
-          label str "species",
-          data str "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?i
-d=9606"
-        },
-        {
-          label str "genome-build",
-          data str "NCBI GRCh37"
-        },
-        {
-          label str "file-date",
-          data str "2016-07-13"
-        }
-      }
-    }
-  },
-  data ftable {
-    {
-      data variation {
-        id {
-          db "dbVar",
-          tag str "4605973"
-        },
-        parent-id {
-          db "dbVar",
-          tag str "esv4748"
-        },
-        name "essv27189",
-        data unknown NULL
-      },
-      location int {
-        from 127513406,
-        to 127513686,
-        strand both,
-        id other {
-          accession "NC_000010",
-          version 10
-        },
-        fuzz-from lim gt,
-        fuzz-to lim lt
-      },
-      ext {
-        type str "GvfAttributes",
-        data {
-          {
-            label str "orig-var-type",
-            data str "sequence_alteration"
-          },
-          {
-            label str "source",
-            data str "dbVar"
-          },
-          {
-            label str "custom-Alias",
-            data str "745"
-          },
-          {
-            label str "custom-Dbxref",
-            data str "URL:www.ncbi.nlm.nih.gov/dbvar/variants/esv4748"
-          },
-          {
-            label str "id",
-            data str "4605973"
-          },
-          {
-            label str "name",
-            data str "essv27189"
-          },
-          {
-            label str "parent",
-            data str "esv4748"
-          },
-          {
-            label str "custom-Reference_seq",
-            data str "~"
-          },
-          {
-            label str "custom-Variant_seq",
-            data str "~,."
-          },
-          {
-            label str "custom-gender",
-            data str "M"
-          },
-          {
-            label str "custom-phenotype",
-            data str "not_reported"
-          },
-          {
-            label str "custom-remapScore",
-            data str "1"
-          },
-          {
-            label str "custom-sample_name",
-            data str "YH"
-          }
-        }
-      }
-    }
-  }
-}
-Seq-annot ::= {
-  id {
     local str "NC_000001.10"
   },
   desc {
@@ -216,6 +99,88 @@ d=9606"
           {
             label str "custom-sample_name",
             data str "Unknown"
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "dbVar",
+          tag str "4605973"
+        },
+        parent-id {
+          db "dbVar",
+          tag str "esv4748"
+        },
+        name "essv27189",
+        data unknown NULL
+      },
+      location int {
+        from 127513406,
+        to 127513686,
+        strand both,
+        id other {
+          accession "NC_000010",
+          version 10
+        },
+        fuzz-from lim gt,
+        fuzz-to lim lt
+      },
+      ext {
+        type str "GvfAttributes",
+        data {
+          {
+            label str "orig-var-type",
+            data str "sequence_alteration"
+          },
+          {
+            label str "source",
+            data str "dbVar"
+          },
+          {
+            label str "custom-Alias",
+            data str "745"
+          },
+          {
+            label str "custom-Dbxref",
+            data str "URL:www.ncbi.nlm.nih.gov/dbvar/variants/esv4748"
+          },
+          {
+            label str "id",
+            data str "4605973"
+          },
+          {
+            label str "name",
+            data str "essv27189"
+          },
+          {
+            label str "parent",
+            data str "esv4748"
+          },
+          {
+            label str "custom-Reference_seq",
+            data str "~"
+          },
+          {
+            label str "custom-Variant_seq",
+            data str "~,."
+          },
+          {
+            label str "custom-gender",
+            data str "M"
+          },
+          {
+            label str "custom-phenotype",
+            data str "not_reported"
+          },
+          {
+            label str "custom-remapScore",
+            data str "1"
+          },
+          {
+            label str "custom-sample_name",
+            data str "YH"
           }
         }
       }

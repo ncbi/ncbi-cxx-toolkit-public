@@ -38,6 +38,7 @@
 #include <util/format_guess.hpp>
 #include <util/line_reader.hpp>
 #include <util/icanceled.hpp>
+#include <objtools/readers/track_data.hpp>
 #include <objtools/readers/line_error.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -261,12 +262,10 @@ protected:
         CAnnot_descr&,
         ILineErrorListener*);
 
-    virtual void xSetTrackData(
+    virtual void xPostProcessAnnot(
         CRef<CSeq_annot>&,
-        CRef<CUser_object>&,
-        const string&,
-        const string&);
-                
+        ILineErrorListener*);
+
     virtual void xAddConversionInfo(
         CRef< CSeq_annot >&,
         ILineErrorListener* );

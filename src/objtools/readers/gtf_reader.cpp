@@ -242,7 +242,7 @@ CGtfReader::ReadSeqAnnots(
             if (x_ParseBrowserLineGff(line, m_CurrentBrowserInfo)) {
                 continue;
             }
-            if (x_ParseTrackLineGff(line, m_CurrentTrackInfo)) {
+            if (xParseTrackLine(line, pEC)) {
                 continue;
             }
             if (x_ParseFeatureGff(line, annots, pEC)) {

@@ -96,12 +96,6 @@ protected:
         CRef<CSeq_feat>&,
         const vector<string>& );
 
-    virtual void xSetTrackData(
-    CRef<CSeq_annot>&,
-        CRef<CUser_object>&,
-        const string&,
-        const string& );
-                
     static void xCleanColumnValues(
         vector<string>&);
 

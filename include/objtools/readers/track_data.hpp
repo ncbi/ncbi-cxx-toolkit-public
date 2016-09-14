@@ -51,6 +51,8 @@ public:
     static bool IsTrackData(
         const LineData& );
     const TrackData& Values() const {return mData;};
+    bool WriteToAnnot(
+        CSeq_annot&);
     bool ContainsData() const {return !mData.empty();};
 
     //convenience accessors

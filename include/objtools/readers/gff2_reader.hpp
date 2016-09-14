@@ -87,6 +87,11 @@ public:
     unsigned int 
     ObjectType() const { return OT_SEQENTRY; };
     
+    virtual CRef< CSeq_annot >
+    ReadSeqAnnot(
+        ILineReader& lr,
+        ILineErrorListener* pErrors=0 );
+
     CRef< CSeq_entry >
     ReadSeqEntry(
         ILineReader&,
@@ -133,10 +138,30 @@ public:
         const string&,
         CRef< CAnnotdesc >& );
                                 
-    virtual bool x_ParseStructuredCommentGff(
-        const string&,
-        CRef< CAnnotdesc >& );
+    virtual bool xParseStructuredComment(
+        const string&);
     
+    virtual bool xParseFeature(
+        const string&,
+        CRef<CSeq_annot>&,
+        ILineErrorListener*);
+      
+    virtual bool xParseAlignment(
+        const string&,
+        CRef<CSeq_annot>&,
+        ILineErrorListener*);
+      
+    virtual bool xIsCurrentDataType(
+        const string&);
+
+    virtual void xPostProcessAnnot(
+        CRef<CSeq_annot>&,
+        ILineErrorListener*);
+
+    virtual void xAssignAnnotId(
+        CRef<CSeq_annot>&,
+        const string& = "");
+
     virtual bool x_ParseDataGff(
         const string&,
         TAnnots&,
@@ -182,7 +207,8 @@ public:
 
     virtual bool x_UpdateAnnotAlignment(
         const CGff2Record&,
-        CRef< CSeq_annot > );
+        CRef< CSeq_annot >,
+        ILineErrorListener* =0);
 
     virtual bool xAddFeatureToAnnot(
         CRef< CSeq_feat >,
@@ -345,9 +371,9 @@ protected:
     //  data:
     //
 protected:
-//    TFlags             m_iFlags;
     ILineErrorListener* m_pErrors;
-    CRef<CAnnotdesc> m_CurrentTrackInfo;
+    unsigned int mCurrentFeatureCount;
+    bool mParsingAlignment;
     CRef<CAnnotdesc> m_CurrentBrowserInfo;
 };
 

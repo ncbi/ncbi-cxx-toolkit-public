@@ -1,345 +1,5 @@
 Seq-annot ::= {
   id {
-    local str "NC_000018.9"
-  },
-  desc {
-    user {
-      type str "gvf-import-pragmas",
-      data {
-        {
-          label str "gff-version",
-          data str "3"
-        },
-        {
-          label str "gvf-version",
-          data str "1.07"
-        },
-        {
-          label str "species",
-          data str "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?i
-d=9606"
-        },
-        {
-          label str "genome-build",
-          data str "NCBI GRCh37"
-        },
-        {
-          label str "file-date",
-          data str "2016-07-13"
-        }
-      }
-    }
-  },
-  data ftable {
-    {
-      data variation {
-        id {
-          db "dbVar",
-          tag str "13538417"
-        },
-        parent-id {
-          db "dbVar",
-          tag str "nsv1068099"
-        },
-        name "nssv3762047",
-        data instance {
-          type translocation,
-          delta {
-            {
-              action del-at
-            },
-            {
-              seq loc null NULL
-            }
-          }
-        }
-      },
-      location pnt {
-        point 34178040,
-        strand both,
-        id other {
-          accession "NC_000018",
-          version 9
-        }
-      },
-      ext {
-        type str "GvfAttributes",
-        data {
-          {
-            label str "orig-var-type",
-            data str "interchromosomal_translocation"
-          },
-          {
-            label str "source",
-            data str "dbVar"
-          },
-          {
-            label str "custom-Alias",
-            data str "10652"
-          },
-          {
-            label str "custom-Dbxref",
-            data str "URL:www.ncbi.nlm.nih.gov/dbvar/variants/nsv1068099"
-          },
-          {
-            label str "id",
-            data str "13538417"
-          },
-          {
-            label str "name",
-            data str "nssv3762047"
-          },
-          {
-            label str "parent",
-            data str "nsv1068099"
-          },
-          {
-            label str "custom-Reference_seq",
-            data str "-"
-          },
-          {
-            label str "custom-Variant_seq",
-            data str "-"
-          },
-          {
-            label str "custom-gender",
-            data str "M"
-          },
-          {
-            label str "custom-phenotype",
-            data str "not_reported"
-          },
-          {
-            label str "custom-sample_name",
-            data str "KWP1"
-          }
-        }
-      }
-    }
-  }
-}
-Seq-annot ::= {
-  id {
-    local str "NC_000012.11"
-  },
-  desc {
-    user {
-      type str "gvf-import-pragmas",
-      data {
-        {
-          label str "gff-version",
-          data str "3"
-        },
-        {
-          label str "gvf-version",
-          data str "1.07"
-        },
-        {
-          label str "species",
-          data str "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?i
-d=9606"
-        },
-        {
-          label str "genome-build",
-          data str "NCBI GRCh37"
-        },
-        {
-          label str "file-date",
-          data str "2016-07-13"
-        }
-      }
-    }
-  },
-  data ftable {
-    {
-      data variation {
-        id {
-          db "dbVar",
-          tag str "13538418"
-        },
-        parent-id {
-          db "dbVar",
-          tag str "nsv1068099"
-        },
-        name "nssv3762047",
-        data instance {
-          type translocation,
-          delta {
-            {
-              action del-at
-            },
-            {
-              seq loc null NULL
-            }
-          }
-        }
-      },
-      location pnt {
-        point 30273006,
-        strand both,
-        id other {
-          accession "NC_000012",
-          version 11
-        }
-      },
-      ext {
-        type str "GvfAttributes",
-        data {
-          {
-            label str "orig-var-type",
-            data str "interchromosomal_translocation"
-          },
-          {
-            label str "source",
-            data str "dbVar"
-          },
-          {
-            label str "custom-Alias",
-            data str "10652"
-          },
-          {
-            label str "custom-Dbxref",
-            data str "URL:www.ncbi.nlm.nih.gov/dbvar/variants/nsv1068099"
-          },
-          {
-            label str "id",
-            data str "13538418"
-          },
-          {
-            label str "name",
-            data str "nssv3762047"
-          },
-          {
-            label str "parent",
-            data str "nsv1068099"
-          },
-          {
-            label str "custom-Reference_seq",
-            data str "-"
-          },
-          {
-            label str "custom-Variant_seq",
-            data str "-"
-          },
-          {
-            label str "custom-gender",
-            data str "M"
-          },
-          {
-            label str "custom-phenotype",
-            data str "not_reported"
-          },
-          {
-            label str "custom-sample_name",
-            data str "KWP1"
-          }
-        }
-      }
-    }
-  }
-}
-Seq-annot ::= {
-  id {
-    local str "NC_000010.10"
-  },
-  desc {
-    user {
-      type str "gvf-import-pragmas",
-      data {
-        {
-          label str "gff-version",
-          data str "3"
-        },
-        {
-          label str "gvf-version",
-          data str "1.07"
-        },
-        {
-          label str "species",
-          data str "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?i
-d=9606"
-        },
-        {
-          label str "genome-build",
-          data str "NCBI GRCh37"
-        },
-        {
-          label str "file-date",
-          data str "2016-07-13"
-        }
-      }
-    }
-  },
-  data ftable {
-    {
-      data variation {
-        id {
-          db "dbVar",
-          tag str "11"
-        },
-        name "nsv1067937",
-        data instance {
-          type translocation,
-          delta {
-            {
-              action del-at
-            },
-            {
-              seq loc null NULL
-            }
-          }
-        }
-      },
-      location pnt {
-        point 20835052,
-        strand both,
-        id other {
-          accession "NC_000010",
-          version 10
-        }
-      },
-      ext {
-        type str "GvfAttributes",
-        data {
-          {
-            label str "orig-var-type",
-            data str "translocation"
-          },
-          {
-            label str "source",
-            data str "dbVar"
-          },
-          {
-            label str "custom-Alias",
-            data str "10048"
-          },
-          {
-            label str "custom-Dbxref",
-            data str "URL:www.ncbi.nlm.nih.gov/dbvar/variants/nsv1067937"
-          },
-          {
-            label str "id",
-            data str "11"
-          },
-          {
-            label str "name",
-            data str "nsv1067937"
-          },
-          {
-            label str "custom-Reference_seq",
-            data str "-"
-          },
-          {
-            label str "custom-Variant_seq",
-            data str "-"
-          }
-        }
-      }
-    }
-  }
-}
-Seq-annot ::= {
-  id {
     local str "NC_000001.10"
   },
   desc {
@@ -517,6 +177,241 @@ d=9606"
           {
             label str "parent",
             data str "nsv1068006"
+          },
+          {
+            label str "custom-Reference_seq",
+            data str "-"
+          },
+          {
+            label str "custom-Variant_seq",
+            data str "-"
+          },
+          {
+            label str "custom-gender",
+            data str "M"
+          },
+          {
+            label str "custom-phenotype",
+            data str "not_reported"
+          },
+          {
+            label str "custom-sample_name",
+            data str "KWP1"
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "dbVar",
+          tag str "11"
+        },
+        name "nsv1067937",
+        data instance {
+          type translocation,
+          delta {
+            {
+              action del-at
+            },
+            {
+              seq loc null NULL
+            }
+          }
+        }
+      },
+      location pnt {
+        point 20835052,
+        strand both,
+        id other {
+          accession "NC_000010",
+          version 10
+        }
+      },
+      ext {
+        type str "GvfAttributes",
+        data {
+          {
+            label str "orig-var-type",
+            data str "translocation"
+          },
+          {
+            label str "source",
+            data str "dbVar"
+          },
+          {
+            label str "custom-Alias",
+            data str "10048"
+          },
+          {
+            label str "custom-Dbxref",
+            data str "URL:www.ncbi.nlm.nih.gov/dbvar/variants/nsv1067937"
+          },
+          {
+            label str "id",
+            data str "11"
+          },
+          {
+            label str "name",
+            data str "nsv1067937"
+          },
+          {
+            label str "custom-Reference_seq",
+            data str "-"
+          },
+          {
+            label str "custom-Variant_seq",
+            data str "-"
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "dbVar",
+          tag str "13538418"
+        },
+        parent-id {
+          db "dbVar",
+          tag str "nsv1068099"
+        },
+        name "nssv3762047",
+        data instance {
+          type translocation,
+          delta {
+            {
+              action del-at
+            },
+            {
+              seq loc null NULL
+            }
+          }
+        }
+      },
+      location pnt {
+        point 30273006,
+        strand both,
+        id other {
+          accession "NC_000012",
+          version 11
+        }
+      },
+      ext {
+        type str "GvfAttributes",
+        data {
+          {
+            label str "orig-var-type",
+            data str "interchromosomal_translocation"
+          },
+          {
+            label str "source",
+            data str "dbVar"
+          },
+          {
+            label str "custom-Alias",
+            data str "10652"
+          },
+          {
+            label str "custom-Dbxref",
+            data str "URL:www.ncbi.nlm.nih.gov/dbvar/variants/nsv1068099"
+          },
+          {
+            label str "id",
+            data str "13538418"
+          },
+          {
+            label str "name",
+            data str "nssv3762047"
+          },
+          {
+            label str "parent",
+            data str "nsv1068099"
+          },
+          {
+            label str "custom-Reference_seq",
+            data str "-"
+          },
+          {
+            label str "custom-Variant_seq",
+            data str "-"
+          },
+          {
+            label str "custom-gender",
+            data str "M"
+          },
+          {
+            label str "custom-phenotype",
+            data str "not_reported"
+          },
+          {
+            label str "custom-sample_name",
+            data str "KWP1"
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "dbVar",
+          tag str "13538417"
+        },
+        parent-id {
+          db "dbVar",
+          tag str "nsv1068099"
+        },
+        name "nssv3762047",
+        data instance {
+          type translocation,
+          delta {
+            {
+              action del-at
+            },
+            {
+              seq loc null NULL
+            }
+          }
+        }
+      },
+      location pnt {
+        point 34178040,
+        strand both,
+        id other {
+          accession "NC_000018",
+          version 9
+        }
+      },
+      ext {
+        type str "GvfAttributes",
+        data {
+          {
+            label str "orig-var-type",
+            data str "interchromosomal_translocation"
+          },
+          {
+            label str "source",
+            data str "dbVar"
+          },
+          {
+            label str "custom-Alias",
+            data str "10652"
+          },
+          {
+            label str "custom-Dbxref",
+            data str "URL:www.ncbi.nlm.nih.gov/dbvar/variants/nsv1068099"
+          },
+          {
+            label str "id",
+            data str "13538417"
+          },
+          {
+            label str "name",
+            data str "nssv3762047"
+          },
+          {
+            label str "parent",
+            data str "nsv1068099"
           },
           {
             label str "custom-Reference_seq",

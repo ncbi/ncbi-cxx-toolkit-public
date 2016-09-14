@@ -1,263 +1,5 @@
 Seq-annot ::= {
   id {
-    local str "NC_000011.9"
-  },
-  desc {
-    user {
-      type str "gvf-import-pragmas",
-      data {
-        {
-          label str "gff-version",
-          data str "3"
-        },
-        {
-          label str "gvf-version",
-          data str "1.07"
-        },
-        {
-          label str "species",
-          data str "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?i
-d=9606"
-        },
-        {
-          label str "genome-build",
-          data str "NCBI GRCh37"
-        },
-        {
-          label str "file-date",
-          data str "2016-07-13"
-        }
-      }
-    }
-  },
-  data ftable {
-    {
-      data variation {
-        id {
-          db "dbVar",
-          tag str "1082894"
-        },
-        parent-id {
-          db "dbVar",
-          tag str "esv275492"
-        },
-        name "essv2585109",
-        data instance {
-          type cnv,
-          delta {
-            {
-              seq this NULL,
-              multiplier-fuzz lim gt
-            }
-          }
-        }
-      },
-      location int {
-        from 26663393,
-        to 26667812,
-        strand both,
-        id other {
-          accession "NC_000011",
-          version 9
-        },
-        fuzz-from range {
-          max 26666228,
-          min 26663393
-        },
-        fuzz-to range {
-          max 26667812,
-          min 26667483
-        }
-      },
-      ext {
-        type str "GvfAttributes",
-        data {
-          {
-            label str "orig-var-type",
-            data str "copy_number_gain"
-          },
-          {
-            label str "source",
-            data str "dbVar"
-          },
-          {
-            label str "custom-Alias",
-            data str "IgH3.1743SSV1"
-          },
-          {
-            label str "custom-Dbxref",
-            data str "URL:www.ncbi.nlm.nih.gov/dbvar/variants/esv275492"
-          },
-          {
-            label str "id",
-            data str "1082894"
-          },
-          {
-            label str "name",
-            data str "essv2585109"
-          },
-          {
-            label str "parent",
-            data str "esv275492"
-          },
-          {
-            label str "custom-Reference_seq",
-            data str "-"
-          },
-          {
-            label str "custom-Variant_seq",
-            data str "~,."
-          },
-          {
-            label str "custom-phenotype",
-            data str "not_reported"
-          },
-          {
-            label str "custom-remapScore",
-            data str "1"
-          },
-          {
-            label str "custom-sample_name",
-            data str "Unknown"
-          },
-          {
-            label str "custom-var_origin",
-            data str "Not tested"
-          }
-        }
-      }
-    }
-  }
-}
-Seq-annot ::= {
-  id {
-    local str "NC_000010.10"
-  },
-  desc {
-    user {
-      type str "gvf-import-pragmas",
-      data {
-        {
-          label str "gff-version",
-          data str "3"
-        },
-        {
-          label str "gvf-version",
-          data str "1.07"
-        },
-        {
-          label str "species",
-          data str "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?i
-d=9606"
-        },
-        {
-          label str "genome-build",
-          data str "NCBI GRCh37"
-        },
-        {
-          label str "file-date",
-          data str "2016-07-13"
-        }
-      }
-    }
-  },
-  data ftable {
-    {
-      data variation {
-        id {
-          db "dbVar",
-          tag str "13283333"
-        },
-        parent-id {
-          db "dbVar",
-          tag str "nsv1197370"
-        },
-        name "nssv7476350",
-        data instance {
-          type cnv,
-          delta {
-            {
-              seq this NULL,
-              multiplier-fuzz lim unk
-            }
-          }
-        }
-      },
-      location int {
-        from 124353506,
-        to 124369823,
-        strand both,
-        id other {
-          accession "NC_000010",
-          version 10
-        }
-      },
-      ext {
-        type str "GvfAttributes",
-        data {
-          {
-            label str "orig-var-type",
-            data str "copy_number_variation"
-          },
-          {
-            label str "source",
-            data str "dbVar"
-          },
-          {
-            label str "custom-Alias",
-            data str "890"
-          },
-          {
-            label str "custom-Dbxref",
-            data str "URL:www.ncbi.nlm.nih.gov/dbvar/variants/nsv1197370"
-          },
-          {
-            label str "id",
-            data str "13283333"
-          },
-          {
-            label str "name",
-            data str "nssv7476350"
-          },
-          {
-            label str "parent",
-            data str "nsv1197370"
-          },
-          {
-            label str "custom-Reference_seq",
-            data str "~"
-          },
-          {
-            label str "custom-Variant_seq",
-            data str "~,."
-          },
-          {
-            label str "custom-copy_number",
-            data str "8"
-          },
-          {
-            label str "custom-gender",
-            data str "F"
-          },
-          {
-            label str "custom-phenotype",
-            data str "Crohn's disease"
-          },
-          {
-            label str "custom-phenotype_id",
-            data str "HP:0100280,MedGen:CN117176"
-          },
-          {
-            label str "custom-sample_name",
-            data str "0282CD"
-          }
-        }
-      }
-    }
-  }
-}
-Seq-annot ::= {
-  id {
     local str "NC_000007.13"
   },
   desc {
@@ -365,6 +107,194 @@ d=9606"
           {
             label str "custom-Variant_seq",
             data str "-,."
+          },
+          {
+            label str "custom-phenotype",
+            data str "not_reported"
+          },
+          {
+            label str "custom-remapScore",
+            data str "1"
+          },
+          {
+            label str "custom-sample_name",
+            data str "Unknown"
+          },
+          {
+            label str "custom-var_origin",
+            data str "Not tested"
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "dbVar",
+          tag str "13283333"
+        },
+        parent-id {
+          db "dbVar",
+          tag str "nsv1197370"
+        },
+        name "nssv7476350",
+        data instance {
+          type cnv,
+          delta {
+            {
+              seq this NULL,
+              multiplier-fuzz lim unk
+            }
+          }
+        }
+      },
+      location int {
+        from 124353506,
+        to 124369823,
+        strand both,
+        id other {
+          accession "NC_000010",
+          version 10
+        }
+      },
+      ext {
+        type str "GvfAttributes",
+        data {
+          {
+            label str "orig-var-type",
+            data str "copy_number_variation"
+          },
+          {
+            label str "source",
+            data str "dbVar"
+          },
+          {
+            label str "custom-Alias",
+            data str "890"
+          },
+          {
+            label str "custom-Dbxref",
+            data str "URL:www.ncbi.nlm.nih.gov/dbvar/variants/nsv1197370"
+          },
+          {
+            label str "id",
+            data str "13283333"
+          },
+          {
+            label str "name",
+            data str "nssv7476350"
+          },
+          {
+            label str "parent",
+            data str "nsv1197370"
+          },
+          {
+            label str "custom-Reference_seq",
+            data str "~"
+          },
+          {
+            label str "custom-Variant_seq",
+            data str "~,."
+          },
+          {
+            label str "custom-copy_number",
+            data str "8"
+          },
+          {
+            label str "custom-gender",
+            data str "F"
+          },
+          {
+            label str "custom-phenotype",
+            data str "Crohn's disease"
+          },
+          {
+            label str "custom-phenotype_id",
+            data str "HP:0100280,MedGen:CN117176"
+          },
+          {
+            label str "custom-sample_name",
+            data str "0282CD"
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "dbVar",
+          tag str "1082894"
+        },
+        parent-id {
+          db "dbVar",
+          tag str "esv275492"
+        },
+        name "essv2585109",
+        data instance {
+          type cnv,
+          delta {
+            {
+              seq this NULL,
+              multiplier-fuzz lim gt
+            }
+          }
+        }
+      },
+      location int {
+        from 26663393,
+        to 26667812,
+        strand both,
+        id other {
+          accession "NC_000011",
+          version 9
+        },
+        fuzz-from range {
+          max 26666228,
+          min 26663393
+        },
+        fuzz-to range {
+          max 26667812,
+          min 26667483
+        }
+      },
+      ext {
+        type str "GvfAttributes",
+        data {
+          {
+            label str "orig-var-type",
+            data str "copy_number_gain"
+          },
+          {
+            label str "source",
+            data str "dbVar"
+          },
+          {
+            label str "custom-Alias",
+            data str "IgH3.1743SSV1"
+          },
+          {
+            label str "custom-Dbxref",
+            data str "URL:www.ncbi.nlm.nih.gov/dbvar/variants/esv275492"
+          },
+          {
+            label str "id",
+            data str "1082894"
+          },
+          {
+            label str "name",
+            data str "essv2585109"
+          },
+          {
+            label str "parent",
+            data str "esv275492"
+          },
+          {
+            label str "custom-Reference_seq",
+            data str "-"
+          },
+          {
+            label str "custom-Variant_seq",
+            data str "~,."
           },
           {
             label str "custom-phenotype",

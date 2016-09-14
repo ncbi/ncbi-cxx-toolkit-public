@@ -33,6 +33,16 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiapp.hpp>
+
+#include <objects/general/Object_id.hpp>
+#include <objects/general/User_object.hpp>
+#include <objects/general/User_field.hpp>
+#include <objects/general/Dbtag.hpp>
+
+#include <objects/seq/Seq_annot.hpp>
+#include <objects/seq/Annotdesc.hpp>
+#include <objects/seq/Annot_descr.hpp>
+#include <objects/seq/Seq_descr.hpp>
 #include <objtools/readers/track_data.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -96,6 +106,38 @@ string CTrackData::ValueOf(
         return valueIt->second;
     }
     return "";
+}
+
+//  -----------------------------------------------------------------------------
+bool
+CTrackData::WriteToAnnot(
+    CSeq_annot& annot)
+//  -----------------------------------------------------------------------------
+{
+    if (!ContainsData()) {
+        return false;
+    }
+    CAnnot_descr& desc = annot.SetDesc();
+    CRef<CUser_object> pTrackdata(new CUser_object());
+    pTrackdata->SetType().SetStr("Track Data");
+   
+    if (!Description().empty()) {
+        annot.SetTitleDesc(Description());
+    }
+    if (!Name().empty()) {
+        annot.SetNameDesc(Name());
+    }
+    map<const string,string>::const_iterator cit = Values().begin();
+    while ( cit != Values().end() ) {
+        pTrackdata->AddField( cit->first, cit->second );
+        ++cit;
+    }
+    if ( pTrackdata->CanGetData() && ! pTrackdata->GetData().empty() ) {
+        CRef<CAnnotdesc> user(new CAnnotdesc());
+        user->SetUser(*pTrackdata);
+        desc.Set().push_back(user);
+    }
+    return true;
 }
 
 END_SCOPE(objects)

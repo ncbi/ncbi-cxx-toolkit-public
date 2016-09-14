@@ -95,13 +95,16 @@ public:
     virtual ~CGvfReader();
 
 protected:
-    virtual bool x_ParseStructuredCommentGff(
-        const string&,
-        CRef< CAnnotdesc >& );
+    virtual bool xParseStructuredComment(
+        const string&);
                                 
-    virtual bool x_ParseFeatureGff(
+    bool xParseFeature(
         const string&,
-        TAnnots&,
+        CRef<CSeq_annot>&,
+        ILineErrorListener*);
+      
+    virtual void xPostProcessAnnot(
+        CRef<CSeq_annot>&,
         ILineErrorListener*);
 
     CRef<CSeq_annot> x_GetAnnotById(
