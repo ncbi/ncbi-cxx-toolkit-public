@@ -2215,10 +2215,15 @@ CSNPDbFeatIterator::EExcluded CSNPDbFeatIterator::x_Excluded(void)
         return eExluded;
     }
     TSeqPos ref_len = x_GetLength();
-    if ( !ref_len && 0 ) {
-        ERR_POST("empty SNP location: "<<
-                 m_PageIter.GetPageRowId()<<"."<<m_CurrFeatId<<
-                 " at "<<ref_pos<<" rs"<<GetFeatId());
+    if ( !ref_len ) {
+        if ( 0 ) {
+            ERR_POST("empty SNP location: "<<
+                     m_PageIter.GetPageRowId()<<"."<<m_CurrFeatId<<
+                     " at "<<ref_pos<<" rs"<<GetFeatId());
+        }
+        else {
+            ref_len = 1;
+        }
     }
     TSeqPos ref_end = ref_pos + ref_len;
     if ( ref_end <= GetSearchRange().GetFrom() ) {
