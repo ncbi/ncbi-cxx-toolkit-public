@@ -957,12 +957,11 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
         if (!uuu->iter  &&  !s_OpenDispatcher(uuu))
             break;
 
-        if (uuu->net_info->firewall
-            &&  strcasecmp(SERV_MapperName(uuu->iter), "local") != 0) {
-            info = 0;
-        } else if (!(info = s_GetNextInfo(uuu, 0/*any*/)))
+        if (!(info = s_GetNextInfo(uuu, 0/*any*/))
+            &&  (!uuu->net_info->firewall
+                 ||  strcasecmp(SERV_MapperName(uuu->iter), "local") == 0)) {
             break;
-
+        }
         if (uuu->type) {
             free((void*) uuu->type);
             uuu->type = 0;
