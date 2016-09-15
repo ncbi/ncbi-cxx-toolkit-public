@@ -222,9 +222,9 @@ CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)
                     "Unable to recognize the specified token.");
         }
     } else if (command == "echo") {
-        CJsonNode reply(message);
-        reply.SetAt(0, CJsonNode::NewBooleanNode(true));
-        return reply;
+        CJsonNode echo_reply(message);
+        echo_reply.SetAt(0, CJsonNode::NewBooleanNode(true));
+        return echo_reply;
     } else
         arg_array.Exception("unknown command");
 

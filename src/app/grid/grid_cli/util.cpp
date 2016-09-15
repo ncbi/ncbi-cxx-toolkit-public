@@ -34,6 +34,7 @@
 #include "util.hpp"
 
 #include <sstream>
+#include <locale>
 #include <corelib/rwstream.hpp>
 #include <cgi/ncbicgi.hpp>
 #include <connect/services/ns_output_parser.hpp>
@@ -47,6 +48,7 @@ BEGIN_NCBI_SCOPE
 
 static void NormalizeStatKeyName(CTempString& key)
 {
+    locale loc;
     char* begin = const_cast<char*>(key.data());
     char* end = begin + key.length();
 
@@ -64,7 +66,7 @@ static void NormalizeStatKeyName(CTempString& key)
     key.assign(begin, end - begin);
 
     for (; begin < end; ++begin)
-        *begin = isalnum(*begin) ? tolower(*begin) : '_';
+        *begin = isalnum(*begin, loc) ? tolower(*begin, loc) : '_';
 }
 
 static inline string UnquoteIfQuoted(const CTempString& str)
@@ -972,6 +974,7 @@ CJsonNode g_ServerInfoToJson(CNetService service,
 static bool s_ExtractKey(const CTempString& line,
         string& key, CTempString& value)
 {
+    locale loc;
     key.erase(0, key.length());
     SIZE_TYPE line_len = line.length();
     key.reserve(line_len);
@@ -979,8 +982,8 @@ static bool s_ExtractKey(const CTempString& line,
     for (SIZE_TYPE i = 0; i < line_len; ++i)
     {
         char c = line[i];
-        if (isalnum(c))
-            key += tolower(c);
+        if (isalnum(c, loc))
+            key += tolower(c, loc);
         else if (c == ' ' || c == '_' || c == '-')
             key += '_';
         else if (c != ':' || key.empty())
