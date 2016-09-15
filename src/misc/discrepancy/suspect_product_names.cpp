@@ -5284,13 +5284,41 @@ static bool DoesObjectMatchConstraint(const CDiscrepancyContext& context, const 
     return true;
 }
 
-
+/*
 static bool DoesObjectMatchConstraintChoiceSet(const CDiscrepancyContext& context, const CConstraint_choice_set& c_set)
 {
     vector <string> strs_in_feat;
     GetStringsFromObject(*context.GetCurrentSeq_feat(), strs_in_feat);  // sema: may need optimization
     ITERATE (list<CRef<CConstraint_choice> >, sit, c_set.Get()) {
         if (!DoesObjectMatchConstraint(context, strs_in_feat, **sit)) {
+            return false;
+        }
+    }
+    return true;
+}
+*/
+
+static bool DoesStringMatchStringConstraint(const string& str, const CString_constraint& str_cons)
+{
+    bool rval = DoesSingleStringMatchConstraint(str, &str_cons); 
+    return str_cons.GetNot_present() ? !rval : rval;
+}
+
+
+static bool DoesStringMatchConstraint(const string& str, const CConstraint_choice& cons)
+{
+    if (cons.Which() == CConstraint_choice::e_String) {
+        return DoesStringMatchStringConstraint(str, cons.GetString());
+    }
+    //case CConstraint_choice::e_Field :
+    return true;
+}
+
+
+static bool DoesStringMatchConstraintChoiceSet(const string& str, const CConstraint_choice_set& c_set)
+{
+    ITERATE (list<CRef<CConstraint_choice> >, sit, c_set.Get()) {
+        if (!DoesStringMatchConstraint(str, **sit)) {
             return false;
         }
     }
@@ -5395,7 +5423,8 @@ DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData, eDisc | eOncaller | eSubmi
             }
             if ((*rule)->CanGetFeat_constraint()) {
                 const CConstraint_choice_set& constr = (*rule)->GetFeat_constraint();
-                if (!DoesObjectMatchConstraintChoiceSet(context, constr)) continue;
+                //if (!DoesObjectMatchConstraintChoiceSet(context, constr)) continue;
+                if (!DoesStringMatchConstraintChoiceSet(prot_name, constr)) continue;
             }
             size_t rule_type = (*rule)->GetRule_type();
             string rule_num = "[*";
@@ -5561,7 +5590,8 @@ DISCREPANCY_CASE(ORGANELLE_PRODUCTS, CSeqFeatData, eOncaller, "Organelle product
             }
             if ((*rule)->CanGetFeat_constraint()) {
                 const CConstraint_choice_set& constr = (*rule)->GetFeat_constraint();
-                if (!DoesObjectMatchConstraintChoiceSet(context, constr)) continue;
+                //if (!DoesObjectMatchConstraintChoiceSet(context, constr)) continue;
+                if (!DoesStringMatchConstraintChoiceSet(prot_name, constr)) continue;
             }
             m_Objs["[n] suspect product[s] not organelle"].Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eNoRef, (*rule)->CanGetReplace(), (CObject*)&**rule)).Fatal((*rule)->IsFatal());
         }
