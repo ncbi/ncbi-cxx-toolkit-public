@@ -513,7 +513,7 @@ struct SRemoteApp::SRequest : public CRemoteAppRequest
 
     CJsonNode CreateFilesNode() const
     {
-        if (m_Files.empty()) return NULL;
+        if (m_Files.empty()) return CJsonNode();
 
         CJsonNode array(CJsonNode::NewArrayNode());
         for (TStoredFiles::const_iterator i = m_Files.begin();
@@ -1222,7 +1222,7 @@ CJsonNode g_WhatIs(const string& id, CCompoundIDPool id_pool)
         return result;
     }
 
-    return NULL;
+    return CJsonNode();
 }
 
 END_NCBI_SCOPE

@@ -300,24 +300,34 @@ CJsonNode CJsonNode::NewArrayNode()
     return new SJsonArrayNodeImpl;
 }
 
-CJsonNode CJsonNode::NewStringNode(const string& value)
+CJsonNode::CJsonNode(const string& value)
+    : m_Impl(new SJsonStringNodeImpl(value))
 {
-    return new SJsonStringNodeImpl(value);
 }
 
-CJsonNode CJsonNode::NewIntegerNode(Int8 value)
+CJsonNode::CJsonNode(const char* value)
+    : m_Impl(new SJsonStringNodeImpl(value))
 {
-    return new SJsonFixedSizeNodeImpl(value);
 }
 
-CJsonNode CJsonNode::NewDoubleNode(double value)
+CJsonNode::CJsonNode(int value)
+    : CJsonNode(new SJsonFixedSizeNodeImpl(Int8(value)))
 {
-    return new SJsonFixedSizeNodeImpl(value);
 }
 
-CJsonNode CJsonNode::NewBooleanNode(bool value)
+CJsonNode::CJsonNode(Int8 value)
+    : CJsonNode(new SJsonFixedSizeNodeImpl(value))
 {
-    return new SJsonFixedSizeNodeImpl(value);
+}
+
+CJsonNode::CJsonNode(double value)
+    : CJsonNode(new SJsonFixedSizeNodeImpl(value))
+{
+}
+
+CJsonNode::CJsonNode(bool value)
+    : CJsonNode(new SJsonFixedSizeNodeImpl(value))
+{
 }
 
 CJsonNode CJsonNode::NewNullNode()
@@ -382,6 +392,28 @@ CJsonNode CJsonNode::GuessType(const CTempString& value)
             NStr::CompareNocase(value, "true") == 0 ? NewBooleanNode(true) :
             NStr::CompareNocase(value, "none") == 0 ? NewNullNode() :
             NewStringNode(value);
+}
+
+CJsonNode::TInstance s_CreateImpl(CJsonNode::ENodeType type)
+{
+    switch (type)
+    {
+    case CJsonNode::eObject:    return new SJsonObjectNodeImpl;
+    case CJsonNode::eArray:     return new SJsonArrayNodeImpl;
+    case CJsonNode::eString:    return new SJsonStringNodeImpl(string());
+    case CJsonNode::eInteger:   return new SJsonFixedSizeNodeImpl(Int8());
+    case CJsonNode::eDouble:    return new SJsonFixedSizeNodeImpl(double());
+    case CJsonNode::eBoolean:   return new SJsonFixedSizeNodeImpl(bool());
+    case CJsonNode::eNull:      return new SJsonFixedSizeNodeImpl();
+    }
+
+    NCBI_THROW_FMT(CJsonException, eInvalidNodeType, "Unknown type: " << type);
+    return nullptr; // Not reached
+}
+
+CJsonNode::CJsonNode(ENodeType type) :
+    m_Impl(s_CreateImpl(type))
+{
 }
 
 CJsonNode::ENodeType CJsonNode::GetNodeType() const

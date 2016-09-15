@@ -188,7 +188,7 @@ CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)
     arg_array.UpdateLocation(command);
 
     if (command == "exit")
-        return NULL;
+        return CJsonNode();
 
     CJsonNode reply(CJsonNode::NewArrayNode());
     reply.Append(m_OKNode);

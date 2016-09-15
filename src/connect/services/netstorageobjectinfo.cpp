@@ -226,7 +226,7 @@ CNetStorageObjectInfo g_CreateNetStorageObjectInfo(const string& object_loc,
         Uint8 file_size, CJsonNode::TInstance storage_specific_info)
 {
     return new SNetStorageObjectInfoImpl(SData(location, object_loc,
-            object_loc_struct ? object_loc_struct->ToJSON() : NULL,
+            object_loc_struct ? object_loc_struct->ToJSON() : CJsonNode(),
             file_size, storage_specific_info));
 }
 

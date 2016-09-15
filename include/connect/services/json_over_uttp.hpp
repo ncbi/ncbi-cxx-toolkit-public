@@ -80,16 +80,16 @@ class NCBI_XCONNECT_EXPORT CJsonNode
     static CJsonNode NewArrayNode();
 
     /// Create a new JSON string node.
-    static CJsonNode NewStringNode(const string& value);
+    static CJsonNode NewStringNode(const string& value) { return value; }
 
     /// Create a new JSON integer node.
-    static CJsonNode NewIntegerNode(Int8 value);
+    static CJsonNode NewIntegerNode(Int8 value) { return value; }
 
     /// Create a new JSON double node.
-    static CJsonNode NewDoubleNode(double value);
+    static CJsonNode NewDoubleNode(double value) { return value; }
 
     /// Create a new JSON boolean node.
-    static CJsonNode NewBooleanNode(bool value);
+    static CJsonNode NewBooleanNode(bool value) { return value; }
 
     /// Create a new JSON null node.
     static CJsonNode NewNullNode();
@@ -98,6 +98,20 @@ class NCBI_XCONNECT_EXPORT CJsonNode
     /// representation of its value and initialize a new
     /// node with this value.
     static CJsonNode GuessType(const CTempString& value);
+
+    /// Create new JSON string node.
+    CJsonNode(const string& value);
+    CJsonNode(const char* value);
+
+    /// Create new JSON integer node.
+    CJsonNode(int value);
+    CJsonNode(Int8 value);
+
+    /// Create new JSON double node.
+    CJsonNode(double value);
+
+    /// Create new JSON boolean node.
+    CJsonNode(bool value);
 
     /// JSON node type.
     enum ENodeType {
@@ -109,6 +123,9 @@ class NCBI_XCONNECT_EXPORT CJsonNode
         eBoolean,
         eNull
     };
+
+    /// Create new JSON node (type depends on the argument)
+    CJsonNode(ENodeType type);
 
     /// Return a ENodeType constant identifying the node type.
     ENodeType GetNodeType() const;
