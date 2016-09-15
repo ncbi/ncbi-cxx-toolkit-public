@@ -195,6 +195,10 @@ CGff2Reader::ReadSeqAnnot(
     mCurrentFeatureCount = 0;
     mParsingAlignment = false;
 
+    map<string, list<CRef<CSeq_align>>> alignments;
+    list<string> id_list;
+   
+
     string line;
     while (xGetLine(lr, line)) {
 
@@ -227,17 +231,32 @@ CGff2Reader::ReadSeqAnnot(
         if (!xIsCurrentDataType(line)) {
             break;
         }
+/*
+        if ( CGff2Reader::IsAlignmentData(line) &&
+             x_ParseAlignmentGff(line, id_list, alignments)) {
+            continue;
+        }
+        */
+
         if (xParseFeature(line, pAnnot, pEC)) {
             continue;
         }
+
         if (xParseAlignment(line, pAnnot, pEC)) {
             continue;
         }
     }
 
+    
+
     if (!mCurrentFeatureCount) {
         return CRef<CSeq_annot>();
     }
+
+    if (!alignments.empty()) {
+        x_ProcessAlignmentsGff(id_list, alignments, pAnnot);
+    }
+
     xPostProcessAnnot(pAnnot, pEC);
     return pAnnot;
 }
@@ -451,6 +470,224 @@ CGff2Reader::xParseFeature(
     return true;
 }
 
+
+//  ----------------------------------------------------------------------------
+void CGff2Reader::x_GetAlignmentScores(const CSeq_align& alignment, 
+                                       TScoreValueMap& score_values)
+//  ----------------------------------------------------------------------------
+{
+    // Start with empty scores
+    score_values.clear();
+
+    if (!alignment.IsSetScore()) {
+        return;
+    }
+
+    for (const CRef<CScore>& score : alignment.GetScore()) {
+
+        if (!score->IsSetId() ||
+            !score->GetId().IsStr() ||
+            !score->IsSetValue()) {
+            continue;
+        }
+        const string name = score->GetId().GetStr();
+        const CScore::TValue& value = score->GetValue();
+        score_values[name] = Ref(new CScore::TValue());
+        score_values[name]->Assign(value);
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+bool s_CompareValues(const CScore::TValue& score_val1, 
+                     const CScore::TValue& score_val2)
+//  ----------------------------------------------------------------------------
+{
+
+    if (score_val1.IsInt() && 
+        score_val2.IsInt() &&
+        score_val1.GetInt() == score_val2.GetInt()) {
+        return true;
+    }
+
+    if (score_val1.IsReal() &&
+        score_val2.IsReal() &&
+        score_val1.GetReal() == score_val2.GetReal()) {
+        return true;
+    }
+
+    return false;
+}
+
+// Result is a set of matching scores
+//  ----------------------------------------------------------------------------
+void CGff2Reader::x_FindMatchingScores(const TScoreValueMap& scores_1,
+                                       const TScoreValueMap& scores_2,
+                                       set<string>& matching_scores) 
+//  ----------------------------------------------------------------------------
+{
+    matching_scores.clear();
+
+    for (const auto& score1 : scores_1) {
+        const string& name = score1.first;
+        const CScore::TValue& value = *(score1.second);
+
+        const auto& it = scores_2.find(name);
+        if (it != scores_2.end() &&
+            s_CompareValues(value, *(it->second))) {
+            matching_scores.insert(name);
+        }
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+void CGff2Reader::x_ProcessAlignmentsGff(const list<string>& id_list,
+                            const map<string, list<CRef<CSeq_align>>>& alignments,
+                            CRef<CSeq_annot> pAnnot) 
+//  ----------------------------------------------------------------------------
+{
+    if (pAnnot.IsNull()) {
+        pAnnot = Ref(new CSeq_annot());
+    }
+
+
+
+    for (const auto id : id_list) {
+        CRef<CSeq_align> pAlign = Ref(new CSeq_align());
+        if (x_MergeAlignments(alignments.at(id), pAlign)) {
+            // Add id
+            auto pAnnotId = Ref(new CAnnot_id());
+            pAnnotId->SetLocal().SetStr(id);
+            pAnnot->SetId().push_back(pAnnotId);
+
+            // Refactor the following to avoid code repetition
+            // if available, add current browser information
+            if ( m_CurrentBrowserInfo ) {
+                pAnnot->SetDesc().Set().push_back( m_CurrentBrowserInfo );
+            }
+
+            // if available, add current track information
+ //           if ( m_CurrentTrackInfo ) {
+ //               pAnnot->SetDesc().Set().push_back( m_CurrentTrackInfo );
+ //           }
+
+            if ( !m_AnnotName.empty() ) {
+                pAnnot->SetNameDesc(m_AnnotName);
+            }
+
+            if ( !m_AnnotTitle.empty() ) {
+                pAnnot->SetTitleDesc(m_AnnotTitle);
+            }
+            // Add alignment
+            pAnnot->SetData().SetAlign().push_back(pAlign);
+        }
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CGff2Reader::x_ParseAlignmentGff(
+    const string& strLine, 
+    list<string>& id_list, // Add id to alignment
+    map<string, list<CRef<CSeq_align>>>& alignments)
+//  ----------------------------------------------------------------------------
+{
+    unique_ptr<CGff2Record> pRecord(x_CreateRecord());
+    if ( !pRecord->AssignFromGff(strLine) ) {
+        return false;
+    }
+
+    const string id = pRecord->Id();
+
+    if (alignments.find(id) == alignments.end()) {
+       id_list.push_back(id);
+    }
+
+    CRef<CSeq_align> alignment;
+    if (!x_CreateAlignment(*pRecord, alignment)) {
+        return false;
+    }
+
+    alignments[id].push_back(alignment);
+
+    mCurrentFeatureCount++;
+    mParsingAlignment = true;
+    return true;
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CGff2Reader::x_MergeAlignments(
+        const list<CRef<CSeq_align>>& alignment_list,
+        CRef<CSeq_align>& processed)
+//  ----------------------------------------------------------------------------
+{
+    if (alignment_list.empty()) {
+        return false;
+    }
+
+    if (alignment_list.size() == 1) {
+        processed = alignment_list.front();
+        return true;
+    }
+
+    // Factor out identical scores
+    list<CRef<CSeq_align>>::const_iterator align_it = alignment_list.begin();
+    //map<string, double> score_values;
+    TScoreValueMap score_values;
+    x_GetAlignmentScores(**align_it, score_values);
+    ++align_it;
+
+    while (align_it != alignment_list.end() &&
+           !score_values.empty()) {
+        TScoreValueMap new_score_values;
+        x_GetAlignmentScores(**align_it, new_score_values);
+
+        set<string> matching_scores;
+        x_FindMatchingScores(score_values, 
+                             new_score_values, 
+                             matching_scores);
+   
+        score_values.clear(); 
+        for (string score_name : matching_scores) {
+            score_values[score_name] = Ref(new CScore::TValue());
+            score_values[score_name]->Assign(*new_score_values[score_name]);
+        }
+        ++align_it;
+    }
+    // At this point, the score_values map should contain the scores that 
+    // do not change over the rows
+
+
+    processed->SetType(CSeq_align::eType_disc);
+
+    for (auto& kv : score_values) {
+        CRef<CScore> score = Ref(new CScore());
+        score->SetId().SetStr(kv.first);
+        score->SetValue().Assign(*(kv.second));
+        processed->SetScore().push_back(score);
+    }
+
+    for (auto current : alignment_list) {
+
+        CRef<CSeq_align> new_align = Ref(new CSeq_align());
+        new_align->Assign(*current);
+        new_align->ResetScore();
+
+        for (CRef<CScore> score : current->GetScore()) {
+            const string& score_name = score->GetId().GetStr();
+            if (score_values.find(score_name) == score_values.end()) {
+                new_align->SetScore().push_back(score);
+            }
+        }
+
+        processed->SetSegs().SetDisc().Set().push_back(new_align);
+    }
+
+    return true;
+}
+
 //  ----------------------------------------------------------------------------
 bool
 CGff2Reader::xParseAlignment(
@@ -570,6 +807,7 @@ bool CGff2Reader::x_ParseFeatureGff(
     return true; 
 };
 
+/*
 bool CGff2Reader::x_ParseAlignmentGff(
     const string& strLine, 
     list<string>& id_list, // Add id to alignment
@@ -594,74 +832,7 @@ bool CGff2Reader::x_ParseAlignmentGff(
     alignments.insert(make_pair(id, alignment));
     return true;
 }
-
-bool CGff2Reader::x_MergeAlignments(
-        multimap<string, CRef<CSeq_align>>::const_iterator start,
-        const size_t count,
-        CRef<CSeq_align>& processed)
-{
-    if (count == 0) {
-        return false;
-    }
-
-    if (count == 1) {
-        processed = start->second;
-        return true;
-    }
-
-    processed->SetType(CSeq_align::eType_disc);
-    auto it = start;
-    for (size_t i=0; i<count; ++i) {
-        CRef<CSeq_align> current = it->second;
-        processed->SetSegs().SetDisc().Set().push_back(current);
-        ++it;
-    } 
-    return true;
-}
-
-
-// Should probably have a single annotation for each alignment in this case
-void CGff2Reader::x_ProcessAlignmentsGff(const list<string>& id_list,
-                            const multimap<string, CRef<CSeq_align>>& alignments,
-                            TAnnots& annots) 
-{
-    for (const auto id : id_list) {
-        const auto start = alignments.lower_bound(id);
-        const size_t count = alignments.count(id);
-        CRef<CSeq_align> pAlign = Ref(new CSeq_align());
-        if (x_MergeAlignments(start, count, pAlign)) {
-            auto pAnnot = Ref(new CSeq_annot());
-            // Add id
-            auto pAnnotId = Ref(new CAnnot_id());
-            pAnnotId->SetLocal().SetStr(id);
-            pAnnot->SetId().push_back(pAnnotId);
-
-            // Refactor the following to avoid code repition
-            //
-            // if available, add current browser information
-            if ( m_CurrentBrowserInfo ) {
-                pAnnot->SetDesc().Set().push_back( m_CurrentBrowserInfo );
-            }
-
-            // if available, add current track information
-            if (m_pTrackDefaults->ContainsData()) {
-                m_pTrackDefaults->WriteToAnnot(*pAnnot);
-            }
-
-            if ( !m_AnnotName.empty() ) {
-                pAnnot->SetNameDesc(m_AnnotName);
-            }
-
-            if ( !m_AnnotTitle.empty() ) {
-                pAnnot->SetTitleDesc(m_AnnotTitle);
-            }
-            // Add alignment
-            pAnnot->SetData().SetAlign().push_back(pAlign);
-            annots.push_back(pAnnot);
-        }
-    }
-}
-
+*/
 
 
 //  ----------------------------------------------------------------------------

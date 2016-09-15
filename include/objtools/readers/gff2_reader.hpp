@@ -38,6 +38,7 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqalign/Spliced_exon.hpp>
+#include <objects/seqalign/Score.hpp>
 
 #include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/reader_base.hpp>
@@ -66,6 +67,8 @@ public:
     } TFlags;
 
     typedef map<string, CRef<CSeq_feat> > IdToFeatureMap;
+    
+    using TScoreValueMap = map<string, CRef<CScore::TValue>>;
 
 public:
 
@@ -175,20 +178,26 @@ public:
     virtual bool x_ParseAlignmentGff(
         const string& strLine, 
         list<string>& id_list,
-        multimap<string, CRef<CSeq_align>>& alignments);
+        map<string, list<CRef<CSeq_align>>>& alignments);
+
+    void x_GetAlignmentScores(const CSeq_align& alignment,
+                              map<string, CRef<CScore::TValue>>& score_values);
+
+    void x_FindMatchingScores(const map<string, CRef<CScore::TValue>>& scores_1,
+                              const map<string, CRef<CScore::TValue>>& scores_2,
+                              set<string>& matching_scores);
 
     virtual bool x_CreateAlignment(
         const CGff2Record& gff,
         CRef<CSeq_align>& pAlign);
 
     bool x_MergeAlignments(
-            multimap<string, CRef<CSeq_align>>::const_iterator start,
-            size_t count,
+            const list<CRef<CSeq_align>>& alignment_list,
             CRef<CSeq_align>& processed);
      
     void x_ProcessAlignmentsGff(const list<string>& id_list,
-                                const multimap<string, CRef<CSeq_align>>& alignments,
-                                TAnnots& annots);
+                                const map<string, list<CRef<CSeq_align>>>& alignments,
+                                CRef<CSeq_annot> pAnnot);
 
 
     virtual bool x_ParseAlignmentGff(
