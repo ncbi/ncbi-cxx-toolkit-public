@@ -252,21 +252,36 @@ bool CBedFeatureRecord::SetLocation(
     const CSeq_loc& loc)
 //  ----------------------------------------------------------------------------
 {
-    if (!loc.IsInt()) {
-        return false;
-    }
-    const CSeq_interval& chromInt = loc.GetInt();
-    m_strChrom = chromInt.GetId().GetSeqIdString();
-    m_strChromStart = NStr::IntToString(chromInt.GetFrom());
-    m_strChromEnd = NStr::IntToString(chromInt.GetTo()+1);
-    m_strStrand = "+";
-    if (chromInt.IsSetStrand()) {
-        ENa_strand strand = chromInt.GetStrand();
-        if (strand == eNa_strand_minus) {
-            m_strStrand = "-";
+    if (loc.IsInt()) {
+        const CSeq_interval& chromInt = loc.GetInt();
+        m_strChrom = chromInt.GetId().GetSeqIdString();
+        m_strChromStart = NStr::IntToString(chromInt.GetFrom());
+        m_strChromEnd = NStr::IntToString(chromInt.GetTo()+1);
+        m_strStrand = "+";
+        if (chromInt.IsSetStrand()) {
+            ENa_strand strand = chromInt.GetStrand();
+            if (strand == eNa_strand_minus) {
+                m_strStrand = "-";
+            }
         }
+        return true;
     }
-    return true;
+
+    if (loc.IsPnt()) {
+        const CSeq_point& chromPt = loc.GetPnt();
+        m_strChrom = chromPt.GetId().GetSeqIdString();
+        m_strChromStart = NStr::IntToString(chromPt.GetPoint());
+        m_strChromEnd = NStr::IntToString(chromPt.GetPoint()+1);
+        m_strStrand = "+";
+        if (chromPt.IsSetStrand()) {
+            ENa_strand strand = chromPt.GetStrand();
+            if (strand == eNa_strand_minus) {
+                m_strStrand = "-";
+            }
+        }
+        return true;
+    }
+    return false;
 }
 
 //  -----------------------------------------------------------------------------
@@ -350,13 +365,20 @@ bool CBedFeatureRecord::SetNoThick(
     const CSeq_loc& loc)
 //  -----------------------------------------------------------------------------
 {
-    if (!loc.IsInt()) {
-        return false;
+    if (loc.IsInt()) {
+        const CSeq_interval& chromInt = loc.GetInt();
+        m_strThickStart = NStr::IntToString(chromInt.GetFrom());
+        m_strThickEnd = NStr::IntToString(chromInt.GetFrom());
+        return true;
     }
-    const CSeq_interval& chromInt = loc.GetInt();
-    m_strThickStart = NStr::IntToString(chromInt.GetFrom());
-    m_strThickEnd = NStr::IntToString(chromInt.GetFrom());
-    return true;
+    
+    if (loc.IsPnt()) {
+        const CSeq_point& chromPt = loc.GetPnt();
+        m_strThickStart = NStr::IntToString(chromPt.GetPoint());
+        m_strThickEnd = NStr::IntToString(chromPt.GetPoint());
+        return true;
+    }
+    return false;
 }
 
 //  -----------------------------------------------------------------------------
