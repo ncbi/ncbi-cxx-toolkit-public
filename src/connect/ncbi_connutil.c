@@ -43,7 +43,7 @@
 #define NCBI_USE_ERRCODE_X   Connect_Util
 
 
-#define CONN_NET_INFO_MAGIC  0x600D600D
+#define CONN_NET_INFO_MAGIC  0x600DF00D
 
 #define SizeOf(arr)  (sizeof(arr) / sizeof((arr)[0]))
 
@@ -340,6 +340,10 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     /* compatibility */
     info->version = 0;
 
+    /* external mode */
+    REG_VALUE(REG_CONN_EXTERNAL, str, DEF_CONN_EXTERNAL);
+    info->external = ConnNetInfo_Boolean(str);
+    
     /* firewall mode */
     REG_VALUE(REG_CONN_FIREWALL, str, DEF_CONN_FIREWALL);
     info->firewall = x_ParseFirewall(str, generic);
@@ -463,10 +467,10 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
     /* URL elements and their parsed lengths as passed */
     const char *user,   *pass,   *host,   *path,   *args;
     size_t     userlen, passlen, hostlen, pathlen, argslen;
-    unsigned short port;
     EURLScheme scheme;
     const char* s;
     size_t len;
+    long port;
     char* p;
 
     if (!s_InfoIsValid(info)  ||  !url)
@@ -483,12 +487,13 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
         if (len >= sizeof(info->host))
             return 0/*failure*/;
         if (s) {
-            long i;
             errno = 0;
-            i = strtol(++s, &p, 10);
-            if (errno  ||  s == p  ||  !i  ||  i ^ (i & 0xFFFF)  ||  *p)
+            port = strtol(++s, &p, 10);
+            if (errno  ||  s == p  ||  *p)
                 return 0/*failure*/;
-            info->port = (unsigned short) i;
+            if (!port  ||  port ^ (port & 0xFFFF))
+                return 0/*failure*/;
+            info->port = port;
         }
         if (len) {
             memcpy(info->host, url, len);
@@ -497,9 +502,10 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
         return 1/*success*/;
     }
 
-    /* "user:pass@host:port" first [any optional] */
+    port = -1/*unassigned*/;
+
+    /* "scheme://user:pass@host:port" first [any optional] */
     if ((s = strstr(url, "//")) != 0) {
-        /* scheme is now optional, too */
         if (s > url) {
             if (s[-1] != ':')
                 return 0/*failure*/;
@@ -514,11 +520,8 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
 
         /* username:password */
         if (!hostlen) {
-            if (scheme != eURL_File)
-                return 0/*failure*/;
-            user = pass = host = "";
+            user    = pass    = host = scheme == eURL_File ? "" : 0;
             userlen = passlen = 0;
-            port = 0/*none*/;
         } else {
             if (!(s = (const char*) memrchr(host, '@', hostlen))) {
                 user    = pass    = "";
@@ -528,6 +531,8 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
                 userlen = (size_t)(s - user);
                 host    = ++s;
                 hostlen = (size_t)(path - s);
+                if (!hostlen)
+                    return 0/*failure*/;
                 if (!(s = (const char*) memchr(user, ':', userlen))) {
                     pass    = "";
                     passlen = 0;
@@ -540,13 +545,14 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
 
             /* port, if any */
             if ((s = (const char*) memchr(host, ':', hostlen)) != 0) {
-                long i;
-                hostlen = (size_t)(s - host);
-                errno = 0;
-                i = strtol(++s, &p, 10);
-                if (errno  ||  s == p  || !i || i ^ (i & 0xFFFF) ||  p != path)
+                if (!(hostlen = (size_t)(s - host)))
                     return 0/*failure*/;
-                port = (unsigned short) i;
+                errno = 0;
+                port = strtol(++s, &p, 10);
+                if (errno  ||  s == p  ||  p != path)
+                    return 0/*failure*/;
+                if (!port  ||  port ^ (port & 0xFFFF))
+                    return 0/*failure*/;
             } else
                 port = 0/*default*/;
 
@@ -561,7 +567,6 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
         user    = pass    = host    = 0;
         userlen = passlen = hostlen = 0;
         path    = url;
-        port    = 0;
     }
 
     pathlen = (scheme == eURL_Https  ||  scheme == eURL_Http
@@ -638,10 +643,11 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
         memcpy(info->pass, pass, passlen);
         info->pass[passlen] = '\0';
     }
+    if (port >= 0  ||  scheme == eURL_File)
+        info->port = port < 0 ? 0 : port;
     if (host) {
         memcpy(info->host, host, hostlen);
         info->host[hostlen] = '\0';
-        info->port = port;
     }
     info->scheme = scheme;
     return 1/*success*/;
@@ -1169,6 +1175,7 @@ extern SConnNetInfo* ConnNetInfo_Clone(const SConnNetInfo* info)
     x_info->scheme                = info->scheme;
     x_info->req_method            = info->req_method;
     x_info->version               = info->version;
+    x_info->external              = info->external;
     x_info->firewall              = info->firewall;
     x_info->stateless             = info->stateless;
     x_info->lb_disable            = info->lb_disable;
@@ -1428,6 +1435,7 @@ extern void ConnNetInfo_Log(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
         s_SaveULong (s, "timeout(usec)",   info->timeout->usec);
     } else
         s_SaveKeyval(s, "timeout",         "INFINITE");
+    s_SaveBool      (s, "external",        info->external);
     s_SaveKeyval    (s, "firewall",        x_Firewall(info->firewall));
     s_SaveBool      (s, "stateless",       info->stateless);
     s_SaveBool      (s, "lb_disable",      info->lb_disable);
@@ -1520,6 +1528,7 @@ extern int/*bool*/ ConnNetInfo_SetTimeout(SConnNetInfo*   info,
         info->timeout = kInfiniteTimeout/*0,timeout*/;
     return 1/*succeeded*/;
 }
+
 
 extern void ConnNetInfo_Destroy(SConnNetInfo* info)
 {
