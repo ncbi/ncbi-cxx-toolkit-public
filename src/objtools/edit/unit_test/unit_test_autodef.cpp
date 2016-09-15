@@ -1327,7 +1327,7 @@ BOOST_AUTO_TEST_CASE(Test_GB_3949)
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_culture_collection, "ATCC:12345");
 
     CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet (entry);
-    AddTitle(nuc, "Sebaea microphylla culture-collection ATCC:12345 fake protein name gene, complete cds.");
+    AddTitle(nuc, "Sebaea microphylla culture ATCC:12345 fake protein name gene, complete cds.");
 
     vector<CSubSource::ESubtype> subsrcs;
     vector<COrgMod::ESubtype> orgmods;
@@ -1990,6 +1990,37 @@ BOOST_AUTO_TEST_CASE(Test_SQD_3914)
     AddTitle(entry, "Sebaea microphylla 16S-23S ribosomal RNA intergenic spacer, tRNA-Ile (trnI) and tRNA-Ala (trnA) genes, complete sequence.");
     CheckDeflineMatches(entry);
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_CAutoDefAvailableModifier_GetOrgModLabel)
+{
+    BOOST_CHECK_EQUAL(CAutoDefAvailableModifier::GetOrgModLabel(COrgMod::eSubtype_culture_collection), "culture");
+    BOOST_CHECK_EQUAL(CAutoDefAvailableModifier::GetOrgModLabel(COrgMod::eSubtype_acronym), "acronym");
+    BOOST_CHECK_EQUAL(CAutoDefAvailableModifier::GetOrgModLabel(COrgMod::eSubtype_strain), "strain");
+    BOOST_CHECK_EQUAL(CAutoDefAvailableModifier::GetOrgModLabel(COrgMod::eSubtype_substrain), "substrain");
+    BOOST_CHECK_EQUAL(CAutoDefAvailableModifier::GetOrgModLabel(COrgMod::eSubtype_type), "type");
+    BOOST_CHECK_EQUAL(CAutoDefAvailableModifier::GetOrgModLabel(COrgMod::eSubtype_subtype), "subtype");
+    BOOST_CHECK_EQUAL(CAutoDefAvailableModifier::GetOrgModLabel(COrgMod::eSubtype_variety), "variety");
+    BOOST_CHECK_EQUAL(CAutoDefAvailableModifier::GetOrgModLabel(COrgMod::eSubtype_serotype), "serotype");
+    BOOST_CHECK_EQUAL(CAutoDefAvailableModifier::GetOrgModLabel(COrgMod::eSubtype_serogroup), "serogroup");
+    BOOST_CHECK_EQUAL(CAutoDefAvailableModifier::GetOrgModLabel(COrgMod::eSubtype_serovar), "serovar");
+    BOOST_CHECK_EQUAL(CAutoDefAvailableModifier::GetOrgModLabel(COrgMod::eSubtype_cultivar), "cultivar");
+    BOOST_CHECK_EQUAL(CAutoDefAvailableModifier::GetOrgModLabel(COrgMod::eSubtype_pathovar), "pathovar");
+    BOOST_CHECK_EQUAL(CAutoDefAvailableModifier::GetOrgModLabel(COrgMod::eSubtype_chemovar), "chemovar");
+    BOOST_CHECK_EQUAL(CAutoDefAvailableModifier::GetOrgModLabel(COrgMod::eSubtype_biovar), "biovar");
+    BOOST_CHECK_EQUAL(CAutoDefAvailableModifier::GetOrgModLabel(COrgMod::eSubtype_biotype), "biotype");
+    BOOST_CHECK_EQUAL(CAutoDefAvailableModifier::GetOrgModLabel(COrgMod::eSubtype_group), "group");
+    BOOST_CHECK_EQUAL(CAutoDefAvailableModifier::GetOrgModLabel(COrgMod::eSubtype_subgroup), "subgroup");
+    BOOST_CHECK_EQUAL(CAutoDefAvailableModifier::GetOrgModLabel(COrgMod::eSubtype_isolate), "isolate");
+    BOOST_CHECK_EQUAL(CAutoDefAvailableModifier::GetOrgModLabel(COrgMod::eSubtype_authority), "authority");
+    BOOST_CHECK_EQUAL(CAutoDefAvailableModifier::GetOrgModLabel(COrgMod::eSubtype_forma), "forma");
+    BOOST_CHECK_EQUAL(CAutoDefAvailableModifier::GetOrgModLabel(COrgMod::eSubtype_ecotype), "ecotype");
+    BOOST_CHECK_EQUAL(CAutoDefAvailableModifier::GetOrgModLabel(COrgMod::eSubtype_synonym), "synonym");
+    BOOST_CHECK_EQUAL(CAutoDefAvailableModifier::GetOrgModLabel(COrgMod::eSubtype_anamorph), "anamorph");
+    BOOST_CHECK_EQUAL(CAutoDefAvailableModifier::GetOrgModLabel(COrgMod::eSubtype_teleomorph), "teleomorph");
+    BOOST_CHECK_EQUAL(CAutoDefAvailableModifier::GetOrgModLabel(COrgMod::eSubtype_breed), "breed");
+}
+
 
 
 END_SCOPE(objects)

@@ -580,6 +580,7 @@ typedef struct {
 
 static const SPreferredQual s_PreferredList[] = {
     { CSubSource::eSubtype_transgenic, false } ,
+    { COrgMod::eSubtype_culture_collection, true },
     { COrgMod::eSubtype_strain, true },
     { COrgMod::eSubtype_isolate, true },
     { COrgMod::eSubtype_cultivar, true },
@@ -592,7 +593,6 @@ static const SPreferredQual s_PreferredList[] = {
     { COrgMod::eSubtype_biotype, true },
     { COrgMod::eSubtype_biovar, true },
     { COrgMod::eSubtype_chemovar, true },
-    { COrgMod::eSubtype_culture_collection, true },
     { COrgMod::eSubtype_pathovar, true },
     { COrgMod::eSubtype_serogroup, true },
     { COrgMod::eSubtype_serovar, true },
