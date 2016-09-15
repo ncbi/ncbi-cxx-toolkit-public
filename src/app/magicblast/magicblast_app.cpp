@@ -583,6 +583,9 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
 
         int second_flags = sam_flags | SAM_FLAG_LAST_SEGMENT |
             SAM_FLAG_SEGS_ALIGNED;
+        if ((*first)->GetSeqStrand(0) == eNa_strand_minus) {
+            second_flags |= SAM_FLAG_NEXT_REVCOMP;
+        }
 
         PrintSAM(ostr, **first, queries, query_info, batch_number,
                  compartment, first_flags, second->GetNonNullPointer());
