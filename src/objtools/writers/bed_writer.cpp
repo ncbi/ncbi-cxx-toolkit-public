@@ -482,7 +482,7 @@ bool CBedWriter::xWriteAnnotThreeFeatData(
         if (!threeFeatManager.ProcessRecord(feature, bedRecord)) {
             break;
         }
-        if (!bedRecord.Write(m_Os, 12)) {
+        if (!bedRecord.Write(m_Os, m_colCount)) {
             break;
         }
     }
