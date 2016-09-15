@@ -1,13 +1,3 @@
-#ifdef MISC_JSONWRAPP___JSONWRAPP_OLD__HPP
-#ifdef __GNUC__
-#  error "Both jsonwrapp_old.hpp and jsonwrapp.hpp are used; please use only one of them"
-#endif // __GNUC__
-#if NCBI_COMPILER_MSVC
-#error "Both jsonwrapp_old.hpp and jsonwrapp.hpp are used; please use only one of them"
-#endif 
-#endif
-
-
 #ifndef MISC_JSONWRAPP___JSONWRAPP__HPP
 #define MISC_JSONWRAPP___JSONWRAPP__HPP
 
