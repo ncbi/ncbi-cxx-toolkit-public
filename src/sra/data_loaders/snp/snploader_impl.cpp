@@ -79,6 +79,8 @@ static const int kChunkIdMul = 2;
 // splitter parameters for SNPs and graphs
 static const TSeqPos kFeatChunkSize = 1000000;
 static const TSeqPos kGraphChunkSize = 10000000;
+static const char kGraphNameSuffix[] = "@@100";
+static const char kOverviewNameSuffix[] = "@@5000";
 
 NCBI_PARAM_DECL(int, SNP_LOADER, DEBUG);
 NCBI_PARAM_DEF_EX(int, SNP_LOADER, DEBUG, 0,
@@ -829,10 +831,12 @@ void CSNPSeqInfo::LoadAnnotBlob(CTSE_LoadLock& load_lock)
         CRef<CSeq_entry> entry(new CSeq_entry);
         entry->SetSet().SetId().SetId(kTSEId);
         entry->SetSet().SetSeq_set();
-        string name = m_File->GetSNPAnnotName();
+        string base_name = m_File->GetSNPAnnotName();
+        string feat_name = base_name;
+        string overvew_name = base_name + +kOverviewNameSuffix;
+        string graph_name = base_name + +kGraphNameSuffix;
         SAnnotTypeSelector type(CSeq_annot::C_Data::e_Graph);
-        entry->SetSet().SetAnnot()
-            .push_back(it.GetOverviewAnnot(total_range, name));
+        entry->SetSet().SetAnnot().push_back(it.GetOverviewAnnot(total_range, overvew_name));
         load_lock->SetSeq_entry(*entry);
         CTSE_Split_Info& split_info = load_lock->GetSplitInfo();
         CTSE_Chunk_Info::TPlace place(CSeq_id_Handle(), kTSEId);
@@ -842,7 +846,7 @@ void CSNPSeqInfo::LoadAnnotBlob(CTSE_LoadLock& load_lock)
             range.SetToOpen((i+1)*kGraphChunkSize);
             int chunk_id = i*kChunkIdMul+kChunkIdGraph;
             CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(chunk_id));
-            chunk->x_AddAnnotType(name, type, it.GetSeqIdHandle(), range);
+            chunk->x_AddAnnotType(graph_name, type, it.GetSeqIdHandle(), range);
             chunk->x_AddAnnotPlace(place);
             split_info.AddChunk(*chunk);
         }
@@ -853,7 +857,7 @@ void CSNPSeqInfo::LoadAnnotBlob(CTSE_LoadLock& load_lock)
             range.SetTo((i+1)*kFeatChunkSize+it.GetMaxSNPLength());
             int chunk_id = i*kChunkIdMul+kChunkIdFeat;
             CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(chunk_id));
-            chunk->x_AddAnnotType(name, type, it.GetSeqIdHandle(), range);
+            chunk->x_AddAnnotType(feat_name, type, it.GetSeqIdHandle(), range);
             chunk->x_AddAnnotPlace(place);
             split_info.AddChunk(*chunk);
         }
@@ -875,13 +879,14 @@ void CSNPSeqInfo::LoadAnnotChunk(CTSE_Chunk_Info& chunk_info)
     int chunk_type = chunk_id%kChunkIdMul;
     int i = chunk_id/kChunkIdMul;
     CTSE_Chunk_Info::TPlace place(CSeq_id_Handle(), kTSEId);
+    string base_name = m_File->GetSNPAnnotName();
+    CSNPDbSeqIterator it = GetSeqIterator();
     if ( chunk_type == kChunkIdFeat ) {
         CRange<TSeqPos> range;
         range.SetFrom(i*kFeatChunkSize);
         range.SetToOpen((i+1)*kFeatChunkSize);
-        string name = m_File->GetSNPAnnotName();
-        CSNPDbSeqIterator it = GetSeqIterator();
-        for ( auto& annot : it.GetTableFeatAnnots(range, name) ) {
+        string feat_name = base_name;
+        for ( auto& annot : it.GetTableFeatAnnots(range, base_name) ) {
             chunk_info.x_LoadAnnot(place, *annot);
         }
     }
@@ -889,9 +894,8 @@ void CSNPSeqInfo::LoadAnnotChunk(CTSE_Chunk_Info& chunk_info)
         CRange<TSeqPos> range;
         range.SetFrom(i*kGraphChunkSize);
         range.SetToOpen((i+1)*kGraphChunkSize);
-        string name = m_File->GetSNPAnnotName();
-        CSNPDbSeqIterator it = GetSeqIterator();
-        if ( auto annot = it.GetCoverageAnnot(range, name) ) {
+        string graph_name = base_name + kGraphNameSuffix;
+        if ( auto annot = it.GetCoverageAnnot(range, graph_name) ) {
             chunk_info.x_LoadAnnot(place, *annot);
         }
     }
