@@ -419,6 +419,7 @@ void CPrimeCacheApplication::x_Process_Fasta(CNcbiIstream& istr,
     CFastaReader::TFlags flags =
         CFastaReader::fRequireID |
         CFastaReader::fForceType |
+        CFastaReader::fNoUserObjs |
         CFastaReader::fAddMods;
     switch(m_InstMol) {
     case CSeq_inst::eMol_aa:
