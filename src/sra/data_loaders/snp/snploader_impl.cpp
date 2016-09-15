@@ -78,13 +78,18 @@ static const int kChunkIdMul = 2;
 
 // splitter parameters for SNPs and graphs
 static const TSeqPos kFeatChunkSize = 1000000;
-static const TSeqPos kGraphChunkSize = 1000000;
-
-#define PILEUP_NAME_SUFFIX "pileup graphs"
+static const TSeqPos kGraphChunkSize = 10000000;
 
 NCBI_PARAM_DECL(int, SNP_LOADER, DEBUG);
 NCBI_PARAM_DEF_EX(int, SNP_LOADER, DEBUG, 0,
                   eParam_NoThread, SNP_LOADER_DEBUG);
+
+enum {
+    eDebug_open = 1,
+    eDebug_open_time = 2,
+    eDebug_load = 3,
+    eDebug_load_time = 4
+};
 
 static int GetDebugLevel(void)
 {
@@ -543,7 +548,7 @@ CSNPDataLoader_Impl::GetFileInfo(const CSNPBlobId& blob_id)
 
 
 CTSE_LoadLock CSNPDataLoader_Impl::GetBlobById(CDataSource* data_source,
-                                                const CSNPBlobId& blob_id)
+                                               const CSNPBlobId& blob_id)
 {
     CDataLoader::TBlobId loader_blob_id(&blob_id);
     CTSE_LoadLock load_lock = data_source->GetTSE_LoadLock(loader_blob_id);
@@ -573,6 +578,13 @@ CSNPDataLoader_Impl::GetOrphanAnnotRecords(CDataSource* ds,
                                            const SAnnotSelector* sel)
 {
     CDataLoader::TTSE_LockSet locks;
+    // explicitly specified files
+    for ( auto f : m_FixedFiles ) {
+        if ( auto s = f.second->GetSeqInfo(id) ) {
+            CRef<CSNPBlobId> blob_id(new CSNPBlobId(*f.second, id));
+            locks.insert(GetBlobById(ds, *blob_id));
+        }
+    }
     // implicitly load NA accessions
     if ( sel && sel->IsIncludedAnyNamedAnnotAccession() ) {
         const SAnnotSelector::TNamedAnnotAccessions& accs =
@@ -600,18 +612,36 @@ CSNPDataLoader_Impl::GetOrphanAnnotRecords(CDataSource* ds,
 void CSNPDataLoader_Impl::LoadBlob(const CSNPBlobId& blob_id,
                                    CTSE_LoadLock& load_lock)
 {
-    LOG_POST("CSNPDataLoader::LoadBlob("<<blob_id.ToString()<<")");
+    CStopWatch sw;
+    if ( GetDebugLevel() >= eDebug_load ) {
+        LOG_POST_X(5, Info<<"CSNPDataLoader::LoadBlob("<<blob_id<<")");
+        sw.Start();
+    }
     CRef<CSNPFileInfo> file_info = GetFileInfo(blob_id);
     file_info->GetSeqInfo(blob_id)->LoadAnnotBlob(load_lock);
+    if ( GetDebugLevel() >= eDebug_load_time ) {
+        LOG_POST_X(6, Info<<"CSNPDataLoader::LoadBlob("<<blob_id<<")"
+                 " loaded in "<<sw.Elapsed());
+    }
 }
 
 
 void CSNPDataLoader_Impl::LoadChunk(const CSNPBlobId& blob_id,
                                     CTSE_Chunk_Info& chunk_info)
 {
-    LOG_POST("CSNPDataLoader::LoadChunk("<<blob_id.ToString()<<"."<<chunk_info.GetChunkId()<<")");
+    CStopWatch sw;
+    if ( GetDebugLevel() >= eDebug_load ) {
+        LOG_POST_X(7, Info<<"CSNPDataLoader::"
+                   "LoadChunk("<<blob_id<<", "<<chunk_info.GetChunkId()<<")");
+        sw.Start();
+    }
     CRef<CSNPFileInfo> file_info = GetFileInfo(blob_id);
     file_info->GetSeqInfo(blob_id)->LoadAnnotChunk(chunk_info);
+    if ( GetDebugLevel() >= eDebug_load_time ) {
+        LOG_POST_X(8, Info<<"CSNPDataLoader::"
+                   "LoadChunk("<<blob_id<<", "<<chunk_info.GetChunkId()<<")"
+                   " loaded in "<<sw.Elapsed());
+    }
 }
 
 
@@ -651,10 +681,16 @@ void CSNPFileInfo::x_Initialize(CSNPDataLoader_Impl& impl,
     if ( m_AnnotName.empty() ) {
         m_AnnotName = GetDefaultAnnotName();
     }
+    CStopWatch sw;
+    if ( GetDebugLevel() >= eDebug_open ) {
+        LOG_POST_X(1, Info <<
+                   "CSNPDataLoader("<<csra<<")");
+        sw.Start();
+    }
     m_SNPDb = CSNPDb(impl.m_Mgr, CDirEntry::MakePath(impl.m_DirPath, csra));
-    if ( GetDebugLevel() >= 1 ) {
-        LOG_POST_X(8, Info <<
-                   "CSNPDataLoader("<<csra<<")="<<csra);
+    if ( GetDebugLevel() >= eDebug_open_time ) {
+        LOG_POST_X(2, Info <<
+                   "CSNPDataLoader("<<csra<<") opened VDB in "<<sw.Elapsed());
     }
 }
 
@@ -669,18 +705,6 @@ void CSNPFileInfo::GetPossibleAnnotNames(TAnnotNames& names) const
 {
     names.push_back(CAnnotName(GetSNPAnnotName()));
 }
-
-
-/*
-void CSNPFileInfo::AddSeq(const CSeq_id_Handle& id)
-{
-    if ( GetDebugLevel() >= 1 ) {
-        LOG_POST_X(9, Info << "CSNPDataLoader(" << m_FileName << "): "
-                   "Found "<<id);
-    }
-    m_Seqs[id] = new CSNPSeqInfo(this, id);
-}
-*/
 
 
 CRef<CSNPSeqInfo>
@@ -805,11 +829,13 @@ void CSNPSeqInfo::LoadAnnotBlob(CTSE_LoadLock& load_lock)
         CRef<CSeq_entry> entry(new CSeq_entry);
         entry->SetSet().SetId().SetId(kTSEId);
         entry->SetSet().SetSeq_set();
+        string name = m_File->GetSNPAnnotName();
+        SAnnotTypeSelector type(CSeq_annot::C_Data::e_Graph);
+        entry->SetSet().SetAnnot()
+            .push_back(it.GetOverviewAnnot(total_range, name));
         load_lock->SetSeq_entry(*entry);
         CTSE_Split_Info& split_info = load_lock->GetSplitInfo();
         CTSE_Chunk_Info::TPlace place(CSeq_id_Handle(), kTSEId);
-        string name = m_File->GetSNPAnnotName();
-        SAnnotTypeSelector type(CSeq_annot::C_Data::e_Graph);
         for ( int i = 0; i*kGraphChunkSize < total_range.GetToOpen(); ++i ) {
             CRange<TSeqPos> range;
             range.SetFrom(i*kGraphChunkSize);
