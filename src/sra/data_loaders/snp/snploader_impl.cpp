@@ -248,7 +248,7 @@ size_t CSNPBlobId::GetNAIndex(void) const
 void CSNPBlobId::SetNAIndex(size_t na_index)
 {
     _ASSERT(IsValidNAIndex(na_index));
-    m_SubSat = na_index;
+    m_SubSat = int(na_index);
 }
 
 
@@ -268,7 +268,7 @@ size_t CSNPBlobId::GetNAVersion(void) const
 void CSNPBlobId::SetNAVersion(size_t na_version)
 {
     _ASSERT(IsValidNAVersion(na_version));
-    m_Sat = kSNPSatBase + na_version;
+    m_Sat = int(kSNPSatBase + na_version);
 }
 
 
@@ -338,7 +338,7 @@ void CSNPBlobId::SetSeqAndFilterIndex(size_t seq_index,
 {
     _ASSERT(IsValidSeqIndex(seq_index));
     _ASSERT(IsValidFilterIndex(filter_index));
-    m_SatKey = seq_index + filter_index * kSeqIndexCount;
+    m_SatKey = int(seq_index + filter_index * kSeqIndexCount);
 }
 
 
@@ -427,20 +427,20 @@ bool CSNPBlobId::FromSatString(CTempString str)
     if ( dot2 == NPOS ) {
         return false;
     }
-    m_Sat = NStr::StringToNumeric<size_t>(str.substr(0, dot1),
-                                          NStr::fConvErr_NoThrow);
+    m_Sat = NStr::StringToNumeric<int>(str.substr(0, dot1),
+                                       NStr::fConvErr_NoThrow);
     if ( !IsValidSat() ) {
         return false;
     }
-    m_SubSat = NStr::StringToNumeric<size_t>(str.substr(dot1+1, dot2-dot1-1),
-                                             NStr::fConvErr_NoThrow);
+    m_SubSat = NStr::StringToNumeric<int>(str.substr(dot1+1, dot2-dot1-1),
+                                          NStr::fConvErr_NoThrow);
 
     if ( !IsValidSubSat() ) {
         return false;
     }
     
-    m_SatKey = NStr::StringToNumeric<size_t>(str.substr(dot2+1),
-                                             NStr::fConvErr_NoThrow);
+    m_SatKey = NStr::StringToNumeric<int>(str.substr(dot2+1),
+                                          NStr::fConvErr_NoThrow);
     if ( !IsValidSatKey() ) {
         return false;
     }
