@@ -81,7 +81,8 @@ END_LOCAL_NAMESPACE;
 
 
 NCBI_PARAM_DECL(string, SNP, ACCESSIONS);
-NCBI_PARAM_DEF(string, SNP, ACCESSIONS, "");
+NCBI_PARAM_DEF_EX(string, SNP, ACCESSIONS, "",
+                  eParam_NoThread, SNP_ACCESSIONS);
 
 
 string CSNPDataLoader::SLoaderParams::GetLoaderName(void) const

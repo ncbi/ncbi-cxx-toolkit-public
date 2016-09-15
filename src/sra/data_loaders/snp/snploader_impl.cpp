@@ -159,6 +159,7 @@ const int kNAVersionMin = 1;
 const int kNAVersionMax = 99;
 const int kSeqIndexCount = 1000000;
 const int kFilterIndexCount = 2000;
+const int kFilterIndexMaxLength = 4;
 
 CSNPBlobId::CSNPBlobId(const CTempString& str)
 {
@@ -174,6 +175,20 @@ CSNPBlobId::CSNPBlobId(const CSNPFileInfo& file,
       m_File(file.GetFileName()),
       m_SeqId(seq_id)
 {
+    SetSeqAndFilterIndex(0, file.GetDefaultFilterIndex());
+}
+
+
+CSNPBlobId::CSNPBlobId(const CSNPFileInfo& file,
+                       const CSeq_id_Handle& seq_id,
+                       size_t filter_index)
+    : m_Sat(0),
+      m_SubSat(0),
+      m_SatKey(0),
+      m_File(file.GetFileName()),
+      m_SeqId(seq_id)
+{
+    SetSeqAndFilterIndex(0, filter_index);
 }
 
 
@@ -313,7 +328,7 @@ size_t CSNPBlobId::GetSeqIndex(void) const
 
 size_t CSNPBlobId::GetFilterIndex(void) const
 {
-    _ASSERT(IsSatId());
+    _ASSERT(IsSatId() || GetSatKey() % kSeqIndexCount == 0);
     return GetSatKey() / kSeqIndexCount;
 }
 
@@ -354,6 +369,32 @@ string CSNPBlobId::GetFileName(void) const
 
 static const char kFileEnd[] = "|||";
 
+
+static
+size_t sx_ExtractFilterIndex(string& s)
+{
+    size_t size = s.size();
+    size_t pos = size;
+    while ( pos && isdigit(s[pos-1]) ) {
+        --pos;
+    }
+    size_t num_len = size - pos;
+    if ( !num_len || num_len > kFilterIndexMaxLength ||
+         !pos || s[pos] == '0' || s[pos-1] != '#' ) {
+        return 0;
+    }
+    size_t index = NStr::StringToNumeric<size_t>(s.substr(pos));
+    if ( !CSNPBlobId::IsValidFilterIndex(index) ) {
+        return 0;
+    }
+    // internally filter index is zero-based, but in accession it's one-based
+    --index;
+    // remove filter index from accession
+    s.resize(pos - 1);
+    return index;
+}
+
+
 string CSNPBlobId::ToString(void) const
 {
     CNcbiOstrstream out;
@@ -362,6 +403,9 @@ string CSNPBlobId::ToString(void) const
     }
     else {
         out << m_File;
+        if ( size_t filter_index = GetFilterIndex() ) {
+            out << '#' << (filter_index+1);
+        }
         out << kFileEnd;
         out << m_SeqId;
     }
@@ -423,6 +467,7 @@ void CSNPBlobId::FromString(CTempString str)
     }
     m_File = str.substr(0, div);
     m_SeqId = CSeq_id_Handle::GetHandle(str.substr(div+strlen(kFileEnd)));
+    SetSeqAndFilterIndex(0, sx_ExtractFilterIndex(m_File));
 }
 
 
@@ -488,17 +533,18 @@ CSNPDataLoader_Impl::~CSNPDataLoader_Impl(void)
 
 void CSNPDataLoader_Impl::AddFixedFile(const string& file)
 {
-    m_FixedFiles[file] = new CSNPFileInfo(*this, file);
+    CRef<CSNPFileInfo> info(new CSNPFileInfo(*this, file));
+    m_FixedFiles[info->GetFileName()] = info;
 }
 
 
-CRef<CSNPFileInfo> CSNPDataLoader_Impl::GetFixedFile(const string& acc)
+CRef<CSNPFileInfo> CSNPDataLoader_Impl::GetFixedFile(const CSNPBlobId& blob_id)
 {
-    TFixedFiles::iterator it = m_FixedFiles.find(acc);
-    if ( it != m_FixedFiles.end() ) {
-        return it->second;
+    TFixedFiles::iterator it = m_FixedFiles.find(blob_id.GetFileName());
+    if ( it == m_FixedFiles.end() ) {
+        return null;
     }
-    return null;
+    return it->second;
 }
 
 
@@ -541,11 +587,22 @@ CRef<CSNPFileInfo>
 CSNPDataLoader_Impl::GetFileInfo(const CSNPBlobId& blob_id)
 {
     if ( !m_FixedFiles.empty() ) {
-        return GetFixedFile(blob_id.GetFileName());
+        return GetFixedFile(blob_id);
     }
     else {
         return FindFile(blob_id.GetFileName());
     }
+}
+
+
+CRef<CSNPSeqInfo>
+CSNPDataLoader_Impl::GetSeqInfo(const CSNPBlobId& blob_id)
+{
+    CRef<CSNPSeqInfo> info = GetFileInfo(blob_id)->GetSeqInfo(blob_id);
+    if ( size_t filter_index = blob_id.GetFilterIndex() ) {
+        info->m_FilterIndex = filter_index;
+    }
+    return info;
 }
 
 
@@ -619,8 +676,7 @@ void CSNPDataLoader_Impl::LoadBlob(const CSNPBlobId& blob_id,
         LOG_POST_X(5, Info<<"CSNPDataLoader::LoadBlob("<<blob_id<<")");
         sw.Start();
     }
-    CRef<CSNPFileInfo> file_info = GetFileInfo(blob_id);
-    file_info->GetSeqInfo(blob_id)->LoadAnnotBlob(load_lock);
+    GetSeqInfo(blob_id)->LoadAnnotBlob(load_lock);
     if ( GetDebugLevel() >= eDebug_load_time ) {
         LOG_POST_X(6, Info<<"CSNPDataLoader::LoadBlob("<<blob_id<<")"
                  " loaded in "<<sw.Elapsed());
@@ -637,8 +693,7 @@ void CSNPDataLoader_Impl::LoadChunk(const CSNPBlobId& blob_id,
                    "LoadChunk("<<blob_id<<", "<<chunk_info.GetChunkId()<<")");
         sw.Start();
     }
-    CRef<CSNPFileInfo> file_info = GetFileInfo(blob_id);
-    file_info->GetSeqInfo(blob_id)->LoadAnnotChunk(chunk_info);
+    GetSeqInfo(blob_id)->LoadAnnotChunk(chunk_info);
     if ( GetDebugLevel() >= eDebug_load_time ) {
         LOG_POST_X(8, Info<<"CSNPDataLoader::"
                    "LoadChunk("<<blob_id<<", "<<chunk_info.GetChunkId()<<")"
@@ -679,6 +734,7 @@ void CSNPFileInfo::x_Initialize(CSNPDataLoader_Impl& impl,
 {
     m_IsValidNA = CSNPBlobId::IsValidNA(csra);
     m_FileName = csra;
+    m_DefaultFilterIndex = sx_ExtractFilterIndex(m_FileName);
     m_AnnotName = impl.m_AnnotName;
     if ( m_AnnotName.empty() ) {
         m_AnnotName = GetDefaultAnnotName();
@@ -686,13 +742,14 @@ void CSNPFileInfo::x_Initialize(CSNPDataLoader_Impl& impl,
     CStopWatch sw;
     if ( GetDebugLevel() >= eDebug_open ) {
         LOG_POST_X(1, Info <<
-                   "CSNPDataLoader("<<csra<<")");
+                   "CSNPDataLoader("<<m_FileName<<")");
         sw.Start();
     }
-    m_SNPDb = CSNPDb(impl.m_Mgr, CDirEntry::MakePath(impl.m_DirPath, csra));
+    m_SNPDb = CSNPDb(impl.m_Mgr, m_FileName);
     if ( GetDebugLevel() >= eDebug_open_time ) {
         LOG_POST_X(2, Info <<
-                   "CSNPDataLoader("<<csra<<") opened VDB in "<<sw.Elapsed());
+                   "CSNPDataLoader("<<m_FileName<<")"
+                   " opened VDB in "<<sw.Elapsed());
     }
 }
 
@@ -772,7 +829,7 @@ CSNPSeqInfo::CSNPSeqInfo(CSNPFileInfo* file,
                          const CSNPDbSeqIterator& it)
     : m_File(file),
       m_SeqIndex(it.GetVDBSeqIndex()),
-      m_FilterIndex(0)
+      m_FilterIndex(file->GetDefaultFilterIndex())
 {
     if ( !m_File->IsValidNA() ||
          !CSNPBlobId::IsValidSeqIndex(m_SeqIndex) ||
@@ -791,7 +848,7 @@ CRef<CSNPBlobId> CSNPSeqInfo::GetBlobId(void) const
     if ( !m_SeqId ) {
         return Ref(new CSNPBlobId(*m_File, m_SeqIndex, m_FilterIndex));
     }
-    return Ref(new CSNPBlobId(*m_File, m_SeqId));
+    return Ref(new CSNPBlobId(*m_File, m_SeqId, m_FilterIndex));
 }
 
 
@@ -813,12 +870,17 @@ void CSNPSeqInfo::SetBlobId(CRef<CSNPBlobId>& ret,
 CSNPDbSeqIterator
 CSNPSeqInfo::GetSeqIterator(void) const
 {
+    CSNPDbSeqIterator it;
     if ( !m_SeqId ) {
-        return CSNPDbSeqIterator(*m_File, m_SeqIndex);
+        it = CSNPDbSeqIterator(*m_File, m_SeqIndex);
     }
     else {
-        return CSNPDbSeqIterator(*m_File, m_SeqId);
+        it = CSNPDbSeqIterator(*m_File, m_SeqId);
     }
+    if ( m_FilterIndex ) {
+        it.SetTrack(CSNPDbTrackIterator(*m_File, m_FilterIndex));
+    }
+    return it;
 }
 
 
