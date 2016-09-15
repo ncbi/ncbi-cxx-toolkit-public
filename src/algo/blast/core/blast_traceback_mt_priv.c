@@ -191,7 +191,7 @@ BlastHSPResults* SThreadLocalDataArrayConsolidateResults(SThreadLocalDataArray* 
                 : MAX(thread_hitlist->worst_evalue, hits4query->worst_evalue);
             hits4query->low_score = !tid
                 ? thread_hitlist->low_score
-                : MAX(thread_hitlist->low_score, hits4query->low_score);
+                : MIN(thread_hitlist->low_score, hits4query->low_score);
         }
     }
 
