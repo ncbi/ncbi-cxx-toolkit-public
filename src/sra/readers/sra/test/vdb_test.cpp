@@ -1243,13 +1243,20 @@ int CCSRATestApp::Run(void)
             int count = args["limit_count"].AsInteger();
             Uint8 scanned = 0, clipped = 0;
             Uint8 rejected = 0, duplicate = 0, hidden = 0;
-            Uint8 start_id = args["start_id"]? args["start_id"].AsInteger(): 1;
             Uint8 spot_id = 0;
             Uint4 read_id = 0;
             CCSraShortReadIterator::TBioseqFlags flags = make_quality_graph?
                 CCSraShortReadIterator::fQualityGraph:
                 CCSraShortReadIterator::fDefaultBioseqFlags;
-            for ( CCSraShortReadIterator it(csra_db, start_id); it; ++it ) {
+            CCSraShortReadIterator it;
+            if ( args["start_id"] ) {
+                Uint8 start_id = args["start_id"].AsInteger();
+                it = CCSraShortReadIterator(csra_db, start_id);
+            }
+            else {
+                it = CCSraShortReadIterator(csra_db);
+            }
+            for ( ; it; ++it ) {
                 if ( !spot_id ) {
                     spot_id = it.GetShortId1();
                     read_id = it.GetShortId2();
@@ -1288,9 +1295,11 @@ int CCSRATestApp::Run(void)
                 }
                 if ( !--count ) break;
             }
-            CCSraShortReadIterator it(csra_db, spot_id, read_id);
-            CRef<CBioseq> seq = it.GetShortBioseq(flags);
-            out << "First: " << MSerial_AsnText << *seq;
+            if ( spot_id ) {
+                CCSraShortReadIterator it(csra_db, spot_id, read_id);
+                CRef<CBioseq> seq = it.GetShortBioseq(flags);
+                out << "First: " << MSerial_AsnText << *seq;
+            }
             out << "Clipped: "<<clipped<<"/"<<scanned<<" = "<<100.*clipped/scanned<<"%" << endl;
             if ( rejected ) {
                 out << "Rejected: "<<rejected<<"/"<<scanned<<" = "<<100.*rejected/scanned<<"%" << endl;
