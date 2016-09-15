@@ -1383,7 +1383,7 @@ static void s_TEST_BDB_LOB_File(void)
     lob.Open("lobtest.db", "lob", CBDB_LobFile::eCreate);
 
     const char* test_data = "This is a LOB test data";
-    unsigned lob_len = ::strlen(test_data)+1;
+    size_t lob_len = ::strlen(test_data)+1;
 
     EBDB_ErrCode ret = lob.Insert(1, test_data, lob_len);
     assert(ret == eBDB_Ok);
@@ -1393,7 +1393,7 @@ static void s_TEST_BDB_LOB_File(void)
 
     ret = lob.Fetch(1);
     assert(ret == eBDB_Ok);
-    unsigned len1 = lob.LobSize();
+    size_t len1 = lob.LobSize();
     assert(len1 == lob_len);
 
     char buf[256] = {0,};
@@ -1417,15 +1417,14 @@ static void s_TEST_BDB_LOB_File(void)
 #ifndef _DEBUG
     cout << "Testing reallocate read." << endl;
 
-    unsigned buf_size = 5;         // insufficient memory to get the BLOB
+    size_t buf_size = 5;         // insufficient memory to get the BLOB
     void* buf2=::malloc(buf_size);
 
     // Here we create a check buf if reallocate fails for some reasons
     // chances are it will result in checkblock signature failure
-    unsigned check_buf_size = 2000;
-    unsigned* check_buf = new unsigned[check_buf_size];
-    unsigned i;
-    for (i = 0; i < buf_size; ++i) {
+    size_t check_buf_size = 2000;
+    size_t* check_buf = new size_t[check_buf_size];
+    for (size_t i = 0; i < buf_size; ++i) {
         check_buf[i] = i;
     }
 
@@ -1433,7 +1432,7 @@ static void s_TEST_BDB_LOB_File(void)
     ret = lob.Fetch(1, &buf2, 5, CBDB_LobFile::eReallocAllowed);
     assert(ret == eBDB_Ok);
 
-    unsigned new_buf_size = lob.LobSize();
+    size_t new_buf_size = lob.LobSize();
     assert(buf_size < new_buf_size);
 
     if (strcmp((char*)buf2, test_data) != 0) {
@@ -1445,7 +1444,7 @@ static void s_TEST_BDB_LOB_File(void)
     ::free(buf2);   // should not crash here
 
     // Check the signature
-    for (i = 0; i < buf_size; ++i) {
+    for (size_t i = 0; i < buf_size; ++i) {
         assert(check_buf[i] == i);
     }
 #endif
@@ -1481,7 +1480,7 @@ static void s_TEST_BDB_BLOB_File(void)
     blob.Open("blobtest.db", "blob", CBDB_LobFile::eCreate);
 
     const char* test_data = "This is a BLOB test data";
-    unsigned lob_len = ::strlen(test_data)+1;
+    size_t lob_len = ::strlen(test_data)+1;
 
     blob.i1 = 1;
     blob.i2 = 2;
@@ -1507,8 +1506,8 @@ static void s_TEST_BDB_BLOB_File(void)
 
     CBDB_BLobStream* bstream = blob.CreateStream();
 
-    unsigned len = strlen(test_data);
-    for (unsigned i = 0; i < len+1; ++i) {
+    size_t len = strlen(test_data);
+    for (size_t i = 0; i < len+1; ++i) {
         char ch = test_data[i];
         bstream->Write(&ch, 1);
     }
@@ -1520,7 +1519,7 @@ static void s_TEST_BDB_BLOB_File(void)
 
     ret = blob.Fetch();
     assert(ret == eBDB_Ok);
-    unsigned len1 = blob.LobSize();
+    size_t len1 = blob.LobSize();
     assert(len1 == strlen(test_data)+1);
 
     char buf[256] = {0,};
@@ -1544,7 +1543,7 @@ static void s_TEST_BDB_BLOB_File(void)
 
     ret = blob.Fetch();
     assert(ret == eBDB_Ok);
-    unsigned len1 = blob.LobSize();
+    size_t len1 = blob.LobSize();
     assert(len1 == strlen(test_data)+1);
 
     char buf[256] = {0,};
@@ -1573,7 +1572,7 @@ static void s_TEST_BDB_BLOB_File(void)
     while (cur.Fetch() == eBDB_Ok) {
 
         assert(blob.i2 == 2 || blob.i2 == 3 || blob.i2 == 4);
-        unsigned len = blob.LobSize();
+        size_t len = blob.LobSize();
         ret = blob.GetData(buf, sizeof(buf));
         assert(ret == eBDB_Ok);
         if (strcmp(buf, tdata) != 0) {
@@ -2036,7 +2035,7 @@ static void s_TEST_BDB_Queue()
     {{
     TestQueueBlob db_q_blob;
     const char* szTest = "Hello queue!";
-    unsigned len = strlen(szTest)+1;
+    size_t len = strlen(szTest) + 1;
     db_q_blob.Open("db_queue_blob.que", CBDB_File::eCreate,
                    false /*disable dirty reads*/, 100 /*max record length*/);
 
@@ -2044,7 +2043,6 @@ static void s_TEST_BDB_Queue()
     cout << rec_id << endl;
     char szBuf[100];
 
-    EBDB_ErrCode ret;
     db_q_blob.key = rec_id;
     ret = db_q_blob.GetData(szBuf, 100);
     cout << "Read value: " << szBuf << " BDB error code: " << ret << endl;
@@ -2080,8 +2078,8 @@ static void s_TEST_BDB_Hash()
     ret = db_h.Fetch();
     assert (ret == eBDB_Ok);
 
-    string d = db_h.value.GetString();
-    assert (d == "data_0");
+    string d0 = db_h.value.GetString();
+    assert (d0 == "data_0");
 
 
     db_h.key = "update1";
@@ -2109,7 +2107,7 @@ static void s_TEST_BDB_Hash()
     assert (ret == eBDB_NotFound);
 
     for (int i = 0; i < 100; ++i) {
-        string k = "key_" + NStr::IntToString(i);
+        string k = "key_"  + NStr::IntToString(i);
         string d = "data_" + NStr::IntToString(i);
         db_h.key = k;
 

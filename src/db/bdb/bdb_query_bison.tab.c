@@ -778,7 +778,7 @@ yyparse ()
 int yychar;
 
 /* The semantic value of the lookahead symbol.  */
-YYSTYPE yylval;
+YYSTYPE yylval = 0;
 
 /* Number of syntax errors so far.  */
 int yynerrs;
@@ -817,7 +817,7 @@ int yynerrs;
 
   /* The variables used to return semantic value and location from the
      action routines.  */
-  YYSTYPE yyval;
+  YYSTYPE yyval = 0;
 
 
   /* When reducing, the number of symbols on the RHS of the reduced
@@ -851,7 +851,7 @@ int yynerrs;
   yyssp++;
 
  yysetstate:
-  *yyssp = yystate;
+  *yyssp = (short)yystate;
 
   if (yyss + yystacksize - 1 <= yyssp)
     {

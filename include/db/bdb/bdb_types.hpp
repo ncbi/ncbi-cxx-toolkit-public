@@ -2339,7 +2339,7 @@ int CBDB_FieldFixedByteString::Compare(const void* p1,
 }
 
 inline
-size_t CBDB_FieldFixedByteString::GetDataLength(const void* buf) const
+size_t CBDB_FieldFixedByteString::GetDataLength(const void* /*buf*/) const
 {
     return GetBufferSize();
 }
@@ -2580,7 +2580,7 @@ inline void CBDB_BufferManager::SetNullBit(unsigned int n, bool value)
     unsigned char  mask = (unsigned char) (1 << (n & 7));
     unsigned char* offs = buf + (n >> 3);
 
-    (void) (value ? (*offs |= mask) : (*offs &= ~mask));
+    (void) (value ? (*offs |= mask) : (*offs &= (unsigned char)~mask));
 }
 
 

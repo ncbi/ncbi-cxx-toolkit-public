@@ -56,7 +56,7 @@ const unsigned char* s_GetLString(const unsigned char* str,
             *str_len = -(*str_len);
             str += 4;
         } else {
-            *str_len = ::strlen((const char*)str);
+            *str_len = (int)::strlen((const char*)str);
         }
     } else {  // no legacy strings
         if (*str_len <= 0) { // true L-string
@@ -80,7 +80,7 @@ const unsigned char* s_GetLString(const DBT* val,
 
     if (val->size <= 4) {  // looks like legacy C-string
         _ASSERT(check_legacy);
-        *str_len = ::strlen((const char*)str);
+        *str_len = (int)::strlen((const char*)str);
         return str;
     }
 
@@ -241,10 +241,9 @@ int BDB_StringCompare(DB*, const DBT* val1, const DBT* val2)
     return ::strcmp((const char*)val1->data, (const char*)val2->data);
 }
 
-int BDB_FixedByteStringCompare(DB* db, const DBT* val1, const DBT* val2)
+int BDB_FixedByteStringCompare(DB* /*db*/, const DBT* val1, const DBT* val2)
 {
     _ASSERT(val1->size == val2->size);
-
     int r = ::memcmp(val1->data, val2->data, val1->size);
     return r;
 }
@@ -527,7 +526,7 @@ int CBDB_BufferManager::GetFieldIndex(const string& name) const
         const CBDB_Field& field = *m_Fields[i];
         const string& fname = field.GetName();
         if (NStr::CompareNocase(name, fname) == 0) {
-            return i;
+            return (int)i;
         }
     }
     return -1;
@@ -638,23 +637,21 @@ void CBDB_BufferManager::ArrangePtrsPacked()
     }
 }
 
+
 void CBDB_BufferManager::x_ComputePackOpt()
 {
-    unsigned int offset = m_NullSetSize;
+    size_t offset = m_NullSetSize;
 
     for (TFieldVector::size_type i = 0;  i < m_Fields.size();  ++i) {
         CBDB_Field& df = *m_Fields[i];
 
         if (df.IsVariableLength()) {
-            m_FirstVarFieldIdx = i;
+            m_FirstVarFieldIdx = (unsigned int)i;
             break;
         }
-
-        size_t actual_len = df.GetLength();
-        offset += actual_len;
-    } // for
-
-    m_FirstVarFieldIdxOffs = offset;
+        offset += df.GetLength();
+    }
+    m_FirstVarFieldIdxOffs = (unsigned int)offset;
     m_PackOptComputed = true;
 }
 
@@ -936,18 +933,18 @@ void CBDB_FieldLString::Set(const char* str, size_t size,
     if ( !size )
         str = kEmptyCStr;
 
-    unsigned int new_len = (unsigned)size;
+    size_t new_len = size;
 
     // check overflow
-    unsigned eff_buffer_size = GetBufferSize() - 4;
+    size_t eff_buffer_size = GetBufferSize() - 4;
     if (new_len > eff_buffer_size) {
         if (if_overflow == eTruncateOnOverflow) {
             new_len = eff_buffer_size;
         } else {
             string message("String field overflow. Max length is ");
-            message += NStr::IntToString(eff_buffer_size);
+            message += NStr::NumericToString(eff_buffer_size);
             message += ", requested length is ";
-            message += NStr::IntToString(new_len);
+            message += NStr::NumericToString(new_len);
             BDB_THROW(eOverflow, message);
         }
     }
@@ -1017,12 +1014,12 @@ void CBDB_FieldLString::SetMinVal()
 void CBDB_FieldLString::SetMaxVal()
 {
     void* buf = Unpack();
-    int buf_size = GetBufferSize();
+    size_t buf_size = GetBufferSize();
 
     ::memset(buf, 0x7F, buf_size); // 0xFF for international
     ((char*) buf)[buf_size - 1] = '\0';
 
-    int s_len = -(buf_size - 4);  // always store it negative
+    int s_len = -((int)buf_size - 4);  // always store it negative
     unsigned char* str_buf = (unsigned char*) buf;
 
     str_buf[0] = (unsigned char) (s_len);
@@ -1127,19 +1124,19 @@ void CBDB_FieldLString::ToString(string& ostr) const
 
 void CBDB_FieldLString::SetStdString(const string& str)
 {
-    unsigned int str_len = str.length();
+    size_t str_len = str.length();
     if (str_len == 0) {
         Set("", eThrowOnOverflow);
         return;
     }
 
-    unsigned eff_buffer_size = GetBufferSize() - 4;
+    size_t eff_buffer_size = GetBufferSize() - 4;
     // check overflow
     if (str_len > eff_buffer_size) {
         string message("String field overflow. Max length is ");
-        message += NStr::IntToString(eff_buffer_size);
+        message += NStr::NumericToString(eff_buffer_size);
         message += ", requested length is ";
-        message += NStr::IntToString(str_len);
+        message += NStr::NumericToString(str_len);
         BDB_THROW(eOverflow, message);
     }
 
@@ -1154,7 +1151,6 @@ void CBDB_FieldLString::SetStdString(const string& str)
     str_buf[3] = (unsigned char) (s_len >> 24);
 
     str_buf += 4;
-
     ::memcpy(str_buf, str_data, str_len);
 
     SetNotNull();

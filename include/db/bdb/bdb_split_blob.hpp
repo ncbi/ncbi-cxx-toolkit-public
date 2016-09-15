@@ -95,7 +95,7 @@ public:
         static const unsigned size_split[] = {
             256, 512, 2048, 4096, 8192, 16384, 32768
         };
-        const unsigned kMaxSize = sizeof(size_split) / sizeof(*size_split);
+        const unsigned kMaxSize = (unsigned)(sizeof(size_split) / sizeof(*size_split));
 
         for (unsigned i = 0; i < kMaxSize;  ++i) {
             if (blob_size < size_split[i]) {
@@ -806,7 +806,7 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::Insert(unsigned int     id,
 
     {{
         TLockGuard lg(m_ObjDeMuxLock);
-        m_ObjDeMux->GetCoordinates(size, coord);
+        m_ObjDeMux->GetCoordinates((unsigned)size, coord);
     }}
 
     {{
@@ -1367,8 +1367,8 @@ CBDB_BlobSplitStore<TBV, TObjDeMux, TL>::SaveIdDeMux(
         const typename TIdDeMux::TDimVector& dv = de_mux.GetDimVector(i);
 
         for (size_t j = 0; j < dv.size(); ++j) {
-            dict_file.dim = i;
-            dict_file.dim_idx = j;
+            dict_file.dim = (Uint4) i;
+            dict_file.dim_idx = (Uint4) j;
 
             const TBitVector* bv = dv[j].get();
             if (!bv) {

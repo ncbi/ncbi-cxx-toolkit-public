@@ -65,7 +65,7 @@ int yylex(YYSTYPE *lvalp, void* param)
     CBDB_QueryParserEnvironment* env = (CBDB_QueryParserEnvironment*) param;
 
     // Skip white space 
-    while (isspace((unsigned char)(c = env->GetChar())));
+    while (isspace((unsigned char)(c = (char)env->GetChar())));
 
     // Process single char tokens
     for (i = 0; i < sizeof(char_tokens) / sizeof(char_tokens[0]); ++i) {
@@ -79,7 +79,7 @@ int yylex(YYSTYPE *lvalp, void* param)
     // Process string tokens in apostrophes
     if (c == '\'') {
         do {
-            c = env->GetChar();
+            c = (char)env->GetChar();
             if (c == 0) {
                 string err_msg = "Invalid string ";
                 err_msg.append(tok_start);
@@ -163,7 +163,7 @@ int yylex(YYSTYPE *lvalp, void* param)
     // Process name-like tokens
     if (isalnum((unsigned char) c)) {
         do {
-            c = env->GetChar();            
+            c = (char)env->GetChar();
         } while (isalnum((unsigned char) c) || c == '_');
 
         env->UnGetChar();

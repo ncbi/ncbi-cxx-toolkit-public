@@ -190,7 +190,7 @@ void CBDB_FileDumper::Dump(CNcbiOstream& out, CBDB_FileCursor& cur)
         if (blob_db) {
             unsigned char buf[2048];
 
-            unsigned size = blob_db->LobSize();
+            size_t size = blob_db->LobSize();
             out << m_ColumnSeparator;
             if (size) {
 

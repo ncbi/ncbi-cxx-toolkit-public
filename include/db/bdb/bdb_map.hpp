@@ -139,7 +139,7 @@ public:
             return *this;
         }
 
-        void open_cursor(CBDB_RawFile::EOpenMode open_mode,
+        void open_cursor(CBDB_RawFile::EOpenMode /*open_mode*/,
                          CBDB_FileCursor::ECondition cursor_condition) const
         {
             delete m_Cur; m_Cur = 0;

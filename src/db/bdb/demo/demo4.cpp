@@ -91,14 +91,14 @@ void PrintBLOB_Table()
     EBDB_ErrCode ret = lob.Fetch(1);
 
     if (ret == eBDB_Ok) {
-        unsigned size = lob.LobSize();
+        size_t size = lob.LobSize();
         if (size > sizeof(buffer)) {
             cout << "Insufficient buffer size!" << endl;
         }
         else {
             ret = lob.GetData(buffer, sizeof(buffer));
             assert(ret == eBDB_Ok);
-            for (unsigned int i = 0; i < size / sizeof(buffer[0]); ++i) {
+            for (size_t i = 0; i < size / sizeof(buffer[0]); ++i) {
                 cout << buffer[i] << " ";
             }
             cout << endl;
@@ -118,8 +118,8 @@ void PrintBLOB_Table()
                     CBDB_LobFile::eReallocForbidden);
 
     if (ret == eBDB_Ok) {
-        unsigned size = lob.LobSize();
-        for (unsigned int i = 0; i < size / sizeof(buffer[0]); ++i) {
+        size_t size = lob.LobSize();
+        for (size_t i = 0; i < size / sizeof(buffer[0]); ++i) {
             cout << buffer[i] << " ";
         }
         cout << endl;
@@ -187,14 +187,14 @@ void PrintDemoDB()
     EBDB_ErrCode ret = lob.Fetch();
 
     if (ret == eBDB_Ok) {
-        unsigned size = lob.LobSize();
+        size_t size = lob.LobSize();
         if (size > sizeof(buffer)) {
             NcbiCout << "Insufficient buffer size!" << NcbiEndl;
         }
         else {
             ret = lob.GetData(buffer, sizeof(buffer));
             assert(ret == eBDB_Ok);
-            for (unsigned int i = 0; i < size / sizeof(buffer[0]); ++i) {
+            for (size_t i = 0; i < size / sizeof(buffer[0]); ++i) {
                 NcbiCout << buffer[i] << " ";
             }
             NcbiCout << NcbiEndl;

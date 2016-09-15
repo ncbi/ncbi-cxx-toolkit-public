@@ -79,8 +79,8 @@ CBlobMetaDB::UpdateInsert(const CBDB_BlobMetaContainer& meta_container)
 EBDB_ErrCode
 CBlobMetaDB::FetchMeta(Uint4                   blob_id,
                        CBDB_BlobMetaContainer* meta_container,
-                       Uint4*                  id_from,
-                       Uint4*                  id_to)
+                       Uint4*                  id_from_arg,
+                       Uint4*                  id_to_arg)
 {
     _ASSERT(meta_container);
 
@@ -109,10 +109,10 @@ CBlobMetaDB::FetchMeta(Uint4                   blob_id,
             meta_container->Deserialize(buf);
             const CBDB_ExtBlobMap& bmap = meta_container->GetBlobMap();
             if (bmap.HasBlob(blob_id)) {
-                if (id_from)
-                    *id_from = from;
-                if (id_to)
-                    *id_to = to;
+                if (id_from_arg)
+                    *id_from_arg = from;
+                if (id_to_arg)
+                    *id_to_arg = to;
 
                 return eBDB_Ok;
             }
@@ -440,7 +440,7 @@ void CBDB_ExtBlobMap::Serialize(CBDB_RawFile::TBuffer* buf,
         ptr += sizeof(bl.blob_id);
 
         if (!is_single_chunk) {
-            sz = bl.blob_location_table.size();
+            sz = (unsigned)bl.blob_location_table.size();
             ::memcpy(ptr, &sz, sizeof(sz));
             ptr += sizeof(sz);
         }

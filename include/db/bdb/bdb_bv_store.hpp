@@ -580,7 +580,7 @@ SBDB_BvStore_Id<TBV>::ComputeBitCountMap(TBitCountMap* bc_map,
                 continue;
 */
                 this->m_Buffer.resize(buf_size);
-                void* p = &this->m_Buffer[0];
+                p = &this->m_Buffer[0];
                 err = cur.Fetch(CBDB_FileCursor::eDefault,
                                 &p, this->m_Buffer.size(),
                                 CBDB_File::eReallocForbidden);
@@ -686,7 +686,7 @@ void CBDB_MatrixBvStore<TBV, TM>::LoadMatrixDescriptions(
             if (e.IsBufferSmall()  ||  e.IsNoMem()) {
                 unsigned buf_size = this->LobSize();
                 this->m_Buffer.resize(buf_size);
-                void* p = &this->m_Buffer[0];
+                p = &this->m_Buffer[0];
                 err = cur.Fetch(CBDB_FileCursor::eCurrent,
                                 &p, this->m_Buffer.size(),
                                 CBDB_File::eReallocForbidden);

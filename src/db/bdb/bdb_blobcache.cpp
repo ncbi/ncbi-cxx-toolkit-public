@@ -236,7 +236,7 @@ private:
 class CCacheBufferResizeStrategy
 {
 public:
-    static size_t GetNewCapacity(size_t cur_capacity, size_t requested_size)
+    static size_t GetNewCapacity(size_t /*cur_capacity*/, size_t requested_size)
     {
         size_t reserve = requested_size / 2;
         if (reserve > 1 * 1024 * 1024) {
@@ -379,7 +379,7 @@ public:
         if (count == 0)
             return eRW_Success;
 //      m_AttrUpdFlag = false;
-        m_BlobSize += count;
+        m_BlobSize += (unsigned)count;
         m_Flushed = false;
 
         // check BLOB size quota
@@ -406,7 +406,7 @@ public:
 
 //        if (m_Buffer.size()) {
         if (!m_OverflowFile) {
-            unsigned int new_buf_length = m_Buffer.size() + count;
+            size_t new_buf_length = m_Buffer.size() + count;
             if (new_buf_length <= m_Cache.GetOverflowLimit()) {
                 size_t old_size = m_Buffer.size();
                 m_Buffer.resize(old_size + count);
@@ -1545,7 +1545,7 @@ void CBDB_Cache::StopPurgeThread()
 
 void CBDB_Cache::OpenReadOnly(const string&  cache_path,
                               const string&  cache_name,
-                              unsigned int   cache_ram_size)
+                              unsigned int   /*cache_ram_size*/)
 {
     {{
 
@@ -1658,7 +1658,7 @@ ICache::TFlags CBDB_Cache::GetFlags()
     return (TFlags) 0;
 }
 
-void CBDB_Cache::SetFlags(ICache::TFlags flags)
+void CBDB_Cache::SetFlags(ICache::TFlags)
 {
 }
 
@@ -1862,7 +1862,7 @@ void CBDB_Cache::RegisterOverflow(const string&  key,
                 m_CacheAttrDB->upd_count = upd_count;
                 m_CacheAttrDB->owner_name = owner;
 
-                blob_id = m_CacheAttrDB->blob_id;
+                blob_id  = m_CacheAttrDB->blob_id;
                 coord[0] = m_CacheAttrDB->volume_id;
                 coord[1] = m_CacheAttrDB->split_id;
 
@@ -1871,7 +1871,7 @@ void CBDB_Cache::RegisterOverflow(const string&  key,
         }} // cursor
 
         if (ret != eBDB_Ok) { // record not found: re-registration
-            unsigned blob_id = GetNextBlobId(false /*no locking*/);
+            unsigned next_blob_id = GetNextBlobId(false /*no locking*/);
             m_CacheAttrDB->key = key;
             m_CacheAttrDB->version = version;
             m_CacheAttrDB->subkey = subkey;
@@ -1882,7 +1882,7 @@ void CBDB_Cache::RegisterOverflow(const string&  key,
             m_CacheAttrDB->upd_count  = 0;
             m_CacheAttrDB->read_count = 0;
             m_CacheAttrDB->owner_name = owner;
-            m_CacheAttrDB->blob_id = blob_id;
+            m_CacheAttrDB->blob_id = next_blob_id;
             m_CacheAttrDB->volume_id = 0;
             m_CacheAttrDB->split_id = 0;
 
@@ -1891,7 +1891,7 @@ void CBDB_Cache::RegisterOverflow(const string&  key,
                 LOG_POST_X(16, Error << "Failed to insert BLOB attributes "
                                << key << " " << version << " " << subkey);
             } else {
-                m_CacheIdIDX->blob_id = blob_id;
+                m_CacheIdIDX->blob_id = next_blob_id;
                 m_CacheIdIDX->key = key;
                 m_CacheIdIDX->version = version;
                 m_CacheIdIDX->subkey = subkey;
@@ -1902,7 +1902,6 @@ void CBDB_Cache::RegisterOverflow(const string&  key,
                                    << key << " " << version << " " << subkey);
                 }
             }
-
 
         }
 
@@ -2048,9 +2047,9 @@ void CBDB_Cache::x_Store(unsigned       blob_id,
 
                 try {
                     unsigned split_coord[2];
-                    EBDB_ErrCode ret =
+                    EBDB_ErrCode res =
                         m_BLOB_SplitStore->GetCoordinates(blob_id, split_coord);
-                    if (ret == eBDB_Ok) {
+                    if (res == eBDB_Ok) {
                         if (coord[0] != split_coord[0] || coord[1] != split_coord[1]) {
                             m_BLOB_SplitStore->Delete(blob_id, split_coord,
                                                       CBDB_RawFile::eThrowOnError);
@@ -2189,7 +2188,7 @@ void CBDB_Cache::x_Store(unsigned       blob_id,
         if (IsSaveStatistics()) {
             CFastMutexGuard guard(m_DB_Lock);
             m_Statistics.AddStore(owner, curr - tz_delta,
-                                  blob_stored, blob_updated, size, overflow);
+                                  blob_stored, blob_updated, (unsigned)size, overflow);
         }
 
     }
@@ -3621,7 +3620,7 @@ void CBDB_Cache::EvaluateTimeLine(bool* interrupted)
         // Check expiration of BLOB keys
         //
         if (blob_batch_vect.size()) {
-            time_t curr = time(0); // initial timepoint
+            curr = time(0); // initial timepoint
             CStopWatch  sw(CStopWatch::eStart);
 
             {{
@@ -3648,7 +3647,7 @@ void CBDB_Cache::EvaluateTimeLine(bool* interrupted)
 
                     } else {
                         {{
-                            CFastMutexGuard guard(m_TimeLine_Lock);
+                            CFastMutexGuard guard_timeline(m_TimeLine_Lock);
                             m_TimeLine->AddObject(exp_time, blob_descr.blob_id);
                         }} // m_TimeLine_Lock
                     }
@@ -3977,7 +3976,7 @@ purge_start:
 
                     // FIXME: statistics, locking, etc
                     if (IsSaveStatistics()) {
-                        CFastMutexGuard guard(m_DB_Lock);
+                        CFastMutexGuard guard_dbl(m_DB_Lock);
                         if (0 == m_CacheAttrDB_RO2->read_count) {
                             m_Statistics.AddNeverRead(owner_name);
                         }
@@ -3993,7 +3992,7 @@ purge_start:
                     ++db_recs;
 
                     {{
-                        CFastMutexGuard guard(m_TimeLine_Lock);
+                        CFastMutexGuard guard_timeline(m_TimeLine_Lock);
                         m_TimeLine->AddObject(exp_time, blob_id);
                     }} // m_TimeLine_Lock
 
@@ -4005,7 +4004,7 @@ purge_start:
                             // too agressively
 
                             double delta = fabs(double(m_NextExpTime - exp_time));
-                            double fraction = fabs(double(delta / m_NextExpTime));
+                            double fraction = fabs(delta / double(m_NextExpTime));
                             if (fraction > 0.1 && delta > m_PurgeThreadDelay) {
                                 next_exp_key = key;
                                 m_NextExpTime = exp_time;
@@ -4358,7 +4357,7 @@ void CBDB_Cache::Verify(const string&  cache_path,
     delete m_Env; m_Env = 0;
 }
 
-void CBDB_Cache::x_PerformCheckPointNoLock(unsigned bytes_written)
+void CBDB_Cache::x_PerformCheckPointNoLock(unsigned /*bytes_written*/)
 {
     if (m_RunPurgeThread == false) {
         m_Env->TransactionCheckpoint();
@@ -4420,7 +4419,7 @@ bool CBDB_Cache::x_CheckTimeStampExpired(SCache_AttrDB& attr_db,
 
 void CBDB_Cache::x_UpdateAccessTime(const string&  key,
                                     int            version,
-                                    const string&  subkey,
+                                    const string&  /*subkey*/,
                                     EBlobAccessType access_type,
                                     CBDB_Transaction& trans)
 {
@@ -4599,10 +4598,10 @@ void CBDB_Cache::x_DropOverflow(const string&  file_path)
 
 unsigned CBDB_Cache::GetNextBlobId(bool lock_id)
 {
-    unsigned blob_id = m_BlobIdCounter.Add(1);
+    unsigned blob_id = (unsigned)m_BlobIdCounter.Add(1);
     if (blob_id >= kMax_UInt) {
         m_BlobIdCounter.Set(0);
-        blob_id = m_BlobIdCounter.Add(1);
+        blob_id = (unsigned)m_BlobIdCounter.Add(1);
         m_GC_Deleted.clear();
     }
     if (lock_id) {
@@ -4956,8 +4955,8 @@ CBDB_Cache::BlobCheckIn(unsigned         blob_id_ext,
 
 
 
-void CBDB_Cache::x_UpdateOwnerStatOnDelete(const string& owner,
-                                           bool          expl_delete)
+void CBDB_Cache::x_UpdateOwnerStatOnDelete(const string& /*owner*/,
+                                           bool          /*expl_delete*/)
 {
 /*
     SBDB_CacheStatistics& st = m_OwnerStatistics[owner];
@@ -4995,6 +4994,7 @@ void CBDB_Cache::x_UpdateOwnerStatOnDelete(const string& owner,
     SBDB_CacheStatistics::AddToHistogram(&st.blob_size_hist, blob_size);
 */
 }
+
 /*
 size_t CBDB_Cache::x_GetBlobSize(const char* key,
                                  int         version,

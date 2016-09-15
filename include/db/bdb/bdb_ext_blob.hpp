@@ -554,22 +554,22 @@ void CBDB_ExtBlobStore<TBV>::Open(const string&             storage_name,
         ext_fname = storage_name + ext_fname_postf;
     }
 
-    IOS_BASE::openmode om;
+    IOS_BASE::openmode om = IOS_BASE::binary;
     switch (open_mode) {
     case CBDB_RawFile::eReadWriteCreate:
     case CBDB_RawFile::eReadWrite:
-        om = IOS_BASE::in | IOS_BASE::out;
+        om |= IOS_BASE::in | IOS_BASE::out;
         break;
     case CBDB_RawFile::eReadOnly:
-        om = IOS_BASE::in;
+        om |= IOS_BASE::in;
         break;
     case CBDB_RawFile::eCreate:
-        om = IOS_BASE::in | IOS_BASE::out | IOS_BASE::trunc;
+        om |= IOS_BASE::in | IOS_BASE::out | IOS_BASE::trunc;
         break;
     default:
         _ASSERT(0);
     } // switch
-    om |= IOS_BASE::binary;
+    
     m_ExtStore = new CNcbiFstream(ext_fname.c_str(), om);
     if (!m_ExtStore->is_open() || m_ExtStore->bad()) {
         delete m_ExtStore; m_ExtStore = 0;
@@ -636,7 +636,7 @@ void CBDB_ExtBlobStore<TBV>::StoreBlob(unsigned                     blob_id,
         return;
     }
 
-    offset = m_BlobContainer.size();
+    offset = (unsigned)m_BlobContainer.size();
     m_BlobContainer.resize(m_BlobContainer.size() + buf.size());
     if (buf.size()) {
         ::memcpy(m_BlobContainer.data() + offset, buf.data(), buf.size());

@@ -107,7 +107,7 @@ void CBDB_MultiRowBuffer::InitDBT()
 {
     memset(m_Data_DBT, 0, sizeof(DBT));
     m_Data_DBT->data = m_Buf;
-    m_Data_DBT->ulen = m_Data_DBT->size = m_BufSize;
+    m_Data_DBT->ulen = m_Data_DBT->size = (u_int32_t)m_BufSize;
     m_Data_DBT->flags = DB_DBT_USERMEM;
 }
 
@@ -205,9 +205,11 @@ void CBDB_RawFile::SetEnv(CBDB_Env& env)
     m_Env = &env;
 }
 
+
+#ifdef HAVE_GETMPF
+
 void CBDB_RawFile::SetCachePriority(ECachePriority priority)
 {
-#ifdef HAVE_GETMPF
     if (m_DB) {
         DB_MPOOLFILE* mpf = m_DB->get_mpf(m_DB);
         if (mpf) {
@@ -231,12 +233,17 @@ void CBDB_RawFile::SetCachePriority(ECachePriority priority)
                 p = DB_PRIORITY_VERY_HIGH;
                 break;
             }
-
             mpf->set_priority(mpf, p);
         }
     }
-#endif
 }
+#else
+void CBDB_RawFile::SetCachePriority(ECachePriority)
+{
+    return;
+}
+#endif // HAVE_GETMPF
+
 
 DB_TXN* CBDB_RawFile::GetTxn()
 {
@@ -639,7 +646,6 @@ void CBDB_RawFile::x_CreateDB(unsigned rec_len)
 
     if (DuplicatesAllowed()) {
         ret = m_DB->set_flags(m_DB, DB_DUP);
-
         BDB_CHECK(ret, 0);
     }
 
@@ -659,18 +665,18 @@ void CBDB_RawFile::x_CreateDB(unsigned rec_len)
 
     case eHash:
         if (m_H_ffactor) {
-            int ret = m_DB->set_h_ffactor(m_DB, m_H_ffactor);
+            ret = m_DB->set_h_ffactor(m_DB, m_H_ffactor);
             BDB_CHECK(ret, FileName().c_str());
         }
         if (m_H_nelem) {
-            int ret = m_DB->set_h_nelem(m_DB, m_H_nelem);
+            ret = m_DB->set_h_nelem(m_DB, m_H_nelem);
             BDB_CHECK(ret, FileName().c_str());
         }
         break;
 
     case eBtree:
         if (m_BT_minkey) {
-            int ret = m_DB->set_bt_minkey(m_DB, m_BT_minkey);
+            ret = m_DB->set_bt_minkey(m_DB, m_BT_minkey);
             BDB_CHECK(ret, FileName().c_str());
         }
         break;
@@ -1100,18 +1106,16 @@ int CBDB_RawFile::x_DB_Put(DBT *key,
             ::memset(buf, 0, 4);
 #endif
             buf += 4;
-
             size_t dst_len;
-
-            bool compressed =
-                m_Compressor->CompressBuffer(data->data, data->size,
-                                             buf, data->size,
-                                             &dst_len);
+            
+            compressed = m_Compressor->CompressBuffer(data->data, data->size,
+                                                      buf, data->size,
+                                                     &dst_len);
             if (compressed) {
                 _ASSERT(dst_len <= data->size);
                 buf = (unsigned*)m_CompressBuffer.data();
 #ifdef HAVE_UNALIGNED_READS
-                *buf = dst_len;
+                *buf = (unsigned)dst_len;
 #else
                 ::memcpy(buf, &dst_len, 4);
 #endif
@@ -1132,7 +1136,7 @@ int CBDB_RawFile::x_DB_Put(DBT *key,
 
         // store the compress buffer
         data->data = m_CompressBuffer.data();
-        data->size = m_CompressBuffer.size();
+        data->size = (u_int32_t)m_CompressBuffer.size();
 
         ret = m_DB->put(m_DB, txn, key, data, flags);
 
@@ -1173,18 +1177,15 @@ int CBDB_RawFile::x_DB_CPut(DBC *dbc,
             ::memset(buf, 0, 4);
 #endif
             buf += 4;
-
             size_t dst_len;
-
-            bool compressed =
-                m_Compressor->CompressBuffer(data->data, data->size,
-                                             buf, data->size,
-                                             &dst_len);
+            compressed = m_Compressor->CompressBuffer(data->data, data->size,
+                                                      buf, data->size,
+                                                      &dst_len);
             if (compressed) {
                 _ASSERT(dst_len <= data->size);
                 buf = (unsigned*)m_CompressBuffer.data();
 #ifdef HAVE_UNALIGNED_READS
-                *buf = dst_len;
+                *buf = (unsigned)dst_len;
 #else
                 ::memcpy(buf, &dst_len, 4);
 #endif
@@ -1205,7 +1206,7 @@ int CBDB_RawFile::x_DB_CPut(DBC *dbc,
 
         // store the compress buffer
         data->data = m_CompressBuffer.data();
-        data->size = m_CompressBuffer.size();
+        data->size = (u_int32_t)m_CompressBuffer.size();
 
         ret = dbc->c_put(dbc, key, data, flags);
 
@@ -1320,7 +1321,7 @@ void CBDB_File::Open(const string& filename,
     if (m_DB_Type == eQueue) {
         DisableDataPacking();
         if (m_DataBuf.get()) {
-            rec_len = m_DataBuf->ComputeBufferSize();
+            rec_len = (unsigned)m_DataBuf->ComputeBufferSize();
         }
     }
 
@@ -1337,7 +1338,7 @@ void CBDB_File::Reopen(EOpenMode open_mode, bool support_dirty_read)
     unsigned rec_len = 0;
     if (m_DB_Type == eQueue) {
         if (m_DataBuf.get()) {
-            rec_len = m_DataBuf->ComputeBufferSize();
+            rec_len = (unsigned)m_DataBuf->ComputeBufferSize();
         }
     }
     CBDB_RawFile::Reopen(open_mode, support_dirty_read, rec_len);
@@ -1517,7 +1518,7 @@ void CBDB_File::Discard()
 
 /// @internal
 size_t
-BDB_compare_prefix(DB* dbp, const DBT* a, const DBT* b)
+BDB_compare_prefix(DB* /*dbp*/, const DBT* a, const DBT* b)
 {
     size_t cnt, len;
     char* p1, *p2;
@@ -1707,7 +1708,7 @@ EBDB_ErrCode CBDB_File::ReadCursor(DBC*         dbc,
 
     x_StartRead();
     m_DBT_Data->data = &((*buf)[0]);
-    m_DBT_Data->ulen = buf->size();
+    m_DBT_Data->ulen = (u_int32_t)buf->size();
     m_DBT_Data->size = 0;
     m_DBT_Data->flags = DB_DBT_USERMEM;
 
