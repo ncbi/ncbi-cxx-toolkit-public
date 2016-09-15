@@ -434,6 +434,7 @@ private:
 /// @param front Region before delim if found. [out]
 /// @param delim Character for which to search. [in]
 /// @return true if the character was found, false otherwise.
+NCBI_XOBJREAD_EXPORT
 bool SeqDB_SplitString(CSeqDB_Substring & buffer,
                        CSeqDB_Substring & front,
                        char               delim);
@@ -460,6 +461,7 @@ bool SeqDB_SplitString(CSeqDB_Substring & buffer,
 ///   The file extension (without the "."), or NULL if none.
 /// @param outp
 ///   A returned string containing the combined path and file name
+NCBI_XOBJREAD_EXPORT
 void SeqDB_CombinePath(const CSeqDB_Substring & path,
                        const CSeqDB_Substring & file,
                        const CSeqDB_Substring * extn,
@@ -475,6 +477,7 @@ void SeqDB_CombinePath(const CSeqDB_Substring & path,
 ///   Input path
 /// @return
 ///   Path minus file extension
+NCBI_XOBJREAD_EXPORT
 CSeqDB_Substring SeqDB_RemoveFileName(CSeqDB_Substring s);
 
 
@@ -487,6 +490,7 @@ CSeqDB_Substring SeqDB_RemoveFileName(CSeqDB_Substring s);
 ///   Input path
 /// @return
 ///   Filename portion of path
+NCBI_XOBJREAD_EXPORT
 CSeqDB_Substring SeqDB_RemoveDirName(CSeqDB_Substring s);
 
 
@@ -499,6 +503,7 @@ CSeqDB_Substring SeqDB_RemoveDirName(CSeqDB_Substring s);
 ///   Input path
 /// @return
 ///   Path minus file extension
+NCBI_XOBJREAD_EXPORT
 CSeqDB_Substring SeqDB_RemoveExtn(CSeqDB_Substring s);
 
 
@@ -511,6 +516,7 @@ CSeqDB_Substring SeqDB_RemoveExtn(CSeqDB_Substring s);
 /// filesystem sources such as alias files.
 ///
 /// @param dbs This string will be changed in-place.
+NCBI_XOBJREAD_EXPORT
 void SeqDB_ConvertOSPath(string & dbs);
 
 
@@ -1085,11 +1091,13 @@ string SeqDB_FindBlastDBPath(const string   & file_name,
 ///   Second component
 /// @param delim
 ///   The delimiter to use when joining elements
+NCBI_XOBJREAD_EXPORT
 void SeqDB_JoinDelim(string & a, const string & b, const string & delim);
 
 
 /// Thow a SeqDB exception; this is seperated into a function
 /// primarily to allow a breakpoint to be set.
+NCBI_XOBJREAD_EXPORT
 void SeqDB_ThrowException(CSeqDBException::EErrCode code, const string & msg);
 
 
@@ -1108,6 +1116,7 @@ void SeqDB_ThrowException(CSeqDBException::EErrCode code, const string & msg);
 /// @param file Name of the file containing the assert.
 /// @param line The line the assert in on.
 /// @param text The text version of the asserted condition.
+NCBI_XOBJREAD_EXPORT
 void SeqDB_FileIntegrityAssert(const string & file,
                                int            line,
                                const string & text);
@@ -1200,6 +1209,7 @@ private:
 ///
 /// @param dbs Database names to combine.
 /// @param dbname Combined database name.
+NCBI_XOBJREAD_EXPORT
 void SeqDB_CombineAndQuote(const vector<string> & dbs,
                            string               & dbname);
 
@@ -1207,6 +1217,7 @@ void SeqDB_CombineAndQuote(const vector<string> & dbs,
 ///
 /// @param dbname Combined database name.
 /// @param dbs Database names to combine.
+NCBI_XOBJREAD_EXPORT
 void SeqDB_SplitQuoted(const string             & dbname,
                        vector<CSeqDB_Substring> & dbs,
                        bool keep_quote = false);
