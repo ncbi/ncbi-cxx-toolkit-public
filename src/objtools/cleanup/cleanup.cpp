@@ -2422,6 +2422,8 @@ static const TSeqdescOrderElem sc_seqdesc_order_map[] = {
         { CSeqdesc::e_Prf, 19 },
         { CSeqdesc::e_Pdb, 20 },
         { CSeqdesc::e_Het, 4 },
+        
+        
         { CSeqdesc::e_Source, 2 },
         { CSeqdesc::e_Molinfo, 3 },
         { CSeqdesc::e_Modelev, 23 }
@@ -2430,11 +2432,11 @@ typedef CStaticPairArrayMap<CSeqdesc::E_Choice, int> TSeqdescOrderMap;
 DEFINE_STATIC_ARRAY_MAP(TSeqdescOrderMap, sc_SeqdescOrderMap, sc_seqdesc_order_map);
 
 static
-int s_SeqDescToOrdering(const CRef<CSeqdesc> &desc) {
+int s_SeqDescToOrdering(CSeqdesc::E_Choice chs) {
     // ordering assigned to unknown
     const int unknown_seqdesc = (1 + sc_SeqdescOrderMap.size());
 
-    TSeqdescOrderMap::const_iterator find_iter = sc_SeqdescOrderMap.find(desc->Which());
+    TSeqdescOrderMap::const_iterator find_iter = sc_SeqdescOrderMap.find(chs);
     if (find_iter == sc_SeqdescOrderMap.end()) {
         return unknown_seqdesc;
     }
@@ -2442,10 +2444,50 @@ int s_SeqDescToOrdering(const CRef<CSeqdesc> &desc) {
     return find_iter->second;
 }
 
+static int s_StrucCommOrder(const string&str) {
+    if (NStr::StartsWith(str, "##Evidence-Data")) return 1;
+    if (NStr::StartsWith(str, "##RefSeq-Attributes")) return 2;
+    if (NStr::StartsWith(str, "##Taxonomic-Update-Statistics")) return 3;
+    if (NStr::StartsWith(str, "##Genome-Assembly-Data")) return 4;
+    if (NStr::StartsWith(str, "##Genome-Annotation-Data")) return 5;
+    return 0;
+}
+
 static
 bool s_SeqDescLessThan(const CRef<CSeqdesc> &desc1, const CRef<CSeqdesc> &desc2)
 {
-    return (s_SeqDescToOrdering(desc1) < s_SeqDescToOrdering(desc2));
+    CSeqdesc::E_Choice chs1, chs2;
+
+    chs1 = desc1->Which();
+    chs2 = desc2->Which();
+
+    if (chs1 == CSeqdesc::e_User && chs2 == CSeqdesc::e_User) {
+        const CUser_object& uop1 = desc1->GetUser();
+        const CUser_object& uop2 = desc2->GetUser();
+        const CUser_object::TType &typ1 = uop1.GetType();
+        const CUser_object::TType &typ2 = uop2.GetType();
+        bool issc1 = (bool) (typ1.IsStr() && typ1.GetStr() == "StructuredComment");
+        bool issc2 = (bool) (typ2.IsStr() && typ2.GetStr() == "StructuredComment");
+        if (issc1 && issc2) {
+            CConstRef<CUser_field> fld1 = uop1.GetFieldRef("StructuredCommentPrefix");
+            CConstRef<CUser_field> fld2 = uop2.GetFieldRef("StructuredCommentPrefix");
+            if (fld1 && fld2 && fld1->IsSetData() && fld2->IsSetData() && fld1->GetData().IsStr()&& fld2->GetData().IsStr()) {
+                const string& str1 = fld1->GetData().GetStr();
+                const string& str2 = fld2->GetData().GetStr();
+                int val1 = s_StrucCommOrder(str1);
+                int val2 = s_StrucCommOrder(str2);
+                if (val1 != val2) {
+                    return (val1 < val2);
+                }
+            }
+        } else if (issc1) {
+            return true;
+        } else if (issc2) {
+            return false;
+        }
+    }
+
+    return (s_SeqDescToOrdering(chs1) < s_SeqDescToOrdering(chs2));
 }
 
 bool CCleanup::NormalizeDescriptorOrder(CSeq_descr& descr)
