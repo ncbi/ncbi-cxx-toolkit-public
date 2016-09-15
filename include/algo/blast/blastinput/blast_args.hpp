@@ -631,6 +631,55 @@ public:
                                          CBlastOptions& options);
 };
 
+/// Argument class to collect options specific to KBLASTP
+class NCBI_BLASTINPUT_EXPORT CKBlastpArgs : public IBlastCmdLineArgs
+{
+public:
+
+    /// Constructor
+    CKBlastpArgs(void) : m_JDistance(0.05), m_MinHits(0), m_TargetSeqs(5000) {}
+
+    /// Our virtual destructor
+    virtual ~CKBlastpArgs() {}
+
+    /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
+    virtual void SetArgumentDescriptions(CArgDescriptions& arg_desc);
+    /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
+    virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args, 
+                                         CBlastOptions& options);
+
+    
+    /// Get the Jaccard distance
+    double GetJaccardDistance(void) { return m_JDistance;}
+
+    /// Get the minimum number of LSH matches.
+    int GetMinHits(void) {return m_MinHits;}
+
+    /// The database
+    string GetDatabase(void) {return m_DbIndex;}
+
+    /// Number of target sequences.
+    int GetTargetSeqs(void) {return m_TargetSeqs;}
+
+private:
+    /// Prohibit copy constructor
+    CKBlastpArgs(const CKBlastpArgs& rhs);
+    /// Prohibit assignment operator
+    CKBlastpArgs& operator=(const CKBlastpArgs& rhs);
+
+    /// Jaccard distance
+    double m_JDistance;
+
+    /// Minimum number of hits
+    int m_MinHits;
+
+    /// Database/index
+    string m_DbIndex;
+
+    /// Number of target sequences to try BLAST on.
+    int m_TargetSeqs;
+};
+
 /// Argument class to collect options specific to DELTA-BLAST
 class NCBI_BLASTINPUT_EXPORT CDeltaBlastArgs : public IBlastCmdLineArgs
 {

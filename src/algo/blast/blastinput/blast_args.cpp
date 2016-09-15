@@ -1367,6 +1367,35 @@ CPhiBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
     }
 }
 
+void 
+CKBlastpArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
+{
+   arg_desc.SetCurrentGroup("KBLASTP options");
+   arg_desc.AddDefaultKey(kArgJDistance, "threshold", "Jaccard Distance", 
+			CArgDescriptions::eDouble, kDfltArgJDistance);
+   arg_desc.AddDefaultKey(kArgMinHits, "minhits", "minimal number of LSH matches", 
+			CArgDescriptions::eInteger, kDfltArgMinHits);
+   arg_desc.AddDefaultKey(kArgKIndex, "dbk", "index of kmers", 
+			CArgDescriptions::eString, kDfltArgKIndex);
+   arg_desc.AddDefaultKey(kArgTargetSeqs, "targetseqs", "Number of target sequences to process with BLAST", 
+			CArgDescriptions::eInteger, kDfltArgTargetSeqs);
+}
+
+void 
+CKBlastpArgs::ExtractAlgorithmOptions(const CArgs& args,
+                                         CBlastOptions& opt)
+{
+	if (args.Exist(kArgJDistance)) 
+		m_JDistance = args[kArgJDistance].AsDouble();
+	if (args.Exist(kArgMinHits))
+		m_MinHits = args[kArgMinHits].AsInteger();
+	if (args.Exist(kArgKIndex))
+		m_DbIndex = args[kArgKIndex].AsString();
+	if (args.Exist(kArgTargetSeqs))
+		m_TargetSeqs = args[kArgTargetSeqs].AsInteger();
+}
+
+
 void
 CDeltaBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {

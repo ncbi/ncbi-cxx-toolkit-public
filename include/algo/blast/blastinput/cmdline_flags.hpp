@@ -352,6 +352,23 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgRpsDb;
 /// Default value for domain database name
 NCBI_BLASTINPUT_EXPORT extern const string kDfltArgRpsDb;
 
+/// KBLASTP arguments
+/// Specifies Jaccard distance (threshold)
+NCBI_BLASTINPUT_EXPORT extern const string kArgJDistance;
+/// Default value
+NCBI_BLASTINPUT_EXPORT extern const string kDfltArgJDistance;
+/// Specifies minimal number of LSH matches
+NCBI_BLASTINPUT_EXPORT extern const string kArgMinHits;
+/// Default value
+NCBI_BLASTINPUT_EXPORT extern const string kDfltArgMinHits;
+/// KMER index
+NCBI_BLASTINPUT_EXPORT extern const string kArgKIndex;
+NCBI_BLASTINPUT_EXPORT extern const string kDfltArgKIndex;
+/// Number of sequences to attempt BLAST on.
+NCBI_BLASTINPUT_EXPORT extern const string kArgTargetSeqs;
+NCBI_BLASTINPUT_EXPORT extern const string kDfltArgTargetSeqs;
+
+
 /// Argument to specify inclusion e-value threshold for conserved domains
 NCBI_BLASTINPUT_EXPORT extern const string kArgDomainInclusionEThreshold;
 /// Argument to specify whether show domain hits in DELTA-BLAST

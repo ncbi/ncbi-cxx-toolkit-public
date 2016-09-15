@@ -213,6 +213,15 @@ const string kDfltArgRpsDb("cdd_delta");
 const string kArgDomainInclusionEThreshold("domain_inclusion_ethresh");
 const string kArgShowDomainHits("show_domain_hits");
 
+const string kArgJDistance("thresh");
+const string kDfltArgJDistance("0.05");
+const string kArgMinHits("min_hits");
+const string kDfltArgMinHits("0");
+const string kArgKIndex("dbk");
+const string kDfltArgKIndex("nr");
+const string kArgTargetSeqs("target_seqs");
+const string kDfltArgTargetSeqs("5000");
+
 const string kArgRid("rid");
 const string kArgArchive("archive");
 
