@@ -122,6 +122,7 @@ static size_t GetMissingGCSize(void)
 }
 
 
+/*
 NCBI_PARAM_DECL(string, SNP_LOADER, ANNOT_NAME);
 NCBI_PARAM_DEF_EX(string, SNP_LOADER, ANNOT_NAME, "SNP",
                   eParam_NoThread, SNP_LOADER_ANNOT_NAME);
@@ -131,6 +132,7 @@ static string GetDefaultAnnotName(void)
     static CSafeStatic<NCBI_PARAM_TYPE(SNP_LOADER, ANNOT_NAME)> s_Value;
     return s_Value->Get();
 }
+*/
 
 
 NCBI_PARAM_DECL(bool, SNP_LOADER, SPLIT);
@@ -970,12 +972,8 @@ void CSNPSeqInfo::LoadAnnotBlob(CTSE_LoadLock& load_lock)
             it.GetOverviewAnnot(total_range, overvew_name);
         vector<char> feat_chunks(total_range.GetTo()/kFeatChunkSize+1);
         if ( overvew_annot ) {
-            TSeqPos last_end = 0;
             for ( auto& g : overvew_annot->GetData().GetGraph() ) {
-                const CSeq_graph& graph = *g;
-                _ASSERT(graph.GetLoc().GetInt().GetFrom() >= last_end);
-                sx_AddBits(feat_chunks, kFeatChunkSize, graph);
-                last_end = graph.GetLoc().GetInt().GetTo()+1;
+                sx_AddBits(feat_chunks, kFeatChunkSize, *g);
             }
             entry->SetSet().SetAnnot().push_back(overvew_annot);
         }
