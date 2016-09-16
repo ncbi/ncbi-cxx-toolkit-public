@@ -479,6 +479,9 @@ void CPrimeCacheApplication::x_Process_Fasta(CNcbiIstream& istr,
             }
         }
 
+        if (entry->IsSetDescr() && entry->GetDescr().Get().empty()) {
+            entry->SetSeq().ResetDescr();
+        }
         CCache_blob blob;
         blob.SetTimestamp(timestamp);
         blob.Pack(*entry);
