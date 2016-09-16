@@ -39,7 +39,7 @@ for dir in "$@"; do
                 targets="$targets `basename $f`$ext"
                 ;;
             *blast* | datatool | gbench* | id1_fetch | idwwwget | lbsmc \
-                | one2all )
+                | one2all | run_with_lock )
                 ;;
             *)
                 test "$compress_others" = "no"  ||  \
