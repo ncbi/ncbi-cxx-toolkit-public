@@ -368,6 +368,7 @@ string CSNPBlobId::GetFileName(void) const
 
 
 static const char kFileEnd[] = "|||";
+static const char kFilterPrefixChar = '#';
 
 
 static
@@ -380,7 +381,7 @@ size_t sx_ExtractFilterIndex(string& s)
     }
     size_t num_len = size - pos;
     if ( !num_len || num_len > kFilterIndexMaxLength ||
-         !pos || s[pos] == '0' || s[pos-1] != '#' ) {
+         !pos || s[pos] == '0' || s[pos-1] != kFilterPrefixChar ) {
         return 0;
     }
     size_t index = NStr::StringToNumeric<size_t>(s.substr(pos));
@@ -403,11 +404,8 @@ string CSNPBlobId::ToString(void) const
     }
     else {
         out << m_File;
-        if ( size_t filter_index = GetFilterIndex() ) {
-            out << '#' << (filter_index+1);
-        }
-        out << kFileEnd;
-        out << m_SeqId;
+        out << kFilterPrefixChar << (GetFilterIndex()+1);
+        out << kFileEnd << m_SeqId;
     }
     return CNcbiOstrstreamToString(out);
 }
@@ -719,13 +717,7 @@ CSNPDataLoader_Impl::GetPossibleAnnotNames(void) const
 CSNPFileInfo::CSNPFileInfo(CSNPDataLoader_Impl& impl,
                            const string& acc)
 {
-    //CMutexGuard guard(GetMutex());
     x_Initialize(impl, acc);
-    /*
-    for ( CSNPDbSeqIterator rit(m_SNPDb); rit; ++rit ) {
-        AddSeq(rit.GetSeqIdHandle());
-    }
-    */
 }
 
 
@@ -735,9 +727,21 @@ void CSNPFileInfo::x_Initialize(CSNPDataLoader_Impl& impl,
     m_IsValidNA = CSNPBlobId::IsValidNA(csra);
     m_FileName = csra;
     m_DefaultFilterIndex = sx_ExtractFilterIndex(m_FileName);
+    if ( m_FileName.size() == csra.size() ) {
+        NCBI_THROW_FMT(CSraException, eOtherError,
+                       "No filter number specification: "<<csra);
+    }
     m_AnnotName = impl.m_AnnotName;
     if ( m_AnnotName.empty() ) {
-        m_AnnotName = GetDefaultAnnotName();
+        m_AnnotName = csra;
+        if ( !m_IsValidNA ) {
+            // remove directory part, if any
+            SIZE_TYPE sep = m_AnnotName.find_last_of("/\\");
+            if ( sep != NPOS ) {
+                m_AnnotName.erase(0, sep+1);
+            }
+        }
+        //GetDefaultAnnotName();
     }
     CStopWatch sw;
     if ( GetDebugLevel() >= eDebug_open ) {
@@ -884,6 +888,70 @@ CSNPSeqInfo::GetSeqIterator(void) const
 }
 
 
+template<class Values>
+bool sx_HasNonZero(const Values& values, TSeqPos index, TSeqPos count)
+{
+    TSeqPos end = min(index+count, TSeqPos(values.size()));
+    for ( TSeqPos i = index; i < end; ++i ) {
+        if ( values[i] ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+template<class TValues>
+void sx_AddBits2(vector<char>& bits,
+                 TSeqPos bit_values,
+                 TSeqPos pos_index,
+                 const TValues& values)
+{
+    TSeqPos dst_ind = pos_index / bit_values;
+    TSeqPos src_ind = 0;
+    if ( TSeqPos first_offset = pos_index % bit_values ) {
+        TSeqPos first_count = bit_values - first_offset;
+        if ( !bits[dst_ind] ) {
+            bits[dst_ind] = sx_HasNonZero(values, 0, first_count);
+        }
+        dst_ind += 1;
+        src_ind += first_count;
+    }
+    while ( src_ind < values.size() ) {
+        if ( !bits[dst_ind] ) {
+            bits[dst_ind] = sx_HasNonZero(values, src_ind, bit_values);
+        }
+        ++dst_ind;
+        src_ind += bit_values;
+    }
+}
+
+
+static
+void sx_AddBits(vector<char>& bits,
+                TSeqPos kChunkSize,
+                const CSeq_graph& graph)
+{
+    TSeqPos comp = graph.GetComp();
+    _ASSERT(kChunkSize % comp == 0);
+    TSeqPos bit_values = kChunkSize / comp;
+    const CSeq_interval& loc = graph.GetLoc().GetInt();
+    TSeqPos pos = loc.GetFrom();
+    _ASSERT(pos % comp == 0);
+    _ASSERT(graph.GetNumval()*comp == loc.GetLength());
+    TSeqPos pos_index = pos/comp;
+    if ( graph.GetGraph().IsByte() ) {
+        auto& values = graph.GetGraph().GetByte().GetValues();
+        _ASSERT(values.size() == graph.GetNumval());
+        sx_AddBits2(bits, bit_values, pos_index, values);
+    }
+    else {
+        auto& values = graph.GetGraph().GetInt().GetValues();
+        _ASSERT(values.size() == graph.GetNumval());
+        sx_AddBits2(bits, bit_values, pos_index, values);
+    }
+}
+
 void CSNPSeqInfo::LoadAnnotBlob(CTSE_LoadLock& load_lock)
 {
     CSNPDbSeqIterator it = GetSeqIterator();
@@ -898,11 +966,28 @@ void CSNPSeqInfo::LoadAnnotBlob(CTSE_LoadLock& load_lock)
         string overvew_name = base_name + +kOverviewNameSuffix;
         string graph_name = base_name + +kGraphNameSuffix;
         SAnnotTypeSelector type(CSeq_annot::C_Data::e_Graph);
-        entry->SetSet().SetAnnot().push_back(it.GetOverviewAnnot(total_range, overvew_name));
+        CRef<CSeq_annot> overvew_annot =
+            it.GetOverviewAnnot(total_range, overvew_name);
+        vector<char> feat_chunks(total_range.GetTo()/kFeatChunkSize+1);
+        if ( overvew_annot ) {
+            TSeqPos last_end = 0;
+            for ( auto& g : overvew_annot->GetData().GetGraph() ) {
+                const CSeq_graph& graph = *g;
+                _ASSERT(graph.GetLoc().GetInt().GetFrom() >= last_end);
+                sx_AddBits(feat_chunks, kFeatChunkSize, graph);
+                last_end = graph.GetLoc().GetInt().GetTo()+1;
+            }
+            entry->SetSet().SetAnnot().push_back(overvew_annot);
+        }
         load_lock->SetSeq_entry(*entry);
         CTSE_Split_Info& split_info = load_lock->GetSplitInfo();
         CTSE_Chunk_Info::TPlace place(CSeq_id_Handle(), kTSEId);
+        _ASSERT(kGraphChunkSize % kFeatChunkSize == 0);
+        const TSeqPos feat_per_graph = kGraphChunkSize/kFeatChunkSize;
         for ( int i = 0; i*kGraphChunkSize < total_range.GetToOpen(); ++i ) {
+            if ( !sx_HasNonZero(feat_chunks, i*feat_per_graph, feat_per_graph) ) {
+                continue;
+            }
             CRange<TSeqPos> range;
             range.SetFrom(i*kGraphChunkSize);
             range.SetToOpen((i+1)*kGraphChunkSize);
@@ -913,10 +998,14 @@ void CSNPSeqInfo::LoadAnnotBlob(CTSE_LoadLock& load_lock)
             split_info.AddChunk(*chunk);
         }
         type = CSeqFeatData::eSubtype_variation;
+        TSeqPos overflow = it.GetMaxSNPLength()-1;
         for ( int i = 0; i*kFeatChunkSize < total_range.GetToOpen(); ++i ) {
+            if ( !feat_chunks[i] ) {
+                continue;
+            }
             CRange<TSeqPos> range;
             range.SetFrom(i*kFeatChunkSize);
-            range.SetTo((i+1)*kFeatChunkSize+it.GetMaxSNPLength());
+            range.SetToOpen((i+1)*kFeatChunkSize+overflow);
             int chunk_id = i*kChunkIdMul+kChunkIdFeat;
             CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(chunk_id));
             chunk->x_AddAnnotType(feat_name, type, it.GetSeqIdHandle(), range);
