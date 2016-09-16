@@ -588,11 +588,13 @@ public:
 
     enum EFlags {
         fZoomPage       = 1<<0,
+        fNoGaps         = 1<<1,
         fDefaultFlags   = 0
     };
     typedef CSafeFlags<EFlags> TFlags;
 
-    CRef<CSeq_graph> GetOverviewGraph(CRange<TSeqPos> range) const;
+    CRef<CSeq_graph> GetOverviewGraph(CRange<TSeqPos> range,
+                                      TFlags flags = fDefaultFlags) const;
 
     CRef<CSeq_annot> GetOverviewAnnot(CRange<TSeqPos> range,
                                       const string& annot_name,

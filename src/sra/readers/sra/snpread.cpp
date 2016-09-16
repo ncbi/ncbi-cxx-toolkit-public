@@ -693,8 +693,18 @@ inline void x_AdjustGraphRange(CRange<TSeqPos>& range,
 
 struct SGraphMaker {
     static const TSeqPos kMinGraphGap = 1000;
-    bool m_SingleGraph;
-    bool m_NoGaps;
+
+    enum EGraphSet {
+        eMultipleGraphs,
+        eSingleGraph
+    };
+    enum EGapsType {
+        eAllowGaps,
+        eNoGaps
+    };
+
+    EGraphSet m_GraphSet;
+    EGapsType m_GapsType;
     CRef<CSeq_graph> m_Graph;
     typedef list< CRef<CSeq_graph> > TGraphs;
     TGraphs m_Graphs;
@@ -707,10 +717,11 @@ struct SGraphMaker {
     void Start(const CSNPDbSeqIterator& it,
                CRange<TSeqPos>& range,
                TSeqPos comp,
-               bool single_graph = false)
+               EGraphSet graph_set = eMultipleGraphs,
+               EGapsType gaps_type = eAllowGaps)
         {
-            m_SingleGraph = single_graph;
-            m_NoGaps = false;
+            m_GraphSet = graph_set;
+            m_GapsType = gaps_type;
             m_Graph = null;
             m_Graphs.clear();
             m_Id = it.GetSeqId();
@@ -774,7 +785,7 @@ struct SGraphMaker {
     void AddActualGap()
         {
             _ASSERT(m_EmptyCount);
-            _ASSERT(!m_NoGaps);
+            _ASSERT(m_GapsType == eAllowGaps);
             if ( m_Graph ) {
                 x_EndGraph();
             }
@@ -800,7 +811,8 @@ struct SGraphMaker {
             _ASSERT(count);
             if ( m_EmptyCount ) {
                 if ( !m_Graph ||
-                     (!m_SingleGraph && m_EmptyCount >= kMinGraphGap) ) {
+                     (m_GraphSet == eMultipleGraphs &&
+                      m_EmptyCount >= kMinGraphGap) ) {
                     AddActualGap();
                 }
                 else {
@@ -833,7 +845,7 @@ struct SGraphMaker {
     void AddEmpty(TSeqPos count)
         {
             _ASSERT(count);
-            if ( m_NoGaps ) {
+            if ( m_GapsType == eNoGaps ) {
                 AddActualZeroes(count);
             }
             else {
@@ -901,9 +913,10 @@ CRef<CSeq_annot> x_NewAnnot(const string& annot_name = kDefaultAnnotName)
 void x_CollectOverviewGraph(SGraphMaker& g,
                             const CSNPDbSeqIterator& seq_it,
                             CRange<TSeqPos> range,
-                            bool single_graph)
+                            SGraphMaker::EGraphSet graph_set,
+                            SGraphMaker::EGapsType gaps_type)
 {
-    g.Start(seq_it, range, kOverviewZoom, single_graph);
+    g.Start(seq_it, range, kOverviewZoom, graph_set, gaps_type);
     for ( CSNPDbGraphIterator it(seq_it, range); it; ++it ) {
         g.AddValue(it.GetTotalValue());
     }
@@ -913,9 +926,9 @@ void x_CollectOverviewGraph(SGraphMaker& g,
 void x_CollectCoverageGraph(SGraphMaker& g,
                             const CSNPDbSeqIterator& seq_it,
                             CRange<TSeqPos> range,
-                            bool single_graph)
+                            SGraphMaker::EGraphSet graph_set)
 {
-    g.Start(seq_it, range, kCoverageZoom, single_graph);
+    g.Start(seq_it, range, kCoverageZoom, graph_set);
     for ( CSNPDbGraphIterator it(seq_it, range); it; ++it ) {
         CRange<TSeqPos> page = it.GetPageRange();
         TSeqPos skip_beg = 0;
@@ -943,10 +956,13 @@ END_LOCAL_NAMESPACE;
 
 
 CRef<CSeq_graph>
-CSNPDbSeqIterator::GetOverviewGraph(CRange<TSeqPos> range) const
+CSNPDbSeqIterator::GetOverviewGraph(CRange<TSeqPos> range,
+                                    TFlags flags) const
 {
     SGraphMaker g;
-    x_CollectOverviewGraph(g, *this, range, true);
+    x_CollectOverviewGraph(g, *this, range,
+                           g.eSingleGraph,
+                           flags & fNoGaps? g.eNoGaps: g.eAllowGaps);
     return g.FinishGraph();
 }
 
@@ -957,7 +973,9 @@ CSNPDbSeqIterator::GetOverviewAnnot(CRange<TSeqPos> range,
                                     TFlags flags) const
 {
     SGraphMaker g;
-    x_CollectOverviewGraph(g, *this, range, false);
+    x_CollectOverviewGraph(g, *this, range,
+                           flags & fNoGaps? g.eSingleGraph: g.eMultipleGraphs,
+                           flags & fNoGaps? g.eNoGaps: g.eAllowGaps);
     CRef<CSeq_annot> annot = x_NewAnnot(annot_name);
     annot->SetData().SetGraph().swap(g.FinishAnnot());
     return annot;
@@ -976,7 +994,7 @@ CRef<CSeq_graph>
 CSNPDbSeqIterator::GetCoverageGraph(CRange<TSeqPos> range) const
 {
     SGraphMaker g;
-    x_CollectCoverageGraph(g, *this, range, true);
+    x_CollectCoverageGraph(g, *this, range, g.eSingleGraph);
     return g.FinishGraph();
 }
 
@@ -987,7 +1005,7 @@ CSNPDbSeqIterator::GetCoverageAnnot(CRange<TSeqPos> range,
                                     TFlags flags) const
 {
     SGraphMaker g;
-    x_CollectCoverageGraph(g, *this, range, false);
+    x_CollectCoverageGraph(g, *this, range, g.eMultipleGraphs);
     CRef<CSeq_annot> annot = x_NewAnnot(annot_name);
     annot->SetData().SetGraph().swap(g.FinishAnnot());
     return annot;
