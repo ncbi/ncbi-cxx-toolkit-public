@@ -65,12 +65,9 @@ version  1 # of file format
 4+8   E???  ddbj_tpa_wgs_nuc
 4+9   E???  ddbj_tpa_wgs_nuc
 4+10  E???  ddbj_tpa_wgs_nuc
-4+8   F???  embl_tpa_nuc # fallback to placate older clients
-4+9   F???  embl_tpa_nuc # fallback to placate older clients
-4+10  F???  embl_tpa_nuc # fallback to placate older clients
-4+8   F???  embl_tpa_wgs_nuc
-4+9   F???  embl_tpa_wgs_nuc
-4+10  F???  embl_tpa_wgs_nuc
+4+8   F???  embl_wgs_nuc
+4+9   F???  embl_wgs_nuc
+4+10  F???  embl_wgs_nuc
 4+8   G???  gb_tsa_nuc
 4+9   G???  gb_tsa_nuc
 4+10  G???  gb_tsa_nuc
@@ -98,12 +95,9 @@ version  1 # of file format
 4+8   N???  gb_wgs_nuc
 4+9   N???  gb_wgs_nuc
 4+10  N???  gb_wgs_nuc
-4+8   O???  embl_tpa_nuc # fallback to placate older clients
-4+9   O???  embl_tpa_nuc # fallback to placate older clients
-4+10  O???  embl_tpa_nuc # fallback to placate older clients
-4+8   O???  embl_tpa_wgs_nuc
-4+9   O???  embl_tpa_wgs_nuc
-4+10  O???  embl_tpa_wgs_nuc
+4+8   O???  embl_wgs_nuc
+4+9   O???  embl_wgs_nuc
+4+10  O???  embl_wgs_nuc
 4+8   P???  gb_wgs_nuc
 4+9   P???  gb_wgs_nuc
 4+10  P???  gb_wgs_nuc
