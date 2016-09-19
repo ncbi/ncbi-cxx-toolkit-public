@@ -231,20 +231,20 @@ CGff2Reader::ReadSeqAnnot(
         if (!xIsCurrentDataType(line)) {
             break;
         }
-/*
+
         if ( CGff2Reader::IsAlignmentData(line) &&
              x_ParseAlignmentGff(line, id_list, alignments)) {
             continue;
         }
-        */
 
         if (xParseFeature(line, pAnnot, pEC)) {
             continue;
         }
-
+/*
         if (xParseAlignment(line, pAnnot, pEC)) {
             continue;
         }
+        */
     }
 
     
@@ -340,6 +340,10 @@ void CGff2Reader::xAssignAnnotId(
     const string& givenId)
 //  ----------------------------------------------------------------------------
 {
+    if (pAnnot->GetData().IsAlign()) {
+        return;
+    }
+
     string annotId(givenId);
     if (annotId.empty()  &&  pAnnot->GetData().IsFtable()) {
         const CSeq_annot::TData::TFtable ftable = pAnnot->GetData().GetFtable();
@@ -349,20 +353,7 @@ void CGff2Reader::xAssignAnnotId(
         const CSeq_feat& front = *ftable.front();
         annotId = front.GetLocation().GetId()->GetSeqIdString(true);
     }
-    if (annotId.empty()  &&  pAnnot->GetData().IsAlign()) {
-        const CSeq_annot::TData::TAlign align = pAnnot->GetData().GetAlign();
-        if (align.empty()) {
-            return;
-        }
-        try {
-            const CSeq_align& front = *align.front();
-            annotId = front.GetSegs().GetDenseg().GetIds().back()->
-                GetSeqIdString(true);
-        }
-        catch(exception&) {
-            return;
-        }
-    }
+
     CRef< CAnnot_id > pAnnotId(new CAnnot_id);
     pAnnotId->SetLocal().SetStr(annotId);
     pAnnot->SetId().push_back(pAnnotId);   
@@ -551,26 +542,13 @@ void CGff2Reader::x_ProcessAlignmentsGff(const list<string>& id_list,
         pAnnot = Ref(new CSeq_annot());
     }
 
-
-
     for (const auto id : id_list) {
         CRef<CSeq_align> pAlign = Ref(new CSeq_align());
         if (x_MergeAlignments(alignments.at(id), pAlign)) {
-            // Add id
-            auto pAnnotId = Ref(new CAnnot_id());
-            pAnnotId->SetLocal().SetStr(id);
-            pAnnot->SetId().push_back(pAnnotId);
-
-            // Refactor the following to avoid code repetition
             // if available, add current browser information
             if ( m_CurrentBrowserInfo ) {
                 pAnnot->SetDesc().Set().push_back( m_CurrentBrowserInfo );
             }
-
-            // if available, add current track information
- //           if ( m_CurrentTrackInfo ) {
- //               pAnnot->SetDesc().Set().push_back( m_CurrentTrackInfo );
- //           }
 
             if ( !m_AnnotName.empty() ) {
                 pAnnot->SetNameDesc(m_AnnotName);

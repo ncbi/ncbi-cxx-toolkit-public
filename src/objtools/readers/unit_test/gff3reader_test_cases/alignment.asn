@@ -1,7 +1,4 @@
 Seq-annot ::= {
-  id {
-    local str "NC_000020.10"
-  },
   data align {
     {
       type partial,
