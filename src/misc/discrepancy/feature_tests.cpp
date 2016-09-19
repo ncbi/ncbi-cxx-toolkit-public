@@ -2166,13 +2166,13 @@ DISCREPANCY_CASE(CDS_WITHOUT_MRNA, CSeq_feat, eDisc | eOncaller | eSmart, "Codin
 
             CConstRef<CSeq_feat> mRNA = sequence::GetOverlappingmRNA(obj.GetLocation(), context.GetScope());
             if (mRNA.Empty()) {
-                m_Objs[kCDSWithoutMRNA].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
+                m_Objs[kCDSWithoutMRNA].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj), eKeepRef, true), false);
             }
             else {
                 const CRNA_ref& rna = mRNA->GetData().GetRna();
 
                 if (!IsProductMatch(rna.GetRnaProductName(), GetProductForCDS(obj, context.GetScope()))) {
-                    m_Objs[kCDSWithoutMRNA].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj), eKeepRef), false);
+                    m_Objs[kCDSWithoutMRNA].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj), eKeepRef, true), false);
                 }
             }
         }
