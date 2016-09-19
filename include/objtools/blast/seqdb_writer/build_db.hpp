@@ -150,13 +150,15 @@ public:
     /// @param Logging will be done to this stream. [in]
     /// @param use_gi_mask if true will generate GI-based mask files [in]
     /// @param logfile file to write the log to [in]
+    /// @param long_seqids if true, requires long sequence ids
+    /// (database|accession) when parsing fasta sequences [in]
     CBuildDatabase(const string         & dbname,
                    const string         & title,
                    bool                   is_protein,
                    CWriteDB::TIndexType   indexing,
                    bool                   use_gi_mask,
-                   bool                   long_seqids,
-                   ostream              * logfile);
+                   ostream              * logfile,
+                   bool                   long_seqids = false);
 
     // Note -- should deprecate (or just remove) the following one:
     // - sparse does nothing
@@ -177,14 +179,16 @@ public:
     /// @param parse_seqids specify true to parse the sequence IDs [in]
     /// @param use_gi_mask if true will generate GI-based mask files [in]
     /// @param indexing index fields to add to database. [in]
+    /// @param long_seqids if true, requires long sequence ids
+    /// (database|accession) when parsing fasta sequences [in]
     CBuildDatabase(const string         & dbname,
                    const string         & title,
                    bool                   is_protein,
                    bool                   sparse,
                    bool                   parse_seqids,
-                   bool                   long_seqids,
                    bool                   use_gi_mask,
-                   ostream              * logfil);
+                   ostream              * logfil,
+                   bool                   long_seqids = false);
 
     ~CBuildDatabase();
 

@@ -2504,7 +2504,7 @@ BOOST_AUTO_TEST_CASE(CBuildDatabase_WriteToInvalidPathWindows)
     CRef<CBuildDatabase> bd;
     BOOST_REQUIRE_THROW(
         bd.Reset(new CBuildDatabase(kOutput, "foo", true,
-                                    CWriteDB::eDefault, false, false, &log)),
+                                    CWriteDB::eDefault, false, &log)),
         CMultisourceException);
     BOOST_REQUIRE(bd.Empty());
 /* temporarily disabled.
@@ -2522,7 +2522,7 @@ BOOST_AUTO_TEST_CASE(CBuildDatabase_WriteToInvalidPathUnix)
     CRef<CBuildDatabase> bd;
     BOOST_REQUIRE_THROW(
         bd.Reset(new CBuildDatabase(kOutput, "foo", true,
-                                    CWriteDB::eDefault, false, false, &log)),
+                                    CWriteDB::eDefault, false, &log)),
         CMultisourceException);
     BOOST_REQUIRE(bd.Empty());
     CFile f1(kOutput + ".pal"), f2(kOutput + ".pin");
@@ -2615,7 +2615,7 @@ BOOST_AUTO_TEST_CASE(CBuildDatabase_TestDirectoryCreation)
 
     CRef<CBuildDatabase> bd;
     bd.Reset(new CBuildDatabase(kOutput, "foo", true,
-                                CWriteDB::eNoIndex, false, false, &log));
+                                CWriteDB::eNoIndex, false, &log));
                                 //CWriteDB::eDefault, false, &cerr));
     //CRef<CTaxIdSet> tid(new CTaxIdSet(9301));
     CRef<CTaxIdSet> tid(new CTaxIdSet(9606));
@@ -2646,7 +2646,7 @@ BOOST_AUTO_TEST_CASE(CBuildDatabase_TestBasicDatabaseCreation)
 
     CRef<CBuildDatabase> bd;
     bd.Reset(new CBuildDatabase(kOutput, "foo", true,
-                                CWriteDB::eNoIndex, false, false, &log));
+                                CWriteDB::eNoIndex, false, &log));
                                 //CWriteDB::eDefault, false, &cerr));
     //CRef<CTaxIdSet> tid(new CTaxIdSet(9301));
     CRef<CTaxIdSet> tid(new CTaxIdSet(9606));
@@ -2684,7 +2684,6 @@ BOOST_AUTO_TEST_CASE(CBuildDatabase_TestQuickDatabaseCreation)
             true,               // is_protein
             CWriteDB::eNoIndex, // indexing
             false,              // use_gi_mask
-            false,              // long_seqids
             &log
     ));
     bd->SetSourceDb("swissprot");
@@ -2724,7 +2723,6 @@ BOOST_AUTO_TEST_CASE(CBuildDatabase_TestQuickDatabaseCreation_NoIds)
             true,               // is_protein
             CWriteDB::eNoIndex, // indexing
             false,              // use_gi_mask
-            false,              // long_seqids
             &log
     ));
     bd->SetSourceDb("swissprot");
@@ -2790,7 +2788,7 @@ BOOST_AUTO_TEST_CASE(CBuildDatabase_WGS_gap)
 
     CRef<CBuildDatabase> bd;
     bd.Reset(new CBuildDatabase(kOutput, "foo", false,
-                                CWriteDB::eNoIndex, false, false, &log));
+                                CWriteDB::eNoIndex, false, &log));
     bd->StartBuild();
 
     auto_ptr<CObjectIStream> ois
@@ -2938,7 +2936,7 @@ BOOST_AUTO_TEST_CASE(ReadBareIDProtein)
     string dbname = "data/bare_id_test_prot";
     string title = "Temporary unit test db";
     ostringstream log;
-    CBuildDatabase db(dbname, title, true, false, true, false, false, &log);
+    CBuildDatabase db(dbname, title, true, false, true, false, &log);
 
     db.StartBuild();
     db.AddFasta(istr);
@@ -2998,7 +2996,7 @@ BOOST_AUTO_TEST_CASE(ReadMultipleBareIDs)
     string dbname = "data/bare_id_test_prot2";
     string title = "Temporary unit test db";
     ostringstream log;
-    CBuildDatabase db(dbname, title, true, false, true, false, false, &log);
+    CBuildDatabase db(dbname, title, true, false, true, false, &log);
 
     db.StartBuild();
     db.AddFasta(istr);
@@ -3060,7 +3058,7 @@ BOOST_AUTO_TEST_CASE(ReadBareIDNucleotide)
     string dbname = "data/bare_id_test_nucl";
     string title = "Temporary unit test db";
     ostringstream log;
-    CBuildDatabase db(dbname, title, false, false, true, false, false, &log);
+    CBuildDatabase db(dbname, title, false, false, true, false, &log);
 
     db.StartBuild();
     db.AddFasta(istr);
@@ -3129,7 +3127,7 @@ BOOST_AUTO_TEST_CASE(ReadLongIDProtein)
     string dbname = "data/bare_id_test_prot_legacy";
     string title = "Temporary unit test db";
     ostringstream log;
-    CBuildDatabase db(dbname, title, true, false, true, true, false, &log);
+    CBuildDatabase db(dbname, title, true, false, true, false, &log, true);
 
     db.StartBuild();
     db.AddFasta(istr);
@@ -3189,7 +3187,7 @@ BOOST_AUTO_TEST_CASE(ReadMultipleLongIDs)
     string dbname = "data/bare_id_test_legacy_prot2";
     string title = "Temporary unit test db";
     ostringstream log;
-    CBuildDatabase db(dbname, title, true, false, true, true, false, &log);
+    CBuildDatabase db(dbname, title, true, false, true, false, &log, true);
 
     db.StartBuild();
     db.AddFasta(istr);
@@ -3247,7 +3245,7 @@ BOOST_AUTO_TEST_CASE(ReadLongIDNucleotide)
     string dbname = "data/bare_id_test_nucl_legacy";
     string title = "Temporary unit test db";
     ostringstream log;
-    CBuildDatabase db(dbname, title, false, false, true, true, false, &log);
+    CBuildDatabase db(dbname, title, false, false, true, false, &log, true);
 
     db.StartBuild();
     db.AddFasta(istr);

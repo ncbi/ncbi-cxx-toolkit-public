@@ -1026,8 +1026,8 @@ CBuildDatabase::CBuildDatabase(const string         & dbname,
                                bool                   is_protein,
                                CWriteDB::TIndexType   indexing,
                                bool                   use_gi_mask,
-                               bool                   long_seqids,
-                               ostream              * logfile)
+                               ostream              * logfile,
+                               bool                   long_seqids)
     : m_IsProtein    (is_protein),
       m_KeepLinks    (false),
       m_KeepMbits    (false),
@@ -1077,9 +1077,9 @@ CBuildDatabase::CBuildDatabase(const string & dbname,
                                bool           is_protein,
                                bool           sparse,
                                bool           parse_seqids,
-                               bool           long_seqids,
                                bool           use_gi_mask,
-                               ostream      * logfile)
+                               ostream      * logfile,
+                               bool           long_seqids)
     : m_IsProtein    (is_protein),
       m_KeepLinks    (false),
       m_KeepMbits    (false),

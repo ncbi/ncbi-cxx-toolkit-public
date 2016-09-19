@@ -1094,8 +1094,8 @@ void CMakeBlastDBApp::x_BuildDatabase()
                                   is_protein,
                                   indexing,
                                   use_gi_mask,
-                                  long_seqids,
-                                  m_LogFile));
+                                  m_LogFile,
+                                  long_seqids));
 
 #if _BLAST_DEBUG
     if (args["verbose"]) {
