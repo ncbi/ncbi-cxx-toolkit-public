@@ -754,6 +754,7 @@ void CNetScheduleServerListener::OnInit(
                     list<CTempString>::const_iterator it = affinities.begin();
                     affinity_list = *it;
                     for (;;) {
+                        SNetScheduleAPIImpl::VerifyAffinityAlphabet(*it);
                         ns_impl->m_AffinityLadder.push_back(
                                 make_pair(*it, affinity_list));
                         if (++it == affinities.end())

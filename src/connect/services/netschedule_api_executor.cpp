@@ -192,6 +192,8 @@ static bool s_DoParseGetJobResponse(
     return true;
 }
 
+string s_GET2(CNetScheduleExecutor::EJobAffinityPreference affinity_preference);
+
 bool g_ParseGetJobResponse(CNetScheduleJob& job, const string& response)
 {
     if (response.empty())
@@ -358,13 +360,14 @@ bool SNetScheduleExecutorImpl::x_GetJobWithAffinityLadder(
         SNetServerImpl* server, const CDeadline& timeout, 
         const string& prio_aff_list, CNetScheduleJob& job)
 {
-    string cmd(CNetScheduleNotificationHandler::MkBaseGETCmd(
-            m_AffinityPreference, prio_aff_list));
+    string cmd(s_GET2(m_AffinityPreference));
 
     m_NotificationHandler.CmdAppendTimeoutGroupAndClientInfo(cmd,
             &timeout, m_JobGroup);
 
-    if (!prio_aff_list.empty()) cmd.append(" prioritized_aff=1");
+    if (!prio_aff_list.empty()) {
+        cmd += " aff=" + prio_aff_list + " prioritized_aff=1";
+    }
 
     return ExecGET(server, cmd, job);
 }
@@ -430,32 +433,31 @@ bool CNetScheduleExecutor::GetJob(CNetScheduleJob& job,
     }
 }
 
+string s_GET2(CNetScheduleExecutor::EJobAffinityPreference affinity_preference)
+{
+    switch (affinity_preference) {
+    case CNetScheduleExecutor::ePreferredAffsOrAnyJob:
+        return "GET2 wnode_aff=1 any_aff=1";
+
+    case CNetScheduleExecutor::ePreferredAffinities:
+        return "GET2 wnode_aff=1 any_aff=0";
+
+    case CNetScheduleExecutor::eClaimNewPreferredAffs:
+        return "GET2 wnode_aff=1 any_aff=0 exclusive_new_aff=1";
+
+    case CNetScheduleExecutor::eAnyJob:
+        return "GET2 wnode_aff=0 any_aff=1";
+
+    default:
+        return "GET2 wnode_aff=0 any_aff=0";
+    }
+}
+
 string CNetScheduleNotificationHandler::MkBaseGETCmd(
     CNetScheduleExecutor::EJobAffinityPreference affinity_preference,
     const string& affinity_list)
 {
-    string cmd;
-
-    switch (affinity_preference) {
-    case CNetScheduleExecutor::ePreferredAffsOrAnyJob:
-        cmd = "GET2 wnode_aff=1 any_aff=1";
-        break;
-
-    case CNetScheduleExecutor::ePreferredAffinities:
-        cmd = "GET2 wnode_aff=1 any_aff=0";
-        break;
-
-    case CNetScheduleExecutor::eClaimNewPreferredAffs:
-        cmd = "GET2 wnode_aff=1 any_aff=0 exclusive_new_aff=1";
-        break;
-
-    case CNetScheduleExecutor::eAnyJob:
-        cmd = "GET2 wnode_aff=0 any_aff=1";
-        break;
-
-    case CNetScheduleExecutor::eExplicitAffinitiesOnly:
-        cmd = "GET2 wnode_aff=0 any_aff=0";
-    }
+    string cmd(s_GET2(affinity_preference));
 
     if (!affinity_list.empty()) {
         list<CTempString> affinity_tokens;
