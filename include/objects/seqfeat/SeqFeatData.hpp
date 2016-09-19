@@ -411,6 +411,7 @@ public:
         eQual_pseudo,
         eQual_pseudogene,
         eQual_rearranged,
+        eQual_recombination_class,
         eQual_region_name,
         eQual_regulatory_class,
         eQual_replace,
