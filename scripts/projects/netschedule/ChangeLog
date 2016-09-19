@@ -1,3 +1,9 @@
+Release 4.27.0 cloned from 4.26.0 (2016-09-19)
+
+Improvements:
+    * NetSchedule: let prioritized affinities work together with any affinity
+      flag (JIRA: CXX-8587)
+
 Release 4.26.0 cloned from 4.25.0 (2016-05-04)
 
 Improvements:
