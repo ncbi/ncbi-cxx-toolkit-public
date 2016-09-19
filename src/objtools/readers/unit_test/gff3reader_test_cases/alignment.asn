@@ -1,4 +1,5 @@
 Seq-annot ::= {
+  name "alignments",
   data align {
     {
       type partial,

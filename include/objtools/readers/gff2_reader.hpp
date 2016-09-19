@@ -165,6 +165,10 @@ public:
         CRef<CSeq_annot>&,
         const string& = "");
 
+    virtual void xAssignAnnotName(
+        CRef<CSeq_annot>&,
+        const string& name = "") const;
+
     virtual bool x_ParseDataGff(
         const string&,
         TAnnots&,

@@ -240,14 +240,8 @@ CGff2Reader::ReadSeqAnnot(
         if (xParseFeature(line, pAnnot, pEC)) {
             continue;
         }
-/*
-        if (xParseAlignment(line, pAnnot, pEC)) {
-            continue;
-        }
-        */
     }
 
-    
 
     if (!mCurrentFeatureCount) {
         return CRef<CSeq_annot>();
@@ -331,6 +325,7 @@ void CGff2Reader::xPostProcessAnnot(
     xAddConversionInfo(pAnnot, pEC);
     xAssignTrackData(pAnnot);
     xAssignAnnotId(pAnnot);
+    xAssignAnnotName(pAnnot);
     xGenerateParentChildXrefs(pAnnot);
 }
 
@@ -340,7 +335,7 @@ void CGff2Reader::xAssignAnnotId(
     const string& givenId)
 //  ----------------------------------------------------------------------------
 {
-    if (pAnnot->GetData().IsAlign()) {
+    if (givenId.empty() && pAnnot->GetData().IsAlign()) {
         return;
     }
 
@@ -358,6 +353,22 @@ void CGff2Reader::xAssignAnnotId(
     pAnnotId->SetLocal().SetStr(annotId);
     pAnnot->SetId().push_back(pAnnotId);   
 }
+
+
+//  ----------------------------------------------------------------------------
+void CGff2Reader::xAssignAnnotName(
+        CRef<CSeq_annot>& pAnnot,
+        const string& name) const
+//  ----------------------------------------------------------------------------
+{
+    if (name.empty() && !pAnnot->GetData().IsAlign()) {
+        return;
+    }
+
+    string annotName = name.empty() ? "alignments" : name;
+    pAnnot->SetName(annotName);
+}
+
 
 //  ----------------------------------------------------------------------------
 void CGff2Reader::x_SetTrackDataToSeqEntry(
@@ -577,7 +588,6 @@ bool CGff2Reader::x_ParseAlignmentGff(
     }
 
     const string id = pRecord->Id();
-
     if (alignments.find(id) == alignments.end()) {
        id_list.push_back(id);
     }
@@ -589,7 +599,7 @@ bool CGff2Reader::x_ParseAlignmentGff(
 
     alignments[id].push_back(alignment);
 
-    mCurrentFeatureCount++;
+    ++mCurrentFeatureCount;
     mParsingAlignment = true;
     return true;
 }
