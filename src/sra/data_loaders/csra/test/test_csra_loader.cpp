@@ -2402,3 +2402,16 @@ BOOST_AUTO_TEST_CASE(CheckPrivate1)
     }
     BOOST_CHECK(isError);
 }
+
+
+NCBITEST_INIT_TREE()
+{
+    NCBITEST_DISABLE(FetchSeq1);
+    NCBITEST_DISABLE(FetchSeq2);
+    NCBITEST_DISABLE(FetchSeq3);
+    NCBITEST_DISABLE(FetchSeq4);
+    NCBITEST_DISABLE(FetchSeq4l);
+    NCBITEST_DISABLE(FetchSeq4sx);
+    NCBITEST_DISABLE(FetchSeq4sd);
+    NCBITEST_DISABLE(FetchSeq4s);
+}
