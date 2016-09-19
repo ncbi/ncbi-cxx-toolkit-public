@@ -1720,6 +1720,7 @@ START_SUBTYPE(misc_recomb)
     ADD_QUAL(map);
     ADD_QUAL(note);
     ADD_QUAL(old_locus_tag);
+    ADD_QUAL(recombination_class);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -3126,6 +3127,7 @@ static const TQualPair kQualPairs[] = {
     { CSeqFeatData::eQual_pseudo, "pseudo" },
     { CSeqFeatData::eQual_pseudogene, "pseudogene" },
     { CSeqFeatData::eQual_rearranged, "rearranged" },
+    { CSeqFeatData::eQual_recombination_class, "recombination_class" },
     { CSeqFeatData::eQual_region_name, "region_name" },
     { CSeqFeatData::eQual_regulatory_class, "regulatory_class" },
     { CSeqFeatData::eQual_replace, "replace" },

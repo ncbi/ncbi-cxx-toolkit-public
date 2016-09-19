@@ -263,6 +263,24 @@ bool CGb_qual::IsValidPseudogeneValue(const string& val)
 }
 
 
+const CGb_qual::TLegalRecombinationClassSet &
+CGb_qual::GetSetOfLegalRecombinationClassValues(void)
+{
+    static const char * misc_recombs[] = {
+        "breakpoint_junction",
+        "meiotic_recombination",
+        "mitotic_recombination",
+        "non_allelic_homologous_recombination"
+    };
+
+
+    DEFINE_STATIC_ARRAY_MAP_WITH_COPY(
+        TLegalRecombinationClassSet, sc_LegalRecombinationClass, misc_recombs);
+
+    return sc_LegalRecombinationClass;
+}
+
+
 // constructor
 CInferencePrefixList::CInferencePrefixList(void)
 {
