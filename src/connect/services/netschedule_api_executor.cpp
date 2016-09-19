@@ -376,44 +376,14 @@ bool SNetScheduleExecutorImpl::x_GetJobWithAffinityLadder(
         return x_GetJobWithAffinityList(server, &timeout, job,
                 m_AffinityPreference, kEmptyStr);
 
-    // If prioritized_aff flag is supported (NS v4.22.0+)
-    CRef<SNetScheduleServerProperties> server_props =
-        CNetScheduleServerListener::x_GetServerProperties(server);
+    string cmd("GET2 wnode_aff=0 any_aff=0 aff=");
+    cmd += prio_aff_list;
 
-    if (server_props->version.IsUpCompatible(CVersionInfo(4, 22, 0))) {
-        string cmd("GET2 wnode_aff=0 any_aff=0 aff=");
-        cmd += prio_aff_list;
+    m_NotificationHandler.CmdAppendTimeoutGroupAndClientInfo(cmd,
+            &timeout, m_JobGroup);
 
-        m_NotificationHandler.CmdAppendTimeoutGroupAndClientInfo(cmd,
-                &timeout, m_JobGroup);
-
-        cmd.append(" prioritized_aff=1");
-        return ExecGET(server, cmd, job);
-    }
-
-    // XXX: Compatibility mode.
-    // TODO: Can be thrown out after all NS serves are updated to version 4.22.0+
-    list<CTempString> affinity_tokens;
-    NStr::Split(prio_aff_list, ",", affinity_tokens,
-            NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
-
-    string affinity_list;
-    list<CTempString>::const_iterator it = affinity_tokens.begin();
-
-    while (it != affinity_tokens.end()) {
-        affinity_list += *it;
-        const bool last_try = ++it == affinity_tokens.end();
-
-        if (x_GetJobWithAffinityList(server, last_try ? &timeout : NULL,
-                    job, CNetScheduleExecutor::eExplicitAffinitiesOnly,
-                    affinity_list)) {
-            return true;
-        }
-
-        affinity_list += ',';
-    }
-
-    return false;
+    cmd.append(" prioritized_aff=1");
+    return ExecGET(server, cmd, job);
 }
 
 bool CNetScheduleExecutor::GetJob(CNetScheduleJob& job,
