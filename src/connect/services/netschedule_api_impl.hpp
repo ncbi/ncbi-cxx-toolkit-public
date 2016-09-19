@@ -438,11 +438,6 @@ struct SNetScheduleExecutorImpl : public CObject
     string MkSETAFFCmd();
     bool ExecGET(SNetServerImpl* server,
             const string& get_cmd, CNetScheduleJob& job);
-    bool x_GetJobWithAffinityList(SNetServerImpl* server,
-            const CDeadline* timeout,
-            CNetScheduleJob& job,
-            CNetScheduleExecutor::EJobAffinityPreference affinity_preference,
-            const string& affinity_list);
     bool x_GetJobWithAffinityLadder(SNetServerImpl* server,
             const CDeadline& timeout,
             const string& prio_aff_list,
