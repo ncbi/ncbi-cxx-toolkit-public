@@ -2504,7 +2504,7 @@ void CNewCleanup_imp::PubEquivBC (CPub_equiv& pub_equiv)
     if (last_pmid == 0 && last_article_pubmed_id > 0) {
         CRef<CPub> new_pub( new CPub );
         new_pub->SetPmid().Set( last_article_pubmed_id );
-        pub_equiv.Set().push_back( new_pub );
+        pub_equiv.Set().insert(pub_equiv.Set().begin(), new_pub);
         ChangeMade(CCleanupChange::eChangePublication);
     } else if (last_pmid > 0 && last_article_pubmed_id == 0 && last_article ) {
         CRef<CArticleId> new_article_id(new CArticleId);
@@ -2512,6 +2512,7 @@ void CNewCleanup_imp::PubEquivBC (CPub_equiv& pub_equiv)
         last_article->SetIds().Set().push_back(new_article_id);
         ChangeMade(CCleanupChange::eChangePublication);
     }
+
 
 }
 
