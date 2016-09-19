@@ -2641,8 +2641,8 @@ CQueue::x_FindVacantJob(const CNSClientId  &          client,
             vacant_jobs -= m_ReadJobs;
 
         if (prioritized_aff) {
-            // The only criteria here is a list of explicit affinities
-            // respecting their order
+            // The criteria here is a list of explicit affinities
+            // (respecting their order) which may be followed by any affinity
             for (vector<unsigned int>::const_iterator  k = aff_ids.begin();
                     k != aff_ids.end(); ++k) {
                 TNSBitVector    aff_jobs = m_AffinityRegistry.
@@ -2650,6 +2650,13 @@ CQueue::x_FindVacantJob(const CNSClientId  &          client,
                 TNSBitVector    candidates = vacant_jobs & aff_jobs;
                 if (candidates.any())
                     return x_SJobPick(*(candidates.first()), false, *k);
+            }
+            if (any_affinity) {
+                if (vacant_jobs.any()) {
+                    unsigned int    job_id = *(vacant_jobs.first());
+                    return x_SJobPick(job_id, false,
+                                      m_GCRegistry.GetAffinityID(job_id));
+                }
             }
             return x_SJobPick();
         }

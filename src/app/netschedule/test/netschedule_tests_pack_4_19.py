@@ -755,3 +755,123 @@ class Scenario1813( TestBase ):
             raise Exception( "Expected a job, got nothing: " + str(output) )
         return True
 
+
+
+class Scenario1900( TestBase ):
+    " Scenario 1900 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "SUBMIT with a2, SUBMIT with a1 " \
+               "GET2 a=a1,a2 wnode_aff=1 prioritized_aff=1 => ERR, " \
+               "GET2 a=a3,a4 any_aff=1 prioritized_aff=1 => OK, " \
+               "GET2 a=a1,a2 exclusive_new_aff=1 prioritized_aff=1 => ERR"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch()
+
+        self.ns.submitJob( 'TEST', 'bla', affinity='a2' )
+        self.ns.submitJob( 'TEST', 'bla', affinity='a1' )
+
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario1603' )
+        ns_client.set_client_identification( 'node', 'session' )
+
+        ex = False
+        try:
+            execAny( ns_client, 'GET2 wnode_aff=1 any_aff=0 '
+                                'aff=a1,a2 prioritized_aff=1' )
+        #except Exception, exc:
+        except Exception:
+            ex = True
+            #print str( exc )
+
+        if ex == False:
+            raise Exception( "Expected exception, got none  (case 1)" )
+
+        # 4.27.0 and up should provide a job
+        output = execAny( ns_client, 'GET2 wnode_aff=0 any_aff=1 '
+                                     'aff=a3,a4 prioritized_aff=1' )
+        if 'job_key=' not in output:
+            raise Exception( "Expected a job with affinity a2, received no job: '" + output + "'" )
+
+        ex = False
+        try:
+            execAny( ns_client, 'GET2 wnode_aff=0 any_aff=0 exclusive_new_aff=1 '
+                                'aff=a1,a2 prioritized_aff=1' )
+        #except Exception, exc:
+        except Exception:
+            ex = True
+            #print str( exc )
+
+        if ex == False:
+            raise Exception( "Expected exception, got none  (case 3)" )
+
+        return True
+
+
+class Scenario1901( TestBase ):
+    " Scenario 1901 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "SUBMIT with a2, SUBMIT with a1 " \
+               "GET + PUT" \
+               "READ2 a=a1,a2 reader_aff=1 prioritized_aff=1 => ERR, " \
+               "READ2 a=a3,a4 any_aff=1 prioritized_aff=1 => OK, " \
+               "READ2 a=a1,a2 exclusive_new_aff=1 prioritized_aff=1 => ERR"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch()
+
+        self.ns.submitJob( 'TEST', 'bla', affinity='a2' )
+        self.ns.submitJob( 'TEST', 'bla', affinity='a1' )
+
+        j = self.ns.getJob( 'TEST' )
+        self.ns.putJob( 'TEST', j[ 0 ], j[ 1 ], 0 )
+        j = self.ns.getJob( 'TEST' )
+        self.ns.putJob( 'TEST', j[ 0 ], j[ 1 ], 0 )
+
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario1606' )
+        ns_client.set_client_identification( 'node', 'session' )
+
+        ex = False
+        try:
+            execAny( ns_client, 'READ2 reader_aff=1 any_aff=0 '
+                                'aff=a1,a2 prioritized_aff=1' )
+        #except Exception, exc:
+        except Exception:
+            ex = True
+            #print str( exc )
+
+        if ex == False:
+            raise Exception( "Expected exception, got none (case 1)" )
+
+        # 4.27.0 and up should provide a job
+        output = execAny( ns_client, 'READ2 reader_aff=0 any_aff=1 '
+                                     'aff=a3,a4 prioritized_aff=1' )
+        if 'job_key=' not in output:
+            raise Exception( "Expected a job with affinity a2, received no job: '" + output + "'" )
+
+        ex = False
+        try:
+            execAny( ns_client, 'READ2 reader_aff=0 any_aff=0 exclusive_new_aff=1 '
+                                'aff=a1,a2 prioritized_aff=1' )
+        #except Exception, exc:
+        except Exception:
+            ex = True
+            #print str( exc )
+
+        if ex == False:
+            raise Exception( "Expected exception, got none (case 3)" )
+
+        return True

@@ -3990,11 +3990,6 @@ void CNetScheduleHandler::x_CheckGetParameters(void)
                    "It is forbidden to have both any_affinity and "
                    "exclusive_new_aff GET2 flags set to 1.");
     if (m_CommandArguments.prioritized_aff == true &&
-        m_CommandArguments.any_affinity == true)
-        NCBI_THROW(CNetScheduleException, eInvalidParameter,
-                   "It is forbidden to have both prioritized_aff and "
-                   "any_aff GET2 flags set to 1.");
-    if (m_CommandArguments.prioritized_aff == true &&
         m_CommandArguments.wnode_affinity == true)
         NCBI_THROW(CNetScheduleException, eInvalidParameter,
                    "It is forbidden to have both prioritized_aff and "
@@ -4029,11 +4024,6 @@ void CNetScheduleHandler::x_CheckReadParameters(void)
         NCBI_THROW(CNetScheduleException, eInvalidParameter,
                    "It is forbidden to have both any_aff and "
                    "exclusive_new_aff READ2 flags set to 1.");
-    if (m_CommandArguments.prioritized_aff == true &&
-        m_CommandArguments.any_affinity == true)
-        NCBI_THROW(CNetScheduleException, eInvalidParameter,
-                   "It is forbidden to have both prioritized_aff and "
-                   "any_aff READ2 flags set to 1.");
     if (m_CommandArguments.prioritized_aff == true &&
         m_CommandArguments.reader_affinity == true)
         NCBI_THROW(CNetScheduleException, eInvalidParameter,
