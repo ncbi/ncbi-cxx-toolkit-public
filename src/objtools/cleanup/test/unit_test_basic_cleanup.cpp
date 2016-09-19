@@ -858,3 +858,27 @@ BOOST_AUTO_TEST_CASE(Test_SQD_3994)
     BOOST_CHECK_EQUAL(name->GetSuffix(), "Sr.");
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_trna_product_qual_cleanup)
+{
+    CRef<CSeq_feat> trna(new CSeq_feat());
+    trna->SetData().SetRna().SetType(CRNA_ref::eType_tRNA);
+    trna->SetData().SetRna().SetExt().SetTRNA().SetAa().SetNcbieaa(86);
+    trna->SetComment("SMAX5B_nc006978T1");
+    trna->SetLocation().SetInt().SetFrom(7572);
+    trna->SetLocation().SetInt().SetTo(7644);
+    trna->SetLocation().SetInt().SetStrand(eNa_strand_minus);
+    trna->SetLocation().SetInt().SetId().SetEmbl().SetAccession("LN913684");
+    trna->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("product", "trna.Val")));
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    cleanup.SetScope(scope);
+    changes = cleanup.BasicCleanup(*trna);
+
+    BOOST_CHECK_EQUAL(trna->IsSetQual(), true);
+    BOOST_CHECK_EQUAL(trna->GetQual().front()->GetQual(), "product");
+
+}
+

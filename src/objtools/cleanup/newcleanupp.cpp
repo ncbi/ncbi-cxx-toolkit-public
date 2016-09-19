@@ -4805,7 +4805,8 @@ CNewCleanup_imp::x_HandleTrnaProductGBQual(CSeq_feat& feat, CRNA_ref& rna, const
             if (trp.GetAa().GetNcbieaa() == s_ParseSeqFeatTRnaString(product, NULL, ignored, false) &&
                 NStr::IsBlank(ignored)) {
             } else {
-                x_AddToComment(feat, product);
+                return eAction_Nothing;
+//                x_AddToComment(feat, product);
             }
             if (NStr::CompareNocase (product, "tRNA-fMet") == 0 || NStr::CompareNocase (product, "iRNA-fMet") == 0) {
                 return eAction_Nothing;
