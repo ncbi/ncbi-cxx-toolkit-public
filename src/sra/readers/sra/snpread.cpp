@@ -2233,14 +2233,11 @@ CSNPDbFeatIterator::EExcluded CSNPDbFeatIterator::x_Excluded(void)
         return eExluded;
     }
     TSeqPos ref_len = x_GetLength();
-    if ( !ref_len ) {
-        if ( 0 ) {
-            ERR_POST("empty SNP location: "<<
-                     m_PageIter.GetPageRowId()<<"."<<m_CurrFeatId<<
-                     " at "<<ref_pos<<" rs"<<GetFeatId());
-        }
-        else {
-            ref_len = 1;
+    if ( ref_len == 0 ) { // insertion SNP
+        // make 2-base interval with insertion point in the middle, if possible
+        if ( ref_pos > 0 ) {
+            --ref_pos;
+            ref_len = 2;
         }
     }
     TSeqPos ref_end = ref_pos + ref_len;
