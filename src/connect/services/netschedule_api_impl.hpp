@@ -156,16 +156,16 @@ private:
     };
     typedef int TMode;
 
-public:
-    CNetScheduleServerListener() :
-        m_ClientType(CNetScheduleAPI::eCT_Auto),
-        m_Mode(fNetSchedule | fConfigLoading)
+    static TMode GetMode(bool wn, bool try_config)
     {
+        if (wn) return fWorkerNode;
+        if (try_config) return fNetSchedule | fConfigLoading;
+                        return fNetSchedule;
     }
 
-    CNetScheduleServerListener(bool wn_compatible) :
-        m_ClientType(CNetScheduleAPI::eCT_Auto),
-        m_Mode(wn_compatible ? fWorkerNode : fNetSchedule)
+public:
+    CNetScheduleServerListener(bool wn, bool try_config) :
+        m_Mode(GetMode(wn, try_config))
     {
     }
 
@@ -195,7 +195,7 @@ public:
     // preferred affinities from two threads.
     CFastMutex m_AffinitySubmissionMutex;
 
-    CNetScheduleAPI::EClientType m_ClientType;
+    CNetScheduleAPI::EClientType m_ClientType = CNetScheduleAPI::eCT_Auto;
 
 private:
     const TMode m_Mode;
@@ -283,10 +283,7 @@ struct SNetScheduleAPIImpl : public CObject
 {
     SNetScheduleAPIImpl(CConfig* config, const string& section,
         const string& service_name, const string& client_name,
-        const string& queue_name);
-
-    SNetScheduleAPIImpl(const string& service_name, const string& client_name,
-        const string& queue_name, bool wn_compatible);
+        const string& queue_name, bool wn = false, bool try_config = true);
 
     // Special constructor for CNetScheduleAPI::GetServer().
     SNetScheduleAPIImpl(SNetServerInPool* server, SNetScheduleAPIImpl* parent);

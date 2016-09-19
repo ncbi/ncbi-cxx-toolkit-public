@@ -896,26 +896,14 @@ static const char* const s_NetScheduleConfigSections[] = {
 SNetScheduleAPIImpl::SNetScheduleAPIImpl(
         CConfig* config, const string& section,
         const string& service_name, const string& client_name,
-        const string& queue_name) :
+        const string& queue_name, bool wn, bool try_config) :
     m_Service(new SNetServiceImpl("NetScheduleAPI", client_name,
-                new CNetScheduleServerListener)),
+                new CNetScheduleServerListener(wn, try_config))),
     m_Queue(queue_name),
     m_JobTtl(0)
 {
     m_Service->Init(this, service_name,
         config, section, s_NetScheduleConfigSections);
-}
-
-SNetScheduleAPIImpl::SNetScheduleAPIImpl(
-        const string& service_name, const string& client_name,
-        const string& queue_name, bool wn_compatible) :
-    m_Service(new SNetServiceImpl("NetScheduleAPI", client_name,
-                new CNetScheduleServerListener(wn_compatible), wn_compatible)),
-    m_Queue(queue_name),
-    m_JobTtl(0)
-{
-    m_Service->Init(this, service_name,
-        NULL, kEmptyStr, s_NetScheduleConfigSections);
 }
 
 SNetScheduleAPIImpl::SNetScheduleAPIImpl(
@@ -1548,14 +1536,16 @@ CNetScheduleAPI::TInstance
 CNetScheduleAPIExt::CreateWnCompat(const string& service_name,
         const string& client_name)
 {
-    return new SNetScheduleAPIImpl(service_name, client_name, kEmptyStr, true);
+    return new SNetScheduleAPIImpl(nullptr, kEmptyStr,
+            service_name, client_name, kEmptyStr, true, false);
 }
 
 CNetScheduleAPI::TInstance
 CNetScheduleAPIExt::CreateNoCfgLoad(const string& service_name,
         const string& client_name, const string& queue_name)
 {
-    return new SNetScheduleAPIImpl(service_name, client_name, queue_name, false);
+    return new SNetScheduleAPIImpl(nullptr, kEmptyStr,
+            service_name, client_name, queue_name, false, false);
 }
 
 
