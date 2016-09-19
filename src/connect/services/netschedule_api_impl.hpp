@@ -360,6 +360,7 @@ struct SNetScheduleAPIImpl : public CObject
     void UseOldStyleAuth();
     void SetAuthParam(const string& param_name, const string& param_value);
     CCompoundIDPool GetCompoundIDPool() { return m_CompoundIDPool; }
+    void InitAffinities(CConfig* config, const string& section);
 
     CNetService m_Service;
 

@@ -685,8 +685,6 @@ void CNetScheduleServerListener::OnInit(
         SNetScheduleAPIImpl::VerifyQueueNameAlphabet(queue_ref);
     }
 
-    ns_impl->m_AffinityPreference = CNetScheduleExecutor::eAnyJob;
-
     const list<string> embedded_synonyms{"use_embedded_input"};
     bool use_affinities_value;
 
@@ -722,47 +720,7 @@ void CNetScheduleServerListener::OnInit(
             embedded.ReadOnce();
 
             if (use_affinities.ReadOnce() && use_affinities_value) {
-                ns_impl->m_AffinityPreference = config->GetBool(module,
-                        "claim_new_affinities", CConfig::eErr_NoThrow, false) ?
-                    CNetScheduleExecutor::eClaimNewPreferredAffs :
-                    config->GetBool(module,
-                        "process_any_job", CConfig::eErr_NoThrow, false) ?
-                            CNetScheduleExecutor::ePreferredAffsOrAnyJob :
-                            CNetScheduleExecutor::ePreferredAffinities;
-
-                string affinity_list = config->GetString(module,
-                        "affinity_list", CConfig::eErr_NoThrow, kEmptyStr);
-
-                if (!affinity_list.empty()) {
-                    NStr::Split(affinity_list, ", ", ns_impl->m_AffinityList,
-                            NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
-                    ITERATE(list<string>, it, ns_impl->m_AffinityList) {
-                        SNetScheduleAPIImpl::VerifyAffinityAlphabet(*it);
-                    }
-                }
-
-                string affinity_ladder = config->GetString(module,
-                        "affinity_ladder", CConfig::eErr_NoThrow, kEmptyStr);
-                list<CTempString> affinities;
-                NStr::Split(affinity_ladder, ", ", affinities,
-                        NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
-
-                if (!affinities.empty()) {
-                    ns_impl->m_AffinityPreference =
-                        CNetScheduleExecutor::eExplicitAffinitiesOnly;
- 
-                    list<CTempString>::const_iterator it = affinities.begin();
-                    affinity_list = *it;
-                    for (;;) {
-                        SNetScheduleAPIImpl::VerifyAffinityAlphabet(*it);
-                        ns_impl->m_AffinityLadder.push_back(
-                                make_pair(*it, affinity_list));
-                        if (++it == affinities.end())
-                            break;
-                        affinity_list += ',';
-                        affinity_list += *it;
-                    }
-                }
+                ns_impl->InitAffinities(config, module);
             }
 
             job_group.ReadOnce();
@@ -904,6 +862,7 @@ SNetScheduleAPIImpl::SNetScheduleAPIImpl(
     m_Service(new SNetServiceImpl("NetScheduleAPI", client_name,
                 new CNetScheduleServerListener(wn, try_config))),
     m_Queue(queue_name),
+    m_AffinityPreference(CNetScheduleExecutor::eAnyJob),
     m_JobTtl(0)
 {
     m_Service->Init(this, service_name,
@@ -1417,6 +1376,75 @@ void SNetScheduleAPIImpl::SetAuthParam(const string& param_name,
         m_AuthParams.erase(param_name);
 
     UpdateAuthString();
+}
+
+void SNetScheduleAPIImpl::InitAffinities(CConfig* config, const string& section)
+{
+    const bool claim_new_affinities = config->GetBool(section,
+            "claim_new_affinities", CConfig::eErr_NoThrow, false);
+
+    const bool process_any_job = config->GetBool(section,
+            "process_any_job", CConfig::eErr_NoThrow, false);
+
+    const string affinity_list = config->GetString(section,
+            "affinity_list", CConfig::eErr_NoThrow, kEmptyStr);
+
+    const string affinity_ladder = config->GetString(section,
+            "affinity_ladder", CConfig::eErr_NoThrow, kEmptyStr);
+
+    if (affinity_ladder.empty()) {
+
+        if (claim_new_affinities) {
+            m_AffinityPreference = CNetScheduleExecutor::eClaimNewPreferredAffs;
+
+        } else if (process_any_job) {
+            m_AffinityPreference = CNetScheduleExecutor::ePreferredAffsOrAnyJob;
+
+        } else {
+            m_AffinityPreference = CNetScheduleExecutor::ePreferredAffinities;
+        }
+
+        if (affinity_list.empty()) return;
+
+        NStr::Split(affinity_list, ", ", m_AffinityList,
+                NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
+
+        for (auto& affinity : m_AffinityList) {
+            VerifyAffinityAlphabet(affinity);
+        }
+
+        return;
+    }
+
+    // Sanity checks
+    if (claim_new_affinities) {
+        NCBI_THROW(CConfigException, eInvalidParameter,
+                "'affinity_ladder' cannot be used with 'claim_new_affinities'");
+    }
+    if (!affinity_list.empty()) {
+        NCBI_THROW(CConfigException, eInvalidParameter,
+                "'affinity_ladder' cannot be used with 'affinity_list'");
+    }
+
+    if (!process_any_job) {
+        m_AffinityPreference = CNetScheduleExecutor::eExplicitAffinitiesOnly;
+    }
+
+    list<CTempString> affinities;
+    NStr::Split(affinity_ladder, ", ", affinities,
+            NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
+
+    if (affinities.empty()) return;
+
+    string affinity_step;
+
+    for (auto& affinity : affinities) {
+        VerifyAffinityAlphabet(affinity);
+
+        if (!affinity_step.empty()) affinity_step += ',';
+        affinity_step += affinity;
+        m_AffinityLadder.emplace_back(affinity, affinity_step);
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
