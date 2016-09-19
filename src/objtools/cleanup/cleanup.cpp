@@ -588,9 +588,9 @@ bool CCleanup::MoveFeatToProtein(CSeq_feat_Handle fh)
         return ConvertProteinToImp(fh);
     }
 
-    CSeq_feat_Handle cds_h = fh.GetScope().GetSeq_featHandle(*cds);
-    if (!cds_h) {
-        // can't get handle
+    CRef<CSeq_loc> prot_loc = GetProteinLocationFromNucleotideLocation(fh.GetLocation(), *cds, fh.GetScope());
+
+    if (!prot_loc) {
         return false;
     }
 
@@ -612,34 +612,9 @@ bool CCleanup::MoveFeatToProtein(CSeq_feat_Handle fh)
         }
     }
 
-    CRef<CSeq_loc> new_loc;
-    CRef<CSeq_loc_Mapper> nuc2prot_mapper(
-        new CSeq_loc_Mapper(*cds, CSeq_loc_Mapper::eLocationToProduct, &fh.GetScope()));
-    new_loc = nuc2prot_mapper->Map(orig_feat->GetLocation());
-    if (!new_loc) {
-        return false;
-    }
-    const CSeq_id* sid = new_loc->GetId();
-    const CSeq_id* orig_id = orig_feat->GetLocation().GetId();
-    if (!sid || (orig_id && sid->Equals(*orig_id))) {
-        // unable to map to protein location
-        return false;
-    }
-    if (!cds_h.GetLocation().IsPartialStart(eExtreme_Biological)) {
-        if (new_loc->IsPartialStart(eExtreme_Biological)) {
-            new_loc->SetPartialStart(false, eExtreme_Biological);
-        }
-    }
-    if (!cds_h.GetLocation().IsPartialStop(eExtreme_Biological)) {
-        if (new_loc->IsPartialStop(eExtreme_Biological)) {
-            new_loc->SetPartialStop(false, eExtreme_Biological);
-        }
-    }
-
-    new_loc->ResetStrand();
     // change location to protein
     new_feat->ResetLocation();
-    new_feat->SetLocation(*new_loc);
+    new_feat->SetLocation(*prot_loc);
 
 
     CSeq_feat_EditHandle edh(fh);
@@ -3642,6 +3617,66 @@ bool CCleanup::DecodeXMLMarkChanged(std::string & str)
 
     return change_made;
 }
+
+
+CRef<CSeq_loc> CCleanup::GetProteinLocationFromNucleotideLocation(const CSeq_loc& nuc_loc, const CSeq_feat& cds, CScope& scope)
+{
+    CRef<CSeq_loc> new_loc;
+    CRef<CSeq_loc_Mapper> nuc2prot_mapper(
+        new CSeq_loc_Mapper(cds, CSeq_loc_Mapper::eLocationToProduct, &scope));
+    new_loc = nuc2prot_mapper->Map(nuc_loc);
+    if (!new_loc) {
+        return CRef<CSeq_loc>(NULL);
+    }
+    const CSeq_id* sid = new_loc->GetId();
+    const CSeq_id* orig_id = nuc_loc.GetId();
+    if (!sid || (orig_id && sid->Equals(*orig_id))) {
+        // unable to map to protein location
+        return CRef<CSeq_loc>(NULL);
+    }
+
+    new_loc->ResetStrand();
+
+    // if location includes stop codon, remove it
+    CBioseq_Handle prot = scope.GetBioseqHandle(*sid);
+    if (prot && new_loc->GetStop(objects::eExtreme_Positional) >= prot.GetBioseqLength())
+    {
+        CRef<CSeq_id> sub_id(new CSeq_id());
+        sub_id->Assign(*sid);
+        CSeq_loc sub(*sub_id, prot.GetBioseqLength(), new_loc->GetStop(objects::eExtreme_Positional), new_loc->GetStrand());
+        new_loc = sequence::Seq_loc_Subtract(*new_loc, sub, CSeq_loc::fMerge_All | CSeq_loc::fSort, &scope);
+    }
+
+
+    if (!cds.GetLocation().IsPartialStart(eExtreme_Biological)) {
+        if (new_loc->IsPartialStart(eExtreme_Biological)) {
+            new_loc->SetPartialStart(false, eExtreme_Biological);
+        }
+    }
+    if (!cds.GetLocation().IsPartialStop(eExtreme_Biological)) {
+        if (new_loc->IsPartialStop(eExtreme_Biological)) {
+            new_loc->SetPartialStop(false, eExtreme_Biological);
+        }
+    }
+
+
+
+    return new_loc;
+}
+
+
+CRef<CSeq_loc> CCleanup::GetProteinLocationFromNucleotideLocation(const CSeq_loc& nuc_loc, CScope& scope)
+{
+    CConstRef<CSeq_feat> cds = sequence::GetOverlappingCDS(nuc_loc, scope);
+    if (!cds || !cds->IsSetProduct()) {
+        // there is no overlapping coding region feature, so there is no appropriate
+        // protein sequence to move to
+        return CRef<CSeq_loc>(NULL);
+    }
+
+    return GetProteinLocationFromNucleotideLocation(nuc_loc, *cds, scope);
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
