@@ -2358,10 +2358,20 @@ DISCREPANCY_SUMMARIZE(METAGENOME_SOURCE)
 DISCREPANCY_CASE(DUP_SRC_QUAL, CBioSource, eDisc | eOncaller | eSmart, "Each qualifier on a source should have different value")
 {
     map<string, size_t> Map;
+    string collected_by;
+    string identified_by;
     if (obj.CanGetSubtype()) {
         ITERATE (CBioSource::TSubtype, it, obj.GetSubtype()) {
             if ((*it)->CanGetName()) {
                 const string& s = (*it)->GetName();
+                if ((*it)->CanGetSubtype()) {
+                    if ((*it)->GetSubtype() == CSubSource::eSubtype_collected_by) {
+                        collected_by = s;
+                    }
+                    else if ((*it)->GetSubtype() == CSubSource::eSubtype_identified_by) {
+                        identified_by = s;
+                    }
+                }
                 if (!s.empty()) {
                     if (Map.find(s) != Map.end()) {
                         Map[s]++;
@@ -2390,6 +2400,9 @@ DISCREPANCY_CASE(DUP_SRC_QUAL, CBioSource, eDisc | eOncaller | eSmart, "Each qua
     }
     for (map<string, size_t>::const_iterator it = Map.begin(); it != Map.end(); it++) {
         if (it->second) {
+            if (it->second == 1 && it->first == collected_by && collected_by == collected_by) {
+                continue; // there is no error if collected_by equals to identified_by
+            }
             string s = "[n] biosource[s] [has] repeating qualifier value \'";
             s += it->first;
             s += "\'";
