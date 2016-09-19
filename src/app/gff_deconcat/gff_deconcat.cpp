@@ -75,7 +75,7 @@ private:
     void xWriteFile(CNcbiOfstream& ostr,
                     const string& header, 
                     const list<string>& body);
-    void x_SetExtension(const string& input_filename);
+    void xSetExtension(const string& input_filename);
 
     string m_OutputDir;
     string m_Extension;
@@ -100,7 +100,7 @@ void CGffDeconcatApp::Init(void)
 }
 
 
-void CGffDeconcatApp::x_SetExtension(const string& input_filename)
+void CGffDeconcatApp::xSetExtension(const string& input_filename)
 {
     CDir input_file(input_filename);
     string trial_ext(input_file.GetExt());
@@ -124,25 +124,7 @@ int CGffDeconcatApp::Run(void)
     const CArgs& args = GetArgs();
     CNcbiIstream& istr = args["i"].AsInputFile();
 
-    x_SetExtension(args["i"].AsString());
-/*
-    CDirEntry input_file(args["i"].AsString());
-    string extension(input_file.GetExt());
-
-    if (!NStr::IsBlank(extension)) {
-        try {
-            NStr::StringToDouble(extension); // Extension cannot be numeric
-            m_Extension = ".gff";
-        }
-        catch(...) {
-            m_Extension = extension;
-        }
-    } 
-    else {
-        m_Extension = ".gff";
-    }
-
-*/
+    xSetExtension(args["i"].AsString());
 
     if (args["dir"]) {
         auto dirname = args["dir"].AsString();
@@ -244,7 +226,6 @@ void CGffDeconcatApp::xWriteFile(CNcbiOfstream& ostr,
 END_NCBI_SCOPE
 
 USING_NCBI_SCOPE;
-
 
 int main(int argc, const char* argv[])
 {
