@@ -358,23 +358,14 @@ bool SNetScheduleExecutorImpl::x_GetJobWithAffinityLadder(
         SNetServerImpl* server, const CDeadline& timeout, 
         const string& prio_aff_list, CNetScheduleJob& job)
 {
-    if (prio_aff_list.empty()) {
-        string cmd(CNetScheduleNotificationHandler::MkBaseGETCmd(
-                m_AffinityPreference, kEmptyStr));
-
-        m_NotificationHandler.CmdAppendTimeoutGroupAndClientInfo(cmd,
-                &timeout, m_JobGroup);
-
-        return ExecGET(server, cmd, job);
-    }
-
-    string cmd("GET2 wnode_aff=0 any_aff=0 aff=");
-    cmd += prio_aff_list;
+    string cmd(CNetScheduleNotificationHandler::MkBaseGETCmd(
+            m_AffinityPreference, prio_aff_list));
 
     m_NotificationHandler.CmdAppendTimeoutGroupAndClientInfo(cmd,
             &timeout, m_JobGroup);
 
-    cmd.append(" prioritized_aff=1");
+    if (!prio_aff_list.empty()) cmd.append(" prioritized_aff=1");
+
     return ExecGET(server, cmd, job);
 }
 

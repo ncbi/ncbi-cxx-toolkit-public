@@ -748,6 +748,9 @@ void CNetScheduleServerListener::OnInit(
                         NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
                 if (!affinities.empty()) {
+                    ns_impl->m_AffinityPreference =
+                        CNetScheduleExecutor::eExplicitAffinitiesOnly;
+ 
                     list<CTempString>::const_iterator it = affinities.begin();
                     affinity_list = *it;
                     for (;;) {
