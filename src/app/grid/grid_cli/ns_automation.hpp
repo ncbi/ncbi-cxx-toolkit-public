@@ -57,10 +57,6 @@ struct SNetScheduleServiceAutomationObject : public SNetServiceAutomationObject
         CNetScheduleAPI::TInstance m_NetScheduleAPI;
     };
 
-    SNetScheduleServiceAutomationObject(CAutomationProc* automation_proc,
-            const string& service_name, const string& queue_name,
-            const string& client_name);
-
     virtual const string& GetType() const { return kName; }
 
     virtual const void* GetImplPtr() const;
@@ -70,12 +66,14 @@ struct SNetScheduleServiceAutomationObject : public SNetServiceAutomationObject
 
     static NAutomation::CCommand CallCommand();
     static NAutomation::TCommands CallCommands();
+    static CAutomationObject* Create(CArgArray& arg_array,
+            const string& class_name, CAutomationProc* automation_proc);
 
 protected:
     CNetScheduleAPIExt m_NetScheduleAPI;
 
     SNetScheduleServiceAutomationObject(CAutomationProc* automation_proc,
-            const CNetScheduleAPI::TInstance ns_server);
+            CNetScheduleAPI ns_api, CNetService::EServiceType type);
 
 private:
     static const string kName;
@@ -89,10 +87,6 @@ struct SNetScheduleServerAutomationObject :
     SNetScheduleServerAutomationObject(CAutomationProc* automation_proc,
             CNetScheduleAPIExt ns_api, CNetServer::TInstance server);
 
-    SNetScheduleServerAutomationObject(CAutomationProc* automation_proc,
-            const string& service_name, const string& queue_name,
-            const string& client_name);
-
     virtual const string& GetType() const { return kName; }
 
     virtual const void* GetImplPtr() const;
@@ -102,6 +96,8 @@ struct SNetScheduleServerAutomationObject :
 
     static NAutomation::CCommand CallCommand();
     static NAutomation::TCommands CallCommands();
+    static CAutomationObject* Create(CArgArray& arg_array,
+            const string& class_name, CAutomationProc* automation_proc);
 
 private:
     CNetServer m_NetServer;

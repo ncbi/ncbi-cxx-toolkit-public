@@ -45,52 +45,59 @@ const void* SNetScheduleServiceAutomationObject::GetImplPtr() const
 
 SNetScheduleServiceAutomationObject::SNetScheduleServiceAutomationObject(
         CAutomationProc* automation_proc,
-        const string& service_name, const string& queue_name,
-        const string& client_name) :
-    TBase(automation_proc, CNetService::eLoadBalancedService),
-    m_NetScheduleAPI(CNetScheduleAPIExt::CreateNoCfgLoad(
-                service_name, client_name, queue_name))
+        CNetScheduleAPI ns_api, CNetService::EServiceType type) :
+    TBase(automation_proc, type),
+    m_NetScheduleAPI(ns_api)
 {
     m_Service = m_NetScheduleAPI.GetService();
     m_NetScheduleAPI.SetEventHandler(
             new CEventHandler(automation_proc, m_NetScheduleAPI));
 }
 
-SNetScheduleServiceAutomationObject::SNetScheduleServiceAutomationObject(
-        CAutomationProc* automation_proc,
-        const CNetScheduleAPI::TInstance ns_server) :
-    TBase(automation_proc, CNetService::eSingleServerService),
-    m_NetScheduleAPI(ns_server)
-{
-    m_Service = m_NetScheduleAPI.GetService();
-}
-
 SNetScheduleServerAutomationObject::SNetScheduleServerAutomationObject(
         CAutomationProc* automation_proc,
         CNetScheduleAPIExt ns_api, CNetServer::TInstance server) :
-    TBase(automation_proc, ns_api.GetServer(server)),
+    TBase(automation_proc, ns_api.GetServer(server),
+            CNetService::eSingleServerService),
     m_NetServer(server)
-{
-}
-
-SNetScheduleServerAutomationObject::SNetScheduleServerAutomationObject(
-        CAutomationProc* automation_proc,
-        const string& service_name,
-        const string& queue_name,
-        const string& client_name) :
-    TBase(automation_proc, CNetScheduleAPIExt::CreateNoCfgLoad(
-                service_name, client_name, queue_name))
 {
     if (m_Service.IsLoadBalanced()) {
         NCBI_THROW(CAutomationException, eCommandProcessingError,
                 "NetScheduleServer constructor: "
                 "'server_address' must be a host:port combination");
     }
+}
 
-    m_NetServer = m_Service.Iterate().GetServer();
+CAutomationObject* SNetScheduleServiceAutomationObject::Create(
+        CArgArray& arg_array, const string& class_name,
+        CAutomationProc* automation_proc)
+{
+    if (class_name != kName) return nullptr;
 
-    m_NetScheduleAPI.SetEventHandler(
-            new CEventHandler(automation_proc, m_NetScheduleAPI));
+    const string service_name(arg_array.NextString(kEmptyStr));
+    const string queue_name(arg_array.NextString(kEmptyStr));
+    const string client_name(arg_array.NextString(kEmptyStr));
+    CNetScheduleAPIExt ns_api(CNetScheduleAPIExt::CreateNoCfgLoad(
+                service_name, client_name, queue_name));
+
+    return new SNetScheduleServiceAutomationObject(automation_proc, ns_api,
+            CNetService::eLoadBalancedService);
+}
+
+CAutomationObject* SNetScheduleServerAutomationObject::Create(
+        CArgArray& arg_array, const string& class_name,
+        CAutomationProc* automation_proc)
+{
+    if (class_name != kName) return nullptr;
+
+    const string service_name(arg_array.NextString(kEmptyStr));
+    const string queue_name(arg_array.NextString(kEmptyStr));
+    const string client_name(arg_array.NextString(kEmptyStr));
+    CNetScheduleAPIExt ns_api(CNetScheduleAPIExt::CreateNoCfgLoad(
+                service_name, client_name, queue_name));
+
+    CNetServer server = ns_api.GetService().Iterate().GetServer();
+    return new SNetScheduleServerAutomationObject(automation_proc, ns_api, server);
 }
 
 const void* SNetScheduleServerAutomationObject::GetImplPtr() const

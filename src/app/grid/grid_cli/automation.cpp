@@ -191,21 +191,13 @@ CAutomationObject* CAutomationProc::CreateObject(const string& class_name,
         return SNetCacheServerAutomationObject::Create(arg_array, class_name, this);
 
     case kFirstStep + 2:
-        if (class_name == "nssvc") {
-            string service_name(arg_array.NextString(kEmptyStr));
-            string queue_name(arg_array.NextString(kEmptyStr));
-            string client_name(arg_array.NextString(kEmptyStr));
-            return (
-                    new SNetScheduleServiceAutomationObject(this,
-                        service_name, queue_name, client_name));
-        } else if (class_name == "nssrv") {
-            string service_name(arg_array.NextString(kEmptyStr));
-            string queue_name(arg_array.NextString(kEmptyStr));
-            string client_name(arg_array.NextString(kEmptyStr));
-            return (
-                    new SNetScheduleServerAutomationObject(this,
-                        service_name, queue_name, client_name));
-        } else if (class_name == "wn") {
+        return SNetScheduleServiceAutomationObject::Create(arg_array, class_name, this);
+
+    case kFirstStep + 3:
+        return SNetScheduleServerAutomationObject::Create(arg_array, class_name, this);
+
+    case kFirstStep + 4:
+        if (class_name == "wn") {
             string wn_address(arg_array.NextString());
             string client_name(arg_array.NextString(kEmptyStr));
             return (
