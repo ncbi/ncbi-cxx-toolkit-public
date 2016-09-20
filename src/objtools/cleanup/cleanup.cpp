@@ -2489,7 +2489,7 @@ bool CCleanup::NormalizeDescriptorOrder(CSeq_entry_Handle seh)
 {
     bool rval = false;
 
-    CSeq_entry_CI ci(seh);
+    CSeq_entry_CI ci(seh, CSeq_entry_CI::fRecursive);
     while (ci) {
         CSeq_entry_EditHandle edit(*ci);
         if (edit.IsSetDescr()) {
