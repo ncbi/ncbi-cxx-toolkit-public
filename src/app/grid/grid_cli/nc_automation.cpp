@@ -174,7 +174,7 @@ SNetCacheServerAutomationObject::SNetCacheServerAutomationObject(
     }
 }
 
-SNetCacheServiceAutomationObject* SNetCacheServiceAutomationObject::Create(
+CAutomationObject* SNetCacheServiceAutomationObject::Create(
         CArgArray& arg_array, const string& class_name,
         CAutomationProc* automation_proc)
 {
@@ -187,7 +187,7 @@ SNetCacheServiceAutomationObject* SNetCacheServiceAutomationObject::Create(
             CNetService::eLoadBalancedService);
 }
 
-SNetCacheServerAutomationObject* SNetCacheServerAutomationObject::Create(
+CAutomationObject* SNetCacheServerAutomationObject::Create(
         CArgArray& arg_array, const string& class_name,
         CAutomationProc* automation_proc)
 {
