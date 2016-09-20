@@ -59,6 +59,28 @@ const void* SWorkerNodeAutomationObject::GetImplPtr() const
     return m_NetScheduleAPI;
 }
 
+NAutomation::TCommands SWorkerNodeAutomationObject::CallCommands()
+{
+    NAutomation::TCommands cmds =
+    {
+        { "version", },
+        { "wn_info", },
+        { "suspend", {
+                { "pullback_mode", false, },
+                { "timeout", 0, },
+            }},
+        { "resume", },
+        { "shutdown", {
+                { "level", 0 },
+            }},
+    };
+
+    NAutomation::TCommands base_cmds = TBase::CallCommands();
+    cmds.insert(cmds.end(), base_cmds.begin(), base_cmds.end());
+
+    return cmds;
+}
+
 enum EWorkerNodeShutdownMode {
     eNormalShutdown,
     eShutdownNow,

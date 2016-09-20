@@ -50,6 +50,8 @@ struct SWorkerNodeAutomationObject : public SNetServiceAutomationObject
     virtual bool Call(const string& method,
             CArgArray& arg_array, CJsonNode& reply);
 
+    static NAutomation::TCommands CallCommands();
+
 private:
     CNetScheduleAPI m_NetScheduleAPI;
     CNetServer m_WorkerNode;
