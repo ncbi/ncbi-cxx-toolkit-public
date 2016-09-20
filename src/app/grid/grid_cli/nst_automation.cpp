@@ -132,6 +132,33 @@ TAutomationObjectRef CAutomationProc::ReturnNetStorageServerObject(
     return object;
 }
 
+NAutomation::TCommands SNetStorageServiceAutomationObject::CallCommands()
+{
+    NAutomation::TCommands cmds =
+    {
+        { "clients_info", },
+        { "users_info", },
+        { "client_objects", {
+                { "client_name", CJsonNode::eString, },
+                { "limit", 0, },
+            }},
+        { "user_objects", {
+                { "user_name", CJsonNode::eString, },
+                { "user_ns", "" },
+                { "limit", 0, },
+            }},
+        { "get_servers", },
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
+        { "allow_xsite_connections", },
+#endif
+    };
+
+    NAutomation::TCommands base_cmds = TBase::CallCommands();
+    cmds.insert(cmds.end(), base_cmds.begin(), base_cmds.end());
+
+    return cmds;
+}
+
 bool SNetStorageServiceAutomationObject::Call(const string& method,
         CArgArray& arg_array, CJsonNode& reply)
 {
@@ -188,6 +215,27 @@ bool SNetStorageServiceAutomationObject::Call(const string& method,
         return TBase::Call(method, arg_array, reply);
 
     return true;
+}
+
+NAutomation::TCommands SNetStorageServerAutomationObject::CallCommands()
+{
+    NAutomation::TCommands cmds =
+    {
+        { "health", },
+        { "server_info", },
+        { "conf", },
+        { "metadata_info", },
+        { "reconf", },
+        { "ackalert", {
+                { "name", CJsonNode::eString, },
+                { "user", CJsonNode::eString, },
+            }},
+    };
+
+    NAutomation::TCommands base_cmds = TBase::CallCommands();
+    cmds.insert(cmds.end(), base_cmds.begin(), base_cmds.end());
+
+    return cmds;
 }
 
 bool SNetStorageServerAutomationObject::Call(const string& method,

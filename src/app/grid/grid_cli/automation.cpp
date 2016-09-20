@@ -43,13 +43,30 @@
 #include <fcntl.h>
 #endif
 
-USING_NCBI_SCOPE;
-
 #define PROTOCOL_VERSION 4
 
 #define AUTOMATION_IO_BUFFER_SIZE 4096
 
 #define PROTOCOL_ERROR_BASE_RETCODE 20
+
+BEGIN_NCBI_SCOPE
+
+namespace NAutomation
+{
+
+CArgument::CArgument(string name, CJsonNode::ENodeType type)
+{
+}
+
+CCommand::CCommand(string name, TArguments args)
+{
+}
+
+}
+
+END_NCBI_SCOPE
+
+USING_NCBI_SCOPE;
 
 void CArgArray::Exception(const char* what)
 {
@@ -79,6 +96,19 @@ CJsonNode SServerAddressToJson::ExecOn(CNetServer server)
     return CJsonNode::NewStringNode(server.GetServerAddress());
 }
 
+NAutomation::TCommands SNetServiceBaseAutomationObject::CallCommands()
+{
+    NAutomation::TCommands cmds =
+    {
+        { "get_name", },
+        { "get_address", {
+                { "which_part", 0, }
+            }},
+    };
+
+    return cmds;
+}
+
 bool SNetServiceBaseAutomationObject::Call(const string& method,
         CArgArray& arg_array, CJsonNode& reply)
 {
@@ -94,6 +124,26 @@ bool SNetServiceBaseAutomationObject::Call(const string& method,
         return false;
 
     return true;
+}
+
+NAutomation::TCommands SNetServiceAutomationObject::CallCommands()
+{
+    NAutomation::TCommands cmds =
+    {
+        { "server_info", },
+        { "exec", {
+                { "command", CJsonNode::eString, },
+                { "multiline", false, },
+            }},
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
+        { "allow_xsite_connections", },
+#endif
+    };
+
+    NAutomation::TCommands base_cmds = TBase::CallCommands();
+    cmds.insert(cmds.end(), base_cmds.begin(), base_cmds.end());
+
+    return cmds;
 }
 
 bool SNetServiceAutomationObject::Call(const string& method,

@@ -175,6 +175,30 @@ inline void CArgArray::UpdateLocation(const string& location)
     }
 }
 
+namespace NAutomation
+{
+
+class CArgument
+{
+public:
+    CArgument(string name, CJsonNode::ENodeType type);
+
+    template <typename TValue>
+    CArgument(string name, const TValue& value) {}
+};
+
+class CCommand
+{
+public:
+    typedef initializer_list<CArgument> TArguments;
+
+    CCommand(string name, TArguments args = TArguments());
+};
+
+typedef vector<CCommand> TCommands;
+
+}
+
 struct SServerAddressToJson : public IExecToJson
 {
     SServerAddressToJson(int which_part) : m_WhichPart(which_part) {}
@@ -227,6 +251,8 @@ struct SNetServiceBaseAutomationObject : public CAutomationObject
 
     CNetService m_Service;
     CNetService::EServiceType m_ActualServiceType;
+
+    static NAutomation::TCommands CallCommands();
 };
 
 struct SNetServiceAutomationObject : public SNetServiceBaseAutomationObject
@@ -241,6 +267,8 @@ struct SNetServiceAutomationObject : public SNetServiceBaseAutomationObject
 
     virtual bool Call(const string& method,
             CArgArray& arg_array, CJsonNode& reply);
+
+    static NAutomation::TCommands CallCommands();
 };
 
 typedef CRef<CAutomationObject> TAutomationObjectRef;
