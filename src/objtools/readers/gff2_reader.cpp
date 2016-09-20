@@ -620,11 +620,23 @@ bool CGff2Reader::x_MergeAlignments(
         return true;
     }
 
+    map<string, size_t> summed_scores;
+
     // Factor out identical scores
     list<CRef<CSeq_align>>::const_iterator align_it = alignment_list.begin();
-    //map<string, double> score_values;
     TScoreValueMap score_values;
     x_GetAlignmentScores(**align_it, score_values);
+
+    if (score_values.find("num_ident") != score_values.end()) {
+        summed_scores["num_ident"] = score_values["num_ident"]->GetInt();
+        score_values.erase("num_ident");
+    }
+
+    if (score_values.find("num_mismatch") != score_values.end()) {
+        summed_scores["num_mismatch"] = score_values["num_mismatch"]->GetInt();
+        score_values.erase("num_mismatch");
+    }
+
     ++align_it;
 
     while (align_it != alignment_list.end() &&
@@ -632,11 +644,25 @@ bool CGff2Reader::x_MergeAlignments(
         TScoreValueMap new_score_values;
         x_GetAlignmentScores(**align_it, new_score_values);
 
+        if (new_score_values.find("num_ident") == new_score_values.end()) {
+            summed_scores.erase("num_ident");
+        } else if (summed_scores.find("num_ident") != summed_scores.end()) {
+            summed_scores["num_ident"] += new_score_values["num_ident"]->GetInt();
+            new_score_values.erase("num_ident");
+        }
+
+        if (new_score_values.find("num_mismatch") == new_score_values.end()) {
+            summed_scores.erase("num_mismatch");
+        } else if (summed_scores.find("num_mismatch") != summed_scores.end()) {
+            summed_scores["num_mismatch"] += new_score_values["num_mismatch"]->GetInt();
+            new_score_values.erase("num_mismatch");
+        }
+
         set<string> matching_scores;
         x_FindMatchingScores(score_values, 
                              new_score_values, 
                              matching_scores);
-   
+
         score_values.clear(); 
         for (string score_name : matching_scores) {
             score_values[score_name] = Ref(new CScore::TValue());
@@ -649,6 +675,14 @@ bool CGff2Reader::x_MergeAlignments(
 
 
     processed->SetType(CSeq_align::eType_disc);
+
+    for (auto& kv : summed_scores) {
+        CRef<CScore> score = Ref(new CScore());
+        score->SetId().SetStr(kv.first);
+        score->SetValue().SetInt(kv.second);
+        processed->SetScore().push_back(score);
+    }
+
 
     for (auto& kv : score_values) {
         CRef<CScore> score = Ref(new CScore());
