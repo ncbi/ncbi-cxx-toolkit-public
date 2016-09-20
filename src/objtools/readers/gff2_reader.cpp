@@ -325,7 +325,6 @@ void CGff2Reader::xPostProcessAnnot(
     xAddConversionInfo(pAnnot, pEC);
     xAssignTrackData(pAnnot);
     xAssignAnnotId(pAnnot);
-    xAssignAnnotName(pAnnot);
     xGenerateParentChildXrefs(pAnnot);
 }
 
@@ -352,21 +351,6 @@ void CGff2Reader::xAssignAnnotId(
     CRef< CAnnot_id > pAnnotId(new CAnnot_id);
     pAnnotId->SetLocal().SetStr(annotId);
     pAnnot->SetId().push_back(pAnnotId);   
-}
-
-
-//  ----------------------------------------------------------------------------
-void CGff2Reader::xAssignAnnotName(
-        CRef<CSeq_annot>& pAnnot,
-        const string& name) const
-//  ----------------------------------------------------------------------------
-{
-    if (name.empty() && !pAnnot->GetData().IsAlign()) {
-        return;
-    }
-
-    string annotName = name.empty() ? "alignments" : name;
-    pAnnot->SetName(annotName);
 }
 
 
@@ -561,9 +545,7 @@ void CGff2Reader::x_ProcessAlignmentsGff(const list<string>& id_list,
                 pAnnot->SetDesc().Set().push_back( m_CurrentBrowserInfo );
             }
 
-            if ( !m_AnnotName.empty() ) {
-                pAnnot->SetNameDesc(m_AnnotName);
-            }
+            pAnnot->SetNameDesc("alignments");
 
             if ( !m_AnnotTitle.empty() ) {
                 pAnnot->SetTitleDesc(m_AnnotTitle);
@@ -1242,7 +1224,11 @@ bool CGff2Reader::xAlignmentSetSegment(
         CReadUtil::AsSeqId(gff.Id()));
 
     //starts
-    size_t targetOffset = 0;
+    //size_t targetOffset = 0;
+    size_t targetOffset = NStr::StringToInt(targetParts[1])-1;
+
+
+
     size_t identOffset = gff.SeqStart();
     for (int i=0; i < gapCount; ++i) {
         char changeType = gapParts[i][0];
