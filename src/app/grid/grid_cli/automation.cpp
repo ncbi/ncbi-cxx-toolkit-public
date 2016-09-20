@@ -62,6 +62,10 @@ CCommand::CCommand(string name, TArguments args)
 {
 }
 
+CCommand::CCommand(string name, TCommandsGetter getter)
+{
+}
+
 }
 
 END_NCBI_SCOPE
@@ -227,6 +231,55 @@ TObjectID CAutomationProc::CreateObject(const string& class_name,
                 "Error in '" << class_name << "' constructor: " << e.GetMsg());
     }
     return AddObject(new_object, new_object->GetImplPtr());
+}
+
+NAutomation::TCommands CAutomationProc::CallCommands()
+{
+    return NAutomation::TCommands
+    {
+        SNetCacheBlobAutomationObject::CallCommand(),
+        SNetCacheServerAutomationObject::CallCommand(),
+        SNetCacheServiceAutomationObject::CallCommand(),
+        SNetScheduleServerAutomationObject::CallCommand(),
+        SNetScheduleServiceAutomationObject::CallCommand(),
+        SNetStorageServerAutomationObject::CallCommand(),
+        SNetStorageServiceAutomationObject::CallCommand(),
+        SWorkerNodeAutomationObject::CallCommand(),
+    };
+}
+
+NAutomation::TCommands CAutomationProc::NewCommands()
+{
+    return NAutomation::TCommands
+    {
+        // TODO:
+        // SNetCacheServiceAutomationObject::NewCommand(),
+        // SNetCacheServerAutomationObject::NewCommand(),
+        // SNetScheduleServiceAutomationObject::NewCommand(),
+        // SNetScheduleServerAutomationObject::NewCommand(),
+        // SWorkerNodeAutomationObject::NewCommand(),
+        // SNetStorageServiceAutomationObject::NewCommand(),
+        // SNetStorageServerAutomationObject::NewCommand(),
+    };
+}
+
+NAutomation::TCommands CAutomationProc::Commands()
+{
+    NAutomation::TCommands cmds =
+    {
+        { "exit", },
+        { "call", CAutomationProc::CallCommands },
+        { "new", CAutomationProc::NewCommands },
+        { "del", {
+                { "object_id", CJsonNode::eInteger, },
+            }},
+        { "whatis", {
+                { "some_id", CJsonNode::eString, },
+            }},
+        { "echo", },
+    };
+
+    return cmds;
 }
 
 CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)

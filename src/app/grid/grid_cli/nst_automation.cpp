@@ -132,6 +132,11 @@ TAutomationObjectRef CAutomationProc::ReturnNetStorageServerObject(
     return object;
 }
 
+NAutomation::CCommand SNetStorageServiceAutomationObject::CallCommand()
+{
+    return NAutomation::CCommand(kName, CallCommands);
+}
+
 NAutomation::TCommands SNetStorageServiceAutomationObject::CallCommands()
 {
     NAutomation::TCommands cmds =
@@ -215,6 +220,11 @@ bool SNetStorageServiceAutomationObject::Call(const string& method,
         return TBase::Call(method, arg_array, reply);
 
     return true;
+}
+
+NAutomation::CCommand SNetStorageServerAutomationObject::CallCommand()
+{
+    return NAutomation::CCommand(kName, CallCommands);
 }
 
 NAutomation::TCommands SNetStorageServerAutomationObject::CallCommands()

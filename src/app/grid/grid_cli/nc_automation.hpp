@@ -74,6 +74,7 @@ struct SNetCacheServiceAutomationObject : public SNetServiceAutomationObject
     virtual bool Call(const string& method,
             CArgArray& arg_array, CJsonNode& reply);
 
+    static NAutomation::CCommand CallCommand();
     static NAutomation::TCommands CallCommands();
 
 protected:
@@ -110,6 +111,7 @@ struct SNetCacheBlobAutomationObject : public CAutomationObject
     virtual bool Call(const string& method,
             CArgArray& arg_array, CJsonNode& reply);
 
+    static NAutomation::CCommand CallCommand();
     static NAutomation::TCommands CallCommands();
 
     CRef<SNetCacheServiceAutomationObject> m_NetCacheObject;

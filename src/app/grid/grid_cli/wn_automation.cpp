@@ -59,6 +59,11 @@ const void* SWorkerNodeAutomationObject::GetImplPtr() const
     return m_NetScheduleAPI;
 }
 
+NAutomation::CCommand SWorkerNodeAutomationObject::CallCommand()
+{
+    return NAutomation::CCommand(kName, CallCommands);
+}
+
 NAutomation::TCommands SWorkerNodeAutomationObject::CallCommands()
 {
     NAutomation::TCommands cmds =

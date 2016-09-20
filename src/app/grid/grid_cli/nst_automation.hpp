@@ -67,6 +67,7 @@ struct SNetStorageServiceAutomationObject : public SNetServiceBaseAutomationObje
     virtual bool Call(const string& method,
             CArgArray& arg_array, CJsonNode& reply);
 
+    static NAutomation::CCommand CallCommand();
     static NAutomation::TCommands CallCommands();
 
 protected:
@@ -105,9 +106,10 @@ struct SNetStorageServerAutomationObject : public SNetStorageServiceAutomationOb
     virtual bool Call(const string& method,
             CArgArray& arg_array, CJsonNode& reply);
 
-private:
+    static NAutomation::CCommand CallCommand();
     static NAutomation::TCommands CallCommands();
 
+private:
     CNetServer m_NetServer;
 
     static const string kName;

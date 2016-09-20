@@ -89,6 +89,11 @@ static void ExtractVectorOfStrings(CArgArray& arg_array,
             result.push_back(arg_array.GetString(*it));
 }
 
+NAutomation::CCommand SNetScheduleServerAutomationObject::CallCommand()
+{
+    return NAutomation::CCommand(kName, CallCommands);
+}
+
 NAutomation::TCommands SNetScheduleServerAutomationObject::CallCommands()
 {
     NAutomation::TCommands cmds =
@@ -156,6 +161,11 @@ void SNetScheduleServiceAutomationObject::CEventHandler::OnWarning(
 {
     m_AutomationProc->SendWarning(warn_msg, m_AutomationProc->
             ReturnNetScheduleServerObject(m_NetScheduleAPI, server));
+}
+
+NAutomation::CCommand SNetScheduleServiceAutomationObject::CallCommand()
+{
+    return NAutomation::CCommand(kName, CallCommands);
 }
 
 NAutomation::TCommands SNetScheduleServiceAutomationObject::CallCommands()

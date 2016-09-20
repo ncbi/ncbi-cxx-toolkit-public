@@ -187,15 +187,18 @@ public:
     CArgument(string name, const TValue& value) {}
 };
 
+class CCommand;
+typedef vector<CCommand> TCommands;
+typedef function<TCommands()> TCommandsGetter;
+
 class CCommand
 {
 public:
     typedef initializer_list<CArgument> TArguments;
 
     CCommand(string name, TArguments args = TArguments());
+    CCommand(string name, TCommandsGetter getter);
 };
-
-typedef vector<CCommand> TCommands;
 
 }
 
@@ -322,6 +325,10 @@ private:
     CJsonNode m_OKNode;
     CJsonNode m_ErrNode;
     CJsonNode m_WarnNode;
+
+    static NAutomation::TCommands Commands();
+    static NAutomation::TCommands CallCommands();
+    static NAutomation::TCommands NewCommands();
 };
 
 inline TObjectID CAutomationProc::AddObject(TAutomationObjectRef new_object)

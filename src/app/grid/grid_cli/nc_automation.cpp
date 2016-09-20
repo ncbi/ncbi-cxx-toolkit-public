@@ -44,6 +44,11 @@ const void* SNetCacheBlobAutomationObject::GetImplPtr() const
     return this;
 }
 
+NAutomation::CCommand SNetCacheBlobAutomationObject::CallCommand()
+{
+    return NAutomation::CCommand(kName, CallCommands);
+}
+
 NAutomation::TCommands SNetCacheBlobAutomationObject::CallCommands()
 {
     NAutomation::TCommands cmds =
@@ -169,6 +174,11 @@ TAutomationObjectRef CAutomationProc::ReturnNetCacheServerObject(
         AddObject(object, server);
     }
     return object;
+}
+
+NAutomation::CCommand SNetCacheServiceAutomationObject::CallCommand()
+{
+    return NAutomation::CCommand(kName, CallCommands);
 }
 
 NAutomation::TCommands SNetCacheServiceAutomationObject::CallCommands()
