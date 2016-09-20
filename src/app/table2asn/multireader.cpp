@@ -243,7 +243,8 @@ CMultiReader::xReadFasta(CNcbiIstream& instream)
 //                 |  CFastaReader::fLeaveAsText;
     }
     m_iFlags |= CFastaReader::fAddMods
-             |  CFastaReader::fValidate;
+             |  CFastaReader::fValidate
+             |  CFastaReader::fHyphensIgnoreAndWarn;
 
     if (m_context.m_handle_as_aa)
     {
