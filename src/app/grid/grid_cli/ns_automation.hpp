@@ -76,6 +76,8 @@ struct SNetScheduleServiceAutomationObject : public SNetServiceAutomationObject
     virtual bool Call(const string& method,
             CArgArray& arg_array, CJsonNode& reply);
 
+    static NAutomation::TCommands CallCommands();
+
 protected:
     CNetScheduleAPIExt m_NetScheduleAPI;
 
@@ -113,6 +115,8 @@ struct SNetScheduleServerAutomationObject :
 
     virtual bool Call(const string& method,
             CArgArray& arg_array, CJsonNode& reply);
+
+    static NAutomation::TCommands CallCommands();
 
 private:
     CNetServer m_NetServer;

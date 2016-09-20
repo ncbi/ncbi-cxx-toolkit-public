@@ -89,6 +89,37 @@ static void ExtractVectorOfStrings(CArgArray& arg_array,
             result.push_back(arg_array.GetString(*it));
 }
 
+NAutomation::TCommands SNetScheduleServerAutomationObject::CallCommands()
+{
+    NAutomation::TCommands cmds =
+    {
+        { "server_status", {
+                { "verbose", false, },
+            }},
+        { "job_group_info", {
+                { "verbose", false, },
+            }},
+        { "client_info", {
+                { "verbose", false, },
+            }},
+        { "notification_info", {
+                { "verbose", false, },
+            }},
+        { "affinity_info", {
+                { "verbose", false, },
+            }},
+        { "change_preferred_affinities", {
+                { "affs_to_add", CJsonNode::eArray, },
+                { "affs_to_del", CJsonNode::eArray, },
+            }},
+    };
+
+    NAutomation::TCommands base_cmds = TBase::CallCommands();
+    cmds.insert(cmds.end(), base_cmds.begin(), base_cmds.end());
+
+    return cmds;
+}
+
 bool SNetScheduleServerAutomationObject::Call(const string& method,
         CArgArray& arg_array, CJsonNode& reply)
 {
@@ -125,6 +156,49 @@ void SNetScheduleServiceAutomationObject::CEventHandler::OnWarning(
 {
     m_AutomationProc->SendWarning(warn_msg, m_AutomationProc->
             ReturnNetScheduleServerObject(m_NetScheduleAPI, server));
+}
+
+NAutomation::TCommands SNetScheduleServiceAutomationObject::CallCommands()
+{
+    NAutomation::TCommands cmds =
+    {
+        { "set_client_type", {
+                { "client_type", 0, },
+            }},
+        { "set_node_session", {
+                { "node", "", },
+                { "session", "", },
+            }},
+        { "queue_info", {
+                { "queue_name", "", },
+            }},
+        { "queue_class_info", },
+        { "reconf", },
+        { "suspend", {
+                { "pullback_mode", false, },
+            }},
+        { "resume", },
+        { "shutdown", {
+                { "do_not_drain", false, },
+            }},
+        { "parse_key", {
+                { "job_key", CJsonNode::eString, },
+            }},
+        { "job_info", {
+                { "job_key", CJsonNode::eString, },
+                { "verbose", true, },
+            }},
+        { "job_counters", {
+                { " affinity", "", },
+                { " job_group", "", },
+            }},
+        { "get_servers", },
+    };
+
+    NAutomation::TCommands base_cmds = TBase::CallCommands();
+    cmds.insert(cmds.end(), base_cmds.begin(), base_cmds.end());
+
+    return cmds;
 }
 
 bool SNetScheduleServiceAutomationObject::Call(const string& method,
