@@ -69,6 +69,7 @@ struct SNetStorageServiceAutomationObject : public SNetServiceBaseAutomationObje
 
     static NAutomation::CCommand CallCommand();
     static NAutomation::TCommands CallCommands();
+    static NAutomation::CCommand NewCommand();
     static CAutomationObject* Create(CArgArray& arg_array,
             const string& class_name, CAutomationProc* automation_proc);
 
@@ -98,6 +99,7 @@ struct SNetStorageServerAutomationObject : public SNetStorageServiceAutomationOb
 
     static NAutomation::CCommand CallCommand();
     static NAutomation::TCommands CallCommands();
+    static NAutomation::CCommand NewCommand();
     static CAutomationObject* Create(CArgArray& arg_array,
             const string& class_name, CAutomationProc* automation_proc);
 

@@ -253,14 +253,13 @@ NAutomation::TCommands CAutomationProc::NewCommands()
 {
     return NAutomation::TCommands
     {
-        // TODO:
-        // SNetCacheServiceAutomationObject::NewCommand(),
-        // SNetCacheServerAutomationObject::NewCommand(),
-        // SNetScheduleServiceAutomationObject::NewCommand(),
-        // SNetScheduleServerAutomationObject::NewCommand(),
-        // SWorkerNodeAutomationObject::NewCommand(),
-        // SNetStorageServiceAutomationObject::NewCommand(),
-        // SNetStorageServerAutomationObject::NewCommand(),
+        SNetCacheServiceAutomationObject::NewCommand(),
+        SNetCacheServerAutomationObject::NewCommand(),
+        SNetScheduleServiceAutomationObject::NewCommand(),
+        SNetScheduleServerAutomationObject::NewCommand(),
+        SNetStorageServiceAutomationObject::NewCommand(),
+        SNetStorageServerAutomationObject::NewCommand(),
+        SWorkerNodeAutomationObject::NewCommand(),
     };
 }
 

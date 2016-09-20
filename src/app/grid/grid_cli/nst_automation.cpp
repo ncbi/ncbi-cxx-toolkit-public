@@ -38,6 +38,17 @@ USING_NCBI_SCOPE;
 const string SNetStorageServiceAutomationObject::kName = "nstsvc";
 const string SNetStorageServerAutomationObject::kName = "nstsrv";
 
+NAutomation::CCommand SNetStorageServiceAutomationObject::NewCommand()
+{
+    return NAutomation::CCommand(kName, {
+            { "service_name", CJsonNode::eString, },
+            { "domain_name", "", },
+            { "client_name", "", },
+            { "metadata", "", },
+            { "ticket", "", },
+        });
+}
+
 CAutomationObject* SNetStorageServiceAutomationObject::Create(
         CArgArray& arg_array, const string& class_name,
         CAutomationProc* automation_proc)
@@ -58,6 +69,18 @@ CAutomationObject* SNetStorageServiceAutomationObject::Create(
     CNetStorageAdmin nst_api_admin(nst_api);
     return new SNetStorageServiceAutomationObject(automation_proc, nst_api_admin,
             CNetService::eLoadBalancedService);
+}
+
+NAutomation::CCommand SNetStorageServerAutomationObject::NewCommand()
+{
+    return NAutomation::CCommand(kName, {
+            { "server_address", CJsonNode::eString, },
+            { "service_name", "", },
+            { "domain_name", "", },
+            { "client_name", "", },
+            { "metadata", "", },
+            { "ticket", "", },
+        });
 }
 
 CAutomationObject* SNetStorageServerAutomationObject::Create(

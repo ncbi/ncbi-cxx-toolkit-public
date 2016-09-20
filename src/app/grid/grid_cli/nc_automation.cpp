@@ -174,6 +174,14 @@ SNetCacheServerAutomationObject::SNetCacheServerAutomationObject(
     }
 }
 
+NAutomation::CCommand SNetCacheServiceAutomationObject::NewCommand()
+{
+    return NAutomation::CCommand(kName, {
+            { "service_name", "", },
+            { "client_name", "", },
+        });
+}
+
 CAutomationObject* SNetCacheServiceAutomationObject::Create(
         CArgArray& arg_array, const string& class_name,
         CAutomationProc* automation_proc)
@@ -185,6 +193,14 @@ CAutomationObject* SNetCacheServiceAutomationObject::Create(
     CNetCacheAPI nc_api(service_name, client_name);
     return new SNetCacheServiceAutomationObject(automation_proc, nc_api,
             CNetService::eLoadBalancedService);
+}
+
+NAutomation::CCommand SNetCacheServerAutomationObject::NewCommand()
+{
+    return NAutomation::CCommand(kName, {
+            { "service_name", "", },
+            { "client_name", "", },
+        });
 }
 
 CAutomationObject* SNetCacheServerAutomationObject::Create(

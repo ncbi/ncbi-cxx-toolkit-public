@@ -68,6 +68,15 @@ SNetScheduleServerAutomationObject::SNetScheduleServerAutomationObject(
     }
 }
 
+NAutomation::CCommand SNetScheduleServiceAutomationObject::NewCommand()
+{
+    return NAutomation::CCommand(kName, {
+            { "service_name", "", },
+            { "queue_name", "", },
+            { "client_name", "", },
+        });
+}
+
 CAutomationObject* SNetScheduleServiceAutomationObject::Create(
         CArgArray& arg_array, const string& class_name,
         CAutomationProc* automation_proc)
@@ -82,6 +91,15 @@ CAutomationObject* SNetScheduleServiceAutomationObject::Create(
 
     return new SNetScheduleServiceAutomationObject(automation_proc, ns_api,
             CNetService::eLoadBalancedService);
+}
+
+NAutomation::CCommand SNetScheduleServerAutomationObject::NewCommand()
+{
+    return NAutomation::CCommand(kName, {
+            { "service_name", "", },
+            { "queue_name", "", },
+            { "client_name", "", },
+        });
 }
 
 CAutomationObject* SNetScheduleServerAutomationObject::Create(

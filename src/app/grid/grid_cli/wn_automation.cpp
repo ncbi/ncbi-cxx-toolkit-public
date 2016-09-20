@@ -53,6 +53,14 @@ SWorkerNodeAutomationObject::SWorkerNodeAutomationObject(
     }
 }
 
+NAutomation::CCommand SWorkerNodeAutomationObject::NewCommand()
+{
+    return NAutomation::CCommand(kName, {
+            { "wn_address", CJsonNode::eString, },
+            { "client_name", "", },
+        });
+}
+
 CAutomationObject* SWorkerNodeAutomationObject::Create(
         CArgArray& arg_array, const string& class_name,
         CAutomationProc* automation_proc)
