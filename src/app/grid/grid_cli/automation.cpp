@@ -200,17 +200,14 @@ CAutomationObject* CAutomationProc::CreateObject(const string& class_name,
         return SWorkerNodeAutomationObject::Create(arg_array, class_name, this);
 
     case kFirstStep + 5:
-        if (class_name == "nstsvc") {
-            return (
-                    new SNetStorageServiceAutomationObject(this, arg_array));
-        } else if (class_name == "nstsrv") {
-            return (
-                    new SNetStorageServerAutomationObject(this, arg_array));
-        } else {
-            NCBI_THROW_FMT(CAutomationException, eInvalidInput,
-                    "Unknown class '" << class_name << "'");
-        }
+        return SNetStorageServiceAutomationObject::Create(arg_array, class_name, this);
 
+    case kFirstStep + 6:
+        return SNetStorageServerAutomationObject::Create(arg_array, class_name, this);
+
+    case kFirstStep + 7:
+        NCBI_THROW_FMT(CAutomationException, eInvalidInput,
+                "Unknown class '" << class_name << "'");
         break; // Not reached
     }
 

@@ -38,34 +38,52 @@ USING_NCBI_SCOPE;
 const string SNetStorageServiceAutomationObject::kName = "nstsvc";
 const string SNetStorageServerAutomationObject::kName = "nstsrv";
 
-string s_GetInitStringForService(CArgArray& arg_array)
+CAutomationObject* SNetStorageServiceAutomationObject::Create(
+        CArgArray& arg_array, const string& class_name,
+        CAutomationProc* automation_proc)
 {
+    if (class_name != kName) return nullptr;
+
     const string service_name(arg_array.NextString());
     const string domain_name(arg_array.NextString(kEmptyStr));
     const string client_name(arg_array.NextString(kEmptyStr));
     const string metadata(arg_array.NextString(kEmptyStr));
     const string ticket(arg_array.NextString(kEmptyStr));
+    const string init_string(
+            "nst=" + service_name + "&domain=" + domain_name +
+            "&client=" + client_name + "&metadata=" + metadata +
+            "&ticket=" + ticket);
 
-    return "nst=" + service_name + "&domain=" + domain_name +
-        "&client=" + client_name + "&metadata=" + metadata +
-        "&ticket=" + ticket;
+    CNetStorage nst_api(init_string);
+    CNetStorageAdmin nst_api_admin(nst_api);
+    return new SNetStorageServiceAutomationObject(automation_proc, nst_api_admin,
+            CNetService::eLoadBalancedService);
 }
 
-string s_GetInitStringForServer(CArgArray& arg_array)
+CAutomationObject* SNetStorageServerAutomationObject::Create(
+        CArgArray& arg_array, const string& class_name,
+        CAutomationProc* automation_proc)
 {
-    string server(arg_array.NextString());
+    if (class_name != kName) return nullptr;
+
+    string server_address(arg_array.NextString());
     string service_name(arg_array.NextString(kEmptyStr));
 
-    if (service_name.empty()) swap(server, service_name);
+    if (service_name.empty()) swap(server_address, service_name);
 
     const string domain_name(arg_array.NextString(kEmptyStr));
     const string client_name(arg_array.NextString(kEmptyStr));
     const string metadata(arg_array.NextString(kEmptyStr));
     const string ticket(arg_array.NextString(kEmptyStr));
+    const string init_string(
+            "nst=" + service_name + "&domain=" + domain_name +
+            "&client=" + client_name + "&metadata=" + metadata +
+            "&ticket=" + ticket + "&server=" + server_address);
 
-    return "nst=" + service_name + "&domain=" + domain_name +
-        "&client=" + client_name + "&metadata=" + metadata +
-        "&ticket=" + ticket + "&server=" + server;
+    CNetStorage nst_api(init_string);
+    CNetStorageAdmin nst_api_admin(nst_api);
+    CNetServer server = nst_api_admin.GetService().Iterate().GetServer();
+    return new SNetStorageServerAutomationObject(automation_proc, nst_api_admin, server);
 }
 
 static void s_RemoveStdReplyFields(CJsonNode& server_reply)
@@ -77,23 +95,14 @@ static void s_RemoveStdReplyFields(CJsonNode& server_reply)
 }
 
 SNetStorageServiceAutomationObject::SNetStorageServiceAutomationObject(
-        CAutomationProc* automation_proc, CArgArray& arg_array) :
-    SNetServiceBaseAutomationObject(automation_proc,
-            CNetService::eLoadBalancedService),
-    m_NetStorageAdmin(CNetStorage(s_GetInitStringForService(arg_array)))
+        CAutomationProc* automation_proc,
+        CNetStorageAdmin nst_api, CNetService::EServiceType type) :
+    TBase(automation_proc, type),
+    m_NetStorageAdmin(nst_api)
 {
     m_Service = m_NetStorageAdmin.GetService();
     m_NetStorageAdmin.SetEventHandler(
             new CEventHandler(automation_proc, m_NetStorageAdmin));
-}
-
-SNetStorageServiceAutomationObject::SNetStorageServiceAutomationObject(
-        CAutomationProc* automation_proc,
-        const CNetStorageAdmin& nst_server) :
-    TBase(automation_proc, CNetService::eSingleServerService),
-    m_NetStorageAdmin(nst_server)
-{
-    m_Service = m_NetStorageAdmin.GetService();
 }
 
 void SNetStorageServiceAutomationObject::CEventHandler::OnWarning(
@@ -111,25 +120,15 @@ const void* SNetStorageServiceAutomationObject::GetImplPtr() const
 SNetStorageServerAutomationObject::SNetStorageServerAutomationObject(
         CAutomationProc* automation_proc,
         CNetStorageAdmin nst_api, CNetServer::TInstance server) :
-    TBase(automation_proc, nst_api.GetServer(server)),
+    TBase(automation_proc, nst_api.GetServer(server),
+            CNetService::eSingleServerService),
     m_NetServer(server)
-{
-}
-
-SNetStorageServerAutomationObject::SNetStorageServerAutomationObject(
-        CAutomationProc* automation_proc, CArgArray& arg_array) :
-    SNetStorageServiceAutomationObject(automation_proc,
-            CNetStorageAdmin(CNetStorage(s_GetInitStringForServer(arg_array))))
 {
     if (m_Service.IsLoadBalanced()) {
         NCBI_THROW(CAutomationException, eCommandProcessingError,
                 "NetStorageServer constructor: "
                 "'server_address' must be a host:port combination");
     }
-
-    m_NetServer = m_Service.Iterate().GetServer();
-    m_NetStorageAdmin.SetEventHandler(
-            new CEventHandler(automation_proc, m_NetStorageAdmin));
 }
 
 const void* SNetStorageServerAutomationObject::GetImplPtr() const
