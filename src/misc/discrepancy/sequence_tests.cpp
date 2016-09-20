@@ -2632,7 +2632,7 @@ static const string kLongerFound = "LongSeq";
 static const size_t MIN_SEQUENCE_LEN = 20000;
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(SEQUENCES_ARE_SHORT, CSeq_inst, eDisc | eOncaller, "Short sequences test")
+DISCREPANCY_CASE(SEQUENCES_ARE_SHORT, CSeq_inst, eDisc, "Short sequences test")
 //  ----------------------------------------------------------------------------
 {
     if (obj.GetLength() > MIN_SEQUENCE_LEN) {
