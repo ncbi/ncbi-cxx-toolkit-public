@@ -33,42 +33,17 @@
 
 #include <ncbi_pch.hpp>
 
-#include <sstream>
-#include <iomanip>
+#include <objtools/variation/variation_utils.hpp>
 
-#include <cstdlib>
-#include <iostream>
-#include <algorithm>
+#include <objects/general/Object_id.hpp>
+#include <objects/general/User_object.hpp>
+#include <objects/seqfeat/Delta_item.hpp>
+#include <objects/seqfeat/Variation_ref.hpp>
+#include <objects/seqloc/Na_strand.hpp>
 
-#include <corelib/ncbistd.hpp>
-#include <corelib/ncbiapp.hpp>
-#include <corelib/ncbifile.hpp>
-#include <serial/serial.hpp>
-#include <serial/objistr.hpp>
-#include <serial/objostr.hpp>
-#include <serial/objectio.hpp>
-#include <serial/streamiter.hpp>
-#include <util/compress/stream_util.hpp>
-
-#include <objmgr/object_manager.hpp>
-#include <objmgr/scope.hpp>
-#include <objects/variation/Variation.hpp>
-#include <objects/variation/VariantPlacement.hpp>
-#include <objects/general/Dbtag.hpp>
-#include <objects/misc/sequence_macros.hpp>
-
-
-#include <util/line_reader.hpp>
-#include <objtools/data_loaders/genbank/gbloader.hpp>
-#include <objtools/data_loaders/blastdb/bdbloader.hpp>
-#include <connect/services/neticache_client.hpp>
-#include <corelib/rwstream.hpp>
-
-#include <objmgr/util/sequence.hpp>
+#include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
-
-#include <objtools/variation/variation_utils.hpp>
 
 static bool s_ContainsSeqDataIupacna(const CDelta_item& delta_item)
 {
