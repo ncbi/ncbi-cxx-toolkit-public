@@ -361,13 +361,14 @@ bool SNetScheduleExecutorImpl::x_GetJobWithAffinityLadder(
         const string& prio_aff_list, CNetScheduleJob& job)
 {
     string cmd(s_GET2(m_AffinityPreference));
+    const bool have_affinities = !prio_aff_list.empty();
+
+    if (have_affinities) cmd += " aff=" + prio_aff_list;
 
     m_NotificationHandler.CmdAppendTimeoutGroupAndClientInfo(cmd,
             &timeout, m_JobGroup);
 
-    if (!prio_aff_list.empty()) {
-        cmd += " aff=" + prio_aff_list + " prioritized_aff=1";
-    }
+    if (have_affinities) cmd += " prioritized_aff=1";
 
     return ExecGET(server, cmd, job);
 }
