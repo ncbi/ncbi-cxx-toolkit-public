@@ -2066,7 +2066,8 @@ _ct_get_server_type(TDSSOCKET *tds, int datatype)
 	case CS_UNIQUE_TYPE:		return SYBUNIQUE;
 	case CS_LONGBINARY_TYPE:	return SYBLONGBINARY;
     case CS_UNICHAR_TYPE:       return SYBNVARCHAR;
-    case CS_LONGCHAR_TYPE:      return SYBLONGCHAR;
+    case CS_LONGCHAR_TYPE:
+        return (!tds || IS_TDS7_PLUS(tds->conn)) ? SYBVARCHAR : SYBLONGCHAR;
     case CS_NLONGCHAR_TYPE:     return SYBNVARCHAR;
 
 	default:
