@@ -46,7 +46,24 @@ NAutomation::CCommand SNetStorageServiceAutomationObject::NewCommand()
             { "client_name", "", },
             { "metadata", "", },
             { "ticket", "", },
+            { "hello_service", "", },
         });
+}
+
+string s_GetInitString(CArgArray& arg_array)
+{
+    const string service_name(arg_array.NextString());
+    const string domain_name(arg_array.NextString(kEmptyStr));
+    const string client_name(arg_array.NextString(kEmptyStr));
+    const string metadata(arg_array.NextString(kEmptyStr));
+    const string ticket(arg_array.NextString(kEmptyStr));
+    const string hello_service(arg_array.NextString(kEmptyStr));
+    const string init_string(
+            "nst=" + service_name + "&domain=" + domain_name +
+            "&client=" + client_name + "&metadata=" + metadata +
+            "&ticket=" + ticket + "&hello_service=" + hello_service);
+
+    return init_string;
 }
 
 CAutomationObject* SNetStorageServiceAutomationObject::Create(
@@ -55,32 +72,10 @@ CAutomationObject* SNetStorageServiceAutomationObject::Create(
 {
     if (class_name != kName) return nullptr;
 
-    const string service_name(arg_array.NextString());
-    const string domain_name(arg_array.NextString(kEmptyStr));
-    const string client_name(arg_array.NextString(kEmptyStr));
-    const string metadata(arg_array.NextString(kEmptyStr));
-    const string ticket(arg_array.NextString(kEmptyStr));
-    const string init_string(
-            "nst=" + service_name + "&domain=" + domain_name +
-            "&client=" + client_name + "&metadata=" + metadata +
-            "&ticket=" + ticket);
-
-    CNetStorage nst_api(init_string);
+    CNetStorage nst_api(s_GetInitString(arg_array));
     CNetStorageAdmin nst_api_admin(nst_api);
     return new SNetStorageServiceAutomationObject(automation_proc, nst_api_admin,
             CNetService::eLoadBalancedService);
-}
-
-NAutomation::CCommand SNetStorageServerAutomationObject::NewCommand()
-{
-    return NAutomation::CCommand(kName, {
-            { "server_address", CJsonNode::eString, },
-            { "service_name", "", },
-            { "domain_name", "", },
-            { "client_name", "", },
-            { "metadata", "", },
-            { "ticket", "", },
-        });
 }
 
 CAutomationObject* SNetStorageServerAutomationObject::Create(
@@ -89,21 +84,7 @@ CAutomationObject* SNetStorageServerAutomationObject::Create(
 {
     if (class_name != kName) return nullptr;
 
-    string server_address(arg_array.NextString());
-    string service_name(arg_array.NextString(kEmptyStr));
-
-    if (service_name.empty()) swap(server_address, service_name);
-
-    const string domain_name(arg_array.NextString(kEmptyStr));
-    const string client_name(arg_array.NextString(kEmptyStr));
-    const string metadata(arg_array.NextString(kEmptyStr));
-    const string ticket(arg_array.NextString(kEmptyStr));
-    const string init_string(
-            "nst=" + service_name + "&domain=" + domain_name +
-            "&client=" + client_name + "&metadata=" + metadata +
-            "&ticket=" + ticket + "&server=" + server_address);
-
-    CNetStorage nst_api(init_string);
+    CNetStorage nst_api(s_GetInitString(arg_array));
     CNetStorageAdmin nst_api_admin(nst_api);
     CNetServer server = nst_api_admin.GetService().Iterate().GetServer();
     return new SNetStorageServerAutomationObject(automation_proc, nst_api_admin, server);

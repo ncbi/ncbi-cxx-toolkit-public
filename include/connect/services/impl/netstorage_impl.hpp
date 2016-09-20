@@ -110,7 +110,7 @@ struct NCBI_XCONNECT_EXPORT SNetStorage::SConfig
     EDefaultStorage default_storage;
     EErrMode err_mode;
     string ticket;
-    string server;
+    string hello_service;
 
     SConfig() : default_storage(eUndefined), err_mode(eLog) {}
     void ParseArg(const string&, const string&);

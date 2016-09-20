@@ -667,8 +667,8 @@ void SNetStorage::SConfig::ParseArg(const string& name, const string& value)
         err_mode = GetErrMode(value);
     else if (name == "ticket")
         ticket = value;
-    else if (name == "server")
-        server = value;
+    else if (name == "hello_service")
+        hello_service = value;
 }
 
 void SNetStorage::SConfig::Validate(const string& init_string)
@@ -724,6 +724,8 @@ void SNetStorage::SConfig::Validate(const string& init_string)
     default: /* eNoCreate */
         break;
     }
+
+    if (hello_service.empty()) hello_service = service;
 }
 
 SNetStorageRPC::SNetStorageRPC(const TConfig& config,
@@ -739,7 +741,7 @@ SNetStorageRPC::SNetStorageRPC(const TConfig& config,
     CJsonNode hello(MkStdRequest("HELLO"));
 
     hello.SetString("Client", m_Config.client_name);
-    hello.SetString("Service", m_Config.service);
+    hello.SetString("Service", m_Config.hello_service);
     if (!m_Config.metadata.empty())
         hello.SetString("Metadata", m_Config.metadata);
     {{
@@ -754,8 +756,7 @@ SNetStorageRPC::SNetStorageRPC(const TConfig& config,
     m_Service = new SNetServiceImpl("NetStorageAPI", m_Config.client_name,
             new CNetStorageServerListener(hello, m_Config.err_mode));
 
-    m_Service->Init(this,
-            m_Config.server.empty() ? m_Config.service : m_Config.server,
+    m_Service->Init(this, m_Config.service,
             NULL, kEmptyStr, s_NetStorageConfigSections);
 }
 
