@@ -1,0 +1,1270 @@
+Seq-entry ::= set {
+  class genbank,
+  descr {
+    user {
+      type str "NcbiCleanup",
+      data {
+        {
+          label str "method",
+          data str "ExtendedSeqEntryCleanup"
+        },
+        {
+          label str "version",
+          data int 1
+        },
+        {
+          label str "month",
+          data int 9
+        },
+        {
+          label str "day",
+          data int 16
+        },
+        {
+          label str "year",
+          data int 2016
+        }
+      }
+    }
+  },
+  seq-set {
+    set {
+      class phy-set,
+      descr {
+        title "Fusarium sp. 28S ribosomal RNA gene, partial sequence.",
+        pub {
+          pub {
+            pmid 27605713,
+            article {
+              title {
+                name "Veterinary Fusarioses within the United States."
+              },
+              authors {
+                names std {
+                  {
+                    name name {
+                      last "O'Donnell",
+                      first "K",
+                      initials "K."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Sutton",
+                      first "D",
+                      initials "D.A."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Wiederhold",
+                      first "N",
+                      initials "N."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Robert",
+                      first "V",
+                      initials "V.A."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Crous",
+                      first "P",
+                      initials "P.W."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Geiser",
+                      first "D",
+                      initials "D.M."
+                    }
+                  }
+                }
+              },
+              from journal {
+                title {
+                  iso-jta "J. Clin. Microbiol."
+                },
+                imp {
+                  date std {
+                    year 2016,
+                    month 9,
+                    day 7
+                  },
+                  prepub in-press,
+                  pubstatus aheadofprint
+                }
+              },
+              ids {
+                doi "10.1128/JCM.01607-16",
+                pubmed 27605713
+              }
+            }
+          }
+        },
+        pub {
+          pub {
+            sub {
+              authors {
+                names std {
+                  {
+                    name name {
+                      last "O'Donnell",
+                      first "Kerry",
+                      initials "K."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Sutton",
+                      first "Deanna",
+                      initials "D.A."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Wiederhold",
+                      first "Nathan",
+                      initials "N."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Robert",
+                      first "Vincent",
+                      initials "V.A.R.G."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Crous",
+                      first "Pedro",
+                      initials "P.W."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Geiser",
+                      first "David",
+                      initials "D.M."
+                    }
+                  }
+                },
+                affil std {
+                  affil "U.S. Department of Agriculture",
+                  div "Mycotoxin Prevention and Applied Microbiology Research
+ Unit",
+                  city "Peoria",
+                  sub "IL",
+                  country "USA",
+                  street "1815 North University Street",
+                  postal-code "61604-3999"
+                }
+              },
+              date std {
+                year 2016,
+                month 8,
+                day 22
+              }
+            }
+          }
+        },
+        user {
+          class "SMART_V1.0",
+          type id 1,
+          data {
+            {
+              label id 1,
+              num 1,
+              data int 10801488
+            }
+          }
+        },
+        user {
+          type str "NcbiAutofix",
+          data {
+          }
+        },
+        create-date std {
+          year 2016,
+          month 8,
+          day 22
+        },
+        update-date std {
+          year 2016,
+          month 9,
+          day 16
+        }
+      },
+      seq-set {
+        seq {
+          id {
+            local str "Fusarium_sp._54984_mouse_mucosa_MA",
+            general {
+              db "NCBIFILE",
+              tag str "F_oxysporum/Fusarium_sp._54984_mouse_mucosa_MA"
+            },
+            general {
+              db "TMSMART",
+              tag id 70801646
+            },
+            genbank {
+              accession "KX768760"
+            }
+          },
+          descr {
+            title "Fusarium sp. strain 54984 28S ribosomal RNA gene, partial
+ sequence.",
+            source {
+              genome genomic,
+              org {
+                taxname "Fusarium sp.",
+                db {
+                  {
+                    db "taxon",
+                    tag id 29916
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Fusarium",
+                    species "sp."
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "54984"
+                    }
+                  },
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Pezizomycotina; Sordariomycetes; Hypocreomycetidae; Hypocreales; Nectriaceae;
+ Fusarium",
+                  gcode 1,
+                  mgcode 4,
+                  div "PLN"
+                }
+              },
+              subtype {
+                {
+                  subtype other,
+                  name "Fusarium oxysporum species complex multilocus
+ haplotype 33"
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "StructuredComment",
+              data {
+                {
+                  label str "StructuredCommentPrefix",
+                  data str "##Assembly-Data-START##"
+                },
+                {
+                  label str "Assembly Method",
+                  data str "Sequencher v. 5.2.4"
+                },
+                {
+                  label str "Sequencing Technology",
+                  data str "Sanger dideoxy sequencing"
+                },
+                {
+                  label str "StructuredCommentSuffix",
+                  data str "##Assembly-Data-END##"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "Fusarium_sp._54984_mouse_mucosa_MA"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr delta,
+            mol dna,
+            length 2090,
+            ext delta {
+              literal {
+                length 620,
+                seq-data ncbi2na 'BEF18DE78AB096D7D9763F550EAF75A3F7A21FB2ABEE
+A3FF8EEDB75A1A9AE4AB2D8BC87EBA0F5B6328BD6D8B7ADA7BBBE86B92ACA79FA13ADAF628D8F6
+2A5A65CD8E3BB8ECE6B72ACA7AFEDFAD43F8EDA756E4A522E0AAAD4AB2B12ACA49F33FADADE8AD
+8F77A7A68DE11ED80623989AECAB29CBF6D7652BE63FA188CEEBD2ACA772AC2C83D8BF6D9612FF
+7BBBB3ACAE4AB29037775A52C7EDEBAD'H
+              },
+              literal {
+                length 473
+              },
+              literal {
+                length 642,
+                seq-data ncbi2na 'C3F18F330DE4D1DCAB278037CCECDEB44FEB822BEBFA
+3AE238100B90EC83ECCE3FE402EA6E03E80B6BFD599238893BF8AE5388E45DD62185D06B1454EE
+FADA1D7B9A5B52A6A30B220CEBAECAB2BA5AB52ACAF45035B43DA7E0D82A4ADCAB2968B2ADCAB2
+907745760BADC56B2507D0D977469651A1764E186A1C514DA3D97EB60327ACCE47FE000E6E403A
+FFBAFEBA5B8B63FFFBFD5310383FE6803002E9518A40'H
+              },
+              literal {
+                length 19
+              },
+              literal {
+                length 336,
+                seq-data ncbi2na 'C01ADDA2ACCE20A89035A589780AB8A1016A6241774B
+348DF921F51E6ED5DEC49FE4A75A5DA49AAAF4CBADB61751807919D69B849B1EA8E5EEC8E4B5A9
+F97A167248EA77BA387A59E9C85E0178906A2B05DD9668'H
+              }
+            }
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "28S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 43,
+                    strand plus,
+                    id local str "Fusarium_sp._54984_mouse_mucosa_MA",
+                    fuzz-from lim lt
+                  }
+                },
+                {
+                  data imp {
+                    key "misc_feature"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 44,
+                    to 2089,
+                    strand plus,
+                    id local str "Fusarium_sp._54984_mouse_mucosa_MA",
+                    fuzz-to lim gt
+                  },
+                  qual {
+                    {
+                      qual "product",
+                      val "28S-18S ribosomal RNA intergenic spacer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "Fusarium_sp._62542_feces_TX",
+            general {
+              db "NCBIFILE",
+              tag str "F_oxysporum/Fusarium_sp._62542_feces_TX"
+            },
+            general {
+              db "TMSMART",
+              tag id 70801647
+            },
+            genbank {
+              accession "KX768761"
+            }
+          },
+          descr {
+            title "Fusarium sp. strain 62542 28S ribosomal RNA gene, partial
+ sequence.",
+            source {
+              genome genomic,
+              org {
+                taxname "Fusarium sp.",
+                db {
+                  {
+                    db "taxon",
+                    tag id 29916
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Fusarium",
+                    species "sp."
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "62542"
+                    }
+                  },
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Pezizomycotina; Sordariomycetes; Hypocreomycetidae; Hypocreales; Nectriaceae;
+ Fusarium",
+                  gcode 1,
+                  mgcode 4,
+                  div "PLN"
+                }
+              },
+              subtype {
+                {
+                  subtype other,
+                  name "Fusarium oxysporum species complex multilocus
+ haplotype 33"
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "StructuredComment",
+              data {
+                {
+                  label str "StructuredCommentPrefix",
+                  data str "##Assembly-Data-START##"
+                },
+                {
+                  label str "Assembly Method",
+                  data str "Sequencher v. 5.2.4"
+                },
+                {
+                  label str "Sequencing Technology",
+                  data str "Sanger dideoxy sequencing"
+                },
+                {
+                  label str "StructuredCommentSuffix",
+                  data str "##Assembly-Data-END##"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "Fusarium_sp._62542_feces_TX"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr delta,
+            mol dna,
+            length 2090,
+            ext delta {
+              literal {
+                length 661,
+                seq-data ncbi2na 'BEF18DE78AB096D7D9763F550EAF75A3F7A21FB2ABEE
+A3FF8EEDB75A1A9AE4AB2D8BC87EBA0F5B6328BD6D8B7ADA7BBBE86B92ACA79FA13ADAF628D8F6
+2A5A65CD8E3BB8ECE6B72ACA7AFEDFAD43F8EDA756E4A522E0AAAD4AB2B12ACA49F33FADADE8AD
+8F77A7A68DE11ED80623989AECAB29CBF6D7652BE63FA188CEEBD2ACA772AC2C83D8BF6D9612FF
+7BBBB3ACAE4AB29037775A52C7EDEBADB8B63FFFBFE531CF83FE40'H
+              },
+              literal {
+                length 1087
+              },
+              literal {
+                length 342,
+                seq-data ncbi2na '951C01ADDA2ACCE20A89035A589780AB8A1016A62417
+74B348DF921F51E6ED5DEC49FE4A75A5DA49AAAF4CBADB61751807919D69B849B1EA8E5EEC8E4B
+5A9F97A167248EA77BA387A59E9C85E0178906A2B05DD96680'H
+              }
+            }
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "28S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 43,
+                    strand plus,
+                    id local str "Fusarium_sp._62542_feces_TX",
+                    fuzz-from lim lt
+                  }
+                },
+                {
+                  data imp {
+                    key "misc_feature"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 44,
+                    to 2089,
+                    strand plus,
+                    id local str "Fusarium_sp._62542_feces_TX",
+                    fuzz-to lim gt
+                  },
+                  qual {
+                    {
+                      qual "product",
+                      val "28S-18S ribosomal RNA intergenic spacer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "Fusarium_sp._54996_little_blue_penguin_foot_MA",
+            general {
+              db "NCBIFILE",
+              tag str "F_oxysporum/Fusarium_sp._54996_little_blue_penguin_foot
+_MA"
+            },
+            general {
+              db "TMSMART",
+              tag id 70801648
+            },
+            genbank {
+              accession "KX768762"
+            }
+          },
+          descr {
+            title "Fusarium sp. strain 54996 28S ribosomal RNA gene, partial
+ sequence.",
+            source {
+              genome genomic,
+              org {
+                taxname "Fusarium sp.",
+                db {
+                  {
+                    db "taxon",
+                    tag id 29916
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Fusarium",
+                    species "sp."
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "54996"
+                    }
+                  },
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Pezizomycotina; Sordariomycetes; Hypocreomycetidae; Hypocreales; Nectriaceae;
+ Fusarium",
+                  gcode 1,
+                  mgcode 4,
+                  div "PLN"
+                }
+              },
+              subtype {
+                {
+                  subtype other,
+                  name "Fusarium oxysporum species complex multilocus
+ haplotype 33"
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "StructuredComment",
+              data {
+                {
+                  label str "StructuredCommentPrefix",
+                  data str "##Assembly-Data-START##"
+                },
+                {
+                  label str "Assembly Method",
+                  data str "Sequencher v. 5.2.4"
+                },
+                {
+                  label str "Sequencing Technology",
+                  data str "Sanger dideoxy sequencing"
+                },
+                {
+                  label str "StructuredCommentSuffix",
+                  data str "##Assembly-Data-END##"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "Fusarium_sp._54996_little_blue_penguin_foot_MA"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr delta,
+            mol dna,
+            length 2088,
+            ext delta {
+              literal {
+                length 625,
+                seq-data ncbi2na 'EF18DE78AB096D7D9763F550EAF75A3F7A21FB2ABEEA
+3FF8EEDB75A1A9AE4AB2D8BC87EBA0F5B6328BD6D8B7ADA7BBBE86B92ACA79FA13ADAF628D8F62
+A5A65CD8E3BB8ECE6B72ACA7AFEDFAD43F8EDA756E4A522E0AAAD4AB2B12ACA49F33FADADE8AD8
+F77A7A68DE11ED80623989AECAB29CBF6D7652BE63FA188CEEBD2ACA772AC2C83D8BF6D9612FF7
+BBBB3ACAE4AB29037775A52C7EDEBADB8B40'H
+              },
+              literal {
+                length 351
+              },
+              literal {
+                length 1112,
+                seq-data ncbi2na '7ACCCB3EAAAECAB2B7A91EFF59F657D5FC762A8A18DF
+A7A868AECAB29F0FC63CCC37934772AC9E00DF33B37AD13FAE08AFAFE8EB88E0402E43B20FB338
+FF900BA9B80FA02DAFF56648E224EFE2B94E23917758861741AC5153BBEB6875EE696D4A9A8C2C
+8833AEBB2ACAE96AD4AB2BD140D6D0F69F8360A92B72ACA5A2CAB72ACA41DD15D82EB715AC941F
+4365DD1A594685D93861A87145368F65FAD80C9EB3391FF80039B900EBFEEBFAE96E2D8FFFEFF5
+4C40E0FF9A00C00BA546292D7A6E6951C01ADDA2ACCE20A89035A589780AB8A1016A6241774B34
+8DF921F51E6ED5DEC49FE4A75A5DA49AAAF4CBADB61751807919D69B849B1EA8E5EEC8E4B5A9F9
+7A167248EA77BA387A59E9C85E0178906A2B05DD9668'H
+              }
+            }
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "28S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 41,
+                    strand plus,
+                    id local str "Fusarium_sp._54996_little_blue_penguin_foot_
+MA",
+                    fuzz-from lim lt
+                  }
+                },
+                {
+                  data imp {
+                    key "misc_feature"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 42,
+                    to 2087,
+                    strand plus,
+                    id local str "Fusarium_sp._54996_little_blue_penguin_foot_
+MA",
+                    fuzz-to lim gt
+                  },
+                  qual {
+                    {
+                      qual "product",
+                      val "28S-18S ribosomal RNA intergenic spacer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "Fusarium_sp._62547_canine_stomach_CA",
+            general {
+              db "NCBIFILE",
+              tag str "F_oxysporum/Fusarium_sp._62547_canine_stomach_CA"
+            },
+            general {
+              db "TMSMART",
+              tag id 70801649
+            },
+            genbank {
+              accession "KX768763"
+            }
+          },
+          descr {
+            title "Fusarium sp. strain 62547 28S ribosomal RNA gene, partial
+ sequence.",
+            source {
+              genome genomic,
+              org {
+                taxname "Fusarium sp.",
+                db {
+                  {
+                    db "taxon",
+                    tag id 29916
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Fusarium",
+                    species "sp."
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "62547"
+                    }
+                  },
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Pezizomycotina; Sordariomycetes; Hypocreomycetidae; Hypocreales; Nectriaceae;
+ Fusarium",
+                  gcode 1,
+                  mgcode 4,
+                  div "PLN"
+                }
+              },
+              subtype {
+                {
+                  subtype other,
+                  name "Fusarium oxysporum species complex multilocus
+ haplotype 33"
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "StructuredComment",
+              data {
+                {
+                  label str "StructuredCommentPrefix",
+                  data str "##Assembly-Data-START##"
+                },
+                {
+                  label str "Assembly Method",
+                  data str "Sequencher v. 5.2.4"
+                },
+                {
+                  label str "Sequencing Technology",
+                  data str "Sanger dideoxy sequencing"
+                },
+                {
+                  label str "StructuredCommentSuffix",
+                  data str "##Assembly-Data-END##"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "Fusarium_sp._62547_canine_stomach_CA"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 2088,
+            seq-data ncbi2na 'EF18DE78AB096D7D9763F550EAF75A3F7A21FB2ABEEA3FF8
+EEDB75A1A9AE4AB2D8BC87EBA0F5B6328BD6D8B7ADA7BBBE86B92ACA79FA13ADAF628D8F62A5A6
+5CD8E3BB8ECE6B72ACA7AFEDFAD43F8EDA756E4A522E0AAAD4AB2B12ACA49F33FADADE8AD8F77A
+7A68DE11ED80623989AECAB29CBF6D7652BE63FA188CEEBD2ACA772AC2C83D8BF6D9612FF7BBBB
+3ACAE4AB29037775A52C7EDEBADB8B63FFFBFE531CF83FE680F402E9DA8B565E9B9B587604DB6B
+B13388A8B0D695A5AA54D989E4AB2B00B000BEF08A66BB69B9FB3F9A8883CDE8AE7AB25A821FA3
+A37A56A0EADE65E8F7AEEBB2ACAEC8C8E2EB72ACAC4AB2720B7ACCCB3EAAAECAB2B7A91EFF59F6
+57D5FC762A8A18DFA7A868AECAB29F0FC63CCC37934772AC9E00DF33B37AD13FAE08AFAFE8EB88
+E0402E43B20FB338FF900BA9B80FA02DAFF56648E224EFE2B94E23917758861741AC5153BBEB68
+75EE696D4A9A8C2C8833AEBB2ACAE96AD4AB2BD140D6D0F69F8360A92B72ACA5A2CAB72ACA41DD
+15D82EB715AC941F4365DD1A594685D93861A87145368F65FAD80C9EB3391FF80039B900EBFEEB
+FAE96E2D8FFFEFF54C40E0FF9A00C00BA546292D7A6E6951C01ADDA2ACCE20A89035A589780AB8
+A1016A6241774B348DF921F51E6ED5DEC49FE4A75A5DA49AAAF4CBADB61751807919D69B849B1E
+A8E5EEC8E4B5A9F97A167248EA77BA387A59E9C85E0178906A2B05DD9668'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "28S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 41,
+                    strand plus,
+                    id local str "Fusarium_sp._62547_canine_stomach_CA",
+                    fuzz-from lim lt
+                  }
+                },
+                {
+                  data imp {
+                    key "misc_feature"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 42,
+                    to 2087,
+                    strand plus,
+                    id local str "Fusarium_sp._62547_canine_stomach_CA",
+                    fuzz-to lim gt
+                  },
+                  qual {
+                    {
+                      qual "product",
+                      val "28S-18S ribosomal RNA intergenic spacer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "Fusarium_sp._62545_endoscope_CA",
+            general {
+              db "NCBIFILE",
+              tag str "F_oxysporum/Fusarium_sp._62545_endoscope_CA"
+            },
+            general {
+              db "TMSMART",
+              tag id 70801650
+            },
+            genbank {
+              accession "KX768764"
+            }
+          },
+          descr {
+            title "Fusarium sp. strain 62545 28S ribosomal RNA gene, partial
+ sequence.",
+            source {
+              genome genomic,
+              org {
+                taxname "Fusarium sp.",
+                db {
+                  {
+                    db "taxon",
+                    tag id 29916
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Fusarium",
+                    species "sp."
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "62545"
+                    }
+                  },
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Pezizomycotina; Sordariomycetes; Hypocreomycetidae; Hypocreales; Nectriaceae;
+ Fusarium",
+                  gcode 1,
+                  mgcode 4,
+                  div "PLN"
+                }
+              },
+              subtype {
+                {
+                  subtype other,
+                  name "Fusarium oxysporum species complex multilocus
+ haplotype 33"
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "StructuredComment",
+              data {
+                {
+                  label str "StructuredCommentPrefix",
+                  data str "##Assembly-Data-START##"
+                },
+                {
+                  label str "Assembly Method",
+                  data str "Sequencher v. 5.2.4"
+                },
+                {
+                  label str "Sequencing Technology",
+                  data str "Sanger dideoxy sequencing"
+                },
+                {
+                  label str "StructuredCommentSuffix",
+                  data str "##Assembly-Data-END##"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "Fusarium_sp._62545_endoscope_CA"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "ModifierList",
+                  data fields {
+                    {
+                      label str "OrgMods",
+                      data strs {
+                        "strain"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          inst {
+            repr delta,
+            mol dna,
+            length 2090,
+            ext delta {
+              literal {
+                length 821,
+                seq-data ncbi2na 'BEF18DE78AB096D7D9763F550EAF75A3F7A21FB2ABEE
+A3FF8EEDB75A1A9AE4AB2D8BC87EBA0F5B6328BD6D8B7ADA7BBBE86B92ACA79FA13ADAF628D8F6
+2A5A65CD8E3BB8ECE6B72ACA7AFEDFAD43F8EDA756E4A522E0AAAD4AB2B12ACA49F33FADADE8AD
+8F77A7A68DE11ED80623989AECAB29CBF6D7652BE63FA188CEEBD2ACA772AC2C83D8BF6D9612FF
+7BBBB3ACAE4AB29037775A52C7EDEBADB8B63FFFBFE531CF83FE680F402E9DA8B565E9B9B58760
+4DB6BB13388A8B0D695A5AA54D989E4AB2B00B000BEF08A66BB69B80'H
+              },
+              literal {
+                length 445
+              },
+              literal {
+                length 369,
+                seq-data ncbi2na '48E224EFE2B94E23917758861741AC5153BBEB6875EE
+696D4A9A8C2C8833AEBB2ACAE96AD4AB2BD140D6D0F69F8360A92B72ACA5A2CAB72ACA41DD15D8
+2EB715AC941F4365DD1A594685D93861A87145368F65FAD80C9EB3391FF80000'H
+              },
+              literal {
+                length 131
+              },
+              literal {
+                length 324,
+                seq-data ncbi2na 'A2ACCE20A89035A589780AB8A1016A6241774B348DF9
+21F51E6ED5DEC49FE4A75A5DA49AAAF4CBADB61751807919D69B849B1EA8E5EEC8E4B5A9F97A16
+7248EA77BA387A59E9C85E0178906A2B05DD9668'H
+              }
+            }
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data rna {
+                    type rRNA,
+                    ext name "28S ribosomal RNA"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 43,
+                    strand plus,
+                    id local str "Fusarium_sp._62545_endoscope_CA",
+                    fuzz-from lim lt
+                  }
+                },
+                {
+                  data imp {
+                    key "misc_feature"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 44,
+                    to 2089,
+                    strand plus,
+                    id local str "Fusarium_sp._62545_endoscope_CA",
+                    fuzz-to lim gt
+                  },
+                  qual {
+                    {
+                      qual "product",
+                      val "28S-18S ribosomal RNA intergenic spacer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data align {
+            {
+              type partial,
+              dim 5,
+              segs denseg {
+                dim 5,
+                numseg 2,
+                ids {
+                  local str "Fusarium_sp._54984_mouse_mucosa_MA",
+                  local str "Fusarium_sp._62542_feces_TX",
+                  local str "Fusarium_sp._54996_little_blue_penguin_foot_MA",
+                  local str "Fusarium_sp._62547_canine_stomach_CA",
+                  local str "Fusarium_sp._62545_endoscope_CA"
+                },
+                starts {
+                  0,
+                  0,
+                  -1,
+                  -1,
+                  0,
+                  2,
+                  2,
+                  0,
+                  0,
+                  2
+                },
+                lens {
+                  2,
+                  2088
+                },
+                strands {
+                  plus,
+                  plus,
+                  plus,
+                  plus,
+                  plus,
+                  plus,
+                  plus,
+                  plus,
+                  plus,
+                  plus
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

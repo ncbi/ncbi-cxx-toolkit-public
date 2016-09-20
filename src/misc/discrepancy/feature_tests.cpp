@@ -2415,5 +2415,38 @@ DISCREPANCY_SUMMARIZE(MULTIPLE_QUALS)
 
 
 
+// MISC_FEATURE_WITH_PRODUCT_QUAL
+
+static const string kMiscFeatWithProduct = "[n] feature[s] [has] a product qualifier";
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(MISC_FEATURE_WITH_PRODUCT_QUAL, CSeq_feat, eOncaller, "Misc features containing a product qualifier")
+//  ----------------------------------------------------------------------------
+{
+    if (obj.IsSetData() && obj.IsSetQual()) {
+
+        CSeqFeatData::ESubtype subtype = obj.GetData().GetSubtype();
+
+        if (subtype == CSeqFeatData::eSubtype_misc_feature) {
+
+            ITERATE(CSeq_feat::TQual, qual, obj.GetQual()) {
+                if ((*qual)->IsSetQual() && (*qual)->GetQual() == "product") {
+                    m_Objs[kMiscFeatWithProduct].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
+                }
+            }
+        }
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(MISC_FEATURE_WITH_PRODUCT_QUAL)
+//  ----------------------------------------------------------------------------
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

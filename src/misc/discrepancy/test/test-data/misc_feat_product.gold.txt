@@ -1,0 +1,14 @@
+Discrepancy Report Results
+
+Summary
+MISC_FEATURE_WITH_PRODUCT_QUAL: 5 features have a product qualifier
+
+Detailed Report
+
+MISC_FEATURE_WITH_PRODUCT_QUAL: 5 features have a product qualifier
+test-data/misc_feat_product.asn:misc_feature	/product=28S-18S ribosomal RNA intergenic spacer	gb|KX768760|:45->2090	
+test-data/misc_feat_product.asn:misc_feature	/product=28S-18S ribosomal RNA intergenic spacer	gb|KX768761|:45->2090	
+test-data/misc_feat_product.asn:misc_feature	/product=28S-18S ribosomal RNA intergenic spacer	gb|KX768762|:43->2088	
+test-data/misc_feat_product.asn:misc_feature	/product=28S-18S ribosomal RNA intergenic spacer	gb|KX768763|:43->2088	
+test-data/misc_feat_product.asn:misc_feature	/product=28S-18S ribosomal RNA intergenic spacer	gb|KX768764|:45->2090	
+
