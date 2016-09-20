@@ -197,13 +197,10 @@ CAutomationObject* CAutomationProc::CreateObject(const string& class_name,
         return SNetScheduleServerAutomationObject::Create(arg_array, class_name, this);
 
     case kFirstStep + 4:
-        if (class_name == "wn") {
-            string wn_address(arg_array.NextString());
-            string client_name(arg_array.NextString(kEmptyStr));
-            return (
-                    new SWorkerNodeAutomationObject(this,
-                            wn_address, client_name));
-        } else if (class_name == "nstsvc") {
+        return SWorkerNodeAutomationObject::Create(arg_array, class_name, this);
+
+    case kFirstStep + 5:
+        if (class_name == "nstsvc") {
             return (
                     new SNetStorageServiceAutomationObject(this, arg_array));
         } else if (class_name == "nstsrv") {

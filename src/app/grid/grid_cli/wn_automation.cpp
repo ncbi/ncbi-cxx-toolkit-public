@@ -38,10 +38,9 @@ USING_NCBI_SCOPE;
 const string SWorkerNodeAutomationObject::kName = "wn";
 
 SWorkerNodeAutomationObject::SWorkerNodeAutomationObject(
-        CAutomationProc* automation_proc,
-        const string& wn_address, const string& client_name) :
+        CAutomationProc* automation_proc, CNetScheduleAPI ns_api) :
     TBase(automation_proc, CNetService::eSingleServerService),
-    m_NetScheduleAPI(CNetScheduleAPIExt::CreateWnCompat(wn_address, client_name))
+    m_NetScheduleAPI(ns_api)
 {
     m_Service = m_NetScheduleAPI.GetService();
 
@@ -52,6 +51,20 @@ SWorkerNodeAutomationObject::SWorkerNodeAutomationObject(
                 "WorkerNode constructor: 'wn_address' "
                 "must be a host:port combination");
     }
+}
+
+CAutomationObject* SWorkerNodeAutomationObject::Create(
+        CArgArray& arg_array, const string& class_name,
+        CAutomationProc* automation_proc)
+{
+    if (class_name != kName) return nullptr;
+
+    const string wn_address(arg_array.NextString());
+    const string client_name(arg_array.NextString(kEmptyStr));
+    CNetScheduleAPIExt ns_api(CNetScheduleAPIExt::CreateWnCompat(
+                wn_address, client_name));
+
+    return new SWorkerNodeAutomationObject(automation_proc, ns_api);
 }
 
 const void* SWorkerNodeAutomationObject::GetImplPtr() const

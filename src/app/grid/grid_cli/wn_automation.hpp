@@ -40,9 +40,6 @@ struct SWorkerNodeAutomationObject : public SNetServiceAutomationObject
 {
     typedef SNetServiceAutomationObject TBase;
 
-    SWorkerNodeAutomationObject(CAutomationProc* automation_proc,
-            const string& wn_address, const string& client_name);
-
     virtual const string& GetType() const { return kName; }
 
     virtual const void* GetImplPtr() const;
@@ -52,12 +49,16 @@ struct SWorkerNodeAutomationObject : public SNetServiceAutomationObject
 
     static NAutomation::CCommand CallCommand();
     static NAutomation::TCommands CallCommands();
+    static CAutomationObject* Create(CArgArray& arg_array,
+            const string& class_name, CAutomationProc* automation_proc);
 
 private:
+    SWorkerNodeAutomationObject(CAutomationProc* automation_proc,
+            CNetScheduleAPI ns_api);
+
     CNetScheduleAPI m_NetScheduleAPI;
     CNetServer m_WorkerNode;
 
-private:
     static const string kName;
 };
 
