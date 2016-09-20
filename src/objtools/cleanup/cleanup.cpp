@@ -3241,6 +3241,18 @@ bool CCleanup::ConvertSrcFeatsToSrcDescs(CSeq_entry_Handle seh)
 {
     bool any_change = false;
     for (CBioseq_CI b(seh); b; ++b) {
+        bool transgenic_or_focus = false;
+        CSeqdesc_CI existing_src(*b, CSeqdesc::e_Source);
+        while (existing_src && !transgenic_or_focus) {
+            if (existing_src->GetSource().IsSetIs_focus() ||
+                existing_src->GetSource().HasSubtype(CSubSource::eSubtype_transgenic)) {
+                transgenic_or_focus = true;
+            }
+            ++existing_src;
+        }
+        if (transgenic_or_focus) {
+            continue;
+        }
         for (CFeat_CI p(*b, CSeqFeatData::e_Biosrc); p; ++p) {
             if (p->GetLocation().IsInt() &&
                 p->GetLocation().GetStart(eExtreme_Biological) == 0 &&
