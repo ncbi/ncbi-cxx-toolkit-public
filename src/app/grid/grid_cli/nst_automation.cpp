@@ -38,9 +38,10 @@ USING_NCBI_SCOPE;
 const string SNetStorageServiceAutomationObject::kName = "nstsvc";
 const string SNetStorageServerAutomationObject::kName = "nstsrv";
 
-NAutomation::CCommand SNetStorageServiceAutomationObject::NewCommand()
+NAutomation::CCommand SNetStorageServiceAutomationObject::NewCommand(
+        const string& name)
 {
-    return NAutomation::CCommand(kName, {
+    return NAutomation::CCommand(name, {
             { "service_name", CJsonNode::eString, },
             { "domain_name", "", },
             { "client_name", "", },

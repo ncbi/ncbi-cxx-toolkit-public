@@ -64,7 +64,7 @@ struct SNetCacheServiceAutomationObject : public SNetServiceAutomationObject
     virtual bool Call(const string& method,
             CArgArray& arg_array, CJsonNode& reply);
 
-    static NAutomation::CCommand CallCommand();
+    static NAutomation::CCommand CallCommand() { return CallCommand(kName); }
     static NAutomation::TCommands CallCommands();
     static NAutomation::CCommand NewCommand();
     static CAutomationObject* Create(CArgArray& arg_array,
@@ -73,6 +73,8 @@ struct SNetCacheServiceAutomationObject : public SNetServiceAutomationObject
 protected:
     SNetCacheServiceAutomationObject(CAutomationProc* automation_proc,
             CNetCacheAPI nc_api, CNetService::EServiceType type);
+
+    static NAutomation::CCommand CallCommand(const string& name);
 
     CNetCacheAPI m_NetCacheAPI;
 
@@ -121,6 +123,7 @@ struct SNetCacheServerAutomationObject : public SNetCacheServiceAutomationObject
     virtual bool Call(const string& method,
             CArgArray& arg_array, CJsonNode& reply);
 
+    static NAutomation::CCommand CallCommand() { return TBase::CallCommand(kName); }
     static NAutomation::CCommand NewCommand();
     static CAutomationObject* Create(CArgArray& arg_array,
             const string& class_name, CAutomationProc* automation_proc);

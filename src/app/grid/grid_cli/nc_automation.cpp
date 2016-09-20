@@ -233,9 +233,10 @@ TAutomationObjectRef CAutomationProc::ReturnNetCacheServerObject(
     return object;
 }
 
-NAutomation::CCommand SNetCacheServiceAutomationObject::CallCommand()
+NAutomation::CCommand SNetCacheServiceAutomationObject::CallCommand(
+        const string& name)
 {
-    return NAutomation::CCommand(kName, CallCommands);
+    return NAutomation::CCommand(name, CallCommands);
 }
 
 NAutomation::TCommands SNetCacheServiceAutomationObject::CallCommands()

@@ -69,7 +69,7 @@ struct SNetStorageServiceAutomationObject : public SNetServiceBaseAutomationObje
 
     static NAutomation::CCommand CallCommand();
     static NAutomation::TCommands CallCommands();
-    static NAutomation::CCommand NewCommand();
+    static NAutomation::CCommand NewCommand() { return NewCommand(kName); }
     static CAutomationObject* Create(CArgArray& arg_array,
             const string& class_name, CAutomationProc* automation_proc);
 
@@ -78,6 +78,8 @@ protected:
 
     SNetStorageServiceAutomationObject(CAutomationProc* automation_proc,
             CNetStorageAdmin nst_api, CNetService::EServiceType type);
+
+    static NAutomation::CCommand NewCommand(const string& name);
 
 private:
     static const string kName;
@@ -99,6 +101,7 @@ struct SNetStorageServerAutomationObject : public SNetStorageServiceAutomationOb
 
     static NAutomation::CCommand CallCommand();
     static NAutomation::TCommands CallCommands();
+    static NAutomation::CCommand NewCommand() { return TBase::NewCommand(kName); }
     static CAutomationObject* Create(CArgArray& arg_array,
             const string& class_name, CAutomationProc* automation_proc);
 
