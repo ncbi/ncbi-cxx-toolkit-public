@@ -160,7 +160,7 @@ void CTable2AsnValidator::ReportErrorStats(CNcbiOstream& out)
     }
 }
 
-void CTable2AsnValidator::ReportDiscrepancies(CSerialObject& obj, CScope& scope, const string& fname)
+void CTable2AsnValidator::ReportDiscrepancies(CSerialObject& obj, CScope& scope)
 {
     CRef<NDiscrepancy::CDiscrepancySet> tests = NDiscrepancy::CDiscrepancySet::New(scope);
     vector<string> names = NDiscrepancy::GetDiscrepancyNames(NDiscrepancy::eSubmitter);
@@ -173,9 +173,12 @@ void CTable2AsnValidator::ReportDiscrepancies(CSerialObject& obj, CScope& scope,
     tests->Parse(obj);
     tests->Summarize();
     tests->AutofixAll();
-    CNcbiOfstream output(fname.c_str());
+    if (!m_discrepancy_output.get())
+    {
+        m_discrepancy_output.reset(new CNcbiOfstream(m_context->m_discrepancy_file.c_str()));
+    }
     bool print_fatal = true;
-    tests->OutputText(output, print_fatal, false, false);
+    tests->OutputText(*m_discrepancy_output, print_fatal, false, false);
 }
 
 void CTable2AsnValidator::UpdateECNumbers(objects::CSeq_entry_Handle seh, const string& fname, auto_ptr<CNcbiOfstream>& ostream)

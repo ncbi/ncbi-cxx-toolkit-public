@@ -661,6 +661,12 @@ int CTbl2AsnApp::Run(void)
     {
         m_context.m_discrepancy_file = args["Z"].AsString();
     }
+    else
+    if (args["M"])
+    {
+        m_context.m_discrepancy_file = GenerateOutputFilename(".dr");
+    }
+
     m_context.m_eukariote = args["euk"].AsBoolean();
 
     if (m_context.m_cleanup.find('f') != string::npos)
@@ -937,15 +943,10 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
             m_validator->Validate(submit, entry, m_context.m_validate, GenerateOutputFilename(".val"));
         }
 
-        string fname;
-        if (!m_context.m_master_genome_flag.empty())
-            fname = GenerateOutputFilename(".dr");
-        else
-            fname = m_context.m_discrepancy_file;
-        if (!fname.empty())
+        if (!m_context.m_discrepancy_file.empty())
         {
             m_validator->ReportDiscrepancies(
-                submit.Empty() ? (CSerialObject&)*entry : (CSerialObject&)*submit, *m_context.m_scope, fname);
+                submit.Empty() ? (CSerialObject&)*entry : (CSerialObject&)*submit, *m_context.m_scope);
         }
     }
 }

@@ -24,7 +24,7 @@ public:
     void ReportErrors(CConstRef<objects::CValidError> errors, CNcbiOstream& out);
     void ReportErrorStats(CNcbiOstream& out);
     size_t TotalErrors() const; 
-    void ReportDiscrepancies(CSerialObject& obj, objects::CScope& scope, const string& output);
+    void ReportDiscrepancies(CSerialObject& obj, objects::CScope& scope);
 protected:
     typedef map<int, size_t> TErrorStatMap;
     typedef struct 
@@ -34,6 +34,7 @@ protected:
     } TErrorStats;
     vector<TErrorStats> m_stats;
     CTable2AsnContext* m_context;
+    auto_ptr<CNcbiOstream> m_discrepancy_output;
 };
 
 END_NCBI_SCOPE
