@@ -289,8 +289,6 @@ class CAutomationProc
 public:
     CAutomationProc(IMessageSender* message_sender);
 
-    TObjectID CreateObject(const string& class_name, CArgArray& arg_array);
-
     CJsonNode ProcessMessage(const CJsonNode& message);
 
     void SendWarning(const string& warn_msg, TAutomationObjectRef source);
@@ -314,6 +312,11 @@ public:
             CNetStorageAdmin::TInstance nst_api,
             CNetServer::TInstance server);
 private:
+    CAutomationObject* CreateObject(const string& class_name,
+            CArgArray& arg_array, int step);
+
+    TObjectID CreateObject(CArgArray& arg_array);
+
     TAutomationObjectRef& ObjectIdToRef(TObjectID object_id);
 
     IMessageSender* m_MessageSender;

@@ -178,52 +178,73 @@ CAutomationProc::CAutomationProc(IMessageSender* message_sender) :
 {
 }
 
-TObjectID CAutomationProc::CreateObject(const string& class_name,
-        CArgArray& arg_array)
+const int kFirstStep = 0;
+
+CAutomationObject* CAutomationProc::CreateObject(const string& class_name,
+        CArgArray& arg_array, int step)
 {
-    TAutomationObjectRef new_object;
-    try {
+    switch (step) {
+    case kFirstStep:
         if (class_name == "ncsvc") {
             string service_name(arg_array.NextString(kEmptyStr));
             string client_name(arg_array.NextString(kEmptyStr));
-            new_object.Reset(
+            return (
                     new SNetCacheServiceAutomationObject(this,
                             service_name, client_name));
         } else if (class_name == "ncsrv") {
             string service_name(arg_array.NextString(kEmptyStr));
             string client_name(arg_array.NextString(kEmptyStr));
-            new_object.Reset(
+            return (
                     new SNetCacheServerAutomationObject(this,
                             service_name, client_name));
         } else if (class_name == "nssvc") {
             string service_name(arg_array.NextString(kEmptyStr));
             string queue_name(arg_array.NextString(kEmptyStr));
             string client_name(arg_array.NextString(kEmptyStr));
-            new_object.Reset(
+            return (
                     new SNetScheduleServiceAutomationObject(this,
                         service_name, queue_name, client_name));
         } else if (class_name == "nssrv") {
             string service_name(arg_array.NextString(kEmptyStr));
             string queue_name(arg_array.NextString(kEmptyStr));
             string client_name(arg_array.NextString(kEmptyStr));
-            new_object.Reset(
+            return (
                     new SNetScheduleServerAutomationObject(this,
                         service_name, queue_name, client_name));
         } else if (class_name == "wn") {
             string wn_address(arg_array.NextString());
             string client_name(arg_array.NextString(kEmptyStr));
-            new_object.Reset(
+            return (
                     new SWorkerNodeAutomationObject(this,
                             wn_address, client_name));
         } else if (class_name == "nstsvc") {
-            new_object.Reset(
+            return (
                     new SNetStorageServiceAutomationObject(this, arg_array));
         } else if (class_name == "nstsrv") {
-            new_object.Reset(
+            return (
                     new SNetStorageServerAutomationObject(this, arg_array));
         } else {
             NCBI_THROW_FMT(CAutomationException, eInvalidInput,
                     "Unknown class '" << class_name << "'");
+        }
+
+        break; // Not reached
+    }
+
+    _TROUBLE;
+    return nullptr;
+}
+
+TObjectID CAutomationProc::CreateObject(CArgArray& arg_array)
+{
+    string class_name(arg_array.NextString());
+    arg_array.UpdateLocation(class_name);
+
+    TAutomationObjectRef new_object;
+
+    try {
+        for (int step = kFirstStep; !new_object; ++step) {
+            new_object.Reset(CreateObject(class_name, arg_array, step));
         }
     }
     catch (CException& e) {
@@ -307,9 +328,7 @@ CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)
                             " method '" << method << "'");
         }
     } else if (command == "new") {
-        string class_name(arg_array.NextString());
-        arg_array.UpdateLocation(class_name);
-        reply.AppendInteger(CreateObject(class_name, arg_array));
+        reply.AppendInteger(CreateObject(arg_array));
     } else if (command == "del") {
         TAutomationObjectRef& object(ObjectIdToRef(
                 (TObjectID) arg_array.NextInteger()));
