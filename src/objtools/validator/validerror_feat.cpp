@@ -6459,12 +6459,18 @@ void CValidError_feat::ValidateOneFeatXrefPair(const CSeq_feat& feat, const CSeq
                 }
             }
         } else if (CSeqFeatData::ProhibitXref(feat.GetData().GetSubtype(), far_feat.GetData().GetSubtype())) {
+            string label1 = feat.GetData().GetKey(CSeqFeatData::eVocabulary_genbank);
+            string label2 = far_feat.GetData().GetKey(CSeqFeatData::eVocabulary_genbank);
             PostErr(eDiag_Error, eErr_SEQ_FEAT_SeqFeatXrefProblem,
-                "Cross-references are not between CDS and mRNA pair or between a gene and a CDS or mRNA",
+                "Cross-references are not between CDS and mRNA pair or between a gene and a CDS or mRNA ("
+                + label1 + "," + label2 + ")",
                 feat);
         } else if (!CSeqFeatData::AllowXref(feat.GetData().GetSubtype(), far_feat.GetData().GetSubtype())) {
+            string label1 = feat.GetData().GetKey(CSeqFeatData::eVocabulary_genbank);
+            string label2 = far_feat.GetData().GetKey(CSeqFeatData::eVocabulary_genbank);
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_SeqFeatXrefProblem,
-                "Cross-references are not between CDS and mRNA pair or between a gene and a CDS or mRNA",
+                "Cross-references are not between CDS and mRNA pair or between a gene and a CDS or mRNA ("
+                + label1 + "," + label2 + ")",
                 feat);
         }
     } else if (HasNonReciprocalXref(far_feat, feat.GetId(), feat.GetData().GetSubtype(), m_Imp.GetTSE_Handle())) {
@@ -6508,14 +6514,23 @@ void CValidError_feat::ValidateSeqFeatXref (const CSeqFeatXref& xref, const CSeq
             } else {
                 ITERATE(CTSE_Handle::TSeq_feat_Handles, ff, far_feats) {
                     ValidateOneFeatXrefPair(feat, *(ff->GetSeq_feat()), xref);
+                    if (xref.IsSetData()) {
+                        // Check that feature with ID matches data
+                        if (xref.GetData().Which() != ff->GetData().Which()) {
+                            PostErr(eDiag_Error, eErr_SEQ_FEAT_SeqFeatXrefProblem,
+                                "SeqFeatXref contains both id and data, data type conflicts with data on feature with id",
+                                feat);
+                        }
+                    }
                 }
             }
         } else {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_SeqFeatXrefFeatureMissing,
                 "Cross-referenced feature cannot be found",
                 feat);
-        }
-    } else if (xref.IsSetData() && xref.GetData().IsGene() && feat.GetData().IsGene()) {
+        }        
+    } 
+    if (xref.IsSetData() && xref.GetData().IsGene() && feat.GetData().IsGene()) {
         PostErr (eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryGeneXref,
                  "Gene feature has gene cross-reference",
                  feat);

@@ -14881,9 +14881,9 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SeqFeatXrefProblem)
 //    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "SeqFeatXrefNotReciprocal",
 //                                "CDS/mRNA unambiguous pair have erroneous cross-references"));
     expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "SeqFeatXrefProblem",
-                                "Cross-references are not between CDS and mRNA pair or between a gene and a CDS or mRNA"));
+                                "Cross-references are not between CDS and mRNA pair or between a gene and a CDS or mRNA (misc_feature,CDS)"));
     expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "SeqFeatXrefProblem",
-                                "Cross-references are not between CDS and mRNA pair or between a gene and a CDS or mRNA"));
+                                "Cross-references are not between CDS and mRNA pair or between a gene and a CDS or mRNA (CDS,misc_feature)"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
