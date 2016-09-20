@@ -57,9 +57,6 @@ struct SNetCacheServiceAutomationObject : public SNetServiceAutomationObject
         CNetCacheAPI::TInstance m_NetCacheAPI;
     };
 
-    SNetCacheServiceAutomationObject(CAutomationProc* automation_proc,
-            const string& service_name, const string& client_name);
-
     virtual const string& GetType() const { return kName; }
 
     virtual const void* GetImplPtr() const;
@@ -69,12 +66,14 @@ struct SNetCacheServiceAutomationObject : public SNetServiceAutomationObject
 
     static NAutomation::CCommand CallCommand();
     static NAutomation::TCommands CallCommands();
+    static SNetCacheServiceAutomationObject* Create(CArgArray& arg_array,
+            const string& class_name, CAutomationProc* automation_proc);
 
 protected:
-    CNetCacheAPI m_NetCacheAPI;
-
     SNetCacheServiceAutomationObject(CAutomationProc* automation_proc,
-            const CNetCacheAPI& nc_server);
+            CNetCacheAPI nc_api, CNetService::EServiceType type);
+
+    CNetCacheAPI m_NetCacheAPI;
 
     friend struct SNetCacheBlobAutomationObject;
 
@@ -114,15 +113,15 @@ struct SNetCacheServerAutomationObject : public SNetCacheServiceAutomationObject
     SNetCacheServerAutomationObject(CAutomationProc* automation_proc,
             CNetCacheAPI nc_api, CNetServer::TInstance server);
 
-    SNetCacheServerAutomationObject(CAutomationProc* automation_proc,
-        const string& service_name, const string& client_name);
-
     virtual const string& GetType() const { return kName; }
 
     virtual const void* GetImplPtr() const;
 
     virtual bool Call(const string& method,
             CArgArray& arg_array, CJsonNode& reply);
+
+    static SNetCacheServerAutomationObject* Create(CArgArray& arg_array,
+            const string& class_name, CAutomationProc* automation_proc);
 
 private:
     CNetServer m_NetServer;

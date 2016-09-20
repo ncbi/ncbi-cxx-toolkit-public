@@ -151,49 +151,53 @@ const void* SNetCacheServiceAutomationObject::GetImplPtr() const
 
 SNetCacheServiceAutomationObject::SNetCacheServiceAutomationObject(
         CAutomationProc* automation_proc,
-        const string& service_name, const string& client_name) :
-    TBase(automation_proc, CNetService::eLoadBalancedService),
-    m_NetCacheAPI(service_name, client_name)
+        CNetCacheAPI nc_api, CNetService::EServiceType type) :
+    TBase(automation_proc, type),
+    m_NetCacheAPI(nc_api)
 {
     m_Service = m_NetCacheAPI.GetService();
     m_NetCacheAPI.SetEventHandler(
             new CEventHandler(automation_proc, m_NetCacheAPI));
 }
 
-SNetCacheServiceAutomationObject::SNetCacheServiceAutomationObject(
-        CAutomationProc* automation_proc,
-        const CNetCacheAPI& nc_server) :
-    TBase(automation_proc, CNetService::eSingleServerService),
-    m_NetCacheAPI(nc_server)
-{
-    m_Service = m_NetCacheAPI.GetService();
-}
-
 SNetCacheServerAutomationObject::SNetCacheServerAutomationObject(
         CAutomationProc* automation_proc,
         CNetCacheAPI nc_api, CNetServer::TInstance server) :
-    TBase(automation_proc, nc_api.GetServer(server)),
+    TBase(automation_proc, nc_api.GetServer(server),
+            CNetService::eSingleServerService),
     m_NetServer(server)
-{
-}
-
-SNetCacheServerAutomationObject::SNetCacheServerAutomationObject(
-        CAutomationProc* automation_proc,
-        const string& service_name,
-        const string& client_name) :
-    SNetCacheServiceAutomationObject(automation_proc,
-            CNetCacheAPI(service_name, client_name))
 {
     if (m_Service.IsLoadBalanced()) {
         NCBI_THROW(CAutomationException, eCommandProcessingError,
                 "NetCacheServer constructor: "
                 "'server_address' must be a host:port combination");
     }
+}
 
-    m_NetServer = m_Service.Iterate().GetServer();
+SNetCacheServiceAutomationObject* SNetCacheServiceAutomationObject::Create(
+        CArgArray& arg_array, const string& class_name,
+        CAutomationProc* automation_proc)
+{
+    if (class_name != kName) return nullptr;
 
-    m_NetCacheAPI.SetEventHandler(
-            new CEventHandler(automation_proc, m_NetCacheAPI));
+    const string service_name(arg_array.NextString(kEmptyStr));
+    const string client_name(arg_array.NextString(kEmptyStr));
+    CNetCacheAPI nc_api(service_name, client_name);
+    return new SNetCacheServiceAutomationObject(automation_proc, nc_api,
+            CNetService::eLoadBalancedService);
+}
+
+SNetCacheServerAutomationObject* SNetCacheServerAutomationObject::Create(
+        CArgArray& arg_array, const string& class_name,
+        CAutomationProc* automation_proc)
+{
+    if (class_name != kName) return nullptr;
+
+    const string service_name(arg_array.NextString(kEmptyStr));
+    const string client_name(arg_array.NextString(kEmptyStr));
+    CNetCacheAPI nc_api(service_name, client_name);
+    CNetServer server = nc_api.GetService().Iterate().GetServer();
+    return new SNetCacheServerAutomationObject(automation_proc, nc_api, server);
 }
 
 const void* SNetCacheServerAutomationObject::GetImplPtr() const
