@@ -44,6 +44,23 @@ const void* SNetCacheBlobAutomationObject::GetImplPtr() const
     return this;
 }
 
+NAutomation::TCommands SNetCacheBlobAutomationObject::CallCommands()
+{
+    NAutomation::TCommands cmds =
+    {
+        { "write", {
+                { "value", CJsonNode::eString, },
+            }},
+        { "read", {
+                { "buf_size", -1, },
+            }},
+        { "close", },
+        { "get_key", },
+    };
+
+    return cmds;
+}
+
 bool SNetCacheBlobAutomationObject::Call(const string& method,
         CArgArray& arg_array, CJsonNode& reply)
 {
@@ -152,6 +169,22 @@ TAutomationObjectRef CAutomationProc::ReturnNetCacheServerObject(
         AddObject(object, server);
     }
     return object;
+}
+
+NAutomation::TCommands SNetCacheServiceAutomationObject::CallCommands()
+{
+    NAutomation::TCommands cmds =
+    {
+        { "get_blob", {
+                { "blob_key", "", },
+            }},
+        { "get_servers", },
+    };
+
+    NAutomation::TCommands base_cmds = TBase::CallCommands();
+    cmds.insert(cmds.end(), base_cmds.begin(), base_cmds.end());
+
+    return cmds;
 }
 
 bool SNetCacheServiceAutomationObject::Call(const string& method,
