@@ -104,7 +104,8 @@ CNcbiApplication* CNcbiApplication::Instance(void)
 
 CNcbiApplication::CNcbiApplication(const SBuildInfo& build_info)
     : m_ConfigLoaded(false),
-      m_LogFile(0)
+      m_LogFile(0),
+      m_LogOptions(0)
 {
     // Initialize UID and start timer
     GetDiagContext().GetUID();
@@ -331,189 +332,179 @@ void CNcbiApplication::x_TryInit(EAppDiagStream diag,
     }
 }
 
-
-// Logging of environment variables: space separated list of names which
-// should be logged after each request start.
-NCBI_PARAM_DECL(string, Log, LogAppEnvironment);
-NCBI_PARAM_DEF_EX(string, Log, LogAppEnvironment, kEmptyStr,
-                  eParam_NoThread,
-                  DIAG_LOG_APP_ENVIRONMENT);
-typedef NCBI_PARAM_TYPE(Log, LogAppEnvironment) TLogAppEnvironment;
-
-
-// Logging of registry values: space separated list of 'section:name' strings.
-NCBI_PARAM_DECL(string, Log, LogAppRegistry);
-NCBI_PARAM_DEF_EX(string, Log, LogAppRegistry, kEmptyStr,
-                  eParam_NoThread,
-                  DIAG_LOG_APP_REGISTRY);
-typedef NCBI_PARAM_TYPE(Log, LogAppRegistry) TLogAppRegistry;
+#define NCBI_LOG_PARAM(type,Name,NAME)                                         \
+/* Logging of environment variables: space separated list of names which       \
+   should be logged after each request start.                                */\
+NCBI_PARAM_DECL  (type, Log, LogApp ## Name);                                  \
+NCBI_PARAM_DEF_EX(type, Log, LogApp ## Name, false,                            \
+                  eParam_NoThread, DIAG_LOG_APP_ ## NAME);                     \
+typedef NCBI_PARAM_TYPE(Log, LogApp ## Name) TLogApp ## Name;
 
 
-// Logging of registry values: space separated list of 'section:name' strings.
-NCBI_PARAM_DECL(string, Log, LogAppArguments);
-NCBI_PARAM_DEF_EX(string, Log, LogAppArguments, kEmptyStr,
-                  eParam_NoThread,
-                  DIAG_LOG_APP_ARGUMENTS);
-typedef NCBI_PARAM_TYPE(Log, LogAppArguments) TLogAppArguments;
+NCBI_LOG_PARAM(bool, Environment,        ENVIRONMENT)
+NCBI_LOG_PARAM(bool, EnvironmentOnStart, ENVIRONMENT_ON_START)
+NCBI_LOG_PARAM(bool, EnvironmentOnStop,  ENVIRONMENT_ON_STOP)
+NCBI_LOG_PARAM(bool, Registry,           REGISTRY)
+NCBI_LOG_PARAM(bool, RegistryOnStart,    REGISTRY_ON_START)
+NCBI_LOG_PARAM(bool, RegistryOnStop,     REGISTRY_ON_STOP)
+NCBI_LOG_PARAM(bool, Arguments,          ARGUMENTS)
+NCBI_LOG_PARAM(bool, Path,               PATH)
+NCBI_LOG_PARAM(bool, RunContext,         RUN_CONTEXT)
 
 
-// Logging of registry values: space separated list of 'section:name' strings.
-NCBI_PARAM_DECL(string, Log, LogAppPath);
-NCBI_PARAM_DEF_EX(string, Log, LogAppPath, kEmptyStr,
-                  eParam_NoThread,
-                  DIAG_LOG_APP_PATH);
-typedef NCBI_PARAM_TYPE(Log, LogAppPath) TLogAppPath;
+enum ELogOptionsEvent {
+    eStartEvent = 0x01, ///< right before AppMain()
+    eStopEvent  = 0x02,  ///< right after AppMain()
+    eOtherEvent = 0x03 ///< general case
+};
 
 
-// Logging of registry values: space separated list of 'section:name' strings.
-NCBI_PARAM_DECL(string, Log, LogAppRunContext);
-NCBI_PARAM_DEF_EX(string, Log, LogAppRunContext, kEmptyStr,
-                  eParam_NoThread,
-                  DIAG_LOG_APP_RUN_CONTEXT);
-typedef NCBI_PARAM_TYPE(Log, LogAppRunContext) TLogAppRunContext;
+/// Flags to adjust standard I/O streams' behavior.
+enum ELogOptions {
+    fLogAppEnvironmentStart = 0x01, ///< log app environment on app start
+    fLogAppEnvironmentStop  = 0x02, ///< log app environment on app stop
+    fLogAppEnvironmentBoth  = 0x03, ///< log app environment on start and stop
+    fLogAppRegistryStart    = 0x04, ///< log app registry on app start
+    fLogAppRegistryStop     = 0x08, ///< log app registry on app stop
+    fLogAppRegistryBoth     = 0x0c, ///< log app registry on app start and stop
+    fLogAppArguments        = 0x10, ///< log app arguments
+    fLogAppPath             = 0x20, ///< log app executable path
+};
 
 
-void CNcbiApplication::x_LogOptions(ELogOptionsEvent event)
+void CNcbiApplication::x_ReadLogOptions()
 {
-    static CSafeStatic<TLogAppRunContext> s_LogAppRunContext;
-    static CSafeStatic<TLogAppEnvironment> s_LogAppEnvironment;
-    static CSafeStatic<TLogAppRegistry>    s_LogAppRegistry;
-    static CSafeStatic<TLogAppArguments>   s_LogAppArguments;
-    static CSafeStatic<TLogAppPath>        s_LogAppPath;
+    TLogAppRegistry           logAppRegistry;
+    TLogAppRegistryOnStart    logAppRegistryOnStart;
+    TLogAppRegistryOnStop     logAppRegistryOnStop;
+    TLogAppEnvironment        logAppEnvironment;
+    TLogAppEnvironmentOnStart logAppEnvironmentOnStart;
+    TLogAppEnvironmentOnStop  logAppEnvironmentOnStop;
+    TLogAppArguments          logAppArguments;
+    TLogAppPath               logAppPath;
+    TLogAppRunContext         logAppRunContext;
 
-    // If "Run Context" is set, all other options are made equal to it
-    string log_args = s_LogAppRunContext->Get();
-    if (!log_args.empty()) {
-        s_LogAppEnvironment->Set(s_LogAppRunContext->Get());
-        s_LogAppArguments->Set(s_LogAppRunContext->Get());
-        s_LogAppRegistry->Set(s_LogAppRunContext->Get());
-        s_LogAppPath->Set(s_LogAppRunContext->Get());
+    /* Log all */
+    if (logAppRunContext.Get()) {
+        m_LogOptions = 0x7f; // all on
+        return;
     }
 
-    // Print environment values.
-    log_args = s_LogAppEnvironment->Get();
-    if ( !log_args.empty()) {
-        bool log_run = (NStr::CompareNocase(log_args, "true") == 0) || 
-                       (NStr::CompareNocase(log_args, "1") == 0) || 
-                       (NStr::CompareNocase(log_args, "yes") == 0) ||
-                       (NStr::CompareNocase(log_args, "on") == 0) ||
-                       (log_args == "on_stop"  && event == eStopEvent) ||
-                       (log_args == "on_start" && event == eStartEvent) ||
-                       (log_args == "on_start_and_stop" && 
-                                (event == eStartEvent || event == eStopEvent));
-        if (log_run) {
-            CDiagContext_Extra extra = GetDiagContext().Extra();
-            extra.Print("LogAppEnvironment", "true");
-            {{
-                    // The guard must be released before flushing the extra -
-                    // otherwise there may be a deadlock when accessing CParam-s
-                    // from other threads.
-                    CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-                    CNcbiApplication* app = CNcbiApplication::Instance();
-                    if (app) {
-                        list<string> env_keys;
-                        const CNcbiEnvironment& env = app->GetEnvironment();
-                        env.Enumerate(env_keys);
-                        ITERATE(list<string>, it, env_keys) {
-                            const string& val = env.Get(*it);
-                            extra.Print(*it, val);
-                        }
-                    }
-                }}
-            extra.Flush();
-        }
+    /* Log registry */
+    if (logAppRegistry.Get()) {
+        m_LogOptions |= fLogAppRegistryBoth;
+    } else {
+        m_LogOptions |= logAppRegistryOnStart.Get() ? fLogAppRegistryStart : 0;
+        m_LogOptions |= logAppRegistryOnStop.Get()  ? fLogAppRegistryStop : 0;
+    }
+    
+    /* Log environment */
+    if (logAppEnvironment.Get()) {
+        m_LogOptions |= fLogAppEnvironmentBoth;
+    } else {
+        m_LogOptions |=
+            logAppEnvironmentOnStart.Get() ? fLogAppEnvironmentStart : 0;
+        m_LogOptions |=
+            logAppEnvironmentOnStop.Get()  ? fLogAppEnvironmentStop : 0;
+    }
+    /* Log arguments */
+    m_LogOptions |= logAppArguments.Get() ? fLogAppArguments        :0;
+
+    /* Log path */
+    m_LogOptions |= logAppPath.Get() ? fLogAppPath             :0;
+}
+
+
+void CNcbiApplication::x_LogOptions(short int /* ELogOptionsEvent */ event)
+{
+    // Print environment values
+    if (m_LogOptions & fLogAppEnvironmentStart  &&  event & eStartEvent
+        ||
+        m_LogOptions & fLogAppEnvironmentStop  &&  event & eStopEvent)
+    {
+        CDiagContext_Extra extra = GetDiagContext().Extra();
+        extra.Print("LogAppEnvironment", "true");
+        {{
+            // The guard must be released before flushing the extra -
+            // otherwise there may be a deadlock when accessing CParam-s
+            // from other threads.
+            CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
+            CNcbiApplication* app = CNcbiApplication::Instance();
+            if (app) {
+                list<string> env_keys;
+                const CNcbiEnvironment& env = app->GetEnvironment();
+                env.Enumerate(env_keys);
+                ITERATE(list<string>, it, env_keys) {
+                    const string& val = env.Get(*it);
+                    extra.Print(*it, val);
+                }
+            }
+        }}
+        extra.Flush();
     }
 
     // Print registry values
-    log_args = s_LogAppRegistry->Get();
-    if (!log_args.empty()) {
-        bool log_run = (NStr::CompareNocase(log_args, "true") == 0) || 
-                       (NStr::CompareNocase(log_args, "1") == 0) || 
-                       (NStr::CompareNocase(log_args, "yes") == 0) ||
-                       (NStr::CompareNocase(log_args, "on") == 0) ||
-                       (log_args == "on_stop"  && event == eStopEvent) ||
-                       (log_args == "on_start" && event == eStartEvent) ||
-                       (log_args == "on_start_and_stop" && 
-                                (event == eStartEvent || event == eStopEvent));
-        if (log_run) {
-            CDiagContext_Extra extra = GetDiagContext().Extra();
-            extra.Print("LogAppRegistry", "true");
-            {{
-                    // The guard must be released before flushing the extra -
-                    // see above.
-                    CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-                    CNcbiApplication* app = CNcbiApplication::Instance();
-                    if (app) {
-                        list<string> reg_sections;
-                        const CNcbiRegistry& reg = app->GetConfig();
-                        reg.EnumerateSections(&reg_sections);
-                        ITERATE(list<string>, it, reg_sections) {
-                            string section, name;
-                            list<string> section_entries;
-                            reg.EnumerateEntries(*it, &section_entries);
-                            ITERATE(list<string>, it_entry, section_entries) {
-                                const string& val = reg.Get(*it, *it_entry);
-                                string path = "[" + *it + "]" + *it_entry;
-                                extra.Print(path, val);
-                            }
-                        }
+    if (m_LogOptions & fLogAppRegistryStart  &&  event & eStartEvent
+        ||
+        m_LogOptions & fLogAppRegistryStop  &&  event & eStopEvent)
+    {
+        CDiagContext_Extra extra = GetDiagContext().Extra();
+        extra.Print("LogAppRegistry", "true");
+        {{
+            // The guard must be released before flushing the extra -
+            // see above.
+            CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
+            CNcbiApplication* app = CNcbiApplication::Instance();
+            if (app) {
+                list<string> reg_sections;
+                const CNcbiRegistry& reg = app->GetConfig();
+                reg.EnumerateSections(&reg_sections);
+                ITERATE(list<string>, it, reg_sections) {
+                    string section, name;
+                    list<string> section_entries;
+                    reg.EnumerateEntries(*it, &section_entries);
+                    ITERATE(list<string>, it_entry, section_entries) {
+                        const string& val = reg.Get(*it, *it_entry);
+                        string path = "[" + *it + "]" + *it_entry;
+                        extra.Print(path, val);
                     }
-                }}
-            extra.Flush();
-        }
+                }
+            }
+        }}
+        extra.Flush();
     }
-    log_args = s_LogAppArguments->Get();
-    if (!log_args.empty()) {
-        bool log_run = (NStr::CompareNocase(log_args, "true") == 0) || 
-                       (NStr::CompareNocase(log_args, "1") == 0) || 
-                       (NStr::CompareNocase(log_args, "yes") == 0) ||
-                       (NStr::CompareNocase(log_args, "on") == 0) ||
-                       (log_args == "on_stop"  && event == eStopEvent) ||
-                       (log_args == "on_start" && event == eStartEvent) ||
-                       (log_args == "on_start_and_stop" && 
-                                (event == eStartEvent || event == eStopEvent));
-        if (log_run) {
-            CDiagContext_Extra extra = GetDiagContext().Extra();
-            extra.Print("LogAppArguments", "true");
-            {{
-                    // The guard must be released before flushing the extra -
-                    // see above.
-                    CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-                    CNcbiApplication* app = CNcbiApplication::Instance();
-                    if (app) {
-                        const CArgs& args = app->GetArgs();
-                        string args_str;
-                        extra.Print("Arguments", args.Print(args_str));
-                    }
-                }}
-            extra.Flush();
-        }
+    
+    if (m_LogOptions & fLogAppArguments) {
+        CDiagContext_Extra extra = GetDiagContext().Extra();
+        extra.Print("LogAppArguments", "true");
+        {{
+            // The guard must be released before flushing the extra -
+            // see above.
+            CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
+            CNcbiApplication* app = CNcbiApplication::Instance();
+            if (app) {
+                const CArgs& args = app->GetArgs();
+                string args_str;
+                extra.Print("Arguments", args.Print(args_str));
+            }
+        }}
+        extra.Flush();
     }
-    log_args = s_LogAppPath->Get();
-    if (!log_args.empty()) {
-        bool log_run = (NStr::CompareNocase(log_args, "true") == 0) || 
-                       (NStr::CompareNocase(log_args, "1") == 0) || 
-                       (NStr::CompareNocase(log_args, "yes") == 0) ||
-                       (NStr::CompareNocase(log_args, "on") == 0) ||
-                       (log_args == "on_stop"  && event == eStopEvent) ||
-                       (log_args == "on_start" && event == eStartEvent) ||
-                       (log_args == "on_start_and_stop" && 
-                                (event == eStartEvent || event == eStopEvent));
-        if (log_run) {
-            CDiagContext_Extra extra = GetDiagContext().Extra();
-            extra.Print("LogAppPath", "true");
-            {{
-                    // The guard must be released before flushing the extra -
-                    // see above.
-                    CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-                    CNcbiApplication* app = CNcbiApplication::Instance();
-                    if (app) {
-                        const string& path = app->GetProgramExecutablePath();
-                        extra.Print("Path", path);
-                    }
-                }}
-            extra.Flush();
-        }
+
+    if (m_LogOptions & fLogAppPath) {
+        CDiagContext_Extra extra = GetDiagContext().Extra();
+        extra.Print("LogAppPath", "true");
+        {{
+            // The guard must be released before flushing the extra -
+            // see above.
+            CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
+            CNcbiApplication* app = CNcbiApplication::Instance();
+            if (app) {
+                const string& path = app->GetProgramExecutablePath();
+                extra.Print("Path", path);
+            }
+        }}
+        extra.Flush();
     }
 }
 
@@ -567,6 +558,7 @@ void CNcbiApplication::x_TryMain(EAppDiagStream diag,
         }
         *exit_code = 0;
     }
+    x_ReadLogOptions();
     x_LogOptions(eStartEvent);
     // Run application
     if (*exit_code == 1) {

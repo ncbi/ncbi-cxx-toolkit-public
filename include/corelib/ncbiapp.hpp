@@ -559,15 +559,17 @@ private:
     /// @param reg
     ///   Registry to read from. If NULL, use the current registry setting.
     void x_HonorStandardSettings(IRegistry* reg = 0);
+    
+    /// Store switches that turn on/off logging of environment, registry, 
+    /// arguments and path
+    int m_LogOptions;
 
-    enum ELogOptionsEvent {
-        eStartEvent, ///< right before AppMain()
-        eStopEvent,  ///< right after AppMain()
-        eOtherEvent  ///< general case
-    };
+    /// Read switches that are stored in m_LogOptions from registry and 
+    /// environment
+    void x_ReadLogOptions();
 
-    /// Log environment, registry, command arguments, 
-    void x_LogOptions(ELogOptionsEvent = eOtherEvent);
+    /// Log environment, registry, command arguments, path
+    void x_LogOptions(short int);
     
     /// Setup C++ standard I/O streams' behaviour.
     ///
