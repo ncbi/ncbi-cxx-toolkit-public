@@ -206,8 +206,12 @@ void CCleanupApp::Init(void)
 
     // normal cleanup options (will replace -nocleanup and -basic)
     {{
-        arg_desc->AddOptionalKey("K", "Cleanup", "Systemic Cleaning Options",
-            CArgDescriptions::eString);
+        arg_desc->AddOptionalKey("K", "Cleanup", "Systemic Cleaning Options\n"
+                                 "\tb Basic\n"
+                                 "\ts Extended\n"
+                                 "\tn Normalize Descriptor Order\n"
+                                 "\tu Remove Cleanup User-object\n",
+                                 CArgDescriptions::eString);
     }}
 
     // extra cleanup options
@@ -277,7 +281,7 @@ void CCleanupApp::x_KOptionsValid(const string& opt)
     string::const_iterator s = opt.begin();
     while (s != opt.end()) {
         if (!isspace(*s)) {
-            if (*s != 'b' && *s != 's' && *s != 'u') {
+            if (*s != 'b' && *s != 's' && *s != 'u' && *s != 'n') {
                 unrecognized += *s;
             }
         }
@@ -1045,13 +1049,16 @@ bool CCleanupApp::HandleSeqEntry(CSeq_entry_Handle entry)
         options = CCleanup::eClean_NoNcbiUserObjects;
     }
 
-    any_changes |= x_BasicAndExtended(entry, label, do_basic, do_extended, options);
+    any_changes |= x_BasicAndExtended(entry, label, do_basic, do_extended, options);    
 
     if (args["F"]) {
         any_changes |= x_ProcessFeatureOptions(args["F"].AsString(), entry);
     }
     if (args["X"]) {
         any_changes |= x_ProcessXOptions(args["X"].AsString(), entry);
+    }
+    if (args["K"] && NStr::Find(args["K"].AsString(), "n") != string::npos && !do_extended) {
+        any_changes |= CCleanup::NormalizeDescriptorOrder(entry);
     }
 
     return true;
