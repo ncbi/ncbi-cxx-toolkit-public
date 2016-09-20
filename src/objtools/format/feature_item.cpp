@@ -3506,6 +3506,7 @@ void CFeatureItem::x_ImportQuals(
         DO_IMPORT(product),
         DO_IMPORT(pseudogene),
         DO_IMPORT(rad_map),
+        DO_IMPORT(recombination_class),
         DO_IMPORT(regulatory_class),
         DO_IMPORT(replace),
         DO_IMPORT(ribosomal_slippage),
@@ -3878,6 +3879,7 @@ void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
 #define DO_QUAL(x) x_FormatQual(eFQ_##x, #x, qvec)
     DO_QUAL(ncRNA_class);
     DO_QUAL(regulatory_class);
+    DO_QUAL(recombination_class);
 
     DO_QUAL(partial);
     DO_QUAL(gene);
@@ -4615,6 +4617,7 @@ static const TQualPair sc_GbToFeatQualMap[] = {
     { eFQ_pseudogene, CSeqFeatData::eQual_pseudogene },
     { eFQ_region, CSeqFeatData::eQual_note },
     { eFQ_region_name, CSeqFeatData::eQual_region_name },
+    { eFQ_recombination_class, CSeqFeatData::eQual_recombination_class },
     { eFQ_regulatory_class, CSeqFeatData::eQual_regulatory_class },
     { eFQ_replace, CSeqFeatData::eQual_replace },
     { eFQ_ribosomal_slippage, CSeqFeatData::eQual_ribosomal_slippage },

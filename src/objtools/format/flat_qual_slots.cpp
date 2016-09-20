@@ -142,6 +142,7 @@ GetStringOfFeatQual(EFeatureQualifier eFeatureQualifier)
         TYPICAL_FQ(rad_map),
         TYPICAL_FQ(region),
         TYPICAL_FQ(region_name),
+        TYPICAL_FQ(recombination_class),
         TYPICAL_FQ(regulatory_class),
         TYPICAL_FQ(replace),
         TYPICAL_FQ(ribosomal_slippage),
