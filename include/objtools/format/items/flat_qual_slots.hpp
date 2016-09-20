@@ -135,6 +135,7 @@ enum EFeatureQualifier {
     eFQ_rad_map,
     eFQ_region,
     eFQ_region_name,
+    eFQ_recombination_class,
     eFQ_regulatory_class,
     eFQ_replace,
     eFQ_ribosomal_slippage,
