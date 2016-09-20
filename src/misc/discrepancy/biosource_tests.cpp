@@ -2400,7 +2400,7 @@ DISCREPANCY_CASE(DUP_SRC_QUAL, CBioSource, eDisc | eOncaller | eSmart, "Each qua
     }
     for (map<string, size_t>::const_iterator it = Map.begin(); it != Map.end(); it++) {
         if (it->second) {
-            if (it->second == 1 && it->first == collected_by && collected_by == collected_by) {
+            if (it->second == 1 && it->first == collected_by && collected_by == identified_by) {
                 continue; // there is no error if collected_by equals to identified_by
             }
             string s = "[n] biosource[s] [has] repeating qualifier value \'";
