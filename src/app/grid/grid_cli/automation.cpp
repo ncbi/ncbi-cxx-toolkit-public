@@ -239,12 +239,12 @@ NAutomation::TCommands CAutomationProc::CallCommands()
     return NAutomation::TCommands
     {
         SNetCacheBlobAutomationObject::CallCommand(),
-        SNetCacheServerAutomationObject::CallCommand(),
         SNetCacheServiceAutomationObject::CallCommand(),
-        SNetScheduleServerAutomationObject::CallCommand(),
+        SNetCacheServerAutomationObject::CallCommand(),
         SNetScheduleServiceAutomationObject::CallCommand(),
-        SNetStorageServerAutomationObject::CallCommand(),
+        SNetScheduleServerAutomationObject::CallCommand(),
         SNetStorageServiceAutomationObject::CallCommand(),
+        SNetStorageServerAutomationObject::CallCommand(),
         SWorkerNodeAutomationObject::CallCommand(),
     };
 }
