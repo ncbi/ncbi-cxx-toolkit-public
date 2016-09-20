@@ -87,6 +87,15 @@ SNetStorageServiceAutomationObject::SNetStorageServiceAutomationObject(
             new CEventHandler(automation_proc, m_NetStorageAdmin));
 }
 
+SNetStorageServiceAutomationObject::SNetStorageServiceAutomationObject(
+        CAutomationProc* automation_proc,
+        const CNetStorageAdmin& nst_server) :
+    TBase(automation_proc, CNetService::eSingleServerService),
+    m_NetStorageAdmin(nst_server)
+{
+    m_Service = m_NetStorageAdmin.GetService();
+}
+
 void SNetStorageServiceAutomationObject::CEventHandler::OnWarning(
         const string& warn_msg, CNetServer server)
 {
@@ -97,6 +106,14 @@ void SNetStorageServiceAutomationObject::CEventHandler::OnWarning(
 const void* SNetStorageServiceAutomationObject::GetImplPtr() const
 {
     return m_NetStorageAdmin;
+}
+
+SNetStorageServerAutomationObject::SNetStorageServerAutomationObject(
+        CAutomationProc* automation_proc,
+        CNetStorageAdmin nst_api, CNetServer::TInstance server) :
+    TBase(automation_proc, nst_api.GetServer(server)),
+    m_NetServer(server)
+{
 }
 
 SNetStorageServerAutomationObject::SNetStorageServerAutomationObject(

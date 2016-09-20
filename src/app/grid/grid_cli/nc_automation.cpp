@@ -39,6 +39,15 @@ const string SNetCacheBlobAutomationObject::kName = "ncblob";
 const string SNetCacheServiceAutomationObject::kName = "ncsvc";
 const string SNetCacheServerAutomationObject::kName = "ncsrv";
 
+SNetCacheBlobAutomationObject::SNetCacheBlobAutomationObject(
+        SNetCacheServiceAutomationObject* nc_object,
+        const string& blob_key) :
+    CAutomationObject(nc_object->m_AutomationProc),
+    m_NetCacheObject(nc_object),
+    m_BlobKey(blob_key)
+{
+}
+
 const void* SNetCacheBlobAutomationObject::GetImplPtr() const
 {
     return this;
@@ -138,6 +147,34 @@ void SNetCacheServiceAutomationObject::CEventHandler::OnWarning(
 const void* SNetCacheServiceAutomationObject::GetImplPtr() const
 {
     return m_NetCacheAPI;
+}
+
+SNetCacheServiceAutomationObject::SNetCacheServiceAutomationObject(
+        CAutomationProc* automation_proc,
+        const string& service_name, const string& client_name) :
+    TBase(automation_proc, CNetService::eLoadBalancedService),
+    m_NetCacheAPI(service_name, client_name)
+{
+    m_Service = m_NetCacheAPI.GetService();
+    m_NetCacheAPI.SetEventHandler(
+            new CEventHandler(automation_proc, m_NetCacheAPI));
+}
+
+SNetCacheServiceAutomationObject::SNetCacheServiceAutomationObject(
+        CAutomationProc* automation_proc,
+        const CNetCacheAPI& nc_server) :
+    TBase(automation_proc, CNetService::eSingleServerService),
+    m_NetCacheAPI(nc_server)
+{
+    m_Service = m_NetCacheAPI.GetService();
+}
+
+SNetCacheServerAutomationObject::SNetCacheServerAutomationObject(
+        CAutomationProc* automation_proc,
+        CNetCacheAPI nc_api, CNetServer::TInstance server) :
+    TBase(automation_proc, nc_api.GetServer(server)),
+    m_NetServer(server)
+{
 }
 
 SNetCacheServerAutomationObject::SNetCacheServerAutomationObject(

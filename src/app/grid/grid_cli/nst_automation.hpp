@@ -74,12 +74,7 @@ protected:
     CNetStorageAdmin m_NetStorageAdmin;
 
     SNetStorageServiceAutomationObject(CAutomationProc* automation_proc,
-            const CNetStorageAdmin& nst_server) :
-        TBase(automation_proc, CNetService::eSingleServerService),
-        m_NetStorageAdmin(nst_server)
-    {
-        m_Service = m_NetStorageAdmin.GetService();
-    }
+            const CNetStorageAdmin& nst_server);
 
 private:
     static const string kName;
@@ -90,11 +85,7 @@ struct SNetStorageServerAutomationObject : public SNetStorageServiceAutomationOb
     typedef SNetStorageServiceAutomationObject TBase;
 
     SNetStorageServerAutomationObject(CAutomationProc* automation_proc,
-            CNetStorageAdmin nst_api, CNetServer::TInstance server) :
-        TBase(automation_proc, nst_api.GetServer(server)),
-        m_NetServer(server)
-    {
-    }
+            CNetStorageAdmin nst_api, CNetServer::TInstance server);
 
     SNetStorageServerAutomationObject(CAutomationProc* automation_proc,
             CArgArray& arg_array);

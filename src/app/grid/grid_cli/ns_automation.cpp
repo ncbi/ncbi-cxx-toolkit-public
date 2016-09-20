@@ -43,6 +43,36 @@ const void* SNetScheduleServiceAutomationObject::GetImplPtr() const
     return m_NetScheduleAPI;
 }
 
+SNetScheduleServiceAutomationObject::SNetScheduleServiceAutomationObject(
+        CAutomationProc* automation_proc,
+        const string& service_name, const string& queue_name,
+        const string& client_name) :
+    TBase(automation_proc, CNetService::eLoadBalancedService),
+    m_NetScheduleAPI(CNetScheduleAPIExt::CreateNoCfgLoad(
+                service_name, client_name, queue_name))
+{
+    m_Service = m_NetScheduleAPI.GetService();
+    m_NetScheduleAPI.SetEventHandler(
+            new CEventHandler(automation_proc, m_NetScheduleAPI));
+}
+
+SNetScheduleServiceAutomationObject::SNetScheduleServiceAutomationObject(
+        CAutomationProc* automation_proc,
+        const CNetScheduleAPI::TInstance ns_server) :
+    TBase(automation_proc, CNetService::eSingleServerService),
+    m_NetScheduleAPI(ns_server)
+{
+    m_Service = m_NetScheduleAPI.GetService();
+}
+
+SNetScheduleServerAutomationObject::SNetScheduleServerAutomationObject(
+        CAutomationProc* automation_proc,
+        CNetScheduleAPIExt ns_api, CNetServer::TInstance server) :
+    TBase(automation_proc, ns_api.GetServer(server)),
+    m_NetServer(server)
+{
+}
+
 SNetScheduleServerAutomationObject::SNetScheduleServerAutomationObject(
         CAutomationProc* automation_proc,
         const string& service_name,

@@ -58,14 +58,7 @@ struct SNetCacheServiceAutomationObject : public SNetServiceAutomationObject
     };
 
     SNetCacheServiceAutomationObject(CAutomationProc* automation_proc,
-            const string& service_name, const string& client_name) :
-        TBase(automation_proc, CNetService::eLoadBalancedService),
-        m_NetCacheAPI(service_name, client_name)
-    {
-        m_Service = m_NetCacheAPI.GetService();
-        m_NetCacheAPI.SetEventHandler(
-                new CEventHandler(automation_proc, m_NetCacheAPI));
-    }
+            const string& service_name, const string& client_name);
 
     virtual const string& GetType() const { return kName; }
 
@@ -81,12 +74,7 @@ protected:
     CNetCacheAPI m_NetCacheAPI;
 
     SNetCacheServiceAutomationObject(CAutomationProc* automation_proc,
-            const CNetCacheAPI& nc_server) :
-        TBase(automation_proc, CNetService::eSingleServerService),
-        m_NetCacheAPI(nc_server)
-    {
-        m_Service = m_NetCacheAPI.GetService();
-    }
+            const CNetCacheAPI& nc_server);
 
     friend struct SNetCacheBlobAutomationObject;
 
@@ -97,12 +85,7 @@ private:
 struct SNetCacheBlobAutomationObject : public CAutomationObject
 {
     SNetCacheBlobAutomationObject(SNetCacheServiceAutomationObject* nc_object,
-            const string& blob_key) :
-        CAutomationObject(nc_object->m_AutomationProc),
-        m_NetCacheObject(nc_object),
-        m_BlobKey(blob_key)
-    {
-    }
+            const string& blob_key);
 
     virtual const string& GetType() const { return kName; }
 
@@ -129,11 +112,7 @@ struct SNetCacheServerAutomationObject : public SNetCacheServiceAutomationObject
     typedef SNetCacheServiceAutomationObject TBase;
 
     SNetCacheServerAutomationObject(CAutomationProc* automation_proc,
-            CNetCacheAPI nc_api, CNetServer::TInstance server) :
-        TBase(automation_proc, nc_api.GetServer(server)),
-        m_NetServer(server)
-    {
-    }
+            CNetCacheAPI nc_api, CNetServer::TInstance server);
 
     SNetCacheServerAutomationObject(CAutomationProc* automation_proc,
         const string& service_name, const string& client_name);
