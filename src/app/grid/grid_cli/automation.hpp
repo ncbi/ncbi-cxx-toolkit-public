@@ -181,23 +181,45 @@ namespace NAutomation
 class CArgument
 {
 public:
-    CArgument(string name, CJsonNode::ENodeType type);
+    CArgument(string name, CJsonNode::ENodeType type) :
+        m_Name(name), 
+        m_TypeOrValue(type),
+        m_Optional(false)
+    {}
 
     template <typename TValue>
-    CArgument(string name, const TValue& value) {}
+    CArgument(string name, const TValue& value) :
+        m_Name(name), 
+        m_TypeOrValue(value),
+        m_Optional(true)
+    {}
+
+    CJsonNode Help();
+
+private:
+    const string m_Name;
+    CJsonNode m_TypeOrValue;
+    const bool m_Optional;
 };
 
+struct SCommandImpl;
 class CCommand;
+
+typedef initializer_list<CArgument> TArguments;
 typedef vector<CCommand> TCommands;
 typedef function<TCommands()> TCommandsGetter;
 
 class CCommand
 {
 public:
-    typedef initializer_list<CArgument> TArguments;
-
     CCommand(string name, TArguments args = TArguments());
     CCommand(string name, TCommandsGetter getter);
+
+    CJsonNode Help(CJsonIterator& input);
+
+private:
+    string m_Name;
+    shared_ptr<SCommandImpl> m_Impl;
 };
 
 }
@@ -329,6 +351,7 @@ private:
     CJsonNode m_ErrNode;
     CJsonNode m_WarnNode;
 
+    static NAutomation::CCommand HelpCommand();
     static NAutomation::TCommands Commands();
     static NAutomation::TCommands CallCommands();
     static NAutomation::TCommands NewCommands();

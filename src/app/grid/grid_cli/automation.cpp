@@ -54,16 +54,116 @@ BEGIN_NCBI_SCOPE
 namespace NAutomation
 {
 
-CArgument::CArgument(string name, CJsonNode::ENodeType type)
+struct SCommandImpl
+{
+    virtual ~SCommandImpl() {}
+    virtual CJsonNode Help(const string& name, CJsonIterator& input) = 0;
+};
+
+struct SSimpleCommandImpl : SCommandImpl
+{
+    SSimpleCommandImpl(TArguments args);
+    CJsonNode Help(const string& name, CJsonIterator& input) override;
+
+private:
+    vector<CArgument> m_Args;
+};
+
+struct SCommandGroupImpl : SCommandImpl
+{
+    SCommandGroupImpl(TCommandsGetter getter);
+    CJsonNode Help(const string& name, CJsonIterator& input) override;
+
+private:
+    TCommands m_Commands;
+};
+
+CJsonNode CArgument::Help()
+{
+    CJsonNode help(CJsonNode::eObject);
+    help.SetString("name", m_Name);
+    help.SetString("type", m_TypeOrValue.GetTypeName());
+    if (m_Optional) help.SetByKey("default", m_TypeOrValue);
+    return help;
+}
+
+SSimpleCommandImpl::SSimpleCommandImpl(TArguments args) :
+    m_Args(args)
 {
 }
 
-CCommand::CCommand(string name, TArguments args)
+CJsonNode SSimpleCommandImpl::Help(const string& name, CJsonIterator& input)
+{
+    // Full mode
+    CJsonNode help(CJsonNode::eObject);
+    help.SetString("command", name);
+
+    if (m_Args.size()) {
+        CJsonNode elements(CJsonNode::eArray);
+
+        for (auto& element : m_Args) elements.Append(element.Help());
+
+        help.SetByKey("arguments", elements);
+    }
+
+    return help;
+}
+
+SCommandGroupImpl::SCommandGroupImpl(TCommandsGetter getter) :
+    m_Commands(getter())
 {
 }
 
-CCommand::CCommand(string name, TCommandsGetter getter)
+CJsonNode SCommandGroupImpl::Help(const string& name, CJsonIterator& input)
 {
+    // Full mode
+    CJsonNode help(CJsonNode::eObject);
+    help.SetString("command", name);
+
+    if (m_Commands.size()) {
+        CJsonNode elements(CJsonNode::eArray);
+
+        for (auto& element : m_Commands) {
+            if (CJsonNode sub_help = element.Help(input)) {
+
+                // If help is called for a particular sub-command only
+                if (sub_help.IsObject()) return sub_help;
+
+                elements.Append(sub_help);
+            }
+        }
+
+        help.SetByKey("sub-help", elements);
+    }
+
+    return help;
+}
+
+CCommand::CCommand(string name, TArguments args) :
+    m_Name(name),
+    m_Impl(new SSimpleCommandImpl(args))
+{
+}
+
+CCommand::CCommand(string name, TCommandsGetter getter) :
+    m_Name(name),
+    m_Impl(new SCommandGroupImpl(getter))
+{
+}
+
+CJsonNode CCommand::Help(CJsonIterator& input)
+{
+    // Short mode (enumeration)
+    if (!input.IsValid()) {
+        return CJsonNode(m_Name);
+    }
+
+    // Help for a different element
+    if (input.GetNode().AsString() != m_Name) {
+        return CJsonNode();
+    }
+
+    return m_Impl->Help(m_Name, ++input);
 }
 
 }
@@ -282,8 +382,27 @@ NAutomation::TCommands CAutomationProc::Commands()
     return cmds;
 }
 
+NAutomation::CCommand CAutomationProc::HelpCommand()
+{
+    return NAutomation::CCommand("help", CAutomationProc::Commands);
+}
+
 CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)
 {
+    CJsonIterator input(message.Iterate());
+
+    // Empty input (help)
+    if (!input.IsValid()) {
+        CJsonNode help(CJsonNode::eArray);
+        help.AppendString("help");
+        input = help.Iterate();
+    }
+
+    // Help
+    if (CJsonNode help = HelpCommand().Help(input)) {
+        return help;
+    }
+
     CArgArray arg_array(message);
 
     string command(arg_array.NextString());
