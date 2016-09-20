@@ -560,8 +560,8 @@ string CBlastDBExtractor::ExtractSuperKingdom() {
 //    }
 //}
 
+    static const string kNoMasksFound = "none";
 string CBlastDBExtractor::ExtractMaskingData() {
-    static const string kNoMasksFound("none");
 #if ((defined(NCBI_COMPILER_WORKSHOP) && (NCBI_COMPILER_VERSION <= 550))  ||  \
      defined(NCBI_COMPILER_MIPSPRO))
     return kNoMasksFound;
@@ -607,24 +607,10 @@ string CBlastDBExtractor::ExtractSeqLen() {
     return NStr::IntToString(m_BlastDb.GetSeqLength(m_Oid));
 }
 
-// Calculates hash for a buffer in IUPACna (NCBIeaa for proteins) format.
-// NOTE: if sequence is in a different format, the function below can be modified to convert
-// each byte into IUPACna encoding on the fly.
-static int s_GetHash(const char* buffer, int length)
-{
-    CChecksum crc(CChecksum::eCRC32ZIP);
-
-    for(int ii = 0; ii < length; ii++) {
-        if (buffer[ii] != '\n')
-            crc.AddChars(buffer+ii,1);
-    }
-    return (crc.GetChecksum() ^ (0xFFFFFFFFL));
-}
-
 string CBlastDBExtractor::ExtractHash() {
     string seq;
     m_BlastDb.GetSequenceAsString(m_Oid, seq);
-    return NStr::IntToString(s_GetHash(seq.c_str(), seq.size()));
+    return NStr::IntToString(CBlastSeqUtil::GetSeqHash(seq.c_str(), seq.size()));
 }
 
 static void s_ReplaceCtrlAsInTitle(CRef<CBioseq> bioseq)
@@ -818,6 +804,284 @@ void CBlastDBExtractor::SetConfig(TSeqRange range, objects::ENa_strand strand,
 	m_OrigSeqRange = range;
 	m_Strand = strand;
 	m_FiltAlgoId = filt_algo_id;
+}
+
+void CBlastDeflineUtil::ExtractDataFromBlastDeflineSet(const CBlast_def_line_set & dl_set,
+        											   vector<string> & results,
+        											   BlastDeflineFields fields,
+        											   string target_id,
+        											   bool use_long_id)
+{
+	CSeq_id target_seq_id (target_id, CSeq_id::fParse_PartialOK | CSeq_id::fParse_Default);
+	Int8 num_id = NStr::StringToNumeric<Int8>(target_id, NStr::fConvErr_NoThrow);
+	bool can_be_gi = errno ? false: true;
+	ITERATE(CBlast_def_line_set::Tdata, itr, dl_set.Get()) {
+		 ITERATE(CBlast_def_line::TSeqid, id, (*itr)->GetSeqid()) {
+
+			 if ((*id)->Match(target_seq_id) || (can_be_gi && (*id)->IsGi() && ((*id)->GetGi() == num_id))) {
+				 CBlastDeflineUtil::ExtractDataFromBlastDefline( **itr, results, fields, use_long_id);
+				 return;
+			 }
+		 }
+	}
+
+	NCBI_THROW(CException, eInvalid, "Failed to find target id " + target_id);
+}
+
+static string s_CheckName(const string & name)
+{
+        if(name == "-") return NOT_AVAILABLE;
+        if(name == "unclassified") return NOT_AVAILABLE;
+
+        return name;
+}
+
+void CBlastDeflineUtil::ExtractDataFromBlastDefline(const CBlast_def_line & dl,
+				                            	    vector<string> & results,
+				                                    BlastDeflineFields fields,
+				                                    bool use_long_id)
+{
+	results.clear();
+	results.resize(CBlastDeflineUtil::max_index, kEmptyStr);
+	if (fields.gi == 1) {
+         results[CBlastDeflineUtil::gi] = NOT_AVAILABLE;
+		 ITERATE(CBlast_def_line::TSeqid, id, dl.GetSeqid()) {
+			 if ((*id)->IsGi()) {
+				 TGi gi = (*id)->GetGi();
+				 results[CBlastDeflineUtil::gi] = NStr::NumericToString(gi);
+				 break;
+			 }
+	     }
+	}
+	if ((fields.accession == 1) || (fields.seq_id == 1)) {
+		 CRef<CSeq_id> theId = FindBestChoice(dl.GetSeqid(), CSeq_id::WorstRank);
+		 if(fields.seq_id == 1) {
+        	 results[CBlastDeflineUtil::seq_id] = theId->AsFastaString();
+		 }
+		 if(fields.accession == 1) {
+			 results[CBlastDeflineUtil::accession] = s_GetBareId(*theId);
+		 }
+	}
+	if(fields.title == 1) {
+		if(dl.IsSetTitle()) {
+        	 results[CBlastDeflineUtil::title] = dl.GetTitle();
+		}
+		else {
+        	 results[CBlastDeflineUtil::title] = NOT_AVAILABLE;
+		}
+	}
+	if ((fields.tax_id == 1) || (fields.tax_names == 1)) {
+		unsigned int tax_id = 0;
+		if (dl.IsSetTaxid()) {
+			tax_id = dl.GetTaxid();
+		}
+
+		if (fields.tax_id == 1) {
+			results[CBlastDeflineUtil::tax_id] = NStr::NumericToString(tax_id);
+		}
+
+		if (fields.tax_names == 1) {
+			try {
+				SSeqDBTaxInfo taxinfo;
+			    CSeqDB::GetTaxInfo(tax_id, taxinfo);
+			    results[CBlastDeflineUtil::scientific_name] = taxinfo.scientific_name;
+			    results[CBlastDeflineUtil::common_name] = taxinfo.common_name;
+			    results[CBlastDeflineUtil::blast_name] = s_CheckName(taxinfo.blast_name);
+			    results[CBlastDeflineUtil::super_kingdom] = s_CheckName(taxinfo.s_kingdom);
+	        } catch (const CException&) {
+			    results[CBlastDeflineUtil::scientific_name] = NOT_AVAILABLE;
+			    results[CBlastDeflineUtil::common_name] = NOT_AVAILABLE;
+			    results[CBlastDeflineUtil::blast_name] = NOT_AVAILABLE;
+			    results[CBlastDeflineUtil::super_kingdom] = NOT_AVAILABLE;
+			}
+		}
+	}
+
+	if ((fields.leaf_node_tax_ids == 1) || (fields.leaf_node_tax_names == 1)) {
+		set<int>  tax_id_set = dl.GetLeafTaxIds();
+		if (tax_id_set.empty()) {
+			if (dl.IsSetTaxid()) {
+				tax_id_set.insert(dl.GetTaxid());
+			}
+			else {
+				tax_id_set.insert(0);
+			}
+		}
+
+		string separator = kEmptyStr;
+		ITERATE(set<int>, itr, tax_id_set) {
+			if (fields.leaf_node_tax_names == 1) {
+				try {
+					SSeqDBTaxInfo taxinfo;
+					CSeqDB::GetTaxInfo(*itr, taxinfo);
+					results[CBlastDeflineUtil::leaf_node_scientific_names] += separator + taxinfo.scientific_name;
+					results[CBlastDeflineUtil::leaf_node_common_names] += separator + taxinfo.common_name;
+				} catch (const CException&) {
+				    results[CBlastDeflineUtil::leaf_node_scientific_names] += separator + NOT_AVAILABLE;
+				    results[CBlastDeflineUtil::leaf_node_common_names] += separator + NOT_AVAILABLE;
+				}
+			}
+		    results[CBlastDeflineUtil::leaf_node_tax_ids] += separator + NStr::NumericToString(*itr);
+			separator = SEPARATOR;
+		}
+	}
+
+	if (fields.membership == 1) {
+		int membership = 0;
+		if(dl.IsSetMemberships()) {
+			 ITERATE(CBlast_def_line::TMemberships, memb_int, dl.GetMemberships()) {
+				 membership += *memb_int;
+			 }
+		}
+		results[CBlastDeflineUtil::membership] = NStr::NumericToString(membership);
+	}
+
+	if (fields.pig == 1) {
+		int pig = -1;
+        if (dl.IsSetOther_info()) {
+        	ITERATE(CBlast_def_line::TOther_info, itr, dl.GetOther_info()) {
+        		if (*itr != -1) {
+        			pig = *itr;
+        			break;
+		        }
+		    }
+		}
+        results[CBlastDeflineUtil::pig] = NStr::NumericToString(pig);
+	}
+	if(fields.links == 1) {
+		if (dl.IsSetLinks()) {
+			ITERATE(CBlast_def_line::TLinks, links_int, dl.GetLinks()) {
+				results[CBlastDeflineUtil::links] += NStr::IntToString(*links_int) + SEPARATOR;
+			}
+		}
+		else {
+			results[CBlastDeflineUtil::links] = NOT_AVAILABLE;
+		}
+	}
+
+	if(fields.asn_defline == 1) {
+		CNcbiOstrstream tmp;
+		tmp << MSerial_AsnText << dl;
+		results[CBlastDeflineUtil::asn_defline] = CNcbiOstrstreamToString(tmp);
+	}
+}
+
+static string s_GetTitle(const CBioseq & bioseq)
+{
+    ITERATE(CSeq_descr::Tdata, desc, bioseq.GetDescr().Get()) {
+        if ((*desc)->Which() == CSeqdesc::e_Title) {
+            return (*desc)->GetTitle();
+        }
+    }
+    return string();
+}
+
+void CBlastDeflineUtil::ProcessFastaDeflines(CBioseq & bioseq, string & out, bool use_ctrla)
+{
+	out = kEmptyStr;
+    CRef<CSeq_id> id(*(bioseq.GetId().begin()));
+     if (id->IsGeneral() &&
+         id->GetGeneral().GetDb() == "BL_ORD_ID") {
+         out = ">"  + s_GetTitle(bioseq) + '\n';
+     }
+     else if (id->IsLocal()) {
+         string lcl_tmp = id->AsFastaString();
+         lcl_tmp = lcl_tmp.erase(0,4);
+         out = ">" + lcl_tmp + " " + s_GetTitle(bioseq) + '\n';
+     }
+     else {
+        string separator = use_ctrla ? "\001" : " >";
+
+        out = '>';
+        id = FindBestChoice(bioseq.GetId(), CSeq_id::Score);
+        out += s_GetBareId(*id) + ' ';
+
+        string title = s_GetTitle(bioseq);
+        if(!title.empty()) {
+        NStr::ReplaceInPlace(title, " >", "\001");
+
+        vector<string> tokens;
+        NStr::Split(title, "\001", tokens);
+        auto it = tokens.begin();
+        out += *it;
+        ++it;
+        for (; it != tokens.end(); ++it) {
+            size_t pos = it->find (" ");
+            string str_id(*it, 0, pos != NPOS ? pos : it->length());
+            list< CRef<CSeq_id> > seqids;
+            CSeq_id::ParseFastaIds(seqids, str_id);
+
+            // no valid sequence ids indicates that '>' was within the
+            // defline text
+            if (seqids.empty()) {
+                out += " >" + *it;
+                continue;
+            }
+            out += separator;
+            id = FindBestChoice(seqids, CSeq_id::Score);
+            out += s_GetBareId(*id);
+            if (pos != NPOS) {
+                out += it->substr(pos, it->length() - pos);
+            }
+        }
+        }
+        out += '\n';
+     }
+}
+
+// Calculates hash for a buffer in IUPACna (NCBIeaa for proteins) format.
+// NOTE: if sequence is in a different format, the function below can be modified to convert
+// each byte into IUPACna encoding on the fly.
+Uint4 CBlastSeqUtil::GetSeqHash(const char* buffer, int length)
+{
+    CChecksum crc(CChecksum::eCRC32ZIP);
+
+    for(int ii = 0; ii < length; ii++) {
+        if (buffer[ii] != '\n')
+            crc.AddChars(buffer+ii,1);
+    }
+    return (crc.GetChecksum() ^ (0xFFFFFFFFL));
+}
+
+void CBlastSeqUtil::ApplySeqMask(string & seq, const CSeqDB::TSequenceRanges & masks, const TSeqRange r)
+{
+	if(r.Empty()) {
+		ITERATE(CSeqDB::TSequenceRanges, itr, masks) {
+			transform(&seq[itr->first], &seq[itr->second],
+			                      &seq[itr->first], (int (*)(int))tolower);
+		}
+	}
+	else {
+		const TSeqPos r_from = r.GetFrom();
+		ITERATE(CSeqDB::TSequenceRanges, itr, masks) {
+			TSeqRange mask (*itr);
+			if(mask.GetFrom() > r.GetTo()) {
+				break;
+			}
+			TSeqRange  tmp = r.IntersectionWith(mask);
+			if(!tmp.Empty()) {
+				transform(&seq[tmp.GetFrom() -r_from], &seq[tmp.GetToOpen() - r_from],
+		                  &seq[tmp.GetFrom() -r_from], (int (*)(int))tolower);
+			}
+		}
+	}
+}
+
+void CBlastSeqUtil::GetReverseStrandSeq(string & seq)
+{
+	CSeqManip::ReverseComplement(seq, CSeqUtil::e_Iupacna, 0, seq.size());
+}
+
+string CBlastSeqUtil::GetMasksString(const CSeqDB::TSequenceRanges & masks)
+{
+	if (masks.empty()) {
+		return kNoMasksFound;
+	}
+	CNcbiOstrstream out;
+	ITERATE(CSeqDB::TSequenceRanges, range, masks) {
+		out << range->first << "-" << range->second << SEPARATOR;
+	}
+	return CNcbiOstrstreamToString(out);
 }
 
 END_NCBI_SCOPE

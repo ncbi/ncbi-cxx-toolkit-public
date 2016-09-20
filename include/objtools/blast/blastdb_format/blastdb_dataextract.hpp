@@ -171,6 +171,70 @@ private:
     void x_SetGi();
 };
 
+class NCBI_BLASTDB_FORMAT_EXPORT CBlastDeflineUtil
+{
+public:
+	struct BlastDeflineFields{
+		unsigned int accession:1;
+		unsigned int seq_id:1;
+		unsigned int gi:1;
+		unsigned int title:1;
+		unsigned int membership:1;
+		unsigned int tax_id:1;
+		unsigned int leaf_node_tax_ids:1;
+		// The tax names include: scientific_name, common_name, blast_name and super kingdom
+		unsigned int tax_names:1;
+		unsigned int leaf_node_tax_names:1;
+		unsigned int pig:1;
+		unsigned int links:1;
+		unsigned int asn_defline:1;
+
+	};
+
+	enum FieldIndex {
+		accession = 0,
+		seq_id,
+		gi,
+		title,
+		membership,
+		pig,
+		tax_id,
+		leaf_node_tax_ids,
+		scientific_name,
+		leaf_node_scientific_names,
+		common_name,
+		leaf_node_common_names,
+		blast_name,
+		super_kingdom,
+		links,
+		asn_defline,
+		max_index
+	};
+	static void ExtractDataFromBlastDeflineSet(const CBlast_def_line_set & dl_set,
+			                                   vector<string> & results,
+			                                   BlastDeflineFields fields,
+			                                   string target_id,
+			                                   bool use_long_id);
+
+	static void ExtractDataFromBlastDefline(const CBlast_def_line & dl,
+				                            vector<string> & results,
+				                            BlastDeflineFields fields,
+				                            bool use_long_id);
+
+	static void ProcessFastaDeflines(CBioseq & bioseq, string & out, bool use_ctrla);
+};
+
+class NCBI_BLASTDB_FORMAT_EXPORT CBlastSeqUtil
+{
+public:
+	static Uint4 GetSeqHash(const char* buffer, int length);
+	static void ApplySeqMask(string & seq,
+			                 const CSeqDB::TSequenceRanges & masks,
+			                 const TSeqRange r=TSeqRange::GetEmpty());
+	static void GetReverseStrandSeq(string & seq);
+	static string GetMasksString(const CSeqDB::TSequenceRanges & masks);
+
+};
 
 END_NCBI_SCOPE
 
