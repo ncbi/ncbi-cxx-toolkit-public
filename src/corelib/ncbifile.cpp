@@ -5072,20 +5072,16 @@ Uint8 CFileUtil::GetTotalDiskSpace(const string& path)
 
 CFileDeleteList::~CFileDeleteList()
 {
-    ITERATE (TNames, name, m_Names) {
-        CDirEntry entry(*name);
-        if ( entry.IsDir()) {
-            CDir(*name).Remove(CDir::eRecursiveIgnoreMissing);
-        } else {
-            entry.Remove();
+    ITERATE (TList, path, m_Paths) {
+        if (!CDirEntry(*path).Remove(CDirEntry::eRecursiveIgnoreMissing)) {
+            ERR_POST(Warning << "CFileDeleteList: failed to remove path: " << *path);
         }
     }
 }
 
-
-void CFileDeleteAtExit::Add(const string& entryname)
+void CFileDeleteAtExit::Add(const string& path)
 {
-    s_DeleteAtExitFileList->Add(entryname);
+    s_DeleteAtExitFileList->Add(path);
 }
 
 const CFileDeleteList& CFileDeleteAtExit::GetDeleteList(void)

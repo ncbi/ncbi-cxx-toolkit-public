@@ -2133,12 +2133,8 @@ public:
 ///
 /// Define a list of dir entries for deletion.
 ///
-/// Each Object of this class maintains a list of names of dir entries
-/// that will be deleted from the file system when the object
-/// goes out of scope.
-///
-/// Note: Directories will be removed recursively, symbolic links -- 
-/// without dir entries which they points to.
+/// Each object of this class maintains a list of paths that will be deleted
+/// from the file system when the object goes out of scope.
 
 class NCBI_XNCBI_EXPORT CFileDeleteList : public CObject
 {
@@ -2146,17 +2142,25 @@ public:
     /// Destructor removes all dir entries on list.
     ~CFileDeleteList();
 
-    typedef list<string> TNames;
+    typedef list<string> TList;
 
-    /// Add a dir entry for later deletion.
-    void Add(const string& entryname);
+    /// Add a path for later deletion.
+    /// @param path
+    ///   String that specifies the file system entry to delete.
+    ///   It will be stored as the absolute normalized path, so relative names
+    ///   are safe to use.
+    /// @note
+    ///   Directories will be removed recursively.
+    ///   Symbolic links -- without dir entries which they points to.
+    void Add(const string& path);
+
     /// Get the underlying list.
-    const TNames& GetNames() const;
+    const TList& GetList() const;
     /// Set the underlying list.
-    void SetNames(TNames& names);
+    void SetList(TList& list);
 
 private:
-    TNames  m_Names;   ///< List of dir entries for deletion
+    TList  m_Paths;  ///< List of dir entries for deletion
 };
 
 
@@ -2171,7 +2175,7 @@ class NCBI_XNCBI_EXPORT CFileDeleteAtExit
 {
 public:
     /// Add the name of a dir entry; it will be deleted on (normal) exit
-    static void Add(const string& entryname);
+    static void Add(const string& path);
 
     /// Get underlying static CFileDeleteList object
     static const CFileDeleteList& GetDeleteList();
@@ -3925,21 +3929,22 @@ bool CSymLink::Exists(void) const
 // CFileDelete*
 
 inline
-void CFileDeleteList::Add(const string& entryname)
+void CFileDeleteList::Add(const string& path)
 {
-    m_Names.push_back(entryname);
+    string p = CDirEntry::NormalizePath(CDirEntry::CreateAbsolutePath(path));
+    m_Paths.push_back(p);
 }
 
 inline
-const CFileDeleteList::TNames& CFileDeleteList::GetNames(void) const
+const CFileDeleteList::TList& CFileDeleteList::GetList(void) const
 {
-    return m_Names;
+    return m_Paths;
 }
 
 inline
-void CFileDeleteList::SetNames(CFileDeleteList::TNames& names)
+void CFileDeleteList::SetList(CFileDeleteList::TList& list)
 {
-    m_Names = names;
+    m_Paths = list;
 }
 
 
