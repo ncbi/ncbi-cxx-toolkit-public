@@ -1,0 +1,2283 @@
+Seq-entry ::= set {
+  class genbank ,
+  seq-set {
+    set {
+      class phy-set ,
+      descr {
+        title "Lejeuneaceae tRNA-Leu (trnL) gene and trnL-trnF intergenic
+ spacer, partial sequence; chloroplast." ,
+        pub {
+          pub {
+            gen {
+              cit "Unpublished" ,
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Wang" ,
+                          first "Jian" ,
+                          initials "J." } } ,
+                    {
+                      name
+                        name {
+                          last "Zhu" ,
+                          first "Rui-Liang" ,
+                          initials "R.-L." } } ,
+                    {
+                      name
+                        name {
+                          last "Gradstein" ,
+                          first "Stephan" ,
+                          initials "S.R." } } } } ,
+              title "Taxonomic revision of Lejeuneaceae subfamily
+ Ptychanthoideae (Marchantiophyta) in China" } } } ,
+        pub {
+          pub {
+            sub {
+              authors {
+                names
+                  std {
+                    {
+                      name
+                        name {
+                          last "Wang" ,
+                          first "Jian" ,
+                          initials "J." } } ,
+                    {
+                      name
+                        name {
+                          last "Zhu" ,
+                          first "Rui-Liang" ,
+                          initials "R.-L." } } ,
+                    {
+                      name
+                        name {
+                          last "Gradstein" ,
+                          first "Stephan" ,
+                          initials "S.R." } } } ,
+                affil
+                  std {
+                    affil "School of Life Science" ,
+                    div "Department of Biology" ,
+                    city "Shanghai" ,
+                    country "China" ,
+                    street "500 Dongchuan Road" ,
+                    postal-code "200241" } } ,
+              medium email ,
+              date
+                std {
+                  year 2015 ,
+                  month 1 ,
+                  day 7 } } } } ,
+        user {
+          class "SMART_V1.0" ,
+          type
+            id 1 ,
+          data {
+            {
+              label
+                id 1 ,
+              num 1 ,
+              data
+                int 9231896 } } } ,
+        user {
+          type
+            str "NcbiAutofix" ,
+          data {
+             } } ,
+        user {
+          type
+            str "NcbiCleanup" ,
+          data {
+            {
+              label
+                str "method" ,
+              data
+                str "SequinCleanup" } ,
+            {
+              label
+                str "version" ,
+              data
+                int 7 } ,
+            {
+              label
+                str "month" ,
+              data
+                int 1 } ,
+            {
+              label
+                str "day" ,
+              data
+                int 9 } ,
+            {
+              label
+                str "year" ,
+              data
+                int 2015 } } } ,
+        update-date
+          std {
+            year 2015 ,
+            month 1 ,
+            day 8 } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "seq21" ,
+            general {
+              db "BankIt" ,
+              tag
+                str "1788939/seq21" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 51541873 } ,
+            genbank {
+              accession "KP403750" } } ,
+          descr {
+            title "Caudalejeunea cristiloba voucher 12 tRNA-Leu (trnL) gene
+ and trnL-trnF intergenic spacer, partial sequence; chloroplast." ,
+            source {
+              genome chloroplast ,
+              org {
+                taxname "Caudalejeunea cristiloba" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 1592798 } } ,
+                orgname {
+                  name
+                    binomial {
+                      genus "Caudalejeunea" ,
+                      species "cristiloba" } ,
+                  mod {
+                    {
+                      subtype specimen-voucher ,
+                      subname "12" } } ,
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Marchantiophyta; Jungermanniopsida; Jungermanniidae; Porellales;
+ Jubulineae; Lejeuneaceae; Caudalejeunea" ,
+                  gcode 1 ,
+                  mgcode 1 ,
+                  div "PLN" ,
+                  pgcode 11 } } ,
+              subtype {
+                {
+                  subtype country ,
+                  name "Thailand" } ,
+                {
+                  subtype isolation-source ,
+                  name "on tree bark" } ,
+                {
+                  subtype collection-date ,
+                  name "17-Jul-2010" } ,
+                {
+                  subtype collected-by ,
+                  name "S.Chantanaorrapint et al." } } } ,
+            molinfo {
+              biomol genomic } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "LocalID:seq21" } } } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "SmartComment" ,
+                  data
+                    str "TOTAL # OF SEQS:30" } ,
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "BankIt1788939" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "GAP: est. length - alignment" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "SmartComment" ,
+                  data
+                    str "TOTAL # OF SETS:30" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "TAX: No, not new species/combinations" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "RESUB: This is a resubmission of
+ Group/BankIt#:1785983" } } } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 432 ,
+            topology not-set ,
+            seq-data
+              ncbi2na '03FE25F2C880FE70B87BFD13D2A0170BFE033CAC35E2503FCBCE032
+B9221D8280735C1800FFF773FFFFF3C62CF8F4B162C4C33F580C30011D831CB7ECF4DF0FFC0C0D
+30C8628C08C8B5FFF12DCCC3FF3F3230FB00200D6FA7F0C85F8ABD0B5771552CF0403CDBD43FCC
+0F40F'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "trnL" } ,
+                    partial TRUE ,
+                    comment "trnL(UAA)" ,
+                    location
+                      int {
+                        from 0 ,
+                        to 390 ,
+                        strand plus ,
+                        id
+                          local
+                            str "seq21" ,
+                        fuzz-from
+                          lim lt } } ,
+                  {
+                    data
+                      imp {
+                        key "intron" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 339 ,
+                        strand plus ,
+                        id
+                          local
+                            str "seq21" ,
+                        fuzz-from
+                          lim lt } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 76 } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 340 ,
+                        to 390 ,
+                        strand plus ,
+                        id
+                          local
+                            str "seq21" ,
+                        fuzz-from
+                          lim lt } } ,
+                  {
+                    data
+                      imp {
+                        key "misc_feature" } ,
+                    partial TRUE ,
+                    comment "trnL-trnF intergenic spacer; trnL(UAA)-trnF(GAA)" ,
+                    location
+                      int {
+                        from 390 ,
+                        to 431 ,
+                        strand plus ,
+                        id
+                          local
+                            str "seq21" ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "seq22" ,
+            general {
+              db "BankIt" ,
+              tag
+                str "1788939/seq22" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 51541874 } ,
+            genbank {
+              accession "KP403751" } } ,
+          descr {
+            title "Caudalejeunea lehmanniana voucher 12353 tRNA-Leu (trnL)
+ gene and trnL-trnF intergenic spacer, partial sequence; chloroplast." ,
+            source {
+              genome chloroplast ,
+              org {
+                taxname "Caudalejeunea lehmanniana" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 1592799 } } ,
+                orgname {
+                  name
+                    binomial {
+                      genus "Caudalejeunea" ,
+                      species "lehmanniana" } ,
+                  mod {
+                    {
+                      subtype specimen-voucher ,
+                      subname "12353" } } ,
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Marchantiophyta; Jungermanniopsida; Jungermanniidae; Porellales;
+ Jubulineae; Lejeuneaceae; Caudalejeunea" ,
+                  gcode 1 ,
+                  mgcode 1 ,
+                  div "PLN" ,
+                  pgcode 11 } } ,
+              subtype {
+                {
+                  subtype country ,
+                  name "Brazil" } ,
+                {
+                  subtype isolation-source ,
+                  name "on tree bark" } ,
+                {
+                  subtype collection-date ,
+                  name "02-Sep-2011" } ,
+                {
+                  subtype collected-by ,
+                  name "D.F. Peralta" } } } ,
+            molinfo {
+              biomol genomic } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "LocalID:seq22" } } } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "SmartComment" ,
+                  data
+                    str "TOTAL # OF SEQS:30" } ,
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "BankIt1788939" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "GAP: est. length - alignment" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "SmartComment" ,
+                  data
+                    str "TOTAL # OF SETS:30" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "TAX: No, not new species/combinations" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "RESUB: This is a resubmission of
+ Group/BankIt#:1785983" } } } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 446 ,
+            topology not-set ,
+            seq-data
+              ncbi2na '03FE25F2C880DE70B87BFD13D2A0170BEC033CAC35E2503FCBCE032
+B9221D0280735C18C0FFDDCFFFFCF18B3E3D2C483100CFF6031C00CFE0C70033F831C33ECF4FF0
+FF003C3DC3218A302322D7FFC434CC3FF3F3230FB00200D6FA7F0C85F8ABD0B5771553CF8403FD
+BD43DCC0F40F0'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "trnL" } ,
+                    partial TRUE ,
+                    comment "trnL(UAA)" ,
+                    location
+                      int {
+                        from 0 ,
+                        to 404 ,
+                        strand plus ,
+                        id
+                          local
+                            str "seq22" ,
+                        fuzz-from
+                          lim lt } } ,
+                  {
+                    data
+                      imp {
+                        key "intron" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 353 ,
+                        strand plus ,
+                        id
+                          local
+                            str "seq22" ,
+                        fuzz-from
+                          lim lt } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 76 } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 354 ,
+                        to 404 ,
+                        strand plus ,
+                        id
+                          local
+                            str "seq22" ,
+                        fuzz-from
+                          lim lt } } ,
+                  {
+                    data
+                      imp {
+                        key "misc_feature" } ,
+                    partial TRUE ,
+                    comment "trnL-trnF intergenic spacer; trnL(UAA)-trnF(GAA)" ,
+                    location
+                      int {
+                        from 404 ,
+                        to 445 ,
+                        strand plus ,
+                        id
+                          local
+                            str "seq22" ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "seq23" ,
+            general {
+              db "BankIt" ,
+              tag
+                str "1788939/seq23" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 51541875 } ,
+            genbank {
+              accession "KP403752" } } ,
+          descr {
+            title "Caudalejeunea lehmanniana voucher 8029 tRNA-Leu (trnL) gene
+ and trnL-trnF intergenic spacer, partial sequence; chloroplast." ,
+            source {
+              genome chloroplast ,
+              org {
+                taxname "Caudalejeunea lehmanniana" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 1592799 } } ,
+                orgname {
+                  name
+                    binomial {
+                      genus "Caudalejeunea" ,
+                      species "lehmanniana" } ,
+                  mod {
+                    {
+                      subtype specimen-voucher ,
+                      subname "8029" } } ,
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Marchantiophyta; Jungermanniopsida; Jungermanniidae; Porellales;
+ Jubulineae; Lejeuneaceae; Caudalejeunea" ,
+                  gcode 1 ,
+                  mgcode 1 ,
+                  div "PLN" ,
+                  pgcode 11 } } ,
+              subtype {
+                {
+                  subtype country ,
+                  name "Brazil" } ,
+                {
+                  subtype isolation-source ,
+                  name "on tree bark" } ,
+                {
+                  subtype collection-date ,
+                  name "13-May-2009" } ,
+                {
+                  subtype collected-by ,
+                  name "D.F. Peralta" } } } ,
+            molinfo {
+              biomol genomic } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "LocalID:seq23" } } } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "SmartComment" ,
+                  data
+                    str "TOTAL # OF SEQS:30" } ,
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "BankIt1788939" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "GAP: est. length - alignment" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "SmartComment" ,
+                  data
+                    str "TOTAL # OF SETS:30" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "TAX: No, not new species/combinations" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "RESUB: This is a resubmission of
+ Group/BankIt#:1785983" } } } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 435 ,
+            topology not-set ,
+            seq-data
+              ncbi2na '03FE25F2C880DEF0B87BFD13D2A0170BEC033CAC35E2503FCBCE032
+B9221D0280735C18C0FFDDCFFFFF3C62CF8F4B120C4033FD80C30033F831C1C0CFB3D3FC3FC80F
+0F30C8628C08C8B5FFF10D330FFCFCCAC3EC008035BE9FC3217E2AF42D5DC554F3E100FF6F50F7
+303D03C'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "trnL" } ,
+                    partial TRUE ,
+                    comment "trnL(UAA)" ,
+                    location
+                      int {
+                        from 0 ,
+                        to 393 ,
+                        strand plus ,
+                        id
+                          local
+                            str "seq23" ,
+                        fuzz-from
+                          lim lt } } ,
+                  {
+                    data
+                      imp {
+                        key "intron" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 342 ,
+                        strand plus ,
+                        id
+                          local
+                            str "seq23" ,
+                        fuzz-from
+                          lim lt } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 76 } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 343 ,
+                        to 393 ,
+                        strand plus ,
+                        id
+                          local
+                            str "seq23" ,
+                        fuzz-from
+                          lim lt } } ,
+                  {
+                    data
+                      imp {
+                        key "misc_feature" } ,
+                    partial TRUE ,
+                    comment "trnL-trnF intergenic spacer; trnL(UAA)-trnF(GAA)" ,
+                    location
+                      int {
+                        from 393 ,
+                        to 434 ,
+                        strand plus ,
+                        id
+                          local
+                            str "seq23" ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "seq24" ,
+            general {
+              db "BankIt" ,
+              tag
+                str "1788939/seq24" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 51541876 } ,
+            genbank {
+              accession "KP403753" } } ,
+          descr {
+            title "Caudalejeunea reniloba voucher 25236/A tRNA-Leu (trnL) gene
+ and trnL-trnF intergenic spacer, partial sequence; chloroplast." ,
+            source {
+              genome chloroplast ,
+              org {
+                taxname "Caudalejeunea reniloba" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 1527722 } } ,
+                orgname {
+                  name
+                    binomial {
+                      genus "Caudalejeunea" ,
+                      species "reniloba" } ,
+                  mod {
+                    {
+                      subtype specimen-voucher ,
+                      subname "25236/A" } } ,
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Marchantiophyta; Jungermanniopsida; Jungermanniidae; Porellales;
+ Jubulineae; Lejeuneaceae; Caudalejeunea" ,
+                  gcode 1 ,
+                  mgcode 1 ,
+                  div "PLN" ,
+                  pgcode 11 } } ,
+              subtype {
+                {
+                  subtype country ,
+                  name "Indonesia" } ,
+                {
+                  subtype isolation-source ,
+                  name "on leaves" } ,
+                {
+                  subtype collection-date ,
+                  name "26-May-2005" } ,
+                {
+                  subtype collected-by ,
+                  name "A.Schafer-Verwimp" } } } ,
+            molinfo {
+              biomol genomic } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "LocalID:seq24" } } } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "SmartComment" ,
+                  data
+                    str "TOTAL # OF SEQS:30" } ,
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "BankIt1788939" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "GAP: est. length - alignment" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "SmartComment" ,
+                  data
+                    str "TOTAL # OF SETS:30" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "TAX: No, not new species/combinations" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "RESUB: This is a resubmission of
+ Group/BankIt#:1785983" } } } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 430 ,
+            topology not-set ,
+            seq-data
+              ncbi2na '03FE25F2C880FF70B87BFD13D2A0170BFE033CAC35E2503FCFCC032
+B9221D8280735C1800FFF773FFFF3C62CF8F4B122C4C33FD80C30011F831C33ECF4DF0F7C0C0D3
+0C8628C08C8B5FFF12DCCC3FF3F3230FB00200D6FA7F0C85F8ABD0B5771552CF8403CDBD43FCC0
+F40F0'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "trnL" } ,
+                    partial TRUE ,
+                    comment "trnL(UAA)" ,
+                    location
+                      int {
+                        from 0 ,
+                        to 388 ,
+                        strand plus ,
+                        id
+                          local
+                            str "seq24" ,
+                        fuzz-from
+                          lim lt } } ,
+                  {
+                    data
+                      imp {
+                        key "intron" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 337 ,
+                        strand plus ,
+                        id
+                          local
+                            str "seq24" ,
+                        fuzz-from
+                          lim lt } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 76 } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 338 ,
+                        to 388 ,
+                        strand plus ,
+                        id
+                          local
+                            str "seq24" ,
+                        fuzz-from
+                          lim lt } } ,
+                  {
+                    data
+                      imp {
+                        key "misc_feature" } ,
+                    partial TRUE ,
+                    comment "trnL-trnF intergenic spacer; trnL(UAA)-trnF(GAA)" ,
+                    location
+                      int {
+                        from 388 ,
+                        to 429 ,
+                        strand plus ,
+                        id
+                          local
+                            str "seq24" ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "seq25" ,
+            general {
+              db "BankIt" ,
+              tag
+                str "1788939/seq25" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 51541877 } ,
+            genbank {
+              accession "KP403754" } } ,
+          descr {
+            title "Caudalejeunea reniloba voucher 1318 tRNA-Leu (trnL) gene
+ and trnL-trnF intergenic spacer, partial sequence; chloroplast." ,
+            source {
+              genome chloroplast ,
+              org {
+                taxname "Caudalejeunea reniloba" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 1527722 } } ,
+                orgname {
+                  name
+                    binomial {
+                      genus "Caudalejeunea" ,
+                      species "reniloba" } ,
+                  mod {
+                    {
+                      subtype specimen-voucher ,
+                      subname "1318" } } ,
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Marchantiophyta; Jungermanniopsida; Jungermanniidae; Porellales;
+ Jubulineae; Lejeuneaceae; Caudalejeunea" ,
+                  gcode 1 ,
+                  mgcode 1 ,
+                  div "PLN" ,
+                  pgcode 11 } } ,
+              subtype {
+                {
+                  subtype country ,
+                  name "Thailand" } ,
+                {
+                  subtype isolation-source ,
+                  name "on tree bark" } ,
+                {
+                  subtype collection-date ,
+                  name "30-Jun-2009" } ,
+                {
+                  subtype collected-by ,
+                  name "S.Kornochalert" } } } ,
+            molinfo {
+              biomol genomic } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "LocalID:seq25" } } } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "SmartComment" ,
+                  data
+                    str "TOTAL # OF SEQS:30" } ,
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "BankIt1788939" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "GAP: est. length - alignment" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "SmartComment" ,
+                  data
+                    str "TOTAL # OF SETS:30" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "TAX: No, not new species/combinations" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "RESUB: This is a resubmission of
+ Group/BankIt#:1785983" } } } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 431 ,
+            topology not-set ,
+            seq-data
+              ncbi2na '03FE25F2C880DE70B87BFD13D2A0160BFE033CAC35E2503FCBCE032
+B9221D8280735C180C3FFDDCFFFFCF18B3E3D2C48B134CFF6030C0047E0C70CFB3F37C3FF030B4
+C3218A302322D7FFC437330FFCFCC8C3EC008035BE9FC3217E2AF42D5DC554B3E100FF6F50FF30
+3D53C'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "trnL" } ,
+                    partial TRUE ,
+                    comment "trnL(UAA)" ,
+                    location
+                      int {
+                        from 0 ,
+                        to 389 ,
+                        strand plus ,
+                        id
+                          local
+                            str "seq25" ,
+                        fuzz-from
+                          lim lt } } ,
+                  {
+                    data
+                      imp {
+                        key "intron" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 338 ,
+                        strand plus ,
+                        id
+                          local
+                            str "seq25" ,
+                        fuzz-from
+                          lim lt } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 76 } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 339 ,
+                        to 389 ,
+                        strand plus ,
+                        id
+                          local
+                            str "seq25" ,
+                        fuzz-from
+                          lim lt } } ,
+                  {
+                    data
+                      imp {
+                        key "misc_feature" } ,
+                    partial TRUE ,
+                    comment "trnL-trnF intergenic spacer; trnL(UAA)-trnF(GAA)" ,
+                    location
+                      int {
+                        from 389 ,
+                        to 430 ,
+                        strand plus ,
+                        id
+                          local
+                            str "seq25" ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "seq26" ,
+            general {
+              db "BankIt" ,
+              tag
+                str "1788939/seq26" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 51541878 } ,
+            genbank {
+              accession "KP403755" } } ,
+          descr {
+            title "Caudalejeunea tridentata voucher 20131102-131 tRNA-Leu
+ (trnL) gene and trnL-trnF intergenic spacer, partial sequence; chloroplast." ,
+            source {
+              genome chloroplast ,
+              org {
+                taxname "Caudalejeunea tridentata" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 1592800 } } ,
+                orgname {
+                  name
+                    binomial {
+                      genus "Caudalejeunea" ,
+                      species "tridentata" } ,
+                  mod {
+                    {
+                      subtype specimen-voucher ,
+                      subname "20131102-131" } } ,
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Marchantiophyta; Jungermanniopsida; Jungermanniidae; Porellales;
+ Jubulineae; Lejeuneaceae; Caudalejeunea" ,
+                  gcode 1 ,
+                  mgcode 1 ,
+                  div "PLN" ,
+                  pgcode 11 } } ,
+              subtype {
+                {
+                  subtype country ,
+                  name "Viet Nam" } ,
+                {
+                  subtype isolation-source ,
+                  name "on tree bark" } ,
+                {
+                  subtype collection-date ,
+                  name "02-Nov-2013" } ,
+                {
+                  subtype collected-by ,
+                  name "R.L.Zhu et al." } } } ,
+            molinfo {
+              biomol genomic } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "LocalID:seq26" } } } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "SmartComment" ,
+                  data
+                    str "TOTAL # OF SEQS:30" } ,
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "BankIt1788939" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "GAP: est. length - alignment" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "SmartComment" ,
+                  data
+                    str "TOTAL # OF SETS:30" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "TAX: No, not new species/combinations" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "RESUB: This is a resubmission of
+ Group/BankIt#:1785983" } } } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 444 ,
+            topology not-set ,
+            seq-data
+              ncbi2na '03FE25F2C880FE70B87BFD13D2A0370BFE03388C35E2503FCBCE032
+B9221D8280735C1800FFF773FFF3C62CF8FCB1C0B120CFF6030C000DC0C70CF33D3C33CCFCCF4F
+FC0C0F30C8628C08C8B5FFF10DCCC3FF3F3230FB00200D6FA7F0C85F8ABD0B5771553EF8403FFB
+D43FCC0F40F'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "trnL" } ,
+                    partial TRUE ,
+                    comment "trnL(UAA)" ,
+                    location
+                      int {
+                        from 0 ,
+                        to 402 ,
+                        strand plus ,
+                        id
+                          local
+                            str "seq26" ,
+                        fuzz-from
+                          lim lt } } ,
+                  {
+                    data
+                      imp {
+                        key "intron" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 351 ,
+                        strand plus ,
+                        id
+                          local
+                            str "seq26" ,
+                        fuzz-from
+                          lim lt } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 76 } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 352 ,
+                        to 402 ,
+                        strand plus ,
+                        id
+                          local
+                            str "seq26" ,
+                        fuzz-from
+                          lim lt } } ,
+                  {
+                    data
+                      imp {
+                        key "misc_feature" } ,
+                    partial TRUE ,
+                    comment "trnL-trnF intergenic spacer; trnL(UAA)-trnF(GAA)" ,
+                    location
+                      int {
+                        from 402 ,
+                        to 443 ,
+                        strand plus ,
+                        id
+                          local
+                            str "seq26" ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "seq27" ,
+            general {
+              db "BankIt" ,
+              tag
+                str "1788939/seq27" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 51541879 } ,
+            genbank {
+              accession "KP403756" } } ,
+          descr {
+            title "Caudalejeunea tridentata voucher 20130807-18 tRNA-Leu
+ (trnL) gene and trnL-trnF intergenic spacer, partial sequence; chloroplast." ,
+            source {
+              genome chloroplast ,
+              org {
+                taxname "Caudalejeunea tridentata" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 1592800 } } ,
+                orgname {
+                  name
+                    binomial {
+                      genus "Caudalejeunea" ,
+                      species "tridentata" } ,
+                  mod {
+                    {
+                      subtype specimen-voucher ,
+                      subname "20130807-18" } } ,
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Marchantiophyta; Jungermanniopsida; Jungermanniidae; Porellales;
+ Jubulineae; Lejeuneaceae; Caudalejeunea" ,
+                  gcode 1 ,
+                  mgcode 1 ,
+                  div "PLN" ,
+                  pgcode 11 } } ,
+              subtype {
+                {
+                  subtype country ,
+                  name "China" } ,
+                {
+                  subtype isolation-source ,
+                  name "on rotten logs" } ,
+                {
+                  subtype collection-date ,
+                  name "07-Aug-2013" } ,
+                {
+                  subtype collected-by ,
+                  name "J. Wang et al." } } } ,
+            molinfo {
+              biomol genomic } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "LocalID:seq27" } } } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "SmartComment" ,
+                  data
+                    str "TOTAL # OF SEQS:30" } ,
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "BankIt1788939" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "GAP: est. length - alignment" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "SmartComment" ,
+                  data
+                    str "TOTAL # OF SETS:30" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "TAX: No, not new species/combinations" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "RESUB: This is a resubmission of
+ Group/BankIt#:1785983" } } } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 444 ,
+            topology not-set ,
+            seq-data
+              ncbi2na '03FE25F2C880FE70B87BFD13D2A0370BFE03388C35E2503FCBCE032
+B9221D8280735C1800FFF773FFF3C62CF8FCB1C0B120CFF6030C000DC0C70CF33D3C33CCFCCF4F
+FC0C0F30C8628C08C8B5FFF10DCCC3FF3F3230FB00200D6FA7F0C85F8ABD0B5771553EF8403FFB
+D43FCC0F40F'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "trnL" } ,
+                    partial TRUE ,
+                    comment "trnL(UAA)" ,
+                    location
+                      int {
+                        from 0 ,
+                        to 402 ,
+                        strand plus ,
+                        id
+                          local
+                            str "seq27" ,
+                        fuzz-from
+                          lim lt } } ,
+                  {
+                    data
+                      imp {
+                        key "intron" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 351 ,
+                        strand plus ,
+                        id
+                          local
+                            str "seq27" ,
+                        fuzz-from
+                          lim lt } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 76 } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 352 ,
+                        to 402 ,
+                        strand plus ,
+                        id
+                          local
+                            str "seq27" ,
+                        fuzz-from
+                          lim lt } } ,
+                  {
+                    data
+                      imp {
+                        key "misc_feature" } ,
+                    partial TRUE ,
+                    comment "trnL-trnF intergenic spacer; trnL(UAA)-trnF(GAA)" ,
+                    location
+                      int {
+                        from 402 ,
+                        to 443 ,
+                        strand plus ,
+                        id
+                          local
+                            str "seq27" ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "seq28" ,
+            general {
+              db "BankIt" ,
+              tag
+                str "1788939/seq28" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 51541880 } ,
+            genbank {
+              accession "KP403757" } } ,
+          descr {
+            title "Ptychanthus striatus voucher 20110520-6B tRNA-Leu (trnL)
+ gene and trnL-trnF intergenic spacer, partial sequence; chloroplast." ,
+            source {
+              genome chloroplast ,
+              org {
+                taxname "Ptychanthus striatus" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 203655 } } ,
+                orgname {
+                  name
+                    binomial {
+                      genus "Ptychanthus" ,
+                      species "striatus" } ,
+                  mod {
+                    {
+                      subtype specimen-voucher ,
+                      subname "20110520-6B" } } ,
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Marchantiophyta; Jungermanniopsida; Jungermanniidae; Porellales;
+ Jubulineae; Lejeuneaceae; Ptychanthus" ,
+                  gcode 1 ,
+                  mgcode 1 ,
+                  div "PLN" ,
+                  pgcode 11 } } ,
+              subtype {
+                {
+                  subtype country ,
+                  name "China" } ,
+                {
+                  subtype isolation-source ,
+                  name "on tree bark" } ,
+                {
+                  subtype collection-date ,
+                  name "20-May-2011" } ,
+                {
+                  subtype collected-by ,
+                  name "J.Wang & T.Peng" } } } ,
+            molinfo {
+              biomol genomic } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "LocalID:seq28" } } } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "SmartComment" ,
+                  data
+                    str "TOTAL # OF SEQS:30" } ,
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "BankIt1788939" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "GAP: est. length - alignment" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "SmartComment" ,
+                  data
+                    str "TOTAL # OF SETS:30" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "TAX: No, not new species/combinations" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "RESUB: This is a resubmission of
+ Group/BankIt#:1785983" } } } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 415 ,
+            topology not-set ,
+            seq-data
+              ncbi2na '03FE25F2C880CC70B87BFD13D2A01702FE2B38AC35E2503FCBCE032
+B9221D8280735C1800FFF773FFF3C62CF0F43910D40333F80C34013780EF4CF2FF80C0770C8628
+C08C8B5FFF10DCCC3FF3F2230FB00200D6FA7F0C85F8ABD0B5771553CF00FF4F50FF301D03C'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "trnL" } ,
+                    partial TRUE ,
+                    comment "trnL(UAA)" ,
+                    location
+                      int {
+                        from 0 ,
+                        to 376 ,
+                        strand plus ,
+                        id
+                          local
+                            str "seq28" ,
+                        fuzz-from
+                          lim lt } } ,
+                  {
+                    data
+                      imp {
+                        key "intron" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 325 ,
+                        strand plus ,
+                        id
+                          local
+                            str "seq28" ,
+                        fuzz-from
+                          lim lt } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 76 } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 326 ,
+                        to 376 ,
+                        strand plus ,
+                        id
+                          local
+                            str "seq28" ,
+                        fuzz-from
+                          lim lt } } ,
+                  {
+                    data
+                      imp {
+                        key "misc_feature" } ,
+                    partial TRUE ,
+                    comment "trnL-trnF intergenic spacer; trnL(UAA)-trnF(GAA)" ,
+                    location
+                      int {
+                        from 376 ,
+                        to 414 ,
+                        strand plus ,
+                        id
+                          local
+                            str "seq28" ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "seq29" ,
+            general {
+              db "BankIt" ,
+              tag
+                str "1788939/seq29" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 51541881 } ,
+            genbank {
+              accession "KP403758" } } ,
+          descr {
+            title "Tuzibeanthus chinensis voucher 20100918-9 tRNA-Leu (trnL)
+ gene and trnL-trnF intergenic spacer, partial sequence; chloroplast." ,
+            source {
+              genome chloroplast ,
+              org {
+                taxname "Tuzibeanthus chinensis" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 1527781 } } ,
+                orgname {
+                  name
+                    binomial {
+                      genus "Tuzibeanthus" ,
+                      species "chinensis" } ,
+                  mod {
+                    {
+                      subtype specimen-voucher ,
+                      subname "20100918-9" } } ,
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Marchantiophyta; Jungermanniopsida; Jungermanniidae; Porellales;
+ Jubulineae; Lejeuneaceae; Tuzibeanthus" ,
+                  gcode 1 ,
+                  mgcode 1 ,
+                  div "PLN" ,
+                  pgcode 11 } } ,
+              subtype {
+                {
+                  subtype country ,
+                  name "China" } ,
+                {
+                  subtype isolation-source ,
+                  name "on rock" } ,
+                {
+                  subtype collection-date ,
+                  name "18-Sep-2010" } ,
+                {
+                  subtype collected-by ,
+                  name "Y.M.Wei & T.Peng" } } } ,
+            molinfo {
+              biomol genomic } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "LocalID:seq29" } } } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "SmartComment" ,
+                  data
+                    str "TOTAL # OF SEQS:30" } ,
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "BankIt1788939" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "GAP: est. length - alignment" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "SmartComment" ,
+                  data
+                    str "TOTAL # OF SETS:30" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "TAX: No, not new species/combinations" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "RESUB: This is a resubmission of
+ Group/BankIt#:1785983" } } } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 421 ,
+            topology not-set ,
+            seq-data
+              ncbi2na '03FE25F2C880DC70B87BFD13D2A01702FE2B38AC35E2503FCBCE032
+B9221D8280735C1800FFFDDCFFFCF18B3C3D2E443500CCDE030D004DE0C50EF4CF2FF80C0770C8
+628C08C8B5FFF10DCCC3FF3F2230FB00200D6FA7F0C85F8ABD0B5771553CF00FF4B50FF303D03C
+0'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "trnL" } ,
+                    partial TRUE ,
+                    comment "trnL(UAA)" ,
+                    location
+                      int {
+                        from 0 ,
+                        to 382 ,
+                        strand plus ,
+                        id
+                          local
+                            str "seq29" ,
+                        fuzz-from
+                          lim lt } } ,
+                  {
+                    data
+                      imp {
+                        key "intron" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 331 ,
+                        strand plus ,
+                        id
+                          local
+                            str "seq29" ,
+                        fuzz-from
+                          lim lt } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 76 } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 332 ,
+                        to 382 ,
+                        strand plus ,
+                        id
+                          local
+                            str "seq29" ,
+                        fuzz-from
+                          lim lt } } ,
+                  {
+                    data
+                      imp {
+                        key "misc_feature" } ,
+                    partial TRUE ,
+                    comment "trnL-trnF intergenic spacer; trnL(UAA)-trnF(GAA)" ,
+                    location
+                      int {
+                        from 382 ,
+                        to 420 ,
+                        strand plus ,
+                        id
+                          local
+                            str "seq29" ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "seq30" ,
+            general {
+              db "BankIt" ,
+              tag
+                str "1788939/seq30" } ,
+            general {
+              db "TMSMART" ,
+              tag
+                id 51541882 } ,
+            genbank {
+              accession "KP403759" } } ,
+          descr {
+            title "Tuzibeanthus chinensis voucher 20111218-36A tRNA-Leu (trnL)
+ gene and trnL-trnF intergenic spacer, partial sequence; chloroplast." ,
+            source {
+              genome chloroplast ,
+              org {
+                taxname "Tuzibeanthus chinensis" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 1527781 } } ,
+                orgname {
+                  name
+                    binomial {
+                      genus "Tuzibeanthus" ,
+                      species "chinensis" } ,
+                  mod {
+                    {
+                      subtype specimen-voucher ,
+                      subname "20111218-36A" } } ,
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Marchantiophyta; Jungermanniopsida; Jungermanniidae; Porellales;
+ Jubulineae; Lejeuneaceae; Tuzibeanthus" ,
+                  gcode 1 ,
+                  mgcode 1 ,
+                  div "PLN" ,
+                  pgcode 11 } } ,
+              subtype {
+                {
+                  subtype country ,
+                  name "China" } ,
+                {
+                  subtype isolation-source ,
+                  name "on tree bark" } ,
+                {
+                  subtype collection-date ,
+                  name "18-Dec-2012" } ,
+                {
+                  subtype collected-by ,
+                  name "R.L.Zhu" } } } ,
+            molinfo {
+              biomol genomic } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "LocalID:seq30" } } } ,
+            user {
+              type
+                str "StructuredComment" ,
+              data {
+                {
+                  label
+                    str "StructuredCommentPrefix" ,
+                  data
+                    str "##Assembly-Data-START##" } ,
+                {
+                  label
+                    str "Sequencing Technology" ,
+                  data
+                    str "Sanger dideoxy sequencing" } ,
+                {
+                  label
+                    str "StructuredCommentSuffix" ,
+                  data
+                    str "##Assembly-Data-END##" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "SmartComment" ,
+                  data
+                    str "TOTAL # OF SEQS:30" } ,
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "BankIt1788939" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "GAP: est. length - alignment" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "SmartComment" ,
+                  data
+                    str "TOTAL # OF SETS:30" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "TAX: No, not new species/combinations" } } } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "RESUB: This is a resubmission of
+ Group/BankIt#:1785983" } } } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 421 ,
+            topology not-set ,
+            seq-data
+              ncbi2na '03FE25F2C880DC70B87BFD13D2A01702FE2B38AC35E2503FCBCE032
+B9221D8280735C1800FFFDDCFFFCF18B3C3D2E443500CCDE030D004DE0C50EF4CF2FF80C0770C8
+628C08C8B5FFF10DCCC3FF3F2230FB00200D6FA7F0C85F8ABD0B5771553CF00FF4B50FF303D03C
+0'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "trnL" } ,
+                    partial TRUE ,
+                    comment "trnL(UAA)" ,
+                    location
+                      int {
+                        from 0 ,
+                        to 382 ,
+                        strand plus ,
+                        id
+                          local
+                            str "seq30" ,
+                        fuzz-from
+                          lim lt } } ,
+                  {
+                    data
+                      imp {
+                        key "intron" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 331 ,
+                        strand plus ,
+                        id
+                          local
+                            str "seq30" ,
+                        fuzz-from
+                          lim lt } } ,
+                  {
+                    data
+                      rna {
+                        type tRNA ,
+                        ext
+                          tRNA {
+                            aa
+                              ncbieaa 76 } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 332 ,
+                        to 382 ,
+                        strand plus ,
+                        id
+                          local
+                            str "seq30" ,
+                        fuzz-from
+                          lim lt } } ,
+                  {
+                    data
+                      imp {
+                        key "misc_feature" } ,
+                    partial TRUE ,
+                    comment "trnL-trnF intergenic spacer; trnL(UAA)-trnF(GAA)" ,
+                    location
+                      int {
+                        from 382 ,
+                        to 420 ,
+                        strand plus ,
+                        id
+                          local
+                            str "seq30" ,
+                        fuzz-to
+                          lim gt } } } } } } } } } }

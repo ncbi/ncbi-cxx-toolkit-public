@@ -1,0 +1,29 @@
+Discrepancy Report Results
+
+Summary
+GENE_MISC_IGS_OVERLAP: 10 genes overlap with IGS misc features
+
+Detailed Report
+
+GENE_MISC_IGS_OVERLAP: 10 genes overlap with IGS misc features
+test-data/gene_misc_igs_overlap.sqn:Gene	trnL	gb|KP403750|:<1-391	
+test-data/gene_misc_igs_overlap.sqn:misc_feature	trnL-trnF intergenic spacer; trnL(UAA)-trnF(GAA)	gb|KP403750|:391->432	
+test-data/gene_misc_igs_overlap.sqn:Gene	trnL	gb|KP403751|:<1-405	
+test-data/gene_misc_igs_overlap.sqn:misc_feature	trnL-trnF intergenic spacer; trnL(UAA)-trnF(GAA)	gb|KP403751|:405->446	
+test-data/gene_misc_igs_overlap.sqn:Gene	trnL	gb|KP403752|:<1-394	
+test-data/gene_misc_igs_overlap.sqn:misc_feature	trnL-trnF intergenic spacer; trnL(UAA)-trnF(GAA)	gb|KP403752|:394->435	
+test-data/gene_misc_igs_overlap.sqn:Gene	trnL	gb|KP403753|:<1-389	
+test-data/gene_misc_igs_overlap.sqn:misc_feature	trnL-trnF intergenic spacer; trnL(UAA)-trnF(GAA)	gb|KP403753|:389->430	
+test-data/gene_misc_igs_overlap.sqn:Gene	trnL	gb|KP403754|:<1-390	
+test-data/gene_misc_igs_overlap.sqn:misc_feature	trnL-trnF intergenic spacer; trnL(UAA)-trnF(GAA)	gb|KP403754|:390->431	
+test-data/gene_misc_igs_overlap.sqn:Gene	trnL	gb|KP403755|:<1-403	
+test-data/gene_misc_igs_overlap.sqn:misc_feature	trnL-trnF intergenic spacer; trnL(UAA)-trnF(GAA)	gb|KP403755|:403->444	
+test-data/gene_misc_igs_overlap.sqn:Gene	trnL	gb|KP403756|:<1-403	
+test-data/gene_misc_igs_overlap.sqn:misc_feature	trnL-trnF intergenic spacer; trnL(UAA)-trnF(GAA)	gb|KP403756|:403->444	
+test-data/gene_misc_igs_overlap.sqn:Gene	trnL	gb|KP403757|:<1-377	
+test-data/gene_misc_igs_overlap.sqn:misc_feature	trnL-trnF intergenic spacer; trnL(UAA)-trnF(GAA)	gb|KP403757|:377->415	
+test-data/gene_misc_igs_overlap.sqn:Gene	trnL	gb|KP403758|:<1-383	
+test-data/gene_misc_igs_overlap.sqn:misc_feature	trnL-trnF intergenic spacer; trnL(UAA)-trnF(GAA)	gb|KP403758|:383->421	
+test-data/gene_misc_igs_overlap.sqn:Gene	trnL	gb|KP403759|:<1-383	
+test-data/gene_misc_igs_overlap.sqn:misc_feature	trnL-trnF intergenic spacer; trnL(UAA)-trnF(GAA)	gb|KP403759|:383->421	
+
