@@ -230,7 +230,9 @@ CSeqVector GetSequenceFromFeature
 static string s_GetBioseqAcc(const CSeq_id& id, int* version)
 {
     try {
-        return id.GetSeqIdString(version);
+        string label;
+        id.GetLabel(&label, version, CSeq_id::eFasta);
+        return label;
     } catch (CException&) {
         return kEmptyStr;
     }
