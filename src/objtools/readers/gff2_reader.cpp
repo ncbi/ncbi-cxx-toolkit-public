@@ -569,8 +569,12 @@ bool CGff2Reader::x_ParseAlignmentGff(
     if ( !pRecord->AssignFromGff(strLine) ) {
         return false;
     }
+    
+    string id;
+    if ( !pRecord->GetAttribute("ID", id) ) {
+        id = pRecord->Id();
+    }
 
-    const string id = pRecord->Id();
     if (alignments.find(id) == alignments.end()) {
        id_list.push_back(id);
     }
