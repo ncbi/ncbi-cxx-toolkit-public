@@ -2484,7 +2484,7 @@ CNCMessageHandler::x_WaitForBlobAccess(void)
     m_LatestExist = is_exist
                     &&  (x_IsFlagSet(fNoBlobVersionCheck)
                          ||  m_BlobAccess->GetCurBlobVersion() == m_BlobVersion);
-    if (x_IsFlagSet(fDoNotProxyToPeers) || m_ForceLocal) {
+    if (x_IsFlagSet(fDoNotProxyToPeers) || m_ForceLocal || !m_SearchOnRead) {
         m_LatestSrvId = CNCDistributionConf::GetSelfID();
     } else {
         m_LatestSrvId = is_valid ?
