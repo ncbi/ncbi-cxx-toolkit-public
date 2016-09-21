@@ -3,6 +3,15 @@ Release 4.27.0 cloned from 4.26.0 (2016-09-19)
 Improvements:
     * NetSchedule: let prioritized affinities work together with any affinity
       flag (JIRA: CXX-8587)
+    * NetSchedule: shutdown sockets on client close (JIRA: CXX-8286)
+    * NetSchedule: extend with IServer_ConnectionHandler::OnError() callback
+      (JIRA: CXX-8287)
+    * NS -- use status code 404 (NotFound) for non-existing jobs
+      (JIRA: CXX-8251)
+    * NS -- log connection ID on establishing the connection; change method of
+      ID creation (JIRA: CXX-8253)
+    * NetSchedule: not initialized member (JIRA: CXX-8359)
+
 
 Release 4.26.0 cloned from 4.25.0 (2016-05-04)
 
