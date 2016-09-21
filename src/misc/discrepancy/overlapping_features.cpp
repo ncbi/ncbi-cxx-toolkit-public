@@ -448,7 +448,7 @@ DISCREPANCY_SUMMARIZE(EXON_INTRON_CONFLICT)
 
 static const string kGeneMisc = "[n] gene[s] overlap[S] with IGS misc features";
 
-DISCREPANCY_CASE(GENE_MISC_IGS_OVERLAP, COverlappingFeatures, eDisc | eOncaller, "Gene with misc feature overlap")
+DISCREPANCY_CASE(GENE_MISC_IGS_OVERLAP, COverlappingFeatures, eOncaller, "Gene with misc feature overlap")
 {
     ITERATE(vector<CConstRef<CSeq_feat>>, gene, context.FeatGenes()) {
         if ((*gene)->IsSetLocation() && (*gene)->IsSetData() && (*gene)->GetData().GetGene().IsSetLocus() &&

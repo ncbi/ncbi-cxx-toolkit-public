@@ -1,0 +1,13 @@
+Discrepancy Report Results
+
+Summary
+SUSPECT_PRODUCT_NAMES: 2 product_names contain suspect phrases or characters
+	Product name does not contain letters
+		2 features do not contain letters in product name
+
+Detailed Report
+
+SUSPECT_PRODUCT_NAMES: 2 product_names contain suspect phrases or characters
+test-data/alldigits.sqn:CDS	2	lcl|contig002:22139-25222	abc_5678
+test-data/alldigits.sqn:CDS	3'	lcl|contig002:4015-5724	abc_123
+

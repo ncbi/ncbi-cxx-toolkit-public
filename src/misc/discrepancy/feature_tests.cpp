@@ -2384,7 +2384,7 @@ DISCREPANCY_SUMMARIZE(FEATURE_LIST)
 static const string kMultiQuals = "[n] feature[s] contain[S] multiple /number qualifiers";
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(MULTIPLE_QUALS, CSeq_feat, eDisc, "Multiple qualifiers")
+DISCREPANCY_CASE(MULTIPLE_QUALS, CSeq_feat, eDisc | eOncaller, "Multiple qualifiers")
 //  ----------------------------------------------------------------------------
 {
     if (obj.IsSetQual()) {
@@ -2420,7 +2420,7 @@ DISCREPANCY_SUMMARIZE(MULTIPLE_QUALS)
 static const string kMiscFeatWithProduct = "[n] feature[s] [has] a product qualifier";
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(MISC_FEATURE_WITH_PRODUCT_QUAL, CSeq_feat, eOncaller, "Misc features containing a product qualifier")
+DISCREPANCY_CASE(MISC_FEATURE_WITH_PRODUCT_QUAL, CSeq_feat, eDisc | eOncaller | eSubmitter | eSmart, "Misc features containing a product qualifier")
 //  ----------------------------------------------------------------------------
 {
     if (obj.IsSetData() && obj.IsSetQual()) {

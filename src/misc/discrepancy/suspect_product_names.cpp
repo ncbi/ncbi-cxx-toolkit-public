@@ -5397,6 +5397,17 @@ static string GetRuleMatch(const CSuspect_rule& rule)
 
 static const string kSuspectProductNames = "[n] product_name[s] contain[S] suspect phrase[s] or character[s]";
 
+static bool ContainsLetters(const string& prod_name)
+{
+    ITERATE(string, symbol, prod_name) {
+        if (isalpha(*symbol)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData, eDisc | eOncaller | eSubmitter | eSmart, "Suspect Product Name")
 {
     if (obj.GetSubtype() != CSeqFeatData::eSubtype_prot) {
@@ -5407,37 +5418,47 @@ DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData, eDisc | eOncaller | eSubmi
 
     if (prot.IsSetName() && !prot.GetName().empty()) {
         string prot_name = *prot.GetName().begin();
-        size_t rule_num = 1;
-        ITERATE(list<CRef<CSuspect_rule> >, rule, rules->Get()) {
-            string leading_space = "[*" + NStr::NumericToString(rule_num) + "*]";
-            rule_num++;
-            const CSearch_func& find = (*rule)->GetFind();
-            if (!MatchesSearchFunc(prot_name, find)) {
-                continue;
-            }
-            if ((*rule)->CanGetExcept()) {
-                const CSearch_func& except = (*rule)->GetExcept();
-                if (!IsSearchFuncEmpty(except) && MatchesSearchFunc(prot_name, except)) {
+
+        if (!ContainsLetters(prot_name)) {
+
+            const CSeq_feat* cds = sequence::GetCDSForProduct(*(context.GetCurrentBioseq()), &(context.GetScope()));
+            CReportNode& node = m_Objs[kSuspectProductNames]["[*-1*]Product name does not contain letters"].Summ()["[n] feature[s] [does] not contain letters in product name"].Summ().Fatal();
+            node.Add(*context.NewDiscObj(cds ? CConstRef<CSeq_feat>(cds) : context.GetCurrentSeq_feat())).Fatal();
+        }
+        else {
+
+            size_t rule_num = 1;
+            ITERATE(list<CRef<CSuspect_rule> >, rule, rules->Get()) {
+                string leading_space = "[*" + NStr::NumericToString(rule_num) + "*]";
+                rule_num++;
+                const CSearch_func& find = (*rule)->GetFind();
+                if (!MatchesSearchFunc(prot_name, find)) {
                     continue;
                 }
-            }
-            if ((*rule)->CanGetFeat_constraint()) {
-                const CConstraint_choice_set& constr = (*rule)->GetFeat_constraint();
-                //if (!DoesObjectMatchConstraintChoiceSet(context, constr)) continue;
-                if (!DoesStringMatchConstraintChoiceSet(prot_name, constr)) continue;
-            }
-            size_t rule_type = (*rule)->GetRule_type();
-            string rule_num = "[*";
-            if (rule_type < 10) {
-                rule_num += " ";
-            }
-            rule_num += NStr::NumericToString(rule_type) + "*]" + GetRuleText(**rule);
-            string rule_text = leading_space + GetRuleMatch(**rule);
-            CReportNode& node = m_Objs[kSuspectProductNames][rule_num].Summ()[rule_text].Summ().Fatal((*rule)->IsFatal());
-            const CSeq_feat* cds = sequence::GetCDSForProduct(*(context.GetCurrentBioseq()), &(context.GetScope()));
+                if ((*rule)->CanGetExcept()) {
+                    const CSearch_func& except = (*rule)->GetExcept();
+                    if (!IsSearchFuncEmpty(except) && MatchesSearchFunc(prot_name, except)) {
+                        continue;
+                    }
+                }
+                if ((*rule)->CanGetFeat_constraint()) {
+                    const CConstraint_choice_set& constr = (*rule)->GetFeat_constraint();
+                    //if (!DoesObjectMatchConstraintChoiceSet(context, constr)) continue;
+                    if (!DoesStringMatchConstraintChoiceSet(prot_name, constr)) continue;
+                }
+                size_t rule_type = (*rule)->GetRule_type();
+                string rule_num = "[*";
+                if (rule_type < 10) {
+                    rule_num += " ";
+                }
+                rule_num += NStr::NumericToString(rule_type) + "*]" + GetRuleText(**rule);
+                string rule_text = leading_space + GetRuleMatch(**rule);
+                CReportNode& node = m_Objs[kSuspectProductNames][rule_num].Summ()[rule_text].Summ().Fatal((*rule)->IsFatal());
+                const CSeq_feat* cds = sequence::GetCDSForProduct(*(context.GetCurrentBioseq()), &(context.GetScope()));
 
-            node.Add(*context.NewDiscObj(cds ? CConstRef<CSeq_feat>(cds) : context.GetCurrentSeq_feat(), 
-                     eNoRef, (*rule)->CanGetReplace(), (CObject*)&**rule)).Fatal((*rule)->IsFatal());
+                node.Add(*context.NewDiscObj(cds ? CConstRef<CSeq_feat>(cds) : context.GetCurrentSeq_feat(),
+                    eNoRef, (*rule)->CanGetReplace(), (CObject*)&**rule)).Fatal((*rule)->IsFatal());
+            }
         }
     }
 }
