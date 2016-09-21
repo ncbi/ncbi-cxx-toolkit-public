@@ -213,6 +213,7 @@ class CCommand
 {
 public:
     CCommand(string name, TArguments args = TArguments());
+    CCommand(string name, string args);
     CCommand(string name, TCommandsGetter getter);
 
     CJsonNode Help(CJsonIterator& input);

@@ -69,6 +69,15 @@ private:
     vector<CArgument> m_Args;
 };
 
+struct SVariadicCommandImpl : SCommandImpl
+{
+    SVariadicCommandImpl(string args);
+    CJsonNode Help(const string& name, CJsonIterator& input) override;
+
+private:
+    const string m_Args;
+};
+
 struct SCommandGroupImpl : SCommandImpl
 {
     SCommandGroupImpl(TCommandsGetter getter);
@@ -92,7 +101,7 @@ SSimpleCommandImpl::SSimpleCommandImpl(TArguments args) :
 {
 }
 
-CJsonNode SSimpleCommandImpl::Help(const string& name, CJsonIterator& input)
+CJsonNode SSimpleCommandImpl::Help(const string& name, CJsonIterator&)
 {
     // Full mode
     CJsonNode help(CJsonNode::eObject);
@@ -106,6 +115,20 @@ CJsonNode SSimpleCommandImpl::Help(const string& name, CJsonIterator& input)
         help.SetByKey("arguments", elements);
     }
 
+    return help;
+}
+
+SVariadicCommandImpl::SVariadicCommandImpl(string args) :
+    m_Args(args)
+{
+}
+
+CJsonNode SVariadicCommandImpl::Help(const string& name, CJsonIterator&)
+{
+    // Full mode
+    CJsonNode help(CJsonNode::eObject);
+    help.SetString("command", name);
+    help.SetString("arguments", m_Args);
     return help;
 }
 
@@ -142,6 +165,12 @@ CJsonNode SCommandGroupImpl::Help(const string& name, CJsonIterator& input)
 CCommand::CCommand(string name, TArguments args) :
     m_Name(name),
     m_Impl(new SSimpleCommandImpl(args))
+{
+}
+
+CCommand::CCommand(string name, string args) :
+    m_Name(name),
+    m_Impl(new SVariadicCommandImpl(args))
 {
 }
 
@@ -376,7 +405,7 @@ NAutomation::TCommands CAutomationProc::Commands()
         { "whatis", {
                 { "some_id", CJsonNode::eString, },
             }},
-        { "echo", },
+        { "echo", "any" },
     };
 
     return cmds;
