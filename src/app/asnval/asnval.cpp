@@ -267,7 +267,13 @@ void CAsnvalApp::Init(void)
         "L", "OutFile", "Log File",
         CArgDescriptions::eOutputFile);
 
-    arg_desc->AddDefaultKey("v", "Verbosity", "Verbosity", CArgDescriptions::eInteger, "1");
+    arg_desc->AddDefaultKey("v", "Verbosity", 
+                            "Verbosity\n"
+                            "\t1 Standard Report\n"
+                            "\t2 Accession / Severity / Code(space delimited)\n"
+                            "\t3 Accession / Severity / Code(tab delimited)\n"
+                            "\t4 XML Report",
+                            CArgDescriptions::eInteger, "1");
     CArgAllow* v_constraint = new CArgAllow_Integers(eVerbosity_min, eVerbosity_max);
     arg_desc->SetConstraint("v", v_constraint);
 
