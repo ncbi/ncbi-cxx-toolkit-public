@@ -42,7 +42,10 @@ BEGIN_NCBI_SCOPE
 class CDiagCompileInfo;
 class CRequestContext;
 class CSharedHitId;
+//struct SSystemMutex;
+namespace ncbi_namespace_mutex_mt {
 struct SSystemMutex;
+};
 
 
 #define xncbi_Validate(expr, msg)   \
@@ -514,7 +517,7 @@ public:
     };
     static string GetAppName(ENameType)
     { return string(); }
-    static SSystemMutex& GetInstanceMutex(void);
+    static ncbi_namespace_mutex_mt::SSystemMutex& GetInstanceMutex(void);
 };
 
 
