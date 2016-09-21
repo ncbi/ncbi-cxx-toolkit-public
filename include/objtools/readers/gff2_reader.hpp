@@ -180,24 +180,28 @@ public:
         list<string>& id_list,
         map<string, list<CRef<CSeq_align>>>& alignments);
 
-    void x_GetAlignmentScores(const CSeq_align& alignment,
-                              map<string, CRef<CScore::TValue>>& score_values);
+    void x_GetAlignmentScores(
+        const CSeq_align& alignment,
+        TScoreValueMap& score_values);
+      //  map<string, CRef<CScore::TValue>>& score_values);
 
-    void x_FindMatchingScores(const map<string, CRef<CScore::TValue>>& scores_1,
-                              const map<string, CRef<CScore::TValue>>& scores_2,
-                              set<string>& matching_scores);
+    void x_FindMatchingScores(
+        const TScoreValueMap& scores_1,
+        const TScoreValueMap& scores_2,
+        set<string>& matching_scores);
 
     virtual bool x_CreateAlignment(
         const CGff2Record& gff,
         CRef<CSeq_align>& pAlign);
 
     bool x_MergeAlignments(
-            const list<CRef<CSeq_align>>& alignment_list,
-            CRef<CSeq_align>& processed);
+        const list<CRef<CSeq_align>>& alignment_list,
+        CRef<CSeq_align>& processed);
      
-    void x_ProcessAlignmentsGff(const list<string>& id_list,
-                                const map<string, list<CRef<CSeq_align>>>& alignments,
-                                CRef<CSeq_annot> pAnnot);
+    void x_ProcessAlignmentsGff(
+        const list<string>& id_list,
+        const map<string, list<CRef<CSeq_align>>>& alignments,
+        CRef<CSeq_annot> pAnnot);
 
 
     virtual bool x_ParseAlignmentGff(
@@ -301,6 +305,13 @@ public:
     bool xAlignmentSetScore(
         const CGff2Record&,
         CRef<CSeq_align> );
+
+    bool xSetDensegStarts(
+        const vector<string>& gapParts, 
+        bool oppositeStrands,
+        size_t targetStart,
+        const CGff2Record& gff,
+        CSeq_align::C_Segs::TDenseg& denseg);
 
     virtual bool xReadInit();
 

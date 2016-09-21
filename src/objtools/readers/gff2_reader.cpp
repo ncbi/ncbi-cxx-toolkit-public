@@ -1167,12 +1167,11 @@ bool CGff2Reader::xGetTargetParts(const CGff2Record& gff, vector<string>& target
     return true;
 }
 
-// FIXME - convert the following function into a private member method
-bool s_SetDensegStarts(vector<string>& gapParts, 
-                       const bool oppositeStrands,
-                       const size_t targetStart,
-                       const CGff2Record& gff,
-                       CSeq_align::C_Segs::TDenseg& denseg)
+bool CGff2Reader::xSetDensegStarts(const vector<string>& gapParts, 
+                                   const bool oppositeStrands,
+                                   const size_t targetStart,
+                                   const CGff2Record& gff,
+                                   CSeq_align::C_Segs::TDenseg& denseg)
 {
 
     size_t targetOffset = targetStart;
@@ -1292,12 +1291,11 @@ bool CGff2Reader::xAlignmentSetSegment(
 
     size_t targetOffset = NStr::StringToInt(targetParts[1])-1;
 
-    // FIXME - convert the following function into a private member method
-    if (!s_SetDensegStarts(gapParts, 
-                           oppositeStrands,
-                           targetOffset,
-                           gff,
-                           denseg)) {
+    if (!xSetDensegStarts(gapParts, 
+                          oppositeStrands,
+                          targetOffset,
+                          gff,
+                          denseg)) {
         return false;
     }
 
