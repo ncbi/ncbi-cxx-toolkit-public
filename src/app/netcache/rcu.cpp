@@ -198,7 +198,9 @@ CSrvRCUUser::CallRCU(void)
          thr->thread_state >= eThreadStopped) &&  this != thr) {
         SRV_FATAL("CallRCU unexpected");
     }
-    thr->rcu->calls.push_back(*this);
+    if (this->m_RCUListHook.next_ == nullptr) {
+        thr->rcu->calls.push_back(*this);
+    }
 }
 
 
