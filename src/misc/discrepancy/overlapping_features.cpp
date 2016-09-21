@@ -444,5 +444,45 @@ DISCREPANCY_SUMMARIZE(EXON_INTRON_CONFLICT)
 }
 
 
+// GENE_MISC_IGS_OVERLAP
+
+static const string kGeneMisc = "[n] gene[s] overlap[S] with IGS misc features";
+
+DISCREPANCY_CASE(GENE_MISC_IGS_OVERLAP, COverlappingFeatures, eDisc | eOncaller, "Gene with misc feature overlap")
+{
+    ITERATE(vector<CConstRef<CSeq_feat>>, gene, context.FeatGenes()) {
+        if ((*gene)->IsSetLocation() && (*gene)->IsSetData() && (*gene)->GetData().GetGene().IsSetLocus() &&
+            NStr::StartsWith((*gene)->GetData().GetGene().GetLocus(), "trn")) {
+
+            const CSeq_loc& loc_gene = (*gene)->GetLocation();
+            bool gene_added = false;
+
+            ITERATE(vector<CConstRef<CSeq_feat>>, misc, context.FeatMisc()) {
+                if ((*misc)->IsSetLocation() && (*misc)->IsSetComment() && NStr::FindNoCase((*misc)->GetComment(), "intergenic spacer") != NPOS) {
+
+                    const CSeq_loc& loc_misc = (*misc)->GetLocation();
+                    if (sequence::Compare(loc_gene, loc_misc, &context.GetScope(), sequence::fCompareOverlapping) != sequence::eNoOverlap) {
+
+                        if (!gene_added) {
+                            m_Objs[kGeneMisc].Add(*context.NewDiscObj(*gene)).Incr();
+                            gene_added = true;
+                        }
+
+                        m_Objs[kGeneMisc].Add(*context.NewDiscObj(*misc));
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(GENE_MISC_IGS_OVERLAP)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

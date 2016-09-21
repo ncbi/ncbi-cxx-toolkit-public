@@ -605,6 +605,9 @@ void CDiscrepancyContext::CollectFeature(const CSeq_feat& feat)
         case CSeqFeatData::eSubtype_intron:
             m_FeatIntrons.push_back(CConstRef<CSeq_feat>(&feat));
             break;
+        case CSeqFeatData::eSubtype_misc_feature:
+            m_FeatMisc.push_back(CConstRef<CSeq_feat>(&feat));
+            break;
         default:
             break;
     }

@@ -401,6 +401,7 @@ public:
     const vector<CConstRef<CSeq_feat> >& Feat_RNAs() { return m_Feat_RNAs; }
     const vector<CConstRef<CSeq_feat> >& FeatExons() { return m_FeatExons; }
     const vector<CConstRef<CSeq_feat> >& FeatIntrons() { return m_FeatIntrons; }
+    const vector<CConstRef<CSeq_feat> >& FeatMisc() { return m_FeatMisc; }
 
     CRef<CDiscrepancyObject> NewDiscObj(CConstRef<CBioseq> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
     CRef<CDiscrepancyObject> NewDiscObj(CConstRef<CSeqdesc> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
@@ -445,6 +446,7 @@ protected:
     vector<CConstRef<CSeq_feat> > m_Feat_RNAs;  // other RNA
     vector<CConstRef<CSeq_feat> > m_FeatExons;
     vector<CConstRef<CSeq_feat> > m_FeatIntrons;
+    vector<CConstRef<CSeq_feat> > m_FeatMisc;
     map<const CSerialObject*, string> m_TextMap;
     map<const CSerialObject*, string> m_TextMapShort;
 
