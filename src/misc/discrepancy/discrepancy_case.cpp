@@ -1190,7 +1190,7 @@ DISCREPANCY_SUMMARIZE(SEGSETS_PRESENT)
 // QUALITY_SCORES
 DISCREPANCY_CASE(QUALITY_SCORES, CSeq_annot, eDisc | eSmart, "Check for quality scores")
 {
-    if (!context.GetCurrentBioseq()->IsSetInst() || context.GetCurrentBioseq()->IsAa()) {
+    if (!context.GetCurrentBioseq() || !context.GetCurrentBioseq()->IsSetInst() || context.GetCurrentBioseq()->IsAa()) {
         return;
     }
 
