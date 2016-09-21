@@ -229,6 +229,7 @@ CGff2Reader::ReadSeqAnnot(
         }
 
         if (!xIsCurrentDataType(line)) {
+            xUngetLine(lr);
             break;
         }
 
