@@ -6925,7 +6925,6 @@ void CNewCleanup_imp::x_CleanStructuredComment( CUser_object &user_object )
                         if (!ambiguous && coll_date->GetStd().IsSetMonth()) {
                             coll_date->GetDate(&month, "%N");
                             month = month.substr(0, 3);
-                            NStr::ToUpper(month);
                         }
                         coll_date->GetDate(&year, "%Y");
                         if (!NStr::IsBlank(day)) {
