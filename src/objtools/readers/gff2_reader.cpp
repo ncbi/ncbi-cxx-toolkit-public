@@ -811,32 +811,6 @@ bool CGff2Reader::x_ParseFeatureGff(
     return true; 
 };
 
-/*
-bool CGff2Reader::x_ParseAlignmentGff(
-    const string& strLine, 
-    list<string>& id_list, // Add id to alignment
-    multimap<string, CRef<CSeq_align>>& alignments)
-{
-    unique_ptr<CGff2Record> pRecord(x_CreateRecord());
-    if ( !pRecord->AssignFromGff(strLine) ) {
-        return false;
-    }
-
-    const string id = pRecord->Id();
-
-    if (alignments.find(id) == alignments.end()) {
-       id_list.push_back(id);
-    }
-
-    CRef<CSeq_align> alignment;
-    if (!x_CreateAlignment(*pRecord, alignment)) {
-        return false;
-    }
-
-    alignments.insert(make_pair(id, alignment));
-    return true;
-}
-*/
 
 
 //  ----------------------------------------------------------------------------
@@ -1188,47 +1162,52 @@ bool CGff2Reader::xGetTargetParts(const CGff2Record& gff, vector<string>& target
     return true;
 }
 
-
-//  ----------------------------------------------------------------------------
-bool CGff2Reader::xAlignmentSetSegment(
-    const CGff2Record& gff,
-    CRef<CSeq_align> pAlign)
-//  ----------------------------------------------------------------------------
+// FIXME - convert the following function into a private member method
+bool s_SetDensegStarts(vector<string>& gapParts, 
+                       const bool oppositeStrands,
+                       const size_t targetStart,
+                       const CGff2Record& gff,
+                       CSeq_align::C_Segs::TDenseg& denseg)
 {
 
-    vector<string> targetParts;
-    if (!xGetTargetParts(gff, targetParts)) {
-        return false;
+    size_t targetOffset = targetStart;
+    const size_t gapCount = gapParts.size();
+    // Gap attribute is always given with respect to the target 
+    // strand. 
+    // The reference start values depend on the relative strandedness.
+    // The target start values do not.
+    if (oppositeStrands) {
+        size_t identOffset = gff.SeqStop();
+        for (int i=0; i<gapCount; ++i) {
+            char changeType = gapParts[i][0];
+            int changeSize = NStr::StringToInt(gapParts[i].substr(1));
+            switch (changeType) {
+            default:
+                return false;
+            case 'M': 
+                denseg.SetStarts().push_back(targetOffset);
+                denseg.SetStarts().push_back(identOffset+1-changeSize);
+                targetOffset += changeSize;
+                identOffset -= changeSize;
+                break;
+
+            case 'I':
+                denseg.SetStarts().push_back(targetOffset);
+                denseg.SetStarts().push_back(-1);
+                targetOffset += changeSize;
+                break;
+
+            case 'D':
+                denseg.SetStarts().push_back(-1);
+                denseg.SetStarts().push_back(identOffset+1-changeSize);
+                identOffset -= changeSize;
+                break;
+            }
+        }
+        return true;
     }
 
-    string gapInfo;
-    vector<string> gapParts;
-    if (gff.GetAttribute("Gap", gapInfo)) {
-        NStr::Split(gapInfo, " ", gapParts);
-    }
-    else {
-        gapParts.push_back(string("M") + NStr::NumericToString(gff.SeqStop()-gff.SeqStart()+1));
-    }
-    int gapCount = gapParts.size();
-
-    //meta
-    CSeq_align::TSegs& segs = pAlign->SetSegs();
-    CSeq_align::C_Segs::TDenseg& denseg = segs.SetDenseg();
-    denseg.SetDim(2);
-    denseg.SetNumseg(gapCount);
-
-    //ids
-    denseg.SetIds().push_back(
-        CReadUtil::AsSeqId(targetParts[0]));
-    denseg.SetIds().push_back(
-        CReadUtil::AsSeqId(gff.Id()));
-
-    //starts
-    //size_t targetOffset = 0;
-    size_t targetOffset = NStr::StringToInt(targetParts[1])-1;
-
-
-
+    // No difference in strandedness
     size_t identOffset = gff.SeqStart();
     for (int i=0; i < gapCount; ++i) {
         char changeType = gapParts[i][0];
@@ -1254,10 +1233,22 @@ bool CGff2Reader::xAlignmentSetSegment(
             break;
         }
     }
-    //lengths
-    for (int i=0; i < gapCount; ++i) {
-        denseg.SetLens().push_back(NStr::StringToInt(CTempString(gapParts[i],1,string::npos)));
+
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Reader::xAlignmentSetSegment(
+    const CGff2Record& gff,
+    CRef<CSeq_align> pAlign)
+//  ----------------------------------------------------------------------------
+{
+
+    vector<string> targetParts;
+    if (!xGetTargetParts(gff, targetParts)) {
+        return false;
     }
+
     //strands
     ENa_strand targetStrand = eNa_strand_plus;
     if (targetParts[3] == "-") {
@@ -1267,6 +1258,49 @@ bool CGff2Reader::xAlignmentSetSegment(
     if (gff.IsSetStrand()) {
         identStrand = gff.Strand();
     }
+
+
+    string gapInfo;
+    vector<string> gapParts;
+    if (gff.GetAttribute("Gap", gapInfo)) {
+        NStr::Split(gapInfo, " ", gapParts);
+    }
+    else {
+        gapParts.push_back(string("M") + NStr::NumericToString(gff.SeqStop()-gff.SeqStart()+1));
+    }
+
+    bool oppositeStrands = (targetStrand != identStrand);
+
+    int gapCount = gapParts.size();
+
+    //meta
+    CSeq_align::TSegs& segs = pAlign->SetSegs();
+    CSeq_align::C_Segs::TDenseg& denseg = segs.SetDenseg();
+    denseg.SetDim(2);
+    denseg.SetNumseg(gapCount);
+
+    //ids
+    denseg.SetIds().push_back(
+        CReadUtil::AsSeqId(targetParts[0]));
+    denseg.SetIds().push_back(
+        CReadUtil::AsSeqId(gff.Id()));
+
+    size_t targetOffset = NStr::StringToInt(targetParts[1])-1;
+
+    // FIXME - convert the following function into a private member method
+    if (!s_SetDensegStarts(gapParts, 
+                           oppositeStrands,
+                           targetOffset,
+                           gff,
+                           denseg)) {
+        return false;
+    }
+
+    //lengths
+    for (int i=0; i < gapCount; ++i) {
+        denseg.SetLens().push_back(NStr::StringToInt(CTempString(gapParts[i],1,string::npos)));
+    }
+
     for (int i=0; i < gapCount; ++i) {
         denseg.SetStrands().push_back(targetStrand);
         denseg.SetStrands().push_back(identStrand);
