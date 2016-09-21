@@ -1,0 +1,5900 @@
+Seq-annot ::= {
+  id {
+    local str "NW_006763130.1"
+  },
+  data ftable {
+    {
+      id local id 1,
+      data biosrc {
+        genome genomic,
+        org {
+          orgname {
+            mod {
+              {
+                subtype strain,
+                subname "NOD/ShiLtJ"
+              }
+            }
+          }
+        },
+        subtype {
+          {
+            subtype chromosome,
+            name "6"
+          },
+          {
+            subtype map,
+            name "6qF3"
+          }
+        }
+      },
+      location int {
+        from 0,
+        to 620322,
+        strand plus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id0"
+        },
+        {
+          qual "Name",
+          val "6"
+        },
+        {
+          qual "mol_type",
+          val "genomic DNA"
+        }
+      },
+      dbxref {
+        {
+          db "taxon",
+          tag id 10090
+        }
+      }
+    },
+    {
+      id local id 2,
+      data imp {
+        key "STS"
+      },
+      location int {
+        from 1566,
+        to 1917,
+        strand plus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id2"
+        }
+      },
+      dbxref {
+        {
+          db "UniSTS",
+          tag id 130925
+        }
+      }
+    },
+    {
+      id local id 3,
+      data imp {
+        key "STS"
+      },
+      location int {
+        from 5921,
+        to 6061,
+        strand plus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id123"
+        }
+      },
+      dbxref {
+        {
+          db "UniSTS",
+          tag id 166300
+        }
+      }
+    },
+    {
+      id local id 4,
+      data gene {
+        locus "Klra9",
+        desc "killer cell lectin-like receptor subfamily A, member 9",
+        syn {
+          "Ly49I",
+          "LY49I1"
+        }
+      },
+      location int {
+        from 8625,
+        to 22895,
+        strand minus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene0"
+        },
+        {
+          qual "Name",
+          val "Klra9"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 5
+        },
+        {
+          id local id 6
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 16640
+        },
+        {
+          db "MGI",
+          tag str "MGI:1321153"
+        }
+      }
+    },
+    {
+      id local id 5,
+      data rna {
+        type mRNA
+      },
+      except TRUE,
+      comment "The RefSeq transcript has 27 substitutions, 1 non-frameshifting
+ indel compared to this genomic sequence",
+      location mix {
+        int {
+          from 22758,
+          to 22895,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 20967,
+          to 21103,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 19496,
+          to 19585,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 18432,
+          to 18650,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 15408,
+          to 15547,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 12340,
+          to 12443,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 8914,
+          to 9069,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 8625,
+          to 8835,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "Parent",
+          val "gene0"
+        },
+        {
+          qual "ID",
+          val "rna0"
+        },
+        {
+          qual "gene",
+          val "Klra9"
+        },
+        {
+          qual "product",
+          val "killer cell lectin-like receptor subfamily A, member 9"
+        },
+        {
+          qual "transcript_id",
+          val "NM_010651.3"
+        }
+      },
+      xref {
+        {
+          id local id 6
+        },
+        {
+          id local id 4
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 16640
+        },
+        {
+          db "Genbank",
+          tag str "NM_010651.3"
+        },
+        {
+          db "MGI",
+          tag str "MGI:1321153"
+        }
+      },
+      except-text "annotated by transcript or proteomic data"
+    },
+    {
+      id local id 6,
+      data cdregion {
+        frame one
+      },
+      except TRUE,
+      comment "The RefSeq protein has 12 substitutions compared to this
+ genomic sequence",
+      location mix {
+        int {
+          from 20967,
+          to 21078,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 19496,
+          to 19585,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 18432,
+          to 18650,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 15408,
+          to 15547,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 12340,
+          to 12443,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 8934,
+          to 9069,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds0"
+        },
+        {
+          qual "gene",
+          val "Klra9"
+        },
+        {
+          qual "product",
+          val "killer cell lectin-like receptor subfamily A, member 9"
+        },
+        {
+          qual "protein_id",
+          val "NP_034781.2"
+        },
+        {
+          qual "Parent",
+          val "rna0"
+        }
+      },
+      xref {
+        {
+          id local id 5
+        },
+        {
+          id local id 4
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 16640
+        },
+        {
+          db "Genbank",
+          tag str "NP_034781.2"
+        },
+        {
+          db "MGI",
+          tag str "MGI:1321153"
+        }
+      },
+      except-text "annotated by transcript or proteomic data"
+    },
+    {
+      id local id 7,
+      data imp {
+        key "STS"
+      },
+      location int {
+        from 18472,
+        to 18611,
+        strand plus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id389"
+        }
+      },
+      dbxref {
+        {
+          db "UniSTS",
+          tag id 143711
+        }
+      }
+    },
+    {
+      id local id 8,
+      data imp {
+        key "STS"
+      },
+      location int {
+        from 24591,
+        to 24614,
+        strand plus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id644"
+        }
+      },
+      dbxref {
+        {
+          db "UniSTS",
+          tag id 271146
+        }
+      }
+    },
+    {
+      id local id 9,
+      data imp {
+        key "STS"
+      },
+      location int {
+        from 33150,
+        to 33252,
+        strand plus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id936"
+        }
+      },
+      dbxref {
+        {
+          db "UniSTS",
+          tag id 258434
+        }
+      }
+    },
+    {
+      id local id 10,
+      data imp {
+        key "STS"
+      },
+      location int {
+        from 62097,
+        to 62356,
+        strand plus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id1777"
+        }
+      },
+      dbxref {
+        {
+          db "UniSTS",
+          tag id 258348
+        }
+      }
+    },
+    {
+      id local id 11,
+      data gene {
+        locus "Klra7",
+        desc "killer cell lectin-like receptor, subfamily A, member 7",
+        syn {
+          "LGL-1",
+          "Ly-49G.1",
+          "Ly-49G.2",
+          "Ly-49G.3",
+          "Ly49g",
+          "Ly49G.4",
+          "Ly49g1",
+          "Ly49g2"
+        }
+      },
+      location int {
+        from 64023,
+        to 81112,
+        strand minus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene1"
+        },
+        {
+          qual "Name",
+          val "Klra7"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 12
+        },
+        {
+          id local id 13
+        },
+        {
+          id local id 16
+        },
+        {
+          id local id 17
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 16638
+        },
+        {
+          db "MGI",
+          tag str "MGI:101901"
+        }
+      }
+    },
+    {
+      id local id 12,
+      data rna {
+        type mRNA
+      },
+      except TRUE,
+      comment "The RefSeq transcript has 15 substitutions, 1 non-frameshifting
+ indel compared to this genomic sequence",
+      location mix {
+        int {
+          from 79292,
+          to 79473,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 77723,
+          to 77812,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 76297,
+          to 76515,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 74240,
+          to 74382,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 71833,
+          to 71936,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 64304,
+          to 64459,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 64023,
+          to 64209,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "Parent",
+          val "gene1"
+        },
+        {
+          qual "ID",
+          val "rna1"
+        },
+        {
+          qual "gene",
+          val "Klra7"
+        },
+        {
+          qual "product",
+          val "killer cell lectin-like receptor, subfamily A, member 7,
+ transcript variant 2"
+        },
+        {
+          qual "transcript_id",
+          val "NM_014194.5"
+        }
+      },
+      xref {
+        {
+          id local id 16
+        },
+        {
+          id local id 11
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 16638
+        },
+        {
+          db "Genbank",
+          tag str "NM_014194.5"
+        },
+        {
+          db "MGI",
+          tag str "MGI:101901"
+        }
+      },
+      except-text "annotated by transcript or proteomic data"
+    },
+    {
+      id local id 13,
+      data rna {
+        type mRNA
+      },
+      except TRUE,
+      comment "The RefSeq transcript has 15 substitutions compared to this
+ genomic sequence",
+      location mix {
+        int {
+          from 81038,
+          to 81112,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 79292,
+          to 79458,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 77723,
+          to 77812,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 76297,
+          to 76515,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 74892,
+          to 74930,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 74240,
+          to 74382,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 71833,
+          to 71936,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 64255,
+          to 64459,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "Parent",
+          val "gene1"
+        },
+        {
+          qual "ID",
+          val "rna2"
+        },
+        {
+          qual "gene",
+          val "Klra7"
+        },
+        {
+          qual "product",
+          val "killer cell lectin-like receptor, subfamily A, member 7,
+ transcript variant 1"
+        },
+        {
+          qual "transcript_id",
+          val "NM_001110323.1"
+        }
+      },
+      xref {
+        {
+          id local id 17
+        },
+        {
+          id local id 11
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 16638
+        },
+        {
+          db "Genbank",
+          tag str "NM_001110323.1"
+        },
+        {
+          db "MGI",
+          tag str "MGI:101901"
+        }
+      },
+      except-text "annotated by transcript or proteomic data"
+    },
+    {
+      id local id 14,
+      data gene {
+        locus "Klra13-ps",
+        desc "killer cell lectin-like receptor subfamily A, member 13,
+ pseudogene",
+        syn {
+          "Klra13",
+          "Ly49M"
+        }
+      },
+      location int {
+        from 64312,
+        to 230751,
+        strand minus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene2"
+        },
+        {
+          qual "Name",
+          val "Klra13-ps"
+        },
+        {
+          qual "gene_biotype",
+          val "misc_RNA"
+        }
+      },
+      xref {
+        {
+          id local id 15
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 16631
+        },
+        {
+          db "MGI",
+          tag str "MGI:1321090"
+        }
+      },
+      pseudo TRUE
+    },
+    {
+      id local id 15,
+      data rna {
+        type other
+      },
+      except TRUE,
+      comment "The RefSeq transcript has 13 substitutions compared to this
+ genomic sequence",
+      location mix {
+        int {
+          from 230635,
+          to 230751,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 228546,
+          to 228626,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 227456,
+          to 227677,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 225444,
+          to 225586,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 71833,
+          to 71936,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 64312,
+          to 64459,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "Parent",
+          val "gene2"
+        },
+        {
+          qual "ID",
+          val "rna3"
+        },
+        {
+          qual "Name",
+          val "NR_033451.1"
+        },
+        {
+          qual "gene",
+          val "Klra13-ps"
+        },
+        {
+          qual "product",
+          val "killer cell lectin-like receptor subfamily A, member 13,
+ pseudogene"
+        },
+        {
+          qual "transcript_id",
+          val "NR_033451.1"
+        }
+      },
+      xref {
+        {
+          id local id 14
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 16631
+        },
+        {
+          db "Genbank",
+          tag str "NR_033451.1"
+        },
+        {
+          db "MGI",
+          tag str "MGI:1321090"
+        }
+      },
+      except-text "annotated by transcript or proteomic data"
+    },
+    {
+      id local id 16,
+      data cdregion {
+        frame one,
+        code-break {
+          {
+            loc int {
+              from 76468,
+              to 76466,
+              strand minus,
+              id other {
+                accession "NW_006763130",
+                version 1
+              }
+            },
+            aa ncbieaa 85
+          }
+        }
+      },
+      except TRUE,
+      comment "isoform 2 is encoded by transcript variant 2; The RefSeq
+ protein has 9 substitutions compared to this genomic sequence",
+      location mix {
+        int {
+          from 79292,
+          to 79403,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 77723,
+          to 77812,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 76297,
+          to 76515,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 74240,
+          to 74382,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 71833,
+          to 71936,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 64324,
+          to 64459,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds1"
+        },
+        {
+          qual "gene",
+          val "Klra7"
+        },
+        {
+          qual "product",
+          val "killer cell lectin-like receptor 7 isoform 2"
+        },
+        {
+          qual "protein_id",
+          val "NP_055009.5"
+        },
+        {
+          qual "Parent",
+          val "rna1"
+        }
+      },
+      xref {
+        {
+          id local id 12
+        },
+        {
+          id local id 11
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 16638
+        },
+        {
+          db "Genbank",
+          tag str "NP_055009.5"
+        },
+        {
+          db "MGI",
+          tag str "MGI:101901"
+        }
+      },
+      except-text "annotated by transcript or proteomic data"
+    },
+    {
+      id local id 17,
+      data cdregion {
+        frame one,
+        code-break {
+          {
+            loc int {
+              from 76468,
+              to 76466,
+              strand minus,
+              id other {
+                accession "NW_006763130",
+                version 1
+              }
+            },
+            aa ncbieaa 85
+          }
+        }
+      },
+      except TRUE,
+      comment "isoform 1 is encoded by transcript variant 1; The RefSeq
+ protein has 9 substitutions compared to this genomic sequence",
+      location mix {
+        int {
+          from 79292,
+          to 79403,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 77723,
+          to 77812,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 76297,
+          to 76515,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 74892,
+          to 74930,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 74240,
+          to 74382,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 71833,
+          to 71936,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 64324,
+          to 64459,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds2"
+        },
+        {
+          qual "gene",
+          val "Klra7"
+        },
+        {
+          qual "product",
+          val "killer cell lectin-like receptor 7 isoform 1"
+        },
+        {
+          qual "protein_id",
+          val "NP_001103793.1"
+        },
+        {
+          qual "Parent",
+          val "rna2"
+        }
+      },
+      xref {
+        {
+          id local id 13
+        },
+        {
+          id local id 11
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 16638
+        },
+        {
+          db "Genbank",
+          tag str "NP_001103793.1"
+        },
+        {
+          db "MGI",
+          tag str "MGI:101901"
+        }
+      },
+      except-text "annotated by transcript or proteomic data"
+    },
+    {
+      id local id 18,
+      data imp {
+        key "STS"
+      },
+      location int {
+        from 64926,
+        to 65262,
+        strand plus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id1856"
+        }
+      },
+      dbxref {
+        {
+          db "UniSTS",
+          tag id 166310
+        }
+      }
+    },
+    {
+      id local id 19,
+      data imp {
+        key "STS"
+      },
+      location int {
+        from 74299,
+        to 74537,
+        strand plus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id2176"
+        }
+      },
+      dbxref {
+        {
+          db "UniSTS",
+          tag id 143717
+        }
+      }
+    },
+    {
+      id local id 20,
+      data imp {
+        key "STS"
+      },
+      location int {
+        from 74908,
+        to 76378,
+        strand plus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id2208"
+        }
+      },
+      dbxref {
+        {
+          db "UniSTS",
+          tag id 143715
+        }
+      }
+    },
+    {
+      id local id 21,
+      data gene {
+        locus "LOC100862408"
+      },
+      location int {
+        from 110253,
+        to 133162,
+        strand minus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene3"
+        },
+        {
+          qual "Name",
+          val "LOC100862408"
+        },
+        {
+          qual "gene_biotype",
+          val "pseudogene"
+        }
+      },
+      xref {
+        {
+          id local id 22
+        },
+        {
+          id local id 24
+        },
+        {
+          id local id 26
+        },
+        {
+          id local id 27
+        },
+        {
+          id local id 28
+        },
+        {
+          id local id 29
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 100862408
+        }
+      },
+      pseudo TRUE
+    },
+    {
+      id local id 22,
+      data imp {
+        key "exon"
+      },
+      location int {
+        from 110253,
+        to 110388,
+        strand minus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "Parent",
+          val "gene3"
+        },
+        {
+          qual "ID",
+          val "id3726"
+        },
+        {
+          qual "gene",
+          val "LOC100862408"
+        },
+        {
+          qual "model_evidence",
+          val "Supporting evidence includes similarity to: 34 Proteins, and
+ 11% coverage of the annotated genomic feature by RNAseq alignments"
+        }
+      },
+      xref {
+        {
+          id local id 21
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 100862408
+        }
+      }
+    },
+    {
+      id local id 23,
+      data imp {
+        key "STS"
+      },
+      location int {
+        from 110849,
+        to 111186,
+        strand plus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id3727"
+        }
+      },
+      dbxref {
+        {
+          db "UniSTS",
+          tag id 166310
+        }
+      }
+    },
+    {
+      id local id 24,
+      data imp {
+        key "exon"
+      },
+      location int {
+        from 119143,
+        to 119246,
+        strand minus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "Parent",
+          val "gene3"
+        },
+        {
+          qual "ID",
+          val "id3728"
+        },
+        {
+          qual "gene",
+          val "LOC100862408"
+        },
+        {
+          qual "model_evidence",
+          val "Supporting evidence includes similarity to: 34 Proteins, and
+ 11% coverage of the annotated genomic feature by RNAseq alignments"
+        }
+      },
+      xref {
+        {
+          id local id 21
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 100862408
+        }
+      }
+    },
+    {
+      id local id 25,
+      data imp {
+        key "STS"
+      },
+      location int {
+        from 127165,
+        to 128682,
+        strand plus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id3729"
+        }
+      },
+      dbxref {
+        {
+          db "UniSTS",
+          tag id 515498
+        }
+      }
+    },
+    {
+      id local id 26,
+      data imp {
+        key "exon"
+      },
+      location int {
+        from 127430,
+        to 127572,
+        strand minus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "Parent",
+          val "gene3"
+        },
+        {
+          qual "ID",
+          val "id3730"
+        },
+        {
+          qual "gene",
+          val "LOC100862408"
+        },
+        {
+          qual "model_evidence",
+          val "Supporting evidence includes similarity to: 34 Proteins, and
+ 11% coverage of the annotated genomic feature by RNAseq alignments"
+        }
+      },
+      xref {
+        {
+          id local id 21
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 100862408
+        }
+      }
+    },
+    {
+      id local id 27,
+      data imp {
+        key "exon"
+      },
+      location int {
+        from 129840,
+        to 130046,
+        strand minus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "Parent",
+          val "gene3"
+        },
+        {
+          qual "ID",
+          val "id3731"
+        },
+        {
+          qual "gene",
+          val "LOC100862408"
+        },
+        {
+          qual "model_evidence",
+          val "Supporting evidence includes similarity to: 34 Proteins, and
+ 11% coverage of the annotated genomic feature by RNAseq alignments"
+        }
+      },
+      xref {
+        {
+          id local id 21
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 100862408
+        }
+      }
+    },
+    {
+      id local id 28,
+      data imp {
+        key "exon"
+      },
+      location int {
+        from 130923,
+        to 131012,
+        strand minus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "Parent",
+          val "gene3"
+        },
+        {
+          qual "ID",
+          val "id3732"
+        },
+        {
+          qual "gene",
+          val "LOC100862408"
+        },
+        {
+          qual "model_evidence",
+          val "Supporting evidence includes similarity to: 34 Proteins, and
+ 11% coverage of the annotated genomic feature by RNAseq alignments"
+        }
+      },
+      xref {
+        {
+          id local id 21
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 100862408
+        }
+      }
+    },
+    {
+      id local id 29,
+      data imp {
+        key "exon"
+      },
+      location int {
+        from 133051,
+        to 133162,
+        strand minus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "Parent",
+          val "gene3"
+        },
+        {
+          qual "ID",
+          val "id3733"
+        },
+        {
+          qual "gene",
+          val "LOC100862408"
+        },
+        {
+          qual "model_evidence",
+          val "Supporting evidence includes similarity to: 34 Proteins, and
+ 11% coverage of the annotated genomic feature by RNAseq alignments"
+        }
+      },
+      xref {
+        {
+          id local id 21
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 100862408
+        }
+      }
+    },
+    {
+      id local id 30,
+      data imp {
+        key "STS"
+      },
+      location int {
+        from 149296,
+        to 149619,
+        strand plus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id3734"
+        }
+      },
+      dbxref {
+        {
+          db "UniSTS",
+          tag id 143706
+        }
+      }
+    },
+    {
+      id local id 31,
+      data gene {
+        locus "Klra16",
+        desc "killer cell lectin-like receptor, subfamily A, member 16",
+        syn {
+          "Klra24",
+          "Ly-49P",
+          "Ly49P",
+          "Ly49x"
+        }
+      },
+      location int {
+        from 149511,
+        to 173163,
+        strand minus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene4"
+        },
+        {
+          qual "Name",
+          val "Klra16"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 32
+        },
+        {
+          id local id 33
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 27424
+        },
+        {
+          db "MGI",
+          tag str "MGI:1351669"
+        }
+      }
+    },
+    {
+      id local id 32,
+      data rna {
+        type mRNA
+      },
+      except TRUE,
+      comment "The RefSeq transcript has 6 substitutions, 2 non-frameshifting
+ indels compared to this genomic sequence",
+      location mix {
+        int {
+          from 173084,
+          to 173163,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 171201,
+          to 171337,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 169825,
+          to 169914,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 168723,
+          to 168929,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 166283,
+          to 166425,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 163852,
+          to 163955,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 149511,
+          to 149941,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "Parent",
+          val "gene4"
+        },
+        {
+          qual "ID",
+          val "rna4"
+        },
+        {
+          qual "gene",
+          val "Klra16"
+        },
+        {
+          qual "product",
+          val "killer cell lectin-like receptor, subfamily A, member 16"
+        },
+        {
+          qual "transcript_id",
+          val "NM_013794.4"
+        }
+      },
+      xref {
+        {
+          id local id 33
+        },
+        {
+          id local id 31
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 27424
+        },
+        {
+          db "Genbank",
+          tag str "NM_013794.4"
+        },
+        {
+          db "MGI",
+          tag str "MGI:1351669"
+        }
+      },
+      except-text "annotated by transcript or proteomic data"
+    },
+    {
+      id local id 33,
+      data cdregion {
+        frame one
+      },
+      except TRUE,
+      comment "The RefSeq protein has 5 substitutions compared to this genomic
+ sequence",
+      location mix {
+        int {
+          from 171201,
+          to 171312,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 169825,
+          to 169914,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 168723,
+          to 168929,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 166283,
+          to 166425,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 163852,
+          to 163955,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 149806,
+          to 149941,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds3"
+        },
+        {
+          qual "gene",
+          val "Klra16"
+        },
+        {
+          qual "product",
+          val "killer cell lectin-like receptor, subfamily A, member 16"
+        },
+        {
+          qual "protein_id",
+          val "NP_038822.3"
+        },
+        {
+          qual "Parent",
+          val "rna4"
+        }
+      },
+      xref {
+        {
+          id local id 32
+        },
+        {
+          id local id 31
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 27424
+        },
+        {
+          db "Genbank",
+          tag str "NP_038822.3"
+        },
+        {
+          db "MGI",
+          tag str "MGI:1351669"
+        }
+      },
+      except-text "annotated by transcript or proteomic data"
+    },
+    {
+      id local id 34,
+      data imp {
+        key "STS"
+      },
+      location int {
+        from 156289,
+        to 156615,
+        strand plus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id3742"
+        }
+      },
+      dbxref {
+        {
+          db "UniSTS",
+          tag id 166310
+        }
+      }
+    },
+    {
+      id local id 35,
+      data imp {
+        key "STS"
+      },
+      location int {
+        from 239423,
+        to 239709,
+        strand plus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id4612"
+        }
+      },
+      dbxref {
+        {
+          db "UniSTS",
+          tag id 130925
+        }
+      }
+    },
+    {
+      id local id 36,
+      data gene {
+        locus "Klra3",
+        desc "killer cell lectin-like receptor, subfamily A, member 3",
+        syn {
+          "5E6",
+          "Ly49c",
+          "Nk-2",
+          "NK-2.1",
+          "Nk2",
+          "Nk2.1"
+        }
+      },
+      location int {
+        from 248233,
+        to 292460,
+        strand minus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene5"
+        },
+        {
+          qual "Name",
+          val "Klra3"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 37
+        },
+        {
+          id local id 38
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 16634
+        },
+        {
+          db "MGI",
+          tag str "MGI:101905"
+        }
+      }
+    },
+    {
+      id local id 37,
+      data rna {
+        type mRNA
+      },
+      except TRUE,
+      comment "The RefSeq transcript has 49 substitutions, 1 non-frameshifting
+ indel compared to this genomic sequence",
+      location mix {
+        int {
+          from 292305,
+          to 292460,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 290526,
+          to 290655,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 289047,
+          to 289136,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 288001,
+          to 288219,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 254930,
+          to 255069,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 251885,
+          to 251988,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 248233,
+          to 248680,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "Parent",
+          val "gene5"
+        },
+        {
+          qual "ID",
+          val "rna5"
+        },
+        {
+          qual "gene",
+          val "Klra3"
+        },
+        {
+          qual "product",
+          val "killer cell lectin-like receptor, subfamily A, member 3,
+ transcript variant 1"
+        },
+        {
+          qual "transcript_id",
+          val "NM_010648.3"
+        }
+      },
+      xref {
+        {
+          id local id 38
+        },
+        {
+          id local id 36
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 16634
+        },
+        {
+          db "Genbank",
+          tag str "NM_010648.3"
+        },
+        {
+          db "MGI",
+          tag str "MGI:101905"
+        }
+      },
+      except-text "annotated by transcript or proteomic data"
+    },
+    {
+      id local id 38,
+      data cdregion {
+        frame one
+      },
+      except TRUE,
+      comment "The RefSeq protein has 13 substitutions, 1 non-frameshifting
+ indel compared to this genomic sequence",
+      location mix {
+        int {
+          from 290526,
+          to 290637,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 289047,
+          to 289136,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 288001,
+          to 288219,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 254930,
+          to 255069,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 251885,
+          to 251988,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 248548,
+          to 248680,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds4"
+        },
+        {
+          qual "gene",
+          val "Klra3"
+        },
+        {
+          qual "product",
+          val "killer cell lectin-like receptor 3"
+        },
+        {
+          qual "protein_id",
+          val "NP_034778.2"
+        },
+        {
+          qual "Parent",
+          val "rna5"
+        }
+      },
+      xref {
+        {
+          id local id 37
+        },
+        {
+          id local id 36
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 16634
+        },
+        {
+          db "Genbank",
+          tag str "NP_034778.2"
+        },
+        {
+          db "MGI",
+          tag str "MGI:101905"
+        }
+      },
+      except-text "annotated by transcript or proteomic data"
+    },
+    {
+      id local id 39,
+      data imp {
+        key "STS"
+      },
+      location int {
+        from 268997,
+        to 269301,
+        strand plus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id5025"
+        }
+      },
+      dbxref {
+        {
+          db "UniSTS",
+          tag id 130925
+        }
+      }
+    },
+    {
+      id local id 40,
+      data imp {
+        key "STS"
+      },
+      location int {
+        from 288041,
+        to 288180,
+        strand plus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id5339"
+        }
+      },
+      dbxref {
+        {
+          db "UniSTS",
+          tag id 143711
+        }
+      }
+    },
+    {
+      id local id 41,
+      data imp {
+        key "STS"
+      },
+      location int {
+        from 294170,
+        to 294199,
+        strand plus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id5581"
+        }
+      },
+      dbxref {
+        {
+          db "UniSTS",
+          tag id 271146
+        }
+      }
+    },
+    {
+      id local id 42,
+      data imp {
+        key "STS"
+      },
+      location int {
+        from 294170,
+        to 294187,
+        strand plus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id5582"
+        }
+      },
+      dbxref {
+        {
+          db "UniSTS",
+          tag id 271146
+        }
+      }
+    },
+    {
+      id local id 43,
+      data imp {
+        key "STS"
+      },
+      location int {
+        from 315717,
+        to 316047,
+        strand plus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id6701"
+        }
+      },
+      dbxref {
+        {
+          db "UniSTS",
+          tag id 143706
+        }
+      }
+    },
+    {
+      id local id 44,
+      data gene {
+        locus "Klra1",
+        desc "killer cell lectin-like receptor, subfamily A, member 1",
+        syn {
+          "A1",
+          "CH29-493D4.3",
+          "Klra22",
+          "Ly49a",
+          "Ly49o<129>",
+          "Ly49v"
+        }
+      },
+      location int {
+        from 315936,
+        to 338920,
+        strand minus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene6"
+        },
+        {
+          qual "Name",
+          val "Klra1"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        }
+      },
+      xref {
+        {
+          id local id 45
+        },
+        {
+          id local id 46
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 16627
+        },
+        {
+          db "MGI",
+          tag str "MGI:101907"
+        }
+      }
+    },
+    {
+      id local id 45,
+      data rna {
+        type mRNA
+      },
+      except TRUE,
+      comment "The RefSeq transcript has 16 substitutions, 2 non-frameshifting
+ indels compared to this genomic sequence",
+      location mix {
+        int {
+          from 338873,
+          to 338920,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 335546,
+          to 335740,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 334439,
+          to 334716,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 332676,
+          to 332842,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 331124,
+          to 331213,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 329778,
+          to 329981,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 327323,
+          to 327465,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 324929,
+          to 325032,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 315936,
+          to 316372,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "Parent",
+          val "gene6"
+        },
+        {
+          qual "ID",
+          val "rna6"
+        },
+        {
+          qual "gene",
+          val "Klra1"
+        },
+        {
+          qual "product",
+          val "killer cell lectin-like receptor, subfamily A, member 1"
+        },
+        {
+          qual "transcript_id",
+          val "NM_016659.3"
+        }
+      },
+      xref {
+        {
+          id local id 46
+        },
+        {
+          id local id 44
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 16627
+        },
+        {
+          db "Genbank",
+          tag str "NM_016659.3"
+        },
+        {
+          db "MGI",
+          tag str "MGI:101907"
+        }
+      },
+      except-text "annotated by transcript or proteomic data"
+    },
+    {
+      id local id 46,
+      data cdregion {
+        frame one
+      },
+      except TRUE,
+      comment "The RefSeq protein has 3 substitutions compared to this genomic
+ sequence",
+      location mix {
+        int {
+          from 332676,
+          to 332787,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 331124,
+          to 331213,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 329778,
+          to 329981,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 327323,
+          to 327465,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 324929,
+          to 325032,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 316237,
+          to 316372,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds5"
+        },
+        {
+          qual "gene",
+          val "Klra1"
+        },
+        {
+          qual "product",
+          val "T-cell surface glycoprotein YE1/48"
+        },
+        {
+          qual "protein_id",
+          val "NP_057868.2"
+        },
+        {
+          qual "Parent",
+          val "rna6"
+        }
+      },
+      xref {
+        {
+          id local id 45
+        },
+        {
+          id local id 44
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 16627
+        },
+        {
+          db "Genbank",
+          tag str "NP_057868.2"
+        },
+        {
+          db "MGI",
+          tag str "MGI:101907"
+        }
+      },
+      except-text "annotated by transcript or proteomic data"
+    },
+    {
+      id local id 47,
+      data imp {
+        key "STS"
+      },
+      location int {
+        from 316835,
+        to 317145,
+        strand plus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id6784"
+        }
+      },
+      dbxref {
+        {
+          db "UniSTS",
+          tag id 166310
+        }
+      }
+    },
+    {
+      id local id 48,
+      data imp {
+        key "STS"
+      },
+      location int {
+        from 329847,
+        to 331192,
+        strand plus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id7677"
+        }
+      },
+      dbxref {
+        {
+          db "UniSTS",
+          tag id 143704
+        }
+      }
+    },
+    {
+      id local id 49,
+      data imp {
+        key "STS"
+      },
+      location int {
+        from 334439,
+        to 335458,
+        strand plus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id8000"
+        }
+      },
+      dbxref {
+        {
+          db "UniSTS",
+          tag id 143705
+        }
+      }
+    },
+    {
+      id local id 50,
+      data imp {
+        key "STS"
+      },
+      location int {
+        from 336945,
+        to 337042,
+        strand plus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id8131"
+        }
+      },
+      dbxref {
+        {
+          db "UniSTS",
+          tag id 507756
+        }
+      }
+    },
+    {
+      id local id 51,
+      data imp {
+        key "STS"
+      },
+      location int {
+        from 341390,
+        to 341494,
+        strand plus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id8319"
+        }
+      },
+      dbxref {
+        {
+          db "UniSTS",
+          tag id 258434
+        }
+      }
+    },
+    {
+      id local id 52,
+      data imp {
+        key "STS"
+      },
+      location int {
+        from 360101,
+        to 361068,
+        strand plus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id9155"
+        }
+      },
+      dbxref {
+        {
+          db "UniSTS",
+          tag id 474272
+        }
+      }
+    },
+    {
+      id local id 53,
+      data imp {
+        key "STS"
+      },
+      location int {
+        from 432651,
+        to 433027,
+        strand plus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id12161"
+        }
+      },
+      dbxref {
+        {
+          db "UniSTS",
+          tag id 143708
+        }
+      }
+    },
+    {
+      id local id 54,
+      data imp {
+        key "STS"
+      },
+      location int {
+        from 432651,
+        to 433026,
+        strand plus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id12162"
+        }
+      },
+      dbxref {
+        {
+          db "UniSTS",
+          tag id 132208
+        }
+      }
+    },
+    {
+      id local id 55,
+      data imp {
+        key "STS"
+      },
+      location int {
+        from 432875,
+        to 433025,
+        strand plus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id12168"
+        }
+      },
+      dbxref {
+        {
+          db "UniSTS",
+          tag id 166312
+        }
+      }
+    },
+    {
+      id local id 56,
+      data gene {
+        locus "Gm38706"
+      },
+      location int {
+        from 434774,
+        to 472644,
+        strand minus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene7"
+        },
+        {
+          qual "Name",
+          val "Gm38706"
+        },
+        {
+          qual "gene_biotype",
+          val "pseudogene"
+        }
+      },
+      xref {
+        {
+          id local id 57
+        },
+        {
+          id local id 58
+        },
+        {
+          id local id 59
+        },
+        {
+          id local id 60
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 105242439
+        },
+        {
+          db "MGI",
+          tag str "MGI:5621591"
+        }
+      },
+      pseudo TRUE
+    },
+    {
+      id local id 57,
+      data imp {
+        key "exon"
+      },
+      location int {
+        from 434774,
+        to 436103,
+        strand minus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "Parent",
+          val "gene7"
+        },
+        {
+          qual "ID",
+          val "id12241"
+        },
+        {
+          qual "gene",
+          val "Gm38706"
+        },
+        {
+          qual "model_evidence",
+          val "Supporting evidence includes similarity to: 1 Protein"
+        }
+      },
+      xref {
+        {
+          id local id 56
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 105242439
+        },
+        {
+          db "MGI",
+          tag str "MGI:5621591"
+        }
+      }
+    },
+    {
+      id local id 58,
+      data imp {
+        key "exon"
+      },
+      location int {
+        from 471697,
+        to 472029,
+        strand minus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "Parent",
+          val "gene7"
+        },
+        {
+          qual "ID",
+          val "id13688"
+        },
+        {
+          qual "gene",
+          val "Gm38706"
+        },
+        {
+          qual "model_evidence",
+          val "Supporting evidence includes similarity to: 1 Protein"
+        }
+      },
+      xref {
+        {
+          id local id 56
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 105242439
+        },
+        {
+          db "MGI",
+          tag str "MGI:5621591"
+        }
+      }
+    },
+    {
+      id local id 59,
+      data imp {
+        key "exon"
+      },
+      location int {
+        from 472210,
+        to 472252,
+        strand minus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "Parent",
+          val "gene7"
+        },
+        {
+          qual "ID",
+          val "id13714"
+        },
+        {
+          qual "gene",
+          val "Gm38706"
+        },
+        {
+          qual "model_evidence",
+          val "Supporting evidence includes similarity to: 1 Protein"
+        }
+      },
+      xref {
+        {
+          id local id 56
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 105242439
+        },
+        {
+          db "MGI",
+          tag str "MGI:5621591"
+        }
+      }
+    },
+    {
+      id local id 60,
+      data imp {
+        key "exon"
+      },
+      location int {
+        from 472537,
+        to 472644,
+        strand minus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "Parent",
+          val "gene7"
+        },
+        {
+          qual "ID",
+          val "id13734"
+        },
+        {
+          qual "gene",
+          val "Gm38706"
+        },
+        {
+          qual "model_evidence",
+          val "Supporting evidence includes similarity to: 1 Protein"
+        }
+      },
+      xref {
+        {
+          id local id 56
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 105242439
+        },
+        {
+          db "MGI",
+          tag str "MGI:5621591"
+        }
+      }
+    },
+    {
+      id local id 61,
+      data imp {
+        key "STS"
+      },
+      location int {
+        from 475073,
+        to 475269,
+        strand plus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id13863"
+        }
+      },
+      dbxref {
+        {
+          db "UniSTS",
+          tag id 166311
+        }
+      }
+    },
+    {
+      id local id 62,
+      data imp {
+        key "STS"
+      },
+      location int {
+        from 491841,
+        to 491993,
+        strand plus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id14356"
+        }
+      },
+      dbxref {
+        {
+          db "UniSTS",
+          tag id 257281
+        }
+      }
+    },
+    {
+      id local id 63,
+      data imp {
+        key "STS"
+      },
+      location int {
+        from 508963,
+        to 509076,
+        strand plus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id14989"
+        }
+      },
+      dbxref {
+        {
+          db "UniSTS",
+          tag id 257631
+        }
+      }
+    },
+    {
+      id local id 64,
+      data imp {
+        key "STS"
+      },
+      location int {
+        from 521782,
+        to 521914,
+        strand plus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id15434"
+        }
+      },
+      dbxref {
+        {
+          db "UniSTS",
+          tag id 142655
+        }
+      }
+    },
+    {
+      id local id 65,
+      data gene {
+        locus "Gm8816",
+        desc "predicted gene 8816",
+        syn {
+          "EG667793"
+        }
+      },
+      location int {
+        from 526095,
+        to 528226,
+        strand plus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene8"
+        },
+        {
+          qual "Name",
+          val "Gm8816"
+        },
+        {
+          qual "gene_biotype",
+          val "pseudogene"
+        }
+      },
+      xref {
+        {
+          id local id 66
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 667793
+        },
+        {
+          db "MGI",
+          tag str "MGI:3648634"
+        }
+      },
+      pseudo TRUE
+    },
+    {
+      id local id 66,
+      data imp {
+        key "exon"
+      },
+      location int {
+        from 526095,
+        to 528226,
+        strand plus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "Parent",
+          val "gene8"
+        },
+        {
+          qual "ID",
+          val "id15548"
+        },
+        {
+          qual "gene",
+          val "Gm8816"
+        }
+      },
+      xref {
+        {
+          id local id 65
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 667793
+        },
+        {
+          db "MGI",
+          tag str "MGI:3648634"
+        }
+      }
+    },
+    {
+      id local id 67,
+      data imp {
+        key "STS"
+      },
+      location int {
+        from 534037,
+        to 534229,
+        strand plus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id15765"
+        }
+      },
+      dbxref {
+        {
+          db "UniSTS",
+          tag id 166305
+        }
+      }
+    },
+    {
+      id local id 68,
+      data gene {
+        locus "Gm20997"
+      },
+      partial TRUE,
+      location int {
+        from 536046,
+        to 538621,
+        strand minus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene9"
+        },
+        {
+          qual "Name",
+          val "Gm20997"
+        },
+        {
+          qual "gene_biotype",
+          val "protein_coding"
+        },
+        {
+          qual "start_range",
+          val "."
+        },
+        {
+          qual "start_range",
+          val "536047"
+        }
+      },
+      xref {
+        {
+          id local id 69
+        },
+        {
+          id local id 70
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 100504950
+        },
+        {
+          db "MGI",
+          tag str "MGI:5434352"
+        }
+      }
+    },
+    {
+      id local id 69,
+      data rna {
+        type mRNA
+      },
+      partial TRUE,
+      except TRUE,
+      comment "The sequence of the model RefSeq transcript was modified
+ relative to this genomic sequence to represent the inferred CDS: inserted 1
+ base in 1 codon",
+      location mix {
+        int {
+          from 538387,
+          to 538621,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 536046,
+          to 538233,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "Parent",
+          val "gene9"
+        },
+        {
+          qual "ID",
+          val "rna7"
+        },
+        {
+          qual "gene",
+          val "Gm20997"
+        },
+        {
+          qual "model_evidence",
+          val "Supporting evidence includes similarity to: 9 Proteins, and 4%
+ coverage of the annotated genomic feature by RNAseq alignments"
+        },
+        {
+          qual "product",
+          val "predicted gene, 20997, transcript variant X1"
+        },
+        {
+          qual "start_range",
+          val "."
+        },
+        {
+          qual "start_range",
+          val "536047"
+        },
+        {
+          qual "transcript_id",
+          val "XM_017319046.1"
+        }
+      },
+      xref {
+        {
+          id local id 70
+        },
+        {
+          id local id 68
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 100504950
+        },
+        {
+          db "Genbank",
+          tag str "XM_017319046.1"
+        },
+        {
+          db "MGI",
+          tag str "MGI:5434352"
+        }
+      },
+      except-text "unclassified transcription discrepancy"
+    },
+    {
+      id local id 70,
+      data cdregion {
+        frame one
+      },
+      partial TRUE,
+      except TRUE,
+      comment "The sequence of the model RefSeq protein was modified relative
+ to this genomic sequence to represent the inferred CDS: inserted 1 base in 1
+ codon",
+      location mix {
+        int {
+          from 538387,
+          to 538621,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        int {
+          from 536046,
+          to 538233,
+          strand minus,
+          id other {
+            accession "NW_006763130",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "cds6"
+        },
+        {
+          qual "gene",
+          val "Gm20997"
+        },
+        {
+          qual "product",
+          val "LOW QUALITY PROTEIN: zinc finger protein 665-like isoform X1"
+        },
+        {
+          qual "protein_id",
+          val "XP_017174535.1"
+        },
+        {
+          qual "Parent",
+          val "rna7"
+        }
+      },
+      xref {
+        {
+          id local id 69
+        },
+        {
+          id local id 68
+        }
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 100504950
+        },
+        {
+          db "Genbank",
+          tag str "XP_017174535.1"
+        },
+        {
+          db "MGI",
+          tag str "MGI:5434352"
+        }
+      },
+      except-text "unclassified translation discrepancy"
+    },
+    {
+      id local id 71,
+      data imp {
+        key "STS"
+      },
+      location int {
+        from 566101,
+        to 566449,
+        strand plus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id16437"
+        }
+      },
+      dbxref {
+        {
+          db "UniSTS",
+          tag id 257691
+        }
+      }
+    },
+    {
+      id local id 72,
+      data imp {
+        key "STS"
+      },
+      location int {
+        from 566556,
+        to 566655,
+        strand plus,
+        id other {
+          accession "NW_006763130",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id16447"
+        }
+      },
+      dbxref {
+        {
+          db "UniSTS",
+          tag id 257868
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  desc {
+    name "alignments"
+  },
+  data align {
+    {
+      type disc,
+      score {
+        {
+          id str "num_ident",
+          value int 9336
+        },
+        {
+          id str "num_mismatch",
+          value int 216
+        },
+        {
+          id str "for_remapping",
+          value int 0
+        },
+        {
+          id str "pct_coverage",
+          value real { 1, 10, 2 }
+        },
+        {
+          id str "pct_coverage_hiqual",
+          value real { 1, 10, 2 }
+        },
+        {
+          id str "pct_identity_gap",
+          value real { 976569, 10, -4 }
+        },
+        {
+          id str "pct_identity_ungap",
+          value real { 977387, 10, -4 }
+        },
+        {
+          id str "rank",
+          value int 1
+        }
+      },
+      segs disc {
+        {
+          type partial,
+          dim 2,
+          score {
+            {
+              id str "score",
+              value int 138
+            },
+            {
+              id str "num_ident",
+              value int 1167
+            },
+            {
+              id str "num_mismatch",
+              value int 27
+            }
+          },
+          segs denseg {
+            dim 2,
+            numseg 1,
+            ids {
+              other {
+                accession "NM_010651",
+                version 3
+              },
+              other {
+                accession "NW_006763130",
+                version 1
+              }
+            },
+            starts {
+              0,
+              22758
+            },
+            lens {
+              138
+            },
+            strands {
+              plus,
+              minus
+            }
+          }
+        },
+        {
+          type partial,
+          dim 2,
+          score {
+            {
+              id str "score",
+              value int 130
+            },
+            {
+              id str "num_ident",
+              value int 1167
+            },
+            {
+              id str "num_mismatch",
+              value int 27
+            }
+          },
+          segs denseg {
+            dim 2,
+            numseg 1,
+            ids {
+              other {
+                accession "NM_010651",
+                version 3
+              },
+              other {
+                accession "NW_006763130",
+                version 1
+              }
+            },
+            starts {
+              138,
+              20967
+            },
+            lens {
+              137
+            },
+            strands {
+              plus,
+              minus
+            }
+          }
+        },
+        {
+          type partial,
+          dim 2,
+          score {
+            {
+              id str "score",
+              value int 90
+            },
+            {
+              id str "num_ident",
+              value int 1167
+            },
+            {
+              id str "num_mismatch",
+              value int 27
+            }
+          },
+          segs denseg {
+            dim 2,
+            numseg 1,
+            ids {
+              other {
+                accession "NM_010651",
+                version 3
+              },
+              other {
+                accession "NW_006763130",
+                version 1
+              }
+            },
+            starts {
+              275,
+              19496
+            },
+            lens {
+              90
+            },
+            strands {
+              plus,
+              minus
+            }
+          }
+        },
+        {
+          type partial,
+          dim 2,
+          score {
+            {
+              id str "score",
+              value int 200
+            },
+            {
+              id str "num_ident",
+              value int 1167
+            },
+            {
+              id str "num_mismatch",
+              value int 27
+            }
+          },
+          segs denseg {
+            dim 2,
+            numseg 1,
+            ids {
+              other {
+                accession "NM_010651",
+                version 3
+              },
+              other {
+                accession "NW_006763130",
+                version 1
+              }
+            },
+            starts {
+              365,
+              18432
+            },
+            lens {
+              219
+            },
+            strands {
+              plus,
+              minus
+            }
+          }
+        },
+        {
+          type partial,
+          dim 2,
+          score {
+            {
+              id str "score",
+              value int 135
+            },
+            {
+              id str "num_ident",
+              value int 1167
+            },
+            {
+              id str "num_mismatch",
+              value int 27
+            }
+          },
+          segs denseg {
+            dim 2,
+            numseg 1,
+            ids {
+              other {
+                accession "NM_010651",
+                version 3
+              },
+              other {
+                accession "NW_006763130",
+                version 1
+              }
+            },
+            starts {
+              584,
+              15408
+            },
+            lens {
+              140
+            },
+            strands {
+              plus,
+              minus
+            }
+          }
+        },
+        {
+          type partial,
+          dim 2,
+          score {
+            {
+              id str "score",
+              value int 101
+            },
+            {
+              id str "num_ident",
+              value int 1167
+            },
+            {
+              id str "num_mismatch",
+              value int 27
+            }
+          },
+          segs denseg {
+            dim 2,
+            numseg 1,
+            ids {
+              other {
+                accession "NM_010651",
+                version 3
+              },
+              other {
+                accession "NW_006763130",
+                version 1
+              }
+            },
+            starts {
+              724,
+              12340
+            },
+            lens {
+              104
+            },
+            strands {
+              plus,
+              minus
+            }
+          }
+        },
+        {
+          type partial,
+          dim 2,
+          score {
+            {
+              id str "score",
+              value int 149
+            },
+            {
+              id str "num_ident",
+              value int 1167
+            },
+            {
+              id str "num_mismatch",
+              value int 27
+            }
+          },
+          segs denseg {
+            dim 2,
+            numseg 1,
+            ids {
+              other {
+                accession "NM_010651",
+                version 3
+              },
+              other {
+                accession "NW_006763130",
+                version 1
+              }
+            },
+            starts {
+              828,
+              8914
+            },
+            lens {
+              156
+            },
+            strands {
+              plus,
+              minus
+            }
+          }
+        },
+        {
+          type partial,
+          dim 2,
+          score {
+            {
+              id str "score",
+              value int 188
+            },
+            {
+              id str "num_ident",
+              value int 1167
+            },
+            {
+              id str "num_mismatch",
+              value int 27
+            }
+          },
+          segs denseg {
+            dim 2,
+            numseg 3,
+            ids {
+              other {
+                accession "NM_010651",
+                version 3
+              },
+              other {
+                accession "NW_006763130",
+                version 1
+              }
+            },
+            starts {
+              984,
+              8752,
+              -1,
+              8751,
+              1068,
+              8625
+            },
+            lens {
+              84,
+              1,
+              126
+            },
+            strands {
+              plus,
+              minus,
+              plus,
+              minus,
+              plus,
+              minus
+            }
+          }
+        }
+      }
+    },
+    {
+      type disc,
+      score {
+        {
+          id str "num_ident",
+          value int 7420
+        },
+        {
+          id str "num_mismatch",
+          value int 105
+        },
+        {
+          id str "for_remapping",
+          value int 0
+        },
+        {
+          id str "pct_coverage",
+          value real { 1, 10, 2 }
+        },
+        {
+          id str "pct_coverage_hiqual",
+          value real { 1, 10, 2 }
+        },
+        {
+          id str "pct_identity_gap",
+          value real { 980574, 10, -4 }
+        },
+        {
+          id str "pct_identity_ungap",
+          value real { 986047, 10, -4 }
+        },
+        {
+          id str "rank",
+          value int 1
+        }
+      },
+      segs disc {
+        {
+          type partial,
+          dim 2,
+          score {
+            {
+              id str "score",
+              value int 177
+            },
+            {
+              id str "num_ident",
+              value int 1060
+            },
+            {
+              id str "num_mismatch",
+              value int 15
+            }
+          },
+          segs denseg {
+            dim 2,
+            numseg 1,
+            ids {
+              other {
+                accession "NM_014194",
+                version 5
+              },
+              other {
+                accession "NW_006763130",
+                version 1
+              }
+            },
+            starts {
+              0,
+              79292
+            },
+            lens {
+              182
+            },
+            strands {
+              plus,
+              minus
+            }
+          }
+        },
+        {
+          type partial,
+          dim 2,
+          score {
+            {
+              id str "score",
+              value int 87
+            },
+            {
+              id str "num_ident",
+              value int 1060
+            },
+            {
+              id str "num_mismatch",
+              value int 15
+            }
+          },
+          segs denseg {
+            dim 2,
+            numseg 1,
+            ids {
+              other {
+                accession "NM_014194",
+                version 5
+              },
+              other {
+                accession "NW_006763130",
+                version 1
+              }
+            },
+            starts {
+              182,
+              77723
+            },
+            lens {
+              90
+            },
+            strands {
+              plus,
+              minus
+            }
+          }
+        },
+        {
+          type partial,
+          dim 2,
+          score {
+            {
+              id str "score",
+              value int 208
+            },
+            {
+              id str "num_ident",
+              value int 1060
+            },
+            {
+              id str "num_mismatch",
+              value int 15
+            }
+          },
+          segs denseg {
+            dim 2,
+            numseg 1,
+            ids {
+              other {
+                accession "NM_014194",
+                version 5
+              },
+              other {
+                accession "NW_006763130",
+                version 1
+              }
+            },
+            starts {
+              272,
+              76297
+            },
+            lens {
+              219
+            },
+            strands {
+              plus,
+              minus
+            }
+          }
+        },
+        {
+          type partial,
+          dim 2,
+          score {
+            {
+              id str "score",
+              value int 138
+            },
+            {
+              id str "num_ident",
+              value int 1060
+            },
+            {
+              id str "num_mismatch",
+              value int 15
+            }
+          },
+          segs denseg {
+            dim 2,
+            numseg 1,
+            ids {
+              other {
+                accession "NM_014194",
+                version 5
+              },
+              other {
+                accession "NW_006763130",
+                version 1
+              }
+            },
+            starts {
+              491,
+              74240
+            },
+            lens {
+              143
+            },
+            strands {
+              plus,
+              minus
+            }
+          }
+        },
+        {
+          type partial,
+          dim 2,
+          score {
+            {
+              id str "score",
+              value int 104
+            },
+            {
+              id str "num_ident",
+              value int 1060
+            },
+            {
+              id str "num_mismatch",
+              value int 15
+            }
+          },
+          segs denseg {
+            dim 2,
+            numseg 1,
+            ids {
+              other {
+                accession "NM_014194",
+                version 5
+              },
+              other {
+                accession "NW_006763130",
+                version 1
+              }
+            },
+            starts {
+              634,
+              71833
+            },
+            lens {
+              104
+            },
+            strands {
+              plus,
+              minus
+            }
+          }
+        },
+        {
+          type partial,
+          dim 2,
+          score {
+            {
+              id str "score",
+              value int 149
+            },
+            {
+              id str "num_ident",
+              value int 1060
+            },
+            {
+              id str "num_mismatch",
+              value int 15
+            }
+          },
+          segs denseg {
+            dim 2,
+            numseg 1,
+            ids {
+              other {
+                accession "NM_014194",
+                version 5
+              },
+              other {
+                accession "NW_006763130",
+                version 1
+              }
+            },
+            starts {
+              738,
+              64304
+            },
+            lens {
+              156
+            },
+            strands {
+              plus,
+              minus
+            }
+          }
+        },
+        {
+          type partial,
+          dim 2,
+          score {
+            {
+              id str "score",
+              value int 172
+            },
+            {
+              id str "num_ident",
+              value int 1060
+            },
+            {
+              id str "num_mismatch",
+              value int 15
+            }
+          },
+          segs denseg {
+            dim 2,
+            numseg 3,
+            ids {
+              other {
+                accession "NM_014194",
+                version 5
+              },
+              other {
+                accession "NW_006763130",
+                version 1
+              }
+            },
+            starts {
+              894,
+              64088,
+              -1,
+              64082,
+              1016,
+              64023
+            },
+            lens {
+              122,
+              6,
+              59
+            },
+            strands {
+              plus,
+              minus,
+              plus,
+              minus,
+              plus,
+              minus
+            }
+          }
+        }
+      }
+    },
+    {
+      type disc,
+      score {
+        {
+          id str "num_ident",
+          value int 8302
+        },
+        {
+          id str "num_mismatch",
+          value int 42
+        },
+        {
+          id str "for_remapping",
+          value int 0
+        },
+        {
+          id str "pct_coverage",
+          value real { 965964, 10, -4 }
+        },
+        {
+          id str "pct_coverage_hiqual",
+          value real { 965964, 10, -4 }
+        },
+        {
+          id str "pct_identity_gap",
+          value real { 961102, 10, -4 }
+        },
+        {
+          id str "pct_identity_ungap",
+          value real { 994966, 10, -4 }
+        },
+        {
+          id str "rank",
+          value int 1
+        }
+      },
+      segs disc {
+        {
+          type partial,
+          dim 2,
+          score {
+            {
+              id str "num_ident",
+              value int 1186
+            },
+            {
+              id str "num_mismatch",
+              value int 6
+            }
+          },
+          segs denseg {
+            dim 2,
+            numseg 1,
+            ids {
+              other {
+                accession "NM_013794",
+                version 4
+              },
+              other {
+                accession "NW_006763130",
+                version 1
+              }
+            },
+            starts {
+              0,
+              173084
+            },
+            lens {
+              80
+            },
+            strands {
+              plus,
+              minus
+            }
+          }
+        },
+        {
+          type partial,
+          dim 2,
+          score {
+            {
+              id str "num_ident",
+              value int 1186
+            },
+            {
+              id str "num_mismatch",
+              value int 6
+            }
+          },
+          segs denseg {
+            dim 2,
+            numseg 1,
+            ids {
+              other {
+                accession "NM_013794",
+                version 4
+              },
+              other {
+                accession "NW_006763130",
+                version 1
+              }
+            },
+            starts {
+              80,
+              171201
+            },
+            lens {
+              137
+            },
+            strands {
+              plus,
+              minus
+            }
+          }
+        },
+        {
+          type partial,
+          dim 2,
+          score {
+            {
+              id str "num_ident",
+              value int 1186
+            },
+            {
+              id str "num_mismatch",
+              value int 6
+            }
+          },
+          segs denseg {
+            dim 2,
+            numseg 1,
+            ids {
+              other {
+                accession "NM_013794",
+                version 4
+              },
+              other {
+                accession "NW_006763130",
+                version 1
+              }
+            },
+            starts {
+              217,
+              169825
+            },
+            lens {
+              90
+            },
+            strands {
+              plus,
+              minus
+            }
+          }
+        },
+        {
+          type partial,
+          dim 2,
+          score {
+            {
+              id str "num_ident",
+              value int 1186
+            },
+            {
+              id str "num_mismatch",
+              value int 6
+            }
+          },
+          segs denseg {
+            dim 2,
+            numseg 1,
+            ids {
+              other {
+                accession "NM_013794",
+                version 4
+              },
+              other {
+                accession "NW_006763130",
+                version 1
+              }
+            },
+            starts {
+              307,
+              168723
+            },
+            lens {
+              207
+            },
+            strands {
+              plus,
+              minus
+            }
+          }
+        },
+        {
+          type partial,
+          dim 2,
+          score {
+            {
+              id str "num_ident",
+              value int 1186
+            },
+            {
+              id str "num_mismatch",
+              value int 6
+            }
+          },
+          segs denseg {
+            dim 2,
+            numseg 1,
+            ids {
+              other {
+                accession "NM_013794",
+                version 4
+              },
+              other {
+                accession "NW_006763130",
+                version 1
+              }
+            },
+            starts {
+              514,
+              166283
+            },
+            lens {
+              143
+            },
+            strands {
+              plus,
+              minus
+            }
+          }
+        },
+        {
+          type partial,
+          dim 2,
+          score {
+            {
+              id str "num_ident",
+              value int 1186
+            },
+            {
+              id str "num_mismatch",
+              value int 6
+            }
+          },
+          segs denseg {
+            dim 2,
+            numseg 1,
+            ids {
+              other {
+                accession "NM_013794",
+                version 4
+              },
+              other {
+                accession "NW_006763130",
+                version 1
+              }
+            },
+            starts {
+              657,
+              163852
+            },
+            lens {
+              104
+            },
+            strands {
+              plus,
+              minus
+            }
+          }
+        },
+        {
+          type partial,
+          dim 2,
+          score {
+            {
+              id str "num_ident",
+              value int 1186
+            },
+            {
+              id str "num_mismatch",
+              value int 6
+            }
+          },
+          segs denseg {
+            dim 2,
+            numseg 5,
+            ids {
+              other {
+                accession "NM_013794",
+                version 4
+              },
+              other {
+                accession "NW_006763130",
+                version 1
+              }
+            },
+            starts {
+              761,
+              149655,
+              1048,
+              -1,
+              1088,
+              149563,
+              1180,
+              -1,
+              1182,
+              149511
+            },
+            lens {
+              287,
+              40,
+              92,
+              2,
+              52
+            },
+            strands {
+              plus,
+              minus,
+              plus,
+              minus,
+              plus,
+              minus,
+              plus,
+              minus,
+              plus,
+              minus
+            }
+          }
+        }
+      }
+    },
+    {
+      type disc,
+      score {
+        {
+          id str "num_ident",
+          value int 8666
+        },
+        {
+          id str "num_mismatch",
+          value int 343
+        },
+        {
+          id str "for_remapping",
+          value int 0
+        },
+        {
+          id str "pct_coverage",
+          value real { 997674, 10, -4 }
+        },
+        {
+          id str "pct_coverage_hiqual",
+          value real { 997674, 10, -4 }
+        },
+        {
+          id str "pct_identity_gap",
+          value real { 95969, 10, -3 }
+        },
+        {
+          id str "pct_identity_ungap",
+          value real { 961927, 10, -4 }
+        },
+        {
+          id str "rank",
+          value int 1
+        }
+      },
+      segs disc {
+        {
+          type partial,
+          dim 2,
+          score {
+            {
+              id str "score",
+              value int 149
+            },
+            {
+              id str "num_ident",
+              value int 1238
+            },
+            {
+              id str "num_mismatch",
+              value int 49
+            }
+          },
+          segs denseg {
+            dim 2,
+            numseg 1,
+            ids {
+              other {
+                accession "NM_010648",
+                version 3
+              },
+              other {
+                accession "NW_006763130",
+                version 1
+              }
+            },
+            starts {
+              0,
+              292305
+            },
+            lens {
+              156
+            },
+            strands {
+              plus,
+              minus
+            }
+          }
+        },
+        {
+          type partial,
+          dim 2,
+          score {
+            {
+              id str "score",
+              value int 121
+            },
+            {
+              id str "num_ident",
+              value int 1238
+            },
+            {
+              id str "num_mismatch",
+              value int 49
+            }
+          },
+          segs denseg {
+            dim 2,
+            numseg 1,
+            ids {
+              other {
+                accession "NM_010648",
+                version 3
+              },
+              other {
+                accession "NW_006763130",
+                version 1
+              }
+            },
+            starts {
+              156,
+              290526
+            },
+            lens {
+              130
+            },
+            strands {
+              plus,
+              minus
+            }
+          }
+        },
+        {
+          type partial,
+          dim 2,
+          score {
+            {
+              id str "score",
+              value int 83
+            },
+            {
+              id str "num_ident",
+              value int 1238
+            },
+            {
+              id str "num_mismatch",
+              value int 49
+            }
+          },
+          segs denseg {
+            dim 2,
+            numseg 1,
+            ids {
+              other {
+                accession "NM_010648",
+                version 3
+              },
+              other {
+                accession "NW_006763130",
+                version 1
+              }
+            },
+            starts {
+              286,
+              289047
+            },
+            lens {
+              90
+            },
+            strands {
+              plus,
+              minus
+            }
+          }
+        },
+        {
+          type partial,
+          dim 2,
+          score {
+            {
+              id str "score",
+              value int 198
+            },
+            {
+              id str "num_ident",
+              value int 1238
+            },
+            {
+              id str "num_mismatch",
+              value int 49
+            }
+          },
+          segs denseg {
+            dim 2,
+            numseg 1,
+            ids {
+              other {
+                accession "NM_010648",
+                version 3
+              },
+              other {
+                accession "NW_006763130",
+                version 1
+              }
+            },
+            starts {
+              376,
+              288001
+            },
+            lens {
+              219
+            },
+            strands {
+              plus,
+              minus
+            }
+          }
+        },
+        {
+          type partial,
+          dim 2,
+          score {
+            {
+              id str "score",
+              value int 129
+            },
+            {
+              id str "num_ident",
+              value int 1238
+            },
+            {
+              id str "num_mismatch",
+              value int 49
+            }
+          },
+          segs denseg {
+            dim 2,
+            numseg 1,
+            ids {
+              other {
+                accession "NM_010648",
+                version 3
+              },
+              other {
+                accession "NW_006763130",
+                version 1
+              }
+            },
+            starts {
+              595,
+              254930
+            },
+            lens {
+              140
+            },
+            strands {
+              plus,
+              minus
+            }
+          }
+        },
+        {
+          type partial,
+          dim 2,
+          score {
+            {
+              id str "score",
+              value int 99
+            },
+            {
+              id str "num_ident",
+              value int 1238
+            },
+            {
+              id str "num_mismatch",
+              value int 49
+            }
+          },
+          segs denseg {
+            dim 2,
+            numseg 1,
+            ids {
+              other {
+                accession "NM_010648",
+                version 3
+              },
+              other {
+                accession "NW_006763130",
+                version 1
+              }
+            },
+            starts {
+              735,
+              251885
+            },
+            lens {
+              104
+            },
+            strands {
+              plus,
+              minus
+            }
+          }
+        },
+        {
+          type partial,
+          dim 2,
+          score {
+            {
+              id str "score",
+              value int 399
+            },
+            {
+              id str "num_ident",
+              value int 1238
+            },
+            {
+              id str "num_mismatch",
+              value int 49
+            }
+          },
+          segs denseg {
+            dim 2,
+            numseg 3,
+            ids {
+              other {
+                accession "NM_010648",
+                version 3
+              },
+              other {
+                accession "NW_006763130",
+                version 1
+              }
+            },
+            starts {
+              839,
+              248670,
+              850,
+              -1,
+              853,
+              248233
+            },
+            lens {
+              11,
+              3,
+              437
+            },
+            strands {
+              plus,
+              minus,
+              plus,
+              minus,
+              plus,
+              minus
+            }
+          }
+        }
+      }
+    },
+    {
+      type disc,
+      score {
+        {
+          id str "num_ident",
+          value int 14841
+        },
+        {
+          id str "num_mismatch",
+          value int 144
+        },
+        {
+          id str "for_remapping",
+          value int 0
+        },
+        {
+          id str "pct_coverage",
+          value real { 9988, 10, -2 }
+        },
+        {
+          id str "pct_coverage_hiqual",
+          value real { 9988, 10, -2 }
+        },
+        {
+          id str "pct_identity_gap",
+          value real { 988609, 10, -4 }
+        },
+        {
+          id str "pct_identity_ungap",
+          value real { 99039, 10, -3 }
+        },
+        {
+          id str "rank",
+          value int 1
+        }
+      },
+      segs disc {
+        {
+          type partial,
+          dim 2,
+          score {
+            {
+              id str "score",
+              value int 48
+            },
+            {
+              id str "num_ident",
+              value int 1649
+            },
+            {
+              id str "num_mismatch",
+              value int 16
+            }
+          },
+          segs denseg {
+            dim 2,
+            numseg 1,
+            ids {
+              other {
+                accession "NM_016659",
+                version 3
+              },
+              other {
+                accession "NW_006763130",
+                version 1
+              }
+            },
+            starts {
+              0,
+              338873
+            },
+            lens {
+              48
+            },
+            strands {
+              plus,
+              minus
+            }
+          }
+        },
+        {
+          type partial,
+          dim 2,
+          score {
+            {
+              id str "score",
+              value int 190
+            },
+            {
+              id str "num_ident",
+              value int 1649
+            },
+            {
+              id str "num_mismatch",
+              value int 16
+            }
+          },
+          segs denseg {
+            dim 2,
+            numseg 1,
+            ids {
+              other {
+                accession "NM_016659",
+                version 3
+              },
+              other {
+                accession "NW_006763130",
+                version 1
+              }
+            },
+            starts {
+              48,
+              335546
+            },
+            lens {
+              195
+            },
+            strands {
+              plus,
+              minus
+            }
+          }
+        },
+        {
+          type partial,
+          dim 2,
+          score {
+            {
+              id str "score",
+              value int 273
+            },
+            {
+              id str "num_ident",
+              value int 1649
+            },
+            {
+              id str "num_mismatch",
+              value int 16
+            }
+          },
+          segs denseg {
+            dim 2,
+            numseg 1,
+            ids {
+              other {
+                accession "NM_016659",
+                version 3
+              },
+              other {
+                accession "NW_006763130",
+                version 1
+              }
+            },
+            starts {
+              243,
+              334439
+            },
+            lens {
+              278
+            },
+            strands {
+              plus,
+              minus
+            }
+          }
+        },
+        {
+          type partial,
+          dim 2,
+          score {
+            {
+              id str "score",
+              value int 164
+            },
+            {
+              id str "num_ident",
+              value int 1649
+            },
+            {
+              id str "num_mismatch",
+              value int 16
+            }
+          },
+          segs denseg {
+            dim 2,
+            numseg 1,
+            ids {
+              other {
+                accession "NM_016659",
+                version 3
+              },
+              other {
+                accession "NW_006763130",
+                version 1
+              }
+            },
+            starts {
+              521,
+              332676
+            },
+            lens {
+              167
+            },
+            strands {
+              plus,
+              minus
+            }
+          }
+        },
+        {
+          type partial,
+          dim 2,
+          score {
+            {
+              id str "score",
+              value int 85
+            },
+            {
+              id str "num_ident",
+              value int 1649
+            },
+            {
+              id str "num_mismatch",
+              value int 16
+            }
+          },
+          segs denseg {
+            dim 2,
+            numseg 1,
+            ids {
+              other {
+                accession "NM_016659",
+                version 3
+              },
+              other {
+                accession "NW_006763130",
+                version 1
+              }
+            },
+            starts {
+              688,
+              331124
+            },
+            lens {
+              90
+            },
+            strands {
+              plus,
+              minus
+            }
+          }
+        },
+        {
+          type partial,
+          dim 2,
+          score {
+            {
+              id str "score",
+              value int 201
+            },
+            {
+              id str "num_ident",
+              value int 1649
+            },
+            {
+              id str "num_mismatch",
+              value int 16
+            }
+          },
+          segs denseg {
+            dim 2,
+            numseg 1,
+            ids {
+              other {
+                accession "NM_016659",
+                version 3
+              },
+              other {
+                accession "NW_006763130",
+                version 1
+              }
+            },
+            starts {
+              778,
+              329778
+            },
+            lens {
+              204
+            },
+            strands {
+              plus,
+              minus
+            }
+          }
+        },
+        {
+          type partial,
+          dim 2,
+          score {
+            {
+              id str "score",
+              value int 140
+            },
+            {
+              id str "num_ident",
+              value int 1649
+            },
+            {
+              id str "num_mismatch",
+              value int 16
+            }
+          },
+          segs denseg {
+            dim 2,
+            numseg 1,
+            ids {
+              other {
+                accession "NM_016659",
+                version 3
+              },
+              other {
+                accession "NW_006763130",
+                version 1
+              }
+            },
+            starts {
+              982,
+              327323
+            },
+            lens {
+              143
+            },
+            strands {
+              plus,
+              minus
+            }
+          }
+        },
+        {
+          type partial,
+          dim 2,
+          score {
+            {
+              id str "score",
+              value int 101
+            },
+            {
+              id str "num_ident",
+              value int 1649
+            },
+            {
+              id str "num_mismatch",
+              value int 16
+            }
+          },
+          segs denseg {
+            dim 2,
+            numseg 1,
+            ids {
+              other {
+                accession "NM_016659",
+                version 3
+              },
+              other {
+                accession "NW_006763130",
+                version 1
+              }
+            },
+            starts {
+              1125,
+              324929
+            },
+            lens {
+              104
+            },
+            strands {
+              plus,
+              minus
+            }
+          }
+        },
+        {
+          type partial,
+          dim 2,
+          score {
+            {
+              id str "score",
+              value int 417
+            },
+            {
+              id str "num_ident",
+              value int 1649
+            },
+            {
+              id str "num_mismatch",
+              value int 16
+            }
+          },
+          segs denseg {
+            dim 2,
+            numseg 5,
+            ids {
+              other {
+                accession "NM_016659",
+                version 3
+              },
+              other {
+                accession "NW_006763130",
+                version 1
+              }
+            },
+            starts {
+              1229,
+              316211,
+              -1,
+              316210,
+              1391,
+              316107,
+              1494,
+              -1,
+              1496,
+              315936
+            },
+            lens {
+              162,
+              1,
+              103,
+              2,
+              171
+            },
+            strands {
+              plus,
+              minus,
+              plus,
+              minus,
+              plus,
+              minus,
+              plus,
+              minus,
+              plus,
+              minus
+            }
+          }
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 2286
+        },
+        {
+          id str "num_ident",
+          value int 2318
+        },
+        {
+          id str "num_mismatch",
+          value int 13
+        },
+        {
+          id str "common_component",
+          value int 0
+        },
+        {
+          id str "filter_score",
+          value int 1
+        },
+        {
+          id str "for_remapping",
+          value int 0
+        },
+        {
+          id str "rank",
+          value int 1
+        },
+        {
+          id str "bit_score",
+          value real { 425545, 10, -2 }
+        },
+        {
+          id str "e_value",
+          value real { 0, 10, 0 }
+        },
+        {
+          id str "pct_identity_gap",
+          value real { 993571, 10, -4 }
+        },
+        {
+          id str "pct_identity_ungap",
+          value real { 994423, 10, -4 }
+        },
+        {
+          id str "pct_identity_gapopen_only",
+          value real { 993571, 10, -4 }
+        },
+        {
+          id str "pct_coverage",
+          value real { 999571, 10, -4 }
+        },
+        {
+          id str "pct_coverage_hiqual",
+          value real { 999571, 10, -4 }
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 5,
+        ids {
+          other {
+            accession "NG_020831",
+            version 2
+          },
+          other {
+            accession "NW_006763130",
+            version 1
+          }
+        },
+        starts {
+          0,
+          525995,
+          -1,
+          526562,
+          567,
+          526563,
+          1888,
+          -1,
+          1889,
+          527884
+        },
+        lens {
+          567,
+          1,
+          1321,
+          1,
+          443
+        },
+        strands {
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus
+        }
+      }
+    },
+    {
+      type disc,
+      score {
+        {
+          id str "num_ident",
+          value int 4846
+        },
+        {
+          id str "num_mismatch",
+          value int 0
+        },
+        {
+          id str "for_remapping",
+          value int 2
+        },
+        {
+          id str "pct_coverage",
+          value real { 999587, 10, -4 }
+        },
+        {
+          id str "pct_coverage_hiqual",
+          value real { 999587, 10, -4 }
+        },
+        {
+          id str "pct_identity_gap",
+          value real { 999587, 10, -4 }
+        },
+        {
+          id str "pct_identity_ungap",
+          value real { 1, 10, 2 }
+        },
+        {
+          id str "rank",
+          value int 1
+        }
+      },
+      segs disc {
+        {
+          type partial,
+          dim 2,
+          score {
+            {
+              id str "num_ident",
+              value int 2423
+            },
+            {
+              id str "num_mismatch",
+              value int 0
+            }
+          },
+          segs denseg {
+            dim 2,
+            numseg 1,
+            ids {
+              other {
+                accession "XM_017319046",
+                version 1
+              },
+              other {
+                accession "NW_006763130",
+                version 1
+              }
+            },
+            starts {
+              0,
+              538387
+            },
+            lens {
+              235
+            },
+            strands {
+              plus,
+              minus
+            }
+          }
+        },
+        {
+          type partial,
+          dim 2,
+          score {
+            {
+              id str "num_ident",
+              value int 2423
+            },
+            {
+              id str "num_mismatch",
+              value int 0
+            }
+          },
+          segs denseg {
+            dim 2,
+            numseg 3,
+            ids {
+              other {
+                accession "XM_017319046",
+                version 1
+              },
+              other {
+                accession "NW_006763130",
+                version 1
+              }
+            },
+            starts {
+              235,
+              536318,
+              2151,
+              -1,
+              2152,
+              536046
+            },
+            lens {
+              1916,
+              1,
+              272
+            },
+            strands {
+              plus,
+              minus,
+              plus,
+              minus,
+              plus,
+              minus
+            }
+          }
+        }
+      }
+    }
+  }
+}
