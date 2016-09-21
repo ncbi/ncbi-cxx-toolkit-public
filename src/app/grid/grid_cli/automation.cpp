@@ -168,7 +168,7 @@ CCommand::CCommand(string name, TArguments args) :
 {
 }
 
-CCommand::CCommand(string name, string args) :
+CCommand::CCommand(string name, const char * const args) :
     m_Name(name),
     m_Impl(new SVariadicCommandImpl(args))
 {

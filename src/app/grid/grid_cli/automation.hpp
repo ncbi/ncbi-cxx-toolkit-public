@@ -197,9 +197,9 @@ public:
     CJsonNode Help();
 
 private:
-    const string m_Name;
+    string m_Name;
     CJsonNode m_TypeOrValue;
-    const bool m_Optional;
+    bool m_Optional;
 };
 
 struct SCommandImpl;
@@ -213,7 +213,7 @@ class CCommand
 {
 public:
     CCommand(string name, TArguments args = TArguments());
-    CCommand(string name, string args);
+    CCommand(string name, const char * const args);
     CCommand(string name, TCommandsGetter getter);
 
     CJsonNode Help(CJsonIterator& input);
