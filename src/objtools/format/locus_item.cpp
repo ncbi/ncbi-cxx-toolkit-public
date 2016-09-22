@@ -204,6 +204,8 @@ static string s_FastaGetOriginalID (CBioseqContext& ctx)
 
 static bool s_ShouldUseOriginalID (CBioseqContext& ctx)
 {
+    if (ctx.Config().IsFormatLite()) return false;
+
     const CBioseq_Handle& bsh = ctx.GetHandle();
     const CBioseq& seq = *bsh.GetCompleteBioseq();
 
