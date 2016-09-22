@@ -165,6 +165,9 @@ NAutomation::TCommands SNetStorageServiceAutomationObject::CallCommands()
                 { "user_ns", "" },
                 { "limit", 0, },
             }},
+        { "object_info", {
+                { "object_loc", CJsonNode::eString, },
+            }},
         { "server_info", },
         { "get_servers", },
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
@@ -224,6 +227,12 @@ bool SNetStorageServiceAutomationObject::Call(const string& method,
 
         CJsonNode response(g_ExecToJson(info_to_json, service,
                 m_ActualServiceType, CNetService::eIncludePenalized));
+        reply.Append(response);
+    } else if (method == "object_info") {
+        const string object_loc(arg_array.NextString());
+        CNetStorageObject object(m_NetStorageAdmin.Open(object_loc));
+        CNetStorageObjectInfo object_info(object.GetInfo());
+        CJsonNode response(object_info.ToJSON());
         reply.Append(response);
     } else if (method == "get_servers") {
         CJsonNode object_ids(CJsonNode::NewArrayNode());

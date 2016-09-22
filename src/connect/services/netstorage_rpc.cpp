@@ -1608,6 +1608,11 @@ void CNetStorageAdmin::SetEventHandler(INetEventHandler* event_handler)
     m_Impl->m_NetStorageRPC->m_Service->SetEventHandler(event_handler);
 }
 
+CNetStorageObject CNetStorageAdmin::Open(const string& object_loc)
+{
+    return m_Impl->m_NetStorageRPC->Open(object_loc);
+}
+
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
 void g_AllowXSiteConnections(CNetStorageAdmin& admin)
 {
