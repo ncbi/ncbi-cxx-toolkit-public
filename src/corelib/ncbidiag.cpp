@@ -1953,6 +1953,24 @@ void CDiagContext::PrintStart(const string& message)
     // Print extra message. If ncbi_role and/or ncbi_location are set,
     // they will be logged by this extra. Otherwise nothing will be printed.
     Extra().PrintNcbiRoleAndLocation().Flush();
+
+    static const char* kCloudIdFile = "/etc/ncbi/cloudid";
+    CFile cloudid(kCloudIdFile);
+    if ( cloudid.Exists() ) {
+        CDiagContext_Extra ex = Extra();
+        CNcbiIfstream in(kCloudIdFile);
+        while (!in.eof() && in.good()) {
+            string s;
+            getline(in, s);
+            size_t sep = s.find('\t');
+            if (sep == NPOS) continue;
+            string name = NStr::TruncateSpaces(s.substr(0, sep));
+            string value = s.substr(sep + 1);
+            ex.Print(name, value);
+        }
+        ex.Flush();
+    }
+
     // Log hit id if already available.
     x_GetDefaultHitID(eHitID_NoCreate);
 }
