@@ -1,7 +1,7 @@
 # $Id$
 
 APP = blastdb_format_unit_test
-SRC = seq_writer_unit_test
+SRC = seq_writer_unit_test seq_formatter_unit_test
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 CXXFLAGS = $(FAST_CXXFLAGS)
@@ -19,4 +19,4 @@ CHECK_COPY = data
 REQUIRES = Boost.Test.Included
 
 
-WATCHERS = zaretska jianye madden camacho
+WATCHERS = zaretska jianye madden camacho fongah2
