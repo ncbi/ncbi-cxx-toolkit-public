@@ -4251,6 +4251,20 @@ echo "$as_me: error: incompatible options: --without-bdb but --with-gbench" >&2;
       else
          : ${with_bdb:=yes}
       fi
+     if test "$with_boost" = "no"; then
+         { { echo "$as_me:$LINENO: error: incompatible options: --without-boost but --with-gbench" >&5
+echo "$as_me: error: incompatible options: --without-boost but --with-gbench" >&2;}
+   { (exit 1); exit 1; }; }
+      else
+         : ${with_boost:=yes}
+      fi
+     if test "$with_xslt" = "no"; then
+         { { echo "$as_me:$LINENO: error: incompatible options: --without-xslt but --with-gbench" >&5
+echo "$as_me: error: incompatible options: --without-xslt but --with-gbench" >&2;}
+   { (exit 1); exit 1; }; }
+      else
+         : ${with_xslt:=yes}
+      fi
 
    : ${with_projects=scripts/projects/ncbi_gbench.lst}
 elif test "$with_jni" = "yes" ; then
@@ -46519,6 +46533,10 @@ if test "$with_gbench" != "no"  -a  -d "$real_srcdir/src/app/gbench"; then
    fi
    if test "$with_bdb" = "no"; then
      reason="$reason${sep}Berkeley DB"
+     sep=", "
+   fi
+   if test "$ncbi_cv_lib_boost_spirit" != "yes"; then
+     reason=Boost.Spirit
      sep=", "
    fi
    if test "$with_mt" = "no"; then
