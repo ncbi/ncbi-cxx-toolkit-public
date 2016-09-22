@@ -111,6 +111,26 @@ private:
     static const string kName;
 };
 
+struct SNetStorageObjectAutomationObject : public CAutomationObject
+{
+    SNetStorageObjectAutomationObject(CAutomationProc* automation_proc,
+            CNetStorageObject::TInstance object);
+
+    virtual const string& GetType() const override { return kName; }
+    virtual const void* GetImplPtr() const override;
+
+    virtual bool Call(const string& method,
+            CArgArray& arg_array, CJsonNode& reply) override;
+
+    static NAutomation::CCommand CallCommand();
+    static NAutomation::TCommands CallCommands();
+
+private:
+    CNetStorageObject m_Object;
+
+    static const string kName;
+};
+
 END_NCBI_SCOPE
 
 #endif // NST_AUTOMATION__HPP

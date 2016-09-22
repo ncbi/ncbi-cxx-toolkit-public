@@ -37,6 +37,7 @@ USING_NCBI_SCOPE;
 
 const string SNetStorageServiceAutomationObject::kName = "nstsvc";
 const string SNetStorageServerAutomationObject::kName = "nstsrv";
+const string SNetStorageObjectAutomationObject::kName = "nstobj";
 
 NAutomation::CCommand SNetStorageServiceAutomationObject::NewCommand(
         const string& name)
@@ -165,15 +166,8 @@ NAutomation::TCommands SNetStorageServiceAutomationObject::CallCommands()
                 { "user_ns", "" },
                 { "limit", 0, },
             }},
-        { "object_info", {
+        { "open_object", {
                 { "object_loc", CJsonNode::eString, },
-            }},
-        { "attr_list", {
-                { "object_loc", CJsonNode::eString, },
-            }},
-        { "attr_value", {
-                { "object_loc", CJsonNode::eString, },
-                { "attr_name", CJsonNode::eString, },
             }},
         { "server_info", },
         { "get_servers", },
@@ -235,25 +229,14 @@ bool SNetStorageServiceAutomationObject::Call(const string& method,
         CJsonNode response(g_ExecToJson(info_to_json, service,
                 m_ActualServiceType, CNetService::eIncludePenalized));
         reply.Append(response);
-    } else if (method == "object_info") {
+    } else if (method == "open_object") {
         const string object_loc(arg_array.NextString());
         CNetStorageObject object(m_NetStorageAdmin.Open(object_loc));
-        CNetStorageObjectInfo object_info(object.GetInfo());
-        CJsonNode response(object_info.ToJSON());
-        reply.Append(response);
-    } else if (method == "attr_list") {
-        const string object_loc(arg_array.NextString());
-        CNetStorageObject object(m_NetStorageAdmin.Open(object_loc));
-        CNetStorageObject::TAttributeList attr_list(object.GetAttributeList());
-        CJsonNode response(CJsonNode::eArray);
-        for (auto& attr : attr_list) response.AppendString(attr);
-        reply.Append(response);
-    } else if (method == "attr_value") {
-        const string object_loc(arg_array.NextString());
-        const string attr_name(arg_array.NextString());
-        CNetStorageObject object(m_NetStorageAdmin.Open(object_loc));
-        CJsonNode response(object.GetAttribute(attr_name));
-        reply.Append(response);
+        TAutomationObjectRef automation_object(
+                new SNetStorageObjectAutomationObject(m_AutomationProc, object));
+
+        TObjectID response(m_AutomationProc->AddObject(automation_object));
+        reply.AppendInteger(response);
     } else if (method == "get_servers") {
         CJsonNode object_ids(CJsonNode::NewArrayNode());
         for (CNetServiceIterator it = m_NetStorageAdmin.GetService().Iterate(
@@ -328,6 +311,60 @@ bool SNetStorageServerAutomationObject::Call(const string& method,
         reply.Append(response);
     } else
         return TBase::Call(method, arg_array, reply);
+
+    return true;
+}
+
+SNetStorageObjectAutomationObject::SNetStorageObjectAutomationObject(
+        CAutomationProc* automation_proc, CNetStorageObject::TInstance object) :
+    CAutomationObject(automation_proc),
+    m_Object(object)
+{
+}
+
+const void* SNetStorageObjectAutomationObject::GetImplPtr() const
+{
+    return m_Object;
+}
+
+NAutomation::CCommand SNetStorageObjectAutomationObject::CallCommand()
+{
+    return NAutomation::CCommand(kName, CallCommands);
+}
+
+NAutomation::TCommands SNetStorageObjectAutomationObject::CallCommands()
+{
+    NAutomation::TCommands cmds =
+    {
+        { "info", },
+        { "attr_list", },
+        { "get_attr", {
+                { "attr_name", CJsonNode::eString, },
+            }},
+    };
+
+    return cmds;
+}
+
+bool SNetStorageObjectAutomationObject::Call(const string& method,
+        CArgArray& arg_array, CJsonNode& reply)
+{
+    if (method == "info") {
+        CNetStorageObjectInfo object_info(m_Object.GetInfo());
+        CJsonNode response(object_info.ToJSON());
+        reply.Append(response);
+    } else if (method == "attr_list") {
+        CNetStorageObject::TAttributeList attr_list(m_Object.GetAttributeList());
+        CJsonNode response(CJsonNode::eArray);
+        for (auto& attr : attr_list) response.AppendString(attr);
+        reply.Append(response);
+    } else if (method == "get_attr") {
+        const string attr_name(arg_array.NextString());
+        CJsonNode response(m_Object.GetAttribute(attr_name));
+        reply.Append(response);
+    } else {
+        return false;
+    }
 
     return true;
 }

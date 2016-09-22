@@ -374,6 +374,7 @@ NAutomation::TCommands CAutomationProc::CallCommands()
         SNetScheduleServerAutomationObject::CallCommand(),
         SNetStorageServiceAutomationObject::CallCommand(),
         SNetStorageServerAutomationObject::CallCommand(),
+        SNetStorageObjectAutomationObject::CallCommand(),
         SWorkerNodeAutomationObject::CallCommand(),
     };
 }
