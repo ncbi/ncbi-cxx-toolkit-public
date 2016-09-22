@@ -156,7 +156,7 @@ CJsonNode SCommandGroupImpl::Help(const string& name, CJsonIterator& input)
             }
         }
 
-        help.SetByKey("sub-help", elements);
+        help.SetByKey("sub-topics", elements);
     }
 
     return help;
@@ -420,12 +420,14 @@ NAutomation::CCommand CAutomationProc::HelpCommand()
 CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)
 {
     CJsonIterator input(message.Iterate());
+    CJsonNode reply(CJsonNode::NewArrayNode());
 
     // Empty input (help)
     if (!input.IsValid()) {
-        CJsonNode help(CJsonNode::eArray);
-        help.AppendString("help");
-        input = help.Iterate();
+        reply.AppendString("Type `help` (in single quotes) for usage. "
+                "For help on a sub-topic, add it to the command, "
+                "e.g. `help`, `call`, `nstobj`");
+        return reply;
     }
 
     // Help
@@ -442,7 +444,6 @@ CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)
     if (command == "exit")
         return CJsonNode();
 
-    CJsonNode reply(CJsonNode::NewArrayNode());
     reply.Append(m_OKNode);
 
     if (command == "call") {
