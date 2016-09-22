@@ -168,6 +168,13 @@ NAutomation::TCommands SNetStorageServiceAutomationObject::CallCommands()
         { "object_info", {
                 { "object_loc", CJsonNode::eString, },
             }},
+        { "attr_list", {
+                { "object_loc", CJsonNode::eString, },
+            }},
+        { "attr_value", {
+                { "object_loc", CJsonNode::eString, },
+                { "attr_name", CJsonNode::eString, },
+            }},
         { "server_info", },
         { "get_servers", },
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
@@ -233,6 +240,19 @@ bool SNetStorageServiceAutomationObject::Call(const string& method,
         CNetStorageObject object(m_NetStorageAdmin.Open(object_loc));
         CNetStorageObjectInfo object_info(object.GetInfo());
         CJsonNode response(object_info.ToJSON());
+        reply.Append(response);
+    } else if (method == "attr_list") {
+        const string object_loc(arg_array.NextString());
+        CNetStorageObject object(m_NetStorageAdmin.Open(object_loc));
+        CNetStorageObject::TAttributeList attr_list(object.GetAttributeList());
+        CJsonNode response(CJsonNode::eArray);
+        for (auto& attr : attr_list) response.AppendString(attr);
+        reply.Append(response);
+    } else if (method == "attr_value") {
+        const string object_loc(arg_array.NextString());
+        const string attr_name(arg_array.NextString());
+        CNetStorageObject object(m_NetStorageAdmin.Open(object_loc));
+        CJsonNode response(object.GetAttribute(attr_name));
         reply.Append(response);
     } else if (method == "get_servers") {
         CJsonNode object_ids(CJsonNode::NewArrayNode());
