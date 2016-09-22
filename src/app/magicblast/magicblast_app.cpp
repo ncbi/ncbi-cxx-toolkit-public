@@ -880,9 +880,6 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
     // edit distance
     ostr << sep << "NM:i:" << edit_distance;
 
-    ostr << sep << "Zb:i:" << batch_number;
-    ostr << sep << "Zc:i:" << compartment;
-
     return ostr;
 }
 
