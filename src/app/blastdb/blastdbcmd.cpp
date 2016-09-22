@@ -38,7 +38,7 @@
 #include <objtools/blast/seqdb_reader/seqdbexpert.hpp>
 #include <algo/blast/api/blast_exception.hpp>
 #include <algo/blast/blastinput/blast_input_aux.hpp>
-#include <objtools/blast/blastdb_format/seq_writer.hpp>
+#include <objtools/blast/blastdb_format/seq_formatter.hpp>
 #include <objtools/blast/blastdb_format/blastdb_formatter.hpp>
 #include <objtools/blast/blastdb_format/blastdb_seqid.hpp>
 
@@ -72,21 +72,21 @@ private:
     CRef<CSeqDBExpert> m_BlastDb;
     /// Is the database protein
     bool m_DbIsProtein;
-    /// Sequence range, non-empty if provided as command line argument
-    TSeqRange m_SeqRange;
-    /// Strand to retrieve
-    ENa_strand m_Strand;
     /// output is FASTA
     bool m_FASTA;
     /// output is ASN.1 defline
-    bool m_Asn1DeflineOutput;
+    bool m_Asn1Bioseq;
     /// should we find duplicate entries?
     bool m_GetDuplicates;
     /// should we output target sequence only?
     bool m_TargetOnly;
 
+    CBlastDB_FormatterConfig m_Config;
+
     /// Initializes the application's data members
     void x_InitApplicationData();
+
+    string x_InitSearchRequest();
 
     /// Prints the BLAST database information (e.g.: handles -info command line
     /// option)
@@ -96,158 +96,175 @@ private:
     /// @return 0 on success; 1 if some sequences were not retrieved
     int x_ProcessSearchRequest();
 
-    /// Vector of sequence identifiers in a BLAST database
-    typedef vector< CRef<CBlastDBSeqId> > TQueries;
-
-    /// Extract the queries for the BLAST database from the command line
-    /// options
-    /// @param queries queries to retrieve [in|out]
-    /// @return 0 on sucess; 1 if some queries were not processed
-    int x_GetQueries(TQueries& queries) const;
-
-    /// Add a query ID for processing
-    /// @param retval the return value where the queries will be added [in|out]
-    /// @param entry the user's query [in]
-    /// @return 0 on sucess; 1 if some seqid is not translated
-    int x_AddSeqId(CBlastDBCmdApp::TQueries& retval, const string& entry) const;
-
-    /// Add an OID for processing
-    /// @param retval the return value where the queries will be added [in|out]
-    /// @param entry the user's query [in]
-    void x_AddOid(CBlastDBCmdApp::TQueries& retval, const int oid, bool check=false) const;
-
     /// Process batch entry with range, strand and filter id
     /// @param args program input args
     /// @param seq_fmt sequence formatter object
     /// @return 0 on sucess; 1 if some queries were not processed
-    int x_ProcessBatchEntry(const CArgs& args, CSeqFormatter & seq_fmt);
+    int x_ProcessBatchEntry(CBlastDB_Formatter & seq_fmt);
+
+    /// Process entry with range, strand and filter id
+    /// @param args program input args
+    /// @param seq_fmt sequence formatter object
+    /// @return 0 on sucess; 1 if some queries were not processed
+    int x_ProcessEntry(CBlastDB_Formatter & fmt);
+
+    int x_ProcessSearchType(CBlastDB_Formatter & fmt);
+
+    bool x_GetOids(const string & acc, vector<int> & oids);
+
+    int x_ModifyConfigForBatchEntry(const vector<string> & tmp);
 };
 
-int
-CBlastDBCmdApp::x_AddSeqId(CBlastDBCmdApp::TQueries& retval,
-                           const string& entry) const
+bool
+CBlastDBCmdApp::x_GetOids(const string & acc, vector<int> & oids)
 {
-    // Process get dups
-    if (m_GetDuplicates) {
-        vector<int> oids;
-        m_BlastDb->AccessionToOids(entry, oids);
-        ITERATE(vector<int>, oid, oids) {
-            x_AddOid(retval, *oid, true);
-        }
-        return 0;
-    }
-
-    // FASTA / target_only just need one id
-    if (m_TargetOnly) {
-        retval.push_back(CRef<CBlastDBSeqId>(new CBlastDBSeqId(entry)));
-        return 0;
-    }
-
-    // Default: find oid first and add all pertinent
-    vector<int> oids;
-    m_BlastDb->AccessionToOids(entry, oids);
-    if (!oids.empty()) {
-        x_AddOid(retval, oids[0], true);
-        return 0;
-    }
-
-    ERR_POST(Error << entry << ": OID not found");
-    return 1;
-}
-
-void
-CBlastDBCmdApp::x_AddOid(CBlastDBCmdApp::TQueries& retval,
-                         const int oid,
-                         bool check) const
-{
-    // check to see if this oid has been excluded
-    if (check) {
-        list< CRef<CSeq_id> > filtered_ids = m_BlastDb->GetSeqIDs(oid);
-        if (filtered_ids.empty()) {
-            return;
-        }
-    }
-
-    // FASTA output just need one id
-    if (m_FASTA || m_Asn1DeflineOutput) {
-        CRef<CBlastDBSeqId> blastdb_seqid(new CBlastDBSeqId());
-        blastdb_seqid->SetOID(oid);
-        retval.push_back(blastdb_seqid);
-        return;
-    }
-
-    // Not a NR database, add oid instead
-    vector<TGi> gis;
-    m_BlastDb->GetGis(oid, gis);
-    if (gis.empty()) {
-	list< CRef<CSeq_id> > ids = m_BlastDb->GetSeqIDs(oid);
-	ITERATE(list< CRef<CSeq_id> > , id, ids) {
-		CRef<CBlastDBSeqId> blastdb_seqid(new CBlastDBSeqId((*id)->AsFastaString()));
-        	retval.push_back(blastdb_seqid);
+	m_BlastDb->AccessionToOids(acc, oids);
+	if(oids.empty()) {
+		ERR_POST(Error <<  "Entry not found: " << acc);
+		return false;
 	}
-        return;
-    }
-
-    // Default:  add all possible ids
-    ITERATE(vector<TGi>, gi, gis) {
-        retval.push_back(CRef<CBlastDBSeqId>
-                         (new CBlastDBSeqId(NStr::NumericToString(GI_TO(TIntId, *gi)))));
-    }
+	return true;
 }
 
 int
-CBlastDBCmdApp::x_GetQueries(CBlastDBCmdApp::TQueries& retval) const
+CBlastDBCmdApp::x_ProcessEntry(CBlastDB_Formatter & fmt)
 {
-    int err_found = 0;
-    int err_here;
+	unsigned int err_found = 0;
     const CArgs& args = GetArgs();
-
-    retval.clear();
-
     _ASSERT(m_BlastDb.NotEmpty());
 
-    if (args["pig"].HasValue()) {
-        retval.reserve(1);
-        retval.push_back(CRef<CBlastDBSeqId>
-                         (new CBlastDBSeqId(args["pig"].AsInteger())));
-
+   	if (args["pig"].HasValue()) {
+    	CSeqDB::TOID oid;
+    	m_BlastDb->PigToOid(args["pig"].AsInteger(),oid);
+   		fmt.Write(oid, m_Config);
     } else if (args["entry"].HasValue()) {
+    	static const string kDelim(",");
+    	const string& entry = args["entry"].AsString();
 
-        static const string kDelim(",");
-        const string& entry = args["entry"].AsString();
+    	vector<string> queries;
+       	if (entry.find(kDelim[0]) != string::npos) {
+           	NStr::Split(entry, kDelim, queries, NStr::fSplit_NoMergeDelims);
+       	} else {
+       		queries.resize(1);
+       		queries[0]  = entry;
+     	}
+   		for(unsigned int i=0; i < queries.size(); i++) {
+     		vector<CSeqDB::TOID> oids;
+     		if(x_GetOids(queries[i], oids)) {
+     			if (m_GetDuplicates) {
+     				for(unsigned int j=0; j < oids.size(); j++) {
+     					fmt.Write(oids[j], m_Config);
+     				}
+     			}
+     			else {
+     				if(m_TargetOnly) {
+     					fmt.Write(oids[0], m_Config, queries[i]);
+     				}
+     				else {
+     					fmt.Write(oids[0], m_Config);
+     				}
+     			}
+     		}
+     		else {
+     			err_found ++;
+     		}
+     	}
+   		if(err_found == queries.size()) {
+   			NCBI_THROW(CInputException, eInvalidInput,
+   		               "Entry or entries not found in BLAST database");
+   		}
+    }
+   	return (err_found) ? 1:0;
+}
 
-        if (entry.find(kDelim[0]) != string::npos) {
-            vector<string> tokens;
-            NStr::Split(entry, kDelim, tokens, NStr::fSplit_NoMergeDelims);
-            ITERATE(vector<string>, itr, tokens) {
-                err_found += (err_here = x_AddSeqId(retval, *itr));
-                if (err_here) {
-                    ERR_POST(Error << *itr << ": OID not found");
-                }
-            }
-        } else if (entry == "all") {
-            for (int i = 0; m_BlastDb->CheckOrFindOID(i); i++) {
-                x_AddOid(retval, i);
-            }
-        } else {
-            err_found += (err_here = x_AddSeqId(retval, entry));
-            if (err_here) {
-                ERR_POST(Error << entry << ": OID not found");
-            }
+bool s_IsMaskAlgoIdValid(CSeqDB & blastdb, int id)
+{
+	if (id >= 0) {
+	    vector<int> algo_id(1, id);
+	    vector<int> invalid_algo_ids = blastdb.ValidateMaskAlgorithms(algo_id);
+	    if ( !invalid_algo_ids.empty()) {
+	    	ERR_POST(Error << "Invalid filtering algorithm ID: " << NStr::IntToString(id));
+	    	return false;
+	    }
+	}
+	return true;
+}
+
+int CBlastDBCmdApp::x_ModifyConfigForBatchEntry(const vector<string> & tmp)
+{
+	int status = 0;
+	if (!m_DbIsProtein) {
+		m_Config.m_Strand = eNa_strand_plus;
+	}
+   	m_Config.m_SeqRange = TSeqRange::GetEmpty();
+   	m_Config.m_FiltAlgoId = -1;
+   	for(unsigned int i=1; i < tmp.size(); i++) {
+   		if(tmp[i].find('-')!= string::npos)
+    	{
+    		try {
+    			m_Config.m_SeqRange = ParseSequenceRangeOpenEnd(tmp[i]);
+    		} catch (...) {
+    		}
+    	}
+    	else if (!m_DbIsProtein && NStr::EqualNocase(tmp[i].c_str(), "minus")) {
+    		m_Config.m_Strand = eNa_strand_minus;
+    	}
+    	else {
+    		m_Config.m_FiltAlgoId = NStr::StringToNonNegativeInt(tmp[i]);
+    		if(!s_IsMaskAlgoIdValid(*m_BlastDb, m_Config.m_FiltAlgoId)){
+    			status = 1;
+    		}
+    	}
+    }
+   	return status;
+}
+
+int
+CBlastDBCmdApp::x_ProcessBatchEntry(CBlastDB_Formatter & fmt)
+{
+	int err_found = 0;
+   	const CArgs& args = GetArgs();
+    CNcbiIstream& input = args["entry_batch"].AsInputFile();
+
+    while (input) {
+        string line;
+        NcbiGetlineEOL(input, line);
+        if ( !line.empty() ) {
+        	vector<string> tmp;
+        	NStr::Split(line, " \t", tmp, NStr::fSplit_MergeDelims);
+        	if(tmp.empty()) {
+        		continue;
+        	}
+        	if(x_ModifyConfigForBatchEntry(tmp))  {
+        		err_found ++;
+        		ERR_POST (Error << "Skipped " << tmp[0]);
+        		continue;
+        	}
+   			vector<int> oids;
+         	if(!x_GetOids(tmp[0], oids)) {
+         		err_found ++;
+        		ERR_POST (Error << "Skipped " << tmp[0]);
+        		continue;
+         	}
+
+         	if (m_GetDuplicates) {
+         		for(unsigned int j=0; j < oids.size(); j++) {
+         			fmt.Write(oids[j], m_Config);
+         		}
+           	}
+         	else {
+         		if(m_TargetOnly) {
+         			fmt.Write(oids[0], m_Config, tmp[0]);
+         		}
+         		else {
+         			fmt.Write(oids[0], m_Config);
+         		}
+         	}
         }
-
-    } else {
-        NCBI_THROW(CInputException, eInvalidInput,
-                   "Must specify query type: one of 'entry', 'entry_batch', or 'pig'");
     }
-
-    if (retval.empty()) {
-        NCBI_THROW(CInputException, eInvalidInput,
-                   "Entry or entries not found in BLAST database");
-    }
-
     return (err_found) ? 1 : 0;
 }
+
 
 void
 CBlastDBCmdApp::x_InitApplicationData()
@@ -256,28 +273,7 @@ CBlastDBCmdApp::x_InitApplicationData()
 
     CSeqDB::ESeqType seqtype = ParseMoleculeTypeString(args[kArgDbType].AsString());
     m_BlastDb.Reset(new CSeqDBExpert(args[kArgDb].AsString(), seqtype));
-
     m_DbIsProtein = static_cast<bool>(m_BlastDb->GetSequenceType() == CSeqDB::eProtein);
-
-    m_SeqRange = TSeqRange::GetEmpty();
-    if (args["range"].HasValue()) {
-        m_SeqRange = ParseSequenceRangeOpenEnd(args["range"].AsString());
-    }
-
-    m_Strand = eNa_strand_unknown;
-    if (args["strand"].HasValue() && !m_DbIsProtein) {
-        if (args["strand"].AsString() == "plus") {
-            m_Strand = eNa_strand_plus;
-        } else if (args["strand"].AsString() == "minus") {
-            m_Strand = eNa_strand_minus;
-        } else {
-            abort();    // both strands not supported
-        }
-    }
-
-    m_GetDuplicates = args["get_dups"];
-
-    m_TargetOnly = args["target_only"];
 }
 
 void
@@ -319,167 +315,142 @@ CBlastDBCmdApp::x_PrintBlastDatabaseInformation()
     }
 }
 
-int
-CBlastDBCmdApp::x_ProcessSearchRequest()
+string
+CBlastDBCmdApp::x_InitSearchRequest()
 {
-    const CArgs& args = GetArgs();
-    CNcbiOstream& out = args[kArgOutput].AsOutputFile();
+   	const CArgs& args = GetArgs();
+    m_GetDuplicates = args["get_dups"];
+    m_TargetOnly = args["target_only"];
 
-    CSeqFormatterConfig conf;
-    conf.m_LineWidth = args["line_length"].AsInteger();
-    conf.m_SeqRange = m_SeqRange;
-    conf.m_Strand = m_Strand;
-    conf.m_TargetOnly = m_TargetOnly;
-    conf.m_UseCtrlA = args["ctrl_a"];
-    if (args["mask_sequence_with"].HasValue()) {
-    	 conf.m_FiltAlgoId = -1;
-    	 conf.m_FiltAlgoId = NStr::StringToInt(args["mask_sequence_with"].AsString(), NStr::fConvErr_NoThrow);
-    	 if(errno)
-    		 conf.m_FiltAlgoId = m_BlastDb->GetMaskAlgorithmId(args["mask_sequence_with"].AsString());
-    }
-
-    string outfmt;
+    string outfmt = kEmptyStr;
     if (args["outfmt"].HasValue()) {
-        outfmt = args["outfmt"].AsString();
+    	outfmt = args["outfmt"].AsString();
         m_FASTA = false;
-        m_Asn1DeflineOutput = false;
+        m_Asn1Bioseq = false;
 
-        if (outfmt.find("%f") != string::npos &&
-            outfmt.find("%d") != string::npos) {
-            NCBI_THROW(CInputException, eInvalidInput,
-                "The %d and %f output format options cannot be specified together.");
+        if ((outfmt.find("%f") != string::npos &&
+           	(outfmt.find("%b") != string::npos || outfmt.find("%d") != string::npos)) ||
+            (outfmt.find("%b") != string::npos && outfmt.find("%d") != string::npos)) {
+           	NCBI_THROW(CInputException, eInvalidInput,
+                    	"The %f, %b, %d output format options cannot be specified together.");
+        }
+
+        if (outfmt.find("%b") != string::npos) {
+           	outfmt = "%b";
+           	m_Asn1Bioseq = true;
         }
 
         // If "%f" is found within outfmt, discard everything else
         if (outfmt.find("%f") != string::npos) {
-            outfmt = "%f";
-            m_FASTA = true;
+           	outfmt = "%f";
+           	m_FASTA = true;
         }
-        // If "%d" is found within outfmt, discard everything else
+
         if (outfmt.find("%d") != string::npos) {
-            outfmt = "%d";
-            m_Asn1DeflineOutput = true;
+           	outfmt = "%d";
         }
+
         if (outfmt.find("%m") != string::npos) {
-            int algo_id = 0;
-            size_t i = outfmt.find("%m") + 2;
-            bool found = false;
-            while (i < outfmt.size()
-                && outfmt[i] >= '0' && outfmt[i] <= '9') {
-                algo_id = algo_id * 10 + (outfmt[i] - '0');
-                outfmt.erase(i, 1);
-                found = true;
+           	int algo_id = 0;
+           	size_t i = outfmt.find("%m") + 2;
+           	bool found = false;
+           	while (i < outfmt.size() && outfmt[i] >= '0' && outfmt[i] <= '9') {
+           		algo_id = algo_id * 10 + (outfmt[i] - '0');
+               	outfmt.erase(i, 1);
+               	found = true;
             }
             if (!found) {
-                NCBI_THROW(CInputException, eInvalidInput,
-                    "The option '-outfmt %m' is not followed by a masking algo ID.");
+               	NCBI_THROW(CInputException, eInvalidInput,
+                       	   "The option '-outfmt %m' is not followed by a masking algo ID.");
             }
-            conf.m_FmtAlgoId = algo_id;
+            m_Config.m_FmtAlgoId = algo_id;
+    		if(!s_IsMaskAlgoIdValid(*m_BlastDb, m_Config.m_FmtAlgoId)) {
+    			NCBI_THROW(CInvalidDataException, eInvalidInput,
+    				                   "Invalid filtering algorithm ID for outfmt %m.");
+    		}
         }
     }
 
-    bool errors_found = false;
-    CSeqFormatter seq_fmt(outfmt, *m_BlastDb, out, conf);
-
-    /* Special case: full db dump when no range and mask data is specified */
-    if (m_FASTA &&
-        args["entry"].HasValue() && args["entry"].AsString() == "all" &&
-        ! args["mask_sequence_with"].HasValue() &&
-        ! args["range"].HasValue()) {
-
-        try {
-            seq_fmt.DumpAll(*m_BlastDb, conf);
-        } catch (const CException& e) {
-            ERR_POST(Error << e.GetMsg());
-            errors_found = true;
-        } catch (...) {
-            ERR_POST(Error << "Failed to retrieve requested item");
-            errors_found = true;
+    if (args["strand"].HasValue() && !m_DbIsProtein) {
+    	if (args["strand"].AsString() == "plus") {
+                m_Config.m_Strand = eNa_strand_plus;
+            } else if (args["strand"].AsString() == "minus") {
+                m_Config.m_Strand = eNa_strand_minus;
+            } else {
+            	NCBI_THROW(CInputException, eInvalidInput,
+            	           "Both strands is not supported");
+            }
+    }
+    m_Config.m_UseCtrlA = args["ctrl_a"];
+    if (args["mask_sequence_with"].HasValue()) {
+    	m_Config.m_FiltAlgoId = -1;
+        m_Config.m_FiltAlgoId = NStr::StringToInt(args["mask_sequence_with"].AsString(), NStr::fConvErr_NoThrow);
+        if(errno) {
+        	m_Config.m_FiltAlgoId = m_BlastDb->GetMaskAlgorithmId(args["mask_sequence_with"].AsString());
         }
-        return errors_found ? 1 : 0;
+   		if(!s_IsMaskAlgoIdValid(*m_BlastDb, m_Config.m_FiltAlgoId)){
+   			NCBI_THROW(CInvalidDataException, eInvalidInput,
+   		               "Invalid filtering algorithm ID for mask_sequence_with.");
+   		}
     }
-
-    if (args["entry_batch"].HasValue()) {
-       	return x_ProcessBatchEntry(args, seq_fmt);
+    if (args["range"].HasValue()) {
+    	m_Config.m_SeqRange = ParseSequenceRangeOpenEnd(args["range"].AsString());
     }
-
-    TQueries queries;
-	errors_found = (x_GetQueries(queries) > 0 ? true : false);
-    _ASSERT( !queries.empty() );
-
-    NON_CONST_ITERATE(TQueries, itr, queries) {
-        try {
-            seq_fmt.Write(**itr);
-        } catch (const CException& e) {
-            ERR_POST(Error << e.GetMsg());
-            errors_found = true;
-        } catch (...) {
-            ERR_POST(Error << "Failed to retrieve requested item");
-            errors_found = true;
-        }
-    }
-    return errors_found ? 1 : 0;
+     return outfmt;
 }
 
-int CBlastDBCmdApp::x_ProcessBatchEntry(const CArgs& args, CSeqFormatter & seq_fmt)
+int
+CBlastDBCmdApp::x_ProcessSearchType(CBlastDB_Formatter & fmt)
 {
-    CNcbiIstream& input = args["entry_batch"].AsInputFile();
-    bool err_found = false;
-    while (input) {
-        string line;
-        NcbiGetlineEOL(input, line);
-        if ( !line.empty() ) {
-        	vector<string> tmp;
-        	NStr::Split(line, " \t", tmp, NStr::fSplit_MergeDelims);
-        	if(tmp.empty())
-        		continue;
-
-        	TQueries queries;
-        	if(x_AddSeqId(queries, tmp[0]) > 0 )
-        			err_found = true;
-
-            if(queries.empty())
-            	continue;
-
-           	TSeqRange seq_range(TSeqRange::GetEmpty());
-            ENa_strand seq_strand = eNa_strand_plus;
-           	int seq_algo_id = -1;
-
-           	for(unsigned int i=1; i < tmp.size(); i++) {
-
-           		if(tmp[i].find('-')!= string::npos)
-            	{
-            		try {
-            			seq_range = ParseSequenceRangeOpenEnd(tmp[i]);
-            		} catch (...) {
-            			seq_range = TSeqRange::GetEmpty();
-            		}
-            	}
-            	else if (!m_DbIsProtein && NStr::EqualNocase(tmp[i].c_str(), "minus")) {
-            		seq_strand = eNa_strand_minus;
-            	}
-            	else {
-            		seq_algo_id = NStr::StringToNonNegativeInt(tmp[i]);
-            	}
-            }
-
-           	seq_fmt.SetConfig(seq_range, seq_strand, seq_algo_id);
-           	NON_CONST_ITERATE(TQueries, itr, queries) {
-           	    try {
-           	        seq_fmt.Write(**itr);
-           	    } catch (const CException& e) {
-           	        ERR_POST(Error << e.GetMsg() << ": " << **itr);
-           	        err_found = true;
-           	    } catch (...) {
-           	        ERR_POST(Error << "Failed to retrieve requested item: "
-           	                << **itr);
-           	        err_found = true;
-           	    }
-           	}
-        }
-    }
-    return err_found ? 1:0;
+   	const CArgs& args = GetArgs();
+	if (args["entry"].HasValue() && args["entry"].AsString() == "all") {
+		fmt.DumpAll(m_Config);
+	}
+	else if (args["entry_batch"].HasValue()) {
+		return x_ProcessBatchEntry(fmt);
+	}
+	else if (args["entry"].HasValue() || args["pig"].HasValue()) {
+		return x_ProcessEntry(fmt);
+	}
+	else {
+		NCBI_THROW(CInputException, eInvalidInput,
+		       	   "Must specify query type: one of 'entry', 'entry_batch', or 'pig'");
+	}
+	return 0;
 }
+
+int
+CBlastDBCmdApp::x_ProcessSearchRequest()
+{
+   	int err_found = 0;
+    try {
+    	const CArgs& args = GetArgs();
+    	CNcbiOstream& out = args[kArgOutput].AsOutputFile();
+    	string outfmt = x_InitSearchRequest();
+    	/* Special case: full db dump when no range and mask data is specified */
+    	if (m_FASTA) {
+    		CBlastDB_FastaFormatter fasta_fmt(*m_BlastDb, out, args["line_length"].AsInteger());
+    		err_found = x_ProcessSearchType(fasta_fmt);
+    	}
+    	else if (m_Asn1Bioseq) {
+    		CBlastDB_BioseqFormatter bioseq_fmt(*m_BlastDb, out);
+    		err_found = x_ProcessSearchType(bioseq_fmt);
+    	}
+    	else {
+    		CBlastDB_SeqFormatter seq_fmt(outfmt, *m_BlastDb, out);
+    		err_found = x_ProcessSearchType(seq_fmt);
+    	}
+    }
+    catch (const CException& e) {
+    	ERR_POST(Error << e.GetMsg());
+        err_found = 1;
+    } catch (...) {
+        ERR_POST(Error << "Failed to retrieve requested item");
+        err_found = 1;
+    }
+	return err_found;
+}
+
 
 void CBlastDBCmdApp::Init()
 {
@@ -615,7 +586,7 @@ void CBlastDBCmdApp::Init()
     arg_desc->SetCurrentGroup("Output configuration options for FASTA format");
     arg_desc->AddDefaultKey("line_length", "number", "Line length for output",
                         CArgDescriptions::eInteger,
-                        NStr::IntToString(CSeqFormatterConfig().m_LineWidth));
+                        NStr::IntToString(80));
     arg_desc->SetConstraint("line_length",
                             new CArgAllowValuesGreaterThanOrEqual(1));
 
@@ -687,7 +658,6 @@ int CBlastDBCmdApp::Run(void)
     SetDiagPostLevel(eDiag_Warning);
     SetDiagPostPrefix("blastdbcmd");
 
-
     try {
         CNcbiOstream& out = args["out"].AsOutputFile();
         if (args["show_blastdb_search_path"]) {
@@ -712,11 +682,11 @@ int CBlastDBCmdApp::Run(void)
         }
 
         x_InitApplicationData();
-
         if (args["info"]) {
             x_PrintBlastDatabaseInformation();
         } else {
-            status = x_ProcessSearchRequest();
+        	x_InitSearchRequest();
+       		status = x_ProcessSearchRequest();
         }
 
     } CATCH_ALL(status)
