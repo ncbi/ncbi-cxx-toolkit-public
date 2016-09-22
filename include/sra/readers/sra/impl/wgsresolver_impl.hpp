@@ -66,6 +66,9 @@ public:
     const string& GetWGSIndexPath(void) const {
         return m_WGSIndexPath;
     }
+    const string& GetWGSIndexResolvedPath(void) const {
+        return m_WGSIndexResolvedPath;
+    }
     
     bool IsValid(void) const {
         return m_Db;
@@ -105,6 +108,7 @@ private:
     CVDBMgr m_Mgr;
     CMutex m_Mutex; // for update
     string m_WGSIndexPath;
+    string m_WGSIndexResolvedPath;
     CTime m_Timestamp;
     CVDB m_Db;
     CVDBTable m_GiIdxTable;

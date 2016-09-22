@@ -53,7 +53,7 @@
 BEGIN_NCBI_NAMESPACE;
 
 #define NCBI_USE_ERRCODE_X   WGSResolver
-NCBI_DEFINE_ERR_SUBCODE_X(31);
+NCBI_DEFINE_ERR_SUBCODE_X(32);
 
 BEGIN_NAMESPACE(objects);
 
@@ -314,6 +314,7 @@ void CWGSResolver_VDB::Open(const CVDBMgr& mgr, const string& acc_or_path)
 
     // save original argument for possible changes in symbolic links
     m_WGSIndexPath = acc_or_path;
+    m_WGSIndexResolvedPath = path;
     if ( !CDirEntry(path).GetTime(&m_Timestamp) ) {
         m_Timestamp = CTime();
     }
@@ -339,8 +340,15 @@ void CWGSResolver_VDB::Reopen(void)
 bool CWGSResolver_VDB::Update(void)
 {
     string path = s_ResolveAccOrPath(m_Mgr, GetWGSIndexPath());
+    if ( path != GetWGSIndexResolvedPath() ) {
+        // resolved to a different path -> new index by symbolic link
+        LOG_POST_X(32, "CWGSResolver_VDB: new index path: "<<path);
+        Reopen();
+        return true;
+    }
+
     CTime timestamp;
-    if ( !CDirEntry(GetWGSIndexPath()).GetTime(&timestamp) ) {
+    if ( !CDirEntry(path).GetTime(&timestamp) ) {
         // cannot get timestamp -> remote reference
         return false;
     }
