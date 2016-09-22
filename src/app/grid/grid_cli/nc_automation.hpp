@@ -89,8 +89,7 @@ private:
 
 struct SNetCacheBlob : public CAutomationObject
 {
-    SNetCacheBlob(SNetCacheService* nc_object,
-            const string& blob_key);
+    SNetCacheBlob(SNetCacheService* nc_object, const string& blob_key);
 
     virtual const string& GetType() const { return kName; }
 

@@ -60,8 +60,7 @@ struct SNetStorageService : public SNetServiceBase
         CNetStorageAdmin::TInstance m_NetStorageAdmin;
     };
 
-    SNetStorageService(CAutomationProc* automation_proc,
-            CArgArray& arg_array);
+    SNetStorageService(CAutomationProc* automation_proc, CArgArray& arg_array);
 
     virtual const string& GetType() const { return kName; }
 

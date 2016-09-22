@@ -83,8 +83,7 @@ private:
     static const string kName;
 };
 
-struct SNetScheduleServer :
-        public SNetScheduleService
+struct SNetScheduleServer : public SNetScheduleService
 {
     typedef SNetScheduleService TBase;
 

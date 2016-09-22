@@ -57,8 +57,7 @@ struct SWorkerNode : public SNetService
             const string& class_name, CAutomationProc* automation_proc);
 
 private:
-    SWorkerNode(CAutomationProc* automation_proc,
-            CNetScheduleAPI ns_api);
+    SWorkerNode(CAutomationProc* automation_proc, CNetScheduleAPI ns_api);
 
     CNetScheduleAPI m_NetScheduleAPI;
     CNetServer m_WorkerNode;

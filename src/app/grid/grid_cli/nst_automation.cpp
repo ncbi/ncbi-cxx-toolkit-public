@@ -41,8 +41,7 @@ const string SNetStorageService::kName = "nstsvc";
 const string SNetStorageServer::kName = "nstsrv";
 const string SNetStorageObject::kName = "nstobj";
 
-CCommand SNetStorageService::NewCommand(
-        const string& name)
+CCommand SNetStorageService::NewCommand(const string& name)
 {
     return CCommand(name, {
             { "service_name", CJsonNode::eString, },
