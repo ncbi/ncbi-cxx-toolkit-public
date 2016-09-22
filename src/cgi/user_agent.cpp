@@ -123,6 +123,7 @@ bool CCgiUserAgent::IsBrowser(void) const
         case eiCab:
         case eKonqueror:
         case eLynx:
+        case ePapers:
         case eOregano:
         case eOpera:
         case eW3m:
