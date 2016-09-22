@@ -98,6 +98,7 @@ public:
         eNetscape,              ///< Netscape (Navigator), versions >=6 are Gecko-based (www.netscape.com)
         eOpera,                 ///< Opera      (www.opera.com)
         eOregano,               ///< Oregano    (www.castle.org.uk/oregano/)
+        eUCBrowser,             ///< UC Browser (www.ucweb.com/ucbrowser/)
         eW3m,                   ///< w3m        (www.w3m.org)
         eNagios,                ///< check_http/nagios-plugins (nagiosplugins.org)
 
@@ -141,6 +142,7 @@ public:
         eStainless,             ///< Stainless   (www.stainlessapp.com)
 
         /// Search robots/bots/validators
+        eApp,                   ///< Class: applications (desktop/mobile)
         eCrawler,               ///< Class: crawlers / search robots
         eOfflineBrowser,        ///< Class: offline browsers
         eScript,                ///< Class: script tools (perl/php/...)

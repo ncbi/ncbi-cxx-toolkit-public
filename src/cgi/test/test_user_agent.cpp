@@ -638,5 +638,20 @@ CTestApplication::~CTestApplication()
 
 int main(int argc, char** argv)
 {
+#if 0
+    CCgiUserAgent agent("");
+
+    cout << "Browser   = " << agent.GetBrowserName()  << " " << agent.GetBrowserVersion().Print() << endl;
+    cout << "Engine    = " << agent.GetEngineName()   << " " << agent.GetEngineVersion().Print() << endl;
+    cout << "Platform  = " << agent.GetPlatformName() << endl;
+    cout << endl;
+    cout << "is_bot    = " << agent.IsBot()           << endl;
+    cout << "is_phone  = " << agent.IsPhoneDevice()   << endl;
+    cout << "is_tablet = " << agent.IsTabletDevice()  << endl;
+    cout << "is_mobile = " << agent.IsMobileDevice()  << endl;
+
+    return 0;
+#endif
+
     return CTestApplication().AppMain(argc, argv);
 }

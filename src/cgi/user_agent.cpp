@@ -512,6 +512,8 @@ const SBrowser s_Browsers[] = {
     { CCgiUserAgent::eCrawler,      "BDFetch",                  "BDFetch",                  CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAppProduct },
     { CCgiUserAgent::eCrawler,      "BecomeBot",                "www.become.com",           CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAppComment },
     { CCgiUserAgent::eCrawler,      "Bimbot",                   "Bimbot",                   CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fApp },
+    { CCgiUserAgent::eCrawler,      "Bingbot",                  "www.bing.com",             CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAny },
+    { CCgiUserAgent::eCrawler,      "BingPreview",              "BingPreview",              CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fVendor },
     { CCgiUserAgent::eCrawler,      "BlitzBOT",                 "B-l-i-t-z-B-O-T",          CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAny },
     { CCgiUserAgent::eCrawler,      "BlitzBOT",                 "BlitzBot",                 CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAny },
     { CCgiUserAgent::eCrawler,      "BlitzBOT",                 "BlitzBOT",                 CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAny },
@@ -577,6 +579,7 @@ const SBrowser s_Browsers[] = {
     { CCgiUserAgent::eCrawler,      "MojeekBot",                "www.mojeek.com",           CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAppComment },
     { CCgiUserAgent::eCrawler,      "Morning Paper",            "Morning Paper",            CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAppProduct },
     { CCgiUserAgent::eCrawler,      "MSNBot",                   "msnbot",                   CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fApp },
+    { CCgiUserAgent::eCrawler,      "MSNBot-Media",             "msnbot-media",             CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fApp },
     { CCgiUserAgent::eCrawler,      "MS Sharepoint Portal Server","MS Search",              CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fApp },
     { CCgiUserAgent::eCrawler,      "MSIECrawler",              "MSIECrawler",              CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAppComment },
     { CCgiUserAgent::eCrawler,      "MSRBOT",                   "MSRBOT",                   CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAppProduct },
@@ -704,6 +707,8 @@ const SBrowser s_Browsers[] = {
     { CCgiUserAgent::eScript,       "Python-urllib",            "Python-urllib",            CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAppProduct },
     { CCgiUserAgent::eScript,       "Wget",                     "Wget",                     CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAppProduct },
 
+    { CCgiUserAgent::eApp,          "Papers (papersapp.com)",   "Papers",                   CCgiUserAgent::eEngine_Unknown, CCgiUserAgent::ePlatform_Unknown,      fAppProduct },
+
     // Mobile devices
 
     { CCgiUserAgent::eAirEdge,      "AIR-EDGE",                 "DDIPOCKET",                CCgiUserAgent::eEngine_Unknown, CCgiUserAgent::ePlatform_MobileDevice, fAppComment },
@@ -802,6 +807,8 @@ const SBrowser s_Browsers[] = {
     { CCgiUserAgent::eOregano,      "Oregano",                  "Oregano2",                 CCgiUserAgent::eEngine_Unknown, CCgiUserAgent::ePlatform_Unknown,      fAppComment },
     { CCgiUserAgent::eOregano,      "Oregano",                  "Oregano",                  CCgiUserAgent::eEngine_Unknown, CCgiUserAgent::ePlatform_Unknown,      fAppComment },
     { CCgiUserAgent::eOpera,        "Opera",                    "Opera",                    CCgiUserAgent::eEngine_Unknown, CCgiUserAgent::ePlatform_Unknown,      fAny },
+    { CCgiUserAgent::eUCBrowser,    "UC Browser",               "UCBrowser",                CCgiUserAgent::eEngine_Unknown, CCgiUserAgent::ePlatform_Unknown,      fVendorProduct },
+    { CCgiUserAgent::eUCBrowser,    "UC Browser",               "UCWEB",                    CCgiUserAgent::eEngine_Unknown, CCgiUserAgent::ePlatform_Unknown,      fApp },
     { CCgiUserAgent::eW3m,          "w3m",                      "w3m",                      CCgiUserAgent::eEngine_Unknown, CCgiUserAgent::ePlatform_Unknown,      fAppProduct },
     { CCgiUserAgent::eNagios,       "check_http (nagios-plugins)","check_http",             CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAppProduct }
 
@@ -1166,6 +1173,8 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
             m_UserAgent.find(USTR("NetBSD"))       != NPOS  ||
             m_UserAgent.find(USTR("OpenBSD"))      != NPOS  ||
             m_UserAgent.find(USTR("IRIX"))         != NPOS  ||
+            // ??? could be iOS as well
+            //m_UserAgent.find(USTR("Darwin"))       != NPOS  ||
             m_UserAgent.find(USTR("nagios-plugins")) != NPOS) {
             m_Platform = ePlatform_Unix;
         } else
