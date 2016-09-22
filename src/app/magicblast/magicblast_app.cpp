@@ -68,17 +68,15 @@ USING_SCOPE(objects);
 #endif
 
 static const int   kMajorVersion = 1;
-static const int   kMinorVersion = 0;
+static const int   kMinorVersion = 1;
 static const int   kPatchVersion = 0;
-static const char* kReleaseDate = "September-09-2016";
 
 class CMagicBlastVersion : public CVersionInfo
 {
 public:
     CMagicBlastVersion() : CVersionInfo(kMajorVersion,
                                         kMinorVersion,
-                                        kPatchVersion,
-                                        kReleaseDate)
+                                        kPatchVersion)
     {}
 };
 
