@@ -168,7 +168,7 @@ CSNPBlobId::CSNPBlobId(const CTempString& str)
     FromString(str);
 }
 
-
+/*
 CSNPBlobId::CSNPBlobId(const CSNPFileInfo& file,
                        const CSeq_id_Handle& seq_id)
     : m_Sat(0),
@@ -179,7 +179,7 @@ CSNPBlobId::CSNPBlobId(const CSNPFileInfo& file,
 {
     SetSeqAndFilterIndex(0, file.GetDefaultFilterIndex());
 }
-
+*/
 
 CSNPBlobId::CSNPBlobId(const CSNPFileInfo& file,
                        const CSeq_id_Handle& seq_id,
@@ -187,7 +187,7 @@ CSNPBlobId::CSNPBlobId(const CSNPFileInfo& file,
     : m_Sat(0),
       m_SubSat(0),
       m_SatKey(0),
-      m_File(file.GetFileName()),
+      m_Accession(file.GetAccession()),
       m_SeqId(seq_id)
 {
     SetSeqAndFilterIndex(0, filter_index);
@@ -197,8 +197,16 @@ CSNPBlobId::CSNPBlobId(const CSNPFileInfo& file,
 CSNPBlobId::CSNPBlobId(const CSNPFileInfo& file,
                        size_t seq_index,
                        size_t filter_index)
+    : m_Sat(0),
+      m_SubSat(0),
+      m_SatKey(0)
 {
-    SetSatNA(file.GetFileName());
+    if ( file.IsValidNA() ) {
+        SetSatNA(file.GetAccession());
+    }
+    else {
+        m_Accession = file.GetAccession();
+    }
     SetSeqAndFilterIndex(seq_index, filter_index);
 }
 
@@ -358,13 +366,13 @@ CSeq_id_Handle CSNPBlobId::GetSeqId(void) const
 }
 
 
-string CSNPBlobId::GetFileName(void) const
+string CSNPBlobId::GetAccession(void) const
 {
     if ( IsSatId() ) {
         return GetSatNA();
     }
     else {
-        return m_File;
+        return m_Accession;
     }
 }
 
@@ -398,6 +406,15 @@ size_t sx_ExtractFilterIndex(string& s)
 }
 
 
+static
+string sx_AddFilterIndex(const string& s, size_t filter_index)
+{
+    CNcbiOstrstream str;
+    str << s << kFilterPrefixChar << (filter_index+1);
+    return CNcbiOstrstreamToString(str);
+}
+
+
 string CSNPBlobId::ToString(void) const
 {
     CNcbiOstrstream out;
@@ -405,7 +422,7 @@ string CSNPBlobId::ToString(void) const
         out << m_Sat << '.' << m_SubSat << '.' << m_SatKey;
     }
     else {
-        out << m_File;
+        out << m_Accession;
         out << kFilterPrefixChar << (GetFilterIndex()+1);
         out << kFileEnd << m_SeqId;
     }
@@ -465,9 +482,9 @@ void CSNPBlobId::FromString(CTempString str)
         NCBI_THROW_FMT(CSraException, eOtherError,
                        "Bad CSNPBlobId: "<<str);
     }
-    m_File = str.substr(0, div);
+    m_Accession = str.substr(0, div);
     m_SeqId = CSeq_id_Handle::GetHandle(str.substr(div+strlen(kFileEnd)));
-    SetSeqAndFilterIndex(0, sx_ExtractFilterIndex(m_File));
+    SetSeqAndFilterIndex(0, sx_ExtractFilterIndex(m_Accession));
 }
 
 
@@ -483,8 +500,8 @@ bool CSNPBlobId::operator<(const CBlobId& id) const
     if ( m_SatKey != id2.m_SatKey ) {
         return m_SatKey < id2.m_SatKey;
     }
-    if ( m_File != id2.m_File ) {
-        return m_File < id2.m_File;
+    if ( m_Accession != id2.m_Accession ) {
+        return m_Accession < id2.m_Accession;
     }
     return m_SeqId < id2.m_SeqId;
 }
@@ -497,7 +514,7 @@ bool CSNPBlobId::operator==(const CBlobId& id) const
         m_SubSat == id2.m_SubSat &&
         m_SatKey == id2.m_SatKey &&
         m_SeqId == id2.m_SeqId &&
-        m_File == id2.m_File;
+        m_Accession == id2.m_Accession;
 }
 
 
@@ -534,13 +551,15 @@ CSNPDataLoader_Impl::~CSNPDataLoader_Impl(void)
 void CSNPDataLoader_Impl::AddFixedFile(const string& file)
 {
     CRef<CSNPFileInfo> info(new CSNPFileInfo(*this, file));
-    m_FixedFiles[info->GetFileName()] = info;
+    string key = info->GetBaseAnnotName();
+    sx_ExtractFilterIndex(key);
+    m_FixedFiles[key] = info;
 }
 
 
-CRef<CSNPFileInfo> CSNPDataLoader_Impl::GetFixedFile(const CSNPBlobId& blob_id)
+CRef<CSNPFileInfo> CSNPDataLoader_Impl::GetFixedFile(const string& acc)
 {
-    TFixedFiles::iterator it = m_FixedFiles.find(blob_id.GetFileName());
+    TFixedFiles::iterator it = m_FixedFiles.find(acc);
     if ( it == m_FixedFiles.end() ) {
         return null;
     }
@@ -584,14 +603,21 @@ CRef<CSNPFileInfo> CSNPDataLoader_Impl::FindFile(const string& acc)
 
 
 CRef<CSNPFileInfo>
-CSNPDataLoader_Impl::GetFileInfo(const CSNPBlobId& blob_id)
+CSNPDataLoader_Impl::GetFileInfo(const string& acc)
 {
     if ( !m_FixedFiles.empty() ) {
-        return GetFixedFile(blob_id);
+        return GetFixedFile(acc);
     }
     else {
-        return FindFile(blob_id.GetFileName());
+        return FindFile(acc);
     }
+}
+
+
+CRef<CSNPFileInfo>
+CSNPDataLoader_Impl::GetFileInfo(const CSNPBlobId& blob_id)
+{
+    return GetFileInfo(blob_id.GetAccession());
 }
 
 
@@ -599,9 +625,6 @@ CRef<CSNPSeqInfo>
 CSNPDataLoader_Impl::GetSeqInfo(const CSNPBlobId& blob_id)
 {
     CRef<CSNPSeqInfo> info = GetFileInfo(blob_id)->GetSeqInfo(blob_id);
-    if ( size_t filter_index = blob_id.GetFilterIndex() ) {
-        info->m_FilterIndex = filter_index;
-    }
     return info;
 }
 
@@ -637,28 +660,38 @@ CSNPDataLoader_Impl::GetOrphanAnnotRecords(CDataSource* ds,
                                            const SAnnotSelector* sel)
 {
     CDataLoader::TTSE_LockSet locks;
+    /*
     // explicitly specified files
     for ( auto f : m_FixedFiles ) {
-        if ( auto s = f.second->GetSeqInfo(id) ) {
-            CRef<CSNPBlobId> blob_id(new CSNPBlobId(*f.second, id));
+        if ( auto s = f.second->GetSeqInfo(id, 0 TODO) ) {
+            CRef<CSNPBlobId> blob_id = s->GetBlobId();
             locks.insert(GetBlobById(ds, *blob_id));
         }
     }
+    */
     // implicitly load NA accessions
     if ( sel && sel->IsIncludedAnyNamedAnnotAccession() ) {
         const SAnnotSelector::TNamedAnnotAccessions& accs =
             sel->GetNamedAnnotAccessions();
-        if ( m_FoundFiles.get_size_limit() < accs.size() ) {
-            // increase VDB cache size
-            m_FoundFiles.set_size_limit(accs.size()+GetGCSize());
-        }
-        if ( m_MissingFiles.get_size_limit() < accs.size() ) {
-            // increase VDB cache size
-            m_MissingFiles.set_size_limit(accs.size()+GetMissingGCSize());
+        if ( m_FixedFiles.empty() ) {
+            if ( m_FoundFiles.get_size_limit() < accs.size() ) {
+                // increase VDB cache size
+                m_FoundFiles.set_size_limit(accs.size()+GetGCSize());
+            }
+            if ( m_MissingFiles.get_size_limit() < accs.size() ) {
+                // increase VDB cache size
+                m_MissingFiles.set_size_limit(accs.size()+GetMissingGCSize());
+            }
         }
         ITERATE ( SAnnotSelector::TNamedAnnotAccessions, it, accs ) {
-            if ( CRef<CSNPFileInfo> info = FindFile(it->first) ) {
-                if ( CRef<CSNPSeqInfo> seq = info->GetSeqInfo(id) ) {
+            string acc = it->first;
+            size_t filter_index = sx_ExtractFilterIndex(acc);
+            if ( filter_index == 0 && acc.size() == it->first.size() ) {
+                // filter specification is required
+                continue;
+            }
+            if ( CRef<CSNPFileInfo> info = GetFileInfo(acc) ) {
+                if ( CRef<CSNPSeqInfo> seq = info->GetSeqInfo(id, filter_index) ) {
                     locks.insert(GetBlobById(ds, *seq->GetBlobId()));
                 }
             }
@@ -726,24 +759,20 @@ CSNPFileInfo::CSNPFileInfo(CSNPDataLoader_Impl& impl,
 void CSNPFileInfo::x_Initialize(CSNPDataLoader_Impl& impl,
                                 const string& csra)
 {
-    m_IsValidNA = CSNPBlobId::IsValidNA(csra);
     m_FileName = csra;
-    m_DefaultFilterIndex = sx_ExtractFilterIndex(m_FileName);
-    if ( m_FileName.size() == csra.size() ) {
-        NCBI_THROW_FMT(CSraException, eOtherError,
-                       "No filter number specification: "<<csra);
+    sx_ExtractFilterIndex(m_FileName);
+    m_IsValidNA = CSNPBlobId::IsValidNA(m_FileName);
+    m_Accession = m_FileName;
+    if ( !m_IsValidNA ) {
+        // remove directory part, if any
+        SIZE_TYPE sep = m_Accession.find_last_of("/\\");
+        if ( sep != NPOS ) {
+            m_Accession.erase(0, sep+1);
+        }
     }
     m_AnnotName = impl.m_AnnotName;
     if ( m_AnnotName.empty() ) {
-        m_AnnotName = csra;
-        if ( !m_IsValidNA ) {
-            // remove directory part, if any
-            SIZE_TYPE sep = m_AnnotName.find_last_of("/\\");
-            if ( sep != NPOS ) {
-                m_AnnotName.erase(0, sep+1);
-            }
-        }
-        //GetDefaultAnnotName();
+        m_AnnotName = m_Accession;
     }
     CStopWatch sw;
     if ( GetDebugLevel() >= eDebug_open ) {
@@ -760,56 +789,38 @@ void CSNPFileInfo::x_Initialize(CSNPDataLoader_Impl& impl,
 }
 
 
-string CSNPFileInfo::GetSNPAnnotName(void) const
+string CSNPFileInfo::GetSNPAnnotName(size_t filter_index) const
 {
-    return m_AnnotName;
+    return sx_AddFilterIndex(GetBaseAnnotName(), filter_index);
 }
 
 
 void CSNPFileInfo::GetPossibleAnnotNames(TAnnotNames& names) const
 {
-    names.push_back(CAnnotName(GetSNPAnnotName()));
+    for ( CSNPDbTrackIterator it(m_SNPDb); it; ++it ) {
+        names.push_back(CAnnotName(GetSNPAnnotName(it.GetVDBTrackIndex())));
+    }
 }
 
 
 CRef<CSNPSeqInfo>
-CSNPFileInfo::GetSeqInfo(const CSeq_id_Handle& seq_id)
+CSNPFileInfo::GetSeqInfo(const CSeq_id_Handle& seq_id, size_t filter_index)
 {
-    CMutexGuard guard(GetMutex());
-    TSeqById::const_iterator it = m_SeqById.find(seq_id);
-    if ( it != m_SeqById.end() ) {
-        return it->second;
-    }
     CRef<CSNPSeqInfo> ret;
     CSNPDbSeqIterator seq_it(m_SNPDb, seq_id);
     if ( seq_it ) {
-        size_t seq_index = seq_it.GetVDBSeqIndex();
-        auto& idx_slot = m_SeqByIdx[seq_index];
-        if ( idx_slot ) {
-            ret = idx_slot;
-        }
-        else {
-            // new sequence
-            ret = new CSNPSeqInfo(this, seq_it);
-            idx_slot = ret;
-        }
+        ret = new CSNPSeqInfo(this, seq_it, filter_index);
     }
     return ret;
 }
 
 
 CRef<CSNPSeqInfo>
-CSNPFileInfo::GetSeqInfo(size_t seq_index)
+CSNPFileInfo::GetSeqInfo(size_t seq_index, size_t filter_index)
 {
-    CMutexGuard guard(GetMutex());
-    TSeqByIdx::const_iterator it = m_SeqByIdx.find(seq_index);
-    if ( it != m_SeqByIdx.end() ) {
-        return it->second;
-    }
     CSNPDbSeqIterator seq_it(m_SNPDb, seq_index);
     _ASSERT(seq_it);
-    CRef<CSNPSeqInfo> ret(new CSNPSeqInfo(this, seq_it));
-    m_SeqByIdx[seq_it.GetVDBSeqIndex()] = ret;
+    CRef<CSNPSeqInfo> ret(new CSNPSeqInfo(this, seq_it, filter_index));
     return ret;
 }
 
@@ -818,10 +829,10 @@ CRef<CSNPSeqInfo>
 CSNPFileInfo::GetSeqInfo(const CSNPBlobId& blob_id)
 {
     if ( blob_id.IsSatId() ) {
-        return GetSeqInfo(blob_id.GetSeqIndex());
+        return GetSeqInfo(blob_id.GetSeqIndex(), blob_id.GetFilterIndex());
     }
     else {
-        return GetSeqInfo(blob_id.GetSeqId());
+        return GetSeqInfo(blob_id.GetSeqId(), blob_id.GetFilterIndex());
     }
 }
 
@@ -832,18 +843,17 @@ CSNPFileInfo::GetSeqInfo(const CSNPBlobId& blob_id)
 
 
 CSNPSeqInfo::CSNPSeqInfo(CSNPFileInfo* file,
-                         const CSNPDbSeqIterator& it)
+                         const CSNPDbSeqIterator& it,
+                         size_t filter_index)
     : m_File(file),
       m_SeqIndex(it.GetVDBSeqIndex()),
-      m_FilterIndex(file->GetDefaultFilterIndex())
+      m_FilterIndex(filter_index)
 {
-    if ( !m_File->IsValidNA() ||
-         !CSNPBlobId::IsValidSeqIndex(m_SeqIndex) ||
-         !CSNPBlobId::IsValidFilterIndex(m_FilterIndex) ) {
-        m_SeqIndex = 0;
+    if ( !CSNPBlobId::IsValidFilterIndex(m_FilterIndex) ) {
         m_FilterIndex = 0;
+    }
+    if ( !file->IsValidNA() ) {
         m_SeqId = it.GetSeqIdHandle();
-        _ASSERT(m_SeqId);
     }
 }
 
@@ -963,7 +973,7 @@ void CSNPSeqInfo::LoadAnnotBlob(CTSE_LoadLock& load_lock)
         CRef<CSeq_entry> entry(new CSeq_entry);
         entry->SetSet().SetId().SetId(kTSEId);
         entry->SetSet().SetSeq_set();
-        string base_name = m_File->GetSNPAnnotName();
+        string base_name = m_File->GetSNPAnnotName(m_FilterIndex);
         string feat_name = base_name;
         string overvew_name = base_name + +kOverviewNameSuffix;
         string graph_name = base_name + +kGraphNameSuffix;
@@ -1012,7 +1022,7 @@ void CSNPSeqInfo::LoadAnnotBlob(CTSE_LoadLock& load_lock)
         }
     }
     else {
-        string name = m_File->GetSNPAnnotName();
+        string name = m_File->GetSNPAnnotName(m_FilterIndex);
         CRef<CSeq_entry> entry(new CSeq_entry);
         for ( auto& annot : it.GetTableFeatAnnots(total_range, name) ) {
             entry->SetSet().SetAnnot().push_back(annot);
@@ -1028,7 +1038,7 @@ void CSNPSeqInfo::LoadAnnotChunk(CTSE_Chunk_Info& chunk_info)
     int chunk_type = chunk_id%kChunkIdMul;
     int i = chunk_id/kChunkIdMul;
     CTSE_Chunk_Info::TPlace place(CSeq_id_Handle(), kTSEId);
-    string base_name = m_File->GetSNPAnnotName();
+    string base_name = m_File->GetSNPAnnotName(m_FilterIndex);
     CSNPDbSeqIterator it = GetSeqIterator();
     if ( chunk_type == kChunkIdFeat ) {
         CRange<TSeqPos> range;

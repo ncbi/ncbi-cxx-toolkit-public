@@ -54,8 +54,10 @@ class CSNPBlobId : public CBlobId
 public:
     explicit
     CSNPBlobId(const CTempString& str);
+    /*
     CSNPBlobId(const CSNPFileInfo& file,
                const CSeq_id_Handle& seq_id);
+    */
     CSNPBlobId(const CSNPFileInfo& file,
                const CSeq_id_Handle& seq_id,
                size_t filter_index);
@@ -119,7 +121,7 @@ public:
                               size_t filter_index);
 
     CSeq_id_Handle GetSeqId(void) const;
-    string GetFileName(void) const;
+    string GetAccession(void) const;
 
 protected:
     // ID2 blob id
@@ -128,7 +130,7 @@ protected:
     Int4 m_SatKey; // seq & filter indexes
     
     // SNP file name or VDB accession
-    string m_File;
+    string m_Accession;
     // Ref Seq-id for annot blobs
     CSeq_id_Handle m_SeqId;
 };
@@ -144,7 +146,8 @@ class CSNPSeqInfo : public CObject
 {
 public:
     CSNPSeqInfo(CSNPFileInfo* file,
-                const CSNPDbSeqIterator& it);
+                const CSNPDbSeqIterator& it,
+                size_t filter_index);
 
     CSNPDbSeqIterator GetSeqIterator(void) const;
 
@@ -194,20 +197,28 @@ public:
         {
             return m_FileName;
         }
+    const string& GetAccession(void) const
+        {
+            return m_Accession;
+        }
     const string& GetBaseAnnotName(void) const
         {
             return m_AnnotName;
         }
-    string GetSNPAnnotName(void) const;
+    string GetSNPAnnotName(size_t filter_index) const;
+    /*
     size_t GetDefaultFilterIndex(void) const
         {
             return m_DefaultFilterIndex;
         }
+    */
 
     CRef<CSNPBlobId> GetAnnotBlobId(const CSeq_id_Handle& id) const;
 
-    CRef<CSNPSeqInfo> GetSeqInfo(const CSeq_id_Handle& seq_id);
-    CRef<CSNPSeqInfo> GetSeqInfo(size_t seq_index);
+    CRef<CSNPSeqInfo> GetSeqInfo(const CSeq_id_Handle& seq_id,
+                                 size_t filter_index);
+    CRef<CSNPSeqInfo> GetSeqInfo(size_t seq_index,
+                                 size_t filter_index);
     CRef<CSNPSeqInfo> GetSeqInfo(const CSNPBlobId& blob_id);
 
     CMutex& GetMutex(void) const
@@ -239,11 +250,12 @@ protected:
                       const string& file_name);
 
     bool m_IsValidNA;
-    string m_FileName;
-    string m_AnnotName;
+    string m_FileName; // external VDB file access string
+    string m_Accession; // OM named annot accession (without filter index)
+    string m_AnnotName; // OM annot name (without filter index)
     mutable CMutex m_SNPMutex;
     CSNPDb m_SNPDb;
-    size_t m_DefaultFilterIndex;
+    //size_t m_DefaultFilterIndex;
     TSeqById m_SeqById;
     TSeqByIdx m_SeqByIdx;
 };
@@ -257,9 +269,9 @@ public:
 
     void AddFixedFile(const string& file_name);
     
-    CRef<CSNPFileInfo> GetFixedFile(const CSNPBlobId& blob_id);
+    CRef<CSNPFileInfo> GetFixedFile(const string& acc);
     CRef<CSNPFileInfo> FindFile(const string& acc);
-
+    CRef<CSNPFileInfo> GetFileInfo(const string& acc);
     CRef<CSNPFileInfo> GetFileInfo(const CSNPBlobId& blob_id);
     CRef<CSNPSeqInfo> GetSeqInfo(const CSNPBlobId& blob_id);
 
