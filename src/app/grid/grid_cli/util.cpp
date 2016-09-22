@@ -1228,4 +1228,33 @@ CJsonNode g_WhatIs(const string& id, CCompoundIDPool id_pool)
     return CJsonNode();
 }
 
+namespace NNetStorage
+{
+
+void RemoveStdReplyFields(CJsonNode& server_reply)
+{
+    server_reply.DeleteByKey("Type");
+    server_reply.DeleteByKey("Status");
+    server_reply.DeleteByKey("RE");
+    server_reply.DeleteByKey("Warnings");
+}
+
+CExecToJson::CExecToJson(CNetStorageAdmin::TInstance netstorage_admin,
+        const string& command) :
+    m_NetStorageAdmin(netstorage_admin),
+    m_Command(command)
+{
+}
+
+CJsonNode CExecToJson::ExecOn(CNetServer server)
+{
+    CJsonNode server_reply(m_NetStorageAdmin.ExchangeJson(
+            m_NetStorageAdmin.MkNetStorageRequest(m_Command), server));
+
+    RemoveStdReplyFields(server_reply);
+    return server_reply;
+}
+
+}
+
 END_NCBI_SCOPE

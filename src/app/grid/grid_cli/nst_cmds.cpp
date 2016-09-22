@@ -178,14 +178,6 @@ CNetStorageObject CGridCommandLineInterfaceApp::GetNetStorageObject()
     }
 }
 
-static void s_NetStorage_RemoveStdReplyFields(CJsonNode& server_reply)
-{
-    server_reply.DeleteByKey("Type");
-    server_reply.DeleteByKey("Status");
-    server_reply.DeleteByKey("RE");
-    server_reply.DeleteByKey("Warnings");
-}
-
 void CGridCommandLineInterfaceApp::NetStorage_PrintServerReply(
         CJsonNode& server_reply)
 {
@@ -197,36 +189,12 @@ void CGridCommandLineInterfaceApp::NetStorage_PrintServerReply(
     }
 }
 
-class CNetStorageExecToJson : public IExecToJson
-{
-public:
-    CNetStorageExecToJson(CNetStorageAdmin::TInstance netstorage_admin,
-            const string& command) :
-        m_NetStorageAdmin(netstorage_admin),
-        m_Command(command)
-    {
-    }
-
-private:
-    virtual CJsonNode ExecOn(CNetServer server)
-    {
-        CJsonNode server_reply(m_NetStorageAdmin.ExchangeJson(
-                m_NetStorageAdmin.MkNetStorageRequest(m_Command), server));
-
-        s_NetStorage_RemoveStdReplyFields(server_reply);
-        return server_reply;
-    }
-
-    CNetStorageAdmin m_NetStorageAdmin;
-    const string m_Command;
-};
-
 int CGridCommandLineInterfaceApp::PrintNetStorageServerInfo()
 {
     CNetService service(m_NetStorageAdmin.GetService());
 
     if (m_Opts.output_format != eHumanReadable) {
-        CNetStorageExecToJson info_to_json(m_NetStorageAdmin, "INFO");
+        NNetStorage::CExecToJson info_to_json(m_NetStorageAdmin, "INFO");
 
         g_PrintJSON(stdout, g_ExecToJson(info_to_json, service,
                 service.GetServiceType(), CNetService::eIncludePenalized));
@@ -240,7 +208,7 @@ int CGridCommandLineInterfaceApp::PrintNetStorageServerInfo()
             CJsonNode server_reply(m_NetStorageAdmin.ExchangeJson(
                     m_NetStorageAdmin.MkNetStorageRequest("INFO"), server));
 
-            s_NetStorage_RemoveStdReplyFields(server_reply);
+            NNetStorage::RemoveStdReplyFields(server_reply);
 
             if (print_server_address)
                 printf("[%s]\n", server.GetServerAddress().c_str());
@@ -299,7 +267,7 @@ int CGridCommandLineInterfaceApp::ShutdownNetStorageServer()
 int CGridCommandLineInterfaceApp::ReconfigureNetStorageServer()
 {
     CNetService service(m_NetStorageAdmin.GetService());
-    CNetStorageExecToJson reconf_to_json(m_NetStorageAdmin, "RECONFIGURE");
+    NNetStorage::CExecToJson reconf_to_json(m_NetStorageAdmin, "RECONFIGURE");
 
     g_PrintJSON(stdout, g_ExecToJson(reconf_to_json, service,
             service.GetServiceType(), CNetService::eIncludePenalized));

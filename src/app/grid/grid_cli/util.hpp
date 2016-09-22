@@ -34,6 +34,7 @@
 
 #include <connect/services/netschedule_api.hpp>
 #include <connect/services/ns_output_parser.hpp>
+#include <connect/services/netstorage.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -144,6 +145,25 @@ void g_ResumeWorkerNode(CNetServer worker_node);
 #define TOKEN_TYPE__NETSTORAGEOBJECT_LOC "NetStorageObjectLoc"
 
 CJsonNode g_WhatIs(const string& id, CCompoundIDPool id_pool = CCompoundIDPool());
+
+namespace NNetStorage
+{
+
+void RemoveStdReplyFields(CJsonNode&);
+
+class CExecToJson : public IExecToJson
+{
+public:
+    CExecToJson(CNetStorageAdmin::TInstance, const string&);
+
+private:
+    virtual CJsonNode ExecOn(CNetServer) override;
+
+    CNetStorageAdmin m_NetStorageAdmin;
+    const string m_Command;
+};
+
+}
 
 END_NCBI_SCOPE
 

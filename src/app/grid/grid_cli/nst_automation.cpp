@@ -91,14 +91,6 @@ CAutomationObject* SNetStorageServerAutomationObject::Create(
     return new SNetStorageServerAutomationObject(automation_proc, nst_api_admin, server);
 }
 
-static void s_RemoveStdReplyFields(CJsonNode& server_reply)
-{
-    server_reply.DeleteByKey("Type");
-    server_reply.DeleteByKey("Status");
-    server_reply.DeleteByKey("RE");
-    server_reply.DeleteByKey("Warnings");
-}
-
 SNetStorageServiceAutomationObject::SNetStorageServiceAutomationObject(
         CAutomationProc* automation_proc,
         CNetStorageAdmin nst_api, CNetService::EServiceType type) :
@@ -173,6 +165,7 @@ NAutomation::TCommands SNetStorageServiceAutomationObject::CallCommands()
                 { "user_ns", "" },
                 { "limit", 0, },
             }},
+        { "server_info", },
         { "get_servers", },
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
         { "allow_xsite_connections", },
@@ -199,7 +192,7 @@ bool SNetStorageServiceAutomationObject::Call(const string& method,
         CJsonNode request(m_NetStorageAdmin.MkNetStorageRequest(found->second));
 
         CJsonNode response(m_NetStorageAdmin.ExchangeJson(request));
-        s_RemoveStdReplyFields(response);
+        NNetStorage::RemoveStdReplyFields(response);
         reply.Append(response);
     } else if (method == "client_objects") {
         string client_name(arg_array.NextString());
@@ -210,7 +203,7 @@ bool SNetStorageServiceAutomationObject::Call(const string& method,
         if (limit) request.SetInteger("Limit", limit);
 
         CJsonNode response(m_NetStorageAdmin.ExchangeJson(request));
-        s_RemoveStdReplyFields(response);
+        NNetStorage::RemoveStdReplyFields(response);
         reply.Append(response);
     } else if (method == "user_objects") {
         string user_name(arg_array.NextString());
@@ -223,7 +216,14 @@ bool SNetStorageServiceAutomationObject::Call(const string& method,
         if (limit) request.SetInteger("Limit", limit);
 
         CJsonNode response(m_NetStorageAdmin.ExchangeJson(request));
-        s_RemoveStdReplyFields(response);
+        NNetStorage::RemoveStdReplyFields(response);
+        reply.Append(response);
+    } else if (method == "server_info") {
+        NNetStorage::CExecToJson info_to_json(m_NetStorageAdmin, "INFO");
+        CNetService service(m_NetStorageAdmin.GetService());
+
+        CJsonNode response(g_ExecToJson(info_to_json, service,
+                m_ActualServiceType, CNetService::eIncludePenalized));
         reply.Append(response);
     } else if (method == "get_servers") {
         CJsonNode object_ids(CJsonNode::NewArrayNode());
@@ -253,7 +253,6 @@ NAutomation::TCommands SNetStorageServerAutomationObject::CallCommands()
     NAutomation::TCommands cmds =
     {
         { "health", },
-        { "server_info", },
         { "conf", },
         { "metadata_info", },
         { "reconf", },
@@ -275,7 +274,6 @@ bool SNetStorageServerAutomationObject::Call(const string& method,
     map<string, string> no_param_commands =
     {
         { "health",         "HEALTH" },
-        { "server_info",    "INFO" },
         { "conf",           "CONFIGURATION" },
         { "metadata_info",  "GETMETADATAINFO" },
         { "reconf",         "RECONFIGURE" },
@@ -286,7 +284,7 @@ bool SNetStorageServerAutomationObject::Call(const string& method,
         CJsonNode request(m_NetStorageAdmin.MkNetStorageRequest(found->second));
 
         CJsonNode response(m_NetStorageAdmin.ExchangeJson(request));
-        s_RemoveStdReplyFields(response);
+        NNetStorage::RemoveStdReplyFields(response);
         reply.Append(response);
     } else if (method == "ackalert") {
         string name(arg_array.NextString());
@@ -297,7 +295,7 @@ bool SNetStorageServerAutomationObject::Call(const string& method,
         request.SetString("User", user);
 
         CJsonNode response(m_NetStorageAdmin.ExchangeJson(request));
-        s_RemoveStdReplyFields(response);
+        NNetStorage::RemoveStdReplyFields(response);
         reply.Append(response);
     } else
         return TBase::Call(method, arg_array, reply);
