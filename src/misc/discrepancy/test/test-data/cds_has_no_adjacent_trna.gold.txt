@@ -1,0 +1,11 @@
+Discrepancy Report Results
+
+Summary
+CDS_HAS_NO_ADJACENT_TRNA: 1 coding region does not have adjacent tRNA
+
+Detailed Report
+
+CDS_HAS_NO_ADJACENT_TRNA: 1 coding region does not have adjacent tRNA
+test-data/cds_has_no_adjacent_trna.asn:CDS	NADH dehydrogenase subunit 1	gb|KU365727|:c3493-2605	
+test-data/cds_has_no_adjacent_trna.asn:tRNA	Tyr	gb|KU365727|:c2575-2511	
+

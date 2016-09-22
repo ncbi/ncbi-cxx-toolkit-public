@@ -37,10 +37,12 @@
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/RNA_gen.hpp>
 #include <objects/seqfeat/Imp_feat.hpp>
+#include <objects/seqfeat/Code_break.hpp>
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/seq/Delta_seq.hpp>
 #include <objects/seq/Seq_literal.hpp>
+#include <objects/seq/seqport_util.hpp>
 #include <objtools/cleanup/cleanup.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -2446,6 +2448,98 @@ DISCREPANCY_SUMMARIZE(MISC_FEATURE_WITH_PRODUCT_QUAL)
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
+
+
+// CDS_HAS_NO_ADJACENT_TRNA
+
+const string kCDShasNoTRNA = "[n] coding region[s] [does] not have adjacent tRNA";
+
+static bool IsStopCodon(const CCode_break::C_Aa& aa)
+{
+    int aa_idx = -1;
+    
+    switch (aa.Which()) {
+    case CCode_break::C_Aa::e_Ncbieaa:
+        aa_idx = aa.GetNcbieaa();
+        aa_idx = CSeqportUtil::GetMapToIndex(CSeq_data::e_Ncbieaa, CSeq_data::e_Ncbistdaa, aa_idx);
+        break;
+    case CCode_break::C_Aa::e_Ncbi8aa:
+        aa_idx = aa.GetNcbi8aa();
+        break;
+    case CCode_break::C_Aa::e_Ncbistdaa:
+        aa_idx = aa.GetNcbistdaa();
+        break;
+    }
+
+    static const int STOP_CODON = 25;
+    return aa_idx == STOP_CODON;
+}
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(CDS_HAS_NO_ADJACENT_TRNA, CSeq_feat_BY_BIOSEQ, eDisc, "CDSs should have adjacent tRNA")
+//  ----------------------------------------------------------------------------
+{
+    if (!obj.IsSetLocation() || !obj.IsSetData() || !obj.GetData().IsCdregion() || !obj.GetData().GetCdregion().IsSetCode_break()) {
+        return;
+    }
+
+    const CBioSource* biosrc = context.GetCurrentBiosource();
+    if (biosrc && biosrc->GetGenome() == CBioSource::eGenome_mitochondrion) {
+
+        const CCode_break& code_break = *obj.GetData().GetCdregion().GetCode_break().front();
+        if (code_break.IsSetAa() && IsStopCodon(code_break.GetAa())) {
+
+            ENa_strand strand = obj.GetLocation().IsSetStrand() ? obj.GetLocation().GetStrand() : eNa_strand_unknown;
+            TSeqPos stop = obj.GetLocation().GetStop(eExtreme_Biological);
+
+            const CSeq_feat* nearest_trna = nullptr;
+
+            TSeqPos diff = UINT_MAX;
+            ITERATE(vector<CConstRef<CSeq_feat>>, trna, context.FeatTRNAs()) {
+                if ((*trna)->IsSetLocation()) {
+
+                    TSeqPos start = (*trna)->GetLocation().GetStart(eExtreme_Biological);
+                    TSeqPos cur_diff = UINT_MAX;
+                    
+                    if (strand == eNa_strand_minus) {
+
+                        if (start <= stop) {
+                            cur_diff = stop - start;
+                        }
+                    }
+                    else {
+                        if (start >= stop) {
+                            cur_diff = start - stop;
+                        }
+                    }
+
+                    if (cur_diff < diff) {
+
+                        diff = cur_diff;
+                        nearest_trna = *trna;
+                    }
+                }
+            }
+
+            if (nearest_trna) {
+
+                ENa_strand trna_strand = nearest_trna->GetLocation().IsSetStrand() ? nearest_trna->GetLocation().GetStrand() : eNa_strand_unknown;
+                if (trna_strand == strand && diff > 0) {
+                    m_Objs[kCDShasNoTRNA].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false).Incr();
+                    m_Objs[kCDShasNoTRNA].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(nearest_trna)), false);
+                }
+            }
+        }
+    }
+}
+
+
+//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(CDS_HAS_NO_ADJACENT_TRNA)
+//  ----------------------------------------------------------------------------
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
 
 
 END_SCOPE(NDiscrepancy)

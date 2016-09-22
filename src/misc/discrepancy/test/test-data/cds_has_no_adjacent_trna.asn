@@ -1,0 +1,1628 @@
+Seq-entry ::= set {
+  class nuc-prot ,
+  descr {
+    source {
+      genome mitochondrion ,
+      org {
+        taxname "Pleurobranchaea novaezealandia" ,
+        db {
+          {
+            db "taxon" ,
+            tag
+              id 1883448 } } ,
+        orgname {
+          name
+            binomial {
+              genus "Pleurobranchaea" ,
+              species "novaezealandia" } ,
+          lineage "Eukaryota; Metazoa; Lophotrochozoa; Mollusca; Gastropoda;
+ Heterobranchia; Euthyneura; Nudipleura; Pleurobranchomorpha;
+ Pleurobranchoidea; Pleurobranchidae; Pleurobranchaea" ,
+          gcode 1 ,
+          mgcode 5 ,
+          div "INV" } } } ,
+    pub {
+      pub {
+        gen {
+          cit "Unpublished" ,
+          authors {
+            names
+              std {
+                {
+                  name
+                    name {
+                      last "Yang" ,
+                      first "Tiezhu" ,
+                      initials "T." } } ,
+                {
+                  name
+                    name {
+                      last "Liu" ,
+                      first "Chen" ,
+                      initials "C." } } ,
+                {
+                  name
+                    name {
+                      last "Shen" ,
+                      first "Heding" ,
+                      initials "H." } } } ,
+            affil
+              std {
+                affil "Shanghai Ocean University" ,
+                div "College of Fisheries and Life Science" ,
+                city "Shanghai" ,
+                country "China" ,
+                street "No. 999, Hucheng Ring Road" ,
+                postal-code "201306" } } ,
+          title "Complete mitochondrial genome of Pleurobranchaea
+ novaezealandiae Cheseman" } } } ,
+    pub {
+      pub {
+        sub {
+          authors {
+            names
+              std {
+                {
+                  name
+                    name {
+                      last "Yang" ,
+                      first "Tiezhu" ,
+                      initials "T." } } ,
+                {
+                  name
+                    name {
+                      last "Liu" ,
+                      first "Chen" ,
+                      initials "C." } } ,
+                {
+                  name
+                    name {
+                      last "Shen" ,
+                      first "Heding" ,
+                      initials "H." } } } ,
+            affil
+              std {
+                affil "Shanghai Ocean University" ,
+                div "College of Fisheries and Life Science" ,
+                city "Shanghai" ,
+                country "China" ,
+                street "No. 999, Hucheng Ring Road" ,
+                postal-code "201306" } } ,
+          date
+            std {
+              year 2015 ,
+              month 12 ,
+              day 31 } } } } ,
+    user {
+      type
+        str "NcbiCleanup" ,
+      data {
+        {
+          label
+            str "method" ,
+          data
+            str "SequinCleanup" } ,
+        {
+          label
+            str "version" ,
+          data
+            int 8 } ,
+        {
+          label
+            str "month" ,
+          data
+            int 7 } ,
+        {
+          label
+            str "day" ,
+          data
+            int 28 } ,
+        {
+          label
+            str "year" ,
+          data
+            int 2016 } } } ,
+    user {
+      type
+        str "NcbiAutofix" ,
+      data {
+         } } ,
+    update-date
+      std {
+        year 2016 ,
+        month 7 ,
+        day 28 } } ,
+  seq-set {
+    seq {
+      id {
+        local
+          str "Pleurobranchaea__1" ,
+        general {
+          db "NCBIFILE" ,
+          tag
+            str "Pleurobranchaea.sqn/Pleurobranchaea" } ,
+        general {
+          db "TMSMART" ,
+          tag
+            id 61294908 } ,
+        genbank {
+          accession "KU365727" } } ,
+      descr {
+        title "novaezealandiae Cheseman" ,
+        molinfo {
+          biomol genomic } ,
+        user {
+          type
+            str "StructuredComment" ,
+          data {
+            {
+              label
+                str "StructuredCommentPrefix" ,
+              data
+                str "##Assembly-Data-START##" } ,
+            {
+              label
+                str "Sequencing Technology" ,
+              data
+                str "Sanger dideoxy sequencing" } ,
+            {
+              label
+                str "StructuredCommentSuffix" ,
+              data
+                str "##Assembly-Data-END##" } } } ,
+        create-date
+          std {
+            year 2015 ,
+            month 12 ,
+            day 29 } } ,
+      inst {
+        repr raw ,
+        mol dna ,
+        length 14531 ,
+        seq-data
+          ncbi2na '1C59E0B30AC02C1FCEF370275129F53FFF3F01C1F710DFCB713C2B25FDE
+7E82901B101CC70702C33E0F33F701C202DFF0342E7D4410CA4C0E0E3C9D440FDE04FB5B00C45E
+9FF41013DD31CFC3654A469173FF1573E0AC0BD09B8204D2782DB0F1ECBF737602814491AF341F
+70C3633DD7DDF077D74AC733283403C93EDC01283F4C1F4B1478E141E7FC01CF5DCFDFE76DC023
+02C36088A82270D11C03479683C4BD010DD0BE789F720CB5B82006CF00201FD758A025100B003D
+43411C7324E36E002033F77FB2AC8E78371C0F33EDF42354789008CE373FC137D2ED19FF03C273
+D9D300C0D2510CFDE4DE09F8427DCFFF7C072141111F30C00A9FCCDCF8BC334D30D15FC0301550
+31FA4970F0071B02C803300D80CA079C8BA4C29D743284255C342F00C383BC41C045004517AC08
+A040E086A30FFD71D5700A4823328D90D8CF10890C1575C3FDCA0F81820F9B0903080CD3D6BE0E
+E04AEF1CC8DC93AF30FF4AB758B0EFA020015C0227004000100203504337FD0800C28E03A0FF3D
+0B8FC0D17028FDF817F74EC800703820B7C05D434202B00C03B0A008063F02FAF9504803557407
+4771CF7EB5D0C283278452BFB0F12E9554008CFE57428204CD700092F5CF74400036F1D71CF42C
+EEAE3C3307FAC330D561433B3B308010004086753F9382BF6010D35D7AE6DD910CE0D12090383F
+14EDE7B32ECC8C00C05AF20FE081C02435C03E35D6FD340C8807CFA9FA095C33CFDE7ADCBF860B
+F393003F02CF0082F1B0D3F558B5B0CF7C70418C354D9E5D209240050C0148048A5C9EDD02F441
+307B30031C829F0CC2E5DC240D00F7C0238CBF07F50090C8A410004B10E507DC30F53409C87474
+FF49FE0A58EBFFCFCF05CC9F7FF64EA1103B4C0C0FC43F165CF7494500DC4D5303C28C70112E44
+08901A0AC93FD04C374F008D336B9628CA45D81C10013DF9C420312E0200032A8FC235CFC37C00
+D31DF7651E538020EF24C7494004B02C0035D4501D0CF83520109DE1D17DE4034068958F2FD243
+EF7C40D314A9C2A030C70043A805433F025DF7438C6FF0B08392A0083402C331D1F4C2032FE249
+27640957003933F20F608D15670C0354C04FC196C3100810CB0D7461133F80F037DDAB303B4078
+C29C01C37C0BEA980303083E3F7D6E2B30DFF7FC00C3F40934940A7810555025517CF2B5FD609E
+84C17007F1BDC302E0009049410044C042C70F78C38CCF8243C3002C800DC0928C200F620FEB45
+C705D1F0A3855702C01FBDFCC000C29D434D4C3700950E7FDFC3A24005FCF756C070E8B8800302
+C80A70373FF6B1CF7441C15C828C5ED16C30CF0F01C5DF5DCA0C0250770BEF0DD858DF0C3F175C
+E3D55245C024112801FB001169845E32CFA5D12FFDF4E0327FC1B18844CCF9ED3CFB245C13083C
+D7CC03F31F74C0CFFF708F039FE2C0195F300A245850132DD70EF033EC8C502B3270D51175C325
+8337E3F581B8F3C83385A79400C12E5F03024EEECC0E83027220AC0F435088011CF1D72F8708BE
+22243C5FFC3B4F74CAC9E74555C3010BC48D44010C331FB8EF74FCFA02F3374360E3C200D567BC
+722F820EC70277C4A2FA249CC9E4AC1421700A03E247FCBC09A40130CF5C41D7800C033ACF5F3E
+000D701ED771014F00031D08430F1B75CB63C34F02FE005A7FCA8F4D1DE32C0C3409028EC3D70D
+4DD15C220C0032215E000D0C0F4F80D10084F00F40C018D7C028DF7DCCCFCEE404800775480F0E
+F1473DC05C11C37CD0414F000800F407E0B74040D0FDC03078FF7C0F080C74DF0C02CC1E24B070
+10CF01023C321F037FD3F3FCFFDF18A35F5A45E09D91C61C304F0C02C6154281080223230F75D0
+70F7ED799E03F8255C0057030CBD3345FF01C3000E02572C00C19D27DEF44C038B8FDF7852103B
+33010442C25D41331C0009133801420754B4390C01D1008C170C40500F5E7314128F7A0C3A0A4C
+0100005805110300D43D0038F63D4D35DC1F502F2CF76E07BFF83FEB1E813003D1EFCBE405037D
+FE7C0B12C1870CFFCCF313E35C0D0193C3DE50B43CF3331F31045DAD7F6C7829803002320DE17A
+7C65ADE0748D3B28030BD812050CE301A72DC50FD72D41362B440503FE23CE7BCD5D2B0FC1477C
+F30DB4CC3FF7202FFFBF73BE5504004FF03337F0FFB003DC2ADF76DFFFCF7321FFD37112C0F438
+040FE2127C9D6EFF4F4C561D4FC025078F19C5F246B40B1669CFCC23C478923F45C03B31FCA73B
+FFBC072D8250FFE58BD7C07EFF3CCF33FFF0F03F01FFC3CF300FCF3C74FFC4FCF1015FC3F2BD80
+7F71F5C8F77F00F0FFC1C001FFEABBCD5C01FCED430035C144C01748BD4EDC17C0A6B1FCC5FD80
+9352337020F8AB3F655C0CC0DC42531F7130737FDF7004AFCCFC9DF7FDDA83FF030337FEB0053D
+C402B104053DFF0FF4013D4E8EC7DC1C0F3C7B00C0FDD80C00650309EBFF743B0788E0DC43DF4F
+FDC3FFF36E51FF39129C48DDD6CFDCE00D43A40177DD3D18808968958B81245719E9C9009F7441
+3011013CC324004801063502860378FD1F30CE4D28C358316D8A4C520257002EF8A0202F03F124
+0813E7000EE7F674D9D3B0EF017BCF3EA0F0C040575003A60C49D73E1044C380B8905130C2CD3B
+0C433702083F84310D5EF0D55C0B832803005C01D0C4C927800AD561F5302EF3C345C00DF0C5EC
+A0490D1CCB2796C0B0918BB51B735512E04CE389D110C05700D50F80F324C0F31702F5009E9FE3
+800FDF00CE2030D5015E820F00CC45D2AE540834810BBEB020CA345D55E5A3408072CF02FD8DEF
+04132C3255650C7A0A8C02432039AF1481234040C07C867532F365A226CCF003EFB0C03E1645C3
+0A18255E503B02000F1C0D0782C556E1432852106BA3116F417BD49D45F534FBE04C0240300828
+AC305001F3BCFCD62801F334A6450F0C2AC53D2FD601450F3CBA4F1CC00034C18093A92F10D13C
+C00E36D170829D782D5C1D8060F00870955F5C02144D335400433306F50CDFCEBDBE00CB4D933F
+33CFBBFE0A17F3DFED7BF323C00DCD1F3DD2D14010F47C004023CCC337D7300FC29540A500CCDC
+FCF50811FE3DD777C0C80830001F42C800417C21245C026A007001300E9059CC8C945E4117F4FF
+50E041000A6B0157C39E71D70957C3FFFD7400D0033410015038C04302D40313D0010502120943
+0D74D4B3B70F8209D70069982BCBF8FC35C30A75070A55255950051E722ACC3434E05D0A2BC3CF
+36402B507FFB45F3030010682D35C35DD9457C01500BA4280A75C1FC5008710001040802330FF4
+C0D51F710084FB01C43DD70C30089DD502979110033F4F9E7D7EFC4800CD7E16C00208A4605430
+37C3DC85074121C34F7D2088DB440285C032F3CF383004F67861302C903FC00FCCFFD04D0E015B
+D35A69C7C4CFDFC803C73FC733F7C0DF5FF3A8454CD3F2F833256E1735F0F6FE41DDE4C52FA3CB
+7FFCF034A23C4F75F124A3CB0CB743CFD71F38E188CFBDB8B71334297D31344EE3F5ADF024A3F3
+FCFEFBF582EEFFF7DD3FFF89FDFD3209F275F4BE03EA90FE1450CA0F9D77F497F42F5DD7C3177B
+DFF3CD68B4BBC5E054D12FC810A030C12A47D0A1CF7C11FDFCAFFC7F7377D0CCC8333201F6F743
+E4874BF3AF717DFCF907A7F46B7D3BCCB289F6F5C12CEFF79833FF5F4FF8400D34ECA3DF249E4E
+33E13FEC86CB78F3D7FFBC83F1E38A37F700C9F00AC09FE3FEC2D00388F3C77FC817F77033F253
+9FFE32200C0F003228FC00E3D708D700E0E00810B310CEFFCFD2F5DFFC07FF3C8AD6E3F0217B10
+0333CC279570033CB5D70048A503035EE3D4CB1A8127BCBD571C0D0BB28A1094CF0C4100C00D14
+0A7C3168CE710B015F0CC0F3DF6AEEDFF7CC2C0329C04010248208085389C732E4079DC0335D08
+5F54030252F1C431F339544860C271C99FF13417860844F1E7BCC0D75D33DC21C40C00EB0CC1F0
+DF03C0101DF3C004350151707F2C03D49C234D817940AA5DC4E25FEB2502BB954CCFAC3F010009
+DC30C040B4009D82C3367C53D70DDA0CE00B13F37955ED020B3470C0A40825704B332CF333BD79
+FB0D9DE9EB35D05C03C21C0B683C080FD00006C013CF13F82080044C3C31C040838C31007CC5DD
+61D95DF4AEF9402260004883C07C00053CF7D63DF7E11003EED137D4800EF8FC3DDD1D42C38E40
+1021D9C11875D07BF38591434040C3CF02F24C33209A2120ED570F42F249703DCC7DC3F77F4674
+04FEFCCC0ABFE005FF8A2B0CD7501F46C03F476E0071F7DD701015D6DB4F7DD4D6168003BFE15F
+2E33F93C97E15D3DFF2CB330FC17DFC32330EBF2088074597D83BAFF8D430808E6B75FDD056FFF
+FCF0FBDDFDF3FF8CF82C91D73F52FF05F0C1032E75E4E843CF9F8B25FFC20D7DFFEA33F462E038
+289DF8F8BC6DF0BFFF3C0FFE0CAC270BFC27FEA74C15043A3D3755CFC3417EDB8F003C3E8380FC
+83A83CE7DCF08399150C0033C0731C80CB0FCBD0F5C0978703AB9492D9AD315FA9C3F0DF3C8FAF
+EFF010B10C072E032F3E0A013739C014FF1701DE08C0728F2315C73322640F2037091C21FF4BC0
+1F0184E9A49740FD2A81F148C3E30D540C3DCFFDFC09FB336586D20D47E2BB3D80EFC2040094A5
+38E495320C17C2B8BC4F040CBCFFD2580D033F49172007A1F80B030CF0031F7E0CF0FE9EE440D9
+5B4776FB800E230B6C112C2AC7A02E57EDFEEB83F346717FD8AC83200C3F5F230FE0260736470B
+F697C97E8331D740F0E7378FCFF491F8FB2509EBB9DD3D77CE9F357F1FB24DCCFDF174A06E0540
+AF4800DFFC20F7F4F03A1010B48001F5E8737F0F7FDD7C385FDFF0FF017FCA1FB17F6FC6950420
+33F8BF49E5727F2C7F82F67DFBB7A38BA5F543A0D259D1724537AE5524A3F3D4FFCB243E01CF20
+FF0F6D7F05F0BB1A3CF9033CB9E84CF3CCA7C3E5077F0412CA0FFF7C5C38F1EEB53BE8CC333F82
+DFEDEEC3D0931B3FDDFF2C01FCEB8224D7930FFC28609C30024FC1EF0F0080B3FC317D7CCE510F
+0B50CF28FFC33437B9BCFE57FEF3C304D3C098137500B8C13401C102D361D4DFDFEFFF0FDFCE03
+A4800E5C07F09BF34E1FF2DFD337FDAEC6918883F8B7708A35F5008E8BF7316AF5F5DFF7FEF777
+7774126A96FE5FF70BF907C3BFFC3C0'H } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  rna {
+                    type tRNA ,
+                    ext
+                      tRNA {
+                        aa
+                          ncbieaa 72 } } ,
+                location
+                  int {
+                    from 18 ,
+                    to 85 ,
+                    strand minus ,
+                    id
+                      local
+                        str "Pleurobranchaea__1" } } ,
+              {
+                data
+                  rna {
+                    type tRNA ,
+                    ext
+                      tRNA {
+                        aa
+                          ncbieaa 71 } } ,
+                location
+                  int {
+                    from 87 ,
+                    to 153 ,
+                    strand minus ,
+                    id
+                      local
+                        str "Pleurobranchaea__1" } } ,
+              {
+                data
+                  gene {
+                    locus "COX2" } ,
+                location
+                  int {
+                    from 164 ,
+                    to 838 ,
+                    strand minus ,
+                    id
+                      genbank {
+                        accession "KU365727" } } } ,
+              {
+                data
+                  rna {
+                    type tRNA ,
+                    ext
+                      tRNA {
+                        aa
+                          ncbieaa 70 } } ,
+                location
+                  int {
+                    from 838 ,
+                    to 903 ,
+                    strand minus ,
+                    id
+                      local
+                        str "Pleurobranchaea__1" } } ,
+              {
+                data
+                  rna {
+                    type tRNA ,
+                    ext
+                      tRNA {
+                        aa
+                          ncbieaa 68 } } ,
+                location
+                  int {
+                    from 911 ,
+                    to 977 ,
+                    strand minus ,
+                    id
+                      local
+                        str "Pleurobranchaea__1" } } ,
+              {
+                data
+                  gene {
+                    locus "CYTB" } ,
+                location
+                  int {
+                    from 984 ,
+                    to 2153 ,
+                    strand minus ,
+                    id
+                      genbank {
+                        accession "KU365727" } } } ,
+              {
+                data
+                  gene {
+                    locus "ND4l" } ,
+                location
+                  int {
+                    from 2146 ,
+                    to 2418 ,
+                    strand minus ,
+                    id
+                      genbank {
+                        accession "KU365727" } } } ,
+              {
+                data
+                  rna {
+                    type tRNA ,
+                    ext
+                      tRNA {
+                        aa
+                          ncbieaa 87 } } ,
+                location
+                  int {
+                    from 2439 ,
+                    to 2506 ,
+                    strand minus ,
+                    id
+                      local
+                        str "Pleurobranchaea__1" } } ,
+              {
+                data
+                  rna {
+                    type tRNA ,
+                    ext
+                      tRNA {
+                        aa
+                          ncbieaa 89 } } ,
+                location
+                  int {
+                    from 2510 ,
+                    to 2574 ,
+                    strand minus ,
+                    id
+                      local
+                        str "Pleurobranchaea__1" } } ,
+              {
+                data
+                  gene {
+                    locus "ND1" } ,
+                location
+                  int {
+                    from 2604 ,
+                    to 3492 ,
+                    strand minus ,
+                    id
+                      genbank {
+                        accession "KU365727" } } } ,
+              {
+                data
+                  gene {
+                    locus "ND5" } ,
+                location
+                  int {
+                    from 3610 ,
+                    to 5092 ,
+                    strand minus ,
+                    id
+                      local
+                        str "Pleurobranchaea__1" } } ,
+              {
+                data
+                  gene {
+                    locus "ND6" } ,
+                location
+                  int {
+                    from 5191 ,
+                    to 5599 ,
+                    strand minus ,
+                    id
+                      local
+                        str "Pleurobranchaea__1" } } ,
+              {
+                data
+                  rna {
+                    type tRNA ,
+                    ext
+                      tRNA {
+                        aa
+                          ncbieaa 80 } } ,
+                location
+                  int {
+                    from 5614 ,
+                    to 5681 ,
+                    strand plus ,
+                    id
+                      local
+                        str "Pleurobranchaea__1" } } ,
+              {
+                data
+                  rna {
+                    type tRNA ,
+                    ext
+                      tRNA {
+                        aa
+                          ncbieaa 65 } } ,
+                location
+                  int {
+                    from 5685 ,
+                    to 5753 ,
+                    strand minus ,
+                    id
+                      local
+                        str "Pleurobranchaea__1" } } ,
+              {
+                data
+                  rna {
+                    type tRNA ,
+                    ext
+                      tRNA {
+                        aa
+                          ncbieaa 76 } } ,
+                location
+                  int {
+                    from 5753 ,
+                    to 5812 ,
+                    strand minus ,
+                    id
+                      local
+                        str "Pleurobranchaea__1" } } ,
+              {
+                data
+                  rna {
+                    type rRNA ,
+                    ext
+                      name "16S ribosomal RNA" } ,
+                location
+                  int {
+                    from 5835 ,
+                    to 6790 ,
+                    strand minus ,
+                    id
+                      local
+                        str "Pleurobranchaea__1" } } ,
+              {
+                data
+                  rna {
+                    type tRNA ,
+                    ext
+                      tRNA {
+                        aa
+                          ncbieaa 86 } } ,
+                location
+                  int {
+                    from 6919 ,
+                    to 6984 ,
+                    strand minus ,
+                    id
+                      local
+                        str "Pleurobranchaea__1" } } ,
+              {
+                data
+                  gene {
+                    locus "COX1" } ,
+                location
+                  int {
+                    from 7028 ,
+                    to 8537 ,
+                    strand minus ,
+                    id
+                      local
+                        str "Pleurobranchaea__1" } } ,
+              {
+                data
+                  rna {
+                    type tRNA ,
+                    ext
+                      tRNA {
+                        aa
+                          ncbieaa 75 } } ,
+                location
+                  int {
+                    from 8550 ,
+                    to 8623 ,
+                    strand minus ,
+                    id
+                      local
+                        str "Pleurobranchaea__1" } } ,
+              {
+                data
+                  gene {
+                    locus "ND2" } ,
+                location
+                  int {
+                    from 8726 ,
+                    to 9559 ,
+                    strand minus ,
+                    id
+                      genbank {
+                        accession "KU365727" } } } ,
+              {
+                data
+                  rna {
+                    type tRNA ,
+                    ext
+                      tRNA {
+                        aa
+                          ncbieaa 73 } } ,
+                location
+                  int {
+                    from 9583 ,
+                    to 9650 ,
+                    strand minus ,
+                    id
+                      local
+                        str "Pleurobranchaea__1" } } ,
+              {
+                data
+                  gene {
+                    locus "COX3" } ,
+                location
+                  int {
+                    from 9703 ,
+                    to 10477 ,
+                    strand plus ,
+                    id
+                      local
+                        str "Pleurobranchaea__1" } } ,
+              {
+                data
+                  rna {
+                    type tRNA ,
+                    ext
+                      tRNA {
+                        aa
+                          ncbieaa 84 } } ,
+                location
+                  int {
+                    from 10478 ,
+                    to 10546 ,
+                    strand plus ,
+                    id
+                      local
+                        str "Pleurobranchaea__1" } } ,
+              {
+                data
+                  gene {
+                    locus "ND4" } ,
+                location
+                  int {
+                    from 10632 ,
+                    to 11835 ,
+                    strand minus ,
+                    id
+                      local
+                        str "Pleurobranchaea__1" } } ,
+              {
+                data
+                  rna {
+                    type tRNA ,
+                    ext
+                      tRNA {
+                        aa
+                          ncbieaa 83 } } ,
+                location
+                  int {
+                    from 11895 ,
+                    to 11955 ,
+                    strand minus ,
+                    id
+                      local
+                        str "Pleurobranchaea__1" } } ,
+              {
+                data
+                  rna {
+                    type tRNA ,
+                    ext
+                      tRNA {
+                        aa
+                          ncbieaa 83 } } ,
+                location
+                  int {
+                    from 11980 ,
+                    to 12032 ,
+                    strand plus ,
+                    id
+                      local
+                        str "Pleurobranchaea__1" } } ,
+              {
+                data
+                  gene {
+                    locus "ND3" } ,
+                location
+                  int {
+                    from 12130 ,
+                    to 12457 ,
+                    strand plus ,
+                    id
+                      local
+                        str "Pleurobranchaea__1" } } ,
+              {
+                data
+                  rna {
+                    type tRNA ,
+                    ext
+                      tRNA {
+                        aa
+                          ncbieaa 77 } } ,
+                location
+                  int {
+                    from 12488 ,
+                    to 12555 ,
+                    strand plus ,
+                    id
+                      local
+                        str "Pleurobranchaea__1" } } ,
+              {
+                data
+                  rna {
+                    type rRNA ,
+                    ext
+                      name "12S ribosomal RNA" } ,
+                location
+                  int {
+                    from 12554 ,
+                    to 13294 ,
+                    strand plus ,
+                    id
+                      local
+                        str "Pleurobranchaea__1" } } ,
+              {
+                data
+                  rna {
+                    type tRNA ,
+                    ext
+                      tRNA {
+                        aa
+                          ncbieaa 69 } } ,
+                location
+                  int {
+                    from 13286 ,
+                    to 13349 ,
+                    strand plus ,
+                    id
+                      local
+                        str "Pleurobranchaea__1" } } ,
+              {
+                data
+                  rna {
+                    type tRNA ,
+                    ext
+                      tRNA {
+                        aa
+                          ncbieaa 82 } } ,
+                location
+                  int {
+                    from 13349 ,
+                    to 13412 ,
+                    strand plus ,
+                    id
+                      local
+                        str "Pleurobranchaea__1" } } ,
+              {
+                data
+                  gene {
+                    locus "ATP6" } ,
+                location
+                  int {
+                    from 13502 ,
+                    to 14066 ,
+                    strand plus ,
+                    id
+                      local
+                        str "Pleurobranchaea__1" } } ,
+              {
+                data
+                  rna {
+                    type tRNA ,
+                    ext
+                      tRNA {
+                        aa
+                          ncbieaa 78 } } ,
+                location
+                  int {
+                    from 14080 ,
+                    to 14145 ,
+                    strand plus ,
+                    id
+                      local
+                        str "Pleurobranchaea__1" } } ,
+              {
+                data
+                  gene {
+                    locus "ATP8" } ,
+                location
+                  int {
+                    from 14146 ,
+                    to 14284 ,
+                    strand plus ,
+                    id
+                      local
+                        str "Pleurobranchaea__1" } } ,
+              {
+                data
+                  rna {
+                    type tRNA ,
+                    ext
+                      tRNA {
+                        aa
+                          ncbieaa 76 } } ,
+                location
+                  int {
+                    from 14305 ,
+                    to 14365 ,
+                    strand plus ,
+                    id
+                      local
+                        str "Pleurobranchaea__1" } } ,
+              {
+                data
+                  rna {
+                    type tRNA ,
+                    ext
+                      tRNA {
+                        aa
+                          ncbieaa 81 } } ,
+                location
+                  int {
+                    from 14365 ,
+                    to 14425 ,
+                    strand plus ,
+                    id
+                      local
+                        str "Pleurobranchaea__1" } } ,
+              {
+                data
+                  rna {
+                    type tRNA ,
+                    ext
+                      tRNA {
+                        aa
+                          ncbieaa 67 } } ,
+                location
+                  int {
+                    from 14476 ,
+                    to 14530 ,
+                    strand minus ,
+                    id
+                      local
+                        str "Pleurobranchaea__1" } } } } } } ,
+    seq {
+      id {
+        local
+          str "Pleurobranchaea_1__1" ,
+        general {
+          db "NCBIFILE" ,
+          tag
+            str "Pleurobranchaea.sqn/Pleurobranchaea_1" } ,
+        general {
+          db "TMSMART" ,
+          tag
+            id 61294909 } } ,
+      descr {
+        title "cytochrome c oxidase subunit II (mitochondrion)
+ [Pleurobranchaea novaezealandia]" ,
+        molinfo {
+          biomol peptide ,
+          tech concept-trans-a } } ,
+      inst {
+        repr raw ,
+        mol aa ,
+        length 224 ,
+        seq-data
+          ncbieaa "MGSWSQYNLVDSASTLQSEMFLFHDHAMVVLIGIFTFVAFLGGKFLFNTFSSRTILEAQ
+QLEIVWTVIPAVILVWLALPSLRLLYLLDEQSNSGMVLKAVGHQWYWSYEIPVLDNANFDSYMVPEEELSEGEYRLLE
+VDNRAVVPFEMETTVITTSADVLHAWTLPSMGVKMGAVPGRLNSMSMFVEKPGVFYGQCSEICGANHSFMPIVVEALD
+LKDFLSLEM" } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  prot {
+                    name {
+                      "cytochrome c oxidase subunit II" } } ,
+                location
+                  int {
+                    from 0 ,
+                    to 223 ,
+                    id
+                      local
+                        str "Pleurobranchaea_1__1" } } } } } } ,
+    seq {
+      id {
+        local
+          str "Pleurobranchaea_2__1" ,
+        general {
+          db "NCBIFILE" ,
+          tag
+            str "Pleurobranchaea.sqn/Pleurobranchaea_2" } ,
+        general {
+          db "TMSMART" ,
+          tag
+            id 61294910 } } ,
+      descr {
+        title "cytochrome b (mitochondrion) [Pleurobranchaea novaezealandia]" ,
+        molinfo {
+          biomol peptide ,
+          tech concept-trans-a } } ,
+      inst {
+        repr raw ,
+        mol aa ,
+        length 389 ,
+        seq-data
+          ncbieaa "MHKLRQTSPAEMMLGLPSPMSFSIWWNGGSILGLLLVLQILTGLFLSMHYTADMVNSFA
+SVIHIVRDAPGGWLFRNLHANGASLFFVFLYMHIGRGLYYQSYINHPHTWMVGVTIFFVSMGTAFLGYVLPWGQMSFW
+GATVITNLVSAIPYWGPSMVEWVWGGFSVGQPTLNRFFSLHFILPFLIGGLSLLHLVFLHEKGSSNPLGDLNHLNKIP
+FHPYFSWKDIVGFLFVFFVLALLGFFFPTLLGDPENYNHASSMVTPVHIQPEWYFLFAYAILRSIPSKLGGVIALVMS
+IAILYLLPFSGVGKIIPSSFVPLYQVVFWCLVVTFIILTWLGACPIEEPYATLAVPISILYFLLYVVLISLPSIWGFI
+LKGDYDDINSMDMKPFLL" } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  prot {
+                    name {
+                      "cytochrome b" } } ,
+                location
+                  int {
+                    from 0 ,
+                    to 388 ,
+                    id
+                      local
+                        str "Pleurobranchaea_2__1" } } } } } } ,
+    seq {
+      id {
+        local
+          str "Pleurobranchaea_3__1" ,
+        general {
+          db "NCBIFILE" ,
+          tag
+            str "Pleurobranchaea.sqn/Pleurobranchaea_3" } ,
+        general {
+          db "TMSMART" ,
+          tag
+            id 61294911 } } ,
+      descr {
+        title "NADH dehydrogenase subunit 4L (mitochondrion) [Pleurobranchaea
+ novaezealandia]" ,
+        molinfo {
+          biomol peptide ,
+          tech concept-trans-a } } ,
+      inst {
+        repr raw ,
+        mol aa ,
+        length 90 ,
+        seq-data
+          ncbieaa "MVLFFVASIAFGKLNYHLLSILICLEALMLSLLVFLYSYVVNFETASPLFLVLLVFAAS
+EAAMGLSLLVSMLRTRGNDYVTSFNTLNFYA" } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  prot {
+                    name {
+                      "NADH dehydrogenase subunit 4L" } } ,
+                location
+                  int {
+                    from 0 ,
+                    to 89 ,
+                    id
+                      local
+                        str "Pleurobranchaea_3__1" } } } } } } ,
+    seq {
+      id {
+        local
+          str "Pleurobranchaea_4__1" ,
+        general {
+          db "NCBIFILE" ,
+          tag
+            str "Pleurobranchaea.sqn/Pleurobranchaea_4" } ,
+        general {
+          db "TMSMART" ,
+          tag
+            id 61294912 } } ,
+      descr {
+        title "NADH dehydrogenase subunit 1 (mitochondrion) [Pleurobranchaea
+ novaezealandia]" ,
+        molinfo {
+          biomol peptide ,
+          tech concept-trans-a } } ,
+      inst {
+        repr raw ,
+        mol aa ,
+        length 296 ,
+        seq-data
+          ncbieaa "MLQYIIISISTCLCVLLAVAFFTLLERKVLGYVQLRKGPNKVGLWGVVQPLADALKLFL
+KEKIMPHGSNQFLFIFAPTLSLVLALSVWHLYPSSFNFKYVSWGLLLFFCITALNVYGILLAGWSSNSKYAFLGALRA
+AAQTISYEVSMLLLILFPAFLLKTYHWEEALNIGFPIVLVLFPLALVWFVSTIAETNRAPFDFAEGESELVSGFNIEF
+GGGFFTLLFLAEYANILFMAVASSVWFLSLNSILNPLFFSFTVFLVASMFLLVRGAYPRHRYDLLMSLCWKCYLPFAL
+CAL" } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  prot {
+                    name {
+                      "NADH dehydrogenase subunit 1" } } ,
+                location
+                  int {
+                    from 0 ,
+                    to 295 ,
+                    id
+                      local
+                        str "Pleurobranchaea_4__1" } } } } } } ,
+    seq {
+      id {
+        local
+          str "Pleurobranchaea_5__1" ,
+        general {
+          db "NCBIFILE" ,
+          tag
+            str "Pleurobranchaea.sqn/Pleurobranchaea_5" } ,
+        general {
+          db "TMSMART" ,
+          tag
+            id 61294913 } } ,
+      descr {
+        title "NADH dehydrogenase subunit 5 (mitochondrion) [Pleurobranchaea
+ novaezealandia]" ,
+        molinfo {
+          biomol peptide ,
+          tech concept-trans-a } } ,
+      inst {
+        repr raw ,
+        mol aa ,
+        length 494 ,
+        seq-data
+          ncbieaa "MLLLSWVFLNLSKSVILEIDLFETSSLNFSFLMVVDKISVSFSMVVTLISGSVFLFAHK
+YMEEDPFKDRFIWILMSFVISMNLLIFSGSLFFILLGWDGLGITSFALIIYYQSDESLKAGFQTLMINRLGDVIIVLS
+IFLMVCSGQFSIFSMSNTMFYFSGVVGMLCFAALTKSAQFPFSSWLPAAMAAPTPVSALVHSSTLVTAGIFLIIRLSY
+NFPMNENITSMLLFCGSVTCLLGGWAATYENDIKKVIALSTLSQLGVMVFSLGLNLPSLALFHLYTHALFKALLFLAA
+GHILMITFGNQDIRLLGGVGLAMPLVSTMFNISSLCLVGAPFMSAFYSKHLILEKMFMSSMNFMSMILMLGATMMTAM
+YVSRTLKAISWSKTVSPMLSGVAGVFTSFPVLLLGAGGIMGGKLLSSVEINNLELAFIPSGSGSLINIITVTGILLGL
+VVSMVPKNSFSLSTLFFLTPLVYGSMKVFAPLKKSIGLLDYGWLE" } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  prot {
+                    name {
+                      "NADH dehydrogenase subunit 5" } } ,
+                location
+                  int {
+                    from 0 ,
+                    to 493 ,
+                    id
+                      local
+                        str "Pleurobranchaea_5__1" } } } } } } ,
+    seq {
+      id {
+        local
+          str "Pleurobranchaea_6__1" ,
+        general {
+          db "NCBIFILE" ,
+          tag
+            str "Pleurobranchaea.sqn/Pleurobranchaea_6" } ,
+        general {
+          db "TMSMART" ,
+          tag
+            id 61294914 } } ,
+      descr {
+        title "NADH dehydrogenase subunit 6 (mitochondrion) [Pleurobranchaea
+ novaezealandia]" ,
+        molinfo {
+          biomol peptide ,
+          tech concept-trans-a } } ,
+      inst {
+        repr raw ,
+        mol aa ,
+        length 136 ,
+        seq-data
+          ncbieaa "MVSVFFVLCLPLFQNPVGMAGILVCISLSFVSFIALTGSSWFSYVLFLVYVGGLLVLFM
+YICLVSSNHSFYVNSSWALFLLGLSFFISLKGDMNYYLGFLGASNFSAGQELVEENYLSLFLFLGVVLLLMLLVVVR" } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  prot {
+                    name {
+                      "NADH dehydrogenase subunit 6" } } ,
+                location
+                  int {
+                    from 0 ,
+                    to 135 ,
+                    id
+                      local
+                        str "Pleurobranchaea_6__1" } } } } } } ,
+    seq {
+      id {
+        local
+          str "Pleurobranchaea_7__1" ,
+        general {
+          db "NCBIFILE" ,
+          tag
+            str "Pleurobranchaea.sqn/Pleurobranchaea_7" } ,
+        general {
+          db "TMSMART" ,
+          tag
+            id 61294915 } } ,
+      descr {
+        title "cytochrome c oxidase subunit I (mitochondrion) [Pleurobranchaea
+ novaezealandia]" ,
+        molinfo {
+          biomol peptide ,
+          tech concept-trans-a } } ,
+      inst {
+        repr raw ,
+        mol aa ,
+        length 503 ,
+        seq-data
+          ncbieaa "MRWLFSTNHKDIGTLYIVFGMWCGLLGSGLSLLIRFELGTSGAFLGDDHFYNVIVTAHA
+FVMIFFMVMPLMIGGFGNWMVPLLIGAPDMSFPRMNNMSFWLLPPSFILLLCSTMMEGGAGTGWTVYPPLSGPIGHGG
+TSVDLVIFSLHLAGASSLLGAVNFITTIFNMRSPAMTMERLSLFVWSVLVTAFLLLLSLPVLAGAITMLLTDRNFNTS
+FFDPAGGGDPILYQHLFWFFGHPEVYILILPGFGIISHILSNFSSKPAFGTLGMIYAMISIGILGFIVWAHHMFTVGM
+DVDTRAYFTAATMVIAVPTGIKIFSWLMTLYGSRGPFSAAMYWVLGFIFLFTLGGLTGIVLSNSSLDIVLHDTYYVVA
+HFHYVLSMGAVFAIFGGFVY*FPMMTGLTLHERWAKAHFLAMFFAVNLTFFPQHFLGLSGMPRRYSDYPDAYYKWNQI
+SSFGSLFSVFAIMMFVFMLWEAFASQRSVLFTRAPALSREWEEVLPLDFHSNTE" } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  prot {
+                    name {
+                      "cytochrome c oxidase subunit I" } } ,
+                location
+                  int {
+                    from 0 ,
+                    to 502 ,
+                    id
+                      local
+                        str "Pleurobranchaea_7__1" } } } } } } ,
+    seq {
+      id {
+        local
+          str "Pleurobranchaea_8__1" ,
+        general {
+          db "NCBIFILE" ,
+          tag
+            str "Pleurobranchaea.sqn/Pleurobranchaea_8" } ,
+        general {
+          db "TMSMART" ,
+          tag
+            id 61294916 } } ,
+      descr {
+        title "NADH dehydrogenase subunit 2 (mitochondrion) [Pleurobranchaea
+ novaezealandia]" ,
+        molinfo {
+          biomol peptide ,
+          tech concept-trans-a } } ,
+      inst {
+        repr raw ,
+        mol aa ,
+        length 278 ,
+        seq-data
+          ncbieaa "MMMTILGPFVTISSEEWLVCWVGLELSFIGFVPLLFYGQGYFSVNKEAAMKYFCVQAFG
+SALLLLGEL*FTMSFVEVGFMKIMSFLCCFFVVFW*S*EPFLATFGF*GWRED*DDFRCFYL*GDKKLDLLR**LTSL
+SFMIDYTL*QWFWAGLGP*LEPY*D*IKLTFAPF*ELLQLDMLDEDYWLLSLVVFECILDFIVYHLGFCWYFWFLSKK
+N*GA*E*QH*GVYRLFCCSLENESCCSWLSMAVAILCF*FSRF*VLS*GCFSTWSFFILSI*E" } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  prot {
+                    name {
+                      "NADH dehydrogenase subunit 2" } } ,
+                location
+                  int {
+                    from 0 ,
+                    to 277 ,
+                    id
+                      local
+                        str "Pleurobranchaea_8__1" } } } } } } ,
+    seq {
+      id {
+        local
+          str "Pleurobranchaea_10__1" ,
+        general {
+          db "NCBIFILE" ,
+          tag
+            str "Pleurobranchaea.sqn/Pleurobranchaea_10" } ,
+        general {
+          db "TMSMART" ,
+          tag
+            id 61294918 } } ,
+      descr {
+        title "cytochrome c oxidase subunit III (mitochondrion)
+ [Pleurobranchaea novaezealandia]" ,
+        molinfo {
+          biomol peptide ,
+          tech concept-trans-a } } ,
+      inst {
+        repr raw ,
+        mol aa ,
+        length 258 ,
+        seq-data
+          ncbieaa "MGHPYHLVEYSPWPILNSFATLCMPVGLVFFIKSGDYILLTAGLVMVSIISYLWWRDIV
+RESTYQGLHTSHVISGLKAGFILFVVSEVCFFFSFFWAFFHSSLAPSVEIGAIWPPMGIAPLSAFQVPLLNTSVLLLS
+GVSVTWTHHSLEQGNNNSALQGLFLTLSLGFYFLSLQYMEYMETSFSIADSVYGSTFFIATGFHGLHVMVGASFLTVC
+FLRMFFLHFDKNHHVGFLAAAWYWHFVDVVWLFLFVSIYWWGS" } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  prot {
+                    name {
+                      "cytochrome c oxidase subunit III" } } ,
+                location
+                  int {
+                    from 0 ,
+                    to 257 ,
+                    id
+                      local
+                        str "Pleurobranchaea_10__1" } } } } } } ,
+    seq {
+      id {
+        local
+          str "Pleurobranchaea_11__1" ,
+        general {
+          db "NCBIFILE" ,
+          tag
+            str "Pleurobranchaea.sqn/Pleurobranchaea_11" } ,
+        general {
+          db "TMSMART" ,
+          tag
+            id 61294919 } } ,
+      descr {
+        title "NADH dehydrogenase subunit 4 (mitochondrion) [Pleurobranchaea
+ novaezealandia]" ,
+        molinfo {
+          biomol peptide ,
+          tech concept-trans-a } } ,
+      inst {
+        repr raw ,
+        mol aa ,
+        length 401 ,
+        seq-data
+          ncbieaa "MLASLCFASLLGVSELNQHFSGSCDTIFVSSSIGSMMVFLSLILCFFALLATPEEGESE
+SYKFCIIILCLVLIMCFSSSNVMMFYVFFEISLIPTLVLILGWGYQPERLQAGTYMMLYTVSASLPLLVMLLWQGADK
+CTFHIPSLGMVSDITSSFLTLFIISAFLFKLPMYGAHLWLPKAHVEAPLAGSMILAGILLKLGGFGLFLMSVCFNLSL
+SYITIFICSLSMWGGFMTAVMCLRQVDVKALVAYSSVGHMSIVVTGFILGSSWGYFSAVCTMVAHGLSSSALFCLAYF
+TYKKSHTRSMIYIKGLLVAYPVLSLWWFLFCCINMACPPTLDLVGELTAVPVLWNHSIYLASVLGGLMFLGAAYNMFL
+YSSLNHGPLMKSLKSGTEMKTYCMLVLFIH" } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  prot {
+                    name {
+                      "NADH dehydrogenase subunit 4" } } ,
+                location
+                  int {
+                    from 0 ,
+                    to 400 ,
+                    id
+                      local
+                        str "Pleurobranchaea_11__1" } } } } } } ,
+    seq {
+      id {
+        local
+          str "Pleurobranchaea_12__1" ,
+        general {
+          db "NCBIFILE" ,
+          tag
+            str "Pleurobranchaea.sqn/Pleurobranchaea_12" } ,
+        general {
+          db "TMSMART" ,
+          tag
+            id 61294920 } } ,
+      descr {
+        title "NADH dehydrogenase subunit 3 (mitochondrion) [Pleurobranchaea
+ novaezealandia]" ,
+        molinfo {
+          biomol peptide ,
+          tech concept-trans-a } } ,
+      inst {
+        repr raw ,
+        mol aa ,
+        length 109 ,
+        seq-data
+          ncbieaa "MMFALALTLILLVVYNLTFFNSYNGLEEKLTAFECGFDPMSKMRSPFSTRFFLLIVLFL
+IFDIEVALLFPVLTLMTNSAPAWTIIAWVAFLSILLFGMFHEWNEGALDW" } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  prot {
+                    name {
+                      "NADH dehydrogenase subunit 3" } } ,
+                location
+                  int {
+                    from 0 ,
+                    to 108 ,
+                    id
+                      local
+                        str "Pleurobranchaea_12__1" } } } } } } ,
+    seq {
+      id {
+        local
+          str "Pleurobranchaea_13__1" ,
+        general {
+          db "NCBIFILE" ,
+          tag
+            str "Pleurobranchaea.sqn/Pleurobranchaea_13" } ,
+        general {
+          db "TMSMART" ,
+          tag
+            id 61294921 } } ,
+      descr {
+        title "ATP synthase F0 subunit 6 (mitochondrion) [Pleurobranchaea
+ novaezealandia]" ,
+        molinfo {
+          biomol peptide ,
+          tech concept-trans-a } } ,
+      inst {
+        repr raw ,
+        mol aa ,
+        length 188 ,
+        seq-data
+          ncbieaa "MFLTSGTWTQSFSKIFLSILSLNGQTSQKKLPGLSLILFSLMTFLLILNLLGLVPFVYG
+PTSNIWVSAALALVLWSSLLVSGWVAFPMESAAHLAPSGAPAGFIPFLVAIETISILIRPLTLSVRIIANISAGHIIM
+GLIANSLTTVGIFSYLMITVVHVGYNMFEVFVCVIQAYVFSLLVKLYGEEH" } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  prot {
+                    name {
+                      "ATP synthase F0 subunit 6" } } ,
+                location
+                  int {
+                    from 0 ,
+                    to 187 ,
+                    id
+                      local
+                        str "Pleurobranchaea_13__1" } } } } } } ,
+    seq {
+      id {
+        local
+          str "Pleurobranchaea_14__1" ,
+        general {
+          db "NCBIFILE" ,
+          tag
+            str "Pleurobranchaea.sqn/Pleurobranchaea_14" } ,
+        general {
+          db "TMSMART" ,
+          tag
+            id 61294922 } } ,
+      descr {
+        title "ATP synthase F0 subunit 8 (mitochondrion) [Pleurobranchaea
+ novaezealandia]" ,
+        molinfo {
+          biomol peptide ,
+          tech concept-trans-a } } ,
+      inst {
+        repr raw ,
+        mol aa ,
+        length 46 ,
+        seq-data
+          ncbieaa "MPQLSPMLGFLMSICALFALLLLMTSLKRTSPKVMTSKLTKSSTPS" } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  prot {
+                    name {
+                      "ATP synthase F0 subunit 8" } } ,
+                location
+                  int {
+                    from 0 ,
+                    to 45 ,
+                    id
+                      local
+                        str "Pleurobranchaea_14__1" } } } } } } } ,
+  annot {
+    {
+      data
+        ftable {
+          {
+            data
+              cdregion {
+                code {
+                  id 5 } } ,
+            product
+              whole
+                local
+                  str "Pleurobranchaea_1__1" ,
+            location
+              int {
+                from 164 ,
+                to 838 ,
+                strand minus ,
+                id
+                  genbank {
+                    accession "KU365727" } } } ,
+          {
+            data
+              cdregion {
+                code {
+                  id 5 } } ,
+            product
+              whole
+                local
+                  str "Pleurobranchaea_2__1" ,
+            location
+              int {
+                from 984 ,
+                to 2153 ,
+                strand minus ,
+                id
+                  genbank {
+                    accession "KU365727" } } } ,
+          {
+            data
+              cdregion {
+                code {
+                  id 5 } } ,
+            product
+              whole
+                local
+                  str "Pleurobranchaea_3__1" ,
+            location
+              int {
+                from 2146 ,
+                to 2418 ,
+                strand minus ,
+                id
+                  genbank {
+                    accession "KU365727" } } } ,
+          {
+            data
+              cdregion {
+                code {
+                  id 5 } ,
+                code-break {
+                  {
+                    loc
+                      int {
+                        from 2604 ,
+                        to 2604 ,
+                        strand minus ,
+                        id
+                          genbank {
+                            accession "KU365727" } } ,
+                    aa
+                      ncbieaa 42 } } } ,
+            comment "TAA stop codon is completed by the addition of 3' A
+ residues to the mRNA" ,
+            product
+              whole
+                local
+                  str "Pleurobranchaea_4__1" ,
+            location
+              int {
+                from 2604 ,
+                to 3492 ,
+                strand minus ,
+                id
+                  genbank {
+                    accession "KU365727" } } } ,
+          {
+            data
+              cdregion {
+                code {
+                  id 5 } } ,
+            product
+              whole
+                local
+                  str "Pleurobranchaea_5__1" ,
+            location
+              int {
+                from 3610 ,
+                to 5092 ,
+                strand minus ,
+                id
+                  local
+                    str "Pleurobranchaea__1" } } ,
+          {
+            data
+              cdregion {
+                code {
+                  id 5 } } ,
+            product
+              whole
+                local
+                  str "Pleurobranchaea_6__1" ,
+            location
+              int {
+                from 5191 ,
+                to 5599 ,
+                strand minus ,
+                id
+                  local
+                    str "Pleurobranchaea__1" } } ,
+          {
+            data
+              cdregion {
+                code {
+                  id 5 } } ,
+            product
+              whole
+                local
+                  str "Pleurobranchaea_7__1" ,
+            location
+              int {
+                from 7029 ,
+                to 8537 ,
+                strand minus ,
+                id
+                  genbank {
+                    accession "KU365727" } } } ,
+          {
+            data
+              cdregion {
+                code {
+                  id 5 } } ,
+            product
+              whole
+                local
+                  str "Pleurobranchaea_8__1" ,
+            location
+              int {
+                from 8726 ,
+                to 9559 ,
+                strand minus ,
+                id
+                  genbank {
+                    accession "KU365727" } } } ,
+          {
+            data
+              cdregion {
+                code {
+                  id 5 } } ,
+            product
+              whole
+                local
+                  str "Pleurobranchaea_10__1" ,
+            location
+              int {
+                from 9704 ,
+                to 10477 ,
+                strand plus ,
+                id
+                  genbank {
+                    accession "KU365727" } } } ,
+          {
+            data
+              cdregion {
+                code {
+                  id 5 } ,
+                code-break {
+                  {
+                    loc
+                      int {
+                        from 10632 ,
+                        to 10632 ,
+                        strand minus ,
+                        id
+                          genbank {
+                            accession "KU365727" } } ,
+                    aa
+                      ncbieaa 42 } } } ,
+            comment "TAA stop codon is completed by the addition of 3' A
+ residues to the mRNA" ,
+            product
+              whole
+                local
+                  str "Pleurobranchaea_11__1" ,
+            location
+              int {
+                from 10632 ,
+                to 11835 ,
+                strand minus ,
+                id
+                  local
+                    str "Pleurobranchaea__1" } } ,
+          {
+            data
+              cdregion {
+                code {
+                  id 5 } } ,
+            product
+              whole
+                local
+                  str "Pleurobranchaea_12__1" ,
+            location
+              int {
+                from 12131 ,
+                to 12457 ,
+                strand plus ,
+                id
+                  genbank {
+                    accession "KU365727" } } } ,
+          {
+            data
+              cdregion {
+                code {
+                  id 5 } } ,
+            product
+              whole
+                local
+                  str "Pleurobranchaea_13__1" ,
+            location
+              int {
+                from 13503 ,
+                to 14066 ,
+                strand plus ,
+                id
+                  genbank {
+                    accession "KU365727" } } } ,
+          {
+            data
+              cdregion {
+                code {
+                  id 5 } } ,
+            product
+              whole
+                local
+                  str "Pleurobranchaea_14__1" ,
+            location
+              int {
+                from 14147 ,
+                to 14284 ,
+                strand plus ,
+                id
+                  genbank {
+                    accession "KU365727" } } } } } } }
