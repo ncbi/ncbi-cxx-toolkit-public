@@ -707,8 +707,6 @@ const SBrowser s_Browsers[] = {
     { CCgiUserAgent::eScript,       "Python-urllib",            "Python-urllib",            CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAppProduct },
     { CCgiUserAgent::eScript,       "Wget",                     "Wget",                     CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAppProduct },
 
-    { CCgiUserAgent::eApp,          "Papers (papersapp.com)",   "Papers",                   CCgiUserAgent::eEngine_Unknown, CCgiUserAgent::ePlatform_Unknown,      fAppProduct },
-
     // Mobile devices
 
     { CCgiUserAgent::eAirEdge,      "AIR-EDGE",                 "DDIPOCKET",                CCgiUserAgent::eEngine_Unknown, CCgiUserAgent::ePlatform_MobileDevice, fAppComment },
@@ -801,6 +799,7 @@ const SBrowser s_Browsers[] = {
     // Other                                                    
 
     { CCgiUserAgent::eiCab,         "iCab",                     "iCab",                     CCgiUserAgent::eEngine_Unknown, CCgiUserAgent::ePlatform_Unknown,      fApp },
+    { CCgiUserAgent::ePapers,       "Papers",                   "Papers",                   CCgiUserAgent::eEngine_Unknown, CCgiUserAgent::ePlatform_Unknown,      fAppProduct },
     { CCgiUserAgent::eKonqueror,    "Konqueror",                "Konqueror",                CCgiUserAgent::eEngine_Unknown, CCgiUserAgent::ePlatform_Unknown,      fAny },
     { CCgiUserAgent::eLynx,         "Lynx",                     "Lynx",                     CCgiUserAgent::eEngine_Unknown, CCgiUserAgent::ePlatform_Unknown,      fAppProduct },
     { CCgiUserAgent::eLynx,         "ELynx", /* Linx based */   "ELynx",                    CCgiUserAgent::eEngine_Unknown, CCgiUserAgent::ePlatform_Unknown,      fAppProduct },
