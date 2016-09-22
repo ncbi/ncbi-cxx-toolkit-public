@@ -103,7 +103,7 @@ inline
 CEnumeratedTypeInfo* CreateEnumeratedTypeInfo(const T& ,
                                               const CEnumeratedTypeValues* values)
 {
-    return new CEnumeratedTypeInfo(sizeof(T), values, numeric_limits<T>::is_signed);
+    return new CEnumeratedTypeInfo(sizeof(T), values, values->IsInteger() ? numeric_limits<T>::is_signed : true);
 }
 
 
