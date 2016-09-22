@@ -261,9 +261,9 @@ protected:
     TObjectID m_Id;
 };
 
-struct SNetServiceBaseAutomationObject : public CAutomationObject
+struct SNetServiceBase : public CAutomationObject
 {
-    SNetServiceBaseAutomationObject(CAutomationProc* automation_proc,
+    SNetServiceBase(CAutomationProc* automation_proc,
             CNetService::EServiceType actual_service_type) :
         CAutomationObject(automation_proc),
         m_ActualServiceType(actual_service_type)
@@ -279,11 +279,11 @@ struct SNetServiceBaseAutomationObject : public CAutomationObject
     static TCommands CallCommands();
 };
 
-struct SNetServiceAutomationObject : public SNetServiceBaseAutomationObject
+struct SNetService : public SNetServiceBase
 {
-    typedef SNetServiceBaseAutomationObject TBase;
+    typedef SNetServiceBase TBase;
 
-    SNetServiceAutomationObject(CAutomationProc* automation_proc,
+    SNetService(CAutomationProc* automation_proc,
             CNetService::EServiceType actual_service_type) :
         TBase(automation_proc, actual_service_type)
     {

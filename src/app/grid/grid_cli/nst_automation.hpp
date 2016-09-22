@@ -39,9 +39,9 @@ BEGIN_NCBI_SCOPE
 namespace NAutomation
 {
 
-struct SNetStorageServiceAutomationObject : public SNetServiceBaseAutomationObject
+struct SNetStorageService : public SNetServiceBase
 {
-    typedef SNetServiceBaseAutomationObject TBase;
+    typedef SNetServiceBase TBase;
 
     class CEventHandler : public INetEventHandler
     {
@@ -60,7 +60,7 @@ struct SNetStorageServiceAutomationObject : public SNetServiceBaseAutomationObje
         CNetStorageAdmin::TInstance m_NetStorageAdmin;
     };
 
-    SNetStorageServiceAutomationObject(CAutomationProc* automation_proc,
+    SNetStorageService(CAutomationProc* automation_proc,
             CArgArray& arg_array);
 
     virtual const string& GetType() const { return kName; }
@@ -79,7 +79,7 @@ struct SNetStorageServiceAutomationObject : public SNetServiceBaseAutomationObje
 protected:
     CNetStorageAdmin m_NetStorageAdmin;
 
-    SNetStorageServiceAutomationObject(CAutomationProc* automation_proc,
+    SNetStorageService(CAutomationProc* automation_proc,
             CNetStorageAdmin nst_api, CNetService::EServiceType type);
 
     static CCommand NewCommand(const string& name);
@@ -88,11 +88,11 @@ private:
     static const string kName;
 };
 
-struct SNetStorageServerAutomationObject : public SNetStorageServiceAutomationObject
+struct SNetStorageServer : public SNetStorageService
 {
-    typedef SNetStorageServiceAutomationObject TBase;
+    typedef SNetStorageService TBase;
 
-    SNetStorageServerAutomationObject(CAutomationProc* automation_proc,
+    SNetStorageServer(CAutomationProc* automation_proc,
             CNetStorageAdmin nst_api, CNetServer::TInstance server);
 
     virtual const string& GetType() const { return kName; }
@@ -114,9 +114,9 @@ private:
     static const string kName;
 };
 
-struct SNetStorageObjectAutomationObject : public CAutomationObject
+struct SNetStorageObject : public CAutomationObject
 {
-    SNetStorageObjectAutomationObject(CAutomationProc* automation_proc,
+    SNetStorageObject(CAutomationProc* automation_proc,
             CNetStorageObject::TInstance object);
 
     virtual const string& GetType() const override { return kName; }

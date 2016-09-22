@@ -37,9 +37,9 @@ USING_NCBI_SCOPE;
 
 using namespace NAutomation;
 
-const string SWorkerNodeAutomationObject::kName = "wn";
+const string SWorkerNode::kName = "wn";
 
-SWorkerNodeAutomationObject::SWorkerNodeAutomationObject(
+SWorkerNode::SWorkerNode(
         CAutomationProc* automation_proc, CNetScheduleAPI ns_api) :
     TBase(automation_proc, CNetService::eSingleServerService),
     m_NetScheduleAPI(ns_api)
@@ -55,7 +55,7 @@ SWorkerNodeAutomationObject::SWorkerNodeAutomationObject(
     }
 }
 
-CCommand SWorkerNodeAutomationObject::NewCommand()
+CCommand SWorkerNode::NewCommand()
 {
     return CCommand(kName, {
             { "wn_address", CJsonNode::eString, },
@@ -63,7 +63,7 @@ CCommand SWorkerNodeAutomationObject::NewCommand()
         });
 }
 
-CAutomationObject* SWorkerNodeAutomationObject::Create(
+CAutomationObject* SWorkerNode::Create(
         CArgArray& arg_array, const string& class_name,
         CAutomationProc* automation_proc)
 {
@@ -74,20 +74,20 @@ CAutomationObject* SWorkerNodeAutomationObject::Create(
     CNetScheduleAPIExt ns_api(CNetScheduleAPIExt::CreateWnCompat(
                 wn_address, client_name));
 
-    return new SWorkerNodeAutomationObject(automation_proc, ns_api);
+    return new SWorkerNode(automation_proc, ns_api);
 }
 
-const void* SWorkerNodeAutomationObject::GetImplPtr() const
+const void* SWorkerNode::GetImplPtr() const
 {
     return m_NetScheduleAPI;
 }
 
-CCommand SWorkerNodeAutomationObject::CallCommand()
+CCommand SWorkerNode::CallCommand()
 {
     return CCommand(kName, CallCommands);
 }
 
-TCommands SWorkerNodeAutomationObject::CallCommands()
+TCommands SWorkerNode::CallCommands()
 {
     TCommands cmds =
     {
@@ -115,7 +115,7 @@ enum EWorkerNodeShutdownMode {
     eKillNode
 };
 
-bool SWorkerNodeAutomationObject::Call(const string& method,
+bool SWorkerNode::Call(const string& method,
         CArgArray& arg_array, CJsonNode& reply)
 {
     if (method == "version")

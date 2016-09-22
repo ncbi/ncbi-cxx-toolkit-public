@@ -37,11 +37,11 @@ USING_NCBI_SCOPE;
 
 using namespace NAutomation;
 
-const string SNetStorageServiceAutomationObject::kName = "nstsvc";
-const string SNetStorageServerAutomationObject::kName = "nstsrv";
-const string SNetStorageObjectAutomationObject::kName = "nstobj";
+const string SNetStorageService::kName = "nstsvc";
+const string SNetStorageServer::kName = "nstsrv";
+const string SNetStorageObject::kName = "nstobj";
 
-CCommand SNetStorageServiceAutomationObject::NewCommand(
+CCommand SNetStorageService::NewCommand(
         const string& name)
 {
     return CCommand(name, {
@@ -70,7 +70,7 @@ string s_GetInitString(CArgArray& arg_array)
     return init_string;
 }
 
-CAutomationObject* SNetStorageServiceAutomationObject::Create(
+CAutomationObject* SNetStorageService::Create(
         CArgArray& arg_array, const string& class_name,
         CAutomationProc* automation_proc)
 {
@@ -78,11 +78,11 @@ CAutomationObject* SNetStorageServiceAutomationObject::Create(
 
     CNetStorage nst_api(s_GetInitString(arg_array));
     CNetStorageAdmin nst_api_admin(nst_api);
-    return new SNetStorageServiceAutomationObject(automation_proc, nst_api_admin,
+    return new SNetStorageService(automation_proc, nst_api_admin,
             CNetService::eLoadBalancedService);
 }
 
-CAutomationObject* SNetStorageServerAutomationObject::Create(
+CAutomationObject* SNetStorageServer::Create(
         CArgArray& arg_array, const string& class_name,
         CAutomationProc* automation_proc)
 {
@@ -91,10 +91,10 @@ CAutomationObject* SNetStorageServerAutomationObject::Create(
     CNetStorage nst_api(s_GetInitString(arg_array));
     CNetStorageAdmin nst_api_admin(nst_api);
     CNetServer server = nst_api_admin.GetService().Iterate().GetServer();
-    return new SNetStorageServerAutomationObject(automation_proc, nst_api_admin, server);
+    return new SNetStorageServer(automation_proc, nst_api_admin, server);
 }
 
-SNetStorageServiceAutomationObject::SNetStorageServiceAutomationObject(
+SNetStorageService::SNetStorageService(
         CAutomationProc* automation_proc,
         CNetStorageAdmin nst_api, CNetService::EServiceType type) :
     TBase(automation_proc, type),
@@ -105,19 +105,19 @@ SNetStorageServiceAutomationObject::SNetStorageServiceAutomationObject(
             new CEventHandler(automation_proc, m_NetStorageAdmin));
 }
 
-void SNetStorageServiceAutomationObject::CEventHandler::OnWarning(
+void SNetStorageService::CEventHandler::OnWarning(
         const string& warn_msg, CNetServer server)
 {
     m_AutomationProc->SendWarning(warn_msg, m_AutomationProc->
             ReturnNetStorageServerObject(m_NetStorageAdmin, server));
 }
 
-const void* SNetStorageServiceAutomationObject::GetImplPtr() const
+const void* SNetStorageService::GetImplPtr() const
 {
     return m_NetStorageAdmin;
 }
 
-SNetStorageServerAutomationObject::SNetStorageServerAutomationObject(
+SNetStorageServer::SNetStorageServer(
         CAutomationProc* automation_proc,
         CNetStorageAdmin nst_api, CNetServer::TInstance server) :
     TBase(automation_proc, nst_api.GetServer(server),
@@ -131,7 +131,7 @@ SNetStorageServerAutomationObject::SNetStorageServerAutomationObject(
     }
 }
 
-const void* SNetStorageServerAutomationObject::GetImplPtr() const
+const void* SNetStorageServer::GetImplPtr() const
 {
     return m_NetServer;
 }
@@ -142,18 +142,18 @@ TAutomationObjectRef CAutomationProc::ReturnNetStorageServerObject(
 {
     TAutomationObjectRef object(FindObjectByPtr(server));
     if (!object) {
-        object = new SNetStorageServerAutomationObject(this, nst_api, server);
+        object = new SNetStorageServer(this, nst_api, server);
         AddObject(object, server);
     }
     return object;
 }
 
-CCommand SNetStorageServiceAutomationObject::CallCommand()
+CCommand SNetStorageService::CallCommand()
 {
     return CCommand(kName, CallCommands);
 }
 
-TCommands SNetStorageServiceAutomationObject::CallCommands()
+TCommands SNetStorageService::CallCommands()
 {
     TCommands cmds =
     {
@@ -184,7 +184,7 @@ TCommands SNetStorageServiceAutomationObject::CallCommands()
     return cmds;
 }
 
-bool SNetStorageServiceAutomationObject::Call(const string& method,
+bool SNetStorageService::Call(const string& method,
         CArgArray& arg_array, CJsonNode& reply)
 {
     map<string, string> no_param_commands =
@@ -235,7 +235,7 @@ bool SNetStorageServiceAutomationObject::Call(const string& method,
         const string object_loc(arg_array.NextString());
         CNetStorageObject object(m_NetStorageAdmin.Open(object_loc));
         TAutomationObjectRef automation_object(
-                new SNetStorageObjectAutomationObject(m_AutomationProc, object));
+                new SNetStorageObject(m_AutomationProc, object));
 
         TObjectID response(m_AutomationProc->AddObject(automation_object));
         reply.AppendInteger(response);
@@ -257,12 +257,12 @@ bool SNetStorageServiceAutomationObject::Call(const string& method,
     return true;
 }
 
-CCommand SNetStorageServerAutomationObject::CallCommand()
+CCommand SNetStorageServer::CallCommand()
 {
     return CCommand(kName, CallCommands);
 }
 
-TCommands SNetStorageServerAutomationObject::CallCommands()
+TCommands SNetStorageServer::CallCommands()
 {
     TCommands cmds =
     {
@@ -282,7 +282,7 @@ TCommands SNetStorageServerAutomationObject::CallCommands()
     return cmds;
 }
 
-bool SNetStorageServerAutomationObject::Call(const string& method,
+bool SNetStorageServer::Call(const string& method,
         CArgArray& arg_array, CJsonNode& reply)
 {
     map<string, string> no_param_commands =
@@ -317,24 +317,24 @@ bool SNetStorageServerAutomationObject::Call(const string& method,
     return true;
 }
 
-SNetStorageObjectAutomationObject::SNetStorageObjectAutomationObject(
+SNetStorageObject::SNetStorageObject(
         CAutomationProc* automation_proc, CNetStorageObject::TInstance object) :
     CAutomationObject(automation_proc),
     m_Object(object)
 {
 }
 
-const void* SNetStorageObjectAutomationObject::GetImplPtr() const
+const void* SNetStorageObject::GetImplPtr() const
 {
     return m_Object;
 }
 
-CCommand SNetStorageObjectAutomationObject::CallCommand()
+CCommand SNetStorageObject::CallCommand()
 {
     return CCommand(kName, CallCommands);
 }
 
-TCommands SNetStorageObjectAutomationObject::CallCommands()
+TCommands SNetStorageObject::CallCommands()
 {
     TCommands cmds =
     {
@@ -348,7 +348,7 @@ TCommands SNetStorageObjectAutomationObject::CallCommands()
     return cmds;
 }
 
-bool SNetStorageObjectAutomationObject::Call(const string& method,
+bool SNetStorageObject::Call(const string& method,
         CArgArray& arg_array, CJsonNode& reply)
 {
     if (method == "info") {

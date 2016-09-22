@@ -39,9 +39,9 @@ BEGIN_NCBI_SCOPE
 namespace NAutomation
 {
 
-struct SNetScheduleServiceAutomationObject : public SNetServiceAutomationObject
+struct SNetScheduleService : public SNetService
 {
-    typedef SNetServiceAutomationObject TBase;
+    typedef SNetService TBase;
 
     class CEventHandler : public INetEventHandler
     {
@@ -76,19 +76,19 @@ struct SNetScheduleServiceAutomationObject : public SNetServiceAutomationObject
 protected:
     CNetScheduleAPIExt m_NetScheduleAPI;
 
-    SNetScheduleServiceAutomationObject(CAutomationProc* automation_proc,
+    SNetScheduleService(CAutomationProc* automation_proc,
             CNetScheduleAPI ns_api, CNetService::EServiceType type);
 
 private:
     static const string kName;
 };
 
-struct SNetScheduleServerAutomationObject :
-        public SNetScheduleServiceAutomationObject
+struct SNetScheduleServer :
+        public SNetScheduleService
 {
-    typedef SNetScheduleServiceAutomationObject TBase;
+    typedef SNetScheduleService TBase;
 
-    SNetScheduleServerAutomationObject(CAutomationProc* automation_proc,
+    SNetScheduleServer(CAutomationProc* automation_proc,
             CNetScheduleAPIExt ns_api, CNetServer::TInstance server);
 
     virtual const string& GetType() const { return kName; }

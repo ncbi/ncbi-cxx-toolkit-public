@@ -39,9 +39,9 @@ BEGIN_NCBI_SCOPE
 namespace NAutomation
 {
 
-struct SNetCacheServiceAutomationObject : public SNetServiceAutomationObject
+struct SNetCacheService : public SNetService
 {
-    typedef SNetServiceAutomationObject TBase;
+    typedef SNetService TBase;
 
     class CEventHandler : public INetEventHandler
     {
@@ -74,22 +74,22 @@ struct SNetCacheServiceAutomationObject : public SNetServiceAutomationObject
             const string& class_name, CAutomationProc* automation_proc);
 
 protected:
-    SNetCacheServiceAutomationObject(CAutomationProc* automation_proc,
+    SNetCacheService(CAutomationProc* automation_proc,
             CNetCacheAPI nc_api, CNetService::EServiceType type);
 
     static CCommand CallCommand(const string& name);
 
     CNetCacheAPI m_NetCacheAPI;
 
-    friend struct SNetCacheBlobAutomationObject;
+    friend struct SNetCacheBlob;
 
 private:
     static const string kName;
 };
 
-struct SNetCacheBlobAutomationObject : public CAutomationObject
+struct SNetCacheBlob : public CAutomationObject
 {
-    SNetCacheBlobAutomationObject(SNetCacheServiceAutomationObject* nc_object,
+    SNetCacheBlob(SNetCacheService* nc_object,
             const string& blob_key);
 
     virtual const string& GetType() const { return kName; }
@@ -102,7 +102,7 @@ struct SNetCacheBlobAutomationObject : public CAutomationObject
     static CCommand CallCommand();
     static TCommands CallCommands();
 
-    CRef<SNetCacheServiceAutomationObject> m_NetCacheObject;
+    CRef<SNetCacheService> m_NetCacheObject;
     string m_BlobKey;
     size_t m_BlobSize;
     auto_ptr<IReader> m_Reader;
@@ -112,11 +112,11 @@ private:
     static const string kName;
 };
 
-struct SNetCacheServerAutomationObject : public SNetCacheServiceAutomationObject
+struct SNetCacheServer : public SNetCacheService
 {
-    typedef SNetCacheServiceAutomationObject TBase;
+    typedef SNetCacheService TBase;
 
-    SNetCacheServerAutomationObject(CAutomationProc* automation_proc,
+    SNetCacheServer(CAutomationProc* automation_proc,
             CNetCacheAPI nc_api, CNetServer::TInstance server);
 
     virtual const string& GetType() const { return kName; }

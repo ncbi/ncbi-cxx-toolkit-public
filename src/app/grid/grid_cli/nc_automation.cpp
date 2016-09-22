@@ -37,12 +37,12 @@ USING_NCBI_SCOPE;
 
 using namespace NAutomation;
 
-const string SNetCacheBlobAutomationObject::kName = "ncblob";
-const string SNetCacheServiceAutomationObject::kName = "ncsvc";
-const string SNetCacheServerAutomationObject::kName = "ncsrv";
+const string SNetCacheBlob::kName = "ncblob";
+const string SNetCacheService::kName = "ncsvc";
+const string SNetCacheServer::kName = "ncsrv";
 
-SNetCacheBlobAutomationObject::SNetCacheBlobAutomationObject(
-        SNetCacheServiceAutomationObject* nc_object,
+SNetCacheBlob::SNetCacheBlob(
+        SNetCacheService* nc_object,
         const string& blob_key) :
     CAutomationObject(nc_object->m_AutomationProc),
     m_NetCacheObject(nc_object),
@@ -50,17 +50,17 @@ SNetCacheBlobAutomationObject::SNetCacheBlobAutomationObject(
 {
 }
 
-const void* SNetCacheBlobAutomationObject::GetImplPtr() const
+const void* SNetCacheBlob::GetImplPtr() const
 {
     return this;
 }
 
-CCommand SNetCacheBlobAutomationObject::CallCommand()
+CCommand SNetCacheBlob::CallCommand()
 {
     return CCommand(kName, CallCommands);
 }
 
-TCommands SNetCacheBlobAutomationObject::CallCommands()
+TCommands SNetCacheBlob::CallCommands()
 {
     TCommands cmds =
     {
@@ -77,7 +77,7 @@ TCommands SNetCacheBlobAutomationObject::CallCommands()
     return cmds;
 }
 
-bool SNetCacheBlobAutomationObject::Call(const string& method,
+bool SNetCacheBlob::Call(const string& method,
         CArgArray& arg_array, CJsonNode& reply)
 {
     if (method == "write") {
@@ -139,20 +139,19 @@ bool SNetCacheBlobAutomationObject::Call(const string& method,
     return true;
 }
 
-void SNetCacheServiceAutomationObject::CEventHandler::OnWarning(
+void SNetCacheService::CEventHandler::OnWarning(
         const string& warn_msg, CNetServer server)
 {
     m_AutomationProc->SendWarning(warn_msg, m_AutomationProc->
             ReturnNetCacheServerObject(m_NetCacheAPI, server));
 }
 
-const void* SNetCacheServiceAutomationObject::GetImplPtr() const
+const void* SNetCacheService::GetImplPtr() const
 {
     return m_NetCacheAPI;
 }
 
-SNetCacheServiceAutomationObject::SNetCacheServiceAutomationObject(
-        CAutomationProc* automation_proc,
+SNetCacheService::SNetCacheService(CAutomationProc* automation_proc,
         CNetCacheAPI nc_api, CNetService::EServiceType type) :
     TBase(automation_proc, type),
     m_NetCacheAPI(nc_api)
@@ -162,8 +161,7 @@ SNetCacheServiceAutomationObject::SNetCacheServiceAutomationObject(
             new CEventHandler(automation_proc, m_NetCacheAPI));
 }
 
-SNetCacheServerAutomationObject::SNetCacheServerAutomationObject(
-        CAutomationProc* automation_proc,
+SNetCacheServer::SNetCacheServer(CAutomationProc* automation_proc,
         CNetCacheAPI nc_api, CNetServer::TInstance server) :
     TBase(automation_proc, nc_api.GetServer(server),
             CNetService::eSingleServerService),
@@ -176,7 +174,7 @@ SNetCacheServerAutomationObject::SNetCacheServerAutomationObject(
     }
 }
 
-CCommand SNetCacheServiceAutomationObject::NewCommand()
+CCommand SNetCacheService::NewCommand()
 {
     return CCommand(kName, {
             { "service_name", "", },
@@ -184,7 +182,7 @@ CCommand SNetCacheServiceAutomationObject::NewCommand()
         });
 }
 
-CAutomationObject* SNetCacheServiceAutomationObject::Create(
+CAutomationObject* SNetCacheService::Create(
         CArgArray& arg_array, const string& class_name,
         CAutomationProc* automation_proc)
 {
@@ -193,11 +191,11 @@ CAutomationObject* SNetCacheServiceAutomationObject::Create(
     const string service_name(arg_array.NextString(kEmptyStr));
     const string client_name(arg_array.NextString(kEmptyStr));
     CNetCacheAPI nc_api(service_name, client_name);
-    return new SNetCacheServiceAutomationObject(automation_proc, nc_api,
+    return new SNetCacheService(automation_proc, nc_api,
             CNetService::eLoadBalancedService);
 }
 
-CCommand SNetCacheServerAutomationObject::NewCommand()
+CCommand SNetCacheServer::NewCommand()
 {
     return CCommand(kName, {
             { "service_name", "", },
@@ -205,7 +203,7 @@ CCommand SNetCacheServerAutomationObject::NewCommand()
         });
 }
 
-CAutomationObject* SNetCacheServerAutomationObject::Create(
+CAutomationObject* SNetCacheServer::Create(
         CArgArray& arg_array, const string& class_name,
         CAutomationProc* automation_proc)
 {
@@ -215,10 +213,10 @@ CAutomationObject* SNetCacheServerAutomationObject::Create(
     const string client_name(arg_array.NextString(kEmptyStr));
     CNetCacheAPI nc_api(service_name, client_name);
     CNetServer server = nc_api.GetService().Iterate().GetServer();
-    return new SNetCacheServerAutomationObject(automation_proc, nc_api, server);
+    return new SNetCacheServer(automation_proc, nc_api, server);
 }
 
-const void* SNetCacheServerAutomationObject::GetImplPtr() const
+const void* SNetCacheServer::GetImplPtr() const
 {
     return m_NetServer;
 }
@@ -229,19 +227,19 @@ TAutomationObjectRef CAutomationProc::ReturnNetCacheServerObject(
 {
     TAutomationObjectRef object(FindObjectByPtr(server));
     if (!object) {
-        object = new SNetCacheServerAutomationObject(this, ns_api, server);
+        object = new SNetCacheServer(this, ns_api, server);
         AddObject(object, server);
     }
     return object;
 }
 
-CCommand SNetCacheServiceAutomationObject::CallCommand(
+CCommand SNetCacheService::CallCommand(
         const string& name)
 {
     return CCommand(name, CallCommands);
 }
 
-TCommands SNetCacheServiceAutomationObject::CallCommands()
+TCommands SNetCacheService::CallCommands()
 {
     TCommands cmds =
     {
@@ -257,12 +255,12 @@ TCommands SNetCacheServiceAutomationObject::CallCommands()
     return cmds;
 }
 
-bool SNetCacheServiceAutomationObject::Call(const string& method,
+bool SNetCacheService::Call(const string& method,
         CArgArray& arg_array, CJsonNode& reply)
 {
     if (method == "get_blob") {
         reply.AppendInteger(m_AutomationProc->AddObject(
-                TAutomationObjectRef(new SNetCacheBlobAutomationObject(this,
+                TAutomationObjectRef(new SNetCacheBlob(this,
                         arg_array.NextString(kEmptyStr)))));
     } else if (method == "get_servers") {
         CJsonNode object_ids(CJsonNode::NewArrayNode());
@@ -277,7 +275,7 @@ bool SNetCacheServiceAutomationObject::Call(const string& method,
     return true;
 }
 
-bool SNetCacheServerAutomationObject::Call(const string& method,
+bool SNetCacheServer::Call(const string& method,
         CArgArray& arg_array, CJsonNode& reply)
 {
     return TBase::Call(method, arg_array, reply);

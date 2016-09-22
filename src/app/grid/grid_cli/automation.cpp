@@ -222,7 +222,7 @@ CJsonNode SServerAddressToJson::ExecOn(CNetServer server)
     return CJsonNode::NewStringNode(server.GetServerAddress());
 }
 
-TCommands SNetServiceBaseAutomationObject::CallCommands()
+TCommands SNetServiceBase::CallCommands()
 {
     TCommands cmds =
     {
@@ -235,7 +235,7 @@ TCommands SNetServiceBaseAutomationObject::CallCommands()
     return cmds;
 }
 
-bool SNetServiceBaseAutomationObject::Call(const string& method,
+bool SNetServiceBase::Call(const string& method,
         CArgArray& arg_array, CJsonNode& reply)
 {
     if (method == "get_name")
@@ -252,7 +252,7 @@ bool SNetServiceBaseAutomationObject::Call(const string& method,
     return true;
 }
 
-TCommands SNetServiceAutomationObject::CallCommands()
+TCommands SNetService::CallCommands()
 {
     TCommands cmds =
     {
@@ -272,7 +272,7 @@ TCommands SNetServiceAutomationObject::CallCommands()
     return cmds;
 }
 
-bool SNetServiceAutomationObject::Call(const string& method,
+bool SNetService::Call(const string& method,
         CArgArray& arg_array, CJsonNode& reply)
 {
     if (method == "server_info")
@@ -307,25 +307,25 @@ CAutomationObject* CAutomationProc::CreateObject(const string& class_name,
 {
     switch (step) {
     case kFirstStep:
-        return SNetCacheServiceAutomationObject::Create(arg_array, class_name, this);
+        return SNetCacheService::Create(arg_array, class_name, this);
 
     case kFirstStep + 1:
-        return SNetCacheServerAutomationObject::Create(arg_array, class_name, this);
+        return SNetCacheServer::Create(arg_array, class_name, this);
 
     case kFirstStep + 2:
-        return SNetScheduleServiceAutomationObject::Create(arg_array, class_name, this);
+        return SNetScheduleService::Create(arg_array, class_name, this);
 
     case kFirstStep + 3:
-        return SNetScheduleServerAutomationObject::Create(arg_array, class_name, this);
+        return SNetScheduleServer::Create(arg_array, class_name, this);
 
     case kFirstStep + 4:
-        return SWorkerNodeAutomationObject::Create(arg_array, class_name, this);
+        return SWorkerNode::Create(arg_array, class_name, this);
 
     case kFirstStep + 5:
-        return SNetStorageServiceAutomationObject::Create(arg_array, class_name, this);
+        return SNetStorageService::Create(arg_array, class_name, this);
 
     case kFirstStep + 6:
-        return SNetStorageServerAutomationObject::Create(arg_array, class_name, this);
+        return SNetStorageServer::Create(arg_array, class_name, this);
 
     case kFirstStep + 7:
         NCBI_THROW_FMT(CAutomationException, eInvalidInput,
@@ -360,15 +360,15 @@ TCommands CAutomationProc::CallCommands()
 {
     return TCommands
     {
-        SNetCacheBlobAutomationObject::CallCommand(),
-        SNetCacheServiceAutomationObject::CallCommand(),
-        SNetCacheServerAutomationObject::CallCommand(),
-        SNetScheduleServiceAutomationObject::CallCommand(),
-        SNetScheduleServerAutomationObject::CallCommand(),
-        SNetStorageServiceAutomationObject::CallCommand(),
-        SNetStorageServerAutomationObject::CallCommand(),
-        SNetStorageObjectAutomationObject::CallCommand(),
-        SWorkerNodeAutomationObject::CallCommand(),
+        SNetCacheBlob::CallCommand(),
+        SNetCacheService::CallCommand(),
+        SNetCacheServer::CallCommand(),
+        SNetScheduleService::CallCommand(),
+        SNetScheduleServer::CallCommand(),
+        SNetStorageService::CallCommand(),
+        SNetStorageServer::CallCommand(),
+        SNetStorageObject::CallCommand(),
+        SWorkerNode::CallCommand(),
     };
 }
 
@@ -376,13 +376,13 @@ TCommands CAutomationProc::NewCommands()
 {
     return TCommands
     {
-        SNetCacheServiceAutomationObject::NewCommand(),
-        SNetCacheServerAutomationObject::NewCommand(),
-        SNetScheduleServiceAutomationObject::NewCommand(),
-        SNetScheduleServerAutomationObject::NewCommand(),
-        SNetStorageServiceAutomationObject::NewCommand(),
-        SNetStorageServerAutomationObject::NewCommand(),
-        SWorkerNodeAutomationObject::NewCommand(),
+        SNetCacheService::NewCommand(),
+        SNetCacheServer::NewCommand(),
+        SNetScheduleService::NewCommand(),
+        SNetScheduleServer::NewCommand(),
+        SNetStorageService::NewCommand(),
+        SNetStorageServer::NewCommand(),
+        SWorkerNode::NewCommand(),
     };
 }
 

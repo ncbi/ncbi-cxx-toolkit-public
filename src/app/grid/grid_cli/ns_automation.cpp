@@ -37,15 +37,15 @@ USING_NCBI_SCOPE;
 
 using namespace NAutomation;
 
-const string SNetScheduleServiceAutomationObject::kName = "nssvc";
-const string SNetScheduleServerAutomationObject::kName = "nssrv";
+const string SNetScheduleService::kName = "nssvc";
+const string SNetScheduleServer::kName = "nssrv";
 
-const void* SNetScheduleServiceAutomationObject::GetImplPtr() const
+const void* SNetScheduleService::GetImplPtr() const
 {
     return m_NetScheduleAPI;
 }
 
-SNetScheduleServiceAutomationObject::SNetScheduleServiceAutomationObject(
+SNetScheduleService::SNetScheduleService(
         CAutomationProc* automation_proc,
         CNetScheduleAPI ns_api, CNetService::EServiceType type) :
     TBase(automation_proc, type),
@@ -56,7 +56,7 @@ SNetScheduleServiceAutomationObject::SNetScheduleServiceAutomationObject(
             new CEventHandler(automation_proc, m_NetScheduleAPI));
 }
 
-SNetScheduleServerAutomationObject::SNetScheduleServerAutomationObject(
+SNetScheduleServer::SNetScheduleServer(
         CAutomationProc* automation_proc,
         CNetScheduleAPIExt ns_api, CNetServer::TInstance server) :
     TBase(automation_proc, ns_api.GetServer(server),
@@ -70,7 +70,7 @@ SNetScheduleServerAutomationObject::SNetScheduleServerAutomationObject(
     }
 }
 
-CCommand SNetScheduleServiceAutomationObject::NewCommand()
+CCommand SNetScheduleService::NewCommand()
 {
     return CCommand(kName, {
             { "service_name", "", },
@@ -79,7 +79,7 @@ CCommand SNetScheduleServiceAutomationObject::NewCommand()
         });
 }
 
-CAutomationObject* SNetScheduleServiceAutomationObject::Create(
+CAutomationObject* SNetScheduleService::Create(
         CArgArray& arg_array, const string& class_name,
         CAutomationProc* automation_proc)
 {
@@ -91,11 +91,11 @@ CAutomationObject* SNetScheduleServiceAutomationObject::Create(
     CNetScheduleAPIExt ns_api(CNetScheduleAPIExt::CreateNoCfgLoad(
                 service_name, client_name, queue_name));
 
-    return new SNetScheduleServiceAutomationObject(automation_proc, ns_api,
+    return new SNetScheduleService(automation_proc, ns_api,
             CNetService::eLoadBalancedService);
 }
 
-CCommand SNetScheduleServerAutomationObject::NewCommand()
+CCommand SNetScheduleServer::NewCommand()
 {
     return CCommand(kName, {
             { "service_name", "", },
@@ -104,7 +104,7 @@ CCommand SNetScheduleServerAutomationObject::NewCommand()
         });
 }
 
-CAutomationObject* SNetScheduleServerAutomationObject::Create(
+CAutomationObject* SNetScheduleServer::Create(
         CArgArray& arg_array, const string& class_name,
         CAutomationProc* automation_proc)
 {
@@ -117,10 +117,10 @@ CAutomationObject* SNetScheduleServerAutomationObject::Create(
                 service_name, client_name, queue_name));
 
     CNetServer server = ns_api.GetService().Iterate().GetServer();
-    return new SNetScheduleServerAutomationObject(automation_proc, ns_api, server);
+    return new SNetScheduleServer(automation_proc, ns_api, server);
 }
 
-const void* SNetScheduleServerAutomationObject::GetImplPtr() const
+const void* SNetScheduleServer::GetImplPtr() const
 {
     return m_NetServer;
 }
@@ -131,7 +131,7 @@ TAutomationObjectRef CAutomationProc::ReturnNetScheduleServerObject(
 {
     TAutomationObjectRef object(FindObjectByPtr(server));
     if (!object) {
-        object = new SNetScheduleServerAutomationObject(this, ns_api, server);
+        object = new SNetScheduleServer(this, ns_api, server);
         AddObject(object, server);
     }
     return object;
@@ -146,12 +146,12 @@ static void ExtractVectorOfStrings(CArgArray& arg_array,
             result.push_back(arg_array.GetString(*it));
 }
 
-CCommand SNetScheduleServerAutomationObject::CallCommand()
+CCommand SNetScheduleServer::CallCommand()
 {
     return CCommand(kName, CallCommands);
 }
 
-TCommands SNetScheduleServerAutomationObject::CallCommands()
+TCommands SNetScheduleServer::CallCommands()
 {
     TCommands cmds =
     {
@@ -182,7 +182,7 @@ TCommands SNetScheduleServerAutomationObject::CallCommands()
     return cmds;
 }
 
-bool SNetScheduleServerAutomationObject::Call(const string& method,
+bool SNetScheduleServer::Call(const string& method,
         CArgArray& arg_array, CJsonNode& reply)
 {
     if (method == "server_status")
@@ -213,19 +213,19 @@ bool SNetScheduleServerAutomationObject::Call(const string& method,
     return true;
 }
 
-void SNetScheduleServiceAutomationObject::CEventHandler::OnWarning(
+void SNetScheduleService::CEventHandler::OnWarning(
         const string& warn_msg, CNetServer server)
 {
     m_AutomationProc->SendWarning(warn_msg, m_AutomationProc->
             ReturnNetScheduleServerObject(m_NetScheduleAPI, server));
 }
 
-CCommand SNetScheduleServiceAutomationObject::CallCommand()
+CCommand SNetScheduleService::CallCommand()
 {
     return CCommand(kName, CallCommands);
 }
 
-TCommands SNetScheduleServiceAutomationObject::CallCommands()
+TCommands SNetScheduleService::CallCommands()
 {
     TCommands cmds =
     {
@@ -268,7 +268,7 @@ TCommands SNetScheduleServiceAutomationObject::CallCommands()
     return cmds;
 }
 
-bool SNetScheduleServiceAutomationObject::Call(const string& method,
+bool SNetScheduleService::Call(const string& method,
         CArgArray& arg_array, CJsonNode& reply)
 {
     if (method == "set_client_type")

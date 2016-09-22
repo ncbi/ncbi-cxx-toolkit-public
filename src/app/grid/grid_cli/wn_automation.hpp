@@ -39,9 +39,9 @@ BEGIN_NCBI_SCOPE
 namespace NAutomation
 {
 
-struct SWorkerNodeAutomationObject : public SNetServiceAutomationObject
+struct SWorkerNode : public SNetService
 {
-    typedef SNetServiceAutomationObject TBase;
+    typedef SNetService TBase;
 
     virtual const string& GetType() const { return kName; }
 
@@ -57,7 +57,7 @@ struct SWorkerNodeAutomationObject : public SNetServiceAutomationObject
             const string& class_name, CAutomationProc* automation_proc);
 
 private:
-    SWorkerNodeAutomationObject(CAutomationProc* automation_proc,
+    SWorkerNode(CAutomationProc* automation_proc,
             CNetScheduleAPI ns_api);
 
     CNetScheduleAPI m_NetScheduleAPI;
