@@ -41,8 +41,6 @@ namespace NAutomation
 
 struct SWorkerNode : public SNetService
 {
-    typedef SNetService TBase;
-
     virtual const string& GetType() const { return kName; }
 
     virtual const void* GetImplPtr() const;

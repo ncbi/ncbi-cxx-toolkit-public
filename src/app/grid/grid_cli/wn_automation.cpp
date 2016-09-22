@@ -41,7 +41,7 @@ const string SWorkerNode::kName = "wn";
 
 SWorkerNode::SWorkerNode(
         CAutomationProc* automation_proc, CNetScheduleAPI ns_api) :
-    TBase(automation_proc, CNetService::eSingleServerService),
+    SNetService(automation_proc, CNetService::eSingleServerService),
     m_NetScheduleAPI(ns_api)
 {
     m_Service = m_NetScheduleAPI.GetService();
@@ -103,7 +103,7 @@ TCommands SWorkerNode::CallCommands()
             }},
     };
 
-    TCommands base_cmds = TBase::CallCommands();
+    TCommands base_cmds = SNetService::CallCommands();
     cmds.insert(cmds.end(), base_cmds.begin(), base_cmds.end());
 
     return cmds;
@@ -141,7 +141,7 @@ bool SWorkerNode::Call(const string& method,
             m_NetScheduleAPI.GetAdmin().ShutdownServer(CNetScheduleAdmin::eDie);
         }
     else
-        return TBase::Call(method, arg_array, reply);
+        return SNetService::Call(method, arg_array, reply);
 
     return true;
 }

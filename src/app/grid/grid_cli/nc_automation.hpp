@@ -41,8 +41,6 @@ namespace NAutomation
 
 struct SNetCacheService : public SNetService
 {
-    typedef SNetService TBase;
-
     class CEventHandler : public INetEventHandler
     {
     public:
@@ -113,8 +111,6 @@ private:
 
 struct SNetCacheServer : public SNetCacheService
 {
-    typedef SNetCacheService TBase;
-
     SNetCacheServer(CAutomationProc* automation_proc,
             CNetCacheAPI nc_api, CNetServer::TInstance server);
 
@@ -125,7 +121,7 @@ struct SNetCacheServer : public SNetCacheService
     virtual bool Call(const string& method,
             CArgArray& arg_array, CJsonNode& reply);
 
-    static CCommand CallCommand() { return TBase::CallCommand(kName); }
+    static CCommand CallCommand() { return SNetCacheService::CallCommand(kName); }
     static CCommand NewCommand();
     static CAutomationObject* Create(CArgArray& arg_array,
             const string& class_name, CAutomationProc* automation_proc);

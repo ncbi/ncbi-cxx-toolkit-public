@@ -96,7 +96,7 @@ CAutomationObject* SNetStorageServer::Create(
 SNetStorageService::SNetStorageService(
         CAutomationProc* automation_proc,
         CNetStorageAdmin nst_api, CNetService::EServiceType type) :
-    TBase(automation_proc, type),
+    SNetServiceBase(automation_proc, type),
     m_NetStorageAdmin(nst_api)
 {
     m_Service = m_NetStorageAdmin.GetService();
@@ -119,7 +119,7 @@ const void* SNetStorageService::GetImplPtr() const
 SNetStorageServer::SNetStorageServer(
         CAutomationProc* automation_proc,
         CNetStorageAdmin nst_api, CNetServer::TInstance server) :
-    TBase(automation_proc, nst_api.GetServer(server),
+    SNetStorageService(automation_proc, nst_api.GetServer(server),
             CNetService::eSingleServerService),
     m_NetServer(server)
 {
@@ -177,7 +177,7 @@ TCommands SNetStorageService::CallCommands()
 #endif
     };
 
-    TCommands base_cmds = TBase::CallCommands();
+    TCommands base_cmds = SNetServiceBase::CallCommands();
     cmds.insert(cmds.end(), base_cmds.begin(), base_cmds.end());
 
     return cmds;
@@ -251,7 +251,7 @@ bool SNetStorageService::Call(const string& method,
             g_AllowXSiteConnections(m_NetStorageAdmin);
         else
 #endif
-        return TBase::Call(method, arg_array, reply);
+        return SNetServiceBase::Call(method, arg_array, reply);
 
     return true;
 }
@@ -275,7 +275,7 @@ TCommands SNetStorageServer::CallCommands()
             }},
     };
 
-    TCommands base_cmds = TBase::CallCommands();
+    TCommands base_cmds = SNetStorageService::CallCommands();
     cmds.insert(cmds.end(), base_cmds.begin(), base_cmds.end());
 
     return cmds;
@@ -311,7 +311,7 @@ bool SNetStorageServer::Call(const string& method,
         NNetStorage::RemoveStdReplyFields(response);
         reply.Append(response);
     } else
-        return TBase::Call(method, arg_array, reply);
+        return SNetStorageService::Call(method, arg_array, reply);
 
     return true;
 }

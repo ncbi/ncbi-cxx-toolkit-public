@@ -48,7 +48,7 @@ const void* SNetScheduleService::GetImplPtr() const
 SNetScheduleService::SNetScheduleService(
         CAutomationProc* automation_proc,
         CNetScheduleAPI ns_api, CNetService::EServiceType type) :
-    TBase(automation_proc, type),
+    SNetService(automation_proc, type),
     m_NetScheduleAPI(ns_api)
 {
     m_Service = m_NetScheduleAPI.GetService();
@@ -59,7 +59,7 @@ SNetScheduleService::SNetScheduleService(
 SNetScheduleServer::SNetScheduleServer(
         CAutomationProc* automation_proc,
         CNetScheduleAPIExt ns_api, CNetServer::TInstance server) :
-    TBase(automation_proc, ns_api.GetServer(server),
+    SNetScheduleService(automation_proc, ns_api.GetServer(server),
             CNetService::eSingleServerService),
     m_NetServer(server)
 {
@@ -176,7 +176,7 @@ TCommands SNetScheduleServer::CallCommands()
             }},
     };
 
-    TCommands base_cmds = TBase::CallCommands();
+    TCommands base_cmds = SNetScheduleService::CallCommands();
     cmds.insert(cmds.end(), base_cmds.begin(), base_cmds.end());
 
     return cmds;
@@ -208,7 +208,7 @@ bool SNetScheduleServer::Call(const string& method,
         m_NetScheduleAPI.GetExecutor().ChangePreferredAffinities(
                 &affs_to_add, &affs_to_del);
     } else
-        return TBase::Call(method, arg_array, reply);
+        return SNetScheduleService::Call(method, arg_array, reply);
 
     return true;
 }
@@ -262,7 +262,7 @@ TCommands SNetScheduleService::CallCommands()
         { "get_servers", },
     };
 
-    TCommands base_cmds = TBase::CallCommands();
+    TCommands base_cmds = SNetService::CallCommands();
     cmds.insert(cmds.end(), base_cmds.begin(), base_cmds.end());
 
     return cmds;
@@ -331,7 +331,7 @@ bool SNetScheduleService::Call(const string& method,
                     GetID());
         reply.Append(object_ids);
     } else
-        return TBase::Call(method, arg_array, reply);
+        return SNetService::Call(method, arg_array, reply);
 
     return true;
 }

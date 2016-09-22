@@ -281,11 +281,9 @@ struct SNetServiceBase : public CAutomationObject
 
 struct SNetService : public SNetServiceBase
 {
-    typedef SNetServiceBase TBase;
-
     SNetService(CAutomationProc* automation_proc,
             CNetService::EServiceType actual_service_type) :
-        TBase(automation_proc, actual_service_type)
+        SNetServiceBase(automation_proc, actual_service_type)
     {
     }
 

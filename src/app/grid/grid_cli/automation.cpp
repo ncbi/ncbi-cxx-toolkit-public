@@ -266,7 +266,7 @@ TCommands SNetService::CallCommands()
 #endif
     };
 
-    TCommands base_cmds = TBase::CallCommands();
+    TCommands base_cmds = SNetServiceBase::CallCommands();
     cmds.insert(cmds.end(), base_cmds.begin(), base_cmds.end());
 
     return cmds;
@@ -287,7 +287,7 @@ bool SNetService::Call(const string& method,
             m_Service.AllowXSiteConnections();
         else
 #endif
-        return TBase::Call(method, arg_array, reply);
+        return SNetServiceBase::Call(method, arg_array, reply);
 
     return true;
 }

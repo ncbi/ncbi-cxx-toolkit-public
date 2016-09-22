@@ -153,7 +153,7 @@ const void* SNetCacheService::GetImplPtr() const
 
 SNetCacheService::SNetCacheService(CAutomationProc* automation_proc,
         CNetCacheAPI nc_api, CNetService::EServiceType type) :
-    TBase(automation_proc, type),
+    SNetService(automation_proc, type),
     m_NetCacheAPI(nc_api)
 {
     m_Service = m_NetCacheAPI.GetService();
@@ -163,7 +163,7 @@ SNetCacheService::SNetCacheService(CAutomationProc* automation_proc,
 
 SNetCacheServer::SNetCacheServer(CAutomationProc* automation_proc,
         CNetCacheAPI nc_api, CNetServer::TInstance server) :
-    TBase(automation_proc, nc_api.GetServer(server),
+    SNetCacheService(automation_proc, nc_api.GetServer(server),
             CNetService::eSingleServerService),
     m_NetServer(server)
 {
@@ -248,7 +248,7 @@ TCommands SNetCacheService::CallCommands()
         { "get_servers", },
     };
 
-    TCommands base_cmds = TBase::CallCommands();
+    TCommands base_cmds = SNetService::CallCommands();
     cmds.insert(cmds.end(), base_cmds.begin(), base_cmds.end());
 
     return cmds;
@@ -269,7 +269,7 @@ bool SNetCacheService::Call(const string& method,
                     ReturnNetCacheServerObject(m_NetCacheAPI, *it)->GetID());
         reply.Append(object_ids);
     } else
-        return TBase::Call(method, arg_array, reply);
+        return SNetService::Call(method, arg_array, reply);
 
     return true;
 }
@@ -277,5 +277,5 @@ bool SNetCacheService::Call(const string& method,
 bool SNetCacheServer::Call(const string& method,
         CArgArray& arg_array, CJsonNode& reply)
 {
-    return TBase::Call(method, arg_array, reply);
+    return SNetCacheService::Call(method, arg_array, reply);
 }

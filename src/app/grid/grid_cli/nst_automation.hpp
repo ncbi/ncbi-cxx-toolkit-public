@@ -41,8 +41,6 @@ namespace NAutomation
 
 struct SNetStorageService : public SNetServiceBase
 {
-    typedef SNetServiceBase TBase;
-
     class CEventHandler : public INetEventHandler
     {
     public:
@@ -89,8 +87,6 @@ private:
 
 struct SNetStorageServer : public SNetStorageService
 {
-    typedef SNetStorageService TBase;
-
     SNetStorageServer(CAutomationProc* automation_proc,
             CNetStorageAdmin nst_api, CNetServer::TInstance server);
 
@@ -103,7 +99,7 @@ struct SNetStorageServer : public SNetStorageService
 
     static CCommand CallCommand();
     static TCommands CallCommands();
-    static CCommand NewCommand() { return TBase::NewCommand(kName); }
+    static CCommand NewCommand() { return SNetStorageService::NewCommand(kName); }
     static CAutomationObject* Create(CArgArray& arg_array,
             const string& class_name, CAutomationProc* automation_proc);
 

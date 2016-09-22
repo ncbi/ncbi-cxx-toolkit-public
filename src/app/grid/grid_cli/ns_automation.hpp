@@ -41,8 +41,6 @@ namespace NAutomation
 
 struct SNetScheduleService : public SNetService
 {
-    typedef SNetService TBase;
-
     class CEventHandler : public INetEventHandler
     {
     public:
@@ -85,8 +83,6 @@ private:
 
 struct SNetScheduleServer : public SNetScheduleService
 {
-    typedef SNetScheduleService TBase;
-
     SNetScheduleServer(CAutomationProc* automation_proc,
             CNetScheduleAPIExt ns_api, CNetServer::TInstance server);
 
