@@ -212,9 +212,12 @@ protected:
 
     virtual void   ParseDefLine  (const TStr& s, ILineErrorListener * pMessageListener);
     virtual bool   ParseIDs      (const TStr& s, ILineErrorListener * pMessageListener);
-    virtual size_t ParseRange    (const TStr& s, TSeqPos& start, TSeqPos& end, ILineErrorListener * pMessageListener);
+    bool ParseIDs (const TStr& s, 
+                   list<CRef<CSeq_id>>& ids, 
+                   ILineErrorListener* pMessageListener) const;
+    static size_t ParseRange    (const TStr& s, TSeqPos& start, TSeqPos& end, ILineErrorListener * pMessageListener);
     virtual void   ParseTitle    (const SLineTextAndLoc & lineInfo, ILineErrorListener * pMessageListener);
-    virtual bool   IsValidLocalID(const TStr& s);
+    virtual bool   IsValidLocalID(const TStr& s) const;
     virtual void   GenerateID    (void);
     virtual void   ParseDataLine (const TStr& s, ILineErrorListener * pMessageListener);
     virtual void   CheckDataLine (const TStr& s, ILineErrorListener * pMessageListener);
@@ -227,12 +230,12 @@ protected:
     virtual bool   CreateWarningsForSeqDataInTitle(
         const TStr& sLineText, 
         TSeqPos iLineNum,
-        ILineErrorListener * pMessageListener);
+        ILineErrorListener * pMessageListener) const;
     virtual void   PostWarning(ILineErrorListener * pMessageListener,
             EDiagSev _eSeverity, size_t _uLineNum, CTempString _MessageStrmOps, 
             CObjReaderParseException::EErrCode _eErrCode, 
             ILineError::EProblem _eProblem, 
-            CTempString _sFeature, CTempString _sQualName, CTempString _sQualValue);
+            CTempString _sFeature, CTempString _sQualName, CTempString _sQualValue) const;
 
     typedef int                         TRowNum;
     typedef map<TRowNum, TSignedSeqPos> TSubMap;
