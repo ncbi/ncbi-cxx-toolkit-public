@@ -834,7 +834,6 @@ odbc_ftds64 needs tds_ftds64
 odbc_ftds95 needs tds_ftds95
 omssa needs $(SEQ_LIBS)
 omssa needs pub
-osutils needs3party $(RT_LIBS)
 osutils needs3party ctutils
 pathogen_cluster_loader needs $(SDBAPI_LIB)
 pathogen_cluster_loader needs xasmcompare
@@ -895,7 +894,6 @@ remap needs $(SEQ_LIBS)
 remap needs pub
 remapcli needs remap
 remapcli needs xconnect
-rt needs3party $(ORIG_LIBS)
 sage_mappings needs xser
 sample_asn needs general
 sampling needs3party $(ORIG_LIBS)
@@ -1029,7 +1027,6 @@ tds_ftds64 needs3party $(ORIG_LIBS)
 tds_ftds95 needs3party $(KRB5_LIBS)
 tds_ftds95 needs3party $(NETWORK_LIBS)
 tds_ftds95 needs3party $(ORIG_LIBS)
-tds_ftds95 needs3party $(RT_LIBS)
 tea_crypt needs generic_db_utils
 test_boost includes3party $(BOOST_TEST_LIBS)
 test_boost needs xncbi
@@ -1070,10 +1067,8 @@ tvlib needs uudutil
 tvlib needs w_phylo_tree
 txclient needs xconnect
 txserv needs xmlwrapp
-txserv needs3party $(RT_LIBS)
 txserv14 needs txxmldoc
 txserv14 needs xconnect
-txserv14 needs3party $(RT_LIBS)
 txxmldoc needs $(COMPRESS_LIBS)
 txxmldoc needs xutil
 txxmldoc needs3party $(LIBXML_LIBS)
