@@ -49,12 +49,11 @@
 
 #define PROTOCOL_ERROR_BASE_RETCODE 20
 
-BEGIN_NCBI_SCOPE
+USING_NCBI_SCOPE;
 
-namespace NAutomation
-{
+using namespace NAutomation;
 
-struct SCommandImpl
+struct NAutomation::SCommandImpl
 {
     virtual ~SCommandImpl() {}
     virtual CJsonNode Help(const string& name, CJsonIterator& input) = 0;
@@ -194,12 +193,6 @@ CJsonNode CCommand::Help(CJsonIterator& input)
 
     return m_Impl->Help(m_Name, ++input);
 }
-
-}
-
-END_NCBI_SCOPE
-
-USING_NCBI_SCOPE;
 
 void CArgArray::Exception(const char* what)
 {

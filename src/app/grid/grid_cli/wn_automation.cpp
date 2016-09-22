@@ -35,6 +35,8 @@
 
 USING_NCBI_SCOPE;
 
+using namespace NAutomation;
+
 const string SWorkerNodeAutomationObject::kName = "wn";
 
 SWorkerNodeAutomationObject::SWorkerNodeAutomationObject(

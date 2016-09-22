@@ -35,6 +35,8 @@
 
 USING_NCBI_SCOPE;
 
+using namespace NAutomation;
+
 const string SNetScheduleServiceAutomationObject::kName = "nssvc";
 const string SNetScheduleServerAutomationObject::kName = "nssrv";
 

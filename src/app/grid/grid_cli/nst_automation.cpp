@@ -35,6 +35,8 @@
 
 USING_NCBI_SCOPE;
 
+using namespace NAutomation;
+
 const string SNetStorageServiceAutomationObject::kName = "nstsvc";
 const string SNetStorageServerAutomationObject::kName = "nstsrv";
 const string SNetStorageObjectAutomationObject::kName = "nstobj";

@@ -37,6 +37,9 @@
 
 BEGIN_NCBI_SCOPE
 
+namespace NAutomation
+{
+
 class CAutomationException : public CException
 {
 public:
@@ -175,9 +178,6 @@ inline void CArgArray::UpdateLocation(const string& location)
     }
 }
 
-namespace NAutomation
-{
-
 class CArgument
 {
 public:
@@ -222,8 +222,6 @@ private:
     string m_Name;
     shared_ptr<SCommandImpl> m_Impl;
 };
-
-}
 
 struct SServerAddressToJson : public IExecToJson
 {
@@ -371,6 +369,8 @@ inline TObjectID CAutomationProc::AddObject(TAutomationObjectRef new_object,
 {
     m_ObjectByPointer[impl_ptr] = new_object;
     return AddObject(new_object);
+}
+
 }
 
 END_NCBI_SCOPE

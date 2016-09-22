@@ -36,6 +36,9 @@
 
 BEGIN_NCBI_SCOPE
 
+namespace NAutomation
+{
+
 struct SWorkerNodeAutomationObject : public SNetServiceAutomationObject
 {
     typedef SNetServiceAutomationObject TBase;
@@ -62,6 +65,8 @@ private:
 
     static const string kName;
 };
+
+}
 
 END_NCBI_SCOPE
 

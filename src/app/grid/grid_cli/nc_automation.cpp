@@ -35,6 +35,8 @@
 
 USING_NCBI_SCOPE;
 
+using namespace NAutomation;
+
 const string SNetCacheBlobAutomationObject::kName = "ncblob";
 const string SNetCacheServiceAutomationObject::kName = "ncsvc";
 const string SNetCacheServerAutomationObject::kName = "ncsrv";

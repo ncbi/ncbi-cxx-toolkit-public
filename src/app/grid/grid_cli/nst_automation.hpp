@@ -36,6 +36,9 @@
 
 BEGIN_NCBI_SCOPE
 
+namespace NAutomation
+{
+
 struct SNetStorageServiceAutomationObject : public SNetServiceBaseAutomationObject
 {
     typedef SNetServiceBaseAutomationObject TBase;
@@ -130,6 +133,8 @@ private:
 
     static const string kName;
 };
+
+}
 
 END_NCBI_SCOPE
 
