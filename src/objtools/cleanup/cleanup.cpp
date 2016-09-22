@@ -64,7 +64,6 @@
 #include <objmgr/seq_vector_ci.hpp>
 #include <objtools/cleanup/cleanup.hpp>
 #include "cleanup_utils.hpp"
-#include <objtools/edit/cds_fix.hpp>
 
 #include <util/strsearch.hpp>
 

@@ -59,10 +59,8 @@
 #include <objmgr/scope.hpp>
 
 #include <objects/medline/Medline_entry.hpp>
-#include <objtools/edit/struc_comm_field.hpp>
-#include <objtools/edit/gb_block_field.hpp>
-#include <objtools/edit/seq_entry_edit.hpp>
 #include <objects/valid/Comment_rule.hpp>
+#include <objects/valid/Comment_set.hpp>
 
 #include <util/ncbi_cache.hpp>
 #include <util/sequtil/sequtil_convert.hpp>
