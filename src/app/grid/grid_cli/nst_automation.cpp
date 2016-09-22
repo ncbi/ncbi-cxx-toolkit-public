@@ -41,10 +41,10 @@ const string SNetStorageServiceAutomationObject::kName = "nstsvc";
 const string SNetStorageServerAutomationObject::kName = "nstsrv";
 const string SNetStorageObjectAutomationObject::kName = "nstobj";
 
-NAutomation::CCommand SNetStorageServiceAutomationObject::NewCommand(
+CCommand SNetStorageServiceAutomationObject::NewCommand(
         const string& name)
 {
-    return NAutomation::CCommand(name, {
+    return CCommand(name, {
             { "service_name", CJsonNode::eString, },
             { "domain_name", "", },
             { "client_name", "", },
@@ -148,14 +148,14 @@ TAutomationObjectRef CAutomationProc::ReturnNetStorageServerObject(
     return object;
 }
 
-NAutomation::CCommand SNetStorageServiceAutomationObject::CallCommand()
+CCommand SNetStorageServiceAutomationObject::CallCommand()
 {
-    return NAutomation::CCommand(kName, CallCommands);
+    return CCommand(kName, CallCommands);
 }
 
-NAutomation::TCommands SNetStorageServiceAutomationObject::CallCommands()
+TCommands SNetStorageServiceAutomationObject::CallCommands()
 {
-    NAutomation::TCommands cmds =
+    TCommands cmds =
     {
         { "clients_info", },
         { "users_info", },
@@ -178,7 +178,7 @@ NAutomation::TCommands SNetStorageServiceAutomationObject::CallCommands()
 #endif
     };
 
-    NAutomation::TCommands base_cmds = TBase::CallCommands();
+    TCommands base_cmds = TBase::CallCommands();
     cmds.insert(cmds.end(), base_cmds.begin(), base_cmds.end());
 
     return cmds;
@@ -257,14 +257,14 @@ bool SNetStorageServiceAutomationObject::Call(const string& method,
     return true;
 }
 
-NAutomation::CCommand SNetStorageServerAutomationObject::CallCommand()
+CCommand SNetStorageServerAutomationObject::CallCommand()
 {
-    return NAutomation::CCommand(kName, CallCommands);
+    return CCommand(kName, CallCommands);
 }
 
-NAutomation::TCommands SNetStorageServerAutomationObject::CallCommands()
+TCommands SNetStorageServerAutomationObject::CallCommands()
 {
-    NAutomation::TCommands cmds =
+    TCommands cmds =
     {
         { "health", },
         { "conf", },
@@ -276,7 +276,7 @@ NAutomation::TCommands SNetStorageServerAutomationObject::CallCommands()
             }},
     };
 
-    NAutomation::TCommands base_cmds = TBase::CallCommands();
+    TCommands base_cmds = TBase::CallCommands();
     cmds.insert(cmds.end(), base_cmds.begin(), base_cmds.end());
 
     return cmds;
@@ -329,14 +329,14 @@ const void* SNetStorageObjectAutomationObject::GetImplPtr() const
     return m_Object;
 }
 
-NAutomation::CCommand SNetStorageObjectAutomationObject::CallCommand()
+CCommand SNetStorageObjectAutomationObject::CallCommand()
 {
-    return NAutomation::CCommand(kName, CallCommands);
+    return CCommand(kName, CallCommands);
 }
 
-NAutomation::TCommands SNetStorageObjectAutomationObject::CallCommands()
+TCommands SNetStorageObjectAutomationObject::CallCommands()
 {
-    NAutomation::TCommands cmds =
+    TCommands cmds =
     {
         { "info", },
         { "attr_list", },

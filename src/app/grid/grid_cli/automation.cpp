@@ -222,9 +222,9 @@ CJsonNode SServerAddressToJson::ExecOn(CNetServer server)
     return CJsonNode::NewStringNode(server.GetServerAddress());
 }
 
-NAutomation::TCommands SNetServiceBaseAutomationObject::CallCommands()
+TCommands SNetServiceBaseAutomationObject::CallCommands()
 {
-    NAutomation::TCommands cmds =
+    TCommands cmds =
     {
         { "get_name", },
         { "get_address", {
@@ -252,9 +252,9 @@ bool SNetServiceBaseAutomationObject::Call(const string& method,
     return true;
 }
 
-NAutomation::TCommands SNetServiceAutomationObject::CallCommands()
+TCommands SNetServiceAutomationObject::CallCommands()
 {
-    NAutomation::TCommands cmds =
+    TCommands cmds =
     {
         { "server_info", },
         { "exec", {
@@ -266,7 +266,7 @@ NAutomation::TCommands SNetServiceAutomationObject::CallCommands()
 #endif
     };
 
-    NAutomation::TCommands base_cmds = TBase::CallCommands();
+    TCommands base_cmds = TBase::CallCommands();
     cmds.insert(cmds.end(), base_cmds.begin(), base_cmds.end());
 
     return cmds;
@@ -356,9 +356,9 @@ TObjectID CAutomationProc::CreateObject(CArgArray& arg_array)
     return AddObject(new_object, new_object->GetImplPtr());
 }
 
-NAutomation::TCommands CAutomationProc::CallCommands()
+TCommands CAutomationProc::CallCommands()
 {
-    return NAutomation::TCommands
+    return TCommands
     {
         SNetCacheBlobAutomationObject::CallCommand(),
         SNetCacheServiceAutomationObject::CallCommand(),
@@ -372,9 +372,9 @@ NAutomation::TCommands CAutomationProc::CallCommands()
     };
 }
 
-NAutomation::TCommands CAutomationProc::NewCommands()
+TCommands CAutomationProc::NewCommands()
 {
-    return NAutomation::TCommands
+    return TCommands
     {
         SNetCacheServiceAutomationObject::NewCommand(),
         SNetCacheServerAutomationObject::NewCommand(),
@@ -386,9 +386,9 @@ NAutomation::TCommands CAutomationProc::NewCommands()
     };
 }
 
-NAutomation::TCommands CAutomationProc::Commands()
+TCommands CAutomationProc::Commands()
 {
-    NAutomation::TCommands cmds =
+    TCommands cmds =
     {
         { "exit", },
         { "call", CAutomationProc::CallCommands },
@@ -405,9 +405,9 @@ NAutomation::TCommands CAutomationProc::Commands()
     return cmds;
 }
 
-NAutomation::CCommand CAutomationProc::HelpCommand()
+CCommand CAutomationProc::HelpCommand()
 {
-    return NAutomation::CCommand("help", CAutomationProc::Commands);
+    return CCommand("help", CAutomationProc::Commands);
 }
 
 CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)

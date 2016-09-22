@@ -67,9 +67,9 @@ struct SNetCacheServiceAutomationObject : public SNetServiceAutomationObject
     virtual bool Call(const string& method,
             CArgArray& arg_array, CJsonNode& reply);
 
-    static NAutomation::CCommand CallCommand() { return CallCommand(kName); }
-    static NAutomation::TCommands CallCommands();
-    static NAutomation::CCommand NewCommand();
+    static CCommand CallCommand() { return CallCommand(kName); }
+    static TCommands CallCommands();
+    static CCommand NewCommand();
     static CAutomationObject* Create(CArgArray& arg_array,
             const string& class_name, CAutomationProc* automation_proc);
 
@@ -77,7 +77,7 @@ protected:
     SNetCacheServiceAutomationObject(CAutomationProc* automation_proc,
             CNetCacheAPI nc_api, CNetService::EServiceType type);
 
-    static NAutomation::CCommand CallCommand(const string& name);
+    static CCommand CallCommand(const string& name);
 
     CNetCacheAPI m_NetCacheAPI;
 
@@ -99,8 +99,8 @@ struct SNetCacheBlobAutomationObject : public CAutomationObject
     virtual bool Call(const string& method,
             CArgArray& arg_array, CJsonNode& reply);
 
-    static NAutomation::CCommand CallCommand();
-    static NAutomation::TCommands CallCommands();
+    static CCommand CallCommand();
+    static TCommands CallCommands();
 
     CRef<SNetCacheServiceAutomationObject> m_NetCacheObject;
     string m_BlobKey;
@@ -126,8 +126,8 @@ struct SNetCacheServerAutomationObject : public SNetCacheServiceAutomationObject
     virtual bool Call(const string& method,
             CArgArray& arg_array, CJsonNode& reply);
 
-    static NAutomation::CCommand CallCommand() { return TBase::CallCommand(kName); }
-    static NAutomation::CCommand NewCommand();
+    static CCommand CallCommand() { return TBase::CallCommand(kName); }
+    static CCommand NewCommand();
     static CAutomationObject* Create(CArgArray& arg_array,
             const string& class_name, CAutomationProc* automation_proc);
 

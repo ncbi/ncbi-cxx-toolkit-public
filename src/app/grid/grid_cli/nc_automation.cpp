@@ -55,14 +55,14 @@ const void* SNetCacheBlobAutomationObject::GetImplPtr() const
     return this;
 }
 
-NAutomation::CCommand SNetCacheBlobAutomationObject::CallCommand()
+CCommand SNetCacheBlobAutomationObject::CallCommand()
 {
-    return NAutomation::CCommand(kName, CallCommands);
+    return CCommand(kName, CallCommands);
 }
 
-NAutomation::TCommands SNetCacheBlobAutomationObject::CallCommands()
+TCommands SNetCacheBlobAutomationObject::CallCommands()
 {
-    NAutomation::TCommands cmds =
+    TCommands cmds =
     {
         { "write", {
                 { "value", CJsonNode::eString, },
@@ -176,9 +176,9 @@ SNetCacheServerAutomationObject::SNetCacheServerAutomationObject(
     }
 }
 
-NAutomation::CCommand SNetCacheServiceAutomationObject::NewCommand()
+CCommand SNetCacheServiceAutomationObject::NewCommand()
 {
-    return NAutomation::CCommand(kName, {
+    return CCommand(kName, {
             { "service_name", "", },
             { "client_name", "", },
         });
@@ -197,9 +197,9 @@ CAutomationObject* SNetCacheServiceAutomationObject::Create(
             CNetService::eLoadBalancedService);
 }
 
-NAutomation::CCommand SNetCacheServerAutomationObject::NewCommand()
+CCommand SNetCacheServerAutomationObject::NewCommand()
 {
-    return NAutomation::CCommand(kName, {
+    return CCommand(kName, {
             { "service_name", "", },
             { "client_name", "", },
         });
@@ -235,15 +235,15 @@ TAutomationObjectRef CAutomationProc::ReturnNetCacheServerObject(
     return object;
 }
 
-NAutomation::CCommand SNetCacheServiceAutomationObject::CallCommand(
+CCommand SNetCacheServiceAutomationObject::CallCommand(
         const string& name)
 {
-    return NAutomation::CCommand(name, CallCommands);
+    return CCommand(name, CallCommands);
 }
 
-NAutomation::TCommands SNetCacheServiceAutomationObject::CallCommands()
+TCommands SNetCacheServiceAutomationObject::CallCommands()
 {
-    NAutomation::TCommands cmds =
+    TCommands cmds =
     {
         { "get_blob", {
                 { "blob_key", "", },
@@ -251,7 +251,7 @@ NAutomation::TCommands SNetCacheServiceAutomationObject::CallCommands()
         { "get_servers", },
     };
 
-    NAutomation::TCommands base_cmds = TBase::CallCommands();
+    TCommands base_cmds = TBase::CallCommands();
     cmds.insert(cmds.end(), base_cmds.begin(), base_cmds.end());
 
     return cmds;

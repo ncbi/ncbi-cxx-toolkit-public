@@ -276,7 +276,7 @@ struct SNetServiceBaseAutomationObject : public CAutomationObject
     CNetService m_Service;
     CNetService::EServiceType m_ActualServiceType;
 
-    static NAutomation::TCommands CallCommands();
+    static TCommands CallCommands();
 };
 
 struct SNetServiceAutomationObject : public SNetServiceBaseAutomationObject
@@ -292,7 +292,7 @@ struct SNetServiceAutomationObject : public SNetServiceBaseAutomationObject
     virtual bool Call(const string& method,
             CArgArray& arg_array, CJsonNode& reply);
 
-    static NAutomation::TCommands CallCommands();
+    static TCommands CallCommands();
 };
 
 typedef CRef<CAutomationObject> TAutomationObjectRef;
@@ -350,10 +350,10 @@ private:
     CJsonNode m_ErrNode;
     CJsonNode m_WarnNode;
 
-    static NAutomation::CCommand HelpCommand();
-    static NAutomation::TCommands Commands();
-    static NAutomation::TCommands CallCommands();
-    static NAutomation::TCommands NewCommands();
+    static CCommand HelpCommand();
+    static TCommands Commands();
+    static TCommands CallCommands();
+    static TCommands NewCommands();
 };
 
 inline TObjectID CAutomationProc::AddObject(TAutomationObjectRef new_object)

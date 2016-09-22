@@ -70,9 +70,9 @@ SNetScheduleServerAutomationObject::SNetScheduleServerAutomationObject(
     }
 }
 
-NAutomation::CCommand SNetScheduleServiceAutomationObject::NewCommand()
+CCommand SNetScheduleServiceAutomationObject::NewCommand()
 {
-    return NAutomation::CCommand(kName, {
+    return CCommand(kName, {
             { "service_name", "", },
             { "queue_name", "", },
             { "client_name", "", },
@@ -95,9 +95,9 @@ CAutomationObject* SNetScheduleServiceAutomationObject::Create(
             CNetService::eLoadBalancedService);
 }
 
-NAutomation::CCommand SNetScheduleServerAutomationObject::NewCommand()
+CCommand SNetScheduleServerAutomationObject::NewCommand()
 {
-    return NAutomation::CCommand(kName, {
+    return CCommand(kName, {
             { "service_name", "", },
             { "queue_name", "", },
             { "client_name", "", },
@@ -146,14 +146,14 @@ static void ExtractVectorOfStrings(CArgArray& arg_array,
             result.push_back(arg_array.GetString(*it));
 }
 
-NAutomation::CCommand SNetScheduleServerAutomationObject::CallCommand()
+CCommand SNetScheduleServerAutomationObject::CallCommand()
 {
-    return NAutomation::CCommand(kName, CallCommands);
+    return CCommand(kName, CallCommands);
 }
 
-NAutomation::TCommands SNetScheduleServerAutomationObject::CallCommands()
+TCommands SNetScheduleServerAutomationObject::CallCommands()
 {
-    NAutomation::TCommands cmds =
+    TCommands cmds =
     {
         { "server_status", {
                 { "verbose", false, },
@@ -176,7 +176,7 @@ NAutomation::TCommands SNetScheduleServerAutomationObject::CallCommands()
             }},
     };
 
-    NAutomation::TCommands base_cmds = TBase::CallCommands();
+    TCommands base_cmds = TBase::CallCommands();
     cmds.insert(cmds.end(), base_cmds.begin(), base_cmds.end());
 
     return cmds;
@@ -220,14 +220,14 @@ void SNetScheduleServiceAutomationObject::CEventHandler::OnWarning(
             ReturnNetScheduleServerObject(m_NetScheduleAPI, server));
 }
 
-NAutomation::CCommand SNetScheduleServiceAutomationObject::CallCommand()
+CCommand SNetScheduleServiceAutomationObject::CallCommand()
 {
-    return NAutomation::CCommand(kName, CallCommands);
+    return CCommand(kName, CallCommands);
 }
 
-NAutomation::TCommands SNetScheduleServiceAutomationObject::CallCommands()
+TCommands SNetScheduleServiceAutomationObject::CallCommands()
 {
-    NAutomation::TCommands cmds =
+    TCommands cmds =
     {
         { "set_client_type", {
                 { "client_type", 0, },
@@ -262,7 +262,7 @@ NAutomation::TCommands SNetScheduleServiceAutomationObject::CallCommands()
         { "get_servers", },
     };
 
-    NAutomation::TCommands base_cmds = TBase::CallCommands();
+    TCommands base_cmds = TBase::CallCommands();
     cmds.insert(cmds.end(), base_cmds.begin(), base_cmds.end());
 
     return cmds;

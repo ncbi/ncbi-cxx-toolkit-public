@@ -67,9 +67,9 @@ struct SNetScheduleServiceAutomationObject : public SNetServiceAutomationObject
     virtual bool Call(const string& method,
             CArgArray& arg_array, CJsonNode& reply);
 
-    static NAutomation::CCommand CallCommand();
-    static NAutomation::TCommands CallCommands();
-    static NAutomation::CCommand NewCommand();
+    static CCommand CallCommand();
+    static TCommands CallCommands();
+    static CCommand NewCommand();
     static CAutomationObject* Create(CArgArray& arg_array,
             const string& class_name, CAutomationProc* automation_proc);
 
@@ -98,9 +98,9 @@ struct SNetScheduleServerAutomationObject :
     virtual bool Call(const string& method,
             CArgArray& arg_array, CJsonNode& reply);
 
-    static NAutomation::CCommand CallCommand();
-    static NAutomation::TCommands CallCommands();
-    static NAutomation::CCommand NewCommand();
+    static CCommand CallCommand();
+    static TCommands CallCommands();
+    static CCommand NewCommand();
     static CAutomationObject* Create(CArgArray& arg_array,
             const string& class_name, CAutomationProc* automation_proc);
 

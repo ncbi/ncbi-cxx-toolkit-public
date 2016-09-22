@@ -55,9 +55,9 @@ SWorkerNodeAutomationObject::SWorkerNodeAutomationObject(
     }
 }
 
-NAutomation::CCommand SWorkerNodeAutomationObject::NewCommand()
+CCommand SWorkerNodeAutomationObject::NewCommand()
 {
-    return NAutomation::CCommand(kName, {
+    return CCommand(kName, {
             { "wn_address", CJsonNode::eString, },
             { "client_name", "", },
         });
@@ -82,14 +82,14 @@ const void* SWorkerNodeAutomationObject::GetImplPtr() const
     return m_NetScheduleAPI;
 }
 
-NAutomation::CCommand SWorkerNodeAutomationObject::CallCommand()
+CCommand SWorkerNodeAutomationObject::CallCommand()
 {
-    return NAutomation::CCommand(kName, CallCommands);
+    return CCommand(kName, CallCommands);
 }
 
-NAutomation::TCommands SWorkerNodeAutomationObject::CallCommands()
+TCommands SWorkerNodeAutomationObject::CallCommands()
 {
-    NAutomation::TCommands cmds =
+    TCommands cmds =
     {
         { "version", },
         { "wn_info", },
@@ -103,7 +103,7 @@ NAutomation::TCommands SWorkerNodeAutomationObject::CallCommands()
             }},
     };
 
-    NAutomation::TCommands base_cmds = TBase::CallCommands();
+    TCommands base_cmds = TBase::CallCommands();
     cmds.insert(cmds.end(), base_cmds.begin(), base_cmds.end());
 
     return cmds;

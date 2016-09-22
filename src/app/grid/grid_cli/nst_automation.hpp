@@ -70,9 +70,9 @@ struct SNetStorageServiceAutomationObject : public SNetServiceBaseAutomationObje
     virtual bool Call(const string& method,
             CArgArray& arg_array, CJsonNode& reply);
 
-    static NAutomation::CCommand CallCommand();
-    static NAutomation::TCommands CallCommands();
-    static NAutomation::CCommand NewCommand() { return NewCommand(kName); }
+    static CCommand CallCommand();
+    static TCommands CallCommands();
+    static CCommand NewCommand() { return NewCommand(kName); }
     static CAutomationObject* Create(CArgArray& arg_array,
             const string& class_name, CAutomationProc* automation_proc);
 
@@ -82,7 +82,7 @@ protected:
     SNetStorageServiceAutomationObject(CAutomationProc* automation_proc,
             CNetStorageAdmin nst_api, CNetService::EServiceType type);
 
-    static NAutomation::CCommand NewCommand(const string& name);
+    static CCommand NewCommand(const string& name);
 
 private:
     static const string kName;
@@ -102,9 +102,9 @@ struct SNetStorageServerAutomationObject : public SNetStorageServiceAutomationOb
     virtual bool Call(const string& method,
             CArgArray& arg_array, CJsonNode& reply);
 
-    static NAutomation::CCommand CallCommand();
-    static NAutomation::TCommands CallCommands();
-    static NAutomation::CCommand NewCommand() { return TBase::NewCommand(kName); }
+    static CCommand CallCommand();
+    static TCommands CallCommands();
+    static CCommand NewCommand() { return TBase::NewCommand(kName); }
     static CAutomationObject* Create(CArgArray& arg_array,
             const string& class_name, CAutomationProc* automation_proc);
 
@@ -125,8 +125,8 @@ struct SNetStorageObjectAutomationObject : public CAutomationObject
     virtual bool Call(const string& method,
             CArgArray& arg_array, CJsonNode& reply) override;
 
-    static NAutomation::CCommand CallCommand();
-    static NAutomation::TCommands CallCommands();
+    static CCommand CallCommand();
+    static TCommands CallCommands();
 
 private:
     CNetStorageObject m_Object;
