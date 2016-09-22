@@ -42,6 +42,8 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+#define GT( a, b ) CFeatListItem( CSeqFeatData::a, CSeqFeatData::b, "", "" )
+
 //  --------------------------------------------------------------------------
 CSafeStatic<TLookupSofaToGenbank> CGff3SofaTypes::m_Lookup;
 //  --------------------------------------------------------------------------
@@ -68,6 +70,8 @@ CGff3SofaTypes::CGff3SofaTypes()
     for (SOFAITER cit = entries.begin(); cit != entries.end(); ++cit) {
         lookup[cit->second.m_name] = cit->first;
     }
+    //overrides:
+    lookup["primary_transcript"] = GT(e_Imp, eSubtype_preRNA);
 };
 
 //  --------------------------------------------------------------------------
@@ -100,6 +104,8 @@ CFeatListItem CGff3SofaTypes::MapSofaTermToFeatListItem(
     }
     return cit->second;
 }
+
+#undef GT
 
 END_objects_SCOPE
 END_NCBI_SCOPE
