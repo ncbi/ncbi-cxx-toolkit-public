@@ -31,6 +31,8 @@
 
 #include <ncbi_pch.hpp>
 
+#include <sstream>
+
 #include "nc_automation.hpp"
 #include "ns_automation.hpp"
 #include "wn_automation.hpp"
@@ -686,7 +688,10 @@ int CGridCommandLineInterfaceApp::Automation_PipeServer()
                     }
                 }
                 catch (CException& e) {
-                    proc.SendError(e.GetMsg());
+                    ostringstream os;
+                    os << e.GetMsg() << ": ";
+                    e.ReportExtra(os);
+                    proc.SendError(os.str());
                 }
 
                 json_reader.Reset();
@@ -730,7 +735,10 @@ int CGridCommandLineInterfaceApp::Automation_DebugConsole()
                 dumper_and_sender.SendMessage(reply);
             }
             catch (CException& e) {
-                proc.SendError(e.GetMsg());
+                ostringstream os;
+                os << e.GetMsg() << ": ";
+                e.ReportExtra(os);
+                proc.SendError(os.str());
             }
         }
         catch (CStringException& e) {

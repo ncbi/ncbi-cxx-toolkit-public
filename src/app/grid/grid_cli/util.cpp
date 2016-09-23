@@ -98,7 +98,7 @@ private:
 
 CJsonNode CExecAndParseStructuredOutput::ExecOn(CNetServer server)
 {
-    return CJsonNode::ParseObject(server.ExecWithRetry(m_Cmd, false).response);
+    return CJsonNode::ParseJSON(server.ExecWithRetry(m_Cmd, false).response);
 }
 
 CJsonNode g_ExecStructuredNetScheduleCmdToJson(CNetScheduleAPI ns_api,
