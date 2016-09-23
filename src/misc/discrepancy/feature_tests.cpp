@@ -621,7 +621,7 @@ DISCREPANCY_CASE(PARTIAL_PROBLEMS, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller | eSub
         if (start > 0) {
             TSeqPos extend_len = 0;
             if (IsExtendableLeft(start, *seq, &(context.GetScope()), extend_len)) {
-                add_this = true;
+                add_this = extend_len > 3;
             }
         }
     }
@@ -630,7 +630,7 @@ DISCREPANCY_CASE(PARTIAL_PROBLEMS, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller | eSub
         if (stop < seq->GetLength() - 1) {
             TSeqPos extend_len = 0;
             if (IsExtendableRight(stop, *seq, &(context.GetScope()), extend_len)) {
-                add_this = true;
+                add_this = extend_len > 3;
             }
         }
     }
