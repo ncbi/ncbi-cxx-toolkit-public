@@ -6982,6 +6982,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UTD	s	University of Texas, Plant Resources Center",
 "UTE	s	University of Tartu",
 "UTEP	s	University of Texas at El Paso, Centennial Museum",
+"UTEP:Herp	s	University of Texas at El Paso, Centennial Museum, Herpetology Collection",
 "UTEX	c	The Culture Collection of Algae at the University of Texas Austin",
 "UTG	s	University of Tuebingen",
 "UTGD	s	Geology Department, The University of Tasmania",
