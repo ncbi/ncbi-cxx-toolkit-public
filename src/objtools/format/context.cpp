@@ -925,6 +925,8 @@ bool CBioseqContext::x_IsDeltaLitOnly(void) const
         if ( ext.IsDelta() ) {
             ITERATE (CDelta_ext::Tdata, it, ext.GetDelta().Get()) {
                 if ( (*it)->IsLoc() ) {
+                    const CSeq_loc& loc = (*it)->GetLoc();
+                    if (loc.IsNull()) continue;
                     return false;
                 }
             }
