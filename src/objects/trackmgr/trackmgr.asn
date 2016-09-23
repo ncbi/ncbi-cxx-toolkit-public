@@ -93,6 +93,16 @@ TMgr-DisplayTrackReply ::= SEQUENCE {
 
 TMgr-DTrackId ::= Dbtag
 
+TMgr-SeqTrackIdRequest ::= SEQUENCE {
+    seq-accession VisibleString
+}
+
+TMgr-SeqTrackIdReply ::= SEQUENCE {
+    status TMgr-Status,
+    messages SET OF TMgr-Message OPTIONAL,
+    dtrack-id TMgr-DTrackId OPTIONAL
+}
+
 TMgr-SwitchTrackContextRequest ::= SEQUENCE {
     client TMgr-ClientInfo,
     new-genome-context TMgr-GenomeContext,
