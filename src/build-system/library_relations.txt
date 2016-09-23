@@ -28,9 +28,6 @@ GLEW needs3party $(ORIG_LIBS)
 GLU needs3party $(ORIG_LIBS)
 GLU needs3party X11
 GLU needs3party Xext
-GMC needs $(CONNEXT)
-GMC needs softparse
-GMC needs xgridcgi
 OSMesa needs3party $(OPENGL_LIBS)
 OSMesa needs3party $(ORIG_LIBS)
 VDBUtils needs bdbasncli
@@ -942,9 +939,9 @@ softparse needs $(COMPRESS_LIBS)
 softparse needs affy
 softparse needs taxon1
 softparse needs xmlwrapp
-spcgi needs $(CONNEXT)
 spcgi needs softparse
-spcgi needs xgridcgi
+spcgi needs xcgi
+spcgi needs xhtml
 spellsrvbase needs txserv
 splitdbasn_g needs gendefasn_g
 splitdbasn_g needs3party ncbiobj
