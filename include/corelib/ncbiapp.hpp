@@ -569,7 +569,7 @@ private:
     void x_ReadLogOptions();
 
     /// Log environment, registry, command arguments, path
-    void x_LogOptions(short int);
+    void x_LogOptions(int event);
     
     /// Setup C++ standard I/O streams' behaviour.
     ///
