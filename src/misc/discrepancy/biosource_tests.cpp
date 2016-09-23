@@ -1635,10 +1635,20 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_BIOSOURCE)
             subtype += " (" + diff_str + ")";
         }
 
+        size_t subcat_index = 0;
+        static size_t MAX_NUM_LEN = 10;
+
         ITERATE (TItemsByBioSource, item, items) {
+
+            string subcat_num = NStr::SizetToString(subcat_index);
+            subcat_num = string(MAX_NUM_LEN - subcat_num.size(), '0') + subcat_num;
+
+            string subcat = "[*" + subcat_num + "*][n/2] contig[s] [has] identical sources that do not match another contig source";
+            ++subcat_index;
+
             ITERATE (list<TBioseqSeqdesc>, bioseq_desc, item->second) {
-                m_Objs[subtype].Add(*context.NewDiscObj(CConstRef<CSeqdesc>(bioseq_desc->second)), false);
-                m_Objs[subtype].Add(*context.NewDiscObj(CConstRef<CBioseq>(bioseq_desc->first)), false);
+                m_Objs[subtype][subcat].Add(*context.NewDiscObj(CConstRef<CSeqdesc>(bioseq_desc->second)), false).Ext();
+                m_Objs[subtype][subcat].Add(*context.NewDiscObj(CConstRef<CBioseq>(bioseq_desc->first)), false).Ext();
             }
         }
 
