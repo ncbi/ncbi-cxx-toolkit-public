@@ -300,6 +300,8 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgGLFocusV;
 NCBI_BLASTINPUT_EXPORT extern const string kArgExtendAlign;
 ///Argument to specify minimal required V length
 NCBI_BLASTINPUT_EXPORT extern const string kArgMinVLength;
+///Argument to specify minimal required J gene length
+NCBI_BLASTINPUT_EXPORT extern const string kArgMinJLength;
 ///Argument to specify number of clonotype to show
 NCBI_BLASTINPUT_EXPORT extern const string kArgNumClonotype;
 ///Argument to specify number of clonotype file

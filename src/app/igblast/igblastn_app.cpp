@@ -370,9 +370,11 @@ int CIgBlastnApp::Run(void)
         stable_sort(map_vec.begin(), map_vec.end(), x_SortByCount);
         
         int total_elements = 0;
+        int total_unique_clones = 0;
         ITERATE(MapVec, iter, map_vec) {
             ITERATE(AaMap, iter2, *((*iter)->second)){
                 total_elements += iter2->second->count;
+                total_unique_clones ++;
             }
         }
 
@@ -383,8 +385,10 @@ int CIgBlastnApp::Run(void)
         } else {
             outfile = &m_CmdLineArgs->GetOutputStream();
         }
-        *outfile << "\nTotal queries = " << total_input << ", queries with identifiable CDR3 = " <<  total_elements << endl << endl;
-        
+        *outfile << "\nTotal queries = " << total_input << endl;
+        *outfile << "Total identifiable CDR3 = " << total_elements << endl;
+        *outfile << "Total unique clonotypes = " << total_unique_clones << endl;
+        *outfile << endl;
         
         if (!(ig_opts->m_IsProtein) && total_elements > 1) {
             *outfile << "\n" << "#Clonotype summary.  A particular clonotype includes any V(D)J rearrangements that have the same germline V(D)J gene segments, the same productive/non-productive status and the same CDR3 nucleotide as well as amino sequence (Those having the same CDR3 nucleotide but different amino acid sequence or productive/non-productive status due to frameshift in V or J gene are assigned to a different clonotype.  However, their clonotype identifers share the same prefix, for example, 6a, 6b).  Fields (tab-delimited) are clonotype identifier, representative query sequence name, count, frequency (%), CDR3 nucleotide sequence, CDR3 amino acid sequence, productive status, chain type, V gene, D gene, J gene\n" << endl;

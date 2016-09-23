@@ -79,6 +79,7 @@ public:
     bool m_Translate;                // should translation be displayed
     bool m_ExtendAlign;
     int m_MinVLength;
+    int m_MinJLength;
 };
 
 class CIgAnnotation : public CObject
@@ -330,7 +331,7 @@ private:
 
     
     /// Append annotation info to the final results
-    static void s_SetAnnotation(vector<CRef <CIgAnnotation> > &annot,
+    void x_SetAnnotation(vector<CRef <CIgAnnotation> > &annot,
                                 CRef<CSearchResultSet> &final_results);
 
     void x_FindDJ(CRef<CSearchResultSet>& results_D,
@@ -354,7 +355,7 @@ private:
                      bool va_or_vd_as_heavy_chain);
 
     void x_ExtendAlign(CRef<CSearchResultSet> & results);
-    void x_ScreenV(CRef<CSearchResultSet> & results);
+    void x_ScreenByAlignLength(CRef<CSearchResultSet> & results, int length);
     void x_FillJDomain(CRef<CSeq_align> & align, CRef <CIgAnnotation> & annot);
     
 };

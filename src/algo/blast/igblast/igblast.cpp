@@ -129,13 +129,13 @@ CIgAnnotationInfo::CIgAnnotationInfo(CConstRef<CIgBlastOptions> &ig_opt)
     }
 };
 
-void CIgBlast::x_ScreenV(CRef<CSearchResultSet> & results){
+void CIgBlast::x_ScreenByAlignLength(CRef<CSearchResultSet> & results, int length){
     NON_CONST_ITERATE(CSearchResultSet, result, *results) {
         if ((*result)->HasAlignments()) {
             CSeq_align_set::Tdata & align_list = (*result)->SetSeqAlign()->Set();
             CSeq_align_set::Tdata::iterator it = align_list.begin();
             while (it != align_list.end()) {
-                if((*it)->GetAlignLength() - (*it)->GetTotalGapCount(0) < m_IgOptions->m_MinVLength){
+                if((*it)->GetAlignLength() - (*it)->GetTotalGapCount(0) < length){
                     it = align_list.erase(it);
                 } else {
                     ++it;
@@ -250,7 +250,7 @@ CIgBlast::Run()
         if (m_IgOptions->m_ExtendAlign){
             x_ExtendAlign(results[0]);
         }
-        x_ScreenV(results[0]);
+        x_ScreenByAlignLength(results[0], m_IgOptions->m_MinVLength);
         x_ConvertResultType(results[0]);
         s_SortResultsByEvalue(results[0]);
         x_AnnotateV(results[0], annots);
@@ -265,7 +265,7 @@ CIgBlast::Run()
         if (m_IgOptions->m_ExtendAlign){
             x_ExtendAlign(results[3]);
         }
-        x_ScreenV(results[3]);
+        x_ScreenByAlignLength(results[3], m_IgOptions->m_MinVLength);
         s_SortResultsByEvalue(results[3]);
         x_AnnotateDomain(results[0], results[3], annots);
     }
@@ -283,6 +283,9 @@ CIgBlast::Run()
             try {
                 blast.SetNumberOfThreads(m_NumThreads);
                 results[gene] = blast.Run();
+                if (gene == 2){
+                    x_ScreenByAlignLength(results[gene], m_IgOptions->m_MinJLength);
+                }
                 x_ConvertResultType(results[gene]);
             } catch(...) {
                 num_genes = 1;
@@ -334,7 +337,7 @@ CIgBlast::Run()
     x_SetChainType(final_results, annots);
 
     /*** attach annotation info back to the results */
-    s_SetAnnotation(annots, final_results);
+    x_SetAnnotation(annots, final_results);
 
     return final_results;
 };
@@ -543,7 +546,14 @@ static bool s_CompareSeqAlignByEvalue(const CRef<CSeq_align> &x,
     int dx, dy;
     dx = x->GetAlignLength();
     dy = y->GetAlignLength();
-    return (ix*dy >= iy*dx);
+    if (ix*dy != iy*dx) {
+        return (ix*dy >= iy*dx);
+    }
+    string x_id = NcbiEmptyString;
+    string y_id = NcbiEmptyString;
+    x->GetSeq_id(1).GetLabel(&x_id, CSeq_id::eContent);
+    y->GetSeq_id(1).GetLabel(&y_id, CSeq_id::eContent);
+    return (x_id < y_id);
 };
 
 // Compare two seqaligns according to their evalue and coverage
@@ -557,6 +567,29 @@ static bool s_CompareSeqAlignByScore(const CRef<CSeq_align> &x, const CRef<CSeq_
     y->GetNamedScore(CSeq_align::eScore_IdentityCount, sy);
     return (sx <= sy);
 };
+
+// Compare two seqaligns according to their evalue and coverage and name 
+//compare name since blast does not guarantee order of same score hits
+static bool s_CompareSeqAlignByScoreAndName(const CRef<CSeq_align> &x, const CRef<CSeq_align> &y)
+{
+    int sx, sy;
+    x->GetNamedScore(CSeq_align::eScore_Score, sx);
+    y->GetNamedScore(CSeq_align::eScore_Score, sy);
+    if (sx != sy) return (sx > sy);
+    x->GetNamedScore(CSeq_align::eScore_IdentityCount, sx);
+    y->GetNamedScore(CSeq_align::eScore_IdentityCount, sy);
+    if (sx != sy) {
+        return (sx <= sy);
+    }
+    
+    string x_id = NcbiEmptyString;
+    string y_id = NcbiEmptyString;
+    x->GetSeq_id(1).GetLabel(&x_id, CSeq_id::eContent);
+    y->GetSeq_id(1).GetLabel(&y_id, CSeq_id::eContent);
+    return (x_id < y_id);
+    
+};
+
 
 // Test if D and J annotation not compatible
 static bool s_DJNotCompatible(const CSeq_align &d, const CSeq_align &j, bool ms, int margin)
@@ -712,7 +745,7 @@ void CIgBlast::x_FindDJAln(CRef<CSeq_align_set>& align_D,
                 else ++it;
             }
             /* sort according to score */
-            align_list.sort(s_CompareSeqAlignByScore);
+            align_list.sort(s_CompareSeqAlignByScoreAndName);
         }
 
         /* preprocess J */
@@ -761,7 +794,7 @@ void CIgBlast::x_FindDJAln(CRef<CSeq_align_set>& align_D,
                 else ++it;
             }
             /* sort according to score */
-            align_list.sort(s_CompareSeqAlignByScore);
+            align_list.sort(s_CompareSeqAlignByScoreAndName);
         }
 
         /* which one to keep, D or J? */
@@ -1338,15 +1371,20 @@ void CIgBlast::s_AppendResults(CRef<CSearchResultSet> &results,
     }
 };
 
-void CIgBlast::s_SetAnnotation(vector<CRef <CIgAnnotation> > &annots,
+void CIgBlast::x_SetAnnotation(vector<CRef <CIgAnnotation> > &annots,
                                CRef<CSearchResultSet> &final_results)
 {
     int iq = 0;
-    ITERATE(CSearchResultSet, result, *final_results) {
+    NON_CONST_ITERATE(CSearchResultSet, result, *final_results) {
         CIgBlastResults *ig_result = dynamic_cast<CIgBlastResults *>
-                                     (const_cast<CSearchResults *>(&**result));
+            (const_cast<CSearchResults *>(&**result));
         CIgAnnotation *annot = &*(annots[iq++]);
         ig_result->SetIgAnnotation().Reset(annot);
+        if (annot->m_GeneInfo[4] < 0 && m_IgOptions->m_MinJLength > 0) { //no J
+            if ((*result)->HasAlignments()){
+                (*result)->SetSeqAlign()->Set().clear();
+            }
+        } 
     }
 };
 

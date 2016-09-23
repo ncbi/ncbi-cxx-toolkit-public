@@ -1490,6 +1490,9 @@ CBlastFormat::PrintOneResultSet(blast::CIgBlastResults& results,
 void 
 CBlastFormat::x_ReverseQuery(blast::CIgBlastResults& results)
 {
+    if (!results.HasAlignments()){
+        return;
+    }
     // create a temporary seq_id
     CConstRef<CSeq_id> qid = results.GetSeqId();
     string new_id = qid->AsFastaString() + "_reversed";
