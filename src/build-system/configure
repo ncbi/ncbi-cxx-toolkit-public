@@ -4265,6 +4265,13 @@ echo "$as_me: error: incompatible options: --without-xslt but --with-gbench" >&2
       else
          : ${with_xslt:=yes}
       fi
+     if test "$with_gnutls" = "no"; then
+         { { echo "$as_me:$LINENO: error: incompatible options: --without-gnutls but --with-gbench" >&5
+echo "$as_me: error: incompatible options: --without-gnutls but --with-gbench" >&2;}
+   { (exit 1); exit 1; }; }
+      else
+         : ${with_gnutls:=yes}
+      fi
 
    : ${with_projects=scripts/projects/ncbi_gbench.lst}
 elif test "$with_jni" = "yes" ; then
@@ -46537,6 +46544,14 @@ if test "$with_gbench" != "no"  -a  -d "$real_srcdir/src/app/gbench"; then
    fi
    if test "$ncbi_cv_lib_boost_spirit" != "yes"; then
      reason=Boost.Spirit
+     sep=", "
+   fi
+   if test "$with_libxslt" = "no"; then
+     reason="$reason${sep}libxslt"
+     sep=", "
+   fi
+   if test "$with_gnutls" = "no"; then
+     reason="$reason${sep}GNUTLS"
      sep=", "
    fi
    if test "$with_mt" = "no"; then

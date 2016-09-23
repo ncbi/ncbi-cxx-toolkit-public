@@ -662,7 +662,7 @@ AC_DIVERT_POP
 
 
 if test "$with_gbench" = "yes" ; then
-   m4_foreach(OPT, [dll,mt,gui,exe,serial,objects,algo,glew_mx,wxwidgets,ftgl,sqlite3,bdb,boost,xslt],
+   m4_foreach(OPT, [dll,mt,gui,exe,serial,objects,algo,glew_mx,wxwidgets,ftgl,sqlite3,bdb,boost,xslt,gnutls],
      [if test "$[with_]OPT" = "no"; then
          AC_MSG_ERROR([incompatible options: --without-]OPT[ but --with-gbench])
       else
@@ -7740,6 +7740,14 @@ if test "$with_gbench" != "no"  -a  -d "$real_srcdir/src/app/gbench"; then
    fi
    if test "$ncbi_cv_lib_boost_spirit" != "yes"; then
      reason=Boost.Spirit
+     sep=", "
+   fi
+   if test "$with_libxslt" = "no"; then
+     reason="$reason${sep}libxslt"
+     sep=", "
+   fi
+   if test "$with_gnutls" = "no"; then
+     reason="$reason${sep}GNUTLS"
      sep=", "
    fi
    if test "$with_mt" = "no"; then
