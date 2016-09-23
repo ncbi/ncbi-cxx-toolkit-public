@@ -54,10 +54,6 @@ class CSNPBlobId : public CBlobId
 public:
     explicit
     CSNPBlobId(const CTempString& str);
-    /*
-    CSNPBlobId(const CSNPFileInfo& file,
-               const CSeq_id_Handle& seq_id);
-    */
     CSNPBlobId(const CSNPFileInfo& file,
                const CSeq_id_Handle& seq_id,
                size_t filter_index);
@@ -206,12 +202,6 @@ public:
             return m_AnnotName;
         }
     string GetSNPAnnotName(size_t filter_index) const;
-    /*
-    size_t GetDefaultFilterIndex(void) const
-        {
-            return m_DefaultFilterIndex;
-        }
-    */
 
     CRef<CSNPBlobId> GetAnnotBlobId(const CSeq_id_Handle& id) const;
 
@@ -255,7 +245,6 @@ protected:
     string m_AnnotName; // OM annot name (without filter index)
     mutable CMutex m_SNPMutex;
     CSNPDb m_SNPDb;
-    //size_t m_DefaultFilterIndex;
     TSeqById m_SeqById;
     TSeqByIdx m_SeqByIdx;
 };

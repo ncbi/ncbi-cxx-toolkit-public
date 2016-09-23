@@ -168,18 +168,6 @@ CSNPBlobId::CSNPBlobId(const CTempString& str)
     FromString(str);
 }
 
-/*
-CSNPBlobId::CSNPBlobId(const CSNPFileInfo& file,
-                       const CSeq_id_Handle& seq_id)
-    : m_Sat(0),
-      m_SubSat(0),
-      m_SatKey(0),
-      m_File(file.GetFileName()),
-      m_SeqId(seq_id)
-{
-    SetSeqAndFilterIndex(0, file.GetDefaultFilterIndex());
-}
-*/
 
 CSNPBlobId::CSNPBlobId(const CSNPFileInfo& file,
                        const CSeq_id_Handle& seq_id,
@@ -660,15 +648,6 @@ CSNPDataLoader_Impl::GetOrphanAnnotRecords(CDataSource* ds,
                                            const SAnnotSelector* sel)
 {
     CDataLoader::TTSE_LockSet locks;
-    /*
-    // explicitly specified files
-    for ( auto f : m_FixedFiles ) {
-        if ( auto s = f.second->GetSeqInfo(id, 0 TODO) ) {
-            CRef<CSNPBlobId> blob_id = s->GetBlobId();
-            locks.insert(GetBlobById(ds, *blob_id));
-        }
-    }
-    */
     // implicitly load NA accessions
     if ( sel && sel->IsIncludedAnyNamedAnnotAccession() ) {
         const SAnnotSelector::TNamedAnnotAccessions& accs =
