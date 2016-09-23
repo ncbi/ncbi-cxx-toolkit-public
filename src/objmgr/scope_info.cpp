@@ -1454,6 +1454,7 @@ void CTSE_ScopeInfo::RemoveLastInfoLock(CScopeInfo_Base& info)
         // already unlocked
         return;
     }
+    CRef<CScope_Impl> scope;
     CRef<CTSE_ScopeInfo> self;
     CUnlockedTSEsGuard guard;
     {{
@@ -1462,6 +1463,7 @@ void CTSE_ScopeInfo::RemoveLastInfoLock(CScopeInfo_Base& info)
             // already locked again
             return;
         }
+        scope = m_DS_Info->m_Scope; // to prevent premature deletion of scope
         self = this; // to prevent deletion of this while mutex is locked.
         info.m_TSE_Handle.Reset();
     }}
