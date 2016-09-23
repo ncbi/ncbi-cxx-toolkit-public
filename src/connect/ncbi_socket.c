@@ -133,12 +133,17 @@
 
 #ifdef NCBI_MONKEY
 /* A hack - we know that SOCK variable has name "sock" in code.
- * If the desired behavior is timeout, "sock" will be replaced with a
- * connection to non-working server */
-#   define send(a,b,c,d)  ((g_MONKEY_Send == NULL)    ? send(a,b,c,d)  : g_MONKEY_Send(a,b,c,d,&sock))
-#   define recv(a,b,c,d)  ((g_MONKEY_Recv == NULL)    ? recv(a,b,c,d)  : g_MONKEY_Recv(a,b,c,d,&sock))
-#   define connect(a,b,c) ((g_MONKEY_Connect == NULL) ? connect(a,b,c) : g_MONKEY_Connect(a,b,c))
-#endif
+   If the desired behavior is timeout, "sock" will be replaced with a
+   connection to non-working server */
+#  define send(a,b,c,d)                                                 \
+    (g_MONKEY_Send    ? g_MONKEY_Send(a,b,c,d,&sock) : send(a,b,c,d))
+#  define recv(a,b,c,d)                                                 \
+    (g_MONKEY_Recv    ? g_MONKEY_Recv(a,b,c,d,&sock) : recv(a,b,c,d))
+#  define connect(a,b,c)                                                \
+    (g_MONKEY_Connect ? g_MONKEY_Connect(a,b,c)      : connect(a,b,c))
+#endif /*NCBI_MONKEY*/
+
+
 /******************************************************************************
  *  TYPEDEFS & MACROS
  */
@@ -3947,13 +3952,16 @@ static EIO_Status s_Close_(SOCK sock, int abort)
 
 static EIO_Status s_Close(SOCK sock)
 {
-#if defined NCBI_MONKEY
-    /* Not interception of close(). 
+    EIO_Status status;
+
+#ifdef NCBI_MONKEY
+    /* Not interception of close().
        We only tell Monkey to "forget" this socket */
-    if (g_MONKEY_Close != NULL)
+    if (g_MONKEY_Close)
         g_MONKEY_Close(sock->sock);
-#endif /* NCBI_MONKEY */
-    EIO_Status status = s_Close_(sock, 0/*orderly*/);
+#endif /*NCBI_MONKEY*/
+
+    status = s_Close_(sock, 0/*orderly*/);
     if (s_ErrHook  &&  status != eIO_Success) {
         SSOCK_ErrInfo info;
         memset(&info, 0, sizeof(info));
@@ -3973,8 +3981,8 @@ static EIO_Status s_Close(SOCK sock)
         info.status = status;
         s_ErrorCallback(&info);        
     }
-    return status;
 
+    return status;
 }
 
 
@@ -4095,12 +4103,13 @@ static EIO_Status s_Connect_(SOCK            sock,
     sock->eof      = 0/*false*/;
     sock->w_status = eIO_Success;
     assert(sock->w_len == 0);
+
 #ifdef NCBI_MONKEY
     /* Bind created x_sock to the sock in Chaos Monkey, this information is 
-     * important to keep rules working */
-    if (g_MONKEY_SockHasSocket != 0)
+       important to keep rules working */
+    if (g_MONKEY_SockHasSocket)
         g_MONKEY_SockHasSocket(sock, x_sock);
-#endif /* NCBI_MONKEY */
+#endif /*NCBI_MONKEY*/
 
 #ifdef NCBI_OS_MSWIN
     assert(!sock->event);
@@ -6502,22 +6511,23 @@ extern EIO_Status SOCK_Poll(size_t          n,
                             size_t*         n_ready)
 {
     EIO_Status status;
-#if defined NCBI_MONKEY
+    struct timeval tv;
+    size_t         i;
+
+#ifdef NCBI_MONKEY
     int/*bool*/ call_intercepted = 0;
-    size_t      orig_n = n;
     SSOCK_Poll* orig_polls = polls; /* to know if 'polls' was replaced */
     EIO_Status  mnk_status = -1;
-    if (g_MONKEY_Poll != NULL) {
+    size_t      orig_n = n;
+    if (g_MONKEY_Poll) {
         /* Not a poll function itself, just removes some of "polls" items */
         call_intercepted = g_MONKEY_Poll(&n, &polls, &mnk_status);
     }
-    /* Even if call was intercepted, s_Select continues as if nothing
-    happened, because what we did is just removed some SSOCK_Poll pointers.
-    The changes made in s_Select will appear in the original array, but only
-    for those SSOCK_Poll's that were left by Monkey */
-#endif /* defined NCBI_MONKEY */
-    struct timeval tv;
-    size_t         i;
+    /* Even if call was intercepted, s_Select() continues as if nothing
+       happened, because what we did was just removed some SSOCK_Poll pointers.
+       The changes made in s_Select() will appear in the original array, but
+       only for those SSOCK_Poll's that were left by Monkey */
+#endif /*NCBI_MONKEY*/
 
     if (n  &&  !polls) {
         if (n_ready)
@@ -6548,22 +6558,22 @@ extern EIO_Status SOCK_Poll(size_t          n,
     }
 
     status = s_SelectStallsafe(n, polls, s_to2tv(timeout, &tv), n_ready);
-#if defined NCBI_MONKEY
-    /* Copy poll results to the original array. Probably Monkey excluded 
-     * some sockets from array, so we need two iterators */
+
+#ifdef NCBI_MONKEY
+    /* Copy poll results to the original array.  Probably Monkey excluded some
+       sockets from array, so we need two iterators */
     if (orig_polls != polls) {
         size_t orig_iter, new_iter;
-        /* First - initialize events with eIO_Open (no event) */
         for (orig_iter = 0;  orig_iter < orig_n;  orig_iter++) {
-            orig_polls[orig_iter].event = eIO_Open /* no event */;
-            orig_polls[orig_iter].revent = eIO_Open /* no event */;
+            orig_polls[orig_iter].event  = eIO_Open/*no event*/;
+            orig_polls[orig_iter].revent = eIO_Open/*no event*/;
         }
         for (new_iter = 0;  new_iter < n;  new_iter++) {
             for (orig_iter = 0;  orig_iter < orig_n;  orig_iter++) {
-                if (orig_polls[orig_iter].sock->sock 
-                                           == polls[new_iter].sock->sock) {
-                    orig_polls[orig_iter]  = polls[new_iter];
-                    break; /* Item found! Now increase new_iter */
+                if (orig_polls[orig_iter].sock->sock
+                    == polls[new_iter].sock->sock) {
+                    orig_polls[orig_iter] = polls[new_iter];
+                    break;
                 }
             }
         }
@@ -6573,7 +6583,8 @@ extern EIO_Status SOCK_Poll(size_t          n,
             return mnk_status;
         }
     }
-#endif /* defined NCBI_MONKEY */
+#endif /*NCBI_MONKEY*/
+
     return status;
 }
 
