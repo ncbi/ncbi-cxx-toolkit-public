@@ -39,6 +39,7 @@
 #include "nst_automation.hpp"
 
 #include <connect/ncbi_pipe.hpp>
+#include <connect/services/grid_app_version_info.hpp>
 
 #ifdef WIN32
 #include <io.h>
@@ -402,6 +403,7 @@ TCommands CAutomationProc::Commands()
                 { "some_id", CJsonNode::eString, },
             }},
         { "echo", "any" },
+        { "version", },
     };
 
     return cmds;
@@ -471,6 +473,9 @@ CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)
         CJsonNode echo_reply(message);
         echo_reply.SetAt(0, CJsonNode::NewBooleanNode(true));
         return echo_reply;
+    } else if (command == "version") {
+        reply.AppendString(GRID_APP_VERSION);
+        reply.AppendString(__DATE__);
     } else
         arg_array.Exception("unknown command");
 
