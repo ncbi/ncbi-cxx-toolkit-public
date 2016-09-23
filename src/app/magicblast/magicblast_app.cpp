@@ -542,6 +542,7 @@ CNcbiOstream& PrintSAMHeader(CNcbiOstream& ostr,
 
 #define SAM_FLAG_MULTI_SEGMENTS  0x1
 #define SAM_FLAG_SEGS_ALIGNED    0x2
+#define SAM_FLAG_NEXT_SEG_UNMAPPED 0x8
 #define SAM_FLAG_SEQ_REVCOMP    0x10
 #define SAM_FLAG_NEXT_REVCOMP   0x20
 #define SAM_FLAG_FIRST_SEGMENT  0x40
@@ -573,14 +574,12 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
         ++second;
         _ASSERT(second != disc.Get().end());
 
-        int first_flags = sam_flags | SAM_FLAG_FIRST_SEGMENT |
-            SAM_FLAG_SEGS_ALIGNED;
+        int first_flags = sam_flags | SAM_FLAG_SEGS_ALIGNED;
         if ((*second)->GetSeqStrand(0) == eNa_strand_minus) {
             first_flags |= SAM_FLAG_NEXT_REVCOMP; 
         }
 
-        int second_flags = sam_flags | SAM_FLAG_LAST_SEGMENT |
-            SAM_FLAG_SEGS_ALIGNED;
+        int second_flags = sam_flags | SAM_FLAG_SEGS_ALIGNED;
         if ((*first)->GetSeqStrand(0) == eNa_strand_minus) {
             second_flags |= SAM_FLAG_NEXT_REVCOMP;
         }
@@ -636,8 +635,18 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
         sam_flags |= SAM_FLAG_SEQ_REVCOMP;
     }
 
-    if (!mate) {
-        sam_flags |= SAM_FLAG_FIRST_SEGMENT | SAM_FLAG_LAST_SEGMENT;
+    if ((sam_flags & SAM_FLAG_MULTI_SEGMENTS) != 0 && context >= 0) {
+        if (query_info->contexts[context].has_pair) {
+            sam_flags |= SAM_FLAG_FIRST_SEGMENT;
+        }
+        else {
+            sam_flags |= SAM_FLAG_LAST_SEGMENT;
+        }
+    }
+
+
+    if ((sam_flags & SAM_FLAG_MULTI_SEGMENTS) != 0 && !mate) {
+        sam_flags |= SAM_FLAG_NEXT_SEG_UNMAPPED;
     }
 
     // read id
