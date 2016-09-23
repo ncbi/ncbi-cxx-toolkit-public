@@ -103,7 +103,17 @@ inline
 CEnumeratedTypeInfo* CreateEnumeratedTypeInfo(const T& ,
                                               const CEnumeratedTypeValues* values)
 {
-    return new CEnumeratedTypeInfo(sizeof(T), values, values->IsInteger() ? numeric_limits<T>::is_signed : true);
+// C++ enums are not signed and not unsigned
+    bool is_signed = std::is_signed<T>::value;
+    if (std::is_enum<T>::value) {
+        for (const auto& v : values->GetValues()) {
+            if (v.second < 0) {
+                is_signed = true;
+                break;
+            }
+        }
+    }
+    return new CEnumeratedTypeInfo(sizeof(T), values, is_signed);
 }
 
 
