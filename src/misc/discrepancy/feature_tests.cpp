@@ -220,21 +220,21 @@ const string kMissingGene = "[n] feature[s] [has] no genes";
 bool ReportGeneMissing(const CSeq_feat& f)
 {
     CSeqFeatData::ESubtype subtype = f.GetData().GetSubtype();
+    if (subtype == CSeqFeatData::eSubtype_regulatory) {
+        return false;
+    }
     if (IsRBS(f) ||
         f.GetData().IsCdregion() ||
         f.GetData().IsRna() ||
         subtype == CSeqFeatData::eSubtype_exon ||
         subtype == CSeqFeatData::eSubtype_intron) {
         return true;
-    } else {
-        return false;
     }
+    return false;
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(MISSING_GENES, CSeq_feat_BY_BIOSEQ, eDisc | eSubmitter | eSmart, "Missing Genes")
-//  ----------------------------------------------------------------------------
 {
     if (!ReportGeneMissing(obj)) {
         return;
@@ -250,9 +250,8 @@ DISCREPANCY_CASE(MISSING_GENES, CSeq_feat_BY_BIOSEQ, eDisc | eSubmitter | eSmart
     }
 }
 
-//  ----------------------------------------------------------------------------
+
 DISCREPANCY_SUMMARIZE(MISSING_GENES)
-//  ----------------------------------------------------------------------------
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
