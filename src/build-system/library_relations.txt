@@ -960,10 +960,8 @@ ssl needs3party $(Z_LIBS)
 ssparse needs3party ncbiid1
 ssparse needs3party ncbimla
 ssparse needs3party ncbitxc2
-ssrvcmn needs $(LIBSSSUTILS)
-ssrvcmn needs xconnect
+ssrvcmn needs ssssys
 ssscli needs ssrvcmn
-ssscli needs ssssys
 sssdb needs ssssys
 sssdb needs3party $(SYBASE_DLLS)
 sssdb needs3party $(SYBASE_LIBS)
