@@ -2793,7 +2793,6 @@ IK	s	Zoological Institute, Ukrainian Academy of Sciences
 ILCA	s	International Livestock Research Institute
 ILF	s	Iflracombe Museum
 ILH	s	Iowa Lakeside Laboratory
-ILL	h	University of Illinois
 ILL	sc	University of Illinois, Plant Biology Department
 ILLS	s	Illinois Natural History Survey
 ILMA	s	Istituto Leonardo Murialdo
@@ -2990,6 +2989,7 @@ ITAL	c	Banco de Fermentos Lacticos
 ITALSL	c	Secao de Leite e Derivados
 ITALSM	c	Secao de Microbiologia
 ITBCC	c	Institute of Technology Bandung Culture Collection
+ITBZC	s	Institute of Tropical Biology, Zoology Collection
 ITC	b	International Transit Centre
 ITCC<IND>	c	Indian Type Culture Collection
 ITCC<ITA>	s	Istituto Tecnico Stattale "Camillo Cavour"
@@ -3867,7 +3867,6 @@ MDE	s	Musee des Dinosaures in Esperaza
 MDFW	s	Massachusetts Division of Fisheries and Wildlife
 MDH<GBR>	s	Dorman Museum
 MDH<USA-MI>	c	Michigan Department of Health
-MDI	h	Malaysian Agricultural Research and Development Institute
 MDI	h	Malaysian Agricultural Research and Development Institute
 MDKY	s	Morehead State University, Biological and Environmental Sciences Department
 MDLA	s	Museu do Dundo
@@ -6913,6 +6912,7 @@ USLH	s	University of Louisiana Lafayette, Department of Renewable Resources
 USM<MYS>	s	Universiti Sains Malaysia
 USM<MYS>:VCRU	s	Universiti Sains Malaysia, Vector Control Research Unit
 USM<PER>	s	Universidad Nacional Mayor de San Marcos, Museo de Historia Natural, Herbario
+USMMC	s	Universiti Sains Malaysia Mollusc Collection
 USMP	h	Universiti Sains Malaysia
 USMS	s	University of Southern Mississippi, Department of Biological Sciences
 USNC	s	Smithsonian Institution, Paleobiology Department
