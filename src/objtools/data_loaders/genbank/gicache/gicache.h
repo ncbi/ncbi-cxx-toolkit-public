@@ -61,7 +61,7 @@ int			GICache_GetMeta(const char* Name, char* Value, size_t ValueSz);
 /* Install logger CB */
 void        GICache_SetLog(void (*logfunc)(char*));
 /* Dumps out content of the cache. Result is a text file with 3 columns: gi, accession, length  */
-void		GICache_Dump(const char* cache_prefix, const char* filename);
+void		GICache_Dump(const char* cache_prefix, const char* filename, volatile int * quitting);
 int GICache_GetAccFreqTab(FreqTab* tab, const FreqTab* tablen);
 #ifdef __cplusplus
 }

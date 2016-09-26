@@ -589,7 +589,7 @@ void GICache_SetLog(void (*logfunc)(char*)) {
     LogFunc = logfunc;
 }
 
-void GICache_Dump(const char* cache_prefix, const char* filename) {
+void GICache_Dump(const char* cache_prefix, const char* filename, volatile int * quitting) {
 	FILE* f;
 	char logmsg[256];
 	int needopen;
@@ -643,6 +643,8 @@ void GICache_Dump(const char* cache_prefix, const char* filename) {
 			snprintf(line, sizeof(line), "%" PRId64 " %s %" PRId64 "\n", gi64, acc_buf, gi_len);
 			fputs(line, f);
 		}
+		if (quitting && *quitting)
+			break;
 	}
 
 	mdb_cursor_close(cur);
