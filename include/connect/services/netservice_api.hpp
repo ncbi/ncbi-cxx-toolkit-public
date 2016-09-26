@@ -136,8 +136,8 @@ class NCBI_XCONNECT_EXPORT CNetService
     CNetService Clone(const string& name);
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-    void AllowXSiteConnections();
-    bool IsUsingXSiteProxy();
+    static void AllowXSiteConnections(ESwitch = eDefault);
+    static bool IsUsingXSiteProxy();
 #endif
 };
 

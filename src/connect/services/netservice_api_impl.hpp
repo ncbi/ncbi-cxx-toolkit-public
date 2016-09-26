@@ -35,6 +35,7 @@
 #include "balancing.hpp"
 
 #include <map>
+#include <atomic>
 
 BEGIN_NCBI_SCOPE
 
@@ -252,10 +253,6 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
             INetServerConnectionListener* listener, bool old_style_auth = false) :
         m_Listener(listener),
         m_ServerPool(new SNetServerPoolImpl(listener, old_style_auth)),
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-        m_ColoNetwork(0),
-        m_AllowXSiteConnections(false),
-#endif
         m_APIName(api_name),
         m_ClientName(client_name),
         m_UseSmartRetries(true),
@@ -270,10 +267,6 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
         m_Listener(prototype->m_Listener),
         m_ServerPool(prototype->m_ServerPool),
         m_ServiceName(server->m_Address.AsString()),
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-        m_ColoNetwork(prototype->m_ColoNetwork),
-        m_AllowXSiteConnections(prototype->m_AllowXSiteConnections),
-#endif
         m_APIName(prototype->m_APIName),
         m_ClientName(prototype->m_ClientName),
         m_UseSmartRetries(prototype->m_UseSmartRetries),
@@ -287,10 +280,6 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
         m_Listener(prototype->m_Listener),
         m_ServerPool(prototype->m_ServerPool),
         m_ServiceName(service_name),
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-        m_ColoNetwork(prototype->m_ColoNetwork),
-        m_AllowXSiteConnections(prototype->m_AllowXSiteConnections),
-#endif
         m_APIName(prototype->m_APIName),
         m_ClientName(prototype->m_ClientName),
         m_UseSmartRetries(prototype->m_UseSmartRetries),
@@ -344,11 +333,11 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
     }
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-    void AllowXSiteConnections();
+    static void AllowXSiteConnections(ESwitch);
 
-    bool IsColoAddr(unsigned int ip) const
+    static bool IsColoAddr(unsigned int ip)
     {
-        return (SOCK_NetToHostLong(ip) >> 16) == m_ColoNetwork;
+        return (SOCK_NetToHostLong(ip) >> 16) == m_ColoNetwork.load();
     }
 #endif
 
@@ -369,8 +358,8 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
     unsigned m_LatestDiscoveryIteration;
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-    unsigned int m_ColoNetwork;
-    bool m_AllowXSiteConnections;
+    static atomic<unsigned> m_ColoNetwork;
+    static atomic<bool> m_AllowXSiteConnections;
 #endif
 
 private:

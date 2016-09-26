@@ -286,6 +286,9 @@ SNetServerPoolImpl::SNetServerPoolImpl(INetServerConnectionListener* listener,
 {
 }
 
+atomic<unsigned> SNetServiceImpl::m_ColoNetwork{0};
+atomic<bool> SNetServiceImpl::m_AllowXSiteConnections{false};
+
 void SNetServiceImpl::ZeroInit()
 {
     m_ServiceType = CNetService::eServiceNotDefined;
@@ -318,19 +321,19 @@ void SNetServiceImpl::Construct()
 }
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-void CNetService::AllowXSiteConnections()
+void CNetService::AllowXSiteConnections(ESwitch on_off)
 {
-    m_Impl->AllowXSiteConnections();
+    SNetServiceImpl::AllowXSiteConnections(on_off);
 }
 
 bool CNetService::IsUsingXSiteProxy()
 {
-    return m_Impl->m_AllowXSiteConnections;
+    return SNetServiceImpl::m_AllowXSiteConnections.load();
 }
 
-void SNetServiceImpl::AllowXSiteConnections()
+void SNetServiceImpl::AllowXSiteConnections(ESwitch on_off)
 {
-    m_AllowXSiteConnections = true;
+    m_AllowXSiteConnections.store(on_off != eOff);
 
     SConnNetInfo* net_info = ConnNetInfo_Create(SNetServerImpl::kXSiteFwd);
 
@@ -344,7 +347,7 @@ void SNetServiceImpl::AllowXSiteConnections()
             "Cannot find cross-site proxy");
     }
 
-    m_ColoNetwork = SOCK_NetToHostLong(sinfo->host) >> 16;
+    m_ColoNetwork.store(SOCK_NetToHostLong(sinfo->host) >> 16);
 
     free(sinfo);
 }
@@ -459,9 +462,16 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
         }
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-        if (config->GetBool(section, "allow_xsite_conn",
-                CConfig::eErr_NoThrow, false))
-            AllowXSiteConnections();
+        try {
+            bool allow_xsite_conn = config->GetBool(section, "allow_xsite_conn",
+                    CConfig::eErr_Throw, false);
+
+            AllowXSiteConnections(allow_xsite_conn ? eOn : eOff);
+        }
+        catch (CConfigException& ex) {
+            if (ex.GetErrCode() != CConfigException::eParameterMissing) throw;
+        }
+ 
 #endif
 
         m_UseSmartRetries = config->GetBool(section,
