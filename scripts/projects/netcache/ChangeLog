@@ -170,3 +170,7 @@ June 17, 2016
 version 6.9.7 (CXX-8248)
 Corrected periodic synchronization bugs.
 
+September 21, 2016
+version 6.9.8 (CXX-8613)
+Fixed handling of SearchOnRead setting.
+
