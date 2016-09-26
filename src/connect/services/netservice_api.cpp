@@ -469,16 +469,11 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
         }
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-        try {
-            bool allow_xsite_conn = config->GetBool(section, "allow_xsite_conn",
-                    CConfig::eErr_Throw, false);
-
-            AllowXSiteConnections(allow_xsite_conn ? eOn : eOff);
+        if (TServConn_AllowXsiteConn::GetDefault() ||
+                config->GetBool(section, "allow_xsite_conn",
+                    CConfig::eErr_NoThrow, false)) {
+            AllowXSiteConnections(eOn);
         }
-        catch (CConfigException& ex) {
-            if (ex.GetErrCode() != CConfigException::eParameterMissing) throw;
-        }
- 
 #endif
 
         m_UseSmartRetries = config->GetBool(section,

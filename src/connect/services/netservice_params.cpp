@@ -48,6 +48,7 @@ NCBI_PARAM_DEF(int, netservice_api, max_find_lbname_retries, 3);
 NCBI_PARAM_DEF(string, netcache_api, fallback_server, "");
 NCBI_PARAM_DEF(int, netservice_api, max_connection_pool_size, 0); // unlimited
 NCBI_PARAM_DEF(bool, netservice_api, connection_data_logging, false);
+NCBI_PARAM_DEF(bool, netservice_api, allow_xsite_conn, false);
 NCBI_PARAM_DEF(unsigned, server, max_wait_for_servers, 24 * 60 * 60);
 NCBI_PARAM_DEF(bool, server, stop_on_job_errors, true);
 NCBI_PARAM_DEF(bool, server, allow_implicit_job_return, false);

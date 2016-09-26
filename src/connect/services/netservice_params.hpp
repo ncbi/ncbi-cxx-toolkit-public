@@ -128,6 +128,10 @@ NCBI_PARAM_DECL(bool, netservice_api, connection_data_logging);
 typedef NCBI_PARAM_TYPE(netservice_api, connection_data_logging)
     TServConn_ConnDataLogging;
 
+NCBI_PARAM_DECL(bool, netservice_api, allow_xsite_conn);
+typedef NCBI_PARAM_TYPE(netservice_api, allow_xsite_conn)
+    TServConn_AllowXsiteConn;
+
 // Worker node-specific parameters
 
 // Determine how long the worker node should wait for the
