@@ -79,8 +79,8 @@
 
 NCBI_XBLAST_EXPORT const int   kBlastMajorVersion = 2;
 NCBI_XBLAST_EXPORT const int   kBlastMinorVersion = 5;
-NCBI_XBLAST_EXPORT const int   kBlastPatchVersion = 0;
-NCBI_XBLAST_EXPORT const char* kBlastReleaseDate = "September-09-2016";
+NCBI_XBLAST_EXPORT const int   kBlastPatchVersion = 1;
+NCBI_XBLAST_EXPORT const char* kBlastReleaseDate = "September-26-2016";
 
 /** Structure to be passed to s_BlastSearchEngineCore, containing pointers
     to various preallocated structures and arrays. */
