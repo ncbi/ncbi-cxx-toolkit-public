@@ -197,7 +197,7 @@ void CNetStorageObjectLoc::Parse(const string& object_loc)
 
     // Not used, though has to be read to be backward-compatible
     if (m_LocatorFlags & fLF_Cacheable) {
-        field.GetNextNeighbor();
+        field = field.GetNextNeighbor();
     }
 
     // Find storage info (optional).
@@ -211,7 +211,7 @@ void CNetStorageObjectLoc::Parse(const string& object_loc)
             // Restore storage-specific info.
             if (m_Location == eNFL_NetCache) {
                 // Not used, though has to be read to be backward-compatible
-                VERIFY_FIELD_EXISTS(field.GetNextNeighbor());
+                VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
 
                 // Get the service name.
                 VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
