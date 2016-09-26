@@ -1015,14 +1015,7 @@ void CFastaReader::ParseTitle(
 
 bool CFastaReader::IsValidLocalID(const TStr& s) const
 {
-    IsValidLocalID(s, GetFlags());
-    /*
-    if (TestFlag(fQuickIDCheck)) { // just check first character
-        return CSeq_id::IsValidLocalID(s.substr(0, 1));
-    } else {
-        return CSeq_id::IsValidLocalID(s);
-    }
-    */
+    return IsValidLocalID(s, GetFlags());
 }
 
 bool CFastaReader::IsValidLocalID(const TStr& idString, 
@@ -2348,6 +2341,35 @@ void CFastaReader::SetGapLinkageEvidences(CSeq_gap::EType type, const set<int>& 
        m_gap_linkage_evidence.insert((CLinkage_evidence::EType)*it);
    }
 }
+
+
+void CFastaReader::PostWarning(ILineErrorListener* pMessageListener, 
+                               const size_t lineNumber,
+                               const string& errMessage, 
+                               const CObjReaderParseException::EErrCode errCode) const
+{
+    unique_ptr<CObjReaderLineException> pLineExpt(
+        CObjReaderLineException::Create(
+        eDiag_Warning,
+        lineNumber,
+        errMessage, 
+        ILineError::eProblem_GeneralParsingError,
+        "", "", "", "",
+        errCode));
+
+
+    if (!pMessageListener) {
+        LOG_POST_X(1, Warning << pLineExpt->Message());
+        return;
+    }
+
+    if (!pMessageListener->PutError(*pLineExpt)) {
+        throw CObjReaderParseException(DIAG_COMPILE_INFO, 0, errCode, errMessage, lineNumber, eDiag_Warning);
+    }
+}
+
+
+
 
 void CFastaReader::PostWarning(
             ILineErrorListener * pMessageListener,

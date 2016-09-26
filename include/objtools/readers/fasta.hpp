@@ -258,6 +258,11 @@ protected:
             ILineError::EProblem _eProblem, 
             CTempString _sFeature, CTempString _sQualName, CTempString _sQualValue) const;
 
+    void PostWarning(ILineErrorListener* pMessageListener, 
+                     const size_t lineNumber,
+                     const string& errMessage, 
+                     CObjReaderParseException::EErrCode errCode) const;
+
     typedef int                         TRowNum;
     typedef map<TRowNum, TSignedSeqPos> TSubMap;
     // align coord -> row -> seq coord
