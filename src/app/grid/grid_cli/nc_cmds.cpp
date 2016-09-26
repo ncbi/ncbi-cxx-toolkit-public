@@ -35,19 +35,24 @@
 
 USING_NCBI_SCOPE;
 
-void s_SetupMirroring()
+void CGridCommandLineInterfaceApp::SetUp_NetCache()
 {
-    CNcbiRegistry& reg(CNcbiApplication::Instance()->GetConfig());
-    reg.Set("netcache_api", "enable_mirroring", "true");
+    if (IsOptionSet(eEnableMirroring)) {
+        CNcbiRegistry& reg(CNcbiApplication::Instance()->GetConfig());
+        reg.Set("netcache_api", "enable_mirroring", "true");
+    }
+
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
+    if (IsOptionSet(eAllowXSiteConn)) CNetService::AllowXSiteConnections();
+#endif
 }
 
 void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(bool icache_mode,
         bool require_version)
 {
-    m_Opts.ncid.Parse(icache_mode, require_version);
+    SetUp_NetCache();
 
-    if (IsOptionSet(eEnableMirroring))
-        s_SetupMirroring();
+    m_Opts.ncid.Parse(icache_mode, require_version);
 
     if (!icache_mode) {
         m_APIClass = eNetCacheAPI;
@@ -71,10 +76,6 @@ void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(bool icache_mode,
             m_NetCacheAPI.SetDefaultParameters(nc_server_check = eOff);
         }
 
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-        if (IsOptionSet(eAllowXSiteConn))
-            m_NetCacheAPI.GetService().AllowXSiteConnections();
-#endif
     } else {
         m_APIClass = eNetICacheClient;
         m_NetICacheClient = CNetICacheClient(m_Opts.nc_service,
@@ -85,11 +86,6 @@ void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(bool icache_mode,
                 "option is required in icache mode.");
         }
 
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-        if (IsOptionSet(eAllowXSiteConn))
-            m_NetICacheClient.GetService().AllowXSiteConnections();
-#endif
-
         if (!IsOptionSet(eCompatMode))
             m_NetICacheClient.SetFlags(ICache::fBestReliability);
     }
@@ -98,10 +94,9 @@ void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(bool icache_mode,
 void CGridCommandLineInterfaceApp::SetUp_NetCacheAdminCmd(
         CGridCommandLineInterfaceApp::EAdminCmdSeverity cmd_severity)
 {
-    m_APIClass = eNetCacheAdmin;
+    SetUp_NetCache();
 
-    if (IsOptionSet(eEnableMirroring))
-        s_SetupMirroring();
+    m_APIClass = eNetCacheAdmin;
 
     if (cmd_severity != eReadOnlyAdminCmd &&
             !IsOptionExplicitlySet(eNetCache)) {
@@ -110,11 +105,6 @@ void CGridCommandLineInterfaceApp::SetUp_NetCacheAdminCmd(
     }
     m_NetCacheAPI = CNetCacheAPI(m_Opts.nc_service, m_Opts.auth);
     m_NetCacheAdmin = m_NetCacheAPI.GetAdmin();
-
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-    if (IsOptionSet(eAllowXSiteConn))
-        m_NetCacheAPI.GetService().AllowXSiteConnections();
-#endif
 }
 
 void CGridCommandLineInterfaceApp::PrintBlobMeta(const CNetCacheKey& key)

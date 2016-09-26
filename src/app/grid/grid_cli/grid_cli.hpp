@@ -551,6 +551,7 @@ private:
     void SetUp_AdminCmd(EAdminCmdSeverity cmd_severity);
     int NetCacheSanityCheck();
     int NetScheduleSanityCheck();
+    void SetUp_NetCache();
     void SetUp_NetCacheCmd(bool icache_mode, bool require_version = true);
     void SetUp_NetCacheCmd() { SetUp_NetCacheCmd(IsOptionSet(eCache)); }
     void SetUp_NetCacheAdminCmd(EAdminCmdSeverity cmd_severity);
