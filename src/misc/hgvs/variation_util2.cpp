@@ -93,8 +93,10 @@ BEGIN_NCBI_SCOPE
 
 namespace variation {
 
-CRef<CVariationException> CreateException(const string& message,
-                                          CVariationException::ECode code = static_cast<CVariationException::ECode>(0))
+static CRef<CVariationException> CreateException(
+        const string& message,
+        CVariationException::ECode code = 
+            static_cast<CVariationException::ECode>(0))
 {
     CRef<CVariationException> e(new CVariationException);
     e->SetMessage(message);
@@ -106,7 +108,10 @@ CRef<CVariationException> CreateException(const string& message,
 
 
 template<typename T>
-void ChangeIdsInPlace(T& container, sequence::EGetIdType id_type, CScope& scope)
+static void ChangeIdsInPlace(
+        T& container, 
+        sequence::EGetIdType id_type, 
+        CScope& scope)
 {
     for(CTypeIterator<CSeq_id> it = Begin(container); it; ++it) {
         CSeq_id& id = *it;
@@ -114,23 +119,34 @@ void ChangeIdsInPlace(T& container, sequence::EGetIdType id_type, CScope& scope)
             || (id_type == sequence::eGetId_ForceGi && id.IsGi()))
         {
             continue;
-        } else {
-            CSeq_id_Handle idh = sequence::GetId(id, scope, id_type);
-            id.Assign(*idh.GetSeqId());
         }
+
+        const CSeq_id_Handle idh = sequence::GetId(id, scope, id_type);
+        if(!idh) {
+            NCBI_USER_THROW("Can't convert seq-id for " + it->AsFastaString());
+        }
+            
+        id.Assign(*idh.GetSeqId());
     }
 }
 
-TSeqPos CVariationUtil::s_GetLength(const CVariantPlacement& p, CScope* scope)
+TSeqPos CVariationUtil::s_GetLength(
+        const CVariantPlacement& p, 
+        CScope* scope)
 {
     int start_offset = p.IsSetStart_offset() ? p.GetStart_offset() : 0;
-    int stop_offset = p.IsSetStop_offset() ? p.GetStop_offset() : p.GetLoc().IsPnt() ? start_offset : 0;
-    return ncbi::sequence::GetLength(p.GetLoc(), scope) + stop_offset - start_offset;
+
+    int stop_offset  = p.IsSetStop_offset()  ? p.GetStop_offset() 
+                     : p.GetLoc().IsPnt()    ? start_offset 
+                     :                         0;
+    return ncbi::sequence::GetLength(p.GetLoc(), scope) 
+           + stop_offset 
+           - start_offset;
 }
 
 // verify that exon_anchor_pos is represented in biostarts or biostops
 // depending on the sign of offset_pos
-bool ValidExonTerminal(
+static bool ValidExonTerminal(
         const set<TSeqPos>& exon_biostarts,
         const set<TSeqPos>& exon_biostops,
         TSeqPos exon_anchor_pos,
@@ -140,8 +156,11 @@ bool ValidExonTerminal(
     // Note: offset=0 may appear in cases like NM_000535.5:c.1145-?_2174+?del
     // We don't know here whether we're dealing with lt or gt, so will optimistically
     // allow if we find the anchor in either starts or stops.
-    bool found_in_starts = exon_biostarts.find(exon_anchor_pos) != exon_biostarts.end();
-    bool found_in_stops  = exon_biostops.find(exon_anchor_pos)  != exon_biostops.end();
+    bool found_in_starts = exon_biostarts.find(exon_anchor_pos) 
+                        != exon_biostarts.end();
+
+    bool found_in_stops  = exon_biostops.find(exon_anchor_pos) 
+                        != exon_biostops.end();
 
     return (offset_pos  < 0 && found_in_starts)
         || (offset_pos  > 0 && found_in_stops)
@@ -149,7 +168,7 @@ bool ValidExonTerminal(
 }
 
 
-int GetFuzzSign(const CInt_fuzz& fuzz, int loc_sign)
+static int GetFuzzSign(const CInt_fuzz& fuzz, int loc_sign)
 {
     return !fuzz.IsLim()                       ? 0
          : fuzz.GetLim() == CInt_fuzz::eLim_lt ? -1
@@ -160,7 +179,7 @@ int GetFuzzSign(const CInt_fuzz& fuzz, int loc_sign)
 }
 
 
-bool ValidExonTerminals(
+static bool ValidExonTerminals(
         const set<TSeqPos>& exon_biostarts,
         const set<TSeqPos>& exon_biostops,
         const CVariantPlacement& p)
@@ -210,6 +229,7 @@ bool ValidExonTerminals(
     return start_ok && stop_ok;
 }
 
+
 CVariationUtil::ETestStatus CVariationUtil::CheckExonBoundary(const CVariantPlacement& p)
 {
     const CSeq_id* id = p.GetLoc().GetId();
@@ -237,7 +257,9 @@ CVariationUtil::ETestStatus CVariationUtil::CheckExonBoundary(const CVariantPlac
          :                                                        eFail;
 }
 
-CVariationUtil::ETestStatus CVariationUtil::CheckExonBoundary(const CVariantPlacement& p, const CSeq_align& aln)
+CVariationUtil::ETestStatus CVariationUtil::CheckExonBoundary(
+        const CVariantPlacement& p, 
+        const CSeq_align& aln)
 {
     const CSeq_id* id = p.GetLoc().GetId();
     if(!aln.GetSegs().IsSpliced()
@@ -264,7 +286,7 @@ CVariationUtil::ETestStatus CVariationUtil::CheckExonBoundary(const CVariantPlac
     return ValidExonTerminals(exon_biostarts, exon_biostops, p) ? ePass : eFail;
 }
 
-void SwapLtGtFuzz(CInt_fuzz& fuzz)
+static void SwapLtGtFuzz(CInt_fuzz& fuzz)
 {
     if(fuzz.IsLim() && fuzz.GetLim() == CInt_fuzz::eLim_gt) {
         fuzz.SetLim(CInt_fuzz::eLim_lt);
@@ -273,8 +295,12 @@ void SwapLtGtFuzz(CInt_fuzz& fuzz)
     }
 }
 
+
 //loc is presumed Int-loc
-void ApplyOffsetFuzz(CSeq_loc& loc, const CInt_fuzz& offset_fuzz, bool is_start)
+static void ApplyOffsetFuzz(
+        CSeq_loc& loc, 
+        const CInt_fuzz& offset_fuzz, 
+        bool is_start)
 {
     bool minus_strand = loc.GetStrand() == eNa_strand_minus;
     CInt_fuzz& fuzz = (minus_strand == is_start) ? loc.SetInt().SetFuzz_to()
@@ -291,13 +317,19 @@ void ApplyOffsetFuzz(CSeq_loc& loc, const CInt_fuzz& offset_fuzz, bool is_start)
     }
 }
 
+
 void CVariationUtil::s_ResolveIntronicOffsets(CVariantPlacement& p)
 {
-    if(!p.IsSetStart_offset() && !p.IsSetStop_offset()) {
+    if(    !p.IsSetStart_offset() 
+        && !p.IsSetStop_offset()) 
+    {
         return;
     }
 
-    if(p.GetLoc().IsPnt() && !p.IsSetStop_offset() && p.IsSetStart_offset()) {
+    if(     p.GetLoc().IsPnt() 
+        && !p.IsSetStop_offset() 
+        &&  p.IsSetStart_offset()) 
+    {
         //In case of point, only start-offset may be specified. In this case
         //temporarily set stop-offset to be the same (it will be reset below),
         //such that start and stop of point-as-interval are adjusted consistently.
@@ -309,22 +341,34 @@ void CVariationUtil::s_ResolveIntronicOffsets(CVariantPlacement& p)
     //Another scenario is when start/stop in CDNA coords lie in different exons, so
     //the mapping is across one or more intron - we want to collapse the genomic loc
     //(do we want to preselve the gaps caused by indels rather than introns?)
-    CRef<CSeq_loc> loc = sequence::Seq_loc_Merge(p.GetLoc(), CSeq_loc::fMerge_SingleRange, NULL);
+    CRef<CSeq_loc> loc = 
+        sequence::Seq_loc_Merge(
+            p.GetLoc(), 
+            CSeq_loc::fMerge_SingleRange, 
+            NULL);
 
-    if(!loc->IsInt() && (p.IsSetStart_offset() || p.IsSetStop_offset())) {
+    if(   !loc->IsInt() 
+       && (p.IsSetStart_offset() || p.IsSetStop_offset())) 
+    {
         NcbiCerr << MSerial_AsnText << p;
         NCBI_THROW(CException, eUnknown, "Complex location");
     }
 
     bool minus_strand = loc->GetStrand() == eNa_strand_minus;
+
     if(p.IsSetStart_offset()) {
-        TSeqPos& bio_start_ref = minus_strand ? loc->SetInt().SetTo() : loc->SetInt().SetFrom();
+        TSeqPos& bio_start_ref = minus_strand ? loc->SetInt().SetTo() 
+                                              : loc->SetInt().SetFrom();
+
         bio_start_ref += p.GetStart_offset() * (minus_strand ? -1 : 1);
         p.ResetStart_offset();
     }
 
     if(p.IsSetStop_offset()) {
-        TSeqPos& bio_stop_ref = loc->GetStrand() == eNa_strand_minus ? loc->SetInt().SetFrom() : loc->SetInt().SetTo();
+        TSeqPos& bio_stop_ref =
+            loc->GetStrand() == eNa_strand_minus ? loc->SetInt().SetFrom() 
+                                                 : loc->SetInt().SetTo();
+
         bio_stop_ref += p.GetStop_offset() * (minus_strand ? -1 : 1);
         p.ResetStop_offset();
     }
@@ -347,7 +391,10 @@ void CVariationUtil::s_ResolveIntronicOffsets(CVariantPlacement& p)
 }
 
 
-void CVariationUtil::s_AddIntronicOffsets(CVariantPlacement& p, const CSpliced_seg& ss, CScope* scope)
+void CVariationUtil::s_AddIntronicOffsets(
+        CVariantPlacement& p, 
+        const CSpliced_seg& ss, 
+        CScope* scope)
 {
 #if 0
     if(!p.GetLoc().IsPnt() && !p.GetLoc().IsInt()) {
@@ -355,19 +402,32 @@ void CVariationUtil::s_AddIntronicOffsets(CVariantPlacement& p, const CSpliced_s
     }
 #endif
 
-    if(p.IsSetStart_offset() || p.IsSetStop_offset() || p.IsSetStart_offset_fuzz() || p.IsSetStop_offset_fuzz()) {
+    if(   p.IsSetStart_offset() 
+       || p.IsSetStop_offset() 
+       || p.IsSetStart_offset_fuzz() 
+       || p.IsSetStop_offset_fuzz()) 
+    {
         NCBI_THROW(CException, eUnknown, "Expected offset-free placement");
     }
 
-    if(!p.GetLoc().GetId() || !sequence::IsSameBioseq(*p.GetLoc().GetId(), ss.GetGenomic_id(), scope)) {
-        NCBI_THROW(CException, eUnknown, "Expected genomic_id in the variation to be the same as in spliced-seg");
+    if(   !p.GetLoc().GetId() 
+       || !sequence::IsSameBioseq(
+                *p.GetLoc().GetId(), 
+                ss.GetGenomic_id(), 
+                scope)) 
+    {
+        NCBI_THROW(CException, eUnknown, 
+                   "Expected genomic_id in the variation to be the same as in spliced-seg");
     }
 
     long start = p.GetLoc().GetStart(eExtreme_Positional);
     long stop = p.GetLoc().GetStop(eExtreme_Positional);
 
-    long closest_start = ss.GetExons().front()->GetGenomic_start(); //closest-exon-boundary for bio-start of variation location
-    long closest_stop = ss.GetExons().front()->GetGenomic_start(); //closest-exon-boundary for bio-stop of variation location
+    long closest_start = ss.GetExons().front()->GetGenomic_start(); 
+        // closest-exon-boundary for bio-start of variation location
+        
+    long closest_stop = ss.GetExons().front()->GetGenomic_start(); 
+        // closest-exon-boundary for bio-stop of variation location
 
     ITERATE(CSpliced_seg::TExons, it, ss.GetExons()) {
         const CSpliced_exon& se = **it;
@@ -542,7 +602,7 @@ CRef<CVariantPlacement> CVariationUtil::Remap(const CVariantPlacement& p, const 
 }
 
 
-CRef<CSeq_align> CreateSplicedSeqAlignFromFeat(const CSeq_feat& rna_feat)
+static CRef<CSeq_align> CreateSplicedSeqAlignFromFeat(const CSeq_feat& rna_feat)
 {
     CRef<CSeq_align> aln(new CSeq_align);
     aln->SetType(CSeq_align::eType_other);
@@ -572,7 +632,9 @@ CRef<CSeq_align> CreateSplicedSeqAlignFromFeat(const CSeq_feat& rna_feat)
 //todo: 1. what if we don't have the requested version of the product annotated?
 //      2. do we need to support NGs, etc (will need to search all alignments on sequnece, as we can't find NG by product-id)
 //      3. Do we want to return VariantPlacement instead, such that we can communicate auxiliary info?
-CRef<CVariantPlacement> CVariationUtil::RemapToAnnotatedTarget(const CVariation& v, const CSeq_id& target)
+CRef<CVariantPlacement> CVariationUtil::RemapToAnnotatedTarget(
+        const CVariation& v, 
+        const CSeq_id& target)
 {
     CRef<CVariantPlacement> result(new CVariantPlacement());
     result->SetLoc().SetNull();
@@ -703,7 +765,7 @@ CRef<CVariantPlacement> CVariationUtil::RemapToAnnotatedTarget(const CVariation&
 
 
 template<typename T>
-bool ContainsIupacNaAmbiguities(const T& obj)
+static bool ContainsIupacNaAmbiguities(const T& obj)
 {
     for(CTypeConstIterator<CSeq_data> it(Begin(obj)); it; ++it) {
         const CSeq_data& sd = *it;
@@ -784,7 +846,9 @@ bool CVariationUtil::CheckPlacement(CVariantPlacement& p)
 }
 
 
-CRef<CVariantPlacement> CVariationUtil::Remap(const CVariantPlacement& p, CSeq_loc_Mapper& mapper)
+CRef<CVariantPlacement> CVariationUtil::Remap(
+        const CVariantPlacement& p, 
+        CSeq_loc_Mapper& mapper)
 {
     CRef<CVariantPlacement> p2 = x_Remap(p, mapper);
     if(((p.IsSetStart_offset() || p.IsSetStop_offset()) && p2->GetMol() == CVariantPlacement::eMol_genomic)
@@ -814,7 +878,10 @@ CRef<CVariantPlacement> CVariationUtil::Remap(const CVariantPlacement& p, CSeq_l
     return p2;
 }
 
-CRef<CVariantPlacement> CVariationUtil::x_Remap(const CVariantPlacement& p, CSeq_loc_Mapper& mapper)
+
+CRef<CVariantPlacement> CVariationUtil::x_Remap(
+        const CVariantPlacement& p, 
+        CSeq_loc_Mapper& mapper)
 {
     CRef<CVariantPlacement> p2(new CVariantPlacement);
 
@@ -1533,7 +1600,7 @@ CRef<CSeq_literal> CVariationUtil::GetLiteralAtLoc(const CSeq_loc& loc)
 }
 
 
-bool IsRightPartial(CBioseq_Handle bsh)
+static bool IsRightPartial(CBioseq_Handle bsh)
 {
     ITERATE(CSeq_descr::Tdata, it, bsh.GetDescr().Get()) {
         const CSeqdesc& desc = **it;
@@ -1783,12 +1850,18 @@ void CVariationUtil::ChangeToDelins(CVariation& v)
 
 
 
-void CVariationUtil::AttachProteinConsequences(CVariation& v, const CSeq_id* target_id, bool ignore_genomic)
+void CVariationUtil::AttachProteinConsequences(
+        CVariation& v, 
+        const CSeq_id* target_id, 
+        bool ignore_genomic)
 {
     v.Index();
 
     if(v.GetData().IsSet()) {
-        NON_CONST_ITERATE(CVariation::TData::TSet::TVariations, it, v.SetData().SetSet().SetVariations()) {
+
+        NON_CONST_ITERATE(CVariation::TData::TSet::TVariations, it, 
+                          v.SetData().SetSet().SetVariations()) 
+        {
             AttachProteinConsequences(**it, target_id, ignore_genomic);
         }
         return;
@@ -1807,7 +1880,8 @@ void CVariationUtil::AttachProteinConsequences(CVariation& v, const CSeq_id* tar
 
 
     if(v.GetData().GetInstance().IsSetObservation()
-       && !(v.GetData().GetInstance().GetObservation() & CVariation_inst::eObservation_variant))
+       && !(  v.GetData().GetInstance().GetObservation() 
+            & CVariation_inst::eObservation_variant))
     {
         //only compute placements for variant instances; (as for asserted/reference there's no change)
         return;
@@ -1849,7 +1923,7 @@ void CVariationUtil::AttachProteinConsequences(CVariation& v, const CSeq_id* tar
 }
 
 //translate IUPACNA literal; do not translate last partial codon.
-string Translate(const string& nuc_str, bool is_mito)
+static string Translate(const string& nuc_str, bool is_mito)
 {
     string prot_str;
 
@@ -1875,7 +1949,9 @@ string Translate(const string& nuc_str, bool is_mito)
     return prot_str;
 }
 
-CVariation_inst::EType CalcInstTypeForAA(const string& prot_ref_str, const string& prot_delta_str)
+CVariation_inst::EType CalcInstTypeForAA(
+        const string& prot_ref_str, 
+        const string& prot_delta_str)
 {
     CVariation_inst::EType inst_type =
         prot_delta_str.size() == 0 && prot_ref_str.size() > 0 ? CVariation_inst::eType_del
@@ -1888,7 +1964,9 @@ CVariation_inst::EType CalcInstTypeForAA(const string& prot_ref_str, const strin
     return inst_type;
 }
 
-CVariantProperties::TEffect CalcEffectForProt(const string& prot_ref_str, const string& prot_delta_str)
+static CVariantProperties::TEffect CalcEffectForProt(
+        const string& prot_ref_str, 
+        const string& prot_delta_str)
 {
     CVariantProperties::TEffect effect = 0;
     for(size_t i = 0; i < prot_ref_str.size() && i < prot_delta_str.size(); i++) {
@@ -1905,9 +1983,10 @@ CVariantProperties::TEffect CalcEffectForProt(const string& prot_ref_str, const 
     return effect;
 }
 
-CVariationUtil::TSOTerms CalcSOTermsForProt(TSignedSeqPos nuc_delta_len,
-                                            const string& prot_ref_str,
-                                            const string& prot_variant_str)
+static CVariationUtil::TSOTerms CalcSOTermsForProt(
+        TSignedSeqPos nuc_delta_len,
+        const string& prot_ref_str,
+        const string& prot_variant_str)
 {
     CVariationUtil::TSOTerms terms;
 
@@ -1951,7 +2030,11 @@ void CVariationUtil::FlipStrand(CVariantPlacement& vp) const
 {
     vp.SetLoc().FlipStrand();
     if(vp.IsSetSeq() && vp.GetSeq().IsSetSeq_data()) {
-        CSeqportUtil::ReverseComplement(vp.SetSeq().SetSeq_data(), &vp.SetSeq().SetSeq_data(), 0, vp.GetSeq().GetLength());
+        CSeqportUtil::ReverseComplement(
+                vp.SetSeq().SetSeq_data(), 
+                &vp.SetSeq().SetSeq_data(), 
+                0, 
+                vp.GetSeq().GetLength());
     }
 
     CRef<CVariantPlacement> tmp(new CVariantPlacement);
@@ -1983,7 +2066,9 @@ void CVariationUtil::FlipStrand(CVariantPlacement& vp) const
 }
 
 
-bool CVariationUtil::s_IsInstStrandFlippable(const CVariation& v, const CVariation_inst& inst)
+bool CVariationUtil::s_IsInstStrandFlippable(
+        const CVariation& v, 
+        const CVariation_inst& inst)
 {
     bool ret = true;
     ITERATE(CVariation_inst::TDelta, it, v.GetData().GetInstance().GetDelta()) {
@@ -2013,10 +2098,14 @@ void CVariationUtil::FlipStrand(CVariation& v) const
     }
 
     if(v.GetData().IsSet()) {
-        NON_CONST_ITERATE(CVariation::TData::TSet::TVariations, it, v.SetData().SetSet().SetVariations()) {
+        NON_CONST_ITERATE(CVariation::TData::TSet::TVariations, 
+                          it, 
+                          v.SetData().SetSet().SetVariations()) 
+        {
             FlipStrand(**it);
         }
     } else if(v.GetData().IsInstance()) {
+
         if(!s_IsInstStrandFlippable(v, v.GetData().GetInstance())) {
             NCBI_THROW(CException, eUnknown, "Variation is not strand-flippable");
         } else {
@@ -2118,7 +2207,7 @@ void CVariationUtil::x_AdjustDelinsToInterval(CVariation& v, const CSeq_loc& loc
     v.SetPlacements().front()->SetLoc().Assign(loc);
 }
 
-bool Contains(const CSeq_loc& a, const CSeq_loc& b, CScope* scope)
+static bool Contains(const CSeq_loc& a, const CSeq_loc& b, CScope* scope)
 {
     CRef<CSeq_loc> a1(new CSeq_loc);
     a1->Assign(a);
@@ -2131,7 +2220,9 @@ bool Contains(const CSeq_loc& a, const CSeq_loc& b, CScope* scope)
     return sequence::Compare(*a1, *b1, scope, sequence::fCompareOverlapping) == sequence::eContains;
 }
 
-CRef<CVariation> CVariationUtil::x_CreateUnknownVariation(const CSeq_id& id, CVariantPlacement::TMol mol)
+CRef<CVariation> CVariationUtil::x_CreateUnknownVariation(
+        const CSeq_id& id, 
+        CVariantPlacement::TMol mol)
 {
     CRef<CVariantPlacement> p(new CVariantPlacement);
     p->SetLoc().SetWhole().Assign(id);
@@ -2143,7 +2234,7 @@ CRef<CVariation> CVariationUtil::x_CreateUnknownVariation(const CSeq_id& id, CVa
     return v;
 }
 
-CRef<CVariation> CreateUnknownProtConsequenceVariation(
+static CRef<CVariation> CreateUnknownProtConsequenceVariation(
         const CVariantPlacement& nuc_p,
         const CSeq_feat& cds_feat,
         bool is_frameshifting,
@@ -2211,7 +2302,7 @@ CRef<CVariation> CreateUnknownProtConsequenceVariation(
 }
 
 
-size_t GetCommonPrefixLen(const string& a, const string& b)
+static size_t GetCommonPrefixLen(const string& a, const string& b)
 {
     size_t i(0);
     while(i < a.size() && i < b.size() && a[i] == b[i]) {
@@ -2220,7 +2311,7 @@ size_t GetCommonPrefixLen(const string& a, const string& b)
     return i;
 }
 
-size_t GetCommonSuffixLen(const string& a, const string& b)
+static size_t GetCommonSuffixLen(const string& a, const string& b)
 {
     size_t i(0);
     while(i < a.size() && i < b.size() && a[a.size() - 1 - i] == b[b.size() - 1 - i]) {
@@ -2231,12 +2322,12 @@ size_t GetCommonSuffixLen(const string& a, const string& b)
 
 
 // Return true iff can't use the CDS for mapping between prot and mRNA;
-bool HasProblematicExceptions(const CSeq_feat& cds_feat)
+static bool HasProblematicExceptions(const CSeq_feat& cds_feat)
 {
     return !cds_feat.IsSetExcept()      ? false
          : !cds_feat.GetExcept()        ? false
          : !cds_feat.IsSetExcept_text() ? true
-         : cds_feat.GetExcept_text().size() > ( //not all of except-text is explained by benign exceptions
+         : (int)cds_feat.GetExcept_text().size() > ( //not all of except-text is explained by benign exceptions
              27 * (NStr::Find(cds_feat.GetExcept_text(), "mismatches in translation") != NPOS)
           +  20 * (NStr::Find(cds_feat.GetExcept_text(), "ribosomal slippage")        != NPOS));
 }
@@ -2780,7 +2871,9 @@ const CConstRef<CSeq_literal> CVariationUtil::s_FindAssertedLiteral(const CVaria
 }
 
 
-bool Equals(const CVariation::TPlacements& p1, const CVariation::TPlacements& p2)
+static bool Equals(
+        const CVariation::TPlacements& p1, 
+        const CVariation::TPlacements& p2)
 {
     if(p1.size() != p2.size()) {
         return false;
@@ -2803,14 +2896,21 @@ void CVariationUtil::s_FactorOutPlacements(CVariation& v)
     if(!v.GetData().IsSet()) {
         return;
     }
-    NON_CONST_ITERATE(CVariation::TData::TSet::TVariations, it, v.SetData().SetSet().SetVariations()) {
+
+    NON_CONST_ITERATE(
+            CVariation::TData::TSet::TVariations, it, 
+            v.SetData().SetSet().SetVariations()) 
+    {
         s_FactorOutPlacements(**it);
     }
 
     CVariation::TPlacements* p1 = NULL;
 
     bool ok = true;
-    NON_CONST_ITERATE(CVariation::TData::TSet::TVariations, it, v.SetData().SetSet().SetVariations()) {
+    NON_CONST_ITERATE(
+            CVariation::TData::TSet::TVariations, it, 
+            v.SetData().SetSet().SetVariations()) 
+    {
         CVariation& v2 = **it;
         if(!v2.IsSetPlacements()) {
             ok = false;
@@ -2882,9 +2982,6 @@ CConstRef<CVariation> CVariationUtil::s_FindConsequenceForPlacement(
 
     return cons_v;
 }
-
-
-
 
 
 void CVariationUtil::s_AttachGeneIDdbxref(CVariantPlacement& p, int gene_id)
@@ -3011,9 +3108,10 @@ void CVariationUtil::SetPlacementProperties(CVariantPlacement& placement)
 }
 
 
-void CVariationUtil::FindLocationProperties(const CSeq_align& transcript_aln,
-                                            const CSeq_loc& query_loc,
-                                            TSOTerms& terms)
+void CVariationUtil::FindLocationProperties(
+        const CSeq_align& transcript_aln,
+        const CSeq_loc& query_loc,
+        TSOTerms& terms)
 {
     //note: initializing mapper with scope because the annotation from scope is gi-based,
     //while the parameters are normaly accver-based
@@ -3046,16 +3144,18 @@ void CVariationUtil::FindLocationProperties(const CSeq_align& transcript_aln,
 }
 
 
-void CVariationUtil::s_FindLocationProperties(CConstRef<CSeq_loc> rna_loc,
-                                              CConstRef<CSeq_loc> cds_loc,
-                                              const CSeq_loc& query_loc,
-                                              CVariationUtil::TSOTerms& terms)
+void CVariationUtil::s_FindLocationProperties(
+        CConstRef<CSeq_loc> rna_loc,
+        CConstRef<CSeq_loc> cds_loc,
+        const CSeq_loc& query_loc,
+        CVariationUtil::TSOTerms& terms)
 {
     struct SPropsMap
     {
         typedef CRangeMap<CVariationUtil::ESOTerm, TSeqPos> TRangeMap;
         typedef map<CSeq_id_Handle, TRangeMap> TIdRangeMap;
         TIdRangeMap loc_map;
+
         void Add(CVariationUtil::ESOTerm term, const CSeq_loc& loc)
         {
             for(CSeq_loc_CI ci(loc); ci; ++ci) {
@@ -3073,7 +3173,10 @@ void CVariationUtil::s_FindLocationProperties(CConstRef<CSeq_loc> rna_loc,
     const CSeq_loc& main_loc = rna_loc ? *rna_loc : *cds_loc;
 
     {{
-        TLocsPair p = CVariantPropertiesIndex::s_GetNeighborhoodLocs(main_loc, main_loc.GetStop(eExtreme_Positional) + 100000);
+        TLocsPair p = CVariantPropertiesIndex::s_GetNeighborhoodLocs(
+                main_loc, 
+                main_loc.GetStop(eExtreme_Positional) + 100000);
+        
         props_map.Add(eSO_2KB_upstream_variant, *p.first);
         props_map.Add(eSO_500B_downstream_variant, *p.second);
     }}
@@ -3082,8 +3185,13 @@ void CVariationUtil::s_FindLocationProperties(CConstRef<CSeq_loc> rna_loc,
         TLocsPair p = CVariantPropertiesIndex::s_GetIntronsAndSpliceSiteLocs(main_loc);
         props_map.Add(eSO_intron_variant, *p.first);
         size_t i(0);
-        for(CSeq_loc_CI ci(*p.second, CSeq_loc_CI::eEmpty_Skip, CSeq_loc_CI::eOrder_Biological); ci; ++ci) {
-            props_map.Add((i%2 ? eSO_splice_acceptor_variant : eSO_splice_donor_variant), *ci.GetRangeAsSeq_loc());
+        for(CSeq_loc_CI ci(*p.second, 
+                           CSeq_loc_CI::eEmpty_Skip, 
+                           CSeq_loc_CI::eOrder_Biological); ci; ++ci) 
+        {
+            props_map.Add( (i%2 ? eSO_splice_acceptor_variant 
+                                : eSO_splice_donor_variant), 
+                           *ci.GetRangeAsSeq_loc());
             i++;
         }
     }}
@@ -3149,7 +3257,11 @@ TSeqPos CVariationUtil::GetEffectiveTranscriptLength(const CBioseq_Handle& bsh)
 }
 
 
-void CVariationUtil::x_SetVariantPropertiesForIntronic(CVariantPlacement& p, int offset, const CSeq_loc& loc, CBioseq_Handle& bsh)
+void CVariationUtil::x_SetVariantPropertiesForIntronic(
+        CVariantPlacement& p, 
+        int offset, 
+        const CSeq_loc& loc, 
+        CBioseq_Handle& bsh)
 {
     if(!p.IsSetGene_location()) {
         //need to zero-out the bitmask, otherwise in debug mode it will be preset to a magic value,
@@ -3326,7 +3438,7 @@ private:
 };
 
 
-bool IsRefSeqGene(const CBioseq_Handle& bsh)
+static bool IsRefSeqGene(const CBioseq_Handle& bsh)
 {
     if(!bsh.CanGetDescr()) {
         return false;
@@ -3346,7 +3458,7 @@ bool IsRefSeqGene(const CBioseq_Handle& bsh)
 // VAR-239
 // If RefSeqGene NG, Return GeneIDs for loci having alignments to transcripts.
 // Otherwise, return empty set
-set<int> GetFocusLocusIDs(const CBioseq_Handle& bsh)
+static set<int> GetFocusLocusIDs(const CBioseq_Handle& bsh)
 {
     set<int> gene_ids;
     if(!IsRefSeqGene(bsh)) {
@@ -3397,7 +3509,8 @@ set<int> GetFocusLocusIDs(const CBioseq_Handle& bsh)
 // There's no GeneID on a protein bioseq.
 // Instead, need to find the corresponding cdregion (which may or may not have GeneID dbxref), 
 // and get GeneID based on parent gene feature.
-int CVariationUtil::CVariantPropertiesIndex::s_GetGeneIdForProduct(CBioseq_Handle orig_bsh)
+int CVariationUtil::CVariantPropertiesIndex::s_GetGeneIdForProduct(
+        CBioseq_Handle orig_bsh)
 {
     CBioseq_Handle bsh = orig_bsh.GetInst_Mol() == CSeq_inst::eMol_aa ?
             sequence::GetNucleotideParent(orig_bsh) : orig_bsh;
@@ -4193,7 +4306,9 @@ CRef<CVariation_ref> CVariationUtil::x_AsVariation_ref(const CVariation& v, cons
         vr->SetSomatic_origin();
         ITERATE(CVariation::TSomatic_origin, it, v.GetSomatic_origin()) {
             const CVariation::TSomatic_origin::value_type::TObjectType& v_so = **it;
-            CVariation_ref::TSomatic_origin::value_type vr_so(new CVariation_ref::TSomatic_origin::value_type::TObjectType);
+
+            CVariation_ref::TSomatic_origin::value_type vr_so(
+                    new CVariation_ref::TSomatic_origin::value_type::TObjectType);
 
             if(v_so.IsSetSource()) {
                 vr_so->SetSource().Assign(v_so.GetSource());
@@ -4202,7 +4317,8 @@ CRef<CVariation_ref> CVariationUtil::x_AsVariation_ref(const CVariation& v, cons
             if(v_so.IsSetCondition()) {
                 vr_so->SetCondition();
                 if(v_so.GetCondition().IsSetDescription()) {
-                    vr_so->SetCondition().SetDescription(v_so.GetCondition().GetDescription());
+                    vr_so->SetCondition().SetDescription(
+                            v_so.GetCondition().GetDescription());
                 }
                 if(v_so.GetCondition().IsSetObject_id()) {
                     vr_so->SetCondition().SetObject_id();
@@ -4225,7 +4341,7 @@ CRef<CVariation_ref> CVariationUtil::x_AsVariation_ref(const CVariation& v, cons
     return vr;
 }
 
-CRef<CDelta_item> CreateDeltaForOffset(int offset, const CInt_fuzz* fuzz)
+static CRef<CDelta_item> CreateDeltaForOffset(int offset, const CInt_fuzz* fuzz)
 {
     CRef<CDelta_item> delta(new CDelta_item);
     delta->SetAction(CDelta_item::eAction_offset);
@@ -4239,7 +4355,9 @@ CRef<CDelta_item> CreateDeltaForOffset(int offset, const CInt_fuzz* fuzz)
     return delta;
 }
 
-void CVariationUtil::s_AddInstOffsetsFromPlacementOffsets(CVariation_inst& vi, const CVariantPlacement& p)
+void CVariationUtil::s_AddInstOffsetsFromPlacementOffsets(
+        CVariation_inst& vi, 
+        const CVariantPlacement& p)
 {
     if(p.IsSetStart_offset()) {
         vi.SetDelta().push_front( CreateDeltaForOffset(
@@ -4450,13 +4568,13 @@ CRef<CVariation> CVariationUtil::x_AsVariation(const CVariation_ref& vr)
 }
 
 
-int GetSignedOffset(const CDelta_item& delta)
+static int GetSignedOffset(const CDelta_item& delta)
 {
     return delta.GetSeq().GetLiteral().GetLength()
          * (delta.IsSetMultiplier() ? delta.GetMultiplier() : 1);
 }
 
-const CInt_fuzz* GetFuzz(const CDelta_item& delta)
+static const CInt_fuzz* GetFuzz(const CDelta_item& delta)
 {
     return delta.GetSeq().GetLiteral().IsSetFuzz() ?
           &delta.GetSeq().GetLiteral().GetFuzz() : NULL;
