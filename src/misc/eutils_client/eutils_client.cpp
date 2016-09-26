@@ -684,7 +684,12 @@ Uint8 CEutilsClient::x_Search(const string& db,
     if ( !m_UrlTag.empty() ) {
         params += "&user=" + NStr::URLEncode(m_UrlTag);
     }
-
+    if (is_same<TGi, T>::type::value || is_same<int, T>::type::value) {
+        params += "&idtype=gi";
+    } else {
+        params += "&idtype=acc";
+    }
+    
     Uint8 count = 0;
 
     LOG_POST(Trace << "Executing: db=" << db << " query=" << term);

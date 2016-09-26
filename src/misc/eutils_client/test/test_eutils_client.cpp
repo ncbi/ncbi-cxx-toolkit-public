@@ -73,6 +73,19 @@ void CTestEutilsClient::Init(void)
     arg_desc->AddOptionalKey("query", "Query",
                      "Entrez Query",
                      CArgDescriptions::eString);
+
+    arg_desc->AddOptionalKey("idtype", "Type",
+                     "Type of IDs (acc or gi)",
+                     CArgDescriptions::eString);
+    arg_desc->SetConstraint("idtype",
+                            &(*new CArgAllow_Strings,
+                              "gi",
+                              "acc"
+                              ));
+    arg_desc->SetDependency("query",
+                            CArgDescriptions::eRequires,
+                            "idtype");
+
     arg_desc->AddOptionalKey("count", "Query",
                      "Entrez Query, return count of results",
                      CArgDescriptions::eString);
@@ -93,7 +106,7 @@ void CTestEutilsClient::Init(void)
 
     arg_desc->AddOptionalKey("fetch", "UID",
                              "Fetch data for a given UID in db",
-                             CArgDescriptions::eInteger);
+                             CArgDescriptions::eString);
     arg_desc->SetDependency("fetch",
                             CArgDescriptions::eRequires,
                             "db");
@@ -101,6 +114,9 @@ void CTestEutilsClient::Init(void)
                             CArgDescriptions::eRequires,
                             "retmode");
 
+    arg_desc->AddOptionalKey("host", "hostname",
+                             "Hostname to connect to",
+                             CArgDescriptions::eString);
 
     arg_desc->AddDefaultKey("o", "Output",
             "Output stream, default to stdin.",
@@ -115,23 +131,40 @@ void CTestEutilsClient::Init(void)
 /////////////////////////////////////////////////////////////////////////////
 //  Run test (printout arguments obtained from command-line)
 
+static void s_Print(CNcbiOstream& ostr, const vector<TGi>& uids) {
+    for(auto& x : uids){ 
+        ostr << x << NcbiEndl;
+    }
+}
 
+static void s_Print(CNcbiOstream& ostr, const vector<objects::CSeq_id_Handle>& uids) {
+    for(auto& seh : uids) {
+        ostr << seh.GetSeqId()->GetSeqIdString(true) << NcbiEndl;
+    }
+}
 
 int CTestEutilsClient::Run(void)
 {
     // Get arguments
     const CArgs& args = GetArgs();
 
-    CEutilsClient ecli;
+    CEutilsClient ecli(args["host"] ? args["host"].AsString() : kEmptyStr);
+
     CNcbiOstream& ostr = args["o"].AsOutputFile();
 
     string db = args["db"].AsString();
+
     if (args["query"].HasValue()) {
+        bool acc = (args["idtype"].AsString() == "acc");
         string query = args["query"].AsString();
-        vector<int> uids;
-        ecli.Search(db, query, uids);
-        ITERATE(vector<int>, uidit, uids) {
-            ostr << *uidit << NcbiEndl;
+        if (acc) {
+            vector<objects::CSeq_id_Handle> uids;
+            ecli.Search(db, query, uids);
+            s_Print(ostr, uids);
+        } else {
+            vector<TGi> uids;
+            ecli.Search(db, query, uids);
+            s_Print(ostr, uids);
         }
     }
      
@@ -145,20 +178,37 @@ int CTestEutilsClient::Run(void)
         list<string> idstrs;
         NStr::Split(args["docsum"].AsString(), ",", idstrs,
             NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
-        vector<int> uids;
-        ITERATE(list<string>, id_it, idstrs) {
-            uids.push_back(NStr::StringToInt(*id_it) );
+        vector<TGi> uids;
+        for (auto& id : idstrs) {
+            TGi gi = NStr::StringToNumeric<TGi>(id, NStr::fConvErr_NoThrow);
+            if (gi) {
+                uids.push_back(gi);
+            }
         }
         xml::document docsums;
-        ecli.Summary(db, uids, docsums);
+        if (uids.size() == idstrs.size()) {
+            ecli.Summary(db, uids, docsums);
+        } else {
+            vector<objects::CSeq_id_Handle> uids;
+            for (auto& id : idstrs) {
+                uids.push_back(objects::CSeq_id_Handle::GetHandle(id));
+            }
+            ecli.Summary(db, uids, docsums);
+        }
         docsums.save_to_stream( ostr, xml::save_op_no_decl);
     }
 
     if (args["fetch"]) {
         string db_to = args["db"].AsString();
-        int uid = args["fetch"].AsInteger();
-        vector<int> uids(1, uid);
-        ecli.Fetch(db, uids, ostr, args["retmode"].AsString());
+        string uid = args["fetch"].AsString();
+        TGi gi = NStr::StringToNumeric<TGi>(uid, NStr::fConvErr_NoThrow);
+        if (!gi) {
+            vector<objects::CSeq_id_Handle> uids(1, objects::CSeq_id_Handle::GetHandle(uid));
+            ecli.Fetch(db, uids, ostr, args["retmode"].AsString());
+        } else {
+            vector<TGi> uids(1, gi);
+            ecli.Fetch(db, uids, ostr, args["retmode"].AsString());
+        }
     }
     return 0;
 }
