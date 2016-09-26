@@ -261,6 +261,7 @@ private:
     };
 
     int m_Mode;
+    int m_ReturnCode;
     int m_ListType;
     string m_StructuredCommentPrefix;
     bool m_CompareStructuredComments;
@@ -289,7 +290,7 @@ private:
 CBiosampleChkApp::CBiosampleChkApp(void) :
     m_ObjMgr(0), m_In(0), m_Continue(false),
     m_Level(0), m_ReportStream(0), m_NeedReportHeader(true), m_AsnOut(0), 
-    m_LogStream(0), m_Mode(e_report_diffs),
+    m_LogStream(0), m_Mode(e_report_diffs), m_ReturnCode(0),
     m_StructuredCommentPrefix(""), m_CompareStructuredComments(true), 
     m_FirstSeqOnly(false), m_IDPrefix(""), m_HUPDate(""),
     m_BioSampleAccession(""), m_BioProjectAccession(""),
@@ -781,7 +782,7 @@ int CBiosampleChkApp::Run(void)
         }
         return 1;
     } else {
-        return 0;
+        return m_ReturnCode;
     }
 }
 
@@ -1017,6 +1018,7 @@ void CBiosampleChkApp::ProcessBioseqHandle(CBioseq_Handle bh)
             m_Diffs.clear();
             GetBioseqDiffs(bh);
             if (biosample_util::DoDiffsContainConflicts(m_Diffs, m_LogStream)) {
+                m_ReturnCode = 1;
                 string sequence_id = biosample_util::GetBestBioseqLabel(bh);
                 *m_LogStream << "Conflicts found for  " << sequence_id << endl;
                 try {
