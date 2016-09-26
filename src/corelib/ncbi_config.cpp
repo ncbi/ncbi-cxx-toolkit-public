@@ -521,7 +521,7 @@ int CConfig::GetInt(const string&  driver_name,
                           ", incorrect parameter format:" +
                           param_name  + " : " + param +
                           " " + ex.what();
-            NCBI_THROW(CConfigException, eParameterMissing, msg);
+            NCBI_THROW(CConfigException, eInvalidParameter, msg);
         } else {
             string msg = "Configuration error " + driver_name +
                           ", incorrect parameter format:" +
@@ -561,7 +561,7 @@ Uint8 CConfig::GetDataSize(const string&  driver_name,
                          ", incorrect parameter format:" +
                          param_name  + " : " + param +
                          " " + ex.what();
-            NCBI_THROW(CConfigException, eParameterMissing, msg);
+            NCBI_THROW(CConfigException, eInvalidParameter, msg);
         } else {
             string msg = "Configuration error " + driver_name +
                           ", incorrect parameter format:" +
@@ -602,7 +602,7 @@ bool CConfig::GetBool(const string&  driver_name,
                          ", incorrect parameter format:" +
                          param_name  + " : " + param +
                          ". " + ex.what();
-            NCBI_THROW(CConfigException, eParameterMissing, msg);
+            NCBI_THROW(CConfigException, eInvalidParameter, msg);
         } else {
             string msg = "Configuration error " + driver_name +
                           ", incorrect parameter format:" +
@@ -642,7 +642,7 @@ double CConfig::GetDouble(const string&  driver_name,
                           ", incorrect parameter format:" +
                           param_name  + " : " + param +
                           " " + ex.what();
-            NCBI_THROW(CConfigException, eParameterMissing, msg);
+            NCBI_THROW(CConfigException, eInvalidParameter, msg);
         } else {
             string msg = "Configuration error " + driver_name +
                           ", incorrect parameter format:" +
