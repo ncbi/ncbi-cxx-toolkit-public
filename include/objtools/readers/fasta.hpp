@@ -216,6 +216,7 @@ protected:
     void ParseDefLine(const TStr& defLine, 
                       TReaderFlags fBaseFlags,
                       TFlags fFastaFlags,
+                      size_t lineNumber,
                       list<CRef<CSeq_id>>& ids, 
                       bool& hasRange,
                       TSeqPos& rangeStart,
@@ -228,6 +229,7 @@ protected:
     bool ParseIDs (const TStr& s, 
         TReaderFlags fBaseFlags,
         TFlags fFastaFlags,
+        size_t lineNumber,
         list<CRef<CSeq_id>>& ids, 
         ILineErrorListener* pMessageListener) const;
 
@@ -248,6 +250,8 @@ protected:
         const TStr& sLineText, 
         TSeqPos iLineNum,
         ILineErrorListener * pMessageListener) const;
+    static bool ExcessiveSeqDataInTitle(const string& title, 
+                                        TFlags fFastaFlags);
     virtual void   PostWarning(ILineErrorListener * pMessageListener,
             EDiagSev _eSeverity, size_t _uLineNum, CTempString _MessageStrmOps, 
             CObjReaderParseException::EErrCode _eErrCode, 

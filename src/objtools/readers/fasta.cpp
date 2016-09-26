@@ -537,6 +537,7 @@ void CFastaReader::SetIDGenerator(CSeqIdGenerator& gen)
 void CFastaReader::ParseDefLine(const TStr& defLine,
                                 const TReaderFlags fBaseFlags,
                                 const TFlags fFastaFlags,
+                                const size_t lineNumber,
                                 list<CRef<CSeq_id>>& ids,
                                 bool& hasRange,
                                 TSeqPos& rangeStart,
@@ -629,6 +630,7 @@ void CFastaReader::ParseDefLine(const TStr& defLine,
             has_id = ParseIDs(TStr(defLine.data() + start, pos - start - range_len), 
                               fBaseFlags, 
                               fFastaFlags, 
+                              lineNumber,
                               ids, 
                               pMessageListener);
             if (has_id  &&  (fFastaFlags & fAllSeqIds)  &&  defLine[pos] == '\1') {
@@ -656,7 +658,7 @@ void CFastaReader::ParseDefLine(const TStr& defLine,
             // we parse the titles after we know what molecule this is
             seqTitles.push_back(
                 SLineTextAndLoc(
-                defLine.substr(title_start, pos - title_start), LineNumber()));
+                defLine.substr(title_start, pos - title_start), lineNumber));
         }
         start = pos + 1;
     } while ( (fFastaFlags & fAllSeqIds)  &&  start < len  &&  defLine[start - 1] == '\1'
@@ -674,6 +676,7 @@ void CFastaReader::ParseDefLine(const TStr& s, ILineErrorListener * pMessageList
     ParseDefLine(s,
                  m_iFlags, 
                  GetFlags(),
+                 LineNumber(),
                  SetIDs(), 
                  has_range,
                  range_start, 
@@ -763,6 +766,7 @@ bool CFastaReader::ParseIDs(
     const TStr& s, 
     const TReaderFlags fBaseFlags, 
     const TFlags fFastaFlags,
+    const size_t lineNumber,
     list<CRef<CSeq_id>>& ids, 
     ILineErrorListener * pMessageListener) const
 {
@@ -771,8 +775,7 @@ bool CFastaReader::ParseIDs(
     {
         return new CSeq_id(CSeq_id::e_Local, s);
     }
-    //CBioseq::TId& ids = SetIDs();
-    // CBioseq::TId  old_ids = ids;
+
     size_t count = 0;
     // be generous overall, and give raw local IDs the benefit of the
     // doubt for now
@@ -787,11 +790,25 @@ bool CFastaReader::ParseIDs(
         {
             string temp = NStr::Replace(s, ",", "_");
             count = CSeq_id::ParseIDs(ids, temp, flags);
+
+            TStr errMessage = "CFastaReader: Near line " + NStr::NumericToString(lineNumber) 
+                + ", the sequence contains 'comma' symbol and replaced with 'underscore' "
+                + "symbol. Please find and correct the sequence id.";
+            PostWarning(pMessageListener, 
+                        eDiag_Warning, 
+                        lineNumber,
+                        errMessage,
+                        CObjReaderParseException::eFormat,
+                        ILineError::eProblem_GeneralParsingError,
+                        "", "", "");
+
+/*
             FASTA_WARNING(LineNumber(),
                 "CFastaReader: Near line " << LineNumber() 
                 << ", the sequence contains 'comma' symbol and replaced with 'underscore' "
                 << "symbol. Please find and correct the sequence id.",
                 ILineError::eProblem_GeneralParsingError, "");
+                */
         }
         else
         {
@@ -818,7 +835,6 @@ bool CFastaReader::ParseIDs(
         ids.back()->GetLabel(&temp, 0, CSeq_id::eContent);
         if (!IsValidLocalID(temp, fFastaFlags))
         {
-            //&&  !NStr::StartsWith(s, "lcl|", NStr::eNocase)
             ids.clear();
             return false;
         }
@@ -833,15 +849,12 @@ bool CFastaReader::ParseIDs(
 
         // before throwing an ID-too-long error, check if what we
         // think is a "sequence ID" is actually sequence data
-     
-        CMessageListenerLenient dummy_err_container; // so we can ignore them
-        if( CreateWarningsForSeqDataInTitle(s, LineNumber(), &dummy_err_container) ) {
-            // it's actually seq data
+        if (ExcessiveSeqDataInTitle(s,fFastaFlags)) {
             return false;
         }
 
-        FASTA_ERROR(LineNumber(),
-            "CFastaReader: Near line " << LineNumber() 
+        FASTA_ERROR(lineNumber,
+            "CFastaReader: Near line " << lineNumber
             << ", the sequence ID is too long.  Its length is " << s.length()
             << " but the max length allowed is " << m_MaxIDLength 
             << ".  Please find and correct all sequence IDs that are too long.",
@@ -1738,6 +1751,51 @@ void CFastaReader::AssignMolType(ILineErrorListener * pMessageListener)
         }
     } 
 }
+
+bool 
+CFastaReader::ExcessiveSeqDataInTitle(const string& title, TFlags fFastaFlags) 
+{
+    if (fFastaFlags & fAssumeProt) {
+        return false;
+    }
+
+    // Check for nuc or aa sequence at the end of the title
+    const size_t kWarnNumNucCharsAtEnd = 20;
+    const size_t kWarnNumAminoAcidCharsAtEnd = 50;
+
+    // Check for nuc sequence
+    if (title.length() > kWarnNumNucCharsAtEnd) {
+        size_t numNucChars = 0;
+        for (auto rit=title.crbegin(); rit!=title.crend(); ++rit) {
+            if (!s_ASCII_IsUnAmbigNuc(*rit)) {
+                break;
+            }
+            ++numNucChars;
+        }
+        if (numNucChars > kWarnNumNucCharsAtEnd) {
+            return true;
+        }
+    }
+
+    // Check for Aa sequence
+    if (title.length() > kWarnNumAminoAcidCharsAtEnd) {
+        size_t numAaChars = 0;
+        for (auto rit=title.crbegin(); rit!=title.crend(); ++rit) {
+            const auto ch = *rit;
+            if ( !(ch >= 'A' && ch <= 'Z')  &&
+                 !(ch >= 'a' && ch <= 'z') ) {
+                break;
+            }
+            ++numAaChars;
+        }
+        if (numAaChars > kWarnNumAminoAcidCharsAtEnd) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 
 bool
 CFastaReader::CreateWarningsForSeqDataInTitle(
