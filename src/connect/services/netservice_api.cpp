@@ -323,9 +323,9 @@ void SNetServiceImpl::Construct()
 }
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-void CNetService::AllowXSiteConnections(ESwitch on_off)
+void CNetService::AllowXSiteConnections()
 {
-    SNetServiceImpl::AllowXSiteConnections(on_off);
+    SNetServiceImpl::AllowXSiteConnections();
 }
 
 bool CNetService::IsUsingXSiteProxy()
@@ -333,9 +333,9 @@ bool CNetService::IsUsingXSiteProxy()
     return SNetServiceImpl::IsUsingXSiteProxy();
 }
 
-void SNetServiceImpl::AllowXSiteConnections(ESwitch on_off)
+void SNetServiceImpl::AllowXSiteConnections()
 {
-    m_AllowXSiteConnections.store(on_off != eOff);
+    m_AllowXSiteConnections.store(true);
 
     SConnNetInfo* net_info = ConnNetInfo_Create(SNetServerImpl::kXSiteFwd);
 
@@ -472,7 +472,7 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
         if (TServConn_AllowXsiteConn::GetDefault() ||
                 config->GetBool(section, "allow_xsite_conn",
                     CConfig::eErr_NoThrow, false)) {
-            AllowXSiteConnections(eOn);
+            AllowXSiteConnections();
         }
 #endif
 

@@ -334,7 +334,7 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     static bool IsUsingXSiteProxy();
-    static void AllowXSiteConnections(ESwitch);
+    static void AllowXSiteConnections();
 
     static bool IsColoAddr(unsigned int ip)
     {
