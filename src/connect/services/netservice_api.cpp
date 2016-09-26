@@ -286,8 +286,10 @@ SNetServerPoolImpl::SNetServerPoolImpl(INetServerConnectionListener* listener,
 {
 }
 
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
 atomic<unsigned> SNetServiceImpl::m_ColoNetwork{0};
 atomic<bool> SNetServiceImpl::m_AllowXSiteConnections{false};
+#endif
 
 void SNetServiceImpl::ZeroInit()
 {
