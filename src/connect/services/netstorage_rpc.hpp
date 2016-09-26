@@ -105,18 +105,6 @@ public:
 
 private:
     map<string, CNetService> m_ServiceMap;
-
-public:
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-    void AllowXSiteConnections()
-    {
-        m_AllowXSiteConnections = true;
-        m_Service.AllowXSiteConnections();
-        if (m_NetCacheAPI) m_NetCacheAPI.GetService().AllowXSiteConnections();
-    }
-
-    bool m_AllowXSiteConnections;
-#endif
 };
 
 END_NCBI_SCOPE

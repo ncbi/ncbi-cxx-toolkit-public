@@ -151,13 +151,6 @@ struct SContext : CObject
     ISelector* Create(TNetStorageFlags, const string&, Int8);
     ISelector* Create(TNetStorageFlags, const string&, const string&);
 
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-    void AllowXSiteConnections()
-    {
-        if (icache_client) icache_client.GetService().AllowXSiteConnections();
-    }
-#endif
-
 private:
     void Init();
 

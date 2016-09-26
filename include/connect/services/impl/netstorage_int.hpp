@@ -270,13 +270,6 @@ class NCBI_XCONNECT_EXPORT CNetStorageAdmin
     CNetStorageObject Open(const string& object_loc);
 };
 
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-/// @internal
-NCBI_XCONNECT_EXPORT void g_AllowXSiteConnections(CNetStorage&);
-NCBI_XCONNECT_EXPORT void g_AllowXSiteConnections(CNetStorageByKey&);
-NCBI_XCONNECT_EXPORT void g_AllowXSiteConnections(CNetStorageAdmin&);
-#endif
-
 END_NCBI_SCOPE
 
 #endif  /* CONNECT_SERVICES_IMPL__NETSTORAGE_INT__HPP */

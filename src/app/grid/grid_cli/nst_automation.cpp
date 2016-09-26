@@ -248,7 +248,7 @@ bool SNetStorageService::Call(const string& method,
     } else
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
         if (method == "allow_xsite_connections")
-            g_AllowXSiteConnections(m_NetStorageAdmin);
+            CNetService::AllowXSiteConnections();
         else
 #endif
         return SNetServiceBase::Call(method, arg_array, reply);

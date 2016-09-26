@@ -131,10 +131,6 @@ struct SDirectNetStorageImpl : public SNetStorageImpl
     CJsonNode ReportConfig() const;
 
 private:
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-    void AllowXSiteConnections() { m_Context->AllowXSiteConnections(); }
-#endif
-
     CRef<SContext> m_Context;
 };
 

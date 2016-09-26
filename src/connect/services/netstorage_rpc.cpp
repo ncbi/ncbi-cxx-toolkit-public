@@ -732,9 +732,6 @@ SNetStorageRPC::SNetStorageRPC(const TConfig& config,
         TNetStorageFlags default_flags) :
     m_DefaultFlags(default_flags),
     m_Config(config)
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-    , m_AllowXSiteConnections(false)
-#endif
 {
     m_RequestNumber.Set(0);
 
@@ -768,9 +765,6 @@ SNetStorageRPC::SNetStorageRPC(SNetServerInPool* server,
     m_CompoundIDPool(parent->m_CompoundIDPool),
     m_NetCacheAPI(parent->m_NetCacheAPI),
     m_ServiceMap(parent->m_ServiceMap)
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-    , m_AllowXSiteConnections(parent->m_AllowXSiteConnections)
-#endif
 {
 }
 
@@ -1033,13 +1027,6 @@ void SNetStorageRPC::x_InitNetCacheAPI()
         CNetCacheAPI nc_api(m_Config.nc_service, m_Config.client_name);
         nc_api.SetCompoundIDPool(m_CompoundIDPool);
         nc_api.SetDefaultParameters(nc_use_compound_id = true);
-
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-        if (m_AllowXSiteConnections) {
-            nc_api.GetService().AllowXSiteConnections();
-        }
-#endif
-
         m_NetCacheAPI = nc_api;
     }
 }
@@ -1483,10 +1470,6 @@ struct SNetStorageByKeyRPC : public SNetStorageByKeyImpl
     virtual ENetStorageRemoveResult Remove(const string& key,
             TNetStorageFlags flags);
 
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-    void AllowXSiteConnections() { m_NetStorageRPC->AllowXSiteConnections(); }
-#endif
-
     CRef<SNetStorageRPC,
             CNetComponentCounterLocker<SNetStorageRPC> > m_NetStorageRPC;
 };
@@ -1612,13 +1595,6 @@ CNetStorageObject CNetStorageAdmin::Open(const string& object_loc)
 {
     return m_Impl->m_NetStorageRPC->Open(object_loc);
 }
-
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-void g_AllowXSiteConnections(CNetStorageAdmin& admin)
-{
-    admin->m_NetStorageRPC->AllowXSiteConnections();
-}
-#endif
 
 SNetStorageImpl* SNetStorage::CreateImpl(const SConfig& config,
         TNetStorageFlags default_flags)
