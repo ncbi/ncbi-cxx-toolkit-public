@@ -511,10 +511,6 @@ bool CNetCache::Init()
         if (object_loc.GetLocation() == eNFL_NetCache) {
             m_Client = CNetICacheClient(object_loc.GetNCServiceName(),
                     object_loc.GetAppDomain(), kEmptyStr);
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-            if (object_loc.IsXSiteProxyAllowed())
-                m_Client.GetService().AllowXSiteConnections();
-#endif
         } else if (m_Context->icache_client)
             m_Client = m_Context->icache_client;
         else
@@ -527,12 +523,7 @@ bool CNetCache::Init()
 void CNetCache::SetLocator()
 {
     CNetService service(m_Client.GetService());
-    Locator().SetLocation_NetCache(
-            service.GetServiceName(),
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-            service.IsUsingXSiteProxy() ? true :
-#endif
-                    false);
+    Locator().SetLocation_NetCache(service.GetServiceName());
 }
 
 

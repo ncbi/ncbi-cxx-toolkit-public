@@ -129,15 +129,8 @@ public:
     // This contains both of the above
     string GetUniqueKey() const {return m_UniqueKey;}
 
-    void SetLocation_NetCache(const string& service_name,
-        bool allow_xsite_conn);
-
+    void SetLocation_NetCache(const string& service_name);
     string GetNCServiceName() const {return m_NCServiceName;}
-
-    bool IsXSiteProxyAllowed() const
-    {
-        return (m_NCFlags & fNCF_AllowXSiteConn) != 0;
-    }
 
     void SetLocation_FileTrack(EFileTrackSite ft_site);
     EFileTrackSite GetFileTrackSite() const;
@@ -179,11 +172,6 @@ private:
     };
     typedef unsigned TLocatorFlags;
 
-    enum ENetCacheFlags {
-        fNCF_AllowXSiteConn     = (1 << 0),
-    };
-    typedef unsigned TNetCacheFlags;
-
     void Parse(const string& object_loc);
     string MakeShortUniqueKey() const;
     string MakeUniqueKey() const { return m_AppDomain + '-' + m_ShortUniqueKey; }
@@ -216,7 +204,6 @@ private:
     // The same as above plus app domain
     string m_UniqueKey;
 
-    TNetCacheFlags m_NCFlags;
     string m_NCServiceName;
 
     mutable bool m_Dirty;

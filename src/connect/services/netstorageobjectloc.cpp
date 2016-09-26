@@ -67,7 +67,6 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
     m_Random(random_number),
     m_ShortUniqueKey(MakeShortUniqueKey()),
     m_UniqueKey(MakeUniqueKey()),
-    m_NCFlags(0),
     m_Dirty(true)
 {
 
@@ -85,7 +84,6 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
     m_AppDomain(app_domain),
     m_ShortUniqueKey(unique_key),
     m_UniqueKey(MakeUniqueKey()),
-    m_NCFlags(0),
     m_Dirty(true)
 {
 }
@@ -119,7 +117,6 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
     m_CompoundIDPool(cid_pool),
     m_ObjectID(0),
     m_Location(eNFL_Unknown),
-    m_NCFlags(0),
     m_Dirty(false),
     m_Locator(object_loc)
 {
@@ -131,7 +128,6 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
     m_CompoundIDPool(cid_pool),
     m_ObjectID(0),
     m_Location(eNFL_Unknown),
-    m_NCFlags(0),
     m_Dirty(false),
     m_Locator(object_loc)
 {
@@ -214,9 +210,9 @@ void CNetStorageObjectLoc::Parse(const string& object_loc)
 
             // Restore storage-specific info.
             if (m_Location == eNFL_NetCache) {
-                // Get NetCache flags.
-                VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
-                m_NCFlags = (TNetCacheFlags) field.GetFlags();
+                // Not used, though has to be read to be backward-compatible
+                VERIFY_FIELD_EXISTS(field.GetNextNeighbor());
+
                 // Get the service name.
                 VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
                 m_NCServiceName = field.GetServiceName();
@@ -227,9 +223,7 @@ void CNetStorageObjectLoc::Parse(const string& object_loc)
     }
 }
 
-void CNetStorageObjectLoc::SetLocation_NetCache(
-        const string& service_name,
-        bool allow_xsite_conn)
+void CNetStorageObjectLoc::SetLocation_NetCache(const string& service_name)
 {
     if (m_Location == eNFL_NetCache) return;
 
@@ -239,11 +233,6 @@ void CNetStorageObjectLoc::SetLocation_NetCache(
     m_Location = eNFL_NetCache;
 
     m_NCServiceName = service_name;
-
-    if (allow_xsite_conn)
-        m_NCFlags |= fNCF_AllowXSiteConn;
-    else
-        m_NCFlags &= ~(TNetCacheFlags) fNCF_AllowXSiteConn;
 
     // NB: FileTrack site must not be reset.
 }
@@ -258,7 +247,6 @@ void CNetStorageObjectLoc::SetLocation_FileTrack(EFileTrackSite ft_site)
     m_Location = eNFL_FileTrack;
 
     m_NCServiceName.clear();
-    m_NCFlags = 0;
 
     m_LocatorFlags &= ~(TLocatorFlags) (fLF_DevEnv | fLF_QAEnv);
 
@@ -335,8 +323,8 @@ void CNetStorageObjectLoc::x_Pack() const
 
         switch (m_Location) {
         case eNFL_NetCache:
-            // Save NetCache flags.
-            cid.AppendFlags(m_NCFlags);
+            // Not used, though has to be written to be backward-compatible
+            cid.AppendFlags(0);
             // Save the service name.
             cid.AppendServiceName(m_NCServiceName);
             break;
@@ -427,8 +415,6 @@ void CNetStorageObjectLoc::ToJSON(CJsonNode& root) const
     switch (m_Location) {
     case eNFL_NetCache:
         storage_info.SetString("ServiceName", m_NCServiceName);
-        storage_info.SetBoolean("AllowXSiteConn", IsXSiteProxyAllowed());
-
         root.SetByKey("NetCache", storage_info);
         break;
     default:
