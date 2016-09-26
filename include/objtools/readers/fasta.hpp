@@ -207,17 +207,34 @@ protected:
         string  m_sLineText;
         TSeqPos m_iLineNum;
     };
+    using TSeqTitles = vector<SLineTextAndLoc>;
 
     virtual CRef<CSeq_entry> x_ReadSegSet(ILineErrorListener * pMessageListener);
 
     virtual void   ParseDefLine  (const TStr& s, ILineErrorListener * pMessageListener);
-    virtual bool   ParseIDs      (const TStr& s, ILineErrorListener * pMessageListener);
+
+    void ParseDefLine(const TStr& defLine, 
+                      TReaderFlags fBaseFlags,
+                      TFlags fFastaFlags,
+                      list<CRef<CSeq_id>>& ids, 
+                      bool& hasRange,
+                      TSeqPos& rangeStart,
+                      TSeqPos& rangeEnd,
+                      TSeqTitles& seqTitles, 
+                      ILineErrorListener* pMessageListener) const;
+
+    virtual bool   ParseIDs(const TStr& s, ILineErrorListener * pMessageListener);
+
     bool ParseIDs (const TStr& s, 
-                   list<CRef<CSeq_id>>& ids, 
-                   ILineErrorListener* pMessageListener) const;
+        TReaderFlags fBaseFlags,
+        TFlags fFastaFlags,
+        list<CRef<CSeq_id>>& ids, 
+        ILineErrorListener* pMessageListener) const;
+
     static size_t ParseRange    (const TStr& s, TSeqPos& start, TSeqPos& end, ILineErrorListener * pMessageListener);
     virtual void   ParseTitle    (const SLineTextAndLoc & lineInfo, ILineErrorListener * pMessageListener);
     virtual bool   IsValidLocalID(const TStr& s) const;
+    static bool IsValidLocalID(const TStr& idString, TFlags fFastaFlags);
     virtual void   GenerateID    (void);
     virtual void   ParseDataLine (const TStr& s, ILineErrorListener * pMessageListener);
     virtual void   CheckDataLine (const TStr& s, ILineErrorListener * pMessageListener);
@@ -355,7 +372,7 @@ protected:
     SGap::TLinkEvidSet      m_gap_linkage_evidence;
     SGap::TNullableGapType  m_gap_type;
 
-    vector<SLineTextAndLoc> m_CurrentSeqTitles;
+    TSeqTitles m_CurrentSeqTitles;
     CRef<CSourceModParser::CModFilter> m_pModFilter;
     std::vector<ILineError::EProblem> m_ignorable;
 };

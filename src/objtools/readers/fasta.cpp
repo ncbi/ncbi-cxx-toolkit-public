@@ -534,26 +534,34 @@ void CFastaReader::SetIDGenerator(CSeqIdGenerator& gen)
     m_IDGenerator.Reset(&gen);
 }
 
-void CFastaReader::ParseDefLine(const TStr& s, ILineErrorListener * pMessageListener)
+void CFastaReader::ParseDefLine(const TStr& defLine,
+                                const TReaderFlags fBaseFlags,
+                                const TFlags fFastaFlags,
+                                list<CRef<CSeq_id>>& ids,
+                                bool& hasRange,
+                                TSeqPos& rangeStart,
+                                TSeqPos& rangeEnd,
+                                TSeqTitles& seqTitles, 
+                                ILineErrorListener * pMessageListener) const
 {
-    size_t start = 1, pos, len = s.length(), range_len = 0, title_start;
-    TSeqPos range_start, range_end;
+    size_t start = 1, pos, len = defLine.length(), title_start;
+    size_t range_len = 0;
 
     // ignore spaces between '>' and the sequence ID
     for( ; start < len; ++start ) {
-        if( ! isspace(s[start]) ) {
+        if( ! isspace(defLine[start]) ) {
             break;
         }
     }
 
     do {
         bool has_id = true;
-        if (TestFlag(fNoParseID)) {
+        if ((fFastaFlags & fNoParseID)) {
             title_start = start;
         } else {
             // This loop finds the end of the sequence ID
             for ( pos = start;  pos < len;  ++pos) {
-                unsigned char c = s[pos];
+                unsigned char c = defLine[pos];
                 
                 if (c <= ' ' ) { // assumes ASCII
                     break;
@@ -573,7 +581,7 @@ void CFastaReader::ParseDefLine(const TStr& s, ILineErrorListener * pMessageList
                     const static size_t kMaxCharsToLookAt = 30; 
                     // we give up much sooner than the length of the string, if the string is long.
                     // also note that we give up *before* the end so even if pos
-                    // reaches bracket_give_up_pos, we can still say s[pos] without worrying
+                    // reaches bracket_give_up_pos, we can still say defLine[pos] without worrying
                     // about array-out-of-bounds issues.
                     const size_t bracket_give_up_pos = min(len - 1, kMaxCharsToLookAt);
                     // keep track of the first space we find, because that becomes the end of the seqid
@@ -582,7 +590,7 @@ void CFastaReader::ParseDefLine(const TStr& s, ILineErrorListener * pMessageList
 
                     // find the end of the key
                     for( ; pos < bracket_give_up_pos ; ++pos ) {
-                        const unsigned char c = s[pos];
+                        const unsigned char c = defLine[pos];
                         if( c == '=' ) {
                             break;
                         } else if( c <= ' ' ) {
@@ -596,7 +604,7 @@ void CFastaReader::ParseDefLine(const TStr& s, ILineErrorListener * pMessageList
                         }
                     }
 
-                    if( s[pos] == '=' ) {
+                    if( defLine[pos] == '=' ) {
                         // this seems to be a FASTA mod, so consider the left square bracket
                         // to be the end of the seqid
                         pos = left_bracket_pos;
@@ -616,22 +624,26 @@ void CFastaReader::ParseDefLine(const TStr& s, ILineErrorListener * pMessageList
                 }
             }
 
-            range_len = ParseRange(TStr(s.data() + start, pos - start),
-                                   range_start, range_end, pMessageListener);
-            has_id = ParseIDs(TStr(s.data() + start, pos - start - range_len), SetIDs(), pMessageListener);
-            if (has_id  &&  TestFlag(fAllSeqIds)  &&  s[pos] == '\1') {
+            range_len = ParseRange(TStr(defLine.data() + start, pos - start),
+                                   rangeStart, rangeEnd, pMessageListener);
+            has_id = ParseIDs(TStr(defLine.data() + start, pos - start - range_len), 
+                              fBaseFlags, 
+                              fFastaFlags, 
+                              ids, 
+                              pMessageListener);
+            if (has_id  &&  (fFastaFlags & fAllSeqIds)  &&  defLine[pos] == '\1') {
                 start = pos + 1;
                 continue;
             }
             title_start = pos;
             // trim leading whitespace from title (is this appropriate?)
             while (title_start < len
-                   &&  isspace((unsigned char) s[title_start])) {
+                   &&  isspace((unsigned char) defLine[title_start])) {
                 ++title_start;
             }
         }
         for (pos = title_start + 1;  pos < len;  ++pos) {
-            if ((unsigned char) s[pos] < ' ') {
+            if ((unsigned char) defLine[pos] < ' ') {
                 break;
             }
         }
@@ -642,13 +654,32 @@ void CFastaReader::ParseDefLine(const TStr& s, ILineErrorListener * pMessageList
         }
         if (title_start < min(pos, len)) {
             // we parse the titles after we know what molecule this is
-            m_CurrentSeqTitles.push_back(
+            seqTitles.push_back(
                 SLineTextAndLoc(
-                s.substr(title_start, pos - title_start), LineNumber()));
+                defLine.substr(title_start, pos - title_start), LineNumber()));
         }
         start = pos + 1;
-    } while (TestFlag(fAllSeqIds)  &&  start < len  &&  s[start - 1] == '\1'
+    } while ( (fFastaFlags & fAllSeqIds)  &&  start < len  &&  defLine[start - 1] == '\1'
              &&  !range_len);
+
+    hasRange = (range_len>0);
+}
+
+
+void CFastaReader::ParseDefLine(const TStr& s, ILineErrorListener * pMessageListener)
+{
+    TSeqPos range_start, range_end;
+
+    bool has_range;
+    ParseDefLine(s,
+                 m_iFlags, 
+                 GetFlags(),
+                 SetIDs(), 
+                 has_range,
+                 range_start, 
+                 range_end, 
+                 m_CurrentSeqTitles, 
+                 pMessageListener);
 
     if (GetIDs().empty()) {
         // No [usable] IDs
@@ -676,7 +707,7 @@ void CFastaReader::ParseDefLine(const TStr& s, ILineErrorListener * pMessageList
 
     m_BestID = FindBestChoice(GetIDs(), CSeq_id::BestRank);
 
-    if (range_len) {
+    if (has_range) {
         // generate a new ID, and record its relation to the given one(s).
         SetIDs().clear();
         GenerateID();
@@ -729,10 +760,14 @@ void CFastaReader::ParseDefLine(const TStr& s, ILineErrorListener * pMessageList
 }
 
 bool CFastaReader::ParseIDs(
-    const TStr& s, list<CRef<CSeq_id>>& ids, ILineErrorListener * pMessageListener) const
+    const TStr& s, 
+    const TReaderFlags fBaseFlags, 
+    const TFlags fFastaFlags,
+    list<CRef<CSeq_id>>& ids, 
+    ILineErrorListener * pMessageListener) const
 {
     // if user wants all ids to be purely local, no problem
-    if( m_iFlags & CReaderBase::fAllIdsAsLocal )
+    if( fBaseFlags & CReaderBase::fAllIdsAsLocal )
     {
         return new CSeq_id(CSeq_id::e_Local, s);
     }
@@ -743,7 +778,7 @@ bool CFastaReader::ParseIDs(
     // doubt for now
     CSeq_id::TParseFlags flags
         = CSeq_id::fParse_PartialOK | CSeq_id::fParse_AnyLocal;
-    if (TestFlag(fParseRawID)) {
+    if ( fFastaFlags & fParseRawID ) {
         flags |= CSeq_id::fParse_RawText;
     }
 
@@ -767,7 +802,7 @@ bool CFastaReader::ParseIDs(
     }
 
     // numerics become local, if requested
-    if( m_iFlags & CReaderBase::fNumericIdsAsLocal ) {
+    if( fBaseFlags & CReaderBase::fNumericIdsAsLocal ) {
         NON_CONST_ITERATE(CBioseq::TId, id_it, ids) {
             CSeq_id & id = **id_it;
             if( id.IsGi() ) {
@@ -781,7 +816,7 @@ bool CFastaReader::ParseIDs(
     {
         string temp;
         ids.back()->GetLabel(&temp, 0, CSeq_id::eContent);
-        if (!IsValidLocalID(temp))
+        if (!IsValidLocalID(temp, fFastaFlags))
         {
             //&&  !NStr::StartsWith(s, "lcl|", NStr::eNocase)
             ids.clear();
@@ -967,11 +1002,24 @@ void CFastaReader::ParseTitle(
 
 bool CFastaReader::IsValidLocalID(const TStr& s) const
 {
+    IsValidLocalID(s, GetFlags());
+    /*
     if (TestFlag(fQuickIDCheck)) { // just check first character
         return CSeq_id::IsValidLocalID(s.substr(0, 1));
     } else {
         return CSeq_id::IsValidLocalID(s);
     }
+    */
+}
+
+bool CFastaReader::IsValidLocalID(const TStr& idString, 
+    const TFlags fFastaFlags)
+{
+    if ( fFastaFlags & fQuickIDCheck) { // check only the first character
+        return CSeq_id::IsValidLocalID(idString.substr(0,1));
+    }
+
+    return CSeq_id::IsValidLocalID(idString);
 }
 
 void CFastaReader::GenerateID(void)
