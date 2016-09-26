@@ -54,31 +54,31 @@ USING_SCOPE(objects);
 
 CConstRef<CBioseq> CDiscrepancyContext::GetCurrentBioseq(void) const 
 {
-    static CConstRef<CBioseq> bioseq;
-    static size_t count = 0;
-    if (count != m_Count_Bioseq) {
-        count = m_Count_Bioseq;
+    //static CConstRef<CBioseq> bioseq;
+    //static size_t count = 0;
+    if (GetCurrentBioseq_count != m_Count_Bioseq) {
+        GetCurrentBioseq_count = m_Count_Bioseq;
         if (m_Current_Bioseq) {
-            bioseq = m_Current_Bioseq;
+            GetCurrentBioseq_bioseq = m_Current_Bioseq;
         }
         else {
-            bioseq.Reset();
+            GetCurrentBioseq_bioseq.Reset();
             CConstRef<CBioseq_set> BS = GetCurrentBioseq_set();
             if (BS && BS->IsSetClass()) {
                 CScope &scope = GetScope();
                 if (BS->GetClass() == CBioseq_set::eClass_nuc_prot) {
-                    bioseq.Reset(scope.GetBioseqHandle(BS->GetNucFromNucProtSet()).GetCompleteBioseq());
+                    GetCurrentBioseq_bioseq.Reset(scope.GetBioseqHandle(BS->GetNucFromNucProtSet()).GetCompleteBioseq());
                 }
                 else if (BS->GetClass() == CBioseq_set::eClass_gen_prod_set) {
-                    bioseq.Reset(scope.GetBioseqHandle(BS->GetGenomicFromGenProdSet()).GetCompleteBioseq());
+                    GetCurrentBioseq_bioseq.Reset(scope.GetBioseqHandle(BS->GetGenomicFromGenProdSet()).GetCompleteBioseq());
                 }
                 else if (BS->GetClass() == CBioseq_set::eClass_segset) {
-                    bioseq.Reset(scope.GetBioseqHandle(BS->GetMasterFromSegSet()).GetCompleteBioseq());
+                    GetCurrentBioseq_bioseq.Reset(scope.GetBioseqHandle(BS->GetMasterFromSegSet()).GetCompleteBioseq());
                 }
             }
         }
     }
-    return bioseq;
+    return GetCurrentBioseq_bioseq;
 }
 
 
@@ -111,24 +111,24 @@ CConstRef<CSuspect_rule_set> CDiscrepancyContext::GetOrganelleProductRules()
 
 const CBioSource* CDiscrepancyContext::GetCurrentBiosource()
 {
-    static const CBioSource* biosrc;
-    static size_t count = 0;
-    if (count != m_Count_Bioseq) {
-        count = m_Count_Bioseq;
-        biosrc = sequence::GetBioSource(m_Scope->GetBioseqHandle(*GetCurrentBioseq()));
+    //static const CBioSource* biosrc;
+    //static size_t count = 0;
+    if (GetCurrentBiosource_count != m_Count_Bioseq) {
+        GetCurrentBiosource_count = m_Count_Bioseq;
+        GetCurrentBiosource_biosrc = sequence::GetBioSource(m_Scope->GetBioseqHandle(*GetCurrentBioseq()));
     }
-    return biosrc;
+    return GetCurrentBiosource_biosrc;
 }
 
 const CMolInfo* CDiscrepancyContext::GetCurrentMolInfo()
 {
-    static const CMolInfo* mol_info;
-    static size_t count = 0;
-    if (count != m_Count_Bioseq) {
-        count = m_Count_Bioseq;
-        mol_info = sequence::GetMolInfo(m_Scope->GetBioseqHandle(*GetCurrentBioseq()));
+    //static const CMolInfo* mol_info;
+    //static size_t count = 0;
+    if (GetCurrentMolInfo_count != m_Count_Bioseq) {
+        GetCurrentMolInfo_count = m_Count_Bioseq;
+        GetCurrentMolInfo_mol_info = sequence::GetMolInfo(m_Scope->GetBioseqHandle(*GetCurrentBioseq()));
     }
-    return mol_info;
+    return GetCurrentMolInfo_mol_info;
 }
 
 bool CDiscrepancyContext::IsCurrentSequenceMrna()
@@ -164,47 +164,42 @@ bool CDiscrepancyContext::HasLineage(const CBioSource& biosrc, const string& def
 
 bool CDiscrepancyContext::HasLineage(const string& lineage)
 {
-    static const CBioSource* biosrc = 0;
-    static size_t count = 0;
-    if (count != m_Count_Bioseq) {
-        count = m_Count_Bioseq;
-        biosrc = GetCurrentBiosource();
+    //static const CBioSource* biosrc = 0;
+    //static size_t count = 0;
+    if (HasLineage_count != m_Count_Bioseq) {
+        HasLineage_count = m_Count_Bioseq;
+        HasLineage_biosrc = GetCurrentBiosource();
     }
-    return biosrc ? HasLineage(*biosrc, GetLineage(), lineage) : false;
+    return HasLineage_biosrc ? HasLineage(*HasLineage_biosrc, GetLineage(), lineage) : false;
 }
 
 
 bool CDiscrepancyContext::IsDNA()
 {
-    static bool result = false;
-    static size_t count = 0;
-    if (count != m_Count_Bioseq) {
-        count = m_Count_Bioseq;
-
-        result = false;
+    //static bool result = false;
+    //static size_t count = 0;
+    if (IsDNA_count != m_Count_Bioseq) {
+        IsDNA_count = m_Count_Bioseq;
+        IsDNA_result = false;
         CConstRef<CBioseq> bioseq = GetCurrentBioseq();
         if (bioseq && bioseq->IsNa() && bioseq->IsSetInst()) {
-
-            result = (bioseq->GetInst().IsSetMol() && bioseq->GetInst().GetMol() == CSeq_inst::eMol_dna);
+            IsDNA_result = (bioseq->GetInst().IsSetMol() && bioseq->GetInst().GetMol() == CSeq_inst::eMol_dna);
         }
     }
-    return result;
+    return IsDNA_result;
 }
 
 bool CDiscrepancyContext::IsOrganelle()
 {
-    static bool result = false;
-    static size_t count = 0;
-    if (count != m_Count_Bioseq) {
-        count = m_Count_Bioseq;
-
-        result = false;
+    //static bool result = false;
+    //static size_t count = 0;
+    if (IsOrganelle_count != m_Count_Bioseq) {
+        IsOrganelle_count = m_Count_Bioseq;
+        IsOrganelle_result = false;
         const CBioSource* biosrc = GetCurrentBiosource();
         if (biosrc && biosrc->IsSetGenome()) {
-
             int genome = biosrc->GetGenome();
-
-            result = ((genome == CBioSource::eGenome_chloroplast
+            IsOrganelle_result = ((genome == CBioSource::eGenome_chloroplast
                 || genome == CBioSource::eGenome_chromoplast
                 || genome == CBioSource::eGenome_kinetoplast
                 || genome == CBioSource::eGenome_mitochondrion
@@ -219,16 +214,16 @@ bool CDiscrepancyContext::IsOrganelle()
         }
     }
 
-    return result;
+    return IsOrganelle_result;
 }
 
 
 bool CDiscrepancyContext::IsEukaryotic()
 {
-    static bool result = false;
-    static size_t count = 0;
-    if (count != m_Count_Bioseq) {
-        count = m_Count_Bioseq;
+    //static bool result = false;
+    //static size_t count = 0;
+    if (IsEukaryotic_count != m_Count_Bioseq) {
+        IsEukaryotic_count = m_Count_Bioseq;
         const CBioSource* biosrc = GetCurrentBiosource();
         if (biosrc) {
             CBioSource::EGenome genome = (CBioSource::EGenome) biosrc->GetGenome();
@@ -237,75 +232,75 @@ bool CDiscrepancyContext::IsEukaryotic()
                 && genome != CBioSource::eGenome_plastid
                 && genome != CBioSource::eGenome_apicoplast
                 && HasLineage(*biosrc, GetLineage(), "Eukaryota")) {
-                result = true;
-                return result;
+                IsEukaryotic_result = true;
+                return IsEukaryotic_result;
             }
         }
-        result = false;
+        IsEukaryotic_result = false;
     }
-    return result;
+    return IsEukaryotic_result;
 }
 
 
 bool CDiscrepancyContext::IsBacterial()
 {
-    static bool result = false;
-    static size_t count = 0;
-    if (count != m_Count_Bioseq) {
-        count = m_Count_Bioseq;
+    //static bool result = false;
+    //static size_t count = 0;
+    if (IsBacterial_count != m_Count_Bioseq) {
+        IsBacterial_count = m_Count_Bioseq;
         const CBioSource* biosrc = GetCurrentBiosource();
         if (biosrc) {
             //CBioSource::EGenome genome = (CBioSource::EGenome) biosrc->GetGenome();
             if (HasLineage(*biosrc, GetLineage(), "Bacteria")) {
-                result = true;
-                return result;
+                IsBacterial_result = true;
+                return IsBacterial_result;
             }
         }
-        result = false;
+        IsBacterial_result = false;
     }
-    return result;
+    return IsBacterial_result;
 }
 
 
 bool CDiscrepancyContext::IsViral()
 {
-    static bool result = false;
-    static size_t count = 0;
-    if (count != m_Count_Bioseq) {
-        count = m_Count_Bioseq;
+    //static bool result = false;
+    //static size_t count = 0;
+    if (IsViral_count != m_Count_Bioseq) {
+        IsViral_count = m_Count_Bioseq;
         const CBioSource* biosrc = GetCurrentBiosource();
         if (biosrc) {
             CBioSource::EGenome genome = (CBioSource::EGenome) biosrc->GetGenome();
             if (HasLineage(*biosrc, GetLineage(), "Viruses")) {
-                result = true;
-                return result;
+                IsViral_result = true;
+                return IsViral_result;
             }
         }
-        result = false;
+        IsViral_result = false;
     }
-    return result;
+    return IsViral_result;
 }
 
 
 bool CDiscrepancyContext::IsPubMed()
 {
-    static bool result = false;
-    static size_t count = 0;
-    if (count != m_Count_Pub_equiv) {
-        count = m_Count_Pub_equiv;
-        result = false;
+    //static bool result = false;
+    //static size_t count = 0;
+    if (IsPubMed_count != m_Count_Pub_equiv) {
+        IsPubMed_count = m_Count_Pub_equiv;
+        IsPubMed_result = false;
         const CPub_equiv* equiv = GetCurrentPub_equiv();
         if (equiv) {
             const CPub_equiv::Tdata& list = equiv->Get();
             ITERATE (CPub_equiv::Tdata, it, list) {
                 if ((*it)->IsPmid()) {
-                    result = true;
+                    IsPubMed_result = true;
                     break;
                 }
             }
         }
     }
-    return result;
+    return IsPubMed_result;
 }
 
 
@@ -323,35 +318,35 @@ bool CDiscrepancyContext::IsCurrentRnaInGenProdSet()
 
 CBioSource::TGenome CDiscrepancyContext::GetCurrentGenome()
 {
-    static CBioSource::TGenome genome;
-    static size_t count = 0;
-    if (count != m_Count_Bioseq) {
-        count = m_Count_Bioseq;
+    //static CBioSource::TGenome genome;
+    //static size_t count = 0;
+    if (GetCurrentGenome_count != m_Count_Bioseq) {
+        GetCurrentGenome_count = m_Count_Bioseq;
         const CBioSource* biosrc = GetCurrentBiosource();
-        genome = biosrc ? biosrc->GetGenome() : CBioSource::eGenome_unknown;
+        GetCurrentGenome_genome = biosrc ? biosrc->GetGenome() : CBioSource::eGenome_unknown;
     }
-    return genome;
+    return GetCurrentGenome_genome;
 }
 
 
 bool CDiscrepancyContext::SequenceHasFarPointers()
 {
-    static bool result = false;
-    static size_t count = 0;
-    if (count != m_Count_Bioseq) {
-        count = m_Count_Bioseq;
-        result = false;
+    //static bool result = false;
+    //static size_t count = 0;
+    if (SequenceHasFarPointers_count != m_Count_Bioseq) {
+        SequenceHasFarPointers_count = m_Count_Bioseq;
+        SequenceHasFarPointers_result = false;
         if (!GetCurrentBioseq()->CanGetInst() || !GetCurrentBioseq()->GetInst().CanGetExt() || !GetCurrentBioseq()->GetInst().GetExt().IsDelta()) {
-            return result;
+            return SequenceHasFarPointers_result;
         }
         FOR_EACH_DELTASEQ_IN_DELTAEXT(it, GetCurrentBioseq()->GetInst().GetExt().GetDelta()) {
             if ((*it)->IsLoc()) {
-                result = true;
-                return result;
+                SequenceHasFarPointers_result = true;
+                return SequenceHasFarPointers_result;
             }
         }
     }
-    return result;
+    return SequenceHasFarPointers_result;
 }
 
 
@@ -388,13 +383,13 @@ static void CountNucleotides(const CSeq_data& seq_data, CSeqSummary& ret)
 
 const CSeqSummary& CDiscrepancyContext::GetNucleotideCount()
 {
-    static CSafeStatic<CSeqSummary> ret;
-    static size_t count = 0;
-    if (count == m_Count_Bioseq) {
-        return ret.Get();
+    //static CSafeStatic<CSeqSummary> ret;
+    //static size_t count = 0;
+    if (GetNucleotideCount_count == m_Count_Bioseq) {
+        return GetNucleotideCount_ret;
     }
-    count = m_Count_Bioseq;
-    ret->clear();
+    GetNucleotideCount_count = m_Count_Bioseq;
+    GetNucleotideCount_ret.clear();
 
     // Make a Seq Map so that we can explicitly look at the gaps vs. the unknowns.
     const CRef<CSeqMap> seq_map = CSeqMap::CreateSeqMapForBioseq(*GetCurrentBioseq());
@@ -404,17 +399,17 @@ const CSeqSummary& CDiscrepancyContext::GetNucleotideCount()
     for (; seq_iter; ++seq_iter) {
         switch (seq_iter.GetType()) {
             case CSeqMap::eSeqData:
-                ret->Len += seq_iter.GetLength();
-                CountNucleotides(seq_iter.GetData(), ret.Get());
+                GetNucleotideCount_ret.Len += seq_iter.GetLength();
+                CountNucleotides(seq_iter.GetData(), GetNucleotideCount_ret);
                 break;
             case CSeqMap::eSeqGap:
-                ret->Len += seq_iter.GetLength();
+                GetNucleotideCount_ret.Len += seq_iter.GetLength();
                 break;
             default:
                 break;
         }
     }
-    return ret.Get();
+    return GetNucleotideCount_ret;
 }
 
 
@@ -455,71 +450,73 @@ bool CDiscrepancyContext::IsBadLocusTagFormat(const string& locus_tag)
     return !regexp.IsMatch(locus_tag); 
 }
 
-const CSeq_id *
-CDiscrepancyContext::GetProteinId(void)
+
+const CSeq_id* CDiscrepancyContext::GetProteinId()
 {
-    static const CSeq_id * protein_id = NULL;
-    static size_t count = 0;
-    if (count == m_Count_Bioseq) {
-        return protein_id;
+    //static const CSeq_id* protein_id = NULL;
+    //static size_t count = 0;
+    if (GetProteinId_count == m_Count_Bioseq) {
+        return GetProteinId_protein_id;
     }
-    count = m_Count_Bioseq;
-    protein_id = NULL;
+    GetProteinId_count = m_Count_Bioseq;
+    GetProteinId_protein_id = NULL;
     if( ! GetCurrentBioseq()->IsSetId() ) {
         // NULL
-        return protein_id;
+        return GetProteinId_protein_id;
     }
     const CBioseq::TId& bioseq_ids = GetCurrentBioseq()->GetId();
     ITERATE(CBioseq::TId, id_it, bioseq_ids) {
         const CSeq_id & seq_id = **id_it;
         if( seq_id.IsGeneral() && ! seq_id.GetGeneral().IsSkippable() ) {
-            protein_id = &seq_id;
+            GetProteinId_protein_id = &seq_id;
             break;
         }
     }
-    return protein_id;
+    return GetProteinId_protein_id;
 }
 
-bool CDiscrepancyContext::IsRefseq(void)
-{
-    static bool is_refseq = false;
-    static size_t count = 0;
-    if (count == m_Count_Bioseq) {
-        return is_refseq;
-    }
-    count = m_Count_Bioseq;
 
-    is_refseq = false;
+bool CDiscrepancyContext::IsRefseq()
+{
+    //static bool is_refseq = false;
+    //static size_t count = 0;
+    if (IsRefseq_count == m_Count_Bioseq) {
+        return IsRefseq_is_refseq;
+    }
+    IsRefseq_count = m_Count_Bioseq;
+
+    IsRefseq_is_refseq = false;
     if( ! GetCurrentBioseq()->IsSetId() ) {
         // false
-        return is_refseq;
+        return IsRefseq_is_refseq;
     }
     const CBioseq::TId& bioseq_ids = GetCurrentBioseq()->GetId();
     ITERATE(CBioseq::TId, id_it, bioseq_ids) {
         const CSeq_id & seq_id = **id_it;
         if( seq_id.IsOther() ) {
             // for historical reasons, "other" means "refseq"
-            is_refseq = true;
+            IsRefseq_is_refseq = true;
             break;
         }
     }
 
-    return is_refseq;
+    return IsRefseq_is_refseq;
 }
 
-bool CDiscrepancyContext::IsBGPipe(void)
+
+bool CDiscrepancyContext::IsBGPipe()
 {
-    static bool is_bgpipe = false;
-    static size_t count = 0;
-    if (count == m_Count_Bioseq) {
-        return is_bgpipe;
+    //static bool is_bgpipe = false;
+    //static size_t count = 0;
+    if (IsBGPipe_count == m_Count_Bioseq) {
+        return IsBGPipe_is_bgpipe;
     }
-    count = m_Count_Bioseq;
-    is_bgpipe = false;
+    IsBGPipe_count = m_Count_Bioseq;
+    IsBGPipe_is_bgpipe = false;
 
     CSeqdesc_CI user_desc_ci(
         m_Scope->GetBioseqHandle(*GetCurrentBioseq()), CSeqdesc::e_User);
-    for( ; ! is_bgpipe && user_desc_ci; ++user_desc_ci) {
+    for( ; ! IsBGPipe_is_bgpipe && user_desc_ci; ++user_desc_ci) {
         const CUser_object & user_desc  = user_desc_ci->GetUser();
         // only look at structured comments
         if( ! FIELD_IS_SET_AND_IS(user_desc, Type, Str) ||
@@ -553,11 +550,11 @@ bool CDiscrepancyContext::IsBGPipe(void)
             continue;
         }
 
-        is_bgpipe = true;
-        return is_bgpipe;
+        IsBGPipe_is_bgpipe = true;
+        return IsBGPipe_is_bgpipe;
     }
 
-    return is_bgpipe;
+    return IsBGPipe_is_bgpipe;
 }
 
 

@@ -336,7 +336,7 @@ public:
             INIT_DISCREPANCY_TYPE(CAuth_list),
             INIT_DISCREPANCY_TYPE(CPerson_id),
             INIT_DISCREPANCY_TYPE(CBioseq_set)
-        {}
+        { InitStatic(); }
     bool AddTest(const string& name);
     bool SetAutofixHook(const string& name, TAutofixHook func);
     void Parse(const CSerialObject& root);
@@ -470,6 +470,105 @@ protected:
     // features of the set, and never to subvert the visitor pattern
     // by iterating over the contents oneself
     ADD_DISCREPANCY_TYPE(CBioseq_set)
+
+    // moved static members from the functions
+    //static CConstRef<CBioseq> bioseq;
+    //static size_t count = 0;
+    mutable CConstRef<CBioseq> GetCurrentBioseq_bioseq;
+    mutable size_t GetCurrentBioseq_count;
+    //static const CBioSource* biosrc;
+    //static size_t count = 0;
+    mutable const CBioSource* GetCurrentBiosource_biosrc;
+    mutable size_t GetCurrentBiosource_count;
+    //static const CMolInfo* mol_info;
+    //static size_t count = 0;
+    mutable const CMolInfo* GetCurrentMolInfo_mol_info;
+    mutable size_t GetCurrentMolInfo_count;
+    //static const CBioSource* biosrc = 0;
+    //static size_t count = 0;
+    mutable const CBioSource* HasLineage_biosrc;
+    mutable size_t HasLineage_count;
+    //static bool result = false;
+    //static size_t count = 0;
+    mutable bool IsDNA_result;
+    mutable size_t IsDNA_count;
+    //static bool result = false;
+    //static size_t count = 0;
+    mutable bool IsOrganelle_result;
+    mutable size_t IsOrganelle_count;
+    //static bool result = false;
+    //static size_t count = 0;
+    mutable bool IsEukaryotic_result;
+    mutable size_t IsEukaryotic_count;
+    //static bool result = false;
+    //static size_t count = 0;
+    mutable bool IsBacterial_result;
+    mutable size_t IsBacterial_count;
+    //static bool result = false;
+    //static size_t count = 0;
+    mutable bool IsViral_result;
+    mutable size_t IsViral_count;
+    //static bool result = false;
+    //static size_t count = 0;
+    mutable bool IsPubMed_result;
+    mutable size_t IsPubMed_count;
+    //static CBioSource::TGenome genome;
+    //static size_t count = 0;
+    mutable CBioSource::TGenome GetCurrentGenome_genome;
+    mutable size_t GetCurrentGenome_count;
+    //static bool result = false;
+    //static size_t count = 0;
+    mutable bool SequenceHasFarPointers_result;
+    mutable size_t SequenceHasFarPointers_count;
+    //static CSafeStatic<CSeqSummary> ret;
+    //static size_t count = 0;
+    mutable CSeqSummary GetNucleotideCount_ret;
+    mutable size_t GetNucleotideCount_count;
+    //static const CSeq_id * protein_id = NULL;
+    //static size_t count = 0;
+    mutable const CSeq_id* GetProteinId_protein_id;
+    mutable size_t GetProteinId_count;
+    //static bool is_refseq = false;
+    //static size_t count = 0;
+    mutable bool IsRefseq_is_refseq;
+    mutable size_t IsRefseq_count;
+    //static bool is_bgpipe = false;
+    //static size_t count = 0;
+    mutable bool IsBGPipe_is_bgpipe;
+    mutable size_t IsBGPipe_count;
+    void InitStatic(void)
+    {
+        GetCurrentBioseq_count = 0;
+        GetCurrentBiosource_biosrc = 0;
+        GetCurrentBiosource_count = 0;
+        GetCurrentMolInfo_mol_info = 0;
+        GetCurrentMolInfo_count = 0;
+        HasLineage_biosrc = 0;
+        HasLineage_count = 0;
+        IsDNA_result = 0;
+        IsDNA_count = 0;
+        IsOrganelle_result = 0;
+        IsOrganelle_count = 0;
+        IsEukaryotic_result = 0;
+        IsEukaryotic_count = 0;
+        IsBacterial_result = 0;
+        IsBacterial_count = 0;
+        IsViral_result = 0;
+        IsViral_count = 0;
+        IsPubMed_result = 0;
+        IsPubMed_count = 0;
+        GetCurrentGenome_genome = 0;
+        GetCurrentGenome_count = 0;
+        SequenceHasFarPointers_result = 0;
+        SequenceHasFarPointers_count = 0;
+        GetNucleotideCount_count = 0;
+        CSeq_id* GetProteinId_protein_id = 0;
+        GetProteinId_count = 0;
+        IsRefseq_is_refseq = 0;
+        IsRefseq_count = 0;
+        IsBGPipe_is_bgpipe = 0;
+        IsBGPipe_count = 0;
+    }
 };
 
 
