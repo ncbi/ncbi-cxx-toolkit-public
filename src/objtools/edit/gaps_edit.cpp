@@ -386,6 +386,7 @@ void CGapsEditor::ConvertBioseqToDelta(CBioseq& bioseq)
     delta_seq->SetLiteral().SetLength(len);
     delta_ext.Set().push_back(delta_seq);
     bioseq.SetInst().ResetSeq_data();
+    bioseq.SetInst().SetRepr(CSeq_inst::eRepr_delta);
 }
 
 void CGapsEditor::AppendGap(CBioseq& bioseq)
@@ -394,6 +395,7 @@ void CGapsEditor::AppendGap(CBioseq& bioseq)
     CDelta_seq::TLiteral& lit = delta_seq->SetLiteral();
     lit.SetLength(0);
     x_SetGapParameters(*delta_seq);
+    lit.SetLength(100);
     bioseq.SetInst().SetExt().SetDelta().Set().push_back(delta_seq);
 }
 
