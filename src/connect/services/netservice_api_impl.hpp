@@ -333,6 +333,7 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
     }
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
+    static bool IsUsingXSiteProxy();
     static void AllowXSiteConnections(ESwitch);
 
     static bool IsColoAddr(unsigned int ip)
@@ -357,11 +358,6 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
     SDiscoveredServers* m_ServerGroupPool;
     unsigned m_LatestDiscoveryIteration;
 
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-    static atomic<unsigned> m_ColoNetwork;
-    static atomic<bool> m_AllowXSiteConnections;
-#endif
-
 private:
     string m_APIName;
     string m_ClientName;
@@ -370,6 +366,11 @@ private:
     bool m_UseSmartRetries;
     int m_ConnectionMaxRetries;
     int m_ConnectionRetryDelay;
+
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
+    static atomic<unsigned> m_ColoNetwork;
+    static atomic<bool> m_AllowXSiteConnections;
+#endif
 };
 
 struct SNetServiceMap {

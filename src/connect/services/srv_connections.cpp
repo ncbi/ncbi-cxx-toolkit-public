@@ -507,7 +507,7 @@ CNetServerConnection SNetServerImpl::Connect(STimeout* timeout,
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     ticket_t ticket = 0;
 
-    if (m_Service->m_AllowXSiteConnections &&
+    if (m_Service->IsUsingXSiteProxy() &&
             m_Service->IsColoAddr(m_ServerInPool->m_Address.host)) {
         union {
             SFWDRequestReply rq;

@@ -48,6 +48,10 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
         CGridCommandLineInterfaceApp::EAPIClass api_class,
         CGridCommandLineInterfaceApp::EAdminCmdSeverity cmd_severity)
 {
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
+    if (IsOptionSet(eAllowXSiteConn)) CNetService::AllowXSiteConnections();
+#endif
+
     if (api_class == eNetScheduleSubmitter)
         SetUp_NetCacheCmd(false);
 
@@ -97,11 +101,6 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
         m_NetScheduleAPI.SetClientType(CNetScheduleAPI::eCT_Admin);
 
     m_NetScheduleAPI.SetEventHandler(new CNetScheduleWarningLogger(this));
-
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-    if (IsOptionSet(eAllowXSiteConn))
-        m_NetScheduleAPI.GetService().AllowXSiteConnections();
-#endif
 
     if (IsOptionSet(eCompatMode)) {
         m_NetScheduleAPI.UseOldStyleAuth();

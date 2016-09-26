@@ -330,7 +330,7 @@ void CNetService::AllowXSiteConnections(ESwitch on_off)
 
 bool CNetService::IsUsingXSiteProxy()
 {
-    return SNetServiceImpl::m_AllowXSiteConnections.load();
+    return SNetServiceImpl::IsUsingXSiteProxy();
 }
 
 void SNetServiceImpl::AllowXSiteConnections(ESwitch on_off)
@@ -352,6 +352,11 @@ void SNetServiceImpl::AllowXSiteConnections(ESwitch on_off)
     m_ColoNetwork.store(SOCK_NetToHostLong(sinfo->host) >> 16);
 
     free(sinfo);
+}
+
+bool SNetServiceImpl::IsUsingXSiteProxy()
+{
+    return m_AllowXSiteConnections.load();
 }
 #endif
 

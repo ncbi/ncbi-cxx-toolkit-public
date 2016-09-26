@@ -41,6 +41,10 @@ USING_NCBI_SCOPE;
 void CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class,
         CGridCommandLineInterfaceApp::EAdminCmdSeverity /*cmd_severity*/)
 {
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
+    if (IsOptionSet(eAllowXSiteConn)) CNetService::AllowXSiteConnections();
+#endif
+
     if (IsOptionSet(eNetStorage) && IsOptionSet(eDirectMode)) {
         NCBI_THROW(CArgException, eExcludedValue, "'--" DIRECT_MODE_OPTION "' "
             "cannot be used together with '--" NETSTORAGE_OPTION "'");
@@ -151,10 +155,6 @@ void CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class,
         if (api_class == eNetStorageAdmin)
             m_NetStorageAdmin = CNetStorageAdmin(m_NetStorage);
     }
-
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-    if (IsOptionSet(eAllowXSiteConn)) CNetService::AllowXSiteConnections();
-#endif
 }
 
 CNetStorageObject CGridCommandLineInterfaceApp::GetNetStorageObject()
