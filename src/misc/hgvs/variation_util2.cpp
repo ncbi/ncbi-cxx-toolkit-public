@@ -1727,21 +1727,27 @@ CRef<CSeq_literal> CVariationUtil::s_SpliceLiterals(
 CConstRef<CSeq_literal>  CVariationUtil::x_FindOrCreateLiteral(const CVariation& v)
 {
     CConstRef<CSeq_literal> literal = s_FindFirstLiteral(v);
-    if(!literal) {
-        //instantiate a literal from a placement (make sure there are no offsets)
-        const CVariation::TPlacements* placements = s_GetPlacements(v);
-        if(placements) {
-            ITERATE(CVariation::TPlacements, it, *placements) {
-                const CVariantPlacement& p = **it;
-                if(p.IsSetStart_offset() || p.IsSetStop_offset()) {
-                    continue;
-                } else {
-                    literal = x_GetLiteralAtLoc(p.GetLoc());
-                    break;
-                }
-            }
-        }
+    if(literal) {
+        return literal;
     }
+
+    //instantiate a literal from a placement (make sure there are no offsets)
+    const CVariation::TPlacements* placements = s_GetPlacements(v);
+
+    if(!placements) {
+        return literal;
+    }
+
+    ITERATE(CVariation::TPlacements, it, *placements) {
+        const CVariantPlacement& p = **it;
+        if(p.IsSetStart_offset() || p.IsSetStop_offset()) {
+            continue;
+        }
+
+        literal = x_GetLiteralAtLoc(p.GetLoc());
+        break;
+    }
+
     return literal;
 }
 
@@ -1760,6 +1766,25 @@ void CVariationUtil::ChangeToDelins(CVariation& v)
         {
             ChangeToDelins(**it);
         }
+    } else if(v.GetData().IsInstance()
+           && v.GetData().GetInstance().GetType() == CVariation_inst::eType_inv 
+           && v.GetData().GetInstance().GetDelta().empty())
+    {
+        CVariation_inst& inst = v.SetData().SetInstance();
+        inst.SetType(CVariation_inst::eType_delins);
+
+        CConstRef<CSeq_literal> this_literal = x_FindOrCreateLiteral(v);
+        if(!this_literal) {
+            NcbiCerr << MSerial_AsnText << v;
+            NCBI_THROW(CException, eUnknown, 
+                        "Could not find literal for 'this' location in placements");
+        }
+        
+        CRef<CDelta_item> di(new CDelta_item);
+        di->SetSeq().SetLiteral().Assign(*this_literal);
+        this->FlipStrand(*di);
+        inst.SetDelta().push_back(di);
+
     } else if(v.GetData().IsInstance()) {
         CVariation_inst& inst = v.SetData().SetInstance();
         inst.SetType(CVariation_inst::eType_delins);
