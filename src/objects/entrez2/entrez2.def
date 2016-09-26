@@ -4,7 +4,7 @@ clients = entrez2_client
 
 [entrez2_client]
 class   = CEntrez2Client
-service = ENTREZ2
+service = ENTREZ2S
 request = Entrez2-request.request
 reply   = Entrez2-reply.reply
 
