@@ -461,11 +461,10 @@ void CAlnGraphic::AlnGraphicDisplay(CNcbiOstream& out){
 void CAlnGraphic::x_PrintTop (CNCBINode* center, CHTML_table* tbl_box, CHTML_tc*& tbl_box_tc){
     if(m_View & eMouseOverInfo){
      
-        CRef<CHTML_input> textbox(new CHTML_input("text", "defline"));
+        CRef<CHTMLBlockElement> textbox(new CHTMLBlockElement("div","Mouse over to see the defline, click to show alignments"));        
         CNodeRef centered_text;       
-        textbox->SetAttribute("size", 85);
-        textbox->SetAttribute("value", 
-                              "Mouse over to see the defline, click to show alignments");
+        textbox->SetAttribute("id", "df");
+        textbox->SetAttribute("style","width:60em;background-color: white; border: 1px solid");        
         center->AppendChild(&(*textbox));
       
     }
@@ -748,12 +747,11 @@ void CAlnGraphic::x_BuildHtmlTable(int master_len, CHTML_table* tbl_box, CHTML_t
                     bar_length, m_BarHeight,"score " + NStr::IntToString((int)(*iter2)->bits));
                 image->SetAttribute("border", 0);
                 if(m_View & eMouseOverInfo){
-                    image->SetAttribute("ONMouseOver", m_MouseOverFormName 
-                                        + ".defline.value=" + "'" + 
+                    image->SetAttribute("ONMouseOver", "document.getElementById('df').innerHTML='" + 
                                         NStr::JavaScriptEncode((*iter2)->info)
                                         + "'");
-                    image->SetAttribute("ONMOUSEOUT", m_MouseOverFormName + 
-                                        ".defline.value='Mouse-over to show defline and scores, click to show alignments'");
+                    image->SetAttribute("ONMOUSEOUT",
+                                        "document.getElementById('df').innerHTML='Mouse-over to show defline and scores, click to show alignments'");
                 }
                 if(m_View & (eAnchorLink | eAnchorLinkDynamic)){
                     string acc;
