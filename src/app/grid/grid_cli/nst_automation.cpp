@@ -172,9 +172,6 @@ TCommands SNetStorageService::CallCommands()
             }},
         { "server_info", },
         { "get_servers", },
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-        { "allow_xsite_connections", },
-#endif
     };
 
     TCommands base_cmds = SNetServiceBase::CallCommands();
@@ -246,11 +243,6 @@ bool SNetStorageService::Call(const string& method,
                     ReturnNetStorageServerObject(m_NetStorageAdmin, *it)->GetID());
         reply.Append(object_ids);
     } else
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-        if (method == "allow_xsite_connections")
-            CNetService::AllowXSiteConnections();
-        else
-#endif
         return SNetServiceBase::Call(method, arg_array, reply);
 
     return true;

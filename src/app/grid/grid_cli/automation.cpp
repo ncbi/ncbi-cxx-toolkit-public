@@ -233,6 +233,10 @@ TCommands SNetServiceBase::CallCommands()
         { "get_address", {
                 { "which_part", 0, }
             }},
+// TODO: Remove this after GRID Python module stops using it
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
+        { "allow_xsite_connections", },
+#endif
     };
 
     return cmds;
@@ -250,6 +254,12 @@ bool SNetServiceBase::Call(const string& method,
         reply.Append(g_ExecToJson(server_address_proc,
                 m_Service, m_ActualServiceType));
     } else
+// TODO: Remove this after GRID Python module stops using it
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
+        if (method == "allow_xsite_connections")
+            CNetService::AllowXSiteConnections();
+        else
+#endif
         return false;
 
     return true;
@@ -264,9 +274,6 @@ TCommands SNetService::CallCommands()
                 { "command", CJsonNode::eString, },
                 { "multiline", false, },
             }},
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-        { "allow_xsite_connections", },
-#endif
     };
 
     TCommands base_cmds = SNetServiceBase::CallCommands();
@@ -285,11 +292,6 @@ bool SNetService::Call(const string& method,
         reply.Append(g_ExecAnyCmdToJson(m_Service, m_ActualServiceType,
                 command, arg_array.NextBoolean(false)));
     } else
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-        if (method == "allow_xsite_connections")
-            m_Service.AllowXSiteConnections();
-        else
-#endif
         return SNetServiceBase::Call(method, arg_array, reply);
 
     return true;
@@ -404,6 +406,9 @@ TCommands CAutomationProc::Commands()
             }},
         { "echo", "any" },
         { "version", },
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
+        { "allow_xsite_connections", },
+#endif
     };
 
     return cmds;
@@ -477,6 +482,11 @@ CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)
         reply.AppendString(GRID_APP_VERSION);
         reply.AppendString(__DATE__);
     } else
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
+        if (command == "allow_xsite_connections")
+            CNetService::AllowXSiteConnections();
+        else
+#endif
         arg_array.Exception("unknown command");
 
     return reply;
