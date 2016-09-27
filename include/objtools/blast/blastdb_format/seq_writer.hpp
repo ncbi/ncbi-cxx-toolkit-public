@@ -40,7 +40,7 @@
 BEGIN_NCBI_SCOPE
 
 /// Configuration object for CSeqFormatter
-struct CSeqFormatterConfig {
+struct NCBI_DEPRECATED CSeqFormatterConfig {
     /// Default constructor
     CSeqFormatterConfig() {
         m_LineWidth = 80;
@@ -74,7 +74,7 @@ struct CSeqFormatterConfig {
 };
 
 /// Customizable sequence writer interface
-class NCBI_BLASTDB_FORMAT_EXPORT CSeqFormatter 
+class NCBI_BLASTDB_FORMAT_EXPORT NCBI_DEPRECATED CSeqFormatter 
 {
 public:
     /// Constructor
