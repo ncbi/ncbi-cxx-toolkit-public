@@ -53,6 +53,7 @@
 #include <objmgr/seqdesc_ci.hpp>
 
 #include <objtools/writers/gff3flybase_writer.hpp>
+#include <objects/seqalign/Prot_pos.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -235,12 +236,21 @@ bool CGff3FlybaseWriter::xAssignAlignmentSplicedLocation(
 
     unsigned int seqStart = exon.GetProduct_start().AsSeqPos()/tgtWidth;
     unsigned int seqStop = exon.GetProduct_end().AsSeqPos()/tgtWidth;
+
     ENa_strand seqStrand = eNa_strand_plus;
     if (spliced.CanGetProduct_strand()  &&  
             spliced.GetProduct_strand() == objects::eNa_strand_minus) {
          seqStrand = eNa_strand_minus;
     }
     record.SetLocation(seqStart, seqStop, seqStrand);
+
+    // Works for + strand
+    if (exon.GetProduct_start().IsProtpos() &&
+        exon.GetProduct_start().GetProtpos().IsSetFrame()) {
+        const TSeqPos frame = exon.GetProduct_start().GetProtpos().GetFrame();
+        record.SetPhase(frame-1);
+    }
+
     return true;
 }
 
