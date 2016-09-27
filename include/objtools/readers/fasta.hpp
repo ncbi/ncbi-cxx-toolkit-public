@@ -190,13 +190,6 @@ public:
 
     void IgnoreProblem(ILineError::EProblem problem);
 
-protected:
-    enum EInternalFlags {
-        fAligning = 0x40000000,
-        fInSegSet = 0x20000000
-    };
-
-    typedef CTempString TStr;
     struct SLineTextAndLoc {
         SLineTextAndLoc(
             const string & sLineText,
@@ -207,31 +200,44 @@ protected:
         string  m_sLineText;
         TSeqPos m_iLineNum;
     };
+
+    using TIgnoredProblems = vector<ILineError::EProblem>;
     using TSeqTitles = vector<SLineTextAndLoc>;
+protected:
+    enum EInternalFlags {
+        fAligning = 0x40000000,
+        fInSegSet = 0x20000000
+    };
+
+    typedef CTempString TStr;
 
     virtual CRef<CSeq_entry> x_ReadSegSet(ILineErrorListener * pMessageListener);
 
     virtual void   ParseDefLine  (const TStr& s, ILineErrorListener * pMessageListener);
 
-    void ParseDefLine(const TStr& defLine, 
-                      TReaderFlags fBaseFlags,
-                      TFlags fFastaFlags,
-                      size_t lineNumber,
-                      list<CRef<CSeq_id>>& ids, 
-                      bool& hasRange,
-                      TSeqPos& rangeStart,
-                      TSeqPos& rangeEnd,
-                      TSeqTitles& seqTitles, 
-                      ILineErrorListener* pMessageListener) const;
+    static void ParseDefLine(const TStr& defLine, 
+        TReaderFlags fBaseFlags,
+        TFlags fFastaFlags,
+        size_t maxIdLength,
+        size_t lineNumber,
+        const TIgnoredProblems& ignoredErrors,
+        list<CRef<CSeq_id>>& ids, 
+        bool& hasRange,
+        TSeqPos& rangeStart,
+        TSeqPos& rangeEnd,
+        TSeqTitles& seqTitles, 
+        ILineErrorListener* pMessageListener);
 
     virtual bool   ParseIDs(const TStr& s, ILineErrorListener * pMessageListener);
 
-    bool ParseIDs (const TStr& s, 
+    static bool ParseIDs (const TStr& s, 
         TReaderFlags fBaseFlags,
         TFlags fFastaFlags,
+        size_t maxIdLength,
         size_t lineNumber,
+        const TIgnoredProblems& ignoredErrors,
         list<CRef<CSeq_id>>& ids, 
-        ILineErrorListener* pMessageListener) const;
+        ILineErrorListener* pMessageListener);
 
     static size_t ParseRange    (const TStr& s, TSeqPos& start, TSeqPos& end, ILineErrorListener * pMessageListener);
     virtual void   ParseTitle    (const SLineTextAndLoc & lineInfo, ILineErrorListener * pMessageListener);
@@ -258,10 +264,15 @@ protected:
             ILineError::EProblem _eProblem, 
             CTempString _sFeature, CTempString _sQualName, CTempString _sQualValue) const;
 
-    void PostWarning(ILineErrorListener* pMessageListener, 
-                     const size_t lineNumber,
-                     const string& errMessage, 
-                     CObjReaderParseException::EErrCode errCode) const;
+    static void PostWarning(ILineErrorListener* pMessageListener, 
+                            const size_t lineNumber,
+                            const string& errMessage, 
+                            CObjReaderParseException::EErrCode errCode);
+
+    static void PostError(ILineErrorListener* pMessageListener, 
+                          const size_t lineNumber,
+                          const string& errMessage, 
+                          CObjReaderParseException::EErrCode errCode);
 
     typedef int                         TRowNum;
     typedef map<TRowNum, TSignedSeqPos> TSubMap;
@@ -350,6 +361,7 @@ protected:
     typedef CRef<SGap> TGapRef;
     typedef vector<TGapRef>     TGaps;
     typedef set<CSeq_id_Handle> TIDTracker;
+   
 
     CRef<ILineReader>       m_LineReader;
     stack<TFlags>           m_Flags;

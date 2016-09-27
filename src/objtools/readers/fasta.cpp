@@ -537,13 +537,15 @@ void CFastaReader::SetIDGenerator(CSeqIdGenerator& gen)
 void CFastaReader::ParseDefLine(const TStr& defLine,
                                 const TReaderFlags fBaseFlags,
                                 const TFlags fFastaFlags,
+                                const size_t maxIdLength,
                                 const size_t lineNumber,
+                                const TIgnoredProblems& ignoredErrors,
                                 list<CRef<CSeq_id>>& ids,
                                 bool& hasRange,
                                 TSeqPos& rangeStart,
                                 TSeqPos& rangeEnd,
                                 TSeqTitles& seqTitles, 
-                                ILineErrorListener * pMessageListener) const
+                                ILineErrorListener * pMessageListener) 
 {
     size_t start = 1, pos, len = defLine.length(), title_start;
     size_t range_len = 0;
@@ -630,7 +632,9 @@ void CFastaReader::ParseDefLine(const TStr& defLine,
             has_id = ParseIDs(TStr(defLine.data() + start, pos - start - range_len), 
                               fBaseFlags, 
                               fFastaFlags, 
+                              maxIdLength,
                               lineNumber,
+                              ignoredErrors,
                               ids, 
                               pMessageListener);
             if (has_id  &&  (fFastaFlags & fAllSeqIds)  &&  defLine[pos] == '\1') {
@@ -673,10 +677,13 @@ void CFastaReader::ParseDefLine(const TStr& s, ILineErrorListener * pMessageList
     TSeqPos range_start, range_end;
 
     bool has_range;
+
     ParseDefLine(s,
                  m_iFlags, 
                  GetFlags(),
+                 m_MaxIDLength,
                  LineNumber(),
+                 m_ignorable,
                  SetIDs(), 
                  has_range,
                  range_start, 
@@ -766,9 +773,11 @@ bool CFastaReader::ParseIDs(
     const TStr& s, 
     const TReaderFlags fBaseFlags, 
     const TFlags fFastaFlags,
+    const size_t maxIdLength,
     const size_t lineNumber,
+    const TIgnoredProblems& ignoredErrors,
     list<CRef<CSeq_id>>& ids, 
-    ILineErrorListener * pMessageListener) const
+    ILineErrorListener * pMessageListener) 
 {
     // if user wants all ids to be purely local, no problem
     if( fBaseFlags & CReaderBase::fAllIdsAsLocal )
@@ -785,30 +794,28 @@ bool CFastaReader::ParseIDs(
         flags |= CSeq_id::fParse_RawText;
     }
 
+    const bool ignoreError
+        = (find(ignoredErrors.cbegin(), ignoredErrors.cend(), ILineError::eProblem_GeneralParsingError) 
+           != ignoredErrors.cend()); 
+
     try {
         if (s.find(',') != TStr::npos && s.find('|') == TStr::npos)
         {
             string temp = NStr::Replace(s, ",", "_");
             count = CSeq_id::ParseIDs(ids, temp, flags);
 
-            TStr errMessage = "CFastaReader: Near line " + NStr::NumericToString(lineNumber) 
+            const string errMessage = 
+                "CFastaReader: Near line " + NStr::NumericToString(lineNumber) 
                 + ", the sequence contains 'comma' symbol and replaced with 'underscore' "
                 + "symbol. Please find and correct the sequence id.";
-            PostWarning(pMessageListener, 
-                        eDiag_Warning, 
-                        lineNumber,
-                        errMessage,
-                        CObjReaderParseException::eFormat,
-                        ILineError::eProblem_GeneralParsingError,
-                        "", "", "");
 
-/*
-            FASTA_WARNING(LineNumber(),
-                "CFastaReader: Near line " << LineNumber() 
-                << ", the sequence contains 'comma' symbol and replaced with 'underscore' "
-                << "symbol. Please find and correct the sequence id.",
-                ILineError::eProblem_GeneralParsingError, "");
-                */
+            if (!ignoreError) {
+                PostWarning(pMessageListener, 
+                            lineNumber,
+                            errMessage,
+                            CObjReaderParseException::eFormat);
+
+            }
         }
         else
         {
@@ -845,7 +852,7 @@ bool CFastaReader::ParseIDs(
       CTempString check;
       size_t last = s.rfind('|');
       check = (last == CTempString::npos) ? s : s.substr(last + 1);
-      if (check.length() > m_MaxIDLength ) { 
+      if (check.length() > maxIdLength) { 
 
         // before throwing an ID-too-long error, check if what we
         // think is a "sequence ID" is actually sequence data
@@ -853,12 +860,19 @@ bool CFastaReader::ParseIDs(
             return false;
         }
 
-        FASTA_ERROR(lineNumber,
-            "CFastaReader: Near line " << lineNumber
-            << ", the sequence ID is too long.  Its length is " << s.length()
-            << " but the max length allowed is " << m_MaxIDLength 
-            << ".  Please find and correct all sequence IDs that are too long.",
-            CObjReaderParseException::eIDTooLong);
+        const string errMessage =
+            "CFastaReader: Near line " + NStr::NumericToString(lineNumber)
+            + ", the sequence ID is too long.  Its length is " + NStr::NumericToString(s.length())
+            + " but the max length allowed is "+  NStr::NumericToString(maxIdLength)
+            + ".  Please find and correct all sequence IDs that are too long.";
+
+
+        if (!ignoreError) {
+            PostError(pMessageListener, 
+                      lineNumber,
+                      errMessage,
+                      CObjReaderParseException::eIDTooLong);
+        }
       }
     }
     return count > 0;
@@ -2346,7 +2360,7 @@ void CFastaReader::SetGapLinkageEvidences(CSeq_gap::EType type, const set<int>& 
 void CFastaReader::PostWarning(ILineErrorListener* pMessageListener, 
                                const size_t lineNumber,
                                const string& errMessage, 
-                               const CObjReaderParseException::EErrCode errCode) const
+                               const CObjReaderParseException::EErrCode errCode) 
 {
     unique_ptr<CObjReaderLineException> pLineExpt(
         CObjReaderLineException::Create(
@@ -2368,6 +2382,26 @@ void CFastaReader::PostWarning(ILineErrorListener* pMessageListener,
     }
 }
 
+
+void CFastaReader::PostError(ILineErrorListener* pMessageListener,
+                             const size_t lineNumber,
+                             const string& errMessage,
+                             const CObjReaderParseException::EErrCode errCode) 
+{
+
+    unique_ptr<CObjReaderLineException> pLineExpt(
+        CObjReaderLineException::Create(
+        eDiag_Warning,
+        lineNumber,
+        errMessage, 
+        ILineError::eProblem_GeneralParsingError,
+        "", "", "", "",
+        errCode));
+
+    if (!pMessageListener || !pMessageListener->PutError(*pLineExpt)) {
+        throw CObjReaderParseException(DIAG_COMPILE_INFO, 0, errCode, errMessage, lineNumber, eDiag_Error);
+    }
+}
 
 
 
