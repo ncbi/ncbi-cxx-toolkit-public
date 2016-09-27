@@ -1565,10 +1565,13 @@ CNcbiTestApplication::AdjustTestTimeout(but::test_unit* tu)
             CNcbiEnvironment env;
             printf("Maximum execution time of %s seconds is exceeded",
                    m_TimeoutStr.c_str());
-#if BOOST_VERSION >= 105900
+#if BOOST_VERSION < 105900
+            throw but::test_being_aborted();
+#elif defined(SIGALRM)
             raise(SIGALRM);
 #else
-            throw but::test_being_aborted();
+            throw runtime_error("Maximum execution time of " + m_TimeoutStr +
+                                " seconds is exceeded");
 #endif
         }
         new_timeout = (unsigned int)(m_Timeout - elapsed);
