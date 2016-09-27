@@ -113,23 +113,30 @@ public:
         : m_InternalData(internal_data), m_OptsMemento(opts_memento)
     {
         // The following fields need to be copied to ensure MT-safety
-        BlastSeqSrc* seqsrc = 
+        BlastSeqSrc* seqsrc =
             BlastSeqSrcCopy(m_InternalData.m_SeqSrc->GetPointer());
-        m_InternalData.m_SeqSrc.Reset(new TBlastSeqSrc(seqsrc, 
+        m_InternalData.m_SeqSrc.Reset(new TBlastSeqSrc(seqsrc,
                                                        BlastSeqSrcFree));
         // The progress field must be copied to ensure MT-safety
         if (m_InternalData.m_ProgressMonitor->Get()) {
-            SBlastProgress* bp = 
+            SBlastProgress* bp =
                 SBlastProgressNew(m_InternalData.m_ProgressMonitor->Get()->user_data);
             m_InternalData.m_ProgressMonitor.Reset(new CSBlastProgress(bp));
         }
+        // The BlastQueryInfo field needs to be copied to silence Thread
+        // Sanitizer warnings, and probably to ensure MT-safety too.
+        BlastQueryInfo* queryInfo =
+                BlastQueryInfoDup(m_InternalData.m_QueryInfo);
+        m_InternalData.m_QueryInfo = queryInfo;
     }
 
 protected:
-    virtual ~CPrelimSearchThread(void) {}
+    virtual ~CPrelimSearchThread(void) {
+        BlastQueryInfoFree(m_InternalData.m_QueryInfo);
+    }
 
     virtual void* Main(void) {
-        return (void*) 
+        return (void*)
             ((intptr_t) CPrelimSearchRunner(m_InternalData, m_OptsMemento)());
     }
 
