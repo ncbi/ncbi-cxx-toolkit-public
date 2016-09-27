@@ -487,4 +487,62 @@ bool CGff3FlybaseWriter::xAssignAlignmentDensegScores(
     return true;
 }
 
+//  ----------------------------------------------------------------------------
+bool CGff3FlybaseWriter::xAssignAlignmentSplicedGap(
+    CGffAlignRecord& record,
+    const CSpliced_seg& spliced,
+    const CSpliced_exon& exon)
+//  ----------------------------------------------------------------------------
+{
+    CSeq_id::EAccessionInfo productInfo;
+    const CSeq_id& productId = spliced.GetProduct_id();
+    CSeq_id_Handle bestH = sequence::GetId(
+        productId, *m_pScope, sequence::eGetId_Best);
+    if (bestH) {
+        productInfo = bestH.GetSeqId()->IdentifyAccession();
+    }
+    else {
+        productInfo = productId.IdentifyAccession();
+    }
+    const int tgtWidth = (productInfo & CSeq_id::fAcc_prot) ? 3 : 1;
+
+    typedef list<CRef<CSpliced_exon_chunk> > CHUNKS;
+
+    const CHUNKS& chunks = exon.GetParts();
+    for (CHUNKS::const_iterator cit = chunks.begin(); cit != chunks.end(); ++cit) {
+        const CSpliced_exon_chunk& chunk = **cit;
+        switch (chunk.Which()) {
+        default:
+            break;
+        case CSpliced_exon_chunk::e_Mismatch:
+            record.AddMatch(chunk.GetMismatch()); 
+            break;
+        case CSpliced_exon_chunk::e_Diag:
+            record.AddMatch(chunk.GetDiag()/tgtWidth); 
+            break;
+        case CSpliced_exon_chunk::e_Match:
+            record.AddMatch(chunk.GetMatch()/tgtWidth); 
+            break;
+        case CSpliced_exon_chunk::e_Genomic_ins:
+            {
+                const size_t del_length = chunk.GetGenomic_ins()/tgtWidth;
+                if (del_length > 0) {
+                    record.AddInsertion(del_length);
+                }
+            }
+            break;
+        case CSpliced_exon_chunk::e_Product_ins:
+            {
+                const size_t insert_length = chunk.GetProduct_ins()/tgtWidth;
+                if (insert_length > 0) { 
+                    record.AddDeletion(insert_length);
+                }
+            }
+            break;
+        }
+    }
+    record.FinalizeMatches();
+    return true;
+}
+
 END_NCBI_SCOPE

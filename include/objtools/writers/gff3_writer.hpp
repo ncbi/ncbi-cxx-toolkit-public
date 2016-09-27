@@ -214,7 +214,7 @@ protected:
         CGffAlignRecord&,
         const CSpliced_seg&,
         const CSpliced_exon&);
-    bool xAssignAlignmentSplicedGap(
+    virtual bool xAssignAlignmentSplicedGap(
         CGffAlignRecord&,
         const CSpliced_seg&,
         const CSpliced_exon&);

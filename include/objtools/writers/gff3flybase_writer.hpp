@@ -65,6 +65,11 @@ protected:
         const CSpliced_seg&,
         const CSpliced_exon&) override;
 
+    virtual bool xAssignAlignmentSplicedGap(
+        CGffAlignRecord& record,
+        const CSpliced_seg& spliced,
+        const CSpliced_exon& exon) override;
+
     virtual bool xAssignAlignmentSplicedSeqId(
         CGffAlignRecord&,
         const CSpliced_seg&,
