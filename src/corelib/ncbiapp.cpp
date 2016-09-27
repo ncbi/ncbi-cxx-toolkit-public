@@ -104,8 +104,8 @@ CNcbiApplication* CNcbiApplication::Instance(void)
 
 CNcbiApplication::CNcbiApplication(const SBuildInfo& build_info)
     : m_ConfigLoaded(false),
-      m_LogFile(0),
-      m_LogOptions(0)
+      m_LogOptions(0),
+      m_LogFile(0)
 {
     // Initialize UID and start timer
     GetDiagContext().GetUID();
@@ -397,8 +397,8 @@ void CNcbiApplication::x_ReadLogOptions()
 void CNcbiApplication::x_LogOptions(int /*ELogOptionsEvent*/ event)
 {
     // Print environment values
-    if ( m_LogOptions & fLogAppEnvironment  &&  event & eStartEvent ||
-        m_LogOptions & fLogAppEnvironmentStop  &&  event & eStopEvent ) {
+    if ( (m_LogOptions & fLogAppEnvironment  &&  event & eStartEvent) ||
+         (m_LogOptions & fLogAppEnvironmentStop  &&  event & eStopEvent) ) {
         CDiagContext_Extra extra = GetDiagContext().Extra();
         extra.Print("LogAppEnvironment", "true");
         list<string> env_keys;
@@ -411,8 +411,8 @@ void CNcbiApplication::x_LogOptions(int /*ELogOptionsEvent*/ event)
     }
 
     // Print registry values
-    if ( m_LogOptions & fLogAppRegistry  &&  event & eStartEvent ||
-         m_LogOptions & fLogAppRegistryStop  &&  event & eStopEvent ) {
+    if ( (m_LogOptions & fLogAppRegistry  &&  event & eStartEvent) ||
+         (m_LogOptions & fLogAppRegistryStop  &&  event & eStopEvent) ) {
         CDiagContext_Extra extra = GetDiagContext().Extra();
         extra.Print("LogAppRegistry", "true");
         list<string> reg_sections;
