@@ -113,6 +113,122 @@ list<CNPiece> FindGoodParts(const CProteinAlignText& alignment_text, CProSplignO
         it =  m_AliPiece.erase(it);
     }
 
+    //trim flanks with positives dropoff over a cutoff, iterative
+    //flank 'good pieces' should not be dropped completely
+    if( !m_AliPiece.empty() ) {
+        const double dropoff = 25/(double)100;
+        const int window_size = 59;
+        bool keep_trimming = true;
+
+        //trim left flank
+
+        while ( keep_trimming ) {
+            _ASSERT( !m_AliPiece.empty() );
+            _ASSERT( m_AliPiece.begin()->beg + 1 < m_AliPiece.begin()->end );
+            int begpos = m_AliPiece.begin()->beg;
+            int endpos = m_AliPiece.begin()->end;
+            //cut point
+            double cur_max_drop = 0;
+            int cur_cut = begpos;
+            //current point
+            int cur_pos = begpos;
+            int cur_end = begpos + window_size;
+            int cur_len = 0;//flank length
+            int lposit = 0; // number of positives to the left of cur_pos;
+            int rposit = 0; // number of positives in the window [cur_pos, cur_end) 
+            //count posit in initial window 
+            if( cur_end >= endpos ) break; //nothing to trim if piece length is window size or less
+            //initial window
+            for( int pos = cur_pos; pos < cur_end; ++pos ) {
+                if(match[pos] == POSIT_CHAR || match[pos] == MATCH_CHAR) {
+                    ++rposit;
+                }
+            }
+            //find cutting point
+            do {
+                //step
+                if( match[cur_pos] == POSIT_CHAR || match[cur_pos] == MATCH_CHAR ) {
+                    ++lposit;
+                    _ASSERT( rposit > 0 );
+                    --rposit;
+                }
+                if(  match[cur_end] == POSIT_CHAR || match[cur_end] == MATCH_CHAR ) {
+                    ++rposit;
+                }
+                ++cur_pos;
+                ++cur_end;
+                ++cur_len;
+                //check
+                double posit_drop = rposit/(double)window_size - lposit/(double)cur_len;
+                if( posit_drop >= dropoff && posit_drop > cur_max_drop ) {
+                    cur_max_drop = posit_drop;
+                    cur_cut = cur_pos;
+                }
+            } while( cur_end < endpos );
+            // cut ?
+            if( cur_cut == begpos ) {
+                keep_trimming = false;
+            } else {//trim
+                m_AliPiece.begin()->beg = cur_cut;
+            }
+
+        }
+
+        //trim right flank
+
+        keep_trimming = true;
+        while ( keep_trimming ) {
+            _ASSERT( !m_AliPiece.empty() );
+            _ASSERT( m_AliPiece.back().beg + 1 < m_AliPiece.back().end );
+            int begpos = m_AliPiece.back().beg;
+            int endpos = m_AliPiece.back().end;
+            //cut point
+            double cur_max_drop = 0;
+            int cur_cut = endpos;
+            //current numbers
+            int win_end = endpos;
+            if( begpos + window_size > win_end) break; //window goes out of the 'good piece'
+            int win_beg = win_end - window_size;
+            int cur_len = 0;//flank length
+            int fposit = 0; // flank number of positives (startins with win_end);
+            int wposit = 0; // number of positives in the window [win_beg, win_end) 
+            //count posit in initial window 
+            for( int pos = win_beg; pos < win_end; ++pos ) {
+                if(match[pos] == POSIT_CHAR || match[pos] == MATCH_CHAR) {
+                    ++wposit;
+                }
+            }
+            //find cutting point
+            while( win_beg > begpos ) {
+                //step
+                --win_end;
+                --win_beg;
+                if( match[win_end] == POSIT_CHAR || match[win_end] == MATCH_CHAR ) {
+                    _ASSERT(wposit > 0);
+                    ++fposit;
+                    --wposit;
+                }
+                if( match[win_beg] == POSIT_CHAR || match[win_beg] == MATCH_CHAR ) {
+                    ++wposit;
+                }
+                ++cur_len;
+                //check
+                double posit_drop = wposit/(double)window_size - fposit/(double)cur_len;
+                if( posit_drop >= dropoff && posit_drop > cur_max_drop ) {
+                    cur_max_drop = posit_drop;
+                    cur_cut = win_end;
+                }
+            }
+            // cut ?
+            if( cur_cut == endpos ) {
+                keep_trimming = false;
+            } else {//trim
+                m_AliPiece.back().end = cur_cut;
+            }
+        }
+    } //end of positive flank drop trimming
+
+    // 'fill holes' mode. keep everything between the first 'good piece' and the last one.
     if( !m_AliPiece.empty() && m_options.GetFillHoles() ) {
         string::size_type beg = m_AliPiece.front().beg;
         string::size_type end = m_AliPiece.back().end;
