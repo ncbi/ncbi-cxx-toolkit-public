@@ -3857,24 +3857,28 @@ function_cleanup:
         sfree(incoming_align_set_tld[i]);
         Blast_CompositionWorkspaceFree(&NRrecord_tld[i]);
         s_SavedParametersFree(&savedParams_tld[i]);
+        BlastSeqSrcFree(seqsrc_tld[i]);
     }
-    sfree(theseMatches);
-    sfree(NRrecord_tld);
     sfree(alignments_tld);
-    sfree(incoming_align_set_tld);
-    sfree(savedParams_tld);
-    sfree(sbp_tld);
-    sfree(matrix_tld);
-    sfree(seqsrc_tld);
+    sfree(compositionTestIndex_tld);
     sfree(gap_align_tld);
-    sfree(score_params_tld);
-    sfree(hit_params_tld);
-    sfree(results_tld);
     sfree(gapping_params_context_tld);
+    sfree(hit_params_tld);
+    sfree(incoming_align_set_tld);
+    sfree(matrix_tld);
+    sfree(NRrecord_tld);
+    sfree(numContexts_tld);
+    sfree(query_info_tld);
     sfree(redo_align_params_tld);
     sfree(redoneMatches_tld);
+    sfree(results_tld);
+    sfree(savedParams_tld);
+    sfree(sbp_tld);
+    sfree(score_params_tld);
+    sfree(seqsrc_tld);
     sfree(status_code_tld);
-    sfree(query_info_tld);
+    sfree(subjectBlk_tld);
+    sfree(theseMatches);
 
     return (Int2) status_code;
 }
