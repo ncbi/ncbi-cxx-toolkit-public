@@ -17,13 +17,11 @@ SRC = read_util format_guess_ex \
       gvf_reader \
       vcf_reader \
       best_feat_finder source_mod_parser fasta_exception agp_converter \
-      ucscregion_reader \
+      ucscregion_reader struct_cmt_reader \
       message_listener line_error
 
 
 DLL_LIB = submit seqset $(SEQ_LIBS) general creaders xutil
-
-
 
 USES_LIBRARIES =  \
     creaders submit
