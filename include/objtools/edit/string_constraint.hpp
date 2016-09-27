@@ -102,7 +102,7 @@ public:
     const string& GetMatchText() { return m_MatchText; }
     void SetMatchText(const string& match_text) { m_MatchText = match_text; }
     void Assign(const CStringConstraint& other);
-
+    bool IsInRange(const string& str, const string &tmp);
 private:
     string m_MatchText;
     EMatchType m_MatchType;

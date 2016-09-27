@@ -132,7 +132,7 @@ bool CStringConstraint::DoesTextMatch (const string& text)
                 vector<string> tokens;
                 NStr::Tokenize(match, ",; ", tokens);
                 ITERATE(vector<string>, it, tokens) {
-                    if (NStr::Equal(*it, tmp)) {
+                    if (IsInRange(*it, tmp) || NStr::Equal(*it, tmp)) {
                         rval = true;
                         break;
                     }
@@ -146,6 +146,32 @@ bool CStringConstraint::DoesTextMatch (const string& text)
     return rval;    
 }
 
+bool CStringConstraint::IsInRange(const string& str, const string &tmp)
+{
+    bool range(false);
+    if (NStr::Find(str, "-") != NPOS)
+    {
+        string first, last;
+        NStr::SplitInTwo(str, "-", first, last);
+        int start = NStr::StringToInt(first, NStr::fConvErr_NoThrow | NStr::fAllowLeadingSymbols);
+        int end = NStr::StringToInt(last, NStr::fConvErr_NoThrow | NStr::fAllowLeadingSymbols);
+        NStr::ReplaceInPlace(first, NStr::IntToString(start), kEmptyStr);
+        NStr::ReplaceInPlace(last, NStr::IntToString(end), kEmptyStr);
+        if (first == last && start <= end)
+        {
+            for ( ; start <= end; ++start)
+            {
+                string match = first + NStr::IntToString(start);
+                if (NStr::Equal(match, tmp)) 
+                {
+                    range = true;
+                    break;
+                }
+            }
+        }
+    }
+    return range;
+}
 
 bool CStringConstraint::DoesListMatch(const vector<string>& vals)
 {
