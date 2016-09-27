@@ -41,10 +41,6 @@ void CGridCommandLineInterfaceApp::SetUp_NetCache()
         CNcbiRegistry& reg(CNcbiApplication::Instance()->GetConfig());
         reg.Set("netcache_api", "enable_mirroring", "true");
     }
-
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-    if (IsOptionSet(eAllowXSiteConn)) CNetService::AllowXSiteConnections();
-#endif
 }
 
 void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(bool icache_mode,

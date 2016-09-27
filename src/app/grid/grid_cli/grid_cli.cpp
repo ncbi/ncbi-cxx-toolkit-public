@@ -1618,6 +1618,11 @@ int CGridCommandLineInterfaceApp::Run()
                     return 2;
                 }
                 break;
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
+            case eAllowXSiteConn:
+                CNetService::AllowXSiteConnections();
+                break;
+#endif
             default: // Just to silence the compiler.
                 break;
             }
