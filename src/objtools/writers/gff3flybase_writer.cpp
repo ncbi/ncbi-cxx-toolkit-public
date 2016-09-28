@@ -237,6 +237,7 @@ bool CGff3FlybaseWriter::xAssignAlignmentSplicedLocation(
     unsigned int seqStart = exon.GetProduct_start().AsSeqPos()/tgtWidth;
     unsigned int seqStop = exon.GetProduct_end().AsSeqPos()/tgtWidth;
 
+
     ENa_strand seqStrand = eNa_strand_plus;
     if (spliced.CanGetProduct_strand()  &&  
             spliced.GetProduct_strand() == objects::eNa_strand_minus) {
@@ -529,10 +530,22 @@ bool CGff3FlybaseWriter::xAssignAlignmentSplicedGap(
                 if (del_length > 0) {
                     record.AddInsertion(del_length);
                 }
+                if (tgtWidth == 3) {
+                    const size_t forward_shift = chunk.GetGenomic_ins()%tgtWidth;
+                    if (forward_shift >  0) {
+                        record.AddForwardShift(forward_shift);
+                    }
+                }
             }
             break;
         case CSpliced_exon_chunk::e_Product_ins:
             {
+                if (tgtWidth == 3) { // Can only occur when target is prot
+                    const size_t reverse_shift = chunk.GetProduct_ins()%tgtWidth;
+                    if (reverse_shift > 0) { 
+                        record.AddReverseShift(reverse_shift);
+                    }
+                }
                 const size_t insert_length = chunk.GetProduct_ins()/tgtWidth;
                 if (insert_length > 0) { 
                     record.AddDeletion(insert_length);
