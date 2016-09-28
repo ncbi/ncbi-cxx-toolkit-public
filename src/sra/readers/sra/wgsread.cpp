@@ -4689,13 +4689,6 @@ CRef<CSeq_id> CWGSProteinIterator::GetAccSeq_id(void) const
     else {
         id = GetDb().GetProteinSeq_id(m_CurrId);
     }
-    {
-        PROFILE(sw____GetProtWGSAcc);
-        CTempString name = m_Cur->ACCESSION(m_CurrId);
-        if ( !name.empty() ) {
-            sx_SetName(*id, name);
-        }
-    }
     return id;
 }
 
