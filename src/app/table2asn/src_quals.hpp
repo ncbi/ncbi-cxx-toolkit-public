@@ -45,7 +45,7 @@ public:
    CSourceQualifiersReader(CTable2AsnContext* context);
    ~CSourceQualifiersReader();
 
-   void LoadSourceQualifiers(const string& filename, const string& opt_map_filename);
+   bool LoadSourceQualifiers(const string& filename, const string& opt_map_filename);
    void ProcessSourceQualifiers(objects::CSeq_entry& container, const string& opt_map_filename);
 
 private:

@@ -143,13 +143,21 @@ void CSourceQualifiersReader::x_ApplyAllQualifiers(objects::CSourceModParser& mo
     }
 }
 
-void CSourceQualifiersReader::LoadSourceQualifiers(const string& filename, const string& opt_map_filename)
+bool CSourceQualifiersReader::LoadSourceQualifiers(const string& filename, const string& opt_map_filename)
 {
+    bool loaded = false;
     if (CFile(filename).Exists())
+    {
+        loaded = true;
         x_LoadSourceQualifiers(m_quals[0], filename, opt_map_filename);
+    }
 
     if (!m_context->m_single_source_qual_file.empty())
+    {
+        loaded = true;
         x_LoadSourceQualifiers(m_quals[1], m_context->m_single_source_qual_file, opt_map_filename);
+    }
+    return loaded;
 }
 
 void CSourceQualifiersReader::x_LoadSourceQualifiers(TSrcQuals& quals, const string& filename, const string& opt_map_filename)
@@ -162,6 +170,7 @@ void CSourceQualifiersReader::x_LoadSourceQualifiers(TSrcQuals& quals, const str
     const char* end = ptr + sz;
     while (ptr < end)
     {
+        // search for next non empty line
         if (*ptr == '\r' || *ptr == '\n')
         {
             ptr++;
@@ -170,6 +179,7 @@ void CSourceQualifiersReader::x_LoadSourceQualifiers(TSrcQuals& quals, const str
 
         const char* start = ptr;
 
+        // search for end of line
         const char* endline = (const char*)memchr(ptr, '\n', end - ptr);
         if (endline == 0) // this is the last line
         {
@@ -185,9 +195,12 @@ void CSourceQualifiersReader::x_LoadSourceQualifiers(TSrcQuals& quals, const str
         while (start < endline && *endline == '\r')
             endline--;
 
+
+        // compose line control structure
         if (start < endline)
         {
             CTempString newline(start, endline - start + 1);
+            // parse the header
             if (quals.m_cols.empty())
             {
                 NStr::Split(newline, "\t", quals.m_cols);
@@ -206,6 +219,7 @@ void CSourceQualifiersReader::x_LoadSourceQualifiers(TSrcQuals& quals, const str
                     }
                 }
             }
+            // parse regular line
             else
             {
                 const char* endid = (const char*)memchr(start, '\t', endline - start);
