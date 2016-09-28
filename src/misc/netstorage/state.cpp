@@ -1164,7 +1164,12 @@ ISelector* SContext::Create(TNetStorageFlags flags,
     flags = DefaultFlags(flags);
     TObjLoc loc(compound_id_pool, flags, app_domain,
             m_Random.GetRandUint8(), filetrack_api.config.site);
-    loc.SetServiceName(service);
+
+    // Do not set fake service name used by NST health check script
+    if (NStr::CompareNocase(service, "LBSMDNSTTestService")) {
+        loc.SetServiceName(service);
+    }
+
     if (id) loc.SetObjectID(id);
     return new CSelector(loc, this, flags);
 }
