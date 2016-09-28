@@ -157,6 +157,9 @@ protected:
 
     //bool xCreateMicroIntrons(
     //    CBioseq_Handle);
+    //
+    bool xSplicedSegHasProteinProd(
+            const CSpliced_seg& spliced);
 
     bool xAssignAlignment(
         CGffFeatureRecord&);

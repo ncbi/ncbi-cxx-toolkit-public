@@ -240,6 +240,7 @@ string sBestMatchType(
     return "match";
 }
     
+
 //  ----------------------------------------------------------------------------
 bool sFeatureHasChildOfSubtype(
     CMappedFeat mf,
@@ -486,6 +487,32 @@ bool CGff3Writer::xAssignAlignmentSplicedAttributes(
 }
 
 //  ----------------------------------------------------------------------------
+bool CGff3Writer::xSplicedSegHasProteinProd(
+    const CSpliced_seg& spliced) 
+//  ----------------------------------------------------------------------------
+{
+    if (spliced.IsSetProduct_type() ) {
+        return (spliced.GetProduct_type() == CSpliced_seg::eProduct_type_protein);
+    }
+    // The following lines of code should never be called since 
+    // the product type should always be specified
+    const CSeq_id& productId = spliced.GetProduct_id();
+    CSeq_id_Handle bestH = sequence::GetId(
+        productId, *m_pScope, sequence::eGetId_Best);
+
+    CSeq_id::EAccessionInfo productInfo;
+    if (bestH) {
+        productInfo = bestH.GetSeqId()->IdentifyAccession();
+    }
+    else {
+        productInfo = productId.IdentifyAccession();
+    }
+    
+    return (productInfo & CSeq_id::fAcc_prot);
+}
+
+
+//  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignAlignmentSplicedSeqId(
     CGffAlignRecord& record,
     const CSpliced_seg& spliced,
@@ -554,6 +581,12 @@ bool CGff3Writer::xAssignAlignmentSplicedType(
     const CSpliced_exon& exon)
 //  ----------------------------------------------------------------------------
 {
+    if (spliced.IsSetProduct_type() &&
+        spliced.GetProduct_type() == CSpliced_seg::eProduct_type_protein) {
+        record.SetType("nucleotide_to_protein_match");
+        return true;
+    }
+
     CSeq_id_Handle genomicH = sequence::GetId(
         spliced.GetGenomic_id(), *m_pScope, sequence::eGetId_Best);
     CSeq_id_Handle productH = sequence::GetId(
@@ -614,17 +647,8 @@ bool CGff3Writer::xAssignAlignmentSplicedGap(
     const CSpliced_exon& exon)
 //  ----------------------------------------------------------------------------
 {
-    CSeq_id::EAccessionInfo productInfo;
-    const CSeq_id& productId = spliced.GetProduct_id();
-    CSeq_id_Handle bestH = sequence::GetId(
-        productId, *m_pScope, sequence::eGetId_Best);
-    if (bestH) {
-        productInfo = bestH.GetSeqId()->IdentifyAccession();
-    }
-    else {
-        productInfo = productId.IdentifyAccession();
-    }
-    const int tgtWidth = (productInfo & CSeq_id::fAcc_prot) ? 3 : 1;
+    const bool isProteinProd = xSplicedSegHasProteinProd(spliced);
+    const unsigned int tgtWidth = isProteinProd ? 3 : 1;
 
     typedef list<CRef<CSpliced_exon_chunk> > CHUNKS;
 
@@ -647,27 +671,27 @@ bool CGff3Writer::xAssignAlignmentSplicedGap(
             break;
         case CSpliced_exon_chunk::e_Genomic_ins:
             {
-                const int del_length = chunk.GetGenomic_ins()/tgtWidth;
+                const unsigned int del_length = chunk.GetGenomic_ins()/tgtWidth;
                 if (del_length > 0) {
                     record.AddDeletion(del_length);
                 }
             }
-            if (tgtWidth > 1) {
-                const int forward_shift = chunk.GetGenomic_ins()%tgtWidth;
+            if (isProteinProd) {
+                const unsigned int forward_shift = chunk.GetGenomic_ins()%tgtWidth;
                 if (forward_shift >  0) {
                     record.AddForwardShift(forward_shift);
                 }
             }
             break;
         case CSpliced_exon_chunk::e_Product_ins:
-            if (tgtWidth > 1) { // Can only occur when target is prot
-                const int reverse_shift = chunk.GetProduct_ins()%tgtWidth;
+            if (isProteinProd) { 
+                const unsigned int reverse_shift = chunk.GetProduct_ins()%tgtWidth;
                 if (reverse_shift > 0) { 
                     record.AddReverseShift(reverse_shift);
                 }
             }
             {
-                const int insert_length = chunk.GetProduct_ins()/tgtWidth;
+                const unsigned int insert_length = chunk.GetProduct_ins()/tgtWidth;
                 if (insert_length > 0) { 
                     record.AddInsertion(insert_length);
                 }
@@ -686,21 +710,19 @@ bool CGff3Writer::xAssignAlignmentSplicedTarget(
     const CSpliced_exon& exon)
 //  ----------------------------------------------------------------------------
 {
-    CSeq_id::EAccessionInfo productInfo;
     string target;
     const CSeq_id& productId = spliced.GetProduct_id();
     CSeq_id_Handle bestH = sequence::GetId(
         productId, *m_pScope, sequence::eGetId_Best);
     if (bestH) {
         bestH.GetSeqId()->GetLabel(&target, CSeq_id::eContent);
-        productInfo = bestH.GetSeqId()->IdentifyAccession();
     }
     else {
         productId.GetLabel(&target, CSeq_id::eContent);
-        productInfo = productId.IdentifyAccession();
     }
 
-    const int tgtWidth = (productInfo & CSeq_id::fAcc_prot) ? 3 : 1;
+    const bool isProteinProd = xSplicedSegHasProteinProd(spliced);
+    const unsigned int tgtWidth = isProteinProd ? 3 : 1;
 
 
     string seqStart = NStr::IntToString(exon.GetProduct_start().AsSeqPos()/tgtWidth+1);
@@ -942,7 +964,7 @@ bool CGff3Writer::xAssignAlignmentDensegTarget(
 
 
     CSeq_id::EAccessionInfo sourceInfo = pSourceId->IdentifyAccession();
-    const int tgtWidth = (sourceInfo & CSeq_id::fAcc_prot) ? 3 : 1;
+    const unsigned int tgtWidth = (sourceInfo & CSeq_id::fAcc_prot) ? 3 : 1;
 
     target += " " + NStr::IntToString(start2/tgtWidth + 1);
     target += " " + NStr::IntToString(stop2/tgtWidth + 1);
@@ -960,7 +982,7 @@ bool CGff3Writer::xAssignAlignmentDensegGap(
 {
     const CDense_seg& denseSeg = alnMap.GetDenseg();
 
-    int tgtWidth; //could be 1 or 3, depending on nuc or prot
+    unsigned int tgtWidth; //could be 1 or 3, depending on nuc or prot
     if (0 < denseSeg.GetWidths().size()) {
         tgtWidth = denseSeg.GetWidths()[0];
     } else {
@@ -989,13 +1011,13 @@ bool CGff3Writer::xAssignAlignmentDensegGap(
             CRange<int> tgtPiece = alnMap.GetRange(0, seg);
 
             if (tgtWidth > 1) {
-                const int reverse_shift = tgtPiece.GetLength()%tgtWidth;
+                const unsigned int reverse_shift = tgtPiece.GetLength()%tgtWidth;
                 if (reverse_shift > 0) { // Can only occur when target is prot
                     record.AddReverseShift(reverse_shift);
                 }
             }
 
-            const int insert_length = tgtPiece.GetLength()/tgtWidth;
+            const unsigned int insert_length = tgtPiece.GetLength()/tgtWidth;
             if (insert_length > 0) { 
                 record.AddInsertion(insert_length);
             }
@@ -1004,13 +1026,13 @@ bool CGff3Writer::xAssignAlignmentDensegGap(
         if (IS_DELETION(tgtFlags, srcFlags)) {
             CRange<int> srcPiece = alnMap.GetRange(srcRow, seg);
 
-            const int del_length = srcPiece.GetLength()/tgtWidth;
+            const unsigned int del_length = srcPiece.GetLength()/tgtWidth;
             if (del_length > 0) {
                 record.AddDeletion(del_length);
             }
 
             if (tgtWidth > 1) {
-                const int forward_shift = srcPiece.GetLength()%tgtWidth;
+                const unsigned int forward_shift = srcPiece.GetLength()%tgtWidth;
                 if (forward_shift > 0) {
                     record.AddForwardShift(forward_shift);
                 }
