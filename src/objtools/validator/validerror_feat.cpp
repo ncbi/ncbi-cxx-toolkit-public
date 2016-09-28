@@ -4228,14 +4228,9 @@ void CValidError_feat::ValidateImp(
                     }
                 }
                 if ( missing ) {
-                    if ( NStr::Equal (val, "other") ) {
+                    if ( NStr::Equal (val, "other") && !feat.IsSetComment() ) {
                         PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
-                            "The regulatory_class value should not be '" + val + "'", feat);
-                    } else {
-                        /*
-                        PostErr(eDiag_Info, eErr_SEQ_FEAT_InvalidQualifierValue,
-                            "The regulatory_class value should not be 'other'", feat);
-                        */
+                            "The regulatory_class 'other' is missing the required /note", feat);
                     }
                 }
             }
