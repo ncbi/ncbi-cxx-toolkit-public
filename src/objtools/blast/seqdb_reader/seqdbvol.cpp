@@ -1279,18 +1279,21 @@ CSeqDBVol::GetBioseq(int                    oid,
         defline_set.Reset(new CBlast_def_line_set);
 
         CRef<const CSeq_id > seqid;
-        CRef<const CSeq_id > seqid_gi;
+        CRef<const CSeq_id > seqid_lcl;
         if (target_gi != ZERO_GI) {
-            seqid_gi.Reset(new CSeq_id(CSeq_id::e_Gi, GI_TO(TIntId, target_gi)));
-        } else {
+            seqid.Reset(new CSeq_id(CSeq_id::e_Gi, GI_TO(TIntId, target_gi)));
+            seqid_lcl.Reset(new CSeq_id(CSeq_id::e_Local, NStr::NumericToString(target_gi)));
+        }
+        else {
             seqid.Reset(target_seq_id);
+            seqid_lcl.Reset(new CSeq_id(CSeq_id::e_Local, seqid->GetSeqIdString(true)));
         }
 
         CRef<CBlast_def_line> filt_dl;
 
         ITERATE(TDeflines, iter, orig_deflines->Get()) {
             if ((seqid.NotEmpty() && s_SeqDB_SeqIdIn((**iter).GetSeqid(), *seqid)) ||
-                (seqid_gi.NotEmpty() && s_SeqDB_SeqIdIn((**iter).GetSeqid(), *seqid_gi))) {
+                (seqid_lcl.NotEmpty() && s_SeqDB_SeqIdIn((**iter).GetSeqid(), *seqid_lcl))) {
                 filt_dl = *iter;
                 break;
             }

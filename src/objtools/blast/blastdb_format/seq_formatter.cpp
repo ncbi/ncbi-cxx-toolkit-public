@@ -416,8 +416,7 @@ int CBlastDB_FastaFormatter::Write(CSeqDB::TOID oid, const CBlastDB_FormatterCon
 			bioseq = m_BlastDb.GetBioseq(oid, ZERO_GI, &seq_id);
 		}
 		else {
-			CSeq_id seq_id(target_id, CSeq_id::fParse_PartialOK | CSeq_id::fParse_Default);
-			bioseq = m_BlastDb.GetBioseq(oid, num_id, &seq_id);
+			bioseq = m_BlastDb.GetBioseq(oid, num_id);
 		}
 	}
 	else {
