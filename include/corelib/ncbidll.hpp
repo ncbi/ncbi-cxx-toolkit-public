@@ -241,6 +241,19 @@ public:
     /// Load the DLL using the name specified in the constructor's DLL "name".
     /// If Load() is called more than once without calling Unload() in between,
     /// then it will do nothing.
+    ///
+    /// @note If the DLL links against the core "xncbi" library, loading it may
+    /// result in reinvoking static initializers, with potential consequences
+    /// ranging from having to retune diagnostic settings to crashing at exit.
+    /// This problem could theoretically also affect other libraries linked
+    /// from both sides, but they haven't been an issue in practice.  It can
+    /// help for both the program and the DLL to link "xncbi" dynamically, but
+    /// in some configurations that change still isn't entirely sufficient.  As
+    /// such, on affected platforms, the C++ Toolkit's build system arranges to
+    /// filter "xncbi" out of the relevant makefile settings unless
+    /// specifically directed otherwise via KEEP_CORELIB = yes (which can be
+    /// useful when building plugins for third-party applications such as
+    /// scripting languages).
     NCBI_XNCBI_EXPORT void Load(void);
 
     /// Unload DLL.
