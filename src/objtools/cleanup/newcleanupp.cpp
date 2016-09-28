@@ -5459,8 +5459,8 @@ void CNewCleanup_imp::x_NameStdBC ( CName_std& name, bool fix_initials )
                     next_pos = first.find_first_not_of(" -", next_pos);
                     if( string::npos == next_pos ) break;
                     // if we hit an letter after that, copy the letter to inits
-                    if( isalpha( first[next_pos] ) ) {\
-                        first_initials += first[next_pos];
+                    if( isalpha( first[next_pos] ) ) {
+                        first_initials += toupper(first[next_pos]);
                     }
                     // find next space or hyphen
                     next_pos = first.find_first_of(" -", next_pos);
@@ -5472,25 +5472,27 @@ void CNewCleanup_imp::x_NameStdBC ( CName_std& name, bool fix_initials )
                 }
             }
         }
-        // continue extracting initials from middle name
+        // continue extracting initials from middle name, but only if existing Initials field is empty
         {
-            if ( FIELD_IS_SET(name, Middle) ) {
-                const string &middle = GET_FIELD(name, Middle);
-                string::size_type next_pos = 0;
-                while ( next_pos < middle.length() ) {
-                    // skip initial spaces and hyphens
-                    next_pos = middle.find_first_not_of(" -", next_pos);
-                    if( string::npos == next_pos ) break;
-                    // if we hit an letter after that, copy the letter to inits
-                    if( isalpha( middle[next_pos] ) ) {\
-                        first_initials += middle[next_pos];
-                    }
-                    // find next space or hyphen
-                    next_pos = middle.find_first_of(" -", next_pos);
-                    if( string::npos == next_pos ) break;
-                    // if it's a hyphen, copy it
-                    if( middle[next_pos] == '-' ) {
-                        first_initials += '-';
+            if (RAW_FIELD_IS_EMPTY_OR_UNSET(name, Initials)) {
+                if ( FIELD_IS_SET(name, Middle) ) {
+                    const string &middle = GET_FIELD(name, Middle);
+                    string::size_type next_pos = 0;
+                    while ( next_pos < middle.length() ) {
+                        // skip initial spaces and hyphens
+                        next_pos = middle.find_first_not_of(" -", next_pos);
+                        if( string::npos == next_pos ) break;
+                        // if we hit an letter after that, copy the  to inits
+                        if( isalpha( middle[next_pos] ) ) {
+                            first_initials += toupper(middle[next_pos]);
+                        }
+                        // find next space or hyphen
+                        next_pos = middle.find_first_of(" -", next_pos);
+                        if( string::npos == next_pos ) break;
+                        // if it's a hyphen, copy it
+                        if( middle[next_pos] == '-' ) {
+                            first_initials += '-';
+                        }
                     }
                 }
             }
