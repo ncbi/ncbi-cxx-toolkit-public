@@ -68,28 +68,41 @@ const THTTP_Flags kDefaultHttpFlags =
         fHTTP_SuppressMessages |
         fHTTP_Flushable;
 
-static const char* const s_URLs[CNetStorageObjectLoc::eNumberOfFileTrackSites] =
+struct SUrl
 {
-    "https://submit.ncbi.nlm.nih.gov",
-    "https://dsubmit.ncbi.nlm.nih.gov",
-    "https://qsubmit.ncbi.nlm.nih.gov",
-};
+    typedef CNetStorageObjectLoc TLoc;
+    typedef TLoc::EFileTrackSite TSite;
 
-string s_GetURL(const CNetStorageObjectLoc& object_loc,
-        const char* path, const char* path_after_key = 0)
-{
-    _ASSERT(path);
+    static string Get(TSite site, const char* path)
+    {
+        const char* const kURLs[TLoc::eNumberOfFileTrackSites] =
+        {
+            "https://submit.ncbi.nlm.nih.gov",
+            "https://dsubmit.ncbi.nlm.nih.gov",
+            "https://qsubmit.ncbi.nlm.nih.gov",
+        };
 
-    string url = s_URLs[object_loc.GetFileTrackSite()];
-    url += path;
-
-    if (path_after_key) {
-        url += object_loc.GetUniqueKey();
-        url += path_after_key;
+        _ASSERT(path);
+        return string(kURLs[site]) + path;
     }
 
-    return url;
-}
+    static string Get(TSite site, const char* path,
+            const string& key, const char* sub_path)
+    {
+        _ASSERT(sub_path);
+        return Get(site, path) + key + sub_path;
+    }
+
+    static string Get(const TLoc& loc, const char* path)
+    {
+        return Get(loc.GetFileTrackSite(), path);
+    }
+
+    static string Get(const TLoc& loc, const char* path, const char* sub_path)
+    {
+        return Get(loc.GetFileTrackSite(), path, loc.GetUniqueKey(), sub_path);
+    }
+};
 
 SFileTrackRequest::SFileTrackRequest(
         const SFileTrackConfig& config,
@@ -110,7 +123,7 @@ SFileTrackDownload::SFileTrackDownload(
         const SFileTrackConfig& config,
         const CNetStorageObjectLoc& object_loc) :
     SFileTrackRequest(config, object_loc,
-            s_GetURL(object_loc, "/ft/byid/", "/contents"))
+            SUrl::Get(object_loc, "/ft/byid/", "/contents"))
 
 {
 }
@@ -121,7 +134,7 @@ SFileTrackUpload::SFileTrackUpload(
         const string& user_header,
         SConnNetInfo* net_info) :
     SFileTrackRequest(config, object_loc,
-            s_GetURL(object_loc, "/api/2.0/uploads/binary/"),
+            SUrl::Get(object_loc, "/api/2.0/uploads/binary/"),
             net_info, user_header, fHTTP_WriteThru)
 {
 }
@@ -240,8 +253,8 @@ void SFileTrackUpload::RenameFile(const string& from, const string& to,
         CHttpSession session;
         session.SetHttpFlags(kDefaultHttpFlags);
 
-        string url(s_URLs[m_ObjectLoc.GetFileTrackSite()]);
-        url.append("/api/2.0/files/").append(from).append("/");
+        SUrl::TSite site(m_ObjectLoc.GetFileTrackSite());
+        const string url(SUrl::Get(site, "/api/2.0/files/", from, "/"));
 
         CHttpRequest req = session.NewRequest(url, CHttpSession::ePut);
         auto& timeout(m_Config.comm_timeout);
@@ -337,7 +350,7 @@ CRef<SFileTrackDownload> SFileTrackAPI::StartDownload(
 
 void SFileTrackAPI::Remove(const CNetStorageObjectLoc& object_loc)
 {
-    const string url(s_GetURL(object_loc, "/ftmeta/files/", "/__delete__"));
+    const string url(SUrl::Get(object_loc, "/ftmeta/files/", "/__delete__"));
 
     SFileTrackRequest new_request(config, object_loc, url);
     new_request.RemoveFile();
@@ -403,7 +416,7 @@ SFileTrackAPI::SFileTrackAPI(const SFileTrackConfig& c)
 
 CJsonNode SFileTrackAPI::GetFileInfo(const CNetStorageObjectLoc& object_loc)
 {
-    const string url(s_GetURL(object_loc, "/ftmeta/files/", "/"));
+    const string url(SUrl::Get(object_loc, "/ftmeta/files/", "/"));
 
     SFileTrackRequest request(config, object_loc, url);
 
@@ -415,7 +428,7 @@ string SFileTrackAPI::GetPath(const CNetStorageObjectLoc& object_loc)
     CHttpSession session;
     session.SetHttpFlags(kDefaultHttpFlags);
 
-    const string url(s_GetURL(object_loc, "/api/2.0/pins/"));
+    const string url(SUrl::Get(object_loc, "/api/2.0/pins/"));
     CHttpRequest req = session.NewRequest(url, CHttpSession::ePost);
     auto& timeout(config.comm_timeout);
     req.SetTimeout(CTimeout(timeout.sec, timeout.usec));
