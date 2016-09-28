@@ -72,6 +72,14 @@ public:
     bool IsUncultured() const;
     void SetUncultured( bool bUncultured );
 
+    // Modifier forwarding flag. Used during org-ref lookup to enable/disable
+    // modifier forwarding. If set modifier forwarding is disabled.
+    // Flag is kept along with other flags in orgname.attrib field
+    // (see comments to x_SetAttribFlag() function)
+    bool IsModifierForwardingDisabled() const;
+    void DisableModifierForwarding();
+    void EnableModifierForwarding();
+
     CRef<COrgName> MakeCommon(const COrgName& other) const;
 
 private:

@@ -193,6 +193,24 @@ void COrgName::SetUncultured( bool bUncultured )
     }
 }
 
+// Modifier forwarding flag. Used during org-ref lookup to enable/disable
+// modifier forwarding. If set modifier forwarding is disabled.
+// Flag is kept along with other flags in orgname.attrib field
+// (see comments to x_SetAttribFlag() function)
+bool COrgName::IsModifierForwardingDisabled() const
+{
+    return x_GetAttribFlag( "nomodforward" );
+}
+
+void COrgName::DisableModifierForwarding()
+{
+    x_SetAttribFlag( "nomodforward" );
+}
+
+void COrgName::EnableModifierForwarding()
+{
+    x_ResetAttribFlag( "nomodforward" );
+}
 
 #define MAKE_COMMON(o1,o2,o3,Field) if (o1.IsSet##Field() && o2.IsSet##Field() && NStr::Equal(o1.Get##Field(), o2.Get##Field())) o3.Set##Field(o1.Get##Field());
 #define MAKE_COMMON_INT(o1,o2,o3,Field) if (o1.IsSet##Field() && o2.IsSet##Field() && o1.Get##Field() == o2.Get##Field()) o3.Set##Field(o1.Get##Field());
