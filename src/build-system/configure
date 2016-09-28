@@ -2921,21 +2921,21 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 ## Title
 
-# Check whether --with-title0 was given.
-if test "${with_title0+set}" = set; then
-  withval=$with_title0;
+# Check whether --with-_ was given.
+if test "${with__+set}" = set; then
+  withval=$with__;
 fi
 
 
-# Check whether --with-title1 was given.
-if test "${with_title1+set}" = set; then
-  withval=$with_title1;
+# Check whether --with-_ was given.
+if test "${with__+set}" = set; then
+  withval=$with__;
 fi
 
 
-# Check whether --with-title2 was given.
-if test "${with_title2+set}" = set; then
-  withval=$with_title2;
+# Check whether --with-_ was given.
+if test "${with__+set}" = set; then
+  withval=$with__;
 fi
 
 
@@ -3141,9 +3141,9 @@ if test "${with_lib_rebuilds+set}" = set; then
 fi
 
 
-# Check whether --with-lib-rebuilds2 was given.
-if test "${with_lib_rebuilds2+set}" = set; then
-  withval=$with_lib_rebuilds2;
+# Check whether --with-lib-rebuilds was given.
+if test "${with_lib_rebuilds+set}" = set; then
+  withval=$with_lib_rebuilds;
 fi
 
 # Check whether --with-deactivation was given.
@@ -3218,9 +3218,9 @@ if test "${with_caution+set}" = set; then
 fi
 
 
-# Check whether --with-caution2 was given.
-if test "${with_caution2+set}" = set; then
-  withval=$with_caution2;
+# Check whether --with-caution was given.
+if test "${with_caution+set}" = set; then
+  withval=$with_caution;
 fi
 
 
@@ -3244,9 +3244,9 @@ if test "${with_ncbi_c+set}" = set; then
 fi
 
 
-# Check whether --with-ncbi-c2 was given.
-if test "${with_ncbi_c2+set}" = set; then
-  withval=$with_ncbi_c2;
+# Check whether --with-ncbi-c was given.
+if test "${with_ncbi_c+set}" = set; then
+  withval=$with_ncbi_c;
 fi
 
 
@@ -3256,9 +3256,9 @@ if test "${with_sss+set}" = set; then
 fi
 
 
-# Check whether --with-sss2 was given.
-if test "${with_sss2+set}" = set; then
-  withval=$with_sss2;
+# Check whether --with-sss was given.
+if test "${with_sss+set}" = set; then
+  withval=$with_sss;
 fi
 
 
@@ -3286,9 +3286,9 @@ if test "${with_vdb+set}" = set; then
 fi
 
 
-# Check whether --with-vdb2 was given.
-if test "${with_vdb2+set}" = set; then
-  withval=$with_vdb2;
+# Check whether --with-vdb was given.
+if test "${with_vdb+set}" = set; then
+  withval=$with_vdb;
 fi
 
 
@@ -3312,9 +3312,9 @@ if test "${with_z+set}" = set; then
 fi
 
 
-# Check whether --with-z2 was given.
-if test "${with_z2+set}" = set; then
-  withval=$with_z2;
+# Check whether --with-z was given.
+if test "${with_z+set}" = set; then
+  withval=$with_z;
 fi
 
 
@@ -3324,9 +3324,9 @@ if test "${with_bz2+set}" = set; then
 fi
 
 
-# Check whether --with-bz2b was given.
-if test "${with_bz2b+set}" = set; then
-  withval=$with_bz2b;
+# Check whether --with-bz2 was given.
+if test "${with_bz2+set}" = set; then
+  withval=$with_bz2;
 fi
 
 
@@ -3336,9 +3336,9 @@ if test "${with_lzo+set}" = set; then
 fi
 
 
-# Check whether --with-lzo_ was given.
-if test "${with_lzo_+set}" = set; then
-  withval=$with_lzo_;
+# Check whether --with-lzo was given.
+if test "${with_lzo+set}" = set; then
+  withval=$with_lzo;
 fi
 
 
@@ -3348,9 +3348,9 @@ if test "${with_pcre+set}" = set; then
 fi
 
 
-# Check whether --with-pcre2 was given.
-if test "${with_pcre2+set}" = set; then
-  withval=$with_pcre2;
+# Check whether --with-pcre was given.
+if test "${with_pcre+set}" = set; then
+  withval=$with_pcre;
 fi
 
 
@@ -3360,9 +3360,9 @@ if test "${with_gmp+set}" = set; then
 fi
 
 
-# Check whether --with-gmp2 was given.
-if test "${with_gmp2+set}" = set; then
-  withval=$with_gmp2;
+# Check whether --with-gmp was given.
+if test "${with_gmp+set}" = set; then
+  withval=$with_gmp;
 fi
 
 
@@ -3372,9 +3372,9 @@ if test "${with_gcrypt+set}" = set; then
 fi
 
 
-# Check whether --with-gcrypt2 was given.
-if test "${with_gcrypt2+set}" = set; then
-  withval=$with_gcrypt2;
+# Check whether --with-gcrypt was given.
+if test "${with_gcrypt+set}" = set; then
+  withval=$with_gcrypt;
 fi
 
 
@@ -3384,9 +3384,9 @@ if test "${with_nettle+set}" = set; then
 fi
 
 
-# Check whether --with-nettle2 was given.
-if test "${with_nettle2+set}" = set; then
-  withval=$with_nettle2;
+# Check whether --with-nettle was given.
+if test "${with_nettle+set}" = set; then
+  withval=$with_nettle;
 fi
 
 
@@ -3396,9 +3396,9 @@ if test "${with_gnutls+set}" = set; then
 fi
 
 
-# Check whether --with-gnutls2 was given.
-if test "${with_gnutls2+set}" = set; then
-  withval=$with_gnutls2;
+# Check whether --with-gnutls was given.
+if test "${with_gnutls+set}" = set; then
+  withval=$with_gnutls;
 fi
 
 
@@ -3414,9 +3414,9 @@ if test "${with_openssl+set}" = set; then
 fi
 
 
-# Check whether --with-openssl2 was given.
-if test "${with_openssl2+set}" = set; then
-  withval=$with_openssl2;
+# Check whether --with-openssl was given.
+if test "${with_openssl+set}" = set; then
+  withval=$with_openssl;
 fi
 
 
@@ -3426,9 +3426,9 @@ if test "${with_krb5+set}" = set; then
 fi
 
 
-# Check whether --with-krb5b was given.
-if test "${with_krb5b+set}" = set; then
-  withval=$with_krb5b;
+# Check whether --with-krb5 was given.
+if test "${with_krb5+set}" = set; then
+  withval=$with_krb5;
 fi
 
 
@@ -3456,9 +3456,9 @@ if test "${with_ftds+set}" = set; then
 fi
 
 
-# Check whether --with-ftds2 was given.
-if test "${with_ftds2+set}" = set; then
-  withval=$with_ftds2;
+# Check whether --with-ftds was given.
+if test "${with_ftds+set}" = set; then
+  withval=$with_ftds;
 fi
 
 
@@ -3474,9 +3474,9 @@ if test "${with_mysql+set}" = set; then
 fi
 
 
-# Check whether --with-mysql2 was given.
-if test "${with_mysql2+set}" = set; then
-  withval=$with_mysql2;
+# Check whether --with-mysql was given.
+if test "${with_mysql+set}" = set; then
+  withval=$with_mysql;
 fi
 
 
@@ -3486,9 +3486,9 @@ if test "${with_opengl+set}" = set; then
 fi
 
 
-# Check whether --with-opengl2 was given.
-if test "${with_opengl2+set}" = set; then
-  withval=$with_opengl2;
+# Check whether --with-opengl was given.
+if test "${with_opengl+set}" = set; then
+  withval=$with_opengl;
 fi
 
 
@@ -3498,9 +3498,9 @@ if test "${with_mesa+set}" = set; then
 fi
 
 
-# Check whether --with-mesa2 was given.
-if test "${with_mesa2+set}" = set; then
-  withval=$with_mesa2;
+# Check whether --with-mesa was given.
+if test "${with_mesa+set}" = set; then
+  withval=$with_mesa;
 fi
 
 
@@ -3510,9 +3510,9 @@ if test "${with_glut+set}" = set; then
 fi
 
 
-# Check whether --with-glut2 was given.
-if test "${with_glut2+set}" = set; then
-  withval=$with_glut2;
+# Check whether --with-glut was given.
+if test "${with_glut+set}" = set; then
+  withval=$with_glut;
 fi
 
 
@@ -3522,9 +3522,9 @@ if test "${with_glew+set}" = set; then
 fi
 
 
-# Check whether --with-glew2 was given.
-if test "${with_glew2+set}" = set; then
-  withval=$with_glew2;
+# Check whether --with-glew was given.
+if test "${with_glew+set}" = set; then
+  withval=$with_glew;
 fi
 
 
@@ -3540,9 +3540,9 @@ if test "${with_wxwidgets+set}" = set; then
 fi
 
 
-# Check whether --with-wxwidgets2 was given.
-if test "${with_wxwidgets2+set}" = set; then
-  withval=$with_wxwidgets2;
+# Check whether --with-wxwidgets was given.
+if test "${with_wxwidgets+set}" = set; then
+  withval=$with_wxwidgets;
 fi
 
 
@@ -3552,9 +3552,9 @@ if test "${with_wxwidgets_ucs+set}" = set; then
 fi
 
 
-# Check whether --with-wxwidgets-ucs2 was given.
-if test "${with_wxwidgets_ucs2+set}" = set; then
-  withval=$with_wxwidgets_ucs2;
+# Check whether --with-wxwidgets-ucs was given.
+if test "${with_wxwidgets_ucs+set}" = set; then
+  withval=$with_wxwidgets_ucs;
 fi
 
 
@@ -3564,9 +3564,9 @@ if test "${with_freetype+set}" = set; then
 fi
 
 
-# Check whether --with-freetype_ was given.
-if test "${with_freetype_+set}" = set; then
-  withval=$with_freetype_;
+# Check whether --with-freetype was given.
+if test "${with_freetype+set}" = set; then
+  withval=$with_freetype;
 fi
 
 
@@ -3576,9 +3576,9 @@ if test "${with_ftgl+set}" = set; then
 fi
 
 
-# Check whether --with-ftgl2 was given.
-if test "${with_ftgl2+set}" = set; then
-  withval=$with_ftgl2;
+# Check whether --with-ftgl was given.
+if test "${with_ftgl+set}" = set; then
+  withval=$with_ftgl;
 fi
 
 
@@ -3588,15 +3588,15 @@ if test "${with_fastcgi+set}" = set; then
 fi
 
 
-# Check whether --with-fastcgi2 was given.
-if test "${with_fastcgi2+set}" = set; then
-  withval=$with_fastcgi2;
+# Check whether --with-fastcgi was given.
+if test "${with_fastcgi+set}" = set; then
+  withval=$with_fastcgi;
 fi
 
 
-# Check whether --with-fastcgi3 was given.
-if test "${with_fastcgi3+set}" = set; then
-  withval=$with_fastcgi3;
+# Check whether --with-fastcgi was given.
+if test "${with_fastcgi+set}" = set; then
+  withval=$with_fastcgi;
 fi
 
 
@@ -3630,9 +3630,9 @@ if test "${with_orbacus+set}" = set; then
 fi
 
 
-# Check whether --with-orbacus2 was given.
-if test "${with_orbacus2+set}" = set; then
-  withval=$with_orbacus2;
+# Check whether --with-orbacus was given.
+if test "${with_orbacus+set}" = set; then
+  withval=$with_orbacus;
 fi
 
 
@@ -3648,9 +3648,9 @@ if test "${with_python+set}" = set; then
 fi
 
 
-# Check whether --with-python2 was given.
-if test "${with_python2+set}" = set; then
-  withval=$with_python2;
+# Check whether --with-python was given.
+if test "${with_python+set}" = set; then
+  withval=$with_python;
 fi
 
 
@@ -3660,9 +3660,9 @@ if test "${with_perl+set}" = set; then
 fi
 
 
-# Check whether --with-perl2 was given.
-if test "${with_perl2+set}" = set; then
-  withval=$with_perl2;
+# Check whether --with-perl was given.
+if test "${with_perl+set}" = set; then
+  withval=$with_perl;
 fi
 
 
@@ -3678,9 +3678,9 @@ if test "${with_boost+set}" = set; then
 fi
 
 
-# Check whether --with-boost2 was given.
-if test "${with_boost2+set}" = set; then
-  withval=$with_boost2;
+# Check whether --with-boost was given.
+if test "${with_boost+set}" = set; then
+  withval=$with_boost;
 fi
 
 
@@ -3690,9 +3690,9 @@ if test "${with_boost_tag+set}" = set; then
 fi
 
 
-# Check whether --with-boost-tag2 was given.
-if test "${with_boost_tag2+set}" = set; then
-  withval=$with_boost_tag2;
+# Check whether --with-boost-tag was given.
+if test "${with_boost_tag+set}" = set; then
+  withval=$with_boost_tag;
 fi
 
 
@@ -3702,9 +3702,9 @@ if test "${with_sqlite3+set}" = set; then
 fi
 
 
-# Check whether --with-sqlite3b was given.
-if test "${with_sqlite3b+set}" = set; then
-  withval=$with_sqlite3b;
+# Check whether --with-sqlite3 was given.
+if test "${with_sqlite3+set}" = set; then
+  withval=$with_sqlite3;
 fi
 
 
@@ -3714,9 +3714,9 @@ if test "${with_icu+set}" = set; then
 fi
 
 
-# Check whether --with-icu2 was given.
-if test "${with_icu2+set}" = set; then
-  withval=$with_icu2;
+# Check whether --with-icu was given.
+if test "${with_icu+set}" = set; then
+  withval=$with_icu;
 fi
 
 
@@ -3726,9 +3726,9 @@ if test "${with_expat+set}" = set; then
 fi
 
 
-# Check whether --with-expat2 was given.
-if test "${with_expat2+set}" = set; then
-  withval=$with_expat2;
+# Check whether --with-expat was given.
+if test "${with_expat+set}" = set; then
+  withval=$with_expat;
 fi
 
 
@@ -3738,9 +3738,9 @@ if test "${with_sablot+set}" = set; then
 fi
 
 
-# Check whether --with-sablot2 was given.
-if test "${with_sablot2+set}" = set; then
-  withval=$with_sablot2;
+# Check whether --with-sablot was given.
+if test "${with_sablot+set}" = set; then
+  withval=$with_sablot;
 fi
 
 
@@ -3750,9 +3750,9 @@ if test "${with_libxml+set}" = set; then
 fi
 
 
-# Check whether --with-libxml_ was given.
-if test "${with_libxml_+set}" = set; then
-  withval=$with_libxml_;
+# Check whether --with-libxml was given.
+if test "${with_libxml+set}" = set; then
+  withval=$with_libxml;
 fi
 
 
@@ -3762,9 +3762,9 @@ if test "${with_libxslt+set}" = set; then
 fi
 
 
-# Check whether --with-libxslt2 was given.
-if test "${with_libxslt2+set}" = set; then
-  withval=$with_libxslt2;
+# Check whether --with-libxslt was given.
+if test "${with_libxslt+set}" = set; then
+  withval=$with_libxslt;
 fi
 
 
@@ -3774,9 +3774,9 @@ if test "${with_libexslt+set}" = set; then
 fi
 
 
-# Check whether --with-libexslt2 was given.
-if test "${with_libexslt2+set}" = set; then
-  withval=$with_libexslt2;
+# Check whether --with-libexslt was given.
+if test "${with_libexslt+set}" = set; then
+  withval=$with_libexslt;
 fi
 
 
@@ -3786,9 +3786,9 @@ if test "${with_xerces+set}" = set; then
 fi
 
 
-# Check whether --with-xerces2 was given.
-if test "${with_xerces2+set}" = set; then
-  withval=$with_xerces2;
+# Check whether --with-xerces was given.
+if test "${with_xerces+set}" = set; then
+  withval=$with_xerces;
 fi
 
 
@@ -3798,9 +3798,9 @@ if test "${with_xalan+set}" = set; then
 fi
 
 
-# Check whether --with-xalan2 was given.
-if test "${with_xalan2+set}" = set; then
-  withval=$with_xalan2;
+# Check whether --with-xalan was given.
+if test "${with_xalan+set}" = set; then
+  withval=$with_xalan;
 fi
 
 
@@ -3810,9 +3810,9 @@ if test "${with_zorba+set}" = set; then
 fi
 
 
-# Check whether --with-zorba2 was given.
-if test "${with_zorba2+set}" = set; then
-  withval=$with_zorba2;
+# Check whether --with-zorba was given.
+if test "${with_zorba+set}" = set; then
+  withval=$with_zorba;
 fi
 
 
@@ -3822,9 +3822,9 @@ if test "${with_oechem+set}" = set; then
 fi
 
 
-# Check whether --with-oechem2 was given.
-if test "${with_oechem2+set}" = set; then
-  withval=$with_oechem2;
+# Check whether --with-oechem was given.
+if test "${with_oechem+set}" = set; then
+  withval=$with_oechem;
 fi
 
 
@@ -3834,9 +3834,9 @@ if test "${with_sge+set}" = set; then
 fi
 
 
-# Check whether --with-sge2 was given.
-if test "${with_sge2+set}" = set; then
-  withval=$with_sge2;
+# Check whether --with-sge was given.
+if test "${with_sge+set}" = set; then
+  withval=$with_sge;
 fi
 
 
@@ -3846,9 +3846,9 @@ if test "${with_muparser+set}" = set; then
 fi
 
 
-# Check whether --with-muparser2 was given.
-if test "${with_muparser2+set}" = set; then
-  withval=$with_muparser2;
+# Check whether --with-muparser was given.
+if test "${with_muparser+set}" = set; then
+  withval=$with_muparser;
 fi
 
 
@@ -3858,9 +3858,9 @@ if test "${with_hdf5+set}" = set; then
 fi
 
 
-# Check whether --with-hdf5b was given.
-if test "${with_hdf5b+set}" = set; then
-  withval=$with_hdf5b;
+# Check whether --with-hdf5 was given.
+if test "${with_hdf5+set}" = set; then
+  withval=$with_hdf5;
 fi
 
 
@@ -3870,9 +3870,9 @@ if test "${with_gif+set}" = set; then
 fi
 
 
-# Check whether --with-gif2 was given.
-if test "${with_gif2+set}" = set; then
-  withval=$with_gif2;
+# Check whether --with-gif was given.
+if test "${with_gif+set}" = set; then
+  withval=$with_gif;
 fi
 
 
@@ -3882,9 +3882,9 @@ if test "${with_jpeg+set}" = set; then
 fi
 
 
-# Check whether --with-jpeg2 was given.
-if test "${with_jpeg2+set}" = set; then
-  withval=$with_jpeg2;
+# Check whether --with-jpeg was given.
+if test "${with_jpeg+set}" = set; then
+  withval=$with_jpeg;
 fi
 
 
@@ -3894,9 +3894,9 @@ if test "${with_png+set}" = set; then
 fi
 
 
-# Check whether --with-png2 was given.
-if test "${with_png2+set}" = set; then
-  withval=$with_png2;
+# Check whether --with-png was given.
+if test "${with_png+set}" = set; then
+  withval=$with_png;
 fi
 
 
@@ -3906,9 +3906,9 @@ if test "${with_tiff+set}" = set; then
 fi
 
 
-# Check whether --with-tiff2 was given.
-if test "${with_tiff2+set}" = set; then
-  withval=$with_tiff2;
+# Check whether --with-tiff was given.
+if test "${with_tiff+set}" = set; then
+  withval=$with_tiff;
 fi
 
 
@@ -3918,9 +3918,9 @@ if test "${with_xpm+set}" = set; then
 fi
 
 
-# Check whether --with-xpm2 was given.
-if test "${with_xpm2+set}" = set; then
-  withval=$with_xpm2;
+# Check whether --with-xpm was given.
+if test "${with_xpm+set}" = set; then
+  withval=$with_xpm;
 fi
 
 
@@ -3930,9 +3930,9 @@ if test "${with_magic+set}" = set; then
 fi
 
 
-# Check whether --with-magic2 was given.
-if test "${with_magic2+set}" = set; then
-  withval=$with_magic2;
+# Check whether --with-magic was given.
+if test "${with_magic+set}" = set; then
+  withval=$with_magic;
 fi
 
 
@@ -3942,9 +3942,9 @@ if test "${with_curl+set}" = set; then
 fi
 
 
-# Check whether --with-curl2 was given.
-if test "${with_curl2+set}" = set; then
-  withval=$with_curl2;
+# Check whether --with-curl was given.
+if test "${with_curl+set}" = set; then
+  withval=$with_curl;
 fi
 
 
@@ -3954,9 +3954,9 @@ if test "${with_mimetic+set}" = set; then
 fi
 
 
-# Check whether --with-mimetic2 was given.
-if test "${with_mimetic2+set}" = set; then
-  withval=$with_mimetic2;
+# Check whether --with-mimetic was given.
+if test "${with_mimetic+set}" = set; then
+  withval=$with_mimetic;
 fi
 
 
@@ -3966,9 +3966,9 @@ if test "${with_gsoap+set}" = set; then
 fi
 
 
-# Check whether --with-gsoap2 was given.
-if test "${with_gsoap2+set}" = set; then
-  withval=$with_gsoap2;
+# Check whether --with-gsoap was given.
+if test "${with_gsoap+set}" = set; then
+  withval=$with_gsoap;
 fi
 
 
@@ -3978,9 +3978,9 @@ if test "${with_avro+set}" = set; then
 fi
 
 
-# Check whether --with-avro2 was given.
-if test "${with_avro2+set}" = set; then
-  withval=$with_avro2;
+# Check whether --with-avro was given.
+if test "${with_avro+set}" = set; then
+  withval=$with_avro;
 fi
 
 
@@ -3990,9 +3990,9 @@ if test "${with_cereal+set}" = set; then
 fi
 
 
-# Check whether --with-cereal2 was given.
-if test "${with_cereal2+set}" = set; then
-  withval=$with_cereal2;
+# Check whether --with-cereal was given.
+if test "${with_cereal+set}" = set; then
+  withval=$with_cereal;
 fi
 
 
@@ -4002,9 +4002,9 @@ if test "${with_sasl2+set}" = set; then
 fi
 
 
-# Check whether --with-sasl2b was given.
-if test "${with_sasl2b+set}" = set; then
-  withval=$with_sasl2b;
+# Check whether --with-sasl2 was given.
+if test "${with_sasl2+set}" = set; then
+  withval=$with_sasl2;
 fi
 
 
@@ -4014,9 +4014,9 @@ if test "${with_mongodb+set}" = set; then
 fi
 
 
-# Check whether --with-mongodb2 was given.
-if test "${with_mongodb2+set}" = set; then
-  withval=$with_mongodb2;
+# Check whether --with-mongodb was given.
+if test "${with_mongodb+set}" = set; then
+  withval=$with_mongodb;
 fi
 
 
@@ -4026,9 +4026,9 @@ if test "${with_gmock+set}" = set; then
 fi
 
 
-# Check whether --with-gmock2 was given.
-if test "${with_gmock2+set}" = set; then
-  withval=$with_gmock2;
+# Check whether --with-gmock was given.
+if test "${with_gmock+set}" = set; then
+  withval=$with_gmock;
 fi
 
 
@@ -4038,9 +4038,9 @@ if test "${with_lapack+set}" = set; then
 fi
 
 
-# Check whether --with-lapack2 was given.
-if test "${with_lapack2+set}" = set; then
-  withval=$with_lapack2;
+# Check whether --with-lapack was given.
+if test "${with_lapack+set}" = set; then
+  withval=$with_lapack;
 fi
 
 
@@ -4062,9 +4062,9 @@ if test "${with_3psw+set}" = set; then
 fi
 
 
-# Check whether --with-3psw2 was given.
-if test "${with_3psw2+set}" = set; then
-  withval=$with_3psw2;
+# Check whether --with-3psw was given.
+if test "${with_3psw+set}" = set; then
+  withval=$with_3psw;
 fi
 
 
@@ -4136,9 +4136,9 @@ if test "${with_internal+set}" = set; then
 fi
 
 
-# Check whether --with-internal2 was given.
-if test "${with_internal2+set}" = set; then
-  withval=$with_internal2;
+# Check whether --with-internal was given.
+if test "${with_internal+set}" = set; then
+  withval=$with_internal;
 fi
 
 
@@ -4148,9 +4148,9 @@ if test "${with_gbench+set}" = set; then
 fi
 
 
-# Check whether --with-gbench2 was given.
-if test "${with_gbench2+set}" = set; then
-  withval=$with_gbench2;
+# Check whether --with-gbench was given.
+if test "${with_gbench+set}" = set; then
+  withval=$with_gbench;
 fi
 
 

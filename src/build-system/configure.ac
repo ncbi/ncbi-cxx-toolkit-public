@@ -109,11 +109,11 @@ AC_CONFIG_SRCDIR(src/build-system/Makefile.mk.in)
 #### Describe all "--with-*" arguments -- for the usage printout on "--help"
 
 ## Title
-AC_ARG_WITH(title0,
+AC_ARG_WITH(_,
    [===============================================================================])
-AC_ARG_WITH(title1,
+AC_ARG_WITH(_,
    [=============== NCBI C++ Toolkit specific configuration flags =================])
-AC_ARG_WITH(title2,
+AC_ARG_WITH(_,
    [===============================================================================])
 
 ## Code generation
@@ -185,7 +185,7 @@ AC_ARG_WITH(bincopy,
    [ --with-bincopy          populate lib and bin with copies, not hard links])
 AC_ARG_WITH(lib-rebuilds,
    [ --with-lib-rebuilds     ensure that apps use up-to-date libraries])
-AC_ARG_WITH(lib-rebuilds2,
+AC_ARG_WITH(lib-rebuilds,
    [ --with-lib-rebuilds=ask ask whether to update each app's libraries])dnl'
 AC_ARG_WITH(deactivation,
    [ --without-deactivation  keep old copies of libraries that no longer build])
@@ -211,7 +211,7 @@ AC_ARG_WITH(pch,
    [ --with-pch              use precompiled headers if possible])
 AC_ARG_WITH(caution,
    [ --with-caution          cancel configuration unconditionally when in doubt])
-AC_ARG_WITH(caution2,
+AC_ARG_WITH(caution,
    [ --without-caution       proceed without asking when in doubt])
 AC_ARG_WITH(ccache,
    [ --without-ccache        do not automatically use ccache if available])
@@ -221,11 +221,11 @@ AC_ARG_WITH(distcc,
 ## NCBI packages
 AC_ARG_WITH(ncbi-c,
    [ --with-ncbi-c=DIR       use NCBI C Toolkit installation in DIR])
-AC_ARG_WITH(ncbi-c2,
+AC_ARG_WITH(ncbi-c,
    [ --without-ncbi-c        do not use NCBI C Toolkit])
 AC_ARG_WITH(sss,
    [ --with-sss=DIR          use NCBI SSS installation in DIR])
-AC_ARG_WITH(sss2,
+AC_ARG_WITH(sss,
    [ --without-sss           do not use NCBI SSS libraries])
 AC_ARG_WITH(sssutils,
    [ --without-utils         do not use NCBI SSS UTIL library])
@@ -235,7 +235,7 @@ AC_ARG_WITH(included-sss,
    [ --with-included-sss     use the in-tree copy of SSS])
 AC_ARG_WITH(vdb,
    [ --with-vdb=DIR          use NCBI SRA/VDB Toolkit installation in DIR])
-AC_ARG_WITH(vdb2,
+AC_ARG_WITH(vdb,
    [ --without-vdb           do not use the NCBI SRA/VDB Toolkit])
 AC_ARG_WITH(downloaded-vdb,
    [ --with-downloaded-vdb   download and build SRA/VDB from GitHub])
@@ -245,45 +245,45 @@ AC_ARG_WITH(static-vdb,
 ## Third-party and system packages
 AC_ARG_WITH(z,
    [ --with-z=DIR            use zlib installation in DIR])
-AC_ARG_WITH(z2,
+AC_ARG_WITH(z,
    [ --without-z             use internal copy of zlib])
 AC_ARG_WITH(bz2,
    [ --with-bz2=DIR          use bzlib installation in DIR])
-AC_ARG_WITH(bz2b,
+AC_ARG_WITH(bz2,
    [ --without-bz2           use internal copy of bzlib])
 AC_ARG_WITH(lzo,
    [ --with-lzo=DIR          use LZO installation in DIR (requires 2.x or up)])
-AC_ARG_WITH(lzo_,
+AC_ARG_WITH(lzo,
    [ --without-lzo           do not use LZO])
 AC_ARG_WITH(pcre,
    [ --with-pcre=DIR         use PCRE installation in DIR])
-AC_ARG_WITH(pcre2,
+AC_ARG_WITH(pcre,
    [ --without-pcre          use internal copy of PCRE])
 AC_ARG_WITH(gmp,
    [ --with-gmp=DIR          use GMP installation in DIR])
-AC_ARG_WITH(gmp2,
+AC_ARG_WITH(gmp,
    [ --without-gmp           do not use GMP])
 AC_ARG_WITH(gcrypt,
    [ --with-gcrypt=DIR       use gcrypt installation in DIR])
-AC_ARG_WITH(gcrypt2,
+AC_ARG_WITH(gcrypt,
    [ --without-gcrypt        do not use gcrypt])
 AC_ARG_WITH(nettle,
    [ --with-nettle=DIR       use Nettle installation in DIR])
-AC_ARG_WITH(nettle2,
+AC_ARG_WITH(nettle,
    [ --without-nettle        do not use Nettle])
 AC_ARG_WITH(gnutls,
    [ --with-gnutls=DIR       use GNUTLS installation in DIR])
-AC_ARG_WITH(gnutls2,
+AC_ARG_WITH(gnutls,
    [ --without-gnutls        do not use GNUTLS])
 AC_ARG_WITH(static-gnutls,
    [ --with-static-gnutls    link GNUTLS statically if possible])
 AC_ARG_WITH(openssl,
    [ --with-openssl=DIR      use OpenSSL installation in DIR])
-AC_ARG_WITH(openssl2,
+AC_ARG_WITH(openssl,
    [ --without-openssl       do not use OpenSSL])
 AC_ARG_WITH(krb5,
    [ --with-krb5=DIR         use Kerberos 5 installation in DIR])
-AC_ARG_WITH(krb5b,
+AC_ARG_WITH(krb5,
    [ --without-krb5          do not use Kerberos 5])
 AC_ARG_WITH(sybase,
    [ --without-sybase        do not use SYBASE libraries])
@@ -293,53 +293,53 @@ AC_ARG_WITH(sybase-new,
    [ --with-sybase-new       use newer SYBASE install (12.5 rather than 12.0)])
 AC_ARG_WITH(ftds,
    [ --without-ftds          do not use FreeTDS libraries])
-AC_ARG_WITH(ftds2,
+AC_ARG_WITH(ftds,
    [ --with-ftds=DIR         use FreeTDS installation in DIR])
 AC_ARG_WITH(ftds-renamed,
    [ --without-ftds-renamed  do not rename Sybase DBLIB symbols in built-in FTDS])
 AC_ARG_WITH(mysql,
    [ --without-mysql         do not use MySQL])
-AC_ARG_WITH(mysql2,
+AC_ARG_WITH(mysql,
    [ --with-mysql=DIR        use MySQL installation in DIR])
 AC_ARG_WITH(opengl,
    [ --without-opengl        do not use OpenGL])
-AC_ARG_WITH(opengl2,
+AC_ARG_WITH(opengl,
    [ --with-opengl=DIR       use OpenGL installation in DIR])
 AC_ARG_WITH(mesa,
    [ --without-mesa          do not use MESA off-screen OpenGL])
-AC_ARG_WITH(mesa2,
+AC_ARG_WITH(mesa,
    [ --with-mesa=DIR         use MESA installation in DIR])
 AC_ARG_WITH(glut,
    [ --without-glut          do not use GLUT])
-AC_ARG_WITH(glut2,
+AC_ARG_WITH(glut,
    [ --with-glut=DIR         use GLUT installation in DIR])
 AC_ARG_WITH(glew,
    [ --without-glew          do not use GLEW])
-AC_ARG_WITH(glew2,
+AC_ARG_WITH(glew,
    [ --with-glew=DIR         use GLEW installation in DIR])
 AC_ARG_WITH(glew-mx,
    [ --with-glew-mx          insist on a multi-context-ready GLEW installation])
 AC_ARG_WITH(wxwidgets,
    [ --without-wxwidgets     do not use wxWidgets (2.6+)])
-AC_ARG_WITH(wxwidgets2,
+AC_ARG_WITH(wxwidgets,
    [ --with-wxwidgets=DIR    use wxWidgets installation in DIR])
 AC_ARG_WITH(wxwidgets-ucs,
    [ --with-wxwidgets-ucs    use Unicode builds of wxWidgets])
-AC_ARG_WITH(wxwidgets-ucs2,
+AC_ARG_WITH(wxwidgets-ucs,
    [ --without-wxwidgets-ucs do not use Unicode builds of wxWidgets])
 AC_ARG_WITH(freetype,
    [ --without-freetype      do not use FreeType])
-AC_ARG_WITH(freetype_,
+AC_ARG_WITH(freetype,
    [ --with-freetype=DIR     use FreeType installation in DIR])
 AC_ARG_WITH(ftgl,
    [ --without-ftgl          do not use FTGL])
-AC_ARG_WITH(ftgl2,
+AC_ARG_WITH(ftgl,
    [ --with-ftgl=DIR         use FTGL installation in DIR])
 AC_ARG_WITH(fastcgi,
    [ --without-fastcgi       do not use Fast-CGI library])
-AC_ARG_WITH(fastcgi2,
+AC_ARG_WITH(fastcgi,
    [ --with-fastcgi=VERSION  use Fast-CGI installation in \$NCBI/fcgi-VERSION])
-AC_ARG_WITH(fastcgi3,
+AC_ARG_WITH(fastcgi,
    [ --with-fastcgi=DIR      use Fast-CGI installation in DIR])
 AC_ARG_WITH(bdb,
    [ --without-bdb           do not use Berkeley DB library])
@@ -351,143 +351,143 @@ AC_ARG_WITH(sp,
    [ --without-sp            do not use SP libraries])
 AC_ARG_WITH(orbacus,
    [ --without-orbacus       do not use ORBacus CORBA libraries])
-AC_ARG_WITH(orbacus2,
+AC_ARG_WITH(orbacus,
    [ --with-orbacus=DIR      use ORBacus installation in DIR])
 AC_ARG_WITH(odbc,
    [ --with-odbc=DIR         use ODBC installation in DIR])
 AC_ARG_WITH(python,
    [ --with-python=DIR       use Python installation in DIR])
-AC_ARG_WITH(python2,
+AC_ARG_WITH(python,
    [ --without-python        do not use Python])
 AC_ARG_WITH(perl,
    [ --with-perl=DIR         use Perl installation in DIR])
-AC_ARG_WITH(perl2,
+AC_ARG_WITH(perl,
    [ --without-perl          do not use Perl])
 AC_ARG_WITH(jni,
    [ --with-jni(=JDK-DIR)    build Java bindings (against the JDK in JDK-DIR)])
 AC_ARG_WITH(boost,
    [ --with-boost=DIR        use Boost installation in DIR])
-AC_ARG_WITH(boost2,
+AC_ARG_WITH(boost,
    [ --without-boost         do not use Boost])
 AC_ARG_WITH(boost-tag,
    [ --with-boost-tag=TAG    use TAG as the tag appended to Boost library names])
-AC_ARG_WITH(boost-tag2,
+AC_ARG_WITH(boost-tag,
    [ --without-boost-tag     use untagged Boost library names])
 AC_ARG_WITH(sqlite3,
    [ --with-sqlite3=DIR      use SQLite 3.x installation in DIR])
-AC_ARG_WITH(sqlite3b,
+AC_ARG_WITH(sqlite3,
    [ --without-sqlite3       do not use SQLite 3.x])
 AC_ARG_WITH(icu,
    [ --with-icu=DIR          use ICU installation in DIR])
-AC_ARG_WITH(icu2,
+AC_ARG_WITH(icu,
    [ --without-icu           do not use ICU])
 AC_ARG_WITH(expat,
    [ --with-expat=DIR        use Expat installation in DIR])
-AC_ARG_WITH(expat2,
+AC_ARG_WITH(expat,
    [ --without-expat         do not use Expat])
 AC_ARG_WITH(sablot,
    [ --with-sablot=DIR       use Sablotron installation in DIR])
-AC_ARG_WITH(sablot2,
+AC_ARG_WITH(sablot,
    [ --without-sablot        do not use Sablotron])
 AC_ARG_WITH(libxml,
    [ --with-libxml=DIR       use libxml2 installation in DIR])
-AC_ARG_WITH(libxml_,
+AC_ARG_WITH(libxml,
    [ --without-libxml        do not use libxml2])
 AC_ARG_WITH(libxslt,
    [ --with-libxslt=DIR      use libxslt installation in DIR])
-AC_ARG_WITH(libxslt2,
+AC_ARG_WITH(libxslt,
    [ --without-libxslt       do not use libxslt])
 AC_ARG_WITH(libexslt,
    [ --with-libexslt=DIR     use libexslt installation in DIR])
-AC_ARG_WITH(libexslt2,
+AC_ARG_WITH(libexslt,
    [ --without-libexslt      do not use libexslt])
 AC_ARG_WITH(xerces,
    [ --with-xerces=DIR       use Xerces-C++ installation in DIR])
-AC_ARG_WITH(xerces2,
+AC_ARG_WITH(xerces,
    [ --without-xerces        do not use Xerces-C++])
 AC_ARG_WITH(xalan,
    [ --with-xalan=DIR        use Xalan-C++ installation in DIR])
-AC_ARG_WITH(xalan2,
+AC_ARG_WITH(xalan,
    [ --without-xalan         do not use Xalan-C++])
 AC_ARG_WITH(zorba,
    [ --with-zorba=DIR        use Zorba installation in DIR])
-AC_ARG_WITH(zorba2,
+AC_ARG_WITH(zorba,
    [ --without-zorba         do not use Zorba])
 AC_ARG_WITH(oechem,
    [ --with-oechem=DIR       use OpenEye OEChem installation in DIR])
-AC_ARG_WITH(oechem2,
+AC_ARG_WITH(oechem,
    [ --without-oechem        do not use OEChem])
 AC_ARG_WITH(sge,
    [ --with-sge=DIR          use Sun/Univa Grid Engine installation in DIR])
-AC_ARG_WITH(sge2,
+AC_ARG_WITH(sge,
    [ --without-sge           do not use Sun/Univa Grid Engine])
 AC_ARG_WITH(muparser,
    [ --with-muparser=DIR     use muParser installation in DIR])
-AC_ARG_WITH(muparser2,
+AC_ARG_WITH(muparser,
    [ --without-muparser      do not use muParser])
 AC_ARG_WITH(hdf5,
    [ --with-hdf5=DIR         use HDF5 installation in DIR])
-AC_ARG_WITH(hdf5b,
+AC_ARG_WITH(hdf5,
    [ --without-hdf5          do not use HDF5])
 AC_ARG_WITH(gif,
    [ --with-gif=DIR          use lib(un)gif installation in DIR])
-AC_ARG_WITH(gif2,
+AC_ARG_WITH(gif,
    [ --without-gif           do not use lib(un)gif])
 AC_ARG_WITH(jpeg,
    [ --with-jpeg=DIR         use libjpeg installation in DIR])
-AC_ARG_WITH(jpeg2,
+AC_ARG_WITH(jpeg,
    [ --without-jpeg          do not use libjpeg])
 AC_ARG_WITH(png,
    [ --with-png=DIR          use libpng installation in DIR])
-AC_ARG_WITH(png2,
+AC_ARG_WITH(png,
    [ --without-png           do not use libpng])
 AC_ARG_WITH(tiff,
    [ --with-tiff=DIR         use libtiff installation in DIR])
-AC_ARG_WITH(tiff2,
+AC_ARG_WITH(tiff,
    [ --without-tiff          do not use libtiff])
 AC_ARG_WITH(xpm,
    [ --with-xpm=DIR          use libXpm installation in DIR])
-AC_ARG_WITH(xpm2,
+AC_ARG_WITH(xpm,
    [ --without-xpm           do not use libXpm])
 AC_ARG_WITH(magic,
    [ --with-magic=DIR        use libmagic installation in DIR])
-AC_ARG_WITH(magic2,
+AC_ARG_WITH(magic,
    [ --without-magic         do not use libmagic])
 AC_ARG_WITH(curl,
    [ --with-curl=DIR         use libcurl installation in DIR])
-AC_ARG_WITH(curl2,
+AC_ARG_WITH(curl,
    [ --without-curl          do not use libcurl])
 AC_ARG_WITH(mimetic,
    [ --with-mimetic=DIR      use libmimetic installation in DIR])
-AC_ARG_WITH(mimetic2,
+AC_ARG_WITH(mimetic,
    [ --without-mimetic       do not use libmimetic])
 AC_ARG_WITH(gsoap,
    [ --with-gsoap=DIR        use gSOAP++ installation in DIR])
-AC_ARG_WITH(gsoap2,
+AC_ARG_WITH(gsoap,
    [ --without-gsoap         do not use gSOAP++])
 AC_ARG_WITH(avro,
    [ --with-avro=DIR         use Apache Avro installation in DIR])
-AC_ARG_WITH(avro2,
+AC_ARG_WITH(avro,
    [ --without-avro          do not use Apache Avro])
 AC_ARG_WITH(cereal,
    [ --with-cereal=DIR       use USC Cereal installation in DIR])
-AC_ARG_WITH(cereal2,
+AC_ARG_WITH(cereal,
    [ --without-cereal        do not use USC Cereal])
 AC_ARG_WITH(sasl2,
    [ --with-sasl2=DIR        use SASL 2 installation in DIR])
-AC_ARG_WITH(sasl2b,
+AC_ARG_WITH(sasl2,
    [ --without-sasl2         do not use SASL 2])
 AC_ARG_WITH(mongodb,
    [ --with-mongodb=DIR      use MongoDB installation in DIR])
-AC_ARG_WITH(mongodb2,
+AC_ARG_WITH(mongodb,
    [ --without-mongodb       do not use MongoDB])
 AC_ARG_WITH(gmock,
    [ --with-gmock=DIR        use Google Mock installation in DIR])
-AC_ARG_WITH(gmock2,
+AC_ARG_WITH(gmock,
    [ --without-gmock         do not use Google Mock])
 AC_ARG_WITH(lapack,
    [ --with-lapack=DIR       use LAPACK installation in DIR])
-AC_ARG_WITH(lapack2,
+AC_ARG_WITH(lapack,
    [ --without-lapack        do not use LAPACK])
 AC_ARG_WITH(lmdb,
    [ --with-lmdb=DIR         use LMDB installation in DIR])
@@ -495,7 +495,7 @@ AC_ARG_WITH(lmdb,
    [ --without-lmdb          do not use LMDB])
 AC_ARG_WITH(3psw,
    [ --with-3psw=std:netopt  favor standard (system) builds of the above pkgs.])
-AC_ARG_WITH(3psw2,
+AC_ARG_WITH(3psw,
    [ --without-3psw          do not use any of the above packages])
 
 ## Optional projects
@@ -521,11 +521,11 @@ AC_ARG_WITH(algo,
    [ --without-algo          do not build CPU-intensive algorithms])
 AC_ARG_WITH(internal,
    [ --with-internal         always try to build internal projects])
-AC_ARG_WITH(internal2,
+AC_ARG_WITH(internal,
    [ --without-internal      never build internal projects])
 AC_ARG_WITH(gbench,
    [ --with-gbench           ensure that Genome Workbench can be built])
-AC_ARG_WITH(gbench2,
+AC_ARG_WITH(gbench,
    [ --without-gbench        do not build Genome Workbench])
 
 ## Manuals
