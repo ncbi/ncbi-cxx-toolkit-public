@@ -227,6 +227,9 @@
 /* Define to 1 if libbz2 is available. */
 #undef HAVE_LIBBZ2
 
+/* Define to 1 if libcassandra is available. */
+#undef HAVE_LIBCASSANDRA
+
 /* Define to 1 if non-public CONNECT extensions are available. */
 #undef HAVE_LIBCONNEXT
 
@@ -367,6 +370,9 @@
 /* Define to 1 if libsqlite3 is available. */
 #undef HAVE_LIBSQLITE3
 
+/* Define to 1 if libssh2 is available. */
+#undef HAVE_LIBSSH2
+
 /* Define to 1 if the NCBI SSS DB library is available. */
 #undef HAVE_LIBSSSDB
 
@@ -384,6 +390,9 @@
 
 /* Define to 1 if libungif is available. */
 #undef HAVE_LIBUNGIF
+
+/* Define to 1 if libuv is available. */
+#undef HAVE_LIBUV
 
 /* Define to 1 if libxml2 is available. */
 #undef HAVE_LIBXML

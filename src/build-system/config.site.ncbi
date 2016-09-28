@@ -38,6 +38,7 @@ try_local() {
         test -f "$d/include/avro"          &&  : ${AVRO_PATH=$d}
         test -f "$d/include/db.h"          &&  : ${BERKELEYDB_PATH=$d}
         test -d "$d/include/boost"         &&  : ${BOOST_PATH=$d}
+        test -d "$d/include/cassandra.h"   &&  : ${CASSANDRA_PATH=$d}
         test -d "$d/include/cereal"        &&  : ${CEREAL_PATH=$d}
         test -d "$d/include/curl"          &&  : ${CURL_PATH=$d}
         test -f "$d/include/expat.h"       &&  : ${EXPAT_PATH=$d}
@@ -54,6 +55,8 @@ try_local() {
         test -x "$d/bin/icu-config"        &&  : ${ICU_PATH=$d}
         test -f "$d/include/jpeglib.h"     &&  : ${JPEG_PATH=$d}
         test -x "$d/bin/krb5-config"       &&  : ${KRB5_PATH=$d}
+        test -d "$d/include/libssh2.h"     &&  : ${LIBSSH2_PATH=$d}
+        test -f "$d/include/uv.h"          &&  : ${LIBUV_PATH=$d}
         test -d "$d/include/libxslt"       &&  : ${LIBXML_PATH=$d}
         test -f "$d/include/lmdb.h"        &&  : ${LMDB_PATH=$d}
         test -f "$d/include/lzo/lzo1.h"    &&  : ${LZO_PATH=$d}
@@ -137,6 +140,8 @@ case "$ncbi_platform" in
     *          ) : ${BOOST_PATH=$NCBI/boost-1.53.0-ncbi1} ;;
 esac
 
+: ${CASSANDRA_PATH=$NCBI/datastax-cpp-driver-2.4.3}
+
 : ${CEREAL_PATH=$NCBI/cereal-1.1.0}
 
 case "$ncbi_platform" in
@@ -191,6 +196,10 @@ case "$ncbi_platform" in
     Linux64    ) : ${ICU_PATH=$NCBI/icu-49.1.1} ;;
     *          ) : ${ICU_PATH=$NCBI/icu-3.2} ;;
 esac
+
+: ${LIBSSH2_PATH=$NCBI/libssh2-1.7.0}
+
+: ${LIBUV_PATH=$NCBI/libuv-1.9.1}
 
 : ${LIBXML_PATH=$NCBI/libxml-2.7.8}
 

@@ -71,7 +71,8 @@ case "$with_3psw" in
                      python, perl, jni, sqlite3, mimetic, sge, icu, sp, expat,
                      sablot, libxml, libxslt, libexslt, xerces, xalan, zorba,
                      oechem, muparser, hdf5, gif, jpeg, png, tiff, xpm, magic,
-                     curl, gsoap, avro, cereal, sasl2, mongodb, gmock, lapack],
+                     curl, gsoap, avro, cereal, sasl2, mongodb, gmock, lapack,
+                     libuv, libssh2, cassandra],
         [if test "${[with_]X-no}" != "no"; then
             AC_MSG_ERROR([incompatible options: --with-]X[ but --without-3psw])
          else
@@ -493,6 +494,18 @@ AC_ARG_WITH(lmdb,
    [ --with-lmdb=DIR         use LMDB installation in DIR])
 AC_ARG_WITH(lmdb,
    [ --without-lmdb          do not use LMDB])
+AC_ARG_WITH(libuv,
+   [ --with-libuv=DIR        use libuv installation in DIR])
+AC_ARG_WITH(libuv,
+   [ --without-libuv         do not use libuv])
+AC_ARG_WITH(libssh2,
+   [ --with-libssh2=DIR      use libssh2 installation in DIR])
+AC_ARG_WITH(libssh2,
+   [ --without-libssh2       do not use libssh2])
+AC_ARG_WITH(cassandra,
+   [ --with-cassandra=DIR    use Datastax Cassandra driver installation in DIR])
+AC_ARG_WITH(cassandra,
+   [ --without-cassandra     do not use Datastax Cassandra driver])
 AC_ARG_WITH(3psw,
    [ --with-3psw=std:netopt  favor standard (system) builds of the above pkgs.])
 AC_ARG_WITH(3psw,
@@ -554,7 +567,8 @@ bdb python perl jni sqlite3 icu boost boost-tag \
 sp expat sablot libxml libxslt libexslt xerces xalan zorba \
 oechem sge muparser hdf5 \
 gif jpeg tiff png xpm \
-magic curl mimetic gsoap avro cereal sasl2 mongodb gmock lapack lmdb 3psw \
+magic curl mimetic gsoap avro cereal sasl2 mongodb gmock lapack lmdb \
+libuv libssh2 cassandra 3psw \
 local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
@@ -623,7 +637,8 @@ for x_arg in "$@" ; do
       | --with-jpeg=* | --with-png=* | --with-tiff=* | --with-xpm=* \
       | --with-magic=* | --with-curl=* | --with-mimetic=* | --with-gsoap=* \
       | --with-avro=* | --with-cereal=* | --with-sasl2=* | --with-mongodb=* \
-      | --with-gmock=* | --with-lapack=* | --with-lmdb=* )
+      | --with-gmock=* | --with-lapack=* | --with-lmdb=* | --with-libuv=* \
+      | --with-libssh2=* | --with-cassandra=* )
       # Confirm that the specified directory exists and is readable.
       dir=`echo $x_arg | sed -e 's/^[[^=]]*=//'`
       case "$x_arg" in
@@ -7434,6 +7449,86 @@ NCBI_CHECK_THIRD_PARTY_LIB(lmdb,
    [AC_LANG_PROGRAM([[#include <lmdb.h>]],
       [[MDB_env *env; return mdb_env_create(&env);]])])
 
+# libuv
+case "$with_libuv" in
+   yes | no | '' ) ;;
+   *             ) LIBUV_PATH=$with_libuv ;;
+esac
+if test -d "$LIBUV_PATH"; then
+   NCBI_FIX_DIR(LIBUV_PATH)
+   for d in "$LIBUV_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx/lib" \
+            "$LIBUV_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx/lib" \
+            "$LIBUV_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx/lib" \
+            "$LIBUV_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx/lib" \
+            "$LIBUV_PATH/lib$bit64_sfx" "$LIBUV_PATH/lib"; do
+      if test -d "$d"; then
+         LIBUV_LIBDIR=$d
+         NCBI_FIX_DIR(LIBUV_LIBDIR)
+         break
+      fi
+   done
+fi
+NCBI_RPATHIFY(LIBUV_LIBPATH, $LIBUV_LIBDIR)
+NCBI_CHECK_THIRD_PARTY_LIB_EX(libuv, LIBUV, uv,
+   [AC_LANG_PROGRAM([[#include <uv.h>]],
+      [[uv_mutex_t m; return uv_mutex_init(&m);]])])
+if test "$with_libuv" != no -a -f "$LIBUV_LIBDIR/libuv-static.a"; then
+    LIBUV_STATIC_LIBS="-L$LIBUV_LIBDIR -luv-static"
+else
+    LIBUV_STATIC_LIBS=$LIBUV_LIBS
+fi
+
+# libssh2
+if test -d "$LIBSSH2_PATH"; then
+   NCBI_FIX_DIR(LIBSSH2_PATH)
+   for d in "$LIBSSH2_PATH/$compiler_vpfx$DEBUG_SFX$bit64_sfx/lib" \
+            "$LIBSSH2_PATH/$compiler_pfx$DEBUG_SFX$bit64_sfx/lib" \
+            "$LIBSSH2_PATH/$compiler_vpfx$DEBUG_SFX/lib" \
+            "$LIBSSH2_PATH/$compiler_pfx$DEBUG_SFX/lib" \
+            "$LIBSSH2_PATH/lib$bit64_sfx" "$LIBSSH2_PATH/lib"; do
+      if test -d "$d"; then
+         LIBSSH2_LIBDIR=$d
+         NCBI_FIX_DIR(LIBSSH2_LIBDIR)
+         break
+      fi
+   done
+fi
+NCBI_RPATHIFY(LIBSSH2_LIBPATH, $LIBSSH2_LIBDIR)
+NCBI_CHECK_THIRD_PARTY_LIB_EX(libssh2, LIBSSH2, ssh2,
+   [AC_LANG_PROGRAM([[#include <libssh2.h>]],
+      [[return libssh2_init(LIBSSH2_INIT_NO_CRYPTO);]])],
+   [$OPENSSL_LIBS])
+if test "$with_libssh2" != no -a -f "$LIBSSH2_LIBDIR/libssh2-static.a"; then
+    LIBSSH2_STATIC_LIBS="-L$LIBSSH2_LIBDIR -lssh2-static $OPENSSL_LIBS"
+else
+    LIBSSH2_STATIC_LIBS=$LIBSSH2_LIBS
+fi
+
+# Datastax Cassandra driver
+if test -d "$CASSANDRA_PATH"; then
+   NCBI_FIX_DIR(CASSANDRA_PATH)
+   for d in "$CASSANDRA_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+            "$CASSANDRA_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+            "$CASSANDRA_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
+            "$CASSANDRA_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
+      if test -d "$d"; then
+         CASSANDRA_PATH=$d
+         NCBI_FIX_DIR(CASSANDRA_PATH)
+         break
+      fi
+   done
+fi
+NCBI_CHECK_THIRD_PARTY_LIB(cassandra,
+   [AC_LANG_PROGRAM([[#include <cassandra.h>]],
+      [[CassCluster* c = cass_cluster_new();]])],
+   [$LIBSSH2_LIBS $LIBUV_LIBS])
+if test "$with_cassandra" != no -a \
+     -f "$CASSANDRA_PATH/lib/libcassandra_static.a"; then
+    CASSANDRA_STATIC_LIBS="-L$CASSANDRA_PATH/lib -lcassandra_static $LIBSSH2_STATIC_LIBS $LIBUV_STATIC_LIBS"
+else
+    CASSANDRA_STATIC_LIBS=$CASSANDRA_LIBS
+fi
+
 ### Restore original compiler/linker flags
 LIBS="$orig_LIBS"
 CPPFLAGS="$orig_CPPFLAGS"
@@ -8175,6 +8270,9 @@ AC_SUBST(GSOAP_PATH)
 AC_SUBST(AVRO_STATIC_LIBS)
 AC_SUBST(CEREAL_INCLUDE)
 AC_SUBST(MONGODB_STATIC_LIBS)
+AC_SUBST(LIBUV_STATIC_LIBS)
+AC_SUBST(LIBSSH2_STATIC_LIBS)
+AC_SUBST(CASSANDRA_STATIC_LIBS)
 AC_SUBST(ncbi_xreader_pubseqos)
 AC_SUBST(ncbi_xreader_pubseqos2)
 AC_SUBST(UNLESS_PUBSEQOS)
