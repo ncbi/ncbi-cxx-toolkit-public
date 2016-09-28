@@ -708,7 +708,13 @@ int CGapStatsApplication::RunNoCatch(void)
             // but would not halt processing of the file_or_accn)
             x_PrintOutMessage(out_message, cerr);
             exit_code = 1;
-        } catch(...) {
+        } catch (const ncbi::CException& ex) {
+            SOutMessage out_message(
+                sFileOrAccn, SOutMessage::kFatalStr,
+                ex.GetErrCodeString(), ex.GetMsg());
+            x_PrintOutMessage(out_message, cerr);
+            exit_code = 1;
+        } catch (...) {
             // Unexpected exceptions make us give up without processing
             // further files-or-accns.
             
