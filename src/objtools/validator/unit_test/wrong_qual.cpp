@@ -76,16 +76,16 @@ static void s_TestOneWrongQual(const string qual, const string val, const string
     vector< CExpectedError *> expected_errors;
     bool is_illegal = s_IsIllegal (feat);
     if (is_illegal) {
-        expected_errors.push_back(new CExpectedError("good", eDiag_Error, "UnknownImpFeatKey",
+        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "UnknownImpFeatKey",
                                   "Feature key " + feat + " is no longer legal"));
     }
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "WrongQualOnImpFeat", msg));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "WrongQualOnImpFeat", msg));
     if (NStr::Equal(qual, "rpt_unit_range") && NStr::Equal(feat, "polyA_site")) {
-        expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "RptUnitRangeProblem", 
+        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "RptUnitRangeProblem", 
                                   "/rpt_unit_range is not within sequence length"));
     }
     if (NStr::Equal(qual, "old_locus_tag")) {
-        expected_errors.push_back(new CExpectedError("good", eDiag_Error, "LocusTagProblem", 
+        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "LocusTagProblem", 
                                   "old_locus_tag without inherited locus_tag"));
     }
     CConstRef<CValidError> eval = validator.Validate(*misc_feat, scope, options);
