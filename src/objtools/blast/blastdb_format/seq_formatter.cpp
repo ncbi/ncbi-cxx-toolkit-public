@@ -89,10 +89,11 @@ CBlastDB_SeqFormatter::CBlastDB_SeqFormatter(const string& format_spec, CSeqDB& 
 
   	x_DataRequired();
 
-    CMetaRegistry::SEntry sentry =
-    CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
-    m_UseLongSeqIds = sentry.registry ?
-    sentry.registry->HasEntry("BLAST", "LONG_SEQID") : false;
+    CNcbiApplication* app = CNcbiApplication::Instance();
+    if (app) {
+        const CNcbiRegistry& registry = app->GetConfig();
+        m_UseLongSeqIds = (registry.Get("BLAST", "LONG_SEQID") == "1");
+    }
 }
 
 void CBlastDB_SeqFormatter::x_DataRequired()
@@ -387,10 +388,11 @@ CBlastDB_FastaFormatter::CBlastDB_FastaFormatter(CSeqDB& blastdb, CNcbiOstream& 
 	m_fasta.SetAllFlags(CFastaOstream::fKeepGTSigns|CFastaOstream::fNoExpensiveOps);
 	m_fasta.SetWidth(width);
 
-    CMetaRegistry::SEntry sentry =
-    CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
-    m_UseLongSeqIds = sentry.registry ?
-    sentry.registry->HasEntry("BLAST", "LONG_SEQID") : false;
+    CNcbiApplication* app = CNcbiApplication::Instance();
+    if (app) {
+        const CNcbiRegistry& registry = app->GetConfig();
+        m_UseLongSeqIds = (registry.Get("BLAST", "LONG_SEQID") == "1");
+    }
 }
 
 static void

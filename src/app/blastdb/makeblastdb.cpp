@@ -1084,10 +1084,12 @@ void CMakeBlastDBApp::x_BuildDatabase()
     indexing |= (hash_index ? CWriteDB::eAddHash : 0);
     indexing |= (parse_seqids ? CWriteDB::eFullIndex : 0);
 
-    CMetaRegistry::SEntry sentry =
-        CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
-    bool long_seqids = sentry.registry ?
-        sentry.registry->HasEntry("BLAST", "LONG_SEQID") : false;
+    bool long_seqids = false;
+    CNcbiApplication* app = CNcbiApplication::Instance();
+    if (app) {
+        const CNcbiRegistry& registry = app->GetConfig();
+        long_seqids = (registry.Get("BLAST", "LONG_SEQID") == "1");
+    }
 
     m_DB.Reset(new CBuildDatabase(dbname,
                                   title,

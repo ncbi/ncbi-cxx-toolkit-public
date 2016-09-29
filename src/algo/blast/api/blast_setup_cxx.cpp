@@ -1422,10 +1422,12 @@ FindBlastDbPath(const char* dbname, bool is_prot)
     }
 
     // Obtain the matrix path from the ncbi configuration file
-    CMetaRegistry::SEntry sentry;
-    sentry = CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
-    string path = 
-        sentry.registry ? sentry.registry->Get("BLAST", "BLASTDB") : "";
+    string path;
+    if (app) {
+        const CNcbiRegistry& registry = app->GetConfig();
+        if (registry.HasEntry("BLAST", "BLASTDB"))
+            CDirEntry::NormalizePath(registry.Get("BLAST", "BLASTDB"), eFollowLinks);
+    }
 
     full_path = CFile::MakePath(path, database);
     if (BlastDbFileExists(full_path, is_prot)) {

@@ -137,11 +137,11 @@ private:
     void x_Init(EConfigOpts options, const string& dbname, bool load_proteins);
 
     /// Load the DATA_LOADERS configuration value from the config file
-    void x_LoadDataLoadersConfig(const CMetaRegistry::SEntry& sentry);
+    void x_LoadDataLoadersConfig(const CNcbiRegistry& registry);
 
     /// Load the BLAST database configured to search for the blastdb
     /// DATA_LOADERS option from the config file
-    void x_LoadBlastDbDataLoaderConfig(const CMetaRegistry::SEntry& sentry);
+    void x_LoadBlastDbDataLoaderConfig(const CNcbiRegistry& registry);
 };
 
 

@@ -182,11 +182,11 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& options,
     	x_InitSAMFormatter();
     }
 
-    CMetaRegistry::SEntry sentry =
-        CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
-
-    m_LongSeqId = sentry.registry ?
-        sentry.registry->HasEntry("BLAST", "LONG_SEQID") : false;
+    CNcbiApplication* app = CNcbiApplication::Instance();
+    if (app) {
+        const CNcbiRegistry& registry = app->GetConfig();
+        m_LongSeqId = (registry.Get("BLAST", "LONG_SEQID") == "1");
+    }
 }
 
 CBlastFormat::CBlastFormat(const blast::CBlastOptions& opts, 
@@ -289,11 +289,11 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& opts,
     	x_InitSAMFormatter();
     }
 
-    CMetaRegistry::SEntry sentry =
-        CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
-
-    m_LongSeqId = sentry.registry ?
-        sentry.registry->HasEntry("BLAST", "LONG_SEQID") : false;
+    CNcbiApplication* app = CNcbiApplication::Instance();
+    if (app) {
+        const CNcbiRegistry& registry = app->GetConfig();
+        m_LongSeqId = (registry.Get("BLAST", "LONG_SEQID") == "1");
+    }
 }
 
 CBlastFormat::~CBlastFormat()

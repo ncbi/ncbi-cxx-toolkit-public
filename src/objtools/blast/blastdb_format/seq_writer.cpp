@@ -273,10 +273,12 @@ void CSeqFormatter::DumpAll(CSeqDB& blastdb, CSeqFormatterConfig config)
     fasta.SetWidth(config.m_LineWidth);
     fasta.SetAllFlags(CFastaOstream::fKeepGTSigns|CFastaOstream::fNoExpensiveOps);
 
-    CMetaRegistry::SEntry sentry =
-        CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
-    bool long_seqids = sentry.registry ?
-        sentry.registry->HasEntry("BLAST", "LONG_SEQID") : false;
+    bool long_seqids = false;
+    CNcbiApplication* app = CNcbiApplication::Instance();
+    if (app) {
+        const CNcbiRegistry& registry = app->GetConfig();
+        long_seqids = (registry.Get("BLAST", "LONG_SEQID") == "1");
+    }
 
     CRef<CBioseq> bioseq;
     for (int i=0; blastdb.CheckOrFindOID(i); i++) {

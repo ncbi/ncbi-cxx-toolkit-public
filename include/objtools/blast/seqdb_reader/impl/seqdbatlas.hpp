@@ -1785,12 +1785,14 @@ public:
         path += CDirEntry::NormalizePath(env.Get("BLASTDB"),eFollowLinks);
         path += splitter;
         // Finally, the config file.
-        CMetaRegistry::SEntry sentry =
-             CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
-        if (sentry.registry) {
-            path += CDirEntry::NormalizePath(sentry.registry->Get("BLAST", "BLASTDB"),eFollowLinks);
-            path += splitter;
-        }
+        CNcbiApplication* app = CNcbiApplication::Instance();
+        if (app) {
+            const CNcbiRegistry& registry = app->GetConfig();
+            if (registry.HasEntry("BLAST", "BLASTDB")) {
+                path += CDirEntry::NormalizePath(registry.Get("BLAST", "BLASTDB"),eFollowLinks);
+                path += splitter;
+            }
+        } 
         return path;
     }
 

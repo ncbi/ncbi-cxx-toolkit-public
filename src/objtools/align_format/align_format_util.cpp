@@ -509,11 +509,12 @@ CAlignFormatUtil::GetSeqIdString(const list<CRef<CSeq_id> > & ids, bool believe_
     if (wid && (wid->Which()!= CSeq_id::e_Local || believe_local_id)){
         TGi gi = FindGi(ids);
 
-        CMetaRegistry::SEntry sentry =
-            CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
-
-        bool use_long_seqids = sentry.registry ?
-            sentry.registry->HasEntry("BLAST", "LONG_SEQID") : false;
+        bool use_long_seqids = false;
+        CNcbiApplication* app = CNcbiApplication::Instance();
+        if (app) {
+            const CNcbiRegistry& registry = app->GetConfig();
+            use_long_seqids = (registry.Get("BLAST", "LONG_SEQID") == "1");
+        }
         if (!use_long_seqids) {
 
             all_id_str = GetBareId(*wid);

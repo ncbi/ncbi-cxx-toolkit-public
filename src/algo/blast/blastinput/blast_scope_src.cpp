@@ -64,21 +64,21 @@ SDataLoaderConfig::x_Init(SDataLoaderConfig::EConfigOpts options,
     }
     m_IsLoadingProteins = load_proteins;
 
-    CMetaRegistry::SEntry sentry =
-        CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
-    x_LoadDataLoadersConfig(sentry);
-    x_LoadBlastDbDataLoaderConfig(sentry);
+    CNcbiApplication* app = CNcbiApplication::Instance();
+    if (app) {
+        const CNcbiRegistry& registry = app->GetConfig();
+        x_LoadDataLoadersConfig(registry);
+        x_LoadBlastDbDataLoaderConfig(registry);
+    }
 }
 
 void
-SDataLoaderConfig::x_LoadDataLoadersConfig(const CMetaRegistry::SEntry& sentry)
+SDataLoaderConfig::x_LoadDataLoadersConfig(const CNcbiRegistry& registry)
 {
     static const string kDataLoadersConfig("DATA_LOADERS");
 
-    if (sentry.registry && 
-        sentry.registry->HasEntry("BLAST", kDataLoadersConfig)) {
-        const string& kLoaders = sentry.registry->Get("BLAST",
-                                                      kDataLoadersConfig);
+    if (registry.HasEntry("BLAST", kDataLoadersConfig)) {
+        const string& kLoaders = registry.Get("BLAST", kDataLoadersConfig);
         if (NStr::FindNoCase(kLoaders, "blastdb") == NPOS) {
             m_UseBlastDbs = false;
         }
@@ -95,8 +95,7 @@ SDataLoaderConfig::x_LoadDataLoadersConfig(const CMetaRegistry::SEntry& sentry)
 }
 
 void
-SDataLoaderConfig::x_LoadBlastDbDataLoaderConfig
-    (const CMetaRegistry::SEntry& sentry)
+SDataLoaderConfig::x_LoadBlastDbDataLoaderConfig(const CNcbiRegistry& registry)
 {
     if ( !m_UseBlastDbs ) {
         m_BlastDbName.clear();
@@ -115,8 +114,8 @@ SDataLoaderConfig::x_LoadBlastDbDataLoaderConfig
         ? kProtBlastDbLoaderConfig 
         : kNuclBlastDbLoaderConfig;
 
-    if (sentry.registry && sentry.registry->HasEntry("BLAST", config_param)) {
-        m_BlastDbName = sentry.registry->Get("BLAST", config_param);
+    if (registry.HasEntry("BLAST", config_param)) {
+        m_BlastDbName = registry.Get("BLAST", config_param);
     } else {
         _ASSERT(m_BlastDbName.empty());
         m_BlastDbName = m_IsLoadingProteins 

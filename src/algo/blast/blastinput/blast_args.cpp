@@ -1613,12 +1613,12 @@ CIgBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
 {
     string paths[3];
     CNcbiEnvironment env;
-    CMetaRegistry::SEntry sentry = 
-            CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
     paths[0] = CDirEntry::NormalizePath(CDir::GetCwd(), eFollowLinks);
     paths[1] = CDirEntry::NormalizePath(env.Get("IGDATA"), eFollowLinks);
-    if (sentry.registry) {
-       paths[2] = CDirEntry::NormalizePath(sentry.registry->Get("BLAST","IGDATA"), eFollowLinks);
+    CNcbiApplication* app = CNcbiApplication::Instance();
+    if (app) {
+        const CNcbiRegistry& registry = app->GetConfig();
+        paths[2] = CDirEntry::NormalizePath(registry.Get("BLAST","IGDATA"), eFollowLinks);
     } else {
 #if defined(NCBI_OS_DARWIN)
        paths[2] = "/usr/local/ncbi/igblast/data";

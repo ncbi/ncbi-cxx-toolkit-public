@@ -56,8 +56,13 @@ public:
 
     typedef blast::SDataLoaderConfig::EConfigOpts EConfigOpts;
 
-    CAutoNcbiConfigFile(EConfigOpts opts = blast::SDataLoaderConfig::eDefault) {
-        m_Sentry = CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
+    CAutoNcbiConfigFile(EConfigOpts opts = blast::SDataLoaderConfig::eDefault)
+        : m_App(CNcbiApplication::Instance()), m_Registry(0)
+    {
+        _ASSERT(m_App);
+        m_App->ReloadConfig(CMetaRegistry::fAlwaysReload);
+        m_Registry = &m_App->GetConfig();
+        _ASSERT(m_Registry);
 
         string value;
         if (opts & blast::SDataLoaderConfig::eUseBlastDbDataLoader) {
@@ -69,33 +74,39 @@ public:
         if (opts & blast::SDataLoaderConfig::eUseNoDataLoaders) {
             value += "none";
         }
-        m_Sentry.registry->Set(kSection, kDataLoaders, value);
+        m_Registry->Set(kSection, kDataLoaders, value);
     }
 
     void SetProteinBlastDbDataLoader(const string& prot_db_name) {
-        m_Sentry.registry->Set(kSection, kProtBlastDbDataLoader, prot_db_name);
+        m_Registry->Set(kSection, kProtBlastDbDataLoader, prot_db_name);
     }
 
     void SetNucleotideBlastDbDataLoader(const string& nucl_db_name) {
-        m_Sentry.registry->Set(kSection, kNuclBlastDbDataLoader, nucl_db_name);
+        m_Registry->Set(kSection, kNuclBlastDbDataLoader, nucl_db_name);
     }
 
     void RemoveBLASTDBEnvVar() {
-        m_BlastDb = m_Sentry.registry->Get(kSection, "BLASTDB");
-        m_Sentry.registry->Set(kSection, "BLASTDB", "/dev/null");
+        m_BlastDb = m_Registry->Get(kSection, "BLASTDB");
+        m_Registry->Set(kSection, "BLASTDB", "/dev/null");
     }
 
     ~CAutoNcbiConfigFile() {
-        m_Sentry.registry->Set(kSection, kDataLoaders, kEmptyStr);
-        m_Sentry.registry->Set(kSection, kProtBlastDbDataLoader, kEmptyStr);
-        m_Sentry.registry->Set(kSection, kNuclBlastDbDataLoader, kEmptyStr);
+        m_App->ReloadConfig(CMetaRegistry::fAlwaysReload);
+        m_Registry->Set(kSection, kDataLoaders, kEmptyStr);
+        m_Registry->Set(kSection, kProtBlastDbDataLoader, kEmptyStr);
+        m_Registry->Set(kSection, kNuclBlastDbDataLoader, kEmptyStr);
         if ( !m_BlastDb.empty() ) {
-            m_Sentry.registry->Set(kSection, "BLASTDB", m_BlastDb);
+            m_Registry->Set(kSection, "BLASTDB", m_BlastDb);
         }
     }
+
 private:
-    CMetaRegistry::SEntry m_Sentry;
+    CNcbiApplication* m_App;
+    CNcbiRegistry* m_Registry;
     string m_BlastDb;
+
+    CAutoNcbiConfigFile(const CAutoNcbiConfigFile&) = delete;
+    CAutoNcbiConfigFile& operator=(const CAutoNcbiConfigFile&) = delete;
 };
 
 /// RAII class for the CBlastScopeSource. It revokes the BLAST database data

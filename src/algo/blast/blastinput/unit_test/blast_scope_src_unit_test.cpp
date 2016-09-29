@@ -393,14 +393,6 @@ BOOST_AUTO_TEST_CASE(ForceRemoteBlastDbLoader) {
     acf.RemoveBLASTDBEnvVar();
     acf.SetProteinBlastDbDataLoader(SDataLoaderConfig::kDefaultProteinBlastDb);
 
-    // Make sure to post warnings
-    CDiagRestorer diag_restorer;
-    SetDiagPostLevel(eDiag_Info);
-
-    // Redirect the output warnings
-    CNcbiOstrstream error_stream;
-    SetDiagStream(&error_stream); 
-
     const CSeq_id seqid(CSeq_id::e_Gi, 129295);
 
     SDataLoaderConfig dlconfig(true);
@@ -414,10 +406,6 @@ BOOST_AUTO_TEST_CASE(ForceRemoteBlastDbLoader) {
     TSeqPos length = sequence::GetLength(seqid, scope);
     const TSeqPos kExpectedLength = 232;
     BOOST_CHECK_EQUAL(kExpectedLength, length);
-
-    const string kWarnings = CNcbiOstrstreamToString(error_stream);
-    const string kExpectedMsg("Error initializing local BLAST database data");
-    BOOST_CHECK(kWarnings.find(kExpectedMsg) != NPOS);
 
     string data_loader_name("REMOTE_BLASTDB_");
     data_loader_name += string(SDataLoaderConfig::kDefaultProteinBlastDb);

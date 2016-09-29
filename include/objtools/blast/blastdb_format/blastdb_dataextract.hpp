@@ -69,16 +69,17 @@ public:
               m_UseCtrlA(ctrl_a),
               m_Oid(0)
     {
-	m_Gi2TaxidMap.first = -1;
-	m_Gi2AccMap.first = -1;
-	m_Gi2TitleMap.first = -1;
-	m_Oid2Pig.first = -1;
-	m_Gi2SeqIdMap.first = -1;
+        m_Gi2TaxidMap.first = -1;
+        m_Gi2AccMap.first = -1;
+        m_Gi2TitleMap.first = -1;
+        m_Oid2Pig.first = -1;
+        m_Gi2SeqIdMap.first = -1;
 
-        CMetaRegistry::SEntry sentry =
-            CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
-        m_UseLongSeqIds = sentry.registry ?
-            sentry.registry->HasEntry("BLAST", "LONG_SEQID") : false;
+        CNcbiApplication* app = CNcbiApplication::Instance();
+        if (app) {
+            const CNcbiRegistry& registry = app->GetConfig();
+            m_UseLongSeqIds = (registry.Get("BLAST", "LONG_SEQID") == "1");
+        }
     }
 
     /// Setting seqid

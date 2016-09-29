@@ -1721,8 +1721,11 @@ BOOST_AUTO_TEST_CASE(ReadGiNuclWithFlankingSpacesIntoBuffer_Single)
     BOOST_REQUIRE(bioseqs->GetSeq_set().front()->IsSeq());
     const CBioseq& b = bioseqs->GetSeq_set().front()->GetSeq();
     BOOST_REQUIRE(b.IsNa());
-    BOOST_REQUIRE_EQUAL(CSeq_id::e_Gi, b.GetId().front()->Which());
-    BOOST_REQUIRE_EQUAL(gi, b.GetId().front()->GetGi());
+
+    CRef<CSeq_id> id = FindBestChoice(b.GetId(), CSeq_id::BestRank);
+    BOOST_REQUIRE(id.NotNull());
+    BOOST_REQUIRE_EQUAL(CSeq_id::e_Gi, id->Which());
+    BOOST_REQUIRE_EQUAL(gi, id->GetGi());
     BOOST_REQUIRE_EQUAL(CSeq_inst::eRepr_raw, b.GetInst().GetRepr());
     BOOST_REQUIRE(CSeq_inst::IsNa(b.GetInst().GetMol()));
     BOOST_REQUIRE_EQUAL(length, b.GetInst().GetLength());
