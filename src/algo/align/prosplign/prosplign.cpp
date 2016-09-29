@@ -294,7 +294,7 @@ void CProSplignOutputOptions::SetupArgDescriptions(CArgDescriptions* arg_desc)
          "if difference is more than cut_flanks_with_posit_dropoff, flank will be dropped",
          CArgDescriptions::eInteger,
          NStr::IntToString(CProSplignOutputOptions::default_cut_flanks_with_posit_window));
-    arg_desc->SetConstraint("total_positives", new CArgAllow_Integers(0, 10000));
+    arg_desc->SetConstraint("cut_flanks_with_posit_window", new CArgAllow_Integers(0, 10000));
 
     arg_desc->AddDefaultKey
         ("start_bonus",
