@@ -429,7 +429,7 @@ CBlastDBCmdApp::x_ProcessSearchRequest()
     	string outfmt = x_InitSearchRequest();
     	/* Special case: full db dump when no range and mask data is specified */
     	if (m_FASTA) {
-    		CBlastDB_FastaFormatter fasta_fmt(*m_BlastDb, out, args["line_length"].AsInteger());
+    		CBlastDB_FastaFormatter fasta_fmt(*m_BlastDb, out, args["line_length"].AsInteger(), args["long_seqids"].AsBoolean());
     		err_found = x_ProcessSearchType(fasta_fmt);
     	}
     	else if (m_Asn1Bioseq) {
@@ -645,6 +645,8 @@ void CBlastDBCmdApp::Init()
     arg_desc->AddFlag("exact_length", "Get exact length for db info", true);
     arg_desc->SetDependency("exact_length", CArgDescriptions::eRequires,
                             "info");
+    arg_desc->AddFlag("long_seqids", "Use long seq id for fasta deflines", true);
+    arg_desc->SetDependency("long_seqids", CArgDescriptions::eExcludes, "info");
     SetupArgDescriptions(arg_desc.release());
 }
 

@@ -120,7 +120,6 @@ private:
     CBlastDeflineUtil::BlastDeflineFields m_DeflineFields;
     /// Bit Mask for other fields
     unsigned int m_OtherFields;
-    bool m_UseLongSeqIds;
     /// Build data for write
     void x_Print(CSeqDB::TOID oid, vector<string> & defline_data, vector<string> & other_fields);
 
@@ -145,7 +144,7 @@ public:
     /// @param blastdb BLAST database from which to retrieve the data [in]
     /// @param out output stream to write the data [in]
     /// @param width fasta line width [in]
-    CBlastDB_FastaFormatter(CSeqDB& blastdb, CNcbiOstream& out, TSeqPos width = 80);
+    CBlastDB_FastaFormatter(CSeqDB& blastdb, CNcbiOstream& out, TSeqPos width = 80, bool useLongSeqId = false);
 
     void DumpAll(const CBlastDB_FormatterConfig  & config);
 

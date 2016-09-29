@@ -89,11 +89,8 @@ CBlastDB_SeqFormatter::CBlastDB_SeqFormatter(const string& format_spec, CSeqDB& 
 
   	x_DataRequired();
 
-    CNcbiApplication* app = CNcbiApplication::Instance();
-    if (app) {
-        const CNcbiRegistry& registry = app->GetConfig();
-        m_UseLongSeqIds = (registry.Get("BLAST", "LONG_SEQID") == "1");
-    }
+    CMetaRegistry::SEntry sentry =
+    CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
 }
 
 void CBlastDB_SeqFormatter::x_DataRequired()
@@ -346,13 +343,13 @@ int CBlastDB_SeqFormatter::Write(CSeqDB::TOID oid, const CBlastDB_FormatterConfi
     		}
     		ITERATE(CBlast_def_line_set::Tdata, itr, df_set->Get()) {
     			vector<string> defline_data(CBlastDeflineUtil::max_index, kEmptyStr);
-    			CBlastDeflineUtil::ExtractDataFromBlastDefline(**itr, defline_data, m_DeflineFields, m_UseLongSeqIds);
+    			CBlastDeflineUtil::ExtractDataFromBlastDefline(**itr, defline_data, m_DeflineFields, false);
     			x_Print(oid, defline_data, other_fields);
     		}
     	}
     	else {
    			vector<string> defline_data(CBlastDeflineUtil::max_index, kEmptyStr);
-    		CBlastDeflineUtil::ExtractDataFromBlastDeflineSet(*df_set, defline_data, m_DeflineFields, target_id, m_UseLongSeqIds);
+    		CBlastDeflineUtil::ExtractDataFromBlastDeflineSet(*df_set, defline_data, m_DeflineFields, target_id, false);
    			x_Print(oid, defline_data, other_fields);
     	}
     }
@@ -382,17 +379,11 @@ void CBlastDB_SeqFormatter::DumpAll(const CBlastDB_FormatterConfig & config)
 	}
 }
 
-CBlastDB_FastaFormatter::CBlastDB_FastaFormatter(CSeqDB& blastdb, CNcbiOstream& out, TSeqPos width)
-    :  m_BlastDb(blastdb), m_Out(out), m_fasta(out)
+CBlastDB_FastaFormatter::CBlastDB_FastaFormatter(CSeqDB& blastdb, CNcbiOstream& out, TSeqPos width, bool useLongSeqId)
+    :  m_BlastDb(blastdb), m_Out(out), m_fasta(out), m_UseLongSeqIds(useLongSeqId)
 {
 	m_fasta.SetAllFlags(CFastaOstream::fKeepGTSigns|CFastaOstream::fNoExpensiveOps);
 	m_fasta.SetWidth(width);
-
-    CNcbiApplication* app = CNcbiApplication::Instance();
-    if (app) {
-        const CNcbiRegistry& registry = app->GetConfig();
-        m_UseLongSeqIds = (registry.Get("BLAST", "LONG_SEQID") == "1");
-    }
 }
 
 static void
