@@ -77,11 +77,9 @@ BEGIN_NAMESPACE(objects);
 
 static const TSeqPos kPageSize = 5000;
 static const TSeqPos kMaxSNPLength = 256;
-static const size_t kFlagsSize = 8;
 static const TSeqPos kOverviewZoom = kPageSize;
 static const TSeqPos kCoverageZoom = 100;
 static const size_t kMax_AlleleLength  = 32;
-static const char kAlleleSeparator = '|';
 
 static const char kDefaultAnnotName[] = "SNP";
 
