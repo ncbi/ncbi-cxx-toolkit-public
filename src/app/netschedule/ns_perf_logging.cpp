@@ -223,6 +223,37 @@ void s_DoDonePerfLogging(const CJob &  job, const CNSPreciseTime &  time_to,
 }
 
 
+void g_DoErasePerfLogging(const CQueue &  queue, const CJob &  job)
+{
+    if (!CPerfLogger::IsON())
+        return;
+    if (!queue.ShouldPerfLogTransitions())
+        return;
+
+    const vector<CJobEvent>&    job_events = job.GetEvents();
+    if (job_events.empty())
+        return;     // Must never happened
+
+    string              job_key = queue.MakeJobKey(job.GetId());
+    string              qname = queue.GetQueueName();
+    CNSPreciseTime      time_submit = job.GetEvents()[ 0 ].GetTimestamp();
+    CNSPreciseTime      current_time = CNSPreciseTime::Current();
+    CNSPreciseTime      time_diff = current_time - time_submit;
+
+    // Create a logger and set the time
+    CPerfLogger         perf_logger(CPerfLogger::eSuspend);
+    perf_logger.Adjust(CTimeSpan(time_diff.Sec(), time_diff.NSec()));
+
+    // Log the event and a variation
+    CDiagContext_Extra  extra = perf_logger.Post(
+            504, s_FormResourceName(CNetScheduleAPI::ePending,
+                                    CNetScheduleAPI::eDeleted));
+
+    s_AppendCommonExtras(qname, job_key, "ns", "", 0, "", extra);
+    extra.Print("run_count", job.GetRunCount());
+}
+
+
 void s_AppendCommonExtras(const string &  qname,
                           const string &  job_key,
                           const string &  agent,

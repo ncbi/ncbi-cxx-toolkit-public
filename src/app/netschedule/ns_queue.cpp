@@ -2572,8 +2572,11 @@ void CQueue::EraseJob(unsigned int  job_id, TJobStatus  status)
 // status - the job status from which the job was deleted
 void CQueue::x_Erase(const TNSBitVector &  job_ids, TJobStatus  status)
 {
-    CFastMutexGuard     jtd_guard(m_JobsToDeleteLock);
     size_t              job_count = job_ids.count();
+    if (job_count <= 0)
+        return;
+
+    CFastMutexGuard     jtd_guard(m_JobsToDeleteLock);
 
     m_JobsToDelete |= job_ids;
     m_JobsToDeleteOps += job_count;
@@ -3530,29 +3533,35 @@ CQueue::CheckJobsExpiry(const CNSPreciseTime &  current_time,
     }}
 
     if (result.deleted > 0) {
-        x_Erase(job_ids, status);
+        TNSBitVector::enumerator    en(job_ids.first());
+        CFastMutexGuard             guard(m_OperationLock);
+        CNSTransaction              transaction(this);
 
-        CFastMutexGuard     guard(m_OperationLock);
-        TNSBitVector        jobs_to_notify = m_JobsToNotify & job_ids;
-        if (jobs_to_notify.any()) {
-            TNSBitVector::enumerator    en(jobs_to_notify.first());
-            CNSTransaction              transaction(this);
+        for (; en.valid(); ++en) {
+            unsigned int    id = *en;
+            CJob            job;
+            bool            need_to_notify = m_JobsToNotify[id];
 
-            for (; en.valid(); ++en) {
-                unsigned int    id = *en;
-                CJob            job;
 
+            // if the job is deleted from the pending state then a performance
+            // record should be produced. A job full information is also
+            // required if the submitter expects job notifications.
+            if (need_to_notify || status == CNetScheduleAPI::ePending) {
                 if (job.Fetch(this, id) == CJob::eJF_Ok) {
-                    if (job.ShouldNotifyListener(current_time, m_JobsToNotify))
+                    if (need_to_notify &&
+                        job.ShouldNotifyListener(current_time, m_JobsToNotify)) {
                         m_NotificationsList.NotifyJobStatus(
                                             job.GetListenerNotifAddr(),
                                             job.GetListenerNotifPort(),
                                             MakeJobKey(id),
                                             CNetScheduleAPI::eDeleted,
                                             job.GetLastEventIndex());
-
+                        m_JobsToNotify.set_bit(id, false);
+                    }
+                    if (status == CNetScheduleAPI::ePending) {
+                        g_DoErasePerfLogging(*this, job);
+                    }
                 }
-                m_JobsToNotify.set_bit(id, false);
             }
         }
 
@@ -3560,7 +3569,7 @@ CQueue::CheckJobsExpiry(const CNSPreciseTime &  current_time,
             m_NotificationsList.ClearExactGetNotifications();
     }
 
-
+    x_Erase(job_ids, status);
     return result;
 }
 

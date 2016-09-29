@@ -48,6 +48,7 @@ void g_DoPerfLogging(const CQueue &  queue, const CJob &  job, int  status);
 void g_DoPerfLogging(const CQueue &  queue,
                      const vector<TJobStatus> &  statuses,
                      const vector<unsigned int> &  counters);
+void g_DoErasePerfLogging(const CQueue &  queue, const CJob &  job);
 
 
 
