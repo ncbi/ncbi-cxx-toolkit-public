@@ -32,13 +32,15 @@ public:
     int Run(void);
 
 private:
-    CSeq_entry_Handle x_GetGenomeSEH(CSeq_entry_Handle seh);
+    CSeq_entry_Handle x_GetNucleotideSEH(CSeq_entry_Handle seh);
     bool x_GetSequenceIdFromCDSs(CSeq_entry_Handle& seh, CRef<CSeq_id>& prod_id);
     bool x_UpdateSequenceIds(CRef<CSeq_id>& new_id, CSeq_entry_Handle& seh);
     CObjectOStream* x_InitOutputStream(const string& filename, const bool binary) const;
     bool x_TryReadSeqEntry(CObjectIStream& istr, CSeq_entry& seq_entry) const;
     bool x_TryReadBioseqSet(CObjectIStream& istr, CSeq_entry& seq_entry) const;
     CObjectIStream* x_InitInputStream(const CArgs& args);
+    void x_GetNucProtSets(CSeq_entry_Handle seh, list<CSeq_entry_Handle>& nucProtSets) const;
+    void x_ProcessNucProtSets(const CArgs& args, list<CSeq_entry_Handle>& nuc_prot_sets);
 };
 
 
@@ -116,6 +118,110 @@ bool CSetupProtMatchApp::x_TryReadBioseqSet(CObjectIStream& istr, CSeq_entry& se
 }
 
 
+void CSetupProtMatchApp::x_ProcessNucProtSets(const CArgs& args, list<CSeq_entry_Handle>& nuc_prot_sets)
+{
+    CRef<CObjectManager> obj_mgr = CObjectManager::GetInstance();
+    CRef<CScope> gb_scope = Ref(new CScope(*obj_mgr));
+    gb_scope->AddDataLoader("GBLOADER");
+
+    const bool AsBinary = true;
+    const bool AsText = false;
+
+    const bool multiple_sets = (nuc_prot_sets.size() > 1);
+
+    unsigned int count = 0;
+    string filename;
+    for (auto nuc_prot_seh : nuc_prot_sets) {
+     
+       // Fetch the genbank entry
+       CSeq_entry_Handle nucleotide_seh = x_GetNucleotideSEH(nuc_prot_seh);
+
+       CBioseq_Handle gb_bsh;
+       CConstRef<CSeq_entry> gb_tse;
+       for (auto pNucId : nucleotide_seh.GetSeq().GetCompleteBioseq()->GetId()) {
+           if (pNucId->IsGenbank()) {
+               gb_bsh = gb_scope->GetBioseqHandle(*pNucId);
+               gb_tse = gb_bsh.GetTSE_Handle().GetCompleteTSE();
+               break;
+           }
+       }
+
+       // Write the genbank nuc-prot-set to a file
+       try {
+           filename = args["o"].AsString();
+           filename += ".genbank";
+           if (multiple_sets) {
+               filename += NStr::NumericToString(count);
+           }
+           filename += ".asn";
+           unique_ptr<CObjectOStream> pOstr(x_InitOutputStream(filename, AsBinary));
+           *pOstr << *gb_tse;
+       } catch (CException& e) {
+           NCBI_THROW(CProteinMatchException,
+                      eOutputError, 
+                      "Failed to write " + filename);
+       }
+       
+
+    
+        // Write the genbank nucleotide sequence to a file
+        try {
+            CSeq_entry_Handle gb_nuc_seh = x_GetNucleotideSEH(gb_bsh.GetSeq_entry_Handle());
+            filename = args["o"].AsString();
+            filename += ".genbank_nuc";
+            if (multiple_sets) {
+                filename += NStr::NumericToString(count);
+            }
+            filename += ".asn";
+            unique_ptr<CObjectOStream> pOstr(x_InitOutputStream(filename, AsText));
+            *pOstr << *gb_nuc_seh.GetCompleteSeq_entry();
+        } catch (CException& e) {
+           NCBI_THROW(CProteinMatchException,
+                      eOutputError, 
+                      "Failed to write " + filename);
+        }
+
+        CRef<CSeq_id> local_id;
+        if (x_GetSequenceIdFromCDSs(nuc_prot_seh, local_id)) {
+            x_UpdateSequenceIds(local_id, nucleotide_seh); 
+        }
+
+        // Write processed update
+        try {
+            filename = args["o"].AsString(); 
+            filename += ".local";
+            if (multiple_sets) {
+                filename += NStr::NumericToString(count);
+            }
+            filename += ".asn";
+            unique_ptr<CObjectOStream> pOstr(x_InitOutputStream(filename, AsBinary));
+            *pOstr << *nuc_prot_seh.GetCompleteSeq_entry();
+        } catch (CException& e) {
+            NCBI_THROW(CProteinMatchException, 
+                       eOutputError,
+                       "Failed to write " + filename);
+        }
+
+
+        // Write update nucleotide sequence
+        try {
+            filename = args["o"].AsString();
+            filename += ".local_nuc";
+            if (multiple_sets) {
+                filename += NStr::NumericToString(count);
+            }
+            filename += ".asn";
+            unique_ptr<CObjectOStream> pOstr(x_InitOutputStream(filename, AsText));
+            *pOstr << *nucleotide_seh.GetCompleteSeq_entry();
+        } catch (CException& e) {
+            NCBI_THROW(CProteinMatchException,
+                       eOutputError,
+                       "Failed to write " + filename);
+        }
+        ++count;
+    }
+}
+
 
 int CSetupProtMatchApp::Run(void) 
 {
@@ -126,10 +232,6 @@ int CSetupProtMatchApp::Run(void)
     CGBDataLoader::RegisterInObjectManager(*obj_mgr);
     CRef<CScope> scope(new CScope(*obj_mgr));
     scope->AddDefaults();
-
-    CRef<CScope> gb_scope(new CScope(*obj_mgr));
-    gb_scope->AddDataLoader("GBLOADER");
-
 
     // Set up object input stream
     unique_ptr<CObjectIStream> pInStream(x_InitInputStream(args));
@@ -174,10 +276,6 @@ int CSetupProtMatchApp::Run(void)
         }
     }
 
-
-
-
-
     // Fetch Seq-entry Handle 
     CSeq_entry_Handle seh;
     try {
@@ -189,83 +287,12 @@ int CSetupProtMatchApp::Run(void)
                    "Could not obtain valid seq-entry handle");
     }
 
-    const bool AsBinary = true;
-    const bool AsText = false;
-    // Seq-entry Handle for the nucleotide sequence
-    CSeq_entry_Handle genome_seh = x_GetGenomeSEH(seh);
 
-    CConstRef<CSeq_entry> gb_tse;
-    CBioseq_Handle gb_bsh; 
-    for (auto pNucId : genome_seh.GetSeq().GetCompleteBioseq()->GetId()) {
-        if (pNucId->IsGenbank()) { // May need to use a different scope
-            gb_bsh = gb_scope->GetBioseqHandle(*pNucId); // Do need to use a different scope. Want to fetch from genbank, not local.
-            auto gbtse_handle = gb_bsh.GetTSE_Handle(); // Need to put a check here
-            gb_tse = gbtse_handle.GetCompleteTSE();
-            break;
-        }
-    }
-
-    try {
-        string filename = args["o"].AsString();
-        filename += ".genbank.asn";
-        unique_ptr<CObjectOStream> pOstr(x_InitOutputStream(filename, AsBinary));
-        *pOstr << *gb_tse;
-      //  args["ogb"].AsOutputFile() << MSerial_Format_AsnBinary() << *gb_tse;
-    } catch (CException& e) {
-        NCBI_THROW(CProteinMatchException, 
-                   eOutputError, 
-                   "Failed to write Genbank Seq-entry");
-    }
-
-
-    if (args["o"]) {
-        CSeq_entry_Handle gb_nuc_seh = x_GetGenomeSEH(gb_bsh.GetSeq_entry_Handle());
-        try {
-
-            string filename = args["o"].AsString();
-            filename += ".genbank_nuc.asn";
-            unique_ptr<CObjectOStream> pOstr(x_InitOutputStream(filename, AsText));
-            *pOstr << *gb_nuc_seh.GetCompleteSeq_entry();
-          //  args["o"].AsOutputFile() << MSerial_Format_AsnText() << *gb_nuc_seh.GetCompleteSeq_entry();
-
-        } catch(CException& e) {
-            NCBI_THROW(CProteinMatchException,
-                       eOutputError,
-                       "Failed to write genomic Seq-entry");
-        }
-    }
-   
-    CRef<CSeq_id> local_id;
-    if (x_GetSequenceIdFromCDSs(seh, local_id)) {
-        x_UpdateSequenceIds(local_id, genome_seh); // Remove any preexisting ids and replace by local_id
-    }
-
-    try {
-        string filename = args["o"].AsString();
-        filename += ".local.asn";
-        unique_ptr<CObjectOStream> pOstr(x_InitOutputStream(filename, AsBinary));
-        *pOstr << *seh.GetCompleteSeq_entry();
-    } catch(CException& e) {
-        NCBI_THROW(CProteinMatchException,
-                   eOutputError,
-                   "Failed to write processed Seq-entry");
-    }
-
-    if (args["o"]) {
-        try {
-            string filename = args["o"].AsString();
-            filename += ".local_nuc.asn";
-            unique_ptr<CObjectOStream> pOstr(x_InitOutputStream(filename, AsText));
-            *pOstr << *genome_seh.GetCompleteSeq_entry();
-        } catch(CException& e) {
-            NCBI_THROW(CProteinMatchException,
-                       eOutputError,
-                       "Failed to write genomic Seq-entry");
-        }
-    }
+    list<CSeq_entry_Handle> nuc_prot_sets;
+    x_GetNucProtSets(seh, nuc_prot_sets);
+    x_ProcessNucProtSets(args, nuc_prot_sets);
 
     scope->RemoveEntry(seq_entry);
-
     return 0;
 }
 
@@ -291,8 +318,25 @@ CObjectIStream* CSetupProtMatchApp::x_InitInputStream(
 }
 
 
+void CSetupProtMatchApp::x_GetNucProtSets(
+        CSeq_entry_Handle seh, 
+        list<CSeq_entry_Handle>& nucProtSets) const
+{
+    if (!seh.IsSet()) {
+        return;
+    }
 
-CSeq_entry_Handle CSetupProtMatchApp::x_GetGenomeSEH(CSeq_entry_Handle seh)
+    for (CSeq_entry_CI it(seh, CSeq_entry_CI::fRecursive); it; ++it) {
+        if (it->IsSet() && 
+            it->GetSet().IsSetClass() &&
+            it->GetSet().GetClass() == CBioseq_set::eClass_nuc_prot) {
+            nucProtSets.push_back(*it);
+        }
+    }
+}
+
+
+CSeq_entry_Handle CSetupProtMatchApp::x_GetNucleotideSEH(CSeq_entry_Handle seh)
 {
     if (seh.IsSeq()) {
         const CMolInfo* molinfo = sequence::GetMolInfo(seh.GetSeq());
