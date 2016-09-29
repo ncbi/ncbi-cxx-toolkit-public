@@ -127,7 +127,7 @@ bool COrgMod::IsMultipleValuesAllowed(TSubtype subtype)
 }
 
 
-bool COrgMod::IsDiscouraged(const TSubtype subtype)
+bool COrgMod::IsDiscouraged(const TSubtype subtype, bool indexer)
 {
     if (subtype == eSubtype_dosage
         || subtype == eSubtype_gb_acronym
@@ -135,7 +135,7 @@ bool COrgMod::IsDiscouraged(const TSubtype subtype)
         || subtype == eSubtype_gb_synonym
         || subtype == eSubtype_old_lineage
         || subtype == eSubtype_old_name
-        || subtype == eSubtype_metagenome_source) {
+        || (subtype == eSubtype_metagenome_source && !indexer)) {
         return true;
     } else {
         return false;

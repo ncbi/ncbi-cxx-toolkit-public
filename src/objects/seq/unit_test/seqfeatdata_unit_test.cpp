@@ -1540,3 +1540,10 @@ BOOST_AUTO_TEST_CASE(Test_recombination_class)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_OrgMod_IsDiscouraged)
+{
+    BOOST_CHECK_EQUAL(COrgMod::IsDiscouraged(COrgMod::eSubtype_metagenome_source), true);
+    BOOST_CHECK_EQUAL(COrgMod::IsDiscouraged(COrgMod::eSubtype_metagenome_source, true), false);
+}
+
+
