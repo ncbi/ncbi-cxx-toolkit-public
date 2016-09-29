@@ -169,6 +169,16 @@ public:
 
     bool IsPassThrough() const;
 
+    /// cut flanks if drop of positives is more than a dropoff
+    /// in comparison to positives in a window next to a flank 
+    CProSplignOutputOptions& SetCutFlanksWithPositDrop(bool);
+    bool GetCutFlanksWithPositDrop() const;
+    CProSplignOutputOptions& SetCutFlanksWithPositDropoff(int);
+    int GetCutFlanksWithPositDropoff() const;
+    //window size
+    CProSplignOutputOptions& SetCutFlanksWithPositWindow(int);
+    int GetCutFlanksWithPositWindow() const;
+
     /// cut partial codons and adjecent at the beginning and at the end good pieces
     /// called at the end of post processing
     CProSplignOutputOptions& SetCutFlankPartialCodons(bool);
@@ -211,8 +221,6 @@ public:
     CProSplignOutputOptions& SetMinGoodLen(int);
     int GetMinGoodLen() const;
 
-
-
     /// reward (in # of positives?) for start codon match. 
     CProSplignOutputOptions& SetStartBonus(int);
     int GetStartBonus() const;
@@ -221,6 +229,10 @@ public:
     int GetStopBonus() const;
 
 public:
+    static const bool default_cut_flanks_with_posit_drop = true;
+    static const int  default_cut_flanks_with_posit_dropoff = 35;
+    static const int  default_cut_flanks_with_posit_window = 59;
+
     static const bool default_cut_flank_partial_codons = true;
     static const bool default_fill_holes = false;
     static const bool default_cut_ns = false;
@@ -241,6 +253,10 @@ public:
     static const int default_stop_bonus = 8; /// ???
 
 private:
+    bool cut_flanks_with_posit_drop;
+    int  cut_flanks_with_posit_dropoff;
+    int  cut_flanks_with_posit_window;
+
     bool cut_flank_partial_codons;
     bool fill_holes;
     bool cut_ns;

@@ -115,9 +115,9 @@ list<CNPiece> FindGoodParts(const CProteinAlignText& alignment_text, CProSplignO
 
     //trim flanks with positives dropoff over a cutoff, iterative
     //flank 'good pieces' should not be dropped completely
-    if( !m_AliPiece.empty() ) {
-        const double dropoff = 25/(double)100;
-        const int window_size = 59;
+    if( !m_AliPiece.empty() && m_options.GetCutFlanksWithPositDrop() ) {
+        const double dropoff = m_options.GetCutFlanksWithPositDropoff()/(double)100;
+        const int window_size = m_options.GetCutFlanksWithPositWindow();
         bool keep_trimming = true;
 
         //trim left flank
