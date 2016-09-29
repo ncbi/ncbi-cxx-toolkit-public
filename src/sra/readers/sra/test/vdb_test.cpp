@@ -301,8 +301,11 @@ void CheckRc(rc_t rc, const char* code, const char* file, int line)
         char buffer2[8192];
         unsigned len = sprintf(buffer2, "%s:%d: %s failed: %#x: %s\n",
                              file, line, code, rc, buffer1);
-        write(2, buffer2, len);
-        exit(1);
+        int exit_code = 1;
+        if ( write(2, buffer2, len) != len ) {
+            ++exit_code;
+        }
+        exit(exit_code);
     }
 }
 
