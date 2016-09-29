@@ -5460,7 +5460,7 @@ void CNewCleanup_imp::x_NameStdBC ( CName_std& name, bool fix_initials )
                     if( string::npos == next_pos ) break;
                     // if we hit an letter after that, copy the letter to inits
                     if( isalpha( first[next_pos] ) ) {
-                        first_initials += toupper(first[next_pos]);
+                        first_initials += first[next_pos];
                     }
                     // find next space or hyphen
                     next_pos = first.find_first_of(" -", next_pos);
@@ -5484,7 +5484,7 @@ void CNewCleanup_imp::x_NameStdBC ( CName_std& name, bool fix_initials )
                         if( string::npos == next_pos ) break;
                         // if we hit an letter after that, copy the  to inits
                         if( isalpha( middle[next_pos] ) ) {
-                            first_initials += toupper(middle[next_pos]);
+                            first_initials += middle[next_pos];
                         }
                         // find next space or hyphen
                         next_pos = middle.find_first_of(" -", next_pos);
