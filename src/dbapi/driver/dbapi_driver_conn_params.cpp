@@ -729,6 +729,7 @@ CCPPToolkitConnParams::GetServerType(const CTempString& server_name)
     if (NStr::CompareNocase(server_name, 0, 8, "DBAPI_MS") == 0
         || NStr::CompareNocase(server_name, 0, 5, "MSSQL") == 0
         || NStr::CompareNocase(server_name, 0, 5, "MSDEV") == 0
+        || NStr::CompareNocase(server_name, 0, 9, "MS2008DEV") == 0
         || NStr::CompareNocase(server_name, 0, 7, "OAMSDEV") == 0
         || NStr::CompareNocase(server_name, 0, 6, "QMSSQL") == 0
         || NStr::CompareNocase(server_name, 0, 6, "BLASTQ") == 0

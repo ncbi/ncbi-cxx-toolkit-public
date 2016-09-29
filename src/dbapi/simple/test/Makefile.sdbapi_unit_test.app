@@ -23,9 +23,9 @@ CHECK_TIMEOUT = 600
 CHECK_CMD = sdbapi_unit_test -dr ftds64 -S MsSql
 CHECK_CMD = sdbapi_unit_test -dr ftds95 -S MsSql
 CHECK_CMD = sdbapi_unit_test -dr ftds95 -S MsSql -V 7.3
-CHECK_CMD = sdbapi_unit_test -dr ftds64 -S DBAPI_MS2014_TEST -T MsSql
-CHECK_CMD = sdbapi_unit_test -dr ftds95 -S DBAPI_MS2014_TEST -T MsSql
-CHECK_CMD = sdbapi_unit_test -dr ftds95 -S DBAPI_MS2014_TEST -T MsSql -V 7.3
+CHECK_CMD = sdbapi_unit_test -dr ftds64 -S DBAPI_MS2008_TEST -T MsSql
+CHECK_CMD = sdbapi_unit_test -dr ftds95 -S DBAPI_MS2008_TEST -T MsSql
+CHECK_CMD = sdbapi_unit_test -dr ftds95 -S DBAPI_MS2008_TEST -T MsSql -V 7.3
 CHECK_CMD = sdbapi_unit_test -dr ftds64 -S Sybase
 CHECK_CMD = sdbapi_unit_test -dr ftds95 -S Sybase
 

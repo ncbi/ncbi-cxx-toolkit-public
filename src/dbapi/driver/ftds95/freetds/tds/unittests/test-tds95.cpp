@@ -42,7 +42,7 @@
 
 BEGIN_NCBI_SCOPE
 
-static const char* kServers[] = { "MSDEV1", "MSDEV2", "DBAPI_DEV3", NULL };
+static const char* kServers[] = { "MSDEV1", "MS2008DEV1", "DBAPI_DEV3", NULL };
 
 class CRunTestApplication : public CNcbiApplication
 {

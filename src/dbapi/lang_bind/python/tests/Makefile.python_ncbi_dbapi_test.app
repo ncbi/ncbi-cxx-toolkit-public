@@ -18,14 +18,14 @@ CHECK_CMD = python_ncbi_dbapi_test -dr ctlib -S Sybase
 CHECK_CMD = python_ncbi_dbapi_test -dr dblib -S Sybase
 CHECK_CMD = python_ncbi_dbapi_test -dr ftds64 -S Sybase
 CHECK_CMD = python_ncbi_dbapi_test -dr ftds64 -S MsSql
-CHECK_CMD = python_ncbi_dbapi_test -dr ftds64 -S DBAPI_MS2014_TEST
+CHECK_CMD = python_ncbi_dbapi_test -dr ftds64 -S DBAPI_MS2008_TEST
 CHECK_CMD = python_ncbi_dbapi_test -dr ftds95 -S Sybase
 CHECK_CMD = python_ncbi_dbapi_test -dr ftds95 -S MsSql
 CHECK_CMD = python_ncbi_dbapi_test -dr ftds95 -S MsSql -V 7.3
-CHECK_CMD = python_ncbi_dbapi_test -dr ftds95 -S DBAPI_MS2014_TEST
-CHECK_CMD = python_ncbi_dbapi_test -dr ftds95 -S DBAPI_MS2014_TEST -V 7.3
+CHECK_CMD = python_ncbi_dbapi_test -dr ftds95 -S DBAPI_MS2008_TEST
+CHECK_CMD = python_ncbi_dbapi_test -dr ftds95 -S DBAPI_MS2008_TEST -V 7.3
 CHECK_CMD = python_ncbi_dbapi_test -dr odbc  -S MsSql
-CHECK_CMD = python_ncbi_dbapi_test -dr odbc  -S DBAPI_MS2014_TEST
+CHECK_CMD = python_ncbi_dbapi_test -dr odbc  -S DBAPI_MS2008_TEST
 
 
 WATCHERS = ucko
