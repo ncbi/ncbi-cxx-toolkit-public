@@ -68,7 +68,7 @@ public:
     virtual const string& GetText() const { return m_Text; }
     const string& GetShort() const { return m_ShortName; }
 
-    void SetText(CScope& scope);
+    void SetText(CScope& scope, const string& str = kEmptyStr);
     void SetText(const string& str) { m_Text = str; }
     void SetShort(const string& str) { m_ShortName = str; }
 
@@ -91,7 +91,6 @@ public:
 
     static string GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope);
     static string GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope, const string& product);  
-    static string GetTextObjectDescription(const CSeqdesc& sd, CScope& scope);
     static string GetTextObjectDescription(const CSeqdesc& sd);
     static string GetTextObjectDescription(CBioseq_Handle bsh);
     static string GetTextObjectDescription(CBioseq_set_Handle bssh);

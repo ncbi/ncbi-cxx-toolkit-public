@@ -199,9 +199,7 @@ void GetPubTitleAndAuthors(const CPubdesc& pubdesc, string& title, string& autho
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(TITLE_AUTHOR_CONFLICT, CSeqdesc, eDisc | eOncaller | eSmart, "Publications with the same titles should have the same authors")
-//  ----------------------------------------------------------------------------
 {
     if (!obj.IsPub()) {
         return;
@@ -213,17 +211,13 @@ DISCREPANCY_CASE(TITLE_AUTHOR_CONFLICT, CSeqdesc, eDisc | eOncaller | eSmart, "P
         return;
     }
     // We ask to keep the reference because we do need the actual object to stick around so we can deal with them later.
-    CRef<CDiscrepancyObject> this_disc_obj(context.NewDiscObj(CConstRef<CSeqdesc>(&obj), eKeepRef));
-
-    m_Objs["titles"][title][authors].Add(*this_disc_obj);
+    m_Objs["titles"][title][authors].Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(&obj), context.GetCurrentBioseqLabel(), eKeepRef));
 }
 
 
 static const char* kTitleAuthorConflict = "Publication Title/Author Inconsistencies";
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(TITLE_AUTHOR_CONFLICT)
-//  ----------------------------------------------------------------------------
 {
     if (m_Objs.empty()) {
         return;
@@ -238,7 +232,7 @@ DISCREPANCY_SUMMARIZE(TITLE_AUTHOR_CONFLICT)
                 NON_CONST_ITERATE (TReportObjectList, robj, m_Objs["titles"][it->first][it2->first].GetObjects()) {
                     const CDiscrepancyObject* other_disc_obj = dynamic_cast<CDiscrepancyObject*>(robj->GetNCPointer());
                     CConstRef<CSeqdesc> pub_desc(dynamic_cast<const CSeqdesc*>(other_disc_obj->GetObject().GetPointer()));
-                    m_Objs[kTitleAuthorConflict][top]["[n] article[s] [has] title '" + it->first + "' and author list '" + it2->first + "'"].Add(*context.NewDiscObj(pub_desc), false).Fatal();
+                    m_Objs[kTitleAuthorConflict][top]["[n] article[s] [has] title '" + it->first + "' and author list '" + it2->first + "'"].Add(*context.NewSeqdescObj(pub_desc, kEmptyStr), false).Fatal();
                 }
                 ++it2;
             }
@@ -373,13 +367,12 @@ bool HasUnpubWithoutTitle(const CPubdesc& pubdesc)
 
 
 const string kUnpubPubWithoutTitle = "[n] unpublished pub[s] [has] no title";
-//  ----------------------------------------------------------------------------
+
 DISCREPANCY_CASE(UNPUB_PUB_WITHOUT_TITLE, CPubdesc, eDisc | eOncaller | eSubmitter | eSmart, "Unpublished pubs should have titles")
-//  ----------------------------------------------------------------------------
 {
     if (HasUnpubWithoutTitle(obj)) {
         if (context.GetCurrentSeqdesc() != NULL) {
-            m_Objs[kUnpubPubWithoutTitle].Add(*context.NewDiscObj(context.GetCurrentSeqdesc()), false).Fatal();
+            m_Objs[kUnpubPubWithoutTitle].Add(*context.NewSeqdescObj(context.GetCurrentSeqdesc(), context.GetCurrentBioseqLabel()), false).Fatal();
         } else if (context.GetCurrentSeq_feat() != NULL) {
             m_Objs[kUnpubPubWithoutTitle].Add(*context.NewDiscObj(context.GetCurrentSeq_feat()), false).Fatal();
         }
@@ -387,9 +380,7 @@ DISCREPANCY_CASE(UNPUB_PUB_WITHOUT_TITLE, CPubdesc, eDisc | eOncaller | eSubmitt
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(UNPUB_PUB_WITHOUT_TITLE)
-//  ----------------------------------------------------------------------------
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
@@ -437,13 +428,12 @@ bool IsCitSubMissingAffiliation(const CPubdesc& pubdesc)
 
 
 const string kMissingAffil = "[n] citsub[s] [is] missing affiliation";
-//  ----------------------------------------------------------------------------
+
 DISCREPANCY_CASE(MISSING_AFFIL, CPubdesc, eDisc | eOncaller, "Missing affiliation")
-//  ----------------------------------------------------------------------------
 {
     if (IsCitSubMissingAffiliation(obj)) {
         if (context.GetCurrentSeqdesc() != NULL) {
-            m_Objs[kMissingAffil].Add(*context.NewDiscObj(context.GetCurrentSeqdesc()), false).Fatal();
+            m_Objs[kMissingAffil].Add(*context.NewSeqdescObj(context.GetCurrentSeqdesc(), context.GetCurrentBioseqLabel()), false).Fatal();
         } else if (context.GetCurrentSeq_feat() != NULL) {
             m_Objs[kMissingAffil].Add(*context.NewDiscObj(context.GetCurrentSeq_feat()), false).Fatal();
         }
@@ -708,7 +698,7 @@ static void AddParentObject(CReportNode& objs, CDiscrepancyContext& context, con
         objs[category].Add(*context.NewDiscObj(feat, keepref, autofix, more));
     }
     else if (desc) {
-        objs[category].Add(*context.NewDiscObj(desc, keepref, autofix, more));
+        objs[category].Add(*context.NewSeqdescObj(desc, context.GetCurrentBioseqLabel(), keepref, autofix, more));
     }
     else {  // C Toolkit does not test submit blocks; C++ Toolkit - does!
         objs[category].Add(*context.NewSubmitBlockObj(keepref, autofix, more));

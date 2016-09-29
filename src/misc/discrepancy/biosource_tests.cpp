@@ -81,9 +81,7 @@ static unsigned int AutofixBiosrc(TReportObjectList& list, CScope& scope, bool (
 const string kMapChromosomeConflict = "[n] source[s] on eukaryotic sequence[s] [has] map but not chromosome";
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(MAP_CHROMOSOME_CONFLICT, CSeqdesc, eDisc | eOncaller | eSmart, "Eukaryotic sequences with a map source qualifier should also have a chromosome source qualifier")
-//  ----------------------------------------------------------------------------
 {
     if (!obj.IsSource() || !context.IsEukaryotic() || !obj.GetSource().IsSetSubtype()) {
         return;
@@ -104,10 +102,8 @@ DISCREPANCY_CASE(MAP_CHROMOSOME_CONFLICT, CSeqdesc, eDisc | eOncaller | eSmart, 
     }
 
     if (has_map && !has_chromosome) {
-        m_Objs[kMapChromosomeConflict].Add(*context.NewDiscObj(CConstRef<CSeqdesc>(&obj)),
-            false).Fatal();
+        m_Objs[kMapChromosomeConflict].Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(&obj), context.GetCurrentBioseqLabel()), false).Fatal();
     }
-
 }
 
 
@@ -1529,6 +1525,7 @@ static void GetOrgrefDifferences(const COrg_ref& first_org, const COrg_ref& seco
     }
 }
 
+
 static void GetBiosourceDifferences(const CBioSource& first_biosrc, const CBioSource& second_biosrc, TInconsistecyDescriptionList& diffs)
 {
     if (!CCompareValues<CBioSource, int>::IsEqualInt(first_biosrc, second_biosrc, &CBioSource::IsSetOrigin, &CBioSource::GetOrigin, CBioSource::eOrigin_unknown)) {
@@ -1564,16 +1561,16 @@ static void GetBiosourceDifferences(const CBioSource& first_biosrc, const CBioSo
 
 static const string kBioSource = "BioSource";
 
-//  ----------------------------------------------------------------------------
+
 DISCREPANCY_CASE(INCONSISTENT_BIOSOURCE, CBioSource, eDisc, "Inconsistent BioSource")
-//  ----------------------------------------------------------------------------
 {
-    if (!context.GetCurrentBioseq()->IsNa() || context.GetCurrentSeqdesc().Empty()) {
+    CConstRef<CBioseq> bioseq = context.GetCurrentBioseq();
+    if (!bioseq->IsNa() || context.GetCurrentSeqdesc().Empty()) {
         return;
     }
-
     CSeqdesc* seqdesc = const_cast<CSeqdesc*>(context.GetCurrentSeqdesc().GetPointer());
-    m_Objs[kBioSource].Add(*context.NewDiscObj(context.GetCurrentBioseq(), eKeepRef, false, seqdesc), true);
+    context.NewSeqdescObj(CConstRef<CSeqdesc>(seqdesc), context.GetCurrentBioseqLabel());    // this will cache the seqdesc name and allow using CConstRef<CBioseq>(0) in context.NewSeqdescObj()
+    m_Objs[kBioSource].Add(*context.NewDiscObj(bioseq, eKeepRef, false, seqdesc), true);
 }
 
 
@@ -1607,10 +1604,10 @@ static void GetItemsByBiosource(TReportObjectList& objs, TItemsByBioSource& item
     }
 }
 
+
 static const string kInconsistentBiosources = "[n/2] inconsistent contig source[s]";
-//  ----------------------------------------------------------------------------
+
 DISCREPANCY_SUMMARIZE(INCONSISTENT_BIOSOURCE)
-//  ----------------------------------------------------------------------------
 {
     if (m_Objs.empty()) {
         return;
@@ -1620,9 +1617,7 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_BIOSOURCE)
     GetItemsByBiosource(m_Objs[kBioSource].GetObjects(), items);
 
     if (items.size() > 1) {
-
         m_Objs.GetMap().erase(kBioSource);
-
         TItemsByBioSource::iterator first = items.begin(),
                                     second = first;
         ++second;
@@ -1639,19 +1634,15 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_BIOSOURCE)
         static size_t MAX_NUM_LEN = 10;
 
         ITERATE (TItemsByBioSource, item, items) {
-
             string subcat_num = NStr::SizetToString(subcat_index);
             subcat_num = string(MAX_NUM_LEN - subcat_num.size(), '0') + subcat_num;
-
             string subcat = "[*" + subcat_num + "*][n/2] contig[s] [has] identical sources that do not match another contig source";
             ++subcat_index;
-
             ITERATE (list<TBioseqSeqdesc>, bioseq_desc, item->second) {
-                m_Objs[subtype][subcat].Add(*context.NewDiscObj(CConstRef<CSeqdesc>(bioseq_desc->second)), false).Ext();
+                m_Objs[subtype][subcat].Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(bioseq_desc->second), kEmptyStr), false).Ext();
                 m_Objs[subtype][subcat].Add(*context.NewDiscObj(CConstRef<CBioseq>(bioseq_desc->first)), false).Ext();
             }
         }
-
         m_ReportItems = m_Objs.Export(*this)->GetSubitems();
     }
 }
@@ -1661,18 +1652,17 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_BIOSOURCE)
 static const string kTaxnameMismatch = "[n] tax name[s] [does] not match taxonomy lookup";
 static const string kOgRefs = "OrgRef";
 
-//  ----------------------------------------------------------------------------
+
 DISCREPANCY_CASE(TAX_LOOKUP_MISMATCH, CBioSource, eDisc, "Find Tax Lookup Mismatches")
-//  ----------------------------------------------------------------------------
 {
     if (!obj.IsSetOrg()) {
         return;
     }
-
     m_Objs[kOgRefs].Add(*context.NewFeatOrDescObj(eKeepRef, false, const_cast<CBioSource*>(&obj)));
 }
 
 static void GetOrgRefs(TReportObjectList& objs, vector<CRef<COrg_ref>>& org_refs)
+
 {
     NON_CONST_ITERATE (TReportObjectList, obj, objs) {
 
@@ -1688,6 +1678,7 @@ static void GetOrgRefs(TReportObjectList& objs, vector<CRef<COrg_ref>>& org_refs
     }
 }
 
+
 static const CDbtag* GetTaxonTag(const COrg_ref& org)
 {
     const CDbtag* ret = nullptr;
@@ -1702,6 +1693,7 @@ static const CDbtag* GetTaxonTag(const COrg_ref& org)
 
     return ret;
 }
+
 
 static bool IsOrgDiffers(const COrg_ref& first, const COrg_ref& second)
 {
@@ -1721,6 +1713,7 @@ static bool IsOrgDiffers(const COrg_ref& first, const COrg_ref& second)
     return !first_db_tag->Equals(*second_db_tag);
 }
 
+
 static CRef<CTaxon3_reply> GetOrgRefs(vector<CRef<COrg_ref>>& orgs)
 {
     CTaxon3 taxon3;
@@ -1728,6 +1721,7 @@ static CRef<CTaxon3_reply> GetOrgRefs(vector<CRef<COrg_ref>>& orgs)
     CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(orgs);
     return reply;
 }
+
 
 static void GetMismatchOrMissingOrgRefReport(CDiscrepancyContext& context, CReportNode& objs_node, const string& subitem, bool is_mismatch)
 {
@@ -1755,37 +1749,30 @@ static void GetMismatchOrMissingOrgRefReport(CDiscrepancyContext& context, CRepo
                 }
 
                 if (report) {
-
                     CDiscrepancyObject* dobj = dynamic_cast<CDiscrepancyObject*>(obj_it->GetPointer());
-
                     CConstRef<CSeqdesc> desc(dynamic_cast<const CSeqdesc*>(dobj->GetObject().GetPointer()));
                     CConstRef<CSeq_feat> feat(dynamic_cast<const CSeq_feat*>(dobj->GetObject().GetPointer()));
-
                     if (desc.Empty()) {
                         objs_node[subitem].Add(*context.NewDiscObj(feat));
                     }
                     else {
-                        objs_node[subitem].Add(*context.NewDiscObj(desc));
+                        objs_node[subitem].Add(*context.NewSeqdescObj(desc, kEmptyStr));
                     }
                 }
-
                 ++org_ref;
                 ++obj_it;
             }
         }
     }
-
     objs_node.GetMap().erase(kOgRefs);
 }
 
-//  ----------------------------------------------------------------------------
+
 DISCREPANCY_SUMMARIZE(TAX_LOOKUP_MISMATCH)
-//  ----------------------------------------------------------------------------
 {
     if (m_Objs.empty()) {
         return;
     }
-
     GetMismatchOrMissingOrgRefReport(context, m_Objs, kTaxnameMismatch, true);
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }

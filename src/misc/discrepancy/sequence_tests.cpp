@@ -123,7 +123,7 @@ DISCREPANCY_CASE(DUP_DEFLINE, CSeq_inst, eOncaller, "Definition lines should be 
     }
     ITERATE(CBioseq::TDescr::Tdata, it, seq->GetDescr().Get()) {
         if ((*it)->IsTitle()) {
-            m_Objs[(*it)->GetTitle()].Add(*context.NewDiscObj(*it), false);
+            m_Objs[(*it)->GetTitle()].Add(*context.NewSeqdescObj(*it, context.GetCurrentBioseqLabel()), false);
         }
     }
 }
@@ -255,20 +255,16 @@ DISCREPANCY_SUMMARIZE(SHORT_PROT_SEQUENCES)
 
 // COMMENT_PRESENT
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(COMMENT_PRESENT, CSeqdesc, eOncaller, "Comment descriptor present")
-//  ----------------------------------------------------------------------------
 {
     if (obj.IsComment()) {
-        CRef<CDiscrepancyObject> this_disc_obj(context.NewDiscObj(CConstRef<CSeqdesc>(&obj), eKeepRef));
-        m_Objs["comment"][obj.GetComment()].Add(*this_disc_obj, false);
+        //CRef<CDiscrepancyObject> this_disc_obj(context.NewSeqdescObj(CConstRef<CSeqdesc>(&obj), context.GetCurrentBioseq(), eKeepRef));
+        m_Objs["comment"][obj.GetComment()].Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(&obj), context.GetCurrentBioseqLabel(), eKeepRef), false);
     }
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(COMMENT_PRESENT)
-//  ----------------------------------------------------------------------------
 {
     if (m_Objs.empty()) {
         return;
@@ -286,7 +282,7 @@ DISCREPANCY_SUMMARIZE(COMMENT_PRESENT)
         {
             const CDiscrepancyObject* other_disc_obj = dynamic_cast<CDiscrepancyObject*>(robj->GetNCPointer());
             CConstRef<CSeqdesc> comment_desc(dynamic_cast<const CSeqdesc*>(other_disc_obj->GetObject().GetPointer()));
-            m_Objs[label].Add(*context.NewDiscObj(comment_desc), false);
+            m_Objs[label].Add(*context.NewSeqdescObj(comment_desc, kEmptyStr), false);
         }
         ++it;
     }
@@ -827,9 +823,8 @@ DISCREPANCY_CASE(TITLE_ENDS_WITH_SEQUENCE, CSeqdesc, eDisc | eSubmitter | eSmart
     if (!obj.IsTitle()) {
         return;
     }
-
     if (EndsWithSequence(obj.GetTitle())) {
-        m_Objs[kEndsWithSeq].Add(*context.NewDiscObj(CConstRef<CSeqdesc>(&obj)));
+        m_Objs[kEndsWithSeq].Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(&obj), context.GetCurrentBioseqLabel()));
     }
 }
 
@@ -1010,11 +1005,9 @@ void AddUserObjectFieldItems
                     collector[field_name][missing_label].Add(*seq_disc_obj, false);
                 }
             }
-            collector[field_name]
-                ["[n] " + object_name + "[s] [has] field " + field_name + " value '" + GetFieldValueAsString(**f) + "'"]
-            .Add(*context.NewDiscObj(d), false);
-            previously_seen[kPreviouslySeenFieldsThis][(*f)->GetLabel().GetStr()].Add(*context.NewDiscObj(d), false);
-            previously_seen[kPreviouslySeenFields][object_name][(*f)->GetLabel().GetStr()].Add(*context.NewDiscObj(d), false);
+            collector[field_name]["[n] " + object_name + "[s] [has] field " + field_name + " value '" + GetFieldValueAsString(**f) + "'"].Add(*context.NewSeqdescObj(d, context.GetCurrentBioseqLabel()), false);
+            previously_seen[kPreviouslySeenFieldsThis][(*f)->GetLabel().GetStr()].Add(*context.NewSeqdescObj(d, context.GetCurrentBioseqLabel()), false);
+            previously_seen[kPreviouslySeenFields][object_name][(*f)->GetLabel().GetStr()].Add(*context.NewSeqdescObj(d, context.GetCurrentBioseqLabel()), false);
         }
     }
 
@@ -1023,14 +1016,13 @@ void AddUserObjectFieldItems
 
         if (!previously_seen[kPreviouslySeenFieldsThis].Exist(z->first)) {
             collector[field_prefix + z->first][" [n] " + object_name + "[s] [is] missing field " + field_prefix + z->first]
-                .Add(*context.NewDiscObj(d), false);
+                .Add(*context.NewSeqdescObj(d, context.GetCurrentBioseqLabel()), false);
         }
     }
 
     // maintain object list for missing fields
-    CRef<CDiscrepancyObject> this_disc_obj(context.NewDiscObj(d, eKeepRef));
+    CRef<CDiscrepancyObject> this_disc_obj(context.NewSeqdescObj(d, context.GetCurrentBioseqLabel(), eKeepRef));
     previously_seen[kPreviouslySeenObjects][object_name].Add(*this_disc_obj, false);
-
     previously_seen[kPreviouslySeenFieldsThis].clear();
 }
 
@@ -1236,15 +1228,12 @@ const string kStructuredCommentReport = "collection";
 const string kStructuredCommentPrevious = "previous";
 const string kStructuredCommentFieldPrefix = "structured comment field ";
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(INCONSISTENT_STRUCTURED_COMMENTS, CSeq_inst, eDisc | eSubmitter | eSmart, "Inconsistent structured comments")
-//  ----------------------------------------------------------------------------
 {
     if (obj.IsAa()) {
         return;
     }
     CConstRef<CBioseq> seq = context.GetCurrentBioseq();
-
     CBioseq_Handle bsh = context.GetScope().GetBioseqHandle(*seq);
     CSeqdesc_CI d(bsh, CSeqdesc::e_User);
     while (d) {
@@ -1257,12 +1246,8 @@ DISCREPANCY_CASE(INCONSISTENT_STRUCTURED_COMMENTS, CSeq_inst, eDisc | eSubmitter
         if (NStr::IsBlank(prefix)) {
             prefix = "unnamed";
         }
-        
-        m_Objs[kStructuredCommentObservedPrefixesThis][prefix].Add(*context.NewDiscObj(dr, eKeepRef), false);
-
-        AddUserObjectFieldItems(dr, seq, m_Objs[kStructuredCommentReport],
-                                m_Objs[kStructuredCommentPrevious], context, 
-                                prefix + " structured comment", kStructuredCommentFieldPrefix);
+        m_Objs[kStructuredCommentObservedPrefixesThis][prefix].Add(*context.NewSeqdescObj(dr, context.GetCurrentBioseqLabel(), eKeepRef), false);
+        AddUserObjectFieldItems(dr, seq, m_Objs[kStructuredCommentReport], m_Objs[kStructuredCommentPrevious], context, prefix + " structured comment", kStructuredCommentFieldPrefix);
         ++d;
     }
 
@@ -1617,7 +1602,7 @@ DISCREPANCY_CASE(TAXNAME_NOT_IN_DEFLINE, CSeq_inst, eDisc | eOncaller, "Complete
         }
 
         if (no_taxname_in_defline) {
-            m_Objs[kNoTaxnameInDefline].Add(*context.NewDiscObj(CConstRef<CSeqdesc>(&(*title))), false);
+            m_Objs[kNoTaxnameInDefline].Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(&(*title)), context.GetCurrentBioseqLabel()), false);
         }
     }
 
@@ -1923,23 +1908,19 @@ DISCREPANCY_SUMMARIZE(LOW_QUALITY_REGION)
 
 const string kDeflineOnSet = "[n] title[s] on sets were found";
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(DEFLINE_ON_SET, CBioseq_set, eOncaller, "Titles on sets")
-//  ----------------------------------------------------------------------------
 {
     if (obj.IsSetDescr()) {
         ITERATE(CSeq_descr::Tdata, descr, obj.GetDescr().Get()) {
             if ((*descr)->IsTitle()) {
-                m_Objs[kDeflineOnSet].Add(*context.NewDiscObj(*descr), false);
+                m_Objs[kDeflineOnSet].Add(*context.NewSeqdescObj(*descr, context.GetCurrentBioseqLabel()), false);
             }
         }
     }
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(DEFLINE_ON_SET)
-//  ----------------------------------------------------------------------------
 {
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
 }
@@ -2232,45 +2213,36 @@ static bool IsSegmentSubtype(const CBioSource& bio_src)
 
 static const string kMissingSegment = "[n] biosource[s] should have segment qualifier but [does] not";
 
-//  ----------------------------------------------------------------------------
+
 DISCREPANCY_CASE(SMALL_GENOME_SET_PROBLEM, CBioseq_set, eOncaller, "Problems with small genome sets")
-//  ----------------------------------------------------------------------------
 {
     if (obj.IsSetClass() && obj.GetClass() == CBioseq_set::eClass_small_genome_set) {
-
         TBioSourcesList bio_srcs;
         CollectBioSources(obj, bio_srcs);
-
         string taxname,
                isolate,
                strain;
-
         bool all_taxname_same = true,
              all_isolate_same = true,
              all_strain_same = true;
 
         ITERATE(TBioSourcesList, descr_bio_src, bio_srcs) {
-
             const CBioSource& bio_src = (*descr_bio_src)->GetSource();
             if (context.HasLineage(bio_src, "", "Viruses")) {
                 if (!IsSegmentSubtype(bio_src)) {
-                    m_Objs[kMissingSegment].Add(*context.NewDiscObj(CConstRef<CSeqdesc>(*descr_bio_src)), false);
+                    m_Objs[kMissingSegment].Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(*descr_bio_src), context.GetCurrentBioseqLabel()), false);
                 }
             }
-
             if (all_taxname_same) {
                 all_taxname_same = CompareOrGetString(bio_src, &CBioSource::IsSetTaxname, &CBioSource::GetTaxname, taxname);
             }
-
             if (all_isolate_same) {
                 all_isolate_same = CompareOrgModValue(bio_src, COrgMod::eSubtype_isolate, isolate);
             }
-
             if (all_strain_same) {
                 all_strain_same = CompareOrgModValue(bio_src, COrgMod::eSubtype_strain, strain);
             }
         }
-
         if (!all_taxname_same) {
             m_Objs["Not all biosources have same taxname"];
         }
@@ -2389,9 +2361,7 @@ DISCREPANCY_CASE(UNWANTED_SET_WRAPPER, CBioseq_set, eOncaller, "Set wrapper on m
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(UNWANTED_SET_WRAPPER)
-//  ----------------------------------------------------------------------------
 {
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
 }
@@ -2507,6 +2477,7 @@ private:
     size_t m_idx;
 };
 
+
 static void FindSuspectTextInObject(const CSerialObject& obj, list<size_t>& misspells)
 {
     for (CStdTypeConstIterator<string> it(obj); it; ++it) {
@@ -2524,50 +2495,53 @@ static void FindSuspectTextInObject(const CSerialObject& obj, list<size_t>& miss
 static const string kFixable = "Fixable";
 static const string kNonFixable = "Non-fixable";
 
-template<typename T> void  AddMisspellsToReport(const list<size_t>& misspells, CReportNode& node, const T& obj, CDiscrepancyContext& context)
+void  AddMisspellsToReport(const list<size_t>& misspells, CReportNode& node, const CSeq_feat& obj, CDiscrepancyContext& context)
 {
     ITERATE(list<size_t>, misspell_idx, misspells) {
-
         string subitem = string("[n] object[s] contain[S] ") + kSpellFixes[*misspell_idx].m_misspell;
-
         EKeepRef keep_ref = kSpellFixes[*misspell_idx].m_correct == nullptr ? eNoRef : eKeepRef;
         bool autofix = kSpellFixes[*misspell_idx].m_correct != nullptr;
-
         const string& fixable = (autofix ? kFixable : kNonFixable);
-        node[fixable][subitem].Add(*context.NewDiscObj(CConstRef<T>(&obj), keep_ref, autofix, CRef<CIdxObject>(new CIdxObject(*misspell_idx))));
+        node[fixable][subitem].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj), keep_ref, autofix, CRef<CIdxObject>(new CIdxObject(*misspell_idx))));
     }
 }
 
-//  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(FLATFILE_FIND, CSeq_inst, eOncaller, "Flatfile representation of object contains suspect text")
-//  ----------------------------------------------------------------------------
+
+void  AddMisspellsToReport(const list<size_t>& misspells, CReportNode& node, const CSeqdesc& obj, CDiscrepancyContext& context)
 {
+    ITERATE(list<size_t>, misspell_idx, misspells) {
+        string subitem = string("[n] object[s] contain[S] ") + kSpellFixes[*misspell_idx].m_misspell;
+        EKeepRef keep_ref = kSpellFixes[*misspell_idx].m_correct == nullptr ? eNoRef : eKeepRef;
+        bool autofix = kSpellFixes[*misspell_idx].m_correct != nullptr;
+        const string& fixable = (autofix ? kFixable : kNonFixable);
+        node[fixable][subitem].Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(&obj), context.GetCurrentBioseqLabel(), keep_ref, autofix, CRef<CIdxObject>(new CIdxObject(*misspell_idx))));
+    }
+}
+
+
+DISCREPANCY_CASE(FLATFILE_FIND, CSeq_inst, eOncaller, "Flatfile representation of object contains suspect text")
+{
+// may need to rewrite
     CConstRef<CBioseq> bioseq = context.GetCurrentBioseq();
     CBioseq_Handle bioseq_h = context.GetScope().GetBioseqHandle(*bioseq);
-
     for (CSeqdesc_CI descr(bioseq_h); descr; ++descr) {
-
         list<size_t> misspells;
         FindSuspectTextInObject(*descr, misspells);
-
         if (!misspells.empty()) {
-            AddMisspellsToReport<CSeqdesc>(misspells, m_Objs, *descr, context);
+            AddMisspellsToReport(misspells, m_Objs, *descr, context);
         }
     }
-
     for (CFeat_CI feat(bioseq_h); feat; ++feat) {
         list<size_t> misspells;
         FindSuspectTextInObject(feat->GetMappedFeature(), misspells);
-
         if (!misspells.empty()) {
-            AddMisspellsToReport<CSeq_feat>(misspells, m_Objs, feat->GetMappedFeature(), context);
+            AddMisspellsToReport(misspells, m_Objs, feat->GetMappedFeature(), context);
         }
     }
 }
 
-//  ----------------------------------------------------------------------------
+
 DISCREPANCY_SUMMARIZE(FLATFILE_FIND)
-//  ----------------------------------------------------------------------------
 {
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
 }
@@ -2576,16 +2550,13 @@ DISCREPANCY_SUMMARIZE(FLATFILE_FIND)
 static bool FixTextInObject(CSerialObject* obj, size_t misspell_idx)
 {
     bool ret = false;
-
     const SpellFixData& fix_data = kSpellFixes[misspell_idx];
     for (CStdTypeIterator<string> it(*obj); it; ++it) {
-
         if (NStr::Find(*it, fix_data.m_misspell) != NPOS) {
             NStr::ReplaceInPlace(*it, fix_data.m_misspell, fix_data.m_correct, 0, -1);
             ret = true;
         }
     }
-
     return ret;
 }
 

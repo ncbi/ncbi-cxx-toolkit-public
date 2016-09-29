@@ -348,6 +348,7 @@ public:
 
     template<typename T> void Call(CDiscrepancyVisitor<T>& disc, const T& obj){ disc.Call(obj, *this);}
 
+    string GetCurrentBioseqLabel(void) const;
     CConstRef<CBioseq> GetCurrentBioseq(void) const;
     CConstRef<CBioseq_set> GetCurrentBioseq_set(void) const { return m_Bioseq_set_Stack.empty() ? CConstRef<CBioseq_set>(0) : m_Bioseq_set_Stack.back(); }
     const vector<CConstRef<CBioseq_set> > &Get_Bioseq_set_Stack(void) const { return m_Bioseq_set_Stack; }
@@ -404,7 +405,8 @@ public:
     const vector<CConstRef<CSeq_feat> >& FeatMisc() { return m_FeatMisc; }
 
     CRef<CDiscrepancyObject> NewDiscObj(CConstRef<CBioseq> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
-    CRef<CDiscrepancyObject> NewDiscObj(CConstRef<CSeqdesc> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
+    //CRef<CDiscrepancyObject> NewDiscObj(CConstRef<CSeqdesc> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
+    CRef<CDiscrepancyObject> NewSeqdescObj(CConstRef<CSeqdesc> obj, const string& bslabel, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
     CRef<CDiscrepancyObject> NewDiscObj(CConstRef<CSeq_feat> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
     CRef<CDiscrepancyObject> NewDiscObj(CConstRef<CBioseq_set> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
     CRef<CDiscrepancyObject> NewSubmitBlockObj(EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
@@ -472,72 +474,43 @@ protected:
     ADD_DISCREPANCY_TYPE(CBioseq_set)
 
     // moved static members from the functions
-    //static CConstRef<CBioseq> bioseq;
-    //static size_t count = 0;
+    mutable size_t GetCurrentBioseqLabel_count;
+    mutable string GetCurrentBioseqLabel_str;
     mutable CConstRef<CBioseq> GetCurrentBioseq_bioseq;
     mutable size_t GetCurrentBioseq_count;
-    //static const CBioSource* biosrc;
-    //static size_t count = 0;
     mutable const CBioSource* GetCurrentBiosource_biosrc;
     mutable size_t GetCurrentBiosource_count;
-    //static const CMolInfo* mol_info;
-    //static size_t count = 0;
     mutable const CMolInfo* GetCurrentMolInfo_mol_info;
     mutable size_t GetCurrentMolInfo_count;
-    //static const CBioSource* biosrc = 0;
-    //static size_t count = 0;
     mutable const CBioSource* HasLineage_biosrc;
     mutable size_t HasLineage_count;
-    //static bool result = false;
-    //static size_t count = 0;
     mutable bool IsDNA_result;
     mutable size_t IsDNA_count;
-    //static bool result = false;
-    //static size_t count = 0;
     mutable bool IsOrganelle_result;
     mutable size_t IsOrganelle_count;
-    //static bool result = false;
-    //static size_t count = 0;
     mutable bool IsEukaryotic_result;
     mutable size_t IsEukaryotic_count;
-    //static bool result = false;
-    //static size_t count = 0;
     mutable bool IsBacterial_result;
     mutable size_t IsBacterial_count;
-    //static bool result = false;
-    //static size_t count = 0;
     mutable bool IsViral_result;
     mutable size_t IsViral_count;
-    //static bool result = false;
-    //static size_t count = 0;
     mutable bool IsPubMed_result;
     mutable size_t IsPubMed_count;
-    //static CBioSource::TGenome genome;
-    //static size_t count = 0;
     mutable CBioSource::TGenome GetCurrentGenome_genome;
     mutable size_t GetCurrentGenome_count;
-    //static bool result = false;
-    //static size_t count = 0;
     mutable bool SequenceHasFarPointers_result;
     mutable size_t SequenceHasFarPointers_count;
-    //static CSafeStatic<CSeqSummary> ret;
-    //static size_t count = 0;
     mutable CSeqSummary GetNucleotideCount_ret;
     mutable size_t GetNucleotideCount_count;
-    //static const CSeq_id * protein_id = NULL;
-    //static size_t count = 0;
     mutable const CSeq_id* GetProteinId_protein_id;
     mutable size_t GetProteinId_count;
-    //static bool is_refseq = false;
-    //static size_t count = 0;
     mutable bool IsRefseq_is_refseq;
     mutable size_t IsRefseq_count;
-    //static bool is_bgpipe = false;
-    //static size_t count = 0;
     mutable bool IsBGPipe_is_bgpipe;
     mutable size_t IsBGPipe_count;
     void InitStatic(void)
     {
+        GetCurrentBioseqLabel_count = 0;
         GetCurrentBioseq_count = 0;
         GetCurrentBiosource_biosrc = 0;
         GetCurrentBiosource_count = 0;

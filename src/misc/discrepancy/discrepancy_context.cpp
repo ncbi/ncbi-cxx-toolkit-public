@@ -52,6 +52,27 @@ BEGIN_SCOPE(NDiscrepancy)
 USING_SCOPE(objects);
 
 
+string CDiscrepancyContext::GetCurrentBioseqLabel(void) const 
+{
+    if (GetCurrentBioseqLabel_count != m_Count_Bioseq) {
+        GetCurrentBioseqLabel_count = m_Count_Bioseq;
+        GetCurrentBioseqLabel_str.clear();
+        //CConstRef<CBioseq> bs = GetCurrentBioseq();
+        if (m_Current_Bioseq) {
+            const CSeq_id* wid = FindBestChoice(m_Current_Bioseq->GetId(), CSeq_id::BestRank).GetPointer();
+            wid->GetLabel(&GetCurrentBioseqLabel_str, NULL, CSeq_id::eContent);
+        }
+        else {
+            CConstRef<CBioseq_set> bss = GetCurrentBioseq_set();
+            if (bss) {
+                bss->GetLabel(&GetCurrentBioseqLabel_str, CBioseq_set::eContent);
+            }
+        }
+    }
+    return GetCurrentBioseqLabel_str;
+}
+
+
 CConstRef<CBioseq> CDiscrepancyContext::GetCurrentBioseq(void) const 
 {
     //static CConstRef<CBioseq> bioseq;
@@ -640,13 +661,13 @@ CRef<CDiscrepancyObject> CDiscrepancyContext::NewDiscObj(CConstRef<CBioseq> obj,
 }
 
 
-CRef<CDiscrepancyObject> CDiscrepancyContext::NewDiscObj(CConstRef<CSeqdesc> obj, EKeepRef keep_ref, bool autofix, CObject* more)
+CRef<CDiscrepancyObject> CDiscrepancyContext::NewSeqdescObj(CConstRef<CSeqdesc> obj, const string& bslabel, EKeepRef keep_ref, bool autofix, CObject* more)
 {
     bool keep = keep_ref || m_KeepRef;
     CRef<CDiscrepancyObject> D(new CDiscrepancyObject(obj, *m_Scope, m_File, keep, autofix, more));
     const CSerialObject* ser = &*obj;
     if (m_TextMap.find(ser) == m_TextMap.end()) {
-        D->SetText(*m_Scope);
+        D->SetText(*m_Scope, bslabel);
         m_TextMap[ser] = D->GetText();
     }
     else {
@@ -718,7 +739,7 @@ CRef<CDiscrepancyObject> CDiscrepancyContext::NewFeatOrDescObj(EKeepRef keep_ref
         return NewDiscObj(feat, keep_ref, autofix, more);
     }
     else if (desc) {
-        return NewDiscObj(desc, keep_ref, autofix, more);
+        return NewSeqdescObj(desc, GetCurrentBioseqLabel(), keep_ref, autofix, more);
     }
 }
 
@@ -732,7 +753,7 @@ CRef<CDiscrepancyObject> CDiscrepancyContext::NewFeatOrDescOrSubmitBlockObj(EKee
         return NewDiscObj(feat, keep_ref, autofix, more);
     }
     else if (desc) {
-        return NewDiscObj(desc, keep_ref, autofix, more);
+        return NewSeqdescObj(desc, GetCurrentBioseqLabel(), keep_ref, autofix, more);
     }
     else {
         return NewSubmitBlockObj(keep_ref, autofix, more);
@@ -749,7 +770,7 @@ CRef<CDiscrepancyObject> CDiscrepancyContext::NewFeatOrDescOrCitSubObj(EKeepRef 
         return NewDiscObj(feat, keep_ref, autofix, more);
     }
     else if (desc) {
-        return NewDiscObj(desc, keep_ref, autofix, more);
+        return NewSeqdescObj(desc, GetCurrentBioseqLabel(), keep_ref, autofix, more);
     }
     else {
         return NewCitSubObj(keep_ref, autofix, more);

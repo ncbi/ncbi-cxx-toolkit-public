@@ -55,20 +55,20 @@ DISCREPANCY_CASE(RETROVIRIDAE_DNA, CSeqdesc_BY_BIOSEQ, eOncaller, "Retroviridae 
     if (!obj.IsSource() || !context.IsDNA()) {
         return;
     }
-    
     const CBioSource& src = obj.GetSource();
     if (src.IsSetLineage() && context.HasLineage(src, src.GetLineage(), "Retroviridae")) {
         if (!src.IsSetGenome() || src.GetGenome() != CBioSource::eGenome_proviral) {
-
-            m_Objs[kGenomeNotProviral].Add(*context.NewDiscObj(CConstRef<CSeqdesc>(&obj), eKeepRef));
+            m_Objs[kGenomeNotProviral].Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(&obj), context.GetCurrentBioseqLabel(), eKeepRef));
         }
     }
 }
+
 
 DISCREPANCY_SUMMARIZE(RETROVIRIDAE_DNA)
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
+
 
 DISCREPANCY_AUTOFIX(RETROVIRIDAE_DNA)
 {
@@ -77,10 +77,8 @@ DISCREPANCY_AUTOFIX(RETROVIRIDAE_DNA)
     NON_CONST_ITERATE(TReportObjectList, it, list) {
         const CSeqdesc* desc = dynamic_cast<const CSeqdesc*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
         if (desc) {
-
             CSeqdesc* desc_handle = const_cast<CSeqdesc*>(desc); // Is there a way to do this without const_cast???
             desc_handle->SetSource().SetGenome(CBioSource::eGenome_proviral);
-
             n++;
         }
     }
@@ -101,7 +99,7 @@ DISCREPANCY_CASE(NON_RETROVIRIDAE_PROVIRAL, CSeqdesc_BY_BIOSEQ, eOncaller, "Non-
     if (src.IsSetLineage() && !context.HasLineage(src, src.GetLineage(), "Retroviridae")) {
         if (src.IsSetGenome() && src.GetGenome() == CBioSource::eGenome_proviral) {
 
-            m_Objs[kGenomeProviral].Add(*context.NewDiscObj(CConstRef<CSeqdesc>(&obj), eKeepRef));
+            m_Objs[kGenomeProviral].Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(&obj), context.GetCurrentBioseqLabel(), eKeepRef));
         }
     }
 }
@@ -126,7 +124,7 @@ DISCREPANCY_CASE(BAD_MRNA_QUAL, CSeqdesc_BY_BIOSEQ, eOncaller, "mRNA sequence co
     }
     ITERATE(CBioSource::TSubtype, s, src.GetSubtype()) {
         if ((*s)->IsSetSubtype() && ((*s)->GetSubtype() == CSubSource::eSubtype_germline || (*s)->GetSubtype() == CSubSource::eSubtype_rearranged)) {
-            m_Objs["[n] mRNA sequence[s] [has] germline or rearranged qualifier"].Add(*context.NewDiscObj(CConstRef<CSeqdesc>(&obj)));
+            m_Objs["[n] mRNA sequence[s] [has] germline or rearranged qualifier"].Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(&obj), context.GetCurrentBioseqLabel()));
             return;
         }
     }
@@ -148,15 +146,13 @@ DISCREPANCY_CASE(ORGANELLE_NOT_GENOMIC, CSeqdesc_BY_BIOSEQ, eDisc | eOncaller, "
     if (!obj.IsSource() || context.GetCurrentBioseq()->IsAa()) {
         return;
     }
-
     const CMolInfo* molinfo = context.GetCurrentMolInfo();
     if (molinfo == nullptr ||
         (!molinfo->IsSetBiomol() || molinfo->GetBiomol() == CMolInfo::eBiomol_genomic) && context.IsDNA()) {
         return;
     }
-
     if (context.IsOrganelle()) {
-        m_Objs[kOrganelleNotGenomic].Add(*context.NewDiscObj(CConstRef<CSeqdesc>(&obj)));
+        m_Objs[kOrganelleNotGenomic].Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(&obj), context.GetCurrentBioseqLabel()));
     }
 }
 
@@ -244,21 +240,16 @@ const CComment_rule* FindAppropriateRule(const CComment_set& rules, const CUser_
 DISCREPANCY_CASE(SWITCH_STRUCTURED_COMMENT_PREFIX, CSeqdesc, eOncaller, "Suspicious structured comment prefix")
 {
     if (obj.IsUser() && obj.GetUser().GetObjectType() == CUser_object::eObjectType_StructuredComment) {
-
         const CUser_object& user = obj.GetUser();
         string prefix = CComment_rule::GetStructuredCommentPrefix(user);
         if (!prefix.empty()) {
-
             CConstRef<CComment_set> comment_rules = CComment_set::GetCommentRules();
-
             const CComment_rule& rule = comment_rules->FindCommentRule(prefix);
             CComment_rule::TErrorList errors = rule.IsValid(user);
-
             if (!errors.empty()) {
                 const CComment_rule* new_rule = FindAppropriateRule(*comment_rules, user);
-
                 if (new_rule) {
-                    m_Objs[kBadStructCommentPrefix].Add(*context.NewDiscObj(CConstRef<CSeqdesc>(&obj), eKeepRef, true, const_cast<CComment_rule*>(new_rule)));
+                    m_Objs[kBadStructCommentPrefix].Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(&obj), context.GetCurrentBioseqLabel(), eKeepRef, true, const_cast<CComment_rule*>(new_rule)));
                 }
             }
         }
@@ -319,31 +310,23 @@ DISCREPANCY_AUTOFIX(SWITCH_STRUCTURED_COMMENT_PREFIX)
 static const string kComments = "Comments";
 static const string kMismatchedComments = "Mismatched comments were found";
 
-//  ----------------------------------------------------------------------------
+
 DISCREPANCY_CASE(MISMATCHED_COMMENTS, CSeqdesc, eDisc, "Mismatched Comments")
-//  ----------------------------------------------------------------------------
 {
     if (obj.IsComment() && !obj.GetComment().empty()) {
-
-        m_Objs[kComments].Add(*context.NewDiscObj(CConstRef<CSeqdesc>(&obj), eKeepRef));
+        m_Objs[kComments].Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(&obj), context.GetCurrentBioseqLabel(), eKeepRef));
     }
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(MISMATCHED_COMMENTS)
-//  ----------------------------------------------------------------------------
 {
     TReportObjectList report;
-
     const string* cur_comment = nullptr;
-
     bool need_report = false;
     NON_CONST_ITERATE(TReportObjectList, obj, m_Objs[kComments].GetObjects()) {
-
         const CSeqdesc* desc = dynamic_cast<const CSeqdesc*>(dynamic_cast<CDiscrepancyObject*>((*obj).GetNCPointer())->GetObject().GetPointer());
         if (desc) {
-
             if (cur_comment == nullptr) {
                 cur_comment = &desc->GetComment();
             } else if (desc->GetComment() != *cur_comment) {
@@ -352,17 +335,13 @@ DISCREPANCY_SUMMARIZE(MISMATCHED_COMMENTS)
             }
         }
     }
-
     NON_CONST_ITERATE(TReportObjectList, obj, m_Objs[kComments].GetObjects()) {
-
         const CSeqdesc* desc = dynamic_cast<const CSeqdesc*>(dynamic_cast<CDiscrepancyObject*>((*obj).GetNCPointer())->GetObject().GetPointer());
         if (desc) {
-
             string subitem = "[n] comment[s] contain[S] " + desc->GetComment();
-            m_Objs[kMismatchedComments][subitem].Ext().Add(*context.NewDiscObj(CConstRef<CSeqdesc>(desc), eKeepRef, true));
+            m_Objs[kMismatchedComments][subitem].Ext().Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(desc), context.GetCurrentBioseqLabel(), eKeepRef, true));
         }
     }
-
     m_Objs.GetMap().erase(kComments);
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }

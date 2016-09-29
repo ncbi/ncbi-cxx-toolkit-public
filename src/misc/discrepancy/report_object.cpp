@@ -67,7 +67,7 @@ USING_SCOPE(objects);
 
 CConstRef<CSeq_id> GetBestId(const CBioseq&, CSeq_id::E_Choice);
 
-void CReportObject::SetText(CScope& scope)
+void CReportObject::SetText(CScope& scope, const string& label)
 {
     if (m_Bioseq) {
         CBioseq_Handle bsh = scope.GetBioseqHandle(*m_Bioseq);
@@ -78,7 +78,10 @@ void CReportObject::SetText(CScope& scope)
         m_Text = GetTextObjectDescription(*m_Seq_feat, scope);
     }
     else if (m_Seqdesc) {
-        m_Text = GetTextObjectDescription(*m_Seqdesc, scope);
+        m_Text = GetTextObjectDescription(*m_Seqdesc);
+        if (!label.empty()) {
+            m_Text = label + ":" + m_Text;
+        }
     }
     else if (m_Bioseq_set) {
         CBioseq_set_Handle bssh = scope.GetBioseq_setHandle(*m_Bioseq_set);
@@ -361,27 +364,6 @@ string GetIdLabel(const CBioseq& seq)
     string label;
     wid->GetLabel(&label, NULL, CSeq_id::eContent);
     return label;
-}
-
-
-string CReportObject::GetTextObjectDescription(const CSeqdesc& sd, CScope& scope)
-{
-    string desc = GetTextObjectDescription(sd);
-    CRef<CScope> s(&scope);
-    CSeq_entry_Handle seh = edit::GetSeqEntryForSeqdesc (s, sd);
-
-    if (seh) {
-        string label;
-        if (seh.IsSeq()) {
-            label = GetIdLabel(*(seh.GetSeq().GetCompleteBioseq()));
-        } else if (seh.IsSet()) {
-            seh.GetSet().GetCompleteBioseq_set()->GetLabel(&label, CBioseq_set::eContent);
-        }
-        if (!NStr::IsBlank(label)) {
-            desc = label + ":" + desc;
-        }
-    }
-    return desc;
 }
 
 
