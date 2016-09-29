@@ -260,7 +260,7 @@ int CTestApplication::Run()
 #endif
     }
   
-    for(unsigned thr=tc,i=0 ; thr > 0 ; --thr)
+    for(unsigned thr=tc ; thr > 0 ; --thr)
         for(unsigned global_om=0;global_om<=(thr>1U?1U:0U); ++global_om)
             for(unsigned global_scope=0;global_scope<=(thr==1U?1U:(global_om==0U?1U:2U)); ++global_scope)
                 {
@@ -272,7 +272,7 @@ int CTestApplication::Run()
                     Test(mode,thr);
                     timing[thr-1][global_om][global_scope] = time(0)-start ;
                     _TRACE("==================================================");
-                    _TRACE("Test(" << i++ << ") completed  ===============");
+                    _TRACE("Test("<<thr<<","<<global_om<<","<<global_scope<<") completed  ===============");
                 }
   
     for(unsigned global_om=0;global_om<=1; ++global_om)
