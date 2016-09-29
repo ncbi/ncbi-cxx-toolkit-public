@@ -88,9 +88,6 @@ CBlastDB_SeqFormatter::CBlastDB_SeqFormatter(const string& format_spec, CSeqDB& 
     }
 
   	x_DataRequired();
-
-    CMetaRegistry::SEntry sentry =
-    CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
 }
 
 void CBlastDB_SeqFormatter::x_DataRequired()
