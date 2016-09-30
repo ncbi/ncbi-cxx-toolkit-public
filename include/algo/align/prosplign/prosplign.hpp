@@ -189,6 +189,13 @@ public:
     CProSplignOutputOptions& SetFillHoles(bool);
     bool GetFillHoles() const;
 
+    /// fill back small holes between good pieces
+    /// holes with both unaligned protein and nucleotide portions
+    /// less than min_hole_len will be filled back
+    /// 0 - don't fill.
+    CProSplignOutputOptions& SetMinHoleLen(int);
+    int GetMinHoleLen() const;
+
     /// cut trailing Ns at the ends of good pieces. 
     /// called at the end of post processing
     CProSplignOutputOptions& SetCutNs(bool);
@@ -235,6 +242,7 @@ public:
 
     static const bool default_cut_flank_partial_codons = true;
     static const bool default_fill_holes = false;
+    static const int  default_min_hole_len = 200;
     static const bool default_cut_ns = false;
 
     static const int default_flank_positives = 55;
@@ -259,6 +267,7 @@ private:
 
     bool cut_flank_partial_codons;
     bool fill_holes;
+    int min_hole_len;
     bool cut_ns;
     int flank_positives;
     int total_positives;

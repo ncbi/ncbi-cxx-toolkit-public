@@ -209,6 +209,14 @@ void CProSplignOutputOptions::SetupArgDescriptions(CArgDescriptions* arg_desc)
          CArgDescriptions::eBoolean,
          CProSplignOutputOptions::default_fill_holes?"true":"false");
     arg_desc->AddDefaultKey
+        ("min_hole_len",
+         "min_hole_len",
+         "postprocessing: fill back holes with both unaligned portions of nuc. and prot. less than min_hole_len;"
+         " 0 - don\'t fill",
+         CArgDescriptions::eInteger,
+         NStr::IntToString(CProSplignOutputOptions::default_min_hole_len));
+    arg_desc->SetConstraint("min_hole_len", new CArgAllow_Integers(0, 10000));
+    arg_desc->AddDefaultKey
         ("cut_trailing_Ns",
          "cut_trailing_Ns",
          "postprocessing: remove Ns at the end of good pieces. It may slightly decrease positives and identity",
@@ -324,6 +332,7 @@ CProSplignOutputOptions::CProSplignOutputOptions(EMode mode) : CProSplignOptions
        
         SetCutFlankPartialCodons(default_cut_flank_partial_codons);
         SetFillHoles(default_fill_holes);
+        SetMinHoleLen(default_min_hole_len);
         SetCutNs(default_cut_ns);
 
         SetFlankPositives(default_flank_positives);
@@ -350,6 +359,7 @@ CProSplignOutputOptions::CProSplignOutputOptions(EMode mode) : CProSplignOptions
 
         SetCutFlankPartialCodons(false);
         SetFillHoles(false);
+        SetMinHoleLen(0);
         SetCutNs(false);
 
         SetFlankPositives(0);
@@ -379,6 +389,7 @@ CProSplignOutputOptions::CProSplignOutputOptions(const CArgs& args) : CProSplign
         
         SetCutFlankPartialCodons(false);
         SetFillHoles(false);
+        SetMinHoleLen(0);
         SetCutNs(false);
 
         SetFlankPositives(0);
@@ -403,6 +414,7 @@ CProSplignOutputOptions::CProSplignOutputOptions(const CArgs& args) : CProSplign
 
         SetCutFlankPartialCodons(args["cut_flank_partial_codons"].AsBoolean());
         SetFillHoles(args["fill_holes"].AsBoolean());
+        SetMinHoleLen(args["min_hole_len"].AsInteger());
         SetCutNs(args["cut_trailing_Ns"].AsBoolean());
         SetFlankPositives(args["flank_positives"].AsInteger());
         SetTotalPositives(args["total_positives"].AsInteger());
@@ -559,6 +571,16 @@ CProSplignOutputOptions& CProSplignOutputOptions::SetFillHoles(bool val)
 bool CProSplignOutputOptions::GetFillHoles() const
 {
     return fill_holes;
+}
+
+CProSplignOutputOptions& CProSplignOutputOptions::SetMinHoleLen(int val)
+{
+    min_hole_len = val;
+    return *this;
+}
+int CProSplignOutputOptions::GetMinHoleLen() const
+{
+    return min_hole_len;
 }
 
 CProSplignOutputOptions& CProSplignOutputOptions::SetCutNs(bool val)

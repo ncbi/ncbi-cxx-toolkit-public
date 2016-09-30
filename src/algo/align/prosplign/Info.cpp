@@ -236,6 +236,29 @@ list<CNPiece> FindGoodParts(const CProteinAlignText& alignment_text, CProSplignO
         m_AliPiece.push_back(CNPiece(beg, end, 0, 0));
     }
 
+    ///stich small holes
+    if( !m_AliPiece.empty() && m_options.GetMinHoleLen() > 0 ) {
+        for(list<CNPiece>::iterator it =  m_AliPiece.begin(); it !=  m_AliPiece.end(); ) {
+            list<CNPiece>::iterator sit = it;
+            ++sit;
+            if(sit ==  m_AliPiece.end()) break;
+            //count unaligned portion
+            int hbeg = it->end;
+            int hend = sit->beg;
+            int nuc_cnt = 0, prot_cnt = 0;
+            for(int pos = hbeg; pos < hend; ++pos) {
+                if( nuc[pos] != GAP_CHAR && nuc[pos] != INTRON_CHAR ) ++nuc_cnt;
+                if( outp[pos] != GAP_CHAR && outp[pos] != INTRON_CHAR ) ++prot_cnt;
+            }
+            if( nuc_cnt <  m_options.GetMinHoleLen() && prot_cnt < m_options.GetMinHoleLen() ) {//stich
+                sit->beg = it->beg;
+                it =  m_AliPiece.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+            
     //trim short tails with negative score, iterative
     if( !m_AliPiece.empty() ) {
         bool keep_trimming = true;
