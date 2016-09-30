@@ -115,6 +115,9 @@ DISCREPANCY_CASE(BAD_BACTERIAL_GENE_NAME, CSeqFeatData, eDisc | eOncaller | eSub
     if (!obj.IsGene() || !obj.GetGene().CanGetLocus() || context.HasLineage("Eukaryota") || context.IsViral()) {
         return;
     }
+    if (!context.GetCurrentBiosource() || (!context.GetCurrentBiosource()->IsSetLineage() && context.GetLineage().empty())) {
+        return;
+    }
     string locus = obj.GetGene().GetLocus();
     if (!isalpha(locus[0]) || !islower(locus[0])) {
         m_Objs["[n] bacterial gene[s] [does] not start with lowercase letter"].Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eNoRef, true)); // maybe false
