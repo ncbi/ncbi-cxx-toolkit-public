@@ -33,7 +33,7 @@ if [ ! -d interfaces ]; then
     git checkout master
 fi
 if [ "$platform" = IntelMAC ]; then
-    archflag=--arch=fat86
+    # archflag=--arch=fat86
     if [ ! -d $root/tmp/force-clang ]; then
         mkdir -p $root/tmp/force-clang
         ln -s /usr/bin/clang $root/tmp/force-clang/gcc
@@ -45,6 +45,12 @@ fi
 ./configure --prefix=$root/$name --build-prefix=$root/build/$name $archflag \
     ${LIBXML_LIBPATH:+"LDFLAGS=$LIBXML_LIBPATH"}
 make
+
+for x in lib lib64; do
+    if [ -L $root/$name/$x ]; then
+        rm $root/$name/$x
+    fi
+done
 make install
 if [ -f $root/$name/include/klib/rc.h ]; then
     :
