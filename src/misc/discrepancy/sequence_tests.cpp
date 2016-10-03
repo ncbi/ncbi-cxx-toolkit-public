@@ -1537,7 +1537,7 @@ DISCREPANCY_CASE(UNUSUAL_NT, CSeq_inst, eDisc | eSubmitter | eSmart, "Sequence c
                             continue;
                         }
                         if (ContainsUnusualNucleotide((*delta)->GetLiteral().GetSeq_data())) {
-                            m_Objs[kMoreThan14NRuns].Add(*context.NewDiscObj(context.GetCurrentBioseq()), false);
+                            m_Objs[kUnusualNT].Add(*context.NewDiscObj(context.GetCurrentBioseq()), false);
                             break;
                         }
                     }
