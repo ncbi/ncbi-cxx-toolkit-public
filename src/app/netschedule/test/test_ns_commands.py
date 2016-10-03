@@ -178,7 +178,6 @@ class NSCommandsSender:
             "STAT SERVICES":        self.__statServices,
             "ACKALERT":             self.__ackAlert,
             "DUMP":                 self.__dump,
-            "AFLS":                 self.__afls,
             "GETP":                 self.__getp,
             "GETP2":                self.__getp2,
             "GETC":                 self.__getc,
@@ -372,11 +371,6 @@ class NSCommandsSender:
     def __dump( self ):
         self.__submit()
         self.__nsConnect.execute( "DUMP", True )
-        return
-
-    def __afls( self ):
-        self.__submit()
-        self.__nsConnect.execute( "AFLS", False )
         return
 
     def __getp( self ):
