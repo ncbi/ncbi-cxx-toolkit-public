@@ -520,15 +520,15 @@ bool CGff3FlybaseWriter::xAssignAlignmentSplicedGap(
             break;
         case CSpliced_exon_chunk::e_Product_ins:
             {
+                const unsigned int insert_length = chunk.GetProduct_ins()/tgtWidth;
+                if (insert_length > 0) { 
+                    record.AddDeletion(insert_length);
+                }
                 if (isProteinProd) { 
                     const unsigned int reverse_shift = chunk.GetProduct_ins()%tgtWidth;
                     if (reverse_shift > 0) { 
                         record.AddReverseShift(reverse_shift);
                     }
-                }
-                const unsigned int insert_length = chunk.GetProduct_ins()/tgtWidth;
-                if (insert_length > 0) { 
-                    record.AddDeletion(insert_length);
                 }
             }
             break;
