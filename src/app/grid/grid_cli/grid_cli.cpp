@@ -692,7 +692,7 @@ struct SCommandDefinition {
         MAY_REQUIRE_LOCATION_HINTING
         ABOUT_NETSTORAGE_OPTION,
         {eID, NETSTORAGE_COMMON_OPTIONS,
-            NETSTORAGE_DIRECT_OPTIONS,
+            NETSTORAGE_DIRECT_OPTIONS, eFileTrackToken,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_GetAttrList,

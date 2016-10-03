@@ -349,23 +349,34 @@ CRef<SFileTrackDownload> SFileTrackAPI::StartDownload(
 
 void SFileTrackAPI::Remove(const CNetStorageObjectLoc& object_loc)
 {
-    const string url(SUrl::Get(object_loc, "/ftmeta/files/", "/__delete__"));
+    CHttpSession session;
+    session.SetHttpFlags(kDefaultHttpFlags);
 
-    SFileTrackRequest new_request(config, object_loc, url);
-    new_request.RemoveFile();
-}
+    const string url(SUrl::Get(object_loc, "/api/2.0/files/", "/"));
+    CHttpRequest req = session.NewRequest(url, CHttpSession::eDelete);
+    auto& timeout(config.comm_timeout);
+    req.SetTimeout(CTimeout(timeout.sec, timeout.usec));
 
-void SFileTrackRequest::RemoveFile()
-{
-    m_HTTPStream << NcbiEndl;
+    CHttpHeaders& headers = req.Headers();
+    headers.SetValue(CHttpHeaders::eContentType, "application/json");
+    headers.SetValue(kAuthHeader, config.token);
 
-    ostringstream null_stream; // Not used
-    NcbiStreamCopy(null_stream, m_HTTPStream);
+    CHttpResponse response(req.Execute());
 
-    if (m_HTTPStream.GetStatusCode() == CRequestStatus::e404_NotFound) {
+    switch (response.GetStatusCode()) {
+    case CRequestStatus::e200_Ok:
+    case CRequestStatus::e204_NoContent:
+        return;
+
+    case CRequestStatus::e404_NotFound:
         NCBI_THROW_FMT(CNetStorageException, eNotExists,
-                "Cannot remove \"" << m_ObjectLoc.GetLocator() <<
-                "\" (HTTP status " << m_HTTPStream.GetStatusCode() << ").");
+                "Cannot remove \"" << object_loc.GetLocator() << "\"");
+        break; // Not reached
+
+    default:
+        NCBI_THROW_FMT(CNetStorageException, eUnknown,
+                "Cannot remove \"" << object_loc.GetLocator() <<
+                "\": " << response.GetStatusText());
     }
 }
 

@@ -70,7 +70,6 @@ struct SFileTrackRequest : public CObject
             THTTP_Flags flags = 0);
 
     CJsonNode GetFileInfo();
-    void RemoveFile();
 
 protected:
     void CheckIOStatus();
