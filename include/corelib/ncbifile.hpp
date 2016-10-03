@@ -1634,7 +1634,23 @@ public:
     static string GetHome(void);
 
     /// Get temporary directory.
+    ///
+    /// Return temporary directory name specified by OS via environment variables.
+    /// @sa GetAppTmpDir
     static string GetTmpDir(void);
+
+    /// Get temporary directory name for application.
+    ///
+    /// Return temporary directory name specified in the application's registry file or via environment.
+    /// Registry file:
+    ///     [NCBI]
+    ///     TmpDir = ...
+    /// Environment variable:
+    ///     NCBI_CONFIG__NCBI__TmpDir
+    ///
+    /// If not specified, return GetTmpDir().
+    /// @sa GetTmpDir
+    static string GetAppTmpDir(void);
 
     /// Get the current working directory.
     static string GetCwd(void);

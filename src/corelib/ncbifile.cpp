@@ -3649,6 +3649,18 @@ string CDir::GetTmpDir(void)
 }
 
 
+string CDir::GetAppTmpDir(void)
+{
+    // Get application specific temporary directory name
+    string tmp = NCBI_PARAM_TYPE(NCBI, TmpDir)::GetThreadDefault();
+    if (!tmp.empty()) {
+        return tmp;
+    }
+    // Use default TMP directory specified by OS
+    return CDir::GetTmpDir();
+}
+
+
 string CDir::GetCwd(void)
 {
     TXChar buf[4096];
@@ -6226,12 +6238,8 @@ void CFileIO::CreateTemporary(const string& dir,
 #if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
     string x_dir = dir;
     if (x_dir.empty()) {
-        // Get application specific temporary directory name (see CParam)
-        x_dir = NCBI_PARAM_TYPE(NCBI, TmpDir)::GetThreadDefault();
-        if (x_dir.empty()) {
-            // Use default TMP directory specified by OS
-            x_dir = CDir::GetTmpDir();
-        }
+        // Get application specific temporary directory name
+        x_dir = CDir::GetAppTmpDir();
     }
     if (!x_dir.empty()) {
         x_dir = CDirEntry::AddTrailingPathSeparator(x_dir);
