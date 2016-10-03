@@ -203,23 +203,17 @@ public:
 
     using TIgnoredProblems = vector<ILineError::EProblem>;
     using TSeqTitles = vector<SLineTextAndLoc>;
-protected:
-    enum EInternalFlags {
-        fAligning = 0x40000000,
-        fInSegSet = 0x20000000
-    };
-
     typedef CTempString TStr;
 
-    virtual CRef<CSeq_entry> x_ReadSegSet(ILineErrorListener * pMessageListener);
-
-    virtual void   ParseDefLine  (const TStr& s, ILineErrorListener * pMessageListener);
+    struct SDefLineParseInfo {
+        TReaderFlags fBaseFlags;
+        TFlags fFastaFlags;
+        size_t maxIdLength;
+        size_t lineNumber;
+    };
 
     static void ParseDefLine(const TStr& defLine, 
-        TReaderFlags fBaseFlags,
-        TFlags fFastaFlags,
-        size_t maxIdLength,
-        size_t lineNumber,
+        const SDefLineParseInfo& info,
         const TIgnoredProblems& ignoredErrors,
         list<CRef<CSeq_id>>& ids, 
         bool& hasRange,
@@ -228,13 +222,21 @@ protected:
         TSeqTitles& seqTitles, 
         ILineErrorListener* pMessageListener);
 
+protected:
+    enum EInternalFlags {
+        fAligning = 0x40000000,
+        fInSegSet = 0x20000000
+    };
+
+
+    virtual CRef<CSeq_entry> x_ReadSegSet(ILineErrorListener * pMessageListener);
+
+    virtual void   ParseDefLine  (const TStr& s, ILineErrorListener * pMessageListener);
+
     virtual bool   ParseIDs(const TStr& s, ILineErrorListener * pMessageListener);
 
     static bool ParseIDs (const TStr& s, 
-        TReaderFlags fBaseFlags,
-        TFlags fFastaFlags,
-        size_t maxIdLength,
-        size_t lineNumber,
+        const SDefLineParseInfo& info,
         const TIgnoredProblems& ignoredErrors,
         list<CRef<CSeq_id>>& ids, 
         ILineErrorListener* pMessageListener);

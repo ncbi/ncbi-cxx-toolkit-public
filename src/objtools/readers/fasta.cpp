@@ -534,11 +534,10 @@ void CFastaReader::SetIDGenerator(CSeqIdGenerator& gen)
     m_IDGenerator.Reset(&gen);
 }
 
+// This method does not use CRef<CSeq_interval> to access range 
+// information for reasons of efficiency - RW-26
 void CFastaReader::ParseDefLine(const TStr& defLine,
-                                const TReaderFlags fBaseFlags,
-                                const TFlags fFastaFlags,
-                                const size_t maxIdLength,
-                                const size_t lineNumber,
+                                const SDefLineParseInfo& info,
                                 const TIgnoredProblems& ignoredErrors,
                                 list<CRef<CSeq_id>>& ids,
                                 bool& hasRange,
@@ -549,6 +548,10 @@ void CFastaReader::ParseDefLine(const TStr& defLine,
 {
     size_t start = 1, pos, len = defLine.length(), title_start;
     size_t range_len = 0;
+    const TFlags& fFastaFlags = info.fFastaFlags;
+    const TReaderFlags& fBaseFlags = info.fBaseFlags;
+    const size_t& maxIdLength = info.maxIdLength;
+    const size_t& lineNumber = info.lineNumber;
 
     // ignore spaces between '>' and the sequence ID
     for( ; start < len; ++start ) {
@@ -630,10 +633,7 @@ void CFastaReader::ParseDefLine(const TStr& defLine,
             range_len = ParseRange(TStr(defLine.data() + start, pos - start),
                                    rangeStart, rangeEnd, pMessageListener);
             has_id = ParseIDs(TStr(defLine.data() + start, pos - start - range_len), 
-                              fBaseFlags, 
-                              fFastaFlags, 
-                              maxIdLength,
-                              lineNumber,
+                              info,
                               ignoredErrors,
                               ids, 
                               pMessageListener);
@@ -668,6 +668,7 @@ void CFastaReader::ParseDefLine(const TStr& defLine,
     } while ( (fFastaFlags & fAllSeqIds)  &&  start < len  &&  defLine[start - 1] == '\1'
              &&  !range_len);
 
+
     hasRange = (range_len>0);
 }
 
@@ -675,19 +676,20 @@ void CFastaReader::ParseDefLine(const TStr& defLine,
 void CFastaReader::ParseDefLine(const TStr& s, ILineErrorListener * pMessageListener)
 {
     TSeqPos range_start, range_end;
-
     bool has_range;
+    SDefLineParseInfo parseInfo;
+    parseInfo.fBaseFlags = m_iFlags;
+    parseInfo.fFastaFlags = GetFlags();
+    parseInfo.maxIdLength = m_MaxIDLength;
+    parseInfo.lineNumber = LineNumber();
 
     ParseDefLine(s,
-                 m_iFlags, 
-                 GetFlags(),
-                 m_MaxIDLength,
-                 LineNumber(),
+                 parseInfo,
                  m_ignorable,
                  SetIDs(), 
                  has_range,
-                 range_start, 
-                 range_end, 
+                 range_start,
+                 range_end,
                  m_CurrentSeqTitles, 
                  pMessageListener);
 
@@ -769,18 +771,16 @@ void CFastaReader::ParseDefLine(const TStr& s, ILineErrorListener * pMessageList
     }
 }
 
+
 bool CFastaReader::ParseIDs(
     const TStr& s, 
-    const TReaderFlags fBaseFlags, 
-    const TFlags fFastaFlags,
-    const size_t maxIdLength,
-    const size_t lineNumber,
+    const SDefLineParseInfo& info,
     const TIgnoredProblems& ignoredErrors,
     list<CRef<CSeq_id>>& ids, 
     ILineErrorListener * pMessageListener) 
 {
     // if user wants all ids to be purely local, no problem
-    if( fBaseFlags & CReaderBase::fAllIdsAsLocal )
+    if( info.fBaseFlags & CReaderBase::fAllIdsAsLocal )
     {
         return new CSeq_id(CSeq_id::e_Local, s);
     }
@@ -790,7 +790,7 @@ bool CFastaReader::ParseIDs(
     // doubt for now
     CSeq_id::TParseFlags flags
         = CSeq_id::fParse_PartialOK | CSeq_id::fParse_AnyLocal;
-    if ( fFastaFlags & fParseRawID ) {
+    if ( info.fFastaFlags & fParseRawID ) {
         flags |= CSeq_id::fParse_RawText;
     }
 
@@ -805,13 +805,13 @@ bool CFastaReader::ParseIDs(
             count = CSeq_id::ParseIDs(ids, temp, flags);
 
             const string errMessage = 
-                "CFastaReader: Near line " + NStr::NumericToString(lineNumber) 
+                "CFastaReader: Near line " + NStr::NumericToString(info.lineNumber) 
                 + ", the sequence contains 'comma' symbol and replaced with 'underscore' "
                 + "symbol. Please find and correct the sequence id.";
 
             if (!ignoreError) {
                 PostWarning(pMessageListener, 
-                            lineNumber,
+                            info.lineNumber,
                             errMessage,
                             CObjReaderParseException::eFormat);
 
@@ -826,7 +826,7 @@ bool CFastaReader::ParseIDs(
     }
 
     // numerics become local, if requested
-    if( fBaseFlags & CReaderBase::fNumericIdsAsLocal ) {
+    if( info.fBaseFlags & CReaderBase::fNumericIdsAsLocal ) {
         NON_CONST_ITERATE(CBioseq::TId, id_it, ids) {
             CSeq_id & id = **id_it;
             if( id.IsGi() ) {
@@ -840,7 +840,7 @@ bool CFastaReader::ParseIDs(
     {
         string temp;
         ids.back()->GetLabel(&temp, 0, CSeq_id::eContent);
-        if (!IsValidLocalID(temp, fFastaFlags))
+        if (!IsValidLocalID(temp, info.fFastaFlags))
         {
             ids.clear();
             return false;
@@ -852,24 +852,24 @@ bool CFastaReader::ParseIDs(
       CTempString check;
       size_t last = s.rfind('|');
       check = (last == CTempString::npos) ? s : s.substr(last + 1);
-      if (check.length() > maxIdLength) { 
+      if (check.length() > info.maxIdLength) { 
 
         // before throwing an ID-too-long error, check if what we
         // think is a "sequence ID" is actually sequence data
-        if (ExcessiveSeqDataInTitle(s,fFastaFlags)) {
+        if (ExcessiveSeqDataInTitle(s, info.fFastaFlags)) {
             return false;
         }
 
         const string errMessage =
-            "CFastaReader: Near line " + NStr::NumericToString(lineNumber)
+            "CFastaReader: Near line " + NStr::NumericToString(info.lineNumber)
             + ", the sequence ID is too long.  Its length is " + NStr::NumericToString(s.length())
-            + " but the max length allowed is "+  NStr::NumericToString(maxIdLength)
+            + " but the max length allowed is "+  NStr::NumericToString(info.maxIdLength)
             + ".  Please find and correct all sequence IDs that are too long.";
 
 
         if (!ignoreError) {
             PostError(pMessageListener, 
-                      lineNumber,
+                      info.lineNumber,
                       errMessage,
                       CObjReaderParseException::eIDTooLong);
         }
