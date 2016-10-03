@@ -112,9 +112,19 @@ CTestBlastp_All::RunTest(const CSerialObject& obj,
     // the id of the transcript
     const CSeq_id& prod_id
         = *alns.front()->GetSegs().GetDenseg().GetIds()[0];
+
     CObject_id::TId prod_taxid = s_GetTaxid(prod_id, scope);
+
     if (prod_taxid == 0) {
-        throw runtime_error("didn't find taxid for query protein");
+        CBioseq_Handle bsh = scope.GetBioseqHandle(prod_id);
+
+        if(bsh) {
+            NcbiCerr << MSerial_AsnText 
+                     << *bsh.GetSeq_entry_Handle().GetCompleteSeq_entry();
+        }
+
+        throw runtime_error("didn't find taxid for query protein for " 
+                           + prod_id.AsFastaString());
     }
 
     int score;
