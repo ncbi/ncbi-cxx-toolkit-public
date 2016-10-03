@@ -271,7 +271,7 @@ void SFileTrackUpload::RenameFile(const string& from, const string& to)
 
         auto status = req.Execute().GetStatusCode();
 
-        if (status == 200) return;
+        if (status == CRequestStatus::e200_Ok) return;
 
         err.append("status: ").append(to_string(status));
     }
@@ -303,22 +303,32 @@ CJsonNode SFileTrackRequest::GetFileInfo()
                 "\"); HTTP status " << m_HTTPStream.GetStatusCode());
     }
 
-    if (m_HTTPStream.GetStatusCode() == CRequestStatus::e404_NotFound) {
+    auto status = m_HTTPStream.GetStatusCode();
+
+    switch (status) {
+    case CRequestStatus::e404_NotFound:
         NCBI_THROW_FMT(CNetStorageException, eNotExists,
                 "Error while accessing \"" << m_ObjectLoc.GetLocator() <<
                 "\" (storage key \"" << m_ObjectLoc.GetUniqueKey() << "\")");
+        break; // Not reached
 
-    } else if (m_HTTPStream.GetStatusCode() == CRequestStatus::e403_Forbidden) {
+    case CRequestStatus::e403_Forbidden:
         NCBI_THROW_FMT(CNetStorageException, eAuthError,
                 "Error while accessing \"" << m_ObjectLoc.GetLocator() <<
                 "\" (storage key \"" << m_ObjectLoc.GetUniqueKey() << "\")");
+        break; // Not reached
 
-    } else if (m_HTTPStream.GetStatusCode() >= CRequestStatus::e500_InternalServerError &&
-            m_HTTPStream.GetStatusCode() <= CRequestStatus::e505_HTTPVerNotSupported) {
+    case CRequestStatus::e500_InternalServerError:
+    case CRequestStatus::e501_NotImplemented:
+    case CRequestStatus::e502_BadGateway:
+    case CRequestStatus::e503_ServiceUnavailable:
+    case CRequestStatus::e504_GatewayTimeout:
+    case CRequestStatus::e505_HTTPVerNotSupported:
         NCBI_THROW_FMT(CNetStorageException, eUnknown,
                 "Error while accessing \"" << m_ObjectLoc.GetLocator() <<
                 "\" (storage key \"" << m_ObjectLoc.GetUniqueKey() << "\"): " <<
-                " (HTTP status " << m_HTTPStream.GetStatusCode() << ')');
+                " (HTTP status " << status << ')');
+        break; // Not reached
     }
 
     CJsonNode root;
@@ -331,7 +341,7 @@ CJsonNode SFileTrackRequest::GetFileInfo()
                 "Error while accessing \"" << m_ObjectLoc.GetLocator() <<
                 "\" (storage key \"" << m_ObjectLoc.GetUniqueKey() << "\"): " <<
                 s_RemoveHTMLTags(http_response.c_str()) <<
-                " (HTTP status " << m_HTTPStream.GetStatusCode() << ')');
+                " (HTTP status " << status << ')');
     }
 
     CheckIOStatus();
@@ -387,17 +397,19 @@ ERW_Result SFileTrackDownload::Read(void* buf, size_t count, size_t* bytes_read)
     }
 
     if (m_FirstRead) {
-        if (m_HTTPStream.GetStatusCode() >= 400) {
+        auto status = m_HTTPStream.GetStatusCode();
+ 
+        if (status >= CRequestStatus::e400_BadRequest) {
             // Cannot use anything except EErrCode value as the second argument
             // (as exception is added to it inside macro), so had to copy-paste
-            if (m_HTTPStream.GetStatusCode() == CRequestStatus::e404_NotFound) {
+            if (status == CRequestStatus::e404_NotFound) {
                 NCBI_THROW_FMT(CNetStorageException, eNotExists,
                         "Cannot open \"" << m_ObjectLoc.GetLocator() <<
-                        "\" for reading (HTTP status " << m_HTTPStream.GetStatusCode() << ").");
+                        "\" for reading (HTTP status " << status << ").");
             }
             NCBI_THROW_FMT(CNetStorageException, eIOError,
                     "Cannot open \"" << m_ObjectLoc.GetLocator() <<
-                    "\" for reading (HTTP status " << m_HTTPStream.GetStatusCode() << ").");
+                    "\" for reading (HTTP status " << status << ").");
         }
         m_FirstRead = false;
     }
@@ -450,12 +462,17 @@ string SFileTrackAPI::GetPath(const CNetStorageObjectLoc& object_loc)
             object_loc.GetUniqueKey() << "\"}";
 
     CHttpResponse response(req.Execute());
+    auto status = response.GetStatusCode();
 
-    // If neither "200 OK" nor "201 CREATED"
-    if (response.GetStatusCode() < 200 || response.GetStatusCode() > 201) {
+    switch (status) {
+    case CRequestStatus::e200_Ok:
+    case CRequestStatus::e201_Created:
+        break;
+
+    default:
         NCBI_THROW_FMT(CNetStorageException, eUnknown,
                 "Error while locking path for \"" << object_loc.GetLocator() <<
-                "\" in FileTrack: " << response.GetStatusCode() << ' ' <<
+                "\" in FileTrack: " << status << ' ' <<
                 response.GetStatusText());
     }
 
