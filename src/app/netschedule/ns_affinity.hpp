@@ -148,19 +148,6 @@ struct SNSJobsAffinity
 };
 
 
-struct SAffinityStatistics
-{
-    string      m_Token;
-    size_t      m_NumberOfPendingJobs;
-    size_t      m_NumberOfRunningJobs;
-    size_t      m_NumberOfWNPreferred;
-    size_t      m_NumberOfWNWaitGet;
-    size_t      m_NumberOfReaderPreferred;
-    size_t      m_NumberOfReaderWaitRead;
-};
-
-
-
 // Provides storage, search and other high level affinity operations
 class CNSAffinityRegistry
 {
@@ -184,8 +171,6 @@ class CNSAffinityRegistry
                                 TNSBitVector &  resolved_affs,
                                 vector<unsigned int> &  aff_ids);
         unsigned int  ResolveAffinity(const string &  token);
-        list< SAffinityStatistics >
-        GetAffinityStatistics(const CJobStatusTracker &  status_tracker) const;
         TNSBitVector  GetJobsWithAffinity(unsigned int  aff_id) const;
         TNSBitVector  GetJobsWithAffinities(const TNSBitVector &  affs) const;
         TNSBitVector  GetRegisteredAffinities(void) const;

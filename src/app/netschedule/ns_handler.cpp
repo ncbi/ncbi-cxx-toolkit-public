@@ -527,11 +527,6 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
           { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
 
-    { "AFLS",          { &CNetScheduleHandler::x_ProcessGetAffinityList,
-                         eNS_Queue },
-        { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
-          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
-          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "SETCLIENTDATA", { &CNetScheduleHandler::x_ProcessSetClientData,
                          eNS_Queue },
         { { "data",              eNSPT_Str, eNSPA_Required       },
@@ -546,6 +541,8 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
     { "URGC",          { &CNetScheduleHandler::x_CmdObsolete,
                          eNS_NoChecks } },
     { "INIT",          { &CNetScheduleHandler::x_CmdObsolete,
+                         eNS_NoChecks } },
+    { "AFLS",          { &CNetScheduleHandler::x_CmdObsolete,
                          eNS_NoChecks } },
     { "JRTO",          { &CNetScheduleHandler::x_CmdNotImplemented,
                          eNS_NoChecks } },
@@ -3770,13 +3767,6 @@ void CNetScheduleHandler::x_FinalizeReadCommand(const string &  command,
         x_WriteMessage(kOKCompleteResponse);
 
     x_LogCommandWithJob(job);
-    x_PrintCmdRequestStop();
-}
-
-
-void CNetScheduleHandler::x_ProcessGetAffinityList(CQueue* q)
-{
-    x_WriteMessage("OK:" + q->GetAffinityList(m_ClientId) + kEndOfResponse);
     x_PrintCmdRequestStop();
 }
 

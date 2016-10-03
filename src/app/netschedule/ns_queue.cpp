@@ -2877,34 +2877,6 @@ CQueue::x_FindOutdatedJobForReading(const CNSClientId &  client,
 }
 
 
-string CQueue::GetAffinityList(const CNSClientId &    client)
-{
-    m_ClientsRegistry.MarkAsAdmin(client);
-
-    list< SAffinityStatistics >
-                statistics = m_AffinityRegistry.GetAffinityStatistics(
-                                                            m_StatusTracker);
-
-    string          aff_list;
-    for (list< SAffinityStatistics >::const_iterator  k = statistics.begin();
-         k != statistics.end(); ++k) {
-        if (!aff_list.empty())
-            aff_list += "&";
-
-        aff_list += NStr::URLEncode(k->m_Token) + '=' +
-                    NStr::NumericToString(k->m_NumberOfPendingJobs) + "," +
-                    NStr::NumericToString(k->m_NumberOfRunningJobs) + "," +
-                    NStr::NumericToString(k->m_NumberOfWNPreferred) + "," +
-                    NStr::NumericToString(k->m_NumberOfWNWaitGet);
-
-        // NS 4.20.0 has more information: Read preferred affinities and read
-        // wait affinities. It was decided however that the AFLS command will
-        // not output them as they could break the old clients.
-    }
-    return aff_list;
-}
-
-
 TJobStatus CQueue::FailJob(const CNSClientId &    client,
                            unsigned int           job_id,
                            const string &         job_key,

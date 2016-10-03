@@ -318,43 +318,6 @@ unsigned int  CNSAffinityRegistry::ResolveAffinity(const string &  token)
 }
 
 
-list< SAffinityStatistics >
-CNSAffinityRegistry::GetAffinityStatistics(
-                            const CJobStatusTracker &  status_tracker) const
-{
-    list< SAffinityStatistics >     result;
-    CMutexGuard                     guard(m_Lock);
-
-    for (map< unsigned int,
-              SNSJobsAffinity >::const_iterator  k = m_JobsAffinity.begin();
-         k != m_JobsAffinity.end(); ++k) {
-        SAffinityStatistics     stat;
-
-        stat.m_Token = *k->second.m_AffToken;
-        stat.m_NumberOfWNPreferred = k->second.m_WNClients.count();
-        stat.m_NumberOfWNWaitGet = k->second.m_WaitGetClients.count();
-        stat.m_NumberOfReaderPreferred = k->second.m_ReaderClients.count();
-        stat.m_NumberOfReaderWaitRead = k->second.m_WaitReadClients.count();
-
-        // Count the number of pending and running jobs
-        stat.m_NumberOfPendingJobs = 0;
-        stat.m_NumberOfRunningJobs = 0;
-
-        TNSBitVector::enumerator    en(k->second.m_Jobs.first());
-        for ( ; en.valid(); ++en) {
-            TJobStatus      status = status_tracker.GetStatus(*en);
-            if (status == CNetScheduleAPI::ePending)
-                ++stat.m_NumberOfPendingJobs;
-            else if (status == CNetScheduleAPI::eRunning)
-                ++stat.m_NumberOfRunningJobs;
-        }
-
-        result.push_back(stat);
-    }
-    return result;
-}
-
-
 TNSBitVector
 CNSAffinityRegistry::GetJobsWithAffinity(unsigned int  aff_id) const
 {

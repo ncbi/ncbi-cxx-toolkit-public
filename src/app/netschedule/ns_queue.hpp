@@ -344,14 +344,6 @@ public:
     // Optimize bitvectors
     void OptimizeMem();
 
-    // Prepares affinity list of affinities accompanied by number
-    // of jobs belonging to them, e.g.
-    // "a1=500&a2=600a3=200"
-    //
-    // return
-    //     affinity preference string
-    string GetAffinityList(const CNSClientId &    client);
-
     TJobStatus FailJob(const CNSClientId &    client,
                        unsigned int           job_id,
                        const string &         job_key,

@@ -205,7 +205,6 @@ private:
     void x_FinalizeReadCommand(const string &  command,
                                TJobStatus      status,
                                const CJob &    job);
-    void x_ProcessGetAffinityList(CQueue*);
     void x_ProcessSetClientData(CQueue*);
     void x_ProcessClearWorkerNode(CQueue*);
     void x_ProcessCancelQueue(CQueue*);
