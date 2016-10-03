@@ -41,6 +41,7 @@ private:
     CObjectIStream* x_InitInputStream(const CArgs& args);
     void x_GetNucProtSets(CSeq_entry_Handle seh, list<CSeq_entry_Handle>& nucProtSets) const;
     void x_ProcessNucProtSets(const CArgs& args, list<CSeq_entry_Handle>& nuc_prot_sets);
+    void x_WriteSeqEntry(const string& filename, const CSeq_entry& seq_entry, bool AsBinary);
 };
 
 
@@ -117,6 +118,20 @@ bool CSetupProtMatchApp::x_TryReadBioseqSet(CObjectIStream& istr, CSeq_entry& se
     return true;
 }
 
+void CSetupProtMatchApp::x_WriteSeqEntry(const string& filename, 
+        const CSeq_entry& seq_entry,
+        const bool AsBinary)
+{
+
+    try {
+        unique_ptr<CObjectOStream> pOstr(x_InitOutputStream(filename, AsBinary));
+        *pOstr << seq_entry;
+    } catch (CException& e) {
+        NCBI_THROW(CProteinMatchException, 
+                   eOutputError,
+                   "Failed to write " + filename);
+    }
+}
 
 void CSetupProtMatchApp::x_ProcessNucProtSets(const CArgs& args, list<CSeq_entry_Handle>& nuc_prot_sets)
 {
@@ -131,6 +146,9 @@ void CSetupProtMatchApp::x_ProcessNucProtSets(const CArgs& args, list<CSeq_entry
 
     unsigned int count = 0;
     string filename;
+    const string output_stub = args["o"].AsString();
+
+
     for (auto nuc_prot_seh : nuc_prot_sets) {
      
        // Fetch the genbank entry
