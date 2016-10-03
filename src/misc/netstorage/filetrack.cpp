@@ -239,12 +239,11 @@ void SFileTrackUpload::FinishUpload()
     string filetrack_file_id = upload_result.GetString("key");
 
     if (filetrack_file_id != unique_key) {
-        RenameFile(filetrack_file_id, unique_key, kAuthHeader, m_Config.token);
+        RenameFile(filetrack_file_id, unique_key);
     }
 }
 
-void SFileTrackUpload::RenameFile(const string& from, const string& to,
-        CHttpHeaders::CHeaderNameConverter header, const string& value)
+void SFileTrackUpload::RenameFile(const string& from, const string& to)
 {
     string err;
 
@@ -261,7 +260,7 @@ void SFileTrackUpload::RenameFile(const string& from, const string& to,
 
         CHttpHeaders& headers = req.Headers();
         headers.SetValue(CHttpHeaders::eContentType, "application/json");
-        headers.SetValue(header, value);
+        headers.SetValue(kAuthHeader, m_Config.token);
 
         s_ApplyMyNcbiId([&headers](const string& my_ncbi_id)
         {

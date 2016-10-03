@@ -103,8 +103,7 @@ struct SFileTrackUpload : public SFileTrackRequest
     virtual void FinishUpload();
 
 private:
-    void RenameFile(const string& from, const string& to,
-            CHttpHeaders::CHeaderNameConverter header, const string& value);
+    void RenameFile(const string& from, const string& to);
 };
 
 struct SFileTrackAPI
