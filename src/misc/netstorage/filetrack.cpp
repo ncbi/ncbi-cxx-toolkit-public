@@ -232,14 +232,14 @@ void SFileTrackUpload::Write(const void* buf,
 
 void SFileTrackUpload::FinishUpload()
 {
-    string unique_key = m_ObjectLoc.GetUniqueKey();
+    string expected_key = m_ObjectLoc.GetUniqueKey();
 
     CJsonNode upload_result = GetFileInfo();
 
-    string filetrack_file_id = upload_result.GetString("key");
+    string actual_key = upload_result.GetString("key");
 
-    if (filetrack_file_id != unique_key) {
-        RenameFile(filetrack_file_id, unique_key);
+    if (actual_key != expected_key) {
+        RenameFile(actual_key, expected_key);
     }
 }
 
