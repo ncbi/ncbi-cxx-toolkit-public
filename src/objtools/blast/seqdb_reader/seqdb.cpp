@@ -734,6 +734,15 @@ bool CSeqDB::GiToOid(TGi gi, int & oid) const
     return rv;
 }
 
+bool CSeqDB::GiToOidwFilterCheck(TGi gi, int & oid) const
+{
+    m_Impl->Verify();
+    bool rv = m_Impl->GiToOidwFilterCheck(gi, oid);
+    m_Impl->Verify();
+
+    return rv;
+}
+
 bool CSeqDB::OidToGi(int oid, TGi & gi) const
 {
     m_Impl->Verify();

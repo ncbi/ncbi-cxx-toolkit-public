@@ -1016,6 +1016,9 @@ public:
     /// Translate a GI to an OID.
     bool GiToOid(TGi gi, int & oid) const;
 
+    /// Translate a GI To an OID with filter check
+    bool GiToOidwFilterCheck(TGi gi, int & oid) const;
+
     /// Translate a GI to a PIG.
     bool GiToPig(TGi gi, int & pig) const;
 
