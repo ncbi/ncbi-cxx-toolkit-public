@@ -56,7 +56,7 @@ template <class T> void GetStringsFromObject(const T& obj, vector <string>& strs
     for (it = ConstBegin(obj);  it;  ++it) strs.push_back(*static_cast<const string*>(it.GetFoundPtr()));
 }
 
-void FindNRuns(vector<CRange<TSeqPos> >& runs, const objects::CSeq_data& seq_data, const TSeqPos start_pos, const TSeqPos min_run_length);
+void FindNRuns(vector<CRange<TSeqPos> >& runs, const objects::CSeq_data& seq_data, const TSeqPos start_pos, const TSeqPos len, const TSeqPos min_run_length);
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

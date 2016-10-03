@@ -187,9 +187,9 @@ DISCREPANCY_SUMMARIZE(SHORT_SEQUENCES)
 
 // N_RUNS
 
-void FindNRuns(vector<CRange<TSeqPos> >& runs, const CSeq_data& seq_data, const TSeqPos start_pos, const TSeqPos min_run_length) {
+void FindNRuns(vector<CRange<TSeqPos> >& runs, const CSeq_data& seq_data, const TSeqPos start_pos, const TSeqPos len, const TSeqPos min_run_length) {
     CSeq_data as_iupacna;
-    TSeqPos nconv = CSeqportUtil::Convert(seq_data, &as_iupacna, CSeq_data::e_Iupacna);
+    TSeqPos nconv = CSeqportUtil::Convert(seq_data, &as_iupacna, CSeq_data::e_Iupacna, 0, len);
     if (nconv == 0) {
         return;
     }
@@ -246,7 +246,7 @@ DISCREPANCY_CASE(N_RUNS, CSeq_inst, eDisc | eSubmitter | eSmart, "More than 10 N
     sel.SetFlags(CSeqMap::fFindData);
     CSeqMap_CI seq_iter(seq_map, &context.GetScope(), sel);
     for (; seq_iter; ++seq_iter) {
-        FindNRuns(runs, seq_iter.GetData(), seq_iter.GetPosition(), 10);
+        FindNRuns(runs, seq_iter.GetData(), seq_iter.GetPosition(), seq_iter.GetLength(), 10);
         ITERATE (vector<CRange<TSeqPos> >, run, runs) {
             if (!found_any) {
                 found_any = true;

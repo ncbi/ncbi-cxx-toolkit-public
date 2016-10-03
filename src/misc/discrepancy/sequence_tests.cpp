@@ -501,7 +501,7 @@ DISCREPANCY_CASE(N_RUNS_14, CSeq_inst, eDisc, "Runs of more than 14 Ns")
     if (obj.IsNa()) {
         if (obj.IsSetSeq_data()) {
             vector<CRange<TSeqPos> > runs;
-            FindNRuns(runs, obj.GetSeq_data(), 0, MIN_BAD_RUN_LEN);
+            FindNRuns(runs, obj.GetSeq_data(), obj.GetLength(), 0, MIN_BAD_RUN_LEN);
             if (!runs.empty()) {
                 m_Objs[kMoreThan14NRuns].Add(*context.NewDiscObj(context.GetCurrentBioseq()), false);
             }
@@ -515,7 +515,7 @@ DISCREPANCY_CASE(N_RUNS_14, CSeq_inst, eDisc, "Runs of more than 14 Ns")
                             continue;
                         }
                         vector<CRange<TSeqPos> > runs;
-                        FindNRuns(runs, (*delta)->GetLiteral().GetSeq_data(), 0, MIN_BAD_RUN_LEN);
+                        FindNRuns(runs, (*delta)->GetLiteral().GetSeq_data(), 0, (*delta)->GetLiteral().GetLength(), MIN_BAD_RUN_LEN);
                         if (!runs.empty()) {
                             m_Objs[kMoreThan14NRuns].Add(*context.NewDiscObj(context.GetCurrentBioseq()), false);
                             break;
