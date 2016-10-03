@@ -118,7 +118,21 @@ private:
 bool
 CBlastDBCmdApp::x_GetOids(const string & acc, vector<int> & oids)
 {
-	m_BlastDb->AccessionToOids(acc, oids);
+	Int8 num_id = NStr::StringToNumeric<Int8>(acc, NStr::fConvErr_NoThrow);
+	if(!errno) {
+		int gi_oid = -1;
+		m_BlastDb->GiToOidwFilterCheck(num_id, gi_oid);
+		if(gi_oid < 0) {
+			m_BlastDb->AccessionToOids(acc, oids);
+		}
+		else {
+			oids.push_back(gi_oid);
+		}
+			
+	}
+	else {
+		m_BlastDb->AccessionToOids(acc, oids);
+	}
 	if(oids.empty()) {
 		ERR_POST(Error <<  "Entry not found: " << acc);
 		return false;
