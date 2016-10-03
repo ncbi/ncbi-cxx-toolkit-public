@@ -608,22 +608,19 @@ bool CGff2Reader::x_MergeAlignments(
     }
 
     map<string, size_t> summed_scores;
+    const list<string> summed_score_names {"num_ident", "num_mismatch"};
 
     // Factor out identical scores
     list<CRef<CSeq_align>>::const_iterator align_it = alignment_list.begin();
     TScoreValueMap score_values;
     x_GetAlignmentScores(**align_it, score_values);
 
-    if (score_values.find("num_ident") != score_values.end()) {
-        summed_scores["num_ident"] = score_values["num_ident"]->GetInt();
-        score_values.erase("num_ident");
-    }
 
-    if (score_values.find("num_mismatch") != score_values.end()) {
-        summed_scores["num_mismatch"] = score_values["num_mismatch"]->GetInt();
-        score_values.erase("num_mismatch");
+    for (const string& score_name : summed_score_names) {
+        if (score_values.find(score_name) != score_values.end()) {
+            summed_scores[score_name] = score_values[score_name]->GetInt();
+        }
     }
-
     ++align_it;
 
     while (align_it != alignment_list.end() &&
@@ -631,18 +628,13 @@ bool CGff2Reader::x_MergeAlignments(
         TScoreValueMap new_score_values;
         x_GetAlignmentScores(**align_it, new_score_values);
 
-        if (new_score_values.find("num_ident") == new_score_values.end()) {
-            summed_scores.erase("num_ident");
-        } else if (summed_scores.find("num_ident") != summed_scores.end()) {
-            summed_scores["num_ident"] += new_score_values["num_ident"]->GetInt();
-            new_score_values.erase("num_ident");
-        }
-
-        if (new_score_values.find("num_mismatch") == new_score_values.end()) {
-            summed_scores.erase("num_mismatch");
-        } else if (summed_scores.find("num_mismatch") != summed_scores.end()) {
-            summed_scores["num_mismatch"] += new_score_values["num_mismatch"]->GetInt();
-            new_score_values.erase("num_mismatch");
+        for (const string& score_name : summed_score_names) {
+            if (new_score_values.find(score_name) == new_score_values.end()) {
+                summed_scores.erase(score_name);
+            } else if (summed_scores.find(score_name) != summed_scores.end()) {
+                summed_scores[score_name] += new_score_values[score_name]->GetInt();
+                new_score_values.erase(score_name);
+            }
         }
 
         set<string> matching_scores;
@@ -670,7 +662,6 @@ bool CGff2Reader::x_MergeAlignments(
         processed->SetScore().push_back(score);
     }
 
-
     for (auto& kv : score_values) {
         CRef<CScore> score = Ref(new CScore());
         score->SetId().SetStr(kv.first);
@@ -679,7 +670,6 @@ bool CGff2Reader::x_MergeAlignments(
     }
 
     for (auto current : alignment_list) {
-
         CRef<CSeq_align> new_align = Ref(new CSeq_align());
         new_align->Assign(*current);
         new_align->ResetScore();
@@ -690,12 +680,12 @@ bool CGff2Reader::x_MergeAlignments(
                 new_align->SetScore().push_back(score);
             }
         }
-
         processed->SetSegs().SetDisc().Set().push_back(new_align);
     }
 
     return true;
 }
+
 
 //  ----------------------------------------------------------------------------
 bool
@@ -1167,11 +1157,13 @@ bool CGff2Reader::xGetTargetParts(const CGff2Record& gff, vector<string>& target
     return true;
 }
 
+//  ----------------------------------------------------------------------------
 bool CGff2Reader::xSetDensegStarts(const vector<string>& gapParts, 
                                    const bool oppositeStrands,
                                    const size_t targetStart,
                                    const CGff2Record& gff,
                                    CSeq_align::C_Segs::TDenseg& denseg)
+//  ----------------------------------------------------------------------------
 {
 
     size_t targetOffset = targetStart;
