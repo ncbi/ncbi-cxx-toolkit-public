@@ -126,11 +126,22 @@ private:
 template <>
 CTime SLazyInitData::GetTime<eNFL_FileTrack>()
 {
-    const char* const kISO8601TimeFormat = "Y-M-DTh:m:s.ro";
-
     if (st_info) {
         if (CJsonNode ctime = st_info.GetByKeyOrNull("ctime")) {
-            return CTime(ctime.AsString(), kISO8601TimeFormat).ToLocalTime();
+            const string ctime_string = ctime.AsString();
+
+            // TODO:
+            // Remove code related to old format after
+            // all NetStorage servers upgraded to contain CXX-8230.
+            try {
+                return CTime(ctime_string, "Y-M-DTh:m:s.rZ").ToLocalTime();
+            }
+            catch (CTimeException& ex) {
+                if (ex.GetErrCode() != CTimeException::eFormat) throw;
+
+                // Try old format.
+                return CTime(ctime_string, "Y-M-DTh:m:s.ro").ToLocalTime();
+            }
         }
     }
 

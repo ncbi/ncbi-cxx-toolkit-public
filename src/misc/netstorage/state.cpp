@@ -772,8 +772,7 @@ CNetStorageObjectInfo CFileTrack::GetInfoImpl()
 // Cannot use ExistsImpl() directly from other methods,
 // as otherwise it would get into thrown exception instead of those methods
 #define FT_EXISTS_IMPL(object_loc)                                  \
-    if (m_Context->filetrack_api.GetFileInfo(object_loc).           \
-            GetBoolean("deleted")) {                                \
+    if (!m_Context->filetrack_api.GetFileInfo(object_loc)) {        \
         /* Have to throw to let other locations try */              \
         NCBI_THROW_FMT(CNetStorageException, eNotExists,            \
             "NetStorageObject \"" << object_loc.GetLocator() <<     \

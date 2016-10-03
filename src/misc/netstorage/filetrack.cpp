@@ -123,8 +123,7 @@ SFileTrackDownload::SFileTrackDownload(
         const SFileTrackConfig& config,
         const CNetStorageObjectLoc& object_loc) :
     SFileTrackRequest(config, object_loc,
-            SUrl::Get(object_loc, "/ft/byid/", "/contents"))
-
+            SUrl::Get(object_loc, "/api/2.0/files/", "/?format=attachment"))
 {
 }
 
@@ -416,7 +415,7 @@ SFileTrackAPI::SFileTrackAPI(const SFileTrackConfig& c)
 
 CJsonNode SFileTrackAPI::GetFileInfo(const CNetStorageObjectLoc& object_loc)
 {
-    const string url(SUrl::Get(object_loc, "/ftmeta/files/", "/"));
+    const string url(SUrl::Get(object_loc, "/api/2.0/files/", "/"));
 
     SFileTrackRequest request(config, object_loc, url);
 
