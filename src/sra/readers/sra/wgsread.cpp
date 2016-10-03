@@ -964,16 +964,6 @@ bool sx_SetVersion(CSeq_id& id, int version)
 }
 
 
-bool sx_SetName(CSeq_id& id, CTempString name)
-{
-    if ( const CTextseq_id* text_id = id.GetTextseq_Id() ) {
-        const_cast<CTextseq_id*>(text_id)->SetName(name);
-        return true;
-    }
-    return false;
-}
-
-
 int sx_NewStringToNonNegativeInt(CTempString str);
 
 
