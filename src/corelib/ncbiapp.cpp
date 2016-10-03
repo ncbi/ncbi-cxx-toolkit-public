@@ -104,8 +104,8 @@ CNcbiApplication* CNcbiApplication::Instance(void)
 
 CNcbiApplication::CNcbiApplication(const SBuildInfo& build_info)
     : m_ConfigLoaded(false),
-      m_LogOptions(0),
-      m_LogFile(0)
+      m_LogFile(0),
+      m_LogOptions(0)
 {
     // Initialize UID and start timer
     GetDiagContext().GetUID();

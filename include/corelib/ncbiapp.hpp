@@ -559,10 +559,6 @@ private:
     /// @param reg
     ///   Registry to read from. If NULL, use the current registry setting.
     void x_HonorStandardSettings(IRegistry* reg = 0);
-    
-    /// Store switches that turn on/off logging of environment, registry, 
-    /// arguments and path
-    int m_LogOptions;
 
     /// Read switches that are stored in m_LogOptions from registry and 
     /// environment
@@ -614,6 +610,7 @@ private:
     string                     m_DefaultConfig; ///< conf parameter to AppMain
     bool                       m_ConfigLoaded;  ///< Finished loading config
     const char*                m_LogFile;     ///< Logfile if set in the command line
+    int                        m_LogOptions; ///<  logging of env, reg, args, path
 };
 
 
