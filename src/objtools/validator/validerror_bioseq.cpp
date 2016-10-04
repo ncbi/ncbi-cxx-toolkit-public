@@ -8053,11 +8053,19 @@ void CValidError_bioseq::ValidateTwintrons(
             for (CSeq_loc_CI curr(loc); curr; ++curr) {
                 num_intervals++;
                 const CSeq_loc& part = curr.GetEmbeddingSeq_loc();
-                const CSeq_interval& ivl = part.GetInt();
-                if (left == 0) {
-                    left = ivl.GetTo();
+                if (part.IsInt()) {
+                    const CSeq_interval& ivl = part.GetInt();
+                    if (left == 0) {
+                        left = ivl.GetTo();
+                    }
+                    right = ivl.GetFrom();
+                } else if (part.IsPnt()) {
+                    const CSeq_point& pnt = part.GetPnt();
+                    if (left == 0) {
+                        left = pnt.GetPoint();
+                    }
+                    right = pnt.GetPoint();
                 }
-                right = ivl.GetFrom();
             }
             if (num_intervals == 1) continue;
             if (num_intervals == 2) {
