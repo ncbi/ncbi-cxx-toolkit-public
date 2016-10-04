@@ -284,7 +284,7 @@ static const char* s_StrError(SOCK sock, int error)
         return 0;
 
     if (sock) {
-        FSSLError sslerror = s_SSL ? s_SSL->Error : 0;
+        FSSLError sslerror = sock->session  &&  s_SSL ? s_SSL->Error : 0;
         if (sslerror) {
             const char* strerr = sslerror(sock->session == SESSION_INVALID
                                           ? 0 : sock->session, error);
@@ -8044,7 +8044,7 @@ extern int/*bool*/ SOCK_IsLoopbackAddress(unsigned int ip)
             &&  (addr & IN_CLASSA_NET) == (IN_LOOPBACKNET << IN_CLASSA_NSHIFT);
 #else
         return !((addr & 0xFF000000) ^ (INADDR_LOOPBACK-1));
-#  endif /*IN_CLASSA && IN_CLASSA_NET && IN_CLASSA_NSHIFT*/
+#endif /*IN_CLASSA && IN_CLASSA_NET && IN_CLASSA_NSHIFT*/
     }
     return 0/*false*/;
 }
