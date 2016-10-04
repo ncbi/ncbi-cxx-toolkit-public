@@ -2163,7 +2163,7 @@ DISCREPANCY_CASE(CDS_WITHOUT_MRNA, CSeq_feat, eDisc | eOncaller | eSmart, "Codin
         context.IsEukaryotic() && context.IsDNA()) {
 
         const CBioSource* bio_src = context.GetCurrentBiosource();
-        if (bio_src && bio_src->IsSetGenome() && !context.IsOrganelle()) {
+        if (bio_src && !context.IsOrganelle()) {
 
             CConstRef<CSeq_feat> mRNA = sequence::GetOverlappingmRNA(obj.GetLocation(), context.GetScope());
             if (mRNA.Empty()) {
