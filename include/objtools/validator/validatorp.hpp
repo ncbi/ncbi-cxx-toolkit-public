@@ -1423,6 +1423,8 @@ private:
     void x_ReportInternalPartial(const CSeq_feat& feat);
     bool x_PartialAdjacentToIntron(const CSeq_loc& loc);
     void ValidateFeatPartialInContext (const CMappedFeat& feat);
+    void x_ValidateCodingRegionParentPartialness(const CSeq_feat& cds, const CSeq_loc& parent_loc, const string& parent_name);
+    void x_ValidateCodingRegionParentPartialness(const CSeq_feat& cds);
     bool x_IsPartialAtSpliceSiteOrGap (const CSeq_loc& loc, unsigned int tag, bool& bad_seq, bool& is_gap);
     bool x_SplicingNotExpected(const CMappedFeat& feat);
     bool x_MatchesOverlappingFeaturePartial (const CMappedFeat& feat, unsigned int partial_type);

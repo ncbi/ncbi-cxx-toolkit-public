@@ -5346,11 +5346,47 @@ bool CValidError_bioseq::x_PartialAdjacentToIntron(const CSeq_loc& loc)
 }
 
 
+void CValidError_bioseq::x_ValidateCodingRegionParentPartialness(const CSeq_feat& cds, const CSeq_loc& parent_loc, const string& parent_name)
+{
+    if (cds.GetLocation().IsPartialStart(eExtreme_Biological) && !parent_loc.IsPartialStart(eExtreme_Biological)) {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblem, "Coding region should not be 5' partial if " + parent_name + " is 5' complete", cds);
+    }
+    if (cds.GetLocation().IsPartialStop(eExtreme_Biological) && !parent_loc.IsPartialStop(eExtreme_Biological)) {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblem, "Coding region should not be 3' partial if " + parent_name + " is 3' complete", cds);
+    }
+}
+
+
+void CValidError_bioseq::x_ValidateCodingRegionParentPartialness(const CSeq_feat& cds)
+{
+    if (!cds.IsSetData() || !cds.GetData().IsCdregion()) {
+        return;
+    }
+    CConstRef<CSeq_feat> gene = GetGeneForFeature(cds, m_Scope);
+    if (!gene) {
+        return;
+    }
+    x_ValidateCodingRegionParentPartialness(cds, gene->GetLocation(), "gene");
+
+    CConstRef<CSeq_feat> mrna = GetmRNAforCDS(cds, *m_Scope);
+    if (mrna) {
+        TFeatScores contained_mrna;
+        GetOverlappingFeatures(gene->GetLocation(), CSeqFeatData::e_Rna,
+            CSeqFeatData::eSubtype_cdregion, eOverlap_Contained, contained_mrna, *m_Scope);
+        if (contained_mrna.size() == 1) {
+            // messy for alternate splicing, so only check if there is only one
+            x_ValidateCodingRegionParentPartialness(cds, mrna->GetLocation(), "mRNA");
+        }
+    }
+}
+
+
 void CValidError_bioseq::ValidateFeatPartialInContext (
     const CMappedFeat& feat)
 {
 
     ValidateCDSAndProtPartials (feat);
+    x_ValidateCodingRegionParentPartialness(*(feat.GetSeq_feat()));
 
     static const string parterr[2] = { "PartialProduct", "PartialLocation" };
     static const string parterrs[4] = {
