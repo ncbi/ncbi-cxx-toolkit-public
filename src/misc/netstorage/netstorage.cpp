@@ -390,6 +390,14 @@ CDirectNetStorageObject CDirectNetStorage::Create(
 }
 
 
+CDirectNetStorageObject CDirectNetStorage::Create(const string& service_name,
+        TNetStorageFlags flags)
+{
+    // TODO: CXX-8667
+    return Impl<SDirectNetStorageImpl>(m_Impl)->Create(flags, service_name, 42);
+}
+
+
 CDirectNetStorageObject CDirectNetStorage::Open(const string& object_loc)
 {
     return Impl<SDirectNetStorageImpl>(m_Impl)->OpenImpl(object_loc);

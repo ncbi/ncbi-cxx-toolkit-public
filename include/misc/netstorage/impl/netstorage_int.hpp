@@ -69,6 +69,9 @@ public:
         Int8 object_id,
         TNetStorageFlags flags);
 
+    CDirectNetStorageObject Create(const string& service_name,
+            TNetStorageFlags flags);
+
     CDirectNetStorageObject Open(const string& object_loc);
     bool Exists(const string& db_loc, const string& client_loc);
 
