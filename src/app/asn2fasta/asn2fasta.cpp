@@ -498,12 +498,8 @@ int CAsn2FastaApp::Run(void)
                 //
                 seh = ObtainSeqEntryFromSeqEntry(*is);
                 while (seh) {
-                    try {
-                        HandleSeqEntry(seh);
-                    }
-                    catch (...) {
-                        cerr << "Resolution error: Sequence dropped." << '\n';
-                    }
+                    HandleSeqEntry(seh);
+
                     m_Scope->RemoveTopLevelSeqEntry(seh);
                     m_Scope->ResetHistory();
                     seh = ObtainSeqEntryFromSeqEntry(*is);
