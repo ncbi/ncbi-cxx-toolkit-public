@@ -1520,6 +1520,7 @@ CConstRef<CSeq_feat> CDeflineGenerator::x_GetLongestProtein (
 }
 
 // m_LocalAnnotsOnly test is unnecessary because feature iterator is built on local features only
+//  sqd-4081: it appears that test still does matter. reinstated and even more rigorously applied.
 CConstRef<CGene_ref> CDeflineGenerator::x_GetGeneRefViaCDS (
     const CMappedFeat& mapped_cds)
 
@@ -1795,8 +1796,9 @@ void CDeflineGenerator::x_SetTitleFromProtein (
                     m_MainTitle.erase (offset);
                 }
             }
-            if (NStr::EqualNocase (m_MainTitle, "hypothetical protein")  ||
-                 NStr::EqualNocase (m_MainTitle, "uncharacterized protein")) {
+            if ((NStr::EqualNocase (m_MainTitle, "hypothetical protein")  ||
+                 NStr::EqualNocase (m_MainTitle, "uncharacterized protein"))
+                &&  !m_LocalAnnotsOnly ) {
                 gene = x_GetGeneRefViaCDS (mapped_cds);
                 if (gene) {
                     const CGene_ref& grp = *gene;
@@ -1809,12 +1811,12 @@ void CDeflineGenerator::x_SetTitleFromProtein (
                 }
             }
         }
-        if (m_MainTitle.empty()) {
+        if (m_MainTitle.empty()  &&  !m_LocalAnnotsOnly) {
             if (prp.IsSetDesc()) {
                 m_MainTitle = prp.GetDesc();
             }
         }
-        if (m_MainTitle.empty()) {
+        if (m_MainTitle.empty()  &&  !m_LocalAnnotsOnly) {
             FOR_EACH_ACTIVITY_ON_PROT (act_itr, prp) {
                 const string& str = *act_itr;
                 m_MainTitle = str;
@@ -1823,7 +1825,7 @@ void CDeflineGenerator::x_SetTitleFromProtein (
         }
     }
 
-    if (m_MainTitle.empty()) {
+    if (m_MainTitle.empty()  &&  !m_LocalAnnotsOnly) {
         gene = x_GetGeneRefViaCDS (mapped_cds);
         if (gene) {
             const CGene_ref& grp = *gene;
@@ -1848,7 +1850,7 @@ void CDeflineGenerator::x_SetTitleFromProtein (
         }
     }
 
-    if (m_MainTitle.empty()) {
+    if (m_MainTitle.empty()  &&  !m_LocalAnnotsOnly) {
         m_MainTitle = "unnamed protein product";
         gene = x_GetGeneRefViaCDS (mapped_cds);
         if (gene) {
