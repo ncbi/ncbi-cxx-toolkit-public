@@ -38,7 +38,6 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
 
-
 class NCBI_DISCREPANCY_EXPORT CReportObj : public CObject
 {
 public:
@@ -48,6 +47,10 @@ public:
     virtual CConstRef<CSerialObject> GetObject(void) const = 0;
     virtual objects::CScope& GetScope(void) const = 0;
     virtual bool CanAutofix(void) const = 0;
+    static string GetTextObjectDescription(const objects::CSeq_feat& sf, objects::CScope& scope);
+    static string GetTextObjectDescription(const objects::CSeqdesc& sd, objects::CScope& scope);
+    static string GetTextObjectDescription(const objects::CBioseq& bs, objects::CScope& scope);
+    static string GetTextObjectDescription(const objects::CBioseq_set& bs, objects::CScope& scope);
 };
 typedef vector<CRef<CReportObj> > TReportObjectList;
 

@@ -65,14 +65,38 @@ BEGIN_SCOPE(NDiscrepancy)
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
+string CReportObj::GetTextObjectDescription(const CSeq_feat& sf, CScope& scope)
+{
+    return CReportObject::GetTextObjectDescription(sf, scope);
+}
+
+
+string CReportObj::GetTextObjectDescription(const CSeqdesc& sd, CScope& scope)
+{
+    return CReportObject::GetTextObjectDescription(sd);
+}
+
+
+string CReportObj::GetTextObjectDescription(const CBioseq& bs, CScope& scope)
+{
+    return CReportObject::GetTextObjectDescription(bs, scope);
+}
+
+
+string CReportObj::GetTextObjectDescription(const CBioseq_set& bs, CScope& scope)
+{
+    CBioseq_set_Handle bssh = scope.GetBioseq_setHandle(bs);
+    return CReportObject::GetTextObjectDescription(bssh);
+}
+
+
 CConstRef<CSeq_id> GetBestId(const CBioseq&, CSeq_id::E_Choice);
 
 void CReportObject::SetText(CScope& scope, const string& label)
 {
     if (m_Bioseq) {
-        CBioseq_Handle bsh = scope.GetBioseqHandle(*m_Bioseq);
-        m_Text = GetTextObjectDescription(bsh);
-        GetBestId(*bsh.GetCompleteBioseq(), CSeq_id::e_Genbank)->GetLabel(&m_ShortName, CSeq_id::eContent);
+        m_Text = GetTextObjectDescription(*m_Bioseq, scope);
+        GetBestId(*m_Bioseq, CSeq_id::e_Genbank)->GetLabel(&m_ShortName, CSeq_id::eContent);
     }
     else if (m_Seq_feat) {
         m_Text = GetTextObjectDescription(*m_Seq_feat, scope);
@@ -438,19 +462,18 @@ string CReportObject::GetTextObjectDescription(const CSeqdesc& sd)
 
 // label for Bioseq includes "best" ID, plus length, plus number of
 // non-ATGC characters (if any), plus number of gaps (if any)
-string CReportObject::GetTextObjectDescription(CBioseq_Handle bsh)
+string CReportObject::GetTextObjectDescription(const CBioseq& bs, CScope& scope)
 {
     string rval;
-
-    CConstRef<CSeq_id> id = GetBestId(*(bsh.GetCompleteBioseq()), CSeq_id::e_Genbank);
-
+    CConstRef<CSeq_id> id = GetBestId(bs, CSeq_id::e_Genbank);
     id->GetLabel(&rval, CSeq_id::eContent);
-
-    rval += " (length " + NStr::NumericToString(bsh.GetInst_Length());
+    rval += " (length " + NStr::NumericToString(bs.GetInst().GetLength());
+    //CBioseq_Handle bsh;
 
     size_t num_other = 0;
     size_t num_gap = 0;
-    CSeqVector vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+    //CSeqVector vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+    CSeqVector vec(bs, &scope, CBioseq_Handle::eCoding_Iupac);
     CSeqVector::const_iterator vi = vec.begin();
     while (vi != vec.end()) {
         if (*vi == 'A' || *vi == 'T' || *vi == 'G' || *vi == 'C') {
@@ -463,14 +486,14 @@ string CReportObject::GetTextObjectDescription(CBioseq_Handle bsh)
         ++vi;
     }
 
-    if (num_other > 0 && bsh.IsNa()) {
+    if (num_other > 0 && bs.IsNa()) {
         rval += ", " + NStr::NumericToString(num_other) + " other";
     }
 
     if (num_gap > 0) {
         rval += ", " + NStr::NumericToString(num_gap) + " gap";
     }
-    
+
     rval += ")";
     return rval;
 }
