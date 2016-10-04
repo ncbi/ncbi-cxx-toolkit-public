@@ -51,7 +51,7 @@
 #define CONN_FWD_PORT_MIN       5860
 #define CONN_FWD_PORT_MAX       5870
 #define CONN_FWD_BASE                                   \
-    "http://www.ncbi.nlm.nih.gov/IEB/ToolBox/NETWORK"
+    "https://www.ncbi.nlm.nih.gov/IEB/ToolBox/NETWORK"
 #define CONN_FWD_LINK           CONN_FWD_BASE "/dispatcher.html#Firewalling"
 #define CONN_FWD_URL            CONN_FWD_BASE "/firewall.html#Settings"
 #define NCBI_EXTERNAL           "NCBI-External"
