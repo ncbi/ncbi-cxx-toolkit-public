@@ -97,7 +97,7 @@ typedef map<string, CRef<CDiscrepancyCase> > TDiscrepancyCaseMap;
 class NCBI_DISCREPANCY_EXPORT CDiscrepancySet : public CObject
 {
 public:
-    CDiscrepancySet(void) : m_SesameStreetCutoff(0.75), m_KeepRef(false), m_UserData(0) {}
+    CDiscrepancySet(void) : m_SesameStreetCutoff(0.75), m_Gui(false), m_KeepRef(false), m_UserData(0) {}
     virtual ~CDiscrepancySet(void){}
 
     template<typename Container>
@@ -117,6 +117,7 @@ public:
     virtual void OutputText(CNcbiOstream& out, bool fatal = false, bool summary = false, bool ext = false) = 0;
     virtual void OutputXML(CNcbiOstream& out, bool ext = false) = 0;
 
+    bool IsGui(void) const { return m_Gui;}
     const string& GetFile(void) const { return m_File;}
     const string& GetLineage(void) const { return m_Lineage; }
     float GetSesameStreetCutoff(void) const { return m_SesameStreetCutoff; }
@@ -126,6 +127,7 @@ public:
     void SetLineage(const string& s){ m_Lineage = s; }
     void SetSesameStreetCutoff(float f){ m_SesameStreetCutoff = f; }
     virtual void SetSuspectRules(const string&) = 0;
+    void SetGui(bool b){ m_Gui = b; }
     void SetKeepRef(bool b){ m_KeepRef = b; }
     void SetUserData(void* p){ m_UserData = p; }
     static CRef<CDiscrepancySet> New(objects::CScope& scope);
@@ -136,6 +138,7 @@ protected:
     string m_File;
     string m_Lineage;
     float m_SesameStreetCutoff;
+    bool m_Gui;
     bool m_KeepRef;     // set true to allow autofix
     void* m_UserData;
 };

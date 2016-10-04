@@ -169,7 +169,6 @@ DISCREPANCY_CASE(TERMINAL_NS, CSeq_inst, eDisc | eSubmitter | eSmart, "Ns at end
 
     bool has_terminal_n_or_gap = false;
 
-    CBioseq_Handle b = context.GetScope().GetBioseqHandle(*seq);
     CRef<CSeq_loc> start(new CSeq_loc());
     start->SetInt().SetId().Assign(*(seq->GetId().front()));
     start->SetInt().SetFrom(0);
@@ -575,9 +574,7 @@ const string kFeatureCountSequenceList = "sequence_list";
 
 void AddFeatureCount(CReportNode& m_Objs, const string& key, size_t num)
 {
-    string label = "[n] bioseq[s] [has] " + NStr::NumericToString(num)
-        + " " + key + " features";
-
+    string label = "[n] bioseq[s] [has] " + NStr::NumericToString(num) + " " + key + " features";
     CRef<CDiscrepancyObject> seq_disc_obj(dynamic_cast<CDiscrepancyObject*>(m_Objs[kFeatureCountSequenceList].GetObjects().back().GetNCPointer()));
     m_Objs[kFeatureCountSub][key][label].Add(*seq_disc_obj, false);
 }
@@ -642,12 +639,15 @@ DISCREPANCY_SUMMARIZE(FEATURE_COUNT)
         string new_label = it->first + ": " +
             NStr::NumericToString(m_Objs[kFeatureCountTotal][it->first].GetObjects().size()) +
             " present";
-        if (it->second->GetMap().size() > 1) {
-            new_label += " (inconsistent)";
-        }
-        NON_CONST_ITERATE(CReportNode::TNodeMap, s, it->second->GetMap()){
-            NON_CONST_ITERATE(TReportObjectList, q, s->second->GetObjects()) {
-                m_Objs[new_label][s->first].Add(**q).Ext();
+        //if (it->second->GetMap().size() > 1) {
+        //    new_label += " (inconsistent)";
+        //}
+        CReportNode& node = m_Objs[new_label];
+        if (context.IsGui()) {
+            NON_CONST_ITERATE(CReportNode::TNodeMap, s, it->second->GetMap()){
+                NON_CONST_ITERATE(TReportObjectList, q, s->second->GetObjects()) {
+                    node[s->first].Add(**q).Ext();
+                }
             }
         }
     }
