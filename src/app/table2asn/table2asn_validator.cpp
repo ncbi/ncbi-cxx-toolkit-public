@@ -178,7 +178,7 @@ void CTable2AsnValidator::ReportDiscrepancies(CSerialObject& obj, CScope& scope)
         m_discrepancy_output.reset(new CNcbiOfstream(m_context->m_discrepancy_file.c_str()));
     }
     bool print_fatal = true;
-    tests->OutputText(*m_discrepancy_output, print_fatal, false, false);
+    tests->OutputText(*m_discrepancy_output, print_fatal, false, true);
 }
 
 void CTable2AsnValidator::UpdateECNumbers(objects::CSeq_entry_Handle seh, const string& fname, auto_ptr<CNcbiOfstream>& ostream)
