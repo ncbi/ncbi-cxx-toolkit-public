@@ -2084,11 +2084,11 @@ CBulkInsertImpl::Complete(void)
     }
     x_CheckCanWrite(0);
     try {
-        m_BI->Complete();
+        unique_ptr<IBulkInsert> bi(m_BI);
+        m_BI = NULL;
+        bi->Complete();
     }
     SDBAPI_CATCH_LOWLEVEL()
-    delete m_BI;
-    m_BI = NULL;
 }
 
 inline void
