@@ -57,6 +57,46 @@ BEGIN_NCBI_SCOPE
 #define THROW_IO_EXCEPTION(err_code, message, status) \
         NCBI_THROW_FMT(CIOException, err_code, message << IO_StatusStr(status));
 
+#define CHECK_HTTP_STATUS(http, object_loc, ...)                            \
+    do {                                                                    \
+        int http_code = http.GetStatusCode();                               \
+                                                                            \
+        switch (http_code) {                                                \
+        case CRequestStatus::e200_Ok:                                       \
+        case CRequestStatus::e201_Created:                                  \
+        case CRequestStatus::e204_NoContent:                                \
+            break;                                                          \
+                                                                            \
+        default:                                                            \
+            s_ThrowHttpStatus(DIAG_COMPILE_INFO, object_loc.GetLocator(),   \
+                    http_code, http.GetStatusText(), __VA_ARGS__);          \
+        }                                                                   \
+    } while (0)
+
+CNetStorageException::EErrCode s_HttpStatusToErrCode(int http_code)
+{
+    switch (http_code) {
+    case CRequestStatus::e403_Forbidden:
+        return CNetStorageException::eAuthError;
+
+    case CRequestStatus::e404_NotFound:
+        return CNetStorageException::eNotExists;
+    }
+
+    return CNetStorageException::eUnknown;
+}
+
+void s_ThrowHttpStatus(const CDiagCompileInfo& info, const string object_loc,
+        int http_code, const string& http_text, const string what)
+{
+    ostringstream os;
+    CNetStorageException::EErrCode err_code = s_HttpStatusToErrCode(http_code);
+
+    os << "'" << http_code << "|" << http_text << "' " << what << " " << object_loc;
+
+    throw CNetStorageException(info, 0, err_code, os.str());
+}
+
 static EHTTP_HeaderParse s_HTTPParseHeader_SaveStatus(
         const char*, void*, int)
 {
@@ -243,47 +283,42 @@ void SFileTrackUpload::FinishUpload()
     }
 }
 
+// Special overload for SFileTrackUpload::RenameFile
+void s_ThrowHttpStatus(const CDiagCompileInfo& info, const string object_loc,
+        int http_code, const string& http_text, const string& from, const string&)
+{
+    ostringstream os;
+
+    os << "after uploading on renaming " << from << " for";
+
+    s_ThrowHttpStatus(info, object_loc, http_code, http_text, os.str());
+}
+
 void SFileTrackUpload::RenameFile(const string& from, const string& to)
 {
-    string err;
+    CHttpSession session;
+    session.SetHttpFlags(kDefaultHttpFlags);
 
-    try {
-        CHttpSession session;
-        session.SetHttpFlags(kDefaultHttpFlags);
+    SUrl::TSite site(m_ObjectLoc.GetFileTrackSite());
+    const string url(SUrl::Get(site, "/api/2.0/files/", from, "/"));
 
-        SUrl::TSite site(m_ObjectLoc.GetFileTrackSite());
-        const string url(SUrl::Get(site, "/api/2.0/files/", from, "/"));
+    CHttpRequest req = session.NewRequest(url, CHttpSession::ePut);
+    auto& timeout(m_Config.comm_timeout);
+    req.SetTimeout(CTimeout(timeout.sec, timeout.usec));
 
-        CHttpRequest req = session.NewRequest(url, CHttpSession::ePut);
-        auto& timeout(m_Config.comm_timeout);
-        req.SetTimeout(CTimeout(timeout.sec, timeout.usec));
+    CHttpHeaders& headers = req.Headers();
+    headers.SetValue(CHttpHeaders::eContentType, "application/json");
+    headers.SetValue(kAuthHeader, m_Config.token);
 
-        CHttpHeaders& headers = req.Headers();
-        headers.SetValue(CHttpHeaders::eContentType, "application/json");
-        headers.SetValue(kAuthHeader, m_Config.token);
+    s_ApplyMyNcbiId([&headers](const string& my_ncbi_id)
+    {
+        headers.SetValue(DELEGATED_FROM_MYNCBI_ID_HEADER, my_ncbi_id);
+    });
 
-        s_ApplyMyNcbiId([&headers](const string& my_ncbi_id)
-        {
-            headers.SetValue(DELEGATED_FROM_MYNCBI_ID_HEADER, my_ncbi_id);
-        });
+    req.ContentStream() << "{\"key\": \"" << to << "\"}";
 
-        req.ContentStream() << "{\"key\": \"" << to << "\"}";
-
-        auto status = req.Execute().GetStatusCode();
-
-        if (status == CRequestStatus::e200_Ok) return;
-
-        err.append("status: ").append(to_string(status));
-    }
-    catch (CException& e) {
-        err.append("exception: ").append(e.what());
-    }
-
-    NCBI_THROW_FMT(CNetStorageException, eUnknown,
-            "Error while uploading \"" << m_ObjectLoc.GetLocator() <<
-            "\" to FileTrack: the file has been stored as \"" <<
-            from << "\" instead of \"" << to << "\" as requested. "
-            "Renaming failed, " << err);
+    CHttpResponse response(req.Execute());
+    CHECK_HTTP_STATUS(response, m_ObjectLoc, from, to);
 }
 
 CJsonNode SFileTrackRequest::GetFileInfo()
@@ -303,33 +338,7 @@ CJsonNode SFileTrackRequest::GetFileInfo()
                 "\"); HTTP status " << m_HTTPStream.GetStatusCode());
     }
 
-    auto status = m_HTTPStream.GetStatusCode();
-
-    switch (status) {
-    case CRequestStatus::e404_NotFound:
-        NCBI_THROW_FMT(CNetStorageException, eNotExists,
-                "Error while accessing \"" << m_ObjectLoc.GetLocator() <<
-                "\" (storage key \"" << m_ObjectLoc.GetUniqueKey() << "\")");
-        break; // Not reached
-
-    case CRequestStatus::e403_Forbidden:
-        NCBI_THROW_FMT(CNetStorageException, eAuthError,
-                "Error while accessing \"" << m_ObjectLoc.GetLocator() <<
-                "\" (storage key \"" << m_ObjectLoc.GetUniqueKey() << "\")");
-        break; // Not reached
-
-    case CRequestStatus::e500_InternalServerError:
-    case CRequestStatus::e501_NotImplemented:
-    case CRequestStatus::e502_BadGateway:
-    case CRequestStatus::e503_ServiceUnavailable:
-    case CRequestStatus::e504_GatewayTimeout:
-    case CRequestStatus::e505_HTTPVerNotSupported:
-        NCBI_THROW_FMT(CNetStorageException, eUnknown,
-                "Error while accessing \"" << m_ObjectLoc.GetLocator() <<
-                "\" (storage key \"" << m_ObjectLoc.GetUniqueKey() << "\"): " <<
-                " (HTTP status " << status << ')');
-        break; // Not reached
-    }
+    CHECK_HTTP_STATUS(m_HTTPStream, m_ObjectLoc, "on accessing");
 
     CJsonNode root;
 
@@ -340,8 +349,7 @@ CJsonNode SFileTrackRequest::GetFileInfo()
         NCBI_RETHROW_FMT(e, CNetStorageException, eIOError,
                 "Error while accessing \"" << m_ObjectLoc.GetLocator() <<
                 "\" (storage key \"" << m_ObjectLoc.GetUniqueKey() << "\"): " <<
-                s_RemoveHTMLTags(http_response.c_str()) <<
-                " (HTTP status " << status << ')');
+                s_RemoveHTMLTags(http_response.c_str()));
     }
 
     CheckIOStatus();
@@ -371,22 +379,7 @@ void SFileTrackAPI::Remove(const CNetStorageObjectLoc& object_loc)
     headers.SetValue(kAuthHeader, config.token);
 
     CHttpResponse response(req.Execute());
-
-    switch (response.GetStatusCode()) {
-    case CRequestStatus::e200_Ok:
-    case CRequestStatus::e204_NoContent:
-        return;
-
-    case CRequestStatus::e404_NotFound:
-        NCBI_THROW_FMT(CNetStorageException, eNotExists,
-                "Cannot remove \"" << object_loc.GetLocator() << "\"");
-        break; // Not reached
-
-    default:
-        NCBI_THROW_FMT(CNetStorageException, eUnknown,
-                "Cannot remove \"" << object_loc.GetLocator() <<
-                "\": " << response.GetStatusText());
-    }
+    CHECK_HTTP_STATUS(response, object_loc, "on removing");
 }
 
 ERW_Result SFileTrackDownload::Read(void* buf, size_t count, size_t* bytes_read)
@@ -397,20 +390,7 @@ ERW_Result SFileTrackDownload::Read(void* buf, size_t count, size_t* bytes_read)
     }
 
     if (m_FirstRead) {
-        auto status = m_HTTPStream.GetStatusCode();
- 
-        if (status >= CRequestStatus::e400_BadRequest) {
-            // Cannot use anything except EErrCode value as the second argument
-            // (as exception is added to it inside macro), so had to copy-paste
-            if (status == CRequestStatus::e404_NotFound) {
-                NCBI_THROW_FMT(CNetStorageException, eNotExists,
-                        "Cannot open \"" << m_ObjectLoc.GetLocator() <<
-                        "\" for reading (HTTP status " << status << ").");
-            }
-            NCBI_THROW_FMT(CNetStorageException, eIOError,
-                    "Cannot open \"" << m_ObjectLoc.GetLocator() <<
-                    "\" for reading (HTTP status " << status << ").");
-        }
+        CHECK_HTTP_STATUS(m_HTTPStream, m_ObjectLoc, "on opening");
         m_FirstRead = false;
     }
 
@@ -462,19 +442,7 @@ string SFileTrackAPI::GetPath(const CNetStorageObjectLoc& object_loc)
             object_loc.GetUniqueKey() << "\"}";
 
     CHttpResponse response(req.Execute());
-    auto status = response.GetStatusCode();
-
-    switch (status) {
-    case CRequestStatus::e200_Ok:
-    case CRequestStatus::e201_Created:
-        break;
-
-    default:
-        NCBI_THROW_FMT(CNetStorageException, eUnknown,
-                "Error while locking path for \"" << object_loc.GetLocator() <<
-                "\" in FileTrack: " << status << ' ' <<
-                response.GetStatusText());
-    }
+    CHECK_HTTP_STATUS(response, object_loc, "on locking");
 
     ostringstream oss;
     oss << response.ContentStream().rdbuf();
