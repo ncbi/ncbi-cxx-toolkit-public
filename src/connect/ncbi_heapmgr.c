@@ -132,7 +132,7 @@
 #ifdef NCBI_OS_LINUX
 #  if NCBI_PLATFORM_BITS == 64
 #     ifdef __GNUC__
-#       define HEAP_PACKED  __attribute__ ((packed))
+#       define HEAP_PACKED  __attribute__((packed))
 #     elif defined(_CRAYC)
 #       define HEAP_PACKED /* */
 #     else

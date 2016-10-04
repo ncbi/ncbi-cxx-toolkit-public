@@ -244,7 +244,7 @@ extern NCBI_XCONNECT_EXPORT LOG g_CORE_Log;
 
 extern NCBI_XCONNECT_EXPORT const char* g_CORE_Sprintf(const char* fmt, ...)
 #ifdef __GNUC__
-         __attribute__((format(printf, 1, 2)))
+    __attribute__((format(printf,1,2)))
 #endif
 ;
 
