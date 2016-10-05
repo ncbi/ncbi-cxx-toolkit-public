@@ -574,12 +574,25 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
         ++second;
         _ASSERT(second != disc.Get().end());
 
-        int first_flags = sam_flags | SAM_FLAG_SEGS_ALIGNED;
+        // only concordantly aligned pairs have this bit set
+        // FIXME: it is assumed that subject is always in plus strand (BLAST
+        // way)
+        if (((*first)->GetSeqStart(1) < (*second)->GetSeqStart(1) &&
+             (*first)->GetSeqStrand(0) == eNa_strand_plus &&
+             (*second)->GetSeqStrand(0) == eNa_strand_minus) ||
+            ((*second)->GetSeqStart(1) < (*first)->GetSeqStart(1) &&
+             (*second)->GetSeqStrand(0) == eNa_strand_plus &&
+             (*first)->GetSeqStrand(0) == eNa_strand_minus)) {
+
+            sam_flags |= SAM_FLAG_SEGS_ALIGNED;
+        }
+
+        int first_flags = sam_flags;
         if ((*second)->GetSeqStrand(0) == eNa_strand_minus) {
             first_flags |= SAM_FLAG_NEXT_REVCOMP; 
         }
 
-        int second_flags = sam_flags | SAM_FLAG_SEGS_ALIGNED;
+        int second_flags = sam_flags;
         if ((*first)->GetSeqStrand(0) == eNa_strand_minus) {
             second_flags |= SAM_FLAG_NEXT_REVCOMP;
         }

@@ -3778,9 +3778,6 @@ static Boolean s_FindBestPairs(HSPChain** first_list,
             pair_info[num_pairs].trim_second = 0;
             pair_info[num_pairs].valid_pair = 0;
 
-            /* this is assumed if not other configuration is found */
-            pair_info[num_pairs].conf = PAIR_PARALLEL;
-
             /* if the chains align on the opposite strands */
             ASSERT(first_frame != 0 && second_frame != 0);
             if (SIGN(first_frame) != SIGN(second_frame)) {
@@ -3896,6 +3893,12 @@ static Boolean s_FindBestPairs(HSPChain** first_list,
                     continue;
                 }
 
+                num_pairs++;
+            }
+            else {
+                /* for read pairs aligned in the same direction */
+                pair_info[num_pairs].conf = PAIR_PARALLEL;
+                pair_info[num_pairs].score -= 1;
                 num_pairs++;
             }
         }
