@@ -271,7 +271,7 @@ static void s_FindOrfs(const TSeq& seq, COrf::TLocVec& results,
                        bool longest_orfs,
                        size_t max_seq_gap)
 {
-    if (seq.size() < 30) {
+    if (seq.size() < 3) {
         return;
     }
     COrf::TRangeVec ranges;
