@@ -72,6 +72,7 @@ CGff3SofaTypes::CGff3SofaTypes()
     }
     //overrides:
     lookup["primary_transcript"] = GT(e_Imp, eSubtype_preRNA);
+    lookup["sequence_alteration"] = GT(e_Variation, eSubtype_variation_ref);
 };
 
 //  --------------------------------------------------------------------------

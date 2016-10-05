@@ -52,6 +52,7 @@
 #include <objects/seqfeat/SeqFeatXref.hpp>
 #include <objects/seqfeat/Code_break.hpp>
 #include <objects/seqfeat/Genetic_code.hpp>
+#include <objects/seqfeat/Variation_ref.hpp>
 
 #include <objtools/readers/read_util.hpp>
 #include <objtools/readers/reader_base.hpp>
@@ -1323,6 +1324,25 @@ bool CGff2Record::xInitFeatureData(
             const string& key = CSeqFeatData::SubtypeValueToName(
                 static_cast<CSeqFeatData::ESubtype>(itemtype.GetSubtype()));
             imp.SetKey(key);
+            return true;
+        }
+        case CSeqFeatData::e_Variation: {
+            CSeqFeatData::TVariation& variation = pFeature->SetData().SetVariation();
+            variation.SetData().SetUnknown();
+            //CSeqFeatData::TImp& imp = pFeature->SetData().SetImp();
+            //CSeqFeatData::ESubtype subType = 
+            //    static_cast<CSeqFeatData::ESubtype>(itemtype.GetSubtype());
+            //if (subType == CSeqFeatData::eSubtype_bad) {
+            //    if (Type() == ".") {
+            //        imp.SetKey("misc_feature");
+            //        return true;
+            //    }
+            //    imp.SetKey(Type());
+            //    return true;
+            //}
+            //const string& key = CSeqFeatData::SubtypeValueToName(
+            //    static_cast<CSeqFeatData::ESubtype>(itemtype.GetSubtype()));
+            //imp.SetKey(key);
             return true;
         }
     }
