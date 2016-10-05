@@ -3753,8 +3753,8 @@ CDisplaySeqalign::x_InitDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo
 			alnDispParams = x_FillAlnDispParams(bsp_handle);
 			string alnDefLine = x_MapDefLine(alnDispParams,isFirst,false,false,seqLength);
 		    m_CurrAlnID_Lbl = (alnDispParams->gi != ZERO_GI) ?
-                NStr::NumericToString(alnDispParams->gi) : alnDispParams->label;			
-            if (m_UseLongSeqIds) {
+                NStr::NumericToString(alnDispParams->gi) : alnDispParams->label;			            
+            if (m_UseLongSeqIds || alnDispParams->seqID->IsLocal()) {
                 m_CurrAlnAccession = alnDispParams->seqID->AsFastaString();
             }
             else {
