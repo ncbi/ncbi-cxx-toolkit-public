@@ -1176,23 +1176,14 @@ ISelector* SContext::Create(TNetStorageFlags flags,
 }
 
 
-ISelector* SContext::Create(TNetStorageFlags flags,
-        const string& service, const string& key)
-{
-    flags = DefaultFlags(flags);
-    TObjLoc loc(compound_id_pool, flags, app_domain,
-            key, filetrack_api.config.site);
-    loc.SetServiceName(service);
-    return new CSelector(loc, this, flags);
-}
-
-
-ISelector* SContext::Create(TNetStorageFlags flags, const string& key)
+ISelector* SContext::Create(const string& key, TNetStorageFlags flags,
+        const string& service)
 {
     flags = DefaultFlags(flags);
     TObjLoc loc(compound_id_pool, flags, app_domain,
             key, filetrack_api.config.site);
 
+    if (!service.empty()) loc.SetServiceName(service);
     return new CSelector(loc, this, flags);
 }
 
