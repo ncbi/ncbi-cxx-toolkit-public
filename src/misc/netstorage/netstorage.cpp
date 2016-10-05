@@ -126,7 +126,7 @@ struct SDirectNetStorageImpl : public SNetStorageImpl
     // For direct NetStorage API only
     SDirectNetStorageImpl(const string&, CCompoundIDPool::TInstance,
             const IRegistry&);
-    CObj* Create(TNetStorageFlags, const string&, Int8);
+    CObj* Create(TNetStorageFlags, const string&);
     bool Exists(const string& db_loc, const string& client_loc);
     CJsonNode ReportConfig() const;
 
@@ -181,9 +181,9 @@ ENetStorageRemoveResult SDirectNetStorageImpl::Remove(const string& object_loc)
 
 
 CObj* SDirectNetStorageImpl::Create(TNetStorageFlags flags,
-        const string& service, Int8 id)
+        const string& service)
 {
-    ISelector::Ptr selector(m_Context->Create(flags, service, id));
+    ISelector::Ptr selector(m_Context->Create(flags, service));
 
     // Server reports locator to the client before writing anything
     // So, object must choose location for writing here to make locator valid
@@ -383,18 +383,17 @@ CDirectNetStorage::CDirectNetStorage(
 
 CDirectNetStorageObject CDirectNetStorage::Create(
         const string& service_name,
-        Int8 object_id,
+        Int8,
         TNetStorageFlags flags)
 {
-    return Impl<SDirectNetStorageImpl>(m_Impl)->Create(flags, service_name, object_id);
+    return Impl<SDirectNetStorageImpl>(m_Impl)->Create(flags, service_name);
 }
 
 
 CDirectNetStorageObject CDirectNetStorage::Create(const string& service_name,
         TNetStorageFlags flags)
 {
-    // TODO: CXX-8667
-    return Impl<SDirectNetStorageImpl>(m_Impl)->Create(flags, service_name, 42);
+    return Impl<SDirectNetStorageImpl>(m_Impl)->Create(flags, service_name);
 }
 
 

@@ -1160,7 +1160,7 @@ ISelector* SContext::Create(const string& object_loc)
 
 
 ISelector* SContext::Create(TNetStorageFlags flags,
-        const string& service, Int8)
+        const string& service)
 {
     flags = DefaultFlags(flags);
     TObjLoc loc(compound_id_pool, flags, app_domain,

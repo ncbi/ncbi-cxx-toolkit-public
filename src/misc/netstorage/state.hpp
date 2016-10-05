@@ -147,7 +147,7 @@ struct SContext : CObject
 
     ISelector* Create(const string&);
     ISelector* Create(TNetStorageFlags);
-    ISelector* Create(TNetStorageFlags, const string&, Int8);
+    ISelector* Create(TNetStorageFlags, const string&);
     ISelector* Create(const string&, TNetStorageFlags, const string& = kEmptyStr);
 
 private:
