@@ -114,26 +114,16 @@ public:
         const string sFileName = file.GetName();
         vector<string> vecFileNamePieces;
         NStr::Split( sFileName, ".", vecFileNamePieces );
-        BOOST_REQUIRE(vecFileNamePieces.size() == 3);
+        BOOST_REQUIRE(vecFileNamePieces.size() == 2);
 
         string sTestName = vecFileNamePieces[0];
         BOOST_REQUIRE(!sTestName.empty());
-        string sObjType = vecFileNamePieces[1];
-        BOOST_REQUIRE(!sObjType.empty());
-        string sFileType = vecFileNamePieces[2];
+        string sFileType = vecFileNamePieces[1];
         BOOST_REQUIRE(!sFileType.empty());
             
         STestInfo & test_info_to_load =
             (*m_pTestNameToInfoMap)[vecFileNamePieces[0]];
-
-        // assign object type contained in test input
-        if (sObjType == "align"  ||  sObjType == "annot"  ||  
-                sObjType == "entry"  ||  sObjType == "bioseq") {
-            test_info_to_load.mObjType = sObjType;
-        }
-        else {
-            BOOST_FAIL("Unknown object type " << sObjType << ".");
-        }
+        test_info_to_load.mObjType = "align";
 
         // figure out what type of file we have and set appropriately
         if (sFileType == mExtInput) {
@@ -175,8 +165,8 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     if (!CFile(input).Exists()) {
          BOOST_FAIL("input file " << input << " does not exist.");
     }
-    string test_base, test_type;
-    NStr::SplitInTwo(test_name, ".", test_base, test_type);
+    //string test_base, test_type;
+    //NStr::SplitInTwo(test_name, ".", test_base, test_type);
     cerr << "Creating new test case from " << input << " ..." << endl;
 
     CErrorLogger logger(errors);
@@ -194,40 +184,15 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     CNcbiOfstream ofstr(output.c_str());
     CGff3FlybaseWriter* pWriter = sGetWriter(*pScope, ofstr);
 
-    if (test_type == "annot") {
-        CRef<CSeq_annot> pAnnot(new CSeq_annot);
-        *pI >> *pAnnot;
-        pWriter->WriteHeader();
-        pWriter->WriteAnnot(*pAnnot);
-        pWriter->WriteFooter();
-    }
-    else if (test_type == "entry") {
-        CRef<CSeq_entry> pEntry(new CSeq_entry);
-        *pI >> *pEntry;
-        CSeq_entry_Handle seh = pScope->AddTopLevelSeqEntry(*pEntry);
-        pWriter->WriteHeader();
-        pWriter->WriteSeqEntryHandle(seh);
-        pWriter->WriteFooter();
-    }
-    else if (test_type == "align") {
-        CRef<CSeq_align> pAlign(new CSeq_align);
+    CRef<CSeq_align> pAlign(new CSeq_align);
+    *pI >> *pAlign;
+    pWriter->WriteHeader();
+    pWriter->WriteAlign(*pAlign);
+    pWriter->WriteFooter();
+    while (!pI->EndOfData()) {
         *pI >> *pAlign;
         pWriter->WriteHeader();
         pWriter->WriteAlign(*pAlign);
-        pWriter->WriteFooter();
-        while (!pI->EndOfData()) {
-            *pI >> *pAlign;
-            pWriter->WriteHeader();
-            pWriter->WriteAlign(*pAlign);
-            pWriter->WriteFooter();
-        }
-    }
-    else if (test_type == "bioseq") {
-        CRef<CBioseq> pBioseq(new CBioseq);
-        *pI >> *pBioseq;
-        CBioseq_Handle bsh = pScope->AddBioseq(*pBioseq);
-        pWriter->WriteHeader();
-        pWriter->WriteBioseqHandle(bsh);
         pWriter->WriteFooter();
     }
     delete pWriter;
@@ -256,8 +221,8 @@ void sUpdateAll(CDir& test_cases_dir)
         fFF_Default | fFF_Recursive );
 
     ITERATE(TTestNameToInfoMap, name_to_info_it, testNameToInfoMap) {
-        const string & sName = name_to_info_it->first + 
-            "." + name_to_info_it->second.mObjType;
+        const string & sName = name_to_info_it->first; 
+          //  "." + name_to_info_it->second.mObjType;
         sUpdateCase(test_cases_dir, sName);
     }
 }
@@ -287,40 +252,15 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
     CNcbiOfstream ofstr(resultName.c_str());
     CGff3FlybaseWriter* pWriter = sGetWriter(*pScope, ofstr);
 
-    if (testInfo.mObjType == "annot") {
-        CRef<CSeq_annot> pAnnot(new CSeq_annot);
-        *pI >> *pAnnot;
-        pWriter->WriteHeader();
-        pWriter->WriteAnnot(*pAnnot);
-        pWriter->WriteFooter();
-    }
-    else if (testInfo.mObjType == "entry") {
-        CRef<CSeq_entry> pEntry(new CSeq_entry);
-        *pI >> *pEntry;
-        CSeq_entry_Handle seh = pScope->AddTopLevelSeqEntry(*pEntry);
-        pWriter->WriteHeader();
-        pWriter->WriteSeqEntryHandle(seh);
-        pWriter->WriteFooter();
-    }
-    else if (testInfo.mObjType == "align") {
-        CRef<CSeq_align> pAlign(new CSeq_align);
+    CRef<CSeq_align> pAlign(new CSeq_align);
+    *pI >> *pAlign;
+    pWriter->WriteHeader();
+    pWriter->WriteAlign(*pAlign);
+    pWriter->WriteFooter();
+    while (!pI->EndOfData()) {
         *pI >> *pAlign;
         pWriter->WriteHeader();
         pWriter->WriteAlign(*pAlign);
-        pWriter->WriteFooter();
-        while (!pI->EndOfData()) {
-            *pI >> *pAlign;
-            pWriter->WriteHeader();
-            pWriter->WriteAlign(*pAlign);
-            pWriter->WriteFooter();
-        }
-    }
-    else if (testInfo.mObjType == "bioseq") {
-        CRef<CBioseq> pBioseq(new CBioseq);
-        *pI >> *pBioseq;
-        CBioseq_Handle bsh = pScope->AddBioseq(*pBioseq);
-        pWriter->WriteHeader();
-        pWriter->WriteBioseqHandle(bsh);
         pWriter->WriteFooter();
     }
     delete pWriter;

@@ -1,0 +1,27 @@
+##gff-version 3
+#!gff-spec-version 1.20
+##!gff-variant flybase
+# This variant of GFF3 interprets ambiguities in the
+# GFF3 specifications in accordance with the views of Flybase.
+# This impacts the feature tag set, and meaning of the phase.
+#!processor NCBI annotwriter
+XP_015176697.1	RefSeq	nucleotide_to_protein_match	1	29	9608	+	0	ID=792211f6-5c91-4d97-a1a9-eae8ffdc0f1b;Target=NC_004354.4 6255262 6255348 -;def=PREDICTED: dmX-like protein 2 isoform X1 [Polistes dominula];taxid=743375;pct_coverage=94.0893;pct_identity_gap=59.1031;pct_identity_ungap=62.2978;rank=1
+XP_015176697.1	RefSeq	nucleotide_to_protein_match	30	100	.	+	0	ID=792211f6-5c91-4d97-a1a9-eae8ffdc0f1b;Target=NC_004354.4 6252628 6252845 -;Gap=M63 I2 M7
+XP_015176697.1	RefSeq	nucleotide_to_protein_match	100	154	.	+	2	ID=792211f6-5c91-4d97-a1a9-eae8ffdc0f1b;Target=NC_004354.4 6252401 6252563 -
+XP_015176697.1	RefSeq	nucleotide_to_protein_match	155	378	.	+	0	ID=792211f6-5c91-4d97-a1a9-eae8ffdc0f1b;Target=NC_004354.4 6251362 6252073 -;Gap=M11 I3 M11 I2 M6 D1 M63 I1 M4 I13 M67 D1 M10 D2 M13 D1 M33
+XP_015176697.1	RefSeq	nucleotide_to_protein_match	378	466	.	+	1	ID=792211f6-5c91-4d97-a1a9-eae8ffdc0f1b;Target=NC_004354.4 6251006 6251274 -;Gap=M15 I1 M73
+XP_015176697.1	RefSeq	nucleotide_to_protein_match	560	823	.	+	0	ID=792211f6-5c91-4d97-a1a9-eae8ffdc0f1b;Target=NC_004354.4 6249928 6250726 -;Gap=M77 D2 M13 D1 M21 I7 M28 I2 M14 I1 M7 I4 M77 D8 M15
+XP_015176697.1	RefSeq	nucleotide_to_protein_match	823	1087	.	+	1	ID=792211f6-5c91-4d97-a1a9-eae8ffdc0f1b;Target=NC_004354.4 6249074 6249870 -;Gap=M6 D3 M97 I2 M14 I1 M71 I1 M73
+XP_015176697.1	RefSeq	nucleotide_to_protein_match	1130	1556	.	+	0	ID=792211f6-5c91-4d97-a1a9-eae8ffdc0f1b;Target=NC_004354.4 6247672 6248983 -;Gap=M62 I4 M60 I1 M73 I1 M9 I7 M159 D2 M61
+XP_015176697.1	RefSeq	nucleotide_to_protein_match	1556	2421	.	+	1	ID=792211f6-5c91-4d97-a1a9-eae8ffdc0f1b;Target=NC_004354.4 6245014 6247620 -;Gap=M2 I6 M57 I2 M17 D1 M17 I1 M40 I1 M23 D1 M10 D1 M74 I1 M289 I1 M41 D1 M16 I3 M47 D3 M16 I3 M15 D7 M22 I1 M10 D1 M21 D6 M10 I3 M57 I6 M13 D1 M10 D2 M33
+XP_015176697.1	RefSeq	nucleotide_to_protein_match	2421	2762	.	+	1	ID=792211f6-5c91-4d97-a1a9-eae8ffdc0f1b;Target=NC_004354.4 6243873 6244952 -;Gap=M91 D2 M4 I1 M44 I5 M4 I1 M11 I1 M6 I2 M90 I1 M4 I8 M26 D1 M23 I2 M31 I1 M3
+XP_015176697.1	RefSeq	nucleotide_to_protein_match	2762	2843	.	+	1	ID=792211f6-5c91-4d97-a1a9-eae8ffdc0f1b;Target=NC_004354.4 6243590 6243832 -;Gap=M7 I1 M10 D2 M13 I1 M48
+XP_015176697.1	RefSeq	nucleotide_to_protein_match	2843	2970	.	+	1	ID=792211f6-5c91-4d97-a1a9-eae8ffdc0f1b;Target=NC_004354.4 6243139 6243510 -;Gap=M45 D2 M20 D1 M58
+XP_015176697.1	RefSeq	nucleotide_to_protein_match	2970	3060	.	+	1	ID=792211f6-5c91-4d97-a1a9-eae8ffdc0f1b;Target=NC_004354.4 6242831 6243095 -;Gap=M7 I1 M66 D3 M13
+XP_015176697.1	RefSeq	nucleotide_to_protein_match	3060	3208	.	+	2	ID=792211f6-5c91-4d97-a1a9-eae8ffdc0f1b;Target=NC_004354.4 6242354 6242772 -;Gap=M28 D4 M8 I1 M12 D5 R2 M90
+XP_015176697.1	RefSeq	nucleotide_to_protein_match	3209	3232	.	+	0	ID=792211f6-5c91-4d97-a1a9-eae8ffdc0f1b;Target=NC_004354.4 6242215 6242284 -
+XP_015176697.1	RefSeq	nucleotide_to_protein_match	3232	3257	.	+	1	ID=792211f6-5c91-4d97-a1a9-eae8ffdc0f1b;Target=NC_004354.4 6242067 6242141 -
+XP_015176697.1	RefSeq	nucleotide_to_protein_match	3257	3301	.	+	1	ID=792211f6-5c91-4d97-a1a9-eae8ffdc0f1b;Target=NC_004354.4 6241873 6242006 -
+XP_015176697.1	RefSeq	nucleotide_to_protein_match	3302	3329	.	+	0	ID=792211f6-5c91-4d97-a1a9-eae8ffdc0f1b;Target=NC_004354.4 6241728 6241811 -
+XP_015176697.1	RefSeq	nucleotide_to_protein_match	3330	3395	.	+	0	ID=792211f6-5c91-4d97-a1a9-eae8ffdc0f1b;Target=NC_004354.4 6241467 6241664 -
+###

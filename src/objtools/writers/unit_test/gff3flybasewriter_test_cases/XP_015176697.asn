@@ -1,0 +1,638 @@
+Seq-align ::= {
+  type disc,
+  dim 2,
+  score {
+    {
+      id str "num_ident",
+      value int 5970
+    },
+    {
+      id str "num_positives",
+      value int 7368
+    },
+    {
+      id str "num_negatives",
+      value int 2214
+    },
+    {
+      id str "product_gap_length",
+      value int 321
+    },
+    {
+      id str "genomic_gap_length",
+      value int 197
+    },
+    {
+      id str "align_length",
+      value int 10101
+    },
+    {
+      id str "product_internal_gap_length",
+      value int 321
+    },
+    {
+      id str "score",
+      value int 9608
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 591030591030591, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 3613
+    },
+    {
+      id str "pct_identity_ungap",
+      value real { 622978190545758, 10, -13 }
+    },
+    {
+      id str "gap_count",
+      value int 68
+    },
+    {
+      id str "pct_coverage",
+      value real { 940893470790378, 10, -13 }
+    },
+    {
+      id str "pct_coverage_hiqual",
+      value real { 940893470790378, 10, -13 }
+    },
+    {
+      id str "weighted_identity",
+      value real { 604189417254046, 10, -15 }
+    },
+    {
+      id str "rank",
+      value int 1
+    }
+  },
+  segs spliced {
+    product-id gi 972190053,
+    genomic-id gi 669632474,
+    genomic-strand minus,
+    product-type protein,
+    exons {
+      {
+        product-start protpos {
+          amin 0,
+          frame 1
+        },
+        product-end protpos {
+          amin 28,
+          frame 3
+        },
+        genomic-start 6255261,
+        genomic-end 6255347,
+        parts {
+          match 3,
+          diag 84
+        },
+        donor-after-exon {
+          bases "GT"
+        },
+        partial FALSE
+      },
+      {
+        product-start protpos {
+          amin 29,
+          frame 1
+        },
+        product-end protpos {
+          amin 99,
+          frame 2
+        },
+        genomic-start 6252627,
+        genomic-end 6252844,
+        parts {
+          diag 189,
+          genomic-ins 6,
+          diag 23
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start protpos {
+          amin 99,
+          frame 3
+        },
+        product-end protpos {
+          amin 153,
+          frame 3
+        },
+        genomic-start 6252400,
+        genomic-end 6252562,
+        parts {
+          diag 163
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GC"
+        }
+      },
+      {
+        product-start protpos {
+          amin 154,
+          frame 1
+        },
+        product-end protpos {
+          amin 377,
+          frame 1
+        },
+        genomic-start 6251361,
+        genomic-end 6252072,
+        parts {
+          diag 33,
+          genomic-ins 9,
+          diag 33,
+          genomic-ins 6,
+          diag 18,
+          product-ins 3,
+          diag 189,
+          genomic-ins 3,
+          diag 12,
+          genomic-ins 39,
+          diag 201,
+          product-ins 3,
+          diag 30,
+          product-ins 6,
+          diag 39,
+          product-ins 3,
+          diag 100
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start protpos {
+          amin 377,
+          frame 2
+        },
+        product-end protpos {
+          amin 465,
+          frame 3
+        },
+        genomic-start 6251005,
+        genomic-end 6251273,
+        parts {
+          diag 47,
+          genomic-ins 3,
+          diag 219
+        },
+        acceptor-before-exon {
+          bases "AC"
+        },
+        partial TRUE
+      },
+      {
+        product-start protpos {
+          amin 559,
+          frame 1
+        },
+        product-end protpos {
+          amin 822,
+          frame 1
+        },
+        genomic-start 6249927,
+        genomic-end 6250725,
+        parts {
+          diag 231,
+          product-ins 6,
+          diag 39,
+          product-ins 3,
+          diag 63,
+          genomic-ins 21,
+          diag 84,
+          genomic-ins 6,
+          diag 42,
+          genomic-ins 3,
+          diag 21,
+          genomic-ins 12,
+          diag 231,
+          product-ins 24,
+          diag 46
+        },
+        donor-after-exon {
+          bases "GT"
+        },
+        partial TRUE
+      },
+      {
+        product-start protpos {
+          amin 822,
+          frame 2
+        },
+        product-end protpos {
+          amin 1086,
+          frame 3
+        },
+        genomic-start 6249073,
+        genomic-end 6249869,
+        parts {
+          diag 20,
+          product-ins 9,
+          diag 291,
+          genomic-ins 6,
+          diag 42,
+          genomic-ins 3,
+          diag 213,
+          genomic-ins 3,
+          diag 219
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        partial TRUE
+      },
+      {
+        product-start protpos {
+          amin 1129,
+          frame 1
+        },
+        product-end protpos {
+          amin 1555,
+          frame 1
+        },
+        genomic-start 6247671,
+        genomic-end 6248982,
+        parts {
+          diag 186,
+          genomic-ins 12,
+          diag 180,
+          genomic-ins 3,
+          diag 219,
+          genomic-ins 3,
+          diag 27,
+          genomic-ins 21,
+          diag 477,
+          product-ins 6,
+          diag 184
+        },
+        donor-after-exon {
+          bases "GT"
+        },
+        partial TRUE
+      },
+      {
+        product-start protpos {
+          amin 1555,
+          frame 2
+        },
+        product-end protpos {
+          amin 2420,
+          frame 1
+        },
+        genomic-start 6245013,
+        genomic-end 6247619,
+        parts {
+          diag 8,
+          genomic-ins 18,
+          diag 171,
+          genomic-ins 6,
+          diag 51,
+          product-ins 3,
+          diag 51,
+          genomic-ins 3,
+          diag 120,
+          genomic-ins 3,
+          diag 69,
+          product-ins 3,
+          diag 30,
+          product-ins 3,
+          diag 222,
+          genomic-ins 3,
+          diag 867,
+          genomic-ins 3,
+          diag 123,
+          product-ins 3,
+          diag 48,
+          genomic-ins 9,
+          diag 141,
+          product-ins 9,
+          diag 48,
+          genomic-ins 9,
+          diag 45,
+          product-ins 21,
+          diag 66,
+          genomic-ins 3,
+          diag 30,
+          product-ins 3,
+          diag 63,
+          product-ins 18,
+          diag 30,
+          genomic-ins 9,
+          diag 171,
+          genomic-ins 18,
+          diag 39,
+          product-ins 3,
+          diag 30,
+          product-ins 6,
+          diag 100
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start protpos {
+          amin 2420,
+          frame 2
+        },
+        product-end protpos {
+          amin 2761,
+          frame 1
+        },
+        genomic-start 6243872,
+        genomic-end 6244951,
+        parts {
+          diag 275,
+          product-ins 6,
+          diag 12,
+          genomic-ins 3,
+          diag 132,
+          genomic-ins 15,
+          diag 12,
+          genomic-ins 3,
+          diag 33,
+          genomic-ins 3,
+          diag 18,
+          genomic-ins 6,
+          diag 270,
+          genomic-ins 3,
+          diag 12,
+          genomic-ins 24,
+          diag 78,
+          product-ins 3,
+          diag 69,
+          genomic-ins 6,
+          diag 93,
+          genomic-ins 3,
+          diag 10
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start protpos {
+          amin 2761,
+          frame 2
+        },
+        product-end protpos {
+          amin 2842,
+          frame 1
+        },
+        genomic-start 6243589,
+        genomic-end 6243831,
+        parts {
+          diag 23,
+          genomic-ins 3,
+          diag 30,
+          product-ins 6,
+          diag 39,
+          genomic-ins 3,
+          diag 145
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start protpos {
+          amin 2842,
+          frame 2
+        },
+        product-end protpos {
+          amin 2969,
+          frame 1
+        },
+        genomic-start 6243138,
+        genomic-end 6243509,
+        parts {
+          diag 137,
+          product-ins 6,
+          diag 60,
+          product-ins 3,
+          diag 175
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start protpos {
+          amin 2969,
+          frame 2
+        },
+        product-end protpos {
+          amin 3059,
+          frame 2
+        },
+        genomic-start 6242830,
+        genomic-end 6243094,
+        parts {
+          diag 23,
+          genomic-ins 3,
+          diag 198,
+          product-ins 9,
+          diag 41
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start protpos {
+          amin 3059,
+          frame 3
+        },
+        product-end protpos {
+          amin 3207,
+          frame 3
+        },
+        genomic-start 6242353,
+        genomic-end 6242771,
+        parts {
+          diag 85,
+          product-ins 12,
+          diag 24,
+          genomic-ins 3,
+          diag 36,
+          product-ins 17,
+          diag 271
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start protpos {
+          amin 3208,
+          frame 1
+        },
+        product-end protpos {
+          amin 3231,
+          frame 1
+        },
+        genomic-start 6242214,
+        genomic-end 6242283,
+        parts {
+          diag 70
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start protpos {
+          amin 3231,
+          frame 2
+        },
+        product-end protpos {
+          amin 3256,
+          frame 1
+        },
+        genomic-start 6242066,
+        genomic-end 6242140,
+        parts {
+          diag 75
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start protpos {
+          amin 3256,
+          frame 2
+        },
+        product-end protpos {
+          amin 3300,
+          frame 3
+        },
+        genomic-start 6241872,
+        genomic-end 6242005,
+        parts {
+          diag 134
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start protpos {
+          amin 3301,
+          frame 1
+        },
+        product-end protpos {
+          amin 3328,
+          frame 3
+        },
+        genomic-start 6241727,
+        genomic-end 6241810,
+        parts {
+          diag 84
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start protpos {
+          amin 3329,
+          frame 1
+        },
+        product-end protpos {
+          amin 3394,
+          frame 3
+        },
+        genomic-start 6241466,
+        genomic-end 6241663,
+        parts {
+          diag 198
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        partial FALSE
+      }
+    },
+    product-length 3395,
+    modifiers {
+      start-codon-found TRUE,
+      stop-codon-found TRUE
+    }
+  },
+  bounds {
+    whole gi 972190053,
+    int {
+      from 6231466,
+      to 6265347,
+      strand minus,
+      id gi 669632474
+    }
+  },
+  id {
+    str "792211f6-5c91-4d97-a1a9-eae8ffdc0f1b"
+  },
+  ext {
+    {
+      type str "placement_data",
+      data {
+        {
+          label str "gc_asm_id",
+          data str "GCF_000001215.4"
+        },
+        {
+          label str "gc_asm_chain_id",
+          data int 1625
+        },
+        {
+          label str "placement_id",
+          data str "792211f6-5c91-4d97-a1a9-eae8ffdc0f1b"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,296 @@
+Seq-align ::= {
+  type disc,
+  dim 2,
+  score {
+    {
+      id str "num_ident",
+      value int 315
+    },
+    {
+      id str "num_positives",
+      value int 318
+    },
+    {
+      id str "num_negatives",
+      value int 0
+    },
+    {
+      id str "product_gap_length",
+      value int 0
+    },
+    {
+      id str "genomic_gap_length",
+      value int 0
+    },
+    {
+      id str "align_length",
+      value int 318
+    },
+    {
+      id str "product_internal_gap_length",
+      value int 0
+    },
+    {
+      id str "score",
+      value int 573
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 990566037735849, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 3
+    },
+    {
+      id str "pct_identity_ungap",
+      value real { 990566037735849, 10, -13 }
+    },
+    {
+      id str "gap_count",
+      value int 0
+    },
+    {
+      id str "pct_coverage",
+      value real { 963636363636364, 10, -13 }
+    },
+    {
+      id str "pct_coverage_hiqual",
+      value real { 963636363636364, 10, -13 }
+    },
+    {
+      id str "weighted_identity",
+      value real { 99079754601227, 10, -14 }
+    },
+    {
+      id str "rank",
+      value int 1
+    }
+  },
+  segs spliced {
+    product-id gi 971826089,
+    genomic-id gi 671162317,
+    genomic-strand plus,
+    product-type protein,
+    exons {
+      {
+        product-start protpos {
+          amin 1,
+          frame 1
+        },
+        product-end protpos {
+          amin 36,
+          frame 3
+        },
+        genomic-start 10033316,
+        genomic-end 10033423,
+        parts {
+          diag 108
+        },
+        donor-after-exon {
+          bases "GT"
+        },
+        partial TRUE
+      },
+      {
+        product-start protpos {
+          amin 37,
+          frame 1
+        },
+        product-end protpos {
+          amin 106,
+          frame 3
+        },
+        genomic-start 10036645,
+        genomic-end 10036854,
+        parts {
+          diag 210
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        partial TRUE
+      }
+    },
+    product-length 110
+  },
+  bounds {
+    whole gi 971826089,
+    int {
+      from 10023316,
+      to 10046854,
+      strand plus,
+      id gi 671162317
+    }
+  },
+  id {
+    str "85c7e19a-b447-46c7-bcbd-dc7b255e7a4d"
+  },
+  ext {
+    {
+      type str "placement_data",
+      data {
+        {
+          label str "gc_asm_id",
+          data str "GCF_000001215.4"
+        },
+        {
+          label str "gc_asm_chain_id",
+          data int 1625
+        },
+        {
+          label str "placement_id",
+          data str "85c7e19a-b447-46c7-bcbd-dc7b255e7a4d"
+        }
+      }
+    }
+  }
+}
+Seq-align ::= {
+  type disc,
+  dim 2,
+  score {
+    {
+      id str "num_ident",
+      value int 234
+    },
+    {
+      id str "num_positives",
+      value int 291
+    },
+    {
+      id str "num_negatives",
+      value int 27
+    },
+    {
+      id str "product_gap_length",
+      value int 0
+    },
+    {
+      id str "genomic_gap_length",
+      value int 0
+    },
+    {
+      id str "align_length",
+      value int 318
+    },
+    {
+      id str "product_internal_gap_length",
+      value int 0
+    },
+    {
+      id str "score",
+      value int 459
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 735849056603774, 10, -13 }
+    },
+    {
+      id str "num_mismatch",
+      value int 84
+    },
+    {
+      id str "pct_identity_ungap",
+      value real { 735849056603774, 10, -13 }
+    },
+    {
+      id str "gap_count",
+      value int 0
+    },
+    {
+      id str "pct_coverage",
+      value real { 963636363636364, 10, -13 }
+    },
+    {
+      id str "pct_coverage_hiqual",
+      value real { 963636363636364, 10, -13 }
+    },
+    {
+      id str "weighted_identity",
+      value real { 742331288343558, 10, -15 }
+    },
+    {
+      id str "rank",
+      value int 2
+    }
+  },
+  segs spliced {
+    product-id gi 971826089,
+    genomic-id gi 671162317,
+    genomic-strand minus,
+    product-type protein,
+    exons {
+      {
+        product-start protpos {
+          amin 1,
+          frame 1
+        },
+        product-end protpos {
+          amin 36,
+          frame 3
+        },
+        genomic-start 10156352,
+        genomic-end 10156459,
+        parts {
+          diag 108
+        },
+        donor-after-exon {
+          bases "GT"
+        },
+        partial TRUE
+      },
+      {
+        product-start protpos {
+          amin 37,
+          frame 1
+        },
+        product-end protpos {
+          amin 106,
+          frame 3
+        },
+        genomic-start 10154762,
+        genomic-end 10154971,
+        parts {
+          diag 210
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        partial TRUE
+      }
+    },
+    product-length 110
+  },
+  bounds {
+    whole gi 971826089,
+    int {
+      from 10144762,
+      to 10166459,
+      strand minus,
+      id gi 671162317
+    }
+  },
+  id {
+    str "9b8b50e0-34e5-4a08-9980-173a3145488d"
+  },
+  ext {
+    {
+      type str "placement_data",
+      data {
+        {
+          label str "gc_asm_id",
+          data str "GCF_000001215.4"
+        },
+        {
+          label str "gc_asm_chain_id",
+          data int 1625
+        },
+        {
+          label str "placement_id",
+          data str "9b8b50e0-34e5-4a08-9980-173a3145488d"
+        }
+      }
+    }
+  }
+}
