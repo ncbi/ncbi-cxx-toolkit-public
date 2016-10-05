@@ -1145,15 +1145,17 @@ void SContext::Init()
 ISelector* SContext::Create(TNetStorageFlags flags)
 {
     flags = DefaultFlags(flags);
-    return new CSelector(TObjLoc(compound_id_pool,
-                    flags, app_domain, m_Random.GetRandUint8(),
-                    filetrack_api.config.site), this, flags);
+    TObjLoc loc(compound_id_pool, flags, app_domain,
+            m_Random.GetRandUint8(), filetrack_api.config.site);
+
+    return new CSelector(loc, this, flags);
 }
 
 
 ISelector* SContext::Create(const string& object_loc)
 {
-    return new CSelector(TObjLoc(compound_id_pool, object_loc), this);
+    TObjLoc loc(compound_id_pool, object_loc);
+    return new CSelector(loc, this);
 }
 
 
@@ -1188,9 +1190,10 @@ ISelector* SContext::Create(TNetStorageFlags flags,
 ISelector* SContext::Create(TNetStorageFlags flags, const string& key)
 {
     flags = DefaultFlags(flags);
-    return new CSelector(TObjLoc(compound_id_pool,
-                    flags, app_domain, key,
-                    filetrack_api.config.site), this, flags);
+    TObjLoc loc(compound_id_pool, flags, app_domain,
+            key, filetrack_api.config.site);
+
+    return new CSelector(loc, this, flags);
 }
 
 
