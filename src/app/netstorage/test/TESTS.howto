@@ -11,46 +11,25 @@ A binary could be taken from regular builds, e.g.:
 /netopt/ncbi_tools64/c++.current/GCC-Release/bin/test_netstorage.gz
 
 
-2. Setup
+2. Setup and running
 
-The test_netstorage binary does not provide command line arguments to control
-its behavior. Neither it provides a description of what is recognized in its
-.ini file. By default the test uses the ST_Test service (at least at the time
-of writing). Here is a description of how to create a setup for your own
-instance of the NetStorage server.
+Do an svn export:
+svn export https://svn.ncbi.nlm.nih.gov/repos/toolkit/trunk/c++/src/misc/netstorage/test/
 
-2.1 Run the server, and note the host and port, e.g. iebdev22:9800
-2.2 Create test_netstorage.ini as follows:
+there re two files there which are of interest:
+- test_netstorage.ini
+- test_netstorage_server.bash
 
+Copy both of them to the directory where the tes_netstorage binary is sitting.
+They will trick the binary to substitute the service properly to test a locally
+running server.
+Then run as follows:
 
-; The service S is to be used instead of the default service.
-; The service name S is faked and mentioned twice because the test_netstorage
-; changed what parameter/section is recognized. To be on the safe side the
-; service is provided twice.
-[netstorage]
-service_name=S
+./test_netstorage_server.bash ST_Test iebdev13:9800
 
-[netstorage_api]
-service_name=S
-
-
-; The service S is not advertized by the LBSMD daemon and LBSMD is running in a
-; passive mode on the developers hosts and thus changes in the LBSMD
-; configuration files would not help. There is a way however to override the
-; service resolution procedure. This is how to do that (two sections below):
-[CONN]
-LOCAL_ENABLE=1
-
-[S]
-CONN_LOCAL_SERVER_0="STANDALONE iebdev22:9800 L=yes"
-
-
-3. Running
-
-Run the test_netstorage having its .ini file in the same directory.
-Most probably the test suite should be restricted:
-
-$ ./test_netstorage -t 'TestNetStorage*'
+where:
+- ST_Test is a service name used to send to the server
+- iebdev13:9800 is a locally running server
 
 
 
