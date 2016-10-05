@@ -1177,7 +1177,13 @@ CConstRef<CSeq_feat> GetmRNAforCDS(const CSeq_feat& cds, CScope& scope)
         /* using FeatID from feature cross-references:
         * if CDS refers to an mRNA by feature ID, use that feature
         */
-        CBioseq_Handle bsh = scope.GetBioseqHandle(cds.GetLocation());
+        CBioseq_Handle bsh;
+        try {
+            bsh = scope.GetBioseqHandle(cds.GetLocation());
+        } catch (CException& ex) {
+            // multi-accession location, can't do this check
+            return CConstRef<CSeq_feat>(NULL);
+        }
         CTSE_Handle tse = bsh.GetTSE_Handle();
         ITERATE(CSeq_feat::TXref, it, cds.GetXref()) {
             if ((*it)->IsSetId() && (*it)->GetId().IsLocal() && (*it)->GetId().GetLocal().IsId()) {
