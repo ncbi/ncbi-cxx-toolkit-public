@@ -436,6 +436,8 @@ DISCREPANCY_AUTOFIX(SOURCE_QUALS)
     const CSourseQualsAutofixData* fix = 0;
     size_t added = 0;
     size_t changed = 0;
+    string qual;
+    string val;
     NON_CONST_ITERATE (TReportObjectList, it, list) {
         CDiscrepancyObject& obj = *dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer());
         CSeqdesc* desc = const_cast<CSeqdesc*>(dynamic_cast<const CSeqdesc*>(obj.GetObject().GetPointer()));
@@ -444,33 +446,36 @@ DISCREPANCY_AUTOFIX(SOURCE_QUALS)
         if (!fix) {
             continue;
         }
-        CAutofixHookRegularArguments arg;
-        arg.m_User = fix->m_User;
+        qual = fix->m_Qualifier;
+        val = fix->m_Value;
+
+        //CAutofixHookRegularArguments arg;
+        //arg.m_User = fix->m_User;
         //if (m_Hook) {
         //    m_Hook(&arg);
         //}
         
-        if (fix->m_Qualifier == "host") {
-            SetOrgMod(bs, COrgMod::eSubtype_nat_host, fix->m_Value, added, changed);
+        if (qual == "host") {
+            SetOrgMod(bs, COrgMod::eSubtype_nat_host, val, added, changed);
         }
-        else if (fix->m_Qualifier == "strain") {
-            SetOrgMod(bs, COrgMod::eSubtype_strain, fix->m_Value, added, changed);
+        else if (qual == "strain") {
+            SetOrgMod(bs, COrgMod::eSubtype_strain, val, added, changed);
         }
-        else if (fix->m_Qualifier == "country") {
-            SetSubsource(bs, CSubSource::eSubtype_country, fix->m_Value, added, changed);
+        else if (qual == "country") {
+            SetSubsource(bs, CSubSource::eSubtype_country, val, added, changed);
         }
-        else if (fix->m_Qualifier == "isolation-source") {
-            SetSubsource(bs, CSubSource::eSubtype_isolation_source, fix->m_Value, added, changed);
+        else if (qual == "isolation-source") {
+            SetSubsource(bs, CSubSource::eSubtype_isolation_source, val, added, changed);
         }
-        else if (fix->m_Qualifier == "collection-date") {
-            SetSubsource(bs, CSubSource::eSubtype_collection_date, fix->m_Value, added, changed);
+        else if (qual == "collection-date") {
+            SetSubsource(bs, CSubSource::eSubtype_collection_date, val, added, changed);
         }
     }
     if (changed) {
-        return CRef<CAutofixReport>(new CAutofixReport("SOURCE_QUALS: [n] qualifier[s] " + fix->m_Qualifier + " (" + fix->m_Value + ") fixed", added + changed));
+        return CRef<CAutofixReport>(new CAutofixReport("SOURCE_QUALS: [n] qualifier[s] " + qual + " (" + val + ") fixed", added + changed));
     }
     else {
-        return CRef<CAutofixReport>(new CAutofixReport("SOURCE_QUALS: [n] missing qualifier[s] " + fix->m_Qualifier + " (" + fix->m_Value + ") added", added));
+        return CRef<CAutofixReport>(new CAutofixReport("SOURCE_QUALS: [n] missing qualifier[s] " + qual + " (" + val + ") added", added));
     }
 }
 
