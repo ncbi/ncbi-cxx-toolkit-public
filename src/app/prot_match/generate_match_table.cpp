@@ -33,9 +33,20 @@ public:
     typedef list<CRef<CSeq_annot>> TMatches;
 
 private:
-    bool x_GenerateMatchTable(const TMatches& matches);
-    bool x_TryProcessInputFile(const CArgs& args, TMatches& matches);
+    bool x_GenerateMatchTable(const TMatches& matches,
+                              const list<string>& new_proteins,
+                              const list<string>& dead_proteins);
+    bool x_TryProcessInputFile(const CArgs& args, 
+                               TMatches& matches, 
+                               list<string>& new_proteins,
+                               list<string>& dead_proteins);
+
     CObjectIStream* x_InitInputStream(const CArgs& args) const;
+    bool x_IsComparison(const CSeq_annot& seq_annot) const;
+    bool x_HasCdsQuery(const CSeq_annot& seq_annot) const;
+    bool x_HasCdsSubject(const CSeq_annot& seq_annot) const;
+    bool x_IsNovelSubject(const CSeq_annot& seq_annot) const;
+    bool x_IsNovelQuery(const CSeq_annot& seq_annot) const;
     bool x_IsCdsComparison(const CSeq_annot& seq_annot) const;
     bool x_IsGoodGloballyReciprocalBest(const CSeq_annot& seq_annot) const;
     bool x_IsGoodGloballyReciprocalBest(const CUser_object& user_obj) const;
@@ -71,17 +82,60 @@ private:
 };
 
 
-// Check to see if Seq-annot is a feature table containing a pair of CDS features
-bool CProteinMatchApp::x_IsCdsComparison(const CSeq_annot& seq_annot) const
+bool CProteinMatchApp::x_IsComparison(const CSeq_annot& seq_annot) const
 {
-    if (!seq_annot.IsFtable() ||
-        seq_annot.GetData().GetFtable().size() != 2) {
+   if (seq_annot.IsSetName() &&
+       seq_annot.GetName() == "Comparison" &&
+       seq_annot.IsFtable() &&
+       seq_annot.GetData().GetFtable().size() == 2) {
+       return true;
+   }
+
+   return false;
+}
+
+
+
+bool CProteinMatchApp::x_HasCdsQuery(const CSeq_annot& seq_annot) const 
+{
+    if (!x_IsComparison(seq_annot)) {
         return false;
     }
 
+    const CSeq_feat& query_feat = *seq_annot.GetData().GetFtable().front();
+    if (query_feat.IsSetData() &&
+        query_feat.GetData().IsCdregion()) {
+        return true;
+    }
+    return false;
+}
+
+
+bool CProteinMatchApp::x_HasCdsSubject(const CSeq_annot& seq_annot) const 
+{
+    if (!x_IsComparison(seq_annot)) {
+        return false;
+    }
+
+    const CSeq_feat& subject_feat = *seq_annot.GetData().GetFtable().back();
+    if (subject_feat.IsSetData() &&
+        subject_feat.GetData().IsCdregion()) {
+        return true;
+    }
+    return false;
+}
+
+
+
+// Check to see if Seq-annot has the name "Comparison" and is a feature table 
+// containing a pair of CDS features
+bool CProteinMatchApp::x_IsCdsComparison(const CSeq_annot& seq_annot) const
+{
+    if (!x_IsComparison(seq_annot)) {
+        return false;
+    }
     const CSeq_feat& first = *seq_annot.GetData().GetFtable().front();
     const CSeq_feat& second = *seq_annot.GetData().GetFtable().back();
-  
 
     if (first.IsSetData() &&
         first.GetData().IsCdregion()  &&
@@ -91,6 +145,9 @@ bool CProteinMatchApp::x_IsCdsComparison(const CSeq_annot& seq_annot) const
     }
     return false;
 }
+
+
+
 
 // Check to see if the match is the best global reciprocal match 
 bool CProteinMatchApp::x_IsGoodGloballyReciprocalBest(const CUser_object& user_obj) const
@@ -126,7 +183,6 @@ bool CProteinMatchApp::x_IsGoodGloballyReciprocalBest(const CUser_object& user_o
 // Check to see if the match is the best global reciprocal match 
 bool CProteinMatchApp::x_IsGoodGloballyReciprocalBest(const CSeq_annot& seq_annot) const 
 {
-
     if (seq_annot.IsSetDesc()) {
         ITERATE(CAnnot_descr::Tdata, desc_it, seq_annot.GetDesc().Get()) {
             if (!(*desc_it)->IsUser()) {
@@ -145,9 +201,27 @@ bool CProteinMatchApp::x_IsGoodGloballyReciprocalBest(const CSeq_annot& seq_anno
             }
         }
     }
-
     return false;
 }
+
+
+// Check to see if the subject is novel
+bool CProteinMatchApp::x_IsNovelSubject(const CSeq_annot& seq_annot) const 
+{
+    const string comparison_class = x_GetComparisonClass(seq_annot);
+    return (comparison_class == "s-novel");
+}
+
+
+// Check to see if query is novel 
+bool CProteinMatchApp::x_IsNovelQuery(const CSeq_annot& seq_annot) const 
+{
+    const string comparison_class = x_GetComparisonClass(seq_annot);
+    return (comparison_class == "q-novel");
+
+}
+
+
 
 // Return the threshold for the match
 bool CProteinMatchApp::x_GetGGRBThreshold(const CSeq_annot& seq_annot, double& threshold) const 
@@ -421,15 +495,18 @@ int CProteinMatchApp::Run()
 {
     const CArgs& args = GetArgs();
 
+    list<string> new_proteins;
+    list<string> dead_proteins;
+
     TMatches matches;
     // Attempt to read a list of Seq-annots encoding the 
     // the protein matches.
-    if (!x_TryProcessInputFile(args, matches)) {
+    if (!x_TryProcessInputFile(args, matches, new_proteins, dead_proteins)) {
         return 1;
     }
 
     // Generate a mMatchTable (of type CRef<CSeq_table> from the list of Seq-annots. 
-    x_GenerateMatchTable(matches);
+    x_GenerateMatchTable(matches, new_proteins, dead_proteins);
 
     CNcbiOstream* pOs = x_InitOutputStream(args);
 
@@ -443,8 +520,16 @@ int CProteinMatchApp::Run()
 
 bool CProteinMatchApp::x_TryProcessInputFile(
         const CArgs& args,
-        TMatches& matches) 
+        TMatches& matches, 
+        list<string>& new_proteins,  // contains local ids for new proteins
+        list<string>& dead_proteins) // contains accessions for dead proteins
 {
+    dead_proteins.clear();
+    new_proteins.clear();
+
+    set<string> new_protein_set;
+    set<string> dead_protein_set;
+
     unique_ptr<CObjectIStream> pObjIstream(x_InitInputStream(args));
 
     while (!pObjIstream->EndOfData()) {
@@ -455,8 +540,24 @@ bool CProteinMatchApp::x_TryProcessInputFile(
         catch (CException&) {
             return false;
         }
+
+
         if (x_IsProteinMatch(*pSeqAnnot)) {
             matches.push_back(pSeqAnnot);
+            continue;
+        }
+
+
+        if (x_IsNovelSubject(*pSeqAnnot)) {
+            const CSeq_feat& subject = *(pSeqAnnot->GetData().GetFtable().back());
+            //cout << "AccVer : " << x_GetAccessionVersion(subject) << "\n";
+            dead_proteins.push_back(x_GetAccessionVersion(subject));
+            continue;
+        }
+
+        if (x_IsNovelQuery(*pSeqAnnot)) {
+            new_proteins.push_back(x_GetLocalID(*pSeqAnnot));
+            continue;
         }
     }
 
@@ -494,12 +595,16 @@ void CProteinMatchApp::x_AppendColumnValue(
 
 
 bool CProteinMatchApp::x_GenerateMatchTable(
-        const TMatches& matches) 
+        const TMatches& matches,
+        const list<string>& new_proteins,
+        const list<string>& dead_proteins) 
 {
     x_AddColumn("LocalID");
     x_AddColumn("AccVer");
-    x_AddColumn("GI");
-    x_AddColumn("CompClass");
+//    x_AddColumn("GI");
+    x_AddColumn("Status");
+
+  //  x_AddColumn("CompClass");
 
     // Iterate over match Seq-annots
     TMatches::const_iterator cit;
@@ -508,14 +613,26 @@ bool CProteinMatchApp::x_GenerateMatchTable(
         string localID = x_GetLocalID(**cit);
         string gi = x_GetProductGI(**cit);
         string accver = x_GetAccessionVersion(**cit);
-        string compClass = x_GetComparisonClass(**cit);
+        //string compClass = x_GetComparisonClass(**cit);
+        string status = (x_GetComparisonClass(**cit) == "perfect") ? "Same" : "Changed";
 
         x_AppendColumnValue("LocalID", localID);
         x_AppendColumnValue("AccVer", accver);
-        x_AppendColumnValue("GI", gi);
-        x_AppendColumnValue("CompClass", compClass);
+       // x_AppendColumnValue("GI", gi);
+        //x_AppendColumnValue("CompClass", compClass);
+        x_AppendColumnValue("Status", status);
 
         mMatchTable->SetNum_rows(mMatchTable->GetNum_rows()+1);
+    }
+
+    for (string localID : new_proteins) {
+        x_AppendColumnValue("LocalID", localID);
+        x_AppendColumnValue("Status", "New");
+    }
+
+    for (string accver : dead_proteins) {
+        x_AppendColumnValue("AccVer", accver);
+        x_AppendColumnValue("Status", "Dead");
     }
 
     return true;
