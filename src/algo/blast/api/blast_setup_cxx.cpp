@@ -909,7 +909,7 @@ GetSequenceProtein(IBlastSeqVector& sv, string* warnings = 0)
 
     *buf_var++ = GetSentinelByte(eBlastEncodingProtein);
     if (warnings && replaced_residues.size() > 0) {
-        *warnings += "One or more U or O characters replaced by X for ";
+        *warnings += "One or more O characters replaced by X for ";
         *warnings += "alignment score calculations at positions ";
         *warnings += NStr::IntToString(replaced_residues[0]);
         for (i = 1; i < min(kMaxResiduesToWarnAbout, replaced_residues.size()); 
