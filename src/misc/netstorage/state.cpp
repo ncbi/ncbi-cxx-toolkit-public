@@ -1142,14 +1142,6 @@ void SContext::Init()
 }
 
 
-ISelector* SContext::Create(TNetStorageFlags flags)
-{
-    flags = DefaultFlags(flags);
-    TObjLoc loc(compound_id_pool, flags, app_domain,
-            m_Random.GetRandUint8(), filetrack_api.config.site);
-
-    return new CSelector(loc, this, flags);
-}
 
 
 ISelector* SContext::Create(const string& object_loc)
@@ -1159,19 +1151,22 @@ ISelector* SContext::Create(const string& object_loc)
 }
 
 
-ISelector* SContext::Create(TNetStorageFlags flags,
-        const string& service)
+ISelector* SContext::Create(TNetStorageFlags flags, const string& service)
 {
     flags = DefaultFlags(flags);
     TObjLoc loc(compound_id_pool, flags, app_domain,
             m_Random.GetRandUint8(), filetrack_api.config.site);
 
-    // Do not set fake service name used by NST health check script
-    if (NStr::CompareNocase(service, "LBSMDNSTTestService")) {
-        loc.SetServiceName(service);
+    // Non empty service name means this is called by NetStorage server
+    if (!service.empty()) {
+        // Do not set fake service name used by NST health check script
+        if (NStr::CompareNocase(service, "LBSMDNSTTestService")) {
+            loc.SetServiceName(service);
+        }
+
+        loc.SetObjectID();
     }
 
-    loc.SetObjectID();
     return new CSelector(loc, this, flags);
 }
 
@@ -1183,6 +1178,7 @@ ISelector* SContext::Create(const string& key, TNetStorageFlags flags,
     TObjLoc loc(compound_id_pool, flags, app_domain,
             key, filetrack_api.config.site);
 
+    // Non empty service name means this is called by NetStorage server
     if (!service.empty()) loc.SetServiceName(service);
     return new CSelector(loc, this, flags);
 }
