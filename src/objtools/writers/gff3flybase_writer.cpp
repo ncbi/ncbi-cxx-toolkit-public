@@ -234,6 +234,7 @@ bool CGff3FlybaseWriter::xAssignAlignmentSplicedLocation(
     }
     record.SetLocation(seqStart, seqStop, seqStrand);
 
+    // This code may never be called
     if (seqStrand == eNa_strand_minus) {
         if (exon.GetProduct_end().IsProtpos() &&
             exon.GetProduct_end().GetProtpos().IsSetFrame()) {
@@ -243,7 +244,6 @@ bool CGff3FlybaseWriter::xAssignAlignmentSplicedLocation(
         return true;
     }
 
-    // Works for + strand 
     if (exon.GetProduct_start().IsProtpos() &&
         exon.GetProduct_start().GetProtpos().IsSetFrame()) {
         const TSeqPos frame = exon.GetProduct_start().GetProtpos().GetFrame();
