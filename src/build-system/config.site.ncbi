@@ -123,9 +123,7 @@ case "$ncbi_platform" in
         ;;
 esac
 
-case "$ncbi_platform" in
-    Linux64    ) : ${AVRO_PATH=$NCBI/avro-cpp-1.7.7-ncbi1} ;;
-esac
+: ${AVRO_PATH=$NCBI/avro-cpp-1.7.7-ncbi1}
 
 case "$ncbi_platform" in
     FreeBSD*   ) : ${BERKELEYDB_PATH=$NCBI/BerkeleyDB-4.6.21.1} ;;
@@ -143,10 +141,7 @@ esac
 
 : ${CEREAL_PATH=$NCBI/cereal-1.1.0}
 
-case "$ncbi_platform" in
-    Linux*     ) : ${FASTCGI_PATH=$NCBI/fcgi-2.4.0}       ;;
-    *MAC       ) : ${FASTCGI_PATH=$NCBI/fcgi-2.4.0}       ;;
-esac
+: ${FASTCGI_PATH=$NCBI/fcgi-2.4.0}
 
 case "$ncbi_platform" in
     *MAC       ) : ${FREETYPE_PATH=/opt/X11} ;;
@@ -165,9 +160,7 @@ esac
 
 : ${GLEW_PATH=$NCBI/glew-1.5.8}
 
-case "$ncbi_platform" in
-    Linux64    ) : ${GMOCK_PATH=$NCBI/gmock-1.7.0} ;;
-esac
+: ${GMOCK_PATH=$NCBI/gmock-1.7.0}
 
 case "$ncbi_platform" in
     Linux64    ) : ${GMP_PATH=$NCBI/gmp-6.0.0a} ;;
@@ -183,9 +176,7 @@ case "$ncbi_platform" in
     Linux64    ) : ${GSOAP_PATH=$NCBI/gsoap-2.8.15} ;;
 esac
 
-case "$ncbi_platform" in
-    Linux*     ) : ${HDF5_PATH=$NCBI/hdf5-1.8.3} ;;
-esac
+: ${HDF5_PATH=$NCBI/hdf5-1.8.3}
 
 case "$ncbi_platform" in
     *MAC       ) ;;
@@ -208,9 +199,7 @@ esac
 
 : ${MIMETIC_PATH=$NCBI/mimetic-0.9.7-ncbi2}
 
-case "$ncbi_platform" in
-    Linux64    ) : ${MONGODB_PATH=$NCBI/mongodb-1.0.5-ncbi3} ;;
-esac
+: ${MONGODB_PATH=$NCBI/mongodb-1.0.5-ncbi3}
 
 case "$ncbi_platform" in
     FreeBSD64* ) : ${MUPARSER_PATH=$NCBI/muParser-1.30-ncbi1} ;;
@@ -268,13 +257,9 @@ case "$ncbi_platform" in
         ;;
 esac
 
-case "$ncbi_platform" in
-    Linux64    ) : ${SABLOT_PATH=$NCBI/Sablot-1.0.2} ;;
-esac
+: ${SABLOT_PATH=$NCBI/Sablot-1.0.2}
 
-case "$ncbi_platform" in
-    Linux*     ) : ${SGE_PATH=/netopt/uge} ;;
-esac
+: ${SGE_PATH=/netopt/uge}
 
 case "$ncbi_platform" in
     FreeBSD64  ) : ${SQLITE3_PATH=$NCBI/sqlite-3.7.13-ncbi1}   ;;
@@ -282,15 +267,11 @@ case "$ncbi_platform" in
     *          ) : ${SQLITE3_PATH=$NCBI/sqlite-3.6.14.2-ncbi1} ;;
 esac
 
-case "$ncbi_platform" in
-    Linux64    ) : ${SYBASE_PATH=/opt/sybase/clients/15.7-64bit}         ;;
-esac
+: ${SYBASE_PATH=/opt/sybase/clients/15.7-64bit}
 net_sybase_root="/netopt/Sybase/clients"
 local_sybase_root="/export/home/sybase/clients"
 
-case "$ncbi_platform" in
-    Linux64    ) : ${TCHECK_FALLBACK=/opt/intel/itt/bin/32e:/usr/local/intel/itt-3.1/tcheck/bin/32e} ;;
-esac
+: ${TCHECK_FALLBACK=/opt/intel/itt/bin/32e:/usr/local/intel/itt-3.1/tcheck/bin/32e}
 
 net_vdb_base=/net/snowman/vol/projects/trace_software/vdb/vdb-versions
 local_vdb_base=/opt/ncbi/64/trace_software/vdb/vdb-versions
@@ -314,21 +295,11 @@ esac
 
 : ${WXWIDGETS_PATH=$NCBI/wxWidgets-3.0.1-ncbi1}
 
-case "$ncbi_platform" in
-    *MAC       ) ;;
-    Linux64    ) : ${XALAN_PATH=$NCBI/xalan-1.11} ;;
-    *          ) : ${XALAN_PATH=$NCBI/xalan-1.8.0-ncbi2}   ;;
-esac
+: ${XALAN_PATH=$NCBI/xalan-1.11}
 
-case "$ncbi_platform" in
-    *MAC       ) ;;
-    Linux64    ) : ${XERCES_PATH=$NCBI/xerces-3.1.2} ;;
-    *          ) : ${XERCES_PATH=$NCBI/xerces-2.6.0} ;;
-esac
+: ${XERCES_PATH=$NCBI/xerces-3.1.2}
 
-# case "$ncbi_platform" in
-#     Linux64    ) : ${ZORBA_PATH=$NCBI/zorba-2.2.0} ;;
-# esac
+# : ${ZORBA_PATH=$NCBI/zorba-2.2.0}
 
 try_local
 
