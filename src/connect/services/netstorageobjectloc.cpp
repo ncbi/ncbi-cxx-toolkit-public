@@ -140,6 +140,30 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
     }
 }
 
+void CNetStorageObjectLoc::SetObjectID(Uint8 object_id)
+{
+    m_LocatorFlags &= ~(TLocatorFlags) fLF_NoMetaData;
+    m_LocatorFlags |= fLF_HasObjectID;
+    m_ObjectID = object_id;
+    if ((m_LocatorFlags & fLF_HasUserKey) == 0) {
+        m_ShortUniqueKey = MakeShortUniqueKey();
+        m_UniqueKey = MakeUniqueKey();
+    }
+    m_Dirty = true;
+}
+
+void CNetStorageObjectLoc::SetServiceName(const string& service_name)
+{
+    if (service_name.empty() ||
+            strchr(service_name.c_str(), ':') != NULL)
+        ClearLocatorFlags(fLF_NetStorageService);
+    else {
+        m_ServiceName = service_name;
+        SetLocatorFlags(fLF_NetStorageService);
+    }
+    m_Dirty = true;
+}
+
 void CNetStorageObjectLoc::Parse(const string& object_loc)
 {
     CCompoundID cid = m_CompoundIDPool.FromString(object_loc);
