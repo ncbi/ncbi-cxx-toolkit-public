@@ -136,17 +136,12 @@ esac
 case "$ncbi_platform" in
     FreeBSD64  ) : ${BOOST_PATH=$NCBI/boost-1.57.0-ncbi1} ;;
     Linux64    ) : ${BOOST_PATH=$NCBI/boost-1.57.0-ncbi1} ;;
-    SunOS*     ) : ${BOOST_PATH=$NCBI/boost-1.45.0-ncbi2} ;;
     *          ) : ${BOOST_PATH=$NCBI/boost-1.53.0-ncbi1} ;;
 esac
 
 : ${CASSANDRA_PATH=$NCBI/datastax-cpp-driver-2.4.3}
 
 : ${CEREAL_PATH=$NCBI/cereal-1.1.0}
-
-case "$ncbi_platform" in
-    Linux64    ) : ${EXPAT_PATH=$NCBI/expat-1.95.8} ;;
-esac
 
 case "$ncbi_platform" in
     Linux*     ) : ${FASTCGI_PATH=$NCBI/fcgi-2.4.0}       ;;
@@ -273,12 +268,10 @@ esac
 
 case "$ncbi_platform" in
     Linux64    ) : ${SABLOT_PATH=$NCBI/Sablot-1.0.2} ;;
-    SunOSSparc ) : ${SABLOT_PATH=$NCBI/Sablot-1.0.2} ;;
 esac
 
 case "$ncbi_platform" in
     Linux*     ) : ${SGE_PATH=/netopt/uge} ;;
-    SunOS*     ) : ${SGE_PATH=/netopt/sge} ;;
 esac
 
 case "$ncbi_platform" in
