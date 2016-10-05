@@ -1160,7 +1160,7 @@ ISelector* SContext::Create(const string& object_loc)
 
 
 ISelector* SContext::Create(TNetStorageFlags flags,
-        const string& service, Int8 id)
+        const string& service, Int8)
 {
     flags = DefaultFlags(flags);
     TObjLoc loc(compound_id_pool, flags, app_domain,
@@ -1171,7 +1171,7 @@ ISelector* SContext::Create(TNetStorageFlags flags,
         loc.SetServiceName(service);
     }
 
-    if (id) loc.SetObjectID(id);
+    loc.SetObjectID();
     return new CSelector(loc, this, flags);
 }
 

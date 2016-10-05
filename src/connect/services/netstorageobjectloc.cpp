@@ -42,6 +42,7 @@
 
 #include <time.h>
 #include <string.h>
+#include <atomic>
 
 
 #define NCBI_USE_ERRCODE_X  NetStorage_Common
@@ -140,11 +141,13 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
     }
 }
 
-void CNetStorageObjectLoc::SetObjectID(Uint8 object_id)
+static atomic<Uint8> s_GlobalObjectID{0};
+
+void CNetStorageObjectLoc::SetObjectID()
 {
     m_LocatorFlags &= ~(TLocatorFlags) fLF_NoMetaData;
     m_LocatorFlags |= fLF_HasObjectID;
-    m_ObjectID = object_id;
+    m_ObjectID = ++s_GlobalObjectID;
     if ((m_LocatorFlags & fLF_HasUserKey) == 0) {
         m_ShortUniqueKey = MakeShortUniqueKey();
         m_UniqueKey = MakeUniqueKey();
