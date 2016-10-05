@@ -587,7 +587,7 @@ bool CCleanup::MoveFeatToProtein(CSeq_feat_Handle fh)
         return ConvertProteinToImp(fh);
     }
 
-    CRef<CSeq_loc> prot_loc = GetProteinLocationFromNucleotideLocation(fh.GetLocation(), *cds, fh.GetScope());
+    CRef<CSeq_loc> prot_loc = GetProteinLocationFromNucleotideLocation(fh.GetLocation(), *cds, fh.GetScope(), true);
 
     if (!prot_loc) {
         return false;
@@ -3640,8 +3640,12 @@ bool CCleanup::DecodeXMLMarkChanged(std::string & str)
 }
 
 
-CRef<CSeq_loc> CCleanup::GetProteinLocationFromNucleotideLocation(const CSeq_loc& nuc_loc, const CSeq_feat& cds, CScope& scope)
+CRef<CSeq_loc> CCleanup::GetProteinLocationFromNucleotideLocation(const CSeq_loc& nuc_loc, const CSeq_feat& cds, CScope& scope, bool require_inframe)
 {
+    if (require_inframe && 
+        feature::IsLocationInFrame(scope.GetSeq_featHandle(cds), nuc_loc) != feature::eLocationInFrame_InFrame) {
+        return CRef<CSeq_loc>(NULL);
+    }
     CRef<CSeq_loc> new_loc;
     CRef<CSeq_loc_Mapper> nuc2prot_mapper(
         new CSeq_loc_Mapper(cds, CSeq_loc_Mapper::eLocationToProduct, &scope));

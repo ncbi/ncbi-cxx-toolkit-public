@@ -440,7 +440,7 @@ public:
     static bool DecodeXMLMarkChanged(std::string & str);
 
     static CRef<CSeq_loc> GetProteinLocationFromNucleotideLocation(const CSeq_loc& nuc_loc, CScope& scope);
-    static CRef<CSeq_loc> GetProteinLocationFromNucleotideLocation(const CSeq_loc& nuc_loc, const CSeq_feat& cds, CScope& scope);
+    static CRef<CSeq_loc> GetProteinLocationFromNucleotideLocation(const CSeq_loc& nuc_loc, const CSeq_feat& cds, CScope& scope, bool require_inframe = false);
 
 private:
     // Prohibit copy constructor & assignment operator
