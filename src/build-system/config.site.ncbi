@@ -123,7 +123,7 @@ case "$ncbi_platform" in
         ;;
 esac
 
-: ${AVRO_PATH=$NCBI/avro-cpp-1.7.7-ncbi1}
+: ${AVRO_PATH=$NCBI/avro-cpp-1.8.1-ncbi1}
 
 case "$ncbi_platform" in
     FreeBSD*   ) : ${BERKELEYDB_PATH=$NCBI/BerkeleyDB-4.6.21.1} ;;
@@ -131,11 +131,7 @@ case "$ncbi_platform" in
     *MAC       ) : ${BERKELEYDB_PATH=$NCBI/BerkeleyDB-4.5.20}   ;;
 esac
 
-case "$ncbi_platform" in
-    FreeBSD64  ) : ${BOOST_PATH=$NCBI/boost-1.57.0-ncbi1} ;;
-    Linux64    ) : ${BOOST_PATH=$NCBI/boost-1.57.0-ncbi1} ;;
-    *          ) : ${BOOST_PATH=$NCBI/boost-1.53.0-ncbi1} ;;
-esac
+: ${BOOST_PATH=$NCBI/boost-1.62.0-ncbi1}
 
 : ${CASSANDRA_PATH=$NCBI/datastax-cpp-driver-2.4.3}
 
@@ -199,7 +195,7 @@ esac
 
 : ${MIMETIC_PATH=$NCBI/mimetic-0.9.7-ncbi2}
 
-: ${MONGODB_PATH=$NCBI/mongodb-1.0.5-ncbi3}
+: ${MONGODB_PATH=$NCBI/mongodb-1.1.2}
 
 case "$ncbi_platform" in
     FreeBSD64* ) : ${MUPARSER_PATH=$NCBI/muParser-1.30-ncbi1} ;;
