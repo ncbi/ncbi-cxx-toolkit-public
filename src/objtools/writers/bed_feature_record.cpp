@@ -352,9 +352,9 @@ bool CBedFeatureRecord::SetBlocks(
                 blockSizes.push_back(NStr::NumericToString(interval.GetLength()));
             }
         }
-        m_strBlockCount = NStr::NumericToString(intervals.size());
+        m_strBlockCount  = NStr::NumericToString(intervals.size());
         m_strBlockStarts = NStr::Join(blockStarts, ",");
-        m_strBlockSizes = NStr::Join(blockSizes, ",");
+        m_strBlockSizes  = NStr::Join(blockSizes, ",");
         return true;
     }
     return false;

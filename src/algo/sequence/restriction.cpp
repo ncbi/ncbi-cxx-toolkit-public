@@ -246,7 +246,7 @@ void CRebase::x_ParseCutPair(const string& s, int& plus_cut, int& minus_cut)
 {
     // s should look like "(8/13)"; plus_cut gets set to 8 and minus_cut to 13
     list<string> l;
-    NStr::Split(s.substr(1, s.length() - 2), "/", l);
+    NStr::Split(s.substr(1, s.length() - 2), "/", l, NStr::fSplit_Tokenize);
     if (l.size() != 2) {
         throw runtime_error(string("Couldn't parse cut locations ")
                             + s);

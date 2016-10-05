@@ -110,7 +110,7 @@ CRef<CSeq_entry> CGlimmerReader::Read(CNcbiIstream& istr, CScope& scope,
             }
         } else {
             list<string> toks;
-            NStr::Split(line, " \t", toks);
+            NStr::Split(line, " \t", toks, NStr::fSplit_Tokenize);
             if (toks.size() != 5) {
                 CNcbiOstrstream ostr;
                 ostr << "CGlimmerReader::ReadAnnot(): line "

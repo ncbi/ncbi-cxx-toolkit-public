@@ -122,7 +122,7 @@ CSearchHelper::ReadTaxFile(string& Filename, TTaxNameMap& TaxNameMap)
     while(taxnames && !taxnames.eof()) {
         getline(taxnames, line);
         linelist.clear();
-        NStr::Split(line, ",", linelist);
+        NStr::Split(line, ",", linelist, NStr::fSplit_Tokenize);
         if(!linelist.empty()) {
             ilist = linelist.begin();
             ilist++;

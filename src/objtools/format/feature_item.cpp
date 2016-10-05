@@ -1390,7 +1390,7 @@ void CFeatureItem::x_AddQualExceptions(
     const bool bIsRelaxed = ( ! cfg.DropIllegalQuals() );
 
     list<string> exceptions;
-    NStr::Split( raw_exception, ",", exceptions );
+    NStr::Split( raw_exception, ",", exceptions, NStr::fSplit_Tokenize );
 
     list<string> output_exceptions;
     list<string> output_notes;
@@ -3352,7 +3352,7 @@ static void s_ParseParentQual(const CGb_qual& gbqual, list<string>& vals)
     
     if (val.length() > 1  &&  NStr::StartsWith(val, '(')  &&
         NStr::EndsWith(val, ')')  && val.find(',') != NPOS) {
-        NStr::Split(val, "(,)", vals);
+        NStr::Split(val, "(,)", vals, NStr::fSplit_Tokenize);
     } else {
         vals.push_back(val);
     }

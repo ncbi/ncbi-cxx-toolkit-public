@@ -890,7 +890,7 @@ bool CRepeatMaskerReader::ParseRecord(const string& record, SRepeatRegion& mask_
 
     string line = NStr::TruncateSpaces( record );
     list< string > values;
-    if ( NStr::Split( line, " \t", values ).size() < MIN_VALUE_COUNT ) {
+    if ( NStr::Split( line, " \t", values, NStr::fSplit_Tokenize ).size() < MIN_VALUE_COUNT ) {
         return false;
     }
 

@@ -140,7 +140,7 @@ CAgpConverter::LoadChromosomeMap(CNcbiIstream & chromosomes_istr )
             continue;
         }
         list<string> split_line;
-        NStr::Split(line, " \t", split_line);
+        NStr::Split(line, " \t", split_line, NStr::fSplit_Tokenize);
         if (split_line.size() != 2) {
             m_pErrorHandler->HandleError(
                 eError_ChromosomeFileBadFormat,

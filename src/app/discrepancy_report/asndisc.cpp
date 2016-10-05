@@ -414,7 +414,7 @@ int CDiscRepApp::Run(void)
     set<string> Tests;
     if (args["e"]) {
         list<string> List;
-        NStr::Split(args["e"].AsString(), ", ", List);
+        NStr::Split(args["e"].AsString(), ", ", List, NStr::fSplit_Tokenize);
         ITERATE (list<string>, s, List) {
             string name = GetDiscrepancyCaseName(*s);
             if (name.empty()) {
@@ -430,7 +430,7 @@ int CDiscRepApp::Run(void)
     }
     if (args["d"]) {
         list<string> List;
-        NStr::Split(args["d"].AsString(), ", ", List);
+        NStr::Split(args["d"].AsString(), ", ", List, NStr::fSplit_Tokenize);
         ITERATE (list<string>, s, List) {
             string name = GetDiscrepancyCaseName(*s);
             if (name.empty()) {
@@ -449,7 +449,7 @@ int CDiscRepApp::Run(void)
 
     if (args["X"]) {
         list<string> List;
-        NStr::Split(args["X"].AsString(), ", ", List);
+        NStr::Split(args["X"].AsString(), ", ", List, NStr::fSplit_Tokenize);
         ITERATE (list<string>, s, List) {
             if (*s != "ALL") {
                 ERR_POST("Unknown option: " + *s);

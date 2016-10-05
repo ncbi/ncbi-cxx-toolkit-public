@@ -801,7 +801,7 @@ void CDeflineGenerator::x_SetFlags (
         FOR_EACH_STRING_IN_LIST (kw_itr, *keywords) {
             const string& clause = *kw_itr;
             list<string> kywds;
-            NStr::Split( clause, ";", kywds );
+            NStr::Split( clause, ";", kywds, NStr::fSplit_Tokenize );
             FOR_EACH_STRING_IN_LIST ( k_itr, kywds ) {
                 const string& str = *k_itr;
                 if (NStr::EqualNocase (str, "UNORDERED")) {

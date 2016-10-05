@@ -342,7 +342,7 @@ template<typename FUNC>
 void ForEachID(const string& ids, FUNC func)
 {
     list<string> id;
-    NStr::Split(ids, ";,", id);
+    NStr::Split(ids, ";,", id, NStr::fSplit_Tokenize);
     for_each(id.begin(), id.end(), func);
 }
 
@@ -402,7 +402,7 @@ int CTestGenomicCollectionsSvcApplication::RunWithService(CGenomicCollectionsSer
         else if(request == "get-best-assembly")
         {
             list<string> acc;
-            NStr::Split(args["acc"].AsString(), ",", acc);
+            NStr::Split(args["acc"].AsString(), ",", acc, NStr::fSplit_Tokenize);
 
             int filter = args["filter"] ? args["filter"].AsInteger() : eGCClient_FindBestAssemblyFilter_all;
             int sort = args["sort"] ? args["sort"].AsInteger() : eGCClient_FindBestAssemblySort_default;
@@ -421,7 +421,7 @@ int CTestGenomicCollectionsSvcApplication::RunWithService(CGenomicCollectionsSer
         else if(request == "get-all-assemblies")
         {
             list<string> acc;
-            NStr::Split(args["acc"].AsString(), ",", acc);
+            NStr::Split(args["acc"].AsString(), ",", acc, NStr::fSplit_Tokenize);
 
             int filter = args["filter"] ? args["filter"].AsInteger() : eGCClient_FindBestAssemblyFilter_all;
             int sort = args["sort"] ? args["sort"].AsInteger() : eGCClient_FindBestAssemblySort_default;
@@ -432,8 +432,8 @@ int CTestGenomicCollectionsSvcApplication::RunWithService(CGenomicCollectionsSer
         else if(request == "get-assembly-by-sequence")
         {
             list<string> acc, filter_s;
-            NStr::Split(args["acc"].AsString(), ",", acc);
-            NStr::Split(args["filter"] ? args["filter"].AsString() : "all", ",", filter_s);
+            NStr::Split(args["acc"].AsString(), ",", acc, NStr::fSplit_Tokenize);
+            NStr::Split(args["filter"] ? args["filter"].AsString() : "all", ",", filter_s, NStr::fSplit_Tokenize);
 
             int filter = 0;
             ITERATE(list<string>, it, filter_s)

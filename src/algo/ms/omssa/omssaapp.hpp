@@ -218,7 +218,7 @@ InsertList(const string& Input,
 {
     typedef list <string> TStringList;
     TStringList List;
-    NStr::Split(Input, ",", List);
+    NStr::Split(Input, ",", List, NStr::fSplit_Tokenize);
 
     TStringList::iterator iList(List.begin());
     int Num;
@@ -251,7 +251,7 @@ InsertListString(const string& Input,
 {
     typedef list <string> TStringList;
     TStringList List;
-    NStr::Split(Input, ",", List);
+    NStr::Split(Input, ",", List, NStr::fSplit_Tokenize);
 
     TStringList::iterator iList(List.begin());
 

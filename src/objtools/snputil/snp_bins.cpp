@@ -249,13 +249,11 @@ void NSnpBins::CGeneMap::x_Init(const string& sSrc)
     m_GeneMap.clear();
     list<string> GeneSymIDPairsList;
 
-    NStr::Split(sSrc, ":", GeneSymIDPairsList);
+    NStr::Split(sSrc, ":", GeneSymIDPairsList, NStr::fSplit_Tokenize);
 
     ITERATE(list<string>, iGeneSymIDPairsList, GeneSymIDPairsList) {
         list<string> GeneSymIDPair;
-
-        NStr::Split(*iGeneSymIDPairsList, "^", GeneSymIDPair);
-
+        NStr::Split(*iGeneSymIDPairsList, "^", GeneSymIDPair, NStr::fSplit_Tokenize);
         m_GeneMap[GeneSymIDPair.front()] = GeneSymIDPair.size() == 2 ? GeneSymIDPair.back() : string();
     }
 }

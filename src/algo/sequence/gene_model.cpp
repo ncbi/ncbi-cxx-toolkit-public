@@ -3378,7 +3378,7 @@ void CFeatureGenerator::SImplementation::x_SetExceptText(
 
     list<string> except_toks;
     if (feat.IsSetExcept_text()) {
-        NStr::Split(feat.GetExcept_text(), ",", except_toks);
+        NStr::Split(feat.GetExcept_text(), ",", except_toks, NStr::fSplit_Tokenize);
 
         for (list<string>::iterator it = except_toks.begin();
              it != except_toks.end();  ) {

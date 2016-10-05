@@ -375,7 +375,7 @@ static bool x_OkayToAddKeyword(const string& keyword, vector<string> keywords)
 void CKeywordsItem::x_AddKeyword(const string& keyword)
 {
     list<string> kywds;
-    NStr::Split( keyword, ";", kywds );
+    NStr::Split( keyword, ";", kywds, NStr::fSplit_Tokenize );
     FOR_EACH_STRING_IN_LIST ( k_itr, kywds ) {
         const string& kw = *k_itr;
         if (x_OkayToAddKeyword (kw, m_Keywords)) {

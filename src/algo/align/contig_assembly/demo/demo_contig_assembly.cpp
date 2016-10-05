@@ -108,7 +108,7 @@ int CDemoContigAssemblyApp::Run()
     vector<CRef<CSeq_align> > alns;
     vector<unsigned int> half_widths;
     list<string> width_strings;
-    NStr::Split(args["bandwidth"].AsString(), " \t\n\r", width_strings);
+    NStr::Split(args["bandwidth"].AsString(), " \t\n\r", width_strings, NStr::fSplit_Tokenize);
     ITERATE (list<string>, width_string, width_strings) {
         half_widths.push_back(NStr::StringToUInt(*width_string) / 2);
     }
@@ -131,7 +131,7 @@ int CDemoContigAssemblyApp::Run()
     uo->SetType().SetStr("alignment info");
     CUser_field& uf = uo->SetField("comment");
     list<string> lines;
-    NStr::Split((string)CNcbiOstrstreamToString(ostr), "\n\r", lines);
+    NStr::Split((string)CNcbiOstrstreamToString(ostr), "\n\r", lines, NStr::fSplit_Tokenize);
     ITERATE(list<string>, line, lines) {
         uf.SetData().SetStrs().push_back(*line);
     }

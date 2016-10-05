@@ -79,7 +79,7 @@ BEGIN_SCOPE(objects)
 static void s_GBSeqStringCleanup(string& str, bool location = false)
 {
     list<string> l;
-    NStr::Split(str, " \n\r\t\b", l);
+    NStr::Split(str, " \n\r\t\b", l, NStr::fSplit_Tokenize);
     str = NStr::Join(l, " ");
     if ( location ) {
         str = NStr::Replace(str, ", ", ",");
@@ -355,7 +355,7 @@ void CGBSeqFormatter::FormatGenomeProject
         list<string> ids;
         NStr::SplitInTwo( line, ":", first, second );
         first = NStr::TruncateSpaces(first);
-        NStr::Split(second, ",", ids);
+        NStr::Split(second, ",", ids, NStr::fSplit_Tokenize);
         FOR_EACH_STRING_IN_LIST (s_itr, ids) {
             string id = *s_itr;
             id = NStr::TruncateSpaces(id);
@@ -682,7 +682,7 @@ void CGBSeqFormatter::x_StrOStreamToTextOStream(IFlatTextOStream& text_os)
     // flush ObjectOutputStream to underlying strstream
     m_Out->Flush();
     // read text from strstream
-    NStr::Split((string)CNcbiOstrstreamToString(m_StrStream), "\n", l);
+    NStr::Split((string)CNcbiOstrstreamToString(m_StrStream), "\n", l, NStr::fSplit_Tokenize);
     // add text to TextOStream
     text_os.AddParagraph(l);
     // reset strstream
