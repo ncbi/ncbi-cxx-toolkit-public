@@ -2394,14 +2394,14 @@ vector<CConstRef<CSeq_feat> >& src_feats)
 }
 
 
-CRef<CTaxon3_reply> CValidError_imp::RequestSpecificHost
-(const vector<CConstRef<CSeqdesc> > & src_descs,
-const vector<CConstRef<CSeq_entry> > & desc_ctxs,
-const vector<CConstRef<CSeq_feat> > & src_feats,
-TSpecificHostWithParentList& host_list)
+
+void CreateMap
+        (const vector<CConstRef<CSeqdesc> > & src_descs,
+        const vector<CConstRef<CSeq_entry> > & desc_ctxs,
+        const vector<CConstRef<CSeq_feat> > & src_feats,
+        TSpecificHostRequests& host_requests)
 {
-    host_list.clear();
-    vector<CRef<COrg_ref> > org_rq_list;
+    host_requests.clear();
     //first do descriptors
     vector<CConstRef<CSeqdesc> >::const_iterator desc_it = src_descs.begin();
     vector<CConstRef<CSeq_entry> >::const_iterator ctx_it = desc_ctxs.begin();
@@ -2411,19 +2411,19 @@ TSpecificHostWithParentList& host_list)
             if ((*mod_it)->IsSetSubtype()
                 && (*mod_it)->GetSubtype() == COrgMod::eSubtype_nat_host
                 && (*mod_it)->IsSetSubname()) {
-                string host = SpecificHostValueToCheck((*mod_it)->GetSubname());
-                if (!NStr::IsBlank(host)) {
-                    CRef<COrg_ref> rq(new COrg_ref);
-                    rq->SetTaxname(host);
-                    host_list.push_back(COrgrefWithParent_SpecificHost(rq.GetObject(), **desc_it, **ctx_it));
-                    org_rq_list.push_back(rq);
+                const string host_val = (*mod_it)->GetSubname();
+                TSpecificHostRequests::iterator find = host_requests.find(host_val);
+                if (find == host_requests.end()) {
+                    host_requests[host_val].Init(host_val);
+                    host_requests[host_val].AddParent(*desc_it, *ctx_it);
+                } else {
+                    find->second.AddParent(*desc_it, *ctx_it);
                 }
             }
         }
         ++desc_it;
         ++ctx_it;
     }
-
     // collect features with specific hosts
     vector<CConstRef<CSeq_feat> >::const_iterator feat_it = src_feats.begin();
     while (feat_it != src_feats.end()) {
@@ -2432,100 +2432,68 @@ TSpecificHostWithParentList& host_list)
             if ((*mod_it)->IsSetSubtype()
                 && (*mod_it)->GetSubtype() == COrgMod::eSubtype_nat_host
                 && (*mod_it)->IsSetSubname()) {
-                string host = SpecificHostValueToCheck((*mod_it)->GetSubname());
-                if (!NStr::IsBlank(host)) {
-                    CRef<COrg_ref> rq(new COrg_ref);
-                    rq->SetTaxname(host);
-                    host_list.push_back(COrgrefWithParent_SpecificHost(rq.GetObject(), **feat_it));
-                    org_rq_list.push_back(rq);
+                const string host_val = (*mod_it)->GetSubname();
+                TSpecificHostRequests::iterator find = host_requests.find(host_val);
+                if (find == host_requests.end()) {
+                    host_requests[host_val].Init(host_val);
+                    host_requests[host_val].AddParent(*feat_it);
+                } else {
+                    find->second.AddParent(*feat_it);
                 }
             }
         }
         ++feat_it;
     }
-
-    if (org_rq_list.size() > 0) {
-        CRef<CTaxon3_reply> reply = x_GetTaxonService()->SendOrgRefList(org_rq_list);
-        
-        if (!reply || !reply->IsSetReply()) {
-            PostErr(eDiag_Error, eErr_SEQ_DESCR_TaxonomyLookupProblem,
-                "Taxonomy service connection failure", desc_ctxs.front().GetObject());
-        }
-
-        return reply;
-    } else {
-        CRef<CTaxon3_reply> reply;
-        return reply;
-    }
+    
 }
 
-
-string s_GetNthSpecificHost(const CBioSource& src, size_t n)
-{
-    size_t found = 0;
-    FOR_EACH_ORGMOD_ON_BIOSOURCE(mod_it, src)
-    {
-        if ((*mod_it)->IsSetSubtype()
-            && (*mod_it)->GetSubtype() == COrgMod::eSubtype_nat_host
-            && (*mod_it)->IsSetSubname()) {
-            string host = SpecificHostValueToCheck((*mod_it)->GetSubname());
-            if (!NStr::IsBlank(host)) {
-                if (found == n) {
-                    return (*mod_it)->GetSubname();
-                } else {
-                    found++;
-                }
-            }
-        }
-    }
-    return kEmptyStr;
-}
 
 void CValidError_imp::ValidateSpecificHost
 (const vector<CConstRef<CSeqdesc> > & src_descs,
 const vector<CConstRef<CSeq_entry> > & desc_ctxs,
 const vector<CConstRef<CSeq_feat> > & src_feats)
 {
-    TSpecificHostWithParentList host_list;
-    CRef<CTaxon3_reply> reply = RequestSpecificHost(src_descs, desc_ctxs, src_feats, host_list);
+    TSpecificHostRequests host_requests;
 
-    if (reply && reply->IsSetReply()) {
-        CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
-        TSpecificHostWithParentList::iterator org_it = host_list.begin();
-        size_t list_pos = 0;
-        size_t multi_host = 0; // multi_host is used to calculate when multiple hosts
-                               // are present on the same source
+    CreateMap(src_descs, desc_ctxs, src_feats, host_requests);
 
-        // process descriptor and feature responses
-        while (reply_it != reply->GetReply().end() && org_it != host_list.end()) {
-            string host = (*org_it).GetOrgref().GetTaxname();
-            string orig_host = kEmptyStr;
-            if (org_it->HasParentSeqdesc()) {
-                orig_host = s_GetNthSpecificHost(org_it->GetSeqdescParent().GetSource(), multi_host);
-            } else {
-                orig_host = s_GetNthSpecificHost(org_it->GetSeqfeatParent().GetData().GetBiosrc(), multi_host);
-            }
+    vector<CRef<COrg_ref> > org_rq_list;
+    ITERATE(TSpecificHostRequests, it, host_requests) {
+        it->second.AddRequests(org_rq_list);
+    }
+    if (org_rq_list.size() == 0) {
+        return;
+    }
+    CRef<CTaxon3_reply> reply = x_GetTaxonService()->SendOrgRefList(org_rq_list);
 
-            string err_str = InterpretSpecificHostResult(host, **reply_it, orig_host);
-            if (!NStr::IsBlank(err_str)) {
-                EErrType et = eErr_SEQ_DESCR_BadSpecificHost;
-                EDiagSev sev = eDiag_Warning;
-                if (NStr::Find(err_str, "ambiguous") != string::npos) {
-                    et = eErr_SEQ_DESCR_AmbiguousSpecificHost;
-                    sev = eDiag_Info;
-                }
-                if ((*org_it).HasParentSeqdesc()) {
-                    PostObjErr(sev, et, err_str,
-                        (*org_it).GetSeqdescParent(), &((*org_it).GetSeqentryParent()));
-                } else {
-                    PostErr(sev, et, err_str,
-                        (*org_it).GetSeqfeatParent());
-                }
-            }
+    if (!reply || !reply->IsSetReply()) {
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_TaxonomyLookupProblem,
+            "Taxonomy service connection failure", desc_ctxs.front().GetObject());
+        return;
+    }
+
+    CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
+    TSpecificHostRequests::iterator rq_it = host_requests.begin();
+    while (rq_it != host_requests.end()) {
+        while (rq_it->second.NumRemainingReplies() > 0 && reply_it != reply->GetReply().end()) {
+            rq_it->second.AddReply(**reply_it);
             ++reply_it;
-            ++org_it;
-            ++list_pos;
         }
+        if (rq_it->second.NumRemainingReplies() > 0) {
+            PostErr(eDiag_Error, eErr_SEQ_DESCR_TaxonomyLookupProblem, "Failed to respond to all taxonomy requests for specific host", desc_ctxs.front().GetObject());
+            break;
+        }
+        ++rq_it;
+    }
+
+    if (reply_it != reply->GetReply().end()) {
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_TaxonomyLookupProblem, "Unexpected taxonomy responses for specific host", desc_ctxs.front().GetObject());
+    }
+
+    rq_it = host_requests.begin();
+    while (rq_it != host_requests.end()) {
+        rq_it->second.PostErrors(*this);
+        ++rq_it;
     }
 }
 
@@ -3329,6 +3297,91 @@ void CValidError_imp::ValidateOrgModVoucher(const COrgMod& orgmod, const CSerial
     }
 }
 
+
+CSpecificHostRequest::CSpecificHostRequest()
+{
+    Init(kEmptyStr);
+}
+
+
+void CSpecificHostRequest::Init(const string& host)
+{
+    m_Host = host;
+    m_Response = eUnrecognized;
+    m_RepliesProcessed = 0;
+    string host_check = SpecificHostValueToCheck(host);
+    if (NStr::IsBlank(host_check)) {
+        m_Response = eNormal;
+        return;
+    }
+    m_ValuesToTry.push_back(host_check);
+    if (!NStr::Equal(host, host_check)) {
+        m_ValuesToTry.push_back(host);
+    }
+}
+
+
+void CSpecificHostRequest::AddParent(CConstRef<CSeqdesc> desc, CConstRef<CSeq_entry> ctx)
+{
+    m_Descs.push_back(TDescPair(desc, ctx));
+}
+
+
+void CSpecificHostRequest::AddParent(CConstRef<CSeq_feat> feat)
+{
+    m_Feats.push_back(feat);
+}
+
+
+void CSpecificHostRequest::AddRequests(vector<CRef<COrg_ref> >& request_list) const
+{
+    ITERATE(vector<string>, it, m_ValuesToTry) {
+        CRef<COrg_ref> rq(new COrg_ref);
+        rq->SetTaxname(*it);
+        request_list.push_back(rq);
+    }
+}
+
+
+void CSpecificHostRequest::AddReply(const CT3Reply& reply)
+{
+    if (m_Response == eUnrecognized) {
+        m_Error = InterpretSpecificHostResult(m_ValuesToTry[m_RepliesProcessed], reply, m_Host);
+        if (NStr::IsBlank(m_Error)) {
+            m_Response = eNormal;
+        } else if (NStr::Find(m_Error, "ambiguous") != string::npos) {
+            m_Response = eAmbiguous;
+        } else {
+            m_Response = eUnrecognized;
+        }
+    }
+    m_RepliesProcessed++;
+}
+
+
+void CSpecificHostRequest::PostErrors(CValidError_imp& imp)
+{
+    switch (m_Response) {
+        case eNormal:
+            break;
+        case eAmbiguous:
+            ITERATE(vector<TDescPair>, it, m_Descs) {
+                imp.PostObjErr(eDiag_Info, eErr_SEQ_DESCR_AmbiguousSpecificHost, m_Error, *(it->first), it->second);
+            }
+            ITERATE(vector < CConstRef<CSeq_feat> >, it, m_Feats) {
+                imp.PostObjErr(eDiag_Info, eErr_SEQ_DESCR_AmbiguousSpecificHost, m_Error, **it);
+            }
+            break;
+        case eUnrecognized:
+            ITERATE(vector<TDescPair>, it, m_Descs) {
+                imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, m_Error, *(it->first), it->second);
+            }
+            ITERATE(vector < CConstRef<CSeq_feat> >, it, m_Feats) {
+                imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, m_Error, **it);
+            }
+            break;        
+    }
+}
 
 
 END_SCOPE(validator)

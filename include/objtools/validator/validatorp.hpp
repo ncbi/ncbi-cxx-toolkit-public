@@ -265,73 +265,43 @@ typedef CValidator::CCacheImpl CCacheImpl;
 class CValidError_desc;
 class CValidError_descr;
 
-class NCBI_VALIDATOR_EXPORT COrgrefWithParent
+
+class CSpecificHostRequest
 {
 public:
-	enum EOrgrefParent{
-		eSeqdescParent,
-		eSeqfeatParent
-	};
+    CSpecificHostRequest();
+    ~CSpecificHostRequest() {};
 
-	COrgrefWithParent(COrg_ref& orgref, const CSeqdesc& seqdesc, const CSeq_entry& entry)
-		: m_Parent(eSeqdescParent), 
-		  m_Orgref(&orgref), 
-		  m_Seqdesc(&seqdesc), 
-		  m_Seqentry(&entry),
-		  m_Seqfeat(null) { }
-	COrgrefWithParent(COrg_ref& orgref, const CSeq_feat& seqfeat)
-		: m_Parent(eSeqfeatParent), 
-		  m_Orgref(&orgref), 
-		  m_Seqdesc(null),
-		  m_Seqentry(null),
-		  m_Seqfeat(&seqfeat) { }
-	
-	virtual ~COrgrefWithParent(void) { }
-	
-	const COrg_ref&		GetOrgref(void) const { return *m_Orgref; }
-	const CSeqdesc&		GetSeqdescParent(void) const { return *m_Seqdesc; }
-	const CSeq_entry&	GetSeqentryParent(void) const { return *m_Seqentry; }
-	const CSeq_feat&	GetSeqfeatParent(void) const { return *m_Seqfeat; }
-	bool				HasParentSeqdesc(void) const{ return (m_Parent == eSeqdescParent); }
+    void Init(const string& host);
+    void AddParent(CConstRef<CSeqdesc> desc, CConstRef<CSeq_entry> ctx);
+    void AddParent(CConstRef<CSeq_feat> feat);
 
-protected:
-	EOrgrefParent m_Parent;
-	CRef<COrg_ref> m_Orgref;
-	CConstRef<CSeqdesc> m_Seqdesc; 
-	CConstRef<CSeq_entry> m_Seqentry;
-	CConstRef<CSeq_feat> m_Seqfeat;
-};
+    enum EHostResponseFlags{
+        eNormal = 0,
+        eAmbiguous = 1 << 0,
+        eUnrecognized = 1 << 1
+    };
+    typedef int TResponseFlags;
 
+    size_t NumRemainingReplies() { return m_ValuesToTry.size() - m_RepliesProcessed; }
+    void AddRequests(vector<CRef<COrg_ref> >& request_list) const;
+    void AddReply(const CT3Reply& reply);
 
-class NCBI_VALIDATOR_EXPORT COrgrefWithParent_SpecificHost : public COrgrefWithParent
-{
-public:
-	enum EHostResponseFlags{
-		eNormal				= 0,
-		eMisspelled			= 1 << 0,
-		eIncorrectCapital	= 1 << 1,
-		eAmbiguous			= 1 << 2,
-		eUnrecognized		= 1 << 3
-	};
+    void PostErrors(CValidError_imp& imp);
 
-	typedef int TResponseFlags;
-	COrgrefWithParent_SpecificHost(COrg_ref& orgref, const CSeqdesc& seqdesc, 
-								   const CSeq_entry& entry,
-								   TResponseFlags choice = eNormal)
-	: COrgrefWithParent(orgref, seqdesc, entry), m_Host(choice) { } 
-	COrgrefWithParent_SpecificHost(COrg_ref& orgref, const CSeq_feat& seqfeat,
-								   TResponseFlags choice = eNormal)
-	: COrgrefWithParent(orgref, seqfeat), m_Host(choice) { } 
-
-	~COrgrefWithParent_SpecificHost (void) { }
-
-	TResponseFlags GetTaxonomicResponse(void) const { return m_Host; }
-	void SetTaxonomicResponse(TResponseFlags choice) { m_Host = choice; }
 private:
-	TResponseFlags m_Host;
+    string m_Host;
+    vector<string> m_ValuesToTry;
+    typedef pair<CConstRef<CSeqdesc>, CConstRef<CSeq_entry> > TDescPair;
+    vector<TDescPair> m_Descs;
+    vector<CConstRef<CSeq_feat> > m_Feats;
+    TResponseFlags m_Response;
+    string m_Error;
+    size_t m_RepliesProcessed;
 };
 
-typedef vector<COrgrefWithParent_SpecificHost> TSpecificHostWithParentList;
+
+typedef map<string, CSpecificHostRequest> TSpecificHostRequests;
 
 class CBioSourceKind
 {
@@ -525,7 +495,6 @@ public:
     bool biosource = false, const CSeq_entry *ctx = 0);
     void ValidateCitSub(const CCit_sub& cs, const CSerialObject& obj, const CSeq_entry *ctx = 0);
     void ValidateTaxonomy(const CSeq_entry& se); 
-	CRef<CTaxon3_reply> RequestSpecificHost(const vector<CConstRef<CSeqdesc> > & src_descs, const vector<CConstRef<CSeq_entry> > & desc_ctxs, const vector<CConstRef<CSeq_feat> > & src_feats, TSpecificHostWithParentList& host_list);
     void ValidateSpecificHost (const vector<CConstRef<CSeqdesc> > & src_descs, const vector<CConstRef<CSeq_entry> > & desc_ctxs, const vector<CConstRef<CSeq_feat> > & src_feats);
     void ValidateSpecificHost (const CSeq_entry& se);
     void ValidateTentativeName(const CSeq_entry& se);

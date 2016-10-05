@@ -19843,4 +19843,26 @@ BOOST_AUTO_TEST_CASE(Test_VR_78)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_VR_166)
+{
+    string host = "Atlantic white-sided dolphin";
+    string error_msg;
+
+    BOOST_CHECK_EQUAL("Atlantic white-sided dolphin", FixSpecificHost("Atlantic white-sided dolphin"));
+    BOOST_CHECK_EQUAL(true, IsSpecificHostValid("Atlantic white-sided dolphin", error_msg));
+
+
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_nat_host, "Atlantic white-sided dolphin");
+
+    STANDARD_SETUP
+
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+}
+
+
 
