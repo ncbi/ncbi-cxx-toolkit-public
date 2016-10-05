@@ -171,6 +171,7 @@ esac
 
 case "$ncbi_platform" in
     Linux64    ) : ${GMP_PATH=$NCBI/gmp-6.0.0a} ;;
+    *MAC       ) : ${GMP_PATH=$NCBI/gmp-6.0.0a} ;;
 esac
 
 case "$ncbi_platform" in
@@ -225,6 +226,7 @@ esac
 
 case "$ncbi_platform" in
     Linux64    ) : ${NETTLE_PATH=$NCBI/nettle-3.1.1} ;;
+    *MAC       ) : ${NETTLE_PATH=$NCBI/nettle-3.1.1} ;;
 esac
 
 # : ${ODBC_PATH:="/opt/machine/merant"}
