@@ -7572,9 +7572,9 @@ void CValidError_bioseq::x_ValidateAbuttingRNA(const CBioseq_Handle& seq)
                           /* okay in segmented set */
                         } else if ((pos1 == e_RnaPosition_RIGHT_RIBOSOMAL_SUBUNIT && (pos2 != e_RnaPosition_INTERNAL_SPACER_2 && pos2 != e_RnaPosition_INTERNAL_SPACER_X)) ||
                             (pos1 == e_RnaPosition_INTERNAL_SPACER_2 && pos2 != e_RnaPosition_MIDDLE_RIBOSOMAL_SUBUNIT) ||
-                            (pos1 == e_RnaPosition_MIDDLE_RIBOSOMAL_SUBUNIT && pos2 != e_RnaPosition_INTERNAL_SPACER_1) ||
+                            (pos1 == e_RnaPosition_MIDDLE_RIBOSOMAL_SUBUNIT && pos2 != e_RnaPosition_INTERNAL_SPACER_1 && pos2 != e_RnaPosition_INTERNAL_SPACER_X) ||
                             (pos1 == e_RnaPosition_INTERNAL_SPACER_1 && pos2 != e_RnaPosition_LEFT_RIBOSOMAL_SUBUNIT) ||
-                            (pos1 == e_RnaPosition_INTERNAL_SPACER_X && pos2 != e_RnaPosition_LEFT_RIBOSOMAL_SUBUNIT)) {
+                            (pos1 == e_RnaPosition_INTERNAL_SPACER_X && pos2 != e_RnaPosition_LEFT_RIBOSOMAL_SUBUNIT && pos2 != e_RnaPosition_MIDDLE_RIBOSOMAL_SUBUNIT)) {
                             PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadRRNAcomponentOrder,
                                      "Problem with order of abutting rRNA components",
                                      it2->GetOriginalFeature());
@@ -7587,10 +7587,10 @@ void CValidError_bioseq::x_ValidateAbuttingRNA(const CBioseq_Handle& seq)
                             && seq.IsSetInst_Repr() && seq.GetInst_Repr() == CSeq_inst::eRepr_seg) {
                           /* okay in segmented set */
                         } else if ((pos1 == e_RnaPosition_LEFT_RIBOSOMAL_SUBUNIT && (pos2 != e_RnaPosition_INTERNAL_SPACER_1 && pos2 != e_RnaPosition_INTERNAL_SPACER_X)) ||
-                            (pos1 == e_RnaPosition_MIDDLE_RIBOSOMAL_SUBUNIT && pos2 != e_RnaPosition_INTERNAL_SPACER_2) ||
+                            (pos1 == e_RnaPosition_MIDDLE_RIBOSOMAL_SUBUNIT && pos2 != e_RnaPosition_INTERNAL_SPACER_2 && pos2 != e_RnaPosition_INTERNAL_SPACER_X) ||
                             (pos1 == e_RnaPosition_INTERNAL_SPACER_1 && pos2 != e_RnaPosition_MIDDLE_RIBOSOMAL_SUBUNIT) ||
                             (pos1 == e_RnaPosition_INTERNAL_SPACER_2 && pos2 != e_RnaPosition_RIGHT_RIBOSOMAL_SUBUNIT) ||
-                            (pos1 == e_RnaPosition_INTERNAL_SPACER_X && pos2 != e_RnaPosition_RIGHT_RIBOSOMAL_SUBUNIT)) {
+                            (pos1 == e_RnaPosition_INTERNAL_SPACER_X && pos2 != e_RnaPosition_RIGHT_RIBOSOMAL_SUBUNIT && pos2 != e_RnaPosition_MIDDLE_RIBOSOMAL_SUBUNIT)) {
                             PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadRRNAcomponentOrder,
                                      "Problem with order of abutting rRNA components",
                                      it2->GetOriginalFeature());
