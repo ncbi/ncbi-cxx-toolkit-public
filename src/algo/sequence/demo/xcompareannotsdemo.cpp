@@ -1624,7 +1624,7 @@ int CXcompareAnnotsApplication::Run(void)
         while(getline(istr, line).good()) {
             if(line.size() == 0 || line.compare(0, 1, "#") == 0) continue;
             vector<string> tokens;
-            NStr::Split(line, "\t", tokens, NStr::fSplit_Tokenize);
+            NStr::Split(line, "\t", tokens);
             if(tokens.size() != 3) {
                 ERR_POST(Fatal << "Unexpected input it id_map. Execting 3 columns" << line);
             } else {
@@ -1722,7 +1722,7 @@ int CXcompareAnnotsApplication::Run(void)
     while (getline(istr, line).good()) {
         if(line.size() == 0 || line.compare(0, 1, "#") == 0) continue;
         vector<string> tokens;
-        NStr::Split(line, "\t", tokens, NStr::fSplit_Tokenize);
+        NStr::Split(line, "\t", tokens);
 
         if(m_args["i"].AsString().find(".asn") != string::npos && tokens[0].find(":=") != string::npos)
         {

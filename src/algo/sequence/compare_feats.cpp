@@ -704,7 +704,7 @@ int CCompareSeqRegions::s_GetGeneId(const CSeq_feat& feat)
                 std::vector<string> tokens;
                 string label = "";
                 feat.GetProduct().GetWhole().GetLabel(&label, CSeq_id::eContent);
-                NStr::Split(label, ".", tokens, NStr::fSplit_Tokenize);
+                NStr::Split(label, ".", tokens);
                 
                 if(tokens.size() == 4 && (tokens[3] == "m" || tokens[3] == "p")) {
                     int num1 = NStr::StringToInt(tokens[1]);
