@@ -536,9 +536,9 @@ void AddDefaultSentinelFeats(CScope& scope, const CSeq_loc& loc)
 
 
 
-    if(    NStr::Find(title, "gene", 0, NPOS, NStr::eFirst, NStr::eNocase) != NPOS
-        || NStr::Find(title, "mRNA", 0, NPOS, NStr::eFirst, NStr::eNocase) != NPOS
-        || NStr::Find(title, "CDS",  0, NPOS, NStr::eFirst, NStr::eNocase) != NPOS)
+    if(    NStr::Find(title, "gene", NStr::eNocase) != NPOS
+        || NStr::Find(title, "mRNA", NStr::eNocase) != NPOS
+        || NStr::Find(title, "CDS",  NStr::eNocase) != NPOS)
     {
         is_gene = true;
     }
@@ -1624,7 +1624,7 @@ int CXcompareAnnotsApplication::Run(void)
         while(getline(istr, line).good()) {
             if(line.size() == 0 || line.compare(0, 1, "#") == 0) continue;
             vector<string> tokens;
-            NStr::Tokenize(line, "\t", tokens);
+            NStr::Split(line, "\t", tokens, NStr::fSplit_Tokenize);
             if(tokens.size() != 3) {
                 ERR_POST(Fatal << "Unexpected input it id_map. Execting 3 columns" << line);
             } else {
@@ -1722,7 +1722,7 @@ int CXcompareAnnotsApplication::Run(void)
     while (getline(istr, line).good()) {
         if(line.size() == 0 || line.compare(0, 1, "#") == 0) continue;
         vector<string> tokens;
-        NStr::Tokenize(line, "\t", tokens);
+        NStr::Split(line, "\t", tokens, NStr::fSplit_Tokenize);
 
         if(m_args["i"].AsString().find(".asn") != string::npos && tokens[0].find(":=") != string::npos)
         {
