@@ -64,11 +64,6 @@ public:
         const string&               service_name,
         CCompoundIDPool::TInstance  compound_id_pool);
 
-    CDirectNetStorageObject Create(
-        const string& service_name,
-        Int8 object_id,
-        TNetStorageFlags flags);
-
     CDirectNetStorageObject Create(const string& service_name,
             TNetStorageFlags flags);
 

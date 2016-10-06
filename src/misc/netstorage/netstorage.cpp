@@ -381,15 +381,6 @@ CDirectNetStorage::CDirectNetStorage(
 }
 
 
-CDirectNetStorageObject CDirectNetStorage::Create(
-        const string& service_name,
-        Int8,
-        TNetStorageFlags flags)
-{
-    return Impl<SDirectNetStorageImpl>(m_Impl)->Create(flags, service_name);
-}
-
-
 CDirectNetStorageObject CDirectNetStorage::Create(const string& service_name,
         TNetStorageFlags flags)
 {
