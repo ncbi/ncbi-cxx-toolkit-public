@@ -800,7 +800,7 @@ void CNetStorageHandler::x_SendWriteConfirmation()
 
             try {
                 m_Server->GetDb().ExecSP_CreateObjectWithClientID(
-                        m_DBObjectID, object_loc_struct.GetUniqueKey(),
+                        object_loc_struct.GetUniqueKey(),
                         locator, m_ObjectSize, m_DBClientID, m_DBUserID,
                         m_CreateTTL, size_was_null);
             } catch (const exception &  ex) {
@@ -2416,13 +2416,10 @@ CNetStorageHandler::x_ProcessCreate(
     if (m_WriteCreateNeedMetaDBUpdate) {
         // Meta information is required so check the DB
         x_CreateClient();
-        m_DBObjectID = x_GetNextObjectID();
 
         // This call will extract the user info from the context and create the
         // user in DB if needed
         x_CreateUser();
-    } else {
-        m_DBObjectID = 0;
     }
 
     // Create the object stream depending on settings
@@ -3629,7 +3626,7 @@ CNetStorageHandler::x_CreateObjectStream(
                                         m_Server->GetCompoundIDPool());
         m_Server->ReportNetStorageAPIDecryptSuccess();
 
-        return net_storage.Create(m_Service, m_DBObjectID, flags);
+        return net_storage.Create(m_Service, flags);
     } catch (const CRegistryException &  ex) {
         if (ex.GetErrCode() == CRegistryException::eDecryptionFailed)
             m_Server->RegisterNetStorageAPIDecryptError(ex.what());
@@ -3991,13 +3988,6 @@ CNetStorageHandler::x_GetUserID(const CNSTUserID &  user)
     if (user_id != k_UndefinedUserID)
         m_Server->GetUserCache().SetDBUserID(user, user_id);
     return user_id;
-}
-
-
-Int8
-CNetStorageHandler::x_GetNextObjectID(void)
-{
-    return m_Server->GetNextObjectID();
 }
 
 

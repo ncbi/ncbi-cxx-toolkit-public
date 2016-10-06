@@ -1,6 +1,6 @@
 The code requires the following DB side components:
 - Database structure: version 6
-- Stored procedures: version 13
+- Stored procedures: version 14
 
 
 To check the DB versions please use the following request:

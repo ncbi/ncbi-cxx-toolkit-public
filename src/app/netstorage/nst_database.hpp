@@ -92,14 +92,12 @@ public:
 
     CJsonNode  SetParameters(const IRegistry &  reg);
 
-    int  ExecSP_GetNextObjectID(Int8 &  object_id,
-                                Int8    count);
     int  ExecSP_CreateClient(const string &  client,
                              Int8 &  client_id);
     int  ExecSP_CreateUser(const CNSTUserID &  user,
                            Int8 &  user_id);
     int  ExecSP_CreateObjectWithClientID(
-            Int8  object_id, const string &  object_key,
+            const string &  object_key,
             const string &  object_loc, Int8  size,
             Int8  client_id, Int8  user_id,
             const TNSTDBValue<CTimeSpan>  ttl,

@@ -139,54 +139,6 @@ CNSTDatabase::SetParameters(const IRegistry &  reg)
 
 
 int
-CNSTDatabase::ExecSP_GetNextObjectID(Int8 &  object_id,
-                                     Int8  count)
-{
-    const string        proc_name = "GetNextObjectID";
-    CNSTPreciseTime     start = CNSTPreciseTime::Current();
-    try {
-        x_PreCheckConnection();
-
-        int     status;
-        try {
-            CDatabase   db = m_Db->Clone();
-            CQuery      query = db.NewQuery();
-
-            object_id = 0;
-            query.SetOutputParameter("@next_id", eSDB_Int8);
-            query.SetParameter("@count", count);
-            query.ExecuteSP(proc_name, GetExecuteSPTimeout());
-            query.VerifyDone();
-            status = x_CheckStatus(query, proc_name);
-
-            if (status == kSPStatusOK)
-                object_id = query.GetParameter("@next_id").AsInt8();
-            else
-                object_id = -1;
-
-            g_DoPerfLogging("MS_SQL_" + proc_name,
-                            CNSTPreciseTime::Current() - start,
-                            CRequestStatus::e200_Ok);
-            return status;
-        } catch (const std::exception &  ex) {
-            m_Server->RegisterAlert(eDB, proc_name + " DB error: " + ex.what());
-            x_PostCheckConnection();
-            throw;
-        } catch (...) {
-            m_Server->RegisterAlert(eDB, proc_name + " unknown DB error");
-            x_PostCheckConnection();
-            throw;
-        }
-    } catch (...) {
-        g_DoPerfLogging("MS_SQL_" + proc_name,
-                        CNSTPreciseTime::Current() - start,
-                        CRequestStatus::e500_InternalServerError);
-        throw;
-    }
-}
-
-
-int
 CNSTDatabase::ExecSP_CreateClient(const string &  client, Int8 &  client_id)
 {
     const string        proc_name = "CreateClient";
@@ -285,13 +237,16 @@ CNSTDatabase::ExecSP_CreateUser(const CNSTUserID &  user, Int8 &  user_id)
 
 int
 CNSTDatabase::ExecSP_CreateObjectWithClientID(
-            Int8  object_id, const string &  object_key,
+            const string &  object_key,
             const string &  object_loc, Int8  size,
             Int8  client_id, Int8  user_id,
             const TNSTDBValue<CTimeSpan>  ttl,
             bool &  size_was_null)
 {
-    const string        proc_name = "CreateObjectWithClientID";
+    // To avoid extending the list of resources in applog_perf
+    // two names are used: actual DB proc and how it looks in applog_perf
+    const string        proc_name = "CreateObjectWithClientID_v2";
+    const string        proc_name_for_perf_log = "CreateObjectWithClientID";
     CNSTPreciseTime     start = CNSTPreciseTime::Current();
     try {
         x_PreCheckConnection();
@@ -304,7 +259,6 @@ CNSTDatabase::ExecSP_CreateObjectWithClientID(
             CDatabase               db = m_Db->Clone();
             CQuery                  query = db.NewQuery();
 
-            query.SetParameter("@object_id", object_id);
             query.SetParameter("@object_key", object_key);
             query.SetParameter("@object_create_tm",
                                object_loc_struct.GetCreationTime());
@@ -324,7 +278,7 @@ CNSTDatabase::ExecSP_CreateObjectWithClientID(
             query.VerifyDone();
 
             status = x_CheckStatus(query, proc_name);
-            g_DoPerfLogging("MS_SQL_" + proc_name,
+            g_DoPerfLogging("MS_SQL_" + proc_name_for_perf_log,
                             CNSTPreciseTime::Current() - start,
                             CRequestStatus::e200_Ok);
 
@@ -344,7 +298,7 @@ CNSTDatabase::ExecSP_CreateObjectWithClientID(
             throw;
         }
     } catch (...) {
-        g_DoPerfLogging("MS_SQL_" + proc_name,
+        g_DoPerfLogging("MS_SQL_" + proc_name_for_perf_log,
                         CNSTPreciseTime::Current() - start,
                         CRequestStatus::e500_InternalServerError);
         throw;

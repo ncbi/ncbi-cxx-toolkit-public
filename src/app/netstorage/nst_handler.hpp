@@ -219,7 +219,6 @@ private:
     bool                    m_CreateRequest;
     TNSTDBValue<CTimeSpan>  m_CreateTTL;
     Int8                    m_DBClientID;
-    Int8                    m_DBObjectID;
     Int8                    m_DBUserID;
     Int8                    m_ObjectSize;
     CNSTServiceProperties   m_WriteServiceProps;
@@ -333,8 +332,6 @@ private:
                               const TNSTDBValue<Int8> &  value);
     void x_SetObjectInfoReply(CJsonNode &  reply, const string &  name,
                               const TNSTDBValue<string> &  value);
-
-    Int8 x_GetNextObjectID(void);
 
     void x_OptionalExpirationUpdate(CDirectNetStorageObject &  object,
                                     CJsonNode &  reply,

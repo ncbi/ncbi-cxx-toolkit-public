@@ -209,14 +209,6 @@ private:
                             const vector<string> &  deleted) const;
     string  x_GetCrashFlagFileName(void) const;
     bool    x_DoesCrashFlagFileExist(void) const;
-
-public:
-    Int8  GetNextObjectID(void);
-
-private:
-    CFastMutex      m_NextObjectIDLock;
-    Int8            m_LastUsedObjectID;
-    Int8            m_LastReservedObjectID;
 };
 
 
