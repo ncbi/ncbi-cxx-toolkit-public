@@ -208,39 +208,6 @@ SFileTrackUpload::SFileTrackUpload(
 {
 }
 
-static string s_RemoveHTMLTags(const char* text)
-{
-    string result;
-
-    while (isspace((unsigned char) *text))
-        ++text;
-
-    const char* text_beg = text;
-
-    while (*text != '\0')
-        if (*text != '<')
-            ++text;
-        else {
-            if (text > text_beg)
-                result.append(text_beg, text);
-
-            while (*++text != '\0')
-                if (*text == '>') {
-                    text_beg = ++text;
-                    break;
-                }
-        }
-
-    if (text > text_beg)
-        result.append(text_beg, text);
-
-    NStr::TruncateSpacesInPlace(result, NStr::eTrunc_End);
-    NStr::ReplaceInPlace(result, "\n", " ");
-    NStr::ReplaceInPlace(result, "  ", " ");
-
-    return result;
-}
-
 const auto kAuthHeader = "Authorization";
 const auto kAuthPrefix = "Token ";
 
@@ -349,9 +316,8 @@ CJsonNode SFileTrackRequest::GetFileInfo()
     }
     catch (CException& e) {
         NCBI_RETHROW_FMT(e, CNetStorageException, eIOError,
-                "Error while accessing \"" << m_ObjectLoc.GetLocator() <<
-                "\" (storage key \"" << m_ObjectLoc.GetUniqueKey() <<
-                "\"); HTTP status " << m_HTTPStream.GetStatusCode());
+                "'" << e.GetType() << "|" << e.GetErrCodeString() <<
+                "' on accessing " << m_ObjectLoc.GetLocator());
     }
 
     CHECK_HTTP_STATUS(m_HTTPStream, m_ObjectLoc, "on accessing");
@@ -363,9 +329,8 @@ CJsonNode SFileTrackRequest::GetFileInfo()
     }
     catch (CStringException& e) {
         NCBI_RETHROW_FMT(e, CNetStorageException, eIOError,
-                "Error while accessing \"" << m_ObjectLoc.GetLocator() <<
-                "\" (storage key \"" << m_ObjectLoc.GetUniqueKey() << "\"): " <<
-                s_RemoveHTMLTags(http_response.c_str()));
+                "'" << e.GetType() << "|" << e.GetErrCodeString() <<
+                "' on accessing " << m_ObjectLoc.GetLocator());
     }
 
     CHECK_IO_STATUS(m_HTTPStream, m_ObjectLoc, "on accessing", false);
@@ -471,13 +436,12 @@ string SFileTrackAPI::GetPath(const CNetStorageObjectLoc& object_loc)
     }
     catch (CStringException& e) {
         NCBI_RETHROW_FMT(e, CNetStorageException, eUnknown,
-                "Error while locking path for \"" << object_loc.GetLocator() <<
-                "\" in FileTrack: Failed to parse response.");
+                "'" << e.GetType() << "|" << e.GetErrCodeString() <<
+                "' on locking " << object_loc.GetLocator());
     }
 
     NCBI_THROW_FMT(CNetStorageException, eUnknown,
-            "Error while locking path for \"" << object_loc.GetLocator() <<
-            "\" in FileTrack: no path in response");
+            "'no path in response' on locking " << object_loc.GetLocator());
     return string(); // Not reached
 }
 
