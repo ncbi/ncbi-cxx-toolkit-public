@@ -646,11 +646,9 @@ bool CProteinMatchApp::x_GenerateMatchTable(
         const list<string>& new_proteins,
         const list<string>& dead_proteins) 
 {
+    x_AddColumn("Accession");
     x_AddColumn("LocalID");
-    x_AddColumn("AccVer");
-//    x_AddColumn("GI");
     x_AddColumn("Status");
-  //  x_AddColumn("CompClass");
     // Iterate over match Seq-annots
     TMatches::const_iterator cit;
 
@@ -658,30 +656,35 @@ bool CProteinMatchApp::x_GenerateMatchTable(
         string localID = x_GetLocalID(**cit);
         string gi = x_GetProductGI(**cit);
         string accver = x_GetAccessionVersion(**cit);
+
+        vector<string> accver_vec;
+        NStr::Split(accver, ".", accver_vec);
+
+
         //string compClass = x_GetComparisonClass(**cit);
         string status = (x_GetComparisonClass(**cit) == "perfect") ? "Same" : "Changed";
 
         if (localID.empty()) {
             localID = "---";
         }
+        x_AppendColumnValue("Accession", accver_vec[0]);
         x_AppendColumnValue("LocalID", localID);
-        x_AppendColumnValue("AccVer", accver);
-       // x_AppendColumnValue("GI", gi);
-        //x_AppendColumnValue("CompClass", compClass);
         x_AppendColumnValue("Status", status);
 
         mMatchTable->SetNum_rows(mMatchTable->GetNum_rows()+1);
     }
     for (string localID : new_proteins) {
+        x_AppendColumnValue("Accession", "---");
         x_AppendColumnValue("LocalID", localID);
-        x_AppendColumnValue("AccVer", "---");
         x_AppendColumnValue("Status", "New");
         mMatchTable->SetNum_rows(mMatchTable->GetNum_rows()+1);
     }
 
     for (string accver : dead_proteins) {
+        vector<string> accver_vec;
+        NStr::Split(accver, ".", accver_vec);
+        x_AppendColumnValue("Accession", accver_vec[0]);
         x_AppendColumnValue("LocalID", "---");
-        x_AppendColumnValue("AccVer", accver);
         x_AppendColumnValue("Status", "Dead");
         mMatchTable->SetNum_rows(mMatchTable->GetNum_rows()+1);
     }
