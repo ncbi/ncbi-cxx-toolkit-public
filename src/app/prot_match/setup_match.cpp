@@ -34,7 +34,9 @@ public:
 private:
     CSeq_entry_Handle x_GetNucleotideSEH(CSeq_entry_Handle seh);
     bool x_GetSequenceIdFromCDSs(CSeq_entry_Handle& seh, CRef<CSeq_id>& prod_id);
-    bool x_UpdateSequenceIds(CRef<CSeq_id>& new_id, CSeq_entry_Handle& seh);
+    bool x_UpdateSequenceIds(CRef<CSeq_id>& new_id, 
+                             CSeq_entry_Handle& nucleotide_seh,
+                             CSeq_entry_Handle& nuc_prot_seh);
     CObjectOStream* x_InitOutputStream(const string& filename, const bool binary) const;
     bool x_TryReadSeqEntry(CObjectIStream& istr, CSeq_entry& seq_entry) const;
     bool x_TryReadBioseqSet(CObjectIStream& istr, CSeq_entry& seq_entry) const;
@@ -201,7 +203,8 @@ void CSetupProtMatchApp::x_ProcessNucProtSets(const CArgs& args, list<CSeq_entry
 
         CRef<CSeq_id> local_id;
         if (x_GetSequenceIdFromCDSs(nuc_prot_seh, local_id)) {
-            x_UpdateSequenceIds(local_id, nucleotide_seh); 
+            //x_UpdateSequenceIds(local_id, nuc_prot_seh); 
+            x_UpdateSequenceIds(local_id, nucleotide_seh, nuc_prot_seh); 
         }
 
         // Write processed update
@@ -455,19 +458,22 @@ bool CSetupProtMatchApp::x_GetSequenceIdFromCDSs(CSeq_entry_Handle& seh, CRef<CS
 
 
 // Strip old identifiers on the sequence and annptations and replace with new id
-bool CSetupProtMatchApp::x_UpdateSequenceIds(CRef<CSeq_id>& new_id, CSeq_entry_Handle& seh) 
+// Need to rewrite this
+bool CSetupProtMatchApp::x_UpdateSequenceIds(CRef<CSeq_id>& new_id, 
+                                             CSeq_entry_Handle& nucleotide_seh,
+                                             CSeq_entry_Handle& nuc_prot_seh)
 {
-    if (!seh.IsSeq()) {
+    if (!nucleotide_seh.IsSeq()) {
         return false;
     }
 
-    CBioseq_EditHandle bseh = seh.GetSeq().GetEditHandle();
+    CBioseq_EditHandle bseh = nucleotide_seh.GetSeq().GetEditHandle();
 
     bseh.ResetId(); // Remove the old sequence identifiers
     CSeq_id_Handle new_idh = CSeq_id_Handle::GetHandle(*new_id);
     bseh.AddId(new_idh); // Add the new sequence id
 
-    for (CSeq_annot_CI ai(seh); ai; ++ai) { // Add new id to sequence annotations
+    for (CSeq_annot_CI ai(nuc_prot_seh); ai; ++ai) { // Add new id to sequence/set annotations
         const CSeq_annot_Handle& sah = *ai;
 
         for (CSeq_annot_ftable_CI fi(sah); fi; ++fi) {
