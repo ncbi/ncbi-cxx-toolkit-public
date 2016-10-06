@@ -587,7 +587,14 @@ bool CCleanup::MoveFeatToProtein(CSeq_feat_Handle fh)
         return ConvertProteinToImp(fh);
     }
 
-    CRef<CSeq_loc> prot_loc = GetProteinLocationFromNucleotideLocation(fh.GetLocation(), *cds, fh.GetScope(), true);
+    bool require_frame = false;
+    ITERATE(CBioseq::TId, id_it, parent_bsh.GetBioseqCore()->GetId()) {
+        if ((*id_it)->IsEmbl() || (*id_it)->IsDdbj()) {
+            require_frame = true;
+            break;
+        }
+    }
+    CRef<CSeq_loc> prot_loc = GetProteinLocationFromNucleotideLocation(fh.GetLocation(), *cds, fh.GetScope(), require_frame);
 
     if (!prot_loc) {
         return false;
@@ -3642,10 +3649,35 @@ bool CCleanup::DecodeXMLMarkChanged(std::string & str)
 
 CRef<CSeq_loc> CCleanup::GetProteinLocationFromNucleotideLocation(const CSeq_loc& nuc_loc, const CSeq_feat& cds, CScope& scope, bool require_inframe)
 {
-    if (require_inframe && 
-        feature::IsLocationInFrame(scope.GetSeq_featHandle(cds), nuc_loc) != feature::eLocationInFrame_InFrame &&
-        !cds.GetLocation().Equals(nuc_loc)) {
-        return CRef<CSeq_loc>(NULL);
+    if (require_inframe) {
+        feature::ELocationInFrame is_in_frame = feature::IsLocationInFrame(scope.GetSeq_featHandle(cds), nuc_loc);
+        bool is_ok = false;
+        switch (is_in_frame) {
+            case feature::eLocationInFrame_InFrame:
+                is_ok = true;
+                break;
+            case feature::eLocationInFrame_BadStart:
+                if (cds.GetLocation().GetStart(eExtreme_Biological) == nuc_loc.GetStart(eExtreme_Biological)) {
+                    is_ok = true;
+                }
+                break;
+            case feature::eLocationInFrame_BadStop:
+                if (cds.GetLocation().GetStop(eExtreme_Biological) == nuc_loc.GetStop(eExtreme_Biological)) {
+                    is_ok = true;
+                }
+                break;
+            case feature::eLocationInFrame_BadStartAndStop:
+                if (cds.GetLocation().GetStart(eExtreme_Biological) == nuc_loc.GetStart(eExtreme_Biological) &&
+                    cds.GetLocation().GetStop(eExtreme_Biological) == nuc_loc.GetStop(eExtreme_Biological)) {
+                    is_ok = true;
+                }
+                break;
+            case feature::eLocationInFrame_NotIn:
+                break;
+        }
+        if (!is_ok) {
+            return CRef<CSeq_loc>(NULL);
+        }
     }
     CRef<CSeq_loc> new_loc;
     CRef<CSeq_loc_Mapper> nuc2prot_mapper(
