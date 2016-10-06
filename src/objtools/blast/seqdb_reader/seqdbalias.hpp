@@ -973,7 +973,7 @@ private:
 /// functionality to classes like CSeqDBImpl (and others) that do not
 /// need to understand alias walkers, nodes, and tree traversal.
 
-class CSeqDBAliasFile : CObject {
+class CSeqDBAliasFile : public CObject {
     /// Import type to allow shorter name.
     typedef TSeqDBAliasFileValues TAliasFileValues;
     
@@ -1246,6 +1246,10 @@ public:
         m_Node->GetMaskList(mask_list);
     }
     
+    /// Dump debug information for this object
+    /// @sa CDebugDumpable
+    void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
+
 private:
     /// Compute filtering options for all volumes.
     ///

@@ -1838,6 +1838,34 @@ CRef<CSeqDB_FilterTree> CSeqDBAliasFile::GetFilterTree()
     return m_TopTree;
 }
 
+void
+CSeqDBAliasFile::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+{
+    ddc.SetFrame("CSeqDBAliasFile");
+    CObject::DebugDump(ddc, depth);
+    for (SIZE_TYPE i = 0; i < m_VolumeNames.size(); i++) {
+        ddc.Log("m_VolumeNames[" + NStr::SizetToString(i) + "]",
+                m_VolumeNames[i]);
+    }
+    for (SIZE_TYPE i = 0; i < m_AliasNames.size(); i++) {
+        ddc.Log("m_AliasNames[" + NStr::SizetToString(i) + "]",
+                m_AliasNames[i]);
+    }
+    ddc.Log("m_IsProtein", m_IsProtein);
+    ddc.Log("m_MinLength", m_MinLength);
+    ddc.Log("m_NumSeqs", m_NumSeqs);
+    ddc.Log("m_NumSeqsStats", m_NumSeqsStats);
+    ddc.Log("m_NumOIDs", m_NumOIDs);
+    ddc.Log("m_TotalLength", m_TotalLength);
+    ddc.Log("m_TotalLengthStats", m_TotalLengthStats);
+    ddc.Log("m_VolumeLength", m_VolumeLength);
+    ddc.Log("m_MembBit", m_MembBit);
+    ddc.Log("m_HasTitle", m_HasTitle);
+    ddc.Log("m_Title", m_Title);
+    ddc.Log("m_NeedTotalsScan", m_NeedTotalsScan);
+    ddc.Log("m_HasFilters", m_HasFilters);
+}
+
 void CSeqDBAliasNode::ComputeMasks(bool & has_filters)
 {
     if (! m_NodeMasks.empty()) {

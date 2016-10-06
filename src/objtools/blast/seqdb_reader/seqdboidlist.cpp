@@ -444,5 +444,14 @@ CSeqDBOIDList::x_GetOidMask(const CSeqDB_Path & fn,
     return bitset;
 }
 
+void 
+CSeqDBOIDList::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+{
+    ddc.SetFrame("CSeqDBOIDList");
+    CObject::DebugDump(ddc, depth);
+    ddc.Log("m_NumOIDs", m_NumOIDs);
+    ddc.Log("m_AllBits", m_AllBits, depth);
+}
+
 END_NCBI_SCOPE
 

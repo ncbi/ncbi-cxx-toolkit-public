@@ -1483,5 +1483,12 @@ bool DeleteBlastDb(const string& dbpath, CSeqDB::ESeqType seq_type)
 
 const char* CSeqDB::kBlastDbDateFormat = "b d, Y  H:m P";
 
+void CSeqDB::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+{
+    ddc.SetFrame("CSeqDB");
+    CObject::DebugDump(ddc, depth);
+    ddc.Log("m_Impl", m_Impl, depth);
+}
+
 END_NCBI_SCOPE
 

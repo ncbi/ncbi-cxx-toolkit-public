@@ -2498,7 +2498,6 @@ void CSeqDBImpl::SetNumberOfThreads(int num_threads, bool force_mt)
     m_CacheID.clear();
     m_NextCacheID = 0;
     m_NumThreads = num_threads;
-
 }
 
 int CSeqDBImpl::x_GetCacheID(CSeqDBLockHold &locked) const
@@ -2529,6 +2528,35 @@ void CSeqDBImpl::SetVolsMemBit(int mbit)
     for (int vol = 0; vol < nvols; ++vol) {
         m_VolSet.GetVolNonConst(vol)->SetMemBit(mbit);
     }
+}
+
+void CSeqDBImpl::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+{
+    ddc.SetFrame("CSeqDBImpl");
+    CObject::DebugDump(ddc, depth);
+    ddc.Log("m_DBNames", m_DBNames);
+    ddc.Log("m_Aliases", &m_Aliases, depth);
+    ddc.Log("m_OIDList", m_OIDList, depth);
+    ddc.Log("m_RestrictBegin", m_RestrictBegin);
+    ddc.Log("m_RestrictEnd", m_RestrictEnd);
+    ddc.Log("m_NextChunkOID", m_NextChunkOID);
+    ddc.Log("m_NumSeqs", m_NumSeqs);
+    ddc.Log("m_NumSeqsStats", m_NumSeqsStats);
+    ddc.Log("m_NumOIDs", m_NumOIDs);
+    ddc.Log("m_TotalLength", m_TotalLength);
+    ddc.Log("m_ExactTotalLength", m_ExactTotalLength);
+    ddc.Log("m_TotalLengthStats", m_TotalLengthStats);
+    ddc.Log("m_VolumeLength", m_VolumeLength);
+    ddc.Log("m_MaxLength", m_MaxLength);
+    ddc.Log("m_MinLength", m_MinLength);
+    ddc.Log("m_SeqType", string(1, m_SeqType));
+    ddc.Log("m_OidListSetup", m_OidListSetup);
+    ddc.Log("m_NeedTotalsScan", m_NeedTotalsScan);
+    ddc.Log("m_Date", m_Date);
+    ddc.Log("m_UseGiMask", m_UseGiMask);
+    ddc.Log("m_GiMask", m_GiMask);
+    ddc.Log("m_NumThreads", m_NumThreads);
+    ddc.Log("m_NextCacheID", m_NextCacheID);
 }
 
 END_NCBI_SCOPE

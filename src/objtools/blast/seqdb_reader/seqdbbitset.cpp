@@ -422,5 +422,15 @@ void CSeqDB_BitSet::Normalize()
     }
 }
 
+void CSeqDB_BitSet::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+{
+    ddc.SetFrame("CSeqDB_BitSet");
+    CObject::DebugDump(ddc, depth);
+    ddc.Log("m_Special", m_Special);
+    ddc.Log("m_Start", m_Start);
+    ddc.Log("m_End", m_End);
+    ddc.Log("m_Bits.size", m_Bits.size());
+}
+
 END_NCBI_SCOPE
 

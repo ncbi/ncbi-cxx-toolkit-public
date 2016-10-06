@@ -395,24 +395,42 @@ BOOST_AUTO_TEST_CASE(SummaryDataN)
     int seq1(0);
     localN.GetTotals(CSeqDB::eFilteredRange, & seq1, & vol1);
 
-    localN.SetIterationRange(1,0);
+    int oid_values[] = { 0, 100000 };
+    for (auto end_oid : oid_values) {
+        localN.SetIterationRange(1, end_oid);
 
-    Uint8 vol2(0);
-    int seq2(0);
+        Uint8 vol2(0);
+        int seq2(0);
 
-    localN.GetTotals(CSeqDB::eFilteredRange, & seq2, & vol2);
+        localN.GetTotals(CSeqDB::eFilteredRange, & seq2, & vol2);
 
-    BOOST_REQUIRE(vol2 < vol1);
-    BOOST_REQUIRE_EQUAL(seq2, seq1 - 1);
+        BOOST_REQUIRE(vol2 < vol1);
+        BOOST_REQUIRE_EQUAL(seq2, seq1 - 1);
 
-    localN.SetIterationRange(2,0);
+        localN.SetIterationRange(2, end_oid);
 
-    Uint8 vol3(0);
-    int seq3(0);
-    localN.GetTotals(CSeqDB::eFilteredRange, & seq3, & vol3);
+        Uint8 vol3(0);
+        int seq3(0);
+        localN.GetTotals(CSeqDB::eFilteredRange, & seq3, & vol3);
 
-    BOOST_REQUIRE(vol3 < vol2);
-    BOOST_REQUIRE_EQUAL(seq3, seq2 - 1);
+        BOOST_REQUIRE(vol3 < vol2);
+        BOOST_REQUIRE_EQUAL(seq3, seq2 - 1);
+    }
+
+    // Try negative values
+    {
+        Uint8 vol4(0);
+        int seq4(0);
+        localN.SetIterationRange(0, -1);
+        localN.GetTotals(CSeqDB::eFilteredRange, & seq4, & vol4);
+        BOOST_CHECK_EQUAL(0, vol4);
+        BOOST_CHECK_EQUAL(0, seq4);
+
+        localN.SetIterationRange(-2, 10);
+        localN.GetTotals(CSeqDB::eFilteredRange, & seq4, & vol4);
+        BOOST_CHECK_EQUAL(10, seq4);
+        BOOST_CHECK(vol4 > 0);
+    }
 }
 
 BOOST_AUTO_TEST_CASE(SummaryDataP)

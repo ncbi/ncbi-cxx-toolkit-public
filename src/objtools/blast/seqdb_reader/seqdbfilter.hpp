@@ -158,6 +158,17 @@ public:
         return m_MemBit;
     }
 
+    void DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+    {
+        ddc.SetFrame("CSeqDB_AliasMask");
+        CObject::DebugDump(ddc, depth);
+        ddc.Log("m_MaskType", m_MaskType);
+        ddc.Log("m_Path", m_Path.GetPathS());
+        ddc.Log("m_Begin", m_Begin);
+        ddc.Log("m_End", m_End);
+        ddc.Log("m_MemBit", m_MemBit);
+    }
+
 private:
     /// Type of filtering to apply.
     EMaskType m_MaskType;

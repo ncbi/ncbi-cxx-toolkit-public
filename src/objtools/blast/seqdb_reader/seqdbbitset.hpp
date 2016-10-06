@@ -269,6 +269,11 @@ private:
     
     /// Representation of bit data.
     vector<TByte> m_Bits;
+
+public:
+    /// Allows to dump a snapshot of the object
+    /// @todo this doesn't do anything for locality eRemote
+    void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 };
 
 END_NCBI_SCOPE

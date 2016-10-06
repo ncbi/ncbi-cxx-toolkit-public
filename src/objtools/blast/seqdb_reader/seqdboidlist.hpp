@@ -138,6 +138,10 @@ public:
     {
         m_Lease.Clear();
     }
+
+    /// Dump debug information for this object
+    /// @sa CDebugDumpable
+    void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
     
 private:
     /// Shorthand type to clarify code that iterates over memory.

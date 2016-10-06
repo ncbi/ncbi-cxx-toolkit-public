@@ -184,7 +184,7 @@ private:
 /// is seperated from that class so that various implementation
 /// details of CSeqDB are kept from the public interface.
 
-class CSeqDBImpl {
+class CSeqDBImpl : public CObject {
     /// Import type to allow shorter name.
     typedef TSeqDBAliasFileValues TAliasFileValues;
 
@@ -1130,6 +1130,10 @@ public:
     /// Set the membership bit of all volumes
     void SetVolsMemBit(int mbit);
 
+    /// Dump debug information for this object
+    /// @sa CDebugDumpable
+    void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
+
 private:
     CLASS_MARKER_FIELD("IMPL")
 
@@ -1466,7 +1470,6 @@ private:
 
     /// Return sequence to buffer
     void x_RetSeqBuffer(SSeqResBuffer * buffer, CSeqDBLockHold & locked) const;
-
 };
 
 END_NCBI_SCOPE

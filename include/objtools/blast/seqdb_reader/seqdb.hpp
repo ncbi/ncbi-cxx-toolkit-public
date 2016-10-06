@@ -1472,6 +1472,10 @@ public:
     /// Set the membership of all volumes
     void SetVolsMemBit(int mbit);
 
+    /// Dump debug information for this object
+    /// @sa CDebugDumpable
+    void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
+
 protected:
     /// Implementation details are hidden.  (See seqdbimpl.hpp).
     class CSeqDBImpl * m_Impl;
