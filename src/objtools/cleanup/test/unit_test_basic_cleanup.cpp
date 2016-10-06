@@ -882,3 +882,16 @@ BOOST_AUTO_TEST_CASE(Test_trna_product_qual_cleanup)
 
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_double_comma)
+{
+    CRef<CSeq_feat> misc(new CSeq_feat());
+    misc->SetComment("ORF30, len: 104 aa,, similar to cytochrome c-553 precursor(c553)");
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    cleanup.SetScope(scope);
+    changes = cleanup.BasicCleanup(*misc);
+
+    BOOST_CHECK_EQUAL(misc->GetComment(), "ORF30, len: 104 aa, similar to cytochrome c-553 precursor(c553)");
+}

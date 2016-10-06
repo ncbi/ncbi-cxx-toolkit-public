@@ -508,6 +508,7 @@ bool Asn2gnbkCompressSpaces(string& val)
         if (two_chars == twocommas) {
             *out++ = curr;
             next = ' ';
+            two_chars = next;
         }
         else if (two_chars == twospaces) {
         }
