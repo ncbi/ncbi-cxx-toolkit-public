@@ -718,9 +718,12 @@ tds_write_packet(TDSSOCKET * tds, unsigned char final)
 	unsigned int left = 0;
 
 #if TDS_ADDITIONAL_SPACE != 0
+    unsigned char was_final = final;
+
 	if (tds->out_pos > tds->out_buf_max) {
 		left = tds->out_pos - tds->out_buf_max;
 		tds->out_pos = tds->out_buf_max;
+        final = 0;
 	}
 #endif
 
@@ -744,10 +747,13 @@ tds_write_packet(TDSSOCKET * tds, unsigned char final)
 		TDS_FAIL : TDS_SUCCESS;
 #endif /* !ENABLE_ODBC_MARS */
 
+    tds->out_pos = left + 8;
 #if TDS_ADDITIONAL_SPACE != 0
 	memcpy(tds->out_buf + 8, tds->out_buf + tds->out_buf_max, left);
+    if (res == TDS_SUCCESS  &&  !final  &&  was_final) {
+        tds_write_packet(tds, was_final);
+    }
 #endif
-	tds->out_pos = left + 8;
 
 	return res;
 }
