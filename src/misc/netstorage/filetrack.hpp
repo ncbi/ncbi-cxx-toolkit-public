@@ -69,7 +69,7 @@ struct SFileTrackRequest : public CObject
             const string& user_header = kEmptyStr,
             THTTP_Flags flags = 0);
 
-    CJsonNode GetFileInfo();
+    CJsonNode GetFileInfo(const char* const when);
 
 protected:
     const SFileTrackConfig& m_Config;

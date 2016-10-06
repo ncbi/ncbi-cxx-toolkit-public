@@ -256,7 +256,7 @@ void SFileTrackUpload::FinishUpload()
 {
     string expected_key = m_ObjectLoc.GetUniqueKey();
 
-    CJsonNode upload_result = GetFileInfo();
+    CJsonNode upload_result = GetFileInfo("on getting key for");
 
     string actual_key = upload_result.GetString("key");
 
@@ -271,7 +271,7 @@ void s_ThrowHttpStatus(const CDiagCompileInfo& info, const string object_loc,
 {
     ostringstream os;
 
-    os << "after uploading on renaming " << from << " for";
+    os << "on renaming " << from << " for";
 
     s_ThrowHttpStatus(info, object_loc, http_code, http_text, os.str());
 }
@@ -303,7 +303,7 @@ void SFileTrackUpload::RenameFile(const string& from, const string& to)
     CHECK_HTTP_STATUS(response, m_ObjectLoc, from, to);
 }
 
-CJsonNode SFileTrackRequest::GetFileInfo()
+CJsonNode SFileTrackRequest::GetFileInfo(const char* const when)
 {
     string http_response;
 
@@ -315,12 +315,12 @@ CJsonNode SFileTrackRequest::GetFileInfo()
     }
     catch (CException& e) {
         NCBI_RETHROW_FMT(e, CNetStorageException, eIOError,
-                "'" << e.GetType() << "|" << e.GetErrCodeString() <<
-                "' on accessing " << m_ObjectLoc.GetLocator());
+                "'" << e.GetType() << "|" << e.GetErrCodeString() << "' " <<
+                when << " " << m_ObjectLoc.GetLocator());
     }
 
-    CHECK_HTTP_STATUS(m_HTTPStream, m_ObjectLoc, "on accessing");
-    CHECK_IO_STATUS(m_HTTPStream, m_ObjectLoc, "on accessing", false);
+    CHECK_HTTP_STATUS(m_HTTPStream, m_ObjectLoc, when);
+    CHECK_IO_STATUS(m_HTTPStream, m_ObjectLoc, when, false);
 
     CJsonNode root;
 
@@ -329,8 +329,8 @@ CJsonNode SFileTrackRequest::GetFileInfo()
     }
     catch (CStringException& e) {
         NCBI_RETHROW_FMT(e, CNetStorageException, eIOError,
-                "'" << e.GetType() << "|" << e.GetErrCodeString() <<
-                "' on accessing " << m_ObjectLoc.GetLocator());
+                "'" << e.GetType() << "|" << e.GetErrCodeString() << "' " <<
+                when << " " << m_ObjectLoc.GetLocator());
     }
 
     return root;
@@ -368,7 +368,7 @@ ERW_Result SFileTrackDownload::Read(void* buf, size_t count, size_t* bytes_read)
     }
 
     if (m_FirstRead) {
-        CHECK_HTTP_STATUS(m_HTTPStream, m_ObjectLoc, "on opening");
+        CHECK_HTTP_STATUS(m_HTTPStream, m_ObjectLoc, "on reading");
         m_FirstRead = false;
     }
 
@@ -385,7 +385,7 @@ bool SFileTrackDownload::Eof() const
 
 void SFileTrackDownload::FinishDownload()
 {
-    CHECK_IO_STATUS(m_HTTPStream, m_ObjectLoc, "on reading", false);
+    CHECK_IO_STATUS(m_HTTPStream, m_ObjectLoc, "after reading", false);
 }
 
 SFileTrackAPI::SFileTrackAPI(const SFileTrackConfig& c)
@@ -399,7 +399,7 @@ CJsonNode SFileTrackAPI::GetFileInfo(const CNetStorageObjectLoc& object_loc)
 
     SFileTrackRequest request(config, object_loc, url);
 
-    return request.GetFileInfo();
+    return request.GetFileInfo("on getting info for");
 }
 
 string SFileTrackAPI::GetPath(const CNetStorageObjectLoc& object_loc)
