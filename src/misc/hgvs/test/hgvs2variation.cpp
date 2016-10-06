@@ -178,7 +178,7 @@ string TestRoundTrip(const string& hgvs_synonyms, CHgvsParser& parser)
 {
     typedef vector<string> TStrings;
     TStrings inputs;
-    NStr::Split(hgvs_synonyms, "|", inputs, NStr::fSplit_Tokenize);
+    NStr::Split(hgvs_synonyms, "|", inputs);
     string result;
     string delim = "";
     bool all_ok = true;
