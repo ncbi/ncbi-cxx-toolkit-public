@@ -2475,31 +2475,6 @@ public:
                                 vector<SIZE_TYPE>*     token_pos = NULL,
                                 CTempString_Storage*   storage = NULL);
 
-    /// Variation of Split() wihout flags -- for backward compatibility only.
-    /// @attention
-    ///   Automatically use flags: fSplit_Tokenize
-    /// @deprecated  Use Split() with TSplitFlags instead
-    inline
-    NCBI_DEPRECATED
-    static list<string>& Split(const CTempString    str,
-                               const CTempString    delim,
-                               list<string>&        arr) {
-        return Split(str, delim, arr, fSplit_Tokenize);
-    }
-
-    /// Variation of Split() wihout flags -- for backward compatibility only.
-    /// @attention
-    ///   Automatically use flags: fSplit_Tokenize
-    /// @deprecated  Use Split() with TSplitFlags instead
-    inline
-    NCBI_DEPRECATED
-    static list<CTempStringEx>& Split(
-                                const CTempString    str,
-                                const CTempString    delim,
-                                list<CTempStringEx>& arr) {
-        return Split(str, delim, arr, fSplit_Tokenize);
-    }
-
     /// @deprecated  Use Split() with TSplitFlags instead
     inline
     NCBI_DEPRECATED
