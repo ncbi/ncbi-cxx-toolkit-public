@@ -72,8 +72,6 @@ struct SFileTrackRequest : public CObject
     CJsonNode GetFileInfo();
 
 protected:
-    void CheckIOStatus();
-
     const SFileTrackConfig& m_Config;
     const CNetStorageObjectLoc& m_ObjectLoc;
     string m_URL;

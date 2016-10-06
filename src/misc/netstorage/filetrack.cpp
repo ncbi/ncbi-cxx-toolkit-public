@@ -54,9 +54,6 @@
 
 BEGIN_NCBI_SCOPE
 
-#define THROW_IO_EXCEPTION(err_code, message, status) \
-        NCBI_THROW_FMT(CIOException, err_code, message << IO_StatusStr(status));
-
 #define CHECK_HTTP_STATUS(http, object_loc, ...)                            \
     do {                                                                    \
         int http_code = http.GetStatusCode();                               \
@@ -70,6 +67,28 @@ BEGIN_NCBI_SCOPE
         default:                                                            \
             s_ThrowHttpStatus(DIAG_COMPILE_INFO, object_loc.GetLocator(),   \
                     http_code, http.GetStatusText(), __VA_ARGS__);          \
+        }                                                                   \
+    } while (0)
+
+#define CHECK_IO_STATUS(io, object_loc, what, already_failed)               \
+    do {                                                                    \
+        EIO_Status io_code = io.Status();                                   \
+                                                                            \
+        switch (io_code) {                                                  \
+        case eIO_Success:                                                   \
+        case eIO_Closed:                                                    \
+            io_code = io.Status(eIO_Read);                                  \
+        default:                                                            \
+            break;                                                          \
+        }                                                                   \
+                                                                            \
+        switch (io_code) {                                                  \
+        case eIO_Success:                                                   \
+        case eIO_Closed:                                                    \
+            if (!already_failed) break;                                     \
+        default:                                                            \
+            s_ThrowIoStatus(DIAG_COMPILE_INFO, object_loc.GetLocator(),     \
+                    io_code, what);                                         \
         }                                                                   \
     } while (0)
 
@@ -95,6 +114,17 @@ void s_ThrowHttpStatus(const CDiagCompileInfo& info, const string object_loc,
     os << "'" << http_code << "|" << http_text << "' " << what << " " << object_loc;
 
     throw CNetStorageException(info, 0, err_code, os.str());
+}
+
+void s_ThrowIoStatus(const CDiagCompileInfo& info, const string object_loc,
+        EIO_Status io_code, const string what)
+{
+    ostringstream os;
+    auto io_text = IO_StatusStr(io_code);
+
+    os << "'" << io_code << "|" << io_text << "' " << what << " " << object_loc;
+
+    throw CNetStorageException(info, 0, CNetStorageException::eIOError, os.str());
 }
 
 static EHTTP_HeaderParse s_HTTPParseHeader_SaveStatus(
@@ -178,19 +208,6 @@ SFileTrackUpload::SFileTrackUpload(
 {
 }
 
-void SFileTrackRequest::CheckIOStatus()
-{
-    EIO_Status status = m_HTTPStream.Status();
-
-    if ((status != eIO_Success && status != eIO_Closed) ||
-                ((status = m_HTTPStream.Status(eIO_Read)) != eIO_Success &&
-                        status != eIO_Closed)) {
-        THROW_IO_EXCEPTION(eRead,
-                "Error while retrieving HTTP response from " <<
-                m_URL << ": ", status);
-    }
-}
-
 static string s_RemoveHTMLTags(const char* text)
 {
     string result;
@@ -262,8 +279,7 @@ void SFileTrackUpload::Write(const void* buf,
         size_t count, size_t* bytes_written)
 {
     if (!m_HTTPStream.write(static_cast<const char*>(buf), count)) {
-        THROW_IO_EXCEPTION(eWrite, "Error while sending data to " << m_URL,
-                m_HTTPStream.Status());
+        CHECK_IO_STATUS(m_HTTPStream, m_ObjectLoc, "on writing", true);
     }
 
     if (bytes_written != NULL)
@@ -352,8 +368,7 @@ CJsonNode SFileTrackRequest::GetFileInfo()
                 s_RemoveHTMLTags(http_response.c_str()));
     }
 
-    CheckIOStatus();
-
+    CHECK_IO_STATUS(m_HTTPStream, m_ObjectLoc, "on accessing", false);
     return root;
 }
 
@@ -385,8 +400,7 @@ void SFileTrackAPI::Remove(const CNetStorageObjectLoc& object_loc)
 ERW_Result SFileTrackDownload::Read(void* buf, size_t count, size_t* bytes_read)
 {
     if (m_HTTPStream.read(static_cast<char*>(buf), count).bad()) {
-        THROW_IO_EXCEPTION(eWrite, "Error while reading data from " << m_URL,
-                m_HTTPStream.Status());
+        CHECK_IO_STATUS(m_HTTPStream, m_ObjectLoc, "on reading", true);
     }
 
     if (m_FirstRead) {
@@ -407,7 +421,7 @@ bool SFileTrackDownload::Eof() const
 
 void SFileTrackDownload::FinishDownload()
 {
-    CheckIOStatus();
+    CHECK_IO_STATUS(m_HTTPStream, m_ObjectLoc, "on reading", false);
 }
 
 SFileTrackAPI::SFileTrackAPI(const SFileTrackConfig& c)
