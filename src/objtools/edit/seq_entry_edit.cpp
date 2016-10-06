@@ -1752,6 +1752,8 @@ void ConvertRawToDeltaByNs(CSeq_inst& inst,
                 s_AddLiteral(inst, element);
             }
             s_AddGap(inst, n_len, is_unknown, is_assembly_gap, gap_type, linkage, linkage_evidence);
+        } else {
+            s_AddLiteral(inst, element);
         }
     } else {
         s_AddLiteral(inst, element);
