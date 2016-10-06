@@ -248,16 +248,31 @@ void CSeqDBImpl::x_GetOidList(CSeqDBLockHold & locked)
     if (! m_OidListSetup) {
         m_Atlas.Lock(locked);
 
+        CRef<CSeqDB_FilterTree> ft = m_Aliases.GetFilterTree();
         if (m_OIDList.Empty()) {
             m_OIDList.Reset( new CSeqDBOIDList(m_Atlas,
                                                m_VolSet,
-                                               *m_Aliases.GetFilterTree(),
+                                               *ft,
                                                m_UserGiList,
                                                m_NegativeList,
                                                locked) );
         }
 
         m_OidListSetup = true;
+        // Handle the case where FIRST_OID and LAST_OID is set on a top level
+        // alias file and that's the only alias file present
+        if (ft->HasFilter()) {
+            const vector< CRef<CSeqDB_FilterTree> >& nodes = ft->GetNodes();
+            if (nodes.size() == 1) {
+                const CSeqDB_FilterTree::TFilters& filters = nodes.front()->GetFilters();
+                if (filters.size() == 1 && filters.front()->GetType() == CSeqDB_AliasMask::eOidRange) {
+                    const CSeqDB_AliasMask& alias_mask = *filters.front();
+                    SetIterationRange(alias_mask.GetBegin(), alias_mask.GetEnd());
+                }
+            }
+        }
+        //DebugDumpText(cerr, "CSeqDBImpl after m_OIDList initialization", 10);
+        //ft->Print();
     }
 }
 
@@ -310,6 +325,10 @@ CSeqDBImpl::GetNextOIDChunk(int         & begin_chunk, // out
 
     m_Atlas.Lock(locked);
 
+    if (! m_OidListSetup) {
+        x_GetOidList(locked);
+    }
+
     if (! state_obj) {
         state_obj = & m_NextChunkOID;
     }
@@ -345,15 +364,12 @@ CSeqDBImpl::GetNextOIDChunk(int         & begin_chunk, // out
     }
     *state_obj = end_chunk;
 
-    if (! m_OidListSetup) {
-        x_GetOidList(locked);
-    }
-
     // Case 2: Return a range
 
     if (m_OIDList.Empty()) {
         return CSeqDB::eOidRange;
     }
+
 
     // Case 3: Ones and Zeros - The bitmap provides OIDs.
 
@@ -715,7 +731,7 @@ void CSeqDBImpl::x_FillSeqBuffer(SSeqResBuffer  *buffer,
             res.address = seq;
             buffer->results.push_back(res);
             res.length = vol->GetSequence(vol_oid++, &seq, locked);
-        } while (res.length >= 0 && tot_length >= res.length);
+        } while (res.length >= 0 && tot_length >= res.length && vol_oid < m_RestrictEnd);
 
         if (res.length >= 0)  m_Atlas.RetRegion(seq);
         return;
