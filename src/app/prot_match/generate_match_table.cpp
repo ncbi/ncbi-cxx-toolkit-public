@@ -45,8 +45,8 @@ private:
     bool x_IsComparison(const CSeq_annot& seq_annot) const;
     bool x_HasCdsQuery(const CSeq_annot& seq_annot) const;
     bool x_HasCdsSubject(const CSeq_annot& seq_annot) const;
-    bool x_IsNovelSubject(const CSeq_annot& seq_annot) const;
-    bool x_IsNovelQuery(const CSeq_annot& seq_annot) const;
+    bool x_HasNovelSubject(const CSeq_annot& seq_annot) const;
+    bool x_HasNovelQuery(const CSeq_annot& seq_annot) const;
     bool x_IsCdsComparison(const CSeq_annot& seq_annot) const;
     bool x_IsGoodGloballyReciprocalBest(const CSeq_annot& seq_annot) const;
     bool x_IsGoodGloballyReciprocalBest(const CUser_object& user_obj) const;
@@ -206,7 +206,7 @@ bool CProteinMatchApp::x_IsGoodGloballyReciprocalBest(const CSeq_annot& seq_anno
 
 
 // Check to see if the subject is novel
-bool CProteinMatchApp::x_IsNovelSubject(const CSeq_annot& seq_annot) const 
+bool CProteinMatchApp::x_HasNovelSubject(const CSeq_annot& seq_annot) const 
 {
     const string comparison_class = x_GetComparisonClass(seq_annot);
     return (comparison_class == "s-novel");
@@ -214,7 +214,7 @@ bool CProteinMatchApp::x_IsNovelSubject(const CSeq_annot& seq_annot) const
 
 
 // Check to see if query is novel 
-bool CProteinMatchApp::x_IsNovelQuery(const CSeq_annot& seq_annot) const 
+bool CProteinMatchApp::x_HasNovelQuery(const CSeq_annot& seq_annot) const 
 {
     const string comparison_class = x_GetComparisonClass(seq_annot);
     return (comparison_class == "q-novel");
@@ -527,11 +527,12 @@ bool CProteinMatchApp::x_TryProcessInputFile(
     dead_proteins.clear();
     new_proteins.clear();
 
-    set<string> new_protein_set;
-    set<string> dead_protein_set;
+    set<string> new_protein_skip;
+    set<string> dead_protein_skip;
 
     unique_ptr<CObjectIStream> pObjIstream(x_InitInputStream(args));
 
+    list<CRef<CSeq_annot>> seq_annots;
     while (!pObjIstream->EndOfData()) {
         CRef<CSeq_annot> pSeqAnnot(new CSeq_annot());
         try { 
@@ -540,23 +541,44 @@ bool CProteinMatchApp::x_TryProcessInputFile(
         catch (CException&) {
             return false;
         }
+        seq_annots.push_back(pSeqAnnot);
+    }
 
 
+    for (CRef<CSeq_annot> pSeqAnnot : seq_annots) {
         if (x_IsProteinMatch(*pSeqAnnot)) {
             matches.push_back(pSeqAnnot);
-            continue;
-        }
-
-
-        if (x_IsNovelSubject(*pSeqAnnot)) {
             const CSeq_feat& subject = *(pSeqAnnot->GetData().GetFtable().back());
-            //cout << "AccVer : " << x_GetAccessionVersion(subject) << "\n";
-            dead_proteins.push_back(x_GetAccessionVersion(subject));
+            const string accver = x_GetAccessionVersion(subject);
+            dead_protein_skip.insert(accver);
+            const CSeq_feat& query = *(pSeqAnnot->GetData().GetFtable().front());
+            const string localid = x_GetLocalID(query);
+            new_protein_skip.insert(localid);
+            continue;
+        }
+    }
+
+
+    for (CRef<CSeq_annot> pSeqAnnot : seq_annots) {
+        if (x_HasCdsSubject(*pSeqAnnot) && 
+            x_HasNovelSubject(*pSeqAnnot)) {
+            const CSeq_feat& subject = *(pSeqAnnot->GetData().GetFtable().back());
+            const string accver = x_GetAccessionVersion(subject);
+            if (dead_protein_skip.find(accver) == dead_protein_skip.end()) {
+                dead_protein_skip.insert(accver);
+                dead_proteins.push_back(accver);
+            }
             continue;
         }
 
-        if (x_IsNovelQuery(*pSeqAnnot)) {
-            new_proteins.push_back(x_GetLocalID(*pSeqAnnot));
+        if (x_HasCdsQuery(*pSeqAnnot) && 
+            x_HasNovelQuery(*pSeqAnnot)) {
+            const CSeq_feat& query = *(pSeqAnnot->GetData().GetFtable().front());
+            const string localid = x_GetLocalID(query);
+            if (new_protein_skip.find(localid) == new_protein_skip.end()) {
+                new_protein_skip.insert(localid);
+                new_proteins.push_back(localid);
+            }
             continue;
         }
     }
@@ -603,9 +625,7 @@ bool CProteinMatchApp::x_GenerateMatchTable(
     x_AddColumn("AccVer");
 //    x_AddColumn("GI");
     x_AddColumn("Status");
-
   //  x_AddColumn("CompClass");
-
     // Iterate over match Seq-annots
     TMatches::const_iterator cit;
 
@@ -616,6 +636,9 @@ bool CProteinMatchApp::x_GenerateMatchTable(
         //string compClass = x_GetComparisonClass(**cit);
         string status = (x_GetComparisonClass(**cit) == "perfect") ? "Same" : "Changed";
 
+        if (localID.empty()) {
+            localID = "---";
+        }
         x_AppendColumnValue("LocalID", localID);
         x_AppendColumnValue("AccVer", accver);
        // x_AppendColumnValue("GI", gi);
@@ -624,15 +647,18 @@ bool CProteinMatchApp::x_GenerateMatchTable(
 
         mMatchTable->SetNum_rows(mMatchTable->GetNum_rows()+1);
     }
-
     for (string localID : new_proteins) {
         x_AppendColumnValue("LocalID", localID);
+        x_AppendColumnValue("AccVer", "---");
         x_AppendColumnValue("Status", "New");
+        mMatchTable->SetNum_rows(mMatchTable->GetNum_rows()+1);
     }
 
     for (string accver : dead_proteins) {
+        x_AppendColumnValue("LocalID", "---");
         x_AppendColumnValue("AccVer", accver);
         x_AppendColumnValue("Status", "Dead");
+        mMatchTable->SetNum_rows(mMatchTable->GetNum_rows()+1);
     }
 
     return true;
@@ -660,6 +686,8 @@ void CProteinMatchApp::x_WriteTable(
     out << '\n';
 
     const unsigned int numRows = mMatchTable->GetNum_rows();
+
+/*
     // LocalIDToRowIndex maps each local ID to its row index
     // This is used to order the rows by local ID.
     map<string, unsigned int> LocalIDToRowIndex;
@@ -676,6 +704,15 @@ void CProteinMatchApp::x_WriteTable(
     // we order the rows by local ID
    for (auto& id_index_pair : LocalIDToRowIndex) {
         unsigned int row_index = id_index_pair.second;
+        for (const auto& column_name : colNames) {
+            const CSeqTable_column& column = mMatchTable->GetColumn(column_name);
+            const string* pValue = column.GetStringPtr(row_index);
+            out << *pValue << "\t";
+        }
+        out << '\n';
+    } // iterate over rows
+*/
+   for (int row_index=0; row_index<numRows; ++row_index) { 
         for (const auto& column_name : colNames) {
             const CSeqTable_column& column = mMatchTable->GetColumn(column_name);
             const string* pValue = column.GetStringPtr(row_index);
