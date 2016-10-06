@@ -556,6 +556,31 @@ bool CProteinMatchApp::x_TryProcessInputFile(
             new_protein_skip.insert(localid);
             continue;
         }
+
+
+        if (x_IsComparison(*pSeqAnnot) &&
+            x_HasCdsQuery(*pSeqAnnot) &&
+            x_HasCdsSubject(*pSeqAnnot)) {
+
+            const CSeq_feat& query = *(pSeqAnnot->GetData().GetFtable().front());
+            const CSeq_feat& subject = *(pSeqAnnot->GetData().GetFtable().back());
+
+            const string query_accver = x_GetAccessionVersion(query);
+            if (NStr::IsBlank(query_accver)) {
+                continue;
+            }
+
+            const string subject_accver = x_GetAccessionVersion(subject);
+            if (subject_accver != query_accver) {
+                continue;
+            }
+            matches.push_back(pSeqAnnot);
+            dead_protein_skip.insert(subject_accver);
+            const string localid = x_GetLocalID(query);
+            if (!NStr::IsBlank(localid)) {
+                new_protein_skip.insert(localid);
+            }
+        }
     }
 
 
