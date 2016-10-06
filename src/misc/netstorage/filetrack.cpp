@@ -50,8 +50,6 @@
 #include <sstream>
 #include <functional>
 
-#define DELEGATED_FROM_MYNCBI_ID_HEADER "Delegated-From-MyNCBI-ID"
-
 BEGIN_NCBI_SCOPE
 
 #define CHECK_HTTP_STATUS(http, object_loc, ...)                            \
@@ -208,6 +206,7 @@ SFileTrackUpload::SFileTrackUpload(
 {
 }
 
+const auto kMyNcbiIdHeader = "Delegated-From-MyNCBI-ID";
 const auto kAuthHeader = "Authorization";
 const auto kAuthPrefix = "Token ";
 
@@ -229,7 +228,7 @@ CRef<SFileTrackUpload> SFileTrackAPI::StartUpload(
 
     s_ApplyMyNcbiId([&user_header](const string& my_ncbi_id)
     {
-        user_header.append(DELEGATED_FROM_MYNCBI_ID_HEADER ": ");
+        user_header.append(kMyNcbiIdHeader).append(": ");
         user_header.append(my_ncbi_id);
         user_header.append("\r\n");
     });
@@ -295,7 +294,7 @@ void SFileTrackUpload::RenameFile(const string& from, const string& to)
 
     s_ApplyMyNcbiId([&headers](const string& my_ncbi_id)
     {
-        headers.SetValue(DELEGATED_FROM_MYNCBI_ID_HEADER, my_ncbi_id);
+        headers.SetValue(kMyNcbiIdHeader, my_ncbi_id);
     });
 
     req.ContentStream() << "{\"key\": \"" << to << "\"}";
