@@ -152,6 +152,7 @@ esac
 
 case "$ncbi_platform" in
     Linux*     ) : ${GCRYPT_PATH=$NCBI/libgcrypt-1.4.3} ;;
+    *MAC       ) : ${with_gcrypt=no} ;;
 esac
 
 : ${GLEW_PATH=$NCBI/glew-1.5.8}
