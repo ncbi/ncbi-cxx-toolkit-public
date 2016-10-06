@@ -774,7 +774,7 @@ CTestTranscript_PolyA::RunTest(const CSerialObject& obj,
         vec.GetSeqData(begin_pos, end_pos, seq);
 
         for(int ii = 0; ii < 12; ii++) {    
-            size_t pos = NStr::Find(seq, patterns[ii], 0, NPOS, NStr::eLast);
+            size_t pos = NStr::Find(seq, patterns[ii], NStr::eCase, NStr::eReverseSearch);
             if(pos != NPOS) {
                 result->SetOutput_data().AddField("signal_pos", static_cast<int>(pos + begin_pos));
                 result->SetOutput_data().AddField("is_canonical_pas", (ii <= 1)); //AATAAA or ATTAAA
