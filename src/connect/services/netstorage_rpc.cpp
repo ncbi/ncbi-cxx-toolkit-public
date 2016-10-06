@@ -66,6 +66,9 @@ const char* CNetStorageException::GetErrCodeString() const
     case eServerError:          return "eServerError";
     case eTimeout:              return "eTimeout";
     case eExpired:              return "eExpired";
+    case eNotSupported:         return "eNotSupported";
+    case eInterrupted:          return "eInterrupted";
+    case eUnknown:              return "eUnknown";
     default:                    return CException::GetErrCodeString();
     }
 }
