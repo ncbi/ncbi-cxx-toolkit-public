@@ -637,6 +637,7 @@ public:
 
     bool Select(TVDBRowId spot_id);
     bool Select(TVDBRowId spot_id, uint32_t read_id);
+    void SetLastSpotId(TVDBRowId spot_id);
     
     operator const void*(void) const {
         return m_Error? 0: this;

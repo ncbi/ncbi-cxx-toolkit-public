@@ -1742,6 +1742,12 @@ bool CCSraShortReadIterator::Select(TVDBRowId spot_id,
 }
 
 
+void CCSraShortReadIterator::SetLastSpotId(TVDBRowId spot_id)
+{
+    m_MaxSpotId = min(m_MaxSpotId, spot_id);
+}
+
+
 CCSraShortReadIterator::~CCSraShortReadIterator(void)
 {
     if ( m_Seq ) {

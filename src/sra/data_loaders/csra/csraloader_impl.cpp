@@ -1123,20 +1123,19 @@ void CCSRAFileInfo::LoadReadsMainEntry(const CCSRABlobId& blob_id,
     //CMutexGuard guard(GetMutex());
     CRef<CSeq_entry> entry(new CSeq_entry);
     TVDBRowId first_spot_id = blob_id.m_FirstSpotId;
-    TVDBRowId stop_spot_id = first_spot_id + kReadsPerBlob;
+    TVDBRowId last_spot_id = first_spot_id + kReadsPerBlob - 1;
     if ( GetDebugLevel() >= 5 ) {
         LOG_POST_X(12, Info<<
                    "CCSRADataLoader:LoadReads("<<blob_id.ToString()<<", "<<
-                   first_spot_id<<"-"<<(stop_spot_id-1));
+                   first_spot_id<<"-"<<last_spot_id);
     }
     CCSraShortReadIterator::TBioseqFlags flags = CCSraShortReadIterator::fDefaultBioseqFlags;
     if ( m_QualityGraphs ) {
         flags |= CCSraShortReadIterator::fQualityGraph;
     }
-    for ( CCSraShortReadIterator it(*this, first_spot_id); it; ++it ) {
-        if ( it.GetSpotId() >= stop_spot_id ) {
-            break;
-        }
+    CCSraShortReadIterator it(*this, first_spot_id);
+    it.SetLastSpotId(last_spot_id);
+    for ( ; it; ++it ) {
         CRef<CSeq_entry> e(new CSeq_entry);
         e->SetSeq(*it.GetShortBioseq(flags));
         entry->SetSet().SetSeq_set().push_back(e);
