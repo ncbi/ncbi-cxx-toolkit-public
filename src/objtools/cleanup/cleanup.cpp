@@ -3643,7 +3643,8 @@ bool CCleanup::DecodeXMLMarkChanged(std::string & str)
 CRef<CSeq_loc> CCleanup::GetProteinLocationFromNucleotideLocation(const CSeq_loc& nuc_loc, const CSeq_feat& cds, CScope& scope, bool require_inframe)
 {
     if (require_inframe && 
-        feature::IsLocationInFrame(scope.GetSeq_featHandle(cds), nuc_loc) != feature::eLocationInFrame_InFrame) {
+        feature::IsLocationInFrame(scope.GetSeq_featHandle(cds), nuc_loc) != feature::eLocationInFrame_InFrame &&
+        !cds.GetLocation().Equals(nuc_loc)) {
         return CRef<CSeq_loc>(NULL);
     }
     CRef<CSeq_loc> new_loc;
@@ -3672,6 +3673,10 @@ CRef<CSeq_loc> CCleanup::GetProteinLocationFromNucleotideLocation(const CSeq_loc
         new_loc = sequence::Seq_loc_Subtract(*new_loc, sub, CSeq_loc::fMerge_All | CSeq_loc::fSort, &scope);
     }
 
+    if (!new_loc->IsInt() && !new_loc->IsPnt()) {
+        CRef<CSeq_loc> tmp = sequence::Seq_loc_Merge(*new_loc, CSeq_loc::fMerge_All, &scope);
+        new_loc = tmp;
+    }
 
     if (!cds.GetLocation().IsPartialStart(eExtreme_Biological)) {
         if (new_loc->IsPartialStart(eExtreme_Biological)) {
