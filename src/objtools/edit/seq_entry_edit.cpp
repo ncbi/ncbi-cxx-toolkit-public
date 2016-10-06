@@ -30,6 +30,7 @@
 */
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbi_autoinit.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/misc/sequence_macros.hpp>
 #include <objects/pub/Pub.hpp>
@@ -2280,28 +2281,86 @@ void TrimSeqData(CBioseq_Handle bsh,
         return;
     }
 
-    // There should be sequence data
-    if ( !(bsh.CanGetInst() && bsh.GetInst().IsSetSeq_data()) ) {
-        return;
+    // Add the complete bioseq to scope
+    CRef<CBioseq> bseq(new CBioseq);
+    bseq->Assign(*bsh.GetCompleteBioseq());
+    CScope& scope = bsh.GetTopLevelEntry().GetScope();
+    CBioseq_Handle complete_bsh = scope.AddBioseq(*bseq);
+
+    // Determine the "good" range sequence coordinates
+    TSeqPos left_pos = 0;
+    TSeqPos right_pos = inst->GetLength() - 1;
+    for (const auto& cut : sorted_cuts) {
+        if (cut.GetTo() == right_pos) {
+            right_pos = cut.GetFrom() - 1;
+        }
+
+        if (cut.GetFrom() == left_pos) {
+            left_pos = cut.GetTo() + 1;
+        }
     }
 
-    // Copy residues to buffer
-    CSeqVector vec(bsh, CBioseq_Handle::eCoding_Iupac);
-    string seq_string;
-    vec.GetSeqData(0, vec.size(), seq_string);
-
-    // Delete residues per cut
-    for (TCuts::size_type ii = 0; ii < sorted_cuts.size(); ++ii) {
-        const TRange& cut = sorted_cuts[ii];
-        TSeqPos start = cut.GetFrom();
-        TSeqPos length = cut.GetTo() - start + 1;
-        seq_string.erase(start, length);
+    // Create a new Delta-ext
+    CAutoInitRef<CDelta_ext> pDeltaExt;
+    CSeqMap_CI seqmap_ci = complete_bsh.GetSeqMap().ResolvedRangeIterator(&complete_bsh.GetScope(),
+        left_pos,
+        1 + (right_pos - left_pos));
+    for (; seqmap_ci; ++seqmap_ci) {
+        switch (seqmap_ci.GetType()) {
+        case CSeqMap::eSeqGap:
+        {
+            // Sequence gaps
+            const TSeqPos uGapLength = seqmap_ci.GetLength();
+            const bool bIsLengthKnown = !seqmap_ci.IsUnknownLength();
+            CConstRef<CSeq_literal> pOriginalGapSeqLiteral =
+                seqmap_ci.GetRefGapLiteral();
+            CAutoInitRef<CDelta_seq> pDeltaSeq;
+            CAutoInitRef<CSeq_literal> pNewGapLiteral;
+            if (pOriginalGapSeqLiteral) {
+                pNewGapLiteral->Assign(*pOriginalGapSeqLiteral);
+            }
+            if (!bIsLengthKnown) {
+                pNewGapLiteral->SetFuzz().SetLim(CInt_fuzz::eLim_unk);
+            }
+            pNewGapLiteral->SetLength(uGapLength);
+            pDeltaSeq->SetLiteral(*pNewGapLiteral);
+            pDeltaExt->Set().push_back(ncbi::Ref(&*pDeltaSeq));
+        }
+        break;
+        case CSeqMap::eSeqData:
+        {
+            // Sequence data
+            string new_data;
+            CSeqVector seqvec(complete_bsh);
+            seqvec.GetPackedSeqData(new_data, seqmap_ci.GetPosition(),
+                seqmap_ci.GetEndPosition());
+            CRef<CSeq_data> pSeqData(new CSeq_data(new_data, seqvec.GetCoding()));
+            CAutoInitRef<CDelta_seq> pDeltaSeq;
+            pDeltaSeq->SetLiteral().SetLength(seqmap_ci.GetLength());
+            pDeltaSeq->SetLiteral().SetSeq_data(*pSeqData);
+            pDeltaExt->Set().push_back(ncbi::Ref(&*pDeltaSeq));
+        }
+        break;
+        }
     }
 
-    // Update sequence length and sequence data
-    inst->SetLength(seq_string.size());
-    inst->SetSeq_data().SetIupacna(*new CIUPACna(seq_string));
-    CSeqportUtil::Pack(&inst->SetSeq_data());
+    scope.RemoveBioseq(complete_bsh);
+
+    // Update sequence repr, length and data
+    inst->ResetExt();
+    inst->ResetSeq_data();
+    inst->SetLength(1 + (right_pos - left_pos));
+    if (pDeltaExt->Set().size() == 1) {
+        // Repr raw
+        inst->SetRepr(CSeq_inst::eRepr_raw);
+        CRef<CDelta_seq> pDeltaSeq = *pDeltaExt->Set().begin();
+        CSeq_data & seq_data = pDeltaSeq->SetLiteral().SetSeq_data();
+        inst->SetSeq_data(seq_data);
+    }
+    else {
+        // Repr delta
+        inst->SetExt().SetDelta(*pDeltaExt);
+    }
 }
 
 
