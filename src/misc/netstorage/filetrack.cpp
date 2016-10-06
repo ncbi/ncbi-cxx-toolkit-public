@@ -68,7 +68,7 @@ BEGIN_NCBI_SCOPE
         }                                                                   \
     } while (0)
 
-#define CHECK_IO_STATUS(io, object_loc, what, already_failed)               \
+#define CHECK_IO_STATUS(io, object_loc, when, already_failed)               \
     do {                                                                    \
         EIO_Status io_code = io.Status();                                   \
                                                                             \
@@ -86,7 +86,7 @@ BEGIN_NCBI_SCOPE
             if (!already_failed) break;                                     \
         default:                                                            \
             s_ThrowIoStatus(DIAG_COMPILE_INFO, object_loc.GetLocator(),     \
-                    io_code, what);                                         \
+                    io_code, when);                                         \
         }                                                                   \
     } while (0)
 
@@ -104,23 +104,23 @@ CNetStorageException::EErrCode s_HttpStatusToErrCode(int http_code)
 }
 
 void s_ThrowHttpStatus(const CDiagCompileInfo& info, const string object_loc,
-        int http_code, const string& http_text, const string what)
+        int http_code, const string& http_text, const string when)
 {
     ostringstream os;
     CNetStorageException::EErrCode err_code = s_HttpStatusToErrCode(http_code);
 
-    os << "'" << http_code << "|" << http_text << "' " << what << " " << object_loc;
+    os << "'" << http_code << "|" << http_text << "' " << when << " " << object_loc;
 
     throw CNetStorageException(info, 0, err_code, os.str());
 }
 
 void s_ThrowIoStatus(const CDiagCompileInfo& info, const string object_loc,
-        EIO_Status io_code, const string what)
+        EIO_Status io_code, const string when)
 {
     ostringstream os;
     auto io_text = IO_StatusStr(io_code);
 
-    os << "'" << io_code << "|" << io_text << "' " << what << " " << object_loc;
+    os << "'" << io_code << "|" << io_text << "' " << when << " " << object_loc;
 
     throw CNetStorageException(info, 0, CNetStorageException::eIOError, os.str());
 }
@@ -320,6 +320,7 @@ CJsonNode SFileTrackRequest::GetFileInfo()
     }
 
     CHECK_HTTP_STATUS(m_HTTPStream, m_ObjectLoc, "on accessing");
+    CHECK_IO_STATUS(m_HTTPStream, m_ObjectLoc, "on accessing", false);
 
     CJsonNode root;
 
@@ -332,7 +333,6 @@ CJsonNode SFileTrackRequest::GetFileInfo()
                 "' on accessing " << m_ObjectLoc.GetLocator());
     }
 
-    CHECK_IO_STATUS(m_HTTPStream, m_ObjectLoc, "on accessing", false);
     return root;
 }
 

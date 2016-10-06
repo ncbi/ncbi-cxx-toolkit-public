@@ -98,7 +98,7 @@ struct SFileTrackUpload : public SFileTrackRequest
             const string& user_header, SConnNetInfo* net_info);
 
     void Write(const void* buf, size_t count, size_t* bytes_written);
-    virtual void FinishUpload();
+    void FinishUpload();
 
 private:
     void RenameFile(const string& from, const string& to);
