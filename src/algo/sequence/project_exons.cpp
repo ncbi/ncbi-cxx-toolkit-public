@@ -1165,7 +1165,7 @@ static CRef<CSeq_loc> ProjectExon(
    
     try {
         exon_loc = ProjectExon_oldlogic(exon, aln_genomic_id, aln_genomic_strand);
-    } catch(CException& e) {
+    } catch(CException&) {
         exon_loc = ProjectExon_newlogic(exon, aln_genomic_id, aln_genomic_strand);
 
         ERR_POST(Warning << " Project-exon logic failed. Using new logic: " 
