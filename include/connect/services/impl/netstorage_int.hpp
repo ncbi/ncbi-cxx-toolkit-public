@@ -108,10 +108,11 @@ public:
     // This contains both of the above
     string GetUniqueKey() const {return m_UniqueKey;}
 
-    void SetLocation_NetCache(const string& service_name);
+    void SetLocation(EFileTrackSite ft_site,
+            const string& nc_service_name = kEmptyStr);
+
     string GetNCServiceName() const {return m_NCServiceName;}
 
-    void SetLocation_FileTrack(EFileTrackSite ft_site);
     EFileTrackSite GetFileTrackSite() const;
 
     string GetLocator() const

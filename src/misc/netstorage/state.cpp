@@ -523,7 +523,9 @@ bool CNetCache::Init()
 void CNetCache::SetLocator()
 {
     CNetService service(m_Client.GetService());
-    Locator().SetLocation_NetCache(service.GetServiceName());
+    const string& service_name(service.GetServiceName());
+
+    Locator().SetLocation(m_Context->filetrack_api.config.site, service_name);
 }
 
 
@@ -703,7 +705,7 @@ ILocation::TUserInfo CNetCache::GetUserInfoImpl()
 
 void CFileTrack::SetLocator()
 {
-    Locator().SetLocation_FileTrack(m_Context->filetrack_api.config.site);
+    Locator().SetLocation(m_Context->filetrack_api.config.site);
 }
 
 

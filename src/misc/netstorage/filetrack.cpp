@@ -474,6 +474,8 @@ const string s_GetDecryptedKey(const string& key)
 }
 
 SFileTrackConfig::SFileTrackConfig(EVoid) :
+    // This site value corresponds to default site value in CNetStorageObjectLoc
+    site(CNetStorageObjectLoc::eFileTrack_ProdSite),
     comm_timeout(s_GetDefaultTimeout())
 {
 }
