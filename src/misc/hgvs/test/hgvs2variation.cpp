@@ -140,7 +140,7 @@ void CHgvs2variationApplication::Init(void)
     arg_desc->AddFlag("attach_hgvs", "calculate hgvs expressions");
     arg_desc->AddFlag("roundtrip_hgvs", "roundtrip hgvs expression");
     arg_desc->AddFlag("asn_in", "in is text-asn");
-    arg_desc->AddFlag("feat", "asn is seq-feat");
+    arg_desc->AddFlag("i_annot", "input as annot");
     arg_desc->AddFlag("o_hgvs", "Output HGVS expression instead of Variation");
     arg_desc->AddFlag("o_annot", "Output as seq-annot instead of Variation");
 
@@ -154,6 +154,7 @@ void CHgvs2variationApplication::Init(void)
     SetupArgDescriptions(arg_desc.release());
     CException::SetStackTraceLevel(eDiag_Warning);
     SetDiagPostLevel(eDiag_Info);
+    SetDiagFilter(eDiagFilter_All, "!(1305.31)");
 }
 
 using namespace variation;
@@ -177,7 +178,7 @@ string TestRoundTrip(const string& hgvs_synonyms, CHgvsParser& parser)
 {
     typedef vector<string> TStrings;
     TStrings inputs;
-    NStr::Tokenize(hgvs_synonyms, "|", inputs);
+    NStr::Split(hgvs_synonyms, "|", inputs, NStr::fSplit_Tokenize);
     string result;
     string delim = "";
     bool all_ok = true;
@@ -306,11 +307,22 @@ int CHgvs2variationApplication::Run(void)
         while(true) {
             CRef<CVariation> v (new CVariation);
             try {
-                if(args["feat"]) {
-                    CRef<CSeq_feat> feat(new CSeq_feat);
-                    args["in"].AsInputFile() >> MSerial_AsnText >> *feat;
+                if(args["i_annot"]) {
+                    v->SetData().SetSet().SetVariations();
+                    v->SetData().SetSet().SetType(0);
+
+                    CRef<CSeq_annot> annot(new CSeq_annot);
+                    args["in"].AsInputFile() >> MSerial_AsnText >> *annot;
                     CVariationUtil vu(*scope);
-                    v = vu.AsVariation(*feat);
+
+                    ITERATE(CSeq_annot::TData::TFtable, it, annot->GetData().GetFtable()) {
+                        CRef<CVariation> v2 = vu.AsVariation(**it);
+                        if(annot->GetData().GetFtable().size() == 1) {
+                            v = v2;
+                        } else {
+                            v->SetData().SetSet().SetVariations().push_back(v2);
+                        }
+                    }
                 } else {
                     args["in"].AsInputFile() >> MSerial_AsnText>> *v;
                 }                
