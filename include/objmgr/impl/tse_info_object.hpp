@@ -130,7 +130,8 @@ public:
         fNeedUpdate_children_annot    = fNeedUpdate_annot   <<kNeedUpdate_bits,
         fNeedUpdate_children_seq_data = fNeedUpdate_seq_data<<kNeedUpdate_bits,
         fNeedUpdate_children_core     = fNeedUpdate_core    <<kNeedUpdate_bits,
-        fNeedUpdate_children_assembly = fNeedUpdate_assembly<<kNeedUpdate_bits
+        fNeedUpdate_children_assembly = fNeedUpdate_assembly<<kNeedUpdate_bits,
+        fNeedUpdate_children_bioseq   = fNeedUpdate_bioseq  <<kNeedUpdate_bits
     };
     typedef int TNeedUpdateFlags;
     bool x_NeedUpdate(ENeedUpdate flag) const;
