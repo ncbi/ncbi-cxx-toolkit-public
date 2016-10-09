@@ -252,11 +252,6 @@ static const char* x_StringToIPv6(TNCBI_IPv6Addr* addr,
         n++;
     }
 
-    {{
-        size_t i;
-        for (i = 0;  i < t;  ++i)
-            printf("%zu: \"%.*s\"\n", i, (int) token[i].len, token[i].ptr); 
-    }}
     if (!t)
         return 0/*failure*/;
     if (n < len  &&  !token[t - 1].len)
