@@ -56,7 +56,7 @@ private:
 class CConnHolder : public CObject
 {
 public:
-    CConnHolder(IConnection* conn);
+    CConnHolder(IConnection* conn, const CSDB_ConnectionParam& params);
     virtual ~CConnHolder(void);
 
     IConnection* GetConn(void) const;
@@ -76,6 +76,7 @@ private:
     IConnection* m_Conn;
     size_t       m_DefaultTimeout;
     bool         m_HasCustomTimeout;
+    bool         m_ContinueAfterRaiserror;
     Uint4        m_CntOpen;
     list<string> m_PrintOutput;
     CRef<CDB_Exception::SContext> m_Context;

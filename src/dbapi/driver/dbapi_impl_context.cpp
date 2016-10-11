@@ -874,6 +874,12 @@ CDriverContext::ReadDBConfParams(const string&  service_name,
         params->pool_allow_temp_overflow
             = reg.Get(section_name, "conn_pool_allow_temp_overflow");
     }
+    if (reg.HasEntry(section_name, "continue_after_raiserror",
+                     IRegistry::fCountCleared)) {
+        params->flags += SDBConfParams::fContRaiserrorSet;
+        params->continue_after_raiserror
+            = reg.Get(section_name, "continue_after_raiserror");
+    }
     if (reg.HasEntry(section_name, "args", IRegistry::fCountCleared)) {
         params->flags += SDBConfParams::fArgsSet;
         params->args = reg.Get(section_name, "args");
@@ -1059,6 +1065,21 @@ CDriverContext::MakeConnection(const CDBConnParams& params)
         }
         else if (params.GetParam("pool_allow_temp_overflow") == "default") {
             act_params.SetParam("pool_allow_temp_overflow", "false");
+        }
+        if (conf_params.IsContinueAfterRaiserrorSet()) {
+            if (conf_params.continue_after_raiserror.empty()) {
+                act_params.SetParam("continue_after_raiserror", "false");
+            }
+            else {
+                act_params.SetParam
+                    ("continue_after_raiserror", 
+                     NStr::BoolToString(
+                         NStr::StringToBool(
+                             conf_params.continue_after_raiserror)));
+            }
+        }
+        else if (params.GetParam("continue_after_raiserror") == "default") {
+            act_params.SetParam("continue_after_raiserror", "false");
         }
 
         s_TransformLoginData(server_name, user_name, db_name, password);

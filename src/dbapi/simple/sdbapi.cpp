@@ -1042,6 +1042,8 @@ void CSDB_ConnectionParam::x_FillParamMap(void)
     COPY_NUM_PARAM (ConnPoolWaitTime, PoolWaitTime, pool_wait_time);
     COPY_BOOL_PARAM(ConnPoolAllowTempOverflow, PoolAllowTempOverflow,
                     pool_allow_temp_overflow);
+    COPY_BOOL_PARAM(ContinueAfterRaiserror, ContinueAfterRaiserror,
+                    continue_after_raiserror);
 
 #undef COPY_PARAM_EX
 #undef COPY_PARAM
@@ -1140,6 +1142,8 @@ CSDB_ConnectionParam::x_FillLowerParams(CDBConnParamsBase* params) const
     params->SetParam("pool_wait_time", Get(eConnPoolWaitTime, eWithOverrides));
     x_FillBoolParam(params, "pool_allow_temp_overflow",
                     eConnPoolAllowTempOverflow);
+    x_FillBoolParam(params, "continue_after_raiserror",
+                    eContinueAfterRaiserror);
 
     // Generic named parameters.  The historic version of this logic
     // had two quirks, which I [AMU] have not carried over:
@@ -1606,6 +1610,15 @@ bool CSDB_UserHandler::HandleMessage(int severity, int msgnum,
     if (severity == 0) {
         m_Conn.m_PrintOutput.push_back(message);
         return true;
+    } else if (severity == 16  &&  m_Conn.m_ContinueAfterRaiserror) {
+        // Sybase servers use severity 16 for all user-defined messages,
+        // even if they're not intended to abort execution.
+        // Optionally intercept these messages and report them as errors
+        // (vs. exceptions).
+        CDB_DSEx ex(DIAG_COMPILE_INFO, NULL, message + *m_Conn.m_Context,
+                    eDiag_Error, msgnum);
+        ERR_POST_X(19, ex);
+        return true;
     } else {
         return CDB_UserHandler_Exception::HandleMessage
             (severity, msgnum, message);
@@ -1614,10 +1627,12 @@ bool CSDB_UserHandler::HandleMessage(int severity, int msgnum,
 
 
 inline
-CConnHolder::CConnHolder(IConnection* conn)
+CConnHolder::CConnHolder(IConnection* conn, const CSDB_ConnectionParam& params)
     : m_Conn(conn),
       m_DefaultTimeout(0),
       m_HasCustomTimeout(false),
+      m_ContinueAfterRaiserror
+        (params.Get(CSDB_ConnectionParam::eContinueAfterRaiserror) == "true"),
       m_CntOpen(0),
       m_Context(new CDB_Exception::SContext),
       m_Handler(new CSDB_UserHandler(*this))
@@ -1711,7 +1726,7 @@ CDatabaseImpl::Connect(const CSDB_ConnectionParam& params)
     params.x_FillLowerParams(&lower_params);
     AutoPtr<IConnection> conn = s_GetDataSource()->CreateConnection();
     conn->Connect(lower_params);
-    m_Conn.Reset(new CConnHolder(conn.release()));
+    m_Conn.Reset(new CConnHolder(conn.release(), params));
     m_IsOpen = m_EverConnected = true;
     m_Conn->AddOpenRef();
 }

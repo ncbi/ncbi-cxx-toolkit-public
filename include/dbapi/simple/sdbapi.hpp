@@ -908,10 +908,11 @@ public:
     ///   - conn_pool_idle_time
     ///   - conn_pool_wait_time
     ///   - conn_pool_allow_temp_overflow
+    ///   - continue_after_raiserror
     ///   - password_file
     ///   - password_key
     ///
-    ///   The last 8 parameters can also come as named URL parameters;
+    ///   Most of these parameters can also come as named URL parameters;
     ///   "args" is a catch-all for any other parameters, which can appear
     ///   directly as URL parameters.  (Settings from the configuration file's
     ///   "args" string override URL parameters on an individual basis.)
@@ -959,6 +960,7 @@ public:
         eConnPoolIdleTime,
         eConnPoolWaitTime,
         eConnPoolAllowTempOverflow,
+        eContinueAfterRaiserror,
         eArgsString
     };
  
@@ -1379,6 +1381,8 @@ CSDB_ConnectionParam::x_GetName(EParam param)
     case eConnPoolWaitTime: return "conn_pool_wait_time";
     case eConnPoolAllowTempOverflow:
                             return "allow_temp_overflow";
+    case eContinueAfterRaiserror:
+                            return "continue_after_raiserror";
     case eArgsString:       return "args_string";
     }
     _TROUBLE;
@@ -1439,6 +1443,7 @@ CSDB_ConnectionParam::Get(EParam param, EWithOverrides with_overrides) const
     case eConnPoolIdleTime:
     case eConnPoolWaitTime:
     case eConnPoolAllowTempOverflow:
+    case eContinueAfterRaiserror:
     {
         bool found_dummy = false;
         return m_Url.GetArgs().GetValue(x_GetName(param), &found_dummy);
@@ -1506,6 +1511,7 @@ CSDB_ConnectionParam::Set(EParam param, const string& value, TSetFlags flags)
     case eConnPoolIdleTime:
     case eConnPoolWaitTime:
     case eConnPoolAllowTempOverflow:
+    case eContinueAfterRaiserror:
     {
         string name = x_GetName(param);
         if ( !value.empty()  ||  m_Url.GetArgs().IsSetValue(name)) {

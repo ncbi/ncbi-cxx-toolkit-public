@@ -76,7 +76,8 @@ struct NCBI_DBAPIDRIVER_EXPORT SDBConfParams
         fPasswordKeySet  = 0x4000,
         fPoolIdleTimeSet = 0x8000,
         fPoolWaitTimeSet = 0x10000,
-        fPoolAllowTempSet= 0x20000
+        fPoolAllowTempSet= 0x20000,
+        fContRaiserrorSet= 0x40000
     };
     typedef unsigned int  TFlags;
 
@@ -99,6 +100,7 @@ struct NCBI_DBAPIDRIVER_EXPORT SDBConfParams
     string  pool_idle_time;
     string  pool_wait_time;
     string  pool_allow_temp_overflow;
+    string  continue_after_raiserror;
     string  args;
 
 
@@ -122,6 +124,8 @@ struct NCBI_DBAPIDRIVER_EXPORT SDBConfParams
     bool IsPoolWaitTimeSet(void) { return IsFlagSet(fPoolWaitTimeSet);  }
     bool IsPoolAllowTempOverflowSet(void)
                                  { return IsFlagSet(fPoolAllowTempSet); }
+    bool IsContinueAfterRaiserrorSet(void)
+                                 { return IsFlagSet(fContRaiserrorSet); }
     bool IsArgsSet(void)         { return IsFlagSet(fArgsSet);          }
 
     void Clear(void);
