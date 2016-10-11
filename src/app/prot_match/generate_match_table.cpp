@@ -4,6 +4,15 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/objistr.hpp>
 
+#include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqalign/Score.hpp>
+#include <objects/seqalign/Dense_seg.hpp>
+#include <objmgr/util/sequence.hpp>
+#include <objmgr/object_manager.hpp>
+
+#include <objmgr/scope.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
+
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seq/Annot_descr.hpp>
@@ -23,6 +32,12 @@ BEGIN_NCBI_SCOPE
 
 USING_SCOPE(objects);
 
+
+struct SNucMatchInfo {
+    string accession;
+    string status;
+};
+
 class CProteinMatchApp : public CNcbiApplication
 {
 
@@ -33,15 +48,28 @@ public:
     typedef list<CRef<CSeq_annot>> TMatches;
 
 private:
-    bool x_GenerateMatchTable(const TMatches& matches,
-                              const list<string>& new_proteins,
-                              const list<string>& dead_proteins);
-    bool x_TryProcessInputFile(const CArgs& args, 
-                               TMatches& matches, 
-                               list<string>& new_proteins,
-                               list<string>& dead_proteins);
+    bool x_GenerateMatchTable(
+        const SNucMatchInfo& nuc_match_info,
+        const TMatches& protein_matches,
+        const list<string>& new_protein_ids,
+        const list<string>& dead_proteins_accessions);
+ 
+    bool x_TryProcessAnnotFile(const CArgs& args, 
+        TMatches& matches, 
+        list<string>& new_proteins,
+        list<string>& dead_proteins);
+
+    bool x_TryProcessAlignmentFile(
+        const CArgs& args,
+        SNucMatchInfo& nuc_match_info);
+
+    bool x_IsPerfectAlignment(const CSeq_align& align) const;
+    bool x_FetchAccessionVersion(const CSeq_align& align, 
+        string& accver);
 
     CObjectIStream* x_InitInputStream(const CArgs& args) const;
+    CObjectIStream* x_InitInputStream(const string& filename,
+    const ESerialDataFormat serial) const;
     bool x_IsComparison(const CSeq_annot& seq_annot) const;
     bool x_HasCdsQuery(const CSeq_annot& seq_annot) const;
     bool x_HasCdsSubject(const CSeq_annot& seq_annot) const;
@@ -474,6 +502,11 @@ void CProteinMatchApp::Init()
             "Path to ASN.1 input file",
             CArgDescriptions::eInputFile);
 
+    arg_desc->AddKey("aln-input",
+            "InputFile",
+            "Path to nucleotide alignment input file",
+            CArgDescriptions::eInputFile);
+
     arg_desc->AddOptionalKey("o", "OutputFile",
             "Output table file name. Defaults to stdout",
             CArgDescriptions::eOutputFile);
@@ -495,18 +528,29 @@ int CProteinMatchApp::Run()
 {
     const CArgs& args = GetArgs();
 
-    list<string> new_proteins;
-    list<string> dead_proteins;
-
-    TMatches matches;
-    // Attempt to read a list of Seq-annots encoding the 
-    // the protein matches.
-    if (!x_TryProcessInputFile(args, matches, new_proteins, dead_proteins)) {
+    SNucMatchInfo nuc_match_info;
+    if (!x_TryProcessAlignmentFile(args, nuc_match_info)) {
         return 1;
     }
 
+    list<string> new_proteins_ids;
+    list<string> dead_protein_accessions;
+
+    TMatches protein_matches;
+    // Attempt to read a list of Seq-annots encoding the 
+    // the protein matches.
+    if (!x_TryProcessAnnotFile(args, 
+                               protein_matches, 
+                               new_proteins_ids, 
+                               dead_protein_accessions)) {
+        return 2;
+    }
+
     // Generate a mMatchTable (of type CRef<CSeq_table> from the list of Seq-annots. 
-    x_GenerateMatchTable(matches, new_proteins, dead_proteins);
+    x_GenerateMatchTable(nuc_match_info,
+                         protein_matches, 
+                         new_proteins_ids, 
+                         dead_protein_accessions);
 
     CNcbiOstream* pOs = x_InitOutputStream(args);
 
@@ -517,8 +561,113 @@ int CProteinMatchApp::Run()
 }
 
 
+bool CProteinMatchApp::x_TryProcessAlignmentFile(
+        const CArgs& args,
+        SNucMatchInfo& nuc_match_info)
+{
+    // Defaults to binary input
+    ESerialDataFormat serial = eSerial_AsnBinary;
+    if (args["text-input"]) {
+        serial = eSerial_AsnText;
+    }
 
-bool CProteinMatchApp::x_TryProcessInputFile(
+    const string filename = args["aln-input"].AsString();
+
+    CObjectIStream* pObjIstream;
+    pObjIstream = x_InitInputStream(filename, serial);
+
+
+    CRef<CSeq_align> pSeqAlign(new CSeq_align());
+    try {
+        pObjIstream->Read(ObjectInfo(*pSeqAlign));
+    }
+    catch (CException&) {
+        return false;
+    }
+    // Find accession and status
+
+    nuc_match_info.status = x_IsPerfectAlignment(*pSeqAlign) ? "Same" : "Changed";
+    
+    string accver;
+    if (!x_FetchAccessionVersion(*pSeqAlign, accver)) {
+        return false;
+    }
+    vector<string> accver_vector;
+    NStr::Split(accver, ".", accver_vector);
+
+    nuc_match_info.accession = accver_vector[0];
+
+
+    return true;
+}
+
+
+
+bool CProteinMatchApp::x_IsPerfectAlignment(const CSeq_align& align) const 
+{
+    size_t gap_count = 1;
+    size_t num_mismatch = 1;
+    if (align.IsSetScore()) {
+        for (CRef<CScore> score : align.GetScore()) {
+
+            if (score->IsSetId() &&
+                score->GetId().IsStr()) {
+        
+                if (score->GetId().GetStr() == "num_mismatch") {
+                    num_mismatch = score->GetValue().GetInt();
+                    continue;
+                }
+
+                if (score->GetId().GetStr() == "gap_count") {
+                    gap_count = score->GetValue().GetInt();
+                    continue;
+                }
+            }
+        }
+    }
+
+    if (!gap_count  && 
+        !num_mismatch) {
+        return true;
+    }
+
+    return false;
+}
+
+
+bool CProteinMatchApp::x_FetchAccessionVersion(const CSeq_align& align, 
+                                               string& accver) 
+{
+    const bool withVersion = true;
+    if (align.IsSetSegs() &&
+        align.GetSegs().IsDenseg() &&
+        align.GetSegs().GetDenseg().IsSetIds()) {
+
+        for (CRef<CSeq_id> id : align.GetSegs().GetDenseg().GetIds()) {
+           if (id->IsGenbank()) {
+               accver = id->GetSeqIdString(withVersion);
+               return true;
+           } 
+
+           if (id->IsGi()) {
+               CRef<CObjectManager> obj_mgr = CObjectManager::GetInstance();
+               CGBDataLoader::RegisterInObjectManager(*obj_mgr);
+               CRef<CScope> gb_scope = Ref(new CScope(*obj_mgr));
+               gb_scope->AddDataLoader("GBLOADER");
+
+               accver = sequence::GetAccessionForGi(id->GetGi(),
+                                                    *gb_scope);
+               return true;
+           }
+        }
+    }
+
+    return false;
+}
+
+
+
+bool CProteinMatchApp::x_TryProcessAnnotFile(
         const CArgs& args,
         TMatches& matches, 
         list<string>& new_proteins,  // contains local ids for new proteins
@@ -642,13 +791,26 @@ void CProteinMatchApp::x_AppendColumnValue(
 
 
 bool CProteinMatchApp::x_GenerateMatchTable(
+        const SNucMatchInfo& nuc_match_info,
         const TMatches& matches,
         const list<string>& new_proteins,
         const list<string>& dead_proteins) 
 {
-    x_AddColumn("Accession");
-    x_AddColumn("LocalID");
+    x_AddColumn("NA_Accession");
+    x_AddColumn("PROT_Accession");
+    x_AddColumn("PROT_LocalID");
+    x_AddColumn("Mol_type");
     x_AddColumn("Status");
+
+    x_AppendColumnValue("NA_Accession", nuc_match_info.accession);
+    x_AppendColumnValue("PROT_Accession", "---");
+    x_AppendColumnValue("PROT_LocalID", "---");
+    x_AppendColumnValue("Mol_type", "NUC");
+    x_AppendColumnValue("Status", nuc_match_info.status);
+
+    mMatchTable->SetNum_rows(1);
+
+
     // Iterate over match Seq-annots
     TMatches::const_iterator cit;
 
@@ -667,15 +829,19 @@ bool CProteinMatchApp::x_GenerateMatchTable(
         if (localID.empty()) {
             localID = "---";
         }
-        x_AppendColumnValue("Accession", accver_vec[0]);
-        x_AppendColumnValue("LocalID", localID);
+        x_AppendColumnValue("NA_Accession", nuc_match_info.accession);
+        x_AppendColumnValue("PROT_Accession", accver_vec[0]);
+        x_AppendColumnValue("PROT_LocalID", localID);
+        x_AppendColumnValue("Mol_type", "PROT");
         x_AppendColumnValue("Status", status);
 
         mMatchTable->SetNum_rows(mMatchTable->GetNum_rows()+1);
     }
     for (string localID : new_proteins) {
-        x_AppendColumnValue("Accession", "---");
-        x_AppendColumnValue("LocalID", localID);
+        x_AppendColumnValue("NA_Accession", nuc_match_info.accession);
+        x_AppendColumnValue("PROT_Accession", "---");
+        x_AppendColumnValue("PROT_LocalID", localID);
+        x_AppendColumnValue("Mol_type", "PROT");
         x_AppendColumnValue("Status", "New");
         mMatchTable->SetNum_rows(mMatchTable->GetNum_rows()+1);
     }
@@ -683,8 +849,10 @@ bool CProteinMatchApp::x_GenerateMatchTable(
     for (string accver : dead_proteins) {
         vector<string> accver_vec;
         NStr::Split(accver, ".", accver_vec);
-        x_AppendColumnValue("Accession", accver_vec[0]);
-        x_AppendColumnValue("LocalID", "---");
+        x_AppendColumnValue("NA_Accession", nuc_match_info.accession);
+        x_AppendColumnValue("PROT_Accession", accver_vec[0]);
+        x_AppendColumnValue("PROT_LocalID", "---");
+        x_AppendColumnValue("Mol_type", "PROT");
         x_AppendColumnValue("Status", "Dead");
         mMatchTable->SetNum_rows(mMatchTable->GetNum_rows()+1);
     }
@@ -752,6 +920,32 @@ void CProteinMatchApp::x_WriteTable(
 }
 
 
+
+CObjectIStream* CProteinMatchApp::x_InitInputStream(const string& filename,
+    const ESerialDataFormat serial) const
+{
+    CNcbiIstream* pInStream = new CNcbiIfstream(filename.c_str(), ios::in | ios::binary);
+
+    if (pInStream->fail()) {
+        NCBI_THROW(CProteinMatchException, 
+                   eInputError, 
+                   "Could not create input stream for \"" + filename + "\"");
+    }
+
+    CObjectIStream* pObjIStream = CObjectIStream::Open(serial,
+                                                       *pInStream,
+                                                       eTakeOwnership);
+
+    if (!pObjIStream) {
+        NCBI_THROW(CProteinMatchException, 
+                   eInputError, 
+                   "Unable to open input file \"" + filename + "\"");
+    }
+
+    return pObjIStream;
+}
+
+
 CObjectIStream* CProteinMatchApp::x_InitInputStream(const CArgs& args) const
 {
     // Defaults to binary input
@@ -763,25 +957,7 @@ CObjectIStream* CProteinMatchApp::x_InitInputStream(const CArgs& args) const
 
     string infile = args["i"].AsString();
 
-    CNcbiIstream* pInStream = new CNcbiIfstream(infile.c_str(), ios::in | ios::binary);
-
-    if (pInStream->fail()) {
-        NCBI_THROW(CProteinMatchException, 
-                   eInputError, 
-                   "Could not create input stream for \"" + infile + "\"");
-    }
-
-    CObjectIStream* pObjIStream = CObjectIStream::Open(serial,
-                                                       *pInStream,
-                                                       eTakeOwnership);
-
-    if (!pObjIStream) {
-        NCBI_THROW(CProteinMatchException, 
-                   eInputError, 
-                   "Unable to open input file \"" + infile + "\"");
-    }
-
-    return pObjIStream;
+    return x_InitInputStream(infile, serial);
 }
 
 
