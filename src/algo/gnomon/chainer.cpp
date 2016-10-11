@@ -6976,7 +6976,7 @@ void CGnomonAnnotator_Base::SetGenomic(const CSeq_id& contig, CScope& scope, con
                 continue;
 
             CConstRef<CSeq_literal> gsl = sv.GetGapSeq_literal(i);
-            if(gsl && gsl->IsBridgeable() == CSeq_literal::e_NotBridgeable) {               
+            if(gsl && gsl->GetBridgeability() == CSeq_literal::e_NotBridgeable) {               
                 if(current_gap == m_notbridgeable_gaps_len.end())                    
                     current_gap = m_notbridgeable_gaps_len.insert(TIntMap::value_type(i,1)).first;
                 else
