@@ -84,6 +84,7 @@ protected:
 
 CDiscRepApp::CDiscRepApp(void) : m_Scope(*CObjectManager::GetInstance()), m_Ext(false), m_Fat(false), m_AutoFix(false), m_Macro(false), m_Xml(false), m_Print(false)
 {
+  SetVersionByBuild(1);
 }
 
 

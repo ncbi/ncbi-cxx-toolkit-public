@@ -2279,15 +2279,7 @@ int CSeq_id::BaseFastaNAScore(void) const
     case e_Local:                              return 230;
     case e_Gi:                                 return 120;
     case e_General:
-        {
-        const string& db = GetGeneral().GetDb();
-        if (db.compare("TMSMART") == 0 ||
-            db.compare("BankIt") == 0 ||
-            db.compare("NCBIFILE") == 0 )
-            return 240;
-        else
-            return 50;
-        }
+        return GetGeneral().GetDb() == "TMSMART" ? 240 : 50;
     case e_Patent:                             return 40;
     case e_Gibbsq: case e_Gibbmt: case e_Pdb:  return 30;
     case e_Other:                              return 15;
@@ -2303,15 +2295,7 @@ int CSeq_id::BaseFastaAAScore(void) const
     case e_Local:                  return 230;
     case e_Gi:                     return 120;
     case e_General:
-        {
-        const string& db = GetGeneral().GetDb();
-        if (db.compare("TMSMART") == 0 ||
-            db.compare("BankIt") == 0 ||
-            db.compare("NCBIFILE") == 0)
-            return 240;
-        else
-            return 90;
-        }
+        return GetGeneral().GetDb() == "TMSMART" ? 240 : 90;
     case e_Patent:                 return 80;
     case e_Prf:                    return 70;
     case e_Pdb:                    return 50;

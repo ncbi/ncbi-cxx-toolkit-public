@@ -83,6 +83,7 @@ USING_SCOPE(objects);
 class CCleanupApp : public CNcbiApplication, public CGBReleaseFile::ISeqEntryHandler
 {
 public:
+    CCleanupApp();
     void Init(void);
     int  Run (void);
 
@@ -139,6 +140,11 @@ private:
     auto_ptr<CObjectOStream>    m_Out;          // output
 };
 
+
+CCleanupApp::CCleanupApp()
+{
+  SetVersionByBuild(1);
+}
 
 void CCleanupApp::Init(void)
 {
