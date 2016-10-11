@@ -549,8 +549,6 @@ void CFastaReader::ParseDefLine(const TStr& defLine,
     size_t start = 1, pos, len = defLine.length(), title_start;
     size_t range_len = 0;
     const TFlags& fFastaFlags = info.fFastaFlags;
-    const TReaderFlags& fBaseFlags = info.fBaseFlags;
-    const size_t& maxIdLength = info.maxIdLength;
     const size_t& lineNumber = info.lineNumber;
 
     // ignore spaces between '>' and the sequence ID
