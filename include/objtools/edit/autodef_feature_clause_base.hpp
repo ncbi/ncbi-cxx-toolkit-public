@@ -64,7 +64,7 @@ public:
     virtual void AddToOtherLocation(CRef<CSeq_loc> loc);
     virtual void AddToLocation(CRef<CSeq_loc> loc, bool also_set_partials = true);
     virtual bool SameStrand(const CSeq_loc& loc);
-    virtual bool IsPartial() { return false; }
+    virtual bool IsPartial() const { return false; }
     virtual bool IsMobileElement() { return false; }
     virtual bool IsInsertionSequence() { return false; }
     virtual bool IsControlRegion() { return false; }
@@ -88,24 +88,24 @@ public:
 
     bool IsGeneMentioned(CAutoDefFeatureClause_Base *gene_clause);
     bool IsUnattachedGene() const;
-    bool IsTypewordFirst() { return m_ShowTypewordFirst; }
+    bool IsTypewordFirst() const { return m_ShowTypewordFirst; }
     bool DisplayAlleleName ();
 
-    string GetInterval() { return m_Interval; }
-    string GetTypeword() { return m_Typeword; }
-    string GetDescription() { return m_Description; }
-    string GetProductName() { return m_ProductName; }
-    string GetGeneName() { return m_GeneName; }
-    string GetAlleleName() { return m_AlleleName; }
+    const string& GetInterval() { return m_Interval; }
+    const string& GetTypeword() const { return m_Typeword; }
+    const string& GetDescription() const { return m_Description; }
+    const string& GetProductName() { return m_ProductName; }
+    const string& GetGeneName() { return m_GeneName; }
+    const string& GetAlleleName() { return m_AlleleName; }
     virtual void SetProductName(string product_name);
-    bool   GetGeneIsPseudo() { return m_GeneIsPseudo; }
-    bool   NeedPlural() { return m_MakePlural; }
-    bool   IsAltSpliced() { return m_IsAltSpliced; }
+    bool   GetGeneIsPseudo() const { return m_GeneIsPseudo; }
+    bool   NeedPlural() const { return m_MakePlural; }
+    bool   IsAltSpliced() const { return m_IsAltSpliced; }
     void   SetAltSpliced(string splice_name);
-    bool IsMarkedForDeletion() { return m_DeleteMe; }
+    bool IsMarkedForDeletion() const { return m_DeleteMe; }
     void MarkForDeletion() { m_DeleteMe = true; }
     void SetMakePlural() { m_MakePlural = true; }
-    bool HasmRNA() { return m_HasmRNA; }
+    bool HasmRNA() const { return m_HasmRNA; }
     void SetInfoOnly (bool info_only) { m_ClauseInfoOnly = info_only; }
     void PluralizeInterval();
     void PluralizeDescription();
@@ -190,9 +190,10 @@ protected:
     
     bool   m_DeleteMe;
 
-    unsigned int x_LastIntervalChangeBeforeEnd ();
+    size_t x_LastIntervalChangeBeforeEnd () const;
     bool x_OkToConsolidate (unsigned int clause1, unsigned int clause2);
-    bool x_MeetAltSpliceRules (unsigned int clause1, unsigned int clause2, string &splice_name);
+    bool x_OkToConsolidate(const CAutoDefFeatureClause_Base& other) const;
+    bool x_MeetAltSpliceRules (size_t clause1, size_t clause2, string &splice_name);
 
     void x_RemoveNullClauses();
 

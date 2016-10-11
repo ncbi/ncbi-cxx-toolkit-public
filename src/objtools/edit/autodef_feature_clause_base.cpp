@@ -349,7 +349,7 @@ string CAutoDefFeatureClause_Base::ListClauses(bool allow_semicolons, bool suppr
     bool is_last, is_second_to_last;
     bool two_more_in_list;
     
-    unsigned int last_interval_change_before_end = x_LastIntervalChangeBeforeEnd();
+    size_t last_interval_change_before_end = x_LastIntervalChangeBeforeEnd();
     
     string full_clause_list;
     
@@ -585,14 +585,14 @@ string CAutoDefFeatureClause_Base::ListClauses(bool allow_semicolons, bool suppr
 }
 
 
-unsigned int CAutoDefFeatureClause_Base::x_LastIntervalChangeBeforeEnd ()
+size_t CAutoDefFeatureClause_Base::x_LastIntervalChangeBeforeEnd () const
 {
     if (m_ClauseList.size() < 2) {
         return 0;
     }
     string last_interval = m_ClauseList[m_ClauseList.size() - 1]->GetInterval();
     
-    for (unsigned int k = m_ClauseList.size() - 2; k > 0; k--) {
+    for (size_t k = m_ClauseList.size() - 2; k > 0; k--) {
         if (!NStr::Equal(m_ClauseList[k]->GetInterval(), last_interval)
             || (m_ClauseList[k]->IsAltSpliced() && ! m_ClauseList[k + 1]->IsAltSpliced())
             || (!m_ClauseList[k]->IsAltSpliced() && m_ClauseList[k + 1]->IsAltSpliced())) {
@@ -710,33 +710,45 @@ void CAutoDefFeatureClause_Base::ShowSubclauses()
 }
 
 
-bool CAutoDefFeatureClause_Base::x_OkToConsolidate (unsigned int clause1, unsigned int clause2)
+bool CAutoDefFeatureClause_Base::x_OkToConsolidate(const CAutoDefFeatureClause_Base& other) const
 {
-    if (clause1 == clause2
-        || clause1 >= m_ClauseList.size() || clause2 >= m_ClauseList.size()
-        || m_ClauseList[clause1]->IsMarkedForDeletion()
-        || m_ClauseList[clause2]->IsMarkedForDeletion()
-        || (m_ClauseList[clause1]->IsPartial() && !m_ClauseList[clause2]->IsPartial())
-        || (!m_ClauseList[clause1]->IsPartial() && m_ClauseList[clause2]->IsPartial())
-        || !NStr::Equal(m_ClauseList[clause1]->GetDescription(), m_ClauseList[clause2]->GetDescription())
-        || (m_ClauseList[clause1]->IsAltSpliced() && !m_ClauseList[clause2]->IsAltSpliced())
-        || (!m_ClauseList[clause1]->IsAltSpliced() && m_ClauseList[clause2]->IsAltSpliced())) {
-        
+    if (IsMarkedForDeletion() ||
+        other.IsMarkedForDeletion() ||
+        (IsPartial() && !other.IsPartial()) ||
+        (!IsPartial() && other.IsPartial())
+        || !NStr::Equal(GetDescription(), other.GetDescription())
+        || (IsAltSpliced() && !other.IsAltSpliced())
+        || (!IsAltSpliced() && other.IsAltSpliced())
+        || !NStr::Equal(GetTypeword(), other.GetTypeword())) {
+
         return false;
     }
-    
-    CSeqFeatData::ESubtype subtype1 = m_ClauseList[clause1]->GetMainFeatureSubtype();
-    CSeqFeatData::ESubtype subtype2 = m_ClauseList[clause2]->GetMainFeatureSubtype();
-    
-    if ((subtype1 == CSeqFeatData::eSubtype_cdregion 
-         && subtype2 != CSeqFeatData::eSubtype_cdregion
-         && subtype2 != CSeqFeatData::eSubtype_gene)
+
+    CSeqFeatData::ESubtype subtype1 = GetMainFeatureSubtype();
+    CSeqFeatData::ESubtype subtype2 = other.GetMainFeatureSubtype();
+
+    if ((subtype1 == CSeqFeatData::eSubtype_cdregion
+        && subtype2 != CSeqFeatData::eSubtype_cdregion
+        && subtype2 != CSeqFeatData::eSubtype_gene)
         || (subtype1 != CSeqFeatData::eSubtype_cdregion
-            && subtype1 != CSeqFeatData::eSubtype_gene
-            && subtype2 == CSeqFeatData::eSubtype_cdregion)) {
+        && subtype1 != CSeqFeatData::eSubtype_gene
+        && subtype2 == CSeqFeatData::eSubtype_cdregion)) {
         return false;
     }
     return true;
+}
+
+
+bool CAutoDefFeatureClause_Base::x_OkToConsolidate (unsigned int clause1, unsigned int clause2)
+{
+    if (clause1 == clause2 || 
+        clause1 >= m_ClauseList.size() || 
+        clause2 >= m_ClauseList.size() ||
+        !m_ClauseList[clause1] || 
+        !m_ClauseList[clause2]) {
+        return false;
+    }
+    return m_ClauseList[clause1]->x_OkToConsolidate(*(m_ClauseList[clause2]));
 }
 
 
@@ -851,7 +863,7 @@ bool ShareInterval(const CSeq_loc& loc1, const CSeq_loc& loc2)
  * must have the same gene, must share a complete interval, and must have
  * similarly named products.
  */
-bool CAutoDefFeatureClause_Base::x_MeetAltSpliceRules (unsigned int clause1, unsigned int clause2, string &splice_name)
+bool CAutoDefFeatureClause_Base::x_MeetAltSpliceRules (size_t clause1, size_t clause2, string &splice_name)
 {
     if (clause1 >= m_ClauseList.size() || clause2 >= m_ClauseList.size()
         || m_ClauseList[clause1]->GetMainFeatureSubtype() != CSeqFeatData::eSubtype_cdregion
@@ -888,8 +900,8 @@ bool CAutoDefFeatureClause_Base::x_MeetAltSpliceRules (unsigned int clause1, uns
     }
     
     unsigned int match_left_len = 1, match_left_token = 0;
-    unsigned int len1 = product1.length();
-    unsigned int len2 = product2.length();
+    size_t len1 = product1.length();
+    size_t len2 = product2.length();
 
     // find the length of match on the left
     while (match_left_len < len1 && match_left_len < len2
@@ -969,7 +981,7 @@ bool CAutoDefFeatureClause_Base::x_MeetAltSpliceRules (unsigned int clause1, uns
 
 void CAutoDefFeatureClause_Base::FindAltSplices(bool suppress_allele)
 {
-    unsigned int last_cds = m_ClauseList.size();
+    size_t last_cds = m_ClauseList.size();
     string splice_name;
     
     for (unsigned int k = 0; k < m_ClauseList.size(); k++) {
@@ -1232,7 +1244,7 @@ void CAutoDefFeatureClause_Base::ExpandExonLists()
         if (m_ClauseList[k]->IsExonList()) {
             TClauseList remaining;
             remaining.clear();
-            for (unsigned int j = k + 1; j < m_ClauseList.size(); j++) {
+            for (size_t j = k + 1; j < m_ClauseList.size(); j++) {
                 remaining.push_back(m_ClauseList[j]);
                 m_ClauseList[j] = NULL;
             }
@@ -1768,7 +1780,7 @@ vector<string> CAutoDefFeatureClause_Base::GetMiscRNAElements(const string& comm
 {
     vector<string> elements;
     vector<string> parts;
-    NStr::Tokenize(comment, ",", parts, NStr::eMergeDelims);
+    NStr::Split(comment, ",", parts, NStr::fSplit_MergeDelimiters);
     if (parts.empty()) {
         return elements;
     }
@@ -1924,7 +1936,7 @@ vector<string> CAutoDefFeatureClause_Base::GetTrnaIntergenicSpacerClausePhrases(
     vector<string> elements;
 
     vector<string> parts;
-    NStr::Tokenize(comment, ",", parts, NStr::eMergeDelims);
+    NStr::Split(comment, ",", parts, NStr::fSplit_MergeDelimiters);
     if (parts.empty()) {
         return elements;
     }
@@ -1972,7 +1984,7 @@ vector<string> CAutoDefFeatureClause_Base::GetFeatureClausePhrases(string commen
         comment = comment.substr(9);
     }
     vector<string> elements;
-    NStr::Tokenize(comment, ",", elements);
+    NStr::Split(comment, ",", elements);
     bool fail = false;
     ITERATE(vector<string>, it, elements)
     {

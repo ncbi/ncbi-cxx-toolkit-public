@@ -77,7 +77,7 @@ public:
     virtual sequence::ECompare CompareLocation(const CSeq_loc& loc);
     virtual void AddToLocation(CRef<CSeq_loc> loc, bool also_set_partials = true);
     virtual bool SameStrand(const CSeq_loc& loc);
-    virtual bool IsPartial();
+    virtual bool IsPartial() const;
     virtual CRef<CSeq_loc> GetLocation();
 
     // functions for grouping

@@ -318,6 +318,12 @@ void CheckAutoDefOptions
     if (opts.GetKeepMiscRecomb()) {
         expected_num_fields++;
     }
+    if (opts.GetKeep5UTRs()) {
+        expected_num_fields++;
+    }
+    if (opts.GetKeep3UTRs()) {
+        expected_num_fields++;
+    }
     if (!NStr::IsBlank(opts.GetCustomFeatureClause())) {
         expected_num_fields++;
     }
@@ -2021,6 +2027,41 @@ BOOST_AUTO_TEST_CASE(Test_CAutoDefAvailableModifier_GetOrgModLabel)
     BOOST_CHECK_EQUAL(CAutoDefAvailableModifier::GetOrgModLabel(COrgMod::eSubtype_breed), "breed");
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_GB_5618)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    CRef<CSeq_feat> utr3 = unit_test_util::AddMiscFeature(entry);
+    utr3->SetLocation().SetInt().SetFrom(0);
+    utr3->SetLocation().SetInt().SetTo(10);
+    CRef<CSeq_feat> gene1 = unit_test_util::MakeGeneForFeature(utr3);
+    unit_test_util::AddFeat(gene1, entry);
+    CRef<CSeq_feat> utr5 = unit_test_util::AddMiscFeature(entry);
+    utr5->SetLocation().SetInt().SetFrom(20);
+    utr5->SetLocation().SetInt().SetTo(25);
+    CRef<CSeq_feat> gene2 = unit_test_util::MakeGeneForFeature(utr5);
+    unit_test_util::AddFeat(gene2, entry);
+
+    string defline = "Sebaea microphylla gene locus gene, complete sequence.";
+    AddTitle(entry, defline);
+
+    objects::CAutoDef autodef;
+
+    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+
+    CRef<CScope> scope(new CScope(*object_manager));
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    autodef.AddSources(seh);
+    autodef.SetKeep3UTRs(true);
+    autodef.SetKeep5UTRs(true);
+
+    CRef<CAutoDefModifierCombo> mod_combo(new CAutoDefModifierCombo());
+    mod_combo->AddOrgMod(COrgMod::eSubtype_isolate, true);
+    mod_combo->SetUseModifierLabels(true);
+
+    defline = "Sebaea microphylla gene locus gene, 5' UTR and 3' UTR.";
+    CheckDeflineMatches(seh, autodef, mod_combo);
+}
 
 
 END_SCOPE(objects)

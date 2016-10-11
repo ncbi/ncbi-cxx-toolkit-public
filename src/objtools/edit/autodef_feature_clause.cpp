@@ -1074,7 +1074,7 @@ bool CAutoDefFeatureClause::SameStrand(const CSeq_loc& loc)
     
 }
 
-bool CAutoDefFeatureClause::IsPartial()
+bool CAutoDefFeatureClause::IsPartial() const
 {
     if (m_ClauseLocation->IsPartialStart(eExtreme_Biological)
         || m_ClauseLocation->IsPartialStop(eExtreme_Biological)) {
@@ -1407,12 +1407,12 @@ void CAutoDefFeatureClause::ReverseCDSClauseLists()
         && GetMainFeatureSubtype() == CSeqFeatData::eSubtype_cdregion) {
         TClauseList tmp;
         tmp.clear();
-        for (unsigned int k = m_ClauseList.size(); k > 0; k--) {
+        for (size_t k = m_ClauseList.size(); k > 0; k--) {
             tmp.push_back(m_ClauseList[k - 1]);
             m_ClauseList[k - 1] = NULL;
         }
         m_ClauseList.clear();
-        for (unsigned int k = 0; k < tmp.size(); k++) {
+        for (size_t k = 0; k < tmp.size(); k++) {
             m_ClauseList.push_back(tmp[k]);
             tmp[k] = NULL;
         }
