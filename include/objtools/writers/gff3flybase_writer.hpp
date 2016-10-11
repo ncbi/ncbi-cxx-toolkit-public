@@ -48,7 +48,7 @@ public:
     : objects::CGff3Writer(scope, ostr)
     {}
 
-    virtual bool WriteHeader();
+    virtual bool WriteHeader() override;
 
 protected:
     virtual bool xWriteAlignDisc(
