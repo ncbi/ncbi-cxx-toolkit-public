@@ -167,10 +167,12 @@ class ProteinMatchClass :
            output_stub.tab --- protein match table.
         
         """
-        infile = output_stub + ".compare.asn"
+        annot_file = output_stub + ".compare.asn"
+        align_file = output_stub + ".merged.asn"
         outfile = output_stub + ".tab"
         cmd = "{}/generate_match_table".format(self.binary_dir)
-        cmd += " -i " + infile
+        cmd += " -i " + annot_file
+        cmd += " -aln-input " + align_file
         cmd += " -o " + outfile
         p = subprocess.Popen(cmd.split(), stdout=self.logfile)
         p.wait()
@@ -218,6 +220,7 @@ class ProteinMatchClass :
             # Relabel the table
             temporary_tablefile = self.args.outstub + ".tab" + str(count)
             os.rename(self.args.outstub + ".tab", temporary_tablefile)
+            comparefile = self.args.outstub + ".compare.asn"
             self.log_tempfile(temporary_tablefile)
             table_filenames.append(temporary_tablefile)
             count += 1
@@ -229,7 +232,7 @@ class ProteinMatchClass :
                 outfile.write(infile.read())
             for fname in table_filenames:
                 with open(fname) as infile:
-                    next(infile) # skip to the next line
+                    infile.readline() # skip to the next line
                     outfile.write(infile.read())
 
 
