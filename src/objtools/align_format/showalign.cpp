@@ -234,7 +234,6 @@ CDisplaySeqalign::~CDisplaySeqalign()
             delete m_DynamicFeature;
         }
     }
-    delete m_SeqPropertyLabel;
 }
 
 //8.Display Identities,positives,frames etc
