@@ -3290,7 +3290,7 @@ BlastGetStartForGappedAlignmentNucl (const Uint1* query, const Uint1* subject,
    BlastHSP* hsp)
 {
     /* We will stop when the identity count reaches to this number */
-    const Int4 HSP_MAX_IDENT_RUN = 20;
+    int hspMaxIdentRun = 10;
     const Uint1 *q, *s;
     Int4 index, max_offset, score, max_score, q_start, s_start, q_len;
     Boolean match, prev_match;
@@ -3305,14 +3305,15 @@ BlastGetStartForGappedAlignmentNucl (const Uint1* query, const Uint1* subject,
     q_len = hsp->query.end;
     while ((q-query < q_len) && (*q++ == *s++)) {
         score++;
-        if (score > HSP_MAX_IDENT_RUN) return;
+        if (score > hspMaxIdentRun) return;
     }
     q = query + q_start;
     s = subject + s_start;
     while ((q-query >= 0) && (*q-- == *s--)) {
         score++;
-        if (score > HSP_MAX_IDENT_RUN) return;
+        if (score > hspMaxIdentRun) return;
     }
+    hspMaxIdentRun *= 1.5;  /* Demand larger value if we move */
     /* if the old value is not ok, try to find a better point */
     q_start = hsp->query.gapped_start - offset;
     s_start = hsp->subject.gapped_start - offset;
@@ -3336,8 +3337,8 @@ BlastGetStartForGappedAlignmentNucl (const Uint1* query, const Uint1* subject,
             }
         } else if (match) {
             ++score;
-            if (score > HSP_MAX_IDENT_RUN) {
-                max_offset = index - HSP_MAX_IDENT_RUN/2;
+            if (score > hspMaxIdentRun) {
+                max_offset = index - hspMaxIdentRun/2;
                 hsp->query.gapped_start = max_offset;
                 hsp->subject.gapped_start = max_offset + s_start - q_start;
                 return;
