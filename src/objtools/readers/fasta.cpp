@@ -780,7 +780,8 @@ bool CFastaReader::ParseIDs(
     // if user wants all ids to be purely local, no problem
     if( info.fBaseFlags & CReaderBase::fAllIdsAsLocal )
     {
-        return new CSeq_id(CSeq_id::e_Local, s);
+        ids.push_back(Ref(new CSeq_id(CSeq_id::e_Local, s)));
+        return true;
     }
 
     size_t count = 0;
