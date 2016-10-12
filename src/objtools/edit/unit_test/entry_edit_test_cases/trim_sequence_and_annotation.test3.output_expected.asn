@@ -218,31 +218,46 @@ Seq-entry ::= set {
       inst {
         repr raw,
         mol dna,
-        length 1534,
+        length 1676,
         strand ds,
-        seq-data ncbi2na '6F21A40B44859A8DDF385071FE3255F40A4279FDE242E0815433
-40BEA6B1273C77A71CD3A91D3D8E1E646B37BF5A16E386F8C2F8D36B2FDE7736A2EA9F5FCD3A7A
-434AA4DAC61EA4D37F56F7FCCE4A081793DD0991D8E5F50024AC31ED3E90E1BFA369DE290EB4E5
-6834236A46B9AE329259DBEB84023BA25F19CDBE9A435670823C2019F458E280FD3E7DE88E8BAE
-83EB47A208D02690E54E7B9DB70CFBE97910B3E9D8BF96DC10F434258E59F6691A7CFD29BC9450
-82B94E004FE5933B0F366EDFD8B1A4F27AF43C48031B7E81022F7796096D0EBB7DB9FEC02C92C0
-D799C50E1F276E4D028337D493413F08D54190F3697201EBB4C0838934AFF40EA1A0250894E090
-EA0221F85F08AA4310BF49EF56CFD040D94882FA60B083B20317C003FD73A4148334BAE93E103D
-EBE82949F20FD64BC342E8BF722DDCCFC0C0FB493702005270CB008A7FAC1A29A45E0CDCB93D00
-1EBFF7AEEA078B40D7AED93AEAFABABE20A2122BF1FFD97F04E8CC84180B0BE59C200D4F54500D
-3A02E2A4D3EBA0'H
+        seq-data ncbi2na '523F354E1E67E06AE9782D1AF80E459786940D39A45B512541CB
+675268E9F65959E270F6F21A40B44859A8DDF385071FE3255F40A4279FDE242E081543340BEA6B
+1273C77A71CD3A91D3D8E1E646B37BF5A16E386F8C2F8D36B2FDE7736A2EA9F5FCD3A7A434AA4D
+AC61EA4D37F56F7FCCE4A081793DD0991D8E5F50024AC31ED3E90E1BFA369DE290EB4E56834236
+A46B9AE329259DBEB84023BA25F19CDBE9A435670823C2019F458E280FD3E7DE88E8BAE83EB47A
+208D02690E54E7B9DB70CFBE97910B3E9D8BF96DC10F434258E59F6691A7CFD29BC945082B94E0
+04FE5933B0F366EDFD8B1A4F27AF43C48031B7E81022F7796096D0EBB7DB9FEC02C92C0D799C50
+E1F276E4D028337D493413F08D54190F3697201EBB4C0838934AFF40EA1A0250894E090EA0221F
+85F08AA4310BF49EF56CFD040D94882FA60B083B20317C003FD73A4148334BAE93E103DEBE8294
+9F20FD64BC342E8BF722DDCCFC0C0FB493702005270CB008A7FAC1A29A45E0CDCB93D001EBFF7A
+EEA078B40D7AED93AEAFABABE20A2122BF1FFD97F04E8CC84180B0BE59C200D4F54500D3A02E2A
+4D3EBA'H
       },
       annot {
         {
           data ftable {
             {
               data gene {
+                locus "dfrB4"
+              },
+              partial TRUE,
+              location int {
+                from 0,
+                to 39,
+                strand plus,
+                id local str "Seq1",
+                fuzz-from lim lt,
+                fuzz-to lim gt
+              }
+            },
+            {
+              data gene {
                 locus "catB3"
               },
               partial TRUE,
               location int {
-                from 36,
-                to 668,
+                from 178,
+                to 810,
                 strand plus,
                 id local str "Seq1",
                 fuzz-from lim lt,
@@ -255,8 +270,8 @@ EBE82949F20FD64BC342E8BF722DDCCFC0C0FB493702005270CB008A7FAC1A29A45E0CDCB93D00
               },
               partial TRUE,
               location int {
-                from 737,
-                to 1533,
+                from 879,
+                to 1675,
                 strand plus,
                 id local str "Seq1",
                 fuzz-from lim lt,
@@ -270,7 +285,7 @@ EBE82949F20FD64BC342E8BF722DDCCFC0C0FB493702005270CB008A7FAC1A29A45E0CDCB93D00
               partial TRUE,
               location int {
                 from 0,
-                to 1533,
+                to 1675,
                 strand plus,
                 id local str "Seq1",
                 fuzz-from lim lt,
@@ -291,7 +306,7 @@ EBE82949F20FD64BC342E8BF722DDCCFC0C0FB493702005270CB008A7FAC1A29A45E0CDCB93D00
               comment "dfrB4 gene cassette",
               location int {
                 from 0,
-                to 1,
+                to 143,
                 strand plus,
                 id local str "Seq1",
                 fuzz-from lim lt,
@@ -305,8 +320,8 @@ EBE82949F20FD64BC342E8BF722DDCCFC0C0FB493702005270CB008A7FAC1A29A45E0CDCB93D00
               partial TRUE,
               comment "catB3 gene cassette",
               location int {
-                from 2,
-                to 716,
+                from 144,
+                to 858,
                 strand plus,
                 id local str "Seq1",
                 fuzz-from lim lt,
@@ -320,10 +335,63 @@ EBE82949F20FD64BC342E8BF722DDCCFC0C0FB493702005270CB008A7FAC1A29A45E0CDCB93D00
               partial TRUE,
               comment "blaOXA-10 gene cassette",
               location int {
-                from 717,
-                to 1533,
+                from 859,
+                to 1675,
                 strand plus,
                 id local str "Seq1",
+                fuzz-from lim lt,
+                fuzz-to lim gt
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        local str "Seq1_prot_1",
+        general {
+          db "TMSMART",
+          tag id 48119015
+        }
+      },
+      descr {
+        title "dihydrofolate reductase, partial [Aeromonas caviae]",
+        molinfo {
+          biomol peptide,
+          completeness no-ends
+        },
+        user {
+          type str "OrginalID",
+          data {
+            {
+              label str "LocalId",
+              data str "Seq1_prot_1"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 12,
+        seq-data iupacaa "QIYPMTALERVA"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "dihydrofolate reductase"
+                },
+                desc "trimethoprim resistance"
+              },
+              partial TRUE,
+              location int {
+                from 0,
+                to 11,
+                id local str "Seq1_prot_1",
                 fuzz-from lim lt,
                 fuzz-to lim gt
               }
@@ -360,10 +428,10 @@ EBE82949F20FD64BC342E8BF722DDCCFC0C0FB493702005270CB008A7FAC1A29A45E0CDCB93D00
         repr raw,
         mol aa,
         length 210,
-        seq-data iupacaa "MTNYFDSPFKGKLLSEQVKNPNIKVGRYSYYSGYYHGHSFDDCARYLFPDRD
-DVDKLIIGSFCSIGSGASFIMAGNQGHRYDWASSFPFFYMQEEPAFSSALDAFQKAGNTVIGNDVWIGSEAMVMPGIK
-IGHGAVIGSRSLVTKDVEPYAIVGGNPAKKIKKRFTDEEISLLLEMEWWNWSLEKIKAAMPMLCSSNIVGLHKYWLEF
-AV"
+        seq-data ncbieaa "*PTTLIAPSKASCFLSK*RTPISKLGGTAITLATIMGTHSMTAHGICFRTVM
+TLIS*SSVVSALSGVGLPLSWLAIRGIGTTGHHLSRSFICRKNLHSQAHSMPSKKQVILSLAMTFGSALRQWSCPESR
+SGTVR**AAARW*QKMWSLTLSLAAIPLRRLRNASPMRKFHCFWRWSGGIGHWRRSKRQCPCCARLILLACTSIGSSL
+PS"
       },
       annot {
         {
@@ -415,11 +483,11 @@ AV"
       inst {
         repr raw,
         mol aa,
-        length 266,
-        seq-data ncbieaa "MKTFAAYVIIACLSSTALAGSITENTSWNKEFSAEAVNGVFVLCKSSSKSCA
-TNDLARASKEYLPASTFKIPNAIIGLETGVIKNEHQVFKWDGKPRAMKQWERDLTLRGAIQVSAVPVFQQIAREVGEV
-RM*KYLKKFSYGNQNISGGIDKFWLEGQLRISAVNQVEFLESLYLNKLSASKENQLIVKEALVTEAAPEYLVHSKTGF
-SGVGTESNPGVAWWVGWVEKETEVYFFAFNMDIDNESKLPLRKSIPTKIMESEGIIGG"
+        length 265,
+        seq-data ncbieaa "*KHLPHM*LSRVFRVRH*LVQLQKIRLGTKSSLPKPSMVSSCFVKVAVNPAL
+PMT*LVHQRNIFQHQHLRSPTQLSA*KLVS*RMSIRFSNGTESQEP*SNGKET*P*EGQYKFQLFPYFNKSPEKLAK*
+ECRNTLKNFPMATRISVVALTNSGWKASLEFPQLIKWSF*SLYI*INCQHLKKTS***KRLW*RRRHLNI*CIQKLVF
+LVWELSQILVSHGGLGGLRRRQRFTFSPLTWI*TTKVSCR*ENPFPPKSWKVRASLV"
       },
       annot {
         {
@@ -434,7 +502,7 @@ SGVGTESNPGVAWWVGWVEKETEVYFFAFNMDIDNESKLPLRKSIPTKIMESEGIIGG"
               partial TRUE,
               location int {
                 from 0,
-                to 265,
+                to 264,
                 id local str "Seq1_prot_3",
                 fuzz-from lim lt,
                 fuzz-to lim gt
@@ -450,16 +518,16 @@ SGVGTESNPGVAWWVGWVEKETEVYFFAFNMDIDNESKLPLRKSIPTKIMESEGIIGG"
       data ftable {
         {
           data cdregion {
-            frame one,
+            frame two,
             code {
               id 11
             }
           },
           partial TRUE,
-          product whole local str "Seq1_prot_2",
+          product whole local str "Seq1_prot_1",
           location int {
-            from 36,
-            to 668,
+            from 0,
+            to 39,
             strand plus,
             id local str "Seq1",
             fuzz-from lim lt,
@@ -468,7 +536,25 @@ SGVGTESNPGVAWWVGWVEKETEVYFFAFNMDIDNESKLPLRKSIPTKIMESEGIIGG"
         },
         {
           data cdregion {
-            frame one,
+            frame two,
+            code {
+              id 11
+            }
+          },
+          partial TRUE,
+          product whole local str "Seq1_prot_2",
+          location int {
+            from 178,
+            to 810,
+            strand plus,
+            id local str "Seq1",
+            fuzz-from lim lt,
+            fuzz-to lim gt
+          }
+        },
+        {
+          data cdregion {
+            frame two,
             code {
               id 11
             }
@@ -476,8 +562,8 @@ SGVGTESNPGVAWWVGWVEKETEVYFFAFNMDIDNESKLPLRKSIPTKIMESEGIIGG"
           partial TRUE,
           product whole local str "Seq1_prot_3",
           location int {
-            from 737,
-            to 1533,
+            from 879,
+            to 1675,
             strand plus,
             id local str "Seq1",
             fuzz-from lim lt,
