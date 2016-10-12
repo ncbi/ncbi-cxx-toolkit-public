@@ -3447,6 +3447,9 @@ CNCMessageHandler::x_PutToNextPeer(void)
     if (m_ActiveHub) {
         SRV_FATAL("Previous client not released");
     }
+    if (CNCDistributionConf::GetSelfTrustLevel() < CNCPeerControl::Peer(srv_id)->GetTrustLevel()) {
+        return &CNCMessageHandler::x_PutToNextPeer;
+    }
     m_ActiveHub = CNCActiveClientHub::Create(srv_id, this);
     return &CNCMessageHandler::x_SendPutToPeerCmd;
 }

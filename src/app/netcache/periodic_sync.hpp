@@ -345,6 +345,7 @@ private:
     TSyncSlotsList::const_iterator m_NextSlotIt;
     Uint8 m_StartTime;
     Uint8 m_CntUnfinished;
+    Uint8 m_MyTrust, m_TheirTrust;
     set<CNCActiveHandler*> m_SyncHandlers;
 };
 

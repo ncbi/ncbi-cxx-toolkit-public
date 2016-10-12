@@ -215,6 +215,7 @@ CNCPeerControl::CNCPeerControl(Uint8 srv_id)
     m_HostIPname = CTaskServer::IPToString(m_HostIP);
     m_HostAlias = CNCDistributionConf::CreateHostAlias(m_HostIP, Uint4(m_SrvId));
     m_HostProtocol = 0;
+    m_TrustLevel = 0;
 }
 
 void
@@ -760,7 +761,8 @@ CNCPeerControl::MirrorWrite(const CNCBlobKey& key,
         Uint8 srv_id = *it_srv;
         if (done.find(srv_id) == done.end()) {
             CNCPeerControl* peer = Peer(srv_id);
-            if (peer->AcceptsBlobKey(key)) {
+            if (CNCDistributionConf::GetSelfTrustLevel() >= peer->GetTrustLevel()
+                && peer->AcceptsBlobKey(key)) {
                 SNCMirrorEvent* event = new SNCMirrorEvent(eSyncWrite, slot, key, orig_rec_no);
                 peer->x_AddMirrorEvent(event, size);
             }
@@ -884,6 +886,7 @@ void CNCPeerControl::PrintState(CSrvSocketTask& task)
                     CNCDistributionConf::GetPeerName(peer->GetSrvId())).WriteText(qt);
         task.WriteText(eol).WriteText("hostIPname").WriteText(iss).WriteText(peer->m_HostIPname).WriteText(qt);
         task.WriteText(eol).WriteText("hostProtocol").WriteText(is).WriteNumber(peer->m_HostProtocol);
+        task.WriteText(eol).WriteText("hostTrust").WriteText(is).WriteNumber(peer->m_TrustLevel);
         task.WriteText(eol).WriteText("healthy").WriteText(is).WriteText(
                     (peer->m_InThrottle || peer->m_MaybeThrottle) ? "false" : "true");
         task.WriteText(eol).WriteText("initiallySynced").WriteText(is).WriteText(

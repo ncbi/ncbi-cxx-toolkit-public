@@ -595,6 +595,7 @@ CNCActiveSyncControl::CNCActiveSyncControl(void)
     m_StartTime = 0;
     m_LoopStart = 0;
     m_CntUnfinished = 0;
+    m_MyTrust = m_TheirTrust = 0;
 }
 
 CNCActiveSyncControl::~CNCActiveSyncControl(void) {
@@ -760,6 +761,8 @@ CNCActiveSyncControl::x_DoPeriodicSync(void)
     }
 
     m_SrvId = m_SlotSrv->peer->GetSrvId();
+    m_MyTrust = CNCDistributionConf::GetSelfTrustLevel();
+    m_TheirTrust = m_SlotSrv->peer->GetTrustLevel();
     m_Slot = m_SlotData->slot;
     m_Result = eSynOK;
     m_Hint = NC_SYNC_HINT;
@@ -1098,7 +1101,7 @@ CNCActiveSyncControl::x_CleanSyncObjects(void)
 void
 CNCActiveSyncControl::x_CalcNextTask(void)
 {
-    do {
+    for (;;) {
     switch (m_NextTask) {
     case eSynEventSend:
         ++m_CurSendEvent;
@@ -1193,9 +1196,26 @@ sync_next_key:
             m_NextTask = eSynNeedFinalize;
         }
     }
-    // when 'draining', only update existing blobs, never get new ones.
-    } while(CNCBlobStorage::IsDraining() &&
-            (m_NextTask == eSynEventGet || m_NextTask == eSynBlobGet));
+/*
+    SEND:
+        m_MyTrust >= m_TheirTrust ? SEND : NOOP
+    GET:
+        m_MyTrust >  m_TheirTrust ? NOOP : GET
+        draining ? NOOP (only update existing blobs, never get new ones)
+    UPDATE:
+        no restrictions
+*/
+        if (m_NextTask == eSynEventSend || m_NextTask == eSynBlobSend) {
+            if (m_MyTrust < m_TheirTrust) {
+                continue;
+            }
+        }
+        if (m_NextTask == eSynEventGet || m_NextTask == eSynBlobGet) {
+            if (m_MyTrust > m_TheirTrust || CNCBlobStorage::IsDraining()) {
+                continue;
+            }
+        }
+    };
 
 // sanity check
     string blob_key;

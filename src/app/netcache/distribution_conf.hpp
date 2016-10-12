@@ -72,6 +72,7 @@ public:
 
     // Get the current server ID
     static Uint8 GetSelfID(void);
+    static Uint8 GetSelfTrustLevel(void);
 
     static bool  IsThisServerKey(const string& packed_key);
     static bool  IsThisServerKey(const CNCBlobKey& key);

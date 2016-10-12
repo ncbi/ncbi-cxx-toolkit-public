@@ -73,6 +73,8 @@ struct SSrvMirrorInfo
 // while it is possible to handle same slot on different instances of NC
 // on the same machine (same IP), it does not make sense and should be avoided
     map<Uint4, Uint8> s_IpToId;
+// server credentials
+    map<Uint8, Uint8> s_SrvTrust;
 };
 static SSrvMirrorInfo* s_MirrorConf = NULL;
 #if 0
@@ -90,6 +92,7 @@ static Uint2    s_CntTimeBuckets = 0;
 static Uint4    s_SlotRndShare  = numeric_limits<Uint4>::max();
 static Uint4    s_TimeRndShare  = numeric_limits<Uint4>::max();
 static Uint8    s_SelfID        = 0;
+static Uint8    s_SelfTrust     = 0;
 static Uint4    s_SelfIP        = 0;
 static string   s_SelfGroup;
 static string   s_SelfName;
@@ -134,6 +137,7 @@ static bool     s_SlotByRawkey = false;
 static const char*  kNCReg_NCPoolSection       = "mirror";
 static string       kNCReg_NCServerPrefix      = "server_";
 static string       kNCReg_NCServerSlotsPrefix = "srv_slots_";
+static string       kNCReg_NCServerTrustPrefix = "srv_trust_";
 
 
 bool
@@ -274,6 +278,14 @@ CNCDistributionConf::InitMirrorConfig(const CNcbiRegistry& reg, string& err_mess
             err_message = srv_name + ": Host not found";
             goto do_error;
         }
+
+        Uint8 trustlevel = 0;
+        value_name = kNCReg_NCServerTrustPrefix + NStr::NumericToString(srv_idx);
+        reg_value = reg.Get(kNCReg_NCPoolSection, value_name.c_str());
+        if (!reg_value.empty()) {
+            trustlevel = NStr::StringToUInt8(reg_value, NStr::fConvErr_NoThrow);
+        }
+
         Uint8 srv_id = (Uint8(host) << 32) + port;
         string peer_str = host_str + ":" + port_str;
         if (srv_id == s_SelfID) {
@@ -282,6 +294,7 @@ CNCDistributionConf::InitMirrorConfig(const CNcbiRegistry& reg, string& err_mess
                 goto do_error;
             }
             found_self = true;
+            s_SelfTrust = trustlevel;
             if (isReconf) {
                 if (s_SelfGroup != grp_name || s_SelfName != peer_str) {
                     err_message = srv_name + ": Changes in self description prohibited (group or name)";
@@ -298,6 +311,7 @@ CNCDistributionConf::InitMirrorConfig(const CNcbiRegistry& reg, string& err_mess
                 goto do_error;
             }
             mirrorCfg->s_Peers[srv_id] = peer_str;
+            mirrorCfg->s_SrvTrust[srv_id] = trustlevel;
         }
 
         // There must be corresponding description of slots
@@ -382,7 +396,9 @@ CNCDistributionConf::InitMirrorConfig(const CNcbiRegistry& reg, string& err_mess
 // pre-create all peers
         const TNCPeerList& peers = CNCDistributionConf::GetPeers();
         ITERATE(TNCPeerList, p, peers) {
-            CNCPeerControl::Peer(p->first)->SetHostProtocol(0);
+            CNCPeerControl* peer = CNCPeerControl::Peer(p->first);
+            peer->SetHostProtocol(0);
+            peer->SetTrustLevel(s_MirrorConf->s_SrvTrust[p->first]); 
         }
         return true;
     }
@@ -610,6 +626,11 @@ Uint8
 CNCDistributionConf::GetSelfID(void)
 {
     return s_SelfID;
+}
+
+Uint8 CNCDistributionConf::GetSelfTrustLevel(void)
+{
+    return s_SelfTrust & 0xF;
 }
 
 const TNCPeerList&

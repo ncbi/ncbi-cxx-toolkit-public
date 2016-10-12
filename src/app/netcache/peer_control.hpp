@@ -166,6 +166,8 @@ public:
 
     void AbortInitialSync(void);
     void SetHostProtocol(Uint8 ver);
+    void SetTrustLevel(Uint8 trust);
+    Uint8 GetTrustLevel(void) const;
 
     bool AcceptsSyncUpdate(void) const;
     bool AcceptsSyncRemove(void) const;
@@ -206,6 +208,7 @@ private:
     string m_Hostname;
     Uint4 m_HostAlias;
     Uint8 m_HostProtocol;
+    Uint8 m_TrustLevel;
     CMiniMutex m_ObjLock;
     TNCPeerConnsList m_PooledConns;
     TNCPeerConnsList m_BusyConns;
@@ -302,6 +305,14 @@ inline void
 CNCPeerControl::ConnOk(void)
 {
     m_MaybeThrottle = false;
+}
+inline void
+CNCPeerControl::SetTrustLevel(Uint8 trust) {
+    m_TrustLevel = trust;
+}
+inline Uint8 
+CNCPeerControl::GetTrustLevel(void) const {
+    return m_TrustLevel & 0xF;
 }
 
 
