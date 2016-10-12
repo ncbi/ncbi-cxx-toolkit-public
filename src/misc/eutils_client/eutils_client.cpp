@@ -1230,6 +1230,105 @@ void CEutilsClient::LinkHistory(const string& db_from,
 }
 
 #ifdef NCBI_INT8_GI
+void CEutilsClient::LinkOut(const string& db,
+                            const vector<int>& uids,
+                            xml::document& doc,
+                            const string& cmd)
+{
+    x_LinkOut(db, uids, doc, cmd);
+}
+
+#endif
+
+void CEutilsClient::LinkOut(const string& db,
+                            const vector<objects::CSeq_id_Handle>& uids,
+                            xml::document& doc,
+                            const string& cmd)
+{
+    x_LinkOut(db, uids, doc, cmd);
+}
+
+void CEutilsClient::LinkOut(const string& db,
+                            const vector<string>& uids,
+                            xml::document& doc,
+                            const string& cmd)
+{
+    x_LinkOut(db, uids, doc, cmd);
+}
+
+void CEutilsClient::LinkOut(const string& db,
+                            const vector<TGi>& uids,
+                            xml::document& doc,
+                            const string& cmd)
+{
+    x_LinkOut(db, uids, doc, cmd);
+}
+
+template<class T> void CEutilsClient::x_LinkOut(const string& db,
+                                              const vector<T>& uids,
+                                              xml::document& doc,
+                                              const string& cmd)
+{
+    ostringstream oss;
+    oss << "dbfrom=" << NStr::URLEncode(db)
+        << "&cmd=" << NStr::URLEncode(cmd)
+        << "&retmode=xml";
+    s_FormatIds(oss, uids);
+    string params = oss.str();
+
+    bool success = false;
+    m_Url.clear();
+    m_Time.clear();
+    for (int retries = 0;  retries < 10;  ++retries) {
+        try {
+            string path = "/entrez/eutils/elink.fcgi?";
+            string hostname = x_GetHostName();
+            string url = x_BuildUrl(hostname, path, params);
+            LOG_POST(Trace << "query: " << url);
+            CConn_HttpStream istr(x_BuildUrl(hostname, path, kEmptyStr));
+            m_Url.push_back(url);
+            istr << params;
+            m_Time.push_back(CTime(CTime::eCurrent));
+            // slurp up all the output.
+            stringbuf sb;
+            istr >> &sb;
+            if (200 == istr.GetStatusCode()) {
+                string docstr(sb.str());
+
+                // LOG_POST(Info << "Raw results: " << docstr );
+
+                // turn it into an xml::document
+                xml::error_messages msgs;
+                xml::document xmldoc(docstr.data(), docstr.size(), &msgs );
+
+                doc.swap(xmldoc);
+                success = true;
+                break;
+            }
+        }
+        catch (const xml::parser_exception& e) {
+            ERR_POST_X(6, Warning << "failed on attempt " << retries + 1
+                     << ": error parsing xml: " << e.what());
+        }
+        catch (CException& e) {
+            ERR_POST_X(6, Warning << "failed on attempt " << retries + 1
+                     << ": " << e);
+        }
+
+        int sleep_secs = ::sqrt(retries);
+        if (sleep_secs) {
+            SleepSec(sleep_secs);
+        }
+    }
+
+    if ( !success ) {
+        NCBI_THROW(CException, eUnknown,
+                   "failed to execute esummary request: " + params);
+    }
+}
+
+
+#ifdef NCBI_INT8_GI
 void CEutilsClient::Summary(const string& db,
                             const vector<int>& uids,
                             xml::document& docsums,

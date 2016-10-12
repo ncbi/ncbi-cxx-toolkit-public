@@ -278,6 +278,29 @@ public:
 
 #ifdef NCBI_INT8_GI
     NCBI_DEPRECATED
+    void LinkOut(const string& db,
+                 const vector<int>& uids,
+                 xml::document& docsums,
+                 const string& cmd);
+#endif
+
+    void LinkOut(const string& db,
+                 const vector<objects::CSeq_id_Handle>& uids,
+                 xml::document& docsums,
+                 const string& cmd);
+
+    void LinkOut(const string& db,
+                 const vector<string>& uids,
+                 xml::document& docsums,
+                 const string& cmd);
+
+    void LinkOut(const string& db,
+                 const vector<TGi>& uids,
+                 xml::document& docsums,
+                 const string& cmd);
+
+#ifdef NCBI_INT8_GI
+    NCBI_DEPRECATED
     void Summary(const string& db,
                 const vector<int>& uids,
                 xml::document& docsums,
@@ -439,6 +462,11 @@ private:
                                   const vector<T>& uids_from,
                                   CNcbiOstream& ostr,
                                   const string& command);
+
+    template<class T> void x_LinkOut(const string& db,
+                                     const vector<T>& uids,
+                                     xml::document& doc,
+                                     const string& cmd);
 
     template<class T> void x_Summary(const string& db,
                                      const vector<T>& uids,

@@ -194,3 +194,30 @@ BOOST_AUTO_TEST_CASE(TestLinkHistory)
     items  = root.run_xpath_query("//QueryKey/text()");
     BOOST_CHECK ( 1 == items.size() );
 }
+
+BOOST_AUTO_TEST_CASE(TestLinkOut)
+{
+    CEutilsClient cli;
+    xml::document doc;
+
+    {
+        vector<int> uids = { 124000572, 124000574 };
+
+        cli.SetMaxReturn(101); 
+        BOOST_REQUIRE_NO_THROW(cli.LinkOut("nucleotide", uids, doc, "llinks"));
+        const xml::node& root = doc.get_root_node();
+
+        xml::node_set items = root.run_xpath_query("//eLinkResult/LinkSet/IdUrlList/IdUrlSet");
+        BOOST_CHECK ( 2 == items.size() );
+    }
+    
+    //The same with accessions
+    {
+        vector<objects::CSeq_id_Handle> acc = { objects::CSeq_id_Handle::GetHandle("DQ896796.1"), objects::CSeq_id_Handle::GetHandle("DQ896797.1") };
+        BOOST_REQUIRE_NO_THROW(cli.LinkOut("nucleotide", acc, doc, "llinkslib"));
+        const xml::node& root = doc.get_root_node();
+
+        xml::node_set items = root.run_xpath_query("//eLinkResult/LinkSet/IdUrlList/IdUrlSet");
+        BOOST_CHECK ( 2 == items.size() );
+    }    
+}
