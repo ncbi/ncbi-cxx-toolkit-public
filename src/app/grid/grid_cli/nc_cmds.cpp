@@ -54,7 +54,7 @@ void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(bool icache_mode,
         m_APIClass = eNetCacheAPI;
 
         // If NetCache service is not provided, use server from blob ID
-        if (!IsOptionSet(eNetCache) && IsOptionSet(eNCID)) {
+        if (!IsOptionSet(eNetCache) && !m_Opts.ncid.key.empty()) {
             CNetCacheKey key(m_Opts.ncid.key);
             m_Opts.nc_service = key.GetHost() + ':' + to_string(key.GetPort());
         }
