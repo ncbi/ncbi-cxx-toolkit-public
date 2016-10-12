@@ -58,6 +58,7 @@
 #include <objects/seqalign/Product_pos.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqloc/Seq_id.hpp>
 #include <objects/seq/sofa_type.hpp>
 #include <objects/seq/sofa_map.hpp>
 
@@ -1153,6 +1154,34 @@ bool CGff3Writer::xWriteSequenceHeader(
     return true;
 }
 
+//  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+bool CompareLocations(
+    const CMappedFeat& lhs,
+    const CMappedFeat& rhs)
+//  ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+{
+    const CSeq_loc& lhl = lhs.GetLocation();
+    const CSeq_loc& rhl = rhs.GetLocation();
+
+    //test1: id, alphabetical
+    string lhs_id = lhl.GetId()->AsFastaString();
+    string rhs_id = rhl.GetId()->AsFastaString();
+    if (lhs_id != rhs_id) {
+        return (lhs_id < rhs_id);
+    }
+
+    //test2: loc-start ascending
+    size_t lhs_start = lhl.GetStart(ESeqLocExtremes::eExtreme_Positional);
+    size_t rhs_start = rhl.GetStart(ESeqLocExtremes::eExtreme_Positional);
+    if (lhs_start != rhs_start) {
+        return (lhs_start < rhs_start);
+    }
+    //test3: loc-stop decending
+    size_t lhs_stop = lhl.GetStop(ESeqLocExtremes::eExtreme_Positional);
+    size_t rhs_stop = rhl.GetStop(ESeqLocExtremes::eExtreme_Positional);
+    return (lhs_stop > rhs_stop);
+}
+
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::x_WriteBioseqHandle(
     CBioseq_Handle bsh ) 
@@ -1171,6 +1200,7 @@ bool CGff3Writer::x_WriteBioseqHandle(
     }
 
     vector<CMappedFeat> vRoots = fc.FeatTree().GetRootFeatures();
+    std::sort(vRoots.begin(), vRoots.end(), CompareLocations);
     for (auto pit = vRoots.begin(); pit != vRoots.end(); ++pit) {
         CMappedFeat mRoot = *pit;
         if (!xWriteFeature(fc, mRoot)) {
