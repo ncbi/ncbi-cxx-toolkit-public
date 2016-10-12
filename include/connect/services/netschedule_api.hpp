@@ -289,6 +289,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
         eWarnQueueAlreadyPaused,
         eWarnQueueNotPaused,
         eWarnCommandObsolete,
+        eWarnJobNotRead,
     };
     static ENetScheduleWarningType ExtractWarningType(string& warn_msg);
     static const char* WarningTypeToString(

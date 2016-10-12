@@ -997,6 +997,7 @@ CNetScheduleAPI::ENetScheduleWarningType
     EXTRACT_WARNING_TYPE(QueueAlreadyPaused);
     EXTRACT_WARNING_TYPE(QueueNotPaused);
     EXTRACT_WARNING_TYPE(CommandObsolete);
+    EXTRACT_WARNING_TYPE(JobNotRead);
     return eWarnUnknown;
 }
 
@@ -1025,6 +1026,7 @@ const char* CNetScheduleAPI::WarningTypeToString(
     WARNING_TYPE_TO_STRING(QueueAlreadyPaused);
     WARNING_TYPE_TO_STRING(QueueNotPaused);
     WARNING_TYPE_TO_STRING(CommandObsolete);
+    WARNING_TYPE_TO_STRING(JobNotRead);
     default:
         return "eWarnUnknown";
     }
