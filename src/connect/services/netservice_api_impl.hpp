@@ -259,7 +259,6 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
         m_ConnectionMaxRetries(-1),
         m_ConnectionRetryDelay(-1)
     {
-        ZeroInit();
     }
 
     // Constructors for 'spawning'.
@@ -273,7 +272,6 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
         m_ConnectionMaxRetries(prototype->m_ConnectionMaxRetries),
         m_ConnectionRetryDelay(prototype->m_ConnectionRetryDelay)
     {
-        ZeroInit();
         Construct(server);
     }
     SNetServiceImpl(const string& service_name, SNetServiceImpl* prototype) :
@@ -286,11 +284,8 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
         m_ConnectionMaxRetries(prototype->m_ConnectionMaxRetries),
         m_ConnectionRetryDelay(prototype->m_ConnectionRetryDelay)
     {
-        ZeroInit();
         Construct();
     }
-
-    void ZeroInit();
 
     void Construct(SNetServerInPool* server);
     void Construct();
@@ -351,12 +346,12 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
     CNetServerPool m_ServerPool;
 
     string m_ServiceName;
-    CNetService::EServiceType m_ServiceType;
+    CNetService::EServiceType m_ServiceType = CNetService::eServiceNotDefined;
 
     CFastMutex m_DiscoveryMutex;
-    SDiscoveredServers* m_DiscoveredServers;
-    SDiscoveredServers* m_ServerGroupPool;
-    unsigned m_LatestDiscoveryIteration;
+    SDiscoveredServers* m_DiscoveredServers = nullptr;
+    SDiscoveredServers* m_ServerGroupPool = nullptr;
+    unsigned m_LatestDiscoveryIteration = 0;
 
 private:
     string m_APIName;

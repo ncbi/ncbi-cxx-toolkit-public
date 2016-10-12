@@ -291,14 +291,6 @@ atomic<unsigned> SNetServiceImpl::m_ColoNetwork{0};
 atomic<bool> SNetServiceImpl::m_AllowXSiteConnections{false};
 #endif
 
-void SNetServiceImpl::ZeroInit()
-{
-    m_ServiceType = CNetService::eServiceNotDefined;
-    m_DiscoveredServers = NULL;
-    m_ServerGroupPool = NULL;
-    m_LatestDiscoveryIteration = 0;
-}
-
 void SNetServiceImpl::Construct(SNetServerInPool* server)
 {
     m_ServiceType = CNetService::eSingleServerService;
