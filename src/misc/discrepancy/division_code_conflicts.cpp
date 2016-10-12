@@ -45,20 +45,18 @@ DISCREPANCY_MODULE(division_code_conflicts);
 
 DISCREPANCY_CASE(DIVISION_CODE_CONFLICTS, CBioSource, eOncaller, "Division Code Conflicts")
 {
-    if (obj.IsSetOrg() && obj.GetOrg().IsSetOrgname() && obj.GetOrg().GetOrgname().IsSetDiv() && !obj.GetOrg().GetOrgname().GetDiv().empty())
-    {
+    if (obj.IsSetOrg() && obj.GetOrg().IsSetOrgname() && obj.GetOrg().GetOrgname().IsSetDiv() && !obj.GetOrg().GetOrgname().GetDiv().empty()) {
         string div = obj.GetOrg().GetOrgname().GetDiv();
         string str = "[n] bioseq[s] [has] division code ";
         str += div;
-        m_Objs["Division code conflicts found"][str].Add(*context.NewDiscObj(context.GetCurrentBioseq()));
+        m_Objs["Division code conflicts found"][str].Add(*context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary()));
     }
 }
 
 
 DISCREPANCY_SUMMARIZE(DIVISION_CODE_CONFLICTS)
 {
-    if (m_Objs["Division code conflicts found"].GetMap().size() > 1)
-    {
+    if (m_Objs["Division code conflicts found"].GetMap().size() > 1) {
         m_ReportItems = m_Objs.Export(*this)->GetSubitems();
     }
     m_Objs.clear();

@@ -208,7 +208,7 @@ template<typename T> void CDiscrepancyVisitor<T>::Call(const T& obj, CDiscrepanc
     }
     catch (CException& e) {
         string ss = "EXCEPTION caught: "; ss += e.what();
-        m_Objs[ss].Add(*context.NewDiscObj(context.GetCurrentBioseq()));
+        m_Objs[ss].Add(*context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary()));
     }
 }
 
@@ -355,7 +355,7 @@ void CDiscrepancyContext::Parse(const CSerialObject& root)
             m_Count_Bioseq++;
             Update_Bioseq_set_Stack(i);
             if (m_Current_Bioseq->GetInst().IsNa()) {
-                m_NaSeqs.push_back(CRef<CReportObj>(NewDiscObj(m_Current_Bioseq)));
+                m_NaSeqs.push_back(CRef<CReportObj>(NewBioseqObj(m_Current_Bioseq, &GetSeqSummary())));
             }
             if (m_Current_Submit_block_StringObj && m_Current_Submit_block_StringObj->S.empty()) {
                 string label;

@@ -66,9 +66,7 @@ DISCREPANCY_MODULE(sequence_tests);
 
 const string kMissingGenomeAssemblyComments = "[n] bioseq[s] [is] missing GenomeAssembly structured comments";
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(MISSING_GENOMEASSEMBLY_COMMENTS, CSeq_inst, eDisc | eSmart, "Bioseqs should have GenomeAssembly structured comments")
-//  ----------------------------------------------------------------------------
 {
     if (obj.IsAa()) {
         return;
@@ -90,19 +88,13 @@ DISCREPANCY_CASE(MISSING_GENOMEASSEMBLY_COMMENTS, CSeq_inst, eDisc | eSmart, "Bi
     }
 
     if (!found) {
-        m_Objs[kMissingGenomeAssemblyComments].Add(*context.NewDiscObj(seq),
-                    false).Fatal();
+        m_Objs[kMissingGenomeAssemblyComments].Add(*context.NewBioseqObj(seq, &context.GetSeqSummary()), false).Fatal();
     }
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(MISSING_GENOMEASSEMBLY_COMMENTS)
-//  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
@@ -158,9 +150,7 @@ DISCREPANCY_SUMMARIZE(DUP_DEFLINE)
 
 const string kTerminalNs = "[n] sequence[s] [has] terminal Ns";
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(TERMINAL_NS, CSeq_inst, eDisc | eSubmitter | eSmart, "Ns at end of sequences")
-//  ----------------------------------------------------------------------------
 {
     CConstRef<CBioseq> seq = context.GetCurrentBioseq();
     if (!seq || seq->IsAa()) {
@@ -193,19 +183,13 @@ DISCREPANCY_CASE(TERMINAL_NS, CSeq_inst, eDisc | eSubmitter | eSmart, "Ns at end
     }
 
     if (has_terminal_n_or_gap) {
-        m_Objs[kTerminalNs].Add(*context.NewDiscObj(seq),
-            false).Fatal();
+        m_Objs[kTerminalNs].Add(*context.NewBioseqObj(seq, &context.GetSeqSummary()), false).Fatal();
     }
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(TERMINAL_NS)
-//  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
@@ -213,9 +197,7 @@ DISCREPANCY_SUMMARIZE(TERMINAL_NS)
 // SHORT_PROT_SEQUENCES
 const string kShortProtSeqs = "[n] protein sequences are shorter than 50 aa.";
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(SHORT_PROT_SEQUENCES, CSeq_inst, eDisc | eOncaller | eSmart, "Protein sequences should be at least 50 aa, unless they are partial")
-//  ----------------------------------------------------------------------------
 {
     if (!obj.IsAa() || !obj.IsSetLength() || obj.GetLength() >= 50) {
         return;
@@ -237,17 +219,12 @@ DISCREPANCY_CASE(SHORT_PROT_SEQUENCES, CSeq_inst, eDisc | eOncaller | eSmart, "P
         return;
     }
 
-    m_Objs[kShortProtSeqs].Add(*context.NewDiscObj(seq), false);
+    m_Objs[kShortProtSeqs].Add(*context.NewBioseqObj(seq, &context.GetSeqSummary()), false);
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(SHORT_PROT_SEQUENCES)
-//  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
@@ -294,9 +271,8 @@ DISCREPANCY_SUMMARIZE(COMMENT_PRESENT)
 // MRNA_ON_WRONG_SEQUENCE_TYPE
 
 const string kmRNAOnWrongSequenceType = "[n] mRNA[s] [is] located on eukaryotic sequence[s] that [does] not have genomic or plasmid source[s]";
-//  ----------------------------------------------------------------------------
+
 DISCREPANCY_CASE(MRNA_ON_WRONG_SEQUENCE_TYPE, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller, "Eukaryotic sequences that are not genomic or macronuclear should not have mRNA features")
-//  ----------------------------------------------------------------------------
 {
     if (!obj.IsSetData() || obj.GetData().GetSubtype() != CSeqFeatData::eSubtype_mRNA) {
         return;
@@ -326,13 +302,8 @@ DISCREPANCY_CASE(MRNA_ON_WRONG_SEQUENCE_TYPE, CSeq_feat_BY_BIOSEQ, eDisc | eOnca
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(MRNA_ON_WRONG_SEQUENCE_TYPE)
-//  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
@@ -341,19 +312,14 @@ DISCREPANCY_SUMMARIZE(MRNA_ON_WRONG_SEQUENCE_TYPE)
 
 const string kSequencesWithGaps = "[n] sequence[s] contain[S] gaps";
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(GAPS, CSeq_inst, eDisc | eSubmitter | eSmart, "Sequences with gaps")
-//  ----------------------------------------------------------------------------
 {
     if (obj.IsSetRepr() && obj.GetRepr() == CSeq_inst::eRepr_delta) {
 
         bool has_gaps = false;
         if (obj.IsSetExt() && obj.GetExt().IsDelta()) {
-
             ITERATE(CDelta_ext::Tdata, it, obj.GetExt().GetDelta().Get()) {
-
                 if ((*it)->IsLiteral() && (*it)->GetLiteral().IsSetSeq_data() && (*it)->GetLiteral().GetSeq_data().IsGap()) {
-
                     has_gaps = true;
                     break;
                 }
@@ -361,7 +327,6 @@ DISCREPANCY_CASE(GAPS, CSeq_inst, eDisc | eSubmitter | eSmart, "Sequences with g
         }
 
         if (!has_gaps) {
-
             CConstRef<CBioseq> bioseq = context.GetCurrentBioseq();
             if (!bioseq || !bioseq->IsSetAnnot()) {
                 return;
@@ -376,9 +341,7 @@ DISCREPANCY_CASE(GAPS, CSeq_inst, eDisc | eSubmitter | eSmart, "Sequences with g
             }
 
             if (annot) {
-
                 ITERATE(CSeq_annot::TData::TFtable, feat, annot->GetData().GetFtable()) {
-
                     if ((*feat)->IsSetData() && (*feat)->GetData().GetSubtype() == CSeqFeatData::eSubtype_gap) {
                         has_gaps = true;
                         break;
@@ -388,19 +351,14 @@ DISCREPANCY_CASE(GAPS, CSeq_inst, eDisc | eSubmitter | eSmart, "Sequences with g
         }
 
         if (has_gaps) {
-            m_Objs[kSequencesWithGaps].Add(*context.NewDiscObj(context.GetCurrentBioseq()), false);
+            m_Objs[kSequencesWithGaps].Add(*context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary()), false);
         }
     }
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(GAPS)
-//  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
@@ -409,26 +367,19 @@ DISCREPANCY_SUMMARIZE(GAPS)
 
 const string kSequencesWithBioProjectIDs = "[n] sequence[s] contain[S] BioProject IDs";
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(BIOPROJECT_ID, CSeq_inst, eOncaller, "Sequences with BioProject IDs")
-//  ----------------------------------------------------------------------------
 {
     CBioseq_Handle bioseq = context.GetScope().GetBioseqHandle(*context.GetCurrentBioseq());
     CSeqdesc_CI user_desc_it(bioseq, CSeqdesc::E_Choice::e_User);
     for (; user_desc_it; ++user_desc_it) {
-
         const CUser_object& user = user_desc_it->GetUser();
         if (user.IsSetData() && user.IsSetType() && user.GetType().IsStr() && user.GetType().GetStr() == "DBLink") {
-
             ITERATE(CUser_object::TData, user_field, user.GetData()) {
-
                 if ((*user_field)->IsSetLabel() && (*user_field)->GetLabel().IsStr() && (*user_field)->GetLabel().GetStr() == "BioProject" &&
                     (*user_field)->IsSetData() && (*user_field)->GetData().IsStrs()) {
-
                     const CUser_field::C_Data::TStrs& strs = (*user_field)->GetData().GetStrs();
                     if (!strs.empty() && !strs[0].empty()) {
-
-                        m_Objs[kSequencesWithBioProjectIDs].Add(*context.NewDiscObj(context.GetCurrentBioseq()), false);
+                        m_Objs[kSequencesWithBioProjectIDs].Add(*context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary()), false);
                         return;
                     }
                 }
@@ -438,13 +389,8 @@ DISCREPANCY_CASE(BIOPROJECT_ID, CSeq_inst, eOncaller, "Sequences with BioProject
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(BIOPROJECT_ID)
-//  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
@@ -453,9 +399,7 @@ DISCREPANCY_SUMMARIZE(BIOPROJECT_ID)
 
 const string kMissingDeflines = "[n] bioseq[s] [has] no definition line";
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(MISSING_DEFLINES, CSeq_inst, eOncaller, "Missing definition lines")
-//  ----------------------------------------------------------------------------
 {
     if (obj.IsAa()) {
         return;
@@ -472,18 +416,13 @@ DISCREPANCY_CASE(MISSING_DEFLINES, CSeq_inst, eOncaller, "Missing definition lin
         }
     }
     if (!has_title) {
-        m_Objs[kMissingDeflines].Add(*context.NewDiscObj(seq), false);
+        m_Objs[kMissingDeflines].Add(*context.NewBioseqObj(seq, &context.GetSeqSummary()), false);
     }
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(MISSING_DEFLINES)
-//  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
@@ -493,16 +432,14 @@ DISCREPANCY_SUMMARIZE(MISSING_DEFLINES)
 const string kMoreThan14NRuns = "[n] sequence[s] [has] runs of 15 or more Ns";
 const TSeqPos MIN_BAD_RUN_LEN = 15;
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(N_RUNS_14, CSeq_inst, eDisc, "Runs of more than 14 Ns")
-//  ----------------------------------------------------------------------------
 {
     if (obj.IsNa()) {
         if (obj.IsSetSeq_data()) {
             vector<CRange<TSeqPos> > runs;
             FindNRuns(runs, obj.GetSeq_data(), obj.GetLength(), 0, MIN_BAD_RUN_LEN);
             if (!runs.empty()) {
-                m_Objs[kMoreThan14NRuns].Add(*context.NewDiscObj(context.GetCurrentBioseq()), false);
+                m_Objs[kMoreThan14NRuns].Add(*context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary()), false);
             }
         }
         else if (obj.IsSetExt() && obj.GetExt().IsDelta()) {
@@ -516,7 +453,7 @@ DISCREPANCY_CASE(N_RUNS_14, CSeq_inst, eDisc, "Runs of more than 14 Ns")
                         vector<CRange<TSeqPos> > runs;
                         FindNRuns(runs, (*delta)->GetLiteral().GetSeq_data(), 0, (*delta)->GetLiteral().GetLength(), MIN_BAD_RUN_LEN);
                         if (!runs.empty()) {
-                            m_Objs[kMoreThan14NRuns].Add(*context.NewDiscObj(context.GetCurrentBioseq()), false);
+                            m_Objs[kMoreThan14NRuns].Add(*context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary()), false);
                             break;
                         }
                     }
@@ -527,16 +464,10 @@ DISCREPANCY_CASE(N_RUNS_14, CSeq_inst, eDisc, "Runs of more than 14 Ns")
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(N_RUNS_14)
-//  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
-
 
 
 // 10_PERCENTN
@@ -549,19 +480,15 @@ DISCREPANCY_CASE(10_PERCENTN, CSeq_inst, eDisc | eSubmitter | eSmart, "Greater t
     if (obj.IsAa() || context.SequenceHasFarPointers()) {
         return;
     }
-
-    const CSeqSummary& sum = context.GetNucleotideCount();
+    const CSeqSummary& sum = context.GetSeqSummary();
     if (sum.N * 100. / sum.Len > MIN_N_PERCENTAGE) {
-        m_Objs[kMoreThan10PercentsN].Add(*context.NewDiscObj(context.GetCurrentBioseq()));
+        m_Objs[kMoreThan10PercentsN].Add(*context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary()));
     }
 }
 
 
 DISCREPANCY_SUMMARIZE(10_PERCENTN)
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
@@ -595,7 +522,6 @@ void SummarizeFeatureCount(CReportNode& m_Objs)
                     }
                 }
             }
-
             // add non-zero count for this sequence
             AddFeatureCount(m_Objs, it->first, it->second->GetObjects().size());
         }
@@ -615,7 +541,7 @@ DISCREPANCY_CASE(FEATURE_COUNT, CSeq_feat_BY_BIOSEQ, eOncaller | eSubmitter | eS
     if (m_Count != context.GetCountBioseq()) {
         m_Count = context.GetCountBioseq();
         SummarizeFeatureCount(m_Objs);
-        CRef<CDiscrepancyObject> this_disc_obj(context.NewDiscObj(CConstRef<CBioseq>(context.GetCurrentBioseq()), eKeepRef));
+        CRef<CDiscrepancyObject> this_disc_obj(context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary(), eKeepRef));
         m_Objs[kFeatureCountSequenceList].Add(*this_disc_obj, false);
     }
     if (obj.GetData().GetSubtype() == CSeqFeatData::eSubtype_prot) {
@@ -677,12 +603,13 @@ void SummarizeExonCount(CReportNode& m_Objs)
     }
 }
 
+
 DISCREPANCY_CASE(EXON_ON_MRNA, CSeq_feat_BY_BIOSEQ, eOncaller | eSmart, "mRNA sequences should not have exons")
 {
     if (m_Count != context.GetCountBioseq()) {
         m_Count = context.GetCountBioseq();
         SummarizeExonCount(m_Objs);
-        CRef<CDiscrepancyObject> this_disc_obj(context.NewDiscObj(CConstRef<CBioseq>(context.GetCurrentBioseq()), eKeepRef));
+        CRef<CDiscrepancyObject> this_disc_obj(context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary(), eKeepRef));
         m_Objs[kExonBioseq].Add(*this_disc_obj, false);
     }
     if (!context.IsCurrentSequenceMrna() || !obj.IsSetData() || obj.GetData().GetSubtype() != CSeqFeatData::eSubtype_exon) {
@@ -717,14 +644,13 @@ DISCREPANCY_CASE(INCONSISTENT_MOLINFO_TECH, CSeq_inst, eDisc | eSmart, "Inconsis
     CBioseq_Handle bioseq = context.GetScope().GetBioseqHandle(*context.GetCurrentBioseq());
     
     for (CSeqdesc_CI molinfo_desc_it(bioseq, CSeqdesc::E_Choice::e_Molinfo); molinfo_desc_it; ++molinfo_desc_it) {
-
         const CMolInfo& mol_info = molinfo_desc_it->GetMolinfo();
         if (!mol_info.IsSetTech()) {
-            m_Objs[kMissingTech].Add(*context.NewDiscObj(context.GetCurrentBioseq()));
+            m_Objs[kMissingTech].Add(*context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary()));
         }
         else {
             string tech = NStr::IntToString(mol_info.GetTech());
-            m_Objs[tech].Add(*context.NewDiscObj(context.GetCurrentBioseq()));
+            m_Objs[tech].Add(*context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary()));
         }
     }
 }
@@ -796,6 +722,7 @@ static bool IsATGC(char ch)
     return (ch == 'A' || ch == 'T' || ch == 'G' || ch == 'C');
 }
 
+
 static bool EndsWithSequence(const string& title)
 {
     static const size_t MIN_TITLE_SEQ_LEN = 19; // 19 was just copied from C-toolkit
@@ -857,7 +784,6 @@ DISCREPANCY_CASE(FEATURE_MOLTYPE_MISMATCH, CSeq_inst, eOncaller, "Sequences with
     }
 
     if (!is_genomic || !is_dna) {
-
         const CSeq_annot* annot = nullptr;
         CConstRef<CBioseq> bioseq = context.GetCurrentBioseq();
         if (bioseq->IsSetAnnot()) {
@@ -870,15 +796,11 @@ DISCREPANCY_CASE(FEATURE_MOLTYPE_MISMATCH, CSeq_inst, eOncaller, "Sequences with
         }
 
         if (annot) {
-
             ITERATE(CSeq_annot::TData::TFtable, feat, annot->GetData().GetFtable()) {
-
                 if ((*feat)->IsSetData()) {
                     CSeqFeatData::ESubtype subtype = (*feat)->GetData().GetSubtype();
-                    
                     if (subtype == CSeqFeatData::eSubtype_rRNA || subtype == CSeqFeatData::eSubtype_otherRNA) {
-                        
-                        m_Objs[kMoltypeMismatch].Add(*context.NewDiscObj(bioseq, eKeepRef, true));
+                        m_Objs[kMoltypeMismatch].Add(*context.NewBioseqObj(bioseq, &context.GetSeqSummary(), eKeepRef, true));
                         break;
                     }
                 }
@@ -895,6 +817,7 @@ DISCREPANCY_SUMMARIZE(FEATURE_MOLTYPE_MISMATCH)
     }
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
+
 
 static bool FixMoltype(const CBioseq& bioseq, CScope& scope)
 {
@@ -971,9 +894,10 @@ const string& kPreviouslySeenFieldsThis = "Previously Seen Fields This";
 const string& kPreviouslySeenObjects = "Previously Seen Objects";
 
 void AddUserObjectFieldItems
-(CConstRef<CSeqdesc> d, 
- CConstRef<CBioseq> seq, 
- CReportNode& collector, 
+(CConstRef<CSeqdesc> d,
+ CConstRef<CBioseq> seq,
+ const CSeqSummary* info,
+ CReportNode& collector,
  CReportNode& previously_seen,
  CDiscrepancyContext& context,
  const string& object_name,
@@ -982,10 +906,9 @@ void AddUserObjectFieldItems
     if (!d) {
         // add missing for all previously seen fields
         NON_CONST_ITERATE(CReportNode::TNodeMap, obj, previously_seen[kPreviouslySeenFields].GetMap()) {
-
             ITERATE(CReportNode::TNodeMap, z, obj->second->GetMap()) {
                 collector[field_prefix + z->first][" [n] " + object_name + "[s] [is] missing field " + field_prefix + z->first]
-                    .Add(*context.NewDiscObj(seq, eKeepRef), false);
+                    .Add(*context.NewBioseqObj(seq, info, eKeepRef), false);
             }
         }
         return;
@@ -993,9 +916,7 @@ void AddUserObjectFieldItems
     
     bool already_seen = previously_seen[kPreviouslySeenObjects].Exist(object_name);
     ITERATE(CUser_object::TData, f, d->GetUser().GetData()) {
-
         if ((*f)->IsSetLabel() && (*f)->GetLabel().IsStr() && (*f)->IsSetData()) {
-
             string field_name = field_prefix + (*f)->GetLabel().GetStr();
             // add missing field to all previous objects that do not have this field
             if (already_seen && !collector.Exist(field_name)) {
@@ -1013,7 +934,6 @@ void AddUserObjectFieldItems
 
     // add missing for all previously seen fields not on this object
     ITERATE(CReportNode::TNodeMap, z, previously_seen[kPreviouslySeenFields][object_name].GetMap()) {
-
         if (!previously_seen[kPreviouslySeenFieldsThis].Exist(z->first)) {
             collector[field_prefix + z->first][" [n] " + object_name + "[s] [is] missing field " + field_prefix + z->first]
                 .Add(*context.NewSeqdescObj(d, context.GetCurrentBioseqLabel()), false);
@@ -1027,9 +947,7 @@ void AddUserObjectFieldItems
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(INCONSISTENT_DBLINK, CSeq_inst, eDisc | eSubmitter | eSmart, "Inconsistent DBLink fields")
-//  ----------------------------------------------------------------------------
 {
     if (obj.IsAa()) {
         return;
@@ -1041,9 +959,9 @@ DISCREPANCY_CASE(INCONSISTENT_DBLINK, CSeq_inst, eDisc | eSubmitter | eSmart, "I
         ++d;
     }
     if (!d) {
-        m_Objs[kMissingDBLink].Add(*context.NewDiscObj(seq, eKeepRef), false);
+        m_Objs[kMissingDBLink].Add(*context.NewBioseqObj(seq, &context.GetSeqSummary(), eKeepRef), false);
         // add missing for all previously seen fields
-        AddUserObjectFieldItems(CConstRef<CSeqdesc>(NULL), seq, m_Objs[kDBLinkCollect], m_Objs[kDBLinkObjectList], context, "DBLink object");
+        AddUserObjectFieldItems(CConstRef<CSeqdesc>(NULL), seq, &context.GetSeqSummary(), m_Objs[kDBLinkCollect], m_Objs[kDBLinkObjectList], context, "DBLink object");
     }
     while (d) {
         if (d->GetUser().GetObjectType() != CUser_object::eObjectType_DBLink) {
@@ -1051,10 +969,9 @@ DISCREPANCY_CASE(INCONSISTENT_DBLINK, CSeq_inst, eDisc | eSubmitter | eSmart, "I
             continue;
         }
         CConstRef<CSeqdesc> dr(&(*d));
-        AddUserObjectFieldItems(dr, seq, m_Objs[kDBLinkCollect], m_Objs[kDBLinkObjectList], context, "DBLink object");
+        AddUserObjectFieldItems(dr, seq, &context.GetSeqSummary(), m_Objs[kDBLinkCollect], m_Objs[kDBLinkObjectList], context, "DBLink object");
         ++d;
     }
-
 }
 
 
@@ -1089,6 +1006,7 @@ void AnalyzeField(CReportNode& node, bool& all_present, bool& all_same)
         }
     }
 }
+
 
 void AnalyzeFieldReport(CReportNode& node, bool& all_present, bool& all_same)
 {
@@ -1138,6 +1056,7 @@ void CopyNode(CReportNode& new_home, CReportNode& original)
     }
 }
 
+
 void AddSubFieldReport(CReportNode& node, const string& field_name, const string& top_label, CReportNode& m_Objs)
 {
     bool this_present = true;
@@ -1170,9 +1089,7 @@ string AdjustDBLinkFieldName(const string& orig_field_name)
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(INCONSISTENT_DBLINK)
-//  ----------------------------------------------------------------------------
 {
     m_Objs.GetMap().erase(kDBLinkObjectList);
     m_Objs.GetMap().erase(kDBLinkFieldCountTop);
@@ -1214,8 +1131,6 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_DBLINK)
     }
     m_Objs.GetMap().erase(kDBLinkCollect);
 
-
-
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
@@ -1247,7 +1162,7 @@ DISCREPANCY_CASE(INCONSISTENT_STRUCTURED_COMMENTS, CSeq_inst, eDisc | eSubmitter
             prefix = "unnamed";
         }
         m_Objs[kStructuredCommentObservedPrefixesThis][prefix].Add(*context.NewSeqdescObj(dr, context.GetCurrentBioseqLabel(), eKeepRef), false);
-        AddUserObjectFieldItems(dr, seq, m_Objs[kStructuredCommentReport], m_Objs[kStructuredCommentPrevious], context, prefix + " structured comment", kStructuredCommentFieldPrefix);
+        AddUserObjectFieldItems(dr, seq, &context.GetSeqSummary(), m_Objs[kStructuredCommentReport], m_Objs[kStructuredCommentPrevious], context, prefix + " structured comment", kStructuredCommentFieldPrefix);
         ++d;
     }
 
@@ -1255,8 +1170,8 @@ DISCREPANCY_CASE(INCONSISTENT_STRUCTURED_COMMENTS, CSeq_inst, eDisc | eSubmitter
     ITERATE(CReportNode::TNodeMap, it, m_Objs[kStructuredCommentObservedPrefixes].GetMap()) {
         if (!m_Objs[kStructuredCommentObservedPrefixesThis].Exist(it->first)) {
             m_Objs["[n] Bioseq[s] [is] missing " + it->first + " structured comment"]
-                .Add(*context.NewDiscObj(seq, eKeepRef), false);
-            AddUserObjectFieldItems(CConstRef<CSeqdesc>(NULL), seq, m_Objs[kStructuredCommentReport],
+                .Add(*context.NewBioseqObj(seq, &context.GetSeqSummary(), eKeepRef), false);
+            AddUserObjectFieldItems(CConstRef<CSeqdesc>(NULL), seq, &context.GetSeqSummary(), m_Objs[kStructuredCommentReport],
                 m_Objs[kStructuredCommentPrevious], context,
                 it->first + " structured comment", kStructuredCommentFieldPrefix);
         }
@@ -1269,24 +1184,22 @@ DISCREPANCY_CASE(INCONSISTENT_STRUCTURED_COMMENTS, CSeq_inst, eDisc | eSubmitter
                 const CBioseq* this_seq = dynamic_cast<const CBioseq*>((*ro)->GetObject().GetPointer());       
                 CConstRef<CBioseq> this_seq_r(this_seq);
                 m_Objs["[n] Bioseq[s] [is] missing " + it->first + " structured comment"]
-                    .Add(*context.NewDiscObj(this_seq_r, eKeepRef), false);
-                AddUserObjectFieldItems(CConstRef<CSeqdesc>(NULL), this_seq_r, m_Objs[kStructuredCommentReport],
+                    .Add(*context.NewBioseqObj(this_seq_r, 0, eKeepRef), false);
+                AddUserObjectFieldItems(CConstRef<CSeqdesc>(NULL), this_seq_r, 0, m_Objs[kStructuredCommentReport],
                     m_Objs[kStructuredCommentPrevious], context,
                     it->first + " structured comment", kStructuredCommentFieldPrefix);
             }
         }
         // add to list of previously observed prefixes, for next time
-        m_Objs[kStructuredCommentObservedPrefixes][it->first].Add(*context.NewDiscObj(seq, eKeepRef), false);
+        m_Objs[kStructuredCommentObservedPrefixes][it->first].Add(*context.NewBioseqObj(seq, &context.GetSeqSummary(), eKeepRef), false);
     }
 
     m_Objs[kStructuredCommentObservedPrefixesThis].clear();
-    m_Objs[kStructuredCommentsSeqs].Add(*context.NewDiscObj(seq, eKeepRef), false);
+    m_Objs[kStructuredCommentsSeqs].Add(*context.NewBioseqObj(seq, &context.GetSeqSummary(), eKeepRef), false);
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(INCONSISTENT_STRUCTURED_COMMENTS)
-//  ----------------------------------------------------------------------------
 {
     m_Objs.GetMap().erase(kStructuredCommentObservedPrefixesThis);
     m_Objs.GetMap().erase(kStructuredCommentsSeqs);
@@ -1334,15 +1247,13 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_STRUCTURED_COMMENTS)
     }
     m_Objs.GetMap().erase(kStructuredCommentReport);
 
-
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
 // MISSING_STRUCTURED_COMMENT
-//  ----------------------------------------------------------------------------
+
 DISCREPANCY_CASE(MISSING_STRUCTURED_COMMENT, CSeq_inst, eDisc, "Structured comment not included")
-//  ----------------------------------------------------------------------------
 {
     if (obj.IsAa()) {
         return;
@@ -1361,27 +1272,20 @@ DISCREPANCY_CASE(MISSING_STRUCTURED_COMMENT, CSeq_inst, eDisc, "Structured comme
         ++d;
     }
     if (num_structured_comment == 0) {
-        m_Objs["[n] sequence[s] [does] not include structured comments."].Add(*context.NewDiscObj(seq), false);
+        m_Objs["[n] sequence[s] [does] not include structured comments."].Add(*context.NewBioseqObj(seq, &context.GetSeqSummary()), false);
     }
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(MISSING_STRUCTURED_COMMENT)
-//  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-        return;
-    }
-
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
 // MISSING_PROJECT
-//  ----------------------------------------------------------------------------
+
 DISCREPANCY_CASE(MISSING_PROJECT, CSeq_inst, eDisc, "Project not included")
-//  ----------------------------------------------------------------------------
 {
     CConstRef<CBioseq> seq = context.GetCurrentBioseq();
     if (!seq) return;
@@ -1410,27 +1314,20 @@ DISCREPANCY_CASE(MISSING_PROJECT, CSeq_inst, eDisc, "Project not included")
         ++d;
     }
     if (!has_project) {
-        m_Objs["[n] sequence[s] [does] not include project."].Add(*context.NewDiscObj(seq), false);
+        m_Objs["[n] sequence[s] [does] not include project."].Add(*context.NewBioseqObj(seq, &context.GetSeqSummary()), false);
     }
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(MISSING_PROJECT)
-//  ----------------------------------------------------------------------------
 {
-    if (m_Objs.empty()) {
-        return;
-    }
-
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
 // COUNT_UNVERIFIED
-//  ----------------------------------------------------------------------------
+
 DISCREPANCY_CASE(COUNT_UNVERIFIED, CSeq_inst, eOncaller, "Count number of unverified sequences")
-//  ----------------------------------------------------------------------------
 {
     CConstRef<CBioseq> seq = context.GetCurrentBioseq();
     if (!seq) return;
@@ -1445,21 +1342,15 @@ DISCREPANCY_CASE(COUNT_UNVERIFIED, CSeq_inst, eOncaller, "Count number of unveri
         ++d;
     }
     if (found) {
-        m_Objs["[n] sequence[s] [is] unverified"].Add(*context.NewDiscObj(seq), false);
+        m_Objs["[n] sequence[s] [is] unverified"].Add(*context.NewBioseqObj(seq, &context.GetSeqSummary()), false);
     }
 }
 
-//  ----------------------------------------------------------------------------
-DISCREPANCY_SUMMARIZE(COUNT_UNVERIFIED)
-//  ----------------------------------------------------------------------------
-{
-    if (m_Objs.empty()) {
-        return;
-    }
 
+DISCREPANCY_SUMMARIZE(COUNT_UNVERIFIED)
+{
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
-
 
 
 // DEFLINE_PRESENT
@@ -1481,16 +1372,13 @@ DISCREPANCY_CASE(DEFLINE_PRESENT, CSeq_inst, eDisc, "Test defline existence")
 
     CSeqdesc_CI descrs(bioseq_h, CSeqdesc::e_Title);
     if (descrs) {
-        m_Objs[kDeflineExists].Add(*context.NewDiscObj(bioseq));
+        m_Objs[kDeflineExists].Add(*context.NewBioseqObj(bioseq, &context.GetSeqSummary()));
     }
 }
 
 
 DISCREPANCY_SUMMARIZE(DEFLINE_PRESENT)
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
@@ -1506,9 +1394,7 @@ static bool ContainsUnusualNucleotide(const CSeq_data& seq_data)
 
     bool unusual_found = false;
     if (nconv) {
-
         const string& sequence = as_iupacna.GetIupacna().Get();
-
         for (auto nucleotide = sequence.begin(); nucleotide != sequence.end(); ++nucleotide) {
             if (!IsATGC(*nucleotide) && *nucleotide != 'N') {
                 unusual_found = true;
@@ -1516,7 +1402,6 @@ static bool ContainsUnusualNucleotide(const CSeq_data& seq_data)
             }
         }
     }
-
     return unusual_found;
 }
 
@@ -1525,7 +1410,7 @@ DISCREPANCY_CASE(UNUSUAL_NT, CSeq_inst, eDisc | eSubmitter | eSmart, "Sequence c
     if (obj.IsNa()) {
         if (obj.IsSetSeq_data()) {
             if (ContainsUnusualNucleotide(obj.GetSeq_data())) {
-                m_Objs[kUnusualNT].Add(*context.NewDiscObj(context.GetCurrentBioseq()), false);
+                m_Objs[kUnusualNT].Add(*context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary()), false);
             }
         }
         else if (obj.IsSetExt() && obj.GetExt().IsDelta()) {
@@ -1537,7 +1422,7 @@ DISCREPANCY_CASE(UNUSUAL_NT, CSeq_inst, eDisc | eSubmitter | eSmart, "Sequence c
                             continue;
                         }
                         if (ContainsUnusualNucleotide((*delta)->GetLiteral().GetSeq_data())) {
-                            m_Objs[kUnusualNT].Add(*context.NewDiscObj(context.GetCurrentBioseq()), false);
+                            m_Objs[kUnusualNT].Add(*context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary()), false);
                             break;
                         }
                     }
@@ -1550,9 +1435,6 @@ DISCREPANCY_CASE(UNUSUAL_NT, CSeq_inst, eDisc | eSubmitter | eSmart, "Sequence c
 
 DISCREPANCY_SUMMARIZE(UNUSUAL_NT)
 {
-    if (m_Objs.empty()) {
-        return;
-    }
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
@@ -1622,7 +1504,6 @@ static string GetProjectID(const CUser_object& user)
 {
     string res;
     if (user.IsSetData()) {
-
         ITERATE(CUser_object::TData, field, user.GetData()) {
             if ((*field)->IsSetData() && (*field)->GetData().IsInt() && (*field)->IsSetLabel() && (*field)->GetLabel().IsStr() && (*field)->GetLabel().GetStr() == "ProjectID") {
                 res = NStr::IntToString((*field)->GetData().GetInt());
@@ -1643,11 +1524,10 @@ DISCREPANCY_CASE(HAS_PROJECT_ID, CSeq_inst, eOncaller | eSmart, "Sequences with 
 
     CBioseq_Handle seq_h = context.GetScope().GetBioseqHandle(*seq);
     for (CSeqdesc_CI user(seq_h, CSeqdesc::e_User); user; ++user) {
-
         if (user->GetUser().IsSetType() && user->GetUser().GetType().IsStr() && user->GetUser().GetType().GetStr() == "GenomeProjectsDB") {
             string proj_id = GetProjectID(user->GetUser());
             if (!proj_id.empty()) {
-                m_Objs[kProjId][proj_id].Add(*context.NewDiscObj(seq, eKeepRef), false);
+                m_Objs[kProjId][proj_id].Add(*context.NewBioseqObj(seq, &context.GetSeqSummary(), eKeepRef), false);
             }
         }
     }
@@ -1658,7 +1538,6 @@ typedef map<string, list<CConstRef<CBioseq> > > TBioseqMapByID;
 static void CollectSequencesByProjectID(CReportNode& bioseqs, TBioseqMapByID& prots, TBioseqMapByID& nucs)
 {
     NON_CONST_ITERATE(CReportNode::TNodeMap, node, bioseqs.GetMap()) {
-
         ITERATE(TReportObjectList, bioseq, node->second->GetObjects()) {
             const CDiscrepancyObject* dobj = dynamic_cast<const CDiscrepancyObject*>(bioseq->GetPointer());
             if (dobj) {
@@ -1685,11 +1564,12 @@ static void FillReport(const TBioseqMapByID& projs, CReportNode& report, CDiscre
     if (!projs.empty()) {
         ITERATE(TBioseqMapByID, proj, projs) {
             ITERATE(list<CConstRef<CBioseq> >, bioseq, proj->second) {
-                report[what].Add(*context.NewDiscObj(*bioseq), false);
+                report[what].Add(*context.NewBioseqObj(*bioseq, 0), false);
             }
         }
     }
 }
+
 
 DISCREPANCY_SUMMARIZE(HAS_PROJECT_ID)
 {
@@ -1740,15 +1620,12 @@ void SummarizeMultCDSOnMrna(CReportNode& m_Objs)
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(MULTIPLE_CDS_ON_MRNA, CSeq_feat_BY_BIOSEQ, eOncaller | eSubmitter | eSmart, "Multiple CDS on mRNA")
-//  ----------------------------------------------------------------------------
 {
     if (m_Count != context.GetCountBioseq()) {
         m_Count = context.GetCountBioseq();
         SummarizeMultCDSOnMrna(m_Objs);
-
-        CRef<CDiscrepancyObject> this_disc_obj(context.NewDiscObj(CConstRef<CBioseq>(context.GetCurrentBioseq()), eKeepRef));
+        CRef<CDiscrepancyObject> this_disc_obj(context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary(), eKeepRef));
         m_Objs[kLastBioseq].Add(*this_disc_obj, false);
     }
     if (!context.IsCurrentSequenceMrna() || !obj.IsSetData() || !obj.GetData().IsCdregion()) {
@@ -1761,13 +1638,10 @@ DISCREPANCY_CASE(MULTIPLE_CDS_ON_MRNA, CSeq_feat_BY_BIOSEQ, eOncaller | eSubmitt
     if (CCleanup::IsPseudo(obj, context.GetScope())) {
         m_Objs[kPseudoCDSOnMRNA].Add(*(context.NewDiscObj(CConstRef<CSeq_feat>(&obj))), false);
     }
-
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(MULTIPLE_CDS_ON_MRNA)
-//  ----------------------------------------------------------------------------
 {
     SummarizeMultCDSOnMrna(m_Objs);
     m_Objs.GetMap().erase(kCDSOnMrna);
@@ -1794,15 +1668,12 @@ void SummarizeMinusOnMrna(CReportNode& m_Objs)
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(MRNA_SEQUENCE_MINUS_STRAND_FEATURES, CSeq_feat_BY_BIOSEQ, eOncaller, "mRNA sequences have CDS/gene on the complement strand")
-//  ----------------------------------------------------------------------------
 {
     if (m_Count != context.GetCountBioseq()) {
         m_Count = context.GetCountBioseq();
         SummarizeMinusOnMrna(m_Objs);
-
-        CRef<CDiscrepancyObject> this_disc_obj(context.NewDiscObj(CConstRef<CBioseq>(context.GetCurrentBioseq()), eKeepRef));
+        CRef<CDiscrepancyObject> this_disc_obj(context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary(), eKeepRef));
         m_Objs[kLastBioseq].Add(*this_disc_obj, false);
     }
     if (!context.IsCurrentSequenceMrna() || 
@@ -1814,16 +1685,13 @@ DISCREPANCY_CASE(MRNA_SEQUENCE_MINUS_STRAND_FEATURES, CSeq_feat_BY_BIOSEQ, eOnca
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(MRNA_SEQUENCE_MINUS_STRAND_FEATURES)
-//  ----------------------------------------------------------------------------
 {
     SummarizeMinusOnMrna(m_Objs);
     m_Objs.GetMap().erase(kMinusStrandOnMrna);
     m_Objs.GetMap().erase(kLastBioseq);
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
 }
-
 
 
 // LOW_QUALITY_REGION
@@ -1876,7 +1744,7 @@ DISCREPANCY_CASE(LOW_QUALITY_REGION, CSeq_inst, eDisc | eSubmitter | eSmart, "Se
     if (obj.IsNa()) {
         if (obj.IsSetSeq_data()) {
             if (HasLowQualityRegion(obj.GetSeq_data())) {
-                m_Objs[kLowQualityRegion].Add(*context.NewDiscObj(context.GetCurrentBioseq()), false);
+                m_Objs[kLowQualityRegion].Add(*context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary()), false);
             }
         }
         else if (obj.IsSetExt() && obj.GetExt().IsDelta()) {
@@ -1888,7 +1756,7 @@ DISCREPANCY_CASE(LOW_QUALITY_REGION, CSeq_inst, eDisc | eSubmitter | eSmart, "Se
                             continue;
                         }
                         if (HasLowQualityRegion((*delta)->GetLiteral().GetSeq_data())) {
-                            m_Objs[kLowQualityRegion].Add(*context.NewDiscObj(context.GetCurrentBioseq()), false);
+                            m_Objs[kLowQualityRegion].Add(*context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary()), false);
                             break;
                         }
                     }
@@ -1929,9 +1797,7 @@ DISCREPANCY_SUMMARIZE(DEFLINE_ON_SET)
 
 const string kMitochondrionRequired = "[n] bioseq[s] [has] D-loop or control region misc_feature, but [is] do not have mitochondrial source";
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(MITOCHONDRION_REQUIRED, CSeq_inst, eDisc | eOncaller, "If D-loop or control region misc_feat is present, source must be mitochondrial")
-//  ----------------------------------------------------------------------------
 {
     CConstRef<CBioseq> seq = context.GetCurrentBioseq();
     if (!seq) {
@@ -1943,7 +1809,6 @@ DISCREPANCY_CASE(MITOCHONDRION_REQUIRED, CSeq_inst, eDisc | eOncaller, "If D-loo
     bool has_misc_feat_with_control_region = false;
 
     for (CFeat_CI feat_it(seq_h); feat_it; ++feat_it) {
-
         if (feat_it->IsSetData()) {
             if (feat_it->GetData().GetSubtype() == CSeqFeatData::eSubtype_D_loop) {
                 has_D_loop = true;
@@ -1960,25 +1825,23 @@ DISCREPANCY_CASE(MITOCHONDRION_REQUIRED, CSeq_inst, eDisc | eOncaller, "If D-loo
 
     if (has_D_loop || has_misc_feat_with_control_region) {
         if (context.GetCurrentGenome() != CBioSource::eGenome_mitochondrion) {
-            m_Objs[kMitochondrionRequired].Add(*context.NewDiscObj(seq, eKeepRef, true), false);
+            m_Objs[kMitochondrionRequired].Add(*context.NewBioseqObj(seq, &context.GetSeqSummary(), eKeepRef, true), false);
         }
     }
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(MITOCHONDRION_REQUIRED)
-//  ----------------------------------------------------------------------------
 {
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
 }
+
 
 static bool FixGenome(const CBioseq& bioseq, CScope& scope)
 {
     CBioseq_Handle seq_h = scope.GetBioseqHandle(bioseq);
     CSeqdesc_CI biosrc(seq_h, CSeqdesc::e_Source);
     if (biosrc) {
-
         CSeqdesc& edit_biosrc = const_cast<CSeqdesc&>(*biosrc);
         edit_biosrc.SetSource().SetGenome(CBioSource::eGenome_mitochondrion);
         return true;
@@ -1986,6 +1849,7 @@ static bool FixGenome(const CBioseq& bioseq, CScope& scope)
 
     return false;
 }
+
 
 DISCREPANCY_AUTOFIX(MITOCHONDRION_REQUIRED)
 {
@@ -2020,16 +1884,13 @@ static bool IsmRNASequenceInGenProdSet(CDiscrepancyContext& context, const CBios
     bool ret = false;
 
     if (bioseq.GetInst().IsSetMol() && bioseq.GetInst().GetMol() == CSeq_inst::eMol_rna) {
-
         CConstRef<CBioseq_set> bio_set = bioseq.GetParentSet();
         if (bio_set && bio_set->IsSetClass()) {
-
             if (bio_set->GetClass() == CBioseq_set::eClass_nuc_prot) {
                 bio_set = bio_set->GetParentSet();
             }
 
             if (bio_set && bio_set->IsSetClass() && bio_set->GetClass() == CBioseq_set::eClass_gen_prod_set) {
-
                 const CMolInfo* mol_info = context.GetCurrentMolInfo();
                 if (mol_info && mol_info->IsSetBiomol() && IsMolProd(mol_info->GetBiomol())) {
                     ret = true;
@@ -2041,25 +1902,21 @@ static bool IsmRNASequenceInGenProdSet(CDiscrepancyContext& context, const CBios
     return ret;
 }
 
-//  ----------------------------------------------------------------------------
+
 DISCREPANCY_CASE(SHORT_CONTIG, CSeq_inst, eDisc | eSubmitter | eSmart, "Short Contig")
-//  ----------------------------------------------------------------------------
 {
     static TSeqPos MIN_CONTIG_LEN = 200;
 
     if (obj.IsNa() && obj.IsSetLength() && obj.GetLength() < MIN_CONTIG_LEN) {
-
         CConstRef<CBioseq> bioseq = context.GetCurrentBioseq();
         if (!IsmRNASequenceInGenProdSet(context, *bioseq)) {
-            m_Objs[kShortContig].Add(*context.NewDiscObj(bioseq, eKeepRef, true), false);
+            m_Objs[kShortContig].Add(*context.NewBioseqObj(bioseq, &context.GetSeqSummary(), eKeepRef, true), false);
         }
     }
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(SHORT_CONTIG)
-//  ----------------------------------------------------------------------------
 {
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
 }
@@ -2081,6 +1938,7 @@ static bool RemoveBioseq(const CBioseq& bioseq, CScope& scope)
     return true;
 }
 
+
 DISCREPANCY_AUTOFIX(SHORT_CONTIG)
 {
     TReportObjectList list = item->GetDetails();
@@ -2099,23 +1957,18 @@ DISCREPANCY_AUTOFIX(SHORT_CONTIG)
 
 const string kRnaProviral = "[n] RNA bioseq[s] [is] proviral";
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(RNA_PROVIRAL, CSeq_inst, eOncaller, "RNA bioseqs are proviral")
-//  ----------------------------------------------------------------------------
 {
     if (obj.IsSetMol() && obj.GetMol() == CSeq_inst::eMol_rna) {
-
         const CBioSource* bio_src = context.GetCurrentBiosource();
         if (bio_src && bio_src->IsSetOrg() && bio_src->IsSetGenome() && bio_src->GetGenome() == CBioSource::eGenome_proviral) {
-            m_Objs[kRnaProviral].Add(*context.NewDiscObj(context.GetCurrentBioseq()), false);
+            m_Objs[kRnaProviral].Add(*context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary()), false);
         }
     }
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(RNA_PROVIRAL)
-//  ----------------------------------------------------------------------------
 {
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
 }
@@ -2134,6 +1987,7 @@ static void GetBioSourceFromDescr(const CSeq_descr& descrs, TBioSourcesList& bio
         }
     }
 }
+
 
 static void CollectBioSources(const CBioseq_set& bio_set, TBioSourcesList& bio_srcs)
 {
@@ -2172,6 +2026,7 @@ static bool CompareOrGetString(const CBioSource& bio_src, FnIsSet is_set_fn, FnG
     return ret;
 }
 
+
 static bool CompareOrgModValue(const CBioSource& bio_src, COrgMod::TSubtype subtype, string& val)
 {
     bool ret = true;
@@ -2195,6 +2050,7 @@ static bool CompareOrgModValue(const CBioSource& bio_src, COrgMod::TSubtype subt
     }
     return ret;
 }
+
 
 static bool IsSegmentSubtype(const CBioSource& bio_src)
 {
@@ -2256,9 +2112,7 @@ DISCREPANCY_CASE(SMALL_GENOME_SET_PROBLEM, CBioseq_set, eOncaller, "Problems wit
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(SMALL_GENOME_SET_PROBLEM)
-//  ----------------------------------------------------------------------------
 {
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
 }
@@ -2271,7 +2125,6 @@ static const string kUnwantedSetWrapper = "[n] unwanted set wrapper[s]";
 static const CBioSource* GetBioSource(const CBioseq_Handle& bioseq)
 {
     const CBioSource* ret = nullptr;
-
     if (bioseq.IsSetDescr()) {
         ITERATE(CSeq_descr::Tdata, descr, bioseq.GetDescr().Get()) {
             if ((*descr)->IsSource()) {
@@ -2280,9 +2133,9 @@ static const CBioSource* GetBioSource(const CBioseq_Handle& bioseq)
             }
         }
     }
-
     return ret;
 }
+
 
 static bool IsMicroSatellite(const CSeq_feat_Handle& feat)
 {
@@ -2305,12 +2158,10 @@ static bool IsMicroSatellite(const CSeq_feat_Handle& feat)
     return ret;
 }
 
-//  ----------------------------------------------------------------------------
+
 DISCREPANCY_CASE(UNWANTED_SET_WRAPPER, CBioseq_set, eOncaller, "Set wrapper on microsatellites or rearranged genes")
-//  ----------------------------------------------------------------------------
 {
     if (obj.IsSetClass()) {
-
         CBioseq_set::EClass bio_set_class = obj.GetClass();
         if (bio_set_class == CBioseq_set::eClass_eco_set ||
             bio_set_class == CBioseq_set::eClass_mut_set ||
@@ -2323,11 +2174,9 @@ DISCREPANCY_CASE(UNWANTED_SET_WRAPPER, CBioseq_set, eOncaller, "Set wrapper on m
 
             CBioseq_set_Handle bio_set_handle = context.GetScope().GetBioseq_setHandle(obj);
             for (CBioseq_CI bioseq(bio_set_handle); bioseq; ++bioseq) {
-
                 if (!has_rearranged) {
                     const CBioSource* bio_src = GetBioSource(*bioseq);
                     if (bio_src != nullptr && bio_src->IsSetSubtype()) {
-
                         ITERATE(CBioSource::TSubtype, subtype, bio_src->GetSubtype()) {
                             if ((*subtype)->IsSetSubtype() && (*subtype)->GetSubtype() == CSubSource::eSubtype_rearranged) {
                                 has_rearranged = true;
@@ -2602,19 +2451,16 @@ static const string kAllShort = "No sequences longer than 20,000 nt found";
 static const string kLongerFound = "LongSeq";
 static const size_t MIN_SEQUENCE_LEN = 20000;
 
-//  ----------------------------------------------------------------------------
+
 DISCREPANCY_CASE(SEQUENCES_ARE_SHORT, CSeq_inst, eDisc | eSubmitter, "Short sequences test")
-//  ----------------------------------------------------------------------------
 {
     if (obj.GetLength() > MIN_SEQUENCE_LEN) {
-        m_Objs[kLongerFound].Add(*context.NewDiscObj(context.GetCurrentBioseq()), false);
+        m_Objs[kLongerFound].Add(*context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary()), false);
     }
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(SEQUENCES_ARE_SHORT)
-//  ----------------------------------------------------------------------------
 {
     if (m_Objs.GetMap().find(kLongerFound) == m_Objs.GetMap().end()) {
         // no sequences longer than 20000 nt

@@ -1086,9 +1086,8 @@ DISCREPANCY_SUMMARIZE(BIOMATERIAL_TAXNAME_MISMATCH)
 // ORGANELLE_ITS
 const string kSuspectITS = "[n] Bioseq[s] [has] suspect rRNA / ITS on organelle";
 
-//  ----------------------------------------------------------------------------
+
 DISCREPANCY_CASE(ORGANELLE_ITS, CBioSource, eOncaller, "Test Bioseqs for suspect rRNA / ITS on organelle")
-//  ----------------------------------------------------------------------------
 {
     if (!obj.IsSetGenome() || !(obj.GetGenome() == CBioSource::eGenome_chloroplast || obj.GetGenome() == CBioSource::eGenome_mitochondrion)) {
         return;
@@ -1110,16 +1109,11 @@ DISCREPANCY_CASE(ORGANELLE_ITS, CBioSource, eOncaller, "Test Bioseqs for suspect
     bool has_suspect = false;
 
     if (annot) {
-
         ITERATE (CSeq_annot::TData::TFtable, feat, annot->GetData().GetFtable()) {
-
             if ((*feat)->IsSetData() && (*feat)->GetData().IsRna()) {
-
                 const CRNA_ref& rna = (*feat)->GetData().GetRna();
                 if (rna.IsSetType() && (rna.GetType() == CRNA_ref::eType_rRNA || rna.GetType() == CRNA_ref::eType_miscRNA)) {
-
                     string product = rna.GetRnaProductName();
-
                     static vector<string> suspectable_products = {
                         "18S ribosomal RNA",
                         "5.8S ribosomal RNA",
@@ -1139,14 +1133,12 @@ DISCREPANCY_CASE(ORGANELLE_ITS, CBioSource, eOncaller, "Test Bioseqs for suspect
     }
 
     if (has_suspect) {
-        m_Objs[kSuspectITS].Add(*context.NewDiscObj(bioseq), false);
+        m_Objs[kSuspectITS].Add(*context.NewBioseqObj(bioseq, &context.GetSeqSummary()), false);
     }
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(ORGANELLE_ITS)
-//  ----------------------------------------------------------------------------
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
@@ -1156,9 +1148,7 @@ DISCREPANCY_SUMMARIZE(ORGANELLE_ITS)
 
 static const string kTaxnameAndHaplotype = "TaxnameAndHaplotype";
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(HAPLOTYPE_MISMATCH, CBioSource, eOncaller, "Sequences with the same haplotype should match")
-//  ----------------------------------------------------------------------------
 {
     if (!obj.IsSetTaxname() || !obj.IsSetSubtype()) {
         return;
@@ -1166,7 +1156,7 @@ DISCREPANCY_CASE(HAPLOTYPE_MISMATCH, CBioSource, eOncaller, "Sequences with the 
 
     ITERATE (CBioSource::TSubtype, subtype, obj.GetSubtype()) {
         if ((*subtype)->IsSetSubtype() && (*subtype)->GetSubtype() == CSubSource::eSubtype_haplotype) {
-            m_Objs[kTaxnameAndHaplotype].Add(*context.NewDiscObj(context.GetCurrentBioseq(), eKeepRef), true);
+            m_Objs[kTaxnameAndHaplotype].Add(*context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary(), eKeepRef), true);
             break;
         }
     }
@@ -1191,20 +1181,16 @@ static string GetHaplotype(const CBioSource& biosource)
 static void CollectBioseqsByTaxnameAndHaplotype(CDiscrepancyContext& context, TReportObjectList& bioseqs, THaplotypeMap& haplotypes)
 {
     NON_CONST_ITERATE (TReportObjectList, bioseq, bioseqs) {
-
         const CDiscrepancyObject* dobj = dynamic_cast<const CDiscrepancyObject*>(bioseq->GetPointer());
         if (dobj) {
             const CBioseq* cur_bioseq = dobj->GetBioseq();
             if (cur_bioseq) {
-
                 CBioseq_Handle bioseq_h = context.GetScope().GetBioseqHandle(*cur_bioseq);
-
                 CSeqdesc_CI biosrc(bioseq_h, CSeqdesc::e_Source);
                 if (biosrc) {
                     const CBioSource& biosource = biosrc->GetSource();
                     string taxname = biosource.GetTaxname(),
                         haplotype = GetHaplotype(biosource);
-
                     if (!taxname.empty() && !haplotype.empty()) {
                         haplotypes[make_pair(taxname, haplotype)].push_back(bioseq_h);
                     }
@@ -1263,7 +1249,6 @@ static bool IsSeqEqualOrOverlap(const CBioseq_Handle& bioseq1, const CBioseq_Han
     bool res = false;
     // Check for equality at first
     if (seq1.size() == seq2.size()) {
-
         res = IsEqualSubSeq(seq1, seq2, 0, 0, seq1.size(), allowN);
     }
 
@@ -1280,14 +1265,12 @@ static EHaplotypeProblem CheckForHaplotypeProblems(const TBioseqHandleList& bios
     ITERATE (TBioseqHandleList, cur_bioseq, bioseqs) {
         TBioseqHandleList::const_iterator next_bioseq = cur_bioseq;
         for (++next_bioseq; next_bioseq != bioseqs.end(); ++next_bioseq) {
-
             // strict match check
             bool has_problem = !IsSeqEqualOrOverlap(*cur_bioseq, *next_bioseq, false);
 
             // non-strict match check
             if (has_problem) {
                 has_problem = !IsSeqEqualOrOverlap(*cur_bioseq, *next_bioseq, true);
-
                 return has_problem ? nonStrictMatchProblem : strictMatchProblem;
             }
         }
@@ -1306,18 +1289,14 @@ static const string kNonStrictMatchDescr = "(allowing N to match any)";
 static void AddHaplotypeProblems(CDiscrepancyContext& context, CReportNode& report, const string& subtype, const string& match_descr, const THaplotypeMap::const_iterator& bioseqs)
 {
     string sub_subtype = "[n] sequences have organism " + bioseqs->first.first + " haplotype " + bioseqs->first.second + " but the sequences do not match " + match_descr;
-
     ITERATE (TBioseqHandleList, bioseq_h, bioseqs->second) {
-
-        report[kHaplotypeReport][subtype][sub_subtype].Add(*(context.NewDiscObj(bioseq_h->GetBioseqCore())), false);
+        report[kHaplotypeReport][subtype][sub_subtype].Add(*(context.NewBioseqObj(bioseq_h->GetBioseqCore(), 0)), false);
     }
-
     report[kHaplotypeReport][subtype].Incr();
 }
 
-//  ----------------------------------------------------------------------------
+
 DISCREPANCY_SUMMARIZE(HAPLOTYPE_MISMATCH)
-//  ----------------------------------------------------------------------------
 {
     if (m_Objs.empty()) {
         return;
@@ -1329,12 +1308,10 @@ DISCREPANCY_SUMMARIZE(HAPLOTYPE_MISMATCH)
     CReportNode report;
     ITERATE (THaplotypeMap, cur, haplotypes) {
         if (cur->second.size() > 1) {
-
             EHaplotypeProblem res = CheckForHaplotypeProblems(cur->second);
             if (res == strictMatchProblem || res == nonStrictMatchProblem) {
                 AddHaplotypeProblems(context, report, kHaplotypeStrictMatchProblem, kStrictMatchDescr, cur);
             }
-
             if (res == nonStrictMatchProblem) {
                 AddHaplotypeProblems(context, report, kHaplotypeNonStrictMatchProblem, kNonStrictMatchDescr, cur);
             }
@@ -1570,7 +1547,7 @@ DISCREPANCY_CASE(INCONSISTENT_BIOSOURCE, CBioSource, eDisc, "Inconsistent BioSou
     }
     CSeqdesc* seqdesc = const_cast<CSeqdesc*>(context.GetCurrentSeqdesc().GetPointer());
     context.NewSeqdescObj(CConstRef<CSeqdesc>(seqdesc), context.GetCurrentBioseqLabel());    // this will cache the seqdesc name and allow using CConstRef<CBioseq>(0) in context.NewSeqdescObj()
-    m_Objs[kBioSource].Add(*context.NewDiscObj(bioseq, eKeepRef, false, seqdesc), true);
+    m_Objs[kBioSource].Add(*context.NewBioseqObj(bioseq, &context.GetSeqSummary(), eKeepRef, false, seqdesc), true);
 }
 
 
@@ -1580,7 +1557,6 @@ typedef list<pair<const CBioSource*, list<TBioseqSeqdesc>>> TItemsByBioSource;
 static void GetItemsByBiosource(TReportObjectList& objs, TItemsByBioSource& items)
 {
     NON_CONST_ITERATE (TReportObjectList, obj, objs) {
-
         CDiscrepancyObject* dobj = dynamic_cast<CDiscrepancyObject*>(obj->GetPointer());
         if (dobj) {
             const CBioseq* cur_bioseq = dobj->GetBioseq();
@@ -1640,7 +1616,7 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_BIOSOURCE)
             ++subcat_index;
             ITERATE (list<TBioseqSeqdesc>, bioseq_desc, item->second) {
                 m_Objs[subtype][subcat].Add(*context.NewSeqdescObj(CConstRef<CSeqdesc>(bioseq_desc->second), kEmptyStr), false).Ext();
-                m_Objs[subtype][subcat].Add(*context.NewDiscObj(CConstRef<CBioseq>(bioseq_desc->first)), false).Ext();
+                m_Objs[subtype][subcat].Add(*context.NewBioseqObj(CConstRef<CBioseq>(bioseq_desc->first), 0), false).Ext();
             }
         }
         m_ReportItems = m_Objs.Export(*this)->GetSubitems();
@@ -1781,20 +1757,16 @@ DISCREPANCY_SUMMARIZE(TAX_LOOKUP_MISMATCH)
 // TAX_LOOKUP_MISSING
 static const string kTaxlookupMissing = "[n] tax name[s] [is] missing in taxonomy lookup";
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(TAX_LOOKUP_MISSING, CBioSource, eDisc, "Find Missing Tax Lookup")
-//  ----------------------------------------------------------------------------
 {
     if (!obj.IsSetOrg()) {
         return;
     }
-
     m_Objs[kOgRefs].Add(*context.NewFeatOrDescObj(eKeepRef, false, const_cast<CBioSource*>(&obj)));
 }
 
-//  ----------------------------------------------------------------------------
+
 DISCREPANCY_SUMMARIZE(TAX_LOOKUP_MISSING)
-//  ----------------------------------------------------------------------------
 {
     if (m_Objs.empty()) {
         return;
@@ -2421,9 +2393,7 @@ DISCREPANCY_ALIAS(DUP_SRC_QUAL, DUP_SRC_QUAL_DATA)
 // UNUSUAL_ITS
 const string kUnusualITS = "[n] Bioseq[s] [has] unusual rRNA / ITS";
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(UNUSUAL_ITS, CBioSource, eDisc | eOncaller, "Test Bioseqs for unusual rRNA / ITS")
-//  ----------------------------------------------------------------------------
 {
     if (!context.HasLineage(obj, "", "Microsporidia")) {
         return;
@@ -2445,14 +2415,10 @@ DISCREPANCY_CASE(UNUSUAL_ITS, CBioSource, eDisc | eOncaller, "Test Bioseqs for u
     bool has_unusual = false;
 
     if (annot) {
-
         ITERATE(CSeq_annot::TData::TFtable, feat, annot->GetData().GetFtable()) {
-
             if ((*feat)->IsSetComment() && (*feat)->IsSetData() && (*feat)->GetData().IsRna()) {
-
                 const CRNA_ref& rna = (*feat)->GetData().GetRna();
                 if (rna.IsSetType() && rna.GetType() == CRNA_ref::eType_miscRNA) {
-
                     if (NStr::StartsWith((*feat)->GetComment(), "contains", NStr::eNocase)) {
                         has_unusual = true;
                         break;
@@ -2463,14 +2429,12 @@ DISCREPANCY_CASE(UNUSUAL_ITS, CBioSource, eDisc | eOncaller, "Test Bioseqs for u
     }
 
     if (has_unusual) {
-        m_Objs[kUnusualITS].Add(*context.NewDiscObj(bioseq), false);
+        m_Objs[kUnusualITS].Add(*context.NewBioseqObj(bioseq, &context.GetSeqSummary()), false);
     }
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(UNUSUAL_ITS)
-//  ----------------------------------------------------------------------------
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }

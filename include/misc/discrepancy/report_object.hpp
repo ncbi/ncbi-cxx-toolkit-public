@@ -92,7 +92,6 @@ public:
     static string GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope);
     static string GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope, const string& product);  
     static string GetTextObjectDescription(const CSeqdesc& sd);
-    //static string GetTextObjectDescription(CBioseq_Handle bsh);
     static string GetTextObjectDescription(const CBioseq& bs, CScope& scope);
     static string GetTextObjectDescription(CBioseq_set_Handle bssh);
     static void GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope, string &label, string &context, string &location, string &locus_tag);

@@ -382,7 +382,7 @@ public:
     bool IsPubMed(void);
     bool IsCurrentRnaInGenProdSet(void);
     bool SequenceHasFarPointers(void);
-    const CSeqSummary& GetNucleotideCount(void);
+    const CSeqSummary& GetSeqSummary(void);
     bool HasFeatures(void) const { return m_Feat_CI; }
     static string GetGenomeName(int n);
     static string GetAminoacidName(const CSeq_feat& feat); // from tRNA
@@ -404,7 +404,8 @@ public:
     const vector<CConstRef<CSeq_feat> >& FeatIntrons() { return m_FeatIntrons; }
     const vector<CConstRef<CSeq_feat> >& FeatMisc() { return m_FeatMisc; }
 
-    CRef<CDiscrepancyObject> NewDiscObj(CConstRef<CBioseq> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
+    //CRef<CDiscrepancyObject> NewDiscObj(CConstRef<CBioseq> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
+    CRef<CDiscrepancyObject> NewBioseqObj(CConstRef<CBioseq> obj, const CSeqSummary* info, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
     //CRef<CDiscrepancyObject> NewDiscObj(CConstRef<CSeqdesc> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
     CRef<CDiscrepancyObject> NewSeqdescObj(CConstRef<CSeqdesc> obj, const string& bslabel, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
     CRef<CDiscrepancyObject> NewDiscObj(CConstRef<CSeq_feat> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
@@ -500,8 +501,8 @@ protected:
     mutable size_t GetCurrentGenome_count;
     mutable bool SequenceHasFarPointers_result;
     mutable size_t SequenceHasFarPointers_count;
-    mutable CSeqSummary GetNucleotideCount_ret;
-    mutable size_t GetNucleotideCount_count;
+    mutable CSeqSummary GetSeqSummary_ret;
+    mutable size_t GetSeqSummary_count;
     mutable const CSeq_id* GetProteinId_protein_id;
     mutable size_t GetProteinId_count;
     mutable bool IsRefseq_is_refseq;
@@ -534,7 +535,7 @@ protected:
         GetCurrentGenome_count = 0;
         SequenceHasFarPointers_result = 0;
         SequenceHasFarPointers_count = 0;
-        GetNucleotideCount_count = 0;
+        GetSeqSummary_count = 0;
         CSeq_id* GetProteinId_protein_id = 0;
         GetProteinId_count = 0;
         IsRefseq_is_refseq = 0;

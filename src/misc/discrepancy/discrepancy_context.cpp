@@ -373,6 +373,19 @@ bool CDiscrepancyContext::SequenceHasFarPointers()
 
 static void CountNucleotides(const CSeq_data& seq_data, CSeqSummary& ret)
 {
+    if (seq_data.Which() != CSeq_data::e_Iupacna &&
+        seq_data.Which() != CSeq_data::e_Ncbi2na &&
+        seq_data.Which() != CSeq_data::e_Ncbi4na &&
+        seq_data.Which() != CSeq_data::e_Ncbi8na &&
+        seq_data.Which() != CSeq_data::e_Ncbipna) {
+        return;
+    }
+        //e_Iupacaa,      ///< IUPAC 1 letter amino acid code
+        //e_Ncbi8aa,      ///< 8 bit extended amino acid codes
+        //e_Ncbieaa,      ///< extended ASCII 1 letter aa codes
+        //e_Ncbipaa,      ///< amino acid probabilities
+        //e_Ncbistdaa,    ///< consecutive codes for std aas
+
     CSeq_data as_iupacna;
     TSeqPos nconv = CSeqportUtil::Convert(seq_data, &as_iupacna, CSeq_data::e_Iupacna);
     if (nconv == 0) {
@@ -402,15 +415,15 @@ static void CountNucleotides(const CSeq_data& seq_data, CSeqSummary& ret)
 }
 
 
-const CSeqSummary& CDiscrepancyContext::GetNucleotideCount()
+const CSeqSummary& CDiscrepancyContext::GetSeqSummary()
 {
     //static CSafeStatic<CSeqSummary> ret;
     //static size_t count = 0;
-    if (GetNucleotideCount_count == m_Count_Bioseq) {
-        return GetNucleotideCount_ret;
+    if (GetSeqSummary_count == m_Count_Bioseq) {
+        return GetSeqSummary_ret;
     }
-    GetNucleotideCount_count = m_Count_Bioseq;
-    GetNucleotideCount_ret.clear();
+    GetSeqSummary_count = m_Count_Bioseq;
+    GetSeqSummary_ret.clear();
 
     // Make a Seq Map so that we can explicitly look at the gaps vs. the unknowns.
     const CRef<CSeqMap> seq_map = CSeqMap::CreateSeqMapForBioseq(*GetCurrentBioseq());
@@ -420,17 +433,17 @@ const CSeqSummary& CDiscrepancyContext::GetNucleotideCount()
     for (; seq_iter; ++seq_iter) {
         switch (seq_iter.GetType()) {
             case CSeqMap::eSeqData:
-                GetNucleotideCount_ret.Len += seq_iter.GetLength();
-                CountNucleotides(seq_iter.GetData(), GetNucleotideCount_ret);
+                GetSeqSummary_ret.Len += seq_iter.GetLength();
+                CountNucleotides(seq_iter.GetData(), GetSeqSummary_ret);
                 break;
             case CSeqMap::eSeqGap:
-                GetNucleotideCount_ret.Len += seq_iter.GetLength();
+                GetSeqSummary_ret.Len += seq_iter.GetLength();
                 break;
             default:
                 break;
         }
     }
-    return GetNucleotideCount_ret;
+    return GetSeqSummary_ret;
 }
 
 
@@ -640,7 +653,7 @@ void CDiscrepancyContext::CollectFeature(const CSeq_feat& feat)
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-CRef<CDiscrepancyObject> CDiscrepancyContext::NewDiscObj(CConstRef<CBioseq> obj, EKeepRef keep_ref, bool autofix, CObject* more)
+CRef<CDiscrepancyObject> CDiscrepancyContext::NewBioseqObj(CConstRef<CBioseq> obj, const CSeqSummary* info, EKeepRef keep_ref, bool autofix, CObject* more)
 {
     bool keep = keep_ref || m_KeepRef;
     CRef<CDiscrepancyObject> D(new CDiscrepancyObject(obj, *m_Scope, m_File, keep, autofix, more));

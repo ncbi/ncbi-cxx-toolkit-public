@@ -55,7 +55,7 @@ DISCREPANCY_CASE(COUNT_RRNAS, CSeq_feat_BY_BIOSEQ, eDisc, "Count rRNAs")
     if (m_Count != context.GetCountBioseq()) {
         m_Count = context.GetCountBioseq();
         Summarize(context);
-        m_Objs[kEmptyStr].Add(*context.NewDiscObj(context.GetCurrentBioseq()));
+        m_Objs[kEmptyStr].Add(*context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary()));
     }
 
     string aa;
@@ -171,7 +171,7 @@ DISCREPANCY_CASE(COUNT_TRNAS, CSeq_feat_BY_BIOSEQ, eDisc, "Count tRNAs")
     if (m_Count != context.GetCountBioseq()) {
         m_Count = context.GetCountBioseq();
         Summarize(context);
-        m_Objs[kEmptyStr].Add(*context.NewDiscObj(context.GetCurrentBioseq()));
+        m_Objs[kEmptyStr].Add(*context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary()));
     }
 
     string aa = context.GetAminoacidName(obj);
