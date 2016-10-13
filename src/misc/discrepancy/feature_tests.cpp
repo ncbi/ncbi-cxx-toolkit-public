@@ -356,12 +356,10 @@ DISCREPANCY_SUMMARIZE(EXTRA_GENES)
 //SUPERFLUOUS_GENE
 const string kSuperfluousGene = "[n] gene feature[s] [is] not associated with any feature and [is] not pseudo.";
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(SUPERFLUOUS_GENE, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller, "Superfluous Genes")
-//  ----------------------------------------------------------------------------
 {
     // do not collect if pseudo
-    if (!obj.GetData().IsGene()) {
+    if (!obj.GetData().IsGene() || (obj.IsSetPseudo() && obj.GetPseudo())) {
         return;
     }
 
@@ -381,13 +379,10 @@ DISCREPANCY_CASE(SUPERFLUOUS_GENE, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller, "Supe
     if (!found_reportable) {
         m_Objs[kSuperfluousGene].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
     }
-
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(SUPERFLUOUS_GENE)
-//  ----------------------------------------------------------------------------
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
