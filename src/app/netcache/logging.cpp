@@ -90,7 +90,7 @@ static CSrvDiagMsg::ESeverity s_VisibleSev = CSrvDiagMsg::Warning;
 static bool s_LogRequests = true;
 static string s_UnkClient = "UNK_CLIENT";
 static string s_UnkSession = "UNK_SESSION";
-static string s_SevNames[] = {"Trace", "Info", "Warning", "Error", "Critical", "Fatal"};
+static const char* s_SevNames[] = {"Trace", "Info", "Warning", "Error", "Critical", "Fatal", NULL};
 static const size_t kOneRecReserve = 500;
 static const size_t kInitLogBufSize = 10000000;
 static size_t s_LogBufSize = kInitLogBufSize;
@@ -495,6 +495,14 @@ ConfigureLogging(CNcbiRegistry* reg, CTempString section)
                     reg->GetString(section, "log_thread_buf_size", "10 MB"));
     s_MaxFlushPeriod = reg->GetInt(section, "log_flush_period", 60);
     s_FileReopenPeriod = reg->GetInt(section, "log_reopen_period", 60);
+    string vis = reg->GetString(section, "log_visible", "Warning");
+    size_t i = 0;
+    for (i = 0; s_SevNames[i] != NULL; ++i) {
+        if (vis.compare(s_SevNames[i]) == 0) {
+            s_VisibleSev = (CSrvDiagMsg::ESeverity)i;
+            break;
+        }
+    }
 }
 
 void
