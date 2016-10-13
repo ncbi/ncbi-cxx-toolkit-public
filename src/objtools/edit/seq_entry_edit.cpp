@@ -2244,7 +2244,21 @@ void GetSortedCuts(CBioseq_Handle bsh,
                    TCuts& sorted_cuts,
                    EInternalTrimType internal_cut_conversion)
 {
-    sorted_cuts = cuts;
+    if (internal_cut_conversion == eDoNotTrimInternal) {
+        // Remove internal cuts
+        for (TCuts::size_type ii = 0; ii < cuts.size(); ++ii) {
+            const TRange& cut = cuts[ii];
+            TSeqPos from = cut.GetFrom();
+            TSeqPos to = cut.GetTo();
+
+            if (from == 0 || to == bsh.GetBioseqLength()-1) {
+                sorted_cuts.push_back(cut);
+            }
+        }
+    }
+    else {
+        sorted_cuts = cuts;
+    }
 
     /***************************************************************************
      * Adjust internal cuts to terminal cuts
