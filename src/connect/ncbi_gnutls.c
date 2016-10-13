@@ -602,7 +602,7 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
         CORE_UNLOCK;
         if (s_GnuTlsLogLevel) {
             gnutls_global_set_log_function(x_GnuTlsLogger);
-            if (val != buf)
+            if (val == buf)
                 gnutls_global_set_log_level(s_GnuTlsLogLevel);
             CORE_LOGF(eLOG_Note, ("GNUTLS V%s (Loglevel=%d)",
                                   version, s_GnuTlsLogLevel));
