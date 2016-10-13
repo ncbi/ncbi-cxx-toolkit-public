@@ -2388,9 +2388,10 @@ bool CGff3Writer::xAssignFeatureAttributeGeneBiotype(
 //  ----------------------------------------------------------------------------
 {
     //applies only to genomic records
-    if (!fc.IsSequenceGenomicRecord()) {
-        return true;
-    }
+    // rw-5: not any more!
+    //if (!fc.IsSequenceGenomicRecord()) {
+    //    return true;
+    //}
 
     string biotype;
     if (!feature::GetFeatureGeneBiotypeFaster(fc.FeatTree(), mf, biotype)) {
