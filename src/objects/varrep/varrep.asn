@@ -63,6 +63,7 @@ SimpleVariant ::= SEQUENCE {
         na-identity NaIdentity,
         na-sub NaSub,
         prot-sub ProteinSub,
+        prot-silent AaLocation,
         del Deletion,
         dup Duplication,
         inv Inversion,
