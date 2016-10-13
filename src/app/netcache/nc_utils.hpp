@@ -55,7 +55,26 @@ static const char* const kNCPeerClientName = "nc_peer";
 typedef map<string, string> TStringMap;
 typedef map<Uint8, string>  TNCPeerList;
 typedef vector<Uint8>       TServersList;
-typedef CSimpleBufferT<char> TNCBufferType;
+//typedef CSimpleBufferT<char> TNCBufferType;
+class TNCBufferType : public CSimpleBufferT<char>
+{
+public:
+    TNCBufferType& WriteText(const char* buf) {
+        CSimpleBufferT<char>::append(buf, strlen(buf));
+        return *this;
+    }
+    TNCBufferType& WriteText(const string& buf) {
+        CSimpleBufferT<char>::append(buf.data(), buf.size());
+        return *this;
+    }
+    template <typename NumType>
+    TNCBufferType& WriteNumber(NumType num) {
+        return WriteText(NStr::NumericToString(num));
+    }
+    TNCBufferType& WriteBool(bool b) {
+        return WriteText(b ? "true" : "false");
+    }
+};
 
 
 /// Type of access to NetCache blob

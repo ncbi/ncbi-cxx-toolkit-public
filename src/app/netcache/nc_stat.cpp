@@ -858,6 +858,7 @@ void CNCStat::PrintState(CSrvSocketTask& task)
     task.WriteText(eol).WriteText("max_tdiff_blobcopy" ).WriteText(is ).WriteNumber( m_EndState.max_tdiff_blobcopy);
     task.WriteText(eol).WriteText("avg_tdiff_blobnotify" ).WriteText(is ).WriteNumber( m_EndState.avg_tdiff_blobnotify);
     task.WriteText(eol).WriteText("max_tdiff_blobnotify" ).WriteText(is ).WriteNumber( m_EndState.max_tdiff_blobnotify);
+    task.WriteText(eol).WriteText("trust_level").WriteText(is).WriteNumber(CNCDistributionConf::GetSelfTrustLevel());
     m_SrvStat->PrintState(task);
 }
 

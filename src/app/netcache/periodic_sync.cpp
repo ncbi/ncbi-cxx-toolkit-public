@@ -881,7 +881,7 @@ CNCActiveSyncControl::x_WaitForExecutingTasks(void)
         }
     } else {
         for (;m_NextTask > eSynNeedFinalize;) {
-        	CNCActiveHandler* conn = m_SlotSrv->peer->GetBGConn();
+        	CNCActiveHandler* conn = m_SlotSrv->peer->GetBGConn(true);
             if (!conn) {
                 break;
             }
@@ -1215,6 +1215,7 @@ sync_next_key:
                 continue;
             }
         }
+        break;
     };
 
 // sanity check
@@ -1473,7 +1474,7 @@ CNCActiveSyncControl::CmdFinished(ESyncResult res, ESynActionType action, CNCAct
     m_Lock.Unlock();
 }
 
-void CNCActiveSyncControl::PrintState(CSrvSocketTask& task, const CTempString& mask)
+void CNCActiveSyncControl::PrintState(TNCBufferType& task, const CTempString& mask)
 {
     Uint2 slot = 0;
     bool one_slot = false, is_audit = false;

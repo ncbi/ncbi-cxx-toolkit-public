@@ -1382,7 +1382,7 @@ void CNCBlobStorage::WriteBlobList(TNCBufferType& sendBuff, const CTempString& m
     sendBuff.append("\n]",2);
 }
 
-void CNCBlobStorage::WriteDbInfo(CSrvSocketTask& task, const CTempString& mask)
+void CNCBlobStorage::WriteDbInfo(TNCBufferType& task, const CTempString& mask)
 {
     Uint4 id = 0;
     bool use_mask = false, is_id = false, is_audit = false;

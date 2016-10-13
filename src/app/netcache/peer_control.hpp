@@ -143,7 +143,7 @@ public:
     Uint8 GetNextSyncTime(void);
 
     Uint8 GetSrvId(void) const;
-    CNCActiveHandler* GetBGConn(void);
+    CNCActiveHandler* GetBGConn(bool silent = false);
     bool StartActiveSync(void);
     bool AddSyncControl(CNCActiveSyncControl* sync_ctrl);
     void RemoveSyncControl(CNCActiveSyncControl* sync_ctrl);

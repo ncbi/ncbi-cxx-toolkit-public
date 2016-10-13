@@ -274,7 +274,7 @@ public:
     void SetFirst(bool f = true) {
         m_First = f;
     }
-    static void PrintState(CSrvSocketTask& task, const CTempString& mask);
+    static void PrintState(TNCBufferType& sendBuff, const CTempString& mask);
 
 private:
     State x_StartScanSlots(void);

@@ -3692,10 +3692,22 @@ CNCMessageHandler::x_DoCmd_GetConfig(void)
             CNCAlerts::Report(*this, false);
         } else if (section == "sync") {
             CTempString mask = params.find("port") != params.end() ? params.at("port") : CTempString(kEmptyStr);
-            CNCActiveSyncControl::PrintState(*this, mask);
+            Flush();
+            m_SendBuff.reset(new TNCBufferType());
+            CNCActiveSyncControl::PrintState(*m_SendBuff, mask);
+            m_SendBuff->WriteText("\n}}\nOK:END\n");
+            x_SetFlag(fNoReplyOnFinish);
+            m_SendPos = 0;
+            return &CNCMessageHandler::x_WriteSendBuff;
         } else if (section == "db") {
             CTempString mask = params.find("port") != params.end() ? params.at("port") : CTempString(kEmptyStr);
-            CNCBlobStorage::WriteDbInfo(*this, mask);
+            Flush();
+            m_SendBuff.reset(new TNCBufferType());
+            CNCBlobStorage::WriteDbInfo(*m_SendBuff, mask);
+            m_SendBuff->WriteText("\n}}\nOK:END\n");
+            x_SetFlag(fNoReplyOnFinish);
+            m_SendPos = 0;
+            return &CNCMessageHandler::x_WriteSendBuff;
         } else if (section == "blobs") {
             CNCBlobStorage::WriteBlobStat(*this);
         } else if (section == "blist") {
@@ -3703,8 +3715,7 @@ CNCMessageHandler::x_DoCmd_GetConfig(void)
             Flush();
             m_SendBuff.reset(new TNCBufferType());
             CNCBlobStorage::WriteBlobList(*m_SendBuff, mask);
-            m_SendBuff->append("\n}}",3);
-            m_SendBuff->append("\nOK:END\n",8);
+            m_SendBuff->WriteText("\n}}\nOK:END\n");
             x_SetFlag(fNoReplyOnFinish);
             m_SendPos = 0;
             return &CNCMessageHandler::x_WriteSendBuff;
