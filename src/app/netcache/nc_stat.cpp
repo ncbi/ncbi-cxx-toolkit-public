@@ -820,7 +820,8 @@ CNCStat::PrintToLogs(CTempString stat_name)
 
     CSrvPrintProxy proxy(ctx);
     m_SrvStat->PrintToLogs(ctx, proxy);
-    x_PrintUnstructured(proxy);
+// 13oct16: removed - nobody will see it anyway
+//    x_PrintUnstructured(proxy);
 
     diag.StopRequest(ctx);
     m_StatLock.Unlock();

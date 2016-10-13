@@ -1197,7 +1197,8 @@ SMMStat::PrintToLogs(CRequestContext* ctx, CSrvPrintProxy& proxy)
         .PrintParam("big_blocks_size", m_EndState.m_BigBlocksSize);
     diag.Flush();
 
-    x_PrintUnstructured(proxy);
+// 13oct16: removed - nobody will see it anyway
+//    x_PrintUnstructured(proxy);
 }
 
 static void

@@ -283,7 +283,8 @@ CSrvStat::PrintToLogs(CRequestContext* ctx, CSrvPrintProxy& proxy)
 
     m_MMStat->PrintToLogs(ctx, proxy);
 
-    x_PrintUnstructured(proxy);
+// 13oct16: removed - nobody will see it anyway
+//    x_PrintUnstructured(proxy);
 }
 
 void CSrvStat::PrintState(CSrvSocketTask& task)
