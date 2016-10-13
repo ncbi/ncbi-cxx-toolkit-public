@@ -97,6 +97,11 @@ public:
 
 #if 1
 
+#if NCBI_DEVELOPMENT_VER < 20160817
+void  ncbi::CNcbiError::Set( ncbi::CNcbiError::ECode, const ncbi::CTempString& ) {}
+void  ncbi::CNcbiError::SetErrno( int, const ncbi::CTempString& )                {}
+void  ncbi::CNcbiError::SetFromErrno( const ncbi::CTempString& )                 {}
+#else
 void  ncbi::CNcbiError::Set( ncbi::CNcbiError::ECode )                          {}
 void  ncbi::CNcbiError::Set( ncbi::CNcbiError::ECode, const ncbi::CTempString ) {}
 void  ncbi::CNcbiError::Set( ncbi::CNcbiError::ECode, std::string&& )           {}
@@ -110,6 +115,8 @@ void  ncbi::CNcbiError::SetErrno( int, std::string&& )                          
 void  ncbi::CNcbiError::SetErrno( int, const char* )                            {}
 void  ncbi::CNcbiError::SetErrno( int, const std::string& )                     {}
 void  ncbi::CNcbiError::SetErrno( int, const ncbi::CTempString )                {}
+#endif
+
 #if defined(NCBI_OS_MSWIN)
 void ncbi::CNcbiError::SetWindowsError(int)                                     {}
 void ncbi::CNcbiError::SetFromWindowsError(void)                                {}
@@ -184,10 +191,11 @@ CNcbiApplication::GetInstanceMutex(void) {
 }
 #endif
 
+#if NCBI_DEVELOPMENT_VER > 20160817
 CSharedHitId CDiagContext::x_GetDefaultHitID(EDefaultHitIDFlags)
 {
     return CSharedHitId(m_hid);
 }
-
+#endif
 
 END_NCBI_SCOPE
