@@ -1,3 +1,7 @@
+Version 1.18.0 (2016-10-13):
+* Advance to version 18.0 of the stable C++ Toolkit components, with
+  ftds95 as default ftds and support for contacting dispd over HTTPS.
+
 Version 1.17.0 (2016-06-23):
 * Advance to version 17.0 of the stable C++ Toolkit components, complete
   with an ftds95 driver in addition to ftds(64).
