@@ -857,7 +857,7 @@ else
 fi
 
 AC_MSG_CHECKING([NCBI stable components' version])
-scver=`svn info "$proj_topdir" 2>/dev/null |
+scver=`svn info "$top_srcdir/src/build-system" 2>/dev/null |
  sed -ne ['s,^URL: .*/production/components/[^/]*/\([1-9][0-9]*\)\..*,\1,p']`
 if test -n "$scver"; then
    AC_MSG_RESULT($scver)

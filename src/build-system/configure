@@ -4566,7 +4566,7 @@ fi
 
 { echo "$as_me:$LINENO: checking NCBI stable components' version" >&5
 echo $ECHO_N "checking NCBI stable components' version... $ECHO_C" >&6; }
-scver=`svn info "$proj_topdir" 2>/dev/null |
+scver=`svn info "$top_srcdir/src/build-system" 2>/dev/null |
  sed -ne 's,^URL: .*/production/components/[^/]*/\([1-9][0-9]*\)\..*,\1,p'`
 if test -n "$scver"; then
    { echo "$as_me:$LINENO: result: $scver" >&5
