@@ -281,23 +281,23 @@ public:
     void LinkOut(const string& db,
                  const vector<int>& uids,
                  xml::document& docsums,
-                 const string& cmd);
+                 const string& cmd = "llinks");
 #endif
 
     void LinkOut(const string& db,
                  const vector<objects::CSeq_id_Handle>& uids,
                  xml::document& docsums,
-                 const string& cmd);
+                 const string& cmd = "llinks");
 
     void LinkOut(const string& db,
                  const vector<string>& uids,
                  xml::document& docsums,
-                 const string& cmd);
+                 const string& cmd = "llinks");
 
     void LinkOut(const string& db,
                  const vector<TEntrezId>& uids,
                  xml::document& docsums,
-                 const string& cmd);
+                 const string& cmd = "llinks");
 
 #ifdef NCBI_INT8_GI
     NCBI_DEPRECATED
