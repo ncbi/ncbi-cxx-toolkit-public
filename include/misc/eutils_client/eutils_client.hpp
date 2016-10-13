@@ -295,7 +295,7 @@ public:
                  const string& cmd);
 
     void LinkOut(const string& db,
-                 const vector<TGi>& uids,
+                 const vector<TEntrezId>& uids,
                  xml::document& docsums,
                  const string& cmd);
 

@@ -1257,7 +1257,7 @@ void CEutilsClient::LinkOut(const string& db,
 }
 
 void CEutilsClient::LinkOut(const string& db,
-                            const vector<TGi>& uids,
+                            const vector<TEntrezId>& uids,
                             xml::document& doc,
                             const string& cmd)
 {
