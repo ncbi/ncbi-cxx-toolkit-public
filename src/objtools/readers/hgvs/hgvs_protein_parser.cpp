@@ -40,6 +40,7 @@ SHgvsProteinGrammar::SHgvsProteinGrammar(const SHgvsLexer& tok) :
                                          missense |
                                          nonsense |
                                          unknown_sub |
+                                         silent |
                                          aa_dup  |
                                          aa_delins |
                                          aa_del 	|
@@ -52,6 +53,8 @@ SHgvsProteinGrammar::SHgvsProteinGrammar(const SHgvsLexer& tok) :
     nonsense = (aa_site >> tok.stop) ACTION1(AssignNonsense);
 
     unknown_sub = (aa_site >> tok.unknown_val) ACTION1(AssignUnknownSub);
+
+    silent = (aa_loc >> tok.nochange) ACTION1(AssignSilent);
 
     aa_delins = (aa3_loc >> tok.delins >> aa3_stop_seq) ACTION2(AssignAaDelins) |
                 (aa3_loc >> tok.delins >> aa3_seq) ACTION2(AssignAaDelins) |

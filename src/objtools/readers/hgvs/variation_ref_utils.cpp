@@ -175,6 +175,43 @@ CRef<CVariation_ref> g_CreateIdentity(CRef<CSeq_literal> seq_literal,
 }
 
 
+
+CRef<CVariation_ref> g_CreateVarref(CRef<CSeq_literal> seq_literal,
+                                    const CVariation_inst::EType type,
+                                    const CVariation_ref::EMethod_E method,
+                                    const CRef<CDelta_item> start_offset,
+                                    const CRef<CDelta_item> stop_offset,
+                                    const bool enforce_assert)
+{
+    auto var_ref = Ref(new CVariation_ref());
+
+    auto& inst = var_ref->SetData().SetInstance();
+    inst.SetType(type);
+    if (seq_literal->IsSetSeq_data() || 
+        enforce_assert) {
+        inst.SetObservation(CVariation_inst::eObservation_asserted);
+    }
+    inst.SetDelta().clear();
+
+    if (start_offset.NotNull()) {
+        inst.SetDelta().push_back(start_offset);
+    }
+
+    auto delta_item = Ref(new CDelta_item());
+    delta_item->SetSeq().SetLiteral(*seq_literal);
+    inst.SetDelta().push_back(delta_item);
+
+    if (stop_offset.NotNull()) {
+        inst.SetDelta().push_back(stop_offset);
+    }
+
+    s_SetVariationMethod(var_ref, method);
+    return var_ref;
+}
+
+
+
+
 CRef<CVariation_ref> g_CreateDelins(CSeq_literal& insertion,
                                     const CVariation_ref::EMethod_E method,
                                     const CRef<CDelta_item> start_offset,

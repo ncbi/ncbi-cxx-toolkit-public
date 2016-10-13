@@ -174,48 +174,48 @@ private:
 
         /// Return a CVariation_ref describing a "no-change" variant
         CRef<CVariation_ref> x_CreateNaIdentityVarref(const CNaIdentity& identity,
-                                                      const CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
+                                                      CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
 
         /// Return a CVariation_ref describing a "no-change" variant
         CRef<CVariation_ref> x_CreateNaIdentityVarref(const CNtLocation& nt_loc,
                                                       const string& nucleotide,
-                                                      const CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
+                                                      CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
 
         /// Return a CVariation_ref describing a nucleotide substituion (SNP or MNP)
         CRef<CVariation_ref> x_CreateSubstVarref(const CNaSub& sub,
-                                                 const CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
+                                                 CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
 
         /// Return a CVariation_ref describing a nucleotide substituion (SNP or MNP)
         CRef<CVariation_ref> x_CreateSubstVarref(const CNtLocation& nt_loc,
                                                  const string& initial_nt,
                                                  const string& final_nt,
-                                                 const CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
+                                                 CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
 
         CRef<CVariation_ref> x_CreateDuplicationVarref(const CDuplication& dup,
-                                                       const CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
+                                                       CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
 
         CRef<CVariation_ref> x_CreateInsertionVarref(const CInsertion& ins,
-                                                     const CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
+                                                     CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
 
         CRef<CVariation_ref> x_CreateDeletionVarref(const CDeletion& del,
-                                                    const CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
+                                                    CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
 
         CRef<CVariation_ref> x_CreateDelinsVarref(const CDelins& delins,
-                                                  const CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
+                                                  CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
 
         CRef<CVariation_ref> x_CreateDelinsVarref(const CNtLocation& nt_loc, 
                                                   const string& initial_nt,
                                                   const string& final_nt,
-                                                  const CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
+                                                  CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
 
         CRef<CVariation_ref> x_CreateInversionVarref(const CInversion& inv,
-                                                     const CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
+                                                     CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
 
         CRef<CVariation_ref> x_CreateConversionVarref(const CConversion& conv, 
-                                                      const CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
+                                                      CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
 
         CRef<CVariation_ref> x_CreateSSRVarref(const CRepeat& ssr, 
-                                               const CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
+                                               CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
 
         /// Return a CSeq_literal encapsulating a known nucleotide sequence
         CRef<CSeq_literal> x_CreateNtSeqLiteral(const string& raw_seq) const;

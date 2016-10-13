@@ -27,6 +27,7 @@ struct SHgvsProteinGrammar : boost::spirit::qi::grammar<TParseIterator, CRef<CSi
     TRule<CSimpleVariant> missense;
     TRule<CSimpleVariant> nonsense;
     TRule<CSimpleVariant> unknown_sub;
+    TRule<CSimpleVariant> silent;
     TRule<CSimpleVariant> aa_dup;
     TRule<CSimpleVariant> aa_delins;
     TRule<CSimpleVariant> aa_del;

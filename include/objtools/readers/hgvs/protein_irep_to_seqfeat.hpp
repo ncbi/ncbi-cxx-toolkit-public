@@ -51,43 +51,53 @@ public:
 
  private:
         /// Construct the CSeq_feat object for a "simple" protein variant
-        CRef<CSeq_feat> x_CreateSimpleVariantFeat(const string& var_name,
-                                                  const string& identifier,
-                                                  const CSimpleVariant& simple_var) const;
+        CRef<CSeq_feat> x_CreateSimpleVariantFeat(
+            const string& var_name,
+            const string& identifier,
+            const CSimpleVariant& simple_var) const;
           
         /// Construct the CVariation_ref object for a "simple" variant
-        CRef<CVariation_ref> x_CreateVarref(const string& var_name,
-                                            const string& identifier, 
-                                            const CSimpleVariant& simple_var) const;
-
-        CRef<CVariation_ref> x_CreateProteinDelVarref(const string& identifier,
-                                                      const CDeletion& del,
-                                                      const CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
-
-        CRef<CVariation_ref> x_CreateProteinDupVarref(const string& identifier,
-                                                      const CDuplication& dup,
-                                                      const CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
-
-        CRef<CVariation_ref> x_CreateProteinSubstVarref(const string& identifier, 
-                                                        const CProteinSub& sub,
-                                                        const CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
-
-        CRef<CVariation_ref> x_CreateFrameshiftVarref(const string& identifier,
-                                                      const CFrameshift& fs,
-                                                      const CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
-
-        CRef<CVariation_ref> x_CreateInsertionVarref(const string& identifier, 
-                                                     const CInsertion& ins,
-                                                     const CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
-
-        CRef<CVariation_ref> x_CreateDelinsVarref(const string& identifier,
-                                                  const CDelins& delins,
-                                                  const CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
-
-        CRef<CVariation_ref> x_CreateSSRVarref(const string& identifier, 
-                                               const CRepeat& ssr,
-                                               const CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
+        CRef<CVariation_ref> x_CreateVarref(
+            const string& var_name,
+            const CSimpleVariant& simple_var) const;
         
+        CRef<CVariation_ref> x_CreateSilentVarref(
+            const CAaLocation& loc,
+            const CVariation_ref::EMethod_E method) const;
+
+        CRef<CVariation_ref> x_CreateProteinDelVarref(
+            const CDeletion& del,
+            CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
+
+        CRef<CVariation_ref> x_CreateProteinDupVarref(
+            const CDuplication& dup,
+            CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
+
+        CRef<CVariation_ref> x_CreateProteinSubstVarref(
+            const CProteinSub& sub,
+            CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
+
+        CRef<CVariation_ref> x_CreateFrameshiftVarref(
+            const CFrameshift& fs,
+            CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
+
+        CRef<CVariation_ref> x_CreateInsertionVarref(
+            const CInsertion& ins,
+            CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
+
+        CRef<CVariation_ref> x_CreateDelinsVarref(
+            const CDelins& delins,
+            CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
+
+        CRef<CVariation_ref> x_CreateSSRVarref(
+            const CRepeat& ssr,
+            CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
+        
+        CRef<CVariation_ref> x_CreateVarrefFromLoc(
+            CVariation_inst::EType type,
+            const CAaLocation& aa_loc, 
+            CVariation_ref::EMethod_E method=CVariation_ref::eMethod_E_unknown) const;
+
         /// Construct the first "sub" Variation-ref in the composite Variation-ref appearing in an Insertion Seq-feat
         CRef<CVariation_ref> x_CreateInsertionSubvarref(const CInsertion::TSeqinfo& insert) const;
 
@@ -96,8 +106,6 @@ public:
 
         /// Construct the "sub" Variation-ref for a the inserted raw sequence
         CRef<CVariation_ref> x_CreateInsertedRawseqSubvarref(const string& raw_seq) const;
-
-        // CRef<CVariation_ref> x_CreateInsertedCountSubvarref(const CCount& count) const;
 
         CRef<CVariation_ref> x_CreateDelinsSubvarref(const CDelins::TInserted_seq_info& insert) const;
 

@@ -20,6 +20,9 @@ void AssignMissense(CRef<CAaSite>& initial,
                     const CProteinSub::TFinal& final, 
                     CRef<CSimpleVariant>& result);
 
+void AssignSilent(CRef<CAaLocation>& loc, 
+                  CRef<CSimpleVariant>& result);
+
 void AssignNonsense(CRef<CAaSite>& initial, CRef<CSimpleVariant>& result);
 
 void AssignUnknownSub(CRef<CAaSite>& initial, CRef<CSimpleVariant>& result);

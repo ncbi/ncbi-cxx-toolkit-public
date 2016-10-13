@@ -54,20 +54,16 @@ CRef<CVariation_ref> CHgvsNaIrepReader::x_CreateNaIdentityVarref(const CNtLocati
                                                                  const string& nucleotide,
                                                                  const CVariation_ref::EMethod_E method) const
 {
-
     auto nt_literal = Ref(new CSeq_literal());
 
     auto length = nucleotide.empty() ? 1 : nucleotide.size();
 
     nt_literal->SetLength(length);
     if (!nucleotide.empty()) {
-        //nt_literal->SetSeq_data().SetIupacna(CIUPACna(nucleotide));
         nt_literal->SetSeq_data().SetIupacna(x_CreateIUPACna(nucleotide));
     }
     auto offset = CIntronOffsetHelper::GetIntronOffset(nt_loc.GetSite());
-    CRef<CVariation_ref> var_ref = g_CreateIdentity(nt_literal, method, offset);
-
-    return var_ref;
+    return  g_CreateIdentity(nt_literal, method, offset);
 }
 
 

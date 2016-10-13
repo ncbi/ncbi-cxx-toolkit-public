@@ -36,6 +36,12 @@ CRef<CVariation_ref> g_CreateIdentity(CRef<CSeq_literal> seq_literal,
                                       CRef<CDelta_item> stop_offset=null,
                                       bool enforce_assert=false);
 
+CRef<CVariation_ref> g_CreateVarref(CRef<CSeq_literal> seq_literal,
+                                    CVariation_inst::EType type,
+                                    CVariation_ref::EMethod_E method = CVariation_ref::eMethod_E_unknown,
+                                    CRef<CDelta_item> start_offset=null,
+                                    CRef<CDelta_item> stop_offset=null,
+                                    bool enforce_assert=false);
 
 CRef<CVariation_ref> g_CreateDelins(CSeq_literal& insertion, 
                                     CVariation_ref::EMethod_E method = CVariation_ref::eMethod_E_unknown,

@@ -53,6 +53,14 @@ void AssignMissense(CRef<CAaSite>& initial,
 }
 
 
+void AssignSilent(CRef<CAaLocation>& loc, 
+                  CRef<CSimpleVariant>& result)
+{
+    result = CreateResultIfNull(result);
+    result->SetType().SetProt_silent(*loc);
+}
+
+
 void AssignNonsense(CRef<CAaSite>& initial, CRef<CSimpleVariant>& result)
 {
 	result = CreateResultIfNull(result);
