@@ -143,6 +143,11 @@ string GetLogFileName(void)
     return s_FileName;
 }
 
+string GetLogVisibility(void)
+{
+    return s_SevNames[s_VisibleSev];
+}
+
 static void
 s_InitConstants(void)
 {
