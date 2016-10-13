@@ -174,3 +174,11 @@ September 21, 2016
 version 6.9.8 (CXX-8613)
 Fixed handling of SearchOnRead setting.
 
+October 13, 2016
+version 6.10.0 (CXX-8706)
+Implemented server credentials configuration.
+Made visible log severity configurable.
+Removed unstructured information from applog.
+
+
+
