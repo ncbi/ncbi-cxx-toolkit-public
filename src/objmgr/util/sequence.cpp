@@ -3440,6 +3440,7 @@ void x_Translate(const Container& seq,
     size_t length = usable_size / 3;
     bool check_start = (is_5prime_complete && frame == 0);
     bool first_time = true;
+    char aa = '\0';
 
     for (i = 0;  i < length;  ++i) {
 
@@ -3454,9 +3455,11 @@ void x_Translate(const Container& seq,
 
         // save translated amino acid
         if (first_time  &&  check_start) {
-            prot.append(1, tbl.GetStartResidue(state));
+            aa = tbl.GetStartResidue(state);
+            prot.append(1, aa);
         } else {
-            prot.append(1, tbl.GetCodonResidue(state));
+            aa = tbl.GetCodonResidue(state);
+            prot.append(1, aa);
         }
 
         first_time = false;
@@ -3478,10 +3481,20 @@ void x_Translate(const Container& seq,
         // save translated amino acid
         char c = tbl.GetCodonResidue(state);
         if (first_time  &&  check_start) {
-            prot.append(1, tbl.GetStartResidue(state));
+            aa = tbl.GetStartResidue(state);
+            prot.append(1, aa);
         } else if (c != 'X') {
             // if padding was needed, trim ambiguous last residue
-            prot.append(1, tbl.GetCodonResidue(state));
+            aa = tbl.GetCodonResidue(state);
+            prot.append(1, aa);
+        }
+    }
+
+    if ( aa != '*' && include_stop && (! mod) && prot.size() > 0 ) {
+        // check for stop codon that normally encodes an amino acid
+        aa = tbl.GetStartResidue(state);
+        if (aa == '*') {
+            prot[prot.size()-1] = aa;
         }
     }
 
