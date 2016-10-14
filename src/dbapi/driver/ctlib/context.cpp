@@ -660,13 +660,22 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version) :
             DATABASE_DRIVER_ERROR( "Cannot install the server message callback", 100004 );
         }
         // PushCntxMsgHandler();
+    }
 
+    
 #if defined(FTDS_IN_USE)  &&  NCBI_FTDS_VERSION >= 95
-        FIntHandler& int_handler = m_Context->tds_ctx->int_handler;
+    FIntHandler& int_handler = m_Context->tds_ctx->int_handler;
+    static FIntHandler s_DefaultIntHandler;
+    if (int_handler == &CTL_Connection::x_IntHandler) {
+        m_OrigIntHandler = s_DefaultIntHandler;
+    } else {
+        if (s_DefaultIntHandler == nullptr) {
+            s_DefaultIntHandler = int_handler;
+        }
         m_OrigIntHandler = int_handler;
         int_handler = &CTL_Connection::x_IntHandler;
-#endif
     }
+#endif
 
     if ( p_pot ) {
         p_pot->Add((TPotItem) this);
