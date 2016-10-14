@@ -216,7 +216,8 @@ typedef vector<TRange> TCuts;
 enum EInternalTrimType {
     eTrimToClosestEnd = 0,  // default
     eTrimTo5PrimeEnd,
-    eTrimTo3PrimeEnd
+    eTrimTo3PrimeEnd,
+    eDoNotTrimInternal
 };
 
 /// Trim sequence data and all associated annotation
