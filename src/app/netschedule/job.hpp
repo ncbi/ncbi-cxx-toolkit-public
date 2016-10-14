@@ -104,7 +104,9 @@ public:
                             // ID is sent to the client
         eReturnNoBlacklist, // WN asked to return a job without
                             // adding it to the WN blacklist
-        eReschedule         // RESCHEDULE
+        eReschedule,        // RESCHEDULE
+        eRedo,              // REDO
+        eReread             // REREAD
     };
 
     // Converts event code into its string representation

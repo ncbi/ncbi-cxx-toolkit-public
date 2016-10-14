@@ -266,7 +266,10 @@ public:
                               const string &          group,
                               bool &                  auth_token_ok,
                               CJob &                  job);
-
+    TJobStatus  RedoJob(const CNSClientId &     client,
+                        unsigned int            job_id,
+                        const string &          job_key,
+                        CJob &                  job);
     TJobStatus  ReadAndTouchJob(unsigned int      job_id,
                                 CJob &            job,
                                 CNSPreciseTime *  lifetime);
@@ -337,6 +340,12 @@ public:
                                  bool                  is_ns_rollback,
                                  bool                  blacklist,
                                  TJobStatus            target_status);
+
+    TJobStatus  RereadJob(const CNSClientId &     client,
+                          unsigned int            job_id,
+                          const string &          job_key,
+                          CJob &                  job,
+                          bool &                  no_op);
 
     // Erase job from all structures, request delayed db deletion
     void EraseJob(unsigned job_id, TJobStatus  status);

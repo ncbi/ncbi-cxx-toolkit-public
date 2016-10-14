@@ -86,6 +86,9 @@ public:
     void CountJobInfoCacheHit(size_t  count);
     void CountJobInfoCacheMiss(size_t  count);
     void CountJobInfoCacheGCRemoved(size_t  count);
+    void CountRedo(CNetScheduleAPI::EJobStatus  from);
+    void CountReread(CNetScheduleAPI::EJobStatus  from,
+                     CNetScheduleAPI::EJobStatus  to);
 
     static void  PrintServerWide(size_t  affinities);
 
@@ -135,6 +138,24 @@ private:
     CAtomicCounter_WithAutoInit     m_JobInfoCacheHit;
     CAtomicCounter_WithAutoInit     m_JobInfoCacheMiss;
     CAtomicCounter_WithAutoInit     m_JobInfoGCRemoved;
+
+    // REDO related counters
+    CAtomicCounter_WithAutoInit     m_FromDoneJobRedo;
+    CAtomicCounter_WithAutoInit     m_FromFailedJobRedo;
+    CAtomicCounter_WithAutoInit     m_FromConfirmedJobRedo;
+    CAtomicCounter_WithAutoInit     m_FromReadFailedJobRedo;
+    CAtomicCounter_WithAutoInit     m_FromCanceledJobRedo;
+
+    // REREAD related counters
+    CAtomicCounter_WithAutoInit     m_CancelToCancelJobReread;
+    CAtomicCounter_WithAutoInit     m_CancelToDoneJobReread;
+    CAtomicCounter_WithAutoInit     m_CancelToFailedJobReread;
+    CAtomicCounter_WithAutoInit     m_ReadFailedToCancelJobReread;
+    CAtomicCounter_WithAutoInit     m_ReadFailedToDoneJobReread;
+    CAtomicCounter_WithAutoInit     m_ReadFailedToFailedJobReread;
+    CAtomicCounter_WithAutoInit     m_ConfirmedToCancelJobReread;
+    CAtomicCounter_WithAutoInit     m_ConfirmedToDoneJobReread;
+    CAtomicCounter_WithAutoInit     m_ConfirmedToFailedJobReread;
 };
 
 

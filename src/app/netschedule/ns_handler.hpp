@@ -211,6 +211,8 @@ private:
     void x_ProcessRefuseSubmits(CQueue*);
     void x_ProcessPause(CQueue*);
     void x_ProcessResume(CQueue*);
+    void x_ProcessReread(CQueue*);
+    void x_ProcessRedo(CQueue*);
     void x_CmdNotImplemented(CQueue*);
     void x_CmdObsolete(CQueue*);
     void x_CheckNonAnonymousClient(const string &  message);

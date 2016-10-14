@@ -875,3 +875,231 @@ class Scenario1901( TestBase ):
             raise Exception( "Expected exception, got none (case 3)" )
 
         return True
+
+
+class Scenario1902( TestBase ):
+    " Scenario 1902 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+
+    def report_warning( self, msg, server ):
+        " Callback to report a warning "
+        self.warning = msg
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "SUBMIT, REDO => err, GET, REDO => err, PUT, REDO => ok, GET => ok"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch( 3 )
+
+        jobID = self.ns.submitJob(  'TEST', 'bla' )
+
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario1902' )
+        ns_client.set_client_identification( 'node', 'session' )
+        ns_client.on_warning = self.report_warning
+
+        try:
+            output = execAny( ns_client, 'REDO ' + jobID )
+            raise Exception( "Expected exception, got none (case 1)" )
+        except Exception as exc:
+            if "Cannot redo job" not in str( exc ):
+                raise exc
+
+        j = self.ns.getJob( 'TEST' )
+        try:
+            output = execAny( ns_client, 'REDO ' + jobID )
+            raise Exception( "Expected exception, got none (case 2)" )
+        except Exception as exc:
+            if "Cannot redo job" not in str( exc ):
+                raise exc
+
+        self.ns.putJob( 'TEST', j[ 0 ], j[ 1 ], 0 )
+        execAny( ns_client, 'REDO ' + jobID )
+
+        status = self.ns.getFastJobStatus( 'TEST', jobID )
+        if status != "Pending":
+            raise Exception( "Unexpected job state: " + status )
+
+        j = self.ns.getJob( 'TEST' )
+        if j[ 0 ] != jobID:
+            raise Exception( "Could not get the job which was REDO" )
+
+        execAny( ns_client, 'CANCEL ' + jobID )
+        execAny( ns_client, 'REDO ' + jobID )
+
+        status = self.ns.getFastJobStatus( 'TEST', jobID )
+        if status != "Pending":
+            raise Exception( "Unexpected job state: " + status )
+
+        j = self.ns.getJob( 'TEST' )
+        if j[ 0 ] != jobID:
+            raise Exception( "Could not get the job which was REDO" )
+
+        return True
+
+
+class Scenario1903( TestBase ):
+    " Scenario 1903 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+
+    def report_warning( self, msg, server ):
+        " Callback to report a warning "
+        self.warning = msg
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "SUBMIT, REDO => err, GET, REDO => err, FPUT, REDO => ok, GET => ok"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch( 3 )
+
+        jobID = self.ns.submitJob(  'TEST', 'bla' )
+
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario1903' )
+        ns_client.set_client_identification( 'node', 'session' )
+        ns_client.on_warning = self.report_warning
+
+        try:
+            output = execAny( ns_client, 'REDO ' + jobID )
+            raise Exception( "Expected exception, got none (case 1)" )
+        except Exception as exc:
+            if "Cannot redo job" not in str( exc ):
+                raise exc
+
+        j = self.ns.getJob( 'TEST' )
+        try:
+            output = execAny( ns_client, 'REDO ' + jobID )
+            raise Exception( "Expected exception, got none (case 2)" )
+        except Exception as exc:
+            if "Cannot redo job" not in str( exc ):
+                raise exc
+
+        execAny( ns_client, "FPUT2 " + j[ 0 ] + " " + j[ 1 ] + " ErrMsg Output 2" )
+        execAny( ns_client, 'REDO ' + jobID )
+
+        status = self.ns.getFastJobStatus( 'TEST', jobID )
+        if status != "Pending":
+            raise Exception( "Unexpected job state: " + status )
+
+        j = self.ns.getJob( 'TEST' )
+        if j[ 0 ] != jobID:
+            raise Exception( "Could not get the job which was REDO" )
+
+        execAny( ns_client, 'CANCEL ' + jobID )
+        execAny( ns_client, 'REDO ' + jobID )
+
+        status = self.ns.getFastJobStatus( 'TEST', jobID )
+        if status != "Pending":
+            raise Exception( "Unexpected job state: " + status )
+
+        j = self.ns.getJob( 'TEST' )
+        if j[ 0 ] != jobID:
+            raise Exception( "Could not get the job which was REDO" )
+
+        return True
+
+
+
+class Scenario1904( TestBase ):
+    " Scenario 1904 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        self.warning = None
+
+    def report_warning( self, msg, server ):
+        " Callback to report a warning "
+        self.warning = msg
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "SUBMIT, REREAD = > err, GET, PUT, READ, REREAD => err, CFRM, REREAD => ok, READ => ok"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch( 3 )
+
+        jobID = self.ns.submitJob(  'TEST', 'bla' )
+
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario1904' )
+        ns_client.set_client_identification( 'node', 'session' )
+        ns_client.on_warning = self.report_warning
+
+        try:
+            output = execAny( ns_client, 'REREAD ' + jobID )
+            raise Exception( "Expected exception, got none (case 1)" )
+        except Exception as exc:
+            if "Cannot reread job" not in str( exc ):
+                raise exc
+
+        j = self.ns.getJob( 'TEST' )
+        try:
+            output = execAny( ns_client, 'REREAD ' + jobID )
+            raise Exception( "Expected exception, got none (case 2)" )
+        except Exception as exc:
+            if "Cannot reread job" not in str( exc ):
+                raise exc
+
+        execAny( ns_client, "FPUT2 " + j[ 0 ] + " " + j[ 1 ] + " ErrMsg Output 2" )
+
+        self.warning = None
+        execAny( ns_client, 'REREAD ' + jobID )
+        if "eJobNotRead" not in self.warning:
+            raise Exception( "Expected warning, got none" )
+
+        # reading
+        execAny( ns_client, "READ" )
+        try:
+            output = execAny( ns_client, 'REREAD ' + jobID )
+            raise Exception( "Expected exception, got none (case 3)" )
+        except Exception as exc:
+            if "Cannot reread job" not in str( exc ):
+                raise exc
+
+        # confirmed
+        execAny( ns_client, "CFRM " + j[0] + " " + j[1] )
+        status = self.ns.getFastJobStatus( 'TEST', jobID )
+        if status != "Confirmed":
+            raise Exception( "Unexpected job state 1: " + status )
+
+        execAny( ns_client, 'REREAD ' + jobID )
+        # print "warning: " + str( self.warning )
+        # print "\n".join( execAny( ns_client, 'DUMP ' + jobID, isMultiline = True ) )
+
+        status = self.ns.getFastJobStatus( 'TEST', jobID )
+        if status != "Failed":
+            raise Exception( "Unexpected job state 1: " + status )
+
+        execAny( ns_client, 'CANCEL ' + jobID )
+        self.warning = None
+        execAny( ns_client, 'REREAD ' + jobID )
+        if "eJobNotRead" not in self.warning:
+            raise Exception( "Expected warning, got none" )
+
+        execAny( ns_client, "READ" )
+        status = self.ns.getFastJobStatus( 'TEST', jobID )
+        if status != "Reading":
+            raise Exception( "Unexpected job state 2: " + status )
+
+        execAny( ns_client, "CFRM " + j[0] + " " + j[1] )
+        status = self.ns.getFastJobStatus( 'TEST', jobID )
+        if status != "Confirmed":
+            raise Exception( "Unexpected job state 3: " + status )
+
+        execAny( ns_client, 'REREAD ' + jobID )
+        status = self.ns.getFastJobStatus( 'TEST', jobID )
+        if status != "Canceled":
+            raise Exception( "Unexpected job state 4: " + status )
+
+        return True
+
+

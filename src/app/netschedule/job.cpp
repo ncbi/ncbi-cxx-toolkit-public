@@ -73,13 +73,15 @@ static string   s_EventAsString[] = {
     "NSGetRollback",    // eNSGetRollback
     "NSReadRollback",   // eNSReadRollback
     "ReturnNoBlacklist",// eReturnNoBlacklist
-    "Reschedule"        // eReschedule
+    "Reschedule",       // eReschedule
+    "Redo",             // eRedo
+    "Reread"            // eReread
 };
 
 
 string CJobEvent::EventToString(EJobEvent  event)
 {
-    if (event < eSubmit || event > eReschedule)
+    if (event < eSubmit || event > eReread)
         return "UNKNOWN";
 
     return s_EventAsString[ event ];

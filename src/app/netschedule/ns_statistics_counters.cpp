@@ -167,7 +167,6 @@ CStatisticsCounters::CStatisticsCounters(ECountersScope  scope) :
                  [s_StatusToIndex[CNetScheduleAPI::eDeleted]].Set(0);
     m_Transitions[s_StatusToIndex[CNetScheduleAPI::eReadFailed]]
                  [s_StatusToIndex[CNetScheduleAPI::eDeleted]].Set(0);
-    return;
 }
 
 
@@ -240,7 +239,30 @@ void CStatisticsCounters::PrintTransitions(CDiagContext_Extra &  extra) const
          .Print("TOTAL_Reading_Failed_new_session",
                 m_ToFailedDueToReadNewSessionCounter.Get())
          .Print("TOTAL_Reading_Failed_clear",
-                m_ToFailedDueToReadClearCounter.Get());
+                m_ToFailedDueToReadClearCounter.Get())
+
+         // REDO
+         .Print("TOTAL_Done_Pending_redo", m_FromDoneJobRedo.Get())
+         .Print("TOTAL_Failed_Pending_redo", m_FromFailedJobRedo.Get())
+         .Print("TOTAL_Confirmed_Pending_redo", m_FromConfirmedJobRedo.Get())
+         .Print("TOTAL_ReadFailed_Pending_redo", m_FromReadFailedJobRedo.Get())
+         .Print("TOTAL_Canceled_Pending_redo", m_FromCanceledJobRedo.Get())
+
+         // REREAD
+         .Print("TOTAL_Cancel_Cancel_reread", m_CancelToCancelJobReread.Get())
+         .Print("TOTAL_Cancel_Done_reread", m_CancelToDoneJobReread.Get())
+         .Print("TOTAL_Cancel_Failed_reread", m_CancelToFailedJobReread.Get())
+         .Print("TOTAL_ReadFailed_Cancel_reread",
+                 m_ReadFailedToCancelJobReread.Get())
+         .Print("TOTAL_ReadFailed_Done_reread",
+                 m_ReadFailedToDoneJobReread.Get())
+         .Print("TOTAL_ReadFailed_Failed_reread",
+                 m_ReadFailedToFailedJobReread.Get())
+         .Print("TOTAL_Confirmed_Cancel_reread",
+                 m_ConfirmedToCancelJobReread.Get())
+         .Print("TOTAL_Confirmed_Done_reread", m_ConfirmedToDoneJobReread.Get())
+         .Print("TOTAL_Confirmed_Failed_reread",
+                 m_ConfirmedToFailedJobReread.Get());
 }
 
 
@@ -358,7 +380,50 @@ void CStatisticsCounters::PrintDelta(CDiagContext_Extra &  extra,
                 prev.m_ToFailedDueToReadNewSessionCounter.Get())
          .Print("DELTA_Reading_Failed_clear",
                 m_ToFailedDueToReadClearCounter.Get() -
-                prev.m_ToFailedDueToReadClearCounter.Get());
+                prev.m_ToFailedDueToReadClearCounter.Get())
+
+         // REDO
+         .Print("DELTA_Done_Pending_redo",
+                m_FromDoneJobRedo.Get() - prev.m_FromDoneJobRedo.Get())
+         .Print("DELTA_Failed_Pending_redo",
+                m_FromFailedJobRedo.Get() - prev.m_FromFailedJobRedo.Get())
+         .Print("DELTA_Confirmed_Pending_redo",
+                m_FromConfirmedJobRedo.Get() -
+                prev.m_FromConfirmedJobRedo.Get())
+         .Print("DELTA_ReadFailed_Pending_redo",
+                m_FromReadFailedJobRedo.Get() -
+                prev.m_FromReadFailedJobRedo.Get())
+         .Print("DELTA_Canceled_Pending_redo",
+                m_FromCanceledJobRedo.Get() - prev.m_FromCanceledJobRedo.Get())
+
+         // REREAD
+         .Print("DELTA_Cancel_Cancel_reread",
+                m_CancelToCancelJobReread.Get() -
+                prev.m_CancelToCancelJobReread.Get())
+         .Print("DELTA_Cancel_Done_reread",
+                m_CancelToDoneJobReread.Get() -
+                prev.m_CancelToDoneJobReread.Get())
+         .Print("DELTA_Cancel_Failed_reread",
+                m_CancelToFailedJobReread.Get() -
+                prev.m_CancelToFailedJobReread.Get())
+         .Print("DELTA_ReadFailed_Cancel_reread",
+                m_ReadFailedToCancelJobReread.Get() -
+                prev.m_ReadFailedToCancelJobReread.Get())
+         .Print("DELTA_ReadFailed_Done_reread",
+                m_ReadFailedToDoneJobReread.Get() -
+                prev.m_ReadFailedToDoneJobReread.Get())
+         .Print("DELTA_ReadFailed_Failed_reread",
+                m_ReadFailedToFailedJobReread.Get() -
+                prev.m_ReadFailedToFailedJobReread.Get())
+         .Print("DELTA_Confirmed_Cancel_reread",
+                m_ConfirmedToCancelJobReread.Get() -
+                prev.m_ConfirmedToCancelJobReread.Get())
+         .Print("DELTA_Confirmed_Done_reread",
+                m_ConfirmedToDoneJobReread.Get() -
+                prev.m_ConfirmedToDoneJobReread.Get())
+         .Print("DELTA_Confirmed_Failed_reread",
+                m_ConfirmedToFailedJobReread.Get() -
+                prev.m_ConfirmedToFailedJobReread.Get());
 }
 
 
@@ -443,7 +508,39 @@ string CStatisticsCounters::PrintTransitions(void) const
            "OK:Reading_Failed_new_session: " +
            NStr::NumericToString(m_ToFailedDueToReadNewSessionCounter.Get()) + "\n"
            "OK:Reading_Failed_clear: " +
-           NStr::NumericToString(m_ToFailedDueToReadClearCounter.Get()) + "\n";
+           NStr::NumericToString(m_ToFailedDueToReadClearCounter.Get()) + "\n"
+
+           // REDO
+           "OK:Done_Pending_redo: " +
+           NStr::NumericToString(m_FromDoneJobRedo.Get()) + "\n"
+           "OK:Failed_Pending_redo: " +
+           NStr::NumericToString(m_FromFailedJobRedo.Get()) + "\n"
+           "OK:Confirmed_Pending_redo: " +
+           NStr::NumericToString(m_FromConfirmedJobRedo.Get()) + "\n"
+           "OK:ReadFailed_Pending_redo: " +
+           NStr::NumericToString(m_FromReadFailedJobRedo.Get()) + "\n"
+           "OK:Canceled_Pending_redo: " +
+           NStr::NumericToString(m_FromCanceledJobRedo.Get()) + "\n"
+
+           // REREAD
+           "OK:Cancel_Cancel_reread: " +
+           NStr::NumericToString(m_CancelToCancelJobReread.Get()) + "\n"
+           "OK:Cancel_Done_reread: " +
+           NStr::NumericToString(m_CancelToDoneJobReread.Get()) + "\n"
+           "OK:Cancel_Failed_reread: " +
+           NStr::NumericToString(m_CancelToFailedJobReread.Get()) + "\n"
+           "OK:ReadFailed_Cancel_reread: " +
+           NStr::NumericToString(m_ReadFailedToCancelJobReread.Get()) + "\n"
+           "OK:ReadFailed_Done_reread: " +
+           NStr::NumericToString(m_ReadFailedToDoneJobReread.Get()) + "\n"
+           "OK:ReadFailed_Failed_reread: " +
+           NStr::NumericToString(m_ReadFailedToFailedJobReread.Get()) + "\n"
+           "OK:Confirmed_Cancel_reread: " +
+           NStr::NumericToString(m_ConfirmedToCancelJobReread.Get()) + "\n"
+           "OK:Confirmed_Done_reread: " +
+           NStr::NumericToString(m_ConfirmedToDoneJobReread.Get()) + "\n"
+           "OK:Confirmed_Failed_reread: " +
+           NStr::NumericToString(m_ConfirmedToFailedJobReread.Get()) + "\n";
 }
 
 
@@ -666,6 +763,100 @@ void CStatisticsCounters::CountJobInfoCacheGCRemoved(size_t  count)
     m_JobInfoGCRemoved.Add(count);
     if (m_Scope == eQueueCounters)
         s_ServerWide.CountJobInfoCacheGCRemoved(count);
+}
+
+
+void CStatisticsCounters::CountRedo(CNetScheduleAPI::EJobStatus  from)
+{
+    switch (from) {
+        case CNetScheduleAPI::eDone:
+            m_FromDoneJobRedo.Add(1);
+            break;
+        case CNetScheduleAPI::eFailed:
+            m_FromFailedJobRedo.Add(1);
+            break;
+        case CNetScheduleAPI::eConfirmed:
+            m_FromConfirmedJobRedo.Add(1);
+            break;
+        case CNetScheduleAPI::eReadFailed:
+            m_FromReadFailedJobRedo.Add(1);
+            break;
+        case CNetScheduleAPI::eCanceled:
+            m_FromCanceledJobRedo.Add(1);
+            break;
+        default:
+            ERR_POST("Unknown source job state for REDO. "
+                     "Statistics counter is not incremented.");
+            return;
+    }
+    if (m_Scope == eQueueCounters)
+        s_ServerWide.CountRedo(from);
+}
+
+
+void CStatisticsCounters::CountReread(CNetScheduleAPI::EJobStatus  from,
+                                      CNetScheduleAPI::EJobStatus  to)
+{
+    switch (from) {
+        case CNetScheduleAPI::eCanceled:
+            switch (to) {
+                case CNetScheduleAPI::eCanceled:
+                    m_CancelToCancelJobReread.Add(1);
+                    break;
+                case CNetScheduleAPI::eDone:
+                    m_CancelToDoneJobReread.Add(1);
+                    break;
+                case CNetScheduleAPI::eFailed:
+                    m_CancelToFailedJobReread.Add(1);
+                    break;
+                default:
+                    ERR_POST("Unknown target job state for REREAD. "
+                             "Statistics counter is not incremented.");
+                    return;
+            }
+            break;
+        case CNetScheduleAPI::eReadFailed:
+            switch (to) {
+                case CNetScheduleAPI::eCanceled:
+                    m_ReadFailedToCancelJobReread.Add(1);
+                    break;
+                case CNetScheduleAPI::eDone:
+                    m_ReadFailedToDoneJobReread.Add(1);
+                    break;
+                case CNetScheduleAPI::eFailed:
+                    m_ReadFailedToFailedJobReread.Add(1);
+                    break;
+                default:
+                    ERR_POST("Unknown target job state for REREAD. "
+                             "Statistics counter is not incremented.");
+                    return;
+            }
+            break;
+        case CNetScheduleAPI::eConfirmed:
+            switch (to) {
+                case CNetScheduleAPI::eCanceled:
+                    m_ConfirmedToCancelJobReread.Add(1);
+                    break;
+                case CNetScheduleAPI::eDone:
+                    m_ConfirmedToDoneJobReread.Add(1);
+                    break;
+                case CNetScheduleAPI::eFailed:
+                    m_ConfirmedToFailedJobReread.Add(1);
+                    break;
+                default:
+                    ERR_POST("Unknown target job state for REREAD. "
+                             "Statistics counter is not incremented.");
+                    return;
+            }
+            break;
+        default:
+            ERR_POST("Unknown source job state for REREAD. "
+                     "Statistics counter is not incremented.");
+            return;
+    }
+
+    if (m_Scope == eQueueCounters)
+        s_ServerWide.CountReread(from, to);
 }
 
 

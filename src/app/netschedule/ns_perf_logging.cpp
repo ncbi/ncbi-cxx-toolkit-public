@@ -88,7 +88,9 @@ const JobEventToAgent   jobEventToAgentMap[] = {
     { CJobEvent::eNSGetRollback,        "ns",         "rollback"    },
     { CJobEvent::eNSReadRollback,       "ns",         "rollback"    },
     { CJobEvent::eReturnNoBlacklist,    "RETURN",     kEmptyStr     },
-    { CJobEvent::eReschedule,           "RESCHEDULE", "reschedule"  } };
+    { CJobEvent::eReschedule,           "RESCHEDULE", "reschedule"  },
+    { CJobEvent::eRedo,                 "REDO",       kEmptyStr     },
+    { CJobEvent::eReread,               "REREAD",     kEmptyStr     } };
 const size_t    jobEventToAgentMapSize = sizeof(jobEventToAgentMap) /
                                          sizeof(JobEventToAgent);
 
@@ -192,7 +194,9 @@ void g_DoPerfLogging(const CQueue &  queue, const CJob &  job, int  status)
         extra.Print("read_count", job.GetReadCount());
 
     if (status_to == CNetScheduleAPI::eDone &&
-        status_from != CNetScheduleAPI::eReading)
+        status_from != CNetScheduleAPI::eReading &&
+        last_event != CJobEvent::eRedo &&
+        last_event != CJobEvent::eReread)
         s_DoDonePerfLogging(job, time_to, status, qname, job_key, agent,
                             client_node, client_host, variation);
 }

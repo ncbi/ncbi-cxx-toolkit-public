@@ -367,6 +367,12 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
           { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  },
           { "blacklist",         eNSPT_Int, eNSPA_Optional, "1" } } },
+    { "REREAD",        { &CNetScheduleHandler::x_ProcessReread,
+                         eNS_Queue | eNS_Reader | eNS_Program },
+        { { "job_key",           eNSPT_Id,  eNSPA_Required      },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "WST",           { &CNetScheduleHandler::x_ProcessFastStatusW,
                          eNS_Queue },
         { { "job_key",           eNSPT_Id,  eNSPA_Required      },
@@ -462,6 +468,12 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "auth_token",        eNSPT_Id,  eNSPA_Required      },
           { "aff",               eNSPT_Str, eNSPA_Optional, ""  },
           { "group",             eNSPT_Str, eNSPA_Optional, ""  },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "REDO",          { &CNetScheduleHandler::x_ProcessRedo,
+                         eNS_Queue | eNS_Worker | eNS_Program },
+        { { "job_key",           eNSPT_Id,  eNSPA_Required      },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
           { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
@@ -2609,6 +2621,46 @@ void CNetScheduleHandler::x_ProcessReschedule(CQueue* q)
 }
 
 
+void CNetScheduleHandler::x_ProcessRedo(CQueue* q)
+{
+    x_CheckNonAnonymousClient("use REDO command");
+
+    CJob            job;
+    TJobStatus      old_status = q->RedoJob(m_ClientId,
+                                            m_CommandArguments.job_id,
+                                            m_CommandArguments.job_key,
+                                            job);
+
+    if (old_status == CNetScheduleAPI::eJobNotFound) {
+        ERR_POST(Warning << "REDO for unknown job "
+                         << m_CommandArguments.job_key);
+        x_SetCmdRequestStatus(eStatus_NotFound);
+        x_WriteMessage(kErrNoJobFoundResponse);
+        x_PrintCmdRequestStop();
+        return;
+    }
+
+    if (old_status == CNetScheduleAPI::ePending ||
+        old_status == CNetScheduleAPI::eRunning ||
+        old_status == CNetScheduleAPI::eReading) {
+        ERR_POST(Warning << "Cannot redo job "
+                     << m_CommandArguments.job_key
+                     << "; job is in "
+                     << CNetScheduleAPI::StatusToString(old_status)
+                     << " state");
+        x_SetCmdRequestStatus(eStatus_InvalidJobStatus);
+        x_WriteMessage("ERR:eInvalidJobStatus:Cannot redo job; job is in " +
+                       CNetScheduleAPI::StatusToString(old_status) + " state" +
+                       kEndOfResponse);
+    } else {
+        x_WriteMessage(kOKCompleteResponse);
+    }
+
+    x_LogCommandWithJob(job);
+    x_PrintCmdRequestStop();
+}
+
+
 void CNetScheduleHandler::x_ProcessJobDelayExpiration(CQueue* q)
 {
     if (m_CommandArguments.timeout <= 0) {
@@ -3731,6 +3783,54 @@ void CNetScheduleHandler::x_ProcessReadRollback(CQueue* q)
                                             m_CommandArguments.blacklist,
                                             CNetScheduleAPI::eJobNotFound);
     x_FinalizeReadCommand("RDRB", old_status, job);
+}
+
+
+void CNetScheduleHandler::x_ProcessReread(CQueue* q)
+{
+    x_CheckNonAnonymousClient("use REREAD command");
+
+    CJob            job;
+    bool            no_op = false;
+    TJobStatus      old_status = q->RereadJob(m_ClientId,
+                                              m_CommandArguments.job_id,
+                                              m_CommandArguments.job_key,
+                                              job,
+                                              no_op);
+
+    if (old_status == CNetScheduleAPI::eJobNotFound) {
+        ERR_POST(Warning << "REREAD for unknown job "
+                         << m_CommandArguments.job_key);
+        x_SetCmdRequestStatus(eStatus_NotFound);
+        x_WriteMessage(kErrNoJobFoundResponse);
+        x_PrintCmdRequestStop();
+        return;
+    }
+
+    if (old_status == CNetScheduleAPI::ePending ||
+        old_status == CNetScheduleAPI::eRunning ||
+        old_status == CNetScheduleAPI::eReading) {
+        ERR_POST(Warning << "Cannot reread job "
+                     << m_CommandArguments.job_key
+                     << "; job is in "
+                     << CNetScheduleAPI::StatusToString(old_status)
+                     << " state");
+        x_SetCmdRequestStatus(eStatus_InvalidJobStatus);
+        x_WriteMessage("ERR:eInvalidJobStatus:Cannot reread job; job is in " +
+                       CNetScheduleAPI::StatusToString(old_status) + " state" +
+                       kEndOfResponse);
+    } else if (no_op) {
+        ERR_POST(Warning << "Cannot reread job "
+                    << m_CommandArguments.job_key
+                    << "; job has not been read yet");
+        x_WriteMessage("OK:WARNING:eJobNotRead:The job has not been read yet;" +
+                       kEndOfResponse);
+    } else {
+        x_WriteMessage(kOKCompleteResponse);
+    }
+
+    x_LogCommandWithJob(job);
+    x_PrintCmdRequestStop();
 }
 
 
