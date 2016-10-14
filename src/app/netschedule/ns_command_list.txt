@@ -27,7 +27,6 @@ STAT GROUPS             # 4.10.0 and up
 STAT QCLASSES           # 4.14.0 and up
 STAT QUEUES             # 4.14.0 and up
 DUMP
-AFLS
 GETP                    # It's better to use STAT QUEUES
 GETP2
 GETC                    # It's better to use STAT QUEUES
@@ -76,9 +75,13 @@ CWREAD                  # 4.18.0 and up
 JDREX                   # 4.18.0 and up
 ACKALERT
 SETCLIENTDATA
+REDO                    # 4.28.0 and up
+REREAD                  # 4.28.0 and up
+
 
 REGC                    # Deprecated
 URGC                    # Deprecated
 INIT                    # Deprecated
 JRTO                    # Deprecated
+AFLS                    # Deprecated
 
