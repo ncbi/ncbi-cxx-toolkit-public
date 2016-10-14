@@ -530,6 +530,11 @@ class NSCommandsSender:
                                   "job_return_code=1", False )
         return
 
+    def __redo( self ):
+        jobKey = self.__put()
+        self.__nsConnect.execute( "REDO job_key=" + jobKey )
+        return
+
     def __fput2( self ):
         jobKey, authToken = self.__get2()
         self.__nsConnect.execute( "FPUT2 job_key=" + jobKey +
@@ -562,6 +567,11 @@ class NSCommandsSender:
         jobKey, authToken = self.__read()
         self.__nsConnect.execute( "CFRM job_key=" + jobKey +
                                   " auth_token=" + authToken, False )
+        return jobKey
+
+    def __reread( self ):
+        jobKey = self.__cfrm()
+        self.__nsConnect.execute( "REREAD job_key=" + jobKey )
         return
 
     def __fred( self ):
