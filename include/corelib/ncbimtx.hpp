@@ -364,7 +364,7 @@ protected:
     friend class ::ncbi::CSafeStaticPtr_Base;
 };
 
-}; // NCBI_NAMESPACE_MUTEX
+} // NCBI_NAMESPACE_MUTEX
 
 using NCBI_NAMESPACE_MUTEX::SSystemFastMutex;
 
@@ -458,7 +458,7 @@ protected:
     friend class ::ncbi::CMutex;
 };
 
-}; // NCBI_NAMESPACE_MUTEX
+} // NCBI_NAMESPACE_MUTEX
 
 using NCBI_NAMESPACE_MUTEX::SSystemMutex;
 
