@@ -38,6 +38,7 @@
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/general/User_object.hpp>
 
+#include <algo/blast/core/blast_query_info.h>
 #include <algo/blast/blastinput/blast_input_aux.hpp>
 #include <algo/blast/blast_sra_input/blast_sra_input.hpp>
 #include <util/sequtil/sequtil_convert.hpp>
@@ -127,9 +128,24 @@ CSraInputSource::x_ReadOneSeq(CBioseq_set& bioseq_set)
 void
 CSraInputSource::x_ReadPairs(CBioseq_set& bioseq_set)
 {
-    CRef<CSeqdesc> seqdesc(new CSeqdesc);
-    seqdesc->SetUser().SetType().SetStr("Mapping");
-    seqdesc->SetUser().AddField("has_pair", true);
+    CRef<CSeqdesc> seqdesc_first(new CSeqdesc);
+    seqdesc_first->SetUser().SetType().SetStr("Mapping");
+    seqdesc_first->SetUser().AddField("has_pair", eFirstSegment);
+
+    CRef<CSeqdesc> seqdesc_last(new CSeqdesc);
+    seqdesc_last->SetUser().SetType().SetStr("Mapping");
+    seqdesc_last->SetUser().AddField("has_pair", eLastSegment);
+
+    CRef<CSeqdesc> seqdesc_first_partial(new CSeqdesc);
+    seqdesc_first_partial->SetUser().SetType().SetStr("Mapping");
+    seqdesc_first_partial->SetUser().AddField("has_pair",
+                                              fFirstSegmentFlag | fPartialFlag);
+
+    CRef<CSeqdesc> seqdesc_last_partial(new CSeqdesc);
+    seqdesc_last_partial->SetUser().SetType().SetStr("Mapping");
+    seqdesc_last_partial->SetUser().AddField("has_pair",
+                                             fLastSegmentFlag | fPartialFlag);
+
 
     TVDBRowId spot = -1;
     while (*m_It && m_Index < (int)m_NumSeqsInBatch) {
@@ -143,14 +159,32 @@ CSraInputSource::x_ReadPairs(CBioseq_set& bioseq_set)
             break;
         }
         
-        // if the last sequence was accepted and the current sequence has
-        // the same spot id, read current sequence as a mate, otherwise
-        // continue the loop
-        if (index1 >= 0 && m_It->GetSpotId() == spot) {
+        // if the current sequence has the same spot id, read current sequence
+        // as a mate, otherwise continue the loop
+        if (m_It->GetSpotId() == spot) {
             int index2 = x_ReadOneSeq(bioseq_set);
-            if (index2 > 0) {
-                CBioseq& bioseq = m_Entries[index1]->SetSeq();
-                bioseq.SetDescr().Set().push_back(seqdesc);
+            // set pair information for sequences
+            if (index1 >= 0 && index2 >= 0) {
+                {
+                    CBioseq& bioseq = m_Entries[index1]->SetSeq();
+                    bioseq.SetDescr().Set().push_back(seqdesc_first);
+                }
+
+                {
+                    CBioseq& bioseq = m_Entries[index2]->SetSeq();
+                    bioseq.SetDescr().Set().push_back(seqdesc_last);
+                }
+            }
+            else {
+                if (index1 >= 0) {
+                    CBioseq& bioseq = m_Entries[index1]->SetSeq();
+                    bioseq.SetDescr().Set().push_back(seqdesc_first_partial);
+                }
+
+                if (index2 >= 0) {
+                    CBioseq& bioseq = m_Entries[index2]->SetSeq();
+                    bioseq.SetDescr().Set().push_back(seqdesc_last_partial);
+                }
             }
             ++(*m_It);
         }

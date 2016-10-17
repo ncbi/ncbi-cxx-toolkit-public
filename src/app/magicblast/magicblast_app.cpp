@@ -552,7 +552,6 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
                        const BLAST_SequenceBlk* queries,
                        const BlastQueryInfo* query_info,
                        int batch_number, int compartment,
-                       int sam_flags = 0,
                        const CSeq_align* mate = NULL)
 {
     string sep = "\t";
@@ -561,6 +560,7 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
     int query_len = 0;
     int num_hits = 0;
     int context = -1;
+    int sam_flags = 0;
     
     // if paired alignment
     if (align.GetSegs().IsDisc()) {
@@ -574,39 +574,15 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
         ++second;
         _ASSERT(second != disc.Get().end());
 
-        // only concordantly aligned pairs have this bit set
-        // FIXME: it is assumed that subject is always in plus strand (BLAST
-        // way)
-        if (((*first)->GetSeqStart(1) < (*second)->GetSeqStart(1) &&
-             (*first)->GetSeqStrand(0) == eNa_strand_plus &&
-             (*second)->GetSeqStrand(0) == eNa_strand_minus) ||
-            ((*second)->GetSeqStart(1) < (*first)->GetSeqStart(1) &&
-             (*second)->GetSeqStrand(0) == eNa_strand_plus &&
-             (*first)->GetSeqStrand(0) == eNa_strand_minus)) {
-
-            sam_flags |= SAM_FLAG_SEGS_ALIGNED;
-        }
-
-        int first_flags = sam_flags;
-        if ((*second)->GetSeqStrand(0) == eNa_strand_minus) {
-            first_flags |= SAM_FLAG_NEXT_REVCOMP; 
-        }
-
-        int second_flags = sam_flags;
-        if ((*first)->GetSeqStrand(0) == eNa_strand_minus) {
-            second_flags |= SAM_FLAG_NEXT_REVCOMP;
-        }
-
         PrintSAM(ostr, **first, queries, query_info, batch_number,
-                 compartment, first_flags, second->GetNonNullPointer());
+                 compartment, second->GetNonNullPointer());
         ostr << endl;
 
         PrintSAM(ostr, **second, queries, query_info, batch_number,
-                 compartment, second_flags, first->GetNonNullPointer());
+                 compartment, first->GetNonNullPointer());
 
         return ostr;
     }
-
 
     // get align data saved in the user object
     CConstRef<CUser_object> ext = align.FindExt("Mapper Info");
@@ -648,15 +624,44 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
         sam_flags |= SAM_FLAG_SEQ_REVCOMP;
     }
 
-    if ((sam_flags & SAM_FLAG_MULTI_SEGMENTS) != 0 && context >= 0) {
-        if (query_info->contexts[context].has_pair) {
+    if (context >= 0 && query_info->contexts[context].segment_flags != 0) {
+        sam_flags |= SAM_FLAG_MULTI_SEGMENTS;
+
+        if ((query_info->contexts[context].segment_flags & fFirstSegmentFlag)
+            != 0) {
             sam_flags |= SAM_FLAG_FIRST_SEGMENT;
         }
-        else {
+
+        if ((query_info->contexts[context].segment_flags & fLastSegmentFlag)
+            != 0) {
             sam_flags |= SAM_FLAG_LAST_SEGMENT;
         }
-    }
+        
+        if ((query_info->contexts[context].segment_flags & fPartialFlag) != 0
+            || !mate) {
 
+            sam_flags |= SAM_FLAG_NEXT_SEG_UNMAPPED;
+        }
+
+        if (mate) {
+            // only concordantly aligned pairs have this bit set
+            // FIXME: it is assumed that subject is always in plus strand
+            // (BLAST way)
+            if ((align.GetSeqStart(1) < mate->GetSeqStart(1) &&
+                 align.GetSeqStrand(0) == eNa_strand_plus &&
+                 mate->GetSeqStrand(0) == eNa_strand_minus) ||
+                (mate->GetSeqStart(1) < align.GetSeqStart(1) &&
+                 mate->GetSeqStrand(0) == eNa_strand_plus &&
+                 align.GetSeqStrand(0) == eNa_strand_minus)) {
+
+                sam_flags |= SAM_FLAG_SEGS_ALIGNED;
+            }
+
+            if (mate->GetSeqStrand(0) == eNa_strand_minus) {
+                sam_flags |= SAM_FLAG_NEXT_REVCOMP;
+            }
+        }
+    }
 
     if ((sam_flags & SAM_FLAG_MULTI_SEGMENTS) != 0 && !mate) {
         sam_flags |= SAM_FLAG_NEXT_SEG_UNMAPPED;
@@ -909,19 +914,13 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
 CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align_set& aligns,
                        const BLAST_SequenceBlk* queries,
                        const BlastQueryInfo* query_info,
-                       int batch_number, bool is_paired = false)
+                       int batch_number)
 {
-    int sam_flags = 0;
     int compartment = 0;
-
-    if (is_paired) {
-        sam_flags |= SAM_FLAG_MULTI_SEGMENTS;
-    }
 
     ITERATE (list< CRef<CSeq_align> >, it, aligns.Get()) {
 
-        PrintSAM(ostr, **it, queries, query_info, batch_number, compartment++,
-                 sam_flags);
+        PrintSAM(ostr, **it, queries, query_info, batch_number, compartment++);
         ostr << endl;
     }
 
@@ -1304,8 +1303,7 @@ int CMagicBlastApp::Run(void)
                                  *results,
                                  query_data->GetSequenceBlk(),
                                  query_data->GetQueryInfo(),
-                                 batch_number,
-                                 magic_opts->GetPaired());
+                                 batch_number);
                     }
 
 

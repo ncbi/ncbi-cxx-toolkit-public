@@ -158,7 +158,10 @@ public:
     virtual string GetTitle(int index) const = 0;
 
     /// Is this sequence followed by a mate (for mapping short reads)
-    virtual bool IsFirstOfAPair(int index) const = 0;
+    NCBI_DEPRECATED virtual bool IsFirstOfAPair(int index) const = 0;
+
+    /// Get segment information (for mapping paired short reads)
+    virtual int GetSegmentInfo(int index) const = 0;
 };
 
 /// Choose between a Seq-loc specified query strand and the strand obtained

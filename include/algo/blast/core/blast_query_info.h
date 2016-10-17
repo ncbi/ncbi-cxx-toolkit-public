@@ -42,6 +42,20 @@
 extern "C" {
 #endif
 
+/** Information about paired segments (for mapping short reads)
+ */
+typedef enum EMagicBlastSegmentInfo {
+    eNoSegments = 0,             /**< Sequence is not part of a pair */
+    fFirstSegmentFlag = 1,       /**< The first sequence of a pair */
+    fLastSegmentFlag = 1 << 1,   /**< The last sequence of a pair */
+    fPartialFlag = 1 << 2,       /**< The other segment is not present (did not
+                                   pass quality filtering */
+    eFirstSegment = fFirstSegmentFlag, /**< The first sequence of a pair with
+                                            both sequences read and accepted */
+    eLastSegment = fLastSegmentFlag    /** The last sequence of a pair with
+                                           both sequences read and accepted */
+} EMagicBlastSegmentInfo;
+
 /** The context related information */
 typedef struct BlastContextInfo {
     Int4 query_offset;      /**< Offset of this query, strand or frame in the
@@ -55,8 +69,7 @@ typedef struct BlastContextInfo {
                               This field should be set only by the setup code
                               and read by subsequent stages of the BLAST search
                               */
-    Boolean has_pair;       /**< If true, this query has a pair in the contexts
-                                 for the next sequence (for mapping) */
+    Int4 segment_flags;      /**< Flags describing segments for paired reads */
 } BlastContextInfo;
 
 /** Forward declaration of SPHIQueryInfo */

@@ -1560,7 +1560,8 @@ static int s_FindRearrangedPairs(HSPChain** saved,
         }
 
         /* skip queries that do not have pairs */
-        if (!query_info->contexts[query_idx * NUM_STRANDS].has_pair) {
+        if (query_info->contexts[query_idx * NUM_STRANDS].segment_flags ==
+            eNoSegments) {
             continue;
         }
 
@@ -4117,7 +4118,9 @@ s_BlastHSPMapperSplicedPairedRun(void* data, BlastHSPList* hsp_list)
     while (i < hsp_list->hspcnt) {
 
         Int4 context = hsp_array[i]->context;
-        Boolean has_pair = query_info->contexts[context].has_pair;
+        /* is this query the first segment of a pair */
+        Boolean has_pair = (query_info->contexts[context].segment_flags ==
+                            eFirstSegment);
         Int4 query_idx  = context / NUM_STRANDS;
         Int4 first_context = query_idx * NUM_STRANDS;
         Int4 context_next_fragment = has_pair ? (query_idx + 2) * NUM_STRANDS :

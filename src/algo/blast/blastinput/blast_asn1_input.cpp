@@ -140,9 +140,24 @@ CASN1InputSourceOMF::x_ReadFromSingleFile(CBioseq_set& bioseq_set)
     int current_read = 0;
     bool first_added = false;
 
-    CRef<CSeqdesc> seqdesc(new CSeqdesc);
-    seqdesc->SetUser().SetType().SetStr("Mapping");
-    seqdesc->SetUser().AddField("has_pair", true);
+    // tags to indicate paired sequences
+    CRef<CSeqdesc> seqdesc_first(new CSeqdesc);
+    seqdesc_first->SetUser().SetType().SetStr("Mapping");
+    seqdesc_first->SetUser().AddField("has_pair", eFirstSegment);
+
+    CRef<CSeqdesc> seqdesc_last(new CSeqdesc);
+    seqdesc_last->SetUser().SetType().SetStr("Mapping");
+    seqdesc_last->SetUser().AddField("has_pair", eLastSegment);
+
+    CRef<CSeqdesc> seqdesc_first_partial(new CSeqdesc);
+    seqdesc_first_partial->SetUser().SetType().SetStr("Mapping");
+    seqdesc_first_partial->SetUser().AddField("has_pair",
+                                              fFirstSegmentFlag | fPartialFlag);
+
+    CRef<CSeqdesc> seqdesc_last_partial(new CSeqdesc);
+    seqdesc_last_partial->SetUser().SetType().SetStr("Mapping");
+    seqdesc_last_partial->SetUser().AddField("has_pair",
+                                             fLastSegmentFlag | fPartialFlag);
 
     m_Index = 0;
     while (m_Index < (int)m_NumSeqsInBatch && !m_InputStream->eof()) {
@@ -156,7 +171,13 @@ CASN1InputSourceOMF::x_ReadFromSingleFile(CBioseq_set& bioseq_set)
 
             if (m_IsPaired && (current_read & 1) == 1) {
                 if (first_added) {
-                    bioseq_set.SetSeq_set().back()->SetSeq().SetDescr().Set().push_back(seqdesc);
+                    bioseq_set.SetSeq_set().back()->SetSeq().SetDescr().Set().
+                        push_back(seqdesc_first);
+                    m_Entries[index]->SetSeq().SetDescr().Set().push_back(seqdesc_last);
+                }
+                else {
+                    m_Entries[index]->SetSeq().SetDescr().Set().push_back(
+                                                        seqdesc_last_partial);
                 }
                 first_added = false;
             }
@@ -164,6 +185,10 @@ CASN1InputSourceOMF::x_ReadFromSingleFile(CBioseq_set& bioseq_set)
             bioseq_set.SetSeq_set().push_back(m_Entries[index]);
         }
         else {
+            if (first_added) {
+                bioseq_set.SetSeq_set().back()->SetSeq().SetDescr().Set().
+                    push_back(seqdesc_first_partial);
+            }
             first_added = false;
         }
         current_read++;
@@ -176,9 +201,24 @@ CASN1InputSourceOMF::x_ReadFromSingleFile(CBioseq_set& bioseq_set)
 bool
 CASN1InputSourceOMF::x_ReadFromTwoFiles(CBioseq_set& bioseq_set)
 {
-    CRef<CSeqdesc> seqdesc(new CSeqdesc);
-    seqdesc->SetUser().SetType().SetStr("Mapping");
-    seqdesc->SetUser().AddField("has_pair", true);
+    // tags to indicate paired sequences
+    CRef<CSeqdesc> seqdesc_first(new CSeqdesc);
+    seqdesc_first->SetUser().SetType().SetStr("Mapping");
+    seqdesc_first->SetUser().AddField("has_pair", eFirstSegment);
+
+    CRef<CSeqdesc> seqdesc_last(new CSeqdesc);
+    seqdesc_last->SetUser().SetType().SetStr("Mapping");
+    seqdesc_last->SetUser().AddField("has_pair", eLastSegment);
+
+    CRef<CSeqdesc> seqdesc_first_partial(new CSeqdesc);
+    seqdesc_first_partial->SetUser().SetType().SetStr("Mapping");
+    seqdesc_first_partial->SetUser().AddField("has_pair",
+                                              fFirstSegmentFlag | fPartialFlag);
+
+    CRef<CSeqdesc> seqdesc_last_partial(new CSeqdesc);
+    seqdesc_last_partial->SetUser().SetType().SetStr("Mapping");
+    seqdesc_last_partial->SetUser().AddField("has_pair",
+                                             fLastSegmentFlag | fPartialFlag);
 
     int index1;
     int index2;
@@ -189,18 +229,30 @@ CASN1InputSourceOMF::x_ReadFromTwoFiles(CBioseq_set& bioseq_set)
         index1 = x_ReadOneSeq(*m_InputStream); 
         index2 = x_ReadOneSeq(*m_SecondInputStream);
 
-        // if both sequences were read, set mark the pair in the first one
+        // if both sequences were read, the pair in the first one
         if (index1 >= 0 && index2 >= 0) {
-            CBioseq& bioseq = m_Entries[index1]->SetSeq();
-            bioseq.SetDescr().Set().push_back(seqdesc);
-        }
+            m_Entries[index1]->SetSeq().SetDescr().Set().push_back(
+                                                             seqdesc_first);
 
-        if (index1 >= 0) {
+            m_Entries[index2]->SetSeq().SetDescr().Set().push_back(
+                                                              seqdesc_last);
+
             bioseq_set.SetSeq_set().push_back(m_Entries[index1]);
-        }
-
-        if (index2 >= 0) {
             bioseq_set.SetSeq_set().push_back(m_Entries[index2]);
+        }
+        else {
+            // otherwise mark incomplete pair for the sequence that was read
+            if (index1 >= 0) {
+                m_Entries[index1]->SetSeq().SetDescr().Set().push_back(
+                                                       seqdesc_first_partial);
+                bioseq_set.SetSeq_set().push_back(m_Entries[index1]);
+            }
+
+            if (index2 >= 0) {
+                m_Entries[index2]->SetSeq().SetDescr().Set().push_back(
+                                                        seqdesc_last_partial);
+                bioseq_set.SetSeq_set().push_back(m_Entries[index2]);
+            }
         }
     }
 

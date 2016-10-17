@@ -11,7 +11,7 @@ Bioseq-set ::= {
           data {
             {
               label str "has_pair",
-              data bool TRUE
+              data int 1
             }
           }
         }
@@ -28,7 +28,16 @@ Bioseq-set ::= {
         local str "SRR2833414.2.2"
       },
       descr {
-        title "lcl|SRR2833414.2.2"
+        title "lcl|SRR2833414.2.2",
+        user {
+          type str "Mapping",
+          data {
+            {
+              label str "has_pair",
+              data int 2
+            }
+          }
+        }
       },
       inst {
         repr raw,

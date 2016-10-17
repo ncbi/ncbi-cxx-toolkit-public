@@ -40,13 +40,16 @@
 #include <objects/seqloc/PDB_seq_id.hpp>
 #include <objects/seq/Seq_data.hpp>
 #include <objects/seq/NCBIeaa.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
 
 #include <corelib/ncbienv.hpp>
 #include <objtools/readers/reader_exception.hpp>
 #include <algo/blast/api/sseqloc.hpp>
+#include <algo/blast/core/blast_query_info.h>
 #include <algo/blast/blastinput/blast_input.hpp>
 #include <algo/blast/blastinput/blast_input_aux.hpp>
 #include <algo/blast/blastinput/blast_fasta_input.hpp>
+#include <algo/blast/blastinput/blast_asn1_input.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/seq_vector.hpp>
 
@@ -58,6 +61,8 @@
 #include <algo/blast/blastinput/psiblast_args.hpp>
 #include <algo/blast/blastinput/rpsblast_args.hpp>
 #include "blast_input_unit_test_aux.hpp"
+
+#include <unordered_map>
 
 #undef NCBI_BOOST_NO_AUTO_TEST_MAIN
 #include <corelib/test_boost.hpp>
@@ -2667,7 +2672,299 @@ BOOST_AUTO_TEST_CASE(FetchGiFromAccessionInput)
     }
 }
 
+
 BOOST_AUTO_TEST_SUITE_END() // end of blastinput test suite
+
+
+BOOST_AUTO_TEST_SUITE(short_reads)
+
+static int s_GetSegmentFlags(const CBioseq& bioseq)
+{
+    int retval = 0;
+
+    BOOST_REQUIRE(bioseq.IsSetDescr());
+    for (auto desc : bioseq.GetDescr().Get()) {
+        if (desc->Which() == CSeqdesc::e_User) {
+
+            if (!desc->GetUser().IsSetType() ||
+                !desc->GetUser().GetType().IsStr() ||
+                desc->GetUser().GetType().GetStr() != "Mapping") {
+                continue;
+            }
+
+            BOOST_REQUIRE(desc->GetUser().HasField("has_pair"));
+            const CUser_field& field = desc->GetUser().GetField("has_pair");
+            BOOST_REQUIRE(field.GetData().IsInt());
+
+            retval = field.GetData().GetInt();
+        }
+    }
+
+    return retval;
+}
+
+BOOST_AUTO_TEST_CASE(TestFlagsForPairedReadsFromFasta) {
+
+    CNcbiIfstream istr("data/paired_reads.fa");
+    BOOST_REQUIRE(istr);
+    unordered_map<string, int> ref_flags = {
+        {"lcl|pair1", eFirstSegment},
+        {"lcl|pair2", eLastSegment},
+        {"lcl|incomplete1.1", fFirstSegmentFlag | fPartialFlag},
+        {"lcl|incomplete2.2", fLastSegmentFlag | fPartialFlag}
+    };
+    
+    CShortReadFastaInputSource input_source(istr, 1000,
+                                         CShortReadFastaInputSource::eFasta,
+                                         true, true);
+
+    CRef<CBioseq_set> queries(new CBioseq_set);
+    input_source.GetNextNumSequences(*queries, 0);
+    // input file contains six sequences, but two should have been rejected
+    // in screening
+    BOOST_REQUIRE_EQUAL(queries->GetSeq_set().size(), 4u);
+
+    size_t count = 0;
+    for (auto it : queries->GetSeq_set()) {
+        string id = it->GetSeq().GetFirstId()->AsFastaString();
+        int flags = s_GetSegmentFlags(it->GetSeq());
+        int expected = ref_flags.at(id);
+
+        BOOST_REQUIRE_MESSAGE(flags == expected, (string)"Segment flag for " +
+                id + " is different from expected " +
+                NStr::IntToString(flags) + " != " +
+                NStr::IntToString(expected));
+        count++;
+    }
+
+    BOOST_REQUIRE_EQUAL(ref_flags.size(), count);
+}
+
+BOOST_AUTO_TEST_CASE(TestPairedFlagsForPairedReadsFromTwoFastaFiles) {
+
+    CNcbiIfstream istr1("data/paired_reads_1.fa");
+    CNcbiIfstream istr2("data/paired_reads_2.fa");
+    BOOST_REQUIRE(istr1);
+    BOOST_REQUIRE(istr2);
+    unordered_map<string, int> ref_flags = {
+        {"lcl|pair1", eFirstSegment},
+        {"lcl|pair2", eLastSegment},
+        {"lcl|incomplete1.1", fFirstSegmentFlag | fPartialFlag},
+        {"lcl|incomplete2.2", fLastSegmentFlag | fPartialFlag}
+    };
+    
+    CShortReadFastaInputSource input_source(istr1, istr2, 1000,
+                                         CShortReadFastaInputSource::eFasta,
+                                         true);
+
+    CRef<CBioseq_set> queries(new CBioseq_set);
+    input_source.GetNextNumSequences(*queries, 0);
+    // input file contains six sequences, but two should have been rejected
+    // in screening
+    BOOST_REQUIRE_EQUAL(queries->GetSeq_set().size(), 4u);
+
+    size_t count = 0;
+    for (auto it : queries->GetSeq_set()) {
+        string id = it->GetSeq().GetFirstId()->AsFastaString();
+        int flags = s_GetSegmentFlags(it->GetSeq());
+        int expected = ref_flags.at(id);
+
+        BOOST_REQUIRE_MESSAGE(flags == expected, (string)"Segment flag for " +
+                id + " is different from expected " +
+                NStr::IntToString(flags) + " != " +
+                NStr::IntToString(expected));
+        count++;
+    }
+
+    BOOST_REQUIRE_EQUAL(ref_flags.size(), count);
+}
+
+BOOST_AUTO_TEST_CASE(TestPairedFlagsForSingleReadsFromFasta) {
+
+    CNcbiIfstream istr("data/paired_reads.fa");
+    CShortReadFastaInputSource input_source(istr, 1000,
+                                         CShortReadFastaInputSource::eFasta,
+                                         false, true);
+
+    CRef<CBioseq_set> queries(new CBioseq_set);
+    input_source.GetNextNumSequences(*queries, 0);
+    // input file contains six sequences, but two should have been rejected
+    // in screening
+    BOOST_REQUIRE_EQUAL(queries->GetSeq_set().size(), 4u);
+
+    size_t count = 0;
+    for (auto it : queries->GetSeq_set()) {
+        if (it->GetSeq().IsSetDescr()) {
+
+            string id = it->GetSeq().GetFirstId()->AsFastaString();
+            int flags = s_GetSegmentFlags(it->GetSeq());
+            int expected = 0;
+
+            BOOST_REQUIRE_MESSAGE(flags == expected,
+                                  (string)"Segment flag for " +
+                                  id + " is different from expected " +
+                                  NStr::IntToString(flags) + " != " +
+                                  NStr::IntToString(expected));
+        }
+        count++;
+    }
+
+    BOOST_REQUIRE_EQUAL(4u, count);
+}
+
+BOOST_AUTO_TEST_CASE(TestFlagsForPairedReadsFromFastQ) {
+
+    CNcbiIfstream istr("data/paired_reads.fastq");
+    BOOST_REQUIRE(istr);
+    unordered_map<string, int> ref_flags = {
+        {"lcl|pair1", eFirstSegment},
+        {"lcl|pair2", eLastSegment},
+        {"lcl|incomplete1.1", fFirstSegmentFlag | fPartialFlag},
+        {"lcl|incomplete2.2", fLastSegmentFlag | fPartialFlag}
+    };
+    
+    CShortReadFastaInputSource input_source(istr, 1000,
+                                         CShortReadFastaInputSource::eFastq,
+                                         true, true);
+
+    CRef<CBioseq_set> queries(new CBioseq_set);
+    input_source.GetNextNumSequences(*queries, 0);
+    // input file contains six sequences, but two should have been rejected
+    // in screening
+    BOOST_REQUIRE_EQUAL(queries->GetSeq_set().size(), 4u);
+
+    size_t count = 0;
+    for (auto it : queries->GetSeq_set()) {
+        string id = it->GetSeq().GetFirstId()->AsFastaString();
+        int flags = s_GetSegmentFlags(it->GetSeq());
+        int expected = ref_flags.at(id);
+
+        BOOST_REQUIRE_MESSAGE(flags == expected, (string)"Segment flag for " +
+                id + " is different from expected " +
+                NStr::IntToString(flags) + " != " +
+                NStr::IntToString(expected));
+        count++;
+    }
+
+    BOOST_REQUIRE_EQUAL(ref_flags.size(), count);
+}
+
+BOOST_AUTO_TEST_CASE(TestPairedFlagsForPairedReadsFromTwoFastQFiles) {
+
+    CNcbiIfstream istr1("data/paired_reads_1.fastq");
+    CNcbiIfstream istr2("data/paired_reads_2.fastq");
+    BOOST_REQUIRE(istr1);
+    BOOST_REQUIRE(istr2);
+    unordered_map<string, int> ref_flags = {
+        {"lcl|pair1", eFirstSegment},
+        {"lcl|pair2", eLastSegment},
+        {"lcl|incomplete1.1", fFirstSegmentFlag | fPartialFlag},
+        {"lcl|incomplete2.2", fLastSegmentFlag | fPartialFlag}
+    };
+    
+    CShortReadFastaInputSource input_source(istr1, istr2, 1000,
+                                         CShortReadFastaInputSource::eFastq,
+                                         true);
+
+    CRef<CBioseq_set> queries(new CBioseq_set);
+    input_source.GetNextNumSequences(*queries, 0);
+    // input file contains six sequences, but two should have been rejected
+    // in screening
+    BOOST_REQUIRE_EQUAL(queries->GetSeq_set().size(), 4u);
+
+    size_t count = 0;
+    for (auto it : queries->GetSeq_set()) {
+        string id = it->GetSeq().GetFirstId()->AsFastaString();
+        int flags = s_GetSegmentFlags(it->GetSeq());
+        int expected = ref_flags.at(id);
+
+        BOOST_REQUIRE_MESSAGE(flags == expected, (string)"Segment flag for " +
+                id + " is different from expected " +
+                NStr::IntToString(flags) + " != " +
+                NStr::IntToString(expected));
+        count++;
+    }
+
+    BOOST_REQUIRE_EQUAL(ref_flags.size(), count);
+}
+
+
+
+
+BOOST_AUTO_TEST_CASE(TestFlagsForPairedReadsFromASN1) {
+
+    CNcbiIfstream istr("data/paired_reads.asn");
+    BOOST_REQUIRE(istr);
+    unordered_map<string, int> ref_flags = {
+        {"lcl|pair1", eFirstSegment},
+        {"lcl|pair2", eLastSegment},
+        {"lcl|incomplete1.1", fFirstSegmentFlag | fPartialFlag},
+        {"lcl|incomplete2.2", fLastSegmentFlag | fPartialFlag}
+    };
+    
+    CASN1InputSourceOMF input_source(istr, 1000, false, true, true);
+
+    CRef<CBioseq_set> queries(new CBioseq_set);
+    input_source.GetNextNumSequences(*queries, 0);
+    // input file contains six sequences, but two should have been rejected
+    // in screening
+    BOOST_REQUIRE_EQUAL(queries->GetSeq_set().size(), 4u);
+
+    size_t count = 0;
+    for (auto it : queries->GetSeq_set()) {
+        string id = it->GetSeq().GetFirstId()->AsFastaString();
+        int flags = s_GetSegmentFlags(it->GetSeq());
+        int expected = ref_flags.at(id);
+
+        BOOST_REQUIRE_MESSAGE(flags == expected, (string)"Segment flag for " +
+                id + " is different from expected " +
+                NStr::IntToString(flags) + " != " +
+                NStr::IntToString(expected));
+        count++;
+    }
+
+    BOOST_REQUIRE_EQUAL(ref_flags.size(), count);
+}
+
+BOOST_AUTO_TEST_CASE(TestPairedFlagsForPairedReadsFromTwoASN1Files) {
+
+    CNcbiIfstream istr1("data/paired_reads_1.asn");
+    CNcbiIfstream istr2("data/paired_reads_2.asn");
+    BOOST_REQUIRE(istr1);
+    BOOST_REQUIRE(istr2);
+    unordered_map<string, int> ref_flags = {
+        {"lcl|pair1", eFirstSegment},
+        {"lcl|pair2", eLastSegment},
+        {"lcl|incomplete1.1", fFirstSegmentFlag | fPartialFlag},
+        {"lcl|incomplete2.2", fLastSegmentFlag | fPartialFlag}
+    };
+    
+    CASN1InputSourceOMF input_source(istr1, istr2, 1000, false, true);
+
+    CRef<CBioseq_set> queries(new CBioseq_set);
+    input_source.GetNextNumSequences(*queries, 0);
+    // input file contains six sequences, but two should have been rejected
+    // in screening
+    BOOST_REQUIRE_EQUAL(queries->GetSeq_set().size(), 4u);
+
+    size_t count = 0;
+    for (auto it : queries->GetSeq_set()) {
+        string id = it->GetSeq().GetFirstId()->AsFastaString();
+        int flags = s_GetSegmentFlags(it->GetSeq());
+        int expected = ref_flags.at(id);
+
+        BOOST_REQUIRE_MESSAGE(flags == expected, (string)"Segment flag for " +
+                id + " is different from expected " +
+                NStr::IntToString(flags) + " != " +
+                NStr::IntToString(expected));
+        count++;
+    }
+
+    BOOST_REQUIRE_EQUAL(ref_flags.size(), count);
+}
+
+BOOST_AUTO_TEST_SUITE_END() // end of short_reads test suite
+
 
 BOOST_AUTO_TEST_SUITE(blastargs)
 

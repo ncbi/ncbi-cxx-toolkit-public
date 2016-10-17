@@ -53,6 +53,8 @@
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/general/User_object.hpp> // for has_pair
+#include <objects/general/User_field.hpp>
+#include <objects/general/Object_id.hpp>
 
 // Private BLAST API headers
 #include "blast_setup.hpp"
@@ -372,22 +374,46 @@ CBlastQuerySourceBioseqSet::GetTitle(int index) const
 bool
 CBlastQuerySourceBioseqSet::IsFirstOfAPair(int index) const
 {
+    return GetSegmentInfo(index) == eFirstSegment;
+}
+
+
+int
+CBlastQuerySourceBioseqSet::GetSegmentInfo(int index) const
+{
     // FIXME: this is a hack, a better field in Bioseq may be needed to store
     // this information
     CConstRef<CBioseq> bioseq = m_Bioseqs[index];
-    bool retval = false;
+    int retval = 0;
     if (!bioseq->CanGetDescr()) {
         return retval;
     }
     const CSeq_descr::Tdata& descr = bioseq->GetDescr().Get();
     ITERATE(CSeq_descr::Tdata, desc, descr) {
         if ((*desc)->Which() == CSeqdesc::e_User) {
-            retval = (*desc)->GetUser().HasField("has_pair");
+
+            if (!(*desc)->GetUser().IsSetType() ||
+                !(*desc)->GetUser().GetType().IsStr() ||
+                (*desc)->GetUser().GetType().GetStr() != "Mapping") {
+                continue;
+            }
+
+            if (!(*desc)->GetUser().HasField("has_pair")) {
+                break;
+            }
+
+            const CUser_field& field = (*desc)->GetUser().GetField("has_pair");
+            if (!field.GetData().IsInt()) {
+                break;
+            }
+
+            retval = field.GetData().GetInt();
         }
     }
 
     return retval;
 }
+
 
 void 
 CBlastQuerySourceBioseqSet::x_BioseqSanityCheck(const objects::CBioseq& bs) 

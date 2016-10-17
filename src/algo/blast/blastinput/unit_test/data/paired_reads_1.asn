@@ -1,0 +1,42 @@
+Seq-entry ::= seq {
+  id {
+    local str "pair1"
+  },
+  descr {
+    title "HWI-ST330:273:C19UAACXX:1:1307:6147:73672"
+  },
+  inst {
+    repr raw,
+    mol na,
+    length 100,
+    seq-data iupacna "GAATGTCCGTCTGGGTCTCCTTGTGCTGCGGTCCTGGCAACTCGTAGAATTTCTTACCAAAGTATCG"
+  }
+}
+Seq-entry ::= seq {
+  id {
+    local str "incomplete1.1"
+  },
+  descr {
+    title "HWI-ST330:273:C19UAACXX:1:1307:6147:73672"
+  },
+  inst {
+    repr raw,
+    mol na,
+    length 100,
+    seq-data iupacna "GAATGTCCGTCTGGGTCTCCTTGTGCTGCGGTCCTGGCAACTCGTAGAATTTCTTACCAAAGTATCG"
+  }
+}
+Seq-entry ::= seq {
+  id {
+    local str "incomplete2.1"
+  },
+  descr {
+    title "HWI-ST330:273:C19UAACXX:1:1307:6147:73672"
+  },
+  inst {
+    repr raw,
+    mol na,
+    length 100,
+    seq-data iupacna "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
+  }
+}

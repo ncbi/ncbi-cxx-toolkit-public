@@ -42,6 +42,7 @@
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
 
+#include <algo/blast/core/blast_query_info.h>
 #include <algo/blast/blastinput/blast_fasta_input.hpp>
 #include <algo/blast/blastinput/blast_input_aux.hpp>
 
@@ -617,10 +618,24 @@ CShortReadFastaInputSource::x_ReadFasta(CBioseq_set& bioseq_set)
     int current_read = 0;
     bool first_added = false;
 
-    // tag to indicate taht a sequence has a pair
-    CRef<CSeqdesc> seqdesc(new CSeqdesc);
-    seqdesc->SetUser().SetType().SetStr("Mapping");
-    seqdesc->SetUser().AddField("has_pair", true);
+    // tags to indicate paired sequences
+    CRef<CSeqdesc> seqdesc_first(new CSeqdesc);
+    seqdesc_first->SetUser().SetType().SetStr("Mapping");
+    seqdesc_first->SetUser().AddField("has_pair", eFirstSegment);
+
+    CRef<CSeqdesc> seqdesc_last(new CSeqdesc);
+    seqdesc_last->SetUser().SetType().SetStr("Mapping");
+    seqdesc_last->SetUser().AddField("has_pair", eLastSegment);
+
+    CRef<CSeqdesc> seqdesc_first_partial(new CSeqdesc);
+    seqdesc_first_partial->SetUser().SetType().SetStr("Mapping");
+    seqdesc_first_partial->SetUser().AddField("has_pair",
+                                              fFirstSegmentFlag | fPartialFlag);
+
+    CRef<CSeqdesc> seqdesc_last_partial(new CSeqdesc);
+    seqdesc_last_partial->SetUser().SetType().SetStr("Mapping");
+    seqdesc_last_partial->SetUser().AddField("has_pair",
+                                             fLastSegmentFlag | fPartialFlag);
 
     while (index < m_NumSeqsInBatch && !m_LineReader->AtEOF()) {
         ++(*m_LineReader);
@@ -639,7 +654,6 @@ CShortReadFastaInputSource::x_ReadFasta(CBioseq_set& bioseq_set)
                 CBioseq& bioseq = m_Entries[index]->SetSeq();
                 bioseq.SetId().clear();
                 bioseq.SetId().push_back(m_SeqIds[index]);
-                bioseq.SetDescr().Reset();
                 bioseq.SetInst().SetLength(start);
                 m_Sequence[start] = 0;
                 bioseq.SetInst().SetSeq_data().SetIupacna(CIUPACna(
@@ -651,9 +665,19 @@ CShortReadFastaInputSource::x_ReadFasta(CBioseq_set& bioseq_set)
 
                 if (m_IsPaired && (current_read & 1) == 1) {
                     if (first_added) {
-                        // add the tag for paired reads
+                        // set paired tags: both sequences of the pair passed
+                        // validation
                         bioseq_set.SetSeq_set().back()->SetSeq().SetDescr().
-                            Set().push_back(seqdesc);
+                            Set().push_back(seqdesc_first);
+
+                        m_Entries[index]->SetSeq().SetDescr().Set().push_back(
+                                                               seqdesc_last);
+                    }
+                    else {
+                        // only the second sequence of the pair passed
+                        // validation
+                        m_Entries[index]->SetSeq().SetDescr().Set().push_back(
+                                                       seqdesc_last_partial);
                     }
                     first_added = false;
                 }
@@ -664,6 +688,13 @@ CShortReadFastaInputSource::x_ReadFasta(CBioseq_set& bioseq_set)
                 index++;
             }
             else {
+                if (first_added) {
+                    // only the first sequence of the pair passed validation
+                    bioseq_set.SetSeq_set().back()->SetSeq().SetDescr().
+                        Set().push_back(seqdesc_first_partial);
+                    
+                }
+
                 m_NumRejected++;
                 first_added = false;
             }
@@ -698,10 +729,11 @@ CShortReadFastaInputSource::x_ReadFasta(CBioseq_set& bioseq_set)
 
     if (m_Validate && (!x_ValidateSequence(m_Sequence.data(), start))) {
         m_NumRejected++;
-        if (m_IsPaired && (index & 1)) {
-            m_NumRejected++;
-            bioseq_set.SetSeq_set().back().Reset();
-            bioseq_set.SetSeq_set().pop_back();
+        if (m_IsPaired) { 
+            if (first_added && (current_read & 1)  == 1) {
+                bioseq_set.SetSeq_set().back()->SetSeq().SetDescr().Set().
+                    push_back(seqdesc_first_partial);
+            }
         }
 
         return;
@@ -710,18 +742,22 @@ CShortReadFastaInputSource::x_ReadFasta(CBioseq_set& bioseq_set)
     if (m_IsPaired && (current_read & 1) == 1 && first_added) {
         // add the tag for paired reads
         bioseq_set.SetSeq_set().back()->SetSeq().SetDescr().Set().
-            push_back(seqdesc);
+            push_back(seqdesc_first);
     }
 
     // set up the last sequence read
     CBioseq& bioseq = m_Entries[index]->SetSeq();
     bioseq.SetId().clear();
     bioseq.SetId().push_back(m_SeqIds[index]);
-    bioseq.SetDescr().Reset();
     bioseq.SetInst().SetLength(start);
     m_Sequence[start] = 0;
     bioseq.SetInst().SetSeq_data().SetIupacna(CIUPACna(&m_Sequence[0]));
     bioseq_set.SetSeq_set().push_back(m_Entries[index]);    
+
+    if (m_IsPaired && (current_read & 1) == 1) {
+        bioseq_set.SetSeq_set().back()->SetSeq().SetDescr().Set().
+            push_back(first_added ? seqdesc_last : seqdesc_last_partial);
+    }
 }
 
 
@@ -730,6 +766,16 @@ CShortReadFastaInputSource::x_ReadFastc(CBioseq_set& bioseq_set)
 {
     TSeqPos index = 0;
     string id;
+
+    // tags to indicate paired sequences
+    CRef<CSeqdesc> seqdesc_first(new CSeqdesc);
+    seqdesc_first->SetUser().SetType().SetStr("Mapping");
+    seqdesc_first->SetUser().AddField("has_pair", eFirstSegment);
+
+    CRef<CSeqdesc> seqdesc_last(new CSeqdesc);
+    seqdesc_last->SetUser().SetType().SetStr("Mapping");
+    seqdesc_last->SetUser().AddField("has_pair", eLastSegment);
+
     while (index < m_NumSeqsInBatch && !m_LineReader->AtEOF()) {
         ++(*m_LineReader);
         m_Line = **m_LineReader;
@@ -769,18 +815,20 @@ CShortReadFastaInputSource::x_ReadFastc(CBioseq_set& bioseq_set)
             size_t first_len = p;
             size_t second_len = m_Line.length() - p - 2;
 
+            // FIXME: Both reads are rejected if only one fails validation
             if (x_ValidateSequence(first, first_len) &&
                 x_ValidateSequence(second, second_len)) {
 
                 {{
                     CBioseq& bioseq = m_Entries[index]->SetSeq();
                     bioseq.SetId().clear();
-                    bioseq.SetDescr().Reset();
                     m_SeqIds[index]->Set(CSeq_id::e_Local, id + ".1");
                     bioseq.SetId().push_back(m_SeqIds[index]);
                     bioseq.SetInst().SetLength(first_len);
                     first[first_len] = 0;
                     bioseq.SetInst().SetSeq_data().SetIupacna(CIUPACna(first));
+
+                    bioseq.SetDescr().Set().push_back(seqdesc_first);
                 }}
                 // add a sequence to the batch
                 bioseq_set.SetSeq_set().push_back(m_Entries[index]);
@@ -789,12 +837,13 @@ CShortReadFastaInputSource::x_ReadFastc(CBioseq_set& bioseq_set)
                 {{
                     CBioseq& bioseq = m_Entries[index]->SetSeq();
                     bioseq.SetId().clear();
-                    bioseq.SetDescr().Reset();
                     m_SeqIds[index]->Set(CSeq_id::e_Local, id + ".2");
                     bioseq.SetId().push_back(m_SeqIds[index]);
                     bioseq.SetInst().SetLength(second_len);
                     second[second_len] = 0;
                     bioseq.SetInst().SetSeq_data().SetIupacna(CIUPACna(second));
+
+                    bioseq.SetDescr().Set().push_back(seqdesc_last);
                 }}
                 // add a sequence to the batch
                 bioseq_set.SetSeq_set().push_back(m_Entries[index]);
@@ -815,9 +864,24 @@ CShortReadFastaInputSource::x_ReadFastq(CBioseq_set& bioseq_set)
     int current_read = 0;
     bool first_added = false;
 
-    CRef<CSeqdesc> seqdesc(new CSeqdesc);
-    seqdesc->SetUser().SetType().SetStr("Mapping");
-    seqdesc->SetUser().AddField("has_pair", true);
+    // tags to indicate paired sequences
+    CRef<CSeqdesc> seqdesc_first(new CSeqdesc);
+    seqdesc_first->SetUser().SetType().SetStr("Mapping");
+    seqdesc_first->SetUser().AddField("has_pair", eFirstSegment);
+
+    CRef<CSeqdesc> seqdesc_last(new CSeqdesc);
+    seqdesc_last->SetUser().SetType().SetStr("Mapping");
+    seqdesc_last->SetUser().AddField("has_pair", eLastSegment);
+
+    CRef<CSeqdesc> seqdesc_first_partial(new CSeqdesc);
+    seqdesc_first_partial->SetUser().SetType().SetStr("Mapping");
+    seqdesc_first_partial->SetUser().AddField("has_pair",
+                                              fFirstSegmentFlag | fPartialFlag);
+
+    CRef<CSeqdesc> seqdesc_last_partial(new CSeqdesc);
+    seqdesc_last_partial->SetUser().SetType().SetStr("Mapping");
+    seqdesc_last_partial->SetUser().AddField("has_pair",
+                                             fLastSegmentFlag | fPartialFlag);
 
     m_Index = 0;
     while (m_Index < (int)m_NumSeqsInBatch && !m_LineReader->AtEOF()) {
@@ -832,7 +896,15 @@ CShortReadFastaInputSource::x_ReadFastq(CBioseq_set& bioseq_set)
             if (m_IsPaired && (current_read & 1) == 1) {
                 if (first_added) {
                     // this field indicates that this sequence has a pair
-                    bioseq_set.SetSeq_set().back()->SetSeq().SetDescr().Set().push_back(seqdesc);
+                    bioseq_set.SetSeq_set().back()->SetSeq().SetDescr().Set().
+                        push_back(seqdesc_first);
+
+                    m_Entries[index]->SetSeq().SetDescr().Set().push_back(
+                                                                seqdesc_last);
+                }
+                else {
+                    m_Entries[index]->SetSeq().SetDescr().Set().push_back(
+                                                        seqdesc_last_partial);
                 }
                 first_added = false;
             }
@@ -840,6 +912,11 @@ CShortReadFastaInputSource::x_ReadFastq(CBioseq_set& bioseq_set)
             bioseq_set.SetSeq_set().push_back(m_Entries[index]);
         }
         else {
+            if (first_added) {
+                bioseq_set.SetSeq_set().back()->SetSeq().SetDescr().Set().
+                    push_back(seqdesc_first_partial);
+            }
+
             m_NumRejected++;
             first_added = false;
         }
@@ -893,7 +970,6 @@ CShortReadFastaInputSource::x_ReadFastaOneSeq(CRef<ILineReader> line_reader)
         CBioseq& bioseq = m_Entries[m_Index]->SetSeq();
         bioseq.SetId().clear();
         bioseq.SetId().push_back(m_SeqIds[m_Index]);
-        bioseq.SetDescr().Reset();
         bioseq.SetInst().SetLength(start);
         m_Sequence[start] = 0;
         bioseq.SetInst().SetSeq_data().SetIupacna(CIUPACna(&m_Sequence[0]));
@@ -947,7 +1023,6 @@ CShortReadFastaInputSource::x_ReadFastqOneSeq(CRef<ILineReader> line_reader)
         CBioseq& bioseq = m_Entries[m_Index]->SetSeq();
         bioseq.SetId().clear();
         bioseq.SetId().push_back(m_SeqIds[m_Index]);
-        bioseq.SetDescr().Reset();
         bioseq.SetInst().SetLength(line.length());
         bioseq.SetInst().SetSeq_data().SetIupacna(CIUPACna(line.data()));
 
@@ -992,9 +1067,24 @@ CShortReadFastaInputSource::x_ReadFromTwoFiles(CBioseq_set& bioseq_set,
                    "used with two files");
     }
 
-    CRef<CSeqdesc> seqdesc(new CSeqdesc);
-    seqdesc->SetUser().SetType().SetStr("Mapping");
-    seqdesc->SetUser().AddField("has_pair", true);
+    // tags to indicate paired sequences
+    CRef<CSeqdesc> seqdesc_first(new CSeqdesc);
+    seqdesc_first->SetUser().SetType().SetStr("Mapping");
+    seqdesc_first->SetUser().AddField("has_pair", eFirstSegment);
+
+    CRef<CSeqdesc> seqdesc_last(new CSeqdesc);
+    seqdesc_last->SetUser().SetType().SetStr("Mapping");
+    seqdesc_last->SetUser().AddField("has_pair", eLastSegment);
+
+    CRef<CSeqdesc> seqdesc_first_partial(new CSeqdesc);
+    seqdesc_first_partial->SetUser().SetType().SetStr("Mapping");
+    seqdesc_first_partial->SetUser().AddField("has_pair",
+                                              fFirstSegmentFlag | fPartialFlag);
+
+    CRef<CSeqdesc> seqdesc_last_partial(new CSeqdesc);
+    seqdesc_last_partial->SetUser().SetType().SetStr("Mapping");
+    seqdesc_last_partial->SetUser().AddField("has_pair",
+                                             fLastSegmentFlag | fPartialFlag);
 
     int index1;
     int index2;
@@ -1011,24 +1101,27 @@ CShortReadFastaInputSource::x_ReadFromTwoFiles(CBioseq_set& bioseq_set,
             index2 = x_ReadFastqOneSeq(m_SecondLineReader);
         }
 
-        // if both sequences were read and sequence ids match, mark the pair
-        // in the first sequence
-        if (index1 >= 0 && index2 >= 0) {
-            const CSeq_id* id1 = m_Entries[index1]->GetSeq().GetFirstId();
-            const CSeq_id* id2 = m_Entries[index2]->GetSeq().GetFirstId();
-            ASSERT(id1 && id2);
-            
-            if (id1->Match(*id2)) {
-                CBioseq& bioseq = m_Entries[index1]->SetSeq();
-                bioseq.SetDescr().Set().push_back(seqdesc);
-            }
-        }
-
         if (index1 >= 0) {
+            if (index2 >= 0) {
+                m_Entries[index1]->SetSeq().SetDescr().Set().push_back(
+                                                              seqdesc_first);
+            }
+            else {
+                m_Entries[index1]->SetSeq().SetDescr().Set().push_back(
+                                                      seqdesc_first_partial);
+            }
             bioseq_set.SetSeq_set().push_back(m_Entries[index1]);
         }
 
         if (index2 >= 0) {
+            if (index1 >= 0) {
+                m_Entries[index2]->SetSeq().SetDescr().Set().push_back(
+                                                               seqdesc_last);
+            }
+            else {
+                m_Entries[index2]->SetSeq().SetDescr().Set().push_back(
+                                                       seqdesc_last_partial);
+            }
             bioseq_set.SetSeq_set().push_back(m_Entries[index2]);
         }
     }

@@ -151,9 +151,15 @@ public:
     virtual string GetTitle(int index) const;
 
     /// Is this sequence followed by a mate (for mapping short reads)
-    virtual bool IsFirstOfAPair(int index) const
+    NCBI_DEPRECATED virtual bool IsFirstOfAPair(int index) const
     { NCBI_THROW(CException, eInvalid, "Function "
                  "CBlasyQuerySourceOM::IsFirstOfAPair was not implemented");}
+
+    /// Get segment information (for mapping paired short reads)
+    virtual int GetSegmentInfo(int index) const
+    { NCBI_THROW(CException, eInvalid, "Function "
+                 "CBlasyQuerySourceOM::GetSegmentInfo was not implemented");}
+
     
 protected:
     /// Reference to input CBlastQueryVector (or empty if not used)

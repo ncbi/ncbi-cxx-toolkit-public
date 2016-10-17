@@ -258,10 +258,12 @@ SetupQueryInfo_OMF(const IBlastQuerySource& queries,
         }
 
         // mark queries that have pairs (for mapping)
-        if (Blast_ProgramIsMapping(prog) && queries.IsFirstOfAPair(j)) {
+        if (Blast_ProgramIsMapping(prog)) {
             _ASSERT(!translate);
-            query_info->contexts[ctx_index].has_pair = true;
-            query_info->contexts[ctx_index + 1].has_pair = true;
+
+            int seg_flags = queries.GetSegmentInfo(j);
+            query_info->contexts[ctx_index].segment_flags = seg_flags;
+            query_info->contexts[ctx_index + 1].segment_flags = seg_flags;
         }
         ctx_index += kNumContexts;
     }

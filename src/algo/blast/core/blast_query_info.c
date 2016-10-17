@@ -92,6 +92,10 @@ BlastQueryInfo* BlastQueryInfoNew(EBlastProgramType program, int num_queries)
             ASSERT(retval->contexts[i].frame != INT1_MAX);
 
             retval->contexts[i].is_valid = TRUE;
+
+            if (Blast_ProgramIsMapping(program)) {
+                retval->contexts[i].segment_flags = eNoSegments;
+            }
         }
     }
 

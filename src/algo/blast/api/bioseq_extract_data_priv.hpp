@@ -180,7 +180,11 @@ public:
     virtual string GetTitle(int index) const;
 
     /// Is this sequence followed by a mate (for mapping short reads)
-    virtual bool IsFirstOfAPair(int index) const;
+    NCBI_DEPRECATED virtual bool IsFirstOfAPair(int index) const;
+
+    /// Get segment information (for mapping paired short reads)
+    virtual int GetSegmentInfo(int index) const;
+
 
 private:
     /// True if the data contained in this object is protein
