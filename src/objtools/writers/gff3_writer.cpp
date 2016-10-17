@@ -220,25 +220,19 @@ string sBestMatchType(
     const char* strCdnaMatch     = "cDNA_match";
 
     CSeq_id::EAccessionInfo targetInfo = source.IdentifyAccession();
-    CSeq_id::EAccessionInfo sourceInfo =target.IdentifyAccession();
+    CSeq_id::EAccessionInfo sourceInfo = target.IdentifyAccession();
 
 
     if (targetInfo & CSeq_id::fAcc_prot) {
         return strProtMatch;
     }
+
     if ((targetInfo & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_est) {
         return strEstMatch;
     }
-    if ((targetInfo & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_mrna) {
-        return strCdnaMatch;
-    }
-    if ((targetInfo & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_tsa) {
-        return strCdnaMatch;
-    }
-    if (sourceInfo & CSeq_id::fAcc_prot) {
-        return strTransNucMatch;
-    }
-    return "match";
+
+    return strCdnaMatch;
+
 }
     
 
@@ -881,8 +875,7 @@ bool CGff3Writer::xAssignAlignmentDensegType(
         }
     }
     catch(std::exception&) {};
-    CConstRef<CSeq_id> pTargetId = targetIdH.GetSeqId();
-    record.SetType(sBestMatchType(*pSourceId, *pTargetId));
+    record.SetType("match");
     return true;
 }
 
