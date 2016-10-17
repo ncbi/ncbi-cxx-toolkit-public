@@ -67,7 +67,7 @@ private:
     bool x_FetchAccessionVersion(const CSeq_align& align, 
         string& accver);
 
-    CObjectIStream* x_InitInputStream(const CArgs& args) const;
+    CObjectIStream* x_InitInputAnnotStream(const CArgs& args) const;
     CObjectIStream* x_InitInputStream(const string& filename,
     const ESerialDataFormat serial) const;
     bool x_IsComparison(const CSeq_annot& seq_annot) const;
@@ -79,22 +79,21 @@ private:
     bool x_IsGoodGloballyReciprocalBest(const CSeq_annot& seq_annot) const;
     bool x_IsGoodGloballyReciprocalBest(const CUser_object& user_obj) const;
     bool x_IsProteinMatch(const CSeq_annot& seq_annot) const;
+
+    const CSeq_feat& x_GetQuery(const CSeq_annot& compare_annot) const;
+    const CSeq_feat& x_GetSubject(const CSeq_annot& compare_annot) const;
+
+
     CAnnotdesc::TName x_GetComparisonClass(const CSeq_annot& seq_annot) const;
-    bool x_GetGGRBThreshold(const CSeq_annot& annot, double& threshold) const;
-    bool x_GetGGRBThreshold(const CUser_object& user_object, double& threshold) const;
     string x_GetAccessionVersion(const CSeq_feat& seq_feat) const;
     string x_GetAccessionVersion(const CUser_object& obj) const;
-    string x_GetAccessionVersion(const CSeq_annot& seq_annot) const;
 
     string x_GetLocalID(const CUser_object& obj) const;
     string x_GetLocalID(const CSeq_feat& seq_feat) const;
-    string x_GetLocalID(const CSeq_annot& seq_annot) const;
 
-    string x_GetProductGI(const CSeq_annot& seq_annot) const;
     string x_GetProductGI(const CSeq_feat& seq_feat) const;
 
     void x_AddColumn(const string& colName); 
-
     void x_AppendColumnValue(const string& colName,
                             const string& colVal);
 
@@ -250,65 +249,6 @@ bool CProteinMatchApp::x_HasNovelQuery(const CSeq_annot& seq_annot) const
 }
 
 
-
-// Return the threshold for the match
-bool CProteinMatchApp::x_GetGGRBThreshold(const CSeq_annot& seq_annot, double& threshold) const 
-{
-    if (seq_annot.IsSetDesc()) {
-
-        ITERATE(CAnnot_descr::Tdata, desc_it, seq_annot.GetDesc().Get()) {
-            if (!(*desc_it)->IsUser()) {
-                continue;
-            }
-
-            const CUser_object& user = (*desc_it)->GetUser();
-            if (!user.IsSetData() ||
-                !user.IsSetType() ||
-                user.GetType().GetStr() != "Attributes") {
-                continue;
-            }
-
-            if (x_GetGGRBThreshold(user, threshold)) {
-                return true;
-            }
-        }
-    }
-
-    return false;
-}
-
-
-
-// Return the threshold for the match
-bool CProteinMatchApp::x_GetGGRBThreshold(const CUser_object& user_obj, double& threshold) const
-{
-   if (!user_obj.IsSetType() ||
-       !user_obj.IsSetData() ||
-        user_obj.GetType().GetStr() != "Attributes") {
-       return false;
-   }
-
-   ITERATE(CUser_object::TData, it, user_obj.GetData()) {
-
-       const CUser_field& uf = **it;
-
-       if (!uf.IsSetData() ||
-           !uf.IsSetLabel() ||
-           !uf.GetLabel().IsStr() ||
-            uf.GetLabel().GetStr() != "good_globally_reciprocal_best_threshold") {
-           continue;
-       }
-
-       if (uf.GetData().IsReal()) {
-           threshold = uf.GetData().GetReal();
-           return true;
-       }
-   }
-
-   return false;
-}
-
-
 CAnnotdesc::TName CProteinMatchApp::x_GetComparisonClass(const CSeq_annot& seq_annot) const 
 {
     if (seq_annot.IsSetDesc() &&
@@ -321,12 +261,24 @@ CAnnotdesc::TName CProteinMatchApp::x_GetComparisonClass(const CSeq_annot& seq_a
 }
 
 
+const CSeq_feat& CProteinMatchApp::x_GetQuery(const CSeq_annot& compare_annot) const
+{
+    return *(compare_annot.GetData().GetFtable().front());
+}
+
+
+const CSeq_feat& CProteinMatchApp::x_GetSubject(const CSeq_annot& compare_annot) const
+{
+    return *(compare_annot.GetData().GetFtable().back());
+}
+
+
 bool CProteinMatchApp::x_IsProteinMatch(const CSeq_annot& seq_annot) const
 {
     return x_IsCdsComparison(seq_annot) && x_IsGoodGloballyReciprocalBest(seq_annot);
 }
 
-
+/*
 string CProteinMatchApp::x_GetAccessionVersion(const CSeq_annot& seq_annot) const 
 {
     string result = "";
@@ -342,8 +294,7 @@ string CProteinMatchApp::x_GetAccessionVersion(const CSeq_annot& seq_annot) cons
 
     return result;
 }
-
-
+*/
 
 string CProteinMatchApp::x_GetAccessionVersion(const CSeq_feat& seq_feat) const 
 {
@@ -357,10 +308,10 @@ string CProteinMatchApp::x_GetAccessionVersion(const CSeq_feat& seq_feat) const
                 }
         }
     }
-
     return "";
 }
 
+/*
 string CProteinMatchApp::x_GetProductGI(const CSeq_annot& seq_annot) const
 {
     string result = "";
@@ -376,6 +327,7 @@ string CProteinMatchApp::x_GetProductGI(const CSeq_annot& seq_annot) const
 
     return result;
 }
+*/
 
 string CProteinMatchApp::x_GetProductGI(const CSeq_feat& seq_feat) const 
 {
@@ -396,7 +348,7 @@ string CProteinMatchApp::x_GetProductGI(const CSeq_feat& seq_feat) const
     return result;
 }
 
-
+/*
 string CProteinMatchApp::x_GetLocalID(const CSeq_annot& seq_annot) const 
 {
     string result = "";
@@ -412,7 +364,7 @@ string CProteinMatchApp::x_GetLocalID(const CSeq_annot& seq_annot) const
 
     return result;
 }
-
+*/
 
 string CProteinMatchApp::x_GetLocalID(const CSeq_feat& seq_feat) const 
 {
@@ -497,9 +449,9 @@ void CProteinMatchApp::Init()
             "Generate protein match table from the Seq-annots produced by the compare_annots utility",
             false);
 
-    arg_desc->AddKey("i",
+    arg_desc->AddKey("annot-input",
             "InputFile",
-            "Path to ASN.1 input file",
+            "Path to annotation input file",
             CArgDescriptions::eInputFile);
 
     arg_desc->AddKey("aln-input",
@@ -546,7 +498,7 @@ int CProteinMatchApp::Run()
         return 2;
     }
 
-    // Generate a mMatchTable (of type CRef<CSeq_table> from the list of Seq-annots. 
+    // Generate mMatchTable (of type CRef<CSeq_table>) from the list of Seq-annots. 
     x_GenerateMatchTable(nuc_match_info,
                          protein_matches, 
                          new_proteins_ids, 
@@ -592,11 +544,10 @@ bool CProteinMatchApp::x_TryProcessAlignmentFile(
     if (!x_FetchAccessionVersion(*pSeqAlign, accver)) {
         return false;
     }
-    vector<string> accver_vector;
-    NStr::Split(accver, ".", accver_vector);
+    vector<string> accver_vec;
+    NStr::Split(accver, ".", accver_vec);
 
-    nuc_match_info.accession = accver_vector[0];
-
+    nuc_match_info.accession = accver_vec[0];
 
     return true;
 }
@@ -679,7 +630,7 @@ bool CProteinMatchApp::x_TryProcessAnnotFile(
     set<string> new_protein_skip;
     set<string> dead_protein_skip;
 
-    unique_ptr<CObjectIStream> pObjIstream(x_InitInputStream(args));
+    unique_ptr<CObjectIStream> pObjIstream(x_InitInputAnnotStream(args));
 
     list<CRef<CSeq_annot>> seq_annots;
     while (!pObjIstream->EndOfData()) {
@@ -815,15 +766,16 @@ bool CProteinMatchApp::x_GenerateMatchTable(
     TMatches::const_iterator cit;
 
     for (cit=matches.begin(); cit != matches.end(); ++cit) {
-        string localID = x_GetLocalID(**cit);
-        string gi = x_GetProductGI(**cit);
-        string accver = x_GetAccessionVersion(**cit);
+
+        const CSeq_feat& query = x_GetQuery(**cit);
+        const CSeq_feat& subject = x_GetSubject(**cit);
+
+        string localID = x_GetLocalID(query);
+        const string accver = x_GetAccessionVersion(subject);
 
         vector<string> accver_vec;
         NStr::Split(accver, ".", accver_vec);
 
-
-        //string compClass = x_GetComparisonClass(**cit);
         string status = (x_GetComparisonClass(**cit) == "perfect") ? "Same" : "Changed";
 
         if (localID.empty()) {
@@ -837,6 +789,7 @@ bool CProteinMatchApp::x_GenerateMatchTable(
 
         mMatchTable->SetNum_rows(mMatchTable->GetNum_rows()+1);
     }
+
     for (string localID : new_proteins) {
         x_AppendColumnValue("NA_Accession", nuc_match_info.accession);
         x_AppendColumnValue("PROT_Accession", "---");
@@ -883,31 +836,6 @@ void CProteinMatchApp::x_WriteTable(
 
     const unsigned int numRows = mMatchTable->GetNum_rows();
 
-/*
-    // LocalIDToRowIndex maps each local ID to its row index
-    // This is used to order the rows by local ID.
-    map<string, unsigned int> LocalIDToRowIndex;
-    {
-        const CSeqTable_column& column = mMatchTable->GetColumn("LocalID");
-        for (unsigned int row_index=0; row_index<numRows; ++row_index) {
-          const string* pValue = column.GetStringPtr(row_index);
-          LocalIDToRowIndex[*pValue] = row_index;
-        }
-    }
-
-
-    // By iterating over the LocalIDToRowIndex map, 
-    // we order the rows by local ID
-   for (auto& id_index_pair : LocalIDToRowIndex) {
-        unsigned int row_index = id_index_pair.second;
-        for (const auto& column_name : colNames) {
-            const CSeqTable_column& column = mMatchTable->GetColumn(column_name);
-            const string* pValue = column.GetStringPtr(row_index);
-            out << *pValue << "\t";
-        }
-        out << '\n';
-    } // iterate over rows
-*/
    for (int row_index=0; row_index<numRows; ++row_index) { 
         for (const auto& column_name : colNames) {
             const CSeqTable_column& column = mMatchTable->GetColumn(column_name);
@@ -946,16 +874,14 @@ CObjectIStream* CProteinMatchApp::x_InitInputStream(const string& filename,
 }
 
 
-CObjectIStream* CProteinMatchApp::x_InitInputStream(const CArgs& args) const
+CObjectIStream* CProteinMatchApp::x_InitInputAnnotStream(const CArgs& args) const
 {
     // Defaults to binary input
     ESerialDataFormat serial = eSerial_AsnBinary;
     if (args["text-input"]) {
         serial = eSerial_AsnText;
     }
-    
-
-    string infile = args["i"].AsString();
+    string infile = args["annot-input"].AsString();
 
     return x_InitInputStream(infile, serial);
 }
@@ -975,6 +901,7 @@ CNcbiOstream* CProteinMatchApp::x_InitOutputStream(const CArgs& args)
                    eOutputError,
                    "Unable to open output file \"" + args["o"].AsString() + "\"");
     }
+
     return 0;
 }
 
