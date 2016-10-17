@@ -43,11 +43,11 @@ namespace NDirectNetStorageImpl
 class CObj : public SNetStorageObjectImpl, private IState, private ILocation
 {
 public:
-    CObj(ISelector::Ptr selector, bool remove_old_copy = false)
+    CObj(ISelector::Ptr selector, bool is_opened = false)
         : m_Selector(selector),
           m_State(this),
           m_Location(this),
-          m_RemoveOldCopy(remove_old_copy)
+          m_IsOpened(is_opened)
     {
         _ASSERT(m_Selector.get());
     }
@@ -107,7 +107,7 @@ private:
     ISelector::Ptr m_Selector;
     IState* m_State;
     ILocation* m_Location;
-    const bool m_RemoveOldCopy;
+    const bool m_IsOpened;
     bool m_CancelRelocate = false;
 };
 
