@@ -319,7 +319,7 @@ bool CBedFeatureRecord::SetThick(
     if (loc.IsPnt()) {
         const CSeq_point& thickPoint = loc.GetPnt();
         m_strThickStart = NStr::IntToString(thickPoint.GetPoint());
-        m_strThickEnd = NStr::IntToString(thickPoint.GetPoint());
+        m_strThickEnd = NStr::IntToString(thickPoint.GetPoint()+1);
         return true;
     }
     return false;
