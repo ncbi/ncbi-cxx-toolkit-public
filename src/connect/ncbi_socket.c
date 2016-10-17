@@ -2683,11 +2683,11 @@ static EIO_Status s_IsConnected(SOCK sock, const struct timeval* tv)
     EIO_Status  status = s_IsConnected_(sock, tv, &what, &unused, 0);
     if (s_ErrHook  &&  status != eIO_Success  &&  status != eIO_Timeout) {
         SSOCK_ErrInfo info;
+        char          addr[40];
         memset(&info, 0, sizeof(info));
         info.type = eSOCK_ErrIO;
         info.sock = sock;
         if (sock->port) {
-            char addr[40];
             SOCK_ntoa(sock->host, addr, sizeof(addr));
             info.host =       addr;
             info.port = sock->port;
@@ -3027,11 +3027,11 @@ static EIO_Status s_Read(SOCK    sock,
         &&  (status != eIO_Closed
              ||  !(sock->r_status == eIO_Success  &&  sock->eof))) {
         SSOCK_ErrInfo info;
+        char          addr[40];
         memset(&info, 0, sizeof(info));
         info.type = eSOCK_ErrIO;
         info.sock = sock;
         if (sock->port) {
-            char addr[40];
             SOCK_ntoa(sock->host, addr, sizeof(addr));
             info.host =       addr;
             info.port = sock->port;
@@ -3594,11 +3594,11 @@ static EIO_Status s_Write(SOCK        sock,
     EIO_Status status = s_Write_(sock, data, size, n_written, oob);
     if (s_ErrHook  &&  status != eIO_Success) {
         SSOCK_ErrInfo info;
+        char          addr[40];
         memset(&info, 0, sizeof(info));
         info.type = eSOCK_ErrIO;
         info.sock = sock;
         if (sock->port) {
-            char addr[40];
             SOCK_ntoa(sock->host, addr, sizeof(addr));
             info.host =       addr;
             info.port = sock->port;
@@ -3964,11 +3964,11 @@ static EIO_Status s_Close(SOCK sock)
     status = s_Close_(sock, 0/*orderly*/);
     if (s_ErrHook  &&  status != eIO_Success) {
         SSOCK_ErrInfo info;
+        char          addr[40];
         memset(&info, 0, sizeof(info));
         info.type = eSOCK_ErrIO;
         info.sock = sock;
         if (sock->port) {
-            char addr[40];
             SOCK_ntoa(sock->host, addr, sizeof(addr));
             info.host =       addr;
             info.port = sock->port;
@@ -4062,6 +4062,11 @@ static EIO_Status s_Connect_(SOCK            sock,
     } else
 #endif /*NCBI_OS_UNIX*/
     {
+        /* first, set the port to connect to (same port if zero) */
+        if (port)
+            sock->port = port;
+        else
+            assert(sock->port);
         /* get address of the remote host (assume the same host if NULL) */
         if (host && !(sock->host = s_gethostbyname(host, (ESwitch)sock->log))){
             CORE_LOGF_X(22, eLOG_Error,
@@ -4070,11 +4075,6 @@ static EIO_Status s_Connect_(SOCK            sock,
                          s_ID(sock, _id), MAXHOSTNAMELEN, host));
             return eIO_Unknown;
         }
-        /* set the port to connect to (same port if zero) */
-        if (port)
-            sock->port = port;
-        else
-            assert(sock->port);
         addrlen = (TSOCK_socklen_t) sizeof(addr.in);
 #ifdef HAVE_SIN_LEN
         addr.in.sin_len         = addrlen;
@@ -4300,22 +4300,16 @@ static EIO_Status s_Connect(SOCK            sock,
     EIO_Status status = s_Connect_(sock, host, port, timeout);
     if (status != eIO_Success) {
         SSOCK_ErrInfo info;
+        char          addr[40];
         memset(&info, 0, sizeof(info));
         info.type = eSOCK_ErrIO;
         info.sock = sock;
-        if (sock->port) {
-            char addr[40];
-            if (sock->host) {
-                SOCK_ntoa(sock->host, addr, sizeof(addr));
-                info.host = addr;
-            } else
-                info.host = host;
-            info.port = port;
-        }
-#ifdef NCBI_OS_UNIX
-        else
-            info.host = sock->path;
-#endif /*NCBI_OS_UNIX*/
+        if (sock->host) {
+            SOCK_ntoa(sock->host, addr, sizeof(addr));
+            info.host = addr;
+        } else
+            info.host = host;
+        info.port = port;
         info.status = status;
         s_ErrorCallback(&info);
     }
@@ -6268,11 +6262,11 @@ extern EIO_Status SOCK_Shutdown(SOCK      sock,
     status = s_Shutdown(sock, dir, SOCK_GET_TIMEOUT(sock, c));
     if (s_ErrHook  &&  status != eIO_Success) {
         SSOCK_ErrInfo info;
+        char          addr[40];
         memset(&info, 0, sizeof(info));
         info.type = eSOCK_ErrIO;
         info.sock = sock;
         if (sock->port) {
-            char addr[40];
             SOCK_ntoa(sock->host, addr, sizeof(addr));
             info.host =       addr;
             info.port = sock->port;
@@ -6484,11 +6478,11 @@ extern EIO_Status SOCK_Wait(SOCK            sock,
     status = s_Wait(sock, event, timeout);
     if (s_ErrHook  &&  status != eIO_Success  &&  status != eIO_Timeout) {
         SSOCK_ErrInfo info;
+        char          addr[40];
         memset(&info, 0, sizeof(info));
         info.type = eSOCK_ErrIO;
         info.sock = sock;
         if (sock->port) {
-            char addr[40];
             SOCK_ntoa(sock->host, addr, sizeof(addr));
             info.host =       addr;
             info.port = sock->port;
@@ -7586,8 +7580,8 @@ extern EIO_Status DSOCK_RecvMsg(SOCK            sock,
     status = s_RecvMsg(sock, buf, bufsize, msgsize, msglen,
                        sender_addr, sender_port);
     if (s_ErrHook  &&  status != eIO_Success) {
-        char          addr[40];
         SSOCK_ErrInfo info;
+        char          addr[40];
         memset(&info, 0, sizeof(info));
         info.type = eSOCK_ErrIO;
         info.sock = sock;
@@ -7629,8 +7623,8 @@ extern EIO_Status DSOCK_SendMsg(SOCK           sock,
 
     status = s_SendMsg(sock, host, port, data, datalen);
     if (s_ErrHook  &&  status != eIO_Success) {
-        char          addr[40];
         SSOCK_ErrInfo info;
+        char          addr[40];
         memset(&info, 0, sizeof(info));
         info.type = eSOCK_ErrIO;
         info.sock = sock;
