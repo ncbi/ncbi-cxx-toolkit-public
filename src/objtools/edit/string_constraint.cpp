@@ -106,38 +106,27 @@ bool CStringConstraint::DoesTextMatch (const string& text)
         NStr::ToLower(tmp);
     }
     
-    switch (m_MatchType) {
+    vector<string> tokens;
+    NStr::Tokenize(match, ",; ", tokens);
+    ITERATE(vector<string>, it, tokens) {
+        switch (m_MatchType) {
         case eMatchType_Contains: 
-            if (NStr::Find(tmp, match) != string::npos) {
-                rval = true;
-            }
+            rval |= (NStr::Find(tmp, *it) != string::npos);
             break;
         case eMatchType_Equals:
-            if (NStr::Equal(tmp, match)) {
-                rval = true;
-            }
+            rval |= NStr::Equal(tmp, *it);
             break;
         case eMatchType_StartsWith:
-            if (NStr::StartsWith(tmp, match)) {
-                rval = true;
-            }
+            rval |= NStr::StartsWith(tmp, *it);
             break;
         case eMatchType_EndsWith:
-            if (NStr::EndsWith(tmp, match)) {
-                rval = true;
-            }
+            rval |= NStr::EndsWith(tmp, *it);
             break;
         case eMatchType_IsOneOf:
-            {
-                vector<string> tokens;
-                NStr::Tokenize(match, ",; ", tokens);
-                ITERATE(vector<string>, it, tokens) {
-                    if (IsInRange(*it, tmp) || NStr::Equal(*it, tmp)) {
-                        rval = true;
-                        break;
-                    }
-                }
-            }
+            rval |= (IsInRange(*it, tmp) || NStr::Equal(*it, tmp));
+            break;
+        }
+        if (rval)
             break;
     }
     if (m_NotPresent) {
