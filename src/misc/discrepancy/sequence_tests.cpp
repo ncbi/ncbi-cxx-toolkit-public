@@ -316,15 +316,8 @@ DISCREPANCY_CASE(GAPS, CSeq_inst, eDisc | eSubmitter | eSmart, "Sequences with g
 {
     if (obj.IsSetRepr() && obj.GetRepr() == CSeq_inst::eRepr_delta) {
 
-        bool has_gaps = false;
-        if (obj.IsSetExt() && obj.GetExt().IsDelta()) {
-            ITERATE(CDelta_ext::Tdata, it, obj.GetExt().GetDelta().Get()) {
-                if ((*it)->IsLiteral() && (*it)->GetLiteral().IsSetSeq_data() && (*it)->GetLiteral().GetSeq_data().IsGap()) {
-                    has_gaps = true;
-                    break;
-                }
-            }
-        }
+        const CSeqSummary& sum = context.GetSeqSummary();
+        bool has_gaps = !!sum.Gaps;
 
         if (!has_gaps) {
             CConstRef<CBioseq> bioseq = context.GetCurrentBioseq();

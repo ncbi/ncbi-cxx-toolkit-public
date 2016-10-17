@@ -407,7 +407,7 @@ static void CountNucleotides(const CSeq_data& seq_data, TSeqPos len, CSeqSummary
         case CSeq_data::e_Ncbi2na:
             //cout << "> e_Ncbi2na\n";
             {
-                vector<char>::const_iterator& it = seq_data.GetNcbi2na().Get().begin();
+                vector<char>::const_iterator it = seq_data.GetNcbi2na().Get().begin();
                 unsigned char mask = 0xc0;
                 unsigned char shift = 6;
                 for (size_t n = 0; n < len; n++) {
@@ -439,7 +439,7 @@ static void CountNucleotides(const CSeq_data& seq_data, TSeqPos len, CSeqSummary
         case CSeq_data::e_Ncbi4na:
             //cout << "> e_Ncbi4na\n";
             {
-                vector<char>::const_iterator& it = seq_data.GetNcbi4na().Get().begin();
+                vector<char>::const_iterator it = seq_data.GetNcbi4na().Get().begin();
                 unsigned char mask = 0xf0;
                 unsigned char shift = 4;
                 for (size_t n = 0; n < len; n++) {
