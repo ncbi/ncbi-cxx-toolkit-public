@@ -319,7 +319,7 @@ bool CObj::EofImpl()
 ERW_Result CObj::WriteImpl(const void* buf, size_t count, size_t* bytes_written)
 {
     // If object already exists, it will be overwritten in the same backend
-    if (!Exists()) {
+    if (m_RemoveOldCopy && !Exists()) {
         m_Selector->Restart();
     }
 
