@@ -403,57 +403,139 @@ static void CountNucleotides(const CSeq_data& seq_data, TSeqPos len, CSeqSummary
         e_Gap           ///< gap types
     };
 */
-
     switch (seq_data.Which()) {
-        case CSeq_data::e_Iupacna:
-            //cout << "> e_Iupacna\n";
-            break;
         case CSeq_data::e_Ncbi2na:
             //cout << "> e_Ncbi2na\n";
-            break;
+            {
+                vector<char>::const_iterator& it = seq_data.GetNcbi2na().Get().begin();
+                unsigned char mask = 0xc0;
+                unsigned char shift = 6;
+                for (size_t n = 0; n < len; n++) {
+                    unsigned char c = ((*it) & mask) >> shift;
+                    mask >>= 2;
+                    shift -= 2;
+                    if (!mask) {
+                        mask = 0xc0;
+                        shift = 6;
+                        ++it;
+                    }
+                    switch (c) {
+                        case 0:
+                            ret.A++;
+                            break;
+                        case 1:
+                            ret.C++;
+                            break;
+                        case 2:
+                            ret.G++;
+                            break;
+                        case 3:
+                            ret.T++;
+                            break;
+                    }
+                }
+            }
+            return;
         case CSeq_data::e_Ncbi4na:
             //cout << "> e_Ncbi4na\n";
-            break;
+            {
+                vector<char>::const_iterator& it = seq_data.GetNcbi4na().Get().begin();
+                unsigned char mask = 0xf0;
+                unsigned char shift = 4;
+                for (size_t n = 0; n < len; n++) {
+                    unsigned char c = ((*it) & mask) >> shift;
+                    mask >>= 4;
+                    shift -= 4;
+                    if (!mask) {
+                        mask = 0xf0;
+                        shift = 4;
+                        ++it;
+                    }
+                    switch (c) {
+                        case 1:
+                            ret.A++;
+                            break;
+                        case 2:
+                            ret.C++;
+                            break;
+                        case 4:
+                            ret.G++;
+                            break;
+                        case 8:
+                            ret.T++;
+                            break;
+                        default:
+                            ret.Other++;
+                            break;
+                    }
+                }
+            }
+            return;
+        case CSeq_data::e_Iupacna:
+            //cout << "> e_Iupacna\n";
+            {
+                const string& s = seq_data.GetIupacna().Get();
+                for (size_t n = 0; n < len; n++) {
+                    switch (s[n]) {
+                        case 'A':
+                            ret.A++;
+                            break;
+                        case 'C':
+                            ret.C++;
+                            break;
+                        case 'G':
+                            ret.G++;
+                            break;
+                        case 'T':
+                            ret.T++;
+                            break;
+                        case 'N':
+                            ret.N++;
+                            ret.Other++;
+                            break;
+                        default:
+                            ret.Other++;
+                            break;
+                    }
+                }
+            }
+            return;
         case CSeq_data::e_Ncbi8na:
-            //cout << "> e_Ncbi8na\n";
-            break;
-        case CSeq_data::e_Ncbipna:
-            //cout << "> e_Ncbipna\n";
-            break;
+        case CSeq_data::e_Ncbipna:  // no test data available; resorting to "slow" method.
+            //cout << (seq_data.Which() == CSeq_data::e_Ncbi8na ? "> e_Ncbi8na\n" : "> e_Ncbipna\n");
+            {
+                CSeq_data iupacna;
+                if (!CSeqportUtil::Convert(seq_data, &iupacna, CSeq_data::e_Iupacna)) {
+                    return;
+                }
+                const string& s = iupacna.GetIupacna().Get();
+                for (size_t n = 0; n < len; n++) {
+                    switch (s[n]) {
+                        case 'A':
+                            ret.A++;
+                            break;
+                        case 'C':
+                            ret.C++;
+                            break;
+                        case 'G':
+                            ret.G++;
+                            break;
+                        case 'T':
+                            ret.T++;
+                            break;
+                        case 'N':
+                            ret.N++;
+                            ret.Other++;
+                            break;
+                        default:
+                            ret.Other++;
+                            break;
+                    }
+                }
+            }
+            return;
         default:
             return;    
-    }
-
-    CSeq_data as_iupacna;
-    TSeqPos nconv = CSeqportUtil::Convert(seq_data, &as_iupacna, CSeq_data::e_Iupacna);
-    if (nconv == 0) {
-        return;
-    }
-    const string& iupacna_str = as_iupacna.GetIupacna().Get();
-
-    for (TSeqPos n = 0; n < len; n++) {
-        switch (iupacna_str[n])
-        {
-            case 'A':
-                ret.A++;
-                break;
-            case 'C':
-                ret.C++;
-                break;
-            case 'G':
-                ret.G++;
-                break;
-            case 'T':
-                ret.T++;
-                break;
-            case 'N':
-                ret.N++;
-                ret.Other++;
-                break;
-            default:
-                ret.Other++;
-                break;
-        }
     }
 }
 
