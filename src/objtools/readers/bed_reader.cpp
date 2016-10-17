@@ -728,7 +728,7 @@ void CBedReader::xSetFeatureLocationCds(
         pErr->Throw();
     }
     try {
-        to = NStr::StringToInt(fields[7]);
+        to = NStr::StringToInt(fields[7]) - 1;
     }
     catch (std::exception&) {
         AutoPtr<CObjReaderLineException> pErr(
