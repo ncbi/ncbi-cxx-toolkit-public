@@ -1997,6 +1997,10 @@ CNcbiBoostReporter::do_confirmation_report(but::test_unit const&  tu,
                 ostr << "*** Skipped some tests\n";
             }
         }
+        // Boost.Test 3.x (from Boost 1.59+) treats skipped tests as errors.
+        // Override that treatment both here (to avoid a claim that errors
+        // occurred) and in main (to yield a sane exit code regardless of
+        // report level).
         const_cast<bool&>(tr.p_skipped.get()) = false;
         const_cast<but::counter_t&>(tr.p_test_cases_skipped.get()) = 0;
     }
@@ -2291,6 +2295,18 @@ main(int argc, char* argv[])
             !runtime_config::no_result_code()
 #endif
             ) {
+#if BOOST_VERSION >= 105900
+            // Boost.Test 3.x (from Boost 1.59+) treats skipped tests
+            // as errors.  Override that treatment both here (to yield
+            // a sane exit code regardless of report level) and in
+            // CNcbiBoostReporter::do_confirmation_report (to avoid a
+            // claim that errors occurred).
+            but::test_results const& tr
+                = but::results_collector.results(
+                    framework::master_test_suite().p_id);
+            const_cast<bool&>(tr.p_skipped.get()) = false;
+            const_cast<but::counter_t&>(tr.p_test_cases_skipped.get()) = 0;
+#endif
             result_code = results_collector.results( framework::master_test_suite().p_id ).result_code();
             if (!NCBI_NS_NCBI::s_GetTestApp().HasTestErrors()
                 &&  NCBI_NS_NCBI::s_GetTestApp().HasTestTimeouts())
