@@ -9,29 +9,29 @@ digraph NetScheduleNew {
 
     None        -> Pending          [ label = "SUBMIT" ];
 
-    Pending     -> Running          [ label = "GET\nWGET\nJXCG" ];
+    Pending     -> Running          [ label = "GET[2]\nWGET\nJXCG" ];
     Pending     -> Canceled         [ label = "C" ];
-    Pending     -> Done             [ label = "PUT\nJXCG" ];
+    Pending     -> Done             [ label = "PUT[2]\nJXCG" ];
 
     Running     -> Pending          [ label = "RETURN" ];
     Running     -> Pending          [ label = "RESCHEDULE" ];
     Running     -> Canceled         [ label = "C" ];
-    Running     -> Done             [ label = "PUT\nJXCG" ];
+    Running     -> Done             [ label = "PUT[2]\nJXCG" ];
     Running     -> Tries            [ label = "run timeout" ];
-    Running     -> Tries            [ label = "FPUT" ];
+    Running     -> Tries            [ label = "FPUT[2]" ];
     Running     -> Tries            [ label = "CLRN\nnew session", style = "dashed" ];
 
     Tries       -> Failed;
     Tries       -> Pending;
 
-    Failed      -> Reading          [ label = "READ" ];
+    Failed      -> Reading          [ label = "READ[2]" ];
     Failed      -> Canceled         [ label = "C" ];
-    Failed      -> Failed           [ label = "FPUT", style = "dashed" ];
-    Failed      -> Done             [ label = "PUT" ];
+    Failed      -> Failed           [ label = "FPUT[2]", style = "dashed" ];
+    Failed      -> Done             [ label = "PUT[2]" ];
 
-    Done        -> Reading          [ label = "READ" ];
+    Done        -> Reading          [ label = "READ[2]" ];
     Done        -> Canceled         [ label = "C" ];
-    Done        -> Done             [ label = "PUT\nJXCG", style = "dashed" ];
+    Done        -> Done             [ label = "PUT[2]\nJXCG", style = "dashed" ];
     Done        -> Confirmed        [ label = "CFRM" ];
 
     Reading     -> Canceled         [ label = "C" ];
@@ -46,15 +46,29 @@ digraph NetScheduleNew {
     ReadTries   -> Canceled;
     ReadTries   -> Failed;
 
-    ReadFailed  -> Canceled         [ label = "C" ];
+    ReadFailed  -> Canceled         [ label = "C\nREREAD" ];
     ReadFailed  -> ReadFailed       [ label = "FRED", style = "dashed" ];
     ReadFailed  -> Confirmed        [ label = "CFRM" ];
 
-    Confirmed   -> Canceled         [ label = "C" ];
+    Confirmed   -> Canceled         [ label = "C\nREREAD" ];
     Confirmed   -> Confirmed        [ label = "CFRM", style = "dashed" ];
 
-    Canceled    -> Canceled         [ label = "C", style = "dashed" ];
-    Canceled    -> Reading          [ label = "READ" ];
+    Canceled    -> Canceled         [ label = "C\nREREAD", style = "dashed" ];
+    Canceled    -> Reading          [ label = "READ[2]" ];
+
+    Done        -> Pending          [ label = "REDO" ];
+    Failed      -> Pending          [ label = "REDO" ];
+    Confirmed   -> Pending          [ label = "REDO" ];
+    ReadFailed  -> Pending          [ label = "REDO" ];
+    Canceled    -> Pending          [ label = "REDO" ];
+
+    Canceled    -> Done             [ label = "REREAD" ];
+    Canceled    -> Failed           [ label = "REREAD" ];
+    ReadFailed  -> Done             [ label = "REREAD" ];
+    ReadFailed  -> Failed           [ label = "REREAD" ];
+    Confirmed   -> Done             [ label = "REREAD" ];
+    Confirmed   -> Failed           [ label = "REREAD" ];
+
 
     { rank = same; "Done";     "Pending" }
     { rank = same; "Running";  "Reading" }
