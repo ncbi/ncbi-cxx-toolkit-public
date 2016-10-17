@@ -48,7 +48,7 @@ CPsiBlastAppArgs::CPsiBlastAppArgs()
     static const string kProgram("psiblast");
     CRef<IBlastCmdLineArgs> arg;
     arg.Reset(new CProgramDescriptionArgs(kProgram,
-                                          "Position-Specific Initiated BLAST"));
+                                          "Position-Specific Iterated BLAST"));
     m_Args.push_back(arg);
     m_ClientId = kProgram + " " + CBlastVersion().Print();
 
