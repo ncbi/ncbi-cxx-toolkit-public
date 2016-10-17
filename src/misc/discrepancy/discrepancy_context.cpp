@@ -370,21 +370,59 @@ bool CDiscrepancyContext::SequenceHasFarPointers()
     return SequenceHasFarPointers_result;
 }
 
-
-static void CountNucleotides(const CSeq_data& seq_data, CSeqSummary& ret)
+string CSeqSummary::GetStr() const
 {
-    if (seq_data.Which() != CSeq_data::e_Iupacna &&
-        seq_data.Which() != CSeq_data::e_Ncbi2na &&
-        seq_data.Which() != CSeq_data::e_Ncbi4na &&
-        seq_data.Which() != CSeq_data::e_Ncbi8na &&
-        seq_data.Which() != CSeq_data::e_Ncbipna) {
-        return;
+    if (Str.empty()) {
+        Str = " (length " + NStr::NumericToString(Len);
+        if (Other) {
+            Str += ", " + NStr::NumericToString(Other) + " other";
+        }
+        if (Gaps > 0) {
+            Str += ", " + NStr::NumericToString(Gaps) + " gap";
+        }
+        Str += ")";
     }
-        //e_Iupacaa,      ///< IUPAC 1 letter amino acid code
-        //e_Ncbi8aa,      ///< 8 bit extended amino acid codes
-        //e_Ncbieaa,      ///< extended ASCII 1 letter aa codes
-        //e_Ncbipaa,      ///< amino acid probabilities
-        //e_Ncbistdaa,    ///< consecutive codes for std aas
+    return Str;
+}
+
+static void CountNucleotides(const CSeq_data& seq_data, TSeqPos len, CSeqSummary& ret)
+{
+/*
+    enum E_Choice {
+        e_not_set = 0,  ///< No variant selected
+        e_Iupacna,      ///< IUPAC 1 letter nuc acid code
+        e_Iupacaa,      ///< IUPAC 1 letter amino acid code
+        e_Ncbi2na,      ///< 2 bit nucleic acid code
+        e_Ncbi4na,      ///< 4 bit nucleic acid code
+        e_Ncbi8na,      ///< 8 bit extended nucleic acid code
+        e_Ncbipna,      ///< nucleic acid probabilities
+        e_Ncbi8aa,      ///< 8 bit extended amino acid codes
+        e_Ncbieaa,      ///< extended ASCII 1 letter aa codes
+        e_Ncbipaa,      ///< amino acid probabilities
+        e_Ncbistdaa,    ///< consecutive codes for std aas
+        e_Gap           ///< gap types
+    };
+*/
+
+    switch (seq_data.Which()) {
+        case CSeq_data::e_Iupacna:
+            //cout << "> e_Iupacna\n";
+            break;
+        case CSeq_data::e_Ncbi2na:
+            //cout << "> e_Ncbi2na\n";
+            break;
+        case CSeq_data::e_Ncbi4na:
+            //cout << "> e_Ncbi4na\n";
+            break;
+        case CSeq_data::e_Ncbi8na:
+            //cout << "> e_Ncbi8na\n";
+            break;
+        case CSeq_data::e_Ncbipna:
+            //cout << "> e_Ncbipna\n";
+            break;
+        default:
+            return;    
+    }
 
     CSeq_data as_iupacna;
     TSeqPos nconv = CSeqportUtil::Convert(seq_data, &as_iupacna, CSeq_data::e_Iupacna);
@@ -392,8 +430,9 @@ static void CountNucleotides(const CSeq_data& seq_data, CSeqSummary& ret)
         return;
     }
     const string& iupacna_str = as_iupacna.GetIupacna().Get();
-    ITERATE(string, base, iupacna_str) {
-        switch (*base)
+
+    for (TSeqPos n = 0; n < len; n++) {
+        switch (iupacna_str[n])
         {
             case 'A':
                 ret.A++;
@@ -409,6 +448,10 @@ static void CountNucleotides(const CSeq_data& seq_data, CSeqSummary& ret)
                 break;
             case 'N':
                 ret.N++;
+                ret.Other++;
+                break;
+            default:
+                ret.Other++;
                 break;
         }
     }
@@ -434,10 +477,11 @@ const CSeqSummary& CDiscrepancyContext::GetSeqSummary()
         switch (seq_iter.GetType()) {
             case CSeqMap::eSeqData:
                 GetSeqSummary_ret.Len += seq_iter.GetLength();
-                CountNucleotides(seq_iter.GetData(), GetSeqSummary_ret);
+                CountNucleotides(seq_iter.GetData(), seq_iter.GetLength(), GetSeqSummary_ret);
                 break;
             case CSeqMap::eSeqGap:
                 GetSeqSummary_ret.Len += seq_iter.GetLength();
+                GetSeqSummary_ret.Gaps += seq_iter.GetLength();
                 break;
             default:
                 break;
@@ -660,7 +704,9 @@ CRef<CDiscrepancyObject> CDiscrepancyContext::NewBioseqObj(CConstRef<CBioseq> ob
     const CSerialObject* ser = &*obj;
     if (m_TextMap.find(ser) == m_TextMap.end()) {
         D->SetText(*m_Scope);
-        m_TextMap[ser] = D->GetText();
+        string s = D->GetText() + info->GetStr();
+        D->SetText(s);
+        m_TextMap[ser] = s;
         m_TextMapShort[ser] = D->GetShort();
     }
     else {

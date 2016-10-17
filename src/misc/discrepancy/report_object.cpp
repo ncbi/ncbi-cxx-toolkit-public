@@ -467,12 +467,10 @@ string CReportObject::GetTextObjectDescription(const CBioseq& bs, CScope& scope)
     string rval;
     CConstRef<CSeq_id> id = GetBestId(bs, CSeq_id::e_Genbank);
     id->GetLabel(&rval, CSeq_id::eContent);
+/*
     rval += " (length " + NStr::NumericToString(bs.GetInst().GetLength());
-    //CBioseq_Handle bsh;
-
     size_t num_other = 0;
     size_t num_gap = 0;
-    //CSeqVector vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
     CSeqVector vec(bs, &scope, CBioseq_Handle::eCoding_Iupac);
     CSeqVector::const_iterator vi = vec.begin();
     while (vi != vec.end()) {
@@ -495,6 +493,7 @@ string CReportObject::GetTextObjectDescription(const CBioseq& bs, CScope& scope)
     }
 
     rval += ")";
+//*/
     return rval;
 }
 

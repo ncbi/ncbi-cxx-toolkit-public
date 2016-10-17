@@ -292,15 +292,19 @@ class COverlappingFeatures : public CBioseq {};
 
 struct CSeqSummary
 {
-    CSeqSummary() : Len(0), A(0), C(0), G(0), T(0), N(0) {}
-    void clear(void) { Len = 0; A = 0; C = 0; G = 0; T = 0; N = 0; }
+    CSeqSummary() : Len(0), A(0), C(0), G(0), T(0), N(0), Other(0), Gaps(0) {}
+    void clear(void) { Len = 0; A = 0; C = 0; G = 0; T = 0; N = 0; Other = 0; Gaps = 0; Str.clear(); }
     size_t Len;
     size_t A;
     size_t C;
     size_t G;
     size_t T;
     size_t N;
+    size_t Other;
+    size_t Gaps;
     // add more counters if needed
+    mutable string Str;
+    string GetStr() const;
 };
 
 /// CDiscrepancyContext - manage and run the list of tests
