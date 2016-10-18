@@ -31,6 +31,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <objtools/align_format/align_format_util.hpp>
 #include <objtools/align/alngraphic.hpp>
 #include <util/range.hpp>
 #include <serial/iterator.hpp>
@@ -52,6 +53,8 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE (objects)
 USING_SCOPE (sequence);
+USING_SCOPE(align_format);
+
 
 const char* kDigitGif[] = {"0.gif", "1.gif", "2.gif", "3.gif", "4.gif",
                            "5.gif", "6.gif", "7.gif", "8.gif", "9.gif"};
@@ -107,6 +110,30 @@ static string s_GetGif(int bits){
     //for alignment with no bits info
     if(bits == 0){
         gif = "red.gif";
+    }
+    return gif;
+}
+
+const char* kWhite  = "white";
+const char* kGrey   = "grey";
+const char* kBlack  = "black";
+
+static string s_GetScoreColor(int bits){
+    string gif = NcbiEmptyString;
+    if(bits < 40){
+        gif = "black";
+    } else if (bits < 50) {
+        gif = "blue";
+    } else if (bits < 80) {
+        gif = "green";
+    } else if (bits < 200) {
+        gif = "purple";
+    } else  {
+        gif = "red";
+    } 
+    //for alignment with no bits info
+    if(bits == 0){
+        gif = "red";
     }
     return gif;
 }
@@ -227,7 +254,7 @@ void CAlnGraphic::x_MergeSameSeq(TAlnInfoList& alninfo_list){
                                     (*iter)->range->GetTo()));
             //take the maximal score and evalue 
             if((*iter)->bits < (*prev_iter)->bits){
-                (*iter)->bits = (*prev_iter)->bits;
+                (*iter)->bits = (*prev_iter)->bits;    
                 (*iter)->info = (*prev_iter)->info;
             }
             delete (*prev_iter)->range;
@@ -295,32 +322,34 @@ void CAlnGraphic::x_GetAlnInfo(const CSeq_align& aln, const CSeq_id& id,
     double bits = 0;
     string bit_str, evalue_str;
     string title;
-    
-    try{
-        const CBioseq_Handle& handle = m_Scope->GetBioseqHandle(id);
-        if(handle){
-            const CBioseq::TId& ids = handle.GetBioseqCore()->GetId();
-            CRef<CSeq_id> wid = FindBestChoice(ids, CSeq_id::WorstRank);
-            aln_info->id = wid;
-            aln_info->gi =  FindGi(ids);
-            wid->GetLabel(&info, CSeq_id::eContent, 0);
-            CDeflineGenerator defline_gen;
-            title = defline_gen.GenerateDefline(*(handle.GetObjectCore()), *m_Scope);
+    aln_info->id = &id;
+    if(aln_info->getSeqInfo) {
+        try{
+            const CBioseq_Handle& handle = m_Scope->GetBioseqHandle(id);
+            if(handle){
+                const CBioseq::TId& ids = handle.GetBioseqCore()->GetId();
+                CRef<CSeq_id> wid = FindBestChoice(ids, CSeq_id::WorstRank);
+                aln_info->id = wid;
+                aln_info->gi =  FindGi(ids);
+                wid->GetLabel(&info, CSeq_id::eContent, 0);
+                CDeflineGenerator defline_gen;
+                title = defline_gen.GenerateDefline(*(handle.GetObjectCore()), *m_Scope);
             
-            if ((int)title.size() > kDeflineLength){
-                title = title.substr(0, kDeflineLength) + "..";
+                if ((int)title.size() > kDeflineLength){
+                    title = title.substr(0, kDeflineLength) + "..";
+                }
+                info += " " + title;   
+            } else {
+                aln_info->gi = ZERO_GI;
+                //aln_info->id = &id;
+                aln_info->id->GetLabel(&info, CSeq_id::eContent, 0);
             }
-            info += " " + title;   
-        } else {
+        } catch (const CException&){
             aln_info->gi = ZERO_GI;
-            aln_info->id = &id;
-            aln_info->id->GetLabel(&info, CSeq_id::eContent, 0);
+            //aln_info->id = &id;
+            aln_info->id->GetLabel(&info, CSeq_id::eContent, 0);        
         }
-    } catch (const CException&){
-        aln_info->gi = ZERO_GI;
-        aln_info->id = &id;
-        aln_info->id->GetLabel(&info, CSeq_id::eContent, 0);        
-    }
+    }    
     s_GetAlnScores(aln, score, bits, evalue);
     NStr::DoubleToString(bit_str, (int)bits);
     NStr::DoubleToString(evalue_str, evalue);
@@ -330,8 +359,41 @@ void CAlnGraphic::x_GetAlnInfo(const CSeq_align& aln, const CSeq_id& id,
     string formatted_evalue = CNcbiOstrstreamToString(ostream);
     info += " S=" + bit_str + " E=" + formatted_evalue;
     aln_info->info = info;
-    aln_info->bits = bits;
+    aln_info->bits = bits;    
+    aln_info->score = bit_str;
+    aln_info->eval = formatted_evalue;
   
+}
+void CAlnGraphic::x_GetAlnInfo(SAlignInfo* aln_info)
+{
+    
+    try{
+        string info;
+        const CBioseq_Handle& handle = m_Scope->GetBioseqHandle(*aln_info->id);
+        if(handle){
+            const CBioseq::TId& ids = handle.GetBioseqCore()->GetId();
+            CRef<CSeq_id> wid = FindBestChoice(ids, CSeq_id::WorstRank);
+            aln_info->id = wid;
+            aln_info->gi =  FindGi(ids);
+            wid->GetLabel(&aln_info->accession, CSeq_id::eContent);
+            CDeflineGenerator defline_gen;
+            string title = defline_gen.GenerateDefline(*(handle.GetObjectCore()), *m_Scope);
+            
+            if ((int)title.size() > kDeflineLength){
+                title = title.substr(0, kDeflineLength) + "..";
+            }            
+            info = title;   
+        } else {
+            aln_info->gi = ZERO_GI;
+            //aln_info->id = &id;
+            aln_info->id->GetLabel(&info, CSeq_id::eContent);
+        }
+        aln_info->info = info;
+    } catch (const CException&){
+        aln_info->gi = ZERO_GI;
+        //aln_info->id = &id;
+        aln_info->id->GetLabel(&aln_info->info, CSeq_id::eContent);        
+    }
 }
 
 CAlnGraphic::CAlnGraphic(const CSeq_align_set& seqalign, 
@@ -425,6 +487,7 @@ void CAlnGraphic::AlnGraphicDisplay(CNcbiOstream& out){
         }
         SAlignInfo* alninfo = new SAlignInfo;
         alninfo->range = seq_range;
+        alninfo->getSeqInfo = true;
         //get aln info 
         x_GetAlnInfo(**iter, *subid, alninfo);
         alninfo_list->push_back(alninfo);
@@ -787,5 +850,343 @@ void CAlnGraphic::x_BuildHtmlTable(int master_len, CHTML_table* tbl_box, CHTML_t
     }
 }
 
+
+
+static string s_MapSeqInfoTemplate(string seqTemplate,                          
+                          string score,
+                          string seq, 
+                          string defline,
+                          string acc,                          
+                          string eval)                    
+  
+{
+    string imgstring = CAlignFormatUtil::MapTemplate(seqTemplate,"img_seq",seq);            
+    imgstring = CAlignFormatUtil::MapTemplate(imgstring,"img_score",score);    
+    imgstring = CAlignFormatUtil::MapTemplate(imgstring,"img_defline",defline);    
+    imgstring = CAlignFormatUtil::MapTemplate(imgstring,"img_acc",acc);    
+    imgstring = CAlignFormatUtil::MapTemplate(imgstring,"img_eval",eval);    
+    
+    return imgstring;
+}
+
+
+
+
+static string s_MapBarTemplate(string imageTemplate,
+                          int width, 
+                          string imgType, 
+                          string cssClass,
+                          string score = "",
+                          string seq = "", 
+                          string defline = "",
+                          string acc = "",                          
+                          string eval = "")                    
+  
+{
+    string imgstring = CAlignFormatUtil::MapTemplate(imageTemplate,"img_width",NStr::IntToString(width));    
+    imgstring = CAlignFormatUtil::MapTemplate(imgstring,"img_type",imgType);
+    imgstring = CAlignFormatUtil::MapTemplate(imgstring,"img_class",cssClass);    
+    if(!seq.empty()) {
+        imgstring = s_MapSeqInfoTemplate(imgstring,
+                                     score,
+                                     seq, 
+                                     defline,
+                                     acc,                          
+                                     eval);
+    }        
+    return imgstring;
+}
+
+
+
+//m_AlnSet, m_MasterRange,m_Scope - move to display
+void CAlnGraphic::Init(void)
+{
+    /*Note we can't just show each alnment as we go because we will 
+      need to put  all hsp's with the same id on one line*/
+   
+    TAlnInfoList* alninfo_list = NULL;
+    bool is_first_aln = true;
+    int num_align = 0;
+    m_Master_len = 0;
+    
+    CConstRef<CSeq_id> previous_id, subid, master_id;
+    for (CSeq_align_set::Tdata::const_iterator iter = m_AlnSet->Get().begin(); 
+         iter != m_AlnSet->Get().end() && num_align < m_NumAlignToShow; 
+         iter++, num_align++){
+
+        if(!alninfo_list){
+            alninfo_list = new TAlnInfoList; 
+        }
+
+        //get start and end seq position for master sequence
+        CRange<TSeqPos>* seq_range = new CRange<TSeqPos>((*iter)->GetSeqRange(0));;
+        if (m_MasterRange) {           
+            seq_range->Set(seq_range->GetFrom() - m_MasterRange->GetFrom(),
+                           seq_range->GetTo() - m_MasterRange->GetFrom());
+        } 
+                
+        //for minus strand
+        if(seq_range->GetFrom() > seq_range->GetTo()){
+            seq_range->Set(seq_range->GetTo(), seq_range->GetFrom());
+        }
+        subid = &((*iter)->GetSeq_id(1));
+        if(is_first_aln) {
+            master_id =  &((*iter)->GetSeq_id(0));
+            
+            const CBioseq_Handle& handle = m_Scope->GetBioseqHandle(*master_id);
+            if(!handle){
+                NCBI_THROW(CException, eUnknown, "Master sequence is not found!");
+            }
+            if (m_MasterRange) {
+                m_Master_len = m_MasterRange->GetLength();
+            } else {
+                m_Master_len = handle.GetBioseqLength();
+            }
+            //x_DisplayMaster(master_len, &(*center), &(*tbl_box), tbl_box_tc);******************
+            
+        }
+        if(!is_first_aln && !subid->Match(*previous_id)) {
+            //this aln is a new id, show result for previous id
+            //save ranges for the same seqid
+            m_AlninfoListList.push_back(alninfo_list);
+            alninfo_list =  new TAlnInfoList;
+        }
+        SAlignInfo* alninfo = new SAlignInfo;
+        alninfo->range = seq_range;
+        alninfo->getSeqInfo = false;
+        //get aln info 
+        x_GetAlnInfo(**iter, *subid, alninfo);
+        alninfo_list->push_back(alninfo);
+        is_first_aln = false;
+        previous_id = subid;
+    }
+
+    m_Pixel_factor = ((double)kMasterPixel)/m_Master_len;
+    float scale_unit = ((float)(m_Master_len))/(kNumMark - 1);
+    m_Round_number = s_GetRoundNumber((int)scale_unit);
+
+    //save last set of seqs with the same id
+    if(alninfo_list){
+        m_AlninfoListList.push_back(alninfo_list);
+    }
+    //merge range for seq with the same id
+    ITERATE(TAlnInfoListList, iter, m_AlninfoListList) {
+        (*iter)->sort(FromRangeAscendingSort);
+        //    x_MergeSameSeq(**iter);  
+    }
+    
+    //merge non-overlapping range list so that they can be put on 
+    //the same line to compress the results
+    if(m_View & eCompactView){
+        x_MergeDifferentSeq(m_Pixel_factor);  
+    }    
+}
+
+void CAlnGraphic::Display(CNcbiOstream& out){    
+    string scale = x_FormatScale();   
+    out << scale;
+    //display the graphic   
+    x_FormatGraphOverview(out);
+}
+
+
+string CAlnGraphic::x_FormatScaleDigit(string digitString,int spacer_length)
+{
+    string grScaleDigits = CAlignFormatUtil::MapTemplate(m_AlignGraphTemplates->graphDigit,"space_width",spacer_length);
+    grScaleDigits = CAlignFormatUtil::MapTemplate(grScaleDigits,"digits_width",kDigitWidth*digitString.size());            
+    grScaleDigits = CAlignFormatUtil::MapTemplate(grScaleDigits,"digit",digitString);        
+    return grScaleDigits;
+}
+
+
+string CAlnGraphic::x_FormatScale(void)
+{
+    int spacer_length = (int)(m_Pixel_factor*m_Round_number) - kScaleWidth;    
+    string grScale;
+    
+    for (int i = 0; i*m_Round_number <= m_Master_len; i++) {        
+        int spacer = (i == 0) ? 0 : spacer_length;
+        grScale += CAlignFormatUtil::MapTemplate(m_AlignGraphTemplates->graphScale,"scaleSpace",spacer);
+    }
+
+    grScale = CAlignFormatUtil::MapTemplate(m_AlignGraphTemplates->graphPos,"graph_data",grScale);//Probably should be in formatter
+    
+
+    
+    string digit_str, previous_digitstr, first_digit_str;
+
+    int first_digit = 0;    
+    first_digit = m_MasterRange ? m_MasterRange->GetFrom() : 0;
+    first_digit_str = NStr::IntToString(first_digit + 1);
+
+    string grScaleDigits = x_FormatScaleDigit(first_digit_str,0);
+    
+
+    previous_digitstr = first_digit_str;
+  
+    //print scale digits from second mark and on
+    for (TSeqPos i = 1; (int)i*m_Round_number <= m_Master_len; i++) {
+       
+        digit_str = NStr::IntToString(i*m_Round_number + 
+                                      (m_MasterRange ?
+                                       m_MasterRange->GetFrom() : 0)); 
+
+        int spacer_length = (int)(m_Pixel_factor*m_Round_number) 
+            - kDigitWidth*(previous_digitstr.size() 
+                           - previous_digitstr.size()/2) 
+            - kDigitWidth*(digit_str.size()/2);
+        previous_digitstr = digit_str;
+
+        grScaleDigits += x_FormatScaleDigit(digit_str,spacer_length);        
+    }
+    grScaleDigits = CAlignFormatUtil::MapTemplate(m_AlignGraphTemplates->graphPos,"graph_data",grScaleDigits);//Probably should be in formatter
+    return grScale + grScaleDigits;
+}
+
+//alignment bar graph
+void CAlnGraphic::x_FormatGraphOverview(CNcbiOstream & out) 
+{
+    int count = 0;
+    //print out each alignment
+    ITERATE(TAlnInfoListList, iter, m_AlninfoListList){  //iter =  each line
+        if(count > m_NumLine){
+            break;
+        }        
+        CConstRef<CSeq_id> previous_id, current_id;        
+        double temp_value, temp_value2 ;
+        int previous_end = -1;
+        int front_margin = 0;
+        int bar_length = 0;        
+        double prev_round = 0;
+        
+        if(!(*iter)->empty()){ //table for starting white spacer
+            count ++;
+        }
+        bool is_first_segment = true;
+        string oneAlign;
+        ITERATE(TAlnInfoList, iter2, **iter){ //iter2 = each alignments on one line
+            current_id = (*iter2)->id;
+            //white space in front of this alignment
+            //need to take into account of previous round as
+            //even 1 pixel difference would show up
+            int from = (*iter2)->range->GetFrom();
+            int stop = (*iter2)->range->GetTo();
+            if (from <= previous_end) { //some hits overlap
+                if (stop > previous_end) {
+                    from = previous_end + 1;
+                    (*iter2)->range->SetFrom(from);
+                } else {
+                    continue;  //this hsp is contained in previous hsp
+                }
+            }
+            
+            int break_len = from - (previous_end + 1); //distance between two hsp
+            bool break_len_added = false;
+            temp_value = break_len*m_Pixel_factor + prev_round;
+            
+            //rounding to int this way as round() is not portable
+            front_margin = (int)(temp_value + (temp_value < 0.0 ? -0.5 : 0.5));
+            if (front_margin > 0) {
+                prev_round = temp_value - front_margin;
+            } else {
+                prev_round = temp_value;
+            }
+
+            //the alignment box
+            temp_value2 = (*iter2)->range->GetLength()*m_Pixel_factor + 
+                prev_round;
+            bar_length = (int)(temp_value2 + (temp_value2 < 0.0 ? -0.5 : 0.5));
+            
+            //no round if bar itself is more than 0.5 pixel
+            if(bar_length == 0 && (*iter2)->range->GetLength()*m_Pixel_factor >= 0.50){
+                bar_length = 1;
+            }
+          
+            if (bar_length > 0) {
+                prev_round = temp_value2 - bar_length;
+            } else {
+                prev_round = temp_value2;
+            }
+            
+
+            if (!is_first_segment && front_margin == 0 && bar_length > 1) {
+                front_margin = 1;  //show break for every segment that is > 1 pixel
+                bar_length --; //minus the added break len between two segments
+                break_len_added = true;
+            }
+            
+            
+            string connectingBar;
+            
+            //Need to add white space
+            if(front_margin > 0) {
+                //connecting the alignments with the same id                
+                int imgWidth = front_margin;     
+                string imgClass,imgFile;
+                if(m_View & eCompactView && !previous_id.Empty() 
+                   && previous_id->Match(*current_id)){
+                    if (break_len_added) {
+                        imgClass = "h" + NStr::IntToString(kGreakHeight);//Class h6 {height=6}
+                        imgFile = kBlack;                        
+                    } else {
+                        imgClass = "h" + NStr::IntToString(kGapHeight);//Class h1 {height=1}
+                        imgFile = kGrey;                        
+                    }
+                } else {
+                    imgClass = "h" + NStr::IntToString(m_BarHeight);//Class h4 {height=4}
+                    imgFile = kWhite;                                                            
+                }                
+                connectingBar = s_MapBarTemplate(m_AlignGraphTemplates->graphImage,
+                                                imgWidth,  
+                                                imgFile,
+                                                imgClass);                                          
+                oneAlign += connectingBar;
+            }
+            
+            
+            previous_end = stop;
+            previous_id = current_id;
+          
+            if(bar_length > 0){
+                is_first_segment = false;                
+                string seqid,defline,eval,acc,score;
+                x_GetAlnInfo(*iter2);
+                if(m_View & eMouseOverInfo){
+                    defline = (*iter2)->info;
+                    acc = (*iter2)->accession;                    
+                    eval = (*iter2)->eval;
+                    score =(*iter2)->score;
+                }
+                if(m_View & (eAnchorLink | eAnchorLinkDynamic)){                    
+                    seqid = (*iter2)->gi == ZERO_GI ? (*iter2)->accession : NStr::NumericToString((*iter2)->gi);
+                }
+                oneAlign += s_MapBarTemplate(m_AlignGraphTemplates->graphSeq,
+                                                bar_length,  
+                                                s_GetScoreColor((int)(*iter2)->bits),
+                                                "h" + NStr::IntToString(m_BarHeight),//Class h4 {height=4},
+                                                score,
+                                                seqid,
+                                                defline,
+                                                acc,                                                
+                                                eval);                    
+                string graph_seq_popup;                
+                if(NStr::Find(oneAlign,"Accession:"+ acc) == NPOS) {                                        
+                    graph_seq_popup = s_MapSeqInfoTemplate(m_AlignGraphTemplates->graphSeqPopup,
+                                                     score,
+                                                     seqid, 
+                                                     defline,
+                                                     acc,                          
+                                                     eval);
+                }                
+                oneAlign = CAlignFormatUtil::MapTemplate(oneAlign,"graph_seq_popup",graph_seq_popup);    
+            }
+            
+        }//end of one line
+        string bar = CAlignFormatUtil::MapTemplate(m_AlignGraphTemplates->graphPos,"graph_data",oneAlign);
+        out << bar;
+        out.flush();            
+    }
+}
 END_SCOPE(objects)
 END_NCBI_SCOPE
