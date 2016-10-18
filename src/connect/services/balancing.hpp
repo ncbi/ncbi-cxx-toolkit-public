@@ -45,7 +45,6 @@ public:
         m_RebalanceRequests(rebalance_requests),
         m_RebalanceTime(rebalance_time),
         m_RequestCounter(0),
-        m_LastRebalanceTime(CTime::eEmpty),
         m_NextRebalanceTime(CTime::eEmpty)
     {
     }
@@ -59,19 +58,13 @@ public:
     void Reset() {
         CFastMutexGuard g(m_Mutex);
         m_RequestCounter = 0;
-        m_LastRebalanceTime.Clear();
         m_NextRebalanceTime.Clear();
-    }
-    const CTime& GetLastRebalanceTime()
-    {
-        return m_LastRebalanceTime;
     }
 
 private:
     int     m_RebalanceRequests;
     int     m_RebalanceTime;
     int     m_RequestCounter;
-    CTime   m_LastRebalanceTime;
     CTime   m_NextRebalanceTime;
     CFastMutex m_Mutex;
 };
@@ -80,9 +73,6 @@ class CConfig;
 
 NCBI_XCONNECT_EXPORT CRef<CSimpleRebalanceStrategy>
     CreateSimpleRebalanceStrategy(CConfig& config, const string& driver_name);
-
-NCBI_XCONNECT_EXPORT CRef<CSimpleRebalanceStrategy>
-    CreateSimpleRebalanceStrategy(int rebalance_requests, int rebalance_time);
 
 NCBI_XCONNECT_EXPORT CRef<CSimpleRebalanceStrategy>
     CreateDefaultRebalanceStrategy();

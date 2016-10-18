@@ -49,7 +49,6 @@ bool CSimpleRebalanceStrategy::NeedRebalance()
         (m_RebalanceRequests > 0 &&
             m_RequestCounter >= m_RebalanceRequests)) {
         m_RequestCounter = 0;
-        m_LastRebalanceTime = current_time;
         m_NextRebalanceTime = current_time;
         m_NextRebalanceTime.AddNanoSecond(m_RebalanceTime * 1000000);
         return true;
@@ -67,13 +66,6 @@ CRef<CSimpleRebalanceStrategy>
             "rebalance_time", CConfig::eErr_NoThrow,
                 NCBI_AS_STRING(REBALANCE_TIME_DEFAULT)),
             SECONDS_DOUBLE_TO_MS_UL(REBALANCE_TIME_DEFAULT))));
-}
-
-CRef<CSimpleRebalanceStrategy>
-    CreateSimpleRebalanceStrategy(int rebalance_requests, int rebalance_time)
-{
-    return CRef<CSimpleRebalanceStrategy>(
-        new CSimpleRebalanceStrategy(rebalance_requests, rebalance_time));
 }
 
 CRef<CSimpleRebalanceStrategy> CreateDefaultRebalanceStrategy()
