@@ -205,6 +205,9 @@ string NCBI_VALIDATOR_EXPORT SpecificHostValueToCheck(const string& val);
 string InterpretSpecificHostResult(const string& host, const CT3Reply& reply, const string& orig_host = kEmptyStr);
 void NCBI_VALIDATOR_EXPORT AdjustSpecificHostForTaxServer (string& spec_host);
 
+// function is used to convert a pub title into a 'term' parameter of CEutilsClient::Search method
+void NCBI_VALIDATOR_EXPORT ConvertToEntrezTerm(string& title);
+
 END_SCOPE(validator)
 END_SCOPE(objects)
 END_NCBI_SCOPE

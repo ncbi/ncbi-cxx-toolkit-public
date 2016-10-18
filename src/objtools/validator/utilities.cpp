@@ -2026,6 +2026,44 @@ string FixSpecificHost(const string& val)
 }
 
 
+static char s_ConvertChar(char ch)
+{
+    if (ch < 0x02 || ch > 0x7F) {
+        // no change
+    }
+    else if (isalpha(ch)) {
+        ch = tolower(ch);
+    }
+    else if (isdigit(ch)) {
+        // no change
+    }
+    else if (ch == '\'' || ch == '/' || ch == '@' || ch == '`' || ch == ',') {
+        // no change
+    }
+    else {
+        ch = 0x20;
+    }
+    return ch;
+}
+
+
+void ConvertToEntrezTerm(string& title)
+{
+    string::iterator s = title.begin();
+    char p = ' ';
+    while (s != title.end()) {
+        *s = s_ConvertChar(*s);
+        if (isspace(*s) && isspace(p)) {
+            s = title.erase(s);
+        }
+        else {
+            p = *s;
+            s++;
+        }
+    }
+    NStr::TruncateSpacesInPlace(title);
+}
+
 END_SCOPE(validator)
 END_SCOPE(objects)
 END_NCBI_SCOPE
