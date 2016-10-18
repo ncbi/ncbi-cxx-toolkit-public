@@ -69,6 +69,16 @@ public:
     // Destructor
     ~CAlnGraphic();
 
+    struct SAlignGraphTemplates
+    {
+        string graphScale;
+        string graphDigit;
+        string graphImage;//        m_Img_template
+        string graphSeq;
+        string graphPos;
+        string graphSeqPopup;
+    };
+
     //view in ViewOption. default eCompactView
     void SetViewOption(int option) { 
         m_View = option;
@@ -104,18 +114,28 @@ public:
         m_NumLine = num;
     }
 
+    void SetGraphOverviewTemplates(SAlignGraphTemplates *graphTemplates) {
+        m_AlignGraphTemplates = graphTemplates;
+    }
+    void Init(void);
     //show alignment graphic view
     void AlnGraphicDisplay(CNcbiOstream& out);
+    void Display(CNcbiOstream& out);
 
 private:
-    struct SAlignInfo {
+    struct SAlignInfo {        
         CConstRef<CSeq_id> id;
         TGi gi;
         double bits;
         string info;
+        string accession;        
+        string score;
+        string eval;
         CRange<TSeqPos>* range;
+        bool getSeqInfo;
     };
     //callback for sorting range
+    
     inline static bool FromRangeAscendingSort(SAlignInfo* const& info1,
                                               SAlignInfo* const& info2)
     {
@@ -133,7 +153,13 @@ private:
     string m_MouseOverFormName;   //the text input window to show mouseover info
     string m_onClickFunction;
     int m_NumLine;
-    
+
+    int m_Master_len;
+    double m_Pixel_factor;
+    int m_Round_number;
+    SAlignGraphTemplates *m_AlignGraphTemplates;
+    int m_MasterPixelLength;
+
     //blast sub-sequence query
     CRange<TSeqPos>* m_MasterRange; 
 
@@ -142,6 +168,7 @@ private:
                          CHTML_table* tbl_box, CHTML_tc*& tbl_box_tc);
     void x_GetAlnInfo(const CSeq_align& aln, const CSeq_id& id, 
                       SAlignInfo* aln_info);
+    void x_GetAlnInfo(SAlignInfo* aln_info);
     void x_BuildHtmlTable(int master_len, CHTML_table* tbl_box, 
                           CHTML_tc*& tbl_box_tc);
     CRange<TSeqPos>* x_GetEffectiveRange(TAlnInfoList& alninfo_list);
@@ -149,6 +176,10 @@ private:
     void x_MergeSameSeq(TAlnInfoList& alninfo_list);
     void x_PrintTop (CNCBINode* center, CHTML_table* tbl_box, 
                      CHTML_tc*& tbl_box_tc);
+
+    string x_FormatScale(void);
+    string x_FormatScaleDigit(string digitString,int spacer_length);
+    void x_FormatGraphOverview(CNcbiOstream & out);                              
 };
 
 
