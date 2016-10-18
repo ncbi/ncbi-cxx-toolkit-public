@@ -9,12 +9,12 @@ CPPFLAGS = -DNCBI_MODULE=BLAST $(VDB_INCLUDE) $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 LIB = test_boost blast_sra_input $(BLAST_INPUT_LIBS) \
     $(BLAST_LIBS) $(SRAREAD_LIBS) $(OBJMGR_LIBS:ncbi_x%=ncbi_x%$(DLL))
 
-LIBS = $(VDB_LIBS) $(NETWORK_LIBS) $(CMPRS_LIBS) $(ORIG_LIBS)
+LIBS = $(VDB_LIBS) $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CHECK_REQUIRES = MT in-house-resources
 CHECK_CMD = magicblast_unit_test
 CHECK_COPY = data magicblast_unit_test.ini
 
-REQUIRES = VDB
+REQUIRES = VDB Boost.Test.Included
 
 WATCHERS = boratyng
