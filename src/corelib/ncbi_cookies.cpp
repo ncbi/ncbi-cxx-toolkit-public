@@ -80,7 +80,6 @@ CHttpCookie::CHttpCookie(const CTempString& name,
                          const CTempString& path)
     : m_Name(name),
       m_Value(value),
-      m_Domain(domain),
       m_Path(path),
       m_Expires(CTime::eEmpty, CTime::eGmt),
       m_Secure(false),
@@ -89,6 +88,7 @@ CHttpCookie::CHttpCookie(const CTempString& name,
       m_Accessed(CTime::eCurrent, CTime::eGmt),
       m_HostOnly(false)
 {
+    SetDomain(domain); // store canonical domain
     if ( m_Name.empty() ) {
         NCBI_THROW(CHttpCookieException, eValue, "Empty cookie name");
     }
@@ -469,9 +469,10 @@ bool CHttpCookie::Parse(const CTempString& str)
     m_Secure = false;
     m_HttpOnly = false;
     m_Extension.clear();
+    m_HostOnly = false;
+    // Update the creation and access time to current.
     m_Created.SetCurrent();
     m_Accessed.SetCurrent();
-    m_HostOnly = false;
 
     string err_msg;
     size_t pos = str.find(';');
@@ -502,10 +503,6 @@ bool CHttpCookie::Parse(const CTempString& str)
         m_Value = m_Value.substr(1, m_Value.size() - 2);
     }
 
-    // Update the creation and access time.
-    m_Created.SetCurrent();
-    m_Accessed.SetCurrent();
-
     if ( attr_str.empty() ) {
         return true;
     }
@@ -525,7 +522,8 @@ bool CHttpCookie::Parse(const CTempString& str)
         // Assume all values are valid. If they are not, exception
         // will be thrown on an attempt to write the cookie.
         if ( NStr::EqualNocase(name, "domain") ) {
-            m_Domain = NStr::ToLower(value);
+            m_Domain = value;
+            NStr::ToLower(m_Domain);
             if ( NStr::EndsWith(m_Domain, '.') ) {
                 // Ignore domain if it ends with '.'
                 m_Domain.clear();
@@ -637,7 +635,7 @@ bool CHttpCookie::MatchDomain(const string& host) const
         return host == m_Domain;
     }
     size_t pos = h.find(m_Domain);
-    // Domain matching: cookie_domain must be identical to host,
+    // Domain matching: cookie domain must be identical to host,
     // or be a suffix of host and the last char before the suffix
     // must be '.'.
     if (pos == NPOS  ||

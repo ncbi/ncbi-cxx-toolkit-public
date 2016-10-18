@@ -107,9 +107,10 @@ public:
     /// encoded - the caller is responsible for providing a valid value.
     /// @sa AsString()
     void SetValue(const CTempString& value);
-    /// Set cookie's domain. No validation is performed immediately, but
-    /// if the value is invalid CHttpCookieExcepion will be thrown on
-    /// an attempt to get the cookie as a string.
+    /// Set cookie's domain. The value is converted to lower case and
+    /// the leading '.' is trimmed (if any). No other validation is performed
+    /// immediately, but if the value is invalid CHttpCookieExcepion will be
+    /// thrown on an attempt to get the cookie as a string.
     /// @sa AsString()
     void SetDomain(const CTempString& domain);
     /// Set host-only flag. If the flag is true, the domain must be identical
@@ -472,6 +473,10 @@ inline void CHttpCookie::SetValue(const CTempString& value)
 inline void CHttpCookie::SetDomain(const CTempString& domain)
 {
     m_Domain = domain;
+    if (m_Domain.empty()) return;
+    // Ignore leading '.'
+    if (m_Domain[0] == '.') m_Domain = m_Domain.substr(1);
+    NStr::ToLower(m_Domain);
 }
 
 inline void CHttpCookie::SetPath(const CTempString& path)
