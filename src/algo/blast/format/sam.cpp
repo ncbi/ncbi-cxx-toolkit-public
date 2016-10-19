@@ -89,6 +89,9 @@ void CBlast_SAM_Formatter::x_ProcessCustomSpec(const string & custom_spec,
 	CSAM_Formatter::SetProgram(info);
 	m_refRow = 1;
 	ITERATE (vector<string>, iter, format_tokens) {
+		 if("SR" == *iter) {
+			m_refRow = 0;
+		 }
 		 if ("SQ" == *iter) {
 			CSAM_Formatter::SetFlag(CSAM_Formatter::fSAM_SeqData);
 		}

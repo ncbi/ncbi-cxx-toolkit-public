@@ -160,7 +160,8 @@ NCBI_ALIGN_FORMAT_EXPORT extern const size_t kNumTabularOutputFormatSpecifiers;
 NCBI_ALIGN_FORMAT_EXPORT string DescribeTabularOutputFormatSpecifiers(bool is_igblast=false);
 
 enum ESAMField {
-    eSAM_SeqData = 0			///< Include seq data
+    eSAM_SeqData = 0,			///< Include seq data
+    eSAM_SubjAsRefSeq           ///< Subject as reference seqs
 };
 
 struct SSAMFormatSpec {

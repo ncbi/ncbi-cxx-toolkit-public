@@ -223,11 +223,14 @@ const string kArgProduceHtml("html");
 const bool kDfltArgProduceHtml = false;
 const size_t kDfltLineLength = 60;
 
-const size_t kNumSAMOutputFormatSpecifiers = 1;
+const size_t kNumSAMOutputFormatSpecifiers = 2;
 const SSAMFormatSpec sc_SAMFormatSpecifiers[kNumSAMOutputFormatSpecifiers] = {
     SSAMFormatSpec("SQ",
                    "Include Sequence Data",
-                   eSAM_SeqData)
+                   eSAM_SeqData),
+    SSAMFormatSpec("SR",
+                   "Subject as Reference Seq",
+                   eSAM_SubjAsRefSeq)
 };
 
 string DescribeSAMOutputFormatSpecifiers()
