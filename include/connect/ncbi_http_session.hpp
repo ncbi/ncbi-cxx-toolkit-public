@@ -36,6 +36,7 @@
 
 #include <corelib/ncbi_cookies.hpp>
 #include <connect/ncbi_conn_stream.hpp>
+#include <functional>
 
 
 /** @addtogroup HttpSession
@@ -450,6 +451,13 @@ private:
 class NCBI_XCONNECT_EXPORT CHttpRequest
 {
 public:
+    /// Get request URL.
+    const CUrl& GetUrl(void) const { return m_Url; }
+    /// Set request URL.
+    void SetUrl(const CUrl& url) { m_Url = url; }
+    /// Get non-const url reference.
+    CUrl& SetUrl(void) { return m_Url; }
+
     /// Get HTTP headers to be sent.
     CHttpHeaders& Headers(void) { return *m_Headers; }
 
@@ -489,6 +497,32 @@ public:
     /// value is used ($CONN_MAX_TRY - 1).
     void SetRetries(THttpRetries retries) { m_Retries = retries; }
 
+    /// Type for the functor to call when HTTP response comes during Execute().
+    /// @param response
+    ///  The HTTP response that came from the Web server
+    /// @return
+    ///  TRUE if the handler has the HTTP response handled and Execute()
+    ///  should continue. FALSE if Execute() must finish and return control.
+    /// @sa Execute
+    typedef function<bool(CHttpResponse& response)> TResponseHandler;
+
+    /// No-op callback
+    static bool Handler_NoopCB(CHttpResponse& response) { return false; }
+
+    /// Recognize and handle NCBI Remote-CGI interim "try again" responses
+    //static bool Handler_Cgi2RCgi(CHttpResponse& response);
+
+    /// @param on_response
+    ///  Functor to call when HTTP response comes during Execute().
+    ///  E.g. by default (Handler_Cgi2RCgi) we recognize and handle NCBI Remote-CGI
+    ///  interim "try again" responses.
+    /// @sa Handler_Cgi2RCgi
+    void SetResponseHandler(TResponseHandler on_response = Handler_NoopCB)
+    { m_ResponseHandler = on_response; }
+
+    /// Get the currently set response callback
+    TResponseHandler GetResponseHandler(void) const { return m_ResponseHandler; }
+
 private:
     friend class CHttpSession;
 
@@ -523,6 +557,7 @@ private:
     CRef<CHttpResponse> m_Response; // current response or null
     CTimeout            m_Timeout;
     THttpRetries        m_Retries;
+    TResponseHandler    m_ResponseHandler;
 };
 
 
