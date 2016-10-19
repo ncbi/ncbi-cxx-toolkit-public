@@ -116,9 +116,14 @@ void CWGSTestApp::Init(void)
     arg_desc->AddFlag("print_entry", "Print loaded Seq-entry objects");
     arg_desc->AddFlag("print_split", "Print loaded Split info object");
 
+    arg_desc->AddFlag("keep_sequences", "Keep all sequences in memory");
+
     arg_desc->AddOptionalKey("contig_row", "ContigRow",
                              "contig row to fetch",
                              CArgDescriptions::eInt8);
+    arg_desc->AddOptionalKey("contig_version", "ContigVersion",
+                             "contig version to fetch",
+                             CArgDescriptions::eInteger);
     arg_desc->AddOptionalKey("scaffold_row", "ScaffoldRow",
                              "scaffold row to fetch",
                              CArgDescriptions::eInt8);
@@ -834,6 +839,17 @@ int CWGSTestApp::Run(void)
 
     bool is_component = false, is_scaffold = false, is_protein = false;
     uint64_t row = 0;
+    int contig_version = -1;
+    if ( args["contig_version"] ) {
+        contig_version = args["contig_version"].AsInteger();
+    }
+    else {
+        SIZE_TYPE dot_pos = path.rfind('.');
+        if ( dot_pos != NPOS &&
+             (contig_version = NStr::StringToNonNegativeInt(path.substr(dot_pos+1))) >= 0 ) {
+            path.resize(dot_pos);
+        }
+    }
     if ( args["contig_row"] || args["scaffold_row"] || args["protein_row"] ) {
         if ( args["contig_row"] ) {
             row = args["contig_row"].AsInt8();
@@ -867,6 +883,9 @@ int CWGSTestApp::Run(void)
     if ( row && !args["limit_count"] ) {
         limit_count = 1;
     }
+
+    vector< CConstRef<CBioseq> > all_seqs;
+    bool keep_seqs = args["keep_sequences"];
 
     if ( 1 ) {
         CWGSSeqIterator::EWithdrawn withdrawn;
@@ -902,6 +921,9 @@ int CWGSTestApp::Run(void)
             it = CWGSSeqIterator(wgs_db, withdrawn);
         }
         for ( size_t count = 0; it && count < limit_count; ++it, ++count ) {
+            if ( contig_version ) {
+                it.SelectAccVersion(contig_version);
+            }
             out << it.GetAccession()<<'.'<<it.GetAccVersion();
             if ( it.HasGi() ) {
                 out << " gi: "<<it.GetGi();
@@ -934,6 +956,9 @@ int CWGSTestApp::Run(void)
                 }
                 ERR_POST(Fatal<<"Different Seq-data at " << pos << ": " <<
                          MSerial_AsnText << *seq1 << MSerial_AsnText << *seq2);
+            }
+            if ( keep_seqs ) {
+                all_seqs.push_back(seq1);
             }
         }
     }
@@ -1151,6 +1176,9 @@ int CWGSTestApp::Run(void)
                 }
                 if ( print_entry ) {
                     out << MSerial_AsnText << *it.GetSeq_entry();
+                }
+                if ( keep_seqs ) {
+                    all_seqs.push_back(it.GetBioseq());
                 }
             }
         }

@@ -73,6 +73,16 @@ enum
 };
 
 
+enum {
+    NCBI_gb_state_eWGSGenBankLive = 0,
+    NCBI_gb_state_eWGSGenBankSuppressed = 1,
+    NCBI_gb_state_eWGSGenBankReplaced = 2,
+    NCBI_gb_state_eWGSGenBankWithdrawn = 3,
+    NCBI_gb_state_eWGSGenBankUnverified = 4,
+    NCBI_gb_state_eWGSGenBankMissing = 5
+};
+
+
 BEGIN_NCBI_NAMESPACE;
 
 class CObjectOStreamAsnBinary;
@@ -680,7 +690,27 @@ public:
     bool HasGi(void) const;
     CSeq_id::TGi GetGi(void) const;
     CTempString GetAccession(void) const;
-    int GetAccVersion(void) const;
+
+    int GetLatestAccVersion(void) const;
+    unsigned GetAccVersionCount(void) const;
+    bool HasAccVersion(int version) const;
+
+    int GetAccVersion(void) const {
+        return GetLatestAccVersion() + m_AccVersion.m_Offset;
+    }
+
+    // default SVersion object means latest version
+    // offset is negative, -1 means prevous version, -2 is secont previous...
+    enum ELatest {
+        eLatest
+    };
+    struct SVersionSelector {
+        SVersionSelector(ELatest) : m_Offset(0) {}
+        int m_Offset;
+    };
+    
+    // if version == -1 select latest version
+    void SelectAccVersion(int version);
  
     bool HasTitle(void) const;
     CTempString GetTitle(void) const;
@@ -897,6 +927,9 @@ protected:
         }
     }
 
+    // if version == -1 return latest version
+    SVersionSelector x_GetAccVersionSelector(int version) const;
+
     void x_CreateEntry(SWGSCreateInfo& info) const;
     void x_CreateBioseq(SWGSCreateInfo& info) const;
     bool x_InitSplit(SWGSCreateInfo& info) const;
@@ -959,6 +992,7 @@ private:
     CWGSDb m_Db;
     CRef<CWGSDb_Impl::SSeqTableCursor> m_Cur; // VDB seq table accessor
     TVDBRowId m_CurrId, m_FirstGoodId, m_FirstBadId;
+    SVersionSelector m_AccVersion;
     EWithdrawn m_Withdrawn;
     bool m_ClipByQuality;
 };
