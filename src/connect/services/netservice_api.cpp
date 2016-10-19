@@ -541,19 +541,24 @@ void SNetServerPoolImpl::Init(CConfig* config, const string& section,
                 THROTTLE_RELAXATION_PERIOD_DEFAULT);
 
         if (m_ServerThrottlePeriod > 0) {
-            string numerator_str, denominator_str;
+            int numerator = THROTTLE_BY_ERROR_RATE_DEFAULT_NUMERATOR;
+            int denominator = THROTTLE_BY_ERROR_RATE_DEFAULT_DENOMINATOR;
 
-            NStr::SplitInTwo(config->GetString(section,
-                "throttle_by_connection_error_rate", CConfig::eErr_NoThrow,
-                    THROTTLE_BY_ERROR_RATE_DEFAULT), "/",
-                        numerator_str, denominator_str);
+            const string error_rate(config->GetString(section,
+                "throttle_by_connection_error_rate", CConfig::eErr_NoThrow));
 
-            int numerator = NStr::StringToInt(numerator_str,
-                NStr::fConvErr_NoThrow |
-                    NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces);
-            int denominator = NStr::StringToInt(denominator_str,
-                NStr::fConvErr_NoThrow |
-                    NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces);
+            if (!error_rate.empty()) {
+                string numerator_str, denominator_str;
+
+                NStr::SplitInTwo(error_rate, "/", numerator_str, denominator_str);
+
+                numerator = NStr::StringToInt(numerator_str,
+                    NStr::fConvErr_NoThrow |
+                        NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces);
+                denominator = NStr::StringToInt(denominator_str,
+                    NStr::fConvErr_NoThrow |
+                        NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces);
+            }
 
             if (denominator < 1)
                 denominator = 1;
