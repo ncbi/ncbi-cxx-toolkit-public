@@ -9,21 +9,23 @@ from __future__ import print_function
 import os, sys, os.path
 from optparse import OptionParser
 import blast_utils
+import shutil
 
 VERBOSE = False
 SCRIPTS_DIR = os.path.dirname(os.path.abspath(sys.argv[0]))
 
 def main(): #IGNORE:R0911
     """ Creates installers for selected platforms. """
-    parser = OptionParser("%prog <blast_version> <platform> <installation directory>")
+    parser = OptionParser("%prog <blast_version> <platform> \
+                          <installation directory> \"<src-tarball>\"")
     parser.add_option("-v", "--verbose", action="store_true", default=False,
                       help="Show verbose output", dest="VERBOSE")
     options, args = parser.parse_args()
-    if len(args) != 3:
+    if len(args) != 5:
         parser.error("Incorrect number of arguments")
         return 1
 
-    blast_version, platform, installdir = args
+    blast_version, platform, installdir, srctarball, libdir = args
 
     global VERBOSE #IGNORE:W0603
     VERBOSE = options.VERBOSE
@@ -31,17 +33,36 @@ def main(): #IGNORE:R0911
         print("BLAST version", blast_version)
         print("Platform:", platform)
         print("Installation directory:", installdir)
+        print("Source tarball:", srctarball)
+        print("Lib directory:", libdir)
 
     if platform.startswith("Win"):
+        import glob
+        print("Files in libdir " + libdir + ":")
+        for dll in glob.glob(libdir + "/*"):
+            print(dll)
+        print("Files in install dir " + installdir + ":")
+        for dll in glob.glob(installdir + "/*"):
+            print(dll)
+
+
+    if platform.startswith("Win"):
+        shutil.copy(libdir + "libgcc_s_seh-1.dll", installdir + "bin")
+        shutil.copy(libdir + "libgmp-10.dll", installdir + "bin")
+        shutil.copy(libdir + "libgnutls-30.dll", installdir + "bin")
+        shutil.copy(libdir + "libhogweed-4-2.dll", installdir + "bin")
+        shutil.copy(libdir + "libnettle-6-2.dll", installdir + "bin")
+        shutil.copy(libdir + "libp11-kit-0.dll", installdir + "bin")
         return launch_win_installer_build(installdir, blast_version)                
-    if platform.startswith("Linux"):
+    if platform.startswith("Linux64"):
         return launch_rpm_build(installdir, blast_version)
-    if platform == "FreeBSD32" or platform.startswith("SunOS"):
+    if platform == "FreeBSD32" or platform.startswith("SunOS") or \
+        platform.startswith("Linux32"):
         return do_nothing(platform)
     if platform.startswith("IntelMAC"):
         return mac_post_build(installdir, blast_version)
     
-    print("Unknown OS identifier:", platform, file=sys.stderr)
+    print("Unknown OS identifier:" + platform, file=sys.stderr)
     print("Exiting post build script.", file=sys.stderr)
     return 2
 

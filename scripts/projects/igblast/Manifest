@@ -16,9 +16,9 @@
 # It is allowed to have more than one of each statements
 APP: igblastp igblastn makeblastdb
 
-POSTBUILD: $srcdir/scripts/projects/igblast/post_build/make_installers.py -v $version $platform $installdir
+POSTBUILD: $srcdir/scripts/projects/igblast/post_build/make_installers.py -v $version $platform $installdir "$tarball" $bindir
 
-DEFAULT_CONFIGURE_FLAGS: --without-debug --with-strip --with-mt --with-build-root=$srcdir/ReleaseMT
+DEFAULT_CONFIGURE_FLAGS: --without-debug --with-strip --with-openmp --with-mt --without-vdb --with-build-root=$srcdir/ReleaseMT
 
 # Each line describes a single configuration
 # The format is as follows:
@@ -44,4 +44,3 @@ IntelMAC            : clang : Clang.sh       --with-bin-release --without-debug 
 IntelMAC-Clang36    : clang : Clang.sh 7.0.2 --with-bin-release --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-ncbi-public --with-experimental=Int8GI --without-vdb --with-gnutls=/netopt/ncbi_tools/gnutls-3.4.0 --without-gcrypt
 
 USE_COMPONENTS
-

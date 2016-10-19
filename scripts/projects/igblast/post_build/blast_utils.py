@@ -72,7 +72,7 @@ def update_blast_version(config_file, ver):
     os.remove(fname)
 
 
-def create_new_tarball_name(platform, version):
+def create_new_tarball_name(platform, program, version):
     """ Converts the name of a platform as specified to the prepare_release 
     framework to an archive name according to BLAST release naming conventions.
     
@@ -80,7 +80,9 @@ def create_new_tarball_name(platform, version):
     more information can be found in http://mini.ncbi.nih.gov/3oo
     """
     
-    retval = "ncbi-blast-" + version + "+"
+    retval = "ncbi-" + program + "-" + version
+    if program == "blast":
+        retval += "+"
     if platform.startswith("Win"):
         retval += "-x64-win64"
     elif platform.startswith("Linux32"):
