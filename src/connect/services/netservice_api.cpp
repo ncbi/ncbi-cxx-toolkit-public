@@ -897,7 +897,6 @@ void SNetServiceImpl::DiscoverServersIfNeeded()
             // FIXME Retry logic can be removed as soon as LBSMD with
             // packet compression is installed universally.
             int try_count = TServConn_MaxFineLBNameRetries::GetDefault();
-            //LOG_POST("lbname_retries: "<<try_count);
             for (;;) {
                 SConnNetInfo* net_info =
                     ConnNetInfo_Create(m_ServiceName.c_str());
@@ -1018,10 +1017,8 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
         conn_listener = m_Listener;
 
     int retry_count = m_ConnectionMaxRetries;
-    //LOG_POST("retry_count = "<<retry_count);
 
     const unsigned long retry_delay = m_ConnectionRetryDelay;
-    //LOG_POST("retry_delay = "<<retry_delay);
 
     CDeadline max_connection_time(m_ServerPool->m_MaxConnectionTime / 1000,
          (m_ServerPool->m_MaxConnectionTime % 1000) * 1000 * 1000);
