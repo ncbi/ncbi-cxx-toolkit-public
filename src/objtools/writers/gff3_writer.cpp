@@ -378,26 +378,18 @@ bool CGff3Writer::xWriteAlign(
     }
     
     string id = alignId;
-    vector<string> id_strings;
     if (id.empty()) {
         if (align.IsSetId()) {
             const CSeq_align::TId& ids = align.GetId();
             for (CSeq_align::TId::const_iterator it = ids.begin();
                     it != ids.end(); ++it) {
                 if ((*it)->IsStr()) {
-                    id_strings.push_back((*it)->GetStr());
-                    //id = (*it)->GetStr();
-                   // break;
+                    id = (*it)->GetStr();
+                    break;
                 }
             }
         }
-
-        if (!id_strings.empty()) {
-            sort(id_strings.begin(), id_strings.end());
-            id = id_strings[0];
-        }
     }
-
     if (id.empty()) {
         id = xNextAlignId();
     }
