@@ -463,7 +463,7 @@ CNcbiOstream& PrintSAMHeader(CNcbiOstream& ostr,
     IBlastSeqInfoSrc* seqinfo_src = db_adapter->MakeSeqInfoSrc();
     _ASSERT(seq_src && seqinfo_src);
 
-    ostr << "@HD\t" << "VN:1.2\t" << "GO:query" << endl;
+    ostr << "@HD\t" << "VN:1.0\t" << "GO:query" << endl;
     
     BlastSeqSrcResetChunkIterator(seq_src);
     BlastSeqSrcIterator* it = BlastSeqSrcIteratorNew();
@@ -485,7 +485,7 @@ CNcbiOstream& PrintSAMHeader(CNcbiOstream& ostr,
     }
     BlastSeqSrcIteratorFree(it);
 
-    ostr << "@PG\tID:0\tPN:magicblast\tCL:" << cmd_line_args << endl;
+    ostr << "@PG\tID:magicblast\tPN:magicblast\tCL:" << cmd_line_args << endl;
 
     return ostr;
 }
@@ -517,7 +517,7 @@ CNcbiOstream& PrintSAMHeader(CNcbiOstream& ostr,
                              CScope& scope,
                              const string& cmd_line_args)
 {
-    ostr << "@HD\t" << "VN:1.2\t" << "GO:query" << endl;
+    ostr << "@HD\t" << "VN:1.0\t" << "GO:query" << endl;
 
     TSeq_idHashSet subjects;
     ITERATE (CSeq_align_set::Tdata, it, results->Get()) {
@@ -536,7 +536,7 @@ CNcbiOstream& PrintSAMHeader(CNcbiOstream& ostr,
         }
         ostr << "@SQ\t" << "SN:" << id << "\tLN:" << length << endl;
     }
-    ostr << "@PG\tID:0\tPN:magicblast\tCL:" << cmd_line_args << endl;
+    ostr << "@PG\tID:magicblast\tPN:magicblast\tCL:" << cmd_line_args << endl;
     return ostr;
 }
 
