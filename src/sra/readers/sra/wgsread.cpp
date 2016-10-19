@@ -2258,7 +2258,7 @@ unsigned CWGSSeqIterator::GetAccVersionCount(void) const
         return 2;
     }
 #endif
-    return m_Cur->TRIM_START(m_CurrId).size();
+    return unsigned(m_Cur->TRIM_START(m_CurrId).size());
 }
 
 

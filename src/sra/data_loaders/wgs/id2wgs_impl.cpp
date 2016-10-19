@@ -621,7 +621,7 @@ CID2_Blob_Id& CID2WGSProcessor_Impl::GetBlobId(SWGSSeqInfo& seq0)
     CRef<CID2_Blob_Id> id(new CID2_Blob_Id);
     id->SetSat(kBlobIdSat);
     id->SetSub_sat(int(subsat));
-    id->SetSat_key(seq.m_RowId);
+    id->SetSat_key(int(seq.m_RowId));
     seq0.m_BlobId = id;
     return *id;
 }
