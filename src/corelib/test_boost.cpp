@@ -301,7 +301,7 @@ public:
     virtual ~CNcbiTestsObserver(void) {}
 
     /// Method called before execution of all tests
-    virtual void test_start(but::counter_t /* test_cases_amount */);
+    // virtual void test_start(but::counter_t /* test_cases_amount */);
 
     /// Method called after execution of all tests
     virtual void test_finish(void);
@@ -1079,6 +1079,13 @@ CNcbiTestApplication::x_EnsureAllDeps(void)
 inline void
 CNcbiTestApplication::x_ActualizeDeps(void)
 {
+#if BOOST_VERSION >= 105900
+    // Expedite run status initialization so s_IsEnabled will work.
+    auto  master_id = but::framework::master_test_suite().p_id;
+    auto& state     = but::framework::impl::s_frk_state();
+    state.finalize_default_run_status(master_id, but::test_unit::RS_INVALID);
+    state.deduce_run_status(master_id);
+#endif
     ITERATE(TUnitToManyMap, it, m_TestDeps) {
         but::test_unit* test = it->first;
         if (!m_DisabledTests.count(test) && !s_IsEnabled(*test)) {
@@ -1853,13 +1860,6 @@ CNcbiTestsCollector::test_suite_start(but::test_suite const& suite)
     return true;
 }
 
-
-void
-CNcbiTestsObserver::test_start(but::counter_t /* test_cases_amount */)
-{
-    s_GetTestApp().InitTestsBeforeRun();
-}
-
 void
 CNcbiTestsObserver::test_finish(void)
 {
@@ -2235,6 +2235,8 @@ main(int argc, char* argv[])
 #else
         framework::init( &init_unit_test_suite, argc, argv );
 #endif
+
+        ncbi::s_GetTestApp().InitTestsBeforeRun();
 
 #if BOOST_VERSION >= 105900
         if( RTCFG(bool, WAIT_FOR_DEBUGGER, wait_for_debugger) ) {
