@@ -77,7 +77,8 @@ public:
               m_NoRootSeq(false),
               m_SeqType('\0'),
               m_RowDigits(0),
-              m_RowId(0)
+              m_RowId(0),
+              m_Version(-1)
             {
             }
 
@@ -118,6 +119,7 @@ public:
         char m_SeqType;
         Uint1 m_RowDigits;
         TVDBRowId m_RowId;
+        int m_Version; // for contigs
         // cached objects
         CWGSDb m_WGSDb;
         CWGSSeqIterator m_ContigIter;

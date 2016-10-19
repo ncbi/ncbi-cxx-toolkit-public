@@ -175,7 +175,8 @@ CWGSBlobId::CWGSBlobId(CTempString str)
 CWGSBlobId::CWGSBlobId(const CWGSFileInfo::SAccFileInfo& info)
     : m_WGSPrefix(info.file->GetWGSPrefix()),
       m_SeqType(info.seq_type),
-      m_RowId(info.row_id)
+      m_RowId(info.row_id),
+      m_Version(info.version)
 {
 }
 
@@ -188,31 +189,43 @@ CWGSBlobId::~CWGSBlobId(void)
 string CWGSBlobId::ToString(void) const
 {
     CNcbiOstrstream out;
-    out << m_WGSPrefix << '.';
+    out << m_WGSPrefix << '/';
     if ( m_SeqType ) {
         out << m_SeqType;
     }
     out << m_RowId;
+    if ( m_Version != -1 ) {
+        out << '.' << m_Version;
+    }
     return CNcbiOstrstreamToString(out);
 }
 
 
 void CWGSBlobId::FromString(CTempString str)
 {
-    SIZE_TYPE dot = str.rfind('.');
-    if ( dot == NPOS ) {
+    SIZE_TYPE slash = str.rfind('/');
+    if ( slash == NPOS ) {
         NCBI_THROW_FMT(CSraException, eOtherError,
                        "Bad CWGSBlobId: "<<str);
     }
-    m_WGSPrefix = str.substr(0, dot);
-    SIZE_TYPE pos = dot+1;
+    m_WGSPrefix = str.substr(0, slash);
+    str = str.substr(slash+1);
+    SIZE_TYPE pos = 0;
     if ( str[pos] == 'S' || str[pos] == 'P' ) {
         m_SeqType = str[pos++];
     }
     else {
         m_SeqType = '\0';
     }
-    m_RowId = NStr::StringToNumeric<Uint8>(str.substr(dot+1));
+    SIZE_TYPE dot = str.rfind('.');
+    if ( dot == NPOS ) {
+        m_Version = -1;
+    }
+    else {
+        m_Version = NStr::StringToNumeric<int>(str.substr(dot+1));
+        str = str.substr(0, dot);
+    }
+    m_RowId = NStr::StringToNumeric<Uint8>(str);
 }
 
 
@@ -225,6 +238,9 @@ bool CWGSBlobId::operator<(const CBlobId& id) const
     if ( m_SeqType != wgs2.m_SeqType ) {
         return m_SeqType < wgs2.m_SeqType;
     }
+    if ( m_Version != wgs2.m_Version ) {
+        return m_Version < wgs2.m_Version;
+    }
     return m_RowId < wgs2.m_RowId;
 }
 
@@ -233,6 +249,7 @@ bool CWGSBlobId::operator==(const CBlobId& id) const
 {
     const CWGSBlobId& wgs2 = dynamic_cast<const CWGSBlobId&>(id);
     return m_RowId == wgs2.m_RowId &&
+        m_Version == wgs2.m_Version &&
         m_SeqType == wgs2.m_SeqType &&
         m_WGSPrefix == wgs2.m_WGSPrefix;
 }
@@ -479,7 +496,7 @@ CWGSDataLoader_Impl::GetFileInfoByAcc(const string& acc)
         SIZE_TYPE row_digits = acc.size() - row_pos;
         if ( info->m_WGSDb->GetIdRowDigits() == row_digits ) {
             ret.file = info;
-            if ( !ret.IsValidRowId() ) {
+            if ( !ret.ValidateRowId() ) {
                 ret.file = 0;
             }
         }
@@ -524,9 +541,7 @@ CWGSDataLoader_Impl::GetFileInfo(const CSeq_id_Handle& idh)
         return ret;
     }
     if ( text_id->IsSetVersion() ) {
-        ret.has_version = true;
-        ret.version = text_id->GetVersion();
-        if ( !ret.file->IsCorrectVersion(ret) ) {
+        if ( !ret.SetVersion(text_id->GetVersion()) ) {
             ret.file = null;
         }
     }
@@ -602,8 +617,10 @@ CWGSSeqIterator
 CWGSFileInfo::SAccFileInfo::GetContigIterator(void) const
 {
     _ASSERT(IsContig() && row_id != 0);
-    return CWGSSeqIterator(file->GetDb(), row_id,
-                           CWGSSeqIterator::eIncludeWithdrawn);
+    CWGSSeqIterator iter(file->GetDb(), row_id,
+                         CWGSSeqIterator::eIncludeWithdrawn);
+    iter.SelectAccVersion(version);
+    return iter;
 }
 
 
@@ -628,8 +645,10 @@ CWGSFileInfo::GetContigIterator(const CWGSBlobId& blob_id) const
 {
     _ASSERT(blob_id.m_SeqType == '\0');
     _ASSERT(blob_id.m_RowId);
-    return CWGSSeqIterator(GetDb(), blob_id.m_RowId,
-                           CWGSSeqIterator::eIncludeWithdrawn);
+    CWGSSeqIterator iter(GetDb(), blob_id.m_RowId,
+                         CWGSSeqIterator::eIncludeWithdrawn);
+    iter.SelectAccVersion(blob_id.m_Version);
+    return iter;
 }
 
 
@@ -967,8 +986,9 @@ void CWGSFileInfo::x_InitMasterDescr(void)
 }
 
 
-bool CWGSFileInfo::SAccFileInfo::IsValidRowId(void) const
+bool CWGSFileInfo::SAccFileInfo::ValidateRowId(void)
 {
+    _ASSERT(version == -1);
     if ( row_id == 0 ) {
         return false;
     }
@@ -979,23 +999,33 @@ bool CWGSFileInfo::SAccFileInfo::IsValidRowId(void) const
         return GetProteinIterator();
     }
     else {
-        return GetContigIterator();
+        if ( CWGSSeqIterator iter = GetContigIterator() ) {
+            // contigs have versions
+            version = iter.GetLatestAccVersion();
+            return true;
+        }
+        return false;
     }
 }
 
 
-bool CWGSFileInfo::IsCorrectVersion(const SAccFileInfo& info) const
+bool CWGSFileInfo::SAccFileInfo::SetVersion(int version)
 {
-    if ( info.row_id == 0 ) {
+    _ASSERT(version != -1);
+    if ( row_id == 0 ) {
         return false;
     }
-    if ( info.IsContig() ) {
-        CWGSSeqIterator iter = info.GetContigIterator();
-        return iter && info.version == iter.GetAccVersion();
+    if ( IsContig() ) {
+        CWGSSeqIterator iter = GetContigIterator();
+        if ( iter && iter.HasAccVersion(version) ) {
+            this->version = version;
+            return true;
+        }
+        return false;
     }
     else {
         // scaffolds and proteins can have only version 1
-        return info.version == 1;
+        return version == 1;
     }
 }
 
@@ -1007,8 +1037,8 @@ bool CWGSFileInfo::FindGi(SAccFileInfo& info, TGi gi) const
         info.file = this;
         info.row_id = it.GetRowId();
         info.seq_type = it.GetSeqType() == it.eProt? 'P': '\0';
-        info.has_version = false;
-        return true;
+        info.version = -1;
+        return info.ValidateRowId(); // will also set version
     }
     return false;
 }
@@ -1020,8 +1050,8 @@ bool CWGSFileInfo::FindProtAcc(SAccFileInfo& info, const string& acc) const
         info.file = this;
         info.row_id = row_id;
         info.seq_type = 'P';
-        info.has_version = false;
-        return true;
+        info.version = -1;
+        return info.ValidateRowId();
     }
     return false;
 }
@@ -1064,13 +1094,13 @@ void CWGSFileInfo::LoadBlob(const CWGSBlobId& blob_id,
         CBioseq_Handle::TBioseqStateFlags state = 0;
         if ( gb_state ) {
             switch ( gb_state ) {
-            case 1:
+            case NCBI_gb_state_eWGSGenBankSuppressed:
                 state |= CBioseq_Handle::fState_suppress_perm;
                 break;
-            case 2:
+            case NCBI_gb_state_eWGSGenBankReplaced:
                 state |= CBioseq_Handle::fState_dead;
                 break;
-            case 3:
+            case NCBI_gb_state_eWGSGenBankWithdrawn:
                 state |= (CBioseq_Handle::fState_withdrawn |
                           CBioseq_Handle::fState_no_data);
                 break;

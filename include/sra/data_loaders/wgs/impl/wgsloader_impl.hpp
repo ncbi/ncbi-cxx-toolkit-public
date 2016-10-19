@@ -65,8 +65,7 @@ public:
         SAccFileInfo(void)
             : row_id(0),
               seq_type('\0'),
-              has_version(false),
-              version(0)
+              version(-1)
             {
             }
         DECLARE_OPERATOR_BOOL_REF(file);
@@ -86,16 +85,16 @@ public:
         CWGSProteinIterator GetProteinIterator(void) const;
         SAccFileInfo GetRootFileInfo(void) const;
 
-        bool IsValidRowId(void) const;
+        // set version if necessary
+        bool ValidateRowId(void);
+        // reset version if necessary
+        bool SetVersion(int version);
 
         CConstRef<CWGSFileInfo> file;
         TVDBRowId row_id;
         char seq_type; // '\0' - regular nuc, 'S' - scaffold, 'P' - protein
-        bool has_version;
         int version;
     };
-
-    bool IsCorrectVersion(const SAccFileInfo& info) const;
 
     bool FindGi(SAccFileInfo& info, TGi gi) const;
     bool FindProtAcc(SAccFileInfo& info, const string& acc) const;
@@ -214,6 +213,7 @@ public:
     string m_WGSPrefix;
     char m_SeqType;
     TVDBRowId m_RowId;
+    int m_Version;
 
     // string blob id representation:
     // eBlobType_annot_plain_id
