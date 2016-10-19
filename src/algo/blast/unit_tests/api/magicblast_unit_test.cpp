@@ -92,10 +92,10 @@ BOOST_FIXTURE_TEST_SUITE(magicblast, CMagicBlastTestFixture)
 
 struct SExon
 {
-    int prod_start;
-    int prod_end;
-    int gen_start;
-    int gen_end;
+    unsigned int prod_start;
+    unsigned int prod_end;
+    unsigned int gen_start;
+    unsigned int gen_end;
 
     ENa_strand prod_strand;
     ENa_strand gen_strand;
@@ -106,7 +106,7 @@ struct SExon
 struct SMatch
 {
     int score;
-    int prod_length;
+    unsigned int prod_length;
     vector<SExon> exons;
 };
 
