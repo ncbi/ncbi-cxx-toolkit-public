@@ -731,7 +731,7 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
         if((m_Option & eHtml) && (sdl->id_url != NcbiEmptyString)) {
             out << sdl->id_url;
         }
-        if(m_Option & eShowGi){
+        if((m_Option & eShowGi) && !sdl->id->IsGi()){
             if(sdl->gi > ZERO_GI){
                 line_component = "gi|" + NStr::NumericToString(sdl->gi) + "|";
                 out << line_component;
@@ -742,7 +742,10 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
             if(!(sdl->id->AsFastaString().find("gnl|BL_ORD_ID") != string::npos || 
 		sdl->id->AsFastaString().find("lcl|Subject_") != string::npos)){
                 string idStr;
-                if (use_long_seqids) {
+                if (use_long_seqids ||
+                    // use long sequence ids if more than one id is printed
+                    ((m_Option & eShowGi) && sdl->gi > ZERO_GI)) {
+
                     idStr = sdl->id->AsFastaString();
                 }
                 else {

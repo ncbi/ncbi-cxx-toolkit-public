@@ -2269,7 +2269,7 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_
         value_set = true;
     }
 #endif /* CTOOLKIT_COMPATIBLE */
-		
+
     if(bsp_handle){
         const CRef<CSeq_id> wid =
             FindBestChoice(bsp_handle.GetBioseqCore()->GetId(), 
@@ -2305,15 +2305,17 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_
                 out<<alnDispParams->id_url;
             }
                 
-            if(m_AlignOption&eShowGi && alnDispParams->gi > ZERO_GI){
+            if(m_AlignOption&eShowGi && alnDispParams->gi > ZERO_GI &&
+               !alnDispParams->seqID->IsGi()){
                 out<<"gi|"<<alnDispParams->gi<<"|";
-                    }     
+            }     
             if(!((alnDispParams->seqID->AsFastaString().find("gnl|BL_ORD_ID") != string::npos) ||
 		alnDispParams->seqID->AsFastaString().find("lcl|Subject_") != string::npos)){
                 if (strncmp(alnDispParams->seqID->AsFastaString().c_str(), "lcl|", 4) == 0) 
                          out << alnDispParams->label;
                 else {
-                    if (m_UseLongSeqIds) {
+                    if (m_UseLongSeqIds || ((m_AlignOption & eShowGi) &&
+                                            alnDispParams->gi > ZERO_GI)) {
                         alnDispParams->seqID->WriteAsFasta(out);
                     }
                     else {
@@ -2387,7 +2389,8 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_
                         out<< alnDispParams->id_url;
                     }
                 
-                    if(m_AlignOption&eShowGi && alnDispParams->gi > ZERO_GI){
+                    if(m_AlignOption&eShowGi && alnDispParams->gi > ZERO_GI &&
+                       !alnDispParams->seqID->IsGi()){
                         out<<"gi|"<<alnDispParams->gi<<"|";
                     }     
                     if(!(alnDispParams->seqID->AsFastaString().find("gnl|BL_ORD_ID") != string::npos) ||
@@ -2396,7 +2399,10 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_
                             out << alnDispParams->label;
                     	}
                     	else {
-                            if (m_UseLongSeqIds) {
+                            if (m_UseLongSeqIds ||
+                                ((m_AlignOption & eShowGi) &&
+                                 alnDispParams->gi > ZERO_GI)) {
+
                                 alnDispParams->seqID->WriteAsFasta(out);
                             }
                             else {
