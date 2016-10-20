@@ -83,6 +83,18 @@ static const size_t kMax_AlleleLength  = 32;
 
 static const char kDefaultAnnotName[] = "SNP";
 
+static const char* const kSubtypeValue[] = {
+    "U", // eFeatSubtype_unknown
+    "-", // eFeatSubtype_identity
+    "H", // eFeatSubtype_inversion
+    "S", // eFeatSubtype_single_nucleotide_variation
+    "M", // eFeatSubtype_multi_nucleotide_variation
+    "L", // eFeatSubtype_deletion_insertion
+    "D", // eFeatSubtype_deletion
+    "I", // eFeatSubtype_insertion
+    "R", // eFeatSubtype_str
+};
+
 
 /////////////////////////////////////////////////////////////////////////////
 // CSNPDb_Impl
@@ -651,6 +663,16 @@ inline unsigned x_SetBitCount(Uint8 v)
     v = (NCBI_CONST_UINT8(0x0000ffff0000ffff) & (v>>16)) +
         (NCBI_CONST_UINT8(0x0000ffff0000ffff) & v);
     return unsigned(v>>32)+unsigned(v);
+}
+
+
+inline void x_SetOS8(vector<char>& os, Uint8 data)
+{
+    os.resize(8);
+    char* dst = os.data();
+    for ( int i = 0; i < 8; ++i ) {
+        dst[i] = data>>(8*i);
+    }
 }
 
 
@@ -1238,8 +1260,16 @@ struct SCommonStrings : public SColumn
     TIndex index;
     list<string> index_strings;
 
-    SCommonStrings(void)
+    SCommonStrings()
         : values(0),
+          indexes(0)
+        {
+        }
+    explicit
+    SCommonStrings(CSeqTable_column_info::EField_id id,
+                   const char* name = 0)
+        : SColumn(id, name),
+          values(0),
           indexes(0)
         {
         }
@@ -1307,10 +1337,9 @@ struct SCommon8Bytes : public SColumn
                 index.insert(TIndex::value_type(val, 0));
             if ( ins.second ) {
                 ins.first->second = values->size();
-                vector<char>* data = 
-                    new vector<char>(reinterpret_cast<const char*>(&val),
-                                     reinterpret_cast<const char*>(&val+1));
+                vector<char>* data = new vector<char>();
                 values->push_back(data);
+                x_SetOS8(*data, val);
             }
             auto value_index = ins.first->second;
             if ( value_index > kMax_Int ) {
@@ -1355,7 +1384,8 @@ struct SSeqTableContent
 
     SCommonStrings col_alleles[kMaxTableAlleles];
 
-    SCommon8Bytes col_qa;
+    SCommonStrings col_subtype;
+    SCommon8Bytes col_bitfield;
 
     SInt8Column col_dbxref;
 
@@ -1402,7 +1432,8 @@ SSeqTableContent::SSeqTableContent(void)
       col_from(CSeqTable_column_info::eField_id_location_from),
       col_to(CSeqTable_column_info::eField_id_location_to),
       ind_to(col_to),
-      col_qa(CSeqTable_column_info::eField_id_ext, "E.QualityCodes"),
+      col_subtype(CSeqTable_column_info::eField_id_ext, "E.VariationClass"),
+      col_bitfield(CSeqTable_column_info::eField_id_ext, "E.Bitfield"),
       col_dbxref(CSeqTable_column_info::eField_id_dbxref, "D.dbSNP")
 {
     for ( int i = 0; i < kMaxTableAlleles; ++i ) {
@@ -1430,7 +1461,8 @@ void SSeqTableContent::Add(const CSNPDbFeatIterator& it)
         col_alleles[i].Add(it.GetAllele(range, i));
     }
 
-    col_qa.Add(it.GetQualityCodes());
+    col_subtype.Add(it.GetFeatSubtypeString());
+    col_bitfield.Add(it.GetBitfield());
 
     col_dbxref.Add(it.GetFeatId());
 
@@ -1488,11 +1520,16 @@ CRef<CSeq_annot> SSeqTableContent::GetAnnot(const string& annot_name,
         col_alleles[i].Attach(table);
     }
 
-    if ( col_qa ) {
+    if ( col_subtype || col_bitfield ) {
         AddFixedString(table,
                        CSeqTable_column_info::eField_id_ext_type,
                        "dbSnpQAdata");
-        col_qa.Attach(table);
+        if ( col_subtype ) {
+            col_subtype.Attach(table);
+        }
+        if ( col_bitfield ) {
+            col_bitfield.Attach(table);
+        }
     }
 
     col_dbxref.Attach(table);
@@ -1661,9 +1698,9 @@ bool x_ParseSNP_Info(SSNP_Info& info,
         info.m_AllelesIndices[index] = info.kNo_AlleleIndex;
     }
 
-    vector<char> q;
-    it.GetQualityCodes(q);
-    info.m_QualityCodesIndex = packed.x_GetQualityCodesIndex(q);
+    vector<char> os;
+    it.GetBitfieldOS(os);
+    info.m_QualityCodesIndex = packed.x_GetQualityCodesIndex(os);
     if ( info.m_QualityCodesIndex == info.kNo_QualityCodesIndex ) {
         return false;
     }
@@ -2206,6 +2243,19 @@ CTempString CSNPDbFeatIterator::GetFeatType(void) const
 }
 
 
+CSNPDbFeatIterator::EFeatSubtype CSNPDbFeatIterator::GetFeatSubtype(void) const
+{
+    x_CheckValid("CSNPDbFeatIterator::GetFeatSubtype");
+    return EFeatSubtype(*Cur().FEAT_SUBTYPE(m_CurrFeatId));
+}
+
+
+CTempString CSNPDbFeatIterator::GetFeatSubtypeString(void) const
+{
+    return kSubtypeValue[GetFeatSubtype()];
+}
+
+
 TSeqPos CSNPDbFeatIterator::x_GetFrom(void) const
 {
     return *Cur().FROM(m_CurrFeatId);
@@ -2243,7 +2293,7 @@ CSNPDbFeatIterator::EExcluded CSNPDbFeatIterator::x_Excluded(void)
         return eExluded;
     }
     if ( m_Filter.IsSet() ) {
-        if ( !m_Filter.Matches(GetQualityCodes()) ) {
+        if ( !m_Filter.Matches(GetBitfield()) ) {
             return eExluded;
         }
     }
@@ -2330,18 +2380,16 @@ CTempString CSNPDbFeatIterator::GetAllele(const TExtraRange& range,
 }
 
 
-Uint8 CSNPDbFeatIterator::GetQualityCodes(void) const
+Uint8 CSNPDbFeatIterator::GetBitfield(void) const
 {
-    x_CheckValid("CSNPDbFeatIterator::GetQualityCodes");
+    x_CheckValid("CSNPDbFeatIterator::GetBitfield");
     return *Cur().BIT_FLAGS(m_CurrFeatId);
 }
 
 
-void CSNPDbFeatIterator::GetQualityCodes(vector<char>& codes) const
+void CSNPDbFeatIterator::GetBitfieldOS(vector<char>& os) const
 {
-    Uint8 data = GetQualityCodes();
-    codes.assign(reinterpret_cast<const char*>(&data),
-                 reinterpret_cast<const char*>(&data+1));
+    x_SetOS8(os, GetBitfield());
 }
 
 
@@ -2380,8 +2428,10 @@ struct CSNPDbFeatIterator::SCreateCache {
     CRef<CDbtag> m_Dbtag;
     CRef<CUser_object> m_Ext;
     CRef<CObject_id> m_ObjectIdQAdata;
-    CRef<CObject_id> m_ObjectIdQualityCodes;
-    CRef<CUser_field> m_QualityCodes;
+    CRef<CObject_id> m_ObjectIdBitfield;
+    CRef<CObject_id> m_ObjectIdSubtype;
+    CRef<CUser_field> m_Bitfield;
+    CRef<CUser_field> m_Subtype;
 
 #define ALLELE_CACHE
 #ifdef ALLELE_CACHE
@@ -2530,7 +2580,9 @@ CRef<CSeq_feat> CSNPDbFeatIterator::GetSeq_feat(TFlags flags) const
         feat.ResetDbxref();
     }
     feat.ResetExt();
-    if ( flags & (ToFlags(fIncludeQualityCodes)|fIncludeNeighbors) ) {
+    TFlags ext_flags =
+        ToFlags(fIncludeBitfield) | fIncludeNeighbors | fIncludeSubtype;
+    if ( flags & ext_flags ) {
         CUser_object& ext = x_GetPrivate(cache.m_Ext);
         ext.SetType(x_GetObject_id(cache.m_ObjectIdQAdata,
                                    "dbSnpQAdata"));
@@ -2538,11 +2590,18 @@ CRef<CSeq_feat> CSNPDbFeatIterator::GetSeq_feat(TFlags flags) const
         data.clear();
         if ( flags & fIncludeNeighbors ) {
         }
-        if ( flags & fIncludeQualityCodes ) {
-            CUser_field& field = x_GetPrivate(cache.m_QualityCodes);
-            field.SetLabel(x_GetObject_id(cache.m_ObjectIdQualityCodes,
-                                          "QualityCodes"));
-            GetQualityCodes(field.SetData().SetOs());
+        if ( flags & fIncludeSubtype ) {
+            CUser_field& field = x_GetPrivate(cache.m_Subtype);
+            field.SetLabel(x_GetObject_id(cache.m_ObjectIdSubtype,
+                                          "VariationClass"));
+            field.SetData().SetStr(GetFeatSubtypeString());
+            ext.SetData().push_back(Ref(&field));
+        }
+        if ( flags & fIncludeBitfield ) {
+            CUser_field& field = x_GetPrivate(cache.m_Bitfield);
+            field.SetLabel(x_GetObject_id(cache.m_ObjectIdBitfield,
+                                          "Bitfield"));
+            GetBitfieldOS(field.SetData().SetOs());
             ext.SetData().push_back(Ref(&field));
         }
         feat.SetExt(ext);

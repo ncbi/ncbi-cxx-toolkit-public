@@ -77,6 +77,18 @@ struct SSNPDb_Defs
         eSearchByStart
     };
 
+    enum EFeatSubtype {
+        eFeatSubtype_unknown                        = 0,
+        eFeatSubtype_identity                       = 1,
+        eFeatSubtype_inversion                      = 2,
+        eFeatSubtype_single_nucleotide_variation    = 3,
+        eFeatSubtype_multi_nucleotide_variation     = 4,
+        eFeatSubtype_deletion_insertion             = 5,
+        eFeatSubtype_deletion                       = 6,
+        eFeatSubtype_insertion                      = 7,
+        eFeatSubtype_str                            = 8
+    };
+
     typedef Uint8 TFilter;
 
     struct SFilter {
@@ -916,6 +928,8 @@ public:
     }
 
     CTempString GetFeatType(void) const;
+    EFeatSubtype GetFeatSubtype(void) const;
+    CTempString GetFeatSubtypeString(void) const;
 
     typedef pair<TVDBRowId, size_t> TExtraRange;
     TExtraRange GetExtraRange(void) const;
@@ -959,19 +973,32 @@ public:
     Uint4 GetFeatIdPrefix(void) const;
     Uint8 GetFeatId(void) const;
 
-    Uint8 GetQualityCodes(void) const;
-    void GetQualityCodes(vector<char>& codes) const;
+    TFilter GetBitfield(void) const;
+    void GetBitfieldOS(vector<char>& octet_stream) const;
+
+    // use GetBitfield()
+    NCBI_DEPRECATED
+    Uint8 GetQualityCodes(void) const {
+        return GetBitfield();
+    }
+    NCBI_DEPRECATED
+    void GetQualityCodes(vector<char>& codes) const {
+        GetBitfieldOS(codes);
+    }
 
     enum EFlags {
         fIncludeAlleles      = 1<<0,
         fIncludeRsId         = 1<<1,
-        fIncludeQualityCodes = 1<<2,
+        fIncludeBitfield     = 1<<2,
+        fIncludeQualityCodes = fIncludeBitfield,
         fIncludeNeighbors    = 1<<3,
+        fIncludeSubtype      = 1<<4,
         fUseSharedObjects    = 1<<8,
         fDefaultFlags = ( fIncludeAlleles |
                           fIncludeRsId |
-                          fIncludeQualityCodes |
+                          fIncludeBitfield |
                           fIncludeNeighbors |
+                          fIncludeSubtype |
                           fUseSharedObjects )
     };
     typedef CSafeFlags<EFlags> TFlags;
