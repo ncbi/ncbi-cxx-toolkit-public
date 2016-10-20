@@ -286,11 +286,6 @@ SNetServerPoolImpl::SNetServerPoolImpl(INetServerConnectionListener* listener,
 {
 }
 
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-atomic<unsigned> SNetServiceImpl::m_ColoNetwork{0};
-atomic<bool> SNetServiceImpl::m_AllowXSiteConnections{false};
-#endif
-
 void SNetServiceImpl::Construct(SNetServerInPool* server)
 {
     m_ServiceType = CNetService::eSingleServerService;
@@ -317,15 +312,15 @@ void SNetServiceImpl::Construct()
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
 void CNetService::AllowXSiteConnections()
 {
-    SNetServiceImpl::AllowXSiteConnections();
+    SNetServiceXSiteAPI::AllowXSiteConnections();
 }
 
 bool CNetService::IsUsingXSiteProxy()
 {
-    return SNetServiceImpl::IsUsingXSiteProxy();
+    return SNetServiceXSiteAPI::IsUsingXSiteProxy();
 }
 
-void SNetServiceImpl::AllowXSiteConnections()
+void SNetServiceXSiteAPI::AllowXSiteConnections()
 {
     m_AllowXSiteConnections.store(true);
 
@@ -346,10 +341,22 @@ void SNetServiceImpl::AllowXSiteConnections()
     free(sinfo);
 }
 
-bool SNetServiceImpl::IsUsingXSiteProxy()
+bool SNetServiceXSiteAPI::IsUsingXSiteProxy()
 {
     return m_AllowXSiteConnections.load();
 }
+
+void SNetServiceXSiteAPI::InitXSite(CConfig* config, const string& section)
+{
+    if (TServConn_AllowXsiteConn::GetDefault() ||
+            config->GetBool(section, "allow_xsite_conn",
+                CConfig::eErr_NoThrow, false)) {
+        AllowXSiteConnections();
+    }
+}
+
+atomic<unsigned> SNetServiceXSiteAPI::m_ColoNetwork{0};
+atomic<bool> SNetServiceXSiteAPI::m_AllowXSiteConnections{false};
 #endif
 
 CConfig* FindSection(const char* const* sections, const CConfig::TParamTree* tree,
@@ -460,13 +467,7 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
             }
         }
 
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-        if (TServConn_AllowXsiteConn::GetDefault() ||
-                config->GetBool(section, "allow_xsite_conn",
-                    CConfig::eErr_NoThrow, false)) {
-            AllowXSiteConnections();
-        }
-#endif
+        InitXSite(config, section);
 
         m_UseSmartRetries = config->GetBool(section,
                 "smart_service_retries", CConfig::eErr_NoThrow, true);

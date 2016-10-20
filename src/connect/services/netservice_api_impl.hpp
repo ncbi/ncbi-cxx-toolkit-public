@@ -246,7 +246,25 @@ public:
     virtual ~IServiceTraversal() {}
 };
 
-struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
+struct SNetServiceXSiteAPI : public CObject
+{
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
+    static void InitXSite(CConfig* config, const string& section);
+    static bool IsUsingXSiteProxy();
+    static void AllowXSiteConnections();
+
+    static bool IsColoAddr(unsigned int ip)
+    {
+        return (SOCK_NetToHostLong(ip) >> 16) == m_ColoNetwork.load();
+    }
+
+private:
+    static atomic<unsigned> m_ColoNetwork;
+    static atomic<bool> m_AllowXSiteConnections;
+#endif
+};
+
+struct NCBI_XCONNECT_EXPORT SNetServiceImpl : SNetServiceXSiteAPI
 {
     // Construct a new object.
     SNetServiceImpl(const string& api_name, const string& client_name,
@@ -327,16 +345,6 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
         return old_handler;
     }
 
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-    static bool IsUsingXSiteProxy();
-    static void AllowXSiteConnections();
-
-    static bool IsColoAddr(unsigned int ip)
-    {
-        return (SOCK_NetToHostLong(ip) >> 16) == m_ColoNetwork.load();
-    }
-#endif
-
     virtual ~SNetServiceImpl();
 
     // Connection event listening. This listener implements
@@ -361,11 +369,6 @@ private:
     bool m_UseSmartRetries;
     int m_ConnectionMaxRetries;
     int m_ConnectionRetryDelay;
-
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-    static atomic<unsigned> m_ColoNetwork;
-    static atomic<bool> m_AllowXSiteConnections;
-#endif
 };
 
 struct SNetServiceMap {
