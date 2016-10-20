@@ -57,11 +57,6 @@
 BEGIN_NCBI_SCOPE
 
 static const STimeout s_ZeroTimeout = {0, 0};
-#ifndef NCBI_OS_MSWIN
-static const STimeout s_InternalConnectTimeout = {0, 250 * 1000};
-#else
-static const STimeout s_InternalConnectTimeout = {1, 250 * 1000};
-#endif
 
 ///////////////////////////////////////////////////////////////////////////
 SNetServerMultilineCmdOutputImpl::~SNetServerMultilineCmdOutputImpl()
@@ -476,10 +471,45 @@ CNetServerConnection SNetServerImpl::GetConnectionFromPool()
 const char SNetServerImpl::kXSiteFwd[] = "XSITEFWD";
 #endif
 
-inline static bool operator <(const STimeout& t1, const STimeout& t2)
+struct SNetServerImpl::SConnectDeadline
 {
-    return t1.sec == t2.sec ? t1.usec < t2.usec : t1.sec < t2.sec;
-}
+    SConnectDeadline(const STimeout& conn_timeout) :
+        try_timeout(Min(conn_timeout , kMaxTryTimeout)),
+        deadline(CTimeout(try_timeout.sec, try_timeout.usec))
+    {}
+
+    const STimeout* GetRemaining() const { return &try_timeout; }
+
+    bool IsExpired()
+    {
+        CNanoTimeout remaining(deadline.GetRemainingTime());
+
+        if (remaining.IsZero()) return true;
+
+        remaining.Get(&try_timeout.sec, &try_timeout.usec);
+        return false;
+    }
+
+private:
+    static STimeout Min(const STimeout& t1, const STimeout& t2)
+    {
+        if (t1.sec  < t2.sec)  return t1;
+        if (t1.sec  > t2.sec)  return t2;
+        if (t1.usec < t2.usec) return t1;
+        return t2;
+    }
+
+    STimeout try_timeout;
+    CDeadline deadline;
+
+    static const STimeout kMaxTryTimeout;
+};
+
+#ifndef NCBI_OS_MSWIN
+const STimeout SNetServerImpl::SConnectDeadline::kMaxTryTimeout = {0, 250 * 1000};
+#else
+const STimeout SNetServerImpl::SConnectDeadline::kMaxTryTimeout = {1, 250 * 1000};
+#endif
 
 CNetServerConnection SNetServerImpl::Connect(STimeout* timeout,
         INetServerConnectionListener* conn_listener)
@@ -487,10 +517,9 @@ CNetServerConnection SNetServerImpl::Connect(STimeout* timeout,
     CNetServerConnection conn = new SNetServerConnectionImpl(this);
 
     auto& server_pool = m_ServerInPool->m_ServerPool;
-    const STimeout& conn_timeout = timeout ? *timeout : server_pool->m_ConnTimeout;
-    CDeadline deadline(conn_timeout.sec, conn_timeout.usec * 1000);
-    STimeout internal_timeout = conn_timeout < s_InternalConnectTimeout ?
-            conn_timeout : s_InternalConnectTimeout;
+
+    // Do not move, this deadline must be created before any processing
+    SConnectDeadline deadline(timeout ? *timeout : server_pool->m_ConnTimeout);
 
     SServerAddress server_address(m_ServerInPool->m_Address);
     auto& socket = conn->m_Socket;
@@ -568,21 +597,13 @@ CNetServerConnection SNetServerImpl::Connect(STimeout* timeout,
 #endif
 
         EIO_Status io_st;
-        STimeout remaining_timeout;
 
         do {
             io_st = socket.Connect(CSocketAPI::ntoa(
                     server_address.host), server_address.port,
-                    &internal_timeout, fSOCK_LogOff | fSOCK_KeepAlive);
+                    deadline.GetRemaining(), fSOCK_LogOff | fSOCK_KeepAlive);
 
-            deadline.GetRemainingTime().Get(&remaining_timeout.sec,
-                                            &remaining_timeout.usec);
-
-            if (remaining_timeout < internal_timeout)
-                internal_timeout = remaining_timeout;
-
-        } while (io_st == eIO_Timeout && (remaining_timeout.usec > 0 ||
-                                          remaining_timeout.sec > 0));
+        } while (io_st == eIO_Timeout && !deadline.IsExpired());
 
         if (io_st != eIO_Success) {
             socket.Close();

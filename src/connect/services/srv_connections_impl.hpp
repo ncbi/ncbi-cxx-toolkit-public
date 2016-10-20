@@ -267,9 +267,6 @@ struct SNetServerImpl : public CObject
     {
     }
 
-    CNetServerConnection Connect(STimeout* timeout,
-            INetServerConnectionListener* conn_listener);
-
     CNetServerConnection GetConnectionFromPool();
 
     void TryExec(INetServerExecHandler& handler,
@@ -289,6 +286,12 @@ struct SNetServerImpl : public CObject
 
     CNetService m_Service;
     CRef<SNetServerInPool> m_ServerInPool;
+
+private:
+    struct SConnectDeadline;
+
+    CNetServerConnection Connect(STimeout* timeout,
+            INetServerConnectionListener* conn_listener);
 };
 
 END_NCBI_SCOPE
