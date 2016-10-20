@@ -499,12 +499,10 @@ void CVDBMgr::SetCacheRoot(const string& path)
 
 void CVDBMgr::DeleteCacheOlderThan(Uint4 days)
 {
-    /*
     if ( rc_t rc = VDBManagerDeleteCacheOlderThan(*this, days) ) {
         NCBI_THROW2(CSraException, eOtherError,
                     "CVDBMgr: Cannot delete old cache files", rc);
     }
-    */
 }
 
 
