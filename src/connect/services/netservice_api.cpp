@@ -446,6 +446,10 @@ atomic<bool> SNetServiceXSiteAPI::m_AllowXSiteConnections{false};
 
 #else
 
+void SNetServiceXSiteAPI::InitXSite(CConfig*, const string&)
+{
+}
+
 void SNetServiceXSiteAPI::ConnectXSite(CSocket& socket,
         SNetServerImpl::SConnectDeadline& deadline,
         const SServerAddress& original)
