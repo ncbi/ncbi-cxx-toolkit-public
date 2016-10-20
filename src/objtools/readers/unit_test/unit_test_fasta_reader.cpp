@@ -646,6 +646,9 @@ BOOST_AUTO_TEST_CASE(TestDefLineParser)
     TSeqPos rangeStart, rangeEnd;
     CFastaReader::TSeqTitles seqTitles;
 
+    // Anything following a title\1 is interpreted as an ID 
+    // unless a range has already been specified.
+    // The string below thus contains three IDs.
     {
         static const string kFastaDefLine = 
             ">ID1 Title1\1ID2 Title2.1 Title2.2 \1[ID3]\n";
@@ -669,6 +672,8 @@ BOOST_AUTO_TEST_CASE(TestDefLineParser)
     }
 
 
+    // If a range is encountered, do not search for any more IDs. 
+    // ID2 is ignored in the string below.
     { 
         static const string kFastaDefLine = 
             ">ID1:123-456 Title\11D2\n";
@@ -694,6 +699,8 @@ BOOST_AUTO_TEST_CASE(TestDefLineParser)
     }
 
 
+    // ID3 is ignorned in the string below, due to the appearance of 
+    // a range after ID2.
     {
         static const string kFastaDefLine = 
             ">ID1 Title1 \1ID2:12-34 Title2 \1ID3 \n";
@@ -722,6 +729,7 @@ BOOST_AUTO_TEST_CASE(TestDefLineParser)
     }
 
 
+    // Check that lcl|... is handled correctly
     {
         static const string kFastaDefLine = 
             ">lcl|ID1 Title\n";
@@ -742,7 +750,54 @@ BOOST_AUTO_TEST_CASE(TestDefLineParser)
 
         ids.clear();
         seqTitles.clear();
+    }
 
+    // Check that Genbank accessions are read correctly
+    {
+        static const string kFastaDefLine = 
+            ">gb|M73307";
+        CFastaReader::ParseDefLine(kFastaDefLine, 
+                                   parseInfo,
+                                   noIgnoredErrors,
+                                   ids,
+                                   hasRange,
+                                   rangeStart,
+                                   rangeEnd,
+                                   seqTitles,
+                                   nullptr); 
+
+        BOOST_CHECK( ids.size() == 1 );
+        BOOST_CHECK( !hasRange );
+        BOOST_CHECK( seqTitles.empty() );
+        BOOST_CHECK( ids.front()->IsGenbank() &&
+                     ids.front()->GetGenbank().GetAccession() == "M73307");
+
+        ids.clear();
+        seqTitles.clear();
+    }
+
+
+    // Check that the following is interpreted as a defline 
+    // modifier, not an ID.
+    {
+        static const string kFastaDefLine = 
+            ">[topology=linear]";
+        CFastaReader::ParseDefLine(kFastaDefLine, 
+                                   parseInfo,
+                                   noIgnoredErrors,
+                                   ids,
+                                   hasRange,
+                                   rangeStart,
+                                   rangeEnd,
+                                   seqTitles,
+                                   nullptr); 
+
+        BOOST_CHECK( ids.empty() );
+        BOOST_CHECK( !hasRange );
+        BOOST_CHECK( seqTitles.size() == 1 );
+
+        ids.clear();
+        seqTitles.clear();
     }
 }
 
