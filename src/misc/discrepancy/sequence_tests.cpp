@@ -113,7 +113,7 @@ DISCREPANCY_CASE(DUP_DEFLINE, CSeq_inst, eOncaller, "Definition lines should be 
     if (!seq || !seq->IsSetDescr() || obj.IsAa()) {
         return;
     }
-    ITERATE(CBioseq::TDescr::Tdata, it, seq->GetDescr().Get()) {
+    ITERATE (CBioseq::TDescr::Tdata, it, seq->GetDescr().Get()) {
         if ((*it)->IsTitle()) {
             m_Objs[(*it)->GetTitle()].Add(*context.NewSeqdescObj(*it, context.GetCurrentBioseqLabel()), false);
         }
@@ -254,7 +254,7 @@ DISCREPANCY_SUMMARIZE(COMMENT_PRESENT)
 
     CReportNode::TNodeMap::iterator it = m_Objs["comment"].GetMap().begin();
     while (it != m_Objs["comment"].GetMap().end()) {
-        NON_CONST_ITERATE(TReportObjectList, robj, m_Objs["comment"][it->first].GetObjects())
+        NON_CONST_ITERATE (TReportObjectList, robj, m_Objs["comment"][it->first].GetObjects())
         {
             const CDiscrepancyObject* other_disc_obj = dynamic_cast<CDiscrepancyObject*>(robj->GetNCPointer());
             CConstRef<CSeqdesc> comment_desc(dynamic_cast<const CSeqdesc*>(other_disc_obj->GetObject().GetPointer()));
@@ -326,7 +326,7 @@ DISCREPANCY_CASE(GAPS, CSeq_inst, eDisc | eSubmitter | eSmart, "Sequences with g
             }
 
             const CSeq_annot* annot = nullptr;
-            ITERATE(CBioseq::TAnnot, annot_it, bioseq->GetAnnot()) {
+            ITERATE (CBioseq::TAnnot, annot_it, bioseq->GetAnnot()) {
                 if ((*annot_it)->IsFtable()) {
                     annot = *annot_it;
                     break;
@@ -334,7 +334,7 @@ DISCREPANCY_CASE(GAPS, CSeq_inst, eDisc | eSubmitter | eSmart, "Sequences with g
             }
 
             if (annot) {
-                ITERATE(CSeq_annot::TData::TFtable, feat, annot->GetData().GetFtable()) {
+                ITERATE (CSeq_annot::TData::TFtable, feat, annot->GetData().GetFtable()) {
                     if ((*feat)->IsSetData() && (*feat)->GetData().GetSubtype() == CSeqFeatData::eSubtype_gap) {
                         has_gaps = true;
                         break;
@@ -367,7 +367,7 @@ DISCREPANCY_CASE(BIOPROJECT_ID, CSeq_inst, eOncaller, "Sequences with BioProject
     for (; user_desc_it; ++user_desc_it) {
         const CUser_object& user = user_desc_it->GetUser();
         if (user.IsSetData() && user.IsSetType() && user.GetType().IsStr() && user.GetType().GetStr() == "DBLink") {
-            ITERATE(CUser_object::TData, user_field, user.GetData()) {
+            ITERATE (CUser_object::TData, user_field, user.GetData()) {
                 if ((*user_field)->IsSetLabel() && (*user_field)->GetLabel().IsStr() && (*user_field)->GetLabel().GetStr() == "BioProject" &&
                     (*user_field)->IsSetData() && (*user_field)->GetData().IsStrs()) {
                     const CUser_field::C_Data::TStrs& strs = (*user_field)->GetData().GetStrs();
@@ -401,7 +401,7 @@ DISCREPANCY_CASE(MISSING_DEFLINES, CSeq_inst, eOncaller, "Missing definition lin
     bool has_title = false;
     CConstRef<CBioseq> seq = context.GetCurrentBioseq();
     if (seq && seq->IsSetDescr()) {
-        ITERATE(CBioseq::TDescr::Tdata, d, seq->GetDescr().Get()) {
+        ITERATE (CBioseq::TDescr::Tdata, d, seq->GetDescr().Get()) {
             if ((*d)->IsTitle()) {
                 has_title = true;
                 break;
@@ -438,7 +438,7 @@ DISCREPANCY_CASE(N_RUNS_14, CSeq_inst, eDisc, "Runs of more than 14 Ns")
         else if (obj.IsSetExt() && obj.GetExt().IsDelta()) {
             const CSeq_ext::TDelta& deltas = obj.GetExt().GetDelta();
             if (deltas.IsSet()) {
-                ITERATE(CDelta_ext::Tdata, delta, deltas.Get()) {
+                ITERATE (CDelta_ext::Tdata, delta, deltas.Get()) {
                     if ((*delta)->IsLiteral() && (*delta)->GetLiteral().IsSetSeq_data()) {
                         if ((*delta)->GetLiteral().GetSeq_data().Which() == CSeq_data::e_Gap || (*delta)->GetLiteral().GetSeq_data().Which() == CSeq_data::e_not_set) {
                             continue;
@@ -486,7 +486,7 @@ DISCREPANCY_SUMMARIZE(10_PERCENTN)
 }
 
 
-// FEATURE_COUNT
+// FEATURE_COUNT_0
 const string kFeatureCountTop = "Feature Counts";
 const string kFeatureCountTotal = "Feature Count Total";
 const string kFeatureCountSub = "temporary";
@@ -504,10 +504,10 @@ void SummarizeFeatureCount(CReportNode& m_Objs)
 {
     if (!m_Objs[kFeatureCountTop].empty()) {
         CReportNode::TNodeMap& map = m_Objs[kFeatureCountTop].GetMap(); 
-        NON_CONST_ITERATE(CReportNode::TNodeMap, it, map) {
+        NON_CONST_ITERATE (CReportNode::TNodeMap, it, map) {
             // add zeros to all previous sequences that do not have this feature type
             if (!m_Objs[kFeatureCountSub].Exist(it->first)) {
-                ITERATE(TReportObjectList, ro, m_Objs[kFeatureCountSequenceList].GetObjects()) {
+                ITERATE (TReportObjectList, ro, m_Objs[kFeatureCountSequenceList].GetObjects()) {
                     if (*ro != m_Objs[kFeatureCountSequenceList].GetObjects().back()) {
                         string label = "[n] bioseq[s] [has] 0 " + it->first + " features";
                         CRef<CDiscrepancyObject> seq_disc_obj(dynamic_cast<CDiscrepancyObject*>(ro->GetNCPointer()));
@@ -519,7 +519,7 @@ void SummarizeFeatureCount(CReportNode& m_Objs)
             AddFeatureCount(m_Objs, it->first, it->second->GetObjects().size());
         }
         // add zero for all feature types not found
-        ITERATE(CReportNode::TNodeMap, z, m_Objs[kFeatureCountSub].GetMap()) {
+        ITERATE (CReportNode::TNodeMap, z, m_Objs[kFeatureCountSub].GetMap()) {
             if (!m_Objs[kFeatureCountTop].Exist(z->first)) {
                 AddFeatureCount(m_Objs, z->first, 0);
             }
@@ -529,7 +529,7 @@ void SummarizeFeatureCount(CReportNode& m_Objs)
 }
 
 
-DISCREPANCY_CASE(FEATURE_COUNT, CSeq_feat_BY_BIOSEQ, eOncaller | eSubmitter | eSmart, "Count features present or missing from sequences")
+DISCREPANCY_CASE(FEATURE_COUNT_0, CSeq_feat_BY_BIOSEQ, eOncaller | eSubmitter | eSmart, "Count features present or missing from sequences")
 {
     if (m_Count != context.GetCountBioseq()) {
         m_Count = context.GetCountBioseq();
@@ -547,14 +547,14 @@ DISCREPANCY_CASE(FEATURE_COUNT, CSeq_feat_BY_BIOSEQ, eOncaller | eSubmitter | eS
 }
 
 
-DISCREPANCY_SUMMARIZE(FEATURE_COUNT)
+DISCREPANCY_SUMMARIZE(FEATURE_COUNT_0)
 {
     SummarizeFeatureCount(m_Objs);
     if (m_Objs.empty()) {
         return;
     }
     
-    NON_CONST_ITERATE(CReportNode::TNodeMap, it, m_Objs[kFeatureCountSub].GetMap()) {
+    NON_CONST_ITERATE (CReportNode::TNodeMap, it, m_Objs[kFeatureCountSub].GetMap()) {
         string new_label = it->first + ": " +
             NStr::NumericToString(m_Objs[kFeatureCountTotal][it->first].GetObjects().size()) +
             " present";
@@ -563,8 +563,8 @@ DISCREPANCY_SUMMARIZE(FEATURE_COUNT)
         //}
         CReportNode& node = m_Objs[new_label];
         if (context.IsGui()) {
-            NON_CONST_ITERATE(CReportNode::TNodeMap, s, it->second->GetMap()){
-                NON_CONST_ITERATE(TReportObjectList, q, s->second->GetObjects()) {
+            NON_CONST_ITERATE (CReportNode::TNodeMap, s, it->second->GetMap()){
+                NON_CONST_ITERATE (TReportObjectList, q, s->second->GetObjects()) {
                     node[s->first].Add(**q).Ext();
                 }
             }
@@ -577,6 +577,69 @@ DISCREPANCY_SUMMARIZE(FEATURE_COUNT)
     m_Objs.GetMap().erase(kFeatureCountSequenceList);
 
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+// FEATURE_COUNT
+
+DISCREPANCY_CASE(FEATURE_COUNT, COverlappingFeatures, eOncaller | eSubmitter | eSmart, "Count features present or missing from sequences")
+{
+    string type = context.GetCurrentBioseq()->IsNa() ? "n" : "a";
+    CRef<CReportObject> rep(context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary()));
+    if (context.IsGui()) {
+        m_Objs[type][kEmptyCStr].Add(*rep);
+    }
+    ITERATE (vector<CConstRef<CSeq_feat> >, feat, context.FeatAll()) {
+        if ((*feat)->GetData().GetSubtype() == CSeqFeatData::eSubtype_prot) {
+            continue;
+        }
+        string key = (*feat)->GetData().IsGene() ? "gene" : (*feat)->GetData().GetKey(CSeqFeatData::eVocabulary_genbank);
+        m_Objs[type][key].Add(*rep, false);
+        m_Objs[kEmptyCStr][key];
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(FEATURE_COUNT)
+{
+    CReportNode out;
+    CReportNode& aa = m_Objs["a"];
+    CReportNode& na = m_Objs["n"];
+    ITERATE (CReportNode::TNodeMap, it, m_Objs[kEmptyCStr].GetMap()) {
+        const string& key = it->first;
+        string label = key + ": " + NStr::NumericToString(aa[key].GetObjects().size() + na[key].GetObjects().size()) + " present";
+        out[label];
+        if (context.IsGui()) {
+            if (na[key].GetObjects().size()) {
+                map<CReportObj*, size_t> obj2num;
+                NON_CONST_ITERATE (vector<CRef<CReportObj> >, obj, m_Objs["n"][kEmptyStr].GetObjects()) {
+                    obj2num[&**obj] = 0;
+                }
+                NON_CONST_ITERATE (vector<CRef<CReportObj> >, obj, m_Objs["n"][key].GetObjects()) {
+                    obj2num[&**obj]++;
+                }
+                NON_CONST_ITERATE (vector<CRef<CReportObj> >, obj, m_Objs["n"][kEmptyStr].GetObjects()) {
+                    string str = "[n] bioseq[s] [has] " + NStr::NumericToString(obj2num[&**obj]) + " " + key + " features";
+                    out[label][str].Add(**obj);
+                }
+            }
+            if (aa[key].GetObjects().size()) {
+                map<CReportObj*, size_t> obj2num;
+                NON_CONST_ITERATE (vector<CRef<CReportObj> >, obj, m_Objs["a"][kEmptyStr].GetObjects()) {
+                    obj2num[&**obj] = 0;
+                }
+                NON_CONST_ITERATE (vector<CRef<CReportObj> >, obj, m_Objs["a"][key].GetObjects()) {
+                    obj2num[&**obj]++;
+                }
+                NON_CONST_ITERATE (vector<CRef<CReportObj> >, obj, m_Objs["a"][kEmptyStr].GetObjects()) {
+                    string str = "[n] bioseq[s] [has] " + NStr::NumericToString(obj2num[&**obj]) + " " + key + " features";
+                    out[label][str].Add(**obj);
+                }
+            }
+        }
+    }
+    m_Objs.clear();
+    m_ReportItems = out.Export(*this)->GetSubitems();
 }
 
 
@@ -669,7 +732,7 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_MOLINFO_TECH)
            num_of_bioseqs = 0;
 
     CReportNode::TNodeMap::iterator missing_it = the_map.end();
-    NON_CONST_ITERATE(CReportNode::TNodeMap, it, the_map) {
+    NON_CONST_ITERATE (CReportNode::TNodeMap, it, the_map) {
 
         num_of_bioseqs += it->second->GetObjects().size();
 
@@ -780,7 +843,7 @@ DISCREPANCY_CASE(FEATURE_MOLTYPE_MISMATCH, CSeq_inst, eOncaller, "Sequences with
         const CSeq_annot* annot = nullptr;
         CConstRef<CBioseq> bioseq = context.GetCurrentBioseq();
         if (bioseq->IsSetAnnot()) {
-            ITERATE(CBioseq::TAnnot, annot_it, bioseq->GetAnnot()) {
+            ITERATE (CBioseq::TAnnot, annot_it, bioseq->GetAnnot()) {
                 if ((*annot_it)->IsFtable()) {
                     annot = *annot_it;
                     break;
@@ -789,7 +852,7 @@ DISCREPANCY_CASE(FEATURE_MOLTYPE_MISMATCH, CSeq_inst, eOncaller, "Sequences with
         }
 
         if (annot) {
-            ITERATE(CSeq_annot::TData::TFtable, feat, annot->GetData().GetFtable()) {
+            ITERATE (CSeq_annot::TData::TFtable, feat, annot->GetData().GetFtable()) {
                 if ((*feat)->IsSetData()) {
                     CSeqFeatData::ESubtype subtype = (*feat)->GetData().GetSubtype();
                     if (subtype == CSeqFeatData::eSubtype_rRNA || subtype == CSeqFeatData::eSubtype_otherRNA) {
@@ -821,7 +884,7 @@ static bool FixMoltype(const CBioseq& bioseq, CScope& scope)
     CMolInfo* molinfo = nullptr;
 
     if (descrs.IsSet()) {
-        NON_CONST_ITERATE(CSeq_descr::Tdata, descr, descrs.Set()) {
+        NON_CONST_ITERATE (CSeq_descr::Tdata, descr, descrs.Set()) {
             if ((*descr)->IsMolinfo()) {
                 molinfo = &((*descr)->SetMolinfo());
                 break;
@@ -847,7 +910,7 @@ DISCREPANCY_AUTOFIX(FEATURE_MOLTYPE_MISMATCH)
 {
     TReportObjectList list = item->GetDetails();
     unsigned int n = 0;
-    NON_CONST_ITERATE(TReportObjectList, it, list) {
+    NON_CONST_ITERATE (TReportObjectList, it, list) {
         const CBioseq* bioseq = dynamic_cast<const CBioseq*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
         if (bioseq && FixMoltype(*bioseq, scope)) {
             n++;
@@ -871,7 +934,7 @@ string GetFieldValueAsString(const CUser_field& field)
     if (field.GetData().IsStr()) {
         value = field.GetData().GetStr();
     } else if (field.GetData().IsStrs()) {
-        ITERATE(CUser_field::TData::TStrs, s, field.GetData().GetStrs()) {
+        ITERATE (CUser_field::TData::TStrs, s, field.GetData().GetStrs()) {
             if (!NStr::IsBlank(value)) {
                 value += "; ";
             }
@@ -898,8 +961,8 @@ void AddUserObjectFieldItems
 {
     if (!d) {
         // add missing for all previously seen fields
-        NON_CONST_ITERATE(CReportNode::TNodeMap, obj, previously_seen[kPreviouslySeenFields].GetMap()) {
-            ITERATE(CReportNode::TNodeMap, z, obj->second->GetMap()) {
+        NON_CONST_ITERATE (CReportNode::TNodeMap, obj, previously_seen[kPreviouslySeenFields].GetMap()) {
+            ITERATE (CReportNode::TNodeMap, z, obj->second->GetMap()) {
                 collector[field_prefix + z->first][" [n] " + object_name + "[s] [is] missing field " + field_prefix + z->first]
                     .Add(*context.NewBioseqObj(seq, info, eKeepRef), false);
             }
@@ -908,12 +971,12 @@ void AddUserObjectFieldItems
     }
     
     bool already_seen = previously_seen[kPreviouslySeenObjects].Exist(object_name);
-    ITERATE(CUser_object::TData, f, d->GetUser().GetData()) {
+    ITERATE (CUser_object::TData, f, d->GetUser().GetData()) {
         if ((*f)->IsSetLabel() && (*f)->GetLabel().IsStr() && (*f)->IsSetData()) {
             string field_name = field_prefix + (*f)->GetLabel().GetStr();
             // add missing field to all previous objects that do not have this field
             if (already_seen && !collector.Exist(field_name)) {
-                ITERATE(TReportObjectList, ro, previously_seen[kPreviouslySeenObjects][object_name].GetObjects()) {
+                ITERATE (TReportObjectList, ro, previously_seen[kPreviouslySeenObjects][object_name].GetObjects()) {
                     string missing_label = "[n] " + object_name + "[s] [is] missing field " + field_name;
                     CRef<CDiscrepancyObject> seq_disc_obj(dynamic_cast<CDiscrepancyObject*>(ro->GetNCPointer()));
                     collector[field_name][missing_label].Add(*seq_disc_obj, false);
@@ -926,7 +989,7 @@ void AddUserObjectFieldItems
     }
 
     // add missing for all previously seen fields not on this object
-    ITERATE(CReportNode::TNodeMap, z, previously_seen[kPreviouslySeenFields][object_name].GetMap()) {
+    ITERATE (CReportNode::TNodeMap, z, previously_seen[kPreviouslySeenFields][object_name].GetMap()) {
         if (!previously_seen[kPreviouslySeenFieldsThis].Exist(z->first)) {
             collector[field_prefix + z->first][" [n] " + object_name + "[s] [is] missing field " + field_prefix + z->first]
                 .Add(*context.NewSeqdescObj(d, context.GetCurrentBioseqLabel()), false);
@@ -975,7 +1038,7 @@ void AnalyzeField(CReportNode& node, bool& all_present, bool& all_same)
     size_t num_values = 0;
     string value = kEmptyStr;
     bool first = true;
-    ITERATE(CReportNode::TNodeMap, s, node.GetMap()) {
+    ITERATE (CReportNode::TNodeMap, s, node.GetMap()) {
         if (NStr::Find(s->first, " missing field ") != string::npos) {
             all_present = false;
         } else {
@@ -1005,7 +1068,7 @@ void AnalyzeFieldReport(CReportNode& node, bool& all_present, bool& all_same)
 {
     all_present = true;
     all_same = true;
-    NON_CONST_ITERATE(CReportNode::TNodeMap, s, node.GetMap()) {
+    NON_CONST_ITERATE (CReportNode::TNodeMap, s, node.GetMap()) {
         bool this_present = true;
         bool this_same = true;
         AnalyzeField(*(s->second), this_present, this_same);
@@ -1039,12 +1102,12 @@ string GetSummaryLabel(bool all_present, bool all_same)
 
 void CopyNode(CReportNode& new_home, CReportNode& original)
 {
-    NON_CONST_ITERATE(CReportNode::TNodeMap, s, original.GetMap()){
-        NON_CONST_ITERATE(TReportObjectList, q, s->second->GetObjects()) {
+    NON_CONST_ITERATE (CReportNode::TNodeMap, s, original.GetMap()){
+        NON_CONST_ITERATE (TReportObjectList, q, s->second->GetObjects()) {
             new_home[s->first].Add(**q);
         }
     }
-    NON_CONST_ITERATE(TReportObjectList, q, original.GetObjects()) {
+    NON_CONST_ITERATE (TReportObjectList, q, original.GetObjects()) {
         new_home.Add(**q);
     }
 }
@@ -1056,8 +1119,8 @@ void AddSubFieldReport(CReportNode& node, const string& field_name, const string
     bool this_same = true;
     AnalyzeField(node, this_present, this_same);
     string new_label = field_name + " " + GetSummaryLabel(this_present, this_same);
-    NON_CONST_ITERATE(CReportNode::TNodeMap, s, node.GetMap()){
-        NON_CONST_ITERATE(TReportObjectList, q, s->second->GetObjects()) {
+    NON_CONST_ITERATE (CReportNode::TNodeMap, s, node.GetMap()){
+        NON_CONST_ITERATE (TReportObjectList, q, s->second->GetObjects()) {
             m_Objs[top_label][new_label][s->first].Add(**q);
         }
     }
@@ -1111,13 +1174,13 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_DBLINK)
         }
     }
 
-    NON_CONST_ITERATE(CReportNode::TNodeMap, it, m_Objs[kDBLinkCollect].GetMap()) {
+    NON_CONST_ITERATE (CReportNode::TNodeMap, it, m_Objs[kDBLinkCollect].GetMap()) {
         bool this_present = true;
         bool this_same = true;
         AnalyzeField(*(it->second), this_present, this_same);
         string new_label = AdjustDBLinkFieldName(it->first) + " " + GetSummaryLabel(this_present, this_same);
-        NON_CONST_ITERATE(CReportNode::TNodeMap, s, it->second->GetMap()){
-            NON_CONST_ITERATE(TReportObjectList, q, s->second->GetObjects()) {
+        NON_CONST_ITERATE (CReportNode::TNodeMap, s, it->second->GetMap()){
+            NON_CONST_ITERATE (TReportObjectList, q, s->second->GetObjects()) {
                 m_Objs[top_label][new_label][s->first].Add(**q);
             }
         }
@@ -1160,7 +1223,7 @@ DISCREPANCY_CASE(INCONSISTENT_STRUCTURED_COMMENTS, CSeq_inst, eDisc | eSubmitter
     }
 
     //report prefixes seen previously, not found on this sequence
-    ITERATE(CReportNode::TNodeMap, it, m_Objs[kStructuredCommentObservedPrefixes].GetMap()) {
+    ITERATE (CReportNode::TNodeMap, it, m_Objs[kStructuredCommentObservedPrefixes].GetMap()) {
         if (!m_Objs[kStructuredCommentObservedPrefixesThis].Exist(it->first)) {
             m_Objs["[n] Bioseq[s] [is] missing " + it->first + " structured comment"]
                 .Add(*context.NewBioseqObj(seq, &context.GetSeqSummary(), eKeepRef), false);
@@ -1171,9 +1234,9 @@ DISCREPANCY_CASE(INCONSISTENT_STRUCTURED_COMMENTS, CSeq_inst, eDisc | eSubmitter
     }
 
     // report prefixes found on this sequence but not on previous sequences
-    ITERATE(CReportNode::TNodeMap, it, m_Objs[kStructuredCommentObservedPrefixesThis].GetMap()) {
+    ITERATE (CReportNode::TNodeMap, it, m_Objs[kStructuredCommentObservedPrefixesThis].GetMap()) {
         if (!m_Objs[kStructuredCommentObservedPrefixes].Exist(it->first)) {
-            ITERATE(TReportObjectList, ro, m_Objs[kStructuredCommentsSeqs].GetObjects()) {
+            ITERATE (TReportObjectList, ro, m_Objs[kStructuredCommentsSeqs].GetObjects()) {
                 const CBioseq* this_seq = dynamic_cast<const CBioseq*>((*ro)->GetObject().GetPointer());       
                 CConstRef<CBioseq> this_seq_r(this_seq);
                 m_Objs["[n] Bioseq[s] [is] missing " + it->first + " structured comment"]
@@ -1223,17 +1286,17 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_STRUCTURED_COMMENTS)
         }
     }
 
-    NON_CONST_ITERATE(CReportNode::TNodeMap, it, m_Objs[kStructuredCommentReport].GetMap()) {
+    NON_CONST_ITERATE (CReportNode::TNodeMap, it, m_Objs[kStructuredCommentReport].GetMap()) {
         bool this_present = true;
         bool this_same = true;
         AnalyzeField(*(it->second), this_present, this_same);
         string new_label = it->first + " " + GetSummaryLabel(this_present, this_same);
-        NON_CONST_ITERATE(CReportNode::TNodeMap, s, it->second->GetMap()) {
+        NON_CONST_ITERATE (CReportNode::TNodeMap, s, it->second->GetMap()) {
             string sub_label = s->first;
             if (this_present && this_same) {
                 NStr::ReplaceInPlace(sub_label, "[n]", "All");
             }
-            NON_CONST_ITERATE(TReportObjectList, q, s->second->GetObjects()) {
+            NON_CONST_ITERATE (TReportObjectList, q, s->second->GetObjects()) {
                 m_Objs[top_label][new_label][sub_label].Add(**q);
             }
         }
@@ -1289,7 +1352,7 @@ DISCREPANCY_CASE(MISSING_PROJECT, CSeq_inst, eDisc, "Project not included")
     while (d) {
         if (d->GetUser().GetObjectType() == CUser_object::eObjectType_DBLink) {
             if (d->GetUser().IsSetData()) {
-                ITERATE(CUser_object::TData, it, d->GetUser().GetData()) {
+                ITERATE (CUser_object::TData, it, d->GetUser().GetData()) {
                     if ((*it)->IsSetLabel() && (*it)->GetLabel().IsStr() &&
                         NStr::Equal((*it)->GetLabel().GetStr(), "BioProject")) {
                         has_project = true;
@@ -1409,7 +1472,7 @@ DISCREPANCY_CASE(UNUSUAL_NT, CSeq_inst, eDisc | eSubmitter | eSmart, "Sequence c
         else if (obj.IsSetExt() && obj.GetExt().IsDelta()) {
             const CSeq_ext::TDelta& deltas = obj.GetExt().GetDelta();
             if (deltas.IsSet()) {
-                ITERATE(CDelta_ext::Tdata, delta, deltas.Get()) {
+                ITERATE (CDelta_ext::Tdata, delta, deltas.Get()) {
                     if ((*delta)->IsLiteral() && (*delta)->GetLiteral().IsSetSeq_data()) {
                         if ((*delta)->GetLiteral().GetSeq_data().Which() == CSeq_data::e_Gap || (*delta)->GetLiteral().GetSeq_data().Which() == CSeq_data::e_not_set) {
                             continue;
@@ -1497,7 +1560,7 @@ static string GetProjectID(const CUser_object& user)
 {
     string res;
     if (user.IsSetData()) {
-        ITERATE(CUser_object::TData, field, user.GetData()) {
+        ITERATE (CUser_object::TData, field, user.GetData()) {
             if ((*field)->IsSetData() && (*field)->GetData().IsInt() && (*field)->IsSetLabel() && (*field)->GetLabel().IsStr() && (*field)->GetLabel().GetStr() == "ProjectID") {
                 res = NStr::IntToString((*field)->GetData().GetInt());
                 break;
@@ -1530,8 +1593,8 @@ typedef map<string, list<CConstRef<CBioseq> > > TBioseqMapByID;
 
 static void CollectSequencesByProjectID(CReportNode& bioseqs, TBioseqMapByID& prots, TBioseqMapByID& nucs)
 {
-    NON_CONST_ITERATE(CReportNode::TNodeMap, node, bioseqs.GetMap()) {
-        ITERATE(TReportObjectList, bioseq, node->second->GetObjects()) {
+    NON_CONST_ITERATE (CReportNode::TNodeMap, node, bioseqs.GetMap()) {
+        ITERATE (TReportObjectList, bioseq, node->second->GetObjects()) {
             const CDiscrepancyObject* dobj = dynamic_cast<const CDiscrepancyObject*>(bioseq->GetPointer());
             if (dobj) {
                 const CBioseq* cur_bioseq = dobj->GetBioseq();
@@ -1555,8 +1618,8 @@ static string kNucHasProjID = "[n] nucleotide sequence[s] [has] project IDs ";
 static void FillReport(const TBioseqMapByID& projs, CReportNode& report, CDiscrepancyContext& context, const string& what)
 {
     if (!projs.empty()) {
-        ITERATE(TBioseqMapByID, proj, projs) {
-            ITERATE(list<CConstRef<CBioseq> >, bioseq, proj->second) {
+        ITERATE (TBioseqMapByID, proj, projs) {
+            ITERATE (list<CConstRef<CBioseq> >, bioseq, proj->second) {
                 report[what].Add(*context.NewBioseqObj(*bioseq, 0), false);
             }
         }
@@ -1743,7 +1806,7 @@ DISCREPANCY_CASE(LOW_QUALITY_REGION, CSeq_inst, eDisc | eSubmitter | eSmart, "Se
         else if (obj.IsSetExt() && obj.GetExt().IsDelta()) {
             const CSeq_ext::TDelta& deltas = obj.GetExt().GetDelta();
             if (deltas.IsSet()) {
-                ITERATE(CDelta_ext::Tdata, delta, deltas.Get()) {
+                ITERATE (CDelta_ext::Tdata, delta, deltas.Get()) {
                     if ((*delta)->IsLiteral() && (*delta)->GetLiteral().IsSetSeq_data()) {
                         if ((*delta)->GetLiteral().GetSeq_data().Which() == CSeq_data::e_Gap || (*delta)->GetLiteral().GetSeq_data().Which() == CSeq_data::e_not_set) {
                             continue;
@@ -1772,7 +1835,7 @@ const string kDeflineOnSet = "[n] title[s] on sets were found";
 DISCREPANCY_CASE(DEFLINE_ON_SET, CBioseq_set, eOncaller, "Titles on sets")
 {
     if (obj.IsSetDescr()) {
-        ITERATE(CSeq_descr::Tdata, descr, obj.GetDescr().Get()) {
+        ITERATE (CSeq_descr::Tdata, descr, obj.GetDescr().Get()) {
             if ((*descr)->IsTitle()) {
                 m_Objs[kDeflineOnSet].Add(*context.NewSeqdescObj(*descr, context.GetCurrentBioseqLabel()), false);
             }
@@ -1848,7 +1911,7 @@ DISCREPANCY_AUTOFIX(MITOCHONDRION_REQUIRED)
 {
     TReportObjectList list = item->GetDetails();
     unsigned int n = 0;
-    NON_CONST_ITERATE(TReportObjectList, it, list) {
+    NON_CONST_ITERATE (TReportObjectList, it, list) {
         const CBioseq* bioseq = dynamic_cast<const CBioseq*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
         if (bioseq && FixGenome(*bioseq, scope)) {
             n++;
@@ -1918,7 +1981,7 @@ DISCREPANCY_SUMMARIZE(SHORT_CONTIG)
 static bool RemoveBioseq(const CBioseq& bioseq, CScope& scope)
 {
     if (bioseq.IsSetAnnot()) {
-        ITERATE(CBioseq::TAnnot, annot_it, bioseq.GetAnnot()) {
+        ITERATE (CBioseq::TAnnot, annot_it, bioseq.GetAnnot()) {
             if ((*annot_it)->IsFtable()) {
                 return false;
             }
@@ -1936,7 +1999,7 @@ DISCREPANCY_AUTOFIX(SHORT_CONTIG)
 {
     TReportObjectList list = item->GetDetails();
     unsigned int n = 0;
-    NON_CONST_ITERATE(TReportObjectList, it, list) {
+    NON_CONST_ITERATE (TReportObjectList, it, list) {
         const CBioseq* bioseq = dynamic_cast<const CBioseq*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
         if (bioseq && RemoveBioseq(*bioseq, scope)) {
             n++;
@@ -1973,7 +2036,7 @@ typedef list<const CSeqdesc*> TBioSourcesList;
 
 static void GetBioSourceFromDescr(const CSeq_descr& descrs, TBioSourcesList& bio_srcs)
 {
-    ITERATE(CSeq_descr::Tdata, descr, descrs.Get()) {
+    ITERATE (CSeq_descr::Tdata, descr, descrs.Get()) {
         if ((*descr)->IsSource()) {
             bio_srcs.push_back(*descr);
             return;
@@ -1988,7 +2051,7 @@ static void CollectBioSources(const CBioseq_set& bio_set, TBioSourcesList& bio_s
         GetBioSourceFromDescr(bio_set.GetDescr(), bio_srcs);
     }
 
-    ITERATE(CBioseq_set::TSeq_set, entry, bio_set.GetSeq_set()) {
+    ITERATE (CBioseq_set::TSeq_set, entry, bio_set.GetSeq_set()) {
         if ((*entry)->IsSet()) {
             CollectBioSources((*entry)->GetSet(), bio_srcs);
         }
@@ -2025,7 +2088,7 @@ static bool CompareOrgModValue(const CBioSource& bio_src, COrgMod::TSubtype subt
     bool ret = true;
     if (bio_src.IsSetOrgMod()) {
 
-        ITERATE(COrgName::TMod, mod, bio_src.GetOrgname().GetMod()) {
+        ITERATE (COrgName::TMod, mod, bio_src.GetOrgname().GetMod()) {
             if ((*mod)->IsSetSubtype() && (*mod)->GetSubtype() == subtype && (*mod)->IsSetSubname()) {
 
                 if (val.empty()) {
@@ -2050,7 +2113,7 @@ static bool IsSegmentSubtype(const CBioSource& bio_src)
     bool ret = false;
 
     if (bio_src.IsSetSubtype()) {
-        ITERATE(CBioSource::TSubtype, subtype, bio_src.GetSubtype()) {
+        ITERATE (CBioSource::TSubtype, subtype, bio_src.GetSubtype()) {
             if ((*subtype)->IsSetSubtype() && (*subtype)->GetSubtype() == CSubSource::eSubtype_segment) {
                 ret = true;
                 break;
@@ -2075,7 +2138,7 @@ DISCREPANCY_CASE(SMALL_GENOME_SET_PROBLEM, CBioseq_set, eOncaller, "Problems wit
              all_isolate_same = true,
              all_strain_same = true;
 
-        ITERATE(TBioSourcesList, descr_bio_src, bio_srcs) {
+        ITERATE (TBioSourcesList, descr_bio_src, bio_srcs) {
             const CBioSource& bio_src = (*descr_bio_src)->GetSource();
             if (context.HasLineage(bio_src, "", "Viruses")) {
                 if (!IsSegmentSubtype(bio_src)) {
@@ -2119,7 +2182,7 @@ static const CBioSource* GetBioSource(const CBioseq_Handle& bioseq)
 {
     const CBioSource* ret = nullptr;
     if (bioseq.IsSetDescr()) {
-        ITERATE(CSeq_descr::Tdata, descr, bioseq.GetDescr().Get()) {
+        ITERATE (CSeq_descr::Tdata, descr, bioseq.GetDescr().Get()) {
             if ((*descr)->IsSource()) {
                 ret = &(*descr)->GetSource();
                 break;
@@ -2137,7 +2200,7 @@ static bool IsMicroSatellite(const CSeq_feat_Handle& feat)
 
         if (feat.IsSetQual()) {
 
-            ITERATE(CSeq_feat::TQual, qual, feat.GetQual()) {
+            ITERATE (CSeq_feat::TQual, qual, feat.GetQual()) {
                 if ((*qual)->IsSetQual() && (*qual)->IsSetVal() &&
                     NStr::EqualNocase("satellite", (*qual)->GetQual()) && NStr::StartsWith((*qual)->GetVal(), "microsatellite", NStr::eNocase)) {
 
@@ -2170,7 +2233,7 @@ DISCREPANCY_CASE(UNWANTED_SET_WRAPPER, CBioseq_set, eOncaller, "Set wrapper on m
                 if (!has_rearranged) {
                     const CBioSource* bio_src = GetBioSource(*bioseq);
                     if (bio_src != nullptr && bio_src->IsSetSubtype()) {
-                        ITERATE(CBioSource::TSubtype, subtype, bio_src->GetSubtype()) {
+                        ITERATE (CBioSource::TSubtype, subtype, bio_src->GetSubtype()) {
                             if ((*subtype)->IsSetSubtype() && (*subtype)->GetSubtype() == CSubSource::eSubtype_rearranged) {
                                 has_rearranged = true;
                                 break;
@@ -2339,7 +2402,7 @@ static const string kNonFixable = "Non-fixable";
 
 void  AddMisspellsToReport(const list<size_t>& misspells, CReportNode& node, const CSeq_feat& obj, CDiscrepancyContext& context)
 {
-    ITERATE(list<size_t>, misspell_idx, misspells) {
+    ITERATE (list<size_t>, misspell_idx, misspells) {
         string subitem = string("[n] object[s] contain[S] ") + kSpellFixes[*misspell_idx].m_misspell;
         EKeepRef keep_ref = kSpellFixes[*misspell_idx].m_correct == nullptr ? eNoRef : eKeepRef;
         bool autofix = kSpellFixes[*misspell_idx].m_correct != nullptr;
@@ -2351,7 +2414,7 @@ void  AddMisspellsToReport(const list<size_t>& misspells, CReportNode& node, con
 
 void  AddMisspellsToReport(const list<size_t>& misspells, CReportNode& node, const CSeqdesc& obj, CDiscrepancyContext& context)
 {
-    ITERATE(list<size_t>, misspell_idx, misspells) {
+    ITERATE (list<size_t>, misspell_idx, misspells) {
         string subitem = string("[n] object[s] contain[S] ") + kSpellFixes[*misspell_idx].m_misspell;
         EKeepRef keep_ref = kSpellFixes[*misspell_idx].m_correct == nullptr ? eNoRef : eKeepRef;
         bool autofix = kSpellFixes[*misspell_idx].m_correct != nullptr;
@@ -2407,7 +2470,7 @@ DISCREPANCY_AUTOFIX(FLATFILE_FIND)
 {
     TReportObjectList list = item->GetDetails();
     unsigned int n = 0;
-    NON_CONST_ITERATE(TReportObjectList, it, list) {
+    NON_CONST_ITERATE (TReportObjectList, it, list) {
 
         CDiscrepancyObject* dobj = dynamic_cast<CDiscrepancyObject*>(it->GetPointer());
 

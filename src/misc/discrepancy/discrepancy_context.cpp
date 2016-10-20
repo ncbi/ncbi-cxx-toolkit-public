@@ -726,6 +726,7 @@ const CSeq_feat* CDiscrepancyContext::GetCurrentGene() // todo: optimize
 
 void CDiscrepancyContext::ClearFeatureList(void)
 {
+    m_FeatAll.clear();
     m_FeatGenes.clear();
     m_FeatPseudo.clear();
     m_FeatCDS.clear();
@@ -740,6 +741,7 @@ void CDiscrepancyContext::ClearFeatureList(void)
 
 void CDiscrepancyContext::CollectFeature(const CSeq_feat& feat)
 {
+    m_FeatAll.push_back(CConstRef<CSeq_feat>(&feat));
     switch (feat.GetData().GetSubtype()) {
         case CSeqFeatData::eSubtype_gene:
             m_FeatGenes.push_back(CConstRef<CSeq_feat>(&feat));

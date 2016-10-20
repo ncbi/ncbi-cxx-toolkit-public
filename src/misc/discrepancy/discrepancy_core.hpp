@@ -397,6 +397,7 @@ public:
     const CSeq_feat* GetCurrentGene(void);
     void CollectFeature(const CSeq_feat& feat);
     void ClearFeatureList(void);
+    const vector<CConstRef<CSeq_feat> >& FeatAll() { return m_FeatAll; }
     const vector<CConstRef<CSeq_feat> >& FeatGenes() { return m_FeatGenes; }
     const vector<CConstRef<CSeq_feat> >& FeatPseudo() { return m_FeatPseudo; }
     const vector<CConstRef<CSeq_feat> >& FeatCDS() { return m_FeatCDS; }
@@ -444,6 +445,7 @@ protected:
     size_t m_Count_Pub_equiv;
     bool m_Feat_CI;
     TReportObjectList m_NaSeqs;
+    vector<CConstRef<CSeq_feat> > m_FeatAll;
     vector<CConstRef<CSeq_feat> > m_FeatGenes;
     vector<CConstRef<CSeq_feat> > m_FeatPseudo;
     vector<CConstRef<CSeq_feat> > m_FeatCDS;
