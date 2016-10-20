@@ -55,6 +55,7 @@
 
 #include <objects/general/User_field.hpp>
 #include <objects/general/User_object.hpp>
+#include <objects/general/Dbtag.hpp>
 
 #include <algo/blast/core/blast_nalookup.h>
 #include <algo/blast/api/blast_seqinfosrc_aux.hpp>
@@ -155,32 +156,28 @@ static char s_Complement(char c)
     return retval;
 }
 
-
-static CNcbiOstream& s_PrintId(CNcbiOstream& ostr, const CSeq_id& id)
+static string s_GetBareId(const CSeq_id& id)
 {
-    string string_id = id.AsFastaString();
-    if (id.IsLocal()) {
-        // skip 'lcl|'
-        ostr << string_id.c_str() + 4;
+    string retval;
+    // Gis are printed with the bar
+    if (id.IsGi()) {
+        retval = id.AsFastaString();
     }
     else if (id.IsGeneral()) {
-        vector<string> tokens;
-        NStr::Split((CTempString)string_id, "|", tokens);
-        if (tokens.size() >= 3) {
-            // skip 'gnl|SRA|'
-            ostr << tokens[2];
+        const CDbtag& dbt = id.GetGeneral();
+        if (dbt.GetTag().IsStr()) {
+            retval = dbt.GetTag().GetStr();
         }
-        else {
-            ostr << string_id; 
+        else if (dbt.GetTag().IsId()) {
+            retval = NStr::IntToString(dbt.GetTag().GetId());
         }
     }
     else {
-        ostr << string_id;
+        retval = id.GetSeqIdString(true);
     }
 
-    return ostr;
+    return retval;
 }
-
 
 CNcbiOstream& PrintTabular(CNcbiOstream& ostr, const CSeq_align& align,
                            const BLAST_SequenceBlk* queries,
@@ -211,14 +208,9 @@ CNcbiOstream& PrintTabular(CNcbiOstream& ostr, const CSeq_align& align,
     }
 
     string sep = "\t";
-    s_PrintId(ostr, align.GetSeq_id(0)) << sep;
+    ostr << s_GetBareId(align.GetSeq_id(0)) << sep;
 
-    if (align.GetSeq_id(1).IsLocal()) {
-        ostr << align.GetSeq_id(1).AsFastaString().c_str() + 4 << sep;
-    }
-    else {
-        ostr << align.GetSeq_id(1).AsFastaString() << sep;
-    }
+    ostr << s_GetBareId(align.GetSeq_id(1)) << sep;
 
     int score;
     double perc_identity;
@@ -472,16 +464,8 @@ CNcbiOstream& PrintSAMHeader(CNcbiOstream& ostr,
     Int4 oid;
     while ((oid = BlastSeqSrcIteratorNext(seq_src, it)) != BLAST_SEQSRC_EOF) {
         GetSequenceLengthAndId(seqinfo_src, oid, seqid, &length);
-
-        string id;
-        if (seqid->IsLocal()) {
-            id = seqid->AsFastaString().c_str() + 4;
-        }
-        else {
-            id = seqid->AsFastaString();
-        }
-
-        ostr << "@SQ\t" << "SN:" << id << "\tLN:" << length << endl;
+        ostr << "@SQ\t" << "SN:" << s_GetBareId(*seqid) << "\tLN:" << length
+             << endl;
     }
     BlastSeqSrcIteratorFree(it);
 
@@ -526,15 +510,8 @@ CNcbiOstream& PrintSAMHeader(CNcbiOstream& ostr,
 
     ITERATE (TSeq_idHashSet, it, subjects) {
         TSeqPos length = scope.GetSequenceLength(**it);
-        string id;
-        if ((*it)->IsLocal()) {
-            // skip lcl| for local ids
-            id = (*it)->AsFastaString().c_str() + 4;
-        }
-        else {
-            id  = (*it)->AsFastaString();
-        }
-        ostr << "@SQ\t" << "SN:" << id << "\tLN:" << length << endl;
+        ostr << "@SQ\t" << "SN:" << s_GetBareId(**it) << "\tLN:" << length
+             << endl;
     }
     ostr << "@PG\tID:magicblast\tPN:magicblast\tCL:" << cmd_line_args << endl;
     return ostr;
@@ -668,19 +645,13 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
     }
 
     // read id
-    // plus 4 to skip 'lcl|' in query id
-    s_PrintId(ostr, align.GetSeq_id(0)) << sep;
+    ostr << s_GetBareId(align.GetSeq_id(0)) << sep;
 
     // flag
     ostr << sam_flags << sep;
 
     // reference sequence id
-    if (align.GetSeq_id(1).IsLocal()) {
-        ostr << align.GetSeq_id(1).AsFastaString().c_str() + 4 << sep;
-    }
-    else {
-        ostr << align.GetSeq_id(1).AsFastaString() << sep;
-    }
+    ostr << s_GetBareId(align.GetSeq_id(1)) << sep;
 
     // mapping position
     CRange<TSeqPos> range = align.GetSeqRange(1);
@@ -844,7 +815,7 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
             ostr << "=";
         }
         else {
-            s_PrintId(ostr, mate->GetSeq_id(1));
+            ostr << s_GetBareId(mate->GetSeq_id(1));
         }
     }
     else {
