@@ -140,7 +140,7 @@ protected:
 ///
 /// </pre>
 ///
-class NCBI_XUTIL_EXPORT CQueryExec
+class NCBI_XUTIL_EXPORT CQueryExec : public CObject
 {
 public:
     // Subclasses can optionally pass in a field identifier
@@ -170,8 +170,13 @@ public:
     /// 
     CQueryFunctionBase* GetFunc(CQueryParseNode::EType func_type)
                                     { return m_FuncReg[(size_t)func_type]; }
-    
-    
+
+    /// Extend this function to look up and invoke functions that appear
+    /// in the query
+    ///
+    virtual void CallFunction(const string& name,                            
+                              CQueryParseTree::TNode &node) {}
+        
     /// Run query tree evaluation
     ///
     virtual void Evaluate(CQueryParseTree& qtree);
@@ -212,7 +217,7 @@ public:
         { return CQueryParseNode::eNotSet; }
 
     virtual void EvalStart() {}
-    /// Move to the next row for eval, return false if table size < m_EvalRow+1
+    /// Move to (iterate) to next entry
     virtual bool EvalNext(CQueryParseTree& /* qtree */) {return false;}
     virtual bool EvalComplete() {return true;}
 
