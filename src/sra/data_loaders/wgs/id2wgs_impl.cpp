@@ -689,12 +689,11 @@ CID2WGSProcessor_Impl::ResolveBlobId(const CID2_Blob_Id& id)
         }
         seq.m_Version = subsat + 2; // remaining value is version
     }
-    if ( bad ) {
-        seq;
-    }
-    if ( CWGSDb wgs_db = GetWGSDb(seq) ) {
-        seq.m_ValidWGS = true;
-        seq.m_RowId = id.GetSat_key();
+    if ( !bad ) {
+        if ( CWGSDb wgs_db = GetWGSDb(seq) ) {
+            seq.m_ValidWGS = true;
+            seq.m_RowId = id.GetSat_key();
+        }
     }
     return seq;
 }
