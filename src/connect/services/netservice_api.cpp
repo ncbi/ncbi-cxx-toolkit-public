@@ -32,6 +32,7 @@
 
 #include "../ncbi_lbsmd.h"
 #include "../ncbi_servicep.h"
+#include "../ncbi_comm.h"
 
 #include "netservice_api_impl.hpp"
 
@@ -40,6 +41,7 @@
 #include <connect/services/netcache_api_expt.hpp>
 #include <connect/services/netschedule_api_expt.hpp>
 
+#include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 
@@ -320,13 +322,15 @@ bool CNetService::IsUsingXSiteProxy()
     return SNetServiceXSiteAPI::IsUsingXSiteProxy();
 }
 
+const char kXSiteFwd[] = "XSITEFWD";
+
 void SNetServiceXSiteAPI::AllowXSiteConnections()
 {
     m_AllowXSiteConnections.store(true);
 
-    SConnNetInfo* net_info = ConnNetInfo_Create(SNetServerImpl::kXSiteFwd);
+    SConnNetInfo* net_info = ConnNetInfo_Create(kXSiteFwd);
 
-    SSERV_Info* sinfo = SERV_GetInfo(SNetServerImpl::kXSiteFwd,
+    SSERV_Info* sinfo = SERV_GetInfo(kXSiteFwd,
             fSERV_Standalone, SERV_LOCALHOST, net_info);
 
     ConnNetInfo_Destroy(net_info);
@@ -355,8 +359,100 @@ void SNetServiceXSiteAPI::InitXSite(CConfig* config, const string& section)
     }
 }
 
+void SNetServiceXSiteAPI::ConnectXSite(CSocket& socket,
+        SNetServerImpl::SConnectDeadline& deadline,
+        const SServerAddress& original)
+{
+    SServerAddress actual(original);
+    ticket_t ticket = 0;
+
+    if (IsUsingXSiteProxy() && IsColoAddr(actual.host)) {
+        union {
+            SFWDRequestReply rq;
+            char buffer[FWD_MAX_RR_SIZE + 1];
+        };
+
+        memset(buffer, 0, sizeof(buffer));
+        rq.host =                     actual.host;
+        rq.port = SOCK_HostToNetShort(actual.port);
+        rq.flag = SOCK_HostToNetShort(1);
+        _ASSERT(offsetof(SFWDRequestReply, text) +
+                sizeof(kXSiteFwd) < sizeof(buffer));
+        memcpy(rq.text, kXSiteFwd, sizeof(kXSiteFwd));
+
+        size_t len = 0;
+
+        CConn_ServiceStream svc(kXSiteFwd);
+        if (svc.write((const char*) &rq.ticket/*0*/, sizeof(rq.ticket)) &&
+                svc.write(buffer, offsetof(SFWDRequestReply, text) +
+                        sizeof(kXSiteFwd))) {
+            svc.read(buffer, sizeof(buffer) - 1);
+            len = (size_t) svc.gcount();
+            _ASSERT(len < sizeof(buffer));
+        }
+
+        memset(buffer + len, 0, sizeof(buffer) - len);
+
+        if (len < offsetof(SFWDRequestReply, text) ||
+            (rq.flag & 0xF0F0) || rq.port == 0) {
+            const char* err;
+            if (len == 0)
+                err = "Connection refused";
+            else if (len < offsetof(SFWDRequestReply, text))
+                err = "Short response received";
+            else if (!(rq.flag & 0xF0F0))
+                err = rq.flag & 0x0F0F ? "Client rejected" : "Unknown error";
+            else if (NStr::strncasecmp(buffer, "NCBI", 4) == 0)
+                err = buffer;
+            else if (rq.text[0])
+                err = rq.text;
+            else
+                err = "Unspecified error";
+            NCBI_THROW_FMT(CNetSrvConnException, eConnectionFailure,
+                           "Error while acquiring an auth ticket from a "
+                           "cross-site connection proxy: " << err);
+        }
+
+        if (rq.ticket != 0) {
+            actual.host =                     rq.host;
+            actual.port = SOCK_NetToHostShort(rq.port);
+        } else {
+            SOCK sock;
+            actual.port = 0;
+            EIO_Status io_st = CONN_GetSOCK(svc.GetCONN(), &sock);
+            if (sock != NULL)
+                SOCK_CreateOnTop(sock, 0, &sock);
+            if (io_st != eIO_Success  ||  sock == NULL) {
+                NCBI_THROW(CNetSrvConnException, eConnectionFailure,
+                           "Error while connecting to proxy.");
+            }
+            socket.Reset(sock, eTakeOwnership, eCopyTimeoutsToSOCK);
+        }
+        ticket = rq.ticket;
+    }
+
+    if (actual.port) {
+        SNetServerImpl::ConnectImpl(socket, deadline, actual, original);
+    }
+
+    if (ticket && socket.Write(&ticket, sizeof(ticket)) != eIO_Success) {
+        NCBI_THROW(CNetSrvConnException, eConnectionFailure,
+                "Error while sending proxy auth ticket.");
+    }
+}
+
 atomic<unsigned> SNetServiceXSiteAPI::m_ColoNetwork{0};
 atomic<bool> SNetServiceXSiteAPI::m_AllowXSiteConnections{false};
+
+#else
+
+void SNetServiceXSiteAPI::ConnectXSite(CSocket& socket,
+        SNetServerImpl::SConnectDeadline& deadline,
+        const SServerAddress& original)
+{
+    SNetServerImpl::ConnectImpl(socket, deadline, original, original);
+}
+
 #endif
 
 CConfig* FindSection(const char* const* sections, const CConfig::TParamTree* tree,

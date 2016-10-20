@@ -285,10 +285,6 @@ struct SNetServerImpl : public CObject
     static void ConnectImpl(CSocket&, SConnectDeadline&, const SServerAddress&,
             const SServerAddress&);
 
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-    static const char kXSiteFwd[];
-#endif
-
     CNetService m_Service;
     CRef<SNetServerInPool> m_ServerInPool;
 
