@@ -1,0 +1,6 @@
+add_executable(test_ctransition test_ctransition)
+
+target_link_libraries(test_ctransition
+    ctransition
+)
+

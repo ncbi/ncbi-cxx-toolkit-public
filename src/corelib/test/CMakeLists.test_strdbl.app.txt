@@ -1,0 +1,7 @@
+add_executable(test_strdbl
+    test_strdbl
+)
+
+target_link_libraries(test_strdbl
+    xncbi
+)

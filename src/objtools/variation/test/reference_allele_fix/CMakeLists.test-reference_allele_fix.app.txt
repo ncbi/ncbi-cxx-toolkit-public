@@ -1,0 +1,8 @@
+add_executable(test-reference_allele_fix
+    test-reference_allele_fix
+)
+
+target_link_libraries(test-reference_allele_fix
+    ncbi_xloader_genbank variation_utils
+)
+

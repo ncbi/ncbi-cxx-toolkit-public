@@ -1,0 +1,76 @@
+#!/bin/bash
+
+set -o errexit
+
+#############################################################################
+
+root=CMake-Debug
+CC=`which gcc`
+CXX=`which g++`
+CMAKE_BUILD_TYPE=Debug
+BUILD_SHARED_LIBS=OFF
+export BOOST_ROOT=$NCBI/boost-1.53.0-ncbi1/
+
+#############################################################################
+
+while [ ! -z "$1" ]
+do
+    case "$1" in
+        --with-static)
+            BUILD_SHARED_LIBS=OFF
+            ;;
+
+        --with-dll)
+            BUILD_SHARED_LIBS=ON
+            ;;
+
+        --with-debug)
+            CMAKE_BUILD_TYPE=Debug
+            ;;
+
+        --without-debug)
+            CMAKE_BUILD_TYPE=Release
+            ;;
+
+        --with-xcode)
+            XCODE="-G Xcode"
+            ;;
+
+        *)
+            echo "error: option not understood: $1"
+            exit 1
+            ;;
+    esac
+    shift
+done
+
+#############################################################################
+
+# enable extra warnings
+
+## export CFLAGS='-Wmissing-prototypes'
+## export CPPFLAGS='-Wall -Wextra -Wconversion -Wdeprecated-declarations -Wlogical-op -Wmissing-declarations -Wpedantic -Wshadow -Wsuggest-attribute=format -Wswitch -Wpointer-arith -Wcast-align -Wmissing-include-dirs -Winvalid-pch -Wmissing-format-attribute'
+## export CXXFLAGS='-Wnon-virtual-dtor -Wall -Wextra -Wconversion -Wdeprecated-declarations -Wlogical-op -Wmissing-declarations -Wpedantic -Wshadow -Wsuggest-attribute=format -Wswitch -Wpointer-arith -Wcast-align -Wmissing-include-dirs -Winvalid-pch -Wmissing-format-attribute'
+
+#############################################################################
+
+
+root="CMake-$CMAKE_BUILD_TYPE"
+if [ "$BUILD_SHARED_LIBS" == "ON" ]
+then
+    root="$root"DLL
+fi
+
+mkdir -p $root/build
+cd $root/build
+
+    #-DCMAKE_C_LINK_EXECUTABLE='touch <TARGET>' \
+    #-DCMAKE_CXX_LINK_EXECUTABLE='touch <TARGET>' \
+cmake ../../src $XCODE \
+    -DCMAKE_C_COMPILER=$CC \
+    -DCMAKE_CXX_COMPILER=$CXX \
+    -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+    -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS
+
+
+

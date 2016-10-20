@@ -1,0 +1,5 @@
+add_executable(test_ncbi_http_upload test_ncbi_http_upload)
+
+target_link_libraries(test_ncbi_http_upload
+    xconnect
+)

@@ -1,0 +1,5 @@
+add_executable(merge_tree merge_tree_app)
+
+target_link_libraries(merge_tree
+    ncbi_xloader_genbank xmergetree
+)

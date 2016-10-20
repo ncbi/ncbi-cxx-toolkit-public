@@ -1,0 +1,11 @@
+#
+add_executable(asnwalk_read-app
+    asnwalk_read
+)
+
+set_target_properties(asnwalk_read-app PROPERTIES OUTPUT_NAME asnwalk_read)
+
+target_link_libraries(asnwalk_read-app
+    seqset 
+)
+

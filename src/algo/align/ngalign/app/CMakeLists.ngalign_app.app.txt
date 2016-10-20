@@ -1,0 +1,7 @@
+add_executable(ngalign_app ngalign_app)
+
+add_dependencies(ngalign_app seq)
+
+target_link_libraries(ngalign_app
+    ncbi_xloader_asn_cache xngalign
+)

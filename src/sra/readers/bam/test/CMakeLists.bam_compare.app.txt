@@ -1,0 +1,12 @@
+add_executable(bam_compare-app
+    bam_compare samtools
+)
+
+set_target_properties(bam_compare-app PROPERTIES OUTPUT_NAME bam_compare)
+
+include_directories(${SRA_INCLUDE} ${SAMTOOLS_INCLUDE})
+
+target_link_libraries(bam_compare-app
+    ${SAMTOOLS_LIBS} bamread xobjreadex
+    xobjsimple
+)

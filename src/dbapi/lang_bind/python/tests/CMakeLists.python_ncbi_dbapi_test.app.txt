@@ -1,0 +1,9 @@
+add_executable(python_ncbi_dbapi_test python_ncbi_dbapi_test)
+
+include_directories(${PYTHON_INCLUDE} ${BOOST_INCLUDE})
+
+target_link_libraries(python_ncbi_dbapi_test
+    dbapi_driver test_boost
+    ${PYTHON_LIBS}
+)
+

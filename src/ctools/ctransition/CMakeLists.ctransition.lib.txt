@@ -1,0 +1,7 @@
+add_library(ctransition
+    ct_ncbierr ct_ncbimem ct_ncbistr
+)
+
+target_link_libraries(ctransition
+    xncbi
+)

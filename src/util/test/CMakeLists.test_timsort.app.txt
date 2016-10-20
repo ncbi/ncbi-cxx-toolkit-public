@@ -1,0 +1,8 @@
+# Author:  Eugene Vasilchenko (vasilche@ncbi.nlm.nih.gov)
+# Build timsort test application
+
+add_executable(test_timsort test_timsort)
+
+target_link_libraries(test_timsort
+    xutil
+)

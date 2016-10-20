@@ -1,0 +1,9 @@
+add_executable(test_vdbgraph_loader
+    test_vdbgraph_loader
+)
+
+include_directories(${BOOST_INCLUDE})
+
+target_link_libraries(test_vdbgraph_loader
+    ncbi_xloader_vdbgraph test_boost
+)

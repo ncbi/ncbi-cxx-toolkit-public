@@ -1,0 +1,29 @@
+#
+# OS-specific settings
+#
+
+if (UNIX)
+    SET(NCBI_OS_UNIX 1 CACHE INTERNAL "Is Unix")
+    SET(NCBI_OS \"UNIX\" CACHE INTERNAL "Is Unix")
+    if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+        SET(NCBI_OS_LINUX 1 CACHE INTERNAL "Is Linux")
+    endif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+endif(UNIX)
+
+if (WIN32)
+    SET(NCBI_OS_MSWIN 1 CACHE INTERNAL "Is Windows")
+    SET(NCBI_OS \"WINDOWS\" CACHE INTERNAL "Is Windows")
+endif(WIN32)
+
+if (CYGWIN)
+    SET(NCBI_OS_CYGWIN 1 CACHE INTERNAL "Is CygWin")
+    SET(NCBI_OS \"CYGWIN\" CACHE INTERNAL "Is Cygwin")
+endif(CYGWIN)
+
+if (APPLE)
+    if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+        SET(NCBI_OS_DARWIN 1 CACHE INTERNAL "Is Mac OS X")
+    endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+endif(APPLE)
+
+

@@ -1,0 +1,9 @@
+add_executable(test_wgs_loader
+    test_wgs_loader
+)
+
+include_directories(${SRA_INCLUDE} ${BOOST_INCLUDE})
+
+target_link_libraries(test_wgs_loader
+    ncbi_xloader_genbank ncbi_xloader_wgs test_boost
+)

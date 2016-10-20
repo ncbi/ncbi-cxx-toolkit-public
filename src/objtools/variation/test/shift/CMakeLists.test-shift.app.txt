@@ -1,0 +1,7 @@
+add_executable(test-shift
+    test-shift
+)
+
+target_link_libraries(test-shift
+    ncbi_xloader_genbank variation_utils
+)

@@ -1,0 +1,12 @@
+add_library(ncbi_xloader_snp snploader snploader_impl)
+
+add_dependencies(ncbi_xloader_snp
+    seqset seq
+)
+
+target_link_libraries(ncbi_xloader_snp
+    sraread
+)
+
+include_directories(${SRA_INCLUDE})
+add_definitions(-DNCBI_XLOADER_SNP_EXPORTS)

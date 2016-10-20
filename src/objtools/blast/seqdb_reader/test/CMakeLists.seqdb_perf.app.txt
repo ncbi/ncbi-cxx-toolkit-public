@@ -1,0 +1,9 @@
+add_executable(seqdb_perf-app
+    seqdb_perf  
+)
+
+set_target_properties(seqdb_perf-app PROPERTIES OUTPUT_NAME seqdb_perf)
+
+target_link_libraries(seqdb_perf-app
+    seqdb
+)
