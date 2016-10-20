@@ -256,12 +256,14 @@ CRef<CSerialObject> CDiscRepApp::x_ReadFile(const string& fname)
         in->Read(ObjectInfo(*set), CObjectIStream::eNoFileHeader);
         CRef<CSeq_entry> se(new CSeq_entry());
         se->SetSet().Assign(*set);
+        m_Scope.AddTopLevelSeqEntry(*se);
         return CRef<CSerialObject>(se);
     } else if (header == "Bioseq" ) {
         CRef<CBioseq> seq(new CBioseq);
         in->Read(ObjectInfo(*seq), CObjectIStream::eNoFileHeader);
         CRef<CSeq_entry> se(new CSeq_entry());
         se->SetSeq().Assign(*seq);
+        m_Scope.AddTopLevelSeqEntry(*se);
         return CRef<CSerialObject>(se);
     } else {
         NCBI_THROW(CException, eUnknown, "Unhandled type " + header);
