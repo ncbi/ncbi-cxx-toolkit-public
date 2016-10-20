@@ -926,13 +926,15 @@ int CCgi2RCgiApp::RenderPage()
 
 void CCgi2RCgiApp::DefineRefreshTags(const string& url, int idelay)
 {
+    const auto idelay_str = NStr::IntToString(idelay);
+
     if (!m_HTMLPassThrough && idelay >= 0) {
         CHTMLText* redirect = new CHTMLText(
                     "<META HTTP-EQUIV=Refresh "
                     "CONTENT=\"<@REDIRECT_DELAY@>; URL=<@REDIRECT_URL@>\">");
         m_Page->AddTagMap("REDIRECT", redirect);
 
-        CHTMLPlainText* delay = new CHTMLPlainText(NStr::IntToString(idelay));
+        CHTMLPlainText* delay = new CHTMLPlainText(idelay_str);
         m_Page->AddTagMap("REDIRECT_DELAY", delay);
     }
 
@@ -944,6 +946,7 @@ void CCgi2RCgiApp::DefineRefreshTags(const string& url, int idelay)
     m_Response->SetHeaderValue("Cache-Control",
         "no-cache, no-store, max-age=0, private, must-revalidate");
     m_Response->SetHeaderValue("NCBI-RCGI-RetryURL", url);
+    m_Response->SetHeaderValue("NCBI-RCGI-RetryDelay", idelay_str);
 }
 
 
