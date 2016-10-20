@@ -630,6 +630,125 @@ namespace {
     }
 }
 
+
+// Put in a bunch here for the ParseIDs
+BOOST_AUTO_TEST_CASE(TestDefLineParser) 
+{
+    CFastaReader::SDefLineParseInfo parseInfo;
+    parseInfo.maxIdLength = 40;
+    parseInfo.lineNumber = 0;
+    parseInfo.fFastaFlags = CFastaReader::fAllSeqIds;
+    parseInfo.fBaseFlags = 0;
+
+    CFastaReader::TIgnoredProblems noIgnoredErrors;
+    list<CRef<CSeq_id>> ids;
+    bool hasRange;
+    TSeqPos rangeStart, rangeEnd;
+    CFastaReader::TSeqTitles seqTitles;
+
+    {
+        static const string kFastaDefLine = 
+            ">ID1 Title1\1ID2 Title2.1 Title2.2 \1[ID3]\n";
+        CFastaReader::ParseDefLine(kFastaDefLine, 
+                                   parseInfo,
+                                   noIgnoredErrors,
+                                   ids,
+                                   hasRange,
+                                   rangeStart,
+                                   rangeEnd,
+                                   seqTitles,
+                                   nullptr); 
+
+        BOOST_CHECK( ids.size() == 3 );
+        BOOST_CHECK( !hasRange );
+        BOOST_CHECK( seqTitles.size() == 2 );
+        BOOST_CHECK( seqTitles[1].m_sLineText == "Title2.1 Title2.2 " );
+
+        ids.clear();
+        seqTitles.clear();
+    }
+
+
+    { 
+        static const string kFastaDefLine = 
+            ">ID1:123-456 Title\11D2\n";
+        CFastaReader::ParseDefLine(kFastaDefLine, 
+                                   parseInfo,
+                                   noIgnoredErrors,
+                                   ids,
+                                   hasRange,
+                                   rangeStart,
+                                   rangeEnd,
+                                   seqTitles,
+                                   nullptr); 
+
+
+        BOOST_CHECK( ids.size() == 1 );
+        BOOST_CHECK( hasRange );
+        BOOST_CHECK( rangeStart == 122 );
+        BOOST_CHECK( rangeEnd == 455 );
+        BOOST_CHECK( seqTitles.size() == 1 &&
+                     seqTitles.front().m_sLineText == "Title" );
+        ids.clear();
+        seqTitles.clear();
+    }
+
+
+    {
+        static const string kFastaDefLine = 
+            ">ID1 Title1 \1ID2:12-34 Title2 \1ID3 \n";
+        CFastaReader::ParseDefLine(kFastaDefLine, 
+                                   parseInfo,
+                                   noIgnoredErrors,
+                                   ids,
+                                   hasRange,
+                                   rangeStart,
+                                   rangeEnd,
+                                   seqTitles,
+                                   nullptr); 
+
+
+
+        BOOST_CHECK( ids.size() == 2 );
+        BOOST_CHECK( hasRange );
+        BOOST_CHECK( rangeStart == 11 );
+        BOOST_CHECK( rangeEnd == 33 );
+        BOOST_CHECK( seqTitles.size() == 2 );
+        BOOST_CHECK( seqTitles.front().m_sLineText == "Title1 " );
+        BOOST_CHECK( seqTitles.back().m_sLineText == "Title2 " );
+
+        ids.clear();
+        seqTitles.clear();
+    }
+
+
+    {
+        static const string kFastaDefLine = 
+            ">lcl|ID1 Title\n";
+        CFastaReader::ParseDefLine(kFastaDefLine, 
+                                   parseInfo,
+                                   noIgnoredErrors,
+                                   ids,
+                                   hasRange,
+                                   rangeStart,
+                                   rangeEnd,
+                                   seqTitles,
+                                   nullptr); 
+
+        BOOST_CHECK ( ids.size() == 1 );
+        const CRef<CSeq_id>& localId = ids.front();
+        BOOST_CHECK( localId->GetLocal().IsStr() &&
+                     localId->GetLocal().GetStr() == "ID1" );
+
+        ids.clear();
+        seqTitles.clear();
+
+    }
+}
+
+
+
+
 BOOST_AUTO_TEST_CASE(TestTitleRemovedIfEmpty)
 {
     static const string kFastaWhereAllModsRemoved = 
@@ -643,6 +762,10 @@ BOOST_AUTO_TEST_CASE(TestTitleRemovedIfEmpty)
         BOOST_CHECK( ! (*desc_it)->IsTitle() );
     }
 }
+
+
+
+
 
 BOOST_AUTO_TEST_CASE(TestProteinSeqGapChar)
 {
@@ -1443,7 +1566,7 @@ BOOST_AUTO_TEST_CASE(TestIgnoringSpacesAfterGreaterThanInDefline)
 
 BOOST_AUTO_TEST_CASE(TestModFilter)
 {
-    const string kData = ">Seq1 [topology=circular] [org=ia io]\n"
+    const string kData = ">Seq1 Seq2 [topology=circular] [org=ia io]\n"
         "ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTA\n";
 
     // a filter that filters out org mods only.
