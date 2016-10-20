@@ -507,7 +507,7 @@ public:
     typedef function<bool(CHttpResponse& response)> TResponseHandler;
 
     /// No-op callback
-    static bool Handler_NoopCB(CHttpResponse& response) { return false; }
+    static bool Handler_NoopCB(CHttpResponse&) { return false; }
 
     /// Recognize and handle NCBI Remote-CGI interim "try again" responses
     //static bool Handler_Cgi2RCgi(CHttpResponse& response);
