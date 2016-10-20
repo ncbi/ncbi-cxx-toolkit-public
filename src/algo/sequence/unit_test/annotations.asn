@@ -9254,7 +9254,7 @@ Seq-annot ::= {
     {
       data gene {
         locus "DIO3",
-        desc "deiodinase, iodothyronine type III",
+        desc "iodothyronine deiodinase 3",
         syn {
           "5DIII",
           "D3",
