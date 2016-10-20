@@ -1234,6 +1234,9 @@ public:
     NCBI_DEPRECATED
     TVDBRowId GetProductFeatRowId(void) const; // single or 0 if none
 
+    TVDBRowId GetReplacedByRowId(void) const;
+    TVDBRowId GetReplacesRowId(void) const;
+
     enum EFlags {
         fIds_gi       = 1<<0,
         fIds_acc      = 1<<1,

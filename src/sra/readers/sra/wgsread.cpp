@@ -514,6 +514,8 @@ struct CWGSDb_Impl::SProtTableCursor : public CObject {
     DECLARE_VDB_COLUMN_AS(TVDBRowId, FEAT_ROW_END);
     DECLARE_VDB_COLUMN_AS(TVDBRowId, FEAT_PRODUCT_ROW_ID);
     DECLARE_VDB_COLUMN_AS_STRING(PROTEIN);
+    DECLARE_VDB_COLUMN_AS(TVDBRowId, REPLACED_BY);
+    DECLARE_VDB_COLUMN_AS(TVDBRowId, REPLACES);
 };
 
 
@@ -534,7 +536,9 @@ CWGSDb_Impl::SProtTableCursor::SProtTableCursor(const CVDBTable& table)
       INIT_OPTIONAL_VDB_COLUMN(FEAT_ROW_START),
       INIT_OPTIONAL_VDB_COLUMN(FEAT_ROW_END),
       INIT_OPTIONAL_VDB_COLUMN(FEAT_PRODUCT_ROW_ID),
-      INIT_OPTIONAL_VDB_COLUMN(PROTEIN)
+      INIT_OPTIONAL_VDB_COLUMN(PROTEIN),
+      INIT_OPTIONAL_VDB_COLUMN(REPLACED_BY),
+      INIT_OPTIONAL_VDB_COLUMN(REPLACES)
 {
 }
 
@@ -4974,6 +4978,42 @@ TVDBRowId CWGSProteinIterator::GetProductFeatRowId(void) const
 }
 
 
+TVDBRowId CWGSProteinIterator::GetReplacedByRowId(void) const
+{
+    x_CheckValid("CWGSProteinIterator::GetReplacedByRowId");
+    if ( m_Cur->m_REPLACED_BY ) {
+        CVDBValueFor<TVDBRowId> value = m_Cur->REPLACED_BY(m_CurrId);
+        if ( !value.empty() ) {
+            return *value;
+        }
+    }
+#ifdef TEST_ACC_VERSION
+    if ( m_CurrId % 3 != 0 ) {
+        return m_CurrId+1;
+    }
+#endif
+    return 0;
+}
+
+
+TVDBRowId CWGSProteinIterator::GetReplacesRowId(void) const
+{
+    x_CheckValid("CWGSProteinIterator::GetReplacesRowId");
+    if ( m_Cur->m_REPLACES ) {
+        CVDBValueFor<TVDBRowId> value = m_Cur->REPLACES(m_CurrId);
+        if ( !value.empty() ) {
+            return *value;
+        }
+    }
+#ifdef TEST_ACC_VERSION
+    if ( m_CurrId % 3 != 1 ) {
+        return m_CurrId-1;
+    }
+#endif
+    return 0;
+}
+
+
 bool CWGSProteinIterator::HasSeq_descr(TFlags flags) const
 {
     x_CheckValid("CWGSProteinIterator::HasSeq_descr");
@@ -5067,6 +5107,22 @@ CRef<CSeq_inst> CWGSProteinIterator::GetSeq_inst(TFlags flags) const
     else {
         inst->SetRepr(CSeq_inst::eRepr_raw);
         inst->SetSeq_data().SetNcbieaa().Set() = *m_Cur->PROTEIN(m_CurrId);
+    }
+    if ( 1 ) {
+        // add history info
+        TVDBRowId replaced_by_row = GetReplacedByRowId();
+        TVDBRowId replaces_row = GetReplacesRowId();
+        if ( replaced_by_row || replaces_row ) {
+            CSeq_hist& hist = inst->SetHist();
+            if ( replaced_by_row ) {
+                CWGSProteinIterator it(m_Db, replaced_by_row);
+                hist.SetReplaced_by().SetIds().push_back(it.GetId());
+            }
+            if ( replaces_row ) {
+                CWGSProteinIterator it(m_Db, replaces_row);
+                hist.SetReplaces().SetIds().push_back(it.GetId());
+            }
+        }
     }
     return inst;
 }
