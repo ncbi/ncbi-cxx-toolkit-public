@@ -486,28 +486,28 @@ CNetServerConnection SNetServerImpl::Connect(STimeout* timeout,
 {
     CNetServerConnection conn = new SNetServerConnectionImpl(this);
 
-    EIO_Status io_st;
-    const STimeout& conn_timeout = timeout != NULL ? *timeout :
-            m_ServerInPool->m_ServerPool->m_ConnTimeout;
+    auto& server_pool = m_ServerInPool->m_ServerPool;
+    const STimeout& conn_timeout = timeout ? *timeout : server_pool->m_ConnTimeout;
     CDeadline deadline(conn_timeout.sec, conn_timeout.usec * 1000);
     STimeout internal_timeout = conn_timeout < s_InternalConnectTimeout ?
             conn_timeout : s_InternalConnectTimeout;
 
     SServerAddress server_address(m_ServerInPool->m_Address);
+    auto& socket = conn->m_Socket;
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     ticket_t ticket = 0;
 
     if (m_Service->IsUsingXSiteProxy() &&
-            m_Service->IsColoAddr(m_ServerInPool->m_Address.host)) {
+            m_Service->IsColoAddr(server_address.host)) {
         union {
             SFWDRequestReply rq;
             char buffer[FWD_MAX_RR_SIZE + 1];
         };
 
         memset(buffer, 0, sizeof(buffer));
-        rq.host =                     m_ServerInPool->m_Address.host;
-        rq.port = SOCK_HostToNetShort(m_ServerInPool->m_Address.port);
+        rq.host =                     server_address.host;
+        rq.port = SOCK_HostToNetShort(server_address.port);
         rq.flag = SOCK_HostToNetShort(1);
         _ASSERT(offsetof(SFWDRequestReply, text) +
                 sizeof(kXSiteFwd) < sizeof(buffer));
@@ -552,14 +552,14 @@ CNetServerConnection SNetServerImpl::Connect(STimeout* timeout,
         } else {
             SOCK sock;
             server_address.port = 0;
-            io_st = CONN_GetSOCK(svc.GetCONN(), &sock);
+            EIO_Status io_st = CONN_GetSOCK(svc.GetCONN(), &sock);
             if (sock != NULL)
                 SOCK_CreateOnTop(sock, 0, &sock);
             if (io_st != eIO_Success  ||  sock == NULL) {
                 NCBI_THROW(CNetSrvConnException, eConnectionFailure,
                            "Error while connecting to proxy.");
             }
-            conn->m_Socket.Reset(sock, eTakeOwnership, eCopyTimeoutsToSOCK);
+            socket.Reset(sock, eTakeOwnership, eCopyTimeoutsToSOCK);
         }
         ticket = rq.ticket;
     }
@@ -567,10 +567,11 @@ CNetServerConnection SNetServerImpl::Connect(STimeout* timeout,
     if (server_address.port != 0) {
 #endif
 
+        EIO_Status io_st;
         STimeout remaining_timeout;
 
         do {
-            io_st = conn->m_Socket.Connect(CSocketAPI::ntoa(
+            io_st = socket.Connect(CSocketAPI::ntoa(
                     server_address.host), server_address.port,
                     &internal_timeout, fSOCK_LogOff | fSOCK_KeepAlive);
 
@@ -584,7 +585,7 @@ CNetServerConnection SNetServerImpl::Connect(STimeout* timeout,
                                           remaining_timeout.sec > 0));
 
         if (io_st != eIO_Success) {
-            conn->m_Socket.Close();
+            socket.Close();
 
             NCBI_THROW(CNetSrvConnException, eConnectionFailure,
                 FORMAT(m_ServerInPool->m_Address.AsString() <<
@@ -595,7 +596,7 @@ CNetServerConnection SNetServerImpl::Connect(STimeout* timeout,
     }
 
     if (ticket != 0 &&
-            conn->m_Socket.Write(&ticket, sizeof(ticket)) != eIO_Success) {
+            socket.Write(&ticket, sizeof(ticket)) != eIO_Success) {
         NCBI_THROW(CNetSrvConnException, eConnectionFailure,
                 "Error while sending proxy auth ticket.");
     }
@@ -603,19 +604,17 @@ CNetServerConnection SNetServerImpl::Connect(STimeout* timeout,
 
     m_ServerInPool->AdjustThrottlingParameters(SNetServerInPool::eCOR_Success);
 
-    conn->m_Socket.SetDataLogging(
-            TServConn_ConnDataLogging::GetDefault() ? eOn : eOff);
-    conn->m_Socket.SetTimeout(eIO_ReadWrite, timeout != NULL ? timeout :
-                              &m_ServerInPool->m_ServerPool->m_CommTimeout);
-    conn->m_Socket.DisableOSSendDelay();
-    conn->m_Socket.SetReuseAddress(eOn);
+    socket.SetDataLogging(TServConn_ConnDataLogging::GetDefault() ? eOn : eOff);
+    socket.SetTimeout(eIO_ReadWrite, timeout ? timeout :
+                              &server_pool->m_CommTimeout);
+    socket.DisableOSSendDelay();
+    socket.SetReuseAddress(eOn);
 
-    (conn_listener != NULL ? conn_listener :
-            m_Service->m_Listener)->OnConnected(conn);
+    if (!conn_listener) conn_listener = m_Service->m_Listener;
 
-    if (timeout != NULL)
-        conn->m_Socket.SetTimeout(eIO_ReadWrite,
-                &m_ServerInPool->m_ServerPool->m_CommTimeout);
+    conn_listener->OnConnected(conn);
+
+    if (timeout) socket.SetTimeout(eIO_ReadWrite, &server_pool->m_CommTimeout);
 
     return conn;
 }
