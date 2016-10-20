@@ -260,6 +260,8 @@ struct SNetServerInfoImpl : public CObject
 
 struct SNetServerImpl : public CObject
 {
+    struct SConnectDeadline;
+
     SNetServerImpl(CNetService::TInstance service,
             SNetServerInPool* server_in_pool) :
         m_Service(service),
@@ -280,6 +282,9 @@ struct SNetServerImpl : public CObject
             INetServerExecListener* exec_listener = NULL,
             INetServerConnectionListener* conn_listener = NULL);
 
+    static void ConnectImpl(CSocket&, SConnectDeadline&, const SServerAddress&,
+            const SServerAddress&);
+
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     static const char kXSiteFwd[];
 #endif
@@ -288,8 +293,6 @@ struct SNetServerImpl : public CObject
     CRef<SNetServerInPool> m_ServerInPool;
 
 private:
-    struct SConnectDeadline;
-
     CNetServerConnection Connect(STimeout* timeout,
             INetServerConnectionListener* conn_listener);
 };

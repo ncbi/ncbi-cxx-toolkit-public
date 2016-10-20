@@ -596,22 +596,7 @@ CNetServerConnection SNetServerImpl::Connect(STimeout* timeout,
     if (server_address.port != 0) {
 #endif
 
-        EIO_Status io_st;
-
-        do {
-            io_st = socket.Connect(CSocketAPI::ntoa(
-                    server_address.host), server_address.port,
-                    deadline.GetRemaining(), fSOCK_LogOff | fSOCK_KeepAlive);
-
-        } while (io_st == eIO_Timeout && !deadline.IsExpired());
-
-        if (io_st != eIO_Success) {
-            socket.Close();
-
-            NCBI_THROW(CNetSrvConnException, eConnectionFailure,
-                FORMAT(m_ServerInPool->m_Address.AsString() <<
-                    ": Could not connect: " << IO_StatusStr(io_st)));
-        }
+        ConnectImpl(socket, deadline, server_address, m_ServerInPool->m_Address);
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     }
@@ -638,6 +623,26 @@ CNetServerConnection SNetServerImpl::Connect(STimeout* timeout,
     if (timeout) socket.SetTimeout(eIO_ReadWrite, &server_pool->m_CommTimeout);
 
     return conn;
+}
+
+void SNetServerImpl::ConnectImpl(CSocket& socket, SConnectDeadline& deadline,
+        const SServerAddress& actual, const SServerAddress& original)
+{
+    EIO_Status io_st;
+
+    do {
+        io_st = socket.Connect(CSocketAPI::ntoa(actual.host), actual.port,
+                deadline.GetRemaining(), fSOCK_LogOff | fSOCK_KeepAlive);
+
+    } while (io_st == eIO_Timeout && !deadline.IsExpired());
+
+    if (io_st == eIO_Success) return;
+
+    socket.Close();
+
+    NCBI_THROW(CNetSrvConnException, eConnectionFailure,
+        FORMAT(original.AsString() <<
+            ": Could not connect: " << IO_StatusStr(io_st)));
 }
 
 void SNetServerImpl::TryExec(INetServerExecHandler& handler,
