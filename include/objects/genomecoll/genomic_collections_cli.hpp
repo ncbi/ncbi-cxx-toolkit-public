@@ -119,6 +119,11 @@ public:
         // pseudo scaffolds are reported as unlocalized/unplaced, as needed for analysis
         static string kScaffoldsWithAlignments()  {return "ScaffoldsWithAlignments";};
 
+        // Scaffolds
+        // No alignment data
+        // pseudo scaffolds reported as submitted.
+        static string kEntrezIndexing()  {return "EntrezIndexing";};
+
         // Almost maximum contents:
         // all sequences down to contigs
         // No statistics
