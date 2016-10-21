@@ -2518,7 +2518,7 @@ DISCREPANCY_CASE(CDS_HAS_NO_ADJACENT_TRNA, CSeq_feat_BY_BIOSEQ, eDisc, "CDSs sho
             if (nearest_trna) {
 
                 ENa_strand trna_strand = nearest_trna->GetLocation().IsSetStrand() ? nearest_trna->GetLocation().GetStrand() : eNa_strand_unknown;
-                if (trna_strand == strand && diff > 0) {
+                if (trna_strand == strand && diff > 1) {
                     m_Objs[kCDShasNoTRNA].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false).Incr();
                     m_Objs[kCDShasNoTRNA].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(nearest_trna)), false);
                 }
