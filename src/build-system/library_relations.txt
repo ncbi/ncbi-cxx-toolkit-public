@@ -40,7 +40,6 @@ Xext needs3party X11
 Xpm needs3party $(ORIG_LIBS)
 Xpm needs3party X11
 access needs xser
-accnmap needs dbapi
 ads needs $(SEQ_LIBS)
 ads needs pub
 affy needs3party $(CURL_LIBS)
@@ -123,10 +122,6 @@ bdb2ez needs xser
 bdbasncli needs bdb2ez
 bdbasncli needs xconnect
 biblio needs general
-biosample needs $(SDBAPI_LIB)
-biosample needs xmlwrapp
-biosample needs xregexp
-biosample needs xutil
 biotree needs general
 biotree_db needs biotree
 biotree_db needs gpipe_common
@@ -1024,12 +1019,6 @@ test_boost includes3party $(BOOST_TEST_LIBS)
 test_boost needs xncbi
 test_dll needs3party $(ORIG_LIBS)
 test_mt needs xncbi
-test_stat_ext needs $(COMPRESS_LIBS)
-test_stat_ext needs $(XCONNEXT)
-test_stat_ext needs dbapi
-test_stat_ext needs ncbi_xdbapi_ftds
-test_stat_ext needs xconnect
-test_stat_ext needs xutil
 tiff needs $(Z_LIB)
 tiff needs3party $(JPEG_LIBS)
 tiff needs3party $(ORIG_LIBS)
