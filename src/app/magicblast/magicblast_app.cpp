@@ -179,6 +179,47 @@ static string s_GetBareId(const CSeq_id& id)
     return retval;
 }
 
+CNcbiOstream& PrintTabularHeader(CNcbiOstream& ostr, const string& version,
+                                 const string& cmd_line_args)
+{
+    string sep = "\t";
+
+    ostr << "# MAGICBLAST " << version << endl;
+    ostr << "# " << cmd_line_args << endl;
+
+    ostr << "# Fields: ";
+    ostr << "query acc." << sep;
+    ostr << "reference acc." << sep;
+    ostr << "% identity" << sep;
+    ostr << "not used" << sep;
+    ostr << "not used" << sep;
+    ostr << "not used" << sep;
+    ostr << "query start" << sep;
+    ostr << "query end" << sep;
+    ostr << "reference start" << sep;
+    ostr << "reference end" << sep;
+    ostr << "not used" << sep;
+    ostr << "not used" << sep;
+    ostr << "score" << sep;
+    ostr << "query strand" << sep;
+    ostr << "reference strand" << sep;
+    ostr << "query length" << sep;
+    ostr << "BTOP" << sep;
+    ostr << "num placements" << sep;
+    ostr << "not used" << sep;
+    ostr << "compartment" << sep;
+    ostr << "left overhang" << sep;
+    ostr << "right overhang" << sep;
+    ostr << "mate reference" << sep;
+    ostr << "make ref. start" << sep;
+    ostr << "composite score";
+
+    ostr << endl;
+
+    return ostr;
+}
+
+
 CNcbiOstream& PrintTabular(CNcbiOstream& ostr, const CSeq_align& align,
                            const BLAST_SequenceBlk* queries,
                            const BlastQueryInfo* query_info,
@@ -419,10 +460,10 @@ CNcbiOstream& PrintTabular(CNcbiOstream& ostr, const CSeq_align& align,
         }
         ostr << sep << pair_start;
 
-        }
-        else {
-            ostr << sep << "-" << sep << "-";
-        }
+    }
+    else {
+        ostr << sep << "-" << sep << "-";
+    }
 
     ostr << sep << fragment_score;
 
@@ -1136,6 +1177,13 @@ int CMagicBlastApp::Run(void)
                 PrintSAMHeader(m_CmdLineArgs->GetOutputStream(), db_adapter,
                                s_GetCmdlineArgs(GetArguments()));
             }
+        }
+        else if (fmt_args->GetFormattedOutputChoice() ==
+                 CFormattingArgs::eTabular) {
+
+            PrintTabularHeader(m_CmdLineArgs->GetOutputStream(),
+                               GetVersion().Print(),
+                               s_GetCmdlineArgs(GetArguments()));
         }
 
         // FIXME: If subject is given as FASTA, number of threads is changed
