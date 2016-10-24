@@ -1541,6 +1541,10 @@ public:
     virtual EType GetObjectType(void) const { return eFile; };
 
     /// Check existence of file.
+    /// @note 
+    ///   CDirEntry::Exists() could be faster on some platforms,
+    ///   if you don't need to check that entry is a file.
+    /// @sa CDirEntry::Exists
     virtual bool Exists(void) const;
 
     /// Get size of file.
@@ -1628,6 +1632,9 @@ public:
     virtual EType GetObjectType(void) const { return eDir; };
 
     /// Check if directory "dirname" exists.
+    /// @note 
+    ///   CDirEntry::Exists() could be faster on some platforms,
+    ///   if you don't need to check that entry is a directory.
     virtual bool Exists(void) const;
 
     /// Get user "home" directory.
@@ -3757,11 +3764,14 @@ bool CDirEntry::IsLink(void) const
     return GetType(eIgnoreLinks) == eLink;
 }
 
+#if !defined(NCBI_OS_MSWIN)
+// Default implementation. See Windows-specific implementation in the .cpp file
 inline
 bool CDirEntry::Exists(void) const
 {
     return GetType() != eUnknown;
 }
+#endif
 
 inline
 bool CDirEntry::MatchesMask(const string& name, const string& mask,

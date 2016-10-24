@@ -2323,6 +2323,25 @@ CDirEntry::EType CDirEntry::GetType(const TNcbiSys_stat& st)
 }
 
 
+#if defined(NCBI_OS_MSWIN)
+
+// Windows-specific implementation. See default implementation in the .hpp file
+bool CDirEntry::Exists(void) const
+{
+    HANDLE h = CreateFile(_T_XCSTRING(GetPath()),
+                          GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
+                          OPEN_EXISTING,
+                          FILE_FLAG_BACKUP_SEMANTICS /*for dirs*/, NULL);
+    if (h == INVALID_HANDLE_VALUE) {
+        return false;
+    }
+    CloseHandle(h);
+    return true;
+}
+
+#endif
+
+
 string CDirEntry::LookupLink(void) const
 {
 #ifdef NCBI_OS_MSWIN
