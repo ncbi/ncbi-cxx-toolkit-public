@@ -603,8 +603,10 @@ CNetScheduleHandler::CNetScheduleHandler(CNetScheduleServer* server)
     : m_MsgBufferSize(kInitialMessageBufferSize),
       m_MsgBuffer(new char[kInitialMessageBufferSize]),
       m_Server(server),
+      m_ProcessMessage(NULL),
       m_BatchSize(0),
       m_BatchPos(0),
+      m_BatchSubmPort(0),
       m_WithinBatchSubmit(false),
       m_SingleCmdParser(sm_CommandMap),
       m_BatchHeaderParser(sm_BatchHeaderMap),
@@ -2816,9 +2818,9 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
         string      info = m_Server->GetQueueClassesInfo();
 
         if (!info.empty())
-            x_WriteMessage(info + kEndOfResponse);
+            info += kEndOfResponse;
 
-        x_WriteMessage("OK:END" + kEndOfResponse);
+        x_WriteMessage(info + "OK:END" + kEndOfResponse);
         x_PrintCmdRequestStop();
         return;
     }
@@ -2826,9 +2828,9 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
         string      info = m_Server->GetQueueInfo();
 
         if (!info.empty())
-            x_WriteMessage(info + kEndOfResponse);
+            info += kEndOfResponse;
 
-        x_WriteMessage("OK:END" + kEndOfResponse);
+        x_WriteMessage(info + "OK:END" + kEndOfResponse);
         x_PrintCmdRequestStop();
         return;
     }
@@ -2849,35 +2851,34 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
     if (what == "ALERTS") {
         string  output = m_Server->SerializeAlerts();
         if (!output.empty())
-            x_WriteMessage(output + kEndOfResponse);
-        x_WriteMessage("OK:END" + kEndOfResponse);
+            output += kEndOfResponse;
+        x_WriteMessage(output + "OK:END" + kEndOfResponse);
         x_PrintCmdRequestStop();
         return;
     }
 
     if (q == NULL) {
+        string      info;
         if (what == "JOBS")
-            x_WriteMessage(m_Server->PrintJobsStat(m_ClientId) +
-                           kEndOfResponse);
+            info = m_Server->PrintJobsStat(m_ClientId) + kEndOfResponse;
         else {
             // Transition counters for all the queues
-            x_WriteMessage("OK:Started: " +
-                           m_Server->GetStartTime().AsString() +
-                           kEndOfResponse);
-            if (m_Server->GetRefuseSubmits())
-                x_WriteMessage("OK:SubmitsDisabledEffective: 1" +
-                               kEndOfResponse);
-            else
-                x_WriteMessage("OK:SubmitsDisabledEffective: 0" +
-                               kEndOfResponse);
-            if (m_Server->IsDrainShutdown())
-                x_WriteMessage("OK:DrainedShutdown: 1" + kEndOfResponse);
-            else
-                x_WriteMessage("OK:DrainedShutdown: 0" + kEndOfResponse);
-            x_WriteMessage(m_Server->PrintTransitionCounters() +
-                           kEndOfResponse);
+            info = "OK:Started: " + m_Server->GetStartTime().AsString() +
+                   kEndOfResponse;
+
+            info + "OK:SubmitsDisabledEffective: ";
+            if (m_Server->GetRefuseSubmits())   info += "1";
+            else                                info += "0";
+            info += kEndOfResponse;
+
+            info += "OK:DrainedShutdown: ";
+            if (m_Server->IsDrainShutdown())    info += "1";
+            else                                info += "0";
+            info += kEndOfResponse;
+
+            info += m_Server->PrintTransitionCounters() + kEndOfResponse;
         }
-        x_WriteMessage("OK:END" + kEndOfResponse);
+        x_WriteMessage(info + "OK:END" + kEndOfResponse);
         x_PrintCmdRequestStop();
         return;
     }
@@ -2889,77 +2890,75 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
         return;
     }
 
-    x_WriteMessage("OK:Started: " + m_Server->GetStartTime().AsString() +
-                   kEndOfResponse);
-    if (m_Server->GetRefuseSubmits() || q->GetRefuseSubmits())
-        x_WriteMessage("OK:SubmitsDisabledEffective: 1" +
-                       kEndOfResponse);
-    else
-        x_WriteMessage("OK:SubmitsDisabledEffective: 0" +
-                       kEndOfResponse);
-    if (q->GetRefuseSubmits())
-        x_WriteMessage("OK:SubmitsDisabledPrivate: 1" +
-                       kEndOfResponse);
-    else
-        x_WriteMessage("OK:SubmitsDisabledPrivate: 0" +
-                       kEndOfResponse);
+
+    string      info = "OK:Started: " +
+                       m_Server->GetStartTime().AsString() + kEndOfResponse;
+
+    info += "OK:SubmitsDisabledEffective: ";
+    if (m_Server->GetRefuseSubmits() || q->GetRefuseSubmits())  info += "1";
+    else                                                        info += "0";
+    info += kEndOfResponse;
+
+    info += "OK:SubmitsDisabledPrivate: ";
+    if (q->GetRefuseSubmits())      info += "1";
+    else                            info += "0";
+    info += kEndOfResponse;
 
     for (size_t  k = 0; k < g_ValidJobStatusesSize; ++k) {
         TJobStatus      st = g_ValidJobStatuses[k];
         unsigned        count = q->CountStatus(st);
 
-        x_WriteMessage("OK:" + CNetScheduleAPI::StatusToString(st) +
-                       ": " + NStr::NumericToString(count) +
-                       kEndOfResponse);
+        info += "OK:" + CNetScheduleAPI::StatusToString(st) + ": " +
+                NStr::NumericToString(count) + kEndOfResponse;
 
         if (what == "ALL") {
             TNSBitVector::statistics bv_stat;
             q->StatusStatistics(st, &bv_stat);
-            x_WriteMessage("OK:"
-                           "  bit_blk=" +
-                           NStr::NumericToString(bv_stat.bit_blocks) +
-                           "; gap_blk=" +
-                           NStr::NumericToString(bv_stat.gap_blocks) +
-                           "; mem_used=" +
-                           NStr::NumericToString(bv_stat.memory_used) +
-                           kEndOfResponse);
+            info += "OK:"
+                    "  bit_blk=" +
+                    NStr::NumericToString(bv_stat.bit_blocks) +
+                    "; gap_blk=" +
+                    NStr::NumericToString(bv_stat.gap_blocks) +
+                    "; mem_used=" +
+                    NStr::NumericToString(bv_stat.memory_used) +
+                    kEndOfResponse;
         }
     } // for
 
 
     if (what == "ALL") {
-        x_WriteMessage("OK:[Berkeley DB Mutexes]:" + kEndOfResponse);
+        info += "OK:[Berkeley DB Mutexes]:" + kEndOfResponse;
         {{
             CNcbiOstrstream ostr;
 
             m_Server->PrintMutexStat(ostr);
-            x_WriteMessage("OK:" + (string)CNcbiOstrstreamToString(ostr) +
-                           kEndOfResponse);
+            info += "OK:" + (string)CNcbiOstrstreamToString(ostr) +
+                    kEndOfResponse;
         }}
 
-        x_WriteMessage("OK:[Berkeley DB Locks]:" + kEndOfResponse);
+        info += "OK:[Berkeley DB Locks]:" + kEndOfResponse;
         {{
             CNcbiOstrstream ostr;
 
             m_Server->PrintLockStat(ostr);
-            x_WriteMessage("OK:" + (string)CNcbiOstrstreamToString(ostr) +
-                           kEndOfResponse);
+            info += "OK:" + (string)CNcbiOstrstreamToString(ostr) +
+                    kEndOfResponse;
         }}
 
-        x_WriteMessage("OK:[Berkeley DB Memory Usage]:" + kEndOfResponse);
+        info += "OK:[Berkeley DB Memory Usage]:" + kEndOfResponse;
         {{
             CNcbiOstrstream ostr;
 
             m_Server->PrintMemStat(ostr);
-            x_WriteMessage("OK:" + (string)CNcbiOstrstreamToString(ostr) +
-                           kEndOfResponse);
+            info += "OK:" + (string)CNcbiOstrstreamToString(ostr) +
+                    kEndOfResponse;
         }}
     }
 
-    x_WriteMessage("OK:[Transitions counters]:" + kEndOfResponse);
-    x_WriteMessage(q->PrintTransitionCounters() + kEndOfResponse);
-
-    x_WriteMessage("OK:END" + kEndOfResponse);
+    x_WriteMessage(info +
+                   "OK:[Transitions counters]:" + kEndOfResponse +
+                   q->PrintTransitionCounters() + kEndOfResponse +
+                   "OK:END" + kEndOfResponse);
     x_PrintCmdRequestStop();
 }
 
@@ -3203,27 +3202,30 @@ void CNetScheduleHandler::x_ProcessShutdown(CQueue*)
 
 void CNetScheduleHandler::x_ProcessGetConf(CQueue*)
 {
+    string      configuration;
+
     if (m_CommandArguments.effective) {
         // The effective config (some parameters could be altered
         // at run-time) has been requested
-        x_WriteMessage(x_GetServerSection() +
-                       x_GetLogSection() +
-                       x_GetDiagSection() +
-                       x_GetBdbSection() +
-                       m_Server->GetQueueClassesConfig() +
-                       m_Server->GetQueueConfig() +
-                       m_Server->GetLinkedSectionConfig() +
-                       m_Server->GetServiceToQueueSectionConfig() +
-                       kEndOfResponse);
+        configuration = x_GetServerSection() +
+                        x_GetLogSection() +
+                        x_GetDiagSection() +
+                        x_GetBdbSection() +
+                        m_Server->GetQueueClassesConfig() +
+                        m_Server->GetQueueConfig() +
+                        m_Server->GetLinkedSectionConfig() +
+                        m_Server->GetServiceToQueueSectionConfig() +
+                        kEndOfResponse;
     } else {
         // The original config file (the one used at the startup)
         // has been requested
-        CConn_SocketStream  ss(GetSocket().GetSOCK(), eNoOwnership);
+        CNcbiOstrstream             conf;
+        CNcbiOstrstreamToString     converter(conf);
 
-        CNcbiApplication::Instance()->GetConfig().Write(ss);
-        ss.flush();
+        CNcbiApplication::Instance()->GetConfig().Write(conf);
+        configuration = string(converter);
     }
-    x_WriteMessage("OK:END" + kEndOfResponse);
+    x_WriteMessage(configuration + "OK:END" + kEndOfResponse);
     x_PrintCmdRequestStop();
 }
 
@@ -3623,11 +3625,12 @@ void CNetScheduleHandler::x_ProcessGetParam(CQueue* q)
 void CNetScheduleHandler::x_ProcessGetConfiguration(CQueue* q)
 {
     CQueue::TParameterList      parameters = q->GetParameters();
+    string                      configuration;
 
     ITERATE(CQueue::TParameterList, it, parameters) {
-        x_WriteMessage("OK:" + it->first + '=' + it->second + kEndOfResponse);
+        configuration += "OK:" + it->first + '=' + it->second + kEndOfResponse;
     }
-    x_WriteMessage("OK:END" + kEndOfResponse);
+    x_WriteMessage(configuration + "OK:END" + kEndOfResponse);
     x_PrintCmdRequestStop();
 }
 
@@ -4462,36 +4465,24 @@ CNetScheduleHandler::x_StatisticsNew(CQueue *                q,
 
     if (what == "CLIENTS") {
         info = q->PrintClientsList(verbose);
-        if (!info.empty())
-            x_WriteMessage(info + kEndOfResponse);
     }
     else if (what == "NOTIFICATIONS") {
         info = q->PrintNotificationsList(verbose);
-        if (!info.empty())
-            x_WriteMessage(info + kEndOfResponse);
     }
     else if (what == "AFFINITIES") {
         info = q->PrintAffinitiesList(m_ClientId, verbose);
-        if (!info.empty())
-            x_WriteMessage(info + kEndOfResponse);
     }
     else if (what == "GROUPS") {
         info = q->PrintGroupsList(m_ClientId, verbose);
-        if (!info.empty())
-            x_WriteMessage(info + kEndOfResponse);
     }
     else if (what == "SCOPES") {
         info = q->PrintScopesList(verbose);
-        if (!info.empty())
-            x_WriteMessage(info + kEndOfResponse);
     }
     else if (what == "JOBS") {
         info = q->PrintJobsStat(m_ClientId,
                                 m_CommandArguments.group,
                                 m_CommandArguments.affinity_token,
                                 warnings);
-        if (!info.empty())
-            x_WriteMessage(info + kEndOfResponse);
     }
     else if (what == "WNODE") {
         warnings.push_back("eCommandObsolete:Command is obsolete, "
@@ -4503,7 +4494,10 @@ CNetScheduleHandler::x_StatisticsNew(CQueue *                q,
          k != warnings.end(); ++k) {
         msg += "WARNING:" + *k + ";";
     }
-    x_WriteMessage("OK:" + msg + "END" + kEndOfResponse);
+
+    if (!info.empty())
+        info += kEndOfResponse;
+    x_WriteMessage(info + "OK:" + msg + "END" + kEndOfResponse);
     x_PrintCmdRequestStop();
 }
 
