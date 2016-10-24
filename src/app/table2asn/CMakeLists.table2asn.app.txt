@@ -9,13 +9,13 @@ add_executable(table2asn-app
 set_target_properties(table2asn-app PROPERTIES OUTPUT_NAME table2asn)
 
 target_link_libraries(table2asn-app
-    data_loaders_util prosplign
-    xdiscrepancy xmlwrapp xvalidate
+    data_loaders_util prosplign xdiscrepancy
+    xmlwrapp xvalidate
 )
 
 if (APPLE)
    target_link_libraries(table2asn-app
-    data_loaders_util prosplign
-    xdiscrepancy xmlwrapp xvalidate
+    data_loaders_util prosplign xdiscrepancy
+    xmlwrapp xvalidate
 )
 endif (APPLE)

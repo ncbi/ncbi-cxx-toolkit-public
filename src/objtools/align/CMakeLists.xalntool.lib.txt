@@ -9,5 +9,5 @@ add_dependencies(xalntool
 )
 
 target_link_libraries(xalntool
-    align_format xobjutil
+    align_format
 )
