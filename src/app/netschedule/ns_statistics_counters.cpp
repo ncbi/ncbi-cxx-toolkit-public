@@ -249,16 +249,17 @@ void CStatisticsCounters::PrintTransitions(CDiagContext_Extra &  extra) const
          .Print("TOTAL_Canceled_Pending_redo", m_FromCanceledJobRedo.Get())
 
          // REREAD
-         .Print("TOTAL_Cancel_Cancel_reread", m_CancelToCancelJobReread.Get())
-         .Print("TOTAL_Cancel_Done_reread", m_CancelToDoneJobReread.Get())
-         .Print("TOTAL_Cancel_Failed_reread", m_CancelToFailedJobReread.Get())
-         .Print("TOTAL_ReadFailed_Cancel_reread",
+         .Print("TOTAL_Canceled_Canceled_reread",
+                 m_CancelToCancelJobReread.Get())
+         .Print("TOTAL_Canceled_Done_reread", m_CancelToDoneJobReread.Get())
+         .Print("TOTAL_Canceled_Failed_reread", m_CancelToFailedJobReread.Get())
+         .Print("TOTAL_ReadFailed_Canceled_reread",
                  m_ReadFailedToCancelJobReread.Get())
          .Print("TOTAL_ReadFailed_Done_reread",
                  m_ReadFailedToDoneJobReread.Get())
          .Print("TOTAL_ReadFailed_Failed_reread",
                  m_ReadFailedToFailedJobReread.Get())
-         .Print("TOTAL_Confirmed_Cancel_reread",
+         .Print("TOTAL_Confirmed_Canceled_reread",
                  m_ConfirmedToCancelJobReread.Get())
          .Print("TOTAL_Confirmed_Done_reread", m_ConfirmedToDoneJobReread.Get())
          .Print("TOTAL_Confirmed_Failed_reread",
@@ -397,16 +398,16 @@ void CStatisticsCounters::PrintDelta(CDiagContext_Extra &  extra,
                 m_FromCanceledJobRedo.Get() - prev.m_FromCanceledJobRedo.Get())
 
          // REREAD
-         .Print("DELTA_Cancel_Cancel_reread",
+         .Print("DELTA_Canceled_Canceled_reread",
                 m_CancelToCancelJobReread.Get() -
                 prev.m_CancelToCancelJobReread.Get())
-         .Print("DELTA_Cancel_Done_reread",
+         .Print("DELTA_Canceled_Done_reread",
                 m_CancelToDoneJobReread.Get() -
                 prev.m_CancelToDoneJobReread.Get())
-         .Print("DELTA_Cancel_Failed_reread",
+         .Print("DELTA_Canceled_Failed_reread",
                 m_CancelToFailedJobReread.Get() -
                 prev.m_CancelToFailedJobReread.Get())
-         .Print("DELTA_ReadFailed_Cancel_reread",
+         .Print("DELTA_ReadFailed_Canceled_reread",
                 m_ReadFailedToCancelJobReread.Get() -
                 prev.m_ReadFailedToCancelJobReread.Get())
          .Print("DELTA_ReadFailed_Done_reread",
@@ -415,7 +416,7 @@ void CStatisticsCounters::PrintDelta(CDiagContext_Extra &  extra,
          .Print("DELTA_ReadFailed_Failed_reread",
                 m_ReadFailedToFailedJobReread.Get() -
                 prev.m_ReadFailedToFailedJobReread.Get())
-         .Print("DELTA_Confirmed_Cancel_reread",
+         .Print("DELTA_Confirmed_Canceled_reread",
                 m_ConfirmedToCancelJobReread.Get() -
                 prev.m_ConfirmedToCancelJobReread.Get())
          .Print("DELTA_Confirmed_Done_reread",
@@ -523,19 +524,19 @@ string CStatisticsCounters::PrintTransitions(void) const
            NStr::NumericToString(m_FromCanceledJobRedo.Get()) + "\n"
 
            // REREAD
-           "OK:Cancel_Cancel_reread: " +
+           "OK:Canceled_Canceled_reread: " +
            NStr::NumericToString(m_CancelToCancelJobReread.Get()) + "\n"
-           "OK:Cancel_Done_reread: " +
+           "OK:Canceled_Done_reread: " +
            NStr::NumericToString(m_CancelToDoneJobReread.Get()) + "\n"
-           "OK:Cancel_Failed_reread: " +
+           "OK:Canceled_Failed_reread: " +
            NStr::NumericToString(m_CancelToFailedJobReread.Get()) + "\n"
-           "OK:ReadFailed_Cancel_reread: " +
+           "OK:ReadFailed_Canceled_reread: " +
            NStr::NumericToString(m_ReadFailedToCancelJobReread.Get()) + "\n"
            "OK:ReadFailed_Done_reread: " +
            NStr::NumericToString(m_ReadFailedToDoneJobReread.Get()) + "\n"
            "OK:ReadFailed_Failed_reread: " +
            NStr::NumericToString(m_ReadFailedToFailedJobReread.Get()) + "\n"
-           "OK:Confirmed_Cancel_reread: " +
+           "OK:Confirmed_Canceled_reread: " +
            NStr::NumericToString(m_ConfirmedToCancelJobReread.Get()) + "\n"
            "OK:Confirmed_Done_reread: " +
            NStr::NumericToString(m_ConfirmedToDoneJobReread.Get()) + "\n"
