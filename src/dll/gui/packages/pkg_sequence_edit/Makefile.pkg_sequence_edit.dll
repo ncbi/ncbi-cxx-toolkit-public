@@ -1,0 +1,10 @@
+# $Id$
+
+DLL = pkg_sequence_edit
+
+HOSTED_LIBS    = pkg_sequence_edit
+
+DEPENDENCIES   = gui_widgets_seq 
+
+
+

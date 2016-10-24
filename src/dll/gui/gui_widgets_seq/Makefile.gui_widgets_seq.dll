@@ -6,7 +6,7 @@ HOSTED_LIBS    = w_seq_graphic \
                  w_taxtree     \
                  w_seq         \
                  w_feat_table  \
-                 w_seq_tree    \
+                 w_seq_desktop \
                  w_seq_text    \
                  w_edit
 

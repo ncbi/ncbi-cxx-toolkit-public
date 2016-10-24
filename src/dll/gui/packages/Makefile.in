@@ -1,6 +1,6 @@
 # $Id$
 
-SUB_PROJ =  pkg_sequence pkg_alignment pkg_snp
+SUB_PROJ =  pkg_sequence pkg_sequence_edit pkg_alignment pkg_snp
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

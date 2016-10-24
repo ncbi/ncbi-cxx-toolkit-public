@@ -1,6 +1,6 @@
 # $Id$
 
-SUB_PROJ = pkg_radar
+SUB_PROJ = pkg_radar pkg_smart
 
 EXPENDABLE_SUB_PROJ = pkg_proteus \
 					  proteus \
