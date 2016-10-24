@@ -1560,8 +1560,9 @@ static int s_FindRearrangedPairs(HSPChain** saved,
         }
 
         /* skip queries that do not have pairs */
-        if (query_info->contexts[query_idx * NUM_STRANDS].segment_flags ==
-            eNoSegments) {
+        if (query_info->contexts[query_idx * NUM_STRANDS].segment_flags !=
+            eFirstSegment) {
+
             continue;
         }
 

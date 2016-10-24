@@ -112,7 +112,7 @@ public:
         "alignment view options:\n"
         "sam = SAM format,\n"
         "tabular = Tabular format,\n"
-        "text ASN.1\n");
+        "asn = text ASN.1\n");
 
         arg_desc.AddDefaultKey(align_format::kArgOutputFormat, "format", 
                                kOutputFormatDescription,
