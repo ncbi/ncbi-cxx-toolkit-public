@@ -2080,8 +2080,9 @@ DISCREPANCY_CASE(TRINOMIAL_SHOULD_HAVE_QUALIFIER, CBioSource, eDisc | eOncaller 
                 }
             }
             if (n < taxname.length()) {
-                string s = taxname.substr(n);
-                if (NStr::CompareNocase(s, GetSrcQual(obj, srcqual_keywords[i].first))) {
+                string q = GetSrcQual(obj, srcqual_keywords[i].first);
+                string s = taxname.substr(n, q.length());
+                if (!q.length() || NStr::CompareNocase(s, q)) {
                     m_Objs["[n] trinomial source[s] lack[S] corresponding qualifier"].Add(*context.NewFeatOrDescObj());
                 }
                 break;
