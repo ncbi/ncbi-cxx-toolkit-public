@@ -344,7 +344,7 @@ bool CNcbiEnvRegMapper::EnvToReg(const string& env, string& section,
     }
     // Make an offset until the first symbol that could be section name
     // (alphanumeric character)
-    unsigned int section_start_pos = kPfxLen;
+    SIZE_TYPE section_start_pos = kPfxLen;
     for (  ; section_start_pos < env.size(); section_start_pos++) {
         if (isalnum(env[section_start_pos])) break;
     }
