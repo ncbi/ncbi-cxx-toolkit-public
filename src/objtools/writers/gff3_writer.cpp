@@ -1187,12 +1187,12 @@ struct SCompareAlignments {
     SCompareAlignments(CScope& scope) : m_Scope(scope) {}
 
     bool operator()(
-            const pair<CRef<CSeq_align>, string>& p1,
-            const pair<CRef<CSeq_align>, string>& p2) 
+            const pair<CConstRef<CSeq_align>, string>& p1,
+            const pair<CConstRef<CSeq_align>, string>& p2) 
     {
 
-        CRef<CSeq_align> align1 = p1.first;
-        CRef<CSeq_align> align2 = p2.first;
+        CConstRef<CSeq_align> align1 = p1.first;
+        CConstRef<CSeq_align> align2 = p2.first;
 
         if (!align1 && align2) {
              return true;
@@ -1204,7 +1204,7 @@ struct SCompareAlignments {
         }
 
 
-        auto make_key = [](const pair<CRef<CSeq_align>, string>& p, CScope& scope) {
+        auto make_key = [](const pair<CConstRef<CSeq_align>, string>& p, CScope& scope) {
             const CSeq_align& align = *(p.first);
             const string alignId = p.second;
 
@@ -1282,12 +1282,11 @@ bool CGff3Writer::x_WriteBioseqHandle(
     }
 
     if ( m_SortAlignments ) {
-        list<pair<CRef<CSeq_align>, string>> alignCache;
+        list<pair<CConstRef<CSeq_align>, string>> alignCache;
 
         for (CAlign_CI align_it(bsh, selAll); align_it; ++align_it) {
             const string alignId = s_GetAlignID(*align_it); // Might be an empty string
-            CRef<CSeq_align> pAlign = Ref(new CSeq_align());
-            pAlign->Assign(*align_it);
+            CConstRef<CSeq_align> pAlign = ConstRef(&(*align_it));
             alignCache.push_back(make_pair(pAlign,alignId));
         }
 
