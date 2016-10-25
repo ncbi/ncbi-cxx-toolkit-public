@@ -123,6 +123,8 @@ static bool s_CachingComplete = false;
 static CNCMsgHandler_Factory s_MsgHandlerFactory;
 static CNCHeartBeat* s_HeartBeat;
 static string s_PidFile;
+static string s_HostRole;
+static string s_HostLocation;
 
 
 CNCBlobKeyLight& CNCBlobKeyLight::operator=(const CTempString& packed_key)
@@ -890,6 +892,8 @@ void CNCServer::WriteEnvInfo(CSrvSocketTask& task)
     Int8 len = CFile(GetLogFileName()).GetLength();
     task.WriteText(eol).WriteText("logfile_size").WriteText(iss).WriteText(
         NStr::UInt8ToString_DataSize(len > 0 ? len : 0)).WriteText(eos);
+    task.WriteText(eol).WriteText("ncbi_role"    ).WriteText(iss).WriteText(   GetHostRole()).WriteText(eos);
+    task.WriteText(eol).WriteText("ncbi_location").WriteText(iss).WriteText(   GetHostLocation()).WriteText(eos);
 }
 
 bool
@@ -950,6 +954,30 @@ const string&
 CNCServer::GetAdminClient(void)
 {
     return s_AdminClient;
+}
+
+string CNCServer::GetHostRole(void)
+{
+    if (s_HostRole.empty())
+    {
+        CNcbiIfstream in("/etc/ncbi/role");
+        if ( in.good() ) {
+            getline(in, s_HostRole);
+        }
+    }
+    return s_HostRole;
+}
+
+string CNCServer::GetHostLocation(void)
+{
+    if (s_HostLocation.empty())
+    {
+        CNcbiIfstream in("/etc/ncbi/location");
+        if ( in.good() ) {
+            getline(in, s_HostLocation);
+        }
+    }
+    return s_HostLocation;
 }
 
 int

@@ -2082,8 +2082,11 @@ CNCMessageHandler::x_PrintRequestStart(CSrvDiagMsg& diag_msg)
     ITERATE(TNSProtoParams, it, m_ParsedCmd.params) {
         diag_msg.PrintParam(it->first, it->second);
     }
-    if (!m_BlobPass.empty())
+    if (!m_BlobPass.empty()) {
         diag_msg.PrintParam("pass", CNCBlobStorage::PrintablePassword(m_BlobPass));
+    }
+    diag_msg.PrintParam("ncbi_role", CNCServer::GetHostRole());
+    diag_msg.PrintParam("ncbi_location", CNCServer::GetHostLocation());
 }
 
 CNCMessageHandler::State

@@ -499,6 +499,7 @@ void CNCDistributionConf::WriteSetup(CSrvSocketTask& task)
     task.WriteText(s_SelfName).WriteText("\"");
     task.WriteText(eol).WriteText(kNCReg_NCServerPrefix).WriteText("id_").WriteNumber(0).WriteText(is);
     task.WriteNumber(s_SelfID);
+    task.WriteText(eol).WriteText(kNCReg_NCServerTrustPrefix).WriteNumber(0).WriteText(is).WriteNumber(s_SelfTrust);
     task.WriteText(eol).WriteText(kNCReg_NCServerSlotsPrefix).WriteNumber(0).WriteText(is).WriteText("[");
     ITERATE( vector<Uint2>, s, s_SelfSlots) {
         if (s != s_SelfSlots.begin()) {
@@ -516,6 +517,8 @@ void CNCDistributionConf::WriteSetup(CSrvSocketTask& task)
         task.WriteText(p->second).WriteText("\"");
         task.WriteText(eol).WriteText(kNCReg_NCServerPrefix).WriteText("id_").WriteNumber(idx).WriteText(is);
         task.WriteNumber(p->first);
+        task.WriteText(eol).WriteText(kNCReg_NCServerTrustPrefix).WriteNumber(idx).WriteText(is);
+        task.WriteNumber(CNCPeerControl::Peer(p->first)->GetRawTrustLevel());
 
         Uint8 srv_id = p->first;
         vector<Uint2> slots;

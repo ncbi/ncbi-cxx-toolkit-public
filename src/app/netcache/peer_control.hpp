@@ -168,6 +168,7 @@ public:
     void SetHostProtocol(Uint8 ver);
     void SetTrustLevel(Uint8 trust);
     Uint8 GetTrustLevel(void) const;
+    Uint8 GetRawTrustLevel(void) const;
 
     bool AcceptsSyncUpdate(void) const;
     bool AcceptsSyncRemove(void) const;
@@ -320,6 +321,11 @@ CNCPeerControl::SetTrustLevel(Uint8 trust) {
 inline Uint8 
 CNCPeerControl::GetTrustLevel(void) const {
     return m_TrustLevel & 0xF;
+}
+inline Uint8
+CNCPeerControl::GetRawTrustLevel(void) const
+{
+    return m_TrustLevel;
 }
 
 

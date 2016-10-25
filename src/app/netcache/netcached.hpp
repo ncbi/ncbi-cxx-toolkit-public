@@ -224,6 +224,9 @@ public:
     /// Get name of client that should be used for administrative commands
     static const string& GetAdminClient(void);
 
+    static string GetHostRole(void);
+    static string GetHostLocation(void);
+
     /// Get total number of seconds the server is running
     static int GetUpTime(void);
     static void CachingCompleted(void);

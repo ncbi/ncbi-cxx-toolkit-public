@@ -888,7 +888,6 @@ void CNCPeerControl::PrintState(CSrvSocketTask& task)
                     CNCDistributionConf::GetPeerName(peer->GetSrvId())).WriteText(qt);
         task.WriteText(eol).WriteText("hostIPname").WriteText(iss).WriteText(peer->m_HostIPname).WriteText(qt);
         task.WriteText(eol).WriteText("hostProtocol").WriteText(is).WriteNumber(peer->m_HostProtocol);
-        task.WriteText(eol).WriteText("trust_level").WriteText(is).WriteNumber(peer->m_TrustLevel);
         task.WriteText(eol).WriteText("healthy").WriteText(is).WriteText(
                     (peer->m_InThrottle || peer->m_MaybeThrottle) ? "false" : "true");
         task.WriteText(eol).WriteText("initiallySynced").WriteText(is).WriteText(
