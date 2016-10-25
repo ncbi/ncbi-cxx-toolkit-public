@@ -39,6 +39,7 @@
 #include <corelib/version.hpp>
 
 #include <objmgr/scope.hpp>
+#include <objmgr/bioseq_handle.hpp>
 
 #include <algo/align/nw/nw_formatter.hpp>
 #include <algo/align/util/blast_tabular.hpp>
@@ -422,6 +423,7 @@ protected:
     TStrIdToOrfs          m_OrfMap;
 
     // query sequence
+    objects::CBioseq_Handle        m_mrna_bio_handle;
     vector<char>          m_mrna;
     bool                  m_strand;
     size_t                m_polya_start;

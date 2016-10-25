@@ -1632,6 +1632,13 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
             NCBI_THROW(CAlgoAlignException, eNoAlignment, g_msg_NoAlignment);
         }
 
+        //trim holes to codons
+        bool trim_holes_to_codons = true;
+        if( trim_holes_to_codons ) {
+            CSplignTrim trim(&m_genomic.front(), (int)m_genomic.size(), m_aligner, m_MaxPartExonIdentDrop);
+            trim.TrimHolesToCodons(m_segments, m_mrna_bio_handle);
+        }
+
 		//look for the last exon
         int last_exon = -1;
         for(int i = m_segments.size(); i > 0;  ) {
@@ -1985,7 +1992,9 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
         }
     }
 
-    m_segments.resize(0);
+    m_segments.resize(0);  
+
+    /// postprocessing starts here
     
     bool is_test = false;
     bool is_test_plus = false;
@@ -2062,6 +2071,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
         }
     }}
 
+    /// trimming iterations
     while(true) {
 
         bool continue_iterations = false;
@@ -2628,7 +2638,8 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
         }
 
         if(exon_count0 == exon_count1 && continue_iterations == false) break;
-    }
+
+    } // end of trimming iterations
 
     //cut to AG/GT
     {{
@@ -2804,6 +2815,32 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
           }
       }
     }}
+
+    // stich small holes
+    {{
+        size_t min_hole_len = 200;
+        if( min_hole_len > 0) { //find small holes and stich
+            trim.AdjustGaps(m_segments);//make sure there is no adjacent gaps
+            size_t pos1 = 0, pos2 = 2;
+            for(; pos2 < m_segments.size(); ++pos1, ++pos2) {
+                if( m_segments[pos1].m_exon && !m_segments[pos1+1].m_exon && m_segments[pos2].m_exon &&
+                    m_segments[pos1].m_box[1] + min_hole_len >= m_segments[pos2].m_box[0] &&
+                    m_segments[pos1].m_box[3] + min_hole_len >= m_segments[pos2].m_box[2] ) {
+                    
+                    trim.JoinExons(m_segments, pos1, pos2);//note: m_segments changes here! 
+                }
+            }
+        }
+    }}
+
+    // cut gaps to codons
+    {{
+        bool cut_to_codons = true;
+        if( cut_to_codons ) {
+        }
+    }}
+
+    /// there is more postprocessing to follow
 
     if( m_segments.size() == 0 ) {
         NCBI_THROW(CAlgoAlignException, eNoAlignment, g_msg_NoAlignment);//no exons         

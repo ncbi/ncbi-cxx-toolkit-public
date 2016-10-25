@@ -32,9 +32,15 @@
 
 #include <ncbi_pch.hpp>
 
+#include "messages.hpp"
+#include <algo/align/nw/align_exception.hpp>
 #include "splign_exon_trim.hpp"
 
+#include <objmgr/feat_ci.hpp>
+
 BEGIN_NCBI_SCOPE
+
+USING_SCOPE(objects);
 
 //check if the exon segments[p] abuts another exon in genomic coordinates, right side
 bool CSplignTrim::HasAbuttingExonOnRight(TSegs segments, TSeqPos p)
@@ -91,6 +97,156 @@ bool CSplignTrim::ThrowAway20_28_90(TSeg& s)
     }
     return false;
 }
+
+// aka stich holes
+//joins exons segments[p1] and segments[p1] into a singe exon
+//everithing in between becomes a regular gap in query adjacent to a regular gap in subject 
+void CSplignTrim::JoinExons(TSegs& segments, TSeqPos p1, TSeqPos p2)
+{
+    //sanity check
+    if( p1 >= segments.size() ) return;
+    if( p2 >= segments.size() ) return;
+    if( !segments[p1].m_exon ) return;
+    if( !segments[p2].m_exon ) return;
+    size_t pos1 = min( p1, p2);
+    size_t pos2 = max( p1, p2);
+    if( segments[pos1].m_box[1] >= segments[pos2].m_box[0] ||
+        segments[pos1].m_box[3] >= segments[pos2].m_box[2] ) {
+        return; // segments intersect
+    }
+
+    //join
+
+    TSegs new_segments;
+    for( size_t pos = 0; pos < pos1; ++pos) {
+        new_segments.push_back(segments[pos]);
+    }
+    //joint exon
+    TSeg s(segments[pos1]);
+    s.m_box[1] = segments[pos2].m_box[1];
+    s.m_box[3] = segments[pos2].m_box[3];
+    if( segments[pos1].m_box[1] + 1 < segments[pos2].m_box[0]) {
+        s.m_details.append(segments[pos2].m_box[0] - segments[pos1].m_box[1], 'D');
+    }
+    if( segments[pos1].m_box[3] + 1 < segments[pos2].m_box[2]) {
+        s.m_details.append(segments[pos2].m_box[2] - segments[pos1].m_box[3], 'I');
+    }
+    Update(s);
+    new_segments.push_back(s);
+    //write the rest
+    for( size_t pos = ++pos2; pos < segments.size(); ++pos) {
+        new_segments.push_back(segments[pos]);
+    }
+    
+    segments.swap(new_segments);
+}
+
+//trims exons around internal alignment gaps to complete codons
+//if CDS can be retrieved from bioseq
+void CSplignTrim::TrimHolesToCodons(TSegs& segments, CBioseq_Handle& mrna_bio_handle)
+{
+    if( mrna_bio_handle ) {
+
+        //collect CDS intervals (could be more than one in a case of ribosomal slippage)
+        vector<TSeqRange> tr;
+        for(CFeat_CI ci(mrna_bio_handle, SAnnotSelector(CSeqFeatData::e_Cdregion)); ci; ++ci) {
+            for(CSeq_loc_CI slit(ci->GetLocation()); slit; ++slit) {
+                tr.push_back(slit.GetRange());
+            }
+        }
+
+        if(tr.empty()) return;// CDS not found
+
+        //trim
+        AdjustGaps(segments);//make sure there is no adjacent gaps
+        size_t pos1 = 0, pos2 = 2;
+        for(; pos2 < segments.size(); ++pos1, ++pos2) {
+            if( segments[pos1].m_exon && !segments[pos1+1].m_exon && segments[pos2].m_exon ) {//candidate for trimming
+                
+                //trim left exon    
+                TSeqPos p1 = segments[pos1].m_box[1];
+                ITERATE(vector<TSeqRange>, it, tr) {
+                    if( p1 >= it->GetFrom() && p1 <= it->GetTo() ) {
+                        TSeqPos cut_mrna_len = (p1 + 1 - it->GetFrom()) % 3, cnt = 0;
+                        string transcript = segments[pos1].m_details;
+                        int i = (int)transcript.size() - 1;
+                        for(; i>=0; --i) {
+                            if( cnt%3 == cut_mrna_len &&  transcript[i] == 'M' ) { //cut point  
+                                CutFromRight(transcript.size() - i - 1, segments[pos1]);
+                                break;
+                            }
+                            if( transcript[i] != 'I' ) ++cnt;
+                        }
+                        if( i < 0 ) {// exon should not be so bad   
+                            NCBI_THROW(CAlgoAlignException, eInternal, g_msg_InvalidRange);
+                        }
+                        break;
+                    }
+                }
+                
+                //trim right exon   
+                TSeqPos p2 =  segments[pos2].m_box[0];
+                ITERATE(vector<TSeqRange>, it, tr) {
+                    if( p2 >= it->GetFrom() && p2 <= it->GetTo() ) {
+                        TSeqPos cut_mrna_len = ( p2 - it->GetFrom()) % 3, cnt = 0;
+                        string transcript = segments[pos2].m_details;
+                        int i = 0;
+                        for( ; i < (int)transcript.size(); ++i) {
+                            if( cnt%3 == cut_mrna_len && transcript[i] == 'M' ) { //cut point   
+                                CutFromLeft(i, segments[pos2]);
+                                break;
+                            }
+                            if( transcript[i] != 'I' ) ++cnt;
+                        }
+                        if( i == (int)transcript.size() ) {// exon should not be so bad 
+                            NCBI_THROW(CAlgoAlignException, eInternal, g_msg_InvalidRange);
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+// updates m_annot for a segment based on SSegment::m_box and CSplignTrim:m_seq
+void CSplignTrim::UpdateAnnot(TSeg& s)
+{
+    if(s.m_exon) {
+        s.m_annot = "  <exon>  ";
+        if( s.m_box[2] > (size_t)m_seqlen ) {
+            NCBI_THROW(CAlgoAlignException, eInternal, g_msg_InvalidRange);
+        }
+        if( s.m_box[2] > 1 ) {
+            s.m_annot[0] = toupper(m_seq[s.m_box[2] - 2]);
+        }
+        if( s.m_box[2] > 0 ) {
+            s.m_annot[1] = toupper(m_seq[s.m_box[2] - 1]);
+        }
+        if( s.m_box[3] + 2 < (size_t)m_seqlen ) {
+            s.m_annot[9] = toupper(m_seq[s.m_box[3] + 2]);
+        }
+        if( s.m_box[3] + 1 < (size_t)m_seqlen ) {
+            s.m_annot[8] = toupper(m_seq[s.m_box[3] + 1]);
+        }
+    } else {
+        s.m_annot = "<GAP>";
+    }
+}
+
+// implies s.exon, s.m_box, and s.m_details are correct
+// updates the rest of segment fields including m_annot
+void CSplignTrim::Update(TSeg& s)
+{
+    if(s.m_exon) {
+        UpdateAnnot(s);
+        s.Update(m_aligner.GetNonNullPointer());
+    } else {
+        s.SetToGap();
+    }
+}
+            
 
 void CSplignTrim::AdjustGaps(TSegs& segments)
 {

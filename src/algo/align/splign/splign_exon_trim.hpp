@@ -40,6 +40,7 @@
 
 BEGIN_NCBI_SCOPE
 
+
 //trimming of spliced alignments
 class CSplignTrim {
 public:
@@ -78,6 +79,22 @@ public:
     void CutToMatchRight(TSeg& s);
     void Cut50FromRight(TSeg& s);
     void ImproveFromRight(TSeg& s);
+
+    // aka stich holes
+    //joins exons segments[p1] and segments[p1] into a singe exon
+    //everithing in between becomes a regular gap in query adjacent to a regular gap in subject 
+    void JoinExons(TSegs& segments, TSeqPos p1, TSeqPos p2);
+
+    //trims exons around internal alignment gaps to complete codons
+    //if CDS can be retrieved from bioseq
+    void TrimHolesToCodons(TSegs& segments, objects::CBioseq_Handle& mrna_bio_handle);
+
+    // updates m_annot for a segment based on SSegment::m_box and CSplignTrim:m_seq
+    void UpdateAnnot(TSeg& s);
+
+    // implies s.exon, s.m_box, and s.m_details are correct
+    // updates the rest of segment fields including m_annot
+    void Update(TSeg& s);
 
     void AdjustGaps(TSegs& segments);
 
