@@ -118,6 +118,13 @@ static void GiDataIndex_Free(SGiDataIndex* data_index) {
 	}
 }
 
+static int 
+xFindFile(SGiDataIndex* data_index, struct stat* fstat) {
+	int rv;
+	rv = stat(data_index->m_FileName, fstat);
+	return rv;
+}
+
 /* Constructor */
 static SGiDataIndex*
 GiDataIndex_New(const char* prefix, Uint1 readonly, Uint1 enablesync) { 
@@ -125,12 +132,25 @@ GiDataIndex_New(const char* prefix, Uint1 readonly, Uint1 enablesync) {
 	char logmsg[256];
 	SGiDataIndex*  data_index;
 	struct stat fstat;
+	int fstat_err;
 	MDB_txn *txn = 0;
-	int strc;
 	int64_t mapsize;
 
     data_index = (SGiDataIndex*) malloc(sizeof(SGiDataIndex));
     memset(data_index, 0, sizeof(SGiDataIndex));
+    data_index->m_ReadOnlyMode = readonly;
+    assert(strlen(prefix) < PATH_MAX);
+    snprintf(data_index->m_FileName, sizeof(data_index->m_FileName), "%s.db", prefix);
+	fstat_err = xFindFile(data_index, &fstat);
+	if (fstat_err != 0 || fstat.st_size == 0) {
+		/* file does not exist */
+		enablesync = 0;
+		if (readonly) {
+			rc = errno;
+			snprintf(logmsg, sizeof(logmsg), "GI_CACHE: failed to access file (%s): %s\n", data_index->m_FileName, strerror(rc));
+			goto ERROR;
+		}
+	}
 
 	rc = mdb_env_create(&data_index->m_env);
 	if (rc) {
@@ -150,20 +170,8 @@ GiDataIndex_New(const char* prefix, Uint1 readonly, Uint1 enablesync) {
 		goto ERROR;
 	}
 
-    data_index->m_ReadOnlyMode = readonly;
-    assert(strlen(prefix) < PATH_MAX);
-    snprintf(data_index->m_FileName, sizeof(data_index->m_FileName), "%s.db", prefix);
-
-	strc = stat(data_index->m_FileName, &fstat);
-
-	if (readonly && (strc  != 0 || fstat.st_size == 0)) {
-		rc = errno;
-		snprintf(logmsg, sizeof(logmsg), "GI_CACHE: failed to access file (%s): %s\n", data_index->m_FileName, strerror(rc));
-		goto ERROR;
-	}
-
 	mapsize = MAP_SIZE_INIT;
-	if (strc == 0 && fstat.st_size + MAP_SIZE_DELTA >  mapsize)
+	if (fstat_err == 0 && fstat.st_size + MAP_SIZE_DELTA >  mapsize)
 		mapsize = fstat.st_size + MAP_SIZE_DELTA;
 
 	rc = mdb_env_set_mapsize(data_index->m_env, mapsize);
@@ -172,7 +180,7 @@ GiDataIndex_New(const char* prefix, Uint1 readonly, Uint1 enablesync) {
 		goto ERROR;
 	}
 
-	rc = mdb_env_open(data_index->m_env, data_index->m_FileName, MDB_NOSUBDIR | (readonly ? MDB_RDONLY : 0) | (enablesync ? MDB_MAPASYNC : (MDB_NOSYNC | MDB_NOMETASYNC)), 0644);
+	rc = mdb_env_open(data_index->m_env, data_index->m_FileName, MDB_NOSUBDIR | (readonly ? MDB_RDONLY : 0) | (enablesync ? 0 : (MDB_NOSYNC | MDB_NOMETASYNC)), 0644);
 	if (rc) {
 		snprintf(logmsg, sizeof(logmsg), "GI_CACHE: failed to open LMDB db (%s): %s\n", data_index->m_FileName, mdb_strerror(rc));
 		goto ERROR;
