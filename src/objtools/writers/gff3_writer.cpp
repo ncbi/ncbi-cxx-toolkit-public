@@ -272,10 +272,12 @@ bool sFeatureHasChildOfSubtype(
 CGff3Writer::CGff3Writer(
     CScope& scope, 
     CNcbiOstream& ostr,
-    unsigned int uFlags ) :
+    unsigned int uFlags,
+    bool sortAlignments) :
 //  ----------------------------------------------------------------------------
     CGff2Writer( scope, ostr, uFlags ),
-    m_sDefaultMethod("")
+    m_sDefaultMethod(""),
+    m_SortAlignments(sortAlignments)
 {
     m_uRecordId = 1;
     m_uPendingGeneId = 0;
@@ -289,9 +291,11 @@ CGff3Writer::CGff3Writer(
 //  ----------------------------------------------------------------------------
 CGff3Writer::CGff3Writer(
     CNcbiOstream& ostr,
-    unsigned int uFlags ) :
+    unsigned int uFlags,
+    bool sortAlignments) :
 //  ----------------------------------------------------------------------------
-    CGff2Writer( ostr, uFlags )
+    CGff2Writer( ostr, uFlags ),
+    m_SortAlignments(false)
 {
     m_uRecordId = 1;
     m_uPendingGeneId = 0;
@@ -307,6 +311,9 @@ CGff3Writer::~CGff3Writer()
 //  ----------------------------------------------------------------------------
 {
 };
+
+
+
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::WriteAlign(
@@ -333,7 +340,7 @@ bool CGff3Writer::WriteAlign(
     if ( ! xWriteAlign( align ) ) {
         return false;
     }
-    m_uRecordId++;
+//    m_uRecordId++;
     return true;
 }
 
@@ -351,7 +358,6 @@ bool CGff3Writer::x_WriteSeqAnnotHandle(
                 return false;
             }
         }
-		m_uRecordId++;
         return true;
     }
 
@@ -442,7 +448,6 @@ bool CGff3Writer::xWriteAlignSpliced(
     const EXONS& exons = align.GetSegs().GetSpliced().GetExons();
 
     const CSpliced_seg& spliced = align.GetSegs().GetSpliced();
-    //string recordId = xNextAlignId();
     for (EXONS::const_iterator cit = exons.begin(); cit != exons.end(); ++cit) {
         const CSpliced_exon& exon = **cit;
         CRef<CGffAlignRecord> pRecord(new CGffAlignRecord(alignId));      
@@ -783,7 +788,6 @@ bool CGff3Writer::xWriteAlignDenseg(
     const CSeq_id& sourceId = alnMap.GetSeqId(0);
     CBioseq_Handle sourceH = m_pScope->GetBioseqHandle(sourceId);
 
-    //string nextAlignId = xNextAlignId();
     for (CAlnMap::TDim sourceRow = 1; sourceRow < alnMap.GetNumRows(); ++sourceRow) {
         CRef<CGffAlignRecord> pSource(new CGffAlignRecord(alignId));
         const CSeq_id& targetId = alnMap.GetSeqId(sourceRow);
@@ -1175,11 +1179,84 @@ bool CompareLocations(
     return (lhs_stop > rhs_stop);
 }
 
+
+struct SCompareAlignments {
+
+    CScope& m_Scope;
+
+    SCompareAlignments(CScope& scope) : m_Scope(scope) {}
+
+    bool operator()(
+            const pair<CRef<CSeq_align>, string>& p1,
+            const pair<CRef<CSeq_align>, string>& p2) 
+    {
+
+        CRef<CSeq_align> align1 = p1.first;
+        CRef<CSeq_align> align2 = p2.first;
+
+        if (!align1 && align2) {
+             return true;
+        }
+
+        if ((align1 && !align2) ||
+            (!align1 && !align2) ) {
+            return false;
+        }
+
+
+        auto make_key = [](const pair<CRef<CSeq_align>, string>& p, CScope& scope) {
+            const CSeq_align& align = *(p.first);
+            const string alignId = p.second;
+
+            string subject_accession = "";
+            try {
+                subject_accession = sequence::GetAccessionForId(align.GetSeq_id(1), scope);
+            } catch (...) {
+            }
+
+            string target_accession = "";
+            try {
+                target_accession = sequence::GetAccessionForId(align.GetSeq_id(0), scope);
+            } catch (...) {
+            }
+
+            return make_tuple(
+                subject_accession,
+                align.GetSeqStart(1), 
+                align.GetSeqStop(1),
+                align.GetSeqStrand(1),
+                target_accession,
+                align.GetSeqStart(0),
+                align.GetSeqStop(0),
+                align.GetSeqStrand(0),
+                alignId
+                );
+        };
+
+        return (make_key(p1, m_Scope) < make_key(p2, m_Scope));
+    }
+};
+
+
+string s_GetAlignID(const CSeq_align& align) {
+    if (align.IsSetId()) {
+        const CSeq_align::TId& ids = align.GetId();
+        for (CSeq_align::TId::const_iterator it = ids.begin();
+            it != ids.end(); ++it) {
+            if ((*it)->IsStr()) {
+                return (*it)->GetStr();
+            }
+        }
+    }
+    return "";
+}
+
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::x_WriteBioseqHandle(
     CBioseq_Handle bsh ) 
 //  ----------------------------------------------------------------------------
 {
+
     if (!xWriteSequenceHeader(bsh) ) {
         return false;
     }
@@ -1204,9 +1281,27 @@ bool CGff3Writer::x_WriteBioseqHandle(
         }
     }
 
+    if ( m_SortAlignments ) {
+        list<pair<CRef<CSeq_align>, string>> alignCache;
+
+        for (CAlign_CI align_it(bsh, selAll); align_it; ++align_it) {
+            const string alignId = s_GetAlignID(*align_it); // Might be an empty string
+            CRef<CSeq_align> pAlign = Ref(new CSeq_align());
+            pAlign->Assign(*align_it);
+            alignCache.push_back(make_pair(pAlign,alignId));
+        }
+
+        alignCache.sort(SCompareAlignments(m_pScope.GetNCObject()));
+
+        for (auto alignPair : alignCache) {
+            xWriteAlign(*(alignPair.first), alignPair.second);
+        }
+        return true;
+    }
+
+
     for (CAlign_CI align_it(bsh, selAll);  align_it;  ++ align_it) {
         xWriteAlign(*align_it);
-        m_uRecordId++;
     }
     return true;
 }
