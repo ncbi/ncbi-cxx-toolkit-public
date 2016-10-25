@@ -534,6 +534,9 @@ private:
     CFastMutex   m_AsyncCancelMutex;
     size_t       m_OrigTimeout;
     unsigned int m_BaseTimeout;
+#  if NCBI_FTDS_VERSION >= 95
+    unsigned int m_TotalTimeout;
+#  endif
     bool         m_AsyncCancelAllowed;
     bool         m_AsyncCancelRequested;
 #endif
@@ -1293,6 +1296,9 @@ CTL_Connection::CAsyncCancelGuard::CAsyncCancelGuard(CTL_Connection& conn)
     CFastMutexGuard LOCK(conn.m_AsyncCancelMutex);
     conn.m_OrigTimeout          = conn.GetTimeout();
     conn.m_BaseTimeout          = 0;
+#  if NCBI_FTDS_VERSION >= 95
+    conn.m_TotalTimeout         = 0;
+#  endif
     conn.m_AsyncCancelAllowed   = true;
     conn.m_AsyncCancelRequested = false;
 #  if NCBI_FTDS_VERSION < 95

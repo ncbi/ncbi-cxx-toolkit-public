@@ -1342,25 +1342,34 @@ int CTL_Connection::x_IntHandler(void* param)
     CS_CONNECTION*  con = static_cast<CS_CONNECTION*>(param);
     CS_INT          outlen;
     CTL_Connection* ctl_conn = NULL;
+    int             result = TDS_INT_CONTINUE;
     if (con != NULL
         &&  ct_con_props(con, CS_GET, CS_USERDATA, (void*) &ctl_conn,
                          (CS_INT) sizeof(ctl_conn), &outlen) == CS_SUCCEED
         &&  ctl_conn != NULL) {
         CFastMutexGuard LOCK(ctl_conn->m_AsyncCancelMutex);
+        CTL_CmdBase* cmd = ctl_conn->m_ActiveCmd;
+        ++ctl_conn->m_TotalTimeout;
         if (ctl_conn->m_AsyncCancelRequested) {
-            ctl_conn->m_AsyncCancelAllowed = false;
-            LOCK.Release();
-            ctl_conn->m_ActiveCmd->Cancel();
-            return TDS_INT_CANCEL;
+            result = TDS_INT_CANCEL;
         } else if (ctl_conn->m_OrigIntHandler != NULL) {
             LOCK.Release();
-            return (*ctl_conn->m_OrigIntHandler)(param);
-        } else {
-            return TDS_INT_CONTINUE;
+            result = (*ctl_conn->m_OrigIntHandler)(param);
+        } else if (ctl_conn->m_TotalTimeout - ctl_conn->m_BaseTimeout
+                   >= ctl_conn->m_OrigTimeout) {
+            result = TDS_INT_CANCEL;
         }
-    } else {
-        return TDS_INT_CONTINUE;
+        if (result == TDS_INT_CANCEL) {
+            if (cmd != NULL) {
+                ctl_conn->m_AsyncCancelAllowed = false;
+                LOCK.Release();
+                cmd->Cancel();
+            }
+            LOCK.Guard(ctl_conn->m_AsyncCancelMutex);
+            ctl_conn->m_BaseTimeout = ctl_conn->m_TotalTimeout;
+        }
     }
+    return result;
 }
 #  else
 int CTL_Connection::x_TimeoutFunc(void* param, unsigned int total_timeout)
