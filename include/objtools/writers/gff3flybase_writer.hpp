@@ -44,8 +44,9 @@ class NCBI_XOBJWRITE_EXPORT CGff3FlybaseWriter
 public:
     CGff3FlybaseWriter(
         objects::CScope& scope,
-        CNcbiOstream& ostr)
-    : objects::CGff3Writer(scope, ostr)
+        CNcbiOstream& ostr,
+        bool sortAlignments=false)
+    : objects::CGff3Writer(scope, ostr, fNormal, sortAlignments)
     {}
 
     virtual bool WriteHeader() override;

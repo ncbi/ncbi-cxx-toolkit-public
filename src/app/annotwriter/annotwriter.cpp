@@ -707,11 +707,11 @@ CWriterBase* CAnnotWriterApp::xInitWriter(
     }
 
     if (strFormat == "gff3") { 
+        const bool sortAlignments = args["no-sort"] ? false : true;
         if (args["flybase"]) {
-            CGff3FlybaseWriter* pWriter = new CGff3FlybaseWriter(*m_pScope, *pOs);
+            CGff3FlybaseWriter* pWriter = new CGff3FlybaseWriter(*m_pScope, *pOs, sortAlignments);
             return pWriter;
         }
-        const bool sortAlignments = args["no-sort"] ? false : true;
         CGff3Writer* pWriter = new CGff3Writer(*m_pScope, *pOs, xGffFlags(args), sortAlignments);
         xTweakAnnotSelector(args, pWriter->GetAnnotSelector());
         if (args["default-method"]) {
