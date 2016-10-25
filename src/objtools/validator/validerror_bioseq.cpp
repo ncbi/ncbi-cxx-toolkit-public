@@ -4347,8 +4347,8 @@ void CValidError_bioseq::CheckSoureDescriptor(
         // if (! crc.IsSetGenome()) continue;
         CBioSource::TGenome cgenome = crc.GetGenome();
         if (genome == cgenome) break;
-        if (genome == CBioSource::eGenome_unknown) break;
-        if (cgenome == CBioSource::eGenome_unknown) break;
+        if (genome == CBioSource::eGenome_unknown || genome == CBioSource::eGenome_genomic) break;
+        if (cgenome == CBioSource::eGenome_unknown || cgenome == CBioSource::eGenome_genomic) break;
         PostErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentBioSources,
                 "Genome difference between parent and component",
                 *(bsh.GetBioseqCore()));
