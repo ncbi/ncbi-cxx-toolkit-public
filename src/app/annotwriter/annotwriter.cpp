@@ -254,8 +254,12 @@ void CAnnotWriterApp::Init()
         true );
     arg_desc->AddFlag(
         "flybase",
-        "GFF3 only: Use Flybase inerpretation of the GFF3 spec",
+        "GFF3 only: Use Flybase interpretation of the GFF3 spec",
         true );
+    arg_desc->AddFlag(
+        "no-sort", 
+        "GFF3 alignments only: Do not sort alignments when fetching from ID",
+        true);
     arg_desc->AddFlag(
         "micro-introns",
         "GFF3 only: Incorporate micro introns",
@@ -537,6 +541,7 @@ bool CAnnotWriterApp::xTryProcessBioseq(
     CObjectIStream& istr)
 //  -----------------------------------------------------------------------------
 {
+
     CBioseq bioseq;
     try {
         istr.Read(ObjectInfo(bioseq));
@@ -608,6 +613,8 @@ bool CAnnotWriterApp::xTryProcessSeqAlignSet(
     CObjectIStream& istr)
 //  -----------------------------------------------------------------------------
 {
+
+
     CSeq_align_set align_set;
     try {
         istr.Read(ObjectInfo(align_set));
@@ -704,7 +711,8 @@ CWriterBase* CAnnotWriterApp::xInitWriter(
             CGff3FlybaseWriter* pWriter = new CGff3FlybaseWriter(*m_pScope, *pOs);
             return pWriter;
         }
-        CGff3Writer* pWriter = new CGff3Writer(*m_pScope, *pOs, xGffFlags(args));
+        const bool sortAlignments = args["no-sort"] ? false : true;
+        CGff3Writer* pWriter = new CGff3Writer(*m_pScope, *pOs, xGffFlags(args), sortAlignments);
         xTweakAnnotSelector(args, pWriter->GetAnnotSelector());
         if (args["default-method"]) {
             pWriter->SetDefaultMethod(args["default-method"].AsString());
