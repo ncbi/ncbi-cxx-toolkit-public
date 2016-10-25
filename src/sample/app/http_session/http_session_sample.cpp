@@ -136,27 +136,6 @@ public:
 };
 
 
-class CTestResponseHandler
-{
-public:
-    CTestResponseHandler(CHttpRequest& request)
-        : m_Request(request) {}
-
-    bool operator()(CHttpResponse& response)
-    {
-        CUrl& url = m_Request.SetUrl();
-        if (url.GetArgs().GetArgs().empty()) {
-            url.GetArgs().SetValue("message", "request-handler");
-            return true;
-        }
-        return false;
-    }
-
-private:
-    CHttpRequest& m_Request;
-};
-
-
 int CHttpSessionApp::Run(void)
 {
     const CArgs& args = GetArgs();
@@ -319,17 +298,6 @@ int CHttpSessionApp::Run(void)
         CHttpResponse response = g_HttpGet(CUrl("test"));
         if (!PrintResponse(0, response)) m_Errors++;
         cout << "-------------------------------------" << endl << endl;
-    }}
-
-    {{
-        // Simple GET request
-        cout << "GET (response handler) " << sample_url << endl;
-        CHttpRequest req = session.NewRequest(url);
-        req.SetResponseHandler(CTestResponseHandler(req));
-        SetupRequest(req);
-        if (!PrintResponse(&session, req.Execute())) m_Errors++;
-        cout << "-------------------------------------" << endl << endl;
-        return 0;
     }}
 
     if (m_Errors > 0) {

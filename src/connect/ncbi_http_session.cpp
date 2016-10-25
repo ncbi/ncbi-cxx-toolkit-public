@@ -552,42 +552,31 @@ CHttpRequest::CHttpRequest(CHttpSession& session,
       m_Url(url),
       m_Method(method),
       m_Headers(new CHttpHeaders),
-      m_Timeout(CTimeout::eDefault),
-      m_ResponseHandler(Handler_NoopCB)
+      m_Timeout(CTimeout::eDefault)
 {
 }
 
 
 CHttpResponse CHttpRequest::Execute(void)
 {
-    // Save the original headers. x_InitConnection adds automatic
-    // headers (from connnetinfo, cookies, content type etc.) which
-    // may need to be changed on chained request.
-    CHttpHeaders orig_headers;
-    orig_headers.Assign(*m_Headers);
-    CRef<CHttpResponse> ret;
-    do {
-        m_Headers->Assign(orig_headers);
-        // Connection not open yet.
-        // Only POST and PUT support sending form data.
-        bool have_data = m_FormData  &&  !m_FormData.Empty();
-        if ( !m_Response ) {
-            x_InitConnection(have_data);
-        }
-        _ASSERT(m_Response);
-        _ASSERT(m_Stream  &&  m_Stream->IsInitialized());
-        CConn_IOStream& out = m_Stream->GetConnStream();
-        if ( have_data ) {
-            m_FormData->WriteFormData(out);
-        }
-        // Send data to the server and close output stream.
-        out.peek();
-        m_Stream.Reset();
-        ret = m_Response;
-        m_Response.Reset();
+    // Connection not open yet.
+    // Only POST and PUT support sending form data.
+    bool have_data = m_FormData  &&  !m_FormData.Empty();
+    if ( !m_Response ) {
+        x_InitConnection(have_data);
     }
-    while (m_ResponseHandler(*ret));
-    return *ret;
+    _ASSERT(m_Response);
+    _ASSERT(m_Stream  &&  m_Stream->IsInitialized());
+    CConn_IOStream& out = m_Stream->GetConnStream();
+    if ( have_data ) {
+        m_FormData->WriteFormData(out);
+    }
+    // Send data to the server and close output stream.
+    out.peek();
+    m_Stream.Reset();
+    CHttpResponse ret = *m_Response;
+    m_Response.Reset();
+    return ret;
 }
 
 
