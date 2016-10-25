@@ -661,11 +661,6 @@ int CTbl2AsnApp::Run(void)
     {
         m_context.m_discrepancy_file = args["Z"].AsString();
     }
-    else
-    if (args["M"])
-    {
-        m_context.m_discrepancy_file = GenerateOutputFilename(".dr");
-    }
 
     m_context.m_eukariote = args["euk"].AsBoolean();
 
@@ -943,13 +938,11 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
             m_validator->Validate(submit, entry, m_context.m_validate, GenerateOutputFilename(".val"));
         }
 
-#if 0
         if (!m_context.m_discrepancy_file.empty())
         {
             m_validator->ReportDiscrepancies(
                 submit.Empty() ? (CSerialObject&)*entry : (CSerialObject&)*submit, *m_context.m_scope);
         }
-#endif
     }
 }
 
