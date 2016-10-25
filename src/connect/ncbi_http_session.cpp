@@ -195,8 +195,7 @@ void CHttpHeaders::Merge(const CHttpHeaders& headers)
 bool CHttpHeaders::x_IsReservedHeader(CTempString name) const
 {
     for (size_t i = 0; i < sizeof(kReservedHeaders)/sizeof(kReservedHeaders[0]); ++i) {
-        THeaders::const_iterator it = m_Headers.find(kReservedHeaders[i]);
-        if (it != m_Headers.end()) {
+        if (!NStr::CompareNocase(name, kReservedHeaders[i])) {
             ERR_POST(kReservedHeaders[i] << " must be set through CRequestContext");
             return true;
         }

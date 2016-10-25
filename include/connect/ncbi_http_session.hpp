@@ -219,7 +219,7 @@ private:
     CHttpHeaders& operator=(const CHttpHeaders&);
 
     // Check if the name is a reserved one (NCBI-SID, NCBI-PHID).
-    // If yes, log error and _ASSERT(0) - these headers must be set in
+    // If yes, log error - these headers must be set in
     // CRequestContext, not directly.
     // Return 'false' if the header name is not reserved and a value can
     // be set safely.
