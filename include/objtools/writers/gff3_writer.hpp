@@ -67,10 +67,14 @@ public:
     CGff3Writer(
         CScope&,
         CNcbiOstream&,
-        unsigned int = fNormal );
+        unsigned int = fNormal,
+        bool sortAlignments = false 
+        );
     CGff3Writer(
         CNcbiOstream&,
-        unsigned int = fNormal );
+        unsigned int = fNormal,
+        bool sortAlignments = false 
+        );
     virtual ~CGff3Writer();
 
     void SetDefaultMethod(
@@ -304,6 +308,7 @@ protected:
         CGffFeatureContext&,
         const CBioSource&);
 
+
     //begin mss-234//
     bool xAssignFeature(
         CGffFeatureRecord&,
@@ -467,6 +472,10 @@ protected:
     typedef map< CMappedFeat, CRef<CGffFeatureRecord> > TMrnaMapNew;
     TMrnaMapNew m_MrnaMapNew;
 
+    typedef list<tuple<CRef<CSeq_align>, string, string>> TAlignCache;
+    TAlignCache m_AlignCache;
+
+    bool m_SortAlignments;
     unsigned int m_uPendingGeneId;
     unsigned int m_uPendingMrnaId;
     unsigned int m_uPendingTrnaId;
