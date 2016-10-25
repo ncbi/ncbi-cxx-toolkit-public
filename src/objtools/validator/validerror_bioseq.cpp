@@ -964,6 +964,9 @@ bool CValidError_bioseq::IsHistAssemblyMissing(const CBioseq& seq)
 {
     bool rval = false;
     const CSeq_inst& inst = seq.GetInst();
+    if (inst.IsSetHist() && inst.GetHist().IsSetAssembly()) {
+        return false;
+    }
     CSeq_inst::TRepr repr = inst.CanGetRepr() ?
         inst.GetRepr() : CSeq_inst::eRepr_not_set;
 

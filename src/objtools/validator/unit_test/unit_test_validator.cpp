@@ -3268,7 +3268,6 @@ BOOST_AUTO_TEST_CASE(Test_TpaAssmeblyProblem)
     CLEAR_ERRORS
 
     expected_errors.push_back(new CExpectedError("tpg|AY123456.1|", eDiag_Warning, "UnexpectedIdentifierChange", "Loss of accession (gb|AY123456.1|) on gi (21914627) compared to the NCBI sequence repository"));
-    expected_errors.push_back(new CExpectedError("tpg|AY123456.1|", eDiag_Info, "HistAssemblyMissing", "TPA record tpg|AY123456.1| should have Seq-hist.assembly for PRIMARY block"));
     expected_errors.push_back(new CExpectedError("tpg|AY123456.1|", eDiag_Error, "TpaAssmeblyProblem", "There are 1 TPAs with history and 1 without history in this record."));
     expected_errors.push_back(new CExpectedError("tpg|AY123456.1|", eDiag_Warning, "TpaAssmeblyProblem", "There are 1 TPAs without history in this record, but the record has a gi number assignment."));
     eval = validator.Validate(seh, options);
