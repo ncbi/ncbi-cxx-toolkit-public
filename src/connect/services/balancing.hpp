@@ -34,7 +34,8 @@
  *
  */
 
-#include <connect/services/srv_connections.hpp>
+#include <corelib/ncbimtx.hpp>
+#include <corelib/ncbitime.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -49,7 +50,20 @@ public:
     {
     }
 
-    bool NeedRebalance();
+    bool NeedRebalance()
+    {
+        CFastMutexGuard g(m_Mutex);
+        CTime current_time(GetFastLocalTime());
+        if ((m_RebalanceTime > 0 && current_time >= m_NextRebalanceTime) ||
+            (m_RebalanceRequests > 0 &&
+                m_RequestCounter >= m_RebalanceRequests)) {
+            m_RequestCounter = 0;
+            m_NextRebalanceTime = current_time;
+            m_NextRebalanceTime.AddNanoSecond(m_RebalanceTime * 1000000);
+            return true;
+        }
+        return false;
+    }
 
     void OnResourceRequested() {
         CFastMutexGuard g(m_Mutex);
@@ -68,14 +82,6 @@ private:
     CTime   m_NextRebalanceTime;
     CFastMutex m_Mutex;
 };
-
-class CConfig;
-
-NCBI_XCONNECT_EXPORT CRef<CSimpleRebalanceStrategy>
-    CreateSimpleRebalanceStrategy(CConfig& config, const string& driver_name);
-
-NCBI_XCONNECT_EXPORT CRef<CSimpleRebalanceStrategy>
-    CreateDefaultRebalanceStrategy();
 
 END_NCBI_SCOPE
 

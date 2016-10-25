@@ -697,7 +697,13 @@ void SNetServerPoolImpl::Init(CConfig* config, const string& section,
                 NCBI_AS_STRING(MAX_CONNECTION_TIME_DEFAULT)),
                 SECONDS_DOUBLE_TO_MS_UL(MAX_CONNECTION_TIME_DEFAULT));
 
-        m_RebalanceStrategy = CreateSimpleRebalanceStrategy(*config, section);
+        m_RebalanceStrategy = new CSimpleRebalanceStrategy(
+            config->GetInt(section, "rebalance_requests",
+                CConfig::eErr_NoThrow, REBALANCE_REQUESTS_DEFAULT),
+            s_SecondsToMilliseconds(config->GetString(section,
+                "rebalance_time", CConfig::eErr_NoThrow,
+                    NCBI_AS_STRING(REBALANCE_TIME_DEFAULT)),
+                SECONDS_DOUBLE_TO_MS_UL(REBALANCE_TIME_DEFAULT)));
     } else {
         NcbiMsToTimeout(&m_ConnTimeout,
             SECONDS_DOUBLE_TO_MS_UL(CONNECTION_TIMEOUT_DEFAULT));
@@ -719,7 +725,9 @@ void SNetServerPoolImpl::Init(CConfig* config, const string& section,
         m_MaxConnectionTime =
             SECONDS_DOUBLE_TO_MS_UL(MAX_CONNECTION_TIME_DEFAULT);
 
-        m_RebalanceStrategy = CreateDefaultRebalanceStrategy();
+        m_RebalanceStrategy = new CSimpleRebalanceStrategy(
+                REBALANCE_REQUESTS_DEFAULT,
+                SECONDS_DOUBLE_TO_MS_UL(REBALANCE_TIME_DEFAULT));
     }
 
     // Get affinity value from the local LBSM configuration file.
