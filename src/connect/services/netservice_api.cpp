@@ -606,6 +606,9 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
 void SNetServerPoolImpl::Init(CConfig* config, const string& section,
         INetServerConnectionListener* listener)
 {
+    int max_requests = CSimpleRebalanceStrategy::DefaultMaxRequests();
+    double max_seconds = CSimpleRebalanceStrategy::DefaultMaxSeconds();
+
     if (config != NULL) {
         if (m_LBSMAffinityName.empty())
             m_LBSMAffinityName = config->GetString(section,
@@ -697,13 +700,11 @@ void SNetServerPoolImpl::Init(CConfig* config, const string& section,
                 NCBI_AS_STRING(MAX_CONNECTION_TIME_DEFAULT)),
                 SECONDS_DOUBLE_TO_MS_UL(MAX_CONNECTION_TIME_DEFAULT));
 
-        m_RebalanceStrategy = new CSimpleRebalanceStrategy(
-            config->GetInt(section, "rebalance_requests",
-                CConfig::eErr_NoThrow, REBALANCE_REQUESTS_DEFAULT),
-            s_SecondsToMilliseconds(config->GetString(section,
-                "rebalance_time", CConfig::eErr_NoThrow,
-                    NCBI_AS_STRING(REBALANCE_TIME_DEFAULT)),
-                SECONDS_DOUBLE_TO_MS_UL(REBALANCE_TIME_DEFAULT)));
+        max_requests = config->GetInt(section, "rebalance_requests",
+                CConfig::eErr_NoThrow, max_requests);
+
+        max_seconds = config->GetDouble(section, "rebalance_time",
+                CConfig::eErr_NoThrow, max_seconds);
     } else {
         NcbiMsToTimeout(&m_ConnTimeout,
             SECONDS_DOUBLE_TO_MS_UL(CONNECTION_TIMEOUT_DEFAULT));
@@ -724,11 +725,9 @@ void SNetServerPoolImpl::Init(CConfig* config, const string& section,
 
         m_MaxConnectionTime =
             SECONDS_DOUBLE_TO_MS_UL(MAX_CONNECTION_TIME_DEFAULT);
-
-        m_RebalanceStrategy = new CSimpleRebalanceStrategy(
-                REBALANCE_REQUESTS_DEFAULT,
-                SECONDS_DOUBLE_TO_MS_UL(REBALANCE_TIME_DEFAULT));
     }
+
+    m_RebalanceStrategy = new CSimpleRebalanceStrategy(max_requests, max_seconds);
 
     // Get affinity value from the local LBSM configuration file.
     if (!m_LBSMAffinityName.empty())

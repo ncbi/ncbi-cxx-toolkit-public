@@ -76,11 +76,6 @@
 // The parameter is ignored if it's zero.
 #define MAX_CONNECTION_TIME_DEFAULT 0.0
 
-// The following two parameters define how often LBSMD
-// is queried by default.
-#define REBALANCE_TIME_DEFAULT 10.0
-#define REBALANCE_REQUESTS_DEFAULT 5000
-
 #define FIRST_SERVER_TIMEOUT_DEFAULT 0.3
 
 #define COMMIT_JOB_INTERVAL_DEFAULT 2
