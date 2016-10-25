@@ -862,7 +862,7 @@ static string s_MapSeqInfoTemplate(string seqTemplate,
 {
     string imgstring = CAlignFormatUtil::MapTemplate(seqTemplate,"img_seq",seq);            
     imgstring = CAlignFormatUtil::MapTemplate(imgstring,"img_score",score);    
-    imgstring = CAlignFormatUtil::MapTemplate(imgstring,"img_defline",defline);    
+    imgstring = CAlignFormatUtil::MapTemplate(imgstring,"img_defline",CHTMLHelper::HTMLEncode(defline));    
     imgstring = CAlignFormatUtil::MapTemplate(imgstring,"img_acc",acc);    
     imgstring = CAlignFormatUtil::MapTemplate(imgstring,"img_eval",eval);    
     
