@@ -42,6 +42,7 @@
 #include <objects/seqfeat/OrgName.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
 #include <objects/submit/Submit_block.hpp>
+#include <objmgr/util/sequence.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
@@ -409,9 +410,9 @@ public:
     const vector<CConstRef<CSeq_feat> >& FeatIntrons() { return m_FeatIntrons; }
     const vector<CConstRef<CSeq_feat> >& FeatMisc() { return m_FeatMisc; }
 
-    //CRef<CDiscrepancyObject> NewDiscObj(CConstRef<CBioseq> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
+    sequence::ECompare Compare(const CSeq_loc& loc1, const CSeq_loc& loc2);
+    
     CRef<CDiscrepancyObject> NewBioseqObj(CConstRef<CBioseq> obj, const CSeqSummary* info, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
-    //CRef<CDiscrepancyObject> NewDiscObj(CConstRef<CSeqdesc> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
     CRef<CDiscrepancyObject> NewSeqdescObj(CConstRef<CSeqdesc> obj, const string& bslabel, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
     CRef<CDiscrepancyObject> NewDiscObj(CConstRef<CSeq_feat> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
     CRef<CDiscrepancyObject> NewDiscObj(CConstRef<CBioseq_set> obj, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);

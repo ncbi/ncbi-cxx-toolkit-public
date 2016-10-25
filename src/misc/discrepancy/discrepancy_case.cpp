@@ -44,7 +44,6 @@
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/util/feature.hpp>
-#include <objmgr/util/sequence.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <sstream>
@@ -416,13 +415,6 @@ static bool ShouldIgnore(const string& product)
 }
 
 
-static bool LocationsOverlapOnSameStrand(const CSeq_loc& loc1, const CSeq_loc& loc2, CScope* scope)
-{
-    return StrandsMatch(loc1, loc2) &&
-        sequence::Compare(loc1, loc2, scope, sequence::fCompareOverlapping) != sequence::eNoOverlap;
-}
-
-
 static const string kOverlappingCDSNoteText = "overlaps another CDS with the same product name";
 
 
@@ -476,7 +468,7 @@ DISCREPANCY_CASE(OVERLAPPING_CDS, CSeqFeatData, eDisc, "Overlapping CDs")
         NON_CONST_ITERATE (TReportObjectList, robj, list) {
             CConstRef<CSeq_feat> sf((CSeq_feat*)&*(*robj)->GetObject());
             const CSeq_loc& loc = sf->GetLocation();
-            if (!LocationsOverlapOnSameStrand(location, loc, &context.GetScope())) {
+            if (!StrandsMatch(location, loc) || context.Compare(location, loc) == sequence::eNoOverlap) {
                 continue;
             }
             bool has_note = HasOverlapNote(*sf);
@@ -707,7 +699,7 @@ static const char* kContainedSame = "[n] coding region[s] [is] completely contai
 static const char* kContainedOpps = "[n] coding region[s] [is] completely contained in another coding region, but on the opposite strand.";
 
 
-DISCREPANCY_CASE(CONTAINED_CDS, CSeqFeatData, eDisc | eSubmitter | eSmart, "Contained CDs")
+DISCREPANCY_CASE(CONTAINED_CDS_0, CSeqFeatData, eDisc | eSubmitter | eSmart, "Contained CDs")
 {
     if (obj.Which() != CSeqFeatData::e_Cdregion) {
         return;
@@ -737,13 +729,46 @@ DISCREPANCY_CASE(CONTAINED_CDS, CSeqFeatData, eDisc | eSubmitter | eSmart, "Cont
 }
 
 
-DISCREPANCY_SUMMARIZE(CONTAINED_CDS)
+DISCREPANCY_SUMMARIZE(CONTAINED_CDS_0)
 {
     if (m_Objs[kEmptyStr].Exist(kContained) && m_Objs[kEmptyStr][kContained].GetMap().size() == 1) {
         m_ReportItems = m_Objs[kEmptyStr][kContained].Export(*this)->GetSubitems();
     }
     else {
         m_ReportItems = m_Objs[kEmptyStr].Export(*this)->GetSubitems();
+    }
+}
+
+
+DISCREPANCY_CASE(CONTAINED_CDS, COverlappingFeatures, eDisc | eSubmitter | eSmart, "Contained CDs")
+{
+    if (!context.GetCurrentBioseq()->CanGetInst() || !context.GetCurrentBioseq()->GetInst().IsNa() || context.IsEukaryotic()) {
+        return;
+    }
+    const vector<CConstRef<CSeq_feat> >& cds = context.FeatCDS();
+    for (size_t i = 0; i < cds.size(); i++) {
+        const CSeq_loc& loc_i = cds[i]->GetLocation();
+        for (size_t j = i+1; j < cds.size(); j++) {
+            const CSeq_loc& loc_j = cds[j]->GetLocation();
+            //sequence::ECompare compare = sequence::Compare(loc_j, loc_i, &context.GetScope(), sequence::fCompareOverlapping);
+            sequence::ECompare compare = context.Compare(loc_j, loc_i);
+            if (compare == sequence::eContains || compare == sequence::eSame || compare == sequence::eContained) {
+                const char* strand = StrandsMatch(loc_j, loc_i) ? kContainedSame : kContainedOpps;
+                m_Objs[kContained][HasContainedNote(*cds[j]) ? kContainedNote : strand].Add(*context.NewDiscObj(cds[j], eNoRef, compare == sequence::eContains));
+                m_Objs[kContained][HasContainedNote(*cds[i]) ? kContainedNote : strand].Add(*context.NewDiscObj(cds[i], eNoRef, compare == sequence::eContained));
+            }
+        }
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(CONTAINED_CDS)
+{
+    if (m_Objs.Exist(kContained) && m_Objs[kContained].GetMap().size() == 1) {
+        m_ReportItems = m_Objs[kContained].Export(*this)->GetSubitems();
+    }
+    else {
+        m_ReportItems = m_Objs.Export(*this)->GetSubitems();
     }
 }
 

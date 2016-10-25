@@ -32,7 +32,6 @@
 #include "utils.hpp"
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/util/feature.hpp>
-#include <objmgr/util/sequence.hpp>
 #include <objtools/validator/utilities.hpp>
 
 

@@ -29,7 +29,6 @@
 
 #include <ncbi_pch.hpp>
 #include "discrepancy_core.hpp"
-#include <objmgr/util/sequence.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
@@ -73,7 +72,8 @@ DISCREPANCY_CASE(CDS_TRNA_OVERLAP, COverlappingFeatures, eDisc | eSubmitter | eS
                                      cds_strand == eNa_strand_minus && trna_strand == eNa_strand_plus);
 
             if (need_to_compare) {
-                ovlp = sequence::Compare(loc_i, loc_j, &context.GetScope(), sequence::fCompareOverlapping);
+                //ovlp = sequence::Compare(loc_i, loc_j, &context.GetScope(), sequence::fCompareOverlapping);
+                ovlp = context.Compare(loc_i, loc_j);
             }
 
             if (ovlp != sequence::eNoOverlap) {
@@ -192,7 +192,8 @@ DISCREPANCY_CASE(RNA_CDS_OVERLAP, COverlappingFeatures, eDisc | eSubmitter | eSm
         }
         for (size_t j = 0; j < cds.size(); j++) {
             const CSeq_loc& loc_j = cds[j]->GetLocation();
-            sequence::ECompare compare = sequence::Compare(loc_j, loc_i, &context.GetScope(), sequence::fCompareOverlapping);
+            //sequence::ECompare compare = sequence::Compare(loc_j, loc_i, &context.GetScope(), sequence::fCompareOverlapping);
+            sequence::ECompare compare = context.Compare(loc_j, loc_i);
             if (compare == sequence::eSame) {
                 m_Objs[kCDSRNAAnyOverlap][kCDSRNAExactMatch].Ext().Add(*context.NewDiscObj(rnas[i]), false).Add(*context.NewDiscObj(cds[j]), false).Fatal();
             }
@@ -238,7 +239,8 @@ DISCREPANCY_CASE(OVERLAPPING_RRNAS, COverlappingFeatures, eDisc | eSubmitter | e
         const CSeq_loc& loc_i = rrnas[i]->GetLocation();
         for (size_t j = i + 1; j < rrnas.size(); j++) {
             const CSeq_loc& loc_j = rrnas[j]->GetLocation();
-            if (sequence::Compare(loc_j, loc_i, &context.GetScope(), sequence::fCompareOverlapping) != sequence::eNoOverlap) {
+            //if (sequence::Compare(loc_j, loc_i, &context.GetScope(), sequence::fCompareOverlapping) != sequence::eNoOverlap) {
+            if (context.Compare(loc_j, loc_i) != sequence::eNoOverlap) {
                 m_Objs["[n] rRNA feature[s] overlap[S] another rRNA feature."].Add(*context.NewDiscObj(rrnas[i])).Add(*context.NewDiscObj(rrnas[j])).Fatal();
             }
         }
@@ -261,7 +263,8 @@ DISCREPANCY_CASE(OVERLAPPING_GENES, COverlappingFeatures, eDisc, "Overlapping Ge
         const CSeq_loc& loc_i = genes[i]->GetLocation();
         for (size_t j = i + 1; j < genes.size(); j++) {
             const CSeq_loc& loc_j = genes[j]->GetLocation();
-            if (loc_j.GetStrand() == loc_i.GetStrand() && sequence::Compare(loc_j, loc_i, &context.GetScope(), sequence::fCompareOverlapping) != sequence::eNoOverlap) {
+            //if (loc_j.GetStrand() == loc_i.GetStrand() && sequence::Compare(loc_j, loc_i, &context.GetScope(), sequence::fCompareOverlapping) != sequence::eNoOverlap) {
+            if (loc_j.GetStrand() == loc_i.GetStrand() && context.Compare(loc_j, loc_i) != sequence::eNoOverlap) {
                 m_Objs["[n] gene[s] overlap[S] another gene on the same strand."].Add(*context.NewDiscObj(genes[i])).Add(*context.NewDiscObj(genes[j]));
             }
         }
@@ -284,7 +287,8 @@ DISCREPANCY_CASE(FIND_OVERLAPPED_GENES, COverlappingFeatures, eDisc | eSmart, "G
         const CSeq_loc& loc_i = genes[i]->GetLocation();
         for (size_t j = i + 1; j < genes.size(); j++) {
             const CSeq_loc& loc_j = genes[j]->GetLocation();
-            sequence::ECompare ovlp = sequence::Compare(loc_i, loc_j, &context.GetScope(), sequence::fCompareOverlapping);
+            //sequence::ECompare ovlp = sequence::Compare(loc_i, loc_j, &context.GetScope(), sequence::fCompareOverlapping);
+            sequence::ECompare ovlp = context.Compare(loc_i, loc_j);
             if (ovlp == sequence::eContained || ovlp == sequence::eSame) {
                 m_Objs["[n] gene[s] completely overlapped by other genes"].Add(*context.NewDiscObj(genes[i]));
             }
@@ -314,7 +318,8 @@ DISCREPANCY_CASE(DUP_GENES_OPPOSITE_STRANDS, COverlappingFeatures, eDisc | eOnca
             if (loc_i.GetStrand() == loc_j.GetStrand()) {
                 continue;
             }
-            sequence::ECompare ovlp = sequence::Compare(loc_i, loc_j, &context.GetScope(), sequence::fCompareOverlapping);
+            //sequence::ECompare ovlp = sequence::Compare(loc_i, loc_j, &context.GetScope(), sequence::fCompareOverlapping);
+            sequence::ECompare ovlp = context.Compare(loc_i, loc_j);
             if (ovlp == sequence::eSame) {
                 m_Objs["[n] genes match other genes in the same location, but on the opposite strand"].Add(*context.NewDiscObj(genes[i])).Add(*context.NewDiscObj(genes[j]));
             }
@@ -339,7 +344,8 @@ DISCREPANCY_CASE(MRNA_OVERLAPPING_PSEUDO_GENE, COverlappingFeatures, eOncaller, 
         const CSeq_loc& loc_i = mrnas[i]->GetLocation();
         for (size_t j = 0; j < pseudo.size(); j++) {
             const CSeq_loc& loc_j = pseudo[j]->GetLocation();
-            sequence::ECompare ovlp = sequence::Compare(loc_i, loc_j, &context.GetScope(), sequence::fCompareOverlapping);
+            //sequence::ECompare ovlp = sequence::Compare(loc_i, loc_j, &context.GetScope(), sequence::fCompareOverlapping);
+            sequence::ECompare ovlp = context.Compare(loc_i, loc_j);
             if (ovlp != sequence::eNoOverlap) {
                 m_Objs["[n] Pseudogene[s] [has] overlapping mRNA[s]."].Add(*context.NewDiscObj(mrnas[i]));  // should say "n mRNAs overlapping pseudogenes", but C Toolkit reports this way.
                 break;
@@ -459,15 +465,13 @@ DISCREPANCY_CASE(GENE_MISC_IGS_OVERLAP, COverlappingFeatures, eOncaller, "Gene w
 
             ITERATE(vector<CConstRef<CSeq_feat>>, misc, context.FeatMisc()) {
                 if ((*misc)->IsSetLocation() && (*misc)->IsSetComment() && NStr::FindNoCase((*misc)->GetComment(), "intergenic spacer") != NPOS) {
-
                     const CSeq_loc& loc_misc = (*misc)->GetLocation();
-                    if (sequence::Compare(loc_gene, loc_misc, &context.GetScope(), sequence::fCompareOverlapping) != sequence::eNoOverlap) {
-
+                    //if (sequence::Compare(loc_gene, loc_misc, &context.GetScope(), sequence::fCompareOverlapping) != sequence::eNoOverlap) {
+                    if (context.Compare(loc_gene, loc_misc) != sequence::eNoOverlap) {
                         if (!gene_added) {
                             m_Objs[kGeneMisc].Add(*context.NewDiscObj(*gene)).Incr();
                             gene_added = true;
                         }
-
                         m_Objs[kGeneMisc].Add(*context.NewDiscObj(*misc));
                     }
                 }

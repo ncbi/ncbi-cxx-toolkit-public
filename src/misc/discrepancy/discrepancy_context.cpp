@@ -43,7 +43,6 @@
 #include <objects/seqfeat/Delta_item.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/seq_vector.hpp>
-#include <objmgr/util/sequence.hpp>
 #include <util/xregexp/regexp.hpp>
 #include <objtools/cleanup/cleanup.hpp>
 
@@ -776,6 +775,17 @@ void CDiscrepancyContext::CollectFeature(const CSeq_feat& feat)
     if (CCleanup::IsPseudo(feat, *m_Scope)) {
         m_FeatPseudo.push_back(CConstRef<CSeq_feat>(&feat));
     }
+}
+
+
+sequence::ECompare CDiscrepancyContext::Compare(const CSeq_loc& loc1, const CSeq_loc& loc2)
+{
+    CSeq_loc::TRange r1 = loc1.GetTotalRange();
+    CSeq_loc::TRange r2 = loc2.GetTotalRange();
+    if (r1.GetFrom() >= r2.GetToOpen() || r2.GetFrom() >= r1.GetToOpen()) {
+        return sequence::eNoOverlap;
+    }
+    return sequence::Compare(loc1, loc2, &GetScope(), sequence::fCompareOverlapping);
 }
 
 
