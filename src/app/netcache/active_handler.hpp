@@ -35,6 +35,7 @@
 #include "nc_utils.hpp"
 #include "periodic_sync.hpp"
 #include "distribution_conf.hpp"
+#include "message_handler.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -205,7 +206,8 @@ public:
                     const string& password,
                     int version,
                     Uint4 ttl,
-                    Uint1 quorum);
+                    Uint1 quorum,
+                    TNCUserFlags flags);
     void ProxyProlong(CRequestContext* cmd_ctx,
                       const CNCBlobKey& key,
                       const string& password,
@@ -215,7 +217,8 @@ public:
                       bool force_local);
     void ProxyBList(CRequestContext* cmd_ctx,
                     const CNCBlobKey& key,
-                    bool force_local);
+                    bool force_local,
+                    SNCBlobVerData* filters);
 
     CSrvSocketTask* GetSocket(void);
     CTempString GetCmdResponse(void);

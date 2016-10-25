@@ -699,7 +699,8 @@ CNCActiveHandler::ProxyWrite(CRequestContext* cmd_ctx,
                              const string& password,
                              int version,
                              Uint4 ttl,
-                             Uint1 quorum)
+                             Uint1 quorum,
+                             TNCUserFlags flags)
 {
     SetDiagCtx(cmd_ctx);
     m_CurCmd = eWriteData;
@@ -722,6 +723,10 @@ CNCActiveHandler::ProxyWrite(CRequestContext* cmd_ctx,
     m_CmdToSend += "\" \"";
     m_CmdToSend += cmd_ctx->GetSessionID();
     m_CmdToSend.append(1, '"');
+    if (m_Peer->AcceptsUserFlags()) {
+        m_CmdToSend += " flags=";
+        m_CmdToSend += NStr::UIntToString(flags);
+    }
     if (!password.empty()) {
         m_CmdToSend += " \"";
         m_CmdToSend += password;
@@ -773,7 +778,7 @@ CNCActiveHandler::ProxyProlong(CRequestContext* cmd_ctx,
 }
 
 void CNCActiveHandler::ProxyBList(
-    CRequestContext* cmd_ctx, const CNCBlobKey& nc_key, bool force_local)
+    CRequestContext* cmd_ctx, const CNCBlobKey& nc_key, bool force_local, SNCBlobVerData* filters)
 {
     SetDiagCtx(cmd_ctx);
     m_CurCmd = eReadData;
@@ -787,6 +792,24 @@ void CNCActiveHandler::ProxyBList(
     m_CmdToSend += nc_key.SubKey();
     m_CmdToSend += "\" ";
     m_CmdToSend += NStr::UIntToString(Uint1(force_local));
+    if (m_Peer->AcceptsUserFlags()) {
+        if (filters->create_time != 0) {
+            m_CmdToSend += " cr_time=";
+            m_CmdToSend += NStr::NumericToString(filters->create_time);
+        }
+        if (filters->expire != 0) {
+            m_CmdToSend += " exp=";
+            m_CmdToSend += NStr::NumericToString(filters->expire);
+        }
+        if (filters->ver_expire != 0) {
+            m_CmdToSend += " ver_dead=";
+            m_CmdToSend += NStr::NumericToString(filters->ver_expire);
+        }
+        if (filters->create_server != 0) {
+            m_CmdToSend += " cr_srv=";
+            m_CmdToSend += NStr::NumericToString(filters->create_server);
+        }
+    }
 
     x_SetStateAndStartProcessing(&CNCActiveHandler::x_SendCmdToExecute);
 }

@@ -173,6 +173,7 @@ public:
     bool AcceptsSyncRemove(void) const;
     bool AcceptsBlobKey(const CNCBlobKeyLight& key) const;
     bool AcceptsBList(void) const;
+    bool AcceptsUserFlags(void) const;
 
 private:
     CNCPeerControl(Uint8 srv_id);
@@ -299,6 +300,12 @@ inline bool
 CNCPeerControl::AcceptsBList(void) const
 {
     return m_HostProtocol >= 60900;
+}
+
+inline bool
+CNCPeerControl::AcceptsUserFlags(void) const
+{
+    return m_HostProtocol >= 61001;
 }
 
 inline void

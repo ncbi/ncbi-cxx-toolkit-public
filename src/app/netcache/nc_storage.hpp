@@ -96,7 +96,7 @@ private:
 class CNCBlobStorage
 {
 public:
-    static void GetBList(const string& mask, auto_ptr<TNCBufferType>& buffer);
+    static void GetBList(const string& mask, auto_ptr<TNCBufferType>& buffer, SNCBlobVerData* filters);
 
     static bool Initialize(bool do_reinit);
     static void Finalize(void);

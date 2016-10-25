@@ -296,10 +296,30 @@ static CExpiredCleaner* s_ExpiredCleaner = nullptr;
 /**/
 
 void
-CNCBlobStorage::GetBList(const string& mask, auto_ptr<TNCBufferType>& buffer)
+CNCBlobStorage::GetBList(const string& mask, auto_ptr<TNCBufferType>& buffer, SNCBlobVerData* filters)
 {
+    if (mask.empty()) {
+        return;
+    }
     SNCCacheData search_mask;
-    search_mask.key = mask;
+    const char* mb = mask.data();
+    while (*mb == '\"' || *mb == '\'') {
+        ++mb;
+    }
+    const char* me = mask.data() + mask.size() - 1;
+    while (*me == '\1') {
+        --me;
+    }
+    search_mask.key.assign(mb, me-mb);
+    CSrvTime cur_time = CSrvTime::Current();
+    // convert number of seconds ago into microseconds since epoch
+    Uint8 cr_time  = filters->create_time != 0 ? cur_time.AsUSec() - filters->create_time * kUSecsPerSecond : (Uint8)-1;
+    // convert expire N sec from now into seconds since epoch
+    int expire     = filters->expire != 0      ? int(cur_time.Sec() + filters->expire)                      : numeric_limits<int>::max();
+    // convert expire N sec from now into seconds since epoch
+    int ver_expire = filters->ver_expire != 0  ? int(cur_time.Sec() + filters->ver_expire)                  : numeric_limits<int>::max();
+    Uint8 create_server = filters->create_server;
+    bool extra =  filters->create_time != 0 || filters->expire != 0 || filters->ver_expire != 0 || filters->create_server != 0;
 
     ITERATE( TBucketCacheMap, bkt, s_BucketsCache) {
         SBucketCache* cache = bkt->second;
@@ -307,9 +327,35 @@ CNCBlobStorage::GetBList(const string& mask, auto_ptr<TNCBufferType>& buffer)
 #if __NC_CACHEDATA_INTR_SET
         TKeyMap::iterator lb = cache->key_map.lower_bound(search_mask);
         for ( ; lb != cache->key_map.end(); ++lb) {
+            SNCCacheData& d = *lb;
             if (strncmp(search_mask.key.data(), lb->key.data(), search_mask.key.size())== 0) {
-                string bkey( NStr::Replace(lb->key,"\1",","));
-                buffer->append(bkey.data(), bkey.size()).append("\n",1);
+                bool b = lb->create_time <= cr_time;
+                b = lb->expire <= expire;
+                b = lb->ver_expire <= ver_expire;
+                b = (create_server == 0 || create_server == lb->create_server);
+                if (!extra || (lb->create_time <= cr_time &&
+                               lb->expire <= expire &&
+                               lb->ver_expire <= ver_expire &&
+                               (create_server == 0 || create_server == lb->create_server))) {
+
+                    string bkey( NStr::Replace(lb->key,"\1",","));
+                    buffer->append(bkey.data(), bkey.size());
+                    if (extra) {
+                        if  (filters->create_time != 0) {
+                            buffer->WriteText(",cr_time=").WriteNumber(lb->create_time/kUSecsPerSecond);
+                        }
+                        if  (filters->expire != 0) {
+                            buffer->WriteText(",exp=").WriteNumber(lb->expire);
+                        }
+                        if  (filters->ver_expire != 0) {
+                            buffer->WriteText(",ver_dead=").WriteNumber(lb->ver_expire);
+                        }
+                        if  (filters->create_server != 0) {
+                            buffer->WriteText(",cr_srv=").WriteNumber(lb->create_server);
+                        }
+                    }
+                    buffer->append("\n",1);
+                }
                 continue;
             }
             break;
@@ -318,8 +364,30 @@ CNCBlobStorage::GetBList(const string& mask, auto_ptr<TNCBufferType>& buffer)
         TKeyMap::iterator lb = cache->key_map.lower_bound(&search_mask);
         for ( ; lb != cache->key_map.end(); ++lb) {
             if (strncmp(search_mask.key.data(), (*lb)->key.data(), search_mask.key.size())== 0) {
-                string bkey( NStr::Replace((*lb)->key,"\1",","));
-                buffer->append(bkey.data(), bkey.size()).append("\n",1);
+                if (!extra
+                    && lb->create_time <= cr_time
+                    && lb->expire < expire
+                    && lb->ver_expire == ver_expire
+                    && (create_server == 0 || create_server == lb->create_server)) {
+
+                    string bkey( NStr::Replace((*lb)->key,"\1",","));
+                    buffer->append(bkey.data(), bkey.size());
+                    if (extra) {
+                        if  (filters->create_time != 0) {
+                            buffer->WriteText(",cr_time=").WriteNumber((*lb)->create_time/kUSecsPerSecond);
+                        }
+                        if  (filters->expire != 0) {
+                            buffer->WriteText(",exp=").WriteNumber((*lb)->expire);
+                        }
+                        if  (filters->ver_expire != 0) {
+                            buffer->WriteText(",ver_dead=").WriteNumber((*lb)->ver_expire);
+                        }
+                        if  (filters->create_server != 0) {
+                            buffer->WriteText(",cr_srv=").WriteNumber((*lb)->create_server);
+                        }
+                    }
+                    buffer->append("\n",1);
+                }
                 continue;
             }
             break;

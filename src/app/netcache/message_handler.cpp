@@ -206,7 +206,9 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Password for blob access.
           { "pass",    eNSPT_Str,  eNSPA_Optional },
           // request Hit ID
-          { "ncbi_phid", eNSPT_Str,  eNSPA_Optional }
+          { "ncbi_phid", eNSPT_Str,  eNSPA_Optional },
+          // see ENCUserFlags, added in v6.10.1 (CXX-8737)
+          { "flags",  eNSPT_Int,  eNSPA_Optional }
         } },
     // Write blob contents. Old and deprecated command which probably is not
     // used by modern ICache clients anymore. It has the size of the blob right
@@ -413,7 +415,9 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Password for blob access.
           { "pass",    eNSPT_Str,  eNSPA_Optional },
           // request Hit ID
-          { "ncbi_phid", eNSPT_Str,  eNSPA_Optional }
+          { "ncbi_phid", eNSPT_Str,  eNSPA_Optional },
+          // see ENCUserFlags, added in v6.10.1 (CXX-8737)
+          { "flags",  eNSPT_Int,  eNSPA_Optional }
         } },
     // Read blob contents. Command for "NetCache" clients.
     { "GET2",
@@ -690,6 +694,8 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "ip",      eNSPT_Str,  eNSPA_Required },
           // Session ID for application requesting the info.
           { "sid",     eNSPT_Str,  eNSPA_Required },
+          // see ENCUserFlags, added in v6.10.1 (CXX-8737)
+          { "flags",  eNSPT_Int,  eNSPA_Optional },
           // Password for blob access.
           { "pass",    eNSPT_Str,  eNSPA_Optional }
         } },
@@ -1386,7 +1392,16 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "key",     eNSPT_Str,  eNSPA_Required },
           // Blob's subkey.
           { "subkey",  eNSPT_Str,  eNSPA_Optional },
-          { "local",   eNSPT_Int,  eNSPA_Optional }
+          { "local",   eNSPT_Int,  eNSPA_Optional },
+// added in v6.10.1 (CXX-8737)
+          // Created more than this amount of seconds ago
+          { "cr_time", eNSPT_Int,  eNSPA_Optional },
+          // Will expire in the next N seconds
+          { "exp",     eNSPT_Int,  eNSPA_Optional },
+          // Will expire in the next N seconds
+          { "ver_dead",eNSPT_Int,  eNSPA_Optional },
+          // Server_id of the server where blob was created.
+          { "cr_srv",  eNSPT_Int,  eNSPA_Optional }
         } },
     { "PROXY_BLIST",
         {&CNCMessageHandler::x_DoCmd_GetBList,
@@ -1399,7 +1414,16 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "key",     eNSPT_Str,  eNSPA_Required },
           // Blob's subkey.
           { "subkey",  eNSPT_Str,  eNSPA_Required },
-          { "local",   eNSPT_Int,  eNSPA_Required }
+          { "local",   eNSPT_Int,  eNSPA_Required },
+// added in v6.10.1 (CXX-8737)
+          // Created more than this amount of seconds ago
+          { "cr_time", eNSPT_Int,  eNSPA_Optional },
+          // Will expire in the next N seconds
+          { "exp",     eNSPT_Int,  eNSPA_Optional },
+          // Will expire in the next N seconds
+          { "ver_dead",eNSPT_Int,  eNSPA_Optional },
+          // Server_id of the server where blob was created.
+          { "cr_srv",  eNSPT_Int,  eNSPA_Optional }
         } },
 
 // HTTP commands
@@ -1520,6 +1544,12 @@ inline bool
 CNCMessageHandler::x_IsFlagSet(ENCCmdFlags flag)
 {
     return (m_Flags & flag) != 0;
+}
+
+inline bool
+CNCMessageHandler::x_IsUserFlagSet(ENCUserFlags flag)
+{
+    return (m_UserFlags & flag) != 0;
 }
 
 //static Uint8 s_CntHndls = 0;
@@ -1735,6 +1765,7 @@ CNCMessageHandler::x_AssignCmdParams(void)
 {
     LOG_CURRENT_FUNCTION
     CTempString blob_key, blob_subkey;
+    m_UserFlags = fNoUserFlags;
     m_BlobVersion = 0;
     m_NCBlobKey.Clear();
     m_BlobPass.clear();
@@ -1814,6 +1845,11 @@ CNCMessageHandler::x_AssignCmdParams(void)
             case 'e':
                 if (key == "exp") {
                     m_CopyBlobInfo->expire = NStr::StringToInt(val);
+                }
+                break;
+            case 'f':
+                if (key == "flags") {
+                    m_UserFlags = NStr::StringToUInt(val);
                 }
                 break;
             case 'h':
@@ -2808,9 +2844,15 @@ CNCMessageHandler::x_FinishReadingBlob(void)
         Uint8 cur_time = cur_srv_time.AsUSec();
         int cur_secs = int(cur_srv_time.Sec());
         m_BlobAccess->SetBlobCreateTime(cur_time);
-        if (m_BlobAccess->GetNewBlobExpire() == 0)
-            m_BlobAccess->SetNewBlobExpire(cur_secs + m_BlobAccess->GetNewBlobTTL());
-        m_BlobAccess->SetNewVerExpire(cur_secs + m_BlobAccess->GetNewVersionTTL());
+        if (x_IsUserFlagSet(fNoProlong) && m_BlobAccess->IsBlobExists()) {
+            m_BlobAccess->SetNewBlobExpire(m_BlobAccess->GetCurBlobExpire());
+            m_BlobAccess->SetNewVerExpire(m_BlobAccess->GetCurVerExpire());
+        } else {
+            if (m_BlobAccess->GetNewBlobExpire() == 0) {
+                m_BlobAccess->SetNewBlobExpire(cur_secs + m_BlobAccess->GetNewBlobTTL());
+            }
+            m_BlobAccess->SetNewVerExpire(cur_secs + m_BlobAccess->GetNewVersionTTL());
+        }
         m_BlobAccess->SetCreateServer(CNCDistributionConf::GetSelfID(),
                                       CNCBlobStorage::GetNewBlobId());
         write_event->orig_server = CNCDistributionConf::GetSelfID();
@@ -3204,7 +3246,7 @@ CNCMessageHandler::x_SendCmdAsProxy(void)
         break;
     case eProxyWrite:
         pHandler->ProxyWrite(GetDiagCtx(), m_NCBlobKey, m_RawBlobPass,
-                                              m_BlobVersion, m_BlobTTL, m_Quorum);
+                                              m_BlobVersion, m_BlobTTL, m_Quorum, m_UserFlags);
         // The only place that needs to go further to a different state.
         return &CNCMessageHandler::x_WriteInitWriteResponse;
     case eProxyHasBlob:
@@ -3239,7 +3281,7 @@ CNCMessageHandler::x_SendCmdAsProxy(void)
                                                 m_SearchOnRead, m_ForceLocal);
         break;
     case eProxyGetBList:
-        pHandler->ProxyBList(GetDiagCtx(), m_NCBlobKey, m_ForceLocal);
+        pHandler->ProxyBList(GetDiagCtx(), m_NCBlobKey, m_ForceLocal, m_CopyBlobInfo);
         break;
     default:
         SRV_FATAL("Unsupported command: " << m_ParsedCmd.command->extra.proxy_cmd);
@@ -4677,7 +4719,7 @@ CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_GetBList(void)
 {
     m_SendBuff.reset(new TNCBufferType());
-    CNCBlobStorage::GetBList(m_NCBlobKey.PackedKey(), m_SendBuff);
+    CNCBlobStorage::GetBList(m_NCBlobKey.PackedKey(), m_SendBuff,m_CopyBlobInfo);
     x_ReportOK("OK: SIZE=").WriteNumber(m_SendBuff->size()).WriteText("\n");
     Flush();
     m_SendPos = 0;

@@ -124,6 +124,13 @@ enum ENCCmdFlags {
 };
 typedef Uint4 TNCCmdFlags;
 
+enum ENCUserFlags {
+    fNoUserFlags = 0,
+    /// Command does not update blob expiration time
+    fNoProlong    = 1 <<  0
+};
+typedef Uint4 TNCUserFlags;
+
 enum ENCProxyCmd {
     eProxyNone = 0,
     eProxyRead = 1,
@@ -216,6 +223,7 @@ private:
     void x_UnsetFlag(ENCCmdFlags flag);
     /// Check if additional machine state flag is set
     bool x_IsFlagSet(ENCCmdFlags flag);
+    bool x_IsUserFlagSet(ENCUserFlags flag);
     unsigned int x_GetBlobTTL(void);
 
     // State machine implementation
@@ -287,6 +295,7 @@ private:
     CNCMessageHandler& x_ReportOK(const string& sts);
 
     TNCCmdFlags               m_Flags;
+    TNCUserFlags              m_UserFlags;
     /// NetCache protocol parser
     TProtoParser              m_Parser;
     SParsedCmd                m_ParsedCmd;
