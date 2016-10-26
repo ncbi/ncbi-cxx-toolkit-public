@@ -361,23 +361,23 @@ struct SThreadInfo
 
     void run()
     {
-        //GUARD();
+        GUARD();
         AlignAccessAlignmentEnumerator* iter = 0;
         rc_t rc;
         {
-            //GUARD();
+            GUARD();
             rc = AlignAccessDBWindowedAlignments(bam, &iter, ref, 0, 0);
         }
         while ( rc == 0 ) {
             ++count;
-            //GUARD();
+            GUARD();
             rc = AlignAccessAlignmentEnumeratorNext(iter);
         }
         if ( !AlignAccessAlignmentEnumeratorIsEOF(rc) ) {
             CALL(rc);
         }
         {
-            //GUARD();
+            GUARD();
             AlignAccessAlignmentEnumeratorRelease(iter);
         }
     }
@@ -423,21 +423,22 @@ int LowLevelTest()
 #endif
 
     const size_t kNumCursors = 8;
+    const size_t kNumThreads = 3;
     SThreadInfo tinfo[kNumCursors];
     const char* ids[kNumCursors] = {
         "NT_113960",
-        "NT_113960",
-        "NT_113960",
-        "NT_113960",
-        "NT_113945",
         "NT_113945",
         "NT_113880",
+        "NT_113960",
+        "NT_113960",
+        "NT_113960",
+        "NT_113945",
         "NT_113880"
     };
-    for ( size_t i = 0; i < kNumCursors; ++i ) {
+    for ( size_t i = 0; i < kNumThreads; ++i ) {
         tinfo[i].init(i, bam, ids[i]);
     }
-    for ( size_t i = 0; i < kNumCursors; ++i ) {
+    for ( size_t i = 0; i < kNumThreads; ++i ) {
         cout << "Starting thread " << i << " for " << ids[i] << endl;
 #ifdef _MSC_VER
         tinfo[i].thread_id = CreateThread(NULL, 0, read_thread_func,
@@ -446,7 +447,7 @@ int LowLevelTest()
         pthread_create(&tinfo[i].thread_id, 0, read_thread_func, &tinfo[i]);
 #endif
     }
-    for ( size_t i = 0; i < kNumCursors; ++i ) {
+    for ( size_t i = 0; i < kNumThreads; ++i ) {
         cout << "Waiting for thread " << i << endl;
         void* ret = 0;
 #ifdef _MSC_VER

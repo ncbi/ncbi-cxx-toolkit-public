@@ -242,7 +242,10 @@ void CBam2GraphApp::ProcessFile(const string& file)
         cvt.SetOutlierMax(args["max"].AsDouble());
     }
     if ( args["max_details"] ) {
-        cvt.SetOutlierDetails(true);
+        cvt.SetOutlierDetails();
+    }
+    if ( args["estimated"] ) {
+        cvt.SetEstimated();
     }
     CRef<CDelta_ext> delta;
     if ( args["delta"] ) {
@@ -268,7 +271,7 @@ void CBam2GraphApp::ProcessFile(const string& file)
 
     CRef<CSeq_entry> entry;
 
-    if ( args["estimated"] ) {
+    if ( 0 && args["estimated"] ) {
         // faster estimated graph from index only
         CBamHeader header(path);
         CBamIndex index(path+".bai");
@@ -370,10 +373,13 @@ void CBam2GraphApp::ProcessSrz(string srz_name)
         if ( args["min_quality"] ) {
             cvt.SetMinMapQuality(args["min_quality"].AsInteger());
         }
-        cvt.SetOutlierDetails(true);
+        cvt.SetOutlierDetails();
+        if ( args["estimated"] ) {
+            cvt.SetEstimated();
+        }
         
         CRef<CSeq_entry> entry;
-        if ( args["estimated"] ) {
+        if ( 0 && args["estimated"] ) {
             // faster estimated graph from index only
             if ( bam_path != db_name ) {
                 db_name = bam_path;

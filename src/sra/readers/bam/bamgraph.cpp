@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <sra/readers/bam/bamgraph.hpp>
 #include <sra/readers/bam/bamread.hpp>
+#include <sra/readers/bam/bamindex.hpp>
 #include <sra/error_codes.hpp>
 #include <objects/general/general__.hpp>
 #include <objects/seq/seq__.hpp>
@@ -63,7 +64,8 @@ CBam2Seq_graph::CBam2Seq_graph(void)
       m_GraphBinSize(kDefaultGraphBinSize),
       m_OutlierMax(0),
       m_OutlierDetails(false),
-      m_RawAccess(false)
+      m_RawAccess(false),
+      m_Estimated(false)
 {
 }
 
@@ -159,24 +161,33 @@ void CBam2Seq_graph::SetOutlierDetails(bool details)
 }
 
 
-void CBam2Seq_graph::SetRawAccess(bool details)
+void CBam2Seq_graph::SetRawAccess(bool raw_access)
 {
-    m_OutlierDetails = details;
+    m_RawAccess = raw_access;
 }
 
 
-vector<Int8> CBam2Seq_graph::CollectCoverage(CBamMgr& mgr,
-                                             const string& bam_file,
-                                             const string& bam_index)
+void CBam2Seq_graph::SetEstimated(bool estimated)
+{
+    m_Estimated = estimated;
+}
+
+
+vector<Uint8> CBam2Seq_graph::CollectCoverage(CBamMgr& mgr,
+                                              const string& bam_file,
+                                              const string& bam_index)
 {
     CBamDb db(mgr, bam_file, bam_index);
     return CollectCoverage(db);
 }
 
 
-vector<Int8> CBam2Seq_graph::CollectCoverage(CBamDb& db)
+vector<Uint8> CBam2Seq_graph::CollectCoverage(CBamDb& db)
 {
-    vector<Int8> ret;
+    if ( GetEstimated() ) {
+        return CollectEstimatedCoverage(db);
+    }
+    vector<Uint8> ret;
     TSeqPos bin_cnt = 0;
     int align_cnt = 0;
     double align_cov = 0;
@@ -289,7 +300,7 @@ vector<Int8> CBam2Seq_graph::CollectCoverage(CBamDb& db)
     }
     if ( !cov_level_change_map.empty() ) {
         TSeqPos bin = cov_level_change_map.begin()->first;
-        Int8 level = 0;
+        Uint8 level = 0;
         ITERATE ( TCovLevelChangeMap, it, cov_level_change_map ) {
             TSeqPos next_bin = it->first;
             for ( ; bin < next_bin; ++bin ) {
@@ -306,6 +317,34 @@ vector<Int8> CBam2Seq_graph::CollectCoverage(CBamDb& db)
                "Total aligns: "<<align_cnt<<
                " total size: "<<align_cov<<" "<<
                " max align span: "<<max_align_span);
+    return ret;
+}
+
+
+vector<Uint8> CBam2Seq_graph::CollectEstimatedCoverage(CBamDb& db)
+{
+    if ( db.GetIndexName().empty() ) {
+        NCBI_THROW(CBamException, eInvalidArg,
+                   "BAM index file name is empty");
+    }
+    m_GraphBinSize = kEstimatedGraphBinSize;
+    CBamIndex bam_index(db.GetIndexName());
+    size_t ref_index = 0;
+    TSeqPos length = kInvalidSeqPos;
+    for ( CBamRefSeqIterator it(db); it; ++it, ++ref_index ) {
+        if ( it.GetRefSeqId() == GetRefLabel() ) {
+            length = it.GetLength();
+            break;
+        }
+    }
+    
+    vector<uint64_t> ret = bam_index.CollectEstimatedCoverage(ref_index);
+    if ( length == 0 || length == kInvalidSeqPos ) {
+        length = ret.size()*kEstimatedGraphBinSize;
+    }
+    m_TotalRange.SetFrom(0).SetToOpen(length);
+    m_AlignCount = 0;
+    m_MaxAlignSpan = 0;
     return ret;
 }
 
@@ -349,12 +388,12 @@ CRef<CSeq_annot> CBam2Seq_graph::MakeSeq_annot(CBamDb& db,
     annot->SetDesc().Set().push_back(desc);
     user_desc.AddField("MinMapQuality", GetMinMapQuality());
 
-    vector<Int8> cov = CollectCoverage(db);
+    vector<Uint8> cov = CollectCoverage(db);
     if ( cov.empty() ) cov.push_back(0);
-    Int8 min_cov = kMax_I8, max_cov = -1, sum_cov = 0;
+    Uint8 min_cov = kMax_UI8, max_cov = 0, sum_cov = 0;
     size_t val_count = 0;
-    ITERATE ( vector<Int8>, it, cov ) {
-        Int8 c = *it;
+    ITERATE ( vector<Uint8>, it, cov ) {
+        Uint8 c = *it;
         if ( c != 0 ) {
             ++val_count;
             sum_cov += c;
@@ -378,15 +417,24 @@ CRef<CSeq_annot> CBam2Seq_graph::MakeSeq_annot(CBamDb& db,
     }
     double cov_mul = 1./GetGraphBinSize();
     user_desc.AddField("SourceFile", bam_file);
-    user_desc.AddField("AlignCount", m_AlignCount);
-    user_desc.AddField("MaxAlignSpan", int(m_MaxAlignSpan));
+    if ( m_AlignCount ) {
+        if ( m_AlignCount < kMax_Int ) {
+            user_desc.AddField("AlignCount", int(m_AlignCount));
+        }
+        else {
+            user_desc.AddField("AlignCount", double(m_AlignCount));
+        }
+    }
+    if ( m_MaxAlignSpan ) {
+        user_desc.AddField("MaxAlignSpan", int(m_MaxAlignSpan));
+    }
     user_desc.AddField("MinCoverage", min_cov*cov_mul);
     user_desc.AddField("MaxCoverage", max_cov*cov_mul);
     user_desc.AddField("AvgCoverage", avg_cov*cov_mul);
 
     CUser_field::TData::TFields* outliers = 0;
     if ( max_cov > avg_cov*GetOutlierMax() ) {
-        max_cov = Int8(avg_cov*GetOutlierMax());
+        max_cov = Uint8(avg_cov*GetOutlierMax());
         user_desc.AddField("LimitCoverage", max_cov*cov_mul);
         if ( GetOutlierDetails() ) {
             outliers =
@@ -434,8 +482,8 @@ CRef<CSeq_annot> CBam2Seq_graph::MakeSeq_annot(CBamDb& db,
         double byte_mul = double(MAX-1)/(log(double(max_cov))-base);
         graph->SetA(1./byte_mul);
         graph->SetB(log(double(min_cov))-log(double(GetGraphBinSize()))-1./byte_mul);
-        ITERATE ( vector<Int8>, it, cov ) {
-            Int8 c = *it;
+        ITERATE ( vector<Uint8>, it, cov ) {
+            Uint8 c = *it;
             int b;
             if ( c < min_cov ) {
                 b = 0;
@@ -465,8 +513,8 @@ CRef<CSeq_annot> CBam2Seq_graph::MakeSeq_annot(CBamDb& db,
         double byte_mul = double(MAX-1)/(max_cov-min_cov);
         graph->SetA(cov_mul/byte_mul);
         graph->SetB(cov_mul*(min_cov - 1./byte_mul));
-        ITERATE ( vector<Int8>, it, cov ) {
-            Int8 c = *it;
+        ITERATE ( vector<Uint8>, it, cov ) {
+            Uint8 c = *it;
             int b;
             if ( c < min_cov ) {
                 b = 0;

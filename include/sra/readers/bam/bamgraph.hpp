@@ -113,7 +113,8 @@ public:
     
     /// Size of sequence bins in bases corresponding to one graph value
     enum {
-        kDefaultGraphBinSize = 1000
+        kDefaultGraphBinSize = 1000,
+        kEstimatedGraphBinSize = 1<<14
     };
     TSeqPos GetGraphBinSize(void) const;
     void SetGraphBinSize(TSeqPos bin_size);
@@ -122,16 +123,23 @@ public:
     double GetOutlierMax(void) const;
     void SetOutlierMax(double x);
     bool GetOutlierDetails(void) const;
-    void SetOutlierDetails(bool details);
-    
+    void SetOutlierDetails(bool details = true);
+
+    /// try to use raw BAM file access for efficiency
     bool GetRawAccess(void) const;
-    void SetRawAccess(bool raw_access);
+    void SetRawAccess(bool raw_access = true);
+    
+    /// make estimated graph using BAM index only
+    /// the bin size will be always kEstimatedGraphBinSize
+    bool GetEstimated(void) const;
+    void SetEstimated(bool estimated = true);
     
     /// Generate raw align coverage for BAM file using BAM file index
-    vector<Int8> CollectCoverage(CBamMgr& mgr,
-                                 const string& bam_file,
-                                 const string& bam_index);
-    vector<Int8> CollectCoverage(CBamDb& db);
+    vector<Uint8> CollectCoverage(CBamMgr& mgr,
+                                  const string& bam_file,
+                                  const string& bam_index);
+    vector<Uint8> CollectCoverage(CBamDb& db);
+    vector<Uint8> CollectEstimatedCoverage(CBamDb& db);
     
     /// Generate Seq-annot for BAM file using BAM file index
     CRef<CSeq_annot> MakeSeq_annot(CBamMgr& mgr,
@@ -166,10 +174,11 @@ private:
     double          m_OutlierMax;
     bool            m_OutlierDetails;
     bool            m_RawAccess;
+    bool            m_Estimated;
 
     // statistics
     CRange<TSeqPos> m_TotalRange;
-    int             m_AlignCount;
+    Uint8           m_AlignCount;
     TSeqPos         m_MaxAlignSpan;
 };
 
@@ -228,6 +237,12 @@ inline bool CBam2Seq_graph::GetOutlierDetails(void) const
 inline bool CBam2Seq_graph::GetRawAccess(void) const
 {
     return m_RawAccess;
+}
+
+
+inline bool CBam2Seq_graph::GetEstimated(void) const
+{
+    return m_Estimated;
 }
 
 

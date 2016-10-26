@@ -393,11 +393,8 @@ CBamIndex::MakeEstimatedCoverageAnnot(size_t ref_index,
 }
 
 
-CRef<CSeq_annot>
-CBamIndex::MakeEstimatedCoverageAnnot(size_t ref_index,
-                                      const CSeq_id& seq_id,
-                                      const string& annot_name,
-                                      TSeqPos length) const
+vector<uint64_t>
+CBamIndex::CollectEstimatedCoverage(size_t ref_index) const
 {
     vector<uint64_t> vv;
     for ( auto& b : GetRef(ref_index).m_Bins ) {
@@ -414,6 +411,17 @@ CBamIndex::MakeEstimatedCoverageAnnot(size_t ref_index,
             vv[index] = value;
         }
     }
+    return vv;
+}
+
+
+CRef<CSeq_annot>
+CBamIndex::MakeEstimatedCoverageAnnot(size_t ref_index,
+                                      const CSeq_id& seq_id,
+                                      const string& annot_name,
+                                      TSeqPos length) const
+{
+    vector<uint64_t> vv = CollectEstimatedCoverage(ref_index);
     if ( vv.empty() ) vv.push_back(0);
     uint32_t count = uint32_t(vv.size());
     if ( length == 0 || length == kInvalidSeqPos ) {

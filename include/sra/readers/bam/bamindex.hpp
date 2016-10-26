@@ -181,6 +181,9 @@ public:
                                const string& annot_name,
                                TSeqPos ref_length = kInvalidSeqPos) const;
 
+    vector<uint64_t>
+    CollectEstimatedCoverage(size_t ref_index) const;
+
 private:
     TRefs m_Refs;
     Uint8 m_UnmappedCount;

@@ -490,7 +490,8 @@ CBamDb::CBamDb(const CBamMgr& mgr,
 CBamDb::CBamDb(const CBamMgr& mgr,
                const string& db_name,
                const string& idx_name)
-    : m_DbName(db_name)
+    : m_DbName(db_name),
+      m_IndexName(idx_name)
 {
     AutoPtr<VPath, VPathReleaser> kdb_name (sx_GetVPath(db_name));
     AutoPtr<VPath, VPathReleaser> kidx_name(sx_GetVPath(idx_name));

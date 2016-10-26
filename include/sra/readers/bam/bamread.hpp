@@ -374,6 +374,10 @@ public:
         {
             return m_DbName;
         }
+    const string& GetIndexName(void) const
+        {
+            return m_IndexName;
+        }
 
     void SetIdMapper(IIdMapper* idmapper, EOwnership ownership)
         {
@@ -393,6 +397,7 @@ public:
 
 private:
     string m_DbName;
+    string m_IndexName;
     AutoPtr<IIdMapper> m_IdMapper;
     typedef map<string, TSeqPos> TRefSeqLengths;
     mutable TRefSeqLengths m_RefSeqLengths;
