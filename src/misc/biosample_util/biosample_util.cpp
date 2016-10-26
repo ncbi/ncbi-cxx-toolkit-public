@@ -98,7 +98,7 @@ void LibSSLInit()
 string PrepareUrl(bool use_dev_server, const string &args)
 {
     LibSSLInit();
-    string host = use_dev_server ? "dev-api-int" : "api-int";
+    string host = use_dev_server ? "dev-api-int.ncbi.nlm.nih.gov" : "api-int.ncbi.nlm.nih.gov";
     string path = "/biosample/fetch/";
     string url = "https://" + host + path + "?" + args;
     return url;
