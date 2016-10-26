@@ -495,7 +495,7 @@ class Scenario1806( TestBase ):
 
         execAny( ns_client, 'SETSCOPE scope=MyScope' )
         output = execAny( ns_client, 'STAT AFFINITIES verbose=1', isMultiline =True )
-        if output != ['']:
+        if output != [''] and output != []:
             raise Exception( "Expected no affinities, received some: " + str(output) )
 
         execAny( ns_client, 'SETSCOPE scope=' )
@@ -529,12 +529,12 @@ class Scenario1807( TestBase ):
         execAny( ns_client, 'SETSCOPE scope=no-scope-only' )
 
         output = execAny( ns_client, 'STAT AFFINITIES verbose=1', isMultiline =True )
-        if output != ['']:
+        if output != [''] and output != []:
             raise Exception( "Expected no affinities, received some: " + str(output) )
 
         execAny( ns_client, 'SETSCOPE scope=MyWrongScope' )
         output = execAny( ns_client, 'STAT AFFINITIES verbose=1', isMultiline =True )
-        if output != ['']:
+        if output != [''] and output != []:
             raise Exception( "Expected no affinities, received some: " + str(output) )
 
         execAny( ns_client, 'SETSCOPE scope=MyScope' )
