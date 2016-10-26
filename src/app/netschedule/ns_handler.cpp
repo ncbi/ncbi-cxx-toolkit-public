@@ -719,6 +719,9 @@ void CNetScheduleHandler::OnClose(IServer_ConnectionHandler::EClosePeer peer)
 
 void CNetScheduleHandler::OnTimeout()
 {
+    CRequestContextResetter     context_resetter;
+    x_SetRequestContext();
+
     if (m_ConnContext.NotNull())
         m_ConnContext->SetRequestStatus(eStatus_Inactive);
 }
