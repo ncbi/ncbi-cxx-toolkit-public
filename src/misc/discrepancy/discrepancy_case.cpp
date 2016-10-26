@@ -493,7 +493,7 @@ static string GetProdName(const CSeq_feat* feat, map<const CSeq_feat*, string>& 
     if (products.find(feat) == products.end()) {
         string name = GetProductName(*feat, context.GetScope());
         products[feat] = name.empty() || ShouldIgnore(name) ? kEmptyStr : name;
-cout << "product:\t[" << name << "]\t[" << products[feat] << "]\n";
+//cout << "product:\t[" << name << "]\t[" << products[feat] << "]\n";
     }
     return products[feat];
 }
