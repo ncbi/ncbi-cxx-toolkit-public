@@ -267,7 +267,7 @@ const CGb_qual::TLegalRecombinationClassSet &
 CGb_qual::GetSetOfLegalRecombinationClassValues(void)
 {
     static const char * misc_recombs[] = {
-        "breakpoint_junction",
+        "chromosome_breakpoint",
         "meiotic_recombination",
         "mitotic_recombination",
         "non_allelic_homologous_recombination"
