@@ -340,7 +340,7 @@ vector<Uint8> CBam2Seq_graph::CollectEstimatedCoverage(CBamDb& db)
     
     vector<uint64_t> ret = bam_index.CollectEstimatedCoverage(ref_index);
     if ( length == 0 || length == kInvalidSeqPos ) {
-        length = ret.size()*kEstimatedGraphBinSize;
+        length = TSeqPos(ret.size())*kEstimatedGraphBinSize;
     }
     m_TotalRange.SetFrom(0).SetToOpen(length);
     m_AlignCount = 0;
