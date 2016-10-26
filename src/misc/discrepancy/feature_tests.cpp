@@ -982,9 +982,7 @@ bool HasMixedStrands(const CSeq_loc& loc)
 // BAD_GENE_STRAND
 const string kBadGeneStrand = "[n/2] feature location[s] conflict with gene location strand[s]";
 
-//  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(BAD_GENE_STRAND, CSeq_feat_BY_BIOSEQ, eOncaller | eSubmitter | eSmart, "Genes and features that share endpoints should be on the same strand")
-//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(BAD_GENE_STRAND_0, CSeq_feat_BY_BIOSEQ, eOncaller | eSubmitter | eSmart, "Genes and features that share endpoints should be on the same strand")
 {
     if (!obj.IsSetData() || !obj.GetData().IsGene() || !obj.IsSetLocation()) {
         return;
@@ -1041,9 +1039,70 @@ DISCREPANCY_CASE(BAD_GENE_STRAND, CSeq_feat_BY_BIOSEQ, eOncaller | eSubmitter | 
 }
 
 
-//  ----------------------------------------------------------------------------
+DISCREPANCY_SUMMARIZE(BAD_GENE_STRAND_0)
+{
+    m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
+}
+
+
+DISCREPANCY_CASE(BAD_GENE_STRAND, COverlappingFeatures, eOncaller | eSubmitter | eSmart, "Genes and features that share endpoints should be on the same strand")
+{
+    // note - use positional instead of biological, because we are *looking* for objects on the opposite strand
+    const vector<CConstRef<CSeq_feat> >& genes = context.FeatGenes();
+    const vector<CConstRef<CSeq_feat> >& feats = context.FeatAll();
+    for (size_t i = 0; i < genes.size(); i++) {
+        if (!genes[i]->IsSetLocation()) {
+            continue;
+        }
+        const CSeq_loc& loc_i = genes[i]->GetLocation();
+        TSeqPos gene_start = loc_i.GetStart(eExtreme_Positional);
+        TSeqPos gene_stop = loc_i.GetStop(eExtreme_Positional);
+        bool gene_mixed_strands = HasMixedStrands(loc_i);
+        for (size_t j = 0; j < feats.size(); j++) {
+            if (feats[j]->GetData().GetSubtype() == CSeqFeatData::eSubtype_gene || feats[j]->GetData().GetSubtype() == CSeqFeatData::eSubtype_primer_bind) {
+                continue;
+            }
+            const CSeq_loc& loc_j = feats[j]->GetLocation();
+            TSeqPos feat_start = loc_j.GetStart(eExtreme_Positional);
+            TSeqPos feat_stop = loc_j.GetStop(eExtreme_Positional);
+            if (feat_start == gene_start || feat_stop == gene_stop) {
+                bool all_ok = true;
+                if (gene_mixed_strands) {
+                    // compare intervals, to make sure each interval is covered by a gene interval on the correct strand
+                    CSeq_loc_CI f_loc(loc_j);
+                    while (f_loc && all_ok) {
+                        CSeq_loc_CI g_loc(loc_i);
+                        bool found = false;
+                        while (g_loc && !found) {
+                            if (StrandsMatch(f_loc.GetStrand(), g_loc.GetStrand())) {
+                                sequence::ECompare cmp = context.Compare(*(f_loc.GetRangeAsSeq_loc()), *(g_loc.GetRangeAsSeq_loc()));
+                                if (cmp == sequence::eContained || cmp == sequence::eSame) {
+                                    found = true;
+                                }
+                            }
+                            ++g_loc;
+                        }
+                        if (!found) {
+                            all_ok = false;
+                        }
+                        ++f_loc;
+                    }
+                }
+                else {
+                    all_ok = StrandsMatch(loc_j.GetStrand(), loc_i.GetStrand());
+                }
+                if (!all_ok) {
+                    size_t offset = m_Objs[kBadGeneStrand].GetMap().size() + 1;
+                    string label = "Gene and feature strands conflict (pair " + NStr::NumericToString(offset) + ")";
+                    m_Objs[kBadGeneStrand][label].Ext().Add(*context.NewDiscObj(genes[i]), false).Add(*context.NewDiscObj(feats[j]), false);
+                }
+            }
+        }
+    }
+}
+
+
 DISCREPANCY_SUMMARIZE(BAD_GENE_STRAND)
-//  ----------------------------------------------------------------------------
 {
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
 }
