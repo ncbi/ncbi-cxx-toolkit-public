@@ -4498,6 +4498,9 @@ CNetScheduleHandler::x_StatisticsNew(CQueue *                q,
         msg += "WARNING:" + *k + ";";
     }
 
+    while (NStr::EndsWith(info, '\n')) {
+        info.resize(info.size() - 1);
+    }
     if (!info.empty())
         info += kEndOfResponse;
     x_WriteMessage(info + "OK:" + msg + "END" + kEndOfResponse);
