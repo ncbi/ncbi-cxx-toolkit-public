@@ -939,7 +939,9 @@ CShortReadFastaInputSource::x_ReadFastaOneSeq(CRef<ILineReader> line_reader)
     while (line[0] != '>') {
 
         // ignore empty lines
-        if (line.empty()) {
+        if (line.empty() && !line_reader->AtEOF()) {
+            ++(*line_reader);
+            line = **line_reader;
             continue;
         }
 
@@ -955,7 +957,7 @@ CShortReadFastaInputSource::x_ReadFastaOneSeq(CRef<ILineReader> line_reader)
         memcpy(&m_Sequence[start], line.data(), line.length());
         start += line.length();
 
-        if (m_LineReader->AtEOF()) {
+        if (line_reader->AtEOF()) {
             break;
         }
 
