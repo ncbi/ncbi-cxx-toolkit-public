@@ -926,7 +926,7 @@ static const char* const s_Defaultvalidrules[] = {
     "    dependent-rules {",
     "      {",
     "        match-name \"Sequencing Technology\" ,",
-    "        value-constraint \"\\(Sanger dideoxy sequencing\\|ABI PRISM\\|Sanger\\|Sanger sequencing\\)\",",
+    "        value-constraint \"\\(Sanger dideoxy sequencing\\|ABI\\|ABI 3730\\|ABI3730XL\\|ABI 3730XL Genetic Analyzer\\|ABI 3500\\|ABI 3500 Dx Genetic Analyzer CS2\\|ABI PRISM\\|Sanger\\|Sanger sequencing\\)\",",
     "        invert-match TRUE ,",
     "        other-fields {",
     "          {",
