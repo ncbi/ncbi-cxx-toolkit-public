@@ -19614,6 +19614,13 @@ BOOST_AUTO_TEST_CASE(Test_IsLocationInFrame)
     loc->SetInt().SetFrom(cds->GetLocation().GetStop(eExtreme_Biological) + 1);
     loc->SetInt().SetTo(loc->GetInt().GetFrom() + 2);
     BOOST_CHECK_EQUAL(feature::eLocationInFrame_NotIn, feature::IsLocationInFrame(fh, *loc));    
+
+    CRef<CSeq_id> loc_id(new CSeq_id());
+    loc_id->Assign(loc->GetInt().GetId());
+    cds->SetLocation().Assign(*(unit_test_util::MakeMixLoc(loc_id)));
+    loc->SetInt().SetFrom(cds->GetLocation().GetStart(eExtreme_Biological));
+    loc->SetInt().SetTo(cds->GetLocation().GetStop(eExtreme_Biological));
+    BOOST_CHECK_EQUAL(feature::eLocationInFrame_NotIn, feature::IsLocationInFrame(fh, *loc));
 }
 
 CRef<CTaxon3_reply> s_CreateReplyWithMessage(const string& message)

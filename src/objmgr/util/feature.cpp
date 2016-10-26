@@ -3354,6 +3354,11 @@ ELocationInFrame IsLocationInFrame (const CSeq_feat_Handle& cds, const CSeq_loc&
         return eLocationInFrame_NotIn;
     }
 
+    sequence::ECompare cmp = sequence::Compare(cds.GetLocation(), loc, &(cds.GetScope()));
+    if (cmp != sequence::eContains && cmp != sequence::eSame) {
+        return eLocationInFrame_NotIn;
+    }
+
     unsigned int frame = 0;
     if (cds.IsSetData() && cds.GetData().IsCdregion()) {
         const CCdregion& cdr = cds.GetData().GetCdregion();
