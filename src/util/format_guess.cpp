@@ -2694,7 +2694,7 @@ bool CFormatGuess::IsLineAugustus(
 
     //column 6: strand, one in "+-.?"
     const string legalStrands{"+-.?"};
-    if (!NStr::SplitInTwo(remaining, " \t", head, tail)  ||  !head.size() == 1  ||  
+    if (!NStr::SplitInTwo(remaining, " \t", head, tail)  ||  head.size() != 1  ||  
             string::npos == legalStrands.find(head)) {
         return false;
     }
@@ -2702,7 +2702,7 @@ bool CFormatGuess::IsLineAugustus(
 
     //column 7: phase, one in ".0123"
     const string legalPhases{".0123"};
-    if (!NStr::SplitInTwo(remaining, " \t", head, tail)  ||  !head.size() == 1  ||  
+    if (!NStr::SplitInTwo(remaining, " \t", head, tail)  ||  head.size() != 1  ||  
             string::npos == legalPhases.find(head)) {
         return false;
     }
