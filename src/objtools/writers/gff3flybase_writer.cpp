@@ -547,4 +547,81 @@ bool CGff3FlybaseWriter::xAssignAlignmentSplicedGap(
     return true;
 }
 
+struct SFlybaseCompareAlignments {
+
+    CScope& m_Scope;
+
+    SFlybaseCompareAlignments(CScope& scope) : m_Scope(scope) {}
+
+    bool operator()(
+            const pair<CConstRef<CSeq_align>, string>& p1,
+            const pair<CConstRef<CSeq_align>, string>& p2) 
+    {
+
+        CConstRef<CSeq_align> align1 = p1.first;
+        CConstRef<CSeq_align> align2 = p2.first;
+
+        if (!align1 && align2) {
+             return true;
+        }
+
+        if ((align1 && !align2) ||
+            (!align1 && !align2) ) {
+            return false;
+        }
+
+        string subject_accession1 = "";
+        try {
+                subject_accession1 = sequence::GetAccessionForId(align1->GetSeq_id(0), m_Scope);
+        } catch (...) {
+        }
+
+        string subject_accession2 = "";
+        try {
+                subject_accession2 = sequence::GetAccessionForId(align2->GetSeq_id(0), m_Scope);
+        } catch (...) {
+        }
+
+
+        auto make_key = [](const pair<CConstRef<CSeq_align>, string>& p, CScope& scope) {
+            const CSeq_align& align = *(p.first);
+            const string alignId = p.second;
+
+            string subject_accession = "";
+            try {
+                subject_accession = sequence::GetAccessionForId(align.GetSeq_id(0), scope);
+            } catch (...) {
+            }
+
+            string target_accession = "";
+            try {
+                target_accession = sequence::GetAccessionForId(align.GetSeq_id(1), scope);
+            } catch (...) {
+            }
+
+            return make_tuple(
+                subject_accession,
+                align.GetSeqStart(0), 
+                align.GetSeqStop(0),
+                align.GetSeqStrand(0),
+                target_accession,
+                align.GetSeqStart(1),
+                align.GetSeqStop(1),
+                align.GetSeqStrand(1),
+                alignId
+                );
+        };
+
+        return (make_key(p1, m_Scope) < make_key(p2, m_Scope));
+    }
+};
+
+//  ----------------------------------------------------------------------------
+void CGff3FlybaseWriter::x_SortAlignments(TAlignCache& alignCache,
+        CScope& scope)
+//  ----------------------------------------------------------------------------
+{
+    alignCache.sort(SFlybaseCompareAlignments(scope));
+}
+
 END_NCBI_SCOPE

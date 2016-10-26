@@ -87,6 +87,8 @@ public:
         const string& asmblyName="",
         const string& asmblyAccession="" );
 
+protected:
+    typedef list<pair<CConstRef<CSeq_align>, string>> TAlignCache;
 
 protected:
     virtual bool x_WriteBioseqHandle(
@@ -246,6 +248,8 @@ protected:
         const CSpliced_seg&,
         const CSpliced_exon&);
         
+    virtual void x_SortAlignments(TAlignCache& alignCache,
+                                   CScope& scope);
     bool xAssignSource(
         CGffSourceRecord&,
         CGffFeatureContext&,
@@ -465,15 +469,12 @@ protected:
 protected:
     unsigned int m_uRecordId;
     string m_sDefaultMethod;
- 
+
     typedef map< CMappedFeat, CRef<CGffFeatureRecord> > TGeneMapNew;
     TGeneMapNew m_GeneMapNew;
 
     typedef map< CMappedFeat, CRef<CGffFeatureRecord> > TMrnaMapNew;
     TMrnaMapNew m_MrnaMapNew;
-
-    typedef list<tuple<CRef<CSeq_align>, string, string>> TAlignCache;
-    TAlignCache m_AlignCache;
 
     bool m_SortAlignments;
     unsigned int m_uPendingGeneId;

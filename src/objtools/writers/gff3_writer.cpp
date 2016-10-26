@@ -1237,6 +1237,14 @@ struct SCompareAlignments {
     }
 };
 
+//  ----------------------------------------------------------------------------
+void CGff3Writer::x_SortAlignments(TAlignCache& alignCache,
+                                   CScope& scope)
+//  ----------------------------------------------------------------------------
+{
+    alignCache.sort(SCompareAlignments(scope));
+}
+
 
 string s_GetAlignID(const CSeq_align& align) {
     if (align.IsSetId()) {
@@ -1250,6 +1258,7 @@ string s_GetAlignID(const CSeq_align& align) {
     }
     return "";
 }
+
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::x_WriteBioseqHandle(
@@ -1282,22 +1291,23 @@ bool CGff3Writer::x_WriteBioseqHandle(
     }
 
     if ( m_SortAlignments ) {
-        list<pair<CConstRef<CSeq_align>, string>> alignCache;
+        TAlignCache alignCache;
 
         for (CAlign_CI align_it(bsh, selAll); align_it; ++align_it) {
             const string alignId = s_GetAlignID(*align_it); // Might be an empty string
             CConstRef<CSeq_align> pAlign = ConstRef(&(*align_it));
             alignCache.push_back(make_pair(pAlign,alignId));
+
+            string target_accession = sequence::GetAccessionForId(align_it->GetSeq_id(0), m_pScope.GetNCObject());
         }
 
-        alignCache.sort(SCompareAlignments(m_pScope.GetNCObject()));
+        x_SortAlignments(alignCache, m_pScope.GetNCObject());
 
         for (auto alignPair : alignCache) {
             xWriteAlign(*(alignPair.first), alignPair.second);
         }
         return true;
     }
-
 
     for (CAlign_CI align_it(bsh, selAll);  align_it;  ++ align_it) {
         xWriteAlign(*align_it);

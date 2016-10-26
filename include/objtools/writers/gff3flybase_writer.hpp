@@ -105,6 +105,10 @@ protected:
         CGffAlignRecord&,
         const CSeq_align&) override;
 
+    virtual void x_SortAlignments(
+        TAlignCache& alignCache,
+        CScope& scope) override;
+
     bool xAssignTaxid(
         CBioseq_Handle,
         CGffAlignRecord&);
