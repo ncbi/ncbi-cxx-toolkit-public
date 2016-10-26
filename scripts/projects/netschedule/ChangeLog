@@ -1,3 +1,13 @@
+Release 4.28.1 cloned from 4.28.0 (2016-10-26)
+
+Improvements:
+    * netschedule socket leak (JIRA: CXX-8727)
+    * NetSchedule: tries to write into a socket when it is already closed
+      (JIRA: CXX-8740)
+    * NetSchedule: incorrect logging of the timed out connections
+      (JIRA: CXX-8754)
+
+
 Release 4.28.0 cloned from 4.27.0 (2016-10-14)
 
 Improvements:
