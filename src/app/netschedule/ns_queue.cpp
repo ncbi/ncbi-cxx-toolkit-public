@@ -4217,10 +4217,19 @@ void CQueue::TouchClientsRegistry(CNSClientId &  client,
     TNSBitVector        running_jobs;
     TNSBitVector        reading_jobs;
 
-    m_ClientsRegistry.Touch(client, running_jobs, reading_jobs,
-                            client_was_found, session_was_reset,
-                            old_session, had_wn_pref_affs,
-                            had_reader_pref_affs);
+    {{
+        // The client registry may need to make changes in the notification
+        // registry, i.e. two mutexes are to be locked. The other threads may
+        // visit notifications first and then a client registry i.e. the very
+        // same mutexes are locked in a reverse order.
+        // To prevent it the operation lock is locked here.
+        CFastMutexGuard     guard(m_OperationLock);
+        m_ClientsRegistry.Touch(client, running_jobs, reading_jobs,
+                                client_was_found, session_was_reset,
+                                old_session, had_wn_pref_affs,
+                                had_reader_pref_affs);
+        guard.Release();
+    }}
 
     if (session_was_reset) {
         if (running_jobs.any())
