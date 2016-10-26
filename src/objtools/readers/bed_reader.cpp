@@ -146,7 +146,6 @@ CBedReader::ReadSeqAnnot(
     annot.Reset(new CSeq_annot);
     desc.Reset(new CAnnot_descr);
     annot->SetDesc(*desc);
-    CSeq_annot::C_Data::TFtable& tbl = annot->SetData().SetFtable();
 
     m_CurrentFeatureCount = 0;
     string line;

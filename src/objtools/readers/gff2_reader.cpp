@@ -1421,7 +1421,6 @@ bool CGff2Reader::x_FeatureTrimQualifiers(
 //  ----------------------------------------------------------------------------
 {
     typedef CSeq_feat::TQual TQual;
-    typedef CGff2Record::TAttributes TAttrs;
     //task:
     // for each attribute of the new piece check if we already got a feature 
     //  qualifier

@@ -268,8 +268,6 @@ bool CGff3Reader::xVerifyExonLocation(
     const CSeq_interval& containingInt = cit->second.GetObject();
     const CRef<CSeq_loc> pContainedLoc = exon.GetSeqLoc(m_iFlags);
     const CSeq_interval& containedInt = pContainedLoc->GetInt();
-    bool failed = (containedInt.GetFrom() < containingInt.GetFrom())  ||
-        (containedInt.GetTo() > containingInt.GetTo());
     if (containedInt.GetFrom() < containingInt.GetFrom()) {
         return false;
     }
