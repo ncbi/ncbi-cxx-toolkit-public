@@ -410,7 +410,7 @@ public:
     const vector<CConstRef<CSeq_feat> >& FeatIntrons() { return m_FeatIntrons; }
     const vector<CConstRef<CSeq_feat> >& FeatMisc() { return m_FeatMisc; }
 
-    sequence::ECompare Compare(const CSeq_loc& loc1, const CSeq_loc& loc2);
+    sequence::ECompare Compare(const CSeq_loc& loc1, const CSeq_loc& loc2) const;
     
     CRef<CDiscrepancyObject> NewBioseqObj(CConstRef<CBioseq> obj, const CSeqSummary* info, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);
     CRef<CDiscrepancyObject> NewSeqdescObj(CConstRef<CSeqdesc> obj, const string& bslabel, EKeepRef keep_ref = eNoRef, bool autofix = false, CObject* more = 0);

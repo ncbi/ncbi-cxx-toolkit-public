@@ -302,8 +302,6 @@ DISCREPANCY_CASE(EXTRA_GENES, CSeq_feat_BY_BIOSEQ, eDisc | eSubmitter | eSmart, 
             if (ref_gene_locus.empty() || ref_gene_locus == locus) {
 
                 bool exclude_for_partials = false;
-
-                //sequence::ECompare cmp_res = sequence::Compare(obj.GetLocation(), feature_loc, &(context.GetScope()), sequence::fCompareOverlapping);
                 sequence::ECompare cmp_res = context.Compare(obj.GetLocation(), feature_loc);
                 bool location_appropriate = cmp_res == sequence::eSame || cmp_res == sequence::eContains;
 
@@ -1018,7 +1016,6 @@ DISCREPANCY_CASE(BAD_GENE_STRAND, CSeq_feat_BY_BIOSEQ, eOncaller | eSubmitter | 
                     bool found = false;
                     while (g_loc && !found) {
                         if (StrandsMatch(f_loc.GetStrand(), g_loc.GetStrand())) {
-                            //sequence::ECompare cmp = sequence::Compare(*(f_loc.GetRangeAsSeq_loc()), *(g_loc.GetRangeAsSeq_loc()), &(context.GetScope()), sequence::fCompareOverlapping);
                             sequence::ECompare cmp = context.Compare(*(f_loc.GetRangeAsSeq_loc()), *(g_loc.GetRangeAsSeq_loc()));
                             if (cmp == sequence::eContained || cmp == sequence::eSame) {
                                 found = true;

@@ -4638,7 +4638,7 @@ static void ListFeaturesInLocation(const CDiscrepancyContext& context, const CSe
             if (feat_loc.GetStop(eExtreme_Positional) < loc_left) {
                 continue;
             }
-            sequence::ECompare loc_comp = sequence::Compare(feat_loc, seq_loc, &context.GetScope(), sequence::fCompareOverlapping);
+            sequence::ECompare loc_comp = context.Compare(feat_loc, seq_loc);
             if (loc_comp == sequence::eContained) {
                 feat_list.push_back(*feat_it);
             }

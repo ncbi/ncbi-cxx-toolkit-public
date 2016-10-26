@@ -778,7 +778,7 @@ void CDiscrepancyContext::CollectFeature(const CSeq_feat& feat)
 }
 
 
-sequence::ECompare CDiscrepancyContext::Compare(const CSeq_loc& loc1, const CSeq_loc& loc2)
+sequence::ECompare CDiscrepancyContext::Compare(const CSeq_loc& loc1, const CSeq_loc& loc2) const
 {
     CSeq_loc::TRange r1 = loc1.GetTotalRange();
     CSeq_loc::TRange r2 = loc2.GetTotalRange();
