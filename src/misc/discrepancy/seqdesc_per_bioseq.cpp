@@ -198,10 +198,8 @@ static bool IsAppropriateRule(const CComment_rule& rule, const CUser_object& use
     bool ret = true;
     if (user.IsSetData() && !user.GetData().empty()) {
         ITERATE(CUser_object::TData, field, user.GetData()) {
-
             EPrefixOrSuffixType prefixOrSuffix = GetPrefixOrSuffixType(**field);
             if (prefixOrSuffix == eType_none) {
-
                 CConstRef<CField_rule> field_rule = rule.FindFieldRuleRef((*field)->GetLabel().GetStr());
                 if (field_rule.Empty()) {
                     ret = false;
@@ -219,9 +217,7 @@ const CComment_rule* FindAppropriateRule(const CComment_set& rules, const CUser_
     const CComment_rule* ret = nullptr;
     if (rules.IsSet()) {
         ITERATE(CComment_set::Tdata, rule, rules.Get()) {
-
             CComment_rule::TErrorList errors = (*rule)->IsValid(user);
-
             if (errors.empty() && IsAppropriateRule(**rule, user)) {
                 if (ret == nullptr) {
                     ret = *rule;
@@ -244,8 +240,14 @@ DISCREPANCY_CASE(SWITCH_STRUCTURED_COMMENT_PREFIX, CSeqdesc, eOncaller, "Suspici
         string prefix = CComment_rule::GetStructuredCommentPrefix(user);
         if (!prefix.empty()) {
             CConstRef<CComment_set> comment_rules = CComment_set::GetCommentRules();
-            const CComment_rule& rule = comment_rules->FindCommentRule(prefix);
-            CComment_rule::TErrorList errors = rule.IsValid(user);
+            const CComment_rule* rule;
+            try {
+                rule = &comment_rules->FindCommentRule(prefix);
+            }
+            catch(...) {
+                return;
+            }
+            CComment_rule::TErrorList errors = rule->IsValid(user);
             if (!errors.empty()) {
                 const CComment_rule* new_rule = FindAppropriateRule(*comment_rules, user);
                 if (new_rule) {
