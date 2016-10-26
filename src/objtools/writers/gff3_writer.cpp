@@ -216,7 +216,7 @@ string sBestMatchType(
 {
     const char* strProtMatch     = "nucleotide_to_protein_match";
     const char* strEstMatch      = "EST_match";
-    const char* strTransNucMatch = "translated_nucleotide_match";
+    //const char* strTransNucMatch = "translated_nucleotide_match";
     const char* strCdnaMatch     = "cDNA_match";
 
     CSeq_id::EAccessionInfo targetInfo = source.IdentifyAccession();
@@ -1358,7 +1358,7 @@ bool CGff3Writer::xWriteFeature(
     if (s == CSeqFeatData::eSubtype_promoter) {
         cerr << "";
     }
-    const CSeq_loc& loc = mf.GetLocation();
+
     try {
         switch( mf.GetFeatSubtype() ) {
             default:

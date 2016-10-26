@@ -950,7 +950,7 @@ bool CWriteUtil::GetStringForModelEvidence(
         }
     }
 
-    CSeqFeatData::ESubtype st = mf.GetFeatSubtype();
+    //CSeqFeatData::ESubtype st = mf.GetFeatSubtype();
     CNcbiOstrstream text;
     //text << "Derived by automated computational analysis";
     //if (!NStr::IsBlank(method)) {
