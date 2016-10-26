@@ -11,6 +11,8 @@ LIB = test_boost blast_sra_input $(BLAST_INPUT_LIBS) \
 
 LIBS = $(VDB_LIBS) $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
+POST_LINK = $(VDB_POST_LINK)
+
 CHECK_REQUIRES = MT in-house-resources
 CHECK_CMD = blastsrainput_unit_test
 
