@@ -5152,7 +5152,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_Inconsistent)
     expected_errors[0]->SetSeverity(eDiag_Error);
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors[0]->SetAccession("ref|NM_123456|");
-    free(expected_errors[1]);
+    delete expected_errors[1];
     expected_errors.pop_back();
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
