@@ -1269,7 +1269,7 @@ void CBedReader::xSetFeatureColorFromScore(
     const string& featScore )
 //  ----------------------------------------------------------------------------
 {
-    int score;
+    int score = 0;
     try {
         score = NStr::StringToInt(featScore);
     }
