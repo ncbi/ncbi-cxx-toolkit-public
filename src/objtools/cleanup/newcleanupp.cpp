@@ -867,7 +867,7 @@ bool s_RegexpReplace( string &target,
     CRegexp::ECompile compile_flags = CRegexp::fCompile_default )
 {
     CRegexpUtil replacer( target );
-    int num_replacements = replacer.Replace( search_pattern, replacement, 
+    size_t num_replacements = replacer.Replace( search_pattern, replacement, 
         compile_flags, CRegexp::fMatch_default, max_replace );
     // swap is faster than assignment
     replacer.GetResult().swap( target ); 
@@ -5308,7 +5308,7 @@ void CNewCleanup_imp::x_CleanupOrgModNoteEC(COrg_ref& org)
             (*it)->GetSubtype() == COrgMod::eSubtype_other &&
             (*it)->IsSetSubname() &&
             (s_HasMatchingGBMod(org.GetOrgname(), (*it)->GetSubname()) ||
-             org.IsSetTaxname() && NStr::Equal(org.GetTaxname(), (*it)->GetSubname()))) {
+             (org.IsSetTaxname() && NStr::Equal(org.GetTaxname(), (*it)->GetSubname())))) {
             ChangeMade(CCleanupChange::eRemoveOrgmod);
             it = org.SetOrgname().SetMod().erase(it);
         } else {
@@ -5855,7 +5855,7 @@ char s_ConvertTrnaAaToLetter( const CTrna_ext::C_Aa &trna_aa, CSeqUtil::ECoding 
 {
     char temp_aa = '\0';
 
-    int num_converted = 0;
+    size_t num_converted = 0;
     char new_aa = '\0';
     switch( trna_aa.Which() ) {
     case CTrna_ext::C_Aa::e_Iupacaa:
@@ -6996,7 +6996,7 @@ void CNewCleanup_imp::x_RemoveFlankingQuotes( string &val )
     // holds the first and last pos that we will keep
     // (have to use "ints" since might be negative)
     int first_pos = 0;
-    int last_pos = ( val.length() - 1 );
+    size_t last_pos = ( val.length() - 1 );
 
     // move inwards until there are no more quotes to trim
     for( ; first_pos <= last_pos ; ++first_pos, --last_pos ) {
@@ -8942,7 +8942,7 @@ void CNewCleanup_imp::RnaFeatBC (
         STRING_FIELD_NOT_EMPTY(seq_feat, Comment) &&
         FIELD_EQUALS( rna, Type, NCBI_RNAREF(rRNA) ) ) 
     {
-        const int comment_len = GET_FIELD(seq_feat, Comment).length();
+        const size_t comment_len = GET_FIELD(seq_feat, Comment).length();
         if (comment_len > 15 && comment_len < 20) {
             if ( NStr::EndsWith(GET_FIELD(seq_feat, Comment), "S ribosomal RNA", NStr::eNocase) ) {
                 rna.SetExt().SetName( GET_FIELD(seq_feat, Comment) );
@@ -11107,7 +11107,6 @@ bool HasAuthor(const CPubdesc& pub, bool strict)
         return false;
     }
     
-    bool is_patent = false;
     bool any_authors = false;
     ITERATE(CPubdesc::TPub::Tdata, it, pub.GetPub().Get()) {
         if ((*it)->IsPatent()) {
@@ -11387,8 +11386,8 @@ bool s_RetainEmptyAnnot(const CSeq_annot& annot)
 bool CNewCleanup_imp::ShouldRemoveAnnot(const CSeq_annot& annot)
 {
     if (!s_RetainEmptyAnnot(annot) &&
-        (annot.IsFtable() && annot.GetData().GetFtable().empty()) ||
-        !annot.IsSetData()) {
+        ((annot.IsFtable() && annot.GetData().GetFtable().empty()) ||
+         !annot.IsSetData())) {
         return true;
     } else {
         return false;
