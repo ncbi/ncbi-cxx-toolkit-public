@@ -561,30 +561,57 @@ CHttpRequest::CHttpRequest(CHttpSession& session,
 // CCgi2RCgiApp response processing logic for CHttpRequest::Execute()
 struct SRCgiWait
 {
-    SRCgiWait(ESwitch on_off, const CTimeout& deadline);
-    bool operator()(const CHttpHeaders& headers, CUrl* url);
+    SRCgiWait(ESwitch on_off, const CTimeout& deadline, CUrl& url,
+            EReqMethod& method, CRef<CHttpHeaders>& headers,
+            CRef<CHttpFormData>& form_data);
+
+    bool operator()(const CHttpHeaders& headers);
 
 private:
+    // This class is used to restore CHttpRequest members to their original state
+    template <class TMember, class TValue = TMember>
+    struct SValueRestorer
+    {
+        TMember& value;
+
+        SValueRestorer(TMember& v) : value(v) { Assign(original, value); }
+        ~SValueRestorer() { Restore(); }
+        void Restore() { Assign(value, original); }
+
+    private:
+        TValue original;
+    };
+
+    template <class TTo, class TFrom> static void Assign(TTo&, const TFrom&);
+
     const bool m_Enabled;
     CDeadline m_Deadline;
+    SValueRestorer<CUrl> m_Url;
+    SValueRestorer<EReqMethod> m_Method;
+    SValueRestorer<CRef<CHttpHeaders>, CHttpHeaders> m_Headers;
+    SValueRestorer<CRef<CHttpFormData>> m_FormData;
 };
 
 
-SRCgiWait::SRCgiWait(ESwitch on_off, const CTimeout& deadline) :
+SRCgiWait::SRCgiWait(ESwitch on_off, const CTimeout& deadline, CUrl& url,
+        EReqMethod& method, CRef<CHttpHeaders>& headers,
+        CRef<CHttpFormData>& form_data) :
     m_Enabled(on_off != eOff),
-    m_Deadline(deadline.IsDefault() ? CTimeout::eInfinite : deadline)
+    m_Deadline(deadline.IsDefault() ? CTimeout::eInfinite : deadline),
+    m_Url(url),
+    m_Method(method),
+    m_Headers(headers),
+    m_FormData(form_data)
 {
 }
 
 
-bool SRCgiWait::operator()(const CHttpHeaders& headers, CUrl* url)
+bool SRCgiWait::operator()(const CHttpHeaders& headers)
 {
     // Must correspond to CCgi2RCgiApp values
     const unsigned long kExecuteDefaultRefreshDelay = 5;
     const string        kExecuteHeaderRetryURL      = "NCBI-RCGI-RetryURL";
     const string        kExecuteHeaderRetryDelay    = "NCBI-RCGI-RetryDelay";
-
-    _ASSERT(url);
 
     if (!m_Enabled) return false;
     if (m_Deadline.IsExpired()) return false;
@@ -594,8 +621,6 @@ bool SRCgiWait::operator()(const CHttpHeaders& headers, CUrl* url)
     // Not a CCgi2RCgiApp response,
     // either not a remote CGI or it is already finished
     if (retry_url.empty()) return false;
-
-    *url = retry_url;
 
     const auto& retry_delay = headers.GetValue(kExecuteHeaderRetryDelay);
     unsigned long sleep_ms = kExecuteDefaultRefreshDelay;
@@ -621,23 +646,44 @@ bool SRCgiWait::operator()(const CHttpHeaders& headers, CUrl* url)
     }
 
     SleepMilliSec(sleep_ms);
+
+    // Make subsequent requests appropriate
+    m_Url.value = retry_url;
+    m_Method.value = eReqMethod_Get;
+    m_Headers.Restore();
+    m_FormData.value.Reset();
+
     return true;
+}
+
+
+template <class TTo, class TFrom>
+void SRCgiWait::Assign(TTo& to, const TFrom& from)
+{
+    to = from;
+}
+
+
+template <>
+void SRCgiWait::Assign(CHttpHeaders& to, const CRef<CHttpHeaders>& from)
+{
+    to.Assign(*from);
+}
+
+
+template <>
+void SRCgiWait::Assign(CRef<CHttpHeaders>& to, const CHttpHeaders& from)
+{
+    to->Assign(from);
 }
 
 
 CHttpResponse CHttpRequest::Execute(void)
 {
-    SRCgiWait rcgi_wait(m_RCgiWait, m_Deadline);
-
-    // Save the original headers. x_InitConnection adds automatic
-    // headers (from connnetinfo, cookies, content type etc.) which
-    // may need to be changed on chained request.
-    CHttpHeaders orig_headers;
-    orig_headers.Assign(*m_Headers);
+    SRCgiWait rcgi_wait(m_RCgiWait, m_Deadline, m_Url, m_Method, m_Headers, m_FormData);
     CRef<CHttpResponse> ret;
 
     do {
-        m_Headers->Assign(orig_headers);
         // Connection not open yet.
         // Only POST and PUT support sending form data.
         bool have_data = m_FormData  &&  !m_FormData.Empty();
@@ -652,12 +698,11 @@ CHttpResponse CHttpRequest::Execute(void)
         }
         // Send data to the server and close output stream.
         out.peek();
-        m_FormData.Reset();
         m_Stream.Reset();
         ret = m_Response;
         m_Response.Reset();
     }
-    while (rcgi_wait(ret->Headers(), &m_Url));
+    while (rcgi_wait(ret->Headers()));
 
     return *ret;
 }
