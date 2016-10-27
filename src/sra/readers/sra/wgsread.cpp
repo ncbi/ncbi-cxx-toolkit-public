@@ -3459,7 +3459,6 @@ CRef<CSeq_inst> CWGSSeqIterator::x_GetSeq_inst(SWGSCreateInfo& info) const
         inst->SetSeq_data(*Get4na(GetSeqOffset(), length));
     }
     else if ( HasGapInfo() ) {
-        inst->SetStrand(CSeq_inst::eStrand_ds);
         CRef<CSeq_id> id = GetAccSeq_id();
         TWGSContigGapInfo gap_info;
         GetGapInfo(gap_info);
@@ -3497,7 +3496,6 @@ CRef<CSeq_inst> CWGSSeqIterator::x_GetSeq_inst(SWGSCreateInfo& info) const
         }
     }
     else {
-        inst->SetStrand(CSeq_inst::eStrand_ds);
         TSegments segments;
         x_GetSegments(segments, whole);
         x_SetDeltaOrData(*inst, segments);
