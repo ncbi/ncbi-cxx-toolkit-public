@@ -40,6 +40,7 @@
 #include <poll.h>
 #include <errno.h>
 #include <time.h>
+#include <stdarg.h>
 
 #include <lmdb.h>
 #include "gicache.h"
@@ -72,7 +73,49 @@ typedef struct {
 
 static SGiDataIndex *gi_cache = NULL;
 
-static void (*LogFunc)(char*) = NULL;
+static void (*__LogFunc)(char*) = NULL;
+static void (*__LogFuncEx)(int severity, char* msg) = NULL;
+
+static void LOG(int severity, char* fmt, ...) 
+#ifdef __GNUC__
+__attribute__ ((format (printf, 2, 3)))
+#endif
+;
+
+#define SEV_NONE 0 
+#define SEV_INFO 1
+#define SEV_WARNING 2
+#define SEV_ERROR 3
+#define SEV_REJECT 4 
+#define SEV_FATAL 5
+
+static void LOG(int severity, char* fmt, ...) 
+{
+	if (__LogFuncEx || __LogFunc) {
+		char msg[2048];
+		va_list args;
+		va_start(args, fmt);
+		int n = vsnprintf(msg, sizeof(msg), fmt, args);
+		if (n >= sizeof(msg) - 1)
+			n = sizeof(msg) - 1;
+		msg[n] = '\0';
+		va_end(args);
+		if (__LogFuncEx)
+			__LogFuncEx(severity, msg);
+		if (__LogFunc)
+			__LogFunc(msg);
+	}
+}
+
+static int x_mdb_txn_begin(MDB_env *env, MDB_txn *parent, unsigned int flags, MDB_txn **txn) {
+	int rv;
+	rv = mdb_txn_begin(env, parent, flags, txn);
+	if (rv == MDB_READERS_FULL) {
+		mdb_reader_check(env, NULL);
+		rv = mdb_txn_begin(env, parent, flags, txn);
+	}
+	return rv;
+}
 
 int x_Commit(SGiDataIndex* data_index) {
 	int rv = 0;
@@ -82,10 +125,7 @@ int x_Commit(SGiDataIndex* data_index) {
 		data_index->m_txn = NULL;
 		data_index->m_txn_rowcount = 0;
 		if (rc) {
-			char logmsg[256];
-			snprintf(logmsg, sizeof(logmsg), "GI_CACHE: failed to commit transaction: %s\n", mdb_strerror(rc));
-			if (LogFunc)
-				LogFunc(logmsg);
+			LOG(SEV_ERROR, "GI_CACHE: failed to commit transaction: %s\n", mdb_strerror(rc));
 			rv = -1;
 		}
 	}
@@ -186,7 +226,7 @@ GiDataIndex_New(const char* prefix, Uint1 readonly, Uint1 enablesync) {
 		goto ERROR;
 	}
 
-	rc = mdb_txn_begin(data_index->m_env, NULL, readonly ? MDB_RDONLY : 0, &txn);
+	rc = x_mdb_txn_begin(data_index->m_env, NULL, readonly ? MDB_RDONLY : 0, &txn);
 	if (rc) {
 		snprintf(logmsg, sizeof(logmsg), "GI_CACHE: failed to start transaction: %s\n", mdb_strerror(rc));
 		goto ERROR;
@@ -209,7 +249,12 @@ GiDataIndex_New(const char* prefix, Uint1 readonly, Uint1 enablesync) {
 		snprintf(logmsg, sizeof(logmsg), "GI_CACHE: failed to commit transaction: %s\n", mdb_strerror(rc));
 		goto ERROR;
 	}
-	
+
+	rc = mdb_reader_check(data_index->m_env, NULL);
+	if (rc) {
+		snprintf(logmsg, sizeof(logmsg), "GI_CACHE: failed to check readers: %s\n", mdb_strerror(rc));
+		goto ERROR;
+	}
 
     return data_index;
 
@@ -220,8 +265,7 @@ ERROR:
 	}
 	GiDataIndex_Free(data_index);
 	data_index = NULL;
-	if (LogFunc)
-		LogFunc(logmsg);	
+	LOG(SEV_ERROR, logmsg);
 	return NULL;
 }
 
@@ -234,9 +278,7 @@ static int x_DataToGiData(int64_t gi, MDB_val *data, char *acc_buf, int acc_buf_
 	char* pacc = (char*)data->mv_data + gi_len_bytes + 2;
 	
 	if (acclen >= MAX_ACCESSION_LENGTH) {
-		snprintf(logmsg, sizeof(logmsg), "GI_CACHE: accession length (%d) exceeded limit (%d) for gi: %" PRId64 "\n", acclen, MAX_ACCESSION_LENGTH, gi);
-		if (LogFunc)
-			LogFunc(logmsg);
+		LOG(SEV_ERROR, "GI_CACHE: accession length (%d) exceeded limit (%d) for gi: %" PRId64 "\n", acclen, MAX_ACCESSION_LENGTH, gi);
 		return 1;
 	}
 
@@ -253,9 +295,7 @@ static int x_DataToGiData(int64_t gi, MDB_val *data, char *acc_buf, int acc_buf_
 	}
 	if (acc_buf) {
 		if (acc_buf_len <= acclen) {
-			snprintf(logmsg, sizeof(logmsg), "GI_CACHE: accession length buffer length (%d) is too small, actual accession length is %d for gi: %" PRId64 "\n", acc_buf_len, acclen, gi);
-			if (LogFunc)
-				LogFunc(logmsg);
+			LOG(SEV_ERROR, "GI_CACHE: accession length buffer length (%d) is too small, actual accession length is %d for gi: %" PRId64 "\n", acc_buf_len, acclen, gi);
 			return 1;
 		}
 		memcpy(acc_buf, pacc, acclen);
@@ -283,7 +323,7 @@ static int x_GetGiData(SGiDataIndex* data_index, int64_t gi, char *acc_buf, int 
 		goto ERROR;
 	}
 
-	rc = mdb_txn_begin(data_index->m_env, NULL, MDB_RDONLY, &txn);
+	rc = x_mdb_txn_begin(data_index->m_env, NULL, MDB_RDONLY, &txn);
 	if (rc) {
 		snprintf(logmsg, sizeof(logmsg), "GI_CACHE: failed to start transaction: %s\n", mdb_strerror(rc));
 		goto ERROR;
@@ -293,8 +333,10 @@ static int x_GetGiData(SGiDataIndex* data_index, int64_t gi, char *acc_buf, int 
 	key.mv_size = sizeof(gi64);
 	key.mv_data = &gi64;
 	rc = mdb_get(txn, data_index->m_gi_dbi, &key, &data);
-	if (rc == MDB_NOTFOUND) // silent error
+	if (rc == MDB_NOTFOUND) { // silent error
+		LOG(SEV_INFO, "cache-miss for gi=%" PRId64, gi);
 		goto ERROR;
+	}
 	if (rc) {
 		snprintf(logmsg, sizeof(logmsg), "GI_CACHE: failed to get data for gi=%" PRId64 ": %s\n", gi, mdb_strerror(rc));
 		goto ERROR;
@@ -317,8 +359,8 @@ ERROR:
 		mdb_txn_abort(txn);
 		txn = NULL;
 	}
-	if (LogFunc && logmsg[0]) {
-		LogFunc(logmsg);
+	if (logmsg[0]) {
+		LOG(SEV_ERROR, logmsg);
 	}
 	return 0;
 }
@@ -332,7 +374,7 @@ static int64_t x_GetMaxGi(SGiDataIndex* data_index) {
 	MDB_val data = {0};
 	int64_t gi64 = 0;
 
-	rc = mdb_txn_begin(data_index->m_env, NULL, MDB_RDONLY, &txn);
+	rc = x_mdb_txn_begin(data_index->m_env, NULL, MDB_RDONLY, &txn);
 	if (rc) {
 		snprintf(logmsg, sizeof(logmsg), "GI_CACHE: failed to start transaction: %s\n", mdb_strerror(rc));
 		goto ERROR;
@@ -379,9 +421,7 @@ ERROR:
 		mdb_txn_abort(txn);
 		txn = NULL;
 	}
-	if (LogFunc) {
-		LogFunc(logmsg);
-	}
+	LOG(SEV_ERROR, logmsg);
 	return -1;
 }
 
@@ -423,7 +463,7 @@ static int x_PutData(SGiDataIndex* data_index, int64_t gi, int64_t gi_len, const
 	}
 
 	if (!data_index->m_txn) {
-		rc = mdb_txn_begin(data_index->m_env, NULL, 0, &data_index->m_txn);
+		rc = x_mdb_txn_begin(data_index->m_env, NULL, 0, &data_index->m_txn);
 		if (rc) {
 			data_index->m_txn = NULL;
 			snprintf(logmsg, sizeof(logmsg), "GI_CACHE: failed to start transaction: %s\n", mdb_strerror(rc));
@@ -481,8 +521,8 @@ ERROR:
 		mdb_txn_abort(data_index->m_txn);
 		data_index->m_txn = NULL;
 	}
-	if (LogFunc && logmsg[0]) {
-		LogFunc(logmsg);
+	if (logmsg[0]) {
+		LOG(SEV_ERROR, logmsg);
 	}
 	return 0;
 }
@@ -529,8 +569,7 @@ int GICache_GetAccession(int64_t gi, char* acc, int buf_len) {
 	if (acc && buf_len > 0)
 		acc[0] = NULLB;
 	if (!gi_cache) {
-		if (LogFunc)
-			LogFunc("GICache_GetAccession: GI Cache is not initialized, call GICache_ReadData() first");
+		LOG(SEV_ERROR, "GICache_GetAccession: GI Cache is not initialized, call GICache_ReadData() first");
 		return 0;
 	}
 	rv = x_GetGiData(gi_cache, gi, acc, buf_len, NULL);
@@ -594,7 +633,11 @@ int GICache_LoadEnd() {
 }
 
 void GICache_SetLog(void (*logfunc)(char*)) {
-    LogFunc = logfunc;
+    __LogFunc = logfunc;
+}
+
+void GICache_SetLogEx(void (*logfunc)(int severity, char* msg)) {
+	__LogFuncEx = logfunc;	
 }
 
 void GICache_Dump(const char* cache_prefix, const char* filename, volatile int * quitting) {
@@ -619,7 +662,7 @@ void GICache_Dump(const char* cache_prefix, const char* filename, volatile int *
 	}
 	setvbuf(f, NULL, _IOFBF, 128 * 1024);
 
-	rc = mdb_txn_begin(gi_cache->m_env, NULL, MDB_RDONLY, &txn);
+	rc = x_mdb_txn_begin(gi_cache->m_env, NULL, MDB_RDONLY, &txn);
 	if (rc) {
 		snprintf(logmsg, sizeof(logmsg), "GI_CACHE: failed to start transaction: %s\n", mdb_strerror(rc));
 		goto ERROR;
@@ -640,9 +683,7 @@ void GICache_Dump(const char* cache_prefix, const char* filename, volatile int *
 		int64_t gi64 = 0;
 
 		if (!key.mv_data || key.mv_size != sizeof(gi64)) {
-			snprintf(logmsg, sizeof(logmsg), "GI_CACHE: last record contains no valid gi\n");
-			if (LogFunc)
-				LogFunc(logmsg);
+			LOG(SEV_ERROR, "GI_CACHE: last record contains no valid gi\n");
 			continue;
 		}
 		gi64 = *(int64_t*)key.mv_data;
@@ -684,9 +725,7 @@ ERROR:
 		mdb_txn_abort(txn);
 		txn = NULL;
 	}
-	if (LogFunc) {
-		LogFunc(logmsg);
-	}
+	LOG(SEV_ERROR, logmsg);
 	if (needopen) {
 		GICache_ReadEnd();
 	}
@@ -710,7 +749,7 @@ int GICache_DropDb() {
 		snprintf(logmsg, sizeof(logmsg), "GICache_DropDb: failed to drop DB, database has an active transaction");
 		goto ERROR;
 	}
-	rc = mdb_txn_begin(gi_cache->m_env, NULL, 0, &gi_cache->m_txn);
+	rc = x_mdb_txn_begin(gi_cache->m_env, NULL, 0, &gi_cache->m_txn);
 	if (rc) {
 		snprintf(logmsg, sizeof(logmsg), "GI_CACHE: failed to start transaction: %s\n", mdb_strerror(rc));
 		goto ERROR;
@@ -735,9 +774,7 @@ int GICache_DropDb() {
 	
     return 0;
 ERROR:
-	if (LogFunc) {
-		LogFunc(logmsg);
-	}
+	LOG(SEV_ERROR, logmsg);
 	if (gi_cache && gi_cache->m_txn && transtarted) {
 		mdb_txn_abort(gi_cache->m_txn);
 		gi_cache->m_txn = NULL;
@@ -762,12 +799,8 @@ static int x_PutMeta(const char* Name, const char* Value) {
 		if (rc == MDB_NOTFOUND)
 			rc = 0;
 	}
-	if (rc) {
-		char logmsg[256];
-		snprintf(logmsg, sizeof(logmsg), "GICache_UpdateMeta: failed to update META: %s\n", mdb_strerror(rc));
-		if (LogFunc)
-			LogFunc(logmsg);
-	}
+	if (rc)
+		LOG(SEV_ERROR, "GICache_UpdateMeta: failed to update META: %s\n", mdb_strerror(rc));
 	return rc;
 }
 
@@ -790,7 +823,7 @@ int GICache_SetMeta(const char* Name, const char* Value) {
 		snprintf(logmsg, sizeof(logmsg), "GICache_SetMeta: failed to update META, database has an active transaction");
 		goto ERROR;
 	}
-	rc = mdb_txn_begin(gi_cache->m_env, NULL, 0, &gi_cache->m_txn);
+	rc = x_mdb_txn_begin(gi_cache->m_env, NULL, 0, &gi_cache->m_txn);
 	if (rc) {
 		snprintf(logmsg, sizeof(logmsg), "GI_CACHE: failed to start transaction: %s\n", mdb_strerror(rc));
 		goto ERROR;
@@ -807,8 +840,8 @@ int GICache_SetMeta(const char* Name, const char* Value) {
 	
     return 0;
 ERROR:
-	if (LogFunc && logmsg[0]) {
-		LogFunc(logmsg);
+	if (logmsg[0]) {
+		LOG(SEV_ERROR, logmsg);
 	}
 	if (gi_cache && gi_cache->m_txn && transtarted) {
 		mdb_txn_abort(gi_cache->m_txn);
@@ -837,8 +870,8 @@ int GICache_UpdateMeta(int is_incremental, const char* DB, time_t starttime) {
 		goto ERROR;
     return 0;
 ERROR:
-	if (LogFunc && logmsg[0]) {
-		LogFunc(logmsg);
+	if (logmsg[0]) {
+		LOG(SEV_ERROR, logmsg);
 	}
 	return 1;
 }
@@ -856,7 +889,7 @@ int	GICache_GetMeta(const char* Name, char* Value, size_t ValueSz) {
 		snprintf(logmsg, sizeof(logmsg), "GICache_GetMeta: failed to read META, database is not open");
 		goto ERROR;
 	}
-	rc = mdb_txn_begin(gi_cache->m_env, NULL, MDB_RDONLY, &txn);
+	rc = x_mdb_txn_begin(gi_cache->m_env, NULL, MDB_RDONLY, &txn);
 	if (rc) {
 		snprintf(logmsg, sizeof(logmsg), "GI_CACHE: failed to start transaction: %s\n", mdb_strerror(rc));
 		goto ERROR;
@@ -883,8 +916,8 @@ int	GICache_GetMeta(const char* Name, char* Value, size_t ValueSz) {
 	return 0;
 
 ERROR:
-	if (LogFunc && logmsg[0]) {
-		LogFunc(logmsg);
+	if (logmsg[0]) {
+		LOG(SEV_ERROR, logmsg);
 	}
 	if (gi_cache && txn) {
 		mdb_txn_abort(txn);
@@ -910,7 +943,7 @@ int GICache_GetAccFreqTab(FreqTab* tab, const FreqTab* tablen) {
 		goto ERROR;
 	}
 	
-	rc = mdb_txn_begin(gi_cache->m_env, NULL, MDB_RDONLY, &txn);
+	rc = x_mdb_txn_begin(gi_cache->m_env, NULL, MDB_RDONLY, &txn);
 	if (rc) {
 		snprintf(logmsg, sizeof(logmsg), "GI_CACHE: failed to start transaction: %s\n", mdb_strerror(rc));
 		goto ERROR;
@@ -931,9 +964,7 @@ int GICache_GetAccFreqTab(FreqTab* tab, const FreqTab* tablen) {
 		int64_t gi64 = 0;
 
 		if (!key.mv_data || key.mv_size != sizeof(gi64)) {
-			snprintf(logmsg, sizeof(logmsg), "GI_CACHE: record contains no valid gi\n");
-			if (LogFunc)
-				LogFunc(logmsg);
+			LOG(SEV_ERROR, "GI_CACHE: record contains no valid gi\n");
 			continue;
 		}
 		gi64 = *(int64_t*)key.mv_data;
@@ -987,8 +1018,8 @@ ERROR:
 		mdb_txn_abort(txn);
 		txn = NULL;
 	}
-	if (LogFunc && logmsg[0]) {
-		LogFunc(logmsg);
+	if (logmsg[0]) {
+		LOG(SEV_ERROR, logmsg);
 	}
 	return -1;
 	

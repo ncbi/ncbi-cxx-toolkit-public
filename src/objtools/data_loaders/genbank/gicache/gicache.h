@@ -23,6 +23,12 @@ typedef struct {
 	int64_t Count[256];
 } FreqTab;
 
+#ifdef __GNUC__
+#define  DEPRECATED __attribute__ ((deprecated));
+#else
+#define DEPRECATED
+#endif
+
 /* Initializes the cache. If cache_prefix argument is not provided, default name
  * is used. If local cache is not available, use default path and prefix.
  * Return value: 0 on success, 1 on failure. 
@@ -58,8 +64,10 @@ int			GICache_SetMeta(const char* Name, const char* Value);
 int         GICache_UpdateMeta(int is_incremental, const char* DB, time_t starttime);
 /* Retrieve meta info */
 int			GICache_GetMeta(const char* Name, char* Value, size_t ValueSz);
-/* Install logger CB */
-void        GICache_SetLog(void (*logfunc)(char*));
+/* Install logger CB *DEPRECATED* */
+void        GICache_SetLog(void (*logfunc)(char*)) DEPRECATED;  
+/* Install logger CB, severity is actually of ErrSev enum type */
+void        GICache_SetLogEx(void (*logfunc)(int severity, char* msg));
 /* Dumps out content of the cache. Result is a text file with 3 columns: gi, accession, length  */
 void		GICache_Dump(const char* cache_prefix, const char* filename, volatile int * quitting);
 int GICache_GetAccFreqTab(FreqTab* tab, const FreqTab* tablen);
