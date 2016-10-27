@@ -542,7 +542,6 @@ void RescueProtProductQual(CSeq_feat& feat)
                 feat.SetData().SetProt().SetName().push_back((*it)->GetVal());
             }
             it = feat.SetQual().erase(it);
-            break;
         } else {
             ++it;
         }
