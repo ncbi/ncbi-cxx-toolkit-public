@@ -352,6 +352,7 @@ void CCgi2RCgiApp::Init()
     CNcbiRegistry& config(GetConfig());
     string grid_cgi_section("grid_cgi");
 
+    // Default value must correspond to SRCgiWait value
     m_RefreshDelay = config.GetInt(grid_cgi_section,
         "refresh_delay", 5, IRegistry::eReturn);
 
@@ -945,6 +946,8 @@ void CCgi2RCgiApp::DefineRefreshTags(const string& url, int idelay)
     m_Response->SetHeaderValue("Pragma", "no-cache");
     m_Response->SetHeaderValue("Cache-Control",
         "no-cache, no-store, max-age=0, private, must-revalidate");
+
+    // Must correspond to SRCgiWait values
     m_Response->SetHeaderValue("NCBI-RCGI-RetryURL", url);
     m_Response->SetHeaderValue("NCBI-RCGI-RetryDelay", idelay_str);
 }

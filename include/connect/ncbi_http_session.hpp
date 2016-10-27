@@ -489,6 +489,23 @@ public:
     /// value is used ($CONN_MAX_TRY - 1).
     void SetRetries(THttpRetries retries) { m_Retries = retries; }
 
+    /// Get current deadline for Execute().
+    /// For now, effective only for waiting remote CGI response,
+    /// infinite by default.
+    /// @sa Execute() GetRCgiWait()
+    const CTimeout& GetDeadline() const { return m_Deadline; }
+    /// Set new deadline for Execute().
+    /// @sa Execute() SetRCgiWait()
+    CHttpRequest& SetDeadline(const CTimeout& deadline);
+
+    /// Return whether Execute() will wait for remote CGI response.
+    /// If on, will wait for response or deadline expired, on by default.
+    /// @sa Execute() GetDeadline()
+    ESwitch GetRCgiWait() const { return m_RCgiWait; }
+    /// Set whether Execute() should wait for remote CGI response.
+    /// @sa Execute() SetDeadline()
+    CHttpRequest& SetRCgiWait(ESwitch rcgi_wait);
+
 private:
     friend class CHttpSession;
 
@@ -523,6 +540,8 @@ private:
     CRef<CHttpResponse> m_Response; // current response or null
     CTimeout            m_Timeout;
     THttpRetries        m_Retries;
+    CTimeout            m_Deadline;
+    ESwitch             m_RCgiWait;
 };
 
 

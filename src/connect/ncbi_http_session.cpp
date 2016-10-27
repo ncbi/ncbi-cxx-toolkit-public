@@ -551,31 +551,115 @@ CHttpRequest::CHttpRequest(CHttpSession& session,
       m_Url(url),
       m_Method(method),
       m_Headers(new CHttpHeaders),
-      m_Timeout(CTimeout::eDefault)
+      m_Timeout(CTimeout::eDefault),
+      m_Deadline(CTimeout::eDefault),
+      m_RCgiWait(ESwitch::eDefault)
 {
+}
+
+
+// CCgi2RCgiApp response processing logic for CHttpRequest::Execute()
+struct SRCgiWait
+{
+    SRCgiWait(ESwitch on_off, const CTimeout& deadline);
+    bool operator()(const CHttpHeaders& headers, CUrl* url);
+
+private:
+    const bool m_Enabled;
+    CDeadline m_Deadline;
+};
+
+
+SRCgiWait::SRCgiWait(ESwitch on_off, const CTimeout& deadline) :
+    m_Enabled(on_off != eOff),
+    m_Deadline(deadline.IsDefault() ? CTimeout::eInfinite : deadline)
+{
+}
+
+
+bool SRCgiWait::operator()(const CHttpHeaders& headers, CUrl* url)
+{
+    // Must correspond to CCgi2RCgiApp values
+    const unsigned long kExecuteDefaultRefreshDelay = 5;
+    const string        kExecuteHeaderRetryURL      = "NCBI-RCGI-RetryURL";
+    const string        kExecuteHeaderRetryDelay    = "NCBI-RCGI-RetryDelay";
+
+    _ASSERT(url);
+
+    if (!m_Enabled) return false;
+    if (m_Deadline.IsExpired()) return false;
+
+    const auto& retry_url = headers.GetValue(kExecuteHeaderRetryURL);
+
+    // Not a CCgi2RCgiApp response,
+    // either not a remote CGI or it is already finished
+    if (retry_url.empty()) return false;
+
+    *url = retry_url;
+
+    const auto& retry_delay = headers.GetValue(kExecuteHeaderRetryDelay);
+    unsigned long sleep_ms = kExecuteDefaultRefreshDelay;
+
+    // HTTP header has delay
+    if (!retry_delay.empty()) {
+        try {
+            sleep_ms = NStr::StringToULong(retry_delay) * kMilliSecondsPerSecond;
+        }
+        catch (CStringException& ex) {
+            if (ex.GetErrCode() != CStringException::eConvert) throw;
+        }
+    }
+
+    // If the deadline is less than the retry delay,
+    // sleep for the remaining and check once again
+    try {
+        auto remaining = m_Deadline.GetRemainingTime().GetAsMilliSeconds();
+        if (remaining < sleep_ms) sleep_ms = remaining;
+    }
+    catch (CTimeException& ex) {
+        if (ex.GetErrCode() != CTimeException::eConvert) throw;
+    }
+
+    SleepMilliSec(sleep_ms);
+    return true;
 }
 
 
 CHttpResponse CHttpRequest::Execute(void)
 {
-    // Connection not open yet.
-    // Only POST and PUT support sending form data.
-    bool have_data = m_FormData  &&  !m_FormData.Empty();
-    if ( !m_Response ) {
-        x_InitConnection(have_data);
+    SRCgiWait rcgi_wait(m_RCgiWait, m_Deadline);
+
+    // Save the original headers. x_InitConnection adds automatic
+    // headers (from connnetinfo, cookies, content type etc.) which
+    // may need to be changed on chained request.
+    CHttpHeaders orig_headers;
+    orig_headers.Assign(*m_Headers);
+    CRef<CHttpResponse> ret;
+
+    do {
+        m_Headers->Assign(orig_headers);
+        // Connection not open yet.
+        // Only POST and PUT support sending form data.
+        bool have_data = m_FormData  &&  !m_FormData.Empty();
+        if ( !m_Response ) {
+            x_InitConnection(have_data);
+        }
+        _ASSERT(m_Response);
+        _ASSERT(m_Stream  &&  m_Stream->IsInitialized());
+        CConn_IOStream& out = m_Stream->GetConnStream();
+        if ( have_data ) {
+            m_FormData->WriteFormData(out);
+        }
+        // Send data to the server and close output stream.
+        out.peek();
+        m_FormData.Reset();
+        m_Stream.Reset();
+        ret = m_Response;
+        m_Response.Reset();
     }
-    _ASSERT(m_Response);
-    _ASSERT(m_Stream  &&  m_Stream->IsInitialized());
-    CConn_IOStream& out = m_Stream->GetConnStream();
-    if ( have_data ) {
-        m_FormData->WriteFormData(out);
-    }
-    // Send data to the server and close output stream.
-    out.peek();
-    m_Stream.Reset();
-    CHttpResponse ret = *m_Response;
-    m_Response.Reset();
-    return ret;
+    while (rcgi_wait(ret->Headers(), &m_Url));
+
+    return *ret;
 }
 
 
@@ -766,6 +850,20 @@ CHttpRequest& CHttpRequest::SetTimeout(unsigned int sec,
                                        unsigned int usec)
 {
     m_Timeout.Set(sec, usec);
+    return *this;
+}
+
+
+CHttpRequest& CHttpRequest::SetDeadline(const CTimeout& deadline)
+{
+    m_Deadline = deadline;
+    return *this;
+}
+
+
+CHttpRequest& CHttpRequest::SetRCgiWait(ESwitch rcgi_wait)
+{
+    m_RCgiWait = rcgi_wait;
     return *this;
 }
 
