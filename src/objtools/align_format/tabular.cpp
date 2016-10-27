@@ -770,7 +770,6 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
         SetScores(score, bit_score, evalue);
     }
 
-    bool query_is_na = false, subject_is_na = false;
     bool bioseqs_found = true;
     // Extract the full query id from the correspondintg Bioseq handle.
     if (x_IsFieldRequested(eQuerySeqId) || x_IsFieldRequested(eQueryGi) ||
@@ -782,7 +781,6 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
             const CBioseq_Handle& query_bh = 
                 scope.GetBioseqHandle(align.GetSeq_id(0));
             SetQueryId(query_bh);
-            query_is_na = query_bh.IsNa();
             if(m_QueryRange.NotEmpty())
             	m_QueryLength = m_QueryRange.GetLength();
             else
@@ -838,7 +836,6 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
             if(setSubjectId) {
             	SetSubjectId(subject_bh);
             }
-            subject_is_na = subject_bh.IsNa();
             m_SubjectLength = subject_bh.GetBioseqLength();
 
             if(setSubjectIds || setSubjectTaxInfo || setSubjectTitle || setSubjectTaxInfoAll) {
@@ -913,15 +910,18 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
     // Std-segs are produced only for translated searches; Dense-diags only for 
     // ungapped, not translated searches.
     const bool kTranslated = align.GetSegs().IsStd();
-
+    bool query_is_na = CSeq_inst::IsNa(scope.GetSequenceType(align.GetSeq_id(0)));
+    bool subject_is_na = CSeq_inst::IsNa(scope.GetSequenceType(align.GetSeq_id(1)));
     if (kTranslated) {
         CRef<CSeq_align> densegAln = align.CreateDensegFromStdseg();
         // When both query and subject are translated, i.e. tblastx, convert
         // to a special type of Dense-seg.
-        if (query_is_na && subject_is_na)
+        if (query_is_na && subject_is_na) {
             finalAln = densegAln->CreateTranslatedDensegFromNADenseg();
-        else
+        }
+        else {
             finalAln = densegAln;
+        }
     } else if (align.GetSegs().IsDendiag()) {
         finalAln = CAlignFormatUtil::CreateDensegFromDendiag(align);
     }
