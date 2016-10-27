@@ -68,6 +68,7 @@ struct SSrvMirrorInfo
     TSlot2SrvMap  s_RawSlot2Servers;
     TSrvGroupsMap s_Slot2Servers;
     TSrv2SlotMap  s_CommonSlots;
+    TSrv2SlotMap  s_Servers2Slots;
 // ID is defined by IP and port, so this map might be incorrect
 // but we also check the current slot number
 // while it is possible to handle same slot on different instances of NC
@@ -346,6 +347,7 @@ CNCDistributionConf::InitMirrorConfig(const CNcbiRegistry& reg, string& err_mess
             } else {
                 srvs.push_back(srv_id);
                 mirrorCfg->s_Slot2Servers[slot].push_back(SSrvGroupInfo(srv_id, grp_name));
+                mirrorCfg->s_Servers2Slots[srv_id].push_back(slot);
             }
             if (isReconf) {
                 if (slot > s_MaxSlotNumber) {
@@ -611,6 +613,22 @@ const TServersList&
 CNCDistributionConf::GetRawServersForSlot(Uint2 slot)
 {
     return s_MirrorConf->s_RawSlot2Servers[slot];
+}
+const vector<Uint2>&
+CNCDistributionConf::GetSlotsForServer(Uint8 srv_id)
+{
+    return s_MirrorConf->s_Servers2Slots[srv_id];
+}
+Uint2 CNCDistributionConf::GetMaxSlotNumber(void) {
+    return s_MaxSlotNumber;
+}
+void CNCDistributionConf::AddServerSlots(set<Uint2>& slots, Uint8 srv_id)
+{
+    const vector<Uint2>& srv_slots(
+        (srv_id == s_SelfID || srv_id == 0) ? s_SelfSlots : s_MirrorConf->s_Servers2Slots[srv_id]);
+    for( const Uint2 s : srv_slots) {
+        slots.insert(s);
+    }
 }
 
 const vector<Uint2>&

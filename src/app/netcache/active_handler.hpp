@@ -218,7 +218,7 @@ public:
     void ProxyBList(CRequestContext* cmd_ctx,
                     const CNCBlobKey& key,
                     bool force_local,
-                    SNCBlobVerData* filters);
+                    SNCBlobFilter* filters);
 
     CSrvSocketTask* GetSocket(void);
     CTempString GetCmdResponse(void);

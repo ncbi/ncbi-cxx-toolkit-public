@@ -44,6 +44,7 @@ class CNCBlobAccessor;
 struct SNCSpecificParams;
 struct SNCBlobVerData;
 struct SNCBlobSummary;
+struct SNCBlobFilter;
 struct SNCSyncEvent;
 
 
@@ -142,9 +143,9 @@ enum ENCProxyCmd {
     eProxyRemove,
     eProxyGetMeta,
     eProxyProlong,
-    eProxyGetBList
+    eProxyGetBList,
+    eProxyGetBList2
 } NCBI_PACKED_ENUM_END();
-
 
 /// Handler of all NetCache incoming requests.
 /// Handler written to be reusable object so that if one connection to
@@ -212,6 +213,7 @@ public:
     State x_DoCmd_CopyPurge(void);
 
     State x_DoCmd_GetBList(void);
+    State x_DoCmd_GetBListNext(void);
 
     State x_FinishCommand(void);
 
@@ -369,6 +371,8 @@ private:
     string                    m_StatType;
     Uint8                     m_AgeMax;
     Uint8                     m_AgeCur;
+    SNCBlobFilter*            m_BlobFilter;
+    set<Uint2>                m_SlotsDone;
 
     string m_PosponedCmd;
     enum EHttpMode {

@@ -66,6 +66,10 @@ public:
     static void GetServersForSlot(Uint2 slot, TServersList& lst);
     static const TServersList& GetRawServersForSlot(Uint2 slot);
 
+    static Uint2 GetMaxSlotNumber(void);
+    static const vector<Uint2>& GetSlotsForServer(Uint8 srv_id);
+    static void AddServerSlots(set<Uint2>& slots, Uint8 srv_id);
+
     // Provides common slots for the current and the given server
     static const vector<Uint2>&  GetCommonSlots(Uint8 server);
     static bool  HasCommonSlots(Uint8 server);

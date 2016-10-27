@@ -213,7 +213,7 @@ void CNCBlobKey::Assign( const CTempString& cache_name,
                          const CTempString& blob_key,
                          const CTempString& blob_subkey)
 {
-    if (blob_key.empty()) {
+    if (blob_key.empty() && cache_name.empty()) {
         Clear();
         return;
     }

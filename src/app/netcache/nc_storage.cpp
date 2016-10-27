@@ -296,30 +296,37 @@ static CExpiredCleaner* s_ExpiredCleaner = nullptr;
 /**/
 
 void
-CNCBlobStorage::GetBList(const string& mask, auto_ptr<TNCBufferType>& buffer, SNCBlobVerData* filters)
+CNCBlobStorage::GetBList(const string& mask, auto_ptr<TNCBufferType>& buffer, SNCBlobFilter* filters)
 {
     if (mask.empty()) {
         return;
     }
     SNCCacheData search_mask;
     const char* mb = mask.data();
-    while (*mb == '\"' || *mb == '\'') {
+    while (*mb == '\"' || *mb == '\'' || *mb == '*') {
         ++mb;
     }
     const char* me = mask.data() + mask.size() - 1;
-    while (*me == '\1') {
+    while (me >= mb && *me == '\1') {
         --me;
     }
-    search_mask.key.assign(mb, me-mb);
+    search_mask.key.assign(mb, me+1-mb);
+
     CSrvTime cur_time = CSrvTime::Current();
-    // convert number of seconds ago into microseconds since epoch
-    Uint8 cr_time  = filters->create_time != 0 ? cur_time.AsUSec() - filters->create_time * kUSecsPerSecond : (Uint8)-1;
-    // convert expire N sec from now into seconds since epoch
-    int expire     = filters->expire != 0      ? int(cur_time.Sec() + filters->expire)                      : numeric_limits<int>::max();
-    // convert expire N sec from now into seconds since epoch
-    int ver_expire = filters->ver_expire != 0  ? int(cur_time.Sec() + filters->ver_expire)                  : numeric_limits<int>::max();
-    Uint8 create_server = filters->create_server;
-    bool extra =  filters->create_time != 0 || filters->expire != 0 || filters->ver_expire != 0 || filters->create_server != 0;
+
+    Uint8 cr_time_lo = ((filters->cr_ago_le   != 0) ? (cur_time.Sec() - filters->cr_ago_le)   : filters->cr_epoch_ge) * kUSecsPerSecond;
+    Uint8 cr_time_hi = ((filters->cr_ago_ge   != 0) ? (cur_time.Sec() - filters->cr_ago_ge)   : filters->cr_epoch_le) * kUSecsPerSecond;
+    int    expire_lo = ((filters->exp_now_ge  != 0) ? (cur_time.Sec() + filters->exp_now_ge)  : filters->exp_epoch_ge);
+    int    expire_hi = ((filters->exp_now_le  != 0) ? (cur_time.Sec() + filters->exp_now_le)  : filters->exp_epoch_le);
+    int   vexpire_lo = ((filters->vexp_now_ge != 0) ? (cur_time.Sec() + filters->vexp_now_ge) : filters->vexp_epoch_ge);
+    int   vexpire_hi = ((filters->vexp_now_le != 0) ? (cur_time.Sec() + filters->vexp_now_le) : filters->vexp_epoch_le);
+    Uint8    size_lo = filters->size_ge;
+    Uint8    size_hi = filters->size_le;
+    Uint8 create_server = filters->cr_srv;
+    bool extra =  cr_time_lo != 0 || cr_time_hi != 0 ||
+                   expire_lo != 0 ||  expire_hi != 0 ||
+                  vexpire_lo != 0 || vexpire_hi != 0 || 
+                     size_lo != 0 ||    size_hi != 0 || create_server != 0;
 
     ITERATE( TBucketCacheMap, bkt, s_BucketsCache) {
         SBucketCache* cache = bkt->second;
@@ -329,29 +336,30 @@ CNCBlobStorage::GetBList(const string& mask, auto_ptr<TNCBufferType>& buffer, SN
         for ( ; lb != cache->key_map.end(); ++lb) {
             SNCCacheData& d = *lb;
             if (strncmp(search_mask.key.data(), lb->key.data(), search_mask.key.size())== 0) {
-                bool b = lb->create_time <= cr_time;
-                b = lb->expire <= expire;
-                b = lb->ver_expire <= ver_expire;
-                b = (create_server == 0 || create_server == lb->create_server);
-                if (!extra || (lb->create_time <= cr_time &&
-                               lb->expire <= expire &&
-                               lb->ver_expire <= ver_expire &&
-                               (create_server == 0 || create_server == lb->create_server))) {
+                if (!extra || (
+                    (lb->create_time >= cr_time_lo && (cr_time_hi == 0 || lb->create_time <= cr_time_hi)) &&
+                    (lb->expire      >=  expire_lo && ( expire_hi == 0 || lb->expire      <=  expire_hi)) &&
+                    (lb->ver_expire  >= vexpire_lo && (vexpire_hi == 0 || lb->ver_expire  <= vexpire_hi)) &&
+                    (lb->size        >=    size_lo && (   size_hi == 0 || lb->size        <=    size_hi)) &&
+                    (create_server == 0 || lb->create_server == create_server))) {
 
                     string bkey( NStr::Replace(lb->key,"\1",","));
                     buffer->append(bkey.data(), bkey.size());
                     if (extra) {
-                        if  (filters->create_time != 0) {
+                        if  (cr_time_lo != 0 || cr_time_hi != 0) {
                             buffer->WriteText(",cr_time=").WriteNumber(lb->create_time/kUSecsPerSecond);
                         }
-                        if  (filters->expire != 0) {
+                        if  (expire_lo != 0 || expire_hi != 0) {
                             buffer->WriteText(",exp=").WriteNumber(lb->expire);
                         }
-                        if  (filters->ver_expire != 0) {
+                        if  (vexpire_lo != 0 || vexpire_hi != 0) {
                             buffer->WriteText(",ver_dead=").WriteNumber(lb->ver_expire);
                         }
-                        if  (filters->create_server != 0) {
+                        if  (create_server != 0) {
                             buffer->WriteText(",cr_srv=").WriteNumber(lb->create_server);
+                        }
+                        if  (size_lo != 0 || size_hi != 0) {
+                            buffer->WriteText(",size=").WriteNumber(lb->size);
                         }
                     }
                     buffer->append("\n",1);
@@ -364,26 +372,30 @@ CNCBlobStorage::GetBList(const string& mask, auto_ptr<TNCBufferType>& buffer, SN
         TKeyMap::iterator lb = cache->key_map.lower_bound(&search_mask);
         for ( ; lb != cache->key_map.end(); ++lb) {
             if (strncmp(search_mask.key.data(), (*lb)->key.data(), search_mask.key.size())== 0) {
-                if (!extra
-                    && lb->create_time <= cr_time
-                    && lb->expire < expire
-                    && lb->ver_expire == ver_expire
-                    && (create_server == 0 || create_server == lb->create_server)) {
+                if (!extra || (
+                    ((*lb)->create_time >= cr_time_lo && (cr_time_hi == 0 || (*lb)->create_time <= cr_time_hi)) &&
+                    ((*lb)->expire      >=  expire_lo && ( expire_hi == 0 || (*lb)->expire      <=  expire_hi)) &&
+                    ((*lb)->ver_expire  >= vexpire_lo && (vexpire_hi == 0 || (*lb)->ver_expire  <= vexpire_hi)) &&
+                    ((*lb)->size        >=    size_lo && (   size_hi == 0 || (*lb)->size        <=    size_hi)) &&
+                    (create_server == 0 || (*lb)->create_server == create_server))) {
 
                     string bkey( NStr::Replace((*lb)->key,"\1",","));
                     buffer->append(bkey.data(), bkey.size());
                     if (extra) {
-                        if  (filters->create_time != 0) {
+                        if  (cr_time_lo != 0 || cr_time_hi != 0) {
                             buffer->WriteText(",cr_time=").WriteNumber((*lb)->create_time/kUSecsPerSecond);
                         }
-                        if  (filters->expire != 0) {
+                        if  (expire_lo != 0 || expire_hi != 0) {
                             buffer->WriteText(",exp=").WriteNumber((*lb)->expire);
                         }
-                        if  (filters->ver_expire != 0) {
+                        if  (vexpire_lo != 0 || vexpire_hi != 0) {
                             buffer->WriteText(",ver_dead=").WriteNumber((*lb)->ver_expire);
                         }
-                        if  (filters->create_server != 0) {
+                        if  (create_server != 0) {
                             buffer->WriteText(",cr_srv=").WriteNumber((*lb)->create_server);
+                        }
+                        if  (size_lo != 0 || size_hi != 0) {
+                            buffer->WriteText(",size=").WriteNumber((*lb)->size);
                         }
                     }
                     buffer->append("\n",1);

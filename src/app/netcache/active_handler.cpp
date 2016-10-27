@@ -778,7 +778,8 @@ CNCActiveHandler::ProxyProlong(CRequestContext* cmd_ctx,
 }
 
 void CNCActiveHandler::ProxyBList(
-    CRequestContext* cmd_ctx, const CNCBlobKey& nc_key, bool force_local, SNCBlobVerData* filters)
+    CRequestContext* cmd_ctx, const CNCBlobKey& nc_key, bool force_local,
+    SNCBlobFilter* filters)
 {
     SetDiagCtx(cmd_ctx);
     m_CurCmd = eReadData;
@@ -792,22 +793,66 @@ void CNCActiveHandler::ProxyBList(
     m_CmdToSend += nc_key.SubKey();
     m_CmdToSend += "\" ";
     m_CmdToSend += NStr::UIntToString(Uint1(force_local));
-    if (m_Peer->AcceptsUserFlags()) {
-        if (filters->create_time != 0) {
-            m_CmdToSend += " cr_time=";
-            m_CmdToSend += NStr::NumericToString(filters->create_time);
+    if (filters) {
+        if (filters->cr_ago_ge != 0) {
+            m_CmdToSend += " fcr_ago_ge=";
+            m_CmdToSend += NStr::NumericToString(filters->cr_ago_ge);
         }
-        if (filters->expire != 0) {
-            m_CmdToSend += " exp=";
-            m_CmdToSend += NStr::NumericToString(filters->expire);
+        if (filters->cr_ago_le != 0) {
+            m_CmdToSend += " fcr_ago_le=";
+            m_CmdToSend += NStr::NumericToString(filters->cr_ago_le);
         }
-        if (filters->ver_expire != 0) {
-            m_CmdToSend += " ver_dead=";
-            m_CmdToSend += NStr::NumericToString(filters->ver_expire);
+        if (filters->cr_epoch_ge != 0) {
+            m_CmdToSend += " fcr_epoch_ge=";
+            m_CmdToSend += NStr::NumericToString(filters->cr_epoch_ge);
         }
-        if (filters->create_server != 0) {
-            m_CmdToSend += " cr_srv=";
-            m_CmdToSend += NStr::NumericToString(filters->create_server);
+        if (filters->cr_epoch_le != 0) {
+            m_CmdToSend += " fcr_epoch_le=";
+            m_CmdToSend += NStr::NumericToString(filters->cr_epoch_le);
+        }
+        if (filters->exp_now_ge != 0) {
+            m_CmdToSend += " fexp_now_ge=";
+            m_CmdToSend += NStr::NumericToString(filters->exp_now_ge);
+        }
+        if (filters->exp_now_le != 0) {
+            m_CmdToSend += " fexp_now_le=";
+            m_CmdToSend += NStr::NumericToString(filters->exp_now_le);
+        }
+        if (filters->exp_epoch_ge != 0) {
+            m_CmdToSend += " fexp_epoch_ge=";
+            m_CmdToSend += NStr::NumericToString(filters->exp_epoch_ge);
+        }
+        if (filters->exp_epoch_le != 0) {
+            m_CmdToSend += " fexp_epoch_le=";
+            m_CmdToSend += NStr::NumericToString(filters->exp_epoch_le);
+        }
+        if (filters->vexp_now_ge != 0) {
+            m_CmdToSend += " fvexp_now_ge=";
+            m_CmdToSend += NStr::NumericToString(filters->vexp_now_ge);
+        }
+        if (filters->vexp_now_le != 0) {
+            m_CmdToSend += " fvexp_now_le=";
+            m_CmdToSend += NStr::NumericToString(filters->vexp_now_le);
+        }
+        if (filters->vexp_epoch_ge != 0) {
+            m_CmdToSend += " fvexp_epoch_ge=";
+            m_CmdToSend += NStr::NumericToString(filters->vexp_epoch_ge);
+        }
+        if (filters->vexp_epoch_le != 0) {
+            m_CmdToSend += " fvexp_epoch_le=";
+            m_CmdToSend += NStr::NumericToString(filters->vexp_epoch_le);
+        }
+        if (filters->cr_srv != 0) {
+            m_CmdToSend += " fcr_srv=";
+            m_CmdToSend += NStr::NumericToString(filters->cr_srv);
+        }
+        if (filters->size_ge != 0) {
+            m_CmdToSend += " fsize_ge=";
+            m_CmdToSend += NStr::NumericToString(filters->size_ge);
+        }
+        if (filters->size_le != 0) {
+            m_CmdToSend += " fsize_le=";
+            m_CmdToSend += NStr::NumericToString(filters->size_le);
         }
     }
 

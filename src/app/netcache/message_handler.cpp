@@ -207,7 +207,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "pass",    eNSPT_Str,  eNSPA_Optional },
           // request Hit ID
           { "ncbi_phid", eNSPT_Str,  eNSPA_Optional },
-          // see ENCUserFlags, added in v6.10.1 (CXX-8737)
+          // see ENCUserFlags, added in v6.11.0 (CXX-8737)
           { "flags",  eNSPT_Int,  eNSPA_Optional }
         } },
     // Write blob contents. Old and deprecated command which probably is not
@@ -416,7 +416,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "pass",    eNSPT_Str,  eNSPA_Optional },
           // request Hit ID
           { "ncbi_phid", eNSPT_Str,  eNSPA_Optional },
-          // see ENCUserFlags, added in v6.10.1 (CXX-8737)
+          // see ENCUserFlags, added in v6.11.0 (CXX-8737)
           { "flags",  eNSPT_Int,  eNSPA_Optional }
         } },
     // Read blob contents. Command for "NetCache" clients.
@@ -694,7 +694,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "ip",      eNSPT_Str,  eNSPA_Required },
           // Session ID for application requesting the info.
           { "sid",     eNSPT_Str,  eNSPA_Required },
-          // see ENCUserFlags, added in v6.10.1 (CXX-8737)
+          // see ENCUserFlags, added in v6.11.0 (CXX-8737)
           { "flags",  eNSPT_Int,  eNSPA_Optional },
           // Password for blob access.
           { "pass",    eNSPT_Str,  eNSPA_Optional }
@@ -1384,7 +1384,8 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
     { "BLIST",
         {&CNCMessageHandler::x_DoCmd_GetBList,
             "BLIST",
-            fComesFromClient | fNeedsStorageCache | fNeedsBlobList,
+            fComesFromClient |
+                fNeedsStorageCache | fNeedsBlobList | fDoNotCheckPassword,
             eNCNone, eProxyGetBList},
           // Name of cache for blob.
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix },
@@ -1392,21 +1393,58 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "key",     eNSPT_Str,  eNSPA_Required },
           // Blob's subkey.
           { "subkey",  eNSPT_Str,  eNSPA_Optional },
+          { "local",   eNSPT_Int,  eNSPA_Optional }
+        } },
+// added in v6.11.0 (CXX-8737)
+    { "BLIST2",
+        {&CNCMessageHandler::x_DoCmd_GetBList,
+            "BLIST",
+            fComesFromClient |
+                fNeedsStorageCache | fNeedsBlobList | fDoNotProxyToPeers | fDoNotCheckPassword,
+            eNCNone, eProxyGetBList2},
+          // Name of cache for blob.
+        { { "cache",   eNSPT_Id,   eNSPA_ICPrefix },
+          // Blob's key.
+          { "key",     eNSPT_Str,  eNSPA_Required },
+          // Blob's subkey.
+          { "subkey",  eNSPT_Str,  eNSPA_Optional },
           { "local",   eNSPT_Int,  eNSPA_Optional },
-// added in v6.10.1 (CXX-8737)
-          // Created more than this amount of seconds ago
-          { "cr_time", eNSPT_Int,  eNSPA_Optional },
-          // Will expire in the next N seconds
-          { "exp",     eNSPT_Int,  eNSPA_Optional },
-          // Will expire in the next N seconds
-          { "ver_dead",eNSPT_Int,  eNSPA_Optional },
+
+          // Created more than N seconds ago
+          { "fcr_ago_ge", eNSPT_Int,  eNSPA_Optional },
+          // Created less than N seconds ago
+          { "fcr_ago_le", eNSPT_Int,  eNSPA_Optional },
+          // Created more than N seconds since epoch
+          { "fcr_epoch_ge", eNSPT_Int,  eNSPA_Optional },
+          // Created less than N seconds since epoch
+          { "fcr_epoch_le", eNSPT_Int,  eNSPA_Optional },
+          // Will expire in more than N seconds from now
+          { "fexp_now_ge", eNSPT_Int,  eNSPA_Optional },
+          // Will expire in less than N seconds from now
+          { "fexp_now_le", eNSPT_Int,  eNSPA_Optional },
+          // Will expire in more than N seconds since epoch
+          { "fexp_epoch_ge", eNSPT_Int,  eNSPA_Optional },
+          // Will expire in less than N seconds since epoch
+          { "fexp_epoch_le", eNSPT_Int,  eNSPA_Optional },
+          // Will expire in more than N seconds from now
+          { "fvexp_now_ge", eNSPT_Int,  eNSPA_Optional },
+          // Will expire in less than N seconds from now
+          { "fvexp_now_le", eNSPT_Int,  eNSPA_Optional },
+          // Will expire in more than N seconds since epoch
+          { "fvexp_epoch_ge", eNSPT_Int,  eNSPA_Optional },
+          // Will expire in less than N seconds since epoch
+          { "fvexp_epoch_le", eNSPT_Int,  eNSPA_Optional },
           // Server_id of the server where blob was created.
-          { "cr_srv",  eNSPT_Int,  eNSPA_Optional }
+          { "fcr_srv",  eNSPT_Int,  eNSPA_Optional },
+          // blob bigger than this size
+          { "fsize_ge",  eNSPT_Int,  eNSPA_Optional },
+          // blob smaller than this size
+          { "fsize_le",  eNSPT_Int,  eNSPA_Optional }
         } },
     { "PROXY_BLIST",
         {&CNCMessageHandler::x_DoCmd_GetBList,
             "PROXY_BLIST",
-            fNeedsStorageCache | fNeedsBlobList | fDoNotProxyToPeers,
+            fNeedsStorageCache | fNeedsBlobList | fDoNotProxyToPeers | fDoNotCheckPassword,
             eNCNone, eProxyNone},
           // Name of cache for blob.
         { { "cache",   eNSPT_Str,  eNSPA_Required },
@@ -1415,15 +1453,37 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Blob's subkey.
           { "subkey",  eNSPT_Str,  eNSPA_Required },
           { "local",   eNSPT_Int,  eNSPA_Required },
-// added in v6.10.1 (CXX-8737)
-          // Created more than this amount of seconds ago
-          { "cr_time", eNSPT_Int,  eNSPA_Optional },
-          // Will expire in the next N seconds
-          { "exp",     eNSPT_Int,  eNSPA_Optional },
-          // Will expire in the next N seconds
-          { "ver_dead",eNSPT_Int,  eNSPA_Optional },
+// added in v6.11.0 (CXX-8737)
+          // Created more than N seconds ago
+          { "fcr_ago_ge", eNSPT_Int,  eNSPA_Optional },
+          // Created less than N seconds ago
+          { "fcr_ago_le", eNSPT_Int,  eNSPA_Optional },
+          // Created more than N seconds since epoch
+          { "fcr_epoch_ge", eNSPT_Int,  eNSPA_Optional },
+          // Created less than N seconds since epoch
+          { "fcr_epoch_le", eNSPT_Int,  eNSPA_Optional },
+          // Will expire in more than N seconds from now
+          { "fexp_now_ge", eNSPT_Int,  eNSPA_Optional },
+          // Will expire in less than N seconds from now
+          { "fexp_now_le", eNSPT_Int,  eNSPA_Optional },
+          // Will expire in more than N seconds since epoch
+          { "fexp_epoch_ge", eNSPT_Int,  eNSPA_Optional },
+          // Will expire in less than N seconds since epoch
+          { "fexp_epoch_le", eNSPT_Int,  eNSPA_Optional },
+          // Will expire in more than N seconds from now
+          { "fvexp_now_ge", eNSPT_Int,  eNSPA_Optional },
+          // Will expire in less than N seconds from now
+          { "fvexp_now_le", eNSPT_Int,  eNSPA_Optional },
+          // Will expire in more than N seconds since epoch
+          { "fvexp_epoch_ge", eNSPT_Int,  eNSPA_Optional },
+          // Will expire in less than N seconds since epoch
+          { "fvexp_epoch_le", eNSPT_Int,  eNSPA_Optional },
           // Server_id of the server where blob was created.
-          { "cr_srv",  eNSPT_Int,  eNSPA_Optional }
+          { "fcr_srv",  eNSPT_Int,  eNSPA_Optional },
+          // blob bigger than this size
+          { "fsize_ge",  eNSPT_Int,  eNSPA_Optional },
+          // blob smaller than this size
+          { "fsize_le",  eNSPT_Int,  eNSPA_Optional }
         } },
 
 // HTTP commands
@@ -1570,6 +1630,7 @@ CNCMessageHandler::CNCMessageHandler(void)
 #endif
     m_CopyBlobInfo = new SNCBlobVerData(nullptr);
     m_LatestBlobSum = new SNCBlobSummary();
+    m_BlobFilter = new SNCBlobFilter;
 
     SetState(&CNCMessageHandler::x_SocketOpened);
 
@@ -1782,13 +1843,14 @@ CNCMessageHandler::x_AssignCmdParams(void)
     m_CmdVersion = 0;
     m_ForceLocal = false;
     m_AgeMax = m_AgeCur = 0;
+    m_SlotsDone.clear();
     bool quorum_was_set = false;
     bool search_was_set = false;
 
-    delete m_LatestBlobSum;
-    m_LatestBlobSum = new SNCBlobSummary();
+    new (m_LatestBlobSum) SNCBlobSummary();
     delete m_CopyBlobInfo;
     m_CopyBlobInfo = new SNCBlobVerData(nullptr);
+    new (m_BlobFilter) SNCBlobFilter();
 
     CTempString cache_name;
 
@@ -1850,6 +1912,36 @@ CNCMessageHandler::x_AssignCmdParams(void)
             case 'f':
                 if (key == "flags") {
                     m_UserFlags = NStr::StringToUInt(val);
+                } else if (key == "fcr_ago_ge") {
+                    m_BlobFilter->cr_ago_ge = NStr::StringToUInt8(val);
+                } else if (key == "fcr_ago_le") {
+                    m_BlobFilter->cr_ago_le = NStr::StringToUInt8(val);
+                } else if (key == "fcr_epoch_ge") {
+                    m_BlobFilter->cr_epoch_ge = NStr::StringToUInt8(val);
+                } else if (key == "fcr_epoch_le") {
+                    m_BlobFilter->cr_epoch_le = NStr::StringToUInt8(val);
+                } else if (key == "fexp_now_ge") {
+                    m_BlobFilter->exp_now_ge = NStr::StringToUInt8(val);
+                } else if (key == "fexp_now_le") {
+                    m_BlobFilter->exp_now_le = NStr::StringToUInt8(val);
+                } else if (key == "fexp_epoch_ge") {
+                    m_BlobFilter->exp_epoch_ge = NStr::StringToUInt8(val);
+                } else if (key == "fexp_epoch_le") {
+                    m_BlobFilter->exp_epoch_le = NStr::StringToUInt8(val);
+                } else if (key == "fvexp_now_ge") {
+                    m_BlobFilter->vexp_now_ge = NStr::StringToUInt8(val);
+                } else if (key == "frexp_now_le") {
+                    m_BlobFilter->vexp_now_le = NStr::StringToUInt8(val);
+                } else if (key == "fvexp_epoch_ge") {
+                    m_BlobFilter->vexp_epoch_ge = NStr::StringToUInt8(val);
+                } else if (key == "fvexp_epoch_le") {
+                    m_BlobFilter->vexp_epoch_le = NStr::StringToUInt8(val);
+                } else if (key == "fcr_srv") {
+                    m_BlobFilter->cr_srv = NStr::StringToUInt8(val);
+                } else if (key == "fsize_ge") {
+                    m_BlobFilter->size_ge = NStr::StringToUInt8(val);
+                } else if (key == "fsize_le") {
+                    m_BlobFilter->size_le = NStr::StringToUInt8(val);
                 }
                 break;
             case 'h':
@@ -2216,7 +2308,7 @@ CNCMessageHandler::x_StartCommand(void)
         diag_msg.PrintParam("key", m_NCBlobKey.RawKey());
         diag_msg.PrintParam("gen_key", "1");
     }
-    else if (!m_NCBlobKey.IsValid()) {
+    else if (!m_NCBlobKey.IsValid() && !x_IsFlagSet(fNeedsBlobList)) {
         diag_msg.Flush();
         x_ReportError(eStatus_NotFound);
         SRV_LOG(Critical, "Invalid blob key format: " << m_NCBlobKey.RawKey());
@@ -3177,6 +3269,11 @@ CNCMessageHandler::x_WriteSendBuff(void)
     if (strcmp(m_ParsedCmd.command->cmd, "SYNC_START") == 0) {
         return &CNCMessageHandler::x_WriteSyncStartExtra;
     }
+    ENCProxyCmd proxy_cmd = m_ParsedCmd.command->extra.proxy_cmd;
+    if (proxy_cmd == eProxyGetBList2) {
+        Flush();
+        return &CNCMessageHandler::x_DoCmd_GetBListNext;
+    }
     return &CNCMessageHandler::x_FinishCommand;
 }
 
@@ -3226,6 +3323,7 @@ CNCMessageHandler::x_SendCmdAsProxy(void)
     if (status == eNCHubError ||
         status == eNCHubSuccess ||
         (proxy_cmd == eProxyGetBList && !pHandler->GetPeer()->AcceptsBList()) ||
+        (proxy_cmd == eProxyGetBList2 && !pHandler->GetPeer()->AcceptsBList2()) ||
         !pHandler->GetPeer()->AcceptsBlobKey(m_NCBlobKey)
        ) {
         m_LastPeerError = m_ActiveHub->GetErrMsg();
@@ -3284,7 +3382,10 @@ CNCMessageHandler::x_SendCmdAsProxy(void)
                                                 m_SearchOnRead, m_ForceLocal);
         break;
     case eProxyGetBList:
-        pHandler->ProxyBList(GetDiagCtx(), m_NCBlobKey, m_ForceLocal, m_CopyBlobInfo);
+        pHandler->ProxyBList(GetDiagCtx(), m_NCBlobKey, m_ForceLocal, nullptr);
+        break;
+    case eProxyGetBList2:
+        pHandler->ProxyBList(GetDiagCtx(), m_NCBlobKey, m_ForceLocal, m_BlobFilter);
         break;
     default:
         SRV_FATAL("Unsupported command: " << m_ParsedCmd.command->extra.proxy_cmd);
@@ -3316,6 +3417,10 @@ CNCMessageHandler::x_WaitForPeerAnswer(void)
     }
     if (status != eNCHubSuccess) {
         SRV_FATAL("Unexpected client status: " << status);
+    }
+    ENCProxyCmd proxy_cmd = m_ParsedCmd.command->extra.proxy_cmd;
+    if (proxy_cmd == eProxyGetBList2) {
+        return &CNCMessageHandler::x_DoCmd_GetBListNext;
     }
 
     const string& err_msg = m_ActiveHub->GetErrMsg();
@@ -4722,11 +4827,36 @@ CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_GetBList(void)
 {
     m_SendBuff.reset(new TNCBufferType());
-    CNCBlobStorage::GetBList(m_NCBlobKey.PackedKey(), m_SendBuff,m_CopyBlobInfo);
-    x_ReportOK("OK: SIZE=").WriteNumber(m_SendBuff->size()).WriteText("\n");
-    Flush();
+    CNCBlobStorage::GetBList(m_NCBlobKey.PackedKey(), m_SendBuff,m_BlobFilter);
+    CNCDistributionConf::AddServerSlots(m_SlotsDone, 0);
+    ENCProxyCmd proxy_cmd = m_ParsedCmd.command->extra.proxy_cmd;
+    if (proxy_cmd != eProxyGetBList2) {
+        x_ReportOK("OK: SIZE=").WriteNumber(m_SendBuff->size()).WriteText("\n");
+        Flush();
+    }
     m_SendPos = 0;
     return &CNCMessageHandler::x_WriteSendBuff;
+}
+
+CNCMessageHandler::State 
+CNCMessageHandler::x_DoCmd_GetBListNext(void)
+{
+    x_UnsetFlag(fNoReplyOnFinish);
+    if (!m_CheckSrvs.empty()) {
+        CNCDistributionConf::AddServerSlots(m_SlotsDone, m_CheckSrvs[m_SrvsIndex-1]);
+    }
+    Uint2 slot, slot_max = CNCDistributionConf::GetMaxSlotNumber();
+    for (slot=1; slot<slot_max; ++slot) {
+        if (m_SlotsDone.find(slot) == m_SlotsDone.end()) {
+            m_CheckSrvs = CNCDistributionConf::GetRawServersForSlot(slot);
+            if (m_CheckSrvs.empty()) {
+                x_ReportError(eStatus_CondFailed);
+                return &CNCMessageHandler::x_FinishCommand;
+            }
+            return &CNCMessageHandler::x_ProxyToNextPeer;
+        }
+    }
+    return &CNCMessageHandler::x_FinishCommand;
 }
 
 void
@@ -4741,7 +4871,10 @@ CNCMessageHandler::BeginProxyResponse(const CTempString& response, size_t conten
         x_SetFlag(fNoReplyOnFinish);
         return;
     }
-    x_ReportOK(response).WriteText("\n");
+    ENCProxyCmd proxy_cmd = m_ParsedCmd.command->extra.proxy_cmd;
+    if (proxy_cmd != eProxyGetBList2) {
+        x_ReportOK(response).WriteText("\n");
+    }
 }
 
 void
