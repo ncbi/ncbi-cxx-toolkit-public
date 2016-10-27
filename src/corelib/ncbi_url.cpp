@@ -337,6 +337,8 @@ CUrl& CUrl::operator=(const CUrl& url)
         m_OrigArgs = url.m_OrigArgs;
         if ( url.m_ArgsList.get() ) {
             m_ArgsList.reset(new CUrlArgs(*url.m_ArgsList));
+        } else {
+            m_ArgsList.reset();
         }
     }
     return *this;
