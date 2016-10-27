@@ -1355,8 +1355,9 @@ int CTL_Connection::x_IntHandler(void* param)
         } else if (ctl_conn->m_OrigIntHandler != NULL) {
             LOCK.Release();
             result = (*ctl_conn->m_OrigIntHandler)(param);
-        } else if (ctl_conn->m_TotalTimeout - ctl_conn->m_BaseTimeout
-                   >= ctl_conn->m_OrigTimeout) {
+        } else if (ctl_conn->m_OrigTimeout > 0
+                   &&  ctl_conn->m_TotalTimeout - ctl_conn->m_BaseTimeout
+                       >= ctl_conn->m_OrigTimeout) {
             result = TDS_INT_CANCEL;
         }
         if (result == TDS_INT_CANCEL) {
