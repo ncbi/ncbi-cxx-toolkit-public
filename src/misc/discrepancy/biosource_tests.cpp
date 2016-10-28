@@ -1111,9 +1111,11 @@ DISCREPANCY_CASE(ORGANELLE_ITS, CBioSource, eOncaller, "Test Bioseqs for suspect
     if (annot) {
         ITERATE (CSeq_annot::TData::TFtable, feat, annot->GetData().GetFtable()) {
             if ((*feat)->IsSetData() && (*feat)->GetData().IsRna()) {
+
                 const CRNA_ref& rna = (*feat)->GetData().GetRna();
+
                 if (rna.IsSetType() && (rna.GetType() == CRNA_ref::eType_rRNA || rna.GetType() == CRNA_ref::eType_miscRNA)) {
-                    string product = rna.GetRnaProductName();
+
                     static vector<string> suspectable_products = {
                         "18S ribosomal RNA",
                         "5.8S ribosomal RNA",
@@ -1123,9 +1125,27 @@ DISCREPANCY_CASE(ORGANELLE_ITS, CBioSource, eOncaller, "Test Bioseqs for suspect
                         "internal transcribed spacer 2"
                     };
 
+                    string product = rna.GetRnaProductName();
                     if (NStr::FindNoCase(suspectable_products, product) != nullptr) {
                         has_suspect = true;
                         break;
+                    }
+
+                    if ((*feat)->IsSetComment()) {
+                        string comment = (*feat)->GetComment();
+                        if (!comment.empty()) {
+
+                            for (auto suspectable = suspectable_products.begin(); suspectable != suspectable_products.end(); ++suspectable) {
+                                if (NStr::FindNoCase(comment, *suspectable) != NPOS) {
+                                    has_suspect = true;
+                                    break;
+                                }
+                            }
+
+                            if (has_suspect) {
+                                break;
+                            }
+                        }
                     }
                 }
             }
