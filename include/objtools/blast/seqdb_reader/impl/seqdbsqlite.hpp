@@ -38,6 +38,8 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
+BEGIN_NCBI_SCOPE
+
 
 struct SAccOid {
     string m_acc;
@@ -136,5 +138,7 @@ public:
     /// @return true if row is found, or false if all rows have been returned
     bool StepVolumes(string* path, int* modtime, int* volume, int* numoids);
 };
+
+END_NCBI_SCOPE
 
 #endif
