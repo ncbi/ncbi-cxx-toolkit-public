@@ -878,12 +878,11 @@ bool CCleanupApp::x_FixCDS(CSeq_entry_Handle seh, Uint4 options, const string& m
             }
             if ((options & eFixCDS_ExtendToStop) &&
                 x_BatchExtendCDS(*sf, *bi)) {
-                CCdregion::TFrame frame = sf->GetData().GetCdregion().IsSetFrame() ? sf->GetData().GetCdregion().GetFrame() : CCdregion::eFrame_not_set;
                 CConstRef<CSeq_feat> mrna = sequence::GetmRNAforCDS(*orig, seh.GetScope());
                 if (mrna && s_LocationShouldBeExtendedToMatch(mrna->GetLocation(), sf->GetLocation())) {
                     CRef<CSeq_feat> new_mrna(new CSeq_feat());
                     new_mrna->Assign(*mrna);
-                    if (CCleanup::ExtendToStopCodon(*new_mrna, *bi, 50, frame)) {
+                    if (CCleanup::ExtendToStopCodon(*new_mrna, *bi, 50, sf)) {
                         CSeq_feat_EditHandle efh(seh.GetScope().GetSeq_featHandle(*mrna));
                         efh.Replace(*new_mrna);
                     }
@@ -892,7 +891,7 @@ bool CCleanupApp::x_FixCDS(CSeq_entry_Handle seh, Uint4 options, const string& m
                 if (gene && s_LocationShouldBeExtendedToMatch(gene->GetLocation(), sf->GetLocation())) {
                     CRef<CSeq_feat> new_gene(new CSeq_feat());
                     new_gene->Assign(*gene);
-                    if (CCleanup::ExtendToStopCodon(*new_gene, *bi, 50, frame)) {
+                    if (CCleanup::ExtendToStopCodon(*new_gene, *bi, 50, sf)) {
                         CSeq_feat_EditHandle efh(seh.GetScope().GetSeq_featHandle(*gene));
                         efh.Replace(*new_gene);
                     }
