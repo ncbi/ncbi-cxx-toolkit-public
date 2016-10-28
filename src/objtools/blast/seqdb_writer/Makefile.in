@@ -6,5 +6,7 @@
 LIB_PROJ = writedb
 SUB_PROJ = unit_test
 
+REQUIRES = SQLITE3
+
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
