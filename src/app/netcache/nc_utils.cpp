@@ -62,7 +62,9 @@ static SStatusMsg s_StatusMessages[] =
         {eStatus_ShuttingDown,"ERR:Shutting down"},
         {eStatus_BlobTooBig,  "ERR:Blob size exceeds the allowed maximum"},
         {eStatus_NeedAdmin,   "ERR:Command requires administrative privileges"},
-        {eStatus_StaleSync,   "ERR:Stale synchronization"}
+        {eStatus_StaleSync,   "ERR:Stale synchronization"},
+        {eStatus_PrematureClose, "ERR:Connection closed too early"},
+        {eStatus_CmdTimeout, "ERR:Command timeout"}
     };
 
 

@@ -1418,21 +1418,21 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "fcr_epoch_ge", eNSPT_Int,  eNSPA_Optional },
           // Created less than N seconds since epoch
           { "fcr_epoch_le", eNSPT_Int,  eNSPA_Optional },
-          // Will expire in more than N seconds from now
+          // Blob will expire in more than N seconds from now
           { "fexp_now_ge", eNSPT_Int,  eNSPA_Optional },
-          // Will expire in less than N seconds from now
+          // Blob will expire in less than N seconds from now
           { "fexp_now_le", eNSPT_Int,  eNSPA_Optional },
-          // Will expire in more than N seconds since epoch
+          // Blob will expire in more than N seconds since epoch
           { "fexp_epoch_ge", eNSPT_Int,  eNSPA_Optional },
-          // Will expire in less than N seconds since epoch
+          // Blob will expire in less than N seconds since epoch
           { "fexp_epoch_le", eNSPT_Int,  eNSPA_Optional },
-          // Will expire in more than N seconds from now
+          // Version will expire in more than N seconds from now
           { "fvexp_now_ge", eNSPT_Int,  eNSPA_Optional },
-          // Will expire in less than N seconds from now
+          // Version will expire in less than N seconds from now
           { "fvexp_now_le", eNSPT_Int,  eNSPA_Optional },
-          // Will expire in more than N seconds since epoch
+          // Version will expire in more than N seconds since epoch
           { "fvexp_epoch_ge", eNSPT_Int,  eNSPA_Optional },
-          // Will expire in less than N seconds since epoch
+          // Version will expire in less than N seconds since epoch
           { "fvexp_epoch_le", eNSPT_Int,  eNSPA_Optional },
           // Server_id of the server where blob was created.
           { "fcr_srv",  eNSPT_Int,  eNSPA_Optional },

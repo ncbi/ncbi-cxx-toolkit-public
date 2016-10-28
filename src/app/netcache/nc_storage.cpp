@@ -1822,7 +1822,8 @@ CNCAlerts::Register(CNCAlerts::eDebugReleaseCacheData1, "ref_cnt is 0");
 
     if (n != 0) {
         AtomicSub(s_CurKeysCnt, 1);
-        data->CallRCU();
+//        data->CallRCU();
+        delete data;
     }
 #ifdef _DEBUG
     else {
