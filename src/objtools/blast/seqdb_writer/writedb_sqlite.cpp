@@ -31,11 +31,14 @@
 /// Implementation for the CWriteDB_Sqlite and related classes.
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbistd.hpp>
 
 #include <objtools/blast/seqdb_writer/writedb_sqlite.hpp>
 
 #include <sstream>
 using std::ostringstream;
+
+BEGIN_NCBI_SCOPE
 
 CWriteDB_Sqlite::CWriteDB_Sqlite(const string& dbname)
 {
@@ -244,3 +247,5 @@ void CWriteDB_Sqlite::CreateIndex()
     );
     indexStmt.Execute();
 }
+
+END_NCBI_SCOPE
