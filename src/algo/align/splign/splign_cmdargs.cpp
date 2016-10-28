@@ -178,6 +178,22 @@ void CSplignArgUtil::SetupArgDescriptions(CArgDescriptions* argdescr)
                            s_GetDefaultMaxIntron()));
 
     argdescr->AddDefaultKey
+        ("min_hole_len",
+         "min_hole_len",
+         "If a gap between exons is less than min_hole_len (on both query and subject), "
+         "stich the exons together. The gap will be represented as insertions and/or  "
+         "deletions inside the joint exon. 0 - don\'t stich.",
+         CArgDescriptions::eInteger,
+         NStr::NumericToString(CSplign::s_GetDefaultMinHoleLen()));
+
+    argdescr->AddDefaultKey
+        ("trim_holes_to_codons",
+         "trim_holes_to_codons",
+         "Trim exons around a gap to full codons if CDS location is known on the query.",
+         CArgDescriptions::eBoolean,
+         CSplign::s_GetDefaultTrimToCodons()?"true":"false");
+
+    argdescr->AddDefaultKey
         ("max_space",
          "max_space",
          "The max space to allocate for a splice, in MB. "
@@ -212,6 +228,9 @@ void CSplignArgUtil::SetupArgDescriptions(CArgDescriptions* argdescr)
 
     CArgAllow * constrain_7_2M (new CArgAllow_Integers(7,2000000));
     argdescr->SetConstraint("max_intron", constrain_7_2M);
+
+    CArgAllow * constrain_mhl (new CArgAllow_Integers(0,3000));
+    argdescr->SetConstraint("min_hole_len", constrain_mhl);
 
     CArgAllow * constrain_max_space (new CArgAllow_Doubles(500, 4096));
     argdescr->SetConstraint("max_space", constrain_max_space);
@@ -249,6 +268,9 @@ void CSplignArgUtil::ArgsToSplign(CSplign* splign, const CArgs& args)
     splign->SetMinExonIdentity(args["min_exon_idty"].AsDouble());
     splign->SetPolyaExtIdentity(args["min_polya_ext_idty"].AsDouble());
     splign->SetMinPolyaLen(args["min_polya_len"].AsInteger());
+    splign->SetMinHoleLen(args["min_hole_len"].AsInteger());
+    splign->SetTrimToCodons(args["trim_holes_to_codons"].AsBoolean());
+
     double max_space (args["max_space"].AsDouble() * kMb);
     const Uint4 kMax32 (numeric_limits<Uint4>::max());
     if(max_space > kMax32) max_space = kMax32;

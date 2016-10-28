@@ -126,11 +126,12 @@ void CSplignTrim::JoinExons(TSegs& segments, TSeqPos p1, TSeqPos p2)
     s.m_box[1] = segments[pos2].m_box[1];
     s.m_box[3] = segments[pos2].m_box[3];
     if( segments[pos1].m_box[1] + 1 < segments[pos2].m_box[0]) {
-        s.m_details.append(segments[pos2].m_box[0] - segments[pos1].m_box[1], 'D');
+        s.m_details.append(segments[pos2].m_box[0] - segments[pos1].m_box[1] - 1, 'D');
     }
     if( segments[pos1].m_box[3] + 1 < segments[pos2].m_box[2]) {
-        s.m_details.append(segments[pos2].m_box[2] - segments[pos1].m_box[3], 'I');
+        s.m_details.append(segments[pos2].m_box[2] - segments[pos1].m_box[3] - 1, 'I');
     }
+    s.m_details += segments[pos2].m_details;
     Update(s);
     new_segments.push_back(s);
     //write the rest
@@ -143,15 +144,23 @@ void CSplignTrim::JoinExons(TSegs& segments, TSeqPos p1, TSeqPos p2)
 
 //trims exons around internal alignment gaps to complete codons
 //if CDS can be retrieved from bioseq
-void CSplignTrim::TrimHolesToCodons(TSegs& segments, CBioseq_Handle& mrna_bio_handle)
+void CSplignTrim::TrimHolesToCodons(TSegs& segments, CBioseq_Handle& mrna_bio_handle, bool mrna_strand, size_t mrna_len)
 {
-    if( mrna_bio_handle ) {
 
+    if( mrna_bio_handle ) {
         //collect CDS intervals (could be more than one in a case of ribosomal slippage)
         vector<TSeqRange> tr;
         for(CFeat_CI ci(mrna_bio_handle, SAnnotSelector(CSeqFeatData::e_Cdregion)); ci; ++ci) {
             for(CSeq_loc_CI slit(ci->GetLocation()); slit; ++slit) {
-                tr.push_back(slit.GetRange());
+                TSeqRange r, ori;
+                ori = slit.GetRange();
+                if( mrna_strand ) {
+                    r = ori;
+                } else {//reverse
+                    r.SetFrom(mrna_len - ori.GetTo() - 1);
+                    r.SetTo(mrna_len - ori.GetFrom() - 1);
+                }
+                tr.push_back(r);
             }
         }
 
@@ -188,7 +197,7 @@ void CSplignTrim::TrimHolesToCodons(TSegs& segments, CBioseq_Handle& mrna_bio_ha
                 TSeqPos p2 =  segments[pos2].m_box[0];
                 ITERATE(vector<TSeqRange>, it, tr) {
                     if( p2 >= it->GetFrom() && p2 <= it->GetTo() ) {
-                        TSeqPos cut_mrna_len = ( p2 - it->GetFrom()) % 3, cnt = 0;
+                        TSeqPos cut_mrna_len = ( 3 - ( p2 - it->GetFrom()) % 3  ) %3, cnt = 0;
                         string transcript = segments[pos2].m_details;
                         int i = 0;
                         for( ; i < (int)transcript.size(); ++i) {
@@ -206,6 +215,7 @@ void CSplignTrim::TrimHolesToCodons(TSegs& segments, CBioseq_Handle& mrna_bio_ha
                 }
             }
         }
+        AdjustGaps(segments);
     }
 }
 

@@ -87,7 +87,7 @@ public:
 
     //trims exons around internal alignment gaps to complete codons
     //if CDS can be retrieved from bioseq
-    void TrimHolesToCodons(TSegs& segments, objects::CBioseq_Handle& mrna_bio_handle);
+    void TrimHolesToCodons(TSegs& segments, objects::CBioseq_Handle& mrna_bio_handle, bool mrna_strand, size_t mrna_len);
 
     // updates m_annot for a segment based on SSegment::m_box and CSplignTrim:m_seq
     void UpdateAnnot(TSeg& s);

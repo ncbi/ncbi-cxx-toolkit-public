@@ -152,6 +152,14 @@ public:
     static size_t s_GetDefaultMinPolyaLen(void);
     size_t GetMinPolyaLen(void) const;
 
+    void   SetMinHoleLen(size_t len);
+    static size_t s_GetDefaultMinHoleLen(void);
+    size_t GetMinHoleLen(void) const;
+
+    void   SetTrimToCodons(bool);
+    static bool s_GetDefaultTrimToCodons(void);
+    bool GetTrimToCodons(void) const;
+
     void   SetMaxPartExonIdentDrop(double ident);
     static double s_GetDefaultMaxPartExonIdentDrop(void);
     double GetMaxPartExonIdentDrop(void) const;
@@ -391,6 +399,16 @@ protected:
 
     // min polya length
     size_t                m_MinPolyaLen;
+
+    //minimum length of a gap between exons
+    //If a gap between exons is less than min_hole_len (on both query and subject),
+    //stich them back together. The gap will be represented as a regular alignment
+    //gaps inside the joint exon. 0 - don\'t stich.
+    size_t                m_MinHoleLen;
+
+    //trim holes to codons
+    //Trim exons around a gap to full codons if CDS can be retrieved along with the query.
+    bool                  m_TrimToCodons;
 
     // compartment penalty as a per cent of the query (mRna) length
     double                m_CompartmentPenalty;

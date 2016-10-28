@@ -155,7 +155,7 @@ int CSplign::s_GetDefaultNonConsensusSpliceScore(void) {
 }
 
 CSplign::CSplign(void):
-    m_CanResetHistory (true),
+    m_CanResetHistory (false),
     //basic scores
     m_ScoringType(s_GetDefaultScoringType()),
     m_MatchScore(s_GetDefaultMatchScore()),
@@ -170,6 +170,8 @@ CSplign::CSplign(void):
     m_MinExonIdty(s_GetDefaultMinExonIdty()),
     m_MinPolyaExtIdty(s_GetDefaultPolyaExtIdty()),
     m_MinPolyaLen(s_GetDefaultMinPolyaLen()),
+    m_MinHoleLen(s_GetDefaultMinHoleLen()),
+    m_TrimToCodons(s_GetDefaultTrimToCodons()),
     m_CompartmentPenalty(s_GetDefaultCompartmentPenalty()),
     m_MinCompartmentIdty(s_GetDefaultMinCompartmentIdty()),
     m_MinSingletonIdty(s_GetDefaultMinCompartmentIdty()),
@@ -195,7 +197,7 @@ CSplign::~CSplign()
 
 static CVersion* s_CreateVersion(void)
 {
-    return new CVersion(CVersionInfo(2, 0, 8));
+    return new CVersion(CVersionInfo(2, 1, 0));
 };
 
 
@@ -407,6 +409,14 @@ void CSplign::SetMinPolyaLen(size_t len) {
     m_MinPolyaLen = len;
 }
 
+void CSplign::SetMinHoleLen(size_t len) {
+    m_MinHoleLen = len;
+}
+
+void CSplign::SetTrimToCodons(bool val) {
+    m_TrimToCodons = val;
+}
+
 void CSplign::SetMinCompartmentIdentity( double idty )
 {
     if(!(0 <= idty && idty <= 1)) {
@@ -487,6 +497,24 @@ size_t CSplign::GetMinPolyaLen( void ) const {
 size_t CSplign::s_GetDefaultMinPolyaLen(void)
 {
     return 1;
+}
+
+size_t CSplign::GetMinHoleLen( void ) const {
+    return m_MinHoleLen;
+}
+
+size_t CSplign::s_GetDefaultMinHoleLen(void)
+{
+    return 0;
+}
+
+bool CSplign::GetTrimToCodons( void ) const {
+    return m_TrimToCodons;
+}
+
+bool CSplign::s_GetDefaultTrimToCodons(void)
+{
+    return false;
 }
 
 double CSplign::GetMinCompartmentIdentity(void) const {
@@ -597,6 +625,8 @@ void CSplign::x_LoadSequence(vector<char>* seq,
         }
 
         CBioseq_Handle bh (m_Scope->GetBioseqHandle(seqid));
+
+        if( !is_genomic ) m_mrna_bio_handle = bh;
 
         if(retain && m_CanResetHistory) {
             m_Scope->ResetHistory(); // this does not remove the sequence
@@ -1144,6 +1174,7 @@ void CSplign::Run(THitRefs* phitrefs)
  
         // pre-load cDNA
         m_mrna.clear();
+
         x_LoadSequence(&m_mrna, *id_query, 0, kMaxCoord, false);
 
         const TOrfPair orfs (GetCds(id_query, & m_mrna));
@@ -1633,10 +1664,9 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
         }
 
         //trim holes to codons
-        bool trim_holes_to_codons = true;
-        if( trim_holes_to_codons ) {
+        if( GetTrimToCodons() ) {
             CSplignTrim trim(&m_genomic.front(), (int)m_genomic.size(), m_aligner, m_MaxPartExonIdentDrop);
-            trim.TrimHolesToCodons(m_segments, m_mrna_bio_handle);
+            trim.TrimHolesToCodons(m_segments, m_mrna_bio_handle, m_strand, m_mrna.size());
         }
 
 		//look for the last exon
@@ -2818,7 +2848,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
 
     // stich small holes
     {{
-        size_t min_hole_len = 200;
+        size_t min_hole_len = GetMinHoleLen();
         if( min_hole_len > 0) { //find small holes and stich
             trim.AdjustGaps(m_segments);//make sure there is no adjacent gaps
             size_t pos1 = 0, pos2 = 2;
