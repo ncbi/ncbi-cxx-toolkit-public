@@ -805,9 +805,10 @@ bool CBuildDatabase::AddSequences(IBioseqSource & src, bool add_pig)
                 for (auto& it: bss->SetId()) {
                     CSeq_id::EAccessionInfo info = it->IdentifyAccession();
                     if (!it->IsLocal() && !it->IsGi() &&
+                        (info & (CSeq_id::fAcc_prot | CSeq_id::fAcc_nuc)) &&
                         m_IsProtein == !!(info & CSeq_id::fAcc_nuc)) {
 
-                        string label = it->GetSeqIdString();
+                        string label = it->GetSeqIdString(true);
                         it.Reset(new CSeq_id(CSeq_id::e_Local, label));
                     }
                 }

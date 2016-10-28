@@ -1708,9 +1708,10 @@ x_GetFastaReaderDeflines(const CBioseq                  & bioseq,
                      for (auto& it: seqids) {
                          CSeq_id::EAccessionInfo info = it->IdentifyAccession();
                          if (!it->IsLocal() && !it->IsGi() &&
+                             (info & (CSeq_id::fAcc_prot | CSeq_id::fAcc_nuc)) &&
                              bioseq.IsAa() == !!(info & CSeq_id::fAcc_nuc)) {
 
-                             string label = it->GetSeqIdString();
+                             string label = it->GetSeqIdString(true);
                              it.Reset(new CSeq_id(CSeq_id::e_Local, label));
                          }
                      }
