@@ -955,7 +955,7 @@ bool CCleanupApp::x_BasicAndExtended(CSeq_entry_Handle entry, const string& labe
                 LOG_POST(Error << "No changes from BasicCleanup\n");
             }
             else {
-                printf("Changes from BasicCleanup:\n");
+                LOG_POST("Changes from BasicCleanup:\n");
                 ITERATE(vector<string>, vit, changes_str) {
                     LOG_POST(Error << (*vit).c_str());
                 }
@@ -999,7 +999,7 @@ bool CCleanupApp::HandleSeqEntry(CSeq_entry_Handle entry)
     const CArgs& args = GetArgs();
 
     if (args["showprogress"]) {
-        printf("%s\n", label.c_str());
+        LOG_POST("%s\n", label.c_str());
     }
 
     ESerialDataFormat outFormat = eSerial_AsnText;
