@@ -371,6 +371,7 @@ public:
     const CTSE_Split_Info& GetSplitInfo(void) const;
     bool HasSplitInfo(void) const;
     bool x_NeedsDelayedMainChunk(void) const;
+    void x_LoadDelayedMainChunk(void) const;
 
     const CSeq_id_Handle& GetRequestedId(void) const;
     void SetRequestedId(const CSeq_id_Handle& requested_id) const;

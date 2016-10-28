@@ -49,10 +49,8 @@ BEGIN_SCOPE(objects)
 
 void CSplitParser::Attach(CTSE_Info& tse, const CID2S_Split_Info& split)
 {
-    if ( !tse.HasSeq_entry() ) {
-        if ( split.IsSetSkeleton() ) {
-            tse.SetSeq_entry(const_cast<CSeq_entry&>(split.GetSkeleton()));
-        }
+    if ( split.IsSetSkeleton() && tse.HasNoSeq_entry() ) {
+        tse.SetSeq_entry(const_cast<CSeq_entry&>(split.GetSkeleton()));
     }
     CTSE_Split_Info& sinfo = tse.GetSplitInfo();
     ITERATE ( CID2S_Split_Info::TChunks, it, split.GetChunks() ) {

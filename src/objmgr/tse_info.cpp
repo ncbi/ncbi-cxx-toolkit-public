@@ -339,7 +339,7 @@ void CTSE_Info::SetUsedMemory(size_t size)
 
 void CTSE_Info::SetSeq_entry(CSeq_entry& entry, CTSE_SetObjectInfo* set_info)
 {
-    if ( Which() != CSeq_entry::e_not_set ) {
+    if ( m_Which != CSeq_entry::e_not_set ) {
         if ( m_LoadState == eNotLoaded ) {
             Reset();
             m_Object.Reset();
@@ -1369,6 +1369,14 @@ CTSE_Split_Info& CTSE_Info::GetSplitInfo(void)
 bool CTSE_Info::x_NeedsDelayedMainChunk(void) const
 {
     return m_Split && m_Split->x_NeedsDelayedMainChunk();
+}
+
+
+void CTSE_Info::x_LoadDelayedMainChunk(void) const
+{
+    if ( m_Split ) {
+        m_Split->x_LoadDelayedMainChunk();
+    }
 }
 
 

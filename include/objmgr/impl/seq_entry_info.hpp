@@ -91,7 +91,7 @@ public:
 
     typedef CSeq_entry TObject;
 
-    bool HasSeq_entry(void) const;
+    bool HasNoSeq_entry(void) const;
     CConstRef<TObject> GetCompleteSeq_entry(void) const;
     CConstRef<TObject> GetSeq_entryCore(void) const;
     CConstRef<TObject> GetSeq_entrySkeleton(void) const;
@@ -215,6 +215,9 @@ protected:
 
     void x_UpdateAnnotIndexContents(CTSE_Info& tse);
 
+    void x_UpdateSkeleton() const;
+    void x_Update(TNeedUpdateFlags flags) const;
+
     void x_DoUpdate(TNeedUpdateFlags flags);
     void x_SetNeedUpdateContents(TNeedUpdateFlags flags);
 
@@ -241,43 +244,11 @@ protected:
 /////////////////////////////////////////////////////////////////////
 
 inline
-bool CSeq_entry_Info::HasSeq_entry(void) const
+bool CSeq_entry_Info::HasNoSeq_entry(void) const
 {
-    return m_Object.NotEmpty();
+    return !m_Object;
 }
 
-
-inline
-CSeq_entry::E_Choice CSeq_entry_Info::Which(void) const
-{
-    return m_Which;
-}
-
-inline 
-CConstRef<CSeq_entry> CSeq_entry_Info::GetSeq_entrySkeleton(void) const
-{
-    return m_Object;   
-}
-
-inline
-CSeq_entry& CSeq_entry_Info::x_GetObject(void)
-{
-    return *m_Object;
-}
-
-
-inline
-const CSeq_entry& CSeq_entry_Info::x_GetObject(void) const
-{
-    return *m_Object;
-}
-
-
-inline 
-const CBioseq_Base_Info& CSeq_entry_Info::x_GetBaseInfo(void) const
-{
-    return *m_Contents;
-}
 
 inline
 bool CSeq_entry_Info::IsSet(void) const

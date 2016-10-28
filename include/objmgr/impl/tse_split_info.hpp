@@ -111,6 +111,7 @@ public:
 
     bool x_HasDelayedMainChunk(void) const;
     bool x_NeedsDelayedMainChunk(void) const;
+    void x_LoadDelayedMainChunk(void) const;
 
     // split information
     void x_AddDescInfo(const TDescInfo& info, TChunkId chunk_id);

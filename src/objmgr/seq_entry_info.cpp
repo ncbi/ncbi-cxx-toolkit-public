@@ -435,8 +435,60 @@ void CSeq_entry_Info::x_UpdateAnnotIndexContents(CTSE_Info& tse)
 }
 
 
+inline
+void CSeq_entry_Info::x_UpdateSkeleton() const
+{
+    if ( !m_Object ) {
+        GetTSE_Info().x_LoadDelayedMainChunk();
+    }
+}
+
+
+void CSeq_entry_Info::x_Update(TNeedUpdateFlags flags) const
+{
+    x_UpdateSkeleton();
+    TParent::x_Update(flags);
+}
+
+
+CSeq_entry::E_Choice CSeq_entry_Info::Which(void) const
+{
+    x_UpdateSkeleton();
+    return m_Which;
+}
+
+
+CConstRef<CSeq_entry> CSeq_entry_Info::GetSeq_entrySkeleton(void) const
+{
+    x_UpdateSkeleton();
+    return m_Object;   
+}
+
+
+CSeq_entry& CSeq_entry_Info::x_GetObject(void)
+{
+    x_UpdateSkeleton();
+    return *m_Object;
+}
+
+
+const CSeq_entry& CSeq_entry_Info::x_GetObject(void) const
+{
+    x_UpdateSkeleton();
+    return *m_Object;
+}
+
+
+const CBioseq_Base_Info& CSeq_entry_Info::x_GetBaseInfo(void) const
+{
+    x_UpdateSkeleton();
+    return *m_Contents;
+}
+
+
 bool CSeq_entry_Info::IsSetDescr(void) const
 {
+    x_UpdateSkeleton();
     // x_Update(fNeedUpdate_descr);
     return m_Contents && m_Contents->IsSetDescr();
 }
@@ -541,7 +593,9 @@ void CSeq_entry_Info::RemoveAnnot(CRef<CSeq_annot_Info> annot)
 void CSeq_entry_Info::x_SetBioseqChunkId(TChunkId _DEBUG_ARG(chunk_id))
 {
     _ASSERT(chunk_id == kBioseqChunkId);
-    x_CheckWhich(CSeq_entry::e_not_set);
+    //x_CheckWhich(CSeq_entry::e_not_set);
+    _ASSERT(!m_Object);
+    _ASSERT(!m_Contents);
     x_SetNeedUpdate(CTSE_Info::fNeedUpdate_bioseq);
     m_Which = CSeq_entry::e_Seq;
 }

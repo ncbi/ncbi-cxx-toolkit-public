@@ -193,6 +193,15 @@ bool CTSE_Split_Info::x_NeedsDelayedMainChunk(void) const
 }
 
 
+void CTSE_Split_Info::x_LoadDelayedMainChunk(void) const
+{
+    TChunks::const_iterator iter = m_Chunks.end(), begin = m_Chunks.begin();
+    while ( iter != begin && (--iter)->first >= kMax_Int-1 ) {
+        iter->second->Load();
+    }
+}
+
+
 // chunk attach
 void CTSE_Split_Info::AddChunk(CTSE_Chunk_Info& chunk_info)
 {
