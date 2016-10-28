@@ -88,8 +88,6 @@
 #include <objtools/readers/ucscregion_reader.hpp>
 #include <objtools/error_codes.hpp>
 
-#include <objmgr/util/feature.hpp>
-
 #include <algorithm>
 
 
