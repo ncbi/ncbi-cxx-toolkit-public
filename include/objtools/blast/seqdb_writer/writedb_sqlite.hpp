@@ -47,6 +47,8 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
+BEGIN_NCBI_SCOPE
+
 
 /// This class supports creation of a string accession to integer OID
 /// database, stored and maintained using the SQLite library.
@@ -142,5 +144,7 @@ public:
     /// will return without taking any action.
     void CreateIndex();
 };
+
+END_NCBI_SCOPE
 
 #endif
