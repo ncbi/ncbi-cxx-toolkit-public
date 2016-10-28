@@ -210,7 +210,8 @@ public:
 /// @param bsh CBioseq_Handle on which the feature is located
 /// @param limit maximum number of nt to extend, or 0 if unlimited
 /// @return Boolean return value indicates whether the feature was extended
-    static bool ExtendToStopCodon(CSeq_feat& f, CBioseq_Handle bsh, size_t limit, CCdregion::TFrame frame = CCdregion::eFrame_not_set);
+    static bool ExtendToStopCodon(CSeq_feat& f, CBioseq_Handle bsh, size_t limit);
+    static bool ExtendToStopCodon(CSeq_feat& f, CBioseq_Handle bsh, size_t limit, const CSeq_feat* cd_region);
 
 /// Translates coding region and selects best frame (without stops, or longest)
 /// @param cds Coding region Seq-feat to edit

@@ -12513,11 +12513,10 @@ void CNewCleanup_imp::CdRegionEC(CSeq_feat& sf)
         try {
             CBioseq_Handle bsh = m_Scope->GetBioseqHandle(sf.GetLocation());
             if (bsh && CCleanup::ExtendToStopIfShortAndNotPartial(sf, bsh)) {
-                CCdregion::TFrame frame = cdr.IsSetFrame() ? cdr.GetFrame() : CCdregion::eFrame_not_set;
                 if (gene && s_LocationShouldBeExtendedToMatch(gene->GetLocation(), sf.GetLocation())) {
                     CRef<CSeq_feat> new_gene(new CSeq_feat());
                     new_gene->Assign(*gene);
-                    if (CCleanup::ExtendToStopCodon(*new_gene, bsh, 3, frame)) {
+                    if (CCleanup::ExtendToStopCodon(*new_gene, bsh, 3, &sf)) {
                         CSeq_feat_EditHandle efh = CSeq_feat_EditHandle(m_Scope->GetSeq_featHandle(*gene));
                         efh.Replace(*new_gene);
                     }
@@ -12525,7 +12524,7 @@ void CNewCleanup_imp::CdRegionEC(CSeq_feat& sf)
                 if (mrna && s_LocationShouldBeExtendedToMatch(mrna->GetLocation(), sf.GetLocation())) {
                     CRef<CSeq_feat> new_mrna(new CSeq_feat());
                     new_mrna->Assign(*mrna);
-                    if (CCleanup::ExtendToStopCodon(*new_mrna, bsh, 3, frame)) {
+                    if (CCleanup::ExtendToStopCodon(*new_mrna, bsh, 3, &sf)) {
                         CSeq_feat_EditHandle efh = CSeq_feat_EditHandle(m_Scope->GetSeq_featHandle(*mrna));
                         efh.Replace(*new_mrna);
                     }

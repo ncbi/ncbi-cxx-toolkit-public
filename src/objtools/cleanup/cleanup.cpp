@@ -916,25 +916,39 @@ bool CCleanup::SeqLocExtend(CSeq_loc& loc, size_t pos, CScope& scope)
 }
 
 
-bool CCleanup::ExtendToStopCodon(CSeq_feat& f, CBioseq_Handle bsh, size_t limit, CCdregion::TFrame frame)
+bool CCleanup::ExtendToStopCodon(CSeq_feat& f, CBioseq_Handle bsh, size_t limit)
+{
+    const CSeq_feat* cd_region = 0;
+    if (f.IsSetData() && f.GetData().IsCdregion())
+    {
+        cd_region = &f;
+    }
+
+    return ExtendToStopCodon(f, bsh, limit, cd_region);
+}
+
+bool CCleanup::ExtendToStopCodon(CSeq_feat& f, CBioseq_Handle bsh, size_t limit, const CSeq_feat* cd_region)
 {
     const CSeq_loc& loc = f.GetLocation();
     CRef<CSeq_loc> new_loc;
 
+    CCdregion::TFrame frame = CCdregion::eFrame_not_set;
     const CGenetic_code* code = NULL;
-    if (f.IsSetData() && f.GetData().IsCdregion() && f.GetData().GetCdregion().IsSetCode()) {
-        code = &(f.GetData().GetCdregion().GetCode());
+    // we need to extract frame and cd_region from linked cd_region
+    if (cd_region && cd_region->IsSetData() && cd_region->GetData().IsCdregion())
+    {
+        if (cd_region->GetData().GetCdregion().IsSetCode())
+           code = &(cd_region->GetData().GetCdregion().GetCode());
+        if (cd_region->GetData().GetCdregion().IsSetFrame())
+           frame = cd_region->GetData().GetCdregion().GetFrame();
     }
 
     size_t stop = loc.GetStop(eExtreme_Biological);
     // figure out if we have a partial codon at the end
     size_t orig_len = sequence::GetLength(loc, &(bsh.GetScope()));
+    // size_t orig_len = sequence::GetLength(cd_region->GetLocation(), &(bsh.GetScope()));
     size_t len = orig_len;
-    if (frame == CCdregion::eFrame_not_set &&
-        f.IsSetData() && f.GetData().IsCdregion() &&
-        f.GetData().GetCdregion().IsSetFrame()) {
-        frame = f.GetData().GetCdregion().GetFrame();
-    }
+
     if (frame == CCdregion::eFrame_two) {
         len -= 1;
     } else if (frame == CCdregion::eFrame_three) {
