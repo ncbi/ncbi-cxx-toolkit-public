@@ -86,7 +86,7 @@ static const char kDefaultAnnotName[] = "SNP";
 static const char* const kSubtypeValue[] = {
     "U", // eFeatSubtype_unknown
     "-", // eFeatSubtype_identity
-    "H", // eFeatSubtype_inversion
+    "V", // eFeatSubtype_inversion
     "S", // eFeatSubtype_single_nucleotide_variation
     "M", // eFeatSubtype_multi_nucleotide_variation
     "L", // eFeatSubtype_deletion_insertion
