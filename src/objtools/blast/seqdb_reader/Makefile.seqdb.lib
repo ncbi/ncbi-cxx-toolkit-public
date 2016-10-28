@@ -14,6 +14,7 @@ seqdbvol \
 seqdbvolset \
 seqdboidlist \
 seqdbisam \
+seqdbsqlite \
 seqdbtax \
 seqdbgilistset \
 seqdbexpert \
@@ -23,7 +24,8 @@ seqdbgimask \
 seqdbobj
 
 LIB = seqdb
-DLL_LIB = blastdb $(SOBJMGR_LIBS)
+DLL_LIB = blastdb sqlitewrapp $(SOBJMGR_LIBS)
+LIBS = $(SQLITE3_LIBS)
 
 CFLAGS   = $(FAST_CFLAGS)
 CPPFLAGS = -DNCBI_MODULE=BLASTDB $(ORIG_CPPFLAGS)
