@@ -4,7 +4,7 @@
 #################################
 
 LIB_PROJ = writedb
-SUB_PROJ = unit_test seqdb2_create
+SUB_PROJ = unit_test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
