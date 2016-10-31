@@ -38,7 +38,7 @@ Seq-align-set ::= {
         data {
           {
             label str "algo",
-            data str "Splign:2.0.8"
+            data str "Splign:2.1.0"
           }
         }
       }
@@ -84,7 +84,7 @@ Seq-align-set ::= {
         data {
           {
             label str "algo",
-            data str "Splign:2.0.8"
+            data str "Splign:2.1.0"
           }
         }
       }
@@ -230,7 +230,7 @@ Seq-align-set ::= {
         data {
           {
             label str "algo",
-            data str "Splign:2.0.8"
+            data str "Splign:2.1.0"
           }
         }
       }
@@ -276,7 +276,7 @@ Seq-align-set ::= {
         data {
           {
             label str "algo",
-            data str "Splign:2.0.8"
+            data str "Splign:2.1.0"
           }
         }
       }
@@ -322,7 +322,7 @@ Seq-align-set ::= {
         data {
           {
             label str "algo",
-            data str "Splign:2.0.8"
+            data str "Splign:2.1.0"
           }
         }
       }
@@ -368,7 +368,7 @@ Seq-align-set ::= {
         data {
           {
             label str "algo",
-            data str "Splign:2.0.8"
+            data str "Splign:2.1.0"
           }
         }
       }
@@ -414,7 +414,7 @@ Seq-align-set ::= {
         data {
           {
             label str "algo",
-            data str "Splign:2.0.8"
+            data str "Splign:2.1.0"
           }
         }
       }
