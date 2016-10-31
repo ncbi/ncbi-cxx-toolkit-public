@@ -74,6 +74,7 @@ BOOST_AUTO_TEST_CASE(Test_Text_Object1)
     sniff.AddCandidate(CSeq_id::GetTypeInfo());
     sniff.AddCandidate(CBioseq::GetTypeInfo());
     sniff.AddCandidate(CSeq_entry::GetTypeInfo());
+    sniff.SetReportDataErrors();
     sniff.Probe(*in);
     NcbiCout << "Found " << sniff.GetTopLevelMap().size()
              << " object(s) in " << file_name << NcbiEndl;

@@ -162,9 +162,26 @@ public:
     bool GetDiscardObjectInfo() const
         { return m_DiscardObjInfo; }
 
+    /// Report syntax errors to client (as an exception)
+    ///
+    /// In case Sniffer has enough information about expected data type
+    /// but the data has syntax error, the read attempt fails and the Sniffer
+    /// can either hide the error reporting it as an unrecognized type,
+    /// or rethrow the exception to be caught by client for further analysis.
+    ///
+    /// @param report
+    ///   Rethrow serialization exceptions
+    void SetReportDataErrors(bool report = true) {
+        m_ReportErrors = report;
+    }
+    bool GetReportDataErrors(void) const {
+        return m_ReportErrors;
+    }
+
 protected:
     void ProbeText(CObjectIStream& input);
     void ProbeASN1_Bin(CObjectIStream& input);
+    void ProbeAny(CObjectIStream& input);
 
 protected:
     TObjectStack         m_CallStack;
@@ -172,7 +189,7 @@ protected:
     friend class COffsetReadHook;
 private:
 
-    void x_ReadObject(CObjectIStream& input,
+    bool x_ReadObject(CObjectIStream& input,
                       CObjectTypeInfo object_info);
     bool x_TryReadObject(CObjectIStream& input,
                          CObjectTypeInfo object_info);
@@ -190,6 +207,8 @@ private:
     bool                m_DiscardCurrObj;
     /// Flag indicates that object info should be discarded
     bool                m_DiscardObjInfo;
+    /// Report data errors
+    bool                m_ReportErrors;
 };
 
 

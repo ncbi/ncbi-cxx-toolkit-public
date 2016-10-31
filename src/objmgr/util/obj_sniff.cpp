@@ -127,7 +127,8 @@ CObjectsSniffer::CObjectsSniffer(void)
     : m_TopLevelObjectCount(0),
       m_StreamPos(0),
       m_DiscardCurrObj(false),
-      m_DiscardObjInfo(false)
+      m_DiscardObjInfo(false),
+      m_ReportErrors(false)
 {
 }
 
@@ -175,6 +176,7 @@ void CObjectsSniffer::Probe(CObjectIStream& input)
     m_TopLevelObjectCount = 0;
     m_TopLevelMap.clear();
 
+#if 0
     if ( input.GetDataFormat() == eSerial_AsnText ||
          input.GetDataFormat() == eSerial_Xml ) {
         ProbeText(input);
@@ -182,6 +184,9 @@ void CObjectsSniffer::Probe(CObjectIStream& input)
     else {
         ProbeASN1_Bin(input);
     }
+#else
+    ProbeAny(input);
+#endif
 
     //
     // Reset(clean) the hooks
@@ -194,7 +199,7 @@ void CObjectsSniffer::Probe(CObjectIStream& input)
 
 
 inline
-void CObjectsSniffer::x_ReadObject(CObjectIStream& input,
+bool CObjectsSniffer::x_ReadObject(CObjectIStream& input,
                                    CObjectTypeInfo type_info)
 {
     CObjectInfo object_info(type_info);
@@ -203,6 +208,7 @@ void CObjectsSniffer::x_ReadObject(CObjectIStream& input,
     if ( !GetDiscardObjectInfo() ) {
         m_TopLevelMap.push_back(SObjectDescription(type_info, m_StreamPos));
     }
+    return true;
 }
 
 
@@ -214,7 +220,7 @@ bool CObjectsSniffer::x_TryReadObject(CObjectIStream& input,
         x_ReadObject(input, object_info);
         return true;
     }
-    catch ( CSerialException& /*ignored*/ ) {
+    catch ( CException& /*ignored*/ ) {
         input.SetStreamPos(m_StreamPos);
         Reset();
         return false;
@@ -328,6 +334,75 @@ void CObjectsSniffer::ProbeASN1_Bin(CObjectIStream& input)
         // no more objects
         return;
     }
+}
+
+void CObjectsSniffer::ProbeAny(CObjectIStream& input)
+{
+    string format_name("Unknown format");  // for LOG_POST messages
+    switch (input.GetDataFormat())
+    {
+    case eSerial_AsnText:   format_name = "ASN.1 text";   break;
+    case eSerial_AsnBinary: format_name = "ASN.1 binary"; break;
+    case eSerial_Xml:       format_name = "XML";          break;
+    case eSerial_Json:      format_name = "JSON";         break;
+    default:  break;
+    }
+    set<TTypeInfo> known_types;
+    for ( const SCandidateInfo& c : m_Candidates ) {
+        known_types.insert( c.type_info.GetTypeInfo());
+    }
+    string tname;
+
+    try {
+        for ( ; !input.EndOfData(); ) {
+            set<TTypeInfo> matching_types = input.GuessDataType(known_types);
+            set<TTypeInfo>& candidates = matching_types.empty() ? known_types : matching_types;
+            bool report = m_ReportErrors && matching_types.size() == 1;
+            input.ReadFileHeader();
+            m_StreamPos = input.GetStreamPos();
+
+            bool found = false;
+            for (const TTypeInfo& type_info : candidates) {
+                tname = type_info->GetName();
+                found = (report && x_ReadObject(input, type_info)) ||
+                                x_TryReadObject(input, type_info);
+                if ( found ) {
+                    LOG_POST_X(2, Info 
+                                << format_name << " top level object found: "
+                                << type_info->GetName());
+                    break;
+                }
+            }
+            if ( !found ) {
+                // no matching candidate
+                break;
+            }
+        }
+    }
+    catch ( CEofException& /*ignored*/ ) {
+        // no more objects
+        return;
+    }
+    catch ( bad_alloc& /*rethrown*/ ) {
+        // no more memory
+        input.SetStreamPos(m_StreamPos);
+        throw;
+    }
+    catch (CException& expt) {
+        input.SetStreamPos(m_StreamPos);
+        string msg("Failed to read ");
+        msg += format_name + " " + tname + " at " + input.GetPosition();
+        NCBI_RETHROW_SAME(expt, msg);
+    }
+    catch ( exception& e ) {
+        input.SetStreamPos(m_StreamPos);
+        string msg("Failed to read ");
+        msg += format_name + " " + tname + " at " + input.GetPosition();
+        msg += e.what();
+        LOG_POST_X(3, Info << msg);
+        NCBI_THROW(CSerialException, eIoError, msg);
+    }
+
 }
 
 
