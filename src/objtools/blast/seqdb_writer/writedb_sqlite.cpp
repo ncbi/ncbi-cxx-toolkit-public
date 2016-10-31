@@ -63,7 +63,7 @@ CWriteDB_Sqlite::CWriteDB_Sqlite(const string& dbname)
 
     // Also create volume info table.
     m_db->ExecuteSql(
-            "CREATE TABLE IF NOT EXISTS volinfo ("
+            "CREATE TABLE IF NOT EXISTS volinfo ( "
             "path TEXT, "
             "modtime INTEGER, "
             "volume INTEGER, "
