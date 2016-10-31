@@ -329,6 +329,9 @@ XCONNEXT = @XCONNEXT@
 BDB_LIB       = @BDB_LIB@
 BDB_CACHE_LIB = @BDB_CACHE_LIB@
 
+# NCBI C++ API for SQLite 3.x
+SQLITE3_WRAPPER = @SQLITE3_WRAPPER@
+
 # Possibly absent DBAPI drivers (depending on whether the relevant
 # 3rd-party libraries are present, and whether DBAPI was disabled altogether)
 DBAPI_DRIVER  = @DBAPI_DRIVER@

@@ -916,6 +916,7 @@ f_runpath
 f_outexe
 BDB_LIB
 BDB_CACHE_LIB
+SQLITE3_WRAPPER
 DBAPI_DRIVER
 DBAPI_CTLIB
 DBAPI_DBLIB
@@ -41132,6 +41133,9 @@ _ACEOF
 fi
 done
 
+   SQLITE3_WRAPPER=sqlitewrapp
+else
+   SQLITE3_WRAPPER=
 fi
 if test -n "$SQLITE3_LIBS" -a -f "$SQLITE3_LIBDIR/libsqlite3-static.a"; then
    SQLITE3_STATIC_LIBS="-L$SQLITE3_LIBDIR -lsqlite3-static"
@@ -47850,6 +47854,7 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 
+
 #############################################################################
 ### Create output files and do some post-configuration
 
@@ -48958,6 +48963,7 @@ f_runpath!$f_runpath$ac_delim
 f_outexe!$f_outexe$ac_delim
 BDB_LIB!$BDB_LIB$ac_delim
 BDB_CACHE_LIB!$BDB_CACHE_LIB$ac_delim
+SQLITE3_WRAPPER!$SQLITE3_WRAPPER$ac_delim
 DBAPI_DRIVER!$DBAPI_DRIVER$ac_delim
 DBAPI_CTLIB!$DBAPI_CTLIB$ac_delim
 DBAPI_DBLIB!$DBAPI_DBLIB$ac_delim
@@ -49037,7 +49043,6 @@ OSMESA_INCLUDE!$OSMESA_INCLUDE$ac_delim
 OSMESA_LIBS!$OSMESA_LIBS$ac_delim
 OSMESA_STATIC_LIBS!$OSMESA_STATIC_LIBS$ac_delim
 GLUT_INCLUDE!$GLUT_INCLUDE$ac_delim
-GLUT_LIBS!$GLUT_LIBS$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -49079,6 +49084,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+GLUT_LIBS!$GLUT_LIBS$ac_delim
 GLEW_INCLUDE!$GLEW_INCLUDE$ac_delim
 GLEW_LIBS!$GLEW_LIBS$ac_delim
 GLEW_STATIC_LIBS!$GLEW_STATIC_LIBS$ac_delim
@@ -49175,7 +49181,6 @@ serial_ws50_rtti_kludge!$serial_ws50_rtti_kludge$ac_delim
 ncbicntr!$ncbicntr$ac_delim
 UNIX_SRC!$UNIX_SRC$ac_delim
 UNIX_USR_PROJ!$UNIX_USR_PROJ$ac_delim
-compiler!$compiler$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -49217,6 +49222,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+compiler!$compiler$ac_delim
 compiler_root!$compiler_root$ac_delim
 compiler_version!$compiler_version$ac_delim
 COMPILER!$COMPILER$ac_delim
@@ -49229,7 +49235,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 10; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 11; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
