@@ -107,7 +107,10 @@ bool CStringConstraint::DoesTextMatch (const string& text)
     }
     
     vector<string> tokens;
-    NStr::Tokenize(match, ",; ", tokens);
+    if (m_MatchType == eMatchType_Equals)
+        tokens.push_back(match);
+    else
+        NStr::Split(match, ",; ", tokens);
     ITERATE(vector<string>, it, tokens) {
         switch (m_MatchType) {
         case eMatchType_Contains: 
