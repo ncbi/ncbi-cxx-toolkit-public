@@ -39,7 +39,6 @@
 
 
 #ifndef HAVE_STRDUP
-
 char* strdup(const char* str)
 {
     size_t size = strlen(str) + 1;
@@ -48,12 +47,10 @@ char* strdup(const char* str)
         memcpy(res, str, size);
     return res;
 }
-
 #endif /*HAVE_STRDUP*/
 
 
 #ifndef HAVE_STRNDUP
-
 char* strndup(const char* str, size_t n)
 {
     const char* end = n   ? memchr(str, '\0', n) : 0;
@@ -65,7 +62,6 @@ char* strndup(const char* str, size_t n)
     }
     return res;
 }
-
 #endif /*HAVE_STRNDUP*/
 
 
@@ -145,19 +141,34 @@ char* strncpy0(char* s1, const char* s2, size_t n)
 }
 
 
+#ifndef HAVE_MEMCCHR
+void* memcchr(const void* s, int c, size_t n)
+{
+    unsigned char* p = (unsigned char*) s;
+    size_t i;
+    for (i = 0;  i < n;  ++i) {
+        if (*p != (unsigned char) c)
+            return p;
+        ++p;
+    }
+    return 0;
+}
+#endif /*!HAVE_MEMCCHR*/
+
+
 #ifndef HAVE_MEMRCHR
 /* suboptimal but working implementation */
 void* memrchr(const void* s, int c, size_t n)
 {
     unsigned char* e = (unsigned char*) s + n;
     size_t i;
-    for (i = 0;  i < n;  i++) {
+    for (i = 0;  i < n;  ++i) {
         if (*--e == (unsigned char) c)
             return e;
     }
     return 0;
 }
-#endif/*!HAVE_MEMRCHR*/
+#endif /*!HAVE_MEMRCHR*/
 
 
 static const double x_pow10[] = { 1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7 };
@@ -177,7 +188,7 @@ char* NCBI_simple_ftoa(char* s, double f, int p)
     v = f < 0.0 ? -f : f;
     x = (long)(v + 0.5 / w);
     y = (long)(w * (v - x) + 0.5);
-    assert(p  ||  !y);  /* with precision 0, output of "0" is empty */
+    assert(p  ||  !y);  /* with precision 0, output of ".0" is empty */
     return s + sprintf(s, &"-%ld%s%.*lu"[!(f < 0.0)], x, &"."[!p], p, y);
 }
 
