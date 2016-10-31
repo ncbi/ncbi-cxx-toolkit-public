@@ -52,22 +52,53 @@ int/*bool*/  NcbiIsIPv4    (const TNCBI_IPv6Addr* addr);
 
 
 extern NCBI_XCONNECT_EXPORT
-unsigned int NcbiIPv6ToIPv4(const TNCBI_IPv6Addr* addr,
-                            size_t pfxlen);
+unsigned int NcbiIPv6ToIPv4(const TNCBI_IPv6Addr* addr, size_t pfxlen);
 
 
 extern NCBI_XCONNECT_EXPORT
-void         NcbiIPv4ToIPv6(TNCBI_IPv6Addr* addr,
+int/*bool*/  NcbiIPv4ToIPv6(TNCBI_IPv6Addr* addr,
                             unsigned int ipv4, size_t pfxlen);
+
+
+extern NCBI_XCONNECT_EXPORT
+const char*  NcbiStringToIPv4(unsigned int* addr,
+                              const char* src, size_t len);
 
 
 extern NCBI_XCONNECT_EXPORT
 const char*  NcbiStringToIPv6(TNCBI_IPv6Addr* addr,
                              const char* buf, size_t len);
 
+
+extern NCBI_XCONNECT_EXPORT
+const char*  NcbiStringToAddr(TNCBI_IPv6Addr* addr,
+                              const char* src, size_t len);
+
+
+extern NCBI_XCONNECT_EXPORT
+char*        NcbiIPv4ToString(char* buf, size_t bufsize,
+                              unsigned int addr);
+
+
 extern NCBI_XCONNECT_EXPORT
 char*        NcbiIPv6ToString(char* buf, size_t bufsize,
                               const TNCBI_IPv6Addr* addr);
+
+
+extern NCBI_XCONNECT_EXPORT
+char*        NcbiAddrToString(char* buf, size_t bufsize,
+                              TNCBI_IPv6Addr* addr);
+
+
+extern NCBI_XCONNECT_EXPORT
+const char*  NcbiAddrToDNS(char* buf, size_t bufsize,
+                           TNCBI_IPv6Addr* addr);
+
+
+extern NCBI_XCONNECT_EXPORT
+int/*bool*/  NcbiIsInIPv6Network(const TNCBI_IPv6Addr* base,
+                                 unsigned int          bits,
+                                 const TNCBI_IPv6Addr* addr);
 
 
 #ifdef __cplusplus
