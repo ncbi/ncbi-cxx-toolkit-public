@@ -6371,6 +6371,21 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    CLEAR_ERRORS
+
+    // for VR-173
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = unit_test_util::BuildGoodSeq();
+    unit_test_util::SetLineage(entry, "Bacteria; foo");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_tissue_type, "X");
+    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_strain, "Y");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "BioSourceInconsistency",
+        "Tissue-type is inappropriate for bacteria"));
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+
 }
 
 

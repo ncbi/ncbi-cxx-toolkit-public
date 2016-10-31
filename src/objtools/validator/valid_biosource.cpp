@@ -789,6 +789,12 @@ const CSeq_entry *ctx)
                 }
             }
             break;
+        case CSubSource::eSubtype_tissue_type:
+            if (isBacteria) {
+                PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BioSourceInconsistency,
+                    "Tissue-type is inappropriate for bacteria", obj, ctx);
+            }
+            break;
         }
 
         if (isViral && IsUnexpectedViralSubSourceQualifier(subtype)) {
