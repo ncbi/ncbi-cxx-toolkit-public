@@ -4236,6 +4236,21 @@ void CValidError_feat::ValidateImp(
             }
         }
         break;
+    case CSeqFeatData::eSubtype_misc_recomb:
+        {
+            const CGb_qual::TLegalRecombinationClassSet recomb_values = CGb_qual::GetSetOfLegalRecombinationClassValues();
+            FOR_EACH_GBQUAL_ON_FEATURE (gbqual, feat) {
+                if ( NStr::CompareNocase( (*gbqual)->GetQual(), "recombination_class") != 0 ) continue;
+                const string& val = (*gbqual)->GetVal();
+               if ( recomb_values.find(val.c_str()) == recomb_values.end() ) {
+                    if ( NStr::Equal (val, "other") && !feat.IsSetComment() ) {
+                        PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
+                            "The recombination_class 'other' is missing the required /note", feat);
+                    }
+                }
+            }
+        }
+        break;
     case CSeqFeatData::eSubtype_assembly_gap:
         {
             bool is_far_delta = false;
