@@ -24,7 +24,7 @@ seqdbgimask \
 seqdbobj
 
 LIB = seqdb
-DLL_LIB = blastdb sqlitewrapp $(SOBJMGR_LIBS)
+DLL_LIB = blastdb $(SQLITE3_WRAPPER) $(SOBJMGR_LIBS)
 LIBS = $(SQLITE3_LIBS)
 
 CFLAGS   = $(FAST_CFLAGS)
