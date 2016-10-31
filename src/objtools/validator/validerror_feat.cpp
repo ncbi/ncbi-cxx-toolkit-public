@@ -6378,21 +6378,6 @@ bool GeneXrefConflicts(const CSeq_feat& feat, const CSeq_feat& gene)
 }
 
 
-// does feat have an xref to id (the feature ID of the original Seq-feat that refers to feat)
-bool CValidError_feat::HasReciprocalXref(const CSeq_feat& feat, const CFeat_id& id)
-{
-    if (!feat.IsSetXref()) {
-        return false;
-    }
-    ITERATE(CSeq_feat::TXref, it, feat.GetXref()) {
-        if ((*it)->IsSetId() && (*it)->GetId().Equals(id)) {
-            return true;
-        }
-    }
-    return false;
-}
-
-
 // does feat have an xref to a feature other than the one specified by id with the same subtype
 bool CValidError_feat::HasNonReciprocalXref
 (const CSeq_feat& feat,
@@ -6427,7 +6412,7 @@ void CValidError_feat::ValidateOneFeatXrefPair(const CSeq_feat& feat, const CSeq
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_SeqFeatXrefNotReciprocal,
             "Cross-referenced feature does not link reciprocally",
             feat);
-    } else if (HasReciprocalXref(far_feat, feat.GetId())) {
+    } else if (far_feat.HasSeqFeatXref(feat.GetId())) {
         const bool is_cds_mrna = FeaturePairIsTwoTypes(feat, far_feat,
             CSeqFeatData::eSubtype_cdregion, CSeqFeatData::eSubtype_mRNA);
         const bool is_gene_mrna = FeaturePairIsTwoTypes(feat, far_feat,

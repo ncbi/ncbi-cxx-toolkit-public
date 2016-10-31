@@ -1187,8 +1187,6 @@ private:
     void ValidateExcept(const CSeq_feat& feat);
     void ValidateExceptText(const string& text, const CSeq_feat& feat);
     void ValidateSeqFeatXref (const CSeqFeatXref& xref, const CSeq_feat& feat);
-    // does feat have an xref to id (the feature ID of the original Seq-feat that refers to feat)
-    static bool HasReciprocalXref(const CSeq_feat& feat, const CFeat_id& id);
     // does feat have an xref to a feature other than the one specified by id with the same subtype
     static bool HasNonReciprocalXref(const CSeq_feat& feat, 
                                      const CFeat_id& id, CSeqFeatData::ESubtype subtype,

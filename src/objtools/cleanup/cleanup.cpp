@@ -435,6 +435,7 @@ const char* const CCleanupChange::sm_ChangeDesc[eNumberofChangeTypes + 1] = {
     "Remove Dup BioSource",
     "Clean Org-ref",
     "Trim Internal Semicolons",
+    "Add SeqFeatXref",
 
     // set when any other change is made.
     "Change Other", 
@@ -788,6 +789,92 @@ bool CCleanup::RemoveNonsuppressingGeneXrefs(CSeq_feat& f)
     }
     return any_removed;
 }
+
+
+bool CCleanup::RepairXrefs(const CSeq_feat& src, CSeq_feat_Handle& dst, const CTSE_Handle& tse)
+{
+    if (!src.IsSetId() || !src.GetId().IsLocal()) {
+        // can't create xref if no ID
+        return false;
+    }
+    if (!CSeqFeatData::AllowXref(src.GetData().GetSubtype(), dst.GetData().GetSubtype())) {
+        // only create reciprocal xrefs if permitted
+        return false;
+    }
+    // don't create xref if already have xref to feature of same type as src
+    bool has_xref = false;
+    if (dst.IsSetXref()) {
+        ITERATE(CSeq_feat::TXref, xit, dst.GetXref()) {
+            if ((*xit)->IsSetId() && (*xit)->GetId().IsLocal()) {
+                if ((*xit)->GetId().Equals(src.GetId())) {
+                    // already have xref
+                    has_xref = true;
+                    break;
+                } else {
+                    const CTSE_Handle::TFeatureId& feat_id = (*xit)->GetId().GetLocal();
+                    CTSE_Handle::TSeq_feat_Handles far_feats = tse.GetFeaturesWithId(CSeqFeatData::e_not_set, feat_id);
+                    ITERATE(CTSE_Handle::TSeq_feat_Handles, fit, far_feats) {
+                        if (fit->GetData().GetSubtype() == src.GetData().GetSubtype()) {
+                            has_xref = true;
+                            break;
+                        }
+                    }
+                    if (has_xref) {
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    bool rval = false;
+    if (!has_xref) {
+        // to put into "editing mode"
+        dst.GetAnnot().GetEditHandle();
+        CSeq_feat_EditHandle eh(dst);
+        CRef<CSeq_feat> cpy(new CSeq_feat());
+        cpy->Assign(*(dst.GetSeq_feat()));
+        cpy->AddSeqFeatXref(src.GetId());
+        eh.Replace(*cpy);
+        rval = true;
+    }
+    return rval;
+}
+
+
+bool CCleanup::RepairXrefs(const CSeq_feat& f, const CTSE_Handle& tse)
+{
+    bool rval = false;
+
+    if (!f.IsSetId() || !f.IsSetXref()) {
+        return rval;
+    }
+
+    ITERATE(CSeq_feat::TXref, xit, f.GetXref()) {
+        if ((*xit)->IsSetId() && (*xit)->GetId().IsLocal()) {            
+            const CTSE_Handle::TFeatureId& x_id = (*xit)->GetId().GetLocal();
+            CTSE_Handle::TSeq_feat_Handles far_feats = tse.GetFeaturesWithId(CSeqFeatData::e_not_set, x_id);
+            if (far_feats.size() == 1) {
+                rval |= RepairXrefs(f, far_feats[0], tse);
+            }
+        }
+    }
+    return rval;
+}
+
+
+bool CCleanup::RepairXrefs(CSeq_entry_Handle seh)
+{
+    bool rval = false;
+    const CTSE_Handle& tse = seh.GetTSE_Handle();
+
+    CFeat_CI fi(seh);
+    while (fi) {
+        rval |= RepairXrefs(*(fi->GetSeq_feat()), tse);
+        ++fi;
+    }
+    return rval;
+}
+
 
 bool CCleanup::FindMatchingLocusGene(CSeq_feat& f, const CGene_ref& gene_xref, CBioseq_Handle bsh)
 {

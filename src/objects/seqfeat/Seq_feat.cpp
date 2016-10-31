@@ -250,6 +250,32 @@ CProt_ref& CSeq_feat::SetProtXref(void)
 }
 
 
+bool CSeq_feat::HasSeqFeatXref(const CSeqFeatXref::TId& id) const
+{
+    if (!IsSetXref()) {
+        return false;
+    }
+    ITERATE(CSeq_feat::TXref, xit, GetXref()) {
+        if ((*xit)->IsSetId() && (*xit)->GetId().Equals(id)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+bool CSeq_feat::AddSeqFeatXref(const CSeqFeatXref::TId& id)
+{
+    if (HasSeqFeatXref(id)) {
+        return false;
+    }
+    CRef<CSeqFeatXref> x1(new CSeqFeatXref());
+    x1->SetId().Assign(id);
+    SetXref().push_back(x1);
+    return true;
+}
+
+
 void CSeq_feat::AddQualifier(const string& qual_name, const string& qual_val)
 {
     CRef<CGb_qual> qual(new CGb_qual());

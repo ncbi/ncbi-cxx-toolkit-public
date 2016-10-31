@@ -13372,18 +13372,10 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatContentDup)
     cds2->SetId().SetLocal().SetId(2);
     mrna1->SetId().SetLocal().SetId(3);
     mrna2->SetId().SetLocal().SetId(4);
-    CRef<CSeqFeatXref> x1(new CSeqFeatXref());
-    x1->SetId().SetLocal().SetId(3);
-    cds1->SetXref().push_back(x1);
-    CRef<CSeqFeatXref> x2(new CSeqFeatXref());
-    x2->SetId().SetLocal().SetId(4);
-    cds2->SetXref().push_back(x2);
-    CRef<CSeqFeatXref> x3(new CSeqFeatXref());
-    x3->SetId().SetLocal().SetId(1);
-    mrna1->SetXref().push_back(x3);
-    CRef<CSeqFeatXref> x4(new CSeqFeatXref());
-    x4->SetId().SetLocal().SetId(2);
-    mrna2->SetXref().push_back(x4);
+    cds1->AddSeqFeatXref(mrna1->GetId());
+    cds2->AddSeqFeatXref(mrna2->GetId());
+    mrna1->AddSeqFeatXref(cds1->GetId());
+    mrna2->AddSeqFeatXref(cds2->GetId());
     seh = scope.AddTopLevelSeqEntry(*entry);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -14888,12 +14880,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_GeneXrefWithoutGene)
 
 void CreateReciprocalLinks(CSeq_feat& f1, CSeq_feat& f2)
 {
-    CRef<CSeqFeatXref> x1(new CSeqFeatXref());
-    x1->SetId().SetLocal().SetId(f2.GetId().GetLocal().GetId());
-    f1.SetXref().push_back(x1);
-    CRef<CSeqFeatXref> x2(new CSeqFeatXref());
-    x2->SetId().SetLocal().SetId(f1.GetId().GetLocal().GetId());
-    f2.SetXref().push_back(x2);
+    f1.AddSeqFeatXref(f2.GetId());
+    f2.AddSeqFeatXref(f1.GetId());
 }
 
 
@@ -16098,18 +16086,16 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SeqFeatXrefNotReciprocal)
     CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(entry);
     CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
     cds->SetId().SetLocal().SetId(1);
-    CRef<CSeqFeatXref> x1(new CSeqFeatXref());
-    x1->SetId().SetLocal().SetId(2);
-    cds->SetXref().push_back(x1);
     CRef<CSeq_feat> mrna = unit_test_util::MakemRNAForCDS(cds);
     mrna->SetId().SetLocal().SetId(2);
-    CRef<CSeqFeatXref> x2(new CSeqFeatXref());
-    x2->SetId().SetLocal().SetId(3);
-    mrna->SetXref().push_back(x2);
     unit_test_util::AddFeat (mrna, nuc);
     CRef<CSeq_feat> gene = unit_test_util::MakeGeneForFeature (mrna);
     unit_test_util::AddFeat (gene, nuc);
     gene->SetId().SetLocal().SetId(3);
+
+    cds->AddSeqFeatXref(mrna->GetId());
+    mrna->AddSeqFeatXref(gene->GetId());
+
 
     STANDARD_SETUP
 //    expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Warning, "SeqFeatXrefNotReciprocal",

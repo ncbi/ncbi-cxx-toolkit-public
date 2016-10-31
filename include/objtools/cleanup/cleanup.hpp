@@ -159,6 +159,28 @@ public:
 /// @return Boolean return value indicates whether gene-xrefs were removed
     static bool RemoveNonsuppressingGeneXrefs(CSeq_feat& f);
 
+
+/// Repairs non-reciprocal xref pairs for specified feature if xrefs between
+/// subtypes are permitted and feature with missing xref does not have an 
+/// xref to a different feature of the same subtype
+/// @param f Seq-feat to edit [in]
+/// @param tse top-level Seq-entry in which to search for the other half of the xref pair
+/// @return Boolean return value indicates whether xrefs were created
+    static bool RepairXrefs(const CSeq_feat& f, const CTSE_Handle& tse);
+
+/// Repairs non-reciprocal xref pairs for specified feature pair if xrefs between
+/// subtypes are permitted and feature with missing xref does not have an 
+/// xref to a different feature of the same subtype
+/// @param f Seq-feat to edit [in]
+/// @param tse top-level Seq-entry in which to search for the other half of the xref pair
+/// @return Boolean return value indicates whether xrefs were created
+    static bool RepairXrefs(const CSeq_feat& src, CSeq_feat_Handle& dst, const CTSE_Handle& tse);
+
+/// Repairs non-reciprocal xref pairs in specified seq-entry
+/// @param seh Seq-entry to edit [in]
+/// @return Boolean return value indicates whether xrefs were created
+    static bool RepairXrefs(CSeq_entry_Handle seh);
+
 /// Detects gene features with matching locus
 /// @param f Seq-feat parent feature of gene_xref [in]
 /// @param gene_xref Gene-ref of gene-xref [in]

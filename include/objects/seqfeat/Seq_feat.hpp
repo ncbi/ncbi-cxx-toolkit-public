@@ -45,6 +45,7 @@
 #include <objects/seqfeat/Prot_ref.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqfeat/SeqFeatXref.hpp>
 
 // generated classes
 
@@ -77,6 +78,9 @@ public:
     const CProt_ref* GetProtXref(void) const;
     void SetProtXref(CProt_ref& value);
     CProt_ref& SetProtXref(void);
+
+    bool HasSeqFeatXref(const CSeqFeatXref::TId& id) const;
+    bool AddSeqFeatXref(const CSeqFeatXref::TId& id);
 
     /// Add a qualifier to this feature
     void AddQualifier(const string& qual_name, const string& qual_val);

@@ -844,3 +844,74 @@ BOOST_AUTO_TEST_CASE(TEST_RemoveNestedSet)
 
 
 }
+
+
+BOOST_AUTO_TEST_CASE(TEST_RepairXrefs)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+    CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(entry);
+    // CDS:   id 1
+    // mRNA:  id 2
+    // gene1: id 3
+    // gene2: id 4
+    CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
+    cds->SetId().SetLocal().SetId(1);
+    CRef<CSeq_feat> mrna = unit_test_util::MakemRNAForCDS(cds);
+    unit_test_util::AddFeat(mrna, nuc);
+    mrna->SetId().SetLocal().SetId(2);
+    CRef<CSeq_feat> gene1 = unit_test_util::MakeGeneForFeature(mrna);
+    unit_test_util::AddFeat(gene1, nuc);
+    gene1->SetId().SetLocal().SetId(3);
+    CRef<CSeq_feat> gene2 = unit_test_util::MakeGeneForFeature(mrna);
+    unit_test_util::AddFeat(gene2, nuc);
+    gene2->SetId().SetLocal().SetId(4);
+
+    // cds points to mrna and gene 1
+    // gene 1 points to mrna
+    // mrna points to gene 2
+    cds->AddSeqFeatXref(mrna->GetId());
+    cds->AddSeqFeatXref(gene1->GetId());
+    gene1->AddSeqFeatXref(mrna->GetId());
+    mrna->AddSeqFeatXref(gene2->GetId());
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    const CTSE_Handle tse = seh.GetTSE_Handle();
+
+    // this should create reciprocal links on mrna and gene 1 to point back to cds
+    BOOST_CHECK_EQUAL(CCleanup::RepairXrefs(*cds, tse), true);
+    CSeq_annot::TData::TFtable ftable = nuc->GetAnnot().front()->GetData().GetFtable();
+    CSeq_annot::TData::TFtable::iterator fit = ftable.begin();
+    mrna = *fit;
+    ++fit;
+    gene1 = *fit;
+    ++fit;
+    gene2 = *fit;
+    BOOST_CHECK_EQUAL(mrna->HasSeqFeatXref(cds->GetId()), true);
+    BOOST_CHECK_EQUAL(gene1->HasSeqFeatXref(cds->GetId()), true);
+
+    // this should not create reciprocal links, because mrna points to gene 2
+    // and cds already points to gene 1
+    BOOST_CHECK_EQUAL(CCleanup::RepairXrefs(*gene1, tse), false);
+    ftable = nuc->GetAnnot().front()->GetData().GetFtable();
+    fit = ftable.begin();
+    mrna = *fit;
+    ++fit;
+    gene1 = *fit;
+    ++fit;
+    gene2 = *fit;
+    BOOST_CHECK_EQUAL(mrna->HasSeqFeatXref(gene1->GetId()), false);
+
+    // this will create a link on gene2 pointing back at mrna
+    BOOST_CHECK_EQUAL(CCleanup::RepairXrefs(*mrna, tse), true);
+    ftable = nuc->GetAnnot().front()->GetData().GetFtable();
+    fit = ftable.begin();
+    mrna = *fit;
+    ++fit;
+    gene1 = *fit;
+    ++fit;
+    gene2 = *fit;
+    BOOST_CHECK_EQUAL(gene2->HasSeqFeatXref(mrna->GetId()), true);
+
+
+}

@@ -159,6 +159,7 @@ public:
         eRemoveDupBioSource, // 90
         eCleanOrgref,
         eTrimInternalSemicolons,
+        eAddSeqFeatXref,
 
         // set when any other change is made.
         eChangeOther,
