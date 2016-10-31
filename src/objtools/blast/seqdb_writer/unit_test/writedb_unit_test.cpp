@@ -2918,7 +2918,7 @@ BOOST_AUTO_TEST_CASE(ReadBareIDProtein)
         {"gb|EQS08124.1", CSeq_id::e_Genbank},
         {"Somestring", CSeq_id::e_Local},
         {"lcl|anotherstring", CSeq_id::e_Local},
-        {"12AS_A", CSeq_id::e_Local},
+        {"12AS_A", CSeq_id::e_Pdb},
         {"pdb|1I4D|D", CSeq_id::e_Pdb},
         {"2209341B", CSeq_id::e_Local},
         {"prf||2209335A", CSeq_id::e_Prf},

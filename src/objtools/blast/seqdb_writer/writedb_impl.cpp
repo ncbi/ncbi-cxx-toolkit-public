@@ -651,13 +651,11 @@ static bool s_UseFastaReaderDeflines(CConstRef<CBioseq> & bioseq, CConstRef<CBla
 	const CSeq_id * bioseq_id = bioseq->GetNonLocalId();
 
 	if(bioseq_id == NULL ||
-       // For bare pdb and prf ids go with the one from defline.
+       // For bare pir and prf ids go with the one from defline.
        // This is to parse bare ids as local ones. The bare pdb ids are pdb in
        // bioseq (parsed by CFastaReader), but local in deflines (parsed by
        // CSeq_id).
-       (!long_seqid && (bioseq_id->IsPdb() ||
-                        bioseq_id->IsPrf() ||
-                        bioseq_id->IsPir()))) {
+       (!long_seqid && (bioseq_id->IsPrf() || bioseq_id->IsPir()))) {
         return true;
        }
 

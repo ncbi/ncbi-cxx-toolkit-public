@@ -4099,7 +4099,7 @@ string CAlignFormatUtil::GetBareId(const CSeq_id& id)
 {
     string retval; 
 
-    if (id.IsGi() || id.IsPdb() || id.IsPrf() || id.IsPir()) {
+    if (id.IsGi() || id.IsPrf() || id.IsPir()) {
         retval = id.AsFastaString();
     }
     else {
