@@ -1405,7 +1405,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Name of cache for blob.
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix },
           // Blob's key.
-          { "key",     eNSPT_Str,  eNSPA_Required },
+          { "key",     eNSPT_Str,  eNSPA_Optional },
           // Blob's subkey.
           { "subkey",  eNSPT_Str,  eNSPA_Optional },
           { "local",   eNSPT_Int,  eNSPA_Optional },
