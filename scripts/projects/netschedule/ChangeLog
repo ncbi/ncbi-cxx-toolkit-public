@@ -1,3 +1,9 @@
+Release 4.28.2 cloned from 4.28.1 (2016-10-31)
+
+Improvements:
+    * Extra '0' in STAT output (JIRA: CXX-8768)
+
+
 Release 4.28.1 cloned from 4.28.0 (2016-10-26)
 
 Improvements:
