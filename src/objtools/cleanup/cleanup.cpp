@@ -3786,6 +3786,7 @@ CRef<CSeq_loc> CCleanup::GetProteinLocationFromNucleotideLocation(const CSeq_loc
     if (!new_loc) {
         return CRef<CSeq_loc>(NULL);
     }
+
     const CSeq_id* sid = new_loc->GetId();
     const CSeq_id* orig_id = nuc_loc.GetId();
     if (!sid || (orig_id && sid->Equals(*orig_id))) {
@@ -3803,6 +3804,9 @@ CRef<CSeq_loc> CCleanup::GetProteinLocationFromNucleotideLocation(const CSeq_loc
         sub_id->Assign(*sid);
         CSeq_loc sub(*sub_id, prot.GetBioseqLength(), new_loc->GetStop(objects::eExtreme_Positional), new_loc->GetStrand());
         new_loc = sequence::Seq_loc_Subtract(*new_loc, sub, CSeq_loc::fMerge_All | CSeq_loc::fSort, &scope);
+        if (nuc_loc.IsPartialStop(eExtreme_Biological)) {
+            new_loc->SetPartialStop(true, eExtreme_Biological);
+        }
     }
 
     if (!new_loc->IsInt() && !new_loc->IsPnt()) {
