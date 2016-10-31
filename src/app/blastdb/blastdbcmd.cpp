@@ -113,6 +113,8 @@ private:
     bool x_GetOids(const string & acc, vector<int> & oids);
 
     int x_ModifyConfigForBatchEntry(const vector<string> & tmp);
+
+    bool x_UseLongSeqIds();
 };
 
 bool
@@ -433,6 +435,22 @@ CBlastDBCmdApp::x_ProcessSearchType(CBlastDB_Formatter & fmt)
 	return 0;
 }
 
+bool CBlastDBCmdApp::x_UseLongSeqIds()
+{
+	const CArgs& args = GetArgs();
+	if (args["long_seqids"].AsBoolean()) {
+		return true;
+	}
+	CNcbiApplication* app = CNcbiApplication::Instance();
+	if (app) {
+		 const CNcbiRegistry& registry = app->GetConfig();
+		 if (registry.Get("BLAST", "LONG_SEQID") == "1") {
+			 return true;
+		 }
+	}
+	return false;
+}
+
 int
 CBlastDBCmdApp::x_ProcessSearchRequest()
 {
@@ -443,7 +461,7 @@ CBlastDBCmdApp::x_ProcessSearchRequest()
     	string outfmt = x_InitSearchRequest();
     	/* Special case: full db dump when no range and mask data is specified */
     	if (m_FASTA) {
-    		CBlastDB_FastaFormatter fasta_fmt(*m_BlastDb, out, args["line_length"].AsInteger(), args["long_seqids"].AsBoolean());
+    		CBlastDB_FastaFormatter fasta_fmt(*m_BlastDb, out, args["line_length"].AsInteger(), x_UseLongSeqIds());
     		err_found = x_ProcessSearchType(fasta_fmt);
     	}
     	else if (m_Asn1Bioseq) {
