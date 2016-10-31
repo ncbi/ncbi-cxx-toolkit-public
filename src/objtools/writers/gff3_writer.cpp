@@ -210,24 +210,20 @@ sInheritScores(
 
 //  ----------------------------------------------------------------------------
 string sBestMatchType(
-    const CSeq_id& source,
-    const CSeq_id& target)
+    const CSeq_id& source)
 //  ----------------------------------------------------------------------------
 {
     const char* strProtMatch     = "nucleotide_to_protein_match";
     const char* strEstMatch      = "EST_match";
-    //const char* strTransNucMatch = "translated_nucleotide_match";
     const char* strCdnaMatch     = "cDNA_match";
 
-    CSeq_id::EAccessionInfo targetInfo = source.IdentifyAccession();
-    CSeq_id::EAccessionInfo sourceInfo = target.IdentifyAccession();
+    CSeq_id::EAccessionInfo sourceInfo = source.IdentifyAccession();
 
-
-    if (targetInfo & CSeq_id::fAcc_prot) {
+    if (sourceInfo & CSeq_id::fAcc_prot) {
         return strProtMatch;
     }
 
-    if ((targetInfo & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_est) {
+    if ((sourceInfo & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_est) {
         return strEstMatch;
     }
 
@@ -597,7 +593,7 @@ bool CGff3Writer::xAssignAlignmentSplicedType(
     }
     const CSeq_id& genomicId = *genomicH.GetSeqId();
     const CSeq_id& productId =*productH.GetSeqId();
-    record.SetType(sBestMatchType(productId, genomicId));
+    record.SetType(sBestMatchType(genomicId));
     return true;
 }
 
