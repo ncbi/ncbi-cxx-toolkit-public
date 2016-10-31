@@ -499,7 +499,7 @@ public:
     CHttpRequest& SetDeadline(const CTimeout& deadline);
 
     /// Return whether Execute() will wait for remote CGI response.
-    /// If on, will wait for response or deadline expired, on by default.
+    /// If on, will wait for response or deadline expired, off by default.
     /// @sa Execute() GetDeadline()
     ESwitch GetRCgiWait() const { return m_RCgiWait; }
     /// Set whether Execute() should wait for remote CGI response.

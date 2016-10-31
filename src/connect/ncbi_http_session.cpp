@@ -596,7 +596,7 @@ private:
 SRCgiWait::SRCgiWait(ESwitch on_off, const CTimeout& deadline, CUrl& url,
         EReqMethod& method, CRef<CHttpHeaders>& headers,
         CRef<CHttpFormData>& form_data) :
-    m_Enabled(on_off != eOff),
+    m_Enabled(on_off == eOn),
     m_Deadline(deadline.IsDefault() ? CTimeout::eInfinite : deadline),
     m_Url(url),
     m_Method(method),
