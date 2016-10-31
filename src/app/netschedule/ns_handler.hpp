@@ -322,6 +322,8 @@ private:
     void x_SetRequestContext(void);
     string x_GetConnRef(void) const;
 
+    static void x_MakeSureSingleEOR(string &  message);
+
 }; // CNetScheduleHandler
 
 

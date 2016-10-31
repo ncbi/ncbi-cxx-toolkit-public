@@ -2869,7 +2869,7 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
             info = "OK:Started: " + m_Server->GetStartTime().AsString() +
                    kEndOfResponse;
 
-            info + "OK:SubmitsDisabledEffective: ";
+            info += "OK:SubmitsDisabledEffective: ";
             if (m_Server->GetRefuseSubmits())   info += "1";
             else                                info += "0";
             info += kEndOfResponse;
@@ -2881,6 +2881,8 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
 
             info += m_Server->PrintTransitionCounters() + kEndOfResponse;
         }
+
+        x_MakeSureSingleEOR(info);
         x_WriteMessage(info + "OK:END" + kEndOfResponse);
         x_PrintCmdRequestStop();
         return;
@@ -2958,6 +2960,7 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
         }}
     }
 
+    x_MakeSureSingleEOR(info);
     x_WriteMessage(info +
                    "OK:[Transitions counters]:" + kEndOfResponse +
                    q->PrintTransitionCounters() + kEndOfResponse +
@@ -4498,11 +4501,7 @@ CNetScheduleHandler::x_StatisticsNew(CQueue *                q,
         msg += "WARNING:" + *k + ";";
     }
 
-    while (NStr::EndsWith(info, '\n')) {
-        info.resize(info.size() - 1);
-    }
-    if (!info.empty())
-        info += kEndOfResponse;
+    x_MakeSureSingleEOR(info);
     x_WriteMessage(info + "OK:" + msg + "END" + kEndOfResponse);
     x_PrintCmdRequestStop();
 }
@@ -4654,5 +4653,16 @@ void CNetScheduleHandler::x_SetRequestContext(void)
         else
             CDiagContext::SetRequestContext(m_ConnContext);
     }
+}
+
+// Utility function to make sure there is exactly one \n at the end of the
+// message if the message is not empty
+void CNetScheduleHandler::x_MakeSureSingleEOR(string &  message)
+{
+    while (NStr::EndsWith(message, '\n')) {
+        message.resize(message.size() - 1);
+    }
+    if (!message.empty())
+        message += kEndOfResponse;
 }
 
