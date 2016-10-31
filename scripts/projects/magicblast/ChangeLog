@@ -1,2 +1,11 @@
 August 19, 2016
 * First release
+
+November 4, 2016
+* 1.1.0 release
+Improvements:
+* -sra option connects to NCBI via HTTPS
+* Results are formatted with 'bare' accessions
+* Tabular output includes a header with column titles
+Bug fixes:
+* Fixed SAM flag values
