@@ -787,6 +787,7 @@ void CValidError_imp::PostErr
         sv = eDiag_Error;
     }
 
+#if 0
     CConstRef<CSeq_id> id = GetReportableSeqIdForAlignment(align, *m_Scope);
     if (id) {
         CBioseq_Handle bsh = m_Scope->GetBioseqHandle(*id);
@@ -795,6 +796,7 @@ void CValidError_imp::PostErr
             return;
         }
     }
+#endif
 
     // Can't get bioseq for reporting, use other Alignment label
     string desc = "ALIGNMENT: ";
