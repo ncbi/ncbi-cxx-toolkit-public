@@ -172,8 +172,6 @@ list<string> CSeqDBSqlite::GetAccessions(const int oid)
     return accs;
 }
 
-
-
 bool CSeqDBSqlite::StepAccessions(string* acc, int* ver, int* oid)
 {
     if (m_selectStmt == NULL) {
