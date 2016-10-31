@@ -64,7 +64,7 @@ public:
 
 
 protected:
-    void x_GetTypeRefAlt(const CVariation_inst &inst, int &rtype, string &ref, vector<string> &alt);
+    void x_GetTypeRefAlt(const CVariation_inst &inst, int &rtype, string &ref, list<int>& alt_types, vector<string> &alt);
 
     bool x_WriteInit(
         const CSeq_annot& );
@@ -97,8 +97,6 @@ protected:
         CMappedFeat );
         
     bool x_WriteFeatureRef(
-        CGffFeatureContext&,
-        CMappedFeat,
         const unsigned int start,
         const int type,
         const string &anchor,
@@ -106,11 +104,10 @@ protected:
         );
         
     bool x_WriteFeatureAlt(
-        CGffFeatureContext&,
-        CMappedFeat,
         const unsigned int start,
         const int type,
         const string &anchor,
+        const list<int>& alt_types,
         const vector<string> &alt
         );
         

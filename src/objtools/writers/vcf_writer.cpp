@@ -281,24 +281,36 @@ bool CVcfWriter::x_WriteData(
 }
 
 
-void CVcfWriter::x_GetTypeRefAlt(const CVariation_inst &inst, int &rtype, string &ref, vector<string> &alt)
+void CVcfWriter::x_GetTypeRefAlt(const CVariation_inst &inst, int &rtype, string &ref, list<int>& alt_types, vector<string> &alt)
 {
-    int type = inst.GetType();
-    if (type != CVariation_inst::eType_identity)
-        rtype = type;
+    int current_type = inst.GetType();
+    if (current_type != CVariation_inst::eType_identity)
+        rtype = current_type;
     if (inst.IsSetDelta() && !inst.GetDelta().empty() && inst.GetDelta().front()->IsSetSeq() 
         && inst.GetDelta().front()->GetSeq().IsLiteral() 
         && inst.GetDelta().front()->GetSeq().GetLiteral().IsSetSeq_data() 
         && inst.GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().IsIupacna())
     {
         string a = inst.GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get();
+
         if (!a.empty())
         {
-            if (type == CVariation_inst::eType_identity )
+            if (current_type == CVariation_inst::eType_identity ) {
                 ref = a;
-            else if (type != CVariation_inst::eType_del) 
+                return;
+            }
+
+            if (current_type != CVariation_inst::eType_del) {
                 alt.push_back(a);
+            }
+        } else if (current_type == CVariation_inst::eType_delins) {
+            current_type = CVariation_inst::eType_del; // delins with an empty insertion string becomes a del
         }
+
+        alt_types.push_back(current_type);
+    } else if (current_type == CVariation_inst::eType_del || 
+               current_type == CVariation_inst::eType_delins) {
+        alt_types.push_back(CVariation_inst::eType_del);
     }
 }
 
@@ -313,15 +325,25 @@ bool CVcfWriter::x_WriteFeature(
     int type = CVariation_inst::eType_identity;
     string ref;
     vector<string> alt;
+    list<int> alt_types;
+    int count = 0;
     switch(vr.GetData().Which())
     {
-    case  CVariation_Base::C_Data::e_Instance : x_GetTypeRefAlt(vr.GetData().GetInstance(),type,ref,alt); break;
+    case  CVariation_Base::C_Data::e_Instance : x_GetTypeRefAlt(vr.GetData().GetInstance(),type,ref,alt_types, alt); break;
     case  CVariation_Base::C_Data::e_Set : 
         for (CVariation_ref::TData::TSet::TVariations::const_iterator inst = vr.GetData().GetSet().GetVariations().begin(); inst != vr.GetData().GetSet().GetVariations().end(); ++inst)
         {
-            if ( (*inst)->IsSetData() && (*inst)->GetData().IsInstance())
-                x_GetTypeRefAlt((*inst)->GetData().GetInstance(),type,ref,alt);
+
+            if ( (*inst)->IsSetData() && (*inst)->GetData().IsInstance() ) {
+                x_GetTypeRefAlt((*inst)->GetData().GetInstance(), type, ref, alt_types, alt);
+
+    //            const int current_type = (*inst)->GetData().GetInstance().GetType();
+    //            if (current_type != CVariation_inst::eType_identity) {
+    //                alt_types.push_back(current_type);
+    //            }
+            }
         }
+
         break;
     default: break;            
     }
@@ -382,8 +404,6 @@ bool CVcfWriter::x_WriteFeature(
             LOG_POST(Error << "Cannot process Seq-id: " << label << Endm);
             return true;
         }
-        
-        
     }
 
     if (!x_WriteFeatureChrom(context, mf)) {
@@ -395,10 +415,10 @@ bool CVcfWriter::x_WriteFeature(
     if (!x_WriteFeatureId(context, mf)) {
         return false;
     }
-    if (!x_WriteFeatureRef(context, mf, start, type, anchor, ref)) {
+    if (!x_WriteFeatureRef(start, type, anchor, ref)) {
         return false;
     }
-    if (!x_WriteFeatureAlt(context, mf, start, type, anchor, alt)) {
+    if (!x_WriteFeatureAlt(start, type, anchor, alt_types, alt)) {
         return false;
     }
     if (!x_WriteFeatureQual(context, mf)) {
@@ -519,8 +539,6 @@ bool CVcfWriter::x_WriteFeatureId(
 
 //  ----------------------------------------------------------------------------
 bool CVcfWriter::x_WriteFeatureRef(
-    CGffFeatureContext& context,
-    CMappedFeat mf,
     const unsigned int start,
     const int type,
     const string &anchor,
@@ -557,41 +575,51 @@ bool CVcfWriter::x_WriteFeatureRef(
 
 //  ----------------------------------------------------------------------------
 bool CVcfWriter::x_WriteFeatureAlt(
-    CGffFeatureContext& context,
-    CMappedFeat mf,
     const unsigned int start,
     const int type,
     const string &anchor,
+    const list<int>& alt_types,
     const vector<string> &alt
     )
 //  ----------------------------------------------------------------------------
 {
     m_Os << "\t";
 
-  
-    if ( !alt.empty() ) 
-    {
-        for (vector<string>::const_iterator a = alt.begin(); a != alt.end(); ++a)
-        {
-            if (a != alt.begin())
-                m_Os << ",";   
-            if (type == CVariation_inst::eType_ins || type == CVariation_inst::eType_delins) 
-            {
-                if (start > 1)
-                    m_Os << anchor << *a;
-                else
-                    m_Os << *a << anchor;
-            } 
-            else
-                m_Os << *a;                    
-        }
-        return true;
+    size_t count = 0;
+    int index=0;
+
+    for (auto alt_type : alt_types) {
+        if (count) {
+            m_Os << ",";
+        }       
+
+        if (alt_type != CVariation_inst::eType_del) {
+            const string alt_string = alt[index++];
+            if (alt_type == CVariation_inst::eType_ins ||
+                alt_type == CVariation_inst::eType_delins) {
+
+                if (start > 1) {
+                    m_Os << anchor << alt_string;
+                } else {
+                    m_Os << alt_string << anchor;
+                }
+            } else {
+                m_Os << alt_string;
+            }
+            ++count;
+            continue;
+        } 
+        
+        // CVariation_inst::eType_del 
+        if (!anchor.empty()) { 
+            m_Os << anchor;
+            ++count;
+        }    
     }
 
-    if (!anchor.empty() && type == CVariation_inst::eType_del) 
-        m_Os << anchor;
-    else
+    if (!count) {
         m_Os << ".";
+    }
     return true;
 }
 
