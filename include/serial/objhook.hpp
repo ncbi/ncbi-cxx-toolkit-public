@@ -626,7 +626,7 @@ private:
 };
 
 NCBI_XSERIAL_EXPORT
-void Serial_FilterSkip(CObjectIStream& in, CObjectTypeInfo& ctype);
+bool Serial_FilterSkip(CObjectIStream& in, CObjectTypeInfo& ctype);
 
 /// Scan input stream, finding objects of requested type (TObject) only
 template<typename TRoot, typename TObject>
@@ -637,13 +637,8 @@ void Serial_FilterObjects(CObjectIStream& in, CSerial_FilterObjectsHook<TObject>
     CObjectTypeInfo request = CType<TObject>();
     request.SetLocalSkipHook(in, hook);
     request.SetLocalReadHook(in, new CSerial_FilterReadObjectsHook<TObject>(hook));
-    do {
-        try {
-            Serial_FilterSkip(in,root);
-        } catch ( CEofException& ) {
-            return;
-        }
-    } while (readall);
+    while (Serial_FilterSkip(in,root) && readall)
+        ;
 }
 
 /// Scan input stream, finding objects that are not derived from CSerialObject
@@ -654,13 +649,8 @@ void Serial_FilterStdObjects(CObjectIStream& in, CSerial_FilterObjectsHook<TObje
     CObjectTypeInfo root = CType<TRoot>();
     CObjectTypeInfo request = CStdTypeInfo<TObject>::GetTypeInfo();
     request.SetLocalSkipHook(in, hook);
-    do {
-        try {
-            Serial_FilterSkip(in,root);
-        } catch ( CEofException& ) {
-            return;
-        }
-    } while (readall);
+    while (Serial_FilterSkip(in,root) && readall)
+        ;
 }
 
 

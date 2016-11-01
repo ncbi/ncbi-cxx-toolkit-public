@@ -31,7 +31,7 @@ USING_SCOPE(objects);
 #endif
 
 
-class CTestSerialObject // : public CSerialObject
+class CTestSerialObject  : public CSerialObject
 {
 public:
     CTestSerialObject(void);

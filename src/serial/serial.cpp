@@ -73,9 +73,13 @@ void Read(CObjectIStream& in, TObjectPtr object, TTypeInfo type)
     in.Read(object, type);
 }
 
-void Serial_FilterSkip(CObjectIStream& in, CObjectTypeInfo& ctype)
+bool Serial_FilterSkip(CObjectIStream& in, CObjectTypeInfo& ctype)
 {
-    in.Skip(ctype);
+    if (!in.EndOfData()) {
+        in.Skip(ctype);
+        return true;
+    }
+    return false;
 }
 
 DEFINE_STATIC_FAST_MUTEX(s_ModuleNameMutex);
