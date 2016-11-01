@@ -32,6 +32,7 @@
 
 #include <connect/ncbi_ipv6.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "test_assert.h"  /* This header must go last */
 
@@ -40,18 +41,25 @@ int main(int argc, const char* argv[])
 {
     TNCBI_IPv6Addr addr;
     const char *str;
-    char buf[80];
+    char buf[150];
 
-    if (!(str = NcbiStringToIPv6(&addr, argv[1], 0))) {
+    if (!(str = NcbiStringToAddr(&addr, argv[1], 0))) {
         printf("\"%s\" is not a valid IPv6 address\n", argv[1]);
         return 1;
     }
-    if (!NcbiIPv6ToString(buf, sizeof(buf), &addr)) {
+    if (!NcbiAddrToString(buf, sizeof(buf), &addr)) {
         printf("Cannot print IPv6 address\n");
         return 1;
     }
     printf("\"%.*s\" = %s\n", (int)(str - argv[1]), argv[1], buf);
     if (*str)
         printf("Unparsed part: \"%s\"\n", str);
+    if (NcbiAddrToDNS(buf, sizeof(buf), &addr)) {
+        TNCBI_IPv6Addr temp;
+        printf("Domain = %s\n", buf);
+        str = NcbiStringToAddr(&temp, buf, 0);
+        assert(str  &&  !*str);
+        assert(memcmp(&temp, &addr, sizeof(addr)) == 0);
+    }
     return 0;
 }
