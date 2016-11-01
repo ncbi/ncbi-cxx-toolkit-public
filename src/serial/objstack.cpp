@@ -249,14 +249,15 @@ void CObjectStack::x_PopStackPath(void)
     }
 }
 
-const string& CObjectStack::GetStackPath(void)
+const string& CObjectStack::GetStackPath(void) const
 {
     if (GetStackDepth()) {
 //        _ASSERT(FetchFrameFromBottom(0).m_FrameType == TFrame::eFrameNamed);
 //        _ASSERT(FetchFrameFromBottom(0).m_TypeInfo);
 //        m_MemberPath = FetchFrameFromBottom(0).GetTypeInfo()->GetName();
         // there is no "root" symbol
-        m_MemberPath = FetchFrameFromBottom(0).HasTypeInfo() ?
+        string path;
+        path = FetchFrameFromBottom(0).HasTypeInfo() ?
             FetchFrameFromBottom(0).m_TypeInfo->GetName() : "?";
         for ( size_t i = 1; i < GetStackDepth(); ++i ) {
             const TFrame& frame = FetchFrameFromBottom(i);
@@ -266,16 +267,17 @@ const string& CObjectStack::GetStackPath(void)
                     continue;
                 }
                 // member separator symbol is '.'
-                m_MemberPath += '.';
+                path += '.';
                 const string& member = mem_id.GetName();
                 if (!member.empty()) {
-                    m_MemberPath += member;
+                    path += member;
                 } else {
-                    m_MemberPath += NStr::IntToString(mem_id.GetTag());
+                    path += NStr::IntToString(mem_id.GetTag());
                 }
             }
         }
-        m_PathValid = true;
+        const_cast<CObjectStack*>(this)->m_PathValid = true;
+        const_cast<CObjectStack*>(this)->m_MemberPath = path;
     }
     return m_MemberPath;
 }

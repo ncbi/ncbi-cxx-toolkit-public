@@ -159,7 +159,7 @@ public:
     TTypeInfo GetRecentTypeInfo(void) const;
 
     virtual void UnendedFrame(void);
-    const string& GetStackPath(void);
+    const string& GetStackPath(void) const;
 
     void WatchPathHooks(bool set=true);
 protected:
