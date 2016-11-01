@@ -7,14 +7,10 @@ set(MODULE_IMPORT objects/seqloc/seqloc)
 set(MODULE_PATH objects/blastdb)
 
 set(MODULE_EXT "asn")
-add_library(blastdb ${MODULE}__ ${MODULE}___)
+add_library("${MODULE}" ${MODULE}__ ${MODULE}___)
 
 RunDatatool("${MODULE}" "${MODULE_IMPORT}")
 
 target_link_libraries(${MODULE}
-    seq
-)
-
-target_link_libraries(blastdb
     seq
 )

@@ -5,7 +5,7 @@ add_library(phytree_format
     phytree_format phytree_simplify
 )
 add_dependencies(phytree_format
-    biotree seqset taxon1
+    biotree seqset taxon1 blastdb scoremat
 )
 
 target_link_libraries(phytree_format
