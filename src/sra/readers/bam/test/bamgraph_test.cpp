@@ -92,6 +92,7 @@ void CBamGraphTestApp::Init(void)
     arg_desc->AddOptionalKey("seq_id", "SeqId",
                              "RefSeq Seq-id",
                              CArgDescriptions::eString);
+    arg_desc->AddFlag("estimated", "Generate quick estimated graph");
     arg_desc->AddFlag("log", "Generate logarithmic graph");
     arg_desc->AddFlag("int", "Generate graph with int values");
     arg_desc->AddOptionalKey("outlier_max", "OutlierMax",
@@ -143,36 +144,42 @@ int CBamGraphTestApp::Run(void)
         }
     }
 
-    string file = args["file"].AsString();
     string path;
-    
-    ITERATE ( vector<string>, it, dirs ) {
-        string dir = *it;
-        if ( !CDirEntry(dir).Exists() ) {
-            continue;
-        }
-        path = CFile::MakePath(dir, file);
-        if ( !CFile(path).Exists() ) {
-            SIZE_TYPE p1 = file.rfind('/');
-            if ( p1 == NPOS ) {
-                p1 = 0;
-            }
-            else {
-                p1 += 1;
-            }
-            SIZE_TYPE p2 = file.find('.', p1);
-            if ( p2 != NPOS ) {
-                path = CFile::MakePath(dir, file.substr(p1, p2-p1) + "/alignment/" + file);
-            }
-        }
-        if ( CFile(path).Exists() ) {
-            break;
-        }
-        path.clear();
+    string file = args["file"].AsString();
+    if ( NStr::StartsWith(file, "http://") ||
+         NStr::StartsWith(file, "https://") ||
+         NStr::StartsWith(file, "ftp://") ) {
+        path = file;
     }
-    if ( !CFile(path).Exists() ) {
-        ERR_POST("Data file "<<args["file"].AsString()<<" not found.");
-        return 1;
+    else {
+        ITERATE ( vector<string>, it, dirs ) {
+            string dir = *it;
+            if ( !CDirEntry(dir).Exists() ) {
+                continue;
+            }
+            path = CFile::MakePath(dir, file);
+            if ( !CFile(path).Exists() ) {
+                SIZE_TYPE p1 = file.rfind('/');
+                if ( p1 == NPOS ) {
+                    p1 = 0;
+                }
+                else {
+                    p1 += 1;
+                }
+                SIZE_TYPE p2 = file.find('.', p1);
+                if ( p2 != NPOS ) {
+                    path = CFile::MakePath(dir, file.substr(p1, p2-p1) + "/alignment/" + file);
+                }
+            }
+            if ( CFile(path).Exists() ) {
+                break;
+            }
+            path.clear();
+        }
+        if ( !CFile(path).Exists() ) {
+            ERR_POST("File "<<file<<" not found.");
+            return 1;
+        }
     }
 
     string ref_label;
@@ -212,6 +219,9 @@ int CBamGraphTestApp::Run(void)
     }
     if ( args["int"] ) {
         cvt.SetGraphValueType(cvt.eGraphValueTyps_int);
+    }
+    if ( args["estimated"] ) {
+        cvt.SetEstimated();
     }
     if ( args["bin_size"] ) {
         cvt.SetGraphBinSize(args["bin_size"].AsInteger());
