@@ -47,6 +47,16 @@ typedef struct {
 } TNCBI_IPv6Addr;
 
 
+/** Return non-zero if the address is empty (either as IPv6 or IPv4); return
+ *  zero otherwise.
+ */
+extern NCBI_XCONNECT_EXPORT
+int/*bool*/ NcbiIsEmptyIPv6(const TNCBI_IPv6Addr* addr);
+
+
+/** Return non-zero if the address is either IPv4 compatible or a mapped IPv4
+ *  address; return zero otherwise.
+ */
 extern NCBI_XCONNECT_EXPORT
 int/*bool*/  NcbiIsIPv4    (const TNCBI_IPv6Addr* addr);
 
@@ -59,42 +69,81 @@ extern NCBI_XCONNECT_EXPORT
 int/*bool*/  NcbiIPv4ToIPv6(TNCBI_IPv6Addr* addr,
                             unsigned int ipv4, size_t pfxlen);
 
-
+/** Convert first "len" (or "strlen(str)" if "len" is 0) bytes of "str" into an
+ *  IPv4 address in full-quad decimal notation; return non-zero string pointer
+ *  to the first non-converted character (which is neither a digit nor a dot);
+ *  return 0 if conversion failed and no IPv4 address has been found.
+ */
 extern NCBI_XCONNECT_EXPORT
 const char*  NcbiStringToIPv4(unsigned int* addr,
-                              const char* src, size_t len);
+                              const char* str, size_t len);
 
 
+/** Convert first "len" (or "strlen(str)" if "len" is 0) bytes of "str" into an
+ *  IPv6 address in a hexadecimal colon-separated notation (including full-quad
+ *  trailing IPv4); return non-zero string pointer to the first non-converted
+ *  character (which is neither a hex-digit, nor a colon, nor a dot); return 0
+ *  if conversion failed and no IPv6 address has been found.
+ */
 extern NCBI_XCONNECT_EXPORT
 const char*  NcbiStringToIPv6(TNCBI_IPv6Addr* addr,
-                             const char* buf, size_t len);
+                             const char* str, size_t len);
 
-
+/** Convert first "len" (or "strlen(str)" if "len" is 0) bytes of "str" into an
+ *  IP address, which can be either of full-quad decimal IPv4, hexadecimal
+ *  colon-separated IPv6, .in-addr.arpa or .in6.arpa domain names); return
+ *  non-zero string pointer to the first non-converted character (which is
+ *  neither a digit nor a dot); return 0 if no conversion can be made.
+ */
 extern NCBI_XCONNECT_EXPORT
 const char*  NcbiStringToAddr(TNCBI_IPv6Addr* addr,
-                              const char* src, size_t len);
+                              const char* str, size_t len);
 
 
+/** Convert network byte order IPv4 into a full-quad text form and store the
+ *  result in the "buf" of size "bufsize".  Return non-zero string address
+ *  past the stored result, or 0 when the conversion failed for buffer being
+ *  too small.
+ */
 extern NCBI_XCONNECT_EXPORT
 char*        NcbiIPv4ToString(char* buf, size_t bufsize,
                               unsigned int addr);
 
 
+/** Convert IPv6 address into a hex colon-separated text form and store the
+ *  result in the "buf" of size "bufsize".  Return non-zero string address
+ *  past the stored result, or 0 when the conversion failed for buffer being
+ *  too small.
+ */
 extern NCBI_XCONNECT_EXPORT
 char*        NcbiIPv6ToString(char* buf, size_t bufsize,
                               const TNCBI_IPv6Addr* addr);
 
 
+/** Convert IPv6 address into either a full-quad text IPv4 (for IPv4-compatible
+ *  IPv6 addresses) or a hex colon-separated text form(for all other) and store
+ *  the result in the "buf" of size "bufsize".  Return non-zero string address
+ *  past the stored result, or 0 when the conversion failed for buffer being
+ *  too small.
+ */
 extern NCBI_XCONNECT_EXPORT
 char*        NcbiAddrToString(char* buf, size_t bufsize,
                               TNCBI_IPv6Addr* addr);
 
 
+/** Convert IPv6 address into either .in-addr.arpa domain (for IPv4-compatible
+ *  IPv6 addresses) or .ip6.arpa domain (for all other) and store the result in
+ *  the "buf" of size "bufsize".  Return non-zero string address past the
+ *  stored result, or 0 when the conversion failed for buffer being too small.
+ */
 extern NCBI_XCONNECT_EXPORT
 const char*  NcbiAddrToDNS(char* buf, size_t bufsize,
                            TNCBI_IPv6Addr* addr);
 
 
+/** Return non-zero if "addr" belongs to the network specified as CIDR
+ *  "base/bits"; return zero otherwise.
+ */
 extern NCBI_XCONNECT_EXPORT
 int/*bool*/  NcbiIsInIPv6Network(const TNCBI_IPv6Addr* base,
                                  unsigned int          bits,
