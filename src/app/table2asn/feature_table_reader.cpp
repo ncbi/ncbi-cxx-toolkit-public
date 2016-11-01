@@ -733,9 +733,9 @@ CRef<CSeq_entry> CFeatureTableReader::TranslateProtein(CScope& scope, CSeq_entry
         if (was_extended)
         {
             if (!mrna.Empty())
-                CCleanup::ExtendToStopCodon((CSeq_feat&)*mrna, bsh, 3, &cd_feature);
+                CCleanup::ExtendStopPosition((CSeq_feat&)*mrna, &cd_feature);
             if (!gene.Empty())
-                CCleanup::ExtendToStopCodon((CSeq_feat&)*gene, bsh, 3, &cd_feature);
+                CCleanup::ExtendStopPosition((CSeq_feat&)*gene, &cd_feature);
         }
     }
 

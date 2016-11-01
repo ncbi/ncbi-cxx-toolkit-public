@@ -1003,37 +1003,64 @@ bool CCleanup::SeqLocExtend(CSeq_loc& loc, size_t pos, CScope& scope)
 }
 
 
-bool CCleanup::ExtendToStopCodon(CSeq_feat& f, CBioseq_Handle bsh, size_t limit)
+bool CCleanup::ExtendStopPosition(CSeq_feat& f, const CSeq_feat* cdregion, size_t extension)
 {
-    const CSeq_feat* cd_region = 0;
-    if (f.IsSetData() && f.GetData().IsCdregion())
+    CRef<CSeq_loc> new_loc(&f.SetLocation());
+
+    CRef<CSeq_loc> last_interval;
+    if (new_loc->IsMix()) {
+        last_interval = new_loc->SetMix().SetLastLoc();
+    }
+    else
     {
-        cd_region = &f;
+        last_interval = new_loc;
     }
 
-    return ExtendToStopCodon(f, bsh, limit, cd_region);
+    CConstRef<CSeq_id> id(last_interval->GetId());
+
+    TSeqPos new_start;
+    TSeqPos new_stop;
+
+    // the last element of the mix or the single location MUST be converted into interval
+    // whethe it's whole or point, etc
+    if (last_interval->IsSetStrand() && last_interval->GetStrand() == eNa_strand_minus) {
+        new_start = (cdregion ? cdregion->GetLocation().GetStart(eExtreme_Positional) :          
+              last_interval->GetStart(eExtreme_Positional)) - extension;
+
+        new_stop = last_interval->GetStop(eExtreme_Positional);
+    }
+    else {
+        new_start = last_interval->GetStart(eExtreme_Positional);
+        new_stop = (cdregion ? cdregion->GetLocation().GetStop(eExtreme_Positional) :
+            last_interval->GetStop(eExtreme_Positional)) + extension;
+    }
+    last_interval->SetInt().SetFrom(new_start);
+    last_interval->SetInt().SetTo(new_stop);
+    last_interval->SetInt().SetId().Assign(*id);
+
+    new_loc->SetPartialStop(false, eExtreme_Biological);
+
+    return true;
 }
 
-bool CCleanup::ExtendToStopCodon(CSeq_feat& f, CBioseq_Handle bsh, size_t limit, const CSeq_feat* cd_region)
+bool CCleanup::ExtendToStopCodon(CSeq_feat& f, CBioseq_Handle bsh, size_t limit)
 {
     const CSeq_loc& loc = f.GetLocation();
-    CRef<CSeq_loc> new_loc;
 
     CCdregion::TFrame frame = CCdregion::eFrame_not_set;
     const CGenetic_code* code = NULL;
     // we need to extract frame and cd_region from linked cd_region
-    if (cd_region && cd_region->IsSetData() && cd_region->GetData().IsCdregion())
+    if (f.IsSetData() && f.GetData().IsCdregion())
     {
-        if (cd_region->GetData().GetCdregion().IsSetCode())
-           code = &(cd_region->GetData().GetCdregion().GetCode());
-        if (cd_region->GetData().GetCdregion().IsSetFrame())
-           frame = cd_region->GetData().GetCdregion().GetFrame();
+        if (f.GetData().GetCdregion().IsSetCode())
+           code = &(f.GetData().GetCdregion().GetCode());
+        if (f.GetData().GetCdregion().IsSetFrame())
+           frame = f.GetData().GetCdregion().GetFrame();
     }
 
     size_t stop = loc.GetStop(eExtreme_Biological);
     // figure out if we have a partial codon at the end
     size_t orig_len = sequence::GetLength(loc, &(bsh.GetScope()));
-    // size_t orig_len = sequence::GetLength(cd_region->GetLocation(), &(bsh.GetScope()));
     size_t len = orig_len;
 
     if (frame == CCdregion::eFrame_two) {
@@ -1083,51 +1110,8 @@ bool CCleanup::ExtendToStopCodon(CSeq_feat& f, CBioseq_Handle bsh, size_t limit,
         }
 
         if (tbl.GetCodonResidue(state) == '*') {
-            if (loc.IsMix()) {
-                new_loc.Reset(new CSeq_loc());
-                new_loc->SetMix();
-            }
-            CSeq_loc_CI it(loc);
-            CSeq_loc_CI it_next = it;
-            ++it_next;
-            while (it_next) {
-                CConstRef<CSeq_loc> this_loc = it.GetRangeAsSeq_loc();
-                if (new_loc) {
-                    new_loc->Add(*this_loc);
-                } else {
-                    new_loc.Reset(new CSeq_loc());
-                    new_loc->Assign(*this_loc);
-                }
-                it = it_next;
-                ++it_next;
-            }
-            CRef<CSeq_loc> last_interval(new CSeq_loc());
-            CConstRef<CSeq_loc> this_loc = it.GetRangeAsSeq_loc();
-            size_t this_start = this_loc->GetStart(eExtreme_Positional);
-            size_t this_stop = this_loc->GetStop(eExtreme_Positional);
             size_t extension = ((i + 1) * 3) - mod;
-            last_interval->SetInt().SetId().Assign(*(this_loc->GetId()));
-            if (this_loc->IsSetStrand() && this_loc->GetStrand() == eNa_strand_minus) {
-                last_interval->SetStrand(eNa_strand_minus);
-                last_interval->SetInt().SetFrom(this_start - extension);
-                last_interval->SetInt().SetTo(this_stop);
-            } else {
-                last_interval->SetInt().SetFrom(this_start);
-                last_interval->SetInt().SetTo(this_stop + extension);
-                if (this_loc->IsSetStrand()) {
-                    last_interval->SetInt().SetStrand(this_loc->GetStrand());
-                }
-            }
-
-            if (new_loc) {
-                new_loc->Add(*last_interval);
-            } else {
-                new_loc.Reset(new CSeq_loc());
-                new_loc->Assign(*last_interval);
-            }
-            new_loc->SetPartialStart(loc.IsPartialStart(eExtreme_Biological), eExtreme_Biological);
-            new_loc->SetPartialStop(false, eExtreme_Biological);
-            f.SetLocation().Assign(*new_loc);
+            ExtendStopPosition(f, 0, extension);
             return true;
         }
     }
