@@ -32,8 +32,9 @@
 
 #include <objtools/blast/seqdb_reader/seqdb.hpp>
 
-#undef HAVE_SQLITE3ASYNC_H
+#ifdef HAVE_LIBSQLITE3
 #include <db/sqlite/sqlitewrapp.hpp>
+#endif
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -114,7 +115,7 @@ public:
     /// zero, one, or more than one accession.
     list<string> GetAccessions(const int oid);
 
-    /// Step through all accessio-to-OID rows.
+    /// Step through all accession-to-OID rows.
     /// Will lazily execute "SELECT * ..." upon first call.
     /// If any argument is NULL, that value will not be returned.
     /// If all arguments are NULL, only 'found' (true) or 'done' (false)
@@ -132,9 +133,14 @@ public:
     /// If all arguments are NULL, only 'found' (true) or 'done' (false)
     /// will be returned.
     /// When stepping is done, this method will finalize the SELECT statement.
-    /// @param acc pointer to string for accession, or NULL
-    /// @param ver pointer to int for version, or NULL
-    /// @param oid pointer to int for OID, or NULL
+    /// Modification time is identical to time_t in Standard C Library,
+    /// which is the number of seconds since the UNIX Epoch.
+    /// This can be converted to human-readable form with C functions
+    /// such as ctime().
+    /// @param path pointer to string for path, or NULL
+    /// @param modtime pointer to int for modification time, or NULL
+    /// @param volume pointer to int for volume number, or NULL
+    /// @param numoids pointer to int for number of OIDS in volume, or NULL
     /// @return true if row is found, or false if all rows have been returned
     bool StepVolumes(string* path, int* modtime, int* volume, int* numoids);
 };
