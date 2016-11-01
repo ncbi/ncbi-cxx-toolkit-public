@@ -41210,13 +41210,30 @@ echo "$as_me: WARNING: $message" >&2;}  ;;
          in_path=" in $VDB_PATH"
          for x in interfaces include; do
             if test -d "$VDB_PATH/$x"; then
-               : ${VDB_INCLUDE="-I$VDB_PATH/$x"}
+               vdb_inc_root=$VDB_PATH/$x
+               : ${VDB_INCLUDE="-I$vdb_inc_root"}
                break
             fi
          done
+         vdb_inc_subdirs=cc/gcc
+         case "$host_cpu:$bit64_sfx" in
+            *86*:64 ) vdb_inc_subdirs="cc/gcc/x86_64 $vdb_inc_subdirs" ;;
+            *86*:*  ) vdb_inc_subdirs="cc/gcc/fat86 $vdb_inc_subdirs" ;;
+         esac
+         if test "$ncbi_compiler" = ICC; then
+            vdb_inc_subdirs="cc/icc $vdb_inc_subdirs"
+         fi
+         case "$host_os" in
+            darwin*  ) vdb_inc_subdirs="os/mac os/unix $vdb_inc_subdirs" ;;
+            linux*   ) vdb_inc_subdirs="os/linux os/unix $vdb_inc_subdirs" ;;
+            solaris* ) vdb_inc_subdirs="os/sun os/unix $vdb_inc_subdirs" ;;
+         esac
+         for x in $vdb_inc_subdirs; do
+            VDB_INCLUDE="$VDB_INCLUDE -I$vdb_inc_root/$x"
+         done
          case "$DEBUG_SFX" in
             Debug )
-               VDB_INCLUDE="$VDB_INCLUDE $VDB_INCLUDE/cc/gcc -D_DEBUGGING"
+               VDB_INCLUDE="$VDB_INCLUDE -D_DEBUGGING"
                vdb_mode=debug
                ;;
             Release )
