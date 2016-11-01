@@ -947,9 +947,11 @@ void CCgi2RCgiApp::DefineRefreshTags(const string& url, int idelay)
     m_Response->SetHeaderValue("Cache-Control",
         "no-cache, no-store, max-age=0, private, must-revalidate");
 
-    // Must correspond to SRCgiWait values
-    m_Response->SetHeaderValue("NCBI-RCGI-RetryURL", url);
-    m_Response->SetHeaderValue("NCBI-RCGI-RetryDelay", idelay_str);
+    if (idelay >= 0) {
+        // Must correspond to SRCgiWait values
+        m_Response->SetHeaderValue("NCBI-RCGI-RetryURL", url);
+        m_Response->SetHeaderValue("NCBI-RCGI-RetryDelay", idelay_str);
+    }
 }
 
 
