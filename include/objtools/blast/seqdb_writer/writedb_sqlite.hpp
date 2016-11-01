@@ -41,8 +41,9 @@
 #include <objtools/blast/seqdb_reader/seqdb.hpp>
 #include <objtools/blast/seqdb_reader/impl/seqdbsqlite.hpp>
 
-#undef HAVE_SQLITE3ASYNC_H
+#ifdef HAVE_LIBSQLITE3
 #include <db/sqlite/sqlitewrapp.hpp>
+#endif
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
