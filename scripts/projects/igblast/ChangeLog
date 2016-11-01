@@ -1,3 +1,13 @@
+Oct 26, 2016
+* Release 1.6.1
+* Added clonotype report
+
+April 25, 2016
+* Release 1.5.0
+* Added CDR3 annotation 
+* Addedoption for extending at 5' side
+* Default to IMGT region (was Kabat previously)
+	
 July 17, 2014
 * Release 1.4.0
 * Added capability to analyze monkey sequences.
