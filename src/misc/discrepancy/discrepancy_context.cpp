@@ -541,27 +541,25 @@ static void CountNucleotides(const CSeq_data& seq_data, TSeqPos len, CSeqSummary
 
 const CSeqSummary& CDiscrepancyContext::GetSeqSummary()
 {
-    //static CSafeStatic<CSeqSummary> ret;
-    //static size_t count = 0;
     if (GetSeqSummary_count == m_Count_Bioseq) {
         return GetSeqSummary_ret;
     }
     GetSeqSummary_count = m_Count_Bioseq;
     GetSeqSummary_ret.clear();
+    const CBioseq& bs = *GetCurrentBioseq();
 
-    // Make a Seq Map so that we can explicitly look at the gaps vs. the unknowns.
-    const CRef<CSeqMap> seq_map = CSeqMap::CreateSeqMapForBioseq(*GetCurrentBioseq());
+    GetSeqSummary_ret.Len = bs.GetInst().GetLength();
+
+    const CRef<CSeqMap> seq_map = CSeqMap::CreateSeqMapForBioseq(bs);
     SSeqMapSelector sel;
     sel.SetFlags(CSeqMap::fFindData | CSeqMap::fFindGap);
     CSeqMap_CI seq_iter(seq_map, &GetScope(), sel);
     for (; seq_iter; ++seq_iter) {
         switch (seq_iter.GetType()) {
             case CSeqMap::eSeqData:
-                GetSeqSummary_ret.Len += seq_iter.GetLength();
                 CountNucleotides(seq_iter.GetData(), seq_iter.GetLength(), GetSeqSummary_ret);
                 break;
             case CSeqMap::eSeqGap:
-                GetSeqSummary_ret.Len += seq_iter.GetLength();
                 GetSeqSummary_ret.Gaps += seq_iter.GetLength();
                 break;
             default:
