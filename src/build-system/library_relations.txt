@@ -602,7 +602,6 @@ lds2 needs sqlitewrapp
 linkos_utils needs xid_utils
 linkout needs xser
 linkoutdb needs seqdb
-linkoutdb needs sqlitewrapp
 lmdb needs3party $(ORIG_LIBS)
 ls_cli needs $(NCBILS2_LIB)
 ls_cli needs dbloadb
@@ -905,6 +904,7 @@ seqalign_util needs pub
 seqcode needs xser
 seqdb needs $(SOBJMGR_LIBS)
 seqdb needs blastdb
+seqdb needs sqlitewrapp
 seqedit needs seqset
 seqentry_comparator needs xobjwrite
 seqgapscan needs $(SDBAPI_LIB)
