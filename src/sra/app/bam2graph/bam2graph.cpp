@@ -163,7 +163,10 @@ void CBam2GraphApp::ProcessFile(const string& file)
     const CArgs& args = GetArgs();
 
     string path;
-    if ( CFile(file).Exists() ) {
+    if ( NStr::StartsWith(file, "http://") ||
+         NStr::StartsWith(file, "https://") ||
+         NStr::StartsWith(file, "ftp://") ||
+         CFile(file).Exists() ) {
         path = file;
     }
     else {
