@@ -40,6 +40,17 @@
 #include <objects/seqres/seqres__.hpp>
 #include <objects/seqloc/seqloc__.hpp>
 
+#include <kfs/file.h>
+#include <vfs/manager.h>
+#include <vfs/path.h>
+#include <strstream>
+
+#ifndef NCBI_THROW2_FMT
+# define NCBI_THROW2_FMT(exception_class, err_code, message, extra)     \
+    throw NCBI_EXCEPTION2(exception_class, err_code, FORMAT(message), extra)
+#endif
+
+
 BEGIN_NCBI_SCOPE
 
 //#define NCBI_USE_ERRCODE_X   BAM2Graph
@@ -244,6 +255,64 @@ void SBamIndexRefIndex::Read(CNcbiIstream& in)
 
 
 /////////////////////////////////////////////////////////////////////////////
+// CCached
+/////////////////////////////////////////////////////////////////////////////
+
+
+SPECIALIZE_BAM_REF_TRAITS(VFSManager, );
+SPECIALIZE_BAM_REF_TRAITS(VPath, );
+SPECIALIZE_BAM_REF_TRAITS(KFile, const);
+
+
+static size_t ReadVDBFile(AutoArray<char>& data, const string& path)
+{
+    CBamRef<VFSManager> mgr;
+    if ( rc_t rc = VFSManagerMake(mgr.x_InitPtr()) ) {
+        NCBI_THROW2_FMT(CBamException, eInitFailed,
+                        "ReadVDBFile("<<path<<"): "
+                        "cannot get VFSManager", rc);
+    }
+    CBamRef<VPath> vpath;
+    if ( rc_t rc = VFSManagerMakePath(mgr, vpath.x_InitPtr(), path.c_str()) ) {
+        NCBI_THROW2_FMT(CBamException, eInitFailed,
+                        "ReadVDBFile("<<path<<"): "
+                        "cannot create VPath", rc);
+    }
+    CBamRef<const KFile> fp;
+    if ( rc_t rc = VFSManagerOpenFileRead(mgr, fp.x_InitPtr(), vpath) ) {
+        NCBI_THROW2_FMT(CBamException, eInitFailed,
+                        "ReadVDBFile("<<path<<"): "
+                        "cannot open KFile", rc);
+    }
+
+    uint64_t fsz;
+    if ( rc_t rc = KFileSize(fp, &fsz) ) {
+        NCBI_THROW2_FMT(CBamException, eInitFailed,
+                        "ReadVDBFile("<<path<<"): "
+                        "cannot get size", rc);
+    }
+    if ( size_t(fsz) != fsz ) {
+        NCBI_THROW_FMT(CBamException, eInitFailed,
+                       "ReadVDBFile("<<path<<"): "
+                       "size is too large: "<<fsz);
+    }
+    
+    data.reset(new char[fsz]);
+
+    size_t bsz = 0;
+    while ( bsz < fsz ) {
+        size_t nread;
+        if ( rc_t rc = KFileRead(fp, 0, data.get()+bsz, fsz-bsz, &nread) ) {
+            NCBI_THROW2_FMT(CBamException, eInitFailed,
+                            "ReadVDBFile("<<path<<"): "
+                            "read failed", rc);
+        }
+        bsz += nread;
+    }
+    return bsz;
+}
+
+/////////////////////////////////////////////////////////////////////////////
 // CBamIndex
 /////////////////////////////////////////////////////////////////////////////
 
@@ -271,7 +340,10 @@ void CBamIndex::Read(const string& index_file_name)
     m_Refs.clear();
     m_UnmappedCount = 0;
 
-    CNcbiIfstream in(index_file_name.c_str(), ios::binary);
+    AutoArray<char> data;
+    size_t size = ReadVDBFile(data, index_file_name);
+    istrstream in(data.get(), size);
+
     s_ReadMagic(in, "BAI\1");
 
     int32_t n_ref = s_ReadInt32(in);
