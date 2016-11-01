@@ -688,7 +688,7 @@ CObjectIStreamIterator<TRoot, TChild>::CData::x_ReaderThread()
         }
     }
     try {
-        x_Serial_FilterObjects< TRoot >( *m_Istr,
+        x_Serial_FilterObjects< TRoot, TChild >( *m_Istr,
             new x_CObjectIStreamIteratorHook< TRoot, TChild >(this));
     } catch (CException& e) {
         if (!m_EndOfData) {
@@ -1323,7 +1323,7 @@ CObjectIStreamAsyncIterator<TRoot, TChild>::sx_ClearGarbageAndParse(
 
     TObjectsQueue queue;
     try {
-        x_Serial_FilterObjects< TRoot >( *istr,
+        x_Serial_FilterObjects< TRoot, TChild >( *istr,
             new x_CObjectIStreamIteratorHook< TChild >(queue));
     } catch (CException& e) {
         NCBI_REPORT_EXCEPTION("In CObjectIStreamAsyncIterator thread",e);
