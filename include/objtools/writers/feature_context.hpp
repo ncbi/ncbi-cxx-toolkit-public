@@ -55,6 +55,7 @@ public:
         m_ft(feat_iter), m_bsh(bsh), m_sah(sah),
         m_bSequenceIsGenomicRecord(false)
     {
+        xAssignSequenceHasBioSource();
         xAssignSequenceIsGenomicRecord();
     };
 
@@ -64,14 +65,17 @@ public:
 
     CMappedFeat FindBestGeneParent(const CMappedFeat& mf);
     bool IsSequenceGenomicRecord() const { return m_bSequenceIsGenomicRecord; };
+    bool HasSequenceBioSource() const { return m_bSequenceHasBioSource; };
 
 protected:
     feature::CFeatTree m_ft;
     CMappedFeat m_mfLastIn, m_mfLastOut;
     CBioseq_Handle m_bsh;
     CSeq_annot_Handle m_sah;
+    bool m_bSequenceHasBioSource;
     bool m_bSequenceIsGenomicRecord;
 
+    void xAssignSequenceHasBioSource();
     void xAssignSequenceIsGenomicRecord();
 
 private:

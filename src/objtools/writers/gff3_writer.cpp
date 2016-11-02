@@ -2480,11 +2480,9 @@ bool CGff3Writer::xAssignFeatureAttributeGeneBiotype(
     CMappedFeat mf)
 //  ----------------------------------------------------------------------------
 {
-    //applies only to genomic records
-    // rw-5: not any more!
-    //if (!fc.IsSequenceGenomicRecord()) {
-    //    return true;
-    //}
+    if (!fc.HasSequenceBioSource()  ||  fc.IsSequenceGenomicRecord()) {
+        return true;
+    }
 
     string biotype;
     if (!feature::GetFeatureGeneBiotypeFaster(fc.FeatTree(), mf, biotype)) {
