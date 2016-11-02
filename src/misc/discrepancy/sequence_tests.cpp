@@ -36,6 +36,7 @@
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/bioseq_ci.hpp>
 #include <objtools/cleanup/cleanup.hpp>
+#include <objtools/edit/loc_edit.hpp>
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/seq/Delta_seq.hpp>
@@ -1616,16 +1617,44 @@ DISCREPANCY_SUMMARIZE(MULTIPLE_CDS_ON_MRNA)
 
 // MRNA_SEQUENCE_MINUS_STRAND_FEATURES
 
-const string kMinusStrandOnMrna = "features";
-const string kMrnaSequenceMinusStrandFeatures = "[n] mRNA sequences have features on the complement strand.";
+static const string kMinusStrandOnMrna = "minusStrandFeatures";
+static const string kOtherStrandOnMrna = "otherStrandFeatures";
+static const string kMrnaSequenceMinusStrandFeatures = "[n] mRNA sequences have features on the complement strand.";
 
-void SummarizeMinusOnMrna(CReportNode& m_Objs)
+class CMinusStrandData : public CObject
+{
+public:
+    list<CSeq_feat*> m_feats;
+};
+
+static void CopyMinusStrandData(const TReportObjectList& objs, CMinusStrandData& data)
+{
+    ITERATE(TReportObjectList, obj, objs) {
+
+        CConstRef<CSerialObject> serial_obj = (*obj)->GetObject();
+        CSeq_feat* feat = dynamic_cast<CSeq_feat*>(const_cast<CSerialObject*>(serial_obj.GetPointer()));
+        data.m_feats.push_back(feat);
+    }
+}
+
+static void SummarizeMinusOnMrna(CReportNode& m_Objs)
 {
     if (m_Objs[kMinusStrandOnMrna].GetObjects().size() > 0) {
-        CRef<CDiscrepancyObject> seq_disc_obj(dynamic_cast<CDiscrepancyObject*>(m_Objs[kLastBioseq].GetObjects().back().GetNCPointer()));
-        m_Objs[kMrnaSequenceMinusStrandFeatures].Add(*seq_disc_obj, false);
+
+        CDiscrepancyObject* seq_disc_obj = dynamic_cast<CDiscrepancyObject*>(m_Objs[kLastBioseq].GetObjects().back().GetNCPointer());
+        if (m_Objs[kOtherStrandOnMrna].empty()) { // fixable case, no features on strands other than minus
+
+            CRef<CMinusStrandData> obj_data(new CMinusStrandData);
+            CopyMinusStrandData(m_Objs[kMinusStrandOnMrna].GetObjects(), *obj_data);
+
+            CRef<CReportObj> new_disc_obj(seq_disc_obj->Clone(true, CConstRef<CObject>(obj_data.GetPointer())));
+            m_Objs[kMrnaSequenceMinusStrandFeatures].Add(*new_disc_obj, false);
+        }
+        else
+            m_Objs[kMrnaSequenceMinusStrandFeatures].Add(*seq_disc_obj, false);
 
     }
+    m_Objs[kOtherStrandOnMrna].clearObjs();
     m_Objs[kMinusStrandOnMrna].clearObjs();
 }
 
@@ -1638,12 +1667,16 @@ DISCREPANCY_CASE(MRNA_SEQUENCE_MINUS_STRAND_FEATURES, CSeq_feat_BY_BIOSEQ, eOnca
         CRef<CDiscrepancyObject> this_disc_obj(context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary(), eKeepRef));
         m_Objs[kLastBioseq].Add(*this_disc_obj, false);
     }
-    if (!context.IsCurrentSequenceMrna() || 
-        obj.GetLocation().GetStrand() != eNa_strand_minus ||
-        obj.GetData().GetSubtype() == CSeqFeatData::eSubtype_primer_bind) {
-        return;
+
+    if (context.IsCurrentSequenceMrna())
+    {
+        if (obj.GetLocation().GetStrand() != eNa_strand_minus || obj.GetData().GetSubtype() == CSeqFeatData::eSubtype_primer_bind) {
+            m_Objs[kOtherStrandOnMrna].Add(*(context.NewDiscObj(CConstRef<CSeq_feat>(&obj))), false);
+        }
+        else {
+            m_Objs[kMinusStrandOnMrna].Add(*(context.NewDiscObj(CConstRef<CSeq_feat>(&obj))), false);
+        }
     }
-    m_Objs[kMinusStrandOnMrna].Add(*(context.NewDiscObj(CConstRef<CSeq_feat>(&obj))), false);
 }
 
 
@@ -1651,10 +1684,52 @@ DISCREPANCY_SUMMARIZE(MRNA_SEQUENCE_MINUS_STRAND_FEATURES)
 {
     SummarizeMinusOnMrna(m_Objs);
     m_Objs.GetMap().erase(kMinusStrandOnMrna);
+    m_Objs.GetMap().erase(kOtherStrandOnMrna);
     m_Objs.GetMap().erase(kLastBioseq);
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
 }
 
+
+static bool ConvertToReverseComplement(const CBioseq& bioseq, const CMinusStrandData* data, CScope& scope)
+{
+    if (data == nullptr) {
+        return false;
+    }
+
+    CBioseq_EditHandle seq_h = scope.GetBioseqEditHandle(bioseq);
+
+    CRef<objects::CSeq_inst> new_inst(new objects::CSeq_inst());
+    new_inst->Assign(seq_h.GetInst());
+    ReverseComplement(*new_inst, &scope);
+    seq_h.SetInst(*new_inst);
+
+    CMinusStrandData* non_const_data = const_cast<CMinusStrandData*>(data);
+    if (non_const_data) {
+        NON_CONST_ITERATE(list<CSeq_feat*>, feat, non_const_data->m_feats) {
+            edit::ReverseComplementFeature(**feat, scope);
+        }
+    }
+
+    return true;
+}
+
+DISCREPANCY_AUTOFIX(MRNA_SEQUENCE_MINUS_STRAND_FEATURES)
+{
+    TReportObjectList list = item->GetDetails();
+    unsigned int n = 0;
+    NON_CONST_ITERATE(TReportObjectList, it, list) {
+
+        CDiscrepancyObject* disc_obj = dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer());
+        const CBioseq* bioseq = dynamic_cast<const CBioseq*>(disc_obj->GetObject().GetPointer());
+        CConstRef<CObject> data = disc_obj->GetMoreInfo();
+
+        if (bioseq && ConvertToReverseComplement(*bioseq, dynamic_cast<const CMinusStrandData*>(data.GetPointer()), scope)) {
+            n++;
+        }
+    }
+
+    return CRef<CAutofixReport>(n ? new CAutofixReport("MRNA_SEQUENCE_MINUS_STRAND_FEATURES: [n] sequence[s] [is] converted to reverse complement[s]", n) : 0);
+}
 
 // LOW_QUALITY_REGION
 

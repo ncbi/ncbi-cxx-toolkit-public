@@ -1,0 +1,6346 @@
+Seq-entry ::= set {
+  class genbank,
+  descr {
+    user {
+      type str "NcbiCleanup",
+      data {
+        {
+          label str "method",
+          data str "ExtendedSeqEntryCleanup"
+        },
+        {
+          label str "version",
+          data int 1
+        },
+        {
+          label str "month",
+          data int 10
+        },
+        {
+          label str "day",
+          data int 28
+        },
+        {
+          label str "year",
+          data int 2016
+        }
+      }
+    }
+  },
+  seq-set {
+    set {
+      class nuc-prot,
+      descr {
+        source {
+          genome genomic,
+          org {
+            taxname "Crassostrea brasiliana",
+            db {
+              {
+                db "taxon",
+                tag id 398256
+              }
+            },
+            orgname {
+              name binomial {
+                genus "Crassostrea",
+                species "brasiliana"
+              },
+              lineage "Eukaryota; Metazoa; Lophotrochozoa; Mollusca; Bivalvia;
+ Pteriomorphia; Ostreoida; Ostreoidea; Ostreidae; Crassostrea",
+              gcode 1,
+              mgcode 5,
+              div "INV"
+            }
+          }
+        },
+        pub {
+          pub {
+            pmid 26186662,
+            article {
+              title {
+                name "Key metabolic pathways involved in xenobiotic
+ biotransformation and stress responses revealed by transcriptomics of the
+ mangrove oyster Crassostrea brasiliana."
+              },
+              authors {
+                names std {
+
+                  {
+
+                    name name {
+
+                      last "Luchmann",
+
+                      initials "K.H."
+
+                    },
+
+                    affil str "Fishery Engineering Department, Santa Catarina
+
+ State University, Laguna, Brazil. Electronic address: khluchmann@gmail.com."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Clark",
+
+                      initials "M.S."
+
+                    },
+
+                    affil str "British Antarctic Survey, Natural Environment
+
+ Research Council, Cambridge, UK. Electronic address: mscl@bas.ac.uk."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Bainy",
+
+                      initials "A.C."
+
+                    },
+
+                    affil str "Biochemistry Department, Federal University of
+
+ Santa Catarina, Florianopolis, Brazil. Electronic address:
+
+ afonso.bainy@ufsc.br."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Gilbert",
+
+                      initials "J.A."
+
+                    },
+
+                    affil str "Biosciences Division (BIO), Argonne National
+
+ Laboratory, Argonne, USA; Department of Ecology and Evolution, University of
+
+ Chicago, Chicago, USA; Marine Biological Laboratory, Woods Hole, USA; College
+
+ of Environmental and Resource Sciences, Zhejiang University, Hangzhou, China.
+
+ Electronic address: gilbertjack@anl.gov."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Craft",
+
+                      initials "J.A."
+
+                    },
+
+                    affil str "Biological and Biomedical Sciences, Glasgow
+
+ Caledonian University, Glasgow, UK. Electronic address: J.A.Craft@gcu.ac.uk."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Chipman",
+
+                      initials "J.K."
+
+                    },
+
+                    affil str "School of Biological Sciences, The University
+
+ of Birmingham, Birmingham, UK. Electronic address: j.k.chipman@bham.ac.uk."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Thorne",
+
+                      initials "M.A."
+
+                    },
+
+                    affil str "British Antarctic Survey, Natural Environment
+
+ Research Council, Cambridge, UK. Electronic address: mior@bas.ac.uk."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Mattos",
+
+                      initials "J.J."
+
+                    },
+
+                    affil str "Biochemistry Department, Federal University of
+
+ Santa Catarina, Florianopolis, Brazil. Electronic address:
+
+ jaco.mattos@ufsc.br."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Siebert",
+
+                      initials "M.N."
+
+                    },
+
+                    affil str "Biochemistry Department, Federal University of
+
+ Santa Catarina, Florianopolis, Brazil. Electronic address:
+
+ marilia.siebert@ifsc.edu.br."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Schroeder",
+
+                      initials "D.C."
+
+                    },
+
+                    affil str "Marine Biological Association of the United
+
+ Kingdom (MBA), Plymouth, UK. Electronic address: dsch@mba.ac.uk."
+
+                  }
+
+                }
+              },
+              from journal {
+                title {
+                  iso-jta "Aquat. Toxicol.",
+                  ml-jta "Aquat Toxicol",
+                  issn "1879-1514",
+                  name "Aquatic toxicology (Amsterdam, Netherlands)"
+                },
+                imp {
+                  date std {
+                    year 2015,
+                    month 9
+                  },
+                  volume "166",
+                  pages "10-20",
+                  language "eng",
+                  pubstatus ppublish,
+                  history {
+                    {
+                      pubstatus received,
+                      date std {
+                        year 2015,
+                        month 3,
+                        day 31
+                      }
+                    },
+                    {
+                      pubstatus revised,
+                      date std {
+                        year 2015,
+                        month 6,
+                        day 25
+                      }
+                    },
+                    {
+                      pubstatus accepted,
+                      date std {
+                        year 2015,
+                        month 6,
+                        day 26
+                      }
+                    },
+                    {
+                      pubstatus aheadofprint,
+                      date std {
+                        year 2015,
+                        month 7,
+                        day 2
+                      }
+                    },
+                    {
+                      pubstatus other,
+                      date std {
+                        year 2015,
+                        month 7,
+                        day 18,
+                        hour 6,
+                        minute 0
+                      }
+                    },
+                    {
+                      pubstatus pubmed,
+                      date std {
+                        year 2015,
+                        month 7,
+                        day 18,
+                        hour 6,
+                        minute 0
+                      }
+                    },
+                    {
+                      pubstatus medline,
+                      date std {
+                        year 2016,
+                        month 1,
+                        day 8,
+                        hour 6,
+                        minute 0
+                      }
+                    }
+                  }
+                }
+              },
+              ids {
+                pubmed 26186662,
+                pii "S0166-445X(15)30003-5",
+                doi "10.1016/j.aquatox.2015.06.012",
+                other {
+                  db "ELocationID doi",
+                  tag str "10.1016/j.aquatox.2015.06.012"
+                },
+                other {
+                  db "ELocationID pii",
+                  tag str "S0166-445X(15)30003-5"
+                }
+              }
+            }
+          }
+        },
+        pub {
+          pub {
+            sub {
+              authors {
+                names std {
+
+                  {
+
+                    name name {
+
+                      last "Luchmann",
+
+                      first "K",
+
+                      initials "K.H."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Clark",
+
+                      first "M",
+
+                      initials "M.S."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Bainy",
+
+                      first "A",
+
+                      initials "A.C.D."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Gilbert",
+
+                      first "J",
+
+                      initials "J.A."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Craft",
+
+                      first "J",
+
+                      initials "J.A."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Chipman",
+
+                      first "J",
+
+                      initials "J."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Thorne",
+
+                      first "M",
+
+                      initials "M.A.S."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Mattos",
+
+                      first "J",
+
+                      initials "J.J."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Siebert",
+
+                      first "M",
+
+                      initials "M.N."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Schroeder",
+
+                      first "D",
+
+                      initials "D.C."
+
+                    }
+
+                  }
+
+                },
+                affil std {
+                  affil "Santa Catarina State University",
+                  div "Fishery Engineering",
+                  city "Laguna",
+                  sub "SC",
+                  country "Brazil",
+                  street "Cel. Fernandes Martins, 270",
+                  postal-code "88790000"
+                }
+              },
+              medium email,
+              date std {
+                year 2016,
+                month 3,
+                day 14
+              }
+            }
+          }
+        },
+        user {
+          class "SMART_V1.0",
+          type id 1,
+          data {
+            {
+              label id 1,
+              num 1,
+              data int 10300410
+            }
+          }
+        },
+        user {
+          type str "StructuredComment",
+          data {
+            {
+              label str "StructuredCommentPrefix",
+              data str "##Assembly-Data-START##"
+            },
+            {
+              label str "Assembly Method",
+              data str "SeqMan NGen v. v. 3.0.4"
+            },
+            {
+              label str "Sequencing Technology",
+              data str "454"
+            },
+            {
+              label str "StructuredCommentSuffix",
+              data str "##Assembly-Data-END##"
+            }
+          }
+        },
+        user {
+          type str "Submission",
+          data {
+            {
+              label str "SmartComment",
+              data str "ALT EMAIL:karim.luchmann@udesc.br"
+            },
+            {
+              label str "AdditionalComment",
+              data str "BankIt1902111"
+            }
+          }
+        },
+        user {
+          type str "Submission",
+          data {
+            {
+              label str "SmartComment",
+              data str "TOTAL # OF SEQS:9"
+            }
+          }
+        },
+        update-date std {
+          year 2016,
+          month 3,
+          day 11,
+          hour 16,
+          minute 52,
+          second 30
+        }
+      },
+      seq-set {
+        seq {
+          id {
+            local str "CYP2AU1",
+            general {
+              db "BankIt",
+              tag str "1902111/CYP2AU1"
+            },
+            general {
+              db "TMSMART",
+              tag id 64139626
+            },
+            genbank {
+              accession "KU958701"
+            }
+          },
+          descr {
+            title "Crassostrea brasiliana CYP2AU1 protein mRNA, complete cds.",
+            molinfo {
+              biomol mRNA
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "CYP2AU1"
+                }
+              }
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:CYP2AU1"
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol rna,
+            length 1431,
+            strand ss,
+            seq-data ncbi2na '3BAB06BE73FCBAC78D1FF3FA99E1A861422A7155EB586E71
+54D3E90FDADE3C05B48A4B9295120370A000CEA84DC4734E3FF44258EB4FB93A338433D881D7EF
+4D2AA3B3FD202143C43280E4B3C0C0A00A3EB6BDF7A2673A0214081BF9FC186F190BFA3DA006B9
+F901D030E8E0B23EDC3A083E8027E00C253F84F4833FC0C4DAFD03BCDEF57FEFE901AFEAC628E5
+0BD093F8FB5E70101EF5D1E82E6DF75EDD4FFD7BFC67FF1433F07F047B0200DFCA86E8E4F4F028
+30D8E8448403FE100B04F0E3FCD8E4F7EFA0484282AA0223144FC48E148E30D2EF2A0F7D966A07
+8841F5144788EA477EF5C3534568FA48731F4888CF8EBB4FAD2ED05403A04408D0794DAF827FCF
+7A0BD26D19017C45DF96F59391402287D4FF028C4E3D408817D1FFF74F23DED3878D70CCFD4815
+FC2FE756223F70188BA42ECBAA04028807CF53DD05A1820FEDCA2051F9423A073F7FDF8523FF90
+03F28D2358815581B7D45FE8A819EA1F18133C017FC0'H
+          }
+        },
+        seq {
+          id {
+            local str "CYP2AU1_prot_1",
+            general {
+              db "TMSMART",
+              tag id 64139627
+            }
+          },
+          descr {
+            title "CYP2AU1 protein [Crassostrea brasiliana]",
+            molinfo {
+              biomol peptide
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "CYP2AU1_prot_1"
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol aa,
+            length 476,
+            seq-data ncbieaa "MWVTVAILVVLITFIWALTGRPRGLPPGPTCYPIIGNFGLIKPSEAVQ
+AHRNLRKKYGDIYTIMIFHKPMVIVHGYDNIRELLVHQGDVFSERPITIGNAVLNKGKGLVGSSGALWKDQRTFALTT
+LRKFGFGKRCLQTQIMDEVDCLMEELEKLENKPFDIQNILNTSVSNVICSLLFGKRFGYEDAKFKHLIVLLNKLFLTG
+SASSPVSIFPVLRFLPIFNFNTVKKIFRDVDAFIKGIIDGHRQNFDKSNINDFIDAFLLEQTRKGERDTTFTDDQMII
+SVREFFAAGTETTSTTLRWALLFLIHHPDWQTILQRDIDGVIGQCQPKMEHKDQLPSVEAFILEVQRHANLTPLAVPH
+APKEDFHFKGYMIPKRTFTFFSLDSVMTDPNIFPEPFKFAPERFLNESGKCSGEQKEKLIPFSTGRRICLGEPLAKME
+LFLFLTRFLQKFRIRSENPRTSSTFGGNAGTYEHIKTF"
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data prot {
+                    name {
+                      "CYP2AU1 protein"
+                    }
+                  },
+                  location int {
+                    from 0,
+                    to 475,
+                    id local str "CYP2AU1_prot_1"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                frame one,
+                code {
+                  id 1
+                }
+              },
+              product whole local str "CYP2AU1_prot_1",
+              location int {
+                from 0,
+                to 1430,
+                strand plus,
+                id local str "CYP2AU1"
+              }
+            }
+          }
+        }
+      }
+    },
+    set {
+      class nuc-prot,
+      descr {
+        source {
+          genome genomic,
+          org {
+            taxname "Crassostrea brasiliana",
+            db {
+              {
+                db "taxon",
+                tag id 398256
+              }
+            },
+            orgname {
+              name binomial {
+                genus "Crassostrea",
+                species "brasiliana"
+              },
+              lineage "Eukaryota; Metazoa; Lophotrochozoa; Mollusca; Bivalvia;
+ Pteriomorphia; Ostreoida; Ostreoidea; Ostreidae; Crassostrea",
+              gcode 1,
+              mgcode 5,
+              div "INV"
+            }
+          }
+        },
+        pub {
+          pub {
+            pmid 26186662,
+            article {
+              title {
+                name "Key metabolic pathways involved in xenobiotic
+ biotransformation and stress responses revealed by transcriptomics of the
+ mangrove oyster Crassostrea brasiliana."
+              },
+              authors {
+                names std {
+
+                  {
+
+                    name name {
+
+                      last "Luchmann",
+
+                      initials "K.H."
+
+                    },
+
+                    affil str "Fishery Engineering Department, Santa Catarina
+
+ State University, Laguna, Brazil. Electronic address: khluchmann@gmail.com."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Clark",
+
+                      initials "M.S."
+
+                    },
+
+                    affil str "British Antarctic Survey, Natural Environment
+
+ Research Council, Cambridge, UK. Electronic address: mscl@bas.ac.uk."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Bainy",
+
+                      initials "A.C."
+
+                    },
+
+                    affil str "Biochemistry Department, Federal University of
+
+ Santa Catarina, Florianopolis, Brazil. Electronic address:
+
+ afonso.bainy@ufsc.br."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Gilbert",
+
+                      initials "J.A."
+
+                    },
+
+                    affil str "Biosciences Division (BIO), Argonne National
+
+ Laboratory, Argonne, USA; Department of Ecology and Evolution, University of
+
+ Chicago, Chicago, USA; Marine Biological Laboratory, Woods Hole, USA; College
+
+ of Environmental and Resource Sciences, Zhejiang University, Hangzhou, China.
+
+ Electronic address: gilbertjack@anl.gov."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Craft",
+
+                      initials "J.A."
+
+                    },
+
+                    affil str "Biological and Biomedical Sciences, Glasgow
+
+ Caledonian University, Glasgow, UK. Electronic address: J.A.Craft@gcu.ac.uk."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Chipman",
+
+                      initials "J.K."
+
+                    },
+
+                    affil str "School of Biological Sciences, The University
+
+ of Birmingham, Birmingham, UK. Electronic address: j.k.chipman@bham.ac.uk."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Thorne",
+
+                      initials "M.A."
+
+                    },
+
+                    affil str "British Antarctic Survey, Natural Environment
+
+ Research Council, Cambridge, UK. Electronic address: mior@bas.ac.uk."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Mattos",
+
+                      initials "J.J."
+
+                    },
+
+                    affil str "Biochemistry Department, Federal University of
+
+ Santa Catarina, Florianopolis, Brazil. Electronic address:
+
+ jaco.mattos@ufsc.br."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Siebert",
+
+                      initials "M.N."
+
+                    },
+
+                    affil str "Biochemistry Department, Federal University of
+
+ Santa Catarina, Florianopolis, Brazil. Electronic address:
+
+ marilia.siebert@ifsc.edu.br."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Schroeder",
+
+                      initials "D.C."
+
+                    },
+
+                    affil str "Marine Biological Association of the United
+
+ Kingdom (MBA), Plymouth, UK. Electronic address: dsch@mba.ac.uk."
+
+                  }
+
+                }
+              },
+              from journal {
+                title {
+                  iso-jta "Aquat. Toxicol.",
+                  ml-jta "Aquat Toxicol",
+                  issn "1879-1514",
+                  name "Aquatic toxicology (Amsterdam, Netherlands)"
+                },
+                imp {
+                  date std {
+                    year 2015,
+                    month 9
+                  },
+                  volume "166",
+                  pages "10-20",
+                  language "eng",
+                  pubstatus ppublish,
+                  history {
+                    {
+                      pubstatus received,
+                      date std {
+                        year 2015,
+                        month 3,
+                        day 31
+                      }
+                    },
+                    {
+                      pubstatus revised,
+                      date std {
+                        year 2015,
+                        month 6,
+                        day 25
+                      }
+                    },
+                    {
+                      pubstatus accepted,
+                      date std {
+                        year 2015,
+                        month 6,
+                        day 26
+                      }
+                    },
+                    {
+                      pubstatus aheadofprint,
+                      date std {
+                        year 2015,
+                        month 7,
+                        day 2
+                      }
+                    },
+                    {
+                      pubstatus other,
+                      date std {
+                        year 2015,
+                        month 7,
+                        day 18,
+                        hour 6,
+                        minute 0
+                      }
+                    },
+                    {
+                      pubstatus pubmed,
+                      date std {
+                        year 2015,
+                        month 7,
+                        day 18,
+                        hour 6,
+                        minute 0
+                      }
+                    },
+                    {
+                      pubstatus medline,
+                      date std {
+                        year 2016,
+                        month 1,
+                        day 8,
+                        hour 6,
+                        minute 0
+                      }
+                    }
+                  }
+                }
+              },
+              ids {
+                pubmed 26186662,
+                pii "S0166-445X(15)30003-5",
+                doi "10.1016/j.aquatox.2015.06.012",
+                other {
+                  db "ELocationID doi",
+                  tag str "10.1016/j.aquatox.2015.06.012"
+                },
+                other {
+                  db "ELocationID pii",
+                  tag str "S0166-445X(15)30003-5"
+                }
+              }
+            }
+          }
+        },
+        pub {
+          pub {
+            sub {
+              authors {
+                names std {
+
+                  {
+
+                    name name {
+
+                      last "Luchmann",
+
+                      first "K",
+
+                      initials "K.H."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Clark",
+
+                      first "M",
+
+                      initials "M.S."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Bainy",
+
+                      first "A",
+
+                      initials "A.C.D."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Gilbert",
+
+                      first "J",
+
+                      initials "J.A."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Craft",
+
+                      first "J",
+
+                      initials "J.A."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Chipman",
+
+                      first "J",
+
+                      initials "J."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Thorne",
+
+                      first "M",
+
+                      initials "M.A.S."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Mattos",
+
+                      first "J",
+
+                      initials "J.J."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Siebert",
+
+                      first "M",
+
+                      initials "M.N."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Schroeder",
+
+                      first "D",
+
+                      initials "D.C."
+
+                    }
+
+                  }
+
+                },
+                affil std {
+                  affil "Santa Catarina State University",
+                  div "Fishery Engineering",
+                  city "Laguna",
+                  sub "SC",
+                  country "Brazil",
+                  street "Cel. Fernandes Martins, 270",
+                  postal-code "88790000"
+                }
+              },
+              medium email,
+              date std {
+                year 2016,
+                month 3,
+                day 14
+              }
+            }
+          }
+        },
+        user {
+          class "SMART_V1.0",
+          type id 1,
+          data {
+            {
+              label id 1,
+              num 1,
+              data int 10300413
+            }
+          }
+        },
+        user {
+          type str "StructuredComment",
+          data {
+            {
+              label str "StructuredCommentPrefix",
+              data str "##Assembly-Data-START##"
+            },
+            {
+              label str "Assembly Method",
+              data str "SeqMan NGen v. v. 3.0.4"
+            },
+            {
+              label str "Sequencing Technology",
+              data str "454"
+            },
+            {
+              label str "StructuredCommentSuffix",
+              data str "##Assembly-Data-END##"
+            }
+          }
+        },
+        user {
+          type str "Submission",
+          data {
+            {
+              label str "SmartComment",
+              data str "ALT EMAIL:karim.luchmann@udesc.br"
+            },
+            {
+              label str "AdditionalComment",
+              data str "BankIt1902111"
+            }
+          }
+        },
+        user {
+          type str "Submission",
+          data {
+            {
+              label str "SmartComment",
+              data str "TOTAL # OF SEQS:9"
+            }
+          }
+        },
+        update-date std {
+          year 2016,
+          month 3,
+          day 11,
+          hour 16,
+          minute 52,
+          second 30
+        }
+      },
+      seq-set {
+        seq {
+          id {
+            local str "CYP3A-like",
+            general {
+              db "BankIt",
+              tag str "1902111/CYP3A-like"
+            },
+            general {
+              db "TMSMART",
+              tag id 64139630
+            },
+            genbank {
+              accession "KU958702"
+            }
+          },
+          descr {
+            title "Crassostrea brasiliana CYP3A-like protein mRNA, partial cds.",
+            molinfo {
+              biomol mRNA
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "CYP3A-like"
+                }
+              }
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:CYP3A-like"
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol rna,
+            length 429,
+            strand ss,
+            seq-data ncbi2na '70F3FD14B67A9219A5233A235CA9CBA1B4107A36C92DBFF7
+7BBB577C331DC0E8044BFBD68ACEBBD4A15155B577BFA2DD5E0B10584ABF27F8485080D9400B3A
+E1B6DAACC4EA53154FBC7EEDC35A214F02034EB4083D94A1D50D954217FB5760180C95111E3431
+21A6147A63C0'H
+          }
+        },
+        seq {
+          id {
+            local str "CYP3A-like_prot_3",
+            general {
+              db "TMSMART",
+              tag id 64139631
+            }
+          },
+          descr {
+            title "CYP3A-like protein, partial [Crassostrea brasiliana]",
+            molinfo {
+              biomol peptide,
+              completeness no-right
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "CYP3A-like_prot_3"
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol aa,
+            length 129,
+            seq-data ncbieaa "MEILGLVDVNNWIVAVVFLCVSLLIYSKWKHSLFRRYGVPGPTPVPLF
+GVSLKYNRQGLALTDQEIAKKYGDVVGVYMGHTPLLLVSNPETIKEIMVKEFARTPNRPKTFVPRNEIAHTLINTDGD
+HWR"
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data prot {
+                    name {
+                      "CYP3A-like protein"
+                    }
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 128,
+                    id local str "CYP3A-like_prot_3",
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                frame one,
+                code {
+                  id 1
+                }
+              },
+              partial TRUE,
+              product whole local str "CYP3A-like_prot_3",
+              location int {
+                from 40,
+                to 428,
+                strand plus,
+                id local str "CYP3A-like",
+                fuzz-to lim gt
+              }
+            }
+          }
+        }
+      }
+    },
+    set {
+      class nuc-prot,
+      descr {
+        source {
+          genome genomic,
+          org {
+            taxname "Crassostrea brasiliana",
+            db {
+              {
+                db "taxon",
+                tag id 398256
+              }
+            },
+            orgname {
+              name binomial {
+                genus "Crassostrea",
+                species "brasiliana"
+              },
+              lineage "Eukaryota; Metazoa; Lophotrochozoa; Mollusca; Bivalvia;
+ Pteriomorphia; Ostreoida; Ostreoidea; Ostreidae; Crassostrea",
+              gcode 1,
+              mgcode 5,
+              div "INV"
+            }
+          }
+        },
+        pub {
+          pub {
+            pmid 26186662,
+            article {
+              title {
+                name "Key metabolic pathways involved in xenobiotic
+ biotransformation and stress responses revealed by transcriptomics of the
+ mangrove oyster Crassostrea brasiliana."
+              },
+              authors {
+                names std {
+
+                  {
+
+                    name name {
+
+                      last "Luchmann",
+
+                      initials "K.H."
+
+                    },
+
+                    affil str "Fishery Engineering Department, Santa Catarina
+
+ State University, Laguna, Brazil. Electronic address: khluchmann@gmail.com."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Clark",
+
+                      initials "M.S."
+
+                    },
+
+                    affil str "British Antarctic Survey, Natural Environment
+
+ Research Council, Cambridge, UK. Electronic address: mscl@bas.ac.uk."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Bainy",
+
+                      initials "A.C."
+
+                    },
+
+                    affil str "Biochemistry Department, Federal University of
+
+ Santa Catarina, Florianopolis, Brazil. Electronic address:
+
+ afonso.bainy@ufsc.br."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Gilbert",
+
+                      initials "J.A."
+
+                    },
+
+                    affil str "Biosciences Division (BIO), Argonne National
+
+ Laboratory, Argonne, USA; Department of Ecology and Evolution, University of
+
+ Chicago, Chicago, USA; Marine Biological Laboratory, Woods Hole, USA; College
+
+ of Environmental and Resource Sciences, Zhejiang University, Hangzhou, China.
+
+ Electronic address: gilbertjack@anl.gov."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Craft",
+
+                      initials "J.A."
+
+                    },
+
+                    affil str "Biological and Biomedical Sciences, Glasgow
+
+ Caledonian University, Glasgow, UK. Electronic address: J.A.Craft@gcu.ac.uk."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Chipman",
+
+                      initials "J.K."
+
+                    },
+
+                    affil str "School of Biological Sciences, The University
+
+ of Birmingham, Birmingham, UK. Electronic address: j.k.chipman@bham.ac.uk."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Thorne",
+
+                      initials "M.A."
+
+                    },
+
+                    affil str "British Antarctic Survey, Natural Environment
+
+ Research Council, Cambridge, UK. Electronic address: mior@bas.ac.uk."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Mattos",
+
+                      initials "J.J."
+
+                    },
+
+                    affil str "Biochemistry Department, Federal University of
+
+ Santa Catarina, Florianopolis, Brazil. Electronic address:
+
+ jaco.mattos@ufsc.br."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Siebert",
+
+                      initials "M.N."
+
+                    },
+
+                    affil str "Biochemistry Department, Federal University of
+
+ Santa Catarina, Florianopolis, Brazil. Electronic address:
+
+ marilia.siebert@ifsc.edu.br."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Schroeder",
+
+                      initials "D.C."
+
+                    },
+
+                    affil str "Marine Biological Association of the United
+
+ Kingdom (MBA), Plymouth, UK. Electronic address: dsch@mba.ac.uk."
+
+                  }
+
+                }
+              },
+              from journal {
+                title {
+                  iso-jta "Aquat. Toxicol.",
+                  ml-jta "Aquat Toxicol",
+                  issn "1879-1514",
+                  name "Aquatic toxicology (Amsterdam, Netherlands)"
+                },
+                imp {
+                  date std {
+                    year 2015,
+                    month 9
+                  },
+                  volume "166",
+                  pages "10-20",
+                  language "eng",
+                  pubstatus ppublish,
+                  history {
+                    {
+                      pubstatus received,
+                      date std {
+                        year 2015,
+                        month 3,
+                        day 31
+                      }
+                    },
+                    {
+                      pubstatus revised,
+                      date std {
+                        year 2015,
+                        month 6,
+                        day 25
+                      }
+                    },
+                    {
+                      pubstatus accepted,
+                      date std {
+                        year 2015,
+                        month 6,
+                        day 26
+                      }
+                    },
+                    {
+                      pubstatus aheadofprint,
+                      date std {
+                        year 2015,
+                        month 7,
+                        day 2
+                      }
+                    },
+                    {
+                      pubstatus other,
+                      date std {
+                        year 2015,
+                        month 7,
+                        day 18,
+                        hour 6,
+                        minute 0
+                      }
+                    },
+                    {
+                      pubstatus pubmed,
+                      date std {
+                        year 2015,
+                        month 7,
+                        day 18,
+                        hour 6,
+                        minute 0
+                      }
+                    },
+                    {
+                      pubstatus medline,
+                      date std {
+                        year 2016,
+                        month 1,
+                        day 8,
+                        hour 6,
+                        minute 0
+                      }
+                    }
+                  }
+                }
+              },
+              ids {
+                pubmed 26186662,
+                pii "S0166-445X(15)30003-5",
+                doi "10.1016/j.aquatox.2015.06.012",
+                other {
+                  db "ELocationID doi",
+                  tag str "10.1016/j.aquatox.2015.06.012"
+                },
+                other {
+                  db "ELocationID pii",
+                  tag str "S0166-445X(15)30003-5"
+                }
+              }
+            }
+          }
+        },
+        pub {
+          pub {
+            sub {
+              authors {
+                names std {
+
+                  {
+
+                    name name {
+
+                      last "Luchmann",
+
+                      first "K",
+
+                      initials "K.H."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Clark",
+
+                      first "M",
+
+                      initials "M.S."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Bainy",
+
+                      first "A",
+
+                      initials "A.C.D."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Gilbert",
+
+                      first "J",
+
+                      initials "J.A."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Craft",
+
+                      first "J",
+
+                      initials "J.A."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Chipman",
+
+                      first "J",
+
+                      initials "J."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Thorne",
+
+                      first "M",
+
+                      initials "M.A.S."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Mattos",
+
+                      first "J",
+
+                      initials "J.J."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Siebert",
+
+                      first "M",
+
+                      initials "M.N."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Schroeder",
+
+                      first "D",
+
+                      initials "D.C."
+
+                    }
+
+                  }
+
+                },
+                affil std {
+                  affil "Santa Catarina State University",
+                  div "Fishery Engineering",
+                  city "Laguna",
+                  sub "SC",
+                  country "Brazil",
+                  street "Cel. Fernandes Martins, 270",
+                  postal-code "88790000"
+                }
+              },
+              medium email,
+              date std {
+                year 2016,
+                month 3,
+                day 14
+              }
+            }
+          }
+        },
+        user {
+          class "SMART_V1.0",
+          type id 1,
+          data {
+            {
+              label id 1,
+              num 1,
+              data int 10300414
+            }
+          }
+        },
+        user {
+          type str "StructuredComment",
+          data {
+            {
+              label str "StructuredCommentPrefix",
+              data str "##Assembly-Data-START##"
+            },
+            {
+              label str "Assembly Method",
+              data str "SeqMan NGen v. v. 3.0.4"
+            },
+            {
+              label str "Sequencing Technology",
+              data str "454"
+            },
+            {
+              label str "StructuredCommentSuffix",
+              data str "##Assembly-Data-END##"
+            }
+          }
+        },
+        user {
+          type str "Submission",
+          data {
+            {
+              label str "SmartComment",
+              data str "ALT EMAIL:karim.luchmann@udesc.br"
+            },
+            {
+              label str "AdditionalComment",
+              data str "BankIt1902111"
+            }
+          }
+        },
+        user {
+          type str "Submission",
+          data {
+            {
+              label str "SmartComment",
+              data str "TOTAL # OF SEQS:9"
+            }
+          }
+        },
+        update-date std {
+          year 2016,
+          month 3,
+          day 11,
+          hour 16,
+          minute 52,
+          second 30
+        }
+      },
+      seq-set {
+        seq {
+          id {
+            local str "CYP20A1-like",
+            general {
+              db "BankIt",
+              tag str "1902111/CYP20A1-like"
+            },
+            general {
+              db "TMSMART",
+              tag id 64139632
+            },
+            genbank {
+              accession "KU958703"
+            }
+          },
+          descr {
+            title "Crassostrea brasiliana CYP20A1-like protein mRNA, complete
+ cds.",
+            molinfo {
+              biomol mRNA
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "CYP20A1-like"
+                }
+              }
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:CYP20A1-like"
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol rna,
+            length 603,
+            strand ss,
+            seq-data ncbi2na '3BCEE3D5CFBD34DA2BF51144A03FBE13A95CC7F7E5D13423
+BD0880B730203C202D76A8218EE8142C59CB8FEDCDE6D2AE3E3886748EE5B2E954EA594ACD08FD
+87681CA284C03D500455DB0F4E77E9B4B7900E00B1F55057040FE152367D2D4801182D48575725
+F525BDA3D9A8018BB95A9482FE5827827BAE9DEBC535E282F427803AE82B42EB45586FEB3EE1D3
+5048A03FA346792008E0'H
+          }
+        },
+        seq {
+          id {
+            local str "CYP20A1-like_prot_4",
+            general {
+              db "TMSMART",
+              tag id 64139633
+            }
+          },
+          descr {
+            title "CYP20A1-like protein [Crassostrea brasiliana]",
+            molinfo {
+              biomol peptide
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "CYP20A1-like_prot_4"
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol aa,
+            length 200,
+            seq-data ncbieaa "MLCDSLLFIIGGFHTTGNLLTWALYFLASHQDVQEKVYKEIKKVLGED
+DVEPSTASDLSICVRVIDETLRCAVVAPWAARYQDFDSELGGHKIPKTPLVIHALGVSLQNEKYFPNPNKFDPDRFSP
+ENTKSRPSLAFQPFGFAGKRVCPGQKFAEAEAVVALVTILRKFKLKMVEGQVVTPTFGIVTHPTEEIWITLQKR"
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data prot {
+                    name {
+                      "CYP20A1-like protein"
+                    }
+                  },
+                  location int {
+                    from 0,
+                    to 199,
+                    id local str "CYP20A1-like_prot_4"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                frame one,
+                code {
+                  id 1
+                }
+              },
+              product whole local str "CYP20A1-like_prot_4",
+              location int {
+                from 0,
+                to 602,
+                strand plus,
+                id local str "CYP20A1-like"
+              }
+            }
+          }
+        }
+      }
+    },
+    set {
+      class nuc-prot,
+      descr {
+        source {
+          genome genomic,
+          org {
+            taxname "Crassostrea brasiliana",
+            db {
+              {
+                db "taxon",
+                tag id 398256
+              }
+            },
+            orgname {
+              name binomial {
+                genus "Crassostrea",
+                species "brasiliana"
+              },
+              lineage "Eukaryota; Metazoa; Lophotrochozoa; Mollusca; Bivalvia;
+ Pteriomorphia; Ostreoida; Ostreoidea; Ostreidae; Crassostrea",
+              gcode 1,
+              mgcode 5,
+              div "INV"
+            }
+          }
+        },
+        pub {
+          pub {
+            pmid 26186662,
+            article {
+              title {
+                name "Key metabolic pathways involved in xenobiotic
+ biotransformation and stress responses revealed by transcriptomics of the
+ mangrove oyster Crassostrea brasiliana."
+              },
+              authors {
+                names std {
+
+                  {
+
+                    name name {
+
+                      last "Luchmann",
+
+                      initials "K.H."
+
+                    },
+
+                    affil str "Fishery Engineering Department, Santa Catarina
+
+ State University, Laguna, Brazil. Electronic address: khluchmann@gmail.com."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Clark",
+
+                      initials "M.S."
+
+                    },
+
+                    affil str "British Antarctic Survey, Natural Environment
+
+ Research Council, Cambridge, UK. Electronic address: mscl@bas.ac.uk."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Bainy",
+
+                      initials "A.C."
+
+                    },
+
+                    affil str "Biochemistry Department, Federal University of
+
+ Santa Catarina, Florianopolis, Brazil. Electronic address:
+
+ afonso.bainy@ufsc.br."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Gilbert",
+
+                      initials "J.A."
+
+                    },
+
+                    affil str "Biosciences Division (BIO), Argonne National
+
+ Laboratory, Argonne, USA; Department of Ecology and Evolution, University of
+
+ Chicago, Chicago, USA; Marine Biological Laboratory, Woods Hole, USA; College
+
+ of Environmental and Resource Sciences, Zhejiang University, Hangzhou, China.
+
+ Electronic address: gilbertjack@anl.gov."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Craft",
+
+                      initials "J.A."
+
+                    },
+
+                    affil str "Biological and Biomedical Sciences, Glasgow
+
+ Caledonian University, Glasgow, UK. Electronic address: J.A.Craft@gcu.ac.uk."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Chipman",
+
+                      initials "J.K."
+
+                    },
+
+                    affil str "School of Biological Sciences, The University
+
+ of Birmingham, Birmingham, UK. Electronic address: j.k.chipman@bham.ac.uk."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Thorne",
+
+                      initials "M.A."
+
+                    },
+
+                    affil str "British Antarctic Survey, Natural Environment
+
+ Research Council, Cambridge, UK. Electronic address: mior@bas.ac.uk."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Mattos",
+
+                      initials "J.J."
+
+                    },
+
+                    affil str "Biochemistry Department, Federal University of
+
+ Santa Catarina, Florianopolis, Brazil. Electronic address:
+
+ jaco.mattos@ufsc.br."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Siebert",
+
+                      initials "M.N."
+
+                    },
+
+                    affil str "Biochemistry Department, Federal University of
+
+ Santa Catarina, Florianopolis, Brazil. Electronic address:
+
+ marilia.siebert@ifsc.edu.br."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Schroeder",
+
+                      initials "D.C."
+
+                    },
+
+                    affil str "Marine Biological Association of the United
+
+ Kingdom (MBA), Plymouth, UK. Electronic address: dsch@mba.ac.uk."
+
+                  }
+
+                }
+              },
+              from journal {
+                title {
+                  iso-jta "Aquat. Toxicol.",
+                  ml-jta "Aquat Toxicol",
+                  issn "1879-1514",
+                  name "Aquatic toxicology (Amsterdam, Netherlands)"
+                },
+                imp {
+                  date std {
+                    year 2015,
+                    month 9
+                  },
+                  volume "166",
+                  pages "10-20",
+                  language "eng",
+                  pubstatus ppublish,
+                  history {
+                    {
+                      pubstatus received,
+                      date std {
+                        year 2015,
+                        month 3,
+                        day 31
+                      }
+                    },
+                    {
+                      pubstatus revised,
+                      date std {
+                        year 2015,
+                        month 6,
+                        day 25
+                      }
+                    },
+                    {
+                      pubstatus accepted,
+                      date std {
+                        year 2015,
+                        month 6,
+                        day 26
+                      }
+                    },
+                    {
+                      pubstatus aheadofprint,
+                      date std {
+                        year 2015,
+                        month 7,
+                        day 2
+                      }
+                    },
+                    {
+                      pubstatus other,
+                      date std {
+                        year 2015,
+                        month 7,
+                        day 18,
+                        hour 6,
+                        minute 0
+                      }
+                    },
+                    {
+                      pubstatus pubmed,
+                      date std {
+                        year 2015,
+                        month 7,
+                        day 18,
+                        hour 6,
+                        minute 0
+                      }
+                    },
+                    {
+                      pubstatus medline,
+                      date std {
+                        year 2016,
+                        month 1,
+                        day 8,
+                        hour 6,
+                        minute 0
+                      }
+                    }
+                  }
+                }
+              },
+              ids {
+                pubmed 26186662,
+                pii "S0166-445X(15)30003-5",
+                doi "10.1016/j.aquatox.2015.06.012",
+                other {
+                  db "ELocationID doi",
+                  tag str "10.1016/j.aquatox.2015.06.012"
+                },
+                other {
+                  db "ELocationID pii",
+                  tag str "S0166-445X(15)30003-5"
+                }
+              }
+            }
+          }
+        },
+        pub {
+          pub {
+            sub {
+              authors {
+                names std {
+
+                  {
+
+                    name name {
+
+                      last "Luchmann",
+
+                      first "K",
+
+                      initials "K.H."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Clark",
+
+                      first "M",
+
+                      initials "M.S."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Bainy",
+
+                      first "A",
+
+                      initials "A.C.D."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Gilbert",
+
+                      first "J",
+
+                      initials "J.A."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Craft",
+
+                      first "J",
+
+                      initials "J.A."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Chipman",
+
+                      first "J",
+
+                      initials "J."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Thorne",
+
+                      first "M",
+
+                      initials "M.A.S."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Mattos",
+
+                      first "J",
+
+                      initials "J.J."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Siebert",
+
+                      first "M",
+
+                      initials "M.N."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Schroeder",
+
+                      first "D",
+
+                      initials "D.C."
+
+                    }
+
+                  }
+
+                },
+                affil std {
+                  affil "Santa Catarina State University",
+                  div "Fishery Engineering",
+                  city "Laguna",
+                  sub "SC",
+                  country "Brazil",
+                  street "Cel. Fernandes Martins, 270",
+                  postal-code "88790000"
+                }
+              },
+              medium email,
+              date std {
+                year 2016,
+                month 3,
+                day 14
+              }
+            }
+          }
+        },
+        user {
+          class "SMART_V1.0",
+          type id 1,
+          data {
+            {
+              label id 1,
+              num 1,
+              data int 10300415
+            }
+          }
+        },
+        user {
+          type str "StructuredComment",
+          data {
+            {
+              label str "StructuredCommentPrefix",
+              data str "##Assembly-Data-START##"
+            },
+            {
+              label str "Assembly Method",
+              data str "SeqMan NGen v. v. 3.0.4"
+            },
+            {
+              label str "Sequencing Technology",
+              data str "454"
+            },
+            {
+              label str "StructuredCommentSuffix",
+              data str "##Assembly-Data-END##"
+            }
+          }
+        },
+        user {
+          type str "Submission",
+          data {
+            {
+              label str "SmartComment",
+              data str "ALT EMAIL:karim.luchmann@udesc.br"
+            },
+            {
+              label str "AdditionalComment",
+              data str "BankIt1902111"
+            }
+          }
+        },
+        user {
+          type str "Submission",
+          data {
+            {
+              label str "SmartComment",
+              data str "TOTAL # OF SEQS:9"
+            }
+          }
+        },
+        update-date std {
+          year 2016,
+          month 3,
+          day 11,
+          hour 16,
+          minute 52,
+          second 30
+        }
+      },
+      seq-set {
+        seq {
+          id {
+            local str "GST-alpha-like",
+            general {
+              db "BankIt",
+              tag str "1902111/GST-alpha-like"
+            },
+            general {
+              db "TMSMART",
+              tag id 64139634
+            },
+            genbank {
+              accession "KU958704"
+            }
+          },
+          descr {
+            title "Crassostrea brasiliana GST-alpha-like protein mRNA,
+ complete cds.",
+            molinfo {
+              biomol mRNA
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "GST-alpha-like"
+                }
+              }
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:GST-alpha-like"
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol rna,
+            length 684,
+            strand ss,
+            seq-data ncbi2na '3A5AE13BF7B1EAADAA24D579E8254E36F7A2882A7DA28C42
+042F8CDBD2430A2440AA28EF700741548AD239513F0A3A613EFB838350E53FB8737222C7CC0840
+A8441D314D610254889C899D4993918A504107E4120BE39E8DEFB3C7FF501028A28D90228A2342
+0829228E522280E0D9EA2A7172A885027F5C92A2E1FC53A78E6EBFF54C5F9FF9EC6CEACE80D880
+CD40DD0A5C73848BBB9485893429C9E94511E828605E5003B55782A3CB70'H
+          }
+        },
+        seq {
+          id {
+            local str "GST-alpha-like_prot_5",
+            general {
+              db "TMSMART",
+              tag id 64139635
+            }
+          },
+          descr {
+            title "GST-alpha-like protein [Crassostrea brasiliana]",
+            molinfo {
+              biomol peptide
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "GST-alpha-like_prot_5"
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol aa,
+            length 227,
+            seq-data ncbieaa "MAGDMFLYWGSGSIPCWKPMIVLEEKGFGGYKNKLISFSNKEHKGEDV
+LKLNPRGQMPTFKDGDIVVNESNAICDYLESTYKDKGTQLIPSDKAQRARALQRMHEANNNLQQKLMLDLLYYFFQTK
+EEDRKEEEIKKKAEDAREEMNRWEGYLGETKAFLAGSDFTMADAWFFPYLAFAVRMGMEIEKYPNLKAYYDRVCARPS
+IKASWPPHWKDEPAKNVPLKGLV"
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data prot {
+                    name {
+                      "GST-alpha-like protein"
+                    }
+                  },
+                  location int {
+                    from 0,
+                    to 226,
+                    id local str "GST-alpha-like_prot_5"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                frame one,
+                code {
+                  id 1
+                }
+              },
+              product whole local str "GST-alpha-like_prot_5",
+              location int {
+                from 0,
+                to 683,
+                strand plus,
+                id local str "GST-alpha-like"
+              }
+            }
+          }
+        }
+      }
+    },
+    set {
+      class nuc-prot,
+      descr {
+        source {
+          genome genomic,
+          org {
+            taxname "Crassostrea brasiliana",
+            db {
+              {
+                db "taxon",
+                tag id 398256
+              }
+            },
+            orgname {
+              name binomial {
+                genus "Crassostrea",
+                species "brasiliana"
+              },
+              lineage "Eukaryota; Metazoa; Lophotrochozoa; Mollusca; Bivalvia;
+ Pteriomorphia; Ostreoida; Ostreoidea; Ostreidae; Crassostrea",
+              gcode 1,
+              mgcode 5,
+              div "INV"
+            }
+          }
+        },
+        pub {
+          pub {
+            pmid 26186662,
+            article {
+              title {
+                name "Key metabolic pathways involved in xenobiotic
+ biotransformation and stress responses revealed by transcriptomics of the
+ mangrove oyster Crassostrea brasiliana."
+              },
+              authors {
+                names std {
+
+                  {
+
+                    name name {
+
+                      last "Luchmann",
+
+                      initials "K.H."
+
+                    },
+
+                    affil str "Fishery Engineering Department, Santa Catarina
+
+ State University, Laguna, Brazil. Electronic address: khluchmann@gmail.com."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Clark",
+
+                      initials "M.S."
+
+                    },
+
+                    affil str "British Antarctic Survey, Natural Environment
+
+ Research Council, Cambridge, UK. Electronic address: mscl@bas.ac.uk."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Bainy",
+
+                      initials "A.C."
+
+                    },
+
+                    affil str "Biochemistry Department, Federal University of
+
+ Santa Catarina, Florianopolis, Brazil. Electronic address:
+
+ afonso.bainy@ufsc.br."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Gilbert",
+
+                      initials "J.A."
+
+                    },
+
+                    affil str "Biosciences Division (BIO), Argonne National
+
+ Laboratory, Argonne, USA; Department of Ecology and Evolution, University of
+
+ Chicago, Chicago, USA; Marine Biological Laboratory, Woods Hole, USA; College
+
+ of Environmental and Resource Sciences, Zhejiang University, Hangzhou, China.
+
+ Electronic address: gilbertjack@anl.gov."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Craft",
+
+                      initials "J.A."
+
+                    },
+
+                    affil str "Biological and Biomedical Sciences, Glasgow
+
+ Caledonian University, Glasgow, UK. Electronic address: J.A.Craft@gcu.ac.uk."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Chipman",
+
+                      initials "J.K."
+
+                    },
+
+                    affil str "School of Biological Sciences, The University
+
+ of Birmingham, Birmingham, UK. Electronic address: j.k.chipman@bham.ac.uk."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Thorne",
+
+                      initials "M.A."
+
+                    },
+
+                    affil str "British Antarctic Survey, Natural Environment
+
+ Research Council, Cambridge, UK. Electronic address: mior@bas.ac.uk."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Mattos",
+
+                      initials "J.J."
+
+                    },
+
+                    affil str "Biochemistry Department, Federal University of
+
+ Santa Catarina, Florianopolis, Brazil. Electronic address:
+
+ jaco.mattos@ufsc.br."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Siebert",
+
+                      initials "M.N."
+
+                    },
+
+                    affil str "Biochemistry Department, Federal University of
+
+ Santa Catarina, Florianopolis, Brazil. Electronic address:
+
+ marilia.siebert@ifsc.edu.br."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Schroeder",
+
+                      initials "D.C."
+
+                    },
+
+                    affil str "Marine Biological Association of the United
+
+ Kingdom (MBA), Plymouth, UK. Electronic address: dsch@mba.ac.uk."
+
+                  }
+
+                }
+              },
+              from journal {
+                title {
+                  iso-jta "Aquat. Toxicol.",
+                  ml-jta "Aquat Toxicol",
+                  issn "1879-1514",
+                  name "Aquatic toxicology (Amsterdam, Netherlands)"
+                },
+                imp {
+                  date std {
+                    year 2015,
+                    month 9
+                  },
+                  volume "166",
+                  pages "10-20",
+                  language "eng",
+                  pubstatus ppublish,
+                  history {
+                    {
+                      pubstatus received,
+                      date std {
+                        year 2015,
+                        month 3,
+                        day 31
+                      }
+                    },
+                    {
+                      pubstatus revised,
+                      date std {
+                        year 2015,
+                        month 6,
+                        day 25
+                      }
+                    },
+                    {
+                      pubstatus accepted,
+                      date std {
+                        year 2015,
+                        month 6,
+                        day 26
+                      }
+                    },
+                    {
+                      pubstatus aheadofprint,
+                      date std {
+                        year 2015,
+                        month 7,
+                        day 2
+                      }
+                    },
+                    {
+                      pubstatus other,
+                      date std {
+                        year 2015,
+                        month 7,
+                        day 18,
+                        hour 6,
+                        minute 0
+                      }
+                    },
+                    {
+                      pubstatus pubmed,
+                      date std {
+                        year 2015,
+                        month 7,
+                        day 18,
+                        hour 6,
+                        minute 0
+                      }
+                    },
+                    {
+                      pubstatus medline,
+                      date std {
+                        year 2016,
+                        month 1,
+                        day 8,
+                        hour 6,
+                        minute 0
+                      }
+                    }
+                  }
+                }
+              },
+              ids {
+                pubmed 26186662,
+                pii "S0166-445X(15)30003-5",
+                doi "10.1016/j.aquatox.2015.06.012",
+                other {
+                  db "ELocationID doi",
+                  tag str "10.1016/j.aquatox.2015.06.012"
+                },
+                other {
+                  db "ELocationID pii",
+                  tag str "S0166-445X(15)30003-5"
+                }
+              }
+            }
+          }
+        },
+        pub {
+          pub {
+            sub {
+              authors {
+                names std {
+
+                  {
+
+                    name name {
+
+                      last "Luchmann",
+
+                      first "K",
+
+                      initials "K.H."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Clark",
+
+                      first "M",
+
+                      initials "M.S."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Bainy",
+
+                      first "A",
+
+                      initials "A.C.D."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Gilbert",
+
+                      first "J",
+
+                      initials "J.A."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Craft",
+
+                      first "J",
+
+                      initials "J.A."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Chipman",
+
+                      first "J",
+
+                      initials "J."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Thorne",
+
+                      first "M",
+
+                      initials "M.A.S."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Mattos",
+
+                      first "J",
+
+                      initials "J.J."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Siebert",
+
+                      first "M",
+
+                      initials "M.N."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Schroeder",
+
+                      first "D",
+
+                      initials "D.C."
+
+                    }
+
+                  }
+
+                },
+                affil std {
+                  affil "Santa Catarina State University",
+                  div "Fishery Engineering",
+                  city "Laguna",
+                  sub "SC",
+                  country "Brazil",
+                  street "Cel. Fernandes Martins, 270",
+                  postal-code "88790000"
+                }
+              },
+              medium email,
+              date std {
+                year 2016,
+                month 3,
+                day 14
+              }
+            }
+          }
+        },
+        user {
+          class "SMART_V1.0",
+          type id 1,
+          data {
+            {
+              label id 1,
+              num 1,
+              data int 10300417
+            }
+          }
+        },
+        user {
+          type str "StructuredComment",
+          data {
+            {
+              label str "StructuredCommentPrefix",
+              data str "##Assembly-Data-START##"
+            },
+            {
+              label str "Assembly Method",
+              data str "SeqMan NGen v. v. 3.0.4"
+            },
+            {
+              label str "Sequencing Technology",
+              data str "454"
+            },
+            {
+              label str "StructuredCommentSuffix",
+              data str "##Assembly-Data-END##"
+            }
+          }
+        },
+        user {
+          type str "Submission",
+          data {
+            {
+              label str "SmartComment",
+              data str "ALT EMAIL:karim.luchmann@udesc.br"
+            },
+            {
+              label str "AdditionalComment",
+              data str "BankIt1902111"
+            }
+          }
+        },
+        user {
+          type str "Submission",
+          data {
+            {
+              label str "SmartComment",
+              data str "TOTAL # OF SEQS:9"
+            }
+          }
+        },
+        update-date std {
+          year 2016,
+          month 3,
+          day 11,
+          hour 16,
+          minute 52,
+          second 30
+        }
+      },
+      seq-set {
+        seq {
+          id {
+            local str "GST-omega-like",
+            general {
+              db "BankIt",
+              tag str "1902111/GST-omega-like"
+            },
+            general {
+              db "TMSMART",
+              tag id 64139636
+            },
+            genbank {
+              accession "KU958705"
+            }
+          },
+          descr {
+            title "Crassostrea brasiliana GST-omega-like protein mRNA, partial
+ cds.",
+            molinfo {
+              biomol mRNA
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "GST-omega-like"
+                }
+              }
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:GST-omega-like"
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol rna,
+            length 603,
+            strand ss,
+            seq-data ncbi2na '821221F315E084887A0A2780E587402FFD34A7683D5D4F22
+DEA11D60FC4B0DA37B57196220569CBDC9510213D60E032E04C05EAC009783AC7E8023C15FEA80
+B5598C4828E100D7738379ACEFB8F3FA342CCD6A4109E1D58E35B14929828483FCBA24FFA12344
+112C7308EF0EA16520AD39E49A680B78301EF2E8BF8408BC40022907FFE8AC2913DA433DA44FDA
+05C4880D218AC6EE50E0'H
+          }
+        },
+        seq {
+          id {
+            local str "GST-omega-like_prot_6",
+            general {
+              db "TMSMART",
+              tag id 64139637
+            }
+          },
+          descr {
+            title "GST-omega-like protein, partial [Crassostrea brasiliana]",
+            molinfo {
+              biomol peptide,
+              completeness no-left
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "GST-omega-like_prot_6"
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol aa,
+            length 200,
+            seq-data ncbieaa "EDRDLYPEDRDWKELKCRLKSFSSGSEFPPLESGTLRIYSNRICPYAE
+RTRLVLAHKDIPNEIVNINLGKKPEWYLEKINPLGKVPAIQKDDKILYESAVCCDYLDQVYPGNKLTPDDPYQQAKDR
+ILVEHFGQITTQYYKMLMGPPEGHAAAAESLNKLLVEFDKELQKRGNFFGGKAHSAIFGTFRNLQRNQTRYVCQ"
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data prot {
+                    name {
+                      "GST-omega-like protein"
+                    }
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 199,
+                    id local str "GST-omega-like_prot_6",
+                    fuzz-from lim lt
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                frame one,
+                code {
+                  id 1
+                }
+              },
+              partial TRUE,
+              product whole local str "GST-omega-like_prot_6",
+              location int {
+                from 0,
+                to 602,
+                strand plus,
+                id local str "GST-omega-like",
+                fuzz-from lim lt
+              }
+            }
+          }
+        }
+      }
+    },
+    set {
+      class nuc-prot,
+      descr {
+        source {
+          genome genomic,
+          org {
+            taxname "Crassostrea brasiliana",
+            db {
+              {
+                db "taxon",
+                tag id 398256
+              }
+            },
+            orgname {
+              name binomial {
+                genus "Crassostrea",
+                species "brasiliana"
+              },
+              lineage "Eukaryota; Metazoa; Lophotrochozoa; Mollusca; Bivalvia;
+ Pteriomorphia; Ostreoida; Ostreoidea; Ostreidae; Crassostrea",
+              gcode 1,
+              mgcode 5,
+              div "INV"
+            }
+          }
+        },
+        pub {
+          pub {
+            pmid 26186662,
+            article {
+              title {
+                name "Key metabolic pathways involved in xenobiotic
+ biotransformation and stress responses revealed by transcriptomics of the
+ mangrove oyster Crassostrea brasiliana."
+              },
+              authors {
+                names std {
+
+                  {
+
+                    name name {
+
+                      last "Luchmann",
+
+                      initials "K.H."
+
+                    },
+
+                    affil str "Fishery Engineering Department, Santa Catarina
+
+ State University, Laguna, Brazil. Electronic address: khluchmann@gmail.com."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Clark",
+
+                      initials "M.S."
+
+                    },
+
+                    affil str "British Antarctic Survey, Natural Environment
+
+ Research Council, Cambridge, UK. Electronic address: mscl@bas.ac.uk."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Bainy",
+
+                      initials "A.C."
+
+                    },
+
+                    affil str "Biochemistry Department, Federal University of
+
+ Santa Catarina, Florianopolis, Brazil. Electronic address:
+
+ afonso.bainy@ufsc.br."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Gilbert",
+
+                      initials "J.A."
+
+                    },
+
+                    affil str "Biosciences Division (BIO), Argonne National
+
+ Laboratory, Argonne, USA; Department of Ecology and Evolution, University of
+
+ Chicago, Chicago, USA; Marine Biological Laboratory, Woods Hole, USA; College
+
+ of Environmental and Resource Sciences, Zhejiang University, Hangzhou, China.
+
+ Electronic address: gilbertjack@anl.gov."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Craft",
+
+                      initials "J.A."
+
+                    },
+
+                    affil str "Biological and Biomedical Sciences, Glasgow
+
+ Caledonian University, Glasgow, UK. Electronic address: J.A.Craft@gcu.ac.uk."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Chipman",
+
+                      initials "J.K."
+
+                    },
+
+                    affil str "School of Biological Sciences, The University
+
+ of Birmingham, Birmingham, UK. Electronic address: j.k.chipman@bham.ac.uk."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Thorne",
+
+                      initials "M.A."
+
+                    },
+
+                    affil str "British Antarctic Survey, Natural Environment
+
+ Research Council, Cambridge, UK. Electronic address: mior@bas.ac.uk."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Mattos",
+
+                      initials "J.J."
+
+                    },
+
+                    affil str "Biochemistry Department, Federal University of
+
+ Santa Catarina, Florianopolis, Brazil. Electronic address:
+
+ jaco.mattos@ufsc.br."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Siebert",
+
+                      initials "M.N."
+
+                    },
+
+                    affil str "Biochemistry Department, Federal University of
+
+ Santa Catarina, Florianopolis, Brazil. Electronic address:
+
+ marilia.siebert@ifsc.edu.br."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Schroeder",
+
+                      initials "D.C."
+
+                    },
+
+                    affil str "Marine Biological Association of the United
+
+ Kingdom (MBA), Plymouth, UK. Electronic address: dsch@mba.ac.uk."
+
+                  }
+
+                }
+              },
+              from journal {
+                title {
+                  iso-jta "Aquat. Toxicol.",
+                  ml-jta "Aquat Toxicol",
+                  issn "1879-1514",
+                  name "Aquatic toxicology (Amsterdam, Netherlands)"
+                },
+                imp {
+                  date std {
+                    year 2015,
+                    month 9
+                  },
+                  volume "166",
+                  pages "10-20",
+                  language "eng",
+                  pubstatus ppublish,
+                  history {
+                    {
+                      pubstatus received,
+                      date std {
+                        year 2015,
+                        month 3,
+                        day 31
+                      }
+                    },
+                    {
+                      pubstatus revised,
+                      date std {
+                        year 2015,
+                        month 6,
+                        day 25
+                      }
+                    },
+                    {
+                      pubstatus accepted,
+                      date std {
+                        year 2015,
+                        month 6,
+                        day 26
+                      }
+                    },
+                    {
+                      pubstatus aheadofprint,
+                      date std {
+                        year 2015,
+                        month 7,
+                        day 2
+                      }
+                    },
+                    {
+                      pubstatus other,
+                      date std {
+                        year 2015,
+                        month 7,
+                        day 18,
+                        hour 6,
+                        minute 0
+                      }
+                    },
+                    {
+                      pubstatus pubmed,
+                      date std {
+                        year 2015,
+                        month 7,
+                        day 18,
+                        hour 6,
+                        minute 0
+                      }
+                    },
+                    {
+                      pubstatus medline,
+                      date std {
+                        year 2016,
+                        month 1,
+                        day 8,
+                        hour 6,
+                        minute 0
+                      }
+                    }
+                  }
+                }
+              },
+              ids {
+                pubmed 26186662,
+                pii "S0166-445X(15)30003-5",
+                doi "10.1016/j.aquatox.2015.06.012",
+                other {
+                  db "ELocationID doi",
+                  tag str "10.1016/j.aquatox.2015.06.012"
+                },
+                other {
+                  db "ELocationID pii",
+                  tag str "S0166-445X(15)30003-5"
+                }
+              }
+            }
+          }
+        },
+        pub {
+          pub {
+            sub {
+              authors {
+                names std {
+
+                  {
+
+                    name name {
+
+                      last "Luchmann",
+
+                      first "K",
+
+                      initials "K.H."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Clark",
+
+                      first "M",
+
+                      initials "M.S."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Bainy",
+
+                      first "A",
+
+                      initials "A.C.D."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Gilbert",
+
+                      first "J",
+
+                      initials "J.A."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Craft",
+
+                      first "J",
+
+                      initials "J.A."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Chipman",
+
+                      first "J",
+
+                      initials "J."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Thorne",
+
+                      first "M",
+
+                      initials "M.A.S."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Mattos",
+
+                      first "J",
+
+                      initials "J.J."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Siebert",
+
+                      first "M",
+
+                      initials "M.N."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Schroeder",
+
+                      first "D",
+
+                      initials "D.C."
+
+                    }
+
+                  }
+
+                },
+                affil std {
+                  affil "Santa Catarina State University",
+                  div "Fishery Engineering",
+                  city "Laguna",
+                  sub "SC",
+                  country "Brazil",
+                  street "Cel. Fernandes Martins, 270",
+                  postal-code "88790000"
+                }
+              },
+              medium email,
+              date std {
+                year 2016,
+                month 3,
+                day 14
+              }
+            }
+          }
+        },
+        user {
+          class "SMART_V1.0",
+          type id 1,
+          data {
+            {
+              label id 1,
+              num 1,
+              data int 10300418
+            }
+          }
+        },
+        user {
+          type str "StructuredComment",
+          data {
+            {
+              label str "StructuredCommentPrefix",
+              data str "##Assembly-Data-START##"
+            },
+            {
+              label str "Assembly Method",
+              data str "SeqMan NGen v. v. 3.0.4"
+            },
+            {
+              label str "Sequencing Technology",
+              data str "454"
+            },
+            {
+              label str "StructuredCommentSuffix",
+              data str "##Assembly-Data-END##"
+            }
+          }
+        },
+        user {
+          type str "Submission",
+          data {
+            {
+              label str "SmartComment",
+              data str "ALT EMAIL:karim.luchmann@udesc.br"
+            },
+            {
+              label str "AdditionalComment",
+              data str "BankIt1902111"
+            }
+          }
+        },
+        user {
+          type str "Submission",
+          data {
+            {
+              label str "SmartComment",
+              data str "TOTAL # OF SEQS:9"
+            }
+          }
+        },
+        update-date std {
+          year 2016,
+          month 3,
+          day 11,
+          hour 16,
+          minute 52,
+          second 30
+        }
+      },
+      seq-set {
+        seq {
+          id {
+            local str "GST-microsomal-like",
+            general {
+              db "BankIt",
+              tag str "1902111/GST-microsomal-like"
+            },
+            general {
+              db "TMSMART",
+              tag id 64139638
+            },
+            genbank {
+              accession "KU958706"
+            }
+          },
+          descr {
+            title "Crassostrea brasiliana GST-microsomal-like protein mRNA,
+ complete cds.",
+            molinfo {
+              biomol mRNA
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "GST-microsomal-like"
+                }
+              }
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:GST-microsomal-like"
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol rna,
+            length 429,
+            strand ss,
+            seq-data ncbi2na '3A39F7167BFE2E88FFA33B6E7EC38DFF4BFD39F3BA3A8F40
+BEB4272820B382D5F35003B32E38E123D07BF50224450046F220F3505C5C7DD42FF49A1DCE7500
+72693EDEBBAFEBB9E820F971950A73C47AA355008A79BA27FE4C4CA1E78739FFB9D4C37F97E0FE
+F823440DDC00'H
+          }
+        },
+        seq {
+          id {
+            local str "GST-microsomal-like_prot_7",
+            general {
+              db "TMSMART",
+              tag id 64139639
+            }
+          },
+          descr {
+            title "GST-microsomal-like protein [Crassostrea brasiliana]",
+            molinfo {
+              biomol peptide
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "GST-microsomal-like_prot_7"
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol aa,
+            length 142,
+            seq-data ncbieaa "MDASTAVLSGDFGYVVLVMIFSVFMLMWMGFKVGQARKKYEVPYPKMY
+SDDDRFNCFQRAHQNTLENYPTYLLLQVFSGLYAPKLAALSGVVWCAGRIAYAQGYYTGDPQKRLRGAFAYIGLLTML
+LCSIIFALNLLKITNL"
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data prot {
+                    name {
+                      "GST-microsomal-like protein"
+                    }
+                  },
+                  location int {
+                    from 0,
+                    to 141,
+                    id local str "GST-microsomal-like_prot_7"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                frame one,
+                code {
+                  id 1
+                }
+              },
+              product whole local str "GST-microsomal-like_prot_7",
+              location int {
+                from 0,
+                to 428,
+                strand plus,
+                id local str "GST-microsomal-like"
+              }
+            }
+          }
+        }
+      }
+    },
+    set {
+      class nuc-prot,
+      descr {
+        source {
+          genome genomic,
+          org {
+            taxname "Crassostrea brasiliana",
+            db {
+              {
+                db "taxon",
+                tag id 398256
+              }
+            },
+            orgname {
+              name binomial {
+                genus "Crassostrea",
+                species "brasiliana"
+              },
+              lineage "Eukaryota; Metazoa; Lophotrochozoa; Mollusca; Bivalvia;
+ Pteriomorphia; Ostreoida; Ostreoidea; Ostreidae; Crassostrea",
+              gcode 1,
+              mgcode 5,
+              div "INV"
+            }
+          }
+        },
+        pub {
+          pub {
+            pmid 26186662,
+            article {
+              title {
+                name "Key metabolic pathways involved in xenobiotic
+ biotransformation and stress responses revealed by transcriptomics of the
+ mangrove oyster Crassostrea brasiliana."
+              },
+              authors {
+                names std {
+
+                  {
+
+                    name name {
+
+                      last "Luchmann",
+
+                      initials "K.H."
+
+                    },
+
+                    affil str "Fishery Engineering Department, Santa Catarina
+
+ State University, Laguna, Brazil. Electronic address: khluchmann@gmail.com."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Clark",
+
+                      initials "M.S."
+
+                    },
+
+                    affil str "British Antarctic Survey, Natural Environment
+
+ Research Council, Cambridge, UK. Electronic address: mscl@bas.ac.uk."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Bainy",
+
+                      initials "A.C."
+
+                    },
+
+                    affil str "Biochemistry Department, Federal University of
+
+ Santa Catarina, Florianopolis, Brazil. Electronic address:
+
+ afonso.bainy@ufsc.br."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Gilbert",
+
+                      initials "J.A."
+
+                    },
+
+                    affil str "Biosciences Division (BIO), Argonne National
+
+ Laboratory, Argonne, USA; Department of Ecology and Evolution, University of
+
+ Chicago, Chicago, USA; Marine Biological Laboratory, Woods Hole, USA; College
+
+ of Environmental and Resource Sciences, Zhejiang University, Hangzhou, China.
+
+ Electronic address: gilbertjack@anl.gov."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Craft",
+
+                      initials "J.A."
+
+                    },
+
+                    affil str "Biological and Biomedical Sciences, Glasgow
+
+ Caledonian University, Glasgow, UK. Electronic address: J.A.Craft@gcu.ac.uk."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Chipman",
+
+                      initials "J.K."
+
+                    },
+
+                    affil str "School of Biological Sciences, The University
+
+ of Birmingham, Birmingham, UK. Electronic address: j.k.chipman@bham.ac.uk."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Thorne",
+
+                      initials "M.A."
+
+                    },
+
+                    affil str "British Antarctic Survey, Natural Environment
+
+ Research Council, Cambridge, UK. Electronic address: mior@bas.ac.uk."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Mattos",
+
+                      initials "J.J."
+
+                    },
+
+                    affil str "Biochemistry Department, Federal University of
+
+ Santa Catarina, Florianopolis, Brazil. Electronic address:
+
+ jaco.mattos@ufsc.br."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Siebert",
+
+                      initials "M.N."
+
+                    },
+
+                    affil str "Biochemistry Department, Federal University of
+
+ Santa Catarina, Florianopolis, Brazil. Electronic address:
+
+ marilia.siebert@ifsc.edu.br."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Schroeder",
+
+                      initials "D.C."
+
+                    },
+
+                    affil str "Marine Biological Association of the United
+
+ Kingdom (MBA), Plymouth, UK. Electronic address: dsch@mba.ac.uk."
+
+                  }
+
+                }
+              },
+              from journal {
+                title {
+                  iso-jta "Aquat. Toxicol.",
+                  ml-jta "Aquat Toxicol",
+                  issn "1879-1514",
+                  name "Aquatic toxicology (Amsterdam, Netherlands)"
+                },
+                imp {
+                  date std {
+                    year 2015,
+                    month 9
+                  },
+                  volume "166",
+                  pages "10-20",
+                  language "eng",
+                  pubstatus ppublish,
+                  history {
+                    {
+                      pubstatus received,
+                      date std {
+                        year 2015,
+                        month 3,
+                        day 31
+                      }
+                    },
+                    {
+                      pubstatus revised,
+                      date std {
+                        year 2015,
+                        month 6,
+                        day 25
+                      }
+                    },
+                    {
+                      pubstatus accepted,
+                      date std {
+                        year 2015,
+                        month 6,
+                        day 26
+                      }
+                    },
+                    {
+                      pubstatus aheadofprint,
+                      date std {
+                        year 2015,
+                        month 7,
+                        day 2
+                      }
+                    },
+                    {
+                      pubstatus other,
+                      date std {
+                        year 2015,
+                        month 7,
+                        day 18,
+                        hour 6,
+                        minute 0
+                      }
+                    },
+                    {
+                      pubstatus pubmed,
+                      date std {
+                        year 2015,
+                        month 7,
+                        day 18,
+                        hour 6,
+                        minute 0
+                      }
+                    },
+                    {
+                      pubstatus medline,
+                      date std {
+                        year 2016,
+                        month 1,
+                        day 8,
+                        hour 6,
+                        minute 0
+                      }
+                    }
+                  }
+                }
+              },
+              ids {
+                pubmed 26186662,
+                pii "S0166-445X(15)30003-5",
+                doi "10.1016/j.aquatox.2015.06.012",
+                other {
+                  db "ELocationID doi",
+                  tag str "10.1016/j.aquatox.2015.06.012"
+                },
+                other {
+                  db "ELocationID pii",
+                  tag str "S0166-445X(15)30003-5"
+                }
+              }
+            }
+          }
+        },
+        pub {
+          pub {
+            sub {
+              authors {
+                names std {
+
+                  {
+
+                    name name {
+
+                      last "Luchmann",
+
+                      first "K",
+
+                      initials "K.H."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Clark",
+
+                      first "M",
+
+                      initials "M.S."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Bainy",
+
+                      first "A",
+
+                      initials "A.C.D."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Gilbert",
+
+                      first "J",
+
+                      initials "J.A."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Craft",
+
+                      first "J",
+
+                      initials "J.A."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Chipman",
+
+                      first "J",
+
+                      initials "J."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Thorne",
+
+                      first "M",
+
+                      initials "M.A.S."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Mattos",
+
+                      first "J",
+
+                      initials "J.J."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Siebert",
+
+                      first "M",
+
+                      initials "M.N."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Schroeder",
+
+                      first "D",
+
+                      initials "D.C."
+
+                    }
+
+                  }
+
+                },
+                affil std {
+                  affil "Santa Catarina State University",
+                  div "Fishery Engineering",
+                  city "Laguna",
+                  sub "SC",
+                  country "Brazil",
+                  street "Cel. Fernandes Martins, 270",
+                  postal-code "88790000"
+                }
+              },
+              medium email,
+              date std {
+                year 2016,
+                month 3,
+                day 14
+              }
+            }
+          }
+        },
+        user {
+          class "SMART_V1.0",
+          type id 1,
+          data {
+            {
+              label id 1,
+              num 1,
+              data int 10300419
+            }
+          }
+        },
+        user {
+          type str "StructuredComment",
+          data {
+            {
+              label str "StructuredCommentPrefix",
+              data str "##Assembly-Data-START##"
+            },
+            {
+              label str "Assembly Method",
+              data str "SeqMan NGen v. v. 3.0.4"
+            },
+            {
+              label str "Sequencing Technology",
+              data str "454"
+            },
+            {
+              label str "StructuredCommentSuffix",
+              data str "##Assembly-Data-END##"
+            }
+          }
+        },
+        user {
+          type str "Submission",
+          data {
+            {
+              label str "SmartComment",
+              data str "ALT EMAIL:karim.luchmann@udesc.br"
+            },
+            {
+              label str "AdditionalComment",
+              data str "BankIt1902111"
+            }
+          }
+        },
+        user {
+          type str "Submission",
+          data {
+            {
+              label str "SmartComment",
+              data str "TOTAL # OF SEQS:9"
+            }
+          }
+        },
+        update-date std {
+          year 2016,
+          month 3,
+          day 11,
+          hour 16,
+          minute 52,
+          second 30
+        }
+      },
+      seq-set {
+        seq {
+          id {
+            local str "GST-pi-like",
+            general {
+              db "BankIt",
+              tag str "1902111/GST-pi-like"
+            },
+            general {
+              db "TMSMART",
+              tag id 64139640
+            },
+            genbank {
+              accession "KU958707"
+            }
+          },
+          descr {
+            title "Crassostrea brasiliana GST-pi-like protein mRNA, complete
+ cds.",
+            molinfo {
+              biomol mRNA
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "GST-pi-like"
+                }
+              }
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:GST-pi-like"
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol rna,
+            length 393,
+            strand ss,
+            seq-data ncbi2na '3B400E4BC9B1F50BC8ADBA6294C68671EBA10C3FA0CE2824
+8EFA14EA007A48007A01402697FAD2E567BD163A23B52F2E43506535D2317A52027A3F33A27043
+BE294BCE784E3418E8BA28DC2AE93118038FC520738A4A028D4FCF9E37D4A00792EFFE00'H
+          }
+        },
+        seq {
+          id {
+            local str "GST-pi-like_prot_8",
+            general {
+              db "TMSMART",
+              tag id 64139641
+            }
+          },
+          descr {
+            title "GST-pi-like protein [Crassostrea brasiliana]",
+            molinfo {
+              biomol peptide
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "GST-pi-like_prot_8"
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol aa,
+            length 130,
+            seq-data ncbieaa "MSKMQLAYFQVRGRGEAIRTLLVDNNLEYEEADVGPWENWQKNWKPKA
+AFGQCPLFTDGDVQLVQSNAILRYLARKLDLYGANNVEASYADMINDGVEDLRVAYTKMIYQNYEAGKDPFIADLPGK
+LQCF"
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data prot {
+                    name {
+                      "GST-pi-like protein"
+                    }
+                  },
+                  location int {
+                    from 0,
+                    to 129,
+                    id local str "GST-pi-like_prot_8"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                frame one,
+                code {
+                  id 1
+                }
+              },
+              product whole local str "GST-pi-like_prot_8",
+              location int {
+                from 0,
+                to 392,
+                strand plus,
+                id local str "GST-pi-like"
+              }
+            }
+          }
+        }
+      }
+    },
+    set {
+      class nuc-prot,
+      descr {
+        source {
+          genome genomic,
+          org {
+            taxname "Crassostrea brasiliana",
+            db {
+              {
+                db "taxon",
+                tag id 398256
+              }
+            },
+            orgname {
+              name binomial {
+                genus "Crassostrea",
+                species "brasiliana"
+              },
+              lineage "Eukaryota; Metazoa; Lophotrochozoa; Mollusca; Bivalvia;
+ Pteriomorphia; Ostreoida; Ostreoidea; Ostreidae; Crassostrea",
+              gcode 1,
+              mgcode 5,
+              div "INV"
+            }
+          }
+        },
+        pub {
+          pub {
+            pmid 26186662,
+            article {
+              title {
+                name "Key metabolic pathways involved in xenobiotic
+ biotransformation and stress responses revealed by transcriptomics of the
+ mangrove oyster Crassostrea brasiliana."
+              },
+              authors {
+                names std {
+
+                  {
+
+                    name name {
+
+                      last "Luchmann",
+
+                      initials "K.H."
+
+                    },
+
+                    affil str "Fishery Engineering Department, Santa Catarina
+
+ State University, Laguna, Brazil. Electronic address: khluchmann@gmail.com."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Clark",
+
+                      initials "M.S."
+
+                    },
+
+                    affil str "British Antarctic Survey, Natural Environment
+
+ Research Council, Cambridge, UK. Electronic address: mscl@bas.ac.uk."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Bainy",
+
+                      initials "A.C."
+
+                    },
+
+                    affil str "Biochemistry Department, Federal University of
+
+ Santa Catarina, Florianopolis, Brazil. Electronic address:
+
+ afonso.bainy@ufsc.br."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Gilbert",
+
+                      initials "J.A."
+
+                    },
+
+                    affil str "Biosciences Division (BIO), Argonne National
+
+ Laboratory, Argonne, USA; Department of Ecology and Evolution, University of
+
+ Chicago, Chicago, USA; Marine Biological Laboratory, Woods Hole, USA; College
+
+ of Environmental and Resource Sciences, Zhejiang University, Hangzhou, China.
+
+ Electronic address: gilbertjack@anl.gov."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Craft",
+
+                      initials "J.A."
+
+                    },
+
+                    affil str "Biological and Biomedical Sciences, Glasgow
+
+ Caledonian University, Glasgow, UK. Electronic address: J.A.Craft@gcu.ac.uk."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Chipman",
+
+                      initials "J.K."
+
+                    },
+
+                    affil str "School of Biological Sciences, The University
+
+ of Birmingham, Birmingham, UK. Electronic address: j.k.chipman@bham.ac.uk."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Thorne",
+
+                      initials "M.A."
+
+                    },
+
+                    affil str "British Antarctic Survey, Natural Environment
+
+ Research Council, Cambridge, UK. Electronic address: mior@bas.ac.uk."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Mattos",
+
+                      initials "J.J."
+
+                    },
+
+                    affil str "Biochemistry Department, Federal University of
+
+ Santa Catarina, Florianopolis, Brazil. Electronic address:
+
+ jaco.mattos@ufsc.br."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Siebert",
+
+                      initials "M.N."
+
+                    },
+
+                    affil str "Biochemistry Department, Federal University of
+
+ Santa Catarina, Florianopolis, Brazil. Electronic address:
+
+ marilia.siebert@ifsc.edu.br."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Schroeder",
+
+                      initials "D.C."
+
+                    },
+
+                    affil str "Marine Biological Association of the United
+
+ Kingdom (MBA), Plymouth, UK. Electronic address: dsch@mba.ac.uk."
+
+                  }
+
+                }
+              },
+              from journal {
+                title {
+                  iso-jta "Aquat. Toxicol.",
+                  ml-jta "Aquat Toxicol",
+                  issn "1879-1514",
+                  name "Aquatic toxicology (Amsterdam, Netherlands)"
+                },
+                imp {
+                  date std {
+                    year 2015,
+                    month 9
+                  },
+                  volume "166",
+                  pages "10-20",
+                  language "eng",
+                  pubstatus ppublish,
+                  history {
+                    {
+                      pubstatus received,
+                      date std {
+                        year 2015,
+                        month 3,
+                        day 31
+                      }
+                    },
+                    {
+                      pubstatus revised,
+                      date std {
+                        year 2015,
+                        month 6,
+                        day 25
+                      }
+                    },
+                    {
+                      pubstatus accepted,
+                      date std {
+                        year 2015,
+                        month 6,
+                        day 26
+                      }
+                    },
+                    {
+                      pubstatus aheadofprint,
+                      date std {
+                        year 2015,
+                        month 7,
+                        day 2
+                      }
+                    },
+                    {
+                      pubstatus other,
+                      date std {
+                        year 2015,
+                        month 7,
+                        day 18,
+                        hour 6,
+                        minute 0
+                      }
+                    },
+                    {
+                      pubstatus pubmed,
+                      date std {
+                        year 2015,
+                        month 7,
+                        day 18,
+                        hour 6,
+                        minute 0
+                      }
+                    },
+                    {
+                      pubstatus medline,
+                      date std {
+                        year 2016,
+                        month 1,
+                        day 8,
+                        hour 6,
+                        minute 0
+                      }
+                    }
+                  }
+                }
+              },
+              ids {
+                pubmed 26186662,
+                pii "S0166-445X(15)30003-5",
+                doi "10.1016/j.aquatox.2015.06.012",
+                other {
+                  db "ELocationID doi",
+                  tag str "10.1016/j.aquatox.2015.06.012"
+                },
+                other {
+                  db "ELocationID pii",
+                  tag str "S0166-445X(15)30003-5"
+                }
+              }
+            }
+          }
+        },
+        pub {
+          pub {
+            sub {
+              authors {
+                names std {
+
+                  {
+
+                    name name {
+
+                      last "Luchmann",
+
+                      first "K",
+
+                      initials "K.H."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Clark",
+
+                      first "M",
+
+                      initials "M.S."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Bainy",
+
+                      first "A",
+
+                      initials "A.C.D."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Gilbert",
+
+                      first "J",
+
+                      initials "J.A."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Craft",
+
+                      first "J",
+
+                      initials "J.A."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Chipman",
+
+                      first "J",
+
+                      initials "J."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Thorne",
+
+                      first "M",
+
+                      initials "M.A.S."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Mattos",
+
+                      first "J",
+
+                      initials "J.J."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Siebert",
+
+                      first "M",
+
+                      initials "M.N."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Schroeder",
+
+                      first "D",
+
+                      initials "D.C."
+
+                    }
+
+                  }
+
+                },
+                affil std {
+                  affil "Santa Catarina State University",
+                  div "Fishery Engineering",
+                  city "Laguna",
+                  sub "SC",
+                  country "Brazil",
+                  street "Cel. Fernandes Martins, 270",
+                  postal-code "88790000"
+                }
+              },
+              medium email,
+              date std {
+                year 2016,
+                month 3,
+                day 14
+              }
+            }
+          }
+        },
+        user {
+          class "SMART_V1.0",
+          type id 1,
+          data {
+            {
+              label id 1,
+              num 1,
+              data int 10300420
+            }
+          }
+        },
+        user {
+          type str "StructuredComment",
+          data {
+            {
+              label str "StructuredCommentPrefix",
+              data str "##Assembly-Data-START##"
+            },
+            {
+              label str "Assembly Method",
+              data str "SeqMan NGen v. v. 3.0.4"
+            },
+            {
+              label str "Sequencing Technology",
+              data str "454"
+            },
+            {
+              label str "StructuredCommentSuffix",
+              data str "##Assembly-Data-END##"
+            }
+          }
+        },
+        user {
+          type str "Submission",
+          data {
+            {
+              label str "SmartComment",
+              data str "ALT EMAIL:karim.luchmann@udesc.br"
+            },
+            {
+              label str "AdditionalComment",
+              data str "BankIt1902111"
+            }
+          }
+        },
+        user {
+          type str "Submission",
+          data {
+            {
+              label str "SmartComment",
+              data str "TOTAL # OF SEQS:9"
+            }
+          }
+        },
+        update-date std {
+          year 2016,
+          month 3,
+          day 11,
+          hour 16,
+          minute 52,
+          second 30
+        }
+      },
+      seq-set {
+        seq {
+          id {
+            local str "Amine-sulfotransferase-like",
+            general {
+              db "BankIt",
+              tag str "1902111/Amine-sulfotransferase-like"
+            },
+            general {
+              db "TMSMART",
+              tag id 64139642
+            },
+            genbank {
+              accession "KU958708"
+            }
+          },
+          descr {
+            title "Crassostrea brasiliana Amine-sulfotransferase-like protein
+ mRNA, partial cds.",
+            molinfo {
+              biomol mRNA
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "Amine-sulfotransferase-like"
+                }
+              }
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:Amine-sulfotransferase-like"
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol rna,
+            length 234,
+            strand ss,
+            seq-data ncbi2na 'ABCFCF30D3DF733928113EB9CE036E8CE7880432F583D140
+40E5D570F84E7D59A264C092BB58E8B3FB3745EF176531D40A1B7D8006BB00DB41BF10'H
+          }
+        },
+        seq {
+          id {
+            local str "Amine-sulfotransferase-like_prot_9",
+            general {
+              db "TMSMART",
+              tag id 64139643
+            }
+          },
+          descr {
+            title "Amine-sulfotransferase-like protein, partial [Crassostrea
+ brasiliana]",
+            molinfo {
+              biomol peptide,
+              completeness no-ends
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "Amine-sulfotransferase-like_prot_9"
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol aa,
+            length 78,
+            seq-data ncbieaa "GLFIIIILLYAGTHWCYEIVDMLRNNSSEFTKQMPPLIDMLPAERIKQ
+VSDGVFVSHLLPRHTPKDVFEKRCKIVNVY"
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data prot {
+                    name {
+                      "Amine-sulfotransferase-like protein"
+                    }
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 77,
+                    id local str "Amine-sulfotransferase-like_prot_9",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                frame one,
+                code {
+                  id 1
+                }
+              },
+              partial TRUE,
+              product whole local str "Amine-sulfotransferase-like_prot_9",
+              location int {
+                from 0,
+                to 233,
+                strand plus,
+                id local str "Amine-sulfotransferase-like",
+                fuzz-from lim lt,
+                fuzz-to lim gt
+              }
+            }
+          }
+        }
+      }
+    },
+    set {
+      class nuc-prot,
+      descr {
+        source {
+          genome genomic,
+          org {
+            taxname "Crassostrea brasiliana",
+            db {
+              {
+                db "taxon",
+                tag id 398256
+              }
+            },
+            orgname {
+              name binomial {
+                genus "Crassostrea",
+                species "brasiliana"
+              },
+              lineage "Eukaryota; Metazoa; Lophotrochozoa; Mollusca; Bivalvia;
+ Pteriomorphia; Ostreoida; Ostreoidea; Ostreidae; Crassostrea",
+              gcode 1,
+              mgcode 5,
+              div "INV"
+            }
+          }
+        },
+        pub {
+          pub {
+            pmid 26186662,
+            article {
+              title {
+                name "Key metabolic pathways involved in xenobiotic
+ biotransformation and stress responses revealed by transcriptomics of the
+ mangrove oyster Crassostrea brasiliana."
+              },
+              authors {
+                names std {
+
+                  {
+
+                    name name {
+
+                      last "Luchmann",
+
+                      initials "K.H."
+
+                    },
+
+                    affil str "Fishery Engineering Department, Santa Catarina
+
+ State University, Laguna, Brazil. Electronic address: khluchmann@gmail.com."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Clark",
+
+                      initials "M.S."
+
+                    },
+
+                    affil str "British Antarctic Survey, Natural Environment
+
+ Research Council, Cambridge, UK. Electronic address: mscl@bas.ac.uk."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Bainy",
+
+                      initials "A.C."
+
+                    },
+
+                    affil str "Biochemistry Department, Federal University of
+
+ Santa Catarina, Florianopolis, Brazil. Electronic address:
+
+ afonso.bainy@ufsc.br."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Gilbert",
+
+                      initials "J.A."
+
+                    },
+
+                    affil str "Biosciences Division (BIO), Argonne National
+
+ Laboratory, Argonne, USA; Department of Ecology and Evolution, University of
+
+ Chicago, Chicago, USA; Marine Biological Laboratory, Woods Hole, USA; College
+
+ of Environmental and Resource Sciences, Zhejiang University, Hangzhou, China.
+
+ Electronic address: gilbertjack@anl.gov."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Craft",
+
+                      initials "J.A."
+
+                    },
+
+                    affil str "Biological and Biomedical Sciences, Glasgow
+
+ Caledonian University, Glasgow, UK. Electronic address: J.A.Craft@gcu.ac.uk."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Chipman",
+
+                      initials "J.K."
+
+                    },
+
+                    affil str "School of Biological Sciences, The University
+
+ of Birmingham, Birmingham, UK. Electronic address: j.k.chipman@bham.ac.uk."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Thorne",
+
+                      initials "M.A."
+
+                    },
+
+                    affil str "British Antarctic Survey, Natural Environment
+
+ Research Council, Cambridge, UK. Electronic address: mior@bas.ac.uk."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Mattos",
+
+                      initials "J.J."
+
+                    },
+
+                    affil str "Biochemistry Department, Federal University of
+
+ Santa Catarina, Florianopolis, Brazil. Electronic address:
+
+ jaco.mattos@ufsc.br."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Siebert",
+
+                      initials "M.N."
+
+                    },
+
+                    affil str "Biochemistry Department, Federal University of
+
+ Santa Catarina, Florianopolis, Brazil. Electronic address:
+
+ marilia.siebert@ifsc.edu.br."
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Schroeder",
+
+                      initials "D.C."
+
+                    },
+
+                    affil str "Marine Biological Association of the United
+
+ Kingdom (MBA), Plymouth, UK. Electronic address: dsch@mba.ac.uk."
+
+                  }
+
+                }
+              },
+              from journal {
+                title {
+                  iso-jta "Aquat. Toxicol.",
+                  ml-jta "Aquat Toxicol",
+                  issn "1879-1514",
+                  name "Aquatic toxicology (Amsterdam, Netherlands)"
+                },
+                imp {
+                  date std {
+                    year 2015,
+                    month 9
+                  },
+                  volume "166",
+                  pages "10-20",
+                  language "eng",
+                  pubstatus ppublish,
+                  history {
+                    {
+                      pubstatus received,
+                      date std {
+                        year 2015,
+                        month 3,
+                        day 31
+                      }
+                    },
+                    {
+                      pubstatus revised,
+                      date std {
+                        year 2015,
+                        month 6,
+                        day 25
+                      }
+                    },
+                    {
+                      pubstatus accepted,
+                      date std {
+                        year 2015,
+                        month 6,
+                        day 26
+                      }
+                    },
+                    {
+                      pubstatus aheadofprint,
+                      date std {
+                        year 2015,
+                        month 7,
+                        day 2
+                      }
+                    },
+                    {
+                      pubstatus other,
+                      date std {
+                        year 2015,
+                        month 7,
+                        day 18,
+                        hour 6,
+                        minute 0
+                      }
+                    },
+                    {
+                      pubstatus pubmed,
+                      date std {
+                        year 2015,
+                        month 7,
+                        day 18,
+                        hour 6,
+                        minute 0
+                      }
+                    },
+                    {
+                      pubstatus medline,
+                      date std {
+                        year 2016,
+                        month 1,
+                        day 8,
+                        hour 6,
+                        minute 0
+                      }
+                    }
+                  }
+                }
+              },
+              ids {
+                pubmed 26186662,
+                pii "S0166-445X(15)30003-5",
+                doi "10.1016/j.aquatox.2015.06.012",
+                other {
+                  db "ELocationID doi",
+                  tag str "10.1016/j.aquatox.2015.06.012"
+                },
+                other {
+                  db "ELocationID pii",
+                  tag str "S0166-445X(15)30003-5"
+                }
+              }
+            }
+          }
+        },
+        pub {
+          pub {
+            sub {
+              authors {
+                names std {
+
+                  {
+
+                    name name {
+
+                      last "Luchmann",
+
+                      first "K",
+
+                      initials "K.H."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Clark",
+
+                      first "M",
+
+                      initials "M.S."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Bainy",
+
+                      first "A",
+
+                      initials "A.C.D."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Gilbert",
+
+                      first "J",
+
+                      initials "J.A."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Craft",
+
+                      first "J",
+
+                      initials "J.A."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Chipman",
+
+                      first "J",
+
+                      initials "J."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Thorne",
+
+                      first "M",
+
+                      initials "M.A.S."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Mattos",
+
+                      first "J",
+
+                      initials "J.J."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Siebert",
+
+                      first "M",
+
+                      initials "M.N."
+
+                    }
+
+                  },
+
+                  {
+
+                    name name {
+
+                      last "Schroeder",
+
+                      first "D",
+
+                      initials "D.C."
+
+                    }
+
+                  }
+
+                },
+                affil std {
+                  affil "Santa Catarina State University",
+                  div "Fishery Engineering",
+                  city "Laguna",
+                  sub "SC",
+                  country "Brazil",
+                  street "Cel. Fernandes Martins, 270",
+                  postal-code "88790000"
+                }
+              },
+              medium email,
+              date std {
+                year 2016,
+                month 3,
+                day 18
+              }
+            }
+          }
+        },
+        user {
+          class "SMART_V1.0",
+          type id 1,
+          data {
+            {
+              label id 1,
+              num 1,
+              data int 10312295
+            }
+          }
+        },
+        user {
+          type str "Submission",
+          data {
+            {
+              label str "SmartComment",
+              data str "ALT EMAIL:karim.luchmann@udesc.br"
+            },
+            {
+              label str "AdditionalComment",
+              data str "BankIt1904055"
+            }
+          }
+        },
+        user {
+          type str "Submission",
+          data {
+            {
+              label str "SmartComment",
+              data str "TOTAL # OF SEQS:1"
+            }
+          }
+        },
+        update-date std {
+          year 2016,
+          month 3,
+          day 18,
+          hour 14,
+          minute 58,
+          second 2
+        }
+      },
+      seq-set {
+        seq {
+          id {
+            local str "CYP356A1-like",
+            general {
+              db "BankIt",
+              tag str "1904055/CYP356A1-like"
+            },
+            general {
+              db "TMSMART",
+              tag id 64231892
+            },
+            genbank {
+              accession "KU958709"
+            }
+          },
+          descr {
+            title "Crassostrea brasiliana CYP356A1-like protein mRNA, partial
+ cds.",
+            molinfo {
+              biomol mRNA,
+              completeness partial
+            },
+            user {
+              type str "StructuredComment",
+              data {
+                {
+                  label str "StructuredCommentPrefix",
+                  data str "##Assembly-Data-START##"
+                },
+                {
+                  label str "Assembly Method",
+                  data str "SeqMan NGen v. 3.0.4"
+                },
+                {
+                  label str "Sequencing Technology",
+                  data str "454"
+                },
+                {
+                  label str "StructuredCommentSuffix",
+                  data str "##Assembly-Data-END##"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int 0
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "Delete"
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "CYP356A1-like"
+                }
+              }
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:CYP356A1-like"
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol rna,
+            length 363,
+            strand ss,
+            seq-data ncbi2na '8A694E88B7638C444FB5214FD2133FFE6A2E874148F443A1
+EBFBF3F4E1C8F5680D48083B4A280F848BEFA978125F53804482C07A3CC48A5E6EFE21DE21FA89
+B65ADFAAF5113873FB8F442FAE8CE13540AB145B9E301C7ADBE4D18C'H
+          }
+        },
+        seq {
+          id {
+            local str "CYP356A1-like_prot_1",
+            general {
+              db "TMSMART",
+              tag id 64231893
+            }
+          },
+          descr {
+            title "CYP356A1-like protein, partial [Crassostrea brasiliana]",
+            molinfo {
+              biomol peptide,
+              completeness no-ends
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "CYP356A1-like_prot_1"
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol aa,
+            length 121,
+            seq-data ncbieaa "EAAMESLDDTHIVQTISDIFFAGVDSTRFTMDWFVYFMTRFPEIQKEC
+QEEIDRVVGPEQPSMKHRSKLDYTEACVFETLRLGSVAGLGVPHMTICDSQVGGYDIPKGTTVLINYWSLHHD"
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data prot {
+                    name {
+                      "CYP356A1-like protein"
+                    }
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 120,
+                    id local str "CYP356A1-like_prot_1",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                frame one,
+                code {
+                  id 1
+                }
+              },
+              partial TRUE,
+              product whole local str "CYP356A1-like_prot_1",
+              location int {
+                from 0,
+                to 362,
+                strand plus,
+                id local str "CYP356A1-like",
+                fuzz-from lim lt,
+                fuzz-to lim gt
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
