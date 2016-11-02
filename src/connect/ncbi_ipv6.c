@@ -30,8 +30,8 @@
  *
  */
 
-#include "ncbi_assert.h"
 #include "ncbi_ansi_ext.h"
+#include "ncbi_priv.h"
 #include <connect/ncbi_socket.h>
 #include <connect/ncbi_ipv6.h>
 #include <ctype.h>
@@ -529,25 +529,29 @@ extern const char* NcbiAddrToDNS(char* buf, size_t bufsize,
 }
 
 
+/* NB: "str" is actually bounded by the ".in-addr.apra" suffix */
 static const char* x_DNSToIPv4(unsigned int* addr,
                                const char* str, size_t len)
 {
     size_t n;
     unsigned int temp;
-    const char* end = str + len;
+    CORE_DEBUG_ARG(const char* end = str + len;)
     unsigned char* ptr = (unsigned char*) &temp + sizeof(temp);
-    assert(str[len] == '.');
+    assert(*end == '.');
+    if (len < 7/*"x.x.x.x"*/  ||  15/*xxx.xxx.xxx.xxx*/ < len)
+        return 0/*failure*/;
     for (n = 0;  n < sizeof(temp);  ++n) {
         char  s[4];
         char* e;
         long  d;
         errno = 0;
-        d = strtol(str, &e, 10);
-        if (errno  ||  str == e  ||  e - str > 3  ||  *e != '.'  ||  d < 0
-            ||  255 < d
+        d = strtol(str, &e, 10);  /*NB: "str" may be at "in-addr" safely here*/
+        if (errno  ||  str == e  ||  e - str > 3  ||  *e != '.'
+            ||  d < 0  ||  255 < d
             ||  sprintf(s, "%u", (unsigned int) d) != (int)(e - str)) {
             return 0/*failure*/;
         }
+        assert(e <= end);
         *--ptr = d;
         str = ++e;
     }
@@ -556,31 +560,31 @@ static const char* x_DNSToIPv4(unsigned int* addr,
 }
 
 
+/* NB: "str" is actually bounded by the ".ip6.arpa" suffix */
 static const char* x_DNSToIPv6(TNCBI_IPv6Addr* addr,
                                const char* str, size_t len)
 {
     static const char xdigits[] = "0123456789abcdef";
-    const char* end = str + len;
+    CORE_DEBUG_ARG(const char* end = str + len;)
     TNCBI_IPv6Addr temp;
     unsigned char* dst;
     size_t n;
-    assert(str[len] == '.');
+    assert(*end == '.');
     if (len != 4 * sizeof(addr->octet) - 1)
-        return 0;
+        return 0/*failure*/;
     dst = temp.octet + sizeof(temp.octet) - 1;
     for (n = 0;  n < 2 * sizeof(addr->octet);  ++n) {
-        const char* ptr = strchr(xdigits, tolower((unsigned char)(*str)));
+        const char* ptr = strchr(xdigits, tolower((unsigned char)(*str++)));
         unsigned char val;
-        if (!ptr)
-            return 0;
+        assert(str <= end);
+        if (!ptr  ||  *str++ != '.')
+            return 0/*failure*/;
         val = ptr - xdigits;
         if (n & 1) {
             val   <<= 4;
             *dst-- |= val;
         } else
             *dst    = val;
-        if (++str > end  ||  *str++ != '.')
-            return 0;
     }
     *addr = temp;
     return --str;
@@ -620,7 +624,7 @@ extern const char* NcbiStringToAddr(TNCBI_IPv6Addr* addr,
     if (len > kIPv4DNS.len
         &&  strncasecmp(tmp = str + len - (kIPv4DNS.len + dns_only),
                         kIPv4DNS.sfx, kIPv4DNS.len) == 0) {
-        if (x_DNSToIPv4(&ipv4, str, len - kIPv4DNS.len) == tmp) {
+        if (x_DNSToIPv4(&ipv4, str, len - (kIPv4DNS.len + dns_only)) == tmp) {
             NcbiIPv4ToIPv6(addr, ipv4, 0);
             return tmp + (kIPv4DNS.len + dns_only);
         } else if (dns_only)
@@ -629,7 +633,7 @@ extern const char* NcbiStringToAddr(TNCBI_IPv6Addr* addr,
     if (len > kIPv6DNS.len
         &&  strncasecmp(tmp = str + len - (kIPv6DNS.len + dns_only),
                         kIPv6DNS.sfx, kIPv6DNS.len) == 0) {
-        if (x_DNSToIPv6(addr, str, len - kIPv6DNS.len) == tmp)
+        if (x_DNSToIPv6(addr, str, len - (kIPv6DNS.len + dns_only)) == tmp)
             return tmp + (kIPv6DNS.len + dns_only);
         else if (dns_only)
             return 0/*failure*/;
