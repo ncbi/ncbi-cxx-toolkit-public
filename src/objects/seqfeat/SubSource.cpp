@@ -1306,12 +1306,18 @@ static string s_GetNumFromLatLonToken (string token, const string& default_dir)
                 pos++;
                 num_sep ++;
             } else {
-                if (num_sep > 1) {
-                    // already found minutes
+                if (num_sep == 1) {
+                    val += (this_val) / (60.0);
+                    prec += 2;
+                }
+                else if (num_sep == 2) {
+                    val += (this_val) / (3600.0);
+                    prec += 2;
+                }
+                else {
+                    // too many separators
                     return kEmptyStr;
                 }
-                val += (this_val) / (60.0);
-                prec += 2;
                 num_sep ++;
             }
             size_t p_pos = NStr::Find (num_str, ".");
@@ -1319,7 +1325,7 @@ static string s_GetNumFromLatLonToken (string token, const string& default_dir)
                 prec += num_str.substr(p_pos + 1).length();
             }
             pos++;
-            while (isspace((unsigned char)token[pos])) {
+            while (pos < token.size() && isspace((unsigned char)token[pos])) {
                 pos++;
             }
             prev_start = pos;
@@ -1566,6 +1572,7 @@ string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
     NStr::ReplaceInPlace (cpy, "WEST",      "W");
     NStr::ReplaceInPlace (cpy, " AND ",     " "); // treat AND like a space delimiter
     NStr::ReplaceInPlace (cpy, "_", " ");
+    NStr::ReplaceInPlace (cpy, "&", " ");
     NStr::ReplaceInPlace (cpy, "  ", " "); // double-spaces become single spaces
 
     size_t lat_pos = NStr::Find (cpy, "LAT");

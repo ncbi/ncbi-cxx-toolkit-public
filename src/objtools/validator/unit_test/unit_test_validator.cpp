@@ -18475,6 +18475,18 @@ BOOST_AUTO_TEST_CASE(Test_FixLatLonFormat)
     fixed = CSubSource::FixLatLonFormat(to_fix, true);
     BOOST_CHECK_EQUAL(fixed, "0.067682 S 76.39885 W");
 
+    to_fix = "34degrees 20' 13'' N,47degrees 03' 24''E";
+    fixed = CSubSource::FixLatLonFormat(to_fix, true);
+    BOOST_CHECK_EQUAL(fixed, "34.3369 N 47.0567 E");
+
+    to_fix = "34degrees 20' 13' N,47deg 03' 24' E";
+    fixed = CSubSource::FixLatLonFormat(to_fix, true);
+    BOOST_CHECK_EQUAL(fixed, "34.3369 N 47.0567 E");
+
+    to_fix = "8 degrees 28 'N & 77 degrees 41 'E";
+    fixed = CSubSource::FixLatLonFormat(to_fix, true);
+    BOOST_CHECK_EQUAL(fixed, "8.47 N 77.68 E");
+
     bool format_correct;
     bool precision_correct;
     bool lat_in_range;
