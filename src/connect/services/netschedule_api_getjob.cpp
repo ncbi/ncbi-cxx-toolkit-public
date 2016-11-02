@@ -196,10 +196,18 @@ public:
             }
         } while (priority-- > 0);
 
-        // Should not happen
-        LOG_POST(Error << "Got a job " << job.job_id <<
-                " with unexpected affinity " << job.affinity);
-        m_JobPriority = numeric_limits<size_t>::max();
+        // Whether affinities not from the ladder are allowed
+        if (m_GetJobImpl.m_API->m_AffinityPreference ==
+                CNetScheduleExecutor::eAnyJob) {
+            // Make it the least-priority
+            m_JobPriority = affinity_ladder.size();
+        } else {
+            // Should not happen
+            LOG_POST(Error << "Got a job " << job.job_id <<
+                    " with unexpected affinity " << job.affinity);
+            m_JobPriority = numeric_limits<size_t>::max();
+        }
+
         return false;
     }
 
