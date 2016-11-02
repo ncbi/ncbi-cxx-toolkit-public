@@ -12,5 +12,5 @@ add_library("${MODULE}" ${MODULE}__ ${MODULE}___)
 RunDatatool("${MODULE}" "${MODULE_IMPORT}")
 
 target_link_libraries(${MODULE}
-    seq
+    seq xnetblast
 )
