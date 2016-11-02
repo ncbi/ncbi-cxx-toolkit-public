@@ -1369,6 +1369,7 @@ private:
     void ValidateSeqLen(const CBioseq& seq);
     void ValidateSegRef(const CBioseq& seq);
     void ValidateDelta(const CBioseq& seq);
+    static bool x_IgnoreEndGap(CBioseq_Handle bsh, CSeq_gap::TType gap_type);
     void ValidateSeqGap(const CSeq_gap& gap, const CBioseq& seq);
     void ValidateDeltaLoc(const CSeq_loc& loc, const CBioseq& seq, TSeqPos& len);
     bool ValidateRepr(const CSeq_inst& inst, const CBioseq& seq);

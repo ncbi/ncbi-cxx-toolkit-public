@@ -3727,15 +3727,36 @@ static bool s_IsUnspecified(const CSeq_gap& gap)
     return is_unspec;
 }
 
+
+bool CValidError_bioseq::x_IgnoreEndGap(CBioseq_Handle bsh, CSeq_gap::TType gap_type)
+{
+    // always ignore for circular sequences
+    if (bsh.GetInst().IsSetTopology() &&
+        bsh.GetInst().GetTopology() == CSeq_inst::eTopology_circular) {
+        return true;
+    }
+
+    // ignore if location is genomic and gap is of certain type
+    if (gap_type != CSeq_gap::eType_centromere &&
+        gap_type != CSeq_gap::eType_telomere &&
+        gap_type != CSeq_gap::eType_heterochromatin &&
+        gap_type != CSeq_gap::eType_short_arm) {
+        return false;
+    }
+
+    CSeqdesc_CI src(bsh, CSeqdesc::e_Source);
+    if (src && src->GetSource().IsSetGenome() && src->GetSource().GetGenome() == CBioSource::eGenome_chromosome) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
 // Assumes seq is a delta sequence
 void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
 {
     const CSeq_inst& inst = seq.GetInst();
-
-    bool is_circular = false;
-    if (inst.GetTopology() == CSeq_inst::eTopology_circular) {
-      is_circular = true;
-    }
 
     // Get CMolInfo and tech used for validating technique and gap positioning
     const CMolInfo* mi = 0;
@@ -3789,9 +3810,9 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
     TSeqPos seg = 0;
     bool last_is_gap = false;
     int prev_gap_linkage = -1;
-    int prev_gap_type = -1;
+    CSeq_gap::TType prev_gap_type = CSeq_gap::eType_unknown;
     int gap_linkage = -1;
-    int gap_type = -1;
+    CSeq_gap::TType gap_type = CSeq_gap::eType_unknown;
     size_t num_gaps = 0;
     size_t num_adjacent_gaps = 0;
     bool non_interspersed_gaps = false;
@@ -3823,8 +3844,8 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
             }
             last_is_gap = false;
             prev_gap_linkage = -1;
-            prev_gap_type = -1;
-            gap_linkage = -1;
+            prev_gap_type = CSeq_gap::eType_unknown;
+            gap_linkage = CSeq_gap::eType_unknown;
             first = false;
             break;
         }
@@ -3849,7 +3870,7 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                 }
                 last_is_gap = false;
                 prev_gap_linkage = -1;
-                prev_gap_type = -1;
+                prev_gap_type = CSeq_gap::eType_unknown;
                 const CSeq_data& data = lit.GetSeq_data();
                 vector<TSeqPos> badIdx;
                 CSeqportUtil::Validate(data, &badIdx);
@@ -3902,7 +3923,7 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                 }
             } else {
                 gap_linkage = -1;
-                gap_type = -1;
+                gap_type = CSeq_gap::eType_unknown;
                 if ( lit.IsSetSeq_data() && lit.GetSeq_data().IsGap() ) {
                     const CSeq_data& data = lit.GetSeq_data();
                     if (data.Which() == CSeq_data::e_Gap) {
@@ -3921,16 +3942,14 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                             gap_linkage = gap.GetLinkage();
                     }
                 }
-                if ( first ) {
+                if (first  && !x_IgnoreEndGap(bsh, gap_type)) {
                     EDiagSev sev = eDiag_Error;
                     if (tech != CMolInfo::eTech_htgs_0 && tech != CMolInfo::eTech_htgs_1
                         && tech != CMolInfo::eTech_htgs_2 && tech != CMolInfo::eTech_htgs_3) {
                         sev = eDiag_Warning;
                     }
-                    if (! is_circular) {
-                        PostErr(sev, eErr_SEQ_INST_BadDeltaSeq,
+                    PostErr(sev, eErr_SEQ_INST_BadDeltaSeq,
                             "First delta seq component is a gap", seq);
-                    }
                 }
 
                 if(last_is_gap &&
@@ -4014,16 +4033,14 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
             " adjacent gaps in delta seq";
         PostErr(m_Imp.IsRefSeq() ? eDiag_Warning : eDiag_Error, eErr_SEQ_INST_BadDeltaSeq, msg, seq);
     }
-    if ( last_is_gap ) {
+    if (last_is_gap && !x_IgnoreEndGap(bsh, gap_type)) {
         EDiagSev sev = eDiag_Error;
         if (tech != CMolInfo::eTech_htgs_0 && tech != CMolInfo::eTech_htgs_1
             && tech != CMolInfo::eTech_htgs_2 && tech != CMolInfo::eTech_htgs_3) {
             sev = eDiag_Warning;
         }
-        if (! is_circular) {
-            PostErr(sev, eErr_SEQ_INST_BadDeltaSeq,
+        PostErr(sev, eErr_SEQ_INST_BadDeltaSeq,
                 "Last delta seq component is a gap", seq);
-        }
     }
     
     // Validate technique
@@ -6816,7 +6833,7 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq,
         }
     }
 
-    const int num_unmatched_mrna = mrna_list.size();
+    const size_t num_unmatched_mrna = mrna_list.size();
     if (num_unmatched_mrna > 0) {
         string msg; 
         if (num_unmatched_mrna == 1){ 
@@ -7200,13 +7217,13 @@ void CValidError_bioseq::x_ValidateAbuttingUTR(
     // cdregion is special because it can set strand
     const CCacheImpl::TFeatValue & cd_region_feats =
         GetCache().GetFeatFromCache(feat_key);
-    const int num_cds = cd_region_feats.size();
+    const size_t num_cds = cd_region_feats.size();
     feat_key.feat_subtype = CSeqFeatData::eSubtype_3UTR;
-    const int num_3utr = GetCache().GetFeatFromCache(feat_key).size();
+    const size_t num_3utr = GetCache().GetFeatFromCache(feat_key).size();
     feat_key.feat_subtype = CSeqFeatData::eSubtype_5UTR;
-    const int num_5utr = GetCache().GetFeatFromCache(feat_key).size();
+    const size_t num_5utr = GetCache().GetFeatFromCache(feat_key).size();
     feat_key.feat_subtype = CSeqFeatData::eSubtype_gene;
-    const int num_gene = GetCache().GetFeatFromCache(feat_key).size();
+    const size_t num_gene = GetCache().GetFeatFromCache(feat_key).size();
 
     // cdregion is special because it can set strand
     if( num_cds > 0 ) {
