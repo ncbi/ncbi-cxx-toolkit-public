@@ -268,6 +268,9 @@ public:
     static bool ClearInternalPartials(CPacked_seqint& pint, bool is_first = true, bool is_last = true);
     static bool ClearInternalPartials(CSeq_entry_Handle seh);
 
+/// Set feature partial based on feature location
+    static bool SetFeaturePartial(CSeq_feat& f);
+
 /// Update EC numbers
 /// @param ec_num_list Prot-ref ec number list to clean
 /// @return Boolean value indicates whether any changes were made

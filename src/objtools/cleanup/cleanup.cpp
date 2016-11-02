@@ -621,7 +621,7 @@ bool CCleanup::MoveFeatToProtein(CSeq_feat_Handle fh)
     // change location to protein
     new_feat->ResetLocation();
     new_feat->SetLocation(*prot_loc);
-
+    SetFeaturePartial(*new_feat);
 
     CSeq_feat_EditHandle edh(fh);
     edh.Replace(*new_feat);
@@ -1528,6 +1528,36 @@ bool CCleanup::ClearInternalPartials(CSeq_entry_Handle seh)
     }
 
     return rval;
+}
+
+
+bool CCleanup::SetFeaturePartial(CSeq_feat& f)
+{
+    if (!f.IsSetLocation()) {
+        return false;
+    }
+    bool partial = false;
+    CSeq_loc_CI li(f.GetLocation());
+    while (li && !partial) {
+        if (li.GetFuzzFrom() || li.GetFuzzTo()) {
+            partial = true;
+            break;
+        }
+        ++li;
+    }
+    bool changed = false;
+    if (f.IsSetPartial() && f.GetPartial()) {
+        if (!partial) {
+            f.ResetPartial();
+            changed = true;
+        }
+    } else {
+        if (partial) {
+            f.SetPartial(true);
+            changed = true;
+        }
+    }
+    return changed;
 }
 
 
