@@ -1192,6 +1192,7 @@ bool CAutoDefFeatureClause::AddGene (CAutoDefFeatureClause_Base *gene_clause, bo
         && subtype != CSeqFeatData::eSubtype_otherRNA
         && subtype != CSeqFeatData::eSubtype_ncRNA
         && subtype != CSeqFeatData::eSubtype_precursor_RNA
+        && subtype != CSeqFeatData::eSubtype_preRNA
         && subtype != CSeqFeatData::eSubtype_intron
         && subtype != CSeqFeatData::eSubtype_exon
         && !x_GetNoncodingProductFeatProduct(noncoding_product_name)) {
