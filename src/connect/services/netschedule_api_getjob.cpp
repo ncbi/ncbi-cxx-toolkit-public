@@ -64,19 +64,6 @@ typedef list<SServerAddress> TServers;
 typedef list<CNetScheduleGetJob::SEntry> TTimeline;
 typedef TTimeline::iterator TIterator;
 
-// TODO: This can be replaced by lambda after we migrate to C++11
-template <class TImpl>
-struct SEntryHasMoreJobs
-{
-    TImpl& impl;
-    SEntryHasMoreJobs(TImpl& i) : impl(i) {}
-
-    bool operator()(const CNetScheduleGetJob::SEntry& entry)
-    {
-        return impl.MoreJobs(entry);
-    }
-};
-
 template <class TImpl>
 class CAnyAffinityJob
 {
@@ -337,9 +324,13 @@ CNetScheduleGetJob::EResult CNetScheduleGetJobImpl<TImpl>::GetJobImpl(
             return ret;
         }
 
+        auto entry_has_more_jobs = [&](const SEntry& entry) {
+            return m_Impl.MoreJobs(entry);
+        };
+
         // If MoreJobs() returned false for all entries of m_ScheduledActions
         if (find_if(m_ScheduledActions.begin(), m_ScheduledActions.end(),
-                    SEntryHasMoreJobs<TImpl>(m_Impl)) == m_ScheduledActions.end()) {
+                    entry_has_more_jobs) == m_ScheduledActions.end()) {
             return eNoJobs;
         }
 
