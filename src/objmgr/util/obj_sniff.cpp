@@ -388,19 +388,11 @@ void CObjectsSniffer::ProbeAny(CObjectIStream& input)
         input.SetStreamPos(m_StreamPos);
         throw;
     }
-    catch (CException& expt) {
-        input.SetStreamPos(m_StreamPos);
-        string msg("Failed to read ");
-        msg += format_name + " " + tname + " at " + input.GetPosition();
-        NCBI_RETHROW_SAME(expt, msg);
-    }
     catch ( exception& e ) {
         input.SetStreamPos(m_StreamPos);
-        string msg("Failed to read ");
-        msg += format_name + " " + tname + " at " + input.GetPosition();
-        msg += e.what();
-        LOG_POST_X(3, Info << msg);
-        NCBI_THROW(CSerialException, eIoError, msg);
+        LOG_POST_X(3, Info << "Exception reading "
+                   << format_name << " " << e.what());
+        throw;
     }
 
 }
