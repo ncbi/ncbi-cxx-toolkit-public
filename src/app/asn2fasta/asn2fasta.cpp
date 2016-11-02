@@ -276,6 +276,8 @@ void CAsn2FastaApp::Init(void)
 
         arg_desc->AddOptionalKey("oq", "QualityScoreOutputFile",
             "Quality score output file name", CArgDescriptions::eOutputFile);
+        arg_desc->AddFlag("gi-out", "Enable GI output in defline");
+
     }}
 
     // misc
@@ -317,12 +319,16 @@ CFastaOstreamEx* CAsn2FastaApp::OpenFastaOstream(const string& argname, const st
     }
     auto_ptr<CFastaOstreamEx> fasta_os(new CFastaOstreamEx(*os));
 
-    fasta_os->SetAllFlags(
+    fasta_os->SetAllFlags(        
         CFastaOstreamEx::fInstantiateGaps |
         CFastaOstreamEx::fAssembleParts |
         CFastaOstreamEx::fNoDupCheck |
         CFastaOstreamEx::fKeepGTSigns |
         CFastaOstreamEx::fNoExpensiveOps);
+
+    if (GetArgs()["gi-out"])
+        fasta_os->SetFlag(CFastaOstreamEx::fEnableGI);
+
     if( GetArgs()["gap-mode"] ) {
         fasta_os->SetFlag(
             CFastaOstreamEx::fInstantiateGaps);
@@ -980,6 +986,8 @@ bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
     if(!any_feats) {
         for (CBioseq_CI bioseq_it(seh);  bioseq_it;  ++bioseq_it) {
             CBioseq_Handle bsh = *bioseq_it;
+            if (!bsh)
+                continue;
             CFastaOstreamEx* fasta_os = x_GetFastaOstream(bsh);
 
             if ( fasta_os == NULL) continue;

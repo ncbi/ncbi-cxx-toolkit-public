@@ -2454,7 +2454,7 @@ END_SCOPE(sequence)
 
 CFastaOstream::CFastaOstream(CNcbiOstream& out)
     : m_Out(out),
-      m_Flags(fInstantiateGaps | fAssembleParts),
+      m_Flags(fInstantiateGaps | fAssembleParts | fEnableGI),
       m_GapMode(eGM_letters)
 {
     m_Gen.reset(new sequence::CDeflineGenerator);
@@ -2551,6 +2551,33 @@ static bool s_ShouldUseOriginalID (const CBioseq& seq)
     return true;
 }
 
+void CFastaOstream::x_WriteAsFasta(const CBioseq& bioseq)
+{
+    bool is_na = bioseq.GetInst().GetMol() != CSeq_inst::eMol_aa;
+    CConstRef<CSeq_id> best_id = FindBestChoice(bioseq.GetId(),
+        is_na ? CSeq_id::FastaNARank
+        : CSeq_id::FastaAARank);
+
+    // RW-139, no GI in FASTA output
+    if (best_id.NotEmpty())
+    {
+        if ((m_Flags & fEnableGI) && !best_id->IsGi())
+        {
+            // FastA format
+            // Here we have something like:
+            //      gi|###|SOME_ACCESSION|title
+
+            ITERATE(CBioseq::TId, id, bioseq.GetId()) {
+                if ((*id)->IsGi()) {
+                    (*id)->WriteAsFasta(m_Out);
+                    m_Out << '|';
+                    break;
+                }
+            }
+        }
+        best_id->WriteAsFasta(m_Out);
+    }
+}
 
 void CFastaOstream::x_WriteSeqIds(const CBioseq& bioseq,
                                   const CSeq_loc* location)
@@ -2577,10 +2604,10 @@ void CFastaOstream::x_WriteSeqIds(const CBioseq& bioseq,
         if (! NStr::IsBlank(origID)) {
             m_Out << "lcl|" << origID;
         } else {
-            CSeq_id::WriteAsFasta(m_Out, bioseq);
+            x_WriteAsFasta(bioseq);
         }
     } else {
-        CSeq_id::WriteAsFasta(m_Out, bioseq);
+        x_WriteAsFasta(bioseq);
     }
 
     if (have_range) {

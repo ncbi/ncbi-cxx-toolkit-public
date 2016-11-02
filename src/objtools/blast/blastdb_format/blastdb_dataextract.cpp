@@ -640,7 +640,7 @@ string CBlastDBExtractor::ExtractFasta(const CBlastDBSeqId &id) {
 
     CFastaOstream fasta(out);
     fasta.SetWidth(m_LineWidth);
-    fasta.SetAllFlags(CFastaOstream::fKeepGTSigns);
+    fasta.SetAllFlags(CFastaOstream::fKeepGTSigns|CFastaOstream::fEnableGI);
 
     SetSeqId(id, true);
 

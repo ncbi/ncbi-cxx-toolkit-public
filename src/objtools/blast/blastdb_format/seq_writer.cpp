@@ -271,7 +271,7 @@ void CSeqFormatter::DumpAll(CSeqDB& blastdb, CSeqFormatterConfig config)
 {
     CFastaOstream fasta(m_Out);
     fasta.SetWidth(config.m_LineWidth);
-    fasta.SetAllFlags(CFastaOstream::fKeepGTSigns|CFastaOstream::fNoExpensiveOps);
+    fasta.SetAllFlags(CFastaOstream::fKeepGTSigns|CFastaOstream::fNoExpensiveOps|CFastaOstream::fEnableGI);
 
     bool long_seqids = false;
     CNcbiApplication* app = CNcbiApplication::Instance();

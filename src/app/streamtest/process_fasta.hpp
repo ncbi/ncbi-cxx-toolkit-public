@@ -84,7 +84,8 @@ public:
     //  ------------------------------------------------------------------------
     {
         try {
-            m_out->SetAllFlags( CFastaOstream::fInstantiateGaps |
+            m_out->SetAllFlags(CFastaOstream::fEnableGI |
+                                CFastaOstream::fInstantiateGaps |
                                 CFastaOstream::fAssembleParts |
                                 CFastaOstream::fNoDupCheck |
                                 CFastaOstream::fKeepGTSigns |

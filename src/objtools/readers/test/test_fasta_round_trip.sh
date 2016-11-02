@@ -2,8 +2,8 @@
 # $Id$
 
 status=0
-app=test_fasta_round_trip
-data=${app}_data
+app=${1-test_fasta_round_trip}
+data=test_fasta_round_trip_data
 
 test_case() {
     echo "* $app $*"

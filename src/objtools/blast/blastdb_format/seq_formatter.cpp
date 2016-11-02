@@ -379,7 +379,7 @@ void CBlastDB_SeqFormatter::DumpAll(const CBlastDB_FormatterConfig & config)
 CBlastDB_FastaFormatter::CBlastDB_FastaFormatter(CSeqDB& blastdb, CNcbiOstream& out, TSeqPos width, bool useLongSeqId)
     :  m_BlastDb(blastdb), m_Out(out), m_fasta(out), m_UseLongSeqIds(useLongSeqId)
 {
-	m_fasta.SetAllFlags(CFastaOstream::fKeepGTSigns|CFastaOstream::fNoExpensiveOps);
+	m_fasta.SetAllFlags(CFastaOstream::fKeepGTSigns|CFastaOstream::fNoExpensiveOps|CFastaOstream::fEnableGI);
 	m_fasta.SetWidth(width);
 }
 
@@ -479,10 +479,10 @@ int CBlastDB_FastaFormatter::Write(CSeqDB::TOID oid, const CBlastDB_FormatterCon
 void CBlastDB_FastaFormatter::DumpAll(const CBlastDB_FormatterConfig & config)
 {
     if(config.m_Strand == eNa_strand_minus) {
-    	m_fasta.SetAllFlags(CFastaOstream::fKeepGTSigns|CFastaOstream::fNoExpensiveOps|CFastaOstream::fReverseStrand);
+    	m_fasta.SetAllFlags(CFastaOstream::fKeepGTSigns|CFastaOstream::fNoExpensiveOps|CFastaOstream::fReverseStrand|CFastaOstream::fEnableGI);
     }
     else {
-    	m_fasta.SetAllFlags(CFastaOstream::fKeepGTSigns|CFastaOstream::fNoExpensiveOps);
+    	m_fasta.SetAllFlags(CFastaOstream::fKeepGTSigns|CFastaOstream::fNoExpensiveOps|CFastaOstream::fEnableGI);
     }
 
     for (int i=0; m_BlastDb.CheckOrFindOID(i); i++) {
