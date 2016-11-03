@@ -85,6 +85,7 @@
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
+#include <objects/general/Dbtag.hpp>
 #include <objects/seqfeat/OrgName.hpp>
 #include <objects/seqfeat/OrgMod.hpp>
 #include <objects/seqfeat/MultiOrgName.hpp>
@@ -109,7 +110,6 @@
 #include <objects/seqfeat/Variation_ref.hpp>
 #include <objects/seqfeat/Variation_inst.hpp>
 #include <objects/seqfeat/Delta_item.hpp>
-#include <objects/general/Dbtag.hpp>
 #include <objects/seqfeat/SeqFeatSupport.hpp>
 #include <objects/seqfeat/InferenceSupport.hpp>
 #include <objects/seqfeat/EvidenceBasis.hpp>
@@ -340,6 +340,10 @@ void x_BasicCleanupSeqFeat_cit_cit_pub_ETC( Tcontainer_ncbi_cref_cpub_ & arg0 );
   void x_BasicCleanupSeqFeat_cit_ETC( CPub_set & arg0 );
   void x_BasicCleanupSeqFeat_comment_ETC( std::string & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_org_common_ETC( std::string & arg0 );
+  void x_BasicCleanupSeqFeat_dbxref_E_E_ETC( CDbtag & arg0 );
+  void x_BasicCleanupSeqFeat_dbxref_E_ETC( CDbtag & arg0 );
+  template< typename Tcontainer_ncbi_cref_cdbtag_ >
+void x_BasicCleanupSeqFeat_dbxref_ETC( Tcontainer_ncbi_cref_cdbtag_ & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_org_mod_E_ETC( std::string & arg0 );
   template< typename Tcontainer_std_string_ >
 void x_BasicCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_org_org_mod_ETC( Tcontainer_std_string_ & arg0 );
@@ -482,10 +486,6 @@ void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_data_set_varia
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_ETC( CVariation_ref & arg0 );
   void x_BasicCleanupSeqFeat_data_data( CSeqFeatData & arg0 );
   void x_BasicCleanupSeqFeat_data( CSeqFeatData & arg0 );
-  void x_BasicCleanupSeqFeat_dbxref_E_E_ETC( CDbtag & arg0 );
-  void x_BasicCleanupSeqFeat_dbxref_E_ETC( CDbtag & arg0 );
-  template< typename Tcontainer_ncbi_cref_cdbtag_ >
-void x_BasicCleanupSeqFeat_dbxref_ETC( Tcontainer_ncbi_cref_cdbtag_ & arg0 );
   void x_BasicCleanupSeqFeat_exts_E( CUser_object & arg0 );
   template< typename Tcontainer_ncbi_cref_cuser_object_ >
 void x_BasicCleanupSeqFeat_exts( Tcontainer_ncbi_cref_cuser_object_ & arg0 );

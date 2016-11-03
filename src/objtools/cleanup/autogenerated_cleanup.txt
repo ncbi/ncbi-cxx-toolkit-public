@@ -276,7 +276,7 @@ use m_NewCleanup.x_GBQualToOrgRef {
 
 use m_NewCleanup.x_DateStdBC { Date-std }
 
-use m_NewCleanup.DbtagBC { Seq-feat.dbxref.E }
+use m_NewCleanup.DbtagBC { Seq-feat.dbxref.E, Org-ref.db.E }
 
 use m_NewCleanup.DeltaExtBC { Seq-inst.ext.delta AND Seq-inst }
 
