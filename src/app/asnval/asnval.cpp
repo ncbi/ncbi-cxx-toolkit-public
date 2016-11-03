@@ -379,7 +379,7 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
     }
     m_In = OpenFile(fname);
     if (m_In.get() == 0) {
-        ERR_POST("Unable to open " + fname);
+        NCBI_THROW(CException, eUnknown, "Unable to open " + fname);
     } else {
         try {
             if ( NStr::Equal(args["a"].AsString(), "t")) {          // Release file
