@@ -702,12 +702,13 @@ bool CMainLoopThread::CImpl::MoreJobs(const SEntry& /*entry*/)
 bool CMainLoopThread::CImpl::CheckEntry(
         SEntry& entry,
         const string& prio_aff_list,
+        bool all_affinities,
         CNetScheduleJob& job,
         CNetScheduleAPI::EJobStatus* /*job_status*/)
 {
     CNetServer server(m_API.GetService()->GetServer(entry.server_address));
     return m_WorkerNode->m_NSExecutor->x_GetJobWithAffinityLadder(server,
-            m_Timeout, prio_aff_list, job);
+            m_Timeout, prio_aff_list, all_affinities, job);
 }
 
 void CMainLoopThread::CImpl::ReturnJob(CNetScheduleJob& job)

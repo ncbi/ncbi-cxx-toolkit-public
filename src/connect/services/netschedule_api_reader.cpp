@@ -102,6 +102,7 @@ static bool s_ParseReadJobResponse(const string& response,
 bool SNetScheduleJobReaderImpl::CImpl::CheckEntry(
         SEntry& entry,
         const string& prio_aff_list,
+        bool all_affinities,
         CNetScheduleJob& job,
         CNetScheduleAPI::EJobStatus* job_status)
 {

@@ -252,7 +252,7 @@ CNetScheduleGetJob::EResult CNetScheduleGetJobImpl<TImpl>::GetJobImmediately(TJo
             bool all_affinities = true;
             const string& prio_aff_list(holder.Affinity(all_affinities));
 
-            if (m_Impl.CheckEntry(*i, prio_aff_list,
+            if (m_Impl.CheckEntry(*i, prio_aff_list, all_affinities,
                         holder.job, holder.job_status)) {
                 if (i == m_ImmediateActions.begin()) {
                     increment = true;

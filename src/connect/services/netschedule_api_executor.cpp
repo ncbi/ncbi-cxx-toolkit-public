@@ -358,9 +358,14 @@ bool SNetScheduleExecutorImpl::ExecGET(SNetServerImpl* server,
 
 bool SNetScheduleExecutorImpl::x_GetJobWithAffinityLadder(
         SNetServerImpl* server, const CDeadline& timeout, 
-        const string& prio_aff_list, CNetScheduleJob& job)
+        const string& prio_aff_list, bool all_affinities, CNetScheduleJob& job)
 {
-    string cmd(s_GET2(m_AffinityPreference));
+    // Ask for any affinity (if configured) only when all affinities are requested
+    // (fewer affinites are requested when we already have a job).
+    const auto affinity_preference = all_affinities ? m_AffinityPreference :
+        CNetScheduleExecutor::eExplicitAffinitiesOnly;
+
+    string cmd(s_GET2(affinity_preference));
     const bool have_affinities = !prio_aff_list.empty();
 
     if (have_affinities) cmd += " aff=" + prio_aff_list;

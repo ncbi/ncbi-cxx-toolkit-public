@@ -442,6 +442,7 @@ struct SNetScheduleExecutorImpl : public CObject
     bool x_GetJobWithAffinityLadder(SNetServerImpl* server,
             const CDeadline& timeout,
             const string& prio_aff_list,
+            bool all_affinities,
             CNetScheduleJob& job);
 
     void ExecWithOrWithoutRetry(const CNetScheduleJob& job, const string& cmd);
@@ -531,6 +532,7 @@ private:
         bool CheckEntry(
                 SEntry& entry,
                 const string& prio_aff_list,
+                bool all_affinities,
                 CNetScheduleJob& job,
                 CNetScheduleAPI::EJobStatus* job_status);
         void ReturnJob(CNetScheduleJob& job);
