@@ -73,6 +73,7 @@ an_core needs $(GPIPE_GENCOLL_LIBS)
 an_core needs 16S_common
 an_core needs gpinit_bag_util
 an_core needs gpipe_an_base
+an_core needs gpipe_fileutils
 an_core needs gpipe_kmer
 an_core needs pathogen_connection
 an_core needs reftrack_access
@@ -828,6 +829,7 @@ pathogen_cluster_loader needs xasmcompare
 pathogen_cluster_loader needs xconnect
 pathogen_connection needs gpipe_common
 pathogen_connection needs gpipe_dateutil
+pathogen_connection needs taxon1
 pathogen_ctl needs $(GPIPE_COMMON_LIBS)
 pathogen_ctl needs bag_access
 pathogen_ctl needs gpipe_kmer
