@@ -326,7 +326,6 @@ bool CVcfWriter::x_WriteFeature(
     string ref;
     vector<string> alt;
     list<int> alt_types;
-    int count = 0;
     switch(vr.GetData().Which())
     {
     case  CVariation_Base::C_Data::e_Instance : x_GetTypeRefAlt(vr.GetData().GetInstance(),type,ref,alt_types, alt); break;
@@ -336,11 +335,6 @@ bool CVcfWriter::x_WriteFeature(
 
             if ( (*inst)->IsSetData() && (*inst)->GetData().IsInstance() ) {
                 x_GetTypeRefAlt((*inst)->GetData().GetInstance(), type, ref, alt_types, alt);
-
-    //            const int current_type = (*inst)->GetData().GetInstance().GetType();
-    //            if (current_type != CVariation_inst::eType_identity) {
-    //                alt_types.push_back(current_type);
-    //            }
             }
         }
 
