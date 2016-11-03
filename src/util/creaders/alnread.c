@@ -2689,8 +2689,7 @@ static EBool s_IsOrganismComment (TCommentLocPtr clp)
 
 
 /* This function finds an organism comment, which includes the first bracketed
- * comment with org= or organism=, plus any additional bracketed comments
- * separated only by whitespace from the org= or organism= comment.
+ * comment with org= or organism=, plus any additional bracketed comments.
  * The function returns a pointer to a SCommentLoc structure describing
  * the location of the organism comment.
  */
@@ -2712,10 +2711,9 @@ static TCommentLocPtr s_FindOrganismComment (char * string)
     }
 
     next_clp = s_FindComment (clp->end);
-    while (next_clp != NULL  && 
-        (int) strspn (clp->end + 1, " \t\r") == next_clp->start - clp->end - 1
-        &&  ! s_IsOrganismComment (next_clp))
-    {
+	while (next_clp != NULL &&
+		   !s_IsOrganismComment(next_clp))
+	{
         clp->end = next_clp->end;
         next_clp = s_FindComment (clp->end);
     }
@@ -2932,6 +2930,7 @@ static void s_ReadOrgNamesFromText
       s_ReportOrgCommentError (string, afrp->report_error, afrp->report_error_userdata);
     }
     while (clp != NULL) {
+
         org_name = s_CreateOrderedOrgName (clp);
         afrp->organisms = s_AddLineInfo (afrp->organisms, org_name, line_num,
                                        clp->start - string);
