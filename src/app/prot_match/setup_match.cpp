@@ -33,7 +33,7 @@ public:
 
 private:
     CSeq_entry_Handle x_GetNucleotideSEH(CSeq_entry_Handle seh);
-    bool x_GetSequenceIdFromCDSs(CSeq_entry_Handle& seh, CRef<CSeq_id>& prod_id);
+    bool x_GetNucSeqIdFromCDSs(CSeq_entry_Handle& seh, CRef<CSeq_id>& nucseq_id);
     bool x_UpdateSequenceIds(CRef<CSeq_id>& new_id, 
                              CSeq_entry_Handle& nucleotide_seh,
                              CSeq_entry_Handle& nuc_prot_seh);
@@ -41,9 +41,9 @@ private:
     bool x_TryReadSeqEntry(CObjectIStream& istr, CSeq_entry& seq_entry) const;
     bool x_TryReadBioseqSet(CObjectIStream& istr, CSeq_entry& seq_entry) const;
     CObjectIStream* x_InitInputStream(const CArgs& args);
-    void x_GetNucProtSets(CSeq_entry_Handle seh, list<CSeq_entry_Handle>& nucProtSets) const;
-    void x_ProcessNucProtSets(const CArgs& args, list<CSeq_entry_Handle>& nuc_prot_sets);
-    void x_WriteSeqEntry(const string& filename, const CSeq_entry& seq_entry, bool AsBinary);
+    void x_GetNucProtSets(CSeq_entry_Handle seh, list<CSeq_entry_Handle>& nucprot_sets) const;
+    void x_ProcessNucProtSets(const CArgs& args, list<CSeq_entry_Handle>& nucprot_sets);
+    void x_WriteSeqEntry(const string& filename, const CSeq_entry& seq_entry, bool binary);
 };
 
 
@@ -122,11 +122,11 @@ bool CSetupProtMatchApp::x_TryReadBioseqSet(CObjectIStream& istr, CSeq_entry& se
 
 void CSetupProtMatchApp::x_WriteSeqEntry(const string& filename, 
         const CSeq_entry& seq_entry,
-        const bool AsBinary)
+        const bool as_binary)
 {
 
     try {
-        unique_ptr<CObjectOStream> pOstr(x_InitOutputStream(filename, AsBinary));
+        unique_ptr<CObjectOStream> pOstr(x_InitOutputStream(filename, as_binary));
         *pOstr << seq_entry;
     } catch (CException& e) {
         NCBI_THROW(CProteinMatchException, 
@@ -141,8 +141,8 @@ void CSetupProtMatchApp::x_ProcessNucProtSets(const CArgs& args, list<CSeq_entry
     CRef<CScope> gb_scope = Ref(new CScope(*obj_mgr));
     gb_scope->AddDataLoader("GBLOADER");
 
-    const bool AsBinary = true;
-    const bool AsText = false;
+    const bool as_binary = true;
+    const bool as_text = false;
 
     const bool multiple_sets = (nuc_prot_sets.size() > 1);
 
@@ -174,7 +174,7 @@ void CSetupProtMatchApp::x_ProcessNucProtSets(const CArgs& args, list<CSeq_entry
                filename += NStr::NumericToString(count);
            }
            filename += ".asn";
-           unique_ptr<CObjectOStream> pOstr(x_InitOutputStream(filename, AsBinary));
+           unique_ptr<CObjectOStream> pOstr(x_InitOutputStream(filename, as_binary));
            *pOstr << *gb_tse;
        } catch (CException& e) {
            NCBI_THROW(CProteinMatchException,
@@ -193,7 +193,7 @@ void CSetupProtMatchApp::x_ProcessNucProtSets(const CArgs& args, list<CSeq_entry
                 filename += NStr::NumericToString(count);
             }
             filename += ".asn";
-            unique_ptr<CObjectOStream> pOstr(x_InitOutputStream(filename, AsText));
+            unique_ptr<CObjectOStream> pOstr(x_InitOutputStream(filename, as_text));
             *pOstr << *gb_nuc_seh.GetCompleteSeq_entry();
         } catch (CException& e) {
            NCBI_THROW(CProteinMatchException,
@@ -202,8 +202,7 @@ void CSetupProtMatchApp::x_ProcessNucProtSets(const CArgs& args, list<CSeq_entry
         }
 
         CRef<CSeq_id> local_id;
-        if (x_GetSequenceIdFromCDSs(nuc_prot_seh, local_id)) {
-            //x_UpdateSequenceIds(local_id, nuc_prot_seh); 
+        if (x_GetNucSeqIdFromCDSs(nuc_prot_seh, local_id)) {
             x_UpdateSequenceIds(local_id, nucleotide_seh, nuc_prot_seh); 
         }
 
@@ -215,7 +214,7 @@ void CSetupProtMatchApp::x_ProcessNucProtSets(const CArgs& args, list<CSeq_entry
                 filename += NStr::NumericToString(count);
             }
             filename += ".asn";
-            unique_ptr<CObjectOStream> pOstr(x_InitOutputStream(filename, AsBinary));
+            unique_ptr<CObjectOStream> pOstr(x_InitOutputStream(filename, as_binary));
             *pOstr << *nuc_prot_seh.GetCompleteSeq_entry();
         } catch (CException& e) {
             NCBI_THROW(CProteinMatchException, 
@@ -232,7 +231,7 @@ void CSetupProtMatchApp::x_ProcessNucProtSets(const CArgs& args, list<CSeq_entry
                 filename += NStr::NumericToString(count);
             }
             filename += ".asn";
-            unique_ptr<CObjectOStream> pOstr(x_InitOutputStream(filename, AsText));
+            unique_ptr<CObjectOStream> pOstr(x_InitOutputStream(filename, as_text));
             *pOstr << *nucleotide_seh.GetCompleteSeq_entry();
         } catch (CException& e) {
             NCBI_THROW(CProteinMatchException,
@@ -398,7 +397,7 @@ struct SEquivalentTo
 
 // Search for a unique id in the Seq-locs appearing in CDS features in the sequence annotations. If found,
 // convert to a local ID and return true. Else, return false.
-bool CSetupProtMatchApp::x_GetSequenceIdFromCDSs(CSeq_entry_Handle& seh, CRef<CSeq_id>& id)
+bool CSetupProtMatchApp::x_GetNucSeqIdFromCDSs(CSeq_entry_Handle& seh, CRef<CSeq_id>& id)
 {
     // Set containing distinct product ids
     set<CRef<CSeq_id>> ids;
@@ -414,20 +413,17 @@ bool CSetupProtMatchApp::x_GetSequenceIdFromCDSs(CSeq_entry_Handle& seh, CRef<CS
         for (CSeq_annot_ftable_CI fi(sah); fi; ++fi) {
             const CSeq_feat_Handle& sfh = *fi;
 
-            if (!sfh.IsSetProduct()) { // Skip if product not specified
+            if (!sfh.IsSetData() ||
+                !sfh.GetData().IsCdregion()) {
                 continue;
             }
 
-            CRef<CSeq_id> product_id = Ref(new CSeq_id());
-            product_id->Assign(*(sfh.GetLocation().GetId()));
+            CRef<CSeq_id> nucseq_id = Ref(new CSeq_id());
+            nucseq_id->Assign(*(sfh.GetLocation().GetId()));
 
-            if (!product_id) {
-                continue;
-            }
-            
             if (ids.empty() || 
-                find_if(ids.begin(), ids.end(), SEquivalentTo(product_id)) == ids.end()) {
-                ids.insert(product_id);
+                find_if(ids.begin(), ids.end(), SEquivalentTo(nucseq_id)) == ids.end()) {
+                ids.insert(nucseq_id);
             }
         }
     }
@@ -442,11 +438,9 @@ bool CSetupProtMatchApp::x_GetSequenceIdFromCDSs(CSeq_entry_Handle& seh, CRef<CS
         return false;
     }
 
-    CRef<CSeq_id> sannot_id = *(ids.begin());
-
+    CRef<CSeq_id> nucseq_id = *(ids.begin());
     const bool with_version = true;
-    string local_id_string = sannot_id->GetSeqIdString(with_version);
-
+    string local_id_string = nucseq_id->GetSeqIdString(with_version);
 
     if (id.IsNull()) {
         id = Ref(new CSeq_id());
