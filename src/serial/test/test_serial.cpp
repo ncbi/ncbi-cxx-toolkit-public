@@ -281,6 +281,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
             CObjectIStream::Open(eSerial_AsnText, istrs));
         Serial_FilterStdObjects<CTestSerialObject>(*is, new CStringObjectHook);
     }
+#if !defined(NCBI_COMPILER_GCC) || defined(_MT) || NCBI_COMPILER_VERSION > 480
     {
         // find serial objects of a specific type
         // process them right here
@@ -402,6 +403,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
             LOG_POST("CIStreamStdIterator: obj = " << obj);
         });
     }
+#endif  //!defined(NCBI_COMPILER_GCC) || defined(_MT) || NCBI_COMPILER_VERSION > 480
 }
 #endif    
 
