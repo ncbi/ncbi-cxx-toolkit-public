@@ -472,7 +472,8 @@ CRef < CBioseq > FetchSequenceViaHTTP(const string& id)
     for (unsigned int round=1; round<=2 && bioseq.Empty(); ++round) {
         string db = (round == 1) ? "protein" : "nucleotide";
         INFOMSG("Trying to load sequence from URL " << host << path << '?' << (args + "&db=" + db));
-        bool ok = GetAsnDataViaHTTP(host, path, (args + "&db=" + db), &seqEntry, &err);
+
+        bool ok = GetAsnDataViaHTTPS(host, path, (args + "&db=" + db), &seqEntry, &err);
         if (ok) {
             if (seqEntry.IsSeq())
                 bioseq.Reset(&(seqEntry.SetSeq()));

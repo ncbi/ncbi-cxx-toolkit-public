@@ -825,7 +825,7 @@ static bool GetInteractionDataFromIbis(CSeq_annot& ibisSeqAnnot, IbisQuery& quer
     //  runs the risk that the returned interactions are mapped onto an updated
     //  version of the sequence, not the sequence referenced by the mmdb-id in the CD]. 
     INFOMSG("try to load IBIS alignment data by mmdb-id from " << host << path << '?' << args);
-    result = GetAsnDataViaHTTP(host, path, args, &ibisSeqAnnot, &err, false);
+    result = GetAsnDataViaHTTPS(host, path, args, &ibisSeqAnnot, &err, false);
     if (!result) {
         ERRORMSG("Error getting interaction data from ibis.cgi:\n" << err);
     } else {
@@ -840,7 +840,7 @@ static bool GetInteractionDataFromIbis(CSeq_annot& ibisSeqAnnot, IbisQuery& quer
 
                 INFOMSG("try to load IBIS alignment data by pdb accession from " << host << path << '?' << args);
                 err.erase();
-                result = GetAsnDataViaHTTP(host, path, args, &ibisSeqAnnot, &err, false);
+                result = GetAsnDataViaHTTPS(host, path, args, &ibisSeqAnnot, &err, false);
                 if (!result) {
                     ERRORMSG("Error getting interaction data by pdb accession from ibis.cgi:\n" << err);
                 } else {

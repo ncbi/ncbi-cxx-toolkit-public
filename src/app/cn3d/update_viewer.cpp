@@ -476,8 +476,9 @@ void UpdateViewer::GetVASTAlignments(const SequenceList& newSequences,
         // connect to vastalign.cgi
         CBiostruc_annot_set structureAlignment;
         INFOMSG("trying to load VAST alignment data from " << host << path << '?' << args);
-        if (!GetAsnDataViaHTTP(host, path, args, &structureAlignment, &err)) {
-            ERRORMSG("Error calling vastalign.cgi: " << err);
+
+        if (!GetAsnDataViaHTTPS(host, path, args, &structureAlignment, &err)) {
+                ERRORMSG("Error calling vastalign.cgi: " << err);
             BlockMultipleAlignment *newAlignment = MakeEmptyAlignment(master, *s);
             if (newAlignment) newAlignments->push_back(newAlignment);
             continue;

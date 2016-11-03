@@ -194,7 +194,7 @@ static CNcbi_mime_asn1 * GetStructureViaHTTPAndAddToCache(
     string err;
     CRef < CNcbi_mime_asn1 > mime(new CNcbi_mime_asn1());
 
-    if (!GetAsnDataViaHTTP(host, path, args, mime.GetPointer(), &err) ||
+    if (!GetAsnDataViaHTTPS(host, path, args, mime.GetPointer(), &err) ||
             !mime->IsStrucseq()) {
         ERRORMSG("Failed to read structure " << uid << " from network\nreason: " << err);
         return NULL;

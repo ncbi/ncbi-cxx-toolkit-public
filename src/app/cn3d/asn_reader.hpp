@@ -137,8 +137,10 @@ bool WriteASNToFile(const char *filename, const ASNClass& ASNobject, bool isBina
     return okay;
 }
 
+//  ***  Do not use:  always uses http, even if give port = 443  ***
 // for loading ASN data via HTTP connection
 template < class ASNClass >
+NCBI_DEPRECATED
 bool GetAsnDataViaHTTP(
     const std::string& host, const std::string& path, const std::string& args,
     ASNClass *asnObject, std::string *err, bool binaryData = true, unsigned short port = 80)
@@ -173,6 +175,58 @@ bool GetAsnDataViaHTTP(
     ncbi::SetDiagTrace(ncbi::eDT_Default);
 
     CORE_SetREG(origREG);
+    return okay;
+}
+
+// for loading ASN data via HTTPS connection
+template < class ASNClass >
+bool GetAsnDataViaHTTPS(
+    const string& host, const string& path, const string& args,
+    ASNClass *asnObject, string *err,
+    bool binaryData = true)
+
+    //
+    // Makes a simple attempt to enforce to URLs like
+    //
+    //   https://host/....
+    //
+    // a)  prepend 'https://' if 'host' does not start with it
+    // b)  if 'host' starts with non-secure 'http://', change to 'https://'
+    //
+    // for loading ASN data via HTTPS connection
+    // 
+{
+    err->erase();
+    bool okay = false;
+    string hostCopy(host), url;
+
+    if (NStr::StartsWith(host, "http://"))
+        hostCopy = "https://" + host.substr(7);
+    else if (!NStr::StartsWith(host, "https://"))
+        hostCopy = "https://" + host;
+
+    url = hostCopy + path + "?" + args;
+
+    if (!asnObject) {
+        if (err) *err = "GetAsnDataViaHTTPS:  Empty object pointer provided.";
+        return false;
+    }
+
+    try {
+        // load data from stream using given URL params
+        CConn_HttpStream httpsStream(url);
+        ESerialDataFormat dataFormat = (binaryData) ? eSerial_AsnBinary : eSerial_AsnText;
+        // cout << httpsStream.GetType() << ", " << httpsStream.GetDescription() << endl;
+
+        NS_AUTO_PTR<CObjectIStream> inObject(CObjectIStream::Open(dataFormat, httpsStream));
+        *inObject >> *asnObject;
+        okay = true;
+
+    }
+    catch (exception& e) {
+        *err = e.what();
+    }
+
     return okay;
 }
 
