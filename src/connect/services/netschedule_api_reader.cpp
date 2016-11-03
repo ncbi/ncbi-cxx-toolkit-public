@@ -117,7 +117,16 @@ bool SNetScheduleJobReaderImpl::CImpl::CheckEntry(
         cmd.append(m_Affinity);
     } else if (!prio_aff_list.empty()) {
         prioritized_aff = true;
-        cmd.append("any_aff=0 aff=");
+
+        // Ask for any affinity (if configured) only when all affinities are requested
+        // (fewer affinites are requested when we already have a job).
+        if (all_affinities &&
+                m_API->m_AffinityPreference == CNetScheduleExecutor::eAnyJob) {
+            cmd.append("any_aff=1 aff=");
+        } else {
+            cmd.append("any_aff=0 aff=");
+        }
+
         cmd.append(prio_aff_list);
     } else {
         cmd.append("any_aff=1");
