@@ -2542,10 +2542,10 @@ void CValidError_feat::ValidateSpliceExon(const CSeq_feat& feat, const CBioseq_H
     bool rare_consensus_not_expected = s_RareConsensusNotExpected (bsh);
 
     // Find overlapping feature - mRNA or gene - to identify start / stop exon
-    bool overlap_feat_partial_5; // set to true if 5'- most start of overlapping feature is partial
-    bool overlap_feat_partial_3; // set to true if 3'- most end of overlapping feature is partial
-    TSeqPos  overlap_feat_start; // start position of overlapping feature
-    TSeqPos  overlap_feat_stop;  // stop position of overlapping feature
+    bool overlap_feat_partial_5 = false; // set to true if 5'- most start of overlapping feature is partial
+    bool overlap_feat_partial_3 = false; // set to true if 3'- most end of overlapping feature is partial
+    TSeqPos  overlap_feat_start = 0; // start position of overlapping feature
+    TSeqPos  overlap_feat_stop = 0;  // stop position of overlapping feature
 
     bool overlap_feat_exists = false;
     // Locate overlapping mRNA feature
