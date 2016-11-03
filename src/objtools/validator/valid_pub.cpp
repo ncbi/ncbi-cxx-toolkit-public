@@ -1047,11 +1047,7 @@ void CValidError_imp::ValidateCitSub
     }
 
     if ( !has_name ) {
-        EDiagSev sev = eDiag_Critical;
-        if (IsGenbank() || IsRefSeq()) {
-            sev = eDiag_Warning;
-        }
-        PostObjErr(sev, eErr_GENERIC_MissingPubInfo,
+        PostObjErr(eDiag_Critical, eErr_GENERIC_MissingPubInfo,
             "Submission citation has no author names", obj, ctx);
     }
     if ( !has_affil ) {

@@ -8889,7 +8889,7 @@ BOOST_AUTO_TEST_CASE(Test_Generic_MissingPubInfo)
         pub->SetSub().SetAuthors().SetNames().SetStd().pop_back();
 
         expected_errors[0]->SetErrMsg("Submission citation has no author names");
-        expected_errors[0]->SetSeverity(sev);
+        expected_errors[0]->SetSeverity(eDiag_Critical);
         eval = validator.Validate(seh, options);
         CheckErrors (*eval, expected_errors);
         CLEAR_ERRORS
