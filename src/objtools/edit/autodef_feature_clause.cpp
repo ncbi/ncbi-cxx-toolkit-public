@@ -198,6 +198,7 @@ bool CAutoDefFeatureClause::IsRecognizedFeature()
         || subtype == CSeqFeatData::eSubtype_misc_RNA
         || subtype == CSeqFeatData::eSubtype_ncRNA
         || subtype == CSeqFeatData::eSubtype_preRNA
+        || subtype == CSeqFeatData::eSubtype_tmRNA
         || subtype == CSeqFeatData::eSubtype_D_loop
         || subtype == CSeqFeatData::eSubtype_regulatory
         || subtype == CSeqFeatData::eSubtype_misc_recomb
@@ -653,6 +654,9 @@ bool CAutoDefFeatureClause::x_GetProductName(string &product_name)
             product_name = comment;
             return true;
         }
+    } else if (m_MainFeat.GetData().GetSubtype() == CSeqFeatData::eSubtype_tmRNA) {
+        product_name = "tmRNA";
+        return true;
     } else if (m_MainFeat.GetData().Which() == CSeqFeatData::e_Rna) {
         product_name = m_MainFeat.GetData().GetRna().GetRnaProductName();
         if (NStr::IsBlank(product_name) && m_MainFeat.IsSetComment()) {
@@ -1193,6 +1197,7 @@ bool CAutoDefFeatureClause::AddGene (CAutoDefFeatureClause_Base *gene_clause, bo
         && subtype != CSeqFeatData::eSubtype_ncRNA
         && subtype != CSeqFeatData::eSubtype_precursor_RNA
         && subtype != CSeqFeatData::eSubtype_preRNA
+        && subtype != CSeqFeatData::eSubtype_tmRNA
         && subtype != CSeqFeatData::eSubtype_intron
         && subtype != CSeqFeatData::eSubtype_exon
         && !x_GetNoncodingProductFeatProduct(noncoding_product_name)) {
