@@ -53,6 +53,7 @@
 
 BEGIN_NCBI_SCOPE
 
+#if defined(NCBI_THREADS)
 
 /////////////////////////////////////////////////////////////////////////////
 ///   CObjectIStreamAsyncIterator
@@ -250,6 +251,7 @@ public:
     ~CObjectIStreamAsyncIterator();
 };
 
+#endif // NCBI_THREADS
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -425,6 +427,8 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 ///  CObjectIStreamIterator<TRoot, TChild>
 
+#if defined(NCBI_THREADS)
+
 template<typename TRoot, typename TChild>
 class CObjectIStreamIterator<TRoot, TChild>
     : public iterator< input_iterator_tag, TChild, ptrdiff_t, TChild*, TChild& >
@@ -483,6 +487,8 @@ private:
     };
     shared_ptr<CData> m_Data;
 };
+
+#endif // NCBI_THREADS
 
 /////////////////////////////////////////////////////////////////////////////
 ///  CObjectIStreamIterator<TRoot> implementation
@@ -600,6 +606,8 @@ CObjectIStreamIterator<TRoot>
 CObjectIStreamIterator<TRoot>::end(void) {
     return CObjectIStreamIterator<TRoot>();
 }
+
+#if defined(NCBI_THREADS)
 
 /////////////////////////////////////////////////////////////////////////////
 ///  CObjectIStreamIterator<TRoot, TChild> implementation
@@ -1340,7 +1348,6 @@ CObjectIStreamAsyncIterator<TRoot, TChild>::sx_ClearGarbageAndParse(
 //
 // IMPORTANT: this API is deprecated, use CObjectIStreamIterator instead (defined above)
 
-#if defined(NCBI_THREADS)
 
 template<typename TRoot, typename TObject>
 class CIStreamIteratorThread_Base;
