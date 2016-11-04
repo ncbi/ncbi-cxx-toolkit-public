@@ -111,6 +111,8 @@ class CRemoteAppReaper
             void Stop()
             {
                 try {
+                    if (Discard()) return;
+
                     m_Context.CollectorImplStop();
                     Join();
                 } STD_CATCH_ALL("Exception in CCollector::SThread::Stop()")
