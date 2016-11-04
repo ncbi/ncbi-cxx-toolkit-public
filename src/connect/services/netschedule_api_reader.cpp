@@ -102,7 +102,7 @@ static bool s_ParseReadJobResponse(const string& response,
 bool SNetScheduleJobReaderImpl::CImpl::CheckEntry(
         SEntry& entry,
         const string& prio_aff_list,
-        bool all_affinities,
+        bool any_affinity,
         CNetScheduleJob& job,
         CNetScheduleAPI::EJobStatus* job_status)
 {
@@ -118,9 +118,9 @@ bool SNetScheduleJobReaderImpl::CImpl::CheckEntry(
     } else if (!prio_aff_list.empty()) {
         prioritized_aff = true;
 
-        // Ask for any affinity (if configured) only when all affinities are requested
-        // (fewer affinites are requested when we already have a job).
-        if (all_affinities &&
+        // Ask for any affinity only when requested and configured
+        // (it's not requested when we have a job already).
+        if (any_affinity &&
                 m_API->m_AffinityPreference == CNetScheduleExecutor::eAnyJob) {
             cmd.append("any_aff=1 aff=");
         } else {

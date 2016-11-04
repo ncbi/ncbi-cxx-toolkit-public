@@ -346,7 +346,7 @@ private:
         bool CheckEntry(
                 SEntry& entry,
                 const string& prio_aff_list,
-                bool all_affinities,
+                bool any_affinity,
                 CNetScheduleJob& job,
                 CNetScheduleAPI::EJobStatus* job_status);
         void ReturnJob(CNetScheduleJob& job);

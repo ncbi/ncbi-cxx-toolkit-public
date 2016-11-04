@@ -70,13 +70,13 @@ struct CNetScheduleGetJob
     {
         SServerAddress server_address;
         CDeadline deadline;
-        bool all_affinities;
+        bool all_affinities_checked;
         bool more_jobs;
 
         SEntry(const SServerAddress& a, bool j = true) :
             server_address(a),
             deadline(0, 0),
-            all_affinities(true),
+            all_affinities_checked(true),
             more_jobs(j)
         {
         }

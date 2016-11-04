@@ -79,7 +79,7 @@ public:
     void Interrupt()                {}
     TIterator Begin()               { return m_Timeline.begin(); }
     TIterator Next(bool)            { return m_Timeline.begin(); }
-    const string& Affinity(bool&) const { return kEmptyStr; }
+    const string& Affinity() const  { return kEmptyStr; }
     bool Done()                     { return true; }
     bool HasJob() const             { return false; }
 
@@ -138,7 +138,7 @@ public:
         return ++ret;
     }
 
-    const string& Affinity(bool& all_affinities) const
+    const string& Affinity() const
     {
         // Must not happen, since otherwise Done() has returned true already
         _ASSERT(m_JobPriority);
@@ -148,11 +148,9 @@ public:
 
         if (HasJob()) {
             // Only affinities that are higher that current job's one
-            all_affinities = false;
             return affinity_ladder[m_JobPriority - 1].second;
         } else {
             // All affinities
-            all_affinities = true;
             return affinity_ladder.back().second;
         }
     }
@@ -248,11 +246,11 @@ CNetScheduleGetJob::EResult CNetScheduleGetJobImpl<TImpl>::GetJobImmediately(TJo
 
         try {
             // Get prioritized affinity list and
-            // a flag whether the list contains all possible affinities
-            bool all_affinities = true;
-            const string& prio_aff_list(holder.Affinity(all_affinities));
+            // a flag whether any affinity job is appropriate
+            const string& prio_aff_list = holder.Affinity();
+            const bool any_affinity = !holder.HasJob();
 
-            if (m_Impl.CheckEntry(*i, prio_aff_list, all_affinities,
+            if (m_Impl.CheckEntry(*i, prio_aff_list, any_affinity,
                         holder.job, holder.job_status)) {
                 if (i == m_ImmediateActions.begin()) {
                     increment = true;
@@ -275,7 +273,7 @@ CNetScheduleGetJob::EResult CNetScheduleGetJobImpl<TImpl>::GetJobImmediately(TJo
                 // No job has been returned by this server;
                 // query the server later.
                 i->deadline = CDeadline(m_Impl.m_Timeout, 0);
-                i->all_affinities = all_affinities;
+                i->all_affinities_checked = any_affinity;
                 m_ScheduledActions.splice(m_ScheduledActions.end(),
                         m_ImmediateActions, i);
             }
@@ -443,7 +441,7 @@ void CNetScheduleGetJobImpl<TImpl>::ReturnNotFullyCheckedServers()
     TIterator i = m_ScheduledActions.begin();
 
     while (i != m_ScheduledActions.end()) {
-        if (i->all_affinities) {
+        if (i->all_affinities_checked) {
             ++i;
         } else {
             m_ImmediateActions.splice(m_ImmediateActions.end(),
