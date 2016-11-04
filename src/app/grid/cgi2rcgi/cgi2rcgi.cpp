@@ -41,6 +41,7 @@
 
 #include <util/xregexp/regexp.hpp>
 #include <util/checksum.hpp>
+#include <util/retry_ctx.hpp>
 
 #include <connect/services/grid_client.hpp>
 #include <connect/services/grid_app_version_info.hpp>
@@ -951,6 +952,9 @@ void CCgi2RCgiApp::DefineRefreshTags(const string& url, int idelay)
         // Must correspond to SRCgiWait values
         m_Response->SetHeaderValue("NCBI-RCGI-RetryURL", url);
         m_Response->SetHeaderValue("NCBI-RCGI-RetryDelay", idelay_str);
+
+        m_Response->SetHeaderValue(CHttpRetryContext::kHeader_Url, url);
+        m_Response->SetHeaderValue(CHttpRetryContext::kHeader_Delay, idelay_str);
     }
 }
 
