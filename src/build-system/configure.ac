@@ -8462,6 +8462,11 @@ done
 dnl Try to build simple helpers
 (cd $builddir/build-system/helpers && $MAKE -k)
 
+dnl Generated header containing random compile-time values, produced by
+dnl either project_tree_builder (alongside Makefile.flat) or fallback logic.
+random_macro="$build_root/inc/ncbi_random_macro.h"
+rm -f $random_macro
+
 dnl Create Makefile.flat if requested
 if test "$with_configure_dialog" = yes; then
    if test "$with_flat_makefile" = no; then
@@ -8496,6 +8501,10 @@ if test "$with_flat_makefile" != "no"; then
       $EGREP 'Error:|already defined' "$builddir/Flat.configuration_log"
       AC_MSG_ERROR([flat makefile generation failed.])
    fi
+fi
+
+if test ! -f "$random_macro"; then
+   $real_srcdir/scripts/common/impl/define_random_macros.sh >$random_macro
 fi
 
 dnl execute extra-action

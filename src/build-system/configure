@@ -49774,6 +49774,9 @@ done
 
 (cd $builddir/build-system/helpers && $MAKE -k)
 
+random_macro="$build_root/inc/ncbi_random_macro.h"
+rm -f $random_macro
+
 if test "$with_configure_dialog" = yes; then
    if test "$with_flat_makefile" = no; then
       { { echo "$as_me:$LINENO: error: incompatible options: --without-flat-makefile but --with-configure-dialog." >&5
@@ -49813,6 +49816,10 @@ if test "$with_flat_makefile" != "no"; then
 echo "$as_me: error: flat makefile generation failed." >&2;}
    { (exit 1); exit 1; }; }
    fi
+fi
+
+if test ! -f "$random_macro"; then
+   $real_srcdir/scripts/common/impl/define_random_macros.sh >$random_macro
 fi
 
 if test -n "$with_extra_action" ; then
