@@ -37,26 +37,6 @@
 BEGIN_NCBI_SCOPE
 
 
-// HTTP headers controlling retries.
-
-// Stop retries if set, value describes the reason.
-const char* kRetryStop = "X-NCBI-Retry-Stop";
-// Override retries delay. Use min of the header and m_RetryDelay.
-const char* kRetryDelay = "X-NCBI-Retry-Delay";
-// Add args to the request when sending next retry.
-const char* kRetryArgs = "X-NCBI-Retry-Args";
-// Use the specified URL for the next retry.
-const char* kRetryURL = "X-NCBI-Retry-URL";
-// Use different content when sending retry. The values are described below.
-const char* kRetryContent = "X-NCBI-Retry-Content";
-// Send no content whith the next retry.
-const char* kRetryContent_no_content = "no_content";
-// Send content from the last response when retrying.
-const char* kRetryContent_from_response = "from_response";
-// Send content following the prefix (URL-encoded).
-const char* kRetryContent_content = "content:";
-
-
 CRPCClient_Base::CRPCClient_Base(const string&     service,
                                  ESerialDataFormat format,
                                  unsigned int      retry_limit)
