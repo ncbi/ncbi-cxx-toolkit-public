@@ -1,7 +1,7 @@
 IF (UNIX AND NOT APPLE)
   if (EXISTS /opt/ncbi/64/trace_software/vdb/vdb-versions/2.8.0/interfaces)
     set(VDB_FOUND true)
-    set(VDB_INCLUDE /opt/ncbi/64/trace_software/vdb/vdb-versions/2.8.0/interfaces)
+    set(VDB_INCLUDE /opt/ncbi/64/trace_software/vdb/vdb-versions/2.8.0/interfaces /opt/ncbi/64/trace_software/vdb/vdb-versions/2.8.0/interfaces/os/linux /opt/ncbi/64/trace_software/vdb/vdb-versions/2.8.0/interfaces/os/unix /opt/ncbi/64/trace_software/vdb/vdb-versions/2.8.0/interfaces/cc/gcc/x86_64 /opt/ncbi/64/trace_software/vdb/vdb-versions/2.8.0/interfaces/cc/gcc)
     set(VDB_LIB "")
     set(VDB_LIBS -L/opt/ncbi/64/trace_software/vdb/vdb-versions/2.8.0/linux/release/x86_64/lib -Wl,-rpath,/opt/ncbi/64/trace_software/vdb/vdb-versions/cxx_toolkit/2/linux/release/x86_64/lib -lncbi-vdb -L/netopt/ncbi_tools64/libxml-2.7.8/GCC401-Release64/lib -Wl,-rpath,/opt/ncbi/64/libxml-2.7.8/GCC401-Release64/lib:/netopt/ncbi_tools64/libxml-2.7.8/GCC401-Release64/lib -lxml2  -lnsl -lbz2  -lz  -ldl)
     set(VDB_STATIC_LIBS -L/opt/ncbi/64/trace_software/vdb/vdb-versions/2.8.0/linux/release/x86_64/lib -Wl,-rpath,/opt/ncbi/64/trace_software/vdb/vdb-versions/cxx_toolkit/2/linux/release/x86_64/lib -lncbi-vdb -L/netopt/ncbi_tools64/libxml-2.7.8/GCC401-Release64/lib -Wl,-rpath,/opt/ncbi/64/libxml-2.7.8/GCC401-Release64/lib:/netopt/ncbi_tools64/libxml-2.7.8/GCC401-Release64/lib -lxml2  -lnsl -lbz2  -lz  -ldl)
