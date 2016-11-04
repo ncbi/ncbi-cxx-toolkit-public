@@ -98,42 +98,47 @@ class CRemoteAppReaper
         bool stop;
     };
 
-    // Collector (thread) waits/kills child processes
-    class CCollector : public CThread
+    // Collector waits/kills child processes (in a separate thread)
+    class CCollector
     {
-    public:
-        CCollector(CContext& context, const string& app_name)
-            : m_Context(context),
-              m_ThreadName(app_name + "_cl")
-        {}
-
-        void Start()
+        struct SThread : public CThread
         {
-            if (m_Context.Enabled()) {
-                Run();
-            }
-        }
+            SThread(CContext& context, const string& app_name)
+                : m_Context(context),
+                m_ThreadName(app_name + "_cl")
+            {}
 
-        ~CCollector()
-        {
-            if (m_Context.Enabled())
+            void Stop()
+            {
                 try {
                     m_Context.CollectorImplStop();
                     Join();
-                } STD_CATCH_ALL("Exception in ~CCollector()")
-        }
+                } STD_CATCH_ALL("Exception in CCollector::SThread::Stop()")
+            }
+
+        private:
+            // This is the only method called in a different thread
+            void* Main(void)
+            {
+                SetCurrentThreadName(m_ThreadName);
+                m_Context.CollectorImpl();
+                return NULL;
+            }
+
+            CContext& m_Context;
+            const string m_ThreadName;
+        };
+
+    public:
+        CCollector(CContext& context, const string& app_name)
+            : m_Thread(context.Enabled() ? new SThread(context, app_name) : nullptr)
+        {}
+
+        void Start() { if (m_Thread) m_Thread->Run(); }
+        ~CCollector() { if (m_Thread) m_Thread->Stop(); }
 
     private:
-        // This is the only method called in a different thread
-        void* Main(void)
-        {
-            SetCurrentThreadName(m_ThreadName);
-            m_Context.CollectorImpl();
-            return NULL;
-        }
-
-        CContext& m_Context;
-        const string m_ThreadName;
+        SThread* m_Thread;
     };
 
 public:
@@ -157,12 +162,12 @@ public:
     CRemoteAppReaper(int sleep, int max_attempts, const string& app_name);
 
     CManager& GetManager() { return m_Manager; }
-    void StartCollector() { m_Collector->Start(); }
+    void StartCollector() { m_Collector.Start(); }
 
 private:
     CContext m_Context;
     CManager m_Manager;
-    auto_ptr<CCollector> m_Collector;
+    CCollector m_Collector;
 };
 
 CPipe::IProcessWatcher::EAction CRemoteAppReaper::CContext::ManagerImpl(
@@ -254,7 +259,7 @@ CRemoteAppReaper::CRemoteAppReaper(int sleep, int max_attempts,
         const string& app_name)
     : m_Context(sleep, max_attempts),
       m_Manager(m_Context),
-      m_Collector(new CCollector(m_Context, app_name))
+      m_Collector(m_Context, app_name)
 {
 }
 
