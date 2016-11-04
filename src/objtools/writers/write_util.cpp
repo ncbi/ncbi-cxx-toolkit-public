@@ -715,13 +715,15 @@ bool CWriteUtil::GetQualifier(
 void CGffFeatureContext::xAssignSequenceIsGenomicRecord()
 //  ---------------------------------------------------------------------------
 {
+    m_bSequenceIsGenomicRecord = false;
+    if (!m_bsh) {
+        return;
+    }
     if (!m_bsh || !m_bsh.IsSetDescr()) {
-        m_bSequenceIsGenomicRecord = false;
         return;
     }
     const CSeq_descr& descr = m_bsh.GetDescr();
     if (!descr.CanGet()) {
-        m_bSequenceIsGenomicRecord = false;
         return;
     }
     const list< CRef< CSeqdesc > >& listDescr = descr.Get();
@@ -741,7 +743,6 @@ void CGffFeatureContext::xAssignSequenceIsGenomicRecord()
             (bioMol == CMolInfo::eBiomol_cRNA));
         return;
     }
-    m_bSequenceIsGenomicRecord = false;
     return;
 }
 
@@ -750,25 +751,39 @@ void CGffFeatureContext::xAssignSequenceHasBioSource()
 //  ---------------------------------------------------------------------------
 {
     m_bSequenceHasBioSource = false;
-    if (!m_bsh || !m_bsh.IsSetDescr()) {
-        m_bSequenceIsGenomicRecord = false;
+    if (!m_bsh) {
         return;
     }
-    const CSeq_descr& descr = m_bsh.GetDescr();
-    if (!descr.CanGet()) {
-        m_bSequenceIsGenomicRecord = false;
-        return;
-    }
-    const list< CRef< CSeqdesc > >& listDescr = descr.Get();
-    for (list< CRef< CSeqdesc > >::const_iterator cit = listDescr.begin();
-            cit != listDescr.end(); ++cit) {
-        const CSeqdesc& desc = **cit;
-        if (desc.IsSource()) {
-            m_bSequenceHasBioSource = true;
-            return;
+    if (m_bsh.IsSetDescr()) {
+        const CSeq_descr& descr = m_bsh.GetDescr();
+        if (descr.CanGet()) {
+            const list< CRef< CSeqdesc > >& listDescr = descr.Get();
+            for (list< CRef< CSeqdesc > >::const_iterator cit = listDescr.begin();
+                    cit != listDescr.end(); ++cit) {
+                const CSeqdesc& desc = **cit;
+                if (desc.IsSource()) {
+                    m_bSequenceHasBioSource = true;
+                    return;
+                }
+            }
         }
     }
-    m_bSequenceIsGenomicRecord = false;
+    CBioseq_set_Handle setH;
+    setH = m_bsh.GetParentBioseq_set();
+    if (setH  &&  setH.IsSetDescr()) {
+        const CSeq_descr& descr = setH.GetDescr();
+        if (descr.CanGet()) {
+            const list< CRef< CSeqdesc > >& listDescr = descr.Get();
+            for (list< CRef< CSeqdesc > >::const_iterator cit = listDescr.begin();
+                    cit != listDescr.end(); ++cit) {
+                const CSeqdesc& desc = **cit;
+                if (desc.IsSource()) {
+                    m_bSequenceHasBioSource = true;
+                    return;
+                }
+            }
+        }
+    }
     return;
 }
 

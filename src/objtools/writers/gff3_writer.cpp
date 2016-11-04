@@ -2480,7 +2480,9 @@ bool CGff3Writer::xAssignFeatureAttributeGeneBiotype(
     CMappedFeat mf)
 //  ----------------------------------------------------------------------------
 {
-    if (!fc.HasSequenceBioSource()  ||  fc.IsSequenceGenomicRecord()) {
+    // if a biosource is present then only compute if also is genomic record
+    // if a biosource is not present then always compute
+    if (fc.HasSequenceBioSource()  &&  !fc.IsSequenceGenomicRecord()) {
         return true;
     }
 

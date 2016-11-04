@@ -1,7 +1,7 @@
 ##gff-version 3
 #!gff-spec-version 1.21
 #!processor NCBI annotwriter
-U00096.3	Genbank	gene	190	255	.	+	.	ID=gene0;Dbxref=EcoGene:EG11277;Name=thrL;gbkey=Gene;gene=thrL;gene_synonym=ECK0001,JW4367;locus_tag=MSS635_000001
+U00096.3	Genbank	gene	190	255	.	+	.	ID=gene0;Dbxref=EcoGene:EG11277;Name=thrL;gbkey=Gene;gene=thrL;gene_biotype=lncRNA;gene_synonym=ECK0001,JW4367;locus_tag=MSS635_000001
 U00096.3	Genbank	antisense_RNA	190	199	.	+	.	ID=rna0;Parent=gene0;Dbxref=EcoGene:EG11277;gbkey=ncRNA;gene=thrL
 U00096.3	Genbank	exon	190	199	.	+	.	ID=id0;Parent=rna0;Dbxref=EcoGene:EG11277;gbkey=ncRNA;gene=thrL
 U00096.3	Genbank	antisense_RNA	200	209	.	+	.	ID=rna1;Parent=gene0;Dbxref=EcoGene:EG11277;gbkey=ncRNA;gene=thrL
