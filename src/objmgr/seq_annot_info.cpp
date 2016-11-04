@@ -1025,8 +1025,8 @@ void CSeq_annot_Info::x_InitFeatTableKeys(CTSE_Info& tse)
             const CHandleRange& hr = hrit->second;
             key.m_Range = hr.GetOverlappingRange();
             if ( key.m_Range.Empty() ) {
-                ERR_POST_X(7, "Empty region in "<<GetDescription()<<" "<<
-                           MSerial_AsnText<<*info.GetFeatFast());
+                ERR_POST_X(7, "Empty region in "<<GetDescription()<<
+                           " Seq-table location "<<MSerial_AsnText<<*loc);
                 continue;
             }
             key.m_Handle = hrit->first;
@@ -1106,8 +1106,8 @@ void CSeq_annot_Info::x_InitFeatTableKeys(CTSE_Info& tse)
                         const CHandleRange& hr = hrit->second;
                         key.m_Range = hr.GetOverlappingRange();
                         if ( key.m_Range.Empty() ) {
-                            ERR_POST_X(8, "Empty region in "<<GetDescription()<<" "<<
-                                       MSerial_AsnText<<*info.GetFeatFast());
+                            ERR_POST_X(8, "Empty region in "<<GetDescription()<<
+                                       " Seq-table row "<<row);
                             continue;
                         }
                         key.m_Handle = hrit->first;
