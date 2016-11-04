@@ -468,6 +468,14 @@ public:
     static CRef<CSeq_loc> GetProteinLocationFromNucleotideLocation(const CSeq_loc& nuc_loc, CScope& scope);
     static CRef<CSeq_loc> GetProteinLocationFromNucleotideLocation(const CSeq_loc& nuc_loc, const CSeq_feat& cds, CScope& scope, bool require_inframe = false);
 
+/// Find proteins that are not packaged in the same nuc-prot set as the
+/// coding region for which they are a product, and move them to that
+/// nuc-prot set. Ignore coding regions that are in gen-prod-sets.
+/// @param seh Seq-entry to edit
+/// @return bool indicates whether any changes were made
+    static bool RepackageProteins(CSeq_entry_Handle seh);
+    static bool RepackageProteins(const CSeq_feat& cds, CBioseq_set_Handle np);
+
 private:
     // Prohibit copy constructor & assignment operator
     CCleanup(const CCleanup&);

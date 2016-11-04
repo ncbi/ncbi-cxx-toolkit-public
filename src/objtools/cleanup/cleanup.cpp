@@ -3858,5 +3858,51 @@ CRef<CSeq_loc> CCleanup::GetProteinLocationFromNucleotideLocation(const CSeq_loc
 }
 
 
+
+bool CCleanup::RepackageProteins(const CSeq_feat& cds, CBioseq_set_Handle np)
+{
+    if (!cds.IsSetProduct() || !cds.GetProduct().IsWhole()) {
+        // no product, or product is specified weirdly
+        return false;
+    }
+    CBioseq_Handle protein = np.GetTSE_Handle().GetBioseqHandle(cds.GetProduct().GetWhole());
+    if (!protein) {
+        // protein is not in the same TSE
+        return false;
+    }
+    if (protein.GetParentBioseq_set() == np) {
+        // already in the right set
+        return false;
+    }
+    CBioseq_set_EditHandle eh(np);
+    CSeq_entry_Handle ph = protein.GetSeq_entry_Handle();
+    CSeq_entry_EditHandle peh(ph);
+    eh.TakeEntry(peh);
+    return true;
+}
+
+
+bool CCleanup::RepackageProteins(CSeq_entry_Handle seh)
+{
+    bool changed = false;
+    CSeq_entry_CI si(seh, CSeq_entry_CI::fRecursive | CSeq_entry_CI::fIncludeGivenEntry, CSeq_entry::e_Set);
+    while (si) {
+        CBioseq_set_Handle set = si->GetSet();
+        if (set.IsSetClass() && set.GetClass() == CBioseq_set::eClass_nuc_prot && set.HasAnnots()) {
+            ITERATE(CBioseq_set::TAnnot, annot_it, set.GetCompleteBioseq_set()->GetAnnot()) {
+                if ((*annot_it)->IsSetData() && (*annot_it)->IsFtable()) {
+                    ITERATE(CSeq_annot::TData::TFtable, feat_it, (*annot_it)->GetData().GetFtable()) {
+                        if ((*feat_it)->IsSetData() && (*feat_it)->GetData().IsCdregion()) {
+                            changed |= RepackageProteins(**feat_it, set);
+                        }
+                    }
+                }
+            }
+        }
+        ++si;
+    }
+    return changed;
+}
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

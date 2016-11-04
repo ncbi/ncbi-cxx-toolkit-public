@@ -2343,7 +2343,7 @@ void CNewCleanup_imp::DbtagBC (
         try {
             // extract the part before the first space for conversion
             string::size_type pos_of_first_space = 0;
-            while( pos_of_first_space < str.length() && ! isspace(str[pos_of_first_space]) ) {
+            while (pos_of_first_space < str.length() && !isspace(str[pos_of_first_space])) {
                 ++pos_of_first_space;
             }
             CTempString sStrOfNum(str, 0, pos_of_first_space);
@@ -2351,15 +2351,16 @@ void CNewCleanup_imp::DbtagBC (
             // only convert str to int if it fits into the non-negative side
             // of an int.
             int value = NStr::StringToInt(sStrOfNum, NStr::fConvErr_NoThrow);
-            if( value > 0) {
-                SET_FIELD ( oid, Id, NStr::StringToUInt(sStrOfNum) );
-                ChangeMade (CCleanupChange::eChangeDbxrefs);
+            if (value > 0) {
+                dbtag.SetTag().SetId(NStr::StringToUInt(sStrOfNum));
+                ChangeMade(CCleanupChange::eChangeDbxrefs);
             }
         } catch (CStringException&) {
             // just leave things as are
         }
     }
 }
+
 
 void CNewCleanup_imp::PubdescBC (
     CPubdesc& pubdesc
@@ -13178,6 +13179,9 @@ void CNewCleanup_imp::x_ExtendedCleanupExtra(CSeq_entry_Handle seh)
     }
     if (CCleanup::RepairXrefs(seh)) {
         ChangeMade(CCleanupChange::eAddSeqFeatXref);
+    }
+    if (CCleanup::RepackageProteins(seh)) {
+        ChangeMade(CCleanupChange::eChangeOther);
     }
 }
 
