@@ -2191,10 +2191,18 @@ DISCREPANCY_AUTOFIX(AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE)
 
 DISCREPANCY_CASE(MISSING_PRIMER, CBioSource, eOncaller, "Missing values in primer set")
 {
+    static const char* msg = "[n] biosource[s] [has] primer set[s] with missing values";
     if (!obj.CanGetPcr_primers() || !obj.GetPcr_primers().CanGet()) {
         return;
     }
     ITERATE (CPCRReactionSet::Tdata, pr, obj.GetPcr_primers().Get()) {
+        if ((*pr)->CanGetForward() != (*pr)->CanGetReverse()) {
+            m_Objs[msg].Add(*context.NewFeatOrDescObj());
+            return;
+        }
+        if (!(*pr)->CanGetForward()) {
+            continue;
+        }
         const CPCRPrimerSet& fwdset = (*pr)->GetForward();
         const CPCRPrimerSet& revset = (*pr)->GetReverse();
         CPCRPrimerSet::Tdata::const_iterator fwd = fwdset.Get().begin();
@@ -2202,7 +2210,7 @@ DISCREPANCY_CASE(MISSING_PRIMER, CBioSource, eOncaller, "Missing values in prime
         while (fwd != fwdset.Get().end() && rev != revset.Get().end()) {
             if (((*fwd)->CanGetName() && !(*fwd)->GetName().Get().empty()) != ((*rev)->CanGetName() && !(*rev)->GetName().Get().empty())
                     || ((*fwd)->CanGetSeq() && !(*fwd)->GetSeq().Get().empty()) != ((*rev)->CanGetSeq() && !(*rev)->GetSeq().Get().empty())) {
-                m_Objs["[n] biosource[s] [has] primer set[s] with missing values"].Add(*context.NewFeatOrDescObj());
+                m_Objs[msg].Add(*context.NewFeatOrDescObj());
                 return;
             }
             fwd++;
