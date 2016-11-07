@@ -712,7 +712,7 @@ bool CCleanup::IsGeneXrefUnnecessary(const CSeq_feat& sf, CScope& scope, const C
 
     ITERATE(sequence::TFeatScores, g, scores) {
         if (g->second.GetPointer() != gene.GetPointer() && 
-            sequence::Compare(g->second->GetLocation(), gene->GetLocation(), &scope) == sequence::eSame) {
+            sequence::Compare(g->second->GetLocation(), gene->GetLocation(), &scope, sequence::fCompareOverlapping) == sequence::eSame) {
             return false;
         }
     }
@@ -1244,7 +1244,7 @@ CConstRef <CSeq_feat> CCleanup::GetGeneForFeature(const CSeq_feat& feat, CScope&
     } else {
         CConstRef <CSeq_feat> gf = sequence::GetOverlappingGene(feat.GetLocation(), scope, IsTransSpliced(feat) ? sequence::eTransSplicing_Yes : sequence::eTransSplicing_Auto);
         if (gf) {
-            sequence::ECompare cmp = sequence::Compare(gf->GetLocation(), feat.GetLocation(), &scope);
+            sequence::ECompare cmp = sequence::Compare(gf->GetLocation(), feat.GetLocation(), &scope, sequence::fCompareOverlapping);
             if (cmp == sequence::eContains || cmp == sequence::eSame) {
                 return gf;
             }
