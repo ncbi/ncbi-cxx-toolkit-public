@@ -913,5 +913,6 @@ BOOST_AUTO_TEST_CASE(TEST_RepairXrefs)
     gene2 = *fit;
     BOOST_CHECK_EQUAL(gene2->HasSeqFeatXref(mrna->GetId()), true);
 
-
+    // no change this time because there's already an xref
+    BOOST_CHECK_EQUAL(CCleanup::RepairXrefs(*mrna, tse), false);
 }
