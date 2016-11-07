@@ -103,6 +103,9 @@ string& CDiscRepArgDescriptions::PrintUsage(string& str, bool detailed) const
         str+="TESTS\n";
         const vector<string> Name = GetDiscrepancyNames();
         ITERATE (vector<string>, nm, Name) {
+            if ((*nm)[0] == '_') {
+                continue;
+            }
             str += "   ";
             str += *nm;
             const vector<string> Alias = GetDiscrepancyAliases(*nm);
