@@ -3269,7 +3269,7 @@ void CValidError_bioseq::ValidateRawConst(
                 try {
                     const CSeq_feat* cds = GetCDSForProduct(bsh);
                     if (cds) {
-                        CConstRef<CSeq_feat> gene = GetGeneForFeature(*cds, m_Scope);
+                        CConstRef<CSeq_feat> gene = sequence::GetGeneForFeature(*cds, *m_Scope);
                         if (gene && gene->IsSetData() && gene->GetData().IsGene()) {
                             gene->GetData().GetGene().GetLabel(&gene_label);
                         }
@@ -3632,7 +3632,7 @@ void CValidError_bioseq::ValidateDeltaLoc
     try {
         if (seq.IsSetInst ()) {
             const CSeq_inst& inst = seq.GetInst();
-            size_t loc_len = GetLength(loc, m_Scope);
+            TSeqPos loc_len = GetLength(loc, m_Scope);
             if (loc_len == numeric_limits<TSeqPos>::max()) {
                 PostErr (eDiag_Error, eErr_SEQ_INST_SeqDataLenWrong,
                          "-1 length on seq-loc of delta seq_ext", seq);
@@ -4091,7 +4091,7 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                     continue; // Ignore NULLs, reported separately above.
                 }
                 const CDelta_seq& seg = **delta_i;
-                size_t delta_len = s_GetDeltaLen (seg, m_Scope);
+                TSeqPos delta_len = s_GetDeltaLen (seg, m_Scope);
                 if (pos > 0) {
                     if (sv.IsInGap (pos)) {
                         CSeqVector::TResidue res = sv [pos - 1];
@@ -5382,7 +5382,7 @@ void CValidError_bioseq::x_ValidateCodingRegionParentPartialness(const CSeq_feat
     if (!cds.IsSetData() || !cds.GetData().IsCdregion()) {
         return;
     }
-    CConstRef<CSeq_feat> gene = GetGeneForFeature(cds, m_Scope);
+    CConstRef<CSeq_feat> gene = sequence::GetGeneForFeature(cds, *m_Scope);
     if (!gene) {
         return;
     }
@@ -5698,7 +5698,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(
                     } else if (feat.IsSetPseudo() && feat.GetPseudo()) {
                             num_pseudocds++;
                     } else {
-                        CConstRef<CSeq_feat> gene = GetGeneForFeature(feat, m_Scope);
+                        CConstRef<CSeq_feat> gene = sequence::GetGeneForFeature(feat, *m_Scope);
                         if (gene != 0 && gene->IsSetPseudo() && gene->GetPseudo()) {
                             num_pseudocds++;
                         } else if (feat.IsSetExcept_text() 
@@ -5708,7 +5708,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(
                     }
                     ValidateBadGeneOverlap (feat);
 
-                    CConstRef <CSeq_feat> gene = GetGeneForFeature (feat, m_Scope);
+                    CConstRef <CSeq_feat> gene = sequence::GetGeneForFeature (feat, *m_Scope);
                     string sfp_pseudo = "unqualified";
                     string gene_pseudo = "unqualified";
                     if (gene != 0) {
@@ -5757,14 +5757,14 @@ void CValidError_bioseq::ValidateSeqFeatContext(
                     } else if (feat.IsSetPseudo() && feat.GetPseudo()) {
                             num_pseudomrna++;
                     } else {
-                        CConstRef<CSeq_feat> gene = GetGeneForFeature(feat, m_Scope);
+                        CConstRef<CSeq_feat> gene = sequence::GetGeneForFeature(feat, *m_Scope);
                         if (gene != 0 && gene->IsSetPseudo() && gene->GetPseudo()) {
                             num_pseudomrna++;
                         }
                     }                
                     ValidateBadGeneOverlap(feat);
 
-                    CConstRef <CSeq_feat> gene = GetGeneForFeature (feat, m_Scope);
+                    CConstRef <CSeq_feat> gene = sequence::GetGeneForFeature (feat, *m_Scope);
                     string sfp_pseudo = "unqualified";
                     string gene_pseudo = "unqualified";
                     if (gene != 0) {
@@ -6103,7 +6103,7 @@ void CValidError_bioseq::x_ValidateLocusTagGeneralMatch(const CBioseq_Handle& se
         // obtain the gene-ref from the feature or the overlapping gene
         const CGene_ref* grp = feat.GetGeneXref();
         if (grp == NULL) {
-            CConstRef<CSeq_feat> gene = GetGeneForFeature(feat, m_Scope);
+            CConstRef<CSeq_feat> gene = sequence::GetGeneForFeature(feat, *m_Scope);
             if (gene) {
                 grp = &gene->GetData().GetGene();
             }
@@ -7728,9 +7728,9 @@ static bool s_SpecialDuplicateFeatID (
 static bool s_GeneXrefsDiffer (const CSeq_feat& f1, const CSeq_feat& f2, CScope *scope)
 {
     CConstRef <CSeq_feat> g1 =
-        CValidError_bioseq::GetGeneForFeature (f1, scope);
+        sequence::GetGeneForFeature(f1, *scope);
     CConstRef <CSeq_feat> g2
-        = CValidError_bioseq::GetGeneForFeature (f2, scope);
+        = sequence::GetGeneForFeature(f2, *scope);
 
     if (!g1 || !g2) {
         return false;
@@ -7864,9 +7864,9 @@ bool CValidError_bioseq::x_ReportDupOverlapFeaturePair (const CSeq_feat_Handle &
             {{
                 EDiagSev severity = x_DupFeatSeverity(feat1, feat2, fruit_fly, viral, htgs, small_genome, true, true);
                 CConstRef <CSeq_feat> g1 =
-                    CValidError_bioseq::GetGeneForFeature (feat1, m_Scope);
+                    sequence::GetGeneForFeature(feat1, *m_Scope);
                 CConstRef <CSeq_feat> g2 =
-                    CValidError_bioseq::GetGeneForFeature (feat2, m_Scope);
+                    sequence::GetGeneForFeature(feat2, *m_Scope);
                 if (g1 && g2 && g1.GetPointer() != g2.GetPointer()) {
                     severity = eDiag_Warning;
                 }
@@ -9029,40 +9029,6 @@ bool CValidError_bioseq::GetTSAConflictingBiomolTechErrors(const CBioseq& seq)
         rval = true;
     }
     return rval;
-}
-
-
-CConstRef <CSeq_feat> CValidError_bioseq::GetGeneForFeature (
-    const CSeq_feat& f1, CScope *scope)
-{
-    const CGene_ref * g1 = f1.GetGeneXref();
-    CConstRef <CSeq_feat> gene;
-
-    if (g1) {
-        if (g1->IsSuppressed()) {
-            return gene;
-        }
-        string ref_label;
-        g1->GetLabel(&ref_label);
-
-        CBioseq_Handle bsh = BioseqHandleFromLocation(
-            scope, f1.GetLocation());
-        SAnnotSelector sel(CSeqFeatData::e_Gene);
-        CFeat_CI gene_it(bsh, sel);
-        while (gene_it) {
-            string feat_label;
-            feature::GetLabel(gene_it->GetOriginalFeature(), &feat_label,
-                              feature::fFGL_Content, scope);
-            if (NStr::EqualCase(ref_label, feat_label)) {
-                gene.Reset (&(gene_it->GetOriginalFeature()));
-                return gene;
-            }
-            ++gene_it;
-        }
-        return gene;
-    }
-
-    return sequence::GetOverlappingGene(f1.GetLocation(), *scope, sequence::eTransSplicing_Auto);
 }
 
 
@@ -10595,9 +10561,9 @@ void CValidError_bioseq::ValidatemRNAGene (const CBioseq& seq)
 
 bool CValidError_bioseq::x_ReportUTRPair(const CSeq_feat& utr5, const CSeq_feat& utr3)
 {
-    CConstRef<CSeq_feat> gene3 = GetGeneForFeature(utr3, m_Scope);
+    CConstRef<CSeq_feat> gene3 = sequence::GetGeneForFeature(utr3, *m_Scope);
     if (gene3) {
-        CConstRef<CSeq_feat> gene5 = GetGeneForFeature(utr5, m_Scope);
+        CConstRef<CSeq_feat> gene5 = sequence::GetGeneForFeature(utr5, *m_Scope);
         if (gene5 && gene3.GetPointer() == gene5.GetPointer()) {
             return true;
         }

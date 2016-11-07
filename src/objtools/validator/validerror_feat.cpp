@@ -580,7 +580,7 @@ void CValidError_feat::ValidateSeqFeatData
             const CGene_ref* grp = feat.GetGeneXref();
             if ( !grp) {
                 // check overlapping gene
-                CConstRef<CSeq_feat> overlap = CValidError_bioseq::GetGeneForFeature(feat, m_Scope);
+                CConstRef<CSeq_feat> overlap = sequence::GetGeneForFeature(feat, *m_Scope);
                 if ( overlap ) {
                     if (overlap->IsSetPseudo() && overlap->GetPseudo()) {
                         pseudo = true;
@@ -605,7 +605,7 @@ void CValidError_feat::ValidateSeqFeatData
                 }
                 if (! NStr::IsBlank (feat_old_locus_tag)) {
                     if ( grp == 0 ) {
-                        const CSeq_feat* gene = CValidError_bioseq::GetGeneForFeature(feat, m_Scope);
+                        const CSeq_feat* gene = sequence::GetGeneForFeature(feat, *m_Scope);
                         if ( gene != 0 ) {
                             grp = &gene->GetData().GetGene();
                         }
@@ -949,7 +949,7 @@ bool CValidError_feat::IsOverlappingGenePseudo(const CSeq_feat& feat, CScope *sc
     }
 
     // check overlapping gene
-    CConstRef<CSeq_feat> overlap = CValidError_bioseq::GetGeneForFeature(feat, scope);
+    CConstRef<CSeq_feat> overlap = sequence::GetGeneForFeature(feat, *scope);
     if ( overlap ) {
         if ( (overlap->CanGetPseudo()  &&  overlap->GetPseudo())  ||
              (overlap->GetData().GetGene().CanGetPseudo()  &&
@@ -5648,7 +5648,7 @@ void CValidError_feat::ValidatemRNAGene (const CSeq_feat &feat)
         const CGene_ref* genomicgrp = feat.GetGeneXref();
         if ( genomicgrp == 0 ) {
             const CSeq_feat* gene =
-                CValidError_bioseq::GetGeneForFeature(feat, m_Scope);
+                sequence::GetGeneForFeature(feat, *m_Scope);
             if ( gene != 0 ) {
                 genomicgrp = &gene->GetData().GetGene();
             }

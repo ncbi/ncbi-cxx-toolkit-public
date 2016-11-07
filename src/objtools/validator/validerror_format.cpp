@@ -300,7 +300,7 @@ string CValidErrorFormat::x_FormatECNumberForSubmitterReport(const CValidErrItem
     }
 
     // get locus tag
-    CConstRef <CSeq_feat> gene = CValidError_bioseq::GetGeneForFeature (*feat, &scope);
+    CConstRef <CSeq_feat> gene = sequence::GetGeneForFeature(*feat, scope);
     if (gene && gene->GetData().GetGene().IsSetLocus_tag()) {
         locus_tag = gene->GetData().GetGene().GetLocus_tag();
     }

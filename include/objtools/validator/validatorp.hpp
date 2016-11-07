@@ -1336,8 +1336,6 @@ public:
     void ValidateHistory(const CBioseq& seq);
     bool GetTSANStretchErrors(const CBioseq& seq);
     bool GetTSAConflictingBiomolTechErrors(const CBioseq& seq);
-    static CConstRef <CSeq_feat> GetGeneForFeature (
-        const CSeq_feat& f1, CScope *scope);
     static bool IsSelfReferential(const CBioseq& seq);
     static bool IsAllNs(CBioseq_Handle bsh);
     static int PctNs(CBioseq_Handle bsh);
