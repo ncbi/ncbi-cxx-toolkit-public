@@ -114,6 +114,7 @@ public:
     void SelectView(const string& view_name);
     bool NeedRenderPage() const { return m_NeedRenderPage; }
     void NeedRenderPage(bool value) { m_NeedRenderPage = value; }
+    bool NeedMetaRefresh() const { return m_NeedMetaRefresh; }
 
     string& GetJobKey() { return m_JobKey; }
     string& GetJqueryCallback() { return m_JqueryCallback; }
@@ -135,6 +136,7 @@ private:
     string                        m_JobKey;
     string                        m_JqueryCallback;
     bool                          m_NeedRenderPage;
+    bool                          m_NeedMetaRefresh;
 };
 
 
@@ -151,6 +153,10 @@ CGridCgiContext::CGridCgiContext(CHTMLPage& page,
     const CCgiRequest& req = ctx.GetRequest();
     string query_string = req.GetProperty(eCgi_QueryString);
     CCgiRequest::ParseEntries(query_string, m_ParsedQueryString);
+
+    const string kNoMetaRefreshHeader = "X_NCBI_RETRY_NOMETAREFRESH";
+    const string& no_meta_refresh = req.GetRandomProperty(kNoMetaRefreshHeader);
+    m_NeedMetaRefresh = no_meta_refresh.empty() || no_meta_refresh == "0";
 }
 
 string CGridCgiContext::GetSelfURL() const
@@ -287,7 +293,7 @@ public:
     virtual int ProcessRequest(CCgiContext& ctx);
 
 private:
-    void DefineRefreshTags(const string& url, int delay);
+    void DefineRefreshTags(CGridCgiContext& grid_ctx, const string& url, int delay);
 
 private:
     void CheckJob(CGridCgiContext& grid_ctx);
@@ -709,7 +715,7 @@ void CCgi2RCgiApp::CheckJob(CGridCgiContext& grid_ctx)
                 !grid_ctx.GetPersistentEntryValue("Cancel").empty())
             m_GridClient->CancelJob(grid_ctx.GetJobKey());
 
-        DefineRefreshTags(grid_ctx.GetSelfURL(), m_RefreshDelay);
+        DefineRefreshTags(grid_ctx, grid_ctx.GetSelfURL(), m_RefreshDelay);
     }
 }
 
@@ -780,7 +786,7 @@ void CCgi2RCgiApp::SubmitJob(CCgiRequest& request,
             // The job has just been submitted.
             // Render a report page
             grid_ctx.SelectView("JOB_SUBMITTED");
-            DefineRefreshTags(grid_ctx.GetSelfURL(),
+            DefineRefreshTags(grid_ctx, grid_ctx.GetSelfURL(),
                 m_RefreshDelay);
         }
     }
@@ -926,11 +932,12 @@ int CCgi2RCgiApp::RenderPage()
     return 0;
 }
 
-void CCgi2RCgiApp::DefineRefreshTags(const string& url, int idelay)
+void CCgi2RCgiApp::DefineRefreshTags(CGridCgiContext& grid_ctx,
+        const string& url, int idelay)
 {
     const auto idelay_str = NStr::IntToString(idelay);
 
-    if (!m_HTMLPassThrough && idelay >= 0) {
+    if (!m_HTMLPassThrough && idelay >= 0 && grid_ctx.NeedMetaRefresh()) {
         CHTMLText* redirect = new CHTMLText(
                     "<META HTTP-EQUIV=Refresh "
                     "CONTENT=\"<@REDIRECT_DELAY@>; URL=<@REDIRECT_URL@>\">");
@@ -1032,7 +1039,7 @@ bool CCgi2RCgiApp::CheckIfJobDone(
         // Render a job cancellation page
         grid_ctx.SelectView("JOB_CANCELED");
 
-        DefineRefreshTags(m_FallBackUrl.empty() ?
+        DefineRefreshTags(grid_ctx, m_FallBackUrl.empty() ?
             grid_ctx.GetCGIContext().GetSelfURL() : m_FallBackUrl,
                 m_CancelGoBackDelay);
         break;
@@ -1135,7 +1142,7 @@ void CCgi2RCgiApp::OnJobFailed(const string& msg,
 
     string fall_back_url = m_FallBackUrl.empty() ?
         ctx.GetCGIContext().GetSelfURL() : m_FallBackUrl;
-    DefineRefreshTags(fall_back_url, m_FallBackDelay);
+    DefineRefreshTags(ctx, fall_back_url, m_FallBackDelay);
 
     ctx.GetHTMLPage().AddTagMap("MSG",
             new CHTMLPlainText(m_TargetEncodeMode, msg));
