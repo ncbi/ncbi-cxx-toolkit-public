@@ -41,6 +41,8 @@
 
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/blast/Blast4_cutoff.hpp>
+#include <objects/blast/Blast4_parameter.hpp>
+#include <objects/blast/Blast4_parameters.hpp>
 #include <objects/blast/names.hpp>
 
 /** @addtogroup AlgoBlast
