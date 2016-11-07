@@ -61,7 +61,6 @@
 #include <objtools/edit/seq_entry_edit.hpp>
 #include <objtools/edit/loc_edit.hpp>
 
-#include <objtools/edit/gene_utils.hpp>
 #include <objtools/edit/autodef_options.hpp>
 
 #include <set>
@@ -3277,7 +3276,7 @@ string GetTargetedLocusName(const CSeq_feat& feat)
 string GetTargetedLocusName(const CSeq_feat& cds, CScope& scope)
 {
     string tls = kEmptyStr;
-    CConstRef <CSeq_feat> gene_for_feat = GetGeneForFeature(cds, scope);
+    CConstRef <CSeq_feat> gene_for_feat = sequence::GetGeneForFeature(cds, scope);
     if (gene_for_feat) {
         tls = GetTargetedLocusName(*gene_for_feat);
     }

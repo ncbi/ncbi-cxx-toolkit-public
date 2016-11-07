@@ -32,7 +32,6 @@
 
 #include <ncbi_pch.hpp>
 #include <objtools/edit/autodef.hpp>
-#include <objtools/edit/gene_utils.hpp>
 #include <corelib/ncbimisc.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/bioseq_ci.hpp>
@@ -1210,7 +1209,7 @@ bool CAutoDefFeatureClause::AddGene (CAutoDefFeatureClause_Base *gene_clause, bo
         // find overlapping gene for this feature    
         CAutoDefGeneClause *gene = dynamic_cast<CAutoDefGeneClause *>(gene_clause);
         bool suppress_locus_tag = gene ? gene->GetSuppressLocusTag() : false;
-        CConstRef <CSeq_feat> gene_for_feat = edit::GetGeneForFeature(m_MainFeat, m_BH.GetScope());
+        CConstRef <CSeq_feat> gene_for_feat = sequence::GetGeneForFeature(m_MainFeat, m_BH.GetScope());
         if (gene_for_feat && NStr::Equal(x_GetGeneName(gene_for_feat->GetData().GetGene(), suppress_locus_tag), gene_clause->GetGeneName())) {
             used_gene = true;
             m_HasGene = true;
