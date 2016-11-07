@@ -563,7 +563,8 @@ int GICache_ReadData(const char *prefix) {
     return rc;
 }
 
-int GICache_GetAccession(int64_t gi, char* acc, int buf_len) {
+/* Retrieves accession.version and gi length by gi. */
+int GICache_GetAccessionLen(int64_t gi, char* acc, int buf_len, int64_t* gi_len) {
 	int retval = 0;
 	int rv;
 	if (acc && buf_len > 0)
@@ -572,10 +573,14 @@ int GICache_GetAccession(int64_t gi, char* acc, int buf_len) {
 		LOG(SEV_ERROR, "GICache_GetAccession: GI Cache is not initialized, call GICache_ReadData() first");
 		return 0;
 	}
-	rv = x_GetGiData(gi_cache, gi, acc, buf_len, NULL);
+	rv = x_GetGiData(gi_cache, gi, acc, buf_len, gi_len);
 	if (rv)
 		retval = 1;
 	return retval;
+}
+
+int GICache_GetAccession(int64_t gi, char* acc, int buf_len) {
+	return GICache_GetAccessionLen(gi, acc, buf_len, NULL);
 }
 
 int64_t GICache_GetLength(int64_t gi) {

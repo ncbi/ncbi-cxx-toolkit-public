@@ -41,6 +41,8 @@ int         GICache_ReadData(const char *cache_prefix);
  * is 0, otherwise return code is 1.
  */
 int         GICache_GetAccession(int64_t gi, char* acc, int buf_len);
+/* Retrieves accession.version and gi length by gi. */
+int         GICache_GetAccessionLen(int64_t gi, char* acc, int buf_len, int64_t* gi_len);
 /* Retrieves gi length */
 int64_t     GICache_GetLength(int64_t gi);
 /* Returns maximal gi available in cache */
