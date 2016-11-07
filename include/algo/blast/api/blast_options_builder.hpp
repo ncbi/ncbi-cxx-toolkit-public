@@ -34,6 +34,9 @@
 /// Declares the CBlastOptionsBuilder class.
 
 #include <algo/blast/api/blast_options_handle.hpp>
+#include <objects/blast/Blast4_parameter.hpp>
+#include <objects/blast/Blast4_parameters.hpp>
+
 
 /** @addtogroup AlgoBlast
  *
