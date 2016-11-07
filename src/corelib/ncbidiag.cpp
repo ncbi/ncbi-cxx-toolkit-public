@@ -186,8 +186,13 @@ public:
     CTeeDiagHandler(CDiagHandler* orig, bool own_orig);
     virtual void Post(const SDiagMessage& mess);
 
-    // Don't post duplicates to console.
-    virtual void PostToConsole(const SDiagMessage&) {}
+    virtual void PostToConsole(const SDiagMessage& mess)
+    {
+        // Console manipulator ignores severity, so we have to always print
+        // the message to console and set NoTee flag to avoid duplicates.
+        CDiagHandler::PostToConsole(mess);
+        const_cast<SDiagMessage&>(mess).m_NoTee = true;
+    }
 
     virtual string GetLogName(void)
     {
