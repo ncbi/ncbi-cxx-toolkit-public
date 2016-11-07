@@ -1281,7 +1281,7 @@ bool CCleanup::IsPseudo(const CSeq_feat& feat, CScope& scope)
                 }
             }
         }
-        CConstRef<CSeq_feat> gene = GetGeneForFeature(feat, scope);
+        CConstRef<CSeq_feat> gene = sequence::GetGeneForFeature(feat, scope);
         if (gene && IsPseudo(*gene, scope)) {
             return true;
         }

@@ -12508,7 +12508,7 @@ void CNewCleanup_imp::CdRegionEC(CSeq_feat& sf)
     }
 
     CConstRef<CSeq_feat> mrna = sequence::GetmRNAforCDS(sf, *m_Scope);
-    CConstRef<CSeq_feat> gene = CCleanup::GetGeneForFeature(sf, *m_Scope);
+    CConstRef<CSeq_feat> gene = sequence::GetGeneForFeature(sf, *m_Scope);
 
     if (!m_IsEmblOrDdbj) {
         try {

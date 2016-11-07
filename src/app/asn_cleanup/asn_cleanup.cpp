@@ -887,7 +887,7 @@ bool CCleanupApp::x_FixCDS(CSeq_entry_Handle seh, Uint4 options, const string& m
                         efh.Replace(*new_mrna);
                     }
                 }
-                CConstRef<CSeq_feat> gene = CCleanup::GetGeneForFeature(*orig, seh.GetScope());
+                CConstRef<CSeq_feat> gene = sequence::GetGeneForFeature(*orig, seh.GetScope());
                 if (gene && s_LocationShouldBeExtendedToMatch(gene->GetLocation(), sf->GetLocation())) {
                     CRef<CSeq_feat> new_gene(new CSeq_feat());
                     new_gene->Assign(*gene);
