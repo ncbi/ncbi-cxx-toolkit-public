@@ -140,7 +140,7 @@ static void insert_unique(vector<string>& v, const vector<string>& w)
 
 
 // SPELL_CHECK
-DISCREPANCY_CASE(SPELL_CHECK, CSeqFeatData, 0, "Spell check")
+DISCREPANCY_CASE(_SPELL_CHECK, CSeqFeatData, 0, "Spell check")
 {
 	return; // disabled till better times...
     InitSpellChecker();
@@ -179,7 +179,7 @@ DISCREPANCY_CASE(SPELL_CHECK, CSeqFeatData, 0, "Spell check")
 }
 
 
-DISCREPANCY_SUMMARIZE(SPELL_CHECK)
+DISCREPANCY_SUMMARIZE(_SPELL_CHECK)
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
