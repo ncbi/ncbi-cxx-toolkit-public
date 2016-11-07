@@ -34,10 +34,7 @@
 #ifndef ALGO_BLAST_API___BLAST_OPTION__HPP
 #define ALGO_BLAST_API___BLAST_OPTION__HPP
 
-#include <objects/blast/Blast4_value.hpp>
-#include <objects/blast/Blast4_parameter.hpp>
-#include <objects/blast/Blast4_parameters.hpp>
-#include <objects/blast/Blast4_queue_search_reques.hpp>
+#include <objects/scoremat/PssmWithParameters.hpp>
 
 #include <algo/blast/api/blast_types.hpp>
 #include <algo/blast/api/blast_aux.hpp>
@@ -59,6 +56,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_SCOPE(objects)
     class CSeq_loc;
+    class CBlast4_parameters;
 END_SCOPE(objects)
 
 /** @addtogroup AlgoBlast
