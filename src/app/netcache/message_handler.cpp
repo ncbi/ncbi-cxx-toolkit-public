@@ -2328,7 +2328,8 @@ CNCMessageHandler::x_StartCommand(void)
     if ((!CNCDistributionConf::IsServedLocally(m_BlobSlot)
             ||  !CNCServer::IsCachingComplete())
         &&  !x_IsFlagSet(fDoNotProxyToPeers)
-        &&  !m_ForceLocal)
+        &&  !m_ForceLocal
+        && CNCDistributionConf::CountServersForSlot(m_BlobSlot) != 0)
     {
         diag_msg.PrintParam("proxy", "1");
         diag_msg.Flush();
