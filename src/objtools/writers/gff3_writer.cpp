@@ -213,7 +213,7 @@ string sBestMatchType(
     const CSeq_id& source)
 //  ----------------------------------------------------------------------------
 {
-    const char* strProtMatch     = "nucleotide_to_protein_match";
+    const char* strProtMatch     = "protein_match";
     const char* strEstMatch      = "EST_match";
     const char* strCdnaMatch     = "cDNA_match";
 
@@ -579,7 +579,7 @@ bool CGff3Writer::xAssignAlignmentSplicedType(
 {
     if (spliced.IsSetProduct_type() &&
         spliced.GetProduct_type() == CSpliced_seg::eProduct_type_protein) {
-        record.SetType("nucleotide_to_protein_match");
+        record.SetType("protein_match");
         return true;
     }
 
