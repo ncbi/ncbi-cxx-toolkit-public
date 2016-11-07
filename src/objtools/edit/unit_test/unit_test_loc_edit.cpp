@@ -1202,6 +1202,59 @@ BOOST_AUTO_TEST_CASE(Test_SplitLocationForGap)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_GetGeneForFeature)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+
+    CRef<CSeq_feat> imp = unit_test_util::AddGoodImpFeat(entry, "misc_feature");
+
+    STANDARD_SETUP
+
+    CConstRef<CSeq_feat> found_gene = sequence::GetGeneForFeature(*imp, scope);
+    BOOST_ASSERT(found_gene.GetPointer() == NULL);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    CRef<CSeq_feat> gene = unit_test_util::MakeGeneForFeature(imp);
+    gene->SetData().SetGene().SetLocus("A");
+    unit_test_util::AddFeat(gene, entry);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    found_gene = sequence::GetGeneForFeature(*imp, scope);
+    BOOST_ASSERT(found_gene.GetPointer() == gene.GetPointer());
+
+    // prefer gene pointed to by seqfeatxref
+    scope.RemoveTopLevelSeqEntry(seh);
+    CRef<CSeq_feat> gene2 = unit_test_util::MakeGeneForFeature(imp);
+    gene2->SetData().SetGene().SetLocus("B");
+    unit_test_util::AddFeat(gene2, entry);
+    imp->SetId().SetLocal().SetId(1);
+    gene->SetId().SetLocal().SetId(2);
+    gene2->SetId().SetLocal().SetId(3);
+    imp->AddSeqFeatXref(gene2->GetId());
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    found_gene = sequence::GetGeneForFeature(*imp, scope);
+    BOOST_ASSERT(found_gene.GetPointer() == gene2.GetPointer());
+
+    // if xrefs point to non-gene features, fall back to overlap
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = unit_test_util::BuildGoodSeq();
+    imp = unit_test_util::AddGoodImpFeat(entry, "misc_feature");
+    CRef<CSeq_feat> imp2 = unit_test_util::AddGoodImpFeat(entry, "other misc_feature");
+    gene = unit_test_util::MakeGeneForFeature(imp);
+    gene->SetData().SetGene().SetLocus("A");
+    unit_test_util::AddFeat(gene, entry);
+
+    imp->SetId().SetLocal().SetId(1);
+    imp2->SetId().SetLocal().SetId(2);
+    gene->SetId().SetLocal().SetId(3);
+    imp->AddSeqFeatXref(imp2->GetId());
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    found_gene = sequence::GetGeneForFeature(*imp, scope);
+    BOOST_ASSERT(found_gene.GetPointer() == gene.GetPointer());
+
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 

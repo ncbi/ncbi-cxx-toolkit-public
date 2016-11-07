@@ -584,6 +584,10 @@ CConstRef<CSeq_feat> GetOverlappingGene(
     ETransSplicing eTransSplicing = eTransSplicing_Auto);
 
 
+/// Finds gene for feature, but obeys SeqFeatXref directives
+NCBI_XOBJUTIL_EXPORT
+CConstRef<CSeq_feat> GetGeneForFeature(const CSeq_feat& feat, CScope& scope);
+
 NCBI_XOBJUTIL_EXPORT
 CConstRef<CSeq_feat> GetOverlappingmRNA(const CSeq_loc& loc, CScope& scope);
 

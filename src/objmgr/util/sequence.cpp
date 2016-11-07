@@ -1317,6 +1317,73 @@ CConstRef<CSeq_feat> GetOverlappingGene(
 }
 
 
+bool IsTransSpliced(const CSeq_feat& feat)
+{
+    if (feat.IsSetExcept_text() && NStr::Find(feat.GetExcept_text(), "trans-splicing") != string::npos) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+CConstRef<CSeq_feat> GetGeneForFeature(const CSeq_feat& feat, CScope& scope)
+{
+    if (feat.IsSetXref()) {
+        CBioseq_Handle bsh = scope.GetBioseqHandle(feat.GetLocation());
+        if (!bsh) {
+            return CConstRef<CSeq_feat>();
+        }
+        CTSE_Handle tse = bsh.GetTSE_Handle();
+        ITERATE(CSeq_feat::TXref, xit, feat.GetXref()) {
+            if ((*xit)->IsSetData() && (*xit)->GetData().IsGene() && (*xit)->GetData().GetGene().IsSuppressed()) {
+                return (CConstRef <CSeq_feat>());
+            }
+            if ((*xit)->IsSetId() && (*xit)->GetId().IsLocal() &&
+                (!(*xit)->IsSetData() || (*xit)->GetData().IsGene())) {
+                const CTSE_Handle::TFeatureId& feat_id = (*xit)->GetId().GetLocal();
+                CTSE_Handle::TSeq_feat_Handles far_feats = tse.GetFeaturesWithId(CSeqFeatData::eSubtype_gene, feat_id);
+                if (far_feats.size() > 0) {
+                    return far_feats.front().GetSeq_feat();
+                }
+                // if xref claims to point to gene feature but gene feature does not exist,
+                // return NULL
+                if ((*xit)->IsSetData() && (*xit)->GetData().IsGene()) {
+                    return CConstRef<CSeq_feat>();
+                }
+            } else if ((*xit)->IsSetData() && (*xit)->GetData().IsGene()) {
+                const CGene_ref& gene = (*xit)->GetData().GetGene();
+                if (gene.IsSetLocus_tag() && !(gene.GetLocus_tag().empty())) {
+                    CSeq_feat_Handle
+                        seq_feat_hl = tse.GetGeneWithLocus(gene.GetLocus_tag(), true);
+                    if (seq_feat_hl) {
+                        return (seq_feat_hl.GetOriginalSeq_feat());
+                    }
+                }
+                if (gene.CanGetLocus() && !(gene.GetLocus().empty())) {
+                    CSeq_feat_Handle
+                        seq_feat_hl = tse.GetGeneWithLocus(gene.GetLocus(), false);
+                    if (seq_feat_hl) {
+                        return (seq_feat_hl.GetOriginalSeq_feat());
+                    }
+                }
+                return (CConstRef <CSeq_feat>());
+            } 
+        }
+    }
+
+    CConstRef <CSeq_feat> gf = GetOverlappingGene(feat.GetLocation(), scope, IsTransSpliced(feat) ? sequence::eTransSplicing_Yes : sequence::eTransSplicing_Auto);
+    if (gf) {
+        ECompare cmp = Compare(gf->GetLocation(), feat.GetLocation(), &scope, fCompareOverlapping);
+        if (cmp == eContains || cmp == eSame) {
+            return gf;
+        }
+    }
+
+    return CConstRef <CSeq_feat>();
+}
+
+
 CConstRef<CSeq_feat> GetOverlappingmRNA(const CSeq_loc& loc, CScope& scope)
 {
     return GetBestOverlappingFeat(loc, CSeqFeatData::eSubtype_mRNA,
