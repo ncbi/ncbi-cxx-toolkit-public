@@ -717,7 +717,16 @@ bool CDiscrepancyContext::IsBGPipe()
 
 const CSeq_feat* CDiscrepancyContext::GetCurrentGene() // todo: optimize
 {
-    return CCleanup::GetGeneForFeature(*m_Current_Seq_feat, *m_Scope);
+    return GetGeneForFeature(*m_Current_Seq_feat);
+}
+
+
+const CSeq_feat* CDiscrepancyContext::GetGeneForFeature(const CSeq_feat& feat)
+{
+    if (m_GeneForFeatureMap.find(&feat) == m_GeneForFeatureMap.end()) {
+        m_GeneForFeatureMap[&feat] = CCleanup::GetGeneForFeature(feat, *m_Scope);
+    }
+    return m_GeneForFeatureMap[&feat];
 }
 
 

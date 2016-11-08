@@ -136,7 +136,6 @@ string GetLocusTagForFeature(const CSeq_feat& seq_feat, CScope& scope)
             }
         }
     }
-  
     return tag;
 }
 

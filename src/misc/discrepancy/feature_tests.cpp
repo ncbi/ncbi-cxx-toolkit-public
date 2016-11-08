@@ -67,7 +67,7 @@ DISCREPANCY_CASE(PSEUDO_MISMATCH, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller | eSubm
 {
     if (obj.IsSetPseudo() && obj.GetPseudo() && 
         (obj.GetData().IsCdregion() || obj.GetData().IsRna())) {
-        CConstRef<CSeq_feat> gene = CCleanup::GetGeneForFeature(obj, context.GetScope());
+        const CSeq_feat* gene = context.GetGeneForFeature(obj);
         if (gene && !context.IsPseudo(*gene)) {
             m_Objs[kPseudoMismatch].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false).Fatal();
             m_Objs[kPseudoMismatch].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(gene)), false).Fatal();
@@ -140,6 +140,7 @@ DISCREPANCY_SUMMARIZE(SHORT_RRNA)
 const string kRBSWithoutGene = "[n] RBS feature[s] [does] not have overlapping gene[s]";
 const string kRBS = "RBS";
 
+
 bool IsRBS(const CSeq_feat& f)
 {
     if (f.GetData().GetSubtype() == CSeqFeatData::eSubtype_RBS) {
@@ -160,6 +161,7 @@ bool IsRBS(const CSeq_feat& f)
     return false;
 }
 
+
 void AddRBS(CReportNode& objs, CDiscrepancyContext& context) 
 {
     if (!objs["genes"].empty()) {
@@ -170,33 +172,29 @@ void AddRBS(CReportNode& objs, CDiscrepancyContext& context)
         }
     }
 }
-//  ----------------------------------------------------------------------------
+
+
 DISCREPANCY_CASE(RBS_WITHOUT_GENE, CSeq_feat_BY_BIOSEQ, eOncaller, "RBS features should have an overlapping gene")
-//  ----------------------------------------------------------------------------
 {
     // See if we have moved to the "next" Bioseq
     if (m_Count != context.GetCountBioseq()) {
         AddRBS(m_Objs, context);
-
         m_Count = context.GetCountBioseq();
         m_Objs["genes"].clear();
         m_Objs["RBS"].clear();
     }
-
     // We ask to keep the reference because we do need the actual object to stick around so we can deal with them later.
     CRef<CDiscrepancyObject> this_disc_obj(context.NewDiscObj(CConstRef<CSeq_feat>(&obj), eKeepRef));
-
     if (obj.GetData().GetSubtype() == CSeqFeatData::eSubtype_gene) {
         m_Objs["genes"].Add(*this_disc_obj);
-    } else if (IsRBS(obj) && CCleanup::GetGeneForFeature(obj, context.GetScope()) == NULL) {
+    }
+    else if (IsRBS(obj) && !context.GetGeneForFeature(obj)) {
         m_Objs["RBS"].Add(*this_disc_obj);
     }
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(RBS_WITHOUT_GENE)
-//  ----------------------------------------------------------------------------
 {
     AddRBS(m_Objs, context);
     m_Objs.GetMap().erase("genes");
@@ -237,10 +235,9 @@ DISCREPANCY_CASE(MISSING_GENES, CSeq_feat_BY_BIOSEQ, eDisc | eSubmitter | eSmart
     if (gene) {
         return;
     }
-    CConstRef<CSeq_feat> gene_feat = CCleanup::GetGeneForFeature(obj, context.GetScope());
+    const CSeq_feat* gene_feat = context.GetGeneForFeature(obj);
     if (!gene_feat) {
-        m_Objs[kMissingGene].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)),
-            false).Fatal();
+        m_Objs[kMissingGene].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false).Fatal();
     }
 }
 
@@ -354,20 +351,17 @@ DISCREPANCY_CASE(SUPERFLUOUS_GENE, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller, "Supe
     if (!obj.GetData().IsGene() || (obj.IsSetPseudo() && obj.GetPseudo())) {
         return;
     }
-
     // Are any "reportable" features under this gene?
     CFeat_CI fi(context.GetScope(), obj.GetLocation());
     bool found_reportable = false;
     while (fi && !found_reportable) {
         if (!fi->GetData().IsGene()) {
-            CConstRef<CSeq_feat> reported_gene = CCleanup::GetGeneForFeature(*(fi->GetSeq_feat()), fi->GetScope());
-            if (reported_gene.GetPointer() == &obj) {
+            if (&obj == context.GetGeneForFeature(*(fi->GetSeq_feat()))) {
                 found_reportable = true;
             }
         }
         ++fi;
     }
-
     if (!found_reportable) {
         m_Objs[kSuperfluousGene].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
     }
@@ -1335,9 +1329,7 @@ DISCREPANCY_CASE(SHORT_INTRON, CSeq_feat, eDisc | eOncaller | eSubmitter | eSmar
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(SHORT_INTRON)
-//  ----------------------------------------------------------------------------
 {
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
 }
@@ -1358,6 +1350,7 @@ static void AddException(const CSeq_feat& sf, CScope& scope, const string& excep
     CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(sf));
     feh.Replace(*new_feat);
 }
+
 
 static void AdjustBacterialGeneForCodingRegionWithShortIntron(CSeq_feat& sf, CSeq_feat& gene, bool is_bacterial)
 {
@@ -1398,6 +1391,7 @@ static void AdjustBacterialGeneForCodingRegionWithShortIntron(CSeq_feat& sf, CSe
     }
 }
 
+
 static void ConvertToMiscFeature(CSeq_feat& sf, CScope& scope)
 {
     if (sf.IsSetData()) {
@@ -1428,12 +1422,11 @@ static void ConvertToMiscFeature(CSeq_feat& sf, CScope& scope)
     }
 }
 
+
 static bool AddExceptionsToShortIntron(const CSeq_feat& sf, CScope& scope, std::list<CConstRef<CSeq_loc>>& to_remove)
 {
     bool rval = false;
-
     const CBioSource* source = nullptr;
-
     {
         CBioseq_Handle bsh;
         try {
@@ -1447,27 +1440,19 @@ static bool AddExceptionsToShortIntron(const CSeq_feat& sf, CScope& scope, std::
             source = &src->GetSource();
         }
     }
-
     if (source) {
         if (source->IsSetGenome() && source->GetGenome() == CBioSource::eGenome_mitochondrion) {
             return false;
         }
-        
         bool is_bacterial = CDiscrepancyContext::HasLineage(*source, "", "Bacteria");
         if (is_bacterial || CDiscrepancyContext::HasLineage(*source, "", "Archea")) {
-
             CConstRef<CSeq_feat> gene = CCleanup::GetGeneForFeature(sf, scope);
             if (gene.NotEmpty()) {
-                
                 CSeq_feat* gene_edit = const_cast<CSeq_feat*>(gene.GetPointer());
                 CSeq_feat& sf_edit = const_cast<CSeq_feat&>(sf);
-
                 rval = true;
-
                 gene_edit->SetPseudo(true);
-
                 AdjustBacterialGeneForCodingRegionWithShortIntron(sf_edit, *gene_edit, is_bacterial);
-
                 // Merge gene's location
                 if (gene_edit->IsSetLocation()) {
                     CRef<CSeq_loc> new_loc = gene_edit->SetLocation().Merge(CSeq_loc::fMerge_All, nullptr);
@@ -1475,12 +1460,9 @@ static bool AddExceptionsToShortIntron(const CSeq_feat& sf, CScope& scope, std::
                         gene_edit->SetLocation().Assign(*new_loc);
                     }
                 }
-
                 if (sf.IsSetProduct()) {
-                    
                     to_remove.push_back(CConstRef<CSeq_loc>(&sf.GetProduct()));
                 }
-
                 if (is_bacterial) {
                     ConvertToMiscFeature(sf_edit, scope);
                 }
@@ -1489,11 +1471,9 @@ static bool AddExceptionsToShortIntron(const CSeq_feat& sf, CScope& scope, std::
                     sf_handle.Remove();
                 }
             }
-
             return rval;
         }
     }
-
     if (!sf.IsSetExcept_text() || NStr::Find(sf.GetExcept_text(), "low-quality sequence region") == string::npos) {
         AddException(sf, scope, "low-quality sequence region");
         rval = true;
@@ -1506,7 +1486,6 @@ DISCREPANCY_AUTOFIX(SHORT_INTRON)
 {
     TReportObjectList list = item->GetDetails();
     unsigned int n = 0;
-
     std::list<CConstRef<CSeq_loc>> to_remove;
 
     NON_CONST_ITERATE(TReportObjectList, it, list) {
@@ -1517,7 +1496,6 @@ DISCREPANCY_AUTOFIX(SHORT_INTRON)
     }
 
     ITERATE(std::list<CConstRef<CSeq_loc>>, loc, to_remove) {
-
         CBioseq_Handle bioseq_h = scope.GetBioseqHandle(**loc);
         CBioseq_EditHandle bioseq_edit = bioseq_h.GetEditHandle();
         bioseq_edit.Remove();
@@ -1528,9 +1506,8 @@ DISCREPANCY_AUTOFIX(SHORT_INTRON)
 
 
 // UNNECESSARY_VIRUS_GENE
-//  ----------------------------------------------------------------------------
+
 DISCREPANCY_CASE(UNNECESSARY_VIRUS_GENE, CSeq_feat, eOncaller, "Unnecessary gene features on virus: on when lineage is not Picornaviridae,Potyviridae,Flaviviridae and Togaviridae")
-//  ----------------------------------------------------------------------------
 {
     if (!obj.IsSetData() || !obj.GetData().IsGene()) {
         return;
@@ -1545,18 +1522,15 @@ DISCREPANCY_CASE(UNNECESSARY_VIRUS_GENE, CSeq_feat, eOncaller, "Unnecessary gene
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(UNNECESSARY_VIRUS_GENE)
-//  ----------------------------------------------------------------------------
 {
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
 }
 
 
 // CDS_HAS_CDD_XREF
-//  ----------------------------------------------------------------------------
+
 DISCREPANCY_CASE(CDS_HAS_CDD_XREF, CSeq_feat, eDisc | eOncaller, "CDS has CDD Xref")
-//  ----------------------------------------------------------------------------
 {
     if (!obj.IsSetData() || !obj.GetData().IsCdregion() || !obj.IsSetDbxref()) {
         return;
@@ -1576,9 +1550,7 @@ DISCREPANCY_CASE(CDS_HAS_CDD_XREF, CSeq_feat, eDisc | eOncaller, "CDS has CDD Xr
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(CDS_HAS_CDD_XREF)
-//  ----------------------------------------------------------------------------
 {
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
 }
@@ -1588,9 +1560,7 @@ DISCREPANCY_SUMMARIZE(CDS_HAS_CDD_XREF)
 
 static const string kShowTranslExc = "[n] coding region[s] [has] a translation exception";
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(SHOW_TRANSL_EXCEPT, CSeq_feat, eDisc | eSubmitter | eSmart, "Show translation exception")
-//  ----------------------------------------------------------------------------
 {
     if (!obj.IsSetData() || !obj.GetData().IsCdregion()) {
         return;
