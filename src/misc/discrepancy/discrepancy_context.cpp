@@ -733,7 +733,7 @@ const CSeq_feat* CDiscrepancyContext::GetGeneForFeature(const CSeq_feat& feat)
 bool CDiscrepancyContext::IsPseudo(const CSeq_feat& feat)
 {
     if (m_IsPseudoMap.find(&feat) == m_IsPseudoMap.end()) {
-        m_IsPseudoMap[&feat] = CCleanup::IsPseudo(feat, *m_Scope);
+        m_IsPseudoMap[&feat] = sequence::IsPseudo(feat, *m_Scope);
     }
     return m_IsPseudoMap[&feat];
 }

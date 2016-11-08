@@ -358,6 +358,7 @@ DISCREPANCY_CASE(SUPERFLUOUS_GENE, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller, "Supe
         if (!fi->GetData().IsGene()) {
             if (&obj == context.GetGeneForFeature(*(fi->GetSeq_feat()))) {
                 found_reportable = true;
+                break;
             }
         }
         ++fi;
