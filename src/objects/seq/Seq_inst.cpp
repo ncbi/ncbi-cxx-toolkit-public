@@ -79,6 +79,65 @@ string CSeq_inst::GetMoleculeClass(CSeq_inst::EMol mol)
 }
 
 
+bool CSeq_inst::ConvertDeltaToRaw()
+{
+    if (!IsSetRepr() || GetRepr() != objects::CSeq_inst::eRepr_delta ||
+        !IsSetExt() || !GetExt().IsDelta())
+    {
+        return false;
+    }
+
+    // can only be done if there are no seq-loc objects
+    ITERATE(CSeq_ext::TDelta::Tdata, it, GetExt().GetDelta().Get())
+    {
+        if ((*it)->IsLoc()) {
+            return false;
+        }
+    }
+
+    string iupacna;
+    NON_CONST_ITERATE(objects::CSeq_ext::TDelta::Tdata, it, SetExt().SetDelta().Set())
+    {
+        if ((*it)->IsLiteral())
+        {
+            if ((*it)->GetLiteral().IsSetSeq_data())
+            {
+                string str;
+                switch ((*it)->GetLiteral().GetSeq_data().Which())
+                {
+                case objects::CSeq_data::e_Iupacna:
+                    str = (*it)->GetLiteral().GetSeq_data().GetIupacna();
+                    break;
+                case objects::CSeq_data::e_Ncbi2na:
+                    CSeqConvert::Convert((*it)->GetLiteral().GetSeq_data().GetNcbi2na().Get(), CSeqUtil::e_Ncbi2na, 0, (*it)->GetLiteral().GetLength(), str, CSeqUtil::e_Iupacna);
+                    break;
+                case objects::CSeq_data::e_Ncbi4na:
+                    CSeqConvert::Convert((*it)->GetLiteral().GetSeq_data().GetNcbi4na().Get(), CSeqUtil::e_Ncbi4na, 0, (*it)->GetLiteral().GetLength(), str, CSeqUtil::e_Iupacna);
+                    break;
+                case objects::CSeq_data::e_Ncbi8na:
+                    CSeqConvert::Convert((*it)->GetLiteral().GetSeq_data().GetNcbi8na().Get(), CSeqUtil::e_Ncbi8na, 0, (*it)->GetLiteral().GetLength(), str, CSeqUtil::e_Iupacna);
+                    break;
+                default:
+                    break;
+                }
+                iupacna += str;
+            }
+
+            if (!(*it)->GetLiteral().IsSetSeq_data() || (*it)->GetLiteral().GetSeq_data().IsGap())
+            {
+                TSeqPos length = (*it)->GetLiteral().GetLength();
+                iupacna += string(length, 'N');
+            }
+        }
+    }
+
+    SetRepr(objects::CSeq_inst::eRepr_raw);
+    SetSeq_data().SetIupacna() = objects::CIUPACna(iupacna);
+    ResetExt();
+    return true;
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

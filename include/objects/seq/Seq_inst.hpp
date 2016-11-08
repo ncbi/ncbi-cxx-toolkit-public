@@ -66,6 +66,8 @@ public:
     // translate EMol to string
     static string GetMoleculeClass(EMol mol);
 
+    bool ConvertDeltaToRaw();
+
 private:
     // Prohibit copy constructor and assignment operator
     CSeq_inst(const CSeq_inst& value);
