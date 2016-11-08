@@ -1327,6 +1327,41 @@ bool IsTransSpliced(const CSeq_feat& feat)
 }
 
 
+bool IsPseudo(const CSeq_feat& feat, CScope& scope)
+{
+    if (feat.IsSetPseudo() && feat.GetPseudo()) {
+        return true;
+    }
+    if (feat.IsSetQual()) {
+        ITERATE(CSeq_feat::TQual, it, feat.GetQual()) {
+            if ((*it)->IsSetQual() && NStr::EqualNocase((*it)->GetQual(), "pseudogene")) {
+                return true;
+            }
+        }
+    }
+    if (feat.GetData().IsGene()) {
+        if (feat.GetData().GetGene().IsSetPseudo() && feat.GetData().GetGene().GetPseudo()) {
+            return true;
+        }
+    } else {
+        if (feat.IsSetXref()) {
+            ITERATE(CSeq_feat::TXref, it, feat.GetXref()) {
+                if ((*it)->IsSetData() && (*it)->GetData().IsGene() &&
+                    (*it)->GetData().GetGene().IsSetPseudo() &&
+                    (*it)->GetData().GetGene().GetPseudo()) {
+                    return true;
+                }
+            }
+        }
+        CConstRef<CSeq_feat> gene = GetGeneForFeature(feat, scope);
+        if (gene && IsPseudo(*gene, scope)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 CConstRef<CSeq_feat> GetGeneForFeature(const CSeq_feat& feat, CScope& scope)
 {
     if (feat.IsSetXref()) {

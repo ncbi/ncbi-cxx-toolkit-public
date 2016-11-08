@@ -588,6 +588,12 @@ CConstRef<CSeq_feat> GetOverlappingGene(
 NCBI_XOBJUTIL_EXPORT
 CConstRef<CSeq_feat> GetGeneForFeature(const CSeq_feat& feat, CScope& scope);
 
+/// Determines whether given feature is pseudo, using gene associated with feature
+/// if necessary
+NCBI_XOBJUTIL_EXPORT
+bool IsPseudo(const CSeq_feat& feat, CScope& scope);
+
+
 NCBI_XOBJUTIL_EXPORT
 CConstRef<CSeq_feat> GetOverlappingmRNA(const CSeq_loc& loc, CScope& scope);
 
