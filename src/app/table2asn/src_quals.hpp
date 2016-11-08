@@ -51,7 +51,7 @@ public:
 private:
    bool x_ParseAndAddTracks(objects::CBioseq& container,  const string& name, const string& value);
 
-   void x_ApplyAllQualifiers(objects::CSourceModParser& mod, objects::CBioseq& bioseq);
+   bool x_ApplyAllQualifiers(objects::CSourceModParser& mod, objects::CBioseq& bioseq);
    void x_AddQualifiers(objects::CSourceModParser& mod, const string& filename);
    void x_LoadSourceQualifiers(TSrcQuals& quals, const string& filename, const string& opt_map_filename);
 

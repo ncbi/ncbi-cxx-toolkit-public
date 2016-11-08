@@ -33,19 +33,6 @@
 
 #include <ncbi_pch.hpp>
 
-#if 0
-#include <objects/seq/Seq_descr.hpp>
-#include <objects/seq/Seqdesc.hpp>
-#include <objects/seq/Bioseq.hpp>
-#include <objects/seqset/Seq_entry.hpp>
-#include <objects/seqset/Bioseq_set.hpp>
-#include <objects/general/User_object.hpp>
-#include <objects/general/Object_id.hpp>
-#include <objtools/readers/source_mod_parser.hpp>
-
-
-#endif
-
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_ci.hpp>
@@ -58,6 +45,8 @@
 #include "src_quals.hpp"
 #include "struc_cmt_reader.hpp"
 #include "table2asn_context.hpp"
+#include <objtools/readers/line_error.hpp>
+#include <objtools/readers/message_listener.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -67,7 +56,7 @@ USING_SCOPE(objects);
 void TSrcQuals::x_AddQualifiers(CSourceModParser& mod, const vector<CTempString>& values)
 {
     // first is always skipped since it's an id 
-    for (size_t i = 0; i < values.size() && i < m_cols.size(); i++)
+    for (size_t i = 1; i < values.size() && i < m_cols.size(); i++)
     {
         if (!values[i].empty())
         {
@@ -114,7 +103,7 @@ CSourceQualifiersReader::~CSourceQualifiersReader()
 {
 }
 
-void CSourceQualifiersReader::x_ApplyAllQualifiers(objects::CSourceModParser& mod, objects::CBioseq& bioseq)
+bool CSourceQualifiersReader::x_ApplyAllQualifiers(objects::CSourceModParser& mod, objects::CBioseq& bioseq)
 {
     // first is always skipped since it's an id 
     CSourceModParser::TModsRange mods[2];
@@ -136,11 +125,18 @@ void CSourceQualifiersReader::x_ApplyAllQualifiers(objects::CSourceModParser& mo
         if (NStr::CompareNocase(mod->key, "bioproject") == 0)
             edit::CDBLink::SetBioProject(CTable2AsnContext::SetUserObject(bioseq.SetDescr(), "DBLink"), mod->value);
         else
-            if (NStr::CompareNocase(mod->key, "biosample") == 0)
-                edit::CDBLink::SetBioSample(CTable2AsnContext::SetUserObject(bioseq.SetDescr(), "DBLink"), mod->value);
-
-        x_ParseAndAddTracks(bioseq, mod->key, mod->value);
+        if (NStr::CompareNocase(mod->key, "biosample") == 0)
+            edit::CDBLink::SetBioSample(CTable2AsnContext::SetUserObject(bioseq.SetDescr(), "DBLink"), mod->value);
+        else
+        if (!x_ParseAndAddTracks(bioseq, mod->key, mod->value))
+        {
+            m_context->m_logger->PutError(*auto_ptr<CLineError>(
+                CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
+                mod->key)));               
+            return false;
+        }
     }
+    return true;
 }
 
 bool CSourceQualifiersReader::LoadSourceQualifiers(const string& filename, const string& opt_map_filename)
@@ -273,7 +269,10 @@ void CSourceQualifiersReader::ProcessSourceQualifiers(CSeq_entry& entry, const s
             m_quals[1].AddQualifiers(mod, opt_map_filename);
         }
 
-        x_ApplyAllQualifiers(mod, *dest);
+        if (!x_ApplyAllQualifiers(mod, *dest))
+          NCBI_THROW(CArgException, eConstraint,
+             "there are found unrecognised source modifiers");
+
     }
 }
 
