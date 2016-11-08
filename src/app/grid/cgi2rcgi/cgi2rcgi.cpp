@@ -956,10 +956,9 @@ void CCgi2RCgiApp::DefineRefreshTags(CGridCgiContext& grid_ctx,
         "no-cache, no-store, max-age=0, private, must-revalidate");
 
     if (idelay >= 0) {
-        // Must correspond to SRCgiWait values
         m_Response->SetHeaderValue("NCBI-RCGI-RetryURL", url);
-        m_Response->SetHeaderValue("NCBI-RCGI-RetryDelay", idelay_str);
 
+        // Must correspond to SRCgiWait values
         m_Response->SetHeaderValue(CHttpRetryContext::kHeader_Url, url);
         m_Response->SetHeaderValue(CHttpRetryContext::kHeader_Delay, idelay_str);
     }
