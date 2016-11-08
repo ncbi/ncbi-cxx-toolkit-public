@@ -683,6 +683,7 @@ void CBioSource::UpdateWithBioSample(const CBioSource& biosample, bool force, bo
             if (GetOrg().IsSetOrgname() && GetOrg().GetOrgname().IsSetName()) {
                 SetOrg().SetOrgname().ResetName();
             }
+            RemoveOrgMod(COrgMod::eSubtype_old_name);
         } else if (NStr::EqualNocase((*it)->GetFieldName(), "Tax ID")) {
             try {
                 SetOrg().SetTaxId(atoi((*it)->GetSampleVal().c_str()));
