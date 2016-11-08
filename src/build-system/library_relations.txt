@@ -15,11 +15,7 @@ BlastOptsTools needs $(BLAST_LIBS)
 BlastOptsTools needs xcgi
 BlastOptsTools needs xhtml
 BoostTestXML needs xser
-EntrezCache_cgi needs $(EUTILS_LIBS)
-EntrezCache_cgi needs dbloadb
-EntrezCache_cgi needs entrez2cli
-EntrezCache_cgi needs fbsdstd_g
-EntrezCache_cgi needs seqdb
+EntrezCache_cgi includes EntrezCache_g
 EntrezCache_g needs $(EUTILS_LIBS)
 EntrezCache_g needs dbloadb
 EntrezCache_g needs entrez2cli
