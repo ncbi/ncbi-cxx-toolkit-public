@@ -789,6 +789,8 @@ AR\|APR\|MAY\|JUN\|JUL\|AUG\|SEP\|OCT\|NOV\|DEC\)-\(19\|20\)\(0\|1\|2\|3\|4\|5
         match-expression ".+ v\. .+",
         required TRUE } ,
       {
+        field-name "Polishing Method" } ,
+      {
         field-name "Assembly Name" } ,
       {
         field-name "Long Assembly Name" } ,

@@ -822,6 +822,8 @@ static const char* const s_Defaultvalidrules[] = {
     "        match-expression \".+ v\\. .+\",",
     "        required TRUE } ,",
     "      {",
+    "        field-name \"Polishing Method\" } ,",
+    "      {",
     "        field-name \"Assembly Name\" } ,",
     "      {",
     "        field-name \"Long Assembly Name\" } ,",
