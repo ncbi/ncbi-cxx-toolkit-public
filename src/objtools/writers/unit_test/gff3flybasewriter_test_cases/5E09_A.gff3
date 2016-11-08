@@ -5,9 +5,9 @@
 # GFF3 specifications in accordance with the views of Flybase.
 # This impacts the feature tag set, and meaning of the phase.
 #!processor NCBI annotwriter
-5EO9_A	PDB	nucleotide_to_protein_match	2	37	573	+	0	ID=85c7e19a-b447-46c7-bcbd-dc7b255e7a4d;Target=NT_037436.4 10033317 10033424 +;def=Chain A%2C Crystal Structure Of The Complex Of Dpr6 Domain 1 Bound To Dip-alpha Domain 1+2;taxid=7227;pct_coverage=96.3636;pct_identity_gap=99.0566;pct_identity_ungap=99.0566;rank=1
-5EO9_A	PDB	nucleotide_to_protein_match	38	107	.	+	0	ID=85c7e19a-b447-46c7-bcbd-dc7b255e7a4d;Target=NT_037436.4 10036646 10036855 +
+5EO9_A	PDB	protein_match	2	37	573	+	0	ID=85c7e19a-b447-46c7-bcbd-dc7b255e7a4d;Target=NT_037436.4 10033317 10033424 +;def=Chain A%2C Crystal Structure Of The Complex Of Dpr6 Domain 1 Bound To Dip-alpha Domain 1+2;taxid=7227;pct_coverage=96.3636;pct_identity_gap=99.0566;pct_identity_ungap=99.0566;rank=1
+5EO9_A	PDB	protein_match	38	107	.	+	0	ID=85c7e19a-b447-46c7-bcbd-dc7b255e7a4d;Target=NT_037436.4 10036646 10036855 +
 ###
-5EO9_A	PDB	nucleotide_to_protein_match	2	37	.	+	0	ID=9b8b50e0-34e5-4a08-9980-173a3145488d;Target=NT_037436.4 10156353 10156460 -
-5EO9_A	PDB	nucleotide_to_protein_match	38	107	.	+	0	ID=9b8b50e0-34e5-4a08-9980-173a3145488d;Target=NT_037436.4 10154763 10154972 -
+5EO9_A	PDB	protein_match	2	37	.	+	0	ID=9b8b50e0-34e5-4a08-9980-173a3145488d;Target=NT_037436.4 10156353 10156460 -
+5EO9_A	PDB	protein_match	38	107	.	+	0	ID=9b8b50e0-34e5-4a08-9980-173a3145488d;Target=NT_037436.4 10154763 10154972 -
 ###

@@ -5,16 +5,16 @@
 # GFF3 specifications in accordance with the views of Flybase.
 # This impacts the feature tag set, and meaning of the phase.
 #!processor NCBI annotwriter
-XP_013178489.1	RefSeq	nucleotide_to_protein_match	77	105	7550	+	0	ID=a19eed5f-eb95-42a2-9c13-ff81c0ad3ee9;Target=NT_033779.5 3791020 3791106 +;def=PREDICTED: uncharacterized protein LOC106125730 isoform X1 [Papilio xuthus];taxid=66420;pct_coverage=87.2425;pct_identity_gap=53.2073;pct_identity_ungap=54.6458;rank=1
-XP_013178489.1	RefSeq	nucleotide_to_protein_match	142	172	.	+	0	ID=a19eed5f-eb95-42a2-9c13-ff81c0ad3ee9;Target=NT_033779.5 3792683 3792774 +
-XP_013178489.1	RefSeq	nucleotide_to_protein_match	172	1512	.	+	2	ID=a19eed5f-eb95-42a2-9c13-ff81c0ad3ee9;Target=NT_033779.5 3792833 3796886 +;Gap=M79 D4 M3 D1 M360 I3 M57 I2 M6 D1 M47 D4 M3 I1 M34 I2 M24 I4 M3 I2 M185 I2 M4 I1 M9 I6 M99 D2 M415
-XP_013178489.1	RefSeq	nucleotide_to_protein_match	1513	2244	.	+	0	ID=a19eed5f-eb95-42a2-9c13-ff81c0ad3ee9;Target=NT_033779.5 3796949 3799154 +;Gap=M109 I10 M107 I2 M9 I1 M85 D12 M10 I4 M7 I1 M119 D2 M271
-XP_013178489.1	RefSeq	nucleotide_to_protein_match	2244	2314	.	+	1	ID=a19eed5f-eb95-42a2-9c13-ff81c0ad3ee9;Target=NT_033779.5 3799217 3799428 +
-XP_013178489.1	RefSeq	nucleotide_to_protein_match	2315	2433	.	+	0	ID=a19eed5f-eb95-42a2-9c13-ff81c0ad3ee9;Target=NT_033779.5 3799498 3799853 +
-XP_013178489.1	RefSeq	nucleotide_to_protein_match	2433	2475	.	+	2	ID=a19eed5f-eb95-42a2-9c13-ff81c0ad3ee9;Target=NT_033779.5 3799912 3800037 +
-XP_013178489.1	RefSeq	nucleotide_to_protein_match	2475	2518	.	+	2	ID=a19eed5f-eb95-42a2-9c13-ff81c0ad3ee9;Target=NT_033779.5 3800260 3800387 +
-XP_013178489.1	RefSeq	nucleotide_to_protein_match	2518	2642	.	+	1	ID=a19eed5f-eb95-42a2-9c13-ff81c0ad3ee9;Target=NT_033779.5 3800451 3800821 +;Gap=M20 D1 M103
-XP_013178489.1	RefSeq	nucleotide_to_protein_match	2643	2705	.	+	0	ID=a19eed5f-eb95-42a2-9c13-ff81c0ad3ee9;Target=NT_033779.5 3800880 3801068 +
-XP_013178489.1	RefSeq	nucleotide_to_protein_match	2731	2754	.	+	0	ID=a19eed5f-eb95-42a2-9c13-ff81c0ad3ee9;Target=NT_033779.5 3801226 3801294 +;Gap=M14 D1 M9
-XP_013178489.1	RefSeq	nucleotide_to_protein_match	2974	3010	.	+	0	ID=a19eed5f-eb95-42a2-9c13-ff81c0ad3ee9;Target=NT_033779.5 3802126 3802242 +;Gap=M15 I2 M22
+XP_013178489.1	RefSeq	protein_match	77	105	7550	+	0	ID=a19eed5f-eb95-42a2-9c13-ff81c0ad3ee9;Target=NT_033779.5 3791020 3791106 +;def=PREDICTED: uncharacterized protein LOC106125730 isoform X1 [Papilio xuthus];taxid=66420;pct_coverage=87.2425;pct_identity_gap=53.2073;pct_identity_ungap=54.6458;rank=1
+XP_013178489.1	RefSeq	protein_match	142	172	.	+	0	ID=a19eed5f-eb95-42a2-9c13-ff81c0ad3ee9;Target=NT_033779.5 3792683 3792774 +
+XP_013178489.1	RefSeq	protein_match	172	1512	.	+	2	ID=a19eed5f-eb95-42a2-9c13-ff81c0ad3ee9;Target=NT_033779.5 3792833 3796886 +;Gap=M79 D4 M3 D1 M360 I3 M57 I2 M6 D1 M47 D4 M3 I1 M34 I2 M24 I4 M3 I2 M185 I2 M4 I1 M9 I6 M99 D2 M415
+XP_013178489.1	RefSeq	protein_match	1513	2244	.	+	0	ID=a19eed5f-eb95-42a2-9c13-ff81c0ad3ee9;Target=NT_033779.5 3796949 3799154 +;Gap=M109 I10 M107 I2 M9 I1 M85 D12 M10 I4 M7 I1 M119 D2 M271
+XP_013178489.1	RefSeq	protein_match	2244	2314	.	+	1	ID=a19eed5f-eb95-42a2-9c13-ff81c0ad3ee9;Target=NT_033779.5 3799217 3799428 +
+XP_013178489.1	RefSeq	protein_match	2315	2433	.	+	0	ID=a19eed5f-eb95-42a2-9c13-ff81c0ad3ee9;Target=NT_033779.5 3799498 3799853 +
+XP_013178489.1	RefSeq	protein_match	2433	2475	.	+	2	ID=a19eed5f-eb95-42a2-9c13-ff81c0ad3ee9;Target=NT_033779.5 3799912 3800037 +
+XP_013178489.1	RefSeq	protein_match	2475	2518	.	+	2	ID=a19eed5f-eb95-42a2-9c13-ff81c0ad3ee9;Target=NT_033779.5 3800260 3800387 +
+XP_013178489.1	RefSeq	protein_match	2518	2642	.	+	1	ID=a19eed5f-eb95-42a2-9c13-ff81c0ad3ee9;Target=NT_033779.5 3800451 3800821 +;Gap=M20 D1 M103
+XP_013178489.1	RefSeq	protein_match	2643	2705	.	+	0	ID=a19eed5f-eb95-42a2-9c13-ff81c0ad3ee9;Target=NT_033779.5 3800880 3801068 +
+XP_013178489.1	RefSeq	protein_match	2731	2754	.	+	0	ID=a19eed5f-eb95-42a2-9c13-ff81c0ad3ee9;Target=NT_033779.5 3801226 3801294 +;Gap=M14 D1 M9
+XP_013178489.1	RefSeq	protein_match	2974	3010	.	+	0	ID=a19eed5f-eb95-42a2-9c13-ff81c0ad3ee9;Target=NT_033779.5 3802126 3802242 +;Gap=M15 I2 M22
 ###
