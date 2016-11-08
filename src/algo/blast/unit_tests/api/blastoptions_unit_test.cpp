@@ -39,6 +39,8 @@
 #include <algo/blast/core/blast_setup.h>
 #include "test_objmgr.hpp"
 #include <algo/blast/core/hspfilter_besthit.h>
+#include <objects/blast/Blast4_parameter.hpp>
+#include <objects/blast/Blast4_parameters.hpp>
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 
