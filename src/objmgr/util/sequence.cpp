@@ -1330,7 +1330,21 @@ bool IsTransSpliced(const CSeq_feat& feat)
 CConstRef<CSeq_feat> GetGeneForFeature(const CSeq_feat& feat, CScope& scope)
 {
     if (feat.IsSetXref()) {
-        CBioseq_Handle bsh = scope.GetBioseqHandle(feat.GetLocation());
+        CBioseq_Handle bsh;
+        try {
+            CBioseq_Handle bsh = scope.GetBioseqHandle(feat.GetLocation());
+        } catch (CException& ex) {
+            CSeq_loc_CI li(feat.GetLocation());
+            while (li) {
+                try {
+                    bsh = scope.GetBioseqHandle(*(li.GetRangeAsSeq_loc()));
+                    if (bsh) break;
+                } catch (CException& ex2) {
+                    // try the next one
+                }
+                ++li;
+            }
+        }
         if (!bsh) {
             return CConstRef<CSeq_feat>();
         }
