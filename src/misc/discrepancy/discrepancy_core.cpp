@@ -341,6 +341,7 @@ void CDiscrepancyContext::Parse(const CSerialObject& root)
 
     m_TextMap.clear();
     m_TextMapShort.clear();
+    m_IsPseudoMap.clear();
     m_Current_Submit_block.Reset();
     m_Current_Submit_block_StringObj.Reset();
     m_Current_Cit_sub_StringObj.Reset();

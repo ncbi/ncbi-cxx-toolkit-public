@@ -63,26 +63,20 @@ DISCREPANCY_MODULE(feature_tests);
 
 const string kPseudoMismatch = "[n] CDSs, RNAs, and genes have mismatching pseudos.";
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(PSEUDO_MISMATCH, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller | eSubmitter | eSmart, "Pseudo Mismatch")
-//  ----------------------------------------------------------------------------
 {
     if (obj.IsSetPseudo() && obj.GetPseudo() && 
         (obj.GetData().IsCdregion() || obj.GetData().IsRna())) {
         CConstRef<CSeq_feat> gene = CCleanup::GetGeneForFeature(obj, context.GetScope());
-        if (gene && !CCleanup::IsPseudo(*gene, context.GetScope())) {
-            m_Objs[kPseudoMismatch].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), 
-                    false).Fatal();
-            m_Objs[kPseudoMismatch].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(gene)),
-                    false).Fatal();
+        if (gene && !context.IsPseudo(*gene)) {
+            m_Objs[kPseudoMismatch].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false).Fatal();
+            m_Objs[kPseudoMismatch].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(gene)), false).Fatal();
         }
     }
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(PSEUDO_MISMATCH)
-//  ----------------------------------------------------------------------------
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
@@ -327,7 +321,7 @@ DISCREPANCY_CASE(EXTRA_GENES, CSeq_feat_BY_BIOSEQ, eDisc | eSubmitter | eSmart, 
         return;
     }
     
-    if (CCleanup::IsPseudo(obj, context.GetScope())) {
+    if (context.IsPseudo(obj)) {
         m_Objs[kExtraGene][kExtraPseudo].Ext().Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
     } else {
         // do not report if note or description
@@ -344,9 +338,8 @@ DISCREPANCY_CASE(EXTRA_GENES, CSeq_feat_BY_BIOSEQ, eDisc | eSubmitter | eSmart, 
 
 }
 
-//  ----------------------------------------------------------------------------
+
 DISCREPANCY_SUMMARIZE(EXTRA_GENES)
-//  ----------------------------------------------------------------------------
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
@@ -706,11 +699,9 @@ DISCREPANCY_AUTOFIX(PARTIAL_PROBLEMS)
 const string kEukaryoteShouldHavemRNA = "no mRNA present";
 const string kEukaryoticCDSHasMrna = "Eukaryotic CDS has mRNA";
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(EUKARYOTE_SHOULD_HAVE_MRNA, CSeq_feat_BY_BIOSEQ, eDisc | eSubmitter | eSmart, "Eukaryote should have mRNA")
-//  ----------------------------------------------------------------------------
 {
-    if (!obj.IsSetData() || !obj.GetData().IsCdregion() || CCleanup::IsPseudo(obj, context.GetScope())) {
+    if (!obj.IsSetData() || !obj.GetData().IsCdregion() || context.IsPseudo(obj)) {
         return;
     }
     if (!context.IsEukaryotic()) {
@@ -1265,9 +1256,7 @@ const string& kJoinedFeaturesNoException = "[n] feature[s] [has] joined location
 const string& kJoinedFeaturesException = "[n] feature[s] [has] joined location but exception '";
 const string& kJoinedFeaturesBlankException = "[n] feature[s] [has] joined location but a blank exception";
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(JOINED_FEATURES, CSeq_feat_BY_BIOSEQ, eDisc | eSubmitter | eSmart, "Joined Features: on when non-eukaryote")
-//  ----------------------------------------------------------------------------
 {
     if (context.IsEukaryotic() || !obj.IsSetLocation()) {
         return;
@@ -1288,9 +1277,8 @@ DISCREPANCY_CASE(JOINED_FEATURES, CSeq_feat_BY_BIOSEQ, eDisc | eSubmitter | eSma
     }
 }
 
-//  ----------------------------------------------------------------------------
+
 DISCREPANCY_SUMMARIZE(JOINED_FEATURES)
-//  ----------------------------------------------------------------------------
 {
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
 }
@@ -1302,14 +1290,12 @@ const string kShortIntronExcept = "[n] intron[s] [is] shorter than 11 nt and [ha
 
 //"Introns shorter than 10 nt", "DISC_SHORT_INTRON", FindShortIntrons, AddExceptionsToShortIntrons},
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(SHORT_INTRON, CSeq_feat, eDisc | eOncaller | eSubmitter | eSmart, "Introns shorter than 10 nt")
-//  ----------------------------------------------------------------------------
 {
     if (!obj.IsSetData() || !obj.GetData().IsCdregion() || !obj.IsSetLocation() || obj.IsSetExcept()) {
         return;
     }
-    if (CCleanup::IsPseudo(obj, context.GetScope())) {
+    if (context.IsPseudo(obj)) {
         return;
     }
     // looking at space between coding region intervals
@@ -2147,16 +2133,12 @@ static bool IsProductMatch(const string& rna_product, const string& cds_product)
     return rna_rest == cds_rest;
 }
 
-//  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(CDS_WITHOUT_MRNA, CSeq_feat, eDisc | eOncaller | eSmart, "Coding regions on eukaryotic genomic DNA should have mRNAs with matching products")
-//  ----------------------------------------------------------------------------
-{
-    if (obj.IsSetData() && obj.GetData().IsCdregion() && !CCleanup::IsPseudo(obj, context.GetScope()) &&
-        context.IsEukaryotic() && context.IsDNA()) {
 
+DISCREPANCY_CASE(CDS_WITHOUT_MRNA, CSeq_feat, eDisc | eOncaller | eSmart, "Coding regions on eukaryotic genomic DNA should have mRNAs with matching products")
+{
+    if (obj.IsSetData() && obj.GetData().IsCdregion() && !context.IsPseudo(obj) && context.IsEukaryotic() && context.IsDNA()) {
         const CBioSource* bio_src = context.GetCurrentBiosource();
         if (bio_src && !context.IsOrganelle()) {
-
             CConstRef<CSeq_feat> mRNA = sequence::GetOverlappingmRNA(obj.GetLocation(), context.GetScope());
             if (mRNA.Empty()) {
                 m_Objs[kCDSWithoutMRNA].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj), eKeepRef, true), false);
@@ -2173,12 +2155,11 @@ DISCREPANCY_CASE(CDS_WITHOUT_MRNA, CSeq_feat, eDisc | eOncaller | eSmart, "Codin
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(CDS_WITHOUT_MRNA)
-//  ----------------------------------------------------------------------------
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
+
 
 static bool AddmRNAForCDS(const CSeq_feat& cds, CScope& scope)
 {
@@ -2197,6 +2178,7 @@ static bool AddmRNAForCDS(const CSeq_feat& cds, CScope& scope)
     }
     return true;
 }
+
 
 DISCREPANCY_AUTOFIX(CDS_WITHOUT_MRNA)
 {
@@ -2217,9 +2199,7 @@ DISCREPANCY_AUTOFIX(CDS_WITHOUT_MRNA)
 static const string kProteinNames = "All proteins have same name ";
 static const string kProteins = "Proteins";
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_CASE(PROTEIN_NAMES, CSeq_feat, eDisc | eSubmitter | eSmart, "Frequently appearing proteins")
-//  ----------------------------------------------------------------------------
 {
     if (obj.IsSetData() && obj.GetData().IsProt()) {
 
@@ -2311,21 +2291,15 @@ static bool IsmRnaQualsPresent(const CSeq_feat::TQual& quals)
     return protein_id && transcript_id;
 }
 
-//  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS, CSeq_feat, eDisc | eSubmitter | eSmart, "mRNA should have both protein_id and transcript_id")
-//  ----------------------------------------------------------------------------
-{
-    if (obj.IsSetData() && obj.GetData().IsCdregion() && !CCleanup::IsPseudo(obj, context.GetScope()) &&
-        context.IsEukaryotic() && context.IsDNA()) {
 
+DISCREPANCY_CASE(MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS, CSeq_feat, eDisc | eSubmitter | eSmart, "mRNA should have both protein_id and transcript_id")
+{
+    if (obj.IsSetData() && obj.GetData().IsCdregion() && !context.IsPseudo(obj) && context.IsEukaryotic() && context.IsDNA()) {
         const CBioSource* bio_src = context.GetCurrentBiosource();
         if (bio_src) {
-
             CConstRef<CSeq_feat> mRNA = sequence::GetmRNAforCDS(obj, context.GetScope());
             if (mRNA.NotEmpty()) {
-
                 if (mRNA->IsSetQual() && !IsmRnaQualsPresent(mRNA->GetQual())) {
-                
                     m_Objs[kNoLackOfmRnaData].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false).Fatal();
                 }
             }
@@ -2334,9 +2308,7 @@ DISCREPANCY_CASE(MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS, CSeq_feat, eDisc | eSu
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS)
-//  ----------------------------------------------------------------------------
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }

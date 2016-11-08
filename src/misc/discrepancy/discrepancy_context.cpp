@@ -721,6 +721,15 @@ const CSeq_feat* CDiscrepancyContext::GetCurrentGene() // todo: optimize
 }
 
 
+bool CDiscrepancyContext::IsPseudo(const CSeq_feat& feat)
+{
+    if (m_IsPseudoMap.find(&feat) == m_IsPseudoMap.end()) {
+        m_IsPseudoMap[&feat] = CCleanup::IsPseudo(feat, *m_Scope);
+    }
+    return m_IsPseudoMap[&feat];
+}
+
+
 void CDiscrepancyContext::ClearFeatureList(void)
 {
     m_FeatAll.clear();
@@ -770,7 +779,7 @@ void CDiscrepancyContext::CollectFeature(const CSeq_feat& feat)
     if (feat.GetData().IsRna()) {
         m_Feat_RNAs.push_back(CConstRef<CSeq_feat>(&feat));
     }
-    if (CCleanup::IsPseudo(feat, *m_Scope)) {
+    if (IsPseudo(feat)) {
         m_FeatPseudo.push_back(CConstRef<CSeq_feat>(&feat));
     }
 }

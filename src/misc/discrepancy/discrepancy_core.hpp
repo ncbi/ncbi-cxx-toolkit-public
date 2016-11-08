@@ -395,6 +395,7 @@ public:
     const CSeq_id * GetProteinId(void);
     bool IsRefseq(void);
     bool IsBGPipe(void);
+    bool IsPseudo(const CSeq_feat& feat);
     const CSeq_feat* GetCurrentGene(void);
     void CollectFeature(const CSeq_feat& feat);
     void ClearFeatureList(void);
@@ -459,6 +460,7 @@ protected:
     vector<CConstRef<CSeq_feat> > m_FeatMisc;
     map<const CSerialObject*, string> m_TextMap;
     map<const CSerialObject*, string> m_TextMapShort;
+    map<const CSeq_feat*, bool> m_IsPseudoMap;
 
 #define ADD_DISCREPANCY_TYPE(type) bool m_Enable_##type; vector<CDiscrepancyVisitor<type>* > m_All_##type;
     ADD_DISCREPANCY_TYPE(CSeq_inst)

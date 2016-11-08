@@ -1598,7 +1598,7 @@ DISCREPANCY_CASE(MULTIPLE_CDS_ON_MRNA, CSeq_feat_BY_BIOSEQ, eOncaller | eSubmitt
     if (obj.IsSetComment() && NStr::Find(obj.GetComment(), kDisruptedCmt) != string::npos) {
         m_Objs[kDisruptedCmt].Add(*(context.NewDiscObj(CConstRef<CSeq_feat>(&obj))), false);
     }
-    if (CCleanup::IsPseudo(obj, context.GetScope())) {
+    if (context.IsPseudo(obj)) {
         m_Objs[kPseudoCDSOnMRNA].Add(*(context.NewDiscObj(CConstRef<CSeq_feat>(&obj))), false);
     }
 }
