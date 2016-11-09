@@ -79,10 +79,21 @@ string CSeq_inst::GetMoleculeClass(CSeq_inst::EMol mol)
 }
 
 
+#define CONVERT_NA_CODING_TO_STR(encoding) \
+    case CSeq_data::e_##encoding: \
+        CSeqConvert::Convert(seq_data.Get##encoding().Get(), CSeqUtil::e_##encoding, 0, length, str, CSeqUtil::e_Iupacna); \
+        break;
+
+#define CONVERT_AA_CODING_TO_STR(encoding) \
+    case CSeq_data::e_##encoding: \
+        CSeqConvert::Convert(seq_data.Get##encoding().Get(), CSeqUtil::e_##encoding, 0, length, str, CSeqUtil::e_Iupacaa); \
+        break;
+
+
 bool CSeq_inst::ConvertDeltaToRaw()
 {
     if (!IsSetRepr() || GetRepr() != objects::CSeq_inst::eRepr_delta ||
-        !IsSetExt() || !GetExt().IsDelta())
+        !IsSetExt() || !GetExt().IsDelta() || !IsSetMol())
     {
         return false;
     }
@@ -95,44 +106,58 @@ bool CSeq_inst::ConvertDeltaToRaw()
         }
     }
 
+    size_t orig_len = GetLength();
     string iupacna;
     NON_CONST_ITERATE(objects::CSeq_ext::TDelta::Tdata, it, SetExt().SetDelta().Set())
     {
         if ((*it)->IsLiteral())
         {
+            const CSeq_literal& seq_literal = (*it)->GetLiteral();
+            TSeqPos length = seq_literal.GetLength();
             if ((*it)->GetLiteral().IsSetSeq_data())
             {
+                const CSeq_data& seq_data = seq_literal.GetSeq_data();
                 string str;
-                switch ((*it)->GetLiteral().GetSeq_data().Which())
+                switch (seq_data.Which())
                 {
-                case objects::CSeq_data::e_Iupacna:
-                    str = (*it)->GetLiteral().GetSeq_data().GetIupacna();
+                case CSeq_data::e_Iupacna:
+                    str = seq_data.GetIupacna();
                     break;
-                case objects::CSeq_data::e_Ncbi2na:
-                    CSeqConvert::Convert((*it)->GetLiteral().GetSeq_data().GetNcbi2na().Get(), CSeqUtil::e_Ncbi2na, 0, (*it)->GetLiteral().GetLength(), str, CSeqUtil::e_Iupacna);
+                CONVERT_NA_CODING_TO_STR(Ncbi2na)
+                CONVERT_NA_CODING_TO_STR(Ncbi4na)
+                CONVERT_NA_CODING_TO_STR(Ncbi8na)
+                case objects::CSeq_data::e_Iupacaa:
+                    str = seq_data.GetIupacaa();
                     break;
-                case objects::CSeq_data::e_Ncbi4na:
-                    CSeqConvert::Convert((*it)->GetLiteral().GetSeq_data().GetNcbi4na().Get(), CSeqUtil::e_Ncbi4na, 0, (*it)->GetLiteral().GetLength(), str, CSeqUtil::e_Iupacna);
-                    break;
-                case objects::CSeq_data::e_Ncbi8na:
-                    CSeqConvert::Convert((*it)->GetLiteral().GetSeq_data().GetNcbi8na().Get(), CSeqUtil::e_Ncbi8na, 0, (*it)->GetLiteral().GetLength(), str, CSeqUtil::e_Iupacna);
-                    break;
+                CONVERT_AA_CODING_TO_STR(Ncbi8aa);
+                CONVERT_AA_CODING_TO_STR(Ncbieaa);
+                CONVERT_AA_CODING_TO_STR(Ncbistdaa);
                 default:
                     break;
                 }
                 iupacna += str;
             }
 
-            if (!(*it)->GetLiteral().IsSetSeq_data() || (*it)->GetLiteral().GetSeq_data().IsGap())
-            {
-                TSeqPos length = (*it)->GetLiteral().GetLength();
-                iupacna += string(length, 'N');
+            if (!seq_literal.IsSetSeq_data() || seq_literal.GetSeq_data().IsGap())
+            {                
+                if (IsAa()) {
+                    iupacna += string(length, 'X');
+                } else {
+                    iupacna += string(length, 'N');
+                }
             }
         }
     }
 
+    if (orig_len != iupacna.length()) {
+        SetLength(iupacna.length());
+    }
     SetRepr(objects::CSeq_inst::eRepr_raw);
-    SetSeq_data().SetIupacna() = objects::CIUPACna(iupacna);
+    if (IsAa()) {
+        SetSeq_data().SetIupacaa() = objects::CIUPACaa(iupacna);
+    } else {
+        SetSeq_data().SetIupacna() = objects::CIUPACna(iupacna);
+    }
     ResetExt();
     return true;
 }
