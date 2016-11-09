@@ -103,9 +103,9 @@ const char * const CBlastDBAliasApp::DOCUMENTATION = "\n\n"
 "   binary format. This can be provided as an argument to the -gilist option\n"
 "   of the BLAST search command line binaries or to the -gilist option of\n"
 "   this program to create an alias file for a BLAST database (see below).\n\n"
-"2) Alias file creation (restricting with GI List):\n"
-"   Creates an alias for a BLAST database and a GI list which restricts this\n"
-"   database. This is useful if one often searches a subset of a database\n"
+"2) Alias file creation (restricting with GI List or Sequence ID List):\n"
+"   Creates an alias for a BLAST database and a GI or ID list which restricts\n"
+"   this database. This is useful if one often searches a subset of a database\n"
 "   (e.g., based on organism or a curated list). The alias file makes the\n"
 "   search appear as if one were searching a regular BLAST database rather\n"
 "   than the subset of one.\n\n"
@@ -130,7 +130,8 @@ void CBlastDBAliasApp::Init()
     dflt += " with the .bgl extension";
 
     const char* exclusions[]  = { kArgDb.c_str(), kArgDbType.c_str(), kArgDbTitle.c_str(), 
-		kArgGiList.c_str(), kArgOutput.c_str(), "dblist", "num_volumes", "vdblist" };
+              kArgGiList.c_str(), kArgSeqIdList.c_str(), kArgOutput.c_str(),
+              "dblist", "num_volumes", "vdblist" };
     arg_desc->SetCurrentGroup("GI file conversion options");
     arg_desc->AddOptionalKey("gi_file_in", "input_file",
                      "Text file to convert, should contain one GI per line",
@@ -153,7 +154,6 @@ void CBlastDBAliasApp::Init()
     arg_desc->SetCurrentGroup("Alias file creation options");
     arg_desc->AddOptionalKey(kArgDb, "dbname", "BLAST database name", 
                              CArgDescriptions::eString);
-    arg_desc->SetDependency(kArgDb, CArgDescriptions::eRequires, kArgGiList);
     arg_desc->SetDependency(kArgDb, CArgDescriptions::eRequires, kOutput);
 
     arg_desc->AddDefaultKey(kArgDbType, "molecule_type",
@@ -176,6 +176,16 @@ void CBlastDBAliasApp::Init()
                              "to binary",
                              CArgDescriptions::eInputFile);
     arg_desc->SetDependency(kArgGiList, CArgDescriptions::eRequires, kOutput);
+
+    arg_desc->AddOptionalKey(kArgSeqIdList, "input_file", 
+                             "Text sequence id or accession file to restrict "
+                             "the BLAST database provided in -db argument",
+                             CArgDescriptions::eInputFile);
+
+    arg_desc->SetDependency(kArgSeqIdList, CArgDescriptions::eRequires, kOutput);
+    arg_desc->SetDependency(kArgSeqIdList, CArgDescriptions::eExcludes,
+                            kArgGiList);
+
 #ifdef NCBI_TI
     arg_desc->AddFlag("process_as_tis", 
                       "Process all numeric ID lists as TIs instead of GIs", true);
@@ -221,6 +231,7 @@ void CBlastDBAliasApp::Init()
                              CArgDescriptions::eInteger);
     arg_desc->SetDependency("num_volumes", CArgDescriptions::eExcludes, kArgDb);
     arg_desc->SetDependency("num_volumes", CArgDescriptions::eExcludes, kArgGiList);
+    arg_desc->SetDependency("num_volumes", CArgDescriptions::eExcludes, kArgSeqIdList);
     arg_desc->SetDependency("num_volumes", CArgDescriptions::eRequires, kOutput);
     arg_desc->SetDependency("num_volumes", CArgDescriptions::eRequires, kArgDbType);
     arg_desc->SetDependency("num_volumes", CArgDescriptions::eRequires, kArgDbTitle);
@@ -279,12 +290,25 @@ CBlastDBAliasApp::CreateAliasFile() const
     if (args.Exist("process_as_tis") && args["process_as_tis"]) {
         isTiList = true;
     }
+
+    if (args[kArgDb].HasValue() && !args[kArgGiList].HasValue() &&
+        !args[kArgSeqIdList].HasValue()) {
+
+        NCBI_THROW(CInputException, eInvalidInput, "Either gilist or "
+                   "seqid_list must be specified if database name is used");
+    }
+
     if (args[kArgDbTitle].HasValue()) {
         title = args[kArgDbTitle].AsString();
     } else if (args[kArgDb].HasValue()) {
-        _ASSERT(args[kArgGiList].HasValue());
-        title = args[kArgDb].AsString() + " limited by " + 
-            args[kArgGiList].AsString();
+        _ASSERT(args[kArgGiList].HasValue() || args[kArgSeqIdList].HasValue());
+        title = args[kArgDb].AsString() + " limited by ";
+        if (args[kArgGiList]) {
+            title += args[kArgGiList].AsString();
+        }
+        else {
+            title += args[kArgSeqIdList].AsString();
+        }
     }
     const CWriteDB::ESeqType seq_type = 
         args[kArgDbType].AsString() == "prot"
@@ -311,6 +335,14 @@ CBlastDBAliasApp::CreateAliasFile() const
         }
     }
 
+    string seqid_list = args[kArgSeqIdList] ? args[kArgSeqIdList].AsString() :
+        kEmptyStr;
+    if ( !seqid_list.empty() ) {
+        if ( !CFile(seqid_list).Exists() ) {
+            NCBI_THROW(CSeqDBException, eFileErr, seqid_list + " not found");
+        }
+    }
+
     const EAliasFileFilterType alias_type = (isTiList ? eTiList : eGiList);
     if (args["dblist"].HasValue() || args["dblist_file"].HasValue()) {
         vector<string> dbs2aggregate = x_GetDbsToAggregate("dblist", "dblist_file");
@@ -321,11 +353,16 @@ CBlastDBAliasApp::CreateAliasFile() const
             static_cast<unsigned int>(args["num_volumes"].AsInteger());
         CWriteDB_CreateAliasFile(args[kOutput].AsString(), num_vols, seq_type,
                                  title);
-    } else if (args[kArgDb].HasValue()){
+    } else if (args[kArgDb].HasValue() && args[kArgGiList]){
         CWriteDB_CreateAliasFile(args[kOutput].AsString(),
                                  args[kArgDb].AsString(),
                                  seq_type, gilist,
                                  title, alias_type);
+    } else {
+        CWriteDB_CreateAliasFile(args[kOutput].AsString(),
+                                 args[kArgDb].AsString(),
+                                 seq_type, seqid_list,
+                                 title, eSeqIdList);
     }
 
     if (args["vdblist"].HasValue() || args["vdblist_file"].HasValue()) {
