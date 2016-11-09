@@ -916,3 +916,55 @@ BOOST_AUTO_TEST_CASE(TEST_RepairXrefs)
     // no change this time because there's already an xref
     BOOST_CHECK_EQUAL(CCleanup::RepairXrefs(*mrna, tse), false);
 }
+
+
+BOOST_AUTO_TEST_CASE(TEST_ConvertDeltaSeq)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodDeltaSeq();
+    TSeqPos orig_len = entry->GetSeq().GetLength();
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+
+    BOOST_CHECK_EQUAL(CCleanup::ConvertDeltaSeqToRaw(seh), true);
+    CBioseq_Handle bsh = seh.GetSeq();
+    BOOST_CHECK_EQUAL(bsh.GetInst_Length(), orig_len);
+    BOOST_CHECK_EQUAL(bsh.GetInst_Repr(), CSeq_inst::eRepr_raw);
+    objects::CSeqVector nuc_vec(bsh);
+    nuc_vec.SetCoding(objects::CSeq_data::e_Iupacna);
+    string nuc_buffer = "";
+    nuc_vec.GetSeqData(0, bsh.GetInst_Length(), nuc_buffer);
+    BOOST_CHECK_EQUAL(nuc_buffer, "ATGATGATGCCCNNNNNNNNNNCCCATGATGATG");
+
+    // now try protein sequence
+    scope->RemoveTopLevelSeqEntry(seh);
+    entry->SetSeq().SetInst().SetMol(objects::CSeq_inst::eMol_aa);
+    NON_CONST_ITERATE(objects::CSeq_descr::Tdata, it, entry->SetSeq().SetDescr().Set()) {
+        if ((*it)->IsMolinfo()) {
+            (*it)->SetMolinfo().SetBiomol(objects::CMolInfo::eBiomol_peptide);
+        }
+    }
+
+    entry->SetSeq().SetInst().ResetSeq_data();
+    entry->SetSeq().SetInst().SetRepr(objects::CSeq_inst::eRepr_delta);
+    entry->SetSeq().SetInst().SetExt().SetDelta().AddLiteral("ATGATGATGCCC", objects::CSeq_inst::eMol_aa);
+    CRef<objects::CDelta_seq> gap_seg(new objects::CDelta_seq());
+    gap_seg->SetLiteral().SetSeq_data().SetGap();
+    gap_seg->SetLiteral().SetLength(10);
+    entry->SetSeq().SetInst().SetExt().SetDelta().Set().push_back(gap_seg);
+    entry->SetSeq().SetInst().SetExt().SetDelta().AddLiteral("CCCATGATGATG", objects::CSeq_inst::eMol_aa);
+    entry->SetSeq().SetInst().SetLength(34);
+    seh = scope->AddTopLevelSeqEntry(*entry);
+
+    BOOST_CHECK_EQUAL(CCleanup::ConvertDeltaSeqToRaw(seh), true);
+    bsh = seh.GetSeq();
+    BOOST_CHECK_EQUAL(bsh.GetInst_Length(), orig_len);
+    BOOST_CHECK_EQUAL(bsh.GetInst_Repr(), CSeq_inst::eRepr_raw);
+    objects::CSeqVector prot_vec(bsh);
+    prot_vec.SetCoding(objects::CSeq_data::e_Iupacaa);
+    string buffer = "";
+    prot_vec.GetSeqData(0, bsh.GetInst_Length(), buffer);
+    BOOST_CHECK_EQUAL(buffer, "ATGATGATGCCCXXXXXXXXXXCCCATGATGATG");
+
+}
+
