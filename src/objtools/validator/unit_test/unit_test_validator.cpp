@@ -13381,7 +13381,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatContentDup)
     CheckErrors (*eval, expected_errors);
     
     // suppress errors if cdss and mrnas are linked
-    CLEAR_ERRORS
+    //CLEAR_ERRORS
     scope.RemoveTopLevelSeqEntry(seh);
     cds1->SetId().SetLocal().SetId(1);
     cds2->SetId().SetLocal().SetId(2);

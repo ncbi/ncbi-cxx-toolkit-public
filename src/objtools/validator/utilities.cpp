@@ -1577,8 +1577,10 @@ static bool s_AreLinkedToDifferentFeats (CSeq_feat_Handle f1, CSeq_feat_Handle f
         CBioseq_Handle bsh = BioseqHandleFromLocation (&scope, loc);
         if (bsh) {
             const CTSE_Handle& tse = bsh.GetTSE_Handle();
-            vector<int> mrna1;
-            vector<int> mrna2;
+            vector<int> mrna1_id;
+            vector<int> mrna2_id;
+            list<CSeq_feat_Handle> mrna1;
+            list<CSeq_feat_Handle> mrna2;
 
             FOR_EACH_SEQFEATXREF_ON_SEQFEAT (itx, *(f1.GetSeq_feat())) {
                 if ((*itx)->IsSetId() && (*itx)->GetId().IsLocal() 
@@ -1588,7 +1590,8 @@ static bool s_AreLinkedToDifferentFeats (CSeq_feat_Handle f1, CSeq_feat_Handle f
                     ITERATE( vector<CSeq_feat_Handle>, feat_it, handles ) {
                         if (feat_it->IsSetData() 
                             && feat_it->GetData().GetSubtype() == s2) {
-                            mrna1.push_back (feat_id);
+                            mrna1.push_back(*feat_it);
+                            mrna1_id.push_back (feat_id);
                             break;
                         }
                     }
@@ -1602,16 +1605,17 @@ static bool s_AreLinkedToDifferentFeats (CSeq_feat_Handle f1, CSeq_feat_Handle f
                     ITERATE( vector<CSeq_feat_Handle>, feat_it, handles ) {
                         if (feat_it->IsSetData() 
                             && feat_it->GetData().GetSubtype() == s2) {
-                            mrna2.push_back (feat_id);
+                            mrna2.push_back(*feat_it);
+                            mrna2_id.push_back (feat_id);
                         }
                     }
                 }
             }
 
-            if (mrna1.size() > 0 && mrna2.size() > 0) {
+            if (mrna1_id.size() > 0 && mrna2_id.size() > 0) {
                 rval = true;
-                ITERATE (vector<int>, i1, mrna1) {
-                    ITERATE (vector<int>, i2, mrna2) {
+                ITERATE (vector<int>, i1, mrna1_id) {
+                    ITERATE (vector<int>, i2, mrna2_id) {
                         if (*i1 == *i2) {
                             rval = false;
                             break;
@@ -1621,11 +1625,28 @@ static bool s_AreLinkedToDifferentFeats (CSeq_feat_Handle f1, CSeq_feat_Handle f
                         break;
                     }
                 }
+
+                if (rval) { // Check that locations aren't the same
+                    const CSeq_feat_Handle fh1 = mrna1.front();
+                    const CSeq_feat_Handle fh2 = mrna2.front();
+
+
+                    if (s_IsSameStrand(fh1.GetLocation(),
+                                       fh2.GetLocation(),
+                                       fh1.GetScope()) 
+                      && (sequence::Compare(fh1.GetLocation(), 
+                                           fh2.GetLocation(),
+                                           &(fh1.GetScope())) == sequence::eSame)) {
+                        rval = false;
+                    }
+                }
             }
         }
     }
     return rval;
 }
+
+
 
 
 static bool s_AreCodingRegionsLinkedToDifferentmRNAs (CSeq_feat_Handle f1, CSeq_feat_Handle f2)
@@ -1660,6 +1681,7 @@ IsDuplicate
  bool check_partials,
  bool case_sensitive)
 {
+
     EDuplicateFeatureType dup_type = eDuplicate_Not;
 
     // subtypes
@@ -1716,15 +1738,18 @@ IsDuplicate
         return eDuplicate_Not;
     }
 
+
     if (s_AreCodingRegionsLinkedToDifferentmRNAs(f1, f2)) {
         // do not report if features are coding regions linked to different mRNAs
         return eDuplicate_Not;
     }
 
+
     if (s_AremRNAsLinkedToDifferentCodingRegions(f1, f2)) {
         // do not report if features are mRNAs linked to different coding regions
         return eDuplicate_Not;
     }
+
 
     // only report pubs if they have the same label
     if (feat1_subtype == CSeqFeatData::eSubtype_pub && !same_label) {
