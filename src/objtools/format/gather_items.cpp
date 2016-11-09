@@ -106,6 +106,7 @@
 #include <objtools/format/context.hpp>
 #include <objtools/error_codes.hpp>
 #include <objmgr/util/objutil.hpp>
+#include <objmgr/util/seq_loc_util.hpp>
 
 #include <connect/ncbi_socket.hpp>
 
@@ -1628,8 +1629,9 @@ void CFlatGatherer::x_CollectSourceFeatures
       .SetLimitTSE(ctx.GetHandle().GetTopLevelEntry());
 
     for ( CFeat_CI fi(bh, range, as); fi; ++fi ) {
+        TSeqPos start = fi->GetLocation().GetTotalRange().GetFrom();
         TSeqPos stop = fi->GetLocation().GetTotalRange().GetTo();
-        if ( stop >= range.GetFrom()  &&  stop  <= range.GetTo() ) {
+        if ( start <= range.GetFrom()  &&  stop  >= range.GetTo() ) {
             CRef<CSourceFeatureItem> sf(new CSourceFeatureItem(*fi, ctx, m_Feat_Tree));
             srcs.push_back(sf);
         }
@@ -1645,14 +1647,24 @@ void CFlatGatherer::x_CollectBioSourcesOnBioseq
 {
     const CFlatFileConfig& cfg = ctx.Config();
 
+    if ( ctx.IsProt() ) {
+        // collect biosources features on bioseq
+        if ( !ctx.DoContigStyle()  ||  cfg.ShowContigSources() ) {
+            x_CollectSourceFeatures(bh, range, ctx, srcs);
+            if (! srcs.empty()) return;
+        }
+    }
+
     // collect biosources descriptors on bioseq
     // if ( !cfg.IsFormatFTable()  ||  cfg.IsModeDump() ) {
         x_CollectSourceDescriptors(bh, ctx, srcs);
     // }
 
-    // collect biosources features on bioseq
-    if ( !ctx.DoContigStyle()  ||  cfg.ShowContigSources() ) {
-        x_CollectSourceFeatures(bh, range, ctx, srcs);
+    if ( ! ctx.IsProt() ) {
+        // collect biosources features on bioseq
+        if ( !ctx.DoContigStyle()  ||  cfg.ShowContigSources() ) {
+            x_CollectSourceFeatures(bh, range, ctx, srcs);
+        }
     }
 }
 
@@ -1663,18 +1675,19 @@ void CFlatGatherer::x_CollectBioSources(TSourceFeatSet& srcs) const
     CScope* scope = &ctx.GetScope();
     const CFlatFileConfig& cfg = ctx.Config();
 
-    x_CollectBioSourcesOnBioseq(ctx.GetHandle(),
-                                ctx.GetLocation().GetTotalRange(),
-                                ctx,
-                                srcs);
-    
-    // if protein with no sources, get sources applicable to DNA location of CDS
-    if ( srcs.empty()  &&  ctx.IsProt() ) {
+    // if protein, get sources applicable to DNA location of CDS
+    if ( ctx.IsProt() ) {
         const CSeq_feat* cds = GetCDSForProduct(ctx.GetHandle());
         if ( cds != 0 ) {
             const CSeq_loc& cds_loc = cds->GetLocation();
+            CRef<CSeq_loc> cleaned_location( new CSeq_loc );
+            cleaned_location->Assign( cds_loc );
+            if (cleaned_location->IsSetStrand()  &&  IsReverse(cleaned_location->GetStrand())) {
+                CRef<CSeq_loc> rev_loc(SeqLocRevCmpl(*cleaned_location, scope));
+                cleaned_location->Assign(*rev_loc);
+            }
             CBioseq_Handle bioseq_h;
-            ITERATE( CSeq_loc, cds_loc_ci, cds_loc ) {
+            ITERATE( CSeq_loc, cds_loc_ci, *cleaned_location ) {
                 bioseq_h = scope->GetBioseqHandle(cds_loc_ci.GetSeq_id());
                 if( bioseq_h ) {
                     break;
@@ -1683,13 +1696,20 @@ void CFlatGatherer::x_CollectBioSources(TSourceFeatSet& srcs) const
             if( bioseq_h ) {
                 x_CollectBioSourcesOnBioseq(
                     bioseq_h,
-                    cds_loc.GetTotalRange(),
+                    cleaned_location->GetTotalRange(),
                     ctx,
                     srcs);
             }
         }
     }
 
+    if ( srcs.empty() ) {
+        x_CollectBioSourcesOnBioseq(ctx.GetHandle(),
+                                    ctx.GetLocation().GetTotalRange(),
+                                    ctx,
+                                    srcs);
+    }
+  
     // if no source found create one (only if not FTable format or Dump mode)
     if ( srcs.empty()  &&  /* ! cfg.IsFormatFTable()  && */  ! cfg.IsModeDump() ) {
         CRef<CBioSource> bsrc(new CBioSource);
