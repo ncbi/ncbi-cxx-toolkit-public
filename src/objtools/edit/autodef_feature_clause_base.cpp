@@ -1499,12 +1499,6 @@ void CAutoDefFeatureClause_Base::RemoveFeaturesInmRNAsByType(unsigned int featur
 }
 
 
-bool CAutoDefFeatureClause_Base::ShouldRemoveExons()
-{
-    return false;
-}
-
-
 void CAutoDefFeatureClause_Base::RemoveUnwantedExons()
 {
     for (unsigned int k = 0; k < m_ClauseList.size(); k++) {

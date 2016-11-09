@@ -145,8 +145,9 @@ public:
     void RemoveFeaturesUnderType(unsigned int feature_type);
     void RemoveFeaturesInLocation(const CSeq_loc& loc);
     
-    virtual bool ShouldRemoveExons();
-    
+    virtual bool ShouldRemoveExons() { return false; }
+    virtual bool IsExonWithNumber() { return false; }
+
     void RemoveUnwantedExons();
     
     virtual bool IsBioseqPrecursorRNA();

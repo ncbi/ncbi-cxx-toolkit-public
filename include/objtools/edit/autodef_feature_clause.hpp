@@ -90,6 +90,7 @@ public:
     virtual void ReverseCDSClauseLists();
     
     virtual bool ShouldRemoveExons();
+    virtual bool IsExonWithNumber();
     
     virtual bool IsBioseqPrecursorRNA();
 

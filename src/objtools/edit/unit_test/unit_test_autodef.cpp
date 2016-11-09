@@ -883,11 +883,12 @@ void AddExon(CRef<CSeq_entry> seq, const string& number, TSeqPos start)
     exon->ResetComment();
     exon->SetLocation().SetInt().SetFrom(start);
     exon->SetLocation().SetInt().SetTo(start + 5);
-    CRef<CGb_qual> qual(new CGb_qual());
-    qual->SetQual("number");
-    qual->SetVal(number);
-    exon->SetQual().push_back(qual);
-
+    if (!NStr::IsBlank(number)) {
+        CRef<CGb_qual> qual(new CGb_qual());
+        qual->SetQual("number");
+        qual->SetVal(number);
+        exon->SetQual().push_back(qual);
+    }
 }
 
 
@@ -2061,6 +2062,37 @@ BOOST_AUTO_TEST_CASE(Test_GB_5618)
 
     defline = "Sebaea microphylla gene locus gene, 5' UTR and 3' UTR.";
     CheckDeflineMatches(seh, autodef, mod_combo);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_GB_6375)
+{
+    // suppress if no number
+    CRef<CSeq_entry> nps = unit_test_util::BuildGoodNucProtSet();
+    CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(nps);
+    CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet(nps);
+    cds->SetLocation().SetPartialStop(true, eExtreme_Biological);
+    AddExon(nuc, "", cds->GetLocation().GetStart(eExtreme_Positional));
+    string defline = "Sebaea microphylla fake protein name gene, partial cds.";
+    AddTitle(nuc, defline);
+    CheckDeflineMatches(nps, true);
+
+    // show if has number
+    nps = unit_test_util::BuildGoodNucProtSet();
+    nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(nps);
+    cds = unit_test_util::GetCDSFromGoodNucProtSet(nps);
+    cds->SetLocation().SetPartialStop(true, eExtreme_Biological);
+    AddExon(nuc, "1", cds->GetLocation().GetStart(eExtreme_Positional));
+    defline = "Sebaea microphylla fake protein name gene, exon 1 and partial cds.";
+    AddTitle(nuc, defline);
+    CheckDeflineMatches(nps, true);
+
+    // suppress if coding region complete
+    cds->SetLocation().SetPartialStop(false, eExtreme_Biological);
+    defline = "Sebaea microphylla fake protein name gene, complete cds.";
+    AddTitle(nuc, defline);
+    CheckDeflineMatches(nps, true);
+
 }
 
 

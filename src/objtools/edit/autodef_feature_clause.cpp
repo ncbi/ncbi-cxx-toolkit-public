@@ -740,7 +740,8 @@ bool CAutoDefFeatureClause::x_GetExonDescription(string &description)
     string label;
     feature::GetLabel(m_MainFeat, &label, feature::fFGL_Content);
 
-    if ((subtype == CSeqFeatData::eSubtype_exon && NStr::Equal(label, "exon"))
+    if ((subtype == CSeqFeatData::eSubtype_exon && 
+         (NStr::Equal(label, "exon") || NStr::Equal(label, "[exon]")))
         || (subtype == CSeqFeatData::eSubtype_intron && NStr::Equal(label, "[intron]"))
         || (subtype != CSeqFeatData::eSubtype_exon && subtype != CSeqFeatData::eSubtype_intron)) {
         description = "";
@@ -1430,6 +1431,7 @@ void CAutoDefFeatureClause::ReverseCDSClauseLists()
 }
 
 
+
 bool CAutoDefFeatureClause::ShouldRemoveExons()
 {
     unsigned int subtype = GetMainFeatureSubtype();
@@ -1437,11 +1439,42 @@ bool CAutoDefFeatureClause::ShouldRemoveExons()
     if (subtype == CSeqFeatData::eSubtype_mRNA) {
         return false;
     } else if (subtype == CSeqFeatData::eSubtype_cdregion) {
-        return ! IsPartial();
+        if (IsPartial()) {
+            // keep only if exons have numbers
+            for (size_t k = 0; k < m_ClauseList.size(); k++) {
+                if (m_ClauseList[k]->IsExonWithNumber()) {
+                    return false;
+                }
+            }
+            return true;
+        } else {
+            return true;
+        }
     } else {
         return true;
     }
 }
+
+bool CAutoDefFeatureClause::IsExonWithNumber()
+{
+    bool rval = false;
+
+    if (m_MainFeat.IsSetData() &&
+        m_MainFeat.GetData().GetSubtype() == CSeqFeatData::eSubtype_exon &&
+        m_MainFeat.IsSetQual()) {
+        ITERATE(CSeq_feat::TQual, it, m_MainFeat.GetQual()) {
+            if ((*it)->IsSetQual() &&
+                NStr::Equal((*it)->GetQual(), "number") &&
+                (*it)->IsSetVal() &&
+                !NStr::IsBlank((*it)->GetVal())) {
+                rval = true;
+                break;
+            }
+        }
+    }
+    return rval;
+}
+
 
 bool CAutoDefFeatureClause::IsBioseqPrecursorRNA()
 {
