@@ -86,6 +86,9 @@ public:
     const CBioseq& GetGenomicFromGenProdSet(void) const;
     const CBioseq& GetMasterFromSegSet(void) const;
 
+    bool NeedsDocsumTitle() const;
+    static bool NeedsDocsumTitle(EClass set_class);
+
 private:
     // Prohibit copy constructor & assignment operator
     CBioseq_set(const CBioseq_set&);

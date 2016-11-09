@@ -327,5 +327,29 @@ CConstRef<CBioseq_set> CBioseq::GetParentSet(void) const
 }
 
 
+bool CBioseq_set::NeedsDocsumTitle(EClass set_class)
+{
+    bool rval = false;
+    if (set_class == CBioseq_set::eClass_pop_set
+        || set_class == CBioseq_set::eClass_phy_set
+        || set_class == CBioseq_set::eClass_eco_set
+        || set_class == CBioseq_set::eClass_mut_set) {
+        rval = true;
+    }
+    return rval;
+}
+
+
+bool CBioseq_set::NeedsDocsumTitle() const
+{
+    bool rval = false;
+    if (IsSetClass()) {
+        rval = NeedsDocsumTitle(GetClass());
+    }
+    return rval;
+
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
