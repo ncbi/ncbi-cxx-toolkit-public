@@ -951,7 +951,8 @@ CNCBlobVerManager::DeadTimeChanged(SNCBlobVerData* ver_data)
     m_CacheData->lock.Lock();
     if (m_CurVersion == ver_data) {
         m_CacheData->dead_time = ver_data->dead_time;
-
+        m_CacheData->expire = ver_data->expire;
+        m_CacheData->ver_expire = ver_data->ver_expire;
         m_CurVersion->last_access_time = CSrvTime::CurSecs();
         m_CurVersion->need_write_time = m_CurVersion->last_access_time
                                         + s_WBWriteTimeout;
