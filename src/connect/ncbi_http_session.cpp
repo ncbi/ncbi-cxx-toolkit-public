@@ -553,15 +553,15 @@ CHttpRequest::CHttpRequest(CHttpSession& session,
       m_Headers(new CHttpHeaders),
       m_Timeout(CTimeout::eDefault),
       m_Deadline(CTimeout::eDefault),
-      m_RCgiWait(ESwitch::eDefault)
+      m_RetryProcessing(ESwitch::eDefault)
 {
 }
 
 
-// CCgi2RCgiApp response processing logic for CHttpRequest::Execute()
-struct SRCgiWait
+// Processing logic for 'retry later' response in CHttpRequest::Execute()
+struct SRetryProcessing
 {
-    SRCgiWait(ESwitch on_off, const CTimeout& deadline, CUrl& url,
+    SRetryProcessing(ESwitch on_off, const CTimeout& deadline, CUrl& url,
             EReqMethod& method, CRef<CHttpHeaders>& headers,
             CRef<CHttpFormData>& form_data);
 
@@ -593,7 +593,7 @@ private:
 };
 
 
-SRCgiWait::SRCgiWait(ESwitch on_off, const CTimeout& deadline, CUrl& url,
+SRetryProcessing::SRetryProcessing(ESwitch on_off, const CTimeout& deadline, CUrl& url,
         EReqMethod& method, CRef<CHttpHeaders>& headers,
         CRef<CHttpFormData>& form_data) :
     m_Enabled(on_off == eOn),
@@ -606,9 +606,9 @@ SRCgiWait::SRCgiWait(ESwitch on_off, const CTimeout& deadline, CUrl& url,
 }
 
 
-bool SRCgiWait::operator()(const CHttpHeaders& headers)
+bool SRetryProcessing::operator()(const CHttpHeaders& headers)
 {
-    // Must correspond to CHttpRetryContext (CCgi2RCgiApp) values
+    // Must correspond to CHttpRetryContext (e.g. CCgi2RCgiApp) values
     const unsigned long kExecuteDefaultRefreshDelay = 5;
     const string        kExecuteHeaderRetryURL      = "X-NCBI-Retry-URL";
     const string        kExecuteHeaderRetryDelay    = "X-NCBI-Retry-Delay";
@@ -618,8 +618,7 @@ bool SRCgiWait::operator()(const CHttpHeaders& headers)
 
     const auto& retry_url = headers.GetValue(kExecuteHeaderRetryURL);
 
-    // Not a CCgi2RCgiApp response,
-    // either not a remote CGI or it is already finished
+    // Not a 'retry later' response (e.g. remote CGI has already finished)
     if (retry_url.empty()) return false;
 
     const auto& retry_delay = headers.GetValue(kExecuteHeaderRetryDelay);
@@ -658,21 +657,21 @@ bool SRCgiWait::operator()(const CHttpHeaders& headers)
 
 
 template <class TTo, class TFrom>
-void SRCgiWait::Assign(TTo& to, const TFrom& from)
+void SRetryProcessing::Assign(TTo& to, const TFrom& from)
 {
     to = from;
 }
 
 
 template <>
-void SRCgiWait::Assign(CHttpHeaders& to, const CRef<CHttpHeaders>& from)
+void SRetryProcessing::Assign(CHttpHeaders& to, const CRef<CHttpHeaders>& from)
 {
     to.Assign(*from);
 }
 
 
 template <>
-void SRCgiWait::Assign(CRef<CHttpHeaders>& to, const CHttpHeaders& from)
+void SRetryProcessing::Assign(CRef<CHttpHeaders>& to, const CHttpHeaders& from)
 {
     to->Assign(from);
 }
@@ -680,7 +679,8 @@ void SRCgiWait::Assign(CRef<CHttpHeaders>& to, const CHttpHeaders& from)
 
 CHttpResponse CHttpRequest::Execute(void)
 {
-    SRCgiWait rcgi_wait(m_RCgiWait, m_Deadline, m_Url, m_Method, m_Headers, m_FormData);
+    SRetryProcessing retry_processing(m_RetryProcessing, m_Deadline, m_Url,
+            m_Method, m_Headers, m_FormData);
     CRef<CHttpResponse> ret;
 
     do {
@@ -702,7 +702,7 @@ CHttpResponse CHttpRequest::Execute(void)
         ret = m_Response;
         m_Response.Reset();
     }
-    while (rcgi_wait(ret->Headers()));
+    while (retry_processing(ret->Headers()));
 
     return *ret;
 }
@@ -906,9 +906,9 @@ CHttpRequest& CHttpRequest::SetDeadline(const CTimeout& deadline)
 }
 
 
-CHttpRequest& CHttpRequest::SetRCgiWait(ESwitch rcgi_wait)
+CHttpRequest& CHttpRequest::SetRetryProcessing(ESwitch on_off)
 {
-    m_RCgiWait = rcgi_wait;
+    m_RetryProcessing = on_off;
     return *this;
 }
 

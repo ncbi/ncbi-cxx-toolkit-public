@@ -490,21 +490,22 @@ public:
     void SetRetries(THttpRetries retries) { m_Retries = retries; }
 
     /// Get current deadline for Execute().
-    /// For now, effective only for waiting remote CGI response,
-    /// infinite by default.
-    /// @sa Execute() GetRCgiWait()
+    /// For now, effective only for if waiting for actual response
+    /// (as opposed to a recognized 'retry later' response), infinite by default.
+    /// @sa Execute() GetRetryProcessing()
     const CTimeout& GetDeadline() const { return m_Deadline; }
     /// Set new deadline for Execute().
-    /// @sa Execute() SetRCgiWait()
+    /// @sa Execute() SetRetryProcessing()
     CHttpRequest& SetDeadline(const CTimeout& deadline);
 
-    /// Return whether Execute() will wait for remote CGI response.
-    /// If on, will wait for response or deadline expired, off by default.
+    /// Return whether Execute() will wait for actual response.
+    /// If on, will wait for deadline expired or actual response
+    /// (as opposed to a recognized 'retry later' response), off by default.
     /// @sa Execute() GetDeadline()
-    ESwitch GetRCgiWait() const { return m_RCgiWait; }
-    /// Set whether Execute() should wait for remote CGI response.
+    ESwitch GetRetryProcessing() const { return m_RetryProcessing; }
+    /// Set whether Execute() should wait for actual response.
     /// @sa Execute() SetDeadline()
-    CHttpRequest& SetRCgiWait(ESwitch rcgi_wait);
+    CHttpRequest& SetRetryProcessing(ESwitch on_off);
 
 private:
     friend class CHttpSession;
@@ -541,7 +542,7 @@ private:
     CTimeout            m_Timeout;
     THttpRetries        m_Retries;
     CTimeout            m_Deadline;
-    ESwitch             m_RCgiWait;
+    ESwitch             m_RetryProcessing;
 };
 
 

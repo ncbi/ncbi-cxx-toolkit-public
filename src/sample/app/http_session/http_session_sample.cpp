@@ -90,8 +90,8 @@ void CHttpSessionApp::SetupRequest(CHttpRequest& request)
     if ( args["deadline"] ) {
         request.SetDeadline(CTimeout(args["deadline"].AsDouble()));
     }
-    if ( args["rcgi-wait"] ) {
-        request.SetRCgiWait(args["rcgi-wait"].AsBoolean() ? eOn : eOff);
+    if ( args["retry-processing"] ) {
+        request.SetRetryProcessing(args["retry-processing"].AsBoolean() ? eOn : eOff);
     }
 }
 
@@ -125,7 +125,7 @@ void CHttpSessionApp::Init()
         CArgDescriptions::eInteger);
     arg_desc->AddOptionalKey("deadline", "double", "Deadline for request total processing, in seconds",
         CArgDescriptions::eDouble);
-    arg_desc->AddOptionalKey("rcgi-wait", "bool", "Whether to wait for remote CGI response",
+    arg_desc->AddOptionalKey("retry-processing", "bool", "Whether to wait for actual response",
         CArgDescriptions::eBoolean);
 
     // Setup arg.descriptions for this application
