@@ -88,6 +88,17 @@ struct SSNPDb_Defs
         eFeatSubtype_insertion                      = 7,
         eFeatSubtype_str                            = 8
     };
+    enum EFeatSubtypeChar {
+        eFeatSubtypeChar_unknown                        = 'U',
+        eFeatSubtypeChar_identity                       = '-',
+        eFeatSubtypeChar_inversion                      = 'V',
+        eFeatSubtypeChar_single_nucleotide_variation    = 'S',
+        eFeatSubtypeChar_multi_nucleotide_variation     = 'M',
+        eFeatSubtypeChar_deletion_insertion             = 'L',
+        eFeatSubtypeChar_deletion                       = 'D',
+        eFeatSubtypeChar_insertion                      = 'I',
+        eFeatSubtypeChar_str                            = 'R'
+    };
 
     typedef Uint8 TFilter;
 
@@ -930,6 +941,8 @@ public:
     CTempString GetFeatType(void) const;
     EFeatSubtype GetFeatSubtype(void) const;
     CTempString GetFeatSubtypeString(void) const;
+    static char GetFeatSubtypeChar(EFeatSubtype subtype);
+    static CTempString GetFeatSubtypeString(EFeatSubtype subtype);
 
     typedef pair<TVDBRowId, size_t> TExtraRange;
     TExtraRange GetExtraRange(void) const;

@@ -83,18 +83,7 @@ static const size_t kMax_AlleleLength  = 32;
 
 static const char kDefaultAnnotName[] = "SNP";
 
-static const char* const kSubtypeValue[] = {
-    "U", // eFeatSubtype_unknown
-    "-", // eFeatSubtype_identity
-    "V", // eFeatSubtype_inversion
-    "S", // eFeatSubtype_single_nucleotide_variation
-    "M", // eFeatSubtype_multi_nucleotide_variation
-    "L", // eFeatSubtype_deletion_insertion
-    "D", // eFeatSubtype_deletion
-    "I", // eFeatSubtype_insertion
-    "R", // eFeatSubtype_str
-};
-
+static const char kFeatSubtypesToChars[] = "U-VSMLDIR";
 
 /////////////////////////////////////////////////////////////////////////////
 // CSNPDb_Impl
@@ -2250,9 +2239,21 @@ CSNPDbFeatIterator::EFeatSubtype CSNPDbFeatIterator::GetFeatSubtype(void) const
 }
 
 
+char CSNPDbFeatIterator::GetFeatSubtypeChar(EFeatSubtype subtype)
+{
+    return kFeatSubtypesToChars[subtype];
+}
+
+
+CTempString CSNPDbFeatIterator::GetFeatSubtypeString(EFeatSubtype subtype)
+{
+    return CTempString(kFeatSubtypesToChars+subtype, 1);
+}
+
+
 CTempString CSNPDbFeatIterator::GetFeatSubtypeString(void) const
 {
-    return kSubtypeValue[GetFeatSubtype()];
+    return GetFeatSubtypeString(GetFeatSubtype());
 }
 
 
