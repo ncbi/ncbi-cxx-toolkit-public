@@ -42,7 +42,6 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_point.hpp>
-#include <objmgr/util/sequence.hpp>
 
 #include <objtools/readers/format_guess_ex.hpp>
 
