@@ -608,10 +608,10 @@ SRCgiWait::SRCgiWait(ESwitch on_off, const CTimeout& deadline, CUrl& url,
 
 bool SRCgiWait::operator()(const CHttpHeaders& headers)
 {
-    // Must correspond to CCgi2RCgiApp values
+    // Must correspond to CHttpRetryContext (CCgi2RCgiApp) values
     const unsigned long kExecuteDefaultRefreshDelay = 5;
-    const string        kExecuteHeaderRetryURL      = "NCBI-RCGI-RetryURL";
-    const string        kExecuteHeaderRetryDelay    = "NCBI-RCGI-RetryDelay";
+    const string        kExecuteHeaderRetryURL      = "X-NCBI-Retry-URL";
+    const string        kExecuteHeaderRetryDelay    = "X-NCBI-Retry-Delay";
 
     if (!m_Enabled) return false;
     if (m_Deadline.IsExpired()) return false;
