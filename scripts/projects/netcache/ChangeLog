@@ -180,5 +180,10 @@ Implemented server credentials configuration.
 Made visible log severity configurable.
 Removed unstructured information from applog.
 
-
+November 10, 2016
+version 6.11.0 (CXX-8801)
+Added option to re-cache blob without prolonging its life.
+Added ncbi_role info into logs.
+Added option to enumerate blobs in a given cache using various metadata filters.
+Corrected blob caching information.
 
