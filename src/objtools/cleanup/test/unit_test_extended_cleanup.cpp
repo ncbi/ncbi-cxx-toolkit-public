@@ -918,7 +918,6 @@ BOOST_AUTO_TEST_CASE(TEST_RepairXrefs)
 }
 
 
-#if 0 // no CCleanup::ConvertDeltaSeqToRaw yet
 BOOST_AUTO_TEST_CASE(TEST_ConvertDeltaSeq)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodDeltaSeq();
@@ -968,4 +967,4 @@ BOOST_AUTO_TEST_CASE(TEST_ConvertDeltaSeq)
     BOOST_CHECK_EQUAL(buffer, "ATGATGATGCCCXXXXXXXXXXCCCATGATGATG");
 
 }
-#endif
+
