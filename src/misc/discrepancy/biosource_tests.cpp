@@ -1472,10 +1472,10 @@ static void GetOrgnameDifferences(const COrgName& first, const COrgName& second,
             }
         }
 
-        if (it_first != end_first) {
+        if (it_first == end_first) {
             first_mod_set = false;
         }
-        if (it_second != end_second) {
+        if (it_second == end_second) {
             second_mod_set = false;
         }
     }
