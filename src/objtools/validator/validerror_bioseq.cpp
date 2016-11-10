@@ -5750,6 +5750,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(
                     }
                 } else if (fi->GetFeatSubtype() == CSeqFeatData::eSubtype_mRNA) {
                     nummrna++;
+                    CConstRef <CSeq_feat> gene = sequence::GetGeneForFeature(feat, *m_Scope);
                     if (feat.IsSetProduct()) {
                         const CSeq_id* p = feat.GetProduct().GetId();
                         CConstRef<CSeq_id> ref(p);
@@ -5757,14 +5758,12 @@ void CValidError_bioseq::ValidateSeqFeatContext(
                     } else if (feat.IsSetPseudo() && feat.GetPseudo()) {
                             num_pseudomrna++;
                     } else {
-                        CConstRef<CSeq_feat> gene = sequence::GetGeneForFeature(feat, *m_Scope);
                         if (gene != 0 && gene->IsSetPseudo() && gene->GetPseudo()) {
                             num_pseudomrna++;
                         }
                     }                
                     ValidateBadGeneOverlap(feat);
 
-                    CConstRef <CSeq_feat> gene = sequence::GetGeneForFeature (feat, *m_Scope);
                     string sfp_pseudo = "unqualified";
                     string gene_pseudo = "unqualified";
                     if (gene != 0) {
