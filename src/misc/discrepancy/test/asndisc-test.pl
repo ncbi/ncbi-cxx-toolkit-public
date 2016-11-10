@@ -203,8 +203,9 @@ sub normalize_word
 # Fix data lines, like coordinates of features.
 sub normalize_detail
 { my $str = shift;
+  $str=~s/\|:/:/g;
   $str=~s/(\(\S+,\s)(\S+:)/$1/g;
-  $str=~s/\blcl\|//g;
+  $str=~s/\b(lcl|gb|gi|ref|emb|dbj|gnl\|\w+)\|//g;
   $str=~s/misc_RNA/RNA/g;
   $str=~s/\/inference=//g;
   # C seems to prefer "()" for seq-loc-mix but C++ seems to prefer "[]"

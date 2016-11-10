@@ -1,0 +1,11 @@
+Discrepancy Report Results
+
+Summary
+BIOPROJECT_ID: 2 sequences contain BioProject IDs
+
+Detailed Report
+
+BIOPROJECT_ID: 2 sequences contain BioProject IDs
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\VR-181.sqn:FN392236.1 (length 2610, 1 other)
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\VR-181.sqn:CAY76367.1 (length 67)
+

@@ -90,13 +90,13 @@ string CReportObj::GetTextObjectDescription(const CBioseq_set& bs, CScope& scope
 }
 
 
-CConstRef<CSeq_id> GetBestId(const CBioseq&, CSeq_id::E_Choice);
+CConstRef<CSeq_id> GetBestId(const CBioseq& bioseq);
 
 void CReportObject::SetText(CScope& scope, const string& label)
 {
     if (m_Bioseq) {
         m_Text = GetTextObjectDescription(*m_Bioseq, scope);
-        GetBestId(*m_Bioseq, CSeq_id::e_Genbank)->GetLabel(&m_ShortName, CSeq_id::eContent);
+        GetBestId(*m_Bioseq)->GetLabel(&m_ShortName, CSeq_id::eContent);
     }
     else if (m_Seq_feat) {
         m_Text = GetTextObjectDescription(*m_Seq_feat, scope);
@@ -195,17 +195,30 @@ void GetSeqFeatLabel(const CSeq_feat& seq_feat, string& label)
 }
 
 
-CConstRef<CSeq_id> GetBestId(const CBioseq& bioseq, CSeq_id::E_Choice choice)
+static bool IsAccession(const CSeq_id& id)
+{
+    return id.Which() == CSeq_id::e_Genbank
+        || id.Which() == CSeq_id::e_Ddbj
+        || id.Which() == CSeq_id::e_Embl
+        || id.Which() == CSeq_id::e_Other;
+}
+
+
+CConstRef<CSeq_id> GetBestId(const CBioseq& bioseq)
 {
     const CBioseq::TId& seq_id_ls = bioseq.GetId();
     CConstRef<CSeq_id> best_seq_id;
     int best_score = 99999;
     ITERATE (CBioseq::TId, it, seq_id_ls) {
-        if (choice == (*it)->Which()) {
+        if (IsAccession(**it)) {
             return *it;
-        } else if (best_score > (*it)->BaseBestRankScore()) {
-            best_seq_id = *it;
-            best_score = (*it)->BaseBestRankScore();
+        }
+        else {
+            int score = (*it)->BaseBestRankScore();
+            if (best_score > score) {
+                best_seq_id = *it;
+                best_score = score;
+            }
         }
     }
     return best_seq_id;
@@ -217,7 +230,7 @@ void UpgradeSeqLocId(CSeq_point& pnt, CScope& scope)
     if (pnt.IsSetId()) {
         CBioseq_Handle bsh = scope.GetBioseqHandle(pnt.GetId());
         if (bsh) {
-            CConstRef<CSeq_id> best_id = GetBestId(*(bsh.GetCompleteBioseq()), CSeq_id::e_Genbank);
+            CConstRef<CSeq_id> best_id = GetBestId(*bsh.GetCompleteBioseq());
             if (best_id) {
                 pnt.SetId().Assign(*best_id);
             }
@@ -231,7 +244,7 @@ void UpgradeSeqLocId(CSeq_interval& interval, CScope& scope)
     if (interval.IsSetId()) {
         CBioseq_Handle bsh = scope.GetBioseqHandle(interval.GetId());
         if (bsh) {
-            CConstRef<CSeq_id> best_id = GetBestId(*(bsh.GetCompleteBioseq()), CSeq_id::e_Genbank);
+            CConstRef<CSeq_id> best_id = GetBestId(*bsh.GetCompleteBioseq());
             if (best_id) {
                 interval.SetId().Assign(*best_id);
             }
@@ -274,7 +287,7 @@ void UpgradeSeqLocId(CSeq_loc& loc, CScope& scope)
             if (loc.GetPacked_pnt().IsSetId()) {
                 CBioseq_Handle bsh = scope.GetBioseqHandle(loc.GetPacked_pnt().GetId());
                 if (bsh) {
-                    CConstRef<CSeq_id> best_id = GetBestId(*(bsh.GetCompleteBioseq()), CSeq_id::e_Genbank);
+                    CConstRef<CSeq_id> best_id = GetBestId(*bsh.GetCompleteBioseq());
                     if (best_id) {
                         loc.SetPacked_pnt().SetId().Assign(*best_id);
                     }
@@ -288,7 +301,7 @@ void UpgradeSeqLocId(CSeq_loc& loc, CScope& scope)
             {{
                 CBioseq_Handle bsh = scope.GetBioseqHandle(loc.GetPacked_pnt().GetId());
                 if (bsh) {
-                    CConstRef<CSeq_id> best_id = GetBestId(*(bsh.GetCompleteBioseq()), CSeq_id::e_Genbank);
+                    CConstRef<CSeq_id> best_id = GetBestId(*bsh.GetCompleteBioseq());
                     if (best_id) {
                         loc.SetWhole().Assign(*best_id);
                     }
@@ -464,7 +477,7 @@ string CReportObject::GetTextObjectDescription(const CSeqdesc& sd)
 string CReportObject::GetTextObjectDescription(const CBioseq& bs, CScope& scope)
 {
     string rval;
-    CConstRef<CSeq_id> id = GetBestId(bs, CSeq_id::e_Genbank);
+    CConstRef<CSeq_id> id = GetBestId(bs);
     id->GetLabel(&rval, CSeq_id::eContent);
 /*
     rval += " (length " + NStr::NumericToString(bs.GetInst().GetLength());
@@ -522,8 +535,7 @@ string CReportObject::GetTextObjectDescription(CBioseq_set_Handle bssh)
             return "(EMPTY BIOSEQ-SET)";
         }
         const CBioseq_Handle & main_bsh = *bioseq_ci;
-        CConstRef<CSeq_id> best_seq_id = GetBestId(
-            *main_bsh.GetCompleteBioseq(), CSeq_id::e_Genbank);
+        CConstRef<CSeq_id> best_seq_id = GetBestId(*main_bsh.GetCompleteBioseq());
         _ASSERT(best_seq_id);  // a Bioseq must have at least one Seq-id
         {
             string seq_id_str;
@@ -541,9 +553,7 @@ string CReportObject::GetTextObjectDescription(CBioseq_set_Handle bssh)
 
         result_strm << "Set containing ";
         if( direct_child_ci->IsSeq() ) {
-            CConstRef<CSeq_id> best_seq_id = GetBestId(
-                *direct_child_ci->GetSeq().GetCompleteBioseq(),
-                CSeq_id::e_Genbank);
+            CConstRef<CSeq_id> best_seq_id = GetBestId(*direct_child_ci->GetSeq().GetCompleteBioseq());
             _ASSERT(best_seq_id);  // a Bioseq must have at least one Seq-id
             {
                 string seq_id_str;
