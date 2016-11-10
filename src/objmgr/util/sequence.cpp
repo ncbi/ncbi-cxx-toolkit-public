@@ -3973,28 +3973,10 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
 
 bool CSeqTranslator::ChangeDeltaProteinToRawProtein(CRef<CBioseq> protein)
 {
-    if (!protein || !protein->IsAa() || !protein->IsSetInst() || !protein->GetInst().IsSetRepr()
-        || protein->GetInst().GetRepr() != objects::CSeq_inst::eRepr_delta
-        || !protein->GetInst().IsSetExt()
-        || !protein->GetInst().GetExt().IsDelta()) {
+    if (!protein || !protein->IsAa() || !protein->IsSetInst()) {
         return false;
     }
-    // can only do this if all elements are literal
-    ITERATE (objects::CDelta_ext::Tdata, it, protein->GetInst().GetExt().GetDelta().Get()) {
-        if (!(*it)->IsLiteral()) {
-            return false;
-        }
-    }
-
-    objects::CSeqVector prot_vec(*protein);
-    prot_vec.SetCoding(objects::CSeq_data::e_Iupacaa);
-    string buffer = "";
-    prot_vec.GetSeqData(0, protein->GetLength(), buffer);
-    protein->SetInst().ResetExt();
-    protein->SetInst().SetRepr(objects::CSeq_inst::eRepr_raw);
-    protein->SetInst().SetSeq_data().SetIupacaa().Set(buffer);
-    protein->SetInst().SetLength(TSeqPos(buffer.length()));
-    return true;
+    return protein->SetInst().ConvertDeltaToRaw();
 }
 
 
