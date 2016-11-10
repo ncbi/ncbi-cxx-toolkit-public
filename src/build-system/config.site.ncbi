@@ -290,7 +290,10 @@ case "$ncbi_platform" in
         ;;
 esac
 
-: ${WXWIDGETS_PATH=$NCBI/wxWidgets-3.0.1-ncbi1}
+case "$ncbi_platform" in
+    *MAC       ) : ${WXWIDGETS_PATH=$NCBI/wxWidgets-3.0.2-ncbi1} ;;
+    *          ) : ${WXWIDGETS_PATH=$NCBI/wxWidgets-3.0.1-ncbi1} ;;
+esac
 
 : ${XALAN_PATH=$NCBI/xalan-1.11}
 
