@@ -46,6 +46,7 @@
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/bioseq_ci.hpp>
+#include <objmgr/util/sequence.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -157,10 +158,19 @@ void PrintReportLineHeader(CNcbiOstrstream& lines)
 }
 
 
-void ReportMailReportLine(CNcbiOstrstream& lines, const CSeq_table& table, size_t i)
+void ReportMailReportLine(CNcbiOstrstream& lines, const CSeq_table& table, size_t i, CScope* scope = NULL)
 {
     string id;
-    table.GetColumns()[0]->GetData().GetId()[i]->GetLabel(&id, CSeq_id::eContent);
+    if (scope)
+    {
+        CBioseq_Handle bsh =  scope->GetBioseqHandle(*table.GetColumns()[0]->GetData().GetId()[i]);
+        CSeq_id_Handle best = sequence::GetId(bsh, sequence::eGetId_Best);
+        best.GetSeqId()->GetLabel(&id, CSeq_id::eContent);
+    }
+    else
+    {
+        table.GetColumns()[0]->GetData().GetId()[i]->GetLabel(&id, CSeq_id::eContent);
+    }
     lines << id;
     lines << "\t";
     lines << table.GetColumns()[1]->GetData().GetString()[i];
@@ -170,7 +180,7 @@ void ReportMailReportLine(CNcbiOstrstream& lines, const CSeq_table& table, size_
 }
 
 
-string GetReportFromMailReportTable(const CSeq_table& table)
+string GetReportFromMailReportTable(const CSeq_table& table, CScope* scope)
 {
     CNcbiOstrstream lines;
 
@@ -178,7 +188,7 @@ string GetReportFromMailReportTable(const CSeq_table& table)
     PrintReportLineHeader(lines);
     for (size_t i = 0; i < table.GetColumns().front()->GetData().GetSize(); i++) {
         if (table.GetColumns()[4]->GetData().GetInt()[i] == 0) {
-            ReportMailReportLine(lines, table, i);
+            ReportMailReportLine(lines, table, i, scope);
         }
     }
     lines << "\n\nSp. Replaced with Real\n";
@@ -186,7 +196,7 @@ string GetReportFromMailReportTable(const CSeq_table& table)
     for (size_t i = 0; i < table.GetColumns().front()->GetData().GetSize(); i++) {
         if (NStr::Find(table.GetColumns()[1]->GetData().GetString()[i], " sp.") != string::npos
             && NStr::Find(table.GetColumns()[3]->GetData().GetString()[i], " sp.") == string::npos) {
-            ReportMailReportLine(lines, table, i);
+            ReportMailReportLine(lines, table, i, scope);
         }
     }
 
@@ -194,7 +204,7 @@ string GetReportFromMailReportTable(const CSeq_table& table)
     PrintReportLineHeader(lines);
     for (size_t i = 0; i < table.GetColumns().front()->GetData().GetSize(); i++) {
         if (table.GetColumns()[5]->GetData().GetInt()[i] != 0) {
-            ReportMailReportLine(lines, table, i);
+            ReportMailReportLine(lines, table, i, scope);
         }
     }
 
