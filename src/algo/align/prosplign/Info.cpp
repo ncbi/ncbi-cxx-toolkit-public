@@ -160,7 +160,7 @@ list<CNPiece> FindGoodParts(const CProteinAlignText& alignment_text, CProSplignO
                 ++cur_len;
                 //check
                 double posit_drop = rposit/(double)window_size - lposit/(double)cur_len;
-                if( posit_drop >= dropoff && posit_drop > cur_max_drop ) {
+                if( posit_drop >= dropoff && ( posit_drop > cur_max_drop || cur_cut == begpos ) ) {
                     cur_max_drop = posit_drop;
                     cur_cut = cur_pos;
                 }
@@ -169,9 +169,34 @@ list<CNPiece> FindGoodParts(const CProteinAlignText& alignment_text, CProSplignO
             if( cur_cut == begpos ) {
                 keep_trimming = false;
             } else {//trim
+
+                //handle weird cases
+
+                //cut to positive
+                _ASSERT( cur_cut > begpos);
+                for( ; cur_cut < endpos; ++cur_cut ) {
+                    if(match[cur_cut] == POSIT_CHAR || match[cur_cut] == MATCH_CHAR) {
+                        break;
+                    }
+                }
+                if( cur_cut >= endpos ) break; // we don't want to cut the whole piece
+
+                //add positives back 
+                // cur_cut is a positive after above and cur_cut < endpos
+                _ASSERT(cur_cut < endpos);
+                _ASSERT(cur_cut > begpos);
+                _ASSERT(match[cur_cut] == POSIT_CHAR || match[cur_cut] == MATCH_CHAR);
+                for( ; cur_cut >= begpos; --cur_cut) {
+                    if(match[cur_cut] != POSIT_CHAR && match[cur_cut] != MATCH_CHAR) {
+                        ++cur_cut;
+                        break;
+                    }
+                }
+                if( cur_cut <= begpos ) break; // the whole piece is back, no cut
+
+                //trim
                 m_AliPiece.begin()->beg = cur_cut;
             }
-
         }
 
         //trim right flank
@@ -214,7 +239,7 @@ list<CNPiece> FindGoodParts(const CProteinAlignText& alignment_text, CProSplignO
                 ++cur_len;
                 //check
                 double posit_drop = wposit/(double)window_size - fposit/(double)cur_len;
-                if( posit_drop >= dropoff && posit_drop > cur_max_drop ) {
+                if( posit_drop >= dropoff && ( posit_drop > cur_max_drop || cur_cut == endpos ) ) {
                     cur_max_drop = posit_drop;
                     cur_cut = win_end;
                 }
@@ -223,6 +248,31 @@ list<CNPiece> FindGoodParts(const CProteinAlignText& alignment_text, CProSplignO
             if( cur_cut == endpos ) {
                 keep_trimming = false;
             } else {//trim
+
+                //handle weird cases
+
+                //cut to positive
+                for( --cur_cut; cur_cut >= begpos; --cur_cut ) {
+                    if(match[cur_cut] == POSIT_CHAR || match[cur_cut] == MATCH_CHAR) {
+                        ++cur_cut;
+                        break;
+                    }
+                }
+                if( cur_cut <= begpos ) break; // don't want to cut the whole piece
+
+                //add positives back
+                // we are on a positive here and cur_cut < endpos and cur_cut > begpos
+                _ASSERT(cur_cut > begpos);
+                _ASSERT(cur_cut < endpos);
+                _ASSERT(match[cur_cut-1] == POSIT_CHAR || match[cur_cut-1] == MATCH_CHAR);
+                for( ; cur_cut < endpos; ++cur_cut ) {
+                    if(match[cur_cut] != POSIT_CHAR && match[cur_cut] != MATCH_CHAR) {
+                        break;
+                    }
+                }
+                if(cur_cut >= endpos) break;//nothing to cut
+                    
+                //cut
                 m_AliPiece.back().end = cur_cut;
             }
         }

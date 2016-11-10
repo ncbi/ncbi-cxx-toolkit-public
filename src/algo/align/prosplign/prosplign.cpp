@@ -299,7 +299,7 @@ void CProSplignOutputOptions::SetupArgDescriptions(CArgDescriptions* arg_desc)
          "cut_flanks_with_posit_window",
          "window size for cut_flanks_with_posit_drop."
          " positives will be counted for a flank and for a window next to the flank."
-         "if difference is more than cut_flanks_with_posit_dropoff, flank will be dropped",
+         " If difference (in percentage) is more than cut_flanks_with_posit_dropoff, flank will be dropped",
          CArgDescriptions::eInteger,
          NStr::IntToString(CProSplignOutputOptions::default_cut_flanks_with_posit_window));
     arg_desc->SetConstraint("cut_flanks_with_posit_window", new CArgAllow_Integers(0, 10000));
