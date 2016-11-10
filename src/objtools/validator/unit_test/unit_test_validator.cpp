@@ -4675,6 +4675,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_InconsistentBiosources)
     unit_test_util::SetTaxname(second, "Trichechus manatus latirostris");
     unit_test_util::SetTaxon(second, 127582);
     entry->SetSet().SetClass(CBioseq_set::eClass_genbank);
+    unit_test_util::RemoveDescriptorType(entry, CSeqdesc::e_Title);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -10118,6 +10119,9 @@ BOOST_AUTO_TEST_CASE(Test_PKG_GenomicProductPackagingProblem)
     eval = validator.Validate(seh, options); \
     CheckErrors (*eval, expected_errors); \
     entry->SetSet().SetClass(CBioseq_set::eClass_small_genome_set); \
+    scope.RemoveTopLevelSeqEntry(seh); \
+    unit_test_util::RemoveDescriptorType(entry, CSeqdesc::e_Title); \
+    seh = scope.AddTopLevelSeqEntry(*entry); \
     eval = validator.Validate(seh, options); \
     CheckErrors (*eval, expected_errors);
 
@@ -10129,34 +10133,21 @@ BOOST_AUTO_TEST_CASE(Test_PKG_GenomicProductPackagingProblem)
 
 BOOST_AUTO_TEST_CASE(Test_PKG_InconsistentMolInfoBiomols)
 {
-    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSegSet();
-    CRef<CSeq_entry> parts_set = entry->SetSet().SetSeq_set().back();
-    unit_test_util::SetBiomol(parts_set->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_cRNA);
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodEcoSet();
 
     STANDARD_SETUP
-#if 0
-        // we don't care about segsets any more
 
-    expected_errors.push_back(new CExpectedError("part1", eDiag_Error, "InconsistentMolTypeBiomol",
-                                                 "Molecule type (DNA) does not match biomol (RNA)"));
-    expected_errors.push_back(new CExpectedError("master", eDiag_Error, "InconsistentMolInfoBiomols",
-                                                 "Segmented set contains inconsistent MolInfo biomols"));
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    CLEAR_ERRORS
-#endif
-
-    scope.RemoveTopLevelSeqEntry(seh);
-    entry = unit_test_util::BuildGoodEcoSet();
     unit_test_util::SetBiomol(entry->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_cRNA);
-    seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors.push_back(new CExpectedError("lcl|good1", eDiag_Error, "InconsistentMolTypeBiomol",
                                                  "Molecule type (DNA) does not match biomol (RNA)"));
     expected_errors.push_back(new CExpectedError("lcl|good1", eDiag_Warning, "InconsistentMolInfoBiomols",
                                                  "Pop/phy/mut/eco set contains inconsistent MolInfo biomols"));
 
     TESTPOPPHYMUTECO (seh, entry)
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    unit_test_util::RemoveDescriptorType(entry, CSeqdesc::e_Title);
+    seh = scope.AddTopLevelSeqEntry(*entry);
 
     TESTWGS (seh, entry);
 
@@ -10207,6 +10198,9 @@ BOOST_AUTO_TEST_CASE(Test_PKG_InternalGenBankSet)
                                                  "Bioseq-set contains internal GenBank Bioseq-set"));
     expected_errors.push_back(new CExpectedError("", eDiag_Warning, "ImproperlyNestedSets",
                                                  "Nested sets within Pop/Phy/Mut/Eco/Wgs set"));
+    scope.RemoveTopLevelSeqEntry(seh);
+    unit_test_util::RemoveDescriptorType(entry, CSeqdesc::e_Title);
+    seh = scope.AddTopLevelSeqEntry(*entry);
 
     TESTWGS (seh, entry);
 
@@ -10218,6 +10212,7 @@ BOOST_AUTO_TEST_CASE(Test_PKG_ConSetProblem)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodEcoSet();
     entry->SetSet().SetClass(CBioseq_set::eClass_conset);
+    unit_test_util::RemoveDescriptorType(entry, CSeqdesc::e_Title);
 
     STANDARD_SETUP
 
@@ -10339,6 +10334,7 @@ BOOST_AUTO_TEST_CASE(Test_PKG_BioseqSetClassNotSet)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodEcoSet();
     entry->SetSet().SetClass(CBioseq_set::eClass_not_set);
+    unit_test_util::RemoveDescriptorType(entry, CSeqdesc::e_Title);
 
     STANDARD_SETUP
 
@@ -19786,6 +19782,8 @@ BOOST_AUTO_TEST_CASE(Test_BadLocation)
 
     // error goes away if organelle small genome set
     entry->SetSet().SetClass(CBioseq_set::eClass_small_genome_set);
+    // remove title, not appropriate for small genome set
+    unit_test_util::RemoveDescriptorType(entry, CSeqdesc::e_Title);
     NON_CONST_ITERATE(CBioseq_set::TSeq_set, s, entry->SetSet().SetSeq_set()) {
         unit_test_util::SetGenome(*s, CBioSource::eGenome_chloroplast);
     }
@@ -19883,5 +19881,20 @@ BOOST_AUTO_TEST_CASE(Test_VR_166)
 
 }
 
+
+BOOST_AUTO_TEST_CASE(TEST_TitleNotAppropriateForSet)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodEcoSet();
+    entry->SetSet().SetClass(CBioseq_set::eClass_genbank);
+
+    STANDARD_SETUP
+
+    eval = validator.Validate(seh, options);
+    expected_errors.push_back(new CExpectedError("lcl|good1", eDiag_Error, "TitleNotAppropriateForSet",
+        "Only Pop/Phy/Mut/Eco sets should have titles"));
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
 
 

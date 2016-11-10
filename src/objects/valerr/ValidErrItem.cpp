@@ -672,6 +672,9 @@ static const TErrTypStrs sc_ErrStrs[] = {
     { eErr_SEQ_DESCR_InconsistentWGSFlags,
     { "InconsistentWGSFlags",
     "WGS indicators are used inconsistently in this record." } },
+    { eErr_SEQ_DESCR_TitleNotAppropriateForSet,
+    { "TitleNotAppropriateForSet",
+    "Only population study, phylogenetic study, ecological sample study, and mutation sets should have title descriptors." } },
 
     /* SEQ_GENERIC */
 

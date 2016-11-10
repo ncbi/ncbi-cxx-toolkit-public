@@ -578,26 +578,23 @@ void CValidError_bioseqset::ValidateGenbankSet(const CBioseq_set& seqset)
 
 void CValidError_bioseqset::ValidateSetTitle(const CBioseq_set& seqset)
 {
-    if (!seqset.IsSetClass()) {
-        return;
-    }
-    if (seqset.GetClass() != CBioseq_set::eClass_eco_set &&
-        seqset.GetClass() != CBioseq_set::eClass_phy_set &&
-        seqset.GetClass() != CBioseq_set::eClass_pop_set &&
-        seqset.GetClass() != CBioseq_set::eClass_mut_set) {
-        return;
-    }
-
     bool has_title = false;
-    FOR_EACH_DESCRIPTOR_ON_SEQSET (it, seqset) {
+    FOR_EACH_DESCRIPTOR_ON_SEQSET(it, seqset) {
         if ((*it)->IsTitle()) {
             has_title = true;
             break;
         }
     }
-    if (!has_title && (m_Imp.IsRefSeq() || m_Imp.IsEmbl() || m_Imp.IsDdbj() || m_Imp.IsGenbank())) {
-        PostErr(eDiag_Warning, eErr_SEQ_PKG_MissingSetTitle,
-            "Pop/Phy/Mut/Eco set does not have title",
+
+    if (seqset.NeedsDocsumTitle()) {
+        if (!has_title && (m_Imp.IsRefSeq() || m_Imp.IsEmbl() || m_Imp.IsDdbj() || m_Imp.IsGenbank())) {
+            PostErr(eDiag_Warning, eErr_SEQ_PKG_MissingSetTitle,
+                "Pop/Phy/Mut/Eco set does not have title",
+                seqset);
+        }
+    } else if (has_title) {
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_TitleNotAppropriateForSet,
+            "Only Pop/Phy/Mut/Eco sets should have titles",
             seqset);
     }
 }

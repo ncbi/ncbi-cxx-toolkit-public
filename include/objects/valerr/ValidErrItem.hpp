@@ -251,6 +251,7 @@ enum EErrType {
     eErr_SEQ_DESCR_WrongBiomolForTechnique,
     eErr_SEQ_DESCR_WrongOrganismFor16SrRNA,
     eErr_SEQ_DESCR_InconsistentWGSFlags,
+    eErr_SEQ_DESCR_TitleNotAppropriateForSet,
     ERR_CODE_END(SEQ_DESCR),
 
 
