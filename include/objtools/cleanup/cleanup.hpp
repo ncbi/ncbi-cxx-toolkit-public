@@ -476,6 +476,8 @@ public:
     static bool RepackageProteins(CSeq_entry_Handle seh);
     static bool RepackageProteins(const CSeq_feat& cds, CBioseq_set_Handle np);
 
+    static bool ConvertDeltaSeqToRaw(CSeq_entry_Handle seh, CSeq_inst::EMol filter = CSeq_inst::eMol_not_set);
+
 private:
     // Prohibit copy constructor & assignment operator
     CCleanup(const CCleanup&);

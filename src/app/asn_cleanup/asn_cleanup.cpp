@@ -229,7 +229,11 @@ void CCleanupApp::Init(void)
                                  "\tz Delete or Update EC Numbers\n",
                                   CArgDescriptions::eString);
 
-        arg_desc->AddOptionalKey("X", "Miscellaneous", "Other Cleaning Options",
+        arg_desc->AddOptionalKey("X", "Miscellaneous", "Other Cleaning Options\n"
+            "\tw GFF/WGS Genome Cleanup\n"
+            "\tr Regenerate Definition Lines\n"
+            "\tb Batch Cleanup of Multireader Output\n"
+            "\ta Remove Assembly Gaps\n",
             CArgDescriptions::eString);
 
         arg_desc->AddFlag("T", "TaxonomyLookup");
@@ -308,7 +312,7 @@ void CCleanupApp::x_XOptionsValid(const string& opt)
     string::const_iterator s = opt.begin();
     while (s != opt.end()) {
         if (!isspace(*s)) {
-            if (*s != 'w' && *s != 'r' && *s != 'b') {
+            if (*s != 'w' && *s != 'r' && *s != 'b' && *s != 'a') {
                 unrecognized += *s;
             }
         }
@@ -805,6 +809,9 @@ bool CCleanupApp::x_ProcessXOptions(const string& opt, CSeq_entry_Handle seh)
     }
     if (NStr::Find(opt, "b") != string::npos) {
         any_changes = x_GFF3Batch(seh);
+    }
+    if (NStr::Find(opt, "a") != string::npos) {
+        any_changes = CCleanup::ConvertDeltaSeqToRaw(seh);
     }
     return any_changes;
 }

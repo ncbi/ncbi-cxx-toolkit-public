@@ -3904,5 +3904,22 @@ bool CCleanup::RepackageProteins(CSeq_entry_Handle seh)
     return changed;
 }
 
+
+bool CCleanup::ConvertDeltaSeqToRaw(CSeq_entry_Handle seh, CSeq_inst::EMol filter)
+{
+    bool any_change = false;
+    for (CBioseq_CI bi(seh, filter); bi; ++bi) {
+        CBioseq_Handle bsh = *bi;
+        CRef<CSeq_inst> inst(new CSeq_inst());
+        inst->Assign(bsh.GetInst());
+        if (inst->ConvertDeltaToRaw()) {
+            CBioseq_EditHandle beh(bsh);
+            beh.SetInst(*inst);
+            any_change = true;
+        }
+    }
+    return any_change;
+}
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
