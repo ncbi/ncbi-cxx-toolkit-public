@@ -5748,6 +5748,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "SCU	s	Shandong Christian University",
 "SCUF	s	Universidade Federal de Santa Catarina",
 "SCUI	h	Suez Canal University",
+"SCV	b	State Collection of Viruses",
 "SCZ	s	Smithsonian Tropical Research Institute",
 "SD	s	Herbarium, San Diego Natural History Museum",
 "SDAKS	s	South Dakota State University",
