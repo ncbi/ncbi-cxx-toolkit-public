@@ -321,7 +321,7 @@ gc_load_utils needs gc_utils
 gc_load_utils needs xid_utils
 gc_organism needs gpipe_attr
 gc_organism needs taxon1
-gc_schedule needs xconnserv
+gc_schedule needs ncbi_xcache_netcache
 gc_utils needs gpipe_objutil
 gcedit needs agp_lookup
 gcedit needs gc_load_utils
