@@ -1399,7 +1399,7 @@ EIO_Status CConnTest::x_CheckTrap(string* reason)
 bool CConnTest::IsNcbiInhouseClient(void)
 {
     static const STimeout kFast = { 2, 0 };
-    CConn_HttpStream http("/Service/getenv.cgi",
+    CConn_HttpStream http("https:///Service/getenv.cgi",
                           fHTTP_KeepHeader | fHTTP_NoAutoRetry, &kFast);
     char line[1024];
     if (!http  ||  !http.getline(line, sizeof(line)))
