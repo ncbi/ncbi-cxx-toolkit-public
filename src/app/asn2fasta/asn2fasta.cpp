@@ -276,7 +276,7 @@ void CAsn2FastaApp::Init(void)
 
         arg_desc->AddOptionalKey("oq", "QualityScoreOutputFile",
             "Quality score output file name", CArgDescriptions::eOutputFile);
-        arg_desc->AddFlag("gi-out", "Enable GI output in defline");
+        arg_desc->AddFlag("disable-gi", "Disable GI output in defline");
 
     }}
 
@@ -324,10 +324,11 @@ CFastaOstreamEx* CAsn2FastaApp::OpenFastaOstream(const string& argname, const st
         CFastaOstreamEx::fAssembleParts |
         CFastaOstreamEx::fNoDupCheck |
         CFastaOstreamEx::fKeepGTSigns |
-        CFastaOstreamEx::fNoExpensiveOps);
+        CFastaOstreamEx::fNoExpensiveOps|
+        CFastaOstreamEx::fEnableGI);
 
-    if (GetArgs()["gi-out"])
-        fasta_os->SetFlag(CFastaOstreamEx::fEnableGI);
+    if (GetArgs()["disable-gi"])
+        fasta_os->ResetFlag(CFastaOstreamEx::fEnableGI);
 
     if( GetArgs()["gap-mode"] ) {
         fasta_os->SetFlag(
