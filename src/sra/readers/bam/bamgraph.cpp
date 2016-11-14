@@ -177,8 +177,13 @@ vector<Uint8> CBam2Seq_graph::CollectCoverage(CBamMgr& mgr,
                                               const string& bam_file,
                                               const string& bam_index)
 {
-    CBamDb db(mgr, bam_file, bam_index);
-    return CollectCoverage(db);
+    if ( GetEstimated() ) {
+        return CollectEstimatedCoverage(bam_file, bam_index);
+    }
+    else {
+        CBamDb db(mgr, bam_file, bam_index);
+        return CollectCoverage(db);
+    }
 }
 
 
@@ -309,7 +314,6 @@ vector<Uint8> CBam2Seq_graph::CollectCoverage(CBamDb& db)
             level += it->second;
         }
     }
-
     m_TotalRange.SetFrom(min_pos).SetToOpen(max_pos);
     m_AlignCount = align_cnt;
     m_MaxAlignSpan = max_align_span;
@@ -331,13 +335,42 @@ vector<Uint8> CBam2Seq_graph::CollectEstimatedCoverage(CBamDb& db)
     CBamIndex bam_index(db.GetIndexName());
     size_t ref_index = 0;
     TSeqPos length = kInvalidSeqPos;
-    for ( CBamRefSeqIterator it(db); it; ++it, ++ref_index ) {
-        if ( it.GetRefSeqId() == GetRefLabel() ) {
-            length = it.GetLength();
-            break;
+    if ( 1 ) {
+        CBamHeader header(db.GetDbName());
+        ref_index = header.GetRefIndex(GetRefLabel());
+        length = header.GetRefLength(ref_index);
+    }
+    else {
+        for ( CBamRefSeqIterator it(db); it; ++it, ++ref_index ) {
+            if ( it.GetRefSeqId() == GetRefLabel() ) {
+                length = it.GetLength();
+                break;
+            }
         }
     }
-    
+    vector<uint64_t> ret = bam_index.CollectEstimatedCoverage(ref_index);
+    if ( length == 0 || length == kInvalidSeqPos ) {
+        length = TSeqPos(ret.size())*kEstimatedGraphBinSize;
+    }
+    m_TotalRange.SetFrom(0).SetToOpen(length);
+    m_AlignCount = 0;
+    m_MaxAlignSpan = 0;
+    return ret;
+}
+
+
+vector<Uint8> CBam2Seq_graph::CollectEstimatedCoverage(const string& bam_file,
+                                                       const string& bam_ind)
+{
+    if ( bam_file.empty() ) {
+        NCBI_THROW(CBamException, eInvalidArg,
+                   "BAM file name is empty");
+    }
+    m_GraphBinSize = kEstimatedGraphBinSize;
+    CBamHeader header(bam_file);
+    size_t ref_index = header.GetRefIndex(GetRefLabel());
+    TSeqPos length = header.GetRefLength(ref_index);
+    CBamIndex bam_index(bam_ind.empty()? bam_file+".bai": bam_ind);
     vector<uint64_t> ret = bam_index.CollectEstimatedCoverage(ref_index);
     if ( length == 0 || length == kInvalidSeqPos ) {
         length = TSeqPos(ret.size())*kEstimatedGraphBinSize;
@@ -365,16 +398,7 @@ static void sx_SetTitle(CSeq_graph& graph, CSeq_annot& annot,
 }
 
 
-CRef<CSeq_annot> CBam2Seq_graph::MakeSeq_annot(CBamMgr& mgr,
-                                               const string& bam_file,
-                                               const string& bam_index)
-{
-    CBamDb db(mgr, bam_file, bam_index);
-    return MakeSeq_annot(db, bam_file);
-}
-
-
-CRef<CSeq_annot> CBam2Seq_graph::MakeSeq_annot(CBamDb& db,
+CRef<CSeq_annot> CBam2Seq_graph::MakeSeq_annot(const vector<Uint8>& cov,
                                                const string& bam_file)
 {
     CRef<CSeq_annot> annot(new CSeq_annot);
@@ -388,8 +412,6 @@ CRef<CSeq_annot> CBam2Seq_graph::MakeSeq_annot(CBamDb& db,
     annot->SetDesc().Set().push_back(desc);
     user_desc.AddField("MinMapQuality", GetMinMapQuality());
 
-    vector<Uint8> cov = CollectCoverage(db);
-    if ( cov.empty() ) cov.push_back(0);
     Uint8 min_cov = kMax_UI8, max_cov = 0, sum_cov = 0;
     size_t val_count = 0;
     ITERATE ( vector<Uint8>, it, cov ) {
@@ -542,27 +564,32 @@ CRef<CSeq_annot> CBam2Seq_graph::MakeSeq_annot(CBamDb& db,
 
 
 CRef<CSeq_annot> CBam2Seq_graph::MakeSeq_annot(CBamMgr& mgr,
+                                               const string& bam_file,
+                                               const string& bam_index)
+{
+    return MakeSeq_annot(CollectCoverage(mgr, bam_file, bam_index), bam_file);
+}
+
+
+CRef<CSeq_annot> CBam2Seq_graph::MakeSeq_annot(CBamDb& db,
+                                               const string& bam_file)
+{
+    return MakeSeq_annot(CollectCoverage(db), bam_file);
+}
+
+
+CRef<CSeq_annot> CBam2Seq_graph::MakeSeq_annot(CBamMgr& mgr,
                                                const string& bam_file)
 {
     return MakeSeq_annot(mgr, bam_file, bam_file+".bai");
 }
 
 
-CRef<CSeq_entry> CBam2Seq_graph::MakeSeq_entry(CBamMgr& mgr,
-                                               const string& bam_file,
-                                               const string& bam_index)
-{
-    CBamDb db(mgr, bam_file, bam_index);
-    return MakeSeq_entry(db, bam_file);
-}
-
-
-CRef<CSeq_entry> CBam2Seq_graph::MakeSeq_entry(CBamDb& db,
-                                               const string& bam_file)
+CRef<CSeq_entry> CBam2Seq_graph::MakeSeq_entry(CRef<CSeq_annot> annot)
 {
     CRef<CSeq_entry> entry(new CSeq_entry);
     CBioseq& seq = entry->SetSeq();
-    seq.SetAnnot().push_back(MakeSeq_annot(db, bam_file));
+    seq.SetAnnot().push_back(annot);
     if ( m_RefId ) {
         CRef<CSeq_id> id(SerialClone(GetRefId()));
         seq.SetId().push_back(id);
@@ -588,9 +615,24 @@ CRef<CSeq_entry> CBam2Seq_graph::MakeSeq_entry(CBamDb& db,
 
 
 CRef<CSeq_entry> CBam2Seq_graph::MakeSeq_entry(CBamMgr& mgr,
+                                               const string& bam_file,
+                                               const string& bam_index)
+{
+    return MakeSeq_entry(MakeSeq_annot(mgr, bam_file, bam_index));
+}
+
+
+CRef<CSeq_entry> CBam2Seq_graph::MakeSeq_entry(CBamDb& db,
                                                const string& bam_file)
 {
-    return MakeSeq_entry(mgr, bam_file, bam_file+".bai");
+    return MakeSeq_entry(MakeSeq_annot(db, bam_file));
+}
+
+
+CRef<CSeq_entry> CBam2Seq_graph::MakeSeq_entry(CBamMgr& mgr,
+                                               const string& bam_file)
+{
+    return MakeSeq_entry(MakeSeq_annot(mgr, bam_file));
 }
 
 

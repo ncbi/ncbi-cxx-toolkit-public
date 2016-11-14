@@ -35,6 +35,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbifile.hpp>
 #include <util/simple_buffer.hpp>
+#include <sra/readers/bam/vdbfile.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -61,9 +62,10 @@ protected:
 
 private:
     CFastMutex m_Mutex;
-    // two variants: direct file IO or memory mapped file
+    // three variants: direct file IO, memory mapped file, or VDB KFile
     CFileIO m_File;
     AutoPtr<CMemoryFile> m_MemFile;
+    CVDBFile m_VDBFile;
 };
 
 

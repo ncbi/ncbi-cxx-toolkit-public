@@ -151,6 +151,9 @@ int CBamGraphTestApp::Run(void)
          NStr::StartsWith(file, "ftp://") ) {
         path = file;
     }
+    else if ( CFile(file).Exists() ) {
+        path = file;
+    }
     else {
         ITERATE ( vector<string>, it, dirs ) {
             string dir = *it;

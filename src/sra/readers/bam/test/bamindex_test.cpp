@@ -191,36 +191,44 @@ int CBamIndexTestApp::Run(void)
     string file = args["file"].AsString();
     string path;
     
-    ITERATE ( vector<string>, it, dirs ) {
-        string dir = *it;
-        if ( !CDirEntry(dir).Exists() ) {
-            continue;
-        }
-        path = CFile::MakePath(dir, file);
-        if ( !CFile(path).Exists() ) {
-            SIZE_TYPE p1 = file.rfind('/');
-            if ( p1 == NPOS ) {
-                p1 = 0;
-            }
-            else {
-                p1 += 1;
-            }
-            SIZE_TYPE p2 = file.find('.', p1);
-            if ( p2 != NPOS ) {
-                path = CFile::MakePath(dir, file.substr(p1, p2-p1) + "/alignment/" + file);
-            }
-        }
-        if ( CFile(path).Exists() ) {
-            break;
-        }
-        path.clear();
-    }
-    if ( path.empty() ) {
+    if ( NStr::StartsWith(file, "http://") ||
+         NStr::StartsWith(file, "https://") ||
+         NStr::StartsWith(file, "ftp://") ||
+         CFile(file).Exists() ) {
         path = file;
     }
-    if ( !CFile(path).Exists() ) {
-        ERR_POST("Data file "<<args["file"].AsString()<<" not found.");
-        return 1;
+    else {
+        ITERATE ( vector<string>, it, dirs ) {
+            string dir = *it;
+            if ( !CDirEntry(dir).Exists() ) {
+                continue;
+            }
+            path = CFile::MakePath(dir, file);
+            if ( !CFile(path).Exists() ) {
+                SIZE_TYPE p1 = file.rfind('/');
+                if ( p1 == NPOS ) {
+                    p1 = 0;
+                }
+                else {
+                    p1 += 1;
+                }
+                SIZE_TYPE p2 = file.find('.', p1);
+                if ( p2 != NPOS ) {
+                    path = CFile::MakePath(dir, file.substr(p1, p2-p1) + "/alignment/" + file);
+                }
+            }
+            if ( CFile(path).Exists() ) {
+                break;
+            }
+            path.clear();
+        }
+        if ( path.empty() ) {
+            path = file;
+        }
+        if ( !CFile(path).Exists() ) {
+            ERR_POST("Data file "<<args["file"].AsString()<<" not found.");
+            return 1;
+        }
     }
 
     typedef CRange<TSeqPos> TRange;

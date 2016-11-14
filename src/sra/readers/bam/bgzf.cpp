@@ -55,7 +55,12 @@ static int s_GetDebug(void)
 }
 
 
-static const bool kUseMemFile = false;
+enum EFileMode {
+    eUseFileIO,
+    eUseMemFile,
+    eUseVDBFile
+};
+static const EFileMode kFileMode = eUseVDBFile;
 static const bool kCheckBlockCRC32 = true;
 static const size_t kSegmentSize = 16<<20; // 16 MB
 
@@ -72,14 +77,19 @@ const char* CBGZFException::GetErrCodeString(void) const
 
 CPagedFile::CPagedFile(const string& file_name)
 {
-    if (kUseMemFile) {
+    switch ( kFileMode ) {
+    case eUseFileIO:
+        m_File.Open(file_name, CFileIO::eOpen, CFileIO::eRead);
+        break;
+    case eUseMemFile:
         m_MemFile.reset(new CMemoryFile(file_name,
             CMemoryFile::eMMP_Read,
             CMemoryFile::eMMS_Shared,
             0, kSegmentSize)); // to prevent initial mapping
-    }
-    else {
-        m_File.Open(file_name, CFileIO::eOpen, CFileIO::eRead);
+        break;
+    case eUseVDBFile:
+        m_VDBFile = CVDBFile(file_name);
+        break;
     }
 }
 
@@ -92,11 +102,9 @@ CPagedFile::~CPagedFile()
 void CPagedFile::x_Release(CPagedFilePage& page)
 {
     if (page.m_Ptr) {
-        if (kUseMemFile) {
+        if ( m_MemFile ) {
             CFastMutexGuard guard(m_Mutex);
             m_MemFile->Unmap();
-        }
-        else {
         }
         page.m_Ptr = 0;
     }
@@ -116,7 +124,7 @@ void CPagedFile::x_Select(CPagedFilePage& page, TFilePos file_pos)
         page.m_File = this;
     }
     size_t size = kSegmentSize;
-    if ( kUseMemFile ) {
+    if ( m_MemFile ) {
         CFastMutexGuard guard(m_Mutex);
         page.m_Ptr = (const char*)m_MemFile->Map(base_pos, size);
     }
@@ -131,19 +139,27 @@ void CPagedFile::x_Select(CPagedFilePage& page, TFilePos file_pos)
             if (trace) {
                 sw.Start();
             }
-            m_File.SetFilePos(base_pos);
-            while (rem) {
-                size_t cnt = m_File.Read(dst, rem);
-                if (cnt == 0) {
-                    // end of file or error
-                    break;
-                }
+            if ( m_VDBFile ) {
+                size_t cnt = m_VDBFile.ReadAll(base_pos, dst, rem);
                 rem -= cnt;
                 dst += cnt;
             }
+            else {
+                m_File.SetFilePos(base_pos);
+                while (rem) {
+                    size_t cnt = m_File.Read(dst, rem);
+                    if (cnt == 0) {
+                        // end of file or error
+                        break;
+                    }
+                    rem -= cnt;
+                    dst += cnt;
+                }
+            }
             if (trace) {
-                LOG_POST("BGZF: Read page " << base_pos / kSegmentSize << " @ " << base_pos
-                    << " in " << (size - rem) / sw.Elapsed() / (1 << 20) << " MB/s");
+                LOG_POST("BGZF: Read page "<<base_pos/kSegmentSize<<
+                         " @ "<<base_pos<<
+                         " in "<<(size-rem)/sw.Elapsed()/(1<<20)<<" MB/s");
             }
         }
         if (rem) {

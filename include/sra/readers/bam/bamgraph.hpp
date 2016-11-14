@@ -140,6 +140,8 @@ public:
                                   const string& bam_index);
     vector<Uint8> CollectCoverage(CBamDb& db);
     vector<Uint8> CollectEstimatedCoverage(CBamDb& db);
+    vector<Uint8> CollectEstimatedCoverage(const string& bam_file,
+                                           const string& bam_index);
     
     /// Generate Seq-annot for BAM file using BAM file index
     CRef<CSeq_annot> MakeSeq_annot(CBamMgr& mgr,
@@ -150,6 +152,8 @@ public:
                                    const string& bam_file);
     CRef<CSeq_annot> MakeSeq_annot(CBamDb& db,
                                    const string& bam_file);
+    CRef<CSeq_annot> MakeSeq_annot(const vector<Uint8>& cov,
+                                   const string& bam_file);
     /// Generate Seq-entry for BAM file
     CRef<CSeq_entry> MakeSeq_entry(CBamMgr& mgr,
                                    const string& bam_file,
@@ -159,6 +163,7 @@ public:
                                    const string& bam_file);
     CRef<CSeq_entry> MakeSeq_entry(CBamDb& db,
                                    const string& bam_file);
+    CRef<CSeq_entry> MakeSeq_entry(CRef<CSeq_annot> annot);
 
 private:
     // parameters

@@ -1,7 +1,7 @@
 # $Id$
 
 LIB = bamread
-SRC = bamread bamgraph bgzf bamindex
+SRC = bamread bamgraph bgzf bamindex vdbfile
 
 ASN_DEP = seq seqset
 
