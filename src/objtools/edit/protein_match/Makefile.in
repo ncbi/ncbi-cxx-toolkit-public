@@ -1,0 +1,4 @@
+LIB_PROJ = protein_match
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
