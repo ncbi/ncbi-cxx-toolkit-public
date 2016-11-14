@@ -1447,7 +1447,7 @@ static bool AddExceptionsToShortIntron(const CSeq_feat& sf, CScope& scope, std::
         }
         bool is_bacterial = CDiscrepancyContext::HasLineage(*source, "", "Bacteria");
         if (is_bacterial || CDiscrepancyContext::HasLineage(*source, "", "Archea")) {
-            CConstRef<CSeq_feat> gene = CCleanup::GetGeneForFeature(sf, scope);
+            CConstRef<CSeq_feat> gene = sequence::GetGeneForFeature(sf, scope);
             if (gene.NotEmpty()) {
                 CSeq_feat* gene_edit = const_cast<CSeq_feat*>(gene.GetPointer());
                 CSeq_feat& sf_edit = const_cast<CSeq_feat&>(sf);

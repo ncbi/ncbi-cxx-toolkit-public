@@ -724,7 +724,7 @@ const CSeq_feat* CDiscrepancyContext::GetCurrentGene() // todo: optimize
 const CSeq_feat* CDiscrepancyContext::GetGeneForFeature(const CSeq_feat& feat)
 {
     if (m_GeneForFeatureMap.find(&feat) == m_GeneForFeatureMap.end()) {
-        m_GeneForFeatureMap[&feat] = CCleanup::GetGeneForFeature(feat, *m_Scope);
+        m_GeneForFeatureMap[&feat] = sequence::GetGeneForFeature(feat, *m_Scope);
     }
     return m_GeneForFeatureMap[&feat];
 }

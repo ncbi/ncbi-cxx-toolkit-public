@@ -130,7 +130,7 @@ string GetLocusTagForFeature(const CSeq_feat& seq_feat, CScope& scope)
             tag = (gene->CanGetLocus_tag()) ? gene->GetLocus_tag() : kEmptyStr;
         }
         else {
-            CConstRef<CSeq_feat> gene = CCleanup::GetGeneForFeature(seq_feat, scope);
+            CConstRef<CSeq_feat> gene = sequence::GetGeneForFeature(seq_feat, scope);
             if (gene.NotEmpty()) {
                 tag = (gene->GetData().GetGene().CanGetLocus_tag()) ? gene->GetData().GetGene().GetLocus_tag() : kEmptyStr;
             }
