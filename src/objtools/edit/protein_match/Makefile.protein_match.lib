@@ -1,4 +1,4 @@
 LIB = protein_match
-SRC = setup_match
+SRC = setup_match generate_match_table
 
 CPPFLAGS = $(ORIG_CPPFLAGS)
