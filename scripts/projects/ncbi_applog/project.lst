@@ -7,3 +7,5 @@ util/xregexp$
 misc$
 misc/clog$
 misc/clog/app$
+misc/third_party
+misc/third_party_static
