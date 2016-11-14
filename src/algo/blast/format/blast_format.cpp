@@ -1170,6 +1170,8 @@ CBlastFormat::PrintOneResultSet(const blast::CSearchResults& results,
     display.SetDbName(m_DbName);
     display.SetDbType(!m_DbIsAA);
     display.SetLineLen(m_LineLength);
+    int kAlignToShow=2000000000;  // Nice large number per SB-1817
+    display.SetNumAlignToShow(kAlignToShow);
 
     // set the alignment flags
     display.SetAlignOption(flags);
