@@ -45,6 +45,8 @@ FD_LIMIT = 50           # At least 50 fds must be still available
 
 PENALTY_CURVE = [ 90, 99 ]
 
+PRINCIPAL_STOP_ME="/export/home/service/admin/disable_all_netschedules"
+
 
 # Set the value to None and no log file operations will be done
 VERBOSE_LOG_FILE = None
@@ -271,6 +273,9 @@ def main():
         return log( BASE_NO_ACTION_ALERT_CODE + 2,
                     "Error processing command line arguments: " + str( exc ) )
 
+
+    if os.path.exists(PRINCIPAL_STOP_ME):
+        return log( BASE_RESERVE_CODE, "Principal stop_me exists. Disabling NS")
 
     # First stage: connection
     try:
