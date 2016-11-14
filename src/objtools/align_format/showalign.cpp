@@ -195,6 +195,14 @@ CDisplaySeqalign::CDisplaySeqalign(const CSeq_align_set& seqalign,
     CAlignFormatUtil::GetAsciiProteinMatrix(matrix_name 
                                        ? matrix_name 
                                        : BLAST_DEFAULT_MATRIX, mtx);
+
+    // Use default score matrix if one with the provided name was not found.
+    // This may happen for a user's score matrix that was read from a file
+    // (using BLASTMAT environment variable).
+    if (mtx.GetData().empty()) {
+        CAlignFormatUtil::GetAsciiProteinMatrix(BLAST_DEFAULT_MATRIX, mtx);
+    }
+
     // -RMH- --- Need to see if we can retrieve our matrix this way.
     //           for now don't initialize if empty
     //_ASSERT(!mtx.GetData().empty());
