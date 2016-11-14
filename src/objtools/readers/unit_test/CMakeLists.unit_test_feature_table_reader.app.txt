@@ -7,9 +7,10 @@ add_executable(unit_test_feature_table_reader-app
 
 set_target_properties(unit_test_feature_table_reader-app PROPERTIES OUTPUT_NAME unit_test_feature_table_reader)
 
-
-
 target_link_libraries(unit_test_feature_table_reader-app
     test_boost xobjread
 )
 
+add_dependencies(unit_test_feature_table_reader-app
+    genome_collection
+)
