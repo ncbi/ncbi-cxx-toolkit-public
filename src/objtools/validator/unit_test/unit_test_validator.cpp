@@ -652,6 +652,36 @@ BOOST_AUTO_TEST_CASE(Test_ValidError_Format)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_GB_6395)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    unit_test_util::SetTaxon(entry, 0);
+
+    STANDARD_SETUP
+
+    eval = validator.Validate(seh, options);
+
+    CValidErrorFormat format(*objmgr);
+    vector<string> expected;
+    vector<string> seen;
+
+    vector<string> cat_list = format.FormatCompleteSubmitterReport(*eval, scope);
+    ITERATE(vector<string>, it, cat_list) {
+        vector<string> sublist;
+        NStr::Tokenize(*it, "\n", sublist);
+        ITERATE(vector<string>, sit, sublist) {
+            seen.push_back(*sit);
+        }
+    }
+    expected.push_back("NoTaxonID");
+    expected.push_back("lcl|good:Sebaea microphylla");
+    expected.push_back("");
+
+    CheckStrings(seen, expected);
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_Descr_LatLonState)
 {
     // prepare entry

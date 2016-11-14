@@ -229,13 +229,32 @@ string CValidErrorFormat::x_FormatConsensusSpliceForSubmitterReport(const CValid
 }
 
 
+void RemovePrefix(string& str, const string& prefix)
+{
+    size_t type_pos = NStr::Find(str, prefix);
+    if (type_pos != string::npos) {
+        str = str.substr(type_pos + prefix.length());
+    }
+}
+
+void RemoveSuffix(string& str, const string& suffix)
+{
+    size_t type_pos = NStr::Find(str, suffix);
+    if (type_pos != string::npos) {
+        str = str.substr(0, type_pos);
+    }
+}
+
+
 string CValidErrorFormat::x_FormatGenericForSubmitterReport(const CValidErrItem& error) const
 {
     string obj_desc = error.GetObjDesc();
-    size_t type_pos = NStr::Find(obj_desc, "FEATURE: ");
-    if (type_pos != string::npos) {
-        obj_desc = obj_desc.substr(type_pos + 9);
-    }
+    RemovePrefix(obj_desc, "FEATURE: ");
+    RemovePrefix(obj_desc, "DESCRIPTOR: ");
+    RemovePrefix(obj_desc, "BioSrc: ");
+    RemoveSuffix(obj_desc, " BIOSEQ: ");
+    RemoveSuffix(obj_desc, " BIOSEQ-SET: ");
+
     NStr::ReplaceInPlace(obj_desc, ":", "\t", 0, 1);
     size_t close_pos = NStr::Find(obj_desc, "]");
     if (close_pos != string::npos) {
