@@ -40,7 +40,7 @@ NO_CHANGE_CODE = 123
 
 PENALTY_CURVE = [ 90, 99 ]
 
-
+PRINCIPAL_STOP_ME="/export/home/service/admin/disable_all_netstorages"
 
 # Set the value to None and no log file operations will be done
 VERBOSE_LOG_FILE = None
@@ -417,6 +417,9 @@ def main():
                     "Error processing command line arguments: " + str( exc ) )
 
 
+    if os.path.exists(PRINCIPAL_STOP_ME):
+        return log( BASE_RESERVE_CODE, "Principal stop_me exists. Disabling NST")
+
     # First stage - connection
     try:
         parts = connectionPoint.split( ":" )
@@ -582,3 +585,4 @@ if __name__ == "__main__":
         returnValue = NO_CHANGE_CODE
 
     sys.exit( returnValue )
+
