@@ -357,6 +357,13 @@ void CReportObject::GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& 
                 return;
             }
         }
+    } else if (seq_feat.GetData().IsBiosrc() && seq_feat.GetData().GetBiosrc().IsSetOrg()) {
+        const COrg_ref& org = seq_feat.GetData().GetBiosrc().GetOrg();
+        label = (org.CanGetTaxname() ? org.GetTaxname()
+            : (org.CanGetCommon() ? org.GetCommon() : kEmptyStr));
+        location = GetSeqLocDescription(seq_feat.GetLocation(), scope);
+        locus_tag.clear();
+        return;
     }
 
     GetTextObjectDescription(seq_feat, scope, label, location, locus_tag);
