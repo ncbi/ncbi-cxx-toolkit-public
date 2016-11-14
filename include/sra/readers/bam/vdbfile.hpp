@@ -48,7 +48,7 @@ SPECIALIZE_BAM_REF_TRAITS(VPath, );
 SPECIALIZE_BAM_REF_TRAITS(KFile, const);
 
 
-class NCBI_SRAREAD_EXPORT CVFSManager
+class NCBI_BAMREAD_EXPORT CVFSManager
     : public CBamRef<VFSManager>
 {
     typedef CBamRef<VPath> TParent;
@@ -63,7 +63,7 @@ private:
 };
 
 
-class NCBI_SRAREAD_EXPORT CVDBPath
+class NCBI_BAMREAD_EXPORT CVDBPath
     : public CBamRef<VPath>
 {
     typedef CBamRef<VPath> TParent;
