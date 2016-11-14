@@ -3478,7 +3478,7 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
         GetOverlappingFeatures(feat.GetLocation(),
                                CSeqFeatData::e_Rna,
                                CSeqFeatData::eSubtype_rRNA,
-                               eOverlap_Simple,
+                               eOverlap_Interval,
                                scores, *m_Scope);
         if (scores.size() > 0) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadRRNAcomponentOverlap,
