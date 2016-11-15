@@ -80,7 +80,7 @@ create_product_archive()
 create_disk_image()
 {
     du -shc $PRODUCT    # For diagnostics
-	/usr/bin/hdiutil create $PRODUCT.dmg -srcfolder $PRODUCT -verbose
+	/usr/bin/hdiutil create $PRODUCT.dmg -srcfolder $PRODUCT -verbose -size 150m
     mkdir $INSTALLDIR/installer
     mv $PRODUCT.dmg $INSTALLDIR/installer
 }
