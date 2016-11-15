@@ -32,7 +32,7 @@
  *     do that then it try to call a CGI that does the logging
  *     (on other machine). CGI can be specified in the .ini file.
  *     If not specified, use  default at
- *     http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/util/ncbi_applog.cgi
+ *     https://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/util/ncbi_applog.cgi
  *  2) In case of an error ncbi_applog terminates with non-zero error code
  *     and print error message to stderr.
  *  3) Utility does not implement any checks for correct commands order,
@@ -77,7 +77,7 @@
                                       [-nl NUM] [-nr NUM]
     ncbi_applog raw           -file - [-logsite SITE]
                                       [-nl NUM] [-nr NUM] [-timeout SEC]
-    ncbi_applog generate      -phid
+    ncbi_applog generate      -phid -sid
     
 
   Note, that for "raw" command ncbi_applog will skip any line in non-applog format.
@@ -86,7 +86,7 @@
      1) Logging CGI (used if /log is not accessible on current machine)
             Registry file:
                 [NCBI]
-                NcbiApplogCGI = http://...
+                NcbiApplogCGI = https://...
             Environment variable:
                 NCBI_CONFIG__NCBIAPPLOG_CGI
      2) Output destination ("default" if not specified) (see C Logging API for details)
@@ -127,7 +127,7 @@ const char* kErrorMessagePrefix = "NCBI_APPLOG: error: ";
 
 /// Default CGI used by default if /log directory is not writable on current machine.
 /// Can be redefined in the configuration file.
-const char* kDefaultCGI = "http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/util/ncbi_applog.cgi";
+const char* kDefaultCGI = "https://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/util/ncbi_applog.cgi";
 
 /// Regular expression to check lines of raw logs (checks all fields up to appname).
 /// NOTE: we need subpattern for application name only!
@@ -579,11 +579,16 @@ void CNcbiApplogApp::Init(void)
         auto_ptr<CArgDescriptions> arg(new CArgDescriptions(false));
         arg->SetUsageContext(kEmptyStr, "Generate and return IDs.", false, kUsageWidth);
         arg->SetDetailedDescription(
-            "This operation doesn't affect current logging (if any)."
+            "This operation doesn't affect current logging (if any). All flags will be "
+            "processed and printed in the exact order they were specified in the command line. "
+            "If more than one flag specified, each value will be printed on a separate line."
         );
         arg->AddFlag
             ("phid",
             "Generate and return Hit ID (PHID) to use in the user script.");
+        arg->AddFlag
+            ("sid",
+            "Generate and return Session ID (SID) to use in the user script.");
         cmd->AddCommand("generate", arg.release());
     }}
 
@@ -1315,12 +1320,29 @@ int CNcbiApplogApp::Run(void)
     
     } else
     if (cmd == "generate") {
-        // Generate PHID
-        if ( args["phid"] ) {
-            char phid_buf[NCBILOG_HITID_MAX + 1];
-            if (NcbiLogP_GenerateHitID(phid_buf, NCBILOG_HITID_MAX + 1)) {
-                cout << phid_buf;
+        TNcbiLog_UInt8 uid = NcbiLogP_GenerateUID();
+
+        // Generate in the order they passed in the command line
+        CNcbiArguments raw_args = GetArguments();
+        for (size_t i = 1; i < raw_args.Size(); ++i) {
+            string arg = raw_args[i];
+            bool newline = (i > 2);
+
+            if ( newline ) cout << endl;
+            // Generate PHID
+            if (arg == "-phid") {
+                char buf[NCBILOG_HITID_MAX + 1];
+                if (NcbiLogP_GenerateHitID(buf, NCBILOG_HITID_MAX + 1, uid)) {
+                    cout << buf;
+                }
+            // Generate SID
+            } else if (arg == "-sid") {
+                char buf[NCBILOG_SESSION_MAX + 1];
+                if (NcbiLogP_GenerateSID(buf, NCBILOG_SESSION_MAX + 1, uid)) {
+                    cout << buf;
+                }
             }
+            if (newline) cout << endl;
         }
         return 0;
 

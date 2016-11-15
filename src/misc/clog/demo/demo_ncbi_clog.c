@@ -41,11 +41,11 @@
  */
 
 
-/* Fake MT-lock handler -- for display purposes only 
-   Used by NcbiLog_Init() method only.
+/* Fake MT-lock handler -- for display purposes.
 */
 /* #define NCBI_DEMO_MT_LOCK_HANDLER */
-#ifdef NCBI_DEMO_MT_LOCK_HANDLER
+
+#if defined(NCBI_DEMO_MT_LOCK_HANDLER)
 static int s_Test_MT_Handler(void* user_data, ENcbiLog_MTLock_Action action)
 {
     /*
@@ -65,21 +65,20 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 {
     /* Initialize logging API 
     */
-#ifndef NCBI_DEMO_MT_LOCK_HANDLER
-    NcbiLog_InitMT(argv[0]);
-#else
+#if defined(NCBI_DEMO_MT_LOCK_HANDLER)
     TNcbiLog_MTLock mt_lock = NcbiLog_MTLock_Create(NULL, s_Test_MT_Handler);
     NcbiLog_Init(argv[0], mt_lock, eNcbiLog_MT_TakeOwnership);
+#else
+    NcbiLog_InitMT(argv[0]);
 #endif
     /* Or,
        NcbiLog_InitMT(argv[0]); -- use default internal MT handler
        NcbiLog_InitST(argv[0]); -- only for single-threaded applications
     */
-
     
     /* Create separate files for log/err/trace/perf records.
        By default only single.log file will be created.
-       Dont have any effect if logging is going to stdout/stderr.
+       Don't have any effect if logging is going to stdout/stderr.
        NcbiLog_SetSplitLogFile(1);
     */
 
@@ -177,6 +176,7 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
     {{
         NcbiLog_SetRequestId(10);
         NcbiLog_ReqStart(NULL);
+        /* ...  */
         NcbiLog_ReqStop(403, 5, 6);
     }}
     
@@ -195,6 +195,7 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
         NcbiLog_SetClient("192.168.1.1");
         NcbiLog_ReqStart(params);
         NcbiLog_ReqRun();
+        /* ...  */
         NcbiLog_ReqStop(500, 3, 4);
     }}
 

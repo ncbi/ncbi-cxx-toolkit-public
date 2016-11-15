@@ -308,10 +308,22 @@ extern const char* NcbiLogP_GetSessionID_Env(void);
 extern const char* NcbiLogP_GetHitID_Env(void);
 
 
+/** Generate new unique process ID.
+ *  Return 0 on error.
+ */
+extern TNcbiLog_UInt8 NcbiLogP_GenerateUID(void);
+
+
 /** Generate new Hit ID string.
  *  Return NULL on error.
  */
-extern const char* NcbiLogP_GenerateHitID(char* buf, size_t n);
+extern const char* NcbiLogP_GenerateHitID(char* buf, size_t n, TNcbiLog_UInt8 uid);
+
+
+/** Generate new SID string.
+ *  Return NULL on error.
+ */
+extern const char* NcbiLogP_GenerateSID(char* buf, size_t n, TNcbiLog_UInt8 uid);
 
 
 

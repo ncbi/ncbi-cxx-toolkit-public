@@ -165,7 +165,9 @@ typedef enum {
 /** MT locking callback.
  *
  *  @param user_data
- *    See "user_data" in NcbiLog_MTLock_Create()
+ *    Unspecified data to call "handler" with.
+ *    Could be used to have the same handler for some different MT locks.
+ *    The 'user_data' allow to distinguish each lock and adjust behavior accordingly.
  *  @param action
  *    Operation that should be done in the callback handler.
  *  @return
@@ -187,7 +189,9 @@ typedef int/*bool*/ (*FNcbiLog_MTLock_Handler)
 /** Create new MT lock.
  *
  *  @param user_data
- *    Unspecified data to call "handler" with
+ *    Unspecified data to call "handler" with. 
+ *    Could be used to have the same handler for some different MT locks.
+ *    The 'user_data' allow to distinguish each lock and adjust behavior accordingly.
  *  @param handler
  *    Locking callback
  *  @return
@@ -214,7 +218,7 @@ extern void NcbiLog_MTLock_Delete(TNcbiLog_MTLock lock);
 /** Default implementation of simple MT locking callback.
  *
  *  @param user_data
- *    Simple handler don't use this parameter; will be ignored.
+ *    Simple default handler don't use this parameter; will be ignored.
  *  @param action
  *    Operation that should be done in the callback handler.
  *  @return
