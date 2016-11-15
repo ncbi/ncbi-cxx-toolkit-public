@@ -1727,7 +1727,7 @@ static int/*bool*/ s_IsInsideRequest(TNcbiLog_Context ctx)
 
 static char* s_GenerateSID_Str_Ex(char* dst, int /*bool*/ use_logging_api, TNcbiLog_UInt8 uid)
 {
-    TNcbiLog_UInt8 guid, rid;
+    TNcbiLog_UInt8 rid;
     int hi, lo, n;
 
     if (use_logging_api) {
@@ -2954,7 +2954,7 @@ static void s_AppStart(TNcbiLog_Context ctx, const char* argv[])
         } else {
             /* Auto-generate new PHID (not-inherited by requests) */
             char phid_str[NCBILOG_HITID_MAX + 1];
-            s_SetHitID((char*)sx_Info->phid, s_GenerateHitID_Str(phid_str, 1));
+            s_SetHitID((char*)sx_Info->phid, s_GenerateHitID_Str(phid_str));
         }
     }
 
@@ -3255,7 +3255,7 @@ extern void NcbiLog_ReqRun(void)
             return;
         }
         /* Generate and set new request-specific PHID */
-        s_SetHitID(ctx->phid, s_GenerateHitID_Str(phid_str, 1));
+        s_SetHitID(ctx->phid, s_GenerateHitID_Str(phid_str));
     }
     s_LogHitID(ctx, ctx->phid);
 
