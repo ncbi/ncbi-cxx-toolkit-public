@@ -314,14 +314,14 @@ CNCBlobStorage::GetBList(const string& mask, auto_ptr<TNCBufferType>& buffer, SN
 
     CSrvTime cur_time = CSrvTime::Current();
 
-    Uint8 cr_time_lo = ((filters->cr_ago_le   != 0) ? (cur_time.Sec() - filters->cr_ago_le)   : filters->cr_epoch_ge) * kUSecsPerSecond;
-    Uint8 cr_time_hi = ((filters->cr_ago_ge   != 0) ? (cur_time.Sec() - filters->cr_ago_ge)   : filters->cr_epoch_le) * kUSecsPerSecond;
+    Uint8 cr_time_lo = ((filters->cr_ago_lt   != 0) ? (cur_time.Sec() - filters->cr_ago_lt)   : filters->cr_epoch_ge) * kUSecsPerSecond;
+    Uint8 cr_time_hi = ((filters->cr_ago_ge   != 0) ? (cur_time.Sec() - filters->cr_ago_ge)   : filters->cr_epoch_lt) * kUSecsPerSecond;
     int    expire_lo = ((filters->exp_now_ge  != 0) ? (cur_time.Sec() + filters->exp_now_ge)  : filters->exp_epoch_ge);
-    int    expire_hi = ((filters->exp_now_le  != 0) ? (cur_time.Sec() + filters->exp_now_le)  : filters->exp_epoch_le);
+    int    expire_hi = ((filters->exp_now_lt  != 0) ? (cur_time.Sec() + filters->exp_now_lt)  : filters->exp_epoch_lt);
     int   vexpire_lo = ((filters->vexp_now_ge != 0) ? (cur_time.Sec() + filters->vexp_now_ge) : filters->vexp_epoch_ge);
-    int   vexpire_hi = ((filters->vexp_now_le != 0) ? (cur_time.Sec() + filters->vexp_now_le) : filters->vexp_epoch_le);
+    int   vexpire_hi = ((filters->vexp_now_lt != 0) ? (cur_time.Sec() + filters->vexp_now_lt) : filters->vexp_epoch_lt);
     Uint8    size_lo = filters->size_ge;
-    Uint8    size_hi = filters->size_le;
+    Uint8    size_hi = filters->size_lt;
     Uint8 create_server = filters->cr_srv;
     bool extra =  cr_time_lo != 0 || cr_time_hi != 0 ||
                    expire_lo != 0 ||  expire_hi != 0 ||
@@ -334,13 +334,13 @@ CNCBlobStorage::GetBList(const string& mask, auto_ptr<TNCBufferType>& buffer, SN
 #if __NC_CACHEDATA_INTR_SET
         TKeyMap::iterator lb = cache->key_map.lower_bound(search_mask);
         for ( ; lb != cache->key_map.end(); ++lb) {
-            SNCCacheData& d = *lb;
+//            SNCCacheData& d = *lb;
             if (strncmp(search_mask.key.data(), lb->key.data(), search_mask.key.size())== 0) {
                 if (!extra || (
-                    (lb->create_time >= cr_time_lo && (cr_time_hi == 0 || lb->create_time <= cr_time_hi)) &&
-                    (lb->expire      >=  expire_lo && ( expire_hi == 0 || lb->expire      <=  expire_hi)) &&
-                    (lb->ver_expire  >= vexpire_lo && (vexpire_hi == 0 || lb->ver_expire  <= vexpire_hi)) &&
-                    (lb->size        >=    size_lo && (   size_hi == 0 || lb->size        <=    size_hi)) &&
+                    (lb->create_time >= cr_time_lo && (cr_time_hi == 0 || lb->create_time < cr_time_hi)) &&
+                    (lb->expire      >=  expire_lo && ( expire_hi == 0 || lb->expire      <  expire_hi)) &&
+                    (lb->ver_expire  >= vexpire_lo && (vexpire_hi == 0 || lb->ver_expire  < vexpire_hi)) &&
+                    (lb->size        >=    size_lo && (   size_hi == 0 || lb->size        <    size_hi)) &&
                     (create_server == 0 || lb->create_server == create_server))) {
 
                     string bkey( NStr::Replace(lb->key,"\1",","));

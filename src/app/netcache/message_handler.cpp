@@ -1413,33 +1413,33 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Created more than N seconds ago
           { "fcr_ago_ge", eNSPT_Int,  eNSPA_Optional },
           // Created less than N seconds ago
-          { "fcr_ago_le", eNSPT_Int,  eNSPA_Optional },
+          { "fcr_ago_lt", eNSPT_Int,  eNSPA_Optional },
           // Created more than N seconds since epoch
           { "fcr_epoch_ge", eNSPT_Int,  eNSPA_Optional },
           // Created less than N seconds since epoch
-          { "fcr_epoch_le", eNSPT_Int,  eNSPA_Optional },
+          { "fcr_epoch_lt", eNSPT_Int,  eNSPA_Optional },
           // Blob will expire in more than N seconds from now
           { "fexp_now_ge", eNSPT_Int,  eNSPA_Optional },
           // Blob will expire in less than N seconds from now
-          { "fexp_now_le", eNSPT_Int,  eNSPA_Optional },
+          { "fexp_now_lt", eNSPT_Int,  eNSPA_Optional },
           // Blob will expire in more than N seconds since epoch
           { "fexp_epoch_ge", eNSPT_Int,  eNSPA_Optional },
           // Blob will expire in less than N seconds since epoch
-          { "fexp_epoch_le", eNSPT_Int,  eNSPA_Optional },
+          { "fexp_epoch_lt", eNSPT_Int,  eNSPA_Optional },
           // Version will expire in more than N seconds from now
           { "fvexp_now_ge", eNSPT_Int,  eNSPA_Optional },
           // Version will expire in less than N seconds from now
-          { "fvexp_now_le", eNSPT_Int,  eNSPA_Optional },
+          { "fvexp_now_lt", eNSPT_Int,  eNSPA_Optional },
           // Version will expire in more than N seconds since epoch
           { "fvexp_epoch_ge", eNSPT_Int,  eNSPA_Optional },
           // Version will expire in less than N seconds since epoch
-          { "fvexp_epoch_le", eNSPT_Int,  eNSPA_Optional },
+          { "fvexp_epoch_lt", eNSPT_Int,  eNSPA_Optional },
           // Server_id of the server where blob was created.
           { "fcr_srv",  eNSPT_Int,  eNSPA_Optional },
           // blob bigger than this size
           { "fsize_ge",  eNSPT_Int,  eNSPA_Optional },
           // blob smaller than this size
-          { "fsize_le",  eNSPT_Int,  eNSPA_Optional }
+          { "fsize_lt",  eNSPT_Int,  eNSPA_Optional }
         } },
     { "PROXY_BLIST",
         {&CNCMessageHandler::x_DoCmd_GetBList,
@@ -1457,33 +1457,33 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Created more than N seconds ago
           { "fcr_ago_ge", eNSPT_Int,  eNSPA_Optional },
           // Created less than N seconds ago
-          { "fcr_ago_le", eNSPT_Int,  eNSPA_Optional },
+          { "fcr_ago_lt", eNSPT_Int,  eNSPA_Optional },
           // Created more than N seconds since epoch
           { "fcr_epoch_ge", eNSPT_Int,  eNSPA_Optional },
           // Created less than N seconds since epoch
-          { "fcr_epoch_le", eNSPT_Int,  eNSPA_Optional },
+          { "fcr_epoch_lt", eNSPT_Int,  eNSPA_Optional },
           // Will expire in more than N seconds from now
           { "fexp_now_ge", eNSPT_Int,  eNSPA_Optional },
           // Will expire in less than N seconds from now
-          { "fexp_now_le", eNSPT_Int,  eNSPA_Optional },
+          { "fexp_now_lt", eNSPT_Int,  eNSPA_Optional },
           // Will expire in more than N seconds since epoch
           { "fexp_epoch_ge", eNSPT_Int,  eNSPA_Optional },
           // Will expire in less than N seconds since epoch
-          { "fexp_epoch_le", eNSPT_Int,  eNSPA_Optional },
+          { "fexp_epoch_lt", eNSPT_Int,  eNSPA_Optional },
           // Will expire in more than N seconds from now
           { "fvexp_now_ge", eNSPT_Int,  eNSPA_Optional },
           // Will expire in less than N seconds from now
-          { "fvexp_now_le", eNSPT_Int,  eNSPA_Optional },
+          { "fvexp_now_lt", eNSPT_Int,  eNSPA_Optional },
           // Will expire in more than N seconds since epoch
           { "fvexp_epoch_ge", eNSPT_Int,  eNSPA_Optional },
           // Will expire in less than N seconds since epoch
-          { "fvexp_epoch_le", eNSPT_Int,  eNSPA_Optional },
+          { "fvexp_epoch_lt", eNSPT_Int,  eNSPA_Optional },
           // Server_id of the server where blob was created.
           { "fcr_srv",  eNSPT_Int,  eNSPA_Optional },
           // blob bigger than this size
           { "fsize_ge",  eNSPT_Int,  eNSPA_Optional },
           // blob smaller than this size
-          { "fsize_le",  eNSPT_Int,  eNSPA_Optional }
+          { "fsize_lt",  eNSPT_Int,  eNSPA_Optional }
         } },
 
 // HTTP commands
@@ -1914,34 +1914,34 @@ CNCMessageHandler::x_AssignCmdParams(void)
                     m_UserFlags = NStr::StringToUInt(val);
                 } else if (key == "fcr_ago_ge") {
                     m_BlobFilter->cr_ago_ge = NStr::StringToUInt8(val);
-                } else if (key == "fcr_ago_le") {
-                    m_BlobFilter->cr_ago_le = NStr::StringToUInt8(val);
+                } else if (key == "fcr_ago_lt") {
+                    m_BlobFilter->cr_ago_lt = NStr::StringToUInt8(val);
                 } else if (key == "fcr_epoch_ge") {
                     m_BlobFilter->cr_epoch_ge = NStr::StringToUInt8(val);
-                } else if (key == "fcr_epoch_le") {
-                    m_BlobFilter->cr_epoch_le = NStr::StringToUInt8(val);
+                } else if (key == "fcr_epoch_lt") {
+                    m_BlobFilter->cr_epoch_lt = NStr::StringToUInt8(val);
                 } else if (key == "fexp_now_ge") {
                     m_BlobFilter->exp_now_ge = NStr::StringToUInt8(val);
-                } else if (key == "fexp_now_le") {
-                    m_BlobFilter->exp_now_le = NStr::StringToUInt8(val);
+                } else if (key == "fexp_now_lt") {
+                    m_BlobFilter->exp_now_lt = NStr::StringToUInt8(val);
                 } else if (key == "fexp_epoch_ge") {
                     m_BlobFilter->exp_epoch_ge = NStr::StringToUInt8(val);
-                } else if (key == "fexp_epoch_le") {
-                    m_BlobFilter->exp_epoch_le = NStr::StringToUInt8(val);
+                } else if (key == "fexp_epoch_lt") {
+                    m_BlobFilter->exp_epoch_lt = NStr::StringToUInt8(val);
                 } else if (key == "fvexp_now_ge") {
                     m_BlobFilter->vexp_now_ge = NStr::StringToUInt8(val);
-                } else if (key == "frexp_now_le") {
-                    m_BlobFilter->vexp_now_le = NStr::StringToUInt8(val);
+                } else if (key == "fvexp_now_lt") {
+                    m_BlobFilter->vexp_now_lt = NStr::StringToUInt8(val);
                 } else if (key == "fvexp_epoch_ge") {
                     m_BlobFilter->vexp_epoch_ge = NStr::StringToUInt8(val);
-                } else if (key == "fvexp_epoch_le") {
-                    m_BlobFilter->vexp_epoch_le = NStr::StringToUInt8(val);
+                } else if (key == "fvexp_epoch_lt") {
+                    m_BlobFilter->vexp_epoch_lt = NStr::StringToUInt8(val);
                 } else if (key == "fcr_srv") {
                     m_BlobFilter->cr_srv = NStr::StringToUInt8(val);
                 } else if (key == "fsize_ge") {
                     m_BlobFilter->size_ge = NStr::StringToUInt8(val);
-                } else if (key == "fsize_le") {
-                    m_BlobFilter->size_le = NStr::StringToUInt8(val);
+                } else if (key == "fsize_lt") {
+                    m_BlobFilter->size_lt = NStr::StringToUInt8(val);
                 }
                 break;
             case 'h':

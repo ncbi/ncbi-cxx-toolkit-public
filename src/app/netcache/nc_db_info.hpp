@@ -258,20 +258,20 @@ struct SNCBlobFilter {
         memset(this, 0, sizeof(SNCBlobFilter));
     }
     Uint8 cr_ago_ge;
-    Uint8 cr_ago_le;
+    Uint8 cr_ago_lt;
     Uint8 cr_epoch_ge;
-    Uint8 cr_epoch_le;
+    Uint8 cr_epoch_lt;
     Uint8 exp_now_ge;
-    Uint8 exp_now_le;
+    Uint8 exp_now_lt;
     Uint8 exp_epoch_ge;
-    Uint8 exp_epoch_le;
+    Uint8 exp_epoch_lt;
     Uint8 vexp_now_ge;
-    Uint8 vexp_now_le;
+    Uint8 vexp_now_lt;
     Uint8 vexp_epoch_ge;
-    Uint8 vexp_epoch_le;
+    Uint8 vexp_epoch_lt;
     Uint8 cr_srv;
     Uint8 size_ge;
-    Uint8 size_le;
+    Uint8 size_lt;
 };
 
 
