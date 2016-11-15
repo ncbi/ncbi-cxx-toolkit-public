@@ -79,7 +79,7 @@ create_product_archive()
 
 create_disk_image()
 {
-	/usr/bin/hdiutil create $PRODUCT.dmg -srcfolder $PRODUCT
+	/usr/bin/hdiutil create $PRODUCT.dmg -srcfolder $PRODUCT -verbose
     mkdir $INSTALLDIR/installer
     mv $PRODUCT.dmg $INSTALLDIR/installer
 }
