@@ -60,12 +60,71 @@ void CVFSManager::x_Init()
 }
 
 
+#ifdef NCBI_OS_MSWIN
+static inline
+bool s_HasWindowsDriveLetter(const string& s)
+{
+    // first symbol is letter, and second symbol is colon (':')
+    return s.length() >= 2 && isalpha(s[0]&0xff) && s[1] == ':';
+}
+#endif
+
+
+bool CVDBPath::IsPlainAccession(const string& acc_or_path)
+{
+#ifdef NCBI_OS_MSWIN
+    return !s_HasWindowsDriveLetter(acc_or_path) &&
+        acc_or_path.find_first_of("/\\") == NPOS;
+#else
+    return acc_or_path.find('/') == NPOS;
+#endif
+}
+
+
+bool CVDBPath::HasSchemaPrefix(const string& path)
+{
+    // Convert Windows path with drive letter
+    // C:\Users\Public -> /C/Users/Public
+    if (path[0] == 'h' &&
+        (NStr::StartsWith(path, "http://") ||
+         NStr::StartsWith(path, "https://"))) {
+        return true;
+    }
+    if (path[0] == 'f' &&
+        (NStr::StartsWith(path, "ftp://"))) {
+        return true;
+    }
+    return false;
+}
+
+
+bool CVDBPath::IsSysPath(const string& acc_or_path)
+{
+    if (IsPlainAccession(acc_or_path)) {
+        return false;
+    }
+    if (HasSchemaPrefix(acc_or_path)) {
+        return false;
+    }
+    return true;
+}
+
+
 void CVDBPath::x_Init(const CVFSManager& mgr, const string& path)
 {
-    if ( rc_t rc = VFSManagerMakePath(mgr, x_InitPtr(), path.c_str()) ) {
-        NCBI_THROW2_FMT(CBamException, eInitFailed,
-                        "CVDBPath("<<path<<"): "
-                        "cannot create VPath", rc);
+    if (IsSysPath(path)) {
+        if (rc_t rc = VFSManagerMakeSysPath(mgr, x_InitPtr(), path.c_str())) {
+            NCBI_THROW2_FMT(CBamException, eInitFailed,
+                "CVDBPath(" << path << "): "
+                "cannot create VPath", rc);
+        }
+    }
+    else {
+        if (rc_t rc = VFSManagerMakePath(mgr, x_InitPtr(), path.c_str())) {
+            NCBI_THROW2_FMT(CBamException, eInitFailed,
+                "CVDBPath(" << path << "): "
+                "cannot create VPath", rc);
+        }
     }
 }
 

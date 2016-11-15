@@ -82,6 +82,10 @@ public:
 
     CTempString GetString() const;
 
+    static bool HasSchemaPrefix(const string& path);
+    static bool IsSysPath(const string& path);
+    static bool IsPlainAccession(const string& acc_or_path);
+
 private:
     void x_Init(const CVFSManager& mgr, const string& path);
 };
