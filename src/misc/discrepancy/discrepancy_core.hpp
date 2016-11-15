@@ -172,7 +172,7 @@ class CDiscrepancyItem : public CReportItem
 public:
     CDiscrepancyItem(const string& s) : m_Msg(s), m_Autofix(false), m_Fatal(false), m_Ext(false), m_Summ(false) {}
     CDiscrepancyItem(CDiscrepancyCase& t, const string& m, const string& s) : m_Msg(m), m_Str(s), m_Autofix(false), m_Fatal(false), m_Ext(false), m_Summ(false), m_Test(&t) {}
-    string GetTitle(void) const { return m_Test->GetName(); }
+    string GetTitle(void) const { return m_Test ? m_Test->GetName() : kEmptyStr; }
     string GetMsg(void) const { return m_Msg; }
     string GetStr(void) const { return m_Str; }
     TReportObjectList GetDetails(void) const { return m_Objs; }
