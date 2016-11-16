@@ -80,7 +80,7 @@ int CSeqDBSqlite::GetOid(const string& accession)
     if (m_selectStmt == NULL) {
         m_selectStmt = new CSQLITE_Statement(
                 m_db,
-                "SELECT * FROM acc2oid WHERE accession = ?;"
+                "SELECT version, oid FROM acc2oid WHERE accession = ?;"
         );
     }
     m_selectStmt->ClearBindings();
@@ -90,19 +90,19 @@ int CSeqDBSqlite::GetOid(const string& accession)
     int bestOid = -1;
     bool ambig = false;
     while (m_selectStmt->Step()) {
-        int ver = m_selectStmt->GetInt(1);
-        int oid = m_selectStmt->GetInt(2);
+        int ver = m_selectStmt->GetInt(0);
+        int oid = m_selectStmt->GetInt(1);
         if (ver > bestVer) {
             bestVer = ver;
             bestOid = oid;
             ambig = false;
-        } else if (ver == bestVer) {
+        } else if (ver == bestVer  &&  oid != bestOid) {
             ambig = true;
         }
     }
     m_selectStmt->Reset();
-    if (ambig) return -2;
-    if (bestOid == -1) return -1;
+    if (ambig) return kAmbiguous;
+    if (bestOid == -1) return kNotFound;
     return bestOid;
 }
 
@@ -110,34 +110,58 @@ vector<int> CSeqDBSqlite::GetOids(const list<string>& accessions)
 {
     // Create in-memory temporary table to hold accessions.
     m_db->ExecuteSql("CREATE TEMP TABLE IF NOT EXISTS accs ( acc TEXT );");
+    CSQLITE_Statement* ins =
+            new CSQLITE_Statement(m_db, "INSERT INTO accs(acc) VALUES (?);");
     m_db->ExecuteSql("BEGIN TRANSACTION;");
-    CSQLITE_Statement ins(m_db, "INSERT INTO accs(acc) VALUES (?);");
     for (
             list<string>::const_iterator it = accessions.begin();
             it != accessions.end();
             ++it
     ) {
-        ins.ClearBindings();
-        ins.Bind(1, *it);
-        ins.Execute();
-        ins.Reset();
+        ins->ClearBindings();
+        ins->Bind(1, *it);
+        ins->Execute();
+        ins->Reset();
     }
     m_db->ExecuteSql("END TRANSACTION;");
+    delete ins;
 
     // Select from main table based on accessions also being in
     // temp table.
-    map<string, int> acc2oid;
-    CSQLITE_Statement sel(
+    struct SVerOid {
+        int m_ver;
+        int m_oid;
+        SVerOid(int v, int o) : m_ver(v), m_oid(o) {}
+    };
+    map<string, SVerOid> acc2oid;
+    CSQLITE_Statement* sel = new CSQLITE_Statement(
             m_db,
-            "SELECT accession, oid FROM acc2oid INNER JOIN accs "
-            "ON accession = acc;"
+            "SELECT * FROM acc2oid INNER JOIN accs "
+            "ON accession = acc ORDER BY accession ASC, version DESC;"
     );
-    sel.Execute();
-    while (sel.Step()) {
-        string accession = sel.GetString(0);
-        int oid = sel.GetInt(1);
-        acc2oid.insert(pair<string, int>(accession, oid));
+    sel->Execute();
+    while (sel->Step()) {
+        // If accession is not yet in map, it will be added.
+        // If accession is already in the map, it will not be added again.
+        string accession = sel->GetString(0);
+        int version = sel->GetInt(1);
+        int oid = sel->GetInt(2);
+        acc2oid.insert(pair<string, SVerOid>(accession, SVerOid(version, oid)));
+        // Read back map element.  Most of the time we'll get back what
+        // we put in.
+        // If we exactly matched an existing map element, they're redundant
+        // which is no problem.
+        // If the versions differ, the earlier (higher) one takes precedence.
+        // If the versions match but the OIDs do not, we have ambiguity.
+        // If ambiguity has already been declared, that takes precedence.
+        SVerOid veroid = acc2oid.at(accession);
+        if (veroid.m_oid != kAmbiguous) {
+            if (veroid.m_ver == version  &&  veroid.m_oid != oid) {
+                acc2oid.at(accession).m_oid = kAmbiguous;
+            }
+        }
     }
+    delete sel;
 
     // Fetch found OIDs, write to output list.
     vector<int> oids;
@@ -147,9 +171,11 @@ vector<int> CSeqDBSqlite::GetOids(const list<string>& accessions)
             ++it
     ) {
         try {
-            oids.push_back(acc2oid.at(*it));
+            SVerOid veroid = acc2oid.at(*it);   // may throw exception
+            oids.push_back(veroid.m_oid);
         } catch (out_of_range& e) {
-            oids.push_back(-1);
+            // Accession was not found.
+            oids.push_back(kNotFound);
         }
     }
 
@@ -163,7 +189,7 @@ list<string> CSeqDBSqlite::GetAccessions(const int oid)
 {
     list<string> accs;
     ostringstream oss;
-    oss << "SELECT accession FROM acc2oid WHERE oid=" << oid << ";";
+    oss << "SELECT accession FROM acc2oid WHERE oid = " << oid << ";";
     CSQLITE_Statement sel(m_db, oss.str());
     sel.Execute();
     while (sel.Step()) {
