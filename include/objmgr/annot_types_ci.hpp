@@ -92,6 +92,9 @@ public:
     // Get number of annotations
     size_t GetSize(void) const;
 
+    // check if empty segment limit is reached
+    bool MaxSearchSegmentsLimitIsReached(void) const;
+
     typedef vector<SAnnotTypeSelector> TAnnotTypes;
     // Get annot types
     const TAnnotTypes& GetAnnotTypes(void) const;

@@ -69,6 +69,7 @@ SAnnotSelector::SAnnotSelector(TAnnotType annot,
       m_MaxSize(numeric_limits<size_t>::max()),
       m_MaxSearchSegments(kMax_UInt),
       m_MaxSearchTime(FLT_MAX),
+      m_MaxSearchSegmentsAction(eMaxSearchSegmentsThrow),
       m_NoMapping(false),
       m_AdaptiveDepthFlags(kAdaptive_None),
       m_ExactDepth(false),
@@ -99,6 +100,7 @@ SAnnotSelector::SAnnotSelector(TFeatType feat,
       m_MaxSize(numeric_limits<size_t>::max()),
       m_MaxSearchSegments(kMax_UInt),
       m_MaxSearchTime(FLT_MAX),
+      m_MaxSearchSegmentsAction(eMaxSearchSegmentsThrow),
       m_NoMapping(false),
       m_AdaptiveDepthFlags(kAdaptive_None),
       m_ExactDepth(false),
@@ -125,6 +127,7 @@ SAnnotSelector::SAnnotSelector(TFeatSubtype feat_subtype)
       m_MaxSize(numeric_limits<size_t>::max()),
       m_MaxSearchSegments(kMax_UInt),
       m_MaxSearchTime(FLT_MAX),
+      m_MaxSearchSegmentsAction(eMaxSearchSegmentsThrow),
       m_NoMapping(false),
       m_AdaptiveDepthFlags(kAdaptive_None),
       m_ExactDepth(false),
@@ -168,6 +171,7 @@ SAnnotSelector& SAnnotSelector::operator=(const SAnnotSelector& sel)
             m_NamedAnnotAccessions.reset
                 (new TNamedAnnotAccessions(*sel.m_NamedAnnotAccessions));
         }
+        m_MaxSearchSegmentsAction = sel.m_MaxSearchSegmentsAction;
         m_NoMapping = sel.m_NoMapping;
         m_AdaptiveDepthFlags = sel.m_AdaptiveDepthFlags;
         m_ExactDepth = sel.m_ExactDepth;

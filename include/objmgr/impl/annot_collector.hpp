@@ -490,6 +490,10 @@ private:
     const TAnnotNames& x_GetAnnotNames(void) const;
 
     void x_StopSearchLimits(void);
+    bool x_MaxSearchSegmentsLimitIsReached(void) const
+        {
+            return m_SearchSegments == 0;
+        }
 
     const SAnnotSelector*            m_Selector;
     CHeapScope                       m_Scope;
@@ -513,6 +517,7 @@ private:
     typedef SAnnotSelector::TMaxSearchSegments TMaxSearchSegments;
     CStopWatch              m_SearchTime;
     TMaxSearchSegments      m_SearchSegments;
+    SAnnotSelector::EMaxSearchSegmentsAction m_SearchSegmentsAction;
     bool                    m_FromOtherTSE;
 
     friend class CAnnotTypes_CI;

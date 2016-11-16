@@ -466,6 +466,21 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
             return *this;
         }
 
+    enum EMaxSearchSegmentsAction {
+        eMaxSearchSegmentsThrow, // default
+        eMaxSearchSegmentsLog,   // log error message, and stop searching
+        eMaxSearchSegmentsSilent // silently stop searching
+    };
+    EMaxSearchSegmentsAction GetMaxSearchSegmentsAction(void) const
+        {
+            return m_MaxSearchSegmentsAction;
+        }
+    SAnnotSelector& SetMaxSearchSegmentsAction(EMaxSearchSegmentsAction action)
+        {
+            m_MaxSearchSegmentsAction = action;
+            return *this;
+        }
+
     typedef float TMaxSearchTime;
     /// Get maximum time (in seconds) to search before giving up.
     TMaxSearchTime GetMaxSearchTime(void) const
@@ -789,6 +804,7 @@ protected:
     TAnnotsNames          m_IncludeAnnotsNames;
     TAnnotsNames          m_ExcludeAnnotsNames;
     AutoPtr<TNamedAnnotAccessions> m_NamedAnnotAccessions;
+    EMaxSearchSegmentsAction m_MaxSearchSegmentsAction;
     bool                  m_NoMapping;
     TAdaptiveDepthFlags   m_AdaptiveDepthFlags;
     bool                  m_ExactDepth;

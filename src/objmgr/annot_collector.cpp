@@ -85,7 +85,7 @@
 
 BEGIN_NCBI_SCOPE
 
-NCBI_DEFINE_ERR_SUBCODE_X(1);
+NCBI_DEFINE_ERR_SUBCODE_X(2);
 
 BEGIN_SCOPE(objects)
 
@@ -1581,6 +1581,10 @@ CAnnot_Collector::~CAnnot_Collector(void)
 inline
 bool CAnnot_Collector::x_NoMoreObjects(void) const
 {
+    if ( x_MaxSearchSegmentsLimitIsReached() ) {
+        // search segment limit reached
+        return true;
+    }
     typedef SAnnotSelector::TMaxSize TMaxSize;
     TMaxSize limit = m_Selector->GetMaxSize();
     if ( limit >= numeric_limits<TMaxSize>::max() ) {
@@ -1663,6 +1667,7 @@ void CAnnot_Collector::x_Initialize0(const SAnnotSelector& selector)
         x_GetTSE_Info();
     }
     m_SearchSegments = selector.GetMaxSearchSegments();
+    m_SearchSegmentsAction = selector.GetMaxSearchSegmentsAction();
     double max_time = selector.GetMaxSearchTime();
     if ( max_time <= 86400 ) { // 24 hours
         m_SearchTime.Start();
@@ -3502,10 +3507,19 @@ bool CAnnot_Collector::x_SearchMapped(const CSeqMap_CI&     seg,
                    "search time limit exceeded, no annotations found");
     }
     if ( m_SearchSegments != numeric_limits<TMaxSearchSegments>::max() &&
+         x_MaxSearchSegmentsLimitIsReached() ||
          --m_SearchSegments == 0 ) {
-        NCBI_THROW(CAnnotSearchLimitException, eSegmentsLimitExceded,
-                   "CAnnot_Collector: "
-                   "search segments limit exceeded, no annotations found");
+        if ( m_SearchSegmentsAction == SAnnotSelector::eMaxSearchSegmentsThrow ) {
+            NCBI_THROW(CAnnotSearchLimitException, eSegmentsLimitExceded,
+                       "CAnnot_Collector: "
+                       "search segments limit exceeded, no annotations found");
+        }
+        if ( m_SearchSegmentsAction == SAnnotSelector::eMaxSearchSegmentsLog ) {
+            ERR_POST_X(2, "CAnnot_Collector: "
+                       "search segments limit exceeded, no annotations found");
+        }
+        // stop searching
+        return false;
     }
     CHandleRange::TOpenRange master_seg_range(
         seg.GetPosition(),

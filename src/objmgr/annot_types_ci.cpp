@@ -233,5 +233,11 @@ const CAnnotTypes_CI::TAnnotNames& CAnnotTypes_CI::GetAnnotNames(void) const
 }
 
 
+bool CAnnotTypes_CI::MaxSearchSegmentsLimitIsReached(void) const
+{
+    return m_DataCollector->x_MaxSearchSegmentsLimitIsReached();
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
