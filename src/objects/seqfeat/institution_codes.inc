@@ -1500,7 +1500,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "DEE	s	McManus Galleries, Natural History Department",
 "DEES	s	Universidade de Sao Paulo, Piracicaba",
 "DEFS	s	Universidade de Sao Paulo",
-"DEI	s	Deutsches Entomologisches Institut im ZALF",
+"DEI	s	Senckenberg Deutsches Entomologisches Institut",
 "DEIB	s	Deutsches Entomologisches Institut",
 "DEK	s	Northern Illinois University, Biological Sciences Department",
 "DELS	s	University of Delaware, Plant Science Department",
