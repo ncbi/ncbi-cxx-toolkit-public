@@ -3356,10 +3356,10 @@ BOOST_AUTO_TEST_CASE(CreateSqliteDB)
 
     // Expected volinfo.
     const int ref_numvols = 10;
-    const int ref_modtime = 1478031061; // same for all volumes
     const int ref_numoids[ref_numvols] = {
             174, 73, 105, 155, 92, 1, 138, 196, 1, 65
     };
+    int ref_modtime = 0;
 
     // Verify contents of volinfo table.
     string vol_path;
@@ -3374,7 +3374,12 @@ BOOST_AUTO_TEST_CASE(CreateSqliteDB)
             &vol_volume,
             &vol_numoids
     )) {
-        BOOST_REQUIRE_EQUAL(ref_modtime, vol_modtime);
+        // All mod times must match the first one.
+        if (ref_modtime == 0) {
+            ref_modtime = vol_modtime;
+        } else {
+            BOOST_REQUIRE_EQUAL(ref_modtime, vol_modtime);
+        }
         BOOST_REQUIRE_EQUAL(ref_numoids[vol_volume], vol_numoids);
         // Form string to match volume name: "nt_1000.**.nin"
         // where ** is 00 through 09.
