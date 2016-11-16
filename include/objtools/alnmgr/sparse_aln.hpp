@@ -237,10 +237,24 @@ public:
         return aln_pos/GetBaseWidth(row);
     }
 
-    /// Convert sequence position to alignment (genomic) coordinate.
-    TSignedSeqPos NativeSeqPosToAlnPos(TNumrow row, TSignedSeqPos seq_pos) const
+    /// For protein sequences get frame for the specified coordinated.
+    /// For genomic sequences always returns 0.
+    int AlnPosToNativeFrame(TNumrow row, TSignedSeqPos aln_pos) const
     {
-        return seq_pos*GetBaseWidth(row);
+        int w = GetBaseWidth(row);
+        return (w == 3) ? aln_pos % 3 + 1 : 0;
+    }
+
+    /// Convert sequence position to alignment (genomic) coordinate.
+    /// Optional frame can be used with protein positions.
+    TSignedSeqPos NativeSeqPosToAlnPos(TNumrow row,
+                                       TSignedSeqPos seq_pos,
+                                       int frame = 0) const
+    {
+        int w = GetBaseWidth(row);
+        TSignedSeqPos ret = seq_pos*w;
+        if (w == 3  &&  frame) ret += frame - 1;
+        return ret;
     }
 
     /// Convert alignment range (genomic coordinates) on the selected row
@@ -269,14 +283,19 @@ public:
     }
 
     /// Convert sequence range to alignment range (genomic coordinates).
+    /// Optional frames argument can be provided for protein ranges.
     /// NOTE: Need to use template since there are many range types:
     /// TRng, TAlnRng, TRange, TSignedRange etc.
     template<class _TRange>
-    _TRange NativeSeqRangeToAlnRange(TNumrow row, _TRange seq_range) const
+    _TRange NativeSeqRangeToAlnRange(TNumrow row,
+                                     _TRange seq_range,
+                                     TFrames frames = TFrames(0, 0)) const
     {
         if (seq_range.Empty()  ||  seq_range.IsWhole()) return seq_range;
         int w = GetBaseWidth(row);
-        return _TRange(seq_range.GetFrom()*w, seq_range.GetToOpen()*w - 1);
+        int from_frame = frames.first ? frames.first - 1 : 0;
+        int to_frame = frames.second ? frames.second - 1 : 0;
+        return _TRange(seq_range.GetFrom()*w + from_frame, seq_range.GetToOpen()*w + to_frame - 1);
     }
 
 protected:
