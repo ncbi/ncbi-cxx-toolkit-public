@@ -43,3 +43,4 @@ IntelMAC       : Debug     : GCC.sh      --with-debug    --with-dll --with-mt --
 IntelMAC       : Release   : GCC.sh      --without-debug --with-dll --with-mt --with-flat-makefile
 
 XCode          : plain     : Xcode.sh 30 --without-debug --with-64
+
