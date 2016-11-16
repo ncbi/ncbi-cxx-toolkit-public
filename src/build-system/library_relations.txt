@@ -375,10 +375,10 @@ gpcgi needs xregexp
 gpexec_query needs gpipe_common
 gpexec_query needs monitor_buildrun
 gpg-error needs3party $(ORIG_LIBS)
-gpinit includes gpinit_obj
 gpinit needs entrez2cli
 gpinit needs gc_organism
 gpinit needs gpinit_access
+gpinit needs gpinit_obj
 gpinit needs gpipe_objutil
 gpinit_access needs $(SDBAPI_LIB)
 gpinit_access needs xconnect
