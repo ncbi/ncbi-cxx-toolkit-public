@@ -2243,13 +2243,6 @@ ESeqDBIdType SeqDB_SimplifySeqid(CSeq_id       & bestid,
         tsip = bestid.GetTextseq_Id();
         break;
 
-        // this is to handle bare pdb accessions, such as 12AS_A
-    case CSeq_id::e_Pdb:
-        simpler = true;
-        str_id = bestid.AsFastaString();
-        str_id = NStr::ToLower(str_id);
-        break;
-
     default:
         matched = false;
     }
@@ -2417,16 +2410,9 @@ ESeqDBIdType SeqDB_SimplifyAccession(const string & acc,
     ESeqDBIdType result = eStringId;
     num_id = (Uint4)-1;
 
-    list< CRef< CSeq_id > > seqid_set;
+    vector< CRef< CSeq_id > > seqid_set;
 
-    try{
-        CSeq_id::ParseFastaIds(seqid_set, acc, false);
-    }
-    catch (...) {
-        seqid_set.clear();
-    }
-
-    if (!seqid_set.empty() && !seqid_set.front()->IsLocal()) {
+    if (s_SeqDB_ParseSeqIDs(acc, seqid_set)) {
         // Something like SeqIdFindBest()
         CRef<CSeq_id> bestid =
             FindBestChoice(seqid_set, CSeq_id::BestRank);
