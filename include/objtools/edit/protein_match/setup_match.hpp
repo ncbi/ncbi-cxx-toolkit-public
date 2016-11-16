@@ -42,11 +42,10 @@ public:
     CMatchSetup(void) {};
     virtual ~CMatchSetup(void) {};
 
-private:
-    void x_GetNucProtSets(
+    static void GetNucProtSets(
         CSeq_entry_Handle seh,
-        list<CSeq_entry_Handle>& nucProtSets) const;
-
+        list<CSeq_entry_Handle>& nucprot_sets);
+private:
     CSeq_entry_Handle x_GetNucleotideSEH(CSeq_entry_Handle seh);
 
     bool x_GetNucSeqIdFromCDSs(CSeq_entry_Handle& seh, CRef<CSeq_id>& nucseq_id);

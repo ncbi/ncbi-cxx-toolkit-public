@@ -16,9 +16,9 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-void CMatchSetup::x_GetNucProtSets(
+void CMatchSetup::GetNucProtSets(
     CSeq_entry_Handle seh,
-    list<CSeq_entry_Handle>& nucProtSets) const
+    list<CSeq_entry_Handle>& nucprot_sets) 
 {
     if (!seh.IsSet()) {
         return;
@@ -28,7 +28,7 @@ void CMatchSetup::x_GetNucProtSets(
         if (it->IsSet() &&
             it->GetSet().IsSetClass() &&
             it->GetSet().GetClass() == CBioseq_set::eClass_nuc_prot) {
-            nucProtSets.push_back(*it);
+            nucprot_sets.push_back(*it);
         }
     }
 }
