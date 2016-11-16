@@ -183,6 +183,8 @@ public:
     bool IsSummary(void) const { return m_Summ; }
     bool IsReal(void) const { return !m_Test.Empty(); }
     CRef<CAutofixReport> Autofix(CScope& scope) const;
+    void PushReportObj(CReportObj& obj);
+
 protected:
     string m_Msg;
     string m_Str;

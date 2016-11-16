@@ -192,6 +192,19 @@ CRef<CReportItem> CReportNode::Export(CDiscrepancyCase& test, bool unique)
 }
 
 
+CRef<CReportItem> CReportItem::CreateReportItem(const string& msg)
+{
+	CRef<CDiscrepancyItem> item(new CDiscrepancyItem(msg));
+    return CRef<CReportItem>((CReportItem*)item);
+}
+
+
+void CDiscrepancyItem::PushReportObj(CReportObj& obj)
+{
+    m_Objs.push_back(CRef<CReportObj>(&obj));
+}
+
+
 CReportObj* CDiscrepancyObject::Clone(bool autofixable, CConstRef<CObject> data) const
 {
     CDiscrepancyObject* obj = new CDiscrepancyObject(*this);
