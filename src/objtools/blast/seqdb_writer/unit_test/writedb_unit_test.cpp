@@ -50,6 +50,9 @@
 #include <objtools/blast/seqdb_reader/impl/seqdbisam.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 
+#include <objtools/blast/seqdb_writer/writedb_sqlite.hpp>
+#include <objtools/blast/seqdb_reader/impl/seqdbsqlite.hpp>
+
 #include <unordered_map>
 
 #ifndef SKIP_DOXYGEN_PROCESSING
@@ -3267,6 +3270,222 @@ BOOST_AUTO_TEST_CASE(ReadLongIDNucleotide)
         BOOST_REQUIRE_EQUAL(ids.front()->Which(), it.second);
     }
     BOOST_REQUIRE_EQUAL(index, (int)fasta_ids.size());
+}
+
+
+BOOST_AUTO_TEST_CASE(CreateSqliteDB)
+{
+    // Initialize SQLite library.
+    CSQLITE_Global::Initialize();
+
+    // Open test database, 1000 random sequences from nt,
+    // divided over 10 small volumes.
+    CSeqDB seqdb("data/nt_1000", CSeqDB::eUnknown);
+
+    // Get the DB sequence type and total OID count.
+    CSeqDB::ESeqType seqType = seqdb.GetSequenceType();
+    BOOST_REQUIRE_EQUAL(seqType, CSeqDB::eNucleotide);
+    int numOids = seqdb.GetNumOIDs();
+    BOOST_REQUIRE_EQUAL(numOids, 1000);
+
+    // Gather the paths of the volumes.
+    vector<string> paths;
+    seqdb.FindVolumePaths(paths, true); // true means recursive
+    BOOST_REQUIRE_EQUAL(paths.size(), 10U);
+
+    // Open a new SQLite DB for writing.  Will be automatically deleted
+    // when the application exits.
+    const string sqlfile("tmpfile.sql");
+    CTmpFile tmpfile(sqlfile);
+    CWriteDB_Sqlite* sqldb_wr = new CWriteDB_Sqlite(tmpfile.GetFileName());
+
+    // Set the cache size (not critical).
+    sqldb_wr->SetCacheSize(1L << 20);   // 1 MB
+
+    // Get info for each CSeqDB volume.
+    list<SVolInfo> vols;
+    int vol = 0;
+    for (auto it : paths) {
+        // Get modification timestamp of volume.
+        // Use ".nin" or ".pin" file to get timestamp.
+        string s = it + ((seqType == CSeqDB::eProtein) ? ".pin" : ".nin");
+        struct stat attr;
+        int rc = stat(s.c_str(), &attr);
+        if (rc != 0) {
+            cerr << "Cannot stat " << it
+                    << ", errno = " << errno << endl;
+            ++vol;  // skip this volume number
+            continue;
+        }
+        time_t modtime = attr.st_mtime;     // modification timestamp
+
+        // Open DB volume long enough to get its OID count.
+        CSeqDB* seqvol = new CSeqDB(it, CSeqDB::eUnknown);
+        int oids = seqvol->GetNumOIDs();
+        delete seqvol;
+
+        // Save this volume's info.
+        vols.push_back(SVolInfo(s, modtime, vol, oids));
+
+        // Bump volume number.
+        ++vol;
+    }
+    // Create volinfo table.
+    sqldb_wr->CreateVolumeTable(vols);
+
+    // Add accession-to-OID rows as a single transaction.
+    int oid = 0;
+    int added = 0;
+    sqldb_wr->BeginTransaction();
+    while (oid < numOids) {
+        // Each OID may map to multiple Seq-id's.
+        list<CRef<CSeq_id> > seqids = seqdb.GetSeqIDs(oid);
+        added += sqldb_wr->InsertEntries(oid, seqids);
+        ++oid;
+    }
+    sqldb_wr->EndTransaction();
+
+    // Create index for accessions.
+    sqldb_wr->CreateIndex();
+
+    // Finalize DB being created.
+    delete sqldb_wr;
+
+    // Reopen DB for reading.
+    CSeqDBSqlite* sqldb_rd = new CSeqDBSqlite(tmpfile.GetFileName());
+
+    // Expected volinfo.
+    const int ref_numvols = 10;
+    const int ref_modtime = 1478031061; // same for all volumes
+    const int ref_numoids[ref_numvols] = {
+            174, 73, 105, 155, 92, 1, 138, 196, 1, 65
+    };
+
+    // Verify contents of volinfo table.
+    string vol_path;
+    int vol_modtime;
+    int vol_volume;
+    int vol_numoids;
+    int expected_rows = 0;
+    int expected_oids = 0;
+    while (sqldb_rd->StepVolumes(
+            &vol_path,
+            &vol_modtime,
+            &vol_volume,
+            &vol_numoids
+    )) {
+        BOOST_REQUIRE_EQUAL(ref_modtime, vol_modtime);
+        BOOST_REQUIRE_EQUAL(ref_numoids[vol_volume], vol_numoids);
+        // Form string to match volume name: "nt_1000.**.nin"
+        // where ** is 00 through 09.
+        ostringstream oss;
+        oss << "nt_1000" << "." << setw(2) << setfill('0')
+                << vol_volume << ".nin";
+        // Test that above string is substring of stored volume path.
+        BOOST_REQUIRE(vol_path.find(oss.str()) != vol_path.npos);
+        // Count up volumes.
+        ++expected_rows;
+        // Tally up OIDs in volumes.
+        expected_oids += vol_numoids;
+    }
+    // Correct number of volumes?
+    BOOST_REQUIRE_EQUAL(expected_rows, ref_numvols);
+
+    // Verify total number of accession-to-OID rows across all volumes.
+    int total_oids = 0;
+    while (sqldb_rd->StepAccessions(NULL, NULL, NULL)) {
+        ++total_oids;
+    }
+    BOOST_REQUIRE_EQUAL(expected_oids, total_oids);
+
+    // Finalize DB being read.
+    delete sqldb_rd;
+
+    // Finalize SQLite library.
+    CSQLITE_Global::Finalize();
+
+    // Mark DB file for deletion.
+    CFileDeleteAtExit::Add(tmpfile.GetFileName());
+}
+
+
+BOOST_AUTO_TEST_CASE(EditSqliteDB)
+{
+    // Create two lists of fake accessions, version numbers, and OID counts.
+    list<SAccOid> acc2oids1;
+    acc2oids1.push_back(SAccOid("COLUMBUS", 0, 1492));  // Christopher...
+    acc2oids1.push_back(SAccOid("FRANKLIN", 1, 1776));  // Benjamin ...
+    acc2oids1.push_back(SAccOid("HASTINGS", 1, 1066));  // Battle of ...
+    acc2oids1.push_back(SAccOid("WRIGHT",   2, 1903));  // ... Brothers
+    acc2oids1.push_back(SAccOid("TOHOKU",   1, 2011));  // ... Earthquake
+    acc2oids1.push_back(SAccOid("MACLEOD",  1, 1986));  // "The Highlander"
+    acc2oids1.push_back(SAccOid("MIYAZAWA", 3, 1934));  // Kenji ..., author of
+                                                        // "Night on the
+                                                        // Galactic Railroad"
+    list<SAccOid> acc2oids2;
+    acc2oids2.push_back(SAccOid("FILLER1",  1, 1001));  // (stuffing
+    acc2oids2.push_back(SAccOid("FILLER1",  2, 1002));  // instead of
+    acc2oids2.push_back(SAccOid("FILLER2",  1, 1003));  // potatoes)
+
+    // Initialize SQLite library.
+    CSQLITE_Global::Initialize();
+
+    // Create test DB file.
+    const string sqlfile("testfile.sql");
+    CTmpFile tmpfile(sqlfile);
+    CWriteDB_Sqlite* sqldb_wr = new CWriteDB_Sqlite(tmpfile.GetFileName());
+
+    // Set cache size (not critical).
+    sqldb_wr->SetCacheSize(1L << 20);   // 1 MB
+
+    // Add rows of "historical significance" as a single operation.
+    sqldb_wr->BeginTransaction();
+    sqldb_wr->InsertEntries(acc2oids1);
+    sqldb_wr->EndTransaction();
+
+    // Add filler rows, one at a time.
+    sqldb_wr->BeginTransaction();
+    for (auto it : acc2oids2) {
+        sqldb_wr->InsertEntry(it.m_acc, it.m_ver, it.m_oid);
+    }
+    sqldb_wr->EndTransaction();
+
+    // Now remove all rows of The Highlander.  (NOTE: There can be only one.)
+    sqldb_wr->DeleteEntry("MACLEOD");
+
+    // Now remove rows of "filler" with a list of accessions.
+    list<string> fillers;
+    fillers.push_back("FILLER1");   // should match 2 rows
+    fillers.push_back("FILLER2");   // should match 1 row
+    BOOST_REQUIRE_EQUAL(sqldb_wr->DeleteEntries(fillers), 3);  // 3 rows total
+
+    // Finalize creating DB.
+    delete sqldb_wr;
+
+    // Reopen DB for reading.
+    CSeqDBSqlite* sqldb_rd = new CSeqDBSqlite(tmpfile.GetFileName());
+
+    // Read all rows in DB.  There should be four fewer than in original
+    // lists of entries.
+    // If all arguments of StepAccessions are NULL, all it does is return
+    // true until it has stepped through all rows of the acc2oid table.
+    size_t rowcount = 0U;
+    while (sqldb_rd->StepAccessions(NULL, NULL, NULL)) {
+        ++rowcount;
+    }
+    BOOST_REQUIRE_EQUAL(
+            rowcount,
+            (acc2oids1.size() + acc2oids2.size() - 4U)
+    );
+
+    // Finalize DB.
+    delete sqldb_rd;
+
+    // Finalize SQLite library.
+    CSQLITE_Global::Finalize();
+
+    // Mark file for deletion upon exit.
+    CFileDeleteAtExit::Add(tmpfile.GetFileName());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -135,7 +135,7 @@ void CWriteDB_Sqlite::EndTransaction(void)
     }
 }
 
-inline void CWriteDB_Sqlite::CommitTransaction(void)
+void CWriteDB_Sqlite::CommitTransaction(void)
 {
     EndTransaction();
 }
@@ -153,8 +153,6 @@ void CWriteDB_Sqlite::DeleteEntry(const string& accession, const int version)
 
 int CWriteDB_Sqlite::DeleteEntries(const list<string>& accessions)
 {
-    int nrows = 0;
-
     // Create in-memory temporary table to hold accessions.
     m_db->ExecuteSql("CREATE TEMP TABLE IF NOT EXISTS accs ( acc TEXT );");
     m_db->ExecuteSql("BEGIN TRANSACTION;");
@@ -168,12 +166,13 @@ int CWriteDB_Sqlite::DeleteEntries(const list<string>& accessions)
         ins.Bind(1, *it);
         ins.Execute();
         ins.Reset();
-        ++nrows;
     }
     m_db->ExecuteSql("END TRANSACTION;");
 
     // Delete from main table based on accessions also being in temp table.
-    m_db->ExecuteSql("DELETE FROM acc2oid WHERE accession IN accs;");
+    CSQLITE_Statement del(m_db, "DELETE FROM acc2oid WHERE accession IN accs;");
+    del.Execute();
+    int nrows = del.GetChangedRowsCount();
 
     // Clear temp table for possible reuse.
     m_db->ExecuteSql("DELETE FROM accs;");
