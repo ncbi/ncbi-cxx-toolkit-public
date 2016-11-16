@@ -785,7 +785,7 @@ void CNCActiveHandler::ProxyBList(
     m_CurCmd = eReadData;
 
     m_CmdToSend.resize(0);
-    m_CmdToSend += "PROXY_BLIST \"";
+    m_CmdToSend += filters ? "PROXY_BLIST2 \"" : "PROXY_BLIST \"";
     m_CmdToSend += nc_key.Cache();
     m_CmdToSend += "\" \"";
     m_CmdToSend += nc_key.RawKey();

@@ -296,7 +296,7 @@ static CExpiredCleaner* s_ExpiredCleaner = nullptr;
 /**/
 
 void
-CNCBlobStorage::GetBList(const string& mask, auto_ptr<TNCBufferType>& buffer, SNCBlobFilter* filters)
+CNCBlobStorage::GetBList(const string& mask, auto_ptr<TNCBufferType>& buffer, SNCBlobFilter* filters, const string& sep)
 {
     if (mask.empty()) {
         return;
@@ -343,7 +343,7 @@ CNCBlobStorage::GetBList(const string& mask, auto_ptr<TNCBufferType>& buffer, SN
                     (lb->size        >=    size_lo && (   size_hi == 0 || lb->size        <    size_hi)) &&
                     (create_server == 0 || lb->create_server == create_server))) {
 
-                    string bkey( NStr::Replace(lb->key,"\1",","));
+                    string bkey( NStr::Replace(lb->key,"\1",sep));
                     buffer->append(bkey.data(), bkey.size());
                     if (extra) {
                         if  (cr_time_lo != 0 || cr_time_hi != 0) {

@@ -1398,7 +1398,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
 // added in v6.11.0 (CXX-8737)
     { "BLIST2",
         {&CNCMessageHandler::x_DoCmd_GetBList,
-            "BLIST",
+            "BLIST2",
             fComesFromClient |
                 fNeedsStorageCache | fNeedsBlobList | fDoNotProxyToPeers | fDoNotCheckPassword,
             eNCNone, eProxyGetBList2},
@@ -1452,8 +1452,21 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "key",     eNSPT_Str,  eNSPA_Required },
           // Blob's subkey.
           { "subkey",  eNSPT_Str,  eNSPA_Required },
-          { "local",   eNSPT_Int,  eNSPA_Required },
+          { "local",   eNSPT_Int,  eNSPA_Required }
+        } },
 // added in v6.11.0 (CXX-8737)
+    { "PROXY_BLIST2",
+        {&CNCMessageHandler::x_DoCmd_GetBList,
+            "PROXY_BLIST2",
+            fNeedsStorageCache | fNeedsBlobList | fDoNotProxyToPeers | fDoNotCheckPassword,
+            eNCNone, eProxyNone},
+          // Name of cache for blob.
+        { { "cache",   eNSPT_Str,  eNSPA_Required },
+          // Blob's key.
+          { "key",     eNSPT_Str,  eNSPA_Required },
+          // Blob's subkey.
+          { "subkey",  eNSPT_Str,  eNSPA_Required },
+          { "local",   eNSPT_Int,  eNSPA_Required },
           // Created more than N seconds ago
           { "fcr_ago_ge", eNSPT_Int,  eNSPA_Optional },
           // Created less than N seconds ago
@@ -4828,7 +4841,8 @@ CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_GetBList(void)
 {
     m_SendBuff.reset(new TNCBufferType());
-    CNCBlobStorage::GetBList(m_NCBlobKey.PackedKey(), m_SendBuff,m_BlobFilter);
+    bool newsep = NStr::Find(m_ParsedCmd.command->cmd, "BLIST2") != NPOS;
+    CNCBlobStorage::GetBList(m_NCBlobKey.PackedKey(), m_SendBuff,m_BlobFilter, newsep ? "\t" : ",");
     CNCDistributionConf::AddServerSlots(m_SlotsDone, 0);
     ENCProxyCmd proxy_cmd = m_ParsedCmd.command->extra.proxy_cmd;
     if (proxy_cmd != eProxyGetBList2) {

@@ -307,7 +307,7 @@ CNCPeerControl::AcceptsBList(void) const
 inline bool
 CNCPeerControl::AcceptsBList2(void) const
 {
-    return m_HostProtocol >= 61100;
+    return m_HostProtocol > 61100;
 }
 
 inline bool
