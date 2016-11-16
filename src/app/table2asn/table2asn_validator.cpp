@@ -67,12 +67,12 @@ void CTable2AsnValidator::Cleanup(CSeq_entry_Handle& h_entry, const string& flag
     else
     if (flags.find('e') != string::npos)
     {
-        CConstRef<CCleanupChange> changes = cleanup.ExtendedCleanup(*entry, CCleanup::eClean_SyncGenCodes | CCleanup::eClean_NoNcbiUserObjects);
+        CConstRef<CCleanupChange> changes = cleanup.ExtendedCleanup(*entry, CCleanup::eClean_SyncGenCodes);
         need_recalculate_index = true;
     }
     else
     {
-        cleanup.BasicCleanup(*entry, CCleanup::eClean_SyncGenCodes | CCleanup::eClean_NoNcbiUserObjects);
+        cleanup.BasicCleanup(*entry, CCleanup::eClean_SyncGenCodes);
         if (flags.find('U') != string::npos)
           cleanup.RemoveUnnecessaryGeneXrefs(h_entry); //remove unnec gen xref included in extended cleanup
     }
