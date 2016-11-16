@@ -224,6 +224,7 @@ void CDemoApp::Init(void)
     arg_desc->AddFlag("get_taxid", "Get TaxId");
     arg_desc->AddFlag("get_bestid", "Get BestId");
     arg_desc->AddFlag("get_title", "Get sequence title");
+    arg_desc->AddFlag("get_state", "Get sequence state");
 
     arg_desc->AddFlag("seq_map", "scan SeqMap on full depth");
     arg_desc->AddFlag("seg_labels", "get labels of all segments in Delta");
@@ -289,6 +290,7 @@ void CDemoApp::Init(void)
     arg_desc->AddFlag("check_seq_data", "check availability of seq_data");
     arg_desc->AddFlag("seq_vector_tse", "use TSE as a base for CSeqVector");
     arg_desc->AddFlag("skip_graphs", "do not search for graphs");
+    arg_desc->AddFlag("print_graphs", "print all found Seq-graphs");
     arg_desc->AddFlag("skip_alignments", "do not search for alignments");
     arg_desc->AddFlag("print_alignments", "print all found Seq-aligns");
     arg_desc->AddFlag("get_mapped_alignments", "get mapped alignments");
@@ -301,6 +303,12 @@ void CDemoApp::Init(void)
     arg_desc->AddOptionalKey("max_search_segments", "MaxSearchSegments",
                             "Max number of empty segments to search",
                             CArgDescriptions::eInteger);
+    arg_desc->AddOptionalKey("max_search_segments_action", "MaxSearchSegmentsAction",
+                            "Action on max number of empty segments limit",
+                            CArgDescriptions::eString);
+    arg_desc->SetConstraint("max_search_segments_action",
+                            &(*new CArgAllow_Strings,
+                              "throw", "log", "ignore"));
     arg_desc->AddOptionalKey("max_search_time", "MaxSearchTime",
                             "Max time to search for a first annotation",
                             CArgDescriptions::eDouble);
@@ -703,6 +711,11 @@ void CDemoApp::GetIds(CScope& scope, const CSeq_id_Handle& idh)
             NcbiCout << "Best id: null" << NcbiEndl;
         }
     }
+    if ( args["get_state"] ) {
+        NcbiCout << "State: "
+                 << scope.GetSequenceState(idh)
+                 << NcbiEndl;
+    }
     NcbiCout << "Ids:" << NcbiEndl;
     //scope.GetBioseqHandle(idh);
     try {
@@ -816,6 +829,7 @@ int CDemoApp::Run(void)
     bool get_original_feature = args["get_original_feature"];
     bool get_mapped_feature = args["get_mapped_feature"];
     bool get_feat_handle = args["get_feat_handle"];
+    bool print_graphs = args["print_graphs"];
     bool print_alignments = args["print_alignments"];
     bool check_cds = args["check_cds"];
     bool check_seq_data = args["check_seq_data"];
@@ -1048,25 +1062,45 @@ int CDemoApp::Run(void)
     if ( get_ids ) {
         GetIds(scope, idh);
     }
-    if ( get_blob_id && gb_loader && other_loaders.empty() ) {
-        try {
-            CDataLoader::TBlobId blob_id = gb_loader->GetBlobId(idh);
-            if ( !blob_id ) {
-                ERR_POST("Cannot find blob id of "<<id->AsFastaString());
+    string gb_blob_id, seq_blob_id;
+    if ( get_blob_id ) {
+        if ( gb_loader ) {
+            try {
+                CDataLoader::TBlobId blob_id = gb_loader->GetBlobId(idh);
+                if ( !blob_id ) {
+                    ERR_POST("Cannot find blob id of "<<idh<<" from GenBank");
+                }
+                else {
+                    gb_blob_id = gb_loader->GetName()+'/'+blob_id.ToString();
+                }
             }
-            else {
-                NcbiCout << "Resolved: "<<id->AsFastaString()<<
-                    " -> "<<blob_id.ToString()<<NcbiEndl;
+            catch ( CException& exc ) {
+                ERR_POST("Cannot blob id of "<<idh<<": "<<exc);
             }
-        }
-        catch ( CException& exc ) {
-            ERR_POST("Cannot blob id of "<<id->AsFastaString()<<": "<<
-                     exc.GetMsg());
         }
     }
 
     // Get bioseq handle for the seq-id. Most of requests will use this handle.
     CBioseq_Handle handle = scope.GetBioseqHandle(idh);
+
+    if ( get_blob_id ) {
+        if ( !handle ) {
+            ERR_POST("Cannot find blob id of "<<idh);
+        }
+        else {
+            CTSE_Handle tse = handle.GetTSE_Handle();
+            CTSE_Handle::TBlobId blob_id = tse.GetBlobId();
+            seq_blob_id = blob_id.ToString();
+            if ( CDataLoader* loader = tse.GetDataLoader() ) {
+                seq_blob_id = loader->GetName()+'/'+seq_blob_id;
+            }
+            NcbiCout << "Resolved: "<<idh<<" -> "<<seq_blob_id<<NcbiEndl;
+        }
+        if ( !gb_blob_id.empty() && gb_blob_id != seq_blob_id ) {
+            NcbiCout << "GBLoader: "<<idh<<" -> "<<gb_blob_id<<NcbiEndl;
+        }
+    }
+
     bool error = !handle;
     if ( handle.GetState() ) {
         // print blob state:
@@ -1467,6 +1501,18 @@ int CDemoApp::Run(void)
             .SetIgnoreStrand(ignore_strand);
         if ( args["max_search_segments"] ) {
             base_sel.SetMaxSearchSegments(args["max_search_segments"].AsInteger());
+            if ( args["max_search_segments_action"] ) {
+                const string& action = args["max_search_segments_action"].AsString();
+                if ( action == "throw" ) {
+                    base_sel.SetMaxSearchSegmentsAction(base_sel.eMaxSearchSegmentsThrow);
+                }
+                else if ( action == "log" ) {
+                    base_sel.SetMaxSearchSegmentsAction(base_sel.eMaxSearchSegmentsLog);
+                }
+                else if ( action == "ignore" ) {
+                    base_sel.SetMaxSearchSegmentsAction(base_sel.eMaxSearchSegmentsSilent);
+                }
+            }
         }
         if ( args["max_search_time"] ) {
             base_sel.SetMaxSearchTime(float(args["max_search_time"].AsDouble()));
@@ -1855,7 +1901,11 @@ int CDemoApp::Run(void)
             
             x_Pause("getting features", pause_key);
             sw.Restart();
-            for ( CFeat_CI it(scope, *range_loc, base_sel); it;  ++it) {
+            CFeat_CI it(scope, *range_loc, base_sel);
+            if ( it.MaxSearchSegmentsLimitIsReached() ) {
+                NcbiCout << "***** Max search segments limit is reached *****" << NcbiEndl;
+            }
+            for ( ; it;  ++it) {
                 if ( count_types ) {
                     ++types_counts[it->GetFeatType()];
                 }
@@ -2367,7 +2417,7 @@ int CDemoApp::Run(void)
                         it->GetOriginalGraph();
                     if ( get_mapped_feature )
                         it->GetMappedGraph();
-                    if ( print_features ) {
+                    if ( print_graphs ) {
                         NcbiCout << MSerial_AsnText <<
                             it->GetMappedGraph() << it->GetLoc();
                     }
