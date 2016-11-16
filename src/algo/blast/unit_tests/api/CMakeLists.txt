@@ -53,4 +53,5 @@ include(CMakeLists.blastoptions_unit_test.app.txt)
 include(CMakeLists.gencode_singleton_unit_test.app.txt)
 include(CMakeLists.bl2seq_unit_test.app.txt)
 include(CMakeLists.stat_unit_test.app.txt)
+include(CMakeLists.magicblast_unit_test.app.txt)
 
