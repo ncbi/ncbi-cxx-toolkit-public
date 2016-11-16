@@ -31,8 +31,10 @@
 
 #include <corelib/ncbistd.hpp>
 #include <objects/seq/Annotdesc.hpp>
+//#include <objects/seqtable/Seq_table.hpp>
 
 class CSeq_annot;
+class CSeq_feat;
 class CSeq_align;
 class CUser_object;
 class CSeq_table;
@@ -43,8 +45,8 @@ BEGIN_SCOPE(objects)
 class CMatchTabulate {
 
 public:
-    CMatchTabulate() {};
-    virtual ~CMatchTabulate() {};
+    CMatchTabulate(void);
+    virtual ~CMatchTabulate(void);
 
     typedef list<CRef<CSeq_annot>> TMatches;
 

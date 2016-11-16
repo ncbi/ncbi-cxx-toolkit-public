@@ -18,6 +18,16 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+
+CMatchTabulate::CMatchTabulate() : mMatchTable(Ref(new CSeq_table())) 
+{
+    mMatchTable->SetNum_rows(0);
+}
+
+
+CMatchTabulate::~CMatchTabulate() {}
+
+
 bool CMatchTabulate::ProcessAnnots(const list<CRef<CSeq_annot>>& annot_list,
     TMatches& matches,
     list<string>& new_proteins,  // contains local ids for new proteins
