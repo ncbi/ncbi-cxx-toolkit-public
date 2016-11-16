@@ -51,7 +51,8 @@ string BlastDatabaseNames[] = {
     "Yeast", 
     "ecoli", 
     "Drosophila genome", 
-    "month"
+    "month",
+    "SMARTBLAST/landmark"
 };
 
 string OrganismNames[] = {

@@ -59,6 +59,7 @@ enum BlastDatabase
 	eEcoli,  
 	eDrosophila_genome,
 	eMonth,
+    eSmartblast_landmark,
 	eBlastDatabaseEnd
 };
 
