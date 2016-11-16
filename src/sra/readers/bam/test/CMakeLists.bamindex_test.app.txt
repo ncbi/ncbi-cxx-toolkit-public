@@ -1,0 +1,9 @@
+add_executable(bamindex_test-app
+    bamindex_test
+)
+
+set_target_properties(bamindex_test-app PROPERTIES OUTPUT_NAME bamindex_test)
+
+target_link_libraries(bamindex_test-app 
+    bamread
+)
