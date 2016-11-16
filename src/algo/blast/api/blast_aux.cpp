@@ -232,6 +232,7 @@ CBlastHitSavingOptions::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/)
 
     ddc.Log("hitlist_size", m_Ptr->hitlist_size);
     ddc.Log("hsp_num_max", m_Ptr->hsp_num_max);
+    ddc.Log("max_hsps_per_subject", m_Ptr->max_hsps_per_subject);
     ddc.Log("total_hsp_limit", m_Ptr->total_hsp_limit);
     ddc.Log("culling_limit", m_Ptr->culling_limit);
     ddc.Log("expect_value", m_Ptr->expect_value);
