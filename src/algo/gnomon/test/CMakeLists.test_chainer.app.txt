@@ -7,7 +7,7 @@ add_executable(test_chainer-app
 
 set_target_properties(test_chainer-app PROPERTIES OUTPUT_NAME test_chainer)
 
-include_directories(${BOOST_INCLUDE})
+include_directories(SYSTEM ${BOOST_INCLUDE})
 
 target_link_libraries(test_chainer-app
     test_boost xalgognomon

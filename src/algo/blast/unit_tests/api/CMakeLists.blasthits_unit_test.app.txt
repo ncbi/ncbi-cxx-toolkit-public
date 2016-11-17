@@ -7,7 +7,7 @@ add_executable(blasthits_unit_test-app
 
 set_target_properties(blasthits_unit_test-app PROPERTIES OUTPUT_NAME blasthits_unit_test)
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../api
+include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/../../api
                     ${CMAKE_CURRENT_SOURCE_DIR}/../../core
 )
 

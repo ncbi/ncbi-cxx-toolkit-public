@@ -1,6 +1,6 @@
 add_executable(stat_unit_test stat_unit_test)
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../api)
+include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/../../api)
 
 add_definitions(-DNCBI_MODULE=BLAST)
 

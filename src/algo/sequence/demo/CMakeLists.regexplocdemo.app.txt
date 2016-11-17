@@ -7,7 +7,7 @@ add_executable(regexplocdemo-app
 
 set_target_properties(regexplocdemo-app PROPERTIES OUTPUT_NAME regexplocdemo)
 
-include_directories(${PCRE_INCLUDE})
+include_directories(SYSTEM ${PCRE_INCLUDE})
 
 target_link_libraries(regexplocdemo-app
     ncbi_xloader_genbank xalgoseq

@@ -7,7 +7,7 @@ add_library(xalgoseq
     gene_model project_exons transform_align annot_compare compare_feats
     align_group masking_delta align_cleanup util gap_analysis internal_stops
 )
-include_directories(${PCRE_INCLUDE})
+include_directories(SYSTEM ${PCRE_INCLUDE})
 
 add_dependencies(xalgoseq
     seqset

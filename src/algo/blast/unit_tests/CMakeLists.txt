@@ -3,7 +3,7 @@
 #
 
 # Include projects from this directory
-include_directories(${BOOST_INCLUDE})
+include_directories(SYSTEM ${BOOST_INCLUDE})
 
 # Recurse subdirectories
 add_subdirectory(blast_format)

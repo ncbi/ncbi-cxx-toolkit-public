@@ -4,7 +4,7 @@
 add_library(blast_unit_test_util
     test_objmgr blast_test_util
 )
-include_directories(${BOOST_INCLUDE} ${CMAKE_CURRENT_SOURCE_DIR}/../../api)
+include_directories(SYSTEM ${BOOST_INCLUDE} ${CMAKE_CURRENT_SOURCE_DIR}/../../api)
 
 add_dependencies(blast_unit_test_util
     blastdb xnetblast

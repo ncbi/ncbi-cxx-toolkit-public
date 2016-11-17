@@ -5,7 +5,7 @@ add_library(xalgoseqqa
     seqtest xcript_tests prot_prod_tests blastp_tests single_aln_tests
     seq_id_tests
 )
-include_directories(${PCRE_INCLUDE})
+include_directories(SYSTEM ${PCRE_INCLUDE})
 
 add_dependencies(xalgoseqqa
     seqset seqtest entrez2
