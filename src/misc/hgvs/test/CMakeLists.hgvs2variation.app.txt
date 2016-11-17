@@ -7,7 +7,7 @@ add_executable(hgvs2variation-app
 
 set_target_properties(hgvs2variation-app PROPERTIES OUTPUT_NAME hgvs2variation)
 
-include_directories(${BOOST_INCLUDE})
+include_directories(SYSTEM ${BOOST_INCLUDE})
 
 target_link_libraries(hgvs2variation-app
     hgvs

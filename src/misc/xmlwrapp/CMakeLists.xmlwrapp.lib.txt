@@ -8,7 +8,7 @@ add_library(xmlwrapp
     document_proxy libxml2_xmlwrapp deref_impl xpath_object extension_function
     extension_element https_input_impl
 )
-include_directories(${LIBXML_INCLUDE} ${LIBXSLT_INCLUDE})
+include_directories(SYSTEM ${LIBXML_INCLUDE} ${LIBXSLT_INCLUDE})
 
 target_link_libraries(xmlwrapp
     ${LIBXML_LIBS} ${LIBXSLT_LIBS} xconnect

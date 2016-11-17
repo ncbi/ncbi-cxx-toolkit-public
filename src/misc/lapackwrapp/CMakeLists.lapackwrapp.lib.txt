@@ -2,7 +2,7 @@ add_library(lapackwrapp
     ncbi_lapack
 )
 
-include_directories(${ORIG_CPPFLAGS} ${LAPACK_INCLUDE})
+include_directories(SYSTEM ${ORIG_CPPFLAGS} ${LAPACK_INCLUDE})
 
 target_link_libraries(lapackwrapp
     ${LAPACK_LIBS} ${ORIG_LIBS}

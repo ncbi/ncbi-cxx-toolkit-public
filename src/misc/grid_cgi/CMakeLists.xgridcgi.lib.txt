@@ -4,7 +4,7 @@
 add_library(xgridcgi
     grid_cgiapp remote_cgiapp cgi2grid cgi_session_netcache
 )
-include_directories(${FASTCGI_INCLUDE})
+include_directories(SYSTEM ${FASTCGI_INCLUDE})
 
 target_link_libraries(xgridcgi
     xcgi xconnserv xhtml
