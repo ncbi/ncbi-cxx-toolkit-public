@@ -5,7 +5,7 @@ add_library(sraread
     sraread vdbread kdbread csraread wgsresolver wgsresolver_impl wgsread
     graphread snpread
 )
-include_directories(${SRA_INCLUDE})
+include_directories(SYSTEM ${SRA_INCLUDE})
 
 target_link_libraries(sraread
     xobjmgr ${SRAREAD_LDEP}

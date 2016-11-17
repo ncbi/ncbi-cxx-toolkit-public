@@ -7,7 +7,7 @@ add_executable(snp_test-app
 
 set_target_properties(snp_test-app PROPERTIES OUTPUT_NAME snp_test)
 
-include_directories(${SRA_INCLUDE})
+include_directories(SYSTEM ${SRA_INCLUDE})
 
 target_link_libraries(snp_test-app
     sraread

@@ -7,7 +7,7 @@ add_executable(csra_test_mt-app
 
 set_target_properties(csra_test_mt-app PROPERTIES OUTPUT_NAME csra_test_mt)
 
-include_directories(${SRA_INCLUDE})
+include_directories(SYSTEM ${SRA_INCLUDE})
 
 target_link_libraries(csra_test_mt-app
     sraread test_mt

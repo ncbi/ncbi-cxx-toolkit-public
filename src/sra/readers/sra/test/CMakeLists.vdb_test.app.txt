@@ -7,7 +7,7 @@ add_executable(vdb_test-app
 
 set_target_properties(vdb_test-app PROPERTIES OUTPUT_NAME vdb_test)
 
-include_directories(${SRA_INCLUDE})
+include_directories(SYSTEM ${SRA_INCLUDE})
 
 target_link_libraries(vdb_test-app
     sraread

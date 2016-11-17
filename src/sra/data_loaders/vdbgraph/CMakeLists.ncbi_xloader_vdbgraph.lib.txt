@@ -5,7 +5,7 @@ add_library(ncbi_xloader_vdbgraph
     vdbgraphloader vdbgraphloader_impl
 )
 add_definitions(-DNCBI_XLOADER_VDBGRAPH_EXPORTS)
-include_directories(${SRA_INCLUDE})
+include_directories(SYSTEM ${SRA_INCLUDE})
 
 target_link_libraries(ncbi_xloader_vdbgraph
     sraread

@@ -4,7 +4,7 @@
 add_library(ncbi_xloader_sra
     sraloader
 )
-include_directories(${SRA_INCLUDE})
+include_directories(SYSTEM ${SRA_INCLUDE})
 
 target_link_libraries(ncbi_xloader_sra
     sraread

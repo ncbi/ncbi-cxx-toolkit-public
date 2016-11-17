@@ -4,7 +4,7 @@
 add_library(ncbi_xloader_bam
     bamloader bamloader_impl
 )
-include_directories(${SRA_INCLUDE})
+include_directories(SYSTEM ${SRA_INCLUDE})
 
 add_dependencies(ncbi_xloader_bam
     seqset 

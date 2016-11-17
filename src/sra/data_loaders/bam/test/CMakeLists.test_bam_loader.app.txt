@@ -7,7 +7,7 @@ add_executable(test_bam_loader-app
 
 set_target_properties(test_bam_loader-app PROPERTIES OUTPUT_NAME test_bam_loader)
 
-include_directories(${BOOST_INCLUDE})
+include_directories(SYSTEM ${BOOST_INCLUDE})
 
 target_link_libraries(test_bam_loader-app
     ncbi_xloader_bam ncbi_xloader_genbank test_boost

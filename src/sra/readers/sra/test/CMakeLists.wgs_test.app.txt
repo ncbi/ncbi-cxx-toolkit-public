@@ -7,7 +7,7 @@ add_executable(wgs_test-app
 
 set_target_properties(wgs_test-app PROPERTIES OUTPUT_NAME wgs_test)
 
-include_directories(${SRA_INCLUDE})
+include_directories(SYSTEM ${SRA_INCLUDE})
 
 target_link_libraries(wgs_test-app
     sraread

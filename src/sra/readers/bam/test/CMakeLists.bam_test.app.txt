@@ -7,7 +7,7 @@ add_executable(bam_test-app
 
 set_target_properties(bam_test-app PROPERTIES OUTPUT_NAME bam_test)
 
-include_directories(${SRA_INCLUDE})
+include_directories(SYSTEM ${SRA_INCLUDE})
 
 target_link_libraries(bam_test-app
     bamread xobjreadex xobjsimple

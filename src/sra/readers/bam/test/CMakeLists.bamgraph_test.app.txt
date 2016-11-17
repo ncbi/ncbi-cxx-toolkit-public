@@ -7,7 +7,7 @@ add_executable(bamgraph_test-app
 
 set_target_properties(bamgraph_test-app PROPERTIES OUTPUT_NAME bamgraph_test)
 
-include_directories(${SRA_INCLUDE})
+include_directories(SYSTEM ${SRA_INCLUDE})
 
 target_link_libraries(bamgraph_test-app
     bamread

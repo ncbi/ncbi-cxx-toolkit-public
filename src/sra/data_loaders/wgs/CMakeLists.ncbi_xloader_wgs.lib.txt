@@ -5,7 +5,7 @@ add_library(ncbi_xloader_wgs
     wgsloader wgsloader_impl
 )
 add_definitions(-DNCBI_XLOADER_WGS_EXPORTS)
-include_directories(${SRA_INCLUDE})
+include_directories(SYSTEM ${SRA_INCLUDE})
 
 target_link_libraries(ncbi_xloader_wgs
     sraread

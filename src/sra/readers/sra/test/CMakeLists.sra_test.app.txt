@@ -7,7 +7,7 @@ add_executable(sra_test-app
 
 set_target_properties(sra_test-app PROPERTIES OUTPUT_NAME sra_test)
 
-include_directories(${SRA_INCLUDE})
+include_directories(SYSTEM ${SRA_INCLUDE})
 
 target_link_libraries(sra_test-app
     ncbi_xloader_genbank sraread
