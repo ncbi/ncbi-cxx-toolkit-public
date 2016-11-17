@@ -125,16 +125,15 @@ public:
     ///   - 0 if no length information found
     static int              GetLength(const CSeq_feat &);
 
-    /// Return bitfield information stored as "QualityCodes"
+    /// Return bitfield information stored in the feature
     ///
     /// @param mapped_feat
     ///   CMappedFeat object representing snp feature
     /// @return
-    ///   - bitfield created from octect sequence of QualityCodes
-    ///   - CSnpBitfield is empty if no "QualityCodes" are found
+    ///   - CSnpBitfield.isGood() is false if no bitfield is found
     static CSnpBitfield     GetBitfield(const CMappedFeat &);
 
-    /// Return bitfield information stored as "QualityCodes"
+    /// Return bitfield information stored in the feature
     ///
     /// @param mapped_feat
     ///   CSeq_feat object representing snp feature
@@ -360,13 +359,17 @@ template <class TVariation> inline void NSNPVariationHelper::GetDeltas(list<stri
 
 template <class TPVariation> inline bool NSNPVariationHelper::x_CommonConvertFeat(TPVariation pVariation, const CSeq_feat& SrcFeat)
 {
-    if(!NSnp::IsSnp(SrcFeat))
+    if(!NSnp::IsSnp(SrcFeat)) {
         return false;
-
+    }
     CConstRef<CDbtag> tag = SrcFeat.GetNamedDbxref("dbSNP");
-    if (!tag)
+    if(!tag) {
         return false;
-
+    }
+    int Rsid(NSnp::GetRsid(SrcFeat));
+    if (!Rsid) {
+        return false;
+    }
     CSnpBitfield bf(NSnp::GetBitfield(SrcFeat));
     CSnpBitfield::EVariationClass VarClass(bf.GetVariationClass());
 

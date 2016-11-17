@@ -35,6 +35,7 @@
 #include <corelib/ncbistd.hpp>
 
 #include <memory>
+#include <objects/seqfeat/Seq_feat.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -42,11 +43,7 @@ class CSnpBitfieldFactory;
 
 /**
 *   CSnpBitfield is a facade for representing any version of the SNP
-*   bitfield.  A CSnpBitfield is created from a vector<char> data type.
-*
-*   Example:
-*      vector<char> data = <get data e.g. CUser_field::C_Data::GetOs >
-*      CSnpBitfield bitfield = data
+*   bitfield.  A CSnpBitfield is created from a feature.
 *
 *   Internally, the CSnpBitfield uses a Factory (CSnpBitfieldFactory)
 *   to determine the version/format of the bitfield to create and store.
@@ -221,9 +218,13 @@ public:
 		// F6 bit 7, not named but reserved for future use
 		eTGPBit7                        = 68,
 
+		// Add additional properties here.
+		ePropertyV5Last                 = eTGPBit7,
 
-		/// Add additional properties here.
-		ePropertyV5Last                 = eTGPBit7
+		// new properties for VDB-based SNP 2.0
+		eStatusLive                     = 69,    ///< Rs status is live
+		eStatusUnsupported              = 70,    ///< Rs status is unsupported (have no support data)
+		eStatusMerged                   = 71,    ///< Rs status is merged (become a part of another rs)
     };
 
     // A SNP can only be one class of variation
@@ -237,14 +238,20 @@ public:
         eNamedSNP               = 5,
         eNoVariation            = 6,
         eMixed                  = 7,
-        eMultiBase              = 8
+        eMultiBase              = 8,
+
+        // new classes introduced in SNP2.0
+        eIdentity               = 9,
+        eInversion              = 10,
+        eDeletion               = 11,
+        eInsertion              = 12
     };
 
     // Function class (gene_prop in v1.2)
     // A SNP can belong to more than one gene function class
     enum EFunctionClass
     {
-        eUnknownFxn             = 0,  // Uknown
+        eUnknownFxn             = 0,  // Unknown
         eIntron                 = 1,  // In Intron
         eDonor                  = 2,  // In donor splice-site
         eAcceptor               = 3,  // In acceptor splice site
@@ -277,11 +284,11 @@ public:
         virtual bool                            IsTrue(EProperty e)      const = 0;
         virtual bool                            IsTrue(EFunctionClass e) const = 0;
         virtual int                             GetWeight()              const = 0;
+        // version < 20 is legacy SNP bitfield (96-bit)
+        // 20 is SNP 2.0 64-bit bitfield
         virtual int                             GetVersion()             const = 0;
         virtual CSnpBitfield::EFunctionClass    GetFunctionClass()       const = 0;
         virtual CSnpBitfield::EVariationClass   GetVariationClass()      const = 0;
-        virtual const char *                    GetString()              const = 0;
-        virtual void                            GetBytes(vector<char>& bytes) const = 0;
         virtual IEncoding *                     Clone()                        = 0;
         virtual                                 ~IEncoding(){};
     };
@@ -297,10 +304,12 @@ public:
 
     CSnpBitfield();
     CSnpBitfield(const CSnpBitfield &rhs);
-    CSnpBitfield(const std::vector<char> &rhs);
+    NCBI_DEPRECATED CSnpBitfield(const std::vector<char> &rhs) { NCBI_ASSERT(true, "Initialization from vector<char> not supported anymore; use feat instead"); }
+    CSnpBitfield(const objects::CSeq_feat& feat);
 
-    CSnpBitfield &          operator=( const CSnpBitfield &rhs );
-    CSnpBitfield &          operator=( const std::vector<char> &rhs);
+    CSnpBitfield &          operator=(const CSnpBitfield &rhs);
+    CSnpBitfield &          operator=(const objects::CSeq_feat& feat);
+    NCBI_DEPRECATED CSnpBitfield &          operator=( const std::vector<char> &rhs) { NCBI_ASSERT(true, "Initialization from vector<char> not supported anymore; use feat instead"); }
 
     bool                    IsTrue(EProperty prop) const;
     bool                    IsTrue(EFunctionClass fxn)  const;
@@ -311,8 +320,11 @@ public:
     EFunctionClass          GetFunctionClass()          const;
     const char *            GetGenePropertyString()     const;
     const char *            GetVariationClassString()   const;
-    const char *            GetString()                 const;
-    void                    GetBytes(vector<char>& bytes) const;
+    NCBI_DEPRECATED const char *            GetString()                 const  { NCBI_ASSERT(true, "Not supported anymore"); }
+    NCBI_DEPRECATED void                    GetBytes(vector<char>& bytes) const  { NCBI_ASSERT(true, "Not supported anymore"); }
+
+    // returns true if the bitfield was well initialized from a given feature
+    bool                    isGood() const { return GetVersion() > 0; }
 
 ///////////////////////////////////////////////////////////////////////////////
 // Private Methods
@@ -327,7 +339,6 @@ private:
 private:
 
     std::auto_ptr<IEncoding>     m_bitfield; // inits to null object
-    static CSnpBitfieldFactory   sm_Factory; // one shared factory
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -356,16 +367,6 @@ inline CSnpBitfield::EFunctionClass    CSnpBitfield::GetFunctionClass() const {
 inline CSnpBitfield::EVariationClass   CSnpBitfield::GetVariationClass() const {
     return m_bitfield->GetVariationClass();
 }
-
-inline const char * CSnpBitfield::GetString() const {
-    return m_bitfield->GetString();
-}
-
-inline void CSnpBitfield::GetBytes(vector<char>& bytes) const
-{
-    m_bitfield->GetBytes(bytes);
-}
-
 
 inline int  CSnpBitfield::GetVersion() const {
     return m_bitfield->GetVersion();
