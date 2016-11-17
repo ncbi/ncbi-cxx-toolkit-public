@@ -2419,7 +2419,27 @@ ESeqDBIdType SeqDB_SimplifyAccession(const string & acc,
 
         result = SeqDB_SimplifySeqid(*bestid, & acc, num_id, str_id, simpler);
     } else {
-        str_id = acc;
+
+        // Check for bare pdb accession with underscore (such as 12AS_A). These
+        // are not in the isam index and need to be translated to the
+        // standard form (pdb|12AS|A).
+        list< CRef<CSeq_id> > seqids;
+        try {
+            CSeq_id::ParseFastaIds(seqids, acc, false);
+        }
+        catch (...) {
+            seqids.clear();
+        }
+
+        if (!seqids.empty() && seqids.front()->IsPdb() &&
+            acc.find("_") != string::npos) {
+
+            str_id = seqids.front()->AsFastaString();
+            str_id = NStr::ToLower(str_id);
+        }
+        else {
+            str_id = acc;
+        }
         result = eStringId;
         simpler = false;
     }
