@@ -518,6 +518,10 @@ set(SAMTOOLS_LIBS -L${SAMTOOLS}/lib -lbam)
 #LAPACK
 set(LAPACK_LIBS "-llapack -lblas")
 
+#LMBD
+set(LMDB_INCLUDE "/netopt/ncbi_tools64/lmdb-0.9.18/include")
+set(LMDB_LIBS -L/netopt/ncbi_tools64/lmdb-0.9.18/lib64 -llmdb)
+
 ##############################################################################
 #
 # NCBI-isms
