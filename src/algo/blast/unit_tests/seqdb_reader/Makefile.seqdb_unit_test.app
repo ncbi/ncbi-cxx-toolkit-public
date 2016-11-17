@@ -7,7 +7,7 @@ CPPFLAGS = -DNCBI_MODULE=BLASTDB $(ORIG_CPPFLAGS) $(SQLITE3_INCLUDE) $(BOOST_INC
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
 
-LIB = test_boost seqdb writedb xobjutil blastdb $(SOBJMGR_LIBS) $(SQLITE3_WRAPPER)
+LIB = test_boost seqdb writedb xobjutil blastdb $(OBJREAD_LIBS) $(SOBJMGR_LIBS) $(SQLITE3_WRAPPER)
 LIBS = $(SQLITE3_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CHECK_REQUIRES = in-house-resources
