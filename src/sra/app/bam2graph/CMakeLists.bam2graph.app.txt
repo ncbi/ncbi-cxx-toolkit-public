@@ -7,7 +7,7 @@ add_executable(bam2graph-app
 
 set_target_properties(bam2graph-app PROPERTIES OUTPUT_NAME bam2graph)
 
-include_directories(${SRA_INCLUDE})
+include_directories(SYSTEM ${SRA_INCLUDE})
 
 target_link_libraries(bam2graph-app
     bamread
