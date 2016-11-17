@@ -39,45 +39,79 @@
 #include "snp_bitfield_3.hpp"
 #include "snp_bitfield_4.hpp"
 #include "snp_bitfield_5.hpp"
+#include "snp_bitfield_20.hpp"
+
+#include <objects/general/User_field.hpp>
+#include <objects/general/User_object.hpp>
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 
 ///////////////////////////////////////////////////////////////////////////////
 //  Public Methods
 ///////////////////////////////////////////////////////////////////////////////
 CSnpBitfield::IEncoding *
-CSnpBitfieldFactory::CreateBitfield( vector<char> data )
+CSnpBitfieldFactory::CreateBitfield(const CSeq_feat& feat)
 {
     CSnpBitfield::IEncoding *bitfield = 0;
+    // LOG_POST(Error << "Processing feature:");
+    // LOG_POST(Error << MSerial_AsnText << feat);
 
-    // check size
-    size_t size = data.size();
+	if(feat.IsSetExt()) {
+		const CUser_object& user(feat.GetExt());
+		// first try "Bitfield", that's where SNP 2.0 bitfields are stored
+		{
+		    CConstRef<CUser_field> field(user.GetFieldRef("Bitfield"));
+		    if(field && field->CanGetData() && field->GetData().IsOs()) {
+		        const vector<char>& data(field->GetData().GetOs());
 
-    // Only v1.2 and on are supported.  Previous versions were incorrectly
-    //   encoded
+		        // check size
+		        size_t size(data.size());
 
-    // For 1.2 version, there exists 10 bytes
-    if (size == 10) {
-        bitfield = new CSnpBitfield1_2(data);
-    }
-    // All other supported versions have at least 12 bytes and
-    //  maintain a version number in least significant byte
-    else if (size >=12) {
-        unsigned char version = (unsigned char)data[0];
-        switch(version) {
-            case 2:     bitfield = new CSnpBitfield2(data);     break;
-            case 3:     bitfield = new CSnpBitfield3(data);     break;
-            case 4:     bitfield = new CSnpBitfield4(data);     break;
-            case 5:     bitfield = new CSnpBitfield5(data);     break;
+                // VDB based SNP 2.0 bitfield has 96 bits (8 bytes)
+                // it also uses some info from the feature itself, so is initialized from the feature, not the byte sequence
+                if (size == 8) {
+                    bitfield = new CSnpBitfield20(feat);
+                }
+            }
+		}
+		// if a bitfield was not found, try legacy storage scheme in "QualityCodes"
+		if(!bitfield) {
+            CConstRef<CUser_field> field(user.GetFieldRef("QualityCodes"));
+            if(field && field->CanGetData() && field->GetData().IsOs()) {
+                const vector<char>& data(field->GetData().GetOs());
 
-            // if version was undetected, 
-            //   use last known version
-            default:                
-                bitfield = new CSnpBitfield5(data); 
-                break;
+                // check size
+                size_t size(data.size());
+
+                // Only v1.2 and on are supported.  Previous versions were incorrectly
+                //   encoded
+
+                // For 1.2 version, there exists 10 bytes
+                if (size == 10) {
+                    bitfield = new CSnpBitfield1_2(feat);
+                }
+                // other supported versions before VDB based SNP 2.0 have 12 bytes (96 bits) and
+                // maintain a version number in least significant byte
+                else if (size == 12) {
+                    unsigned char version = (unsigned char)data[0];
+                    switch(version) {
+                        case 2:     bitfield = new CSnpBitfield2(feat);     break;
+                        case 3:     bitfield = new CSnpBitfield3(feat);     break;
+                        case 4:     bitfield = new CSnpBitfield4(feat);     break;
+                        case 5:     bitfield = new CSnpBitfield5(feat);     break;
+
+                        // if version was undetected,
+                        //   use last known version
+                        default:
+                            bitfield = new CSnpBitfield5(feat);
+                            break;
+                    }
+                }
+            }
         }
-    }
-    
+	}
+
     // if no bitfield created, create a null bitfield
     if (bitfield == 0) {
         bitfield = new CSnpBitfieldNull();
@@ -123,15 +157,6 @@ CSnpBitfield::EFunctionClass CSnpBitfieldNull::GetFunctionClass() const
 CSnpBitfield::EVariationClass CSnpBitfieldNull::GetVariationClass() const
 {
     return CSnpBitfield::eUnknownVariation;
-}
-
-const char * CSnpBitfieldNull::GetString() const
-{
-    return "";
-}
-
-void CSnpBitfieldNull::GetBytes(vector<char>&) const
-{
 }
 
 

@@ -1,5 +1,5 @@
-#ifndef SNPUTIL___SNP_BITFIELD_2__HPP
-#define SNPUTIL___SNP_BITFIELD_2__HPP
+#ifndef SNPUTIL___SNP_BITFIELD_20__HPP
+#define SNPUTIL___SNP_BITFIELD_20__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -26,72 +26,59 @@
  *
  * ===========================================================================
  *
- * Authors:  Melvin Quintos
+ * Authors:  Dmitry Rudnev
  *
  * File Description:
- *    CSnpBitfield2 represents the SNP Bitfield v2 format.
- *    The format introduces a versioning number stored in the lowest order
- *    byte.  It also adds more gene function properties and removes
- *    previously defined hapmap properties (e.g. 'phase [1-3] attempted')
- *
+ *      CSnpBitfield20 implements the SNP 2.0 (VDB) 64-bit Bitfield format.
+ *      https://confluence.ncbi.nlm.nih.gov/display/VAR/dbSNP2.0+8-byte+%2864-bit%29+Bitfield
+ *      for comparison with previous bitfield (96-bit), see https://confluence.ncbi.nlm.nih.gov/display/VAR/dbSNP+12-byte+%2896%29+Bitfield
  */
 
+#include <corelib/ncbistd.hpp>
+
+#include <vector>
 #include <objtools/snputil/snp_bitfield.hpp>
+#include <objtools/variation/SnpBitAttributes.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
 
 BEGIN_NCBI_SCOPE
 
-/// Implement SNP Bitfield format v2
-class CSnpBitfield2 : public CSnpBitfield::IEncoding
+class CSnpBitfield20 : public CSnpBitfield::IEncoding
 {
 
 ///////////////////////////////////////////////////////////////////////////////
 // Public Methods
 ///////////////////////////////////////////////////////////////////////////////
 public:
-    CSnpBitfield2 (const objects::CSeq_feat& feat);
+    CSnpBitfield20(const objects::CSeq_feat& feat);
 
     virtual bool    IsTrue( CSnpBitfield::EProperty prop )          const;
     virtual bool    IsTrue( CSnpBitfield::EFunctionClass prop )     const;
 
-    virtual int                             GetWeight()             const;
-    virtual int                             GetVersion()            const;
-    virtual CSnpBitfield::EVariationClass   GetVariationClass()     const;
-    virtual CSnpBitfield::EFunctionClass    GetFunctionClass()      const;
-
+    // all weights in SNP 2.0 are assumed to be 1
+    virtual int                             GetWeight()              const { return 1; }
+    virtual int                             GetVersion()             const { return 20; }
+    virtual CSnpBitfield::EFunctionClass    GetFunctionClass()       const;
+    virtual CSnpBitfield::EVariationClass   GetVariationClass()      const { return m_VariationClass; }
     virtual CSnpBitfield::IEncoding *       Clone();
 
-protected:
-    enum EBit
-    {
-        BIT_1 = 0x01,
-        BIT_2 = 0x02,
-        BIT_3 = 0x04,
-        BIT_4 = 0x08,
-        BIT_5 = 0x10,
-        BIT_6 = 0x20,
-        BIT_7 = 0x40,
-        BIT_8 = 0x80
-    };
+private:
+    CSnpBitfield20() {}
 
 ///////////////////////////////////////////////////////////////////////////////
-// Protected Methods
+// Private Data
 ///////////////////////////////////////////////////////////////////////////////
-protected:
-    CSnpBitfield2() {};
-    void x_CreateString();
+private:
+    // internal representation for the SNP 2.0 bitfield
+    unique_ptr<NDbSnp::CSnpBitAttributes> m_bits;
 
-
-///////////////////////////////////////////////////////////////////////////////
-// Protected Data
-///////////////////////////////////////////////////////////////////////////////
-protected:
-    unsigned char   m_listBytes[12];
-    std::string     m_strBits;
+    // variation class is not stored in the bitfield anymore, so we extract it from the feature and store it separately
+    CSnpBitfield::EVariationClass m_VariationClass{CSnpBitfield::eUnknownVariation};
 
 };
 
 END_NCBI_SCOPE
 
-#endif // SNPUTIL___SNP_BITFIELD_2__HPP
+#endif // GUI_WIDGETS_SNP___SNP_BITFIELD_20__HPP
 
 

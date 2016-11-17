@@ -36,12 +36,13 @@
 #include "snp_bitfield_4.hpp"
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 
 ///////////////////////////////////////////////////////////////////////////////
 // Public Methods
 ///////////////////////////////////////////////////////////////////////////////
-CSnpBitfield4::CSnpBitfield4( const std::vector<char> &rhs )
- : CSnpBitfield3(rhs)
+CSnpBitfield4::CSnpBitfield4(const CSeq_feat& feat)
+ : CSnpBitfield3(feat)
 {
 }
 

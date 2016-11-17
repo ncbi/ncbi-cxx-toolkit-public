@@ -34,12 +34,16 @@
 #include <ncbi_pch.hpp>
 
 #include "snp_bitfield_2.hpp"
+#include <objects/general/User_field.hpp>
+#include <objects/general/User_object.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
 
 #include <stdio.h>
 
 
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 
 ///////////////////////////////////////////////////////////////////////////////
 // Static globals, typedefs, etc
@@ -76,21 +80,28 @@ static const int g_bitOffset[] = {
 ///////////////////////////////////////////////////////////////////////////////
 // Public Methods
 ///////////////////////////////////////////////////////////////////////////////
-CSnpBitfield2::CSnpBitfield2( const std::vector<char> &rhs )
+CSnpBitfield2::CSnpBitfield2(const objects::CSeq_feat& feat)
 {
-    // TODO: use NCBI assertions?
-    _ASSERT(rhs.size() == NUM_BYTES);
+	if(feat.IsSetExt()) {
+		const CUser_object& user(feat.GetExt());
+		CConstRef<CUser_field> field(user.GetFieldRef("QualityCodes"));
+		if(field && field->CanGetData() && field->GetData().IsOs()) {
+		    const vector<char>& data(field->GetData().GetOs());
+            // TODO: use NCBI assertions?
+            _ASSERT(data.size() == NUM_BYTES);
 
-    std::vector<char>::const_iterator i_ci = rhs.begin();
+            std::vector<char>::const_iterator i_ci = data.begin();
 
-    for(int i=0 ; i_ci != rhs.end(); ++i_ci, ++i) {
-        m_listBytes[i] = *i_ci;
+            for(int i=0 ; i_ci != data.end(); ++i_ci, ++i) {
+                m_listBytes[i] = *i_ci;
+            }
+
+            x_CreateString();
+        }
     }
-
-    x_CreateString();
 }
 
-int CSnpBitfield2::GetVersion() const 
+int CSnpBitfield2::GetVersion() const
 {
     return 2;
 }
@@ -102,10 +113,10 @@ CSnpBitfield::EFunctionClass CSnpBitfield2::GetFunctionClass() const
     unsigned char byte3 = m_listBytes[3];
     unsigned char byte4 = m_listBytes[4];
 
-    // the 'Has reference' bit may be set.  So turn it off for now.    
+    // the 'Has reference' bit may be set.  So turn it off for now.
     byte4 &= 0xfd; // 1111 1101 <- mask to set the 2nd bit to zero
 
-    if (byte3 != 0 && byte4 != 0) 
+    if (byte3 != 0 && byte4 != 0)
         return CSnpBitfield::eMultipleFxn;
 
     switch ( byte3 )
@@ -119,7 +130,7 @@ CSnpBitfield::EFunctionClass CSnpBitfield2::GetFunctionClass() const
     case fBit6:     return  CSnpBitfield::eInUTR5;
     case fBit7:     return  CSnpBitfield::eInUTR3;
     }
-    
+
     switch ( byte4 )
     {
     case fBit0:     return  CSnpBitfield::eSynonymous;
@@ -168,7 +179,7 @@ bool CSnpBitfield2::IsTrue(CSnpBitfield::EProperty prop) const
 
     // Return false if property queried is
     // newer than last property implemented at version 2 release
-    if(prop > CSnpBitfield::ePropertyV2Last) 
+    if(prop > CSnpBitfield::ePropertyV2Last)
         return false;
 
     // perform table lookup to find byteoffset, and bitoffset
@@ -184,26 +195,26 @@ bool CSnpBitfield2::IsTrue(CSnpBitfield::EProperty prop) const
     return ret;
 }
 
-bool CSnpBitfield2::IsTrue( CSnpBitfield::EFunctionClass prop ) const 
+bool CSnpBitfield2::IsTrue( CSnpBitfield::EFunctionClass prop ) const
 {
     bool ret = false;
-    
-    if (   prop == CSnpBitfield::eMultipleFxn 
+
+    if (   prop == CSnpBitfield::eMultipleFxn
         || prop == CSnpBitfield::eUnknownFxn ) {
 
         ret = ( GetFunctionClass() == prop );
     }
-    else {        
+    else {
 
         // looking for a specific function class
         unsigned char byte3 = m_listBytes[3];
         unsigned char byte4 = m_listBytes[4];
-        
+
         // the 'Has reference' bit may be set.  So turn it off for test.
         byte4 &= 0xfd; // 1111 1101 <- mask to set the 2nd bit to zero
 
         switch (prop) {
-            case  CSnpBitfield::eInGene:    ret = (byte3 & fBit0);  break;            
+            case  CSnpBitfield::eInGene:    ret = (byte3 & fBit0);  break;
             case  CSnpBitfield::eInGene5:   ret = (byte3 & fBit1);  break;
             case  CSnpBitfield::eInGene3:   ret = (byte3 & fBit2);  break;
             case  CSnpBitfield::eIntron:    ret = (byte3 & fBit3);  break;
@@ -218,7 +229,7 @@ bool CSnpBitfield2::IsTrue( CSnpBitfield::EFunctionClass prop ) const
             case  CSnpBitfield::eMissense:      ret = (byte4 & fBit3);  break;
             case  CSnpBitfield::eFrameshift:    ret = (byte4 & fBit4);  break;
 
-            // eUTR 
+            // eUTR
             case CSnpBitfield::eUTR:    ret = (byte3 & fBit6) || (byte3 & fBit7); break;
 
             default:
@@ -226,21 +237,7 @@ bool CSnpBitfield2::IsTrue( CSnpBitfield::EFunctionClass prop ) const
         }
     }
 
-    return ret;    
-}
-
-const char * CSnpBitfield2::GetString() const
-{
-    return m_strBits.c_str();
-}
-
-void CSnpBitfield2::GetBytes(vector<char>& bytes) const
-{
-    bytes.clear();
-    bytes.reserve(sizeof(m_listBytes));
-    for(size_t i=0; i<sizeof(m_listBytes); ++i) {
-        bytes.push_back(m_listBytes[i]);
-    }
+    return ret;
 }
 
 void CSnpBitfield2::x_CreateString()

@@ -119,22 +119,30 @@ int NSnp::GetLength(const CSeq_feat &feat)
 {
     int length = 0;
 
-    if (feat.IsSetExt()) {
-        CConstRef<CUser_field> field =
-            feat.GetExt().GetFieldRef("Extra");
-        if (field) {
-            string s1, s2;
-            const string &str = field->GetData().GetStr();
-            if (NStr::SplitInTwo(str, "=", s1, s2)) {
-                vector<string> v;
+    // features pre-SNP 2.0 have length encoded as neighbors in "Extra"
+    if(GetBitfield(feat).GetVersion() < 20) {
+        if (feat.IsSetExt()) {
+            CConstRef<CUser_field> field =
+                feat.GetExt().GetFieldRef("Extra");
+            if (field) {
+                string s1, s2;
+                const string &str = field->GetData().GetStr();
+                if (NStr::SplitInTwo(str, "=", s1, s2)) {
+                    vector<string> v;
 
-                NStr::Tokenize(str, ",", v);
-                if (v.size()==4) {
-                    int rc = NStr::StringToInt(v[3], NStr::fConvErr_NoThrow);
-                    int lc = NStr::StringToInt(v[2], NStr::fConvErr_NoThrow);
-                    length = rc + lc + 1;
+                    NStr::Tokenize(str, ",", v);
+                    if (v.size()==4) {
+                        int rc = NStr::StringToInt(v[3], NStr::fConvErr_NoThrow);
+                        int lc = NStr::StringToInt(v[2], NStr::fConvErr_NoThrow);
+                        length = rc + lc + 1;
+                    }
                 }
             }
+        }
+    } else {
+        // SNP 2.0 length is feature length
+        if(feat.CanGetLocation()) {
+            length = feat.GetLocation().GetTotalRange().GetLength();
         }
     }
 
@@ -200,12 +208,8 @@ CSnpBitfield NSnp::GetBitfield(const CSeq_feat &feat)
 
     CConstRef<CDbtag> ref = feat.GetNamedDbxref("dbSNP");
 
-    if (ref && feat.IsSetExt() ) {
-        CConstRef<CUser_field> field =
-            feat.GetExt().GetFieldRef("QualityCodes");
-        if (field) {
-            b = field->GetData().GetOs();
-        }
+    if(ref) {
+        b = feat;
     }
 
     return b;
@@ -289,20 +293,21 @@ const string NSNPVariationHelper::sResourceLink_RsID("%rsid%");
 
 bool NSNPVariationHelper::ConvertFeat(CVariation& Variation, const CSeq_feat& SrcFeat)
 {
-    if(!x_CommonConvertFeat(&Variation, SrcFeat))
+    if(!x_CommonConvertFeat(&Variation, SrcFeat)) {
         return false;
+    }
 	CRef<CVariantPlacement> pPlacement(new CVariantPlacement);
     pPlacement->SetLoc().Assign(SrcFeat.GetLocation());
     Variation.SetPlacements().push_back(pPlacement);
 
-    // save a copy of the bitfield since not every bit
+    // save a copy of the feature since not every bit
     // currently is adequately represented in Variation
     CSnpBitfield bf(NSnp::GetBitfield(SrcFeat));
-    if(bf.GetVersion() > 0) {
+    if(bf.isGood()) {
         CRef<CUser_object> pExt(new CUser_object());
-        CUser_field::C_Data::TOs Os;
-        bf.GetBytes(Os);
-        pExt->SetField(SNP_VAR_EXT_BITFIELD).SetData().SetOs() = Os;
+        CNcbiOstrstream ostr;
+        ostr << MSerial_AsnText << SrcFeat;
+        pExt->SetField(SNP_VAR_EXT_BITFIELD).SetData().SetStr(CNcbiOstrstreamToString(ostr));
         pExt->SetClass(SNP_VAR_EXT_CLASS);
         Variation.SetExt().push_back(pExt);
     }
@@ -311,16 +316,16 @@ bool NSNPVariationHelper::ConvertFeat(CVariation& Variation, const CSeq_feat& Sr
 
 bool NSNPVariationHelper::ConvertFeat(CVariation_ref& Variation, const CSeq_feat& SrcFeat)
 {
-    if(!x_CommonConvertFeat(&Variation, SrcFeat))
+    if(!x_CommonConvertFeat(&Variation, SrcFeat)) {
         return false;
-
-    // save a copy of the bitfield since not every bit
+    }
+    // save a copy of the feature since not every bit
     // currently is adequately represented in Variation
     CSnpBitfield bf(NSnp::GetBitfield(SrcFeat));
-    if(bf.GetVersion() > 0) {
-        CUser_field::C_Data::TOs Os;
-        bf.GetBytes(Os);
-        Variation.SetExt().SetField(SNP_VAR_EXT_BITFIELD).SetData().SetOs() = Os;
+    if(bf.isGood()) {
+        CNcbiOstrstream ostr;
+        ostr << MSerial_AsnText << SrcFeat;
+        Variation.SetExt().SetField(SNP_VAR_EXT_BITFIELD).SetData().SetStr(CNcbiOstrstreamToString(ostr));
         Variation.SetExt().SetClass(SNP_VAR_EXT_CLASS);
     }
     return true;

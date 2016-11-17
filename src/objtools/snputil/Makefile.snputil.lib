@@ -4,12 +4,14 @@ LIB = snputil
 
 SRC = snp_utils snp_bitfield \
       snp_bitfield_1_2 snp_bitfield_2 snp_bitfield_3 snp_bitfield_4 \
-      snp_bitfield_5 snp_bitfield_factory \
+      snp_bitfield_5 snp_bitfield_20 snp_bitfield_factory \
 	  snp_bins
 
 ASN_DEP = seqset variation
 
 WATCHERS = rudnev
+
+CPPFLAGS = $(ORIG_CPPFLAGS) $(SRA_INCLUDE)
 
 
 USES_LIBRARIES =  \

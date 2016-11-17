@@ -52,7 +52,7 @@ class CSnpBitfield1_2 : public CSnpBitfield::IEncoding
 // Public Methods
 ///////////////////////////////////////////////////////////////////////////////
 public:
-    CSnpBitfield1_2 (const std::vector<char> &rhs);
+    CSnpBitfield1_2 (const objects::CSeq_feat& feat);
 
     virtual bool    IsTrue( CSnpBitfield::EProperty prop )          const;
     virtual bool    IsTrue( CSnpBitfield::EFunctionClass prop )     const;
@@ -61,14 +61,11 @@ public:
     virtual int                             GetVersion()            const;
     virtual CSnpBitfield::EVariationClass   GetVariationClass()     const;
     virtual CSnpBitfield::EFunctionClass    GetFunctionClass()      const;
-    virtual const char *                    GetString()             const;
-    virtual void                            GetBytes(vector<char>& bytes) const;
 
     virtual CSnpBitfield::IEncoding *       Clone();
 
 private:
     CSnpBitfield1_2() {};
-    void x_CreateString();
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -76,8 +73,6 @@ private:
 ///////////////////////////////////////////////////////////////////////////////
 private:
     unsigned char   m_listBytes[10];
-    std::string     m_strBits;
-
 };
 
 END_NCBI_SCOPE

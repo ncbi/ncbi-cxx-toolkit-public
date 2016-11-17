@@ -34,10 +34,14 @@
 #include <ncbi_pch.hpp>
 
 #include "snp_bitfield_1_2.hpp"
+#include <objects/general/User_field.hpp>
+#include <objects/general/User_object.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
 
 #include <stdio.h>
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 
 ///////////////////////////////////////////////////////////////////////////////
 // Static globals, typedefs, etc
@@ -74,18 +78,25 @@ static const int g_bitOffset[] = {
 ///////////////////////////////////////////////////////////////////////////////
 // Public Methods
 ///////////////////////////////////////////////////////////////////////////////
-CSnpBitfield1_2::CSnpBitfield1_2( const std::vector<char> &rhs )
+CSnpBitfield1_2::CSnpBitfield1_2(const CSeq_feat& feat)
 {
-    // TODO: use NCBI assertions?
-    _ASSERT(rhs.size() == 10);
+	if(feat.IsSetExt()) {
+		const CUser_object& user(feat.GetExt());
+		CConstRef<CUser_field> field(user.GetFieldRef("QualityCodes"));
+		if(field && field->CanGetData() && field->GetData().IsOs()) {
+		    const vector<char>& data(field->GetData().GetOs());
 
-    std::vector<char>::const_iterator i_ci = rhs.begin();
+            // check size, msut be exactly 10 bytes
+            // TODO: use NCBI assertions?
+            _ASSERT(data.size() == 10);
 
-    for(int i=0 ; i_ci != rhs.end(); ++i_ci, ++i) {
-        m_listBytes[i] = *i_ci;
+            std::vector<char>::const_iterator i_ci = data.begin();
+
+            for(int i=0 ; i_ci != data.end(); ++i_ci, ++i) {
+                m_listBytes[i] = *i_ci;
+            }
+        }
     }
-
-    x_CreateString();
 }
 
 int CSnpBitfield1_2::GetVersion() const
@@ -151,41 +162,11 @@ bool CSnpBitfield1_2::IsTrue( CSnpBitfield::EFunctionClass prop ) const
     return (prop == GetFunctionClass());
 }
 
-const char * CSnpBitfield1_2::GetString() const
-{
-    return m_strBits.c_str();
-}
-
-void CSnpBitfield1_2::GetBytes(vector<char>& bytes) const
-{
-    bytes.clear();
-    bytes.reserve(sizeof(m_listBytes));
-    for(size_t i=0; i<sizeof(m_listBytes); ++i) {
-        bytes.push_back(m_listBytes[i]);
-    }
-}
-
-void CSnpBitfield1_2::x_CreateString()
-{
-    m_strBits.erase();
-
-    char buff[5];
-    for(int i=0; i < 10; i++) {
-        unsigned char x = (unsigned char)m_listBytes[i];
-        sprintf(buff, "%02hX", (unsigned int)x);
-        m_strBits += buff;
-        if(i+1 != 10)
-            m_strBits += "-";
-    }
-}
-
 CSnpBitfield::IEncoding * CSnpBitfield1_2::Clone()
 {
     CSnpBitfield1_2 * obj = new CSnpBitfield1_2();
 
     memcpy(obj->m_listBytes, m_listBytes, sizeof(m_listBytes));
-    obj->m_strBits = m_strBits;
-
     return obj;
 }
 

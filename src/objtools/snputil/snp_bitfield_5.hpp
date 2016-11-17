@@ -54,7 +54,7 @@ class CSnpBitfield5 : public CSnpBitfield4
 // Public Methods
 ///////////////////////////////////////////////////////////////////////////////
 public:
-    CSnpBitfield5 (const std::vector<char> &rhs);
+    CSnpBitfield5(const objects::CSeq_feat& feat);
 
     virtual bool    IsTrue( CSnpBitfield::EProperty prop )          const;
     virtual bool    IsTrue( CSnpBitfield::EFunctionClass prop )     const;

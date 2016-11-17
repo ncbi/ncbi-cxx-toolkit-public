@@ -38,6 +38,7 @@
 #include "snp_bitfield_factory.hpp"
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 
 ///////////////////////////////////////////////////////////////////////////////
 // File Globals / typedefs, etc
@@ -53,7 +54,12 @@ static const char * g_VARIATION_NAMES[] =
   "NAMED",
   "NOVAR",
   "MIXED",
-  "MNP"};
+  "MNP",
+  "Idenity",
+  "Inversion",
+  "Deletion",
+  "Insertion"
+};
 
 static const char * g_FXN_NAMES[] =
 {
@@ -73,14 +79,11 @@ static const char * g_FXN_NAMES[] =
     "In 3' Gene",    // In 3' gene region FxnCode = 13
     "In 5' UTR",    // In 5' UTR Location is in an untranslated region (UTR). FxnCode = 55
     "In 3' UTR",    // In 3' UTR Location is in an untranslated region (UTR). FxnCode = 53
-    "Multiple"      // Has multiple gene functions (i.e. fwd strand 5'near gene, rev strand 3'near gene)
+    "Multiple",      // Has multiple gene functions (i.e. fwd strand 5'near gene, rev strand 3'near gene)
+
+    "STOP-Gain",
+    "STOP-Loss"
 };
-
-///////////////////////////////////////////////////////////////////////////////
-// Class Globals Instantiation
-///////////////////////////////////////////////////////////////////////////////
-
-CSnpBitfieldFactory     CSnpBitfield::sm_Factory;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -130,14 +133,9 @@ CSnpBitfield::CSnpBitfield()
     m_bitfield.reset(new CSnpBitfieldNull());
 }
 
-CSnpBitfield::CSnpBitfield( const std::vector<char> &rhs )
+CSnpBitfield::CSnpBitfield(const CSeq_feat& feat)
 {
-    *this = rhs;  // reuse operator=
-}
-
-CSnpBitfield::CSnpBitfield( const CSnpBitfield &rhs )
-{
-    *this = rhs;  // reuse operator=
+    *this = feat;  // reuse operator=
 }
 
 CSnpBitfield & CSnpBitfield::operator= ( const CSnpBitfield &rhs )
@@ -145,14 +143,14 @@ CSnpBitfield & CSnpBitfield::operator= ( const CSnpBitfield &rhs )
     if(this == &rhs)
         return *this;
 
-    m_bitfield.reset( rhs.m_bitfield->Clone() );
+    m_bitfield.reset(rhs.m_bitfield->Clone());
 
     return *this;
 }
 
-CSnpBitfield & CSnpBitfield::operator=( const std::vector<char> &rhs)
+CSnpBitfield & CSnpBitfield::operator=(const CSeq_feat& feat)
 {
-    IEncoding * ptr = sm_Factory.CreateBitfield(rhs);
+    IEncoding * ptr = CSnpBitfieldFactory::CreateBitfield(feat);
 
     m_bitfield.reset(ptr);
 
