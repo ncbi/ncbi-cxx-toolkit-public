@@ -1,5 +1,6 @@
 A	s	Arnold Arboretum, Harvard University
 AA	s	Ministry of Science, Academy of Sciences
+AAC	c	Arignar Anna College
 AAH	s	Arnold Arboretum, Harvard University
 AAPI	s	Plant Industry Laboratory
 AAR	s	Reliquae Aaronsohnianae
@@ -6430,6 +6431,7 @@ TUB	s	Eberhard-Karls-Universitaet Tuebingen, Institut fuer Biologie I
 TUBSB	b	Tohoku University Brassica Seed Bank
 TUC	s	University of Arizona, Ecology and Evolutionary Biology Department
 TUCH	s	Tribhuvan University, Central Department of Botany
+TUFC	s	Tottori University Fungal Culture Collection
 TUFIL	s	Tokyo University of Fisheries, Ichthyological Laboratory
 TUFT	s	Tufts University, Biology Department
 TUH	s	Tehran University, Department of Biology
