@@ -7,7 +7,7 @@ add_executable(test_asn_converter-app
 
 set_target_properties(test_asn_converter-app PROPERTIES OUTPUT_NAME test_asn_converter)
 
-include_directories(${NCBI_C_INCLUDE})
+include_directories(SYSTEM ${NCBI_C_INCLUDE})
 
 target_link_libraries(test_asn_converter-app
     seqset xconnect xctools

@@ -4,7 +4,7 @@
 add_library(ncbi_xreader_cache
     reader_cache writer_cache
 )
-include_directories(${CMPRS_INCLUDE})
+include_directories(SYSTEM ${CMPRS_INCLUDE})
 
 target_link_libraries(ncbi_xreader_cache
     ncbi_xreader

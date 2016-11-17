@@ -7,7 +7,7 @@ add_executable(ct95_cs_diag-app
 
 set_target_properties(ct95_cs_diag-app PROPERTIES OUTPUT_NAME ct95_cs_diag)
 
-include_directories(${FTDS95_INCLUDE})
+include_directories(SYSTEM ${FTDS95_INCLUDE})
 
 target_link_libraries(ct95_cs_diag-app
     ct_ftds95

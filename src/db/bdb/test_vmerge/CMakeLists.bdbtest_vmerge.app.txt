@@ -7,7 +7,7 @@ add_executable(bdbtest_vmerge-app
 
 set_target_properties(bdbtest_vmerge-app PROPERTIES OUTPUT_NAME bdbtest_vmerge)
 
-include_directories(${BERKELEYDB_INCLUDE})
+include_directories(SYSTEM ${BERKELEYDB_INCLUDE})
 
 target_link_libraries(bdbtest_vmerge-app
     xalgovmerge ncbi_xcache_bdb

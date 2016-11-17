@@ -7,7 +7,7 @@ add_executable(dbapi_driver_test_ctlib-app
 
 set_target_properties(dbapi_driver_test_ctlib-app PROPERTIES OUTPUT_NAME dbapi_driver_test_ctlib)
 
-include_directories(${SYBASE_INCLUDE} ${BOOST_INCLUDE})
+include_directories(SYSTEM ${SYBASE_INCLUDE} ${BOOST_INCLUDE})
 
 target_link_libraries(dbapi_driver_test_ctlib-app
     ncbi_xdbapi_ctlib test_boost

@@ -4,7 +4,7 @@
 add_library(xasn
     asnio asnwrite
 )
-include_directories(${NCBI_C_INCLUDE})
+include_directories(SYSTEM ${NCBI_C_INCLUDE})
 
 target_link_libraries(xasn
     xhtml ${NCBI_C_ncbi}

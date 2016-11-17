@@ -10,7 +10,7 @@ add_executable(seq_c_compat_unit_test-app
 
 set_target_properties(seq_c_compat_unit_test-app PROPERTIES OUTPUT_NAME seq_c_compat_unit_test)
 
-include_directories(${BOOST_INCLUDE} ${NCBI_C_INCLUDE})
+include_directories(SYSTEM ${BOOST_INCLUDE} ${NCBI_C_INCLUDE})
 
 target_link_libraries(seq_c_compat_unit_test-app
     seq test_boost xconnect

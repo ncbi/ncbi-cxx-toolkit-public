@@ -6,7 +6,7 @@ if (MYSQL_FOUND)
    add_library(ncbi_xdbapi_mysql
        connection context lang_cmd result
    )
-   include_directories(${MYSQL_INCLUDE} ${Z_INCLUDE})
+   include_directories(SYSTEM ${MYSQL_INCLUDE} ${Z_INCLUDE})
 
    target_link_libraries(ncbi_xdbapi_mysql
        dbapi_driver ${MYSQL_LIBS} ${Z_LIBS}

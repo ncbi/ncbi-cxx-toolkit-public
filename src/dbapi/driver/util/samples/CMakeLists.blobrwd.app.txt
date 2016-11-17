@@ -7,7 +7,7 @@ add_executable(blobrwd-app
 
 set_target_properties(blobrwd-app PROPERTIES OUTPUT_NAME blobrwd)
 
-include_directories(${CMPRS_INCLUDE})
+include_directories(SYSTEM ${CMPRS_INCLUDE})
 
 target_link_libraries(blobrwd-app
     dbapi_util_blobstore

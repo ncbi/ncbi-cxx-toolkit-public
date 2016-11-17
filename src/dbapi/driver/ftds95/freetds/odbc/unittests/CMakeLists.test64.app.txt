@@ -7,7 +7,7 @@ add_executable(odbc95_test64-app
 
 set_target_properties(odbc95_test64-app PROPERTIES OUTPUT_NAME odbc95_test64)
 
-include_directories(${FTDS95_INCLUDE} ${ODBC_INCLUDE})
+include_directories(SYSTEM ${FTDS95_INCLUDE} ${ODBC_INCLUDE})
 
 target_link_libraries(odbc95_test64-app
     odbc_ftds95

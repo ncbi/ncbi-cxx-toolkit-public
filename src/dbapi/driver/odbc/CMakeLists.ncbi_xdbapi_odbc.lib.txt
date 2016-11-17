@@ -4,7 +4,7 @@
 add_library(ncbi_xdbapi_odbc
     connection context cursor lang_cmd result rpc odbc_utils
 )
-include_directories(${ODBC_INCLUDE})
+include_directories(SYSTEM ${ODBC_INCLUDE})
 
 target_link_libraries(ncbi_xdbapi_odbc
     dbapi_driver ${ODBC_LIBS}

@@ -7,7 +7,7 @@ add_executable(blobrws-app
 
 set_target_properties(blobrws-app PROPERTIES OUTPUT_NAME blobrws)
 
-include_directories(${CMPRS_INCLUDE})
+include_directories(SYSTEM ${CMPRS_INCLUDE})
 
 target_link_libraries(blobrws-app
     dbapi_util_blobstore

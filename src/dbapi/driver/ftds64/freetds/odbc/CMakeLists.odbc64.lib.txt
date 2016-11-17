@@ -5,7 +5,7 @@ add_library(odbc_ftds64
     connectparams convert_tds2sql descriptor error native odbc odbc_util
     prepare_query sql2tds odbc_checks
 )
-include_directories(${FTDS64_INCLUDE} ${ODBC_INCLUDE})
+include_directories(SYSTEM ${FTDS64_INCLUDE} ${ODBC_INCLUDE})
 add_definitions(-D_FREETDS_LIBRARY_SOURCE -DHAVE_CONFIG_H=1)
 
 target_link_libraries(odbc_ftds64

@@ -7,7 +7,7 @@ add_executable(db95_numeric-app
 
 set_target_properties(db95_numeric-app PROPERTIES OUTPUT_NAME db95_numeric)
 
-include_directories(${FTDS95_INCLUDE})
+include_directories(SYSTEM ${FTDS95_INCLUDE})
 
 target_link_libraries(db95_numeric-app
     sybdb_ftds95 ${FTDS95_CTLIB_LIBS}

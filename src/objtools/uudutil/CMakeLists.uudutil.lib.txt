@@ -4,7 +4,7 @@
 add_library(uudutil
     project_storage
 )
-include_directories(${LZO_INCLUDE})
+include_directories(SYSTEM ${LZO_INCLUDE})
 
 add_dependencies(uudutil
     gbproj

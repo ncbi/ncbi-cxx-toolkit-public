@@ -7,7 +7,7 @@ add_executable(ct95_blk_out-app
 
 set_target_properties(ct95_blk_out-app PROPERTIES OUTPUT_NAME ct95_blk_out)
 
-include_directories(${FTDS95_INCLUDE})
+include_directories(SYSTEM ${FTDS95_INCLUDE})
 
 target_link_libraries(ct95_blk_out-app
     ct_ftds95

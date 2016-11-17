@@ -7,7 +7,7 @@ add_executable(seq_entry_reassign_ids-app
 
 set_target_properties(seq_entry_reassign_ids-app PROPERTIES OUTPUT_NAME seq_entry_reassign_ids)
 
-include_directories(${BOOST_INCLUDE})
+include_directories(SYSTEM ${BOOST_INCLUDE})
 
 target_link_libraries(seq_entry_reassign_ids-app
     seqset test_boost

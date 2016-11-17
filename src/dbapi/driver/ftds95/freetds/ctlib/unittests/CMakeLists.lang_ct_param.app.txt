@@ -7,7 +7,7 @@ add_executable(ct95_lang_ct_param-app
 
 set_target_properties(ct95_lang_ct_param-app PROPERTIES OUTPUT_NAME ct95_lang_ct_param)
 
-include_directories(${FTDS95_INCLUDE})
+include_directories(SYSTEM ${FTDS95_INCLUDE})
 
 target_link_libraries(ct95_lang_ct_param-app
     ct_ftds95

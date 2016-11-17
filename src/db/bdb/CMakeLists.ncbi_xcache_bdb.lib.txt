@@ -4,7 +4,7 @@
 add_library(ncbi_xcache_bdb
     bdb_blobcache
 )
-include_directories(${BERKELEYDB_INCLUDE})
+include_directories(SYSTEM ${BERKELEYDB_INCLUDE})
 
 target_link_libraries(ncbi_xcache_bdb
     bdb

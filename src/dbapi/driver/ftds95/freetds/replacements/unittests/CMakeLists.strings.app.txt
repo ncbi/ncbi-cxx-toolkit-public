@@ -7,7 +7,7 @@ add_executable(tds95_strings-app
 
 set_target_properties(tds95_strings-app PROPERTIES OUTPUT_NAME tds95_strings)
 
-include_directories(${FTDS95_INCLUDE})
+include_directories(SYSTEM ${FTDS95_INCLUDE})
 
 target_link_libraries(tds95_strings-app
     tds_ftds95

@@ -13,7 +13,7 @@ add_library(tds_ftds95 STATIC
     rp_strlcpy rp_strlcat ../replacements/basename rp_getopt rp_strsep
 )
 add_definitions( -D_FREETDS_LIBRARY_SOURCE -DHAVE_CONFIG_H=1 -fPIC )
-include_directories( ${FTDS95_INCLUDE} )
+include_directories(SYSTEM  ${FTDS95_INCLUDE} )
 
 if (NOT BUILD_SHARED_LIBS)
 target_link_libraries(tds_ftds95

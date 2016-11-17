@@ -7,7 +7,7 @@ add_executable(db95_pending-app
 
 set_target_properties(db95_pending-app PROPERTIES OUTPUT_NAME db95_pending)
 
-include_directories(${FTDS95_INCLUDE})
+include_directories(SYSTEM ${FTDS95_INCLUDE})
 
 target_link_libraries(db95_pending-app
     sybdb_ftds95 ${FTDS95_CTLIB_LIBS}

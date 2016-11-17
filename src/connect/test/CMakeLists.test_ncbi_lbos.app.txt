@@ -7,7 +7,7 @@ add_executable(test_ncbi_lbos-app
 
 set_target_properties(test_ncbi_lbos-app PROPERTIES OUTPUT_NAME test_ncbi_lbos)
 
-include_directories(${BOOST_INCLUDE})
+include_directories(SYSTEM SYSTEM ${BOOST_INCLUDE})
 
 target_link_libraries(test_ncbi_lbos-app
     test_boost xconnect

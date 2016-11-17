@@ -7,7 +7,7 @@ add_executable(dbl_lang-app
 
 set_target_properties(dbl_lang-app PROPERTIES OUTPUT_NAME dbl_lang)
 
-include_directories(${SYBASE_INCLUDE})
+include_directories(SYSTEM ${SYBASE_INCLUDE})
 
 target_link_libraries(dbl_lang-app
     ncbi_xdbapi_dblib xconnext

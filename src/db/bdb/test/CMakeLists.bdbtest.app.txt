@@ -7,7 +7,7 @@ add_executable(bdbtest-app
 
 set_target_properties(bdbtest-app PROPERTIES OUTPUT_NAME bdbtest)
 
-include_directories(${BERKELEYDB_INCLUDE})
+include_directories(SYSTEM ${BERKELEYDB_INCLUDE})
 
 target_link_libraries(bdbtest-app
     ncbi_xcache_bdb xcompress

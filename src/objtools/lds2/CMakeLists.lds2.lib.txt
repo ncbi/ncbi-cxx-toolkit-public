@@ -4,7 +4,7 @@
 add_library(lds2
     lds2 lds2_db lds2_handlers
 )
-include_directories(${SQLITE3_INCLUDE} ${CMPRS_INCLUDE})
+include_directories(SYSTEM ${SQLITE3_INCLUDE} ${CMPRS_INCLUDE})
 
 target_link_libraries(lds2
     sqlitewrapp xcompress xobjread

@@ -4,7 +4,7 @@
 add_library(sybdb_ftds64
     bcp dblib dbopen dbutil rpc xact
 )
-include_directories(${FTDS_INCLUDE})
+include_directories(SYSTEM ${FTDS_INCLUDE})
 add_definitions(-D_FREETDS_LIBRARY_SOURCE -DHAVE_CONFIG_H=1)
 
 target_link_libraries(sybdb_ftds64

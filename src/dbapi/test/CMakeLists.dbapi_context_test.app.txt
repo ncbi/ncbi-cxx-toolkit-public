@@ -7,7 +7,7 @@ add_executable(dbapi_context_test-app
 
 set_target_properties(dbapi_context_test-app PROPERTIES OUTPUT_NAME dbapi_context_test)
 
-include_directories(${BOOST_INCLUDE})
+include_directories(SYSTEM ${BOOST_INCLUDE})
 
 target_link_libraries(dbapi_context_test-app
     dbapi test_boost xconnext

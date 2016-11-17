@@ -7,7 +7,7 @@ add_executable(ct95_ct_diagall-app
 
 set_target_properties(ct95_ct_diagall-app PROPERTIES OUTPUT_NAME ct95_ct_diagall)
 
-include_directories(${FTDS95_INCLUDE})
+include_directories(SYSTEM ${FTDS95_INCLUDE})
 
 target_link_libraries(ct95_ct_diagall-app
     ct_ftds95

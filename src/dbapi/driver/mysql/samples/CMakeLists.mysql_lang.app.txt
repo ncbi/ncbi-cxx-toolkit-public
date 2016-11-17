@@ -7,7 +7,7 @@ add_executable(mysql_lang-app
 
 set_target_properties(mysql_lang-app PROPERTIES OUTPUT_NAME mysql_lang)
 
-include_directories(${MYSQL_INCLUDE} ${Z_INCLUDE})
+include_directories(SYSTEM ${MYSQL_INCLUDE} ${Z_INCLUDE})
 
 target_link_libraries(mysql_lang-app
     ncbi_xdbapi_mysql xconnext

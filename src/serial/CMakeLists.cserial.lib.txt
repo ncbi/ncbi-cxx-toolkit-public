@@ -4,7 +4,7 @@
 add_library(xcser
     asntypes serialasn
 )
-include_directories(${NCBI_C_INCLUDE})
+include_directories(SYSTEM ${NCBI_C_INCLUDE})
 
 target_link_libraries(xcser
     ${NCBI_C_LIBPATH} ${NCBI_C_ncbi} xser

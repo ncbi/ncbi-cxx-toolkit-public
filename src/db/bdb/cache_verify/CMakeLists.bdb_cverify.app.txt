@@ -7,7 +7,7 @@ add_executable(bdb_cverify-app
 
 set_target_properties(bdb_cverify-app PROPERTIES OUTPUT_NAME bdb_cverify)
 
-include_directories(${BERKELEYDB_INCLUDE})
+include_directories(SYSTEM ${BERKELEYDB_INCLUDE})
 
 target_link_libraries(bdb_cverify-app
     ncbi_xcache_bdb

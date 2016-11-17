@@ -7,7 +7,7 @@ add_executable(ctl_sp_who-app
 
 set_target_properties(ctl_sp_who-app PROPERTIES OUTPUT_NAME ctl_sp_who)
 
-include_directories(${SYBASE_INCLUDE})
+include_directories(SYSTEM ${SYBASE_INCLUDE})
 
 target_link_libraries(ctl_sp_who-app
     ncbi_xdbapi_ctlib xconnext

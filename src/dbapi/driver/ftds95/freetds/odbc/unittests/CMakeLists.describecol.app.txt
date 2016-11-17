@@ -7,7 +7,7 @@ add_executable(odbc95_describecol-app
 
 set_target_properties(odbc95_describecol-app PROPERTIES OUTPUT_NAME odbc95_describecol)
 
-include_directories(${FTDS95_INCLUDE} ${ODBC_INCLUDE})
+include_directories(SYSTEM ${FTDS95_INCLUDE} ${ODBC_INCLUDE})
 
 target_link_libraries(odbc95_describecol-app
     odbc_ftds95

@@ -7,7 +7,7 @@ add_executable(tds95_iconv_fread-app
 
 set_target_properties(tds95_iconv_fread-app PROPERTIES OUTPUT_NAME tds95_iconv_fread)
 
-include_directories(${FTDS95_INCLUDE})
+include_directories(SYSTEM ${FTDS95_INCLUDE})
 
 target_link_libraries(tds95_iconv_fread-app
     tds_ftds95

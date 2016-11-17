@@ -7,7 +7,7 @@ add_executable(blobwriter-app
 
 set_target_properties(blobwriter-app PROPERTIES OUTPUT_NAME blobwriter)
 
-include_directories(${CMPRS_INCLUDE})
+include_directories(SYSTEM ${CMPRS_INCLUDE})
 
 target_link_libraries(blobwriter-app
     dbapi_util_blobstore

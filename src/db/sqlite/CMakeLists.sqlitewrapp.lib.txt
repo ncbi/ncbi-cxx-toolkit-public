@@ -4,7 +4,7 @@
 add_library(sqlitewrapp
     sqlitewrapp
 )
-include_directories(${SQLITE3_INCLUDE})
+include_directories(SYSTEM ${SQLITE3_INCLUDE})
 
 target_link_libraries(sqlitewrapp
     xncbi ${SQLITE3_LIBS}

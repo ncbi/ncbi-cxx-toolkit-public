@@ -4,7 +4,7 @@
 add_library(ncbi_xdbapi_ftds
     bcp connection context cursor ftds_ctlib_utils lang_cmd result rpc
 )
-include_directories( ${FTDS_INCLUDE} ${CMAKE_CURRENT_SOURCE_DIR} )
+include_directories(SYSTEM  ${FTDS_INCLUDE} ${CMAKE_CURRENT_SOURCE_DIR} )
 add_definitions( -DFTDS_IN_USE )
 
 target_link_libraries(ncbi_xdbapi_ftds

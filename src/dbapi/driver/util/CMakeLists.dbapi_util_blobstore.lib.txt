@@ -4,7 +4,7 @@
 add_library(dbapi_util_blobstore
     blobstore
 )
-include_directories(${CMPRS_INCLUDE})
+include_directories(SYSTEM ${CMPRS_INCLUDE})
 
 target_link_libraries(dbapi_util_blobstore
     dbapi_driver xcompress

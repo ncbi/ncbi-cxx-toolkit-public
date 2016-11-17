@@ -7,7 +7,7 @@ add_executable(odbc_sp_who-app
 
 set_target_properties(odbc_sp_who-app PROPERTIES OUTPUT_NAME odbc_sp_who)
 
-include_directories(${ODBC_INCLUDE})
+include_directories(SYSTEM ${ODBC_INCLUDE})
 
 target_link_libraries(odbc_sp_who-app
     ncbi_xdbapi_odbc dbapi_driver ${XCONNEXT} xconnect ${ODBC_LIBS}

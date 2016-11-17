@@ -4,7 +4,7 @@
 add_library(ncbi_xreader_id2
     reader_id2
 )
-include_directories(${Z_INCLUDE})
+include_directories(SYSTEM ${Z_INCLUDE})
 
 add_dependencies(ncbi_xreader_id2
     id2

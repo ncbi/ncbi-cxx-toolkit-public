@@ -7,7 +7,7 @@ add_executable(tds95_t0001-app
 
 set_target_properties(tds95_t0001-app PROPERTIES OUTPUT_NAME tds95_t0001)
 
-include_directories(${FTDS95_INCLUDE})
+include_directories(SYSTEM ${FTDS95_INCLUDE})
 
 target_link_libraries(tds95_t0001-app
     tds_ftds95

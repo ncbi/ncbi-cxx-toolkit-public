@@ -7,7 +7,7 @@ add_executable(ctl_lang-app
 
 set_target_properties(ctl_lang-app PROPERTIES OUTPUT_NAME ctl_lang)
 
-include_directories(${SYBASE_INCLUDE})
+include_directories(SYSTEM ${SYBASE_INCLUDE})
 
 target_link_libraries(ctl_lang-app
     ncbi_xdbapi_ctlib xconnext

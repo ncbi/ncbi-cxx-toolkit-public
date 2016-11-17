@@ -7,7 +7,7 @@ add_executable(bdbtest_split-app
 
 set_target_properties(bdbtest_split-app PROPERTIES OUTPUT_NAME bdbtest_split)
 
-include_directories(${BERKELEYDB_INCLUDE})
+include_directories(SYSTEM ${BERKELEYDB_INCLUDE})
 
 target_link_libraries(bdbtest_split-app
     bdb

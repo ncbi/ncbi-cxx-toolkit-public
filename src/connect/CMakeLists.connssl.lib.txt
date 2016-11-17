@@ -4,7 +4,7 @@
 add_library(connssl
     ncbi_gnutls
 )
-include_directories(${GNUTLS_INCLUDE} ${NCBI_C_INCLUDE})
+include_directories(SYSTEM ${GNUTLS_INCLUDE} ${NCBI_C_INCLUDE})
 
 link_directories(${NCBI_TOOLS_ROOT}/lib64)
 

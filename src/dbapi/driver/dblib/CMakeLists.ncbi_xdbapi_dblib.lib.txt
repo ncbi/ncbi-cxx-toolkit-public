@@ -4,7 +4,7 @@
 add_library(ncbi_xdbapi_dblib
     bcp connection context cursor lang_cmd result rpc dblib_utils
 )
-include_directories(${SYBASE_INCLUDE})
+include_directories(SYSTEM ${SYBASE_INCLUDE})
 
 target_link_libraries(ncbi_xdbapi_dblib
     dbapi_driver sybdb_ftds95 ${SYBASE_DBLIBS} ${SYBASE_DLLS}

@@ -7,7 +7,7 @@ add_executable(ctl_lang_ftds95-app
 
 set_target_properties(ctl_lang_ftds95-app PROPERTIES OUTPUT_NAME ctl_lang_ftds95)
 
-include_directories(${FTDS95_INCLUDE})
+include_directories(SYSTEM ${FTDS95_INCLUDE})
 
 target_link_libraries(ctl_lang_ftds95-app
     ncbi_xdbapi_ftds95 xconnext

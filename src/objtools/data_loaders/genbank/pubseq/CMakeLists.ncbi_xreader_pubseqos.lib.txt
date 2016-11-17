@@ -4,7 +4,7 @@
 add_library(ncbi_xreader_pubseqos
     reader_pubseq
 )
-include_directories(${CMPRS_INCLUDE})
+include_directories(SYSTEM ${CMPRS_INCLUDE})
 
 target_link_libraries(ncbi_xreader_pubseqos
     dbapi_driver ncbi_xreader xconnext

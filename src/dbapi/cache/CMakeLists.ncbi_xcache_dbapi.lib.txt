@@ -4,7 +4,7 @@
 add_library(ncbi_xcache_dbapi
     dbapi_blob_cache dbapi_blob_cache_cf
 )
-include_directories(${CMPRS_INCLUDE})
+include_directories(SYSTEM ${CMPRS_INCLUDE})
 
 target_link_libraries(ncbi_xcache_dbapi
     dbapi

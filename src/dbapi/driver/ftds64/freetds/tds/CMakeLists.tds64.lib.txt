@@ -6,7 +6,7 @@ add_library(tds_ftds64
     net numeric query read tdsstring threadsafe token util vstrbuild write
     tds_checks replacements hmac_md5 gssapi sspi
 )
-include_directories(${KRB5_INCLUDE} ${FTDS64_INCLUDE})
+include_directories(SYSTEM ${KRB5_INCLUDE} ${FTDS64_INCLUDE})
 
 add_definitions(-D_FREETDS_LIBRARY_SOURCE -DHAVE_CONFIG_H=1)
 

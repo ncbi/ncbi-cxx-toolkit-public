@@ -7,7 +7,7 @@ add_executable(test_ncbi_ftp_download-app
 
 set_target_properties(test_ncbi_ftp_download-app PROPERTIES OUTPUT_NAME test_ncbi_ftp_download)
 
-include_directories(${CMPRS_INCLUDE})
+include_directories(SYSTEM ${CMPRS_INCLUDE})
 
 target_link_libraries(test_ncbi_ftp_download-app
     xcompress xconnect

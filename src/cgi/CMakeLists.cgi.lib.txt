@@ -6,7 +6,7 @@ add_library(xcgi
     cgi_serial cgi_session cgi_exception cgiapp_cached cgi_entry_reader
     user_agent
 )
-include_directories(${FASTCGI_INCLUDE})
+include_directories(SYSTEM ${FASTCGI_INCLUDE})
 
 target_link_libraries(xcgi
     xutil

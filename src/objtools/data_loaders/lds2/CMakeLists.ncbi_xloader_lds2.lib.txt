@@ -4,7 +4,7 @@
 add_library(ncbi_xloader_lds2
     lds2_dataloader
 )
-include_directories(${SQLITE3_INCLUDE})
+include_directories(SYSTEM ${SQLITE3_INCLUDE})
 
 add_dependencies(ncbi_xloader_lds2
     seq

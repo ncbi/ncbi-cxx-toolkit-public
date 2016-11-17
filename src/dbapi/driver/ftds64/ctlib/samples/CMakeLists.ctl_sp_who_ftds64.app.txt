@@ -7,7 +7,7 @@ add_executable(ctl_sp_who_ftds64-app
 
 set_target_properties(ctl_sp_who_ftds64-app PROPERTIES OUTPUT_NAME ctl_sp_who_ftds64)
 
-include_directories(${FTDS_INCLUDE})
+include_directories(SYSTEM ${FTDS_INCLUDE})
 
 target_link_libraries(ctl_sp_who_ftds64-app
     ncbi_xdbapi_ftds64 xconnext

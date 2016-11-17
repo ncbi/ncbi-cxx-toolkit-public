@@ -10,7 +10,7 @@ if (HAVE_NCBI_C)
 
     set_target_properties(test_userfield-app PROPERTIES OUTPUT_NAME test_userfield)
 
-    include_directories(${NCBI_C_INCLUDE})
+    include_directories(SYSTEM ${NCBI_C_INCLUDE})
 
     target_link_libraries(test_userfield-app
         general-lib

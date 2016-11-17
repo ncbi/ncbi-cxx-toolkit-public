@@ -7,7 +7,7 @@ add_executable(odbc95_wchar-app
 
 set_target_properties(odbc95_wchar-app PROPERTIES OUTPUT_NAME odbc95_wchar)
 
-include_directories(${FTDS95_INCLUDE} ${ODBC_INCLUDE})
+include_directories(SYSTEM ${FTDS95_INCLUDE} ${ODBC_INCLUDE})
 
 target_link_libraries(odbc95_wchar-app
     odbc_ftds95

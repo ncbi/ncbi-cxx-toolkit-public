@@ -7,7 +7,7 @@ add_executable(dbl_sp_who-app
 
 set_target_properties(dbl_sp_who-app PROPERTIES OUTPUT_NAME dbl_sp_who)
 
-include_directories(${SYBASE_INCLUDE})
+include_directories(SYSTEM ${SYBASE_INCLUDE})
 
 target_link_libraries(dbl_sp_who-app
     ncbi_xdbapi_dblib xconnext

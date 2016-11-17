@@ -4,7 +4,7 @@
 add_library(ct_ftds64
     blk cs ct ctutil
 )
-include_directories(${FTDS_INCLUDE})
+include_directories(SYSTEM ${FTDS_INCLUDE})
 add_definitions(-D_FREETDS_LIBRARY_SOURCE -DHAVE_CONFIG_H=1)
 
 target_link_libraries(ct_ftds64

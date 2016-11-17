@@ -9,7 +9,7 @@ add_executable(ctl_sp_databases_ftds-app
 
 set_target_properties(ctl_sp_databases_ftds-app PROPERTIES OUTPUT_NAME ctl_sp_databases_ftds)
 
-include_directories(${FTDS_INCLUDE})
+include_directories(SYSTEM ${FTDS_INCLUDE})
 
 target_link_libraries(ctl_sp_databases_ftds-app
     dbapi ncbi_xdbapi_ctlib xconnext

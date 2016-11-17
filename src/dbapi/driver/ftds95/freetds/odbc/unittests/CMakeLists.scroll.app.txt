@@ -7,7 +7,7 @@ add_executable(odbc95_scroll-app
 
 set_target_properties(odbc95_scroll-app PROPERTIES OUTPUT_NAME odbc95_scroll)
 
-include_directories(${FTDS95_INCLUDE} ${ODBC_INCLUDE})
+include_directories(SYSTEM ${FTDS95_INCLUDE} ${ODBC_INCLUDE})
 
 target_link_libraries(odbc95_scroll-app
     odbc_ftds95

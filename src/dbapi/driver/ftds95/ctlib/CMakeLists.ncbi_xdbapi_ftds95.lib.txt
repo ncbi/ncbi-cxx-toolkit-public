@@ -4,7 +4,7 @@
 add_library(ncbi_xdbapi_ftds95
     bcp connection context cursor lang_cmd result rpc ftds95_ctlib_utils
 )
-include_directories(${FTDS95_INCLUDE})
+include_directories(SYSTEM ${FTDS95_INCLUDE})
 add_definitions(-DFTDS_IN_USE)
 
 target_link_libraries(ncbi_xdbapi_ftds95
