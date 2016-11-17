@@ -3,14 +3,14 @@
 #
 add_library(seqdb
     seqdb seqdbbitset seqdbfilter seqdbatlas seqdbalias seqdbcommon
-    seqdbfile seqdbimpl seqdbvol seqdbvolset seqdboidlist seqdbisam seqdbtax
-    seqdbgilistset seqdbexpert seqdbblob seqdbcol seqdbgimask seqdbobj
+    seqdbfile seqdbimpl seqdbvol seqdbvolset seqdboidlist seqdbisam seqdbsqlite
+    seqdbtax seqdbgilistset seqdbexpert seqdbblob seqdbcol seqdbgimask seqdbobj
 )
 add_dependencies(seqdb
     blastdb
 )
 
 target_link_libraries(seqdb
-    blastdb xobjmgr
+    blastdb xobjmgr sqlitewrapp
 )
 
