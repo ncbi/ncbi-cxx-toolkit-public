@@ -303,11 +303,14 @@ CNCBlobStorage::GetBList(const string& mask, auto_ptr<TNCBufferType>& buffer, SN
     }
     SNCCacheData search_mask;
     const char* mb = mask.data();
+    const char* me = mask.data() + mask.size() - 1;
     while (*mb == '\"' || *mb == '\'' || *mb == '*') {
         ++mb;
     }
-    const char* me = mask.data() + mask.size() - 1;
-    while (me >= mb && *me == '\1') {
+    while (me > mb && *me == '\1' && *(me-1) == '\1') {
+        --me;
+    }
+    if (me == mb && *me == '\1') {
         --me;
     }
     search_mask.key.assign(mb, me+1-mb);
