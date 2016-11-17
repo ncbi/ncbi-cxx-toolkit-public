@@ -515,6 +515,9 @@ set(SAMTOOLS ${NCBI_TOOLS_ROOT}/samtools)
 set(SAMTOOLS_INCLUDE -I${SAMTOOLS}/include)
 set(SAMTOOLS_LIBS -L${SAMTOOLS}/lib -lbam)
 
+#LAPACK
+set(LAPACK_LIBS "-llapack -lblas")
+
 ##############################################################################
 #
 # NCBI-isms

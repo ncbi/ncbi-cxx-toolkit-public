@@ -5,5 +5,5 @@ add_library(xregexp_template_tester
     regexp_template_tester
 )
 target_link_libraries(xregexp_template_tester
-    ${PCRE_LIB} ${PCRE_LIBS}
+    xregexp
 )

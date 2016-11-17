@@ -1,0 +1,9 @@
+add_library(blast_sra_input
+    blast_sra_input
+)
+
+include_directories(${SRA_INCLUDE})
+
+target_link_libraries(blast_sra_input 
+    blastinput sraread
+)
