@@ -1,0 +1,102 @@
+<HTML>
+<HEAD>
+<TITLE>AJAX CRPC Example</TITLE>
+ 
+<script type="text/javascript"
+    src="http://code.jquery.com/jquery-1.10.1.min.js">
+</script>
+
+<script>
+var getUrlParameter = function getUrlParameter(sParam) {
+    var sPageURL = decodeURIComponent(window.location.search.substring(1)),
+        sURLVariables = sPageURL.split('&'),
+        sParameterName,
+        i;
+
+    for (i = 0; i < sURLVariables.length; i++) {
+        sParameterName = sURLVariables[i].split('=');
+
+        if (sParameterName[0] === sParam) {
+            return sParameterName[1] === undefined ? true : sParameterName[1];
+        }
+    }
+};
+
+String.prototype.replaceAll = function(search, replacement) {
+    var target = this;
+    return target.replace(new RegExp(search, 'g'), replacement);
+};
+
+function CRPC(url, div) {
+    var _url;
+    var _div;
+    var interval = 3000;
+
+    function _CRPC(myUrl, myDivId) {
+        if (!_url) {
+            _url = myUrl;
+        }
+        if (!_div) {
+            _div = myDivId;
+        }
+        
+         $.ajax({
+            type: 'GET',
+            url: _url, 
+            success: function(msg) {
+                $('#' + _div).html(msg.replace(/<meta/ig, '<nometa'));
+            },
+            beforeSend: function(xhr){
+                xhr.setRequestHeader('X-NCBI-Retry-NoMetaRefresh', 'true');
+            },
+            complete: function (XMLHttpRequest, textStatus) {
+                var headers = XMLHttpRequest.getAllResponseHeaders();
+                rcgiUrl = XMLHttpRequest.getResponseHeader('NCBI-RCGI-RetryURL');
+                ncbiUrl = XMLHttpRequest.getResponseHeader('X-NCBI-Retry-URL');
+                rcgiDelay = XMLHttpRequest.getResponseHeader('NCBI-RCGI-RetryDelay');
+                ncbiDelay = XMLHttpRequest.getResponseHeader('X-NCBI-Retry-Delay');
+                if (!(!headers) && !rcgiUrl && !ncbiUrl) {
+                    $('#diag').html('returning')
+                    return; /* no more setTimeout */
+                }
+                /* Read delay (optional) */
+                if (!(!ncbiDelay)) {
+                    interval = (+ncbiDelay) * 1000;
+                } else if (!(!rcgiDelay)) {
+                    interval = (+rcgiDelay) * 1000;
+                }
+                /* Read URL (mandatory) */
+                var urlMode = '';
+                if (!(!ncbiUrl)) {
+                    urlMode = 'using ncbi url ' + ncbiUrl;
+                    _url = ncbiUrl;
+                } else {
+                    urlMode = 'using rcgi url ' + rcgiUrl;
+                    _url = rcgiUrl;
+                }
+                var showdiag = getUrlParameter('diag');
+                if (showdiag == 'true') {
+                    $('#diag').html(urlMode + ",<br/><br/>headers are:<br/> " + headers.replaceAll('\r\n', " <br/>"));
+                }
+                setTimeout( _CRPC(_url, _div), interval );
+            }
+        })
+        
+    }
+    _CRPC(url, div);
+}
+
+
+$(document).ready(
+    CRPC('http://iwebdev2.ncbi.nlm.nih.gov/staff/sadyrovr/cgi2rcgi.cgi', 'show')
+);
+
+</script>
+ 
+</HEAD>
+<BODY>
+<br/><br/>
+    <div id="show" align="center"><img src="ncbi_retry_ajax.gif" /></div>
+    <div id="diag" align="center"></div>
+</BODY>
+</HTML>
