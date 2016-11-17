@@ -16,9 +16,16 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+CMatchSetup::CMatchSetup() {
+    CRef<CObjectManager> obj_mgr = CObjectManager::GetInstance();
+    m_GBScope = Ref(new CScope(*obj_mgr));
+    m_GBScope->AddDataLoader("GBLOADER");
+}
+
+
 void CMatchSetup::GetNucProtSets(
     CSeq_entry_Handle seh,
-    list<CSeq_entry_Handle>& nucprot_sets) 
+    list<CSeq_entry_Handle>& nuc_prot_sets) 
 {
     if (!seh.IsSet()) {
         return;
@@ -28,13 +35,13 @@ void CMatchSetup::GetNucProtSets(
         if (it->IsSet() &&
             it->GetSet().IsSetClass() &&
             it->GetSet().GetClass() == CBioseq_set::eClass_nuc_prot) {
-            nucprot_sets.push_back(*it);
+            nuc_prot_sets.push_back(*it);
         }
     }
 }
 
 
-CSeq_entry_Handle CMatchSetup::x_GetNucleotideSEH(CSeq_entry_Handle seh)
+CSeq_entry_Handle CMatchSetup::GetNucleotideSEH(CSeq_entry_Handle seh) const
 {
     if (seh.IsSeq()) {
         const CMolInfo* molinfo = sequence::GetMolInfo(seh.GetSeq());
@@ -55,6 +62,27 @@ CSeq_entry_Handle CMatchSetup::x_GetNucleotideSEH(CSeq_entry_Handle seh)
 }
 
 
+CSeq_entry_Handle CMatchSetup::GetGenBankTopLevelEntry(CSeq_entry_Handle nucleotide_seh)  
+{
+    CBioseq_Handle gb_bsh;
+    CConstRef<CSeq_entry> gb_tse;
+    for (auto pNucId : nucleotide_seh.GetSeq().GetCompleteBioseq()->GetId()) {
+        if (pNucId->IsGenbank()) {
+            gb_bsh = m_GBScope->GetBioseqHandle(*pNucId);
+            if (!gb_bsh) {
+                NCBI_THROW(CProteinMatchException, 
+                    eInputError,
+                    "Failed to fetch GenBank entry");
+            }
+            return gb_bsh.GetTopLevelEntry();
+        }
+    }
+
+    CSeq_entry_Handle empty;
+    return empty;
+}
+
+
 struct SEquivalentTo 
 {
     CRef<CSeq_id> sid;
@@ -71,7 +99,7 @@ struct SEquivalentTo
 };
 
 
-bool CMatchSetup::x_GetNucSeqIdFromCDSs(CSeq_entry_Handle& seh, CRef<CSeq_id>& id) 
+bool CMatchSetup::GetNucSeqIdFromCDSs(CSeq_entry_Handle& seh, CRef<CSeq_id>& id) 
 {
     // Set containing distinct ids
     set<CRef<CSeq_id>> ids;
@@ -113,14 +141,14 @@ bool CMatchSetup::x_GetNucSeqIdFromCDSs(CSeq_entry_Handle& seh, CRef<CSeq_id>& i
 
 
 // Strip old identifiers on the sequence and annotations and replace with new_id
-bool CMatchSetup::x_UpdateNucSeqIds(CRef<CSeq_id>& new_id,
-                                     CSeq_entry_Handle& nucleotide_seh,
-                                     CSeq_entry_Handle& nuc_prot_seh)
+bool CMatchSetup::UpdateNucSeqIds(CRef<CSeq_id>& new_id,
+        CSeq_entry_Handle& nucleotide_seh,
+        CSeq_entry_Handle& nuc_prot_seh)
 {
-    if (!nucleotide_seh.IsSeq()) {
+    if (!nucleotide_seh.IsSeq() || 
+        !nuc_prot_seh.IsSet()) {
         return false;
     }
-
     CBioseq_EditHandle bseh = nucleotide_seh.GetSeq().GetEditHandle();
 
     bseh.ResetId(); // remove the old sequence identifiers

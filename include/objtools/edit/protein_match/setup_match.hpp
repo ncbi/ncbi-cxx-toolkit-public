@@ -39,21 +39,22 @@ BEGIN_SCOPE(objects)
 class CMatchSetup {
 
 public:
-    CMatchSetup(void) {};
+    CMatchSetup(void);
     virtual ~CMatchSetup(void) {};
 
     static void GetNucProtSets(
         CSeq_entry_Handle seh,
         list<CSeq_entry_Handle>& nucprot_sets);
-private:
-    CSeq_entry_Handle x_GetNucleotideSEH(CSeq_entry_Handle seh);
 
-    bool x_GetNucSeqIdFromCDSs(CSeq_entry_Handle& seh, CRef<CSeq_id>& nucseq_id);
-
-    bool x_UpdateNucSeqIds(CRef<CSeq_id>& new_id,
+    CSeq_entry_Handle GetGenBankTopLevelEntry(CSeq_entry_Handle nucleotide_seh);
+    CSeq_entry_Handle GetNucleotideSEH(CSeq_entry_Handle seh) const;
+    bool GetNucSeqIdFromCDSs(CSeq_entry_Handle& seh, CRef<CSeq_id>& nucseq_id);
+    bool UpdateNucSeqIds(CRef<CSeq_id>& new_id,
         CSeq_entry_Handle& nucleotide_seh,
         CSeq_entry_Handle& nuc_prot_seh);
 
+private:
+    CRef<CScope> m_GBScope;
 };
 
 END_SCOPE(objects)

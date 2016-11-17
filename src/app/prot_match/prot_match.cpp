@@ -37,6 +37,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbistd.hpp>
 
+#include <objects/seqset/Seq_entry.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/object_manager.hpp>
 #include <serial/objistr.hpp>
@@ -46,6 +47,15 @@
 #include <objtools/edit/protein_match/generate_match_table.hpp>
 #include <objtools/edit/protein_match/prot_match_exception.hpp>
 
+/*
+#include <objmgr/seq_entry_handle.hpp>
+#include <objmgr/seq_entry_ci.hpp>
+#include <objmgr/util/sequence.hpp>
+#include <objmgr/seq_annot_ci.hpp>
+#include <objmgr/seq_feat_handle.hpp>
+#include <objects/general/Object_id.hpp>
+*/
+#include <objmgr/util/sequence.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -58,9 +68,17 @@ public:
 
 private:
     CObjectIStream* x_InitInputStream(const CArgs& args);
+    CObjectOStream* x_InitOutputStream(const string& filename, 
+    const bool binary) const;
     void x_ReadUpdateFile(CObjectIStream& istr, CSeq_entry& seq_entry) const;
     bool x_TryReadSeqEntry(CObjectIStream& istr, CSeq_entry& seq_entry) const;
     bool x_TryReadBioseqSet(CObjectIStream& istr, CSeq_entry& seq_entry) const;
+    void x_WriteEntry(CSeq_entry_Handle seh, 
+        const string filename, 
+        const bool as_binary);
+    void x_WriteEntry(const CSeq_entry& entry,
+        const string filename,
+        const bool as_binary);
 };
 
 
@@ -86,6 +104,9 @@ void CProteinMatchApp::Init(void)
 
 int CProteinMatchApp::Run(void)
 {
+    const bool as_binary = true;
+    const bool as_text = false;
+
     const CArgs& args = GetArgs();
     
     // Set up scope 
@@ -111,10 +132,47 @@ int CProteinMatchApp::Run(void)
     }    
 
     list<CSeq_entry_Handle> nuc_prot_sets;
+
     CMatchSetup::GetNucProtSets(input_seh, nuc_prot_sets);
 
     if (nuc_prot_sets.empty()) { // Should also probably post a warning
         return 0;
+    }
+
+    const bool multiple_sets = (nuc_prot_sets.size() > 1);
+
+    CMatchSetup match_setup;
+    int count=0;
+    for (CSeq_entry_Handle nuc_prot_seh : nuc_prot_sets) {
+        CSeq_entry_Handle nucleotide_seh = match_setup.GetNucleotideSEH(nuc_prot_seh);
+
+        CSeq_entry_Handle gb_seh = match_setup.GetGenBankTopLevelEntry(nucleotide_seh);
+        if (!gb_seh) {
+            NCBI_THROW(CProteinMatchException,
+                eBadInput,
+                "Failed to fetch GenBank entry");
+        }
+
+        // Write the genbank nuc-prot-set to a file
+        string filename = args["o"].AsString() + ".genbank";
+        if (multiple_sets) {
+            filename += NStr::NumericToString(count);
+        }
+        filename += ".asn";
+        x_WriteEntry(gb_seh, filename, as_binary);
+
+        // Write the genbank nucleotide sequence to a file
+        CSeq_entry_Handle gb_nuc_seh = match_setup.GetNucleotideSEH(gb_seh);
+        filename = args["o"].AsString() + ".genbank_nuc";
+        if (multiple_sets) {
+            filename += NStr::NumericToString(count);
+        }
+        filename += ".asn";
+        x_WriteEntry(gb_nuc_seh, filename, as_text);
+
+
+
+        ++count;
     }
 
     scope->RemoveEntry(input_entry);
@@ -211,6 +269,52 @@ bool CProteinMatchApp::x_TryReadBioseqSet(CObjectIStream& istr, CSeq_entry& seq_
 
     seq_entry.SetSet(seq_set.GetNCObject());
     return true;
+}
+
+
+CObjectOStream* CProteinMatchApp::x_InitOutputStream(const string& filename, 
+    const bool binary) const
+{
+    if (filename.empty()) {
+        NCBI_THROW(CProteinMatchException, 
+                   eOutputError, 
+                   "Output file name not specified");
+    }
+
+    ESerialDataFormat serial = binary ? eSerial_AsnBinary : eSerial_AsnText;
+
+    CObjectOStream* pOstr = CObjectOStream::Open(filename, serial);
+
+    if (!pOstr) {
+        NCBI_THROW(CProteinMatchException, 
+                   eOutputError, 
+                   "Unable to open output file: " + filename);
+    }
+
+    return pOstr;
+}
+
+
+void CProteinMatchApp::x_WriteEntry(CSeq_entry_Handle seh, 
+        const string filename, 
+        const bool as_binary) {
+    x_WriteEntry(*(seh.GetCompleteSeq_entry()),
+            filename,
+            as_binary);
+}
+
+
+void CProteinMatchApp::x_WriteEntry(const CSeq_entry& seq_entry,
+        const string filename, 
+        const bool as_binary) {
+    try { 
+        unique_ptr<CObjectOStream> pOstr(x_InitOutputStream(filename, as_binary));
+        *pOstr << seq_entry;
+    } catch (CException& e) {
+        NCBI_THROW(CProteinMatchException,
+            eOutputError,
+            "Failed to write " + filename);
+    }
 }
 
 END_NCBI_SCOPE
