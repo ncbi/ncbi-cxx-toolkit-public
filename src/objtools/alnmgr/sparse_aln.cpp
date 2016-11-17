@@ -696,7 +696,7 @@ string& CSparseAln::GetAlnSeqString(TNumrow row,
         ++it;
         is_first_seg = false;
     }
-    if ( translate ) {
+    if (translate  &&  aln_range.GetLength() >= trim_from + trim_to) {
         buffer.resize((aln_range.GetLength() - trim_from - trim_to) / 3);
     }
     return buffer;
