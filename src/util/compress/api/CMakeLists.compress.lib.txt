@@ -5,7 +5,7 @@ add_library(xcompress
     compress stream streambuf stream_util bzip2 zlib lzo reader_zlib tar
     archive archive_ archive_zip
 )
-include_directories(${CMPRS_INCLUDE})
+include_directories(SYSTEM ${CMPRS_INCLUDE})
 
 target_link_libraries(xcompress
     xutil

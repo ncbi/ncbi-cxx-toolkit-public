@@ -7,7 +7,7 @@ add_executable(test_scheduler-app
 
 set_target_properties(test_scheduler-app PROPERTIES OUTPUT_NAME test_scheduler)
 
-include_directories(${BOOST_INCLUDE})
+include_directories(SYSTEM ${BOOST_INCLUDE})
 
 target_link_libraries(test_scheduler-app
     test_boost xutil

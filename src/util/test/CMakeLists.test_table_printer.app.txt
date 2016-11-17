@@ -7,7 +7,7 @@ add_executable(test_table_printer-app
 
 set_target_properties(test_table_printer-app PROPERTIES OUTPUT_NAME test_table_printer)
 
-include_directories(${BOOST_INCLUDE})
+include_directories(SYSTEM ${BOOST_INCLUDE})
 
 target_link_libraries(test_table_printer-app
     test_boost xutil

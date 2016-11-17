@@ -5,7 +5,7 @@ add_library(ximage
     image image_io image_util image_io_handler image_io_jpeg image_io_png
     image_io_bmp image_io_tiff image_io_sgi image_io_gif image_io_raw
 )
-include_directories(${Z_INCLUDE} ${JPEG_INCLUDE} ${PNG_INCLUDE} ${GIF_INCLUDE} ${TIFF_INCLUDE} ${XPM_INCLUDE})
+include_directories(SYSTEM ${Z_INCLUDE} ${JPEG_INCLUDE} ${PNG_INCLUDE} ${GIF_INCLUDE} ${TIFF_INCLUDE} ${XPM_INCLUDE})
 
 target_link_libraries(ximage
     xncbi ${IMAGE_LIBS}

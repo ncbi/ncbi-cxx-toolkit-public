@@ -9,6 +9,6 @@ add_library(regexp
     pcreposix
 )
 
-include_directories(${includedir}/util/regexp)
+include_directories(SYSTEM ${includedir}/util/regexp)
 add_definitions(-DHAVE_CONFIG_H)
 

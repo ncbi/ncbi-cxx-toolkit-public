@@ -4,7 +4,7 @@
 add_library(xregexp
     regexp arg_regexp mask_regexp
 )
-include_directories(${PCRE_INCLUDE})
+include_directories(SYSTEM ${PCRE_INCLUDE})
 
 target_link_libraries(xregexp
     regexp xncbi

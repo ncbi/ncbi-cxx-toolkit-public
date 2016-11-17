@@ -6,5 +6,5 @@ add_library(z
     ncbi_z_compress uncompr gzclose gzlib gzread gzwrite
 )
 
-include_directories(${includedir}/util/compress/zlib)
+include_directories(SYSTEM ${includedir}/util/compress/zlib)
 

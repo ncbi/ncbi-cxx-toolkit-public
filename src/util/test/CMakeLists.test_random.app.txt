@@ -7,7 +7,7 @@ add_executable(test_random-app
 
 set_target_properties(test_random-app PROPERTIES OUTPUT_NAME test_random)
 
-include_directories(${BOOST_INCLUDE})
+include_directories(SYSTEM ${BOOST_INCLUDE})
 
 target_link_libraries(test_random-app
     test_boost xutil

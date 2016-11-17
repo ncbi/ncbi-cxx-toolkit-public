@@ -7,7 +7,7 @@ add_executable(test_compress-app
 
 set_target_properties(test_compress-app PROPERTIES OUTPUT_NAME test_compress)
 
-include_directories(${CMPRS_INCLUDE})
+include_directories(SYSTEM ${CMPRS_INCLUDE})
 
 target_link_libraries(test_compress-app
     xcompress

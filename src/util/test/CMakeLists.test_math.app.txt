@@ -7,7 +7,7 @@ add_executable(test_math-app
 
 set_target_properties(test_math-app PROPERTIES OUTPUT_NAME test_math)
 
-include_directories(${BOOST_INCLUDE})
+include_directories(SYSTEM ${BOOST_INCLUDE})
 
 target_link_libraries(test_math-app
     test_boost

@@ -7,7 +7,7 @@ add_executable(test_porter_stemming-app
 
 set_target_properties(test_porter_stemming-app PROPERTIES OUTPUT_NAME test_porter_stemming)
 
-include_directories(${BOOST_INCLUDE})
+include_directories(SYSTEM ${BOOST_INCLUDE})
 
 target_link_libraries(test_porter_stemming-app
     test_boost xutil
