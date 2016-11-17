@@ -1,0 +1,7 @@
+add_library(ncbi_id2proc_wgs
+    id2wgs id2wgs_impl
+)
+
+target_link_libraries(ncbi_id2proc_wgs 
+    id2 sraread xcompress
+)
