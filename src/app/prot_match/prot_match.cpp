@@ -170,7 +170,27 @@ int CProteinMatchApp::Run(void)
         filename += ".asn";
         x_WriteEntry(gb_nuc_seh, filename, as_text);
 
+        CRef<CSeq_id> local_id;
+        if (match_setup.GetNucSeqIdFromCDSs(nuc_prot_seh, local_id)) {
+            match_setup.UpdateNucSeqIds(local_id, nucleotide_seh, nuc_prot_seh);
+        }
 
+        // Write processed update
+        filename = args["o"].AsString() + ".local";
+        if (multiple_sets) {
+            filename += NStr::NumericToString(count);
+        }
+        filename += ".asn";
+        x_WriteEntry(nuc_prot_seh, filename, as_binary);
+
+
+        // Write update nucleotide sequence
+        filename = args["o"].AsString() + ".local_nuc";
+        if (multiple_sets) {
+            filename += NStr::NumericToString(count);
+        }
+        filename += ".asn";
+        x_WriteEntry(nucleotide_seh, filename, as_text);
 
         ++count;
     }
