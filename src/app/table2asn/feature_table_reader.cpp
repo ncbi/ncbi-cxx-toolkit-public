@@ -79,6 +79,8 @@
 
 #include "table2asn_context.hpp"
 
+#include "suspect_feat.hpp"
+
 #include <common/test_assert.h>  /* This header must go last */
 
 BEGIN_NCBI_SCOPE
@@ -496,14 +498,17 @@ namespace
 
             ITERATE(CSeq_annot::TData::TFtable, feat_it, (**it).GetData().GetFtable())
             {
-                ITERATE(CSeq_feat::TIds, id_it, (**feat_it).GetIds())
+                if ((**feat_it).IsSetIds())
                 {
-                    if ((**id_it).Equals(id))
+                    ITERATE(CSeq_feat::TIds, id_it, (**feat_it).GetIds())
                     {
-                        return *feat_it; // CConstRef<CSeq_feat>(&**id_it);
+                        if ((**id_it).Equals(id))
+                        {
+                            return *feat_it;
+                        }
                     }
                 }
-                if ((**feat_it).GetId().Equals(id))
+                if ((**feat_it).IsSetId() && (**feat_it).GetId().Equals(id))
                     return *feat_it;
             }              
         }
@@ -634,7 +639,27 @@ CRef<CSeq_entry> CFeatureTableReader::TranslateProtein(CScope& scope, CSeq_entry
     CProt_ref& prot_ref = prot_feat.SetData().SetProt();
 
 #if 1
-    string protein_name = NewProteinName(cd_feature, m_context.m_use_hypothetic_protein);
+    string protein_name;
+    if (GetProteinName(protein_name, cd_feature))
+    {
+        if (NStr::CompareNocase(protein_name, "hypothetical protein") != 0)
+        {
+            string old = protein_name;
+            if (FixSuspectProductName(protein_name))
+            {
+                m_context.ReportFixedProduct(old, protein_name, cd_feature.GetLocation(), locustag);
+                cd_feature.ResetProduct();
+                //cd_feature.SetProtXref().SetName().clear();
+                //cd_feature.SetProtXref().SetName().push_back(protein_name);
+            }
+        }
+    }
+    else
+    if (m_context.m_use_hypothetic_protein)
+    {
+        protein_name = "hypothetical protein";
+    }
+
     string title = protein_name;
     if (NStr::CompareNocase(protein_name, "hypothetical protein") == 0 && !locustag.empty())
     {
