@@ -34,9 +34,8 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiexpt.hpp>
-#include <corelib/ncbiobj.hpp>
+#include <sra/readers/sra/exception.hpp>
 
-#include <klib/rc.h>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)

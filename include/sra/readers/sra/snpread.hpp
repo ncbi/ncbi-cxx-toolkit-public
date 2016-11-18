@@ -35,8 +35,6 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <util/range.hpp>
-#include <util/rangemap.hpp>
-#include <util/simple_buffer.hpp>
 #include <sra/readers/sra/vdbread.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 #include <objects/seq/Bioseq.hpp>
@@ -44,10 +42,7 @@
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Seq_data.hpp>
 #include <map>
-#include <list>
-
-#include <ncbi/ncbi.h>
-#include <insdc/insdc.h>
+#include <vector>
 
 BEGIN_NCBI_NAMESPACE;
 BEGIN_NAMESPACE(objects);
@@ -56,12 +51,9 @@ class CSeq_entry;
 class CSeq_annot;
 class CSeq_graph;
 class CSeq_feat;
-class CSeq_interval;
-class CSeq_point;
 class CUser_object;
 class CUser_field;
 class CBioseq;
-class CSeq_literal;
 class CSeq_annot_SNP_Info;
 
 class CSNPDbTrackIterator;

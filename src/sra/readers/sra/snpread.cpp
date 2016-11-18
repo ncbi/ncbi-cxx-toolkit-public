@@ -47,6 +47,8 @@
 #include <unordered_map>
 
 #include <sra/readers/sra/kdbread.hpp>
+#include <ncbi/ncbi.h>
+#include <insdc/insdc.h>
 
 BEGIN_STD_NAMESPACE;
 

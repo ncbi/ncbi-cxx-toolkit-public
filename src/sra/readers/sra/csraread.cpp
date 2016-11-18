@@ -44,6 +44,8 @@
 #include <sra/error_codes.hpp>
 
 #include <sra/readers/sra/kdbread.hpp>
+#include <klib/rc.h>
+#include <insdc/sra.h>
 
 #include <sstream>
 #include <algorithm>

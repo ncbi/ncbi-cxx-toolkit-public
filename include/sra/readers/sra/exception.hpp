@@ -35,6 +35,10 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiexpt.hpp>
 
+
+typedef uint32_t rc_t; // from <klib/rc.h>
+
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -73,8 +77,6 @@ class NCBI_SRAREAD_EXPORT CSraException
     : EXCEPTION_VIRTUAL_BASE public CException
 {
 public:
-    typedef uint32_t rc_t;
-
     /// Error types that  corelib can generate.
     ///
     /// These generic error conditions can occur for corelib applications.

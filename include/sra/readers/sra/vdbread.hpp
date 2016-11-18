@@ -33,12 +33,10 @@
  */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbiobj.hpp>
 #include <sra/readers/sra/exception.hpp>
 #include <sra/readers/sra/sdk.hpp>
 #include <vector>
-
-// for String
-#include <klib/text.h>
 
 // SRA SDK structures
 struct KConfig;

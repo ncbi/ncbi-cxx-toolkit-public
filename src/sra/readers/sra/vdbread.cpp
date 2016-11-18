@@ -37,6 +37,7 @@
 
 #include <klib/rc.h>
 #include <klib/log.h>
+#include <klib/text.h>
 #include <kfg/config.h>
 #include <kdb/manager.h>
 #include <kdb/kdb-priv.h>
