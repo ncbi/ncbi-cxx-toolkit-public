@@ -55,6 +55,9 @@
  *
  */
 
+
+//#define NCBI_MONKEY
+
 #include "ncbi_assert.h"
 #include <connect/ncbi_util.h>
 #ifdef NCBI_MONKEY
@@ -426,12 +429,16 @@ typedef int /* bool */    (*FMonkeyPoll)   (size_t*                n,
                                             void* /*SSOCK_Poll[]* */polls,
                                             EIO_Status*            ret_status);
 typedef void              (*FMonkeyClose)  (SOCKET sock); 
+typedef void              (*FSockHasSocket)(void* /* SOCK* */      sock, 
+                                            MONKEY_SOCKTYPE        socket); 
+
 
 extern NCBI_XCONNECT_EXPORT FMonkeySend     g_MONKEY_Send;
 extern NCBI_XCONNECT_EXPORT FMonkeyRecv     g_MONKEY_Recv;
 extern NCBI_XCONNECT_EXPORT FMonkeyPoll     g_MONKEY_Poll;
 extern NCBI_XCONNECT_EXPORT FMonkeyConnect  g_MONKEY_Connect;
 extern NCBI_XCONNECT_EXPORT FMonkeyClose    g_MONKEY_Close;
+extern NCBI_XCONNECT_EXPORT FSockHasSocket  g_MONKEY_SockHasSocket;
 #endif /*NCBI_MONKEY*/
 
 
