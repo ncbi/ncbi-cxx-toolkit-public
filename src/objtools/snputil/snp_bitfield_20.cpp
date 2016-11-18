@@ -37,7 +37,12 @@
 #include <objects/general/User_field.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
+
+// #define USE_SNPREAD
+
+#ifdef USE_SNPREAD
 #include <sra/readers/sra/snpread.hpp>
+#endif
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -63,6 +68,7 @@ CSnpBitfield20::CSnpBitfield20(const CSeq_feat& feat)
 		    CStringUTF8 sVariationClass(fieldVariationClass->GetData().GetStr());
 		    if(!sVariationClass.empty()) {
 		        switch(sVariationClass[0]) {
+#ifdef USE_SNPREAD
 		        case SSNPDb_Defs::eFeatSubtypeChar_unknown: // eFeatSubtype_unknown
 		            m_VariationClass = CSnpBitfield::eUnknownVariation;
 		            break;
@@ -90,6 +96,35 @@ CSnpBitfield20::CSnpBitfield20(const CSeq_feat& feat)
 		        case SSNPDb_Defs::eFeatSubtypeChar_str: // eFeatSubtype_str
 		            m_VariationClass = CSnpBitfield::eMicrosatellite;
 		            break;
+#else
+		        case 'U': // eFeatSubtype_unknown
+		            m_VariationClass = CSnpBitfield::eUnknownVariation;
+		            break;
+		        case '-': // eFeatSubtype_identity
+		            m_VariationClass = CSnpBitfield::eIdentity;
+		            break;
+		        case 'V': // eFeatSubtype_inversion
+		            m_VariationClass = CSnpBitfield::eInversion;
+		            break;
+		        case 'S': // eFeatSubtype_single_nucleotide_variation
+		            m_VariationClass = CSnpBitfield::eSingleBase;
+		            break;
+		        case 'M': // eFeatSubtype_multi_nucleotide_variation
+		            m_VariationClass = CSnpBitfield::eMultiBase;
+		            break;
+		        case 'L': // eFeatSubtype_deletion_insertion
+		            m_VariationClass = CSnpBitfield::eDips;
+		            break;
+		        case 'D': // eFeatSubtype_deletion
+		            m_VariationClass = CSnpBitfield::eDeletion;
+		            break;
+		        case 'I': // eFeatSubtype_insertion
+		            m_VariationClass = CSnpBitfield::eInsertion;
+		            break;
+		        case 'R': // eFeatSubtype_str
+		            m_VariationClass = CSnpBitfield::eMicrosatellite;
+		            break;
+#endif
 		        }
 		    }
 		}
