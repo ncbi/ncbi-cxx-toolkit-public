@@ -2099,21 +2099,29 @@ static bool IsProductMatch(const string& rna_product, const string& cds_product)
 }
 
 
-DISCREPANCY_CASE(CDS_WITHOUT_MRNA, CSeq_feat, eDisc | eOncaller | eSmart, "Coding regions on eukaryotic genomic DNA should have mRNAs with matching products")
+DISCREPANCY_CASE(CDS_WITHOUT_MRNA, COverlappingFeatures, eDisc | eOncaller | eSmart, "Coding regions on eukaryotic genomic DNA should have mRNAs with matching products")
 {
-    if (obj.IsSetData() && obj.GetData().IsCdregion() && !context.IsPseudo(obj) && context.IsEukaryotic() && context.IsDNA()) {
-        const CBioSource* bio_src = context.GetCurrentBiosource();
-        if (bio_src && !context.IsOrganelle()) {
-            CConstRef<CSeq_feat> mRNA = sequence::GetOverlappingmRNA(obj.GetLocation(), context.GetScope());
-            if (mRNA.Empty()) {
-                m_Objs[kCDSWithoutMRNA].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj), eKeepRef, true), false);
+    if (!context.IsEukaryotic() || !context.IsDNA()) {
+        return;
+    }
+    const vector<CConstRef<CSeq_feat> >& cds = context.FeatCDS();
+    const vector<CConstRef<CSeq_feat> >& mrnas = context.FeatMRNAs();
+    for (size_t i = 0; i < cds.size(); i++) {
+        if (context.IsPseudo(*cds[i])) {
+            continue;
+        }
+        bool found = false;
+        string prod = GetProductForCDS(*cds[i], context.GetScope());
+        const CSeq_loc& loc_i = cds[i]->GetLocation();
+        for (size_t j = 0; j < mrnas.size(); j++) {
+            const CSeq_loc& loc_j = mrnas[j]->GetLocation();
+            if (context.Compare(loc_j, loc_i) != sequence::eNoOverlap && IsProductMatch(prod, mrnas[j]->GetData().GetRna().GetRnaProductName())) {
+                found = true;
+                break;
             }
-            else {
-                const CRNA_ref& rna = mRNA->GetData().GetRna();
-                if (!IsProductMatch(rna.GetRnaProductName(), GetProductForCDS(obj, context.GetScope()))) {
-                    m_Objs[kCDSWithoutMRNA].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj), eKeepRef, true), false);
-                }
-            }
+        }
+        if (!found) {
+            m_Objs[kCDSWithoutMRNA].Add(*context.NewDiscObj(cds[i], eNoRef, true));
         }
     }
 }
