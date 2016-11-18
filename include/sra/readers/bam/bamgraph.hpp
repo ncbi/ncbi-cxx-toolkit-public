@@ -142,6 +142,9 @@ public:
     vector<Uint8> CollectEstimatedCoverage(CBamDb& db);
     vector<Uint8> CollectEstimatedCoverage(const string& bam_file,
                                            const string& bam_index);
+    vector<Uint8> CollectRawAccessCoverage(CBamDb& db);
+    vector<Uint8> CollectRawAccessCoverage(const string& bam_file,
+                                           const string& bam_index);
     
     /// Generate Seq-annot for BAM file using BAM file index
     CRef<CSeq_annot> MakeSeq_annot(CBamMgr& mgr,

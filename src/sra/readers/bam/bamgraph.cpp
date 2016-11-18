@@ -180,10 +180,11 @@ vector<Uint8> CBam2Seq_graph::CollectCoverage(CBamMgr& mgr,
     if ( GetEstimated() ) {
         return CollectEstimatedCoverage(bam_file, bam_index);
     }
-    else {
-        CBamDb db(mgr, bam_file, bam_index);
-        return CollectCoverage(db);
+    if ( GetRawAccess() ) {
+        return CollectRawAccessCoverage(bam_file, bam_index);
     }
+    CBamDb db(mgr, bam_file, bam_index);
+    return CollectCoverage(db);
 }
 
 
@@ -191,6 +192,9 @@ vector<Uint8> CBam2Seq_graph::CollectCoverage(CBamDb& db)
 {
     if ( GetEstimated() ) {
         return CollectEstimatedCoverage(db);
+    }
+    if ( GetRawAccess() ) {
+        return CollectRawAccessCoverage(db);
     }
     vector<Uint8> ret;
     TSeqPos bin_cnt = 0;
@@ -213,92 +217,87 @@ vector<Uint8> CBam2Seq_graph::CollectCoverage(CBamDb& db)
     const size_t kWarnLongAlignCount = 10;
     size_t invalid_align_count = 0;
     size_t long_align_count = 0;
-    if ( GetRawAccess() ) {
-        
-    }
-    else {
-        for ( CBamAlignIterator ait(db, GetRefLabel(), 0); ait; ++ait ) {
-            if ( min_qual > 0 && ait.GetMapQuality() < min_qual ) {
-                continue;
-            }
-            ++align_cnt;
-            TSeqPos size = ait.GetCIGARRefSize();
-            if ( size == 0 ) {
-                continue;
-            }
-            TSeqPos pos = ait.GetRefSeqPos();
-            //x_AddCoverage(pos, size);
+    for ( CBamAlignIterator ait(db, GetRefLabel(), 0); ait; ++ait ) {
+        if ( min_qual > 0 && ait.GetMapQuality() < min_qual ) {
+            continue;
+        }
+        ++align_cnt;
+        TSeqPos size = ait.GetCIGARRefSize();
+        if ( size == 0 ) {
+            continue;
+        }
+        TSeqPos pos = ait.GetRefSeqPos();
+        //x_AddCoverage(pos, size);
 
-            TSeqPos end = pos + size;
-            if ( end > ref_length ) {
-                if ( ++invalid_align_count <= kWarnLongAlignCount ) {
-                    ERR_POST_X(5, Warning << "CBam2Seq_graph: "
-                               "alignment is out of refseq bounds " <<
-                               GetRefLabel() << " @ " << pos << ": " << size
-                               << ", CIGAR: "<< ait.GetCIGAR());
-                }
-                else if ( invalid_align_count == kWarnLongAlignCount+1 ) {
-                    ERR_POST_X(6, Warning << "CBam2Seq_graph: "
-                               "there are more alignments out of refseq bounds...");
-                }
-                --align_cnt;
-                continue;
+        TSeqPos end = pos + size;
+        if ( end > ref_length ) {
+            if ( ++invalid_align_count <= kWarnLongAlignCount ) {
+                ERR_POST_X(5, Warning << "CBam2Seq_graph: "
+                           "alignment is out of refseq bounds " <<
+                           GetRefLabel() << " @ " << pos << ": " << size
+                           << ", CIGAR: "<< ait.GetCIGAR());
             }
-            if ( pos < min_pos ) {
-                min_pos = pos;
+            else if ( invalid_align_count == kWarnLongAlignCount+1 ) {
+                ERR_POST_X(6, Warning << "CBam2Seq_graph: "
+                           "there are more alignments out of refseq bounds...");
             }
-            if ( end > max_pos ) {
-                max_pos = end;
+            --align_cnt;
+            continue;
+        }
+        if ( pos < min_pos ) {
+            min_pos = pos;
+        }
+        if ( end > max_pos ) {
+            max_pos = end;
+        }
+        if ( size > max_align_span ) {
+            max_align_span = size;
+        }
+        align_cov += size;
+        if ( size > kWarnLongAlignThreshold ) {
+            if ( ++long_align_count <= kWarnLongAlignCount ) {
+                ERR_POST_X(3, Warning << "CBam2Seq_graph: "
+                           "alignment is too long at " <<
+                           GetRefLabel() << " @ " << pos << ": " << size
+                           << ", CIGAR: "<< ait.GetCIGAR());
             }
-            if ( size > max_align_span ) {
-                max_align_span = size;
+            else if ( long_align_count == kWarnLongAlignCount+1 ) {
+                ERR_POST_X(4, Warning << "CBam2Seq_graph: "
+                           "there are more very long alignments...");
             }
-            align_cov += size;
-            if ( size > kWarnLongAlignThreshold ) {
-                if ( ++long_align_count <= kWarnLongAlignCount ) {
-                    ERR_POST_X(3, Warning << "CBam2Seq_graph: "
-                               "alignment is too long at " <<
-                               GetRefLabel() << " @ " << pos << ": " << size
-                               << ", CIGAR: "<< ait.GetCIGAR());
-                }
-                else if ( long_align_count == kWarnLongAlignCount+1 ) {
-                    ERR_POST_X(4, Warning << "CBam2Seq_graph: "
-                               "there are more very long alignments...");
-                }
+        }
+        _ASSERT(end > pos);
+        TSeqPos end_bin = (end - 1) / bin_size;
+        if ( end_bin >= bin_cnt ) {
+            bin_cnt = end_bin + 1;
+            size_t cap = ret.capacity();
+            while ( bin_cnt > cap ) {
+                LOG_POST_X(1, Info<<"CBam2Seq_graph: "
+                           "Cap "<<cap<<" at "<<align_cnt<<" aligns ");
+                cap *= 2;
             }
-            _ASSERT(end > pos);
-            TSeqPos end_bin = (end - 1) / bin_size;
-            if ( end_bin >= bin_cnt ) {
-                bin_cnt = end_bin + 1;
-                size_t cap = ret.capacity();
-                while ( bin_cnt > cap ) {
-                    LOG_POST_X(1, Info<<"CBam2Seq_graph: "
-                               "Cap "<<cap<<" at "<<align_cnt<<" aligns ");
-                    cap *= 2;
-                }
-                ret.reserve(cap);
-                ret.resize(bin_cnt);
-            }
-            TSeqPos begin_bin = pos / bin_size;
-            if ( begin_bin == end_bin ) {
-                ret[begin_bin] += size;
+            ret.reserve(cap);
+            ret.resize(bin_cnt);
+        }
+        TSeqPos begin_bin = pos / bin_size;
+        if ( begin_bin == end_bin ) {
+            ret[begin_bin] += size;
+        }
+        else {
+            TSeqPos begin_bin_coverage = (begin_bin + 1) * bin_size - pos;
+            ret[begin_bin] += begin_bin_coverage;
+            ++begin_bin;
+            TSeqPos end_bin_coverage = end - end_bin * bin_size;
+            ret[end_bin] += end_bin_coverage;
+            // all intermediate bins are fully covered
+            if ( end_bin > begin_bin + kMapBinCountThreshold ) {
+                // keep long alignment spans in a separate map
+                cov_level_change_map[begin_bin] += bin_size;
+                cov_level_change_map[end_bin] -= bin_size;
             }
             else {
-                TSeqPos begin_bin_coverage = (begin_bin + 1) * bin_size - pos;
-                ret[begin_bin] += begin_bin_coverage;
-                ++begin_bin;
-                TSeqPos end_bin_coverage = end - end_bin * bin_size;
-                ret[end_bin] += end_bin_coverage;
-                // all intermediate bins are fully covered
-                if ( end_bin > begin_bin + kMapBinCountThreshold ) {
-                    // keep long alignment spans in a separate map
-                    cov_level_change_map[begin_bin] += bin_size;
-                    cov_level_change_map[end_bin] -= bin_size;
-                }
-                else {
-                    for ( TSeqPos bin = begin_bin; bin < end_bin; ++bin ) {
-                        ret[bin] += bin_size;
-                    }
+                for ( TSeqPos bin = begin_bin; bin < end_bin; ++bin ) {
+                    ret[bin] += bin_size;
                 }
             }
         }
@@ -325,36 +324,135 @@ vector<Uint8> CBam2Seq_graph::CollectCoverage(CBamDb& db)
 }
 
 
-vector<Uint8> CBam2Seq_graph::CollectEstimatedCoverage(CBamDb& db)
+vector<Uint8> CBam2Seq_graph::CollectRawAccessCoverage(const string& bam_file,
+                                                       const string& bam_ind)
 {
-    if ( db.GetIndexName().empty() ) {
-        NCBI_THROW(CBamException, eInvalidArg,
-                   "BAM index file name is empty");
-    }
-    m_GraphBinSize = kEstimatedGraphBinSize;
-    CBamIndex bam_index(db.GetIndexName());
-    size_t ref_index = 0;
-    TSeqPos length = kInvalidSeqPos;
-    if ( 1 ) {
-        CBamHeader header(db.GetDbName());
-        ref_index = header.GetRefIndex(GetRefLabel());
-        length = header.GetRefLength(ref_index);
-    }
-    else {
-        for ( CBamRefSeqIterator it(db); it; ++it, ++ref_index ) {
-            if ( it.GetRefSeqId() == GetRefLabel() ) {
-                length = it.GetLength();
-                break;
+    vector<Uint8> ret;
+    TSeqPos bin_cnt = 0;
+    int align_cnt = 0;
+    double align_cov = 0;
+    ret.reserve(1024);
+
+    TSeqPos bin_size = GetGraphBinSize();
+    TSeqPos min_pos = kInvalidSeqPos, max_pos = 0;
+    TSeqPos max_align_span = 0;
+    int min_qual = GetMinMapQuality();
+
+    CBamRawDb bam_raw_db(bam_file, bam_ind.empty()? bam_file+".bai": bam_ind);
+    size_t ref_index = bam_raw_db.GetRefIndex(GetRefLabel());
+    TSeqPos ref_length = bam_raw_db.GetRefSeqLength(ref_index);
+
+    typedef map<TSeqPos, Int8> TCovLevelChangeMap;
+    TCovLevelChangeMap cov_level_change_map;
+    const TSeqPos kMapBinCountThreshold = 20;
+
+    const TSeqPos kWarnLongAlignThreshold = 10000;
+    const size_t kWarnLongAlignCount = 10;
+    size_t invalid_align_count = 0;
+    size_t long_align_count = 0;
+    for ( CBamRawAlignIterator ait(bam_raw_db, GetRefLabel(), 0); ait; ++ait ) {
+        if ( min_qual > 0 && ait.GetMapQuality() < min_qual ) {
+            continue;
+        }
+        ++align_cnt;
+        TSeqPos size = ait.GetCIGARRefSize();
+        if ( size == 0 ) {
+            continue;
+        }
+        TSeqPos pos = ait.GetRefSeqPos();
+        //x_AddCoverage(pos, size);
+
+        TSeqPos end = pos + size;
+        if ( end > ref_length ) {
+            if ( ++invalid_align_count <= kWarnLongAlignCount ) {
+                ERR_POST_X(5, Warning << "CBam2Seq_graph: "
+                           "alignment is out of refseq bounds " <<
+                           GetRefLabel() << " @ " << pos << ": " << size
+                           << ", CIGAR: "<< ait.GetCIGAR());
+            }
+            else if ( invalid_align_count == kWarnLongAlignCount+1 ) {
+                ERR_POST_X(6, Warning << "CBam2Seq_graph: "
+                           "there are more alignments out of refseq bounds...");
+            }
+            --align_cnt;
+            continue;
+        }
+        if ( pos < min_pos ) {
+            min_pos = pos;
+        }
+        if ( end > max_pos ) {
+            max_pos = end;
+        }
+        if ( size > max_align_span ) {
+            max_align_span = size;
+        }
+        align_cov += size;
+        if ( size > kWarnLongAlignThreshold ) {
+            if ( ++long_align_count <= kWarnLongAlignCount ) {
+                ERR_POST_X(3, Warning << "CBam2Seq_graph: "
+                           "alignment is too long at " <<
+                           GetRefLabel() << " @ " << pos << ": " << size
+                           << ", CIGAR: "<< ait.GetCIGAR());
+            }
+            else if ( long_align_count == kWarnLongAlignCount+1 ) {
+                ERR_POST_X(4, Warning << "CBam2Seq_graph: "
+                           "there are more very long alignments...");
+            }
+        }
+        _ASSERT(end > pos);
+        TSeqPos end_bin = (end - 1) / bin_size;
+        if ( end_bin >= bin_cnt ) {
+            bin_cnt = end_bin + 1;
+            size_t cap = ret.capacity();
+            while ( bin_cnt > cap ) {
+                LOG_POST_X(1, Info<<"CBam2Seq_graph: "
+                           "Cap "<<cap<<" at "<<align_cnt<<" aligns ");
+                cap *= 2;
+            }
+            ret.reserve(cap);
+            ret.resize(bin_cnt);
+        }
+        TSeqPos begin_bin = pos / bin_size;
+        if ( begin_bin == end_bin ) {
+            ret[begin_bin] += size;
+        }
+        else {
+            TSeqPos begin_bin_coverage = (begin_bin + 1) * bin_size - pos;
+            ret[begin_bin] += begin_bin_coverage;
+            ++begin_bin;
+            TSeqPos end_bin_coverage = end - end_bin * bin_size;
+            ret[end_bin] += end_bin_coverage;
+            // all intermediate bins are fully covered
+            if ( end_bin > begin_bin + kMapBinCountThreshold ) {
+                // keep long alignment spans in a separate map
+                cov_level_change_map[begin_bin] += bin_size;
+                cov_level_change_map[end_bin] -= bin_size;
+            }
+            else {
+                for ( TSeqPos bin = begin_bin; bin < end_bin; ++bin ) {
+                    ret[bin] += bin_size;
+                }
             }
         }
     }
-    vector<uint64_t> ret = bam_index.CollectEstimatedCoverage(ref_index);
-    if ( length == 0 || length == kInvalidSeqPos ) {
-        length = TSeqPos(ret.size())*kEstimatedGraphBinSize;
+    if ( !cov_level_change_map.empty() ) {
+        TSeqPos bin = cov_level_change_map.begin()->first;
+        Uint8 level = 0;
+        ITERATE ( TCovLevelChangeMap, it, cov_level_change_map ) {
+            TSeqPos next_bin = it->first;
+            for ( ; bin < next_bin; ++bin ) {
+                ret[bin] += level;
+            }
+            level += it->second;
+        }
     }
-    m_TotalRange.SetFrom(0).SetToOpen(length);
-    m_AlignCount = 0;
-    m_MaxAlignSpan = 0;
+    m_TotalRange.SetFrom(min_pos).SetToOpen(max_pos);
+    m_AlignCount = align_cnt;
+    m_MaxAlignSpan = max_align_span;
+    LOG_POST_X(2, Info<<"CBam2Seq_graph: "
+               "Total aligns: "<<align_cnt<<
+               " total size: "<<align_cov<<" "<<
+               " max align span: "<<max_align_span);
     return ret;
 }
 
@@ -362,10 +460,6 @@ vector<Uint8> CBam2Seq_graph::CollectEstimatedCoverage(CBamDb& db)
 vector<Uint8> CBam2Seq_graph::CollectEstimatedCoverage(const string& bam_file,
                                                        const string& bam_ind)
 {
-    if ( bam_file.empty() ) {
-        NCBI_THROW(CBamException, eInvalidArg,
-                   "BAM file name is empty");
-    }
     m_GraphBinSize = kEstimatedGraphBinSize;
     CBamHeader header(bam_file);
     size_t ref_index = header.GetRefIndex(GetRefLabel());
@@ -379,6 +473,18 @@ vector<Uint8> CBam2Seq_graph::CollectEstimatedCoverage(const string& bam_file,
     m_AlignCount = 0;
     m_MaxAlignSpan = 0;
     return ret;
+}
+
+
+vector<Uint8> CBam2Seq_graph::CollectRawAccessCoverage(CBamDb& db)
+{
+    return CollectRawAccessCoverage(db.GetDbName(), db.GetIndexName());
+}
+
+
+vector<Uint8> CBam2Seq_graph::CollectEstimatedCoverage(CBamDb& db)
+{
+    return CollectEstimatedCoverage(db.GetDbName(), db.GetIndexName());
 }
 
 

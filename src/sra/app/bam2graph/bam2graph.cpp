@@ -105,6 +105,7 @@ void CBam2GraphApp::Init(void)
                              CArgDescriptions::eInputFile);
 
     arg_desc->AddFlag("estimated", "Make estimated graph using index only");
+    arg_desc->AddFlag("raw-access", "Make graph using raw access to BAM");
     arg_desc->AddOptionalKey("min_quality", "MinMapQuality",
                              "Minimal alignment map quality",
                              CArgDescriptions::eInteger);
@@ -249,6 +250,9 @@ void CBam2GraphApp::ProcessFile(const string& file)
     }
     if ( args["estimated"] ) {
         cvt.SetEstimated();
+    }
+    if ( args["raw-access"] ) {
+        cvt.SetRawAccess();
     }
     CRef<CDelta_ext> delta;
     if ( args["delta"] ) {

@@ -39,6 +39,8 @@
 #include <klib/text.h>
 #include <vfs/path.h>
 #include <vfs/manager.h>
+#include <align/bam.h>
+#include <align/align-access.h>
 
 #include <corelib/ncbifile.hpp>
 #include <objects/general/general__.hpp>
@@ -51,6 +53,15 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 class CSeq_entry;
+
+
+DEFINE_BAM_REF_TRAITS(AlignAccessMgr, const);
+DEFINE_BAM_REF_TRAITS(AlignAccessDB,  const);
+DEFINE_BAM_REF_TRAITS(AlignAccessRefSeqEnumerator, );
+DEFINE_BAM_REF_TRAITS(AlignAccessAlignmentEnumerator, );
+DEFINE_BAM_REF_TRAITS(BAMFile, const);
+DEFINE_BAM_REF_TRAITS(BAMAlignment, const);
+
 
 CBamException::CBamException(void)
     : m_RC(0)

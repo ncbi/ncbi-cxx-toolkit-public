@@ -353,6 +353,10 @@ public:
         {
             return GetHeader().GetRefIndex(ref_label);
         }
+    TSeqPos GetRefSeqLength(size_t ref_index) const
+        {
+            return GetHeader().GetRefLength(ref_index);
+        }
 
 
     CBGZFFile& GetFile()
@@ -485,7 +489,9 @@ struct NCBI_BAMREAD_EXPORT SBamAlignInfo
         }
 
     string get_read() const;
+    uint32_t get_cigar_pos() const;
     uint32_t get_cigar_ref_size() const;
+    uint32_t get_cigar_read_size() const;
     string get_cigar() const;
 
 private:
@@ -563,13 +569,22 @@ public:
     CTempString GetShortSeqAcc() const;
     string GetShortSequence() const;
 
-    TSeqPos GetCIGARPos() const;
-    TSeqPos GetCIGARShortSize() const;
+    TSeqPos GetCIGARPos() const
+        {
+            return m_AlignInfo.get_cigar_pos();
+        }
+    TSeqPos GetCIGARShortSize() const
+        {
+            return m_AlignInfo.get_cigar_read_size();
+        }
     TSeqPos GetCIGARRefSize() const
         {
             return m_AlignInfo.get_cigar_ref_size();
         }
-    string GetCIGAR() const;
+    string GetCIGAR() const
+        {
+            return m_AlignInfo.get_cigar();
+        }
 
     Uint2 GetFlags() const
         {

@@ -757,6 +757,25 @@ string SBamAlignInfo::get_read() const
 }
 
 
+uint32_t SBamAlignInfo::get_cigar_pos() const
+{
+    uint32_t ret = 0;
+    const char* ptr = get_cigar_ptr();
+    for ( uint16_t count = get_cigar_ops_count(); count--; ) {
+        uint32_t op = SBamUtil::MakeUint4(ptr);
+        ptr += 4;
+        switch ( op & 0xf ) {
+        case 4: // S ?
+            ret += op >> 4;
+            break;
+        default:
+            break;
+        }
+    }
+    return ret;
+}
+
+
 uint32_t SBamAlignInfo::get_cigar_ref_size() const
 {
     uint32_t ret = 0;
@@ -768,6 +787,29 @@ uint32_t SBamAlignInfo::get_cigar_ref_size() const
         case 0: // M
         case 2: // D
         case 3: // N ?
+        case 7: // =
+        case 8: // X
+            ret += op >> 4;
+            break;
+        default:
+            break;
+        }
+    }
+    return ret;
+}
+
+
+uint32_t SBamAlignInfo::get_cigar_read_size() const
+{
+    uint32_t ret = 0;
+    const char* ptr = get_cigar_ptr();
+    for ( uint16_t count = get_cigar_ops_count(); count--; ) {
+        uint32_t op = SBamUtil::MakeUint4(ptr);
+        ptr += 4;
+        switch ( op & 0xf ) {
+        case 0: // M
+        case 1: // I
+        case 4: // S ?
         case 7: // =
         case 8: // X
             ret += op >> 4;

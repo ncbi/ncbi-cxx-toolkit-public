@@ -34,9 +34,10 @@
 
 #include <corelib/ncbistd.hpp>
 #include <sra/readers/bam/bamread.hpp>
+
 #include <kfs/file.h>
-#include <vfs/manager.h>
-#include <vfs/path.h>
+struct VFSManager;
+struct VPath;
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)

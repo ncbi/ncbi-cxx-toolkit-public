@@ -43,8 +43,17 @@
 #include <objects/seqalign/Seq_align.hpp>
 #include <objtools/readers/iidmapper.hpp>
 
-#include <align/bam.h>
-#include <align/align-access.h>
+typedef uint32_t rc_t; // from <klib/rc.h>
+
+//#include <align/bam.h>
+struct BAMFile;
+struct BAMAlignment;
+
+//#include <align/align-access.h>
+struct AlignAccessMgr;
+struct AlignAccessDB;
+struct AlignAccessRefSeqEnumerator;
+struct AlignAccessAlignmentEnumerator;
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -185,9 +194,14 @@ struct CBamRefTraits
     template<>                                                          \
     struct CBamRefTraits<Const T>                                       \
     {                                                                   \
-        static rc_t x_Release(const T* t) { return T##Release(t); }     \
-        static rc_t x_AddRef (const T* t) { return T##AddRef(t); }      \
+        static rc_t x_Release(const T* t);                              \
+        static rc_t x_AddRef (const T* t);                              \
     }
+#define DEFINE_BAM_REF_TRAITS(T, Const)                                 \
+    rc_t CBamRefTraits<Const T>::x_Release(const T* t)                  \
+    { return T##Release(t); }                                           \
+    rc_t CBamRefTraits<Const T>::x_AddRef (const T* t)                  \
+    { return T##AddRef(t); }
 
 SPECIALIZE_BAM_REF_TRAITS(AlignAccessMgr, const);
 SPECIALIZE_BAM_REF_TRAITS(AlignAccessDB,  const);

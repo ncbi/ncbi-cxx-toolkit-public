@@ -50,6 +50,11 @@ BEGIN_SCOPE(objects)
 class CSeq_entry;
 
 
+DEFINE_BAM_REF_TRAITS(VFSManager, );
+DEFINE_BAM_REF_TRAITS(VPath, );
+DEFINE_BAM_REF_TRAITS(KFile, const);
+
+
 void CVFSManager::x_Init()
 {
     if ( rc_t rc = VFSManagerMake(x_InitPtr()) ) {
