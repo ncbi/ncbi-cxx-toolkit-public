@@ -309,7 +309,7 @@ public:
 
     CSnpBitfield &          operator=(const CSnpBitfield &rhs);
     CSnpBitfield &          operator=(const objects::CSeq_feat& feat);
-    NCBI_DEPRECATED CSnpBitfield &          operator=( const std::vector<char> &rhs) { NCBI_ASSERT(true, "Initialization from vector<char> not supported anymore; use feat instead"); }
+    NCBI_DEPRECATED CSnpBitfield &          operator=( const std::vector<char> &rhs) { NCBI_ASSERT(true, "Initialization from vector<char> not supported anymore; use feat instead");  return *this; }
 
     bool                    IsTrue(EProperty prop) const;
     bool                    IsTrue(EFunctionClass fxn)  const;
@@ -320,7 +320,7 @@ public:
     EFunctionClass          GetFunctionClass()          const;
     const char *            GetGenePropertyString()     const;
     const char *            GetVariationClassString()   const;
-    NCBI_DEPRECATED const char *            GetString()                 const  { NCBI_ASSERT(true, "Not supported anymore"); }
+    NCBI_DEPRECATED const char *            GetString()                 const  { NCBI_ASSERT(true, "Not supported anymore"); return NULL; }
     NCBI_DEPRECATED void                    GetBytes(vector<char>& bytes) const  { NCBI_ASSERT(true, "Not supported anymore"); }
 
     // returns true if the bitfield was well initialized from a given feature
