@@ -661,4 +661,19 @@ void CTable2AsnContext::ApplyFileTracks(objects::CSeq_entry& entry) const
 
 }
 
+void CTable2AsnContext::ReportFixedProduct(const string& oldproduct, const string& newproduct, const CSeq_loc& loc, const string& locustag)
+{
+    if (m_fixed_product_filename.empty())
+        return;
+
+    if (m_fixed_products.get() == 0)
+    {
+        m_fixed_products.reset(new CNcbiOfstream(m_fixed_product_filename.c_str()));
+    }
+
+    string label;
+    loc.GetLabel(&label);
+    *m_fixed_products << "Changed " << oldproduct << " to " << newproduct << " " << label << " " << locustag << "\n\n";
+}
+
 END_NCBI_SCOPE

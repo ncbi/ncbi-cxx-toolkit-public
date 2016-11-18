@@ -99,9 +99,12 @@ public:
     bool   m_eukariote;
     bool   m_di_fasta;
 
+    string m_fixed_product_filename;
+
     CRef<objects::CSeq_descr>  m_descriptors;
     auto_ptr<objects::edit::CRemoteUpdater>   m_remote_updater;
     auto_ptr<CNcbiOfstream> m_ecn_numbers_ostream;
+    auto_ptr<CNcbiOfstream> m_fixed_products;
 
     //string conffile;
 
@@ -148,6 +151,8 @@ public:
     static void RenameProteinIdsQuals(CTable2AsnContext& context, objects::CSeq_feat& feature);
     static void RemoveProteinIdsQuals(CTable2AsnContext& context, objects::CSeq_feat& feature);
     static bool IsDBLink(const objects::CSeqdesc& desc);
+    void ReportFixedProduct(const string& oldproduct, const string& newproduct, const objects::CSeq_loc& loc, const string& locustag);
+
 
     CRef<objects::CSeq_submit> m_submit_template;
     CRef<objects::CSeq_entry>  m_entry_template;

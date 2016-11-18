@@ -828,6 +828,11 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
         }
     }
 
+    if (!IsDryRun())
+    {
+        m_context.m_fixed_product_filename = GenerateOutputFilename(".fixedproducts");
+        CFile(m_context.m_fixed_product_filename).Remove();
+    }
     m_context.ApplyFileTracks(*entry);
 
     if (m_context.m_descriptors.NotNull())
@@ -1148,8 +1153,8 @@ void CTbl2AsnApp::ProcessSecretFiles(CSeq_entry& result)
 void CTbl2AsnApp::ProcessSRCFileAndQualifiers(const string& pathname, CSeq_entry& result, const string& opt_map_xml)
 { 
     CSourceQualifiersReader src_reader(&m_context);
-    src_reader.LoadSourceQualifiers(pathname, opt_map_xml);
-    src_reader.ProcessSourceQualifiers(result, opt_map_xml);
+    if (src_reader.LoadSourceQualifiers(pathname, opt_map_xml))
+       src_reader.ProcessSourceQualifiers(result, opt_map_xml);
 }
 
 void CTbl2AsnApp::ProcessQVLFile(const string& pathname, CSeq_entry& result)

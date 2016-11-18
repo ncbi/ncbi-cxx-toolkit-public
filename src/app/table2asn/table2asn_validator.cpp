@@ -87,6 +87,7 @@ void CTable2AsnValidator::Cleanup(CSeq_entry_Handle& h_entry, const string& flag
 void CTable2AsnValidator::Validate(CRef<CSeq_submit> submit, CRef<CSeq_entry> entry, const string& flags, const string& report_name)
 {
     CScope scope(*CObjectManager::GetInstance());
+    scope.AddDefaults();
     validator::CValidator validator(scope.GetObjectManager());
 
     Uint4 opts = 0;
