@@ -3,7 +3,7 @@
 #
 add_library(snputil
     snp_utils snp_bitfield snp_bitfield_1_2 snp_bitfield_2 snp_bitfield_3
-    snp_bitfield_4 snp_bitfield_5 snp_bitfield_factory snp_bins
+    snp_bitfield_4 snp_bitfield_5 snp_bitfield_20 snp_bitfield_factory snp_bins
 )
 add_dependencies(snputil
     seqset variation
