@@ -1007,6 +1007,7 @@ void CMonkeyPlan::x_LoadRules(const string&    section,
     }
 }
 
+
 #ifndef NCBI_OS_MSWIN
 /** Regex-like check (might use some refactoring) */
 static bool s_MatchRegex(const string& to_match, const string& regex)
@@ -1608,6 +1609,7 @@ bool CMonkey::Poll(size_t*      n,
         int polls_count         = 0;
         while (polls_iter < *n) {
             SOCK&        sock      = (*polls)[polls_iter].sock;
+            if (sock == NULL) continue;
             LOG_POST(Note << "[CMonkey::Poll]  For connection with port " 
                           << sock->myport << ", host <empty> and "
                              "hostname <empty>.");
