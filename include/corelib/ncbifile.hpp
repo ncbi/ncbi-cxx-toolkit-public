@@ -2712,24 +2712,24 @@ private:
 ///
 /// CMemoryFile --
 ///
-/// Define class for support file memory mapping.
+/// Define class for file memory mapping support.
 ///
-/// This is a simple version of the CMemoryFileMap class, supported one
+/// This is a simple version of the CMemoryFileMap class supporting one
 /// mapped segment only.
 ///
-/// Note, that the mapping file must exists or can be create/extended.
+/// Note that the file being mapped must exist or can be created/extended.
 /// If file size changes after mapping, the effect of references to portions
 /// of the mapped region that correspond to added or removed portions of
 /// the file is unspecified.
 ///
-/// Throws an exceptions on error.
+/// Throws exceptions on errors.
 
 class NCBI_XNCBI_EXPORT CMemoryFile : public CMemoryFileMap
 {
 public:
     /// Constructor.
     ///
-    /// Initialize the memory mapping on file "file_name".
+    /// Initialize memory mapping of file "file_name".
     /// @param filename
     ///   Name of file to map to memory.
     /// @param protect_attr
