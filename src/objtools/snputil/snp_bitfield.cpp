@@ -138,6 +138,11 @@ CSnpBitfield::CSnpBitfield(const CSeq_feat& feat)
     *this = feat;  // reuse operator=
 }
 
+CSnpBitfield::CSnpBitfield(const CSnpBitfield &rhs)
+{
+    *this = rhs;  // reuse operator=
+}
+
 CSnpBitfield & CSnpBitfield::operator= ( const CSnpBitfield &rhs )
 {
     if(this == &rhs)
