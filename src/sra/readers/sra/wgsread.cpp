@@ -54,6 +54,9 @@
 #include <sra/error_codes.hpp>
 
 #include <sra/readers/sra/kdbread.hpp>
+#include <ncbi/ncbi.h>
+#include <insdc/insdc.h>
+#include <ncbi/wgs-contig.h>
 
 //#define COLLECT_PROFILE
 //#define TEST_ACC_VERSION

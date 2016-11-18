@@ -132,6 +132,80 @@ static bool s_GetReadFilterInAlignExt(void)
 #define RC_NO_MORE_ALIGNMENTS RC(rcApp, rcQuery, rcSearching, rcRow, rcNotFound)
 
 
+// SRefTableCursor is helper accessor structure for refseq table
+struct CCSraDb_Impl::SRefTableCursor : public CObject {
+    SRefTableCursor(const CVDBTable& table);
+    
+    CVDBCursor m_Cursor;
+
+    DECLARE_VDB_COLUMN_AS(Uint1, CGRAPH_HIGH);
+    DECLARE_VDB_COLUMN_AS(TVDBRowId, PRIMARY_ALIGNMENT_IDS);
+    DECLARE_VDB_COLUMN_AS(TVDBRowId, SECONDARY_ALIGNMENT_IDS);
+    DECLARE_VDB_COLUMN_AS_STRING(NAME);
+    typedef pair<TVDBRowId, TVDBRowId> row_range_t;
+    DECLARE_VDB_COLUMN_AS(row_range_t, NAME_RANGE);
+    DECLARE_VDB_COLUMN_AS_STRING(SEQ_ID);
+    DECLARE_VDB_COLUMN_AS(INSDC_coord_len, SEQ_LEN);
+    DECLARE_VDB_COLUMN_AS(INSDC_coord_len, MAX_SEQ_LEN);
+    DECLARE_VDB_COLUMN_AS_STRING(READ);
+    DECLARE_VDB_COLUMN_AS(bool, CIRCULAR);
+    DECLARE_VDB_COLUMN_AS(INSDC_coord_zero, OVERLAP_REF_POS);
+};
+
+
+// SAlnTableCursor is helper accessor structure for align table
+struct CCSraDb_Impl::SAlnTableCursor : public CObject {
+    SAlnTableCursor(const CVDBTable& table, bool is_secondary);
+
+    CVDBCursor m_Cursor;
+    bool m_IsSecondary;
+        
+    DECLARE_VDB_COLUMN_AS_STRING(REF_NAME);
+    DECLARE_VDB_COLUMN_AS_STRING(REF_SEQ_ID);
+    DECLARE_VDB_COLUMN_AS(INSDC_coord_zero, REF_POS);
+    DECLARE_VDB_COLUMN_AS(INSDC_coord_len, REF_LEN);
+    DECLARE_VDB_COLUMN_AS(bool, REF_ORIENTATION);
+    DECLARE_VDB_COLUMN_AS(char, HAS_REF_OFFSET);
+    DECLARE_VDB_COLUMN_AS(char, HAS_MISMATCH);
+    DECLARE_VDB_COLUMN_AS(int32_t, REF_OFFSET);
+    DECLARE_VDB_COLUMN_AS(Uint1, REF_OFFSET_TYPE);
+    DECLARE_VDB_COLUMN_AS_STRING(CIGAR_SHORT);
+    DECLARE_VDB_COLUMN_AS_STRING(CIGAR_LONG);
+    DECLARE_VDB_COLUMN_AS_STRING(RAW_READ);
+    DECLARE_VDB_COLUMN_AS_STRING(MISMATCH_READ);
+    DECLARE_VDB_COLUMN_AS_STRING(MISMATCH);
+    DECLARE_VDB_COLUMN_AS(INSDC_coord_len, SPOT_LEN);
+    DECLARE_VDB_COLUMN_AS(TVDBRowId, SEQ_SPOT_ID);
+    DECLARE_VDB_COLUMN_AS(INSDC_coord_one, SEQ_READ_ID);
+    DECLARE_VDB_COLUMN_AS(int32_t, MAPQ);
+    DECLARE_VDB_COLUMN_AS(TVDBRowId, MATE_ALIGN_ID);
+    DECLARE_VDB_COLUMN_AS(INSDC_quality_phred, QUALITY);
+    DECLARE_VDB_COLUMN_AS_STRING(SPOT_GROUP);
+    DECLARE_VDB_COLUMN_AS_STRING(NAME);
+    DECLARE_VDB_COLUMN_AS(INSDC_read_filter, READ_FILTER);
+};
+
+
+// SSeqTableCursor is helper accessor structure for sequence table
+struct CCSraDb_Impl::SSeqTableCursor : public CObject {
+    SSeqTableCursor(const CVDBTable& table);
+
+    CVDBCursor m_Cursor;
+        
+    DECLARE_VDB_COLUMN_AS_STRING(SPOT_GROUP);
+    DECLARE_VDB_COLUMN_AS(INSDC_read_type, READ_TYPE);
+    DECLARE_VDB_COLUMN_AS(INSDC_coord_len, READ_LEN);
+    DECLARE_VDB_COLUMN_AS(INSDC_coord_zero, READ_START);
+    DECLARE_VDB_COLUMN_AS_STRING(READ);
+    DECLARE_VDB_COLUMN_AS(INSDC_quality_phred, QUALITY);
+    DECLARE_VDB_COLUMN_AS(TVDBRowId, PRIMARY_ALIGNMENT_ID);
+    DECLARE_VDB_COLUMN_AS(INSDC_coord_len, TRIM_LEN);
+    DECLARE_VDB_COLUMN_AS(INSDC_coord_zero, TRIM_START);
+    DECLARE_VDB_COLUMN_AS_STRING(NAME);
+    DECLARE_VDB_COLUMN_AS(INSDC_read_filter, READ_FILTER);
+};
+
+
 CCSraDb_Impl::SRefTableCursor::SRefTableCursor(const CVDBTable& table)
     : m_Cursor(table),
       INIT_VDB_COLUMN(CGRAPH_HIGH),
@@ -486,6 +560,26 @@ CRef<CCSraDb_Impl::SSeqTableCursor> CCSraDb_Impl::Seq(void)
 }
 
 
+void CCSraDb_Impl::Put(CRef<SRefTableCursor>& curs)
+{
+    m_Ref.Put(curs);
+}
+
+
+void CCSraDb_Impl::Put(CRef<SAlnTableCursor>& curs)
+{
+    if ( curs ) {
+        m_Aln[curs->m_IsSecondary].Put(curs);
+    }
+}
+
+
+void CCSraDb_Impl::Put(CRef<SSeqTableCursor>& curs)
+{
+    m_Seq.Put(curs);
+}
+
+
 void CCSraDb_Impl::x_CalcSeqLength(const SRefInfo& info)
 {
     CRef<SRefTableCursor> ref(Ref());
@@ -832,6 +926,54 @@ Uint8 CCSraRefSeqIterator::GetEstimatedNumberOfAlignments(void) const
 // CCSraAlignIterator
 /////////////////////////////////////////////////////////////////////////////
 
+void CCSraAlignIterator::Reset(void)
+{
+    if ( m_Ref ) {
+        GetDb().Put(m_Ref);
+    }
+    if ( m_Aln ) {
+        GetDb().Put(m_Aln);
+    }
+    m_RefIter = CCSraRefSeqIterator();
+    m_Error = RC_NO_MORE_ALIGNMENTS;
+    m_ArgRefPos = m_ArgRefLast = 0;
+    m_CurRefPos = m_CurRefLen = 0;
+    m_RefRowNext = m_RefRowLast = 0;
+    m_AlnRowIsSecondary = false;
+    m_SearchMode = eSearchByOverlap;
+    m_AlnRowCur = m_AlnRowEnd = 0;
+}
+
+
+CCSraAlignIterator::CCSraAlignIterator(const CCSraAlignIterator& iter)
+{
+    *this = iter;
+}
+
+
+CCSraAlignIterator& CCSraAlignIterator::operator=(const CCSraAlignIterator& iter)
+{
+    if ( this != &iter ) {
+        Reset();
+        m_Ref = iter.m_Ref;
+        m_Aln = iter.m_Aln;
+        m_RefIter = iter.m_RefIter;
+        m_Error = iter.m_Error;
+        m_ArgRefPos = iter.m_ArgRefPos;
+        m_ArgRefLast = iter.m_ArgRefLast;
+        m_CurRefPos = iter.m_CurRefPos;
+        m_CurRefLen = iter.m_CurRefLen;
+        m_RefRowNext = iter.m_RefRowNext;
+        m_RefRowLast = iter.m_RefRowLast;
+        m_AlnRowIsSecondary = iter.m_AlnRowIsSecondary;
+        m_SearchMode = iter.m_SearchMode;
+        m_AlnRowCur = iter.m_AlnRowCur;
+        m_AlnRowEnd = iter.m_AlnRowEnd;
+    }
+    return *this;
+}
+
+
 CCSraAlignIterator::CCSraAlignIterator(void)
     : m_Error(RC_NO_MORE_ALIGNMENTS)
 {
@@ -870,12 +1012,7 @@ CCSraAlignIterator::CCSraAlignIterator(const CCSraDb& csra_db,
 
 CCSraAlignIterator::~CCSraAlignIterator(void)
 {
-    if ( m_Ref ) {
-        m_RefIter.GetDb().Put(m_Ref);
-    }
-    if ( m_Aln ) {
-        m_RefIter.GetDb().Put(m_Aln);
-    }
+    Reset();
 }
 
 
@@ -1636,6 +1773,46 @@ void CCSraAlignIterator::x_AddField(CUser_object& obj,
 /////////////////////////////////////////////////////////////////////////////
 // CCSraShortReadIterator
 
+void CCSraShortReadIterator::Reset(void)
+{
+    if ( m_Seq ) {
+        GetDb().Put(m_Seq);
+    }
+    m_Db.Reset();
+    m_SpotId = m_MaxSpotId = 0;
+    m_ReadId = 1;
+    m_MaxReadId = 0;
+    m_IncludeTechnicalReads = false;
+    m_ClipByQuality = false;
+    m_Error = RC_NO_MORE_ALIGNMENTS;
+}
+
+
+CCSraShortReadIterator::CCSraShortReadIterator(const CCSraShortReadIterator& iter)
+{
+    *this = iter;
+}
+
+
+CCSraShortReadIterator& CCSraShortReadIterator::operator=(const CCSraShortReadIterator& iter)
+{
+    if ( this != &iter ) {
+        Reset();
+        m_Seq = iter.m_Seq;
+        m_Db = iter.m_Db;
+        m_Error = iter.m_Error;
+        m_SpotId = iter.m_SpotId;
+        m_MaxSpotId = iter.m_MaxSpotId;
+        m_ReadId = iter.m_ReadId;
+        m_MaxReadId = iter.m_MaxReadId;
+        m_IncludeTechnicalReads = iter.m_IncludeTechnicalReads;
+        m_ClipByQuality = iter.m_ClipByQuality;
+        m_Error = iter.m_Error;
+    }
+    return *this;
+}
+
+
 CCSraShortReadIterator::CCSraShortReadIterator(void)
     : m_SpotId(0),
       m_MaxSpotId(0),
@@ -1752,9 +1929,7 @@ void CCSraShortReadIterator::SetLastSpotId(TVDBRowId spot_id)
 
 CCSraShortReadIterator::~CCSraShortReadIterator(void)
 {
-    if ( m_Seq ) {
-        GetDb().Put(m_Seq);
-    }
+    Reset();
 }
 
 

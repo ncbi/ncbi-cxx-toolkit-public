@@ -42,7 +42,11 @@
 #include <objects/seq/Seq_literal.hpp>
 #include <map>
 #include <list>
-#include <insdc/sra.h>
+
+//#include <insdc/sra.h> // for INSDC_coord_one, INSDC_coord_len, INSDC_read_filter
+typedef int32_t INSDC_coord_one;
+typedef uint32_t INSDC_coord_len;
+typedef uint8_t INSDC_read_filter;
 
 BEGIN_NCBI_NAMESPACE;
 BEGIN_NAMESPACE(objects);
@@ -144,75 +148,11 @@ protected:
     void x_CalcSeqLength(const SRefInfo& info);
 
     // SRefTableCursor is helper accessor structure for refseq table
-    struct SRefTableCursor : public CObject {
-        SRefTableCursor(const CVDBTable& table);
-
-        CVDBCursor m_Cursor;
-
-        DECLARE_VDB_COLUMN_AS(Uint1, CGRAPH_HIGH);
-        DECLARE_VDB_COLUMN_AS(TVDBRowId, PRIMARY_ALIGNMENT_IDS);
-        DECLARE_VDB_COLUMN_AS(TVDBRowId, SECONDARY_ALIGNMENT_IDS);
-        DECLARE_VDB_COLUMN_AS_STRING(NAME);
-        typedef pair<TVDBRowId, TVDBRowId> row_range_t;
-        DECLARE_VDB_COLUMN_AS(row_range_t, NAME_RANGE);
-        DECLARE_VDB_COLUMN_AS_STRING(SEQ_ID);
-        DECLARE_VDB_COLUMN_AS(INSDC_coord_len, SEQ_LEN);
-        DECLARE_VDB_COLUMN_AS(INSDC_coord_len, MAX_SEQ_LEN);
-        DECLARE_VDB_COLUMN_AS_STRING(READ);
-        DECLARE_VDB_COLUMN_AS(bool, CIRCULAR);
-        DECLARE_VDB_COLUMN_AS(INSDC_coord_zero, OVERLAP_REF_POS);
-    };
-
+    struct SRefTableCursor;
     // SAlnTableCursor is helper accessor structure for align table
-    struct SAlnTableCursor : public CObject {
-        SAlnTableCursor(const CVDBTable& table, bool is_secondary);
-
-        CVDBCursor m_Cursor;
-        bool m_IsSecondary;
-        
-        DECLARE_VDB_COLUMN_AS_STRING(REF_NAME);
-        DECLARE_VDB_COLUMN_AS_STRING(REF_SEQ_ID);
-        DECLARE_VDB_COLUMN_AS(INSDC_coord_zero, REF_POS);
-        DECLARE_VDB_COLUMN_AS(INSDC_coord_len, REF_LEN);
-        DECLARE_VDB_COLUMN_AS(bool, REF_ORIENTATION);
-        DECLARE_VDB_COLUMN_AS(char, HAS_REF_OFFSET);
-        DECLARE_VDB_COLUMN_AS(char, HAS_MISMATCH);
-        DECLARE_VDB_COLUMN_AS(int32_t, REF_OFFSET);
-        DECLARE_VDB_COLUMN_AS(Uint1, REF_OFFSET_TYPE);
-        DECLARE_VDB_COLUMN_AS_STRING(CIGAR_SHORT);
-        DECLARE_VDB_COLUMN_AS_STRING(CIGAR_LONG);
-        DECLARE_VDB_COLUMN_AS_STRING(RAW_READ);
-        DECLARE_VDB_COLUMN_AS_STRING(MISMATCH_READ);
-        DECLARE_VDB_COLUMN_AS_STRING(MISMATCH);
-        DECLARE_VDB_COLUMN_AS(INSDC_coord_len, SPOT_LEN);
-        DECLARE_VDB_COLUMN_AS(TVDBRowId, SEQ_SPOT_ID);
-        DECLARE_VDB_COLUMN_AS(INSDC_coord_one, SEQ_READ_ID);
-        DECLARE_VDB_COLUMN_AS(int32_t, MAPQ);
-        DECLARE_VDB_COLUMN_AS(TVDBRowId, MATE_ALIGN_ID);
-        DECLARE_VDB_COLUMN_AS(INSDC_quality_phred, QUALITY);
-        DECLARE_VDB_COLUMN_AS_STRING(SPOT_GROUP);
-        DECLARE_VDB_COLUMN_AS_STRING(NAME);
-        DECLARE_VDB_COLUMN_AS(INSDC_read_filter, READ_FILTER);
-    };
-
+    struct SAlnTableCursor;
     // SSeqTableCursor is helper accessor structure for sequence table
-    struct SSeqTableCursor : public CObject {
-        SSeqTableCursor(const CVDBTable& table);
-
-        CVDBCursor m_Cursor;
-        
-        DECLARE_VDB_COLUMN_AS_STRING(SPOT_GROUP);
-        DECLARE_VDB_COLUMN_AS(INSDC_read_type, READ_TYPE);
-        DECLARE_VDB_COLUMN_AS(INSDC_coord_len, READ_LEN);
-        DECLARE_VDB_COLUMN_AS(INSDC_coord_zero, READ_START);
-        DECLARE_VDB_COLUMN_AS_STRING(READ);
-        DECLARE_VDB_COLUMN_AS(INSDC_quality_phred, QUALITY);
-        DECLARE_VDB_COLUMN_AS(TVDBRowId, PRIMARY_ALIGNMENT_ID);
-        DECLARE_VDB_COLUMN_AS(INSDC_coord_len, TRIM_LEN);
-        DECLARE_VDB_COLUMN_AS(INSDC_coord_zero, TRIM_START);
-        DECLARE_VDB_COLUMN_AS_STRING(NAME);
-        DECLARE_VDB_COLUMN_AS(INSDC_read_filter, READ_FILTER);
-    };
+    struct SSeqTableCursor;
     friend struct SSeqTableCursor;
 
     // get table accessor object for exclusive access
@@ -220,17 +160,9 @@ protected:
     CRef<SAlnTableCursor> Aln(bool is_secondary);
     CRef<SSeqTableCursor> Seq(void);
     // return table accessor object for reuse
-    void Put(CRef<SRefTableCursor>& curs) {
-        m_Ref.Put(curs);
-    }
-    void Put(CRef<SAlnTableCursor>& curs) {
-        if ( curs ) {
-            m_Aln[curs->m_IsSecondary].Put(curs);
-        }
-    }
-    void Put(CRef<SSeqTableCursor>& curs) {
-        m_Seq.Put(curs);
-    }
+    void Put(CRef<SRefTableCursor>& curs);
+    void Put(CRef<SAlnTableCursor>& curs);
+    void Put(CRef<SSeqTableCursor>& curs);
 
 protected:
     void OpenRefTable(void);
@@ -459,6 +391,10 @@ public:
                        ESearchMode search_mode = eSearchByOverlap);
     ~CCSraAlignIterator(void);
 
+    void Reset(void);
+    CCSraAlignIterator(const CCSraAlignIterator& iter);
+    CCSraAlignIterator& operator=(const CCSraAlignIterator& iter);
+
     void Select(TSeqPos ref_pos,
                 TSeqPos window = 0,
                 ESearchMode search_mode = eSearchByOverlap);
@@ -634,6 +570,10 @@ public:
                            uint32_t read_id,
                            EClipType clip_type = eDefaultClip);
     ~CCSraShortReadIterator(void);
+
+    void Reset(void);
+    CCSraShortReadIterator(const CCSraShortReadIterator& iter);
+    CCSraShortReadIterator& operator=(const CCSraShortReadIterator& iter);
 
     bool Select(TVDBRowId spot_id);
     bool Select(TVDBRowId spot_id, uint32_t read_id);

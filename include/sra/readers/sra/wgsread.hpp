@@ -47,9 +47,16 @@
 #include <map>
 #include <list>
 
-#include <ncbi/ncbi.h>
-#include <ncbi/wgs-contig.h>
-#include <insdc/insdc.h>
+//#include <ncbi/ncbi.h> // for NCBI_gb_state
+typedef uint32_t NCBI_gb_state;
+//#include <insdc/insdc.h> // for INSDC_coord_*, INSDC_quality_phred
+typedef int32_t INSDC_coord_zero;
+typedef int32_t INSDC_coord_one;
+typedef uint32_t INSDC_coord_len;
+typedef uint8_t INSDC_quality_phred;
+//#include <ncbi/wgs-contig.h> // for NCBI_WGS_component_props, NCBI_WGS_gap_linkage
+typedef int16_t NCBI_WGS_component_props;
+typedef int32_t NCBI_WGS_gap_linkage;
 
 // missing wgs-contig.h definitions
 typedef uint8_t NCBI_WGS_seqtype;

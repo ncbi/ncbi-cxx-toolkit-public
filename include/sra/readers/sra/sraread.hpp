@@ -39,7 +39,9 @@
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seq/Seq_inst.hpp>
 
-#include <sra/sradb.h>
+//#include <sra/sradb.h> // for spotid_t, bitsz_t
+typedef int64_t spotid_t;
+typedef uint64_t bitsz_t;
 
 // SRA SDK structures
 struct SRAMgr;

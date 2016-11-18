@@ -37,6 +37,7 @@
 #include <klib/writer.h>
 #include <sra/types.h>
 #include <sra/impl.h>
+#include <sra/sradb.h>
 #include <sra/sradb-priv.h>
 #include <vfs/manager.h>
 #include <vfs/resolver.h>

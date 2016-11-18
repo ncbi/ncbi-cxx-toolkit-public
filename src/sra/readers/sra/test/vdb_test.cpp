@@ -36,6 +36,7 @@
 #include <corelib/ncbi_system.hpp>
 #include <sra/readers/sra/csraread.hpp>
 #include <sra/readers/ncbi_traces_path.hpp>
+#include <insdc/sra.h>
 
 #include <objects/general/general__.hpp>
 #include <objects/seq/seq__.hpp>
@@ -331,260 +332,187 @@ CRITICAL_SECTION sdk_mutex;
 # define SDKUnlock() do{}while(0)
 #endif
 
-#if 1
+#define LOW_LEVEL_TEST
 int LowLevelTest(void)
 {
-    cout << "LowLevelTest for memory overuse..." << endl;
-    const char* file_name = NCBI_TRACES01_PATH
-        "/compress/1KG/CEU/NA12249/exome.ILLUMINA.MOSAIK.csra";
+    cout << "LowLevelTest SRR1551783.SEQUENCE.TRIM_LEN[38013]..." << endl;
+    const char* file_name = "SRR1551783";
     const VDBManager* mgr = 0;
-    CALL(VDBManagerMakeRead(&mgr, 0));
+    RC_CALL(VDBManagerMakeRead(&mgr, 0));
         
     const VDatabase* db = 0;
-    CALL(VDBManagerOpenDBRead(mgr, &db, 0, file_name));
+    RC_CALL(VDBManagerOpenDBRead(mgr, &db, 0, file_name));
         
-    const VTable* ref_table = 0;
-    CALL(VDatabaseOpenTableRead(db, &ref_table, "REFERENCE"));
-    
-    const VCursor* ref_cursor = 0;
-    CALL(VTableCreateCursorRead(ref_table, &ref_cursor));
-    CALL(VCursorPermitPostOpenAdd(ref_cursor));
-    CALL(VCursorOpen(ref_cursor));
-    
-    uint32_t align_column;
-    CALL(VCursorAddColumn(ref_cursor, &align_column, "PRIMARY_ALIGNMENT_IDS"));
-    
-    const VTable* align_table = 0;
-    CALL(VDatabaseOpenTableRead(db, &align_table, "PRIMARY_ALIGNMENT"));
-
-    const VCursor* align_cursor = 0;
-    CALL(VTableCreateCursorRead(align_table, &align_cursor));
-    CALL(VCursorPermitPostOpenAdd(align_cursor));
-    CALL(VCursorOpen(align_cursor));
-    
-    uint32_t spot_id_column;
-    CALL(VCursorAddColumn(align_cursor, &spot_id_column,
-                          "SEQ_SPOT_ID"));
-    uint32_t read_id_column;
-    CALL(VCursorAddColumn(align_cursor, &read_id_column,
-                          "SEQ_READ_ID"));
-
     const VTable* seq_table = 0;
-    CALL(VDatabaseOpenTableRead(db, &seq_table, "SEQUENCE"));
-
+    RC_CALL(VDatabaseOpenTableRead(db, &seq_table, "SEQUENCE"));
+    
     const VCursor* seq_cursor = 0;
-    CALL(VTableCreateCursorRead(seq_table, &seq_cursor));
-    CALL(VCursorPermitPostOpenAdd(seq_cursor));
-    CALL(VCursorOpen(seq_cursor));
+    RC_CALL(VTableCreateCursorRead(seq_table, &seq_cursor));
+    RC_CALL(VCursorPermitPostOpenAdd(seq_cursor));
+    RC_CALL(VCursorOpen(seq_cursor));
     
-    uint32_t read_column;
-    CALL(VCursorAddColumn(seq_cursor, &read_column, "READ"));
-    
-    for ( int64_t ref_row = 582444; ref_row <= 582444; ++ref_row ) {
-        const int64_t* align_rows = 0;
-        size_t align_count = 0;
-        {
-            const void* data;
-            uint32_t bit_offset, bit_length;
-            uint32_t elem_count;
-            CALL(VCursorCellDataDirect(ref_cursor, ref_row,
-                                       align_column,
-                                       &bit_length, &data, &bit_offset,
-                                       &elem_count));
-            _ASSERT(bit_length == 8*sizeof(int64_t));
-            _ASSERT(bit_offset == 0);
-            align_rows = static_cast<const int64_t*>(data);
-            align_count = elem_count;
-        }
-        
-        for ( size_t i = 0; i < align_count; ++i ) {
-            int64_t align_row = align_rows[i];
-            int64_t spot_id = 0;
-            uint32_t read_id = 0;
-            {
-                const void* data;
-                uint32_t bit_offset, bit_length;
-                uint32_t elem_count;
-                CALL(VCursorCellDataDirect(align_cursor, align_row,
-                                           spot_id_column,
-                                           &bit_length, &data, &bit_offset,
-                                           &elem_count));
-                _ASSERT(bit_length == 8*sizeof(int64_t));
-                _ASSERT(bit_offset == 0);
-                _ASSERT(elem_count == 1);
-                spot_id = *static_cast<const int64_t*>(data);
-                _ASSERT(spot_id);
-            }
-            {
-                const void* data;
-                uint32_t bit_offset, bit_length;
-                uint32_t elem_count;
-                CALL(VCursorCellDataDirect(align_cursor, align_row,
-                                           read_id_column,
-                                           &bit_length, &data, &bit_offset,
-                                           &elem_count));
-                _ASSERT(bit_length == 8*sizeof(uint32_t));
-                _ASSERT(bit_offset == 0);
-                _ASSERT(elem_count == 1);
-                read_id = *static_cast<const uint32_t*>(data);
-                _ASSERT(read_id);
-            }
+    uint32_t SPOT_GROUP;
+    RC_CALL(VCursorAddColumn(seq_cursor, &SPOT_GROUP, "SPOT_GROUP"));
+    uint32_t READ_TYPE;
+    RC_CALL(VCursorAddColumn(seq_cursor, &READ_TYPE, "READ_TYPE"));
+    uint32_t READ_LEN;
+    RC_CALL(VCursorAddColumn(seq_cursor, &READ_LEN, "READ_LEN"));
+    uint32_t READ_START;
+    RC_CALL(VCursorAddColumn(seq_cursor, &READ_START, "READ_START"));
+    uint32_t READ;
+    RC_CALL(VCursorAddColumn(seq_cursor, &READ, "READ"));
+    uint32_t QUALITY;
+    RC_CALL(VCursorAddColumn(seq_cursor, &QUALITY, "QUALITY"));
+    uint32_t TRIM_LEN;
+    RC_CALL(VCursorAddColumn(seq_cursor, &TRIM_LEN, "TRIM_LEN"));
+    uint32_t TRIM_START;
+    RC_CALL(VCursorAddColumn(seq_cursor, &TRIM_START, "TRIM_START"));
+    uint32_t NAME;
+    RC_CALL(VCursorAddColumn(seq_cursor, &NAME, "NAME"));
 
-            const char* read = 0;
-            {
-                const void* data;
-                uint32_t bit_offset, bit_length;
-                uint32_t elem_count;
-                CALL(VCursorCellDataDirect(seq_cursor, spot_id,
-                                           read_column,
-                                           &bit_length, &data, &bit_offset,
-                                           &elem_count));
-                _ASSERT(bit_length == 8);
-                _ASSERT(bit_offset == 0);
-                read = static_cast<const char*>(data);
-            }
-
-            cout << " " << align_row << ":" << spot_id << "." << read_id
-                 << endl;
+    int64_t seq_row = 38012;
+    {
+        const void* data;
+        uint32_t bit_offset, bit_length;
+        uint32_t elem_count;
+        for ( int i = 0; i < 2; ++i ) {
+            RC_CALL(VCursorCellDataDirect(seq_cursor, seq_row,
+                                          READ_TYPE,
+                                          &bit_length, &data, &bit_offset,
+                                          &elem_count));
+            RC_CALL(VCursorCellDataDirect(seq_cursor, seq_row,
+                                          READ_TYPE,
+                                          &bit_length, &data, &bit_offset,
+                                          &elem_count));
+            RC_CALL(VCursorCellDataDirect(seq_cursor, seq_row,
+                                          READ_LEN,
+                                          &bit_length, &data, &bit_offset,
+                                          &elem_count));
+            RC_CALL(VCursorCellDataDirect(seq_cursor, seq_row,
+                                          READ_START,
+                                          &bit_length, &data, &bit_offset,
+                                          &elem_count));
+            RC_CALL(VCursorCellDataDirect(seq_cursor, seq_row,
+                                          TRIM_START,
+                                          &bit_length, &data, &bit_offset,
+                                          &elem_count));
+            RC_CALL(VCursorCellDataDirect(seq_cursor, seq_row,
+                                          TRIM_LEN,
+                                          &bit_length, &data, &bit_offset,
+                                          &elem_count));
         }
+
+        RC_CALL(VCursorCellDataDirect(seq_cursor, seq_row,
+                                      NAME,
+                                      &bit_length, &data, &bit_offset,
+                                      &elem_count));
+        RC_CALL(VCursorCellDataDirect(seq_cursor, seq_row,
+                                      NAME,
+                                      &bit_length, &data, &bit_offset,
+                                      &elem_count));
+        RC_CALL(VCursorCellDataDirect(seq_cursor, seq_row,
+                                      READ_LEN,
+                                      &bit_length, &data, &bit_offset,
+                                      &elem_count));
+        RC_CALL(VCursorCellDataDirect(seq_cursor, seq_row,
+                                      READ_START,
+                                      &bit_length, &data, &bit_offset,
+                                      &elem_count));
+        RC_CALL(VCursorCellDataDirect(seq_cursor, seq_row,
+                                      TRIM_START,
+                                      &bit_length, &data, &bit_offset,
+                                      &elem_count));
+        RC_CALL(VCursorCellDataDirect(seq_cursor, seq_row,
+                                      TRIM_LEN,
+                                      &bit_length, &data, &bit_offset,
+                                      &elem_count));
+        RC_CALL(VCursorCellDataDirect(seq_cursor, seq_row,
+                                      READ,
+                                      &bit_length, &data, &bit_offset,
+                                      &elem_count));
+
+        RC_CALL(VCursorCellDataDirect(seq_cursor, seq_row,
+                                      READ_TYPE,
+                                      &bit_length, &data, &bit_offset,
+                                      &elem_count));
+        RC_CALL(VCursorCellDataDirect(seq_cursor, seq_row,
+                                      READ_LEN,
+                                      &bit_length, &data, &bit_offset,
+                                      &elem_count));
+        RC_CALL(VCursorCellDataDirect(seq_cursor, seq_row,
+                                      READ_START,
+                                      &bit_length, &data, &bit_offset,
+                                      &elem_count));
+        RC_CALL(VCursorCellDataDirect(seq_cursor, seq_row,
+                                      TRIM_START,
+                                      &bit_length, &data, &bit_offset,
+                                      &elem_count));
+        RC_CALL(VCursorCellDataDirect(seq_cursor, seq_row,
+                                      TRIM_LEN,
+                                      &bit_length, &data, &bit_offset,
+                                      &elem_count));
+
+        RC_CALL(VCursorCellDataDirect(seq_cursor, seq_row,
+                                      NAME,
+                                      &bit_length, &data, &bit_offset,
+                                      &elem_count));
+        RC_CALL(VCursorCellDataDirect(seq_cursor, seq_row,
+                                      NAME,
+                                      &bit_length, &data, &bit_offset,
+                                      &elem_count));
+        RC_CALL(VCursorCellDataDirect(seq_cursor, seq_row,
+                                      READ_LEN,
+                                      &bit_length, &data, &bit_offset,
+                                      &elem_count));
+        RC_CALL(VCursorCellDataDirect(seq_cursor, seq_row,
+                                      READ_START,
+                                      &bit_length, &data, &bit_offset,
+                                      &elem_count));
+        RC_CALL(VCursorCellDataDirect(seq_cursor, seq_row,
+                                      TRIM_START,
+                                      &bit_length, &data, &bit_offset,
+                                      &elem_count));
+        RC_CALL(VCursorCellDataDirect(seq_cursor, seq_row,
+                                      TRIM_LEN,
+                                      &bit_length, &data, &bit_offset,
+                                      &elem_count));
+        RC_CALL(VCursorCellDataDirect(seq_cursor, seq_row,
+                                      READ,
+                                      &bit_length, &data, &bit_offset,
+                                      &elem_count));
+
+        RC_CALL(VCursorCellDataDirect(seq_cursor, seq_row+1,
+                                      READ_TYPE,
+                                      &bit_length, &data, &bit_offset,
+                                      &elem_count));
+        RC_CALL(VCursorCellDataDirect(seq_cursor, seq_row+1,
+                                      READ_TYPE,
+                                      &bit_length, &data, &bit_offset,
+                                      &elem_count));
+        RC_CALL(VCursorCellDataDirect(seq_cursor, seq_row+1,
+                                      READ_LEN,
+                                      &bit_length, &data, &bit_offset,
+                                      &elem_count));
+        RC_CALL(VCursorCellDataDirect(seq_cursor, seq_row+1,
+                                      READ_START,
+                                      &bit_length, &data, &bit_offset,
+                                      &elem_count));
+        RC_CALL(VCursorCellDataDirect(seq_cursor, seq_row+1,
+                                      READ_START,
+                                      &bit_length, &data, &bit_offset,
+                                      &elem_count));
+        RC_CALL(VCursorCellDataDirect(seq_cursor, seq_row+1,
+                                      TRIM_LEN,
+                                      &bit_length, &data, &bit_offset,
+                                      &elem_count));
     }
-    CALL(VCursorRelease(seq_cursor));
-    CALL(VTableRelease(seq_table));
-    CALL(VCursorRelease(align_cursor));
-    CALL(VTableRelease(align_table));
-    CALL(VCursorRelease(ref_cursor));
-    CALL(VTableRelease(ref_table));
-    CALL(VDatabaseRelease(db));
-    CALL(VDBManagerRelease(mgr));
+    RC_CALL(VCursorRelease(seq_cursor));
+    RC_CALL(VTableRelease(seq_table));
+    RC_CALL(VDatabaseRelease(db));
+    RC_CALL(VDBManagerRelease(mgr));
     cout << "LowLevelTest done" << endl;
     return 0;
 }
-#else
-struct SThreadInfo
-{
-#ifdef _MSC_VER
-    HANDLE thread_id;
-#else
-    pthread_t thread_id;
-#endif
-    const VCursor* cursor;
-    vector<uint32_t> columns;
-    uint64_t row_start;
-    uint64_t row_end;
-
-    void init_columns()
-    {
-#define ADD_COLUMN(name)                                            \
-        do {                                                        \
-            uint32_t column;                                        \
-            CALL(VCursorAddColumn(cursor, &column, name));          \
-            columns.push_back(column);                              \
-        } while(0)
-        
-        ADD_COLUMN("GI");
-
-#undef ADD_COLUMN
-    }
-
-    void init(const VTable* table, size_t i)
-    {
-        cout << "Create cursor " << i << endl;
-
-        row_start = 1 + i * 10000;
-        row_end = row_start + 10000;
-
-        CALL(VTableCreateCursorRead(table, &cursor));
-        CALL(VCursorPermitPostOpenAdd(cursor));
-        CALL(VCursorOpen(cursor));
-
-        //init_columns();
-    }
-
-    void run()
-    {
-        const bool lock_col_mutex = 0;
-        const bool lock_get_mutex = 0;
-        if ( columns.empty() ) {
-            if ( lock_col_mutex ) SDKLock();
-            init_columns();
-            if ( lock_col_mutex ) SDKUnlock();
-        }
-        for ( uint64_t row = row_start; row < row_end; ++row ) {
-            for ( size_t i = 0; i < columns.size(); ++i ) {
-                const void* data;
-                uint32_t bit_offset, bit_length;
-                uint32_t elem_count;
-                if ( lock_get_mutex ) SDKLock();
-                CALL(VCursorCellDataDirect(cursor, row, columns[i],
-                                           &bit_length, &data, &bit_offset,
-                                           &elem_count));
-                if ( lock_get_mutex ) SDKUnlock();
-            }
-        }
-    }
-
-};
-
-#ifdef _MSC_VER
-DWORD
-#else
-void*
-#endif
-read_thread_func(void* arg)
-{
-    ((SThreadInfo*)arg)->run();
-    return 0;
-}
-
-int LowLevelTest(void)
-{
-    cout << "LowLevelTest for MT cursor read..." << endl;
-    const VDBManager* mgr = 0;
-    CALL(VDBManagerMakeRead(&mgr, 0));
-        
-    const VDatabase* db = 0;
-    CALL(VDBManagerOpenDBRead(mgr, &db, 0, "GAMP01"));
-        
-    const VTable* table = 0;
-    CALL(VDatabaseOpenTableRead(db, &table, "SEQUENCE"));
-
-    const size_t kNumCursors = 2;
-    SThreadInfo tinfo[kNumCursors];
-    for ( size_t i = 0; i < kNumCursors; ++i ) {
-        tinfo[i].init(table, i);
-    }
-#ifdef _MSC_VER
-    InitializeCriticalSection(&sdk_mutex);
-#endif
-    for ( size_t i = 0; i < kNumCursors; ++i ) {
-        cout << "Starting thread " << i << endl;
-#ifdef _MSC_VER
-        tinfo[i].thread_id = CreateThread(NULL, 0, read_thread_func,
-                                            &tinfo[i], 0, NULL);
-#else
-        pthread_create(&tinfo[i].thread_id, 0, read_thread_func, &tinfo[i]);
-#endif
-    }
-    for ( size_t i = 0; i < kNumCursors; ++i ) {
-        cout << "Waiting for thread " << i << endl;
-        void* ret = 0;
-#ifdef _MSC_VER
-        WaitForSingleObject(tinfo[i].thread_id, INFINITE);
-        CloseHandle(tinfo[i].thread_id);
-#else
-        pthread_join(tinfo[i].thread_id, &ret);
-#endif
-    }
-    for ( size_t i = 0; i < kNumCursors; ++i ) {
-        CALL(VCursorRelease(tinfo[i].cursor));
-    }
-    CALL(VTableRelease(table));
-    CALL(VDatabaseRelease(db));
-    CALL(VDBManagerRelease(mgr));
-    cout << "LowLevelTest done" << endl;
-    return 0;
-}
-#endif
 #endif
 
 struct SBaseStat
@@ -666,7 +594,7 @@ int CCSRATestApp::Run(void)
         }
     }
 
-#ifdef CALL
+#ifdef LOW_LEVEL_TEST
     return LowLevelTest();
 #endif
 
