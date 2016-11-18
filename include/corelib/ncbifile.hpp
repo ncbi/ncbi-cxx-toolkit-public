@@ -2712,7 +2712,7 @@ private:
 ///
 /// CMemoryFile --
 ///
-/// Define class for file memory mapping support.
+/// Define class to support file memory mapping.
 ///
 /// This is a simple version of the CMemoryFileMap class supporting one
 /// mapped segment only.
@@ -2729,7 +2729,7 @@ class NCBI_XNCBI_EXPORT CMemoryFile : public CMemoryFileMap
 public:
     /// Constructor.
     ///
-    /// Initialize memory mapping of file "file_name".
+    /// Initialize memory mapping for file "file_name".
     /// @param filename
     ///   Name of file to map to memory.
     /// @param protect_attr
