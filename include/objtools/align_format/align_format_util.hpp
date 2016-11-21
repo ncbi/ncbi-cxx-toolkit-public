@@ -646,6 +646,7 @@ public:
                              int& comp_adj_method);
 
     
+    static void GetUseThisSequence(const objects::CSeq_align& aln,list<TGi>& use_this_gi);
     ///Add the specified white space
     ///@param out: ostream to add white space
     ///@param number: the number of white spaces desired
