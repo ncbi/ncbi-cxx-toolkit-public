@@ -54,7 +54,7 @@ BEGIN_NCBI_SCOPE
 /// This class supports creation of a string accession to integer OID
 /// database, stored and maintained using the SQLite library.
 
-class CWriteDB_Sqlite
+class NCBI_XOBJREAD_EXPORT CWriteDB_Sqlite
 {
 private:
     CSQLITE_Connection* m_db = NULL;
@@ -79,13 +79,19 @@ public:
     /// Begin SQLite transaction.
     /// Multiple database operations will be collected to be executed
     /// together when EndTransaction is called.
+    /// @see EndTransaction
+    /// @see CommitTransaction
     void BeginTransaction(void);
 
     /// End SQLite transaction, committing all changes since BeginTransaction
     /// was called.
+    /// @see BeginTransaction
+    /// @see CommitTransaction
     void EndTransaction(void);
 
     /// End SQLite transaction, identical to EndTransaction above.
+    /// @see BeginTransaction
+    /// @see EndTransaction
     void CommitTransaction(void);
 
     /// Delete one or more records which match the given accession.
@@ -96,6 +102,7 @@ public:
     /// be performed.
     /// @param accession accession(s) to be deleted
     /// @param version version number to be deleted, 0 means all matching
+    /// @see DeleteEntries
     void DeleteEntry(const string& accession, const int version = 0);
 
     /// Delete entries which match the provided list.
@@ -103,6 +110,7 @@ public:
     /// records which match the list of accessions will be deleted.
     /// @param accessions list of string accessions
     /// @return number of rows deleted
+    /// @see DeleteEntry
     int DeleteEntries(const list<string>& accessions);
 
     /// Add an accession-to-OID record WITH version.
@@ -111,6 +119,7 @@ public:
     /// @param accession accession string without ".N" version appended
     /// @param version accession's version number
     /// @param oid OID associated with accession
+    /// @see InsertEntries
     void InsertEntry(const string& accession, const int version, const int oid);
 
     /// Add an accession-to-OID record WITHOUT version on accession.
@@ -118,17 +127,20 @@ public:
     /// recommended.  Version will be stored as zero.
     /// @param accession accession string without ".N" version appended
     /// @param oid OID associated with accession
+    /// @see InsertEntries
     void InsertEntry(const string& accession, const int oid);
 
     /// Add entries in bulk as fetched from CSeqDB::GetSeqIDs.
     /// @param oid OID
     /// @param seqids list<CRef<CSeq_id> > from CSeqDB::GetSeqIDs
     /// @return number of rows added to database
+    /// @see InsertEntry
     int InsertEntries(const int oid, const list<CRef<CSeq_id> >& seqids);
 
     /// Add entries in bulk from list of SAccOid structs.
     /// @param seqids list<SAccOid> from CSeqDB::GetSeqIDs
     /// @return number of rows added to database
+    /// @see IsertEntry
     int InsertEntries(const list<SAccOid>& seqids);
 
     /// Create accession-to-OID index in database.
