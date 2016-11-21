@@ -3378,7 +3378,8 @@ BOOST_AUTO_TEST_CASE(CreateSqliteDB)
         if (ref_modtime == 0) {
             ref_modtime = vol_modtime;
         } else {
-            BOOST_REQUIRE_EQUAL(ref_modtime, vol_modtime);
+            int delta = vol_modtime - ref_modtime;
+            BOOST_REQUIRE((delta > -2)  &&  (delta < 2));
         }
         BOOST_REQUIRE_EQUAL(ref_numoids[vol_volume], vol_numoids);
         // Form string to match volume name: "nt_1000.**.nin"
