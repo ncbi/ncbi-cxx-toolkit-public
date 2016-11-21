@@ -40,6 +40,7 @@
 #include <objects/seqset/Seq_entry.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/object_manager.hpp>
+#include <objmgr/util/sequence.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
@@ -47,15 +48,7 @@
 #include <objtools/edit/protein_match/generate_match_table.hpp>
 #include <objtools/edit/protein_match/prot_match_exception.hpp>
 
-/*
-#include <objmgr/seq_entry_handle.hpp>
-#include <objmgr/seq_entry_ci.hpp>
-#include <objmgr/util/sequence.hpp>
-#include <objmgr/seq_annot_ci.hpp>
-#include <objmgr/seq_feat_handle.hpp>
-#include <objects/general/Object_id.hpp>
-*/
-#include <objmgr/util/sequence.hpp>
+#include "run_binary.hpp"
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -73,12 +66,36 @@ private:
     void x_ReadUpdateFile(CObjectIStream& istr, CSeq_entry& seq_entry) const;
     bool x_TryReadSeqEntry(CObjectIStream& istr, CSeq_entry& seq_entry) const;
     bool x_TryReadBioseqSet(CObjectIStream& istr, CSeq_entry& seq_entry) const;
-    void x_WriteEntry(CSeq_entry_Handle seh, 
-        const string filename, 
-        const bool as_binary);
     void x_WriteEntry(const CSeq_entry& entry,
         const string filename,
         const bool as_binary);
+
+    string x_GetBlastArgs(const string& update_file, 
+                          const string& genbank_file,
+                          const string& alignment_file) const;
+
+
+    string x_GetCompareAnnotsArgs(const string& update_file,
+                                  const string& genbank_file,
+                                  const string& alignment_manifest_file,
+                                  const string& annot_file) const;
+
+    void x_LogTempFile(const string& string);
+    void x_DeleteTempFiles(void);
+
+    struct SSeqEntryFilenames {
+        string gb_nuc_prot_set;
+        string gb_nuc_seq;
+        string local_nuc_prot_set;
+        string local_nuc_seq;
+    };
+
+    SSeqEntryFilenames x_GenerateSeqEntryTempFiles(CSeq_entry_Handle nuc_prot_set,
+        const string& out_stub,
+        const unsigned int count);
+
+    unique_ptr<CMatchSetup> m_pMatchSetup;
+    list<string> m_TempFiles;
 };
 
 
@@ -98,6 +115,8 @@ void CProteinMatchApp::Init(void)
 
     SetupArgDescriptions(arg_desc.release());
 
+    m_pMatchSetup.reset(new CMatchSetup());
+
     return;
 }
 
@@ -107,17 +126,24 @@ int CProteinMatchApp::Run(void)
     const bool as_binary = true;
     const bool as_text = false;
 
+    CBinRunner assm_assm_blastn("assm_assm_blastn");
+    CBinRunner compare_annots("compare_annots");
+
+    assm_assm_blastn.CheckBinary(); // absorb into constructor
+    compare_annots.CheckBinary(); // absorb into constructor
     const CArgs& args = GetArgs();
     
     // Set up scope 
     CRef<CObjectManager> obj_mgr = CObjectManager::GetInstance();
     CGBDataLoader::RegisterInObjectManager(*obj_mgr);
     CRef<CScope> scope(new CScope(*obj_mgr));
-    scope->AddDefaults();
+  //  scope->AddDefaults();
 
     unique_ptr<CObjectIStream> pInStream(x_InitInputStream(args));
 
     // Could use skip hooks here instead
+    // ans2fasta, asnvalidate
+    // Preexisting nucleotide entries may not exist.
     CSeq_entry input_entry;
     x_ReadUpdateFile(*pInStream, input_entry); 
 
@@ -139,61 +165,38 @@ int CProteinMatchApp::Run(void)
         return 0;
     }
 
-    const bool multiple_sets = (nuc_prot_sets.size() > 1);
-
-    CMatchSetup match_setup;
+    const string out_stub = args["o"].AsString();
+     // Handle abuse!! 
     int count=0;
     for (CSeq_entry_Handle nuc_prot_seh : nuc_prot_sets) {
-        CSeq_entry_Handle nucleotide_seh = match_setup.GetNucleotideSEH(nuc_prot_seh);
 
-        CSeq_entry_Handle gb_seh = match_setup.GetGenBankTopLevelEntry(nucleotide_seh);
-        if (!gb_seh) {
-            NCBI_THROW(CProteinMatchException,
-                eBadInput,
-                "Failed to fetch GenBank entry");
-        }
+        SSeqEntryFilenames seq_entry_files = 
+            x_GenerateSeqEntryTempFiles(nuc_prot_seh,
+            out_stub, 
+            count);
 
-        // Write the genbank nuc-prot-set to a file
-        string filename = args["o"].AsString() + ".genbank";
-        if (multiple_sets) {
-            filename += NStr::NumericToString(count);
-        }
-        filename += ".asn";
-        x_WriteEntry(gb_seh, filename, as_binary);
+        const string count_string = NStr::NumericToString(count);
+        
+        const string alignment_file = out_stub + "merged." + count_string + ".asn";
+        const string blast_args = x_GetBlastArgs(
+            seq_entry_files.local_nuc_seq, 
+            seq_entry_files.gb_nuc_seq, 
+            alignment_file);
+        
+        //assm_assm_blastn.Exec(blast_args);
+        x_LogTempFile(alignment_file);
+       
+        // Create alignment manifest tempfile 
+        // const string compare_annots_args = ...
+        // compare_annots.Exec(compare_annots_args);
+        // x_LogTempFile(manifest_file);
+        // x_LogTempFile(annot_file);
 
-        // Write the genbank nucleotide sequence to a file
-        CSeq_entry_Handle gb_nuc_seh = match_setup.GetNucleotideSEH(gb_seh);
-        filename = args["o"].AsString() + ".genbank_nuc";
-        if (multiple_sets) {
-            filename += NStr::NumericToString(count);
-        }
-        filename += ".asn";
-        x_WriteEntry(gb_nuc_seh, filename, as_text);
-
-        CRef<CSeq_id> local_id;
-        if (match_setup.GetNucSeqIdFromCDSs(nuc_prot_seh, local_id)) {
-            match_setup.UpdateNucSeqIds(local_id, nucleotide_seh, nuc_prot_seh);
-        }
-
-        // Write processed update
-        filename = args["o"].AsString() + ".local";
-        if (multiple_sets) {
-            filename += NStr::NumericToString(count);
-        }
-        filename += ".asn";
-        x_WriteEntry(nuc_prot_seh, filename, as_binary);
-
-
-        // Write update nucleotide sequence
-        filename = args["o"].AsString() + ".local_nuc";
-        if (multiple_sets) {
-            filename += NStr::NumericToString(count);
-        }
-        filename += ".asn";
-        x_WriteEntry(nucleotide_seh, filename, as_text);
-
+        // Append to match table here
+        x_DeleteTempFiles();
         ++count;
     }
+    // Write match table here
 
     scope->RemoveEntry(input_entry);
     return 0;
@@ -292,6 +295,78 @@ bool CProteinMatchApp::x_TryReadBioseqSet(CObjectIStream& istr, CSeq_entry& seq_
 }
 
 
+CProteinMatchApp::SSeqEntryFilenames 
+CProteinMatchApp::x_GenerateSeqEntryTempFiles(CSeq_entry_Handle nuc_prot_seh,
+    const string& out_stub,
+    const unsigned int count) 
+{
+    static const bool as_binary = true;
+    static const bool as_text = false;
+
+    CSeq_entry_Handle nucleotide_seh = m_pMatchSetup->GetNucleotideSEH(nuc_prot_seh);
+
+    CSeq_entry_Handle gb_seh = m_pMatchSetup->GetGenBankTopLevelEntry(nucleotide_seh);
+    if (!gb_seh) {
+        NCBI_THROW(CProteinMatchException,
+            eBadInput,
+            "Failed to fetch GenBank entry");
+    }
+
+    const string count_string = NStr::NumericToString(count);
+
+    CConstRef<CBioseq_set> gb_nuc_prot_set = m_pMatchSetup->GetGenBankNucProtSet(nucleotide_seh.GetCompleteSeq_entry()->GetSeq());
+    CConstRef<CSeq_entry> gb_se = gb_seh.GetCompleteSeq_entry();
+
+    // Write the genbank nuc-prot-set to a file
+    string gb_nuc_prot_file = out_stub
+        + ".genbank"
+        + count_string
+        + ".asn";
+    x_WriteEntry(*(gb_nuc_prot_set->GetParentEntry()), gb_nuc_prot_file, as_binary);
+    x_LogTempFile(gb_nuc_prot_file);
+
+    // Write the genbank nucleotide sequence to a file
+    //const CBioseq& gb_nuc_seq = gb_se->GetSet().GetNucFromNucProtSet();
+    const CBioseq& gb_nuc_seq = gb_nuc_prot_set->GetNucFromNucProtSet();
+    const string gb_nuc_file = out_stub
+        + ".genbank_nuc"
+        + count_string
+        + ".asn";
+    x_WriteEntry(*(gb_nuc_seq.GetParentEntry()), gb_nuc_file, as_text);
+    x_LogTempFile(gb_nuc_file);
+
+    CRef<CSeq_id> local_id;
+    if (m_pMatchSetup->GetNucSeqIdFromCDSs(nuc_prot_seh, local_id)) {
+        m_pMatchSetup->UpdateNucSeqIds(local_id, nucleotide_seh, nuc_prot_seh);
+    }
+
+    // Write processed update
+    const string local_nuc_prot_file = out_stub
+        + ".local"
+        + count_string
+        + ".asn";
+    x_WriteEntry(*(nuc_prot_seh.GetCompleteSeq_entry()), local_nuc_prot_file, as_binary);
+    x_LogTempFile(local_nuc_prot_file);
+
+
+    // Write update nucleotide sequence
+    const string local_nuc_file = out_stub
+        + ".local_nuc"
+        + count_string
+        + ".asn";
+    x_WriteEntry(*(nucleotide_seh.GetCompleteSeq_entry()), local_nuc_file, as_text);
+    x_LogTempFile(local_nuc_file);
+
+    SSeqEntryFilenames filenames;
+    filenames.gb_nuc_prot_set = gb_nuc_prot_file;
+    filenames.gb_nuc_seq = gb_nuc_file;
+    filenames.local_nuc_prot_set = local_nuc_prot_file;
+    filenames.local_nuc_seq = local_nuc_file;
+
+    return filenames;
+}
+
+
 CObjectOStream* CProteinMatchApp::x_InitOutputStream(const string& filename, 
     const bool binary) const
 {
@@ -315,18 +390,9 @@ CObjectOStream* CProteinMatchApp::x_InitOutputStream(const string& filename,
 }
 
 
-void CProteinMatchApp::x_WriteEntry(CSeq_entry_Handle seh, 
-        const string filename, 
-        const bool as_binary) {
-    x_WriteEntry(*(seh.GetCompleteSeq_entry()),
-            filename,
-            as_binary);
-}
-
-
 void CProteinMatchApp::x_WriteEntry(const CSeq_entry& seq_entry,
-        const string filename, 
-        const bool as_binary) {
+    const string filename, 
+    const bool as_binary) {
     try { 
         unique_ptr<CObjectOStream> pOstr(x_InitOutputStream(filename, as_binary));
         *pOstr << seq_entry;
@@ -336,6 +402,84 @@ void CProteinMatchApp::x_WriteEntry(const CSeq_entry& seq_entry,
             "Failed to write " + filename);
     }
 }
+
+
+string CProteinMatchApp::x_GetBlastArgs(
+    const string& update_file, 
+    const string& genbank_file,
+    const string& alignment_file) const
+{
+    if (NStr::IsBlank(update_file) ||
+        NStr::IsBlank(genbank_file)) {
+        NCBI_THROW(CProteinMatchException,
+            eInputError,
+            "assm_assm_blastn input file not specified");
+    }
+
+
+    if (NStr::IsBlank(alignment_file)) {
+        NCBI_THROW(CProteinMatchException,
+            eOutputError,
+            "assm_assm_blastn alignment file not specified");
+    }
+
+    string blast_args = 
+        " -query " + update_file +
+        " -target " + genbank_file + 
+        " -task megablast " +
+        " -word_size 16 -evalue 0.01 " +
+        " -gapopen 2 -gapextend 1" +
+        " -best_hit_overhang 0.1 -best_hit_score_edge 0.1 " +
+        " -align-output " + alignment_file + 
+        " -ofmt asn-binary " +
+        " -nogenbank";
+
+    return blast_args;
+}
+
+
+string CProteinMatchApp::x_GetCompareAnnotsArgs(
+        const string& update_file,
+        const string& genbank_file,
+        const string& alignment_manifest_file,
+        const string& annot_file)  const
+{
+    if (NStr::IsBlank(update_file) ||
+        NStr::IsBlank(genbank_file) ||
+        NStr::IsBlank(alignment_manifest_file)) {
+        NCBI_THROW(CProteinMatchException,
+            eInputError,
+            "compare_annots input file not specified");
+    }
+
+    if (NStr::IsBlank(annot_file)) {
+        NCBI_THROW(CProteinMatchException,
+            eOutputError, 
+            "compare_annots annot file is not specified");
+    }
+
+    string compare_annot_args = 
+        " -q_scope_type annots -q_scope_args " + update_file +
+        " -s_scope_type annots -s_scope_args " + genbank_file +
+        " -alns " + alignment_manifest_file +
+        " -o_asn " + annot_file +
+        " -nogenbank";
+
+    return compare_annot_args;
+}
+
+
+void CProteinMatchApp::x_LogTempFile(const string& filename)
+{   
+    m_TempFiles.push_back(filename);
+}
+
+
+void CProteinMatchApp::x_DeleteTempFiles(void) 
+{
+    // Delete temporary files here
+}
+
 
 END_NCBI_SCOPE
 USING_NCBI_SCOPE;

@@ -31,7 +31,10 @@
 
 #include <corelib/ncbistd.hpp>
 #include <objmgr/seq_entry_handle.hpp>
-
+#include <objects/seq/Bioseq.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
+#include <objmgr/scope.hpp>
+#include <objects/seqset/Seq_entry.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -42,9 +45,13 @@ public:
     CMatchSetup(void);
     virtual ~CMatchSetup(void) {};
 
+    // Redundant 
     static void GetNucProtSets(
         CSeq_entry_Handle seh,
         list<CSeq_entry_Handle>& nucprot_sets);
+
+
+    CConstRef<CBioseq_set> GetGenBankNucProtSet(const CBioseq& nuc_seq);
 
     CSeq_entry_Handle GetGenBankTopLevelEntry(CSeq_entry_Handle nucleotide_seh);
     CSeq_entry_Handle GetNucleotideSEH(CSeq_entry_Handle seh) const;
@@ -52,6 +59,9 @@ public:
     bool UpdateNucSeqIds(CRef<CSeq_id>& new_id,
         CSeq_entry_Handle& nucleotide_seh,
         CSeq_entry_Handle& nuc_prot_seh);
+    bool GetNucSeqIdFromCDSs(const CSeq_entry& nuc_prot_set,
+        CScope& scope,
+        CRef<CSeq_id>& id);
 
 private:
     CRef<CScope> m_GBScope;

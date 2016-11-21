@@ -10,6 +10,7 @@
 #include <objmgr/util/sequence.hpp>
 #include <objects/general/Object_id.hpp>
 
+#include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/edit/protein_match/prot_match_exception.hpp>
 #include <objtools/edit/protein_match/setup_match.hpp>
 
@@ -18,6 +19,7 @@ BEGIN_SCOPE(objects)
 
 CMatchSetup::CMatchSetup() {
     CRef<CObjectManager> obj_mgr = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager(*obj_mgr);
     m_GBScope = Ref(new CScope(*obj_mgr));
     m_GBScope->AddDataLoader("GBLOADER");
 }
@@ -31,6 +33,7 @@ void CMatchSetup::GetNucProtSets(
         return;
     }
 
+    // Use ITERATE macros everywhere - or ordinary loop
     for (CSeq_entry_CI it(seh, CSeq_entry_CI::fRecursive); it; ++it) {
         if (it->IsSet() &&
             it->GetSet().IsSetClass() &&
@@ -39,6 +42,7 @@ void CMatchSetup::GetNucProtSets(
         }
     }
 }
+
 
 
 CSeq_entry_Handle CMatchSetup::GetNucleotideSEH(CSeq_entry_Handle seh) const
@@ -50,6 +54,7 @@ CSeq_entry_Handle CMatchSetup::GetNucleotideSEH(CSeq_entry_Handle seh) const
         }
     }
 
+    // Same thing - Don't use CSeq_entry_CI
     for (CSeq_entry_CI it(seh, CSeq_entry_CI::fRecursive); it; ++it) {
         if (it->IsSeq()) {
             const CMolInfo* molinfo = sequence::GetMolInfo(it->GetSeq());
@@ -65,7 +70,6 @@ CSeq_entry_Handle CMatchSetup::GetNucleotideSEH(CSeq_entry_Handle seh) const
 CSeq_entry_Handle CMatchSetup::GetGenBankTopLevelEntry(CSeq_entry_Handle nucleotide_seh)  
 {
     CBioseq_Handle gb_bsh;
-    CConstRef<CSeq_entry> gb_tse;
     for (auto pNucId : nucleotide_seh.GetSeq().GetCompleteBioseq()->GetId()) {
         if (pNucId->IsGenbank()) {
             gb_bsh = m_GBScope->GetBioseqHandle(*pNucId);
@@ -74,12 +78,29 @@ CSeq_entry_Handle CMatchSetup::GetGenBankTopLevelEntry(CSeq_entry_Handle nucleot
                     eInputError,
                     "Failed to fetch GenBank entry");
             }
-            return gb_bsh.GetTopLevelEntry();
+            return gb_bsh.GetTopLevelEntry(); // GetParentBioseqSet() 
         }
     }
 
     CSeq_entry_Handle empty;
     return empty;
+}
+
+
+CConstRef<CBioseq_set> CMatchSetup::GetGenBankNucProtSet(const CBioseq& nuc_seq) 
+{
+    for (auto pNucId : nuc_seq.GetId()) {
+        if (pNucId->IsGenbank()) {
+            CBioseq_Handle gb_bsh = m_GBScope->GetBioseqHandle(*pNucId);
+            if (!gb_bsh) {
+                NCBI_THROW(CProteinMatchException, 
+                    eInputError,
+                    "Failed to fetch GenBank entry");
+            }
+            return gb_bsh.GetCompleteBioseq()->GetParentSet();
+        }
+    }
+    return ConstRef(new CBioseq_set());
 }
 
 
@@ -99,6 +120,15 @@ struct SEquivalentTo
 };
 
 
+bool CMatchSetup::GetNucSeqIdFromCDSs(const CSeq_entry& nuc_prot_set,
+    CScope& scope,
+    CRef<CSeq_id>& id)
+{
+    CSeq_entry_Handle nuc_prot_handle = scope.GetObjectHandle(nuc_prot_set);
+    return GetNucSeqIdFromCDSs(nuc_prot_handle, id);
+}
+
+
 bool CMatchSetup::GetNucSeqIdFromCDSs(CSeq_entry_Handle& seh, CRef<CSeq_id>& id) 
 {
     // Set containing distinct ids
@@ -110,7 +140,7 @@ bool CMatchSetup::GetNucSeqIdFromCDSs(CSeq_entry_Handle& seh, CRef<CSeq_id>& id)
         CRef<CSeq_id> nucseq_id = Ref(new CSeq_id());
         nucseq_id->Assign(*(feature_it->GetLocation().GetId()));
 
-        if(ids.empty() ||
+        if(ids.empty() || // Change this!
            find_if(ids.begin(), ids.end(), SEquivalentTo(nucseq_id)) == ids.end()) {
            ids.insert(nucseq_id);
         }
@@ -119,10 +149,10 @@ bool CMatchSetup::GetNucSeqIdFromCDSs(CSeq_entry_Handle& seh, CRef<CSeq_id>& id)
     if (ids.size() > 1) {
         NCBI_THROW(CProteinMatchException, 
             eBadInput, 
-            "Multiple CDS locations found");
+            "Multiple CDS location ids found");
     }
 
-    if (ids.empty()) {
+    if (ids.empty()) { // Change this - make sure there's some check
         return false;
     }
 
