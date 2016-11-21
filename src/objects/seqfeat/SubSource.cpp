@@ -93,6 +93,7 @@ CSubSource::TSubtype CSubSource::GetSubtypeValue(const string& str,
     string name = NStr::TruncateSpaces(str);
     NStr::ToLower(name);
     replace(name.begin(), name.end(), '_', '-');
+    replace(name.begin(), name.end(), ' ', '-');
 
     if ( NStr::EqualNocase(name, "note") ||
          NStr::EqualNocase(name, "subsource-note") ||
@@ -121,6 +122,7 @@ bool CSubSource::IsValidSubtypeName(const string& str,
     string name = NStr::TruncateSpaces(str);
     NStr::ToLower(name);
     replace(name.begin(), name.end(), '_', '-');
+    replace(name.begin(), name.end(), ' ', '-');
 
     if ( NStr::EqualNocase(name, "note") ||
          NStr::EqualNocase(name, "subsource-note") ||
