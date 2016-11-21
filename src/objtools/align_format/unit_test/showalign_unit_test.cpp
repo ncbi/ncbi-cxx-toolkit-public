@@ -113,6 +113,41 @@ BOOST_AUTO_TEST_CASE(TestTGIConversion)
     BOOST_REQUIRE(output.find("gi|385145539") != NPOS);        
 }
 
+BOOST_AUTO_TEST_CASE(TestTGIConversionExt)
+{
+    const string seqAlignFileName_in = "data/in_showalign_use_this_gi_ext.asn";
+    CRef<CSeq_annot> san(new CSeq_annot);
+  
+    ifstream in(seqAlignFileName_in.c_str());
+    in >> MSerial_AsnText >> *san;
+    in.close();
+    
+    CRef<CSeq_align_set> fileSeqAlignSet(new CSeq_align_set);  
+    fileSeqAlignSet->Set() = san->GetData().GetAlign();     
+
+    const string kDbName("nr");
+    const CBlastDbDataLoader::EDbType kDbType(CBlastDbDataLoader::eProtein);      
+    TestUtil::CBlastOM tmp_data_loader(kDbName, kDbType, CBlastOM::eLocal);        
+    CRef<CScope> scope = tmp_data_loader.NewScope();
+    
+    CDisplaySeqalign ds(*fileSeqAlignSet, *scope);
+    ds.SetDbName(kDbName);
+    ds.SetDbType((kDbType == CBlastDbDataLoader::eProtein));
+    int flags = CDisplaySeqalign::eShowBlastInfo |
+        CDisplaySeqalign::eShowGi | 
+        CDisplaySeqalign::eShowBlastStyleId;
+    ds.SetAlignOption(flags);
+    ds.SetSeqLocChar(CDisplaySeqalign::eLowerCase);
+    CNcbiOstrstream output_stream;
+    ds.DisplaySeqalign(output_stream);
+    string output = CNcbiOstrstreamToString(output_stream);        
+    BOOST_REQUIRE(output.find("gi|212900") != NPOS);
+    BOOST_REQUIRE(output.find("gi|385145537") != NPOS);
+    BOOST_REQUIRE(output.find("gi|385145539") != NPOS);
+    BOOST_REQUIRE(output.find("gi|129296") != NPOS);
+    BOOST_REQUIRE(output.find("gi|71897377") != NPOS);
+}
+
 bool TestSimpleAlignment(CBlastOM::ELocation location, bool long_seqids)
 {
     const string seqAlignFileName_in = "data/blastn.vs.ecoli.asn";
