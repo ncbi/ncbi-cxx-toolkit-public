@@ -91,6 +91,7 @@ private:
     };
 
     SSeqEntryFilenames x_GenerateSeqEntryTempFiles(CSeq_entry_Handle nuc_prot_set,
+        CScope& scope,
         const string& out_stub,
         const unsigned int count);
 
@@ -135,9 +136,7 @@ int CProteinMatchApp::Run(void)
     
     // Set up scope 
     CRef<CObjectManager> obj_mgr = CObjectManager::GetInstance();
-    CGBDataLoader::RegisterInObjectManager(*obj_mgr);
     CRef<CScope> scope(new CScope(*obj_mgr));
-  //  scope->AddDefaults();
 
     unique_ptr<CObjectIStream> pInStream(x_InitInputStream(args));
 
@@ -158,7 +157,6 @@ int CProteinMatchApp::Run(void)
     }    
 
     list<CSeq_entry_Handle> nuc_prot_sets;
-
     CMatchSetup::GetNucProtSets(input_seh, nuc_prot_sets);
 
     if (nuc_prot_sets.empty()) { // Should also probably post a warning
@@ -172,9 +170,10 @@ int CProteinMatchApp::Run(void)
 
         SSeqEntryFilenames seq_entry_files = 
             x_GenerateSeqEntryTempFiles(nuc_prot_seh,
+            *scope, 
             out_stub, 
             count);
-
+/*
         const string count_string = NStr::NumericToString(count);
         
         const string alignment_file = out_stub + "merged." + count_string + ".asn";
@@ -182,10 +181,10 @@ int CProteinMatchApp::Run(void)
             seq_entry_files.local_nuc_seq, 
             seq_entry_files.gb_nuc_seq, 
             alignment_file);
-        
         //assm_assm_blastn.Exec(blast_args);
         x_LogTempFile(alignment_file);
        
+  */      
         // Create alignment manifest tempfile 
         // const string compare_annots_args = ...
         // compare_annots.Exec(compare_annots_args);
@@ -193,7 +192,7 @@ int CProteinMatchApp::Run(void)
         // x_LogTempFile(annot_file);
 
         // Append to match table here
-        x_DeleteTempFiles();
+//        x_DeleteTempFiles();
         ++count;
     }
     // Write match table here
@@ -297,6 +296,7 @@ bool CProteinMatchApp::x_TryReadBioseqSet(CObjectIStream& istr, CSeq_entry& seq_
 
 CProteinMatchApp::SSeqEntryFilenames 
 CProteinMatchApp::x_GenerateSeqEntryTempFiles(CSeq_entry_Handle nuc_prot_seh,
+    CScope& scope,
     const string& out_stub,
     const unsigned int count) 
 {
@@ -336,7 +336,9 @@ CProteinMatchApp::x_GenerateSeqEntryTempFiles(CSeq_entry_Handle nuc_prot_seh,
     x_LogTempFile(gb_nuc_file);
 
     CRef<CSeq_id> local_id;
-    if (m_pMatchSetup->GetNucSeqIdFromCDSs(nuc_prot_seh, local_id)) {
+
+    if (m_pMatchSetup->GetNucSeqIdFromCDSs(*(nuc_prot_seh.GetCompleteSeq_entry()), scope, local_id)) {
+    //if (m_pMatchSetup->GetNucSeqIdFromCDSs(nuc_prot_seh, local_id)) {
         m_pMatchSetup->UpdateNucSeqIds(local_id, nucleotide_seh, nuc_prot_seh);
     }
 

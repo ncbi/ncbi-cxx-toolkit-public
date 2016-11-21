@@ -103,19 +103,12 @@ CConstRef<CBioseq_set> CMatchSetup::GetGenBankNucProtSet(const CBioseq& nuc_seq)
     return ConstRef(new CBioseq_set());
 }
 
-
-struct SEquivalentTo 
+struct SIdCompare
 {
-    CRef<CSeq_id> sid;
-    
-    SEquivalentTo(CRef<CSeq_id>& id) : sid(Ref(new CSeq_id()))
+    bool operator()(const CRef<CSeq_id>& id1,
+        const CRef<CSeq_id>& id2) const 
     {
-        sid->Assign(*id);
-    }
-
-    bool operator()(const CRef<CSeq_id>& id) const
-    {
-        return (id->Compare(*sid) == CSeq_id::e_YES);
+        return id1->CompareOrdered(*id2) < 0;
     }
 };
 
@@ -132,18 +125,13 @@ bool CMatchSetup::GetNucSeqIdFromCDSs(const CSeq_entry& nuc_prot_set,
 bool CMatchSetup::GetNucSeqIdFromCDSs(CSeq_entry_Handle& seh, CRef<CSeq_id>& id) 
 {
     // Set containing distinct ids
-    set<CRef<CSeq_id>> ids;
+    set<CRef<CSeq_id>, SIdCompare> ids;
 
     SAnnotSelector sel(CSeqFeatData::e_Cdregion);
-
     for(CFeat_CI feature_it(seh, sel); feature_it; ++feature_it) {
         CRef<CSeq_id> nucseq_id = Ref(new CSeq_id());
         nucseq_id->Assign(*(feature_it->GetLocation().GetId()));
-
-        if(ids.empty() || // Change this!
-           find_if(ids.begin(), ids.end(), SEquivalentTo(nucseq_id)) == ids.end()) {
-           ids.insert(nucseq_id);
-        }
+        // Throw an exception if null pointer
     }
 
     if (ids.size() > 1) {
