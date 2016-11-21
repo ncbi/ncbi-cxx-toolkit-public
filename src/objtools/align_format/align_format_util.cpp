@@ -704,6 +704,7 @@ void CAlignFormatUtil::GetAlnScores(const CSeq_align& aln,
                             score, bits, evalue, sum_n, num_ident, use_this_gi, comp_adj_method);
         }
     }	
+    if(use_this_gi.size() == 0) GetUseThisSequence(aln,use_this_gi);
 }
 
 string CAlignFormatUtil::GetGnlID(const CDbtag& dtg)
@@ -3818,13 +3819,38 @@ s_GetBlastScore(const container&  scoreList,
 }
 
 
+void CAlignFormatUtil::GetUseThisSequence(const CSeq_align& aln,list<TGi>& use_this_gi)
+                                    
+{
+    const string k_GiPrefix = "gi:";
 
+    if(!aln.CanGetExt() || aln.GetExt().size() == 0) return;
+    const CUser_object &user = *(aln.GetExt().front());
+
+    if (user.IsSetType() && user.GetType().IsStr() && user.GetType().GetStr() == "use_this_seqid" && user.IsSetData()) {
+        const CUser_object::TData& fields = user.GetData();            
+        for (CUser_object::TData::const_iterator fit = fields.begin();  fit != fields.end(); ++fit) {
+            const CUser_field& field = **fit;                 
+
+            if (field.IsSetLabel() && field.GetLabel().IsStr() && field.GetLabel().GetStr() == "SEQIDS" && 
+                                                                     field.IsSetData()  &&  field.GetData().IsStrs()) {
+                const CUser_field::C_Data::TStrs& strs = field.GetData().GetStrs();                                                            
+                ITERATE(CUser_field::TData::TStrs, acc_iter, strs) {
+                    if(NStr::StartsWith(*acc_iter,k_GiPrefix)) { //will be used when switch to 64bit GIs
+                        string strGi = NStr::Replace(*acc_iter,k_GiPrefix,"");
+                        TGi gi = NStr::StringToInt8(strGi);
+                        use_this_gi.push_back(gi);
+                    }                        
+                }
+            }                
+        }
+    }
+}
 
 CAlignFormatUtil::SSeqAlignSetCalcParams* 
 CAlignFormatUtil::GetSeqAlignSetCalcParamsFromASN(const CSeq_align_set& alnSet)
 {
-    bool hasScore = false;
-
+    bool hasScore = false;    
     double evalue = -1;
     double bitScore = -1;
     double totalBitScore = -1;
@@ -3838,9 +3864,8 @@ CAlignFormatUtil::GetSeqAlignSetCalcParamsFromASN(const CSeq_align_set& alnSet)
     
     const CSeq_align& aln = *(alnSet.Get().front()); 
 
-    hasScore = s_GetBlastScore(aln.GetScore(),evalue,bitScore, totalBitScore,percentCoverage,percentIdent,hspNum,totalLen,rawScore,sum_n,use_this_gi);
-        
-        
+    hasScore = s_GetBlastScore(aln.GetScore(),evalue,bitScore, totalBitScore,percentCoverage,percentIdent,hspNum,totalLen,rawScore,sum_n,use_this_gi);    
+       
     if(!hasScore){
         const CSeq_align::TSegs& seg = aln.GetSegs();
         if(seg.Which() == CSeq_align::C_Segs::e_Std){
@@ -3854,6 +3879,11 @@ CAlignFormatUtil::GetSeqAlignSetCalcParamsFromASN(const CSeq_align_set& alnSet)
                             evalue,bitScore, totalBitScore,percentCoverage,percentIdent,hspNum,totalLen,rawScore,sum_n,use_this_gi);
         }
     }
+
+
+    if(use_this_gi.size() == 0) GetUseThisSequence(aln,use_this_gi);
+
+
     auto_ptr<SSeqAlignSetCalcParams> seqSetInfo(new SSeqAlignSetCalcParams);
     seqSetInfo->evalue = evalue;    
     seqSetInfo->bit_score = bitScore;    
