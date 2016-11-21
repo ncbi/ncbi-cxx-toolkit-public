@@ -2390,7 +2390,7 @@ void CFastaReader::PostError(ILineErrorListener* pMessageListener,
 
     unique_ptr<CObjReaderLineException> pLineExpt(
         CObjReaderLineException::Create(
-        eDiag_Warning,
+        eDiag_Error,
         lineNumber,
         errMessage, 
         ILineError::eProblem_GeneralParsingError,
