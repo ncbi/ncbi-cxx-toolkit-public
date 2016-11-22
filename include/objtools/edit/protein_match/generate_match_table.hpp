@@ -47,6 +47,8 @@ class CMatchTabulate {
 public:
     CMatchTabulate(void);
     virtual ~CMatchTabulate(void);
+    void AppendToMatchTable(const CSeq_align& alignment,
+        const list<CRef<CSeq_annot>>& annots);
 
     typedef list<CRef<CSeq_annot>> TMatches;
 
@@ -54,7 +56,16 @@ public:
         string accession;
         string status;
     };
+
 private:
+
+    void x_InitMatchTable(void);
+
+    bool x_AppendToMatchTable(
+        const SNucMatchInfo& nuc_match_info,
+        const TMatches& matches,
+        const list<string>& new_proteins,
+        const list<string>& dead_proteins);
 
 
     bool x_TryProcessAlignment(const CRef<CSeq_align>& alignment,
@@ -92,6 +103,7 @@ private:
 
     CRef<CSeq_table> mMatchTable;
     map<string, size_t> mColnameToIndex;
+    bool mMatchTableInitialized;
 };
 
 END_SCOPE(objects)

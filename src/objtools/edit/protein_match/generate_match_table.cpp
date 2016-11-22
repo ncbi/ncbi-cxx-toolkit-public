@@ -20,7 +20,9 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CMatchTabulate::CMatchTabulate() : mMatchTable(Ref(new CSeq_table())) 
+CMatchTabulate::CMatchTabulate() : 
+    mMatchTable(Ref(new CSeq_table())),
+    mMatchTableInitialized(false)
 {
     mMatchTable->SetNum_rows(0);
 }
@@ -415,6 +417,98 @@ bool CMatchTabulate::x_IsComparison(const CSeq_annot& seq_annot) const
    }
 
    return false;
+}
+
+
+void CMatchTabulate::AppendToMatchTable(
+        const CSeq_align& alignment,
+        const list<CRef<CSeq_annot>>& annots)
+{
+    if (!mMatchTableInitialized) {
+        x_InitMatchTable();
+        mMatchTableInitialized=true;
+    }
+
+    return;
+}
+
+
+void CMatchTabulate::x_InitMatchTable() 
+{
+    x_AddColumn("NA_Accession");
+    x_AddColumn("PROT_Accession");
+    x_AddColumn("PROT_LocalID");
+    x_AddColumn("Mol_type");
+    x_AddColumn("Status");
+
+    mMatchTable->SetNum_rows(0);
+}
+
+
+bool CMatchTabulate::x_AppendToMatchTable(
+    const SNucMatchInfo& nuc_match_info,
+    const TMatches& matches,
+    const list<string>& new_proteins,
+    const list<string>& dead_proteins) 
+{
+    x_AppendColumnValue("NA_Accession", nuc_match_info.accession);
+    x_AppendColumnValue("PROT_Accession", "---");
+    x_AppendColumnValue("PROT_LocalID", "---");
+    x_AppendColumnValue("Mol_type", "NUC");
+    x_AppendColumnValue("Status", nuc_match_info.status);
+
+    mMatchTable->SetNum_rows(mMatchTable->GetNum_rows()+1);
+
+
+    // Iterate over match Seq-annots
+    TMatches::const_iterator cit;
+
+    for (cit=matches.begin(); cit != matches.end(); ++cit) {
+
+        const CSeq_feat& query = x_GetQuery(**cit);
+        const CSeq_feat& subject = x_GetSubject(**cit);
+
+        string localID = x_GetLocalID(query);
+        const string accver = x_GetAccessionVersion(subject);
+
+        vector<string> accver_vec;
+        NStr::Split(accver, ".", accver_vec);
+
+        string status = (x_GetComparisonClass(**cit) == "perfect") ? "Same" : "Changed";
+
+        if (localID.empty()) {
+            localID = "---";
+        }
+        x_AppendColumnValue("NA_Accession", nuc_match_info.accession);
+        x_AppendColumnValue("PROT_Accession", accver_vec[0]);
+        x_AppendColumnValue("PROT_LocalID", localID);
+        x_AppendColumnValue("Mol_type", "PROT");
+        x_AppendColumnValue("Status", status);
+
+        mMatchTable->SetNum_rows(mMatchTable->GetNum_rows()+1);
+    }
+
+    for (string localID : new_proteins) {
+        x_AppendColumnValue("NA_Accession", nuc_match_info.accession);
+        x_AppendColumnValue("PROT_Accession", "---");
+        x_AppendColumnValue("PROT_LocalID", localID);
+        x_AppendColumnValue("Mol_type", "PROT");
+        x_AppendColumnValue("Status", "New");
+        mMatchTable->SetNum_rows(mMatchTable->GetNum_rows()+1);
+    }
+
+    for (string accver : dead_proteins) {
+        vector<string> accver_vec;
+        NStr::Split(accver, ".", accver_vec);
+        x_AppendColumnValue("NA_Accession", nuc_match_info.accession);
+        x_AppendColumnValue("PROT_Accession", accver_vec[0]);
+        x_AppendColumnValue("PROT_LocalID", "---");
+        x_AppendColumnValue("Mol_type", "PROT");
+        x_AppendColumnValue("Status", "Dead");
+        mMatchTable->SetNum_rows(mMatchTable->GetNum_rows()+1);
+    }
+
+    return true;
 }
 
 
