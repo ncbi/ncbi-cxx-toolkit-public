@@ -50,6 +50,8 @@ public:
     void AppendToMatchTable(const CSeq_align& alignment,
         const list<CRef<CSeq_annot>>& annots);
 
+    void WriteTable(CNcbiOstream& out);
+
     typedef list<CRef<CSeq_annot>> TMatches;
 
     struct SNucMatchInfo {
@@ -68,10 +70,10 @@ private:
         const list<string>& dead_proteins);
 
 
-    bool x_TryProcessAlignment(const CRef<CSeq_align>& alignment,
+    bool x_TryProcessAlignment(const CSeq_align& alignment,
         SNucMatchInfo& nuc_match_info);
 
-    bool x_IsPerfectAlignment(const CSeq_align& align) const;
+    bool x_IsPerfectAlignment(const CSeq_align& alignment) const;
 
     bool x_TryProcessAnnots(const list<CRef<CSeq_annot>>& annot_list,
         TMatches& matches,

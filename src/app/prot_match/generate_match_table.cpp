@@ -814,7 +814,7 @@ bool CProteinMatchApp::x_GenerateMatchTable(
 }
 
 // Write the match table. Rows are odered by local ID
-void CProteinMatchApp::x_WriteTable(
+void CMatchTabulate::WriteTable(
         CNcbiOstream& out)
 {
     // colNames contains the column names in the order in which they were added to the table

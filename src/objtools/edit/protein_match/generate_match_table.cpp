@@ -31,13 +31,13 @@ CMatchTabulate::CMatchTabulate() :
 CMatchTabulate::~CMatchTabulate() {}
 
 
-bool CMatchTabulate::x_TryProcessAlignment(const CRef<CSeq_align>& alignment,
+bool CMatchTabulate::x_TryProcessAlignment(const CSeq_align& alignment,
     CMatchTabulate::SNucMatchInfo& nuc_match_info) 
 {
-    nuc_match_info.status = x_IsPerfectAlignment(*alignment) ? "Same" : "Changed";
+    nuc_match_info.status = x_IsPerfectAlignment(alignment) ? "Same" : "Changed";
 
     string accver;
-    if (!x_FetchAccessionVersion(*alignment, accver)) {
+    if (!x_FetchAccessionVersion(alignment, accver)) {
         return false;
     }
 
@@ -429,6 +429,23 @@ void CMatchTabulate::AppendToMatchTable(
         mMatchTableInitialized=true;
     }
 
+    SNucMatchInfo nuc_match_info;
+    x_TryProcessAlignment(alignment, nuc_match_info);
+
+    list<string> new_protein_ids;
+    list<string> dead_protein_accessions;
+    TMatches protein_matches;
+
+    x_TryProcessAnnots(annots,
+        protein_matches,
+        new_protein_ids,
+        dead_protein_accessions);
+
+    x_AppendToMatchTable(nuc_match_info,
+        protein_matches,
+        new_protein_ids,
+        dead_protein_accessions);
+
     return;
 }
 
@@ -535,6 +552,40 @@ void CMatchTabulate::x_AppendColumnValue(
     size_t index = mColnameToIndex[colName];
     CSeqTable_column& column = *mMatchTable->SetColumns().at(index);
     column.SetData().SetString().push_back(colVal);
+}
+
+
+void CMatchTabulate::WriteTable(
+        CNcbiOstream& out)
+{
+    // colNames contains the column names in the order in which they were added to the table
+    vector<string> colNames(mColnameToIndex.size());
+
+    for (map<string,size_t>::const_iterator cit = mColnameToIndex.begin();
+         cit != mColnameToIndex.end();
+         ++cit) {
+        colNames[cit->second] = cit->first;
+    }
+
+    // First, write the column titles
+    for (const auto& column_name :  colNames) {
+        const CSeqTable_column& column = mMatchTable->GetColumn(column_name);
+        string displayName = column.GetHeader().GetTitle();
+        out << displayName << "\t";
+    }
+    out << '\n';
+
+    const unsigned int numRows = mMatchTable->GetNum_rows();
+
+   for (int row_index=0; row_index<numRows; ++row_index) { 
+        for (const auto& column_name : colNames) {
+            const CSeqTable_column& column = mMatchTable->GetColumn(column_name);
+            const string* pValue = column.GetStringPtr(row_index);
+            out << *pValue << "\t";
+        }
+        out << '\n';
+    } // iterate over rows
+    return;
 }
 
 
