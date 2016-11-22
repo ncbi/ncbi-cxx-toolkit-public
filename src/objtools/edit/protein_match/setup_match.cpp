@@ -44,7 +44,6 @@ void CMatchSetup::GetNucProtSets(
 }
 
 
-
 CSeq_entry_Handle CMatchSetup::GetNucleotideSEH(CSeq_entry_Handle seh) const
 {
     if (seh.IsSeq()) {
@@ -132,6 +131,7 @@ bool CMatchSetup::GetNucSeqIdFromCDSs(CSeq_entry_Handle& seh, CRef<CSeq_id>& id)
         CRef<CSeq_id> nucseq_id = Ref(new CSeq_id());
         nucseq_id->Assign(*(feature_it->GetLocation().GetId()));
         // Throw an exception if null pointer
+        ids.insert(nucseq_id); 
     }
 
     if (ids.size() > 1) {

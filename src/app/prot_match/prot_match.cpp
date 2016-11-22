@@ -60,9 +60,12 @@ public:
     int Run(void);
 
 private:
-    CObjectIStream* x_InitInputStream(const CArgs& args);
-    CObjectOStream* x_InitOutputStream(const string& filename, 
-    const bool binary) const;
+    CObjectIStream* x_InitObjectIStream(const CArgs& args);
+    CObjectOStream* x_InitObjectOStream(const string& filename, 
+        const bool binary) const;
+    CObjectIStream* x_InitObjectIStream(const string& filename,
+        const bool binary) const;
+
     void x_ReadUpdateFile(CObjectIStream& istr, CSeq_entry& seq_entry) const;
     bool x_TryReadSeqEntry(CObjectIStream& istr, CSeq_entry& seq_entry) const;
     bool x_TryReadBioseqSet(CObjectIStream& istr, CSeq_entry& seq_entry) const;
@@ -70,15 +73,18 @@ private:
         const string filename,
         const bool as_binary);
 
-    string x_GetBlastArgs(const string& update_file, 
-                          const string& genbank_file,
-                          const string& alignment_file) const;
+    void x_GetBlastArgs(const string& update_file, 
+        const string& genbank_file,
+        const string& alignment_file,
+        vector<string>& blast_args) const;
 
+    void x_GetCompareAnnotsArgs(const string& update_file,
+        const string& genbank_file,
+        const string& alignment_manifest_file,
+        const string& annot_file,
+        vector<string>& compare_annots_args) const;
 
-    string x_GetCompareAnnotsArgs(const string& update_file,
-                                  const string& genbank_file,
-                                  const string& alignment_manifest_file,
-                                  const string& annot_file) const;
+    void x_ReadAnnotFile(const string& filename, list<CRef<CSeq_annot>>& seq_annots) const;
 
     void x_LogTempFile(const string& string);
     void x_DeleteTempFiles(void);
@@ -127,18 +133,15 @@ int CProteinMatchApp::Run(void)
     const bool as_binary = true;
     const bool as_text = false;
 
-    CBinRunner assm_assm_blastn("assm_assm_blastn");
-    CBinRunner compare_annots("compare_annots");
-
-    assm_assm_blastn.CheckBinary(); // absorb into constructor
-    compare_annots.CheckBinary(); // absorb into constructor
+    CBinRunner assm_assm_blastn("./assm_assm_blastn");
+    CBinRunner compare_annots("./compare_annots");
     const CArgs& args = GetArgs();
     
     // Set up scope 
     CRef<CObjectManager> obj_mgr = CObjectManager::GetInstance();
     CRef<CScope> scope(new CScope(*obj_mgr));
 
-    unique_ptr<CObjectIStream> pInStream(x_InitInputStream(args));
+    unique_ptr<CObjectIStream> pInStream(x_InitObjectIStream(args));
 
     // Could use skip hooks here instead
     // ans2fasta, asnvalidate
@@ -173,23 +176,48 @@ int CProteinMatchApp::Run(void)
             *scope, 
             out_stub, 
             count);
-/*
         const string count_string = NStr::NumericToString(count);
         
-        const string alignment_file = out_stub + "merged." + count_string + ".asn";
-        const string blast_args = x_GetBlastArgs(
+        const string alignment_file = out_stub + ".merged" + count_string + ".asn";
+        vector<string> blast_args;
+        x_GetBlastArgs(
             seq_entry_files.local_nuc_seq, 
             seq_entry_files.gb_nuc_seq, 
-            alignment_file);
-        //assm_assm_blastn.Exec(blast_args);
+            alignment_file,
+            blast_args);
+
+        assm_assm_blastn.Exec(blast_args);
         x_LogTempFile(alignment_file);
        
-  */      
         // Create alignment manifest tempfile 
-        // const string compare_annots_args = ...
-        // compare_annots.Exec(compare_annots_args);
-        // x_LogTempFile(manifest_file);
-        // x_LogTempFile(annot_file);
+        const string manifest_file = out_stub + ".aln" + count_string + ".mft";
+        try {
+            CNcbiOfstream ostr(manifest_file);
+            ostr << alignment_file << endl;
+        }
+        catch(...) {
+            NCBI_THROW(CProteinMatchException,
+                eOutputError,
+                "Could not write alignment manifest");
+        }
+        x_LogTempFile(manifest_file);
+
+        const string annot_file = out_stub + ".compare" + count_string + ".asn";
+
+        vector<string> compare_annots_args;
+        x_GetCompareAnnotsArgs(
+            seq_entry_files.local_nuc_prot_set,
+            seq_entry_files.gb_nuc_prot_set,
+            manifest_file, 
+            annot_file,
+            compare_annots_args);
+
+         compare_annots.Exec(compare_annots_args);
+         x_LogTempFile(annot_file);
+
+
+        list<CRef<CSeq_annot>> seq_annots;
+        x_ReadAnnotFile(annot_file, seq_annots);
 
         // Append to match table here
 //        x_DeleteTempFiles();
@@ -244,7 +272,7 @@ void CProteinMatchApp::x_ReadUpdateFile(CObjectIStream& istr, CSeq_entry& seq_en
 }
 
 
-CObjectIStream* CProteinMatchApp::x_InitInputStream(
+CObjectIStream* CProteinMatchApp::x_InitObjectIStream(
     const CArgs& args) 
 {
     ESerialDataFormat serial = eSerial_AsnText;
@@ -337,8 +365,8 @@ CProteinMatchApp::x_GenerateSeqEntryTempFiles(CSeq_entry_Handle nuc_prot_seh,
 
     CRef<CSeq_id> local_id;
 
-    if (m_pMatchSetup->GetNucSeqIdFromCDSs(*(nuc_prot_seh.GetCompleteSeq_entry()), scope, local_id)) {
-    //if (m_pMatchSetup->GetNucSeqIdFromCDSs(nuc_prot_seh, local_id)) {
+    //if (m_pMatchSetup->GetNucSeqIdFromCDSs(*(nuc_prot_seh.GetCompleteSeq_entry()), scope, local_id)) {
+    if (m_pMatchSetup->GetNucSeqIdFromCDSs(nuc_prot_seh, local_id)) {
         m_pMatchSetup->UpdateNucSeqIds(local_id, nucleotide_seh, nuc_prot_seh);
     }
 
@@ -369,7 +397,60 @@ CProteinMatchApp::x_GenerateSeqEntryTempFiles(CSeq_entry_Handle nuc_prot_seh,
 }
 
 
-CObjectOStream* CProteinMatchApp::x_InitOutputStream(const string& filename, 
+void CProteinMatchApp::x_ReadAnnotFile(const string& filename,
+    list<CRef<CSeq_annot>>& seq_annots) const
+{
+    const bool binary = true;
+    unique_ptr<CObjectIStream> pObjIstream(x_InitObjectIStream(filename, binary));
+
+    if (!seq_annots.empty()) {
+        seq_annots.clear();
+    }
+
+    while(!pObjIstream->EndOfData()) {
+        CRef<CSeq_annot> pSeqAnnot(new CSeq_annot());
+        try {
+            pObjIstream->Read(ObjectInfo(*pSeqAnnot));
+        }
+        catch (CException&) {
+            NCBI_THROW(CProteinMatchException, 
+                       eInputError, 
+                      "Could not read \"" + filename + "\"");
+        }
+        seq_annots.push_back(pSeqAnnot);
+    }
+
+} 
+
+
+CObjectIStream* CProteinMatchApp::x_InitObjectIStream(const string& filename,
+    const bool binary) const
+{
+    CNcbiIstream* pInStream = new CNcbiIfstream(filename.c_str(), ios::in | ios::binary);
+
+    if (pInStream->fail()) {
+        NCBI_THROW(CProteinMatchException, 
+                   eInputError, 
+                   "Could not create input stream for \"" + filename + "\"");
+    }
+
+    ESerialDataFormat serial = binary ? eSerial_AsnBinary : eSerial_AsnText;
+
+    CObjectIStream* pObjIStream = CObjectIStream::Open(serial,
+                                                       *pInStream,
+                                                       eTakeOwnership);
+
+    if (!pObjIStream) {
+        NCBI_THROW(CProteinMatchException, 
+                   eInputError, 
+                   "Unable to open input file \"" + filename + "\"");
+    }
+
+    return pObjIStream;
+}
+
+
+CObjectOStream* CProteinMatchApp::x_InitObjectOStream(const string& filename, 
     const bool binary) const
 {
     if (filename.empty()) {
@@ -396,7 +477,7 @@ void CProteinMatchApp::x_WriteEntry(const CSeq_entry& seq_entry,
     const string filename, 
     const bool as_binary) {
     try { 
-        unique_ptr<CObjectOStream> pOstr(x_InitOutputStream(filename, as_binary));
+        unique_ptr<CObjectOStream> pOstr(x_InitObjectOStream(filename, as_binary));
         *pOstr << seq_entry;
     } catch (CException& e) {
         NCBI_THROW(CProteinMatchException,
@@ -406,10 +487,11 @@ void CProteinMatchApp::x_WriteEntry(const CSeq_entry& seq_entry,
 }
 
 
-string CProteinMatchApp::x_GetBlastArgs(
+void CProteinMatchApp::x_GetBlastArgs(
     const string& update_file, 
     const string& genbank_file,
-    const string& alignment_file) const
+    const string& alignment_file,
+    vector<string>& blast_args) const
 {
     if (NStr::IsBlank(update_file) ||
         NStr::IsBlank(genbank_file)) {
@@ -425,26 +507,31 @@ string CProteinMatchApp::x_GetBlastArgs(
             "assm_assm_blastn alignment file not specified");
     }
 
-    string blast_args = 
-        " -query " + update_file +
-        " -target " + genbank_file + 
-        " -task megablast " +
-        " -word_size 16 -evalue 0.01 " +
-        " -gapopen 2 -gapextend 1" +
-        " -best_hit_overhang 0.1 -best_hit_score_edge 0.1 " +
-        " -align-output " + alignment_file + 
-        " -ofmt asn-binary " +
-        " -nogenbank";
-
-    return blast_args;
+    vector<string> args {
+        "-query", update_file,
+        "-target", genbank_file,
+        "-task", "megablast",
+        "-word_size", "16",
+        "-evalue", "0.01",
+        "-gapopen", "2",
+        "-gapextend", "1",
+        "-best_hit_overhang", "0.1",
+        "-best_hit_score_edge", "0.1",
+        "-align-output", alignment_file,
+        "-ofmt", "asn-binary",
+        "-nogenbank"
+    };
+    
+    blast_args = args;
 }
 
 
-string CProteinMatchApp::x_GetCompareAnnotsArgs(
+void CProteinMatchApp::x_GetCompareAnnotsArgs(
         const string& update_file,
         const string& genbank_file,
         const string& alignment_manifest_file,
-        const string& annot_file)  const
+        const string& annot_file,
+        vector<string>& compare_annots_args)  const
 {
     if (NStr::IsBlank(update_file) ||
         NStr::IsBlank(genbank_file) ||
@@ -460,14 +547,16 @@ string CProteinMatchApp::x_GetCompareAnnotsArgs(
             "compare_annots annot file is not specified");
     }
 
-    string compare_annot_args = 
-        " -q_scope_type annots -q_scope_args " + update_file +
-        " -s_scope_type annots -s_scope_args " + genbank_file +
-        " -alns " + alignment_manifest_file +
-        " -o_asn " + annot_file +
-        " -nogenbank";
-
-    return compare_annot_args;
+    vector<string> args {
+        "-q_scope_type", "annots",
+        "-q_scope_args", update_file,
+        "-s_scope_type", "annots",
+        "-s_scope_args", genbank_file,
+        "-alns", alignment_manifest_file,
+        "-o_asn", annot_file,
+        "-nogenbank" };
+    
+    compare_annots_args = args;
 }
 
 

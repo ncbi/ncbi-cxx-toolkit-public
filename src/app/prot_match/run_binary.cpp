@@ -39,13 +39,11 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-//CBinRunner::CBinRunner(void) : m_IsSet(false) 
-//{}
-
 
 CBinRunner::CBinRunner(const string& bin_name) {
     m_pBinary.reset(new CFile(bin_name));
     m_IsSet = true;
+    CheckBinary();
 }
 
 
@@ -72,42 +70,16 @@ bool CBinRunner::CheckBinary(void) const
     return true;
 }
 
-/*
-bool CBinRunner::SetBinary(const string& bin_name) 
+
+void CBinRunner::Exec(const vector<string>& arg_vec) 
 {
-    if (m_IsSet) {
-        return false;
-    }
-
-    m_pBinary.reset(new CFile(bin_name));
-    m_IsSet = true;
-    return true;
-}
-
-
-bool CBinRunner::ResetBinary(const string& bin_name)
-{
-    m_pBinary.reset();
-    m_IsSet = false;
-
-    return SetBinary(bin_name);
-}
-*/
-
-void CBinRunner::Exec(const string& arguments) {
-
-    vector<string> arg_vec;
-    arg_vec.push_back(arguments);
-
-
-    cout << "Executing : " << m_pBinary->GetPath() << "\n";
-
+    CNcbiIstrstream empty_in("");
 
     int exit_code;
     CPipe::EFinish exec_fin = CPipe::ExecWait(
             m_pBinary->GetPath(),
             arg_vec,
-            cin,
+            empty_in,
             cout,
             cerr,
             exit_code);

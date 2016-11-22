@@ -28,6 +28,8 @@ CMatchTabulate::CMatchTabulate() : mMatchTable(Ref(new CSeq_table()))
 CMatchTabulate::~CMatchTabulate() {}
 
 
+
+
 bool CMatchTabulate::ProcessAnnots(const list<CRef<CSeq_annot>>& annot_list,
     TMatches& matches,
     list<string>& new_proteins,  // contains local ids for new proteins

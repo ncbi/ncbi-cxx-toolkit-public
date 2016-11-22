@@ -41,16 +41,11 @@ class CBinRunner
 {
 
 public:
-//    CBinRunner(void);
     CBinRunner(const string& bin_name);
     virtual ~CBinRunner(void);
 
     bool CheckBinary(void) const;
-/*
-    bool SetBinary(const string& bin_name);
-    bool ResetBinary(const string& bin_name);
-*/
-    void Exec(const string& arguments);
+    void Exec(const vector<string>& arguments);
 
 private:
     unique_ptr<CFile> m_pBinary;
