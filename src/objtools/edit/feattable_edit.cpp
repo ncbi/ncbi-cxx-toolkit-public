@@ -649,6 +649,10 @@ void CFeatTableEdit::xGenerateLocusIdsUseExisting()
     }
 }
 
+bool idAlpha(const CSeq_id_Handle& idh1, const CSeq_id_Handle idh2) {
+    return (idh1.AsString() < idh2.AsString());
+}
+
 //  ----------------------------------------------------------------------------
 void CFeatTableEdit::GenerateLocusTags()
 //  ----------------------------------------------------------------------------
@@ -659,17 +663,53 @@ void CFeatTableEdit::GenerateLocusTags()
 
 	CRef<CGb_qual> pLocusTag;
     SAnnotSelector selGenes;
+    vector<CSeq_id_Handle> annotIds;
+    selGenes.SetSortOrder(SAnnotSelector::eSortOrder_Normal);
     selGenes.IncludeFeatSubtype(CSeqFeatData::eSubtype_gene);
     CFeat_CI itGenes(mHandle, selGenes);
     for ( ; itGenes; ++itGenes) {
-        CSeq_feat_EditHandle feh(mpScope->GetObjectHandle(
-            itGenes->GetOriginalFeature()));
-        CRef<CSeq_feat> pEditedFeat(new CSeq_feat);
-        pEditedFeat->Assign(itGenes->GetOriginalFeature());
-        pEditedFeat->RemoveQualifier("locus_tag");
-        pEditedFeat->SetData().SetGene().SetLocus_tag(xNextLocusTag());
-		feh.Replace(*pEditedFeat);
-	}
+        CSeq_feat_Handle fh = *itGenes;
+        CSeq_id_Handle idh = fh.GetLocationId();
+        vector<CSeq_id_Handle>::const_iterator compIt;
+        for ( compIt = annotIds.begin(); 
+                compIt != annotIds.end(); 
+                ++compIt) {
+            if (*compIt == idh) {
+                break;
+            }
+        }
+        if (compIt == annotIds.end()) {
+            annotIds.push_back(idh);
+        }
+    }
+    std::sort(annotIds.begin(), annotIds.end(), idAlpha);
+
+    for (vector<CSeq_id_Handle>::const_iterator idIt = annotIds.begin();
+            idIt != annotIds.end();
+            ++idIt) {
+        CSeq_id_Handle curId = *idIt;
+
+	    CRef<CGb_qual> pLocusTag;
+        SAnnotSelector selGenes;
+        selGenes.SetSortOrder(SAnnotSelector::eSortOrder_None);
+        selGenes.IncludeFeatSubtype(CSeqFeatData::eSubtype_gene);
+        CFeat_CI itGenes(mHandle, selGenes);
+        for ( ; itGenes; ++itGenes) {
+            CSeq_feat_Handle fh = *itGenes;
+            string id1 = fh.GetLocationId().AsString();
+            string id2 = curId.AsString();
+            if (fh.GetLocationId() != curId) {
+                continue;
+            }
+            CSeq_feat_EditHandle feh(mpScope->GetObjectHandle(
+                itGenes->GetOriginalFeature()));
+            CRef<CSeq_feat> pEditedFeat(new CSeq_feat);
+            pEditedFeat->Assign(itGenes->GetOriginalFeature());
+            pEditedFeat->RemoveQualifier("locus_tag");
+            pEditedFeat->SetData().SetGene().SetLocus_tag(xNextLocusTag());
+		    feh.Replace(*pEditedFeat);
+        }
+    }
 	SAnnotSelector selOther;
 	selOther.ExcludeFeatSubtype(CSeqFeatData::eSubtype_gene);
     CFeat_CI itOther(mHandle, selOther);
