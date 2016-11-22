@@ -4,7 +4,7 @@
 #################################
 
 LIB_PROJ = seqdb
-SUB_PROJ = demo test
+SUB_PROJ = demo test seqdb2_info
 
 REQUIRES = SQLITE3
 

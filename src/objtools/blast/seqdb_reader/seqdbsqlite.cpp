@@ -71,36 +71,51 @@ CSeqDBSqlite::~CSeqDBSqlite()
 
 void CSeqDBSqlite::SetCacheSize(const size_t cache_size)
 {
+    // This method accepts a value in bytes, but SQLite wants a number
+    // of pages.  The page size is determined when an SQLite file is created.
     unsigned int pageSize = m_db->GetPageSize();
     m_db->SetCacheSize(cache_size / pageSize);
 }
 
 int CSeqDBSqlite::GetOid(const string& accession)
 {
+    // Create the SELECT statement.
     if (m_selectStmt == NULL) {
         m_selectStmt = new CSQLITE_Statement(
                 m_db,
                 "SELECT version, oid FROM acc2oid WHERE accession = ?;"
         );
     }
+    // Bind the accession string to the statement.
     m_selectStmt->ClearBindings();
     m_selectStmt->Bind(1, accession);
     m_selectStmt->Execute();
-    int bestVer = -1;
-    int bestOid = -1;
-    bool ambig = false;
+    // We need to keep track of the highest version if there are multiple
+    // rows that match the accession.
+    int bestVer = -1;       // the highest version
+    int bestOid = -1;       // the OID with the highest version
+    bool ambig = false;     // ambiguity detected?
+    // Step through all selected rows.
     while (m_selectStmt->Step()) {
+        // Fetch the version and OID.
         int ver = m_selectStmt->GetInt(0);
         int oid = m_selectStmt->GetInt(1);
-        if (ver > bestVer) {
+        if (ver == bestVer  &&  oid != bestOid) {
+            // If the version matches the previous best but the OIDs differ,
+            // we have an ambiguity (which might be resolved farther down).
+            ambig = true;
+        } else if (ver > bestVer) {
+            // If the version exceeds the previous best, save it and the OID.
+            // If we had detected an ambiguity, this overrides it.
             bestVer = ver;
             bestOid = oid;
             ambig = false;
-        } else if (ver == bestVer  &&  oid != bestOid) {
-            ambig = true;
         }
     }
+    // Done with statement.
     m_selectStmt->Reset();
+
+    // Return result of search.
     if (ambig) return kAmbiguous;
     if (bestOid == -1) return kNotFound;
     return bestOid;
@@ -108,7 +123,7 @@ int CSeqDBSqlite::GetOid(const string& accession)
 
 vector<int> CSeqDBSqlite::GetOids(const list<string>& accessions)
 {
-    // Create in-memory temporary table to hold accessions.
+    // Create in-memory temporary table to hold list of accessions.
     m_db->ExecuteSql("CREATE TEMP TABLE IF NOT EXISTS accs ( acc TEXT );");
     CSQLITE_Statement* ins =
             new CSQLITE_Statement(m_db, "INSERT INTO accs(acc) VALUES (?);");
@@ -149,11 +164,12 @@ vector<int> CSeqDBSqlite::GetOids(const list<string>& accessions)
         acc2oid.insert(pair<string, SVerOid>(accession, SVerOid(version, oid)));
         // Read back map element.  Most of the time we'll get back what
         // we put in.
-        // If we exactly matched an existing map element, they're redundant
-        // which is no problem.
+        // If we exactly matched all columns of an existing map element,
+        // they're redundant which is no problem.
         // If the versions differ, the earlier (higher) one takes precedence.
         // If the versions match but the OIDs do not, we have ambiguity.
-        // If ambiguity has already been declared, that takes precedence.
+        // If ambiguity has already been declared, that takes precedence,
+        // because rows are sorted by descending version.
         SVerOid veroid = acc2oid.at(accession);
         if (veroid.m_oid != kAmbiguous) {
             if (veroid.m_ver == version  &&  veroid.m_oid != oid) {
@@ -187,11 +203,16 @@ vector<int> CSeqDBSqlite::GetOids(const list<string>& accessions)
 
 list<string> CSeqDBSqlite::GetAccessions(const int oid)
 {
+    // Perform reverse-lookup of accession for a given OID.
+    // There are likely to be multiple matches.
+    // Reverse lookups are slower than accession-to-OID lookups
+    // because there's no index on the OIDs.
     list<string> accs;
     ostringstream oss;
     oss << "SELECT accession FROM acc2oid WHERE oid = " << oid << ";";
     CSQLITE_Statement sel(m_db, oss.str());
     sel.Execute();
+    // Collect each accession selected.
     while (sel.Step()) {
         accs.push_back(sel.GetString(0));
     }
@@ -200,12 +221,15 @@ list<string> CSeqDBSqlite::GetAccessions(const int oid)
 
 bool CSeqDBSqlite::StepAccessions(string* acc, int* ver, int* oid)
 {
+    // If this is the first step, create the SELECT statement.
     if (m_selectStmt == NULL) {
         m_selectStmt = new CSQLITE_Statement(
                 m_db,
                 "SELECT * FROM acc2oid;"
         );
     }
+    // If there's at least one row remaining, fetch it.
+    // Return only those columns for which non-null targets are given.
     if (m_selectStmt->Step()) {
         if (acc != NULL) {
             *acc = m_selectStmt->GetString(0);
@@ -216,8 +240,11 @@ bool CSeqDBSqlite::StepAccessions(string* acc, int* ver, int* oid)
         if (oid != NULL) {
             *oid = m_selectStmt->GetInt(2);
         }
+        // We're returning a row.
         return true;
     } else {
+        // Rows all used up, finalize SELECT statement and return false,
+        // i.e. now row returned.
         delete m_selectStmt;
         m_selectStmt = NULL;
         return false;
@@ -231,12 +258,15 @@ bool CSeqDBSqlite::StepVolumes(
         int* numoids
 )
 {
+    // If this is the first step, create the SELECT statement.
     if (m_selectStmt == NULL) {
         m_selectStmt = new CSQLITE_Statement(
                 m_db,
                 "SELECT * FROM volinfo;"
         );
     }
+    // If there's at least one row remaining, fetch it.
+    // Return only those columns for which non-null targets are given.
     if (m_selectStmt->Step()) {
         if (path != NULL) {
             *path = m_selectStmt->GetString(0);
@@ -250,8 +280,11 @@ bool CSeqDBSqlite::StepVolumes(
         if (numoids != NULL) {
             *numoids = m_selectStmt->GetInt(3);
         }
+        // We're returning a row.
         return true;
     } else {
+        // Rows all used up, finalize SELECT statement and return false,
+        // i.e. now row returned.
         delete m_selectStmt;
         m_selectStmt = NULL;
         return false;
