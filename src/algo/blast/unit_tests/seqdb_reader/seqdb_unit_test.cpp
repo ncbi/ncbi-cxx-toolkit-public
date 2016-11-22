@@ -852,15 +852,15 @@ BOOST_AUTO_TEST_CASE(NrAndSwissProt)
     nr.GetTotals(CSeqDB::eUnfilteredAll, & nr_oids, & nr_vlen);
     sp.GetTotals(CSeqDB::eUnfilteredAll, & sp_oids, & sp_vlen);
 
-    BOOST_REQUIRE(nr_seqs == nr_oids);
-    BOOST_REQUIRE(nr_tlen == nr_vlen);
+    BOOST_REQUIRE_EQUAL(nr_seqs, nr_oids);
+    BOOST_REQUIRE_EQUAL(nr_tlen, nr_vlen);
 
-    BOOST_REQUIRE(nr_seqs >  sp_seqs);
-    BOOST_REQUIRE(nr_oids != sp_oids);
-    BOOST_REQUIRE(nr_tlen >  sp_tlen);
-    BOOST_REQUIRE(nr_vlen != sp_vlen);
+    BOOST_REQUIRE_GT(nr_seqs, sp_seqs);
+    BOOST_REQUIRE_NE(nr_oids, sp_oids);
+    BOOST_REQUIRE_GT(nr_tlen,  sp_tlen);
+    BOOST_REQUIRE_NE(nr_vlen, sp_vlen);
 
-    BOOST_REQUIRE(nr.GetMaxLength() >= sp.GetMaxLength());
+    BOOST_REQUIRE_GE(nr.GetMaxLength(), sp.GetMaxLength());
 }
 
 BOOST_AUTO_TEST_CASE(TranslateIdents)
