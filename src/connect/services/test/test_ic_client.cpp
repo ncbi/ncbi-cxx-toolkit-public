@@ -46,7 +46,7 @@
 #include <corelib/test_boost.hpp>
 #include <corelib/request_ctx.hpp>
 
-#include <util/random_gen.hpp>
+#include <random>
 
 
 USING_NCBI_SCOPE;
@@ -224,43 +224,6 @@ static int s_Run()
 }
 
 
-// Convenience class for random generator
-struct CRandomSingleton
-{
-    CRandom r;
-    CRandomSingleton() { r.Randomize(); }
-
-    static CRandom& instance()
-    {
-        static CRandomSingleton rs;
-        return rs.r;
-    }
-};
-
-
-// Convenience function to fill container with random char data
-template <class TContainer>
-void RandomFill(TContainer& container, size_t length, bool printable = true)
-{
-    CRandom& random(CRandomSingleton::instance());
-    const char kMin = printable ? '!' : numeric_limits<char>::min();
-    const char kMax = printable ? '~' : numeric_limits<char>::max();
-    container.clear();
-    container.reserve(length);
-    while (length-- > 0) {
-        container.push_back(kMin + random.GetRandIndex(kMax - kMin + 1));
-    }
-}
-
-
-// Convenience function to generate a unique key
-string GetUniqueKey()
-{
-    return NStr::NumericToString(time(NULL)) + "t" +
-        NStr::NumericToString(CRandomSingleton::instance().GetRandUint8());
-}
-
-
 static void s_SimpleTest()
 {
 #define SIMPLE_TEST_CTX \
@@ -278,19 +241,28 @@ static void s_SimpleTest()
     vector<char> src;
     vector<char> buf;
 
-    src.reserve(kSrcSize);
+    src.resize(kSrcSize);
     buf.reserve(kBufSize);
 
-    const string key = GetUniqueKey();
+    uniform_int_distribution<Uint8> uint8_range;
+    auto random_key = bind(uint8_range, default_random_engine());
+
+    uniform_int_distribution<short> char_range(
+            numeric_limits<char>::min(),
+            numeric_limits<char>::max());
+    auto random_char = bind(char_range, default_random_engine());
+
+    const string key = to_string(time(NULL)) + "t" + to_string(random_key());
     vector<string> subkeys;
 
     for (int version = 0; version < kIterations; ++version) {
-        const string subkey = GetUniqueKey();
+        const string subkey = to_string(random_key());
         subkeys.push_back(subkey);
 
         try {
             // Creating blob
-            RandomFill(src, kSrcSize, false);
+            generate_n(src.begin(), kSrcSize, random_char);
+
             api.Store(key, version, subkey, src.data(), src.size());
             BOOST_REQUIRE_MESSAGE(api.HasBlob(key, subkey),
                     "Blob does not exist" SIMPLE_TEST_CTX);
