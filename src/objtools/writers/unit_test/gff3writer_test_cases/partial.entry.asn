@@ -27745,8 +27745,8 @@ Seq-entry ::= seq {
                 key "STS" } ,
             location
               int {
-                from 1937845 ,
-                to 1937946 ,
+                from 1937846 ,
+                to 1937947 ,
                 strand plus ,
                 id
                   gi 157811827 } ,

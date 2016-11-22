@@ -395,7 +395,7 @@ NW_001838553.2	BestRefSeq	CDS	1954735	1954876	.	-	1	ID=cds11;Parent=rna18;Dbxref
 NW_001838553.2	BestRefSeq	CDS	1940982	1941215	.	-	0	ID=cds11;Parent=rna18;Dbxref=GeneID:51029,Genbank:NP_057160.2,HGNC:24264,HPRD:15153,MIM:614638;Name=NP_057160.2;gbkey=CDS;gene=DESI2;product=desumoylating isopeptidase 2;protein_id=NP_057160.2
 NW_001838553.2	RefSeq	STS	1937774	1938019	.	+	.	ID=id245;Dbxref=UniSTS:77714;gbkey=STS
 NW_001838553.2	RefSeq	STS	1937846	1937947	.	+	.	ID=id246;Dbxref=UniSTS:116849;gbkey=STS
-NW_001838553.2	RefSeq	STS	1937846	1937947	.	+	.	ID=id247;Dbxref=UniSTS:854;gbkey=STS
+NW_001838553.2	RefSeq	STS	1937847	1937948	.	+	.	ID=id247;Dbxref=UniSTS:854;gbkey=STS
 NW_001838553.2	RefSeq	STS	1938032	1938171	.	+	.	ID=id248;Dbxref=UniSTS:55771;gbkey=STS
 NW_001838553.2	RefSeq	STS	1940945	1941080	.	+	.	ID=id249;Dbxref=UniSTS:48418;gbkey=STS
 NW_001838553.2	Curated Genomic	gene	1952035	1952325	.	+	.	ID=gene15;Dbxref=GeneID:100271014,HGNC:36279;Name=RPL37P8;description=ribosomal protein L37 pseudogene 8;gbkey=Gene;gene=RPL37P8;gene_biotype=pseudogene;gene_synonym=RPL37_2_190;pseudo=true
