@@ -51,6 +51,7 @@
 #include <corelib/ncbi_safe_static.hpp>
 
 #include <memory>
+#include <sstream>
 
 #define MAX_ICACHE_CACHE_NAME_LENGTH 64
 #define MAX_ICACHE_KEY_LENGTH 256
@@ -1097,6 +1098,37 @@ bool CNetICacheClient::SameCacheParams(const TCacheParams*) const
 void CNetICacheClient::SetEventHandler(INetEventHandler* event_handler)
 {
     m_Impl->m_Service->SetEventHandler(event_handler);
+}
+
+vector<CNetICacheClient::CBlobInfo> CNetICacheClient::Search(
+        CNetICacheClient::CExpression expression,
+        CNetICacheClient::CFields filter)
+{
+    const auto parameters = &m_Impl->m_DefaultParameters;
+    const auto cache_name = NStr::PrintableString(parameters->GetCacheName());
+    string ids;
+    m_Impl->AppendClientIPSessionIDPasswordAgeHitID(&ids, parameters);
+    ostringstream oss;
+    oss << "IC(" << cache_name << ") BLIST2" << expression + filter << ids;
+
+    CNetServerMultilineCmdOutput output(
+            m_Impl->ChooseServerAndExec(
+                oss.str(),
+                kEmptyStr,
+                true,
+                &m_Impl->m_DefaultParameters));
+
+    output->SetNetCacheCompatMode();
+    string line;
+    vector<CNetICacheClient::CBlobInfo> result;
+
+    while (output.ReadLine(line) && !line.empty()) {
+        CBlobInfo blob_info;
+        blob_info << line;
+        result.push_back(blob_info);
+    }
+
+    return result;
 }
 
 void CNetICacheClientExt::ProlongBlobLifetime(const string& key,

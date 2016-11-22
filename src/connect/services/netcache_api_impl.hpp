@@ -33,6 +33,7 @@
 
 #include "netcache_rw.hpp"
 #include "netservice_api_impl.hpp"
+#include <connect/services/netcache_search.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -169,6 +170,18 @@ public:
     CNetServer::TInstance m_PrimaryServer;
     bool m_PrimaryServerCheck;
 };
+
+namespace grid {
+namespace netcache {
+namespace search {
+
+NCBI_XCONNECT_EXPORT CExpression operator+(CExpression l, CFields r);
+NCBI_XCONNECT_EXPORT ostream& operator<<(ostream& os, CExpression expression);
+NCBI_XCONNECT_EXPORT void operator<<(CBlobInfo& blob_info, string data);
+
+}
+}
+}
 
 END_NCBI_SCOPE
 

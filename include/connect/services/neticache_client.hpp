@@ -38,6 +38,7 @@
 ///
 
 #include "netcache_api.hpp"
+#include "netcache_search.hpp"
 
 #include <list>
 
@@ -149,6 +150,25 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
     /// Returns a list of subkeys for a given key
     ///
     list<string> GetSubkeyList(const string& key);
+
+    typedef grid::netcache::search::CBlobInfo CBlobInfo;
+    typedef grid::netcache::search::CExpression CExpression;
+    typedef grid::netcache::search::CFields CFields;
+
+    /// Returns information for all blobs matching provided search expression.
+    /// @see NetCacheSearch for complete list of classes and operators.
+    ///
+    /// @param expression
+    ///    Search expression,
+    ///    e.g. 'created < hours(1) && size >= 1024'
+    /// @param fields
+    ///    Additional output fields requested in blob info,
+    ///    e.g. 'expires | version_expires'
+    /// @return
+    ///    Blob info consisting of key, subkey, fields from provided search
+    ///    expression and output fields for all blobs matched the expression
+    ///
+    vector<CBlobInfo> Search(CExpression expression, CFields fields = CFields());
 
     /// @warning
     ///    This method DOES NOT follow ICache::Read() interface
