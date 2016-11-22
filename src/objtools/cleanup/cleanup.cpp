@@ -2539,18 +2539,6 @@ int s_SeqDescToOrdering(CSeqdesc::E_Choice chs) {
     return find_iter->second;
 }
 
-static int s_StrucCommOrder(const string&str) {
-    if (NStr::StartsWith(str, "##Taxonomic-Update-Statistics")) return 1;
-    if (NStr::StartsWith(str, "##FluData")) return 2;
-    if (NStr::StartsWith(str, "##MIGS")) return 3;
-    if (NStr::StartsWith(str, "##Assembly-Data")) return 4;
-    if (NStr::StartsWith(str, "##Genome-Assembly-Data")) return 5;
-    if (NStr::StartsWith(str, "##Genome-Annotation-Data")) return 6;
-    if (NStr::StartsWith(str, "##Evidence-Data")) return 7;
-    if (NStr::StartsWith(str, "##RefSeq-Attributes")) return 8;
-    return 1000;
-}
-
 static
 bool s_SeqDescLessThan(const CRef<CSeqdesc> &desc1, const CRef<CSeqdesc> &desc2)
 {
@@ -2558,39 +2546,6 @@ bool s_SeqDescLessThan(const CRef<CSeqdesc> &desc1, const CRef<CSeqdesc> &desc2)
 
     chs1 = desc1->Which();
     chs2 = desc2->Which();
-
-    if (chs1 == CSeqdesc::e_User && chs2 == CSeqdesc::e_User) {
-        const CUser_object& uop1 = desc1->GetUser();
-        const CUser_object& uop2 = desc2->GetUser();
-        const CUser_object::TType &typ1 = uop1.GetType();
-        const CUser_object::TType &typ2 = uop2.GetType();
-        if (typ1.IsStr() && typ2.IsStr()) {
-            const string& str1 = typ1.GetStr();
-            const string& str2 = typ2.GetStr();
-            bool issc1 = (bool) (str1 == "StructuredComment");
-            bool issc2 = (bool) (str2 == "StructuredComment");
-            if (issc1 && issc2) {
-                CConstRef<CUser_field> fld1 = uop1.GetFieldRef("StructuredCommentPrefix");
-                CConstRef<CUser_field> fld2 = uop2.GetFieldRef("StructuredCommentPrefix");
-                if (fld1 && fld2 && fld1->IsSetData() && fld2->IsSetData() && fld1->GetData().IsStr()&& fld2->GetData().IsStr()) {
-                    const string& str1 = fld1->GetData().GetStr();
-                    const string& str2 = fld2->GetData().GetStr();
-                    int val1 = s_StrucCommOrder(str1);
-                    int val2 = s_StrucCommOrder(str2);
-                    if (val1 != val2) {
-                        return (val1 < val2);
-                    }
-                    return (NStr::CompareCase(str1, str2) < 0);
-                }
-            } else if (issc1) {
-                return true;
-            } else if (issc2) {
-                return false;
-            } else {
-                return (NStr::CompareCase(str1, str2) < 0);
-            }
-        }
-    }
 
     return (s_SeqDescToOrdering(chs1) < s_SeqDescToOrdering(chs2));
 }
