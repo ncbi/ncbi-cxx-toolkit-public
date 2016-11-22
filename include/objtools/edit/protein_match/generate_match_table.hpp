@@ -50,12 +50,22 @@ public:
 
     typedef list<CRef<CSeq_annot>> TMatches;
 
-    bool ProcessAnnots(const list<CRef<CSeq_annot>>& annot_list,
+    struct SNucMatchInfo {
+        string accession;
+        string status;
+    };
+private:
+
+
+    bool x_TryProcessAlignment(const CRef<CSeq_align>& alignment,
+        SNucMatchInfo& nuc_match_info);
+
+    bool x_IsPerfectAlignment(const CSeq_align& align) const;
+
+    bool x_TryProcessAnnots(const list<CRef<CSeq_annot>>& annot_list,
         TMatches& matches,
         list<string>& new_prot_ids,
         list<string>& dead_prot_ids);
-
-private:
 
     bool x_IsProteinMatch(const CSeq_annot& annot) const;
     bool x_IsCdsComparison(const CSeq_annot& annot) const;
@@ -71,9 +81,6 @@ private:
     void x_AddColumn(const string& colName);
     void x_AppendColumnValue(const string& colName,
         const string& colVal);
-    bool x_FetchAccessionVersion(const CSeq_align,
-        string& accver);
-
     bool x_HasCdsQuery(const CSeq_annot& annot) const;
     bool x_HasCdsSubject(const CSeq_annot& annot) const;
     bool x_IsComparison(const CSeq_annot& annot) const;

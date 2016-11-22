@@ -8,6 +8,7 @@
 #include <objects/general/Object_id.hpp>
 #include <objects/seq/Annot_descr.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
+#include <objects/seqalign/Score.hpp>
 #include <objects/seqtable/SeqTable_column.hpp>
 #include <objects/seqtable/Seq_table.hpp>
 
@@ -28,9 +29,58 @@ CMatchTabulate::CMatchTabulate() : mMatchTable(Ref(new CSeq_table()))
 CMatchTabulate::~CMatchTabulate() {}
 
 
+bool CMatchTabulate::x_TryProcessAlignment(const CRef<CSeq_align>& alignment,
+    CMatchTabulate::SNucMatchInfo& nuc_match_info) 
+{
+    nuc_match_info.status = x_IsPerfectAlignment(*alignment) ? "Same" : "Changed";
+
+    string accver;
+    if (!x_FetchAccessionVersion(*alignment, accver)) {
+        return false;
+    }
+
+    vector<string> accver_vec;
+    NStr::Split(accver, ".", accver_vec);
+
+    nuc_match_info.accession = accver_vec[0];
+
+    return true;
+}
 
 
-bool CMatchTabulate::ProcessAnnots(const list<CRef<CSeq_annot>>& annot_list,
+bool CMatchTabulate::x_IsPerfectAlignment(const CSeq_align& align) const 
+{
+    size_t gap_count = 1;
+    size_t num_mismatch = 1;
+    if (align.IsSetScore()) {
+        for (CRef<CScore> score : align.GetScore()) {
+
+            if (score->IsSetId() &&
+                score->GetId().IsStr()) {
+        
+                if (score->GetId().GetStr() == "num_mismatch") {
+                    num_mismatch = score->GetValue().GetInt();
+                    continue;
+                }
+
+                if (score->GetId().GetStr() == "gap_count") {
+                    gap_count = score->GetValue().GetInt();
+                    continue;
+                }
+            }
+        }
+    }
+
+    if (!gap_count  && 
+        !num_mismatch) {
+        return true;
+    }
+
+    return false;
+}
+
+
+bool CMatchTabulate::x_TryProcessAnnots(const list<CRef<CSeq_annot>>& annot_list,
     TMatches& matches,
     list<string>& new_proteins,  // contains local ids for new proteins
     list<string>& dead_proteins) // contains accessions for dead proteins

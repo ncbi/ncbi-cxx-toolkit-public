@@ -86,6 +86,8 @@ private:
 
     void x_ReadAnnotFile(const string& filename, list<CRef<CSeq_annot>>& seq_annots) const;
 
+    void x_ReadAlignmentFile(const string& filename, CRef<CSeq_align>& alignment) const;
+
     void x_LogTempFile(const string& string);
     void x_DeleteTempFiles(void);
 
@@ -212,12 +214,15 @@ int CProteinMatchApp::Run(void)
             annot_file,
             compare_annots_args);
 
-         compare_annots.Exec(compare_annots_args);
-         x_LogTempFile(annot_file);
-
+        compare_annots.Exec(compare_annots_args);
+        x_LogTempFile(annot_file);
 
         list<CRef<CSeq_annot>> seq_annots;
         x_ReadAnnotFile(annot_file, seq_annots);
+
+        CRef<CSeq_align> alignment = Ref(new CSeq_align());
+        x_ReadAlignmentFile(alignment_file, alignment);
+        
 
         // Append to match table here
 //        x_DeleteTempFiles();
@@ -419,8 +424,24 @@ void CProteinMatchApp::x_ReadAnnotFile(const string& filename,
         }
         seq_annots.push_back(pSeqAnnot);
     }
+}
 
-} 
+
+void CProteinMatchApp::x_ReadAlignmentFile(const string& filename, 
+    CRef<CSeq_align>& pSeqAlign) const
+{
+    const bool binary = true;
+    unique_ptr<CObjectIStream> pObjIstream(x_InitObjectIStream(filename, binary));
+
+    try {
+        pObjIstream->Read(ObjectInfo(*pSeqAlign));
+    } 
+    catch (CException&) {
+        NCBI_THROW(CProteinMatchException, 
+            eInputError, 
+            "Could not read \"" + filename + "\"");
+    }
+}
 
 
 CObjectIStream* CProteinMatchApp::x_InitObjectIStream(const string& filename,
