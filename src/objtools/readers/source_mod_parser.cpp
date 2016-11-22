@@ -497,6 +497,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
                                    CTempString organism)
 {
     const SMod* mod = NULL;
+    bool reset_taxid = false;
 
     // org[anism]
     if (organism.empty())
@@ -520,6 +521,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
                 bsrc->ResetSubtype();
             }
             bsrc->SetOrg().SetTaxname(organism);
+            reset_taxid = true;
         }
     }
 
@@ -584,6 +586,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
                 org_mod->SetSubtype(it->second);
                 org_mod->SetSubname(mod->value);
                 bsrc->SetOrg().SetOrgname().SetMod().push_back(org_mod);
+                reset_taxid = true;
             }
         }
     }}
@@ -603,6 +606,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
                 org_mod->SetSubtype(it->value);
                 org_mod->SetSubname(mod->value);
                 bsrc->SetOrg().SetOrgname().SetMod().push_back(org_mod);
+                reset_taxid = true;
             }
         }
     }}
@@ -774,6 +778,9 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
             bsrc->SetIs_focus();
         }
     }
+
+    if (reset_taxid && bsrc->IsSetOrgname() && bsrc->GetOrg().GetTaxId() != 0)
+       bsrc->SetOrg().SetTaxId(0);
 }
 
 typedef SStaticPair<const char*, CMolInfo::TTech> TTechMapEntry;
@@ -1364,6 +1371,7 @@ void CSourceModParser::AddMods(const CTempString& name, const CTempString& value
     SMod newmod;
     newmod.key = name;
     newmod.value = value;
+    newmod.used = false;
 
     m_Mods.insert(newmod);
 }
