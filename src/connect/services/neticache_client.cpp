@@ -248,6 +248,7 @@ CNetServerConnection SNetICacheClientImpl::InitiateWriteCmd(
         cmd.append(" confirm=1");
     m_UseNextSubHitID.ProperCommand();
     AppendClientIPSessionIDPasswordAgeHitID(&cmd, parameters);
+    if (!m_ProlongBlobLifetimeOnWrite) cmd.append(" flags=1");
 
     return ChooseServerAndExec(cmd, nc_writer->GetKey(),
             false, parameters).conn;

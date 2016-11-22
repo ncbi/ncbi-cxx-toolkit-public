@@ -174,6 +174,9 @@ void CNetCacheServerListener::OnInit(CObject* api_impl,
                 }
             }
         }
+
+        nc_impl->m_ProlongBlobLifetimeOnWrite = config->GetBool(config_section,
+                "prolong_blob_lifetime_on_write", CConfig::eErr_NoThrow, true);
     } else {
         nc_impl->m_TempDir = default_temp_dir;
         nc_impl->m_CacheInput = false;
@@ -568,6 +571,7 @@ CNetServerConnection SNetCacheAPIImpl::InitiateWriteCmd(
 
     m_UseNextSubHitID.ProperCommand();
     AppendClientIPSessionIDPasswordAgeHitID(&cmd, parameters);
+    if (!m_ProlongBlobLifetimeOnWrite) cmd.append(" flags=1");
 
     CNetServer::SExecResult exec_result;
 

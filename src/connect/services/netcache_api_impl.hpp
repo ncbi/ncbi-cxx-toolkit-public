@@ -133,6 +133,7 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
     CCompoundIDPool m_CompoundIDPool;
 
     SUseNextSubHitID m_UseNextSubHitID;
+    bool m_ProlongBlobLifetimeOnWrite = true;
 };
 
 struct SNetCacheAdminImpl : public CObject
