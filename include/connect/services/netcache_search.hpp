@@ -64,12 +64,12 @@ using duration = chrono::system_clock::duration;
 /// Search and output fields
 namespace fields {
 
-const struct KEY             {} key;
-const struct SUBKEY          {} subkey;
-const struct CREATED         {} created;
-const struct EXPIRES         {} expires;
-const struct VERSION_EXPIRES {} version_expires;
-const struct SIZE            {} size;
+const struct KEY             {KEY(){}}              key;
+const struct SUBKEY          {SUBKEY(){}}           subkey;
+const struct CREATED         {CREATED(){}}          created;
+const struct EXPIRES         {EXPIRES(){}}          expires;
+const struct VERSION_EXPIRES {VERSION_EXPIRES(){}}  version_expires;
+const struct SIZE            {SIZE(){}}             size;
 
 }
 
