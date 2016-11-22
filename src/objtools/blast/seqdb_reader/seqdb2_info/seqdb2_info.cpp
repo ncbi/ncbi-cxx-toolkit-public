@@ -23,10 +23,10 @@
  *
  * ===========================================================================
  *
- * Authors:  Denis Vakatov, Vladimir Ivanov
+ * Author:  Thomas W Rackers
  *
  * File Description:
- *   Minimalistic application, with command-line arguments' processing
+ *   Demo of using CSeqDBSqlite class
  *
  */
 
