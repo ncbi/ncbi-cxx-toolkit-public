@@ -51,15 +51,15 @@ BEGIN_SCOPE(NDiscrepancy)
 USING_SCOPE(objects);
 
 
+CConstRef<CSeq_id> GetBestId(const CBioseq& bioseq);
+
 string CDiscrepancyContext::GetCurrentBioseqLabel(void) const 
 {
     if (GetCurrentBioseqLabel_count != m_Count_Bioseq) {
         GetCurrentBioseqLabel_count = m_Count_Bioseq;
         GetCurrentBioseqLabel_str.clear();
-        //CConstRef<CBioseq> bs = GetCurrentBioseq();
         if (m_Current_Bioseq) {
-            const CSeq_id* wid = FindBestChoice(m_Current_Bioseq->GetId(), CSeq_id::BestRank).GetPointer();
-            wid->GetLabel(&GetCurrentBioseqLabel_str, NULL, CSeq_id::eContent);
+            GetBestId(*m_Current_Bioseq)->GetLabel(&GetCurrentBioseqLabel_str, NULL, CSeq_id::eContent);
         }
         else {
             CConstRef<CBioseq_set> bss = GetCurrentBioseq_set();

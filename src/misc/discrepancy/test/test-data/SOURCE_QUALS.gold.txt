@@ -4,9 +4,9 @@ Summary
 SOURCE_QUALS: collected-by (all present, all unique)
 SOURCE_QUALS: country (all present, all unique)
 SOURCE_QUALS: identified-by (all present, all unique)
-SOURCE_QUALS: host (all present, all unique)
 SOURCE_QUALS: fwd-primer-name (all present, all unique, some multi)
 SOURCE_QUALS: fwd-primer-seq (all present, all unique, some multi)
+SOURCE_QUALS: host (all present, all unique)
 SOURCE_QUALS: rev-primer-name (all present, all unique, some multi)
 SOURCE_QUALS: rev-primer-seq (all present, all unique, some multi)
 SOURCE_QUALS: taxname (all present, all unique)
@@ -15,60 +15,70 @@ SOURCE_QUALS: taxid (all present, all unique)
 Detailed Report
 
 SOURCE_QUALS: collected-by (all present, all unique)
+SOURCE_QUALS: 1 source has unique value for collected-by
 SOURCE_QUALS: 1 source has collected-by = Fatma Fakhry
-C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\multiPCR.sqn:225007349:Penicillium citrinum
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\multiPCR.sqn:AB490819:Penicillium citrinum
 
 SOURCE_QUALS: country (all present, all unique)
+SOURCE_QUALS: 1 source has unique value for country
 SOURCE_QUALS: 1 source has country = Japan:Yamaguchi
-C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\multiPCR.sqn:225007349:Penicillium citrinum
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\multiPCR.sqn:AB490819:Penicillium citrinum
 
 SOURCE_QUALS: identified-by (all present, all unique)
+SOURCE_QUALS: 1 source has unique value for identified-by
 SOURCE_QUALS: 1 source has identified-by = Fatma Fakhry
-C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\multiPCR.sqn:225007349:Penicillium citrinum
-
-SOURCE_QUALS: host (all present, all unique)
-SOURCE_QUALS: 1 source has host = Hyoscyamus muticus
-C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\multiPCR.sqn:225007349:Penicillium citrinum
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\multiPCR.sqn:AB490819:Penicillium citrinum
 
 SOURCE_QUALS: fwd-primer-name (all present, all unique, some multi)
+SOURCE_QUALS: 1 source has unique value for fwd-primer-name
 SOURCE_QUALS: 1 source has fwd-primer-name = ITS1
-C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\multiPCR.sqn:225007349:Penicillium citrinum
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\multiPCR.sqn:AB490819:Penicillium citrinum
 
 SOURCE_QUALS: 1 source has fwd-primer-name = ITS7
-C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\multiPCR.sqn:225007349:Penicillium citrinum
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\multiPCR.sqn:AB490819:Penicillium citrinum
 
 SOURCE_QUALS: 1 source has fwd-primer-name = ITS8
-C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\multiPCR.sqn:225007349:Penicillium citrinum
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\multiPCR.sqn:AB490819:Penicillium citrinum
 
 SOURCE_QUALS: fwd-primer-seq (all present, all unique, some multi)
+SOURCE_QUALS: 1 source has unique value for fwd-primer-seq
 SOURCE_QUALS: 1 source has fwd-primer-seq = gaattcggatcc
-C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\multiPCR.sqn:225007349:Penicillium citrinum
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\multiPCR.sqn:AB490819:Penicillium citrinum
 
 SOURCE_QUALS: 1 source has fwd-primer-seq = ggatccgaattc
-C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\multiPCR.sqn:225007349:Penicillium citrinum
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\multiPCR.sqn:AB490819:Penicillium citrinum
 
 SOURCE_QUALS: 1 source has fwd-primer-seq = tccgtaggtgaacctgcgg
-C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\multiPCR.sqn:225007349:Penicillium citrinum
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\multiPCR.sqn:AB490819:Penicillium citrinum
+
+SOURCE_QUALS: host (all present, all unique)
+SOURCE_QUALS: 1 source has unique value for host
+SOURCE_QUALS: 1 source has host = Hyoscyamus muticus
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\multiPCR.sqn:AB490819:Penicillium citrinum
 
 SOURCE_QUALS: rev-primer-name (all present, all unique, some multi)
+SOURCE_QUALS: 1 source has unique value for rev-primer-name
 SOURCE_QUALS: 1 source has rev-primer-name = ITS4
-C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\multiPCR.sqn:225007349:Penicillium citrinum
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\multiPCR.sqn:AB490819:Penicillium citrinum
 
 SOURCE_QUALS: 1 source has rev-primer-name = ITS9
-C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\multiPCR.sqn:225007349:Penicillium citrinum
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\multiPCR.sqn:AB490819:Penicillium citrinum
 
 SOURCE_QUALS: rev-primer-seq (all present, all unique, some multi)
+SOURCE_QUALS: 1 source has unique value for rev-primer-seq
 SOURCE_QUALS: 1 source has rev-primer-seq = gggccccccggg
-C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\multiPCR.sqn:225007349:Penicillium citrinum
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\multiPCR.sqn:AB490819:Penicillium citrinum
 
 SOURCE_QUALS: 1 source has rev-primer-seq = tcctccgcttattgatatgc
-C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\multiPCR.sqn:225007349:Penicillium citrinum
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\multiPCR.sqn:AB490819:Penicillium citrinum
 
 SOURCE_QUALS: taxname (all present, all unique)
+SOURCE_QUALS: 1 source has unique value for taxname
 SOURCE_QUALS: 1 source has taxname = Penicillium citrinum
-C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\multiPCR.sqn:225007349:Penicillium citrinum
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\multiPCR.sqn:AB490819:Penicillium citrinum
 
 SOURCE_QUALS: taxid (all present, all unique)
+SOURCE_QUALS: 1 source has unique value for taxid
 SOURCE_QUALS: 1 source has taxid = 5077
-C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\multiPCR.sqn:225007349:Penicillium citrinum
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\multiPCR.sqn:AB490819:Penicillium citrinum
 
