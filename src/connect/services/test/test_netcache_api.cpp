@@ -45,10 +45,9 @@
 #include <corelib/test_boost.hpp>
 #include <corelib/request_ctx.hpp>
 
-#include <util/random_gen.hpp>
-
 #include <memory>
 #include <vector>
+#include <random>
 
 
 USING_NCBI_SCOPE;
@@ -235,12 +234,12 @@ void s_StressTest(const string&             service,
     for (unsigned i = 0; i < repeats; ) {
 
         vector<string> keys;
-        vector<unsigned> idx0;
-        vector<unsigned> idx1;
+        vector<size_t> idx0;
+        vector<size_t> idx1;
 
         unsigned j;
         for (j = 0; j < 100 && i < repeats; ++j, ++i) {
-            unsigned i0, i1;
+            size_t i0, i1;
             i0 = rand() % (size-1);
             i1 = rand() % (size-1);
 
@@ -270,7 +269,7 @@ void s_StressTest(const string&             service,
         for (unsigned k = 0; k < j; ++k) {
             key = keys[k];
 
-            unsigned i0, i1;
+            size_t i0, i1;
             i0 = idx0[k];
             i1 = idx1[k];
 
@@ -360,16 +359,15 @@ void s_ReadUpdateCharTest(const string& service,
     BOOST_REQUIRE(blob_size == 1);
 
     for (int i = 0; i < 10; ++i) {
-        char z = 'X';
+        z = 'X';
         nc.PutData(key, &z, 1, nc_blob_ttl = 100);
 
         z = 'Y';
         nc.PutData(key, &z, 1, nc_blob_ttl = 100);
 
         z = 0;
-        size_t blob_size = 0;
-        CNetCacheAPI::EReadResult rr =
-            nc.GetData(key, &z, 1, &blob_size);
+        blob_size = 0;
+        rr = nc.GetData(key, &z, 1, &blob_size);
 
         BOOST_REQUIRE(rr == CNetCacheAPI::eReadComplete);
         BOOST_REQUIRE(z == 'Y');
@@ -509,10 +507,10 @@ static int s_ServiceInBlobKeyTest(const string& service,
     return 0;
 }
 
+#ifdef DISABLED_UNTIL_NC_WITH_AGE_SUPPORT_IS_DEPLOYED
 static int s_BlobAgeTest(const string& service,
         const CNamedParameterList* nc_params)
 {
-#ifdef DISABLED_UNTIL_NC_WITH_AGE_SUPPORT_IS_DEPLOYED
     static const int err_code = 32;
 
     static char data[] = "test_data";
@@ -556,6 +554,9 @@ static int s_BlobAgeTest(const string& service,
     catch (CException&) {
         return err_code;
     }
+#else
+static int s_BlobAgeTest(const string&, const CNamedParameterList*)
+{
 #endif /* DISABLED_UNTIL_NC_WITH_AGE_SUPPORT_IS_DEPLOYED */
 
     return 0;
@@ -794,35 +795,6 @@ static int s_Run(const CNamedParameterList* nc_params)
 }
 
 
-// Convenience class for random generator
-struct CRandomSingleton
-{
-    CRandom r;
-    CRandomSingleton() { r.Randomize(); }
-
-    static CRandom& instance()
-    {
-        static CRandomSingleton rs;
-        return rs.r;
-    }
-};
-
-
-// Convenience function to fill container with random char data
-template <class TContainer>
-void RandomFill(TContainer& container, size_t length, bool printable = true)
-{
-    CRandom& random(CRandomSingleton::instance());
-    const char kMin = printable ? '!' : numeric_limits<char>::min();
-    const char kMax = printable ? '~' : numeric_limits<char>::max();
-    container.clear();
-    container.reserve(length);
-    while (length-- > 0) {
-        container.push_back(kMin + random.GetRandIndex(kMax - kMin + 1));
-    }
-}
-
-
 static void s_SimpleTest(const CNamedParameterList* nc_params)
 {
     CNetCacheAPI api(TNetCache_ServiceName::GetDefault(), s_ClientName);
@@ -834,12 +806,18 @@ static void s_SimpleTest(const CNamedParameterList* nc_params)
     vector<char> src;
     vector<char> buf;
 
-    src.reserve(kSrcSize);
+    src.resize(kSrcSize);
     buf.reserve(kBufSize);
+
+    uniform_int_distribution<short> char_range(
+            numeric_limits<char>::min(),
+            numeric_limits<char>::max());
+    auto random_char = bind(char_range, default_random_engine());
 
     for (size_t i = 0; i < kIterations; ++i) {
         // Creating blob
-        RandomFill(src, kSrcSize, false);
+        generate_n(src.begin(), kSrcSize, random_char);
+
         string key = api.PutData(src.data(), src.size());
         BOOST_REQUIRE_MESSAGE(api.HasBlob(key),
                 "Blob does not exist (" << i << ")");
