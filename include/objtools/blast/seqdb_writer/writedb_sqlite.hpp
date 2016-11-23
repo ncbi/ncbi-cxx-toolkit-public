@@ -41,6 +41,8 @@
 #include <objtools/blast/seqdb_reader/seqdb.hpp>
 #include <objtools/blast/seqdb_reader/impl/seqdbsqlite.hpp>
 
+#include <memory>
+
 #ifdef HAVE_LIBSQLITE3
 #include <db/sqlite/sqlitewrapp.hpp>
 #endif
@@ -54,11 +56,11 @@ BEGIN_NCBI_SCOPE
 /// This class supports creation of a string accession to integer OID
 /// database, stored and maintained using the SQLite library.
 
-class NCBI_XOBJREAD_EXPORT CWriteDB_Sqlite
+class NCBI_XOBJREAD_EXPORT CWriteDB_Sqlite : public CObject
 {
 private:
-    CSQLITE_Connection* m_db = NULL;
-    CSQLITE_Statement* m_insertStmt = NULL;
+    unique_ptr<CSQLITE_Connection> m_db;
+    unique_ptr<CSQLITE_Statement> m_insertStmt;
     bool m_inTransaction = false;
 
 public:

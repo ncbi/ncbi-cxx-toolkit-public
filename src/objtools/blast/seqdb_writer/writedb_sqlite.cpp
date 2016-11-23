@@ -44,7 +44,7 @@ CWriteDB_Sqlite::CWriteDB_Sqlite(const string& dbname)
 {
     // Open output SQLite database, and create the acc2oid table
     // if it doesn't exist.
-    m_db = new CSQLITE_Connection(
+    m_db.reset(new CSQLITE_Connection(
             dbname,
             CSQLITE_Connection::fExternalMT
             | CSQLITE_Connection::fVacuumOn
@@ -52,7 +52,7 @@ CWriteDB_Sqlite::CWriteDB_Sqlite(const string& dbname)
             | CSQLITE_Connection::fSyncOff
             | CSQLITE_Connection::fTempToMemory
             | CSQLITE_Connection::fWritesSync
-    );
+    ));
     m_db->ExecuteSql(
             "CREATE TABLE IF NOT EXISTS acc2oid ( "
             "accession TEXT, "
@@ -78,11 +78,10 @@ CWriteDB_Sqlite::~CWriteDB_Sqlite()
     if (m_inTransaction) {
         EndTransaction();
     }
-    if (m_insertStmt != NULL) {
-        delete m_insertStmt;
-        m_insertStmt = NULL;
+    if (m_insertStmt) {
+        m_insertStmt.reset();
     }
-    delete m_db;
+    m_db.reset();
 }
 
 void CWriteDB_Sqlite::SetCacheSize(const size_t cache_size)
@@ -96,27 +95,22 @@ void CWriteDB_Sqlite::CreateVolumeTable(const list<SVolInfo>& vols)
     // Delete all existing rows from volinfo table.
     m_db->ExecuteSql("DELETE FROM volinfo;");
 
-    CSQLITE_Statement* ins = new CSQLITE_Statement(
-            m_db,
+    unique_ptr<CSQLITE_Statement> ins(new CSQLITE_Statement(
+            m_db.get(),
             "INSERT INTO volinfo ( path, modtime, volume, numoids ) "
             "VALUES ( ?, ?, ?, ? );"
-    );
+    ));
     BeginTransaction();
-    for (
-            list<SVolInfo>::const_iterator it = vols.begin();
-            it != vols.end();
-            ++it
-    ) {
+    for (auto it : vols) {
         ins->ClearBindings();
-        ins->Bind(1, it->m_path);
-        ins->Bind(2, it->m_modTime);
-        ins->Bind(3, it->m_vol);
-        ins->Bind(4, it->m_oids);
+        ins->Bind(1, it.m_path);
+        ins->Bind(2, it.m_modTime);
+        ins->Bind(3, it.m_vol);
+        ins->Bind(4, it.m_oids);
         ins->Execute();
         ins->Reset();
     }
     EndTransaction();
-    delete ins;
 }
 
 void CWriteDB_Sqlite::BeginTransaction(void)
@@ -156,21 +150,20 @@ int CWriteDB_Sqlite::DeleteEntries(const list<string>& accessions)
     // Create in-memory temporary table to hold accessions.
     m_db->ExecuteSql("CREATE TEMP TABLE IF NOT EXISTS accs ( acc TEXT );");
     m_db->ExecuteSql("BEGIN TRANSACTION;");
-    CSQLITE_Statement ins(m_db, "INSERT INTO accs(acc) VALUES (?);");
-    for (
-            list<string>::const_iterator it = accessions.begin();
-            it != accessions.end();
-            ++it
-    ) {
+    CSQLITE_Statement ins(m_db.get(), "INSERT INTO accs(acc) VALUES (?);");
+    for (auto it : accessions) {
         ins.ClearBindings();
-        ins.Bind(1, *it);
+        ins.Bind(1, it);
         ins.Execute();
         ins.Reset();
     }
     m_db->ExecuteSql("END TRANSACTION;");
 
     // Delete from main table based on accessions also being in temp table.
-    CSQLITE_Statement del(m_db, "DELETE FROM acc2oid WHERE accession IN accs;");
+    CSQLITE_Statement del(
+            m_db.get(),
+            "DELETE FROM acc2oid WHERE accession IN accs;"
+    );
     del.Execute();
     int nrows = del.GetChangedRowsCount();
 
@@ -186,13 +179,13 @@ void CWriteDB_Sqlite::InsertEntry(
         const int oid
 )
 {
-    if (m_insertStmt == NULL) {
+    if (!m_insertStmt) {
         // Prepare insert statement.
-        m_insertStmt = new CSQLITE_Statement(
-                m_db,
+        m_insertStmt.reset(new CSQLITE_Statement(
+                m_db.get(),
                 "INSERT INTO acc2oid ( accession, version, oid ) "
                 "VALUES ( ?, ?, ? );"
-        );
+        ));
     }
     m_insertStmt->ClearBindings();
     m_insertStmt->Bind(1, accession);
@@ -213,15 +206,13 @@ int CWriteDB_Sqlite::InsertEntries(
 )
 {
     int count = 0;
-    list<CRef<CSeq_id> >::const_iterator it = seqids.begin();
-    while (it != seqids.end()) {
-        if (!(*it)->IsGi()) {
+    for (auto it : seqids) {
+        if (!it->IsGi()) {
             int version;
-            string seqid = (*it)->GetSeqIdString(&version);
+            string seqid = it->GetSeqIdString(&version);
             InsertEntry(seqid, version, oid);
             ++count;
         }
-        ++it;
     }
     return count;
 }
@@ -229,11 +220,9 @@ int CWriteDB_Sqlite::InsertEntries(
 int CWriteDB_Sqlite::InsertEntries(const list<SAccOid>& seqids)
 {
     int count = 0;
-    list<SAccOid>::const_iterator it = seqids.begin();
-    while (it != seqids.end()) {
-        InsertEntry(it->m_acc, it->m_ver, it->m_oid);
+    for (auto it : seqids) {
+        InsertEntry(it.m_acc, it.m_ver, it.m_oid);
         ++count;
-        ++it;
     }
     return count;
 }
@@ -241,7 +230,7 @@ int CWriteDB_Sqlite::InsertEntries(const list<SAccOid>& seqids)
 void CWriteDB_Sqlite::CreateIndex()
 {
     CSQLITE_Statement indexStmt(
-            m_db,
+            m_db.get(),
             "CREATE INDEX IF NOT EXISTS acc ON acc2oid ( accession );"
     );
     indexStmt.Execute();
