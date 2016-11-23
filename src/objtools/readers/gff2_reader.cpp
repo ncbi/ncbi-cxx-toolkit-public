@@ -266,6 +266,61 @@ CGff2Reader::ReadSeqAnnotsNew(
 {
     xProgressInit(lr);
 
+    if (m_iFlags&fGenbankMode) {
+        CRef<CSeq_annot> pAnnot;
+        pAnnot.Reset(new CSeq_annot);
+
+        map<string, list<CRef<CSeq_align>>> alignments;
+        list<string> id_list;
+
+        string line;
+            while (xGetLine(lr, line)) {
+                if (IsCanceled()) {
+                    AutoPtr<CObjReaderLineException> pErr(
+                        CObjReaderLineException::Create(
+                        eDiag_Info,
+                        0,
+                        "Reader stopped by user.",
+                        ILineError::eProblem_ProgressInfo));
+                    ProcessError(*pErr, pEC);
+                    annots.clear();
+                    return;
+                }
+                xReportProgress(pEC);
+
+            try {
+                if (xParseStructuredComment(line)) {
+                    continue;
+                }
+                if (x_ParseBrowserLineGff(line, m_CurrentBrowserInfo)) {
+                    continue;
+                }
+                if ( x_ParseTrackLineGff(line, m_CurrentTrackInfo)) {
+                    continue;
+                }
+
+                if ( CGff2Reader::IsAlignmentData(line) && 
+                     x_ParseAlignmentGff(line, id_list, alignments) ) {
+                    continue;
+                } 
+
+                if ( ! x_ParseDataGff(line, annots, pEC) ) {
+                    continue;
+                }
+            }
+            catch( CObjReaderLineException& err ) {
+                err.SetLineNumber( m_uLineNumber );
+                ProcessError(err, pEC);
+            }
+        }
+
+        if (!alignments.empty()) {
+            x_ProcessAlignmentsGff(id_list, alignments, pAnnot);
+        }        
+        return;
+    }
+    
+    //main line code:
     CRef<CSeq_annot> pAnnot = ReadSeqAnnot(lr, pEC);
     while (pAnnot) {
         annots.push_back(pAnnot);

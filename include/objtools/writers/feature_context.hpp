@@ -53,7 +53,8 @@ public:
         CBioseq_Handle bsh=CBioseq_Handle(), 
         CSeq_annot_Handle sah=CSeq_annot_Handle()) :
         m_ft(feat_iter), m_bsh(bsh), m_sah(sah),
-        m_bSequenceIsGenomicRecord(false)
+        m_bSequenceIsGenomicRecord(false),
+        m_bSequenceHasBioSource(false)
     {
         xAssignSequenceHasBioSource();
         xAssignSequenceIsGenomicRecord();

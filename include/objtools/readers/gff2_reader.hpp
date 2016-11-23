@@ -395,6 +395,7 @@ protected:
     unsigned int mCurrentFeatureCount;
     bool mParsingAlignment;
     CRef<CAnnotdesc> m_CurrentBrowserInfo;
+    CRef<CAnnotdesc> m_CurrentTrackInfo;
 };
 
 END_SCOPE(objects)
