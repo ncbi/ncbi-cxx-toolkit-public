@@ -601,10 +601,12 @@ string CBlastDBExtractor::ExtractHash() {
     return NStr::IntToString(CBlastSeqUtil::GetSeqHash(seq.c_str(), seq.size()));
 }
 
+#define CTRL_A "\001"
+
 static void s_ReplaceCtrlAsInTitle(CRef<CBioseq> bioseq)
 {
     static const string kTarget(" >gi|");
-    static const string kCtrlA = string(1, '\001') + string("gi|");
+    static const string kCtrlA = string(CTRL_A) + string("gi|");
     NON_CONST_ITERATE(CSeq_descr::Tdata, desc, bioseq->SetDescr().Set()) {
         if ((*desc)->Which() == CSeqdesc::e_Title) {
             NStr::ReplaceInPlace((*desc)->SetTitle(), kTarget, kCtrlA);
@@ -621,6 +623,43 @@ static string s_GetTitle(const CBioseq & bioseq)
         }
     }
     return string();
+}
+
+/// Auxiliary function to format the defline for FASTA output format
+static string
+s_ConfigureDeflineTitle(const string& title, bool use_ctrl_a)
+{
+    static const string kStandardSeparator(" >");
+    const string kSeparator(use_ctrl_a ? CTRL_A : kStandardSeparator);
+    string retval;
+    list<string> tokens;
+    NStr::Split(title, kStandardSeparator, tokens, NStr::fSplit_ByPattern);
+    int idx = 0;
+    for (auto token : tokens) {
+        if (idx++ == 0) {
+            retval += token;
+            continue;
+        }
+        SIZE_TYPE pos = token.find(' ');
+        const string kPossibleId(token, 0, pos != NPOS ? pos : token.length());
+        CBioseq::TId seqids;
+        bool is_valid_local_id = CSeq_id::IsValidLocalID(kPossibleId);
+        
+        try { 
+            CSeq_id::ParseIDs(seqids, kPossibleId, CSeq_id::fParse_PartialOK);
+        } catch (const CException& e) {} 
+
+        if ( !is_valid_local_id || !seqids.empty()) {
+            retval += kSeparator;
+            CRef<CSeq_id> id = FindBestChoice(seqids, CSeq_id::Score);
+            retval += GetBareId(*id);
+            if (pos != NPOS)
+                retval += token.substr(pos, token.length() - pos);
+        } else {
+            retval += kStandardSeparator + token;
+        }
+    }
+    return retval;
 }
 
 string CBlastDBExtractor::ExtractFasta(const CBlastDBSeqId &id) {
@@ -679,47 +718,12 @@ string CBlastDBExtractor::ExtractFasta(const CBlastDBSeqId &id) {
         }
         else {
 
-            string separator = m_UseCtrlA ? "\001" : " >";
-            CRef<CSeq_id> id;
-
             out << '>';
-            id = FindBestChoice(m_Bioseq->GetId(), CSeq_id::Score);
+            CRef<CSeq_id> id = FindBestChoice(m_Bioseq->GetId(), CSeq_id::Score);
             out << GetBareId(*id);
 
             string title = s_GetTitle(*m_Bioseq.GetNonNullPointer());
-
-            if (!title.empty()) {
-                out << ' ';
-
-
-                NStr::ReplaceInPlace(title, " >", "\001");
-
-                vector<string> tokens;
-                NStr::Split(title, "\001", tokens);
-                auto it = tokens.begin();
-                out << *it;
-                ++it;
-                for (; it != tokens.end(); ++it) {
-                    size_t pos = it->find (" ");
-                    string str_id(*it, 0, pos != NPOS ? pos : it->length());
-                    list< CRef<CSeq_id> > seqids;
-                    CSeq_id::ParseFastaIds(seqids, str_id);
-
-                    // no valid sequence ids indicates that '>' was within the
-                    // defline text
-                    if (seqids.empty()) {
-                        out << " >" << *it;
-                        continue;
-                    }
-
-                    out << separator;
-                    id = FindBestChoice(seqids, CSeq_id::Score);
-                    out << GetBareId(*id);
-                    if (pos != NPOS) {
-                        out << it->substr(pos, it->length() - pos);
-                    }
-                }
-            }
+            out << ' ' << s_ConfigureDeflineTitle(title, m_UseCtrlA);
             out << endl;
 
             CScope scope(*CObjectManager::GetInstance());
@@ -967,41 +971,13 @@ void CBlastDeflineUtil::ProcessFastaDeflines(CBioseq & bioseq, string & out, boo
          out = ">" + lcl_tmp + " " + s_GetTitle(bioseq) + '\n';
      }
      else {
-        string separator = use_ctrla ? "\001" : " >";
 
         out = '>';
         id = FindBestChoice(bioseq.GetId(), CSeq_id::Score);
         out += GetBareId(*id) + ' ';
 
         string title = s_GetTitle(bioseq);
-        if(!title.empty()) {
-        NStr::ReplaceInPlace(title, " >", "\001");
-
-        vector<string> tokens;
-        NStr::Split(title, "\001", tokens);
-        auto it = tokens.begin();
-        out += *it;
-        ++it;
-        for (; it != tokens.end(); ++it) {
-            size_t pos = it->find (" ");
-            string str_id(*it, 0, pos != NPOS ? pos : it->length());
-            list< CRef<CSeq_id> > seqids;
-            CSeq_id::ParseFastaIds(seqids, str_id);
-
-            // no valid sequence ids indicates that '>' was within the
-            // defline text
-            if (seqids.empty()) {
-                out += " >" + *it;
-                continue;
-            }
-            out += separator;
-            id = FindBestChoice(seqids, CSeq_id::Score);
-            out += GetBareId(*id);
-            if (pos != NPOS) {
-                out += it->substr(pos, it->length() - pos);
-            }
-        }
-        }
+        out += s_ConfigureDeflineTitle(title, use_ctrla);
         out += '\n';
      }
 }
