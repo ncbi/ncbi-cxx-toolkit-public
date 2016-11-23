@@ -803,22 +803,20 @@ static void s_SimpleTest(const CNamedParameterList* nc_params)
     const size_t kIterations = 50;
     const size_t kSrcSize = 20 * 1024 * 1024; // 20MB
     const size_t kBufSize = 100 * 1024; // 100KB
-    vector<char> src;
+    vector<Uint8> src;
     vector<char> buf;
 
-    src.resize(kSrcSize);
-    buf.reserve(kBufSize);
+    src.resize(kSrcSize / sizeof(Uint8));
+    buf.resize(kBufSize);
 
-    uniform_int_distribution<short> char_range(
-            numeric_limits<char>::min(),
-            numeric_limits<char>::max());
-    auto random_char = bind(char_range, default_random_engine());
+    auto random_uint8 = bind(uniform_int_distribution<Uint8>(), mt19937());
 
     for (size_t i = 0; i < kIterations; ++i) {
         // Creating blob
-        generate_n(src.begin(), kSrcSize, random_char);
+        generate_n(src.begin(), src.size(), random_uint8);
+        auto ptr = reinterpret_cast<const char*>(src.data());
 
-        string key = api.PutData(src.data(), src.size());
+        string key = api.PutData(ptr, kSrcSize);
         BOOST_REQUIRE_MESSAGE(api.HasBlob(key),
                 "Blob does not exist (" << i << ")");
         BOOST_REQUIRE_MESSAGE(api.GetBlobSize(key) == kSrcSize,
@@ -832,8 +830,6 @@ static void s_SimpleTest(const CNamedParameterList* nc_params)
                 "Blob size (GetData) differs from the source (" << i << ")");
         BOOST_REQUIRE_MESSAGE(reader.get(),
                 "Failed to get reader (" << i << ")");
-
-        const char* ptr = src.data();
 
         for (;;) {
             size_t read = 0;

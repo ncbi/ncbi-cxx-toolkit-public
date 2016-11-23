@@ -238,32 +238,27 @@ static void s_SimpleTest()
     const int kIterations = 50;
     const size_t kSrcSize = 20 * 1024 * 1024; // 20MB
     const size_t kBufSize = 100 * 1024; // 100KB
-    vector<char> src;
+    vector<Uint8> src;
     vector<char> buf;
 
-    src.resize(kSrcSize);
-    buf.reserve(kBufSize);
+    src.resize(kSrcSize / sizeof(Uint8));
+    buf.resize(kBufSize);
 
-    uniform_int_distribution<Uint8> uint8_range;
-    auto random_key = bind(uint8_range, default_random_engine());
+    auto random_uint8 = bind(uniform_int_distribution<Uint8>(), mt19937());
 
-    uniform_int_distribution<short> char_range(
-            numeric_limits<char>::min(),
-            numeric_limits<char>::max());
-    auto random_char = bind(char_range, default_random_engine());
-
-    const string key = to_string(time(NULL)) + "t" + to_string(random_key());
+    const string key = to_string(time(NULL)) + "t" + to_string(random_uint8());
     vector<string> subkeys;
 
     for (int version = 0; version < kIterations; ++version) {
-        const string subkey = to_string(random_key());
+        const string subkey = to_string(random_uint8());
         subkeys.push_back(subkey);
 
         try {
             // Creating blob
-            generate_n(src.begin(), kSrcSize, random_char);
+            generate_n(src.begin(), src.size(), random_uint8);
+            auto ptr = reinterpret_cast<const char*>(src.data());
 
-            api.Store(key, version, subkey, src.data(), src.size());
+            api.Store(key, version, subkey, ptr, kSrcSize);
             BOOST_REQUIRE_MESSAGE(api.HasBlob(key, subkey),
                     "Blob does not exist" SIMPLE_TEST_CTX);
             BOOST_REQUIRE_MESSAGE(api.GetBlobSize(key, version, subkey) == kSrcSize,
@@ -277,8 +272,6 @@ static void s_SimpleTest()
                     "Blob size (GetData) differs from the source" SIMPLE_TEST_CTX);
             BOOST_REQUIRE_MESSAGE(reader.get(),
                     "Failed to get reader" SIMPLE_TEST_CTX);
-
-            const char* ptr = src.data();
 
             for (;;) {
                 size_t read = 0;
