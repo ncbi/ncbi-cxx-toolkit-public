@@ -5376,6 +5376,9 @@ CTempString CWGSFeatureIterator::GetSeq_featBytes(void) const
 
 CRef<CSeq_feat> CWGSFeatureIterator::GetSeq_feat(void) const
 {
+    DEFINE_STATIC_FAST_MUTEX(s_Mutex);
+    CFastMutexGuard LOCK(s_Mutex);
+
     PROFILE(sw_Feat);
     CRef<CSeq_feat> feat(new CSeq_feat);
     CTempString bytes = GetSeq_featBytes();
