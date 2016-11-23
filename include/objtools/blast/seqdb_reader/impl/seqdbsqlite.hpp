@@ -43,9 +43,9 @@ BEGIN_NCBI_SCOPE
 
 /// Struct mirroring columns of "acc2oid" table in SQLite database
 struct SAccOid {
-    string m_acc;   /// "bare" accession w/out version suffix
-    int m_ver;      /// version number
-    int m_oid;      /// OID
+    string m_acc;   ///< "bare" accession w/out version suffix
+    int m_ver;      ///< version number
+    int m_oid;      ///< OID
 
     /// Default constructor
     SAccOid() :
@@ -64,10 +64,10 @@ struct SAccOid {
 /// The modification time is the number of seconds since the UNIX epoch,
 /// as would be returned by C library function "time()".
 struct SVolInfo {
-    const string m_path;        /// full path to volume file
-    const time_t m_modTime;     /// modification time of volume file
-    const int    m_vol;         /// volume number
-    const int    m_oids;        /// number of OIDs in volume
+    const string m_path;        ///< full path to volume file
+    const time_t m_modTime;     ///< modification time of volume file
+    const int    m_vol;         ///< volume number
+    const int    m_oids;        ///< number of OIDs in volume
 
     /// Explicit constructor
     /// @param path full path to volume file
@@ -92,10 +92,10 @@ private:
     CSQLITE_Statement* m_selectStmt = NULL;
 
 public:
-    static const int kNotFound;     /// accession not found in database
-    static const int kAmbiguous;    /// more than one row found with same
-                                    ///  accession and (highest) version
-                                    ///  but different OIDs
+    static const int kNotFound;     ///< accession not found in database
+    /// more than one row found with same accession and (highest) version
+    ///  but different OIDs
+    static const int kAmbiguous;    
 
     /// Constructor
     /// @param dbname Database file name
