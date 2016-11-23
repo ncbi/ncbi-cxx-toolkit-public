@@ -1599,6 +1599,7 @@ DSEC	s	Universidade Federal da Paraiba
 DSIR	s	Department of Scientific and Industrial Research
 DSM	c	Deutsche Sammlung von Mikroorganismen und Zellkulturen GmbH
 DSM<TZA>	s	University of Dar es Salaam, Botany Department
+DSMZ	c	Deutsche Sammlung von Mikroorganismen und Zellkulture
 DSP	s	Fitzsimon's Snake Park
 DSSC<USA-CA>	b	Drosophila Species Stock Center
 DSU	s	Dnipropetrovsk National University, Department of Geobotany, Soil, and Ecology
@@ -6431,6 +6432,8 @@ TUB	s	Eberhard-Karls-Universitaet Tuebingen, Institut fuer Biologie I
 TUBSB	b	Tohoku University Brassica Seed Bank
 TUC	s	University of Arizona, Ecology and Evolutionary Biology Department
 TUCH	s	Tribhuvan University, Central Department of Botany
+TUCIM	c	TU Wien collection of industrial microorganisms
+TUCIM:	c	TU Wien collection of industrial microorganisms, 
 TUFC	s	Tottori University Fungal Culture Collection
 TUFIL	s	Tokyo University of Fisheries, Ichthyological Laboratory
 TUFT	s	Tufts University, Biology Department
