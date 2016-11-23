@@ -1625,6 +1625,12 @@ CNCMessageHandler::x_IsUserFlagSet(ENCUserFlags flag)
     return (m_UserFlags & flag) != 0;
 }
 
+inline bool
+CNCMessageHandler::x_IsCmdSucceeded(int cmd_status)
+{
+    return cmd_status < 300;
+}
+
 //static Uint8 s_CntHndls = 0;
 
 CNCMessageHandler::CNCMessageHandler(void)
@@ -1689,7 +1695,7 @@ CNCMessageHandler::x_CloseCmdAndConn(void)
         if (HasError()  ||  !CanHaveMoreRead())
             GetDiagCtx()->SetRequestStatus(eStatus_PrematureClose);
         else if (CTaskServer::IsInShutdown())
-            GetDiagCtx()->SetRequestStatus(eStatus_CmdAborted);
+            GetDiagCtx()->SetRequestStatus(eStatus_ShuttingDown);
         else
             GetDiagCtx()->SetRequestStatus(eStatus_CmdTimeout);
     }
@@ -1766,7 +1772,7 @@ CNCMessageHandler::x_ReadAuthMessage(void)
         if (CTaskServer::IsInShutdown())
             GetDiagCtx()->SetRequestStatus(eStatus_ShuttingDown);
         else
-            GetDiagCtx()->SetRequestStatus(eStatus_Inactive);
+            GetDiagCtx()->SetRequestStatus(eStatus_CmdTimeout);
         return &CNCMessageHandler::x_SaveStatsAndClose;
     }
 
@@ -1779,7 +1785,7 @@ CNCMessageHandler::x_ReadAuthMessage(void)
             return &CNCMessageHandler::x_SaveStatsAndClose;
         }
         else {
-            GetDiagCtx()->SetRequestStatus(eStatus_FakeConn);
+            GetDiagCtx()->SetRequestStatus(eStatus_CmdTimeout);
             return &CNCMessageHandler::x_PrintCmdsCntAndClose;
         }
     }
@@ -2261,7 +2267,7 @@ CNCMessageHandler::x_StartCommand(void)
                                         m_SyncId);
         if (start_res == eNetworkError) {
             diag_msg.Flush();
-            x_ReportError(eStatus_StaleSync);
+            x_ReportError(eStatus_CmdAborted);
             if (!x_IsHttpMode()) {
                 x_ResetFlags();
             }
@@ -2404,7 +2410,7 @@ CNCMessageHandler::x_ReadCommand(void)
         if (CTaskServer::IsInShutdown())
             GetDiagCtx()->SetRequestStatus(eStatus_ShuttingDown);
         else
-            GetDiagCtx()->SetRequestStatus(eStatus_Inactive);
+            GetDiagCtx()->SetRequestStatus(eStatus_CmdTimeout);
         return &CNCMessageHandler::x_SaveStatsAndClose;
     }
 
@@ -2816,7 +2822,7 @@ CNCMessageHandler::x_CleanCmdResources(void)
     }
 
     if (x_IsFlagSet(fRunsInStartedSync)) {
-        if (cmd_status == eStatus_OK  ||  x_IsFlagSet(fSyncCmdSuccessful)) {
+        if (x_IsCmdSucceeded(cmd_status)  ||  x_IsFlagSet(fSyncCmdSuccessful)) {
             CNCPeriodicSync::SyncCommandFinished(m_SrvId, m_Slot, m_SyncId);
         } else {
             CNCPeriodicSync::Cancel(m_SrvId, m_Slot, m_SyncId);
@@ -2824,7 +2830,7 @@ CNCMessageHandler::x_CleanCmdResources(void)
     }
     if (!x_IsFlagSet(fNoReplyOnFinish)) {
         if (!x_IsHttpMode()) {
-            if (cmd_status == eStatus_OK) {
+            if (x_IsCmdSucceeded(cmd_status)) {
                 WriteText("OK:\n");
             } else {
                 WriteText(GetMessageByStatus(EHTTPStatus(cmd_status))).WriteText("\n");
@@ -2844,7 +2850,7 @@ CNCMessageHandler::x_CleanCmdResources(void)
     m_ChunkLen = 0;
     m_LastPeerError.clear();
 
-    if (print_size  &&  (cmd_status == eStatus_OK  ||  m_BlobSize != 0))
+    if (print_size  &&  (x_IsCmdSucceeded(cmd_status)  ||  m_BlobSize != 0))
         CSrvDiagMsg().PrintExtra().PrintParam("blob_size", m_BlobSize);
     CSrvDiagMsg().StopRequest();
 
@@ -2854,7 +2860,7 @@ CNCMessageHandler::x_CleanCmdResources(void)
     CNCStat::CmdFinished(m_ParsedCmd.command->cmd, len_usec, cmd_status);
     if (m_Flags & fComesFromClient) {
         if (access_type == eNCCreate) {
-            if (print_size  &&  cmd_status == eStatus_OK)
+            if (print_size  &&  x_IsCmdSucceeded(cmd_status))
                 CNCStat::ClientBlobWrite(m_BlobSize, len_usec);
             else
                 CNCStat::ClientBlobRollback(written_size);
@@ -2883,7 +2889,7 @@ CNCMessageHandler::x_FinishCommand(void)
     if (x_IsFlagSet(eBlobPut) && m_NCBlobKey.IsICacheKey()) {
         x_JournalBlobPutResult(status, m_NCBlobKey.PackedKey(), m_BlobSlot);
     }
-    if (status == eStatus_PUT2Used)
+    if (x_IsFlagSet(fCursedPUT2Cmd))
         return &CNCMessageHandler::x_CloseCmdAndConn;
 
     x_CleanCmdResources();
@@ -2932,7 +2938,7 @@ CNCMessageHandler::x_FinishReadingBlob(void)
         }
     }
 
-    if (GetDiagCtx()->GetRequestStatus() != eStatus_OK  &&  !x_IsFlagSet(fCursedPUT2Cmd))
+    if (!x_IsCmdSucceeded(GetDiagCtx()->GetRequestStatus()))
         return &CNCMessageHandler::x_FinishCommand;
     if (NeedEarlyClose())
         return &CNCMessageHandler::x_CloseCmdAndConn;
@@ -3113,7 +3119,6 @@ CNCMessageHandler::x_ReadBlobChunkLength(void)
     else {
         has_chunklen = ReadNumber(&m_ChunkLen);
         if (!has_chunklen  &&  !CanHaveMoreRead()  &&  x_IsFlagSet(fCursedPUT2Cmd)) {
-            GetDiagCtx()->SetRequestStatus(eStatus_PUT2Used);
             return &CNCMessageHandler::x_FinishReadingBlob;
         }
     }
@@ -3988,23 +3993,23 @@ CNCMessageHandler::x_DoCmd_Put(void)
 {
     LOG_CURRENT_FUNCTION
     if (!m_BlobAccess->IsBlobExists()) {
-        EHTTPStatus sts = eStatus_OK;
+        EHTTPStatus sts = eStatus_Created;
         if (x_IsHttpMode()) {
     // if blob does not exist, verify that it is POST, not PUT
             if (!x_IsFlagSet(fCanGenerateKey)) {
                 sts = eStatus_NotFound;
             }
             if (CNCBlobStorage::IsDraining()) {
-                // 503 - Service Unavailable
-                sts = eStatus_PeerError;
+                sts = eStatus_ServiceUnavailable;
             }
         } else if (CNCBlobStorage::IsDraining()) {
             sts = eStatus_ShuttingDown;
         }
-        if (sts != eStatus_OK) {
+        if (!x_IsCmdSucceeded(sts)) {
             x_ReportError(sts);
             return &CNCMessageHandler::x_FinishCommand;
         }
+        GetDiagCtx()->SetRequestStatus(sts);
     }
 
     m_BlobAccess->SetBlobTTL(x_GetBlobTTL());
@@ -4047,6 +4052,7 @@ CNCMessageHandler::x_DoCmd_Get(void)
     }
 
     if (!x_IsHttpMode()) {
+        GetDiagCtx()->SetRequestStatus(range ? eStatus_PartialContent : eStatus_OK);
         x_ReportOK("OK:BLOB found. SIZE=").WriteNumber(blob_size);
         if (m_AgeMax != 0) {
             WriteText(", AGE=").WriteNumber(m_AgeCur);
@@ -4054,7 +4060,7 @@ CNCMessageHandler::x_DoCmd_Get(void)
         WriteText("\n");
     } else {
         // http://greenbytes.de/tech/webdav/rfc2616.html#header.range
-        x_WriteHttpHeader(range ? 206 : eStatus_OK, blob_size, true);
+        x_WriteHttpHeader(range ? eStatus_PartialContent : eStatus_OK, blob_size, true);
         x_SetFlag(fNoReplyOnFinish);
     }
 
@@ -4227,9 +4233,12 @@ CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_IC_Store(void)
 {
     LOG_CURRENT_FUNCTION
-    if (!m_BlobAccess->IsBlobExists() && CNCBlobStorage::IsDraining()) {
-        x_ReportError(eStatus_ShuttingDown);
-        return &CNCMessageHandler::x_FinishCommand;
+    if (!m_BlobAccess->IsBlobExists()) {
+        if (CNCBlobStorage::IsDraining()) {
+            x_ReportError(eStatus_ShuttingDown);
+            return &CNCMessageHandler::x_FinishCommand;
+        }
+        GetDiagCtx()->SetRequestStatus(eStatus_Created);
     }
     m_BlobAccess->SetBlobTTL(x_GetBlobTTL());
     m_BlobAccess->SetVersionTTL(m_AppSetup->ver_ttl);
@@ -4346,6 +4355,8 @@ CNCMessageHandler::x_DoCmd_SyncStart(void)
                 m_SendBuff->append(&evt->orig_time,   sizeof(evt->orig_time));
             }
         }
+        GetDiagCtx()->SetRequestStatus(eStatus_SyncEvents);
+        x_SetFlag(fSyncCmdSuccessful);
     }
     else {
         _ASSERT(sync_res == eProceedWithBlobs);
@@ -4390,9 +4401,12 @@ CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_CopyPut(void)
 {
     LOG_CURRENT_FUNCTION
-    if (!m_BlobAccess->IsBlobExists() && CNCBlobStorage::IsDraining()) {
-        x_ReportError(eStatus_ShuttingDown);
-        return &CNCMessageHandler::x_FinishCommand;
+    if (!m_BlobAccess->IsBlobExists()) {
+        if (CNCBlobStorage::IsDraining()) {
+            x_ReportError(eStatus_ShuttingDown);
+            return &CNCMessageHandler::x_FinishCommand;
+        }
+        GetDiagCtx()->SetRequestStatus(eStatus_Created);
     }
     m_CopyBlobInfo->ttl = m_BlobTTL;
     m_CopyBlobInfo->password = m_BlobPass;
@@ -4896,7 +4910,7 @@ void
 CNCMessageHandler::x_WriteHttpResponse(void)
 {
     int cmd_status = GetDiagCtx()->GetRequestStatus();
-    bool succeeded = cmd_status >= eStatus_OK && cmd_status < 300;
+    bool succeeded = x_IsCmdSucceeded(cmd_status);
     size_t content_length = 0;
     string envelope;
     if (succeeded && !m_PosponedCmd.empty()) {
@@ -4916,7 +4930,7 @@ CNCMessageHandler::x_WriteHttpResponse(void)
 void
 CNCMessageHandler::x_WriteHttpHeader(int cmd_status, size_t content_length, bool binary)
 {
-    bool succeeded = cmd_status >= eStatus_OK && cmd_status < 300;
+    bool succeeded = x_IsCmdSucceeded(cmd_status);
     WriteText("HTTP/1.");
     WriteText(m_HttpMode == eHttp10 ? "0" : "1");
     WriteText(" ").WriteNumber(cmd_status).WriteText(" ");

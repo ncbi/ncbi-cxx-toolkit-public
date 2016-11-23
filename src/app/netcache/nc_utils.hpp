@@ -92,42 +92,29 @@ enum ENCAccessType {
 /// Additional statuses can be taken from
 /// http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
 enum EHTTPStatus {
+// synchronization-related
+    /// SYNC_START: synchronization by blobs list will be performed.
+    eStatus_SyncBList   = 121,
+    /// SYNC_START: synchronization by events will be performed.
+    eStatus_SyncEvents  = 122,
+    /// Same or newer blob is present on the server.
+    eStatus_NewerBlob   = 123,
+    /// Synchronization cannot start because server is busy doing cleaning or
+    /// some other synchronization on this slot.
+    eStatus_SyncBusy    = 124,
+    /// Synchronization is rejected because both servers tried to start it
+    /// simultaneously.
+    eStatus_CrossSync   = 125,
+
+// success
     /// Command is ok and execution is good.
     eStatus_OK          = 200,
     /// New resource has been created
     eStatus_Created     = 201,
-    /// Inactivity timeout on connection.
-    eStatus_Inactive    = 204,
-    /// SYNC_START command is ok but synchronization by blobs list will be
-    /// performed.
-    eStatus_SyncBList   = 205,
-    /// Operation is not done as the same or newer blob is present on the
-    /// server.
-    eStatus_NewerBlob   = 206,
-    /// "Fake" connection detected -- no data received from client at all.
-    eStatus_FakeConn    = 207,
-    /// Blob version did not match
-    sStatus_BlobVersion = 291,
-    /// Status for PUT2 command or connection that used PUT2 command.
-    eStatus_PUT2Used    = 301,
-    /// SETVALID cannot be executed as new version was already written.
-    eStatus_RaceCond    = 302,
-    /// Synchronization cannot start because server is busy doing cleaning or
-    /// some other synchronization on this slot.
-    eStatus_SyncBusy    = 303,
-    /// Synchronization is rejected because both servers tried to start it
-    /// simultaneously.
-    eStatus_CrossSync   = 305,
-    /// Synchronization is aborted because cleaning thread waited for too much
-    /// or because server needs to shutdown.
-    eStatus_SyncAborted = 306,
-    /// Caching of the database was canceled because server needs to shutdown.
-    eStatus_OperationCanceled = 306,
-    /// Command cannot be executed because NetCache didn't cache the database
-    /// contents.
-    eStatus_JustStarted = 308,
-    /// Connection was forcefully closed because server needs to shutdown.
-    eStatus_ShuttingDown = 309,
+    /// The server is delivering only part of the resource
+    eStatus_PartialContent = 206,
+
+// errors
     /// Command is incorrect.
     eStatus_BadCmd      = 400,
     /// Bad password for accessing the blob.
@@ -143,27 +130,37 @@ enum EHTTPStatus {
     eStatus_NeedAdmin   = 407,
     /// Command timeout is exceeded.
     eStatus_CmdTimeout  = 408,
+    /// SETVALID cannot be executed as new version was already written.
+    eStatus_RaceCond    = 409,
+    /// Blob version did not match
+    sStatus_BlobVersion = 410,
     /// Precondition stated in command has failed (size of blob was given but
     /// data has a different size)
     eStatus_CondFailed  = 412,
-    // Blob size exceeds the allowed maximum.
+    /// Blob size exceeds the allowed maximum.
     eStatus_BlobTooBig  = 413,
     /// Connection was closed too early (client didn't send all data or didn't
     /// get confirmation about successful execution).
     eStatus_PrematureClose = 499,
     /// Internal server error.
     eStatus_ServerError = 500,
+    eStatus_CmdAborted  = 500,
     /// Command is not implemented.
     eStatus_NoImpl      = 501,
-    /// Synchronization command belongs to session that was already canceled
-    eStatus_StaleSync   = 502,
-    /// Command should be proxied to peers but it's impossible to connect to
-    /// peers.
-    eStatus_PeerError   = 503,
+    /// Peer returned something wrong
+    eStatus_BadPeer     = 502,
+    /// operation canceled because server needs to shutdown.
+    eStatus_ShuttingDown = 503,
+    eStatus_ServiceUnavailable = 503,
+    /// Command cannot be executed because NetCache didn't cache the database
+    /// contents yet.
+    eStatus_JustStarted  = 503,
+    /// Command should be proxied to peers but it's impossible to connect to any
+    eStatus_PeerError   = 504,
     /// There's not enough disk space to execute the command.
-    eStatus_NoDiskSpace = 504,
-    /// Command was aborted because server needs to shutdown.
-    eStatus_CmdAborted  = 505
+    eStatus_NoDiskSpace = 507,
+    /// Synchronization is aborted because something went wrong.
+    eStatus_SyncAborted = 520
 };
 
 

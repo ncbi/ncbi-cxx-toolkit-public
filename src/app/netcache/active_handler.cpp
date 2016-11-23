@@ -1294,7 +1294,7 @@ CNCActiveHandler::x_ProcessProtocolError(void)
         << CNCDistributionConf::GetFullPeerName(m_SrvId) << ": "
         << "Protocol error. Got response: '"
         << m_Response << "'");
-    m_ErrMsg = "ERR:Protocol error";
+    m_ErrMsg = GetMessageByStatus(eStatus_BadPeer);
     return &CNCActiveHandler::x_CloseCmdAndConn;
 }
 

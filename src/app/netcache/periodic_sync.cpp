@@ -928,7 +928,7 @@ CNCActiveSyncControl::x_FinishSync(void)
         GetDiagCtx()->SetRequestStatus(eStatus_SyncBusy);
         break;
     case eSynNetworkError:
-        GetDiagCtx()->SetRequestStatus(eStatus_BadCmd);
+        GetDiagCtx()->SetRequestStatus(eStatus_PeerError);
         break;
     }
 

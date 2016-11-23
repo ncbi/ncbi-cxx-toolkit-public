@@ -3383,7 +3383,7 @@ CBlobCacher::x_CancelCaching(void)
 {
     s_DBFilesLock.Unlock();
     if (GetDiagCtx()->GetRequestStatus() == eStatus_OK)
-        GetDiagCtx()->SetRequestStatus(eStatus_OperationCanceled);
+        GetDiagCtx()->SetRequestStatus(eStatus_ShuttingDown);
     CSrvDiagMsg().StopRequest();
     ReleaseDiagCtx();
 

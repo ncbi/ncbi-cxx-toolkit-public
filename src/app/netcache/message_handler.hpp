@@ -226,6 +226,7 @@ private:
     /// Check if additional machine state flag is set
     bool x_IsFlagSet(ENCCmdFlags flag);
     bool x_IsUserFlagSet(ENCUserFlags flag);
+    bool x_IsCmdSucceeded(int cmd_status);
     unsigned int x_GetBlobTTL(void);
 
     // State machine implementation
