@@ -41,24 +41,39 @@ USING_SCOPE(objects);
 
 BEGIN_NCBI_SCOPE
 
-
+/// Struct mirroring columns of "acc2oid" table in SQLite database
 struct SAccOid {
-    string m_acc;
-    int m_ver;
-    int m_oid;
+    string m_acc;   /// "bare" accession w/out version suffix
+    int m_ver;      /// version number
+    int m_oid;      /// OID
 
+    /// Default constructor
     SAccOid() :
         m_acc(""), m_ver(0), m_oid(-1) {}
-    SAccOid(const string acc, const int ver, const int oid) :
+    /// Explicit constructor
+    /// @param acc accession string
+    /// @param ver version number
+    /// @param oid OID
+    SAccOid(const string& acc, const int ver, const int oid) :
         m_acc(acc), m_ver(ver), m_oid(oid) {}
 };
 
 
+/// Struct mirroring columes of "volinfo" table in SQLite database
+/// The "volume file" is a database volume's ".nin" or ".pin" file.
+/// The modification time is the number of seconds since the UNIX epoch,
+/// as would be returned by C library function "time()".
 struct SVolInfo {
-    const string m_path;
-    const time_t m_modTime;
-    const int    m_vol;
-    const int    m_oids;
+    const string m_path;        /// full path to volume file
+    const time_t m_modTime;     /// modification time of volume file
+    const int    m_vol;         /// volume number
+    const int    m_oids;        /// number of OIDs in volume
+
+    /// Explicit constructor
+    /// @param path full path to volume file
+    /// @param modtime modification time of volume file
+    /// @param vol volume number, 0 on up
+    /// @param oid number of OIDs in volume
     SVolInfo(
             const string& path,
             const time_t modTime,
@@ -70,7 +85,6 @@ struct SVolInfo {
 
 /// This class provides search capability of (integer) OIDs keyed to
 /// (string) accessions, stored in a SQLite database.
-
 class NCBI_XOBJREAD_EXPORT CSeqDBSqlite
 {
 private:
@@ -78,8 +92,10 @@ private:
     CSQLITE_Statement* m_selectStmt = NULL;
 
 public:
-    static const int kNotFound;
-    static const int kAmbiguous;
+    static const int kNotFound;     /// accession not found in database
+    static const int kAmbiguous;    /// more than one row found with same
+                                    ///  accession and (highest) version
+                                    ///  but different OIDs
 
     /// Constructor
     /// @param dbname Database file name
@@ -96,18 +112,23 @@ public:
     /// If more than one match to the accession is found,
     /// the OID of the one with the highest version number will
     /// be returned.
-    /// If there are multiple instances of the accession with the same
-    /// version number but different OIDs, -2 will be returned instead
-    /// of the OID.
+    /// If there are multiple instances of the accession with the same highest
+    /// version number but different OIDs, kAmbiguous (-2) will be returned
+    /// instead of the OID.
     /// @param accession String accession (without version suffix)
-    /// @return OID >= 0 if found, -1 if not found, -2 if ambiguous
+    /// @return OID >= 0 if found, kNotFound (-1) if not found,
+    /// kAmbiguous (-2) if ambiguous
+    /// @see GetOids
+    /// @see kNotFound
+    /// @see kAmbiguous
     int GetOid(const string& accession);
 
     /// Get OIDs for a list of string accessions.
     /// Returned vector of OIDs will have the same length as accessions;
-    /// returned OID values will be as defined for GetOid.
+    /// returned OID values will be as described for GetOid.
     /// @param accessions list of string accessions
     /// @return vector of OIDs, one per accession
+    /// @see GetOid
     vector<int> GetOids(const list<string>& accessions);
 
     /// Get accessions for a single OID.
@@ -121,6 +142,10 @@ public:
     /// If all arguments are NULL, only 'found' (true) or 'done' (false)
     /// will be returned.
     /// When stepping is done, this method will finalize the SELECT statement.
+    ///
+    /// NOTE: Stepping should be repeated until this method returns false,
+    /// so that the SELECT statement can be finalized and deleted.
+    ///
     /// @param acc pointer to string for accession, or NULL
     /// @param ver pointer to int for version, or NULL
     /// @param oid pointer to int for OID, or NULL
@@ -137,6 +162,10 @@ public:
     /// which is the number of seconds since the UNIX Epoch.
     /// This can be converted to human-readable form with C functions
     /// such as ctime().
+    ///
+    /// NOTE: Stepping should be repeated until this method returns false,
+    /// so that the SELECT statement can be finalized and deleted.
+    ///
     /// @param path pointer to string for path, or NULL
     /// @param modtime pointer to int for modification time, or NULL
     /// @param volume pointer to int for volume number, or NULL
