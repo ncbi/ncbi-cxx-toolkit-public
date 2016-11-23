@@ -253,7 +253,7 @@ static void s_ReplaceCtrlAsInTitle(CRef<CBioseq> bioseq)
     }
 }
 
-static string s_GetBareId(const CSeq_id& id)
+string GetBareId(const CSeq_id& id)
 {
     string retval; 
 
@@ -314,7 +314,7 @@ void CSeqFormatter::DumpAll(CSeqDB& blastdb, CSeqFormatterConfig config)
 
             m_Out << '>';
             id = FindBestChoice(bioseq->GetId(), CSeq_id::Score);
-            m_Out << s_GetBareId(*id);
+            m_Out << GetBareId(*id);
 
             string title = s_GetTitle(bioseq);
 
@@ -342,7 +342,7 @@ void CSeqFormatter::DumpAll(CSeqDB& blastdb, CSeqFormatterConfig config)
                     }
                     m_Out << separator;
                     id = FindBestChoice(seqids, CSeq_id::Score);
-                    m_Out << s_GetBareId(*id);
+                    m_Out << GetBareId(*id);
                     if (pos != NPOS) {
                         m_Out << it->substr(pos, it->length() - pos);
                     }

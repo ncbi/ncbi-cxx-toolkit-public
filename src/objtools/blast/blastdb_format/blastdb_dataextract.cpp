@@ -48,6 +48,8 @@ USING_SCOPE(objects);
 #define NOT_AVAILABLE "N/A"
 #define SEPARATOR ";"
 
+extern string GetBareId(const CSeq_id& id);
+
 void CBlastDBExtractor::SetSeqId(const CBlastDBSeqId &id, bool get_data) {
     m_Defline.Reset();
     m_Gi = ZERO_GI;
@@ -268,20 +270,6 @@ void CBlastDBExtractor::x_SetGi2AccMap()
 	return;
 }
 
-static string s_GetBareId(const CSeq_id& id)
-{
-    string retval; 
-
-    if (id.IsGi() || id.IsPrf() || id.IsPir()) {
-        retval = id.AsFastaString();
-    }
-    else {
-        retval = id.GetSeqIdString(true);
-    }
-
-    return retval;
-}
-
 void CBlastDBExtractor::x_SetGi2SeqIdMap()
 {
 	if (m_Gi2SeqIdMap.first == m_Oid)
@@ -303,7 +291,7 @@ void CBlastDBExtractor::x_SetGi2SeqIdMap()
                 gi2id[gi] = theId->AsFastaString();
             }
             else {
-                gi2id[gi] = s_GetBareId(*theId);
+                gi2id[gi] = GetBareId(*theId);
             }
         }
     }
@@ -373,7 +361,7 @@ string CBlastDBExtractor::ExtractSeqId() {
             retval = retval.erase(0, 4);
     }
     else {
-        retval = s_GetBareId(*theId);
+        retval = GetBareId(*theId);
     }
 
     return retval;
@@ -625,9 +613,9 @@ static void s_ReplaceCtrlAsInTitle(CRef<CBioseq> bioseq)
     }
 }
 
-static string s_GetTitle(CConstRef<CBioseq> bioseq)
+static string s_GetTitle(const CBioseq & bioseq)
 {
-    ITERATE(CSeq_descr::Tdata, desc, bioseq->GetDescr().Get()) {
+    ITERATE(CSeq_descr::Tdata, desc, bioseq.GetDescr().Get()) {
         if ((*desc)->Which() == CSeqdesc::e_Title) {
             return (*desc)->GetTitle();
         }
@@ -681,7 +669,7 @@ string CBlastDBExtractor::ExtractFasta(const CBlastDBSeqId &id) {
             if (seqid->IsLocal()) {
                 string lcl_tmp = seqid->AsFastaString();
                 lcl_tmp = lcl_tmp.erase(0, 4);
-                out << ">" << lcl_tmp << " " << s_GetTitle(m_Bioseq) << '\n';
+                out << ">" << lcl_tmp << " " << s_GetTitle(*m_Bioseq) << '\n';
                 CScope scope(*CObjectManager::GetInstance());
                 fasta.WriteSequence(scope.AddBioseq(*m_Bioseq), range); 
             }
@@ -696,10 +684,9 @@ string CBlastDBExtractor::ExtractFasta(const CBlastDBSeqId &id) {
 
             out << '>';
             id = FindBestChoice(m_Bioseq->GetId(), CSeq_id::Score);
-            out << s_GetBareId(*id);
+            out << GetBareId(*id);
 
-            string title =
-                s_GetTitle(CConstRef<CBioseq>(m_Bioseq.GetNonNullPointer()));
+            string title = s_GetTitle(*m_Bioseq.GetNonNullPointer());
 
             if (!title.empty()) {
                 out << ' ';
@@ -727,7 +714,7 @@ string CBlastDBExtractor::ExtractFasta(const CBlastDBSeqId &id) {
 
                     out << separator;
                     id = FindBestChoice(seqids, CSeq_id::Score);
-                    out << s_GetBareId(*id);
+                    out << GetBareId(*id);
                     if (pos != NPOS) {
                         out << it->substr(pos, it->length() - pos);
                     }
@@ -859,7 +846,7 @@ void CBlastDeflineUtil::ExtractDataFromBlastDefline(const CBlast_def_line & dl,
         	 results[CBlastDeflineUtil::seq_id] = theId->AsFastaString();
 		 }
 		 if(fields.accession == 1) {
-			 results[CBlastDeflineUtil::accession] = s_GetBareId(*theId);
+			 results[CBlastDeflineUtil::accession] = GetBareId(*theId);
 		 }
 	}
 	if(fields.title == 1) {
@@ -966,16 +953,6 @@ void CBlastDeflineUtil::ExtractDataFromBlastDefline(const CBlast_def_line & dl,
 	}
 }
 
-static string s_GetTitle(const CBioseq & bioseq)
-{
-    ITERATE(CSeq_descr::Tdata, desc, bioseq.GetDescr().Get()) {
-        if ((*desc)->Which() == CSeqdesc::e_Title) {
-            return (*desc)->GetTitle();
-        }
-    }
-    return string();
-}
-
 void CBlastDeflineUtil::ProcessFastaDeflines(CBioseq & bioseq, string & out, bool use_ctrla)
 {
 	out = kEmptyStr;
@@ -994,7 +971,7 @@ void CBlastDeflineUtil::ProcessFastaDeflines(CBioseq & bioseq, string & out, boo
 
         out = '>';
         id = FindBestChoice(bioseq.GetId(), CSeq_id::Score);
-        out += s_GetBareId(*id) + ' ';
+        out += GetBareId(*id) + ' ';
 
         string title = s_GetTitle(bioseq);
         if(!title.empty()) {
@@ -1019,7 +996,7 @@ void CBlastDeflineUtil::ProcessFastaDeflines(CBioseq & bioseq, string & out, boo
             }
             out += separator;
             id = FindBestChoice(seqids, CSeq_id::Score);
-            out += s_GetBareId(*id);
+            out += GetBareId(*id);
             if (pos != NPOS) {
                 out += it->substr(pos, it->length() - pos);
             }
