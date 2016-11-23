@@ -322,7 +322,7 @@ private:
 
     bool x_IsWebComment(CTempString line);
 
-    bool x_AddIntervalToFeature (CTempString strFeatureName, CRef<CSeq_feat> sfp, CSeq_loc_mix& mix,
+    bool x_AddIntervalToFeature (CTempString strFeatureName, CRef<CSeq_feat>& sfp,
                                  Int4 start, Int4 stop,
                                  bool partial5, bool partial3, bool ispoint, bool isminus);
 
@@ -425,7 +425,12 @@ private:
 
     void x_TokenizeStrict( const string &line, vector<string> &out_tokens );
     void x_TokenizeLenient( const string &line, vector<string> &out_tokens );
+    void x_FinishFeature(CRef<CSeq_feat>& feat);
+    void x_ResetFeat(CRef<CSeq_feat>& feat, bool & curr_feat_intervals_done);
+    void x_UpdatePointStrand(CSeq_feat& feat, CSeq_interval::TStrand strand) const;
+    void x_GetPointStrand(const CSeq_feat& feat, CSeq_interval::TStrand& strand) const;
 
+    bool m_need_check_strand;
     string m_real_seqid;
     unsigned int m_line_num;
     CRef<CSeq_id> m_seq_id;
@@ -2454,8 +2459,7 @@ bool CFeature_table_reader_imp::x_IsWebComment(CTempString line)
 
 bool CFeature_table_reader_imp::x_AddIntervalToFeature(
     CTempString strFeatureName,
-    CRef<CSeq_feat> sfp,
-    CSeq_loc_mix& mix,
+    CRef<CSeq_feat>& sfp,
     Int4 start,
     Int4 stop,
     bool partial5,
@@ -2476,9 +2480,15 @@ bool CFeature_table_reader_imp::x_AddIntervalToFeature(
     }
 
     // construct loc, which will be added to the mix
+    CSeq_loc_mix::Tdata & mix_set = sfp->SetLocation().SetMix();
     CRef<CSeq_loc> loc(new CSeq_loc);
     if (ispoint || start == stop ) {
         // a point of some kind
+        if (mix_set.empty())
+           m_need_check_strand = true;
+        else
+           x_GetPointStrand(*sfp, strand);
+
         CRef<CSeq_point> pPoint( new CSeq_point(*m_seq_id, start, strand) );
         if( ispoint ) {
             // between two bases
@@ -2503,10 +2513,14 @@ bool CFeature_table_reader_imp::x_AddIntervalToFeature(
             pIval->SetPartialStop (true, eExtreme_Biological);
         }
         loc->SetInt(*pIval);
+        if (m_need_check_strand)
+        {
+            x_UpdatePointStrand(*sfp, strand);
+            m_need_check_strand = false;
+        }
     }
 
     // check for internal partials
-    CSeq_loc_mix::Tdata & mix_set = mix.Set();
     if( ! mix_set.empty() ) {
         const CSeq_loc & last_loc = *mix_set.back();
         if( last_loc.IsPartialStop(eExtreme_Biological) ||
@@ -2709,22 +2723,82 @@ void CFeature_table_reader_imp::x_ProcessMsg(
         pErr->Throw();
     }
 
-    if ( ! m_pMessageListener->PutError(*pErr) ) {
+    if (!m_pMessageListener->PutError(*pErr)) {
         pErr->Throw();
     }
 }
 
-namespace {
-    // helper for CFeature_table_reader_imp::ReadSequinFeatureTable,
-    // just so we don't forget a step when we reset the feature
-    // 
-    void s_ResetFeat( CRef<CSeq_feat> & sfp, bool & curr_feat_intervals_done ) {
-        sfp.Reset (new CSeq_feat);
-        sfp->ResetLocation ();
-        curr_feat_intervals_done = false;
+
+// helper for CFeature_table_reader_imp::ReadSequinFeatureTable,
+// just so we don't forget a step when we reset the feature
+// 
+void CFeature_table_reader_imp::x_ResetFeat(CRef<CSeq_feat> & sfp, bool & curr_feat_intervals_done)
+{
+    m_need_check_strand = false;
+    sfp.Reset(new CSeq_feat);
+    //sfp->ResetLocation();
+    curr_feat_intervals_done = false;
+}
+
+void CFeature_table_reader_imp::x_GetPointStrand(const CSeq_feat& feat, CSeq_interval::TStrand& strand) const
+{
+    if (feat.IsSetLocation() && feat.GetLocation().IsMix())
+    {
+        const CSeq_loc& last = *feat.GetLocation().GetMix().Get().back();
+        if (last.IsInt() && last.GetInt().IsSetStrand())
+        {
+            strand = last.GetInt().GetStrand();
+        }
+        else
+        if (last.IsPnt() && last.GetPnt().IsSetStrand())
+        {
+            strand = last.GetPnt().GetStrand();
+        }
     }
 }
-                                             
+
+void CFeature_table_reader_imp::x_UpdatePointStrand(CSeq_feat& feat, CSeq_interval::TStrand strand) const
+{
+    if (feat.IsSetLocation() && feat.GetLocation().IsMix())
+    {
+        NON_CONST_REVERSE_ITERATE(CSeq_loc_mix::Tdata, it, feat.SetLocation().SetMix().Set())
+        {
+            if ((**it).IsPnt())
+            {
+                (**it).SetPnt().SetStrand(strand);
+            }
+        }
+    }    
+}
+
+void CFeature_table_reader_imp::x_FinishFeature(CRef<CSeq_feat>& feat)
+{
+    if (feat.Empty())
+        return;
+
+    if (feat->IsSetLocation())
+    {
+        // demote single interval seqlocmix to seqlocint
+        if (feat->GetLocation().IsMix())
+        {
+            switch (feat->GetLocation().GetMix().Get().size())
+            {
+            case 0:
+                feat->SetLocation().SetNull();
+                break;
+            case 1:
+            {
+                CRef<CSeq_loc> keep_loc = *feat->SetLocation().SetMix().Set().begin();
+                feat->SetLocation(*keep_loc);
+            }
+            break;
+            default:
+                break;
+            }
+        }
+    }
+}
+
 CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
     const string& seqid,
     const string& annotname,
@@ -2834,16 +2908,12 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
 
                 // process start - stop - feature line
 
-                s_ResetFeat( sfp, curr_feat_intervals_done );
+                x_FinishFeature(sfp);
+                x_ResetFeat( sfp, curr_feat_intervals_done );
 
                 if (x_SetupSeqFeat (sfp, feat, flags, filter)) {
 
                     ftable.push_back (sfp);
-
-                    // now create location
-
-                    CRef<CSeq_loc> location (new CSeq_loc);
-                    sfp->SetLocation (*location);
 
                     // figure out type of feat, and store in map for later use
                     CSeqFeatData::E_Choice eChoice = CSeqFeatData::e_not_set;
@@ -2861,7 +2931,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                     }
 
                     // and add first interval
-                    x_AddIntervalToFeature (curr_feat_name, sfp, location->SetMix(), 
+                    x_AddIntervalToFeature (curr_feat_name, sfp,
                         start, stop, partial5, partial3, ispoint, isminus);
 
                     ignore_until_next_feature_key = false;
@@ -2887,10 +2957,10 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                     x_ProcessMsg(ILineError::eProblem_NoFeatureProvidedOnIntervals, eDiag_Error);
                     // this feature is in bad shape, so we ignore the rest of it
                     ignore_until_next_feature_key = true;
-                    s_ResetFeat(sfp, curr_feat_intervals_done);
+                    x_ResetFeat(sfp, curr_feat_intervals_done);
                 } else if (sfp  &&  sfp->IsSetLocation()  &&  sfp->GetLocation().IsMix()) {
                     // process start - stop multiple interval line
-                    x_AddIntervalToFeature (curr_feat_name, sfp, sfp->SetLocation().SetMix(), 
+                    x_AddIntervalToFeature (curr_feat_name, sfp,
                                             start, stop, partial5, partial3, ispoint, isminus);
                 } else {
                     if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
@@ -3154,27 +3224,6 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
     // just read features from 5-column table
     CFeature_table_reader_imp impl(&reader, 0, pMessageListener);
     CRef<CSeq_annot> sap = impl.ReadSequinFeatureTable(seqid, annotname, flags, filter);
-
-    // go through all features and demote single interval seqlocmix to seqlocint
-    for (CTypeIterator<CSeq_feat> fi(*sap); fi; ++fi) {
-        CSeq_feat& feat = *fi;
-        CSeq_loc& location = feat.SetLocation ();
-        if (location.IsMix ()) {
-            CSeq_loc_mix& mx = location.SetMix ();
-            CSeq_loc &keep_loc(*mx.Set ().front ());
-            CRef<CSeq_loc> guard_loc(&keep_loc);            
-            switch (mx.Get ().size ()) {
-                case 0:
-                    location.SetNull ();
-                    break;
-                case 1:
-                    feat.SetLocation (*mx.Set ().front ());
-                    break;
-                default:
-                    break;
-            }
-        }
-    }
 
     return sap;
 }
