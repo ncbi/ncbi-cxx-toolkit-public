@@ -564,6 +564,8 @@ struct CWGSDb_Impl::SFeatTableCursor : public CObject {
     DECLARE_VDB_COLUMN_AS(INSDC_coord_zero, PRODUCT_START);
     DECLARE_VDB_COLUMN_AS(INSDC_coord_len, PRODUCT_LEN);
     DECLARE_VDB_COLUMN_AS_STRING(SEQ_FEAT);
+
+    CObjectIStreamAsnBinary m_ObjStr;
 };
 
 
@@ -583,6 +585,27 @@ CWGSDb_Impl::SFeatTableCursor::SFeatTableCursor(const CVDBTable& table)
       INIT_OPTIONAL_VDB_COLUMN(PRODUCT_LEN),
       INIT_VDB_COLUMN(SEQ_FEAT)
 {
+    CObjectTypeInfo type;
+    if ( 1 ) {
+        type = CObjectTypeInfo(CType<CObject_id>());
+        type.FindVariant("str")
+            .SetLocalReadHook(m_ObjStr, new CPackStringChoiceHook);
+    }
+    if ( 1 ) {
+        type = CObjectTypeInfo(CType<CImp_feat>());
+        type.FindMember("key")
+            .SetLocalReadHook(m_ObjStr, new CPackStringClassHook(32, 128));
+    }
+    if ( 1 ) {
+        type = CObjectTypeInfo(CType<CDbtag>());
+        type.FindMember("db")
+            .SetLocalReadHook(m_ObjStr, new CPackStringClassHook);
+    }
+    if ( 1 ) {
+        type = CType<CGb_qual>();
+        type.FindMember("qual")
+            .SetLocalReadHook(m_ObjStr, new CPackStringClassHook);
+    }
 }
 
 
@@ -5376,50 +5399,11 @@ CTempString CWGSFeatureIterator::GetSeq_featBytes(void) const
 
 CRef<CSeq_feat> CWGSFeatureIterator::GetSeq_feat(void) const
 {
-    DEFINE_STATIC_FAST_MUTEX(s_Mutex);
-    CFastMutexGuard LOCK(s_Mutex);
-
     PROFILE(sw_Feat);
     CRef<CSeq_feat> feat(new CSeq_feat);
     CTempString bytes = GetSeq_featBytes();
-    if ( 0 ) {
-        CObjectIStreamAsnBinary in(bytes.data(), bytes.size());
-        in >> *feat;
-    }
-    else {
-        static CObjectIStreamAsnBinary in;
-        static bool init_hooks = 0;
-        if ( init_hooks ) {
-            init_hooks = 0;
-            CObjectTypeInfo type;
-
-            if ( 1 ) {
-                type = CObjectTypeInfo(CType<CObject_id>());
-                type.FindVariant("str")
-                    .SetLocalReadHook(in, new CPackStringChoiceHook);
-            }
-
-            if ( 1 ) {
-                type = CObjectTypeInfo(CType<CImp_feat>());
-                type.FindMember("key")
-                    .SetLocalReadHook(in, new CPackStringClassHook(32, 128));
-            }
-
-            if ( 1 ) {
-                type = CObjectTypeInfo(CType<CDbtag>());
-                type.FindMember("db")
-                    .SetLocalReadHook(in, new CPackStringClassHook);
-            }
-
-            if ( 1 ) {
-                type = CType<CGb_qual>();
-                type.FindMember("qual")
-                    .SetLocalReadHook(in, new CPackStringClassHook);
-            }
-        }
-        in.OpenFromBuffer(bytes.data(), bytes.size());
-        in >> *feat;
-    }
+    m_Cur.GetNCObject().m_ObjStr.OpenFromBuffer(bytes.data(), bytes.size());
+    m_Cur.GetNCObject().m_ObjStr >> *feat;
     return feat;
 }
 
