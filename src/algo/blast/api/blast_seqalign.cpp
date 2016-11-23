@@ -1011,9 +1011,9 @@ s_MakeScore(const string& ident_string, double d, int i, bool is_integer)
 /// Computes the exact size of a CSeq_align::TScore for a given HSP
 /// @param hsp HSP for which the score objects will be built, must be non-NULL
 /// [in]
-/// @param gi_list list of GIs associated with this HSP [in]
+/// @param seqid_list list of IDs associated with this HSP [in]
 static size_t 
-s_CalculateScoreVectorSize(const BlastHSP* hsp, const vector<TGi>  & gi_list)
+s_CalculateScoreVectorSize(const BlastHSP* hsp, const vector<string>  & seqid_list)
 {
     _ASSERT(hsp);
     // query coverage hsp
@@ -1048,8 +1048,8 @@ s_CalculateScoreVectorSize(const BlastHSP* hsp, const vector<TGi>  & gi_list)
     	retval++;
     }
 
-    if ( !gi_list.empty() ) {
-        retval += gi_list.size();
+    if ( !seqid_list.empty() ) {
+        retval += seqid_list.size();
     }
     return retval;
 }
@@ -1057,17 +1057,17 @@ s_CalculateScoreVectorSize(const BlastHSP* hsp, const vector<TGi>  & gi_list)
 /// Creates a list of score objects for a Seq-align, given an HSP structure.
 /// @param hsp Structure containing HSP information [in]
 /// @param scores Linked list of score objects to put into a Seq-align [out]
-/// @param gi_list List of GIs for the subject sequence.
+/// @param seqid_list List of GIs for the subject sequence.
 static void
 s_BuildScoreList(const BlastHSP     * hsp,
                  CSeq_align::TScore & scores,
-                 const vector<TGi>  & gi_list,
+                 const vector<string>  & seqid_list,
                  Int4 query_length)
 {
     if (!hsp)
         return;
 
-    scores.reserve(s_CalculateScoreVectorSize(hsp, gi_list));
+    scores.reserve(s_CalculateScoreVectorSize(hsp, seqid_list));
 
     if (hsp->score) {
         static const string kScore("score");
@@ -1107,10 +1107,9 @@ s_BuildScoreList(const BlastHSP     * hsp,
                                      hsp->comp_adjustment_method, true));
     }
     
-    if ( !gi_list.empty() ) {
-        ITERATE(vector<TGi>, gi, gi_list) { 
-	    const string kGI = string("gi:") + NStr::NumericToString(*gi);
-            scores.push_back(s_MakeScore(kGI, 0.0, 0, true));
+    if ( !seqid_list.empty() ) {
+        ITERATE(vector<string>, sid, seqid_list) { 
+            scores.push_back(s_MakeScore(*sid, 0.0, 0, true));
         }
     }
     
@@ -1127,6 +1126,22 @@ s_BuildScoreList(const BlastHSP     * hsp,
     return;
 }
 
+/// Produce UserObject with Seq-ids to limit formatting to ("use_this_gi")
+/// @param seqalign Seq-align object to fill in [in][out]
+/// @param seqid_list list of strings with seqids [in]
+static void
+s_AddUserObjectToSeqAlign(CRef<CSeq_align>  & seqalign, 
+		const vector<string> & seqid_list)
+{
+	if (seqid_list.empty())
+		return;
+
+	CRef<CUser_object> userObject(new CUser_object());
+	userObject->SetType().SetStr("use_this_seqid");
+	userObject->AddField("SEQIDS", seqid_list);
+	seqalign->SetExt().push_back(userObject);
+}
+
 
 /// Given an HSP structure, creates a list of scores and inserts them into 
 /// a Seq-align.
@@ -1136,12 +1151,12 @@ s_BuildScoreList(const BlastHSP     * hsp,
 static void
 s_AddScoresToSeqAlign(CRef<CSeq_align>  & seqalign,
                       const BlastHSP    * hsp,
-                      const vector<TGi> & gi_list,
+                      const vector<string> & seqid_list,
                       Int4 query_length)
 {
     // Add the scores for this HSP
     CSeq_align::TScore& score_list = seqalign->SetScore();
-    s_BuildScoreList(hsp, score_list, gi_list, query_length);
+    s_BuildScoreList(hsp, score_list, seqid_list, query_length);
 }
 
 
@@ -1158,7 +1173,7 @@ CRef<CDense_diag>
 x_UngappedHSPToDenseDiag(BlastHSP* hsp, CRef<CSeq_id> query_id, 
                          CRef<CSeq_id> subject_id,
                          Int4 query_length, Int4 subject_length,
-                         const vector<TGi> & gi_list)
+                         const vector<string> & seqid_list)
 {
     CRef<CDense_diag> retval(new CDense_diag());
     
@@ -1190,7 +1205,7 @@ x_UngappedHSPToDenseDiag(BlastHSP* hsp, CRef<CSeq_id> query_id,
     }
 
     CSeq_align::TScore& score_list = retval->SetScores();
-    s_BuildScoreList(hsp, score_list, gi_list, query_length);
+    s_BuildScoreList(hsp, score_list, seqid_list, query_length);
 
     return retval;
 }
@@ -1208,7 +1223,7 @@ CRef<CStd_seg>
 x_UngappedHSPToStdSeg(BlastHSP* hsp, CRef<CSeq_id> query_id, 
                       CRef<CSeq_id> subject_id,
                       Int4 query_length, Int4 subject_length,
-                      const vector<TGi> & gi_list)
+                      const vector<string> & seqid_list)
 {
     CRef<CStd_seg> retval(new CStd_seg());
 
@@ -1264,7 +1279,7 @@ x_UngappedHSPToStdSeg(BlastHSP* hsp, CRef<CSeq_id> query_id,
     retval->SetLoc().push_back(subject_loc);
 
     CSeq_align::TScore& score_list = retval->SetScores();
-    s_BuildScoreList(hsp, score_list, gi_list, query_length);
+    s_BuildScoreList(hsp, score_list, seqid_list, query_length);
 
     return retval;
 }
@@ -1284,7 +1299,7 @@ BLASTUngappedHspListToSeqAlign(EBlastProgramType program,
                                CRef<CSeq_id> subject_id, 
                                Int4 query_length,
                                Int4 subject_length,
-                               const vector<TGi> & gi_list,
+                               const vector<string> & seqid_list,
                                vector<CRef<CSeq_align > > & sa_vector)
 {
     CRef<CSeq_align> seqalign(new CSeq_align()); 
@@ -1297,6 +1312,7 @@ BLASTUngappedHspListToSeqAlign(EBlastProgramType program,
 
     hsp_array = hsp_list->hsp_array;
 
+    vector<string> emptyList;  // FIXME: change prototypes below.
     /* All HSPs are put in one seqalign, containing a list of 
      * DenseDiag for same molecule search, or StdSeg for translated searches.
      */
@@ -1311,7 +1327,7 @@ BLASTUngappedHspListToSeqAlign(EBlastProgramType program,
                                          subject_id, 
                                          query_length,
                                          subject_length,
-                                         gi_list));
+                                         emptyList));
         }
     } else { // Translated search
         for (index=0; index<hsp_list->hspcnt; index++) { 
@@ -1322,9 +1338,10 @@ BLASTUngappedHspListToSeqAlign(EBlastProgramType program,
                                       subject_id, 
 		                              query_length,
                                       subject_length,
-                                      gi_list));
+                                      emptyList));
         }
     }
+    s_AddUserObjectToSeqAlign(seqalign, seqid_list);
     sa_vector.push_back(seqalign);
     return;
 }
@@ -1343,7 +1360,7 @@ void
 BLASTHspListToSeqAlign(EBlastProgramType program, BlastHSPList* hsp_list, 
                        CRef<CSeq_id> query_id, CRef<CSeq_id> subject_id, 
                        Int4 query_length, Int4 subject_length, bool is_ooframe,
-                       const vector<TGi> & gi_list,
+                       const vector<string> & seqid_list,
                        vector<CRef<CSeq_align > > & sa_vector)
 {
     // Process the list of HSPs corresponding to one subject sequence and
@@ -1353,6 +1370,7 @@ BLASTHspListToSeqAlign(EBlastProgramType program, BlastHSPList* hsp_list,
 
     sa_vector.clear();
     sa_vector.reserve(hsp_list->hspcnt);
+    vector<string> emptyList;
 
     for (int index = 0; index < hsp_list->hspcnt; index++) { 
         BlastHSP* hsp = hsp_array[index];
@@ -1375,7 +1393,10 @@ BLASTHspListToSeqAlign(EBlastProgramType program, BlastHSPList* hsp_list,
         	if(hsp->num_ident == 0)
         		hsp->num_ident = -1;
         }
-        s_AddScoresToSeqAlign(seqalign, hsp, gi_list, query_length);
+	// Pass in empty list until removed.
+        s_AddScoresToSeqAlign(seqalign, hsp, emptyList, query_length);
+	
+	s_AddUserObjectToSeqAlign(seqalign, seqid_list);
         sa_vector.push_back(seqalign);
     }
     
@@ -1470,9 +1491,9 @@ BlastHitList2SeqAlign_OMF(const BlastHitList     * hit_list,
             subj_masks.push_back(masks);
         }
 
-        // Get GIs for entrez query restriction.
-        vector<TGi> gi_list;
-        GetFilteredRedundantGis(*seqinfo_src, hsp_list->oid, gi_list);
+        // Get SeqIds for entrez query restriction.
+	vector<string> seqid_list;
+        GetFilteredRedundantSeqids(*seqinfo_src, hsp_list->oid, seqid_list, subject_id->IsGi());
         
         // stores a CSeq_align for each matching sequence
         vector<CRef<CSeq_align > > hit_align;
@@ -1484,7 +1505,7 @@ BlastHitList2SeqAlign_OMF(const BlastHitList     * hit_list,
                                        query_length,
                                        subj_length,
                                        is_ooframe,
-                                       gi_list,
+                                       seqid_list,
                                        hit_align);
         } else {
                 BLASTUngappedHspListToSeqAlign(prog,
@@ -1493,7 +1514,7 @@ BlastHitList2SeqAlign_OMF(const BlastHitList     * hit_list,
                                                subject_id,
                                                query_length,
                                                subj_length,
-                                               gi_list,
+                                               seqid_list,
                                                hit_align);
         }
 
@@ -1679,8 +1700,9 @@ s_BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
             TSeqPos query_length = query_data.GetSeqLength(qindex); 
             s_AdjustNegativeSubjFrameInBlastn(kSubjStrand, prog, hsp_list);
             
-            vector<TGi> gi_list;
-            GetFilteredRedundantGis(seqinfo_src, hsp_list->oid, gi_list);
+	    vector<string> seqid_list;
+            GetFilteredRedundantSeqids(seqinfo_src, hsp_list->oid, seqid_list, subject_id->IsGi());
+        
 
             // Union subject sequence ranges
             vector <TSeqRange> ranges;
@@ -1708,7 +1730,7 @@ s_BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
                                            query_length, 
                                            subj_length,
                                            is_ooframe,
-                                           gi_list,
+                                           seqid_list,
                                            hit_align);
             } else {
                     BLASTUngappedHspListToSeqAlign(prog,
@@ -1717,7 +1739,7 @@ s_BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
                                                    subject_id,
                                                    query_length,
                                                    subj_length,
-                                                   gi_list,
+                                                   seqid_list,
                                                    hit_align);
             }
             seq_aligns.Reset(new CSeq_align_set());
@@ -1914,7 +1936,7 @@ CRef<CStd_seg>
 x_NonTranslatedHSPToStdSeg(BlastHSP* hsp, CRef<CSeq_id> query_id,
                       	   CRef<CSeq_id> subject_id,
                       	   Int4 query_length, Int4 subject_length,
-                      	   const vector<TGi> & gi_list)
+                      	   const vector<string> & seqid_list)
 {
     CRef<CStd_seg> retval(new CStd_seg());
 
@@ -1955,7 +1977,7 @@ x_NonTranslatedHSPToStdSeg(BlastHSP* hsp, CRef<CSeq_id> query_id,
     retval->SetLoc().push_back(subject_loc);
 
     CSeq_align::TScore& score_list = retval->SetScores();
-    s_BuildScoreList(hsp, score_list, gi_list, query_length);
+    s_BuildScoreList(hsp, score_list, seqid_list, query_length);
 
     return retval;
 }
@@ -1977,7 +1999,7 @@ BLASTPrelminSearchHitListToStdSeg(EBlastProgramType 	   program,
 
 	CRef<CStd_seg>
 	(*fun_ptr) (BlastHSP* , CRef<CSeq_id> , CRef<CSeq_id> , Int4 , Int4 ,
-	                      	   const vector<TGi> & ) = NULL;
+	                      	   const vector<string> & ) = NULL;
 
 	if((TRANSLATED_QUERY_MASK | TRANSLATED_SUBJECT_MASK) & program )
 		fun_ptr = x_UngappedHSPToStdSeg;
@@ -1994,12 +2016,11 @@ BLASTPrelminSearchHitListToStdSeg(EBlastProgramType 	   program,
 
 	if(hsp_list->hspcnt > 0)
 	{
-            const Uint4 oid = hsp_list->oid;
        	    TSeqPos subject_length = 0;
        	    CRef<CSeq_id> subject_id;
-       	    vector<TGi> gi_list;
-       	    GetFilteredRedundantGis(*subject_seqinfo, oid, gi_list);
-       	    GetSequenceLengthAndId(subject_seqinfo, oid, subject_id, &subject_length);
+	    vector<string> seqid_list;
+       	    GetSequenceLengthAndId(subject_seqinfo, hsp_list->oid, subject_id, &subject_length);
+            GetFilteredRedundantSeqids(*subject_seqinfo, hsp_list->oid, seqid_list, subject_id->IsGi());
 
             for (int j = 0; j < hsp_list->hspcnt; j++)
             {
@@ -2009,7 +2030,7 @@ BLASTPrelminSearchHitListToStdSeg(EBlastProgramType 	   program,
         	    continue;
 
                	seg_list.push_back((*fun_ptr) (hsp, query_id, subject_id, 
-                                               query_length, subject_length, gi_list));
+                                               query_length, subject_length, seqid_list));
 	    }
         }
     }

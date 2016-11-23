@@ -46,6 +46,7 @@
 #include <algo/blast/api/seqsrc_seqdb.hpp>
 #include <algo/blast/api/blast_seqinfosrc.hpp>
 #include <algo/blast/api/seqinfosrc_seqdb.hpp>
+#include <objects/general/User_object.hpp>
 
 
 // needed for objmgr dependent tests of query data interface
@@ -218,81 +219,31 @@ public:
         return hsps;
     }
 
-    void x_FindUsedGis(const CDense_seg & dseg, set<TGi> & used)
+    void x_FindUsedGis(const CSeq_align_set & aset, set<string> & used)
     {
-        typedef vector< CRef< CScore > > TScoreList;
-	const string k_GiPrefix = "gi:";
-        
-        if (dseg.CanGetScores()) {
-            const TScoreList & scores = dseg.GetScores();
-            
-            ITERATE(TScoreList, sc, scores) {
-                const CScore & sc1 = **sc;
-                
-                if (sc1.CanGetId() && sc1.GetId().IsStr()) {
-                    string id_name = sc1.GetId().GetStr();
-                    
-                    if (id_name == "use_this_gi") {
-                        BOOST_REQUIRE(sc1.CanGetValue());
-                        BOOST_REQUIRE(sc1.GetValue().IsInt());
-                        
-                        used.insert(GI_FROM(TIntId, sc1.GetValue().GetInt()));
-                    }
-		    else if (NStr::StartsWith(id_name, k_GiPrefix))
-		    {
-			string strGI = NStr::Replace(id_name, k_GiPrefix, "");
-			TGi gi = NStr::StringToInt8(strGI);
-			used.insert(gi);
-		    }
-                }
-            }
-        }
-    }
-    
-    typedef vector< CRef< CScore > > TScoreList;
-    
-    void x_FindUsedGis(const TScoreList & scores, set<TGi> & used)
-    {
-	const string k_GiPrefix = "gi:";
-        ITERATE(TScoreList, sc, scores) {
-            const CScore & sc1 = **sc;
-            
-            if (sc1.CanGetId() && sc1.GetId().IsStr()) {
-                string id_name = sc1.GetId().GetStr();
-                
-                if (id_name == "use_this_gi") {
-                    BOOST_REQUIRE(sc1.CanGetValue());
-                    BOOST_REQUIRE(sc1.GetValue().IsInt());
-                        
-                    used.insert(GI_FROM(TIntId, sc1.GetValue().GetInt()));
-                }
-		else if (NStr::StartsWith(id_name, k_GiPrefix))
-		{
-			string strGI = NStr::Replace(id_name, k_GiPrefix, "");
-			TGi gi = NStr::StringToInt8(strGI);
-			used.insert(gi);
-                }
-            }
-        }
-    }
-    
-    void x_FindUsedGis(const CSeq_align_set & aset, set<TGi> & used)
-    {
+	used.clear();
         ITERATE(CSeq_align_set::Tdata, align, aset.Get()) {
-            CSeq_align::C_Segs::E_Choice ch = (**align).GetSegs().Which();
-            
-            if ((**align).CanGetScore()) {
-                x_FindUsedGis((**align).GetScore(), used);
-            }
-            
-            if (ch == CSeq_align::C_Segs::e_Disc) {
-                x_FindUsedGis((**align).GetSegs().GetDisc(), used);
-            } else if (ch == CSeq_align::C_Segs::e_Denseg) {
-//                 x_FindUsedGis((**align).GetSegs().GetDenseg(), used);
-            } else {
-                BOOST_REQUIRE_EQUAL((int)ch, 0);
-            }
-        }
+		if((**align).CanGetExt() && (**align).GetExt().size() > 0)
+		{
+		    CRef<CUser_object> uObject = (**align).GetExt().front();
+		    if(uObject->IsSetType() && uObject->GetType().IsStr() && 
+				uObject->GetType().GetStr() == "use_this_seqid" && uObject->IsSetData())
+		    {
+			const CUser_object::TData& fields = uObject->GetData();
+			for(CUser_object::TData::const_iterator fit = fields.begin(); fit != fields.end(); ++fit)
+			{
+				const CUser_field& field = **fit;
+				if (field.IsSetLabel() && field.GetLabel().IsStr() && field.GetLabel().GetStr() == "SEQIDS")
+				{
+					const vector< CStringUTF8 >& giStrings = field.GetData().GetStrs();
+					ITERATE(vector< CStringUTF8 >, str, giStrings) {
+						used.insert(*str);
+					}
+				}
+			}
+		    }
+		}
+	}
     }
     
     CSearchResultSet x_Traceback(CSeqDBGiList * gi_list)
@@ -354,7 +305,7 @@ BOOST_FIXTURE_TEST_SUITE(tracebacksearch, CTracebackSearchTestFixture)
 BOOST_AUTO_TEST_CASE(Traceback) {
     CSearchResultSet rset = x_Traceback(0);
     
-    set<TGi> use_these;
+    set<string> use_these;
     x_FindUsedGis(*rset[0].GetSeqAlign(), use_these);
     
     BOOST_REQUIRE(use_these.empty());
@@ -460,11 +411,11 @@ BOOST_AUTO_TEST_CASE(TracebackEntrez) {
     
     CSearchResultSet rset = x_Traceback(gi_list.GetPointerOrNull());
     
-    set<TGi> use_these;
+    set<string> use_these;
     x_FindUsedGis(*rset[0].GetSeqAlign(), use_these);
     
     BOOST_REQUIRE_EQUAL((int)use_these.size(), 1);
-    BOOST_REQUIRE_EQUAL(*use_these.begin(), GI_CONST(158292535));
+    BOOST_REQUIRE(*(use_these.begin()) == "gi:158292535");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -88,6 +88,45 @@ void GetFilteredRedundantGis(const IBlastSeqInfoSrc & seqinfo_src,
 	sort(gis.begin(), gis.end());
 }
 
+void GetFilteredRedundantSeqids(const IBlastSeqInfoSrc & seqinfo_src,
+                             int                      oid,
+                             vector<string>            & seqids,
+			     bool			use_gi)
+{
+    seqids.resize(0);
+    
+    if (! seqinfo_src.HasGiList()) {
+        return;
+    }
+    
+    list< CRef<CSeq_id> > seqid_list = seqinfo_src.GetId(oid);
+    
+    ITERATE(list< CRef<CSeq_id> >, id, seqid_list) {
+	if (use_gi)
+	{
+        	if ((**id).IsGi())
+		{
+			string sid_string = "gi:" + (*id)->GetSeqIdString(true);
+			seqids.push_back(sid_string);
+		}
+	}
+	else
+	{
+		const CTextseq_id* tsid = (*id)->GetTextseq_Id();
+		if (tsid && tsid->IsSetAccession())
+		{
+			string sid_string = "seqid:" + (*id)->GetSeqIdString(true);
+			seqids.push_back(sid_string);
+		}
+		else if ((*id)->IsPdb())
+		{
+			string sid_string = "seqid:" + (*id)->GetSeqIdString(true);
+			seqids.push_back(sid_string);
+		}
+	}
+    }
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 

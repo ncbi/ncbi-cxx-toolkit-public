@@ -75,6 +75,23 @@ void GetFilteredRedundantGis(const IBlastSeqInfoSrc & sisrc,
                              int                      oid,
                              vector<TGi>            & gis);
 
+/// Get Seqids for a sequence in a redundant database.
+///
+/// This function returns a list of GIs or Seqids corresponding to the specified
+/// OID.  This allows a GI list to be built for those GIs found by a
+/// search and included in the associated database; the returned GIs
+/// will be filtered by any OID and GI list filtering that is applied
+/// to the database (if any).
+///
+/// @param sisrc Source of sequence information. [in]
+/// @param oid OID for which to retrieve GIs.    [in]
+/// @param seqids SeqIds found for the specified oid.  [out]
+/// @param use_gis Return only GIs seqids vector [in]
+NCBI_XBLAST_EXPORT
+void GetFilteredRedundantSeqids(const IBlastSeqInfoSrc & sisrc,
+                             int                      oid,
+                             vector<string>            & seqids,
+			     bool		     use_gis=true);
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
