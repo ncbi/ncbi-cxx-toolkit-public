@@ -882,6 +882,7 @@ refseq_ctl needs bacterial_pipeline_proc
 refseq_ctl needs bag_access
 refseq_ctl needs gpinit_access
 refseq_ctl needs process_annotation_stats
+refseq_ctl needs validation_results
 refseq_ctl needs xid_utils
 reftrack_access needs xncbi
 reftrack_admin needs xncbi
@@ -1080,6 +1081,11 @@ valerr needs xser
 valid needs general
 valid needs xregexp
 validate_regions needs $(GPIPE_GENCOLL_LIBS)
+validation_details needs xmlwrapp
+validation_details needs xobjwrite
+validation_results needs $(SEQ_LIBS)
+validation_results needs pub
+validation_results needs xmlwrapp
 variation needs $(SEQ_LIBS)
 variation needs pub
 variation_utils needs variation
