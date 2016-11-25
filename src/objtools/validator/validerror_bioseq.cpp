@@ -4770,17 +4770,18 @@ void CValidError_bioseq::ValidateMultipleGeneOverlap (const CBioseq_Handle& bsh)
 
 void CValidError_bioseq::ValidateBadGeneOverlap(const CSeq_feat& feat)
 {
+    CConstRef<CSeq_feat> connected_gene = sequence::GetGeneForFeature(feat, *m_Scope);
+    if (connected_gene) {
+        return;
+    }
     const CGene_ref* grp = feat.GetGeneXref();
-    if ( grp != 0 ) {
+    if ( grp != 0 && grp->IsSuppressed()) {
         return;
     }
 
     const CSeq_loc& loc = feat.GetLocation();
 
-    CConstRef<CSeq_feat> gene = GetOverlappingGene(loc, *m_Scope, sequence::eTransSplicing_Auto);
-    if (gene) return;
-
-    gene = GetBestOverlappingFeat(loc, CSeqFeatData::eSubtype_gene, eOverlap_Simple, *m_Scope);
+    CConstRef<CSeq_feat> gene = GetBestOverlappingFeat(loc, CSeqFeatData::eSubtype_gene, eOverlap_Simple, *m_Scope);
     if (! gene) return;
 
     /*

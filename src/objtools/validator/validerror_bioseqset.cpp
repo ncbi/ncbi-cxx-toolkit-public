@@ -826,7 +826,7 @@ void CValidError_bioseqset::ValidateGenProdSet(
                         
                     }
                 } // if (cdna == 0)
-            } else if (!CCleanup::IsPseudo(*(fi->GetSeq_feat()), *m_Scope)) {
+            } else if (!sequence::IsPseudo(*(fi->GetSeq_feat()), *m_Scope)) {
                 PostErr(eDiag_Warning,
                     eErr_SEQ_PKG_GenomicProductPackagingProblem,
                     "Product of mRNA feature (?) not packaged in "
