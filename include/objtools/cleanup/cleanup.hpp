@@ -297,14 +297,6 @@ public:
     static const string& GetProteinName(const CProt_ref& prot);
     static const string& GetProteinName(const CSeq_feat& cds, CScope& scope);
 
-/// Checks to see if a feature is pseudo. Looks for pseudo flag set on feature,
-/// looks for pseudogene qualifier on feature, performs same checks for gene
-/// associated with feature
-/// @param feat Seq-feat to check
-/// @param scope CScope to use when looking for associated gene
-/// @return Boolean return value indicates whether any of the "pseudo" markers are found
-    static bool IsPseudo(const CSeq_feat& feat, CScope& scope);
-
 /// Sets MolInfo::tech for a sequence
 /// @param seq Bioseq to edit
 /// @param tech tech value to set
@@ -444,8 +436,6 @@ public:
 /// @param seh Seq-entry to edit
 /// @return bool indicates whether any changes were made
     static bool ConvertSrcFeatsToSrcDescs(CSeq_entry_Handle seh);
-
-    static CConstRef <CSeq_feat> GetGeneForFeature(const CSeq_feat& feat, CScope& scope);
 
 /// Examine all genes and gene xrefs in the Seq-entry.
 /// If no genes have locus and some have locus tag AND no gene xrefs have locus-tag

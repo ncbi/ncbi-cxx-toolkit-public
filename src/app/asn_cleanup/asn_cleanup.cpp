@@ -823,7 +823,7 @@ bool CCleanupApp::x_BatchExtendCDS(CSeq_feat& sf, CBioseq_Handle b)
         // not coding region
         return false;
     }
-    if (CCleanup::IsPseudo(sf, b.GetScope())) {
+    if (sequence::IsPseudo(sf, b.GetScope())) {
         return false;
     }
 

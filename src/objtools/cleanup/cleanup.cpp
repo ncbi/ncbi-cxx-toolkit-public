@@ -1214,89 +1214,13 @@ bool IsTransSpliced(const CSeq_feat& feat)
 }
 
 
-CConstRef <CSeq_feat> CCleanup::GetGeneForFeature(const CSeq_feat& feat, CScope& scope)
-{
-    const CGene_ref* gene = feat.GetGeneXref();
-    if (gene && gene->IsSuppressed()) {
-        return (CConstRef <CSeq_feat>());
-    }
-
-    if (gene) {
-        CBioseq_Handle
-            bioseq_hl = sequence::GetBioseqFromSeqLoc(feat.GetLocation(), scope);
-        if (!bioseq_hl) {
-            return (CConstRef <CSeq_feat>());
-        }
-        CTSE_Handle tse_hl = bioseq_hl.GetTSE_Handle();
-        if (gene->CanGetLocus_tag() && !(gene->GetLocus_tag().empty())) {
-            CSeq_feat_Handle
-                seq_feat_hl = tse_hl.GetGeneWithLocus(gene->GetLocus_tag(), true);
-            if (seq_feat_hl) {
-                return (seq_feat_hl.GetOriginalSeq_feat());
-            }
-        } else if (gene->CanGetLocus() && !(gene->GetLocus().empty())) {
-            CSeq_feat_Handle
-                seq_feat_hl = tse_hl.GetGeneWithLocus(gene->GetLocus(), false);
-            if (seq_feat_hl) {
-                return (seq_feat_hl.GetOriginalSeq_feat());
-            }
-        } else return (CConstRef <CSeq_feat>());
-    } else {
-        CConstRef <CSeq_feat> gf = sequence::GetOverlappingGene(feat.GetLocation(), scope, IsTransSpliced(feat) ? sequence::eTransSplicing_Yes : sequence::eTransSplicing_Auto);
-        if (gf) {
-            sequence::ECompare cmp = sequence::Compare(gf->GetLocation(), feat.GetLocation(), &scope, sequence::fCompareOverlapping);
-            if (cmp == sequence::eContains || cmp == sequence::eSame) {
-                return gf;
-            }
-        }
-    }
-
-    return (CConstRef <CSeq_feat>());
-};
-
-
-bool CCleanup::IsPseudo(const CSeq_feat& feat, CScope& scope)
-{
-    if (feat.IsSetPseudo() && feat.GetPseudo()) {
-        return true;
-    }
-    if (feat.IsSetQual()) {
-        ITERATE(CSeq_feat::TQual, it, feat.GetQual()) {
-            if ((*it)->IsSetQual() && NStr::EqualNocase((*it)->GetQual(), "pseudogene")) {
-                return true;
-            }
-        }
-    }
-    if (feat.GetData().IsGene()) {
-        if (feat.GetData().GetGene().IsSetPseudo() && feat.GetData().GetGene().GetPseudo()) {
-            return true;
-        }
-    } else {
-        if (feat.IsSetXref()) {
-            ITERATE(CSeq_feat::TXref, it, feat.GetXref()) {
-                if ((*it)->IsSetData() && (*it)->GetData().IsGene() &&
-                    (*it)->GetData().GetGene().IsSetPseudo() &&
-                    (*it)->GetData().GetGene().GetPseudo()) {
-                    return true;
-                }
-            }
-        }
-        CConstRef<CSeq_feat> gene = sequence::GetGeneForFeature(feat, scope);
-        if (gene && IsPseudo(*gene, scope)) {
-            return true;
-        }
-    }
-    return false;
-}
-
-
 bool CCleanup::ExtendToStopIfShortAndNotPartial(CSeq_feat& f, CBioseq_Handle bsh, bool check_for_stop)
 {
     if (!f.GetData().IsCdregion()) {
         // not coding region
         return false;
     }
-    if (IsPseudo(f, bsh.GetScope())) {
+    if (sequence::IsPseudo(f, bsh.GetScope())) {
         return false;
     }
     if (f.GetLocation().IsPartialStop(eExtreme_Biological)) {
@@ -2336,7 +2260,7 @@ bool CCleanup::AddPartialToProteinTitle(CBioseq &bioseq)
 
 bool CCleanup::RemovePseudoProduct(CSeq_feat& cds, CScope& scope)
 {
-    if (!IsPseudo(cds, scope) ||
+    if (!sequence::IsPseudo(cds, scope) ||
         !cds.IsSetData() || !cds.GetData().IsCdregion() ||
         !cds.IsSetProduct()) {
         return false;
@@ -2378,7 +2302,7 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry)
         bool change_this_cds = false;
         CRef<CSeq_feat> new_cds(new CSeq_feat());
         new_cds->Assign(*(cds_it->GetSeq_feat()));
-        if (IsPseudo(*(cds_it->GetSeq_feat()), entry.GetScope())) {
+        if (sequence::IsPseudo(*(cds_it->GetSeq_feat()), entry.GetScope())) {
             change_this_cds = RemovePseudoProduct(*new_cds, entry.GetScope());
         } else {
             change_this_cds |= SetBestFrame(*new_cds, entry.GetScope());
@@ -2390,7 +2314,7 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry)
                 any_changes |= feature::RetranslateCDS(*new_cds, entry.GetScope());
             } else {
                 // need to set product if not set
-                if (!new_cds->IsSetProduct() && !IsPseudo(*new_cds, entry.GetScope())) {
+                if (!new_cds->IsSetProduct() && !sequence::IsPseudo(*new_cds, entry.GetScope())) {
                     CRef<CSeq_id> new_id = GetNewProteinId(protein_id_counter, entry, entry.GetScope().GetBioseqHandle(new_cds->GetLocation()));
                     if (new_id) {
                         new_cds->SetProduct().SetWhole().Assign(*new_id);
