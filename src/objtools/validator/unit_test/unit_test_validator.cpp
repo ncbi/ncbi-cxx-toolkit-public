@@ -19948,6 +19948,17 @@ BOOST_AUTO_TEST_CASE(Test_VR_664)
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 
+    assembly_name->SetData().SetStr("not,valid");
+    desc->SetUser().Assign(*user);
+    eval = validator.Validate(seh, options);
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info,
+                                 "BadStrucCommInvalidFieldValue",
+                                 "Structured Comment invalid"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning,
+                                 "BadStrucCommInvalidFieldValue",
+                                 "not,valid is not a valid value for Assembly Name"));
+    CheckErrors(*eval, expected_errors);
+
     CLEAR_ERRORS
 }
 
