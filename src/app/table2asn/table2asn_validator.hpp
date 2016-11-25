@@ -27,11 +27,13 @@ public:
     void ReportDiscrepancies(CSerialObject& obj, objects::CScope& scope);
 protected:
     typedef map<int, size_t> TErrorStatMap;
-    typedef struct 
+    class TErrorStats
     {
+    public:
+        TErrorStats() : m_total(0) {};
         TErrorStatMap m_individual;
         size_t m_total;
-    } TErrorStats;
+    };
     vector<TErrorStats> m_stats;
     CTable2AsnContext* m_context;
     auto_ptr<CNcbiOstream> m_discrepancy_output;

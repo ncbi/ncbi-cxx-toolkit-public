@@ -270,10 +270,11 @@ void CTbl2AsnApp::Init(void)
         "Z", "OutFile", "Discrepancy Report Output File", CArgDescriptions::eOutputFile);
 
     arg_desc->AddOptionalKey("c", "String", "Cleanup (combine any of the following letters)\n\
-      b Basic Cleanup\n\
-      e Extended Cleanup\n\
+      b Basic cleanup (default)\n\
+      e Extended cleanup\n\
       f Fix product names\n\
-      w WGS cleanup", CArgDescriptions::eString);
+      w WGS cleanup\n\
+      - avoid cleanup", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("z", "OutFile", "Cleanup Log File", CArgDescriptions::eOutputFile);
 
@@ -373,7 +374,7 @@ int CTbl2AsnApp::Run(void)
 
     if (args["c"])
     {
-        if (args["c"].AsString().find_first_not_of("befw") != string::npos)
+        if (args["c"].AsString().find_first_not_of("-befw") != string::npos)
         {
             NCBI_THROW(CArgException, eConvert,
                 "Unrecognized cleanup type " + args["c"].AsString());
@@ -857,8 +858,7 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     }
 
     fr.m_replacement_protein = m_replacement_proteins;
-    if (!m_context.m_ecoset)
-    fr.MergeCDSFeatures(*entry);
+    if (!m_context.m_ecoset) fr.MergeCDSFeatures(*entry);
 
     entry->Parentize();
     
@@ -929,7 +929,7 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     // make asn.1 look nicier
     edit::SortSeqDescr(*entry);
 
-    if (!m_context.m_cleanup.empty())
+    if (m_context.m_cleanup.find('-') == string::npos)
     {
        m_validator->Cleanup(entry_edit_handle, m_context.m_cleanup);
     }
