@@ -791,7 +791,8 @@ AR\|APR\|MAY\|JUN\|JUL\|AUG\|SEP\|OCT\|NOV\|DEC\)-\(19\|20\)\(0\|1\|2\|3\|4\|5
       {
         field-name "Polishing Method" } ,
       {
-        field-name "Assembly Name" } ,
+        field-name "Assembly Name",
+        match-expression "^[A-Za-z0-9 _#\-\.]*$" } ,
       {
         field-name "Long Assembly Name" } ,
       {
