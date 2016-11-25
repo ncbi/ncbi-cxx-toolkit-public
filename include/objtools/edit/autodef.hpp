@@ -77,7 +77,6 @@ public:
     string GetOneDefLine(CBioseq_Handle bh);
     static string GetDocsumOrgDescription(CSeq_entry_Handle se);
     string GetDocsumDefLine(CSeq_entry_Handle se);
-    static bool NeedsDocsumDefline(const CBioseq_set& set);
 
     static bool RegenerateDefLines(CSeq_entry_Handle se);
     

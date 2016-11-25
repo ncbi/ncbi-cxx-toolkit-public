@@ -1279,22 +1279,6 @@ string CAutoDef::GetDocsumDefLine(CSeq_entry_Handle se)
 }
 
 
-bool CAutoDef::NeedsDocsumDefline(const CBioseq_set& set)
-{
-    bool rval = false;
-    if (set.IsSetClass()) {
-        CBioseq_set::EClass set_class = set.GetClass();
-        if (set_class == CBioseq_set::eClass_pop_set
-              || set_class == CBioseq_set::eClass_phy_set
-              || set_class == CBioseq_set::eClass_eco_set
-              || set_class == CBioseq_set::eClass_mut_set) {
-            rval = true;
-        }
-    }
-    return rval;
-}
-
-
 void CAutoDef::GetAvailableModifiers(CAutoDef::TAvailableModifierSet &mod_set)
 {    
     mod_set.clear();
@@ -1374,7 +1358,7 @@ bool CAutoDef::RegenerateDefLines(CSeq_entry_Handle se)
 
     // update the title of the set 
     for (CSeq_entry_CI si(se, CSeq_entry_CI::fRecursive | CSeq_entry_CI::fIncludeGivenEntry, CSeq_entry::e_Set); si; ++si) {
-        if (si->IsSet() && CAutoDef::NeedsDocsumDefline(*(si->GetSet().GetCompleteBioseq_set()))) {
+        if (si->IsSet() && si->GetSet().GetCompleteBioseq_set()->NeedsDocsumTitle()) {
             CAutoDef autodef;
             CConstRef<CUser_object> options = GetOptionsForSet(si->GetSet());
             if (options) {
