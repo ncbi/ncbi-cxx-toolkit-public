@@ -345,26 +345,33 @@ DISCREPANCY_SUMMARIZE(EXTRA_GENES)
 //SUPERFLUOUS_GENE
 const string kSuperfluousGene = "[n] gene feature[s] [is] not associated with any feature and [is] not pseudo.";
 
-DISCREPANCY_CASE(SUPERFLUOUS_GENE, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller, "Superfluous Genes")
+DISCREPANCY_CASE(SUPERFLUOUS_GENE, COverlappingFeatures, eDisc | eOncaller, "Superfluous Genes")
 {
-    // do not collect if pseudo
-    if (!obj.GetData().IsGene() || (obj.IsSetPseudo() && obj.GetPseudo())) {
-        return;
-    }
-    // Are any "reportable" features under this gene?
-    CFeat_CI fi(context.GetScope(), obj.GetLocation());
-    bool found_reportable = false;
-    while (fi && !found_reportable) {
-        if (!fi->GetData().IsGene()) {
-            if (&obj == context.GetGeneForFeature(*(fi->GetSeq_feat()))) {
-                found_reportable = true;
+    const vector<CConstRef<CSeq_feat> >& genes = context.FeatGenes();
+    const vector<CConstRef<CSeq_feat> >& feats = context.FeatAll();
+    for (size_t i = 0; i < genes.size(); i++) {
+        if (genes[i]->IsSetPseudo() && genes[i]->GetPseudo()) {
+            continue;
+        }
+        const CSeq_loc& loc_i = genes[i]->GetLocation();
+        bool found = false;
+        for (size_t j = 0; j < feats.size(); j++) {
+            if (feats[j]->GetData().IsGene()) {
+                continue;
+            }
+            const CSeq_loc& loc_j = feats[j]->GetLocation();
+            sequence::ECompare compare = context.Compare(loc_j, loc_i);
+            if (compare == sequence::eNoOverlap) {
+                continue;
+            }
+            if (genes[i] == context.GetGeneForFeature(*feats[j])) {
+                found = true;
                 break;
             }
         }
-        ++fi;
-    }
-    if (!found_reportable) {
-        m_Objs[kSuperfluousGene].Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
+        if (!found) {
+            m_Objs[kSuperfluousGene].Add(*context.NewDiscObj(genes[i]));
+        }
     }
 }
 
