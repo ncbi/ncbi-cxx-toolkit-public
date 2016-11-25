@@ -7125,44 +7125,7 @@ void CValidError_bioseq::x_ValidateGeneCDSmRNACounts (const CBioseq_Handle& seq)
                 const CSeq_feat& feat = it->GetOriginalFeature();
                 const CGene_ref* gref = feat.GetGeneXref();
 
-                gene.Reset();
-
-                if (gref == NULL) {
-                    gene = GetOverlappingGene(it->GetLocation(), seq.GetScope(), sequence::eTransSplicing_Auto);
-                } else if (!gref->IsSuppressed()) {
-                    // find gene by locus tag or label
-                    if (gene_labels.empty()) {
-                        ITERATE(CCacheImpl::TFeatValue, gene_it, *m_GeneIt) {
-                            const CGene_ref& thisgene = gene_it->GetData().GetGene();
-                            if (thisgene.IsSetLocus_tag()) {
-                                if (gene_locus_tags.find(thisgene.GetLocus_tag()) == gene_locus_tags.end()) {
-                                    gene_locus_tags[thisgene.GetLocus_tag()] = gene_it->GetSeq_feat();
-                                }
-                            }
-                            string label = "";
-                            thisgene.GetLabel(&label);
-                            if (!NStr::IsBlank (label)) {
-                                if (gene_labels.find(label) == gene_labels.end()) {
-                                    gene_labels[label] = gene_it->GetSeq_feat();
-                                }
-                            }
-                        }
-                    }
-
-                    if (gref->IsSetLocus_tag()) {
-                        TGeneList::iterator found_gene = gene_locus_tags.find(gref->GetLocus_tag());
-                        if (found_gene != gene_locus_tags.end()) {
-                            gene = found_gene->second;
-                        }
-                    } else {
-                        string label = "";
-                        gref->GetLabel(&label);
-                        TGeneList::iterator found_gene = gene_labels.find(label);
-                        if (found_gene != gene_labels.end()) {
-                            gene = found_gene->second;
-                        }
-                    }
-                }
+                gene = sequence::GetGeneForFeature(feat, *m_Scope);
 
                 if (gene) {
                     if (cds_count.find(gene) == cds_count.end()) {
