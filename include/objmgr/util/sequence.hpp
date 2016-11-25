@@ -590,6 +590,12 @@ CConstRef<CSeq_feat> GetGeneForFeature(const CSeq_feat& feat, CScope& scope);
 
 /// Determines whether given feature is pseudo, using gene associated with feature
 /// if necessary
+/// Checks to see if a feature is pseudo. Looks for pseudo flag set on feature,
+/// looks for pseudogene qualifier on feature, performs same checks for gene
+/// associated with feature
+/// @param feat Seq-feat to check
+/// @param scope CScope to use when looking for associated gene
+/// @return Boolean return value indicates whether any of the "pseudo" markers are found
 NCBI_XOBJUTIL_EXPORT
 bool IsPseudo(const CSeq_feat& feat, CScope& scope);
 
