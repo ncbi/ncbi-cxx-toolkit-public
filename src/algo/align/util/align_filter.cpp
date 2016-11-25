@@ -160,6 +160,7 @@ void CAlignFilter::SetFilter(const string& filter)
         "MUL",
         "DIV",
         "ADD",
+        "MOD",
         "SUB",
         "IS_SEG_TYPE",
         "COALESCE",
@@ -449,6 +450,56 @@ double CAlignFilter::x_FuncCall(const CQueryParseTree::TNode& node, const CSeq_a
         double val2 = x_TermValue(node2, align);
 
         this_val = val1 * val2;
+
+    }
+    else if (NStr::EqualNocase(function, "MOD")) {
+        CQueryParseTree::TNode::TNodeList_CI iter =
+            node.SubNodeBegin();
+        CQueryParseTree::TNode::TNodeList_CI end =
+            node.SubNodeEnd();
+        const CQueryParseTree::TNode& node1 = **iter;
+        ++iter;
+        if (iter == end) {
+            NCBI_THROW(CException, eUnknown,
+                       "invalid number of nodes: expected 2, got 1");
+        }
+        const CQueryParseTree::TNode& node2 = **iter;
+        ++iter;
+        if (iter != end) {
+            NCBI_THROW(CException, eUnknown,
+                       "invalid number of nodes: "
+                       "expected 2, got more than 2");
+        }
+
+        double val1 = x_TermValue(node1, align);
+        double val2 = x_TermValue(node2, align);
+
+        // we have a further requirement:
+        // val1 needs to be integral
+        // verify this here
+        if (val1 != round(val1)) {
+            NCBI_THROW(CException, eUnknown,
+                       "MOD() function requires an integral operand: "
+                       + NStr::NumericToString(val1) + " != "
+                       + NStr::NumericToString(round(val1))
+                       );
+        }
+
+        if (val2 != round(val2)) {
+            NCBI_THROW(CException, eUnknown,
+                       "MOD() function requires an integral base: "
+                       + NStr::NumericToString(val2) + " != "
+                       + NStr::NumericToString(round(val2))
+                      );
+        }
+        Int8 v1 = (Int8)val1;
+        Int8 v2 = (Int8)val2;
+        if (v2 < 0) {
+            NCBI_THROW(CException, eUnknown,
+                       "MOD() requires a positive base");
+        }
+
+        this_val = v1 % v2;
 
     }
     else if (NStr::EqualNocase(function, "DIV")) {
