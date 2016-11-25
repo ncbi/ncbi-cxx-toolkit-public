@@ -1928,7 +1928,7 @@ CWGSDb_Impl::SSeqTableCursor::GetUnpacked4na(TVDBRowId row,
         PROFILE(sw____GetUnp4na);
         m_4naCacheRow = row;
         m_4naCacheRange = range;
-        m_4naCache.resize_mem(len);
+        m_4naCache.resize_mem((len+7)/8*8);
         m_Cursor.ReadElements(row, m_READ, 8, pos, len, m_4naCache.data());
     }
     return m_4naCache.data();
@@ -1954,7 +1954,7 @@ void CWGSDb_Impl::SSeqTableCursor::GetAmbiguity(TVDBRowId row) const
     if ( m_AMBIGUITY_MASK ) {
         // use precalculated 4na ambiguity bit mask
         uint32_t len = m_Cursor.GetElementCount(row, m_AMBIGUITY_MASK, 8);
-        m_AmbiguityMask.resize_mem(len);
+        m_AmbiguityMask.resize_mem((len+7)/8*8);
         m_Cursor.ReadElements(row, m_AMBIGUITY_MASK, 8, 0, len,
                               m_AmbiguityMask.data());
         // mark all done
