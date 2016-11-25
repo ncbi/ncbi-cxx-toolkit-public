@@ -364,6 +364,7 @@ struct CWGSDb_Impl::SSeqTableCursor : public CObject {
     DECLARE_VDB_COLUMN_AS(NCBI_gi, GI);
     DECLARE_VDB_COLUMN_AS_STRING(ACCESSION);
     DECLARE_VDB_COLUMN_AS(uint32_t, ACC_VERSION);
+    DECLARE_VDB_COLUMN_AS_STRING(SEQID_GNL_PREFIX);
     DECLARE_VDB_COLUMN_AS_STRING(CONTIG_NAME);
     DECLARE_VDB_COLUMN_AS_STRING(NAME);
     DECLARE_VDB_COLUMN_AS_STRING(TITLE);
@@ -418,6 +419,7 @@ CWGSDb_Impl::SSeqTableCursor::SSeqTableCursor(const CVDBTable& table)
       INIT_OPTIONAL_VDB_COLUMN(GI),
       INIT_VDB_COLUMN(ACCESSION),
       INIT_VDB_COLUMN(ACC_VERSION),
+      INIT_OPTIONAL_VDB_COLUMN(SEQID_GNL_PREFIX),
       INIT_VDB_COLUMN(CONTIG_NAME),
       INIT_VDB_COLUMN(NAME),
       INIT_VDB_COLUMN(TITLE),
@@ -2353,6 +2355,45 @@ CRef<CSeq_id> CWGSSeqIterator::GetGiSeq_id(void) const
 
 CRef<CSeq_id> CWGSSeqIterator::GetGeneralSeq_id(void) const
 {
+    if ( m_Cur->m_SEQID_GNL_PREFIX ) {
+        CTempString prefix = m_Cur->SEQID_GNL_PREFIX(m_CurrId);
+        if ( prefix.empty() ) {
+            return null;
+        }
+        else {
+            CRef<CSeq_id> id(new CSeq_id);
+            CDbtag& dbtag = id->SetGeneral();
+            dbtag.SetDb(prefix);
+            sx_SetTag(dbtag, GetContigName());
+            return id;
+        }
+    }
+#if 0
+    if ( GetDb().GetIdPrefixWithVersion() == "AAAA02" ||
+         GetDb().GetIdPrefixWithVersion() == "AABR01" ||
+         GetDb().GetIdPrefixWithVersion() == "ABBA01" ) {
+        CTempString prefix;
+        if ( GetDb().GetIdPrefixWithVersion() == "AAAA02" ) {
+            prefix = "WGS:AAAA";
+        }
+        else if ( GetDb().GetIdPrefixWithVersion() == "AABR01" ) {
+            prefix = "WGS:AABR";
+        }
+        else if ( GetDb().GetIdPrefixWithVersion() == "ABBA01" ) {
+            prefix = "WGS:ABBA";
+        }
+        if ( prefix.empty() ) {
+            return null;
+        }
+        else {
+            CRef<CSeq_id> id(new CSeq_id);
+            CDbtag& dbtag = id->SetGeneral();
+            dbtag.SetDb(prefix);
+            sx_SetTag(dbtag, GetContigName());
+            return id;
+        }
+    }
+#endif
     return GetDb().GetGeneralOrPatentSeq_id(GetContigName(), m_CurrId);
 }
 
