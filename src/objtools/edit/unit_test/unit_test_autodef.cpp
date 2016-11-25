@@ -408,7 +408,8 @@ static void CheckDeflineMatches(CSeq_entry_Handle seh,
     }
 
     // check popset title if needed
-    if (seh.IsSet() && CAutoDef::NeedsDocsumDefline(*(seh.GetSet().GetCompleteBioseq_set()))) {
+
+    if (seh.IsSet() && seh.GetSet().GetCompleteBioseq_set()->NeedsDocsumTitle()) {
         string orig_defline = "";
         CSeqdesc_CI desc_it(seh, CSeqdesc::e_Title, 1);
         if (desc_it) {
