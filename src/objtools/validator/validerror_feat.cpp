@@ -951,11 +951,7 @@ bool CValidError_feat::IsOverlappingGenePseudo(const CSeq_feat& feat, CScope *sc
     // check overlapping gene
     CConstRef<CSeq_feat> overlap = sequence::GetGeneForFeature(feat, *scope);
     if ( overlap ) {
-        if ( (overlap->CanGetPseudo()  &&  overlap->GetPseudo())  ||
-             (overlap->GetData().GetGene().CanGetPseudo()  &&
-              overlap->GetData().GetGene().GetPseudo()) ) {
-            return true;
-        }
+        return sequence::IsPseudo(*overlap, *scope);
     }
 
     return false;
@@ -4179,8 +4175,7 @@ void CValidError_feat::ValidateImp(
     case CSeqFeatData::eSubtype_Imp_CDS:
         {
             // impfeat CDS must be pseudo; fail if not
-            bool pseudo = (feat.CanGetPseudo()  &&  feat.GetPseudo())  ||
-                          IsOverlappingGenePseudo(feat, m_Scope);
+            bool pseudo = sequence::IsPseudo(feat, *m_Scope);
             if ( !pseudo ) {
                 PostErr(eDiag_Info, eErr_SEQ_FEAT_ImpCDSnotPseudo,
                     "ImpFeat CDS should be pseudo", feat);
