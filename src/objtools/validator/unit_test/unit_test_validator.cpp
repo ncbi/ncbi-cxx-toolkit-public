@@ -19928,3 +19928,26 @@ BOOST_AUTO_TEST_CASE(TEST_TitleNotAppropriateForSet)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_VR_664)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    CRef<CUser_object> user = edit::CGenomeAssemblyComment::MakeEmptyUserObject();
+    edit::CGenomeAssemblyComment::SetAssemblyMethod(*user, "x v. y");
+    CRef<CUser_field> assembly_name(new CUser_field());
+    assembly_name->SetLabel().SetStr("Assembly Name");
+    assembly_name->SetData().SetStr("valid value");
+    user->SetData().push_back(assembly_name);
+    edit::CGenomeAssemblyComment::SetGenomeCoverage(*user, "2x");
+    edit::CGenomeAssemblyComment::SetSequencingTechnology(*user, "z");
+    CRef<CSeqdesc> desc(new CSeqdesc());
+    desc->SetUser().Assign(*user);
+    entry->SetSeq().SetDescr().Set().push_back(desc);
+  
+    STANDARD_SETUP
+
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
