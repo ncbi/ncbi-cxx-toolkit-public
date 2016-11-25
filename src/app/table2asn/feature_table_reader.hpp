@@ -26,14 +26,11 @@ class CFeatureTableReader
 public:
    CFeatureTableReader(CTable2AsnContext& context);
 
-   bool CheckIfNeedConversion(const objects::CSeq_entry& entry) const;
-   void ConvertSeqIntoSeqSet(objects::CSeq_entry& entry, bool nuc_prod_set) const;
    void ConvertNucSetToSet(CRef<objects::CSeq_entry>& entry) const;
    // MergeCDSFeatures looks for cdregion features in the feature tables
 //    in sequence annotations and creates protein sequences based on them
 //    as well as converting the sequence or a seq-set into nuc-prot-set
    void MergeCDSFeatures(objects::CSeq_entry& obj);
-   void ParseCdregions(objects::CSeq_entry& entry);
    // This method reads 5 column table and attaches these features
 //    to corresponding sequences
 // This method requires certain postprocessing of plain features added
@@ -46,16 +43,21 @@ public:
    CRef<objects::CDelta_seq> MakeGap(objects::CBioseq_Handle bsh, const objects::CSeq_feat& feature_gap);
    static 
    void RemoveEmptyFtable(objects::CBioseq& bioseq);
+   void ChangeDeltaProteinToRawProtein(objects::CSeq_entry& entry);
+
 private:
-    void MergeCDSFeatures_impl(objects::CSeq_entry& entry);
-    CRef<objects::CSeq_entry> TranslateProtein(
-       objects::CScope& scope, objects::CSeq_entry_Handle top_entry_h, 
+    bool _CheckIfNeedConversion(const objects::CSeq_entry& entry) const;
+    void _ConvertSeqIntoSeqSet(objects::CSeq_entry& entry, bool nuc_prod_set) const;
+    void _ParseCdregions(objects::CSeq_entry& entry);
+    void _MergeCDSFeatures_impl(objects::CSeq_entry& entry);
+    CRef<objects::CSeq_entry> _TranslateProtein(
+       objects::CSeq_entry_Handle top_entry_h, 
        const objects::CBioseq& bioseq,
        objects::CSeq_feat& cd_feature);
 
    int m_local_id_counter;
-   bool AddProteinToSeqEntry(const objects::CSeq_entry* protein, objects::CSeq_entry_Handle seh);
-   void MoveCdRegions(objects::CSeq_entry_Handle entry_h, const objects::CBioseq& bioseq, objects::CSeq_annot::TData::TFtable& seq_ftable, objects::CSeq_annot::TData::TFtable& set_ftable);
+   bool _AddProteinToSeqEntry(const objects::CSeq_entry* protein, objects::CSeq_entry_Handle seh);
+   void _MoveCdRegions(objects::CSeq_entry_Handle entry_h, const objects::CBioseq& bioseq, objects::CSeq_annot::TData::TFtable& seq_ftable, objects::CSeq_annot::TData::TFtable& set_ftable);
 
    CTable2AsnContext& m_context;
 };

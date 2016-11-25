@@ -934,6 +934,9 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
        m_validator->Cleanup(entry_edit_handle, m_context.m_cleanup);
     }
 
+    CFeatureTableReader ftr(m_context);
+    ftr.ChangeDeltaProteinToRawProtein(*entry);
+
     if (!IsDryRun())
     {
         m_validator->UpdateECNumbers(entry_edit_handle, GenerateOutputFilename(".ecn"), m_context.m_ecn_numbers_ostream);
