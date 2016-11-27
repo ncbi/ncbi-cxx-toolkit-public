@@ -85,6 +85,41 @@ static void s_GetAlignmentSpans_Interval(const CSeq_align& align,
         }
         break;
 
+    case CSeq_align::TSegs::e_Std:
+        {{
+             ITERATE (CSeq_align::TSegs::TStd, seg_it,
+                      align.GetSegs().GetStd()) {
+                 // our expectation is to find a set of two locs
+                 // each loc is expected to be a Seq-interval 
+
+                 // we expect std-seg alignments to be single intervals
+                 // check this here
+                 if ((*seg_it)->GetLoc().size() != 2) {
+                     NCBI_THROW(CException, eUnknown,
+                                "Pairwise Std-seg alignments in comparison "
+                                "should always have two locs");
+                 }
+                 CConstRef<CSeq_loc> loc1 = (*seg_it)->GetLoc()[0];
+                 CConstRef<CSeq_loc> loc2 = (*seg_it)->GetLoc()[1];
+
+                 if (loc1->IsEmpty()  ||  loc2->IsEmpty()  ||
+                     loc1->IsNull()  ||  loc2->IsNull()) {
+                     // gaps - omit
+                     continue;
+                 }
+
+                 if (!loc1->IsInt()  ||  !loc2->IsInt()) {
+                     NCBI_THROW(CException, eUnknown,
+                                "Pairwise Std-set alignments in comparison "
+                                "should always be intervals");
+                 }
+                 s_UpdateSpans(loc1->GetTotalRange(),
+                               loc2->GetTotalRange(),
+                               align_info, row);
+             }
+         }}
+        break;
+
     default:
         {{
              CAlnSeqId id0(align.GetSeq_id(0));
