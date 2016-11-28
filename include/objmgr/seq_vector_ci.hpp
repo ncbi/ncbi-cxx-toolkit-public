@@ -201,6 +201,8 @@ public:
 
     DECLARE_OPERATOR_BOOL(IsValid());
 
+    const CSeqMap_CI& GetCurrentSeqMap_CI() const;
+
     /// true if current position of CSeqVector_CI is inside of sequence gap
     bool IsInGap(void) const;
     /// returns gap Seq-data object ref
@@ -470,6 +472,13 @@ CSeqVector_CI::TResidue CSeqVector_CI::operator*(void) const
         x_ThrowOutOfRange();
     }
     return *m_Cache;
+}
+
+
+inline
+const CSeqMap_CI& CSeqVector_CI::GetCurrentSeqMap_CI(void) const
+{
+    return m_Seg;
 }
 
 
