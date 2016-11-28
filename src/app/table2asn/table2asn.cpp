@@ -1156,7 +1156,7 @@ void CTbl2AsnApp::ProcessSecretFiles(CSeq_entry& result)
 void CTbl2AsnApp::ProcessSRCFileAndQualifiers(const string& pathname, CSeq_entry& result, const string& opt_map_xml)
 { 
     CSourceQualifiersReader src_reader(&m_context);
-    if (src_reader.LoadSourceQualifiers(pathname, opt_map_xml))
+    if (src_reader.LoadSourceQualifiers(pathname, opt_map_xml) || !m_context.m_source_mods.empty())
        src_reader.ProcessSourceQualifiers(result, opt_map_xml);
 }
 
