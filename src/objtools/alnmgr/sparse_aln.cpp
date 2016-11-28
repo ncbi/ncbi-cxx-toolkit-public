@@ -445,15 +445,18 @@ CSeqVector& CSparseAln::x_GetSeqVector(TNumrow row) const
 
 int CSparseAln::x_GetGenCode(TNumrow row) const
 {
-    int gencode = kDefaultGenCode;
-    try {
-        CBioseq_Handle h = GetBioseqHandle(row);
-        if ( h ) {
-            gencode = sequence::GetOrg_ref(h).GetGcode();
-        }
-    }
-    catch (...) {}
-    return gencode;
+    CBioseq_Handle h = GetBioseqHandle(row);
+    if ( !h ) return kDefaultGenCode;
+
+    // Try to use bio-source first.
+    CConstRef<CBioSource> src(sequence::GetBioSource(h));
+    if ( src ) return src->GetGenCode();
+
+    // Fallback to org-ref.
+    CConstRef<COrg_ref> ref(sequence::GetOrg_refOrNull(h));
+    if ( ref ) return ref->GetGcode();
+
+    return kDefaultGenCode;
 }
 
 

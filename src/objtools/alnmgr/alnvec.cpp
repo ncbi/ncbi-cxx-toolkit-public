@@ -971,7 +971,8 @@ int CAlnVec::CalculateScore(TNumrow row1, TNumrow row2) const
                                     size2 - start2,
                                     buff2);
             }
-            score += CalculateScore(buff1, buff2, isAA1, isAA2);
+            score += CalculateScore(buff1, buff2, isAA1, isAA2,
+                GetGenCode(row1), GetGenCode(row2));
         }
 
         index1 += numrows;
