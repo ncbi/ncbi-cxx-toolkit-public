@@ -48,7 +48,6 @@ BEGIN_NCBI_SCOPE
 struct SFileTrackConfig
 {
     bool enabled = false;
-    CNetStorageObjectLoc::EFileTrackSite site;
     string token;
     const STimeout comm_timeout;
 
@@ -57,7 +56,18 @@ struct SFileTrackConfig
 
     bool ParseArg(const string&, const string&);
 
-    static CNetStorageObjectLoc::EFileTrackSite GetSite(const string&);
+    struct SSite
+    {
+        using TValue = CNetStorageObjectLoc::EFileTrackSite;
+        SSite();
+        operator TValue();
+        void operator=(const string&);
+
+    private:
+        atomic<TValue> value;
+    };
+
+    static SSite site;
 };
 
 struct SFileTrackRequest : public CObject

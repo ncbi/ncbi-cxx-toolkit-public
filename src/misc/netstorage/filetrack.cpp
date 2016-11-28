@@ -49,6 +49,8 @@
 #include <time.h>
 #include <sstream>
 #include <functional>
+#include <map>
+#include <atomic>
 
 BEGIN_NCBI_SCOPE
 
@@ -474,15 +476,12 @@ const string s_GetDecryptedKey(const string& key)
 }
 
 SFileTrackConfig::SFileTrackConfig(EVoid) :
-    // This site value corresponds to default site value in CNetStorageObjectLoc
-    site(CNetStorageObjectLoc::eFileTrack_ProdSite),
     comm_timeout(s_GetDefaultTimeout())
 {
 }
 
 SFileTrackConfig::SFileTrackConfig(const IRegistry& reg, const string& section) :
     enabled(true),
-    site(GetSite(reg.GetString(s_GetSection(section), "site", "prod"))),
     token(reg.GetEncryptedString(s_GetSection(section), "token",
                 IRegistry::fPlaintextAllowed)),
     comm_timeout(s_GetDefaultTimeout(reg.GetInt(
@@ -494,7 +493,7 @@ SFileTrackConfig::SFileTrackConfig(const IRegistry& reg, const string& section) 
 bool SFileTrackConfig::ParseArg(const string& name, const string& value)
 {
     if (name == "ft_site") {
-        site = SFileTrackConfig::GetSite(value);
+        site = value;
     } else if (name == "ft_token") {
         token = kAuthPrefix + NStr::URLDecode(s_GetDecryptedKey(value));
     } else {
@@ -505,16 +504,40 @@ bool SFileTrackConfig::ParseArg(const string& name, const string& value)
     return true;
 }
 
-CNetStorageObjectLoc::EFileTrackSite
-SFileTrackConfig::GetSite(const string& ft_site_name)
+SFileTrackConfig::SSite SFileTrackConfig::site;
+
+const auto kUninitialized = CNetStorageObjectLoc::eNumberOfFileTrackSites;
+
+SFileTrackConfig::SSite::SSite() :
+    value(kUninitialized)
 {
-    if (ft_site_name == "submit" || ft_site_name == "prod")
-        return CNetStorageObjectLoc::eFileTrack_ProdSite;
-    else if (ft_site_name == "dsubmit" || ft_site_name == "dev")
-        return CNetStorageObjectLoc::eFileTrack_DevSite;
-    else if (ft_site_name == "qsubmit" || ft_site_name == "qa")
-        return CNetStorageObjectLoc::eFileTrack_QASite;
-    else {
+}
+
+SFileTrackConfig::SSite::operator TValue()
+{
+    if (value == kUninitialized) *this = CDiagContext::GetHostRole();
+    return value;
+}
+
+void SFileTrackConfig::SSite::operator=(const string& ft_site_name)
+{
+    map<CTempString, TValue, PNocase> p =
+    {
+        { "production",  TValue::eFileTrack_ProdSite },
+        { "prod",        TValue::eFileTrack_ProdSite },
+        { "submit",      TValue::eFileTrack_ProdSite },
+        { "development", TValue::eFileTrack_DevSite  },
+        { "dev",         TValue::eFileTrack_DevSite  },
+        { "dsubmit",     TValue::eFileTrack_DevSite  },
+        { "qa",          TValue::eFileTrack_QASite   },
+        { "qsubmit",     TValue::eFileTrack_QASite   },
+    };
+
+    auto i = p.find(ft_site_name);
+
+    if (i != p.end()) {
+        value = i->second;
+    } else {
         NCBI_THROW_FMT(CArgException, eInvalidArg,
                 "unrecognized FileTrack site '" << ft_site_name << '\'');
     }
