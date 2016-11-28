@@ -1386,6 +1386,7 @@ private:
     void ValidateMultiIntervalGene (const CBioseq& seq);
     void ValidateMultipleGeneOverlap (const CBioseq_Handle& bsh);
     void ValidateBadGeneOverlap(const CSeq_feat& feat);
+    void x_ReportGeneOverlapError(const CSeq_feat& feat);
     void ValidateCDSAndProtPartials (const CMappedFeat& feat);
     void x_ReportImproperPartial(const CSeq_feat& feat);
     void x_ReportInternalPartial(const CSeq_feat& feat);

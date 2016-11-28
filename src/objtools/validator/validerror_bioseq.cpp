@@ -4768,10 +4768,28 @@ void CValidError_bioseq::ValidateMultipleGeneOverlap (const CBioseq_Handle& bsh)
 }
 
 
+void CValidError_bioseq::x_ReportGeneOverlapError(const CSeq_feat& feat)
+{
+    if (feat.GetData().IsCdregion()) {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSgeneRange,
+            "gene overlaps CDS but does not completely contain it", feat);
+    } else if (feat.GetData().IsRna()) {
+        if (GetOverlappingOperon(feat.GetLocation(), *m_Scope)) {
+            return;
+        }
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_mRNAgeneRange,
+            "gene overlaps mRNA but does not completely contain it", feat);
+    }
+}
+
+
 void CValidError_bioseq::ValidateBadGeneOverlap(const CSeq_feat& feat)
 {
     CConstRef<CSeq_feat> connected_gene = sequence::GetGeneForFeature(feat, *m_Scope);
     if (connected_gene) {
+        if (TestForOverlapEx(connected_gene->GetLocation(), feat.GetLocation(), eOverlap_Contained, m_Scope) < 0) {
+            x_ReportGeneOverlapError(feat);
+        }
         return;
     }
     const CGene_ref* grp = feat.GetGeneXref();
@@ -4783,56 +4801,9 @@ void CValidError_bioseq::ValidateBadGeneOverlap(const CSeq_feat& feat)
 
     CConstRef<CSeq_feat> gene = GetBestOverlappingFeat(loc, CSeqFeatData::eSubtype_gene, eOverlap_Simple, *m_Scope);
     if (! gene) return;
-
-    /*
-    if (!m_GeneIt) {
-        return;
-    }
-
-    m_GeneIt->Rewind();
-    CFeat_CI feat_it = *m_GeneIt;
-    bool has_containing_gene = false;
-
-    while (feat_it) {
-        if (TestForOverlapEx (feat_it->GetLocation(), feat.GetLocation(), eOverlap_Contained, m_Scope) >= 0) {
-            has_containing_gene = true;
-            break;
-        }
-        ++feat_it;
-    }
-
-    if (has_containing_gene) {
-        return;
-    }
-
-    feat_it.Rewind();
-    bool has_simple_overlap = false;
-    while (feat_it) {
-        if (TestForOverlapEx (feat_it->GetLocation(), feat.GetLocation(), eOverlap_Simple, m_Scope) >= 0) {
-            has_simple_overlap = true;
-            break;
-        }
-        ++feat_it;
-    }
-    if (!has_simple_overlap) {
-        return;
-    }
-    */
-
-    // found an intersecting (but not overlapping) gene
-    // set severity level
-    EDiagSev sev = eDiag_Warning;
-
-    // report error
-    if (feat.GetData().IsCdregion()) {
-        PostErr(sev, eErr_SEQ_FEAT_CDSgeneRange, 
-            "gene overlaps CDS but does not completely contain it", feat);
-    } else if (feat.GetData().IsRna()) {
-        if (GetOverlappingOperon(feat.GetLocation(), *m_Scope)) {
-            return;
-        }
-        PostErr(sev, eErr_SEQ_FEAT_mRNAgeneRange,
-            "gene overlaps mRNA but does not completely contain it", feat);
+    if (TestForOverlapEx(gene->GetLocation(), feat.GetLocation(), eOverlap_Contained, m_Scope) < 0) {
+        // found an intersecting (but not overlapping) gene
+        x_ReportGeneOverlapError(feat);
     }
 }
 
