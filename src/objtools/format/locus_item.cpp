@@ -101,7 +101,7 @@ void CLocusItem::x_GatherInfo(CBioseqContext& ctx)
 {
     CSeqdesc_CI mi_desc(ctx.GetHandle(), CSeqdesc::e_Molinfo);
     if ( mi_desc ) {
-        x_SetObject(mi_desc->GetMolinfo());
+        x_SetObject(*mi_desc);
     }
 
     // NB: order of execution is important, as some values depend on others

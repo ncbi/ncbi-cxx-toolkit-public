@@ -171,7 +171,7 @@ CReferenceItem::CReferenceItem(const CSeqdesc& desc, CBioseqContext& ctx) :
 {
     _ASSERT(desc.IsPub());
     
-    x_SetObject(desc.GetPub());
+    x_SetObject(desc);
     m_Pubdesc.Reset(&(desc.GetPub()));
 
     if (ctx.GetMapper() != NULL) {
