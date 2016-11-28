@@ -193,6 +193,9 @@ Changed blob filtering conditions.
 Changed data separator in BLIST2 command output.
 Changed to treat cache and key names as precise matches in BLIST2 command.
 
+November 21, 2016
+version 6.11.2 (CXX-8749)
+Corrected blob list separator and filters.
 
 
 
