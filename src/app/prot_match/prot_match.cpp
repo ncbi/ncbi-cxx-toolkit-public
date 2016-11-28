@@ -36,6 +36,7 @@
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbifile.hpp>
 
 #include <objects/seqset/Seq_entry.hpp>
 #include <objmgr/scope.hpp>
@@ -124,6 +125,11 @@ void CProteinMatchApp::Init(void)
         "Output stub",
         CArgDescriptions::eOutputFile);
 
+    arg_desc->AddOptionalKey("bindir", 
+        "Binary_Dir", 
+        "Directory containing C++ binaries, if not CWD",
+        CArgDescriptions::eString);
+
     arg_desc->AddFlag("keep-temps", "Retain temporary files");
 
     CDataLoadersUtil::AddArgumentDescriptions(*arg_desc,
@@ -139,11 +145,15 @@ int CProteinMatchApp::Run(void)
 {
     const bool as_binary = true;
     const bool as_text = false;
-
-    CBinRunner assm_assm_blastn("./assm_assm_blastn");
-    CBinRunner compare_annots("./compare_annots");
     const CArgs& args = GetArgs();
-    
+
+    const string bin_dir = args["bindir"] ? 
+        args["bindir"].AsString() :
+        CDir::GetCwd();
+
+    CBinRunner assm_assm_blastn(bin_dir, "assm_assm_blastn");
+    CBinRunner compare_annots(bin_dir, "compare_annots");
+
     CRef<CObjectManager> obj_mgr = CObjectManager::GetInstance();
     CDataLoadersUtil::SetupObjectManager(args, *obj_mgr);
     CRef<CScope> db_scope = Ref(new CScope(*obj_mgr));

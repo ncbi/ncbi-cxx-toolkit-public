@@ -40,8 +40,8 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
-CBinRunner::CBinRunner(const string& bin_name) {
-    m_pBinary.reset(new CFile(bin_name));
+CBinRunner::CBinRunner(const string& bin_dir, const string& bin_name) {
+    m_pBinary.reset(new CFile(CDirEntry::MakePath(bin_dir, bin_name)));
     m_IsSet = true;
     CheckBinary();
 }
@@ -55,17 +55,17 @@ bool CBinRunner::CheckBinary(void) const
     if (!(m_IsSet)) {
         return false;
     }
-    
+
     if (!m_pBinary->Exists()) {
         NCBI_THROW(CProteinMatchException,
             eInputError,
-            "Cannot find " + m_pBinary->GetName());
+            "Cannot find " + m_pBinary->GetPath());
     }
 
     if (!m_pBinary->CheckAccess(CFile::fExecute)) {
         NCBI_THROW(CProteinMatchException,
             eInputError,
-            m_pBinary->GetName() + " is not executable");
+            m_pBinary->GetPath() + " is not executable");
     }
     return true;
 }

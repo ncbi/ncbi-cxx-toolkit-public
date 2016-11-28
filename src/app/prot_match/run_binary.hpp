@@ -41,7 +41,7 @@ class CBinRunner
 {
 
 public:
-    CBinRunner(const string& bin_name);
+    CBinRunner(const string& bin_dir, const string& bin_name);
     virtual ~CBinRunner(void);
 
     bool CheckBinary(void) const;
