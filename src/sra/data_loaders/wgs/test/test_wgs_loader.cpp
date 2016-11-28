@@ -65,8 +65,9 @@ USING_SCOPE(objects);
 #define DEFAULT_REPORT_SEQ_STATE_ERROR 1
 
 NCBI_PARAM_DECL(int, WGS, REPORT_GENERAL_ID_ERROR);
-NCBI_PARAM_DEF(int, WGS, REPORT_GENERAL_ID_ERROR,
-               DEFAULT_REPORT_GENERAL_ID_ERROR);
+NCBI_PARAM_DEF_EX(int, WGS, REPORT_GENERAL_ID_ERROR,
+                  DEFAULT_REPORT_GENERAL_ID_ERROR,
+                  eParam_NoThread, WGS_REPORT_GENERAL_ID_ERROR);
 NCBI_PARAM_DECL(int, WGS, REPORT_SEQ_STATE_ERROR);
 NCBI_PARAM_DEF(int, WGS, REPORT_SEQ_STATE_ERROR,
                DEFAULT_REPORT_SEQ_STATE_ERROR);
@@ -98,10 +99,11 @@ enum EMasterDescrType
 
 static EMasterDescrType s_master_descr_type = eWithoutMasterDescr;
 
-void sx_InitGBLoader(CObjectManager& om)
+void sx_InitGBLoader(CObjectManager& om, bool pubseqos2 = false)
 {
+    const char* reader = pubseqos2? "pubseqos2": "id1";
     CGBDataLoader* gbloader = dynamic_cast<CGBDataLoader*>
-        (CGBDataLoader::RegisterInObjectManager(om, 0, om.eNonDefault).GetLoader());
+        (CGBDataLoader::RegisterInObjectManager(om, reader, om.eNonDefault).GetLoader());
     _ASSERT(gbloader);
     gbloader->SetAddWGSMasterDescr(s_master_descr_type == eWithMasterDescr);
 }
@@ -169,7 +171,7 @@ bool sx_HasNewWGSRepository()
 CBioseq_Handle sx_LoadFromGB(const CBioseq_Handle& bh)
 {
     CRef<CObjectManager> om = CObjectManager::GetInstance();
-    sx_InitGBLoader(*om);
+    sx_InitGBLoader(*om, true);
     CScope scope(*om);
     scope.AddDataLoader("GBLOADER");
     return scope.GetBioseqHandle(*bh.GetSeqId());
@@ -182,6 +184,19 @@ string sx_GetASN(const CBioseq_Handle& bh)
         str << MSerial_AsnText << *bh.GetCompleteBioseq();
     }
     return CNcbiOstrstreamToString(str);
+}
+
+string sx_GetGeneralIdStr(const vector<CSeq_id_Handle>& ids)
+{
+    for ( auto& id : ids ) {
+        if ( id.Which() == CSeq_id::e_General ) {
+            string s = id.AsString();
+            string r = s.substr(4);
+            s = s.substr(0, 4) + NStr::ToUpper(r);
+            return s;
+        }
+    }
+    return "";
 }
 
 CRef<CSeq_id> sx_ExtractGeneralId(CBioseq& seq)
@@ -230,6 +245,7 @@ bool sx_EqualGeneralId(const CSeq_id& gen1, const CSeq_id& gen2)
     if ( gen1.Equals(gen2) ) {
         return true;
     }
+    return false;
     // allow partial match in Dbtag.db like "WGS:ABBA" vs "WGS:ABBA01"
     if ( !gen1.IsGeneral() || !gen2.IsGeneral() ) {
         return false;
@@ -441,7 +457,7 @@ bool sx_Equal(const CBioseq_Handle& bh1, const CBioseq_Handle& bh2)
         // GB has general id but VDB hasn't
         if ( gen2->GetGeneral().GetTag().IsId() ) {
             // it might be artificial general id
-            //has_id_error = report_id_error = true;
+            has_id_error = report_id_error = true;
         }
         else {
             has_id_error = report_id_error = true;
@@ -450,7 +466,8 @@ bool sx_Equal(const CBioseq_Handle& bh1, const CBioseq_Handle& bh2)
     else if ( gen1 && !gen2 ) {
         // VDB has general id but GB hasn't
         // it's possible and shouldn't be considered as an error
-        //has_id_error = report_id_error = true;
+        has_id_error = true;
+        report_id_error = GetReportGeneralIdError();
     }
     else if ( gen1 && !sx_EqualGeneralId(*gen1, *gen2) ) {
         has_id_error = true;
@@ -483,7 +500,7 @@ bool sx_Equal(const CBioseq_Handle& bh1, const CBioseq_Handle& bh2)
     }
     if ( has_id_error ) {
         NcbiCout << (report_id_error? "ERROR": "WARNING")
-                 << ": General ids do no match:\n";
+                 << ": General ids do not match:\n";
         NcbiCout << "Id1: ";
         if ( !gen1 ) {
             NcbiCout << "null\n";
@@ -500,7 +517,7 @@ bool sx_Equal(const CBioseq_Handle& bh1, const CBioseq_Handle& bh2)
         }
     }
     if ( has_descr_error ) {
-        NcbiCout << "ERROR: Descriptors do no match:\n";
+        NcbiCout << "ERROR: Descriptors do not match:\n";
         NcbiCout << "WGS: " << MSerial_AsnText << *descr1;
         NcbiCout << "GB: " << MSerial_AsnText << *descr2;
     }
@@ -526,7 +543,7 @@ bool sx_Equal(const CBioseq_Handle& bh1, const CBioseq_Handle& bh2)
         }
     }
     if ( has_annot_error ) {
-        NcbiCout << "ERROR: Annotations do no match:\n";
+        NcbiCout << "ERROR: Annotations do not match:\n";
         NcbiCout << "WGS: " << MSerial_AsnText << *annot1;
         NcbiCout << "GB: " << MSerial_AsnText << *annot2;
     }
@@ -631,7 +648,7 @@ void sx_ReportState(const CBioseq_Handle& bsh, const CSeq_id_Handle& idh)
 int sx_GetDescCount(const CBioseq_Handle& bh, CSeqdesc::E_Choice type)
 {
     int ret = 0;
-    for ( CSeqdesc_CI it(bh, type, 1); it; ++it ) {
+    for ( CSeqdesc_CI it(bh, type); it; ++it ) {
         ++ret;
     }
     return ret;
@@ -1069,6 +1086,108 @@ BOOST_AUTO_TEST_CASE(FetchSeq22)
 }
 
 
+BOOST_AUTO_TEST_CASE(FetchSeq23)
+{
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
+
+    string id = "JANG01000027";
+    CScope scope(*om);
+    scope.AddDefaults();
+
+    CRef<CSeq_id> seqid(new CSeq_id(id));
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*seqid);
+    CBioseq_Handle bh = scope.GetBioseqHandle(idh);
+    BOOST_REQUIRE(bh);
+    BOOST_CHECK_EQUAL(bh.GetState(), 0);
+    BOOST_CHECK(sx_GetDescCount(bh, CSeqdesc::e_Molinfo) >= 1);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Pub), 2);
+    BOOST_CHECK(sx_EqualToGB(bh));
+}
+
+BOOST_AUTO_TEST_CASE(FetchSeqGnl1)
+{
+    // have standard gnl id
+    CRef<CObjectManager> om = sx_InitOM(eWithoutMasterDescr);
+
+    string id = "JAAA01000001";
+    CScope scope(*om);
+    scope.AddDefaults();
+
+    CRef<CSeq_id> seqid(new CSeq_id(id));
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*seqid);
+    BOOST_CHECK_EQUAL(sx_GetGeneralIdStr(scope.GetIds(idh)), "gnl|WGS:JAAA01|CONTIG1");
+    CBioseq_Handle bh = scope.GetBioseqHandle(idh);
+    BOOST_REQUIRE(bh);
+    BOOST_CHECK_EQUAL(bh.GetState(), 0);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Molinfo), 1);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Pub), 0);
+    BOOST_CHECK(sx_EqualToGB(bh));
+    BOOST_CHECK_EQUAL(sx_GetGeneralIdStr(bh.GetId()), "gnl|WGS:JAAA01|CONTIG1");
+}
+
+BOOST_AUTO_TEST_CASE(FetchSeqGnl2)
+{
+    // have GNL column, but the id is standard
+    CRef<CObjectManager> om = sx_InitOM(eWithoutMasterDescr);
+
+    string id = "JAAO01000002";
+    CScope scope(*om);
+    scope.AddDefaults();
+
+    CRef<CSeq_id> seqid(new CSeq_id(id));
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*seqid);
+    BOOST_CHECK_EQUAL(sx_GetGeneralIdStr(scope.GetIds(idh)), "gnl|WGS:JAAO01|CONTIGID02");
+    CBioseq_Handle bh = scope.GetBioseqHandle(idh);
+    BOOST_REQUIRE(bh);
+    BOOST_CHECK_EQUAL(bh.GetState(), 0);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Molinfo), 1);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Pub), 0);
+    BOOST_CHECK(sx_EqualToGB(bh));
+    BOOST_CHECK_EQUAL(sx_GetGeneralIdStr(bh.GetId()), "gnl|WGS:JAAO01|CONTIGID02");
+}
+
+BOOST_AUTO_TEST_CASE(FetchSeqGnl3)
+{
+    // have non-standard gnl id
+    CRef<CObjectManager> om = sx_InitOM(eWithoutMasterDescr);
+
+    string id = "AAAK03000003";
+    CScope scope(*om);
+    scope.AddDefaults();
+
+    CRef<CSeq_id> seqid(new CSeq_id(id));
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*seqid);
+    BOOST_CHECK_EQUAL(sx_GetGeneralIdStr(scope.GetIds(idh)), "gnl|WGS:AAAK|CTG655");
+    CBioseq_Handle bh = scope.GetBioseqHandle(idh);
+    BOOST_REQUIRE(bh);
+    BOOST_CHECK_EQUAL(bh.GetState(), 0);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Molinfo), 1);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Pub), 4);
+    BOOST_CHECK(sx_EqualToGB(bh));
+    BOOST_CHECK_EQUAL(sx_GetGeneralIdStr(bh.GetId()), "gnl|WGS:AAAK|CTG655");
+}
+
+BOOST_AUTO_TEST_CASE(FetchSeqGnl4)
+{
+    // have no gnl id
+    CRef<CObjectManager> om = sx_InitOM(eWithoutMasterDescr);
+
+    string id = "CAAF010000004";
+    CScope scope(*om);
+    scope.AddDefaults();
+
+    CRef<CSeq_id> seqid(new CSeq_id(id));
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*seqid);
+    BOOST_CHECK_EQUAL(sx_GetGeneralIdStr(scope.GetIds(idh)), "");
+    CBioseq_Handle bh = scope.GetBioseqHandle(idh);
+    BOOST_REQUIRE(bh);
+    BOOST_CHECK_EQUAL(bh.GetState(), 0);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Molinfo), 1);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bh, CSeqdesc::e_Pub), 1);
+    BOOST_CHECK(sx_EqualToGB(bh));
+    BOOST_CHECK_EQUAL(sx_GetGeneralIdStr(bh.GetId()), "");
+}
+
 #if 0
 const string s_ProteinFile = 
                     "/net/snowman/vol/export2/dondosha/SVN64/trunk/internal/c++/src/internal/ID/WGS/XXXX01";
@@ -1076,11 +1195,11 @@ const string s_ProteinVDBAcc     = "AXXX01";
 const string s_ProteinContigId   = "AXXX01000001";
 const string s_ProteinScaffoldId = "AXXX01S000001";
 const string s_ProteinProteinId  = "AXXX01P000001";
-const size_t s_ProteinContigDescCount = 14;
-const size_t s_ProteinContigPubCount = 4;
+const int s_ProteinContigDescCount = 14;
+const int s_ProteinContigPubCount = 4;
 const string s_ProteinProteinAcc = "AXXX01P000001";
-const size_t s_ProteinProteinDescCount = 9;
-const size_t s_ProteinProteinPubCount = 2;
+const int s_ProteinProteinDescCount = 9;
+const int s_ProteinProteinPubCount = 2;
 #else
 const string s_ProteinFile = 
                     "x/home/dondosha/trunk/internal/c++/src/internal/ID/WGS/JTED01";
@@ -1088,11 +1207,11 @@ const string s_ProteinVDBAcc     = "JTED01";
 const string s_ProteinContigId   = "JTED01000001";
 const string s_ProteinScaffoldId = "JTED01S000001";
 const string s_ProteinProteinId  = "JTED01P000001";
-const size_t s_ProteinContigDescCount = 11;
-const size_t s_ProteinContigPubCount = 2;
+const int s_ProteinContigDescCount = 11;
+const int s_ProteinContigPubCount = 2;
 const string s_ProteinProteinAcc = "EDT30481.1";
-const size_t s_ProteinProteinDescCount = 13;
-const size_t s_ProteinProteinPubCount = 2;
+const int s_ProteinProteinDescCount = 13;
+const int s_ProteinProteinPubCount = 2;
 #endif
 
 const string s_NewWGSPath = NCBI_TRACES04_PATH "/wgs03";
@@ -1158,7 +1277,7 @@ BOOST_AUTO_TEST_CASE(FetchProt3)
                       s_ProteinProteinDescCount);
     BOOST_CHECK_EQUAL(sx_GetDescCount(bsh, CSeqdesc::e_Pub),
                       s_ProteinProteinPubCount);
-    BOOST_CHECK_EQUAL(CFeat_CI(bsh.GetParentEntry()).GetSize(), 1);
+    BOOST_CHECK_EQUAL(CFeat_CI(bsh.GetParentEntry()).GetSize(), 1u);
 }
 
 
@@ -1181,7 +1300,7 @@ BOOST_AUTO_TEST_CASE(FetchProt4)
                       s_ProteinProteinDescCount);
     BOOST_CHECK_EQUAL(sx_GetDescCount(bsh, CSeqdesc::e_Pub),
                       s_ProteinProteinPubCount);
-    BOOST_CHECK_EQUAL(CFeat_CI(bsh.GetParentEntry()).GetSize(), 1);
+    BOOST_CHECK_EQUAL(CFeat_CI(bsh.GetParentEntry()).GetSize(), 1u);
 }
 
 
@@ -1238,8 +1357,8 @@ BOOST_AUTO_TEST_CASE(FetchProt11)
     CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
     sx_ReportState(bsh, idh);
     BOOST_REQUIRE(bsh);
-    BOOST_CHECK_EQUAL(sx_GetDescCount(bsh, CSeqdesc::e_not_set), 9u);
-    BOOST_CHECK_EQUAL(sx_GetDescCount(bsh, CSeqdesc::e_Pub), 1u);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bsh, CSeqdesc::e_not_set), 9);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bsh, CSeqdesc::e_Pub), 1);
     //BOOST_CHECK(sx_EqualToGB(bsh));
 }
 
@@ -1282,7 +1401,7 @@ BOOST_AUTO_TEST_CASE(FetchProt13)
                       s_ProteinProteinDescCount);
     BOOST_CHECK_EQUAL(sx_GetDescCount(bsh, CSeqdesc::e_Pub),
                       s_ProteinProteinPubCount);
-    BOOST_CHECK_EQUAL(CFeat_CI(bsh.GetParentEntry()).GetSize(), 1);
+    BOOST_CHECK_EQUAL(CFeat_CI(bsh.GetParentEntry()).GetSize(), 1u);
 }
 
 
@@ -1305,7 +1424,7 @@ BOOST_AUTO_TEST_CASE(FetchProt14)
                       s_ProteinProteinDescCount);
     BOOST_CHECK_EQUAL(sx_GetDescCount(bsh, CSeqdesc::e_Pub),
                       s_ProteinProteinPubCount);
-    BOOST_CHECK_EQUAL(CFeat_CI(bsh.GetParentEntry()).GetSize(), 1);
+    BOOST_CHECK_EQUAL(CFeat_CI(bsh.GetParentEntry()).GetSize(), 1u);
 }
 
 
@@ -1879,7 +1998,7 @@ BOOST_AUTO_TEST_CASE(HashTest)
     int wgs_hash = wgs_scope.GetSequenceHash(id);
     BOOST_CHECK(wgs_hash != 0);
 
-    sx_InitGBLoader(*om);
+    sx_InitGBLoader(*om, true);
     CScope gb_scope(*om);
     gb_scope.AddDataLoader("GBLOADER");
     
