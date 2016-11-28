@@ -108,8 +108,7 @@ public:
     // This contains both of the above
     string GetUniqueKey() const {return m_UniqueKey;}
 
-    void SetLocation(EFileTrackSite ft_site,
-            const string& nc_service_name = kEmptyStr);
+    void SetLocation(const string& nc_service_name);
 
     string GetNCServiceName() const {return m_NCServiceName;}
 

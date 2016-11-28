@@ -525,7 +525,7 @@ void CNetCache::SetLocator()
     CNetService service(m_Client.GetService());
     const string& service_name(service.GetServiceName());
 
-    Locator().SetLocation(m_Context->filetrack_api.config.site, service_name);
+    Locator().SetLocation(service_name);
 }
 
 
@@ -705,7 +705,7 @@ ILocation::TUserInfo CNetCache::GetUserInfoImpl()
 
 void CFileTrack::SetLocator()
 {
-    Locator().SetLocation(m_Context->filetrack_api.config.site);
+    Locator().SetLocation(kEmptyStr);
 }
 
 

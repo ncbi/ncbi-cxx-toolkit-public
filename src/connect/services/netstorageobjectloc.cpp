@@ -250,8 +250,7 @@ void CNetStorageObjectLoc::Parse(const string& object_loc)
     }
 }
 
-void CNetStorageObjectLoc::SetLocation(EFileTrackSite ft_site,
-        const string& nc_service_name)
+void CNetStorageObjectLoc::SetLocation(const string& nc_service_name)
 {
     // If NetCache
     if (!nc_service_name.empty()) {
@@ -268,12 +267,6 @@ void CNetStorageObjectLoc::SetLocation(EFileTrackSite ft_site,
 
     m_Dirty = true;
     m_NCServiceName = nc_service_name;
-    m_LocatorFlags &= ~(TLocatorFlags) (fLF_DevEnv | fLF_QAEnv);
-
-    if (ft_site == eFileTrack_DevSite)
-        m_LocatorFlags |= fLF_DevEnv;
-    else if (ft_site == eFileTrack_QASite)
-        m_LocatorFlags |= fLF_QAEnv;
 }
 
 CNetStorageObjectLoc::EFileTrackSite CNetStorageObjectLoc::GetFileTrackSite() const
