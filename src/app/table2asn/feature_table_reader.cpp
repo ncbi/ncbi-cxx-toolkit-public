@@ -741,6 +741,14 @@ CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(CSeq_entry_Handle top_en
 
             AssignLocalIdIfEmpty(mrna_feature, m_local_id_counter);
 
+            const string& product = cd_feature.GetNamedQual("product");
+
+            if (product != kEmptyStr)
+            {
+                CRNA_ref& rna = mrna_feature.SetData().SetRna();
+                if (rna.SetExt().IsName() && rna.SetExt().SetName().empty())
+                    rna.SetExt().SetName() = product;
+            }
             mrna_feature.SetXref().clear();
             mrna_feature.AddSeqFeatXref(cd_feature.GetId());
             cd_feature.AddSeqFeatXref(mrna_feature.GetId());
