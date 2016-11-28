@@ -1526,7 +1526,24 @@ bool s_AreFullLengthCodingRegionsWithDifferentFrames (const CSeq_feat_Handle& f1
 }
 
 
-bool s_AreDifferentVariations (CSeq_feat_Handle f1, CSeq_feat_Handle f2)
+string s_ReplaceListFromQuals(const CSeq_feat::TQual quals)
+{
+    string replace = "";
+    ITERATE(CSeq_feat::TQual, q, quals) {
+        if ((*q)->IsSetQual() && NStr::Equal((*q)->GetQual(), "replace") && (*q)->IsSetVal()) {
+            if (NStr::IsBlank((*q)->GetVal())) {
+                replace += " ";
+            } else {
+                replace += (*q)->GetVal();
+            }
+            replace += ".";
+        }
+    }
+    return replace;
+}
+
+
+bool s_AreDifferentVariations(CSeq_feat_Handle f1, CSeq_feat_Handle f2)
 {
     if (f1.GetData().GetSubtype() != CSeqFeatData::eSubtype_variation
         || f2.GetData().GetSubtype() != CSeqFeatData::eSubtype_variation) {
@@ -1535,36 +1552,15 @@ bool s_AreDifferentVariations (CSeq_feat_Handle f1, CSeq_feat_Handle f2)
     if (!f1.IsSetQual() || !f2.IsSetQual()) {
         return false;
     }
-    string replace1 = "";
+    string replace1 = s_ReplaceListFromQuals(f1.GetQual());
+    string replace2 = s_ReplaceListFromQuals(f2.GetQual());
 
-    ITERATE(CSeq_feat::TQual, q, f1.GetQual()) {
-        if ((*q)->IsSetQual() && NStr::Equal((*q)->GetQual(), "replace") && (*q)->IsSetVal()) {
-            replace1 = (*q)->GetVal();
-            if (!NStr::IsBlank(replace1)) {
-                break;
-            }
-        }
-    }
-
-    string replace2 = "";
-
-    ITERATE(CSeq_feat::TQual, q, f2.GetQual()) {
-        if ((*q)->IsSetQual() && NStr::Equal((*q)->GetQual(), "replace") && (*q)->IsSetVal()) {
-            replace2 = (*q)->GetVal();
-            if (!NStr::IsBlank(replace2)) {
-                break;
-            }
-        }
-    }
-
-    if (!NStr::IsBlank(replace1) && !NStr::Equal(replace1, replace2)) {
+    if (!NStr::Equal(replace1, replace2)) {
         return true;
     } else {
         return false;
     }
 }
-
-
 
 
 static bool s_AreLinkedToDifferentFeats (CSeq_feat_Handle f1, CSeq_feat_Handle f2, CSeqFeatData::ESubtype s1, CSeqFeatData::ESubtype s2)
@@ -1733,8 +1729,8 @@ IsDuplicate
         return eDuplicate_Not;
     }
 
-    if (s_AreDifferentVariations(f1, f2)) {
-        // don't report variations if replace quals are different
+    if ((feat1_subtype == CSeqFeatData::eSubtype_variation && !same_label) || s_AreDifferentVariations(f1, f2)) {
+        // don't report variations if replace quals are different or labels are different
         return eDuplicate_Not;
     }
 
