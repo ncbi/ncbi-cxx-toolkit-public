@@ -3125,8 +3125,9 @@ void CFastaOstream::x_WriteSequence(const CSeqVector& vec,
                 if (rem_line < m_Width) {
                     m_Out << '\n';
                 }
-                CSeqMap_CI smci = vec.GetSeqMap().FindSegment
-                    (it.GetPos() - gap_size, &vec.GetScope());
+                CSeqMap_CI smci = vec.GetSeqMap().FindResolved
+                    (&vec.GetScope(), it.GetPos() - gap_size,
+                     SSeqMapSelector().SetResolveCount(-1));
                 _ASSERT(smci.GetType() == CSeqMap::eSeqGap);
                 if (smci.IsUnknownLength()) {
                     // conventional designation, regardless of nominal length
