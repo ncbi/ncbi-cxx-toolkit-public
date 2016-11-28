@@ -143,22 +143,30 @@ void DumpMemory(const string& prefix)
     }
 }
 
-bool CMultiReader::xReadFile(CNcbiIstream& istr, CRef<CSeq_entry>& entry, CRef<CSeq_submit>& submit)
+CFormatGuess::EFormat CMultiReader::xReadFile(CNcbiIstream& istr, CRef<CSeq_entry>& entry, CRef<CSeq_submit>& submit)
 {
-    xSetFormat(istr);
+    CFormatGuess::EFormat uFormat = xGetFormat(istr);
     m_iFlags = 0;
     m_iFlags |= CFastaReader::fNoUserObjs;
 
-    switch( m_uFormat )
+    switch (uFormat)
     {
     case CFormatGuess::eTextASN:
-        return xReadASN1(m_uFormat, istr, entry, submit);
+        xReadASN1(uFormat, istr, entry, submit);
         break;
-    default:
+    case CFormatGuess::eFasta:
         entry = xReadFasta(istr);
         break;
+    default:
+        NCBI_THROW2(CObjReaderParseException, eFormat,
+            "File format not recognized", 0);
     }
-    return entry.NotEmpty();
+
+    if (entry.Empty())
+        NCBI_THROW2(CObjReaderParseException, eFormat,
+        "File format not recognized", 0);
+
+    return uFormat;
 }
 
 bool 
@@ -303,66 +311,10 @@ CMultiReader::xReadFasta(CNcbiIstream& instream)
 
 }
 
-//  ----------------------------------------------------------------------------
-CFormatGuess::EFormat CMultiReader::GetFormat(CNcbiIstream& in)
-{
-    xSetFormat(in);
-    return m_uFormat;
-}
-
-void CMultiReader::xSetFormat(CNcbiIstream& istr )
+CFormatGuess::EFormat CMultiReader::xGetFormat(CNcbiIstream& istr) const
     //  ----------------------------------------------------------------------------
 {
-    m_uFormat = CFormatGuess::eUnknown;
-#if 0
-    const string& strProgramName = "GetProgramDisplayName";
-
-    if (NStr::StartsWith(strProgramName, "wig") || format == "wig" ||
-        format == "wiggle") {
-            m_uFormat = CFormatGuess::eWiggle;
-    }
-    if (NStr::StartsWith(strProgramName, "bed") || format == "bed") {
-        m_uFormat = CFormatGuess::eBed;
-    }
-    if (NStr::StartsWith(strProgramName, "b15") || format == "bed15" ||
-        format == "microarray") {
-            m_uFormat = CFormatGuess::eBed15;
-    }
-    if (NStr::StartsWith(strProgramName, "gtf") || format == "gtf") {
-        m_uFormat = CFormatGuess::eGtf;
-    }
-    if (NStr::StartsWith(strProgramName, "gff") ||
-        format == "gff3" || format == "gff2") {
-            m_uFormat = CFormatGuess::eGff3;
-    }
-    if (NStr::StartsWith(strProgramName, "agp")) {
-        m_uFormat = CFormatGuess::eAgp;
-    }
-
-    if (NStr::StartsWith(strProgramName, "newick") ||
-        format == "newick" || format == "tree" || format == "tre") {
-            m_uFormat = CFormatGuess::eNewick;
-    }
-    if (NStr::StartsWith(strProgramName, "gvf") || format == "gvf") {
-        m_uFormat = CFormatGuess::eGtf;
-    }
-    if (NStr::StartsWith(strProgramName, "aln") || format == "align" ||
-        format == "aln") {
-            m_uFormat = CFormatGuess::eAlignment;
-    }
-    if (NStr::StartsWith(strProgramName, "hgvs") ||
-        format == "hgvs") {
-            m_uFormat = CFormatGuess::eHgvs;
-    }
-    if( NStr::StartsWith(strProgramName, "fasta") ||
-        format == "fasta" ) {
-            m_uFormat = CFormatGuess::eFasta;
-    }
-    if( NStr::StartsWith(strProgramName, "feattbl") ||
-        format == "5colftbl" ) {
-            m_uFormat = CFormatGuess::eFiveColFeatureTable;
-    }
-#endif
+    CFormatGuess::EFormat uFormat = CFormatGuess::eUnknown;
     CFormatGuess FG(istr);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eBinaryASN);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eFasta);
@@ -374,7 +326,7 @@ void CMultiReader::xSetFormat(CNcbiIstream& istr )
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eFiveColFeatureTable);
     FG.GetFormatHints().DisableAllNonpreferred();
 
-    m_uFormat = FG.GuessFormat();
+    return FG.GuessFormat();
 }
 
 //  ----------------------------------------------------------------------------
@@ -721,7 +673,7 @@ CRef<CSeq_entry> CMultiReader::CreateNewSeqFromTemplate(const CTable2AsnContext&
 
 CFormatGuess::EFormat CMultiReader::LoadFile(CNcbiIstream& istream, CRef<CSeq_entry>& entry, CRef<CSeq_submit>& submit)
 {
-    xReadFile(istream, entry, submit);
+    CFormatGuess::EFormat uFormat = xReadFile(istream, entry, submit);
     if (entry.NotEmpty())
     {
         if (entry->IsSet() && entry->GetSet().GetSeq_set().size() < 2 &&
@@ -740,7 +692,7 @@ CFormatGuess::EFormat CMultiReader::LoadFile(CNcbiIstream& istream, CRef<CSeq_en
         entry->Parentize();
         m_context.MergeWithTemplate(*entry);
     }
-    return m_uFormat;
+    return uFormat;
 }
 
 
@@ -1174,9 +1126,9 @@ private:
 
 bool CMultiReader::xGetAnnotLoader(CAnnotationLoader& loader, CNcbiIstream& in)
 {
-    xSetFormat(in);
+    CFormatGuess::EFormat uFormat = xGetFormat(in);
     CRef<CSeq_entry> entry;
-    switch (m_uFormat)
+    switch (uFormat)
     {
     case CFormatGuess::eFiveColFeatureTable:
     {
@@ -1189,7 +1141,7 @@ bool CMultiReader::xGetAnnotLoader(CAnnotationLoader& loader, CNcbiIstream& in)
     case CFormatGuess::eTextASN:
         {
           CRef<CSeq_submit> unused;
-          xReadASN1(m_uFormat, in, entry, unused);
+          xReadASN1(uFormat, in, entry, unused);
         }
         break;
     case CFormatGuess::eGff2:
@@ -1201,7 +1153,8 @@ bool CMultiReader::xGetAnnotLoader(CAnnotationLoader& loader, CNcbiIstream& in)
         entry = xReadGTF(in);
         break;
     default:
-        return false;
+        NCBI_THROW2(CObjReaderParseException, eFormat,
+            "Annotation file format not recognized", 0);
     }
     if (entry)
     {
@@ -1303,7 +1256,7 @@ bool CMultiReader::LoadAnnot(objects::CSeq_entry& entry, CNcbiIstream& in)
                 CBioseq& bioseq = (CBioseq&)*edit_handle.GetBioseqCore();
                 CConstRef<CSeq_id> matching_id = GetIdByKind(*annot_id, bioseq.GetId());
                 if (matching_id)
-                   annot_id->Assign(*matching_id);
+                    annot_id->Assign(*matching_id);
                 bioseq.SetAnnot().push_back(annot_it);
             }
             else

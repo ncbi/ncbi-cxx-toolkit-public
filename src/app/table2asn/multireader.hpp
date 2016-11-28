@@ -30,7 +30,6 @@ public:
    ~CMultiReader();
  
    CFormatGuess::EFormat LoadFile(CNcbiIstream& in, CRef<objects::CSeq_entry>& entry, CRef<objects::CSeq_submit>& submit);
-   CFormatGuess::EFormat GetFormat(CNcbiIstream& in);
    void Cleanup(CRef<objects::CSeq_entry>);
    void WriteObject(const CSerialObject&, ostream&);
    void ApplyAdditionalProperties(objects::CSeq_entry& entry);
@@ -45,7 +44,7 @@ public:
 
 protected:
 private:
-    bool xReadFile(CNcbiIstream& in, CRef<objects::CSeq_entry>& entry, CRef<objects::CSeq_submit>& submit);
+    CFormatGuess::EFormat xReadFile(CNcbiIstream& in, CRef<objects::CSeq_entry>& entry, CRef<objects::CSeq_submit>& submit);
     CRef<objects::CSeq_entry> xReadFasta(CNcbiIstream& instream);
     bool xReadASN1(CFormatGuess::EFormat format, CNcbiIstream& instream, CRef<objects::CSeq_entry>& entry, CRef<objects::CSeq_submit>& submit);
     CRef<objects::CSeq_entry> xReadGFF3(CNcbiIstream& instream);
@@ -55,10 +54,8 @@ private:
     auto_ptr<CObjectIStream> xCreateASNStream(CFormatGuess::EFormat format, CNcbiIstream& instream);
     CRef<objects::CSeq_entry> CreateNewSeqFromTemplate(const CTable2AsnContext& context, objects::CBioseq& bioseq) const;
 
-    void xSetFormat(CNcbiIstream&);
+    CFormatGuess::EFormat xGetFormat(CNcbiIstream&) const;
 
-    CFormatGuess::EFormat m_uFormat;
-    bool m_bDumpStats;
     int  m_iFlags;
     string m_AnnotName;
     string m_AnnotTitle;
