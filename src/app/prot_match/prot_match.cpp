@@ -78,13 +78,13 @@ private:
     void x_GetBlastArgs(const string& update_file, 
         const string& genbank_file,
         const string& alignment_file,
-        vector<string>& blast_args) const;
+        string& blast_args) const;
 
     void x_GetCompareAnnotsArgs(const string& update_file,
         const string& genbank_file,
         const string& alignment_manifest_file,
         const string& annot_file,
-        vector<string>& compare_annots_args) const;
+        string& compare_annots_args) const;
 
     void x_ReadAnnotFile(const string& filename, list<CRef<CSeq_annot>>& seq_annots) const;
 
@@ -160,12 +160,12 @@ int CProteinMatchApp::Run(void)
     // Could use skip hooks here instead
     // ans2fasta, asnvalidate
     // Preexisting nucleotide entries may not exist.
-    CSeq_entry input_entry;
-    x_ReadUpdateFile(*pInStream, input_entry); 
+    CRef<CSeq_entry> input_entry = Ref(new CSeq_entry());
+    x_ReadUpdateFile(*pInStream, *input_entry); 
 
     CSeq_entry_Handle input_seh;
     try {
-        input_seh = scope->AddTopLevelSeqEntry(input_entry);
+        input_seh = scope->AddTopLevelSeqEntry(*input_entry);
     }
     catch (CException&) {
         NCBI_THROW(CProteinMatchException,
@@ -194,7 +194,7 @@ int CProteinMatchApp::Run(void)
         const string count_string = NStr::NumericToString(count);
         
         const string alignment_file = out_stub + ".merged" + count_string + ".asn";
-        vector<string> blast_args;
+        string blast_args;
         x_GetBlastArgs(
             seq_entry_files.local_nuc_seq, 
             seq_entry_files.db_nuc_seq, 
@@ -219,7 +219,7 @@ int CProteinMatchApp::Run(void)
 
         const string annot_file = out_stub + ".compare" + count_string + ".asn";
 
-        vector<string> compare_annots_args;
+        string compare_annots_args;
         x_GetCompareAnnotsArgs(
             seq_entry_files.local_nuc_prot_set,
             seq_entry_files.db_nuc_prot_set,
@@ -255,7 +255,7 @@ int CProteinMatchApp::Run(void)
     }
 
 
-    scope->RemoveEntry(input_entry);
+    scope->RemoveEntry(*input_entry);
     return 0;
 }
 
@@ -537,7 +537,7 @@ void CProteinMatchApp::x_GetBlastArgs(
     const string& update_file, 
     const string& genbank_file,
     const string& alignment_file,
-    vector<string>& blast_args) const
+    string& blast_args) const
 {
     if (NStr::IsBlank(update_file) ||
         NStr::IsBlank(genbank_file)) {
@@ -553,22 +553,19 @@ void CProteinMatchApp::x_GetBlastArgs(
             "assm_assm_blastn alignment file not specified");
     }
 
-    vector<string> args {
-        "-query", update_file,
-        "-target", genbank_file,
-        "-task", "megablast",
-        "-word_size", "16",
-        "-evalue", "0.01",
-        "-gapopen", "2",
-        "-gapextend", "1",
-        "-best_hit_overhang", "0.1",
-        "-best_hit_score_edge", "0.1",
-        "-align-output", alignment_file,
-        "-ofmt", "asn-binary",
-        "-nogenbank"
-    };
-    
-    blast_args = args;
+    blast_args =
+        " -query " + update_file +
+        " -target " + genbank_file +
+        " -task megablast" 
+        " -word_size 16" 
+        " -evalue 0.01" 
+        " -gapopen 2" 
+        " -gapextend 1" 
+        " -best_hit_overhang 0.1" 
+        " -best_hit_score_edge 0.1" 
+        " -align-output " + alignment_file  +
+        " -ofmt asn-binary" 
+        " -nogenbank";
 }
 
 
@@ -577,7 +574,7 @@ void CProteinMatchApp::x_GetCompareAnnotsArgs(
         const string& genbank_file,
         const string& alignment_manifest_file,
         const string& annot_file,
-        vector<string>& compare_annots_args)  const
+        string& compare_annots_args)  const
 {
     if (NStr::IsBlank(update_file) ||
         NStr::IsBlank(genbank_file) ||
@@ -593,16 +590,14 @@ void CProteinMatchApp::x_GetCompareAnnotsArgs(
             "compare_annots annot file is not specified");
     }
 
-    vector<string> args {
-        "-q_scope_type", "annots",
-        "-q_scope_args", update_file,
-        "-s_scope_type", "annots",
-        "-s_scope_args", genbank_file,
-        "-alns", alignment_manifest_file,
-        "-o_asn", annot_file,
-        "-nogenbank" };
-    
-    compare_annots_args = args;
+    compare_annots_args = 
+        " -q_scope_type annots" 
+        " -q_scope_args " + update_file +
+        " -s_scope_type annots" 
+        " -s_scope_args " + genbank_file +
+        " -alns " + alignment_manifest_file +
+        " -o_asn " + annot_file +
+        " -nogenbank";
 }
 
 
