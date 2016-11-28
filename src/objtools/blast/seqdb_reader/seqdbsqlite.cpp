@@ -47,7 +47,7 @@ const int CSeqDBSqlite::kAmbiguous = -2;
 CSeqDBSqlite::CSeqDBSqlite(const string& dbname)
 {
     // Open input SQLite database.
-    m_db = new CSQLITE_Connection(
+    m_db.reset(new CSQLITE_Connection(
             dbname,
             CSQLITE_Connection::fInternalMT
             | CSQLITE_Connection::fVacuumManual
@@ -56,17 +56,16 @@ CSeqDBSqlite::CSeqDBSqlite(const string& dbname)
             | CSQLITE_Connection::fTempToMemory
             | CSQLITE_Connection::fWritesSync
             | CSQLITE_Connection::fReadOnly
-    );
+    ));
 }
 
 CSeqDBSqlite::~CSeqDBSqlite()
 {
     // Clean up.
-    if (m_selectStmt != NULL) {
-        delete m_selectStmt;
-        m_selectStmt = NULL;
+    if (m_selectStmt) {
+        m_selectStmt.reset();
     }
-    delete m_db;
+    m_db.reset();
 }
 
 void CSeqDBSqlite::SetCacheSize(const size_t cache_size)
@@ -80,11 +79,11 @@ void CSeqDBSqlite::SetCacheSize(const size_t cache_size)
 int CSeqDBSqlite::GetOid(const string& accession)
 {
     // Create the SELECT statement.
-    if (m_selectStmt == NULL) {
-        m_selectStmt = new CSQLITE_Statement(
-                m_db,
+    if (!m_selectStmt) {
+        m_selectStmt.reset(new CSQLITE_Statement(
+                m_db.get(),
                 "SELECT version, oid FROM acc2oid WHERE accession = ?;"
-        );
+        ));
     }
     // Bind the accession string to the statement.
     m_selectStmt->ClearBindings();
@@ -125,21 +124,21 @@ vector<int> CSeqDBSqlite::GetOids(const list<string>& accessions)
 {
     // Create in-memory temporary table to hold list of accessions.
     m_db->ExecuteSql("CREATE TEMP TABLE IF NOT EXISTS accs ( acc TEXT );");
-    CSQLITE_Statement* ins =
-            new CSQLITE_Statement(m_db, "INSERT INTO accs(acc) VALUES (?);");
+    unique_ptr<CSQLITE_Statement> ins(
+            new CSQLITE_Statement(
+                    m_db.get(),
+                    "INSERT INTO accs(acc) VALUES (?);"
+            )
+    );
     m_db->ExecuteSql("BEGIN TRANSACTION;");
-    for (
-            list<string>::const_iterator it = accessions.begin();
-            it != accessions.end();
-            ++it
-    ) {
+    for (auto it : accessions) {
         ins->ClearBindings();
-        ins->Bind(1, *it);
+        ins->Bind(1, it);
         ins->Execute();
         ins->Reset();
     }
     m_db->ExecuteSql("END TRANSACTION;");
-    delete ins;
+    ins.reset();
 
     // Select from main table based on accessions also being in
     // temp table.
@@ -149,11 +148,11 @@ vector<int> CSeqDBSqlite::GetOids(const list<string>& accessions)
         SVerOid(int v, int o) : m_ver(v), m_oid(o) {}
     };
     map<string, SVerOid> acc2oid;
-    CSQLITE_Statement* sel = new CSQLITE_Statement(
-            m_db,
+    unique_ptr<CSQLITE_Statement> sel(new CSQLITE_Statement(
+            m_db.get(),
             "SELECT * FROM acc2oid INNER JOIN accs "
             "ON accession = acc ORDER BY accession ASC, version DESC;"
-    );
+    ));
     sel->Execute();
     while (sel->Step()) {
         // If accession is not yet in map, it will be added.
@@ -177,17 +176,13 @@ vector<int> CSeqDBSqlite::GetOids(const list<string>& accessions)
             }
         }
     }
-    delete sel;
+    sel.reset();
 
     // Fetch found OIDs, write to output list.
     vector<int> oids;
-    for (
-            list<string>::const_iterator it = accessions.begin();
-            it != accessions.end();
-            ++it
-    ) {
+    for (auto it : accessions) {
         try {
-            SVerOid veroid = acc2oid.at(*it);   // may throw exception
+            SVerOid veroid = acc2oid.at(it);   // may throw exception
             oids.push_back(veroid.m_oid);
         } catch (out_of_range& e) {
             // Accession was not found.
@@ -210,7 +205,7 @@ list<string> CSeqDBSqlite::GetAccessions(const int oid)
     list<string> accs;
     ostringstream oss;
     oss << "SELECT accession FROM acc2oid WHERE oid = " << oid << ";";
-    CSQLITE_Statement sel(m_db, oss.str());
+    CSQLITE_Statement sel(m_db.get(), oss.str());
     sel.Execute();
     // Collect each accession selected.
     while (sel.Step()) {
@@ -223,10 +218,10 @@ bool CSeqDBSqlite::StepAccessions(string* acc, int* ver, int* oid)
 {
     // If this is the first step, create the SELECT statement.
     if (m_selectStmt == NULL) {
-        m_selectStmt = new CSQLITE_Statement(
-                m_db,
+        m_selectStmt.reset(new CSQLITE_Statement(
+                m_db.get(),
                 "SELECT * FROM acc2oid;"
-        );
+        ));
     }
     // If there's at least one row remaining, fetch it.
     // Return only those columns for which non-null targets are given.
@@ -245,8 +240,7 @@ bool CSeqDBSqlite::StepAccessions(string* acc, int* ver, int* oid)
     } else {
         // Rows all used up, finalize SELECT statement and return false,
         // i.e. now row returned.
-        delete m_selectStmt;
-        m_selectStmt = NULL;
+        m_selectStmt.reset();
         return false;
     }
 }
@@ -259,11 +253,11 @@ bool CSeqDBSqlite::StepVolumes(
 )
 {
     // If this is the first step, create the SELECT statement.
-    if (m_selectStmt == NULL) {
-        m_selectStmt = new CSQLITE_Statement(
-                m_db,
+    if (!m_selectStmt) {
+        m_selectStmt.reset(new CSQLITE_Statement(
+                m_db.get(),
                 "SELECT * FROM volinfo;"
-        );
+        ));
     }
     // If there's at least one row remaining, fetch it.
     // Return only those columns for which non-null targets are given.
@@ -285,8 +279,7 @@ bool CSeqDBSqlite::StepVolumes(
     } else {
         // Rows all used up, finalize SELECT statement and return false,
         // i.e. now row returned.
-        delete m_selectStmt;
-        m_selectStmt = NULL;
+        m_selectStmt.reset();
         return false;
     }
 }

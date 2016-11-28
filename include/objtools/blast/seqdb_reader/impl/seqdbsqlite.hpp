@@ -85,11 +85,11 @@ struct SVolInfo {
 
 /// This class provides search capability of (integer) OIDs keyed to
 /// (string) accessions, stored in a SQLite database.
-class NCBI_XOBJREAD_EXPORT CSeqDBSqlite
+class NCBI_XOBJREAD_EXPORT CSeqDBSqlite : public CObject
 {
 private:
-    CSQLITE_Connection* m_db = NULL;
-    CSQLITE_Statement* m_selectStmt = NULL;
+    unique_ptr<CSQLITE_Connection> m_db;
+    unique_ptr<CSQLITE_Statement> m_selectStmt;
 
 public:
     static const int kNotFound;     ///< accession not found in database
