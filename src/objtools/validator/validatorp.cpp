@@ -614,7 +614,7 @@ void CValidError_imp::PostErr
  TBioseq        sq)
 {
     // Adjust severity
-    if (m_genomeSubmission && RaiseGenomeSeverity(et)) {
+    if (m_genomeSubmission && et < eDiag_Error && RaiseGenomeSeverity(et)) {
         sv = eDiag_Error;
     }
 
