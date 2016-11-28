@@ -43,6 +43,8 @@
 
 #include <util/random_gen.hpp>
 
+#include <atomic>
+
 BEGIN_NCBI_SCOPE
 
 struct SFileTrackConfig
