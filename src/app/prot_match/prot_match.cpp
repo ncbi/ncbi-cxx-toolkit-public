@@ -47,6 +47,8 @@
 #include <objtools/edit/protein_match/setup_match.hpp>
 #include <objtools/edit/protein_match/generate_match_table.hpp>
 #include <objtools/edit/protein_match/prot_match_exception.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <misc/data_loaders_util/data_loaders_util.hpp>
 
 #include "run_binary.hpp"
 
@@ -92,8 +94,8 @@ private:
     void x_DeleteTempFiles(void);
 
     struct SSeqEntryFilenames {
-        string gb_nuc_prot_set;
-        string gb_nuc_seq;
+        string db_nuc_prot_set;
+        string db_nuc_seq;
         string local_nuc_prot_set;
         string local_nuc_seq;
     };
@@ -122,9 +124,12 @@ void CProteinMatchApp::Init(void)
         "Output stub",
         CArgDescriptions::eOutputFile);
 
-    SetupArgDescriptions(arg_desc.release());
+    arg_desc->AddFlag("keep-temps", "Retain temporary files");
 
-    m_pMatchSetup.reset(new CMatchSetup());
+    CDataLoadersUtil::AddArgumentDescriptions(*arg_desc,
+        CDataLoadersUtil::fDefault);
+
+    SetupArgDescriptions(arg_desc.release());
 
     return;
 }
@@ -139,8 +144,15 @@ int CProteinMatchApp::Run(void)
     CBinRunner compare_annots("./compare_annots");
     const CArgs& args = GetArgs();
     
-    // Set up scope 
     CRef<CObjectManager> obj_mgr = CObjectManager::GetInstance();
+    CDataLoadersUtil::SetupObjectManager(args, *obj_mgr);
+    CRef<CScope> db_scope = Ref(new CScope(*obj_mgr));
+    db_scope->AddDefaults();
+    m_pMatchSetup.reset(new CMatchSetup(db_scope));
+
+    bool keep_temps = args["keep-temps"];
+    
+    // Set up scope 
     CRef<CScope> scope(new CScope(*obj_mgr));
 
     unique_ptr<CObjectIStream> pInStream(x_InitObjectIStream(args));
@@ -170,6 +182,7 @@ int CProteinMatchApp::Run(void)
 
     const string out_stub = args["o"].AsString();
      // Handle abuse!! 
+    CMatchTabulate match_tab;
     int count=0;
     for (CSeq_entry_Handle nuc_prot_seh : nuc_prot_sets) {
 
@@ -184,7 +197,7 @@ int CProteinMatchApp::Run(void)
         vector<string> blast_args;
         x_GetBlastArgs(
             seq_entry_files.local_nuc_seq, 
-            seq_entry_files.gb_nuc_seq, 
+            seq_entry_files.db_nuc_seq, 
             alignment_file,
             blast_args);
 
@@ -209,7 +222,7 @@ int CProteinMatchApp::Run(void)
         vector<string> compare_annots_args;
         x_GetCompareAnnotsArgs(
             seq_entry_files.local_nuc_prot_set,
-            seq_entry_files.gb_nuc_prot_set,
+            seq_entry_files.db_nuc_prot_set,
             manifest_file, 
             annot_file,
             compare_annots_args);
@@ -222,13 +235,25 @@ int CProteinMatchApp::Run(void)
 
         CRef<CSeq_align> alignment = Ref(new CSeq_align());
         x_ReadAlignmentFile(alignment_file, alignment);
-        
-
-        // Append to match table here
-//        x_DeleteTempFiles();
+       
+        match_tab.AppendToMatchTable(*alignment, seq_annots); 
+        if (!keep_temps) {
+            x_DeleteTempFiles();
+        }
         ++count;
     }
-    // Write match table here
+
+    const string table_file = out_stub + ".tab";
+    try {
+        CNcbiOfstream ostr(table_file);
+        match_tab.WriteTable(ostr);
+    }
+    catch (...) {
+        NCBI_THROW(CProteinMatchException,
+            eOutputError,
+            "Could not write match table");
+    }
+
 
     scope->RemoveEntry(input_entry);
     return 0;
@@ -338,35 +363,35 @@ CProteinMatchApp::x_GenerateSeqEntryTempFiles(CSeq_entry_Handle nuc_prot_seh,
 
     CSeq_entry_Handle nucleotide_seh = m_pMatchSetup->GetNucleotideSEH(nuc_prot_seh);
 
-    CSeq_entry_Handle gb_seh = m_pMatchSetup->GetGenBankTopLevelEntry(nucleotide_seh);
-    if (!gb_seh) {
+    CSeq_entry_Handle db_seh = m_pMatchSetup->GetDBTopLevelEntry(nucleotide_seh);
+    if (!db_seh) {
         NCBI_THROW(CProteinMatchException,
             eBadInput,
-            "Failed to fetch GenBank entry");
+            "Failed to fetch DB entry");
     }
 
     const string count_string = NStr::NumericToString(count);
 
-    CConstRef<CBioseq_set> gb_nuc_prot_set = m_pMatchSetup->GetGenBankNucProtSet(nucleotide_seh.GetCompleteSeq_entry()->GetSeq());
-    CConstRef<CSeq_entry> gb_se = gb_seh.GetCompleteSeq_entry();
+    CConstRef<CBioseq_set> db_nuc_prot_set = m_pMatchSetup->GetDBNucProtSet(nucleotide_seh.GetCompleteSeq_entry()->GetSeq());
+    CConstRef<CSeq_entry> db_se = db_seh.GetCompleteSeq_entry();
 
     // Write the genbank nuc-prot-set to a file
-    string gb_nuc_prot_file = out_stub
+    string db_nuc_prot_file = out_stub
         + ".genbank"
         + count_string
         + ".asn";
-    x_WriteEntry(*(gb_nuc_prot_set->GetParentEntry()), gb_nuc_prot_file, as_binary);
-    x_LogTempFile(gb_nuc_prot_file);
+    x_WriteEntry(*(db_nuc_prot_set->GetParentEntry()), db_nuc_prot_file, as_binary);
+    x_LogTempFile(db_nuc_prot_file);
 
     // Write the genbank nucleotide sequence to a file
-    //const CBioseq& gb_nuc_seq = gb_se->GetSet().GetNucFromNucProtSet();
-    const CBioseq& gb_nuc_seq = gb_nuc_prot_set->GetNucFromNucProtSet();
-    const string gb_nuc_file = out_stub
+    //const CBioseq& db_nuc_seq = db_se->GetSet().GetNucFromNucProtSet();
+    const CBioseq& db_nuc_seq = db_nuc_prot_set->GetNucFromNucProtSet();
+    const string db_nuc_file = out_stub
         + ".genbank_nuc"
         + count_string
         + ".asn";
-    x_WriteEntry(*(gb_nuc_seq.GetParentEntry()), gb_nuc_file, as_text);
-    x_LogTempFile(gb_nuc_file);
+    x_WriteEntry(*(db_nuc_seq.GetParentEntry()), db_nuc_file, as_text);
+    x_LogTempFile(db_nuc_file);
 
     CRef<CSeq_id> local_id;
 
@@ -393,8 +418,8 @@ CProteinMatchApp::x_GenerateSeqEntryTempFiles(CSeq_entry_Handle nuc_prot_seh,
     x_LogTempFile(local_nuc_file);
 
     SSeqEntryFilenames filenames;
-    filenames.gb_nuc_prot_set = gb_nuc_prot_file;
-    filenames.gb_nuc_seq = gb_nuc_file;
+    filenames.db_nuc_prot_set = db_nuc_prot_file;
+    filenames.db_nuc_seq = db_nuc_file;
     filenames.local_nuc_prot_set = local_nuc_prot_file;
     filenames.local_nuc_seq = local_nuc_file;
 
@@ -589,7 +614,13 @@ void CProteinMatchApp::x_LogTempFile(const string& filename)
 
 void CProteinMatchApp::x_DeleteTempFiles(void) 
 {
-    // Delete temporary files here
+    string file_list = " ";
+    for (string filename : m_TempFiles) {
+        auto tempfile = CFile(filename);
+        if (tempfile.Exists()) {
+            tempfile.Remove();
+        }
+    }
 }
 
 

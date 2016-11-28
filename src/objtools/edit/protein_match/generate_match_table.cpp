@@ -135,6 +135,29 @@ bool CMatchTabulate::x_TryProcessAnnots(const list<CRef<CSeq_annot>>& annot_list
         }
     }
 
+    for (CRef<CSeq_annot> pSeqAnnot : annot_list) {
+        if (x_HasCdsSubject(*pSeqAnnot) && 
+            x_HasNovelSubject(*pSeqAnnot)) {
+            const CSeq_feat& subject = *(pSeqAnnot->GetData().GetFtable().back());
+            const string accver = x_GetAccessionVersion(subject);
+            if (dead_protein_skip.find(accver) == dead_protein_skip.end()) {
+                dead_protein_skip.insert(accver);
+                dead_proteins.push_back(accver);
+            }
+            continue;
+        }
+
+        if (x_HasCdsQuery(*pSeqAnnot) && 
+            x_HasNovelQuery(*pSeqAnnot)) {
+            const CSeq_feat& query = *(pSeqAnnot->GetData().GetFtable().front());
+            const string localid = x_GetLocalID(query);
+            if (new_protein_skip.find(localid) == new_protein_skip.end()) {
+                new_protein_skip.insert(localid);
+                new_proteins.push_back(localid);
+            }
+            continue;
+        }
+    }
     return true;
 }
 

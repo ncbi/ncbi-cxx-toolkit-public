@@ -10,18 +10,16 @@
 #include <objmgr/util/sequence.hpp>
 #include <objects/general/Object_id.hpp>
 
-#include <objtools/data_loaders/genbank/gbloader.hpp>
+//#include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/edit/protein_match/prot_match_exception.hpp>
 #include <objtools/edit/protein_match/setup_match.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-CMatchSetup::CMatchSetup() {
-    CRef<CObjectManager> obj_mgr = CObjectManager::GetInstance();
-    CGBDataLoader::RegisterInObjectManager(*obj_mgr);
-    m_GBScope = Ref(new CScope(*obj_mgr));
-    m_GBScope->AddDataLoader("GBLOADER");
+
+CMatchSetup::CMatchSetup(CRef<CScope> db_scope) : m_DBScope(db_scope)
+{
 }
 
 
@@ -66,18 +64,18 @@ CSeq_entry_Handle CMatchSetup::GetNucleotideSEH(CSeq_entry_Handle seh) const
 }
 
 
-CSeq_entry_Handle CMatchSetup::GetGenBankTopLevelEntry(CSeq_entry_Handle nucleotide_seh)  
+CSeq_entry_Handle CMatchSetup::GetDBTopLevelEntry(CSeq_entry_Handle nucleotide_seh)  
 {
-    CBioseq_Handle gb_bsh;
+    CBioseq_Handle db_bsh;
     for (auto pNucId : nucleotide_seh.GetSeq().GetCompleteBioseq()->GetId()) {
         if (pNucId->IsGenbank()) {
-            gb_bsh = m_GBScope->GetBioseqHandle(*pNucId);
-            if (!gb_bsh) {
+            db_bsh = m_DBScope->GetBioseqHandle(*pNucId);
+            if (!db_bsh) {
                 NCBI_THROW(CProteinMatchException, 
                     eInputError,
-                    "Failed to fetch GenBank entry");
+                    "Failed to fetch DB entry");
             }
-            return gb_bsh.GetTopLevelEntry(); // GetParentBioseqSet() 
+            return db_bsh.GetTopLevelEntry(); // GetParentBioseqSet() 
         }
     }
 
@@ -86,21 +84,22 @@ CSeq_entry_Handle CMatchSetup::GetGenBankTopLevelEntry(CSeq_entry_Handle nucleot
 }
 
 
-CConstRef<CBioseq_set> CMatchSetup::GetGenBankNucProtSet(const CBioseq& nuc_seq) 
+CConstRef<CBioseq_set> CMatchSetup::GetDBNucProtSet(const CBioseq& nuc_seq) 
 {
     for (auto pNucId : nuc_seq.GetId()) {
         if (pNucId->IsGenbank()) {
-            CBioseq_Handle gb_bsh = m_GBScope->GetBioseqHandle(*pNucId);
-            if (!gb_bsh) {
+            CBioseq_Handle db_bsh = m_DBScope->GetBioseqHandle(*pNucId);
+            if (!db_bsh) {
                 NCBI_THROW(CProteinMatchException, 
                     eInputError,
-                    "Failed to fetch GenBank entry");
+                    "Failed to fetch DB entry");
             }
-            return gb_bsh.GetCompleteBioseq()->GetParentSet();
+            return db_bsh.GetCompleteBioseq()->GetParentSet();
         }
     }
     return ConstRef(new CBioseq_set());
 }
+
 
 struct SIdCompare
 {

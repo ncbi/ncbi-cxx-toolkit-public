@@ -56,7 +56,7 @@ bool CBinRunner::CheckBinary(void) const
         return false;
     }
     
-    if (!m_pBinary->IsFile()) {
+    if (!m_pBinary->Exists()) {
         NCBI_THROW(CProteinMatchException,
             eInputError,
             "Cannot find " + m_pBinary->GetName());

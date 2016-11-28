@@ -42,7 +42,7 @@ BEGIN_SCOPE(objects)
 class CMatchSetup {
 
 public:
-    CMatchSetup(void);
+    CMatchSetup(CRef<CScope> db_scope);
     virtual ~CMatchSetup(void) {};
 
     // Redundant 
@@ -50,10 +50,9 @@ public:
         CSeq_entry_Handle seh,
         list<CSeq_entry_Handle>& nucprot_sets);
 
+    CConstRef<CBioseq_set> GetDBNucProtSet(const CBioseq& nuc_seq);
 
-    CConstRef<CBioseq_set> GetGenBankNucProtSet(const CBioseq& nuc_seq);
-
-    CSeq_entry_Handle GetGenBankTopLevelEntry(CSeq_entry_Handle nucleotide_seh);
+    CSeq_entry_Handle GetDBTopLevelEntry(CSeq_entry_Handle nucleotide_seh);
     CSeq_entry_Handle GetNucleotideSEH(CSeq_entry_Handle seh) const;
     bool GetNucSeqIdFromCDSs(CSeq_entry_Handle& seh, CRef<CSeq_id>& nucseq_id);
     bool UpdateNucSeqIds(CRef<CSeq_id>& new_id,
@@ -64,7 +63,7 @@ public:
         CRef<CSeq_id>& id);
 
 private:
-    CRef<CScope> m_GBScope;
+    CRef<CScope> m_DBScope;
 };
 
 END_SCOPE(objects)
