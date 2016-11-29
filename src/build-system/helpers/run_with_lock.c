@@ -259,7 +259,8 @@ static
 int s_OpenPipeOrPty(int fd_to_mimic, const char* label, int fds[2],
                     EFilterState* state)
 {
-    if (isatty(fd_to_mimic)) {
+    const char* term = getenv("TERM");
+    if (term != NULL  &&  strcmp(term, "dumb")  &&  isatty(fd_to_mimic)) {
         struct termios attr;
         const char*    name;
         *state = eFS_on;
