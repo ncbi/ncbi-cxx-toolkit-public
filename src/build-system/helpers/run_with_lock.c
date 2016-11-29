@@ -185,13 +185,14 @@ int s_Tee(int in, FILE* out1, FILE* out2, EFilterState* state)
         if (*state == eFS_esc) {
             if (*p == '[') {
                 ++p;
-                --n;
+                /* --n; */ /* overadjusts when the final m turns up */
                 *state = eFS_csi;
             } else {
                 fputc('\033', out2);
                 *state = eFS_on;
             }
-        } else if (*state == eFS_csi) {
+        }
+        if (*state == eFS_csi) {
             p = memchr(buffer, 'm', n);
             if (p == NULL) {
                 continue;
@@ -211,23 +212,25 @@ int s_Tee(int in, FILE* out1, FILE* out2, EFilterState* state)
                 if (src > dest  &&  start > src) {
                     memmove(dest, src, start - src);
                 }
+                dest += start - src;
                 if (start == p + n - 1) {
                     *state = eFS_esc;
-                    n = start - p;
+                    n = dest - p;
                     break;
                 }
-                dest += start - src;
                 const char* end = memchr(start + 2, 'm', n - 2 - (start - p));
                 if (end == NULL) {
                     *state = eFS_csi;
-                    n = start - p;
+                    n = dest - p;
                     break;
                 } else {
                     src = end + 1;
                 }
             }
-            memmove(dest, src, n - (src - p));
-            n -= src - dest;
+            if (*state == eFS_on) {
+                memmove(dest, src, n - (src - p));
+                n -= src - dest;
+            }
         }
         if (fwrite(p, 1, n, out2) < n) {
             fprintf(stderr, "%s: Error logging process output: %s.\n",
