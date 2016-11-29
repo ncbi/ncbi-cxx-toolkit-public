@@ -96,7 +96,7 @@ void CSofaMap::x_Init()
     m_Map[ GT( e_Imp, eSubtype_misc_signal ) ]  = SofaType( 5836, "regulatory_region" );
     m_Map[ GT( e_Imp, eSubtype_misc_structure ) ] = SofaType( 2, "sequence_secondary_structure" );
     m_Map[ GT( e_Imp, eSubtype_mobile_element ) ]= SofaType( 1037, "mobile_genetic_element" );
-    m_Map[ GT( e_Imp, eSubtype_modified_base ) ]= SofaType( 305, "modified_base_site" );
+    m_Map[ GT( e_Imp, eSubtype_modified_base ) ]= SofaType( 305, "modified_DNA_base" );
     m_Map[ GT( e_Imp, eSubtype_operon ) ]       = SofaType( 178, "operon" );
     m_Map[ GT( e_Imp, eSubtype_oriT ) ]         = SofaType( 724, "oriT" );
     m_Map[ GT( e_Imp, eSubtype_polyA_signal ) ] = SofaType( 551, "polyA_signal_sequence" );
