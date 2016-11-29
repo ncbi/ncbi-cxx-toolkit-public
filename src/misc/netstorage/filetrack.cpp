@@ -140,37 +140,58 @@ const THTTP_Flags kDefaultHttpFlags =
 
 struct SUrl
 {
-    typedef CNetStorageObjectLoc TLoc;
-    typedef TLoc::EFileTrackSite TSite;
-
-    static string Get(TSite site, const char* path)
+    enum EType
     {
-        const char* const kURLs[TLoc::eNumberOfFileTrackSites] =
-        {
-            "https://submit.ncbi.nlm.nih.gov",
-            "https://dsubmit.ncbi.nlm.nih.gov",
-            "https://qsubmit.ncbi.nlm.nih.gov",
-        };
+        eDownload,
+        eUpload,
+        eLocks,
+        eMeta,
+    };
 
-        _ASSERT(path);
-        return string(kURLs[site]) + path;
+    static string Get(const SFileTrackConfig& config,
+            const CNetStorageObjectLoc& loc, const char* when, EType type)
+    {
+        return GetRoot(config, loc, when) + GetPath(type, loc.GetUniqueKey());
     }
 
-    static string Get(TSite site, const char* path,
-            const string& key, const char* sub_path)
+    static string Get(const SFileTrackConfig& config,
+            const CNetStorageObjectLoc& loc, const char* when, EType type, string key)
     {
-        _ASSERT(sub_path);
-        return Get(site, path) + key + sub_path;
+        return GetRoot(config, loc, when) + GetPath(type, key);
     }
 
-    static string Get(const TLoc& loc, const char* path)
+private:
+    static string GetRoot(const SFileTrackConfig& config,
+            const CNetStorageObjectLoc& loc, const char* when)
     {
-        return Get(loc.GetFileTrackSite(), path);
+        const auto site = loc.GetFileTrackSite();
+
+        if (config.check_locator_site && site != config.site) {
+            NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
+                    "'foreign site objects are forbidden' " <<
+                    when << " " << loc.GetLocator());
+        }
+
+        switch (site) {
+        case CNetStorageObjectLoc::eFileTrack_ProdSite:
+            return "https://submit.ncbi.nlm.nih.gov";
+
+        case CNetStorageObjectLoc::eFileTrack_QASite:
+            return "https://qsubmit.ncbi.nlm.nih.gov";
+
+        default:
+            return "https://dsubmit.ncbi.nlm.nih.gov";
+        }
     }
 
-    static string Get(const TLoc& loc, const char* path, const char* sub_path)
+    static string GetPath(EType type, string key)
     {
-        return Get(loc.GetFileTrackSite(), path, loc.GetUniqueKey(), sub_path);
+        switch (type) {
+        case eDownload: return "/api/2.0/files/" + key + "/?format=attachment";
+        case eUpload:   return "/api/2.0/uploads/binary/";
+        case eLocks:    return "/api/2.0/pins/";
+        default:        return "/api/2.0/files/" + key + "/";
+        }
     }
 };
 
@@ -193,7 +214,7 @@ SFileTrackDownload::SFileTrackDownload(
         const SFileTrackConfig& config,
         const CNetStorageObjectLoc& object_loc) :
     SFileTrackRequest(config, object_loc,
-            SUrl::Get(object_loc, "/api/2.0/files/", "/?format=attachment"))
+            SUrl::Get(config, object_loc, "on downloading", SUrl::eDownload))
 {
 }
 
@@ -203,7 +224,7 @@ SFileTrackUpload::SFileTrackUpload(
         const string& user_header,
         SConnNetInfo* net_info) :
     SFileTrackRequest(config, object_loc,
-            SUrl::Get(object_loc, "/api/2.0/uploads/binary/"),
+            SUrl::Get(config, object_loc, "on uploading", SUrl::eUpload),
             net_info, user_header, fHTTP_WriteThru)
 {
 }
@@ -283,8 +304,7 @@ void SFileTrackUpload::RenameFile(const string& from, const string& to)
     CHttpSession session;
     session.SetHttpFlags(kDefaultHttpFlags);
 
-    SUrl::TSite site(m_ObjectLoc.GetFileTrackSite());
-    const string url(SUrl::Get(site, "/api/2.0/files/", from, "/"));
+    const auto url = SUrl::Get(m_Config, m_ObjectLoc, "on renaming", SUrl::eMeta, from);
 
     CHttpRequest req = session.NewRequest(url, CHttpSession::ePut);
     auto& timeout(m_Config.comm_timeout);
@@ -350,7 +370,7 @@ void SFileTrackAPI::Remove(const CNetStorageObjectLoc& object_loc)
     CHttpSession session;
     session.SetHttpFlags(kDefaultHttpFlags);
 
-    const string url(SUrl::Get(object_loc, "/api/2.0/files/", "/"));
+    const auto url = SUrl::Get(config, object_loc, "on removing", SUrl::eMeta);
     CHttpRequest req = session.NewRequest(url, CHttpSession::eDelete);
     auto& timeout(config.comm_timeout);
     req.SetTimeout(CTimeout(timeout.sec, timeout.usec));
@@ -397,7 +417,7 @@ SFileTrackAPI::SFileTrackAPI(const SFileTrackConfig& c)
 
 CJsonNode SFileTrackAPI::GetFileInfo(const CNetStorageObjectLoc& object_loc)
 {
-    const string url(SUrl::Get(object_loc, "/api/2.0/files/", "/"));
+    const auto url = SUrl::Get(config, object_loc, "on getting info for", SUrl::eMeta);
 
     SFileTrackRequest request(config, object_loc, url);
 
@@ -409,7 +429,7 @@ string SFileTrackAPI::GetPath(const CNetStorageObjectLoc& object_loc)
     CHttpSession session;
     session.SetHttpFlags(kDefaultHttpFlags);
 
-    const string url(SUrl::Get(object_loc, "/api/2.0/pins/"));
+    const auto url = SUrl::Get(config, object_loc, "on locking", SUrl::eLocks);
     CHttpRequest req = session.NewRequest(url, CHttpSession::ePost);
     auto& timeout(config.comm_timeout);
     req.SetTimeout(CTimeout(timeout.sec, timeout.usec));
@@ -482,6 +502,7 @@ SFileTrackConfig::SFileTrackConfig(EVoid) :
 
 SFileTrackConfig::SFileTrackConfig(const IRegistry& reg, const string& section) :
     enabled(true),
+    check_locator_site(reg.GetBool(s_GetSection(section), "check_locator_site", false)),
     token(reg.GetEncryptedString(s_GetSection(section), "token",
                 IRegistry::fPlaintextAllowed)),
     comm_timeout(s_GetDefaultTimeout(reg.GetInt(

@@ -50,6 +50,7 @@ BEGIN_NCBI_SCOPE
 struct SFileTrackConfig
 {
     bool enabled = false;
+    const bool check_locator_site = false;
     string token;
     const STimeout comm_timeout;
 
