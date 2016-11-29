@@ -43,10 +43,6 @@
 
 #include <memory>
 
-#ifdef HAVE_LIBSQLITE3
-#include <db/sqlite/sqlitewrapp.hpp>
-#endif
-
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
