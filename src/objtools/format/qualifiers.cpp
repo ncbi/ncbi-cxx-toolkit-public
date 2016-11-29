@@ -1149,9 +1149,17 @@ void s_HtmlizeLatLon( string &subname ) {
 
     // now we can form the HTML
     CNcbiOstrstream result;
+    /*
     result << "<a href=\"" << strLinkBaseLatLon << "?lat=" 
         << lat 
         << "&amp;lon=" 
+        << lon 
+        << "\">"
+        << subname << "</a>";
+    */
+    result << "<a href=\"" << "https://www.google.com/maps/place/"
+        << lat 
+        << "+" 
         << lon 
         << "\">"
         << subname << "</a>";
