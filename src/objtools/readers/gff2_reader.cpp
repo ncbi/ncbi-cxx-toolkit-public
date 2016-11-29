@@ -274,19 +274,19 @@ CGff2Reader::ReadSeqAnnotsNew(
         list<string> id_list;
 
         string line;
-            while (xGetLine(lr, line)) {
-                if (IsCanceled()) {
-                    AutoPtr<CObjReaderLineException> pErr(
-                        CObjReaderLineException::Create(
-                        eDiag_Info,
-                        0,
-                        "Reader stopped by user.",
-                        ILineError::eProblem_ProgressInfo));
-                    ProcessError(*pErr, pEC);
-                    annots.clear();
-                    return;
-                }
-                xReportProgress(pEC);
+        while (xGetLine(lr, line)) {
+            if (IsCanceled()) {
+                AutoPtr<CObjReaderLineException> pErr(
+                    CObjReaderLineException::Create(
+                    eDiag_Info,
+                    0,
+                    "Reader stopped by user.",
+                    ILineError::eProblem_ProgressInfo));
+                ProcessError(*pErr, pEC);
+                annots.clear();
+                return;
+            }
+            xReportProgress(pEC);
 
             try {
                 if (xParseStructuredComment(line)) {
@@ -1229,7 +1229,7 @@ bool CGff2Reader::xSetDensegStarts(const vector<string>& gapParts,
     // The target start values do not.
     if (oppositeStrands) {
         size_t identOffset = gff.SeqStop();
-        for (int i=0; i<gapCount; ++i) {
+        for (size_t i=0; i<gapCount; ++i) {
             char changeType = gapParts[i][0];
             int changeSize = NStr::StringToInt(gapParts[i].substr(1));
             switch (changeType) {
@@ -1260,7 +1260,7 @@ bool CGff2Reader::xSetDensegStarts(const vector<string>& gapParts,
 
     // No difference in strandedness
     size_t identOffset = gff.SeqStart();
-    for (int i=0; i < gapCount; ++i) {
+    for (size_t i=0; i < gapCount; ++i) {
         char changeType = gapParts[i][0];
         int changeSize = NStr::StringToInt(gapParts[i].substr(1));
         switch (changeType) {
