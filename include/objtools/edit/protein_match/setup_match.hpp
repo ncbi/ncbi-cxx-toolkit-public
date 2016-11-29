@@ -54,12 +54,10 @@ public:
 
     CSeq_entry_Handle GetDBTopLevelEntry(CSeq_entry_Handle nucleotide_seh);
     CSeq_entry_Handle GetNucleotideSEH(CSeq_entry_Handle seh) const;
-    bool GetNucSeqIdFromCDSs(CSeq_entry_Handle& seh, CRef<CSeq_id>& nucseq_id);
     bool UpdateNucSeqIds(CRef<CSeq_id>& new_id,
         CSeq_entry_Handle& nucleotide_seh,
         CSeq_entry_Handle& nuc_prot_seh);
     bool GetNucSeqIdFromCDSs(const CSeq_entry& nuc_prot_set,
-        CScope& scope,
         CRef<CSeq_id>& id);
 
 private:

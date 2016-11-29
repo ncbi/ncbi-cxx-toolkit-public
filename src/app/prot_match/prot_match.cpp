@@ -422,8 +422,7 @@ CProteinMatchApp::x_GenerateSeqEntryTempFiles(CSeq_entry_Handle nuc_prot_seh,
 
     CRef<CSeq_id> local_id;
 
-    //if (m_pMatchSetup->GetNucSeqIdFromCDSs(*(nuc_prot_seh.GetCompleteSeq_entry()), scope, local_id)) {
-    if (m_pMatchSetup->GetNucSeqIdFromCDSs(nuc_prot_seh, local_id)) {
+    if (m_pMatchSetup->GetNucSeqIdFromCDSs(*(nuc_prot_seh.GetCompleteSeq_entry()), local_id)) {
         m_pMatchSetup->UpdateNucSeqIds(local_id, nucleotide_seh, nuc_prot_seh);
     }
 

@@ -13,6 +13,7 @@
 //#include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/edit/protein_match/prot_match_exception.hpp>
 #include <objtools/edit/protein_match/setup_match.hpp>
+#include <serial/iterator.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -112,26 +113,23 @@ struct SIdCompare
 
 
 bool CMatchSetup::GetNucSeqIdFromCDSs(const CSeq_entry& nuc_prot_set,
-    CScope& scope,
     CRef<CSeq_id>& id)
-{
-    CSeq_entry_Handle nuc_prot_handle = scope.GetObjectHandle(nuc_prot_set);
-    return GetNucSeqIdFromCDSs(nuc_prot_handle, id);
-}
-
-
-bool CMatchSetup::GetNucSeqIdFromCDSs(CSeq_entry_Handle& seh, CRef<CSeq_id>& id) 
 {
     // Set containing distinct ids
     set<CRef<CSeq_id>, SIdCompare> ids;
 
-    SAnnotSelector sel(CSeqFeatData::e_Cdregion);
-    for(CFeat_CI feature_it(seh, sel); feature_it; ++feature_it) {
+    for (CTypeConstIterator<CSeq_feat> feat(nuc_prot_set); feat; ++feat) 
+    {
+        if (!feat->GetData().IsCdregion()) {
+            continue;
+        }
+
         CRef<CSeq_id> nucseq_id = Ref(new CSeq_id());
-        nucseq_id->Assign(*(feature_it->GetLocation().GetId()));
+        nucseq_id->Assign(*(feat->GetLocation().GetId()));
         // Throw an exception if null pointer
-        ids.insert(nucseq_id); 
+        ids.insert(nucseq_id);
     }
+
 
     if (ids.size() > 1) {
         NCBI_THROW(CProteinMatchException, 
