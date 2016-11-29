@@ -90,7 +90,9 @@ static CSrvDiagMsg::ESeverity s_VisibleSev = CSrvDiagMsg::Warning;
 static bool s_LogRequests = true;
 static string s_UnkClient = "UNK_CLIENT";
 static string s_UnkSession = "UNK_SESSION";
-static const char* s_SevNames[] = {"Trace", "Info", "Warning", "Error", "Critical", "Fatal", NULL};
+static const char* s_SevNames[] = {"Trace", "Info", "Warning", "Error", "Critical", "Fatal", "Fatal", NULL};
+static const char* s_SoftFatalActions[] = {"abort", "shutdown", "log", NULL};
+static int s_SoftFatal = 0;
 static const size_t kOneRecReserve = 500;
 static const size_t kInitLogBufSize = 10000000;
 static size_t s_LogBufSize = kInitLogBufSize;
@@ -146,6 +148,11 @@ string GetLogFileName(void)
 string GetLogVisibility(void)
 {
     return s_SevNames[s_VisibleSev];
+}
+
+string GetSoftFatalAction(void)
+{
+    return s_SoftFatalActions[s_SoftFatal];
 }
 
 static void
@@ -505,6 +512,13 @@ ConfigureLogging(CNcbiRegistry* reg, CTempString section)
     for (i = 0; s_SevNames[i] != NULL; ++i) {
         if (vis.compare(s_SevNames[i]) == 0) {
             s_VisibleSev = (CSrvDiagMsg::ESeverity)i;
+            break;
+        }
+    }
+    string tmp = reg->GetString(section, "soft_fatal_action", "abort");
+    for (i = 0; s_SoftFatalActions[i] != NULL; ++i) {
+        if (tmp.compare(s_SoftFatalActions[i]) == 0) {
+            s_SoftFatal = i;
             break;
         }
     }
@@ -1059,8 +1073,17 @@ CSrvDiagMsg::Flush(void)
     s_CheckBufSize(m_Data, 1);
     *m_Data->cur_ptr++ = '\n';
     m_Data->cur_msg_ptr = m_Data->cur_ptr;
-    if (m_Data->severity == Fatal)
+    if (m_Data->severity == SoftFatal) {
+        switch (s_SoftFatal) {
+        default:
+        case 0: m_Data->severity = Fatal; break;
+        case 1: CTaskServer::RequestShutdown(eSrvFastShutdown); break;
+        case 2: break;
+        }
+    }
+    if (m_Data->severity == Fatal) {
         s_DoFatalAbort(m_Data);
+    }
     s_CheckBufSize(m_Data, kOneRecReserve);
 }
 

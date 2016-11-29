@@ -37,6 +37,7 @@ BEGIN_NCBI_SCOPE
 void SaveAppCmdLine(const string& cmd_line);
 string GetLogFileName(void);
 string GetLogVisibility(void);
+string GetSoftFatalAction(void);
 void SetLogFileName(CTempString name);
 void ConfigureLogging(CNcbiRegistry* reg, CTempString section);
 void InitLogging(void);

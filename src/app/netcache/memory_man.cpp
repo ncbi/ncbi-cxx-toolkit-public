@@ -301,7 +301,9 @@ s_DoMmap(size_t size)
             abort();
         } else {
             reentry = true;
-            SRV_FATAL("s_DoMmap failed when requesting " << size << " bytes, errno: " << errno);
+            SRV_FATAL("s_DoMmap failed when requesting "
+                << size << " bytes, errno: " << errno
+                << ", mmap_page_cnt: " << GetMPageCount());
         }
     }
     return ptr;
@@ -315,7 +317,8 @@ s_DoUnmap(void* ptr, size_t size)
 {
 #ifdef NCBI_OS_LINUX
     if (munmap(ptr, size) != 0) {
-        SRV_FATAL("s_DoUnmap failed, errno: " << errno);
+        SRV_LOG(SoftFatal, "Fatal error: " << "s_DoUnmap failed, errno: " << errno
+            << ", mmap_page_cnt: " << GetMPageCount());
     }
 #endif
 }

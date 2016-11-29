@@ -861,6 +861,7 @@ void CNCStat::PrintState(CSrvSocketTask& task)
     task.WriteText(eol).WriteText("avg_tdiff_blobnotify" ).WriteText(is ).WriteNumber( m_EndState.avg_tdiff_blobnotify);
     task.WriteText(eol).WriteText("max_tdiff_blobnotify" ).WriteText(is ).WriteNumber( m_EndState.max_tdiff_blobnotify);
     task.WriteText(eol).WriteText("log_visible").WriteText(iss).WriteText(GetLogVisibility()).WriteText("\"");
+    task.WriteText(eol).WriteText("soft_fatal_action").WriteText(iss).WriteText(GetSoftFatalAction()).WriteText("\"");
     m_SrvStat->PrintState(task);
 }
 

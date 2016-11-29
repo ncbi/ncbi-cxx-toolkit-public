@@ -82,6 +82,7 @@ public:
         Warning,
         Error,
         Critical,
+        SoftFatal,
         Fatal
     };
 
