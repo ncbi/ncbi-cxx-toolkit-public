@@ -1362,6 +1362,44 @@ bool IsPseudo(const CSeq_feat& feat, CScope& scope)
 }
 
 
+CConstRef<CSeq_feat> GetLocalGeneByLocus(const string& locus, bool use_tag, CBioseq_Handle bsh)
+{
+    CTSE_Handle tse = bsh.GetTSE_Handle();
+    const CBioseq& b = *(bsh.GetCompleteBioseq());
+
+    CTSE_Handle::TSeq_feat_Handles potentials = tse.GetGenesWithLocus(locus, use_tag);
+    ITERATE(CTSE_Handle::TSeq_feat_Handles, p, potentials) {
+        ITERATE(CBioseq::TId, id, b.GetId()) {
+            CSeq_id::E_SIC cmp = p->GetLocationId().GetSeqId()->Compare(**id);
+            if (cmp == CSeq_id::e_YES) {
+                return p->GetSeq_feat();
+            } else if (cmp == CSeq_id::e_NO) {
+                break;
+            }
+        }
+    }
+    return CConstRef<CSeq_feat>(NULL);
+}
+
+
+CConstRef<CSeq_feat> GetLocalGeneByXref(const CGene_ref& gene, CBioseq_Handle bsh)
+{
+    if (gene.IsSetLocus_tag() && !(gene.GetLocus_tag().empty())) {
+        CConstRef<CSeq_feat> f = GetLocalGeneByLocus(gene.GetLocus_tag(), true, bsh);
+        if (f) {
+            return f;
+        }
+    }
+    if (gene.IsSetLocus() && !(gene.GetLocus().empty())) {
+        CConstRef<CSeq_feat> f = GetLocalGeneByLocus(gene.GetLocus(), false, bsh);
+        if (f) {
+            return f;
+        }
+    }
+    return CConstRef<CSeq_feat>(NULL);
+}
+
+
 CConstRef<CSeq_feat> GetGeneForFeature(const CSeq_feat& feat, CScope& scope)
 {
     if (feat.IsSetXref()) {
@@ -1388,21 +1426,7 @@ CConstRef<CSeq_feat> GetGeneForFeature(const CSeq_feat& feat, CScope& scope)
                 }
             } else if ((*xit)->IsSetData() && (*xit)->GetData().IsGene()) {
                 const CGene_ref& gene = (*xit)->GetData().GetGene();
-                if (gene.IsSetLocus_tag() && !(gene.GetLocus_tag().empty())) {
-                    CSeq_feat_Handle
-                        seq_feat_hl = tse.GetGeneWithLocus(gene.GetLocus_tag(), true);
-                    if (seq_feat_hl) {
-                        return (seq_feat_hl.GetOriginalSeq_feat());
-                    }
-                }
-                if (gene.CanGetLocus() && !(gene.GetLocus().empty())) {
-                    CSeq_feat_Handle
-                        seq_feat_hl = tse.GetGeneWithLocus(gene.GetLocus(), false);
-                    if (seq_feat_hl) {
-                        return (seq_feat_hl.GetOriginalSeq_feat());
-                    }
-                }
-                return (CConstRef <CSeq_feat>());
+                return GetLocalGeneByXref(gene, bsh);
             } 
         }
     }
