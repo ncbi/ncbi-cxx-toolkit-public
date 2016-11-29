@@ -130,6 +130,11 @@ void CProteinMatchApp::Init(void)
         "Directory containing C++ binaries, if not CWD",
         CArgDescriptions::eString);
 
+    arg_desc->AddOptionalKey("outdir",
+        "Output_Dir",
+        "Output directory, if not specified write to CWD",
+        CArgDescriptions::eString);
+
     arg_desc->AddFlag("keep-temps", "Retain temporary files");
 
     CDataLoadersUtil::AddArgumentDescriptions(*arg_desc,
@@ -150,6 +155,15 @@ int CProteinMatchApp::Run(void)
     const string bin_dir = args["bindir"] ? 
         args["bindir"].AsString() :
         CDir::GetCwd();
+
+    string out_dir = CDir::GetCwd();
+    if (args["outdir"]) {
+        CDir outputdir(args["outdir"].AsString());
+        if (!outputdir.Exists()) {
+            outputdir.Create();
+        }
+        out_dir = outputdir.GetDir();
+    }
 
     CBinRunner assm_assm_blastn(bin_dir, "assm_assm_blastn");
     CBinRunner compare_annots(bin_dir, "compare_annots");
@@ -190,7 +204,10 @@ int CProteinMatchApp::Run(void)
         return 0;
     }
 
-    const string out_stub = args["o"].AsString();
+    const string out_stub = CDirEntry::MakePath(
+        out_dir,
+        args["o"].AsString());
+
      // Handle abuse!! 
     CMatchTabulate match_tab;
     int count=0;
