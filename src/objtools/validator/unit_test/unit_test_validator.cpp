@@ -19960,5 +19960,43 @@ BOOST_AUTO_TEST_CASE(Test_VR_664)
     CheckErrors(*eval, expected_errors);
 
     CLEAR_ERRORS
+
+    assembly_name->SetData().SetStr("Ec2009C-3227");
+    desc->SetUser().Assign(*user);
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_VR_478)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    CRef<CSeq_feat> gene(new CSeq_feat());
+    gene->SetData().SetGene().SetLocus("a");
+    CRef<CSeq_loc> int1(new CSeq_loc());
+    int1->SetInt().SetId().Assign(*(entry->GetSeq().GetId().front()));
+    int1->SetInt().SetFrom(0);
+    int1->SetInt().SetTo(5);
+    CRef<CSeq_loc> int2(new CSeq_loc());
+    int2->SetInt().SetId().Assign(*(entry->GetSeq().GetId().front()));
+    int2->SetInt().SetFrom(10);
+    int2->SetInt().SetTo(15);
+    gene->SetLocation().SetMix().Set().push_back(int1);
+    gene->SetLocation().SetMix().Set().push_back(int2);
+    unit_test_util::AddFeat(gene, entry);
+
+    CRef<CSeq_feat> mobile_element(new CSeq_feat());
+    mobile_element->SetData().SetImp().SetKey("mobile_element");
+    mobile_element->SetLocation().SetInt().SetId().Assign(*(entry->GetSeq().GetId().front()));
+    mobile_element->SetLocation().SetInt().SetFrom(6);
+    mobile_element->SetLocation().SetInt().SetTo(9);
+    CRef<CGb_qual> qual(new CGb_qual("mobile_element_type", "superintegron"));
+    mobile_element->SetQual().push_back(qual);
+    unit_test_util::AddFeat(mobile_element, entry);
+
+    STANDARD_SETUP
+
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
 }
 

@@ -4479,6 +4479,76 @@ static bool s_LocIntervalsCoverSegs (const CSeq_loc& loc)
 }
 
 
+bool s_HasMobileElementForInterval(TSeqPos from, TSeqPos to, CBioseq_Handle bsh)
+{
+    CRef<CSeq_loc> loc(new CSeq_loc());
+    loc->SetInt().SetId().Assign(*(bsh.GetSeqId()));
+    if (from < to) {
+        loc->SetInt().SetFrom(from);
+        loc->SetInt().SetTo(to);
+    } else {
+        loc->SetInt().SetFrom(to);
+        loc->SetInt().SetTo(from);
+    }
+    CRef<CSeq_loc> rev_loc(new CSeq_loc());
+    rev_loc->Assign(*loc);
+    rev_loc->SetInt().SetStrand(eNa_strand_minus);
+
+    TFeatScores mobile_elements;
+    GetOverlappingFeatures(*loc, CSeqFeatData::e_Imp,
+        CSeqFeatData::eSubtype_mobile_element, eOverlap_Contained, mobile_elements, bsh.GetScope());
+    ITERATE(TFeatScores, m, mobile_elements) {
+        if (m->second->GetLocation().Compare(*loc) == 0 || m->second->GetLocation().Compare(*rev_loc) == 0) {
+            return true;
+        }
+    }
+    mobile_elements.clear();
+    GetOverlappingFeatures(*rev_loc, CSeqFeatData::e_Imp,
+        CSeqFeatData::eSubtype_mobile_element, eOverlap_Contained, mobile_elements, bsh.GetScope());
+    ITERATE(TFeatScores, m, mobile_elements) {
+        if (m->second->GetLocation().Compare(*loc) == 0 || m->second->GetLocation().Compare(*rev_loc) == 0) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
+bool s_AllIntervalGapsAreMobileElements(const CSeq_loc& loc, CBioseq_Handle bsh)
+{
+    CSeq_loc_CI si(loc);
+    if (!si) {
+        return false;
+    }
+    ENa_strand loc_strand = loc.GetStrand();
+    while (si) {
+        TSeqPos gap_start;
+        if (loc_strand == eNa_strand_minus) {
+            gap_start = si.GetRange().GetFrom() + 1;
+        } else {
+            gap_start = si.GetRange().GetTo() + 1;
+        }
+        ++si;
+        if (si) {
+            TSeqPos gap_end;
+            if (loc_strand == eNa_strand_minus) {
+                gap_end = si.GetRange().GetTo();
+            } else {
+                gap_end = si.GetRange().GetFrom();
+            }
+            if (gap_end > 0) {
+                gap_end--;
+            }
+            if (!s_HasMobileElementForInterval(gap_start, gap_end, bsh)) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+
 void CValidError_bioseq::ValidateMultiIntervalGene(const CBioseq& seq)
 {
     try {
@@ -4496,6 +4566,11 @@ void CValidError_bioseq::ValidateMultiIntervalGene(const CBioseq& seq)
             if (fi->IsSetExcept() && fi->IsSetExcept_text()
                 && NStr::FindNoCase (fi->GetExcept_text(), "trans-splicing") != string::npos) {
                 //ignore - has exception
+                continue;
+            }
+
+            if (s_AllIntervalGapsAreMobileElements(loc, m_CurrentHandle)) {
+                // ignore, "space between" is a mobile element
                 continue;
             }
 
