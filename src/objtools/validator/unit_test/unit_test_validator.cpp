@@ -12673,7 +12673,9 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_CDSmRNArange)
                               "Unmatched CDS"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "CDSmRNAmismatch",
                               "No match for 1 mRNA"));
-    CheckErrors (*eval, expected_errors);
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "BadLocation",
+        "Trans-spliced feature should have multiple intervals"));
+    CheckErrors(*eval, expected_errors);
 
     // overlap problem rather than internal boundary problem
     scope.RemoveTopLevelSeqEntry(seh);
@@ -12693,6 +12695,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_CDSmRNArange)
     CRef<CSeq_entry> prot_seq = entry->SetSet().SetSeq_set().back();
     prot_seq->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set()[4] = 'S';
     seh = scope.AddTopLevelSeqEntry(*entry);
+    free (expected_errors.back());
+    expected_errors.pop_back();
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "CDSmRNArange", 
                       "mRNA overlaps or contains CDS but does not completely contain intervals"));
     eval = validator.Validate(seh, options);
@@ -19998,5 +20002,25 @@ BOOST_AUTO_TEST_CASE(Test_VR_478)
 
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_VR_630)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    CRef<CSeq_feat> gene = unit_test_util::AddMiscFeature(entry);
+    gene->SetData().SetGene().SetLocus("X");
+    gene->SetExcept(true);
+    gene->SetExcept_text("trans-splicing");
+
+    STANDARD_SETUP
+
+    eval = validator.Validate(seh, options);
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning,
+        "BadLocation",
+        "Trans-spliced feature should have multiple intervals"));
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
 }
 

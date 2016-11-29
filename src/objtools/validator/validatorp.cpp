@@ -2040,6 +2040,11 @@ void CValidError_imp::ValidateSeqLoc
     }
 
     if (trans_splice) {
+        CSeq_loc_CI li(loc);
+        ++li;
+        if (!li) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadLocation, "Trans-spliced feature should have multiple intervals", obj);
+        }
         return;
     }
 
