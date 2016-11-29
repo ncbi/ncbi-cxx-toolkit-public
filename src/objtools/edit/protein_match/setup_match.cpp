@@ -65,6 +65,22 @@ CSeq_entry_Handle CMatchSetup::GetNucleotideSEH(CSeq_entry_Handle seh) const
 }
 
 
+
+CBioseq& CMatchSetup::SetNucSeq(CRef<CSeq_entry> nuc_prot_set) {
+
+    NON_CONST_ITERATE(CBioseq_set::TSeq_set, seq_it, nuc_prot_set->SetSet().SetSeq_set()) {
+        CSeq_entry& se = **seq_it;
+        if (se.IsSeq() && se.GetSeq().IsNa()) {
+            return se.SetSeq();
+        }
+    }
+
+    NCBI_THROW(CProteinMatchException, 
+        eInputError,
+        "No nucleotide sequence found");
+}
+
+
 CSeq_entry_Handle CMatchSetup::GetDBTopLevelEntry(CSeq_entry_Handle nucleotide_seh)  
 {
     CBioseq_Handle db_bsh;
@@ -181,6 +197,31 @@ bool CMatchSetup::UpdateNucSeqIds(CRef<CSeq_id>& new_id,
     }
     return true;
 }
+
+bool CMatchSetup::UpdateNucSeqIds(CRef<CSeq_id> new_id,
+        CRef<CSeq_entry> nuc_prot_set)
+{
+    if (!nuc_prot_set->IsSet()) {
+        return false;
+    }
+
+    CBioseq& nuc_seq = SetNucSeq(nuc_prot_set);
+
+    nuc_seq.ResetId();
+    nuc_seq.SetId().push_back(new_id);
+
+    CSeq_entry& nuc_prot_se = nuc_prot_set.GetNCObject();
+
+    for (CTypeIterator<CSeq_feat> feat(nuc_prot_se); feat; ++feat) {
+        
+
+    }
+
+    return true;   
+}
+
+
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

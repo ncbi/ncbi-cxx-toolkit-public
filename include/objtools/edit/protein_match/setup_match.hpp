@@ -57,8 +57,14 @@ public:
     bool UpdateNucSeqIds(CRef<CSeq_id>& new_id,
         CSeq_entry_Handle& nucleotide_seh,
         CSeq_entry_Handle& nuc_prot_seh);
+
+    bool UpdateNucSeqIds(CRef<CSeq_id> new_id,
+        CRef<CSeq_entry> nuc_prot_set);
+
     bool GetNucSeqIdFromCDSs(const CSeq_entry& nuc_prot_set,
         CRef<CSeq_id>& id);
+
+    CBioseq& SetNucSeq(CRef<CSeq_entry> nuc_prot_set);
 
 private:
     CRef<CScope> m_DBScope;

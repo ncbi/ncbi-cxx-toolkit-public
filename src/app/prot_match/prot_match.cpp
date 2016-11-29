@@ -101,8 +101,8 @@ private:
         string local_nuc_seq;
     };
 
-    SSeqEntryFilenames x_GenerateSeqEntryTempFiles(CSeq_entry_Handle nuc_prot_set,
-        CScope& scope,
+    SSeqEntryFilenames x_GenerateSeqEntryTempFiles(CSeq_entry_Handle nuc_prot_seh,
+        CRef<CSeq_entry> nuc_prot_set,
         const string& out_stub,
         const unsigned int count);
 
@@ -213,9 +213,13 @@ int CProteinMatchApp::Run(void)
     int count=0;
     for (CSeq_entry_Handle nuc_prot_seh : nuc_prot_sets) {
 
+        CRef<CSeq_entry> nuc_prot_set = Ref(new CSeq_entry());
+        nuc_prot_set->Assign(*(nuc_prot_seh.GetCompleteSeq_entry()));
+
+
         SSeqEntryFilenames seq_entry_files = 
             x_GenerateSeqEntryTempFiles(nuc_prot_seh,
-            *scope, 
+            nuc_prot_set,
             out_stub, 
             count);
         const string count_string = NStr::NumericToString(count);
@@ -381,7 +385,7 @@ bool CProteinMatchApp::x_TryReadBioseqSet(CObjectIStream& istr, CSeq_entry& seq_
 
 CProteinMatchApp::SSeqEntryFilenames 
 CProteinMatchApp::x_GenerateSeqEntryTempFiles(CSeq_entry_Handle nuc_prot_seh,
-    CScope& scope,
+    CRef<CSeq_entry> nuc_prot_set,
     const string& out_stub,
     const unsigned int count) 
 {
@@ -399,7 +403,8 @@ CProteinMatchApp::x_GenerateSeqEntryTempFiles(CSeq_entry_Handle nuc_prot_seh,
 
     const string count_string = NStr::NumericToString(count);
 
-    CConstRef<CBioseq_set> db_nuc_prot_set = m_pMatchSetup->GetDBNucProtSet(nucleotide_seh.GetCompleteSeq_entry()->GetSeq());
+    //CConstRef<CBioseq_set> db_nuc_prot_set = m_pMatchSetup->GetDBNucProtSet(nucleotide_seh.GetCompleteSeq_entry()->GetSeq());
+    CConstRef<CBioseq_set> db_nuc_prot_set = m_pMatchSetup->GetDBNucProtSet(nuc_prot_set->GetSet().GetNucFromNucProtSet());
     CConstRef<CSeq_entry> db_se = db_seh.GetCompleteSeq_entry();
 
     // Write the genbank nuc-prot-set to a file
@@ -422,7 +427,8 @@ CProteinMatchApp::x_GenerateSeqEntryTempFiles(CSeq_entry_Handle nuc_prot_seh,
 
     CRef<CSeq_id> local_id;
 
-    if (m_pMatchSetup->GetNucSeqIdFromCDSs(*(nuc_prot_seh.GetCompleteSeq_entry()), local_id)) {
+    //if (m_pMatchSetup->GetNucSeqIdFromCDSs(*(nuc_prot_seh.GetCompleteSeq_entry()), local_id)) {
+    if (m_pMatchSetup->GetNucSeqIdFromCDSs(*nuc_prot_set, local_id)) {
         m_pMatchSetup->UpdateNucSeqIds(local_id, nucleotide_seh, nuc_prot_seh);
     }
 
@@ -440,7 +446,13 @@ CProteinMatchApp::x_GenerateSeqEntryTempFiles(CSeq_entry_Handle nuc_prot_seh,
         + ".local_nuc"
         + count_string
         + ".asn";
-    x_WriteEntry(*(nucleotide_seh.GetCompleteSeq_entry()), local_nuc_file, as_text);
+
+    const CBioseq& nuc_seq = nucleotide_seh.GetCompleteSeq_entry()->GetSeq();
+   
+    CRef<CSeq_entry> nuc_se = Ref(new CSeq_entry());
+    nuc_se->SetSeq().Assign(nuc_seq);
+
+    x_WriteEntry(*nuc_se, local_nuc_file, as_text);
     x_LogTempFile(local_nuc_file);
 
     SSeqEntryFilenames filenames;
