@@ -1408,6 +1408,7 @@ private:
     void x_CompareStrings(const TStrFeatMap& str_feat_map, const string& type,
         EErrType err, EDiagSev sev);
     void x_ValidateCompletness(const CBioseq& seq, const CMolInfo& mi);
+    void x_ReportSuspiciousUseOfComplete(const CBioseq& seq, EDiagSev sev);
     void x_ValidateAbuttingUTR(const CBioseq_Handle& seq);
     bool x_IsRangeGap (const CBioseq_Handle& seq, int start, int stop);
     void x_ValidateAbuttingRNA(const CBioseq_Handle& seq);
