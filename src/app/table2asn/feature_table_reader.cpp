@@ -745,9 +745,10 @@ CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(CSeq_entry_Handle top_en
 
             if (product != kEmptyStr)
             {
-                CRNA_ref& rna = mrna_feature.SetData().SetRna();
-                if (rna.SetExt().IsName() && rna.SetExt().SetName().empty())
-                    rna.SetExt().SetName() = product;
+                auto& ext = mrna_feature.SetData().SetRna().SetExt();
+                if (ext.Which() == CRNA_ref::C_Ext::e_not_set || 
+                    (ext.IsName() && ext.SetName().empty()))
+                    ext.SetName() = product;
             }
             mrna_feature.SetXref().clear();
             mrna_feature.AddSeqFeatXref(cd_feature.GetId());
