@@ -65,6 +65,8 @@ public:
 
 typedef map< string, CFeatListItem, CompareNoCase > TLookupSofaToGenbank;
 typedef TLookupSofaToGenbank::const_iterator TLookupSofaToGenbankCit;
+typedef map< string, string, CompareNoCase > TAliasToTerm;
+typedef TAliasToTerm::const_iterator TAliasToTermCit;
 
 //  ----------------------------------------------------------------------------
 class NCBI_XOBJREAD_EXPORT CGff3SofaTypes
@@ -77,13 +79,20 @@ public:
     ~CGff3SofaTypes();
 
     CSeqFeatData::ESubtype MapSofaTermToGenbankType(
-        const string& );
+        const string&);
 
     CFeatListItem MapSofaTermToFeatListItem(
-        const string& );
+        const string&);
+
+    string MapSofaAliasToSofaTerm(
+        const string&);
+
+    bool IsStringSofaAlias(
+        const string&);
 
 protected:
     static CSafeStatic<TLookupSofaToGenbank> m_Lookup;
+    static CSafeStatic<TAliasToTerm> m_Aliases;
 };
 
 //  ----------------------------------------------------------------------------

@@ -707,6 +707,9 @@ bool CGff3Reader::xIsIgnoredFeatureType(
 
     string ftype(featureType);
     NStr::ToLower(ftype);
+    if (SofaTypes().IsStringSofaAlias(ftype)) {
+        ftype = SofaTypes().MapSofaAliasToSofaTerm(ftype);
+    }
 
     static const char* const ignoredTypesAlways_[] = {
         "protein"
@@ -789,6 +792,7 @@ bool CGff3Reader::xIsIgnoredFeatureType(
     if (cit != ignoredTypesGenbank.end()) {
         return true;
     }
+
     CSeqFeatData::ESubtype iGenbankType = SofaTypes().MapSofaTermToGenbankType(ftype);
     if (iGenbankType == CSeqFeatData::eSubtype_bad) {
         return true;

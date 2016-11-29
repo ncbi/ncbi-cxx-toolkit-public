@@ -46,6 +46,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  --------------------------------------------------------------------------
 CSafeStatic<TLookupSofaToGenbank> CGff3SofaTypes::m_Lookup;
+CSafeStatic<TAliasToTerm> CGff3SofaTypes::m_Aliases;
 //  --------------------------------------------------------------------------
 
 //  --------------------------------------------------------------------------
@@ -74,6 +75,9 @@ CGff3SofaTypes::CGff3SofaTypes()
     lookup["primary_transcript"] = GT(e_Imp, eSubtype_preRNA);
     lookup["sequence_alteration"] = GT(e_Variation, eSubtype_variation_ref);
     lookup["signal_peptide"] = GT(e_Imp, eSubtype_sig_peptide);
+
+    TAliasToTerm& aliases = *m_Aliases;
+    aliases["satellite"] = "satellite_DNA";
 };
 
 //  --------------------------------------------------------------------------
@@ -103,6 +107,26 @@ CFeatListItem CGff3SofaTypes::MapSofaTermToFeatListItem(
     if ( cit == m_Lookup->end() ) {
         return CFeatListItem(CSeqFeatData::e_Imp, 
             CSeqFeatData::eSubtype_bad, "", "");
+    }
+    return cit->second;
+}
+
+//  ---------------------------------------------------------------------------
+bool CGff3SofaTypes::IsStringSofaAlias(
+    const string& str)
+//  ---------------------------------------------------------------------------
+{
+    return (m_Aliases->find(str) != m_Aliases->end());
+}
+
+//  ---------------------------------------------------------------------------
+string CGff3SofaTypes::MapSofaAliasToSofaTerm(
+    const string& alias)
+//  ---------------------------------------------------------------------------
+{
+    TAliasToTermCit cit = m_Aliases->find(alias);
+    if (cit == m_Aliases->end()) {
+        return "";
     }
     return cit->second;
 }
