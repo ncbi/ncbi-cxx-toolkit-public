@@ -1357,16 +1357,10 @@ bool CGff3Writer::xWriteFeature(
 {
     CSeqFeatData::ESubtype s = mf.GetFeatSubtype();
     const CSeq_feat& sf = mf.GetOriginalFeature();
-    if (s == CSeqFeatData::eSubtype_regulatory) {
-        string rc = sf.GetNamedQual("regulatory_class");
-        cerr << "";
-    }
-    if (s == CSeqFeatData::eSubtype_promoter) {
-        cerr << "";
-    }
-
+    
+    CSeqFeatData::ESubtype subtype = mf.GetFeatSubtype();
     try {
-        switch( mf.GetFeatSubtype() ) {
+        switch(subtype) {
             default:
                 if (mf.GetFeatType() == CSeqFeatData::e_Rna) {
                     return xWriteFeatureRna( fc, mf );
