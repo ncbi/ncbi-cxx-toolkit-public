@@ -1534,14 +1534,10 @@ CRef<CDelta_seq> CFeatureTableReader::MakeGap(objects::CBioseq_Handle bsh, const
         }
     }
 
-    if (feature_gap.IsSetLocation() && feature_gap.GetLocation().IsInt())
+    if (feature_gap.IsSetLocation())
     {
-        gap_start = feature_gap.GetLocation().GetInt().GetFrom();
-        gap_length = feature_gap.GetLocation().GetInt().GetTo();
-        if (feature_gap.GetLocation().GetInt().IsSetStrand() && feature_gap.GetLocation().GetInt().GetStrand() == eNa_strand_minus)
-        {
-            swap(gap_start, gap_length);
-        }
+        gap_start = feature_gap.GetLocation().GetStart(eExtreme_Positional);
+        gap_length = feature_gap.GetLocation().GetStop(eExtreme_Positional);
         gap_length -= gap_start;
         gap_length++;
     }

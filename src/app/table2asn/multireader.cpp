@@ -1127,6 +1127,9 @@ private:
 bool CMultiReader::xGetAnnotLoader(CAnnotationLoader& loader, CNcbiIstream& in)
 {
     CFormatGuess::EFormat uFormat = xGetFormat(in);
+#ifdef _DEBUG
+    cerr << "Recognized annotation format:" << CFormatGuess::GetFormatName(uFormat) << endl;
+#endif
     CRef<CSeq_entry> entry;
     switch (uFormat)
     {
