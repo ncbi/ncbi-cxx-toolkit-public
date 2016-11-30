@@ -553,7 +553,25 @@ CHttpRequest::CHttpRequest(CHttpSession& session,
       m_Headers(new CHttpHeaders),
       m_Timeout(CTimeout::eDefault),
       m_Deadline(CTimeout::eDefault),
-      m_RetryProcessing(ESwitch::eDefault)
+      m_RetryProcessing(ESwitch::eDefault),
+      m_AdjustUrl(0)
+{
+}
+
+
+CHttpRequest::CHttpRequest(const CHttpRequest& request)
+    : m_Session(request.m_Session),
+      m_Url(request.m_Url),
+      m_Method(request.m_Method),
+      m_Headers(request.m_Headers),
+      m_FormData(request.m_FormData),
+      m_Stream(request.m_Stream),
+      m_Response(request.m_Response),
+      m_Timeout(request.m_Timeout),
+      m_Retries(request.m_Retries),
+      m_Deadline(request.m_Deadline),
+      m_RetryProcessing(request.m_RetryProcessing),
+      m_AdjustUrl(request.m_AdjustUrl)
 {
 }
 
@@ -873,6 +891,13 @@ int CHttpRequest::sx_Adjust(SConnNetInfo* net_info,
     // Update location if it's different from the original url.
     char* loc = ConnNetInfo_URL(net_info);
     if (loc) {
+        CUrl url(loc);
+        if (req->m_AdjustUrl && req->m_AdjustUrl->AdjustUrl(url)) {
+            ConnNetInfo_ParseURL(net_info, url.ComposeUrl(CUrlArgs::eAmp_Char).c_str());
+            // Re-read the url and save it in the response.
+            free(loc);
+            loc = ConnNetInfo_URL(net_info);
+        }
         resp->m_Location.SetUrl(loc);
         free(loc);
     }

@@ -507,10 +507,35 @@ public:
     /// @sa Execute() SetDeadline()
     CHttpRequest& SetRetryProcessing(ESwitch on_off);
 
+    /// Set callback to adjust URL after resolving service location.
+    /// The callback should return for the adjusted URL to be used to
+    /// make the request.
+    template<class TCallback>
+    void SetAdjustUrlCallback(TCallback callback) {
+        m_AdjustUrl.Reset(new CAdjustUrlCallback<TCallback>(callback));
+    }
+
+    CHttpRequest(const CHttpRequest& request);
+
 private:
     friend class CHttpSession;
 
     CHttpRequest(CHttpSession& session, const CUrl& url, EReqMethod method);
+
+    class CAdjustUrlCallback_Base : public CObject {
+    public:
+        virtual ~CAdjustUrlCallback_Base(void) {}
+        virtual bool AdjustUrl(CUrl& url) = 0;
+    };
+
+    template<class TCallback>
+    class CAdjustUrlCallback : public CAdjustUrlCallback_Base {
+    public:
+        CAdjustUrlCallback(TCallback& callback) : m_Callback(callback) {}
+        virtual bool AdjustUrl(CUrl& url) { return m_Callback(url); }
+    private:
+        TCallback m_Callback;
+    };
 
     // Open connection, initialize response.
     void x_InitConnection(bool use_form_data);
@@ -543,6 +568,7 @@ private:
     THttpRetries        m_Retries;
     CTimeout            m_Deadline;
     ESwitch             m_RetryProcessing;
+    CRef<CAdjustUrlCallback_Base> m_AdjustUrl;
 };
 
 
