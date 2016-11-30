@@ -184,29 +184,15 @@ int CProteinMatchApp::Run(void)
 
     bool keep_temps = args["keep-temps"];
     
-    // Set up scope 
-    CRef<CScope> scope(new CScope(*obj_mgr));
-
     unique_ptr<CObjectIStream> pInStream(x_InitObjectIStream(args));
 
-    // Could use skip hooks here instead
-    // ans2fasta, asnvalidate
     // Preexisting nucleotide entries may not exist.
     CRef<CSeq_entry> input_entry = Ref(new CSeq_entry());
     x_ReadUpdateFile(*pInStream, *input_entry); 
 
-    CSeq_entry_Handle input_seh;
-    try {
-        input_seh = scope->AddTopLevelSeqEntry(*input_entry);
-    }
-    catch (CException&) {
-        NCBI_THROW(CProteinMatchException,
-            eBadInput,
-            "Could not obtain valid seq-entry handle");
-    }    
 
-    list<CSeq_entry_Handle> nuc_prot_sets;
-    CMatchSetup::GetNucProtSets(input_seh, nuc_prot_sets);
+    list<CRef<CSeq_entry>> nuc_prot_sets;
+    CMatchSetup::GetNucProtSets(input_entry, nuc_prot_sets);
 
     if (nuc_prot_sets.empty()) { // Should also probably post a warning
         return 0;
@@ -219,10 +205,7 @@ int CProteinMatchApp::Run(void)
      // Handle abuse!! 
     CMatchTabulate match_tab;
     int count=0;
-    for (CSeq_entry_Handle nuc_prot_seh : nuc_prot_sets) {
-        
-        CRef<CSeq_entry> nuc_prot_set = Ref(new CSeq_entry());
-        nuc_prot_set->Assign(*(nuc_prot_seh.GetCompleteSeq_entry()));
+    for (CRef<CSeq_entry> nuc_prot_set : nuc_prot_sets) {
 
         x_ProcessSeqEntry(nuc_prot_set,
             out_stub,
@@ -246,8 +229,6 @@ int CProteinMatchApp::Run(void)
             "Could not write match table");
     }
 
-
-    scope->RemoveEntry(*input_entry);
     return 0;
 }
 

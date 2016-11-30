@@ -45,10 +45,9 @@ public:
     CMatchSetup(CRef<CScope> db_scope);
     virtual ~CMatchSetup(void) {};
 
-    // Redundant 
     static void GetNucProtSets(
-        CSeq_entry_Handle seh,
-        list<CSeq_entry_Handle>& nucprot_sets);
+        CRef<CSeq_entry> input_entry,
+        list<CRef<CSeq_entry>>& nucprot_sets);
 
     CConstRef<CBioseq_set> GetDBNucProtSet(const CBioseq& nuc_seq);
     CSeq_entry_Handle GetDBTopLevelEntry(const CBioseq& nuc_seq);

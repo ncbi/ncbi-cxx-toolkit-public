@@ -25,21 +25,21 @@ CMatchSetup::CMatchSetup(CRef<CScope> db_scope) : m_DBScope(db_scope)
 
 
 void CMatchSetup::GetNucProtSets(
-    CSeq_entry_Handle seh,
-    list<CSeq_entry_Handle>& nuc_prot_sets) 
+    CRef<CSeq_entry> input_entry,
+    list<CRef<CSeq_entry>>& nuc_prot_sets)
 {
-    if (!seh.IsSet()) {
+    if (!input_entry->IsSet()) {
         return;
     }
 
-    // Use ITERATE macros everywhere - or ordinary loop
-    for (CSeq_entry_CI it(seh, CSeq_entry_CI::fRecursive); it; ++it) {
+    for (CTypeIterator<CSeq_entry> it(*input_entry); it; ++it) {
         if (it->IsSet() &&
             it->GetSet().IsSetClass() &&
             it->GetSet().GetClass() == CBioseq_set::eClass_nuc_prot) {
-            nuc_prot_sets.push_back(*it);
+            nuc_prot_sets.push_back(Ref(&*it));
         }
     }
+
 }
 
 
@@ -61,7 +61,6 @@ CBioseq& CMatchSetup::SetNucSeq(CRef<CSeq_entry> nuc_prot_set) {
 CSeq_entry_Handle CMatchSetup::GetDBTopLevelEntry(const CBioseq& nuc_seq)  
 {
     CBioseq_Handle db_bsh;
-    //for (auto pNucId : nucleotide_seh.GetSeq().GetCompleteBioseq()->GetId()) {
     for (auto pNucId : nuc_seq.GetId()) {
         if (pNucId->IsGenbank()) {
             db_bsh = m_DBScope->GetBioseqHandle(*pNucId);
