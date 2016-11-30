@@ -63,6 +63,14 @@ public:
     int Run(void);
 
 private:
+    void x_ProcessSeqEntry(CRef<CSeq_entry> nuc_prot_set,
+    const string& out_stub,
+    int count, 
+    bool keep_temps,
+    CBinRunner& assm_assm_blastn,
+    CBinRunner& compare_annots,
+    CMatchTabulate& match_tab);
+
     CObjectIStream* x_InitObjectIStream(const CArgs& args);
     CObjectOStream* x_InitObjectOStream(const string& filename, 
         const bool binary) const;
@@ -212,64 +220,18 @@ int CProteinMatchApp::Run(void)
     CMatchTabulate match_tab;
     int count=0;
     for (CSeq_entry_Handle nuc_prot_seh : nuc_prot_sets) {
-
+        
         CRef<CSeq_entry> nuc_prot_set = Ref(new CSeq_entry());
         nuc_prot_set->Assign(*(nuc_prot_seh.GetCompleteSeq_entry()));
 
+        x_ProcessSeqEntry(nuc_prot_set,
+            out_stub,
+            count, 
+            keep_temps,
+            assm_assm_blastn,
+            compare_annots,
+            match_tab); 
 
-        SSeqEntryFilenames seq_entry_files = 
-            x_GenerateSeqEntryTempFiles(nuc_prot_set,
-            out_stub, 
-            count);
-        const string count_string = NStr::NumericToString(count);
-        
-        const string alignment_file = out_stub + ".merged" + count_string + ".asn";
-        string blast_args;
-        x_GetBlastArgs(
-            seq_entry_files.local_nuc_seq, 
-            seq_entry_files.db_nuc_seq, 
-            alignment_file,
-            blast_args);
-
-        assm_assm_blastn.Exec(blast_args);
-        x_LogTempFile(alignment_file);
-       
-        // Create alignment manifest tempfile 
-        const string manifest_file = out_stub + ".aln" + count_string + ".mft";
-        try {
-            CNcbiOfstream ostr(manifest_file);
-            ostr << alignment_file << endl;
-        }
-        catch(...) {
-            NCBI_THROW(CProteinMatchException,
-                eOutputError,
-                "Could not write alignment manifest");
-        }
-        x_LogTempFile(manifest_file);
-
-        const string annot_file = out_stub + ".compare" + count_string + ".asn";
-
-        string compare_annots_args;
-        x_GetCompareAnnotsArgs(
-            seq_entry_files.local_nuc_prot_set,
-            seq_entry_files.db_nuc_prot_set,
-            manifest_file, 
-            annot_file,
-            compare_annots_args);
-
-        compare_annots.Exec(compare_annots_args);
-        x_LogTempFile(annot_file);
-
-        list<CRef<CSeq_annot>> seq_annots;
-        x_ReadAnnotFile(annot_file, seq_annots);
-
-        CRef<CSeq_align> alignment = Ref(new CSeq_align());
-        x_ReadAlignmentFile(alignment_file, alignment);
-       
-        match_tab.AppendToMatchTable(*alignment, seq_annots); 
-        if (!keep_temps) {
-            x_DeleteTempFiles();
-        }
         ++count;
     }
 
@@ -287,6 +249,72 @@ int CProteinMatchApp::Run(void)
 
     scope->RemoveEntry(*input_entry);
     return 0;
+}
+
+
+void CProteinMatchApp::x_ProcessSeqEntry(CRef<CSeq_entry> nuc_prot_set,
+    const string& out_stub,
+    const int count, 
+    const bool keep_temps,
+    CBinRunner& assm_assm_blastn,
+    CBinRunner& compare_annots,
+    CMatchTabulate& match_tab) 
+{
+
+    SSeqEntryFilenames seq_entry_files = 
+        x_GenerateSeqEntryTempFiles(nuc_prot_set,
+        out_stub, 
+        count);
+    const string count_string = NStr::NumericToString(count);
+        
+    const string alignment_file = out_stub + ".merged" + count_string + ".asn";
+    string blast_args;
+    x_GetBlastArgs(
+        seq_entry_files.local_nuc_seq, 
+        seq_entry_files.db_nuc_seq, 
+        alignment_file,
+        blast_args);
+
+    assm_assm_blastn.Exec(blast_args);
+    x_LogTempFile(alignment_file);
+       
+    // Create alignment manifest tempfile 
+    const string manifest_file = out_stub + ".aln" + count_string + ".mft";
+    try {
+        CNcbiOfstream ostr(manifest_file);
+        ostr << alignment_file << endl;
+    }
+    catch(...) {
+        NCBI_THROW(CProteinMatchException,
+            eOutputError,
+            "Could not write alignment manifest");
+    }
+    x_LogTempFile(manifest_file);
+
+    const string annot_file = out_stub + ".compare" + count_string + ".asn";
+
+    string compare_annots_args;
+    x_GetCompareAnnotsArgs(
+        seq_entry_files.local_nuc_prot_set,
+        seq_entry_files.db_nuc_prot_set,
+        manifest_file, 
+        annot_file,
+        compare_annots_args);
+
+    compare_annots.Exec(compare_annots_args);
+    x_LogTempFile(annot_file);
+
+    list<CRef<CSeq_annot>> seq_annots;
+    x_ReadAnnotFile(annot_file, seq_annots);
+
+    CRef<CSeq_align> alignment = Ref(new CSeq_align());
+    x_ReadAlignmentFile(alignment_file, alignment);
+       
+    match_tab.AppendToMatchTable(*alignment, seq_annots); 
+    if (!keep_temps) {
+        x_DeleteTempFiles();
+    }
+    return;
 }
 
 
