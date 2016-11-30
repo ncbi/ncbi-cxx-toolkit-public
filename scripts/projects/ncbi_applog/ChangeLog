@@ -1,4 +1,8 @@
-1.2.0 ( 06/29/16)
+1.3.0 (11/29/16)
+    - Switch to HTTPS protocol for CGI mode.
+    - Added '-sid' option for 'generate' command. CXX-8809
+
+1.2.0 (06/29/16)
     - Do not split log files by default, use .log and .perf files for /log, and single .log file for all other locations. CXX-8158
     - Add euid to log file name when using /log. CXX-8158
     - Fixes for 'url' command:  CXX-7846
