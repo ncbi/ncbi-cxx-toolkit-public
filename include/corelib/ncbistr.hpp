@@ -2298,6 +2298,8 @@ public:
     ///   Replace no more than "max_replace" occurrences of substring "search"
     ///   If "max_replace" is zero(default), then replace all occurrences with
     ///   "replace".
+    /// @param num_replace
+    ///   Optional pointer to a value which receives number of replacements occurred.
     /// @return
     ///   Result of replacing the "search" string with "replace" in "src". This
     ///   value is placed in "dst" as well.
@@ -2308,7 +2310,8 @@ public:
                            const string& replace,
                            string&       dst,
                            SIZE_TYPE     start_pos = 0,
-                           SIZE_TYPE     max_replace = 0);
+                           SIZE_TYPE     max_replace = 0,
+                           SIZE_TYPE*    num_replace = 0);
 
     /// Replace occurrences of a substring within a string and returns the
     /// result as a new string.
@@ -2326,6 +2329,8 @@ public:
     ///   Replace no more than "max_replace" occurrences of substring "search"
     ///   If "max_replace" is zero(default), then replace all occurrences with
     ///   "replace".
+    /// @param num_replace
+    ///   Optional pointer to a value which receives number of replacements occurred.
     /// @return
     ///   A new string containing the result of replacing the "search" string
     ///   with "replace" in "src"
@@ -2336,8 +2341,9 @@ public:
                           const string& search,
                           const string& replace,
                           SIZE_TYPE     start_pos = 0,
-                          SIZE_TYPE     max_replace = 0);
-
+                          SIZE_TYPE     max_replace = 0,
+                          SIZE_TYPE*    num_replace = 0);
+    
     /// Replace occurrences of a substring within a string.
     ///
     /// On some platforms this function is much faster than Replace()
@@ -2356,6 +2362,8 @@ public:
     ///   Replace no more than "max_replace" occurrences of substring "search"
     ///   If "max_replace" is zero(default), then replace all occurrences with
     ///   "replace".
+    /// @param num_replace
+    ///   Optional pointer to a value which receives number of replacements occurred.
     /// @return
     ///   Result of replacing the "search" string with "replace" in "src".
     /// @sa
@@ -2364,7 +2372,8 @@ public:
                                   const string& search,
                                   const string& replace,
                                   SIZE_TYPE     start_pos = 0,
-                                  SIZE_TYPE     max_replace = 0);
+                                  SIZE_TYPE     max_replace = 0,
+                                  SIZE_TYPE*    num_replace = 0);
 
     /// Flags for Split*() methods. 
     /// 

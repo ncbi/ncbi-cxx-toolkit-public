@@ -1918,7 +1918,7 @@ BOOST_AUTO_TEST_CASE(s_Replace)
     replace = "W";
     NStr::Replace(src, search, replace, dst, 6, 1);
     BOOST_CHECK_EQUAL(dst, string("aaabbbWaccczzcccXX"));
-    
+
     search  = "bbb";
     replace = "BBB";
     NStr::Replace(src, search, replace, dst, 50);
@@ -1961,6 +1961,30 @@ BOOST_AUTO_TEST_CASE(s_Replace)
     NStr::ReplaceInPlace(src, search, replace);
     BOOST_CHECK_EQUAL(src, string("WWcccbWccczzcccXX"));
 
+    // "number of replacements occurred" test
+    {{
+        string src("aaabbbaaccczzcccXX");
+        size_t n;
+        string tmp;
+
+        NStr::Replace(src, "a", "bb", tmp, 0, 0, &n);
+        BOOST_CHECK(n == 5);
+        NStr::Replace(src, "aa", "bb", tmp, 0, 0, &n);
+        BOOST_CHECK(n == 2);
+        NStr::Replace(src, "aaa", "b", tmp, 0, 0, &n);
+        BOOST_CHECK(n == 1);
+
+        tmp = src;
+        NStr::ReplaceInPlace(tmp, "a", "bb", 0, 0, &n);
+        BOOST_CHECK(n == 5);
+        tmp = src;
+        NStr::ReplaceInPlace(tmp, "aa", "bb", 0, 0, &n);
+        BOOST_CHECK(n == 2);
+        tmp = src;
+        NStr::ReplaceInPlace(tmp, "aaa", "b", 0, 0, &n);
+        BOOST_CHECK(n == 1);
+    }}
+
     // Replace() for big strings (CXX-3871)
     {{
         const unsigned int kStringSize = 50*1024;
@@ -1970,28 +1994,34 @@ BOOST_AUTO_TEST_CASE(s_Replace)
         assert(src_buf);
 
         srand((unsigned int)time(0));
-        for (size_t i=0; i<kStringSize; i++) {
+        for (size_t i = 0; i < kStringSize; i++) {
             src_buf[i] = (rand() % 2 == 0) ? 'A' : 'B';
         }
         string src_str(src_buf, kStringSize);
         string dst_str;
         string cmp_str;
+        size_t n1, n2;
 
-        NStr::Replace(src_str, "A", "CCC", dst_str);
-        NStr::Replace(dst_str, "CCC", "A", cmp_str);
+        NStr::Replace(src_str, "A", "CCC", dst_str, 0, 0, &n1);
+        NStr::Replace(dst_str, "CCC", "A", cmp_str, 0, 0, &n2);
         BOOST_CHECK_EQUAL(src_str, cmp_str);
-        
-        NStr::Replace(src_str, "A", "DD", dst_str, 0, 1);
-        NStr::Replace(dst_str, "DD", "A", cmp_str);
-        BOOST_CHECK_EQUAL(src_str, cmp_str);
+        BOOST_CHECK_EQUAL(n1, n2);
 
-        NStr::Replace(src_str, "A", "EEEE", dst_str, 1000, 5);
-        NStr::Replace(dst_str, "EEEE", "A", cmp_str);
+        NStr::Replace(src_str, "A", "DD", dst_str, 0, 1, &n1);
+        NStr::Replace(dst_str, "DD", "A", cmp_str, 0, 0, &n2);
         BOOST_CHECK_EQUAL(src_str, cmp_str);
+        BOOST_CHECK(n1 == 1  &&  n2 == 1);
 
-        NStr::Replace(src_str, "A", "FFFFF", dst_str, 1000, kStringSize);
-        NStr::Replace(dst_str, "FFFFF", "A", cmp_str);
+        NStr::Replace(src_str, "A", "EEEE", dst_str, 1000, 5, &n1);
+        NStr::Replace(dst_str, "EEEE", "A", cmp_str, 0, 0, &n2);
         BOOST_CHECK_EQUAL(src_str, cmp_str);
+        BOOST_CHECK(n1 <= 5);
+        BOOST_CHECK_EQUAL(n1, n2);
+
+        NStr::Replace(src_str, "A", "FFFFF", dst_str, 1000, kStringSize, &n1);
+        NStr::Replace(dst_str, "FFFFF", "A", cmp_str, 0, 0, &n2);
+        BOOST_CHECK_EQUAL(src_str, cmp_str);
+        BOOST_CHECK_EQUAL(n1, n2);
     }}
 }
 

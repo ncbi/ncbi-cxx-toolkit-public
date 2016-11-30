@@ -3189,14 +3189,17 @@ void NStr::TrimSuffixInPlace(CTempString& str, const CTempString suffix,
 
 string& NStr::Replace(const string& src,
                       const string& search, const string& replace,
-                      string& dst, SIZE_TYPE start_pos, SIZE_TYPE max_replace)
+                      string& dst, SIZE_TYPE start_pos, SIZE_TYPE max_replace,
+                      SIZE_TYPE* num_replace)
 {
     // source and destination should not be the same
     if (&src == &dst) {
         NCBI_THROW2(CStringException, eBadArgs,
                     "NStr::Replace():  source and destination are the same",0);
     }
-    if ( start_pos + search.size() > src.size()  ||  search == replace ) {
+    if (num_replace)
+        *num_replace = 0;
+    if (start_pos + search.size() > src.size() || search == replace) {
         dst = src;
         return dst;
     }
@@ -3238,10 +3241,12 @@ string& NStr::Replace(const string& src,
             copy(replace.begin(), replace.end(), dst_pos); 
             dst_pos   += replace.size();
             start_pos += search.size();
-            src_start = src.begin() + start_pos; 
+            src_start = src.begin() + start_pos;
         }
         // Copy source's string tail to the place
         copy(src_start, src.end(), dst_pos); 
+        if (num_replace)
+            *num_replace = n;
 
     } else {
         // Replacing string is shorter or have the same length.
@@ -3254,6 +3259,8 @@ string& NStr::Replace(const string& src,
                 break;
             dst.replace(start_pos, search.size(), replace);
             start_pos += replace.size();
+            if (num_replace)
+                (*num_replace)++;
         }
     }
     return dst;
@@ -3262,72 +3269,24 @@ string& NStr::Replace(const string& src,
 
 string NStr::Replace(const string& src,
                      const string& search, const string& replace,
-                     SIZE_TYPE start_pos, SIZE_TYPE max_replace)
+                     SIZE_TYPE start_pos, SIZE_TYPE max_replace,
+                     SIZE_TYPE* num_replace)
 {
     string dst;
-    Replace(src, search, replace, dst, start_pos, max_replace);
+    Replace(src, search, replace, dst, start_pos, max_replace, num_replace);
     return dst;
 }
 
-#if 0
-static
-string& _replace_reduct(string& src,
-                             const string& search, const string& replace,
-                             SIZE_TYPE start_pos, SIZE_TYPE max_replace)
-{
-    size_t remove_len = 0;
-
-    const char* start_ptr = src.c_str() + start_pos;
-    char* write_pos = (char*) start_ptr;
-
-    for (SIZE_TYPE count = 0; !(max_replace && count >= max_replace); count++) {
-
-        const char* found = strstr(start_ptr, search.c_str());
-
-        SIZE_TYPE len = (found?found:(src.c_str() + src.size())) - start_ptr;
-        if (len && write_pos != start_ptr)
-        {
-            memcpy(write_pos, start_ptr, len);
-        }
-
-        if (found == 0)
-            break;
-
-        write_pos += len;
-        start_ptr = found + search.size();
-
-        if (replace.size() == 1)
-        {
-           *write_pos++ = replace[0];
-        } else
-        if (replace.size() > 0)
-        {
-            memcpy(write_pos, replace.c_str(), replace.size());
-            write_pos += replace.size();
-        }
-
-        remove_len += (search.size() - replace.size());
-    }
-
-    if (remove_len)
-       src.resize(src.size() - remove_len);
-
-    return src;
-}
-#endif
 
 string& NStr::ReplaceInPlace(string& src,
                              const string& search, const string& replace,
-                             SIZE_TYPE start_pos, SIZE_TYPE max_replace)
+                             SIZE_TYPE start_pos, SIZE_TYPE max_replace,
+                             SIZE_TYPE* num_replace)
 {
-    if ( start_pos + search.size() > src.size()  ||
-         search == replace )
+    if ( num_replace )
+        *num_replace = 0;
+    if ( start_pos + search.size() > src.size()  ||  search == replace )
         return src;
-
-#if 0
-    if (search.size() >= replace.size())
-        return _replace_reduct(src, search, replace, start_pos, max_replace);
-#endif
 
     bool equal_len = (search.size() == replace.size());
     for (SIZE_TYPE count = 0; !(max_replace && count >= max_replace); count++){
@@ -3342,6 +3301,8 @@ string& NStr::ReplaceInPlace(string& src,
             src.replace(start_pos, search.size(), replace);
         }
         start_pos += replace.size();
+        if (num_replace)
+            (*num_replace)++;
     }
     return src;
 }
