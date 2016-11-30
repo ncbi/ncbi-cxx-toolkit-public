@@ -3140,7 +3140,7 @@ void CFastaOstream::x_WriteSequence(const CSeqVector& vec,
         if ((m_GapMode != native_gap_mode || (m_Flags & fInstantiateGaps) == 0)
             &&  it.GetGapSizeForward()) 
         {
-            TSeqPos gap_size = it.SkipGap();
+            TSeqPos gap_size = it.GetGapSizeForward();
             if (m_GapMode == eGM_one_dash
                 ||  (m_Flags & fInstantiateGaps) == 0) {
                 m_Out << "-\n";
@@ -3149,11 +3149,8 @@ void CFastaOstream::x_WriteSequence(const CSeqVector& vec,
                 if (rem_line < m_Width) {
                     m_Out << '\n';
                 }
-                CSeqMap_CI smci = vec.GetSeqMap().FindResolved
-                    (&vec.GetScope(), it.GetPos() - gap_size,
-                     SSeqMapSelector().SetResolveCount(-1));
-                _ASSERT(smci.GetType() == CSeqMap::eSeqGap);
-                if (smci.IsUnknownLength()) {
+                _ASSERT(it.GetCurrentSeqMap_CI().GetType() == CSeqMap::eSeqGap);
+                if (it.GetCurrentSeqMap_CI().IsUnknownLength()) {
                     // conventional designation, regardless of nominal length
                     if( gap_size > 0 && (m_Flags & fKeepUnknGapNomLen) != 0 )
                     {
@@ -3167,8 +3164,8 @@ void CFastaOstream::x_WriteSequence(const CSeqVector& vec,
                 // print gap mods, if requested
                 if( (m_Flags & fShowGapModifiers) != 0 )
                 {
-                    CConstRef<CSeq_literal> pGapLiteral = 
-                        smci.GetRefGapLiteral();
+                    CConstRef<CSeq_literal> pGapLiteral =
+                        it.GetCurrentSeqMap_CI().GetRefGapLiteral();
                     if( pGapLiteral &&
                         FIELD_IS_SET_AND_IS(*pGapLiteral, Seq_data, Gap) )
                     {
@@ -3201,6 +3198,7 @@ void CFastaOstream::x_WriteSequence(const CSeqVector& vec,
                     rem_line -= rem_gap;
                 }
             }
+            it.SkipGap();
             if (rem_state >= gap_size) {
                 rem_state -= gap_size;
             } else {
