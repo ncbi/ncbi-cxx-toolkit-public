@@ -71,7 +71,7 @@ void CSofaMap::x_Init()
     m_Map[ GT( e_Imp, eSubtype_D_loop ) ]       = SofaType( 297, "D_loop" );
     m_Map[ GT( e_Imp, eSubtype_D_segment ) ]    = SofaType( 458, "D_gene_segment" );
     m_Map[ GT( e_Imp, eSubtype_exon ) ]         = SofaType( 147, "exon" );
-    m_Map[ GT( e_Imp, eSubtype_GC_signal ) ]    = SofaType( 173, "GC_rich_promoter" );
+    m_Map[ GT( e_Imp, eSubtype_GC_signal ) ]    = SofaType( 173, "GC_rich_promoter_region" );
     m_Map[ GT( e_Imp, eSubtype_J_segment ) ]    = SofaType( 470, "J_gene_segment" );
     m_Map[ GT( e_Imp, eSubtype_LTR ) ]          = SofaType( 286, "long_terminal_repeat" );
     m_Map[ GT( e_Imp, eSubtype_N_region ) ]     = SofaType( 1835, "N_region" );

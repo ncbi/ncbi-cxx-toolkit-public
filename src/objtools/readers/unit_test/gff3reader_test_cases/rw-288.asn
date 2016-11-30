@@ -1,0 +1,1089 @@
+Seq-annot ::= {
+  id {
+    local str "U00096.3"
+  },
+  data ftable {
+    {
+      id local id 1,
+      data gene {
+        locus "thrL",
+        syn {
+          "ECK0001",
+          "JW4367"
+        },
+        locus-tag "b0001"
+      },
+      location int {
+        from 189,
+        to 254,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene0"
+        }
+      },
+      dbxref {
+        {
+          db "EcoGene",
+          tag str "EG11277"
+        }
+      }
+    },
+    {
+      id local id 2,
+      data imp {
+        key "GC_signal"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id10"
+        }
+      }
+    },
+    {
+      id local id 3,
+      data imp {
+        key "-10_signal"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id1"
+        }
+      }
+    },
+    {
+      id local id 4,
+      data imp {
+        key "-35_signal"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id2"
+        }
+      }
+    },
+    {
+      id local id 5,
+      data imp {
+        key "3'UTR"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id3"
+        }
+      }
+    },
+    {
+      id local id 6,
+      data imp {
+        key "3'clip"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id4"
+        }
+      }
+    },
+    {
+      id local id 7,
+      data imp {
+        key "5'UTR"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id5"
+        }
+      }
+    },
+    {
+      id local id 8,
+      data imp {
+        key "5'clip"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id6"
+        }
+      }
+    },
+    {
+      id local id 9,
+      data imp {
+        key "C_region"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id7"
+        }
+      }
+    },
+    {
+      id local id 10,
+      data imp {
+        key "D-loop"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id8"
+        }
+      }
+    },
+    {
+      id local id 11,
+      data imp {
+        key "D_segment"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id9"
+        }
+      }
+    },
+    {
+      id local id 12,
+      data imp {
+        key "J_segment"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id11"
+        }
+      }
+    },
+    {
+      id local id 13,
+      data imp {
+        key "LTR"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id12"
+        }
+      }
+    },
+    {
+      id local id 14,
+      data imp {
+        key "RBS"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id13"
+        }
+      }
+    },
+    {
+      id local id 15,
+      data imp {
+        key "TATA_signal"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id14"
+        }
+      }
+    },
+    {
+      id local id 16,
+      data imp {
+        key "V_segment"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id15"
+        }
+      }
+    },
+    {
+      id local id 17,
+      data imp {
+        key "assembly_gap"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id16"
+        }
+      }
+    },
+    {
+      id local id 18,
+      data imp {
+        key "Comment"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id17"
+        }
+      }
+    },
+    {
+      id local id 19,
+      data imp {
+        key "conflict"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id18"
+        }
+      }
+    },
+    {
+      id local id 20,
+      data imp {
+        key "mat_peptide_nt"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id19"
+        }
+      }
+    },
+    {
+      id local id 21,
+      data imp {
+        key "mat_peptide"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id20"
+        }
+      }
+    },
+    {
+      id local id 22,
+      data imp {
+        key "misc_binding"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id21"
+        }
+      }
+    },
+    {
+      id local id 23,
+      data imp {
+        key "misc_difference"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id22"
+        }
+      }
+    },
+    {
+      id local id 24,
+      data imp {
+        key "misc_feature"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id23"
+        }
+      }
+    },
+    {
+      id local id 25,
+      data imp {
+        key "misc_recomb"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id24"
+        }
+      }
+    },
+    {
+      id local id 26,
+      data imp {
+        key "misc_signal"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id25"
+        }
+      }
+    },
+    {
+      id local id 27,
+      data imp {
+        key "misc_structure"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id26"
+        }
+      }
+    },
+    {
+      id local id 28,
+      data imp {
+        key "mobile_element"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id27"
+        }
+      }
+    },
+    {
+      id local id 29,
+      data imp {
+        key "modified_base"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id28"
+        }
+      }
+    },
+    {
+      id local id 30,
+      data imp {
+        key "misc_RNA"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id29"
+        }
+      }
+    },
+    {
+      id local id 31,
+      data imp {
+        key "polyA_signal"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id30"
+        }
+      }
+    },
+    {
+      id local id 32,
+      data imp {
+        key "pre_RNA"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id31"
+        }
+      }
+    },
+    {
+      id local id 33,
+      data imp {
+        key "precursor_RNA"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id32"
+        }
+      }
+    },
+    {
+      id local id 34,
+      data imp {
+        key "proprotein"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id33"
+        }
+      }
+    },
+    {
+      id local id 35,
+      data imp {
+        key "prim_transcript"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id34"
+        }
+      }
+    },
+    {
+      id local id 36,
+      data imp {
+        key "primer_bind"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id35"
+        }
+      }
+    },
+    {
+      id local id 37,
+      data imp {
+        key "Protein"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id36"
+        }
+      }
+    },
+    {
+      id local id 38,
+      data imp {
+        key "protein_bind"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id37"
+        }
+      }
+    },
+    {
+      id local id 39,
+      data imp {
+        key "SecStr"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id38"
+        }
+      }
+    },
+    {
+      id local id 40,
+      data imp {
+        key "rep_origin"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id39"
+        }
+      }
+    },
+    {
+      id local id 41,
+      data imp {
+        key "Rsite"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id40"
+        }
+      }
+    },
+    {
+      id local id 42,
+      data imp {
+        key "satellite"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id41"
+        }
+      }
+    },
+    {
+      id local id 43,
+      data imp {
+        key "sig_peptide_nt"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id42"
+        }
+      }
+    },
+    {
+      id local id 44,
+      data imp {
+        key "sig_peptide"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id43"
+        }
+      }
+    },
+    {
+      id local id 45,
+      data imp {
+        key "Site-ref"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id44"
+        }
+      }
+    },
+    {
+      id local id 46,
+      data imp {
+        key "Site-ref"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id45"
+        }
+      }
+    },
+    {
+      id local id 47,
+      data imp {
+        key "transit_peptide_nt"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id46"
+        }
+      }
+    },
+    {
+      id local id 48,
+      data imp {
+        key "unsure"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id47"
+        }
+      }
+    },
+    {
+      id local id 49,
+      data imp {
+        key "variation"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id48"
+        }
+      }
+    },
+    {
+      id local id 50,
+      data imp {
+        key "VariationRef"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id49"
+        }
+      }
+    },
+    {
+      id local id 51,
+      data imp {
+        key "virion"
+      },
+      location int {
+        from 25386,
+        to 26730,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "id50"
+        }
+      }
+    }
+  }
+}

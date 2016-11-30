@@ -1,0 +1,58 @@
+##gff-version 3
+#!gff-spec-version 1.21
+#!genome-build ASM584v2
+#!genome-build-accession NCBI_Assembly:GCA_000005845.2
+##sequence-region U00096.3 1 4641652
+##species http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=511145
+U00096.3	EcoCyc	gene	190	255	.	+	.	ID=gene0;Dbxref=EcoGene:EG11277;gene=thrL;gene_synonym=ECK0001,JW4367;locus_tag=b0001
+U00096.3	EcoCyc	GC_signal	25387	26731	.	+	.	ID=id10;
+U00096.3	EcoCyc	-10_signal	25387	26731	.	+	.	ID=id1;
+U00096.3	EcoCyc	-35_signal	25387	26731	.	+	.	ID=id2;
+U00096.3	EcoCyc	3'UTR	25387	26731	.	+	.	ID=id3;
+U00096.3	EcoCyc	3'clip	25387	26731	.	+	.	ID=id4;
+U00096.3	EcoCyc	5'UTR	25387	26731	.	+	.	ID=id5;
+U00096.3	EcoCyc	5'clip	25387	26731	.	+	.	ID=id6;
+U00096.3	EcoCyc	C_region	25387	26731	.	+	.	ID=id7;
+U00096.3	EcoCyc	D-loop	25387	26731	.	+	.	ID=id8;
+U00096.3	EcoCyc	D_segment	25387	26731	.	+	.	ID=id9;
+U00096.3	EcoCyc	J_segment	25387	26731	.	+	.	ID=id11;
+U00096.3	EcoCyc	LTR	25387	26731	.	+	.	ID=id12;
+U00096.3	EcoCyc	RBS	25387	26731	.	+	.	ID=id13;
+U00096.3	EcoCyc	TATA_signal	25387	26731	.	+	.	ID=id14;
+U00096.3	EcoCyc	V_segment	25387	26731	.	+	.	ID=id15;
+U00096.3	EcoCyc	assembly_gap	25387	26731	.	+	.	ID=id16;
+U00096.3	EcoCyc	Comment	25387	26731	.	+	.	ID=id17;
+U00096.3	EcoCyc	conflict	25387	26731	.	+	.	ID=id18;
+U00096.3	EcoCyc	mat_peptide_nt	25387	26731	.	+	.	ID=id19;
+U00096.3	EcoCyc	mat_peptide	25387	26731	.	+	.	ID=id20;
+U00096.3	EcoCyc	misc_binding	25387	26731	.	+	.	ID=id21;
+U00096.3	EcoCyc	misc_difference	25387	26731	.	+	.	ID=id22;
+U00096.3	EcoCyc	misc_feature	25387	26731	.	+	.	ID=id23;
+U00096.3	EcoCyc	misc_recomb	25387	26731	.	+	.	ID=id24;
+U00096.3	EcoCyc	misc_signal	25387	26731	.	+	.	ID=id25;
+U00096.3	EcoCyc	misc_structure	25387	26731	.	+	.	ID=id26;
+U00096.3	EcoCyc	mobile_element	25387	26731	.	+	.	ID=id27;
+U00096.3	EcoCyc	modified_base	25387	26731	.	+	.	ID=id28;
+U00096.3	EcoCyc	misc_RNA	25387	26731	.	+	.	ID=id29;
+U00096.3	EcoCyc	polyA_signal	25387	26731	.	+	.	ID=id30;
+U00096.3	EcoCyc	pre_RNA	25387	26731	.	+	.	ID=id31;
+U00096.3	EcoCyc	precursor_RNA	25387	26731	.	+	.	ID=id32;
+U00096.3	EcoCyc	proprotein	25387	26731	.	+	.	ID=id33;
+U00096.3	EcoCyc	prim_transcript	25387	26731	.	+	.	ID=id34;
+U00096.3	EcoCyc	primer_bind	25387	26731	.	+	.	ID=id35;
+U00096.3	EcoCyc	Protein	25387	26731	.	+	.	ID=id36;
+U00096.3	EcoCyc	protein_bind	25387	26731	.	+	.	ID=id37;
+U00096.3	EcoCyc	SecStr	25387	26731	.	+	.	ID=id38;
+U00096.3	EcoCyc	rep_origin	25387	26731	.	+	.	ID=id39;
+U00096.3	EcoCyc	Rsite	25387	26731	.	+	.	ID=id40;
+U00096.3	EcoCyc	satellite	25387	26731	.	+	.	ID=id41;
+U00096.3	EcoCyc	sig_peptide_nt	25387	26731	.	+	.	ID=id42;
+U00096.3	EcoCyc	sig_peptide	25387	26731	.	+	.	ID=id43;
+U00096.3	EcoCyc	Site	25387	26731	.	+	.	ID=id44;
+U00096.3	EcoCyc	Site-ref	25387	26731	.	+	.	ID=id45;
+U00096.3	EcoCyc	transit_peptide_nt	25387	26731	.	+	.	ID=id46;
+U00096.3	EcoCyc	unsure	25387	26731	.	+	.	ID=id47;
+U00096.3	EcoCyc	variation	25387	26731	.	+	.	ID=id48;
+U00096.3	EcoCyc	VariationRef	25387	26731	.	+	.	ID=id49;
+U00096.3	EcoCyc	virion	25387	26731	.	+	.	ID=id50;
+###
