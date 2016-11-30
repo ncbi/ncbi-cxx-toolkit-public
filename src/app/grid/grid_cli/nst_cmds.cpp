@@ -130,6 +130,10 @@ void CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class,
         init_string += NStr::URLEncode(m_Opts.app_domain);
     }
 
+    if (IsOptionSet(eNoMetaData)) {
+        init_string += "&metadata=disabled";
+    }
+
     string auth;
 
     if (IsOptionSet(eAuth)) {
