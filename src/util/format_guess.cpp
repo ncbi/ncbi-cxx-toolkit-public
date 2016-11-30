@@ -32,12 +32,9 @@
 #include <ncbi_pch.hpp>
 #include <util/format_guess.hpp>
 #include <util/util_exception.hpp>
-#include <util/compress/zlib.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/stream_utils.hpp>
-
-#include <zlib.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -572,8 +569,6 @@ CFormatGuess::EnsureTestBuffer()
     // If its all comment, read a twice as long buffer
     // Stop when its no longer all comment, end of the stream,
     //   or Multiplier hits 1024 
-
-
     int Multiplier = 1;
     while(true) {
         m_iTestBufferSize = Multiplier * s_iTestBufferGranularity;
@@ -1750,48 +1745,13 @@ bool CFormatGuess::TestFormatSra(EMode /* not used */ )
 
 bool CFormatGuess::TestFormatBam(EMode mode)
 {
-    //Qualifier:
     // Check for a gzip header whose first (only) extra field spans
-    // at least six bytes and has the tag BC:
-    if (!TestFormatGZip(mode)) {
-        return false;
-    }
-    if (m_iTestDataSize < 18) {
-        return false;
-    }
-    if ((m_pTestBuffer[3] & 0x04) == 0) {
-        return false;
-    }
-    if (static_cast<unsigned char>(m_pTestBuffer[10]) < 6  &&  m_pTestBuffer[11] == 0) {
-        return false;
-    }
-    if (m_pTestBuffer[12] != 'B'  ||  m_pTestBuffer[13] != 'C') {
-        return false;
-    }
-
-    //Final:
-    // Uncompressed data must start with "BAM\1":
-    const size_t FILEBUFSIZE(8092);
-    char pFileBuffer[FILEBUFSIZE];
-    size_t fileDataSize = FILEBUFSIZE;
-
-    CZipDecompressor zipD(
-        kZlibDefaultWbits, 
-        CZipCompression::fCheckFileHeader);
-    
-    bool bSuccess = zipD.DecompressBuffer(
-        m_pTestBuffer,
-        256,
-        pFileBuffer,
-        FILEBUFSIZE,
-        &fileDataSize);
-    if (!bSuccess) {
-        int err = zipD.GetErrorCode();
-        if (err != Z_BUF_ERROR) {
-            return false;
-        }
-    }
-    return ( (0 == ::memcmp(pFileBuffer, "BAM", 3))  &&  (pFileBuffer[3] == 1));
+    // at least six bytes and has the tag BC.
+    return (TestFormatGZip(mode)  &&  m_iTestDataSize >= 18
+            &&  (m_pTestBuffer[3] & 4) != 0 // extra field present
+            &&  (static_cast<unsigned char>(m_pTestBuffer[10]) >= 6
+                 ||  m_pTestBuffer[11] != 0) // at least six bytes
+            &&  m_pTestBuffer[12] == 'B'  &&  m_pTestBuffer[13] == 'C');
 }
 
 
