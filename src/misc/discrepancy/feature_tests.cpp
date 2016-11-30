@@ -1792,7 +1792,7 @@ bool StopAbutsGap(const CSeq_loc& loc, CScope& scope)
             search->SetInt().SetTo(stop + 2);
         }
         CSeqVector vec(*search, scope);
-        if (vec.IsInGap(0)) {
+        if (vec.size() && vec.IsInGap(0)) {
             return true;
         }
     } catch (CException& ) {
