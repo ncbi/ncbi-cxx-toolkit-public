@@ -723,14 +723,14 @@ CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(CSeq_entry_Handle top_en
         AssignLocalIdIfEmpty(cd_feature, m_local_id_counter);
 
 
-        cd_feature.SetXref().clear();
+        //cd_feature.SetXref().clear();
         if (gene.NotEmpty())
         {
             CSeq_feat& gene_feature = (CSeq_feat&)*gene;
 
             AssignLocalIdIfEmpty(gene_feature, m_local_id_counter);
             
-            gene_feature.SetXref().clear();
+            //gene_feature.SetXref().clear();
             gene_feature.AddSeqFeatXref(cd_feature.GetId());
             cd_feature.AddSeqFeatXref(gene_feature.GetId());
         }
@@ -750,7 +750,7 @@ CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(CSeq_entry_Handle top_en
                     (ext.IsName() && ext.SetName().empty()))
                     ext.SetName() = product;
             }
-            mrna_feature.SetXref().clear();
+            //mrna_feature.SetXref().clear();
             mrna_feature.AddSeqFeatXref(cd_feature.GetId());
             cd_feature.AddSeqFeatXref(mrna_feature.GetId());
         }
