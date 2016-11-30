@@ -12673,8 +12673,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_CDSmRNArange)
                               "Unmatched CDS"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "CDSmRNAmismatch",
                               "No match for 1 mRNA"));
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "BadLocation",
-        "Trans-spliced feature should have multiple intervals"));
     CheckErrors(*eval, expected_errors);
 
     // overlap problem rather than internal boundary problem
@@ -12695,8 +12693,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_CDSmRNArange)
     CRef<CSeq_entry> prot_seq = entry->SetSet().SetSeq_set().back();
     prot_seq->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set()[4] = 'S';
     seh = scope.AddTopLevelSeqEntry(*entry);
-    free (expected_errors.back());
-    expected_errors.pop_back();
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "CDSmRNArange", 
                       "mRNA overlaps or contains CDS but does not completely contain intervals"));
     eval = validator.Validate(seh, options);
@@ -16610,6 +16606,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadRRNAcomponentOrder)
 
     expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Warning, "BadRRNAcomponentOrder",
                                 "Problem with order of abutting rRNA components"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadRRNAcomponentOrder",
+        "Problem with order of abutting rRNA components"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -19969,6 +19967,12 @@ BOOST_AUTO_TEST_CASE(Test_VR_664)
     desc->SetUser().Assign(*user);
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
+
+    assembly_name->SetData().SetStr("Anop_step_SDA-500_V1");
+    desc->SetUser().Assign(*user);
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
 }
 
 
