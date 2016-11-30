@@ -897,7 +897,9 @@ CNcbiTestsTreeBuilder::EnsureDep(but::test_unit* tu, but::test_unit* tu_from)
 inline void
 CNcbiTestsTreeBuilder::FixUnitsOrder(void)
 {
-    m_RootElem->FixUnitsOrder();
+    if (m_RootElem) {
+        m_RootElem->FixUnitsOrder();
+    }
 }
 
 
