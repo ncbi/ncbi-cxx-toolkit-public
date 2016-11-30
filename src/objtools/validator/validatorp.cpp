@@ -2039,7 +2039,7 @@ void CValidError_imp::ValidateSeqLoc
             loc_lbl + "]", obj);
     }
 
-    if (trans_splice) {
+    if (trans_splice && !NStr::Equal(prefix, "Product")) {
         CSeq_loc_CI li(loc);
         ++li;
         if (!li) {
