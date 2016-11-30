@@ -43,29 +43,6 @@ void CMatchSetup::GetNucProtSets(
 }
 
 
-CSeq_entry_Handle CMatchSetup::GetNucleotideSEH(CSeq_entry_Handle seh) const
-{
-    if (seh.IsSeq()) {
-        const CMolInfo* molinfo = sequence::GetMolInfo(seh.GetSeq());
-        if (molinfo->GetBiomol() != CMolInfo::eBiomol_peptide) {
-            return seh;
-        }
-    }
-
-    // Same thing - Don't use CSeq_entry_CI
-    for (CSeq_entry_CI it(seh, CSeq_entry_CI::fRecursive); it; ++it) {
-        if (it->IsSeq()) {
-            const CMolInfo* molinfo = sequence::GetMolInfo(it->GetSeq());
-            if (molinfo->GetBiomol() != CMolInfo::eBiomol_peptide) {
-                return *it;
-            }
-        }
-    }
-    return CSeq_entry_Handle();
-}
-
-
-
 CBioseq& CMatchSetup::SetNucSeq(CRef<CSeq_entry> nuc_prot_set) {
 
     NON_CONST_ITERATE(CBioseq_set::TSeq_set, seq_it, nuc_prot_set->SetSet().SetSeq_set()) {
@@ -81,10 +58,11 @@ CBioseq& CMatchSetup::SetNucSeq(CRef<CSeq_entry> nuc_prot_set) {
 }
 
 
-CSeq_entry_Handle CMatchSetup::GetDBTopLevelEntry(CSeq_entry_Handle nucleotide_seh)  
+CSeq_entry_Handle CMatchSetup::GetDBTopLevelEntry(const CBioseq& nuc_seq)  
 {
     CBioseq_Handle db_bsh;
-    for (auto pNucId : nucleotide_seh.GetSeq().GetCompleteBioseq()->GetId()) {
+    //for (auto pNucId : nucleotide_seh.GetSeq().GetCompleteBioseq()->GetId()) {
+    for (auto pNucId : nuc_seq.GetId()) {
         if (pNucId->IsGenbank()) {
             db_bsh = m_DBScope->GetBioseqHandle(*pNucId);
             if (!db_bsh) {
@@ -198,6 +176,7 @@ bool CMatchSetup::UpdateNucSeqIds(CRef<CSeq_id>& new_id,
     return true;
 }
 
+
 bool CMatchSetup::UpdateNucSeqIds(CRef<CSeq_id> new_id,
         CRef<CSeq_entry> nuc_prot_set)
 {
@@ -213,13 +192,14 @@ bool CMatchSetup::UpdateNucSeqIds(CRef<CSeq_id> new_id,
     CSeq_entry& nuc_prot_se = nuc_prot_set.GetNCObject();
 
     for (CTypeIterator<CSeq_feat> feat(nuc_prot_se); feat; ++feat) {
-        
-
+        if (!feat->GetData().IsCdregion()) {
+            continue;
+        }
+        feat->SetLocation().SetId(*new_id);
     }
 
     return true;   
 }
-
 
 
 
