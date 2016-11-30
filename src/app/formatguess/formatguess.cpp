@@ -139,7 +139,7 @@ CFormatGuessApp::Run(void)
 //  ============================================================================
 {
     const CArgs& args = GetArgs();
-    CNcbiIstream & input_stream = args["i"].AsInputFile();
+    CNcbiIstream & input_stream = args["i"].AsInputFile(CArgValue::fBinary);
     string name_of_input_stream = args["i"].AsString();
     if( name_of_input_stream.empty() || name_of_input_stream == "-" ) {
         name_of_input_stream = "stdin";
