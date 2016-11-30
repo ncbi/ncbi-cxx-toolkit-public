@@ -444,6 +444,7 @@ gpipe_kmer needs gpipe_objutil
 gpipe_kmer needs sampling
 gpipe_kpi needs xmlwrapp
 gpipe_meta_access needs xncbi
+gpipe_minhash needs xncbi
 gpipe_object_edit needs xalgoalignutil
 gpipe_objutil needs $(DATA_LOADERS_UTIL_LIB)
 gpipe_objutil needs $(OBJEDIT_LIBS)
@@ -580,9 +581,8 @@ ideocoord needs $(SDBAPI_LIB)
 ideocoord needs ideocli
 idgen needs dbassist
 idload needs3party ctutils
-idload_utils needs gpipe_common
+idload_utils needs gpipe_objutil
 idload_utils needs xid_utils
-idload_utils needs xobjutil
 igblast needs $(BLAST_LIBS)
 insdseq needs xser
 jiracli needs jirasvc
