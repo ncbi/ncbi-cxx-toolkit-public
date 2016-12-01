@@ -787,9 +787,10 @@ class CMonitoredProcessWatcher : public CJobContextProcessWatcher
 {
 public:
     CMonitoredProcessWatcher(SParams& p, const string& job_wdir,
-            const string& path, const char* const* env, CTimeout run_timeout)
+            const string& path, const char* const* env,
+            CTimeout run_period, CTimeout run_timeout)
         : CJobContextProcessWatcher(p),
-          m_MonitorWatch(CTimeout::eInfinite),
+          m_MonitorWatch(run_period),
           m_JobWDir(job_wdir),
           m_Path(path),
           m_Env(env),
@@ -1069,7 +1070,7 @@ bool CRemoteAppLauncher::ExecRemoteApp(const vector<string>& args,
 
         auto_ptr<CPipe::IProcessWatcher> watcher(monitor ?
                 new CMonitoredProcessWatcher(params, working_dir,
-                    m_MonitorAppPath, env, m_MonitorRunTimeout) :
+                    m_MonitorAppPath, env, m_MonitorPeriod, m_MonitorRunTimeout) :
                 new CJobContextProcessWatcher(params));
 
         bool result = CPipe::ExecWait(GetAppPath(), args, in,
