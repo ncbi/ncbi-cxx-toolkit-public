@@ -4554,7 +4554,7 @@ fi
 
 { echo "$as_me:$LINENO: checking Subversion revision" >&5
 echo $ECHO_N "checking Subversion revision... $ECHO_C" >&6; }
-svnrev=`svn info "$top_srcdir" 2>/dev/null | sed -ne 's/^Revision: //p'`
+svnrev=`svn info "$srcdir" 2>/dev/null | sed -ne 's/^Revision: //p'`
 if test -n "$svnrev"; then
    { echo "$as_me:$LINENO: result: $svnrev" >&5
 echo "${ECHO_T}$svnrev" >&6; }
@@ -4567,7 +4567,7 @@ fi
 
 { echo "$as_me:$LINENO: checking NCBI stable components' version" >&5
 echo $ECHO_N "checking NCBI stable components' version... $ECHO_C" >&6; }
-scver=`svn info "$top_srcdir/src/build-system" 2>/dev/null |
+scver=`svn info "$srcdir/src/build-system" 2>/dev/null |
  sed -ne 's,^URL: .*/production/components/[^/]*/\([1-9][0-9]*\)\..*,\1,p'`
 if test -n "$scver"; then
    { echo "$as_me:$LINENO: result: $scver" >&5

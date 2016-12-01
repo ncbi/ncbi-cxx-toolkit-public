@@ -847,7 +847,7 @@ else
 fi
 
 AC_MSG_CHECKING([Subversion revision])
-svnrev=`svn info "$top_srcdir" 2>/dev/null | sed -ne 's/^Revision: //p'`
+svnrev=`svn info "$srcdir" 2>/dev/null | sed -ne 's/^Revision: //p'`
 if test -n "$svnrev"; then
    AC_MSG_RESULT($svnrev)
    NCBI_SUBVERSION_REVISION=$svnrev
@@ -857,7 +857,7 @@ else
 fi
 
 AC_MSG_CHECKING([NCBI stable components' version])
-scver=`svn info "$top_srcdir/src/build-system" 2>/dev/null |
+scver=`svn info "$srcdir/src/build-system" 2>/dev/null |
  sed -ne ['s,^URL: .*/production/components/[^/]*/\([1-9][0-9]*\)\..*,\1,p']`
 if test -n "$scver"; then
    AC_MSG_RESULT($scver)
