@@ -811,22 +811,17 @@ CTaxFormat::SSeqInfo *CTaxFormat::x_FillTaxDispParams(const CRef< CBlast_def_lin
                                      const CBioseq_Handle& bsp_handle,
                                      double bits, 
                                      double evalue,                                    
-		                             list<TGi>& use_this_gi)
+		                             list<string>& use_this_seqid)
                                                                         
 {
     SSeqInfo *seqInfo = NULL;
 
 	const list<CRef<CSeq_id> > ids = bdl->GetSeqid();
-	TGi gi =  CAlignFormatUtil::GetGiForSeqIdList(ids);
-    TGi gi_in_use_this_gi = ZERO_GI;
-    
-    ITERATE(list<TGi>, iter_gi, use_this_gi){
-        if(gi == *iter_gi){
-            gi_in_use_this_gi = *iter_gi;
-            break;
-        }
-    }
-	if(use_this_gi.empty() || gi_in_use_this_gi > ZERO_GI) {
+	TGi gi =  CAlignFormatUtil::GetGiForSeqIdList(ids);        
+    CRef<CSeq_id> wid = FindBestChoice(ids, CSeq_id::WorstRank);    
+    bool match = CAlignFormatUtil::MatchSeqInSeqList(gi, wid, use_this_seqid);            
+
+    if(use_this_seqid.empty() || match) {
         
 		seqInfo = new SSeqInfo();
 		seqInfo->gi =  gi;
@@ -860,7 +855,7 @@ void CTaxFormat::x_InitTaxInfoMap(void)
 {
     int score, sum_n, num_ident;
     double bits, evalue;
-    list<TGi> use_this_gi;
+    list<string> use_this_seqid;
     
     m_BlastResTaxInfo = new SBlastResTaxInfo;
     CConstRef<CSeq_id> previousId,subid;    
@@ -871,7 +866,7 @@ void CTaxFormat::x_InitTaxInfoMap(void)
         if(!previousId.Empty() && subid->Match(*previousId)) continue;        
 
         CAlignFormatUtil::GetAlnScores(**iter, score, bits, evalue,
-                                       sum_n, num_ident, use_this_gi);        
+                                       sum_n, num_ident, use_this_seqid);        
         try {
             const CBioseq_Handle& handle = m_Scope.GetBioseqHandle(*subid);            
             if( !handle ) continue;
@@ -883,10 +878,10 @@ void CTaxFormat::x_InitTaxInfoMap(void)
                                 
                 TGi dispGI = ZERO_GI;
                 for(list< CRef< CBlast_def_line > >::const_iterator iter = bdl.begin(); iter != bdl.end(); iter++){                                                        
-                    SSeqInfo *seqInfo = x_FillTaxDispParams(*iter,handle,bits,evalue,use_this_gi);
+                    SSeqInfo *seqInfo = x_FillTaxDispParams(*iter,handle,bits,evalue,use_this_seqid);
                     if(seqInfo) {
                         if(dispGI == ZERO_GI){
-                            dispGI = CAlignFormatUtil::GetDisplayIds(bdl,*seqInfo->seqID,use_this_gi);                            
+                            CAlignFormatUtil::GetDisplayIds(handle,*seqInfo->seqID,use_this_seqid,&dispGI);                            
                         }                                        
                         seqInfo->displGi = dispGI;
                         x_InitBlastDBTaxInfo(seqInfo);

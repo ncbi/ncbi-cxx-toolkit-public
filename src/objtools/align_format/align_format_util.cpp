@@ -668,6 +668,20 @@ void CAlignFormatUtil::GetAlnScores(const CSeq_align& aln,
                                  num_ident, use_this_gi, comp_adj_method);
 }
 
+void CAlignFormatUtil::GetAlnScores(const CSeq_align& aln,
+                                    int& score, 
+                                    double& bits, 
+                                    double& evalue,
+                                    int& sum_n,
+                                    int& num_ident,
+                                    list<string>& use_this_seq)
+{
+    int comp_adj_method = 0; // dummy variable
+
+    CAlignFormatUtil::GetAlnScores(aln, score, bits, evalue, sum_n, 
+                                 num_ident, use_this_seq, comp_adj_method);
+}
+
 
 void CAlignFormatUtil::GetAlnScores(const CSeq_align& aln,
                                     int& score, 
@@ -704,7 +718,65 @@ void CAlignFormatUtil::GetAlnScores(const CSeq_align& aln,
                             score, bits, evalue, sum_n, num_ident, use_this_gi, comp_adj_method);
         }
     }	
-    if(use_this_gi.size() == 0) GetUseThisSequence(aln,use_this_gi);
+    if(use_this_gi.size() == 0) {
+        GetUseThisSequence(aln,use_this_gi);
+    }
+}
+
+//converts gi list to the list of gi:XXXXXXXX strings
+static list<string> s_NumGiToStringGiList(list<TGi> use_this_gi)//for backward compatability
+{
+    const string k_GiPrefix = "gi:";
+    list<string> use_this_seq;
+    ITERATE(list<TGi>, iter_gi, use_this_gi){                
+        string strSeq = k_GiPrefix + NStr::NumericToString(*iter_gi);
+        use_this_seq.push_back(strSeq);        
+    }    
+    return use_this_seq;
+}
+
+void CAlignFormatUtil::GetAlnScores(const CSeq_align& aln,
+                                    int& score, 
+                                    double& bits, 
+                                    double& evalue,
+                                    int& sum_n,
+                                    int& num_ident,
+                                    list<string>& use_this_seq,
+                                    int& comp_adj_method)
+{
+    bool hasScore = false;
+    score = -1;
+    bits = -1;
+    evalue = -1;
+    sum_n = -1;
+    num_ident = -1;
+    comp_adj_method = 0;
+
+    list<TGi> use_this_gi;
+    //look for scores at seqalign level first
+    hasScore = s_GetBlastScore(aln.GetScore(), score, bits, evalue, 
+                               sum_n, num_ident, use_this_gi, comp_adj_method);
+    
+    //look at the seg level
+    if(!hasScore){
+        const CSeq_align::TSegs& seg = aln.GetSegs();
+        if(seg.Which() == CSeq_align::C_Segs::e_Std){
+            s_GetBlastScore(seg.GetStd().front()->GetScores(),  
+                            score, bits, evalue, sum_n, num_ident, use_this_gi, comp_adj_method);
+        } else if (seg.Which() == CSeq_align::C_Segs::e_Dendiag){
+            s_GetBlastScore(seg.GetDendiag().front()->GetScores(), 
+                            score, bits, evalue, sum_n, num_ident, use_this_gi, comp_adj_method);
+        }  else if (seg.Which() == CSeq_align::C_Segs::e_Denseg){
+            s_GetBlastScore(seg.GetDenseg().GetScores(),  
+                            score, bits, evalue, sum_n, num_ident, use_this_gi, comp_adj_method);
+        }
+    }	
+    if(use_this_gi.size() == 0) {
+        GetUseThisSequence(aln,use_this_seq);
+    }
+    else {
+        use_this_seq = s_NumGiToStringGiList(use_this_gi);//for backward compatability
+    }
 }
 
 string CAlignFormatUtil::GetGnlID(const CDbtag& dtg)
@@ -719,7 +791,7 @@ string CAlignFormatUtil::GetGnlID(const CDbtag& dtg)
    return retval;
 }
 
-string CAlignFormatUtil::GetLabel(CConstRef<CSeq_id> id)
+string CAlignFormatUtil::GetLabel(CConstRef<CSeq_id> id,bool with_version)
 {
     string retval = "";
     if (id->Which() == CSeq_id::e_General){
@@ -727,7 +799,7 @@ string CAlignFormatUtil::GetLabel(CConstRef<CSeq_id> id)
         retval = CAlignFormatUtil::GetGnlID(dtg);
     } 
     if (retval == "")
-      retval = id->GetSeqIdString();
+      retval = id->GetSeqIdString(with_version);
 
     return retval;
 }
@@ -3847,6 +3919,32 @@ void CAlignFormatUtil::GetUseThisSequence(const CSeq_align& aln,list<TGi>& use_t
     }
 }
 
+
+/*use_this_seq will contain gi:nnnnnn or seqid:ssssss string list*/
+void CAlignFormatUtil::GetUseThisSequence(const CSeq_align& aln,list<string>& use_this_seq)
+                                    
+{
+    if(!aln.CanGetExt() || aln.GetExt().size() == 0) return;
+    const CUser_object &user = *(aln.GetExt().front());
+
+    if (user.IsSetType() && user.GetType().IsStr() && user.GetType().GetStr() == "use_this_seqid" && user.IsSetData()) {
+        const CUser_object::TData& fields = user.GetData();            
+        for (CUser_object::TData::const_iterator fit = fields.begin();  fit != fields.end(); ++fit) {
+            const CUser_field& field = **fit;                 
+
+            if (field.IsSetLabel() && field.GetLabel().IsStr() && field.GetLabel().GetStr() == "SEQIDS" && 
+                                                                     field.IsSetData()  &&  field.GetData().IsStrs()) {
+                const CUser_field::C_Data::TStrs& strs = field.GetData().GetStrs();                                                            
+                ITERATE(CUser_field::TData::TStrs, acc_iter, strs) {
+                    use_this_seq.push_back(*acc_iter);
+                }
+            }                
+        }
+    }
+}
+
+
+
 CAlignFormatUtil::SSeqAlignSetCalcParams* 
 CAlignFormatUtil::GetSeqAlignSetCalcParamsFromASN(const CSeq_align_set& alnSet)
 {
@@ -3861,6 +3959,7 @@ CAlignFormatUtil::GetSeqAlignSetCalcParamsFromASN(const CSeq_align_set& alnSet)
     int rawScore = -1;
     int sum_n = -1;
     list<TGi> use_this_gi;
+    list<string> use_this_seq;
     
     const CSeq_align& aln = *(alnSet.Get().front()); 
 
@@ -3880,8 +3979,12 @@ CAlignFormatUtil::GetSeqAlignSetCalcParamsFromASN(const CSeq_align_set& alnSet)
         }
     }
 
-
-    if(use_this_gi.size() == 0) GetUseThisSequence(aln,use_this_gi);
+    if(use_this_gi.size() == 0) {
+        GetUseThisSequence(aln,use_this_seq);
+    }
+    else {
+        use_this_seq = s_NumGiToStringGiList(use_this_gi);//for backward compatability
+    }
 
 
     auto_ptr<SSeqAlignSetCalcParams> seqSetInfo(new SSeqAlignSetCalcParams);
@@ -3895,7 +3998,8 @@ CAlignFormatUtil::GetSeqAlignSetCalcParamsFromASN(const CSeq_align_set& alnSet)
 
     seqSetInfo->sum_n = sum_n == -1 ? 1:sum_n ;
     seqSetInfo->id = &(aln.GetSeq_id(1));
-    seqSetInfo->use_this_gi = use_this_gi;
+    seqSetInfo->use_this_gi = StringGiToNumGiList(use_this_seq);//for backward compatability
+    seqSetInfo->use_this_seq = use_this_seq;
     seqSetInfo->raw_score = rawScore;//not used
 
     seqSetInfo->subjRange = CRange<TSeqPos>(0,0);	
@@ -3966,6 +4070,137 @@ CRef<CSeq_id> CAlignFormatUtil::GetDisplayIds(const CBioseq_Handle& handle,
             }
         }
     }    
+    return wid;
+}
+
+
+
+//removes "gi:" or "seqid:" prefix from gi:nnnnnnn or seqid:nnnnn
+static string s_UseThisSeqToTextSeqID(string use_this_seqid, bool &isGi)
+{
+    const string k_GiPrefix = "gi:";
+    const string k_SeqIDPrefix = "seqid:";    
+    isGi = false;
+    string textSeqid;
+    if(NStr::StartsWith(use_this_seqid,k_GiPrefix)) {         
+        textSeqid = NStr::Replace(use_this_seqid,k_GiPrefix,"");
+        isGi = true;
+    }
+    else if(NStr::StartsWith(use_this_seqid,k_SeqIDPrefix)) {         
+        textSeqid = NStr::Replace(use_this_seqid,k_SeqIDPrefix,"");        
+    }
+    else  {//assume no prefix - gi   
+        if(NStr::StringToInt8(use_this_seqid,NStr::fConvErr_NoThrow)) {
+            isGi = true;
+        }
+    }
+    return textSeqid;
+}
+
+
+
+//assume that we have EITHER gi: OR seqid: in the list
+bool CAlignFormatUtil::IsGiList(list<string> &use_this_seq)
+{
+    bool isGi = false;
+    ITERATE(list<string>, iter_seq, use_this_seq){                        
+        s_UseThisSeqToTextSeqID( *iter_seq, isGi);
+        break;
+    }
+    return isGi;
+}
+
+list<TGi> CAlignFormatUtil::StringGiToNumGiList(list<string> &use_this_seq)
+{
+    list<TGi> use_this_gi;
+    ITERATE(list<string>, iter_seq, use_this_seq){        
+        bool isGi = false;
+        string strGI = s_UseThisSeqToTextSeqID( *iter_seq, isGi);
+        if(isGi) use_this_gi.push_back(NStr::StringToInt8(strGI));        
+    }    
+    return use_this_gi;
+}
+
+
+
+bool CAlignFormatUtil::MatchSeqInSeqList(TGi cur_gi, CRef<CSeq_id> &seqID, list<string> &use_this_seq,bool *isGiList)
+{
+    bool found = false;
+    bool isGi = false;        
+
+    string curSeqID = CAlignFormatUtil::GetLabel(seqID,true); //uses GetSeqIdString(true)
+    ITERATE(list<string>, iter_seq, use_this_seq){        
+        isGi = false;
+        string useThisSeq = s_UseThisSeqToTextSeqID(*iter_seq, isGi);
+        if((isGi && cur_gi == NStr::StringToInt8((useThisSeq))) || (!isGi && curSeqID == useThisSeq)){
+            found = true;            
+            break;
+         }
+    }
+    if(isGiList) *isGiList = isGi;
+    return found;
+}
+
+
+
+CRef<CSeq_id> CAlignFormatUtil::GetDisplayIds(const CBioseq_Handle& handle,
+                                const CSeq_id& aln_id,
+                                list<string>& use_this_seq,
+                                int *gi,                                
+                                int *taxid,
+                                string *textSeqID)
+                                           
+{
+    const CRef<CBlast_def_line_set> bdlRef = CSeqDB::ExtractBlastDefline(handle);
+    const list< CRef< CBlast_def_line > > &bdl = (bdlRef.Empty()) ? list< CRef< CBlast_def_line > >() : bdlRef->Get();
+       
+    const CBioseq::TId* ids = &handle.GetBioseqCore()->GetId();
+    CRef<CSeq_id> wid;    
+
+    if(gi) *gi = ZERO_GI;
+    if(taxid) *taxid = 0;
+    if(bdl.empty()){
+        wid = FindBestChoice(*ids, CSeq_id::WorstRank);        
+        if(gi) *gi = FindGi(*ids);    
+        if(textSeqID) *textSeqID = GetLabel(wid,true);//uses GetSeqIdString(true)
+    } else {        
+        bool found = false;
+        for(list< CRef< CBlast_def_line > >::const_iterator iter = bdl.begin();
+            iter != bdl.end(); iter++){
+            const CBioseq::TId* cur_id = &((*iter)->GetSeqid());
+            TGi cur_gi =  FindGi(*cur_id);                
+            wid = FindBestChoice(*cur_id, CSeq_id::WorstRank);
+            string curSeqID = GetLabel(wid,true);//uses GetSeqIdString(true)
+            if (taxid && (*iter)->IsSetTaxid() && (*iter)->CanGetTaxid()){
+                *taxid = (*iter)->GetTaxid();
+            }
+            if (!use_this_seq.empty()) {
+                ITERATE(list<string>, iter_seq, use_this_seq){                    
+                    bool isGi = false;
+                    string useThisSeq = s_UseThisSeqToTextSeqID( *iter_seq, isGi);
+                    if((isGi && cur_gi == NStr::StringToInt8((useThisSeq))) || (!isGi && curSeqID == useThisSeq)){
+                        found = true;
+                        break;
+                    }
+                }
+            } else {
+                ITERATE(CBioseq::TId, iter_id, *cur_id) {
+                    if ((*iter_id)->Match(aln_id) 
+                      || (aln_id.IsGeneral() && aln_id.GetGeneral().CanGetDb() && 
+                         (*iter_id)->IsGeneral() && (*iter_id)->GetGeneral().CanGetDb() &&
+                         aln_id.GetGeneral().GetDb() == (*iter_id)->GetGeneral().GetDb())) {
+                        found = true;
+                    }
+                }
+            }
+            if(found){                
+                if(gi) *gi = cur_gi;                
+                if(textSeqID) *textSeqID = curSeqID;
+                break;
+            }
+        }
+    }
+    
     return wid;
 }
 
