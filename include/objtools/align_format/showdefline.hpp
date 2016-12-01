@@ -111,6 +111,7 @@ public:
         bool was_checked;              //was this sequence checked before?
 	    string fullDefline;            //defline, containing all seq defines (PIG for example)
         int    taxid;
+        string  textSeqID;
     };
 
     //Data representing templates for defline display 
@@ -360,8 +361,8 @@ public:
 
 protected:
     /// Internal data with score information for each defline.
-    struct SScoreInfo {
-        list<TGi> use_this_gi;         // Limit formatting by these GI's.
+    struct SScoreInfo {        
+        list<string> use_this_seqid;   // Limit formatting by these seqids.
         string bit_string;             //bit score
         string raw_score_string;       //raw score
         string evalue_string;          //e value
@@ -499,9 +500,9 @@ protected:
 
     ///Internal function to return defline info
     ///@param id: seq-id we are working with [in]
-    ///@param use_this_gi: list of GI's to limit formatting by [in]
+    ///@param use_this_seqid: list of seqIds to limit formatting by [in]
     ///@return defline info
-    SDeflineInfo* x_GetDeflineInfo(CConstRef<objects::CSeq_id> id, list<TGi>& use_this_gi, int blast_rank);
+    SDeflineInfo* x_GetDeflineInfo(CConstRef<objects::CSeq_id> id, list<string> &use_this_seqid, int blast_rank);
    
     ///Internal function to return defline info
     ///@param aln: seqalign we are working on
@@ -518,11 +519,11 @@ protected:
     ///Internal function to fill defline info
     ///@param handle: sequence handle for current seqalign
     ///@param aln_id: seqid from current seqalign
-    ///@param use_this_gi: gi from use_this_gi in seqalign
+    ///@param use_this_seqid: seqids from use_this_seqid in seqalign
     ///@param sdl: this is where is info is filled to
     void x_FillDeflineAndId(const objects::CBioseq_Handle& handle,
-                            const objects::CSeq_id& aln_id,
-                            list<TGi>& use_this_gi,
+                            const objects::CSeq_id& aln_id,                         
+                            list<string> &use_this_seqid,
                             SDeflineInfo* sdl,
                             int blast_rank);
     

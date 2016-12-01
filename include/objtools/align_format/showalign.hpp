@@ -561,8 +561,8 @@ protected:
         CRef < objects::CAlnVec > alnvec;
         int score;
         double bits;
-        double evalue;
-        list<TGi> use_this_gi;
+        double evalue;        
+        list<string> use_this_seqid;
         int comp_adj_method;
         int sum_n;
         string id_label;
@@ -949,8 +949,8 @@ protected:
     string x_FormatAlnHSPLinks(string &alignInfo);
 	
     SAlnDispParams *x_FillAlnDispParams(const CRef< objects::CBlast_def_line > &iter,
-                                        const objects::CBioseq_Handle& bsp_handle,
-								        list<TGi>& use_this_gi,
+                                        const objects::CBioseq_Handle& bsp_handle,								       
+                                        list<string> &use_this_seqid,
 								        TGi firstGi);
 								   
     

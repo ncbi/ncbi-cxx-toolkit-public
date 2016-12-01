@@ -303,7 +303,7 @@ protected:
                                   const objects::CBioseq_Handle& bsp_handle,
                                   double bits, 
                                   double evalue,    
-	                              list<TGi>& use_this_gi);
+	                              list<string>& use_this_seqid);
 
     CTaxFormat::SSeqInfo *x_FillTaxDispParams(const objects::CBioseq_Handle& bsp_handle,
                              double bits, 

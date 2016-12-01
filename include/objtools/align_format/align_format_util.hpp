@@ -416,6 +416,7 @@ public:
 
         int raw_score;                  //raw score, read from the 'score' in first align in Seq Aln Set, not used        
         list<TGi> use_this_gi;          //Limit formatting by these GI's, read from the first align in Seq Aln Set        
+        list<string> use_this_seq;      //Limit formatting by these seqids, read from the first align in Seq Aln Set        
         int sum_n;                      //sum_n in score block , read from the first align in Seq Aln Set        
 
         int master_covered_length;      //total query length covered by alignment - calculated, used calculate percent_coverage
@@ -624,6 +625,23 @@ public:
                              int& sum_n,
                              int& num_ident,
                              list<TGi>& use_this_gi);
+
+    ///Extract score info from blast alingment
+    ///@param aln: alignment to extract score info from
+    ///@param score: place to extract the raw score to
+    ///@param bits: place to extract the bit score to
+    ///@param evalue: place to extract the e value to
+    ///@param sum_n: place to extract the sum_n to
+    ///@param num_ident: place to extract the num_ident to
+    ///@param use_this_seqid: place to extract use_this_seqid to
+    ///
+    static void GetAlnScores(const objects::CSeq_align& aln,
+                                    int& score, 
+                                    double& bits, 
+                                    double& evalue,
+                                    int& sum_n,
+                                    int& num_ident,
+                                    list<string>& use_this_seq);
     
     ///Extract score info from blast alingment
     /// Second version that fetches compositional adjustment integer
@@ -645,8 +663,54 @@ public:
                              list<TGi>& use_this_gi,
                              int& comp_adj_method);
 
-    
+    ///Extract score info from blast alingment
+    /// Second version that fetches compositional adjustment integer
+    ///@param aln: alignment to extract score info from
+    ///@param score: place to extract the raw score to
+    ///@param bits: place to extract the bit score to
+    ///@param evalue: place to extract the e value to
+    ///@param sum_n: place to extract the sum_n to
+    ///@param num_ident: place to extract the num_ident to
+    ///@param use_this_seq: place to extract use_this_seq to
+    ///@param comp_adj_method: composition based statistics method [out]
+    ///
+    static void GetAlnScores(const objects::CSeq_align& aln,
+                                    int& score, 
+                                    double& bits, 
+                                    double& evalue,
+                                    int& sum_n,
+                                    int& num_ident,
+                                    list<string>& use_this_seq,
+                                    int& comp_adj_method);
+
+    ///Extract use_this_gi info from blast alingment
+    ///@param aln: alignment to extract score info from
+    ///@param use_this_gi: place to extract use_this_gi to
     static void GetUseThisSequence(const objects::CSeq_align& aln,list<TGi>& use_this_gi);
+
+    ///Extract use_this_seq info from blast alingment
+    ///@param aln: alignment to extract score info from
+    ///@param use_this_seq: place to extract use_this_seq to
+    static void GetUseThisSequence(const objects::CSeq_align& aln,list<string>& use_this_seq);
+
+    ///Matches text seqID or gi with the list of seqIds or gis
+    ///@param cur_gi: gi to match
+    ///@param seqID: CSeq_id to extract label info to match
+    ///@param use_this_seq: list<string> containg gi:sssssss or seqid:sssssssss
+    ///@param isGiList: bool= true if use_this_seq conatins gi list
+    ///@ret: bool=true if the match is found
+    static bool MatchSeqInSeqList(TGi cur_gi, CRef<objects::CSeq_id> &seqID, list<string> &use_this_seq,bool *isGiList = NULL);
+
+    ///Check if use_this_seq conatins gi list
+    ///@param use_this_seq: list<string> containg gi:sssssss or seqid:sssssssss
+    ///@ret: bool= true if use_this_seq conatins gi list
+    static bool IsGiList(list<string> &use_this_seq);
+
+    ///Convert if string gi list to TGi list
+    ///@param use_this_seq: list<string> containg gi:sssssss
+    ///@ret: list<TGi> containin sssssss
+    static list<TGi> StringGiToNumGiList(list<string> &use_this_seq);
+
     ///Add the specified white space
     ///@param out: ostream to add white space
     ///@param number: the number of white spaces desired
@@ -661,7 +725,8 @@ public:
     /// Tries to recreate behavior of GetLabel before a change that 
     /// prepends "ti|" to trace IDs
     ///@param id CSeqId: to build label from
-    static string GetLabel(CConstRef<objects::CSeq_id> id);
+    ///@param with_version bool: include version to the label
+    static string GetLabel(CConstRef<objects::CSeq_id> id, bool with_version = false);
     
     ///format evalue and bit_score 
     ///@param evalue: e value
@@ -1254,6 +1319,23 @@ public:
     static TGi GetDisplayIds(const list< CRef< objects::CBlast_def_line > > &bdl,
                                               const objects::CSeq_id& aln_id,
                                               list<TGi>& use_this_gi);
+    
+    ///Scan the the list of blast deflines and find seqID to be use in display    
+    ///@param handle: CBioseq_Handle [in]
+    ///@param aln_id: CSeq_id object for alignment seq [in]
+    ///@param use_this_seq: list<string> list of seqids to use (gi:ssssss or seqid:sssss) [in]
+    ///@param gi: pointer to gi to be used for display if exists
+    ///@param taxid: pointer to taxid to be used for display if exists
+    ///@param textSeqID: pointer to textSeqID to be used for display if exists
+    ///@return: CSeq_id object to be used for display
+    static CRef<objects::CSeq_id> GetDisplayIds(const objects::CBioseq_Handle& handle,
+                                const objects::CSeq_id& aln_id,
+                                list<string>& use_this_seq,
+                                int *gi = NULL,                                
+                                int *taxid  = NULL,
+                                string *textSeqID = NULL);
+
+
 
     ///Check if accession is WGS
     ///@param accession: string accession [in]
@@ -1262,6 +1344,8 @@ public:
     static bool IsWGSAccession(string &accession, string &wgsProj);
 
     ///Check if accession is WGS
+
+
     ///@param accession: string accession [in]    
     ///@return: bool indicating if accession is WGS
     static bool IsWGSPattern(string &wgsAccession);
