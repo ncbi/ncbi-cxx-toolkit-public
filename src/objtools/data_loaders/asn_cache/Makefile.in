@@ -6,6 +6,8 @@
 ASN_PROJ = cache_blob
 LIB_PROJ = ncbi_xloader_asn_cache
 
+REQUIRES = BerkeleyDB
+
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
 
