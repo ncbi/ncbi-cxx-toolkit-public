@@ -42,7 +42,6 @@
 
 #include <time.h>
 #include <string.h>
-#include <atomic>
 
 
 #define NCBI_USE_ERRCODE_X  NetStorage_Common
@@ -61,7 +60,6 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
         EFileTrackSite ft_site) :
     m_CompoundIDPool(cid_pool),
     m_LocatorFlags(x_StorageFlagsToLocatorFlags(flags, ft_site)),
-    m_ObjectID(0),
     m_Location(eNFL_Unknown),
     m_AppDomain(app_domain),
     m_Timestamp(time(NULL)),
@@ -80,7 +78,6 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
         EFileTrackSite ft_site) :
     m_CompoundIDPool(cid_pool),
     m_LocatorFlags(x_StorageFlagsToLocatorFlags(flags, ft_site) | fLF_HasUserKey),
-    m_ObjectID(0),
     m_Location(eNFL_Unknown),
     m_AppDomain(app_domain),
     m_ShortUniqueKey(unique_key),
@@ -116,7 +113,6 @@ ENetStorageObjectLocation s_LocationCodeToLocation(const string& location)
 CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
         const string& object_loc) :
     m_CompoundIDPool(cid_pool),
-    m_ObjectID(0),
     m_Location(eNFL_Unknown),
     m_Dirty(false),
     m_Locator(object_loc)
@@ -127,7 +123,6 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
 CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
         const string& object_loc, TNetStorageAttrFlags flags) :
     m_CompoundIDPool(cid_pool),
-    m_ObjectID(0),
     m_Location(eNFL_Unknown),
     m_Dirty(false),
     m_Locator(object_loc)
@@ -139,20 +134,6 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
         m_LocatorFlags = (m_LocatorFlags & eLF_FieldFlags) |
             x_StorageFlagsToLocatorFlags(flags);
     }
-}
-
-static atomic<Uint8> s_GlobalObjectID{0};
-
-void CNetStorageObjectLoc::SetObjectID()
-{
-    m_LocatorFlags &= ~(TLocatorFlags) fLF_NoMetaData;
-    m_LocatorFlags |= fLF_HasObjectID;
-    m_ObjectID = ++s_GlobalObjectID;
-    if ((m_LocatorFlags & fLF_HasUserKey) == 0) {
-        m_ShortUniqueKey = MakeShortUniqueKey();
-        m_UniqueKey = MakeUniqueKey();
-    }
-    m_Dirty = true;
 }
 
 void CNetStorageObjectLoc::SetServiceName(const string& service_name)

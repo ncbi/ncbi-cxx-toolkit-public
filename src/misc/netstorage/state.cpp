@@ -1165,8 +1165,6 @@ ISelector* SContext::Create(TNetStorageFlags flags, const string& service)
         if (NStr::CompareNocase(service, "LBSMDNSTTestService")) {
             loc.SetServiceName(service);
         }
-
-        loc.SetObjectID();
     }
 
     return new CSelector(loc, this, flags);

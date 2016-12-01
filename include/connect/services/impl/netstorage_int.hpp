@@ -83,7 +83,6 @@ public:
     CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
             const string& object_loc, TNetStorageAttrFlags flags);
 
-    void SetObjectID();
     void SetServiceName(const string& service_name);
 
     bool HasServiceName() const {return m_LocatorFlags & fLF_NetStorageService;}
@@ -167,7 +166,8 @@ private:
 
     TLocatorFlags m_LocatorFlags;
 
-    Uint8 m_ObjectID;
+    // Not used, but still supported (for backward compatibility)
+    Uint8 m_ObjectID = 0;
 
     string m_ServiceName;
     string m_LocationCode;
