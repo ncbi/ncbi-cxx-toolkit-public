@@ -3507,8 +3507,7 @@ bool CAnnot_Collector::x_SearchMapped(const CSeqMap_CI&     seg,
                    "search time limit exceeded, no annotations found");
     }
     if ( m_SearchSegments != numeric_limits<TMaxSearchSegments>::max() &&
-         x_MaxSearchSegmentsLimitIsReached() ||
-         --m_SearchSegments == 0 ) {
+         (x_MaxSearchSegmentsLimitIsReached() || --m_SearchSegments == 0) ) {
         if ( m_SearchSegmentsAction == SAnnotSelector::eMaxSearchSegmentsThrow ) {
             NCBI_THROW(CAnnotSearchLimitException, eSegmentsLimitExceded,
                        "CAnnot_Collector: "
