@@ -4,8 +4,6 @@
 #include <corelib/ncbistd.hpp>
 
 #include <objects/seqfeat/Seq_feat.hpp>
-//#include <objects/seqfeat/SeqFeatSupport.hpp>
-//#include <objects/seqfeat/InferenceSupport.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/general/Object_id.hpp>
@@ -46,7 +44,7 @@ private:
     typedef map<CRef<CSeq_id>, CRef<CSeq_id>> TIdMap;
 
     void x_UpdateSeqEntry(const TIdMap& id_map,
-                          CSeq_entry_Handle& seh);
+        CRef<CSeq_entry> nuc_prot_set);
 
     void x_UpdateBioseq(const TIdMap& id_map,
                         CBioseq& bioseq);
@@ -112,19 +110,13 @@ int CProtIdUpdateApp::Run(void)
 {
     const CArgs& args = GetArgs();
 
-    // Set up scope
-    CRef<CObjectManager> obj_mgr = CObjectManager::GetInstance();
-    CGBDataLoader::RegisterInObjectManager(*obj_mgr);
-    CRef<CScope> scope(new CScope(*obj_mgr));
-    scope->AddDefaults();
-
     // Set up object input stream
     unique_ptr<CObjectIStream> istr(x_InitInputEntryStream(args));
 
     // Attempt to read Seq-entry from input file 
-    CSeq_entry seq_entry;
+    CRef<CSeq_entry> seq_entry = Ref(new CSeq_entry());
     try {
-        istr->Read(ObjectInfo(seq_entry));
+        istr->Read(ObjectInfo(*seq_entry));
     }
     catch (CException&) {
         NCBI_THROW(CProteinMatchException,
@@ -141,21 +133,10 @@ int CProtIdUpdateApp::Run(void)
         cout;
 
     unique_ptr<MSerial_Format> pOutFormat(new MSerial_Format_AsnText());
-   
-    // Fetch Seq-entry Handle 
-    CSeq_entry_Handle seh;
-    try {
-        seh = scope->AddTopLevelSeqEntry( seq_entry );
-    } 
-    catch (CException&) {
-        NCBI_THROW(CProteinMatchException, 
-                   eBadInput, 
-                   "Could not obtain Seq-entry handle");
-    }
 
-    x_UpdateSeqEntry(id_map, seh);
-    scope->RemoveEntry(seq_entry);
-    ostr << MSerial_Format_AsnText() << seq_entry;
+    x_UpdateSeqEntry(id_map, seq_entry);
+
+    ostr << MSerial_Format_AsnText() << *seq_entry;
     return 0;
 }
 
@@ -199,22 +180,27 @@ bool CProtIdUpdateApp::x_ProcessInputTable(CNcbiIstream& istr, TIdMap& id_map)
             vector<string> entries;
             string delim = "\t";
             NStr::Split(line, delim, entries);
-            if (entries.size() >= 2 &&
-                entries[0] == "LocalID" &&
-                entries[1] == "AccVer") { // Skip over the column titles
+            if (!entries.empty() &&
+                entries[0] == "NA_ACCESSION") {
                 continue;
             } 
-            else 
-            if (entries.size() < 2) { // Each row must contain at least a local id 
-                continue;             // and an accession+version.
+        
+            if (entries.size() < 5) { 
+                continue;             
             }
+
+            if (entries[2] == "---" ||  // No local ID
+                entries[3] != "PROT" || // Not a protein
+                entries[4] != "Same") { // Changed
+                continue;
+            }
+
 
             CRef<CSeq_id> gb_id = Ref(new CSeq_id());
             gb_id->SetGenbank().Set(entries[1]);
 
             CRef<CSeq_id> local = Ref(new CSeq_id());
-
-            local->SetLocal().SetStr(entries[0]);
+            local->SetLocal().SetStr(entries[2]);
 
             id_map[local] = gb_id;
         } 
@@ -222,8 +208,6 @@ bool CProtIdUpdateApp::x_ProcessInputTable(CNcbiIstream& istr, TIdMap& id_map)
 
     return true;
 }
-
-
 
 
 void CProtIdUpdateApp::x_UpdateSeqId(const CSeq_id& old_id,
@@ -234,41 +218,9 @@ void CProtIdUpdateApp::x_UpdateSeqId(const CSeq_id& old_id,
         return;
     }
 
-    // Generalize this function to handle different IDs
-
-    if (new_id.IsLocal()) {
-        if (new_id.GetLocal().IsStr()) {
-            id.SetLocal().SetStr(new_id.GetLocal().GetStr());
-        }
-        else 
-        if (new_id.GetLocal().IsId()) {
-            id.SetLocal().SetId(new_id.GetLocal().GetId());
-        }
-        return;
-    }
-
-    if (new_id.IsGenbank()) {
-        if (new_id.GetGenbank().IsSetName()) {
-            id.SetGenbank().SetName(new_id.GetGenbank().GetName());
-        }
-
-        if (new_id.GetGenbank().IsSetAccession()) {
-            id.SetGenbank().SetAccession(new_id.GetGenbank().GetAccession());
-        }
-
-        if (new_id.GetGenbank().IsSetRelease()) {
-            id.SetGenbank().SetRelease(new_id.GetGenbank().GetRelease());
-        }
-
-        if (new_id.GetGenbank().IsSetVersion()) {
-            id.SetGenbank().SetVersion(new_id.GetGenbank().GetVersion());
-        }
-        return;
-    }
-
+    id.Assign(new_id);
     return;
 }
-
 
 
 void CProtIdUpdateApp::x_UpdateSeqId(const TIdMap& id_map,
@@ -339,7 +291,7 @@ void CProtIdUpdateApp::x_UpdateSeqAnnot(const TIdMap& id_map,
         break;
     } 
 
-    case CSeq_annot::TData::e_Ftable: { // Feature table
+    case CSeq_annot::TData::e_Ftable: { 
         EDIT_EACH_SEQFEAT_ON_SEQANNOT(it, annot)
         {
             x_UpdateSeqFeat(id_map, **it);
@@ -347,7 +299,7 @@ void CProtIdUpdateApp::x_UpdateSeqAnnot(const TIdMap& id_map,
         break;
     }
 
-    case CSeq_annot::TData::e_Align: { // Set of alignments
+    case CSeq_annot::TData::e_Align: { 
         EDIT_EACH_SEQALIGN_ON_SEQANNOT(it, annot)
         {
             x_UpdateSeqAlign(id_map, **it);
@@ -355,7 +307,7 @@ void CProtIdUpdateApp::x_UpdateSeqAnnot(const TIdMap& id_map,
         break;
     }
 
-    case CSeq_annot::TData::e_Graph: { // Set of graphs
+    case CSeq_annot::TData::e_Graph: {
         // EACH_SEQGRAPH_ON_SEQANNOT gives a compilation error
         // Loop explicitly
         auto&& graphs = annot.SetData().SetGraph();
@@ -386,7 +338,6 @@ void CProtIdUpdateApp::x_UpdateSeqAnnot(const TIdMap& id_map,
     // Doesn't cover Seq_table
     return;
 }
-
 
 
 void CProtIdUpdateApp::x_UpdateAnnotDesc(const TIdMap& id_map,
@@ -424,7 +375,6 @@ void CProtIdUpdateApp::x_UpdateSeqAlign(const TIdMap& id_map,
         }
         return;
     }
-
 
     if (align.GetSegs().IsDenseg()) {
         EDIT_EACH_SEQID_ON_DENSEG(it, align.SetSegs().SetDenseg()) 
@@ -486,43 +436,23 @@ void CProtIdUpdateApp::x_UpdateSeqFeat(const TIdMap& id_map,
 }
 
 
-
 void CProtIdUpdateApp::x_UpdateSeqEntry(const TIdMap& id_map,
-                                       CSeq_entry_Handle& tlseh) 
+    CRef<CSeq_entry> nuc_prot_set) 
 {
-    for (CSeq_entry_CI it(tlseh, CSeq_entry_CI::fRecursive); it; ++it) {
-       CSeq_entry_Handle seh = *it;
-
-       if (seh.IsSeq()) { // Bioseq
-           CRef<CBioseq> new_seq(new CBioseq());
-           new_seq->Assign(*seh.GetSeq().GetBioseqCore());
-           
-           // update ids on the sequence and in the sequence annotations
-           x_UpdateBioseq(id_map, *new_seq);
-
-           CSeq_entry_EditHandle edit_handle(seh); // Is there a better way to 
-           edit_handle.SelectNone(); // generate a blank CSeq_entry_edit_Handle??
-           edit_handle.SelectSeq(*new_seq);
-       }
-       else // Must be Bioseq-set
-       { 
-           SAnnotSelector sel;
-           for (CAnnot_CI annot_ci(seh, sel); annot_ci; ++annot_ci) 
-           {
-               CRef<CSeq_annot> new_annot(new CSeq_annot());
-               new_annot->Assign(*annot_ci->GetSeq_annotCore());
-               x_UpdateSeqAnnot(id_map, *new_annot);
-
-               CSeq_annot_Handle sah(*annot_ci);
-               CSeq_annot_Handle new_sah = sah.GetScope().AddSeq_annot(*new_annot); // Add the new annot to the scope
-               sah.Swap(new_sah);
-           }
-       }
+    // Update protein-sequence IDs
+    for (CTypeIterator<CBioseq> it(*nuc_prot_set); it; ++it) {
+        if (it->IsAa()) {
+            x_UpdateBioseq(id_map, *it);
+        }
     }
 
-    return;
+    // Update annotations - this probably iterates over all annotations, 
+    // including annotations on the individual bioseqs
+    // This seems to be performing redundant work.
+    for (CTypeIterator<CSeq_annot> it(*nuc_prot_set); it; ++it) {
+        x_UpdateSeqAnnot(id_map, *it);
+    }
 }
-
 
 
 END_NCBI_SCOPE
