@@ -7488,8 +7488,8 @@ bool CValidError_bioseq::x_IsRangeGap (const CBioseq_Handle& seq, int start, int
 bool s_AreAdjacent(ERnaPosition pos1, ERnaPosition pos2)
 {
     if ((pos1 == e_RnaPosition_LEFT_RIBOSOMAL_SUBUNIT && (pos2 == e_RnaPosition_INTERNAL_SPACER_1 || pos2 == e_RnaPosition_INTERNAL_SPACER_X)) ||
-        (pos1 == e_RnaPosition_MIDDLE_RIBOSOMAL_SUBUNIT && pos2 == e_RnaPosition_INTERNAL_SPACER_2) ||
-        (pos1 == e_RnaPosition_INTERNAL_SPACER_1 && pos2 == e_RnaPosition_MIDDLE_RIBOSOMAL_SUBUNIT) ||
+        (pos1 == e_RnaPosition_MIDDLE_RIBOSOMAL_SUBUNIT && (pos2 == e_RnaPosition_INTERNAL_SPACER_2 || pos2 == e_RnaPosition_INTERNAL_SPACER_X)) ||
+        ((pos1 == e_RnaPosition_INTERNAL_SPACER_1 || pos1 == e_RnaPosition_INTERNAL_SPACER_X) && pos2 == e_RnaPosition_MIDDLE_RIBOSOMAL_SUBUNIT) ||
         (pos1 == e_RnaPosition_INTERNAL_SPACER_2 && pos2 == e_RnaPosition_RIGHT_RIBOSOMAL_SUBUNIT) ||
         (pos1 == e_RnaPosition_INTERNAL_SPACER_X && pos2 == e_RnaPosition_RIGHT_RIBOSOMAL_SUBUNIT)) {
         return true;
