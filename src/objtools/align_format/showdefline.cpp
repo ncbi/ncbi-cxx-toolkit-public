@@ -282,7 +282,7 @@ static void s_LimitDescrLength(string &descr)
 
 void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
                                            const CSeq_id& aln_id,
-                                           list<TGi>& use_this_gi,
+                                           list<string> &use_this_seqid,
                                            SDeflineInfo* sdl,
                                            int blast_rank)
 {
@@ -325,17 +325,17 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
         }
     }        
     //get id (sdl->id, sdl-gi)    
-    sdl->id = CAlignFormatUtil::GetDisplayIds(handle,aln_id,use_this_gi,sdl->gi,sdl->taxid);
+    sdl->id = CAlignFormatUtil::GetDisplayIds(handle,aln_id,use_this_seqid,&sdl->gi,&sdl->taxid,&sdl->textSeqID);
     sdl->alnIDFasta = aln_id.AsFastaString();
 
-    //get linkout
+    //get linkout****
     if((m_Option & eLinkout)){
         bool linkout_not_found = true;
         for(list< CRef< CBlast_def_line > >::const_iterator iter = bdl.begin();
             iter != bdl.end(); iter++){
             const CBioseq::TId& cur_id = (*iter)->GetSeqid();
             TGi cur_gi =  FindGi(cur_id);            
-            if(use_this_gi.empty()){
+            if(use_this_seqid.empty()){
                 if(sdl->gi == cur_gi){                 
                     sdl->linkout = m_LinkoutDB
                         ? m_LinkoutDB->GetLinkout(cur_gi,m_MapViewerBuildName)
@@ -352,7 +352,8 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
                     
                     break;
                 }
-            } else {
+            } else if (CAlignFormatUtil::IsGiList(use_this_seqid)) {
+                list<TGi> use_this_gi = CAlignFormatUtil::StringGiToNumGiList(use_this_seqid);
                 ITERATE(list<TGi>, iter_gi, use_this_gi){
                     if(cur_gi == *iter_gi){                     
                         sdl->linkout = m_LinkoutDB
@@ -424,14 +425,9 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
             iter != bdl.end(); iter++){
             const CBioseq::TId& cur_id = (*iter)->GetSeqid();
             TGi cur_gi =  FindGi(cur_id);
-            TGi gi_in_use_this_gi = ZERO_GI;
-            ITERATE(list<TGi>, iter_gi, use_this_gi){
-                if(cur_gi == *iter_gi){
-                    gi_in_use_this_gi = *iter_gi;                 
-                    break;
-                }
-            }
-            if(use_this_gi.empty() || gi_in_use_this_gi > ZERO_GI) {
+            wid = FindBestChoice(cur_id, CSeq_id::WorstRank);
+            bool match = CAlignFormatUtil::MatchSeqInSeqList(cur_gi, wid, use_this_seqid);            
+            if(use_this_seqid.empty() || match) {
                 
                 if((*iter)->IsSetTitle()){
                     bool id_used_already = false;
@@ -694,7 +690,7 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
     
     bool first_new =true;
     ITERATE(vector<SScoreInfo*>, iter, m_ScoreList){
-        SDeflineInfo* sdl = x_GetDeflineInfo((*iter)->id, (*iter)->use_this_gi, (*iter)->blast_rank);
+        SDeflineInfo* sdl = x_GetDeflineInfo((*iter)->id, (*iter)->use_this_seqid, (*iter)->blast_rank);
         size_t line_length = 0;
         string line_component;
         if ((m_Option & eHtml) && (sdl->gi > ZERO_GI)){
@@ -731,7 +727,7 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
         if((m_Option & eHtml) && (sdl->id_url != NcbiEmptyString)) {
             out << sdl->id_url;
         }
-        if((m_Option & eShowGi) && !sdl->id->IsGi()){
+        if(m_Option & eShowGi){
             if(sdl->gi > ZERO_GI){
                 line_component = "gi|" + NStr::NumericToString(sdl->gi) + "|";
                 out << line_component;
@@ -742,10 +738,7 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
             if(!(sdl->id->AsFastaString().find("gnl|BL_ORD_ID") != string::npos || 
 		sdl->id->AsFastaString().find("lcl|Subject_") != string::npos)){
                 string idStr;
-                if (use_long_seqids ||
-                    // use long sequence ids if more than one id is printed
-                    ((m_Option & eShowGi) && sdl->gi > ZERO_GI)) {
-
+                if (use_long_seqids) {
                     idStr = sdl->id->AsFastaString();
                 }
                 else {
@@ -1077,7 +1070,7 @@ void CShowBlastDefline::x_DisplayDeflineTableBody(CNcbiOstream & out)
                                                  query_buf);
     }
     ITERATE(vector<SScoreInfo*>, iter, m_ScoreList){
-        SDeflineInfo* sdl = x_GetDeflineInfo((*iter)->id, (*iter)->use_this_gi, (*iter)->blast_rank);
+        SDeflineInfo* sdl = x_GetDeflineInfo((*iter)->id, (*iter)->use_this_seqid, (*iter)->blast_rank);
         size_t line_length = 0;
         string line_component;
         cur_database_type = (sdl->linkout & eGenomicSeq);
@@ -1309,13 +1302,12 @@ CShowBlastDefline::x_GetScoreInfo(const CSeq_align& aln, int blast_rank)
     double bits = 0;
     double evalue = 0;
     int sum_n = 0;
-    int num_ident = 0;
-    list<TGi> use_this_gi;
+    int num_ident = 0;    
+    list<string> use_this_seq;
 
-    use_this_gi.clear();
-
+    use_this_seq.clear();    
     CAlignFormatUtil::GetAlnScores(aln, score, bits, evalue, sum_n, 
-                                       num_ident, use_this_gi);
+                                       num_ident, use_this_seq);
 
     CAlignFormatUtil::GetScoreString(evalue, bits, 0, score,
                               evalue_buf, bit_score_buf, total_bit_score_buf,
@@ -1325,7 +1317,7 @@ CShowBlastDefline::x_GetScoreInfo(const CSeq_align& aln, int blast_rank)
     score_info->sum_n = sum_n == -1 ? 1:sum_n ;
     score_info->id = &(aln.GetSeq_id(1));
 
-    score_info->use_this_gi = use_this_gi;
+    score_info->use_this_seqid = use_this_seq;
 
     score_info->bit_string = bit_score_buf;
     score_info->raw_score_string = raw_score_buf;
@@ -1365,8 +1357,7 @@ CShowBlastDefline::x_GetScoreInfoForTable(const CSeq_align_set& aln, int blast_r
     score_info->hspNum = seqSetInfo->hspNum;
     score_info->totalLen = seqSetInfo->totalLen;
     
-
-    score_info->use_this_gi = seqSetInfo->use_this_gi;
+    score_info->use_this_seqid = seqSetInfo->use_this_seq;
     score_info->sum_n = seqSetInfo->sum_n == -1 ? 1:seqSetInfo->sum_n ;
 
     score_info->raw_score_string = raw_score_buf;//check if used
@@ -1388,8 +1379,8 @@ CShowBlastDefline::GetDeflineInfo(vector< CConstRef<CSeq_id> > &seqIds)
 {
     vector <CShowBlastDefline::SDeflineInfo*>  sdlVec;
     for(size_t i = 0; i < seqIds.size(); i++) {
-        list<TGi> use_this_gi;
-        CShowBlastDefline::SDeflineInfo* sdl = x_GetDeflineInfo(seqIds[i], use_this_gi, i + 1 );
+        list<string> use_this_seq;
+        CShowBlastDefline::SDeflineInfo* sdl = x_GetDeflineInfo(seqIds[i], use_this_seq, i + 1 );
         sdlVec.push_back(sdl);        
     }
     return sdlVec;
@@ -1398,7 +1389,7 @@ CShowBlastDefline::GetDeflineInfo(vector< CConstRef<CSeq_id> > &seqIds)
 
 
 CShowBlastDefline::SDeflineInfo* 
-CShowBlastDefline::x_GetDeflineInfo(CConstRef<CSeq_id> id, list<TGi>& use_this_gi, int blast_rank)
+CShowBlastDefline::x_GetDeflineInfo(CConstRef<CSeq_id> id, list<string> &use_this_seqid, int blast_rank)
 {
     SDeflineInfo* sdl = NULL;
     sdl = new SDeflineInfo;
@@ -1406,7 +1397,7 @@ CShowBlastDefline::x_GetDeflineInfo(CConstRef<CSeq_id> id, list<TGi>& use_this_g
     sdl->defline = "Unknown";
     try{
         const CBioseq_Handle& handle = m_ScopeRef->GetBioseqHandle(*id);
-        x_FillDeflineAndId(handle, *id, use_this_gi, sdl, blast_rank);
+        x_FillDeflineAndId(handle, *id, use_this_seqid, sdl, blast_rank);
     } catch (const CException&){
         sdl->defline = "Unknown";
         sdl->is_new = false;
@@ -1447,7 +1438,7 @@ void CShowBlastDefline::x_DisplayDeflineTableTemplate(CNcbiOstream & out)
     string rowType = "odd";
     string subHeaderID;  
     ITERATE(vector<SScoreInfo*>, iter, m_ScoreList){
-        SDeflineInfo* sdl = x_GetDeflineInfo((*iter)->id, (*iter)->use_this_gi, (*iter)->blast_rank);
+        SDeflineInfo* sdl = x_GetDeflineInfo((*iter)->id, (*iter)->use_this_seqid, (*iter)->blast_rank);
         cur_database_type = (sdl->linkout & eGenomicSeq);
         string subHeader;             
         bool formatHeaderSort = !is_first && (prev_database_type != cur_database_type);
