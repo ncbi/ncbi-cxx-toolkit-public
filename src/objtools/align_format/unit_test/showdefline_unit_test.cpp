@@ -102,7 +102,7 @@ struct CShowBlastDeflineTest : public CShowBlastDefline {
             auto_ptr<CShowBlastDefline::SScoreInfo>
                 si(sbd.x_GetScoreInfo(**iter, 1));
             auto_ptr<CShowBlastDefline::SDeflineInfo>
-                dl(sbd.x_GetDeflineInfo(si->id, si->use_this_gi, 1));
+                dl(sbd.x_GetDeflineInfo(si->id, si->use_this_seqid, 1));
             CShowBlastDeflineTest::TestData(dl.get(), si.get(), i);
             i++;
             if (i > 1) {
