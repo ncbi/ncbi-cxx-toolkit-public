@@ -241,7 +241,7 @@ CDisplaySeqalign::~CDisplaySeqalign()
         if(m_DynamicFeature){
             delete m_DynamicFeature;
         }
-    }
+    }    
 }
 
 //8.Display Identities,positives,frames etc
@@ -1971,7 +1971,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
                                                        alnvecInfo->evalue, 
                                                        alnvecInfo->sum_n, 
                                                        num_ident,
-                                                       alnvecInfo->use_this_gi,
+                                                       alnvecInfo->use_this_seqid,
                                                        alnvecInfo->comp_adj_method);
                         alnvecInfo->alnvec = avRef;
                        
@@ -2171,26 +2171,26 @@ void CDisplaySeqalign::x_FillIdentityInfo(const string& sequence_standard,
 
 
 CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CRef< CBlast_def_line > &bdl,
-                                                                        const CBioseq_Handle& bsp_handle,
-								                                        list<TGi>& use_this_gi,
+                                                                        const CBioseq_Handle& bsp_handle,								                                        
+                                                                        list<string> &use_this_seqid,
 								                                        TGi firstGi)							   
 {
     SAlnDispParams *alnDispParams = NULL;
+    
 
     bool isNa = bsp_handle.GetBioseqCore()->IsNa();
     int seqLength = (int)bsp_handle.GetBioseqLength();    
 
 	const list<CRef<CSeq_id> > ids = bdl->GetSeqid();
-	TGi gi =  CAlignFormatUtil::GetGiForSeqIdList(ids);
-    TGi gi_in_use_this_gi = ZERO_GI;
+    TGi gi =  CAlignFormatUtil::GetGiForSeqIdList(ids);
+
+    CRef<CSeq_id> wid = FindBestChoice(ids, CSeq_id::WorstRank);    
+    TGi gi_in_use_this_gi = ZERO_GI;    
+    bool isGiList = false;
+    bool match = CAlignFormatUtil::MatchSeqInSeqList(gi, wid, use_this_seqid,&isGiList);           
+    if(match && isGiList) gi_in_use_this_gi = gi;
     
-    ITERATE(list<TGi>, iter_gi, use_this_gi){
-        if(gi == *iter_gi){
-            gi_in_use_this_gi = *iter_gi;
-            break;
-        }
-    }
-	if(use_this_gi.empty() || gi_in_use_this_gi > ZERO_GI) {
+    if(use_this_seqid.empty() || match) {
         firstGi = (firstGi == ZERO_GI) ? gi_in_use_this_gi : firstGi;
 		alnDispParams = new SAlnDispParams();
 		alnDispParams->gi =  gi;
@@ -2277,7 +2277,7 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_
         value_set = true;
     }
 #endif /* CTOOLKIT_COMPATIBLE */
-
+		
     if(bsp_handle){
         const CRef<CSeq_id> wid =
             FindBestChoice(bsp_handle.GetBioseqCore()->GetId(), 
@@ -2314,7 +2314,7 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_
             }
                 
             if(m_AlignOption&eShowGi && alnDispParams->gi > ZERO_GI &&
-               !alnDispParams->seqID->IsGi()){
+                !alnDispParams->seqID->IsGi()){
                 out<<"gi|"<<alnDispParams->gi<<"|";
             }     
             if(!((alnDispParams->seqID->AsFastaString().find("gnl|BL_ORD_ID") != string::npos) ||
@@ -2353,12 +2353,12 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_
             //print each defline 
             bool bMultipleDeflines = false;
             int numBdl = 0;
-            int maxNumBdl = (aln_vec_info->use_this_gi.empty()) ? bdl.size() : aln_vec_info->use_this_gi.size();
+            int maxNumBdl = (aln_vec_info->use_this_seqid.empty()) ? bdl.size() : aln_vec_info->use_this_seqid.size();
             for(list< CRef< CBlast_def_line > >::const_iterator 
                     iter = bdl.begin(); iter != bdl.end(); iter++){                
 				SAlnDispParams *alnDispParams = x_FillAlnDispParams(*iter,
                                                                     bsp_handle,
-																	aln_vec_info->use_this_gi,
+																	aln_vec_info->use_this_seqid,
 																	firstGi);
 																
 																	
@@ -3749,7 +3749,7 @@ CDisplaySeqalign::x_InitDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo
     string deflines;	
     string firstDefline;
     CNcbiEnvironment env;
-	list<TGi>& use_this_gi = aln_vec_info->use_this_gi;    
+	list<string>& use_this_seqid = aln_vec_info->use_this_seqid;    
     if(bsp_handle){        
         const CRef<CBlast_def_line_set> bdlRef =  CSeqDB::ExtractBlastDefline(bsp_handle);        
         const list< CRef< CBlast_def_line > > &bdl = (bdlRef.Empty()) ? list< CRef< CBlast_def_line > >() : bdlRef->Get();
@@ -3785,15 +3785,15 @@ CDisplaySeqalign::x_InitDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo
             int numBdl = 0;            
             for(list< CRef< CBlast_def_line > >::const_iterator 
                     iter = bdl.begin(); iter != bdl.end(); iter++){                
-				alnDispParams = x_FillAlnDispParams(*iter,bsp_handle,use_this_gi,firstGi);                
+				alnDispParams = x_FillAlnDispParams(*iter,bsp_handle,use_this_seqid,firstGi);                
 				if(alnDispParams) {
                     numBdl++;                
                     bool hideDefline = (numBdl > 1)? true : false;                    
 					string alnDefLine = x_MapDefLine(alnDispParams,isFirst,m_AlignOption&eLinkout,hideDefline,seqLength);                    
                     if(isFirst){
                         const CSeq_id& aln_id = m_AV->GetSeqId(1);
-                        TGi alnGi;
-                        CRef<CSeq_id> dispId = CAlignFormatUtil::GetDisplayIds(bsp_handle,aln_id,use_this_gi,alnGi);
+                        TGi alnGi;                        
+                        CRef<CSeq_id> dispId = CAlignFormatUtil::GetDisplayIds(bsp_handle,aln_id,use_this_seqid,&alnGi);
                         m_CurrAlnID_Lbl = (alnGi == ZERO_GI) ? CAlignFormatUtil::GetLabel(dispId) :  NStr::NumericToString(alnGi);
                         if(alnGi == ZERO_GI) {
                             dispId->GetLabel(&m_CurrAlnID_DbLbl, CSeq_id::eContent);
@@ -4773,7 +4773,7 @@ void CDisplaySeqalign::DisplayPairwiseSeqalign(CNcbiOstream& out,unordered_set <
                                                  alnvecInfo->evalue, 
                                                  alnvecInfo->sum_n, 
                                                  num_ident,
-                                                 alnvecInfo->use_this_gi,
+                                                 alnvecInfo->use_this_seqid,
                                                  alnvecInfo->comp_adj_method);
                  
                     alnvecInfo->alnvec = avRef;
