@@ -50,7 +50,6 @@ public:
         list<CRef<CSeq_entry>>& nucprot_sets);
 
     CConstRef<CBioseq_set> GetDBNucProtSet(const CBioseq& nuc_seq);
-    CSeq_entry_Handle GetDBTopLevelEntry(const CBioseq& nuc_seq);
 
     bool UpdateNucSeqIds(CRef<CSeq_id>& new_id,
         CSeq_entry_Handle& nucleotide_seh,

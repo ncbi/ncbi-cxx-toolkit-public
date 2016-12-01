@@ -58,26 +58,6 @@ CBioseq& CMatchSetup::SetNucSeq(CRef<CSeq_entry> nuc_prot_set) {
 }
 
 
-CSeq_entry_Handle CMatchSetup::GetDBTopLevelEntry(const CBioseq& nuc_seq)  
-{
-    CBioseq_Handle db_bsh;
-    for (auto pNucId : nuc_seq.GetId()) {
-        if (pNucId->IsGenbank()) {
-            db_bsh = m_DBScope->GetBioseqHandle(*pNucId);
-            if (!db_bsh) {
-                NCBI_THROW(CProteinMatchException, 
-                    eInputError,
-                    "Failed to fetch DB entry");
-            }
-            return db_bsh.GetTopLevelEntry(); // GetParentBioseqSet() 
-        }
-    }
-
-    CSeq_entry_Handle empty;
-    return empty;
-}
-
-
 CConstRef<CBioseq_set> CMatchSetup::GetDBNucProtSet(const CBioseq& nuc_seq) 
 {
     for (auto pNucId : nuc_seq.GetId()) {

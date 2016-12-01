@@ -202,7 +202,6 @@ int CProteinMatchApp::Run(void)
         out_dir,
         args["o"].AsString());
 
-     // Handle abuse!! 
     CMatchTabulate match_tab;
     int count=0;
     for (CRef<CSeq_entry> nuc_prot_set : nuc_prot_sets) {
