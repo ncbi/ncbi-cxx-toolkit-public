@@ -369,13 +369,17 @@ void CAgpValidateReader::OnGapOrComponent()
         if(m_this_row->component_type == 'W') m_AgpErr->Msg(CAgpErr::W_CompIsNotWgsTypeIs);
       }
       else if( div != CSeq_id::eAcc_other // no further classification
+          &&  div != CSeq_id::eAcc_dirsub // direct submission of anything, e.g. FO081906.4 (see GCOL-6194)
       ) {
-        if( string("ADF").find(m_this_row->component_type)!=NPOS ) m_AgpErr->Msg(CAgpErr::W_CompIsNotHtgTypeIs, m_this_row->GetComponentId());
+        if( string("ADF").find(m_this_row->component_type)!=NPOS )
+            m_AgpErr->Msg(CAgpErr::W_CompIsNotHtgTypeIs, m_this_row->GetComponentId());
       }
     }
     else {
-      if( string("ADF").find(m_this_row->component_type)!=NPOS ) m_AgpErr->Msg(CAgpErr::W_CompIsNotHtgTypeIs, m_this_row->GetComponentId());
-      else if(m_this_row->component_type!='W') m_AgpErr->Msg( CAgpErr::W_CompIsLocalTypeNotW, m_this_row->GetComponentId() );
+      if( string("ADF").find(m_this_row->component_type)!=NPOS )
+          m_AgpErr->Msg(CAgpErr::W_CompIsNotHtgTypeIs, m_this_row->GetComponentId());
+      else if(m_this_row->component_type!='W')
+          m_AgpErr->Msg( CAgpErr::W_CompIsLocalTypeNotW, m_this_row->GetComponentId() );
     }
 
     if( m_comp2len->size() ) {
@@ -470,7 +474,7 @@ void CAgpValidateReader::OnScaffoldEnd()
     m_SingleCompScaffolds++;
     if(m_gapsInLastScaffold) m_SingleCompScaffolds_withGaps++;
 
-    if(m_unplaced && m_prev_orientation) {
+    if((m_unplaced || NStr::StartsWith(m_prev_row->GetObject(), "un", NStr::eNocase) ) && m_prev_orientation) {
       if(m_prev_orientation!='+') m_AgpErr->Msg( CAgpErrEx::W_UnSingleOriNotPlus   , CAgpErr::fAtPrevLine );
 
       TMapStrInt::iterator it = m_comp2len->find( m_this_row->GetComponentId() );
