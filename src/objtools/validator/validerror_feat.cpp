@@ -4236,9 +4236,14 @@ void CValidError_feat::ValidateImp(
                 if ( NStr::CompareNocase( (*gbqual)->GetQual(), "recombination_class") != 0 ) continue;
                 const string& val = (*gbqual)->GetVal();
                if ( recomb_values.find(val.c_str()) == recomb_values.end() ) {
-                    if ( NStr::Equal (val, "other") && !feat.IsSetComment() ) {
-                        PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
-                            "The recombination_class 'other' is missing the required /note", feat);
+                    if ( NStr::Equal (val, "other")) {
+                        if (!feat.IsSetComment()) {
+                            PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
+                                "The recombination_class 'other' is missing the required /note", feat);
+                        }
+                    } else {
+                        PostErr(eDiag_Info, eErr_SEQ_FEAT_InvalidQualifierValue,
+                            "'" + val + "' is not a legal value for recombination_class", feat);
                     }
                 }
             }

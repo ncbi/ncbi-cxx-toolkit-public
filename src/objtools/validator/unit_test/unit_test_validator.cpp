@@ -20028,3 +20028,41 @@ BOOST_AUTO_TEST_CASE(Test_VR_630)
     CLEAR_ERRORS
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_VR_660)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    CRef<CSeq_feat> recomb = unit_test_util::AddMiscFeature(entry);
+    recomb->SetData().SetImp().SetKey("misc_recomb");
+    CRef<CGb_qual> qual(new CGb_qual("recombination_class", "other"));
+    recomb->SetQual().push_back(qual);
+
+    STANDARD_SETUP
+
+    // first check ok because recomb has comment
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    // error because 'other' and no comment
+    recomb->ResetComment();
+    eval = validator.Validate(seh, options);
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error,
+        "InvalidQualifierValue",
+        "The recombination_class 'other' is missing the required /note"));
+    CheckErrors(*eval, expected_errors);
+
+    // info because not other and not valid
+    qual->SetVal("not a valid recombination class");
+    expected_errors[0]->SetErrMsg("'not a valid recombination class' is not a legal value for recombination_class");
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    // no error because legal
+    qual->SetVal("mitotic_recombination");
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+}
+
