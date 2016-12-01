@@ -559,23 +559,6 @@ CHttpRequest::CHttpRequest(CHttpSession& session,
 }
 
 
-CHttpRequest::CHttpRequest(const CHttpRequest& request)
-    : m_Session(request.m_Session),
-      m_Url(request.m_Url),
-      m_Method(request.m_Method),
-      m_Headers(request.m_Headers),
-      m_FormData(request.m_FormData),
-      m_Stream(request.m_Stream),
-      m_Response(request.m_Response),
-      m_Timeout(request.m_Timeout),
-      m_Retries(request.m_Retries),
-      m_Deadline(request.m_Deadline),
-      m_RetryProcessing(request.m_RetryProcessing),
-      m_AdjustUrl(request.m_AdjustUrl)
-{
-}
-
-
 // Processing logic for 'retry later' response in CHttpRequest::Execute()
 struct SRetryProcessing
 {
