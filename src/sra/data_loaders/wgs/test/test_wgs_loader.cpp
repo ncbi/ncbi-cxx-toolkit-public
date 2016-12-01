@@ -96,12 +96,24 @@ enum EMasterDescrType
     eWithoutMasterDescr,
     eWithMasterDescr
 };
+enum EEnhancedInfo
+{
+    eWithoutEnhancedInfo,
+    eWithEnhancedInfo
+};
 
 static EMasterDescrType s_master_descr_type = eWithoutMasterDescr;
 
-void sx_InitGBLoader(CObjectManager& om, bool pubseqos2 = false)
+void sx_InitGBLoader(CObjectManager& om, EEnhancedInfo enhanced = eWithoutEnhancedInfo)
 {
-    const char* reader = pubseqos2? "pubseqos2": "id1";
+    const char* reader;
+    if ( enhanced == eWithEnhancedInfo ) {
+        CNcbiApplication::Instance()->SetEnvironment().Set("NCBI_LOAD_PLUGINS_FROM_DLLS", "1");
+        reader = "pubseqos2";
+    }
+    else {
+        reader = "id1";
+    }
     CGBDataLoader* gbloader = dynamic_cast<CGBDataLoader*>
         (CGBDataLoader::RegisterInObjectManager(om, reader, om.eNonDefault).GetLoader());
     _ASSERT(gbloader);
@@ -171,7 +183,7 @@ bool sx_HasNewWGSRepository()
 CBioseq_Handle sx_LoadFromGB(const CBioseq_Handle& bh)
 {
     CRef<CObjectManager> om = CObjectManager::GetInstance();
-    sx_InitGBLoader(*om, true);
+    sx_InitGBLoader(*om);
     CScope scope(*om);
     scope.AddDataLoader("GBLOADER");
     return scope.GetBioseqHandle(*bh.GetSeqId());
@@ -1998,7 +2010,7 @@ BOOST_AUTO_TEST_CASE(HashTest)
     int wgs_hash = wgs_scope.GetSequenceHash(id);
     BOOST_CHECK(wgs_hash != 0);
 
-    sx_InitGBLoader(*om, true);
+    sx_InitGBLoader(*om, eWithEnhancedInfo);
     CScope gb_scope(*om);
     gb_scope.AddDataLoader("GBLOADER");
     
