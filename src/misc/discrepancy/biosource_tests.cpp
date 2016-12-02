@@ -2358,6 +2358,8 @@ DISCREPANCY_CASE(DUP_SRC_QUAL, CBioSource, eDisc | eOncaller | eSmart, "Each qua
     map<string, size_t> Map;
     string collected_by;
     string identified_by;
+    string anamorph;
+    string old_name;
     if (obj.CanGetSubtype()) {
         ITERATE (CBioSource::TSubtype, it, obj.GetSubtype()) {
             if ((*it)->CanGetName()) {
@@ -2385,6 +2387,14 @@ DISCREPANCY_CASE(DUP_SRC_QUAL, CBioSource, eDisc | eOncaller | eSmart, "Each qua
         ITERATE (COrgName::TMod, it, obj.GetOrg().GetOrgname().GetMod()) {
             if ((*it)->IsSetSubname()) {
                 const string& s = (*it)->GetSubname();
+                if ((*it)->CanGetSubtype()) {
+                    if ((*it)->GetSubtype() == COrgMod::eSubtype_anamorph) {
+                        anamorph = s;
+                    }
+                    if ((*it)->GetSubtype() == COrgMod::eSubtype_old_name) {
+                        old_name = s;
+                    }
+                }
                 if (!s.empty()) {
                     if (Map.find(s) != Map.end()) {
                         Map[s]++;
@@ -2400,6 +2410,9 @@ DISCREPANCY_CASE(DUP_SRC_QUAL, CBioSource, eDisc | eOncaller | eSmart, "Each qua
         if (it->second) {
             if (it->second == 1 && it->first == collected_by && collected_by == identified_by) {
                 continue; // there is no error if collected_by equals to identified_by
+            }
+            if (it->second == 1 && it->first == anamorph && anamorph == old_name) {
+                continue; // there is no error if anamorph equals to old_name
             }
             string s = "[n] biosource[s] [has] repeating qualifier value \'";
             s += it->first;
