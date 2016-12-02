@@ -21,7 +21,10 @@ POSTBUILD: $packagedir/copy_modules.py $srcdir $bindir $installdir
 #ini file
 COPY: $srcdir/src/internal/cppcore/testres/kernel/testres_kernel.ini $installdir/bin
 
-Linux64-Centos  : GCC481  : GCC.sh 4.8.1     --without-debug --with-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c
+Linux64-Centos : O2g : GCC.sh 4.9.3 --without-debug --with-symbols --with-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c
+
+Linux64-Centos : dbg : GCC.sh 4.9.3 --with-debug --with-symbols --with-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c
+Linux64-Centos : O2  : GCC.sh 4.9.3 --without-debug --with-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c
 
 
 
