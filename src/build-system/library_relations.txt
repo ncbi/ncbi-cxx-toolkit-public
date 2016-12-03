@@ -491,9 +491,8 @@ gpxlib needs $(COMPRESS_LIBS)
 gpxlib needs gpipe_common
 gpxlib needs gpxapi
 gpxlib needs xgp_manifest
+grid_wrapper needs gpipe_common
 grid_wrapper needs gpipe_resource_req
-grid_wrapper needs xconnect
-grid_wrapper needs xutil
 grid_wrapper needs3party $(SGE_LIBS)
 gsoapssl++ needs $(Z_LIB)
 gsoapssl++ needs3party $(KRB5_LIBS)
