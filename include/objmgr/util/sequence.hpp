@@ -756,6 +756,7 @@ public:
         fKeepUnknGapNomLen  = 1 << 11, ///< Keep unknown gap's nominal length.  That is, when a gap has an unknown length but nominal length, use that instead of just making it 100.
         fShowGapsOfSizeZero = 1 << 12, ///< Use this to show gaps of size zero as a lone hyphen at the end of a line.
         fEnableGI           = 1 << 13, ///< Use this flag to enable GI output in the defline
+        fHideGenBankPrefix  = 1 << 14,
         // historically misnamed as eFlagName
         eAssembleParts   = fAssembleParts,
         eInstantiateGaps = fInstantiateGaps
