@@ -508,8 +508,10 @@ public:
     CHttpRequest& SetRetryProcessing(ESwitch on_off);
 
     /// Set callback to adjust URL after resolving service location.
+    /// The callback must take a CUrl reference and return bool:
+    /// bool AdjustUrlCallback(CUrl& url);
     /// The callback should return true for the adjusted URL to be used to
-    /// make the request.
+    /// make the request, or false if the changes should be discarded.
     template<class TCallback>
     void SetAdjustUrlCallback(TCallback callback) {
         m_AdjustUrl.Reset(new CAdjustUrlCallback<TCallback>(callback));
