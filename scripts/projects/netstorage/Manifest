@@ -16,6 +16,8 @@
 # It is allowed to have more than one of each statements
 APP: netstoraged
 ETC: src/app/netstorage/netstoraged.ini
+APP: netstorage_gc
+ETC: src/app/netstorage/utils/netstorage_gc.ini
 
 DEFAULT_CONFIGURATIONS: Linux64-Centos:O2g
 
