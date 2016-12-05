@@ -1361,20 +1361,45 @@ bool IsPseudo(const CSeq_feat& feat, CScope& scope)
     return false;
 }
 
-
 CConstRef<CSeq_feat> GetLocalGeneByLocus(const string& locus, bool use_tag, CBioseq_Handle bsh)
 {
     CTSE_Handle tse = bsh.GetTSE_Handle();
     const CBioseq& b = *(bsh.GetCompleteBioseq());
 
     CTSE_Handle::TSeq_feat_Handles potentials = tse.GetGenesWithLocus(locus, use_tag);
+    if (potentials.size() == 1) {
+        return potentials.front().GetSeq_feat();
+    }
     ITERATE(CTSE_Handle::TSeq_feat_Handles, p, potentials) {
-        ITERATE(CBioseq::TId, id, b.GetId()) {
-            CSeq_id::E_SIC cmp = p->GetLocationId().GetSeqId()->Compare(**id);
-            if (cmp == CSeq_id::e_YES) {
-                return p->GetSeq_feat();
-            } else if (cmp == CSeq_id::e_NO) {
-                break;
+        try {
+            CConstRef<CSeq_id> p_id = p->GetLocationId().GetSeqId();
+            if (p_id) {
+                ITERATE(CBioseq::TId, id, b.GetId()) {
+                    CSeq_id::E_SIC cmp = p_id->Compare(**id);
+                    if (cmp == CSeq_id::e_YES) {
+                        return p->GetSeq_feat();
+                    } else if (cmp == CSeq_id::e_NO) {
+                        break;
+                    }
+                }
+            }
+        } catch (CException& ex) {
+            CSeq_loc_CI li(p->GetLocation());
+            while (li) {
+                try {
+                    const CSeq_id& this_id = li.GetSeq_id();
+                    ITERATE(CBioseq::TId, id, b.GetId()) {
+                        CSeq_id::E_SIC cmp = this_id.Compare(**id);
+                        if (cmp == CSeq_id::e_YES) {
+                            return p->GetSeq_feat();
+                        } else if (cmp == CSeq_id::e_NO) {
+                            break;
+                        }
+                    }
+                } catch (CException& ex) {
+                    // no Seq-id for this sublocation, keep trying
+                }
+                ++li;
             }
         }
     }
@@ -2701,7 +2726,22 @@ void CFastaOstream::x_WriteAsFasta(const CBioseq& bioseq)
                 }
             }
         }
-        best_id->WriteAsFasta(m_Out);
+        if ((m_Flags & fEnableGI) == 0 && 
+            (m_Flags & fHideGenBankPrefix) != 0 && 
+            best_id->IsGenbank())
+        {   // see SQD-4144, only Accession.Version should be shown, without prefixes and suffixes
+            const CTextseq_id& gb = best_id->GetGenbank();
+            if (gb.IsSetAccession())
+            {
+                m_Out << gb.GetAccession();
+                if (gb.IsSetVersion())
+                {
+                    m_Out << "." << gb.GetVersion();
+                }
+            }
+        }
+        else
+           best_id->WriteAsFasta(m_Out);
     }
 }
 
