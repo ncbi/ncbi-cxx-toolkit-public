@@ -902,7 +902,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CCH	h	University of Arizona South, Agricultural Extension Service",
 "CCIAL	c	Cultures Cells for Institute Adolfo Lutz",
 "CCIBSO	c	Culture Collection IBSO",
-"CCIBt	c	Culture Collection of Institute of Botany",
+"CCIBt	c	Culture Collection at the Institute of Botany, Sao Paulo",
 "CCIM	c	Culture Collection of Industrial Microorganisms",
 "CCM	c	Czech Collection of Microorganisms",
 "CCM-A	c	Coleccion de Cultivos Microbianos",
