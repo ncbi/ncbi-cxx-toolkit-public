@@ -352,7 +352,7 @@ string CVResolver::Resolve(const string& acc_or_path) const
     const VPath* path;
     rc_t rc = VResolverLocal(*this, acc, &path);
     if ( rc ) {
-        rc = VResolverRemote(*this, eProtocolHttp, acc, &path);
+        rc = VResolverRemote(*this, eProtocolNone, acc, &path);
     }
     if ( rc ) {
         if ( CDirEntry(acc_or_path).Exists() ) {
