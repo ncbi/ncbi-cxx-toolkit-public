@@ -617,6 +617,7 @@ static void s_ReplaceCtrlAsInTitle(CRef<CBioseq> bioseq)
 
 static string s_GetTitle(const CBioseq & bioseq)
 {
+    _ASSERT(bioseq.CanGetDescr());
     ITERATE(CSeq_descr::Tdata, desc, bioseq.GetDescr().Get()) {
         if ((*desc)->Which() == CSeqdesc::e_Title) {
             return (*desc)->GetTitle();
@@ -643,13 +644,12 @@ s_ConfigureDeflineTitle(const string& title, bool use_ctrl_a)
         SIZE_TYPE pos = token.find(' ');
         const string kPossibleId(token, 0, pos != NPOS ? pos : token.length());
         CBioseq::TId seqids;
-        bool is_valid_local_id = CSeq_id::IsValidLocalID(kPossibleId);
         
         try { 
             CSeq_id::ParseIDs(seqids, kPossibleId, CSeq_id::fParse_PartialOK);
         } catch (const CException& e) {} 
 
-        if ( !is_valid_local_id || !seqids.empty()) {
+        if (!seqids.empty()) {
             retval += kSeparator;
             CRef<CSeq_id> id = FindBestChoice(seqids, CSeq_id::Score);
             retval += GetBareId(*id);
@@ -960,7 +960,10 @@ void CBlastDeflineUtil::ExtractDataFromBlastDefline(const CBlast_def_line & dl,
 void CBlastDeflineUtil::ProcessFastaDeflines(CBioseq & bioseq, string & out, bool use_ctrla)
 {
 	out = kEmptyStr;
-    CRef<CSeq_id> id(*(bioseq.GetId().begin()));
+    const CSeq_id* id = bioseq.GetFirstId();
+    if (!id) {
+        return;
+    }
      if (id->IsGeneral() &&
          id->GetGeneral().GetDb() == "BL_ORD_ID") {
          out = ">"  + s_GetTitle(bioseq) + '\n';
