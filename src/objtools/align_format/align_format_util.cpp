@@ -4146,7 +4146,7 @@ bool CAlignFormatUtil::MatchSeqInSeqList(TGi cur_gi, CRef<CSeq_id> &seqID, list<
 CRef<CSeq_id> CAlignFormatUtil::GetDisplayIds(const CBioseq_Handle& handle,
                                 const CSeq_id& aln_id,
                                 list<string>& use_this_seq,
-                                int *gi,                                
+                                TGi *gi,                                
                                 int *taxid,
                                 string *textSeqID)
                                            

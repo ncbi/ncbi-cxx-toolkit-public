@@ -1331,7 +1331,7 @@ public:
     static CRef<objects::CSeq_id> GetDisplayIds(const objects::CBioseq_Handle& handle,
                                 const objects::CSeq_id& aln_id,
                                 list<string>& use_this_seq,
-                                int *gi = NULL,                                
+                                TGi *gi = NULL,                                
                                 int *taxid  = NULL,
                                 string *textSeqID = NULL);
 
