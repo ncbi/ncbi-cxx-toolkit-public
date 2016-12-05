@@ -49,7 +49,7 @@ BEGIN_objects_SCOPE
 /// [[I will ad support though upon request]]
 ///
 class NCBI_XOBJWRITE_EXPORT CBedWriter:
-    public CWriterBase 
+    public CWriterBase, CFeatWriter
 //  ============================================================================
 {
 public:
@@ -104,6 +104,11 @@ protected:
     bool xWriteFeature(
         const CBedTrackRecord&, 
         const CMappedFeat&);
+
+    bool xWriteFeature(const CMappedFeat& feat,
+        CSeq_annot_Handle annot_handle,
+        CBioseq_Handle bioseq_handle) override;
+
 
     virtual SAnnotSelector xGetAnnotSelector();
 

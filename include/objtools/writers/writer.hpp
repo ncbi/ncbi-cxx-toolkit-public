@@ -195,6 +195,29 @@ protected:
     ICanceled* mpCancelled;
 };
 
+
+class NCBI_XOBJWRITE_EXPORT CFeatWriter:
+    public CObject
+{
+
+protected:
+    virtual bool xWriteFeature(const CMappedFeat& feat,
+        CSeq_annot_Handle annot_handle = CSeq_annot_Handle(),
+        CBioseq_Handle bioseq_handle = CBioseq_Handle())=0;
+
+public:
+    virtual ~CFeatWriter(void) = default;
+    template<typename TIter>
+    bool WriteFeatures(TIter first, TIter last) {
+
+        CBioseq_Handle bioseq_handle = CBioseq_Handle();
+        for (TIter it=first; it<=last; ++it) {
+            auto annot_handle = it.GetAnnot();
+            xWriteFeature(*it, annot_handle, bioseq_handle);
+        }
+    }
+};
+
 END_objects_SCOPE
 END_NCBI_SCOPE
 

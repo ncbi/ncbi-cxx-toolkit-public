@@ -60,6 +60,20 @@ public:
         xAssignSequenceIsGenomicRecord();
     };
 
+
+    // Code duplication - this should just be a temporary measure
+    CGffFeatureContext(const CGffFeatureContext& other) :
+        m_ft(other.m_ft),
+        m_bsh(other.m_bsh),
+        m_sah(other.m_sah),
+        m_bSequenceIsGenomicRecord(false),
+        m_bSequenceHasBioSource(false)
+    {
+        xAssignSequenceHasBioSource();
+        xAssignSequenceIsGenomicRecord();
+    };
+
+
     feature::CFeatTree& FeatTree() { return m_ft; };
     CBioseq_Handle BioseqHandle() const { return m_bsh; };
     CSeq_annot_Handle AnnotHandle() const { return m_sah; };
@@ -80,7 +94,7 @@ protected:
     void xAssignSequenceIsGenomicRecord();
 
 private:
-    CGffFeatureContext(const CGffFeatureContext&);
+ //   CGffFeatureContext(const CGffFeatureContext&);
     CGffFeatureContext& operator=(const CGffFeatureContext&);
 };
 

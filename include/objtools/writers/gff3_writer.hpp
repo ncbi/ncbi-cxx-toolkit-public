@@ -470,6 +470,7 @@ protected:
     unsigned int m_uRecordId;
     string m_sDefaultMethod;
 
+
     typedef map< CMappedFeat, CRef<CGffFeatureRecord> > TGeneMapNew;
     TGeneMapNew m_GeneMapNew;
 

@@ -314,6 +314,20 @@ void CVcfWriter::x_GetTypeRefAlt(const CVariation_inst &inst, int &rtype, string
     }
 }
 
+
+
+//  ----------------------------------------------------------------------------
+bool CVcfWriter::xWriteFeature(
+    const CMappedFeat& feat,
+    CSeq_annot_Handle dummy_arg1,
+    CBioseq_Handle dummy_arg2)
+//  ----------------------------------------------------------------------------
+{
+    CGffFeatureContext dummy_context;
+    return x_WriteFeature(dummy_context, feat);
+}
+
+
 //  ----------------------------------------------------------------------------
 bool CVcfWriter::x_WriteFeature(
     CGffFeatureContext& context,

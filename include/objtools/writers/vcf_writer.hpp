@@ -41,7 +41,7 @@ BEGIN_objects_SCOPE
 
 //  ============================================================================
 class NCBI_XOBJWRITE_EXPORT CVcfWriter :
-    public CWriterBase 
+    public CWriterBase, CFeatWriter
 //  ============================================================================
 {
 public:
@@ -126,6 +126,10 @@ protected:
     bool x_WriteFeatureGenotypeData(
         CGffFeatureContext&,
         CMappedFeat );
+
+    bool xWriteFeature(const CMappedFeat& feat, 
+        CSeq_annot_Handle annot_handle,
+        CBioseq_Handle bioseq_handle) override;
     
     CScope& m_Scope;
     vector<string> m_GenotypeHeaders;
