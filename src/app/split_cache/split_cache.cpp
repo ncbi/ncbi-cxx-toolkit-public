@@ -467,10 +467,9 @@ public:
     void CloseDataStream(void)
         {
             m_OStream.reset();
-            size_t size = m_MStream->pcount();
-            const char* data = m_MStream->str();
-            m_MStream->freeze(false);
-            CId2Compressor::Compress(m_Params, m_Data.SetData(), data, size);
+            string s = CNcbiOstrstreamToString(*m_MStream);
+            CId2Compressor::Compress(m_Params, m_Data.SetData(),
+                                     s.data(), s.size());
             CID2_Reply_Data::EData_compression compr;
             switch ( m_Params.m_Compression ) {
             case SSplitterParams::eCompression_none:
