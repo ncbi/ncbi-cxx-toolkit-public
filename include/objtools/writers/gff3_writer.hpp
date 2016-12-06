@@ -75,10 +75,12 @@ public:
         unsigned int = fNormal,
         bool sortAlignments = false 
         );
-    virtual ~CGff3Writer();
+    virtual ~CGff3Writer() = default;
 
     void SetDefaultMethod(
         const string& defaultMethod) { m_sDefaultMethod = defaultMethod; };
+    void SetBioseqHandle(CBioseq_Handle bsh);
+
     virtual bool WriteHeader();
     virtual bool WriteHeader(
         const CSeq_annot& annot) { return CGff2Writer::WriteHeader(annot); };
@@ -124,7 +126,7 @@ protected:
     virtual bool xWriteSequenceHeader(
         CSeq_id_Handle );
     virtual bool xWriteSource(
-        CGffFeatureContext& );
+        CBioseq_Handle);
     virtual bool xWriteFeature(
         CGffFeatureContext&,
         CMappedFeat);
@@ -252,64 +254,47 @@ protected:
                                    CScope& scope);
     bool xAssignSource(
         CGffSourceRecord&,
-        CGffFeatureContext&,
         CBioseq_Handle);
     bool xAssignSourceType(
-        CGffSourceRecord&,
-        CGffFeatureContext&,
-        CBioseq_Handle);
+        CGffSourceRecord&);
     bool xAssignSourceSeqId(
         CGffSourceRecord&,
-        CGffFeatureContext&,
         CBioseq_Handle);
     bool xAssignSourceMethod(
         CGffSourceRecord&,
-        CGffFeatureContext&,
         CBioseq_Handle);
     bool xAssignSourceEndpoints(
         CGffSourceRecord&,
-        CGffFeatureContext&,
         CBioseq_Handle);
     bool xAssignSourceAttributes(
         CGffSourceRecord&,
-        CGffFeatureContext&,
         CBioseq_Handle);
     bool xAssignSourceAttributeGbKey(
-        CGffSourceRecord&,
-        CGffFeatureContext&,
-        CBioseq_Handle);
+        CGffSourceRecord&);
     bool xAssignSourceAttributeMolType(
         CGffSourceRecord&,
-        CGffFeatureContext&,
         CBioseq_Handle);
     bool xAssignSourceAttributeIsCircular(
         CGffSourceRecord&,
-        CGffFeatureContext&,
         CBioseq_Handle);
     bool xAssignSourceAttributesBioSource(
         CGffSourceRecord&,
-        CGffFeatureContext&,
         CBioseq_Handle);
 
     bool xAssignSourceAttributeGenome(
         CGffSourceRecord&,
-        CGffFeatureContext&,
         const CBioSource&);
     bool xAssignSourceAttributeName(
         CGffSourceRecord&,
-        CGffFeatureContext&,
         const CBioSource&);
     bool xAssignSourceAttributeDbxref(
         CGffSourceRecord&,
-        CGffFeatureContext&,
         const CBioSource&);
     bool xAssignSourceAttributesOrgMod(
         CGffSourceRecord&,
-        CGffFeatureContext&,
         const CBioSource&);
     bool xAssignSourceAttributesSubSource(
         CGffSourceRecord&,
-        CGffFeatureContext&,
         const CBioSource&);
 
 
@@ -324,11 +309,9 @@ protected:
         CMappedFeat);
     bool xAssignFeatureType(
         CGffFeatureRecord&,
-        CGffFeatureContext&,
         CMappedFeat);
     bool xAssignFeatureSeqId(
         CGffFeatureRecord&,
-        CGffFeatureContext&,
         CMappedFeat);
     bool xAssignFeatureMethod(
         CGffFeatureRecord&,
@@ -340,15 +323,12 @@ protected:
         CMappedFeat);
     bool xAssignFeatureScore(
         CGffFeatureRecord&,
-        CGffFeatureContext&,
         CMappedFeat);
     bool xAssignFeatureStrand(
         CGffFeatureRecord&,
-        CGffFeatureContext&,
         CMappedFeat);
     bool xAssignFeaturePhase(
         CGffFeatureRecord&,
-        CGffFeatureContext&,
         CMappedFeat);
     bool xAssignFeatureAttributes(
         CGffFeatureRecord&,
@@ -357,15 +337,12 @@ protected:
         
     bool xAssignFeatureAttributeCodeBreak(
         CGffFeatureRecord&,
-        CGffFeatureContext&,
         CMappedFeat);
     bool xAssignFeatureAttributeException(
         CGffFeatureRecord&,
-        CGffFeatureContext&,
         CMappedFeat);
     bool xAssignFeatureAttributeExonNumber(
         CGffFeatureRecord&,
-        CGffFeatureContext&,
         CMappedFeat);
     bool xAssignFeatureAttributeDbXref(
         CGffFeatureRecord&,
@@ -373,7 +350,6 @@ protected:
         CMappedFeat);
     bool xAssignFeatureAttributeGbKey(
         CGffFeatureRecord&,
-        CGffFeatureContext&,
         CMappedFeat);
     bool xAssignFeatureAttributeGene(
         CGffFeatureRecord&,
@@ -381,23 +357,18 @@ protected:
         CMappedFeat);
     bool xAssignFeatureAttributeGeneDesc(
         CGffFeatureRecord&,
-        CGffFeatureContext&,
         CMappedFeat);
     bool xAssignFeatureAttributeGeneSynonym(
         CGffFeatureRecord&,
-        CGffFeatureContext&,
         CMappedFeat);
     bool xAssignFeatureAttributeIsOrdered(
         CGffFeatureRecord&,
-        CGffFeatureContext&,
         CMappedFeat);
     bool xAssignFeatureAttributeLocusTag(
         CGffFeatureRecord&,
-        CGffFeatureContext&,
         CMappedFeat);
     bool xAssignFeatureAttributeOldLocusTag(
         CGffFeatureRecord&,
-        CGffFeatureContext&,
         CMappedFeat);
     bool xAssignFeatureAttributePseudoGene(
         CGffFeatureRecord&,
@@ -405,19 +376,15 @@ protected:
         CMappedFeat);
     bool xAssignFeatureAttributeMapLoc(
         CGffFeatureRecord&,
-        CGffFeatureContext&,
         CMappedFeat);
     bool xAssignFeatureAttributeName(
         CGffFeatureRecord&,
-        CGffFeatureContext&,
         CMappedFeat);
     bool xAssignFeatureAttributeNote(
         CGffFeatureRecord&,
-        CGffFeatureContext&,
         CMappedFeat);
     bool xAssignFeatureAttributeNcrnaClass(
         CGffFeatureRecord&,
-        CGffFeatureContext&,
         CMappedFeat);
     bool xAssignFeatureAttributeParent(
         CGffFeatureRecord&,
@@ -425,27 +392,21 @@ protected:
         CMappedFeat);
     bool xAssignFeatureAttributePartial(
         CGffFeatureRecord&,
-        CGffFeatureContext&,
         CMappedFeat);
     bool xAssignFeatureAttributeProduct(
         CGffFeatureRecord&,
-        CGffFeatureContext&,
         CMappedFeat);
     bool xAssignFeatureAttributeProteinId(
         CGffFeatureRecord&,
-        CGffFeatureContext&,
         CMappedFeat);
     bool xAssignFeatureAttributePseudo(
         CGffFeatureRecord&,
-        CGffFeatureContext&,
         CMappedFeat);
     bool xAssignFeatureAttributeTranscriptId(
         CGffFeatureRecord&,
-        CGffFeatureContext&,
         CMappedFeat);
     bool xAssignFeatureAttributeTranslationTable(
         CGffFeatureRecord&,
-        CGffFeatureContext&,
         CMappedFeat);
     bool xAssignFeatureAttributeGeneBiotype(
         CGffFeatureRecord&,
@@ -454,11 +415,9 @@ protected:
     //end mss-234//
     bool xAssignFeatureAttributeModelEvidence(
         CGffFeatureRecord&,
-        CGffFeatureContext&,
         CMappedFeat);
     bool xAssignFeatureAttributeRptFamily(
         CGffFeatureRecord&,
-        CGffFeatureContext&,
         CMappedFeat);
     string xNextGenericId();
     string xNextGeneId();
@@ -484,6 +443,8 @@ protected:
     unsigned int m_uPendingCdsId;
     unsigned int m_uPendingGenericId;
     unsigned int m_uPendingAlignId;
+
+    CBioseq_Handle m_BioseqHandle;
 };
 
 END_objects_SCOPE

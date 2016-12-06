@@ -273,7 +273,8 @@ CGff3Writer::CGff3Writer(
 //  ----------------------------------------------------------------------------
     CGff2Writer( scope, ostr, uFlags ),
     m_sDefaultMethod(""),
-    m_SortAlignments(sortAlignments)
+    m_SortAlignments(sortAlignments),
+    m_BioseqHandle(CBioseq_Handle())
 {
     m_uRecordId = 1;
     m_uPendingGeneId = 0;
@@ -291,7 +292,8 @@ CGff3Writer::CGff3Writer(
     bool sortAlignments) :
 //  ----------------------------------------------------------------------------
     CGff2Writer( ostr, uFlags ),
-    m_SortAlignments(false)
+    m_SortAlignments(false),
+    m_BioseqHandle(CBioseq_Handle())
 {
     m_uRecordId = 1;
     m_uPendingGeneId = 0;
@@ -302,13 +304,14 @@ CGff3Writer::CGff3Writer(
     m_uPendingAlignId = 0;
 };
 
+
 //  ----------------------------------------------------------------------------
-CGff3Writer::~CGff3Writer()
+void CGff3Writer::SetBioseqHandle(
+    CBioseq_Handle bsh)
 //  ----------------------------------------------------------------------------
 {
-};
-
-
+    m_BioseqHandle = bsh;
+}
 
 
 //  ----------------------------------------------------------------------------
@@ -1268,12 +1271,12 @@ bool CGff3Writer::x_WriteBioseqHandle(
 
     SAnnotSelector selAll = GetAnnotSelector();
     CFeat_CI feat_iter(bsh, selAll);
-    CGffFeatureContext fc(feat_iter, bsh);
 
-    if (!xWriteSource(fc)) {
+    if (!xWriteSource(bsh)) {
         return false;
     }
 
+    CGffFeatureContext fc(feat_iter, bsh);
     vector<CMappedFeat> vRoots = fc.FeatTree().GetRootFeatures();
     std::sort(vRoots.begin(), vRoots.end(), CompareLocations);
     for (auto pit = vRoots.begin(); pit != vRoots.end(); ++pit) {
@@ -1334,16 +1337,15 @@ bool CGff3Writer::xWriteAllChildren(
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xWriteSource(
-    CGffFeatureContext& fc )
+    CBioseq_Handle bsh)
 //  ----------------------------------------------------------------------------
 {
-    CBioseq_Handle bsh = fc.BioseqHandle();
     CSeqdesc_CI sdi(bsh.GetParentEntry(), CSeqdesc::e_Source, 0);
     if (!sdi) {
         return true; 
     }
     CRef<CGffSourceRecord> pSource(new CGffSourceRecord(xNextGenericId()));
-    if (!xAssignSource(*pSource, fc, bsh)) {
+    if (!xAssignSource(*pSource, bsh)) {
         return false;
     }
     return xWriteRecord(*pSource);
@@ -1444,7 +1446,6 @@ bool CGff3Writer::xWriteFeatureTrna(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureType(
     CGffFeatureRecord& record,
-    CGffFeatureContext& fc,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
@@ -1501,7 +1502,6 @@ bool CGff3Writer::xAssignFeatureType(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureSeqId(
     CGffFeatureRecord& record,
-    CGffFeatureContext& fc,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
@@ -1660,7 +1660,6 @@ bool CGff3Writer::xAssignFeatureEndpoints(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureScore(
     CGffFeatureRecord& record,
-    CGffFeatureContext& fc,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
@@ -1670,7 +1669,6 @@ bool CGff3Writer::xAssignFeatureScore(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureStrand(
     CGffFeatureRecord& record,
-    CGffFeatureContext& fc,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
@@ -1681,7 +1679,6 @@ bool CGff3Writer::xAssignFeatureStrand(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeaturePhase(
     CGffFeatureRecord& record,
-    CGffFeatureContext& fc,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
@@ -1698,25 +1695,25 @@ bool CGff3Writer::xAssignFeatureAttributes(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    if (!xAssignFeatureAttributeGbKey(record, fc, mf)) {
+    if (!xAssignFeatureAttributeGbKey(record, mf)) {
         return false;
     }
 
     //attributes common to all feature types:
-    if (!xAssignFeatureAttributeProduct(record, fc, mf) ||
+    if (!xAssignFeatureAttributeProduct(record, mf) ||
             !xAssignFeatureAttributeParent(record, fc, mf)  ||
             !xAssignFeatureAttributePseudoGene(record, fc, mf) ||
-            !xAssignFeatureAttributePartial(record, fc, mf) ||
-            !xAssignFeatureAttributeException(record, fc, mf) ||
-            !xAssignFeatureAttributeExonNumber(record, fc, mf)  ||
-            !xAssignFeatureAttributePseudo(record, fc, mf)  ||
+            !xAssignFeatureAttributePartial(record, mf) ||
+            !xAssignFeatureAttributeException(record, mf) ||
+            !xAssignFeatureAttributeExonNumber(record, mf)  ||
+            !xAssignFeatureAttributePseudo(record, mf)  ||
             !xAssignFeatureAttributeDbXref(record, fc, mf)  ||
             !xAssignFeatureAttributeGene(record, fc, mf)  ||
-            !xAssignFeatureAttributeNote(record, fc, mf)  ||
-            !xAssignFeatureAttributeModelEvidence(record, fc, mf)  ||
-            !xAssignFeatureAttributeIsOrdered(record, fc, mf)  ||
-            !xAssignFeatureAttributeRptFamily(record, fc, mf) ||
-            !xAssignFeatureAttributeTranscriptId(record, fc, mf)) {
+            !xAssignFeatureAttributeNote(record, mf)  ||
+            !xAssignFeatureAttributeModelEvidence(record, mf)  ||
+            !xAssignFeatureAttributeIsOrdered(record, mf)  ||
+            !xAssignFeatureAttributeRptFamily(record, mf) ||
+            !xAssignFeatureAttributeTranscriptId(record, mf)) {
         return false;
     }
 
@@ -1726,12 +1723,12 @@ bool CGff3Writer::xAssignFeatureAttributes(
             break;
 
         case CSeqFeatData::eSubtype_gene:
-            if (!xAssignFeatureAttributeLocusTag(record, fc, mf)  ||
-                    !xAssignFeatureAttributeGeneSynonym(record, fc, mf)  ||
-                    !xAssignFeatureAttributeOldLocusTag(record, fc, mf)  ||
-                    !xAssignFeatureAttributeGeneDesc(record, fc, mf)  ||
+            if (!xAssignFeatureAttributeLocusTag(record, mf)  ||
+                    !xAssignFeatureAttributeGeneSynonym(record, mf)  ||
+                    !xAssignFeatureAttributeOldLocusTag(record, mf)  ||
+                    !xAssignFeatureAttributeGeneDesc(record, mf)  ||
                     !xAssignFeatureAttributeGeneBiotype(record, fc, mf) ||
-                    !xAssignFeatureAttributeMapLoc(record, fc, mf)) {
+                    !xAssignFeatureAttributeMapLoc(record, mf)) {
                 return false;
             }
             break;
@@ -1740,16 +1737,16 @@ bool CGff3Writer::xAssignFeatureAttributes(
             break;
 
         case CSeqFeatData::eSubtype_cdregion:
-            if (!xAssignFeatureAttributeProteinId(record, fc, mf)  ||
-                    !xAssignFeatureAttributeTranslationTable(record, fc, mf)  ||
-                    !xAssignFeatureAttributeCodeBreak(record, fc, mf)) {
+            if (!xAssignFeatureAttributeProteinId(record, mf)  ||
+                    !xAssignFeatureAttributeTranslationTable(record, mf)  ||
+                    !xAssignFeatureAttributeCodeBreak(record, mf)) {
                 return false;
             }
             break;
 
         case CSeqFeatData::eSubtype_ncRNA:
             //rw-234:
-            //if (!xAssignFeatureAttributeNcrnaClass(record, fc, mf)) {
+            //if (!xAssignFeatureAttributeNcrnaClass(record, mf)) {
             //    return false;
             //}
             break;
@@ -1757,7 +1754,7 @@ bool CGff3Writer::xAssignFeatureAttributes(
 
     //  deriviate attributes --- depend on other attributes. Hence need to be
     //  done last: 
-    if (!xAssignFeatureAttributeName(record, fc, mf)) {
+    if (!xAssignFeatureAttributeName(record, mf)) {
         return false;
     }
     return true; 
@@ -1766,7 +1763,6 @@ bool CGff3Writer::xAssignFeatureAttributes(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeIsOrdered(
     CGffFeatureRecord& record,
-    CGffFeatureContext& fc,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
@@ -1779,7 +1775,6 @@ bool CGff3Writer::xAssignFeatureAttributeIsOrdered(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeExonNumber(
     CGffFeatureRecord& record,
-    CGffFeatureContext& fc,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
@@ -1802,7 +1797,6 @@ bool CGff3Writer::xAssignFeatureAttributeExonNumber(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributePseudo(
     CGffFeatureRecord& record,
-    CGffFeatureContext& fc,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
@@ -1940,7 +1934,6 @@ bool CGff3Writer::xAssignFeatureAttributeGene(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeNote(
     CGffFeatureRecord& record,
-    CGffFeatureContext& fc,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
@@ -1954,7 +1947,6 @@ bool CGff3Writer::xAssignFeatureAttributeNote(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeException(
     CGffFeatureRecord& record,
-    CGffFeatureContext& fc,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
@@ -1972,7 +1964,6 @@ bool CGff3Writer::xAssignFeatureAttributeException(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeModelEvidence(
     CGffFeatureRecord& record,
-    CGffFeatureContext& fc,
     CMappedFeat mf)
 //  ----------------------------------------------------------------------------
 {
@@ -1989,7 +1980,6 @@ bool CGff3Writer::xAssignFeatureAttributeModelEvidence(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeRptFamily(
     CGffFeatureRecord& record,
-    CGffFeatureContext& fc,
     CMappedFeat mf)
 //  -----------------------------------------------------------------------------
 {
@@ -2018,7 +2008,6 @@ bool CGff3Writer::xAssignFeatureAttributeRptFamily(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeTranscriptId(
     CGffFeatureRecord& record,
-    CGffFeatureContext& fc,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
@@ -2047,7 +2036,6 @@ bool CGff3Writer::xAssignFeatureAttributeTranscriptId(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeGbKey(
     CGffFeatureRecord& record,
-    CGffFeatureContext& fc,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
@@ -2058,7 +2046,6 @@ bool CGff3Writer::xAssignFeatureAttributeGbKey(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeGeneDesc(
     CGffFeatureRecord& record,
-    CGffFeatureContext& fc,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
@@ -2073,7 +2060,6 @@ bool CGff3Writer::xAssignFeatureAttributeGeneDesc(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeGeneSynonym(
     CGffFeatureRecord& record,
-    CGffFeatureContext& fc,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
@@ -2099,7 +2085,6 @@ bool CGff3Writer::xAssignFeatureAttributeGeneSynonym(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeOldLocusTag(
     CGffFeatureRecord& record,
-    CGffFeatureContext& fc,
     CMappedFeat mf)
 //  ----------------------------------------------------------------------------
 {
@@ -2158,7 +2143,6 @@ bool CGff3Writer::xAssignFeatureAttributePseudoGene(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeMapLoc(
     CGffFeatureRecord& record,
-    CGffFeatureContext& fc,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
@@ -2173,7 +2157,6 @@ bool CGff3Writer::xAssignFeatureAttributeMapLoc(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeName(
     CGffFeatureRecord& record,
-    CGffFeatureContext& fc,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
@@ -2211,7 +2194,6 @@ bool CGff3Writer::xAssignFeatureAttributeName(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeLocusTag(
     CGffFeatureRecord& record,
-    CGffFeatureContext& fc,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
@@ -2226,7 +2208,6 @@ bool CGff3Writer::xAssignFeatureAttributeLocusTag(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributePartial(
     CGffFeatureRecord& record,
-    CGffFeatureContext& fc,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
@@ -2242,7 +2223,6 @@ bool CGff3Writer::xAssignFeatureAttributePartial(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeProteinId(
     CGffFeatureRecord& record,
-    CGffFeatureContext& fc,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
@@ -2260,7 +2240,6 @@ bool CGff3Writer::xAssignFeatureAttributeProteinId(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeTranslationTable(
     CGffFeatureRecord& record,
-    CGffFeatureContext& fc,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
@@ -2283,7 +2262,6 @@ bool CGff3Writer::xAssignFeatureAttributeTranslationTable(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeCodeBreak(
     CGffFeatureRecord& record,
-    CGffFeatureContext& fc,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
@@ -2309,7 +2287,6 @@ bool CGff3Writer::xAssignFeatureAttributeCodeBreak(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeProduct(
     CGffFeatureRecord& record,
-    CGffFeatureContext& fc,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
@@ -2409,7 +2386,6 @@ bool CGff3Writer::xAssignFeatureAttributeProduct(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeNcrnaClass(
     CGffFeatureRecord& record,
-    CGffFeatureContext& fc,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
@@ -2495,13 +2471,13 @@ bool CGff3Writer::xAssignFeatureBasic(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    return (xAssignFeatureType(record, fc, mf)  &&
-        xAssignFeatureSeqId(record, fc, mf)  &&
+    return (xAssignFeatureType(record, mf)  &&
+        xAssignFeatureSeqId(record, mf)  &&
         xAssignFeatureMethod(record, fc, mf)  &&
         xAssignFeatureEndpoints(record, fc, mf)  &&
-        xAssignFeatureScore(record, fc, mf)  &&
-        xAssignFeatureStrand(record, fc, mf)  &&
-        xAssignFeaturePhase(record, fc, mf)  &&
+        xAssignFeatureScore(record, mf)  &&
+        xAssignFeatureStrand(record, mf)  &&
+        xAssignFeaturePhase(record, mf)  &&
         xAssignFeatureAttributes(record, fc, mf));
 }
 
@@ -2557,22 +2533,19 @@ bool CGff3Writer::xAssignFeature(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignSource(
     CGffSourceRecord& record,
-    CGffFeatureContext& fc,
     CBioseq_Handle bsh)
 //  ----------------------------------------------------------------------------
 {
-    return (xAssignSourceType(record, fc, bsh)  &&
-        xAssignSourceSeqId(record, fc, bsh)  &&
-        xAssignSourceMethod(record, fc, bsh)  &&
-        xAssignSourceEndpoints(record, fc, bsh)  &&
-        xAssignSourceAttributes(record, fc, bsh));
+    return (xAssignSourceType(record)   &&
+        xAssignSourceSeqId(record, bsh)  &&
+        xAssignSourceMethod(record, bsh)  &&
+        xAssignSourceEndpoints(record, bsh)  &&
+        xAssignSourceAttributes(record, bsh));
 }
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignSourceType(
-    CGffSourceRecord& record,
-    CGffFeatureContext& fc,
-    CBioseq_Handle bsh)
+    CGffSourceRecord& record)
 //  ----------------------------------------------------------------------------
 {
     record.SetType("region");
@@ -2582,7 +2555,6 @@ bool CGff3Writer::xAssignSourceType(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignSourceSeqId(
     CGffSourceRecord& record,
-    CGffFeatureContext& fc,
     CBioseq_Handle bsh)
 //  ----------------------------------------------------------------------------
 {
@@ -2608,7 +2580,6 @@ bool CGff3Writer::xAssignSourceSeqId(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignSourceMethod(
     CGffSourceRecord& record,
-    CGffFeatureContext& fc,
     CBioseq_Handle bsh)
 //  ----------------------------------------------------------------------------
 {
@@ -2621,7 +2592,6 @@ bool CGff3Writer::xAssignSourceMethod(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignSourceEndpoints(
     CGffSourceRecord& record,
-    CGffFeatureContext& fc,
     CBioseq_Handle bsh)
 //  ----------------------------------------------------------------------------
 {
@@ -2638,21 +2608,18 @@ bool CGff3Writer::xAssignSourceEndpoints(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignSourceAttributes(
     CGffSourceRecord& record,
-    CGffFeatureContext& fc,
     CBioseq_Handle bsh)
 //  ----------------------------------------------------------------------------
 {
-    return (xAssignSourceAttributeGbKey(record, fc, bsh)  &&
-        xAssignSourceAttributeMolType(record, fc, bsh)  &&
-        xAssignSourceAttributeIsCircular(record, fc, bsh)  &&
-        xAssignSourceAttributesBioSource(record, fc, bsh)); 
+    return (xAssignSourceAttributeGbKey(record)  &&
+        xAssignSourceAttributeMolType(record, bsh)  &&
+        xAssignSourceAttributeIsCircular(record, bsh)  &&
+        xAssignSourceAttributesBioSource(record, bsh)); 
 }
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignSourceAttributeGbKey(
-    CGffSourceRecord& record,
-    CGffFeatureContext& fc,
-    CBioseq_Handle bsh)
+    CGffSourceRecord& record)
 //  ----------------------------------------------------------------------------
 {
     record.SetAttribute("gbkey", "Src");
@@ -2662,7 +2629,6 @@ bool CGff3Writer::xAssignSourceAttributeGbKey(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignSourceAttributeMolType(
     CGffSourceRecord& record,
-    CGffFeatureContext& fc,
     CBioseq_Handle bsh)
 //  ----------------------------------------------------------------------------
 {
@@ -2677,7 +2643,6 @@ bool CGff3Writer::xAssignSourceAttributeMolType(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignSourceAttributeIsCircular(
     CGffSourceRecord& record,
-    CGffFeatureContext& fc,
     CBioseq_Handle bsh)
 //  ----------------------------------------------------------------------------
 {
@@ -2691,7 +2656,6 @@ bool CGff3Writer::xAssignSourceAttributeIsCircular(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignSourceAttributesBioSource(
     CGffSourceRecord& record,
-    CGffFeatureContext& fc,
     CBioseq_Handle bsh)
 //  ----------------------------------------------------------------------------
 {
@@ -2700,17 +2664,16 @@ bool CGff3Writer::xAssignSourceAttributesBioSource(
         return true;
     }
     const CBioSource& bioSrc = sdi->GetSource();
-    return (xAssignSourceAttributeGenome(record, fc, bioSrc)  &&
-        xAssignSourceAttributeName(record, fc, bioSrc)  &&
-        xAssignSourceAttributeDbxref(record, fc, bioSrc)  &&
-        xAssignSourceAttributesOrgMod(record, fc, bioSrc)  &&
-        xAssignSourceAttributesSubSource(record, fc, bioSrc));
+    return (xAssignSourceAttributeGenome(record, bioSrc)  &&
+        xAssignSourceAttributeName(record, bioSrc)  &&
+        xAssignSourceAttributeDbxref(record, bioSrc)  &&
+        xAssignSourceAttributesOrgMod(record, bioSrc)  &&
+        xAssignSourceAttributesSubSource(record, bioSrc));
 }
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignSourceAttributeGenome(
     CGffSourceRecord& record,
-    CGffFeatureContext& fc,
     const CBioSource& bioSrc)
 //  ----------------------------------------------------------------------------
 {
@@ -2725,7 +2688,6 @@ bool CGff3Writer::xAssignSourceAttributeGenome(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignSourceAttributeName(
     CGffSourceRecord& record,
-    CGffFeatureContext& fc,
     const CBioSource& bioSrc)
 //  ----------------------------------------------------------------------------
 {
@@ -2740,7 +2702,6 @@ bool CGff3Writer::xAssignSourceAttributeName(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignSourceAttributeDbxref(
     CGffSourceRecord& record,
-    CGffFeatureContext& fc,
     const CBioSource& bioSrc)
 //  ----------------------------------------------------------------------------
 {
@@ -2766,7 +2727,6 @@ bool CGff3Writer::xAssignSourceAttributeDbxref(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignSourceAttributesOrgMod(
     CGffSourceRecord& record,
-    CGffFeatureContext& fc,
     const CBioSource& bioSrc)
 //  ----------------------------------------------------------------------------
 {
@@ -2796,7 +2756,6 @@ bool CGff3Writer::xAssignSourceAttributesOrgMod(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignSourceAttributesSubSource(
     CGffSourceRecord& record,
-    CGffFeatureContext& fc,
     const CBioSource& bioSrc)
 //  ----------------------------------------------------------------------------
 {
