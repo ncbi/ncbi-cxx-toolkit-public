@@ -1,4 +1,4 @@
-#!/opt/python-2.7/bin/python
+#!/opt/python-all/bin/python
 #
 # Authors: Sergey Satskiy
 #
