@@ -68,8 +68,16 @@ ifneq "" "$(wildcard Makefile.$(TMPL).dll.libdep)"
   endif
 endif
 
+ifeq "" "$(KEEP_CORELIB)"
+  ifneq "$(ALLOW_UNDEF)" "$(FORBID_UNDEF)"
+    ifeq "$(DLL_UNDEF_FLAGS)" "$(FORBID_UNDEF)"
+      KEEP_CORELIB := 1
+    endif
+  endif
+endif
+
 ifeq "" "$(filter-out 0 N% n% F% f% OFF Off off, $(KEEP_CORELIB))"
-  ifneq "" "$(filter @OSTYPE@, darwin freebsd)"
+  ifneq "" "$(filter @OSTYPE@, darwin freebsd)$(filter @LIB_OR_DLL@, lib)"
     XDLL_LIB := $(filter-out @lib_l_pre@xncbi%@lib_l_ext@, $(XDLL_LIB))
   endif
 endif
