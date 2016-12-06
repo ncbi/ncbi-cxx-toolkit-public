@@ -15,6 +15,8 @@ LIB = eutils_client xmlwrapp xobjutil \
 LIBS = $(DATA_LOADERS_UTIL_LIBS) \
 	   $(LIBXSLT_LIBS) $(LIBXML_LIBS) $(CMPRS_LIBS) $(ORIG_LIBS)
 
+REQUIRES = BerkeleyDB SQLITE3
+
 # LIB      = xser xhtml xcgi xconnect xutil xncbi
 
 ## If you need the C toolkit...

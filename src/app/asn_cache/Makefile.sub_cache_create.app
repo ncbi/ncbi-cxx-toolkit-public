@@ -10,4 +10,6 @@ CHECK_CMD = python sub_cache_create_unit_test.py --missing-gis remote.gis --lds 
 CHECK_COPY = sub_cache_create_unit_test.py
 CHECK_REQUIRES = in-house-resources PYTHON internal
 
+REQUIRES = SQLITE3
+
 WATCHERS = mozese2
