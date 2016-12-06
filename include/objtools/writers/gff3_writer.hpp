@@ -114,12 +114,12 @@ protected:
     virtual bool xAssignFeatureAttributeParentGene(
         CGffFeatureRecord&,
         CGffFeatureContext&,
-        CMappedFeat );
+        const CMappedFeat& );
 
     virtual bool xAssignFeatureAttributeParentMrna(
         CGffFeatureRecord&,
         CGffFeatureContext&,
-        CMappedFeat );
+        const CMappedFeat& );
 
     virtual bool xWriteSequenceHeader(
         CBioseq_Handle );
@@ -129,28 +129,28 @@ protected:
         CBioseq_Handle);
     virtual bool xWriteFeature(
         CGffFeatureContext&,
-        CMappedFeat);
+        const CMappedFeat&);
     virtual bool xWriteFeatureGene(
         CGffFeatureContext&,
-        CMappedFeat );
+        const CMappedFeat& );
     virtual bool xWriteFeatureRna(
         CGffFeatureContext&,
-        CMappedFeat );
+        const CMappedFeat& );
     virtual bool xWriteFeatureCds(
         CGffFeatureContext&,
-        CMappedFeat );
+        const CMappedFeat& );
     virtual bool xWriteFeatureGeneric(
         CGffFeatureContext&,
-        CMappedFeat );
+        const CMappedFeat& );
     virtual bool xWriteFeatureTrna(
         CGffFeatureContext&,
-        CMappedFeat );
+        const CMappedFeat& );
     virtual bool xWriteFeatureCDJVSegment(
         CGffFeatureContext&,
-        CMappedFeat );
+        const CMappedFeat& );
     virtual bool xWriteAllChildren(
         CGffFeatureContext&,
-        CMappedFeat);
+        const CMappedFeat&);
 
     virtual bool xWriteRecord( 
         const CGffBaseRecord& );
@@ -302,123 +302,123 @@ protected:
     bool xAssignFeature(
         CGffFeatureRecord&,
         CGffFeatureContext&,
-        CMappedFeat);
+        const CMappedFeat&);
     bool xAssignFeatureBasic(
         CGffFeatureRecord&,
         CGffFeatureContext&,
-        CMappedFeat);
+        const CMappedFeat&);
     bool xAssignFeatureType(
         CGffFeatureRecord&,
-        CMappedFeat);
+        const CMappedFeat&);
     bool xAssignFeatureSeqId(
         CGffFeatureRecord&,
-        CMappedFeat);
+        const CMappedFeat&);
     bool xAssignFeatureMethod(
         CGffFeatureRecord&,
         CGffFeatureContext&,
-        CMappedFeat);
+        const CMappedFeat&);
     bool xAssignFeatureEndpoints(
         CGffFeatureRecord&,
         CGffFeatureContext&,
-        CMappedFeat);
+        const CMappedFeat&);
     bool xAssignFeatureScore(
         CGffFeatureRecord&,
-        CMappedFeat);
+        const CMappedFeat&);
     bool xAssignFeatureStrand(
         CGffFeatureRecord&,
-        CMappedFeat);
+        const CMappedFeat&);
     bool xAssignFeaturePhase(
         CGffFeatureRecord&,
-        CMappedFeat);
+        const CMappedFeat&);
     bool xAssignFeatureAttributes(
         CGffFeatureRecord&,
         CGffFeatureContext&,
-        CMappedFeat);
+        const CMappedFeat&);
         
     bool xAssignFeatureAttributeCodeBreak(
         CGffFeatureRecord&,
-        CMappedFeat);
+        const CMappedFeat&);
     bool xAssignFeatureAttributeException(
         CGffFeatureRecord&,
-        CMappedFeat);
+        const CMappedFeat&);
     bool xAssignFeatureAttributeExonNumber(
         CGffFeatureRecord&,
-        CMappedFeat);
+        const CMappedFeat&);
     bool xAssignFeatureAttributeDbXref(
         CGffFeatureRecord&,
         CGffFeatureContext&,
-        CMappedFeat);
+        const CMappedFeat&);
     bool xAssignFeatureAttributeGbKey(
         CGffFeatureRecord&,
-        CMappedFeat);
+        const CMappedFeat&);
     bool xAssignFeatureAttributeGene(
         CGffFeatureRecord&,
         CGffFeatureContext&,
-        CMappedFeat);
+        const CMappedFeat&);
     bool xAssignFeatureAttributeGeneDesc(
         CGffFeatureRecord&,
-        CMappedFeat);
+        const CMappedFeat&);
     bool xAssignFeatureAttributeGeneSynonym(
         CGffFeatureRecord&,
-        CMappedFeat);
+        const CMappedFeat&);
     bool xAssignFeatureAttributeIsOrdered(
         CGffFeatureRecord&,
-        CMappedFeat);
+        const CMappedFeat&);
     bool xAssignFeatureAttributeLocusTag(
         CGffFeatureRecord&,
-        CMappedFeat);
+        const CMappedFeat&);
     bool xAssignFeatureAttributeOldLocusTag(
         CGffFeatureRecord&,
-        CMappedFeat);
+        const CMappedFeat&);
     bool xAssignFeatureAttributePseudoGene(
         CGffFeatureRecord&,
         CGffFeatureContext&,
-        CMappedFeat);
+        const CMappedFeat&);
     bool xAssignFeatureAttributeMapLoc(
         CGffFeatureRecord&,
-        CMappedFeat);
+        const CMappedFeat&);
     bool xAssignFeatureAttributeName(
         CGffFeatureRecord&,
-        CMappedFeat);
+        const CMappedFeat&);
     bool xAssignFeatureAttributeNote(
         CGffFeatureRecord&,
-        CMappedFeat);
+        const CMappedFeat&);
     bool xAssignFeatureAttributeNcrnaClass(
         CGffFeatureRecord&,
-        CMappedFeat);
+        const CMappedFeat&);
     bool xAssignFeatureAttributeParent(
         CGffFeatureRecord&,
         CGffFeatureContext&,
-        CMappedFeat);
+        const CMappedFeat&);
     bool xAssignFeatureAttributePartial(
         CGffFeatureRecord&,
-        CMappedFeat);
+        const CMappedFeat&);
     bool xAssignFeatureAttributeProduct(
         CGffFeatureRecord&,
-        CMappedFeat);
+        const CMappedFeat&);
     bool xAssignFeatureAttributeProteinId(
         CGffFeatureRecord&,
-        CMappedFeat);
+        const CMappedFeat&);
     bool xAssignFeatureAttributePseudo(
         CGffFeatureRecord&,
-        CMappedFeat);
+        const CMappedFeat&);
     bool xAssignFeatureAttributeTranscriptId(
         CGffFeatureRecord&,
-        CMappedFeat);
+        const CMappedFeat&);
     bool xAssignFeatureAttributeTranslationTable(
         CGffFeatureRecord&,
-        CMappedFeat);
+        const CMappedFeat&);
     bool xAssignFeatureAttributeGeneBiotype(
         CGffFeatureRecord&,
         CGffFeatureContext&,
-        CMappedFeat);
+        const CMappedFeat&);
     //end mss-234//
     bool xAssignFeatureAttributeModelEvidence(
         CGffFeatureRecord&,
-        CMappedFeat);
+        const CMappedFeat&);
     bool xAssignFeatureAttributeRptFamily(
         CGffFeatureRecord&,
-        CMappedFeat);
+        const CMappedFeat&);
     string xNextGenericId();
     string xNextGeneId();
     string xNextCdsId();

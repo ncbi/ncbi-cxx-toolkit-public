@@ -234,7 +234,7 @@ string sBestMatchType(
 
 //  ----------------------------------------------------------------------------
 bool sFeatureHasChildOfSubtype(
-    CMappedFeat mf,
+    const CMappedFeat& mf,
     CSeqFeatData::ESubtype subtype,
     feature::CFeatTree* pTree = 0)
     //  ----------------------------------------------------------------------------
@@ -1317,7 +1317,7 @@ bool CGff3Writer::x_WriteBioseqHandle(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xWriteAllChildren(
     CGffFeatureContext& fc,
-    CMappedFeat mf)
+    const CMappedFeat& mf)
 //  ----------------------------------------------------------------------------
 {
     feature::CFeatTree& featTree = fc.FeatTree();
@@ -1354,7 +1354,7 @@ bool CGff3Writer::xWriteSource(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xWriteFeature(
     CGffFeatureContext& fc,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     CSeqFeatData::ESubtype s = mf.GetFeatSubtype();
@@ -1396,7 +1396,7 @@ bool CGff3Writer::xWriteFeature(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xWriteFeatureTrna(
     CGffFeatureContext& fc,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
 
@@ -1446,7 +1446,7 @@ bool CGff3Writer::xWriteFeatureTrna(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureType(
     CGffFeatureRecord& record,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     static const char* const ncrnaClasses_[] = {
@@ -1502,7 +1502,7 @@ bool CGff3Writer::xAssignFeatureType(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureSeqId(
     CGffFeatureRecord& record,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     string bestId;
@@ -1515,7 +1515,7 @@ bool CGff3Writer::xAssignFeatureSeqId(
 
 //  ----------------------------------------------------------------------------
 bool sGetMethodFromModelEvidence(
-    CMappedFeat mf,
+    const CMappedFeat& mf,
     string& method)
 //  ----------------------------------------------------------------------------
 {
@@ -1535,7 +1535,7 @@ bool sGetMethodFromModelEvidence(
 bool CGff3Writer::xAssignFeatureMethod(
     CGffFeatureRecord& record,
     CGffFeatureContext& fc,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     string method(".");
@@ -1586,7 +1586,7 @@ bool CGff3Writer::xAssignFeatureMethod(
 bool CGff3Writer::xAssignFeatureEndpoints(
     CGffFeatureRecord& record,
     CGffFeatureContext& fc,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     CGffBaseRecord& baseRecord = record;
@@ -1660,7 +1660,7 @@ bool CGff3Writer::xAssignFeatureEndpoints(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureScore(
     CGffFeatureRecord& record,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     return true;
@@ -1669,7 +1669,7 @@ bool CGff3Writer::xAssignFeatureScore(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureStrand(
     CGffFeatureRecord& record,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     record.SetStrand(mf.GetLocation().GetStrand());
@@ -1679,7 +1679,7 @@ bool CGff3Writer::xAssignFeatureStrand(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeaturePhase(
     CGffFeatureRecord& record,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     if (mf.GetFeatSubtype() == CSeq_feat::TData::eSubtype_cdregion) {
@@ -1692,7 +1692,7 @@ bool CGff3Writer::xAssignFeaturePhase(
 bool CGff3Writer::xAssignFeatureAttributes(
     CGffFeatureRecord& record,
     CGffFeatureContext& fc,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     if (!xAssignFeatureAttributeGbKey(record, mf)) {
@@ -1763,7 +1763,7 @@ bool CGff3Writer::xAssignFeatureAttributes(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeIsOrdered(
     CGffFeatureRecord& record,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     if (CWriteUtil::IsLocationOrdered(mf.GetLocation())) {
@@ -1775,7 +1775,7 @@ bool CGff3Writer::xAssignFeatureAttributeIsOrdered(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeExonNumber(
     CGffFeatureRecord& record,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     if (!mf.IsSetQual()) {
@@ -1797,7 +1797,7 @@ bool CGff3Writer::xAssignFeatureAttributeExonNumber(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributePseudo(
     CGffFeatureRecord& record,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     if (!mf.IsSetPseudo()) {
@@ -1814,7 +1814,7 @@ bool CGff3Writer::xAssignFeatureAttributePseudo(
 bool CGff3Writer::xAssignFeatureAttributeDbXref(
     CGffFeatureRecord& record,
     CGffFeatureContext& fc,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     CSeqFeatData::E_Choice choice = mf.GetData().Which();
@@ -1897,7 +1897,7 @@ bool CGff3Writer::xAssignFeatureAttributeDbXref(
 bool CGff3Writer::xAssignFeatureAttributeGene(
     CGffFeatureRecord& record,
     CGffFeatureContext& fc,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     string strGene;
@@ -1934,7 +1934,7 @@ bool CGff3Writer::xAssignFeatureAttributeGene(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeNote(
     CGffFeatureRecord& record,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     if (!mf.IsSetComment()  ||  mf.GetComment().empty()) {
@@ -1947,7 +1947,7 @@ bool CGff3Writer::xAssignFeatureAttributeNote(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeException(
     CGffFeatureRecord& record,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     if (mf.IsSetExcept_text()) {
@@ -1964,7 +1964,7 @@ bool CGff3Writer::xAssignFeatureAttributeException(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeModelEvidence(
     CGffFeatureRecord& record,
-    CMappedFeat mf)
+    const CMappedFeat& mf)
 //  ----------------------------------------------------------------------------
 {
     string modelEvidence;
@@ -1980,7 +1980,7 @@ bool CGff3Writer::xAssignFeatureAttributeModelEvidence(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeRptFamily(
     CGffFeatureRecord& record,
-    CMappedFeat mf)
+    const CMappedFeat& mf)
 //  -----------------------------------------------------------------------------
 {
     CSeqFeatData::ESubtype s = mf.GetFeatSubtype();
@@ -2008,7 +2008,7 @@ bool CGff3Writer::xAssignFeatureAttributeRptFamily(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeTranscriptId(
     CGffFeatureRecord& record,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     if (mf.GetFeatType() != CSeqFeatData::e_Rna) {
@@ -2036,7 +2036,7 @@ bool CGff3Writer::xAssignFeatureAttributeTranscriptId(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeGbKey(
     CGffFeatureRecord& record,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     record.SetAttribute("gbkey", mf.GetData().GetKey());
@@ -2046,7 +2046,7 @@ bool CGff3Writer::xAssignFeatureAttributeGbKey(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeGeneDesc(
     CGffFeatureRecord& record,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     const CGene_ref& gene_ref = mf.GetData().GetGene();
@@ -2060,7 +2060,7 @@ bool CGff3Writer::xAssignFeatureAttributeGeneDesc(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeGeneSynonym(
     CGffFeatureRecord& record,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     const CGene_ref& gene_ref = mf.GetData().GetGene();
@@ -2085,7 +2085,7 @@ bool CGff3Writer::xAssignFeatureAttributeGeneSynonym(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeOldLocusTag(
     CGffFeatureRecord& record,
-    CMappedFeat mf)
+    const CMappedFeat& mf)
 //  ----------------------------------------------------------------------------
 {
     if (!mf.IsSetQual()) {
@@ -2116,7 +2116,7 @@ bool CGff3Writer::xAssignFeatureAttributeOldLocusTag(
 bool CGff3Writer::xAssignFeatureAttributePseudoGene(
     CGffFeatureRecord& record,
     CGffFeatureContext& fc,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     string pseudoGene = mf.GetNamedQual("pseudogene");
@@ -2143,7 +2143,7 @@ bool CGff3Writer::xAssignFeatureAttributePseudoGene(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeMapLoc(
     CGffFeatureRecord& record,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     const CGene_ref& gene_ref = mf.GetData().GetGene();
@@ -2157,7 +2157,7 @@ bool CGff3Writer::xAssignFeatureAttributeMapLoc(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeName(
     CGffFeatureRecord& record,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     vector<string> value;   
@@ -2194,7 +2194,7 @@ bool CGff3Writer::xAssignFeatureAttributeName(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeLocusTag(
     CGffFeatureRecord& record,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     const CGene_ref& gene_ref = mf.GetData().GetGene();
@@ -2208,7 +2208,7 @@ bool CGff3Writer::xAssignFeatureAttributeLocusTag(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributePartial(
     CGffFeatureRecord& record,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     if (mf.IsSetPartial()) {
@@ -2223,7 +2223,7 @@ bool CGff3Writer::xAssignFeatureAttributePartial(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeProteinId(
     CGffFeatureRecord& record,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     if (!mf.IsSetProduct()) {
@@ -2240,7 +2240,7 @@ bool CGff3Writer::xAssignFeatureAttributeProteinId(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeTranslationTable(
     CGffFeatureRecord& record,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     if (!mf.IsSetData()  ||  
@@ -2262,7 +2262,7 @@ bool CGff3Writer::xAssignFeatureAttributeTranslationTable(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeCodeBreak(
     CGffFeatureRecord& record,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     if (!mf.IsSetData()  ||  
@@ -2287,7 +2287,7 @@ bool CGff3Writer::xAssignFeatureAttributeCodeBreak(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeProduct(
     CGffFeatureRecord& record,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
 
@@ -2386,7 +2386,7 @@ bool CGff3Writer::xAssignFeatureAttributeProduct(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeNcrnaClass(
     CGffFeatureRecord& record,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     if (!mf.IsSetData()  ||  
@@ -2409,7 +2409,7 @@ bool CGff3Writer::xAssignFeatureAttributeNcrnaClass(
 bool CGff3Writer::xAssignFeatureAttributeParent(
     CGffFeatureRecord& record,
     CGffFeatureContext& fc,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     if (mf.GetFeatType() == CSeqFeatData::e_Rna) {
@@ -2447,7 +2447,7 @@ bool CGff3Writer::xAssignFeatureAttributeParent(
 bool CGff3Writer::xAssignFeatureAttributeGeneBiotype(
     CGffFeatureRecord& record,
     CGffFeatureContext& fc,
-    CMappedFeat mf)
+    const CMappedFeat& mf)
 //  ----------------------------------------------------------------------------
 {
     // if a biosource is present then only compute if also is genomic record
@@ -2468,7 +2468,7 @@ bool CGff3Writer::xAssignFeatureAttributeGeneBiotype(
 bool CGff3Writer::xAssignFeatureBasic(
     CGffFeatureRecord& record,
     CGffFeatureContext& fc,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     return (xAssignFeatureType(record, mf)  &&
@@ -2485,7 +2485,7 @@ bool CGff3Writer::xAssignFeatureBasic(
 bool CGff3Writer::xAssignFeature(
     CGffFeatureRecord& record,
     CGffFeatureContext& fc,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     CRef<CSeq_loc> pLoc(new CSeq_loc(CSeq_loc::e_Mix));
@@ -2777,7 +2777,7 @@ bool CGff3Writer::xAssignSourceAttributesSubSource(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xWriteFeatureGene(
     CGffFeatureContext& fc,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     CRef<CGffFeatureRecord> pRecord( 
@@ -2792,7 +2792,7 @@ bool CGff3Writer::xWriteFeatureGene(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xWriteFeatureCds(
     CGffFeatureContext& fc,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     CRef<CGffFeatureRecord> pCds(new CGffFeatureRecord());
@@ -2843,7 +2843,7 @@ bool CGff3Writer::xWriteFeatureCds(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xWriteFeatureRna(
     CGffFeatureContext& fc,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     string rnaId = xNextTrnaId();
@@ -2887,7 +2887,7 @@ bool CGff3Writer::xWriteFeatureRna(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xWriteFeatureCDJVSegment(
     CGffFeatureContext& fc,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     string id = xNextGenericId();
@@ -2930,7 +2930,7 @@ bool CGff3Writer::xWriteFeatureCDJVSegment(
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xWriteFeatureGeneric(
     CGffFeatureContext& fc,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     CRef<CGffFeatureRecord> pParent(new CGffFeatureRecord(xNextGenericId()));
@@ -2995,7 +2995,7 @@ void CGff3Writer::xWriteAlignment(
 bool CGff3Writer::xAssignFeatureAttributeParentGene(
     CGffFeatureRecord& record,
     CGffFeatureContext& fc,
-    CMappedFeat mf)
+    const CMappedFeat& mf)
 //  ============================================================================
 {
     CMappedFeat gene = fc.FindBestGeneParent(mf);
@@ -3018,7 +3018,7 @@ bool CGff3Writer::xAssignFeatureAttributeParentGene(
 bool CGff3Writer::xAssignFeatureAttributeParentMrna(
     CGffFeatureRecord& record,
     CGffFeatureContext& fc,
-    CMappedFeat mf)
+    const CMappedFeat& mf)
 //  ============================================================================
 {
     CMappedFeat mrna;
