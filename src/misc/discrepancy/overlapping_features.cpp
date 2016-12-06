@@ -107,7 +107,40 @@ DISCREPANCY_CASE(_CDS_TRNA_OVERLAP, COverlappingFeatures, 0, "CDS tRNA Overlap -
 DISCREPANCY_SUMMARIZE(_CDS_TRNA_OVERLAP) {}
 DISCREPANCY_AUTOFIX(_CDS_TRNA_OVERLAP)
 {
-    //unsigned int n = AutofixProductNames(item, scope);
+    const CSeq_feat& cds = dynamic_cast<const CSeq_feat&>(*item->GetDetails()[0]->GetObject());
+    cds.GetLocation().GetId();
+    const CSeq_loc& loc = cds.GetLocation();
+    CBioseq_Handle bsh = scope.GetBioseqHandle(loc);
+    CFeat_CI f(bsh, CSeqFeatData::e_Rna);
+    ENa_strand cds_strand = loc.IsSetStrand() ? loc.GetStrand() : eNa_strand_unknown;
+    CSeq_loc::TRange r1 = loc.GetTotalRange();
+    int ovlp_len = 0;
+    while (f) {
+        if (f->GetData().GetSubtype() == CSeqFeatData::eSubtype_tRNA) {
+            const CSeq_loc& loc_t = f->GetLocation();
+            ENa_strand trna_strand = loc_t.IsSetStrand() ? loc_t.GetStrand() : eNa_strand_unknown;
+            if (!(cds_strand == eNa_strand_plus && trna_strand == eNa_strand_minus || cds_strand == eNa_strand_minus && trna_strand == eNa_strand_plus)) {
+                CSeq_loc::TRange r2 = loc_t.GetTotalRange();
+                if (!(r1.GetFrom() >= r2.GetToOpen() || r2.GetFrom() >= r1.GetToOpen())) {
+                    ovlp_len = r1.GetToOpen() - r2.GetFrom();
+                    if (ovlp_len > 0 && ovlp_len < 3) {
+                        break;
+                    }
+                    else {
+                        ovlp_len = r2.GetToOpen() - r1.GetFrom();
+                        if (ovlp_len > 0 && ovlp_len < 3) {
+                            break;
+                        }
+                        else {
+                            ovlp_len = 0;
+                        }
+                    }
+                }
+            }
+        }
+        ++f;
+    }
+
     return CRef<CAutofixReport>(new CAutofixReport("CDS_TRNA_OVERLAP: [n] CDS[s] trimmed", 1));
 }
 
