@@ -41,6 +41,8 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
+class CMappedFeat;
+
 //  ============================================================================
 /// Defines and provides stubs for a general interface to a variety of file
 /// formatters. These writers take Genbank object in raw or handle form, and 
