@@ -3163,6 +3163,18 @@ void NStr::TrimPrefixInPlace(CTempString& str, const CTempString prefix,
 }
 
 
+CTempString NStr::TrimPrefix_Unsafe(const CTempString str, const CTempString prefix,
+                                    ECase use_case)
+{
+    if (!str.length() ||
+        !prefix.length() ||
+        !Equal(str, 0, prefix.length(), prefix, use_case)) {
+        return str;
+    }
+    return CTempString(str.data() + prefix.length(), str.length() - prefix.length());
+}
+
+
 void NStr::TrimSuffixInPlace(string& str, const CTempString suffix,
                              ECase use_case)
 {
@@ -3180,10 +3192,22 @@ void NStr::TrimSuffixInPlace(CTempString& str, const CTempString suffix,
 {
     if (!str.length() ||
         !suffix.length() ||
-        !Equal(str, str.length() - suffix.length(), suffix.length(),  suffix, use_case)) {
+        !Equal(str, str.length() - suffix.length(), suffix.length(), suffix, use_case)) {
         return;
     }
     str.erase(str.length() - suffix.length());
+}
+
+
+CTempString NStr::TrimSuffix_Unsafe(const CTempString str, const CTempString suffix,
+                                    ECase use_case)
+{
+    if (!str.length() ||
+        !suffix.length() ||
+        !Equal(str, str.length() - suffix.length(), suffix.length(),  suffix, use_case)) {
+        return str;
+    }
+    return CTempString(str.data(), str.length() - suffix.length());
 }
 
 

@@ -3998,59 +3998,106 @@ BOOST_AUTO_TEST_CASE(s_TrimPrefixSuffix)
     const string      sStr = cStr;
     const CTempString tStr(cStr);
 
-    string str;
-    CTempString tstr;
+    string str, s;
+    CTempString tstr, tres;
 
     // NStr::Case
 
     str = cStr;
     {{
+        tres = NStr::TrimPrefix_Unsafe(cStr, "Some");
         NStr::TrimPrefixInPlace(str, "Some");
         BOOST_CHECK_EQUAL(str, string(cStr));
+        BOOST_CHECK_EQUAL(str, tres);
+
+        tres = NStr::TrimPrefix_Unsafe(cStr, "SOME");
         NStr::TrimPrefixInPlace(str, "SOME");
         BOOST_CHECK_EQUAL(str, string(cStr));
+        BOOST_CHECK_EQUAL(str, tres);
+
+        tres = NStr::TrimSuffix_Unsafe(cStr, "STRING");
         NStr::TrimSuffixInPlace(str, "STRING");
         BOOST_CHECK_EQUAL(str, string(cStr));
+        BOOST_CHECK_EQUAL(str, tres);
     }}
     {{
+        s = str;
+        tres = NStr::TrimPrefix_Unsafe(s, "some ");
         NStr::TrimPrefixInPlace(str, "some ");
         BOOST_CHECK_EQUAL(str, string("long string"));
+        BOOST_CHECK_EQUAL(str, tres);
+
+        s = str;
+        tres = NStr::TrimSuffix_Unsafe(s, " string");
         NStr::TrimSuffixInPlace(str, " string");
         BOOST_CHECK_EQUAL(str, string("long"));
+        BOOST_CHECK_EQUAL(str, tres);
     }}
 
     tstr = cStr;
     {{
+        s = tstr;
+        tres = NStr::TrimPrefix_Unsafe(s, "Some");
         NStr::TrimPrefixInPlace(tstr, "Some");
         BOOST_CHECK_EQUAL(tstr, string(cStr));
+        BOOST_CHECK_EQUAL(tstr, tres);
+
+        s = tstr;
+        tres = NStr::TrimPrefix_Unsafe(s, "SOME");
         NStr::TrimPrefixInPlace(tstr, "SOME");
         BOOST_CHECK_EQUAL(tstr, string(cStr));
+        BOOST_CHECK_EQUAL(tstr, tres);
+
+        s = tstr;
+        tres = NStr::TrimSuffix_Unsafe(s, "STRING");
         NStr::TrimSuffixInPlace(str, "STRING");
         BOOST_CHECK_EQUAL(tstr, string(cStr));
+        BOOST_CHECK_EQUAL(tstr, tres);
     }}
     {{
+        s = tstr;
+        tres = NStr::TrimPrefix_Unsafe(s, "some ");
         NStr::TrimPrefixInPlace(tstr, "some ");
         BOOST_CHECK_EQUAL(tstr, string("long string"));
+        BOOST_CHECK_EQUAL(tstr, tres);
+
+        s = tstr;
+        tres = NStr::TrimSuffix_Unsafe(s, " string");
         NStr::TrimSuffixInPlace(tstr, " string");
         BOOST_CHECK_EQUAL(tstr, string("long"));
+        BOOST_CHECK_EQUAL(tstr, tres);
     }}
 
     // NStr::eNocase
 
     str = cStr;
     {{
+        s = str;
+        tres = NStr::TrimPrefix_Unsafe(s, "Some ", NStr::eNocase);
         NStr::TrimPrefixInPlace(str, "Some ", NStr::eNocase);
         BOOST_CHECK_EQUAL(str, string("long string"));
+        BOOST_CHECK_EQUAL(str, tres);
+
+        s = str;
+        tres = NStr::TrimSuffix_Unsafe(s, " STRING", NStr::eNocase);
         NStr::TrimSuffixInPlace(str, " STRING", NStr::eNocase);
         BOOST_CHECK_EQUAL(str, string("long"));
+        BOOST_CHECK_EQUAL(str, tres);
     }}
 
     tstr = cStr;
     {{
+        s = tstr;
+        tres = NStr::TrimPrefix_Unsafe(s, "Some ", NStr::eNocase);
         NStr::TrimPrefixInPlace(tstr, "Some ", NStr::eNocase);
         BOOST_CHECK_EQUAL(tstr, string("long string"));
+        BOOST_CHECK_EQUAL(tstr, tres);
+
+        s = tstr;
+        tres = NStr::TrimSuffix_Unsafe(s, " STRING", NStr::eNocase);
         NStr::TrimSuffixInPlace(tstr, " STRING", NStr::eNocase);
         BOOST_CHECK_EQUAL(tstr, string("long"));
+        BOOST_CHECK_EQUAL(tstr, tres);
     }}
 }
 
