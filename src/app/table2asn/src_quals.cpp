@@ -88,6 +88,7 @@ bool TSrcQuals::AddQualifiers(CSourceModParser& mod, const CBioseq& id)
     ITERATE(CBioseq::TId, id_it, id.GetId())
     {
         string id = (**id_it).AsFastaString();
+        NStr::ToLower(id);
         if (AddQualifiers(mod, id))
             return true;
     }
@@ -221,11 +222,29 @@ void CSourceQualifiersReader::x_LoadSourceQualifiers(TSrcQuals& quals, const str
                 const char* endid = (const char*)memchr(start, '\t', endline - start);
                 if (endid)
                 {
-                    CTempString id_text(start, endid - start);
+                    string id_text(start, endid - start);
+#if 0
+                    NStr::ReplaceInPlace(id_text, ":", "|");
+                    if (id_text.find('|') != string::npos)
+                    {
+                        if (!NStr::StartsWith(id_text, "gnl|"))
+                        {
+                            id_text.insert(0, "gnl|");
+                        }
+                    else {
+                        if (!m_context->m_genome_center_id.empty())
+                        {
+                            id_text = "gnl|" + m_context->m_genome_center_id + "|" + id_text;
+                        }
+                    }
+#endif
+
                     if (opt_map_filename.empty())
                     {
                         CSeq_id id(id_text, CSeq_id::fParse_AnyLocal);
-                        quals.m_lines_map[id.AsFastaString()] = newline;
+                        id_text = id.AsFastaString();
+                        NStr::ToLower(id_text);
+                        quals.m_lines_map[id_text] = newline;
                     }
                     else
                     {
