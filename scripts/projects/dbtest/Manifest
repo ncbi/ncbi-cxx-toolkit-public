@@ -31,5 +31,8 @@ Linux64-Centos : plain : GCC.sh    --without-debug --without-mt --with-static --
 FreeBSD64      : plain : Clang.sh  --without-debug --without-mt --with-static --with-flat-makefile
 IntelMAC       : plain : GCC.sh    --without-debug --without-mt --with-static --with-flat-makefile
 Win32_13       : plain : static 32 ReleaseDLL
+Linux64-Ubuntu : plain : GCC.sh    --without-debug --without-mt --with-static --with-flat-makefile
+Linux32-Ubuntu : plain : GCC.sh    --without-debug --without-mt --with-static --with-flat-makefile
 
-#USE_COMPONENTS
+USE_COMPONENTS
+
