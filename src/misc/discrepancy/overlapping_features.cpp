@@ -103,6 +103,15 @@ DISCREPANCY_SUMMARIZE(CDS_TRNA_OVERLAP)
 }
 
 
+DISCREPANCY_CASE(_CDS_TRNA_OVERLAP, COverlappingFeatures, 0, "CDS tRNA Overlap - autofix") {}
+DISCREPANCY_SUMMARIZE(_CDS_TRNA_OVERLAP) {}
+DISCREPANCY_AUTOFIX(_CDS_TRNA_OVERLAP)
+{
+    //unsigned int n = AutofixProductNames(item, scope);
+    return CRef<CAutofixReport>(new CAutofixReport("CDS_TRNA_OVERLAP: [n] CDS[s] trimmed", 1));
+}
+
+
 // RNA_CDS_OVERLAP
 
 typedef pair<size_t, bool> TRNALength;

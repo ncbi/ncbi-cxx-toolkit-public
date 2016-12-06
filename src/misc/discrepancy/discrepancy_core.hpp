@@ -78,6 +78,7 @@ friend vector<string> GetDiscrepancyNames(TGroup group);
 friend vector<string> GetDiscrepancyAliases(const string& name);
 friend class CDiscrepancyAlias;
 friend class CDiscrepancyContext;
+friend class CReportItem;
 };
 
 
@@ -197,6 +198,7 @@ protected:
     CRef<CDiscrepancyCase> m_Test;
 friend class CReportNode;
 friend class CDiscrepancyGroup;
+friend class CReportItem;
 };
 
 

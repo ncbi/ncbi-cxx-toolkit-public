@@ -31,8 +31,10 @@
 #include "discrepancy_core.hpp"
 #include "utils.hpp"
 #include <sstream>
+#include <objmgr/object_manager.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/util/sequence.hpp>
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
@@ -192,9 +194,11 @@ CRef<CReportItem> CReportNode::Export(CDiscrepancyCase& test, bool unique)
 }
 
 
-CRef<CReportItem> CReportItem::CreateReportItem(const string& msg)
+CRef<CReportItem> CReportItem::CreateReportItem(const string& test, const string& msg, bool autofix)
 {
-	CRef<CDiscrepancyItem> item(new CDiscrepancyItem(msg));
+    CRef<CDiscrepancyCase> t = CDiscrepancyConstructor::GetDiscrepancyConstructor(test)->Create();
+	CRef<CDiscrepancyItem> item(new CDiscrepancyItem(*t, msg, msg));
+    item->m_Autofix = autofix;
     return CRef<CReportItem>((CReportItem*)item);
 }
 

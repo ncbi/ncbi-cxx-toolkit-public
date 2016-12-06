@@ -83,7 +83,7 @@ public:
     virtual bool IsSummary(void) const = 0;
     virtual bool IsReal(void) const = 0;
     virtual CRef<CAutofixReport> Autofix(objects::CScope&) const = 0;
-    static CRef<CReportItem> CreateReportItem(const string& msg);
+    static CRef<CReportItem> CreateReportItem(const string& test, const string& msg, bool autofix = false);
     virtual void PushReportObj(CReportObj& obj) = 0;
 };
 typedef vector<CRef<CReportItem> > TReportItemList;
