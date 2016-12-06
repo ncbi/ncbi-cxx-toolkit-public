@@ -1818,7 +1818,7 @@ s_NaHashLookupScanSubjectForWordCounts(BlastSeqSrc* seq_src,
         return -1;
     }
 
-    ASSERT(lookup->lu_word_length == 16);
+    ASSERT(lookup->lut_word_length == 16);
 
     /* pv array must be one bit per word */
     ASSERT(lookup->pv_array_bts == 5);
