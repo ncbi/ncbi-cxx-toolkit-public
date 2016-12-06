@@ -52,6 +52,21 @@ Int2 LookupTableWrapInit(BLAST_SequenceBlk* query,
         Blast_Message* *error_msg,
         BlastSeqSrc* seqsrc)
 {
+    return LookupTableWrapInit_MT(query, lookup_options, query_options,
+                                  lookup_segments, sbp, lookup_wrap_ptr,
+                                  rps_info, error_msg, seqsrc, 1);
+}
+
+
+Int2 LookupTableWrapInit_MT(BLAST_SequenceBlk* query, 
+        const LookupTableOptions* lookup_options,	
+        const QuerySetUpOptions* query_options,
+        BlastSeqLoc* lookup_segments, BlastScoreBlk* sbp, 
+        LookupTableWrap** lookup_wrap_ptr, const BlastRPSInfo *rps_info,
+        Blast_Message* *error_msg,
+        BlastSeqSrc* seqsrc,
+        Uint4 num_threads)
+{
    Int2 status = 0;
    LookupTableWrap* lookup_wrap;
    EBoneType bone_type;
@@ -143,7 +158,8 @@ Int2 LookupTableWrapInit(BLAST_SequenceBlk* query,
    case eNaHashLookupTable:
            status = BlastNaHashLookupTableNew(query, lookup_segments,
                              (BlastNaHashLookupTable**) &(lookup_wrap->lut), 
-                             lookup_options, query_options, seqsrc);
+                             lookup_options, query_options, seqsrc,
+                             num_threads);
        break;
 
 

@@ -235,13 +235,16 @@ public:
     /// CreateRpsStructures [in]
     /// @param seqsrc BlastSeqSrc structure, only needed when performing
     /// megablast indexed-database searches [in]
+    /// @param num_threads Number of threads to use. Multithreaded
+    /// implementation is only avaliable for Magic-BLAST lookup tables. [in]
     static LookupTableWrap*
     CreateLookupTable(CRef<ILocalQueryData> query_data,
                       const CBlastOptionsMemento* opts_memento,
                       BlastScoreBlk* score_blk,
                       CRef< CBlastSeqLocWrap > lookup_segments,
                       const CBlastRPSInfo* rps_info = NULL,
-                      BlastSeqSrc* seqsrc = NULL);
+                      BlastSeqSrc* seqsrc = NULL,
+                      size_t num_threads = 1);
 
     /// Create and initialize the BlastDiagnostics structure for 
     /// single-threaded applications

@@ -64,7 +64,8 @@ CRef<CSeq_align_set> CMagicBlast::Run(void)
 {
     CRef<CBlastPrelimSearch> prelim_search(new CBlastPrelimSearch(m_Queries,
                                                             m_Options,
-                                                            m_LocalDbAdapter));
+                                                            m_LocalDbAdapter,
+                                                            GetNumberOfThreads()));
 
     int status = prelim_search->CheckInternalData();
     if (status != 0)

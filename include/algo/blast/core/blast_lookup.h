@@ -163,8 +163,8 @@ BackboneCell* BackboneCellNew(Uint4 word, Int4 offset, Int4 size);
  * @param query The query sequence [in]
  * @param locations What locations on the query sequence to index? [in]
  * @param hash_func Hash function for words in 2na [in]
- * @param counts Word counts in a database, to limit lookup table by databse
- *               word frequency [in]
+ * @param pv_array A bit fields with bits set for words that are to be included
+ *                 in the lookup table. Must be 1 bit per word. [in]
  */
 void BlastHashLookupIndexQueryExactMatches(BackboneCell **backbone,
                                            Int4 word_length,
@@ -174,7 +174,7 @@ void BlastHashLookupIndexQueryExactMatches(BackboneCell **backbone,
                                            BlastSeqLoc* locations,
                                            TNaLookupHashFunction hash_func,
                                            Uint4 mask,
-                                           Uint1* counts);
+                                           PV_ARRAY_TYPE* pv_array);
 
 
 

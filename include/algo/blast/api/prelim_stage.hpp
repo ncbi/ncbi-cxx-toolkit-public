@@ -66,7 +66,8 @@ public:
     /// @note we don't own the BlastSeqSrc
     CBlastPrelimSearch(CRef<IQueryFactory> query_factory,
                        CRef<CBlastOptions> options,
-                       CRef<CLocalDbAdapter> db);
+                       CRef<CLocalDbAdapter> db,
+                       size_t num_threads = 1);
 
     /// Constructor which takes a PSSM and an already initialized BlastSeqSrc
     /// object
@@ -140,10 +141,12 @@ private:
     /// @param options BLAST algorithm options [in]
     /// @param pssm PSSM to initialize PSI-BLAST
     /// @param seqsrc Wrapper for source of database sequences [in]
+    /// @param num_threads Number of threads to use [in]
     void x_Init(CRef<IQueryFactory> query_factory,
                 CRef<CBlastOptions> options,
                 CConstRef<objects::CPssmWithParameters> pssm,
-                BlastSeqSrc* seqsrc);
+                BlastSeqSrc* seqsrc,
+                size_t num_threads = 1);
 
     /// Runs the preliminary search in multi-threaded mode
     /// @param internal_data internal preliminary data structures

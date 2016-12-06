@@ -674,7 +674,8 @@ Int4 BlastNaHashLookupTableNew(BLAST_SequenceBlk* query,
                                BlastNaHashLookupTable** lut,
                                const LookupTableOptions* opt, 
                                const QuerySetUpOptions* query_options,
-                               BlastSeqSrc* seqsrc);
+                               BlastSeqSrc* seqsrc,
+                               Uint4 num_threads);
 
 
 /** Free a nucleotide lookup table.

@@ -169,32 +169,11 @@ BackboneCell* BackboneCellNew(Uint4 word, Int4 offset, Int4 size)
     return cell;
 }
 
-#define MAX_WORD_COUNT (10)
-
-/* Test whether a word count is at least one and at most MAX_WORD_COUNT.
-   Counts are stored in 4 bits. */
-static Boolean s_TestCounts(Uint4 word, Uint1* counts)
-{
-    if (!(word & 1)) {
-        if ((counts[word / 2] >> 4) == 0 ||
-            (counts[word / 2] >> 4) >= MAX_WORD_COUNT) {
-            return FALSE;
-        }
-    }
-    else {
-        if ((counts[word / 2] & 0xf) == 0 ||
-            (counts[word / 2] & 0xf) >= MAX_WORD_COUNT) {
-            return FALSE;
-        }
-    }
-
-    return TRUE;
-}
 
 static Int2 s_AddWordHit(BackboneCell** backbone, Int4 wordsize,
                          Int4 charsize, Uint1* seq, Int4 offset,
                          TNaLookupHashFunction hash_func, Uint4 mask,
-                         Uint1* counts)
+                         PV_ARRAY_TYPE* pv_array)
 {
     Uint4 large_index;
     Int8 index;
@@ -209,7 +188,7 @@ static Int2 s_AddWordHit(BackboneCell** backbone, Int4 wordsize,
 
     /* if filtering by database word count, then do not add words
        that do not appear in the database or appear to many times */
-    if (counts && !s_TestCounts(large_index, counts)) {
+    if (pv_array && !PV_TEST(pv_array, large_index, PV_ARRAY_BTS)) {
         return 0;
     }
 
@@ -268,7 +247,7 @@ void BlastHashLookupIndexQueryExactMatches(BackboneCell **backbone,
                                            BlastSeqLoc* locations,
                                            TNaLookupHashFunction hash_func,
                                            Uint4 mask,
-                                           Uint1* counts)
+                                           PV_ARRAY_TYPE* pv_array)
 {
     BlastSeqLoc *loc;
     Int4 offset;
@@ -300,7 +279,7 @@ void BlastHashLookupIndexQueryExactMatches(BackboneCell **backbone,
                              seq - lut_word_length,
                              offset - lut_word_length,
                              hash_func, mask,
-                             counts);
+                             pv_array);
             }
 
             /* if the current word contains an ambiguity, skip all the
@@ -316,7 +295,7 @@ void BlastHashLookupIndexQueryExactMatches(BackboneCell **backbone,
                          seq - lut_word_length, 
                          offset - lut_word_length,
                          hash_func, mask,
-                         counts);
+                         pv_array);
         }
         
     }

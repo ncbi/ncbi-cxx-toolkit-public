@@ -86,6 +86,31 @@ Int2 LookupTableWrapInit(BLAST_SequenceBlk* query,
         Blast_Message* *error_msg,
         BlastSeqSrc* seqsrc);
 
+/** Create the lookup table for all query words (possibly multithreaded,
+    depends on implementation).
+ * @param query The query sequence [in]
+ * @param lookup_options What kind of lookup table to build? [in]
+ * @param query_options options for query setup [in]
+ * @param lookup_segments Locations on query to be used for lookup table
+ *                        construction [in]
+ * @param sbp Scoring block containing matrix [in]
+ * @param lookup_wrap_ptr The initialized lookup table [out]
+ * @param rps_info Structure containing RPS blast setup information [in]
+ * @param error_msg message with warning or errors [in|out]
+ * @param seqsrc Database sequences [in]
+ * @param num_threads Number of threads to use [in]
+ */
+NCBI_XBLAST_EXPORT
+Int2 LookupTableWrapInit_MT(BLAST_SequenceBlk* query, 
+        const LookupTableOptions* lookup_options,	
+        const QuerySetUpOptions* query_options,
+        BlastSeqLoc* lookup_segments, BlastScoreBlk* sbp, 
+        LookupTableWrap** lookup_wrap_ptr, const BlastRPSInfo *rps_info,
+        Blast_Message* *error_msg,
+        BlastSeqSrc* seqsrc,
+        Uint4 num_threads);
+
+
 /** Deallocate memory for the lookup table */
 NCBI_XBLAST_EXPORT
 LookupTableWrap* LookupTableWrapFree(LookupTableWrap* lookup);

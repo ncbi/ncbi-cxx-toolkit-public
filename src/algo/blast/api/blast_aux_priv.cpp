@@ -121,11 +121,11 @@ BlastErrorCode2String(Int2 error_code)
 CRef<SBlastSetupData>
 BlastSetupPreliminarySearch(CRef<IQueryFactory> query_factory,
                             CRef<CBlastOptions> options,
-                            bool is_multi_threaded /* = false */)
+                            size_t num_threads /* = 1 */)
 {
     return BlastSetupPreliminarySearchEx(query_factory, options,
                                          CRef<CPssmWithParameters>(),
-                                         NULL, is_multi_threaded);
+                                         NULL, num_threads);
 }
 
 CRef<SBlastSetupData>
@@ -133,11 +133,12 @@ BlastSetupPreliminarySearchEx(CRef<IQueryFactory> qf,
                               CRef<CBlastOptions> options,
                               CConstRef<CPssmWithParameters> pssm,
                               BlastSeqSrc* seqsrc,
-                              bool is_multi_threaded)
+                              size_t num_threads)
 {
     CRef<SBlastSetupData> retval(new SBlastSetupData(qf, options));
     TSearchMessages m;
     options->Validate();
+    bool is_multi_threaded = num_threads > 1;
 
     // 0. Initialize the megablast database index.
     if (options->GetUseIndex()) {
@@ -209,7 +210,8 @@ BlastSetupPreliminarySearchEx(CRef<IQueryFactory> qf,
             CSetupFactory::CreateLookupTable(query_data, opts_memento.get(),
                                              sbp, lookup_segments_wrap,
                                              retval->m_InternalData->m_RpsData,
-                                             seqsrc);
+                                             seqsrc,
+                                             num_threads);
         retval->m_InternalData->m_LookupTable.Reset
             (new TLookupTableWrap(lut, LookupTableWrapFree));
     }

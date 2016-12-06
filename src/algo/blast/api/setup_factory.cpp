@@ -202,7 +202,8 @@ CSetupFactory::CreateLookupTable(CRef<ILocalQueryData> query_data,
                                  BlastScoreBlk* score_blk,
                                  CRef< CBlastSeqLocWrap > lookup_segments_wrap,
                                  const CBlastRPSInfo* rps_info,
-                                 BlastSeqSrc* seqsrc)
+                                 BlastSeqSrc* seqsrc,
+                                 size_t num_threads)
 {
     BLAST_SequenceBlk* queries = query_data->GetSequenceBlk();
     CBlast_Message blast_msg;
@@ -210,15 +211,16 @@ CSetupFactory::CreateLookupTable(CRef<ILocalQueryData> query_data,
 
     BlastSeqLoc * lookup_segments = lookup_segments_wrap->getLocs();
 
-    Int2 status = LookupTableWrapInit(queries,
-                                      opts_memento->m_LutOpts,
-                                      opts_memento->m_QueryOpts,
-                                      lookup_segments,
-                                      score_blk,
-                                      &retval,
-                                      rps_info ? (*rps_info)() : 0,
-                                      &blast_msg,
-                                      seqsrc);
+    Int2 status = LookupTableWrapInit_MT(queries,
+                                         opts_memento->m_LutOpts,
+                                         opts_memento->m_QueryOpts,
+                                         lookup_segments,
+                                         score_blk,
+                                         &retval,
+                                         rps_info ? (*rps_info)() : 0,
+                                         &blast_msg,
+                                         seqsrc,
+                                         num_threads);
     if (status != 0) {
          TSearchMessages search_messages;
          Blast_Message2TSearchMessages(blast_msg.Get(), 

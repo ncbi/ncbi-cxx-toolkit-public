@@ -1451,6 +1451,139 @@ s_NaHashLookupFillPV(BLAST_SequenceBlk* query,
     return 0;
 }
 
+/* Get number of set bits (adapted 	 
+   from http://graphics.stanford.edu/~seander/bithacks.html) 	 
+   @param v Bit vector [in] 	 
+   @return Number of set bits 	 
+*/ 	 
+static Uint4 s_Popcount(Uint4 v) 	 
+{ 	 
+    if (v==0) return 0; // early bailout for sparse vectors 	 
+    v = v - ((v >> 1) & 0x55555555); 	 
+    v = (v & 0x33333333) + ((v >> 2) & 0x33333333); 	 
+    v = ((v + (v >> 4)) & 0xF0F0F0F); 	 
+    v = v * 0x1010101; 	 
+	  	 
+    return v >> 24; // count 	 
+} 	 
+
+/** Sparse array of Uint1 implemented with a bitfield. The implementation
+    assumes that indices present are known beforehand and the array is used
+    only to access values with certain indices */
+typedef struct BlastSparseUint1Array
+{
+    Uint4* bitfield;       /**< bitfield with bits set for present indices */
+    Uint1* values;         /**< array of values for present indices */
+    Int4* counts;          /**< cumulative number of bits set */
+    Uint4 num_elements;    /**< number of values present in the array */
+    Uint4 length;          /**< length of the bitfield */
+} BlastSparseUint1Array;
+
+
+static BlastSparseUint1Array*
+BlastSparseUint1ArrayFree(BlastSparseUint1Array* array)
+{
+    if (!array) {
+        return NULL;
+    }
+
+    if (array->values) {
+        free(array->values);
+    }
+
+    if (array->counts) {
+        free(array->counts);
+    }
+
+    free(array);
+
+    return NULL;
+}
+
+static BlastSparseUint1Array*
+BlastSparseUint1ArrayNew(Uint4* bitfield, Int8 len)
+{
+    Int4 i;
+    BlastSparseUint1Array* retval = calloc(1, sizeof(BlastSparseUint1Array));
+    
+    if (!retval || !bitfield) {
+        return NULL;
+    }
+
+    retval->bitfield = bitfield;
+    retval->length = len >> PV_ARRAY_BTS;
+    retval->counts = calloc(retval->length, sizeof(Int4));
+    if (!retval->counts) {
+        BlastSparseUint1ArrayFree(retval);
+        return NULL;
+    }
+
+    retval->counts[0] = s_Popcount(retval->bitfield[0]);
+    for (i = 1;i < retval->length;i++) {
+        retval->counts[i] = retval->counts[i - 1] +
+            s_Popcount(retval->bitfield[i]);
+    }
+
+    Int4 num_elements = retval->counts[retval->length - 1];
+    retval->num_elements = num_elements;
+    retval->values = calloc(num_elements, sizeof(Uint1));
+    if (!retval->values) {
+        BlastSparseUint1ArrayFree(retval);
+        return NULL;
+    }
+
+    return retval;
+}
+
+/* Get index into array->values for a given vector index */
+static Int4
+BlastSparseUint1ArrayGetIndex(BlastSparseUint1Array* array, Int8 index)
+{
+    /* index into bitfield */
+    Int4 idx = index >> PV_ARRAY_BTS;
+
+    /* bit number within a bitfield cell (mod 32) */
+    Int4 bit_number = index & PV_ARRAY_MASK;
+
+    /* number of bits set before a specified bit */
+    Int4 bit_count = 0;
+
+    if (!array || idx >= array->length) {
+        return -1;
+    }
+
+    /* get number of bits set up to idx */
+    bit_count = (idx > 0) ? array->counts[idx - 1] : 0;
+    ASSERT(array->bitfield[idx] & (1 << bit_number));
+
+    /* add number of bits set up to bit number in the cell */
+    bit_count += s_Popcount(array->bitfield[idx] & ((1 << bit_number) - 1));
+    bit_count++;
+
+
+    ASSERT(bit_count > 0);
+    return bit_count - 1;
+}
+
+/* Get a pointer to a non zero element in the  sparse vector */
+static Uint1*
+BlastSparseUint1ArrayGetElement(BlastSparseUint1Array* array, Int8 index)
+{
+    Int4 sparse_index;
+
+    if (!array) {
+        return NULL;
+    }
+
+    sparse_index = BlastSparseUint1ArrayGetIndex(array, index);
+    ASSERT(sparse_index < array->num_elements);
+    if (sparse_index < 0 || sparse_index > array->num_elements) {
+        return NULL;
+    }
+
+    return array->values + sparse_index;
+}
+
 
 /** Scan a subject sequecne and update words counters, for 16-base words with
  *  scan step of 1. The counters are 4-bit and counting is done up to 10.
@@ -1462,18 +1595,19 @@ s_NaHashLookupFillPV(BLAST_SequenceBlk* query,
 static Int2
 s_NaHashLookupCountWordsInSubject_16_1(const BLAST_SequenceBlk* sequence,
                                        BlastNaHashLookupTable* lookup,
-                                       Uint1* counts)
+                                       BlastSparseUint1Array* counts)
 {
     Uint1 *s;
     Int4 i;
     Int8 mask = (1ULL << (16 * BITS_PER_NUC)) - 1;
-    Int8 word, index, w;
+    Int8 word, w;
     const Int4 kNumWords
         = sequence->length - lookup->lut_word_length;
 
     PV_ARRAY_TYPE* pv = lookup->pv;
     Int4 pv_array_bts = lookup->pv_array_bts;
     Int4 shift;
+    Uint1* pelem;
 
     if (!sequence || !counts || !lookup || !pv) {
         return -1;
@@ -1504,20 +1638,162 @@ s_NaHashLookupCountWordsInSubject_16_1(const BLAST_SequenceBlk* sequence,
         }
 
         /* update the counter */
-        index = word / 2;
-        if (word & 1) {
-            if ((counts[index] & 0xf) < MAX_WORD_COUNT) {
-                counts[index]++;
-            }
-        }
-        else {
-            if ((counts[index] >> 4) < MAX_WORD_COUNT) {
-                counts[index] += 1 << 4;
-            }
+        pelem = BlastSparseUint1ArrayGetElement(counts, word);
+        if (*pelem < MAX_WORD_COUNT) {
+            (*pelem)++;
         }
     }
 
     return 0;
+}
+
+
+/* Thread local data for database word counting phase of lookup table
+   generation (for Magic-BLAST) */
+typedef struct NaHashLookupThreadData
+{
+    BlastSeqSrcGetSeqArg* seq_arg;
+    BlastSeqSrcIterator** itr;
+    BlastSeqSrc** seq_src;
+    BlastSparseUint1Array** word_counts;
+    Int4 num_threads;
+} NaHashLookupThreadData;
+
+
+static NaHashLookupThreadData* NaHashLookupThreadDataFree(
+                                                  NaHashLookupThreadData* th)
+{
+    if (!th) {
+        return NULL;
+    }
+
+    if (th->seq_arg) {
+        free(th->seq_arg);
+    }
+
+    if (th->itr) {
+        Int4 i;
+        for (i = 0;i < th->num_threads;i++) {
+            BlastSeqSrcIteratorFree(th->itr[i]);
+        }
+        free(th->itr);
+    }
+
+    if (th->seq_src) {
+        Int4 i;
+        for (i = 0;i < th->num_threads;i++) {
+            BlastSeqSrcFree(th->seq_src[i]);
+        }
+        free(th->seq_src);
+    }
+
+    if (th->word_counts) {
+        Int4 i;
+        for (i = 1;i < th->num_threads;i++) {
+            if (th->word_counts[i]->values) {
+                free(th->word_counts[i]->values);
+            }
+
+        }
+        BlastSparseUint1ArrayFree(th->word_counts[0]);
+        free(th->word_counts);
+    }
+
+    return NULL;
+}
+
+
+static NaHashLookupThreadData* NaHashLookupThreadDataNew(Int4 num_threads,
+                                               BlastNaHashLookupTable* lookup,
+                                               BlastSeqSrc* seq_src)
+{
+    Int4 i;
+
+    if (num_threads < 1 || !lookup || !seq_src) {
+        return NULL;
+    }
+
+    NaHashLookupThreadData* retval = calloc(1, sizeof(NaHashLookupThreadData));
+    if (!retval) {
+        return NULL;
+    }
+
+    retval->seq_arg = calloc(num_threads, sizeof(BlastSeqSrcGetSeqArg));
+    if (!retval->seq_arg) {
+        NaHashLookupThreadDataFree(retval);
+        return NULL;
+    }
+
+    retval->itr = calloc(num_threads, sizeof(BlastSeqSrcIterator*));
+    if (!retval->itr) {
+        NaHashLookupThreadDataFree(retval);
+        return NULL;
+    }
+
+    retval->seq_src = calloc(num_threads, sizeof(BlastSeqSrc*));
+    if (!retval->seq_src) {
+        NaHashLookupThreadDataFree(retval);
+        return NULL;
+    }
+
+    retval->word_counts = calloc(num_threads, sizeof(BlastSparseUint1Array*));
+    if (!retval->word_counts) {
+        NaHashLookupThreadDataFree(retval);
+        return NULL;
+    }
+
+    for (i = 0;i < num_threads;i++) {
+            
+        retval->seq_arg[i].encoding = eBlastEncodingProtein;
+
+        retval->seq_src[i] = BlastSeqSrcCopy(seq_src);
+        if (!retval->seq_src[i]) {
+            NaHashLookupThreadDataFree(retval);
+            return NULL;
+        }
+
+        /* each thread must have its own iterator, the small batch seems to
+           work better for work balansing between threads */
+        retval->itr[i] = BlastSeqSrcIteratorNewEx(1);
+        if (!retval->itr[i]) {
+            NaHashLookupThreadDataFree(retval);
+            return NULL;
+        }
+
+        if (i == 0) {
+            retval->word_counts[i] = BlastSparseUint1ArrayNew(lookup->pv,
+                                        1LL << (2 * lookup->lut_word_length));
+
+            if (!retval->word_counts[i]) {
+                NaHashLookupThreadDataFree(retval);
+                return NULL;
+            }
+        }
+        else {
+            /* Make shallow copies of the counts array. We do not copy data
+               that are read only to save memory. */
+            retval->word_counts[i] = malloc(sizeof(BlastSparseUint1Array));
+            if (!retval->word_counts[i]) {
+                NaHashLookupThreadDataFree(retval);
+                return NULL;
+            }
+            memcpy(retval->word_counts[i], retval->word_counts[0],
+                   sizeof(BlastSparseUint1Array));
+
+            retval->word_counts[i]->values = calloc(
+                                        retval->word_counts[i]->num_elements,
+                                        sizeof(Uint1));
+
+            if (!retval->word_counts[i]->values) {
+                NaHashLookupThreadDataFree(retval);
+                return NULL;
+            }
+        }
+    }
+
+    retval->num_threads = num_threads;
+
+    return retval;
 }
 
 /** Scan database sequences and count query words that appear in the database.
@@ -1526,35 +1802,113 @@ s_NaHashLookupCountWordsInSubject_16_1(const BLAST_SequenceBlk* sequence,
  *
  * @param seq_src Source for subject sequences [in]
  * @param lookup Hashed lookuptable [in|out]
+ * @param num_threads Number of threads to use [in]
  */
 static Int2
 s_NaHashLookupScanSubjectForWordCounts(BlastSeqSrc* seq_src,
                                        BlastNaHashLookupTable* lookup,
-                                       Uint1* counts)
+                                       Uint4 num_threads)
 {
-    BlastSeqSrcIterator* itr;
-    BlastSeqSrcGetSeqArg seq_arg;
+    Uint4 i;
+    Int4 k, b;
+    Int4 th_batch = BlastSeqSrcGetNumSeqs(seq_src) / num_threads;
+    NaHashLookupThreadData* th_data = NULL;
 
-    if (!seq_src || !lookup || !lookup->pv || !counts) {
+    if (!seq_src || !lookup || !lookup->pv) {
         return -1;
     }
 
-    memset(&seq_arg, 0, sizeof(seq_arg));
-    seq_arg.encoding = eBlastEncodingProtein;
+    ASSERT(lookup->lu_word_length == 16);
 
-    /* scan subject sequences and update the counters for each */
-    BlastSeqSrcResetChunkIterator(seq_src);
-    itr = BlastSeqSrcIteratorNewEx(MAX(BlastSeqSrcGetNumSeqs(seq_src)/100,1));
-    while ((seq_arg.oid = BlastSeqSrcIteratorNext(seq_src, itr))
-           != BLAST_SEQSRC_EOF) {
+    /* pv array must be one bit per word */
+    ASSERT(lookup->pv_array_bts == 5);
 
-        BlastSeqSrcGetSequence(seq_src, &seq_arg);
-        s_NaHashLookupCountWordsInSubject_16_1(seq_arg.seq, lookup, counts);
-        BlastSeqSrcReleaseSequence(seq_src, &seq_arg);
+    th_data = NaHashLookupThreadDataNew(num_threads, lookup, seq_src);
+    if (!th_data) {
+        return -1;
     }
 
-    BlastSequenceBlkFree(seq_arg.seq);
-    BlastSeqSrcIteratorFree(itr);
+    /* reset database iterator */
+    BlastSeqSrcResetChunkIterator(seq_src);
+
+    /* scan subject sequences and update the counters for each */
+#pragma omp parallel for if (num_threads > 1) num_threads(num_threads) \
+   default(none) shared(num_threads, th_data, lookup, \
+                        th_batch) private(i) schedule(dynamic, 1)
+
+    for (i = 0;i < num_threads;i++) {
+        Int4 j;
+        for (j = 0;j < th_batch;j++) {
+
+#pragma omp critical (get_sequence_for_word_counts)
+            {
+                th_data->seq_arg[i].oid = BlastSeqSrcIteratorNext(
+                                                         th_data->seq_src[i],
+                                                         th_data->itr[i]);
+
+                if (th_data->seq_arg[i].oid != BLAST_SEQSRC_EOF) {
+                    BlastSeqSrcGetSequence(th_data->seq_src[i],
+                                           &th_data->seq_arg[i]);
+                }
+            }
+
+            if (th_data->seq_arg[i].oid != BLAST_SEQSRC_EOF) {
+
+                s_NaHashLookupCountWordsInSubject_16_1(th_data->seq_arg[i].seq,
+                                                       lookup,
+                                                       th_data->word_counts[i]);
+                BlastSeqSrcReleaseSequence(th_data->seq_src[i],
+                                           &th_data->seq_arg[i]);
+            }
+        }
+    }
+
+    /* scan the last sequences */
+    while ((th_data->seq_arg[0].oid = BlastSeqSrcIteratorNext(seq_src,
+                                                              th_data->itr[0]))
+           != BLAST_SEQSRC_EOF) {
+
+        BlastSeqSrcGetSequence(seq_src, &th_data->seq_arg[0]);
+        s_NaHashLookupCountWordsInSubject_16_1(th_data->seq_arg[0].seq, lookup,
+                                               th_data->word_counts[0]);
+        BlastSeqSrcReleaseSequence(seq_src, &th_data->seq_arg[0]);
+    }
+    BlastSequenceBlkFree(th_data->seq_arg[0].seq);
+
+    /* aggregate counts */
+    for (i = 0;i < th_data->word_counts[0]->num_elements;i++) {
+        for (k = 1;k < num_threads;k++) {
+            th_data->word_counts[0]->values[i] =
+                MIN(th_data->word_counts[0]->values[i] +
+                    th_data->word_counts[k]->values[i],
+                    MAX_WORD_COUNT);
+        }
+    }
+    
+    /* iterate over word counts and clear bits for words that appear too
+       often or not at all */
+    i = 0;
+    b = 1;
+    k = 0;
+    while (i < th_data->word_counts[0]->length) {
+        ASSERT(k < th_data->word_counts[0]->num_elements);
+
+        if (th_data->word_counts[0]->bitfield[i] & b) {
+            if (th_data->word_counts[0]->values[k] == 0 ||
+                th_data->word_counts[0]->values[k] >= MAX_WORD_COUNT) {
+
+                th_data->word_counts[0]->bitfield[i] &= ~b;
+            }
+            k++;
+        }
+        b <<= 1;
+        if (b == 0) {
+            i++;
+            b = 1;
+        }
+    }
+
+    NaHashLookupThreadDataFree(th_data);
 
     return 0;
 }
@@ -1838,14 +2192,14 @@ Int4 BlastNaHashLookupTableNew(BLAST_SequenceBlk* query,
                                BlastNaHashLookupTable** lut,
                                const LookupTableOptions* opt, 
                                const QuerySetUpOptions* query_options,
-                               BlastSeqSrc* seqsrc)
+                               BlastSeqSrc* seqsrc,
+                               Uint4 num_threads)
 {
     BackboneCell **thin_backbone = NULL;
     BlastNaHashLookupTable *lookup = *lut =
         (BlastNaHashLookupTable*) calloc(1, sizeof(BlastNaHashLookupTable));
     /* Number of possible 16-base words */
     const Int8 kNumWords = (1ULL << 32);
-    Uint1* counts = NULL;
     Int4 num_hash_bits = 24;
     Int8 database_length = 0LL;
 
@@ -1878,30 +2232,17 @@ Int4 BlastNaHashLookupTableNew(BLAST_SequenceBlk* query,
                                           sizeof(BackboneCell*));
     ASSERT(thin_backbone != NULL);
 
-    /* PV array does not use hashing, and uses 64 words per bit */
-    lookup->pv_array_bts = 11;
-    lookup->pv = (PV_ARRAY_TYPE*)calloc(kNumWords / 64 / PV_ARRAY_BYTES,
+    /* PV array does not use hashing */
+    lookup->pv_array_bts = PV_ARRAY_BTS;
+    lookup->pv = (PV_ARRAY_TYPE*)calloc(kNumWords / PV_ARRAY_BYTES,
                                         sizeof(PV_ARRAY_TYPE));
     ASSERT(lookup->pv);
-
-    
-    /* allocate word counters, to save memory we are using 4 bits per word */
-    if (opt->db_filter) {
-        ASSERT(lookup->word_length == 16);
-        counts = (Uint1*)calloc(kNumWords / 2, sizeof(Uint1));
-        if (counts == NULL) {
-    	    sfree(thin_backbone);
-            BlastNaHashLookupTableDestruct(lookup);
-            return -1;
-        }
-    }  
 
     /* count words in the database */
     if (opt->db_filter) {
         s_NaHashLookupFillPV(query, locations, lookup);
-        s_NaHashLookupScanSubjectForWordCounts(seqsrc, lookup, counts);
+        s_NaHashLookupScanSubjectForWordCounts(seqsrc, lookup, num_threads);
     }
-
     
     BlastHashLookupIndexQueryExactMatches(thin_backbone,
                                           lookup->word_length,
@@ -1910,7 +2251,8 @@ Int4 BlastNaHashLookupTableNew(BLAST_SequenceBlk* query,
                                           query, locations,
                                           lookup->hash_callback,
                                           lookup->mask,
-                                          counts);
+                                          lookup->pv);
+
     if (locations && 
         lookup->word_length > lookup->lut_word_length && 
         s_HasMaskAtHashEnabled(query_options)) {
@@ -1918,9 +2260,6 @@ Int4 BlastNaHashLookupTableNew(BLAST_SequenceBlk* query,
     }
     s_BlastNaHashLookupFinalize(thin_backbone, lookup);
     sfree(thin_backbone);
-    if (counts) {
-        sfree(counts);
-    }
 
     return 0;
 }

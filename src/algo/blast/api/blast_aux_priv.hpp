@@ -118,14 +118,16 @@ struct SBlastSetupData : public CObject {
     TSearchMessages m_Messages;
 };
 
+
 /// Set up internal data structures used by the BLAST CORE engine
 /// @param query_factory source of query sequence data structures [in]
 /// @param options BLAST options [in]
-/// @param is_multi_threaded whether this search is multi-threaded or not [in]
+/// @param num_threads number of threads [in]
 CRef<SBlastSetupData>
 BlastSetupPreliminarySearch(CRef<IQueryFactory> query_factory,
                             CRef<CBlastOptions> options,
-                            bool is_multi_threaded = false);
+                            size_t num_threads = 1);
+
 
 /// Extended interface to set up internal data structures used by the BLAST
 /// CORE engine
@@ -133,13 +135,13 @@ BlastSetupPreliminarySearch(CRef<IQueryFactory> query_factory,
 /// @param options BLAST options [in]
 /// @param pssm PSSM [in]
 /// @param seqsrc source of database/subject sequence data [in]
-/// @param is_multi_threaded whether this search is multi-threaded or not [in]
+/// @param num_threads number of threads to use [in]
 CRef<SBlastSetupData>
 BlastSetupPreliminarySearchEx(CRef<IQueryFactory> qf,
                               CRef<CBlastOptions> options,
                               CConstRef<CPssmWithParameters> pssm,
                               BlastSeqSrc* seqsrc,
-                              bool is_multi_threaded);
+                              size_t num_threads);
 
 /// Builds an CSearchResultSet::TAncillaryVector
 /// @param program BLAST program [in]

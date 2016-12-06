@@ -73,13 +73,18 @@ CBlastPrelimSearch::CBlastPrelimSearch(CRef<IQueryFactory> query_factory,
 
 CBlastPrelimSearch::CBlastPrelimSearch(CRef<IQueryFactory> query_factory,
                                        CRef<CBlastOptions> options,
-                                       CRef<CLocalDbAdapter> db)
+                                       CRef<CLocalDbAdapter> db,
+                                       size_t num_threads)
     : m_QueryFactory(query_factory), m_InternalData(new SInternalData),
     m_Options(options), m_DbAdapter(db), m_DbInfo(NULL)
 {
     BlastSeqSrc* seqsrc = db->MakeSeqSrc();
-    x_Init(query_factory, options, CRef<CPssmWithParameters>(), seqsrc);
+    x_Init(query_factory, options, CRef<CPssmWithParameters>(), seqsrc,
+           num_threads);
     m_InternalData->m_SeqSrc.Reset(new TBlastSeqSrc(seqsrc, 0));
+    if (num_threads > 1) {
+        SetNumberOfThreads(num_threads);
+    }
 }
 
 CBlastPrelimSearch::CBlastPrelimSearch(CRef<IQueryFactory> query_factory,
@@ -120,11 +125,12 @@ void
 CBlastPrelimSearch::x_Init(CRef<IQueryFactory> query_factory,
                            CRef<CBlastOptions> options,
                            CConstRef<objects::CPssmWithParameters> pssm,
-                           BlastSeqSrc* seqsrc )
+                           BlastSeqSrc* seqsrc,
+                           size_t num_threads)
 {
     CRef<SBlastSetupData> setup_data =
         BlastSetupPreliminarySearchEx(query_factory, options, pssm, seqsrc,
-                                      IsMultiThreaded());
+                                      num_threads);
     m_InternalData = setup_data->m_InternalData;
     copy(setup_data->m_Masks.begin(), setup_data->m_Masks.end(),
          back_inserter(m_MasksForAllQueries));
