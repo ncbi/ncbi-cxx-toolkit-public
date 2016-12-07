@@ -511,9 +511,8 @@ void CSplitParser::Load(CTSE_Chunk_Info& chunk,
             chunk.x_LoadSequence(place, piece.GetStart(), piece.GetData());
         }
 
-        ITERATE ( CID2S_Chunk_Data::TBioseqs, it, data.GetBioseqs() ) {
-            const CBioseq& bioseq = **it;
-            chunk.x_LoadBioseq(place, bioseq);
+        if ( !data.GetBioseqs().empty() ) {
+            chunk.x_LoadBioseqs(place, data.GetBioseqs());
         }
     }
 }

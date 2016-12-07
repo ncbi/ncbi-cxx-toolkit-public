@@ -735,8 +735,17 @@ void CTSE_Chunk_Info::x_LoadAnnot(const TPlace& place,
 void CTSE_Chunk_Info::x_LoadBioseq(const TPlace& place,
                                    const CBioseq& bioseq)
 {
+    list< CRef<CBioseq> > bioseqs;
+    bioseqs.push_back(Ref(const_cast<CBioseq*>(&bioseq)));
+    x_LoadBioseqs(place, bioseqs);
+}
+
+
+void CTSE_Chunk_Info::x_LoadBioseqs(const TPlace& place,
+                                    const list< CRef<CBioseq> >& bioseqs)
+{
     _ASSERT(x_Attached());
-    m_SplitInfo->x_LoadBioseq(place, bioseq);
+    m_SplitInfo->x_LoadBioseqs(place, bioseqs, GetChunkId());
 }
 
 

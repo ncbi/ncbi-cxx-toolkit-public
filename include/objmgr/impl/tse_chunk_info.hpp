@@ -199,7 +199,9 @@ public:
     // data attachment
     void x_LoadDescr(const TPlace& place, const CSeq_descr& descr);
     void x_LoadAnnot(const TPlace& place, const CSeq_annot& annot);
+    NCBI_DEPRECATED
     void x_LoadBioseq(const TPlace& place, const CBioseq& bioseq);
+    void x_LoadBioseqs(const TPlace& place, const list< CRef<CBioseq> >& bioseqs);
     void x_LoadSequence(const TPlace& place, TSeqPos pos,
                         const TSequence& seq);
     void x_LoadAssembly(const TBioseqId& seq_id, const TAssembly& assembly);

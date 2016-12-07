@@ -454,6 +454,44 @@ CConstRef<CSeq_entry_Info> CBioseq_set_Info::GetFirstEntry(void) const
 }
 
 
+void CBioseq_set_Info::x_SetChunkBioseqs(const list< CRef<CBioseq> >& bioseqs, int chunk_id)
+{
+    CBioseq_set::TSeq_set& obj_seq_set = m_Object->SetSeq_set();
+    CBioseq_set::TSeq_set::iterator insert_iter = obj_seq_set.end();
+    size_t seq_index = m_Seq_set.size();
+    TChunkSeqSets::iterator chunk_iter = m_ChunkSeqSets.end();
+    while ( chunk_iter != m_ChunkSeqSets.begin() ) {
+        --chunk_iter;
+        if ( chunk_iter->first > chunk_id ) {
+            seq_index -= chunk_iter->second.count;
+            insert_iter = chunk_iter->second.first_iter;
+            // verify consistency between obj_seq_set (in CBioseq_set) and m_Seq_set (in CBioseq_set_Info)
+            _ASSERT(seq_index < m_Seq_set.size());
+            _ASSERT(m_Seq_set[seq_index]->GetSeq_entryCore() == *chunk_iter->second.first_iter);
+            continue;
+        }
+        // this chunk is before new one
+        ++chunk_iter;
+        break;
+    }
+    size_t insert_count = bioseqs.size();
+    SChunkSeqSet& seq_set = m_ChunkSeqSets[chunk_id];
+    m_Seq_set.insert(m_Seq_set.begin()+seq_index, insert_count, TSeq_set::value_type());
+    for ( auto& i : bioseqs ) {
+        CRef<CSeq_entry> entry(new CSeq_entry);
+        entry->SetSeq(i.GetNCObject());
+        CRef<CSeq_entry_Info> info(new CSeq_entry_Info(*entry));
+        CBioseq_set::TSeq_set::iterator added_iter = obj_seq_set.insert(insert_iter, entry);
+        if ( seq_set.count++ == 0 ) {
+            seq_set.first_iter = added_iter;
+        }
+        _ASSERT(!m_Seq_set[seq_index]);
+        m_Seq_set[seq_index++] = info;
+        x_AttachEntry(info);
+    }
+}
+
+
 void CBioseq_set_Info::x_AttachEntry(CRef<CSeq_entry_Info> entry)
 {
     _ASSERT(!entry->HasParent_Info());

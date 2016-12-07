@@ -524,22 +524,12 @@ void CTSE_Split_Info::x_LoadAnnot(const TPlace& place,
     }
 }
 
-void CTSE_Split_Info::x_LoadBioseq(const TPlace& place, const CBioseq& bioseq)
+void CTSE_Split_Info::x_LoadBioseqs(const TPlace& place, const list< CRef<CBioseq> >& bioseqs, int chunk_id)
 {
-    CRef<CSeq_entry> add;
     NON_CONST_ITERATE ( TTSE_Set, it, m_TSE_Set ) {
         CTSE_Info& tse = *it->first;
         ITSE_Assigner& listener = *it->second;
-        if ( !add ) {
-            add = new CSeq_entry;
-            add->SetSeq(const_cast<CBioseq&>(bioseq));
-        }
-        else {
-            CRef<CSeq_entry> tmp(add);
-            add.Reset(new CSeq_entry);
-            add->Assign(*tmp);
-        }
-        listener.LoadBioseq(tse, place, add);
+        listener.LoadChunkBioseqs(tse, place, bioseqs, chunk_id);
     }
 }
 

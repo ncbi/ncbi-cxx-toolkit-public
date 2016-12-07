@@ -205,7 +205,8 @@ void CTSE_Default_Assigner::LoadAnnot(CTSE_Info& tse,
 
 void CTSE_Default_Assigner::LoadBioseq(CTSE_Info& tse,
                                        const TPlace& place, 
-                                       CRef<CSeq_entry> entry)
+                                       CRef<CSeq_entry> entry,
+                                       int chunk_id)
 {
     CRef<CSeq_entry_Info> entry_info;
     {{
@@ -217,7 +218,7 @@ void CTSE_Default_Assigner::LoadBioseq(CTSE_Info& tse,
             tse.x_SetObject(*entry_info, 0); //???
         }
         else {
-            entry_info = x_GetBioseq_set(tse, place).AddEntry(*entry);
+            entry_info = x_GetBioseq_set(tse, place).AddEntry(*entry, chunk_id);
         }
     }}
     if ( !entry_info->x_GetBaseInfo().GetAnnot().empty() ) {
@@ -225,6 +226,26 @@ void CTSE_Default_Assigner::LoadBioseq(CTSE_Info& tse,
         if( tse.HasDataSource() )
             guard.Guard(tse.GetDataSource());
         //tse.UpdateAnnotIndex(*entry_info);
+    }
+}
+
+void CTSE_Default_Assigner::LoadChunkBioseqs(CTSE_Info& tse,
+                                        const TPlace& place, 
+                                        const list< CRef<CBioseq> >& bioseqs,
+                                        int chunk_id)
+{
+    CDataSource::TMainLock::TWriteLockGuard guard(eEmptyGuard);
+    if ( tse.HasDataSource() )
+        guard.Guard(tse.GetDataSource().GetMainLock());
+    if ( place == TPlace(CSeq_id_Handle(), kTSE_Place_id) ) {
+        _ASSERT(bioseqs.size() == 1);
+        CRef<CSeq_entry> entry(new CSeq_entry);
+        entry->SetSeq(bioseqs.front().GetNCObject());
+        CRef<CSeq_entry_Info> entry_info(new CSeq_entry_Info(*entry));
+        tse.x_SetObject(*entry_info, 0); //???
+    }
+    else {
+        x_GetBioseq_set(tse, place).x_SetChunkBioseqs(bioseqs, chunk_id);
     }
 }
 

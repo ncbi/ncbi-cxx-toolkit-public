@@ -133,7 +133,7 @@ public:
     // return first already loaded Seq-entry or null
     CConstRef<CSeq_entry_Info> GetFirstEntry(void) const;
 
-    CRef<CSeq_entry_Info> AddEntry(CSeq_entry& entry, int index = -1, 
+    CRef<CSeq_entry_Info> AddEntry(CSeq_entry& entry, int index, // index == -1 -> at the end
                                    bool set_uniqid = false);
     void AddEntry(CRef<CSeq_entry_Info> entry, int index = -1, 
                   bool set_uniqid = false);
@@ -160,6 +160,8 @@ public:
     void x_AttachEntry(CRef<CSeq_entry_Info> info);
     void x_DetachEntry(CRef<CSeq_entry_Info> info);
 
+    void x_SetChunkBioseqs(const list< CRef<CBioseq> >& bioseqs, int chunk_id);
+    
 protected:
     friend class CDataSource;
     friend class CScope_Impl;
@@ -205,6 +207,15 @@ private:
 
     // members
     TSeq_set            m_Seq_set;
+
+    struct SChunkSeqSet {
+        SChunkSeqSet() : count(0) {}
+        
+        size_t count;
+        CBioseq_set::TSeq_set::iterator first_iter;
+    };
+    typedef map<TChunkId, SChunkSeqSet> TChunkSeqSets;
+    TChunkSeqSets m_ChunkSeqSets;
 
     //
     TChunkIds           m_BioseqChunks;
