@@ -502,7 +502,7 @@ bool CBedWriter::xWriteFeature(
     CSeq_annot_Handle annot_handle,
     CBioseq_Handle dummy_arg)
 {
-    // Terribly inefficient. 
+    // Inefficient!
     // Store track and annot_handle, and only recreate track 
     // if the annot_handle has changed since the last call.
     CBedTrackRecord track;
@@ -511,6 +511,29 @@ bool CBedWriter::xWriteFeature(
     }
 
     return xWriteFeature(track, mapped_feat);
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CBedWriter::xWriteFeature(
+    CFeat_CI feat_it) 
+//  ----------------------------------------------------------------------------
+{
+    if (!feat_it) {
+        return false;
+    }
+
+    const auto& annot_handle = feat_it.GetAnnot();
+
+    // Inefficient!
+    // Store track and annot_handle, and only recreate track 
+    // if the annot_handle has changed since the last call.
+    CBedTrackRecord track;
+    if ( ! track.Assign(*(annot_handle.GetCompleteSeq_annot())) ) {
+        return false;
+    }
+
+    return xWriteFeature(track, *feat_it);
 }
 
 

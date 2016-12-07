@@ -59,27 +59,27 @@ protected:
     virtual string StrAttributes() const;
 
     virtual bool x_AssignSource(
-        CMappedFeat );
+        const CMappedFeat& );
     virtual bool x_AssignType(
-        CMappedFeat,
+        const CMappedFeat&,
         unsigned int =0 );
     virtual bool x_AssignAttributes(
-        CMappedFeat,
+        const CMappedFeat&,
         unsigned int =0);
     virtual bool x_AssignAttributeID(
-        CMappedFeat );
+        const CMappedFeat& );
     virtual bool x_AssignAttributeParent(
-        CMappedFeat );
+        const CMappedFeat& );
     virtual bool x_AssignAttributeName(
-        CMappedFeat );
+        const CMappedFeat& );
     virtual bool x_AssignAttributeVarType(
-        CMappedFeat );
+        const CMappedFeat& );
     virtual bool x_AssignAttributeStartRange(
-        CMappedFeat );
+        const CMappedFeat& );
     virtual bool x_AssignAttributeEndRange(
-        CMappedFeat );
+        const CMappedFeat& );
     virtual bool x_AssignAttributesCustom(
-        CMappedFeat );
+        const CMappedFeat& );
 
     static int s_unique;
     string s_UniqueId();

@@ -183,24 +183,39 @@ bool CGvfWriter::WriteHeader()
 
 //  ----------------------------------------------------------------------------
 bool CGvfWriter::xWriteFeature(
-    CGffFeatureContext& fc,
-    CMappedFeat mf )
+    CFeat_CI feat_it)
 //  ----------------------------------------------------------------------------
 {
+    if (!feat_it) {
+        return false;
+    }
+
+    CGffFeatureContext fc(feat_it, CBioseq_Handle(), feat_it.GetAnnot());
+    return (fc, *feat_it);
+}
+
+//  ----------------------------------------------------------------------------
+bool CGvfWriter::xWriteFeature(
+    CGffFeatureContext& fc,
+    const CMappedFeat& mf )
+//  ----------------------------------------------------------------------------
+{
+    CGffFeatureContext dummy_fc;
+
     switch( mf.GetFeatSubtype() ) {
 
     default:
         return true;
 
     case CSeqFeatData::eSubtype_variation_ref:
-        return xWriteFeatureVariationRef( fc, mf );
+        return xWriteFeatureVariationRef( dummy_fc, mf );
     }
 }
 
 //  ----------------------------------------------------------------------------
 bool CGvfWriter::xWriteFeatureVariationRef(
     CGffFeatureContext& fc,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     CRef<CGvfWriteRecord> pRecord( new CGvfWriteRecord( fc ) );

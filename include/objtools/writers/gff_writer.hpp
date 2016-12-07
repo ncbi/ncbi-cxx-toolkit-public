@@ -216,7 +216,7 @@ protected:
 
     virtual bool xWriteFeature(
         CGffFeatureContext&,
-        CMappedFeat );
+        const CMappedFeat& );
 
     virtual bool x_WriteAssemblyInfo(
         const string&,

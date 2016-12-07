@@ -55,7 +55,6 @@
 #include <objmgr/util/feature.hpp>
 #include <objmgr/seq_vector.hpp>
 
-#include <objtools/writers/feature_context.hpp>
 #include <objtools/variation/variation_utils.hpp>
 #include <objtools/writers/writer_exception.hpp>
 #include <objtools/writers/vcf_writer.hpp>
@@ -270,10 +269,9 @@ bool CVcfWriter::x_WriteData(
     sel.SetSortOrder( SAnnotSelector::eSortOrder_None );
 
     CFeat_CI mf(sah, sel);
-    CGffFeatureContext fc(mf);
 
     for ( ; mf; ++mf ) {
-        if ( ! x_WriteFeature( fc, *mf ) ) {
+        if ( ! x_WriteFeature(*mf ) ) {
             return false;
         }
     }
@@ -314,23 +312,21 @@ void CVcfWriter::x_GetTypeRefAlt(const CVariation_inst &inst, int &rtype, string
     }
 }
 
-
-
 //  ----------------------------------------------------------------------------
 bool CVcfWriter::xWriteFeature(
-    const CMappedFeat& feat,
-    CSeq_annot_Handle dummy_arg1,
-    CBioseq_Handle dummy_arg2)
+    CFeat_CI feat_it) 
 //  ----------------------------------------------------------------------------
 {
-    CGffFeatureContext dummy_context;
-    return x_WriteFeature(dummy_context, feat);
+    if (!feat_it) {
+        return false;
+    }
+
+    return x_WriteFeature(*feat_it);
 }
 
 
 //  ----------------------------------------------------------------------------
 bool CVcfWriter::x_WriteFeature(
-    CGffFeatureContext& context,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 { 
@@ -414,13 +410,13 @@ bool CVcfWriter::x_WriteFeature(
         }
     }
 
-    if (!x_WriteFeatureChrom(context, mf)) {
+    if (!x_WriteFeatureChrom(mf)) {
         return false;
     }
-    if (!x_WriteFeaturePos(context, mf, start, type)) {
+    if (!x_WriteFeaturePos(mf, start, type)) {
         return false;
     }
-    if (!x_WriteFeatureId(context, mf)) {
+    if (!x_WriteFeatureId(mf)) {
         return false;
     }
     if (!x_WriteFeatureRef(start, type, anchor, ref)) {
@@ -429,16 +425,16 @@ bool CVcfWriter::x_WriteFeature(
     if (!x_WriteFeatureAlt(start, type, anchor, alt_types, alt)) {
         return false;
     }
-    if (!x_WriteFeatureQual(context, mf)) {
+    if (!x_WriteFeatureQual(mf)) {
         return false;
     }
-    if (!x_WriteFeatureFilter(context, mf)) {
+    if (!x_WriteFeatureFilter(mf)) {
         return false;
     }
-    if (!x_WriteFeatureInfo(context, mf)) {
+    if (!x_WriteFeatureInfo(mf)) {
         return false;
     }
-    if (!x_WriteFeatureGenotypeData(context, mf)) {
+    if (!x_WriteFeatureGenotypeData(mf)) {
         return false;
     }
     m_Os << '\n';
@@ -447,7 +443,6 @@ bool CVcfWriter::x_WriteFeature(
 
 //  ----------------------------------------------------------------------------
 bool CVcfWriter::x_WriteFeatureChrom(
-    CGffFeatureContext& context,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
@@ -506,7 +501,6 @@ enum EType {
 
 //  ----------------------------------------------------------------------------
 bool CVcfWriter::x_WriteFeaturePos(
-    CGffFeatureContext& context,
     CMappedFeat mf,
     unsigned int start,
     const int type
@@ -524,7 +518,6 @@ bool CVcfWriter::x_WriteFeaturePos(
 
 //  ----------------------------------------------------------------------------
 bool CVcfWriter::x_WriteFeatureId(
-    CGffFeatureContext& context,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
@@ -633,7 +626,6 @@ bool CVcfWriter::x_WriteFeatureAlt(
 
 //  ----------------------------------------------------------------------------
 bool CVcfWriter::x_WriteFeatureQual(
-    CGffFeatureContext& context,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
@@ -658,7 +650,6 @@ bool CVcfWriter::x_WriteFeatureQual(
 
 //  ----------------------------------------------------------------------------
 bool CVcfWriter::x_WriteFeatureFilter(
-    CGffFeatureContext& context,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
@@ -686,7 +677,6 @@ bool CVcfWriter::x_WriteFeatureFilter(
 
 //  ----------------------------------------------------------------------------
 bool CVcfWriter::x_WriteFeatureInfo(
-    CGffFeatureContext& context,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
@@ -904,7 +894,6 @@ bool CVcfWriter::x_WriteFeatureInfo(
 
 //  ----------------------------------------------------------------------------
 bool CVcfWriter::x_WriteFeatureGenotypeData(
-    CGffFeatureContext& context,
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {

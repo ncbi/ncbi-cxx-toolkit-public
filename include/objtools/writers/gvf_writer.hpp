@@ -49,7 +49,7 @@ class CGffAlignmentRecord;
 //  ============================================================================
 class NCBI_XOBJWRITE_EXPORT CGvfWriter
 //  ============================================================================
-    : public CGff3Writer
+    : public CGff3Writer, CFeatWriter
 {
 public:
     CGvfWriter(
@@ -66,12 +66,17 @@ public:
         const CSeq_annot& );
 
 protected:
+
+    virtual bool xWriteFeature(
+        CFeat_CI) override;
+
     virtual bool xWriteFeature(
         CGffFeatureContext&,
-        CMappedFeat);
+        const CMappedFeat& );
+
     virtual bool xWriteFeatureVariationRef(
         CGffFeatureContext&,
-        CMappedFeat );
+        const CMappedFeat& );
 };
 
 END_objects_SCOPE

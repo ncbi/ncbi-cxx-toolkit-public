@@ -105,9 +105,12 @@ protected:
         const CBedTrackRecord&, 
         const CMappedFeat&);
 
+    bool xWriteFeature(
+        CFeat_CI) override;
+
     bool xWriteFeature(const CMappedFeat& feat,
         CSeq_annot_Handle annot_handle,
-        CBioseq_Handle bioseq_handle) override;
+        CBioseq_Handle bioseq_handle);
 
 
     virtual SAnnotSelector xGetAnnotSelector();

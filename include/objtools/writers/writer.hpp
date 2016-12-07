@@ -37,6 +37,7 @@
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/seq_annot_handle.hpp>
+#include <objmgr/feat_ci.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
@@ -201,22 +202,20 @@ protected:
 class NCBI_XOBJWRITE_EXPORT CFeatWriter:
     public CObject
 {
-
 protected:
-    virtual bool xWriteFeature(const CMappedFeat& feat,
-        CSeq_annot_Handle annot_handle = CSeq_annot_Handle(),
-        CBioseq_Handle bioseq_handle = CBioseq_Handle())=0;
+    virtual bool xWriteFeature(CFeat_CI feat) = 0;
 
 public:
     virtual ~CFeatWriter(void) = default;
-    template<typename TIter>
-    bool WriteFeatures(TIter first, TIter last) {
 
-        CBioseq_Handle bioseq_handle = CBioseq_Handle();
-        for (TIter it=first; it<=last; ++it) {
-            auto annot_handle = it.GetAnnot();
-            xWriteFeature(*it, annot_handle, bioseq_handle);
+    bool WriteFeatures(CFeat_CI first) {
+        for (auto it=first; it; ++it) {
+            if (!xWriteFeature(it)) {
+                return false;
+            }
         }
+
+        return true;
     }
 };
 

@@ -77,23 +77,23 @@ protected:
 
     bool x_WriteMetaCreateNew(
         const CSeq_annot& );
+
+    bool xWriteFeature(
+        CFeat_CI feat_it) override;
+
     bool x_WriteFeature(
-        CGffFeatureContext&,
         CMappedFeat );
 
     bool x_WriteFeatureChrom(
-        CGffFeatureContext&,
         CMappedFeat );
         
     bool x_WriteFeaturePos(
-        CGffFeatureContext&,
         CMappedFeat,
         unsigned int start,
         const int type
         );
         
     bool x_WriteFeatureId(
-        CGffFeatureContext&,
         CMappedFeat );
         
     bool x_WriteFeatureRef(
@@ -112,25 +112,17 @@ protected:
         );
         
     bool x_WriteFeatureQual(
-        CGffFeatureContext&,
         CMappedFeat);
         
     bool x_WriteFeatureFilter(
-        CGffFeatureContext&,
         CMappedFeat );
         
     bool x_WriteFeatureInfo(
-        CGffFeatureContext&,
         CMappedFeat );
         
     bool x_WriteFeatureGenotypeData(
-        CGffFeatureContext&,
         CMappedFeat );
 
-    bool xWriteFeature(const CMappedFeat& feat, 
-        CSeq_annot_Handle annot_handle,
-        CBioseq_Handle bioseq_handle) override;
-    
     CScope& m_Scope;
     vector<string> m_GenotypeHeaders;
 };

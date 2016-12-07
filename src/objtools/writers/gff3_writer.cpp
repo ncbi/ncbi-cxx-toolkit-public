@@ -1353,6 +1353,21 @@ bool CGff3Writer::xWriteSource(
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xWriteFeature(
+    CFeat_CI feat_it)
+//  ----------------------------------------------------------------------------
+{
+    if (!feat_it) {
+        return false;
+    }
+
+    CGffFeatureContext fc(feat_it, m_BioseqHandle, feat_it.GetAnnot());
+
+    return xWriteFeature(fc, *feat_it);
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CGff3Writer::xWriteFeature(
     CGffFeatureContext& fc,
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------

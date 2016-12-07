@@ -49,7 +49,7 @@ class CGtfRecord;
 
 //  ============================================================================
 class NCBI_XOBJWRITE_EXPORT CGtfWriter:
-    public CGff2Writer
+    public CGff2Writer, CFeatWriter
 //  ============================================================================
 {
 public:
@@ -77,24 +77,27 @@ protected:
         const CGffWriteRecord* );
 
     virtual bool xWriteFeature(
+        CFeat_CI) override;
+
+    virtual bool xWriteFeature(
         CGffFeatureContext&,
-        CMappedFeat );
+        const CMappedFeat& );
     virtual bool x_WriteFeatureGene(
         CGffFeatureContext&,
-        CMappedFeat );
+        const CMappedFeat& );
     virtual bool x_WriteFeatureMrna(
         CGffFeatureContext&,
-        CMappedFeat );
+        const CMappedFeat& );
     virtual bool x_WriteFeatureCds(
         CGffFeatureContext&,
-        CMappedFeat );
+        const CMappedFeat& );
     virtual bool x_WriteFeatureCdsFragments(
         CGtfRecord&,
 		const CSeq_loc&,
-        CMappedFeat );							//mRNA parent
+        const CMappedFeat& );							//mRNA parent
 
     bool x_SplitCdsLocation(
-        CMappedFeat,
+        const CMappedFeat&,
         CRef< CSeq_loc >&,
         CRef< CSeq_loc >&,
         CRef< CSeq_loc >& ) const;

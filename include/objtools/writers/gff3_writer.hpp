@@ -54,7 +54,7 @@ class CGffAlignmentRecord;
 //  ============================================================================
 class NCBI_XOBJWRITE_EXPORT CGff3Writer
 //  ============================================================================
-    : public CGff2Writer
+    : public CGff2Writer, CFeatWriter
 {
 public:
     typedef enum {
@@ -127,6 +127,8 @@ protected:
         CSeq_id_Handle );
     virtual bool xWriteSource(
         CBioseq_Handle);
+    virtual bool xWriteFeature(
+        CFeat_CI feat_it) override;
     virtual bool xWriteFeature(
         CGffFeatureContext&,
         const CMappedFeat&);

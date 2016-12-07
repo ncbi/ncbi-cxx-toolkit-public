@@ -117,10 +117,26 @@ bool CGtfWriter::x_WriteRecord(
     return true;
 }
 
+
+//  ----------------------------------------------------------------------------
+bool CGtfWriter::xWriteFeature(
+    CFeat_CI feat_it)
+//  ----------------------------------------------------------------------------
+{
+    if (!feat_it) {
+        return false;
+    }
+
+    CGffFeatureContext fc(feat_it, CBioseq_Handle(), CSeq_annot_Handle());
+
+    return xWriteFeature(fc, *feat_it);
+}
+
+
 //  ----------------------------------------------------------------------------
 bool CGtfWriter::xWriteFeature(
     CGffFeatureContext& context,
-    CMappedFeat mf)
+    const CMappedFeat& mf)
 //  ----------------------------------------------------------------------------
 {
     switch(mf.GetFeatSubtype()) {
@@ -146,7 +162,7 @@ bool CGtfWriter::xWriteFeature(
 //  ----------------------------------------------------------------------------
 bool CGtfWriter::x_WriteFeatureGene(
     CGffFeatureContext& context,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     if (m_uFlags & fNoGeneFeatures) {
@@ -164,7 +180,7 @@ bool CGtfWriter::x_WriteFeatureGene(
 //  ----------------------------------------------------------------------------
 bool CGtfWriter::x_WriteFeatureMrna(
     CGffFeatureContext& context,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     CRef<CGtfRecord> pMrna( new CGtfRecord( context ) );
@@ -197,7 +213,7 @@ bool CGtfWriter::x_WriteFeatureMrna(
 //  ----------------------------------------------------------------------------
 bool CGtfWriter::x_WriteFeatureCds(
     CGffFeatureContext& context,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     CRef<CGtfRecord> pParent( 
@@ -240,7 +256,7 @@ bool CGtfWriter::x_WriteFeatureCds(
 bool CGtfWriter::x_WriteFeatureCdsFragments(
     CGtfRecord& record,
 	const CSeq_loc& cdsLoc,
-    CMappedFeat mRna)
+    const CMappedFeat& mRna)
 //  ----------------------------------------------------------------------------
 {
     typedef list<CRef<CSeq_interval> > EXONS;
@@ -287,7 +303,7 @@ bool CGtfWriter::x_WriteFeatureCdsFragments(
 
 //  ----------------------------------------------------------------------------
 bool CGtfWriter::x_SplitCdsLocation(
-    CMappedFeat cds,
+    const CMappedFeat& cds,
     CRef< CSeq_loc >& pLocStartCodon,
     CRef< CSeq_loc >& pLocCode,
     CRef< CSeq_loc >& pLocStopCodon ) const

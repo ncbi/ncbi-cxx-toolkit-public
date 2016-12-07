@@ -74,82 +74,82 @@ public:
 
 protected:
     virtual bool x_AssignAttributes(
-        CMappedFeat,
+        const CMappedFeat&,
         unsigned int =0 );
     virtual bool x_AssignAttributesFromAsnCore(
-        CMappedFeat );
+        const CMappedFeat& );
     virtual bool x_AssignAttributesFromAsnExtended(
-        CMappedFeat );
+        const CMappedFeat& );
 
     static string x_GenericTranscriptId(
-        CMappedFeat );
+        const CMappedFeat& );
 
     static string x_GenericGeneId(
-        CMappedFeat );
+        const CMappedFeat& );
 
 /////
 
     CMappedFeat x_CdsFeatureToMrnaParent(
-        CMappedFeat ) /* throws !*/;
+        const CMappedFeat& ) /* throws !*/;
 
     CMappedFeat x_CdsFeatureToGeneParent(
-        CMappedFeat ) /* throws !*/;
+        const CMappedFeat& ) /* throws !*/;
 
     CMappedFeat x_MrnaFeatureToGeneParent(
-        CMappedFeat ) /* throws !*/;
+        const CMappedFeat& ) /* throws !*/;
 
 /////
 
     string x_FeatureToDbxref(
-        CMappedFeat );
+        const CMappedFeat& );
 
     string x_FeatureToNote(
-        CMappedFeat );
+        const CMappedFeat& );
 
     bool x_FeatureToPseudo(
-        CMappedFeat );
+        const CMappedFeat& );
 
     bool x_FeatureToPartial(
-        CMappedFeat );
+        const CMappedFeat& );
 
 ///
 
     string x_GeneToGeneId(
-        CMappedFeat );
+        const CMappedFeat& );
 
     string x_GeneToGeneSyn(
-        CMappedFeat );
+        const CMappedFeat& );
 
 ///
 
     string x_MrnaToGeneId(
-        CMappedFeat );
+        const CMappedFeat& );
 
     string x_MrnaToTranscriptId(
-        CMappedFeat );
+        const CMappedFeat& );
 
     string x_MrnaToProduct(
-        CMappedFeat );
+        const CMappedFeat& );
 
 ///
 
     string x_CdsToGeneId(
-        CMappedFeat );
+        const CMappedFeat& );
 
     string x_CdsToTranscriptId(
-        CMappedFeat );
+        const CMappedFeat& );
 
     string x_CdsToProteinId(
-        CMappedFeat );
+        const CMappedFeat& );
 
     bool x_CdsToRibosomalSlippage(
-        CMappedFeat );
+        const CMappedFeat& );
 
     string x_CdsToProduct(
-        CMappedFeat );
+        const CMappedFeat& );
 
     string x_CdsToCode(
-        CMappedFeat );
+        const CMappedFeat& );
 
 /////
 

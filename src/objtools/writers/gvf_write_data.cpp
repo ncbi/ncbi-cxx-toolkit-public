@@ -90,7 +90,7 @@ CGvfWriteRecord::~CGvfWriteRecord()
 
 //  ----------------------------------------------------------------------------
 bool CGvfWriteRecord::x_AssignSource(
-    CMappedFeat mapped_feat )
+    const CMappedFeat& mapped_feat )
 //  ----------------------------------------------------------------------------
 {
     m_strSource = ".";
@@ -119,7 +119,7 @@ bool CGvfWriteRecord::x_AssignSource(
 
 //  ----------------------------------------------------------------------------
 bool CGvfWriteRecord::x_AssignType(
-    CMappedFeat mapped_feat,
+    const CMappedFeat& mapped_feat,
     unsigned int )
 //  ----------------------------------------------------------------------------
 {
@@ -186,7 +186,7 @@ bool CGvfWriteRecord::x_AssignType(
 
 //  ----------------------------------------------------------------------------
 bool CGvfWriteRecord::x_AssignAttributes(
-    CMappedFeat mapped_feat,
+    const CMappedFeat& mapped_feat,
     unsigned int )
 //  ----------------------------------------------------------------------------
 {
@@ -216,7 +216,7 @@ bool CGvfWriteRecord::x_AssignAttributes(
 
 //  ----------------------------------------------------------------------------
 bool CGvfWriteRecord::x_AssignAttributesCustom(
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     if ( ! mf.IsSetExt() ) {
@@ -251,7 +251,7 @@ bool CGvfWriteRecord::x_AssignAttributesCustom(
 
 //  ----------------------------------------------------------------------------
 bool CGvfWriteRecord::x_AssignAttributeID(
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     if ( mf.IsSetExt() ) {
@@ -285,7 +285,7 @@ bool CGvfWriteRecord::x_AssignAttributeID(
 
 //  ----------------------------------------------------------------------------
 bool CGvfWriteRecord::x_AssignAttributeParent(
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     if ( mf.IsSetExt() ) {
@@ -317,7 +317,7 @@ bool CGvfWriteRecord::x_AssignAttributeParent(
 
 //  ----------------------------------------------------------------------------
 bool CGvfWriteRecord::x_AssignAttributeName(
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     if ( CSeqFeatData::eSubtype_variation_ref != mf.GetData().GetSubtype() ) {
@@ -333,7 +333,7 @@ bool CGvfWriteRecord::x_AssignAttributeName(
 
 //  ----------------------------------------------------------------------------
 bool CGvfWriteRecord::x_AssignAttributeVarType(
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     if ( mf.IsSetExt() ) {
@@ -353,7 +353,7 @@ bool CGvfWriteRecord::x_AssignAttributeVarType(
 
 //  ----------------------------------------------------------------------------
 bool CGvfWriteRecord::x_AssignAttributeStartRange(
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     const CSeq_loc& loc = mf.GetLocation();
@@ -397,7 +397,7 @@ bool CGvfWriteRecord::x_AssignAttributeStartRange(
 
 //  ----------------------------------------------------------------------------
 bool CGvfWriteRecord::x_AssignAttributeEndRange(
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     const CSeq_loc& loc = mf.GetLocation();

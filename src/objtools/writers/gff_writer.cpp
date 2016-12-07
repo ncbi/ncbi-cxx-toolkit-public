@@ -274,7 +274,7 @@ bool CGff2Writer::x_WriteSeqAnnotHandle(
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::xWriteFeature(
     CGffFeatureContext& context,
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     CRef<CGffWriteRecordFeature> pParent(new CGffWriteRecordFeature(context));

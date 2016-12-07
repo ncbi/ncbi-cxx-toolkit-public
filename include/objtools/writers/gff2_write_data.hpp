@@ -147,29 +147,29 @@ public:
         const string& id="" ): CGffWriteRecord(fc, id){};
 
     virtual bool AssignFromAsn(
-        CMappedFeat,
+        const CMappedFeat&,
         unsigned int =0);
 
 protected:
     virtual bool x_AssignType(
-        CMappedFeat,
+        const CMappedFeat&,
         unsigned int =0 );
     virtual bool x_AssignSeqId(
-        CMappedFeat );
+        const CMappedFeat& );
     virtual bool x_AssignStart(
-        CMappedFeat );
+        const CMappedFeat& );
     virtual bool x_AssignStop(
-        CMappedFeat );
+        const CMappedFeat& );
     virtual bool x_AssignSource(
-        CMappedFeat );
+        const CMappedFeat& );
     virtual bool x_AssignScore(
-        CMappedFeat );
+        const CMappedFeat& );
     virtual bool x_AssignStrand(
-        CMappedFeat );
+        const CMappedFeat& );
     virtual bool x_AssignPhase(
-        CMappedFeat );
+        const CMappedFeat& );
     virtual bool x_AssignAttributes(
-        CMappedFeat,
+        const CMappedFeat&,
         unsigned int =0);
 };
 

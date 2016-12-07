@@ -59,6 +59,7 @@ USING_SCOPE(sequence);
 
 CFastaOstreamEx::CFastaOstreamEx(CNcbiOstream& out) : 
     CFastaOstream(out), 
+    m_TranslateCds(false),
     m_FeatCount(0), 
     m_InternalScope(new CScope(*CObjectManager::GetInstance()))
 {
@@ -68,6 +69,22 @@ CFastaOstreamEx::CFastaOstreamEx(CNcbiOstream& out) :
 void CFastaOstreamEx::ResetFeatureCount(void) 
 {
     m_FeatCount = 0;
+}
+
+
+bool CFastaOstreamEx::WriteFeatures(CFeat_CI feat_it, bool translate_cds) 
+{
+    m_TranslateCds = translate_cds;
+    bool success = CFeatWriter::WriteFeatures(feat_it);
+    m_TranslateCds = false;
+
+    return success;
+}
+
+
+bool CFastaOstreamEx::xWriteFeature(CFeat_CI feat_it) 
+{
+    WriteFeature(*(feat_it->GetSeq_feat()), feat_it->GetScope(), m_TranslateCds);
 }
 
 

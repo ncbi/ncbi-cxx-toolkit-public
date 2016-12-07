@@ -357,7 +357,7 @@ bool CGffWriteRecord::AssignSequenceNumber(
 
 //  ----------------------------------------------------------------------------
 bool CGffWriteRecordFeature::AssignFromAsn(
-    CMappedFeat mapped_feature,
+    const CMappedFeat& mapped_feature,
     unsigned int flags )
 //  ----------------------------------------------------------------------------
 {
@@ -393,7 +393,7 @@ bool CGffWriteRecordFeature::AssignFromAsn(
 
 //  ----------------------------------------------------------------------------
 bool CGffWriteRecordFeature::x_AssignSeqId(
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     if (CWriteUtil::GetBestId(mf, m_strId)) {
@@ -405,7 +405,7 @@ bool CGffWriteRecordFeature::x_AssignSeqId(
 
 //  ----------------------------------------------------------------------------
 bool CGffWriteRecordFeature::x_AssignType(
-    CMappedFeat mf,
+    const CMappedFeat& mf,
     unsigned int )
 //  ----------------------------------------------------------------------------
 {
@@ -452,7 +452,7 @@ bool CGffWriteRecordFeature::x_AssignType(
 
 //  ----------------------------------------------------------------------------
 bool CGffWriteRecordFeature::x_AssignStart(
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     m_uSeqStart = mf.GetLocation().GetStart( eExtreme_Positional );;
@@ -461,7 +461,7 @@ bool CGffWriteRecordFeature::x_AssignStart(
 
 //  ----------------------------------------------------------------------------
 bool CGffWriteRecordFeature::x_AssignStop(
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     m_uSeqStop = mf.GetLocation().GetStop( eExtreme_Positional );;
@@ -517,7 +517,7 @@ CConstRef<CUser_object> sGetUserObjectByType(
 
 //  ----------------------------------------------------------------------------
 bool CGffWriteRecordFeature::x_AssignSource(
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     m_strSource = ".";
@@ -572,7 +572,7 @@ bool CGffWriteRecordFeature::x_AssignSource(
 
 //  ----------------------------------------------------------------------------
 bool CGffWriteRecordFeature::x_AssignScore(
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     if ( !mf.IsSetQual() ) {
@@ -594,7 +594,7 @@ bool CGffWriteRecordFeature::x_AssignScore(
 
 //  ----------------------------------------------------------------------------
 bool CGffWriteRecordFeature::x_AssignStrand(
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     m_peStrand = new ENa_strand( mf.GetLocation().GetStrand() );
@@ -603,7 +603,7 @@ bool CGffWriteRecordFeature::x_AssignStrand(
 
 //  ----------------------------------------------------------------------------
 bool CGffWriteRecordFeature::x_AssignPhase(
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     if ( mf.GetFeatSubtype() == CSeq_feat::TData::eSubtype_cdregion ) {
@@ -614,7 +614,7 @@ bool CGffWriteRecordFeature::x_AssignPhase(
 
 //  ----------------------------------------------------------------------------
 bool CGffWriteRecordFeature::x_AssignAttributes(
-    CMappedFeat mapped_feat,
+    const CMappedFeat& mapped_feat,
     unsigned int )
 //  ----------------------------------------------------------------------------
 {

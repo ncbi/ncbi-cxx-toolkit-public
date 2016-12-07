@@ -115,7 +115,7 @@ bool CGtfRecord::MakeChildRecord(
 
 //  ----------------------------------------------------------------------------
 bool CGtfRecord::x_AssignAttributes(
-    CMappedFeat mapped_feature,
+    const CMappedFeat& mapped_feature,
     unsigned int )
 //  ----------------------------------------------------------------------------
 {
@@ -188,7 +188,7 @@ string CGtfRecord::StrStructibutes() const
 
 //  ----------------------------------------------------------------------------
 bool CGtfRecord::x_AssignAttributesFromAsnCore(
-    CMappedFeat mapped_feature )
+    const CMappedFeat& mapped_feature )
 //  ----------------------------------------------------------------------------
 {
     const CSeq_feat& feature = mapped_feature.GetOriginalFeature();
@@ -223,7 +223,7 @@ bool CGtfRecord::x_AssignAttributesFromAsnCore(
 
 //  ----------------------------------------------------------------------------
 bool CGtfRecord::x_AssignAttributesFromAsnExtended(
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
     const CSeq_feat& feature = mf.GetOriginalFeature();
@@ -343,7 +343,7 @@ void CGtfRecord::SetCdsPhase(
 
 //  ============================================================================
 string CGtfRecord::x_GenericGeneId(
-    CMappedFeat mapped_feat )
+    const CMappedFeat& mapped_feat )
 //  ============================================================================
 {
     static unsigned int uId = 1;
@@ -357,7 +357,7 @@ string CGtfRecord::x_GenericGeneId(
 
 //  ============================================================================
 string CGtfRecord::x_GenericTranscriptId(
-    CMappedFeat mapped_feat )
+    const CMappedFeat& mapped_feat )
 //  ============================================================================
 {
     static unsigned int uId = 1;
@@ -368,7 +368,7 @@ string CGtfRecord::x_GenericTranscriptId(
 
 //  ============================================================================
 CMappedFeat CGtfRecord::x_CdsFeatureToMrnaParent(
-    CMappedFeat mapped_feat )
+    const CMappedFeat& mapped_feat )
 //  ============================================================================
 {
     return feature::GetBestMrnaForCds( mapped_feat, &FeatTree() );
@@ -376,7 +376,7 @@ CMappedFeat CGtfRecord::x_CdsFeatureToMrnaParent(
 
 //  ============================================================================
 CMappedFeat CGtfRecord::x_CdsFeatureToGeneParent(
-    CMappedFeat mapped_feat )
+    const CMappedFeat& mapped_feat )
 //  ============================================================================
 {
     return feature::GetBestGeneForCds( mapped_feat, &FeatTree() );
@@ -384,7 +384,7 @@ CMappedFeat CGtfRecord::x_CdsFeatureToGeneParent(
 
 //  ============================================================================
 CMappedFeat CGtfRecord::x_MrnaFeatureToGeneParent(
-    CMappedFeat mf)
+    const CMappedFeat& mf)
 //  ============================================================================
 {
 	if (mf.GetFeatSubtype() == CSeqFeatData::eSubtype_mRNA) {
@@ -395,7 +395,7 @@ CMappedFeat CGtfRecord::x_MrnaFeatureToGeneParent(
 
 //  ============================================================================
 string CGtfRecord::x_GeneToGeneId(
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ============================================================================
 {
     typedef string GENE_ID;
@@ -453,7 +453,7 @@ string CGtfRecord::x_GeneToGeneId(
 
 //  ============================================================================
 string CGtfRecord::x_GeneToGeneSyn(
-    CMappedFeat mapped_feature )
+    const CMappedFeat& mapped_feature )
 //  ============================================================================
 {
     const CGene_ref& gene = mapped_feature.GetData().GetGene();
@@ -473,7 +473,7 @@ string CGtfRecord::x_GeneToGeneSyn(
 
 //  =============================================================================
 string CGtfRecord::x_MrnaToGeneId(
-    CMappedFeat mapped_feature )
+    const CMappedFeat& mapped_feature )
 //  ============================================================================
 {
     try {
@@ -487,7 +487,7 @@ string CGtfRecord::x_MrnaToGeneId(
 
 //  =============================================================================
 string CGtfRecord::x_MrnaToTranscriptId(
-    CMappedFeat mf)
+    const CMappedFeat& mf)
 //  ============================================================================
 {
     typedef string RNA_ID;
@@ -567,7 +567,7 @@ string CGtfRecord::x_MrnaToTranscriptId(
     
 //  =============================================================================
 string CGtfRecord::x_CdsToGeneId(
-    CMappedFeat mapped_feature )
+    const CMappedFeat& mapped_feature )
 //  ============================================================================
 {
     CMappedFeat gene = x_CdsFeatureToGeneParent( mapped_feature );
@@ -579,7 +579,7 @@ string CGtfRecord::x_CdsToGeneId(
 
 //  =============================================================================
 string CGtfRecord::x_CdsToTranscriptId(
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ============================================================================
 {
     CMappedFeat mrna = x_CdsFeatureToMrnaParent(mf);
@@ -591,7 +591,7 @@ string CGtfRecord::x_CdsToTranscriptId(
 
 //  ============================================================================
 string CGtfRecord::x_CdsToProteinId(
-    CMappedFeat mf )
+    const CMappedFeat& mf )
 //  ============================================================================
 {
     if ( mf.IsSetProduct() ) {
@@ -606,7 +606,7 @@ string CGtfRecord::x_CdsToProteinId(
 
 //  ============================================================================
 bool CGtfRecord::x_CdsToRibosomalSlippage(
-    CMappedFeat mapped_feature )
+    const CMappedFeat& mapped_feature )
 //  ============================================================================
 {
     if ( mapped_feature.IsSetExcept_text() ) {
@@ -619,7 +619,7 @@ bool CGtfRecord::x_CdsToRibosomalSlippage(
     
 //  ============================================================================
 string CGtfRecord::x_CdsToProduct(
-    CMappedFeat mapped_feature )
+    const CMappedFeat& mapped_feature )
 //  ============================================================================
 {
     if ( ! mapped_feature.IsSetXref() ) {
@@ -640,7 +640,7 @@ string CGtfRecord::x_CdsToProduct(
     
 //  ============================================================================
 string CGtfRecord::x_CdsToCode(
-    CMappedFeat mapped_feature )
+    const CMappedFeat& mapped_feature )
 //  ============================================================================
 {
     const CCdregion& cdr = mapped_feature.GetData().GetCdregion();
@@ -652,7 +652,7 @@ string CGtfRecord::x_CdsToCode(
 
 //  ============================================================================
 string CGtfRecord::x_MrnaToProduct(
-    CMappedFeat mapped_feature )
+    const CMappedFeat& mapped_feature )
 //  ============================================================================
 {
     const CRNA_ref& rna = mapped_feature.GetData().GetRna();
@@ -664,7 +664,7 @@ string CGtfRecord::x_MrnaToProduct(
 
 //  ============================================================================
 string CGtfRecord::x_FeatureToDbxref(
-    CMappedFeat mapped_feature )
+    const CMappedFeat& mapped_feature )
 //  ============================================================================
 {
     if ( mapped_feature.IsSetDbxref() ) {
@@ -683,7 +683,7 @@ string CGtfRecord::x_FeatureToDbxref(
 
 //  ============================================================================
 string CGtfRecord::x_FeatureToNote(
-    CMappedFeat mapped_feature )
+    const CMappedFeat& mapped_feature )
 //  ============================================================================
 {
     if ( mapped_feature.IsSetComment() ) {
@@ -694,7 +694,7 @@ string CGtfRecord::x_FeatureToNote(
 
 //  ============================================================================
 bool CGtfRecord::x_FeatureToPseudo(
-    CMappedFeat mapped_feature )
+    const CMappedFeat& mapped_feature )
 //  ============================================================================
 {
     if ( mapped_feature.IsSetPseudo()  &&  mapped_feature.GetPseudo() ) {
@@ -705,7 +705,7 @@ bool CGtfRecord::x_FeatureToPseudo(
 
 //  ============================================================================
 bool CGtfRecord::x_FeatureToPartial(
-    CMappedFeat mapped_feature )
+    const CMappedFeat& mapped_feature )
 //  ============================================================================
 {
     if ( mapped_feature.IsSetPartial()  &&  mapped_feature.GetPartial() ) {
