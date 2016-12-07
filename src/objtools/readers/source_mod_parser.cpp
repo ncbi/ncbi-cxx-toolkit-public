@@ -70,6 +70,20 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+namespace
+{
+    class compare_subtype
+    {
+    public:
+        compare_subtype(CSubSource::TSubtype st) : m_st(st){};
+        bool operator()(const CRef<CSubSource>& st) const
+        {
+            return st->IsSetSubtype() && (st->GetSubtype() == m_st);
+        }
+    private:
+        CSubSource::TSubtype m_st;
+    };
+};
 
 // ASCII letters to lowercase, space and underscore to hyphen.
 const unsigned char CSourceModParser::kKeyCanonicalizationTable[257] =
@@ -631,6 +645,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
                     break;
                 default:
                     if ((mod = FindMod(it->first)) != NULL) {
+                        auto& subtype = bsrc->SetSubtype();
                         CRef<CSubSource> subsource(new CSubSource);
                         subsource->SetSubtype(it->second);
 
@@ -640,7 +655,14 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
                             subsource->SetName(mod->value);
                         }
 
-                        bsrc->SetSubtype().push_back(subsource);
+                        if (!CSubSource::IsMultipleValuesAllowed(it->second))
+                        {                
+                            auto existing = find_if(subtype.begin(), subtype.end(), compare_subtype(it->second));
+                            if (existing != subtype.end())
+                                subtype.erase(existing);
+                        }
+
+                        subtype.push_back(subsource);
                     }
                     break;
             }
