@@ -54,7 +54,7 @@ class CGffAlignmentRecord;
 //  ============================================================================
 class NCBI_XOBJWRITE_EXPORT CGff3Writer
 //  ============================================================================
-    : public CGff2Writer, CFeatWriter
+    : public CGff2Writer, public CFeatWriter
 {
 public:
     typedef enum {

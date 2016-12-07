@@ -48,7 +48,7 @@ class CSeq_entry_Handle;
 
 
 class NCBI_XOBJWRITE_EXPORT CFastaOstreamEx 
-: public CFastaOstream, CFeatWriter
+: public CFeatWriter, public CFastaOstream
 {
 public:
 

@@ -49,7 +49,7 @@ class CGtfRecord;
 
 //  ============================================================================
 class NCBI_XOBJWRITE_EXPORT CGtfWriter:
-    public CGff2Writer, CFeatWriter
+    public CGff2Writer, public CFeatWriter
 //  ============================================================================
 {
 public:

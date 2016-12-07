@@ -44,12 +44,11 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
-class CGffAlignmentRecord;
 
 //  ============================================================================
 class NCBI_XOBJWRITE_EXPORT CGvfWriter
 //  ============================================================================
-    : public CGff3Writer, CFeatWriter
+    : public CGff3Writer
 {
 public:
     CGvfWriter(

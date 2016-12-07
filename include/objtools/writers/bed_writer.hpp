@@ -49,7 +49,7 @@ BEGIN_objects_SCOPE
 /// [[I will ad support though upon request]]
 ///
 class NCBI_XOBJWRITE_EXPORT CBedWriter:
-    public CWriterBase, CFeatWriter
+    public CWriterBase, public CFeatWriter
 //  ============================================================================
 {
 public:
