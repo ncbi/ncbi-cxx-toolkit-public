@@ -513,8 +513,7 @@ BOOST_AUTO_TEST_CASE(testHashLookupTableWordSize16) {
 	BOOST_REQUIRE_EQUAL(10, lookup->longest_chain);
     BOOST_REQUIRE_EQUAL(16777216, lookup->backbone_size);
     BOOST_REQUIRE_EQUAL(24, lookup->offsets_size);
-    BOOST_REQUIRE_EQUAL(11, lookup->pv_array_bts);
-	BOOST_REQUIRE_EQUAL(11, lookup->pv_array_bts);
+    BOOST_REQUIRE_EQUAL(5, lookup->pv_array_bts);
     BOOST_REQUIRE(lookup->hash_callback);
 
     Uint4 pv_array_size = 1u << (32 - 10);
@@ -522,7 +521,7 @@ BOOST_AUTO_TEST_CASE(testHashLookupTableWordSize16) {
             EndianIndependentBufferHash((char*) lookup->pv,
                                         pv_array_size * sizeof(PV_ARRAY_TYPE),
                                         sizeof(PV_ARRAY_TYPE));
-	BOOST_REQUIRE_EQUAL(-1839333193, pv_array_hash);
+	BOOST_REQUIRE_EQUAL(1515308782, pv_array_hash);
 
     TNaLookupHashFunction hash_func =
         (TNaLookupHashFunction)lookup->hash_callback;
@@ -586,8 +585,7 @@ BOOST_AUTO_TEST_CASE(testHashLookupTableWordSize16WithDbFilter) {
 	BOOST_REQUIRE_EQUAL(10, lookup->longest_chain);
     BOOST_REQUIRE_EQUAL(16777216, lookup->backbone_size);
     BOOST_REQUIRE_EQUAL(12, lookup->offsets_size);
-    BOOST_REQUIRE_EQUAL(11, lookup->pv_array_bts);
-	BOOST_REQUIRE_EQUAL(11, lookup->pv_array_bts);
+    BOOST_REQUIRE_EQUAL(5, lookup->pv_array_bts);
     BOOST_REQUIRE(lookup->hash_callback);
 
     Uint4 pv_array_size = 1u << (32 - 10);
@@ -595,7 +593,7 @@ BOOST_AUTO_TEST_CASE(testHashLookupTableWordSize16WithDbFilter) {
             EndianIndependentBufferHash((char*) lookup->pv,
                                         pv_array_size * sizeof(PV_ARRAY_TYPE),
                                         sizeof(PV_ARRAY_TYPE));
-	BOOST_REQUIRE_EQUAL(2116636124, pv_array_hash);
+	BOOST_REQUIRE_EQUAL(130150681, pv_array_hash);
 
 
     TNaLookupHashFunction hash_func =

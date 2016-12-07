@@ -1668,6 +1668,10 @@ static NaHashLookupThreadData* NaHashLookupThreadDataFree(
     }
 
     if (th->seq_arg) {
+        Int4 i;
+        for (i = 0;i < th->num_threads;i++) {
+            BlastSequenceBlkFree(th->seq_arg[i].seq);
+        }
         free(th->seq_arg);
     }
 
@@ -1690,14 +1694,20 @@ static NaHashLookupThreadData* NaHashLookupThreadDataFree(
     if (th->word_counts) {
         Int4 i;
         for (i = 1;i < th->num_threads;i++) {
-            if (th->word_counts[i]->values) {
-                free(th->word_counts[i]->values);
+            if (th->word_counts[i]) {
+                if (th->word_counts[i]->values) {
+                    free(th->word_counts[i]->values);
+                }
+                free(th->word_counts[i]);
             }
+
 
         }
         BlastSparseUint1ArrayFree(th->word_counts[0]);
         free(th->word_counts);
     }
+
+    free(th);
 
     return NULL;
 }
@@ -1873,7 +1883,6 @@ s_NaHashLookupScanSubjectForWordCounts(BlastSeqSrc* seq_src,
                                                th_data->word_counts[0]);
         BlastSeqSrcReleaseSequence(seq_src, &th_data->seq_arg[0]);
     }
-    BlastSequenceBlkFree(th_data->seq_arg[0].seq);
 
     /* aggregate counts */
     for (i = 0;i < th_data->word_counts[0]->num_elements;i++) {
@@ -1891,9 +1900,18 @@ s_NaHashLookupScanSubjectForWordCounts(BlastSeqSrc* seq_src,
     b = 1;
     k = 0;
     while (i < th_data->word_counts[0]->length) {
-        ASSERT(k < th_data->word_counts[0]->num_elements);
+
+        /* skip bit field array elements with all bits cleared */
+        if (th_data->word_counts[0]->bitfield[i] == 0) {
+            i++;
+            b = 1;
+            continue;
+        }
 
         if (th_data->word_counts[0]->bitfield[i] & b) {
+            ASSERT(k < th_data->word_counts[0]->num_elements);
+
+            /* clear bit if word count is too low or too large */
             if (th_data->word_counts[0]->values[k] == 0 ||
                 th_data->word_counts[0]->values[k] >= MAX_WORD_COUNT) {
 
@@ -2010,6 +2028,7 @@ static void s_BlastNaHashLookupFinalize(BackboneCell** thin_backbone,
     Int4 longest_chain = 0;
     PV_ARRAY_TYPE *pv;
     const Int4 pv_array_bts = lookup->pv_array_bts;
+    const Int8 kNumWords = 1LL << (2 * lookup->lut_word_length);
 #ifdef LOOKUP_VERBOSE
     Int4 backbone_occupancy = 0;
     Int4 thick_backbone_occupancy = 0;
@@ -2019,17 +2038,26 @@ static void s_BlastNaHashLookupFinalize(BackboneCell** thin_backbone,
 
     ASSERT(lookup->lut_word_length == 16);
 
+    if (!lookup->pv) {
+
+        lookup->pv = (PV_ARRAY_TYPE*)calloc(kNumWords >> lookup->pv_array_bts,
+                        sizeof(PV_ARRAY_TYPE));
+        ASSERT(lookup->pv);
+    }
+    else {
+        /* reset PV array, it might have been set earlier to count database
+           words, and a few bits may need to be reset */
+        memset(lookup->pv, 0, (kNumWords >> lookup->pv_array_bts) *
+               sizeof(PV_ARRAY_TYPE));
+    }
+    pv = lookup->pv;
+    ASSERT(pv != NULL);
+
     /* allocate the new lookup table */
     lookup->thick_backbone = (NaHashLookupBackboneCell *)calloc(
                                            lookup->backbone_size, 
                                            sizeof(NaHashLookupBackboneCell));
     ASSERT(lookup->thick_backbone != NULL);
-
-    pv = lookup->pv;
-    ASSERT(pv != NULL);
-    /* reset PV array, it might have been set earlier to count database words,
-       and a few bits may need to be reset */
-    memset(pv, 0, (lookup->backbone_size >> pv_array_bts) * PV_ARRAY_BYTES);
 
     /* remove polyA words from the lookup table */
     s_NaHashLookupRemovePolyAWords(thin_backbone, lookup->backbone_size,
@@ -2180,7 +2208,8 @@ BlastNaHashLookupTableDestruct(BlastNaHashLookupTable* lookup)
     sfree(lookup->overflow);
     if (lookup->masked_locations)
        lookup->masked_locations = BlastSeqLocFree(lookup->masked_locations);
-    sfree(lookup->pv);
+    if (lookup->pv)
+        sfree(lookup->pv);
     sfree(lookup);
 
     return NULL;
@@ -2234,12 +2263,13 @@ Int4 BlastNaHashLookupTableNew(BLAST_SequenceBlk* query,
 
     /* PV array does not use hashing */
     lookup->pv_array_bts = PV_ARRAY_BTS;
-    lookup->pv = (PV_ARRAY_TYPE*)calloc(kNumWords / PV_ARRAY_BYTES,
-                                        sizeof(PV_ARRAY_TYPE));
-    ASSERT(lookup->pv);
 
     /* count words in the database */
     if (opt->db_filter) {
+        lookup->pv = (PV_ARRAY_TYPE*)calloc(kNumWords >> lookup->pv_array_bts,
+                                            sizeof(PV_ARRAY_TYPE));
+        ASSERT(lookup->pv);
+
         s_NaHashLookupFillPV(query, locations, lookup);
         s_NaHashLookupScanSubjectForWordCounts(seqsrc, lookup, num_threads);
     }
