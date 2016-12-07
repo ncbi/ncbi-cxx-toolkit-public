@@ -9,4 +9,5 @@ connect/daemons/mod$
 internal/util/testipub$
 internal/webenv2 update-only
 ctools$
+objects$
 objects/id2$
