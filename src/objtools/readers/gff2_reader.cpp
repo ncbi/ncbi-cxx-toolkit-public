@@ -299,8 +299,9 @@ CGff2Reader::ReadSeqAnnotsNew(
                     continue;
                 }
 
-                if ( CGff2Reader::IsAlignmentData(line) && 
-                     x_ParseAlignmentGff(line, id_list, alignments) ) {
+                if (!(m_iFlags & CGff2Reader::fGenbankMode) &&
+                        CGff2Reader::IsAlignmentData(line) && 
+                        x_ParseAlignmentGff(line, id_list, alignments) ) {
                     continue;
                 } 
 
