@@ -228,7 +228,7 @@ CGapsEditor::CreateGap(CBioseq& bioseq, TSeqPos gap_start, TSeqPos gap_length)
     CRef<CDelta_seq> seq = MakeGap(bioseq.SetInst(), gap_start, gap_length);
     if (seq.NotEmpty())
     {
-        CDelta_seq::TLiteral& lit = seq->SetLiteral();
+        seq->SetLiteral();
         x_SetGapParameters(*seq);
     }
     return seq;
@@ -395,8 +395,10 @@ void CGapsEditor::AppendGap(CBioseq& bioseq)
     CDelta_seq::TLiteral& lit = delta_seq->SetLiteral();
     lit.SetLength(0);
     x_SetGapParameters(*delta_seq);
-    lit.SetLength(100);
+    const TSeqPos len = 100;
+    lit.SetLength(len);
     bioseq.SetInst().SetExt().SetDelta().Set().push_back(delta_seq);
+    bioseq.SetInst().SetLength() += len;
 }
 
 void CGapsEditor::AddBioseqAsLiteral(CBioseq& parent, CBioseq& bioseq)
