@@ -30,7 +30,7 @@ TAG_PRE_COMMIT: tagprecommit/create_version.py $local $version
 Linux64-Centos : plain : GCC.sh    --without-debug --without-mt --with-static --with-flat-makefile
 FreeBSD64      : plain : Clang.sh  --without-debug --without-mt --with-static --with-flat-makefile
 IntelMAC       : plain : GCC.sh    --without-debug --without-mt --with-static --with-flat-makefile --without-gcrypt
-Win32_13       : plain : static 32 ReleaseDLL
+Win64_13       : plain : static 64 ReleaseDLL
 Linux64-Ubuntu : plain : GCC.sh    --without-debug --without-mt --with-static --with-flat-makefile
 Linux32-Ubuntu : plain : GCC.sh    --without-debug --without-mt --with-static --with-flat-makefile
 
