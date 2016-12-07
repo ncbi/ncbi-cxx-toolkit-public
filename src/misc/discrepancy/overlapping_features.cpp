@@ -114,6 +114,7 @@ DISCREPANCY_AUTOFIX(_CDS_TRNA_OVERLAP)
     CFeat_CI f(bsh, CSeqFeatData::e_Rna);
     ENa_strand cds_strand = loc.IsSetStrand() ? loc.GetStrand() : eNa_strand_unknown;
     CSeq_loc::TRange r1 = loc.GetTotalRange();
+    CConstRef<CSeq_loc> other;
     int ovlp_len = 0;
     while (f) {
         if (f->GetData().GetSubtype() == CSeqFeatData::eSubtype_tRNA) {
@@ -124,11 +125,13 @@ DISCREPANCY_AUTOFIX(_CDS_TRNA_OVERLAP)
                 if (!(r1.GetFrom() >= r2.GetToOpen() || r2.GetFrom() >= r1.GetToOpen())) {
                     ovlp_len = r1.GetToOpen() - r2.GetFrom();
                     if (ovlp_len > 0 && ovlp_len < 3) {
+                        other.Reset(&loc_t);
                         break;
                     }
                     else {
                         ovlp_len = r2.GetToOpen() - r1.GetFrom();
                         if (ovlp_len > 0 && ovlp_len < 3) {
+                            other.Reset(&loc_t);
                             break;
                         }
                         else {
@@ -140,8 +143,23 @@ DISCREPANCY_AUTOFIX(_CDS_TRNA_OVERLAP)
         }
         ++f;
     }
-
-    return CRef<CAutofixReport>(new CAutofixReport("CDS_TRNA_OVERLAP: [n] CDS[s] trimmed", 1));
+    if (ovlp_len) {
+        CConstRef<CSeq_feat> gene = sequence::GetGeneForFeature(cds, scope);
+        CRef<CSeq_feat> new_cds(new CSeq_feat());
+        new_cds->Assign(cds);
+        new_cds->SetLocation().Assign(*sequence::Seq_loc_Subtract(new_cds->GetLocation(), *other, CSeq_loc::fStrand_Ignore, &scope));
+        CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(cds));
+        feh.Replace(*new_cds);
+        if (gene) {
+            CRef<CSeq_feat> new_gene(new CSeq_feat());
+            new_gene->Assign(*gene);
+            new_gene->SetLocation().Assign(*sequence::Seq_loc_Subtract(new_gene->GetLocation(), *other, CSeq_loc::fStrand_Ignore, &scope));
+            CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(*gene));
+            feh.Replace(*new_gene);
+        }
+        return CRef<CAutofixReport>(new CAutofixReport("CDS_TRNA_OVERLAP: [n] CDS trimmed", 1));
+    }
+    return CRef<CAutofixReport>();
 }
 
 
