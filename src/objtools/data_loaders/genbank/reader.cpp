@@ -577,7 +577,7 @@ bool CReader::LoadSequenceHash(CReaderRequestResult& result,
             hash.sequence_found = ids.GetSeq_ids().IsFound();
             // no hash information by default
         }
-        result.SetLoadedHash(seq_id, TSequenceHash());
+        result.SetLoadedHash(seq_id, hash);
     }
     return true;
 }
