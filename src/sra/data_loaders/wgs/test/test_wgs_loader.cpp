@@ -69,8 +69,9 @@ NCBI_PARAM_DEF_EX(int, WGS, REPORT_GENERAL_ID_ERROR,
                   DEFAULT_REPORT_GENERAL_ID_ERROR,
                   eParam_NoThread, WGS_REPORT_GENERAL_ID_ERROR);
 NCBI_PARAM_DECL(int, WGS, REPORT_SEQ_STATE_ERROR);
-NCBI_PARAM_DEF(int, WGS, REPORT_SEQ_STATE_ERROR,
-               DEFAULT_REPORT_SEQ_STATE_ERROR);
+NCBI_PARAM_DEF_EX(int, WGS, REPORT_SEQ_STATE_ERROR,
+                  DEFAULT_REPORT_SEQ_STATE_ERROR,
+                  eParam_NoThread, WGS_REPORT_SEQ_STATE_ERROR);
 
 static bool GetReportError(int report_level)
 {
@@ -96,26 +97,13 @@ enum EMasterDescrType
     eWithoutMasterDescr,
     eWithMasterDescr
 };
-enum EEnhancedInfo
-{
-    eWithoutEnhancedInfo,
-    eWithEnhancedInfo
-};
 
 static EMasterDescrType s_master_descr_type = eWithoutMasterDescr;
 
-void sx_InitGBLoader(CObjectManager& om, EEnhancedInfo enhanced = eWithoutEnhancedInfo)
+void sx_InitGBLoader(CObjectManager& om)
 {
-    const char* reader;
-    if ( enhanced == eWithEnhancedInfo ) {
-        CNcbiApplication::Instance()->SetEnvironment().Set("NCBI_LOAD_PLUGINS_FROM_DLLS", "1");
-        reader = "pubseqos2";
-    }
-    else {
-        reader = "id1";
-    }
     CGBDataLoader* gbloader = dynamic_cast<CGBDataLoader*>
-        (CGBDataLoader::RegisterInObjectManager(om, reader, om.eNonDefault).GetLoader());
+        (CGBDataLoader::RegisterInObjectManager(om, "id1", om.eNonDefault).GetLoader());
     _ASSERT(gbloader);
     gbloader->SetAddWGSMasterDescr(s_master_descr_type == eWithMasterDescr);
 }
@@ -1883,7 +1871,7 @@ BOOST_AUTO_TEST_CASE(WithdrawnStateTest)
     bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("AFFP01000011.1"));
     BOOST_CHECK(bh);
     BOOST_CHECK_EQUAL(bh.GetState(),
-                      CBioseq_Handle::fState_suppress_perm);
+                      CBioseq_Handle::fState_dead);
     BOOST_CHECK(sx_Equal(bh, sx_LoadFromGB(bh)));
 
     bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("AFFP01000012.1"));
@@ -2010,7 +1998,7 @@ BOOST_AUTO_TEST_CASE(HashTest)
     int wgs_hash = wgs_scope.GetSequenceHash(id);
     BOOST_CHECK(wgs_hash != 0);
 
-    sx_InitGBLoader(*om, eWithEnhancedInfo);
+    sx_InitGBLoader(*om);
     CScope gb_scope(*om);
     gb_scope.AddDataLoader("GBLOADER");
     
