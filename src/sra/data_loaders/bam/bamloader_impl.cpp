@@ -1235,6 +1235,7 @@ void CBamRefSeqInfo::LoadSeqChunk(CTSE_Chunk_Info& chunk_info)
     if ( m_SpotIdDetector ) {
         ait.SetSpotIdDetector(m_SpotIdDetector.GetNCPointer());
     }
+    list< CRef<CBioseq> > bioseqs;
     for( ; ait; ++ait ){
         TSeqPos align_pos = ait.GetRefSeqPos();
         if ( align_pos < pos ) {
@@ -1263,9 +1264,10 @@ void CBamRefSeqInfo::LoadSeqChunk(CTSE_Chunk_Info& chunk_info)
             ++dups;
             continue;
         }
-        chunk_info.x_LoadBioseq(place, *ait.GetShortBioseq());
+        bioseqs.push_back(ait.GetShortBioseq());
         ++count;
     }
+    chunk_info.x_LoadBioseqs(place, bioseqs);
 
     if ( GetDebugLevel() >= 2 ) {
         LOG_POST_X(10, Info<<"CBAMDataLoader: "
