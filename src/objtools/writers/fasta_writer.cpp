@@ -85,6 +85,7 @@ bool CFastaOstreamEx::WriteFeatures(CFeat_CI feat_it, bool translate_cds)
 bool CFastaOstreamEx::xWriteFeature(CFeat_CI feat_it) 
 {
     WriteFeature(*(feat_it->GetSeq_feat()), feat_it->GetScope(), m_TranslateCds);
+    return true;
 }
 
 
