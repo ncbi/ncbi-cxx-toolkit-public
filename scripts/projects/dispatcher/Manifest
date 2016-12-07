@@ -11,6 +11,8 @@
 
 APP: lbsmd lbsmc lbsm_feedback
 APP: launcherd fwdaemon dispd.cgi
+APP: ncbi_dblb_cli
+
 LIB: libconnect.a libconnext.a libmghbn.a liblbsmdapi.a
 
 DEFAULT_CONFIGURATIONS: Linux64-Centos:GCC
@@ -38,3 +40,4 @@ Linux64-Centos  : GCC   : GCC.sh         --with-local-lbsm --without-debug --wit
 FreeBSD64       : Clang : Clang.sh       --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
 IntelMAC        : GCC   : GCC.sh         --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --with-flat-makefile
 # Cygwin64        : GCC   : GCC.sh         --with-local-lbsm --without-debug --without-mt --with-static --without-serial --without-runpath --without-flat-makefile
+
