@@ -261,7 +261,7 @@ private:
     bool UseSpecialCaseRead(void);
 
     int ReadEscapedChar(char endingChar, bool* encoded=0);
-    int ReadEncodedChar(char endingChar, EStringType type = eStringTypeVisible, bool* encoded=0);
+    int ReadEncodedChar(char endingChar, EStringType type, bool& encoded);
     TUnicodeSymbol ReadUtf8Char(char ch);
     bool ReadCDSection(string& s);
     void ReadTagData(string& s, EStringType type = eStringTypeVisible);
@@ -285,7 +285,7 @@ private:
     template<typename Type>
     Type x_UseMemberDefault(void);
     int x_VerifyChar(int);
-    int x_ReadEncodedChar(char endingChar, EStringType type, bool* encoded);
+    int x_ReadEncodedChar(char endingChar, EStringType type, bool& encoded);
 
     enum ETagState {
         eTagOutside,

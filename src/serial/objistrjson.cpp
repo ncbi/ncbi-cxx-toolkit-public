@@ -53,9 +53,10 @@ CObjectIStreamJson::CObjectIStreamJson(void)
     m_ExpectValue(false),
     m_GotNameless(false),
     m_Closing(0),
-    m_StringEncoding( eEncoding_Unknown ),
+    m_StringEncoding( eEncoding_UTF8 ),
     m_BinaryFormat(eDefault)
 {
+    m_Utf8Pos = m_Utf8Buf.begin();
 }
 
 CObjectIStreamJson::CObjectIStreamJson(CNcbiIstream& in, EOwnership deleteIn)
@@ -65,9 +66,10 @@ CObjectIStreamJson::CObjectIStreamJson(CNcbiIstream& in, EOwnership deleteIn)
     m_ExpectValue(false),
     m_GotNameless(false),
     m_Closing(0),
-    m_StringEncoding( eEncoding_Unknown ),
+    m_StringEncoding( eEncoding_UTF8 ),
     m_BinaryFormat(eDefault)
 {
+    m_Utf8Pos = m_Utf8Buf.begin();
     Open(in, deleteIn);
 }
 
@@ -83,6 +85,8 @@ void CObjectIStreamJson::ResetState(void)
     }
     m_LastTag.clear();
     m_RejectedTag.clear();
+    m_Utf8Buf.clear();
+    m_Utf8Pos = m_Utf8Buf.begin();
 }
 
 string CObjectIStreamJson::GetPosition(void) const
@@ -230,19 +234,48 @@ int CObjectIStreamJson::ReadEscapedChar(bool* encoded /*=0*/)
     return c & 0xFF;
 }
 
-char CObjectIStreamJson::ReadEncodedChar(
-    EStringType type /*= eStringTypeVisible*/, bool* encoded /*=0*/)
+char CObjectIStreamJson::ReadEncodedChar(EStringType type, bool& encoded)
 {
     EEncoding enc_out( type == eStringTypeUTF8 ? eEncoding_UTF8 : m_StringEncoding);
     EEncoding enc_in(eEncoding_UTF8);
 
-    if (enc_in != enc_out && enc_out != eEncoding_Unknown) {
-        int c = ReadEscapedChar(encoded);
-        TUnicodeSymbol chU = ReadUtf8Char((char)c);
-        Uint1 ch = CUtf8::SymbolToChar(chU, enc_out);
-        return ch & 0xFF;
+    if (enc_out == eEncoding_UTF8 &&
+        !m_Utf8Buf.empty() && m_Utf8Pos != m_Utf8Buf.end()) {
+        if (++m_Utf8Pos != m_Utf8Buf.end()) {
+            return *m_Utf8Pos & 0xFF;
+        } else {
+            m_Utf8Buf.clear();
+        }
     }
-    return (char)ReadEscapedChar(encoded);
+    int c = ReadEscapedChar(&encoded);
+    if (enc_out != eEncoding_Unknown) {
+        if (encoded) {
+            TUnicodeSymbol chU = c;
+            if (enc_out == eEncoding_UTF8) {
+                m_Utf8Buf = CUtf8::AsUTF8( &chU, 1);
+                m_Utf8Pos = m_Utf8Buf.begin();
+                return *m_Utf8Pos & 0xFF;
+            } else {
+                return CUtf8::SymbolToChar( chU, enc_out);
+            }
+        }
+        if (enc_in != enc_out) {
+            if (enc_out != eEncoding_UTF8) {
+                TUnicodeSymbol chU = enc_in == eEncoding_UTF8 ?
+                    ReadUtf8Char((char)c) : CUtf8::CharToSymbol((char)c, enc_in);
+                Uint1 ch = CUtf8::SymbolToChar( chU, enc_out);
+                return ch & 0xFF;
+            }
+            if ((c & 0x80) == 0) {
+                return c;
+            }
+            char ch = (char)c;
+            m_Utf8Buf = CUtf8::AsUTF8( CTempString(&ch,1), enc_in);
+            m_Utf8Pos = m_Utf8Buf.begin();
+            return *m_Utf8Pos & 0xFF;
+        }
+    }
+    return (char)c;
 }
 
 TUnicodeSymbol CObjectIStreamJson::ReadUtf8Char(char c)
@@ -264,8 +297,8 @@ string CObjectIStreamJson::x_ReadString(EStringType type)
     Expect('\"',true);
     string str;
     for (;;) {
-        bool encoded;
-        char c = ReadEncodedChar(type, &encoded);
+        bool encoded = false;
+        char c = ReadEncodedChar(type, encoded);
         if (!encoded) {
             if (c == '\r' || c == '\n') {
                 ThrowError(fFormatError, "end of line: expected '\"'");
@@ -288,8 +321,8 @@ string CObjectIStreamJson::x_ReadData(EStringType type /*= eStringTypeVisible*/)
     SkipWhiteSpace();
     string str;
     for (;;) {
-        bool encoded;
-        char c = ReadEncodedChar(type, &encoded);
+        bool encoded = false;
+        char c = ReadEncodedChar(type, encoded);
         if (!encoded && strchr(",]} \r\n", c)) {
             m_Input.UngetChar(c);
             break;
@@ -318,8 +351,8 @@ void  CObjectIStreamJson::x_SkipData(void)
     m_ExpectValue = false;
     char to = GetChar(true);
     for (;;) {
-        bool encoded;
-        char c = ReadEncodedChar(eStringTypeUTF8, &encoded);
+        bool encoded = false;
+        char c = ReadEncodedChar(eStringTypeUTF8, encoded);
         if (!encoded) {
             if (to == '\"') {
                 if (c == to) {
@@ -399,6 +432,15 @@ bool CObjectIStreamJson::NextElement(void)
 
 string CObjectIStreamJson::ReadFileHeader(void)
 {
+    {
+        char c = m_Input.PeekChar();
+        if ((unsigned char)c == 0xEF) {
+            if ((unsigned char)m_Input.PeekChar(1) == 0xBB &&
+                (unsigned char)m_Input.PeekChar(2) == 0xBF) {
+                m_Input.SkipChars(3);
+            }
+        }
+    }
     m_FileHeader = true;
     StartBlock('{');
     string str( ReadKey());

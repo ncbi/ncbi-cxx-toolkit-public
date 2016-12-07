@@ -59,7 +59,7 @@ CObjectIStreamXml::CObjectIStreamXml(void)
       m_TagState(eTagOutside), m_Attlist(false),
       m_StdXml(false), m_Doctype_found(false), m_IsNil(false),
       m_Encoding( eEncoding_Unknown ),
-      m_StringEncoding( eEncoding_Unknown ),
+      m_StringEncoding( eEncoding_UTF8 ),
       m_SkipNextTag(false)
 {
     m_Utf8Pos = m_Utf8Buf.begin();
@@ -70,7 +70,7 @@ CObjectIStreamXml::CObjectIStreamXml(CNcbiIstream& in, EOwnership deleteIn)
       m_TagState(eTagOutside), m_Attlist(false),
       m_StdXml(false), m_Doctype_found(false), m_IsNil(false),
       m_Encoding( eEncoding_Unknown ),
-      m_StringEncoding( eEncoding_Unknown ),
+      m_StringEncoding( eEncoding_UTF8 ),
       m_SkipNextTag(false)
 {
     m_Utf8Pos = m_Utf8Buf.begin();
@@ -758,7 +758,7 @@ int CObjectIStreamXml::ReadEscapedChar(char endingChar, bool* encoded)
                             "invalid symbol in char reference");
                 } while ( p < end );
             }
-            return v & 0xFF;
+            return v;
         }
         else {
             CTempString e(p, offset);
@@ -799,12 +799,12 @@ inline int CObjectIStreamXml::x_VerifyChar(int x) {
         ReplaceVisibleChar((char)x, x_FixCharsMethod(), this, kEmptyStr) : x;
 }
 inline
-int CObjectIStreamXml::ReadEncodedChar(char endingChar, EStringType type, bool* encoded)
+int CObjectIStreamXml::ReadEncodedChar(char endingChar, EStringType type, bool& encoded)
 {
     return x_VerifyChar(x_ReadEncodedChar(endingChar,type,encoded));
 }
 
-int CObjectIStreamXml::x_ReadEncodedChar(char endingChar, EStringType type, bool* encoded)
+int CObjectIStreamXml::x_ReadEncodedChar(char endingChar, EStringType type, bool& encoded)
 {
     EEncoding enc_out( type == eStringTypeUTF8 ? eEncoding_UTF8 : m_StringEncoding);
     EEncoding enc_in(m_Encoding == eEncoding_Unknown ? eEncoding_UTF8 : m_Encoding);
@@ -814,29 +814,41 @@ int CObjectIStreamXml::x_ReadEncodedChar(char endingChar, EStringType type, bool
         if (++m_Utf8Pos != m_Utf8Buf.end()) {
             return *m_Utf8Pos & 0xFF;
         } else {
-            m_Utf8Buf.erase();
+            m_Utf8Buf.clear();
         }
     }
-    if (enc_in != enc_out && enc_out != eEncoding_Unknown) {
-        int c = ReadEscapedChar(endingChar, encoded);
-        if (c < 0) {
-            return c;
-        }
-        if (enc_out != eEncoding_UTF8) {
-            TUnicodeSymbol chU = enc_in == eEncoding_UTF8 ?
-                ReadUtf8Char((char)c) : CUtf8::CharToSymbol((char)c, enc_in);
-            Uint1 ch = CUtf8::SymbolToChar( chU, enc_out);
-            return ch & 0xFF;
-        }
-        if ((c & 0x80) == 0) {
-            return c;
-        }
-        char ch = (char)c;
-        m_Utf8Buf = CUtf8::AsUTF8( CTempString(&ch,1), enc_in);
-        m_Utf8Pos = m_Utf8Buf.begin();
-        return *m_Utf8Pos & 0xFF;
+    int c = ReadEscapedChar(endingChar, &encoded);
+    if (c < 0) {
+        return c;
     }
-    return ReadEscapedChar(endingChar, encoded);
+    if (enc_out != eEncoding_Unknown) {
+        if (encoded) {
+            TUnicodeSymbol chU = c;
+            if (enc_out == eEncoding_UTF8) {
+                m_Utf8Buf = CUtf8::AsUTF8( &chU, 1);
+                m_Utf8Pos = m_Utf8Buf.begin();
+                return *m_Utf8Pos & 0xFF;
+            } else {
+                return CUtf8::SymbolToChar( chU, enc_out);
+            }
+        }
+        if (enc_in != enc_out) {
+            if (enc_out != eEncoding_UTF8) {
+                TUnicodeSymbol chU = enc_in == eEncoding_UTF8 ?
+                    ReadUtf8Char((char)c) : CUtf8::CharToSymbol((char)c, enc_in);
+                Uint1 ch = CUtf8::SymbolToChar( chU, enc_out);
+                return ch & 0xFF;
+            }
+            if ((c & 0x80) == 0) {
+                return c;
+            }
+            char ch = (char)c;
+            m_Utf8Buf = CUtf8::AsUTF8( CTempString(&ch,1), enc_in);
+            m_Utf8Pos = m_Utf8Buf.begin();
+            return *m_Utf8Pos & 0xFF;
+        }
+    }
+    return c;
 }
 
 TUnicodeSymbol CObjectIStreamXml::ReadUtf8Char(char c)
@@ -868,8 +880,9 @@ void CObjectIStreamXml::ReadAttributeValue(string& value, bool skipClosing)
     if ( startChar != '\'' && startChar != '\"' )
         ThrowError(fFormatError, "attribute value must start with ' or \"");
     m_Input.SkipChar();
+    bool encoded = false;
     for ( ;; ) {
-        int c = ReadEncodedChar(startChar,eStringTypeUTF8);
+        int c = ReadEncodedChar(startChar,eStringTypeUTF8,encoded);
         if ( c < 0 )
             break;
         value += char(c);
@@ -1269,7 +1282,7 @@ void CObjectIStreamXml::ReadTagData(string& str, EStringType type)
     bool CR = false;
     try {
         for ( ;; ) {
-            int c = ReadEncodedChar(m_Attlist ? '\"' : '<', type, &encoded);
+            int c = ReadEncodedChar(m_Attlist ? '\"' : '<', type, encoded);
             if ( c < 0 ) {
                 if (m_Attlist || !ReadCDSection(str)) {
                     break;

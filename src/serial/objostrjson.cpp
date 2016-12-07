@@ -69,7 +69,7 @@ CObjectOStreamJson::CObjectOStreamJson(CNcbiOstream& out, bool deleteOut)
     : CObjectOStream(eSerial_Json, out, deleteOut ? eTakeOwnership : eNoOwnership),
     m_BlockStart(false),
     m_ExpectValue(false),
-    m_StringEncoding(eEncoding_Unknown),
+    m_StringEncoding(eEncoding_UTF8),
     m_BinaryFormat(eDefault),
     m_WrapAt(0)
 {
@@ -81,7 +81,7 @@ CObjectOStreamJson::CObjectOStreamJson(CNcbiOstream& out, EOwnership deleteOut)
     : CObjectOStream(eSerial_Json, out, deleteOut),
     m_BlockStart(false),
     m_ExpectValue(false),
-    m_StringEncoding(eEncoding_Unknown),
+    m_StringEncoding(eEncoding_UTF8),
     m_BinaryFormat(eDefault),
     m_WrapAt(0)
 {
@@ -244,8 +244,11 @@ void CObjectOStreamJson::CopyStringStore(CObjectIStream& in)
 
 void CObjectOStreamJson::WriteNullPointer(void)
 {
+    CObjectStackFrame::EFrameType ftype = TopFrame().GetFrameType();
     if (m_ExpectValue ||
-        TopFrame().GetFrameType() == CObjectStackFrame::eFrameArrayElement) {
+        ftype == CObjectStackFrame::eFrameArrayElement ||
+        ftype == CObjectStackFrame::eFrameClassMember ||
+        ftype == CObjectStackFrame::eFrameChoiceVariant) {
         WriteKeywordValue("null");
     }
 }
@@ -453,6 +456,9 @@ void CObjectOStreamJson::EndClass(void)
 
 void CObjectOStreamJson::BeginClassMember(const CMemberId& id)
 {
+    if (m_ExpectValue) {
+        return;
+    }
     if (id.HasNotag() || id.IsAttlist()) {
         m_SkippedMemberId = id.GetName();
         TopFrame().SetNotag();
@@ -774,7 +780,7 @@ void CObjectOStreamJson::NextElement(void)
         m_Output.PutChar(',');
     }
     m_Output.PutEol();
-    m_ExpectValue = false;
+    m_ExpectValue = true;
 }
 
 void CObjectOStreamJson::BeginArray(void)

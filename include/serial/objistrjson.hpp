@@ -211,7 +211,7 @@ private:
     void UnexpectedMember(const CTempString& id, const CItemsInfo& items);
 
     int ReadEscapedChar(bool* encoded=0);
-    char ReadEncodedChar(EStringType type = eStringTypeVisible, bool* encoded=0);
+    char ReadEncodedChar(EStringType type, bool& encoded);
     TUnicodeSymbol ReadUtf8Char(char c);
     string x_ReadString(EStringType type);
     string x_ReadData(EStringType type = eStringTypeUTF8);
@@ -238,6 +238,8 @@ private:
     string m_LastTag;
     string m_RejectedTag;
     EBinaryDataFormat m_BinaryFormat;
+    CStringUTF8 m_Utf8Buf;
+    CStringUTF8::const_iterator m_Utf8Pos;
 };
 
 /* @} */
