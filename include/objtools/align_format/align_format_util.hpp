@@ -752,10 +752,17 @@ public:
     ///@param source_aln: the original alnset
     ///@param new_aln: the new alnset
     ///@param num: the specified number
-    ///
+    ///@return actual number of subject sequences
     static void PruneSeqalign(const objects::CSeq_align_set& source_aln, 
                               objects::CSeq_align_set& new_aln,
                               unsigned int num = kDfltArgNumAlignments);
+
+    ///Calculate number of subject sequnces in alignment limitted by num
+    ///@param source_aln: the original alnset    
+    ///@param num: the specified number of subj  sequences to consider
+    ///@return actual number of subject seqs in alignment
+    static unsigned int GetSubjectsNumber(const objects::CSeq_align_set& source_aln,                                      
+                                      unsigned int num);
 
     ///Fill new alignset containing the specified number of alignments 
     ///plus the rest of alignments for the last subget seq
