@@ -4863,6 +4863,11 @@ void CValidError_bioseq::x_ReportGeneOverlapError(const CSeq_feat& feat)
 
 void CValidError_bioseq::ValidateBadGeneOverlap(const CSeq_feat& feat)
 {
+    const CGene_ref* grp = feat.GetGeneXref();
+    if ( grp != 0) {
+        return;
+    }
+
     CConstRef<CSeq_feat> connected_gene = sequence::GetGeneForFeature(feat, *m_Scope);
     if (connected_gene) {
         if (TestForOverlapEx(connected_gene->GetLocation(), feat.GetLocation(), eOverlap_Contained, m_Scope) < 0) {
@@ -4870,10 +4875,12 @@ void CValidError_bioseq::ValidateBadGeneOverlap(const CSeq_feat& feat)
         }
         return;
     }
+    /*
     const CGene_ref* grp = feat.GetGeneXref();
     if ( grp != 0 && grp->IsSuppressed()) {
         return;
     }
+    */
 
     const CSeq_loc& loc = feat.GetLocation();
 
