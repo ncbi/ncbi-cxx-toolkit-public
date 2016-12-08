@@ -1321,7 +1321,8 @@ static int s_StrucCommOrder(const string&str) {
     return 1000;
 }
 
-static bool s_SeqDescCompare(const CRef<CSeqdesc>& desc1, const CRef<CSeqdesc>& desc2)
+static bool s_SeqDescCompare(const CConstRef<CSeqdesc>& desc1,
+                             const CConstRef<CSeqdesc>& desc2)
 {
     CSeqdesc::E_Choice chs1, chs2;
 
@@ -1366,18 +1367,17 @@ static bool s_SeqDescCompare(const CRef<CSeqdesc>& desc1, const CRef<CSeqdesc>& 
 
 void CFlatGatherer::x_StructuredComments(CBioseqContext& ctx) const
 {
-    vector<CRef<CSeqdesc>> vdesc;
+    vector<CConstRef<CSeqdesc> > vdesc;
     for (CSeqdesc_CI it(ctx.GetHandle(), CSeqdesc::e_User); it; ++it) {
         const CSeqdesc & desc = *it;
         if (desc.IsUser()) {
-            CRef<CSeqdesc> dsc(new CSeqdesc);
-            dsc->Assign(desc);
+            CConstRef<CSeqdesc> dsc(&desc);
             vdesc.push_back(dsc);
         }
     }
     stable_sort( vdesc.begin(), vdesc.end(), s_SeqDescCompare );
     for (size_t ii = 0; ii < vdesc.size(); ii++) {
-        CRef<CSeqdesc>& dsc = vdesc[ii];
+        CConstRef<CSeqdesc>& dsc = vdesc[ii];
         const CSeqdesc & desc = *dsc;
         if (m_FirstGenAnnotSCAD && desc.IsUser()) {
             const CUser_object& usr = desc.GetUser();
