@@ -702,7 +702,7 @@ CWriterBase* CAnnotWriterApp::xInitWriter(
     const string strFormat = args["format"].AsString();
     if (strFormat == "gff"  ||  strFormat == "gff2") { 
         CGff2Writer* pWriter = new CGff2Writer(*m_pScope, *pOs, xGffFlags(args));
-        xTweakAnnotSelector(args, pWriter->GetAnnotSelector());
+        xTweakAnnotSelector(args, pWriter->SetAnnotSelector());
         return pWriter;
     }
 
@@ -713,7 +713,7 @@ CWriterBase* CAnnotWriterApp::xInitWriter(
             return pWriter;
         }
         CGff3Writer* pWriter = new CGff3Writer(*m_pScope, *pOs, xGffFlags(args), sortAlignments);
-        xTweakAnnotSelector(args, pWriter->GetAnnotSelector());
+        xTweakAnnotSelector(args, pWriter->SetAnnotSelector());
         if (args["default-method"]) {
             pWriter->SetDefaultMethod(args["default-method"].AsString());
         }
@@ -721,12 +721,12 @@ CWriterBase* CAnnotWriterApp::xInitWriter(
     }
     if (strFormat == "gtf") {
         CGtfWriter* pWriter = new CGtfWriter(*m_pScope, *pOs, xGffFlags(args));
-        xTweakAnnotSelector(args, pWriter->GetAnnotSelector());
+        xTweakAnnotSelector(args, pWriter->SetAnnotSelector());
         return pWriter;
     }
     if (strFormat == "gvf") { 
         CGvfWriter* pWriter = new CGvfWriter( *m_pScope, *pOs, xGffFlags(args));
-        xTweakAnnotSelector(args, pWriter->GetAnnotSelector());
+        xTweakAnnotSelector(args, pWriter->SetAnnotSelector());
         return pWriter;
     }
     if (strFormat == "wiggle"  ||  strFormat == "wig") {
