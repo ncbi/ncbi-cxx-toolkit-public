@@ -78,6 +78,7 @@
 #include <objects/seqalign/Score_set.hpp>
 #include <objtools/writers/gff3_writer.hpp>
 
+
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
@@ -1277,7 +1278,6 @@ bool CGff3Writer::x_WriteBioseqHandle(
     CBioseq_Handle bsh) 
 //  ----------------------------------------------------------------------------
 {
-
     if (!xWriteSequenceHeader(bsh) ) {
         return false;
     }

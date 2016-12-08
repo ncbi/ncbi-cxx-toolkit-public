@@ -69,7 +69,8 @@ protected:
         unsigned int uFlags=0 ) :
         m_Os( ostr ),
         m_uFlags( uFlags ),
-        mpCancelled(0)
+        mpCancelled(0), 
+        m_Range(CRange<TSeqPos>::GetWhole())
     {};
 public:
     virtual ~CWriterBase()
@@ -192,6 +193,14 @@ public:
         return *m_Selector;
     }
 
+    virtual CRange<TSeqPos>& SetRange(void) {
+        return m_Range;
+    }
+
+    virtual const CRange<TSeqPos>& GetRange(void) const {
+        return m_Range;
+    }
+
     void SetCanceler(
         ICanceled* pCanceller) { mpCancelled = pCanceller; };
 
@@ -207,6 +216,7 @@ protected:
     unsigned int m_uFlags;
     ICanceled* mpCancelled;
     unique_ptr<SAnnotSelector> m_Selector;
+    CRange<TSeqPos> m_Range;
 };
 
 
