@@ -101,8 +101,6 @@ protected:
         CRef< CSeq_loc >&,
         CRef< CSeq_loc >&,
         CRef< CSeq_loc >& ) const;
-
-    SAnnotSelector x_GetAnnotSelector();
 };
 
 END_objects_SCOPE

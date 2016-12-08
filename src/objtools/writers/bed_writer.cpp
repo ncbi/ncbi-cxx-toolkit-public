@@ -434,7 +434,7 @@ bool CBedWriter::xWriteAnnotFeatureTable(
     const CSeq_annot& annot)
 //  ----------------------------------------------------------------------------
 {
-    SAnnotSelector sel = GetAnnotSelector();
+    SAnnotSelector sel = SetAnnotSelector();
     CSeq_annot_Handle sah = m_Scope.AddSeq_annot(annot);
     for (CFeat_CI pMf(sah, sel); pMf; ++pMf ) {
         if (IsCanceled()) {
@@ -462,7 +462,7 @@ bool CBedWriter::xWriteAnnotThreeFeatData(
     CThreeFeatManager threeFeatManager;
     CBedFeatureRecord bedRecord;
 
-    SAnnotSelector sel = GetAnnotSelector();
+    SAnnotSelector sel = SetAnnotSelector();
     CSeq_annot_Handle sah = m_Scope.AddSeq_annot(annot);
     CFeat_CI pMf(sah, sel);
     for ( ; pMf; ++pMf ) {
@@ -568,15 +568,6 @@ bool CBedWriter::xWriteFeature(
     }
     return true;
 }
-/*
-//  ----------------------------------------------------------------------------
-SAnnotSelector CBedWriter::GetAnnotSelector()
-//  ----------------------------------------------------------------------------
-{
-    SAnnotSelector sel;
-    sel.SetSortOrder(SAnnotSelector::eSortOrder_Normal);
-    return sel;
-}
-*/
+
 
 END_NCBI_SCOPE

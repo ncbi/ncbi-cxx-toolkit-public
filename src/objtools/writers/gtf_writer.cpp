@@ -363,16 +363,5 @@ bool CGtfWriter::x_SplitCdsLocation(
     return true;
 }
 
-//  ----------------------------------------------------------------------------
-SAnnotSelector CGtfWriter::x_GetAnnotSelector()
-//  ----------------------------------------------------------------------------
-{
-    SAnnotSelector sel;
-    sel.IncludeFeatType(CSeqFeatData::e_Gene);
-    sel.IncludeFeatType(CSeqFeatData::e_Rna);
-    sel.IncludeFeatType(CSeqFeatData::e_Cdregion);
-    sel.SetSortOrder( SAnnotSelector::eSortOrder_Normal );
-    return sel;
-}
 
 END_NCBI_SCOPE

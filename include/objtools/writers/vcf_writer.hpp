@@ -62,7 +62,7 @@ public:
         const string& = "",
         const string& = "" );
 
-    virtual SAnnotSelector& GetAnnotSelector(void) override;
+    virtual SAnnotSelector& SetAnnotSelector(void) override;
 
 protected:
     void x_GetTypeRefAlt(const CVariation_inst &inst, int &rtype, string &ref, list<int>& alt_types, vector<string> &alt);

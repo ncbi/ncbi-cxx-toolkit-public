@@ -360,7 +360,7 @@ bool CGff3Writer::x_WriteSeqAnnotHandle(
         return true;
     }
 
-    SAnnotSelector sel = GetAnnotSelector();
+    SAnnotSelector sel = SetAnnotSelector();
     CFeat_CI feat_iter(sah, sel);
     CGffFeatureContext fc(feat_iter, CBioseq_Handle(), sah);
     for ( /*0*/; feat_iter; ++feat_iter ) {
@@ -1282,7 +1282,7 @@ bool CGff3Writer::x_WriteBioseqHandle(
         return false;
     }
 
-    SAnnotSelector sel = GetAnnotSelector();
+    SAnnotSelector sel = SetAnnotSelector();
     CFeat_CI feat_iter(bsh, sel);
 
     if (!xWriteSource(bsh)) {

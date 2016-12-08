@@ -184,7 +184,7 @@ public:
     ///
     virtual bool WriteFooter() { return true; };
 
-    virtual SAnnotSelector& GetAnnotSelector(void) {
+    virtual SAnnotSelector& SetAnnotSelector(void) {
         if ( !m_Selector.get() ) {
             m_Selector.reset(new SAnnotSelector());
             m_Selector->SetSortOrder(SAnnotSelector::eSortOrder_Normal);

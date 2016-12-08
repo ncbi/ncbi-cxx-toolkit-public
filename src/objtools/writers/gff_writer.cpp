@@ -72,7 +72,7 @@ CGff2Writer::CGff2Writer(
     m_bHeaderWritten(false)
 {
     m_pScope.Reset( &scope );
-    GetAnnotSelector();
+    SetAnnotSelector();
 };
 
 //  ----------------------------------------------------------------------------
@@ -85,7 +85,7 @@ CGff2Writer::CGff2Writer(
 {
     m_pScope.Reset( new CScope( *CObjectManager::GetInstance() ) );
     m_pScope->AddDefaults();
-    GetAnnotSelector();
+    SetAnnotSelector();
 };
 
 //  ----------------------------------------------------------------------------
@@ -172,7 +172,7 @@ bool CGff2Writer::x_WriteSeqEntryHandle(
     SAnnotSelector sel;
     sel.SetMaxSize(1);
     for (CAnnot_CI aci(seh, sel); aci; ++aci) {
-        CFeat_CI fit(*aci, GetAnnotSelector());
+        CFeat_CI fit(*aci, SetAnnotSelector());
         CGffFeatureContext fc(fit, CBioseq_Handle(), *aci);
         CSeq_id_Handle lastId;
         for ( /*0*/; fit; ++fit ) {
@@ -217,7 +217,7 @@ bool CGff2Writer::x_WriteBioseqHandle(
     CBioseq_Handle bsh ) 
 //  ----------------------------------------------------------------------------
 {
-    SAnnotSelector sel = GetAnnotSelector();
+    SAnnotSelector sel = SetAnnotSelector();
     CFeat_CI feat_iter(bsh, sel);
     CGffFeatureContext fc(feat_iter, bsh);
     for (;  feat_iter; ++feat_iter) {
@@ -260,7 +260,7 @@ bool CGff2Writer::x_WriteSeqAnnotHandle(
         return true;
     }
 
-    SAnnotSelector sel = GetAnnotSelector();
+    SAnnotSelector sel = SetAnnotSelector();
     CFeat_CI feat_iter(sah, sel);
     CGffFeatureContext fc(feat_iter, CBioseq_Handle(), sah);
     for ( /*0*/; feat_iter; ++feat_iter ) {
@@ -304,19 +304,6 @@ bool CGff2Writer::xWriteFeature(
     }
     return x_WriteRecord( pParent );    
 }
-
-/*
-//  ----------------------------------------------------------------------------
-SAnnotSelector& CGff2Writer::GetAnnotSelector()
-//  ----------------------------------------------------------------------------
-{
-    if ( !m_Selector.get() ) {
-        m_Selector.reset(new SAnnotSelector());
-        m_Selector->SetSortOrder(SAnnotSelector::eSortOrder_Normal);
-    }
-    return *m_Selector;
-}
-*/
 
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::WriteAlign( 
