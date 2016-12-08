@@ -893,7 +893,7 @@ void CAlignFormatUtil::PruneSeqalign(const CSeq_align_set& source_aln,
 {
     CConstRef<CSeq_id> previous_id, subid; 
     bool is_first_aln = true;
-    unsigned int num_align = 0;
+    unsigned int num_align = 0;    
     ITERATE(CSeq_align_set::Tdata, iter, source_aln.Get()){ 
 
         if ((*iter)->GetSegs().IsDisc()) {
@@ -911,10 +911,37 @@ void CAlignFormatUtil::PruneSeqalign(const CSeq_align_set& source_aln,
             is_first_aln = false;
             previous_id = subid;
         }
-        new_aln.Set().push_back(*iter);
+        new_aln.Set().push_back(*iter);        
     }
 }
 
+
+unsigned int CAlignFormatUtil::GetSubjectsNumber(const CSeq_align_set& source_aln,                                      
+                                             unsigned int number)
+{
+    CConstRef<CSeq_id> previous_id, subid; 
+    bool is_first_aln = true;
+    unsigned int num_align = 0;    
+    ITERATE(CSeq_align_set::Tdata, iter, source_aln.Get()){ 
+
+        if ((*iter)->GetSegs().IsDisc()) {
+            ++num_align;
+        } else {
+            subid = &((*iter)->GetSeq_id(1));
+            if(is_first_aln || (!is_first_aln && !subid->Match(*previous_id))){
+                ++num_align;
+            }
+
+            if(num_align >= number) {
+                 break;
+            }
+
+            is_first_aln = false;
+            previous_id = subid;
+        }                
+    }
+    return num_align;
+}
 
 
 void CAlignFormatUtil::PruneSeqalignAll(const CSeq_align_set& source_aln, 
