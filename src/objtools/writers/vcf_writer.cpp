@@ -122,7 +122,8 @@ bool CVcfWriter::WriteAnnot(
     CRef<CSeq_annot> annot(new CSeq_annot);
     annot->Assign(orig_annot);
     CSeq_annot_Handle sah = m_Scope.AddSeq_annot( *annot );
-    CFeat_CI mf(sah);
+    SAnnotSelector sel = GetAnnotSelector();
+    CFeat_CI mf(sah, sel);
     for ( ; mf; ++mf ) 
     {
         const CSeq_id *seq_id = mf->GetLocation().GetId();
@@ -156,6 +157,17 @@ bool CVcfWriter::WriteAnnot(
         return false;
     }
     return false;
+}
+
+
+//  ----------------------------------------------------------------------------
+SAnnotSelector& CVcfWriter::GetAnnotSelector(void)
+//  ----------------------------------------------------------------------------
+{
+    if (!m_Selector.get()) {
+        CWriterBase::GetAnnotSelector().SetSortOrder(SAnnotSelector::eSortOrder_None);
+    }
+    return *m_Selector;
 }
 
 
@@ -264,8 +276,7 @@ bool CVcfWriter::x_WriteData(
 //  ----------------------------------------------------------------------------
 {
     CSeq_annot_Handle sah = m_Scope.GetSeq_annotHandle( annot );
-    SAnnotSelector sel;
-    //sel.SetSortOrder( SAnnotSelector::eSortOrder_Normal );
+    SAnnotSelector sel = GetAnnotSelector();
     sel.SetSortOrder( SAnnotSelector::eSortOrder_None );
 
     CFeat_CI mf(sah, sel);

@@ -92,6 +92,8 @@ public:
         const string& = "",
         const string& = "");
 
+//    virtual SAnnotSelector GetAnnotSelector();
+
 protected:
     bool xWriteAnnotFeatureTable(
         const CBedTrackRecord&,
@@ -113,7 +115,6 @@ protected:
         CBioseq_Handle bioseq_handle);
 
 
-    virtual SAnnotSelector xGetAnnotSelector();
 
     CScope& m_Scope;
     unsigned int m_colCount;

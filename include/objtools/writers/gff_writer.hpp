@@ -190,7 +190,7 @@ public:
     /// Provide access to the selction criteria used when traversing containers 
     /// for content to be rendered.
     ///
-    virtual SAnnotSelector& GetAnnotSelector();
+//    virtual SAnnotSelector& GetAnnotSelector();
 
 protected:
     virtual bool x_WriteSequenceHeader(
@@ -234,7 +234,6 @@ protected:
     // data:
     CRef<CScope> m_pScope;
     bool m_bHeaderWritten;
-    auto_ptr<SAnnotSelector> m_Selector;
 };
 
 END_objects_SCOPE

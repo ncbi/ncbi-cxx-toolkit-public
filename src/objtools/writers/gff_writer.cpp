@@ -305,16 +305,18 @@ bool CGff2Writer::xWriteFeature(
     return x_WriteRecord( pParent );    
 }
 
+/*
 //  ----------------------------------------------------------------------------
 SAnnotSelector& CGff2Writer::GetAnnotSelector()
 //  ----------------------------------------------------------------------------
 {
     if ( !m_Selector.get() ) {
-        m_Selector.reset(new SAnnotSelector);
+        m_Selector.reset(new SAnnotSelector());
         m_Selector->SetSortOrder(SAnnotSelector::eSortOrder_Normal);
     }
     return *m_Selector;
 }
+*/
 
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::WriteAlign( 

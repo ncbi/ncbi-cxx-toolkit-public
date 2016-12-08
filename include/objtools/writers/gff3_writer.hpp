@@ -54,7 +54,7 @@ class CGffAlignmentRecord;
 //  ============================================================================
 class NCBI_XOBJWRITE_EXPORT CGff3Writer
 //  ============================================================================
-    : public CGff2Writer, public CFeatWriter
+    : public CGff2Writer, public CFeatWriter, public CAlignWriter
 {
 public:
     typedef enum {
@@ -98,6 +98,8 @@ protected:
 	virtual bool x_WriteSeqAnnotHandle(
         CSeq_annot_Handle );
 
+    virtual bool xWriteAlign(
+        CAlign_CI align_it) override;
     bool xWriteAlign( 
         const CSeq_align&,
         const string& = "");

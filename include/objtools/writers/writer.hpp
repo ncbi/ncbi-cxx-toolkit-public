@@ -38,6 +38,8 @@
 #include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/seq_annot_handle.hpp>
 #include <objmgr/feat_ci.hpp>
+#include <objmgr/align_ci.hpp>
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
@@ -182,6 +184,14 @@ public:
     ///
     virtual bool WriteFooter() { return true; };
 
+    virtual SAnnotSelector& GetAnnotSelector(void) {
+        if ( !m_Selector.get() ) {
+            m_Selector.reset(new SAnnotSelector());
+            m_Selector->SetSortOrder(SAnnotSelector::eSortOrder_Normal);
+        }
+        return *m_Selector;
+    }
+
     void SetCanceler(
         ICanceled* pCanceller) { mpCancelled = pCanceller; };
 
@@ -196,11 +206,11 @@ protected:
     CNcbiOstream& m_Os;
     unsigned int m_uFlags;
     ICanceled* mpCancelled;
+    unique_ptr<SAnnotSelector> m_Selector;
 };
 
 
-class NCBI_XOBJWRITE_EXPORT CFeatWriter:
-    public CObject
+class NCBI_XOBJWRITE_EXPORT CFeatWriter
 {
 protected:
     virtual bool xWriteFeature(CFeat_CI feat) = 0;
@@ -209,15 +219,40 @@ public:
     virtual ~CFeatWriter(void) = default;
 
     bool WriteFeatures(CFeat_CI first) {
-        for (auto it=first; it; ++it) {
+        auto it = first;
+        while (it) {
             if (!xWriteFeature(it)) {
                 return false;
             }
+            ++it;
         }
 
         return true;
     }
 };
+
+
+class NCBI_XOBJWRITE_EXPORT CAlignWriter
+{
+protected:
+    virtual bool xWriteAlign(CAlign_CI align_it) = 0;
+
+public:
+    virtual ~CAlignWriter(void) = default;
+
+    bool WriteAlignments(CAlign_CI first) {
+        auto it = first;
+        while (it) {
+            if (!xWriteAlign(it)) {
+                return false;
+            }
+            ++it;
+        }
+
+        return true;
+    }
+};
+
 
 END_objects_SCOPE
 END_NCBI_SCOPE

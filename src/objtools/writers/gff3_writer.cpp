@@ -372,6 +372,19 @@ bool CGff3Writer::x_WriteSeqAnnotHandle(
 }
 
 //  ----------------------------------------------------------------------------
+bool CGff3Writer::xWriteAlign(
+    CAlign_CI align_it) 
+//  ----------------------------------------------------------------------------
+{
+    if (!align_it) {
+        return false;
+    }
+
+    return xWriteAlign(*align_it);
+}
+
+
+//  ----------------------------------------------------------------------------
 bool CGff3Writer::xWriteAlign( 
     const CSeq_align& align,
     const string& alignId)
@@ -1261,7 +1274,7 @@ string s_GetAlignID(const CSeq_align& align) {
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::x_WriteBioseqHandle(
-    CBioseq_Handle bsh ) 
+    CBioseq_Handle bsh) 
 //  ----------------------------------------------------------------------------
 {
 
@@ -1269,8 +1282,8 @@ bool CGff3Writer::x_WriteBioseqHandle(
         return false;
     }
 
-    SAnnotSelector selAll = GetAnnotSelector();
-    CFeat_CI feat_iter(bsh, selAll);
+    SAnnotSelector sel = GetAnnotSelector();
+    CFeat_CI feat_iter(bsh, sel);
 
     if (!xWriteSource(bsh)) {
         return false;
@@ -1292,7 +1305,7 @@ bool CGff3Writer::x_WriteBioseqHandle(
     if ( m_SortAlignments ) {
         TAlignCache alignCache;
 
-        for (CAlign_CI align_it(bsh, selAll); align_it; ++align_it) {
+        for (CAlign_CI align_it(bsh, sel); align_it; ++align_it) {
             const string alignId = s_GetAlignID(*align_it); // Might be an empty string
             CConstRef<CSeq_align> pAlign = ConstRef(&(*align_it));
             alignCache.push_back(make_pair(pAlign,alignId));
@@ -1308,9 +1321,9 @@ bool CGff3Writer::x_WriteBioseqHandle(
         return true;
     }
 
-    for (CAlign_CI align_it(bsh, selAll);  align_it;  ++ align_it) {
-        xWriteAlign(*align_it);
-    }
+    CAlign_CI align_it(bsh, sel);
+    WriteAlignments(align_it);
+
     return true;
 }
 
