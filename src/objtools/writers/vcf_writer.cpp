@@ -279,10 +279,10 @@ bool CVcfWriter::x_WriteData(
     SAnnotSelector sel = SetAnnotSelector();
     sel.SetSortOrder( SAnnotSelector::eSortOrder_None );
 
-    CFeat_CI mf(sah, sel);
+    CFeat_CI fi(sah, sel);
 
-    for ( ; mf; ++mf ) {
-        if ( ! x_WriteFeature(*mf ) ) {
+    for ( ; fi; ++fi ) {
+        if ( ! x_WriteFeature(*fi) ) {
             return false;
         }
     }

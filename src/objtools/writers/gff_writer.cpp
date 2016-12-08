@@ -218,7 +218,8 @@ bool CGff2Writer::x_WriteBioseqHandle(
 //  ----------------------------------------------------------------------------
 {
     SAnnotSelector sel = SetAnnotSelector();
-    CFeat_CI feat_iter(bsh, sel);
+    auto range = GetRange();
+    CFeat_CI feat_iter(bsh, range, sel);
     CGffFeatureContext fc(feat_iter, bsh);
     for (;  feat_iter; ++feat_iter) {
         if (!xWriteFeature(fc, *feat_iter)) {

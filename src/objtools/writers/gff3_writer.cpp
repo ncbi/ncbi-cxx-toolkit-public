@@ -1283,7 +1283,8 @@ bool CGff3Writer::x_WriteBioseqHandle(
     }
 
     SAnnotSelector sel = SetAnnotSelector();
-    CFeat_CI feat_iter(bsh, sel);
+    auto range = GetRange();
+    CFeat_CI feat_iter(bsh, range, sel);
 
     if (!xWriteSource(bsh)) {
         return false;
@@ -1305,7 +1306,7 @@ bool CGff3Writer::x_WriteBioseqHandle(
     if ( m_SortAlignments ) {
         TAlignCache alignCache;
 
-        for (CAlign_CI align_it(bsh, sel); align_it; ++align_it) {
+        for (CAlign_CI align_it(bsh, range, sel); align_it; ++align_it) {
             const string alignId = s_GetAlignID(*align_it); // Might be an empty string
             CConstRef<CSeq_align> pAlign = ConstRef(&(*align_it));
             alignCache.push_back(make_pair(pAlign,alignId));
@@ -1321,7 +1322,7 @@ bool CGff3Writer::x_WriteBioseqHandle(
         return true;
     }
 
-    CAlign_CI align_it(bsh, sel);
+    CAlign_CI align_it(bsh, range, sel);
     WriteAlignments(align_it);
 
     return true;
