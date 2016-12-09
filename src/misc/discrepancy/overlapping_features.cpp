@@ -29,6 +29,7 @@
 
 #include <ncbi_pch.hpp>
 #include "discrepancy_core.hpp"
+#include <objects/seqfeat/Code_break.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
@@ -148,7 +149,29 @@ DISCREPANCY_AUTOFIX(_CDS_TRNA_OVERLAP)
         CRef<CSeq_feat> new_cds(new CSeq_feat());
         new_cds->Assign(cds);
         new_cds->SetLocation().Assign(*sequence::Seq_loc_Subtract(new_cds->GetLocation(), *other, CSeq_loc::fStrand_Ignore, &scope));
+        CRef<CCode_break> code_break(new CCode_break);
+        CRef<CSeq_loc> br_loc(new CSeq_loc);
+        br_loc->Assign(new_cds->GetLocation());
+        if (br_loc->GetStrand() == eNa_strand_minus) {
+            br_loc->SetInt().SetTo(br_loc->GetInt().GetFrom() + ovlp_len);
+        }
+        else {
+            br_loc->SetInt().SetFrom(br_loc->GetInt().GetTo() - ovlp_len);
+        }
+        code_break->SetLoc().Assign(*br_loc);
+        code_break->SetAa().SetNcbieaa('*');
+        string comment;
+        if (new_cds->CanGetComment()) {
+            comment = new_cds->GetComment();
+        }
+        if (comment.length()) {
+            comment += "; ";
+        }
+        comment += "TAA stop codon is completed by the addition of 3' A residues to the mRNA";
+        new_cds->SetComment(comment);
+        new_cds->SetData().SetCdregion().SetCode_break().push_back(code_break);
         CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(cds));
+
         feh.Replace(*new_cds);
         if (gene) {
             CRef<CSeq_feat> new_gene(new CSeq_feat());
