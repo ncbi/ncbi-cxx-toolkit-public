@@ -37,6 +37,7 @@
 
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_http_session.hpp>
+#include <connect/ncbi_connutil.h>
 
 #include <corelib/ncbimisc.hpp>
 #include <corelib/reader_writer.hpp>
@@ -44,6 +45,7 @@
 #include <util/random_gen.hpp>
 
 #include <atomic>
+#include <memory>
 
 BEGIN_NCBI_SCOPE
 
@@ -132,6 +134,9 @@ struct SFileTrackAPI
     DECLARE_OPERATOR_BOOL(config.enabled);
 
     const SFileTrackConfig config;
+
+private:
+    shared_ptr<SConnNetInfo> m_NetInfo;
 };
 
 END_NCBI_SCOPE

@@ -1006,19 +1006,19 @@ void SNetServiceImpl::DiscoverServersIfNeeded()
             // packet compression is installed universally.
             int try_count = TServConn_MaxFineLBNameRetries::GetDefault();
             for (;;) {
-                SConnNetInfo* net_info =
-                    ConnNetInfo_Create(m_ServiceName.c_str());
+                if (!m_NetInfo) {
+                    const auto s = m_ServiceName.c_str();
+                    m_NetInfo.reset(ConnNetInfo_Create(s), ConnNetInfo_Destroy);
+                }
 
                 srv_it = SERV_OpenP(m_ServiceName.c_str(),
                         fSERV_Standalone |
                         fSERV_IncludeStandby |
                         fSERV_IncludeReserved |
                         fSERV_IncludeSuppressed,
-                    SERV_LOCALHOST, 0, 0.0, net_info, NULL, 0, 0 /*false*/,
+                    SERV_LOCALHOST, 0, 0.0, m_NetInfo.get(), NULL, 0, 0 /*false*/,
                     m_ServerPool->m_LBSMAffinityName.c_str(),
                     m_ServerPool->m_LBSMAffinityValue);
-
-                ConnNetInfo_Destroy(net_info);
 
                 if (srv_it != 0 || --try_count < 0)
                     break;

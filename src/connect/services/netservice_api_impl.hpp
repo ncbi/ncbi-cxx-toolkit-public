@@ -33,9 +33,11 @@
 
 #include "srv_connections_impl.hpp"
 #include "balancing.hpp"
+#include <connect/ncbi_connutil.h>
 
 #include <map>
 #include <atomic>
+#include <memory>
 
 BEGIN_NCBI_SCOPE
 
@@ -291,7 +293,8 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : SNetServiceXSiteAPI
         m_ClientName(prototype->m_ClientName),
         m_UseSmartRetries(prototype->m_UseSmartRetries),
         m_ConnectionMaxRetries(prototype->m_ConnectionMaxRetries),
-        m_ConnectionRetryDelay(prototype->m_ConnectionRetryDelay)
+        m_ConnectionRetryDelay(prototype->m_ConnectionRetryDelay),
+        m_NetInfo(prototype->m_NetInfo)
     {
         Construct(server);
     }
@@ -303,7 +306,8 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : SNetServiceXSiteAPI
         m_ClientName(prototype->m_ClientName),
         m_UseSmartRetries(prototype->m_UseSmartRetries),
         m_ConnectionMaxRetries(prototype->m_ConnectionMaxRetries),
-        m_ConnectionRetryDelay(prototype->m_ConnectionRetryDelay)
+        m_ConnectionRetryDelay(prototype->m_ConnectionRetryDelay),
+        m_NetInfo(prototype->m_NetInfo)
     {
         Construct();
     }
@@ -372,6 +376,8 @@ private:
     bool m_UseSmartRetries;
     int m_ConnectionMaxRetries;
     int m_ConnectionRetryDelay;
+
+    shared_ptr<SConnNetInfo> m_NetInfo;
 };
 
 struct SNetServiceMap {

@@ -256,12 +256,14 @@ CRef<SFileTrackUpload> SFileTrackAPI::StartUpload(
         user_header.append("\r\n");
     });
 
-    AutoPtr<SConnNetInfo, CDeleter<SConnNetInfo> > net_info(ConnNetInfo_Create(0));
-    net_info->version = 1;
-    net_info->req_method = eReqMethod_Post;
+    if (!m_NetInfo) {
+        m_NetInfo.reset(ConnNetInfo_Create(nullptr), ConnNetInfo_Destroy);
+        m_NetInfo->version = 1;
+        m_NetInfo->req_method = eReqMethod_Post;
+    }
 
     return CRef<SFileTrackUpload>(
-            new SFileTrackUpload(config, object_loc, user_header, net_info.get()));
+            new SFileTrackUpload(config, object_loc, user_header, m_NetInfo.get()));
 }
 
 void SFileTrackUpload::Write(const void* buf,
