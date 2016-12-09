@@ -7,7 +7,7 @@ $(ORIG_LIBS) needs3party
 16S_summaries needs gpipe_xmlutil
 16S_summaries needs xregexp
 Assembly2Fscreen needs fscreen
-Assembly2Fscreen needs xid_utils
+Assembly2Fscreen needs idload_utils
 BlastCgiUtils needs $(CONNEXT)
 BlastCgiUtils needs connect
 BlastCgiUtils needs xhtml
@@ -849,7 +849,6 @@ pcsubstance needs pub
 pepXML needs xser
 phytree_format needs taxon1
 phytree_format needs xalgophytree
-pn_ctl needs $(GPIPE_GENCOLL_LIBS)
 pn_ctl needs bacterial_pipeline_proc
 pn_ctl needs ec_hmm_relation_cd
 pn_ctl needs gpipe_clean_prot_names
@@ -880,9 +879,9 @@ refseq_aln_source needs xalgoalignsplign
 refseq_ctl needs bacterial_pipeline_proc
 refseq_ctl needs bag_access
 refseq_ctl needs gpinit_access
+refseq_ctl needs idload_utils
 refseq_ctl needs process_annotation_stats
 refseq_ctl needs validation_results
-refseq_ctl needs xid_utils
 reftrack_access needs xncbi
 reftrack_admin needs xncbi
 remap needs $(SEQ_LIBS)
@@ -1441,8 +1440,7 @@ xstruct_dp needs xncbi
 xstruct_thread needs xutil
 xstruct_util needs $(BLAST_LIBS)
 xstruct_util needs xstruct_dp
-xsubmit2id needs sqlitewrapp
-xsubmit2id needs xid_utils
+xsubmit2id needs idload_utils
 xsvcgi needs $(DBAPI_CTLIB)
 xsvcgi needs $(OBJMGR_LIBS)
 xsvcgi needs $(ncbi_xreader_pubseqos2)
