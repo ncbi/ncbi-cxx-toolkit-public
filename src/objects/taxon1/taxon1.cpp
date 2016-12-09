@@ -513,27 +513,28 @@ CTaxon1::OrgRefAdjust( COrg_ref& inp_orgRef, const COrg_ref& db_orgRef,
             }
         }
         // Remove 'other' modifiers
-        //PFindModByType fmbt( COrgMod::eSubtype_other );
-        //remove_if( lDstMod.begin(), lDstMod.end(), fmbt );
     }
     // Remove 'synonym' or 'anamorph' it if coincides with taxname
     PRemoveSynAnamorph rsa( inp_orgRef.GetTaxname() );
-    remove_if( lDstMod.begin(), lDstMod.end(), rsa );
-
     // Remove duplicated modifiers
     for( COrgName::TMod::iterator i = lDstMod.begin();
-	 i != lDstMod.end();
-	 ++i ) {
-	COrgName::TMod::iterator ii = i;
-	for( COrgName::TMod::iterator j = ++ii;
-	 j != lDstMod.end(); ) {
-	    if( (*i)->GetSubtype() == (*j)->GetSubtype() &&
-		NStr::EqualNocase( (*i)->GetSubname(), (*j)->GetSubname() ) ) {
-		j = lDstMod.erase( j );
-	    } else {
-		++j;
+	 i != lDstMod.end(); ) {
+	if( rsa(*i) ) {
+            i = lDstMod.erase( i );
+            continue;
+        } else {
+	    COrgName::TMod::iterator ii = i;
+	    for( COrgName::TMod::iterator j = ++ii;
+	         j != lDstMod.end(); ) {
+	        if( (*i)->GetSubtype() == (*j)->GetSubtype() &&
+		    NStr::EqualNocase( (*i)->GetSubname(), (*j)->GetSubname() ) ) {
+		    j = lDstMod.erase( j );
+	        } else {
+		    ++j;
+	        }
 	    }
-	}
+            ++i;
+        }
     }
 
     // Reset destination modifiers if empty
