@@ -21,6 +21,7 @@ internal/gpipe/gencoll/src/gcaccess$
 internal/gpipe/gencoll/src/gcstats$
 internal/gpipe/gencoll/src/gc_load_utils$
 internal/gpipe/gpinit/src/api$
+internal/gpipe/gpinit/src/asn_config/objects$
 internal/gpipe/gpinit/src/gpinit_compare$
 internal/gpipe/objects/gencoll_load$
 internal/gpipe/objects/genomecoll$
