@@ -9033,7 +9033,8 @@ void CNewCleanup_imp::RnaFeatBC (
             CAminoAcidCharToSymbol::const_iterator aa_end  = sm_TrnaInverseKeys.upper_bound(aa);
             for( ; aa_iter != aa_end ; ++aa_iter ) {
                 const string &a_name = aa_iter->second;
-                if( comment == a_name && ( aa != 'M' || ! NStr::EqualNocase(a_name, "fMet") || ! NStr::EqualNocase(a_name, "iMet") ) ) {
+                if (comment != a_name) continue;
+                if ( aa != 'M' || (! NStr::EqualNocase(a_name, "fMet") && ! NStr::EqualNocase(a_name, "iMet") ) ) {
                     RESET_FIELD(seq_feat, Comment);
                     ChangeMade(CCleanupChange::eChangeComment);
                     break;
