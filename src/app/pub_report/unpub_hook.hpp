@@ -62,6 +62,8 @@ private:
     void ProcessUnpublished(const CPub& pub);
 
     CUnpublishedReport& m_report;
+    bool m_creation_date_processed,
+         m_update_date_processed;
 };
 
 }

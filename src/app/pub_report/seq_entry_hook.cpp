@@ -61,6 +61,7 @@ void CSkipSeqEntryHook::SkipObject(CObjectIStream &in, const CObjectTypeInfo &in
         DefaultSkip(in, info);
 
         m_report.ClearCurrentSeqId();
+        m_report.ClearData();
         // do not call ResetLocalSkipHook here, because CSkipSeqIdHook class will do that by itself
     }
     else

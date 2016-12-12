@@ -56,7 +56,9 @@ namespace pub_report
 {
 
 CSkipPubUnpublishedHook::CSkipPubUnpublishedHook(CUnpublishedReport& report) :
-m_report(report)
+    m_report(report),
+    m_creation_date_processed(false),
+    m_update_date_processed(false)
 {};
 
 static bool IsGenUnpublished(const CCit_gen& cit)
@@ -103,16 +105,25 @@ void CSkipPubUnpublishedHook::ProcessUnpublished(const CPub& pub)
 
 void CSkipPubUnpublishedHook::SkipObject(CObjectIStream &in, const CObjectTypeInfo &info)
 {
+    if (!m_report.IsSetYear()) {
+        m_creation_date_processed = false;
+        m_update_date_processed = false;
+    }
+
     CSeqdesc desc;
     DefaultRead(in, ObjectInfo(desc));
 
-    if (!m_report.IsSetYear()) {
-        if (desc.IsUpdate_date() && desc.GetUpdate_date().IsStd() && desc.GetUpdate_date().GetStd().IsSetYear()) {
-            m_report.SetYear(desc.GetUpdate_date().GetStd().GetYear());
-        }
-
-        if (!m_report.IsSetYear() && desc.IsCreate_date() && desc.GetCreate_date().IsStd() && desc.GetCreate_date().GetStd().IsSetYear()) {
+    if (!m_update_date_processed && !m_creation_date_processed && desc.IsCreate_date()) {
+        if (desc.GetCreate_date().IsStd() && desc.GetCreate_date().GetStd().IsSetYear()) {
             m_report.SetYear(desc.GetCreate_date().GetStd().GetYear());
+            m_creation_date_processed = true;
+        }
+    }
+
+    if (!m_update_date_processed && desc.IsUpdate_date()) {
+        if (desc.GetUpdate_date().IsStd() && desc.GetUpdate_date().GetStd().IsSetYear()) {
+            m_report.SetYear(desc.GetUpdate_date().GetStd().GetYear());
+            m_update_date_processed = true;
         }
     }
 

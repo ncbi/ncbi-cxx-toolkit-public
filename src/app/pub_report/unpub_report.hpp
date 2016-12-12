@@ -67,23 +67,13 @@ public:
 
     virtual void CompleteReport();
     virtual void SetCurrentSeqId(const std::string& name);
+    virtual void ClearData();
 
     void ReportUnpublished(const CPub& pub);
 
-    bool IsSetYear() const
-    {
-        return m_year > 0;
-    }
-
-    void SetYear(int year)
-    {
-        m_year = year;
-    }
-
-    int GetYear() const
-    {
-        return m_year;
-    }
+    bool IsSetYear() const;
+    void SetYear(int year);
+    int GetYear() const;
 
 private:
 
@@ -93,7 +83,8 @@ private:
     typedef std::list<std::shared_ptr<CPubData>> TPubs;
 
     TPubs m_pubs,
-          m_pubs_need_id;
+          m_pubs_need_id,
+          m_pubs_need_year;
 
     ncbi::CNcbiOstream& m_out;
     shared_ptr<CHydraSearch> m_hydra_search;

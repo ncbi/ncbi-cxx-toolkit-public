@@ -142,6 +142,7 @@ class CPubData
 public:
 
     CPubData() :
+        m_year(0),
         m_title_words_set(false),
         m_full_title_set(false)
     {}
@@ -179,8 +180,8 @@ public:
     const string& GetUnique() const
     { return m_unique; }
 
-    const CDate& GetDate() const
-    { return m_date; }
+    int GetYear() const
+    { return m_year; }
 
     const string& GetVolume() const
     { return m_volume; }
@@ -210,8 +211,16 @@ public:
     void SetUnique(const string& unique)
     { m_unique = unique; }
 
-    void SetDate(const CDate& date)
-    { m_date.Assign(date); }
+    void SetYear(const CDate& date)
+    {
+        SetYear(0);
+        if (date.IsStd() && date.GetStd().IsSetYear()) {
+            SetYear(date.GetStd().GetYear());
+        }
+    }
+
+    void SetYear(int year)
+    { m_year = year; }
 
     void AddSeqId(const string& seq_id)
     {
@@ -243,7 +252,7 @@ private:
     string m_unique;
 
     mutable string m_full_title;
-    CDate m_date;
+    int m_year;
 
     mutable bool m_title_words_set,
                  m_full_title_set;
@@ -309,7 +318,7 @@ static void CollectDataGen(const CCit_gen& cit, CPubData& data)
     }
 
     if (cit.IsSetDate()) {
-        data.SetDate(cit.GetDate());
+        data.SetYear(cit.GetDate());
     }
 }
 
@@ -341,7 +350,7 @@ static void CollectDataArt(const CCit_art& cit, CPubData& data)
     }
 
     if (imprint.IsSetDate()) {
-        data.SetDate(imprint.GetDate());
+        data.SetYear(imprint.GetDate());
     }
 
     if (imprint.IsSetVolume()) {
@@ -487,6 +496,10 @@ void CUnpublishedReport::ReportUnpublished(const CPub& pub)
         }
         else {
             data->AddSeqId(cur_seq_id);
+        }
+
+        if (data->GetYear() == 0) {
+            m_pubs_need_year.push_back(data);
         }
     }
 }
@@ -784,13 +797,10 @@ static void ReportTitle(CNcbiOstream& out, const char* prefix, const CPubData& d
     out << '\t';
 }
 
-static void ReportJournal(CNcbiOstream& out, const char* prefix, const CPubData& data, int year)
+static void ReportJournal(CNcbiOstream& out, const char* prefix, const CPubData& data)
 {
     out << prefix;
-
-    if (data.GetDate().IsStd() && data.GetDate().GetStd().IsSetYear()) {
-        year = data.GetDate().GetStd().GetYear();
-    }
+    int year = data.GetYear();
 
     if (data.GetJournal().empty()) {
 
@@ -816,7 +826,7 @@ static void ReportJournal(CNcbiOstream& out, const char* prefix, const CPubData&
     }
 }
 
-static void ReportOnePub(CNcbiOstream& out, const CCit_art& pubmed_cit_art, const CPubData& data, int pmid, int year)
+static void ReportOnePub(CNcbiOstream& out, const CCit_art& pubmed_cit_art, const CPubData& data, int pmid)
 {
     CPubData pubmed_data;
     CollectDataArt(pubmed_cit_art, pubmed_data);
@@ -860,9 +870,9 @@ static void ReportOnePub(CNcbiOstream& out, const CCit_art& pubmed_cit_art, cons
         ReportTitle(out, "OLD_TITL ", data);
         ReportTitle(out, "NEW_TITL ", pubmed_data);
 
-        ReportJournal(out, "OLD_JOUR ", data, year);
+        ReportJournal(out, "OLD_JOUR ", data);
         out << '\t';
-        ReportJournal(out, "NEW_JOUR ", pubmed_data, year);
+        ReportJournal(out, "NEW_JOUR ", pubmed_data);
 
         out << " <" << pmid << '>';
         out << '\n';
@@ -871,7 +881,7 @@ static void ReportOnePub(CNcbiOstream& out, const CCit_art& pubmed_cit_art, cons
 
 void CUnpublishedReport::CompleteReport()
 {
-    m_out << "Trying " << m_pubs.size() << " Entrez Queries\n";
+    m_out << "Trying " << m_pubs.size() << " Entrez Queries\n\n";
     NON_CONST_ITERATE(TPubs, pub, m_pubs) {
 
         CPubmed_entry pubmed_entry;
@@ -882,7 +892,7 @@ void CUnpublishedReport::CompleteReport()
             _ASSERT(pubmed_entry.IsSetMedent() && pubmed_entry.GetMedent().IsSetCit() && "MedEntry and MedEntry.Cit should be present at this point");
 
             (*pub)->SortSeqIds();
-            ReportOnePub(m_out, pubmed_entry.GetMedent().GetCit(), **pub, pmid, m_year);
+            ReportOnePub(m_out, pubmed_entry.GetMedent().GetCit(), **pub, pmid);
         }
     }
 }
@@ -899,5 +909,35 @@ void CUnpublishedReport::SetCurrentSeqId(const std::string& name)
 
     CBaseReport::SetCurrentSeqId(name);
 }
+
+void CUnpublishedReport::ClearData()
+{
+    if (GetYear()) {
+        NON_CONST_ITERATE(TPubs, pub, m_pubs_need_year) {
+            if (!(*pub)->GetYear()) {
+                (*pub)->SetYear(GetYear());
+            }
+        }
+    }
+
+    m_pubs_need_year.clear();
+    SetYear(0); // clears the current year
+}
+
+bool CUnpublishedReport::IsSetYear() const
+{
+    return m_year > 0;
+}
+
+void CUnpublishedReport::SetYear(int year)
+{
+    m_year = year;
+}
+
+int CUnpublishedReport::GetYear() const
+{
+    return m_year;
+}
+
 
 }

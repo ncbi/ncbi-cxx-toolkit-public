@@ -58,6 +58,9 @@ public:
     virtual void CompleteReport()
     {}
 
+    virtual void ClearData()
+    {}
+
 private:
 
     std::string m_current_seq_id;
