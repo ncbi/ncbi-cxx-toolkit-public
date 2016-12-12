@@ -3,7 +3,7 @@
 #
 add_executable(table2asn-app
     table2asn OpticalXML2ASN multireader struc_cmt_reader table2asn_context feature_table_reader
-    fcs_reader table2asn_validator src_quals fasta_ex
+    fcs_reader table2asn_validator src_quals fasta_ex suspect_feat
 )
 
 set_target_properties(table2asn-app PROPERTIES OUTPUT_NAME table2asn)
