@@ -74,9 +74,10 @@ struct SNetStorageRPC : public SNetStorageImpl
         if (service_name.empty())
             return m_Service;
 
-        // Clone will return itself if it has the same name and
-        // insert would not do anything if such entry already exists,
-        // so no need to check for existence.
+        auto i = m_ServiceMap.find(service_name);
+
+        if (i != m_ServiceMap.end()) return i->second;
+
         CNetService service(m_Service.Clone(service_name));
         m_ServiceMap.insert(make_pair(service_name, service));
         return service;
