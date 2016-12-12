@@ -193,6 +193,10 @@ public:
         return *m_Selector;
     }
 
+    NCBI_DEPRECATED SAnnotSelector& GetAnnotSelector(void) {
+        return SetAnnotSelector();
+    }
+
     virtual CRange<TSeqPos>& SetRange(void) {
         return m_Range;
     }
