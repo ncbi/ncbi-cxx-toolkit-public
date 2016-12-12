@@ -1439,9 +1439,11 @@ void CNetScheduleHandler::x_ProcessMsgBatchJob(BUF buffer)
 
     job.SetInput(m_CommandArguments.input);
 
-    // Memorize the job affinity if given
-    if ( !m_CommandArguments.affinity_token.empty() )
-        m_BatchJobs[m_BatchPos].second = m_CommandArguments.affinity_token;
+    // See CXX-8843: no affinity is replaced with "-" affinity automatically
+    if (m_CommandArguments.affinity_token.empty())
+        m_CommandArguments.affinity_token = k_NoAffinityToken;
+
+    m_BatchJobs[m_BatchPos].second = m_CommandArguments.affinity_token;
 
     job.SetMask(m_CommandArguments.job_mask);
     job.SetSubmNotifPort(m_BatchSubmPort);
@@ -1712,6 +1714,10 @@ void CNetScheduleHandler::x_ProcessChangeAffinity(CQueue* q)
     NStr::Split(m_CommandArguments.aff_to_del,
                 "\t,", aff_to_del_list, NStr::fSplit_NoMergeDelims);
 
+    // CXX-8843: remove '-' affinity if so
+    aff_to_add_list.remove(k_NoAffinityToken);
+    aff_to_del_list.remove(k_NoAffinityToken);
+
     // Check that the same affinity has not been mentioned in both add and del
     // lists
     for (list<string>::const_iterator k = aff_to_add_list.begin();
@@ -1768,11 +1774,15 @@ void CNetScheduleHandler::x_ProcessSetAffinity(CQueue* q)
     NStr::Split(m_CommandArguments.affinity_token,
                 "\t,", aff_to_set, NStr::fSplit_NoMergeDelims);
 
+    // CXX-8843: remove '-' affinity if so
+    aff_to_set.remove(k_NoAffinityToken);
+
     ECommandGroup   cmd_group = eGet;
     if (m_CommandArguments.cmd == "SETRAFF")
         cmd_group = eRead;
 
     q->SetAffinity(m_ClientId, aff_to_set, cmd_group);
+
     x_WriteMessage(kOKCompleteResponse);
     x_PrintCmdRequestStop();
 }
@@ -1797,6 +1807,12 @@ void CNetScheduleHandler::x_ProcessSubmit(CQueue* q)
         return;
     }
 
+    // CXX-8843: if there is no affinity then replace it with the '-' affinity
+    if (m_CommandArguments.affinity_token.empty())
+        m_CommandArguments.affinity_token = k_NoAffinityToken;
+    // CXX-8843: if there is no group then replace it with the '-' group
+    if (m_CommandArguments.group.empty())
+        m_CommandArguments.group = k_NoGroupToken;
 
     CJob        job(m_CommandArguments);
     try {
@@ -1844,6 +1860,11 @@ void CNetScheduleHandler::x_ProcessSubmitBatch(CQueue* q)
     try {
         // Memorize the fact that batch submit started
         m_WithinBatchSubmit = true;
+
+        // CXX-8843: if no group is provided it is overwritten with '-' group
+        // automatically
+        if (m_CommandArguments.group.empty())
+            m_CommandArguments.group = k_NoGroupToken;
 
         m_BatchSubmPort    = m_CommandArguments.port;
         m_BatchSubmTimeout = CNSPreciseTime(m_CommandArguments.timeout, 0);
@@ -2577,6 +2598,15 @@ void CNetScheduleHandler::x_ProcessReschedule(CQueue* q)
 
     CJob            job;
     bool            auth_token_ok = true;
+
+    // CXX-8843: replace no affinity with "-" affinity
+    if (m_CommandArguments.affinity_token.empty())
+        m_CommandArguments.affinity_token = k_NoAffinityToken;
+
+    // CXX-8843: replace no group with "-" group
+    if (m_CommandArguments.group.empty())
+        m_CommandArguments.group = k_NoGroupToken;
+
     TJobStatus      old_status = q->RescheduleJob(
                                         m_ClientId,
                                         m_CommandArguments.job_id,

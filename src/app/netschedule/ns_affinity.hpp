@@ -47,6 +47,10 @@ BEGIN_NCBI_SCOPE
 
 const size_t    k_OpLimitToOptimize = 1000000;
 
+// See CXX-8843: if there is no affinity then it should be replaced with "-"
+// affinity automatically
+const string    k_NoAffinityToken = "-";
+
 class CNSClientsRegistry;
 class CQueue;
 class CJobStatusTracker;

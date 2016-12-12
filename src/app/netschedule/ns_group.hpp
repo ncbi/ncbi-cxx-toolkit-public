@@ -49,6 +49,12 @@
 
 BEGIN_NCBI_SCOPE
 
+
+// See CXX-8843: if there is no group then it should be replaced with "-"
+// group automatically
+const string    k_NoGroupToken = "-";
+
+
 class CQueue;
 
 

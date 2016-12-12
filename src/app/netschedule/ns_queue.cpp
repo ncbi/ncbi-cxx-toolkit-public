@@ -941,20 +941,31 @@ CQueue::GetJobOrWait(const CNSClientId &       client,
                 if (m_ClientsRegistry.IsPreferredByAny(
                                                 job_pick.aff_id, eGet))
                     continue;  // Other WN grabbed this affinity already
-                bool added = m_ClientsRegistry.
-                                UpdatePreferredAffinities(
-                                    client, job_pick.aff_id, 0, eGet);
-                if (added)
-                    added_pref_aff = m_AffinityRegistry.GetTokenByID(
-                                                    job_pick.aff_id);
+
+                string  aff_token = m_AffinityRegistry.GetTokenByID(
+                                                            job_pick.aff_id);
+                // CXX-8843: The '-' affinity must not be added to the list of
+                // preferred affinities
+                if (aff_token != k_NoAffinityToken) {
+                    bool added = m_ClientsRegistry.
+                                    UpdatePreferredAffinities(
+                                        client, job_pick.aff_id, 0, eGet);
+                    if (added)
+                        added_pref_aff = aff_token;
+                }
             }
             if (outdated_job && job_pick.aff_id != 0) {
-                bool added = m_ClientsRegistry.
-                                UpdatePreferredAffinities(
-                                    client, job_pick.aff_id, 0, eGet);
-                if (added)
-                    added_pref_aff = m_AffinityRegistry.GetTokenByID(
-                                                    job_pick.aff_id);
+                string  aff_token = m_AffinityRegistry.GetTokenByID(
+                                                            job_pick.aff_id);
+                // CXX-8843: The '-' affinity must not be added to the list of
+                // preferred affinities
+                if (aff_token != k_NoAffinityToken) {
+                    bool added = m_ClientsRegistry.
+                                    UpdatePreferredAffinities(
+                                        client, job_pick.aff_id, 0, eGet);
+                    if (added)
+                        added_pref_aff = aff_token;
+                }
             }
 
             x_UpdateDB_ProvideJobNoLock(client, curr, job_pick.job_id, eGet,
@@ -2361,20 +2372,30 @@ CQueue::GetJobForReadingOrWait(const CNSClientId &       client,
                 if (m_ClientsRegistry.IsPreferredByAny(job_pick.aff_id, eRead))
                     continue;   // Other reader grabbed this affinity already
 
-                bool added = m_ClientsRegistry.UpdatePreferredAffinities(
+                string  aff_token = m_AffinityRegistry.GetTokenByID(
+                                                            job_pick.aff_id);
+                // CXX-8843: The '-' affinity must not be added to the list of
+                // preferred affinities
+                if (aff_token != k_NoAffinityToken) {
+                    bool added = m_ClientsRegistry.UpdatePreferredAffinities(
                                             client, job_pick.aff_id, 0, eRead);
-                if (added)
-                    added_pref_aff = m_AffinityRegistry.
-                                            GetTokenByID(job_pick.aff_id);
+                    if (added)
+                        added_pref_aff = aff_token;
+                }
             }
 
             if (outdated_job && job_pick.aff_id != 0) {
-                bool added = m_ClientsRegistry.
-                                UpdatePreferredAffinities(
-                                        client, job_pick.aff_id, 0, eRead);
-                if (added)
-                    added_pref_aff = m_AffinityRegistry.GetTokenByID(
+                string  aff_token = m_AffinityRegistry.GetTokenByID(
                                                             job_pick.aff_id);
+                // CXX-8843: The '-' affinity must not be added to the list of
+                // preferred affinities
+                if (aff_token != k_NoAffinityToken) {
+                    bool added = m_ClientsRegistry.
+                                    UpdatePreferredAffinities(
+                                            client, job_pick.aff_id, 0, eRead);
+                    if (added)
+                        added_pref_aff = aff_token;
+                }
             }
 
             old_status = GetJobStatus(job_pick.job_id);
