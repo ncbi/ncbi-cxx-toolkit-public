@@ -47,6 +47,7 @@
 #include <objects/seqloc/Seq_loc_mix.hpp>
 #include <objects/seqloc/Seq_point.hpp>
 #include <objects/general/Int_fuzz.hpp>
+#include <objects/misc/sequence_util_macros.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <util/sequtil/sequtil_convert.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -2011,6 +2012,219 @@ void FeatureAdjustForInsert(CSeq_feat& feat,
                 break;
         }
     }
+}
+
+
+bool s_PPntComparePlus(const TSeqPos& p1, const TSeqPos& p2)
+{
+    return (p1 < p2);
+}
+
+
+bool s_PPntCompareMinus(const TSeqPos& p1, const TSeqPos& p2)
+{
+    return (p1 > p2);
+}
+
+
+bool CorrectIntervalOrder(CPacked_seqpnt& ppnt)
+{
+    bool rval = false;
+    if (!ppnt.IsSetPoints()) {
+        // nothing to do
+    } else if (!ppnt.IsSetStrand() || ppnt.GetStrand() == eNa_strand_plus || ppnt.GetStrand() == eNa_strand_unknown) {
+        if (!seq_mac_is_sorted(ppnt.GetPoints().begin(), ppnt.GetPoints().end(), s_PPntComparePlus)) {
+            stable_sort(ppnt.SetPoints().begin(), ppnt.SetPoints().end(), s_PPntComparePlus);
+            rval = true;
+        }        
+    } else if (ppnt.IsSetStrand() && ppnt.GetStrand() == eNa_strand_minus) {
+        if (!seq_mac_is_sorted(ppnt.GetPoints().begin(), ppnt.GetPoints().end(), s_PPntCompareMinus)) {
+            stable_sort(ppnt.SetPoints().begin(), ppnt.SetPoints().end(), s_PPntCompareMinus);
+            rval = true;
+        }
+    }
+    return rval;
+}
+
+
+bool s_StrandsConsistent(const CSeq_interval& a, const CSeq_interval& b)
+{
+    if (a.IsSetStrand() && a.GetStrand() == eNa_strand_minus) {
+        if (!b.IsSetStrand() || b.GetStrand() != eNa_strand_minus) {
+            return false;
+        } else {
+            return true;
+        }
+    } else if (b.IsSetStrand() && b.GetStrand() == eNa_strand_minus) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+
+bool CorrectIntervalOrder(CPacked_seqint& pint)
+{
+    if (pint.Get().size() < 2) {
+        return false;
+    }
+    bool any_change = false;
+
+    bool this_change = true;
+    while (this_change) {
+        this_change = false;
+
+        // can only swap elements if they have the same strand and Seq-id
+        CPacked_seqint::Tdata::iterator a = pint.Set().begin();
+        CPacked_seqint::Tdata::iterator b = a;
+        b++;
+        while (b != pint.Set().end()) {
+            if ((*a)->IsSetId() && (*b)->IsSetId() &&
+                (*a)->GetId().Equals((*b)->GetId()) &&
+                (*a)->IsSetFrom() && (*a)->IsSetTo() && (*a)->GetFrom() < (*a)->GetTo() &&
+                (*b)->IsSetFrom() && (*b)->IsSetTo() && (*b)->GetFrom() < (*b)->GetTo() &&
+                s_StrandsConsistent(**a, **b)) {
+                if ((*a)->IsSetStrand() && (*a)->GetStrand() == eNa_strand_minus) {
+                    if ((*b)->GetTo() > (*a)->GetFrom()) {
+                        CRef<CSeq_interval> swp(a->GetPointer());
+                        a->Reset(b->GetPointer());
+                        b->Reset(swp.GetPointer());
+                        this_change = true;
+                        any_change = true;
+                    }
+                } else {
+                    if ((*b)->GetTo() < (*a)->GetFrom()) {
+                        CRef<CSeq_interval> swp(a->GetPointer());
+                        a->Reset(b->GetPointer());
+                        b->Reset(swp.GetPointer());
+                        this_change = true;
+                        any_change = true;
+                    }
+                }
+            }
+            ++a;
+            ++b;
+        }
+    }
+    return any_change;
+}
+
+
+bool OneIdOneStrand(const CSeq_loc& loc, const CSeq_id** id, ENa_strand& strand)
+{
+    try {
+        CSeq_loc_CI li(loc);
+        *id = &(li.GetSeq_id());
+        strand = li.IsSetStrand() ? li.GetStrand() : eNa_strand_plus;
+        if (strand == eNa_strand_unknown) {
+            strand = eNa_strand_plus;
+        }
+        if (strand != eNa_strand_plus && strand != eNa_strand_minus) {
+            return false;
+        }
+        ++li;
+        while (li) {
+            if (!li.GetSeq_id().Equals(**id)) {
+                return false;
+            }
+            ENa_strand this_strand = li.IsSetStrand() ? li.GetStrand() : eNa_strand_plus;
+            if (this_strand == eNa_strand_unknown) {
+                this_strand = eNa_strand_plus;
+            }
+            if (this_strand != strand) {
+                return false;
+            }
+            ++li;
+        }
+        return true;
+    } catch (CException& ex) {
+        return false;
+    }
+}
+
+
+bool CorrectIntervalOrder(CSeq_loc::TMix::Tdata& mix)
+{
+    bool any_change = false;
+    NON_CONST_ITERATE(CSeq_loc::TMix::Tdata, it, mix) {
+        any_change |= CorrectIntervalOrder(**it);
+    }
+    if (mix.size() < 2) {
+        return any_change;
+    }
+    bool this_change = true;
+    while (this_change) {
+        this_change = false;
+
+        // can only swap elements if they have the same strand and Seq-id
+        CSeq_loc::TMix::Tdata::iterator a = mix.begin();
+        CSeq_loc::TMix::Tdata::iterator b = a;
+        b++;
+        while (b != mix.end()) {
+            try {
+                const CSeq_id* a_id;
+                const CSeq_id* b_id;
+                ENa_strand a_strand;
+                ENa_strand b_strand;
+                if (OneIdOneStrand(**a, &a_id, a_strand) &&
+                    OneIdOneStrand(**b, &b_id, b_strand) &&
+                    a_id->Equals(*b_id) &&
+                    a_strand == b_strand) {
+                    if (a_strand == eNa_strand_plus) {
+                        if ((*a)->GetStart(eExtreme_Biological) > (*b)->GetStop(eExtreme_Biological)) {
+                            CRef<CSeq_loc> swp(a->GetPointer());
+                            a->Reset(b->GetPointer());
+                            b->Reset(swp.GetPointer());
+                            this_change = true;
+                            any_change = true;
+                        }
+                    } else if (a_strand == eNa_strand_minus) {
+                        if ((*a)->GetStart(eExtreme_Biological) < (*b)->GetStop(eExtreme_Biological)) {
+                            CRef<CSeq_loc> swp(a->GetPointer());
+                            a->Reset(b->GetPointer());
+                            b->Reset(swp.GetPointer());
+                            this_change = true;
+                            any_change = true;
+                        }
+                    }
+                }
+            } catch (CException& ex) {
+                // not just one id
+            }
+            ++a;
+            ++b;
+        }
+    }
+    return any_change;
+}
+
+
+bool CorrectIntervalOrder(CSeq_loc& loc)
+{
+    bool any_change = false;
+    switch (loc.Which()) {
+        case CSeq_loc::e_Bond:
+        case CSeq_loc::e_Empty:
+        case CSeq_loc::e_Equiv:
+        case CSeq_loc::e_Feat:
+        case CSeq_loc::e_Int:
+        case CSeq_loc::e_not_set:
+        case CSeq_loc::e_Null:
+        case CSeq_loc::e_Pnt:
+        case CSeq_loc::e_Whole:
+            // nothing to do
+            break;
+        case CSeq_loc::e_Mix:
+            any_change = CorrectIntervalOrder(loc.SetMix().Set());
+            break;
+        case CSeq_loc::e_Packed_int:
+            any_change = CorrectIntervalOrder(loc.SetPacked_int());
+            break;
+        case CSeq_loc::e_Packed_pnt:
+            any_change = CorrectIntervalOrder(loc.SetPacked_pnt());
+            break;
+    }
+    return any_change;
 }
 
 

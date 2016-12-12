@@ -1255,6 +1255,124 @@ BOOST_AUTO_TEST_CASE(Test_GetGeneForFeature)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_CorrectIntervalOrder)
+{
+    CRef<CSeq_id> id_a(new CSeq_id());
+    id_a->SetLocal().SetStr("a");
+    CRef<CSeq_id> id_b(new CSeq_id());
+    id_b->SetLocal().SetStr("b");
+
+    CRef<CSeq_loc> a(new CSeq_loc());
+    a->SetInt().SetFrom(50);
+    a->SetInt().SetTo(60);
+    a->SetInt().SetId().Assign(*id_a);
+
+    BOOST_ASSERT(!edit::CorrectIntervalOrder(*a));
+
+    CRef<CSeq_loc> b(new CSeq_loc());
+    b->SetInt().SetFrom(40);
+    b->SetInt().SetTo(43);
+    b->SetInt().SetId().Assign(*id_a);
+
+    CRef<CSeq_loc> c(new CSeq_loc());
+    c->SetMix().Set().push_back(a);
+    c->SetMix().Set().push_back(b);
+
+    BOOST_ASSERT(edit::CorrectIntervalOrder(*c));
+    BOOST_CHECK_EQUAL(a->Equals(*(c->GetMix().Get().back())), true);
+    BOOST_CHECK_EQUAL(b->Equals(*(c->GetMix().Get().front())), true);
+
+    // won't change if already correct
+    BOOST_ASSERT(!edit::CorrectIntervalOrder(*c));
+
+    a->SetInt().SetStrand(eNa_strand_minus);
+    // won't change if mixed strands
+    BOOST_CHECK_EQUAL(edit::CorrectIntervalOrder(*c), false);
+
+    b->SetInt().SetStrand(eNa_strand_minus);
+    BOOST_CHECK_EQUAL(edit::CorrectIntervalOrder(*c), true);
+    BOOST_CHECK_EQUAL(a->Equals(*(c->GetMix().Get().front())), true);
+    BOOST_CHECK_EQUAL(b->Equals(*(c->GetMix().Get().back())), true);
+
+    CRef<CSeq_loc> d(new CSeq_loc());
+    d->SetPnt().SetId().Assign(*id_b);
+    d->SetPnt().SetPoint(70);
+    d->SetPnt().SetStrand(eNa_strand_minus);
+    c->SetMix().Set().push_back(d);
+    // won't reorder because ids don't match
+    BOOST_ASSERT(!edit::CorrectIntervalOrder(*c));
+    d->SetPnt().SetId().Assign(*id_a);
+    // now will reorder
+    BOOST_CHECK_EQUAL(edit::CorrectIntervalOrder(*c), true);
+    BOOST_CHECK_EQUAL(d->Equals(*(c->GetMix().Get().front())), true);
+    BOOST_CHECK_EQUAL(b->Equals(*(c->GetMix().Get().back())), true);
+
+    a->SetInt().SetStrand(eNa_strand_plus);
+    b->SetInt().SetStrand(eNa_strand_plus);
+    d->SetPnt().SetStrand(eNa_strand_plus);
+    BOOST_CHECK_EQUAL(edit::CorrectIntervalOrder(*c), true);
+    BOOST_CHECK_EQUAL(b->Equals(*(c->GetMix().Get().front())), true);
+    BOOST_CHECK_EQUAL(d->Equals(*(c->GetMix().Get().back())), true);
+
+    CRef<CSeq_loc> e(new CSeq_loc());
+    e->SetPacked_pnt().SetId().Assign(*id_b);
+    e->SetPacked_pnt().SetPoints().push_back(35);
+    e->SetPacked_pnt().SetPoints().push_back(36);
+    e->SetPacked_pnt().SetPoints().push_back(34);
+    BOOST_CHECK_EQUAL(edit::CorrectIntervalOrder(*e), true);
+    BOOST_CHECK_EQUAL(e->SetPacked_pnt().SetPoints().front(), 34);
+    BOOST_CHECK_EQUAL(e->SetPacked_pnt().SetPoints().back(), 36);
+    BOOST_CHECK_EQUAL(edit::CorrectIntervalOrder(*e), false);
+    
+    c->SetMix().Set().push_back(e);
+    // won't correct, IDs differ
+    BOOST_CHECK_EQUAL(edit::CorrectIntervalOrder(*c), false);
+    e->SetPacked_pnt().SetId().Assign(*id_a);
+    BOOST_CHECK_EQUAL(edit::CorrectIntervalOrder(*c), true);
+    BOOST_CHECK_EQUAL(e->Equals(*(c->GetMix().Get().front())), true);
+    BOOST_CHECK_EQUAL(d->Equals(*(c->GetMix().Get().back())), true);
+
+    e->SetPacked_pnt().SetStrand(eNa_strand_minus);
+    BOOST_CHECK_EQUAL(edit::CorrectIntervalOrder(*e), true);
+    BOOST_CHECK_EQUAL(e->SetPacked_pnt().SetPoints().front(), 36);
+    BOOST_CHECK_EQUAL(e->SetPacked_pnt().SetPoints().back(), 34);
+
+    a->SetInt().SetStrand(eNa_strand_minus);
+    b->SetInt().SetStrand(eNa_strand_minus);
+    d->SetPnt().SetStrand(eNa_strand_minus);
+    BOOST_CHECK_EQUAL(edit::CorrectIntervalOrder(*c), true);
+    BOOST_CHECK_EQUAL(e->Equals(*(c->GetMix().Get().back())), true);
+    BOOST_CHECK_EQUAL(d->Equals(*(c->GetMix().Get().front())), true);
+
+    CRef<CSeq_loc> f(new CSeq_loc());
+    CRef<CSeq_interval> f1(new CSeq_interval(*id_a, 80, 83));
+    CRef<CSeq_interval> f2(new CSeq_interval(*id_a, 77, 79));
+    CRef<CSeq_interval> f3(new CSeq_interval(*id_a, 85, 90));
+    f->SetPacked_int().Set().push_back(f1);
+    f->SetPacked_int().Set().push_back(f2);
+    f->SetPacked_int().Set().push_back(f3);
+    BOOST_CHECK_EQUAL(edit::CorrectIntervalOrder(*f), true);
+    BOOST_CHECK_EQUAL(f->SetPacked_int().Set().front()->GetFrom(), 77);
+    BOOST_CHECK_EQUAL(f->SetPacked_int().Set().back()->GetTo(), 90);
+    BOOST_CHECK_EQUAL(edit::CorrectIntervalOrder(*f), false);
+    f1->SetStrand(eNa_strand_minus);
+    f2->SetStrand(eNa_strand_minus);
+    f3->SetStrand(eNa_strand_minus);
+    BOOST_CHECK_EQUAL(edit::CorrectIntervalOrder(*f), true);
+    BOOST_CHECK_EQUAL(f->SetPacked_int().Set().back()->GetFrom(), 77);
+    BOOST_CHECK_EQUAL(f->SetPacked_int().Set().front()->GetTo(), 90);
+    BOOST_CHECK_EQUAL(edit::CorrectIntervalOrder(*f), false);
+
+    c->SetMix().Set().push_back(f);
+    BOOST_CHECK_EQUAL(edit::CorrectIntervalOrder(*c), true);
+    BOOST_CHECK_EQUAL(e->Equals(*(c->GetMix().Get().back())), true);
+    BOOST_CHECK_EQUAL(f->Equals(*(c->GetMix().Get().front())), true);
+    BOOST_CHECK_EQUAL(edit::CorrectIntervalOrder(*c), false);
+
+
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 

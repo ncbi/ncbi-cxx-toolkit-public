@@ -161,6 +161,12 @@ NCBI_XOBJEDIT_EXPORT
                              const CSeq_id* seqid,
                              unsigned int options = eSplitLocOption_make_partial | eSplitLocOption_split_in_exon);
 
+/// Correct the order of consecutive intervals with the same
+/// Seq-id on the same strand
+NCBI_XOBJEDIT_EXPORT
+bool CorrectIntervalOrder(CSeq_loc& loc);
+
+
 END_SCOPE(edit)
 END_SCOPE(objects)
 END_NCBI_SCOPE
