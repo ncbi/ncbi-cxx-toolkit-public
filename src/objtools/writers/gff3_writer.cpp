@@ -362,7 +362,13 @@ bool CGff3Writer::x_WriteSeqAnnotHandle(
     }
 
     SAnnotSelector sel = SetAnnotSelector();
+    sel.SetLimitSeqAnnot(sah).SetResolveNone();
+    CRef<CSeq_loc> loc = Ref(new CSeq_loc());
+    loc->SetWhole();
+    sel.SetSourceLoc(*loc);
+
     CFeat_CI feat_iter(sah, sel);
+
     CGffFeatureContext fc(feat_iter, CBioseq_Handle(), sah);
     for ( /*0*/; feat_iter; ++feat_iter ) {
         if ( ! xWriteFeature( fc, *feat_iter ) ) {

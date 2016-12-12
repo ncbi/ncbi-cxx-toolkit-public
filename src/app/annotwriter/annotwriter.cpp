@@ -148,6 +148,13 @@ private:
         
     unsigned int xGffFlags( 
         const CArgs& );
+
+    TSeqPos xGetFrom(
+        const CArgs& args) const;
+
+    TSeqPos xGetTo(
+        const CArgs& args) const;
+
     string xAssemblyName() const;
     string xAssemblyAccession() const;
     void xTweakAnnotSelector(
@@ -224,6 +231,10 @@ void CAnnotWriterApp::Init()
     {{ 
         arg_desc->AddOptionalKey( "o", "OutputFile", 
             "Output file name", CArgDescriptions::eOutputFile );
+        arg_desc->AddOptionalKey("from", "From",
+            "Beginning of range", CArgDescriptions::eInteger );
+        arg_desc->AddOptionalKey("to", "To",
+            "End of range", CArgDescriptions::eInteger );
     }}
 
     //  flags
@@ -292,6 +303,14 @@ int CAnnotWriterApp::Run()
         TestCanceler canceller;
         m_pWriter->SetCanceler(&canceller);
 #endif
+        if (args["from"]) {
+            m_pWriter->SetRange().SetFrom(xGetFrom(args));
+        }
+
+        if (args["to"]) {
+            m_pWriter->SetRange().SetTo(xGetTo(args));
+        }
+        
         if (xTryProcessInputId(args)) {
             pOs->flush();
             return 0;
@@ -687,6 +706,32 @@ unsigned int CAnnotWriterApp::xGffFlags(
     }
     return eFlags;
 }
+
+//  ----------------------------------------------------------------------------
+TSeqPos CAnnotWriterApp::xGetFrom(
+    const CArgs& args) const
+//  ----------------------------------------------------------------------------
+{
+    if (args["from"]) {
+        return static_cast<TSeqPos>(args["from"].AsInteger()-1);
+    }
+
+    return CRange<TSeqPos>::GetWholeFrom();
+}
+
+
+//  ----------------------------------------------------------------------------
+TSeqPos CAnnotWriterApp::xGetTo(
+    const CArgs& args) const
+//  ----------------------------------------------------------------------------
+{
+    if (args["to"]) {
+        return static_cast<TSeqPos>(args["to"].AsInteger()-1);
+    }
+
+    return CRange<TSeqPos>::GetWholeTo();
+}
+
 
 //  ----------------------------------------------------------------------------
 CWriterBase* CAnnotWriterApp::xInitWriter(
