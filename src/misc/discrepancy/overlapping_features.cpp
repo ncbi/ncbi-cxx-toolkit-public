@@ -104,8 +104,10 @@ DISCREPANCY_SUMMARIZE(CDS_TRNA_OVERLAP)
 }
 
 
-DISCREPANCY_CASE(_CDS_TRNA_OVERLAP, COverlappingFeatures, 0, "CDS tRNA Overlap - autofix") {}
-DISCREPANCY_SUMMARIZE(_CDS_TRNA_OVERLAP) {}
+DISCREPANCY_CASE(_CDS_TRNA_OVERLAP, COverlappingFeatures, 0, "CDS tRNA Overlap - autofix")
+{}
+DISCREPANCY_SUMMARIZE(_CDS_TRNA_OVERLAP)
+{}
 DISCREPANCY_AUTOFIX(_CDS_TRNA_OVERLAP)
 {
     const CSeq_feat& cds = dynamic_cast<const CSeq_feat&>(*item->GetDetails()[0]->GetObject());
@@ -562,6 +564,44 @@ DISCREPANCY_SUMMARIZE(GENE_MISC_IGS_OVERLAP)
 }
 
 
+// GENE_LOCUS_MISSING
+
+DISCREPANCY_CASE(GENE_LOCUS_MISSING, COverlappingFeatures, eOncaller, "Gene locus missing")
+{
+    const vector<CConstRef<CSeq_feat> >& genes = context.FeatGenes();
+    const vector<CConstRef<CSeq_feat> >& cds = context.FeatCDS();
+    const vector<CConstRef<CSeq_feat> >& mrnas = context.FeatMRNAs();
+    ITERATE(vector<CConstRef<CSeq_feat>>, gene, genes) {
+        const CGene_ref& gref = (*gene)->GetData().GetGene();
+        if (context.IsPseudo(**gene) || (gref.CanGetLocus() && !gref.GetLocus().empty())) {
+            continue;
+        }
+        bool found = false;
+        ITERATE(vector<CConstRef<CSeq_feat>>, feat, cds) {
+            if (context.GetGeneForFeature(**feat) == &**gene) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            ITERATE(vector<CConstRef<CSeq_feat>>, feat, mrnas) {
+                if (context.GetGeneForFeature(**feat) == &**gene) {
+                    found = true;
+                    break;
+                }
+            }
+        }
+        if (found) {
+            m_Objs["[n] gene[s] missing locus"].Add(*context.NewDiscObj(*gene));
+        }
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(GENE_LOCUS_MISSING)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
