@@ -1351,9 +1351,9 @@ class Scenario1325( TestBase ):
         if output != "":
             raise Exception( "Not expected job with old affinity" )
         output = execAny( ns_client, "DUMP " + jobID, isMultiline = True )
-        if "affinity: n/a" not in output:
+        if "affinity: 2 ('-')" not in output and "affinity: n/a" not in output:
             raise Exception( "Unexpected affinity of the job" )
-        if "group: n/a" not in output:
+        if "group: n/a" not in output and "group: 2 ('-')" not in output:
             raise Exception( "Unexpected group of the job" )
 
         output = execAny( ns_client, "GET2 wnode_aff=0 any_aff=0 exclusive_new_aff=0 group=group1" )
@@ -1393,9 +1393,9 @@ class Scenario1326( TestBase ):
         if output == "":
             raise Exception( "Expected job with aff1" )
         output = execAny( ns_client, "DUMP " + jobID, isMultiline = True )
-        if "affinity: 1 ('aff1')" not in output:
+        if "'aff1'" not in "\n".join(output):
             raise Exception( "Unexpected affinity of the job" )
-        if "group: 1 ('group1')" not in output:
+        if "'group1'" not in "\n".join(output):
             raise Exception( "Unexpected group of the job" )
         return True
 

@@ -535,7 +535,8 @@ class Scenario18( TestBase ):
             return info[ 'aff_id' ] == "0"
 
         # NS 4.10.0 and up has different output
-        return info[ 'affinity' ] == "n/a"
+        # NS 2.29.0 will report '-' for no affinity jobs
+        return info[ 'affinity' ] == "n/a" or "'-'" in info[ 'affinity' ]
 
 
 class Scenario22( TestBase ):
