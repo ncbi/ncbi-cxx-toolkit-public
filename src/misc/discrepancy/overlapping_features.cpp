@@ -111,7 +111,6 @@ DISCREPANCY_SUMMARIZE(_CDS_TRNA_OVERLAP)
 DISCREPANCY_AUTOFIX(_CDS_TRNA_OVERLAP)
 {
     const CSeq_feat& cds = dynamic_cast<const CSeq_feat&>(*item->GetDetails()[0]->GetObject());
-    cds.GetLocation().GetId();
     const CSeq_loc& loc = cds.GetLocation();
     CBioseq_Handle bsh = scope.GetBioseqHandle(loc);
     CFeat_CI f(bsh, CSeqFeatData::e_Rna);
@@ -173,8 +172,8 @@ DISCREPANCY_AUTOFIX(_CDS_TRNA_OVERLAP)
         new_cds->SetComment(comment);
         new_cds->SetData().SetCdregion().SetCode_break().push_back(code_break);
         CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(cds));
-
         feh.Replace(*new_cds);
+
         if (gene) {
             CRef<CSeq_feat> new_gene(new CSeq_feat());
             new_gene->Assign(*gene);
@@ -573,7 +572,7 @@ DISCREPANCY_CASE(GENE_LOCUS_MISSING, COverlappingFeatures, eOncaller, "Gene locu
     const vector<CConstRef<CSeq_feat> >& mrnas = context.FeatMRNAs();
     ITERATE(vector<CConstRef<CSeq_feat>>, gene, genes) {
         const CGene_ref& gref = (*gene)->GetData().GetGene();
-        if (context.IsPseudo(**gene) || (gref.CanGetLocus() && !gref.GetLocus().empty())) {
+        if (context.IsPseudo(**gene) || !gref.CanGetDesc() || gref.GetDesc().empty() || (gref.CanGetLocus() && !gref.GetLocus().empty())) {
             continue;
         }
         bool found = false;
@@ -592,7 +591,7 @@ DISCREPANCY_CASE(GENE_LOCUS_MISSING, COverlappingFeatures, eOncaller, "Gene locu
             }
         }
         if (found) {
-            m_Objs["[n] gene[s] missing locus"].Add(*context.NewDiscObj(*gene));
+            m_Objs["[n] gene[s] missing locus"].Add(*context.NewDiscObj(*gene, eNoRef, true));
         }
     }
 }
@@ -602,6 +601,20 @@ DISCREPANCY_SUMMARIZE(GENE_LOCUS_MISSING)
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
+
+
+DISCREPANCY_AUTOFIX(GENE_LOCUS_MISSING)
+{
+    const CSeq_feat& gene = dynamic_cast<const CSeq_feat&>(*item->GetDetails()[0]->GetObject());
+    CRef<CSeq_feat> new_gene(new CSeq_feat());
+    new_gene->Assign(gene);
+    new_gene->SetData().SetGene().SetLocus(new_gene->GetData().GetGene().GetDesc());
+    new_gene->SetData().SetGene().ResetDesc();
+    CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(gene));
+    feh.Replace(*new_gene);
+    return CRef<CAutofixReport>(new CAutofixReport("GENE_LOCUS_MISSING: [n] gene[s] fixed", 1));
+}
+
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

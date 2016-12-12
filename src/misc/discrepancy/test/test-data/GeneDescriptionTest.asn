@@ -1,0 +1,3780 @@
+Seq-entry ::= set {
+  class genbank,
+  descr {
+    user {
+      type str "NcbiCleanup",
+      data {
+        {
+          label str "method",
+          data str "ExtendedSeqEntryCleanup"
+        },
+        {
+          label str "version",
+          data int 1
+        },
+        {
+          label str "month",
+          data int 12
+        },
+        {
+          label str "day",
+          data int 1
+        },
+        {
+          label str "year",
+          data int 2016
+        }
+      }
+    }
+  },
+  seq-set {
+    set {
+      class genbank,
+      descr {
+        user {
+          class "SMART_V1.0",
+          type id 1,
+          data {
+            {
+              label id 1,
+              num 1,
+              data int 11032753
+            }
+          }
+        },
+        user {
+          type str "NcbiAutofix",
+          data {
+          }
+        }
+      },
+      seq-set {
+        set {
+          class nuc-prot,
+          descr {
+            source {
+              genome genomic,
+              org {
+                taxname "Saccharomyces bayanus",
+                db {
+                  {
+                    db "taxon",
+                    tag id 4931
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Saccharomyces",
+                    species "bayanus"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "CBS 380"
+                    },
+                    {
+                      subtype culture-collection,
+                      subname "CBS:380"
+                    }
+                  },
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Saccharomycotina; Saccharomycetes; Saccharomycetales; Saccharomycetaceae;
+ Saccharomyces",
+                  gcode 1,
+                  mgcode 3,
+                  div "PLN"
+                }
+              }
+            },
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished",
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Sulo",
+                          first "Pavol",
+                          initials "P."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Szaboova",
+                          first "Dana",
+                          initials "D."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Szemes",
+                          first "Tomas",
+                          initials "T."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Faculty of Natural Sciences, Comenius University",
+                      div "Department of Biochemistry",
+                      city "Bratislava",
+                      country "Slovak Republic",
+                      street "Ilkovicova ulica 6",
+                      postal-code "842 15"
+                    }
+                  },
+                  title "MtDNA analysis in Saccharomyces yeasts reveals
+ revisions in ""Yeast genetic code"" and suggests the evolutionary history of
+ some species."
+                }
+              }
+            },
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Sulo",
+                          first "Pavol",
+                          initials "P."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Szaboova",
+                          first "Dana",
+                          initials "D."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Szemes",
+                          first "Tomas",
+                          initials "T."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Faculty of Natural Sciences, Comenius University",
+                      div "Department of Biochemistry",
+                      city "Bratislava",
+                      country "Slovak Republic",
+                      street "Ilkovicova Ulica 6",
+                      postal-code "842 15"
+                    }
+                  },
+                  date std {
+                    year 2016,
+                    month 11,
+                    day 4
+                  }
+                }
+              }
+            },
+            update-date std {
+              year 2016,
+              month 11,
+              day 23
+            }
+          },
+          seq-set {
+            seq {
+              id {
+                local str "S.bayanus_CBS__9",
+                general {
+                  db "NCBIFILE",
+                  tag str "CCA1_S.bayanus_CBS_380.sqn/S.bayanus_CBS"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 73985878
+                },
+                genbank {
+                  accession "KY095834"
+                }
+              },
+              descr {
+                title "Saccharomyces bayanus strain CBS 380 Cca1p gene,
+ complete cds.",
+                molinfo {
+                  biomol genomic,
+                  tech standard
+                },
+                user {
+                  type str "StructuredComment",
+                  data {
+                    {
+                      label str "StructuredCommentPrefix",
+                      data str "##Assembly-Data-START##"
+                    },
+                    {
+                      label str "Assembly Method",
+                      data str "CLC Genomics Workbench v. 7.5.; Vector NTI
+ Advance v. 10"
+                    },
+                    {
+                      label str "Sequencing Technology",
+                      data str "Illumina"
+                    },
+                    {
+                      label str "StructuredCommentSuffix",
+                      data str "##Assembly-Data-END##"
+                    }
+                  }
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "S.bayanus_CBS__9"
+                    }
+                  }
+                },
+                user {
+                  class "1.0",
+                  type str "AutodefOptions",
+                  data {
+                    {
+                      label str "UseLabels",
+                      data bool TRUE
+                    },
+                    {
+                      label str "LeaveParenthetical",
+                      data bool TRUE
+                    },
+                    {
+                      label str "SpecifyNuclearProduct",
+                      data bool TRUE
+                    },
+                    {
+                      label str "MaxMods",
+                      data int 0
+                    },
+                    {
+                      label str "FeatureListType",
+                      data str "List All Features"
+                    },
+                    {
+                      label str "MiscFeatRule",
+                      data str "Delete"
+                    },
+                    {
+                      label str "HIVRule",
+                      data str "WantBoth"
+                    },
+                    {
+                      label str "ModifierList",
+                      data fields {
+                        {
+                          label str "OrgMods",
+                          data strs {
+                            "strain"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                create-date std {
+                  year 2015,
+                  month 8,
+                  day 7
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 1641,
+                strand ds,
+                seq-data ncbi2na '39C6351CC55C78E00B35648290E1C15C5F65F1291508
+D1FE140BA040337907E7C18733A37B1068891483015894F867D8346A68EAE66109E7A942BDD18D
+C8CD94D0ED385AE043F987AFE061C7E4924F3942CE8B425130CD4423E10815E20360937A216714
+709EFEBBE0BA3FEC0FE237802C4781FDC835702EE7DAC45E082197E2088E713C0677FDCC33D00A
+B82E821F4568AADE62178082B3DE6C759F5E50101BFFA3855F88B9C23C35BFE5DC8F41F653235A
+0B4E9E03A985448D0F797D0F500FDC881BBEBB203A200D70CAD41D473E9FE49E3D00244FC8C1B4
+CFFFE93061034BAC83D062001E508CC0C034246DC638C131E07445E40BF4C83CCD43BDFA209F54
+FF880023EB4344CBF52481FCC70B98FFB554E943F1034FA015C20807C307EF35B5480B3EE020AB
+C0BE2C00E192E34F9081EC8F4FAADB18A0FAFD88FC40E9D9EF9003680DACCF7E20BF43A60EA036
+74FD1B577C8E4FFC00F548DE01682078B77DD443C4193FCF7CCCC610CBFA08F946070054CBA1A4
+240E900B1E80E017A56EBCAC23C30E290D2BA4BF8C15E0A058C78BC3054FE02531C500CDCC00'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data gene {
+                        desc "CCA1"
+                      },
+                      partial TRUE,
+                      location int {
+                        from 0,
+                        to 1640,
+                        strand plus,
+                        id local str "S.bayanus_CBS__9",
+                        fuzz-from lim lt,
+                        fuzz-to lim gt
+                      }
+                    },
+                    {
+                      data rna {
+                        type mRNA,
+                        ext name "Cca1p"
+                      },
+                      partial TRUE,
+                      location int {
+                        from 0,
+                        to 1640,
+                        strand plus,
+                        id local str "S.bayanus_CBS__9",
+                        fuzz-from lim lt,
+                        fuzz-to lim gt
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                local str "S.bayanus_CBS_12__8",
+                general {
+                  db "NCBIFILE",
+                  tag str "CCA1_S.bayanus_CBS_380.sqn/S.bayanus_CBS_12"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 73985890
+                }
+              },
+              descr {
+                title "Cca1p [Saccharomyces bayanus]",
+                molinfo {
+                  biomol peptide,
+                  tech concept-trans-a
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "S.bayanus_CBS_12__8"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol aa,
+                length 546,
+                seq-data ncbieaa "MLRSTIPLLMKSIPQKAMTNPTFALQAPKITLTKVEQNICNLLN
+DYMDLYNGEHQNKPEPLTLRITGGWVRDKLLGQGSHDLDIAINVMTGEQFATGLNDYLQQHYAKYGVKPHNIHKIDKN
+PEKSKHLETATTKLFGVEVDFVNLRSEKYTELSRIPKVCFGTPEEDALRRDATLNALFYNIQKGEVEDFTRRGLRDLK
+EGILRTPLPAKQTFLDDPLRVLRLIRFASRFNFAIDPEVMAEMGDPQINSAFNSKISRERVGVEMEKILIGPTPLLAL
+QLIQKAHLDNVIFFWHNDKSVVEFNEKNCQDINKIKHVYDDNILNSHLQSFIELYPMFLEKLPILRKKIGQSHSFQQN
+FILSAILSPMANLQIIGNPKKKLNNLLSVPESIVKEGLKLSKNDAVIIARTVDSLGSYEELVSRFTNGSLLQKSEIGI
+FLRSFNGEWEIAHFTSLLDAFLKIPRSETGRTESLLHNYNAFYSYIYDNSLEDCHELKPIVDGKQMAKVLEMKPGPWL
+GKINNEAIRWQFDNPEGTDTELITHLKAILPKYL"
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data prot {
+                        name {
+                          "Cca1p"
+                        },
+                        desc "tRNA CCA-pyrophosphorylase"
+                      },
+                      location int {
+                        from 0,
+                        to 545,
+                        id local str "S.bayanus_CBS_12__8"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data cdregion {
+                    frame one,
+                    code {
+                      id 1
+                    }
+                  },
+                  product whole local str "S.bayanus_CBS_12__8",
+                  location int {
+                    from 0,
+                    to 1640,
+                    strand plus,
+                    id local str "S.bayanus_CBS__9"
+                  }
+                }
+              }
+            }
+          }
+        },
+        set {
+          class nuc-prot,
+          descr {
+            source {
+              genome genomic,
+              org {
+                taxname "Saccharomyces cerevisiae",
+                common "baker's yeast",
+                db {
+                  {
+                    db "taxon",
+                    tag id 4932
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Saccharomyces",
+                    species "cerevisiae"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "NRRL Y-12632"
+                    }
+                  },
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Saccharomycotina; Saccharomycetes; Saccharomycetales; Saccharomycetaceae;
+ Saccharomyces",
+                  gcode 1,
+                  mgcode 3,
+                  div "PLN"
+                }
+              }
+            },
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished",
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Sulo",
+                          first "Pavol",
+                          initials "P."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Szaboova",
+                          first "Dana",
+                          initials "D."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Szemes",
+                          first "Tomas",
+                          initials "T."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Faculty of Natural Sciences, Comenius University",
+                      div "Department of Biochemistry",
+                      city "Bratislava",
+                      country "Slovak Republic",
+                      street "Ilkovicova ulica 6",
+                      postal-code "842 15"
+                    }
+                  },
+                  title "MtDNA analysis in Saccharomyces yeasts reveals
+ revisions in ""Yeast genetic code"" and suggests the evolutionary history of
+ some species."
+                }
+              }
+            },
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Sulo",
+                          first "Pavol",
+                          initials "P."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Szaboova",
+                          first "Dana",
+                          initials "D."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Szemes",
+                          first "Tomas",
+                          initials "T."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Faculty of Natural Sciences, Comenius University",
+                      div "Department of Biochemistry",
+                      city "Bratislava",
+                      country "Slovak Republic",
+                      street "Ilkovicova Ulica 6",
+                      postal-code "842 15"
+                    }
+                  },
+                  date std {
+                    year 2016,
+                    month 11,
+                    day 4
+                  }
+                }
+              }
+            },
+            update-date std {
+              year 2016,
+              month 11,
+              day 23
+            }
+          },
+          seq-set {
+            seq {
+              id {
+                local str "S.cerevisiae_NRRL__10",
+                general {
+                  db "NCBIFILE",
+                  tag str "CCA1_S.cerevisiae_NRRL_Y-12632.sqn/S.cerevisiae_NRRL"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 73986012
+                },
+                genbank {
+                  accession "KY095835"
+                }
+              },
+              descr {
+                title "Saccharomyces cerevisiae strain NRRL Y-12632 Cca1p
+ gene, complete cds.",
+                molinfo {
+                  biomol genomic,
+                  tech standard
+                },
+                user {
+                  type str "StructuredComment",
+                  data {
+                    {
+                      label str "StructuredCommentPrefix",
+                      data str "##Assembly-Data-START##"
+                    },
+                    {
+                      label str "Assembly Method",
+                      data str "CLC Genomics Workbench v. 7.5.; Vector NTI
+ Advance v. 10"
+                    },
+                    {
+                      label str "Sequencing Technology",
+                      data str "Illumina"
+                    },
+                    {
+                      label str "StructuredCommentSuffix",
+                      data str "##Assembly-Data-END##"
+                    }
+                  }
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "S.cerevisiae_NRRL__10"
+                    }
+                  }
+                },
+                user {
+                  class "1.0",
+                  type str "AutodefOptions",
+                  data {
+                    {
+                      label str "UseLabels",
+                      data bool TRUE
+                    },
+                    {
+                      label str "LeaveParenthetical",
+                      data bool TRUE
+                    },
+                    {
+                      label str "SpecifyNuclearProduct",
+                      data bool TRUE
+                    },
+                    {
+                      label str "MaxMods",
+                      data int 0
+                    },
+                    {
+                      label str "FeatureListType",
+                      data str "List All Features"
+                    },
+                    {
+                      label str "MiscFeatRule",
+                      data str "Delete"
+                    },
+                    {
+                      label str "HIVRule",
+                      data str "WantBoth"
+                    },
+                    {
+                      label str "ModifierList",
+                      data fields {
+                        {
+                          label str "OrgMods",
+                          data strs {
+                            "strain"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                create-date std {
+                  year 2015,
+                  month 8,
+                  day 4
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 1641,
+                strand ds,
+                seq-data ncbi2na '39C6B71CCDDC78E0CB9E748018E183DC3FEF70391500
+D17C140BA048137B07E7818F3121FB10D00B1443097894F877DA346A68EAE6E109F7A842BDD187
+E8CF94D0EE3B4AE243F9C7AFE062CFE4104F1940CE89425D30CD4423E10835620350937A01E51C
+709DFE9BE0BA3FED0FC237802CC781FD4A31702EE7FA445628219FC20A8E713E0677FDCC13D302
+B82E823F45088ADE4237008E9BDD6C759F5E401013FFA38D5F8ABFE2BE35BFE7DC8F41FC53235A
+0B8E9E03A98D768F0EF93D0F400FDC8898BEBBA23A200CF2CA14157F3E9FE49E3D02A74DF803BC
+DFFFE930E3275B6C03D060883ED08CE8403C34ECC438C133C07447E00BFCF83CCD43BFF2209F5C
+DF0A8003EB6F6528FD2403FCCF8B98D7B554E9C3F103CDA815020803C105EBF6B848093EE0A0A3
+E09E2C00E3924BCF94216C8F433BD338A031F9C2FE48D9D5270003580FACCFDC681FC3A60EA012
+44FF9377348E6FFC08F5427E01C000F83C7FD403C4383FCF7C4CFE10C3F830FB4E070058CBA1A0
+040E90071F40E094AD4E9EAC03C306098F2BA4BF8C35C4A878D083C3074FC02531C500C5EC80'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data gene {
+                        desc "CCA1"
+                      },
+                      partial TRUE,
+                      location int {
+                        from 0,
+                        to 1640,
+                        strand plus,
+                        id local str "S.cerevisiae_NRRL__10",
+                        fuzz-from lim lt,
+                        fuzz-to lim gt
+                      }
+                    },
+                    {
+                      data rna {
+                        type mRNA,
+                        ext name "Cca1p"
+                      },
+                      partial TRUE,
+                      location int {
+                        from 0,
+                        to 1640,
+                        strand plus,
+                        id local str "S.cerevisiae_NRRL__10",
+                        fuzz-from lim lt,
+                        fuzz-to lim gt
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                local str "S.cerevisiae_NRRL_1__10",
+                general {
+                  db "NCBIFILE",
+                  tag str "CCA1_S.cerevisiae_NRRL_Y-12632.sqn/S.cerevisiae_NRR
+L_1"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 73986013
+                }
+              },
+              descr {
+                title "Cca1p [Saccharomyces cerevisiae]",
+                molinfo {
+                  biomol peptide,
+                  tech concept-trans-a
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "S.cerevisiae_NRRL_1__10"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol aa,
+                length 546,
+                seq-data ncbieaa "MLRSTISLLMNSAAQKTMTNSNFVLNAPKITLTKVEQNICNLLN
+DYTDLYNQKYHNKPEPLTLRITGGWVRDKLLGQGSHDLDIAINVMSGEQFATGLNEYLQQHYAKYGAKPHNIHKIDKN
+PEKSKHLETATTKLFGVEVDFVNLRSEKYTELSRIPKVCFGTPEEDALRRDATLNALFYNIHKGEVEDFTKRGLQDLK
+DGVLRTPLPAKQTFLDDPLRVLRLIRFASRFNFTIDPEVMAEMGDPRINVAFNSKISRERVGVEMEKILVGPTPLLAL
+QLIQRAHLENVIFFWHNDSSVVKFNEENCQDMDKINHVYNDNILNSHLKSFIELYPMFLEKLPILREKIGRSPGFQQN
+FILSAILSPMANLQIIGNPKKKINNLVSVTESIVKEGLKLSKNDAAVIAKTVDSICSYEEILAKFADRSQLKKSEIGI
+FLRNFNGEWETAHFASLSDAFLKIPKLETKKIELLFQNYNEFYSYIFDNNLNNCHELKPIVDGKQMAKLLQMKPGPWL
+GKINNEAIRWQFDNPTGTDQELITHLKAILPKYL"
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data prot {
+                        name {
+                          "Cca1p"
+                        },
+                        desc "tRNA CCA-pyrophosphorylase"
+                      },
+                      location int {
+                        from 0,
+                        to 545,
+                        id local str "S.cerevisiae_NRRL_1__10"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data cdregion {
+                    frame one,
+                    code {
+                      id 1
+                    }
+                  },
+                  product whole local str "S.cerevisiae_NRRL_1__10",
+                  location int {
+                    from 0,
+                    to 1640,
+                    strand plus,
+                    id local str "S.cerevisiae_NRRL__10"
+                  }
+                }
+              }
+            }
+          }
+        },
+        set {
+          class nuc-prot,
+          descr {
+            source {
+              genome genomic,
+              org {
+                taxname "Saccharomyces mikatae",
+                db {
+                  {
+                    db "taxon",
+                    tag id 114525
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Saccharomyces",
+                    species "mikatae"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "CBS 8839"
+                    },
+                    {
+                      subtype culture-collection,
+                      subname "CBS:8839"
+                    }
+                  },
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Saccharomycotina; Saccharomycetes; Saccharomycetales; Saccharomycetaceae;
+ Saccharomyces",
+                  gcode 1,
+                  mgcode 3,
+                  div "PLN"
+                }
+              }
+            },
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished",
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Sulo",
+                          first "Pavol",
+                          initials "P."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Szaboova",
+                          first "Dana",
+                          initials "D."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Szemes",
+                          first "Tomas",
+                          initials "T."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Faculty of Natural Sciences, Comenius University",
+                      div "Department of Biochemistry",
+                      city "Bratislava",
+                      country "Slovak Republic",
+                      street "Ilkovicova ulica 6",
+                      postal-code "842 15"
+                    }
+                  },
+                  title "MtDNA analysis in Saccharomyces yeasts reveals
+ revisions in ""Yeast genetic code"" and suggests the evolutionary history of
+ some species."
+                }
+              }
+            },
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Sulo",
+                          first "Pavol",
+                          initials "P."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Szaboova",
+                          first "Dana",
+                          initials "D."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Szemes",
+                          first "Tomas",
+                          initials "T."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Faculty of Natural Sciences, Comenius University",
+                      div "Department of Biochemistry",
+                      city "Bratislava",
+                      country "Slovak Republic",
+                      street "Ilkovicova Ulica 6",
+                      postal-code "842 15"
+                    }
+                  },
+                  date std {
+                    year 2016,
+                    month 11,
+                    day 4
+                  }
+                }
+              }
+            },
+            update-date std {
+              year 2016,
+              month 11,
+              day 23
+            }
+          },
+          seq-set {
+            seq {
+              id {
+                local str "S.mikatae_NRRL_Y-27341__5",
+                general {
+                  db "NCBIFILE",
+                  tag str "CCA1_S.mikatae_CBS_8839.sqn/S.mikatae_NRRL_Y-27341"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 73986073
+                },
+                genbank {
+                  accession "KY095836"
+                }
+              },
+              descr {
+                title "Saccharomyces mikatae strain CBS 8839 Cca1p gene,
+ complete cds.",
+                molinfo {
+                  biomol genomic,
+                  tech standard
+                },
+                user {
+                  type str "StructuredComment",
+                  data {
+                    {
+                      label str "StructuredCommentPrefix",
+                      data str "##Assembly-Data-START##"
+                    },
+                    {
+                      label str "Assembly Method",
+                      data str "CLC Genomics Workbench v. 7.5.; Vector NTI
+ Advance v. 10"
+                    },
+                    {
+                      label str "Sequencing Technology",
+                      data str "Illumina"
+                    },
+                    {
+                      label str "StructuredCommentSuffix",
+                      data str "##Assembly-Data-END##"
+                    }
+                  }
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "S.mikatae_NRRL_Y-27341__5"
+                    }
+                  }
+                },
+                user {
+                  class "1.0",
+                  type str "AutodefOptions",
+                  data {
+                    {
+                      label str "UseLabels",
+                      data bool TRUE
+                    },
+                    {
+                      label str "LeaveParenthetical",
+                      data bool TRUE
+                    },
+                    {
+                      label str "SpecifyNuclearProduct",
+                      data bool TRUE
+                    },
+                    {
+                      label str "MaxMods",
+                      data int 0
+                    },
+                    {
+                      label str "FeatureListType",
+                      data str "List All Features"
+                    },
+                    {
+                      label str "MiscFeatRule",
+                      data str "Delete"
+                    },
+                    {
+                      label str "HIVRule",
+                      data str "WantBoth"
+                    },
+                    {
+                      label str "ModifierList",
+                      data fields {
+                        {
+                          label str "OrgMods",
+                          data strs {
+                            "strain"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                create-date std {
+                  year 2015,
+                  month 8,
+                  day 7
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 1641,
+                strand ds,
+                seq-data ncbi2na '39C6971ACDFC78E00BB5748010E1C3DC3FE5F8391408
+D17E1C0BA041337B05E7C38F31A37B10528914C30D689478C7DA346AAAEAE6A109E7A8429DD18D
+E8CD94D0EF3B6AE043D9C7AFE0E0CFE4924F1B42CE89405D104F4423E10815E00350137A01A614
+709FF6BBE0B23FEC0DC237882C4581FDCA3D702EE7FA045E08239FE20A8E71BE0677FFCC13D302
+B82E823F45088A1C423F8006B3DE6C551F5240101FFFA18D5F98BFC23E3DBFE7DC8F41FF632352
+0B0E9E03A18D740D0C393D0F400DDC8818B6BB623A200DFA4A96194F3E9FE43E3D00274DC8C3BC
+FF7FE930E3835B6E4FD0E0081ED18CE84A3C34CCC438C033E0744FE009FCD83CCD43BFB2001F5E
+FF0A8023EBE765C7F52483FCC709985FB55CE943F123CFA015C2080BC105EBF7B4480936C020A3
+C0BE2400E192EBCF9421EC8F430BD338A331F14AFE6AF9D10F8003480DAECFDC220FC3A60EA012
+44FD1B57BE8E0F7E087D42FE016300F8367FD483C4383DC75C4CCE10C33830FB4E270054CB21A4
+040E90071E88E017AD4EBCAC034306090F2BA43F8C35F9A078C485C3074FC225B1C500C5EC80'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data gene {
+                        desc "CCA1"
+                      },
+                      partial TRUE,
+                      location int {
+                        from 0,
+                        to 1640,
+                        strand plus,
+                        id local str "S.mikatae_NRRL_Y-27341__5",
+                        fuzz-from lim lt,
+                        fuzz-to lim gt
+                      }
+                    },
+                    {
+                      data rna {
+                        type mRNA,
+                        ext name "Cca1p"
+                      },
+                      partial TRUE,
+                      location int {
+                        from 0,
+                        to 1640,
+                        strand plus,
+                        id local str "S.mikatae_NRRL_Y-27341__5",
+                        fuzz-from lim lt,
+                        fuzz-to lim gt
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                local str "S.mikatae_NRRL_Y-27341_1__5",
+                general {
+                  db "NCBIFILE",
+                  tag str "CCA1_S.mikatae_CBS_8839.sqn/S.mikatae_NRRL_Y-27341_1"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 73986074
+                }
+              },
+              descr {
+                title "Cca1p [Saccharomyces mikatae]",
+                molinfo {
+                  biomol peptide,
+                  tech concept-trans-a
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "S.mikatae_NRRL_Y-27341_1__5"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol aa,
+                length 546,
+                seq-data ncbieaa "MLRPTVSLLMKSVPQKTMTNSNFALNAPKITLTKVEQHICNLLN
+DYTDLYNQEHHNNPEPLILRITGGWVRDKLLGQGSHDLDIAINVMSGEQFATGLNEYLQQHYVKYGAKPHNIHKIDKN
+PEKSKHLETATTKLFGVEVDFVNLRSEKYTELSRIPKVCFGTPEEDALRRDATLNALFYNIHKGEVEDFTKRGLQDLK
+NGILRTPLPAKQTFLDDPLRVLRLIRFASRFNFSIDPEVMAEMDDPQINNAFNSKISRERVGVEMEKILAGPTPLLAL
+QLIQKAHLDNVIFFWHNDESVVHFNEKNCHDMDRINHIYNDKILNSHLKSFIELYPMFVEKLPVLREKIGCSPTFQQN
+FILSATLSPMANLQIIGNPKKKVNNLVSVTESIVKEGLKLSKNDAVVIAKTVDSISSYEDILTRFAGCSQLKKSEIGV
+FLREFNGEWETAHFTSLLDEFLKTSKFETDKIESLFQNYNEFYSYIYDNNMNNCHELKPIVDGKQMAKLLEMKPGPWL
+GKINNEAIRWQFDNPCGTDTDLITHLRAVLPKYL"
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data prot {
+                        name {
+                          "Cca1p"
+                        },
+                        desc "tRNA CCA-pyrophosphorylase"
+                      },
+                      location int {
+                        from 0,
+                        to 545,
+                        id local str "S.mikatae_NRRL_Y-27341_1__5"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data cdregion {
+                    frame one,
+                    code {
+                      id 1
+                    }
+                  },
+                  product whole local str "S.mikatae_NRRL_Y-27341_1__5",
+                  location int {
+                    from 0,
+                    to 1640,
+                    strand plus,
+                    id local str "S.mikatae_NRRL_Y-27341__5"
+                  }
+                }
+              }
+            }
+          }
+        },
+        set {
+          class nuc-prot,
+          descr {
+            source {
+              genome genomic,
+              org {
+                taxname "Saccharomyces uvarum",
+                db {
+                  {
+                    db "taxon",
+                    tag id 230603
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Saccharomyces",
+                    species "uvarum"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "CBS 395"
+                    },
+                    {
+                      subtype culture-collection,
+                      subname "CBS:395"
+                    }
+                  },
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Saccharomycotina; Saccharomycetes; Saccharomycetales; Saccharomycetaceae;
+ Saccharomyces",
+                  gcode 1,
+                  mgcode 3,
+                  div "PLN"
+                }
+              }
+            },
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished",
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Sulo",
+                          first "Pavol",
+                          initials "P."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Szaboova",
+                          first "Dana",
+                          initials "D."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Szemes",
+                          first "Tomas",
+                          initials "T."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Faculty of Natural Sciences, Comenius University",
+                      div "Department of Biochemistry",
+                      city "Bratislava",
+                      country "Slovak Republic",
+                      street "Ilkovicova ulica 6",
+                      postal-code "842 15"
+                    }
+                  },
+                  title "MtDNA analysis in Saccharomyces yeasts reveals
+ revisions in ""Yeast genetic code"" and suggests the evolutionary history of
+ some species."
+                }
+              }
+            },
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Sulo",
+                          first "Pavol",
+                          initials "P."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Szaboova",
+                          first "Dana",
+                          initials "D."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Szemes",
+                          first "Tomas",
+                          initials "T."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Faculty of Natural Sciences, Comenius University",
+                      div "Department of Biochemistry",
+                      city "Bratislava",
+                      country "Slovak Republic",
+                      street "Ilkovicova Ulica 6",
+                      postal-code "842 15"
+                    }
+                  },
+                  date std {
+                    year 2016,
+                    month 11,
+                    day 4
+                  }
+                }
+              }
+            },
+            update-date std {
+              year 2016,
+              month 11,
+              day 23
+            }
+          },
+          seq-set {
+            seq {
+              id {
+                local str "S.uvarum_CBS_395__8",
+                general {
+                  db "NCBIFILE",
+                  tag str "CCA1_S.uvarum_CBS_395.sqn/S.uvarum_CBS_395"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 73986159
+                },
+                genbank {
+                  accession "KY095837"
+                }
+              },
+              descr {
+                title "Saccharomyces uvarum strain CBS 395 Cca1p gene,
+ complete cds.",
+                molinfo {
+                  biomol genomic,
+                  tech standard
+                },
+                user {
+                  type str "StructuredComment",
+                  data {
+                    {
+                      label str "StructuredCommentPrefix",
+                      data str "##Assembly-Data-START##"
+                    },
+                    {
+                      label str "Assembly Method",
+                      data str "CLC Genomics Workbench v. 7.5.; Vector NTI
+ Advance v. 10"
+                    },
+                    {
+                      label str "Sequencing Technology",
+                      data str "Illumina"
+                    },
+                    {
+                      label str "StructuredCommentSuffix",
+                      data str "##Assembly-Data-END##"
+                    }
+                  }
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "S.uvarum_CBS_395__8"
+                    }
+                  }
+                },
+                user {
+                  class "1.0",
+                  type str "AutodefOptions",
+                  data {
+                    {
+                      label str "UseLabels",
+                      data bool TRUE
+                    },
+                    {
+                      label str "LeaveParenthetical",
+                      data bool TRUE
+                    },
+                    {
+                      label str "SpecifyNuclearProduct",
+                      data bool TRUE
+                    },
+                    {
+                      label str "MaxMods",
+                      data int 0
+                    },
+                    {
+                      label str "FeatureListType",
+                      data str "List All Features"
+                    },
+                    {
+                      label str "MiscFeatRule",
+                      data str "Delete"
+                    },
+                    {
+                      label str "HIVRule",
+                      data str "WantBoth"
+                    },
+                    {
+                      label str "ModifierList",
+                      data fields {
+                        {
+                          label str "OrgMods",
+                          data strs {
+                            "strain"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                create-date std {
+                  year 2016,
+                  month 10,
+                  day 24
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 1641,
+                strand ds,
+                seq-data ncbi2na '39C63510C5DC78E00B35648290E1C15C5F65F1291508
+D17E140BA040337907E7418733A37B10688914810B5894F867D8346A68EAE66109E7A942BDD18D
+E8CD94D0ED385AE243D9C5ABE060C7E4924F3942CE89425D304D4C23E10015E20360937A21651C
+703EF6BBE0BA3FEC0FC237800CC781FD4835402EE7DAC45E082197E2088E711C0677FDCC33C00A
+B82E821F45288ADE62178082B3DE6C759F5E50101BDFA3855F88B9C2BC359FE5DC8F41F653235A
+0B4E9E23A985448D0E797D0F500CDC881BBEBB203A200DFA6A5415473E9DE4BE3D00A447C841B4
+CFFFE930E1024BAE83F062001E508CC9403424EDC638C131C07445D40BFCC83CCD43BD7A201F5C
+DF088823EB436709F50481FCC70B987FB554E943F9034FA835C20827C307EB35B5480B3EE020AB
+E0BE0C00E192E3CF9401EC8F4F19DB38A03AFD88FC48E9D1EF9003680DA8CF7C203F43A60EA016
+74FD1B577C8E4FFC087548DE012828F8B779D443C4193FCF7C4CC610C3F808F946070054CBA1A4
+240E9C0B9C80E097AD6EBCAC23C30E290F2BA4BF8415E0A078C78BC3054FE02533C500CDCE00'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data gene {
+                        desc "CCA1"
+                      },
+                      partial TRUE,
+                      location int {
+                        from 0,
+                        to 1640,
+                        strand plus,
+                        id local str "S.uvarum_CBS_395__8",
+                        fuzz-from lim lt,
+                        fuzz-to lim gt
+                      }
+                    },
+                    {
+                      data rna {
+                        type mRNA,
+                        ext name "Cca1p"
+                      },
+                      partial TRUE,
+                      location int {
+                        from 0,
+                        to 1640,
+                        strand plus,
+                        id local str "S.uvarum_CBS_395__8",
+                        fuzz-from lim lt,
+                        fuzz-to lim gt
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                local str "S.uvarum_CBS_395_1__8",
+                general {
+                  db "NCBIFILE",
+                  tag str "CCA1_S.uvarum_CBS_395.sqn/S.uvarum_CBS_395_1"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 73986160
+                }
+              },
+              descr {
+                title "Cca1p [Saccharomyces uvarum]",
+                molinfo {
+                  biomol peptide,
+                  tech concept-trans-a
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "S.uvarum_CBS_395_1__8"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol aa,
+                length 546,
+                seq-data ncbieaa "MLRSTIPLLMKSIPQKAMTNPTFALQAPKITLTKVEQNICNLLN
+DYMDLYNGEHQNKSEPLTLRITGGWVRDKLLGQGSHDLDIAINVMTGEQFATGLNEYLQQHYAKYGAKPHNIHKIDKN
+PEKSKHLETATTKLFGVEVDFVNLRSEKYTELSRIPKVCFGTPEEDALRRDATLNALFYNIKKGEVEDFTRRGLRDLK
+EGILRTPLPAKQTFLDDPLRVLRLIRFASRFNFAIDPEVMAEMGDPQINAAFNSKISRERVGVEMEKILAGPTPLLAL
+QLIQKAHLDNVIFFWHNDKAVVEFNEKNCQDIAKIKHVYDDNILNSHLQSFIELYPMFLEKLPILREKIGQSLSFQQN
+FILSATLSPMANLQIIGNPKKKLNNLVSVPESIVKEGLKLNKNDAVIIAKTVDSLRSYEEMVSRFTDGSLLQKSEIGI
+FLRNFNGEWETAHFTSLLDAFLKTPRSETGRIESLLHNYNAFYSYIYDNNLKDCHELKPIVDGKQMAKVLEMKPGPWL
+GKINNEAIRWQFDNPEGTDTELITHLKAILPKYL"
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data prot {
+                        name {
+                          "Cca1p"
+                        },
+                        desc "tRNA CCA-pyrophosphorylase"
+                      },
+                      location int {
+                        from 0,
+                        to 545,
+                        id local str "S.uvarum_CBS_395_1__8"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data cdregion {
+                    frame one,
+                    code {
+                      id 1
+                    }
+                  },
+                  product whole local str "S.uvarum_CBS_395_1__8",
+                  location int {
+                    from 0,
+                    to 1640,
+                    strand plus,
+                    id local str "S.uvarum_CBS_395__8"
+                  }
+                }
+              }
+            }
+          }
+        },
+        set {
+          class nuc-prot,
+          descr {
+            source {
+              genome genomic,
+              org {
+                taxname "Saccharomyces paradoxus",
+                db {
+                  {
+                    db "taxon",
+                    tag id 27291
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Saccharomyces",
+                    species "paradoxus"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "CBS 2908"
+                    },
+                    {
+                      subtype culture-collection,
+                      subname "CBS:2908"
+                    }
+                  },
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Saccharomycotina; Saccharomycetes; Saccharomycetales; Saccharomycetaceae;
+ Saccharomyces",
+                  gcode 1,
+                  mgcode 3,
+                  div "PLN"
+                }
+              }
+            },
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished",
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Sulo",
+                          first "Pavol",
+                          initials "P."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Szaboova",
+                          first "Dana",
+                          initials "D."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Szemes",
+                          first "Tomas",
+                          initials "T."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Faculty of Natural Sciences, Comenius University",
+                      div "Department of Biochemistry",
+                      city "Bratislava",
+                      country "Slovak Republic",
+                      street "Ilkovicova ulica 6",
+                      postal-code "842 15"
+                    }
+                  },
+                  title "MtDNA analysis in Saccharomyces yeasts reveals
+ revisions in ""Yeast genetic code"" and suggests the evolutionary history of
+ some species."
+                }
+              }
+            },
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Sulo",
+                          first "Pavol",
+                          initials "P."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Szaboova",
+                          first "Dana",
+                          initials "D."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Szemes",
+                          first "Tomas",
+                          initials "T."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Faculty of Natural Sciences, Comenius University",
+                      div "Department of Biochemistry",
+                      city "Bratislava",
+                      country "Slovak Republic",
+                      street "Ilkovicova Ulica 6",
+                      postal-code "842 15"
+                    }
+                  },
+                  date std {
+                    year 2016,
+                    month 11,
+                    day 4
+                  }
+                }
+              }
+            },
+            update-date std {
+              year 2016,
+              month 11,
+              day 23
+            }
+          },
+          seq-set {
+            seq {
+              id {
+                local str "S.paradoxus_CBS_2908__9",
+                general {
+                  db "NCBIFILE",
+                  tag str "CCA1_S.paradoxus_CBS_2908.sqn/S.paradoxus_CBS_2908"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 73986266
+                },
+                genbank {
+                  accession "KY095838"
+                }
+              },
+              descr {
+                title "Saccharomyces paradoxus strain CBS 2908 Cca1p gene,
+ complete cds.",
+                molinfo {
+                  biomol genomic,
+                  tech standard
+                },
+                user {
+                  type str "StructuredComment",
+                  data {
+                    {
+                      label str "StructuredCommentPrefix",
+                      data str "##Assembly-Data-START##"
+                    },
+                    {
+                      label str "Assembly Method",
+                      data str "CLC Genomics Workbench v. 7.5.; Vector NTI
+ Advance v. 10"
+                    },
+                    {
+                      label str "Sequencing Technology",
+                      data str "Illumina"
+                    },
+                    {
+                      label str "StructuredCommentSuffix",
+                      data str "##Assembly-Data-END##"
+                    }
+                  }
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "S.paradoxus_CBS_2908__9"
+                    }
+                  }
+                },
+                user {
+                  class "1.0",
+                  type str "AutodefOptions",
+                  data {
+                    {
+                      label str "UseLabels",
+                      data bool TRUE
+                    },
+                    {
+                      label str "LeaveParenthetical",
+                      data bool TRUE
+                    },
+                    {
+                      label str "SpecifyNuclearProduct",
+                      data bool TRUE
+                    },
+                    {
+                      label str "MaxMods",
+                      data int 0
+                    },
+                    {
+                      label str "FeatureListType",
+                      data str "List All Features"
+                    },
+                    {
+                      label str "MiscFeatRule",
+                      data str "Delete"
+                    },
+                    {
+                      label str "HIVRule",
+                      data str "WantBoth"
+                    },
+                    {
+                      label str "ModifierList",
+                      data fields {
+                        {
+                          label str "OrgMods",
+                          data strs {
+                            "strain"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                create-date std {
+                  year 2015,
+                  month 10,
+                  day 20
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 1641,
+                strand ds,
+                seq-data ncbi2na '39C6B71CCDDCF0E0CBBE74C010E183DC3F2FB0391500
+D15E180BA048337907E7C18F31A17B10E20914E3090894F877DA346AEAEAE66109F7A8429D5187
+E84D94D0EE3B4AE243D9C7AFE0E2C7E4924F19C0CEA9425D304F4423E10015620350937A21E71C
+709DFE3BE0BA1FED0FC237802CC781FD4A31702EE7DAC45E282197C20A86513C0677FDCC13D302
+982E823F4508AA5E623F008EBB5C6C759F5640101BFF21855F88B3C2BE35BFE7DC8F41FC53235A
+0B8E9E03A98D748D0CF93D0F400FDC8898BEBB223A200FF2EA161D7F3E9FE49E3D00A745E8C3BC
+DFFFE930E3875B6C0310E0081ED084E8483434CFC438C13FE07647C00BF4F81CCD43BFF2201F5C
+FF0A8003EB4F6D29F50403FCC78998DFB554E9C17103CDA01502080BC105EBF6B848093EE0A0A1
+E09E2C00E1904B0F94216C8E430BD318A031F940FE48D9D5078023780DACCFDC229FC3A60EA012
+44FF9B57368E4FFE08F542FE01C000F87E7FD483C438FFCF7C4C4610C3F830FB4E07005CCBA1A0
+040E90071F40E017AD4E9CAC034306290F33A4BF8C3546A078C481C3074FC0253FC500C7CC80'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data gene {
+                        desc "CCA1"
+                      },
+                      partial TRUE,
+                      location int {
+                        from 0,
+                        to 1640,
+                        strand plus,
+                        id local str "S.paradoxus_CBS_2908__9",
+                        fuzz-from lim lt,
+                        fuzz-to lim gt
+                      }
+                    },
+                    {
+                      data rna {
+                        type mRNA,
+                        ext name "Cca1p"
+                      },
+                      partial TRUE,
+                      location int {
+                        from 0,
+                        to 1640,
+                        strand plus,
+                        id local str "S.paradoxus_CBS_2908__9",
+                        fuzz-from lim lt,
+                        fuzz-to lim gt
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                local str "S.paradoxus_CBS_2908_12__6",
+                general {
+                  db "NCBIFILE",
+                  tag str "CCA1_S.paradoxus_CBS_2908.sqn/S.paradoxus_CBS_2908_
+12"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 73986278
+                }
+              },
+              descr {
+                title "Cca1p [Saccharomyces paradoxus]",
+                molinfo {
+                  biomol peptide,
+                  tech concept-trans-a
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "S.paradoxus_CBS_2908_12__6"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol aa,
+                length 546,
+                seq-data ncbieaa "MLRSTISLLMNSVAHKTMTNSNLVVNAPKITLTKVEQNICNLLN
+DYTDLYNEKHHDKQEPLTLRITGGWVRDKLLGQGSHDLDIAINVMSGEQFATGLNEYLQQHYAKYGAKPHNIHKIDKN
+PEKSKHLETATTKLFDVEVDFVNLRSEKYTELSRIPKVCFGTPEEDALRRDATLNALFYNIHKGEVEDFTKRGLRDLK
+DGVLRTPLPAKQTFLDDPLRVLRLIRFASRFNFTIDPEVMAEMGDPQINIAFNSKISRERVGVEMEKILVGPTPLLAL
+QLIQKAHLDNVIFFWHNDDSVVKYNEKNCQDMDRINHIYNDNILNSHLKSFIELYPMFLEKLPILREKIGHSSGFQQN
+FILSAILSPMANLQIIGNPKKKVNNLVSVTESIVKEGLKLSKNDATVIAKTVDAISSYEEILAKFADRSQLKRSEIGI
+FLRGFNGEWETAHFASLSDAFLKIPKFETKKIDLLFQNYNDFYSYIHDNNLNNCHELKPIVDGKQMAKLLQMKPGPWL
+GKINNEAIIWQFDNPTGTDTELITHLKAILPKYL"
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data prot {
+                        name {
+                          "Cca1p"
+                        },
+                        desc "tRNA CCA-pyrophosphorylase"
+                      },
+                      location int {
+                        from 0,
+                        to 545,
+                        id local str "S.paradoxus_CBS_2908_12__6"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data cdregion {
+                    frame one,
+                    code {
+                      id 1
+                    }
+                  },
+                  product whole local str "S.paradoxus_CBS_2908_12__6",
+                  location int {
+                    from 0,
+                    to 1640,
+                    strand plus,
+                    id local str "S.paradoxus_CBS_2908__9"
+                  }
+                }
+              }
+            }
+          }
+        },
+        set {
+          class nuc-prot,
+          descr {
+            source {
+              genome genomic,
+              org {
+                taxname "Saccharomyces kudriavzevii",
+                db {
+                  {
+                    db "taxon",
+                    tag id 114524
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Saccharomyces",
+                    species "kudriavzevii"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "CBS 8840"
+                    },
+                    {
+                      subtype culture-collection,
+                      subname "CBS:8840"
+                    }
+                  },
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Saccharomycotina; Saccharomycetes; Saccharomycetales; Saccharomycetaceae;
+ Saccharomyces",
+                  gcode 1,
+                  mgcode 3,
+                  div "PLN"
+                }
+              }
+            },
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished",
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Sulo",
+                          first "Pavol",
+                          initials "P."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Szaboova",
+                          first "Dana",
+                          initials "D."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Szemes",
+                          first "Tomas",
+                          initials "T."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Faculty of Natural Sciences, Comenius University",
+                      div "Department of Biochemistry",
+                      city "Bratislava",
+                      country "Slovak Republic",
+                      street "Ilkovicova ulica 6",
+                      postal-code "842 15"
+                    }
+                  },
+                  title "MtDNA analysis in Saccharomyces yeasts reveals
+ revisions in ""Yeast genetic code"" and suggests the evolutionary history of
+ some species."
+                }
+              }
+            },
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Sulo",
+                          first "Pavol",
+                          initials "P."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Szaboova",
+                          first "Dana",
+                          initials "D."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Szemes",
+                          first "Tomas",
+                          initials "T."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Faculty of Natural Sciences, Comenius University",
+                      div "Department of Biochemistry",
+                      city "Bratislava",
+                      country "Slovak Republic",
+                      street "Ilkovicova Ulica 6",
+                      postal-code "842 15"
+                    }
+                  },
+                  date std {
+                    year 2016,
+                    month 11,
+                    day 4
+                  }
+                }
+              }
+            },
+            update-date std {
+              year 2016,
+              month 11,
+              day 23
+            }
+          },
+          seq-set {
+            seq {
+              id {
+                local str "S.kudriavzevii_CBS_8840__4",
+                general {
+                  db "NCBIFILE",
+                  tag str "CCA_S.kudriavzevii_CBS_8840.sqn/S.kudriavzevii_CBS_
+8840"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 73986616
+                },
+                genbank {
+                  accession "KY095839"
+                }
+              },
+              descr {
+                title "Saccharomyces kudriavzevii strain CBS 8840 Cca1p gene,
+ complete cds.",
+                molinfo {
+                  biomol genomic,
+                  tech standard
+                },
+                user {
+                  type str "StructuredComment",
+                  data {
+                    {
+                      label str "StructuredCommentPrefix",
+                      data str "##Assembly-Data-START##"
+                    },
+                    {
+                      label str "Assembly Method",
+                      data str "CLC Genomics Workbench v. 7.5.; Vector NTI
+ Advance v. 10"
+                    },
+                    {
+                      label str "Sequencing Technology",
+                      data str "Illumina"
+                    },
+                    {
+                      label str "StructuredCommentSuffix",
+                      data str "##Assembly-Data-END##"
+                    }
+                  }
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "S.kudriavzevii_CBS_8840__4"
+                    }
+                  }
+                },
+                user {
+                  class "1.0",
+                  type str "AutodefOptions",
+                  data {
+                    {
+                      label str "UseLabels",
+                      data bool TRUE
+                    },
+                    {
+                      label str "LeaveParenthetical",
+                      data bool TRUE
+                    },
+                    {
+                      label str "SpecifyNuclearProduct",
+                      data bool TRUE
+                    },
+                    {
+                      label str "MaxMods",
+                      data int 0
+                    },
+                    {
+                      label str "FeatureListType",
+                      data str "List All Features"
+                    },
+                    {
+                      label str "MiscFeatRule",
+                      data str "Delete"
+                    },
+                    {
+                      label str "HIVRule",
+                      data str "WantBoth"
+                    },
+                    {
+                      label str "ModifierList",
+                      data fields {
+                        {
+                          label str "OrgMods",
+                          data strs {
+                            "strain"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                create-date std {
+                  year 2015,
+                  month 8,
+                  day 7
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 1641,
+                strand ds,
+                seq-data ncbi2na '39C63718F5DF78E009BD648090E181DC7F65F8399608
+D1FE142BA049333907E7C38731A37B105A8914230958947C6759347A6BEAE66309E7AA429DD187
+E84D90D0ED3B4AE043D9C5AFE0E2CFE4104F3940CE89425510CF4C23630015E20350937A21671C
+701FFE3BA0BA3FED0FE236802C4789FD4A3D500EEFFAC656082397E20A8E71BE0677FDC413D002
+982E8A1FC528AA5E623F808683DE6C759F5250101BFFA18D7F88BFC23E35BFE5DC8F41F7532152
+0B8E9E03A985748C04793D0F400CDC889BB68B223A200DFAEA141D5FBE9FE41EBD00A64DF8C3B4
+FFFDE910E3034BEC83D060081E528CE8403494CCC698C131E07647E403FCF83CCD43BFFA201F5E
+FF0A80E3D943658BF52481FCCF0B987FB55CE9C1F803CFA81502002BC305EBF7B4480B3EE022A1
+C0BE2C00E392C34FD421EE8F4309D338A039FD88FE6AD1D903900B780DACCFFE203F41AE0EA036
+74FF9B57FE8E4FFE08F5C0DE095000F8377FF403C43AFFCF6C4CCD10C3F810FB4E270254CBA1A4
+240E903F9F40E017AD4EBCAC23C30E098F93A4BF8C35E6A0586F83E32B4FC00B31C500C7CC80'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data gene {
+                        desc "CCA1"
+                      },
+                      partial TRUE,
+                      location int {
+                        from 0,
+                        to 1640,
+                        strand plus,
+                        id local str "S.kudriavzevii_CBS_8840__4",
+                        fuzz-from lim lt,
+                        fuzz-to lim gt
+                      }
+                    },
+                    {
+                      data rna {
+                        type mRNA,
+                        ext name "Cca1p"
+                      },
+                      partial TRUE,
+                      location int {
+                        from 0,
+                        to 1640,
+                        strand plus,
+                        id local str "S.kudriavzevii_CBS_8840__4",
+                        fuzz-from lim lt,
+                        fuzz-to lim gt
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                local str "S.kudriavzevii_CBS_8840_1__4",
+                general {
+                  db "NCBIFILE",
+                  tag str "CCA_S.kudriavzevii_CBS_8840.sqn/S.kudriavzevii_CBS_
+8840_1"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 73986617
+                }
+              },
+              descr {
+                title "Cca1p [Saccharomyces kudriavzevii]",
+                molinfo {
+                  biomol peptide,
+                  tech concept-trans-a
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "S.kudriavzevii_CBS_8840_1__4"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol aa,
+                length 546,
+                seq-data ncbieaa "MLRSTIPLLMKSVPQKAMTNSTFALNAPKITLTKVEQHICNLLN
+DYTDLYNREHQDKPEPLTLRITGGWVRDKLLGQGSHDLDIAINVMSGEQFATGLNEYLQQHYAKYGAKPHNIHKIDKN
+PEKSKHLETATTKLFDVEVDFVNLRSEKYTELSRIPKMCFGTPEEDALRRDATLNALFYNIQKGEVEDFTRRGLRDLK
+DGILRTPLPAKQTFLDDPLRVLRLIRFASRFNFSIDPEVMAEMGDPQINTAFNSKISRERVGVEMEKILVGPTPLLAL
+QLVQKAHLDNVIFFWHNDKSVVEFNEKNCQDMDKISHIYGDNILNSHLQNFIELYPMFLEKLPVLREMIRQSPSFQQN
+FILSATLSPMANLKIIGNPKKKVNNLVSVTESIVKEGLKLSKNDAVIISKTVDSISSYEEMLSRFAGHSQMQKSEIGI
+FLRNFNGEWEIAHFASLLDAFLKIPKSEAQKIESLFQNYNGFYSYIYHNNLNNCHELKPIVDGKQMANLLQMKPGPWL
+GKINNEAIAWQFDNPAGTDVELIGHLKSILPKYL"
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data prot {
+                        name {
+                          "Cca1p"
+                        },
+                        desc "tRNA CCA-pyrophosphorylase"
+                      },
+                      location int {
+                        from 0,
+                        to 545,
+                        id local str "S.kudriavzevii_CBS_8840_1__4"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data cdregion {
+                    frame one,
+                    code {
+                      id 1
+                    }
+                  },
+                  product whole local str "S.kudriavzevii_CBS_8840_1__4",
+                  location int {
+                    from 0,
+                    to 1640,
+                    strand plus,
+                    id local str "S.kudriavzevii_CBS_8840__4"
+                  }
+                }
+              }
+            }
+          }
+        },
+        set {
+          class nuc-prot,
+          descr {
+            source {
+              genome genomic,
+              org {
+                taxname "Saccharomyces pastorianus",
+                db {
+                  {
+                    db "taxon",
+                    tag id 27292
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Saccharomyces",
+                    species "pastorianus"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "NRRL Y-27171"
+                    },
+                    {
+                      subtype gb-synonym,
+                      subname "Saccharomyces carlsbergensis"
+                    }
+                  },
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Saccharomycotina; Saccharomycetes; Saccharomycetales; Saccharomycetaceae;
+ Saccharomyces",
+                  gcode 1,
+                  mgcode 3,
+                  div "PLN"
+                }
+              }
+            },
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished",
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Sulo",
+                          first "Pavol",
+                          initials "P."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Szaboova",
+                          first "Dana",
+                          initials "D."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Szemes",
+                          first "Tomas",
+                          initials "T."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Faculty of Natural Sciences, Comenius University",
+                      div "Department of Biochemistry",
+                      city "Bratislava",
+                      country "Slovak Republic",
+                      street "Ilkovicova ulica 6",
+                      postal-code "842 15"
+                    }
+                  },
+                  title "MtDNA analysis in Saccharomyces yeasts reveals
+ revisions in ""Yeast genetic code"" and suggests the evolutionary history of
+ some species."
+                }
+              }
+            },
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Sulo",
+                          first "Pavol",
+                          initials "P."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Szaboova",
+                          first "Dana",
+                          initials "D."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Szemes",
+                          first "Tomas",
+                          initials "T."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Faculty of Natural Sciences, Comenius University",
+                      div "Department of Biochemistry",
+                      city "Bratislava",
+                      country "Slovak Republic",
+                      street "Ilkovicova Ulica 6",
+                      postal-code "842 15"
+                    }
+                  },
+                  date std {
+                    year 2016,
+                    month 11,
+                    day 4
+                  }
+                }
+              }
+            },
+            update-date std {
+              year 2016,
+              month 11,
+              day 23
+            }
+          },
+          seq-set {
+            seq {
+              id {
+                local str "S.pastorianus_NRRL_Y_27171__6",
+                general {
+                  db "NCBIFILE",
+                  tag str "CCA1_S.pastorianus_NRRL_Y_27171.sqn/S.pastorianus_N
+RRL_Y_27171"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 73986711
+                },
+                genbank {
+                  accession "KY095840"
+                }
+              },
+              descr {
+                title "Saccharomyces pastorianus strain NRRL Y-27171 Cca1p
+ gene, complete cds.",
+                molinfo {
+                  biomol genomic,
+                  tech standard
+                },
+                user {
+                  type str "StructuredComment",
+                  data {
+                    {
+                      label str "StructuredCommentPrefix",
+                      data str "##Assembly-Data-START##"
+                    },
+                    {
+                      label str "Assembly Method",
+                      data str "CLC Genomics Workbench v. 7.5.; Vector NTI
+ Advance v. 10"
+                    },
+                    {
+                      label str "Sequencing Technology",
+                      data str "Illumina"
+                    },
+                    {
+                      label str "StructuredCommentSuffix",
+                      data str "##Assembly-Data-END##"
+                    }
+                  }
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "S.pastorianus_NRRL_Y_27171__6"
+                    }
+                  }
+                },
+                user {
+                  class "1.0",
+                  type str "AutodefOptions",
+                  data {
+                    {
+                      label str "UseLabels",
+                      data bool TRUE
+                    },
+                    {
+                      label str "LeaveParenthetical",
+                      data bool TRUE
+                    },
+                    {
+                      label str "SpecifyNuclearProduct",
+                      data bool TRUE
+                    },
+                    {
+                      label str "MaxMods",
+                      data int 0
+                    },
+                    {
+                      label str "FeatureListType",
+                      data str "List All Features"
+                    },
+                    {
+                      label str "MiscFeatRule",
+                      data str "Delete"
+                    },
+                    {
+                      label str "HIVRule",
+                      data str "WantBoth"
+                    },
+                    {
+                      label str "ModifierList",
+                      data fields {
+                        {
+                          label str "OrgMods",
+                          data strs {
+                            "strain"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                create-date std {
+                  year 2016,
+                  month 10,
+                  day 21
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 1641,
+                strand ds,
+                seq-data ncbi2na '39C6351CC55C78E00B35648290E1C15C5F65F1291508
+D1FE140BA040337907E7C18733A37B1068891483015894F867D8346A68EAE66109E7A942BDD18D
+C8CD94D0ED385AE043F987AFE061C7E4924F3942CE8B425130CD4423E10815E20360937A216714
+709EFEBBE0BA3FEC0FE237802C4781FDC835702EE7DAC45E082197E2088E713C0677FDCC33D00A
+B82E821F4568AADE62178082B3DE6C759F5E50101BFFA3855F88B9C23C35BFE5DC8F41F653235A
+0B4E9E03A985448D0F797D0F500FDC881BBEBB203A200D70CAD41D473E9FE49E3D00244FC8C1B4
+CFFFE93061034BAC83D062001E508CC0C034246DC638C131E07445E40BF4C83CCD43BDFA209F54
+FF880023EB4344CBF52481FCC70B98FFB554E943F1034FA015C20807C307EF35B5480B3EE020AB
+C0BE2C00E192E34F9081EC8F4FAADB18A0FAFD88FC40E9D9EF9003680DACCF7E20BF43A60EA036
+74FD1B577C8E4FFC00F548DE01682078B77DD443C4193FCF7CCCC610CBFA08F946070054CBA1A4
+240E900B1E80E017A56EBCAC23C30E290D2BA4BF8C15E0A058C78BC3054FE02531C500CDCC00'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data gene {
+                        desc "CCA1"
+                      },
+                      partial TRUE,
+                      location int {
+                        from 0,
+                        to 1640,
+                        strand plus,
+                        id local str "S.pastorianus_NRRL_Y_27171__6",
+                        fuzz-from lim lt,
+                        fuzz-to lim gt
+                      }
+                    },
+                    {
+                      data rna {
+                        type mRNA,
+                        ext name "Cca1p"
+                      },
+                      partial TRUE,
+                      location int {
+                        from 0,
+                        to 1640,
+                        strand plus,
+                        id local str "S.pastorianus_NRRL_Y_27171__6",
+                        fuzz-from lim lt,
+                        fuzz-to lim gt
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                local str "S.pastorianus_NRRL_Y_27171_1__6",
+                general {
+                  db "NCBIFILE",
+                  tag str "CCA1_S.pastorianus_NRRL_Y_27171.sqn/S.pastorianus_N
+RRL_Y_27171_1"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 73986712
+                }
+              },
+              descr {
+                title "Cca1p [Saccharomyces pastorianus]",
+                molinfo {
+                  biomol peptide,
+                  tech concept-trans-a
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "S.pastorianus_NRRL_Y_27171_1__6"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol aa,
+                length 546,
+                seq-data ncbieaa "MLRSTIPLLMKSIPQKAMTNPTFALQAPKITLTKVEQNICNLLN
+DYMDLYNGEHQNKPEPLTLRITGGWVRDKLLGQGSHDLDIAINVMTGEQFATGLNDYLQQHYAKYGVKPHNIHKIDKN
+PEKSKHLETATTKLFGVEVDFVNLRSEKYTELSRIPKVCFGTPEEDALRRDATLNALFYNIQKGEVEDFTRRGLRDLK
+EGILRTPLPAKQTFLDDPLRVLRLIRFASRFNFAIDPEVMAEMGDPQINSAFNSKISRERVGVEMEKILIGPTPLLAL
+QLIQKAHLDNVIFFWHNDKSVVEFNEKNCQDINKIKHVYDDNILNSHLQSFIELYPMFLEKLPILRKKIGQSHSFQQN
+FILSAILSPMANLQIIGNPKKKLNNLLSVPESIVKEGLKLSKNDAVIIARTVDSLGSYEELVSRFTNGSLLQKSEIGI
+FLRSFNGEWEIAHFTSLLDAFLKIPRSETGRTESLLHNYNAFYSYIYDNSLEDCHELKPIVDGKQMAKVLEMKPGPWL
+GKINNEAIRWQFDNPEGTDTELITHLKAILPKYL"
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data prot {
+                        name {
+                          "Cca1p"
+                        },
+                        desc "tRNA CCA-pyrophosphorylase"
+                      },
+                      location int {
+                        from 0,
+                        to 545,
+                        id local str "S.pastorianus_NRRL_Y_27171_1__6"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data cdregion {
+                    frame one,
+                    code {
+                      id 1
+                    }
+                  },
+                  product whole local str "S.pastorianus_NRRL_Y_27171_1__6",
+                  location int {
+                    from 0,
+                    to 1640,
+                    strand plus,
+                    id local str "S.pastorianus_NRRL_Y_27171__6"
+                  }
+                }
+              }
+            }
+          }
+        },
+        set {
+          class nuc-prot,
+          descr {
+            source {
+              genome genomic,
+              org {
+                taxname "Saccharomyces paradoxus",
+                db {
+                  {
+                    db "taxon",
+                    tag id 27291
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Saccharomyces",
+                    species "paradoxus"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "CBS 7400"
+                    },
+                    {
+                      subtype culture-collection,
+                      subname "CBS:7400"
+                    }
+                  },
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Saccharomycotina; Saccharomycetes; Saccharomycetales; Saccharomycetaceae;
+ Saccharomyces",
+                  gcode 1,
+                  mgcode 3,
+                  div "PLN"
+                }
+              }
+            },
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished",
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Sulo",
+                          first "Pavol",
+                          initials "P."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Szaboova",
+                          first "Dana",
+                          initials "D."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Szemes",
+                          first "Tomas",
+                          initials "T."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Faculty of Natural Sciences, Comenius University",
+                      div "Department of Biochemistry",
+                      city "Bratislava",
+                      country "Slovak Republic",
+                      street "Ilkovicova ulica 6",
+                      postal-code "842 15"
+                    }
+                  },
+                  title "MtDNA analysis in Saccharomyces yeasts reveals
+ revisions in ""Yeast genetic code"" and suggests the evolutionary history of
+ some species."
+                }
+              }
+            },
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Sulo",
+                          first "Pavol",
+                          initials "P."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Szaboova",
+                          first "Dana",
+                          initials "D."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Szemes",
+                          first "Tomas",
+                          initials "T."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Faculty of Natural Sciences, Comenius University",
+                      div "Department of Biochemistry",
+                      city "Bratislava",
+                      country "Slovak Republic",
+                      street "Ilkovicova Ulica 6",
+                      postal-code "842 15"
+                    }
+                  },
+                  date std {
+                    year 2016,
+                    month 11,
+                    day 4
+                  }
+                }
+              }
+            },
+            update-date std {
+              year 2016,
+              month 11,
+              day 23
+            }
+          },
+          seq-set {
+            seq {
+              id {
+                local str "S.paradoxus_CBS_7400__6",
+                general {
+                  db "NCBIFILE",
+                  tag str "CCA1_S.paradoxus_CBS_7400.sqn/S.paradoxus_CBS_7400"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 73986781
+                },
+                genbank {
+                  accession "KY095841"
+                }
+              },
+              descr {
+                title "Saccharomyces paradoxus strain CBS 7400 Cca1p gene,
+ complete cds.",
+                molinfo {
+                  biomol genomic,
+                  tech standard
+                },
+                user {
+                  type str "StructuredComment",
+                  data {
+                    {
+                      label str "StructuredCommentPrefix",
+                      data str "##Assembly-Data-START##"
+                    },
+                    {
+                      label str "Assembly Method",
+                      data str "CLC Genomics Workbench v. 7.5.; Vector NTI
+ Advance v. 10"
+                    },
+                    {
+                      label str "Sequencing Technology",
+                      data str "Illumina"
+                    },
+                    {
+                      label str "StructuredCommentSuffix",
+                      data str "##Assembly-Data-END##"
+                    }
+                  }
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "S.paradoxus_CBS_7400__6"
+                    }
+                  }
+                },
+                user {
+                  class "1.0",
+                  type str "AutodefOptions",
+                  data {
+                    {
+                      label str "UseLabels",
+                      data bool TRUE
+                    },
+                    {
+                      label str "LeaveParenthetical",
+                      data bool TRUE
+                    },
+                    {
+                      label str "SpecifyNuclearProduct",
+                      data bool TRUE
+                    },
+                    {
+                      label str "MaxMods",
+                      data int 0
+                    },
+                    {
+                      label str "FeatureListType",
+                      data str "List All Features"
+                    },
+                    {
+                      label str "MiscFeatRule",
+                      data str "Delete"
+                    },
+                    {
+                      label str "HIVRule",
+                      data str "WantBoth"
+                    },
+                    {
+                      label str "ModifierList",
+                      data fields {
+                        {
+                          label str "OrgMods",
+                          data strs {
+                            "strain"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                create-date std {
+                  year 2015,
+                  month 8,
+                  day 7
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 1641,
+                strand ds,
+                seq-data ncbi2na '39C6B71CCDDCF0E0CBBE74C010E183DC3F2FB0391500
+D15E180BA048337907E7C18F31A17B10E20914E3094894F877DA346AEAEAE66109F7A8429D5187
+E84D94D0EE3B4AE243D9C7AFE0E2C7E4924F19C0CEA9425D304F4423E10015620350937A21E71C
+709DFE3BE0BA1FED0FC237802CC781FD4A31702EE7DAC45E282197C20A86513C0677FDCC13D302
+B82E823F4508AA5E623F008EBB5C6C759F5640101BFF21855F88B3C2BE35BFE7DC8F41FC53235A
+0B8E9E03A98D748D0CF93D0F400FDC8898BEBB223A200FF2EA161D7F3E9FE49E3D00A745E8C3BC
+DFFFE930E3875B6C0310E0081ED084E8483434CFC438C13FE07647C00BF4F81CCD43BFF2201FDC
+FF0A8003EB4F6D29F50403FCC78998DFB554E9C17103CDA01502080BC105EBF6B848093EE0A0A1
+E09E2C00E1904B0F94216C8E430BD318A031F940FE48D9D5078023780DACCFDC209FC3A60EA012
+44FF9B57368E4FFE08F542FE01C000F87E7FD483C438FFCF7C4C4610C3F830FB4E07005CCBA1A0
+040E90071F40E017AD4E9CAC034306290F33A4BF8C3546A078C481C3074FC0253FC500C7CC80'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data gene {
+                        desc "CCA1"
+                      },
+                      partial TRUE,
+                      location int {
+                        from 0,
+                        to 1640,
+                        strand plus,
+                        id local str "S.paradoxus_CBS_7400__6",
+                        fuzz-from lim lt,
+                        fuzz-to lim gt
+                      }
+                    },
+                    {
+                      data rna {
+                        type mRNA,
+                        ext name "Cca1p"
+                      },
+                      partial TRUE,
+                      location int {
+                        from 0,
+                        to 1640,
+                        strand plus,
+                        id local str "S.paradoxus_CBS_7400__6",
+                        fuzz-from lim lt,
+                        fuzz-to lim gt
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                local str "S.paradoxus_CBS_7400_1__6",
+                general {
+                  db "NCBIFILE",
+                  tag str "CCA1_S.paradoxus_CBS_7400.sqn/S.paradoxus_CBS_7400_1"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 73986782
+                }
+              },
+              descr {
+                title "Cca1p [Saccharomyces paradoxus]",
+                molinfo {
+                  biomol peptide,
+                  tech concept-trans-a
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "S.paradoxus_CBS_7400_1__6"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol aa,
+                length 546,
+                seq-data ncbieaa "MLRSTISLLMNSVAHKTMTNSNLVVNAPKITLTKVEQNICNLLN
+DYTDLYNEKHHDKPEPLTLRITGGWVRDKLLGQGSHDLDIAINVMSGEQFATGLNEYLQQHYAKYGAKPHNIHKIDKN
+PEKSKHLETATTKLFDVEVDFVNLRSEKYTELSRIPKVCFGTPEEDALRRDATLNALFYNIHKGEVEDFTKRGLRDLK
+DGVLRTPLPAKQTFLDDPLRVLRLIRFASRFNFTIDPEVMAEMGDPQINIAFNSKISRERVGVEMEKILVGPTPLLAL
+QLIQKAHLDNVIFFWHNDDSVVKYNEKNCQDMDRINHIYNDNILNSHLKSFIELYPMFLEKLSILREKIGHSSGFQQN
+FILSAILSPMANLQIIGNPKKKVNNLVSVTESIVKEGLKLSKNDATVIAKTVDAISSYEEILAKFADRSQLKRSEIGI
+FLRSFNGEWETAHFASLSDAFLKIPKFETKKIDLLFQNYNDFYSYIHDNNLNNCHELKPIVDGKQMAKLLQMKPGPWL
+GKINNEAIIWQFDNPTGTDTELITHLKAILPKYL"
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data prot {
+                        name {
+                          "Cca1p"
+                        },
+                        desc "tRNA CCA-pyrophosphorylase"
+                      },
+                      location int {
+                        from 0,
+                        to 545,
+                        id local str "S.paradoxus_CBS_7400_1__6"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data cdregion {
+                    frame one,
+                    code {
+                      id 1
+                    }
+                  },
+                  product whole local str "S.paradoxus_CBS_7400_1__6",
+                  location int {
+                    from 0,
+                    to 1640,
+                    strand plus,
+                    id local str "S.paradoxus_CBS_7400__6"
+                  }
+                }
+              }
+            }
+          }
+        },
+        set {
+          class nuc-prot,
+          descr {
+            source {
+              genome genomic,
+              org {
+                taxname "Saccharomyces arboricola",
+                db {
+                  {
+                    db "taxon",
+                    tag id 706196
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Saccharomyces",
+                    species "arboricola"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "NRRL Y-63701"
+                    },
+                    {
+                      subtype old-name,
+                      subname "Saccharomyces arboricolus"
+                    }
+                  },
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Saccharomycotina; Saccharomycetes; Saccharomycetales; Saccharomycetaceae;
+ Saccharomyces",
+                  gcode 1,
+                  mgcode 3,
+                  div "PLN"
+                }
+              }
+            },
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished",
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Sulo",
+                          first "Pavol",
+                          initials "P."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Szaboova",
+                          first "Dana",
+                          initials "D."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Szemes",
+                          first "Tomas",
+                          initials "T."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Faculty of Natural Sciences, Comenius University",
+                      div "Department of Biochemistry",
+                      city "Bratislava",
+                      country "Slovak Republic",
+                      street "Ilkovicova ulica 6",
+                      postal-code "842 15"
+                    }
+                  },
+                  title "MtDNA analysis in Saccharomyces yeasts reveals
+ revisions in ""Yeast genetic code"" and suggests the evolutionary history of
+ some species."
+                }
+              }
+            },
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Sulo",
+                          first "Pavol",
+                          initials "P."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Szaboova",
+                          first "Dana",
+                          initials "D."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Szemes",
+                          first "Tomas",
+                          initials "T."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Faculty of Natural Sciences, Comenius University",
+                      div "Department of Biochemistry",
+                      city "Bratislava",
+                      country "Slovak Republic",
+                      street "Ilkovicova Ulica 6",
+                      postal-code "842 15"
+                    }
+                  },
+                  date std {
+                    year 2016,
+                    month 11,
+                    day 4
+                  }
+                }
+              }
+            },
+            update-date std {
+              year 2016,
+              month 11,
+              day 23
+            }
+          },
+          seq-set {
+            seq {
+              id {
+                local str "S.arboricolus_NRRL__10",
+                general {
+                  db "NCBIFILE",
+                  tag str "CCA1_S.arboricolus_NRRL_Y-63701.sqn/S.arboricolus_N
+RRL"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 73986949
+                },
+                genbank {
+                  accession "KY095842"
+                }
+              },
+              descr {
+                title "Saccharomyces arboricola strain NRRL Y-63701 Cca1p
+ gene, complete cds.",
+                molinfo {
+                  biomol genomic,
+                  tech standard
+                },
+                user {
+                  type str "StructuredComment",
+                  data {
+                    {
+                      label str "StructuredCommentPrefix",
+                      data str "##Assembly-Data-START##"
+                    },
+                    {
+                      label str "Assembly Method",
+                      data str "CLC Genomics Workbench v. 7.5.; Vector NTI
+ Advance v. 10"
+                    },
+                    {
+                      label str "Sequencing Technology",
+                      data str "Illumina"
+                    },
+                    {
+                      label str "StructuredCommentSuffix",
+                      data str "##Assembly-Data-END##"
+                    }
+                  }
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "S.arboricolus_NRRL__10"
+                    }
+                  }
+                },
+                user {
+                  class "1.0",
+                  type str "AutodefOptions",
+                  data {
+                    {
+                      label str "UseLabels",
+                      data bool TRUE
+                    },
+                    {
+                      label str "LeaveParenthetical",
+                      data bool TRUE
+                    },
+                    {
+                      label str "SpecifyNuclearProduct",
+                      data bool TRUE
+                    },
+                    {
+                      label str "MaxMods",
+                      data int 0
+                    },
+                    {
+                      label str "FeatureListType",
+                      data str "List All Features"
+                    },
+                    {
+                      label str "MiscFeatRule",
+                      data str "Delete"
+                    },
+                    {
+                      label str "HIVRule",
+                      data str "WantBoth"
+                    },
+                    {
+                      label str "ModifierList",
+                      data fields {
+                        {
+                          label str "OrgMods",
+                          data strs {
+                            "strain"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                create-date std {
+                  year 2015,
+                  month 8,
+                  day 4
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 1641,
+                strand ds,
+                seq-data ncbi2na '39C6B71A7DDC78E0093D448090E1815CFFC7F1291508
+D17E140BA04833F90FE7C18731A3DB10588914830B5814F867DA346A6BEAE6E109E72842ADD38F
+E8CF94D0ED3B7AE243D9C5AFE062CFC4224D1942CE89425D104D4423E10815E20350937A21A514
+701EFEB360B23FEF0FE237882CC581FDCA3D70AEE7DAC65E282197E20A8E713E0677FDCC13D082
+B82E8A1F47288ADE623F8086BB5E6C659F5650101FF7E1855708B1C2BE3DBFE5DC8F41FE53235A
+0B4E9603A98D740D04B93D07400FDCA81BB6BB203A200DFACA541D7F3E9FE4BE3D00A445E8C3BC
+CFFFE930E3034BED831060081E508CE8003414ECC438C133E07547E40BFCD83CCD43BFB2201E5E
+FF0A8023EB43450BF50483FCC7CB987F0557E9C3F903CDA03502080B4305E7F634480B3EC020A9
+C0BE2C00E192C34F9421EE8F4B0BD334A03E7F8AFC48DAD1035003780DADDFFE201F41A44EA01A
+C4FF1B57DC8FCFFC01D5C2D2354000F83777D403C4393FCF7C4CFE10C178927B4E070254CBA3A4
+240E900F1F40E097AD7EBCAC23C30E09CC2BA4BF8C35E2A078E789C3274FC0257DE503C7CC00'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data gene {
+                        desc "CCA1"
+                      },
+                      partial TRUE,
+                      location int {
+                        from 0,
+                        to 1640,
+                        strand plus,
+                        id local str "S.arboricolus_NRRL__10",
+                        fuzz-from lim lt,
+                        fuzz-to lim gt
+                      }
+                    },
+                    {
+                      data rna {
+                        type mRNA,
+                        ext name "Cca1p"
+                      },
+                      partial TRUE,
+                      location int {
+                        from 0,
+                        to 1640,
+                        strand plus,
+                        id local str "S.arboricolus_NRRL__10",
+                        fuzz-from lim lt,
+                        fuzz-to lim gt
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                local str "S.arboricolus_NRRL_1__10",
+                general {
+                  db "NCBIFILE",
+                  tag str "CCA1_S.arboricolus_NRRL_Y-63701.sqn/S.arboricolus_N
+RRL_1"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 73986950
+                }
+              },
+              descr {
+                title "Cca1p [Saccharomyces arboricola]",
+                molinfo {
+                  biomol peptide,
+                  tech concept-trans-a
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "S.arboricolus_NRRL_1__10"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol aa,
+                length 546,
+                seq-data ncbieaa "MLRSTASLLMKSIPQKAMTNPIFTLQAPKITLTKVEQNICNLLN
+DYTDSYNREHQNKSEPLTLRITGGWVRDKLLGQGSHDLDIAINVMSGEQFATGLNEYLQEHHAKYGAKPHNIHKIDKN
+PEKSKHLETATTKLFGIEVDFVNLRSEKYTELSRIPKVCFGTPEEDALRRDATLNALFYNIQEGEVEDFTRRGLRDLK
+DGVLRTPLPAKQTFLDDPLRVLRLIRFASRFNFAIDPEVMAEMGDPQINSAFNSKISRERVGVEMEKILVGPTPLLAL
+QLIQKAHLDNVIFFWHNDKSVVEYNEKNCQDMEKINHVYNDNILNSHLQSFIELYPMFVEKLPVLREKIGQSPSFQQN
+FILSATLTPLANLQIIGNPKKKVNNLLSITESIVKEGLKLSKNDAVIIAKTVDSVSSYQEIALRFTDRSQIQKSEIGL
+FLRNFNGTWETVHFTSLLDLFLKLPKSDPKKIESLFQNYNAFYSYIFDNNLSSCHELKPIVDGKQMAKLLQMKPGPWL
+GKINNEAIRWQFDNPEGTDAELIAHLKALLPNYL"
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data prot {
+                        name {
+                          "Cca1p"
+                        },
+                        desc "tRNA CCA-pyrophosphorylase"
+                      },
+                      location int {
+                        from 0,
+                        to 545,
+                        id local str "S.arboricolus_NRRL_1__10"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data cdregion {
+                    frame one,
+                    code {
+                      id 1
+                    }
+                  },
+                  product whole local str "S.arboricolus_NRRL_1__10",
+                  location int {
+                    from 0,
+                    to 1640,
+                    strand plus,
+                    id local str "S.arboricolus_NRRL__10"
+                  }
+                }
+              }
+            }
+          }
+        },
+        set {
+          class nuc-prot,
+          descr {
+            source {
+              genome genomic,
+              org {
+                taxname "Saccharomyces cariocanus",
+                db {
+                  {
+                    db "taxon",
+                    tag id 114526
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Saccharomyces",
+                    species "cariocanus"
+                  },
+                  mod {
+                    {
+                      subtype strain,
+                      subname "CBS 7994"
+                    },
+                    {
+                      subtype culture-collection,
+                      subname "CBS:7994"
+                    }
+                  },
+                  lineage "Eukaryota; Fungi; Dikarya; Ascomycota;
+ Saccharomycotina; Saccharomycetes; Saccharomycetales; Saccharomycetaceae;
+ Saccharomyces",
+                  gcode 1,
+                  mgcode 3,
+                  div "PLN"
+                }
+              }
+            },
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished",
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Sulo",
+                          first "Pavol",
+                          initials "P."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Szaboova",
+                          first "Dana",
+                          initials "D."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Szemes",
+                          first "Tomas",
+                          initials "T."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Faculty of Natural Sciences, Comenius University",
+                      div "Department of Biochemistry",
+                      city "Bratislava",
+                      country "Slovak Republic",
+                      street "Ilkovicova ulica 6",
+                      postal-code "842 15"
+                    }
+                  },
+                  title "MtDNA analysis in Saccharomyces yeasts reveals
+ revisions in ""Yeast genetic code"" and suggests the evolutionary history of
+ some species."
+                }
+              }
+            },
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Sulo",
+                          first "Pavol",
+                          initials "P."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Szaboova",
+                          first "Dana",
+                          initials "D."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Szemes",
+                          first "Tomas",
+                          initials "T."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Faculty of Natural Sciences, Comenius University",
+                      div "Department of Biochemistry",
+                      city "Bratislava",
+                      country "Slovak Republic",
+                      street "Ilkovicova Ulica 6",
+                      postal-code "842 15"
+                    }
+                  },
+                  date std {
+                    year 2016,
+                    month 11,
+                    day 4
+                  }
+                }
+              }
+            },
+            update-date std {
+              year 2016,
+              month 11,
+              day 23
+            }
+          },
+          seq-set {
+            seq {
+              id {
+                local str "S.cariocanus_NRRL__3",
+                general {
+                  db "NCBIFILE",
+                  tag str "CCA1_S.cariocanus_CBS_7994.sqn/S.cariocanus_NRRL"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 73986985
+                },
+                genbank {
+                  accession "KY095843"
+                }
+              },
+              descr {
+                title "Saccharomyces cariocanus strain CBS 7994 Cca1p gene,
+ complete cds.",
+                molinfo {
+                  biomol genomic,
+                  tech standard
+                },
+                user {
+                  type str "StructuredComment",
+                  data {
+                    {
+                      label str "StructuredCommentPrefix",
+                      data str "##Assembly-Data-START##"
+                    },
+                    {
+                      label str "Assembly Method",
+                      data str "CLC Genomics Workbench v. 7.5.; Vector NTI
+ Advance v. 10"
+                    },
+                    {
+                      label str "Sequencing Technology",
+                      data str "Illumina"
+                    },
+                    {
+                      label str "StructuredCommentSuffix",
+                      data str "##Assembly-Data-END##"
+                    }
+                  }
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "S.cariocanus_NRRL__3"
+                    }
+                  }
+                },
+                user {
+                  class "1.0",
+                  type str "AutodefOptions",
+                  data {
+                    {
+                      label str "UseLabels",
+                      data bool TRUE
+                    },
+                    {
+                      label str "LeaveParenthetical",
+                      data bool TRUE
+                    },
+                    {
+                      label str "SpecifyNuclearProduct",
+                      data bool TRUE
+                    },
+                    {
+                      label str "MaxMods",
+                      data int 0
+                    },
+                    {
+                      label str "FeatureListType",
+                      data str "List All Features"
+                    },
+                    {
+                      label str "MiscFeatRule",
+                      data str "Delete"
+                    },
+                    {
+                      label str "HIVRule",
+                      data str "WantBoth"
+                    },
+                    {
+                      label str "ModifierList",
+                      data fields {
+                        {
+                          label str "OrgMods",
+                          data strs {
+                            "strain"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                create-date std {
+                  year 2015,
+                  month 8,
+                  day 4
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 1641,
+                strand ds,
+                seq-data ncbi2na '39E6B71CCDDC70E04B9E74C010E183DC3F2FB0391500
+D15E180B2048337907E7C38F31A37B10E28916E3094894F877DA346AEAEAC66109F7A8429DD187
+C84D94F0EE3B4AE043D9C7AFE0E2C7E4924F1940CEA9425D304D4423E10815620350937A21E71C
+709DFE3BE0BA1FED0FC237802CC781FD483D702EE7FAC45E282397C28A86513C0677FDCC13D30A
+B82E823F45088A5C623F808EBB5C6C759F5640101BFF21855F88B3C2BE35BFE7DC8F41FC53235A
+0B8E9E03A98D748D0CF93D0F400FDC8898BEBB223A200FF2CA94155F3E9FE49E3D00A745E8C3BC
+DFFFE930E3875B6C031060081ED084E8483C34CFC438C13FC07745C00BFCF83CCD43BFF2201F5C
+FF0A0003EB4F6529F50403FCC7899ADFB554E9C17103CDA01500080BC105EBF6B848093EE0A0A1
+C09E2C00E1904B0F9421EC8E430BD318A035F940FE48D1DD078023780FACCFDC209F43A60EA012
+44FF9B57368E4FFE08F542FE01C000F87C7FD483C438FFCF7F4C4610C3F830FB4C07005CCBA1A0
+040E90071F40E017AD4E9CAC034306290F23A4BF8C3545A078C481C3074FC0253FC500C7CC80'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data gene {
+                        desc "CCA1"
+                      },
+                      partial TRUE,
+                      location int {
+                        from 0,
+                        to 1640,
+                        strand plus,
+                        id local str "S.cariocanus_NRRL__3",
+                        fuzz-from lim lt,
+                        fuzz-to lim gt
+                      }
+                    },
+                    {
+                      data rna {
+                        type mRNA,
+                        ext name "Cca1p"
+                      },
+                      partial TRUE,
+                      location int {
+                        from 0,
+                        to 1640,
+                        strand plus,
+                        id local str "S.cariocanus_NRRL__3",
+                        fuzz-from lim lt,
+                        fuzz-to lim gt
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                local str "S.cariocanus_NRRL_1__3",
+                general {
+                  db "NCBIFILE",
+                  tag str "CCA1_S.cariocanus_CBS_7994.sqn/S.cariocanus_NRRL_1"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 73986986
+                }
+              },
+              descr {
+                title "Cca1p [Saccharomyces cariocanus]",
+                molinfo {
+                  biomol peptide,
+                  tech concept-trans-a
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "S.cariocanus_NRRL_1__3"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol aa,
+                length 546,
+                seq-data ncbieaa "MLRSTISLLMNSAAHKTMTNSNLVVNAPKITLTKVEQNICNLLN
+DYTDLYNEEHRDKPEPLTLRITGGWVRDKLLGQGSHDLDIAINVMSGEQFATGLNEYLQQHYAKYGAKPHNIHKIDKN
+PEKSKHLETATTKLFDVEVDFVNLRSEKYTELSRIPKVCFGTPEEDALRRDATLNALFYNIHKGEVEDFTKRGLRDLK
+DGVLRTPLPAKQTFLDDPLRVLRLIRFASRFNFTIDPEVMAEMGDPQINIAFNSKISRERVGVEMEKILVGPTPLLAL
+QLIQKAHLDNVIFFWHNDDSVVKYNEKNCQDMDRINHIYNDNILNSHLKSFIELYPMFLEKLPILRKKIGHSPGFQQN
+FILSAVLSPMANLQIIGNPKKKVNNLVSVTESIVKEGLKLSKNDATVIAKTVDAISSYEEILAKFADHSQLKRSEIGI
+FLRSFNGEWETAHFASLSDAFLKIPKFETKKIDLLFQNYNDFYSFIHDNNLNNCHKLKPIVDGKQMAKLLQMKPGPWL
+GKINNEAIRWQFDNPTGTDTELITHLKAILPKYL"
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data prot {
+                        name {
+                          "Cca1p"
+                        },
+                        desc "tRNA CCA-pyrophosphorylase"
+                      },
+                      location int {
+                        from 0,
+                        to 545,
+                        id local str "S.cariocanus_NRRL_1__3"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data cdregion {
+                    frame one,
+                    code {
+                      id 1
+                    }
+                  },
+                  product whole local str "S.cariocanus_NRRL_1__3",
+                  location int {
+                    from 0,
+                    to 1640,
+                    strand plus,
+                    id local str "S.cariocanus_NRRL__3"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

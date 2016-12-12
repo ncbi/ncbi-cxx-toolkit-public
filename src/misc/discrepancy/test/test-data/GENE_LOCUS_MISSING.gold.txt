@@ -1,0 +1,19 @@
+Discrepancy Report Results
+
+Summary
+GENE_LOCUS_MISSING: 10 genes missing locus
+
+Detailed Report
+
+GENE_LOCUS_MISSING: 10 genes missing locus
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\GeneDescriptionTest.asn:Gene	CCA1	gb|KY095834|:<1->1641	
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\GeneDescriptionTest.asn:Gene	CCA1	gb|KY095835|:<1->1641	
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\GeneDescriptionTest.asn:Gene	CCA1	gb|KY095836|:<1->1641	
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\GeneDescriptionTest.asn:Gene	CCA1	gb|KY095837|:<1->1641	
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\GeneDescriptionTest.asn:Gene	CCA1	gb|KY095838|:<1->1641	
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\GeneDescriptionTest.asn:Gene	CCA1	gb|KY095839|:<1->1641	
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\GeneDescriptionTest.asn:Gene	CCA1	gb|KY095840|:<1->1641	
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\GeneDescriptionTest.asn:Gene	CCA1	gb|KY095841|:<1->1641	
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\GeneDescriptionTest.asn:Gene	CCA1	gb|KY095842|:<1->1641	
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\GeneDescriptionTest.asn:Gene	CCA1	gb|KY095843|:<1->1641	
+
