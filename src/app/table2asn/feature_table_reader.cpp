@@ -285,21 +285,21 @@ namespace
         }
     }
 
-    bool GetProteinName(string& protein_name, const CSeq_feat& feature)
+    bool GetProteinName(string& protein_name, const CSeq_feat& cds)
     {
-        if (feature.IsSetData())
+        if (cds.IsSetData())
         {
-            if (feature.GetData().IsProt() &&
-                feature.GetData().GetProt().IsSetName())
+            if (cds.GetData().IsProt() &&
+                cds.GetData().GetProt().IsSetName())
             {
-                feature.GetData().GetProt().GetLabel(&protein_name);
+                cds.GetData().GetProt().GetLabel(&protein_name);
                 return true;
             }
         }
 
-        if (feature.IsSetXref())
+        if (cds.IsSetXref())
         {
-            ITERATE(CSeq_feat_Base::TXref, xref_it, feature.GetXref())
+            ITERATE(CSeq_feat_Base::TXref, xref_it, cds.GetXref())
             {
                 if ((**xref_it).IsSetData())
                 {
@@ -311,6 +311,11 @@ namespace
                     }
                 }
             }
+        }
+
+        if ( (protein_name = cds.GetNamedQual("product")) != kEmptyStr)
+        {
+            return true;
         }
         return false;
     }
@@ -652,15 +657,21 @@ CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(CSeq_entry_Handle top_en
     string protein_name;
     if (GetProteinName(protein_name, cd_feature))
     {
+        if (NStr::CompareNocase(protein_name, "hypothetical protein") == 0)
+        { 
+            if (!mrna.Empty() && mrna->IsSetData() && mrna->GetData().GetRna().IsSetExt() &&
+                mrna->GetData().GetRna().GetExt().IsName() )
+            {
+                protein_name = mrna->GetData().GetRna().GetExt().GetName();
+            }
+        }
+
         if (NStr::CompareNocase(protein_name, "hypothetical protein") != 0)
         {
             string old = protein_name;
             if (FixSuspectProductName(protein_name))
             {
                 m_context.ReportFixedProduct(old, protein_name, cd_feature.GetLocation(), locustag);
-                cd_feature.ResetProduct();
-                cd_feature.SetProtXref().SetName().clear();
-                cd_feature.SetProtXref().SetName().push_back(protein_name);
             }
         }
     }
@@ -710,6 +721,14 @@ CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(CSeq_entry_Handle top_en
 
     //if (m_feature_links_kind != 0)
     {
+        if (!protein_name.empty())
+        {
+            //cd_feature.ResetProduct();
+            cd_feature.SetProtXref().SetName().clear();
+            cd_feature.SetProtXref().SetName().push_back(protein_name);
+            cd_feature.RemoveQualifier("product");
+        }
+
         if (mrna.Empty())
            mrna = sequence::GetmRNAForProduct(protein_handle);
 
@@ -741,14 +760,14 @@ CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(CSeq_entry_Handle top_en
 
             AssignLocalIdIfEmpty(mrna_feature, m_local_id_counter);
 
-            const string& product = cd_feature.GetNamedQual("product");
+            //const string& product = cd_feature.GetNamedQual("product");
 
-            if (product != kEmptyStr)
+            if (protein_name != kEmptyStr)
             {
                 auto& ext = mrna_feature.SetData().SetRna().SetExt();
                 if (ext.Which() == CRNA_ref::C_Ext::e_not_set || 
                     (ext.IsName() && ext.SetName().empty()))
-                    ext.SetName() = product;
+                    ext.SetName() = protein_name;
             }
             //mrna_feature.SetXref().clear();
             mrna_feature.AddSeqFeatXref(cd_feature.GetId());
