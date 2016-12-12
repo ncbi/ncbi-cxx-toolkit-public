@@ -358,7 +358,7 @@ CBlastDBAliasApp::CreateAliasFile() const
                                  args[kArgDb].AsString(),
                                  seq_type, gilist,
                                  title, alias_type);
-    } else {
+    } else if (args[kArgDb].HasValue()) {
         CWriteDB_CreateAliasFile(args[kOutput].AsString(),
                                  args[kArgDb].AsString(),
                                  seq_type, seqid_list,
