@@ -201,7 +201,7 @@ BlockModel::BlockModel(const CRef< CSeq_align> seqAlign, bool forSlave)
 	GetBlockLengths(seqAlign, lens);
 	GetBlockStarts(seqAlign, starts, !forSlave);
 	assert(lens.size() == starts.size());
-	for (int i = 0; i < lens.size(); i++)
+	for (unsigned int i = 0; i < lens.size(); i++)
 	{
 		m_blocks.push_back(Block(starts[i], lens[i], i));
 	}
@@ -248,7 +248,7 @@ bool BlockModel::operator==(const BlockModel& rhs) const
 {
 	if (!isAlike(rhs))
 		return false;
-	for ( int i = 0; i < m_blocks.size(); i++)
+	for ( unsigned int i = 0; i < m_blocks.size(); i++)
 	{
 		if (m_blocks[i] != rhs.m_blocks[i])
 			return false;
@@ -260,7 +260,7 @@ bool BlockModel::blockMatch(const BlockModel& rhs) const
 {
 	if (m_blocks.size() != rhs.m_blocks.size())
 		return false;
-	for ( int i = 0; i < m_blocks.size(); i++)
+	for ( unsigned int i = 0; i < m_blocks.size(); i++)
 	{
 		if (m_blocks[i].getLen() != rhs.m_blocks[i].getLen())
 			return false;
@@ -399,7 +399,7 @@ bool BlockModel::contain(const BlockModel& rhs) const
 {
 	if (!isAlike(rhs))
 		return false;
-	for ( int i = 0; i < m_blocks.size(); i++)
+	for ( unsigned int i = 0; i < m_blocks.size(); i++)
 	{
 		if (!m_blocks[i].contain(rhs.m_blocks[i]))
 			return false;
@@ -414,7 +414,7 @@ pair<DeltaBlockModel*, bool> BlockModel::operator-(const BlockModel& bm) const
 {
 	DeltaBlockModel* delta = new DeltaBlockModel();
 	set<DeltaBlock> uniqueDelta;
-	for (int i = 0; i < bm.m_blocks.size(); i++)
+	for (unsigned int i = 0; i < bm.m_blocks.size(); i++)
 	{
 		minusOneBlock(bm.m_blocks[i], *delta);
 	}
@@ -432,55 +432,13 @@ pair<DeltaBlockModel*, bool> BlockModel::intersect(const BlockModel& bm) const
 {
 	DeltaBlockModel* delta = new DeltaBlockModel();
 
-	for (int i = 0; i < bm.m_blocks.size(); i++)
+	for (unsigned int i = 0; i < bm.m_blocks.size(); i++)
 	{
 		intersectOneBlock(bm.m_blocks[i], *delta);
 	}
 	return pair<DeltaBlockModel*, bool>(delta, delta->size() == m_blocks.size());
 }
 
-
-//assume delta = AnotherBlockModel - this
-/* don't need it now.  may work on this later
-void BlockModel::concatenateOverlaps()
-{
-	DeltaBlockModel::iterator dit = delta.begin();
-	while (dit != delta.end())
-	{
-		pair<DeltaBlockModel::iterator, DeltaBlockModel::iterator> range =
-			delta.equal_range(*dit);
-		DeltaBlockModel::iterator onePast = range.first;
-		onePast++;
-		if (onePast == range.second) 
-		{
-			//there is only one DeltaBlock for this subjectBlock
-			m_blocks[dit->objectBlockID].retrofit(*dit);
-			dit++;
-		}
-		else
-		{
-			Block::SortedBlocks blocks;
-			for (DeltaBlockModel::iterator tmp = range.first; tmp != range.second; tmp++)
-			{
-				blocks.insert(m_blocks[tmp->objectBlockID]);
-			}
-			Block comBlock;
-			if (Block::concatenate(blocks, comBlock))
-			{
-				comBlock.retrofit(*(range.first));
-				dit = delta.erase(onePast, range.second);
-			}
-			else
-			{
-				for (DeltaBlockModel::iterator tmp = range.first; tmp != range.second; tmp++)
-				{
-					m_blocks[tmp->objectBlockID].retrofit(*tmp);
-				}
-				dit = range.second;
-			}
-		}
-	}
-}*/
 
 //return(this + delta, complete)
 pair<BlockModel*, bool> BlockModel::operator+(const DeltaBlockModel& delta) const
@@ -492,7 +450,7 @@ pair<BlockModel*, bool> BlockModel::operator+(const DeltaBlockModel& delta) cons
 	for (; dt != delta.end(); ++dt)
 	{
 		//const DeltaBlock& db = *dt;
-		if (dt->objectBlockID < 0 || dt->objectBlockID >= m_blocks.size())
+		if (dt->objectBlockID < 0 || dt->objectBlockID >= (int) m_blocks.size())
 		{
 			delete result;
 			return pair<BlockModel*, bool>(nullptr, false);
@@ -565,7 +523,7 @@ bool BlockModel::intersectOneBlock(const Block& aBlock, DeltaBlockModel& delta) 
 
 void BlockModel::findIntersectingBlocks(const Block& target, vector<int>& result) const
 {
-	for (int i = 0; i < m_blocks.size(); i++)
+	for (unsigned int i = 0; i < m_blocks.size(); i++)
 	{
 		if(target.isIntersecting(m_blocks[i]))
 			result.push_back(i);
@@ -612,7 +570,7 @@ CRef<CSeq_align> BlockModel::toSeqAlign(const BlockModel& master) const
 	sa->SetType(CSeq_align::eType_partial);
 	sa->SetDim(2);
 	TDendiag& ddList = sa->SetSegs().SetDendiag();
-	for (int i = 0; i < m_blocks.size(); i++)
+	for (unsigned int i = 0; i < m_blocks.size(); i++)
 	{
 		CRef< CDense_diag > dd(new CDense_diag());
 		dd->SetDim(2);
@@ -651,7 +609,7 @@ int BlockModel::getFirstAlignedPosition()const
 int BlockModel::getTotalBlockLength () const 
 {
 	int len = 0;
-	for (int i = 0; i < m_blocks.size(); i++)
+	for (unsigned int i = 0; i < m_blocks.size(); i++)
 	{
 		len += m_blocks[i].getLen();
 	}
@@ -675,7 +633,7 @@ int BlockModel::getGapToNTerminal(int bn) const
 int BlockModel::getGapToCTerminal(int bn, int len)const 
 {
 	int gap = 0;
-	if (bn == (m_blocks.size() - 1)) //last blast
+	if (bn == (int) (m_blocks.size() - 1)) //last blast
 	{
 		if (len > 0)
 			gap = (len - 1) - m_blocks[bn].getEnd();
@@ -691,7 +649,7 @@ int BlockModel::getGapToCTerminal(int bn, int len)const
 
 void BlockModel::addOffset(int nExt)
 {
-	for (int i = 1; i < m_blocks.size(); i++)
+	for (unsigned int i = 1; i < m_blocks.size(); i++)
 	{
 		m_blocks[i].addOffset(nExt);
 	}
@@ -711,16 +669,16 @@ bool  BlockModel::isValid(int seqLen, int& errBlock) const
 		errBlock = 0;
 		return false;
 	}
-	for (int i = 1; i < m_blocks.size(); i++)
+	for (unsigned int i = 1; i < m_blocks.size(); i++)
 	{
 		if (!m_blocks[i].isValid())
 		{
-			errBlock = i;
+			errBlock = (int) i;
 			return false;
 		}
 		if (m_blocks[i-1].getEnd() >= m_blocks[i].getStart())
 		{
-			errBlock = i -1;
+			errBlock = (int) i - 1;
 			return false;
 		}
 	}
@@ -746,12 +704,12 @@ bool BlockModel::overlap(const BlockModel& bm)const
 int BlockModel::getBlockNumber(int pos) const
 {
 	int i = 0;
-	for (; i < m_blocks.size(); i++)
+	for (; i < (int) m_blocks.size(); i++)
 	{
 		if (pos >= m_blocks[i].getStart() && pos <= m_blocks[i].getEnd())
 			break;
 	}
-	if (i >= m_blocks.size())
+	if (i >= (int) m_blocks.size())
 		return -1;
 	else
 		return i;
@@ -772,12 +730,12 @@ bool BlockModel::mask(const vector<Block>& maskBlocks)
     vector<Block> maskedBlocks;
     vector<Block>& originalBlocks = getBlocks();
     unsigned int i, nOrigBlocks = originalBlocks.size();
-    unsigned int j, nMaskBlocks = maskBlocks.size();
+    unsigned int nMaskBlocks = maskBlocks.size();
     int origTotalLength = getTotalBlockLength();
     int newBlockId = 0;
     int pos, start, len;
     int origStart, origEnd;
-    int maskBlockStart, maskBlockEnd, maskFirst, maskLast;
+    int j, maskBlockStart, maskBlockEnd, maskFirst, maskLast;
     bool hasEffect;
 
     if (nOrigBlocks == 0 || nMaskBlocks == 0) return false;
@@ -858,11 +816,11 @@ void BlockModel::clipToRange(unsigned int min, unsigned max)
     int lastAligned = getBlocks().back().getEnd();
 
     //  Add a masking block for all residues < min.
-    if (firstAligned < min) {
+    if (firstAligned < (int) min) {
         maskBlocks.push_back(Block(firstAligned, min - firstAligned));
     }
     //  Add a masking block for all residues > max.
-    if (lastAligned > max) {
+    if (lastAligned > (int) max) {
         maskBlocks.push_back(Block(max + 1, lastAligned - max));
     }
 
@@ -1012,7 +970,7 @@ void BlockModelPair::extendMidway(int blockNum)
 	// negative for moving to N-end.
 	int nExt = -ngap; 
 	int cExt = 0;
-	if (blockNum != (m_master->getBlocks().size()-1) ) //do not C-extend the last block
+	if (blockNum != (int) (m_master->getBlocks().size()-1) ) //do not C-extend the last block
 	{
 		if ((cgap % 2) == 0)
 			cExt = cgap/2;
