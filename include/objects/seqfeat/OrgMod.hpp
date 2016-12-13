@@ -93,6 +93,7 @@ public:
     static string MakeStructuredVoucher(const string& inst, const string& coll, const string& id);
     static bool FixStructuredVoucher(string& val, const string& voucher_type);
     static bool AddStructureToVoucher(string& val, const string& voucher_type);
+    static bool RescueInstFromParentheses(string& val, const string& voucher_type);
     static string CheckMultipleVouchers(const vector<string>&);
 
     //e.g. "DMNS:Bird" to "Denver Museum of Nature and Science, Ornithology Collections"

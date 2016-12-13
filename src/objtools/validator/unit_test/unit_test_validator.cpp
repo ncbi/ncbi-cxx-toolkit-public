@@ -19004,6 +19004,19 @@ BOOST_AUTO_TEST_CASE(Fix_Structured_Voucher)
     BOOST_CHECK_EQUAL(COrgMod::FixStructuredVoucher(val, "s"), false);
     BOOST_CHECK_EQUAL(val, "A12345");
 
+
+    // if institution code in parentheses at end of unstructured value, reorder
+    // GB-6454
+    val = "M.Riewe 182 (CAS)";
+    BOOST_CHECK_EQUAL(COrgMod::FixStructuredVoucher(val, "s"), true);
+    BOOST_CHECK_EQUAL(val, "CAS:M.Riewe 182");
+
+    // don't fix if value in parentheses is not an institution code
+    val = "L.R. Xu 0081 (WUG)";
+    BOOST_CHECK_EQUAL(COrgMod::FixStructuredVoucher(val, "s"), false);
+    BOOST_CHECK_EQUAL(val, "L.R. Xu 0081 (WUG)");
+
+
 }
 
 

@@ -519,6 +519,41 @@ bool COrgMod::AddStructureToVoucher(string& val, const string& v_type)
 }
 
 
+bool COrgMod::RescueInstFromParentheses(string& val, const string& voucher_type)
+{
+    bool rval = false;
+
+    if (!NStr::EndsWith(val, ")")) {
+        return false;
+    } 
+    size_t colon_pos = NStr::Find(val, ":");
+    if (colon_pos != 0 && colon_pos != string::npos) {
+        return false;
+    }
+    size_t pos = NStr::Find(val, "(", 0, val.length() - 1, NStr::eLast);
+    if (pos == string::npos) {
+        return false;
+    }
+    string inst = val.substr(pos + 1, val.length() - pos - 2);
+    bool miscap = false, needs_country = false, wrong_country = false;
+    string capfix;
+
+    string v_type = voucher_type;
+    if (IsInstitutionCodeValid(inst, v_type, miscap, capfix, needs_country, wrong_country)) {
+        if (colon_pos == 0) {
+            val = inst + val.substr(0, pos);
+        } else {
+            val = inst + ":" + val.substr(0, pos);
+        }
+        NStr::TruncateSpacesInPlace(val);
+        rval = true;
+    }
+    
+
+    return rval;
+}
+
+
 bool 
 COrgMod::FixStructuredVoucher(string& val, const string& v_type)
 {
@@ -528,7 +563,11 @@ COrgMod::FixStructuredVoucher(string& val, const string& v_type)
 
     if (!ParseStructuredVoucher(val, inst_code, coll_code, id)
         || NStr::IsBlank(inst_code)) {
-        return AddStructureToVoucher(val, v_type);
+        if (AddStructureToVoucher(val, v_type)) {
+            return true;
+        } else {
+            return RescueInstFromParentheses(val, v_type);
+        }
     }
     bool rval = false;
     bool found = false;
