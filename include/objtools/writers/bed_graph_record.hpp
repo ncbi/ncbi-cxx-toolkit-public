@@ -54,7 +54,7 @@ public:
     void SetChromId(const string&);
     void SetChromStart(size_t);
     void SetChromEnd(size_t);
-    void SetChromValue(float);
+    void SetChromValue(double);
 
 protected:
     string m_chromId;

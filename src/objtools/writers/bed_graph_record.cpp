@@ -102,7 +102,7 @@ void CBedGraphRecord::SetChromEnd(
 
 //  -----------------------------------------------------------------------------
 void CBedGraphRecord::SetChromValue(
-    float value)
+    double value)
 //  -----------------------------------------------------------------------------
 {
     m_chromValue = NStr::NumericToString(value);

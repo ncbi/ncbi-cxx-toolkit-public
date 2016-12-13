@@ -79,8 +79,6 @@ CBedGraphWriter::~CBedGraphWriter()
 };
 
 //  ----------------------------------------------------------------------------
-
-//  ----------------------------------------------------------------------------
 bool CBedGraphWriter::WriteAnnot( 
     const CSeq_annot& annot,
     const string&,
@@ -97,7 +95,14 @@ bool CBedGraphWriter::WriteAnnot(
     if (xWriteAnnotGraphs(track, annot)) {
         return true;
     }
-    return true;
+    if (xWriteAnnotFeatureTable(track, annot)) {
+        return true;
+    }
+    NCBI_THROW(
+        CObjWriterException,
+        eBadInput,
+        "BedGraph writer does not support this annotation type.");
+    return false;
 }
 
 
@@ -123,6 +128,46 @@ bool CBedGraphWriter::xWriteAnnotGraphs(
 
 
 //  ----------------------------------------------------------------------------
+bool CBedGraphWriter::xWriteAnnotFeatureTable(
+    const CBedTrackRecord& trackdata,
+    const CSeq_annot& annot)
+//  ----------------------------------------------------------------------------
+{
+    NCBI_THROW(
+        CObjWriterException,
+        eBadInput,
+        "BedGraph writer does not support feature tables (yet).");
+    return false;
+
+    if (!annot.IsFtable()) {
+        return false;
+    }
+    const list<CRef<CSeq_feat> >& features = annot.GetData().GetFtable();
+    for (list<CRef<CSeq_feat> >::const_iterator cit = features.begin();
+            cit != features.end();
+            ++cit) {
+        if (!xWriteSingleFeature(trackdata, **cit)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CBedGraphWriter::xWriteAnnotTable(
+    const CBedTrackRecord& trackdata,
+    const CSeq_annot& annot)
+//  ----------------------------------------------------------------------------
+{
+    NCBI_THROW(
+        CObjWriterException,
+        eBadInput,
+        "BedGraph writer does not support tables (yet).");
+    return false;
+}
+
+//  ----------------------------------------------------------------------------
 bool CBedGraphWriter::xWriteSingleGraph(
     const CBedTrackRecord& trackdata,
     const CSeq_graph& graph)
@@ -131,7 +176,21 @@ bool CBedGraphWriter::xWriteSingleGraph(
     if (graph.GetGraph().IsInt()) {
         return xWriteSingleGraphInt(trackdata, graph);
     }
-    cerr << "Graph\n";
+    if (graph.GetGraph().IsByte()) {
+        return xWriteSingleGraphByte(trackdata, graph);
+    }
+    if (graph.GetGraph().IsReal()) {
+        return xWriteSingleGraphReal(trackdata, graph);
+    }
+    return false;
+}
+
+//  ----------------------------------------------------------------------------
+bool CBedGraphWriter::xWriteSingleFeature(
+    const CBedTrackRecord& trackdata,
+    const CSeq_feat& feature)
+//  ----------------------------------------------------------------------------
+{
     return true;
 }
 
@@ -172,11 +231,38 @@ bool CBedGraphWriter::xWriteSingleGraphInt(
             cerr << "";
         }
         double value = offset + scale*values[valIndex];
-        bedRecord.SetChromValue(value );
+        bedRecord.SetChromValue(value);
 
         bedRecord.Write(m_Os);
     }
     return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CBedGraphWriter::xWriteSingleGraphByte(
+    const CBedTrackRecord& trackdata,
+    const CSeq_graph& graph)
+//  ----------------------------------------------------------------------------
+{
+    NCBI_THROW(
+        CObjWriterException,
+        eInterrupted,
+        "BedGraph writer does not support byte graph data (yet).");
+    return false;
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CBedGraphWriter::xWriteSingleGraphReal(
+    const CBedTrackRecord& trackdata,
+    const CSeq_graph& graph)
+//  ----------------------------------------------------------------------------
+{
+    NCBI_THROW(
+        CObjWriterException,
+        eBadInput,
+        "BedGraph writer does not support real graph data (yet).");
+    return false;
 }
 
 END_NCBI_SCOPE

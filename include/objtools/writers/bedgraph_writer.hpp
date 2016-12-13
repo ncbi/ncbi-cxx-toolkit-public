@@ -105,6 +105,27 @@ protected:
         const CBedTrackRecord&,
         const CSeq_graph&);
 
+    bool xWriteSingleGraphReal(
+        const CBedTrackRecord&,
+        const CSeq_graph&);
+
+    bool xWriteSingleGraphByte(
+        const CBedTrackRecord&,
+        const CSeq_graph&);
+
+
+    bool xWriteAnnotFeatureTable(
+        const CBedTrackRecord&,
+        const CSeq_annot&);
+
+    bool xWriteSingleFeature(
+        const CBedTrackRecord&,
+        const CSeq_feat&);
+
+    bool xWriteAnnotTable(
+        const CBedTrackRecord&,
+        const CSeq_annot&);
+
     CScope& m_Scope;
     unsigned int m_colCount;
 };
