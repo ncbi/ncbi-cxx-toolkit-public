@@ -33,6 +33,17 @@
 
 #include "srv_stat.hpp"
 
+/*
+    there were occasional crashes in s_DoUnmap (munmap fails)
+    this new approach seems to fix the problem
+*/
+#define __NC_MEMMAN_NEWALLOC 1
+/*
+    if I use real_ptr, I have to change (reduce) kNCMaxBlobChunkSize
+    while everything seems to work fine, when mixing old and new NC, still it is scary.
+    so, let us try to keep kNCMaxBlobChunkSize as it always was
+*/
+#define __NC_MEMMAN_USEREALPTR 0
 
 BEGIN_NCBI_SCOPE
 

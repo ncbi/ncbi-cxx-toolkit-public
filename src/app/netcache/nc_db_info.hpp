@@ -30,6 +30,7 @@
 
 
 #include "nc_utils.hpp"
+#include "memory_man.hpp"
 
 
 namespace intr = boost::intrusive;
@@ -46,7 +47,11 @@ static const Uint4  kNCMaxDBFileId = 0xFFFFFFFF;
 /// obtain the maximum block size it can allocate this way. kNCMaxBlobChunkSize
 /// should be equal or less than that size (which is kMMMaxBlockSize in
 /// memory_man.cpp in task_server library).
+#if __NC_MEMMAN_NEWALLOC && __NC_MEMMAN_USEREALPTR
+static const size_t kNCMaxBlobChunkSize = 32736;
+#else
 static const size_t kNCMaxBlobChunkSize = 32740;
+#endif
 static const Uint2  kNCMaxChunksInMap = 128;
 
 

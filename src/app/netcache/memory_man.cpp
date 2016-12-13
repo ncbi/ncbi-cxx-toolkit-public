@@ -89,6 +89,12 @@ struct SMMBlocksPool
 
 struct SMMPageHeader
 {
+#if __NC_MEMMAN_NEWALLOC
+#if __NC_MEMMAN_USEREALPTR
+    void* real_ptr;
+#endif
+    size_t real_size;
+#endif
     size_t block_size;
     void* free_list;
     CMiniMutex page_lock;
@@ -323,6 +329,87 @@ s_DoUnmap(void* ptr, size_t size)
 #endif
 }
 
+#if __NC_MEMMAN_NEWALLOC
+
+static inline bool
+s_TryUnmap(void* ptr, size_t size)
+{
+#if __NC_MEMMAN_USEREALPTR
+#ifdef NCBI_OS_LINUX
+    return (munmap(ptr, size) == 0);
+#endif
+#else
+    s_DoUnmap(ptr, size);
+    return true;
+#endif
+}
+
+static void*
+s_SysAllocLongWay(size_t ptr, size_t size)
+{
+    size_t aligned_ptr = ptr, new_size = size;
+    for (;;) {
+        s_DoUnmap((void*)ptr, new_size);
+        aligned_ptr = (ptr & kMMAllocPageMask);
+        new_size = max(new_size, (size_t)kMMAllocPageSize) + (ptr - aligned_ptr);
+        ptr = (size_t)s_DoMmap(new_size);
+        aligned_ptr = (ptr & kMMAllocPageMask);
+        if (aligned_ptr == ptr) {
+            break;
+        }
+        aligned_ptr += kMMAllocPageSize;
+        if ((ptr + new_size > aligned_ptr) && (ptr + new_size - aligned_ptr >= size)) {
+            if (s_TryUnmap((void*)ptr, aligned_ptr - ptr)) {
+                new_size -= (aligned_ptr - ptr);
+                ptr = aligned_ptr;
+            }
+            break;
+        }
+    }
+
+    SMMPageHeader* page = (SMMPageHeader*)aligned_ptr;
+    new (page) SMMPageHeader();
+#if __NC_MEMMAN_USEREALPTR
+    page->real_ptr = (void*)ptr;
+#endif
+    page->real_size = new_size;
+    AtomicAdd(s_TotalSysMem, page->real_size);
+    return (void*)page;
+}
+
+static void*
+s_SysAlloc(size_t size)
+{
+    AtomicAdd(s_TotalPageCount, 1);
+    size_t ptr = (size_t)s_DoMmap(size);
+    if ((ptr & kMMAllocPageMask) == ptr) {
+        SMMPageHeader* page = (SMMPageHeader*)ptr;
+        new (page) SMMPageHeader();
+#if __NC_MEMMAN_USEREALPTR
+        page->real_ptr = page;
+#endif
+        page->real_size = size;
+        AtomicAdd(s_TotalSysMem, page->real_size);
+        return (void*)page;
+    }
+    return s_SysAllocLongWay(ptr, size);
+}
+
+static void
+s_SysFree(void* ptr, size_t size)
+{
+    SMMPageHeader* page = (SMMPageHeader*)ptr;
+    AtomicSub(s_TotalSysMem, page->real_size);
+    AtomicSub(s_TotalPageCount, 1);
+#if __NC_MEMMAN_USEREALPTR
+    s_DoUnmap(page->real_ptr, page->real_size);
+#else
+    s_DoUnmap(page, page->real_size);
+#endif
+}
+
+#else  // __NC_MEMMAN_NEWALLOC
+
 static void*
 s_SysAllocLongWay(size_t size)
 {
@@ -360,6 +447,7 @@ s_SysFree(void* ptr, size_t size)
     AtomicSub(s_TotalPageCount, 1);
     s_DoUnmap(ptr, size);
 }
+#endif  //__NC_MEMMAN_NEWALLOC
 
 static inline SMMPageHeader*
 s_GetPageByPtr(void* ptr)
@@ -456,7 +544,9 @@ static SMMPageHeader*
 s_AllocNewPage(Uint2 size_idx, SMMStat* __NC_MEMMAN_PERTHREAD_STAT_ARG(stat))
 {
     SMMPageHeader* page = (SMMPageHeader*)s_SysAlloc(kMMAllocPageSize);
+#if !__NC_MEMMAN_NEWALLOC
     new (page) SMMPageHeader();
+#endif
     page->block_size = kMMBlockSizes[size_idx];
     page->cnt_free = kMMCntForSize[size_idx];
 #if __NC_MEMMAN_PERTHREAD_STAT
