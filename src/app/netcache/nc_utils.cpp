@@ -59,7 +59,7 @@ static SStatusMsg s_StatusMessages[] =
         {eStatus_NotFound,    "ERR:BLOB not found."},
         {eStatus_CondFailed,  "ERR:Precondition failed"},
         {eStatus_NoImpl,      "ERR:Not implemented"},
-        {eStatus_ShuttingDown,"ERR:Shutting down"},
+        {eStatus_ShuttingDown,"ERR:Service unavailable"},
         {eStatus_BlobTooBig,  "ERR:Blob size exceeds the allowed maximum"},
         {eStatus_NeedAdmin,   "ERR:Command requires administrative privileges"},
         {eStatus_CmdAborted,  "ERR:Stale synchronization"},
