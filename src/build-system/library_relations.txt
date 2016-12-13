@@ -312,6 +312,7 @@ ftgl needs3party $(ORIG_LIBS)
 gbproj needs submit
 gbproj needs xconnect
 gbseq needs xser
+gc_asn_access needs $(GPIPE_GENCOLL_LIBS)
 gc_assm_rpt needs $(GPIPE_GENCOLL_LIBS)
 gc_common needs xser
 gc_load_utils needs $(GPIPE_COMMON_LIBS)
@@ -1326,7 +1327,7 @@ xgencoll needs simple_asm
 xgencollstats needs $(GPIPE_GENCOLL_LIBS)
 xgencollstats needs gencoll_stats
 xgp_manifest needs xser
-xgpgcreport needs $(GPIPE_GENCOLL_LIBS)
+xgpgcreport needs gc_asn_access
 xgpgcreport needs gencoll_release_report
 xgpp_console needs dbapi
 xgpp_console_access needs xgpp_console_commands
