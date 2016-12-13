@@ -133,12 +133,6 @@ bool CBedGraphWriter::xWriteAnnotFeatureTable(
     const CSeq_annot& annot)
 //  ----------------------------------------------------------------------------
 {
-    NCBI_THROW(
-        CObjWriterException,
-        eBadInput,
-        "BedGraph writer does not support feature tables (yet).");
-    return false;
-
     if (!annot.IsFtable()) {
         return false;
     }
@@ -146,8 +140,11 @@ bool CBedGraphWriter::xWriteAnnotFeatureTable(
     for (list<CRef<CSeq_feat> >::const_iterator cit = features.begin();
             cit != features.end();
             ++cit) {
-        if (!xWriteSingleFeature(trackdata, **cit)) {
-            return false;
+        try {
+            xWriteSingleFeature(trackdata, **cit);
+        }
+        catch(CObjWriterException& except) {
+            cerr << except.GetMsg() << endl;
         }
     }
     return true;
@@ -191,6 +188,44 @@ bool CBedGraphWriter::xWriteSingleFeature(
     const CSeq_feat& feature)
 //  ----------------------------------------------------------------------------
 {
+    CBedGraphRecord bedRecord;
+
+    const CSeq_loc& location = feature.GetLocation();
+    if (!location.IsInt()) {
+        NCBI_THROW(
+            CObjWriterException,
+            eInterrupted,
+            "BedGraph writer does not support feature locations that are not intervals.");
+    }
+    const CSeq_interval& interval = location.GetInt();
+
+    const string& scoreStr = feature.GetNamedQual("score");
+    if (scoreStr.empty()) {
+        NCBI_THROW(
+            CObjWriterException,
+            eInterrupted,
+            "BedGraph writer only supports features with a \"score\" qualifier.");
+    }
+    double score = 0;
+    try {
+        score = NStr::StringToDouble(scoreStr);
+    }
+    catch(CException&) {
+        NCBI_THROW(
+            CObjWriterException,
+            eInterrupted,
+            "BedGraph writer encountered feature with bad \"score\" qualifier.");
+    }
+
+    const CSeq_id& id = interval.GetId();
+    string recordId;
+    id.GetLabel(&recordId);
+    bedRecord.SetChromId(recordId);
+
+    bedRecord.SetChromStart(interval.GetFrom());
+    bedRecord.SetChromEnd(interval.GetTo()-1);
+    bedRecord.SetChromValue(score);
+    bedRecord.Write(m_Os);
     return true;
 }
 
@@ -211,12 +246,6 @@ bool CBedGraphWriter::xWriteSingleGraphInt(
     CBedGraphRecord bedRecord;
     size_t numValues = graph.GetNumval();
     const vector<int> values = graph.GetGraph().GetInt().GetValues();
-    //debug >>
-    //const size_t maxValues = 100;
-    //if (numValues > maxValues) {
-    //    numValues = maxValues;
-    //}
-    //debug <<
     for (size_t valIndex = 0; valIndex < numValues; ++valIndex) {
         bedRecord.SetChromId(chromId);
 
