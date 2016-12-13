@@ -12,7 +12,7 @@ SRC = agp_write \
       gtf_writer gtf_write_data \
       gvf_writer gvf_write_data \
       wiggle_writer \
-      bed_writer bed_track_record bed_feature_record \
+      bed_writer bedgraph_writer bed_track_record bed_feature_record bed_graph_record \
       vcf_writer \
       ucsc_writer \
       src_writer \
