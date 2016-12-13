@@ -41,48 +41,6 @@ USING_SCOPE(objects);
 
 BEGIN_NCBI_SCOPE
 
-/// Struct mirroring columns of "acc2oid" table in SQLite database
-struct SAccOid {
-    string m_acc;   ///< "bare" accession w/out version suffix
-    int m_ver;      ///< version number
-    int m_oid;      ///< OID
-
-    /// Default constructor
-    SAccOid() :
-        m_acc(""), m_ver(0), m_oid(-1) {}
-    /// Explicit constructor
-    /// @param acc accession string
-    /// @param ver version number
-    /// @param oid OID
-    SAccOid(const string& acc, const int ver, const int oid) :
-        m_acc(acc), m_ver(ver), m_oid(oid) {}
-};
-
-
-/// Struct mirroring columes of "volinfo" table in SQLite database
-/// The "volume file" is a database volume's ".nin" or ".pin" file.
-/// The modification time is the number of seconds since the UNIX epoch,
-/// as would be returned by C library function "time()".
-struct SVolInfo {
-    const string m_path;        ///< full path to volume file
-    const time_t m_modTime;     ///< modification time of volume file
-    const int    m_vol;         ///< volume number
-    const int    m_oids;        ///< number of OIDs in volume
-
-    /// Explicit constructor
-    /// @param path full path to volume file
-    /// @param modtime modification time of volume file
-    /// @param vol volume number, 0 on up
-    /// @param oid number of OIDs in volume
-    SVolInfo(
-            const string& path,
-            const time_t modTime,
-            const int vol,
-            const int oids
-    ) : m_path(path), m_modTime(modTime), m_vol(vol), m_oids(oids) {}
-};
-
-
 /// This class provides search capability of (integer) OIDs keyed to
 /// (string) accessions, stored in a SQLite database.
 class NCBI_XOBJREAD_EXPORT CSeqDBSqlite : public CObject
@@ -92,10 +50,49 @@ private:
     unique_ptr<CSQLITE_Statement> m_selectStmt;
 
 public:
-    static const int kNotFound;     ///< accession not found in database
-    /// more than one row found with same accession and (highest) version
-    ///  but different OIDs
-    static const int kAmbiguous;    
+    typedef Int4 TOid;
+
+    static const TOid kNotFound;     ///< accession not found in database
+
+    /// Struct mirroring columns of "acc2oid" table in SQLite database
+    struct SAccOid {
+        string m_acc;   ///< "bare" accession w/out version suffix
+        int    m_ver;   ///< version number
+        TOid   m_oid;   ///< OID
+
+        /// Default constructor
+        SAccOid() :
+            m_acc(""), m_ver(0), m_oid((TOid) -1) {}
+        /// Explicit constructor
+        /// @param acc accession string
+        /// @param ver version number
+        /// @param oid OID
+        SAccOid(const string& acc, const int ver, const int oid) :
+            m_acc(acc), m_ver(ver), m_oid((TOid) oid) {}
+    };
+
+    /// Struct mirroring columes of "volinfo" table in SQLite database
+    /// The "volume file" is a database volume's ".nin" or ".pin" file.
+    /// The modification time is the number of seconds since the UNIX epoch,
+    /// as would be returned by C library function "time()".
+    struct SVolInfo {
+        const string m_path;        ///< full path to volume file
+        const time_t m_modTime;     ///< modification time of volume file
+        const int    m_vol;         ///< volume number
+        const int    m_oids;        ///< number of OIDs in volume
+
+        /// Explicit constructor
+        /// @param path full path to volume file
+        /// @param modtime modification time of volume file
+        /// @param vol volume number, 0 on up
+        /// @param oid number of OIDs in volume
+        SVolInfo(
+                const string& path,
+                const time_t modTime,
+                const int vol,
+                const int oids
+        ) : m_path(path), m_modTime(modTime), m_vol(vol), m_oids(oids) {}
+    };
 
     /// Constructor
     /// @param dbname Database file name
@@ -108,33 +105,74 @@ public:
     /// @param cache_size Cache size in bytes
     void SetCacheSize(const size_t cache_size);
 
-    /// Get OID for single string accession.
-    /// If more than one match to the accession is found,
-    /// the OID of the one with the highest version number will
-    /// be returned.
-    /// If there are multiple instances of the accession with the same highest
-    /// version number but different OIDs, kAmbiguous (-2) will be returned
-    /// instead of the OID.
+    /// Get OIDs for single string accession and integer version.
+    /// String accession should NOT include ".version".
+    /// If there are no matches, oidv will be returned empty.
+    /// If there are multiple matches, all matches will be returned.
+    /// In actuality, if there are multiple matches that share the
+    /// version number, this should be considered an error in the database.
+    /// @param oidv Reference to vector of TOid to receive found OIDs
     /// @param accession String accession (without version suffix)
-    /// @return OID >= 0 if found, kNotFound (-1) if not found,
-    /// kAmbiguous (-2) if ambiguous
+    /// @param version Version number
     /// @see GetOids
     /// @see kNotFound
-    /// @see kAmbiguous
-    int GetOid(const string& accession);
+    void GetOid(
+            vector<TOid>&      oidv,
+            const string&      accession,
+            const unsigned int version
+    );
 
-    /// Get OIDs for a list of string accessions.
-    /// Returned vector of OIDs will have the same length as accessions;
-    /// returned OID values will be as described for GetOid.
-    /// @param accessions list of string accessions
-    /// @return vector of OIDs, one per accession
+    /// Get OIDs for single string accession.
+    /// String accession may have ".version" appended.
+    /// If there are no matches, oidv will be returned empty.
+    /// If there are multiple matches, and allow_dup is true,
+    /// all matches will be returned even if they have the same version.
+    /// If there are multiple matches, and allow_dup is false,
+    /// the ones with the highest version number will be returned
+    /// (assuming a version was not specified).
+    /// In actuality, if there are multiple matches that share the
+    /// highest or provided version number, this should be considered an error
+    /// in the database.
+    /// @param oidv Reference to vector of TOid to receive found OIDs
+    /// @param accession String accession (with or without version suffix)
+    /// @param allow_dup If true, return all OIDs which match (default false)
+    /// @see GetOids
+    /// @see kNotFound
+    void GetOid(
+            vector<TOid>& oidv,
+            const string& accession,
+            const bool    allow_dup = false
+    );
+
+    /// Get OIDs for a vector of string accessions.
+    /// Accessions may have ".version" appended.
+    /// Returned vector of OIDs will have the same length as vector
+    /// of accessions in one-to-one correspondence.
+    /// Each accession will be searched in a similar manner to
+    /// calls to GetOid (above) with allow_dup set to false.
+    /// Any accessions which are not found will be assigned OIDs
+    /// of kNotFound (-1).
+    /// @param oidv Reference to vector of TOid to receive found OIDs
+    /// @param accessions Vector of string accessions
     /// @see GetOid
-    vector<int> GetOids(const list<string>& accessions);
+    void GetOids(
+            vector<TOid>&         oidv,
+            const vector<string>& accessions
+    );
 
     /// Get accessions for a single OID.
     /// OID to accession is one-to-many, so a single OID can match
     /// zero, one, or more than one accession.
-    list<string> GetAccessions(const int oid);
+    /// NOTE: At this time, the SQLite databases only have an index on the
+    /// accessions, NOT on the OIDs, so this method will run MUCH slower than
+    /// GetOid/GetOids.
+    /// @param accessions Reference to vector of accession strings,
+    ///   which will have ".version" appended.
+    /// @param oid OID on which to search.
+    void GetAccessions(
+            vector<string>& accessions,
+            const TOid      oid
+    );
 
     /// Step through all accession-to-OID rows.
     /// Will lazily execute "SELECT * ..." upon first call.
@@ -150,7 +188,7 @@ public:
     /// @param ver pointer to int for version, or NULL
     /// @param oid pointer to int for OID, or NULL
     /// @return true if row is found, or false if all rows have been returned
-    bool StepAccessions(string* acc, int* ver, int* oid);
+    bool StepAccessions(string* acc, int* ver, TOid* oid);
 
     /// Step through all volumes.
     /// Will lazily execute "SELECT * ..." upon first call.

@@ -55,6 +55,8 @@ using std::ostringstream;
 class CSeqdb2InfoApplication : public CNcbiApplication
 {
 private:
+    typedef CSeqDBSqlite::TOid TOid;
+
     virtual void Init(void);
     virtual int  Run(void);
     virtual void Exit(void);
@@ -156,25 +158,6 @@ bool isPositiveInteger(const string& s)
 }
 
 
-// Convert a signed integer to its string equivalent.
-string itos(const int n)
-{
-    // Trivial case of zero.
-    if (n == 0) return "0";
-    // Need absolute value of n.
-    int na = (n < 0) ? -n : n;
-    // This loop forms the string, LS digit to MS digit.
-    string s;
-    while (na != 0) {
-        s = string(1, ((char) (na % 10) + '0')) + s;
-        na /= 10;
-    }
-    // Prepend the '-' sign if necessary.
-    if (n < 0) s = '-' + s;
-    return s;
-}
-
-
 // Strip leading and trailing whitespace off a C-style string, and return
 // the result as a C++ string object.
 string trim(char* c)
@@ -218,7 +201,7 @@ int CSeqdb2InfoApplication::Run(void)
         // this application.
         string accList = args["entry_batch"].AsString();
         ifstream is(accList);
-        list<string> accessions;
+        vector<string> accessions;
         char acc[64];
         // Copy each accession into a list container.
         while (true) {
@@ -232,16 +215,17 @@ int CSeqdb2InfoApplication::Run(void)
 
         // Get OIDs for accession list.  OIDs will be mapped one-to-one
         // with their accessions.
+        vector<TOid> oids;
         clock_t tic, toc;
         tic = clock();
-        vector<int> oids = sqldb.GetOids(accessions);
+        sqldb.GetOids(oids, accessions);
         toc = clock();
 
         // Display results, counting all found entries only (signaled by
         // *it being non-negative).
         int nf = 0;
-        list<string>::iterator ir = accessions.begin();
-        vector<int>::iterator it = oids.begin();
+        vector<string>::iterator ir = accessions.begin();
+        vector<TOid>::iterator it = oids.begin();
         while (ir != accessions.end()  &&  it != oids.end()) {
             if (*it >= 0) {
                 ++nf;
@@ -266,9 +250,9 @@ int CSeqdb2InfoApplication::Run(void)
             unsigned int numRecords = 0;
             string acc;
             int ver;
-            int oid;
+            TOid oid;
             while (sqldb.StepAccessions(&acc, &ver, &oid)) {
-                cout << acc << "." << ver << " " << oid << endl;
+                cout << acc << "." << ver << " " << (int) oid << endl;
                 ++numRecords;
             }
 
@@ -277,23 +261,24 @@ int CSeqdb2InfoApplication::Run(void)
             // If parameter is a valid non-negative integer, it won't be
             // a valid accession, so we treat it as an OID and perform
             // a reverse-search (OID-to-accessions).
-            int oid = atoi(args["entry"].AsString().c_str());
-            list<string> accs = sqldb.GetAccessions(oid);
-            list<string>::iterator it = accs.begin();
-            while (it != accs.end()) {
-                cout << *it++ << endl;
+            TOid oid = (TOid) atoi(args["entry"].AsString().c_str());
+            vector<string> accs;
+            sqldb.GetAccessions(accs, oid);
+            for (auto acc : accs) {
+                cout << acc << endl;
             }
 
         } else {
 
             // Assume this is a string accession.
-            int oid = sqldb.GetOid(entry);
-            if (oid == CSeqDBSqlite::kAmbiguous) {
-                cout << "Accession.version ambiguous" << endl;
-            } else if (oid == CSeqDBSqlite::kNotFound) {
+            vector<TOid> oids;
+            sqldb.GetOid(oids, entry);
+            if (oids.empty()) {
                 cout << "Accession not found" << endl;
             } else {
-                cout << oid << endl;
+                for (auto oid : oids) {
+                    cout << (int) oid << endl;
+                }
             }
 
         }
@@ -310,8 +295,8 @@ int CSeqdb2InfoApplication::Run(void)
                 string m_numoids;
                 SVol(string p, int m, int v, int n) :
                     m_path(p),
-                    m_volume(itos(v)),
-                    m_numoids(itos(n))
+                    m_volume(to_string(v)),
+                    m_numoids(to_string(n))
                 {
                     long lt = (long) m;
                     m_modtime = trim(ctime(&lt));

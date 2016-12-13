@@ -4390,6 +4390,8 @@ BOOST_AUTO_TEST_CASE(CSeqDBIsam_32bit_GI)
     }
 }
 
+typedef CSeqDBSqlite::TOid TOid;
+
 BOOST_AUTO_TEST_CASE(CSeqDBSqlite_Singles)
 {
     // Test file path.
@@ -4491,22 +4493,78 @@ BOOST_AUTO_TEST_CASE(CSeqDBSqlite_Singles)
     // Open DB for reading.
     CSeqDBSqlite* sqldb_rd = new CSeqDBSqlite(sqlfile);
 
-    // Perform individual lookups.
-    BOOST_REQUIRE_EQUAL(sqldb_rd->GetOid("GMPEROZ"), 28);     // unique
-    BOOST_REQUIRE_EQUAL(sqldb_rd->GetOid("CMPERFT"), 30);     // unique
-    BOOST_REQUIRE_EQUAL(sqldb_rd->GetOid("FTPERMI"), 5280);   // highest version
-    BOOST_REQUIRE_EQUAL(sqldb_rd->GetOid("INPERM"),  39);     // highest version
-    BOOST_REQUIRE_EQUAL(sqldb_rd->GetOid("MMPERCM"), 10);     // highest version
-    BOOST_REQUIRE_EQUAL(sqldb_rd->GetOid("MPERNMI"), 1852);   // redundant is ok
-    BOOST_REQUIRE_EQUAL(
-            sqldb_rd->GetOid("MISSING"),
-            CSeqDBSqlite::kNotFound
-    );  // not in table
-    BOOST_REQUIRE_EQUAL(
-            sqldb_rd->GetOid("ANGPERNM"),
-            CSeqDBSqlite::kAmbiguous
-    );  // ambiguous, 2 rows have same accession and (highest) version
-        // but different OIDs, so we can't tell which is correct
+    // Perform individual lookups.  First, without versions.
+    vector<TOid> oids;
+
+    sqldb_rd->GetOid(oids, "GMPEROZ");
+    BOOST_REQUIRE_EQUAL(oids.size(), (size_t) 1);
+    BOOST_REQUIRE_EQUAL(oids.front(), (TOid) 28);
+
+    sqldb_rd->GetOid(oids, "CMPERFT");
+    BOOST_REQUIRE_EQUAL(oids.size(), (size_t) 1);
+    BOOST_REQUIRE_EQUAL(oids.front(), (TOid) 30);
+
+    sqldb_rd->GetOid(oids, "FTPERMI");              // don't allow dups
+    BOOST_REQUIRE_EQUAL(oids.size(), (size_t) 1);
+    BOOST_REQUIRE_EQUAL(oids.front(), (TOid) 5280); // highest version
+    sqldb_rd->GetOid(oids, "FTPERMI", true);        // allow dups
+    BOOST_REQUIRE_EQUAL(oids.size(), (size_t) 3);
+    BOOST_REQUIRE_EQUAL(oids.front(), (TOid) 5280); // highest version
+    BOOST_REQUIRE_EQUAL(oids.back(), (TOid) 5281);  // lowest version, high OID
+
+    sqldb_rd->GetOid(oids, "INPERM");               // don't allow dups
+    BOOST_REQUIRE_EQUAL(oids.size(), (size_t) 1);
+    BOOST_REQUIRE_EQUAL(oids.front(), (TOid) 39);   // highest version
+    sqldb_rd->GetOid(oids, "INPERM", true);         // allow dups
+    BOOST_REQUIRE_EQUAL(oids.size(), (size_t) 2);
+    BOOST_REQUIRE_EQUAL(oids.front(), (TOid) 39);   // highest version
+    BOOST_REQUIRE_EQUAL(oids.back(), (TOid) 38);    // lowest version
+
+    sqldb_rd->GetOid(oids, "MMPERCM");              // don't allow dups
+    BOOST_REQUIRE_EQUAL(oids.size(), (size_t) 1);
+    BOOST_REQUIRE_EQUAL(oids.front(), (TOid) 10);   // highest version
+    sqldb_rd->GetOid(oids, "MMPERCM", true);        // allow dups
+    BOOST_REQUIRE_EQUAL(oids.size(), (size_t) 3);
+    BOOST_REQUIRE_EQUAL(oids.front(), (TOid) 10);   // highest version
+    BOOST_REQUIRE_EQUAL(oids.back(), (TOid) 9);     // lowest version, high OID
+
+    sqldb_rd->GetOid(oids, "ANGPERNM");             // don't allow dups
+    BOOST_REQUIRE_EQUAL(oids.size(), (size_t) 2);
+    BOOST_REQUIRE_EQUAL(oids.front(), (TOid) 10);   // highest version, low OID
+    sqldb_rd->GetOid(oids, "ANGPERNM", true);       // allow dups
+    BOOST_REQUIRE_EQUAL(oids.size(), (size_t) 3);
+    BOOST_REQUIRE_EQUAL(oids.front(), (TOid) 10);   // highest version
+    BOOST_REQUIRE_EQUAL(oids.back(), (TOid) 12);    // lowest version
+
+    sqldb_rd->GetOid(oids, "MPERNMI");              // don't allow dups
+    BOOST_REQUIRE_EQUAL(oids.size(), (size_t) 1);
+    BOOST_REQUIRE_EQUAL(oids.front(), (TOid) 1852);
+    // For this case, there are only two matching rows, and they have
+    // the same OID.  Since they are completely redundant, the OID is
+    // returned only once.
+    sqldb_rd->GetOid(oids, "MPERNMI", true);        // allow dups
+    BOOST_REQUIRE_EQUAL(oids.size(), (size_t) 1);
+    BOOST_REQUIRE_EQUAL(oids.front(), (TOid) 1852);
+
+    sqldb_rd->GetOid(oids, "MISSING");
+    BOOST_REQUIRE(oids.empty());
+
+    // Now with accession.version strings.
+    sqldb_rd->GetOid(oids, "ANGPERNM.3");
+    BOOST_REQUIRE_EQUAL(oids.size(), (size_t) 2);
+    BOOST_REQUIRE_EQUAL(oids.front(), (TOid) 10);
+    BOOST_REQUIRE_EQUAL(oids.back(), (TOid) 11);
+    sqldb_rd->GetOid(oids, "ANGPERNM.2");
+    BOOST_REQUIRE_EQUAL(oids.size(), (size_t) 1);
+    BOOST_REQUIRE_EQUAL(oids.front(), (TOid) 12);
+    sqldb_rd->GetOid(oids, "ANGPERNM.1");
+    BOOST_REQUIRE(oids.empty());
+
+    // For this case, there are two rows which match in all columns.
+    // Only one row's OID (doesn't matter which) will be returned.
+    sqldb_rd->GetOid(oids, "MPERNMI.2");
+    BOOST_REQUIRE_EQUAL(oids.size(), (size_t) 1);
+    BOOST_REQUIRE_EQUAL(oids.front(), (TOid) 1852);
 
     // Finalize DB.
     delete sqldb_rd;
@@ -4515,7 +4573,7 @@ BOOST_AUTO_TEST_CASE(CSeqDBSqlite_Singles)
     CSQLITE_Global::Finalize();
 }
 
-BOOST_AUTO_TEST_CASE(CSeqDBSqlite_Batch)
+BOOST_AUTO_TEST_CASE(CSeqDBSqlite_Batch_NoVersions)
 {
     // Initialize SQLite library.
     CSQLITE_Global::Initialize();
@@ -4526,44 +4584,116 @@ BOOST_AUTO_TEST_CASE(CSeqDBSqlite_Batch)
 
     // Perform bulk lookups.
     // First, create accession list.
-    // The accession list is actually a vector first, because a vector
-    // can be shuffled.
-    vector<string> accs_vec;
-    accs_vec.push_back("GMPEROZ");
-    accs_vec.push_back("CMPERFT");
-    accs_vec.push_back("FTPERMI");
-    accs_vec.push_back("INPERM");
-    accs_vec.push_back("MPERNMI");
-    accs_vec.push_back("MMPERCM");
-    accs_vec.push_back("MISSING");      // won't be found
-    accs_vec.push_back("ANGPERNM");     // will be ambiguous
+    vector<string> accs;
+    accs.push_back("GMPEROZ");
+    accs.push_back("CMPERFT");
+    accs.push_back("FTPERMI");
+    accs.push_back("INPERM");
+    accs.push_back("MPERNMI");
+    accs.push_back("MMPERCM");
+    accs.push_back("ANGPERNM");
+    accs.push_back("MISSING");      // won't be found
 
-    // Shuffle the accession list, then copy them into a list container.
+    // Shuffle the accessions.
     unsigned seed = chrono::system_clock::now().time_since_epoch().count();
-    shuffle(accs_vec.begin(), accs_vec.end(), default_random_engine(seed));
-    list<string> accs(accs_vec.begin(), accs_vec.end());
+    shuffle(accs.begin(), accs.end(), default_random_engine(seed));
 
-    // Look up OIDs, which should be one-to-one with accession list
+    // Look up OIDs, which should be one-to-one with accessions
     // even when they were shuffled beforehand.
-    vector<int> oids = sqldb_rd->GetOids(accs);
+    vector<TOid> oids;
+    sqldb_rd->GetOids(oids, accs);
     // Verify correct size of output.
     BOOST_REQUIRE_EQUAL(oids.size(), accs.size());
 
     // We use a map to look up the expected "OIDs" because we don't know
     // the order in which accessions were searched.
-    map<string, int> answer_sheet;
-    answer_sheet["GMPEROZ"]  = 28;      // 28.35 g/oz
-    answer_sheet["CMPERFT"]  = 30;      // 30.4 cm/ft
-    answer_sheet["FTPERMI"]  = 5280;    // 5280 ft/mi
-    answer_sheet["INPERM"]   = 39;      // 39.37 in/m
-    answer_sheet["MPERNMI"]  = 1852;    // 1852 m/nautical mile (really)
-    answer_sheet["MMPERCM"]  = 10;      // 10 mm/cm
+    map<string, TOid> answer_sheet;
+    answer_sheet["GMPEROZ"]  = (TOid) 28;      // 28.35 g/oz
+    answer_sheet["CMPERFT"]  = (TOid) 30;      // 30.4 cm/ft
+    answer_sheet["FTPERMI"]  = (TOid) 5280;    // 5280 ft/mi
+    answer_sheet["INPERM"]   = (TOid) 39;      // 39.37 in/m
+    answer_sheet["MPERNMI"]  = (TOid) 1852;    // 1852 m/nautical mile
+    answer_sheet["MMPERCM"]  = (TOid) 10;      // 10 mm/cm
+    answer_sheet["ANGPERNM"] = (TOid) 10;      // angstrom/nm
     answer_sheet["MISSING"]  = CSeqDBSqlite::kNotFound;
-    answer_sheet["ANGPERNM"] = CSeqDBSqlite::kAmbiguous;    // angstrom/nm
 
     // Verify each returned OID matches the expected value.
-    vector<int>::iterator oid_it = oids.begin();
-    list<string>::iterator acc_it = accs.begin();
+    vector<TOid>::iterator oid_it = oids.begin();
+    vector<string>::iterator acc_it = accs.begin();
+    while (oid_it != oids.end()  &&  acc_it != accs.end()) {
+        BOOST_REQUIRE_EQUAL(answer_sheet[*acc_it++], *oid_it++);
+    }
+
+    // Finalize DB.
+    delete sqldb_rd;
+
+    // Finalize SQLite library.
+    CSQLITE_Global::Finalize();
+}
+
+BOOST_AUTO_TEST_CASE(CSeqDBSqlite_Batch_MixedVersions)
+{
+    // Initialize SQLite library.
+    CSQLITE_Global::Initialize();
+
+    // Open DB for reading.
+    const string sqlfile("data/testfile1.sqlite");
+    CSeqDBSqlite* sqldb_rd = new CSeqDBSqlite(sqlfile);
+
+    // Perform bulk lookups.
+    // First, create accession list.
+    vector<string> accs;
+    accs.push_back("GMPEROZ.1");    // shoud be 28
+    accs.push_back("CMPERFT.2");    // should be 30
+    accs.push_back("FTPERMI.1");    // should be 5280
+    accs.push_back("FTPERMI.0");    // should be 5279
+    accs.push_back("FTPERMI");      // should be 5280
+    accs.push_back("INPERM.2");     // should be 39
+    accs.push_back("INPERM.1");     // should be 38
+    accs.push_back("INPERM");       // should be 39
+    accs.push_back("MPERNMI.2");    // should be 1852
+    accs.push_back("MPERNMI.1");    // won't be found
+    accs.push_back("ANGPERNM.3");   // should be 10
+    accs.push_back("ANGPERNM.2");   // should be 12
+    accs.push_back("ANGPERNM");     // should be 10
+    accs.push_back("MMPERCM.3");    // should be 10
+    accs.push_back("MMPERCM.2");    // should be 8
+    accs.push_back("MISSING");      // won't be found
+
+    // Shuffle the accessions.
+    unsigned seed = chrono::system_clock::now().time_since_epoch().count();
+    shuffle(accs.begin(), accs.end(), default_random_engine(seed));
+
+    // Look up OIDs, which should be one-to-one with accessions
+    // even when they were shuffled beforehand.
+    vector<TOid> oids;
+    sqldb_rd->GetOids(oids, accs);
+    // Verify correct size of output.
+    BOOST_REQUIRE_EQUAL(oids.size(), accs.size());
+
+    // We use a map to look up the expected "OIDs" because we don't know
+    // the order in which accessions were searched.
+    map<string, TOid> answer_sheet;
+    answer_sheet["GMPEROZ.1"]  = (TOid) 28;
+    answer_sheet["CMPERFT.2"]  = (TOid) 30;
+    answer_sheet["FTPERMI.1"]  = (TOid) 5280;
+    answer_sheet["FTPERMI.0"]  = (TOid) 5279;
+    answer_sheet["FTPERMI"]    = (TOid) 5280;
+    answer_sheet["INPERM.2"]   = (TOid) 39;
+    answer_sheet["INPERM.1"]   = (TOid) 38;
+    answer_sheet["INPERM"]     = (TOid) 39;
+    answer_sheet["MPERNMI.2"]  = (TOid) 1852;
+    answer_sheet["MPERNMI.1"]  = CSeqDBSqlite::kNotFound;
+    answer_sheet["ANGPERNM.3"] = (TOid) 10;
+    answer_sheet["ANGPERNM.2"] = (TOid) 12;
+    answer_sheet["ANGPERNM"]   = (TOid) 10;
+    answer_sheet["MMPERCM.3"]  = (TOid) 10;
+    answer_sheet["MMPERCM.2"]  = (TOid) 8;
+    answer_sheet["MISSING"]    = CSeqDBSqlite::kNotFound;
+
+    // Verify each returned OID matches the expected value.
+    vector<TOid>::iterator oid_it = oids.begin();
+    vector<string>::iterator acc_it = accs.begin();
     while (oid_it != oids.end()  &&  acc_it != accs.end()) {
         BOOST_REQUIRE_EQUAL(answer_sheet[*acc_it++], *oid_it++);
     }
@@ -4585,21 +4715,21 @@ BOOST_AUTO_TEST_CASE(CSeqDBSqlite_ReverseLookup)
     CSeqDBSqlite* sqldb_rd = new CSeqDBSqlite(sqlfile);
 
     // Perform individual lookups.
-    list<string> accessions;
+    vector<string> accessions;
 
-    accessions = sqldb_rd->GetAccessions(8);
-    BOOST_REQUIRE_EQUAL(accessions.size(), 1U);
+    sqldb_rd->GetAccessions(accessions, (TOid) 8);
+    BOOST_REQUIRE_EQUAL(accessions.size(), (size_t) 1);
     BOOST_REQUIRE_EQUAL(accessions.front(), "MMPERCM");
 
-    accessions = sqldb_rd->GetAccessions(9);
-    BOOST_REQUIRE_EQUAL(accessions.size(), 1U);
+    sqldb_rd->GetAccessions(accessions, (TOid) 9);
+    BOOST_REQUIRE_EQUAL(accessions.size(), (size_t) 1);
     BOOST_REQUIRE_EQUAL(accessions.front(), "MMPERCM");
 
     // This "OID" appears in two rows with distinct "accessions".
     // Since we don't know the order in which they will be returned by
     // GetAccessions, we have to test both possible orderings.
-    accessions = sqldb_rd->GetAccessions(10);
-    BOOST_REQUIRE_EQUAL(accessions.size(), 2U);
+    sqldb_rd->GetAccessions(accessions, (TOid) 10);
+    BOOST_REQUIRE_EQUAL(accessions.size(), (size_t) 2);
     // They must differ.
     BOOST_REQUIRE(accessions.front() != accessions.back());
     // First one must match one of two strings.
@@ -4613,52 +4743,52 @@ BOOST_AUTO_TEST_CASE(CSeqDBSqlite_ReverseLookup)
             ||  accessions.back() == "ANGPERNM"
     );
 
-    accessions = sqldb_rd->GetAccessions(11);
-    BOOST_REQUIRE_EQUAL(accessions.size(), 1U);
+    sqldb_rd->GetAccessions(accessions, (TOid) 11);
+    BOOST_REQUIRE_EQUAL(accessions.size(), (size_t) 1);
     BOOST_REQUIRE_EQUAL(accessions.front(), "ANGPERNM");
 
-    accessions = sqldb_rd->GetAccessions(12);
-    BOOST_REQUIRE_EQUAL(accessions.size(), 1U);
+    sqldb_rd->GetAccessions(accessions, (TOid) 12);
+    BOOST_REQUIRE_EQUAL(accessions.size(), (size_t) 1);
     BOOST_REQUIRE_EQUAL(accessions.front(), "ANGPERNM");
 
-    accessions = sqldb_rd->GetAccessions(28);
-    BOOST_REQUIRE_EQUAL(accessions.size(), 1U);
+    sqldb_rd->GetAccessions(accessions, (TOid) 28);
+    BOOST_REQUIRE_EQUAL(accessions.size(), (size_t) 1);
     BOOST_REQUIRE_EQUAL(accessions.front(), "GMPEROZ");
 
-    accessions = sqldb_rd->GetAccessions(30);
-    BOOST_REQUIRE_EQUAL(accessions.size(), 1U);
+    sqldb_rd->GetAccessions(accessions, (TOid) 30);
+    BOOST_REQUIRE_EQUAL(accessions.size(), (size_t) 1);
     BOOST_REQUIRE_EQUAL(accessions.front(), "CMPERFT");
 
-    accessions = sqldb_rd->GetAccessions(38);
-    BOOST_REQUIRE_EQUAL(accessions.size(), 1U);
+    sqldb_rd->GetAccessions(accessions, (TOid) 38);
+    BOOST_REQUIRE_EQUAL(accessions.size(), (size_t) 1);
     BOOST_REQUIRE_EQUAL(accessions.front(), "INPERM");
 
-    accessions = sqldb_rd->GetAccessions(39);
-    BOOST_REQUIRE_EQUAL(accessions.size(), 1U);
+    sqldb_rd->GetAccessions(accessions, (TOid) 39);
+    BOOST_REQUIRE_EQUAL(accessions.size(), (size_t) 1);
     BOOST_REQUIRE_EQUAL(accessions.front(), "INPERM");
 
     // This "OID" appears in two rows which match exactly, which is okay.
     // This would hold true even if they differ only in version.
-    accessions = sqldb_rd->GetAccessions(1852);
-    BOOST_REQUIRE_EQUAL(accessions.size(), 2U);
+    sqldb_rd->GetAccessions(accessions, (TOid) 1852);
+    BOOST_REQUIRE_EQUAL(accessions.size(), (size_t) 2);
     BOOST_REQUIRE_EQUAL(accessions.front(), "MPERNMI");
     BOOST_REQUIRE_EQUAL(accessions.back(), "MPERNMI");
 
-    accessions = sqldb_rd->GetAccessions(5279);
-    BOOST_REQUIRE_EQUAL(accessions.size(), 1U);
+    sqldb_rd->GetAccessions(accessions, (TOid) 5279);
+    BOOST_REQUIRE_EQUAL(accessions.size(), (size_t) 1);
     BOOST_REQUIRE_EQUAL(accessions.front(), "FTPERMI");
 
-    accessions = sqldb_rd->GetAccessions(5280);
-    BOOST_REQUIRE_EQUAL(accessions.size(), 1U);
+    sqldb_rd->GetAccessions(accessions, (TOid) 5280);
+    BOOST_REQUIRE_EQUAL(accessions.size(), (size_t) 1);
     BOOST_REQUIRE_EQUAL(accessions.front(), "FTPERMI");
 
-    accessions = sqldb_rd->GetAccessions(5281);
-    BOOST_REQUIRE_EQUAL(accessions.size(), 1U);
+    sqldb_rd->GetAccessions(accessions, (TOid) 5281);
+    BOOST_REQUIRE_EQUAL(accessions.size(), (size_t) 1);
     BOOST_REQUIRE_EQUAL(accessions.front(), "FTPERMI");
 
     // There is no "OID" of zero, so we should get an empty list of
     // accessions.
-    accessions = sqldb_rd->GetAccessions(0);    // not in DB
+    sqldb_rd->GetAccessions(accessions, (TOid) 0);
     BOOST_REQUIRE(accessions.empty());
 
     // Finalize DB.
@@ -4681,8 +4811,8 @@ BOOST_AUTO_TEST_CASE(CSeqDBSqlite_Steps)
     // Also verify expected contents of first and last rows.
     string acc;
     int ver;
-    int oid;
-    int rows = 0;
+    TOid oid;
+    size_t rows = 0;
     // If the test database file is regenerated, the first and last rows
     // below will need to be changed.  You can use the "sqlite3" application
     // to examine the SQLite database directly to see the rows in table
@@ -4692,16 +4822,16 @@ BOOST_AUTO_TEST_CASE(CSeqDBSqlite_Steps)
             // Check contents of the first row.
             BOOST_REQUIRE_EQUAL(acc, "GMPEROZ");
             BOOST_REQUIRE_EQUAL(ver, 1);
-            BOOST_REQUIRE_EQUAL(oid, 28);
+            BOOST_REQUIRE_EQUAL(oid, (TOid) 28);
         }
         ++rows;
     }
     // Check contents of the last row read.
     BOOST_REQUIRE_EQUAL(acc, "ANGPERNM");
     BOOST_REQUIRE_EQUAL(ver, 3);
-    BOOST_REQUIRE_EQUAL(oid, 11);
+    BOOST_REQUIRE_EQUAL(oid, (TOid) 11);
     // Verify expected number of rows.
-    BOOST_REQUIRE_EQUAL(rows, 15);
+    BOOST_REQUIRE_EQUAL(rows, (size_t) 15);
 
     // In same manner, step through volume info table.
     string path;
@@ -4725,7 +4855,7 @@ BOOST_AUTO_TEST_CASE(CSeqDBSqlite_Steps)
     BOOST_REQUIRE_EQUAL(volume, 1);
     BOOST_REQUIRE_EQUAL(numoids, 7);
     // Verify expected number of rows.
-    BOOST_REQUIRE_EQUAL(rows, 2);
+    BOOST_REQUIRE_EQUAL(rows, (size_t) 2);
 
     // Finalize DB.
     delete sqldb_rd;
