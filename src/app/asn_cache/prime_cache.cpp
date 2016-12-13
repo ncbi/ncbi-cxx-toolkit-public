@@ -241,10 +241,10 @@ public:
     }
 
     void SkipObject(CObjectIStream& istr,
-                    const CObjectTypeInfo& /*info*/)
+                    const CObjectTypeInfo& info)
     {
         T record;
-        istr.ReadObject(&record, CType<T>().GetTypeInfo());
+        istr.ReadObject(&record, info.GetTypeInfo());
         m_Consumer(record);
     }
 
