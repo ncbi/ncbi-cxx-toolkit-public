@@ -60,6 +60,10 @@ private:
     bool m_inTransaction = false;
 
 public:
+    typedef CSeqDBSqlite::TOid TOid;
+    typedef CSeqDBSqlite::SVolInfo SVolInfo;
+    typedef CSeqDBSqlite::SAccOid SAccOid;
+
     /// Constructor for a SQLite accession-to-OID database.
     /// @param dbname Database name (no default suffix)
     CWriteDB_Sqlite(const string& dbname);
@@ -118,7 +122,7 @@ public:
     /// @param version accession's version number
     /// @param oid OID associated with accession
     /// @see InsertEntries
-    void InsertEntry(const string& accession, const int version, const int oid);
+    void InsertEntry(const string& accession, const int version, const TOid oid);
 
     /// Add an accession-to-OID record WITHOUT version on accession.
     /// Database will accept non-unique accessions, but it's not
@@ -126,14 +130,14 @@ public:
     /// @param accession accession string without ".N" version appended
     /// @param oid OID associated with accession
     /// @see InsertEntries
-    void InsertEntry(const string& accession, const int oid);
+    void InsertEntry(const string& accession, const TOid oid);
 
     /// Add entries in bulk as fetched from CSeqDB::GetSeqIDs.
     /// @param oid OID
     /// @param seqids list<CRef<CSeq_id> > from CSeqDB::GetSeqIDs
     /// @return number of rows added to database
     /// @see InsertEntry
-    int InsertEntries(const int oid, const list<CRef<CSeq_id> >& seqids);
+    int InsertEntries(const TOid oid, const list<CRef<CSeq_id> >& seqids);
 
     /// Add entries in bulk from list of SAccOid structs.
     /// @param seqids list<SAccOid> from CSeqDB::GetSeqIDs

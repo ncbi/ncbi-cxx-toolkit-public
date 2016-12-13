@@ -176,7 +176,7 @@ int CWriteDB_Sqlite::DeleteEntries(const list<string>& accessions)
 void CWriteDB_Sqlite::InsertEntry(
         const string& accession,
         const int version,
-        const int oid
+        const TOid oid
 )
 {
     if (!m_insertStmt) {
@@ -190,18 +190,18 @@ void CWriteDB_Sqlite::InsertEntry(
     m_insertStmt->ClearBindings();
     m_insertStmt->Bind(1, accession);
     m_insertStmt->Bind(2, version);
-    m_insertStmt->Bind(3, oid);
+    m_insertStmt->Bind(3, (int) oid);
     m_insertStmt->Execute();
     m_insertStmt->Reset();
 }
 
-void CWriteDB_Sqlite::InsertEntry(const string& accession, const int oid)
+void CWriteDB_Sqlite::InsertEntry(const string& accession, const TOid oid)
 {
     InsertEntry(accession, 0, oid);
 }
 
 int CWriteDB_Sqlite::InsertEntries(
-        const int oid,
+        const TOid oid,
         const list<CRef<CSeq_id> >& seqids
 )
 {

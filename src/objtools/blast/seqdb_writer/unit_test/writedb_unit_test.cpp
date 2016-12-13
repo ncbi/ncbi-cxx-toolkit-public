@@ -3273,6 +3273,11 @@ BOOST_AUTO_TEST_CASE(ReadLongIDNucleotide)
 }
 
 
+typedef CSeqDBSqlite::SVolInfo SVolInfo;
+typedef CSeqDBSqlite::SAccOid SAccOid;
+typedef CSeqDBSqlite::TOid TOid;
+
+
 BOOST_AUTO_TEST_CASE(CreateSqliteDB)
 {
     // Initialize SQLite library.
@@ -3334,12 +3339,12 @@ BOOST_AUTO_TEST_CASE(CreateSqliteDB)
     sqldb_wr->CreateVolumeTable(vols);
 
     // Add accession-to-OID rows as a single transaction.
-    int oid = 0;
+    TOid oid = (TOid) 0;
     int added = 0;
     sqldb_wr->BeginTransaction();
-    while (oid < numOids) {
+    while ((int) oid < numOids) {
         // Each OID may map to multiple Seq-id's.
-        list<CRef<CSeq_id> > seqids = seqdb.GetSeqIDs(oid);
+        list<CRef<CSeq_id> > seqids = seqdb.GetSeqIDs((int) oid);
         added += sqldb_wr->InsertEntries(oid, seqids);
         ++oid;
     }

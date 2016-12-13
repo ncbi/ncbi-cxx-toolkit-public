@@ -54,6 +54,9 @@ USING_SCOPE(objects);
 class CSeqdb2CreateApplication : public CNcbiApplication
 {
 private:
+    typedef CSeqDBSqlite::TOid TOid;
+    typedef CSeqDBSqlite::SVolInfo SVolInfo;
+
     CWriteDB_Sqlite* m_sqldb = NULL;
     bool m_quiet = false;
     bool m_verbose = false;
@@ -67,8 +70,8 @@ private:
             CSeqDB::ESeqType seqType
     );
     int processBatch(
-            int&    oid,
-            int     lastOid,
+            TOid&   oid,
+            TOid    lastOid,
             int     num,
             CSeqDB& seqdb
     );
@@ -76,7 +79,7 @@ private:
             const int     bigBatch,
             const string& seqdbName,
             const string& sqldbName,
-            const int     firstOid,
+            const TOid    firstOid,
             const int     numOids,
             const int     batchSize
     );
@@ -154,22 +157,18 @@ int CSeqdb2CreateApplication::processVolumeTable(
 
     // Get info for each DB volume.
     int vol = 0;
-    for (
-            vector<string>::const_iterator it = paths.begin();
-            it != paths.end();
-            ++it
-    ) {
+    for (auto it : paths) {
         // Get modification time of volume.
         // Use ".nin" or ".pin" file to get date.
-        string s = *it + ((seqType == CSeqDB::eProtein) ? ".pin" : ".nin");
+        string s = it + ((seqType == CSeqDB::eProtein) ? ".pin" : ".nin");
         struct stat attr;
         int rc = stat(s.c_str(), &attr);
         if (rc != 0) {
-            cerr << "Cannot stat " << *it << ", errno = " << errno << endl;
+            cerr << "Cannot stat " << it << ", errno = " << errno << endl;
             continue;
         }
         time_t modtime = attr.st_mtime;
-        CSeqDB* seqvol = new CSeqDB(*it, CSeqDB::eUnknown);
+        CSeqDB* seqvol = new CSeqDB(it, CSeqDB::eUnknown);
         // Get number of OIDs for each volume.
         int oids = seqvol->GetNumOIDs();
         delete seqvol;
@@ -185,8 +184,8 @@ int CSeqdb2CreateApplication::processVolumeTable(
 // Process a batch of records as a single transaction.
 
 int CSeqdb2CreateApplication::processBatch(
-        int& oid,
-        int lastOid,
+        TOid& oid,
+        TOid lastOid,
         int num,
         CSeqDB& seqdb
 )
@@ -195,7 +194,7 @@ int CSeqdb2CreateApplication::processBatch(
     m_sqldb->BeginTransaction();
     for (int b = 0; b < num; ++b) {
         if (oid >= lastOid) break;
-        list<CRef<CSeq_id> > seqids = seqdb.GetSeqIDs(oid);
+        list<CRef<CSeq_id> > seqids = seqdb.GetSeqIDs((int) oid);
         added += m_sqldb->InsertEntries(oid, seqids);
         ++oid;
     }
@@ -213,8 +212,8 @@ int CSeqdb2CreateApplication::processSuperBatch(
         const int bigBatch,
         const string& seqdbName,
         const string& sqldbName,
-        const int firstOid,
-        const int lastOid,
+        const TOid firstOid,
+        const TOid lastOid,
         const int batchSize
 )
 {
@@ -226,7 +225,7 @@ int CSeqdb2CreateApplication::processSuperBatch(
     m_sqldb->SetCacheSize(16L << 20);       // 16 MiB
 
     time_t tic, toc;    // wall clock time, resolution 1 sec
-    int oid = firstOid;
+    TOid oid = firstOid;
     int added;
     int totalAdded = 0;
     const int totalAddedLimit = 10 * 1000 * 1000;   // 10 million
@@ -243,7 +242,7 @@ int CSeqdb2CreateApplication::processSuperBatch(
         totalAdded += added;
         if (m_verbose) {
             cout << "Batch " << bigBatch << ":" << ++batch
-                    << " ends at OID " << oid << ", "
+                    << " ends at OID " << (int) oid << ", "
                     << added << " rows added in "
                     << difftime(toc, tic) << " sec" << endl;
         }
@@ -322,15 +321,15 @@ int CSeqdb2CreateApplication::Run(void)
     // or when more than 10 million rows have been added since it was called.
     // This method reopens the database, then closes it again after processing
     // the superbatch, freeing memory before starting the next one.
-    int oid = 0;
+    TOid oid = (TOid) 0;
     int bigBatchNum = 1;
-    while (oid < numOids) {
+    while ((int) oid < numOids) {
         oid = processSuperBatch(
                 bigBatchNum,
                 seqfn,
                 sqlfn,
                 oid,
-                numOids,
+                (TOid) numOids,
                 batchSize
         );
         ++bigBatchNum;
