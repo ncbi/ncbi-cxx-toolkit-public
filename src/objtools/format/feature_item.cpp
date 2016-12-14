@@ -1661,7 +1661,25 @@ void CFeatureItem::x_AddQuals(
         if (feat_gene_xref && ! suppressed && 
             ! CGeneFinder::ResolveGeneXref(feat_gene_xref, ctx.GetTopLevelEntry())) {
             gene_ref = feat_gene_xref;
-        } else if (! feat_gene_xref || ! suppressed) {
+        } else if ((! feat_gene_xref || ! suppressed) &&
+                   subtype != CSeqFeatData::eSubtype_primer_bind) {
+
+            CScope& scope = ctx.GetScope();
+            const CSeq_feat& orig = m_Feat.GetOriginalFeature();
+            CConstRef<CSeq_feat> overlap = sequence::GetGeneForFeature(orig, scope);
+            if (overlap) {
+                gene_feat = overlap;
+            } else {
+                // e.g., check sig_peptide for gene overlapping parent CDS
+                CSeq_feat_Handle parent_feat_handle;
+                if( parentFeatureItem ) {
+                    parent_feat_handle = parentFeatureItem->GetFeat();
+                }
+                CGeneFinder::GetAssociatedGeneInfo( m_Feat, ctx, m_Loc, m_GeneRef, gene_ref, 
+                    gene_feat, parent_feat_handle );
+            }
+
+            /*
             CMappedFeat mapped_gene = GetBestGeneForFeat (m_Feat, m_Feat_Tree);
             if (mapped_gene && subtype != CSeqFeatData::eSubtype_primer_bind) {
                 gene_feat = &mapped_gene.GetOriginalFeature();
@@ -1675,6 +1693,7 @@ void CFeatureItem::x_AddQuals(
                 CGeneFinder::GetAssociatedGeneInfo( m_Feat, ctx, m_Loc, m_GeneRef, gene_ref, 
                     gene_feat, parent_feat_handle );
             }
+            */
         }
     }
 
