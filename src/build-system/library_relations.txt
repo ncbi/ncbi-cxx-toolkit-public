@@ -1079,7 +1079,7 @@ uuid needs3party $(ORIG_LIBS)
 valerr needs xser
 valid needs general
 valid needs xregexp
-validate_regions needs $(GPIPE_GENCOLL_LIBS)
+validate_regions needs gc_asn_access
 validation_details needs xmlwrapp
 validation_details needs xobjwrite
 validation_results needs $(SEQ_LIBS)
@@ -1320,11 +1320,9 @@ xformat needs gbseq
 xformat needs mlacli
 xformat needs xalnmgr
 xformat needs xcleanup
-xgencoll needs aligndb_reader
 xgencoll needs gencoll_client
-xgencoll needs ncbi_xcache_netcache
-xgencoll needs simple_asm
-xgencollstats needs $(GPIPE_GENCOLL_LIBS)
+xgencoll needs gpipe_objutil
+xgencollstats needs gc_asn_access
 xgencollstats needs gencoll_stats
 xgp_manifest needs xser
 xgpgcreport needs gc_asn_access
