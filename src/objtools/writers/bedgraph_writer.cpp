@@ -121,8 +121,11 @@ bool CBedGraphWriter::xWriteAnnotGraphs(
     for (list<CRef<CSeq_graph> >::const_iterator cit = graphs.begin();
             cit != graphs.end();
             ++cit) {
-        if (!xWriteSingleGraph(trackdata, **cit)) {
-            return false;
+        try {
+            xWriteSingleGraph(trackdata, **cit);
+        }
+        catch(const CObjWriterException& except) {
+            cerr << except.GetMsg() << endl;
         }
     }
     return true;
@@ -270,11 +273,31 @@ bool CBedGraphWriter::xWriteSingleGraphByte(
     const CSeq_graph& graph)
 //  ----------------------------------------------------------------------------
 {
-    NCBI_THROW(
-        CObjWriterException,
-        eInterrupted,
-        "BedGraph writer does not support byte graph data (yet).");
-    return false;
+    const CSeq_loc& location = graph.GetLoc();
+    string chromId;
+    location.GetId()->GetLabel(&chromId);
+    size_t chromStart = 0;
+    size_t chromStep = graph.GetComp();
+    double scale = graph.GetA();
+    double offset = graph.GetB();
+
+    CBedGraphRecord bedRecord;
+    size_t numValues = graph.GetNumval();
+    const vector<char> values = graph.GetGraph().GetByte().GetValues();
+    for (size_t valIndex = 0; valIndex < numValues; ++valIndex) {
+        bedRecord.SetChromId(chromId);
+
+        size_t recordStart = valIndex * chromStep;
+        bedRecord.SetChromStart(recordStart);
+
+        size_t recordEnd = recordStart + chromStep - 1;
+        bedRecord.SetChromEnd(recordEnd);
+
+        double value = offset + scale*values[valIndex];
+        bedRecord.SetChromValue(value);
+        bedRecord.Write(m_Os);
+    }
+    return true;
 }
 
 
