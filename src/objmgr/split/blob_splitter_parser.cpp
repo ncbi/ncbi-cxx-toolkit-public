@@ -435,7 +435,7 @@ void CBlobSplitterImpl::CopySkeleton(CBioseq_set& dst, const CBioseq_set& src)
         auto& seq_set = src.GetSeq_set();
         auto begin = seq_set.begin();
         auto end = seq_set.end();
-        if ( need_split_annot ) {
+        if ( need_split_bioseq ) {
             // extract split bioseqs starting from end
             // remember start of split bioseqs
             size_t old_size = info->m_Bioseqs.size();
