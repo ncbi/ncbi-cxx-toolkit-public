@@ -939,41 +939,6 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align_set& aligns,
     return ostr;
 }
 
-static int s_GetNumberOfSubjects(CRef<CLocalDbAdapter> db_adapter)
-{
-    if (db_adapter->IsBlastDb()) {
-        CSeqDB seqdb(db_adapter->GetDatabaseName(),
-                     db_adapter->IsProtein() ? CSeqDB::eProtein :
-                     CSeqDB::eNucleotide);
-
-        return seqdb.GetNumSeqs();
-    }
-
-    BlastSeqSrc* seq_src = db_adapter->MakeSeqSrc();
-    _ASSERT(seq_src);
-
-    int num_seqs = BlastSeqSrcGetNumSeqs(seq_src);
-
-    return num_seqs;
-}
-
-
-static Uint8 s_GetDbSize(CRef<CLocalDbAdapter> db_adapter)
-{
-    if (db_adapter->IsBlastDb()) {
-        CSeqDB seqdb(db_adapter->GetDatabaseName(),
-                     db_adapter->IsProtein() ? CSeqDB::eProtein :
-                     CSeqDB::eNucleotide);
-
-        return seqdb.GetTotalLength();
-    }
-
-    BlastSeqSrc* seq_src = db_adapter->MakeSeqSrc();
-    _ASSERT(seq_src);
-
-    return BlastSeqSrcGetTotLen(seq_src);
-}
-
 
 static CShortReadFastaInputSource::EInputFormat
 s_QueryOptsInFmtToFastaInFmt(CMapperQueryOptionsArgs::EInputFormat infmt)
@@ -1072,7 +1037,9 @@ s_CreateInputSource(CRef<CMapperQueryOptionsArgs> query_opts,
 static void
 s_InitializeSubject(CRef<blast::CBlastDatabaseArgs> db_args, 
                     CRef<blast::CBlastOptionsHandle> opts_hndl,
-                    CRef<blast::CLocalDbAdapter>& db_adapter)
+                    CRef<blast::CLocalDbAdapter>& db_adapter,
+                    Uint8& subject_length,
+                    int& num_sequences)
 {
     db_adapter.Reset();
 
@@ -1091,8 +1058,15 @@ s_InitializeSubject(CRef<blast::CBlastDatabaseArgs> db_args,
     if ( (subjects = db_args->GetSubjects(scope)) ) {
         _ASSERT(search_db.Empty());
         db_adapter.Reset(new CLocalDbAdapter(subjects, opts_hndl, true));
+
+        BlastSeqSrc* seq_src = db_adapter->MakeSeqSrc();
+        _ASSERT(seq_src);
+        subject_length = BlastSeqSrcGetTotLen(seq_src);
+        num_sequences = BlastSeqSrcGetNumSeqs(seq_src);
     } else {
         _ASSERT(search_db.NotEmpty());
+        subject_length = search_db->GetSeqDb()->GetTotalLength();
+        num_sequences = search_db->GetSeqDb()->GetNumSeqs();
         db_adapter.Reset(new CLocalDbAdapter(*search_db));
     }
 }
@@ -1155,7 +1129,10 @@ int CMagicBlastApp::Run(void)
         CRef<CBlastDatabaseArgs> db_args(m_CmdLineArgs->GetBlastDatabaseArgs());
 
         CRef<CLocalDbAdapter> db_adapter;
-        s_InitializeSubject(db_args, opts_hndl, db_adapter);
+        Uint8 db_size;
+        int num_db_sequences;
+        s_InitializeSubject(db_args, opts_hndl, db_adapter, db_size,
+                            num_db_sequences);
         _ASSERT(db_adapter);
 
 
@@ -1170,10 +1147,8 @@ int CMagicBlastApp::Run(void)
         /*** Get the formatting options ***/
         CRef<CFormattingArgs> fmt_args(m_CmdLineArgs->GetFormattingArgs());
 
-
-        const int kNumSubjects = s_GetNumberOfSubjects(db_adapter);
         if (fmt_args->GetFormattedOutputChoice() == CFormattingArgs::eSAM) {
-            if (kNumSubjects < kSamLargeNumSubjects) {
+            if (num_db_sequences < kSamLargeNumSubjects) {
                 PrintSAMHeader(m_CmdLineArgs->GetOutputStream(), db_adapter,
                                s_GetCmdlineArgs(GetArguments()));
             }
@@ -1195,7 +1170,6 @@ int CMagicBlastApp::Run(void)
 
         // we thread searches against smaller databases by queries and against
         // larger database by database
-        Uint8 db_size = s_GetDbSize(db_adapter);
         if (db_size < kLargeDb) {
             num_query_threads = m_CmdLineArgs->GetNumThreads();
             batch_size = 500000;
@@ -1229,7 +1203,7 @@ int CMagicBlastApp::Run(void)
             #pragma omp parallel for if (num_query_threads > 1) \
               num_threads(num_query_threads) default(none) shared(opt, input, \
               fmt_args, os_vector, batch_number, print_warning, \
-              db_adapter, num_query_threads, num_db_threads)  \
+              db_adapter, num_query_threads, num_db_threads, db_args) \
               private(index) schedule(dynamic, 1)
             for (index = 0;index < num_query_threads;index++) {
 
@@ -1265,6 +1239,13 @@ int CMagicBlastApp::Run(void)
                         search_db.Reset(
                               new CSearchDatabase(kDbName,
                                     CSearchDatabase::eBlastDbIsNucleotide));
+
+                        CRef<CSeqDBGiList> gilist =
+                            db_args->GetSearchDatabase()->GetGiList();
+
+                        if (gilist.NotEmpty()) {
+                            search_db->SetGiList(gilist.GetNonNullPointer());
+                        }
 
                         thread_db_adapter.Reset(
                                            new CLocalDbAdapter(*search_db));
