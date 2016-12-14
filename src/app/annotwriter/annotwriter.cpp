@@ -83,6 +83,7 @@
 #include <objtools/writers/bed_track_record.hpp>
 #include <objtools/writers/bed_feature_record.hpp>
 #include <objtools/writers/bed_writer.hpp>
+#include <objtools/writers/bedgraph_writer.hpp>
 #include <objtools/writers/vcf_writer.hpp>
 #include <objtools/writers/gvf_writer.hpp>
 
@@ -201,6 +202,7 @@ void CAnnotWriterApp::Init()
             "gtf", 
             "wig", "wiggle",
             "bed",
+            "bedgraph",
             "vcf" ) );
     }}
 
@@ -779,6 +781,9 @@ CWriterBase* CAnnotWriterApp::xInitWriter(
     }
     if (strFormat == "bed") {
         return new CBedWriter(*m_pScope, *pOs, 12);
+    }
+    if (strFormat == "bedgraph") {
+        return new CBedGraphWriter(*m_pScope, *pOs, 4);
     }
     if (strFormat == "vcf") {
         return new CVcfWriter(*m_pScope, *pOs);
