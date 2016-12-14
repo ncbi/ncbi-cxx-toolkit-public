@@ -41,6 +41,8 @@
 #include <objects/seqfeat/Feat_id.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
 #include <objects/seqres/Int_graph.hpp>
+#include <objects/seqres/Real_graph.hpp>
+#include <objects/seqres/Byte_graph.hpp>
 
 #include <objmgr/scope.hpp>
 #include <objmgr/feat_ci.hpp>
@@ -255,13 +257,8 @@ bool CBedGraphWriter::xWriteSingleGraphInt(
         size_t recordEnd = recordStart + chromStep - 1;
         bedRecord.SetChromEnd(recordEnd);
 
-        if (values[valIndex] >= 1) {
-            size_t curValue = values[valIndex];
-            cerr << "";
-        }
         double value = offset + scale*values[valIndex];
         bedRecord.SetChromValue(value);
-
         bedRecord.Write(m_Os);
     }
     return true;
@@ -287,11 +284,31 @@ bool CBedGraphWriter::xWriteSingleGraphReal(
     const CSeq_graph& graph)
 //  ----------------------------------------------------------------------------
 {
-    NCBI_THROW(
-        CObjWriterException,
-        eBadInput,
-        "BedGraph writer does not support real graph data (yet).");
-    return false;
+    const CSeq_loc& location = graph.GetLoc();
+    string chromId;
+    location.GetId()->GetLabel(&chromId);
+    size_t chromStart = 0;
+    size_t chromStep = graph.GetComp();
+    double scale = graph.GetA();
+    double offset = graph.GetB();
+
+    CBedGraphRecord bedRecord;
+    size_t numValues = graph.GetNumval();
+    const vector<double> values = graph.GetGraph().GetReal().GetValues();
+    for (size_t valIndex = 0; valIndex < numValues; ++valIndex) {
+        bedRecord.SetChromId(chromId);
+
+        size_t recordStart = valIndex * chromStep;
+        bedRecord.SetChromStart(recordStart);
+
+        size_t recordEnd = recordStart + chromStep - 1;
+        bedRecord.SetChromEnd(recordEnd);
+
+        double value = offset + scale*values[valIndex];
+        bedRecord.SetChromValue(value);
+        bedRecord.Write(m_Os);
+    }
+    return true;
 }
 
 END_NCBI_SCOPE
