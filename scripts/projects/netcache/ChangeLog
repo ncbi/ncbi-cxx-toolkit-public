@@ -194,8 +194,14 @@ Changed data separator in BLIST2 command output.
 Changed to treat cache and key names as precise matches in BLIST2 command.
 
 November 21, 2016
-version 6.11.2 (CXX-8749)
+version 6.11.2 (CXX-8832)
 Corrected blob list separator and filters.
 
+November 29, 2016
+version 6.11.3 (CXX-8842)
+Introduced SoftFatal log severity
 
+December 14, 2016
+version 6.11.4 (CXX-8898)
+Changed memory allocation algorithm.
 
