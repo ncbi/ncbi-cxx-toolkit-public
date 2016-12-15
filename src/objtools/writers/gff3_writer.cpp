@@ -77,6 +77,7 @@
 #include <objtools/writers/gff3_alignment_data.hpp>
 #include <objects/seqalign/Score_set.hpp>
 #include <objtools/writers/gff3_writer.hpp>
+#include <objtools/edit/feature_edit.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -1280,6 +1281,18 @@ string s_GetAlignID(const CSeq_align& align) {
 
 
 //  ----------------------------------------------------------------------------
+bool s_RangeContains(const CRange<TSeqPos>& range, const TSeqPos pos) 
+//  ----------------------------------------------------------------------------
+{
+    if ((range.GetFrom() <= pos) &&
+        (range.GetTo() >= pos)) {
+        return true;
+    }
+    return false;
+}
+
+
+//  ----------------------------------------------------------------------------
 bool CGff3Writer::x_WriteBioseqHandle(
     CBioseq_Handle bsh) 
 //  ----------------------------------------------------------------------------
@@ -1290,6 +1303,8 @@ bool CGff3Writer::x_WriteBioseqHandle(
 
     SAnnotSelector sel = SetAnnotSelector();
     auto range = GetRange();
+    auto from = range.GetFrom();
+    auto to = range.GetTo();
     CFeat_CI feat_iter(bsh, range, sel);
 
     if (!xWriteSource(bsh)) {
@@ -1301,9 +1316,22 @@ bool CGff3Writer::x_WriteBioseqHandle(
     std::sort(vRoots.begin(), vRoots.end(), CompareLocations);
     for (auto pit = vRoots.begin(); pit != vRoots.end(); ++pit) {
         CMappedFeat mRoot = *pit;
+        
+        if (!range.IsWhole() &&
+            (s_RangeContains(mRoot.GetTotalRange(), from) ||
+            s_RangeContains(mRoot.GetTotalRange(), to))) {
+
+            CMappedFeat trimmed_feat = edit::CFeatTrim::Apply(mRoot, range);
+
+            if (!xWriteFeature(fc, trimmed_feat)) {
+                return false;
+            }
+        }
+        else 
         if (!xWriteFeature(fc, mRoot)) {
             return false;
         }
+
         if (!xWriteAllChildren(fc, mRoot)) {
             return false;
         }
@@ -1340,11 +1368,26 @@ bool CGff3Writer::xWriteAllChildren(
     const CMappedFeat& mf)
 //  ----------------------------------------------------------------------------
 {
+    const auto& range = GetRange();
+    const auto from = range.GetFrom();
+    const auto to = range.GetTo();
+
     feature::CFeatTree& featTree = fc.FeatTree();
     vector<CMappedFeat> vChildren;
     featTree.GetChildrenTo(mf, vChildren);
     for (auto cit = vChildren.begin(); cit != vChildren.end(); ++cit) {
         CMappedFeat mChild = *cit;
+        if (!range.IsWhole() &&
+            (s_RangeContains(mChild.GetTotalRange(), from) ||
+            s_RangeContains(mChild.GetTotalRange(), to))) {
+
+            CMappedFeat trimmed_feat = edit::CFeatTrim::Apply(mChild, range);
+
+            if (!xWriteFeature(fc, trimmed_feat)) {
+                return false;
+            }
+        }
+        else 
         if (!xWriteFeature(fc, mChild)) {
             return false;
         }
@@ -2246,11 +2289,19 @@ bool CGff3Writer::xAssignFeatureAttributePartial(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
-    if (mf.IsSetPartial()) {
-        if (mf.GetPartial() == true) {
-            record.SetAttribute("partial", "true");
-            return true;
-        }
+
+    bool partial = false;
+    if (mf.IsMapped() &&
+        mf.IsSetPartial()) {
+        partial = mf.GetPartial();
+    }
+    else if (!mf.IsMapped() &&
+        mf.GetSeq_feat()->IsSetPartial()) {
+        partial = mf.GetSeq_feat()->GetPartial();
+    }
+
+    if (partial) {
+        record.SetAttribute("partial", "true");
     }
     return true; 
 }
