@@ -5153,26 +5153,8 @@ CRef<CSeq_inst> CWGSProteinIterator::GetSeq_inst(TFlags flags) const
     TSeqPos length = GetSeqLength();
     inst->SetMol(GetDb().GetProteinMolType());
     inst->SetLength(length);
-    CTempString ref_acc;
-    if ( HasRefAcc() ) {
-        ref_acc = GetRefAcc();
-    }
-    if ( !m_Cur->m_PROTEIN ||
-         (!ref_acc.empty() && ref_acc != GetAccession()) ) {
-        // WP_ reference
-        inst->SetRepr(CSeq_inst::eRepr_delta);
-        CRef<CDelta_seq> seg(new CDelta_seq);
-        CSeq_interval& interval = seg->SetLoc().SetInt();
-        interval.SetFrom(0);
-        interval.SetTo(length-1);
-        interval.SetStrand(eNa_strand_plus);
-        interval.SetId().Set(GetRefAcc());
-        inst->SetExt().SetDelta().Set().push_back(seg);
-    }
-    else {
-        inst->SetRepr(CSeq_inst::eRepr_raw);
-        inst->SetSeq_data().SetNcbieaa().Set() = *m_Cur->PROTEIN(m_CurrId);
-    }
+    inst->SetRepr(CSeq_inst::eRepr_raw);
+    inst->SetSeq_data().SetNcbieaa().Set() = *m_Cur->PROTEIN(m_CurrId);
     if ( 1 ) {
         // add history info
         TVDBRowId replaced_by_row = GetReplacedByRowId();
