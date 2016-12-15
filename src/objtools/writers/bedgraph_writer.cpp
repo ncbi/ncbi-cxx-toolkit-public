@@ -43,6 +43,8 @@
 #include <objects/seqres/Int_graph.hpp>
 #include <objects/seqres/Real_graph.hpp>
 #include <objects/seqres/Byte_graph.hpp>
+#include <objects/seqtable/Seq_table.hpp>
+#include <objects/seqtable/SeqTable_column.hpp>
 
 #include <objmgr/scope.hpp>
 #include <objmgr/feat_ci.hpp>
@@ -100,6 +102,9 @@ bool CBedGraphWriter::WriteAnnot(
     if (xWriteAnnotFeatureTable(track, annot)) {
         return true;
     }
+    if (xWriteAnnotSeqTable(track, annot)) {
+        return true;
+    }
     NCBI_THROW(
         CObjWriterException,
         eBadInput,
@@ -107,6 +112,118 @@ bool CBedGraphWriter::WriteAnnot(
     return false;
 }
 
+
+//  ----------------------------------------------------------------------------
+bool CBedGraphWriter::xWriteAnnotSeqTable(
+    const CBedTrackRecord& trackdata,
+    const CSeq_annot& annot)
+//  ----------------------------------------------------------------------------
+{
+    if (!annot.IsSeq_table()) {
+        return false;
+    }
+    CBedGraphRecord bedRecord;
+
+    const CSeq_table& table = annot.GetData().GetSeq_table();
+    int numRows = table.GetNum_rows();
+    for (int row=0; row < numRows; ++row) {
+        string chromId;
+        {{
+            const vector<CRef<CSeqTable_column> > columns = table.GetColumns();
+            for (size_t col = 0; col < columns.size(); ++col) {
+                const CSeqTable_column_info& header = columns[col]->GetHeader();
+                if (header.IsSetField_name()) {
+                    string fieldName = header.GetField_name();
+                    if (fieldName == "Seq-table location") {
+                        CConstRef< CSeq_loc > pLoc = columns[col]->GetSeq_loc(row);
+                        pLoc->GetId()->GetLabel(&chromId, CSeq_id::eContent);
+                        break;
+                    }
+                }
+                if (header.IsSetField_id()) {
+                    int fieldId = header.GetField_id();
+                    if (fieldId == CSeqTable_column_info::eField_id_location_id) {
+                        CConstRef< CSeq_id > pId = columns[col]->GetSeq_id(row);
+                        pId->GetLabel(&chromId, CSeq_id::eContent);
+                        break;
+                    }
+                }
+            }
+        }}
+        if (chromId.empty()) {
+            chromId = "unknown";
+        }
+        bedRecord.SetChromId(chromId);
+
+        int chromStart(0);
+        {{
+            const vector<CRef<CSeqTable_column> > columns = table.GetColumns();
+            for (size_t col = 0; col < columns.size(); ++col) {
+                const CSeqTable_column_info& header = columns[col]->GetHeader();
+                if (header.IsSetField_id()) {
+                    int fieldId = header.GetField_id();
+                    if (fieldId == CSeqTable_column_info::eField_id_location_from) {
+                        if (columns[col]->TryGetInt(row, chromStart)) {
+                            break;
+                        }
+                    }
+                }
+            }
+        }}
+        bedRecord.SetChromStart(chromStart);
+        
+        int chromEnd(0);
+        {{
+            const vector<CRef<CSeqTable_column> > columns = table.GetColumns();
+            for (size_t col = 0; col < columns.size(); ++col) {
+                const CSeqTable_column_info& header = columns[col]->GetHeader();
+                if (header.IsSetField_name()) {
+                    string fieldName = header.GetField_name();
+                    if (fieldName == "span") {
+                        if (columns[col]->TryGetInt(row, chromEnd)) {
+                            chromEnd += chromStart;
+                            break;
+                        }
+                    }
+                }
+                if (header.IsSetField_id()) {
+                    int fieldId = header.GetField_id();
+                    if (fieldId == CSeqTable_column_info::eField_id_location_to) {
+                        if (columns[col]->TryGetInt(row, chromEnd)) {
+                            break;
+                        }
+                    }
+                }
+            }
+        }}
+        bedRecord.SetChromEnd(chromEnd);
+
+        double chromValue(0);
+        {{
+            const vector<CRef<CSeqTable_column> > columns = table.GetColumns();
+            for (size_t col = 0; col < columns.size(); ++col) {
+                const CSeqTable_column_info& header = columns[col]->GetHeader();
+                if (header.IsSetField_name()) {
+                    string fieldName = header.GetField_name();
+                    if (fieldName == "values") {
+                        if (columns[col]->TryGetReal(row, chromValue)) {
+                            break;
+                        }
+                        int intValue(0);
+                        if (columns[col]->TryGetInt(row, intValue)) {
+                            chromValue = intValue;
+                            break;
+                        } 
+                    }
+                }
+            }
+        }}
+        bedRecord.SetChromValue(chromValue);
+        
+        bedRecord.Write(m_Os);
+    }
+    return true;
+}
 
 //  ----------------------------------------------------------------------------
 bool CBedGraphWriter::xWriteAnnotGraphs(
@@ -155,19 +272,6 @@ bool CBedGraphWriter::xWriteAnnotFeatureTable(
     return true;
 }
 
-
-//  ----------------------------------------------------------------------------
-bool CBedGraphWriter::xWriteAnnotTable(
-    const CBedTrackRecord& trackdata,
-    const CSeq_annot& annot)
-//  ----------------------------------------------------------------------------
-{
-    NCBI_THROW(
-        CObjWriterException,
-        eBadInput,
-        "BedGraph writer does not support tables (yet).");
-    return false;
-}
 
 //  ----------------------------------------------------------------------------
 bool CBedGraphWriter::xWriteSingleGraph(

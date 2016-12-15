@@ -122,7 +122,8 @@ protected:
         const CBedTrackRecord&,
         const CSeq_feat&);
 
-    bool xWriteAnnotTable(
+
+    bool xWriteAnnotSeqTable(
         const CBedTrackRecord&,
         const CSeq_annot&);
 
