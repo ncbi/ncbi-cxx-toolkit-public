@@ -106,6 +106,7 @@ class ITaxon3;
 BEGIN_SCOPE(validator)
 
 class CValidError_imp;
+class CTaxValidationAndCleanup;
 
 // =============================================================================
 //                            Caching classes
@@ -268,6 +269,8 @@ class CValidError_desc;
 class CValidError_descr;
 
 
+// For Taxonomy Lookups and Fixups
+
 class CSpecificHostRequest
 {
 public:
@@ -290,6 +293,8 @@ public:
     void AddReply(const CT3Reply& reply);
 
     void PostErrors(CValidError_imp& imp);
+    const string& SuggestFix() const;
+
 
 private:
     string m_Host;
@@ -298,12 +303,54 @@ private:
     vector<TDescPair> m_Descs;
     vector<CConstRef<CSeq_feat> > m_Feats;
     TResponseFlags m_Response;
+    string m_SuggestedFix;
     string m_Error;
     size_t m_RepliesProcessed;
 };
 
 
 typedef map<string, CSpecificHostRequest> TSpecificHostRequests;
+
+class NCBI_VALIDATOR_EXPORT CTaxValidationAndCleanup
+{
+public:
+    CTaxValidationAndCleanup();
+    ~CTaxValidationAndCleanup() {};
+
+    void Init(const CSeq_entry& se);
+    vector< CRef<COrg_ref> > GetTaxonomyLookupRequest() const;
+    void ReportTaxLookupErrors(const CTaxon3_reply& reply, CValidError_imp& imp, bool is_insd_patent) const;
+    bool AdjustOrgRefsWithTaxLookupReply(const CTaxon3_reply& reply, 
+                                         vector<CRef<COrg_ref> > org_refs, 
+                                         string& error_message) const;
+    vector<CRef<COrg_ref> > GetSpecificHostLookupRequest(bool for_fix);
+    void ReportSpecificHostErrors(const CTaxon3_reply& reply, CValidError_imp& imp);
+    bool AdjustOrgRefsWithSpecificHostReply(const CTaxon3_reply& reply, 
+                                            vector<CRef<COrg_ref> > org_refs, 
+                                            string& error_message);
+
+    CConstRef<CSeq_entry> GetTopReportObject() const;
+
+    size_t NumDescs() const { return m_SrcDescs.size(); }
+    size_t NumFeats() const { return m_SrcFeats.size(); }
+
+    CConstRef<CSeqdesc> GetDesc(size_t num) const { return m_SrcDescs[num]; };
+    CConstRef<CSeq_feat> GetFeat(size_t num) const { return m_SrcFeats[num]; };
+
+protected:
+    void x_GatherSources(const CSeq_entry& se);
+    void x_CreateSpecificHostMap(bool for_fix);
+    void x_UpdateSpecificHostMapWithReply(const CTaxon3_reply& reply, string& error_message);
+    bool x_ApplySpecificHostMap(COrg_ref& org_ref) const;
+    static void x_DefaultSpecificHostAdjustments(string& host_val);
+
+    vector<CConstRef<CSeqdesc> > m_SrcDescs;
+    vector<CConstRef<CSeq_entry> > m_DescCtxs;
+    vector<CConstRef<CSeq_feat> > m_SrcFeats;
+    TSpecificHostRequests m_SpecificHostRequests;
+    bool m_SpecificHostRequestsBuilt;
+    bool m_SpecificHostRequestsUpdated;
+};
 
 class CBioSourceKind
 {
@@ -467,6 +514,10 @@ public:
     void PostObjErr (EDiagSev sv, EErrType et, const string& msg, const CSerialObject& obj, const CSeq_entry *ctx = 0);
     void PostBadDateError (EDiagSev sv, const string& msg, int flags, const CSerialObject& obj, const CSeq_entry *ctx = 0);
 
+    void HandleTaxonomyError(const CT3Error& error, const string& host, const COrg_ref& orf);
+    void HandleTaxonomyError(const CT3Error& error, const EErrType type, const CSeq_feat& feat);
+    void HandleTaxonomyError(const CT3Error& error, const EErrType type, const CSeqdesc& desc, const CSeq_entry* entry);
+
     bool RaiseGenomeSeverity(EErrType et);
 
     // General use validation methods
@@ -497,14 +548,13 @@ public:
     bool biosource = false, const CSeq_entry *ctx = 0);
     void ValidateCitSub(const CCit_sub& cs, const CSerialObject& obj, const CSeq_entry *ctx = 0);
     void ValidateTaxonomy(const CSeq_entry& se); 
-    void ValidateSpecificHost (const vector<CConstRef<CSeqdesc> > & src_descs, const vector<CConstRef<CSeq_entry> > & desc_ctxs, const vector<CConstRef<CSeq_feat> > & src_feats);
+    void ValidateSpecificHost(CTaxValidationAndCleanup& tval);
     void ValidateSpecificHost (const CSeq_entry& se);
     void ValidateTentativeName(const CSeq_entry& se);
     void ValidateTaxonomy(const COrg_ref& org, int genome = CBioSource::eGenome_unknown);
     void ValidateMultipleTaxIds(const CSeq_entry_Handle& seh);
     void ValidateCitations (const CSeq_entry_Handle& seh);
     bool x_IsFarFetchFailure (const CSeq_loc& loc);
-    void GatherSources (const CSeq_entry& se, vector<CConstRef<CSeqdesc> >& src_descs, vector<CConstRef<CSeq_entry> >& desc_ctxs, vector<CConstRef<CSeq_feat> >& src_feats);
 		    
     // getters
     inline CScope* GetScope(void) { return m_Scope; }
@@ -699,15 +749,6 @@ private:
     void FindNonAsciiText (const CSerialObject& obj);
     void FindCollidingSerialNumbers (const CSerialObject& obj);
 
-    void x_HandleTaxonomyError(const CT3Error& error,
-        const string& host, const COrg_ref& orf);
-
-    void x_HandleTaxonomyError(const CT3Error& error,
-        const EErrType type, const CSeq_feat& feat);
-
-    void x_HandleTaxonomyError(const CT3Error& error,
-        const EErrType type, const CSeqdesc& desc, 
-        const CSeq_entry* entry);
 
     void GatherTentativeName (const CSeq_entry& se, vector<CConstRef<CSeqdesc> >& usr_descs, vector<CConstRef<CSeq_entry> >& desc_ctxs, vector<CConstRef<CSeq_feat> >& usr_feats);
 

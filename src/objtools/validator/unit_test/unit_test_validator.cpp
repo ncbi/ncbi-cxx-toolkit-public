@@ -95,6 +95,7 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/macro/Suspect_rule_set.hpp>
+#include <objects/taxon3/taxon3.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_ci.hpp>
@@ -105,6 +106,7 @@
 #include <objmgr/util/sequence.hpp>
 #include <objects/seq/seqport_util.hpp>
 #include <objtools/validator/validator.hpp>
+#include <objtools/validator/validatorp.hpp>
 #include <objtools/validator/utilities.hpp>
 #include <objtools/validator/validerror_format.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
@@ -20077,5 +20079,146 @@ BOOST_AUTO_TEST_CASE(Test_VR_660)
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 
+}
+
+
+void AddSpecificHost(COrg_ref& org, const string& val)
+{
+    CRef<COrgMod> om(new COrgMod(COrgMod::eSubtype_nat_host, val));
+    org.SetOrgname().SetMod().push_back(om);
+}
+
+
+void AddSpecificHostDescriptor(CRef<CSeq_entry> entry, const string& val)
+{
+    CRef<CSeqdesc> src_desc(new CSeqdesc());
+    // should look up
+    src_desc->SetSource().SetOrg().SetTaxname("Influenza A virus");
+    AddSpecificHost(src_desc->SetSource().SetOrg(), val);
+    entry->SetDescr().Set().push_back(src_desc);
+}
+
+void AddSpecificHostFeat(CRef<CSeq_entry> entry, const string& val)
+{
+    CRef<CSeq_feat> src_feat = unit_test_util::AddMiscFeature(entry);
+    // should not look up
+    src_feat->SetData().SetBiosrc().SetOrg().SetTaxname("Influenza virus A");
+    AddSpecificHost(src_feat->SetData().SetBiosrc().SetOrg(), val);
+}
+
+typedef vector< pair<string, string> > THostStringsVector;
+
+BOOST_AUTO_TEST_CASE(Test_BulkSpecificHostFix)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+
+    THostStringsVector test_values;
+    test_values.push_back(pair<string, string>("Homo supiens", "Homo supiens")); // non-fixable spelling problem
+    test_values.push_back(pair<string, string>("HUMAN", "Homo sapiens"));
+    test_values.push_back(pair<string, string>("Homo sapiens", "Homo sapiens"));
+    test_values.push_back(pair<string, string>("Pinus sp.", "Pinus sp.")); // ambiguous
+    test_values.push_back(pair<string, string>("Gallus Gallus", "Gallus gallus"));
+    test_values.push_back(pair<string, string>("Eschericia coli", "Escherichia coli")); // fixable spelling problem
+    test_values.push_back(pair<string, string>("Avian", "Avian"));
+    test_values.push_back(pair<string, string>("Bovine", "Bovine"));
+    test_values.push_back(pair<string, string>("Pig", "Pig"));
+    test_values.push_back(pair<string, string>(" Chicken", "Chicken")); // truncate space
+    test_values.push_back(pair<string, string>("Homo sapiens; sex: female", "Homo sapiens; sex: female"));
+    test_values.push_back(pair<string, string>("Atlantic white-sided dolphin", "Atlantic white-sided dolphin"));
+
+    vector<CRef<COrg_ref> > to_adjust;
+
+    ITERATE(THostStringsVector, it, test_values) {
+        AddSpecificHostDescriptor(entry, it->first);
+        AddSpecificHostFeat(entry, it->first);
+        CRef<COrg_ref> org(new COrg_ref());
+        org->SetTaxname("foo");
+        AddSpecificHost(*org, it->first);
+        to_adjust.push_back(org);
+    }
+    string error_message;
+
+    CTaxValidationAndCleanup tval;
+    tval.Init(*entry);
+    vector<CRef<COrg_ref> > org_rq_list = tval.GetSpecificHostLookupRequest(true);
+    BOOST_CHECK_EQUAL(org_rq_list.size(), test_values.size() - 2); // three homo sapiens are combined
+
+    objects::CTaxon3 taxon3;
+    taxon3.Init();
+    CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_rq_list);
+
+    BOOST_CHECK_EQUAL(tval.AdjustOrgRefsWithSpecificHostReply(*reply, to_adjust, error_message), true);
+
+    vector<CRef<COrg_ref> >::iterator org = to_adjust.begin();
+    THostStringsVector::iterator tvit = test_values.begin();
+    while (org != to_adjust.end()) {
+        BOOST_CHECK_EQUAL((*org)->GetOrgname().GetMod().front()->GetSubname(), tvit->second);
+        ++org;
+        ++tvit;
+    }
+
+    CRef<COrg_ref> test_src(new COrg_ref());
+    AddSpecificHost(*test_src, "Homo supiens"); // don't change because bad
+    AddSpecificHost(*test_src, "Pinus sp."); // don't change because ambivalent
+    AddSpecificHost(*test_src, "Eschericia coli"); // change because spelling
+
+    to_adjust.clear();
+    to_adjust.push_back(test_src);
+    BOOST_CHECK_EQUAL(tval.AdjustOrgRefsWithSpecificHostReply(*reply, to_adjust, error_message), true);
+    COrgName::TMod::const_iterator m = test_src->GetOrgname().GetMod().begin();
+    BOOST_CHECK_EQUAL((*m)->GetSubname(), "Homo supiens");
+    ++m;
+    BOOST_CHECK_EQUAL((*m)->GetSubname(), "Pinus sp.");
+    ++m;
+    BOOST_CHECK_EQUAL((*m)->GetSubname(), "Escherichia coli");
+    // already fixed all problems, don't fix again
+    BOOST_CHECK_EQUAL(tval.AdjustOrgRefsWithSpecificHostReply(*reply, to_adjust, error_message), false);
+    m = test_src->GetOrgname().GetMod().begin();
+    BOOST_CHECK_EQUAL((*m)->GetSubname(), "Homo supiens");
+    ++m;
+    BOOST_CHECK_EQUAL((*m)->GetSubname(), "Pinus sp.");
+    ++m;
+    BOOST_CHECK_EQUAL((*m)->GetSubname(), "Escherichia coli");
+
+    vector< CRef<COrg_ref> > original_orgs = tval.GetTaxonomyLookupRequest();
+    vector< CRef<COrg_ref> > edited_orgs = tval.GetTaxonomyLookupRequest();
+    CRef<CTaxon3_reply> lookup_reply = taxon3.SendOrgRefList(original_orgs);
+    BOOST_CHECK_EQUAL(lookup_reply->GetReply().size(), original_orgs.size());
+    BOOST_CHECK_EQUAL(tval.AdjustOrgRefsWithTaxLookupReply(*lookup_reply, edited_orgs, error_message), true);
+    // second time should produce no additional changes
+    BOOST_CHECK_EQUAL(tval.AdjustOrgRefsWithTaxLookupReply(*lookup_reply, edited_orgs, error_message), false);
+    vector< CRef<COrg_ref> > spec_host_rq = tval.GetSpecificHostLookupRequest(true);
+    CRef<CTaxon3_reply> spec_host_reply = taxon3.SendOrgRefList(spec_host_rq);
+    BOOST_CHECK_EQUAL(tval.AdjustOrgRefsWithSpecificHostReply(*spec_host_reply, edited_orgs, error_message), true);
+    // second time should produce no additional changes
+    BOOST_CHECK_EQUAL(tval.AdjustOrgRefsWithSpecificHostReply(*spec_host_reply, edited_orgs, error_message), false);
+
+    size_t num_descs = tval.NumDescs();
+    size_t num_updated_descs = 0;
+    for (size_t n = 0; n < num_descs; n++) {
+        if (!original_orgs[n]->Equals(*(edited_orgs[n]))) {
+            CConstRef<CSeqdesc> desc = tval.GetDesc(n);
+            CRef<CSeqdesc> new_desc(new CSeqdesc());
+            new_desc->Assign(*desc);
+            new_desc->SetSource().SetOrg().Assign(*(edited_orgs[n]));
+            num_updated_descs++;
+        }
+    }
+    // we expect that all descs will be updated, because they have a recognizable taxname but none of the other data
+    BOOST_CHECK_EQUAL(num_updated_descs, num_descs);
+
+    size_t num_updated_feats = 0;
+    for (size_t n = 0; n < tval.NumFeats(); n++) {
+        if (!original_orgs[n + num_descs]->Equals(*edited_orgs[n + num_descs])) {
+            CConstRef<CSeq_feat> feat = tval.GetFeat(n);
+            CRef<CSeq_feat> new_feat(new CSeq_feat());
+            new_feat->Assign(*feat);
+            new_feat->SetData().SetBiosrc().SetOrg().Assign(*(edited_orgs[n]));
+            num_updated_feats++;
+        }
+    }
+    // only four of the feats will be updated, because their taxnames cannot be
+    // recognized, and only four of the specific hosts are altered.
+    BOOST_CHECK_EQUAL(num_updated_feats, 4);
 }
 
