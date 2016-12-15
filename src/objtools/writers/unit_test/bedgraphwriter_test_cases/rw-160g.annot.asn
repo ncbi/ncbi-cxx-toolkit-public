@@ -1,0 +1,121 @@
+Seq-annot ::= {
+  desc {
+    name "test-graph.input",
+    title "sorted coverage graph"
+  },
+  data graph {
+    {
+      title "sorted coverage graph",
+      loc whole other {
+        accession "NT_165516",
+        version 1
+      },
+      comp 1,
+      a { 274509803921569, 10, -16 },
+      b { 0, 10, 0 },
+      numval 27,
+      graph byte {
+        max 255,
+        min 0,
+        axis 0,
+        values '2400000000006D0037000000FF0000000000000049003900000024'H
+      }
+    },
+    {
+      title "sorted coverage graph",
+      loc whole other {
+        accession "NT_167216",
+        version 1
+      },
+      comp 1000,
+      a { -465661287958261, 10, -27 },
+      b { 100000000046566, 10, -17 },
+      numval 1,
+      graph int {
+        max 2147483646,
+        min 1,
+        axis 0,
+        values {
+          0
+        }
+      }
+    },
+    {
+      title "sorted coverage graph",
+      loc whole other {
+        accession "NT_167220",
+        version 1
+      },
+      comp 1000,
+      a { 588595867979241, 10, -24 },
+      b { 719999994114041, 10, -16 },
+      numval 15,
+      graph int {
+        max 2147483646,
+        min 1,
+        axis 0,
+        values {
+          0,
+          6795835,
+          1,
+          380566723,
+          691476143,
+          1129807457,
+          2147483646,
+          820596995,
+          129120853,
+          0,
+          0,
+          0,
+          0,
+          67958344,
+          1196066841
+        }
+      }
+    },
+    {
+      title "sorted coverage graph",
+      loc whole other {
+        accession "NT_167243",
+        version 1
+      },
+      comp 1000,
+      a { -465661287958261, 10, -27 },
+      b { 100000000046566, 10, -17 },
+      numval 1,
+      graph int {
+        max 2147483646,
+        min 1,
+        axis 0,
+        values {
+          0
+        }
+      }
+    },
+    {
+      title "sorted coverage graph",
+      loc whole local str "chrEBV",
+      comp 1000,
+      a { 360421836879694, 10, -24 },
+      b { 399999963957816, 10, -17 },
+      numval 10,
+      graph int {
+        max 2147483646,
+        min 1,
+        axis 0,
+        values {
+          810161790,
+          0,
+          0,
+          0,
+          399531842,
+          399531842,
+          810161790,
+          0,
+          1631421685,
+          1631421685
+        }
+      }
+    }
+  }
+}

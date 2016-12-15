@@ -1,0 +1,59 @@
+Seq-annot ::= {
+  id {
+    local str "U00096.3"
+  },
+  desc {
+    name "test-features.input",
+    title "sorted coverage graph"
+  },
+  data ftable {
+    {
+      data gene {
+      },
+      location int {
+        from 1,
+        to 100,
+        strand plus,
+        id local str "test1"
+      },
+      qual {
+        {
+          qual "score",
+          val "100"
+        }
+      }
+    },
+    {
+      data gene {
+      },
+      location int {
+        from 100,
+        to 200,
+        strand plus,
+        id local str "test1"
+      },
+      qual {
+        {
+          qual "score",
+          val "200"
+        }
+      }
+    },
+    {
+      data gene {
+      },
+      location int {
+        from 800,
+        to 900,
+        strand plus,
+        id local str "test1"
+      },
+      qual {
+        {
+          qual "score",
+          val "800"
+        }
+      }
+    }
+  }
+}

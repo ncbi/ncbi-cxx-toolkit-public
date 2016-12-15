@@ -10,6 +10,7 @@ APP_PROJ = \
 	unit_test_vcfwriter \
 	unit_test_wigwriter \
 	unit_test_bedwriter \
+	unit_test_bedgraphwriter \
 	unit_test_ucscwriter \
 	unit_test_srcwriter
 
