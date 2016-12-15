@@ -9,6 +9,6 @@ LIB = eutils_client hydra_client pubmed xvalidate xconnect taxon3 xobjutil seq s
       xobjmgr genome_collection xncbi sequtil pub medline biblio general xser seqset \
       xutil xmlwrapp
 
-LIBS = $(LIBXML_LIBS) $(LIBXSLT_LIBS) $(LIBEXSLT_LIBS) $(GNUTLS_LIBS)
+LIBS = $(LIBXML_LIBS) $(LIBXSLT_LIBS) $(LIBEXSLT_LIBS) $(GNUTLS_LIBS) $(DL_LIBS)
 
 WATCHERS = dobronad
