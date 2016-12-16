@@ -1856,11 +1856,17 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
 bool CAnnot_Collector::x_CheckAdaptive(const CBioseq_Handle& bh) const
 {
     int adaptive_flags = GetSelector().GetAdaptiveDepthFlags();
-    if ( !(adaptive_flags & SAnnotSelector::fAdaptive_ByPolicy) &&
-         (adaptive_flags & (SAnnotSelector::fAdaptive_ByTriggers |
-                            SAnnotSelector::fAdaptive_BySubtypes)) ) {
+    if ( !(adaptive_flags & (SAnnotSelector::fAdaptive_ByTriggers |
+                             SAnnotSelector::fAdaptive_BySubtypes)) ) {
+        // no heuristics
         return false;
     }
+    if ( !(adaptive_flags & SAnnotSelector::fAdaptive_ByPolicy) ) {
+        // heuristics only
+        return true;
+    }
+    // both policy and heuristics are active
+    // use heuristics only if there is no policy information on sequence
     return bh && bh.GetFeatureFetchPolicy() == bh.eFeatureFetchPolicy_default;
 }
 
@@ -1868,11 +1874,17 @@ bool CAnnot_Collector::x_CheckAdaptive(const CBioseq_Handle& bh) const
 bool CAnnot_Collector::x_CheckAdaptive(const CSeq_id_Handle& id) const
 {
     int adaptive_flags = GetSelector().GetAdaptiveDepthFlags();
-    if ( !(adaptive_flags & SAnnotSelector::fAdaptive_ByPolicy) &&
-         (adaptive_flags & (SAnnotSelector::fAdaptive_ByTriggers |
-                            SAnnotSelector::fAdaptive_BySubtypes)) ) {
+    if ( !(adaptive_flags & (SAnnotSelector::fAdaptive_ByTriggers |
+                             SAnnotSelector::fAdaptive_BySubtypes)) ) {
+        // no heuristics
         return false;
     }
+    if ( !(adaptive_flags & SAnnotSelector::fAdaptive_ByPolicy) ) {
+        // heuristics only
+        return true;
+    }
+    // both policy and heuristics are active
+    // use heuristics only if there is no policy information on sequence
     CBioseq_Handle bh = x_GetBioseqHandle(id);
     return bh && bh.GetFeatureFetchPolicy() == bh.eFeatureFetchPolicy_default;
 }
