@@ -4536,13 +4536,14 @@ BOOST_AUTO_TEST_CASE(CSeqDBSqlite_Singles)
     BOOST_REQUIRE_EQUAL(oids.front(), (TOid) 10);   // highest version
     BOOST_REQUIRE_EQUAL(oids.back(), (TOid) 12);    // lowest version
 
-    sqldb_rd->GetOid(oids, "MPERNMI");              // don't allow dups
+    // While we're at it, make sure lower- and mixed-case are handled properly.
+    sqldb_rd->GetOid(oids, "mpernmi");              // don't allow dups
     BOOST_REQUIRE_EQUAL(oids.size(), (size_t) 1);
     BOOST_REQUIRE_EQUAL(oids.front(), (TOid) 1852);
     // For this case, there are only two matching rows, and they have
     // the same OID.  Since they are completely redundant, the OID is
     // returned only once.
-    sqldb_rd->GetOid(oids, "MPERNMI", true);        // allow dups
+    sqldb_rd->GetOid(oids, "MperNmi", true);        // allow dups
     BOOST_REQUIRE_EQUAL(oids.size(), (size_t) 1);
     BOOST_REQUIRE_EQUAL(oids.front(), (TOid) 1852);
 

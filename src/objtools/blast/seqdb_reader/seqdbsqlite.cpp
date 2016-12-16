@@ -138,8 +138,10 @@ void CSeqDBSqlite::GetOid(
         );
     }
     // Bind the accession string to the statement.
+    // NOTE: ToUpper converts in-place, so won't accept const argument.
+    string acc(accession);
     selectStmt->ClearBindings();
-    selectStmt->Bind(1, accession);
+    selectStmt->Bind(1, NStr::ToUpper(acc));
     selectStmt->Bind(2, version);
     selectStmt->Execute();
     // Erase current contents of result vector.
@@ -188,8 +190,11 @@ void CSeqDBSqlite::GetOid(
         );
     }
     // Bind the accession string to the statement.
+    // NOTE: ToUpper converts in-place, so won't accept const argument.
+    string acc_u(accession);
+    NStr::ToUpper(acc_u);
     selectStmt->ClearBindings();
-    selectStmt->Bind(1, accession);
+    selectStmt->Bind(1, acc_u);
     selectStmt->Execute();
 
     // We may need to keep track of the highest version if there are
@@ -233,12 +238,14 @@ void CSeqDBSqlite::GetOids(
     vector<tuple<string, string, unsigned int> > acc_w_ver;
     vector<string> acc_wo_ver;
     for (auto acc : accessions) {
+        string acc_upper(acc);      // make non-const copy
+        NStr::ToUpper(acc_upper);   // convert in-place
         string a;
         unsigned int v;
-        if (x_ExtractVersion(acc, a, v)) {
-            acc_w_ver.push_back(make_tuple(acc, a, v));
+        if (x_ExtractVersion(acc_upper, a, v)) {
+            acc_w_ver.push_back(make_tuple(acc_upper, a, v));
         } else {
-            acc_wo_ver.push_back(acc);
+            acc_wo_ver.push_back(acc_upper);
         }
     }
 
