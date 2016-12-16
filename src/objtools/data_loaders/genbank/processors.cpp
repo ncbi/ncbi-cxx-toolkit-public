@@ -887,12 +887,14 @@ void CProcessor::LoadWGSMaster(CDataLoader* loader,
     CSeq_id_Handle id = chunk_info.m_MasterId;
     int mask = chunk_info.m_DescrMask;
     CRef<CSeq_descr> descr = s_GetWGSMasterDescr(loader, id, mask);
-    if ( kAddMasterDescrToTSE ) {
-        chunk->x_LoadDescr(CTSE_Chunk_Info::TPlace(), *descr);
-    }
-    else {
-        CRef<CBioseqUpdater> upd(new CWGSBioseqUpdaterDescr(id, descr));
-        const_cast<CTSE_Split_Info&>(chunk->GetSplitInfo()).x_SetBioseqUpdater(upd);
+    if ( descr ) {
+        if ( kAddMasterDescrToTSE ) {
+            chunk->x_LoadDescr(CTSE_Chunk_Info::TPlace(), *descr);
+        }
+        else {
+            CRef<CBioseqUpdater> upd(new CWGSBioseqUpdaterDescr(id, descr));
+            const_cast<CTSE_Split_Info&>(chunk->GetSplitInfo()).x_SetBioseqUpdater(upd);
+        }
     }
     chunk->SetLoaded();
 }
