@@ -310,7 +310,7 @@ private:
 // constructor
 CAsn2FlatApp::CAsn2FlatApp (void)
 {
-    SetVersion(CVersionInfo(0, 9, 25));
+    SetVersionByBuild(1);
 }
 
 // destructor
