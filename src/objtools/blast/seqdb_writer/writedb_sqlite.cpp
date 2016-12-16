@@ -136,8 +136,10 @@ void CWriteDB_Sqlite::CommitTransaction(void)
 
 void CWriteDB_Sqlite::DeleteEntry(const string& accession, const int version)
 {
+    string acc(accession);  // must be non-const to convert to upper-case
+    NStr::ToUpper(acc);
     ostringstream oss;
-    oss << "DELETE FROM acc2oid WHERE accession = '" << accession << "'";
+    oss << "DELETE FROM acc2oid WHERE accession = '" << acc << "'";
     if (version > 0) {
         oss << " AND version = " << version;
     }
@@ -151,9 +153,11 @@ int CWriteDB_Sqlite::DeleteEntries(const list<string>& accessions)
     m_db->ExecuteSql("CREATE TEMP TABLE IF NOT EXISTS accs ( acc TEXT );");
     m_db->ExecuteSql("BEGIN TRANSACTION;");
     CSQLITE_Statement ins(m_db.get(), "INSERT INTO accs(acc) VALUES (?);");
-    for (auto it : accessions) {
+    for (auto accession : accessions) {
+        string acc(accession);
+        NStr::ToUpper(acc);
         ins.ClearBindings();
-        ins.Bind(1, it);
+        ins.Bind(1, acc);
         ins.Execute();
         ins.Reset();
     }
@@ -187,8 +191,10 @@ void CWriteDB_Sqlite::InsertEntry(
                 "VALUES ( ?, ?, ? );"
         ));
     }
+    string acc(accession);
+    NStr::ToUpper(acc);
     m_insertStmt->ClearBindings();
-    m_insertStmt->Bind(1, accession);
+    m_insertStmt->Bind(1, acc);
     m_insertStmt->Bind(2, version);
     m_insertStmt->Bind(3, (int) oid);
     m_insertStmt->Execute();
@@ -197,7 +203,9 @@ void CWriteDB_Sqlite::InsertEntry(
 
 void CWriteDB_Sqlite::InsertEntry(const string& accession, const TOid oid)
 {
-    InsertEntry(accession, 0, oid);
+    string acc(accession);
+    NStr::ToUpper(acc);
+    InsertEntry(acc, 0, oid);
 }
 
 int CWriteDB_Sqlite::InsertEntries(
@@ -210,6 +218,7 @@ int CWriteDB_Sqlite::InsertEntries(
         if (!it->IsGi()) {
             int version;
             string seqid = it->GetSeqIdString(&version);
+            NStr::ToUpper(seqid);
             InsertEntry(seqid, version, oid);
             ++count;
         }
@@ -221,7 +230,9 @@ int CWriteDB_Sqlite::InsertEntries(const list<SAccOid>& seqids)
 {
     int count = 0;
     for (auto it : seqids) {
-        InsertEntry(it.m_acc, it.m_ver, it.m_oid);
+        string acc(it.m_acc);
+        NStr::ToUpper(acc);
+        InsertEntry(acc, it.m_ver, it.m_oid);
         ++count;
     }
     return count;

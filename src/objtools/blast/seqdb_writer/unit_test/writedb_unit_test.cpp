@@ -3433,10 +3433,11 @@ BOOST_AUTO_TEST_CASE(EditSqliteDB)
     acc2oids1.push_back(SAccOid("MIYAZAWA", 3, 1934));  // Kenji ..., author of
                                                         // "Night on the
                                                         // Galactic Railroad"
+    // All of the bwlow should be written as upper case.
     list<SAccOid> acc2oids2;
-    acc2oids2.push_back(SAccOid("FILLER1",  1, 1001));  // (stuffing
-    acc2oids2.push_back(SAccOid("FILLER1",  2, 1002));  // instead of
-    acc2oids2.push_back(SAccOid("FILLER2",  1, 1003));  // potatoes)
+    acc2oids2.push_back(SAccOid("Filler1",  1, 1001));  // (stuffing
+    acc2oids2.push_back(SAccOid("filler1",  2, 1002));  // instead of
+    acc2oids2.push_back(SAccOid("FiLlEr2",  1, 1003));  // potatoes)
 
     // Initialize SQLite library.
     CSQLITE_Global::Initialize();
@@ -3465,9 +3466,10 @@ BOOST_AUTO_TEST_CASE(EditSqliteDB)
     sqldb_wr->DeleteEntry("MACLEOD");
 
     // Now remove rows of "filler" with a list of accessions.
+    // Should work even though upper/lower cases don't match.
     list<string> fillers;
     fillers.push_back("FILLER1");   // should match 2 rows
-    fillers.push_back("FILLER2");   // should match 1 row
+    fillers.push_back("filler2");   // should match 1 row
     BOOST_REQUIRE_EQUAL(sqldb_wr->DeleteEntries(fillers), 3);  // 3 rows total
 
     // Finalize creating DB.
