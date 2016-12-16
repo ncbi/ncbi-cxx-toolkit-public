@@ -49,6 +49,7 @@ private:
     bool xReadASN1(CFormatGuess::EFormat format, CNcbiIstream& instream, CRef<objects::CSeq_entry>& entry, CRef<objects::CSeq_submit>& submit);
     CRef<objects::CSeq_entry> xReadGFF3(CNcbiIstream& instream);
     CRef<objects::CSeq_entry> xReadGTF(CNcbiIstream& instream);
+    void x_PostProcessAnnot(objects::CSeq_entry& entry);
     bool xGetAnnotLoader(CAnnotationLoader& loader, CNcbiIstream& in);
 
     auto_ptr<CObjectIStream> xCreateASNStream(CFormatGuess::EFormat format, CNcbiIstream& instream);

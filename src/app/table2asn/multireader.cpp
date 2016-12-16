@@ -1008,10 +1008,17 @@ CRef<CSeq_entry> CMultiReader::xReadGFF3(CNcbiIstream& instream)
     entry->SetSeq();
     reader.ReadSeqAnnotsNew(entry->SetAnnot(), lr, m_context.m_logger);
 
+    x_PostProcessAnnot(*entry);
+
+    return entry;
+}
+
+void CMultiReader::x_PostProcessAnnot(objects::CSeq_entry& entry)
+{
     unsigned int startingLocusTagNumber = 1;
 
     typedef CGff3Reader::TAnnotList ANNOTS;
-    ANNOTS& annots = entry->SetAnnot();
+    ANNOTS& annots = entry.SetAnnot();
    
     for (ANNOTS::iterator it = annots.begin(); it != annots.end(); ++it) {
 
@@ -1025,8 +1032,6 @@ CRef<CSeq_entry> CMultiReader::xReadGFF3(CNcbiIstream& instream)
 
         startingLocusTagNumber = fte.PendingLocusTagNumber();
     }
-
-    return entry;
 }
 
 auto_ptr<CObjectIStream> CMultiReader::xCreateASNStream(CFormatGuess::EFormat format, CNcbiIstream& instream)
@@ -1127,9 +1132,10 @@ private:
 bool CMultiReader::xGetAnnotLoader(CAnnotationLoader& loader, CNcbiIstream& in)
 {
     CFormatGuess::EFormat uFormat = xGetFormat(in);
-#ifdef _DEBUG
-    cerr << "Recognized annotation format:" << CFormatGuess::GetFormatName(uFormat) << endl;
-#endif
+
+    if (uFormat != CFormatGuess::eUnknown)
+      cerr << "Recognized annotation format:" << CFormatGuess::GetFormatName(uFormat) << endl;
+
     CRef<CSeq_entry> entry;
     switch (uFormat)
     {
@@ -1287,6 +1293,8 @@ CRef<CSeq_entry> CMultiReader::xReadGTF(CNcbiIstream& instream)
     CRef<CSeq_entry> entry(new CSeq_entry);
     entry->SetSeq();
     reader.ReadSeqAnnotsNew(entry->SetAnnot(), lr, m_context.m_logger);
+
+    x_PostProcessAnnot(*entry);
 
     return entry;
 }
