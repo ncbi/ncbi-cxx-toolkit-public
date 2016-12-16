@@ -18,9 +18,9 @@ SRC = agp_write \
       src_writer \
       fasta_writer 
 
-DLL_LIB = variation_utils $(XFORMAT_LIBS)
+DLL_LIB = variation_utils $(XFORMAT_LIBS) $(OBJEDIT_LIBS)
 
 WATCHERS = ludwigf boukn gotvyans foleyjp
 
 USES_LIBRARIES =  \
-    $(OBJREAD_LIBS) variation_utils xalnmgr xformat xobjedit
+    $(OBJREAD_LIBS) $(OBJEDIT_LIBS) variation_utils xalnmgr xformat xobjedit
