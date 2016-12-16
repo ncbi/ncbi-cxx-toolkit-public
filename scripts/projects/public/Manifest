@@ -37,7 +37,7 @@ Linux64-Centos7 : Clang    : Clang.sh 3.8.0 --with-debug --with-mt --with-flat-m
 Linux64-Ubuntu : plain-GCC : GCC.sh --without-debug --with-mt --with-flat-makefile --without-ncbi-c
 Linux32-Ubuntu : plain-GCC : GCC.sh --without-debug --with-mt --with-flat-makefile --without-ncbi-c
 
-FreeBSD64      : plain     : Clang.sh --without-debug --with-mt --with-flat-makefile --with-runpath --without-ncbi-c
+FreeBSD64      : plain     : Clang.sh --without-debug --with-mt --with-flat-makefile --with-runpath --without-ncbi-c --with-gnutls=/usr/local
 
 IntelMAC       : Debug     : GCC.sh      --with-debug    --with-dll --with-mt --with-flat-makefile --without-gcrypt --without-mysql --without-pcre --without-ncbi-c
 IntelMAC       : Release   : GCC.sh      --without-debug --with-dll --with-mt --with-flat-makefile --without-gcrypt --without-mysql --without-pcre --without-ncbi-c
