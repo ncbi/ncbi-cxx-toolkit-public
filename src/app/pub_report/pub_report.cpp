@@ -93,10 +93,7 @@ CNcbiIstream* CPubReportApp::GetInputStream()
 
     const CArgs& args = GetArgs();
     if (args["i"].HasValue()) {
-
-        string input_file = args["i"].AsString();
-        m_in_file.open(input_file);
-        in = &m_in_file;
+        in = &args["i"].AsInputFile();
     }
 
     return in;
@@ -108,10 +105,7 @@ CNcbiOstream* CPubReportApp::GetOutputStream()
 
     const CArgs& args = GetArgs();
     if (args["o"].HasValue()) {
-
-        string output_file = args["o"].AsString();
-        m_out_file.open(output_file);
-        out = &m_out_file;
+        out = &args["o"].AsOutputFile();
     }
 
     return out;
