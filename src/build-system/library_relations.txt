@@ -1395,7 +1395,7 @@ xobjreadex needs $(OBJREAD_LIBS)
 xobjreadex needs xobjutil
 xobjsimple needs $(OBJMGR_LIBS)
 xobjutil needs $(SOBJMGR_LIBS)
-xobjwrite needs $(OBJREAD_LIBS)
+xobjwrite needs $(OBJEDIT_LIBS)
 xobjwrite needs $(XFORMAT_LIBS)
 xobjwrite needs variation_utils
 xobjwrite needs xalnmgr
