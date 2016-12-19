@@ -538,7 +538,7 @@ CConn_HttpStream::CConn_HttpStream(const string&   url,
 
 
 CConn_HttpStream::CConn_HttpStream(const string&   url,
-                                   TReqMethod      method,
+                                   EReqMethod      method,
                                    const string&   user_header,
                                    THTTP_Flags     flags,
                                    const STimeout* timeout,

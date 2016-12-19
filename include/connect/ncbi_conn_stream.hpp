@@ -519,7 +519,7 @@ public:
      const string&       path,
      const string&       args         = kEmptyStr,
      const string&       user_header  = kEmptyStr,
-     unsigned short      port         = 0, ///< 0 means default (80 for HTTP)
+     unsigned short      port         = 0, ///< 0 means default(eg 80 for HTTP)
      THTTP_Flags         flags        = fHTTP_AutoReconnect,
      const STimeout*     timeout      = kDefaultTimeout,
      size_t              buf_size     = kConn_DefaultBufSize
@@ -534,7 +534,7 @@ public:
 
     CConn_HttpStream
     (const string&       url,
-     TReqMethod          method,
+     EReqMethod          method,
      const string&       user_header  = kEmptyStr,
      THTTP_Flags         flags        = fHTTP_AutoReconnect,
      const STimeout*     timeout      = kDefaultTimeout,
