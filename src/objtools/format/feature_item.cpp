@@ -998,7 +998,7 @@ string CFeatureItem::GetKey(void) const
                  subtype == CSeqFeatData::eSubtype_mat_peptide_aa     ||
                 subtype == CSeqFeatData::eSubtype_sig_peptide_aa     ||
                 subtype == CSeqFeatData::eSubtype_transit_peptide_aa     ||
-                subtype == CSeqFeatData::eSubtype_propeptide ) {
+                subtype == CSeqFeatData::eSubtype_propeptide_aa ) {
                 return "Precursor";
             } 
         }
@@ -3247,6 +3247,7 @@ void CFeatureItem::x_AddQualsProt(
     {
         double wt = 0;
         bool has_mat_peptide = false;
+        bool has_propeptide = false;
         bool has_signal_peptide = false;
 
         CConstRef<CSeq_loc> loc(&m_Feat.GetLocation());
@@ -3279,6 +3280,10 @@ void CFeatureItem::x_AddQualsProt(
 
                 case CProt_ref::eProcessed_mature:
                     has_mat_peptide = true;
+                    break;
+
+                case CProt_ref::eProcessed_propeptide:
+                    has_propeptide = true;
                     break;
 
                 default:
@@ -3321,7 +3326,7 @@ void CFeatureItem::x_AddQualsProt(
                     break;
             }
 
-            if ( (!has_mat_peptide  ||  !has_signal_peptide) || (proteinIsAtLeastMature) || (!is_pept_whole_loc) ) { 
+            if ( (!has_mat_peptide  ||  !has_signal_peptide  ||  !has_propeptide) || (proteinIsAtLeastMature) || (!is_pept_whole_loc) ) { 
                 try {
                     const TGetProteinWeight flags = 0;
                     wt = GetProteinWeight(m_Feat.GetOriginalFeature(),

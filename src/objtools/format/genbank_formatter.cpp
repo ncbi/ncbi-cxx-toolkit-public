@@ -1590,8 +1590,8 @@ void CGenbankFormatter::FormatFeature
       if (f.GetContext()->IsProt()) {
       } else if (f.GetContext()->IsRefSeq()) {
       } else if (f.GetContext()->Config().IsModeEntrez() || f.GetContext()->Config().IsModeRelease()) {
-	        fkey = "misc_feature";
-	    }
+	      // fkey = "misc_feature";
+	  }
 	}
 	// write <span...> and <script...> in HTML mode
 	if (bHtml && f.GetContext()->Config().IsModeEntrez() && f.GetContext()->Config().ShowSeqSpans()) {

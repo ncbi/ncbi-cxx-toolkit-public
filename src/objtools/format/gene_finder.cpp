@@ -325,7 +325,7 @@ void CGeneFinder::GetAssociatedGeneInfo(
         case CSeqFeatData::eSubtype_sig_peptide_aa:
         case CSeqFeatData::eSubtype_transit_peptide_aa:
         case CSeqFeatData::eSubtype_preprotein:
-        case CSeqFeatData::eSubtype_propeptide:
+        case CSeqFeatData::eSubtype_propeptide_aa:
             also_look_at_parent_CDS = true;
             break;
         default:
