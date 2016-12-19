@@ -534,7 +534,7 @@ public:
 
     CConn_HttpStream
     (const string&       url,
-     EReqMethod          method,
+     TReqMethod          method,
      const string&       user_header  = kEmptyStr,
      THTTP_Flags         flags        = fHTTP_AutoReconnect,
      const STimeout*     timeout      = kDefaultTimeout,
