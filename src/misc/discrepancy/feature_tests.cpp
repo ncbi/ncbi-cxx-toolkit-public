@@ -254,85 +254,62 @@ const string kExtraGene = "[n] gene feature[s] [is] not associated with a CDS or
 const string kExtraPseudo = "[n] pseudo gene feature[s] [is] not associated with a CDS or RNA feature.";
 const string kExtraGeneNonPseudoNonFrameshift = "[n] non-pseudo gene feature[s] are not associated with a CDS or RNA feature and [does] not have frameshift in the comment.";
 
-//  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(EXTRA_GENES, CSeq_feat_BY_BIOSEQ, eDisc | eSubmitter | eSmart, "Extra Genes")
-//  ----------------------------------------------------------------------------
+
+DISCREPANCY_CASE(EXTRA_GENES, COverlappingFeatures, eDisc | eSubmitter | eSmart, "Extra Genes")
 {
     // TODO: Do not collect if mRNA sequence in Gen-prod set
 
-    // do not collect if pseudo
-    if (!obj.GetData().IsGene()) {
-        return;
-    }
-    bool gene_partial_start = obj.GetLocation().IsPartialStart(eExtreme_Biological);
-    bool gene_partial_stop = obj.GetLocation().IsPartialStop(eExtreme_Biological);
-
-    const string& locus = obj.GetData().GetGene().IsSetLocus() ? obj.GetData().GetGene().GetLocus() : kEmptyStr;
-
-    // Are any "reportable" features under this gene?
-    CFeat_CI fi(context.GetScope(), obj.GetLocation());
-    bool found_reportable = false;
-    while (fi && !found_reportable) {
-        if (fi->GetData().IsCdregion() ||
-            fi->GetData().IsRna()) {
-
-            string ref_gene_locus;
-            const CGene_ref* gene_ref = fi->GetGeneXref();
-            const CSeq_loc& feature_loc = fi->GetLocation();
-
-            if (gene_ref) {
-                ref_gene_locus = gene_ref->IsSetLocus() ? gene_ref->GetLocus() : kEmptyStr;
-            }
-            else {
-                CConstRef<CSeq_feat> gene = sequence::GetBestOverlappingFeat(feature_loc, CSeqFeatData::e_Gene, sequence::eOverlap_Contained, context.GetScope());
-                if (gene.NotEmpty()) {
-                    ref_gene_locus = (gene->GetData().GetGene().CanGetLocus()) ? gene->GetData().GetGene().GetLocus() : kEmptyStr;
-                }
-            }
-
-            if (ref_gene_locus.empty() || ref_gene_locus == locus) {
-
-                bool exclude_for_partials = false;
-                sequence::ECompare cmp_res = context.Compare(obj.GetLocation(), feature_loc);
-                bool location_appropriate = cmp_res == sequence::eSame || cmp_res == sequence::eContains;
-
-                if (cmp_res == sequence::eSame) {
-                    // check partials
-                    if (!gene_partial_start && feature_loc.IsPartialStart(eExtreme_Biological)) {
-                        exclude_for_partials = true;
+    const vector<CConstRef<CSeq_feat> >& genes = context.FeatGenes();
+    const vector<CConstRef<CSeq_feat> >& all = context.FeatAll();
+    ITERATE(vector<CConstRef<CSeq_feat>>, gene, genes) {
+        if (((*gene)->IsSetComment() && !(*gene)->GetComment().empty()) || ((*gene)->GetData().GetGene().IsSetDesc() && !(*gene)->GetData().GetGene().GetDesc().empty())) {
+            continue;
+        }
+        bool gene_partial_start = (*gene)->GetLocation().IsPartialStart(eExtreme_Biological);
+        bool gene_partial_stop = (*gene)->GetLocation().IsPartialStop(eExtreme_Biological);
+        const string& locus = (*gene)->GetData().GetGene().IsSetLocus() ? (*gene)->GetData().GetGene().GetLocus() : kEmptyStr;
+        const CSeq_loc& loc = (*gene)->GetLocation();
+        bool found = false;
+        ITERATE(vector<CConstRef<CSeq_feat>>, feat, all) {
+            if ((*feat)->GetData().IsCdregion() || (*feat)->GetData().IsRna()) {
+                string ref_gene_locus;
+                const CGene_ref* gene_ref = (*feat)->GetGeneXref();
+                const CSeq_loc& loc_f = (*feat)->GetLocation();
+                sequence::ECompare cmp = context.Compare(loc, loc_f);
+                if (cmp == sequence::eSame || cmp == sequence::eContains) {
+                    if (gene_ref) {
+                        ref_gene_locus = gene_ref->IsSetLocus() ? gene_ref->GetLocus() : kEmptyStr;
                     }
-                    else if (!gene_partial_stop && feature_loc.IsPartialStop(eExtreme_Biological)) {
-                        exclude_for_partials = true;
+                    else {
+                        CConstRef<CSeq_feat> gene = sequence::GetBestOverlappingFeat(loc_f, CSeqFeatData::e_Gene, sequence::eOverlap_Contained, context.GetScope());
+                        if (gene.NotEmpty()) {
+                            ref_gene_locus = (gene->GetData().GetGene().CanGetLocus()) ? gene->GetData().GetGene().GetLocus() : kEmptyStr;
+                        }
                     }
-                }
-
-                if (location_appropriate && !exclude_for_partials) {
-                    found_reportable = true;
+                    if (ref_gene_locus.empty() || ref_gene_locus == locus) {
+                        bool exclude_for_partials = false;
+                        //bool location_appropriate = cmp == sequence::eSame || cmp == sequence::eContains;
+                        if (cmp == sequence::eSame) {
+                            // check partials
+                            if (!gene_partial_start && loc_f.IsPartialStart(eExtreme_Biological)) {
+                                exclude_for_partials = true;
+                            }
+                            else if (!gene_partial_stop && loc_f.IsPartialStop(eExtreme_Biological)) {
+                                exclude_for_partials = true;
+                            }
+                        }
+                        if (!exclude_for_partials) {
+                            found = true;
+                            break;
+                        }
+                    }
                 }
             }
         }
-        ++fi;
-    }
-
-    if (found_reportable) {
-        return;
-    }
-    
-    if (context.IsPseudo(obj)) {
-        m_Objs[kExtraGene][kExtraPseudo].Ext().Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
-    } else {
-        // do not report if note or description
-        if (obj.IsSetComment() && !NStr::IsBlank(obj.GetComment())) {
-            // ignore genes with notes
-        }
-        else if (obj.GetData().GetGene().IsSetDesc() && !NStr::IsBlank(obj.GetData().GetGene().GetDesc())) {
-            // ignore genes with descriptions
-        }
-        else {
-            m_Objs[kExtraGene][kExtraGeneNonPseudoNonFrameshift].Ext().Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)));
+        if (!found) {
+            m_Objs[kExtraGene][context.IsPseudo(**gene) ? kExtraPseudo : kExtraGeneNonPseudoNonFrameshift].Ext().Add(*context.NewDiscObj(*gene));
         }
     }
-
 }
 
 
