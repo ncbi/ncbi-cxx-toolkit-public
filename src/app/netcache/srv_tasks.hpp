@@ -219,6 +219,8 @@ public:
     /// context pointers with deepest context (the one assigned to task first)
     /// in the element 0, context set later in the element 1 etc.
     CRequestContext** m_DiagChain;
+//#if __NC_MEMMAN_USE_STD_MALLOC
+    size_t m_DiagChainSize;
     /// Timer ticket assigned to this task when it calls RunAfter().
     STimerTicket* m_Timer;
     /// Object that will delete this task after call to Terminate().

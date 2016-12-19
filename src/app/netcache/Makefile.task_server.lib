@@ -11,7 +11,7 @@ SRC = server_core srv_sync time_man rcu sockets_man scheduler \
 REQUIRES = MT Boost.Test.Included Linux GCC
 
 
-CPPFLAGS = $(BOOST_INCLUDE) $(ORIG_CPPFLAGS)
+CPPFLAGS = $(NETCACHE_MEMORY_MAN_MODEL) $(BOOST_INCLUDE) $(ORIG_CPPFLAGS)
 
 
 WATCHERS = gouriano

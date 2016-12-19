@@ -117,7 +117,6 @@ static bool s_DiskSpaceAlert = false;
 static CFutex s_CntHaltedThreads;
 static CFutex s_Halt;
 
-
 extern string s_AppBaseName;
 extern SSrvThread** s_Threads;
 
@@ -1161,13 +1160,22 @@ CSrvTask::SetDiagCtx(CRequestContext* ctx)
     }
     if (!m_DiagChain) {
         m_DiagChain = (CRequestContext**)malloc(sizeof(m_DiagCtx) * 2);
+#if __NC_MEMMAN_USE_STD_MALLOC
+        m_DiagChainSize = sizeof(m_DiagCtx) * 2;
+        memset(m_DiagChain, 0, m_DiagChainSize);
+#else
         memset(m_DiagChain, 0, GetMemSize(m_DiagChain));
+#endif
         m_DiagChain[0] = m_DiagCtx;
         m_DiagChain[1] = m_DiagCtx = ctx;
         return;
     }
 
+#if __NC_MEMMAN_USE_STD_MALLOC
+    Uint4 mem_cap = Uint4(m_DiagChainSize / sizeof(m_DiagCtx));
+#else
     Uint4 mem_cap = Uint4(GetMemSize(m_DiagChain) / sizeof(m_DiagCtx));
+#endif
     Uint4 cnt_in_chain = mem_cap;
     while (!m_DiagChain[cnt_in_chain - 1]) {
         if (--cnt_in_chain == 0) {
@@ -1177,8 +1185,14 @@ CSrvTask::SetDiagCtx(CRequestContext* ctx)
     if (cnt_in_chain == mem_cap) {
         m_DiagChain = (CRequestContext**)
                       realloc(m_DiagChain, mem_cap * 2 * sizeof(m_DiagCtx));
+#if __NC_MEMMAN_USE_STD_MALLOC
+        m_DiagChainSize = mem_cap * 2 * sizeof(m_DiagCtx);
+        memset(&m_DiagChain[mem_cap], 0,
+               m_DiagChainSize - mem_cap * sizeof(m_DiagCtx));
+#else
         memset(&m_DiagChain[mem_cap], 0,
                GetMemSize(m_DiagChain) - mem_cap * sizeof(m_DiagCtx));
+#endif
     }
     m_DiagChain[cnt_in_chain] = m_DiagCtx = ctx;
 }
@@ -1200,7 +1214,11 @@ CSrvTask::ReleaseDiagCtx(void)
     if (!m_DiagChain)
         return;
 
+#if __NC_MEMMAN_USE_STD_MALLOC
+    Uint4 mem_cap = Uint4(m_DiagChainSize / sizeof(m_DiagCtx));
+#else
     Uint4 mem_cap = Uint4(GetMemSize(m_DiagChain) / sizeof(m_DiagCtx));
+#endif
     Uint4 cnt_in_chain = mem_cap;
     while (!m_DiagChain[cnt_in_chain - 1]) {
         if (--cnt_in_chain == 0) {

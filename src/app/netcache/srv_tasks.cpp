@@ -64,6 +64,7 @@ CSrvTask::CSrvTask(void)
       m_Priority(1),
       m_DiagCtx(NULL),
       m_DiagChain(NULL),
+      m_DiagChainSize(0),
       m_Timer(NULL)
 {
 #if __NC_TASKS_MONITOR
@@ -83,6 +84,7 @@ CSrvTask::~CSrvTask(void)
     _ASSERT(!(m_TaskFlags & fTaskOnTimer)  &&  !m_Timer);
     _ASSERT(!m_DiagCtx);
     free(m_DiagChain);
+    m_DiagChainSize = 0;
 #if __NC_TASKS_MONITOR
     s_all_tasks_lock.Lock();
 #if __NC_TASKS_INTR_SET

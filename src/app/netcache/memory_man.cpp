@@ -118,6 +118,7 @@ struct SMMFreePageGrades
 };
 
 
+#if !__NC_MEMMAN_USE_STD_MALLOC
 class CMMFlusher : public CSrvTask
 {
 public:
@@ -127,6 +128,7 @@ public:
 private:
     virtual void ExecuteSlice(TSrvThreadNum thr_num);
 };
+#endif
 
 
 struct SMMMemPoolsSet
@@ -142,7 +144,9 @@ static bool s_HadMemMgrInit = false;
 static SMMMemPoolsSet s_GlobalPoolsSet;
 static SMMFreePageGrades s_FreePages[kMMCntBlockSizes];
 static SMMMemPoolsSet s_MainPoolsSet;
+#if !__NC_MEMMAN_USE_STD_MALLOC
 static CMMFlusher* s_Flusher;
+#endif
 static Uint8 s_TotalSysMem = 0;
 static Int8 s_TotalPageCount = 0;
 static SMMStateStat s_StartState;
@@ -294,6 +298,19 @@ s_LowLevelInit(void)
     
     s_HadLowLevelInit = true;
 }
+
+#if __NC_MEMMAN_USE_STD_MALLOC
+void InitMemoryMan(void)
+{
+    if (!s_HadLowLevelInit)
+        s_LowLevelInit();
+    s_HadMemMgrInit = true;
+}
+void FinalizeMemoryMan(void)
+{
+}
+
+#else //__NC_MEMMAN_USE_STD_MALLOC
 
 static inline void*
 s_DoMmap(size_t size)
@@ -1057,10 +1074,15 @@ void FinalizeMemoryMan(void)
     s_HadLowLevelInit = false;
 #endif
 }
+#endif //__NC_MEMMAN_USE_STD_MALLOC
 
 void
 AssignThreadMemMgr(SSrvThread* thr)
 {
+#if __NC_MEMMAN_USE_STD_MALLOC
+    if (!s_HadLowLevelInit)
+        s_LowLevelInit();
+#endif
     if (thr->thread_num == 0) {
         thr->mm_pool = &s_MainPoolsSet;
     }
@@ -1083,9 +1105,12 @@ AssignThreadMemMgr(SSrvThread* thr)
 void
 ReleaseThreadMemMgr(SSrvThread* thr)
 {
+#if !__NC_MEMMAN_USE_STD_MALLOC
     s_FlushPoolSet(thr->mm_pool);
+#endif
 }
 
+#if !__NC_MEMMAN_USE_STD_MALLOC
 
 CMMFlusher::CMMFlusher(void)
 {
@@ -1130,7 +1155,7 @@ CMMFlusher::ExecuteSlice(TSrvThreadNum /* thr_num */)
 // once a minute
     RunAfter(kMMFlushPeriod);
 }
-
+#endif
 
 void
 SMMStat::InitStartState(void)
@@ -1419,6 +1444,7 @@ SMMStat::x_PrintUnstructured(CSrvPrintProxy& proxy)
 void
 SMMStat::PrintToSocket(CSrvPrintProxy& proxy)
 {
+#if !__NC_MEMMAN_USE_STD_MALLOC
     proxy << endl
           << "Data memory state - "
                     << g_ToSizeStr(m_StartState.m_TotalData) << " to "
@@ -1433,11 +1459,25 @@ SMMStat::PrintToSocket(CSrvPrintProxy& proxy)
     proxy << endl;
 
     x_PrintUnstructured(proxy);
+#endif //!__NC_MEMMAN_USE_STD_MALLOC
 }
 
 void SMMStat::PrintState(CSrvSocketTask& task)
 {
     string is("\": "), iss("\": \""), eol(",\n\""), qt("\"");
+    task.WriteText(eol).WriteText("memory_man").WriteText(iss);
+#if __NC_MEMMAN_USE_STD_MALLOC
+#if defined(NETCACHE_MEMORY_MAN_TCM)
+    task.WriteText("TCM");
+#else
+    task.WriteText("STD");
+#endif
+#else
+    task.WriteText("NC");
+#endif
+    task.WriteText(qt);
+#if __NC_MEMMAN_USE_STD_MALLOC
+#else
     task.WriteText(eol).WriteText("total_sys_memory").WriteText(iss)
                                      .WriteText( NStr::UInt8ToString_DataSize( m_EndState.m_TotalSys)).WriteText(qt);
     task.WriteText(eol).WriteText("total_data_memory").WriteText(iss)
@@ -1446,6 +1486,7 @@ void SMMStat::PrintState(CSrvSocketTask& task)
     task.WriteText(eol).WriteText("big_blocks_size" ).WriteText(iss)
                                      .WriteText( NStr::UInt8ToString_DataSize( m_EndState.m_BigBlocksSize)).WriteText(qt);
     task.WriteText(eol).WriteText("mmap_page_cnt").WriteText(is).WriteNumber(s_TotalPageCount);
+#endif
 #if __NC_MEMMAN_ALLPTR_COUNT
     task.WriteText(eol).WriteText("AllPtrCount").WriteText(is);
     task.WriteText("[");
@@ -1470,6 +1511,7 @@ void SMMStat::PrintState(CSrvSocketTask& task)
 
 END_NCBI_SCOPE;
 
+#if !__NC_MEMMAN_USE_STD_MALLOC
 
 void*
 operator new (size_t size)
@@ -1538,7 +1580,7 @@ s_InitMallocHook(void)
 
 void (*__MALLOC_HOOK_VOLATILE __malloc_initialize_hook) (void) = &s_InitMallocHook;
 
-#else
+#else  //__NC_MEMMAN_USE_MALLOC_HOOK
 
 extern "C" {
 
@@ -1558,6 +1600,8 @@ void free(void* mem_ptr)
 }
 }
 
-#endif
+#endif //__NC_MEMMAN_USE_MALLOC_HOOK
 
-#endif
+#endif //__GLIBC__
+
+#endif //__NC_MEMMAN_USE_STD_MALLOC

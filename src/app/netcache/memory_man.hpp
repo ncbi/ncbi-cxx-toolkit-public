@@ -33,6 +33,13 @@
 
 #include "srv_stat.hpp"
 
+//try to use standard memory manager
+#if defined(NETCACHE_MEMORY_MAN_STD) || defined(NETCACHE_MEMORY_MAN_TCM)
+#define __NC_MEMMAN_USE_STD_MALLOC 1
+#else
+#define __NC_MEMMAN_USE_STD_MALLOC 0
+#endif
+
 /*
     there were occasional crashes in s_DoUnmap (munmap fails)
     this new approach seems to fix the problem
