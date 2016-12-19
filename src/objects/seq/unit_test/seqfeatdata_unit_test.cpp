@@ -1547,3 +1547,25 @@ BOOST_AUTO_TEST_CASE(Test_OrgMod_IsDiscouraged)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_GetBioProjectTypeAndLocation)
+{
+    CRef<CBioSource> src(new CBioSource());
+    
+    BOOST_CHECK_EQUAL(src->GetBioprojectType(), "eChromosome");
+    BOOST_CHECK_EQUAL(src->GetBioprojectLocation(), "eOther");
+    src->SetOrg().SetOrgname().SetLineage("viruses");
+    BOOST_CHECK_EQUAL(src->GetBioprojectType(), "eSegment");
+    BOOST_CHECK_EQUAL(src->GetBioprojectLocation(), "eVirionPhage");
+    src->SetOrg().SetOrgname().SetLineage("viroids");
+    BOOST_CHECK_EQUAL(src->GetBioprojectType(), "eSegment");
+    BOOST_CHECK_EQUAL(src->GetBioprojectLocation(), "eViroid");
+
+    src->SetGenome(CBioSource::eGenome_apicoplast);
+    src->ResetOrg();
+    BOOST_CHECK_EQUAL(src->GetBioprojectType(), "eChromosome");
+    BOOST_CHECK_EQUAL(src->GetBioprojectLocation(), "eApicoplast");
+
+    
+
+
+}

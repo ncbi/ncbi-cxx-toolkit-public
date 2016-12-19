@@ -505,6 +505,13 @@ string CBioSource::GetBioprojectType (void) const
         }
     }
 
+    if (IsSetOrg() && GetOrg().IsSetLineage()) {
+        const string& lineage = GetOrg().GetLineage();
+        if (NStr::FindNoCase(lineage, "viruses") != string::npos ||
+            NStr::FindNoCase(lineage, "viroids") != string::npos) {
+            return "eSegment";
+        }
+    }
     return "eChromosome";
 }
 
@@ -513,6 +520,18 @@ string CBioSource::GetBioprojectLocation(void) const
 {
     if (IsSetGenome() && GetGenome() == CBioSource::eGenome_chromosome) {
         return "eNuclearProkaryote";
+    }
+
+    const string& bioprojecttype = GetBioprojectType();
+    if (NStr::Equal(bioprojecttype, "eSegment")) {
+        if (IsSetOrg() && GetOrg().IsSetLineage()) {
+            const string& lineage = GetOrg().GetLineage();
+            if (NStr::FindNoCase(lineage, "viruses") != string::npos) {
+                return "eVirionPhage";
+            } else if (NStr::FindNoCase(lineage, "viroids") != string::npos) {
+                return "eViroid";
+            }
+        }
     }
 
     if (IsSetGenome()) {
@@ -552,7 +571,15 @@ string CBioSource::GetBioprojectLocation(void) const
                 return "eProviralProphage";
                 break;
             case CBioSource::eGenome_virion:
-                return "eVirionPhage";
+                if (IsSetOrg() && GetOrg().IsSetLineage()) {
+                    const string& lineage = GetOrg().GetLineage();
+                    if (NStr::FindNoCase(lineage, "viruses") != string::npos) {
+                        return "eVirionPhage";
+                    } else if (NStr::FindNoCase(lineage, "viroids") != string::npos) {
+                        return "eViroid";
+                    }
+                }
+                return "eOther";
                 break;
             case CBioSource::eGenome_nucleomorph:
                 return "eNucleomorph";
@@ -575,13 +602,27 @@ string CBioSource::GetBioprojectLocation(void) const
             case CBioSource::eGenome_chromatophore:
                 return "eChromatophore";
                 break;
+            case CBioSource::eGenome_transposon:
+                if (NStr::Equal(bioprojecttype, "ePlasmid")) {
+                    return "ePlasmid";
+                } else {
+                    return "eOther";
+                }
+                break;
+            case CBioSource::eGenome_insertion_seq:
+                if (NStr::Equal(bioprojecttype, "ePlasmid")) {
+                    return "ePlasmid";
+                } else {
+                    return "eOther";
+                }
+                break;
         }
     }
-    if (NStr::Equal(GetBioprojectType(), "ePlasmid")) {
+    if (NStr::Equal(bioprojecttype, "ePlasmid")) {
         return "eNuclearProkaryote";
-    }
+    } 
 
-    return kEmptyStr;
+    return "eOther";
 }
 
 static const char* kDisableStrainForwardAttrib = "nomodforward";
