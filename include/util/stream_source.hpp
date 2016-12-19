@@ -124,6 +124,8 @@ public:
     ///
     CInputStreamSource(const CArgs& args, const string& prefix = "input");
 
+    virtual ~CInputStreamSource();
+
     /// Initialize from a stream
     /// No ownership is claimed by this class - lifetime management of the
     /// stream is the responsibility of the caller.
@@ -152,7 +154,7 @@ public:
 
     /// Initialize from a set of arguments
     ///
-    void InitArgs(const CArgs& args, const string &prefix = "input");
+    virtual void InitArgs(const CArgs& args, const string &prefix = "input");
 
     /// Access the current stream
     ///
@@ -187,7 +189,7 @@ public:
     ///
     ///       If these conditions aren't met, throws an exception.
     ///
-    CInputStreamSource& operator++();
+    virtual CInputStreamSource& operator++();
 
     /// Determine if there are any more streams to be processed
     ///
@@ -211,16 +213,18 @@ public:
     ///   the current file index
     size_t GetCurrentStreamIndex(size_t* count = nullptr) const;
 
-private:
+protected:
     CArgs m_Args;
     string m_Prefix;
 
     CNcbiIstream* m_Istr;
-    auto_ptr<CNcbiIfstream> m_IstrOwned;
+    auto_ptr<CNcbiIstream> m_IstrOwned;
+
     vector<string> m_Files;
     size_t m_CurrIndex;
     string m_CurrFile;
 
+private:
     /// forbidden
     CInputStreamSource(const CInputStreamSource&);
     CInputStreamSource& operator=(const CInputStreamSource&);

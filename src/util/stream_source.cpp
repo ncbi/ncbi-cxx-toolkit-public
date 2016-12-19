@@ -135,6 +135,11 @@ CInputStreamSource::CInputStreamSource(const CArgs& args, const string& prefix)
     InitArgs(args, prefix);
 }
 
+
+CInputStreamSource::~CInputStreamSource()
+{
+}
+
 void CInputStreamSource::InitArgs(const CArgs& args, const string &prefix)
 {
     m_Args.Assign(args);
