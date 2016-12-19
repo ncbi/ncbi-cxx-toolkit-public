@@ -4649,22 +4649,6 @@ void CValidError_feat::ValidateCompareVal (const string& val, const CSeq_feat& f
 }
 
 
-TGi CValidError_feat::x_SeqIdToGiNumber(
-    const string& seq_id,
-    const string& database_name )
-{
-    TGi gi = ZERO_GI;
-    try {
-        CRef<CSeq_id> id(new CSeq_id(seq_id));
-        CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*id);
-        gi = m_Scope->GetGi (idh);
-    } catch (CException ) {
-    } catch (std::exception ) {
-    }
-    return gi;
-};
-
-
 /*
 Return values are:
  0: no problem - Accession is in proper format
@@ -4881,13 +4865,7 @@ CValidError_feat::EInferenceValidCode CValidError_feat::ValidateInferenceAccessi
                     rsult = eInferenceValidCode_bad_accession;
                 } else if (fetch_accession) {
                     // Test to see if accession is public
-                    const char* database_names[] = { "Nucleotide", "Protein" };
-                    const int num_databases = sizeof( database_names ) / sizeof( const char* );
-                    TGi gi_number = ZERO_GI;
-                    for ( int i=0; (gi_number == ZERO_GI) && (i < num_databases); ++ i ) {
-                        gi_number = x_SeqIdToGiNumber( remainder, database_names[ i ] );
-                    }
-                    if (gi_number == ZERO_GI) {
+                    if (!IsSequenceFetchable(remainder)) {
                         rsult = eInferenceValidCode_accession_version_not_public;
                     }
                 }

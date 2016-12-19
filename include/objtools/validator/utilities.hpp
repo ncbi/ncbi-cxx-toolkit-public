@@ -220,6 +220,9 @@ bool NCBI_VALIDATOR_EXPORT HasBadStartCodon(const CSeq_feat& feat, CScope &scope
 // note that this might not be reported if the feature is pseudo, or has an appropriate exception
 bool NCBI_VALIDATOR_EXPORT HasBadStartCodon(const CSeq_loc& loc, const string& transl_prot);
 
+bool NCBI_VALIDATOR_EXPORT IsSequenceFetchable(const CSeq_id& id);
+bool NCBI_VALIDATOR_EXPORT IsSequenceFetchable(const string& seq_id);
+
 END_SCOPE(validator)
 END_SCOPE(objects)
 END_NCBI_SCOPE

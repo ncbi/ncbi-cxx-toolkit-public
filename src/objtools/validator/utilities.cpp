@@ -2234,6 +2234,38 @@ bool HasBadStartCodon(const CSeq_feat& feat, CScope& scope, bool ignore_exceptio
 }
 
 
+bool IsSequenceFetchable(const CSeq_id& id)
+{
+    bool fetchable = false;
+    try {
+        CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(id);
+        CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
+        scope->AddDefaults();
+        CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
+        if (bsh) {
+            fetchable = true;
+        }
+    } catch (CException& ex) {
+    } catch (std::exception &) {
+    }
+    return fetchable;
+}
+
+
+bool IsSequenceFetchable(const string& seq_id)
+{
+    bool fetchable = false;
+    try {
+        CRef<CSeq_id> id(new CSeq_id(seq_id));
+        if (id) {
+            fetchable = IsSequenceFetchable(*id);
+        }
+    } catch (CException& ex) {
+    } catch (std::exception &) {
+    }
+    return fetchable;
+}
+
 END_SCOPE(validator)
 END_SCOPE(objects)
 END_NCBI_SCOPE

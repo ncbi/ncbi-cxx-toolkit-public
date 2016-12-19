@@ -1084,8 +1084,8 @@ public:
 
     static vector<string> GetAccessionsFromInferenceString (string inference, string &prefix, string &remainder, bool &same_species);
     static bool GetPrefixAndAccessionFromInferenceAccession (string inf_accession, string &prefix, string &accession);
-    EInferenceValidCode ValidateInferenceAccession (string accession, bool fetch_accession, bool is_similar_to);
-    EInferenceValidCode ValidateInference(string inference, bool fetch_accession);
+    static EInferenceValidCode ValidateInferenceAccession (string accession, bool fetch_accession, bool is_similar_to);
+    static EInferenceValidCode ValidateInference(string inference, bool fetch_accession);
 
     // functions expected to be used in Discrepancy Report
     bool DoesCDSHaveShortIntrons(const CSeq_feat& feat);
@@ -1240,8 +1240,6 @@ private:
         TSeqPos pos);
 
     bool Is5AtEndSpliceSiteOrGap(const CSeq_loc& loc);
-
-    TGi x_SeqIdToGiNumber(const string& seq_id, const string& database_name );
 
     void ValidateCharactersInField (string value, string field_name, const CSeq_feat& feat);
     void x_ReportECNumFileStatus(const CSeq_feat& feat);
