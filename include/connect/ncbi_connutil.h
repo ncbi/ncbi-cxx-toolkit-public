@@ -110,6 +110,11 @@ typedef enum {
     eReqMethod_Connect,      /*  4 */
     /* HTTP/1.1 */
     eReqMethod_v1  = 8,
+    eReqMethod_Any11             = eReqMethod_v1 | eReqMethod_Any,
+    eReqMethod_Get11             = eReqMethod_v1 | eReqMethod_Get,
+    eReqMethod_Post11            = eReqMethod_v1 | eReqMethod_Post,
+    eReqMethod_Head11            = eReqMethod_v1 | eReqMethod_Head,
+    eReqMethod_Connect11         = eReqMethod_v1 | eReqMethod_Connect,
     eReqMethod_Put = 16,     /* 16 */
     eReqMethod_Patch,        /* 17 */
     eReqMethod_Trace,        /* 18 */
