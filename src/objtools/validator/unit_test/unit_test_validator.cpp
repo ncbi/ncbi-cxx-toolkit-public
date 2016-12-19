@@ -11414,7 +11414,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_CdTransFail)
     SetDiagFilter(eDiagFilter_All, "");
 }
 
-/*
+
 BOOST_AUTO_TEST_CASE(Test_FEAT_StartCodon)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
@@ -11422,19 +11422,48 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_StartCodon)
     cds->SetLocation().SetInt().SetFrom(1);
     cds->SetLocation().SetInt().SetTo(27);
 
+    CRef<CSeq_entry> nuc(new CSeq_entry());
+    nuc->Assign(*unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(entry));
+    CRef<CSeq_feat> nuc_only_cds(new CSeq_feat());
+    nuc_only_cds->Assign(*cds);
+    unit_test_util::AddFeat(nuc_only_cds, nuc);
+
     STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "StartCodon",
                               "Illegal start codon (and 1 internal stops). Probably wrong genetic code [0]"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "InternalStop",
                               "1 internal stops (and illegal start codon). Genetic code [0]"));
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "TransLen",
-                                                 "Given protein length [8] does not match translation length [9]"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "NoStop",
                                                  "Missing stop codon"));
+    CExpectedError* protlen = new CExpectedError("lcl|nuc", eDiag_Error, "TransLen",
+                                                 "Given protein length [8] does not match translation length [9]");
+    expected_errors.push_back(protlen);
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    seh = scope.AddTopLevelSeqEntry(*nuc);
+    eval = validator.Validate(seh, options);
+    CExpectedError* no_protein = new CExpectedError("lcl|nuc", eDiag_Error, "NoProtein", "No protein Bioseq given");
+    CExpectedError* no_pub = new CExpectedError("lcl|nuc", eDiag_Error, "NoPubFound", "No publications anywhere on this entire record.");
+    CExpectedError* no_sub = new CExpectedError("lcl|nuc", eDiag_Error, "MissingPubInfo", "No submission citation anywhere on this entire record.");
+    CExpectedError* no_org = new CExpectedError("lcl|nuc", eDiag_Error, "NoOrgFound", "No organism name anywhere on this entire record.");
+    expected_errors.pop_back();
+    expected_errors.push_back(no_protein);
+    expected_errors.push_back(no_pub);
+    expected_errors.push_back(no_sub);
+    expected_errors.push_back(no_org);
+    CheckErrors(*eval, expected_errors);
+    expected_errors.pop_back();
+    expected_errors.pop_back();
+    expected_errors.pop_back();
+    expected_errors.pop_back();
+    expected_errors.push_back(protlen);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    seh = scope.AddTopLevelSeqEntry(*entry);
 
     // don't report start codon if unclassified exception
     cds->SetExcept(true);
@@ -11448,6 +11477,18 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_StartCodon)
     expected_errors.pop_back();
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    nuc_only_cds->Assign(*cds);
+    seh = scope.AddTopLevelSeqEntry(*nuc);
+    eval = validator.Validate(seh, options);
+    expected_errors.push_back(no_pub);
+    expected_errors.push_back(no_sub);
+    expected_errors.push_back(no_org);
+    CheckErrors(*eval, expected_errors);
+    expected_errors.pop_back();
+    expected_errors.pop_back();
+    expected_errors.pop_back();
 
     scope.RemoveTopLevelSeqEntry(seh);
     entry = unit_test_util::BuildGoodNucProtSet();
@@ -11477,8 +11518,13 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_StartCodon)
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
+
+    delete no_protein;
+    delete no_pub;
+    delete no_sub;
+    delete no_org;
 }
-*/
+
 
 BOOST_AUTO_TEST_CASE(Test_FEAT_InternalStop)
 {

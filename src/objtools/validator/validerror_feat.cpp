@@ -6565,21 +6565,6 @@ void CValidError_feat::ReportCdTransErrors
 }
 
 
-static const char* const sc_BypassCdsTransCheckText[] = {
-  "RNA editing",
-  "adjusted for low-quality genome",
-  "annotated by transcript or proteomic data",
-  "artificial frameshift",
-  "mismatches in translation",
-  "rearrangement required for product",
-  "reasons given in citation",
-  "translated product replaced",
-  "unclassified translation discrepancy"
-};
-typedef CStaticArraySet<const char*, PCase_CStr> TBypassCdsTransCheckSet;
-DEFINE_STATIC_ARRAY_MAP(TBypassCdsTransCheckSet, sc_BypassCdsTransCheck, sc_BypassCdsTransCheckText);
-
-
 static void s_LocIdType(const CSeq_loc& loc, CScope& scope, const CSeq_entry& tse,
                         bool& is_nt, bool& is_ng, bool& is_nw, bool& is_nc)
 {
@@ -6647,17 +6632,14 @@ void CValidError_feat::CheckForThreeBaseNonsense (
         tmp_cds->SetData().SetCdregion().SetCode().Assign(cdr.GetCode());
     }
 
-    string transl_prot;   // translated protein
-    bool got_stop = false;
     bool alt_start = false;
-    bool show_stop = false;
-    bool unable_to_translate = true;
+    try {
+        string transl_prot = TranslateCodingRegionForValidation(*tmp_cds, *scope, alt_start);
 
-    CBioseq_Handle bsh;
-    x_FindTranslationStops(*tmp_cds, got_stop, show_stop, unable_to_translate, alt_start, transl_prot, bsh, scope);
-
-    if (NStr::Equal (transl_prot, "*")) {
-        nonsense_intron = true;
+        if (NStr::Equal(transl_prot, "*")) {
+            nonsense_intron = true;
+        }
+    } catch (CException& ex) {
     }
 }
 
@@ -6740,6 +6722,83 @@ int GetGcodeForInternalStopErrors(const CCdregion& cdr)
 }
 
 
+// refactoring functions start
+size_t CountInternalStopCodons(const string& transl_prot)
+{
+    if (NStr::IsBlank(transl_prot)) {
+        return 0;
+    }
+    // count internal stops and Xs
+    size_t internal_stop_count = 0;
+
+    ITERATE(string, it, transl_prot) {
+        if (*it == '*') {
+            ++internal_stop_count;
+        }
+    }
+    // if stop at end, reduce count by one (since one of the stops counted isn't internal)
+    if (transl_prot[transl_prot.length() - 1] == '*') {
+        --internal_stop_count;
+    }
+    return internal_stop_count;
+}
+
+
+// validator should not call if unclassified except
+
+string GetStartCodonErrorMessage(const CSeq_feat& feat, const char first_char, size_t internal_stop_count)
+{
+    bool got_dash = first_char == '-';
+    string codon_desc = got_dash ? "Illegal" : "Ambiguous";
+    string p_word = got_dash ? "Probably" : "Possibly";
+
+    int gc = GetGcodeForInternalStopErrors(feat.GetData().GetCdregion());
+    string gccode = NStr::IntToString(gc);
+
+    string error_message;
+
+    if (internal_stop_count > 0) {
+        error_message = codon_desc + " start codon (and " +
+            NStr::SizetToString(internal_stop_count) +
+            " internal stops). " + p_word + " wrong genetic code [" +
+            gccode + "]";
+    } else {
+        error_message = codon_desc + " start codon used. Wrong genetic code [" +
+            gccode + "] or protein should be partial";
+    }
+    return error_message;
+}
+
+
+string GetStartCodonErrorMessage(const CSeq_feat& feat, const string& transl_prot)
+{
+    size_t internal_stop_count = CountInternalStopCodons(transl_prot);
+
+    return GetStartCodonErrorMessage(feat, transl_prot[0], internal_stop_count);
+}
+
+
+string GetInternalStopErrorMessage(const CSeq_feat& feat, const string& transl_prot)
+{
+    size_t internal_stop_count = CountInternalStopCodons(transl_prot);
+
+    int gc = GetGcodeForInternalStopErrors(feat.GetData().GetCdregion());
+    string gccode = NStr::IntToString(gc);
+
+    string error_message;
+    if (HasBadStartCodon(feat.GetLocation(), transl_prot)) {
+        bool got_dash = transl_prot[0] == '-';
+        string codon_desc = got_dash ? "illegal" : "ambiguous";
+        error_message = NStr::SizetToString(internal_stop_count) +
+            " internal stops (and " + codon_desc + " start codon). Genetic code [" + gccode + "]";
+    } else {
+        error_message = NStr::SizetToString(internal_stop_count) +
+            " internal stops. Genetic code [" + gccode + "]";
+    }
+    return error_message;
+}
+
+
 bool CValidError_feat::ValidateCdRegionTranslation 
 (const CSeq_feat& feat,
  const string& transl_prot,
@@ -6770,7 +6829,7 @@ bool CValidError_feat::ValidateCdRegionTranslation
             PostErr (sev, eErr_SEQ_FEAT_NonsenseIntron, "Triplet intron encodes stop codon", feat);
         }
     }
-
+    
     int gc = GetGcodeForInternalStopErrors(feat.GetData().GetCdregion());
 
     string gccode = NStr::IntToString(gc);
@@ -6802,58 +6861,55 @@ bool CValidError_feat::ValidateCdRegionTranslation
     if (num_x > num_nonx) {
         PostErr (eDiag_Warning, eErr_SEQ_FEAT_CDShasTooManyXs, "CDS translation consists of more than 50% X residues", feat);
     }
-
+    
     if (internal_stop_count > 0) {
         has_errors = true;
         other_than_mismatch = true;
-        if (got_dash || got_x) {
-            string codon_desc = got_dash ? "Illegal" : "Ambiguous";
-            string p_word = got_dash ? "Probably" : "Possibly";
-            if (report_errors  ||  unclassified_except) {
+        if (HasBadStartCodon(feat.GetLocation(), transl_prot)) {
+            if (report_errors || unclassified_except) {
                 EDiagSev sev = eDiag_Error;
                 if (unclassified_except) {
                     sev = eDiag_Warning;
-                } else {                
-                    PostErr(sev, eErr_SEQ_FEAT_StartCodon,
-                        codon_desc + " start codon (and " + 
-                        NStr::SizetToString(internal_stop_count) +
-                        " internal stops). " + p_word + " wrong genetic code [" +
-                        gccode + "]", feat);
+                } else {
+#if 0
+                    string start_err_msg = GetStartCodonErrorMessage(feat, transl_prot);
+                    PostErr(eDiag_Error, eErr_SEQ_FEAT_StartCodon,
+                        start_err_msg, feat);
                     reported_bad_start_codon = true;
+#endif
                 }
-                NStr::ToLower(codon_desc);
                 if (unclassified_except && m_Imp.IsGpipe() && m_Imp.IsGenomic()) {
                     // suppress if gpipe genomic
                 } else {
-                    PostErr(sev, eErr_SEQ_FEAT_InternalStop, 
-                        NStr::SizetToString(internal_stop_count) + 
-                        " internal stops (and " + codon_desc + " start codon). Genetic code [" + gccode + "]", feat);
+                    string stop_err_msg = GetInternalStopErrorMessage(feat, transl_prot);
+                    PostErr(sev, eErr_SEQ_FEAT_InternalStop, stop_err_msg, feat);
                 }
             }
-        } else if (report_errors /* ||  unclassified_except */ ) {
+        } else if (report_errors) {
             if (unclassified_except && m_Imp.IsGpipe() && m_Imp.IsGenomic()) {
                 // suppress if gpipe genomic
             } else {
-                PostErr(eDiag_Error, eErr_SEQ_FEAT_InternalStop, 
-                    NStr::SizetToString(internal_stop_count) + 
-                    " internal stops. Genetic code [" + gccode + "]", feat);
+                string stop_err_msg = GetInternalStopErrorMessage(feat, transl_prot);
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_InternalStop, stop_err_msg, feat);
             }
         }
         prot_ok = false;
         if (internal_stop_count > 5) {
             return false;
         }
-    } else if (got_dash || got_x) {
-        string codon_desc = got_dash ? "Illegal" : "Ambiguous";
+    } else if (HasBadStartCodon(feat.GetLocation(), transl_prot)) {
         has_errors = true;
         other_than_mismatch = true;
-        if (report_errors && !reported_bad_start_codon && !unclassified_except) {
-            PostErr(eDiag_Error, eErr_SEQ_FEAT_StartCodon, 
-                codon_desc + " start codon used. Wrong genetic code [" +
-                gccode + "] or protein should be partial", feat);
+#if 0
+        if (!unclassified_except && report_errors && !reported_bad_start_codon) {
+            string start_err_msg = GetStartCodonErrorMessage(feat, transl_prot);
+            PostErr(eDiag_Error, eErr_SEQ_FEAT_StartCodon,
+                start_err_msg, feat);
             reported_bad_start_codon = true;
         }
+#endif
     }
+
     return true;
 }
 
@@ -6871,21 +6927,16 @@ void CValidError_feat::x_GetExceptionFlags
  bool& rna_editing,
  bool& transcript_or_proteomic)
 {
-    ITERATE (TBypassCdsTransCheckSet, it, sc_BypassCdsTransCheck) {
-        if (NStr::FindNoCase(except_text, *it) != NPOS) {
-            report_errors = false;  // biological exception
-        }
-    }
+    report_errors = ReportTranslationErrors(except_text);
+
     if (NStr::FindNoCase(except_text, "unclassified translation discrepancy") != NPOS) {
         unclassified_except = true;
     }
     if (NStr::FindNoCase(except_text, "mismatches in translation") != NPOS) {
         mismatch_except = true;
-        report_errors = true;
     }
     if (NStr::FindNoCase(except_text, "artificial frameshift") != NPOS) {
         frameshift_except = true;
-        report_errors = true;
     }
     if (NStr::FindNoCase(except_text, "rearrangement required for product") != NPOS) {
         rearrange_except = true;
@@ -6957,97 +7008,6 @@ void CValidError_feat::x_CheckCDSFrame
                 }
             }
         }
-    }
-}
-
-
-void FixGeneticCode(CCdregion& cdr)
-{
-    if (!cdr.IsSetCode()) {
-        return;
-    }
-    CGenetic_code::C_E::TId genCode = 0;
-    if (cdr.IsSetCode()) {
-        ITERATE(CCdregion::TCode::Tdata, it, cdr.GetCode().Get()) {
-            if ((*it)->IsId()) {
-                genCode = (*it)->GetId();
-            }
-        }
-    } 
-
-    if (genCode == 7) {
-        genCode = 4;
-    } else if (genCode == 8) {
-        genCode = 1;
-    } else if (genCode == 0) {
-        genCode = 1;
-    }
-    cdr.ResetCode();
-    CRef<CGenetic_code::C_E> new_code(new CGenetic_code::C_E());
-    new_code->SetId(genCode);
-    cdr.SetCode().Set().push_back(new_code);
-}
-
-
-void CValidError_feat::x_FindTranslationStops
-(const CSeq_feat& feat,
- bool& got_stop,
- bool& show_stop,
- bool& unable_to_translate,
- bool& alt_start,
- string& transl_prot,
- CBioseq_Handle bsh,
- CScope *scope
-)
-{
-    CRef<CSeq_feat> tmp_cds(new CSeq_feat());
-    tmp_cds->Assign(feat);
-    FixGeneticCode(tmp_cds->SetData().SetCdregion());
-    const CCdregion& cdregion = tmp_cds->GetData().GetCdregion();
-    try {
-        if (scope) {
-            if (tmp_cds->GetLocation().IsWhole()) {
-                if (!bsh) {
-                    return;
-                }
-                size_t start = 0;
-                if (cdregion.IsSetFrame()) {
-                    if (cdregion.GetFrame() == 2) {
-                        start = 1;
-                    } else if (cdregion.GetFrame() == 3) {
-                        start = 2;
-                    }
-                }
-                const CGenetic_code* genetic_code = NULL;
-                if (cdregion.IsSetCode()) {
-                    genetic_code = &(cdregion.GetCode());
-                }
-                CRef<CSeq_id> id(new CSeq_id());
-                id->Assign(tmp_cds->GetLocation().GetWhole());
-                CRef<CSeq_loc> tmp(new CSeq_loc(*id, start, bsh.GetInst_Length() - 1));
-                CSeqTranslator::Translate(*tmp, bsh.GetScope(), transl_prot, genetic_code, true, false, &alt_start);
-                unable_to_translate = false;
-                if (!NStr::IsBlank(transl_prot)) {
-                    if (NStr::EndsWith(transl_prot, "*")) {
-                        got_stop = true;
-                    }
-                    show_stop = true;
-                }
-            } else {
-                CSeqTranslator::Translate(*tmp_cds, *scope, transl_prot,
-                        true,   // include stop codons
-                        false,  // do not remove trailing X/B/Z
-                        &alt_start);
-                unable_to_translate = false;
-                if (!NStr::IsBlank(transl_prot)) {
-                    if (NStr::EndsWith(transl_prot, "*")) {
-                        got_stop = true;
-                    }
-                    show_stop = true;
-                }
-            }
-        }
-    } catch (CException& e) {
     }
 }
 
@@ -7229,22 +7189,18 @@ void CValidError_feat::x_CheckTranslationMismatches
                                     feat);
                             }
                             other_than_mismatch = true;
-                        } else if (t_res == '-') {
+                        } else if (t_res == '-' || t_res == 'X') {
+#if 0
                             if (report_errors && !reported_bad_start_codon && !unclassified_except) {
                                 PostErr(eDiag_Error, eErr_SEQ_FEAT_StartCodon,
-                                    "Illegal start codon used. Wrong genetic code [" +
-                                    gccode + "] or protein should be partial", feat);
+                                    GetStartCodonErrorMessage(feat, t_res, 0), feat);
                             }
+#endif
                             other_than_mismatch = true;
-                        } else {
                             if (t_res == 'X') {
-                                if (report_errors && !reported_bad_start_codon && !unclassified_except) {
-                                    PostErr(eDiag_Error, eErr_SEQ_FEAT_StartCodon,
-                                        "Ambiguous start codon used. Wrong genetic code [" +
-                                        gccode + "] or protein should be partial", feat);
-                                }
-                                other_than_mismatch = true;
+                                mismatches.push_back(i);
                             }
+                        } else {
                             mismatches.push_back(i);
                         }
                     } else {
@@ -7360,14 +7316,14 @@ void CValidError_feat::x_CheckTranslationMismatches
             }
         }
     } else {
+#if 0
         if (feat.IsSetPartial() && feat.GetPartial() && (!no_beg) && (!no_end)) {
         } else if (NStr::StartsWith(transl_prot, "-")) {
             if (report_errors && !reported_bad_start_codon && !unclassified_except) {
-                PostErr(eDiag_Error, eErr_SEQ_FEAT_StartCodon,
-                        "Illegal start codon used. Wrong genetic code [" +
-                        gccode + "] or protein should be partial", feat);
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_StartCodon, GetStartCodonErrorMessage(feat, transl_prot[0], 0), feat);
             }
         }
+#endif
     }
 }
 
@@ -7458,11 +7414,28 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat,
     string transl_prot;   // translated protein
     bool got_stop = false;
     bool alt_start = false;
-    bool show_stop = false;
-    bool unable_to_translate = true;
+    bool unable_to_translate = false;
 
     CBioseq_Handle bsh = GetCache().GetBioseqHandleFromLocation(m_Scope, feat.GetLocation(), m_Imp.GetTSE_Handle());
-    x_FindTranslationStops(feat, got_stop, show_stop, unable_to_translate, alt_start, transl_prot, bsh, m_Scope);
+    try {
+        transl_prot = TranslateCodingRegionForValidation(feat, *m_Scope, alt_start);
+    } catch (CException& ex) {
+        unable_to_translate = true;
+    }
+
+    if (NStr::EndsWith(transl_prot, "*")) {
+        got_stop = true;
+    }
+
+    if (HasBadStartCodon(feat, *m_Scope, m_Imp.IgnoreExceptions())) {
+        has_errors = true;
+        other_than_mismatch = true;
+        if (!unclassified_except && report_errors) {
+            string start_err_msg = GetStartCodonErrorMessage(feat, transl_prot);
+            PostErr(eDiag_Error, eErr_SEQ_FEAT_StartCodon,
+                start_err_msg, feat);
+        }
+    }
 
     if (unable_to_translate) {
         if (report_errors) {
@@ -7508,8 +7481,9 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat,
 
         bool reported_bad_start_codon = false;
 
-        if (!ValidateCdRegionTranslation (feat, transl_prot, report_errors, unclassified_except, has_errors, 
-            other_than_mismatch, reported_bad_start_codon, prot_ok, nonsense_intron)) {
+        ValidateCdRegionTranslation(feat, transl_prot, report_errors, unclassified_except, has_errors,
+            other_than_mismatch, reported_bad_start_codon, prot_ok, nonsense_intron);
+        if (CountInternalStopCodons(transl_prot) > 5) {
             return;
         }
 
@@ -7526,7 +7500,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat,
         size_t num_mismatches = 0;
         size_t len = 0;
 
-        show_stop = true;
+        bool show_stop = true;
 
         bool no_product = true;
         x_CheckTranslationMismatches(feat,

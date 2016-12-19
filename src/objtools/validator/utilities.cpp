@@ -2085,6 +2085,155 @@ void ConvertToEntrezTerm(string& title)
     NStr::TruncateSpacesInPlace(title);
 }
 
+
+void FixGeneticCode(CCdregion& cdr)
+{
+    if (!cdr.IsSetCode()) {
+        return;
+    }
+    CGenetic_code::C_E::TId genCode = 0;
+    if (cdr.IsSetCode()) {
+        ITERATE(CCdregion::TCode::Tdata, it, cdr.GetCode().Get()) {
+            if ((*it)->IsId()) {
+                genCode = (*it)->GetId();
+            }
+        }
+    }
+
+    if (genCode == 7) {
+        genCode = 4;
+    } else if (genCode == 8) {
+        genCode = 1;
+    } else if (genCode == 0) {
+        genCode = 1;
+    }
+    cdr.ResetCode();
+    CRef<CGenetic_code::C_E> new_code(new CGenetic_code::C_E());
+    new_code->SetId(genCode);
+    cdr.SetCode().Set().push_back(new_code);
+}
+
+
+string TranslateCodingRegionForValidation(const CSeq_feat& feat, CScope &scope, bool& alt_start)
+{
+    string transl_prot = kEmptyStr;
+    CRef<CSeq_feat> tmp_cds(new CSeq_feat());
+    tmp_cds->Assign(feat);
+    FixGeneticCode(tmp_cds->SetData().SetCdregion());
+    const CCdregion& cdregion = tmp_cds->GetData().GetCdregion();
+    if (tmp_cds->GetLocation().IsWhole()) {
+        CBioseq_Handle bsh = scope.GetBioseqHandle(tmp_cds->GetLocation().GetWhole());
+        if (!bsh) {
+            return kEmptyStr;
+        }
+        size_t start = 0;
+        if (cdregion.IsSetFrame()) {
+            if (cdregion.GetFrame() == 2) {
+                start = 1;
+            } else if (cdregion.GetFrame() == 3) {
+                start = 2;
+            }
+        }
+        const CGenetic_code* genetic_code = NULL;
+        if (cdregion.IsSetCode()) {
+            genetic_code = &(cdregion.GetCode());
+        }
+        CRef<CSeq_id> id(new CSeq_id());
+        id->Assign(tmp_cds->GetLocation().GetWhole());
+        CRef<CSeq_loc> tmp(new CSeq_loc(*id, start, bsh.GetInst_Length() - 1));
+        CSeqTranslator::Translate(*tmp, scope, transl_prot, genetic_code, true, false, &alt_start);
+    } else {
+        CSeqTranslator::Translate(*tmp_cds, scope, transl_prot,
+            true,   // include stop codons
+            false,  // do not remove trailing X/B/Z
+            &alt_start);
+    }
+
+    return transl_prot;
+}
+
+
+bool HasBadStartCodon(const CSeq_loc& loc, const string& transl_prot)
+{
+    bool got_dash = (transl_prot[0] == '-');
+    bool got_x = (transl_prot[0] == 'X'
+        && !loc.IsPartialStart(eExtreme_Biological));
+
+    if (!got_dash && !got_x) {
+        return false;
+    }
+    return true;
+}
+
+
+static const char* const sc_BypassCdsTransCheckText[] = {
+    "RNA editing",
+    "adjusted for low-quality genome",
+    "annotated by transcript or proteomic data",
+    "rearrangement required for product",
+    "reasons given in citation",
+    "translated product replaced",
+    "unclassified translation discrepancy"
+};
+typedef CStaticArraySet<const char*, PCase_CStr> TBypassCdsTransCheckSet;
+DEFINE_STATIC_ARRAY_MAP(TBypassCdsTransCheckSet, sc_BypassCdsTransCheck, sc_BypassCdsTransCheckText);
+
+static const char* const sc_ForceCdsTransCheckText[] = {
+    "artificial frameshift",
+    "mismatches in translation"
+};
+typedef CStaticArraySet<const char*, PCase_CStr> TForceCdsTransCheckSet;
+DEFINE_STATIC_ARRAY_MAP(TForceCdsTransCheckSet, sc_ForceCdsTransCheck, sc_ForceCdsTransCheckText);
+
+bool ReportTranslationErrors(const string& except_text)
+{
+    bool report = true;
+    ITERATE(TBypassCdsTransCheckSet, it, sc_BypassCdsTransCheck) {
+        if (NStr::FindNoCase(except_text, *it) != NPOS) {
+            report = false;
+        }
+    }
+    if (!report) {
+        ITERATE(TForceCdsTransCheckSet, it, sc_ForceCdsTransCheck) {
+            if (NStr::FindNoCase(except_text, *it) != NPOS) {
+                report = true;
+            }
+        }
+    }
+    return report;
+}
+
+
+bool HasBadStartCodon(const CSeq_feat& feat, CScope& scope, bool ignore_exceptions)
+{
+    if (!feat.IsSetData() || !feat.GetData().IsCdregion()) {
+        return false;
+    }
+    // do not validate for pseudo gene
+    FOR_EACH_GBQUAL_ON_FEATURE(it, feat) {
+        if ((*it)->IsSetQual() && NStr::EqualNocase((*it)->GetQual(), "pseudo")) {
+            return false;
+        }
+    }
+
+    if (!ignore_exceptions && feat.CanGetExcept() && feat.GetExcept() &&
+        feat.CanGetExcept_text()) {
+        if (!ReportTranslationErrors(feat.GetExcept_text())) {
+            return false;
+        }
+    }
+
+    bool alt_start = false;
+    string transl_prot;
+    try {
+        transl_prot = TranslateCodingRegionForValidation(feat, scope, alt_start);
+    } catch (CException& ex) {
+        return false;
+    }
+    return HasBadStartCodon(feat.GetLocation(), transl_prot);
+}
+
+
 END_SCOPE(validator)
 END_SCOPE(objects)
 END_NCBI_SCOPE

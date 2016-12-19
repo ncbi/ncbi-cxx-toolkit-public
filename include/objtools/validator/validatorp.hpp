@@ -1129,15 +1129,6 @@ private:
          const bool report_errors,
          bool& has_errors,
          bool& other_than_mismatch);
-    static void x_FindTranslationStops
-        (const CSeq_feat& feat,
-         bool& got_stop,
-         bool& show_stop,
-         bool& unable_to_translate,
-         bool& alt_start,
-         string& transl_prot,
-         CBioseq_Handle bsh,
-         CScope *scope);
     const CSeq_id* x_GetCDSProduct
         (const CSeq_feat& feat,
          bool report_errors,

@@ -208,6 +208,18 @@ void NCBI_VALIDATOR_EXPORT AdjustSpecificHostForTaxServer (string& spec_host);
 // function is used to convert a pub title into a 'term' parameter of CEutilsClient::Search method
 void NCBI_VALIDATOR_EXPORT ConvertToEntrezTerm(string& title);
 
+string NCBI_VALIDATOR_EXPORT TranslateCodingRegionForValidation(const CSeq_feat& feat, CScope &scope, bool& alt_start);
+
+// if special text is found in a feature exception, translation errors will not be reported
+bool NCBI_VALIDATOR_EXPORT ReportTranslationErrors(const string& except_text);
+
+// checks to see if this feature would be reported as having a bad start codon
+bool NCBI_VALIDATOR_EXPORT HasBadStartCodon(const CSeq_feat& feat, CScope &scope, bool ignore_exceptions);
+
+// checks to see if this location and translation has a bad start codon
+// note that this might not be reported if the feature is pseudo, or has an appropriate exception
+bool NCBI_VALIDATOR_EXPORT HasBadStartCodon(const CSeq_loc& loc, const string& transl_prot);
+
 END_SCOPE(validator)
 END_SCOPE(objects)
 END_NCBI_SCOPE
