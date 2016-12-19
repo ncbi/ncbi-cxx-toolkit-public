@@ -123,6 +123,7 @@ static const SImportEntry kImportTable[] = {
     { "prim_transcript",     CSeqFeatData::eSubtype_prim_transcript },
     { "primer_bind",         CSeqFeatData::eSubtype_primer_bind },
     { "promoter",            CSeqFeatData::eSubtype_promoter },
+    { "propeptide",          CSeqFeatData::eSubtype_propeptide },
     { "protein_bind",        CSeqFeatData::eSubtype_protein_bind },
     { "regulatory",          CSeqFeatData::eSubtype_regulatory },
     { "rep_origin",          CSeqFeatData::eSubtype_rep_origin },
@@ -189,7 +190,7 @@ static const TProtInfoPair kProtInfoPairs[] = {
     PROT_INFO_PAIR(mature, mat_peptide_aa, "Prot", "mat_peptide"),
     PROT_INFO_PAIR(signal_peptide, sig_peptide_aa, "Prot", "sig_peptide"),
     PROT_INFO_PAIR(transit_peptide, transit_peptide_aa, "Prot", "transit_peptide"),
-    PROT_INFO_PAIR(propeptide, propeptide, "Prot", "propeptide")
+    PROT_INFO_PAIR(propeptide, propeptide_aa, "Prot", "propeptide")
 };
 
 typedef CStaticPairArrayMap<CProt_ref::EProcessed,
@@ -477,7 +478,8 @@ static const TFeatKey feat_key_to_subtype [] = {
     {  "prim_transcript",    CSeqFeatData::eSubtype_prim_transcript     },
     {  "primer_bind",        CSeqFeatData::eSubtype_primer_bind         },
     {  "promoter",           CSeqFeatData::eSubtype_promoter            },
-    {  "propeptide",         CSeqFeatData::eSubtype_propeptide          },
+    {  "propeptide",         CSeqFeatData::eSubtype_propeptide_aa       },
+    {  "propeptide_nt",      CSeqFeatData::eSubtype_propeptide          },
     {  "proprotein",         CSeqFeatData::eSubtype_preprotein          },
     {  "protein_bind",       CSeqFeatData::eSubtype_protein_bind        },
     {  "rRNA",               CSeqFeatData::eSubtype_rRNA                },
@@ -725,8 +727,9 @@ static const SSubtypeInfo s_subtype_info[] = {
     SUBTYPE_INFO(               e_Imp,              eSubtype_telomere, 101),
     SUBTYPE_INFO(               e_Imp,          eSubtype_assembly_gap, 102),
     SUBTYPE_INFO(               e_Imp,            eSubtype_regulatory, 103),
-    SUBTYPE_INFO(              e_Prot,            eSubtype_propeptide, 104),
-    SUBTYPE_INFO(           e_not_set,                   eSubtype_max, 105),
+    SUBTYPE_INFO(               e_Imp,            eSubtype_propeptide, 104),
+    SUBTYPE_INFO(              e_Prot,         eSubtype_propeptide_aa, 105),
+    SUBTYPE_INFO(           e_not_set,                   eSubtype_max, 106),
     SUBTYPE_INFO(           e_not_set,                   eSubtype_any, 255)
 };
 static const size_t s_subtype_count =
@@ -768,7 +771,6 @@ void CSeqFeatData::s_InitSubtypesTable(void)
     for (int sub = eSubtype_prot; sub <= eSubtype_transit_peptide_aa; ++sub) {
         table[ESubtype(sub)] = e_Prot;
     }
-    table[eSubtype_propeptide] = e_Prot;
     for (int sub = eSubtype_preRNA; sub <= eSubtype_otherRNA; ++sub) {
         table[ESubtype(sub)] = e_Rna;
     }
@@ -780,7 +782,8 @@ void CSeqFeatData::s_InitSubtypesTable(void)
     for ( const SImportEntry* p = kImportTable; p != kImportTableEnd; ++p ) {
         table[p->m_Subtype] = e_Imp;
     }
-    table[eSubtype_propeptide] = e_Prot;
+    table[eSubtype_propeptide] = e_Imp;
+    table[eSubtype_propeptide_aa] = e_Prot;
 
     sx_SubtypesTableInitialized = true;
 
@@ -2984,6 +2987,34 @@ START_SUBTYPE(propeptide)
     ADD_QUAL(usedin);
 END_SUBTYPE
 
+START_SUBTYPE(propeptide_aa)
+    ADD_QUAL(EC_number);
+    ADD_QUAL(allele);
+    ADD_QUAL(calculated_mol_wt);
+    ADD_QUAL(citation);
+    ADD_QUAL(db_xref);
+    ADD_QUAL(derived_from);
+    ADD_QUAL(evidence);
+    ADD_QUAL(exception);
+    ADD_QUAL(experiment);
+    ADD_QUAL(function);
+    ADD_QUAL(gene);
+    ADD_QUAL(gene_synonym);
+    ADD_QUAL(inference);
+    ADD_QUAL(label);
+    ADD_QUAL(locus_tag);
+    ADD_QUAL(map);
+    ADD_QUAL(name);
+    ADD_QUAL(note);
+    ADD_QUAL(old_locus_tag);
+    ADD_QUAL(product);
+    ADD_QUAL(protein_id);
+    ADD_QUAL(pseudo);
+    ADD_QUAL(pseudogene);
+    ADD_QUAL(standard_name);
+    ADD_QUAL(usedin);
+END_SUBTYPE
+
 #undef START_SUBTYPE
 #undef ADD_QUAL
 #undef END_SUBTYPE
@@ -3996,7 +4027,7 @@ static const SFeatListItem sc_ConfigItemInit[] = {
     {  CSeqFeatData::e_Prot,     CSeqFeatData::eSubtype_mat_peptide_aa,    "Mature Peptide AA", "Mat-Peptide AA"  },
     {  CSeqFeatData::e_Prot,     CSeqFeatData::eSubtype_sig_peptide_aa,    "Signal Peptide AA", "Sig-Peptide AA"  },
     {  CSeqFeatData::e_Prot,     CSeqFeatData::eSubtype_transit_peptide_aa,    "Transit Peptide AA", "Transit-Peptide AA"  },
-    {  CSeqFeatData::e_Prot,     CSeqFeatData::eSubtype_propeptide,    "ProPeptide", "ProPeptide"  },
+    {  CSeqFeatData::e_Prot,     CSeqFeatData::eSubtype_propeptide_aa,    "ProPeptide AA", "ProPeptide"  },
 
     {  CSeqFeatData::e_Rna,     CSeqFeatData::eSubtype_any,   "RNA, All" , "RNA Master"  },
     {  CSeqFeatData::e_Rna,     CSeqFeatData::eSubtype_preRNA,  "precursor_RNA",   "precursor_RNA"  },
@@ -4414,7 +4445,7 @@ CSeqFeatData::EFeatureLocationAllowed CSeqFeatData::AllowedFeatureLocation(ESubt
         case eSubtype_mat_peptide_aa:
         case eSubtype_sig_peptide_aa:
         case eSubtype_transit_peptide_aa:
-        case eSubtype_propeptide:
+        case eSubtype_propeptide_aa:
         case eSubtype_bond:
         case eSubtype_psec_str:
             rval = eFeatureLocationAllowed_ProtOnly;
@@ -4521,6 +4552,7 @@ bool CSeqFeatData::ShouldRepresentAsGbqual (CSeqFeatData::ESubtype feat_subtype,
         if (feat_subtype == CSeqFeatData::eSubtype_mat_peptide
             || feat_subtype == CSeqFeatData::eSubtype_sig_peptide
             || feat_subtype == CSeqFeatData::eSubtype_transit_peptide
+            || feat_subtype == CSeqFeatData::eSubtype_propeptide
             || feat_subtype == CSeqFeatData::eSubtype_C_region
             || feat_subtype == CSeqFeatData::eSubtype_D_segment
             || feat_subtype == CSeqFeatData::eSubtype_exon
