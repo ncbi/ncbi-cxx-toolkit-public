@@ -43,27 +43,23 @@ class CMatchSetup {
 
 public:
     CMatchSetup(CRef<CScope> db_scope);
-    virtual ~CMatchSetup(void) {};
+    virtual ~CMatchSetup(void) = default;
 
-    static void GetNucProtSets(
+    static void GatherNucProtSets(
         CRef<CSeq_entry> input_entry,
-        list<CRef<CSeq_entry>>& nucprot_sets);
+        list<CRef<CSeq_entry>>& nuc_prot_sets);
 
     CConstRef<CBioseq_set> GetDBNucProtSet(const CBioseq& nuc_seq);
 
-    bool UpdateNucSeqIds(CRef<CSeq_id>& new_id,
-        CSeq_entry_Handle& nucleotide_seh,
-        CSeq_entry_Handle& nuc_prot_seh);
-
     bool UpdateNucSeqIds(CRef<CSeq_id> new_id,
-        CRef<CSeq_entry> nuc_prot_set);
+        CSeq_entry& nuc_prot_set) const;
 
     bool GetNucSeqIdFromCDSs(const CSeq_entry& nuc_prot_set,
-        CRef<CSeq_id>& id);
-
-    CBioseq& SetNucSeq(CRef<CSeq_entry> nuc_prot_set);
+        CRef<CSeq_id>& id) const;
 
 private:
+    CBioseq& x_FetchNucSeqRef(CSeq_entry& nuc_prot_set) const;
+
     CRef<CScope> m_DBScope;
 };
 

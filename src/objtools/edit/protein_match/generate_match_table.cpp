@@ -181,6 +181,7 @@ bool CMatchTabulate::x_IsCdsComparison(const CSeq_annot& seq_annot) const
     return false;
 }
 
+
 bool CMatchTabulate::x_IsGoodGloballyReciprocalBest(const CUser_object& user_obj) const
 {
    if (!user_obj.IsSetType() ||
@@ -288,7 +289,7 @@ bool CMatchTabulate::x_FetchAccessionVersion(const CSeq_align& align,
         align.GetSegs().IsDenseg() &&
         align.GetSegs().GetDenseg().IsSetIds()) {
         for (CRef<CSeq_id> id : align.GetSegs().GetDenseg().GetIds()) {
-            if (id->IsGenbank()) {
+            if (id->IsGenbank() || id->IsOther()) {
                 accver = id->GetSeqIdString(withVersion);
                 return true;
             }
@@ -302,7 +303,6 @@ bool CMatchTabulate::x_FetchAccessionVersion(const CSeq_align& align,
                 accver = sequence::GetAccessionForGi(id->GetGi(), *gb_scope);
                 return true;
             }
-
         }
     }
     return false;
@@ -387,7 +387,7 @@ string CMatchTabulate::x_GetLocalID(const CUser_object& user_obj) const
         if (!uf.IsSetData() ||
             !uf.IsSetLabel() ||
             !uf.GetLabel().IsStr() ||
-             uf.GetLabel().GetStr() != "produce_localid") {
+             uf.GetLabel().GetStr() != "product_localid") {
             continue;
         }
 
@@ -600,7 +600,7 @@ void CMatchTabulate::WriteTable(
 
     const unsigned int numRows = mMatchTable->GetNum_rows();
 
-   for (int row_index=0; row_index<numRows; ++row_index) { 
+    for (int row_index=0; row_index<numRows; ++row_index) { 
         for (const auto& column_name : colNames) {
             const CSeqTable_column& column = mMatchTable->GetColumn(column_name);
             const string* pValue = column.GetStringPtr(row_index);

@@ -31,7 +31,6 @@
 
 #include <corelib/ncbistd.hpp>
 #include <objects/seq/Annotdesc.hpp>
-//#include <objects/seqtable/Seq_table.hpp>
 
 class CSeq_annot;
 class CSeq_feat;
