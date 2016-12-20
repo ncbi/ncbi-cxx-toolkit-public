@@ -281,6 +281,13 @@ protected:
 
     /// Process version request: set content type, print version informations etc.
     /// The default implementation prints GetVersion/GetFullVersion as plain text.
+    /// For automatic handling of version request all of the following conditions
+    /// must be met:
+    /// - CGI_ENABLE_VERSION_REQUEST=t must be set in the environment or
+    ///   EnableVersionRequest=t in [CGI] section of the INI file.
+    /// - REQUEST_METHOD must be GET
+    /// - query string must include version=[short|long] argument (all other
+    ///   arguments are ignored).
     virtual void ProcessVersionRequest(EVersionType ver_type);
 
 protected:
