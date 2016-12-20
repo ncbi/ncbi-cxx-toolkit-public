@@ -1937,48 +1937,6 @@ s_NaHashLookupScanSubjectForWordCounts(BlastSeqSrc* seq_src,
 }
 
 
-static void s_NaHashLookupRemoveWordFromThinBackbone(
-                                         BackboneCell** thin_backbone,
-                                         Uint4 word,
-                                         TNaLookupHashFunction hash_func,
-                                         Uint4 mask)
-{
-    BackboneCell* prev = NULL;
-    BackboneCell* next = NULL;
-    BackboneCell* b = NULL;
-    Int8 index = hash_func((Uint1*)&word, mask);
-
-    if (!thin_backbone[index]) {
-        return;
-    }
-
-    /* if word present in the first enrty for the hashed value */
-    if (thin_backbone[index]->word == word) {
-        next = thin_backbone[index]->next;
-        thin_backbone[index]->next = NULL;
-        BackboneCellFree(thin_backbone[index]);
-        thin_backbone[index] = next;
-
-        return;
-    }
-
-    /* in case of a collision check the remaining words with the same hash
-       value */
-    prev = thin_backbone[index];
-    b = thin_backbone[index]->next;
-    for (; b; prev = prev->next, b = b->next) {
-        if (b->word == word) {
-            next = b->next;
-            b->next = NULL;
-            BackboneCellFree(b);
-            prev->next = next;
-
-            break;
-        }
-    }
-}
-
-
 static Int2 s_NaHashLookupRemovePolyAWords(BlastNaHashLookupTable* lookup)
 {
     Int8 word;
