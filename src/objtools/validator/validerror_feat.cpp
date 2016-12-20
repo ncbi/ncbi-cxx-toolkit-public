@@ -1176,8 +1176,12 @@ static int s_GetStrictGenCode(const CBioSource& src)
                 case CBioSource::eGenome_apicoplast:
                 case CBioSource::eGenome_leucoplast:
                 case CBioSource::eGenome_proplastid:
-                    // bacteria and plant plastids are code 11.
-                    gencode = 11;
+                    if (orn.IsSetPgcode() && orn.GetPgcode() != 0) {
+                        gencode = orn.GetPgcode();
+                    } else {
+                        // bacteria and plant plastids are code 11.
+                        gencode = 11;
+                    }
                     break;
                 default:
                     if (orn.IsSetGcode()) {
@@ -7073,12 +7077,6 @@ void CValidError_feat::x_CheckTranslationMismatches
                             }
                             other_than_mismatch = true;
                         } else if (t_res == '-' || t_res == 'X') {
-#if 0
-                            if (report_errors && !reported_bad_start_codon && !unclassified_except) {
-                                PostErr(eDiag_Error, eErr_SEQ_FEAT_StartCodon,
-                                    GetStartCodonErrorMessage(feat, t_res, 0), feat);
-                            }
-#endif
                             other_than_mismatch = true;
                             if (t_res == 'X') {
                                 mismatches.push_back(i);
@@ -7197,15 +7195,6 @@ void CValidError_feat::x_CheckTranslationMismatches
                          + ") are not equal", feat);
             }
         }
-    } else {
-#if 0
-        if (feat.IsSetPartial() && feat.GetPartial() && (!no_beg) && (!no_end)) {
-        } else if (NStr::StartsWith(transl_prot, "-")) {
-            if (report_errors && !reported_bad_start_codon && !unclassified_except) {
-                PostErr(eDiag_Error, eErr_SEQ_FEAT_StartCodon, GetStartCodonErrorMessage(feat, transl_prot[0], 0), feat);
-            }
-        }
-#endif
     }
 }
 
