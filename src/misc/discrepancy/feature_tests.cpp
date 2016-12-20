@@ -823,97 +823,84 @@ const string kConflictStart = " feature partialness conflicts with gene on 5' en
 const string kConflictStop = " feature partialness conflicts with gene on 3' end";
 
 
-//  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(GENE_PARTIAL_CONFLICT, CSeq_feat_BY_BIOSEQ, eOncaller | eSubmitter | eSmart, "Feature partialness should agree with gene partialness if endpoints match")
-//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(GENE_PARTIAL_CONFLICT, COverlappingFeatures, eOncaller | eSubmitter | eSmart, "Feature partialness should agree with gene partialness if endpoints match")
 {
-    if (!obj.IsSetData()) {
-        return;
-    }
-    const CSeq_feat* gene = context.GetCurrentGene();
-    if (!gene) {
-        return;
-    }
-
-    CSeqFeatData::ESubtype subtype = obj.GetData().GetSubtype();
-
-    bool conflict_start = false;
-    bool conflict_stop = false;
-
-    string middle_label = kGenePartialConflictOther;
-
-    if (obj.GetData().IsCdregion()) {
-        bool is_mrna = context.IsCurrentSequenceMrna();
-        if (!context.IsEukaryotic() || is_mrna) {
-            middle_label = kGenePartialConflictCodingRegion;
-            conflict_start = IsPartialStartConflict(obj, *gene);
-            conflict_stop = IsPartialStopConflict(obj, *gene);
-            if (is_mrna && (!conflict_start || !conflict_stop)) {                
-                CBioseq_Handle bsh = context.GetScope().GetBioseqHandle(*(context.GetCurrentBioseq()));               
-                if (!conflict_start) {
-                    //look for 5' UTR
-                    TSeqPos gene_start = gene->GetLocation().GetStart(eExtreme_Biological);
-                    bool found_start = false;
-                    bool found_utr5 = false;
-                    for (CFeat_CI fi(bsh, CSeqFeatData::eSubtype_5UTR); fi; ++fi) {
-                        found_utr5 = true;
-                        if (fi->GetLocation().GetStart(eExtreme_Biological) == gene_start) {
-                            found_start = true;
-                            break;
+    const vector<CConstRef<CSeq_feat> >& all = context.FeatAll();
+    ITERATE(vector<CConstRef<CSeq_feat>>, feat, all) {
+        if (!(*feat)->IsSetData()) {
+            continue;
+        }
+        const CSeq_feat* gene = context.GetGeneForFeature(**feat);
+        if (!gene) {
+            continue;
+        }
+        bool conflict_start = false;
+        bool conflict_stop = false;
+        CSeqFeatData::ESubtype subtype = (*feat)->GetData().GetSubtype();
+        string middle_label = kGenePartialConflictOther;
+        if ((*feat)->GetData().IsCdregion()) {
+            bool is_mrna = context.IsCurrentSequenceMrna();
+            if (!context.IsEukaryotic() || is_mrna) {
+                middle_label = kGenePartialConflictCodingRegion;
+                conflict_start = IsPartialStartConflict(**feat, *gene);
+                conflict_stop = IsPartialStopConflict(**feat, *gene);
+                if (is_mrna && (!conflict_start || !conflict_stop)) {                
+                    if (!conflict_start) {
+                        //look for 5' UTR
+                        TSeqPos gene_start = gene->GetLocation().GetStart(eExtreme_Biological);
+                        bool found_start = false;
+                        bool found_utr5 = false;
+                        ITERATE (vector<CConstRef<CSeq_feat>>, fi, all) {
+                            if ((*fi)->IsSetData() && (*feat)->GetData().GetSubtype() == CSeqFeatData::eSubtype_5UTR) {
+                                found_utr5 = true;
+                                if ((*fi)->GetLocation().GetStart(eExtreme_Biological) == gene_start) {
+                                    found_start = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (found_utr5 && !found_start) {
+                            conflict_start = true;
                         }
                     }
-                    if (found_utr5 && !found_start) {
-                        conflict_start = true;
-                    }
-                }
-                if (!conflict_stop) {
-                    //look for 3' UTR
-                    TSeqPos gene_stop = gene->GetLocation().GetStop(eExtreme_Biological);
-                    bool found_stop = false;
-                    bool found_utr3 = false;
-                    for (CFeat_CI fi(bsh, CSeqFeatData::eSubtype_3UTR); fi; ++fi) {
-                        found_utr3 = true;
-                        if (fi->GetLocation().GetStop(eExtreme_Biological) == gene_stop) {
-                            found_stop = true;
-                            break;
+                    if (!conflict_stop) {
+                        //look for 3' UTR
+                        TSeqPos gene_stop = gene->GetLocation().GetStop(eExtreme_Biological);
+                        bool found_stop = false;
+                        bool found_utr3 = false;
+                        ITERATE (vector<CConstRef<CSeq_feat>>, fi, all) {
+                            if ((*fi)->IsSetData() && (*feat)->GetData().GetSubtype() == CSeqFeatData::eSubtype_3UTR) {
+                                found_utr3 = true;
+                                if ((*fi)->GetLocation().GetStop(eExtreme_Biological) == gene_stop) {
+                                    found_stop = true;
+                                    break;
+                                }
+                            }
                         }
-                    }
-                    if (found_utr3 && !found_stop) {
-                        conflict_stop = true;
+                        if (found_utr3 && !found_stop) {
+                            conflict_stop = true;
+                        }
                     }
                 }
             }
         }
-    } else if (obj.GetData().IsRna() ||
-        subtype == CSeqFeatData::eSubtype_intron ||
-        subtype == CSeqFeatData::eSubtype_exon ||
-        subtype == CSeqFeatData::eSubtype_5UTR ||
-        subtype == CSeqFeatData::eSubtype_3UTR ||
-        subtype == CSeqFeatData::eSubtype_misc_feature) {
-        conflict_start = IsPartialStartConflict(obj, *gene);
-        conflict_stop = IsPartialStopConflict(obj, *gene);
-        if (subtype == CSeqFeatData::eSubtype_misc_feature) {
-            middle_label = kGenePartialConflictMiscFeat;
+        else if ((*feat)->GetData().IsRna() || subtype == CSeqFeatData::eSubtype_intron || subtype == CSeqFeatData::eSubtype_exon || subtype == CSeqFeatData::eSubtype_5UTR || subtype == CSeqFeatData::eSubtype_3UTR || subtype == CSeqFeatData::eSubtype_misc_feature) {
+            conflict_start = IsPartialStartConflict(**feat, *gene);
+            conflict_stop = IsPartialStopConflict(**feat, *gene);
+            if (subtype == CSeqFeatData::eSubtype_misc_feature) {
+                middle_label = kGenePartialConflictMiscFeat;
+            }
         }
-    }
-
-    if (conflict_start || conflict_stop) {
-        string label = CSeqFeatData::SubtypeValueToName(subtype);
-        if (conflict_start && conflict_stop) {
-            label += kConflictBoth;
-        } else if (conflict_start) {
-            label += kConflictStart;
-        } else {
-            label += kConflictStop;
+        if (conflict_start || conflict_stop) {
+            string label = CSeqFeatData::SubtypeValueToName(subtype);
+            label += conflict_start && conflict_stop ? kConflictBoth : conflict_start ? kConflictStart : kConflictStop;
+            m_Objs[kGenePartialConflictTop][middle_label].Ext()[label].Ext().Add(*context.NewDiscObj(*feat), false).Add(*context.NewDiscObj(CConstRef<CSeq_feat>(gene)), false);
         }
-        m_Objs[kGenePartialConflictTop][middle_label].Ext()[label].Ext().Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false).Add(*context.NewDiscObj(CConstRef<CSeq_feat>(gene)), false);
     }
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(GENE_PARTIAL_CONFLICT)
-//  ----------------------------------------------------------------------------
 {
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
 }
