@@ -775,27 +775,64 @@ static Int4 s_TrimHSP(BlastHSP* hsp, Int4 num, Boolean is_query,
 
     /* update the Jumper edit script */
     if (is_start) {
-        Int4 pos = hsp->query.offset + delta_query;
-        i = 0;
-        while (i < hsp->map_info->edits->num_edits &&
-               hsp->map_info->edits->edits[i].query_pos < pos) {
-            i++;
-        }
-        if (i > 0) {
-            for (k = 0;k < hsp->map_info->edits->num_edits - i;k++) {
-                hsp->map_info->edits->edits[k] =
-                    hsp->map_info->edits->edits[k + i];
+        Int4 k = hsp->map_info->edits->num_edits - 1;
+        Int4 p = hsp->query.end - 1;
+        const Uint1 kGap = 15;
+        for (i = hsp->gap_info->size - 1;i >= 0;i--) {
+            if (hsp->gap_info->op_type[i] != eGapAlignDel) {
+
+                p -= hsp->gap_info->num[i];
+                while (k >= 0 &&
+                       hsp->map_info->edits->edits[k].query_pos > p &&
+                       hsp->map_info->edits->edits[k].query_base != kGap) {
+
+                    k--;
+                }
             }
-            hsp->map_info->edits->num_edits -= i;
+            else {
+                Int4 j;
+                for (j = 0;j < hsp->gap_info->num[i];j++) {
+                    ASSERT(k >= 0);
+                    ASSERT(hsp->map_info->edits->edits[k].query_base == kGap);
+                    k--;
+                }
+            }
+        }
+        k++;
+        if (k > 0) {
+            for (i = 0;i < hsp->map_info->edits->num_edits - k;i++) {
+                hsp->map_info->edits->edits[i] =
+                    hsp->map_info->edits->edits[i + k];
+            }
+            hsp->map_info->edits->num_edits -= k;
+            ASSERT(hsp->map_info->edits->num_edits >= 0);
         }
     }
     else {
-        Int4 pos = hsp->query.end - delta_query - 1;
-        i = hsp->map_info->edits->num_edits - 1;
-        while (i >= 0 && hsp->map_info->edits->edits[i].query_pos > pos) {
-            i--;
+        Int4 k = 0;
+        Int4 p = hsp->query.offset;
+        const Uint1 kGap = 15;
+
+        for (i = 0;i < hsp->gap_info->size;i++) {
+            if (hsp->gap_info->op_type[i] != eGapAlignDel) {
+
+                p += hsp->gap_info->num[i];
+                while (k < hsp->map_info->edits->num_edits &&
+                       hsp->map_info->edits->edits[k].query_pos < p &&
+                       hsp->map_info->edits->edits[k].query_base != kGap) {
+
+                    k++;
+                }
+            }
+            else {
+                Int4 j;
+                for (j = 0;j < hsp->gap_info->num[i];j++) {
+                    ASSERT(hsp->map_info->edits->edits[k].query_base == kGap);
+                    k++;
+                }
+            }
         }
-        hsp->map_info->edits->num_edits = i + 1;
+        hsp->map_info->edits->num_edits = k;
     }
 
     /* update HSP start positions */
@@ -2308,13 +2345,32 @@ s_FindSpliceJunctionsForOverlaps(BlastHSP* first, BlastHSP* second,
                 Int4 num_edits = first->map_info->edits->num_edits;
                 Int4 trim_by;
                 
-                if (edits[num_edits - 1].query_pos == query_len - 1) {
-                    edge >>= 2;
-                    edge |= edits[num_edits - 1].subject_base << 2;
+                if (edits[num_edits - 1].query_pos >= first->query.end - 1) {
+                    if (edits[num_edits - 1].subject_base != kGap) {
+                        edge >>= 2;
+                        edge |= edits[num_edits - 1].subject_base << 2;
+                    }
+                }
+                else if (edits[num_edits - 1].query_pos == query_len - 2 &&
+                         edits[num_edits - 1].subject_base == kGap) {
+
+                    edge = (edge << 2) | query[query_len - 1];
                 }
                 else {
-                    edge = (edits[num_edits - 1].subject_base << 2) |
-                        query[edits[num_edits - 1].query_pos + 1];
+                    if (edits[num_edits - 1].subject_base != kGap &&
+                        edits[num_edits - 1].query_base != kGap) {
+
+                        edge = (edits[num_edits - 1].subject_base << 2) |
+                            query[edits[num_edits - 1].query_pos + 1];
+                    }
+                    else if (edits[num_edits - 1].subject_base == kGap) {
+                        edge = (query[edits[num_edits - 1].query_pos + 1] << 2 ) |
+                            query[edits[num_edits - 1].query_pos + 2];
+                    }
+                    else {
+                        edge = (edits[num_edits - 1].subject_base << 2) |
+                            query[edits[num_edits - 1].query_pos];
+                    }
                 }
 
                 trim_by = first->query.end -  edits[
@@ -2342,12 +2398,25 @@ s_FindSpliceJunctionsForOverlaps(BlastHSP* first, BlastHSP* second,
                 Int4 trim_by;
 
                 if (edits[0].query_pos == 0) {
-                    edge <<= 2;
-                    edge |= edits[0].subject_base;
+                    if (edits[0].subject_base != kGap) {
+                        edge <<= 2;
+                        edge |= edits[0].subject_base;
+                    }
+                }
+                else if (edits[0].query_pos == 1 &&
+                         edits[0].subject_base == kGap) {
+
+                    edge = (edge << 2) | query[0];
                 }
                 else {
+
                     edge = (query[edits[0].query_pos - 1] << 2) |
                         edits[0].subject_base;
+
+                    if (edits[0].subject_base == kGap) {
+                        edge = (query[edits[0].query_pos - 2] << 2) |
+                            query[edits[0].query_pos - 1];
+                    }
                 }
 
                 trim_by = edits[0].query_pos - second->query.offset + 1;
