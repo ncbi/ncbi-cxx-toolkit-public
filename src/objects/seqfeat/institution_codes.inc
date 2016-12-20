@@ -549,7 +549,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BJRI<BGD>	b	Gene bank at Bangladesh Jute Research Institute",
 "BJTC	s	Capital Normal University, Biology Department",
 "BK	s	Bangkok Herbarium",
-"BKF	s	Royal Forest Department",
+"BKF	s	The Forest Herbarium",
 "BKL	s	Brooklyn Botanic Garden",
 "BKNU	s	Kunsan National University",
 "BLA	s	Fundacao Estadual de Pesquisa Agropecuaria",
