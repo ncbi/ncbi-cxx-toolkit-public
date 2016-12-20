@@ -1163,13 +1163,13 @@ void CTbl2AsnApp::ProcessSRCFileAndQualifiers(const string& pathname, CSeq_entry
 void CTbl2AsnApp::ProcessQVLFile(const string& pathname, CSeq_entry& result)
 {
     CFile file(pathname);
-    if (!file.Exists()) return;
+    if (!file.Exists() || file.GetLength() == 0) return;
 }
 
 void CTbl2AsnApp::ProcessDSCFile(const string& pathname, CSeq_entry& result)
 {
     CFile file(pathname);
-    if (!file.Exists()) return;
+    if (!file.Exists() || file.GetLength() == 0) return;
 
     CRef<CSeq_descr> descr;
     m_reader->LoadDescriptors(pathname, descr);
@@ -1179,7 +1179,7 @@ void CTbl2AsnApp::ProcessDSCFile(const string& pathname, CSeq_entry& result)
 void CTbl2AsnApp::ProcessCMTFile(const string& pathname, CSeq_entry& result, bool byrows)
 {
     CFile file(pathname);
-    if (!file.Exists()) return;
+    if (!file.Exists() || file.GetLength() == 0) return;
 
     CRef<ILineReader> reader(ILineReader::New(pathname));
 
@@ -1194,7 +1194,7 @@ void CTbl2AsnApp::ProcessCMTFile(const string& pathname, CSeq_entry& result, boo
 void CTbl2AsnApp::ProcessPEPFile(const string& pathname, CSeq_entry& entry)
 {
     CFile file(pathname);
-    if (!file.Exists()) return;
+    if (!file.Exists() || file.GetLength() == 0) return;
 
     CRef<ILineReader> reader(ILineReader::New(pathname));
 
@@ -1206,13 +1206,13 @@ void CTbl2AsnApp::ProcessPEPFile(const string& pathname, CSeq_entry& entry)
 void CTbl2AsnApp::ProcessRNAFile(const string& pathname, CSeq_entry& entry)
 {
     CFile file(pathname);
-    if (!file.Exists()) return;
+    if (!file.Exists() || file.GetLength() == 0) return;
 }
 
 void CTbl2AsnApp::ProcessPRTFile(const string& pathname, CSeq_entry& entry)
 {
     CFile file(pathname);
-    if (!file.Exists()) return;
+    if (!file.Exists() || file.GetLength() == 0) return;
 
     CRef<ILineReader> reader(ILineReader::New(pathname));
 
@@ -1224,7 +1224,7 @@ void CTbl2AsnApp::ProcessPRTFile(const string& pathname, CSeq_entry& entry)
 void CTbl2AsnApp::ProcessAnnotFile(const string& pathname, CSeq_entry& entry)
 {
     CFile file(pathname);
-    if (!file.Exists()) return;
+    if (!file.Exists() || file.GetLength() == 0) return;
 
     CNcbiIfstream in(pathname.c_str());
 
