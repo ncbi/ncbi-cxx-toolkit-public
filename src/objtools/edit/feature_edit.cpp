@@ -197,18 +197,18 @@ void CFeatTrim::x_UpdateFrame(const TSeqPos offset, CCdregion& cdregion)
     }
 
     const TSeqPos old_frame = x_GetFrame(cdregion);
-    const TSeqPos new_frame = (old_frame + 3 - frame_change)%3; // Check this!
+    const TSeqPos new_frame = (old_frame + frame_change)%3; 
 
     CCdregion::EFrame frame = CCdregion::eFrame_one;
     switch(new_frame) {
-        case 1:
-            frame = CCdregion::eFrame_two;
-            break;
-        case 2:
-            frame = CCdregion::eFrame_three;
-            break;
-        default:
-            break;
+    case 1:
+        frame = CCdregion::eFrame_two;
+        break;
+    case 2:
+        frame = CCdregion::eFrame_three;
+        break;
+    default:
+        break;
     }
     cdregion.ResetFrame();
     cdregion.SetFrame(frame);
