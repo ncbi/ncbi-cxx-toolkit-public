@@ -6701,27 +6701,6 @@ int GetGcodeForInternalStopErrors(const CCdregion& cdr)
 
 
 // refactoring functions start
-size_t CountInternalStopCodons(const string& transl_prot)
-{
-    if (NStr::IsBlank(transl_prot)) {
-        return 0;
-    }
-    // count internal stops and Xs
-    size_t internal_stop_count = 0;
-
-    ITERATE(string, it, transl_prot) {
-        if (*it == '*') {
-            ++internal_stop_count;
-        }
-    }
-    // if stop at end, reduce count by one (since one of the stops counted isn't internal)
-    if (transl_prot[transl_prot.length() - 1] == '*') {
-        --internal_stop_count;
-    }
-    return internal_stop_count;
-}
-
-
 // validator should not call if unclassified except
 
 string GetStartCodonErrorMessage(const CSeq_feat& feat, const char first_char, size_t internal_stop_count)
@@ -6777,23 +6756,21 @@ string GetInternalStopErrorMessage(const CSeq_feat& feat, const string& transl_p
 }
 
 
-bool CValidError_feat::ValidateCdRegionTranslation 
+void CValidError_feat::ValidateCdRegionTranslation 
 (const CSeq_feat& feat,
  const string& transl_prot,
  bool report_errors, 
  bool unclassified_except,
  bool& has_errors,
  bool& other_than_mismatch,
- bool& reported_bad_start_codon,
- bool& prot_ok,
  bool &nonsense_intron)
 {
     if (!feat.IsSetData() || !feat.GetData().IsCdregion()) {
-        return false;
+        return;
     }
 
     if (NStr::IsBlank(transl_prot)) {
-        return true;
+        return;
     }
 
     CSeq_loc nonsense_intron_loc;
@@ -6808,93 +6785,25 @@ bool CValidError_feat::ValidateCdRegionTranslation
         }
     }
     
-    int gc = GetGcodeForInternalStopErrors(feat.GetData().GetCdregion());
-
-    string gccode = NStr::IntToString(gc);
-
-    // count internal stops and Xs
-    size_t internal_stop_count = 0;
-
-    bool got_dash = (transl_prot[0] == '-');
-    bool got_x = (transl_prot[0] == 'X' 
-                  && !feat.GetLocation().IsPartialStart(eExtreme_Biological));
     size_t num_x = 0, num_nonx = 0;
 
     ITERATE(string, it, transl_prot) {
-        if ( *it == '*' ) {
-            ++internal_stop_count;
-        }
         if ( *it == 'X' ) {
             num_x++;
         } else {
             num_nonx++;
         }
     }
-    // if stop at end, reduce count by one (since one of the stops counted isn't internal)
-    if (transl_prot[transl_prot.length() - 1] == '*') {
-        --internal_stop_count;
-    }
 
     // report too many Xs
     if (num_x > num_nonx) {
         PostErr (eDiag_Warning, eErr_SEQ_FEAT_CDShasTooManyXs, "CDS translation consists of more than 50% X residues", feat);
     }
-    
-    if (internal_stop_count > 0) {
-        has_errors = true;
-        other_than_mismatch = true;
-        if (HasBadStartCodon(feat.GetLocation(), transl_prot)) {
-            if (report_errors || unclassified_except) {
-                EDiagSev sev = eDiag_Error;
-                if (unclassified_except) {
-                    sev = eDiag_Warning;
-                } else {
-#if 0
-                    string start_err_msg = GetStartCodonErrorMessage(feat, transl_prot);
-                    PostErr(eDiag_Error, eErr_SEQ_FEAT_StartCodon,
-                        start_err_msg, feat);
-                    reported_bad_start_codon = true;
-#endif
-                }
-                if (unclassified_except && m_Imp.IsGpipe() && m_Imp.IsGenomic()) {
-                    // suppress if gpipe genomic
-                } else {
-                    string stop_err_msg = GetInternalStopErrorMessage(feat, transl_prot);
-                    PostErr(sev, eErr_SEQ_FEAT_InternalStop, stop_err_msg, feat);
-                }
-            }
-        } else if (report_errors) {
-            if (unclassified_except && m_Imp.IsGpipe() && m_Imp.IsGenomic()) {
-                // suppress if gpipe genomic
-            } else {
-                string stop_err_msg = GetInternalStopErrorMessage(feat, transl_prot);
-                PostErr(eDiag_Error, eErr_SEQ_FEAT_InternalStop, stop_err_msg, feat);
-            }
-        }
-        prot_ok = false;
-        if (internal_stop_count > 5) {
-            return false;
-        }
-    } else if (HasBadStartCodon(feat.GetLocation(), transl_prot)) {
-        has_errors = true;
-        other_than_mismatch = true;
-#if 0
-        if (!unclassified_except && report_errors && !reported_bad_start_codon) {
-            string start_err_msg = GetStartCodonErrorMessage(feat, transl_prot);
-            PostErr(eDiag_Error, eErr_SEQ_FEAT_StartCodon,
-                start_err_msg, feat);
-            reported_bad_start_codon = true;
-        }
-#endif
-    }
-
-    return true;
 }
 
 
 void CValidError_feat::x_GetExceptionFlags
 (const string& except_text,
- bool& report_errors,
  bool& unclassified_except,
  bool& mismatch_except,
  bool& frameshift_except,
@@ -6905,8 +6814,6 @@ void CValidError_feat::x_GetExceptionFlags
  bool& rna_editing,
  bool& transcript_or_proteomic)
 {
-    report_errors = ReportTranslationErrors(except_text);
-
     if (NStr::FindNoCase(except_text, "unclassified translation discrepancy") != NPOS) {
         unclassified_except = true;
     }
@@ -7103,13 +7010,11 @@ void CValidError_feat::x_CheckTranslationMismatches
  bool rna_editing,
  bool mismatch_except,
  bool unclassified_except,
- bool reported_bad_start_codon,
  bool no_beg,
  bool no_end,
  size_t& len,
  size_t& num_mismatches,
  bool& no_product,
- bool& prot_ok,
  bool& show_stop,
  bool& has_errors,
  bool& other_than_mismatch)
@@ -7185,7 +7090,6 @@ void CValidError_feat::x_CheckTranslationMismatches
                         mismatches.push_back(i);
                     }
                     has_errors = true;
-                    prot_ok = false;
                 }
             }
         } else {
@@ -7334,7 +7238,6 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat,
         }
     }
 
-    bool prot_ok = true;
     int  ragged = 0;
     bool has_errors = false, unclassified_except = false,
         mismatch_except = false, frameshift_except = false,
@@ -7348,8 +7251,8 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat,
         feat.CanGetExcept()  &&  feat.GetExcept()  &&
         feat.CanGetExcept_text()) {
         const string& except_text = feat.GetExcept_text();
-        x_GetExceptionFlags (except_text,
-                             report_errors,
+        report_errors = ReportTranslationErrors(except_text);
+        x_GetExceptionFlags(except_text,
                              unclassified_except,
                              mismatch_except,
                              frameshift_except,
@@ -7423,6 +7326,9 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat,
         other_than_mismatch = true;
     }
 
+    size_t num_mismatches = 0;
+    size_t internal_stop_codons = 0;
+
     if (!unable_to_translate) {
         // check alternative start codon
         if (!alt_start) {
@@ -7457,12 +7363,26 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat,
         bool no_beg = 
             (part_loc & eSeqlocPartial_Start)  ||  (part_prod & eSeqlocPartial_Start);
 
-        bool reported_bad_start_codon = false;
-
         ValidateCdRegionTranslation(feat, transl_prot, report_errors, unclassified_except, has_errors,
-            other_than_mismatch, reported_bad_start_codon, prot_ok, nonsense_intron);
-        if (CountInternalStopCodons(transl_prot) > 5) {
-            return;
+            other_than_mismatch, nonsense_intron);
+
+        internal_stop_codons = CountInternalStopCodons(transl_prot);
+        if (internal_stop_codons > 0) {
+            has_errors = true;
+            other_than_mismatch = true;
+            if (report_errors || unclassified_except) {
+                if (unclassified_except && m_Imp.IsGpipe() && m_Imp.IsGenomic()) {
+                    // suppress if gpipe genomic
+                } else {
+                    PostErr(unclassified_except ? eDiag_Warning : eDiag_Error, 
+                            eErr_SEQ_FEAT_InternalStop, 
+                            GetInternalStopErrorMessage(feat, transl_prot), 
+                            feat);
+                }
+            }
+            if (internal_stop_codons > 5) {
+                return;
+            }
         }
 
     
@@ -7475,7 +7395,6 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat,
                         has_errors,
                         other_than_mismatch);
 
-        size_t num_mismatches = 0;
         size_t len = 0;
 
         bool show_stop = true;
@@ -7491,13 +7410,11 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat,
                                      rna_editing,
                                      mismatch_except,
                                      unclassified_except,
-                                     reported_bad_start_codon,
                                      no_beg,
                                      no_end,
                                      len,
                                      num_mismatches,
                                      no_product,
-                                     prot_ok,
                                      show_stop,
                                      has_errors,
                                      other_than_mismatch);
@@ -7527,7 +7444,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat,
     }
 
     if (report_errors && transl_except) {
-        if (prot_ok) {
+        if (internal_stop_codons == 0 && num_mismatches == 0) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_TranslExcept,
                 "Unparsed transl_except qual (but protein is okay). Skipped", feat);
         } else {

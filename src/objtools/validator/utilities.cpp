@@ -2166,6 +2166,8 @@ bool HasBadStartCodon(const CSeq_loc& loc, const string& transl_prot)
 }
 
 
+static const char * kUnclassifiedTranslationDiscrepancy = "unclassified translation discrepancy";
+
 static const char* const sc_BypassCdsTransCheckText[] = {
     "RNA editing",
     "adjusted for low-quality genome",
@@ -2173,7 +2175,7 @@ static const char* const sc_BypassCdsTransCheckText[] = {
     "rearrangement required for product",
     "reasons given in citation",
     "translated product replaced",
-    "unclassified translation discrepancy"
+    kUnclassifiedTranslationDiscrepancy
 };
 typedef CStaticArraySet<const char*, PCase_CStr> TBypassCdsTransCheckSet;
 DEFINE_STATIC_ARRAY_MAP(TBypassCdsTransCheckSet, sc_BypassCdsTransCheck, sc_BypassCdsTransCheckText);
@@ -2231,6 +2233,65 @@ bool HasBadStartCodon(const CSeq_feat& feat, CScope& scope, bool ignore_exceptio
         return false;
     }
     return HasBadStartCodon(feat.GetLocation(), transl_prot);
+}
+
+
+size_t CountInternalStopCodons(const string& transl_prot)
+{
+    if (NStr::IsBlank(transl_prot)) {
+        return 0;
+    }
+    // count internal stops and Xs
+    size_t internal_stop_count = 0;
+
+    ITERATE(string, it, transl_prot) {
+        if (*it == '*') {
+            ++internal_stop_count;
+        }
+    }
+    // if stop at end, reduce count by one (since one of the stops counted isn't internal)
+    if (transl_prot[transl_prot.length() - 1] == '*') {
+        --internal_stop_count;
+    }
+    return internal_stop_count;
+}
+
+
+bool HasInternalStop(const CSeq_feat& feat, CScope& scope, bool ignore_exceptions)
+{
+    if (!feat.IsSetData() || !feat.GetData().IsCdregion()) {
+        return false;
+    }
+    // do not validate for pseudo gene
+    FOR_EACH_GBQUAL_ON_FEATURE(it, feat) {
+        if ((*it)->IsSetQual() && NStr::EqualNocase((*it)->GetQual(), "pseudo")) {
+            return false;
+        }
+    }
+
+    if (!ignore_exceptions && feat.CanGetExcept() && feat.GetExcept() &&
+        feat.CanGetExcept_text()) {
+        const string& except_text = feat.GetExcept_text();
+        if (!NStr::Find(except_text, kUnclassifiedTranslationDiscrepancy) != string::npos
+            && !ReportTranslationErrors(feat.GetExcept_text())) {
+            return false;
+        }
+    }
+
+    bool alt_start = false;
+    string transl_prot;
+    try {
+        transl_prot = TranslateCodingRegionForValidation(feat, scope, alt_start);
+    } catch (CException& ex) {
+        return false;
+    }
+
+    size_t internal_stop_codons = CountInternalStopCodons(transl_prot);
+    if (internal_stop_codons > 0) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 

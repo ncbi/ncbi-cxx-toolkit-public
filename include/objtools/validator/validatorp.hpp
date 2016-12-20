@@ -1111,10 +1111,9 @@ private:
     void ValidateCdTrans(const CSeq_feat& feat, bool &nonsense_intron);
     void x_ReportUnnecessaryAlternativeStartCodonException(const CSeq_feat& feat);
     static void CheckForThreeBaseNonsense (const CSeq_feat& feat, const CSeq_id& id, const CCdregion& cdr, TSeqPos start, TSeqPos stop, ENa_strand strand, bool &nonsense_intron, CSeq_loc& intron_loc, CScope *scope);
-    bool ValidateCdRegionTranslation (const CSeq_feat& feat, const string& transl_prot, bool report_errors, bool unclassified_except, bool& has_errors, bool& other_than_mismatch, bool& reported_bad_start_codon, bool& prot_ok, bool &nonsense_intron);
+    void ValidateCdRegionTranslation (const CSeq_feat& feat, const string& transl_prot, bool report_errors, bool unclassified_except, bool& has_errors, bool& other_than_mismatch, bool &nonsense_intron);
     void x_GetExceptionFlags
         (const string& except_text,
-         bool& report_errors,
          bool& unclassified_except,
          bool& mismatch_except,
          bool& frameshift_except,
@@ -1152,13 +1151,11 @@ private:
          bool rna_editing,
          bool mismatch_except,
          bool unclassified_except,
-         bool reported_bad_start_codon,
          bool no_beg,
          bool no_end,
          size_t& len,
          size_t& num_mismatches,
          bool& no_product,
-         bool& prot_ok,
          bool& show_stop,
          bool& has_errors,
          bool& other_than_mismatch);
