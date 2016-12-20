@@ -67,14 +67,13 @@ class CPubReportApp : public CNcbiApplication
 
     CNcbiIstream* GetInputStream();
     CNcbiOstream* GetOutputStream();
-
-    CNcbiIfstream m_in_file;
-    CNcbiOfstream m_out_file;
 };
 
 
 void CPubReportApp::Init(void)
 {
+    SetVersionByBuild(0);
+
     // Prepare command line descriptions
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(), "Publications Report");
