@@ -48,7 +48,6 @@ public:
        vector<CRef<objects::CSeqdesc> > m_descs;
    } TStructComment;
 
-#if 0
    template<typename _container>
    size_t LoadComments(ILineReader& reader, _container& cont)
    {
@@ -80,9 +79,16 @@ public:
            }
        }
    }
-#endif
 
    objects::CUser_object* FindStructuredComment(objects::CSeq_descr& descr);
+#if 0
+   size_t LoadCommentsVector(ILineReader& reader, vector<TStructComment>& cont)
+   {
+       LoadComments(reader, cont);
+   }
+#endif
+
+
 protected:
    void _LoadHeaderLine(ILineReader& reader, vector<string>& cols);
    void _BuildStructuredComment(TStructComment& cmt, const vector<string>& cols, const vector<CTempString>& values);

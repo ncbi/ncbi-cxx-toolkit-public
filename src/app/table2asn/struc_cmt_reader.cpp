@@ -57,19 +57,6 @@ USING_SCOPE(objects);
 namespace
 {
 
-    CUser_object* FindStructuredComment(CSeq_descr& descr)
-    {
-        NON_CONST_ITERATE(CSeq_descr::Tdata, it, descr.Set())
-        {
-            if ((**it).IsUser())
-            {
-                if ((**it).GetUser().GetType().GetStr().compare("StructuredComment") == 0)
-                    return &((**it).SetUser());
-            }
-        }
-        return 0;
-    }
-
     CBioseq* FindObjectById(CSeq_entry& entry, const CSeq_id& id)
     {
         switch (entry.Which())
@@ -98,15 +85,15 @@ namespace
 
 }
 
-CStructuredCommentsReader::CStructuredCommentsReader(ILineErrorListener* logger) : m_logger(logger)
+CTable2AsnStructuredCommentsReader::CTable2AsnStructuredCommentsReader(ILineErrorListener* logger) : CStructuredCommentsReader(logger)
 {
 }
 
-CStructuredCommentsReader::~CStructuredCommentsReader()
+CTable2AsnStructuredCommentsReader::~CTable2AsnStructuredCommentsReader()
 {
 }
 
-CUser_object* CStructuredCommentsReader::AddStructuredComment(CUser_object* user_obj, CSeq_descr& descr, const CTempString& name, const CTempString& value)
+CUser_object* CTable2AsnStructuredCommentsReader::AddStructuredComment(CUser_object* user_obj, CSeq_descr& descr, const CTempString& name, const CTempString& value)
 {
     if (name.compare("StructuredCommentPrefix") == 0)
         user_obj = 0; // reset user obj so to create a new one
@@ -131,7 +118,7 @@ CUser_object* CStructuredCommentsReader::AddStructuredComment(CUser_object* user
 }
 
 
-void CStructuredCommentsReader::AddStructuredCommentToAllObjects(CSeq_entry& entry, const string& name, const string& value)
+void CTable2AsnStructuredCommentsReader::AddStructuredCommentToAllObjects(CSeq_entry& entry, const string& name, const string& value)
 {
     if (entry.IsSet())
     {
@@ -145,25 +132,22 @@ void CStructuredCommentsReader::AddStructuredCommentToAllObjects(CSeq_entry& ent
 
 }
 
-void CStructuredCommentsReader::ProcessCommentsFileByCols(ILineReader& reader, CSeq_entry& container)
+void CTable2AsnStructuredCommentsReader::ProcessCommentsFileByCols(ILineReader& reader, CSeq_entry& container)
 {
     vector<string> cols;
+
+    _LoadHeaderLine(reader, cols);
 
     while (!reader.AtEOF())
     {
         reader.ReadLine();
         // First line is a collumn definitions
-        string current = reader.GetCurrentLine();
-        if (reader.GetLineNumber() == 1)
-        {
-            NStr::Split(current, "\t", cols);
-            continue;
-        }
+        CTempString current = reader.GetCurrentLine();
 
         if (!current.empty())
         {
             // Each line except first is a set of values, first collumn is a sequence id
-            vector<string> values;
+            vector<CTempString> values;
             NStr::Split(current, "\t", values);
             if (!values[0].empty())
             {
@@ -188,7 +172,7 @@ void CStructuredCommentsReader::ProcessCommentsFileByCols(ILineReader& reader, C
     }
 }
 
-void CStructuredCommentsReader::ProcessCommentsFileByRows(ILineReader& reader, CSeq_entry& container)
+void CTable2AsnStructuredCommentsReader::ProcessCommentsFileByRows(ILineReader& reader, CSeq_entry& container)
 {
     while (!reader.AtEOF())
     {
@@ -207,10 +191,4 @@ void CStructuredCommentsReader::ProcessCommentsFileByRows(ILineReader& reader, C
     }
 }
 
-CStructuredComments::CStructuredComments(objects::CSeq_entry& container)
-    :m_entry(&container)
-{
-}
-
 END_NCBI_SCOPE
-

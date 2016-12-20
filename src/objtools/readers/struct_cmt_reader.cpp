@@ -33,8 +33,6 @@
 
 #include <ncbi_pch.hpp>
 
-#include <objtools/readers/struct_cmt_reader.hpp>
-
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/general/User_object.hpp>
@@ -42,6 +40,8 @@
 #include <objects/seqloc/Seq_id.hpp>
 
 #include <util/line_reader.hpp>
+#include <objtools/readers/struct_cmt_reader.hpp>
+
 
 #include <common/test_assert.h>  /* This header must go last */
 

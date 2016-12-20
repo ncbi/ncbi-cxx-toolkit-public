@@ -1183,7 +1183,7 @@ void CTbl2AsnApp::ProcessCMTFile(const string& pathname, CSeq_entry& result, boo
 
     CRef<ILineReader> reader(ILineReader::New(pathname));
 
-    CStructuredCommentsReader cmt_reader(m_logger);
+    CTable2AsnStructuredCommentsReader cmt_reader(m_logger);
 
     if (byrows)
         cmt_reader.ProcessCommentsFileByRows(*reader, result);

@@ -3,6 +3,8 @@
 
 #include <corelib/ncbistl.hpp>
 
+#include <objtools/readers/struct_cmt_reader.hpp>
+
 BEGIN_NCBI_SCOPE
 
 // forward declarations
@@ -37,13 +39,13 @@ class ILineReader;
   reader.ProcessCommentsFileByRows(reader2, *entry);
 */
 
-class CStructuredCommentsReader
+class CTable2AsnStructuredCommentsReader : public CStructuredCommentsReader
 {
 public:
    // If you need messages and error to be logged
    // supply an optional ILineErrorListener instance
-   CStructuredCommentsReader(objects::ILineErrorListener* logger);
-   ~CStructuredCommentsReader();
+    CTable2AsnStructuredCommentsReader(objects::ILineErrorListener* logger);
+    ~CTable2AsnStructuredCommentsReader();
    // Read input tab delimited file and apply Structured Comments to the container
    // First row of the file is a list of Field to apply
    // First collumn of the file is an ID of the object (sequence) to apply
@@ -65,15 +67,6 @@ private:
    objects::ILineErrorListener* m_logger;
 };
 
-class CStructuredComments
-{
-public:
-    CStructuredComments(objects::CSeq_entry& container);
-protected:
-    CRef<objects::CSeq_entry> m_entry;
-};
-
 END_NCBI_SCOPE
-
 
 #endif
