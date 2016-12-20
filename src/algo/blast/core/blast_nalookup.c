@@ -1817,12 +1817,13 @@ static NaHashLookupThreadData* NaHashLookupThreadDataNew(Int4 num_threads,
 static Int2
 s_NaHashLookupScanSubjectForWordCounts(BlastSeqSrc* seq_src,
                                        BlastNaHashLookupTable* lookup,
-                                       Uint4 num_threads)
+                                       Uint4 in_num_threads)
 {
     Uint4 i;
     Int4 k, b;
-    Int4 th_batch = BlastSeqSrcGetNumSeqs(seq_src) / num_threads;
+    Int4 num_db_seqs, th_batch;
     NaHashLookupThreadData* th_data = NULL;
+    Uint4 num_threads;
 
     if (!seq_src || !lookup || !lookup->pv) {
         return -1;
@@ -1832,6 +1833,10 @@ s_NaHashLookupScanSubjectForWordCounts(BlastSeqSrc* seq_src,
 
     /* pv array must be one bit per word */
     ASSERT(lookup->pv_array_bts == 5);
+
+    num_db_seqs = BlastSeqSrcGetNumSeqs(seq_src);
+    num_threads = MIN(in_num_threads, num_db_seqs);
+    th_batch = BlastSeqSrcGetNumSeqs(seq_src) / num_threads;
 
     th_data = NaHashLookupThreadDataNew(num_threads, lookup, seq_src);
     if (!th_data) {
@@ -1974,30 +1979,38 @@ static void s_NaHashLookupRemoveWordFromThinBackbone(
 }
 
 
-static Int2 s_NaHashLookupRemovePolyAWords(BackboneCell** thin_backbone,
-                                           Int4 size,
-                                           TNaLookupHashFunction hash_func,
-                                           Uint4 mask)
+static Int2 s_NaHashLookupRemovePolyAWords(BlastNaHashLookupTable* lookup)
 {
-    Int4 word_size = 16;
     Int8 word;
+    Int4 word_size;
     Int4 i, k;
+    PV_ARRAY_TYPE* pv = NULL;
+    Int4 pv_array_bts;
 
-    ASSERT(word_size == 16);
+    if (!lookup) {
+        return -1;
+    }
+
+    ASSERT(lookup->lut_word_length == 16);
+
+    /* a bit must represent a single word */
+    ASSERT(lookup->pv_array_bts == 5);
+
+    pv = lookup->pv;
+    pv_array_bts = lookup->pv_array_bts;
+    word_size = lookup->lut_word_length;
 
     /* remove As and Ts */
-    s_NaHashLookupRemoveWordFromThinBackbone(thin_backbone, 0, hash_func, mask);
-    s_NaHashLookupRemoveWordFromThinBackbone(thin_backbone, 0xffffffff,
-                                             hash_func, mask);
+    pv[0] &= ~(PV_ARRAY_TYPE)1;
+    pv[0xffffffff >> pv_array_bts] &=
+        ~((PV_ARRAY_TYPE)1 << (0xffffffff & PV_ARRAY_MASK));
 
     /* remove As with a single error */
     for (i = 1;i < 4;i++) {
         word = i;
         for (k = 0;k < word_size;k++) {
-            s_NaHashLookupRemoveWordFromThinBackbone(thin_backbone,
-                                                     word << (k * 2),
-                                                     hash_func,
-                                                     mask);
+            pv[word >> pv_array_bts] &=
+                ~((PV_ARRAY_TYPE)1 << (word & PV_ARRAY_MASK));
         }
     }
 
@@ -2005,8 +2018,9 @@ static Int2 s_NaHashLookupRemovePolyAWords(BackboneCell** thin_backbone,
     for (i = 0;i < 3;i++) {
         for (k = 0;k < word_size;k++) {
             word = ((0xffffffff ^ (3 << k*2)) | (i << k*2)) & 0xffffffff;
-            s_NaHashLookupRemoveWordFromThinBackbone(thin_backbone, word,
-                                                     hash_func, mask);
+
+            pv[word >> pv_array_bts] &=
+                ~((PV_ARRAY_TYPE)1 << (word & PV_ARRAY_MASK));
         }
     }
 
@@ -2058,10 +2072,6 @@ static void s_BlastNaHashLookupFinalize(BackboneCell** thin_backbone,
                                            lookup->backbone_size, 
                                            sizeof(NaHashLookupBackboneCell));
     ASSERT(lookup->thick_backbone != NULL);
-
-    /* remove polyA words from the lookup table */
-    s_NaHashLookupRemovePolyAWords(thin_backbone, lookup->backbone_size,
-                                   lookup->hash_callback, lookup->mask);
 
     /* find out how many cells are needed for the overflow array */
     for (i = 0; i < lookup->backbone_size; i++) {
@@ -2263,14 +2273,15 @@ Int4 BlastNaHashLookupTableNew(BLAST_SequenceBlk* query,
 
     /* PV array does not use hashing */
     lookup->pv_array_bts = PV_ARRAY_BTS;
+    lookup->pv = (PV_ARRAY_TYPE*)calloc(kNumWords >> lookup->pv_array_bts,
+                                        sizeof(PV_ARRAY_TYPE));
+    ASSERT(lookup->pv);
+
+    s_NaHashLookupFillPV(query, locations, lookup);
+    s_NaHashLookupRemovePolyAWords(lookup);
 
     /* count words in the database */
     if (opt->db_filter) {
-        lookup->pv = (PV_ARRAY_TYPE*)calloc(kNumWords >> lookup->pv_array_bts,
-                                            sizeof(PV_ARRAY_TYPE));
-        ASSERT(lookup->pv);
-
-        s_NaHashLookupFillPV(query, locations, lookup);
         s_NaHashLookupScanSubjectForWordCounts(seqsrc, lookup, num_threads);
     }
     
