@@ -1660,7 +1660,7 @@ bool CCgiApplication::x_DoneHeadRequest(void) const
 
 
 NCBI_PARAM_DECL(bool, CGI, EnableVersionRequest);
-NCBI_PARAM_DEF_EX(bool, CGI, EnableVersionRequest, false,
+NCBI_PARAM_DEF_EX(bool, CGI, EnableVersionRequest, true,
                   eParam_NoThread, CGI_ENABLE_VERSION_REQUEST);
 typedef NCBI_PARAM_TYPE(CGI, EnableVersionRequest) TEnableVersionRequest;
 
@@ -1670,16 +1670,17 @@ bool CCgiApplication::x_ProcessVersionRequest()
     if (!TEnableVersionRequest::GetDefault()) return false;
     CCgiRequest& request = m_Context->GetRequest();
     if (request.GetRequestMethod() != CCgiRequest::eMethod_GET) return false;
-    string ver_type = request.GetEntry("version");
+    string ver_type = request.GetEntry("ncbi_version");
     EVersionType vt;
-    if (ver_type == "short") {
+    if (ver_type.empty() || ver_type == "short") {
         vt = eVersion_Short;
     }
-    else if (ver_type == "long") {
-        vt = eVersion_Long;
+    else if (ver_type == "full") {
+        vt = eVersion_Full;
     }
     else {
-        return false;
+        NCBI_THROW(CCgiRequestException, eEntry,
+            "Unsupported ncbi_version argument value");
     }
     ProcessVersionRequest(vt);
     return true;
@@ -1693,11 +1694,9 @@ void CCgiApplication::ProcessVersionRequest(EVersionType ver_type)
     case eVersion_Short:
         version = GetVersion().Print();
         break;
-    case eVersion_Long:
+    case eVersion_Full:
         version = GetFullVersion().Print(GetAppName());
         break;
-    default:
-        return;
     }
     CCgiResponse& response = m_Context->GetResponse();
     response.SetContentType("text/plain");

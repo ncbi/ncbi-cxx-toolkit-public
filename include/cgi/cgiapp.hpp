@@ -276,7 +276,7 @@ protected:
 
     enum EVersionType {
         eVersion_Short,
-        eVersion_Long
+        eVersion_Full
     };
 
     /// Process version request: set content type, print version informations etc.
@@ -286,7 +286,7 @@ protected:
     /// - CGI_ENABLE_VERSION_REQUEST=t must be set in the environment or
     ///   EnableVersionRequest=t in [CGI] section of the INI file.
     /// - REQUEST_METHOD must be GET
-    /// - query string must include version=[short|long] argument (all other
+    /// - query string must include ncbi_version=[short|full] argument (all other
     ///   arguments are ignored).
     virtual void ProcessVersionRequest(EVersionType ver_type);
 
