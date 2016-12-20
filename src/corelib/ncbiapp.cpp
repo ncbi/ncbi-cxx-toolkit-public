@@ -1193,6 +1193,7 @@ void CNcbiApplication::x_AddDefaultArgs(void)
 
 void CNcbiApplication::SetProgramDisplayName(const string& app_name)
 {
+    if (app_name.empty()) return;
     m_ProgramDisplayName = app_name;
     // Also set app_name in the diag context
     if ( GetDiagContext().GetAppName().empty() ) {
