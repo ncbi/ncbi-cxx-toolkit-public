@@ -552,9 +552,16 @@ int CCgiApplication::Run(void)
                     }
                 }
                 GetDiagContext().SetAppState(eDiagAppState_Request);
-                result = CCgiContext::ProcessCORSRequest(
-                    m_Context->GetRequest(), m_Context->GetResponse()) ?
-                    0 : ProcessRequest(*m_Context);
+                if (x_ProcessVersionRequest()) {
+                    result = 0;
+                }
+                else if (CCgiContext::ProcessCORSRequest(
+                    m_Context->GetRequest(), m_Context->GetResponse())) {
+                    result = 0;
+                }
+                else {
+                    result = ProcessRequest(*m_Context);
+                }
                 GetDiagContext().SetAppState(eDiagAppState_RequestEnd);
                 m_Context->GetResponse().Finalize();
                 if (result != 0) {
@@ -1649,6 +1656,53 @@ bool CCgiApplication::x_DoneHeadRequest(void) const
         return false;
     }
     return true;
+}
+
+
+NCBI_PARAM_DECL(bool, CGI, EnableVersionRequest);
+NCBI_PARAM_DEF_EX(bool, CGI, EnableVersionRequest, false,
+                  eParam_NoThread, CGI_ENABLE_VERSION_REQUEST);
+typedef NCBI_PARAM_TYPE(CGI, EnableVersionRequest) TEnableVersionRequest;
+
+
+bool CCgiApplication::x_ProcessVersionRequest()
+{
+    if (!TEnableVersionRequest::GetDefault()) return false;
+    CCgiRequest& request = m_Context->GetRequest();
+    if (request.GetRequestMethod() != CCgiRequest::eMethod_GET) return false;
+    string ver_type = request.GetEntry("version");
+    EVersionType vt;
+    if (ver_type == "short") {
+        vt = eVersion_Short;
+    }
+    else if (ver_type == "long") {
+        vt = eVersion_Long;
+    }
+    else {
+        return false;
+    }
+    ProcessVersionRequest(vt);
+    return true;
+}
+
+
+void CCgiApplication::ProcessVersionRequest(EVersionType ver_type)
+{
+    string version;
+    switch (ver_type) {
+    case eVersion_Short:
+        version = GetVersion().Print();
+        break;
+    case eVersion_Long:
+        version = GetFullVersion().Print(GetAppName());
+        break;
+    default:
+        return;
+    }
+    CCgiResponse& response = m_Context->GetResponse();
+    response.SetContentType("text/plain");
+    response.WriteHeader();
+    *response.GetOutput() << version;
 }
 
 

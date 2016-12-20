@@ -150,6 +150,7 @@ private:
     void SaveResultToCache(const CCgiRequest& request, CNcbiIstream& is);
     void SaveRequest(const string& rid, const CCgiRequest& request);
     CCgiRequest* GetSavedRequest(const string& rid);
+    bool x_ProcessVersionRequest(void);
 
 protected:
     /// Check the command line arguments before parsing them.
@@ -272,6 +273,15 @@ protected:
     /// current CHttpResponse if one exists.
     /// @sa CHttpResponse::SetStatus()
     void SetHTTPStatus(unsigned int status, const string& reason = kEmptyStr);
+
+    enum EVersionType {
+        eVersion_Short,
+        eVersion_Long
+    };
+
+    /// Process version request: set content type, print version informations etc.
+    /// The default implementation prints GetVersion/GetFullVersion as plain text.
+    virtual void ProcessVersionRequest(EVersionType ver_type);
 
 protected:
     /// Set CONN_HTTP_REFERER, print self-URL and referer to log.
