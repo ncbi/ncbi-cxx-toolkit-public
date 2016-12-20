@@ -51,6 +51,10 @@ public:
         const CRange<TSeqPos>& range);
 
 private:
+    static void x_TrimLocation(TSeqPos from, TSeqPos to, 
+        CRef<CSeq_loc>& loc);
+    static TSeqPos x_GetStartOffset(const CMappedFeat& mapped_feat, 
+        TSeqPos from, TSeqPos to);
     static TSeqPos x_GetFrame(const CCdregion& cdregion);
     static void x_UpdateFrame(TSeqPos offset, CCdregion& cdregion);
 };

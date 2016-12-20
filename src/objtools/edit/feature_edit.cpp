@@ -49,7 +49,36 @@ CMappedFeat CFeatTrim::Apply(const CMappedFeat& mapped_feat,
     CRef<CSeq_loc> loc(new CSeq_loc());
     loc->Assign(sfh.GetLocation());
 
-    CSeq_loc_CI loc_it(*loc);
+    x_TrimLocation(from, to, loc);
+
+    // Create a new seq-feat with the trimmed location
+    CSeq_feat_EditHandle sfeh(sfh);
+    CRef<CSeq_feat> new_sf(new CSeq_feat());
+    new_sf->Assign(*mapped_feat.GetSeq_feat());
+    new_sf->SetLocation(*loc);
+    if (loc->IsPartialStart(eExtreme_Biological) || 
+        loc->IsPartialStop(eExtreme_Biological)) {
+        new_sf->SetPartial(true);
+    }
+
+
+    // If Cdregion need to consider changes in frameshift
+    if (new_sf->GetData().IsCdregion()) {
+        const TSeqPos offset = x_GetStartOffset(mapped_feat, from, to);
+        x_UpdateFrame(offset, new_sf->SetData().SetCdregion());
+    }
+
+    sfeh.Replace(*new_sf);
+    return CMappedFeat(sfh);
+}
+
+
+void CFeatTrim::x_TrimLocation(const TSeqPos from, const TSeqPos to,
+    CRef<CSeq_loc>& loc) 
+{
+    if (loc.IsNull()) {
+        return;
+    }
 
     bool partial_start = false;
     bool partial_stop = false;
@@ -64,7 +93,6 @@ CMappedFeat CFeatTrim::Apply(const CMappedFeat& mapped_feat,
 
         CRef<CSeq_id> current_seqid = Ref(new CSeq_id());
         current_seqid->Assign(loc_it.GetSeq_id());
-
 
         // May be able to do this more succinctly and efficiently using CSeq_loc::Intersect
         if ((current_to < from) ||
@@ -100,7 +128,7 @@ CMappedFeat CFeatTrim::Apply(const CMappedFeat& mapped_feat,
                 current_to,
                 strand));
 
-            loc = loc->Subtract(*trim, 0, NULL, NULL);     
+            loc =  loc->Subtract(*trim, 0, NULL, NULL);     
             partial_stop = true; 
         }
     }
@@ -117,62 +145,29 @@ CMappedFeat CFeatTrim::Apply(const CMappedFeat& mapped_feat,
     if (partial_stop) {
         loc->SetPartialStop(true, eExtreme_Biological);
     }
+}
 
 
-    // Create a new seq-feat with the trimmed location
-    CSeq_feat_EditHandle sfeh(sfh);
-    CRef<CSeq_feat> new_sf(new CSeq_feat());
-    new_sf->Assign(*mapped_feat.GetSeq_feat());
-    new_sf->SetLocation(*loc);
-    if (partial_start || partial_stop) {
-        new_sf->SetPartial(true);
-    }
+TSeqPos CFeatTrim::x_GetStartOffset(const CMappedFeat& mapped_feat,
+    TSeqPos from, TSeqPos to) 
+{
+    TSeqPos offset = 0;
+    const auto strand = mapped_feat.GetLocation().GetStrand();
+    CRange<TSeqPos> feat_range = mapped_feat.GetLocationTotalRange();
 
-
-    // If Cdregion need to consider changes in frameshift
-    if (new_sf->GetData().IsCdregion()) {
-        CRange<TSeqPos> feat_range = mapped_feat.GetLocationTotalRange();
-        // Calculate the difference between the range and feature start position
-        TSeqPos offset = 0;
-        if (strand != eNa_strand_minus) {
-            TSeqPos feat_from = feat_range.GetFrom();
-            if (feat_from < from) {
-                offset = from - feat_from;
-            }
-        } 
-        else { // eNa_strand_minus
-            TSeqPos feat_to = feat_range.GetTo();
-            if (feat_to > to) {
-                offset = feat_to - to;
-            }
+    if (strand != eNa_strand_minus) {
+        TSeqPos feat_from = feat_range.GetFrom();
+        if (feat_from < from) {
+            offset = from - feat_from;
         }
-
-        x_UpdateFrame(offset, new_sf->SetData().SetCdregion());
-/*
-        const TSeqPos frame_change = offset%3;
-        if (frame_change) {
-            const TSeqPos old_frame = s_GetFrame(new_sf->GetData().GetCdregion());
-            const TSeqPos new_frame = (old_frame + 3 - frame_change)%3;
-
-            CCdregion::EFrame frame = CCdregion::eFrame_one;
-            switch(new_frame) {
-                case 1:
-                    frame = CCdregion::eFrame_two;
-                    break;
-                case 2:
-                    frame = CCdregion::eFrame_three;
-                    break;
-                default:
-                    break;
-            }
-            new_sf->SetData().SetCdregion().ResetFrame();
-            new_sf->SetData().SetCdregion().SetFrame(frame);
-        }
-        */
     }
-
-    sfeh.Replace(*new_sf);
-    return CMappedFeat(sfh);
+    else { // eNa_strand_minus
+        TSeqPos feat_to = feat_range.GetTo();
+        if (feat_to > to) {
+            offset = feat_to - to;
+        }
+    }
+    return offset;
 }
 
 
@@ -202,7 +197,7 @@ void CFeatTrim::x_UpdateFrame(const TSeqPos offset, CCdregion& cdregion)
     }
 
     const TSeqPos old_frame = x_GetFrame(cdregion);
-    const TSeqPos new_frame = (old_frame + 3 - frame_change)%3;
+    const TSeqPos new_frame = (old_frame + 3 - frame_change)%3; // Check this!
 
     CCdregion::EFrame frame = CCdregion::eFrame_one;
     switch(new_frame) {
