@@ -199,5 +199,6 @@ int main(int argc, const char* argv[])
     SetSplitLogFile(true);
     GetDiagContext().SetOldPostFormat(false);
 
-    return CNetCacheBlobFetchApp().AppMain(argc, argv);
+    grid::cgi::CVersionReporting<CNetCacheBlobFetchApp> app;
+    return app.AppMain(argc, argv);
 }
