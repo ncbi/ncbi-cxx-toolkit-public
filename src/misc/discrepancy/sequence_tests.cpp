@@ -2399,7 +2399,7 @@ void  AddMisspellsToReport(const list<size_t>& misspells, CReportNode& node, con
 }
 
 
-DISCREPANCY_CASE(FLATFILE_FIND, CSeq_inst, eOncaller, "Flatfile representation of object contains suspect text")
+DISCREPANCY_CASE(FLATFILE_FIND, COverlappingFeatures, eOncaller, "Flatfile representation of object contains suspect text")
 {
 // may need to rewrite
     CConstRef<CBioseq> bioseq = context.GetCurrentBioseq();
@@ -2411,11 +2411,12 @@ DISCREPANCY_CASE(FLATFILE_FIND, CSeq_inst, eOncaller, "Flatfile representation o
             AddMisspellsToReport(misspells, m_Objs, *descr, context);
         }
     }
-    for (CFeat_CI feat(bioseq_h); feat; ++feat) {
+    const vector<CConstRef<CSeq_feat> >& all = context.FeatAll();
+    ITERATE(vector<CConstRef<CSeq_feat>>, feat, all) {
         list<size_t> misspells;
-        FindSuspectTextInObject(feat->GetMappedFeature(), misspells);
+        FindSuspectTextInObject(**feat, misspells);
         if (!misspells.empty()) {
-            AddMisspellsToReport(misspells, m_Objs, feat->GetMappedFeature(), context);
+            AddMisspellsToReport(misspells, m_Objs, **feat, context);
         }
     }
 }
