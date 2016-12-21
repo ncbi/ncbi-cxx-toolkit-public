@@ -1670,7 +1670,10 @@ bool CCgiApplication::x_ProcessVersionRequest()
     if (!TEnableVersionRequest::GetDefault()) return false;
     CCgiRequest& request = m_Context->GetRequest();
     if (request.GetRequestMethod() != CCgiRequest::eMethod_GET) return false;
-    string ver_type = request.GetEntry("ncbi_version");
+    bool found = false;
+    string ver_type = request.GetEntry("ncbi_version", &found);
+    if ( !found ) return false;
+
     EVersionType vt;
     if (ver_type.empty() || ver_type == "short") {
         vt = eVersion_Short;
