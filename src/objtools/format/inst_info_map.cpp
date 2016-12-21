@@ -57,7 +57,7 @@ CInstInfoMap::GetInstitutionVoucherInfo(
     static const string  s_ccug_base("http://www.ccug.se/default.cfm?page=search_record.cfm&db=mc&s_tests=1&ccugno=");
     static const string  s_cfmr_base("http://www.fpl.fs.fed.us/search/mycologysearch_action.php?sorting_rule=1u&phrasesAndKeywords02=");
     static const string  s_cori_base("http://ccr.coriell.org/Sections/Search/Search.aspx?q=");
-    static const string  s_dsmz_base("http://www.dsmz.de/catalogues/details/culture/DSM-");
+    static const string  s_dsmz_base("https://www.dsmz.de/catalogues/details/culture/PV-");
     static const string  s_frr_base("http://www.foodscience.csiro.au/cgi-bin/rilax/search.pl?stpos=0&stype=AND&query=");
     static const string  s_fsu_base("http://www.prz.uni-jena.de/data.php?fsu=");
     static const string  s_jcm_base("http://www.jcm.riken.jp/cgi-bin/jcm/jcm_number?JCM=");
@@ -131,6 +131,7 @@ CInstInfoMap::GetInstitutionVoucherInfo(
         { "DMNS:Bird",        TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  0, NULL,   &s_colon_pfx,  NULL,        "Denver Museum of Nature and Science, Ornithology Collections") ) },
         { "DMNS:Mamm",        TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  0, NULL,   &s_colon_pfx,  NULL,        "Denver Museum of Nature and Science, Mammology Collection") ) },
         { "DSM",              TVoucherInfoRef(new SVoucherInfo(&s_dsmz_base,  false, 0, NULL,   NULL,          NULL,        "Deutsche Sammlung von Mikroorganismen und Zellkulturen GmbH") ) },
+        { "DSMZ",             TVoucherInfoRef(new SVoucherInfo(&s_dsmz_base,  false, 0, NULL,   NULL,          NULL,        "Deutsche Sammlung von Mikroorganismen und Zellkulturen GmbH") ) },
         { "FRR",              TVoucherInfoRef(new SVoucherInfo(&s_frr_base,   false, 0, NULL,   NULL,          NULL,        "Food Science Australia, Ryde") ) },
         { "FSU<DEU>",         TVoucherInfoRef(new SVoucherInfo(&s_fsu_base,   false, 0, NULL,   NULL,          NULL,        "Jena Microbial Resource Collection") ) },
         { "ICMP",             TVoucherInfoRef(new SVoucherInfo(&s_lcr_base,   true,  0, NULL,   &s_uscr_pfx,   NULL,        "International Collection of Microorganisms from Plants") ) },
@@ -167,7 +168,7 @@ CInstInfoMap::GetInstitutionVoucherInfo(
         { "MVZ:Mamm",         TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  0, NULL,   &s_colon_pfx,  NULL,        "Museum of Vertebrate Zoology, University of California at Berkeley, Mammal Collection") ) },
         { "MVZ:Page",         TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  0, NULL,   &s_colon_pfx,  NULL,        "Museum of Vertebrate Zoology, University of California at Berkeley, Notebook Page Collection") ) },
         { "MVZObs:Herp",      TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  0, NULL,   &s_colon_pfx,  NULL,        "Museum of Vertebrate Zoology, University of California at Berkeley, Herpetology Collection") ) },
-        { "NBRC",             TVoucherInfoRef(new SVoucherInfo(&s_nbrc_base,  false, 0, NULL,   NULL,          NULL,        "NITE Biological Resource Center") ) },
+        { "NBRC",             TVoucherInfoRef(new SVoucherInfo(&s_nbrc_base,  false, 8, &yp0,   NULL,          NULL,        "NITE Biological Resource Center") ) },
         { "NBSB:Bird",        TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  0, NULL,   &s_colon_pfx,  NULL,        "National Biomonitoring Specimen Bank, U.S. Geological Survey, bird collection") ) },
         { "NCIMB",            TVoucherInfoRef(new SVoucherInfo(&s_ncimb_base, false, 0, NULL,   NULL,          NULL,        "National Collections of Industrial Food and Marine Bacteria (incorporating the NCFB)") ) },
         { "NCTC",             TVoucherInfoRef(new SVoucherInfo(&s_nctc_base,  false, 0, NULL,   NULL,          NULL,        "National Collection of Type Cultures") ) },
