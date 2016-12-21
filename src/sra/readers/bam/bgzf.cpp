@@ -471,7 +471,7 @@ bool CBGZFStream::HaveNextDataBlock(CBGZFPos pos)
 size_t CBGZFStream::Read(char* buf, size_t count)
 {
     count = min(GetNextAvailableBytes(), count);
-    _ASSERT(count < 0x10000);
+    _ASSERT(count <= 0x10000);
     _ASSERT(m_Data);
     memcpy(buf, m_Data.get() + m_ReadPos, count);
     m_ReadPos += CBGZFPos::TByteOffset(count);
