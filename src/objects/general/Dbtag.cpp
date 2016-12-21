@@ -992,6 +992,15 @@ string CDbtag::GetUrl(const string & genus,
         break;
             
 
+    case CDbtag::eDbtagType_IFO:
+        if (!tag.empty()){
+            while (tag.size() < SIZE_TYPE(8)){
+                tag = '0' + tag;
+            }
+        }
+        break;
+            
+
     case eDbtagType_ISHAM_ITS:
         if (NStr::StartsWith(tag, "MITS", NStr::eNocase)) {
             tag = tag.substr(4);
