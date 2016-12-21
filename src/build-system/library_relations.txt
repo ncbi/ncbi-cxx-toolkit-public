@@ -416,6 +416,7 @@ gpipe_blast needs $(BLAST_LIBS)
 gpipe_blast needs gpipe_alnutil
 gpipe_clean_prot_names needs gpipe_attr
 gpipe_clean_prot_names needs xdiscrepancy_report
+gpipe_common needs $(COMPRESS_LIBS)
 gpipe_common needs $(SDBAPI_LIB)
 gpipe_common needs eutils_client
 gpipe_common needs xcgi
@@ -488,7 +489,6 @@ gpipe_xml needs gpipe_dateutil
 gpipe_xmlutil needs xmlwrapp
 gpxapi needs general
 gpxapi needs xconnect
-gpxlib needs $(COMPRESS_LIBS)
 gpxlib needs gpipe_common
 gpxlib needs gpxapi
 gpxlib needs xgp_manifest
