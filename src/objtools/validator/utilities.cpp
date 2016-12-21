@@ -2272,7 +2272,7 @@ bool HasInternalStop(const CSeq_feat& feat, CScope& scope, bool ignore_exception
     if (!ignore_exceptions && feat.CanGetExcept() && feat.GetExcept() &&
         feat.CanGetExcept_text()) {
         const string& except_text = feat.GetExcept_text();
-        if (!NStr::Find(except_text, kUnclassifiedTranslationDiscrepancy) != string::npos
+        if (NStr::Find(except_text, kUnclassifiedTranslationDiscrepancy) == string::npos
             && !ReportTranslationErrors(feat.GetExcept_text())) {
             return false;
         }
@@ -2290,6 +2290,91 @@ bool HasInternalStop(const CSeq_feat& feat, CScope& scope, bool ignore_exception
     if (internal_stop_codons > 0) {
         return true;
     } else {
+        return false;
+    }
+}
+
+
+CRef<CSeqVector> MakeSeqVectorForResidueCounting(CBioseq_Handle bsh)
+{
+    CRef<CSeqVector> sv(new CSeqVector(bsh, CBioseq_Handle::eCoding_Iupac));
+    CSeq_data::E_Choice seqtyp = bsh.GetInst().IsSetSeq_data() ?
+        bsh.GetInst().GetSeq_data().Which() : CSeq_data::e_not_set;
+    if (seqtyp == CSeq_data::e_Ncbieaa || seqtyp == CSeq_data::e_Ncbistdaa) {
+        sv->SetCoding(CSeq_data::e_Ncbieaa);
+    }
+    return sv;
+}
+
+
+bool HasBadProteinStart(const CSeqVector& sv)
+{
+    if (sv.size() < 1) {
+        return false;
+    } else if (sv.IsInGap(0) || sv[0] == '-') {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+bool HasBadProteinStart(const CSeq_feat& feat, CScope& scope)
+{
+    if (!feat.IsSetData() || !feat.GetData().IsCdregion() ||
+        !feat.IsSetProduct()) {
+        return false;
+    }
+    // use try catch for those weird situations where the product is
+    // not specified as a single product sequence (in which case we
+    // should just skip this test)
+    try {
+        CBioseq_Handle bsh = scope.GetBioseqHandle(feat.GetProduct());
+        if (!bsh.IsAa()) {
+            return false;
+        }
+        CConstRef<CSeqVector> sv = MakeSeqVectorForResidueCounting(bsh);
+        return HasBadProteinStart(*sv);
+    } catch (CException& ex) {
+        return false;
+    }
+}
+
+
+size_t CountProteinStops(const CSeqVector& sv)
+{
+    size_t terminations = 0;
+
+    for (CSeqVector_CI sv_iter(sv); (sv_iter); ++sv_iter) {
+        if (*sv_iter == '*') {
+            terminations++;
+        }
+    }
+    return terminations;
+}
+
+
+bool HasStopInProtein(const CSeq_feat& feat, CScope& scope)
+{
+    if (!feat.IsSetData() || !feat.GetData().IsCdregion() ||
+        !feat.IsSetProduct()) {
+        return false;
+    }
+    // use try catch for those weird situations where the product is
+    // not specified as a single product sequence (in which case we
+    // should just skip this test)
+    try {
+        CBioseq_Handle bsh = scope.GetBioseqHandle(feat.GetProduct());
+        if (!bsh.IsAa()) {
+            return false;
+        }
+        CConstRef<CSeqVector> sv = MakeSeqVectorForResidueCounting(bsh);
+        if (CountProteinStops(*sv) > 0) {
+            return true;
+        } else {
+            return false;
+        }
+    } catch (CException& ex) {
         return false;
     }
 }

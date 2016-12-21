@@ -223,6 +223,13 @@ bool NCBI_VALIDATOR_EXPORT HasBadStartCodon(const CSeq_loc& loc, const string& t
 size_t CountInternalStopCodons(const string& transl_prot);
 bool NCBI_VALIDATOR_EXPORT HasInternalStop(const CSeq_feat& feat, CScope& scope, bool ignore_exceptions);
 
+CRef<CSeqVector> MakeSeqVectorForResidueCounting(CBioseq_Handle bsh);
+bool HasBadProteinStart(const CSeqVector& sv);
+bool NCBI_VALIDATOR_EXPORT HasBadProteinStart(const CSeq_feat& cds, CScope& scope);
+
+size_t CountProteinStops(const CSeqVector& sv);
+bool NCBI_VALIDATOR_EXPORT HasStopInProtein(const CSeq_feat& feat, CScope& scope);
+
 bool NCBI_VALIDATOR_EXPORT IsSequenceFetchable(const CSeq_id& id);
 bool NCBI_VALIDATOR_EXPORT IsSequenceFetchable(const string& seq_id);
 

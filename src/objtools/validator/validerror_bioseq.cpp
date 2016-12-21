@@ -3130,25 +3130,21 @@ void CValidError_bioseq::ValidateRawConst(
 
         if (check_alphabet) {
             unsigned int trailingX = 0;
-            size_t terminations = 0, dashes = 0;
-            bool gap_at_start = false, leading_x = false, found_lower = false;
+            size_t dashes = 0;
+            bool leading_x = false, found_lower = false;
 
-            CSeqVector sv = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
-            if (seqtyp == CSeq_data::e_Ncbieaa || seqtyp == CSeq_data::e_Ncbistdaa) {
-                sv.SetCoding (CSeq_data::e_Ncbieaa);
-            }
+            CConstRef<CSeqVector> sv = MakeSeqVectorForResidueCounting(bsh); 
             CSeqVector sv_res = bsh.GetSeqVector(CBioseq_Handle::eCoding_Ncbi);
 
             size_t bad_cnt = 0;
             TSeqPos pos = 1;
-            for ( CSeqVector_CI sv_iter(sv), sv_res_iter(sv_res); (sv_iter) && (sv_res_iter); ++sv_iter, ++sv_res_iter ) {
+            for ( CSeqVector_CI sv_iter(*sv), sv_res_iter(sv_res); (sv_iter) && (sv_res_iter); ++sv_iter, ++sv_res_iter ) {
                 CSeqVector::TResidue res = *sv_iter;
                 CSeqVector::TResidue n_res = *sv_res_iter;
                 if ( !IsResidue(n_res) ) {
                     if (res == 'U' && bsh.IsSetInst_Mol() && bsh.GetInst_Mol() == CSeq_inst::eMol_rna) {
                         // U is ok for RNA
                     } else if (res == '*' && bsh.IsAa()) {
-                        terminations++;
                         trailingX = 0;
                     } else {
                         if ( ! IsResidue(res)) {
@@ -3186,13 +3182,9 @@ void CValidError_bioseq::ValidateRawConst(
                                 msg, seq);
                         }
                     }
-                } else if ( res == '-' || sv.IsInGap(pos - 1) ) {
+                } else if ( res == '-' || sv->IsInGap(pos - 1) ) {
                     dashes++;
-                    if (pos == 1) {
-                        gap_at_start = true;
-                    }
                 } else if ( res == '*') {
-                    terminations++;
                     trailingX = 0;
                 } else if ( res == 'X' ) {
                     trailingX++;
@@ -3210,6 +3202,9 @@ void CValidError_bioseq::ValidateRawConst(
                 }
                 ++pos;
             }
+
+            bool gap_at_start = HasBadProteinStart(*sv);
+            size_t terminations = CountProteinStops(*sv);
 
             // only show leading or trailing X if product of NNN in nucleotide
             if (seq.IsAa() && (leading_x || trailingX > 0)) {
@@ -3294,15 +3289,12 @@ void CValidError_bioseq::ValidateRawConst(
                 } catch (std::exception ) {
                 }
 
-                string msg = "[" + NStr::SizetToString(terminations) + "] termination symbols in protein sequence";
-
                 if (NStr::IsBlank(gene_label)) {
                     gene_label = "gene?";
                 }
                 if (NStr::IsBlank(protein_label)) {
                     protein_label = "prot?";
                 }
-                msg += " (" + gene_label + " - " + protein_label + ")";
 
                 if (dashes > 0) {
                     if (gap_at_start && dashes == 1) {
@@ -3324,6 +3316,9 @@ void CValidError_bioseq::ValidateRawConst(
                 }
 
                 if (terminations > 0) {
+                    string msg = "[" + NStr::SizetToString(terminations) + "] termination symbols in protein sequence";
+                    msg += " (" + gene_label + " - " + protein_label + ")";
+
                     PostErr(eDiag_Error, eErr_SEQ_INST_StopInProtein, msg, seq);
                 }
             }

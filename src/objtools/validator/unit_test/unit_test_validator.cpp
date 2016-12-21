@@ -1492,6 +1492,9 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_StopInProtein)
     cds->SetExcept(true);
     cds->SetExcept_text("unclassified translation discrepancy");
 
+    BOOST_CHECK_EQUAL(validator::HasStopInProtein(*cds, scope), true);
+    BOOST_CHECK_EQUAL(validator::HasInternalStop(*cds, scope, false), true);
+
     // list of expected errors
     expected_errors.push_back(new CExpectedError("lcl|prot", eDiag_Error, "StopInProtein", "[3] termination symbols in protein sequence (gene? - fake protein name)"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "ExceptionProblem", "unclassified translation discrepancy is not a legal exception explanation"));
@@ -1504,6 +1507,9 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_StopInProtein)
     CLEAR_ERRORS
     cds->ResetExcept();
     cds->ResetExcept_text();
+    BOOST_CHECK_EQUAL(validator::HasStopInProtein(*cds, scope), true);
+    BOOST_CHECK_EQUAL(validator::HasInternalStop(*cds, scope, false), true);
+    BOOST_CHECK_EQUAL(validator::HasBadStartCodon(*cds, scope, false), true);
 
     expected_errors.push_back(new CExpectedError("lcl|prot", eDiag_Error, "StopInProtein", "[3] termination symbols in protein sequence (gene? - fake protein name)"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "StartCodon", "Illegal start codon (and 3 internal stops). Probably wrong genetic code [0]"));
@@ -11430,6 +11436,9 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_StartCodon)
 
     STANDARD_SETUP
 
+    BOOST_CHECK_EQUAL(validator::HasInternalStop(*cds, scope, false), true);
+    BOOST_CHECK_EQUAL(validator::HasBadStartCodon(*cds, scope, false), true);
+
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "StartCodon",
                               "Illegal start codon (and 1 internal stops). Probably wrong genetic code [0]"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "InternalStop",
@@ -11535,6 +11544,9 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_InternalStop)
 
     STANDARD_SETUP
 
+    BOOST_CHECK_EQUAL(validator::HasInternalStop(*cds, scope, false), true);
+    BOOST_CHECK_EQUAL(validator::HasBadStartCodon(*cds, scope, false), true);
+
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "StartCodon",
                               "Illegal start codon (and 1 internal stops). Probably wrong genetic code [0]"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "InternalStop",
@@ -11556,6 +11568,10 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_InternalStop)
     nuc_seq->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[9] = 'T';
     entry->SetSet().SetSeq_set().back()->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("MPR*TEIN");
     seh = scope.AddTopLevelSeqEntry(*entry);
+
+    BOOST_CHECK_EQUAL(validator::HasStopInProtein(*cds, scope), true);
+    BOOST_CHECK_EQUAL(validator::HasInternalStop(*cds, scope, false), true);
+
     expected_errors.push_back(new CExpectedError("lcl|prot", eDiag_Error, "StopInProtein",
                               "[1] termination symbols in protein sequence (gene? - fake protein name)"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "InternalStop",
@@ -13607,6 +13623,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_MissingCDSproduct)
     cds->SetProduct().SetWhole().SetLocal().SetStr("not_present_ever");
     entry->SetSet().SetSeq_set().push_back (nuc);
     STANDARD_SETUP
+
+    BOOST_CHECK_EQUAL(validator::HasBadStartCodon(*cds, scope, false), true);
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "StartCodon",
               "Illegal start codon used. Wrong genetic code [0] or protein should be partial"));
@@ -17374,6 +17392,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ShortIntron)
 
     STANDARD_SETUP
 
+    BOOST_CHECK_EQUAL(validator::HasBadStartCodon(*cds, scope, false), true);
+
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "StartCodon",
                               "Illegal start codon used. Wrong genetic code [0] or protein should be partial"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "NoProtein",
@@ -17414,6 +17434,9 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ShortIntron)
     // make cds not pseudo, intron pseudo, should still get one ShortIntron error
     cds->ResetPseudo();
     intron->SetPseudo(true);
+
+    BOOST_CHECK_EQUAL(validator::HasBadStartCodon(*cds, scope, false), true);
+
     CLEAR_ERRORS
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "StartCodon",
                               "Illegal start codon used. Wrong genetic code [0] or protein should be partial"));
@@ -19500,6 +19523,9 @@ BOOST_AUTO_TEST_CASE(Test_GP_9919)
     CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
     cds->SetExcept(true);
     cds->SetExcept_text("unclassified translation discrepancy");
+
+    BOOST_CHECK_EQUAL(validator::HasStopInProtein(*cds, scope), true);
+    BOOST_CHECK_EQUAL(validator::HasInternalStop(*cds, scope, false), true);
 
     // list of expected errors
     expected_errors.push_back(new CExpectedError("lcl|prot", eDiag_Error, "StopInProtein", "[3] termination symbols in protein sequence (gene? - fake protein name)"));
