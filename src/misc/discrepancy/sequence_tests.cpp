@@ -1834,36 +1834,30 @@ DISCREPANCY_SUMMARIZE(DEFLINE_ON_SET)
 
 const string kMitochondrionRequired = "[n] bioseq[s] [has] D-loop or control region misc_feature, but [is] do not have mitochondrial source";
 
-DISCREPANCY_CASE(MITOCHONDRION_REQUIRED, CSeq_inst, eDisc | eOncaller, "If D-loop or control region misc_feat is present, source must be mitochondrial")
+DISCREPANCY_CASE(MITOCHONDRION_REQUIRED, COverlappingFeatures, eDisc | eOncaller, "If D-loop or control region misc_feat is present, source must be mitochondrial")
 {
-    CConstRef<CBioseq> seq = context.GetCurrentBioseq();
-    if (!seq) {
+    if (context.GetCurrentGenome() == CBioSource::eGenome_mitochondrion) {
         return;
     }
-    CBioseq_Handle seq_h = context.GetScope().GetBioseqHandle(*seq);
-
+    const vector<CConstRef<CSeq_feat> >& all = context.FeatAll();
     bool has_D_loop = false;
     bool has_misc_feat_with_control_region = false;
-
-    for (CFeat_CI feat_it(seq_h); feat_it; ++feat_it) {
-        if (feat_it->IsSetData()) {
-            if (feat_it->GetData().GetSubtype() == CSeqFeatData::eSubtype_D_loop) {
+    ITERATE(vector<CConstRef<CSeq_feat>>, feat, all) {
+        if ((*feat)->IsSetData()) {
+            if ((*feat)->GetData().GetSubtype() == CSeqFeatData::eSubtype_D_loop) {
                 has_D_loop = true;
                 break;
             }
-            else if (feat_it->GetData().GetSubtype() == CSeqFeatData::eSubtype_misc_feature) {
-                if (feat_it->IsSetComment() && NStr::FindNoCase(feat_it->GetComment(), "control region") != NPOS) {
+            else if ((*feat)->GetData().GetSubtype() == CSeqFeatData::eSubtype_misc_feature) {
+                if ((*feat)->IsSetComment() && NStr::FindNoCase((*feat)->GetComment(), "control region") != NPOS) {
                     has_misc_feat_with_control_region = true;
                     break;
                 }
             }
         }
     }
-
     if (has_D_loop || has_misc_feat_with_control_region) {
-        if (context.GetCurrentGenome() != CBioSource::eGenome_mitochondrion) {
-            m_Objs[kMitochondrionRequired].Add(*context.NewBioseqObj(seq, &context.GetSeqSummary(), eKeepRef, true), false);
-        }
+        m_Objs[kMitochondrionRequired].Add(*context.NewBioseqObj(context.GetCurrentBioseq(), &context.GetSeqSummary(), eNoRef, true));
     }
 }
 
