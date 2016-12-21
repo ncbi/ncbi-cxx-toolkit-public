@@ -35,7 +35,7 @@ class ILineReader;
   }
 */
 
-class CStructuredCommentsReader
+class NCBI_XOBJREAD_EXPORT CStructuredCommentsReader
 {
 public:
    // If you need messages and error to be logged
