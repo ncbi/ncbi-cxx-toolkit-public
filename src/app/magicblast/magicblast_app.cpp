@@ -827,7 +827,7 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
                     (*exon)->GetProduct_end().GetNucpos() - 1;
                 if (query_gap > 0) {
                     cigar += NStr::IntToString(query_gap);
-                    cigar += "D";
+                    cigar += "I";
                 }
                 edit_distance += query_gap;
 
