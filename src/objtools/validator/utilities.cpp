@@ -49,6 +49,7 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objmgr/util/seq_loc_util.hpp>
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/align_ci.hpp>
@@ -2377,6 +2378,152 @@ bool HasStopInProtein(const CSeq_feat& feat, CScope& scope)
     } catch (CException& ex) {
         return false;
     }
+}
+
+
+void FeatureHasEnds(const CSeq_feat& feat, CScope* scope, bool& no_beg, bool& no_end)
+{
+    unsigned int part_loc = sequence::SeqLocPartialCheck(feat.GetLocation(), scope);
+    no_beg = false;
+    no_end = false;
+
+    if (part_loc & sequence::eSeqlocPartial_Start) {
+        no_beg = true;
+    }
+    if (part_loc & sequence::eSeqlocPartial_Stop) {
+        no_end = true;
+    }
+
+
+    if ((!no_beg || !no_end) && feat.IsSetProduct()) {
+        unsigned int part_prod = sequence::SeqLocPartialCheck(feat.GetProduct(), scope);
+        if (part_prod & sequence::eSeqlocPartial_Start) {
+            no_beg = true;
+        }
+        if (part_prod & sequence::eSeqlocPartial_Stop) {
+            no_end = true;
+        }
+    }
+}
+
+
+CBioseq_Handle GetCDSProductSequence(const CSeq_feat& feat, CScope* scope, const CTSE_Handle & tse, bool far_fetch, bool& is_far)
+{
+    CBioseq_Handle prot_handle;
+    is_far = false;
+    if (!feat.IsSetProduct()) {
+        return prot_handle;
+    }
+    const CSeq_id* protid = NULL;
+    try {
+        protid = &sequence::GetId(feat.GetProduct(), scope);
+    } catch (CException&) {}
+    if (protid != NULL) {
+        prot_handle = scope->GetBioseqHandleFromTSE(*protid, tse);
+        if (!prot_handle  &&  far_fetch) {
+            prot_handle = scope->GetBioseqHandle(*protid);
+            is_far = true;
+        }
+    }
+    return prot_handle;
+}
+
+
+vector<TSeqPos> GetMismatches(const CSeq_feat& feat, CScope* scope, CBioseq_Handle prot_handle, const string& transl_prot)
+{
+    vector<TSeqPos> mismatches;
+    // can't check for mismatches unless there is a product
+    if (!prot_handle || !prot_handle.IsAa()) {
+        return mismatches;
+    }
+
+    CSeqVector prot_vec = prot_handle.GetSeqVector();
+    prot_vec.SetCoding(CSeq_data::e_Ncbieaa);
+    size_t prot_len = prot_vec.size();
+    size_t len = transl_prot.length();
+
+    if (NStr::EndsWith(transl_prot, "*") && (len == prot_len + 1)) { // ok, got stop
+        --len;
+    }
+
+    // ignore terminal 'X' from partial last codon if present
+    while (prot_len > 0) {
+        if (prot_vec[prot_len - 1] == 'X') {  //remove terminal X
+            --prot_len;
+        } else {
+            break;
+        }
+    }
+
+    while (len > 0) {
+        if (transl_prot[len - 1] == 'X') {  //remove terminal X
+            --len;
+        } else {
+            break;
+        }
+    }
+
+    if (len == prot_len)  {                // could be identical
+        for (TSeqPos i = 0; i < len; ++i) {
+            CSeqVectorTypes::TResidue p_res = prot_vec[i];
+            CSeqVectorTypes::TResidue t_res = transl_prot[i];
+
+            if (t_res != p_res) {
+                if (i == 0) {
+                    bool no_beg, no_end;
+                    FeatureHasEnds(feat, scope, no_beg, no_end);
+                    if (feat.IsSetPartial() && feat.GetPartial() && (!no_beg) && (!no_end)) {
+                    } else if (t_res == '-') {
+                    } else {
+                        mismatches.push_back(i);
+                    }
+                } else {
+                    mismatches.push_back(i);
+                }
+            }
+        }
+    }
+    return mismatches;
+}
+
+
+bool HasNoStop(const CSeq_feat& feat, CScope* scope)
+{
+    bool no_beg, no_end;
+    FeatureHasEnds(feat, scope, no_beg, no_end);
+    if (no_end) {
+        return false;
+    }
+
+    string transl_prot;
+    bool alt_start;
+    try {
+        transl_prot = TranslateCodingRegionForValidation(feat, *scope, alt_start);
+    } catch (CException& ex) {
+    }
+    if (NStr::EndsWith(transl_prot, "*")) {
+        return false;
+    }
+
+    bool show_stop = true;
+    if (!no_beg && feat.IsSetPartial() && feat.GetPartial()) {
+        CBioseq_Handle prot_handle;
+        try {
+            CBioseq_Handle bsh = scope->GetBioseqHandle(feat.GetLocation());
+            const CTSE_Handle tse = bsh.GetTSE_Handle();
+            bool is_far = false;
+            prot_handle = GetCDSProductSequence(feat, scope, tse, true, is_far);
+            if (prot_handle) {
+                vector<TSeqPos> mismatches = GetMismatches(feat, scope, prot_handle, transl_prot);
+                if (mismatches.size() == 0) {
+                    show_stop = false;
+                }
+            }
+        } catch (CException& ex) {
+        }
+    }
+
+    return show_stop;
 }
 
 

@@ -1128,11 +1128,10 @@ private:
          const bool report_errors,
          bool& has_errors,
          bool& other_than_mismatch);
-    const CSeq_id* x_GetCDSProduct
+    CBioseq_Handle x_GetCDSProduct
         (const CSeq_feat& feat,
          bool report_errors,
          size_t translation_length,
-         CBioseq_Handle& prot_handle,
          string& farstr,
          bool& has_errors,
          bool& other_than_mismatch);
@@ -1151,8 +1150,6 @@ private:
          bool rna_editing,
          bool mismatch_except,
          bool unclassified_except,
-         bool no_beg,
-         bool no_end,
          size_t& len,
          size_t& num_mismatches,
          bool& no_product,
@@ -1162,7 +1159,7 @@ private:
     void ValidateCdsProductId(const CSeq_feat& feat);
     void ValidateCdConflict(const CCdregion& cdregion, const CSeq_feat& feat);
     void ReportCdTransErrors(const CSeq_feat& feat,
-        bool show_stop, bool got_stop, bool no_end, int ragged,
+        bool show_stop, bool got_stop,
         bool report_errors, bool& has_errors);
 
     EDiagSev x_SeverityForConsensusSplice(void);
@@ -1231,7 +1228,9 @@ private:
     bool IsPlastid(int genome);
     static bool IsOverlappingGenePseudo(const CSeq_feat& feat, CScope* scope);
     unsigned char Residue(unsigned char res);
-    int  CheckForRaggedEnd(const CSeq_loc&, const CCdregion& cdr);
+
+    static int CheckForRaggedEnd(const CSeq_feat& feat, CScope* scope);
+    static int CheckForRaggedEnd(const CSeq_loc&, const CCdregion& cdr, CScope* scope);
     bool SuppressCheck(const string& except_text);
     string MapToNTCoords(const CSeq_feat& feat, const CSeq_loc& product,
         TSeqPos pos);

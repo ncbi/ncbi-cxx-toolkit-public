@@ -11405,6 +11405,8 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_CdTransFail)
     cds->SetLocation().SetInt().SetFrom(27);
     STANDARD_SETUP
 
+    BOOST_CHECK_EQUAL(validator::HasNoStop(*cds, &scope), true);
+
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Critical, "Range",
                                                  "Location: SeqLoc [{lcl|nuc}] out of range"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "ProductLength",
@@ -11438,6 +11440,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_StartCodon)
 
     BOOST_CHECK_EQUAL(validator::HasInternalStop(*cds, scope, false), true);
     BOOST_CHECK_EQUAL(validator::HasBadStartCodon(*cds, scope, false), true);
+    BOOST_CHECK_EQUAL(validator::HasNoStop(*cds, &scope), true);
 
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "StartCodon",
                               "Illegal start codon (and 1 internal stops). Probably wrong genetic code [0]"));
@@ -11546,6 +11549,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_InternalStop)
 
     BOOST_CHECK_EQUAL(validator::HasInternalStop(*cds, scope, false), true);
     BOOST_CHECK_EQUAL(validator::HasBadStartCodon(*cds, scope, false), true);
+    BOOST_CHECK_EQUAL(validator::HasNoStop(*cds, &scope), true);
 
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "StartCodon",
                               "Illegal start codon (and 1 internal stops). Probably wrong genetic code [0]"));
@@ -11710,6 +11714,8 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_NoStop)
     cds->SetLocation().SetInt().SetTo(23);
 
     STANDARD_SETUP
+
+    BOOST_CHECK_EQUAL(validator::HasNoStop(*cds, &scope), true);
 
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "NoStop",
                                                  "Missing stop codon"));
@@ -13625,6 +13631,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_MissingCDSproduct)
     STANDARD_SETUP
 
     BOOST_CHECK_EQUAL(validator::HasBadStartCodon(*cds, scope, false), true);
+    BOOST_CHECK_EQUAL(validator::HasNoStop(*cds, &scope), true);
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "StartCodon",
               "Illegal start codon used. Wrong genetic code [0] or protein should be partial"));
@@ -17393,6 +17400,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ShortIntron)
     STANDARD_SETUP
 
     BOOST_CHECK_EQUAL(validator::HasBadStartCodon(*cds, scope, false), true);
+    BOOST_CHECK_EQUAL(validator::HasNoStop(*cds, &scope), true);
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "StartCodon",
                               "Illegal start codon used. Wrong genetic code [0] or protein should be partial"));
@@ -17436,6 +17444,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ShortIntron)
     intron->SetPseudo(true);
 
     BOOST_CHECK_EQUAL(validator::HasBadStartCodon(*cds, scope, false), true);
+    BOOST_CHECK_EQUAL(validator::HasNoStop(*cds, &scope), true);
 
     CLEAR_ERRORS
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "StartCodon",

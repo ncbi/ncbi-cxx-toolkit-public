@@ -983,23 +983,45 @@ unsigned char CValidError_feat::Residue(unsigned char res)
 }
 
 
+int CValidError_feat::CheckForRaggedEnd(const CSeq_feat& feat, CScope* scope)
+{
+    int ragged = 0;
+    if (!feat.IsSetData() || !feat.GetData().IsCdregion() || !feat.IsSetLocation()) {
+        return 0;
+    }
+    unsigned int part_loc = SeqLocPartialCheck(feat.GetLocation(), scope);
+    if (feat.IsSetProduct()) {
+        unsigned int part_prod = SeqLocPartialCheck(feat.GetProduct(), scope);
+        if ((part_loc & eSeqlocPartial_Stop) ||
+            (part_prod & eSeqlocPartial_Stop)) {
+            // not ragged
+        } else {
+            // complete stop, so check for ragged end
+            ragged = CheckForRaggedEnd(feat.GetLocation(), feat.GetData().GetCdregion(), scope);
+        }
+    }
+    return ragged;
+}
+
+
 int CValidError_feat::CheckForRaggedEnd
 (const CSeq_loc& loc, 
- const CCdregion& cdregion)
+ const CCdregion& cdregion,
+ CScope* scope)
 {
-    size_t len = GetLength(loc, m_Scope);
+    size_t len = GetLength(loc, scope);
     if ( cdregion.GetFrame() > CCdregion::eFrame_one ) {
         len -= cdregion.GetFrame() - 1;
     }
 
     int ragged = len % 3;
     if ( ragged > 0 ) {
-        len = GetLength(loc, m_Scope);
+        len = GetLength(loc, scope);
         size_t last_pos = 0;
 
         CSeq_loc::TRange range = CSeq_loc::TRange::GetEmpty();
         FOR_EACH_CODEBREAK_ON_CDREGION (cbr, cdregion) {
-            SRelLoc rl(loc, (*cbr)->GetLoc(), m_Scope);
+            SRelLoc rl(loc, (*cbr)->GetLoc(), scope);
             ITERATE (SRelLoc::TRanges, rit, rl.m_Ranges) {
                 if ((*rit)->GetTo() > last_pos) {
                     last_pos = (*rit)->GetTo();
@@ -6517,11 +6539,11 @@ void CValidError_feat::ReportCdTransErrors
 (const CSeq_feat& feat,
  bool show_stop,
  bool got_stop, 
- bool no_end,
- int ragged,
  bool report_errors,
  bool& has_errors)
 {
+    bool no_beg, no_end;
+    FeatureHasEnds(feat, m_Scope, no_beg, no_end);
     if (show_stop) {
         if (!got_stop  && !no_end) {
             has_errors = true;
@@ -6535,12 +6557,15 @@ void CValidError_feat::ReportCdTransErrors
                 PostErr (eDiag_Error, eErr_SEQ_FEAT_PartialProblem,
                     "Got stop codon, but 3'end is labeled partial", feat);
             }
-        } else if (got_stop  &&  !no_end  &&  ragged) {
-            has_errors = true;
-            if (report_errors) {
-                PostErr (eDiag_Error, eErr_SEQ_FEAT_TransLen, 
-                    "Coding region extends " + NStr::IntToString(ragged) +
-                    " base(s) past stop codon", feat);
+        } else if (got_stop  &&  !no_end) {
+            int ragged = CheckForRaggedEnd(feat, m_Scope);
+            if (ragged > 0) {
+                has_errors = true;
+                if (report_errors) {
+                    PostErr(eDiag_Error, eErr_SEQ_FEAT_TransLen,
+                        "Coding region extends " + NStr::IntToString(ragged) +
+                        " base(s) past stop codon", feat);
+                }
             }
         }
     }
@@ -6901,41 +6926,36 @@ void CValidError_feat::x_CheckCDSFrame
 }
 
 
-const CSeq_id* CValidError_feat::x_GetCDSProduct
+CBioseq_Handle CValidError_feat::x_GetCDSProduct
 (const CSeq_feat& feat,
  bool report_errors,
  size_t translation_length,
- CBioseq_Handle& prot_handle,
  string& farstr,
  bool& has_errors,
  bool& other_than_mismatch)
 {
-    const CSeq_id* protid = 0;
+    bool is_far = false;
+    CBioseq_Handle prot_handle = GetCDSProductSequence(feat, m_Scope,
+        m_Imp.GetTSE_Handle(), m_Imp.IsFarFetchCDSproducts(), is_far);
 
-    if (feat.IsSetProduct()) {
-        try {
-            protid = &GetId(feat.GetProduct(), m_Scope);
-        } catch (CException&) {}
-        if (protid != NULL) {
-            prot_handle = m_Scope->GetBioseqHandleFromTSE(*protid, m_Imp.GetTSE_Handle());
-            if (!prot_handle  &&  m_Imp.IsFarFetchCDSproducts()) {
-                prot_handle = m_Scope->GetBioseqHandle(*protid);
-                farstr = "(far) ";
-                if (!prot_handle) {
-                    string label;
-                    protid->GetLabel(&label);
+    if (!prot_handle) {
+        if (is_far) {
+            const CSeq_id* protid = 0;
+            try {
+                protid = &GetId(feat.GetProduct(), m_Scope);
+            } catch (CException&) {}
+            if (protid != NULL) {
+                string label;
+                protid->GetLabel(&label);
 
-                    PostErr(eDiag_Error, eErr_SEQ_FEAT_ProductFetchFailure, 
-                          "Unable to fetch CDS product '" + label + "'", feat);
-                    if (m_Imp.x_IsFarFetchFailure(feat.GetProduct())) {
-                        m_Imp.SetFarFetchFailure();
-                    }
-                    return protid;
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_ProductFetchFailure,
+                    "Unable to fetch CDS product '" + label + "'", feat);
+                if (m_Imp.x_IsFarFetchFailure(feat.GetProduct())) {
+                    m_Imp.SetFarFetchFailure();
                 }
             }
         }
-    }
-    if (!prot_handle) {
+
         if  (!m_Imp.IsStandaloneAnnot()) {
             if (translation_length > 6) {
                 bool is_nt, is_ng, is_nw, is_nc;
@@ -6963,7 +6983,7 @@ const CSeq_id* CValidError_feat::x_GetCDSProduct
             }
         }
     }
-    return protid;
+    return prot_handle;
 }
 
 
@@ -7014,8 +7034,6 @@ void CValidError_feat::x_CheckTranslationMismatches
  bool rna_editing,
  bool mismatch_except,
  bool unclassified_except,
- bool no_beg,
- bool no_end,
  size_t& len,
  size_t& num_mismatches,
  bool& no_product,
@@ -7061,34 +7079,30 @@ void CValidError_feat::x_CheckTranslationMismatches
             }
         }
 
+
+
         vector<TSeqPos> mismatches;
         if (len == prot_len)  {                // could be identical
-            for (TSeqPos i = 0; i < len; ++i) {
-                CSeqVectorTypes::TResidue p_res = prot_vec[i];
-                CSeqVectorTypes::TResidue t_res = transl_prot[i];
-
-                if (t_res != p_res) {
-                    if (i == 0) {
-                        if (feat.IsSetPartial() && feat.GetPartial() && (!no_beg) && (!no_end)) {
-                            if (report_errors) {
-                                PostErr(eDiag_Error, eErr_SEQ_FEAT_PartialProblem,
-                                    "Start of location should probably be partial",
-                                    feat);
-                            }
-                            other_than_mismatch = true;
-                        } else if (t_res == '-' || t_res == 'X') {
-                            other_than_mismatch = true;
-                            if (t_res == 'X') {
-                                mismatches.push_back(i);
-                            }
-                        } else {
-                            mismatches.push_back(i);
-                        }
-                    } else {
-                        mismatches.push_back(i);
+            if (prot_vec.size() > 0 && transl_prot.length() > 0 &&
+                prot_vec[0] != transl_prot[0]) {
+                bool no_beg, no_end;
+                FeatureHasEnds(feat, m_Scope, no_beg, no_end);
+                if (feat.IsSetPartial() && feat.GetPartial() && (!no_beg) && (!no_end)) {
+                    if (report_errors) {
+                        PostErr(eDiag_Error, eErr_SEQ_FEAT_PartialProblem,
+                            "Start of location should probably be partial",
+                            feat);
                     }
+                    other_than_mismatch = true;
+                    has_errors = true;
+                } else if (transl_prot[0] == '-' || transl_prot[0] == 'X') {
+                    other_than_mismatch = true;
                     has_errors = true;
                 }
+            }
+            mismatches = GetMismatches(feat, m_Scope, prot_handle, transl_prot);
+            if (mismatches.size() > 0) {
+                has_errors = true;
             }
         } else {
             has_errors = true;
@@ -7165,6 +7179,8 @@ void CValidError_feat::x_CheckTranslationMismatches
 
         if (feat.CanGetPartial()  &&  feat.GetPartial()  &&
             num_mismatches == 0) {
+            bool no_beg, no_end;
+            FeatureHasEnds(feat, m_Scope, no_beg, no_end);
             if (!no_beg  && !no_end) {
                 if (report_errors) {
                     if (m_Imp.IsGpipe () && m_Imp.IsGenomic()) {
@@ -7227,7 +7243,6 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat,
         }
     }
 
-    int  ragged = 0;
     bool has_errors = false, unclassified_except = false,
         mismatch_except = false, frameshift_except = false,
         rearrange_except = false, product_replaced = false,
@@ -7297,7 +7312,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat,
         got_stop = true;
     }
 
-    if (HasBadStartCodon(feat, *m_Scope, m_Imp.IgnoreExceptions())) {
+    if (HasBadStartCodon(feat.GetLocation(), transl_prot)) {
         has_errors = true;
         other_than_mismatch = true;
         if (!unclassified_except && report_errors) {
@@ -7324,21 +7339,6 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat,
             x_ReportUnnecessaryAlternativeStartCodonException(feat);
         }
 
-        bool no_end = false;
-        unsigned int part_prod = eSeqlocPartial_Complete;
-        if (feat.IsSetProduct()) {
-            part_prod = SeqLocPartialCheck(feat.GetProduct(), m_Scope);
-            if ( (part_loc & eSeqlocPartial_Stop)  ||
-                (part_prod & eSeqlocPartial_Stop) ) {
-                no_end = true;
-            } else {    
-                // complete stop, so check for ragged end
-                ragged = CheckForRaggedEnd(location, cdregion);
-            }
-        } else if (part_loc & eSeqlocPartial_Stop) {
-            no_end = true;
-        }
-
         if (report_errors) {
           x_ValidateCdregionCodebreak(cdregion, feat);
         }
@@ -7349,9 +7349,6 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat,
             other_than_mismatch = true;
         }
     
-        bool no_beg = 
-            (part_loc & eSeqlocPartial_Start)  ||  (part_prod & eSeqlocPartial_Start);
-
         ValidateCdRegionTranslation(feat, transl_prot, report_errors, unclassified_except, has_errors,
             other_than_mismatch, nonsense_intron);
 
@@ -7375,11 +7372,9 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat,
         }
 
     
-        CBioseq_Handle prot_handle;
-        x_GetCDSProduct(feat, 
+        CBioseq_Handle prot_handle = x_GetCDSProduct(feat,
                         report_errors,
                         transl_prot.length(),
-                        prot_handle,
                         farstr,
                         has_errors,
                         other_than_mismatch);
@@ -7399,8 +7394,6 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat,
                                      rna_editing,
                                      mismatch_except,
                                      unclassified_except,
-                                     no_beg,
-                                     no_end,
                                      len,
                                      num_mismatches,
                                      no_product,
@@ -7408,7 +7401,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat,
                                      has_errors,
                                      other_than_mismatch);
 
-        ReportCdTransErrors(feat, show_stop, got_stop, no_end, ragged, 
+        ReportCdTransErrors(feat, show_stop, got_stop, 
             report_errors, has_errors);
 
         if (!report_errors && !no_product) {

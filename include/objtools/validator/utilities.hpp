@@ -230,6 +230,11 @@ bool NCBI_VALIDATOR_EXPORT HasBadProteinStart(const CSeq_feat& cds, CScope& scop
 size_t CountProteinStops(const CSeqVector& sv);
 bool NCBI_VALIDATOR_EXPORT HasStopInProtein(const CSeq_feat& feat, CScope& scope);
 
+void FeatureHasEnds(const CSeq_feat& feat, CScope* scope, bool& no_beg, bool& no_end);
+CBioseq_Handle GetCDSProductSequence(const CSeq_feat& feat, CScope* scope, const CTSE_Handle & tse, bool far_fetch, bool& is_far);
+vector<TSeqPos> GetMismatches(const CSeq_feat& feat, CScope* scope, CBioseq_Handle prot_handle, const string& transl_prot);
+bool NCBI_VALIDATOR_EXPORT HasNoStop(const CSeq_feat& feat, CScope* scope);
+
 bool NCBI_VALIDATOR_EXPORT IsSequenceFetchable(const CSeq_id& id);
 bool NCBI_VALIDATOR_EXPORT IsSequenceFetchable(const string& seq_id);
 
