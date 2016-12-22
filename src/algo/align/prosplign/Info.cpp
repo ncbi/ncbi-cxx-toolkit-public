@@ -56,10 +56,8 @@ USING_SCOPE(ncbi::objects);
 
 const char GAP_CHAR='-'; // used in dna and protein text
 const char INTRON_CHAR='.'; // protein
-#ifdef _DEBUG
 const char SPACE_CHAR=' '; // translation and protein
-//const char INTRON_OR_GAP[] = {INTRON_CHAR,GAP_CHAR,0};
-#endif
+const char INTRON_OR_GAP[] = {INTRON_CHAR,GAP_CHAR,0};
 
 // used in match text
 const char BAD_PIECE_CHAR='X';
@@ -69,6 +67,29 @@ const char MATCH_CHAR='|';
 const char POSIT_CHAR='+';
 
 BEGIN_SCOPE(prosplign)
+
+class CProSplignTrimmer {
+public:
+    CProSplignTrimmer(const CProteinAlignText& alignment_text); 
+
+    /// checks if alignment ends should be restored beyond 'beg' or 'end'
+    ///returns new flanking coord or 'beg' if no restoring )
+    size_t RestoreFivePrime(size_t beg);
+    size_t RestoreThreePrime(size_t end);
+
+private:
+    const CProteinAlignText& m_alignment_text;
+  
+    string m_posit;// has POSIT_CHAR in all positive alignment positions, example:
+
+// dna        : GATGAAACAGCACTAGTGACAGGTAAA
+// translation:  D  E  T  A  L  V  T  G  K 
+// match      :  |  |     +        |  |  | 
+// protein    :  D  E  Q  S  F --- T  G  K 
+
+// m_posit    : ++++++   +++      +++++++++
+};
+
 
 CProSplignOutputOptionsExt::CProSplignOutputOptionsExt(const CProSplignOutputOptions& options) : CProSplignOutputOptions(options)
 {
@@ -386,6 +407,15 @@ list<CNPiece> FindGoodParts(const CProteinAlignText& alignment_text, CProSplignO
         }
             
     }//end trim partial codons 
+
+
+    //restore short flanks if it makes the alignment complete
+    if( !m_AliPiece.empty() ) {
+        CProSplignTrimmer trim(alignment_text); 
+        m_AliPiece.front().beg = trim.RestoreFivePrime(m_AliPiece.front().beg); 
+        m_AliPiece.back().end = trim.RestoreThreePrime(m_AliPiece.back().end); 
+    }
+        
 
     return  m_AliPiece;
 }
@@ -1179,6 +1209,121 @@ void prosplign::RefineAlignment(CScope& scope, CSeq_align& seq_align, const list
     
 #endif
 }
+
+
+/// CProSplignTrimmer implementation
+
+CProSplignTrimmer::CProSplignTrimmer(const CProteinAlignText& alignment_text)
+        : m_alignment_text(alignment_text) {
+            const string& outp = alignment_text.GetProtein();
+            const string& match = alignment_text.GetMatch();
+            m_posit = match;
+            for (size_t i = 1; i < match.size()-1; ++i) {
+                if(isupper(outp[i])) {
+                    _ASSERT( outp[i-1]==SPACE_CHAR && outp[i+1]==SPACE_CHAR );
+                    if( match[i] == MATCH_CHAR || match[i] == POSIT_CHAR ) {
+                        m_posit[i-1] = m_posit[i+1] = m_posit[i] = POSIT_CHAR;
+                        ++i;
+                    }
+                } else if(islower(outp[i])) {
+                    if( match[i] == MATCH_CHAR || match[i] == POSIT_CHAR ) {
+                        m_posit[i] = POSIT_CHAR;
+                    }
+                }
+            }
+}
+
+
+// check if alignment beginning should be restored
+size_t CProSplignTrimmer::RestoreFivePrime(size_t beg) {
+    const string& prot_row = m_alignment_text.GetProtein();
+    const string& dna_row = m_alignment_text.GetDNA();
+    size_t pbeg = prot_row.find_first_not_of(INTRON_OR_GAP);
+    if(pbeg == string::npos) return beg; 
+    if( pbeg >= beg ) return beg;//nothing to restore
+    int ali_len = (int)(beg - pbeg);
+    if( m_posit[pbeg] != POSIT_CHAR ) return beg;//won't start from mismatch/gap
+    if( ali_len > 36 ) return beg;// flank is not short enough to restore
+    int posit_cnt = 0;
+    int gap_cnt = 0;//number of gaps, not length
+    int mismatch_cnt = 0;
+    int in_gap = 0; // 0 - not in gap, -1 - gap in prot, 1 - gap in dna
+    for(size_t i = pbeg; i < beg; ++i) {
+        _ASSERT( m_posit[i] != POSIT_CHAR || ( prot_row[i] != GAP_CHAR && dna_row[i] != GAP_CHAR ) );
+        if( prot_row[i] == INTRON_CHAR ) return beg;
+        if( prot_row[i] == GAP_CHAR ) {
+            if( in_gap != -1 ) {
+                in_gap = -1;
+                ++gap_cnt;
+            }
+        } else if( dna_row[i] == GAP_CHAR ) {
+            if( in_gap != 1 ) {
+                in_gap = 1;
+                ++gap_cnt;
+            }
+        } else {//not in gap
+            in_gap = 0;
+            if ( m_posit[i] == POSIT_CHAR ) {
+                ++posit_cnt;
+            } else {
+                ++mismatch_cnt;
+            }
+        }
+    }
+    if( gap_cnt == 0 && mismatch_cnt < 10) return pbeg;//three mismatches and no gap, restore
+    if( gap_cnt < 3 && 100 * posit_cnt >= 60 * ali_len ) return pbeg;//match 60% or more
+    if( gap_cnt < 2 && 100 * posit_cnt >= 50 * ali_len ) return pbeg;//might reconsider later on
+    //do not extend
+    return beg;
+}
+
+
+// check if alignment end should be restored
+size_t CProSplignTrimmer::RestoreThreePrime(size_t end) {
+    const string& prot_row = m_alignment_text.GetProtein();
+    const string& dna_row = m_alignment_text.GetDNA();
+    const string& tran_row = m_alignment_text.GetTranslation();
+    size_t pend = prot_row.find_last_not_of(INTRON_OR_GAP);
+    if(pend == string::npos) return end;
+    if( m_posit[pend] != POSIT_CHAR ) return end;//won't end with mismatch/gap
+    ++pend;
+    if( end >= pend ) return end;//nothing to restore
+    int ali_len = (int)(pend-end);
+    if( ali_len > 36 ) return end;// flank is not short enough to restore
+    int posit_cnt = 0;
+    int gap_cnt = 0;//number of gaps, not length
+    int mismatch_cnt = 0;
+    int in_gap = 0; // 0 - not in gap, -1 - gap in prot, 1 - gap in dna
+    for(size_t i = end; i<pend; ++i) {
+        _ASSERT( m_posit[i] != POSIT_CHAR || ( prot_row[i] != GAP_CHAR && dna_row[i] != GAP_CHAR ) );
+        if( prot_row[i] == INTRON_CHAR ) return end; //don't extend over introns
+        if( tran_row[i] == '*' ) return end;//don't extend over stop
+        if( prot_row[i] == GAP_CHAR ) {
+            if( in_gap != -1 ) {
+                in_gap = -1;
+                ++gap_cnt;
+            }
+        } else if( dna_row[i] == GAP_CHAR ) {
+            if( in_gap != 1 ) {
+                in_gap = 1;
+                ++gap_cnt;
+            }
+        } else {//not in gap
+            in_gap = 0;
+            if ( m_posit[i] == POSIT_CHAR ) {
+                ++posit_cnt;
+            } else {
+                ++mismatch_cnt;
+            }
+        }
+    }
+    if( gap_cnt == 0 && mismatch_cnt < 10) return pend;//three mismatches and no gap, restore   
+    if( gap_cnt < 3 && 100 * posit_cnt >= 60 * ali_len ) return pend;//match 60% or more    
+    if( gap_cnt < 2 && 100 * posit_cnt >= 50 * ali_len ) return pend;//might reconsider later on    
+    //do not extend
+    return end;
+}
+
 
 END_NCBI_SCOPE
 
