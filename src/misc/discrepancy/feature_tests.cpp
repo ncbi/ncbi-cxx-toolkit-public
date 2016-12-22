@@ -261,7 +261,7 @@ DISCREPANCY_CASE(EXTRA_GENES, COverlappingFeatures, eDisc | eSubmitter | eSmart,
 
     const vector<CConstRef<CSeq_feat> >& genes = context.FeatGenes();
     const vector<CConstRef<CSeq_feat> >& all = context.FeatAll();
-    ITERATE(vector<CConstRef<CSeq_feat>>, gene, genes) {
+    ITERATE (vector<CConstRef<CSeq_feat>>, gene, genes) {
         if (((*gene)->IsSetComment() && !(*gene)->GetComment().empty()) || ((*gene)->GetData().GetGene().IsSetDesc() && !(*gene)->GetData().GetGene().GetDesc().empty())) {
             continue;
         }
@@ -1799,7 +1799,7 @@ bool StartAbutsGap(const CSeq_loc& loc, CScope& scope)
 // 1. endpoints match exactly, or 
 // 2. non-matching 5' endpoint can be extended by an RBS feature to match gene start, or
 // 3. if coding region non-matching endpoints are partial and abut a gap
-bool IsGeneLocationOk(const CSeq_loc& feat_loc, const CSeq_loc& gene_loc, bool is_coding_region, CScope& scope)
+bool IsGeneLocationOk(const CSeq_loc& feat_loc, const CSeq_loc& gene_loc, bool is_coding_region, CScope& scope, const vector<CConstRef<CSeq_feat> >& features)
 {
     if (IsMixedStrand(feat_loc) || IsMixedStrand(gene_loc)) {
         // special handling for trans-spliced
@@ -1840,17 +1840,11 @@ bool IsGeneLocationOk(const CSeq_loc& feat_loc, const CSeq_loc& gene_loc, bool i
         rbs_search->SetInt().SetFrom(gene_start);
         rbs_search->SetInt().SetTo(feat_start - 1);
     }
-    
-    CFeat_CI rbs(scope, *rbs_search, SAnnotSelector(CSeqFeatData::eSubtype_regulatory));
-    while (rbs) {
-        // interval must match
-        // must be actual RBS feature
-        if (IsRBS(*(rbs->GetSeq_feat())) &&
-            rbs->GetLocation().GetStart(eExtreme_Positional) == rbs_search->GetStart(eExtreme_Positional) &&
-            rbs->GetLocation().GetStart(eExtreme_Positional) == rbs_search->GetStart(eExtreme_Positional)) {
+    ITERATE (vector<CConstRef<CSeq_feat>>, feat, features) {
+        if ((*feat)->GetLocation().GetStart(eExtreme_Positional) == rbs_search->GetStart(eExtreme_Positional) &&
+            (*feat)->GetLocation().GetStart(eExtreme_Positional) == rbs_search->GetStart(eExtreme_Positional) && IsRBS(**feat)) {
             return true;
         }
-        ++rbs;
     }
     if (is_coding_region && feat_loc.IsPartialStart(eExtreme_Biological) && StartAbutsGap(feat_loc, scope)) {
         // check to see if 5' end is partial and abuts gap
@@ -1858,6 +1852,7 @@ bool IsGeneLocationOk(const CSeq_loc& feat_loc, const CSeq_loc& gene_loc, bool i
     }
     return false;
 }
+
 
 static string GetNextSubitemId(size_t num)
 {
@@ -1867,100 +1862,73 @@ static string GetNextSubitemId(size_t num)
     return ret;
 }
 
-//  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(FEATURE_LOCATION_CONFLICT, CSeq_feat_BY_BIOSEQ, eDisc | eSubmitter | eSmart, "Feature Location Conflict")
-//  ----------------------------------------------------------------------------
+
+
+DISCREPANCY_CASE(FEATURE_LOCATION_CONFLICT, COverlappingFeatures, eDisc | eSubmitter | eSmart, "Feature Location Conflict")
 {
-    if (!obj.IsSetData() || context.IsCurrentRnaInGenProdSet() || !obj.IsSetLocation()) {
+    if (context.IsCurrentRnaInGenProdSet()) {
         return;
     }
-    // handle RNA features always, coding regions only if not eukaryotic
-    bool handle_feat = false;
-    if (obj.GetData().IsRna()) {
-        handle_feat = true;
-    } else if (!context.IsEukaryotic() && obj.GetData().IsCdregion()) {
-        handle_feat = true;
-    }
-    if (!handle_feat) {
-        return;
-    }
-
-    const CGene_ref* gx = obj.GetGeneXref();
-    if (gx) {
-        if (!gx->IsSuppressed()) {
-            
-            CBioseq_Handle bsh = context.GetScope().GetBioseqHandle(*(context.GetCurrentBioseq()));
-            CTSE_Handle tse_hl = bsh.GetTSE_Handle();
-            CTSE_Handle::TSeq_feat_Handles gene_candidates = tse_hl.GetGenesByRef(*gx);
-
-            bool found_match = false;
-            ITERATE(CTSE_Handle::TSeq_feat_Handles, it, gene_candidates) {
-                if (StrandsMatch((*it).GetLocation().GetStrand(), obj.GetLocation().GetStrand())) {
-                    if (IsGeneLocationOk(obj.GetLocation(), (*it).GetLocation(), obj.GetData().IsCdregion(), context.GetScope())) {
-                        found_match = true;
-                    } else {
-
-                        string subitem_id = GetNextSubitemId(m_Objs[kFeatureLocationConflictTop].GetMap().size());
-
-                        if (obj.GetData().IsCdregion()) {
-                            m_Objs[kFeatureLocationConflictTop]
-                                [kFeatureLocationCodingRegion + subitem_id]
-                            .Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false)
-                            .Add(*context.NewDiscObj(it->GetSeq_feat()), false).Ext();
-                        } else {
-                            m_Objs[kFeatureLocationConflictTop]
-                                [kFeatureLocationRNA + subitem_id]
-                            .Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false)
-                                .Add(*context.NewDiscObj(it->GetSeq_feat()), false).Ext();
+    bool eucariotic = context.IsEukaryotic();
+    const vector<CConstRef<CSeq_feat> >& all = context.FeatAll();
+    ITERATE (vector<CConstRef<CSeq_feat>>, feat, all) {
+        if ((*feat)->IsSetData() && (*feat)->IsSetLocation() && ((*feat)->GetData().IsRna() || (!eucariotic && (*feat)->GetData().IsCdregion()))) {
+            const CGene_ref* gx = (*feat)->GetGeneXref();
+            if (gx) {
+                if (!gx->IsSuppressed()) {
+                    CBioseq_Handle bsh = context.GetScope().GetBioseqHandle(*(context.GetCurrentBioseq()));
+                    CTSE_Handle tse_hl = bsh.GetTSE_Handle();
+                    CTSE_Handle::TSeq_feat_Handles gene_candidates = tse_hl.GetGenesByRef(*gx);
+                    bool found_match = false;
+                    ITERATE(CTSE_Handle::TSeq_feat_Handles, it, gene_candidates) {
+                        if (StrandsMatch((*it).GetLocation().GetStrand(), (*feat)->GetLocation().GetStrand())) {
+                            if (IsGeneLocationOk((*feat)->GetLocation(), (*it).GetLocation(), (*feat)->GetData().IsCdregion(), context.GetScope(), all)) {
+                                found_match = true;
+                            }
+                            else {
+                                string subitem_id = GetNextSubitemId(m_Objs[kFeatureLocationConflictTop].GetMap().size());
+                                if ((*feat)->GetData().IsCdregion()) {
+                                    m_Objs[kFeatureLocationConflictTop][kFeatureLocationCodingRegion + subitem_id].Add(*context.NewDiscObj(*feat), false).Add(*context.NewDiscObj(it->GetSeq_feat()), false).Ext();
+                                }
+                                else {
+                                    m_Objs[kFeatureLocationConflictTop][kFeatureLocationRNA + subitem_id].Add(*context.NewDiscObj(*feat), false).Add(*context.NewDiscObj(it->GetSeq_feat()), false).Ext();
+                                }
+                            }
+                            m_Objs[kFeatureLocationConflictTop].Incr();
                         }
                     }
-
-                    m_Objs[kFeatureLocationConflictTop].Incr();
+                    if (!found_match) {
+                        if ((*feat)->GetData().IsCdregion()) {
+                            m_Objs[kFeatureLocationConflictTop]["Coding region xref gene does not exist"].Add(*context.NewDiscObj(*feat), false);
+                        }
+                        else {
+                            m_Objs[kFeatureLocationConflictTop]["RNA feature xref gene does not exist"].Add(*context.NewDiscObj(*feat), false);
+                        }
+                        m_Objs[kFeatureLocationConflictTop].Incr();
+                    }
                 }
             }
-
-            if (!found_match) {
-                if (obj.GetData().IsCdregion()) {
-                    m_Objs[kFeatureLocationConflictTop]
-                        ["Coding region xref gene does not exist"]
-                    .Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
-                } else {
-                    m_Objs[kFeatureLocationConflictTop]
-                        ["RNA feature xref gene does not exist"]
-                    .Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false);
+            else {
+                const CSeq_feat* gene = context.GetGeneForFeature(**feat);
+                if (gene && gene->IsSetLocation()) {
+                    if (!IsGeneLocationOk((*feat)->GetLocation(), gene->GetLocation(), (*feat)->GetData().IsCdregion(), context.GetScope(), all)) {
+                        string subitem_id = GetNextSubitemId(m_Objs[kFeatureLocationConflictTop].GetMap().size());
+                        if ((*feat)->GetData().IsCdregion()) {
+                            m_Objs[kFeatureLocationConflictTop][kFeatureLocationCodingRegion + subitem_id].Add(*context.NewDiscObj(*feat), false).Add(*context.NewDiscObj(CConstRef<CSeq_feat>(gene)), false).Ext();
+                        }
+                        else {
+                            m_Objs[kFeatureLocationConflictTop][kFeatureLocationRNA + subitem_id].Add(*context.NewDiscObj(*feat), false).Add(*context.NewDiscObj(CConstRef<CSeq_feat>(gene)), false).Ext();
+                        }
+                        m_Objs[kFeatureLocationConflictTop].Incr();
+                    }
                 }
-                m_Objs[kFeatureLocationConflictTop].Incr();
-            }
-        }
-    } else {
-        const CSeq_feat* gene = context.GetCurrentGene();
-        if (gene && gene->IsSetLocation()) {
-            if (!IsGeneLocationOk(obj.GetLocation(), gene->GetLocation(), obj.GetData().IsCdregion(), context.GetScope())) {
-
-                string subitem_id = GetNextSubitemId(m_Objs[kFeatureLocationConflictTop].GetMap().size());
-
-                if (obj.GetData().IsCdregion()) {
-                    m_Objs[kFeatureLocationConflictTop]
-                        [kFeatureLocationCodingRegion + subitem_id]
-                    .Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false)
-                        .Add(*context.NewDiscObj(CConstRef<CSeq_feat>(gene)), false).Ext();
-                } else {
-                    m_Objs[kFeatureLocationConflictTop]
-                        [kFeatureLocationRNA + subitem_id]
-                    .Add(*context.NewDiscObj(CConstRef<CSeq_feat>(&obj)), false)
-                        .Add(*context.NewDiscObj(CConstRef<CSeq_feat>(gene)), false).Ext();
-                }
-
-                m_Objs[kFeatureLocationConflictTop].Incr();
             }
         }
     }
-
 }
 
-//  ----------------------------------------------------------------------------
+
 DISCREPANCY_SUMMARIZE(FEATURE_LOCATION_CONFLICT)
-//  ----------------------------------------------------------------------------
 {
     m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
 }

@@ -533,14 +533,14 @@ static const string kGeneMisc = "[n] gene[s] overlap[S] with IGS misc features";
 
 DISCREPANCY_CASE(GENE_MISC_IGS_OVERLAP, COverlappingFeatures, eOncaller, "Gene with misc feature overlap")
 {
-    ITERATE(vector<CConstRef<CSeq_feat>>, gene, context.FeatGenes()) {
+    ITERATE (vector<CConstRef<CSeq_feat>>, gene, context.FeatGenes()) {
         if ((*gene)->IsSetLocation() && (*gene)->IsSetData() && (*gene)->GetData().GetGene().IsSetLocus() &&
             NStr::StartsWith((*gene)->GetData().GetGene().GetLocus(), "trn")) {
 
             const CSeq_loc& loc_gene = (*gene)->GetLocation();
             bool gene_added = false;
 
-            ITERATE(vector<CConstRef<CSeq_feat>>, misc, context.FeatMisc()) {
+            ITERATE (vector<CConstRef<CSeq_feat>>, misc, context.FeatMisc()) {
                 if ((*misc)->IsSetLocation() && (*misc)->IsSetComment() && NStr::FindNoCase((*misc)->GetComment(), "intergenic spacer") != NPOS) {
                     const CSeq_loc& loc_misc = (*misc)->GetLocation();
                     if (context.Compare(loc_gene, loc_misc) != sequence::eNoOverlap) {
@@ -570,20 +570,20 @@ DISCREPANCY_CASE(GENE_LOCUS_MISSING, COverlappingFeatures, eOncaller, "Gene locu
     const vector<CConstRef<CSeq_feat> >& genes = context.FeatGenes();
     const vector<CConstRef<CSeq_feat> >& cds = context.FeatCDS();
     const vector<CConstRef<CSeq_feat> >& mrnas = context.FeatMRNAs();
-    ITERATE(vector<CConstRef<CSeq_feat>>, gene, genes) {
+    ITERATE (vector<CConstRef<CSeq_feat>>, gene, genes) {
         const CGene_ref& gref = (*gene)->GetData().GetGene();
         if (context.IsPseudo(**gene) || !gref.CanGetDesc() || gref.GetDesc().empty() || (gref.CanGetLocus() && !gref.GetLocus().empty())) {
             continue;
         }
         bool found = false;
-        ITERATE(vector<CConstRef<CSeq_feat>>, feat, cds) {
+        ITERATE (vector<CConstRef<CSeq_feat>>, feat, cds) {
             if (context.GetGeneForFeature(**feat) == &**gene) {
                 found = true;
                 break;
             }
         }
         if (!found) {
-            ITERATE(vector<CConstRef<CSeq_feat>>, feat, mrnas) {
+            ITERATE (vector<CConstRef<CSeq_feat>>, feat, mrnas) {
                 if (context.GetGeneForFeature(**feat) == &**gene) {
                     found = true;
                     break;

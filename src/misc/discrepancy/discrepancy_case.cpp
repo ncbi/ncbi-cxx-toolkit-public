@@ -811,7 +811,7 @@ DISCREPANCY_AUTOFIX(NONWGS_SETS_PRESENT)
 {
     TReportObjectList list = item->GetDetails();
     unsigned int n = 0;
-    NON_CONST_ITERATE(TReportObjectList, it, list) {
+    NON_CONST_ITERATE (TReportObjectList, it, list) {
         const CBioseq_set* set = dynamic_cast<const CBioseq_set*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
         if (set) {
             CBioseq_set_Handle set_h = scope.GetBioseq_setHandle(*set);
@@ -1294,7 +1294,7 @@ typedef map<string, TGenesList> TGeneLocusMap;
 
 static void CollectGenesByLocusTag(CDiscrepancyContext& context, TReportObjectList& objs, TGeneLocusMap& genes)
 {
-    NON_CONST_ITERATE(TReportObjectList, obj, objs) {
+    NON_CONST_ITERATE (TReportObjectList, obj, objs) {
 
         const CSeq_feat* cds = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*obj).GetNCPointer())->GetObject().GetPointer());
         if (cds) {
@@ -1324,7 +1324,7 @@ DISCREPANCY_SUMMARIZE(GENE_PRODUCT_CONFLICT)
 
     CollectGenesByLocusTag(context, m_Objs[kGenes].GetObjects(), genes);
 
-    ITERATE(TGeneLocusMap, gene, genes) {
+    ITERATE (TGeneLocusMap, gene, genes) {
         if (gene->second.size() > 1) {
 
             TGenesList::const_iterator cur_gene = gene->second.begin();
@@ -1342,7 +1342,7 @@ DISCREPANCY_SUMMARIZE(GENE_PRODUCT_CONFLICT)
 
             if (diff) {
 
-                ITERATE(TGenesList, cur_gene, gene->second) {
+                ITERATE (TGenesList, cur_gene, gene->second) {
                     report[kGeneProductConflict].Add(*context.NewDiscObj(cur_gene->first), false);
                 }
             }

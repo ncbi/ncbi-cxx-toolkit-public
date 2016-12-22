@@ -1629,8 +1629,7 @@ public:
 
 static void CopyMinusStrandData(const TReportObjectList& objs, CMinusStrandData& data)
 {
-    ITERATE(TReportObjectList, obj, objs) {
-
+    ITERATE (TReportObjectList, obj, objs) {
         CConstRef<CSerialObject> serial_obj = (*obj)->GetObject();
         CSeq_feat* feat = dynamic_cast<CSeq_feat*>(const_cast<CSerialObject*>(serial_obj.GetPointer()));
         data.m_feats.push_back(feat);
@@ -1705,7 +1704,7 @@ static bool ConvertToReverseComplement(const CBioseq& bioseq, const CMinusStrand
 
     CMinusStrandData* non_const_data = const_cast<CMinusStrandData*>(data);
     if (non_const_data) {
-        NON_CONST_ITERATE(list<CSeq_feat*>, feat, non_const_data->m_feats) {
+        NON_CONST_ITERATE (list<CSeq_feat*>, feat, non_const_data->m_feats) {
             edit::ReverseComplementFeature(**feat, scope);
         }
     }
@@ -1717,7 +1716,7 @@ DISCREPANCY_AUTOFIX(MRNA_SEQUENCE_MINUS_STRAND_FEATURES)
 {
     TReportObjectList list = item->GetDetails();
     unsigned int n = 0;
-    NON_CONST_ITERATE(TReportObjectList, it, list) {
+    NON_CONST_ITERATE (TReportObjectList, it, list) {
 
         CDiscrepancyObject* disc_obj = dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer());
         const CBioseq* bioseq = dynamic_cast<const CBioseq*>(disc_obj->GetObject().GetPointer());
@@ -1842,7 +1841,7 @@ DISCREPANCY_CASE(MITOCHONDRION_REQUIRED, COverlappingFeatures, eDisc | eOncaller
     const vector<CConstRef<CSeq_feat> >& all = context.FeatAll();
     bool has_D_loop = false;
     bool has_misc_feat_with_control_region = false;
-    ITERATE(vector<CConstRef<CSeq_feat>>, feat, all) {
+    ITERATE (vector<CConstRef<CSeq_feat>>, feat, all) {
         if ((*feat)->IsSetData()) {
             if ((*feat)->GetData().GetSubtype() == CSeqFeatData::eSubtype_D_loop) {
                 has_D_loop = true;
@@ -2412,7 +2411,7 @@ DISCREPANCY_CASE(FLATFILE_FIND, COverlappingFeatures, eOncaller, "Flatfile repre
         }
     }
     const vector<CConstRef<CSeq_feat> >& all = context.FeatAll();
-    ITERATE(vector<CConstRef<CSeq_feat>>, feat, all) {
+    ITERATE (vector<CConstRef<CSeq_feat>>, feat, all) {
         list<size_t> misspells;
         FindSuspectTextInObject(**feat, misspells);
         if (!misspells.empty()) {

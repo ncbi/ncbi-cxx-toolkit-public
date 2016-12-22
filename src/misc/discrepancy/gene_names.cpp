@@ -98,7 +98,7 @@ DISCREPANCY_AUTOFIX(BAD_GENE_NAME)
 {
     TReportObjectList list = item->GetDetails();
     unsigned int n = 0;
-    NON_CONST_ITERATE(TReportObjectList, it, list) {
+    NON_CONST_ITERATE (TReportObjectList, it, list) {
         const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
         if (sf) {
             MoveLocusToNote(sf, scope);
@@ -135,7 +135,7 @@ DISCREPANCY_AUTOFIX(BAD_BACTERIAL_GENE_NAME)
 {
     TReportObjectList list = item->GetDetails();
     unsigned int n = 0;
-    NON_CONST_ITERATE(TReportObjectList, it, list) {
+    NON_CONST_ITERATE (TReportObjectList, it, list) {
         const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
         if (sf) {
             MoveLocusToNote(sf, scope);
@@ -175,7 +175,7 @@ DISCREPANCY_AUTOFIX(EC_NUMBER_ON_UNKNOWN_PROTEIN)
 {
     TReportObjectList list = item->GetDetails();
     unsigned int n = 0;
-    NON_CONST_ITERATE(TReportObjectList, it, list) {
+    NON_CONST_ITERATE (TReportObjectList, it, list) {
         const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
         if (sf) {
             CRef<CSeq_feat> new_feat(new CSeq_feat());
@@ -213,7 +213,7 @@ DISCREPANCY_CASE(SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME, CSeqFeatData, eDisc | e
     if (!prot.CanGetName()) {
         return;
     }
-    ITERATE(list <string>, jt, prot.GetName()) {
+    ITERATE (list <string>, jt, prot.GetName()) {
         if (NStr::FindNoCase(*jt, "hypothetical protein") != string::npos) {
             m_Objs["[n] hypothetical coding region[s] [has] a gene name"].Add(*context.NewDiscObj(context.GetCurrentSeq_feat(), eNoRef, true, (CObject*)&*gene));
             break;
@@ -232,7 +232,7 @@ DISCREPANCY_AUTOFIX(SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME)
 {
     TReportObjectList list = item->GetDetails();
     unsigned int n = 0;
-    NON_CONST_ITERATE(TReportObjectList, it, list) {
+    NON_CONST_ITERATE (TReportObjectList, it, list) {
         CDiscrepancyObject& obj = *dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer());
         const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(obj.GetMoreInfo().GetPointer());
         if (sf) {
@@ -255,7 +255,7 @@ DISCREPANCY_CASE(DUPLICATE_LOCUS_TAGS, COverlappingFeatures, eDisc | eOncaller |
     const vector<CConstRef<CSeq_feat> >& genes = context.FeatGenes();
     string last_locus_tag = kEmptyStr;
     CConstRef<CSeq_feat> last_gene(NULL);
-    ITERATE(vector<CConstRef<CSeq_feat>>, gene, genes) {
+    ITERATE (vector<CConstRef<CSeq_feat>>, gene, genes) {
         if ((*gene)->GetData().GetGene().IsSetLocus_tag()) {
             CRef<CDiscrepancyObject> this_disc_obj(context.NewDiscObj(*gene, eKeepRef));
             const string& this_locus_tag = (*gene)->GetData().GetGene().GetLocus_tag();
@@ -284,7 +284,7 @@ DISCREPANCY_SUMMARIZE(DUPLICATE_LOCUS_TAGS)
     while (it != m_Objs[kDuplicateLocusTags].GetMap().end()) {
         if (m_Objs[kDuplicateLocusTags][it->first].GetObjects().size() > 1) {
             string label = kDuplicateLocusTagsStart + it->first + ".";
-            NON_CONST_ITERATE(TReportObjectList, robj, m_Objs[kDuplicateLocusTags][it->first].GetObjects()) {
+            NON_CONST_ITERATE (TReportObjectList, robj, m_Objs[kDuplicateLocusTags][it->first].GetObjects()) {
                 const CDiscrepancyObject* other_disc_obj = dynamic_cast<CDiscrepancyObject*>(robj->GetNCPointer());
                 CConstRef<CSeq_feat> feat(dynamic_cast<const CSeq_feat*>(other_disc_obj->GetObject().GetPointer()));
                 m_Objs[kDuplicateLocusTagsTop][label].Add(*context.NewDiscObj(feat), false);
