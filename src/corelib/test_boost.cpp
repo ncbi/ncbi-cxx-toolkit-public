@@ -1812,12 +1812,10 @@ CNcbiTestApplication::InitTestFramework(int argc, char* argv[])
             // Call should be doubled to support manual adding of
             // test cases inside NCBITEST_INIT_TREE().
             x_CollectAllTests();
-#if BOOST_VERSION < 105900
             if (x_GetEnabledTestsCount() == 0) {
                 SetGloballyDisabled();
                 x_AddDummyTest();
             }
-#endif
 #ifdef NCBI_COMPILER_WORKSHOP
             else if (!CONFIGURED_FILTERS.empty()) {
                 printf("Parameter --run_test is not supported in current configuration\n");
