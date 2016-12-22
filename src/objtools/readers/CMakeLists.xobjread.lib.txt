@@ -11,7 +11,7 @@ add_library(xobjread
     gvf_reader
     vcf_reader
     best_feat_finder source_mod_parser fasta_exception agp_converter
-    ucscregion_reader
+    ucscregion_reader struct_cmt_reader
     message_listener line_error
 )
 include_directories(SYSTEM ${BOOST_INCLUDE})
