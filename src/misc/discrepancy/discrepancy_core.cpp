@@ -360,6 +360,7 @@ void CDiscrepancyContext::Parse(const CSerialObject& root)
     m_TextMapShort.clear();
     m_IsPseudoMap.clear();
     m_GeneForFeatureMap.clear();
+    m_ProdForFeatureMap.clear();
     m_Current_Submit_block.Reset();
     m_Current_Submit_block_StringObj.Reset();
     m_Current_Cit_sub_StringObj.Reset();

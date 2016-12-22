@@ -327,39 +327,6 @@ static bool StrandsMatch(const CSeq_loc& loc1, const CSeq_loc& loc2)
 }
 
 
-static string GetProductName(const CProt_ref& prot)
-{
-    string prot_nm;
-    if (prot.IsSetName() && prot.GetName().size() > 0) {
-        prot_nm = prot.GetName().front();
-    }
-    return prot_nm;
-}
-
-
-string GetProductName(const CSeq_feat& cds, CScope& scope)
-{
-    string prot_nm;
-    if (cds.IsSetProduct()) {
-        CBioseq_Handle prot_bsq = sequence::GetBioseqFromSeqLoc(cds.GetProduct(), scope);
-        if (prot_bsq) {
-            CFeat_CI prot_ci(prot_bsq, CSeqFeatData::e_Prot);
-            if (prot_ci) {
-                prot_nm = GetProductName(prot_ci->GetOriginalFeature().GetData().GetProt());
-            }
-        }
-    }
-    else if (cds.IsSetXref()) {
-        ITERATE (CSeq_feat::TXref, it, cds.GetXref()) {
-            if ((*it)->IsSetData() && (*it)->GetData().IsProt()) {
-                prot_nm = GetProductName((*it)->GetData().GetProt());
-            }
-        }
-    }
-    return prot_nm;
-}
-
-
 static const char* kSimilarProductWords[] = { "transposase", "integrase" };
 static const int   kNumSimilarProductWords = sizeof (kSimilarProductWords) / sizeof (char *);
 
@@ -440,7 +407,7 @@ static const char* kOverlap2 = "[n] coding region[s] overlap[S] another coding r
 static string GetProdName(const CSeq_feat* feat, map<const CSeq_feat*, string>& products, CDiscrepancyContext& context)
 {
     if (products.find(feat) == products.end()) {
-        string name = GetProductName(*feat, context.GetScope());
+        string name = context.GetProdForFeature(*feat);
         products[feat] = name.empty() || ShouldIgnore(name) ? kEmptyStr : name;
     }
     return products[feat];
@@ -1295,16 +1262,13 @@ typedef map<string, TGenesList> TGeneLocusMap;
 static void CollectGenesByLocusTag(CDiscrepancyContext& context, TReportObjectList& objs, TGeneLocusMap& genes)
 {
     NON_CONST_ITERATE (TReportObjectList, obj, objs) {
-
         const CSeq_feat* cds = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*obj).GetNCPointer())->GetObject().GetPointer());
         if (cds) {
-
             CScope& scope = context.GetScope();
             CConstRef<CSeq_feat> gene = sequence::GetBestGeneForCds(*cds, scope);
-
             if (gene) {
                 const string& locus = gene->GetData().GetGene().GetLocus();
-                string product = GetProductName(*cds, scope);
+                string product = context.GetProdForFeature(*cds);
                 genes[locus].push_back(make_pair(CConstRef<CSeq_feat>(cds), product));
             }
         }

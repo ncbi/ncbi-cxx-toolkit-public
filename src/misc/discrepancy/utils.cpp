@@ -32,6 +32,8 @@
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/seq_macros.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
+#include <objmgr/feat_ci.hpp>
+#include <objmgr/util/sequence.hpp>
 #include "utils.hpp"
 
 BEGIN_NCBI_SCOPE
@@ -159,6 +161,34 @@ void AddComment(CSeq_feat& feat, const string& comment)
         feat.SetComment() += "; ";
     }
     feat.SetComment() += comment;
+}
+
+
+static string GetProductName(const CProt_ref& prot)
+{
+    return prot.IsSetName() && prot.GetName().size() > 0 ? prot.GetName().front() : "";
+}
+
+
+string GetProductName(const CSeq_feat& feat, objects::CScope& scope)
+{
+    if (feat.IsSetProduct()) {
+        CBioseq_Handle prot_bsq = sequence::GetBioseqFromSeqLoc(feat.GetProduct(), scope);
+        if (prot_bsq) {
+            CFeat_CI prot_ci(prot_bsq, CSeqFeatData::e_Prot);
+            if (prot_ci) {
+                return GetProductName(prot_ci->GetOriginalFeature().GetData().GetProt());
+            }
+        }
+    }
+    else if (feat.IsSetXref()) {
+        ITERATE (CSeq_feat::TXref, it, feat.GetXref()) {
+            if ((*it)->IsSetData() && (*it)->GetData().IsProt()) {
+                return GetProductName((*it)->GetData().GetProt());
+            }
+        }
+    }
+    return kEmptyStr;
 }
 
 

@@ -730,6 +730,15 @@ const CSeq_feat* CDiscrepancyContext::GetGeneForFeature(const CSeq_feat& feat)
 }
 
 
+string CDiscrepancyContext::GetProdForFeature(const CSeq_feat& feat)
+{
+    if (m_ProdForFeatureMap.find(&feat) == m_ProdForFeatureMap.end()) {
+        m_ProdForFeatureMap[&feat] = GetProductName(feat, *m_Scope);
+    }
+    return m_ProdForFeatureMap[&feat];
+}
+
+
 bool CDiscrepancyContext::IsPseudo(const CSeq_feat& feat)
 {
     if (m_IsPseudoMap.find(&feat) == m_IsPseudoMap.end()) {
