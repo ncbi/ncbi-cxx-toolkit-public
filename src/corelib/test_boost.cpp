@@ -1363,6 +1363,7 @@ CNcbiTestApplication::SetGloballyDisabled(void)
     // nothing else.
     printf("All tests are disabled in current configuration.\n"
            " (for autobuild scripts: NCBI_UNITTEST_DISABLED)\n");
+    x_AddDummyTest();
 }
 
 void
@@ -1812,10 +1813,13 @@ CNcbiTestApplication::InitTestFramework(int argc, char* argv[])
             // Call should be doubled to support manual adding of
             // test cases inside NCBITEST_INIT_TREE().
             x_CollectAllTests();
+#if BOOST_VERSION <= 105900
+            // As of Boost.Test 3.0 (Boost 1.59.0), this check is prone
+            // to false positives.
             if (x_GetEnabledTestsCount() == 0) {
                 SetGloballyDisabled();
-                x_AddDummyTest();
             }
+#endif
 #ifdef NCBI_COMPILER_WORKSHOP
             else if (!CONFIGURED_FILTERS.empty()) {
                 printf("Parameter --run_test is not supported in current configuration\n");
