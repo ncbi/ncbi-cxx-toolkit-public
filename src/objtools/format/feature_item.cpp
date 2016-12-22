@@ -1669,6 +1669,7 @@ void CFeatureItem::x_AddQuals(
             CConstRef<CSeq_feat> overlap = sequence::GetGeneForFeature(orig, scope);
             if (overlap) {
                 gene_feat = overlap;
+                gene_ref = &gene_feat->GetData().GetGene();
             } else {
                 // e.g., check sig_peptide for gene overlapping parent CDS
                 CSeq_feat_Handle parent_feat_handle;
