@@ -1,0 +1,55 @@
+Seq-feat ::= {
+  id local id 16,
+  data cdregion {
+    frame two,
+    code {
+      id 1
+    }
+  },
+  partial TRUE,
+  product whole gi 4885397,
+  location mix {
+    pnt {
+      point 13866,
+      strand plus,
+      id gi 14523048,
+      fuzz lim lt
+    },
+    int {
+      from 14754,
+      to 14958,
+      strand plus,
+      id gi 14523048
+    },
+    pnt {
+      point 15134,
+      strand plus,
+      id gi 14523048,
+      fuzz lim gt
+    }
+  },
+  xref {
+    {
+      id local id 14,
+      data gene {
+        locus "HBZ"
+      }
+    },
+    {
+      id local id 15,
+      data rna {
+        type mRNA
+      }
+    }
+  },
+  dbxref {
+    {
+      db "CCDS",
+      tag str "CCDS10397.1"
+    },
+    {
+      db "GeneID",
+      tag id 3050
+    }
+  }
+}

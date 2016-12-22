@@ -34,11 +34,16 @@
 #include <ncbi_pch.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/object_manager.hpp>
+#include <objmgr/mapped_feat.hpp>
+#include <objmgr/seq_feat_handle.hpp>
 
 //#include "unit_test_feature_edit.hpp"
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbifile.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seq/Seq_annot.hpp>
+#include <objtools/edit/feature_edit.hpp>
+#include <objects/blastxml2/Range.hpp>
 
 // This header must be included before all Boost.Test headers if there are any
 #include <corelib/test_boost.hpp>
@@ -69,6 +74,7 @@ bool s_AreFeatsEqual(
 struct STestInfo {
     CFile m_InFile;
     CFile m_BaselineFile;
+    CRange<TSeqPos> m_Range;
 };
 
 using TTestName = string;
@@ -101,19 +107,31 @@ public:
             return;
         }
 
-
         vector<string> vecFileNamePieces;
         NStr::Split(fileName, ".", vecFileNamePieces);
-        BOOST_REQUIRE(vecFileNamePieces.size() == 2);
+        BOOST_REQUIRE(vecFileNamePieces.size() == 3);
 
-        const string testName = vecFileNamePieces[0];
+        const string testRange = vecFileNamePieces[1];
+        BOOST_REQUIRE(!testRange.empty());
+
+        const string testName = vecFileNamePieces[0] + "_" + testRange ;
         BOOST_REQUIRE(!testName.empty());
 
-        const string fileType = vecFileNamePieces[1];
+        vector<string> vecRange;
+        NStr::Split(testRange, "_", vecRange);
+        BOOST_REQUIRE(vecRange.size() == 2);
+
+        const string fileType = vecFileNamePieces[2];
         BOOST_REQUIRE(!fileType.empty());
 
         STestInfo& test_info_to_load = 
             (*m_pTestNameToInfoMap)[testName];
+
+        if (test_info_to_load.m_Range.Empty()) {
+            TSeqPos start = NStr::StringToInt(vecRange[0]);
+            TSeqPos stop = NStr::StringToInt(vecRange[1]);
+            test_info_to_load.m_Range = CRange<TSeqPos>(start, stop);
+        }
 
         if (fileType == m_ExtInput) {
             BOOST_REQUIRE( test_info_to_load.m_InFile.GetPath().empty() );
@@ -137,10 +155,10 @@ private:
 };
 
 
-void sRunTest(const string& testName, const STestInfo& testInfo)
+void sRunFeatureTrimTest(const string& testName, const STestInfo& testInfo)
 {
 
-    cout << "Running feature-edit test\n";
+    cout << "Running feature-trim test\n";
 
     if (!testName.empty()) {
         cerr << "Running " << testName << "\n";
@@ -150,15 +168,22 @@ void sRunTest(const string& testName, const STestInfo& testInfo)
     CRef<CSeq_feat> infeat = s_ReadFeat(testInfo.m_InFile.GetPath());
     CRef<CSeq_feat> baseline = s_ReadFeat(testInfo.m_BaselineFile.GetPath());
 
-    // Steps 1:
-    // Read infeat
-    // Add to local scope
-    // Get Seq-feat Handle
-    // Get Mapped feat 
-    // Trim mapped feat
-    // Return complete seq-feat
-    // Compare to baseline
-    const bool success = infeat->Equals(*baseline);
+    CRef<CSeq_annot> temp_annot = Ref(new CSeq_annot());
+    temp_annot->SetData().SetFtable().push_back(infeat);
+    s_pScope->AddSeq_annot(*temp_annot);
+
+    CSeq_feat_Handle sfh = s_pScope->GetSeq_featHandle(*infeat);
+
+    if (!sfh) {
+        cout << "Failed to get sfh" << endl;
+    }
+
+    CMappedFeat mapped_feat(sfh);
+    mapped_feat = edit::CFeatTrim::Apply(mapped_feat, testInfo.m_Range);
+
+    const CSeq_feat& trimmed_feat = mapped_feat.GetMappedFeature();
+
+    const bool success = trimmed_feat.Equals(*baseline);
     if (!success) {
         BOOST_ERROR("Error: " << testName << " failed.");
     }
@@ -225,7 +250,7 @@ BOOST_AUTO_TEST_CASE(RunTests)
         const string& testName = name_to_info_it->first;
         const STestInfo& testInfo = name_to_info_it->second;
 
-        BOOST_CHECK_NO_THROW(sRunTest(testName, testInfo));
+        BOOST_CHECK_NO_THROW(sRunFeatureTrimTest(testName, testInfo));
     }
 }
 

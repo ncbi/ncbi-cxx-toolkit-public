@@ -1,0 +1,50 @@
+Seq-feat ::= {
+  id local id 15,
+  data rna {
+    type mRNA,
+    ext name "hemoglobin subunit zeta"
+  },
+  partial TRUE,
+  product whole gi 6633805,
+  location mix {
+    int {
+      from 13772,
+      to 13866,
+      strand plus,
+      id gi 14523048,
+      fuzz-from lim lt
+    },
+    int {
+      from 14754,
+      to 14958,
+      strand plus,
+      id gi 14523048
+    },
+    int {
+      from 15134,
+      to 15262,
+      strand plus,
+      id gi 14523048,
+      fuzz-to lim gt
+    }
+  },
+  xref {
+    {
+      id local id 16,
+      data cdregion {
+      }
+    },
+    {
+      id local id 14,
+      data gene {
+        locus "HBZ"
+      }
+    }
+  },
+  dbxref {
+    {
+      db "GeneID",
+      tag id 3050
+    }
+  }
+}
