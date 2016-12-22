@@ -1184,12 +1184,22 @@ bool CFeature_table_reader_imp::x_AddQualifierToCdregion (
             // set genetic code directly, or add qualifier and let cleanup convert?
             try {
                 int num = NStr::StringToLong(val);
+                CGen_code_table::GetTransTable(num); // throws if bad num
                 CRef<CGenetic_code::C_E> code(new CGenetic_code::C_E());
                 code->SetId(num);
                 crp.SetCode().Set().push_back(code);
                 return true;
-            } catch( ... ) {
+            } catch( CStringException ) {
+                // if val is not a number, add qualifier directly and 
+                // let cleanup convert?
                 return x_AddGBQualToFeature(sfp, "transl_table", val);
+            } catch( ... ) {
+                // invalid genome code table so don't even try to make 
+                // the transl_table qual
+                x_ProcessMsg(
+                    ILineError::eProblem_QualifierBadValue, eDiag_Error,
+                    kCdsFeatName, "transl_table", val);
+                return true;
             }
             break;
             
@@ -2645,6 +2655,9 @@ bool CFeature_table_reader_imp::x_SetupSeqFeat (
                     break;
                 case CSeqFeatData::eSubtype_transit_peptide_aa:
                     prot_ref.SetProcessed(CProt_ref::eProcessed_transit_peptide);
+                    break;
+                case CSeqFeatData::eSubtype_propeptide_aa:
+                    prot_ref.SetProcessed(CProt_ref::eProcessed_propeptide);
                     break;
             }
         }

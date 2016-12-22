@@ -140,7 +140,7 @@ typedef list<ILineError::EProblem> TErrList;
 static void 
 s_CheckErrorsVersusExpected( 
     ILineErrorListener * pMessageListener, 
-    TErrList expected_errors // yes, *copy* the container
+    TErrList expected_errors // yes, *copy* the container so we can modify
     )
 {
     for (size_t i = 0; i < pMessageListener->Count(); i++) {
@@ -1968,3 +1968,55 @@ BOOST_AUTO_TEST_CASE(TestRegulatoryFeat)
         }
     }
 }
+
+static const char * sc_Table18 = "\
+>Feature lcl|seq1\n\
+10\t60\tmat_peptide\n\
+\t\t\tnote\tyo\n\
+100\t170\tpropeptide\n\
+\t\t\tnote\thello\n\
+";
+
+BOOST_AUTO_TEST_CASE(TestPeptideFeats)
+{
+    CRef<CSeq_annot> annot = s_ReadOneTableFromString (sc_Table18);
+    SerializeOutIfVerbose("TestCaseInsensitivity initial annot", *annot);
+    
+    const CSeq_annot::TData::TFtable& ftable = annot->GetData().GetFtable();
+
+    BOOST_REQUIRE_EQUAL(ftable.size(), 2);
+    BOOST_REQUIRE(ftable.front()->IsSetData());
+    BOOST_REQUIRE(ftable.back()->IsSetData());
+
+    const CSeqFeatData & feat_data_0 = ftable.front()->GetData();
+    BOOST_REQUIRE_EQUAL(feat_data_0.GetProt().GetProcessed(), 
+                        CProt_ref::eProcessed_mature);
+                        
+    const CSeqFeatData & feat_data_1 = ftable.back()->GetData();
+    BOOST_REQUIRE_EQUAL(feat_data_1.GetProt().GetProcessed(), 
+                        CProt_ref::eProcessed_propeptide);
+}
+
+static const char * sc_Table19 = "\
+>Feature lcl|seq1\n\
+1\t1578\tCDS\n\
+\t\t\tproduct\tcytochrome c oxidase subunit I\n\
+\t\t\ttransl_table\t1111\n\
+";
+
+// when transl_table is given a bad value, it should cause an error
+BOOST_AUTO_TEST_CASE(TestBadTranslTable)
+{
+    TErrList expected_errors = {
+        ILineError::eProblem_QualifierBadValue};
+        
+    CRef<CSeq_annot> annot = s_ReadOneTableFromString (
+        sc_Table19,
+        expected_errors);
+    const CSeq_annot::TData::TFtable& ftable = annot->GetData().GetFtable();
+    BOOST_CHECK_EQUAL(ftable.size(), 1);
+    
+    // expect no quals
+    CheckExpectedQuals (ftable.front(), {});
+}
+
