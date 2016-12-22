@@ -11,6 +11,7 @@ LIB = prosplign
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
 
+COLOR_DIAGNOSTICS = -fdiagnostics-color=never
 
 USES_LIBRARIES =  \
     xalgoalignutil
