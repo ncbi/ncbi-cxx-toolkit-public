@@ -871,7 +871,7 @@ static void s_SplitCommaSeparatedStringInParens( vector<string> &output_vec, con
         amount_to_chop_off_end = 1;
     }
     
-    NStr::Tokenize( string_to_split.substr( 1, string_to_split.length() - amount_to_chop_off_end - 1), ",", output_vec );
+    NStr::Split( string_to_split.substr( 1, string_to_split.length() - amount_to_chop_off_end - 1), ",", output_vec, 0 );
 }
 
 static const char* const sc_ValidPseudoGene[] = {
@@ -3808,7 +3808,7 @@ void CFeatureItem::x_AddRptUnitQual(
     if (NStr::StartsWith(rpt_unit, '(')  &&  NStr::EndsWith(rpt_unit, ')')  &&
         NStr::Find(rpt_unit, "(", 1) == NPOS) {
         string tmp = rpt_unit.substr(1, rpt_unit.length() - 2);
-        NStr::Tokenize(tmp, ",", units);
+        NStr::Split(tmp, ",", units, 0);
     } else {
         units.push_back(rpt_unit);
     }

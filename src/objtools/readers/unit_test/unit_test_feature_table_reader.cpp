@@ -117,7 +117,7 @@ static void s_ListLinesWithPattern(
     out_vecOfLinesThatMatch.clear();
 
     vector<CTempString> vecOfLineContents;
-    NStr::Tokenize(str, "\n", vecOfLineContents);
+    NStr::Split(str, "\n", vecOfLineContents, 0);
     ITERATE_0_IDX(ii, vecOfLineContents.size()) {
         if( NPOS != NStr::Find(vecOfLineContents[ii], pattern)) {
             out_vecOfLinesThatMatch.push_back(ii + 1); // line nums are 1-based
@@ -128,7 +128,7 @@ static void s_ListLinesWithPattern(
 static size_t s_CountOccurrences(const CTempString & str, const CTempString & pattern )
 {
     vector<CTempString> vecPiecesBetweenTheWordError;
-    NStr::TokenizePattern(
+    NStr::SplitByPattern(
         str, pattern, vecPiecesBetweenTheWordError );
     size_t iNumErrsExpected = ( vecPiecesBetweenTheWordError.size() - 1 );
     BOOST_REQUIRE(iNumErrsExpected > 0);
@@ -1539,7 +1539,7 @@ BOOST_AUTO_TEST_CASE(TestCreateGenesFromCDSs)
     // the code in these braces just sets geneExpectedOnEachCDS
     {{
         vector<CTempString> cdsSplitPieces;
-        NStr::TokenizePattern(sc_Table11, "CDS", cdsSplitPieces);
+        NStr::SplitByPattern(sc_Table11, "CDS", cdsSplitPieces);
 
         CTempString kStartOfGene("gene\t");
 

@@ -2784,7 +2784,7 @@ void CPCRSetList::AddFwdName(string name)
     if (NStr::StartsWith(name, "(") && NStr::EndsWith(name, ")") && NStr::Find(name, ",") != string::npos) {
         name = name.substr(1, name.length() - 2);
         vector<string> mult_names;
-        NStr::Tokenize(name, ",", mult_names);
+        NStr::Split(name, ",", mult_names, 0);
         unsigned int name_num = 0;
         while (name_num < mult_names.size()) {
             while (pcr_num < m_SetList.size() && !NStr::IsBlank(m_SetList[pcr_num]->GetFwdName())) {
@@ -2815,7 +2815,7 @@ void CPCRSetList::AddRevName(string name)
     if (NStr::StartsWith(name, "(") && NStr::EndsWith(name, ")") && NStr::Find(name, ",") != string::npos) {
         name = name.substr(1, name.length() - 2);
         vector<string> mult_names;
-        NStr::Tokenize(name, ",", mult_names);
+        NStr::Split(name, ",", mult_names, 0);
         unsigned int name_num = 0;
         while (name_num < mult_names.size()) {
             while (pcr_num < m_SetList.size() && !NStr::IsBlank(m_SetList[pcr_num]->GetRevName())) {
@@ -2846,7 +2846,7 @@ void CPCRSetList::AddFwdSeq(string name)
     if (NStr::StartsWith(name, "(") && NStr::EndsWith(name, ")") && NStr::Find(name, ",") != string::npos) {
         name = name.substr(1, name.length() - 2);
         vector<string> mult_names;
-        NStr::Tokenize(name, ",", mult_names);
+        NStr::Split(name, ",", mult_names, 0);
         unsigned int name_num = 0;
         while (name_num < mult_names.size()) {
             while (pcr_num < m_SetList.size() && !NStr::IsBlank(m_SetList[pcr_num]->GetFwdSeq())) {
@@ -2877,7 +2877,7 @@ void CPCRSetList::AddRevSeq(string name)
     if (NStr::StartsWith(name, "(") && NStr::EndsWith(name, ")") && NStr::Find(name, ",") != string::npos) {
         name = name.substr(1, name.length() - 2);
         vector<string> mult_names;
-        NStr::Tokenize(name, ",", mult_names);
+        NStr::Split(name, ",", mult_names, 0);
         unsigned int name_num = 0;
         while (name_num < mult_names.size()) {
             while (pcr_num < m_SetList.size() && !NStr::IsBlank(m_SetList[pcr_num]->GetRevSeq())) {
@@ -2988,7 +2988,7 @@ void CValidError_imp::ValidateOrgModVoucher(const COrgMod& orgmod, const CSerial
     }
 
     vector<string> error_list;
-    NStr::Tokenize(error, "\n", error_list);
+    NStr::Split(error, "\n", error_list, 0);
     ITERATE(vector<string>, err, error_list) {
         if (NStr::IsBlank(*err)) {
             // do nothing

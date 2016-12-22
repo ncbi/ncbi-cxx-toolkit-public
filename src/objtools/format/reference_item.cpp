@@ -1297,7 +1297,8 @@ void CReferenceItem::ChangeMedlineAuthorsToISO( CRef<CPub> pub )
         {
             NStr::TruncateSpacesInPlace(author_name);
             vector<string> tokens;
-            NStr::Tokenize(author_name, " ", tokens, NStr::eMergeDelims);
+            NStr::Split(author_name, " ", tokens, 
+                        NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
             // get suffix if it exists, and remove it from the list
             if( tokens.size() >= 3 && 

@@ -713,7 +713,7 @@ bool CAgpFastaComparator::x_GetCompAndObjSeqIds(
             }
 
             vecLineTokens.clear();
-            NStr::Tokenize(line, kDelim, vecLineTokens);
+            NStr::Split(line, kDelim, vecLineTokens, 0);
 
             // are there enough columns for an AGP file?
             if( vecLineTokens.size() <= kMaxColUsed ){

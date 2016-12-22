@@ -112,7 +112,7 @@ namespace {
 
             // split the name
             vector<string> tokens;
-            NStr::Tokenize(file.GetName(), ".", tokens);
+            NStr::Split(file.GetName(), ".", tokens, 0);
 
             if( tokens.size() != 4u ) {
                 throw std::runtime_error("initialization failed trying to tokenize this file: " + file.GetName());

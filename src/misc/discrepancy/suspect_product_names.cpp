@@ -538,7 +538,10 @@ static const string SkipWeasel(const string& str)
     {
         CFastMutexGuard guard(sx_WeaselVecMutex);
         if (weasels->empty()) {
-            NStr::Tokenize("candidate,hypothetical,novel,possible,potential,predicted,probable,putative,uncharacterized,unique", ",", *weasels);
+            NStr::Split(
+                "candidate,hypothetical,novel,possible,potential,predicted,"
+                "probable,putative,uncharacterized,unique", 
+                ",", *weasels, 0);
         }
     }
 
@@ -547,7 +550,7 @@ static const string SkipWeasel(const string& str)
     }
     string ret_str;
     vector <string> arr;
-    arr = NStr::Tokenize(str, " ", arr);
+    arr = NStr::Split(str, " ", arr, 0);
     if (arr.size() == 1) {
         return str;
     }
@@ -1175,7 +1178,8 @@ static bool StringMayContainPlural(const string& str)
         return false;
     }
     vector <string> arr;
-    arr = NStr::Tokenize(str, " ,", arr, NStr::eMergeDelims);
+    arr = NStr::Split(str, " ,", arr, 
+                      NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     if (arr.size() == 1) { // doesn't have ', ', or the last char is ', '
         len = arr[0].size();
         if (len == 1) {

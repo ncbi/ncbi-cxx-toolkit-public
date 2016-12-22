@@ -1437,8 +1437,8 @@ bool CFastaReader::ParseGapLine(
 
             // could be semi-colon separated
             vector<CTempString> arrLinkageEvidences;
-            NStr::Tokenize(sValue, ";", arrLinkageEvidences, 
-                NStr::eMergeDelims);
+            NStr::Split(sValue, ";", arrLinkageEvidences, 
+                        NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
             ITERATE(vector<CTempString>, link_evid_it, arrLinkageEvidences) {
                 CTempString sLinkEvid = *link_evid_it;

@@ -93,7 +93,7 @@ namespace {
             // extract info from the file name
             const string sFileName = file.GetName();
             vector<CTempString> vecFileNamePieces;
-            NStr::Tokenize( sFileName, ".", vecFileNamePieces );
+            NStr::Split( sFileName, ".", vecFileNamePieces, 0 );
 
             BOOST_REQUIRE( vecFileNamePieces.size() == 2 ||
                 vecFileNamePieces.size() == 3 );

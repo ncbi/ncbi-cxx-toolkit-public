@@ -5890,8 +5890,6 @@ char s_ConvertTrnaAaToLetter( const CTrna_ext::C_Aa &trna_aa, CSeqUtil::ECoding 
 
 void CNewCleanup_imp::x_SeqFeatTRNABC( CSeq_feat& feat, CTrna_ext & tRNA )
 {
-    const string &comment = ( FIELD_IS_SET(feat, Comment) ? GET_FIELD(feat, Comment) : kEmptyStr );
-
     if( tRNA.IsSetAa() && tRNA.GetAa().IsIupacaa() ) {
         const int old_value = tRNA.GetAa().GetIupacaa();
         tRNA.SetAa().SetNcbieaa( old_value );
