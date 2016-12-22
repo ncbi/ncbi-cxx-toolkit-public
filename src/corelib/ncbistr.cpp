@@ -2605,7 +2605,8 @@ SIZE_TYPE NStr::DoubleToStringPosix(double val, unsigned int precision,
         *buffer_pos++ = 'e';
         *buffer_pos++ = exp_positive ? '+' : '-';
 
-#if defined(NCBI_OS_MSWIN)
+//#if defined(NCBI_OS_MSWIN)
+#if NCBI_COMPILER_MSVC && _MSC_VER < 1900
         bool need_zeros = true;
         size_t need_digits = 3;
 #else
