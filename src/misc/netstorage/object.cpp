@@ -330,6 +330,7 @@ ERW_Result CObj::WriteImpl(const void* buf, size_t count, size_t* bytes_written)
             m_Location = l;
             m_State = rw_state;
             if (m_IsOpened) RemoveOldCopyIfExists();
+            m_IsOpened = true;
             return result;
         }
     }

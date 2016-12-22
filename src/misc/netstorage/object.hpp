@@ -107,7 +107,7 @@ private:
     ISelector::Ptr m_Selector;
     IState* m_State;
     ILocation* m_Location;
-    const bool m_IsOpened;
+    bool m_IsOpened;
     bool m_CancelRelocate = false;
 };
 
