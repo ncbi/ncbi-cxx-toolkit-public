@@ -1549,10 +1549,10 @@ BOOST_AUTO_TEST_CASE(Test_OrgMod_IsDiscouraged)
 
 BOOST_AUTO_TEST_CASE(Test_GetBioProjectTypeAndLocation)
 {
-    CRef<CBioSource> src(new CBioSource());
-    
+    CRef<CBioSource> src(new CBioSource());    
     BOOST_CHECK_EQUAL(src->GetBioprojectType(), "eChromosome");
-    BOOST_CHECK_EQUAL(src->GetBioprojectLocation(), "eOther");
+    BOOST_CHECK_EQUAL(src->GetBioprojectLocation(), "eNuclearProkaryote");
+
     src->SetOrg().SetOrgname().SetLineage("viruses");
     BOOST_CHECK_EQUAL(src->GetBioprojectType(), "eSegment");
     BOOST_CHECK_EQUAL(src->GetBioprojectLocation(), "eVirionPhage");
@@ -1565,7 +1565,14 @@ BOOST_AUTO_TEST_CASE(Test_GetBioProjectTypeAndLocation)
     BOOST_CHECK_EQUAL(src->GetBioprojectType(), "eChromosome");
     BOOST_CHECK_EQUAL(src->GetBioprojectLocation(), "eApicoplast");
 
-    
+    src->ResetGenome();
+    CRef<CSubSource> p(new CSubSource(CSubSource::eSubtype_plasmid_name, "foo"));
+    src->SetSubtype().push_back(p);
+    BOOST_CHECK_EQUAL(src->GetBioprojectType(), "ePlasmid");
+    BOOST_CHECK_EQUAL(src->GetBioprojectLocation(), "ePlasmid");
 
+    src->SetGenome(CBioSource::eGenome_unknown);
+    BOOST_CHECK_EQUAL(src->GetBioprojectType(), "ePlasmid");
+    BOOST_CHECK_EQUAL(src->GetBioprojectLocation(), "ePlasmid");
 
 }

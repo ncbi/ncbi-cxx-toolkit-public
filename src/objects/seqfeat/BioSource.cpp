@@ -537,6 +537,9 @@ string CBioSource::GetBioprojectLocation(void) const
     if (IsSetGenome()) {
         switch (GetGenome()) {
             case CBioSource::eGenome_unknown:
+                if (NStr::Equal(bioprojecttype, "ePlasmid")) {
+                    return "ePlasmid";
+                }
             case CBioSource::eGenome_genomic:
                 return "eNuclearProkaryote";
                 break;
@@ -619,8 +622,10 @@ string CBioSource::GetBioprojectLocation(void) const
         }
     }
     if (NStr::Equal(bioprojecttype, "ePlasmid")) {
+        return "ePlasmid";
+    } else if (!NStr::Equal(bioprojecttype, "eSegment")) {
         return "eNuclearProkaryote";
-    } 
+    }
 
     return "eOther";
 }
