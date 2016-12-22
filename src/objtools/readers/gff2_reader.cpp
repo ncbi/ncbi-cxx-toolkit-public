@@ -299,12 +299,6 @@ CGff2Reader::ReadSeqAnnotsNew(
                     continue;
                 }
 
-                if (!(m_iFlags & CGff2Reader::fGenbankMode) &&
-                        CGff2Reader::IsAlignmentData(line) && 
-                        x_ParseAlignmentGff(line, id_list, alignments) ) {
-                    continue;
-                } 
-
                 if ( ! x_ParseDataGff(line, annots, pEC) ) {
                     continue;
                 }
@@ -842,7 +836,7 @@ bool CGff2Reader::x_ParseFeatureGff(
     //  If a preexisting annot was found, update it with the new feature
     //  information:
     //
-    if ( it != annots.end() ) {
+    if (it != annots.end()) {
         if ( ! x_UpdateAnnotFeature( *pRecord, *it, pEC ) ) {
             return false;
         }
@@ -857,7 +851,8 @@ bool CGff2Reader::x_ParseFeatureGff(
         if ( ! x_InitAnnot( *pRecord, pAnnot, pEC ) ) {
             return false;
         }
-        annots.insert(annots.begin(), pAnnot );      
+        annots.push_back(pAnnot);
+        //annots.insert(annots.end(), pAnnot );      
     }
     return true; 
 };
