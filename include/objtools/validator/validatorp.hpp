@@ -1056,7 +1056,7 @@ private:
 // =============================  Validate SeqFeat  ============================
 
 
-class CValidError_feat : private CValidError_base
+class NCBI_VALIDATOR_EXPORT CValidError_feat : private CValidError_base
 {
 public:
     CValidError_feat(CValidError_imp& imp);
