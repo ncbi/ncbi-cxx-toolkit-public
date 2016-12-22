@@ -653,6 +653,14 @@ bool CValidError_imp::HasName(const CAuth_list& authors)
                         if ( ! NStr::IsBlank(pid.GetName().GetLast()) ) {
                             return true;
                         }
+                    } else if ( pid.IsMl() ) {
+                        if ( ! NStr::IsBlank (pid.GetMl()) ) {
+                            return true;
+                        }
+                    } else if ( pid.IsStr() ) {
+                        if ( ! NStr::IsBlank (pid.GetStr()) ) {
+                            return true;
+                        }
                     } else if ( pid.IsConsortium() ) {
                         if ( ! NStr::IsBlank (pid.GetConsortium()) ) {
                             return true;
