@@ -16,7 +16,7 @@ LIB    = xobjedit
 
 DLL_LIB = $(XFORMAT_LIBS) xregexp $(PCRE_LIB) $(SOBJMGR_LIBS)
 
-ASN_DEP = seqset valid macro
+ASN_DEP = seqset valid
 
 WATCHERS = bollin gotvyans
 
