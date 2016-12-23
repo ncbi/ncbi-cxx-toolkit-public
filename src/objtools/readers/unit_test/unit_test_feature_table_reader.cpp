@@ -2017,6 +2017,6 @@ BOOST_AUTO_TEST_CASE(TestBadTranslTable)
     BOOST_CHECK_EQUAL(ftable.size(), 1);
     
     // expect no quals
-    CheckExpectedQuals (ftable.front(), {});
+    set<string> expected_quals;
+    CheckExpectedQuals (ftable.front(), expected_quals);
 }
-
