@@ -808,9 +808,44 @@ BreakOnBoundaries(int row) const
 AutoPtr<CAlignCompare::SAlignment> CAlignCompare::SAlignment::
 Slice(int row, TSeqPos from, TSeqPos to) const
 {
+    if (align->GetSegs().IsDisc()) {
+        vector< AutoPtr<SAlignment> > seg_slices;
+        TSeqRange slice_range(min(from, to), max(from, to));
+        ITERATE (CSeq_align_set::Tdata, seg_it, align->GetSegs().GetDisc().Get())
+        {
+            TSeqRange seg_slice_range =
+                slice_range & (*seg_it)->GetSeqRange(row);
+            if (seg_slice_range.Empty()) {
+                continue;
+            }
+            AutoPtr<SAlignment> slice =
+                SAlignment(source_set, *seg_it, compare_object) .  Slice(
+                     row, seg_slice_range.GetFrom(), seg_slice_range.GetTo());
+            if (slice.get()) {
+                seg_slices.push_back(slice);
+            }
+        }
+        AutoPtr<SAlignment> complete_slice;
+        if (seg_slices.size() == 1) {
+            complete_slice = seg_slices.front();
+        } else if (seg_slices.size() > 1) {
+            CRef<CSeq_align> complete_align(new CSeq_align);
+            complete_slice.reset(new SAlignment(source_set, complete_align,
+                                                compare_object, true));
+            ITERATE (vector< AutoPtr<SAlignment> >, seg_it, seg_slices) {
+                complete_align->SetSegs().SetDisc().Set().push_back(
+                     (*seg_it)->align);
+                complete_slice->query_mismatches += (*seg_it)->query_mismatches;
+                complete_slice->subject_mismatches += (*seg_it)->query_mismatches;
+            }
+        }
+        return complete_slice;
+    }
+
     if (!align->GetSegs().IsDenseg()) {
         NCBI_THROW(CException, eUnknown,
-               "Alignment splitting supported only for Dense-seq alignments");
+               "Alignment splitting supported only for Dense-seq and "
+               "Disc-seg alignments");
     }
     AutoPtr<SAlignment> slice;
     CRef<CSeq_align> slice_align(new CSeq_align);
