@@ -106,12 +106,12 @@ cds_internal_stops > 0
 11
 cds_internal_stops == 9
 11
-frame > 10
-0 1
-sframe > 5
-1
-qframe > 5
-0
+frame > 0
+4 9 11
+sframe > 0
+4 9
+qframe > 0
+4 11
 start_codon = 1
 1 2 4 5 10 11
 stop_codon = 1
