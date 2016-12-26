@@ -239,6 +239,10 @@ public:
     /// of gaps with a length that is not a multiple of 3.
     /// @throws CSeqalignException if alignment type is not supported
     TSeqPos         GetNumFrameshifts(TDim row = -1) const;
+    TSeqPos         GetNumFrameshiftsWithinRange(const TSeqRange &range,
+                                                 TDim row = -1) const;
+    TSeqPos         GetNumFrameshiftsWithinRanges(const CRangeCollection<TSeqPos> &ranges,
+                                                  TDim row = -1) const;
 
     /// Retrieves the locations of aligned bases in the given row, excluding
     /// gaps and incontinuities
