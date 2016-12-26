@@ -169,9 +169,34 @@ public:
 
     virtual bool IsInteger() const { return true; };
 
-    virtual double Get(const CSeq_align& align, CScope*) const
+    virtual double Get(const CSeq_align& align, CScope *scope) const
     {
-        return align.GetNumFrameshifts(m_Row);
+        CBioseq_Handle bsh = scope->GetBioseqHandle(align.GetSeq_id(0));
+        CSeq_inst::EMol mol_type = bsh.GetBioseqMolType();
+        switch (mol_type) {
+        case CSeq_inst::eMol_aa:
+            /// Protein alignment; just count frameshifts
+            return align.GetNumFrameshifts(m_Row);
+
+        case CSeq_inst::eMol_rna:
+        {{
+            /// Only count frameshifts within cdregion
+            CFeat_CI feat_it(bsh,
+                             SAnnotSelector()
+                             .IncludeFeatType(CSeqFeatData::e_Cdregion));
+            if (feat_it) {
+                return align.GetNumFrameshiftsWithinRange(feat_it->GetRange(),
+                                                          m_Row);
+            }
+            break;
+        }}
+
+        default:
+            NCBI_THROW(CException, eUnknown,
+                       "Can't count frameshifts on a genomic alignment");
+        }
+
+        return 0;
     }
 
     virtual void PrintHelp(CNcbiOstream& ostr) const
@@ -784,7 +809,7 @@ public:
         CSeq_id &query_id = const_cast<CSeq_id &>(clean_align->GetSeq_id(0));
         CSeq_id &subject_id = const_cast<CSeq_id &>(clean_align->GetSeq_id(1));
         CBioseq_Handle genomic_bsh = scope->GetBioseqHandle(subject_id);
-        TSeqPos genomic_len = genomic_bsh.GetBioseqLength();
+        int genomic_len = genomic_bsh.GetBioseqLength();
 
         CSeq_loc_Mapper mapper(*clean_align, 1);
 
