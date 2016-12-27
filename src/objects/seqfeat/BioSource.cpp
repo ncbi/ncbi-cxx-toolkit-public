@@ -532,15 +532,18 @@ string CBioSource::GetBioprojectLocation(void) const
                 return "eViroid";
             }
         }
+        return "eOther";
     }
 
-    if (IsSetGenome()) {
+    if (!IsSetGenome()) {
+        return "eNuclearProkaryote";
+    } else {
         switch (GetGenome()) {
             case CBioSource::eGenome_unknown:
-                if (NStr::Equal(bioprojecttype, "ePlasmid")) {
-                    return "ePlasmid";
-                }
             case CBioSource::eGenome_genomic:
+            case CBioSource::eGenome_chromosome:
+            case CBioSource::eGenome_plasmid:
+            case CBioSource::eGenome_extrachrom:
                 return "eNuclearProkaryote";
                 break;
             case CBioSource::eGenome_mitochondrion:
@@ -548,9 +551,6 @@ string CBioSource::GetBioprojectLocation(void) const
                 break;
             case CBioSource::eGenome_kinetoplast:
                 return "eKinetoplast";
-                break;
-            case CBioSource::eGenome_chromosome:
-                return "eNuclearProkaryote";
                 break;
             case CBioSource::eGenome_chloroplast:
                 return "eChloroplast";
@@ -564,13 +564,11 @@ string CBioSource::GetBioprojectLocation(void) const
             case CBioSource::eGenome_macronuclear:
                 return "eMacronuclear";
                 break;
-            case CBioSource::eGenome_extrachrom:
-                return "eNuclearProkaryote";
-                break;
             case CBioSource::eGenome_cyanelle:
                 return "eCyanelle";
                 break;
             case CBioSource::eGenome_proviral:
+            case CBioSource::eGenome_endogenous_virus:
                 return "eProviralProphage";
                 break;
             case CBioSource::eGenome_virion:
@@ -596,9 +594,6 @@ string CBioSource::GetBioprojectLocation(void) const
             case CBioSource::eGenome_proplastid:
                 return "eProplastid";
                 break;
-            case CBioSource::eGenome_endogenous_virus:
-                return "eOther";
-                break;
             case CBioSource::eGenome_hydrogenosome:
                 return "eHydrogenosome";
                 break;
@@ -606,24 +601,12 @@ string CBioSource::GetBioprojectLocation(void) const
                 return "eChromatophore";
                 break;
             case CBioSource::eGenome_transposon:
-                if (NStr::Equal(bioprojecttype, "ePlasmid")) {
-                    return "ePlasmid";
-                } else {
-                    return "eOther";
-                }
-                break;
             case CBioSource::eGenome_insertion_seq:
-                if (NStr::Equal(bioprojecttype, "ePlasmid")) {
-                    return "ePlasmid";
-                } else {
-                    return "eOther";
-                }
+                return "eOther";
                 break;
         }
     }
-    if (NStr::Equal(bioprojecttype, "ePlasmid")) {
-        return "ePlasmid";
-    } else if (!NStr::Equal(bioprojecttype, "eSegment")) {
+    if (!NStr::Equal(bioprojecttype, "eSegment")) {
         return "eNuclearProkaryote";
     }
 

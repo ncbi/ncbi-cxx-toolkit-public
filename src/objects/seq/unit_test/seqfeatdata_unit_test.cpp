@@ -1547,32 +1547,78 @@ BOOST_AUTO_TEST_CASE(Test_OrgMod_IsDiscouraged)
 }
 
 
+void CheckViruses(CBioSource& src)
+{
+    src.SetOrg().SetOrgname().SetLineage("viruses");
+    BOOST_CHECK_EQUAL(src.GetBioprojectType(), "eSegment");
+    BOOST_CHECK_EQUAL(src.GetBioprojectLocation(), "eVirionPhage");
+    src.SetOrg().SetOrgname().SetLineage("viroids");
+    BOOST_CHECK_EQUAL(src.GetBioprojectType(), "eSegment");
+    BOOST_CHECK_EQUAL(src.GetBioprojectLocation(), "eViroid");
+    src.SetOrg().SetOrgname().ResetLineage();
+}
+
+
+void CheckPlasmid(CBioSource& src)
+{
+    CRef<CSubSource> p(new CSubSource(CSubSource::eSubtype_plasmid_name, "foo"));
+    src.SetSubtype().push_back(p);
+    BOOST_CHECK_EQUAL(src.GetBioprojectType(), "ePlasmid");
+    src.ResetSubtype();
+}
+
+
+void CheckBioProjectLocationVals(CBioSource::EGenome genome, const string& bioprojectlocation)
+{
+    CRef<CBioSource> src(new CBioSource());
+    src->SetGenome(genome);
+    BOOST_CHECK_EQUAL(src->GetBioprojectType(), "eChromosome");
+    BOOST_CHECK_EQUAL(src->GetBioprojectLocation(), bioprojectlocation);
+    CheckViruses(*src);
+    CheckPlasmid(*src);
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_GetBioProjectTypeAndLocation)
 {
     CRef<CBioSource> src(new CBioSource());    
     BOOST_CHECK_EQUAL(src->GetBioprojectType(), "eChromosome");
     BOOST_CHECK_EQUAL(src->GetBioprojectLocation(), "eNuclearProkaryote");
-
-    src->SetOrg().SetOrgname().SetLineage("viruses");
-    BOOST_CHECK_EQUAL(src->GetBioprojectType(), "eSegment");
-    BOOST_CHECK_EQUAL(src->GetBioprojectLocation(), "eVirionPhage");
-    src->SetOrg().SetOrgname().SetLineage("viroids");
-    BOOST_CHECK_EQUAL(src->GetBioprojectType(), "eSegment");
-    BOOST_CHECK_EQUAL(src->GetBioprojectLocation(), "eViroid");
-
-    src->SetGenome(CBioSource::eGenome_apicoplast);
-    src->ResetOrg();
-    BOOST_CHECK_EQUAL(src->GetBioprojectType(), "eChromosome");
-    BOOST_CHECK_EQUAL(src->GetBioprojectLocation(), "eApicoplast");
-
-    src->ResetGenome();
-    CRef<CSubSource> p(new CSubSource(CSubSource::eSubtype_plasmid_name, "foo"));
-    src->SetSubtype().push_back(p);
-    BOOST_CHECK_EQUAL(src->GetBioprojectType(), "ePlasmid");
-    BOOST_CHECK_EQUAL(src->GetBioprojectLocation(), "ePlasmid");
+    CheckViruses(*src);
 
     src->SetGenome(CBioSource::eGenome_unknown);
-    BOOST_CHECK_EQUAL(src->GetBioprojectType(), "ePlasmid");
-    BOOST_CHECK_EQUAL(src->GetBioprojectLocation(), "ePlasmid");
+    BOOST_CHECK_EQUAL(src->GetBioprojectType(), "eChromosome");
+    BOOST_CHECK_EQUAL(src->GetBioprojectLocation(), "eNuclearProkaryote");
+    CheckViruses(*src);
+
+    src->SetGenome(CBioSource::eGenome_chromosome);
+    BOOST_CHECK_EQUAL(src->GetBioprojectType(), "eChromosome");
+    BOOST_CHECK_EQUAL(src->GetBioprojectLocation(), "eNuclearProkaryote");
+    src->SetSubtype().push_back(CRef<CSubSource>(new CSubSource(CSubSource::eSubtype_linkage_group, "x")));
+    BOOST_CHECK_EQUAL(src->GetBioprojectType(), "eLinkageGroup");
+    BOOST_CHECK_EQUAL(src->GetBioprojectLocation(), "eNuclearProkaryote");
+    src->ResetSubtype();
+
+    src->SetGenome(CBioSource::eGenome_extrachrom);
+    BOOST_CHECK_EQUAL(src->GetBioprojectType(), "eExtrachrom");
+    BOOST_CHECK_EQUAL(src->GetBioprojectLocation(), "eNuclearProkaryote");
+
+    CheckBioProjectLocationVals(CBioSource::eGenome_apicoplast, "eApicoplast");
+    CheckBioProjectLocationVals(CBioSource::eGenome_chloroplast, "eChloroplast");
+    CheckBioProjectLocationVals(CBioSource::eGenome_chromatophore, "eChromatophore");
+    CheckBioProjectLocationVals(CBioSource::eGenome_chromoplast, "eChromoplast");
+    CheckBioProjectLocationVals(CBioSource::eGenome_cyanelle, "eCyanelle");
+    CheckBioProjectLocationVals(CBioSource::eGenome_hydrogenosome, "eHydrogenosome");
+    CheckBioProjectLocationVals(CBioSource::eGenome_kinetoplast, "eKinetoplast");
+    CheckBioProjectLocationVals(CBioSource::eGenome_leucoplast, "eLeucoplast");
+    CheckBioProjectLocationVals(CBioSource::eGenome_macronuclear, "eMacronuclear");
+    CheckBioProjectLocationVals(CBioSource::eGenome_mitochondrion, "eMitochondrion");
+    CheckBioProjectLocationVals(CBioSource::eGenome_nucleomorph, "eNucleomorph");
+    CheckBioProjectLocationVals(CBioSource::eGenome_plastid, "ePlastid");
+    CheckBioProjectLocationVals(CBioSource::eGenome_proplastid, "eProplastid");
+    CheckBioProjectLocationVals(CBioSource::eGenome_proviral, "eProviralProphage");
+    CheckBioProjectLocationVals(CBioSource::eGenome_endogenous_virus, "eProviralProphage");
+    CheckBioProjectLocationVals(CBioSource::eGenome_transposon, "eOther");
+    CheckBioProjectLocationVals(CBioSource::eGenome_insertion_seq, "eOther");
 
 }
