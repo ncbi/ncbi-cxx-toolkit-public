@@ -69,31 +69,45 @@ extern NCBI_XCONNECT_EXPORT
 int/*bool*/  NcbiIPv4ToIPv6(TNCBI_IPv6Addr* addr,
                             unsigned int ipv4, size_t pfxlen);
 
-/** Convert first "len" (or "strlen(str)" if "len" is 0) bytes of "str" into an
- *  IPv4 address in full-quad decimal notation; return non-zero string pointer
- *  to the first non-converted character (which is neither a digit nor a dot);
- *  return 0 if conversion failed and no IPv4 address has been found.
+/** Convert into an IPv4 address, the first "len" (or "strlen(str)" if "len" is
+ *  0) bytes of "str" from a full-quad decimal notation; return a non-zero
+ *  string pointer to the first non-converted character (which is neither a
+ *  digit nor a dot); return 0 if conversion failed and no IPv4 address had
+ *  been found.
  */
 extern NCBI_XCONNECT_EXPORT
 const char*  NcbiStringToIPv4(unsigned int* addr,
                               const char* str, size_t len);
 
 
-/** Convert first "len" (or "strlen(str)" if "len" is 0) bytes of "str" into an
- *  IPv6 address in a hexadecimal colon-separated notation (including full-quad
- *  trailing IPv4); return non-zero string pointer to the first non-converted
- *  character (which is neither a hex-digit, nor a colon, nor a dot); return 0
- *  if conversion failed and no IPv6 address has been found.
+/** Convert into an IPv6 address, the first "len" (or "strlen(str)" if "len" is
+ *  0) bytes of "str" from a hexadecimal colon-separated notation (including
+ *  full-quad trailing IPv4); return a non-zero string pointer to the first
+ *  non-converted character (which is neither a hex-digit, nor a colon, nor a
+ *  dot); return 0 if conversion failed and no IPv6 address had been found.
  */
 extern NCBI_XCONNECT_EXPORT
 const char*  NcbiStringToIPv6(TNCBI_IPv6Addr* addr,
                              const char* str, size_t len);
 
-/** Convert first "len" (or "strlen(str)" if "len" is 0) bytes of "str" into an
- *  IP address, which can be either of full-quad decimal IPv4, hexadecimal
- *  colon-separated IPv6, .in-addr.arpa or .in6.arpa domain names); return
- *  non-zero string pointer to the first non-converted character (which is
- *  neither a digit nor a dot); return 0 if no conversion can be made.
+
+/** Convert into an IPv6 address, the first "len" (or "strlen(str)" if "len" is
+ *  0) bytes of "str" from either a full-quad decimal IPv4 or a hexadecimal
+ *  colon-separated IPv6; return a non-zero string pointer to the first
+ *  non-converted character (which is neither a [hex-]digit, nor a colon, nor a
+ *  dot); return 0 if  no conversion can be made.
+ */
+extern NCBI_XCONNECT_EXPORT
+const char*  NcbiIPToAddr(TNCBI_IPv6Addr* addr,
+                          const char* str, size_t len);
+
+
+/** Convert into an IPv6 address, the first "len" (or "strlen(str)" if "len" is
+ *  0) bytes of "str", which can be either of a full-quad decimal IPv4, a
+ *  hexadecimal colon-separated IPv6, an .in-addr.arpa- or an .in6.arpa-domain
+ *  names; return a non-zero string pointer to the first non-converted
+ *  character (which is neither a [hex-]digit, nor a colon, nor a dot); return
+ *  0 if no conversion can be made.
  */
 extern NCBI_XCONNECT_EXPORT
 const char*  NcbiStringToAddr(TNCBI_IPv6Addr* addr,
@@ -128,7 +142,7 @@ char*        NcbiIPv6ToString(char* buf, size_t bufsize,
  */
 extern NCBI_XCONNECT_EXPORT
 char*        NcbiAddrToString(char* buf, size_t bufsize,
-                              TNCBI_IPv6Addr* addr);
+                              const TNCBI_IPv6Addr* addr);
 
 
 /** Convert IPv6 address into either .in-addr.arpa domain (for IPv4-compatible
@@ -138,7 +152,7 @@ char*        NcbiAddrToString(char* buf, size_t bufsize,
  */
 extern NCBI_XCONNECT_EXPORT
 const char*  NcbiAddrToDNS(char* buf, size_t bufsize,
-                           TNCBI_IPv6Addr* addr);
+                           const TNCBI_IPv6Addr* addr);
 
 
 /** Return non-zero if "addr" belongs to the network specified as CIDR
