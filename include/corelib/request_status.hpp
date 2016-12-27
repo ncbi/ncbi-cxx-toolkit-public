@@ -108,6 +108,8 @@ public:
         e504_GatewayTimeout         = 504,
         e505_HTTPVerNotSupported    = 505
     };
+
+    static string GetStdStatusMessage(ECode code);
 };
 
 
