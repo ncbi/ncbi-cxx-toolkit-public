@@ -769,7 +769,8 @@ char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info, int/*bool*/ but_last)
                 buffer[buflen++] = ' ';
                 memcpy(buffer + buflen, name, namelen);
                 buflen += namelen;
-            }
+            } else if (iter->types < t)
+                break;
         }
         if (buffer[buflen - 1] != ':') {
             strcpy(&buffer[buflen], "\r\n");
@@ -828,7 +829,7 @@ char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info, int/*bool*/ but_last)
         iter->time = (TNCBI_Time) time(0);
         s_SkipSkip(iter);
         /* Put all the rest into rejection list */
-        for (i = 0;  i < iter->n_skip;  i++) {
+        for (i = 0;  i < iter->n_skip;  ++i) {
             /* NB: all skip infos are now kept with names (perhaps, empty) */
             const char* name    = SERV_NameOfInfo(iter->skip[i]);
             size_t      namelen = name  &&  *name ? strlen(name) : 0;
