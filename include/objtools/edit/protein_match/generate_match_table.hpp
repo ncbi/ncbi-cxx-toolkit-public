@@ -49,7 +49,10 @@ public:
     void AppendToMatchTable(const CSeq_align& alignment,
         const list<CRef<CSeq_annot>>& annots);
 
-    void WriteTable(CNcbiOstream& out);
+    void WriteTable(CNcbiOstream& out) const;
+
+    static void WriteTable(const CSeq_table& table,
+        CNcbiOstream& out);
 
     typedef list<CRef<CSeq_annot>> TMatches;
 
@@ -106,6 +109,10 @@ private:
     map<string, size_t> mColnameToIndex;
     bool mMatchTableInitialized;
 };
+
+
+CRef<CSeq_table> g_ReadSeqTable(const string& in);
+//CRef<CSeq_table> g_ReadSeqTable(CNcbiIstream& in);
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

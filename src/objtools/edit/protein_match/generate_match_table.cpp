@@ -15,6 +15,7 @@
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/edit/protein_match/prot_match_exception.hpp>
 #include <objtools/edit/protein_match/generate_match_table.hpp>
+#include <util/line_reader.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -578,37 +579,78 @@ void CMatchTabulate::x_AppendColumnValue(
 }
 
 
-void CMatchTabulate::WriteTable(
-        CNcbiOstream& out)
+
+void CMatchTabulate::WriteTable(const CSeq_table& table,
+    CNcbiOstream& out)
 {
-    // colNames contains the column names in the order in which they were added to the table
-    vector<string> colNames(mColnameToIndex.size());
-
-    for (map<string,size_t>::const_iterator cit = mColnameToIndex.begin();
-         cit != mColnameToIndex.end();
-         ++cit) {
-        colNames[cit->second] = cit->first;
-    }
-
-    // First, write the column titles
-    for (const auto& column_name :  colNames) {
-        const CSeqTable_column& column = mMatchTable->GetColumn(column_name);
-        string displayName = column.GetHeader().GetTitle();
+    for (auto pColumn : table.GetColumns()) {
+        string displayName = pColumn->GetHeader().GetTitle();
         out << displayName << "\t";
     }
+
     out << '\n';
 
-    const unsigned int numRows = mMatchTable->GetNum_rows();
+    const unsigned int numRows = table.GetNum_rows();
 
     for (int row_index=0; row_index<numRows; ++row_index) { 
-        for (const auto& column_name : colNames) {
-            const CSeqTable_column& column = mMatchTable->GetColumn(column_name);
-            const string* pValue = column.GetStringPtr(row_index);
+        for (auto pColumn : table.GetColumns()) {
+            const string* pValue = pColumn->GetStringPtr(row_index);
             out << *pValue << "\t";
         }
         out << '\n';
     } // iterate over rows
     return;
+}
+
+
+void CMatchTabulate::WriteTable(
+        CNcbiOstream& out) const
+{
+    WriteTable(*mMatchTable, out);
+}
+
+
+//CRef<CSeq_table> g_ReadSeqTable(CNcbiIstream& in) 
+CRef<CSeq_table> g_ReadSeqTable(const string& in) 
+
+{
+    CRef<CSeq_table> table = Ref(new CSeq_table());
+    CRef<ILineReader> pLineReader = ILineReader::New(in);
+
+    if ( pLineReader->AtEOF() ) {
+        return table;
+    }
+
+    pLineReader->ReadLine();
+    string line = pLineReader->GetCurrentLine();
+    list<string> colNames;
+    NStr::Split(line, " \t", colNames, NStr::fSplit_Tokenize);
+
+    for (auto colName : colNames) {
+        CRef<CSeqTable_column> pColumn(new CSeqTable_column());
+        pColumn->SetHeader().SetField_name(colName); // Not the title, for internal use
+        pColumn->SetHeader().SetTitle(colName);
+        pColumn->SetDefault().SetString("");
+        table->SetColumns().push_back(pColumn);
+    }
+
+
+    int num_rows = 0;
+    while (!pLineReader->AtEOF()) {
+        pLineReader->ReadLine();
+        line = pLineReader->GetCurrentLine();
+        list<string> colValues;
+        NStr::Split(line, " \t", colValues, NStr::fSplit_Tokenize);
+        auto it = colValues.begin();
+        for (CRef<CSeqTable_column> pColumn : table->SetColumns()) { // Fix this!
+            pColumn->SetData().SetString().push_back(*it);
+            ++it;
+        }
+        ++num_rows;
+    }
+
+    table->SetNum_rows(num_rows);
+    return table;
 }
 
 
