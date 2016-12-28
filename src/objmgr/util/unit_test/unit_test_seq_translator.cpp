@@ -1201,6 +1201,38 @@ BOOST_AUTO_TEST_CASE(Test_FindBestFrame)
     BOOST_CHECK_EQUAL(CSeqTranslator::FindBestFrame(*cds, scope), CCdregion::eFrame_two);
 }
 
+const char* sc_TestBestFrameEntry ="\
+Seq-entry ::= seq {\
+  id { local str \"nuc1\" } , \
+  inst { repr raw, mol dna, length 45,\
+    seq-data iupacna \"TTTTTATGGAGTAATCGCTAACTTGTAATGCCCAGGCTGGAGTGC\"\
+  },\
+  annot { { data ftable {\
+    {\
+      data cdregion { frame one, code { id 1 } },\
+      location int { from 5, to 43, id local str \"nuc1\" }\
+    }\
+  } } }\
+}";
+
+
+BOOST_AUTO_TEST_CASE(Test_FindFrame2)
+{
+    CSeq_entry entry;
+    // only change if new frame has no internal stops
+    {{
+         CNcbiIstrstream istr(sc_TestBestFrameEntry);
+         istr >> MSerial_AsnText >> entry;
+    }}
+    CRef<CSeq_feat> cds = entry.SetSeq().SetAnnot().front()->SetData().SetFtable().front();
+
+    CScope scope(*CObjectManager::GetInstance());
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(entry);
+    BOOST_CHECK_EQUAL(CSeqTranslator::FindBestFrame(*cds, scope), CCdregion::eFrame_one);
+}
+
+
+
 
 
 const char * sc_MinusOrigin = "\

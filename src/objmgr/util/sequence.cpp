@@ -4223,11 +4223,24 @@ CCdregion::EFrame CSeqTranslator::FindBestFrame(const CSeq_feat& cds, CScope& sc
     frames.push_back(CCdregion::eFrame_three);
     size_t best = 0;
     CCdregion::EFrame best_frame = orig_frame;
+
     ITERATE(vector<CCdregion::EFrame>, it, frames) {
         tmp_cds->SetData().SetCdregion().SetFrame(*it);
         string prot;
         CSeqTranslator::Translate(*tmp_cds, scope, prot, true, false, NULL);
         size_t pos = NStr::Find(prot, "*");
+
+        // if the original frame has no internal stop codons and has a final
+        // stop codon, keep the original frame
+        if (*it == orig_frame) {
+            if (pos != string::npos && pos == prot.length() - 1) {
+                return orig_frame;
+            }
+        }
+        // do not consider new frames that have internal stops
+        if (pos < prot.length() - 1) {
+            continue;
+        }
         if (pos == string::npos) {
             pos = prot.length();
         }
