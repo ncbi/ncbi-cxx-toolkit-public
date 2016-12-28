@@ -11634,10 +11634,58 @@ void CNewCleanup_imp::x_RemoveOldFeatures(CBioseq & bioseq)
 }
 
 
+//SQD-2043 change pop sets to phy sets if taxnames differ
+void CNewCleanup_imp::x_ChangePopToPhy(CBioseq_set& bioseq_set)
+{
+    if (!bioseq_set.IsSetClass() || bioseq_set.GetClass() != CBioseq_set::eClass_pop_set) {
+        return;
+    }
+    bool all_same = true;
+    CTypeConstIterator<CBioseq> seqit(ConstBegin(bioseq_set));
+    string first_taxname = "";
+    bool is_first = true;
+    for (; seqit; ++seqit) {
+        string taxname = "";
+        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(*seqit);
+        // Will get the first biosource either from the descriptor
+        // or feature.
+        CSeqdesc_CI d(bsh, CSeqdesc::e_Source);
+        if (d) {
+            if (d->GetSource().IsSetOrg() && d->GetSource().GetOrg().IsSetTaxname()) {
+                taxname = d->GetSource().GetOrg().GetTaxname();
+            }
+        } else {
+            CFeat_CI f(bsh, CSeqFeatData::e_Biosrc);
+            if (f && f->GetData().GetBiosrc().IsSetOrg() && f->GetData().GetBiosrc().GetOrg().IsSetTaxname()) {
+                taxname = f->GetData().GetBiosrc().GetOrg().GetTaxname();
+            }
+        }
+
+        if (is_first) {
+            first_taxname = taxname;
+            is_first = false;
+            continue;
+        }
+
+        // Make sure all the taxnames in the set are the same.
+        if (!NStr::CompareNocase(first_taxname, taxname) == 0) {
+            all_same = false;
+            break;
+        }
+    }
+    if (!all_same) {
+        bioseq_set.SetClass(CBioseq_set::eClass_phy_set);
+        ChangeMade(CCleanupChange::eChangeBioseqSetClass);
+    }
+}
+
 void CNewCleanup_imp::x_BioseqSetEC( CBioseq_set & bioseq_set )
 {
     // put general Bioseq-set cleanup here:
     // ...
+
+    // NOTE: Need to do this first, because cleanup rules may be different for pop and phy
+    x_ChangePopToPhy(bioseq_set);
 
     // special logic for various bioseq_set types:
     switch( GET_FIELD_OR_DEFAULT(

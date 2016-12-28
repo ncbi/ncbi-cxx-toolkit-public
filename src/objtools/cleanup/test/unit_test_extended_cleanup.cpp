@@ -968,3 +968,29 @@ BOOST_AUTO_TEST_CASE(TEST_ConvertDeltaSeq)
 
 }
 
+
+BOOST_AUTO_TEST_CASE(TEST_ConvertPopToPhy)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodEcoSet();
+    CRef<CSeq_entry> first = entry->SetSet().SetSeq_set().front();
+
+    unit_test_util::SetTaxname(first, "apple");
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    entry->Parentize();
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    cleanup.SetScope(scope);
+    changes = cleanup.ExtendedCleanup(*entry);
+    // originally an eco set, which should not change
+    BOOST_CHECK_EQUAL(entry->GetSet().GetClass(), CBioseq_set::eClass_eco_set);
+
+    //but if we change it to population study, cleanup should fix it to phy set
+    entry->SetSet().SetClass(CBioseq_set::eClass_pop_set);
+    changes = cleanup.ExtendedCleanup(*entry);
+    BOOST_CHECK_EQUAL(entry->GetSet().GetClass(), CBioseq_set::eClass_phy_set);
+
+}
