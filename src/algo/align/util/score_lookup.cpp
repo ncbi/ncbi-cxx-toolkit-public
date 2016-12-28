@@ -171,32 +171,26 @@ public:
 
     virtual double Get(const CSeq_align& align, CScope *scope) const
     {
-        CBioseq_Handle bsh = scope->GetBioseqHandle(align.GetSeq_id(0));
-        CSeq_inst::EMol mol_type = bsh.GetBioseqMolType();
-        switch (mol_type) {
-        case CSeq_inst::eMol_aa:
+        if (align.GetSegs().IsSpliced() &&
+            align.GetSegs().GetSpliced().GetProduct_type() ==
+            CSpliced_seg::eProduct_type_protein)
+        {
             /// Protein alignment; just count frameshifts
             return align.GetNumFrameshifts(m_Row);
-
-        case CSeq_inst::eMol_rna:
-        {{
-            /// Only count frameshifts within cdregion
-            CFeat_CI feat_it(bsh,
-                             SAnnotSelector()
-                             .IncludeFeatType(CSeqFeatData::e_Cdregion));
-            if (feat_it) {
-                return align.GetNumFrameshiftsWithinRange(feat_it->GetRange(),
-                                                          m_Row);
-            }
-            break;
-        }}
-
-        default:
+        }
+        CBioseq_Handle bsh = scope->GetBioseqHandle(align.GetSeq_id(0));
+        if (bsh.GetBioseqMolType() !=  CSeq_inst::eMol_rna) {
             NCBI_THROW(CException, eUnknown,
                        "Can't count frameshifts on a genomic alignment");
         }
-
-        return 0;
+    
+        /// Only count frameshifts within cdregion
+        CFeat_CI feat_it(bsh,
+                         SAnnotSelector()
+                         .IncludeFeatType(CSeqFeatData::e_Cdregion));
+        return feat_it
+            ? align.GetNumFrameshiftsWithinRange(feat_it->GetRange(), m_Row)
+            : 0;
     }
 
     virtual void PrintHelp(CNcbiOstream& ostr) const
