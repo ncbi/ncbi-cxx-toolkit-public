@@ -1912,23 +1912,9 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
     
     //inits m_FeatObj,m_featScope,m_CanRetrieveSeq,m_ConfigFile,m_Reg,m_LinkoutOrder,m_DynamicFeature
     x_InitAlignParams(actual_aln_list);    
-        
-    bool newDesign = false;    
-    string oldBlastFormat = m_Ctx ? m_Ctx->GetRequestValue("OLD_BLAST").GetValue() : kEmptyStr;
-    if(!oldBlastFormat.empty() && m_AlignOption & eHtml) {
-        oldBlastFormat = NStr::ToLower(oldBlastFormat);
-        newDesign = (oldBlastFormat == "on" || oldBlastFormat == "true" || oldBlastFormat == "yes") ? false : true;
-    }
-    if(m_Ctx && (m_AlignOption & eHtml) && !newDesign){  
-        out<<"<script src=\"blastResult.js\"></script>";
-    }
+            
     //get sequence
-    if(m_AlignOption&eSequenceRetrieval && m_AlignOption&eHtml && m_CanRetrieveSeq){         
-        if(!newDesign)
-            out<<s_GetSeqForm((char*)"submitterTop", m_IsDbNa, m_QueryNumber, 
-                          CAlignFormatUtil::GetDbType(actual_aln_list,m_Scope),m_DbName, m_Rid.c_str(),
-                          s_GetQueryIDFromSeqAlign(actual_aln_list).c_str(),
-                          ((m_AlignOption & eDisplayTreeView) ? true: false));
+    if(m_AlignOption&eSequenceRetrieval && m_AlignOption&eHtml && m_CanRetrieveSeq){                 
         out<<"<form name=\"getSeqAlignment"<<m_QueryNumber<<"\">\n";
     }
     //begin to display
@@ -2119,13 +2105,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
         } 
     }
     if(m_AlignOption&eSequenceRetrieval && m_AlignOption&eHtml && m_CanRetrieveSeq){
-        out<<"</form>\n";        
-        if(!newDesign)
-            out<<s_GetSeqForm((char*)"submitterBottom", m_IsDbNa,
-                              m_QueryNumber, CAlignFormatUtil::GetDbType(actual_aln_list,m_Scope),
-                              m_DbName, m_Rid.c_str(),
-                              s_GetQueryIDFromSeqAlign(actual_aln_list).c_str(),
-                          ((m_AlignOption & eDisplayTreeView) ? true: false));
+        out<<"</form>\n";                
     }
 }
 
