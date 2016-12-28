@@ -6938,7 +6938,10 @@ CBioseq_Handle CValidError_feat::x_GetCDSProduct
     CBioseq_Handle prot_handle = GetCDSProductSequence(feat, m_Scope,
         m_Imp.GetTSE_Handle(), m_Imp.IsFarFetchCDSproducts(), is_far);
 
-    if (!prot_handle) {
+    if (is_far) {
+        farstr = "(far) ";
+    }
+    if (!prot_handle && m_Imp.IsFarFetchCDSproducts()) {
         if (is_far) {
             const CSeq_id* protid = 0;
             try {

@@ -9790,8 +9790,6 @@ BOOST_AUTO_TEST_CASE(Test_PKG_NucProtProblem)
     expected_errors[0] = NULL;
     expected_errors[1]->SetErrMsg("No proteins in nuc-prot set");
     expected_errors[1]->SetAccession("lcl|nuc");
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "NoProtein",
-                                                 "No protein Bioseq given"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "MissingCDSproduct",
                                                  "Unable to find product Bioseq from CDS feature"));
     eval = validator.Validate(seh, options);
@@ -9809,8 +9807,6 @@ BOOST_AUTO_TEST_CASE(Test_PKG_NucProtProblem)
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors[1]->SetSeverity(eDiag_Critical);
     expected_errors[1]->SetErrMsg("Multiple unsegmented nucleotides in nuc-prot set");
-    delete expected_errors[3];
-    expected_errors.pop_back();
     delete expected_errors[2];
     expected_errors.pop_back();
     eval = validator.Validate(seh, options);
@@ -11458,12 +11454,10 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_StartCodon)
     scope.RemoveTopLevelSeqEntry(seh);
     seh = scope.AddTopLevelSeqEntry(*nuc);
     eval = validator.Validate(seh, options);
-    CExpectedError* no_protein = new CExpectedError("lcl|nuc", eDiag_Error, "NoProtein", "No protein Bioseq given");
     CExpectedError* no_pub = new CExpectedError("lcl|nuc", eDiag_Error, "NoPubFound", "No publications anywhere on this entire record.");
     CExpectedError* no_sub = new CExpectedError("lcl|nuc", eDiag_Error, "MissingPubInfo", "No submission citation anywhere on this entire record.");
     CExpectedError* no_org = new CExpectedError("lcl|nuc", eDiag_Error, "NoOrgFound", "No organism name anywhere on this entire record.");
     expected_errors.pop_back();
-    expected_errors.push_back(no_protein);
     expected_errors.push_back(no_pub);
     expected_errors.push_back(no_sub);
     expected_errors.push_back(no_org);
@@ -11484,8 +11478,6 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_StartCodon)
     expected_errors[0] = new CExpectedError("lcl|nuc", eDiag_Error, "ExceptionProblem", "unclassified translation discrepancy is not a legal exception explanation");
     expected_errors[1]->SetSeverity(eDiag_Warning);
     delete expected_errors[2];
-    delete expected_errors[3];
-    expected_errors.pop_back();
     expected_errors.pop_back();
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -11531,7 +11523,6 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_StartCodon)
 
     CLEAR_ERRORS
 
-    delete no_protein;
     delete no_pub;
     delete no_sub;
     delete no_org;
@@ -11598,6 +11589,8 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_NoProtein)
 
     STANDARD_SETUP
 
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "ProductFetchFailure",
+        "Unable to fetch CDS product 'lcl|prot'"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "NucProtProblem",
                               "No proteins in nuc-prot set"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "NoProtein",
@@ -11605,6 +11598,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_NoProtein)
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "MissingCDSproduct",
                               "Unable to find product Bioseq from CDS feature"));
 
+    options |= CValidator::eVal_far_fetch_cds_products;
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -14866,7 +14860,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatureProductInconsistency)
 
     expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Warning, "FeatureProductInconsistency",
                                 "2 CDS features have 1 product references"));
-    expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Error, "NoProtein", "No protein Bioseq given"));
     expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Error, "MissingCDSproduct", "Expected CDS product absent"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -17404,8 +17397,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ShortIntron)
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "StartCodon",
                               "Illegal start codon used. Wrong genetic code [0] or protein should be partial"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "NoProtein",
-                              "No protein Bioseq given"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "NoStop",
                               "Missing stop codon"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "NotSpliceConsensusDonor",
@@ -17449,8 +17440,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ShortIntron)
     CLEAR_ERRORS
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "StartCodon",
                               "Illegal start codon used. Wrong genetic code [0] or protein should be partial"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "NoProtein",
-                              "No protein Bioseq given"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "NoStop",
                               "Missing stop codon"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "NotSpliceConsensusDonor",
