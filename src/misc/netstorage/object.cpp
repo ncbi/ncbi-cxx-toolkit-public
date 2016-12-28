@@ -232,6 +232,8 @@ string CObj::Relocate(TNetStorageFlags flags, TNetStorageProgressCb cb)
                 // m_CancelRelocate may only be set to true inside the callback
                 if (cb(progress), m_CancelRelocate) {
                     m_CancelRelocate = false;
+                    new_file->Abort();
+                    Close();
                     NCBI_THROW(CNetStorageException, eInterrupted,
                         "Request to interrupt Relocate has been received.");
                 }
