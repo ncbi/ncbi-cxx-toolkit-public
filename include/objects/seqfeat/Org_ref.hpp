@@ -90,6 +90,10 @@ public:
 
     CRef<COrg_ref> MakeCommon(const COrg_ref& other) const;
     
+    static CConstRef<COrg_ref> TableLookup(const string& taxname);
+    static const vector<string>& GetTaxnameList();
+    bool UpdateFromTable();
+
 private:
     // Prohibit copy constructor and assignment operator
     COrg_ref(const COrg_ref& value);

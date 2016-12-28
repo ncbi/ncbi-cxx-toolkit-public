@@ -338,6 +338,171 @@ CRef<COrg_ref> COrg_ref::MakeCommon(const COrg_ref& other) const
 }
 
 
+typedef map<string, CRef<COrg_ref>, PNocase> TOrgrefMap;
+static TOrgrefMap s_OrgRefMap;
+static vector<string> s_CommonTaxnameList;
+static bool                s_OrgRefMapInitialized = false;
+DEFINE_STATIC_FAST_MUTEX(s_OrgRefMapMutex);
+
+// automatically generated include file
+#include "common_tax.inc"
+
+static void s_ProcessOrgRefMapLine(const CTempString& line)
+{
+    vector<string> tokens;
+    NStr::Split(line, "\t", tokens, NStr::fSplit_NoMergeDelims);
+    if (tokens.size() != 8) {
+        //        ERR_POST_X(1, Warning << "Bad format in common_tax.txt entry " << line
+        //                   << "; disregarding");
+    } else {
+        NON_CONST_ITERATE(vector<string>, t, tokens) {
+            NStr::TruncateSpacesInPlace(*t);
+            if (NStr::Equal(*t, "-")) {
+                *t = kEmptyStr;
+            }
+        }
+
+        s_CommonTaxnameList.push_back(tokens[0]);
+        CRef<COrg_ref> org(new COrg_ref());
+        org->SetTaxname(tokens[0]);
+        if (!NStr::IsBlank(tokens[1])) {
+            org->SetCommon(tokens[1]);
+        }
+        
+        if (!NStr::IsBlank(tokens[2])) {
+            try {
+                org->SetOrgname().SetGcode(NStr::StringToNumeric(tokens[2]));
+            } catch (CException& ex) {
+            }
+        }
+        if (!NStr::IsBlank(tokens[3])) {
+            try {
+                org->SetOrgname().SetMgcode(NStr::StringToNumeric(tokens[3]));
+            } catch (CException& ex) {
+            }
+        }
+        if (!NStr::IsBlank(tokens[4])) {
+            try {
+                org->SetOrgname().SetPgcode(NStr::StringToNumeric(tokens[4]));
+            } catch (CException& ex) {
+            }
+        }
+
+        if (!NStr::IsBlank(tokens[5])) {
+            try {
+                CRef<CDbtag>taxon(new CDbtag());
+                taxon->SetDb("taxon");
+                taxon->SetTag().SetId(NStr::StringToNumeric(tokens[5]));
+                org->SetDb().push_back(taxon);
+            } catch (CException& ex) {
+            }
+        }
+
+        if (!NStr::IsBlank(tokens[6])) {
+            org->SetOrgname().SetDiv(tokens[6]);
+        }
+        
+        if (!NStr::IsBlank(tokens[7])) {
+            org->SetOrgname().SetLineage(tokens[7]);
+        }
+
+        s_OrgRefMap[tokens[0]] = org;
+    }
+}
+
+
+static void s_InitializeOrgRefMap(void)
+{
+    CFastMutexGuard GUARD(s_OrgRefMapMutex);
+    if (s_OrgRefMapInitialized) {
+        return;
+    }
+    string file = g_FindDataFile("common_tax.txt");
+    CRef<ILineReader> lr;
+    if (!file.empty()) {
+        try {
+            lr = ILineReader::New(file);
+        } NCBI_CATCH("s_InitializeOrgRefMap")
+    }
+
+    if (lr.Empty()) {
+        size_t num_orgrefs = sizeof(kOrgRefList) / sizeof(char *);
+        for (size_t i = 0; i < num_orgrefs; i++) {
+            const char *p = kOrgRefList[i];
+            s_ProcessOrgRefMapLine(p);
+        }
+    } else {
+        do {
+            s_ProcessOrgRefMapLine(*++*lr);
+        } while (!lr->AtEOF());
+    }
+
+    s_OrgRefMapInitialized = true;
+}
+
+
+CConstRef<COrg_ref> COrg_ref::TableLookup(const string& taxname)
+{
+    s_InitializeOrgRefMap();
+    TOrgrefMap::iterator it = s_OrgRefMap.find(taxname);
+    if (it != s_OrgRefMap.end()) {
+        return CConstRef<COrg_ref>(it->second.GetPointer());
+    }
+    return CConstRef<COrg_ref>(NULL);
+}
+
+
+bool COrg_ref::UpdateFromTable()
+{
+    if (!IsSetTaxname() || NStr::IsBlank(GetTaxname())) {
+        return false;
+    }
+    CConstRef<COrg_ref> lookup = TableLookup(GetTaxname());
+    if (lookup) {
+        if (!NStr::IsBlank(lookup->GetCommon())) {
+            SetCommon(lookup->GetCommon());
+        }
+        if (lookup->IsSetGcode()) {
+            SetOrgname().SetGcode(lookup->GetGcode());
+        }
+        if (lookup->IsSetMgcode()) {
+            SetOrgname().SetMgcode(lookup->GetMgcode());
+        }
+        if (lookup->IsSetDivision()) {
+            SetOrgname().SetDiv(lookup->GetDivision());
+        }
+        if (lookup->IsSetDb()) {
+            CObject_id::TId taxid = 0;
+            ITERATE(TDb, it, lookup->GetDb()) {
+                if ((*it)->IsSetDb() &&
+                    (*it)->IsSetTag() &&
+                    (*it)->GetTag().IsId() &&
+                    NStr::Equal((*it)->GetDb(), "taxon")) {
+                    taxid = (*it)->GetTag().GetId();
+                    break;
+                }
+            }
+            if (taxid > 0) {
+                SetTaxId(taxid);
+            }
+        }
+        if (lookup->IsSetLineage()) {
+            SetOrgname().SetLineage(lookup->GetOrgname().GetLineage());
+        }
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+const vector<string>& COrg_ref::GetTaxnameList()
+{
+    return s_CommonTaxnameList;
+}
+
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

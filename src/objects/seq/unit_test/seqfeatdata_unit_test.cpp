@@ -1622,3 +1622,19 @@ BOOST_AUTO_TEST_CASE(Test_GetBioProjectTypeAndLocation)
     CheckBioProjectLocationVals(CBioSource::eGenome_insertion_seq, "eOther");
 
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_OrgRefLookup)
+{
+    string taxname = "Acacia koa";
+
+    CConstRef<COrg_ref> lookup = COrg_ref::TableLookup(taxname);
+    BOOST_CHECK_EQUAL(lookup->GetTaxname(), taxname);
+    BOOST_CHECK_EQUAL(lookup->GetOrgname().GetDiv(), "PLN");
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_CleanupAndRepairInference)
+{
+    BOOST_CHECK_EQUAL(CGb_qual::CleanupAndRepairInference("similar to sequence : UniProtKB : P39748"), "similar to sequence:UniProtKB:P39748");
+}
