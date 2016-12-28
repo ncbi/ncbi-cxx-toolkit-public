@@ -413,6 +413,35 @@ static string s_FindInArray(const string &val, const char **arr)
     return result;
 }
 
+static const char *kInferenceDBChoices[] = {
+    "GenBank",
+    "EMBL",
+    "DDBJ",
+    "INSD",
+    "RefSeq",
+    "UniProt",
+    "Other",
+    "\0" };
+
+size_t kNumInferenceDBChoices = sizeof(kInferenceDBChoices) / sizeof(char *);
+
+static const char *kInferenceTypes[] = {
+    "similar to sequence",
+    "similar to AA",
+    "similar to DNA",
+    "similar to RNA",
+    "similar to mRNA",
+    "similar to EST",
+    "similar to other RNA",
+    "profile",
+    "nucleotide motif",
+    "protein motif",
+    "ab initio prediction",
+    "alignment",
+    "\0" };
+
+size_t kNumInferenceTypes = sizeof(kInferenceTypes) / sizeof(char *);
+
 void CGb_qual::ParseInferenceString(string val, string &category, string &type_str, bool &is_same_species, string &database, 
                                     string &accession, string &program, string &version, string &acc_list)
 {
@@ -432,30 +461,16 @@ void CGb_qual::ParseInferenceString(string val, string &category, string &type_s
         }
     }
 
-    static const char *types[] = {
-        "similar to sequence",
-        "similar to protein",
-        "similar to DNA",
-        "similar to RNA",
-        "similar to mRNA",
-        "similar to EST",
-        "similar to other RNA",
-        "profile",
-        "nucleotide motif",
-        "protein motif",
-        "ab initio prediction",
-        "alignment",
-        "\0"};
 
     type_str.clear();
     is_same_species = false;
     // start with 1 - first item is blank
-    for (unsigned int i = 0; types[i][0] != '\0'; i++) 
+    for (unsigned int i = 0; kInferenceTypes[i][0] != '\0'; i++)
     {
-        if (NStr::StartsWith(val, types[i], NStr::eNocase)) 
+        if (NStr::StartsWith(val, kInferenceTypes[i], NStr::eNocase))
         {
-            type_str = types[i];
-            val = val.substr(strlen(types[i]));
+            type_str = kInferenceTypes[i];
+            val = val.substr(strlen(kInferenceTypes[i]));
             NStr::TruncateSpacesInPlace(val);
             if (NStr::StartsWith(val, "(same species)", NStr::eNocase)) {
                 is_same_species = true;
@@ -473,16 +488,6 @@ void CGb_qual::ParseInferenceString(string val, string &category, string &type_s
     // add type-dependent extra data
     if (NStr::StartsWith(type_str, "similar to ")) {
 
-        static const char *choices[] = {
-            "GenBank",
-            "EMBL",
-            "DDBJ",
-            "INSD",
-            "RefSeq",
-            "UniProt",
-            "Other",
-            "\0"};
-     
         NStr::TruncateSpacesInPlace(val);
         while (NStr::StartsWith(val, "|")) {
             val = val.substr(1);
@@ -490,7 +495,7 @@ void CGb_qual::ParseInferenceString(string val, string &category, string &type_s
         }
         size_t pos = NStr::Find(val, ":");
         if (pos == NPOS) {
-            database = s_FindInArray(val, choices);
+            database = s_FindInArray(val, kInferenceDBChoices);
             if (database.empty())
                 accession = val;            
             else
@@ -498,7 +503,7 @@ void CGb_qual::ParseInferenceString(string val, string &category, string &type_s
         } else {
             string part1 = val.substr(0, pos);
             string part2 = val.substr(pos + 1);
-            database = s_FindInArray(part1, choices);
+            database = s_FindInArray(part1, kInferenceDBChoices);
             if (!database.empty())
             {
                 accession = part2;            
@@ -618,6 +623,23 @@ string CGb_qual::CleanupAndRepairInference( const string &orig_inference )
     ReplaceIfNotFound(inference, "COORDINATES:", "COORDINATES: ");
     ReplaceIfNotFound(inference, "DESCRIPTION:", "DESCRIPTION: ");
     ReplaceIfNotFound(inference, "EXISTENCE:", "EXISTENCE: ");
+
+    for (size_t i = 0; i < kNumInferenceDBChoices - 1; i++) {
+        string find = kInferenceDBChoices[i];
+        find += ": ";
+        string replace = kInferenceDBChoices[i];
+        replace += ":";
+        NStr::ReplaceInPlace(inference, find, replace);
+    }
+    NStr::ReplaceInPlace(inference, "UniProtKB: ", "UniProtKB:");
+
+    for (size_t i = 0; i < kNumInferenceTypes - 1; i++) {
+        string find = kInferenceTypes[i];
+        find += ": ";
+        string replace = kInferenceTypes[i];
+        replace += ":";
+        NStr::ReplaceInPlace(inference, find, replace);
+    }
 
     return inference;
 }
