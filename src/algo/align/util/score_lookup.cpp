@@ -178,7 +178,13 @@ public:
             /// Protein alignment; just count frameshifts
             return align.GetNumFrameshifts(m_Row);
         }
+
         CBioseq_Handle bsh = scope->GetBioseqHandle(align.GetSeq_id(0));
+        if ( !bsh ) {
+            NCBI_THROW(CException, eUnknown,
+                       "failed to retrieve sequence for " +
+                       align.GetSeq_id(0).AsFastaString());
+        }
         if (bsh.GetBioseqMolType() !=  CSeq_inst::eMol_rna) {
             NCBI_THROW(CException, eUnknown,
                        "Can't count frameshifts on a genomic alignment");
@@ -502,7 +508,17 @@ public:
         double pct_overlap = length * 100;
 
         CBioseq_Handle q = scope->GetBioseqHandle(align.GetSeq_id(0));
+        if ( !q ) {
+            NCBI_THROW(CException, eUnknown,
+                       "failed to retrieve sequence for " +
+                       align.GetSeq_id(0).AsFastaString());
+        }
         CBioseq_Handle s = scope->GetBioseqHandle(align.GetSeq_id(1));
+        if ( !s ) {
+            NCBI_THROW(CException, eUnknown,
+                       "failed to retrieve sequence for " +
+                       align.GetSeq_id(1).AsFastaString());
+        }
         if (q.IsAa()  &&  s.IsAa()) {
             pct_overlap *= 3;
         }
@@ -803,6 +819,11 @@ public:
         CSeq_id &query_id = const_cast<CSeq_id &>(clean_align->GetSeq_id(0));
         CSeq_id &subject_id = const_cast<CSeq_id &>(clean_align->GetSeq_id(1));
         CBioseq_Handle genomic_bsh = scope->GetBioseqHandle(subject_id);
+        if ( !genomic_bsh ) {
+            NCBI_THROW(CException, eUnknown,
+                       "failed to retrieve sequence for " +
+                       subject_id.AsFastaString());
+        }
         int genomic_len = genomic_bsh.GetBioseqLength();
 
         CSeq_loc_Mapper mapper(*clean_align, 1);
@@ -815,6 +836,11 @@ public:
         }
         else {
             CBioseq_Handle bsh = scope->GetBioseqHandle(query_id);
+            if ( !bsh ) {
+                NCBI_THROW(CException, eUnknown,
+                           "failed to retrieve sequence for " +
+                           query_id.AsFastaString());
+            }
             CFeat_CI feat_it(bsh,
                              SAnnotSelector()
                              .IncludeFeatType(CSeqFeatData::e_Cdregion));
@@ -1088,6 +1114,11 @@ public:
         }
 
         CBioseq_Handle product = scope->GetBioseqHandle(align.GetSeq_id(0));
+        if ( !product ) {
+            NCBI_THROW(CException, eUnknown,
+                       "failed to retrieve sequence for " +
+                       align.GetSeq_id(0).AsFastaString());
+        }
         CFeat_CI cds(product, CSeqFeatData::eSubtype_cdregion);
 
         if (cds) {
@@ -1392,7 +1423,6 @@ public:
     virtual double Get(const CSeq_align& align, CScope* scope) const
     {
         CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(align.GetSeq_id(0));
-        CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
     
         //
         // compute the BLAST score
@@ -1417,6 +1447,11 @@ private:
     double x_GetPerfectScore(CScope& scope, const CSeq_id_Handle& idh) const
     {
         CBioseq_Handle bsh = scope.GetBioseqHandle(idh);
+        if ( !bsh ) {
+            NCBI_THROW(CException, eUnknown,
+                       "failed to retrieve sequence for " +
+                       idh.AsString());
+        }
 
         CSeq_align perfect_align;
         CDense_seg& seg = perfect_align.SetSegs().SetDenseg();
@@ -1517,6 +1552,11 @@ public:
     virtual double Get(const CSeq_align& align, CScope* scope) const
     {
         CBioseq_Handle bsh = scope->GetBioseqHandle(align.GetSeq_id(m_Row));
+        if ( !bsh ) {
+            NCBI_THROW(CException, eUnknown,
+                       "failed to retrieve sequence for " +
+                       align.GetSeq_id(m_Row).AsFastaString());
+        }
         CFeat_CI gene_it(bsh, CSeqFeatData::e_Gene);
         if (!gene_it) {
             NCBI_THROW(CException, eUnknown, "No gene feature");
