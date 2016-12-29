@@ -275,15 +275,34 @@ protected:
     /// @sa CHttpResponse::SetStatus()
     void SetHTTPStatus(unsigned int status, const string& reason = kEmptyStr);
 
+    /// Process help request: set content type, print usage informations etc.
+    /// For automatic handling of help request all of the following conditions
+    /// must be met:
+    /// - CGI_ENABLE_HELP_REQUEST=t must be set in the environment or
+    ///   EnableHelpRequest=t in [CGI] section of the INI file.
+    /// - REQUEST_METHOD must be GET
+    /// - query string must include ncbi_help[=<format>] argument (all other
+    ///   arguments are ignored).
+    /// The default implementation looks for <appname>.help.<format> files in
+    /// the app directory, then for help.<format>. The formats are checked in
+    /// the following order:
+    /// 1. If format argument is present, try to open <appname>.help.<format>,
+    ///    then help.<format>.
+    /// 2. Check 'Accept:' http header; for each 'type/subtype' entry try to open
+    ///    <appname>.help.<subtype> and help.<subtype>.
+    /// 3. Check availability of help files for html, xml, and json formats.
+    /// 4. Use CArgDescriptions to print help in XML format.
+    /// If a help file starts with 'Content-type: ...' followed by double-
+    /// newline, the specified content type is sent in the response regardless
+    /// of the actual format selected.
+    virtual void ProcessHelpRequest(const string& format);
+
     enum EVersionType {
         eVersion_Short,
         eVersion_Full
     };
 
-    virtual void ProcessHelpRequest(const string& format);
-
     /// Process version request: set content type, print version informations etc.
-    /// The default implementation prints GetVersion/GetFullVersion as plain text.
     /// For automatic handling of version request all of the following conditions
     /// must be met:
     /// - CGI_ENABLE_VERSION_REQUEST=t must be set in the environment or
@@ -291,6 +310,8 @@ protected:
     /// - REQUEST_METHOD must be GET
     /// - query string must include ncbi_version=[short|full] argument (all other
     ///   arguments are ignored).
+    /// The default implementation prints GetVersion/GetFullVersion as plain text
+    /// (default), XML or JSON depending on the 'Accept:' HTTP header, if any.
     virtual void ProcessVersionRequest(EVersionType ver_type);
 
     /// "Accept:" header entry.
