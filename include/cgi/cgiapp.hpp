@@ -150,6 +150,7 @@ private:
     void SaveResultToCache(const CCgiRequest& request, CNcbiIstream& is);
     void SaveRequest(const string& rid, const CCgiRequest& request);
     CCgiRequest* GetSavedRequest(const string& rid);
+    bool x_ProcessHelpRequest(void);
     bool x_ProcessVersionRequest(void);
 
 protected:
@@ -279,6 +280,8 @@ protected:
         eVersion_Full
     };
 
+    virtual void ProcessHelpRequest(const string& format);
+
     /// Process version request: set content type, print version informations etc.
     /// The default implementation prints GetVersion/GetFullVersion as plain text.
     /// For automatic handling of version request all of the following conditions
@@ -289,6 +292,26 @@ protected:
     /// - query string must include ncbi_version=[short|full] argument (all other
     ///   arguments are ignored).
     virtual void ProcessVersionRequest(EVersionType ver_type);
+
+    /// "Accept:" header entry.
+    struct SAcceptEntry {
+        SAcceptEntry(void) : m_Quality(1) {}
+
+        typedef map<string, string> TParams;
+
+        string m_Type;
+        string m_Subtype;
+        float m_Quality; ///< Quality factor or "1" if not set (or not numeric).
+        string m_MediaRangeParams; ///< Media range parameters
+        TParams m_AcceptParams; ///< Accept parameters
+
+        bool operator<(const SAcceptEntry& entry) const;
+    };
+
+    typedef list<SAcceptEntry> TAcceptEntries;
+
+    /// Parse "Accept:" header, put entries to the list, more specific first.
+    void ParseAcceptHeader(TAcceptEntries& entries) const;
 
 protected:
     /// Set CONN_HTTP_REFERER, print self-URL and referer to log.

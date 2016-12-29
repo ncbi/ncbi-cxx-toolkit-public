@@ -640,9 +640,14 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                         }
                     }
                     GetDiagContext().SetAppState(eDiagAppState_Request);
-                    x_result = CCgiContext::ProcessCORSRequest(
-                        m_Context->GetRequest(), m_Context->GetResponse()) ?
-                        0 : ProcessRequest(*m_Context);
+                    if (x_ProcessHelpRequest() ||
+                        x_ProcessVersionRequest() ||
+                        CCgiContext::ProcessCORSRequest(m_Context->GetRequest(), m_Context->GetResponse())) {
+                        x_result = 0;
+                    }
+                    else {
+                        x_result = ProcessRequest(*m_Context);
+                    }
                     GetDiagContext().SetAppState(eDiagAppState_RequestEnd);
                     m_Context->GetResponse().Finalize();
                     if (x_result == 0) {

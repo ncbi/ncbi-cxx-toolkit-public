@@ -552,11 +552,9 @@ int CCgiApplication::Run(void)
                     }
                 }
                 GetDiagContext().SetAppState(eDiagAppState_Request);
-                if (x_ProcessVersionRequest()) {
-                    result = 0;
-                }
-                else if (CCgiContext::ProcessCORSRequest(
-                    m_Context->GetRequest(), m_Context->GetResponse())) {
+                if (x_ProcessHelpRequest() ||
+                    x_ProcessVersionRequest() ||
+                    CCgiContext::ProcessCORSRequest(m_Context->GetRequest(), m_Context->GetResponse())) {
                     result = 0;
                 }
                 else {
@@ -1659,19 +1657,249 @@ bool CCgiApplication::x_DoneHeadRequest(void) const
 }
 
 
-NCBI_PARAM_DECL(bool, CGI, EnableVersionRequest);
-NCBI_PARAM_DEF_EX(bool, CGI, EnableVersionRequest, true,
+inline
+bool CCgiApplication::SAcceptEntry::operator<(const SAcceptEntry& entry) const
+{
+    // Prefer specific type over wildcard.
+    bool this_wc = m_Type == "*";
+    bool other_wc = entry.m_Type == "*";
+    if (this_wc != other_wc) return !this_wc;
+    // Prefer specific subtype over wildcard.
+    this_wc = m_Subtype == "*";
+    other_wc = entry.m_Subtype == "*";
+    if (this_wc != other_wc) return !this_wc;
+    // Prefer more specific media range params.
+    if (m_MediaRangeParams.empty() != entry.m_MediaRangeParams.empty()) {
+        return !m_MediaRangeParams.empty();
+    }
+    // Prefer higher quality factor.
+    if (m_Quality != entry.m_Quality) return m_Quality > entry.m_Quality;
+    // Otherwise sort by type/subtype values.
+    if (m_Type != entry.m_Type) return m_Type < entry.m_Type;
+    if (m_Subtype != entry.m_Subtype) return m_Subtype < entry.m_Subtype;
+    // Otherwise (same type/subtype, quality factor and number of params)
+    // consider entries equal.
+    return false;
+}
+
+
+void CCgiApplication::ParseAcceptHeader(TAcceptEntries& entries) const {
+    string accept = m_Context->GetRequest().GetProperty(eCgi_HttpAccept);
+    if (accept.empty()) return;
+    list<string> types;
+    NStr::Split(accept, ",", types, NStr::fSplit_MergeDelimiters);
+    ITERATE(list<string>, type_it, types) {
+        list<string> parts;
+        NStr::Split(NStr::TruncateSpaces(*type_it), ";", parts, NStr::fSplit_MergeDelimiters);
+        if ( parts.empty() ) continue;
+        entries.push_back(SAcceptEntry());
+        SAcceptEntry& entry = entries.back();
+        NStr::SplitInTwo(NStr::TruncateSpaces(parts.front()), "/", entry.m_Type, entry.m_Subtype);
+        NStr::TruncateSpacesInPlace(entry.m_Type);
+        NStr::TruncateSpacesInPlace(entry.m_Subtype);
+        list<string>::const_iterator ext_it = parts.begin();
+        ++ext_it; // skip type/subtype
+        bool aparams = false;
+        while (ext_it != parts.end()) {
+            string name, value;
+            NStr::SplitInTwo(NStr::TruncateSpaces(*ext_it), "=", name, value);
+            NStr::TruncateSpacesInPlace(name);
+            NStr::TruncateSpacesInPlace(value);
+            if (name == "q") {
+                entry.m_Quality = NStr::StringToNumeric<float>(value, NStr::fConvErr_NoThrow);
+                if (entry.m_Quality == 0 && errno != 0) {
+                    entry.m_Quality = 1;
+                }
+                aparams = true;
+                ++ext_it;
+                continue;
+            }
+            if (aparams) {
+                entry.m_AcceptParams[name] = value;
+            }
+            else {
+                 entry.m_MediaRangeParams += ";" + name + "=" + value;
+            }
+            ++ext_it;
+        }
+    }
+    entries.sort();
+}
+
+
+NCBI_PARAM_DECL(bool, CGI, EnableHelpRequest);
+NCBI_PARAM_DEF_EX(bool, CGI, EnableHelpRequest, true,
+                  eParam_NoThread, CGI_ENABLE_HELP_REQUEST);
+typedef NCBI_PARAM_TYPE(CGI, EnableHelpRequest) TEnableHelpRequest;
+
+
+bool CCgiApplication::x_ProcessHelpRequest()
+{
+    if (!TEnableHelpRequest::GetDefault()) return false;
+    CCgiRequest& request = m_Context->GetRequest();
+    if (request.GetRequestMethod() != CCgiRequest::eMethod_GET) return false;
+    bool found = false;
+    string format = request.GetEntry("ncbi_help", &found);
+    if ( !found ) return false;
+    ProcessHelpRequest(format);
+    return true;
+}
+
+
+static const char* kStdFormats[] = { "html", "xml", "json" };
+static const char* kStdContentTypes[] = { "text/html", "text/xml", "application/json" };
+
+inline string FindContentType(CTempString format) {
+    for (size_t i = 0; i < sizeof(kStdFormats) / sizeof(kStdFormats[0]); ++i) {
+        if (format == kStdFormats[i]) return kStdContentTypes[i];
+    }
+    return kEmptyStr;
+}
+
+
+void CCgiApplication::ProcessHelpRequest(const string& format)
+{
+    string base_name = GetProgramExecutablePath();
+    string fname;
+    string content_type;
+    // If 'format' is set, try to find <basename>.help.<format> or help.<format> file.
+    if ( !format.empty() ) {
+        string fname_fmt = base_name + ".help." + format;
+        if ( CFile(fname_fmt).Exists() ) {
+            fname = fname_fmt;
+            content_type = FindContentType(format);
+        }
+        else {
+            fname_fmt = "help." + format;
+            if ( CFile(fname_fmt).Exists() ) {
+                fname = fname_fmt;
+                content_type = FindContentType(format);
+            }
+        }
+    }
+
+    // If 'format' is not set or there's no file of the specified format, check
+    // 'Accept:' header.
+    if ( fname.empty() ) {
+        TAcceptEntries entries;
+        ParseAcceptHeader(entries);
+        ITERATE(TAcceptEntries, it, entries) {
+            string fname_accept = base_name + ".help." + it->m_Subtype + it->m_MediaRangeParams;
+            if ( CFile(fname_accept).Exists() ) {
+                fname = fname_accept;
+                content_type = it->m_Type + "/" + it->m_Subtype;
+                break;
+            }
+        }
+        if ( fname.empty() ) {
+            ITERATE(TAcceptEntries, it, entries) {
+                string fname_accept = "help." + it->m_Subtype + it->m_MediaRangeParams;
+                if ( CFile(fname_accept).Exists() ) {
+                    fname = fname_accept;
+                    content_type = it->m_Type + "/" + it->m_Subtype;
+                    break;
+                }
+            }
+        }
+    }
+
+    // Finally, check standard formats: html/xml/json
+    if ( fname.empty() ) {
+        for (size_t i = 0; i < sizeof(kStdFormats) / sizeof(kStdFormats[0]); ++i) {
+            string fname_std = base_name + ".help." + kStdFormats[i];
+            if ( CFile(fname_std).Exists() ) {
+                fname = fname_std;
+                content_type = kStdContentTypes[i];
+                break;
+            }
+        }
+    }
+    if ( fname.empty() ) {
+        for (size_t i = 0; i < sizeof(kStdFormats) / sizeof(kStdFormats[0]); ++i) {
+            string fname_std = string("help.") + kStdFormats[i];
+            if ( CFile(fname_std).Exists() ) {
+                fname = fname_std;
+                content_type = kStdContentTypes[i];
+                break;
+            }
+        }
+    }
+
+    CCgiResponse& response = m_Context->GetResponse();
+    if ( !fname.empty() ) {
+        CNcbiIfstream in(fname);
+
+        // Check if the file starts with "Content-type:" header followed by double-eol.
+        bool ct_found = false;
+        string ct;
+        getline(in, ct);
+        if ( NStr::StartsWith(ct, "content-type:", NStr::eNocase) ) {
+            string eol;
+            getline(in, eol);
+            if ( eol.empty() ) {
+                ct_found = true;
+                content_type = NStr::TruncateSpaces(ct.substr(13));
+            }
+        }
+        if ( !ct_found ) {
+            in.seekg(0);
+        }
+
+        if ( !content_type.empty()) {
+            response.SetContentType(content_type);
+        }
+        response.WriteHeader();
+        NcbiStreamCopy(*response.GetOutput(), in);
+    }
+    else {
+        // Could not find help file, use arg descriptions instead.
+        const CArgDescriptions* args = GetArgDescriptions();
+        if ( args ) {
+            response.SetContentType("text/xml");
+            response.WriteHeader();
+            args->PrintUsageXml(*response.GetOutput());
+        }
+        else {
+            NCBI_THROW(CCgiRequestException, eData,
+                "Can not find help for CGI application");
+        }
+    }
+}
+
+
+NCBI_PARAM_DECL(string, CGI, EnableVersionRequest);
+NCBI_PARAM_DEF_EX(string, CGI, EnableVersionRequest, "t",
                   eParam_NoThread, CGI_ENABLE_VERSION_REQUEST);
 typedef NCBI_PARAM_TYPE(CGI, EnableVersionRequest) TEnableVersionRequest;
 
 
 bool CCgiApplication::x_ProcessVersionRequest()
 {
-    if (!TEnableVersionRequest::GetDefault()) return false;
     CCgiRequest& request = m_Context->GetRequest();
     if (request.GetRequestMethod() != CCgiRequest::eMethod_GET) return false;
+
+    // If param value is a bool, enable the default ncbi_version CGI arg.
+    // Otherwise try to use the value as the arg's name, then fallback to
+    // ncbi_version.
+    bool use_alt_name = false;
+    string vparam = TEnableVersionRequest::GetDefault();
+    if ( vparam.empty() ) return false;
+    try {
+        bool is_enabled = NStr::StringToBool(vparam);
+        if (!is_enabled) return false;
+    }
+    catch (CStringException) {
+        use_alt_name = true;
+    }
+
+    string ver_type;
     bool found = false;
-    string ver_type = request.GetEntry("ncbi_version", &found);
+    if ( use_alt_name ) {
+        ver_type = request.GetEntry(vparam, &found);
+    }
+    if ( !found ) {
+        ver_type = request.GetEntry("ncbi_version", &found);
+    }
     if ( !found ) return false;
 
     EVersionType vt;
@@ -1692,19 +1920,57 @@ bool CCgiApplication::x_ProcessVersionRequest()
 
 void CCgiApplication::ProcessVersionRequest(EVersionType ver_type)
 {
-    string version;
-    switch (ver_type) {
-    case eVersion_Short:
-        version = GetVersion().Print();
-        break;
-    case eVersion_Full:
-        version = GetFullVersion().Print(GetAppName());
-        break;
+    string format = "plain";
+    string content_type = "text/plain";
+    TAcceptEntries entries;
+    ParseAcceptHeader(entries);
+    ITERATE(TAcceptEntries, it, entries) {
+        if (it->m_Subtype == "xml" || it->m_Subtype == "json" ||
+            (it->m_Type == "text" && it->m_Subtype == "plain")) {
+            format = it->m_Subtype;
+            content_type = it->m_Type + "/" + it->m_Subtype;
+            break;
+        }
     }
+
     CCgiResponse& response = m_Context->GetResponse();
-    response.SetContentType("text/plain");
+    response.SetContentType(content_type);
     response.WriteHeader();
-    *response.GetOutput() << version;
+    CNcbiOstream& out = *response.GetOutput();
+    if (format == "plain") {
+        switch (ver_type) {
+        case eVersion_Short:
+            out << GetVersion().Print();
+            break;
+        case eVersion_Full:
+            out << GetFullVersion().Print(GetAppName());
+            break;
+        }
+    }
+    else if (format == "xml") {
+        switch (ver_type) {
+        case eVersion_Short:
+            out << GetFullVersion().PrintXml(kEmptyStr, CVersion::fVersionInfo);
+            break;
+        case eVersion_Full:
+            out << GetFullVersion().PrintXml(GetAppName());
+            break;
+        }
+    }
+    else if (format == "json") {
+        switch (ver_type) {
+        case eVersion_Short:
+            out << GetFullVersion().PrintJson(kEmptyStr, CVersion::fVersionInfo);
+            break;
+        case eVersion_Full:
+            out << GetFullVersion().PrintJson(GetAppName());
+            break;
+        }
+    }
+    else {
+        NCBI_THROW(CCgiRequestException, eData,
+            "Unsupported version format");
+    }
 }
 
 
