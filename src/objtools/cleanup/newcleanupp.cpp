@@ -12557,13 +12557,15 @@ void CNewCleanup_imp::CdRegionEC(CSeq_feat& sf)
         }
     }
 
-    CConstRef<CSeq_feat> mrna = sequence::GetmRNAforCDS(sf, *m_Scope);
-    CConstRef<CSeq_feat> gene = sequence::GetGeneForFeature(sf, *m_Scope);
-
     if (!m_IsEmblOrDdbj) {
         try {
+            CRef<CSeq_feat> cds_cpy(new CSeq_feat());
+            cds_cpy->Assign(sf);
             CBioseq_Handle bsh = m_Scope->GetBioseqHandle(sf.GetLocation());
             if (bsh && CCleanup::ExtendToStopIfShortAndNotPartial(sf, bsh)) {
+                CConstRef<CSeq_feat> mrna = sequence::GetmRNAforCDS(*cds_cpy, *m_Scope);
+                CConstRef<CSeq_feat> gene = sequence::GetGeneForFeature(*cds_cpy, *m_Scope);
+
                 if (gene && s_LocationShouldBeExtendedToMatch(gene->GetLocation(), sf.GetLocation())) {
                     CRef<CSeq_feat> new_gene(new CSeq_feat());
                     new_gene->Assign(*gene);
