@@ -11586,17 +11586,16 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_NoProtein)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
     entry->SetSet().SetSeq_set().pop_back();
-
+    CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
+    cds->ResetProduct();
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "ProductFetchFailure",
-        "Unable to fetch CDS product 'lcl|prot'"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "NucProtProblem",
                               "No proteins in nuc-prot set"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "NoProtein",
                               "No protein Bioseq given"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "MissingCDSproduct",
-                              "Unable to find product Bioseq from CDS feature"));
+                              "Expected CDS product absent"));
 
     options |= CValidator::eVal_far_fetch_cds_products;
     eval = validator.Validate(seh, options);
@@ -14861,6 +14860,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatureProductInconsistency)
     expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Warning, "FeatureProductInconsistency",
                                 "2 CDS features have 1 product references"));
     expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Error, "MissingCDSproduct", "Expected CDS product absent"));
+    expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Error, "NoProtein", "No protein Bioseq given"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -17413,6 +17413,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ShortIntron)
                               "Splice donor consensus (GT) not found at start of intron, position 17 of lcl|good"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "NotSpliceConsensusAcceptor", 
                               "Splice acceptor consensus (AG) not found at end of intron, position 19 of lcl|good"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "NoProtein", "No protein Bioseq given"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -17454,6 +17455,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ShortIntron)
                               "Splice donor consensus (GT) not found at start of intron, position 17 of lcl|good"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "NotSpliceConsensusAcceptor", 
                               "Splice acceptor consensus (AG) not found at end of intron, position 19 of lcl|good"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "NoProtein", "No protein Bioseq given"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 

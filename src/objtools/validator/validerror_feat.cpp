@@ -6941,24 +6941,35 @@ CBioseq_Handle CValidError_feat::x_GetCDSProduct
     if (is_far) {
         farstr = "(far) ";
     }
-    if (!prot_handle && m_Imp.IsFarFetchCDSproducts()) {
-        if (is_far) {
-            const CSeq_id* protid = 0;
-            try {
-                protid = &GetId(feat.GetProduct(), m_Scope);
-            } catch (CException&) {}
-            if (protid != NULL) {
+    const CSeq_id* protid = 0;
+    try {
+        protid = &GetId(feat.GetProduct(), m_Scope);
+    } catch (CException&) {}
+
+    if (protid != NULL) {
+        if (!prot_handle) {
+            if (!m_Imp.IsFarFetchCDSproducts()) {
+                return prot_handle;
+            }
+            if (feat.IsSetProduct()) {
                 string label;
                 protid->GetLabel(&label);
-
-                PostErr(eDiag_Error, eErr_SEQ_FEAT_ProductFetchFailure,
+                EDiagSev sev = eDiag_Error;
+                if (protid->IsGeneral() && protid->GetGeneral().IsSetDb() &&
+                    (NStr::EqualNocase(protid->GetGeneral().GetDb(), "ti") ||
+                    NStr::EqualNocase(protid->GetGeneral().GetDb(), "SRA"))) {
+                    sev = eDiag_Warning;
+                }
+                PostErr(sev, eErr_SEQ_FEAT_ProductFetchFailure,
                     "Unable to fetch CDS product '" + label + "'", feat);
                 if (m_Imp.x_IsFarFetchFailure(feat.GetProduct())) {
                     m_Imp.SetFarFetchFailure();
                 }
+                return prot_handle;
             }
         }
-
+    }
+    if (!prot_handle) {
         if  (!m_Imp.IsStandaloneAnnot()) {
             if (translation_length > 6) {
                 bool is_nt, is_ng, is_nw, is_nc;
