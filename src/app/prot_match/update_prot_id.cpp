@@ -131,46 +131,6 @@ int CProtIdUpdateApp::Run(void)
     bool isSeqSet = false;
     CRef<CSeq_entry> seq_entry = Ref(new CSeq_entry());
     x_ReadUpdateFile(*istr, isSeqSet, *seq_entry);
-/*
-    try {
-        istr->Read(ObjectInfo(*seq_entry));
-    }
-    catch (CException&) {
-        NCBI_THROW(CProteinMatchException,
-                   eInputError,
-                   "Failed to read Seq-entry");
-    }
-    set<TTypeInfo> knownTypes, matchingTypes;
-    knownTypes.insert(CSeq_entry::GetTypeInfo());
-    knownTypes.insert(CBioseq_set::GetTypeInfo());
-    matchingTypes = istr->GuessDataType(knownTypes);
-
-    if (matchingTypes.empty()) {
-        NCBI_THROW(CProteinMatchException,
-            eInputError,
-            "Unrecognized input");
-    }
-
-    const TTypeInfo typeInfo = *matchingTypes.begin();
-
-    if (typeInfo == CSeq_entry::GetTypeInfo()) {
-        if (!x_TryReadSeqEntry(*istr, *seq_entry)) {
-            NCBI_THROW(CProteinMatchException,
-                eInputError,
-                "Failed to read Seq-entry");
-        }
-    } 
-    else 
-    if (typeInfo == CBioseq_set::GetTypeInfo()) {
-        if (!x_TryReadBioseqSet(*istr, *seq_entry)) {
-            NCBI_THROW(CProteinMatchException,
-                eInputError,
-                "Failed to read Bioseq-set");
-        }
-        isSeqSet = true;
-    }
-
-*/
 
     CNcbiIstream& table_str = args["t"].AsInputFile();
     map<CRef<CSeq_id>, CRef<CSeq_id>> id_map;
@@ -299,20 +259,22 @@ bool CProtIdUpdateApp::x_ProcessInputTable(CNcbiIstream& istr, TIdMap& id_map)
             }
 
             vector<string> entries;
-            string delim = "\t";
-            NStr::Split(line, delim, entries);
+            string delim = " \t";
+            NStr::Split(line, delim, entries, NStr::fSplit_MergeDelimiters);
             if (!entries.empty() &&
                 entries[0] == "NA_ACCESSION") {
                 continue;
             } 
-        
+       
+
             if (entries.size() < 5) { 
                 continue;             
             }
 
+
             if (entries[2] == "---" ||  // No local ID
                 entries[3] != "PROT" || // Not a protein
-                entries[4] != "Same") { // Changed
+                (entries[4] != "Same" && entries[4] != "New")) {
                 continue;
             }
 
@@ -327,6 +289,7 @@ bool CProtIdUpdateApp::x_ProcessInputTable(CNcbiIstream& istr, TIdMap& id_map)
         } 
     }
 
+
     return true;
 }
 
@@ -338,7 +301,6 @@ void CProtIdUpdateApp::x_UpdateSeqId(const CSeq_id& old_id,
     if (id.Compare(old_id) != CSeq_id::e_YES) {
         return;
     }
-
     id.Assign(new_id);
     return;
 }
@@ -350,7 +312,10 @@ void CProtIdUpdateApp::x_UpdateSeqId(const TIdMap& id_map,
     for (const auto& id_pair : id_map) {
         const CSeq_id& old_id = *(id_pair.first);
         const CSeq_id& new_id = *(id_pair.second);
-        x_UpdateSeqId(old_id, new_id, id);
+
+        if (id.Compare(old_id) == CSeq_id::e_YES) {
+            id.Assign(new_id);
+        }
     }
     return;
 }
