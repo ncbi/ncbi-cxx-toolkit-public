@@ -34,10 +34,26 @@
 #include <objmgr/mapped_feat.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objtools/edit/feature_edit.hpp>
+#include <objects/seqfeat/Code_break.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
+
+
+struct SOutsideRange
+{
+    SOutsideRange(TSeqPos from, TSeqPos to) : m_From(from), m_To(to) {}
+
+    bool operator()(const CRef<CCode_break>& code_break) {
+        CRange<TSeqPos> cb_range = code_break->GetLoc().GetTotalRange();
+        return (((m_From > cb_range.GetFrom()) || (m_To < cb_range.GetTo()))); 
+    }
+
+    TSeqPos m_From;
+    TSeqPos m_To;   
+};
+
 
 CMappedFeat CFeatTrim::Apply(const CMappedFeat& mapped_feat, 
         const CRange<TSeqPos>& range)
@@ -66,6 +82,15 @@ CMappedFeat CFeatTrim::Apply(const CMappedFeat& mapped_feat,
     if (new_sf->GetData().IsCdregion()) {
         const TSeqPos offset = x_GetStartOffset(mapped_feat, from, to);
         x_UpdateFrame(offset, new_sf->SetData().SetCdregion());
+
+        if (new_sf->SetData().SetCdregion().IsSetCode_break()) {
+            // iterate over code breaks and remove if they fall outside the range
+            list<CRef<CCode_break>>& code_breaks = new_sf->SetData().SetCdregion().SetCode_break();
+            code_breaks.remove_if(SOutsideRange(from,to));
+            if (code_breaks.empty()) {
+                new_sf->SetData().SetCdregion().ResetCode_break();
+            }
+        }
     }
 
     sfeh.Replace(*new_sf);
