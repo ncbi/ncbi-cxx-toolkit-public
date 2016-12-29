@@ -640,6 +640,13 @@ string CGb_qual::CleanupAndRepairInference( const string &orig_inference )
         replace += ":";
         NStr::ReplaceInPlace(inference, find, replace);
     }
+    for (size_t i = 0; i < ArraySize(valid_inf_prefixes); i++) {
+        string find = valid_inf_prefixes[i];
+        find += ": ";
+        string replace = valid_inf_prefixes[i];
+        replace += ":";
+        NStr::ReplaceInPlace(inference, find, replace);
+    }
 
     return inference;
 }
