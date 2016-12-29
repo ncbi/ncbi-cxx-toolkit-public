@@ -1321,7 +1321,7 @@ xformat needs mlacli
 xformat needs xalnmgr
 xformat needs xcleanup
 xgencoll needs gencoll_client
-xgencoll needs gpipe_objutil
+xgencoll needs simple_asm
 xgencollstats needs gc_asn_access
 xgencollstats needs gencoll_stats
 xgp_manifest needs xser
