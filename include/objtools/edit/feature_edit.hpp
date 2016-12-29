@@ -36,6 +36,7 @@
 #include <objmgr/mapped_feat.hpp>
 #include <objects/blastxml2/Range.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
+#include <objects/seqfeat/Trna_ext.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -57,6 +58,7 @@ private:
         TSeqPos from, TSeqPos to);
     static TSeqPos x_GetFrame(const CCdregion& cdregion);
     static void x_UpdateFrame(TSeqPos offset, CCdregion& cdregion);
+    static void x_TrimTrnaExt(TSeqPos from, TSeqPos to, CTrna_ext& ext);
 };
 
 END_SCOPE(edit)

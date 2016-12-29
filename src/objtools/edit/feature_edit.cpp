@@ -35,6 +35,8 @@
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objtools/edit/feature_edit.hpp>
 #include <objects/seqfeat/Code_break.hpp>
+#include <objects/seqfeat/Trna_ext.hpp>
+#include <objects/seqfeat/RNA_ref.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -90,6 +92,13 @@ CMappedFeat CFeatTrim::Apply(const CMappedFeat& mapped_feat,
             if (code_breaks.empty()) {
                 new_sf->SetData().SetCdregion().ResetCode_break();
             }
+        }
+    }
+    else 
+    if (new_sf->GetData().GetSubtype() == CSeqFeatData::eSubtype_tRNA) {
+        auto& rna = new_sf->SetData().SetRna();
+        if (rna.IsSetExt() && rna.GetExt().IsTRNA()) {
+            x_TrimTrnaExt(from, to, rna.SetExt().SetTRNA());
         }
     }
 
@@ -237,6 +246,21 @@ void CFeatTrim::x_UpdateFrame(const TSeqPos offset, CCdregion& cdregion)
     }
     cdregion.ResetFrame();
     cdregion.SetFrame(frame);
+}
+
+
+void CFeatTrim::x_TrimTrnaExt(const TSeqPos from, const TSeqPos to, CTrna_ext& ext)
+{
+    if (!ext.IsSetAnticodon()) {
+        return;
+    }
+
+    CRange<TSeqPos> ac_range = ext.GetAnticodon().GetTotalRange();
+
+    if (from > ac_range.GetFrom() || to < ac_range.GetTo()) {
+        ext.ResetAnticodon();
+    }
+    return;
 }
 
 
