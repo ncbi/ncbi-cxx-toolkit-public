@@ -104,6 +104,12 @@ public:
     ///   Return empty string if major version is undefined (< 0).
     virtual string Print(void) const;
 
+    /// Print version information as XML (see ncbi_version.xsd)
+    virtual string PrintXml(void) const;
+
+    /// Print version information as JSON
+    virtual string PrintJson(void) const;
+
     /// Major version
     int GetMajor(void) const { return m_Major; }
     /// Minor version
@@ -203,6 +209,12 @@ public:
     /// Print version information.
     virtual string Print(void) const;
 
+    /// Print version information ax XML.
+    virtual string PrintXml(void) const;
+
+    /// Print version information as JSON.
+    virtual string PrintJson(void) const;
+
 private:
     // default ctor
     CComponentVersionInfo(void);
@@ -226,6 +238,9 @@ struct NCBI_XNCBI_EXPORT SBuildInfo
 
     SBuildInfo();
     SBuildInfo(const string& d, const string& t = kEmptyStr) : date(d), tag(t) {}
+
+    string PrintXml(void) const;
+    string PrintJson(void) const;
 };
 
 
@@ -291,10 +306,15 @@ public:
     };
     typedef int TPrintFlags;  ///< Binary OR of EPrintFlags
     
-    /// Print version data.
+    /// Print version data, plain text.
     string Print(const string& appname, TPrintFlags flags = fPrintAll) const;
+    /// Print version data, XML.
+    string PrintXml(const string& appname, TPrintFlags flags = fPrintAll) const;
+    /// Print version data, JSON.
+    string PrintJson(const string& appname, TPrintFlags flags = fPrintAll) const;
 
 private:
+
     AutoPtr< CVersionInfo > m_VersionInfo;
     vector< AutoPtr< CComponentVersionInfo> > m_Components;
     SBuildInfo m_BuildInfo;

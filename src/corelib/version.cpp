@@ -190,6 +190,47 @@ string CVersionInfo::Print(void) const
 }
 
 
+string CVersionInfo::PrintXml(void) const
+{
+    CNcbiOstrstream os;
+    os << "<version_info";
+    if (m_Major >= 0) {
+        os << " major=\"" << m_Major <<
+            "\" minor=\"" << (m_Minor >= 0 ? m_Minor : 0) << "\"";
+        if (m_PatchLevel >= 0) {
+            os << " patch_level=\"" << m_PatchLevel << "\"";
+        }
+    }
+    if ( !m_Name.empty() ) {
+        os << " name=\"" << NStr::XmlEncode(m_Name) << "\"";
+    }
+    os << "/>\n";
+    return CNcbiOstrstreamToString(os);
+}
+
+
+string CVersionInfo::PrintJson(void) const
+{
+    CNcbiOstrstream os;
+    os << "{";
+    bool need_separator = false;
+    if (m_Major >= 0) {
+        os << "\"major\": \"" << m_Major <<
+            "\", \"minor\": \"" << (m_Minor >= 0 ? m_Minor : 0) << "\"";
+        if (m_PatchLevel >= 0) {
+            os << ", \"patch_level\": \"" << m_PatchLevel << "\"";
+        }
+        need_separator = true;
+    }
+    if ( !m_Name.empty() ) {
+        if ( need_separator ) os << ", ";
+        os << "\"name\": \"" << NStr::JsonEncode(m_Name) << "\"";
+    }
+    os << "}";
+    return CNcbiOstrstreamToString(os);
+}
+
+
 CVersionInfo::EMatch 
 CVersionInfo::Match(const CVersionInfo& version_info) const
 {
@@ -450,6 +491,24 @@ string CComponentVersionInfo::Print(void) const
     return CNcbiOstrstreamToString(os);
 }
 
+string CComponentVersionInfo::PrintXml(void) const
+{
+    CNcbiOstrstream os;
+    os << "<component name=\"" << NStr::XmlEncode(GetComponentName()) << "\">\n" <<
+        CVersionInfo::PrintXml() <<
+        "</component>\n";
+    return CNcbiOstrstreamToString(os);
+}
+
+string CComponentVersionInfo::PrintJson(void) const
+{
+    CNcbiOstrstream os;
+    os << "{ \"name\": \"" <<
+        NStr::JsonEncode(GetComponentName()) <<
+        "\", \"version_info\": " << CVersionInfo::PrintJson() << "}";
+    return CNcbiOstrstreamToString(os);
+}
+
 /////////////////////////////////////////////////////////////////////////////
 //  SBuildInfo
 
@@ -460,6 +519,40 @@ SBuildInfo::SBuildInfo()
 #endif
 {
 }
+
+
+string SBuildInfo::PrintXml(void) const
+{
+    CNcbiOstrstream os;
+    os << "<build_info";
+    if ( !date.empty() ) {
+        os << " date=\"" << NStr::XmlEncode(date) << "\"";
+    }
+    if ( !tag.empty() ) {
+        os << " tag=\"" << NStr::XmlEncode(tag) << "\"";
+    }
+    os << "/>\n";
+    return CNcbiOstrstreamToString(os);
+}
+
+
+string SBuildInfo::PrintJson(void) const
+{
+    CNcbiOstrstream os;
+    bool need_separator = false;
+    os << "{";
+    if ( !date.empty() ) {
+        os << "\"date\": \"" << NStr::JsonEncode(date) << "\"";
+        need_separator = true;
+    }
+    if ( !tag.empty() ) {
+        if ( need_separator ) os << ", ";
+        os << "\"tag\": \"" << NStr::JsonEncode(tag) << "\"";
+    }
+    os << "}";
+    return CNcbiOstrstreamToString(os);
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 //  CVersion
@@ -603,6 +696,133 @@ string CVersion::Print(const string& appname, TPrintFlags flags) const
     }
 #endif /* NCBI_TEAMCITY_BUILD_NUMBER */
 
+    return CNcbiOstrstreamToString(os);
+}
+
+
+string CVersion::PrintXml(const string& appname, TPrintFlags flags) const
+{
+    CNcbiOstrstream os;
+
+    os << "<?xml version=\"1.0\"?>\n"
+        "<ncbi_version xmlns=\"ncbi:version\"\n"
+        "  xmlns:xs=\"http://www.w3.org/2001/XMLSchema-instance\"\n"
+        "  xs:schemaLocation=\"ncbi:version ncbi_version.xsd\">\n";
+
+    if (flags & fVersionInfo) {
+        if ( !appname.empty() ) {
+            os << "<appname>" << NStr::XmlEncode(appname) << "</appname>\n";
+        }
+        os << m_VersionInfo->PrintXml();
+    }
+
+    if (flags & fComponents) {
+        ITERATE(vector< AutoPtr< CComponentVersionInfo> >, c, m_Components) {
+            os << (*c)->PrintXml();
+        }
+    }
+
+#if NCBI_PACKAGE
+    if (flags & ( fPackageShort | fPackageFull )) {
+        os << "<package name=\"" << NStr::XmlEncode(GetPackageName()) << "\">\n" <<
+            GetPackageVersion().PrintXml() <<
+            SBuildInfo().PrintXml();
+        if (flags & fPackageFull) {
+            os << "<config>" << NStr::XmlEncode(GetPackageConfig()) << "</config>\n";
+        }
+        os << "</package>\n";
+    }
+#endif
+
+#ifdef NCBI_SIGNATURE
+    if (flags & fBuildSignature) {
+        os << "<build_signature>" << NStr::XmlEncode(NCBI_SIGNATURE) << "</build_signature>\n";
+    }
+#endif
+
+    if (flags & fBuildInfo) {
+        os << m_BuildInfo.PrintXml();
+    }
+
+#ifdef NCBI_TEAMCITY_BUILD_NUMBER
+    if (flags & fTCBuildNumber) {
+        os << "<teamcity_build_number>" << NStr::XmlEncode(NCBI_TEAMCITY_BUILD_NUMBER) <<
+            "</teamcity_build_number>\n";
+    }
+#endif /* NCBI_TEAMCITY_BUILD_NUMBER */
+
+    os << "</ncbi_version>\n";
+
+    return CNcbiOstrstreamToString(os);
+}
+
+
+string CVersion::PrintJson(const string& appname, TPrintFlags flags) const
+{
+    CNcbiOstrstream os;
+    bool need_separator = false;
+
+    os << "{\n  \"ncbi_version\": {\n";
+
+    if (flags & fVersionInfo) {
+        if ( !appname.empty() ) {
+            os << "    \"appname\": \"" << NStr::JsonEncode(appname) << "\",\n";
+        }
+        os << "    \"version_info\": " << m_VersionInfo->PrintJson();
+        need_separator = true;
+    }
+
+    if (flags & fComponents) {
+        if ( need_separator ) os << ",\n";
+        os << "    \"components\": [";
+        need_separator = false;
+        ITERATE(vector< AutoPtr< CComponentVersionInfo> >, c, m_Components) {
+            if ( need_separator ) os << ",";
+            os << "\n      " << (*c)->PrintJson();
+            need_separator = true;
+        }
+        os << "]";
+        need_separator = true;
+    }
+
+#if NCBI_PACKAGE
+    if (flags & ( fPackageShort | fPackageFull )) {
+        if ( need_separator ) os << ",\n";
+        os << "    \"package\": {\n" <<
+            "      \"name\": \"" << NStr::JsonEncode(GetPackageName()) << "\",\n" <<
+            "      \"version_info\": " << GetPackageVersion().PrintJson() << ",\n" <<
+            "      \"build_info\": " << SBuildInfo().PrintJson();
+        if (flags & fPackageFull) {
+            os << ",\n      \"config\": \"" << NStr::JsonEncode(GetPackageConfig()) << "\"";
+        }
+        os << "}";
+        need_separator = true;
+    }
+#endif
+
+#ifdef NCBI_SIGNATURE
+    if (flags & fBuildSignature) {
+        if ( need_separator ) os << ",\n";
+        os << "    \"build_signature\": \"" << NStr::JsonEncode(NCBI_SIGNATURE) << "\"";
+        need_separator = true;
+    }
+#endif
+
+    if (flags & fBuildInfo) {
+        if ( need_separator ) os << ",\n";
+        os << "    \"build_info\": " << m_BuildInfo.PrintJson();
+        need_separator = true;
+    }
+
+#ifdef NCBI_TEAMCITY_BUILD_NUMBER
+    if (flags & fTCBuildNumber) {
+        if ( need_separator ) os << ",\n";
+        os << "    \"teamcity_build_number\": \"" <<
+            NStr::JsonEncode(NCBI_TEAMCITY_BUILD_NUMBER) << "\"";
+    }
+#endif /* NCBI_TEAMCITY_BUILD_NUMBER */
+
+    os << "\n  }\n}\n";
     return CNcbiOstrstreamToString(os);
 }
 
