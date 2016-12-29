@@ -4841,20 +4841,61 @@ void CValidError_bioseq::ValidateMultipleGeneOverlap (const CBioseq_Handle& bsh)
 }
 
 
-void CValidError_bioseq::x_ReportGeneOverlapError(const CSeq_feat& feat)
+void CValidError_bioseq::x_ReportGeneOverlapError(const CSeq_feat& feat, const string& gene_label)
 {
+    string msg("gene [");
+    msg += gene_label;
+
     if (feat.GetData().IsCdregion()) {
-        PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSgeneRange,
-            "gene overlaps CDS but does not completely contain it", feat);
+
+        msg += "] overlaps CDS but does not completely contain it";
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSgeneRange, msg, feat);
+
     } else if (feat.GetData().IsRna()) {
+
         if (GetOverlappingOperon(feat.GetLocation(), *m_Scope)) {
             return;
         }
-        PostErr(eDiag_Warning, eErr_SEQ_FEAT_mRNAgeneRange,
-            "gene overlaps mRNA but does not completely contain it", feat);
+
+        msg += "] overlaps mRNA but does not completely contain it";
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_mRNAgeneRange, msg, feat);
     }
 }
 
+static void s_GetGeneTextLabel(const CSeq_feat& feat, string& label)
+{
+    _ASSERT(feat.IsSetData() && feat.GetData().IsGene() && "Here should be a gene feature");
+    _ASSERT(feat.IsSetLocation() && "The feature should have a location");
+
+    if (feat.IsSetData() && feat.GetData().IsGene()) {
+
+        const CGene_ref& gene = feat.GetData().GetGene();
+        if (gene.IsSetLocus()) {
+            label += gene.GetLocus();
+        }
+        else if (gene.IsSetDesc()) {
+            label += gene.GetDesc();
+        }
+
+        if (feat.IsSetLocation()) {
+            string loc_label;
+            feat.GetLocation().GetLabel(&loc_label);
+
+            if (!label.empty()) {
+                label += ':';
+            }
+            label += loc_label;
+        }
+
+        if (gene.IsSetLocus_tag()) {
+
+            if (!label.empty()) {
+                label += ':';
+            }
+            label += gene.GetLocus_tag();
+        }
+    }
+}
 
 void CValidError_bioseq::ValidateBadGeneOverlap(const CSeq_feat& feat)
 {
@@ -4866,7 +4907,10 @@ void CValidError_bioseq::ValidateBadGeneOverlap(const CSeq_feat& feat)
     CConstRef<CSeq_feat> connected_gene = sequence::GetGeneForFeature(feat, *m_Scope);
     if (connected_gene) {
         if (TestForOverlapEx(connected_gene->GetLocation(), feat.GetLocation(), eOverlap_Contained, m_Scope) < 0) {
-            x_ReportGeneOverlapError(feat);
+
+            string gene_label;
+            s_GetGeneTextLabel(*connected_gene, gene_label);
+            x_ReportGeneOverlapError(feat, gene_label);
         }
         return;
     }
@@ -4882,8 +4926,12 @@ void CValidError_bioseq::ValidateBadGeneOverlap(const CSeq_feat& feat)
     CConstRef<CSeq_feat> gene = GetBestOverlappingFeat(loc, CSeqFeatData::eSubtype_gene, eOverlap_Simple, *m_Scope);
     if (! gene) return;
     if (TestForOverlapEx(gene->GetLocation(), feat.GetLocation(), eOverlap_Contained, m_Scope) < 0) {
+
+        string gene_label;
+        s_GetGeneTextLabel(*gene, gene_label);
+
         // found an intersecting (but not overlapping) gene
-        x_ReportGeneOverlapError(feat);
+        x_ReportGeneOverlapError(feat, gene_label);
     }
 }
 
