@@ -7,7 +7,7 @@ import urllib
 
 # ViewVC proper knows nothing of svn:externals; this wrapper resolves
 # them before handing the user off to it.
-real_vvc = 'http://www.ncbi.nlm.nih.gov/viewvc/v1/'
+real_vvc = 'https://www.ncbi.nlm.nih.gov/viewvc/v1/'
 repos = 'https://svn.ncbi.nlm.nih.gov/repos/'
 viewable = repos
 base = repos + 'toolkit/trunk'
@@ -18,7 +18,7 @@ try:
     server_name = os.environ['SERVER_NAME']
     if ('internal' in script_name or
         (server_name[0] == 'i' and not 'public' in script_name)):
-        real_vvc = 'http://svn.ncbi.nlm.nih.gov/viewvc/'
+        real_vvc = 'https://svn.ncbi.nlm.nih.gov/viewvc/'
         base += '/internal'
         public = False
 except:
@@ -84,7 +84,7 @@ url = real_vvc + urllib.quote(resolved[len(viewable):])
 if not resolved.startswith(viewable):
     print >>sys.stderr, path, "resolved to unsupported URL", resolved
     if public: # Try redirecting to internal side
-        url = ('http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC/internal'
+        url = ('https://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC/internal'
                + '/viewvc.cgi?p=' + urllib.quote(path))
     else:
         print "Status: 500 Internal error"
