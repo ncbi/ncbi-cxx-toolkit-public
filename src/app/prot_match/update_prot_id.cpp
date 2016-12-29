@@ -279,6 +279,12 @@ bool CProtIdUpdateApp::x_ProcessInputTable(CNcbiIstream& istr, TIdMap& id_map)
             }
 
 
+            if (entries[1] == "___") {
+                ERR_POST(Warning << entries[1] << ": Protein accession unspecified");
+                continue;
+            }
+
+
             CRef<CSeq_id> gb_id = Ref(new CSeq_id());
             gb_id->SetGenbank().Set(entries[1]);
 
