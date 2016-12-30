@@ -820,7 +820,7 @@ ILocation::TUserInfo CFileTrack::GetUserInfoImpl()
     CJsonNode file_info = m_Context->filetrack_api.GetFileInfo(Locator());
     CJsonNode my_ncbi_id = file_info.GetByKeyOrNull("myncbi_id");
 
-    if (my_ncbi_id) return TUserInfo("my_ncbi_id", my_ncbi_id.AsString());
+    if (my_ncbi_id) return TUserInfo("my_ncbi_id", my_ncbi_id.Repr());
 
     return TUserInfo(kEmptyStr, kEmptyStr);
 }
