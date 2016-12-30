@@ -231,21 +231,23 @@ def collectDBUpdateScripts():
 
     result = []
     selfDir = getSelfDir()
-    for root, dirs, files in os.walk(selfDir, topdown=False):
-        for name in files:
-            if name == 'nst_db.sql':
-                # Skip it -- it is for an initial DB creation but we expect the
-                # db exists
-                continue
-            if name.startswith('nst_db_') and name.endswith('.sql'):
-                parts = name[7:-4].split('_to_')
-                if len(parts) != 2:
-                    raise Exception('DB update file ' + name +
-                                    ' has unexpected name format')
+    for name in os.listdir(selfDir):
+        if os.path.isdir(name):
+            continue
+        if name == 'nst_db.sql':
+            # Skip it -- it is for an initial DB creation but we expect the
+            # db exists
+            continue
+        if name.startswith('nst_db_') and name.endswith('.sql'):
+            parts = name[7:-4].split('_to_')
+            if len(parts) != 2:
+                raise Exception('DB update file ' + name +
+                                ' has unexpected name format')
 
-                dbVerFrom, spVerFrom = convertVersion(parts[0])
-                dbVerTo, spVerTo = convertVersion(parts[1])
-                result.append((dbVerFrom, spVerFrom, dbVerTo, spVerTo, root + name))
+            dbVerFrom, spVerFrom = convertVersion(parts[0])
+            dbVerTo, spVerTo = convertVersion(parts[1])
+            result.append((dbVerFrom, spVerFrom, dbVerTo, spVerTo,
+                           selfDir + name))
     result = sorted(result, key=lambda val: val[0] * 10000 + val[1])
     return result
 
