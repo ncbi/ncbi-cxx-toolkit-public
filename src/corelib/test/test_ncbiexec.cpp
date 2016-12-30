@@ -135,6 +135,9 @@ int CTest::Run(void)
 #if defined(NCBI_OS_CYGWIN)
         string path_setting("PATH=");
         const string& path = GetEnvironment().Get("PATH");
+#elif defined(NCBI_OS_DARWIN)
+        string path_setting("DYLD_LIBRARY_PATH=");
+        const string& path = GetEnvironment().Get("DYLD_LIBRARY_PATH");
 #else
         string path_setting("LD_LIBRARY_PATH=");
         const string& path = GetEnvironment().Get("LD_LIBRARY_PATH");
