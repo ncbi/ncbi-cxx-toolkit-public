@@ -744,7 +744,6 @@ void CValidError_bioseq::ValidateSeqIds
     bool has_gi = false;
     bool is_lrg = false;
     bool has_ng = false;
-    bool is_nc = false;
     bool wgs_tech_needs_wgs_accession = false;
     bool is_segset_accession = false;
     bool has_wgs_general = false;
@@ -766,8 +765,6 @@ void CValidError_bioseq::ValidateSeqIds
             if (NStr::StartsWith(acc, "NG_")) {
                 has_ng = true;
                 wgs_tech_needs_wgs_accession = true;
-            } else if (NStr::StartsWith(acc, "NC_")) {
-                is_nc = true;
             } else if (NStr::StartsWith(acc, "NM_")
                         || NStr::StartsWith(acc, "NP_")
                         || NStr::StartsWith(acc, "NR_")) {
@@ -906,12 +903,12 @@ void CValidError_bioseq::ValidateSeqIds
             }
         }
 
-          if (is_nc && mi && seq.IsNa()
+        if ((IsNTNCNWACAccession(seq) || IsNG(seq)) && mi && seq.IsNa()
                 && (!mi->IsSetBiomol() 
                 || (mi->GetBiomol() != CMolInfo::eBiomol_genomic 
                     && mi->GetBiomol() != CMolInfo::eBiomol_cRNA))) {
             PostErr (eDiag_Error, eErr_SEQ_DESCR_Inconsistent, 
-                     "NC nucleotide should be genomic or cRNA",
+                     "genomic RefSeq accession should use genomic or cRNA biomol type",
                      seq);
         }
     }
@@ -2725,11 +2722,24 @@ void CValidError_bioseq::ReportBadGenomeGap(const CBioseq& seq)
 }
 
 
-static EDiagSev GetBioseqEndWarning (bool is_NC, bool isPatent, bool only_local, bool is_circular, EBioseqEndIsType end_is_char)
+static EDiagSev GetBioseqEndWarning (const CBioseq& seq, bool is_circular, EBioseqEndIsType end_is_char)
 {
     EDiagSev sev;
+    bool only_local = true;
+    bool is_NCACNTNW = false;
+    bool is_patent = false;
+    FOR_EACH_SEQID_ON_BIOSEQ(id_it, seq) {
+        if (!(*id_it)->IsLocal()) {
+            only_local = false;
+            if ((*id_it)->IsPatent()) {
+                is_patent = true;
+            } else if (IsNTNCNWACAccession(**id_it)) {
+                is_NCACNTNW = true;
+            }
+        }
+    }
 
-    if (is_NC || isPatent) {
+    if (is_NCACNTNW || is_patent) {
         sev = eDiag_Warning;
     } else if (is_circular) {
         sev = eDiag_Warning;
@@ -2908,43 +2918,29 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
             CheckBioseqEndsForNAndGap(bsh, begin_n, begin_gap, end_n, end_gap);
         }
 
-        bool only_local = true;
-        bool is_NC = false;
-        bool is_patent = false;
-        FOR_EACH_SEQID_ON_BIOSEQ (id_it, seq) {
-            if (!(*id_it)->IsLocal()) {
-                only_local = false;
-                if ((*id_it)->IsPatent()) {
-                    is_patent = true;
-                } else if ((*id_it)->IsOther() && (*id_it)->GetOther().IsSetAccession()
-                    && NStr::StartsWith ((*id_it)->GetOther().GetAccession(), "NC_")) {
-                    is_NC = true;
-                }
-            }
-        }
         bool is_circular = false;
         if (bsh.IsSetInst_Topology() && bsh.GetInst_Topology() == CSeq_inst::eTopology_circular) {
             is_circular = true;
         }
         EDiagSev sev;
         if (begin_n != eBioseqEndIsType_None) {
-            sev = GetBioseqEndWarning(is_NC, is_patent, only_local, is_circular, begin_n);
+            sev = GetBioseqEndWarning(seq, is_circular, begin_n);
             PostErr(sev, eErr_SEQ_INST_TerminalNs, "N at beginning of sequence", seq);
         } else if (begin_gap != eBioseqEndIsType_None) {
-            sev = GetBioseqEndWarning(is_NC, is_patent, only_local, is_circular, begin_gap);
+            sev = GetBioseqEndWarning(seq, is_circular, begin_gap);
             PostErr (sev, eErr_SEQ_INST_TerminalGap, "Gap at beginning of sequence", seq);
         }
 
         if (end_n != eBioseqEndIsType_None) {
-            sev = GetBioseqEndWarning(is_NC, is_patent, only_local, is_circular, end_n);
+            sev = GetBioseqEndWarning(seq, is_circular, end_n);
             PostErr(sev, eErr_SEQ_INST_TerminalNs, "N at end of sequence", seq);
         } else if (end_gap != eBioseqEndIsType_None) {
-            sev = GetBioseqEndWarning(is_NC, is_patent, only_local, is_circular, end_gap);
+            sev = GetBioseqEndWarning(seq, is_circular, end_gap);
             PostErr (sev, eErr_SEQ_INST_TerminalGap, "Gap at end of sequence", seq);
         }
 
         // don't check N content for patent sequences
-        if (is_patent) {
+        if (SeqIsPatent(seq)) {
             return;
         }
                         
@@ -3772,23 +3768,14 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
     bool any_tech_ok = false;
     bool has_gi = false;
     FOR_EACH_SEQID_ON_BIOSEQ (id_it, seq) {
-        if ((*id_it)->IsOther() && (*id_it)->GetOther().IsSetAccession()) {
-            const string& accession = (*id_it)->GetOther().GetAccession();
-            if (NStr::StartsWith(accession, "NT_")
-                || NStr::StartsWith(accession, "NC_")) {
-                any_tech_ok = true;
-                break;
-            }
+        if (IsNTNCNWACAccession(**id_it)) {
+            any_tech_ok = true;
+            break;
         } else if ((*id_it)->IsGi()) {
             has_gi = true;
         }
     }
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
-    if (!any_tech_ok) {
-        if (GetGenProdSetParent (bsh)) {
-            any_tech_ok = true;
-        }
-    }
     if (!any_tech_ok && seq.IsNa()
         && tech != CMolInfo::eTech_htgs_0 && tech != CMolInfo::eTech_htgs_1 
         && tech != CMolInfo::eTech_htgs_2 && tech != CMolInfo::eTech_htgs_3 
@@ -5756,7 +5743,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(
             } else if ((*seq_it)->IsOther()) {
                 is_refseq = true;
                 if ((*seq_it)->GetOther().IsSetAccession() 
-                    && NStr::StartsWith((*seq_it)->GetOther().GetAccession(), "NT_")) {
+                    && NStr::StartsWith((*seq_it)->GetOther().GetAccession(), "NC_")) {
                     is_nc = true;
                 }
             }
@@ -7687,102 +7674,6 @@ void CValidError_bioseq::x_ValidateAbuttingRNA(const CBioseq_Handle& seq)
 }
 
 
-static bool s_SpecialFlybaseId (const CSeq_id& id)
-{
-    bool rval = false;
-    if (id.IsOther()) {
-        if (id.GetOther().IsSetAccession()) {
-            const string& accession = id.GetOther().GetAccession();
-            if (NStr::StartsWith(accession, "NT_")
-                || NStr::StartsWith(accession, "NC_")
-                || NStr::StartsWith(accession, "NG_")
-                || NStr::StartsWith(accession, "NW_")) {
-                rval = true;
-            }
-        }
-    }
-    return rval;
-}
-
-
-static bool s_SpecialFlybaseId (
-    const CSeq_feat& feat, CScope * scope, CCacheImpl & cache,
-    const CTSE_Handle & tse)
-{
-    bool rval = false;
-
-    CBioseq_Handle bsh = cache.GetBioseqHandleFromLocation(
-        scope, feat.GetLocation(), tse);
-
-    if (bsh) {
-        FOR_EACH_SEQID_ON_BIOSEQ (id_it, *(bsh.GetCompleteBioseq())) {
-            rval = s_SpecialFlybaseId (**id_it);
-            if (rval) {
-                break;
-            }
-        }
-    } else {
-        CSeq_loc_CI loc_ci (feat.GetLocation());
-        while (loc_ci && !rval) {
-            rval = s_SpecialFlybaseId (loc_ci.GetSeq_id());
-            ++loc_ci;
-        }
-    }
-    return rval;
-}
-
-
-static bool s_SpecialDuplicateFeatID (const CSeq_id& id)
-{
-    bool rval = false;
-
-    if (id.IsOther()) {
-        if (id.GetOther().IsSetAccession()) {
-            const string& accession = id.GetOther().GetAccession();
-            if (NStr::StartsWith(accession, "NT_")
-                || NStr::StartsWith(accession, "NC_")
-                || NStr::StartsWith(accession, "NG_")
-                || NStr::StartsWith(accession, "NW_")) {
-                rval = true;
-            }
-        }
-    } else if (id.IsGenbank()) {
-        rval = true;
-    } else if (id.IsGeneral() && !id.GetGeneral().IsSkippable()) {
-        rval = true;
-    }
-
-    return rval;
-}
-
-
-static bool s_SpecialDuplicateFeatID (
-    const CSeq_feat& feat, CScope * scope, CCacheImpl & cache,
-    const CTSE_Handle & tse)
-{
-    bool rval = false;
-
-    CBioseq_Handle bsh = cache.GetBioseqHandleFromLocation(
-        scope, feat.GetLocation(), tse);
-
-    if (bsh) {
-        FOR_EACH_SEQID_ON_BIOSEQ (id_it, *(bsh.GetCompleteBioseq())) {
-            rval = s_SpecialDuplicateFeatID (**id_it);
-            if (rval) {
-                break;
-            }
-        }
-    } else {
-        CSeq_loc_CI loc_ci (feat.GetLocation());
-        while (loc_ci && !rval) {
-            rval = s_SpecialDuplicateFeatID (loc_ci.GetSeq_id());
-            ++loc_ci;
-        }
-    }
-    return rval;
-}
-
-
 static bool s_GeneXrefsDiffer (const CSeq_feat& f1, const CSeq_feat& f2, CScope *scope)
 {
     CConstRef <CSeq_feat> g1 =
@@ -7804,10 +7695,8 @@ static bool s_GeneXrefsDiffer (const CSeq_feat& f1, const CSeq_feat& f2, CScope 
 EDiagSev CValidError_bioseq::x_DupFeatSeverity 
 (const CSeq_feat& curr,
  const CSeq_feat& prev, 
- bool is_fruitfly,
  bool is_viral,
  bool is_htgs,
- bool is_small_genome,
  bool same_annot,
  bool same_label)
 {
@@ -7815,50 +7704,8 @@ EDiagSev CValidError_bioseq::x_DupFeatSeverity
         return eDiag_Warning;
     }
 
-    EDiagSev severity = eDiag_Error;
+    EDiagSev severity = eDiag_Warning;
     CSeqFeatData::ESubtype curr_subtype = curr.GetData().GetSubtype();
-
-    if ( curr_subtype == CSeqFeatData::eSubtype_pub          ||
-         curr_subtype == CSeqFeatData::eSubtype_region       ||
-         curr_subtype == CSeqFeatData::eSubtype_misc_feature ||
-         curr_subtype == CSeqFeatData::eSubtype_STS          ||
-         curr_subtype == CSeqFeatData::eSubtype_variation ) {
-        // lower severity for some features
-        severity = eDiag_Warning;
-    } else if (s_SpecialDuplicateFeatID(
-                   curr, m_Scope, GetCache(), m_Imp.GetTSE_Handle()))
-    {
-        if (is_fruitfly || s_SpecialFlybaseId(
-                curr, m_Scope, GetCache(), m_Imp.GetTSE_Handle()))
-        {
-            severity = eDiag_Warning;
-        }
-    } else {
-        severity = eDiag_Warning;
-    }
-
-    // if different CDS frames, lower to warning
-    if (curr_subtype == CSeqFeatData::eSubtype_cdregion) {
-        CCdregion::EFrame       curr_frame, prev_frame;
-        curr_frame = curr.GetData().GetCdregion().GetFrame();
-        prev_frame = prev.GetData().GetCdregion().GetFrame();
-        
-        if ( (curr_frame != CCdregion::eFrame_not_set  &&
-            curr_frame != CCdregion::eFrame_one)     ||
-            (prev_frame != CCdregion::eFrame_not_set  &&
-            prev_frame != CCdregion::eFrame_one) ) {
-            if ( curr_frame != prev_frame ) {
-                severity = eDiag_Warning;
-            }
-        }
-    }
-
-    if (is_small_genome) {
-        if (curr_subtype == CSeqFeatData::eSubtype_gene ||
-            curr_subtype == CSeqFeatData::eSubtype_cdregion) {
-            severity = eDiag_Warning;
-        }
-    }
 
     if ( (prev.IsSetDbxref()  &&
           IsFlybaseDbxrefs(prev.GetDbxref()))  || 
@@ -7904,7 +7751,7 @@ EDiagSev CValidError_bioseq::x_DupFeatSeverity
 
 
 
-bool CValidError_bioseq::x_ReportDupOverlapFeaturePair (const CSeq_feat_Handle & f1, const CSeq_feat_Handle & f2, bool fruit_fly, bool viral, bool htgs, bool small_genome)
+bool CValidError_bioseq::x_ReportDupOverlapFeaturePair (const CSeq_feat_Handle & f1, const CSeq_feat_Handle & f2, bool fruit_fly, bool viral, bool htgs)
 {
     if (fruit_fly && IsDicistronicGene(f1) && IsDicistronicGene(f2)) {
         return false;
@@ -7920,7 +7767,7 @@ bool CValidError_bioseq::x_ReportDupOverlapFeaturePair (const CSeq_feat_Handle &
     switch (dup_type) {
         case eDuplicate_Duplicate:
             {{
-                EDiagSev severity = x_DupFeatSeverity(feat1, feat2, fruit_fly, viral, htgs, small_genome, true, true);
+                EDiagSev severity = x_DupFeatSeverity(feat1, feat2, viral, htgs, true, true);
                 CConstRef <CSeq_feat> g1 =
                     sequence::GetGeneForFeature(feat1, *m_Scope);
                 CConstRef <CSeq_feat> g2 =
@@ -7935,7 +7782,7 @@ bool CValidError_bioseq::x_ReportDupOverlapFeaturePair (const CSeq_feat_Handle &
             break;
         case eDuplicate_SameIntervalDifferentLabel:
             if (PartialsSame(feat1.GetLocation(), feat2.GetLocation())) {
-                EDiagSev severity = x_DupFeatSeverity(feat1, feat2, fruit_fly, viral, htgs, small_genome, true, false);
+                EDiagSev severity = x_DupFeatSeverity(feat1, feat2, viral, htgs, true, false);
                 if (feat1.GetData().IsImp()) {
                     severity = eDiag_Warning;
                 }
@@ -7947,7 +7794,7 @@ bool CValidError_bioseq::x_ReportDupOverlapFeaturePair (const CSeq_feat_Handle &
             break;
         case eDuplicate_DuplicateDifferentTable:
             {{
-                EDiagSev severity = x_DupFeatSeverity(feat1, feat2, fruit_fly, viral, htgs, small_genome, false, true);
+                EDiagSev severity = x_DupFeatSeverity(feat1, feat2, viral, htgs, false, true);
                 PostErr (severity, eErr_SEQ_FEAT_FeatContentDup, 
                     "Duplicate feature (packaged in different feature table)",
                     feat2);
@@ -7956,7 +7803,7 @@ bool CValidError_bioseq::x_ReportDupOverlapFeaturePair (const CSeq_feat_Handle &
             break;
         case eDuplicate_SameIntervalDifferentLabelDifferentTable:
             {{
-                EDiagSev severity = x_DupFeatSeverity(feat1, feat2, fruit_fly, viral, htgs, small_genome, false, false);
+                EDiagSev severity = x_DupFeatSeverity(feat1, feat2, viral, htgs, false, false);
                 PostErr (severity, eErr_SEQ_FEAT_DuplicateFeat,
                     "Features have identical intervals, but labels "
                     "differ (packaged in different feature table)",
@@ -8086,7 +7933,7 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(
                 if (curr_start > prev_end) {
                     break;
                 }
-                if (x_ReportDupOverlapFeaturePair (f1, curr_it->GetSeq_feat_Handle(), fruit_fly, viral, htgs, small_genome)) {
+                if (x_ReportDupOverlapFeaturePair (f1, curr_it->GetSeq_feat_Handle(), fruit_fly, viral, htgs)) {
                     break;
                 }
             }

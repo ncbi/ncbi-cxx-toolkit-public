@@ -1104,7 +1104,6 @@ private:
     void ValidateGeneFeaturePair(const CSeq_feat& feat, const CSeq_feat& gene);
     bool x_FindProteinGeneXrefByKey(CBioseq_Handle bsh, const string& key);
     bool FindGeneToMatchGeneXref(const CGene_ref& xref, CSeq_entry_Handle seh);
-    bool x_ShouldReportSuspiciousGeneXref(const CSeq_feat& feat, CBioseq_Handle bsh, bool good_loc_bad_strand);
     void ValidateOperon(const CSeq_feat& feat);
 
     void ValidateCdregion(const CCdregion& cdregion, const CSeq_feat& obj);
@@ -1425,8 +1424,8 @@ private:
     bool x_MatchesOverlappingFeaturePartial (const CMappedFeat& feat, unsigned int partial_type);
     bool x_IsSameAsCDS(const CMappedFeat& feat);
     void ValidateSeqFeatContext(const CBioseq& seq);
-    EDiagSev x_DupFeatSeverity (const CSeq_feat& curr, const CSeq_feat& prev, bool is_fruitfly, bool viral, bool htgs, bool is_small_genome, bool same_annot, bool same_label);
-    bool x_ReportDupOverlapFeaturePair (const CSeq_feat_Handle & f1, const CSeq_feat_Handle & f2, bool fruit_fly, bool viral, bool htgs, bool small_genome);
+    EDiagSev x_DupFeatSeverity (const CSeq_feat& curr, const CSeq_feat& prev, bool viral, bool htgs, bool same_annot, bool same_label);
+    bool x_ReportDupOverlapFeaturePair (const CSeq_feat_Handle & f1, const CSeq_feat_Handle & f2, bool fruit_fly, bool viral, bool htgs);
     void x_ReportOverlappingPeptidePair (CSeq_feat_Handle f1, CSeq_feat_Handle f2, const CBioseq& bioseq, bool& reported_last_peptide);
     void ValidateDupOrOverlapFeats(const CBioseq& seq);
     void ValidateTwintrons(const CBioseq& seq);

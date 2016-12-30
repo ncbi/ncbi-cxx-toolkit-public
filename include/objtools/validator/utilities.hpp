@@ -238,6 +238,13 @@ bool NCBI_VALIDATOR_EXPORT HasNoStop(const CSeq_feat& feat, CScope* scope);
 bool NCBI_VALIDATOR_EXPORT IsSequenceFetchable(const CSeq_id& id);
 bool NCBI_VALIDATOR_EXPORT IsSequenceFetchable(const string& seq_id);
 
+bool IsNTNCNWACAccession(const string& acc);
+bool IsNTNCNWACAccession(const CSeq_id& id);
+bool IsNTNCNWACAccession(const CBioseq& seq);
+bool IsNG(const CSeq_id& id);
+bool IsNG(const CBioseq& seq);
+
+
 END_SCOPE(validator)
 END_SCOPE(objects)
 END_NCBI_SCOPE

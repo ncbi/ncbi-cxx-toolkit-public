@@ -5267,7 +5267,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_Inconsistent)
     // expect errors
     unit_test_util::SetBiomol(entry, CMolInfo::eBiomol_genomic_mRNA);
     expected_errors.push_back(new CExpectedError("ref|NC_123456|", eDiag_Error, "Inconsistent",
-                              "NC nucleotide should be genomic or cRNA"));
+                              "genomic RefSeq accession should use genomic or cRNA biomol type"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     unit_test_util::SetBiomol(entry, CMolInfo::eBiomol_mRNA);
@@ -12524,8 +12524,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_UnnecessaryGeneXref)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "UnnecessaryGeneXref", 
-                              "Unnecessary gene cross-reference foo"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -15131,35 +15129,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SeqFeatXrefProblem)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SuspiciousGeneXref)
-{
-    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
-    unit_test_util::SetDrosophila_melanogaster (entry);
-    entry->SetSeq().SetId().front()->SetOther().SetAccession("NT_123456");
-
-    CRef<CSeq_feat> feat = unit_test_util::AddMiscFeature(entry);
-    CRef<CSeq_feat> gene1 = unit_test_util::MakeGeneForFeature (feat);
-    unit_test_util::AddFeat (gene1, entry);
-    CRef<CSeq_feat> gene2 = unit_test_util::MakeGeneForFeature (feat);
-    gene2->SetData().SetGene().SetLocus("other gene");
-    gene2->SetLocation().SetInt().SetTo(entry->GetSeq().GetLength() - 1);
-    gene2->SetLocation().SetInt().SetStrand(eNa_strand_minus);
-    unit_test_util::AddFeat (gene2, entry);
-    feat->SetGeneXref().SetLocus("other gene");
-
-    STANDARD_SETUP
-
-    expected_errors.push_back (new CExpectedError("ref|NT_123456|", eDiag_Warning, "GeneXrefStrandProblem",
-                                "Gene cross-reference is not on expected strand"));
-    expected_errors.push_back(new CExpectedError("ref|NT_123456|", eDiag_Warning, "SuspiciousGeneXref",
-        "Curated Drosophila record should not have gene cross-reference other gene"));
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    CLEAR_ERRORS    
 }
 
 

@@ -6183,26 +6183,12 @@ void CValidError_feat::ValidateExcept(const CSeq_feat& feat)
 }
 
 
-static bool s_IsNcOrNt(const string& accession)
-{
-    if (NStr::StartsWith(accession, "NC_", NStr::eNocase)) {
-        return true;
-    } else if (NStr::StartsWith(accession, "NT_", NStr::eNocase)) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-
-static bool s_IsNcOrNt (
+static bool IsNTNCNWACAccession(
 const CSeq_loc& loc, CScope *scope, CCacheImpl & cache,
 const CTSE_Handle & tse)
 {
     const CSeq_id *id = loc.GetId();
-    if (id != NULL && id->IsOther() 
-        && id->GetOther().IsSetAccession()
-        && s_IsNcOrNt(id->GetOther().GetAccession())) {
+    if (id != NULL && IsNTNCNWACAccession(*id)) {
         return true;
     }
 
@@ -6214,9 +6200,7 @@ const CTSE_Handle & tse)
         return false;
     }
     FOR_EACH_SEQID_ON_BIOSEQ (id_it, *(bsh.GetCompleteBioseq())) {
-        if ((*id_it)->IsOther() 
-            && (*id_it)->GetOther().IsSetAccession()
-            && s_IsNcOrNt((*id_it)->GetOther().GetAccession())) {
+        if (IsNTNCNWACAccession(**id_it)) {
             return true;
         }
     }
@@ -6279,7 +6263,7 @@ void CValidError_feat::ValidateExceptText(const string& text, const CSeq_feat& f
             }
         }
         if ( !found ) {
-            if ( s_IsNcOrNt (feat.GetLocation(), m_Scope, GetCache(), m_Imp.GetTSE_Handle()) ) {
+            if (IsNTNCNWACAccession(feat.GetLocation(), m_Scope, GetCache(), m_Imp.GetTSE_Handle())) {
                 sev = eDiag_Warning;
             }
             PostErr(sev, eErr_SEQ_FEAT_ExceptionProblem,
@@ -7759,47 +7743,6 @@ bool CValidError_feat::FindGeneToMatchGeneXref(const CGene_ref& xref, CSeq_entry
     }
 }
 
-bool CValidError_feat::x_ShouldReportSuspiciousGeneXref(const CSeq_feat& feat, CBioseq_Handle bsh, bool good_loc_bad_strand)
-{
-    // report suspicious gene xrefs
-
-    if (good_loc_bad_strand) {
-        return false;
-    }
-    // only test if drosophila, because
-    // curated fly source still has duplicate features
-    CSeqdesc_CI dbsrc_i(bsh, CSeqdesc::e_Source);
-    if (!dbsrc_i || !dbsrc_i->GetSource().IsSetTaxname() ||
-        !NStr::StartsWith(dbsrc_i->GetSource().GetTaxname(), "Drosophila ", NStr::eNocase)) {
-        return false;
-    }
-
-    if (feat.IsSetExcept_text() && NStr::Find(feat.GetExcept_text(), "dicistronic gene") != string::npos) {
-        // but not if feature has dicistronic gene exception
-        return false;
-    }
-
-    bool do_report = false;
-    // only do test if in gen-prod-set or has one of a specific kind of accession
-    FOR_EACH_SEQID_ON_BIOSEQ(it, *bsh.GetCompleteBioseq()) {
-        if ((*it)->IsOther() && (*it)->GetOther().IsSetAccession()) {
-            const string& accession = (*it)->GetOther().GetAccession();
-            if (NStr::StartsWith(accession, "NT_")
-                || NStr::StartsWith(accession, "NC_")
-                || NStr::StartsWith(accession, "NG_")
-                || NStr::StartsWith(accession, "NW_")) {
-                do_report = true;
-                break;
-            }
-        }
-    }
-    if (!do_report && GetGenProdSetParent(bsh)) {
-        do_report = true;
-    }
-
-    return do_report;
-}
-
 
 void CValidError_feat::ValidateGeneFeaturePair(const CSeq_feat& feat, const CSeq_feat& gene)
 {
@@ -7975,25 +7918,6 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
     } else if ( !gene_xref->IsSuppressed() ) {
         // we are counting features with gene xrefs
         m_Imp.IncrementGeneXrefCount();
-
-        // compare gene xref to overlapping gene
-        if (xref_match_same_as_overlap && num_genes == 1) {
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryGeneXref,
-                "Unnecessary gene cross-reference " + label, feat);
-        } else {
-            // report suspicious gene xrefs
-            if (x_ShouldReportSuspiciousGeneXref(feat, bsh, good_loc_bad_strand)) {
-                string xref_label;
-                gene_xref->GetLabel(&xref_label);
-                if (NStr::IsBlank(xref_label)) {
-                    xref_label = "?";
-                }
-                    
-                PostErr (eDiag_Warning, eErr_SEQ_FEAT_SuspiciousGeneXref, 
-                         "Curated Drosophila record should not have gene cross-reference " + xref_label,
-                         feat);
-            }
-        }
 
         // make sure overlapping gene and gene xref do not conflict
         if (gene_xref->IsSetAllele() && !NStr::IsBlank(gene_xref->GetAllele())) {

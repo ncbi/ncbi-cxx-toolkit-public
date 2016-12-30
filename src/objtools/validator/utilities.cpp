@@ -2559,6 +2559,66 @@ bool IsSequenceFetchable(const string& seq_id)
     return fetchable;
 }
 
+
+bool IsNTNCNWACAccession(const string& acc)
+{
+    if (NStr::StartsWith(acc, "NT_") || NStr::StartsWith(acc, "NC_") ||
+        NStr::StartsWith(acc, "AC_") || NStr::StartsWith(acc, "NW_")) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+bool IsNTNCNWACAccession(const CSeq_id& id)
+{
+    if (id.IsOther() && id.GetOther().IsSetAccession() &&
+        IsNTNCNWACAccession(id.GetOther().GetAccession())) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+bool IsNTNCNWACAccession(const CBioseq& seq)
+{
+    bool is_it = false;
+    FOR_EACH_SEQID_ON_BIOSEQ(id_it, seq) {
+        if (IsNTNCNWACAccession(**id_it)) {
+            is_it = true;
+            break;
+        }
+    }
+    return is_it;
+}
+
+
+bool IsNG(const CSeq_id& id)
+{
+    if (id.IsOther() && id.GetOther().IsSetAccession() &&
+        NStr::StartsWith(id.GetOther().GetAccession(), "NG_")) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+bool IsNG(const CBioseq& seq)
+{
+    bool is_it = false;
+    FOR_EACH_SEQID_ON_BIOSEQ(id_it, seq) {
+        if (IsNG(**id_it)) {
+            is_it = true;
+            break;
+        }
+    }
+    return is_it;
+}
+
+
 END_SCOPE(validator)
 END_SCOPE(objects)
 END_NCBI_SCOPE
