@@ -45,6 +45,24 @@
 
 #define MAX_IP_ADDR_LEN  16  /*sizeof("255.255.255.255")*/
 
+#define SERV_VHOSTABLE   (/*fSERV_Ncbid |*/ fSERV_Http | fSERV_Standalone)
+
+
+/*
+ * Server-info storage model:
+ *   SSERV_Info's basic fields are stored per the structure;
+ *   SSERV_Info::u is the last "fixed" field;
+ *   SSERV_Info::u's string parameters are stored contiguously following the
+ *                 "fixed" area (VTable::SizeOf() returns the size of the
+ *                 type-dependent "u" plus all the string parameters);
+ *   SSERV_Info::vhost (if non-zero) is stored past the parameters;
+ *   SSERV_Info::extra defines the "extra" opaque bytes (which may be used to
+ *                 store keep private information) that follow vhost (or the
+ *                 SSERV_Info::u's block if vhost is empty), zero means none;
+ *   SERV_SizeOfInfo() returns the size that includes all of the above.
+ * Service name may be stored right past the entire info, contiguously.
+ */
+
 
 /*****************************************************************************
  *  Attributes for the different server types::  Interface
@@ -65,12 +83,12 @@ typedef struct {
 typedef struct {
     ESERV_Type        type;
     const char*       tag;
-    size_t            tag_len;
+    size_t            taglen;
     SSERV_Info_VTable vtable;
 } SSERV_Attr;
 
 
-/* Flags
+/* Flags: to be removed, backward compatibility only
  */
 static const char kRegularInter[] = "RegularInter";
 static const char kBlastInter[]   = "BlastInter";
@@ -80,13 +98,14 @@ static const char kBlast[]        = "Blast";
 static struct {
     const char* tag;
     size_t      len;
-    ESERV_Flag  val;
+    ESERV_Algo  algo;
+    ESERV_Site  site;
 } kFlags[] = {
     /* must be ordered longer-to-shorter */
-    { kRegularInter, sizeof(kRegularInter)-1, eSERV_RegularInter },
-    { kBlastInter,   sizeof(kBlastInter)-1,   eSERV_BlastInter   },
-    { kRegular,      sizeof(kRegular)-1,      eSERV_Regular      },
-    { kBlast,        sizeof(kBlast)-1,        eSERV_Blast        }
+    { kRegularInter, sizeof(kRegularInter)-1, eSERV_Regular, fSERV_Interzone },
+    { kBlastInter,   sizeof(kBlastInter)-1,   eSERV_Blast,   fSERV_Interzone },
+    { kRegular,      sizeof(kRegular)-1,      eSERV_Regular, 0               },
+    { kBlast,        sizeof(kBlast)-1,        eSERV_Blast,   0               }
 };
 
 
@@ -112,7 +131,7 @@ extern const char* SERV_ReadType(const char* str,
     if (!attr)
         return 0;
     *type = attr->type;
-    return str + attr->tag_len; 
+    return str + attr->taglen; 
 }
 
 
@@ -143,33 +162,49 @@ extern char* SERV_WriteInfo(const SSERV_Info* info)
         memmove(c_t, p, strlen(p) + 1);
     } else
         *c_t = '\0';
-    reserve = attr->tag_len+1 + MAX_IP_ADDR_LEN + 1+5/*port*/ + 1+12/*flag*/ +
-        1+9/*coef*/ + 3+strlen(c_t)/*cont.type*/ + 3*(1+5)/*site*/ +
-        1+14/*rate*/ + 2*(1+5)/*mode*/ + 1+12/*time*/ + 1/*EOL*/;
+    reserve = attr->taglen+1 + MAX_IP_ADDR_LEN + 1+5/*port*/ + 1+12/*algo*/
+        + 1+9/*coef*/ + 3+strlen(c_t)/*cont.type*/ + 3*(1+5)/*site*/
+        + 1+14/*rate*/ + 2*(1+5)/*mode*/ + 1+12/*time*/ + 2*(1+5)/*$,X*/
+        + 3+info->vhost
+        + 1/*EOL*/;
     /* write server-specific info */
     if ((str = attr->vtable.Write(reserve, &info->u)) != 0) {
         char* s = str;
         size_t n;
 
-        memcpy(s, attr->tag, attr->tag_len);
-        s += attr->tag_len;
+        memcpy(s, attr->tag, attr->taglen);
+        s += attr->taglen;
         *s++ = ' ';
-        s += SOCK_HostPortToString(info->host, info->port, s, reserve);
+        if (info->host == SOCK_HostToNetLong(-1L)) {
+            int/*bool*/ ipv6 = !NcbiIsIPv4(&info->addr);
+            if (ipv6)
+                *s++ = '[';
+            s = NcbiAddrToString(s, reserve, &info->addr);
+            if (ipv6)
+                *s++ = ']';
+            if (info->port)
+                s += sprintf(s, ":%hu", info->port);
+        } else
+            s += SOCK_HostPortToString(info->host, info->port, s, reserve);
         if ((n = strlen(str + reserve)) != 0) {
             *s++ = ' ';
             memmove(s, str + reserve, n + 1);
             s = str + strlen(str);
         }
-        for (n = 0;  n < sizeof(kFlags) / sizeof(kFlags[0]);  ++n) {
-            if (info->flag == kFlags[n].val) {
-                s += sprintf(s, " %s", kFlags[n].tag);
-                break;
-            }
+        if (info->algo != eSERV_Regular) {
+            assert(info->algo == eSERV_Blast);
+            strcpy(s, " A=B");
+            s += 4;
         }
         if (info->coef)
             s  = NCBI_simple_ftoa(strcpy(s, " B=") + 3, info->coef, 2);
         if (*c_t)
             s += sprintf(s, " C=%s", c_t);
+        if (info->vhost) {
+            size_t size = s_GetAttrByType(info->type)->vtable.SizeOf(&info->u);
+            const char* vhost = (const char*) &info->u + size;
+            s += sprintf(s, " H=%.*s", (int) info->vhost, vhost);
+        }
         s += sprintf(s, " L=%s", k_NY[info->site & fSERV_Local]);
         if (info->type != fSERV_Dns  &&  (info->site & fSERV_Private))
             s += sprintf(s, " P=yes");
@@ -180,6 +215,8 @@ extern char* SERV_WriteInfo(const SSERV_Info* info)
         if (info->type != fSERV_Dns  &&  (info->mode & fSERV_Secure))
             s += sprintf(s, " $=yes");
         sprintf(s, " T=%lu", (unsigned long) info->time);
+        if (info->site & fSERV_Interzone)
+            s += sprintf(s, " X=yes");
     }
     return str;
 }
@@ -189,26 +226,35 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
                             const char* name,
                             int/*bool*/ lazy)
 {
-    int/*bool*/    coef, mime, locl, priv, rate, sful, secu, time, flag;
+    int/*bool*/ algo, coef, mime, locl, priv, rate, sful, secu, time, cros, vh;
+    const char* vhost;
+    const SSERV_Attr* attr;
+    TNCBI_IPv6Addr addr;
     ESERV_Type     type;
     unsigned int   host;                /* network byte order       */
     unsigned short port;                /* host (native) byte order */
     SSERV_Info*    info;
+    size_t         len;
 
     /* detect server type */
     str = SERV_ReadType(str, &type);
     if (!str  ||  (*str  &&  !isspace((unsigned char)(*str))))
         return 0;
     /* NB: "str" guarantees there is a non-NULL attr */
+    verify((attr = s_GetAttrByType(type)) != 0);
     while (*str  &&  isspace((unsigned char)(*str)))
         ++str;
-    if (*str  &&  (*str == ':'  ||  !ispunct((unsigned char)(*str)))) {
+
+    /* read optional connection point */
+    if (*str  &&
+        (*str == ':'  ||  *str == '['  ||  !ispunct((unsigned char)(*str)))) {
         const char* end = str;
         size_t      len;
         while (*end  &&  !isspace((unsigned char)(*end)))
             ++end;
         verify((len = (size_t)(end - str)) > 0);
-        if (*str != ':') {
+
+        if (!(*str == ':'  ||  *str == '[')) {
             if (strcspn(str, "=") >= len) {
                 size_t i;
                 for (i = 0;  i < sizeof(kFlags) / sizeof(kFlags[0]);  ++i) {
@@ -222,28 +268,84 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
                 end = 0;
         }
         if (end) {
-            if (!(str = SOCK_StringToHostPortEx(str, &host, &port, lazy)))
+            int/*bool*/ ipv6 = *str == '['  &&  len > 2 ? 1/*T*/ : 0/*F*/;
+            const char* tmp = NcbiIPToAddr(&addr, str + ipv6, len - ipv6);
+            if (tmp  &&  (!ipv6  ||  *tmp == ']')) {
+                str   = tmp + ipv6;
+                if (str != end  &&  *str != ':')
+                    return 0;
+                ipv6  = 1;
+                vhost = 0;
+            } else {
+                vhost = attr->type & SERV_VHOSTABLE ? str : 0;
+                ipv6  = 0;
+            }
+            if (str != end
+                &&  !(str = SOCK_StringToHostPortEx(str, &host, &port, lazy))){
                 return 0;
+            }
+            assert(!ipv6  ||  (!lazy  &&  !host));
             if (str != end)
                 return 0;
+            if (!ipv6)
+                NcbiIPv4ToIPv6(&addr, host, 0);
+            else if (NcbiIsIPv4(&addr))
+                host = NcbiIPv6ToIPv4(&addr, 0);
+            else
+                host = SOCK_HostToNetLong(-1L);
             while (*str  &&  isspace((unsigned char)(*str)))
                 ++str;
+            if (vhost) {
+                int/*bool*/ dot = 0/*false*/;
+                for (len = 0;  len < (size_t)(end - vhost);  ++len) {
+                    if (vhost[len] == ':')
+                        break;
+                    if (vhost[len] == '.')
+                        dot = 1/*true*/;
+                }
+                if (len > 1  &&  dot) {
+                    tmp = strndup(vhost, len);
+                    assert(!tmp  ||  !SOCK_isipEx(tmp, 1/*fullquad*/));
+                    if (!tmp)
+                        vhost = 0;
+                    else if (!SOCK_isip(tmp)/*NB: very unlikely*/)
+                        vhost = 0;
+                    else
+                        free((void*) tmp);
+                } else
+                    vhost = 0;
+            }
         } else {
             host = 0;
             port = 0;
+            memset(&addr, 0, sizeof(addr));
+            vhost = 0;
+            len = 0;
         }
     } else {
         host = 0;
         port = 0;
+        memset(&addr, 0, sizeof(addr));
+        vhost = 0;
+        len = 0;
     }
-    /* read server-specific info according to the detected type */
-    info = s_GetAttrByType(type)->vtable.Read(&str, name ? strlen(name)+1 : 0);
+    if (!port  &&  attr->type == fSERV_Standalone)
+        return 0;
+
+    /* read server-specific info according to the detected type... */
+    info = attr->vtable.Read(&str,
+                             (name ? strlen(name) + 1 : 0) +
+                             (attr->type & SERV_VHOSTABLE ? 256 : 0));
     if (!info)
         return 0;
+    assert(info->type == attr->type);
     info->host = host;
     info->port = port;
-    coef = mime = locl = priv = rate = sful = secu = time = flag = 0/*false*/;
-    /* continue reading server info: optional parts... */
+    info->addr = addr;
+    algo = coef = mime = locl = priv = rate = sful = secu = time = cros = vh
+        = 0/*false*/;
+
+    /* ...continue reading server info: optional tags */
     while (*str  &&  isspace((unsigned char)(*str)))
         ++str;
     while (*str) {
@@ -256,8 +358,25 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
             EMIME_Type     mime_t;
             EMIME_SubType  mime_s;
             EMIME_Encoding mime_e;
-            
+
             switch (toupper((unsigned char)(*str++))) {
+            case 'A':
+                if (algo)
+                    break;
+                algo = 1/*true*/;
+                switch (*str) {
+                case 'B':
+                    info->algo = eSERV_Blast;
+                    ++str;
+                    break;
+                case 'R':
+                    info->algo = eSERV_Regular;
+                    ++str;
+                    break;
+                default:
+                    break;
+                }
+                break;
             case 'B':
                 if (coef)
                     break;
@@ -286,6 +405,19 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
                     while (*str  &&  !isspace((unsigned char)(*str)))
                         str++;
                 }
+                break;
+            case 'H':
+                if (!(info->type & SERV_VHOSTABLE))
+                    break;
+                if (vh)
+                    break;
+                vh = 1/*true*/;
+                for (len = 0;  *++str;  ++len) {
+                    if (isspace((unsigned char)(*str)))
+                        break;
+                }
+                assert(len);
+                vhost = str - len;
                 break;
             case 'L':
                 if (locl)
@@ -368,25 +500,52 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
                     str += n;
                 }
                 break;
+            case 'X':
+                if (cros)
+                    break;
+                cros = 1/*true*/;
+                if (sscanf(++str, "%3s%n", s, &n) >= 1) {
+                    if (strcasecmp(s, "YES") == 0) {
+                        info->site |=  fSERV_Interzone;
+                        str += n;
+                    } else if (strcasecmp(s, "NO") == 0) {
+                        info->mode &= ~fSERV_Interzone;
+                        str += n;
+                    }
+                }
+                break;
             }
-        } else if (!flag) {
+        } else if (!algo) {
             size_t i;
-            flag = 1/*true*/;
+            algo = 1/*true*/;
             for (i = 0;  i < sizeof(kFlags) / sizeof(kFlags[0]);  ++i) {
                 if (strncasecmp(str, kFlags[i].tag, kFlags[i].len) == 0) {
-                    info->flag = kFlags[i].val;
+                    if (kFlags[i].site) {
+                        if (cros)
+                            break;
+                        cros = 1/*true*/;
+                        info->site |= kFlags[i].site;
+                    }
+                    info->algo = kFlags[i].algo;
                     str += kFlags[i].len;
                     break;
                 }
             }
         } else
-              break;
+            break;
         if (*str  &&  !isspace((unsigned char)(*str)))
             break;
         while (*str  &&  isspace((unsigned char)(*str)))
             ++str;
     }
-    if (!*str) {
+    if (!*str  ||  !vhost  ||  secu  ||  (info->type & fSERV_Http)) {
+        if (vhost) {
+            if (len > 255)
+                len = 255;
+            strncpy0((char*) &info->u + attr->vtable.SizeOf(&info->u),
+                     vhost, len);
+            info->vhost = len;
+        }
         if (name) {
             strcpy((char*) info + SERV_SizeOfInfo(info), name);
             if (info->type == fSERV_Dns)
@@ -420,7 +579,6 @@ SSERV_Info* SERV_CopyInfoEx(const SSERV_Info* orig,
         return 0;
     if ((info = (SSERV_Info*)malloc(size + (name ? strlen(name)+1 : 0))) != 0){
         memcpy(info, orig, size);
-        memset(&info->reserved, 0, sizeof(info->reserved));
         if (name) {
             strcpy((char*) info + size, name);
             if (orig->type == fSERV_Dns)
@@ -451,7 +609,11 @@ extern size_t SERV_SizeOfInfo(const SSERV_Info *info)
 {
     const SSERV_Attr* attr = info ? s_GetAttrByType(info->type) : 0;
     return attr
-        ? sizeof(*info) - sizeof(info->u) + attr->vtable.SizeOf(&info->u) : 0;
+        ? (sizeof(*info) - sizeof(info->u)
+           + attr->vtable.SizeOf(&info->u)
+           + info->vhost
+           + info->extra)
+        : 0;
 }
 
 
@@ -459,8 +621,13 @@ extern int/*bool*/ SERV_EqualInfo(const SSERV_Info *i1,
                                   const SSERV_Info *i2)
 {
     const SSERV_Attr* attr;
-    if (i1->type != i2->type || i1->host != i2->host || i1->port != i2->port)
-        return 0;
+    if (i1->type != i2->type  ||
+        i1->host != i2->host  ||
+        i1->port != i2->port) {
+        return 0/*false*/;
+    }
+    if (memcmp(&i1->addr, &i2->addr, sizeof(i1->addr)) != 0)
+        return 0/*false*/;
     attr = s_GetAttrByType(i1->type/*==i2->type*/);
     return attr->vtable.Equal ? attr->vtable.Equal(&i1->u, &i2->u) : 1;
 }
@@ -539,8 +706,10 @@ SSERV_Info* SERV_CreateNcbidInfoEx(unsigned int   host,
         info->mime_t = eMIME_T_Undefined;
         info->mime_s = eMIME_Undefined;
         info->mime_e = eENCOD_None;
-        info->flag   = SERV_DEFAULT_FLAG;
-        memset(&info->reserved, 0, sizeof(info->reserved));
+        info->algo   = SERV_DEFAULT_ALGO;
+        info->vhost  = 0;
+        info->extra  = 0;
+        memset(&info->addr, 0, sizeof(info->addr));
         info->u.ncbid.args = (TNCBI_Size) sizeof(info->u.ncbid);
         if (args  &&  strcmp(args, "''"/*special case*/) == 0)
             args = 0;
@@ -604,8 +773,10 @@ SSERV_Info* SERV_CreateStandaloneInfoEx(unsigned int   host,
         info->mime_t = eMIME_T_Undefined;
         info->mime_s = eMIME_Undefined;
         info->mime_e = eENCOD_None;
-        info->flag   = SERV_DEFAULT_FLAG;
-        memset(&info->reserved, 0, sizeof(info->reserved));
+        info->algo   = SERV_DEFAULT_ALGO;
+        info->vhost  = 0;
+        info->extra  = 0;
+        memset(&info->addr, 0, sizeof(info->addr));
         memset(&info->u.standalone, 0, sizeof(info->u.standalone));
     }
     return info;
@@ -683,8 +854,9 @@ static SSERV_Info* s_Http_Read(const char** str, size_t add)
 
 static size_t s_Http_SizeOf(const USERV_Info* u)
 {
-    return sizeof(u->http) + strlen(SERV_HTTP_PATH(&u->http))+1 +
-        strlen(SERV_HTTP_ARGS(&u->http))+1;
+    return sizeof(u->http)
+        + strlen(SERV_HTTP_PATH(&u->http))+1
+        + strlen(SERV_HTTP_ARGS(&u->http))+1;
 }
 
 
@@ -720,11 +892,13 @@ SSERV_Info* SERV_CreateHttpInfoEx(ESERV_Type     type,
         info->mime_t = eMIME_T_Undefined;
         info->mime_s = eMIME_Undefined;
         info->mime_e = eENCOD_None;
-        info->flag   = SERV_DEFAULT_FLAG;
-        memset(&info->reserved, 0, sizeof(info->reserved));
+        info->algo   = SERV_DEFAULT_ALGO;
+        info->vhost  = 0;
+        info->extra  = 0;
+        memset(&info->addr, 0, sizeof(info->addr));
         info->u.http.path = (TNCBI_Size) sizeof(info->u.http);
-        info->u.http.args = (TNCBI_Size) (info->u.http.path +
-                                          (path ? strlen(path) : 0) + 1);
+        info->u.http.args = (TNCBI_Size) (info->u.http.path
+                                          + (path ? strlen(path) : 0) + 1);
         strcpy(SERV_HTTP_PATH(&info->u.http), path ? path : "");
         strcpy(SERV_HTTP_ARGS(&info->u.http), args ? args : "");
     }
@@ -801,8 +975,10 @@ SSERV_Info* SERV_CreateFirewallInfoEx(unsigned int   host,
         info->mime_t = eMIME_T_Undefined;
         info->mime_s = eMIME_Undefined;
         info->mime_e = eENCOD_None;
-        info->flag   = SERV_DEFAULT_FLAG;
-        memset(&info->reserved, 0, sizeof(info->reserved));
+        info->algo   = SERV_DEFAULT_ALGO;
+        info->vhost  = 0;
+        info->extra  = 0;
+        memset(&info->addr, 0, sizeof(info->addr));
         info->u.firewall.type = type;
     }
     return info;
@@ -845,7 +1021,8 @@ static size_t s_Dns_SizeOf(const USERV_Info* u)
 }
 
 
-SSERV_Info* SERV_CreateDnsInfoEx(unsigned int host, size_t add)
+SSERV_Info* SERV_CreateDnsInfoEx(unsigned int host,
+                                 size_t       add)
 {
     SSERV_Info* info = (SSERV_Info*) malloc(sizeof(SSERV_Info) + add);
 
@@ -861,8 +1038,10 @@ SSERV_Info* SERV_CreateDnsInfoEx(unsigned int host, size_t add)
         info->mime_t = eMIME_T_Undefined;
         info->mime_s = eMIME_Undefined;
         info->mime_e = eENCOD_None;
-        info->flag   = SERV_DEFAULT_FLAG;
-        memset(&info->reserved, 0, sizeof(info->reserved));
+        info->algo   = SERV_DEFAULT_ALGO;
+        info->vhost  = 0;
+        info->extra  = 0;
+        memset(&info->addr, 0, sizeof(info->addr));
         memset(&info->u.dns, 0, sizeof(info->u.dns));
     }
     return info;
@@ -942,7 +1121,7 @@ static const SSERV_Attr* s_GetAttrByTag(const char* tag)
     if (tag) {
         size_t i;
         for (i = 0;  i < sizeof(kSERV_Attr)/sizeof(kSERV_Attr[0]);  ++i) {
-            size_t len = kSERV_Attr[i].tag_len;
+            size_t len = kSERV_Attr[i].taglen;
             if (strncasecmp(tag, kSERV_Attr[i].tag, len) == 0
                 &&  (!tag[len]  ||  isspace((unsigned char) tag[len])))
                 return &kSERV_Attr[i];
