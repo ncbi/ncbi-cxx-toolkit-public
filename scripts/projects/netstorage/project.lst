@@ -1,6 +1,7 @@
 corelib$
 util$
 util/regexp$
+util/xregexp
 util/compress
 util/qparse$
 util/bitset$ update-only
@@ -41,3 +42,4 @@ dbapi/driver/ftds95/impl update-only
 dbapi/driver/ftds95/freetds/replacements$
 dbapi/driver/ftds-default
 dbapi/simple$
+
