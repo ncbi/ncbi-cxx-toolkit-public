@@ -18,6 +18,7 @@ APP: netstoraged
 ETC: src/app/netstorage/netstoraged.ini
 APP: netstorage_gc
 ETC: src/app/netstorage/utils/netstorage_gc.ini
+APP: test_netstorage
 
 DEFAULT_CONFIGURATIONS: Linux64-Centos:O2g
 
