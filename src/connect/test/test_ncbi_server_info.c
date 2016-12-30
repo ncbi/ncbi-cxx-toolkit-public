@@ -33,6 +33,7 @@
 #include "../ncbi_priv.h"
 #include <connect/ncbi_server_info.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "test_assert.h"  /* This header must go last */
 
