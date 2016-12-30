@@ -127,7 +127,7 @@ static EHTTP_HeaderParse s_ParseHeader(const char* header,
                                        int/*bool*/ user_callback_enabled)
 {
     static const char   kStateless[] = "TRY_STATELESS";
-    static const size_t klen = sizeof(kStateless) - 1;
+    static const size_t kSLen = sizeof(kStateless) - 1;
     SServiceConnector*  uuu = (SServiceConnector*) user_data;
     EHTTP_HeaderParse   header_parse;
 
@@ -151,8 +151,8 @@ static EHTTP_HeaderParse s_ParseHeader(const char* header,
             header += sizeof(HTTP_CONNECTION_INFO) - 1;
             while (*header  &&  isspace((unsigned char)(*header)))
                 header++;
-            if (strncasecmp(header, kStateless, klen) == 0  &&
-                (!header[klen]  ||  isspace((unsigned char) header[klen]))) {
+            if (strncasecmp(header, kStateless, kSLen) == 0  &&
+                (!header[kSLen]  ||  isspace((unsigned char) header[kSLen]))) {
                 /* Special keyword for switching into stateless mode */
                 uuu->host = (unsigned int)(-1);
 #if defined(_DEBUG)  &&  !defined(NDEBUG)
@@ -529,7 +529,11 @@ static int/*bool*/ s_Adjust(SConnNetInfo* net_info,
     char*              iter_header;
     SSERV_InfoCPtr     info;
 
-    assert(n > 0  &&  (!net_info->firewall  ||  net_info->stateless));
+    assert(n  ||  uuu->extra.adjust);
+    assert(!net_info->firewall  ||  net_info->stateless);
+
+    if (!n)
+        return uuu->extra.adjust(net_info, uuu->extra.data, 0);
 
     if (uuu->retry >= uuu->net_info->max_try)
         return 0/*failure - too many errors*/;
@@ -869,10 +873,14 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
     assert(!uuu->descr);
     uuu->descr = ConnNetInfo_URL(net_info);
     return !uuu->extra.adjust
-        ||  uuu->extra.adjust(net_info, uuu->extra.data, 0)
+        ||  uuu->extra.adjust(net_info, uuu->extra.data, (unsigned int)(-1))
         ? HTTP_CreateConnectorEx(net_info,
                                  (uuu->extra.flags
-                                  & (fHTTP_Flushable | fHTTP_NoAutoRetry))
+                                  & (fHTTP_Flushable       |
+                                     fHTTP_NoAutoRetry     |
+                                     (uuu->extra.adjust
+                                      ? fHTTP_AdjustOnRedirect
+                                      : 0)))
                                  | fHTTP_AutoReconnect,
                                  s_ParseHeaderUCB, uuu/*user_data*/,
                                  s_Adjust, 0/*cleanup*/)
