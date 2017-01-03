@@ -37,6 +37,7 @@
 #include <objects/blastxml2/Range.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqfeat/Trna_ext.hpp>
+#include <objects/seqfeat/Code_break.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -59,6 +60,7 @@ private:
     static TSeqPos x_GetFrame(const CCdregion& cdregion);
     static void x_UpdateFrame(TSeqPos offset, CCdregion& cdregion);
     static void x_TrimTrnaExt(TSeqPos from, TSeqPos to, CTrna_ext& ext);
+    static void x_TrimCodeBreak(TSeqPos from, TSeqPos to, CCode_break& cod_break);
 };
 
 END_SCOPE(edit)

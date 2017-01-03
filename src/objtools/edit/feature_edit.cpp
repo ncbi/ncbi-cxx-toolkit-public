@@ -45,15 +45,23 @@ BEGIN_SCOPE(edit)
 
 struct SOutsideRange
 {
-    SOutsideRange(TSeqPos from, TSeqPos to) : m_From(from), m_To(to) {}
+    SOutsideRange(TSeqPos from, TSeqPos to) 
+        : m_From(from), m_To(to) {}
 
     bool operator()(const CRef<CCode_break>& code_break) {
         CRange<TSeqPos> cb_range = code_break->GetLoc().GetTotalRange();
-        return (((m_From > cb_range.GetFrom()) || (m_To < cb_range.GetTo()))); 
+        const auto strand = code_break->GetLoc().GetStrand();
+        if (strand != eNa_strand_minus) {
+            const TSeqPos cb_from = cb_range.GetFrom();
+            return ((cb_from < m_From) || (m_To < cb_from)); 
+        } 
+        // eNa_strand_minus
+        const TSeqPos cb_to = cb_range.GetTo();
+        return ((cb_to > m_To) || (m_From > cb_to)); 
     }
 
     TSeqPos m_From;
-    TSeqPos m_To;   
+    TSeqPos m_To;  
 };
 
 
@@ -74,8 +82,9 @@ CMappedFeat CFeatTrim::Apply(const CMappedFeat& mapped_feat,
     CRef<CSeq_feat> new_sf(new CSeq_feat());
     new_sf->Assign(*mapped_feat.GetSeq_feat());
     new_sf->SetLocation(*loc);
-    if (loc->IsPartialStart(eExtreme_Biological) || 
-        loc->IsPartialStop(eExtreme_Biological)) {
+    if (!loc->IsNull() &&
+        (loc->IsPartialStart(eExtreme_Biological) || 
+        loc->IsPartialStop(eExtreme_Biological))) {
         new_sf->SetPartial(true);
     }
 
@@ -92,6 +101,26 @@ CMappedFeat CFeatTrim::Apply(const CMappedFeat& mapped_feat,
             if (code_breaks.empty()) {
                 new_sf->SetData().SetCdregion().ResetCode_break();
             }
+            else {
+                const auto strand = loc->GetStrand();
+                // Trim the 3' end
+                if (strand != eNa_strand_minus) {
+                    for (auto code_break : code_breaks) {
+                        const TSeqPos cb_to = code_break->GetLoc().GetTotalRange().GetTo();
+                        if (cb_to > to) {
+                            x_TrimCodeBreak(from, to, *code_break);
+                        }
+                    }
+                }
+                else { // strand == eNa_strand_minus
+                    for (auto code_break : code_breaks) {
+                        const TSeqPos cb_from = code_break->GetLoc().GetTotalRange().GetFrom();
+                        if (cb_from < from) {
+                            x_TrimCodeBreak(from, to, *code_break);
+                        }
+                    }
+                } 
+            }
         }
     }
     else 
@@ -104,6 +133,17 @@ CMappedFeat CFeatTrim::Apply(const CMappedFeat& mapped_feat,
 
     sfeh.Replace(*new_sf);
     return CMappedFeat(sfh);
+}
+
+
+void CFeatTrim::x_TrimCodeBreak(const TSeqPos from, const TSeqPos to,
+    CCode_break& code_break)
+{
+    CRef<CSeq_loc> cb_loc(new CSeq_loc());
+    cb_loc->Assign(code_break.GetLoc());
+    x_TrimLocation(from, to, cb_loc);
+    code_break.ResetLoc();
+    code_break.SetLoc(*cb_loc);
 }
 
 
@@ -165,6 +205,10 @@ void CFeatTrim::x_TrimLocation(const TSeqPos from, const TSeqPos to,
             loc =  loc->Subtract(*trim, 0, NULL, NULL);     
             partial_stop = true; 
         }
+    }
+
+    if (loc->IsNull()) {
+        return;
     }
 
     if (strand == eNa_strand_minus) {
@@ -257,9 +301,25 @@ void CFeatTrim::x_TrimTrnaExt(const TSeqPos from, const TSeqPos to, CTrna_ext& e
 
     CRange<TSeqPos> ac_range = ext.GetAnticodon().GetTotalRange();
 
-    if (from > ac_range.GetFrom() || to < ac_range.GetTo()) {
+    const TSeqPos ac_from = ac_range.GetFrom();
+    const TSeqPos ac_to   = ac_range.GetTo();
+   
+   if (from <= ac_from && to >= ac_to) {
+        return;
+   } 
+
+    if (from > ac_to || to < ac_from) {   
         ext.ResetAnticodon();
-    }
+        return;
+    } 
+
+    // else there is some overlap
+    CRef<CSeq_loc> loc(new CSeq_loc());
+    loc->Assign(ext.GetAnticodon());
+    x_TrimLocation(from, to, loc);
+    ext.ResetAnticodon();
+    ext.SetAnticodon(*loc);
+
     return;
 }
 
