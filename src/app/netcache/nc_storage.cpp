@@ -2744,9 +2744,14 @@ CNCBlobStorage::GetFullBlobsList(Uint2 slot, TNCBlobSumList& blobs_lst, const CN
         for (Uint8 i = 0; i < cnt_blobs; ++i) {
             Uint2 key_slot = 0, key_bucket = 0;
             if (!CNCDistributionConf::GetSlotByKey(info_ptr->key, key_slot, key_bucket) ||
-                key_slot != slot || key_bucket != bucket_num) {
+                key_slot != slot /*|| key_bucket != bucket_num*/) {
                 SRV_FATAL("Slot verification failed, blob key: " << info_ptr->key <<
                           ", expected slot: " << slot << ", calculated slot: " << key_slot);
+            }
+            if (key_bucket != bucket_num) {
+                SRV_LOG(Critical, "Slot verification failed, blob key: " << info_ptr->key <<
+                          ", slot: " << slot <<
+                          ", expected bucket: " << bucket_num << ", calculated bucket: " << key_bucket);
             }
 
             if (info_ptr->size > CNCDistributionConf::GetMaxBlobSizeSync()) {
