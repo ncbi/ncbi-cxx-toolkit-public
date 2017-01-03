@@ -158,7 +158,7 @@ void CGeneFileUtils::ReadGeneInfo(CNcbiIfstream& in,
     }
 
     vector<string> strItems;
-    NStr::Tokenize(strBuf, "\t", strItems);
+    NStr::SplitByPattern(strBuf, "\t", strItems);
 
     if (strItems.size() != k_nGeneAllDataNumItems)
     {

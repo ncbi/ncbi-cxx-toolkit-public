@@ -138,7 +138,7 @@ bool CGeneFileWriter::
         return false;
 
     vector<string> strItems;
-    NStr::Tokenize(strLine, "\t", strItems);
+    NStr::SplitByPattern(strLine, "\t", strItems);
 
     if (strItems.size() != GENE_2_ACCN_NUM_ITEMS)
     {
@@ -437,7 +437,7 @@ bool CGeneFileWriter::
         return false;
 
     vector<string> strItems;
-    NStr::Tokenize(strLine, "\t", strItems);
+    NStr::SplitByPattern(strLine, "\t", strItems);
 
     if (strItems.size() != GENE_INFO_NUM_ITEMS)
     {
@@ -596,7 +596,7 @@ bool CGeneFileWriter::
         return false;
 
     vector<string> strItems;
-    NStr::Tokenize(strLine, "\t", strItems);
+    NStr::SplitByPattern(strLine, "\t", strItems);
 
     if (strItems.size() != GENE_2_PM_NUM_ITEMS)
     {

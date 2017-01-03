@@ -174,7 +174,7 @@ void CGeneInfo::ToString(string& strGeneInfo,
         // words and append them one by one.
 
         vector<string> strDescrWords;
-        NStr::Tokenize(GetDescription(), " ", strDescrWords);
+        NStr::SplitByPattern(GetDescription(), " ", strDescrWords);
         for (size_t iWord = 0; iWord < strDescrWords.size(); iWord++)
         {
             string strCurWord = strDescrWords[iWord];
