@@ -1321,9 +1321,9 @@ bool CGff3Writer::x_WriteBioseqHandle(
             (s_RangeContains(mRoot.GetTotalRange(), from) ||
             s_RangeContains(mRoot.GetTotalRange(), to))) {
 
-            CMappedFeat trimmed_feat = edit::CFeatTrim::Apply(mRoot, range);
+            edit::CFeatTrim::Apply(range, mRoot);
 
-            if (!xWriteFeature(fc, trimmed_feat)) {
+            if (!xWriteFeature(fc, mRoot)) {
                 return false;
             }
         }
@@ -1381,9 +1381,9 @@ bool CGff3Writer::xWriteAllChildren(
             (s_RangeContains(mChild.GetTotalRange(), from) ||
             s_RangeContains(mChild.GetTotalRange(), to))) {
 
-            CMappedFeat trimmed_feat = edit::CFeatTrim::Apply(mChild, range);
+            edit::CFeatTrim::Apply(range, mChild);
 
-            if (!xWriteFeature(fc, trimmed_feat)) {
+            if (!xWriteFeature(fc, mChild)) {
                 return false;
             }
         }
@@ -1436,7 +1436,6 @@ bool CGff3Writer::xWriteFeature(
 //  ----------------------------------------------------------------------------
 {
     CSeqFeatData::ESubtype s = mf.GetFeatSubtype();
-    const CSeq_feat& sf = mf.GetOriginalFeature();
     
     CSeqFeatData::ESubtype subtype = mf.GetFeatSubtype();
     try {
