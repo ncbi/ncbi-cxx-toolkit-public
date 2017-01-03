@@ -49,7 +49,10 @@ def main():
              "libgnutls-30.dll",
              "libhogweed-4-2.dll",
              "libnettle-6-2.dll",
-             "libp11-kit-0.dll" ]
+             "libp11-kit-0.dll",
+             "msvcp120.dll",
+             "msvcr120.dll"
+             ]
     
     cwd = os.getcwd()
     for app in apps:
