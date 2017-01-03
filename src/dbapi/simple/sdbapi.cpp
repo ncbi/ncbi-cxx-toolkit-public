@@ -1610,14 +1610,17 @@ bool CSDB_UserHandler::HandleMessage(int severity, int msgnum,
     if (severity == 0) {
         m_Conn.m_PrintOutput.push_back(message);
         return true;
-    } else if (severity == 16  &&  m_Conn.m_ContinueAfterRaiserror) {
+    } else if (m_Conn.m_ContinueAfterRaiserror
+               &&  (severity == 16  ||  (severity == 10  &&  msgnum > 0))) {
         // Sybase servers use severity 16 for all user-defined messages,
-        // even if they're not intended to abort execution.
-        // Optionally intercept these messages and report them as errors
-        // (vs. exceptions).
+        // even if they're not intended to abort execution.  Also, some
+        // standard minor errors (such as Duplicate key was ignored, #3604)
+        // normally map to DBAPI exceptions with severity warning.
+        // Optionally intercept all of these messages and report them as
+        // warnings (vs. exceptions).
         CDB_DSEx ex(DIAG_COMPILE_INFO, NULL, message + *m_Conn.m_Context,
                     eDiag_Error, msgnum);
-        ERR_POST_X(19, ex);
+        ERR_POST_X(19, Warning << ex);
         return true;
     } else {
         return CDB_UserHandler_Exception::HandleMessage
