@@ -1215,7 +1215,7 @@ int CTime::MonthNameToNum(const string& month)
 {
     const char** name = month.length() == 3 ? kMonthAbbr : kMonthFull;
     for (int i = 0; i < 12; ++i) {
-        if (NStr::StartsWith(name[i], month)) {
+        if ( NStr::CompareNocase(month, name[i]) == 0 ) {
             return i+1;
         }
     }

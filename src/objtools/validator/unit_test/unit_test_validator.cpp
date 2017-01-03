@@ -18737,7 +18737,6 @@ BOOST_AUTO_TEST_CASE(Test_FixFormatDate)
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("12-Nov"), "");
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("12-Oct"), "");
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("13072010"), "");
-    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("13-Sept-2012"), "13-Sep-2012");
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("14-Apr-97"), "14-Apr-1997");
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("14092010"), "");
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("14122011"), "");
