@@ -310,8 +310,9 @@ EIO_Status CConnTest::ExtraCheckOnFailure(void)
     ::sprintf(net_info->path, "/NcbiTest%08lX%08lX",
               (unsigned long) sec, (unsigned long) nanosec);
 
+    size_t n;
     vector< AutoPtr<CConn_HttpStream> > http;
-    for (size_t n = 0;  n < sizeof(kTests) / sizeof(kTests[0]);  ++n) {
+    for (n = 0;  n < sizeof(kTests) / sizeof(kTests[0]);  ++n) {
         char user_header[80];
         net_info->scheme = kTests[n].scheme;
         const char* host = kTests[n].host;
@@ -360,7 +361,7 @@ EIO_Status CConnTest::ExtraCheckOnFailure(void)
         }
     } while (status != eIO_Interrupt  &&  !deadline.IsExpired());
 
-    if (status == eIO_Success  &&  http.size())
+    if (status == eIO_Success  &&  http.size() == n)
         status  = eIO_Timeout;
 
     PostCheck(eNone, 0/*main*/, status, kEmptyStr);
