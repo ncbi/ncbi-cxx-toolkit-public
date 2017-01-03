@@ -698,6 +698,13 @@ string CNetCache::FileTrack_PathImpl()
 
 ILocation::TUserInfo CNetCache::GetUserInfoImpl()
 {
+    TObjLoc& object_loc(Locator());
+
+    try {
+        NC_EXISTS_IMPL(object_loc);
+    }
+    NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on accessing " + LocatorToStr())
+
     // Not supported
     return TUserInfo(kEmptyStr, kEmptyStr);
 }
