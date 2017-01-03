@@ -361,111 +361,140 @@ void CValidError_imp::ValidatePubArticle
             "Publication has no title", obj, ctx);
     }
         
-    if ( art.GetFrom().IsJournal() ) {
+    if (art.GetFrom().IsJournal()) {
         const CCit_jour& jour = art.GetFrom().GetJournal();
-        
+
         bool has_iso_jta = HasIsoJTA(jour.GetTitle());
-        bool in_press = false;
         bool is_electronic_journal = IsElectronicJournal(art.GetFrom().GetJournal());
 
-        if ( !HasTitle(jour.GetTitle()) ) {
+        if (!HasTitle(jour.GetTitle())) {
             PostObjErr(eDiag_Error, eErr_GENERIC_MissingPubInfo,
-            "Journal title missing", obj, ctx);
+                "Journal title missing", obj, ctx);
         }
 
-        if ( jour.CanGetImp() ) {
+        bool in_press = false;
+        if (jour.CanGetImp()) {
             const CImprint& imp = jour.GetImp();
 
-            if ( imp.CanGetPrepub() ) {
-                in_press =  imp.GetPrepub() == CImprint::ePrepub_in_press;
-                if ( in_press ) {
-                    if ( imp.IsSetPages() ) {
-                        if (! NStr::IsBlank(imp.GetPages()) ) {
-                            PostObjErr (eDiag_Warning, eErr_GENERIC_PublicationInconsistency, 
-                                     "In-press is not expected to have page numbers", obj, ctx);
-                        }
-                    }
-                    if ( (! imp.IsSetDate()) || (imp.GetDate().IsStr() && NStr::Equal (imp.GetDate().GetStr(), "?"))) {
-                        PostObjErr (eDiag_Warning, eErr_GENERIC_MissingPubInfo, 
-                                    "In-press is missing the date", obj, ctx);
-                    }
-                }
-            }
-
-            if ( !imp.IsSetPrepub()        &&  
-                 (!imp.CanGetPubstatus()   ||  
-                  imp.GetPubstatus() != ePubStatus_aheadofprint) ) {
-                bool no_vol = !imp.IsSetVolume()  || 
-                              NStr::IsBlank(imp.GetVolume());
-                bool no_pages = !imp.IsSetPages()  ||
-                                NStr::IsBlank(imp.GetPages());
-
-                if ( no_vol ) {
-                    if (is_electronic_journal) {
-                        PostObjErr(eDiag_Info, eErr_GENERIC_MissingVolumeEpub,
-                            "Electronic journal volume missing", obj, ctx);
-                    } else {
-                        PostObjErr(eDiag_Warning, eErr_GENERIC_MissingVolume,
-                            "Journal volume missing", obj, ctx);
-                    }
-                }
-                if ( no_pages ) {
-                    if (is_electronic_journal) {
-                        PostObjErr(eDiag_Info, eErr_GENERIC_MissingPagesEpub,
-                            "Electronic journal pages missing", obj, ctx);
-                    } else {
-                        PostObjErr(eDiag_Warning, eErr_GENERIC_MissingPages,
-                            "Journal pages missing", obj, ctx);
-                    }
-                }
-                
-                if (!no_pages && !is_electronic_journal) {
-                    x_ValidatePages(imp.GetPages(), obj, ctx);
-                }
-                if (imp.IsSetDate() && imp.GetDate().Which() != CDate::e_not_set) {
-                    if (imp.GetDate().IsStr() && NStr::Equal (imp.GetDate().GetStr(), "?")) {
-                        PostObjErr (eDiag_Warning, eErr_GENERIC_MissingPubInfo, 
-                                    "Publication date marked as '?'", obj, ctx);
-                    } else if (imp.GetDate().IsStd()) {
-                        if (!imp.GetDate().GetStd().IsSetYear()) {
-                            PostObjErr (eDiag_Warning, eErr_GENERIC_MissingPubInfo, 
-                                        "Publication date missing", obj, ctx);
-                        } else if (imp.GetDate().GetStd().GetYear() == 0) {
-                            PostObjErr (eDiag_Warning, eErr_GENERIC_MissingPubInfo, 
-                                        "Publication date not set", obj, ctx);
-                        } else {
-                            int rval = CheckDate (imp.GetDate());
-                            if (rval != eDateValid_valid) {
-                                PostBadDateError (eDiag_Error, "Publication date has error", rval, obj, ctx);
-                            }
-                        }
-                    }
-                } else {
-                    PostObjErr (eDiag_Warning, eErr_GENERIC_MissingPubInfo, 
-                                "Publication date missing", obj, ctx);
-                }
-            }
-            if (imp.IsSetPubstatus()) {
-                CImprint::TPubstatus pubstatus = imp.GetPubstatus();
-                if (pubstatus == ePubStatus_aheadofprint
-                    && (!imp.IsSetPrepub() || imp.GetPrepub() != CImprint::ePrepub_in_press)) {
-                    bool noVol = !imp.IsSetVolume() || NStr::IsBlank(imp.GetVolume());
-                    bool noPages = !imp.IsSetPages() || NStr::IsBlank(imp.GetPages());
-                    if (!noVol && !noPages && uid == 0) {
-                        PostObjErr (eDiag_Warning, eErr_GENERIC_PublicationInconsistency, 
-                                 "Ahead-of-print without in-press", obj, ctx);
-                    }
-                }  
-                if (pubstatus == ePubStatus_epublish 
-                    && imp.IsSetPrepub() && imp.GetPrepub() == CImprint::ePrepub_in_press) {
-                    PostObjErr (eDiag_Warning, eErr_GENERIC_PublicationInconsistency, 
-                             "Electronic-only publication should not also be in-press", obj, ctx);
-                }
+            if (imp.CanGetPrepub()) {
+                in_press = imp.GetPrepub() == CImprint::ePrepub_in_press;
             }
         }
+
+        if (uid == 0) {
+            ValidatePubArticleNoPMID(art, obj, ctx);
+        }
+
+
         if ( !has_iso_jta  &&  (uid > 0  ||  in_press  ||  IsRequireISOJTA()) && !is_electronic_journal ) {
             PostObjErr(eDiag_Warning, eErr_GENERIC_MissingISOJTA,
                 "ISO journal title abbreviation missing", obj, ctx);
+        }
+    }
+}
+
+
+void CValidError_imp::ValidatePubArticleNoPMID
+(const CCit_art& art,
+const CSerialObject& obj,
+const CSeq_entry *ctx)
+{
+    if (!art.GetFrom().IsJournal()) {
+        return;
+    }
+    const CCit_jour& jour = art.GetFrom().GetJournal();
+    if (!jour.IsSetImp()) {
+        return;
+    }
+
+    bool in_press = false;
+    bool is_electronic_journal = IsElectronicJournal(jour);
+
+    const CImprint& imp = jour.GetImp();
+
+    if (imp.CanGetPrepub()) {
+        in_press = imp.GetPrepub() == CImprint::ePrepub_in_press;
+        if (in_press) {
+            if (imp.IsSetPages()) {
+                if (!NStr::IsBlank(imp.GetPages())) {
+                    PostObjErr(eDiag_Warning, eErr_GENERIC_PublicationInconsistency,
+                        "In-press is not expected to have page numbers", obj, ctx);
+                }
+            }
+            if ((!imp.IsSetDate()) || (imp.GetDate().IsStr() && NStr::Equal(imp.GetDate().GetStr(), "?"))) {
+                PostObjErr(eDiag_Warning, eErr_GENERIC_MissingPubInfo,
+                    "In-press is missing the date", obj, ctx);
+            }
+        }
+    }
+
+    if (!imp.IsSetPrepub() &&
+        (!imp.CanGetPubstatus() ||
+        imp.GetPubstatus() != ePubStatus_aheadofprint)) {
+        bool no_vol = !imp.IsSetVolume() ||
+            NStr::IsBlank(imp.GetVolume());
+        bool no_pages = !imp.IsSetPages() ||
+            NStr::IsBlank(imp.GetPages());
+        if (no_vol) {
+            if (is_electronic_journal) {
+                PostObjErr(eDiag_Info, eErr_GENERIC_MissingVolumeEpub,
+                    "Electronic journal volume missing", obj, ctx);
+            } else {
+                PostObjErr(eDiag_Warning, eErr_GENERIC_MissingVolume,
+                    "Journal volume missing", obj, ctx);
+            }
+        }
+        if (no_pages) {
+            if (is_electronic_journal) {
+                PostObjErr(eDiag_Info, eErr_GENERIC_MissingPagesEpub,
+                    "Electronic journal pages missing", obj, ctx);
+            } else {
+                PostObjErr(eDiag_Warning, eErr_GENERIC_MissingPages,
+                    "Journal pages missing", obj, ctx);
+            }
+        }
+
+        if (!no_pages && !is_electronic_journal) {
+            x_ValidatePages(imp.GetPages(), obj, ctx);
+        }
+        if (imp.IsSetDate() && imp.GetDate().Which() != CDate::e_not_set) {
+            if (imp.GetDate().IsStr() && NStr::Equal(imp.GetDate().GetStr(), "?")) {
+                PostObjErr(eDiag_Warning, eErr_GENERIC_MissingPubInfo,
+                    "Publication date marked as '?'", obj, ctx);
+            } else if (imp.GetDate().IsStd()) {
+                if (!imp.GetDate().GetStd().IsSetYear()) {
+                    PostObjErr(eDiag_Warning, eErr_GENERIC_MissingPubInfo,
+                        "Publication date missing", obj, ctx);
+                } else if (imp.GetDate().GetStd().GetYear() == 0) {
+                    PostObjErr(eDiag_Warning, eErr_GENERIC_MissingPubInfo,
+                        "Publication date not set", obj, ctx);
+                } else {
+                    int rval = CheckDate(imp.GetDate());
+                    if (rval != eDateValid_valid) {
+                        PostBadDateError(eDiag_Error, "Publication date has error", rval, obj, ctx);
+                    }
+                }
+            }
+        } else {
+            PostObjErr(eDiag_Warning, eErr_GENERIC_MissingPubInfo,
+                "Publication date missing", obj, ctx);
+        }
+    }
+    if (imp.IsSetPubstatus()) {
+        CImprint::TPubstatus pubstatus = imp.GetPubstatus();
+        if (pubstatus == ePubStatus_aheadofprint
+            && (!imp.IsSetPrepub() || imp.GetPrepub() != CImprint::ePrepub_in_press)) {
+            bool noVol = !imp.IsSetVolume() || NStr::IsBlank(imp.GetVolume());
+            bool noPages = !imp.IsSetPages() || NStr::IsBlank(imp.GetPages());
+            if (!noVol && !noPages) {
+                PostObjErr(eDiag_Warning, eErr_GENERIC_PublicationInconsistency,
+                    "Ahead-of-print without in-press", obj, ctx);
+            }
+        }
+        if (pubstatus == ePubStatus_epublish
+            && imp.IsSetPrepub() && imp.GetPrepub() == CImprint::ePrepub_in_press) {
+            PostObjErr(eDiag_Warning, eErr_GENERIC_PublicationInconsistency,
+                "Electronic-only publication should not also be in-press", obj, ctx);
         }
     }
 }
@@ -850,6 +879,14 @@ void CValidError_imp::ValidateAuthorsInPubequiv
  const CSerialObject& obj,
  const CSeq_entry* ctx)
 {
+    // per VR-19, do not validate authors if PMID specified
+    FOR_EACH_PUB_ON_PUBEQUIV(pub_iter, pe) {
+        const CPub& pub = **pub_iter;
+        if (pub.IsPmid() && pub.GetPmid() > 0) {
+            return;
+        }
+    }
+
     FOR_EACH_PUB_ON_PUBEQUIV (pub_iter, pe) {
         const CPub& pub = **pub_iter;
         const CAuth_list* authors = 0;
