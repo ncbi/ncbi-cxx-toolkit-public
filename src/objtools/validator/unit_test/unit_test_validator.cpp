@@ -10901,7 +10901,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_PartialProblem)
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "MultiIntervalGene",
         "Gene feature on non-segmented sequence should not have multiple intervals"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "CDSgeneRange",
-        "gene overlaps CDS but does not completely contain it"));
+        "gene [locus value:[lcl|nuc:1-6, ~, 8-11]] overlaps CDS but does not completely contain it"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialsInconsistent",
                                                  "Coding region and protein feature partials conflict"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialProblem",
@@ -12665,7 +12665,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BothStrands)
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "BothStrands", 
                       "mRNA may not be on both (forward and reverse) strands"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "mRNAgeneRange",
-                      "gene overlaps mRNA but does not completely contain it"));
+                      "gene [gene locus:lcl|good:1-57] overlaps mRNA but does not completely contain it"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -12920,7 +12920,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_CDSgeneRange)
     STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "CDSgeneRange", 
-                      "gene overlaps CDS but does not completely contain it"));
+                      "gene [gene locus:lcl|nuc:2-27] overlaps CDS but does not completely contain it"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -12967,7 +12967,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_mRNAgeneRange)
     STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "mRNAgeneRange",
-                      "gene overlaps mRNA but does not completely contain it"));
+                      "gene [locus:lcl|good:6-11] overlaps mRNA but does not completely contain it"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "CDSmRNAmismatch",
                        "No match for 1 mRNA"));
     eval = validator.Validate(seh, options);
