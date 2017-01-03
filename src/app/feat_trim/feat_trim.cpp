@@ -118,11 +118,13 @@ int CFeatTrimApp::Run(void)
     CSeq_feat_Handle sfh = m_pScope->GetSeq_featHandle(*infeat);
 
     CMappedFeat mapped_feat(sfh);
-    mapped_feat = edit::CFeatTrim::Apply(mapped_feat, range);
+    edit::CFeatTrim::Apply(range, mapped_feat);
+ 
+    if (!mapped_feat.GetSeq_feat_Handle()) {
+        return 0;
+    }
 
-    const CSeq_feat& trimmed_feat = mapped_feat.GetMappedFeature();
-
-    ostr << MSerial_AsnText  << trimmed_feat;
+    ostr << MSerial_AsnText  << mapped_feat.GetMappedFeature();
     ostr.flush();
 
     return 0;
@@ -158,6 +160,9 @@ TSeqPos CFeatTrimApp::xGetFrom(
         const CArgs& args) const
 {
     if (args["from"]) {
+        if ( args["from"].AsInteger() <= 0) {
+            return 0;
+        }
         return static_cast<TSeqPos>(args["from"].AsInteger()-1);
     }
 

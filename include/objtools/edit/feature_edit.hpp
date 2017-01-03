@@ -48,9 +48,9 @@ class NCBI_XOBJEDIT_EXPORT CFeatTrim
 //  ----------------------------------------------------------------------------
 {
 public:
-    static CMappedFeat Apply(
-        const CMappedFeat& mapped_feat,
-        const CRange<TSeqPos>& range);
+    static void Apply(
+        const CRange<TSeqPos>& range,
+        CMappedFeat& mapped_feat);
 
 private:
     static void x_TrimLocation(TSeqPos from, TSeqPos to, 

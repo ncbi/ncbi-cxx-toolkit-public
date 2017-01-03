@@ -65,8 +65,8 @@ struct SOutsideRange
 };
 
 
-CMappedFeat CFeatTrim::Apply(const CMappedFeat& mapped_feat, 
-        const CRange<TSeqPos>& range)
+void CFeatTrim::Apply(const CRange<TSeqPos>& range,
+        CMappedFeat& mapped_feat)
 {
     auto from = range.GetFrom();
     auto to = range.GetTo();
@@ -76,9 +76,13 @@ CMappedFeat CFeatTrim::Apply(const CMappedFeat& mapped_feat,
     loc->Assign(sfh.GetLocation());
 
     x_TrimLocation(from, to, loc);
+    CSeq_feat_EditHandle sfeh(sfh);
+    if (loc->IsNull()) {
+        sfeh.Remove();
+        return;
+    }
 
     // Create a new seq-feat with the trimmed location
-    CSeq_feat_EditHandle sfeh(sfh);
     CRef<CSeq_feat> new_sf(new CSeq_feat());
     new_sf->Assign(*mapped_feat.GetSeq_feat());
     new_sf->SetLocation(*loc);
@@ -132,7 +136,7 @@ CMappedFeat CFeatTrim::Apply(const CMappedFeat& mapped_feat,
     }
 
     sfeh.Replace(*new_sf);
-    return CMappedFeat(sfh);
+    return;
 }
 
 
