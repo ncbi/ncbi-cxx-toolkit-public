@@ -179,7 +179,7 @@ void sRunFeatureTrimTest(const string& testName, const STestInfo& testInfo)
     }
 
     CMappedFeat mapped_feat(sfh);
-    mapped_feat = edit::CFeatTrim::Apply(mapped_feat, testInfo.m_Range);
+    edit::CFeatTrim::Apply(testInfo.m_Range, mapped_feat);
 
     const CSeq_feat& trimmed_feat = mapped_feat.GetMappedFeature();
 
