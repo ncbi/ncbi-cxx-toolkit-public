@@ -2664,7 +2664,7 @@ void CValidError_imp::ValidateTaxonomy(const COrg_ref& org, int genome)
                                 }
                             }
                             if (taxid_req != taxid_rep) {
-                                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem,
+                                PostObjErr(eDiag_Error, eErr_SEQ_DESCR_TaxonomyLookupProblem,
                                     "Organism name is '" + taxname_req
                                     + "', taxonomy ID should be '" + NStr::IntToString(taxid_rep)
                                     + "' but is '" + NStr::IntToString(taxid_req) + "'",
@@ -3268,7 +3268,7 @@ void CTaxValidationAndCleanup::ReportTaxLookupErrors
                     int taxid_reply = orp_rep.GetTaxId();
 
                     if (taxid_request != 0 && taxid_reply != 0 && taxid_request != taxid_reply) {
-                        imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem,
+                        imp.PostObjErr(eDiag_Error, eErr_SEQ_DESCR_TaxonomyLookupProblem,
                             "Organism name is '" + taxname_req
                             + "', taxonomy ID should be '" + NStr::IntToString(taxid_reply)
                             + "' but is '" + NStr::IntToString(taxid_request) + "'",
