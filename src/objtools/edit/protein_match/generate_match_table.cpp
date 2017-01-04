@@ -611,10 +611,11 @@ void CMatchTabulate::WriteTable(
 
 
 //CRef<CSeq_table> g_ReadSeqTable(CNcbiIstream& in) 
-CRef<CSeq_table> g_ReadSeqTable(const string& in) 
-
+void g_ReadSeqTable(CNcbiIstream& in, CSeq_table& table) 
 {
-    CRef<CSeq_table> table = Ref(new CSeq_table());
+
+    //CRef<CSeq_table> table = Ref(new CSeq_table());
+    table.Reset();
     CRef<ILineReader> pLineReader = ILineReader::New(in);
 
     if ( pLineReader->AtEOF() ) {
@@ -631,7 +632,7 @@ CRef<CSeq_table> g_ReadSeqTable(const string& in)
         pColumn->SetHeader().SetField_name(colName); // Not the title, for internal use
         pColumn->SetHeader().SetTitle(colName);
         pColumn->SetDefault().SetString("");
-        table->SetColumns().push_back(pColumn);
+        table.SetColumns().push_back(pColumn);
     }
 
 
@@ -642,14 +643,14 @@ CRef<CSeq_table> g_ReadSeqTable(const string& in)
         list<string> colValues;
         NStr::Split(line, " \t", colValues, NStr::fSplit_Tokenize);
         auto it = colValues.begin();
-        for (CRef<CSeqTable_column> pColumn : table->SetColumns()) { // Fix this!
+        for (CRef<CSeqTable_column> pColumn : table.SetColumns()) { 
             pColumn->SetData().SetString().push_back(*it);
             ++it;
         }
         ++num_rows;
     }
 
-    table->SetNum_rows(num_rows);
+    table.SetNum_rows(num_rows);
     return table;
 }
 

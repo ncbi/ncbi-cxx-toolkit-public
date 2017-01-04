@@ -111,8 +111,7 @@ private:
 };
 
 
-CRef<CSeq_table> g_ReadSeqTable(const string& in);
-//CRef<CSeq_table> g_ReadSeqTable(CNcbiIstream& in);
+void g_ReadSeqTable(CNcbiIstream& in, CSeq_table& table);
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
