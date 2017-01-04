@@ -41,10 +41,12 @@
 #include <util/random_gen.hpp>
 
 #include <boost/preprocessor.hpp>
-#include <boost/type_traits/integral_constant.hpp>
 
 #include <algorithm>
 #include <random>
+#include <thread>
+#include <chrono>
+#include <type_traits>
 
 USING_NCBI_SCOPE;
 
@@ -68,28 +70,23 @@ NCBI_PARAM_DECL(string, filetrack, site);
 NCBI_PARAM_DEF(string, filetrack, site, "dev");
 typedef NCBI_PARAM_TYPE(filetrack, site) TFileTrack_Site;
 
-NCBI_PARAM_DECL(string, filetrack, api_key);
-NCBI_PARAM_DEF(string, filetrack, api_key, \
-        "bqyMqDEHsQ3foORxBO87FMNhXjv9LxuzF9Rbs4HLuiaf2pHOku7D9jDRxxyiCtp2");
-typedef NCBI_PARAM_TYPE(filetrack, api_key) TFileTrack_Key;
-
 NCBI_PARAM_DECL(string, netstorage_api, my_ncbi_id);
 NCBI_PARAM_DEF(string, netstorage_api, my_ncbi_id, "none");
 typedef NCBI_PARAM_TYPE(netstorage_api, my_ncbi_id) TNetStorage_MyNcbiId;
 
-NCBI_PARAM_DECL(string, filetrack, token);
-NCBI_PARAM_DEF(string, filetrack, token, "28ca53369135f5e77472e0851f4facf1ab00ffce");
-typedef NCBI_PARAM_TYPE(filetrack, token) TFileTrack_Token;
+NCBI_PARAM_DECL(string, filetrack, ft_token);
+NCBI_PARAM_DEF(string, filetrack, ft_token, "eafe32733ade877a24555a9df15edcca42512040");
+typedef NCBI_PARAM_TYPE(filetrack, ft_token) TFileTrack_Token;
 
 
 // ENetStorageObjectLocation to type mapping
-typedef boost::integral_constant<ENetStorageObjectLocation, eNFL_Unknown>
+typedef integral_constant<ENetStorageObjectLocation, eNFL_Unknown>
     TLocationRelocated;
-typedef boost::integral_constant<ENetStorageObjectLocation, eNFL_NotFound>
+typedef integral_constant<ENetStorageObjectLocation, eNFL_NotFound>
     TLocationNotFound;
-typedef boost::integral_constant<ENetStorageObjectLocation, eNFL_NetCache>
+typedef integral_constant<ENetStorageObjectLocation, eNFL_NetCache>
     TLocationNetCache;
-typedef boost::integral_constant<ENetStorageObjectLocation, eNFL_FileTrack>
+typedef integral_constant<ENetStorageObjectLocation, eNFL_FileTrack>
     TLocationFileTrack;
 
 
@@ -99,6 +96,9 @@ struct SCtx
     long line;
 
     SCtx() : line(0) {}
+    SCtx(const string& d) : desc(d), line(0) {}
+    SCtx& operator()(const string& d) { desc = d; return *this; }
+    const SCtx& operator()(long l) { line = l; return *this; }
 };
 
 #define OUTPUT_CTX(ctx) ctx.desc << '[' << ctx.line << "]: "
@@ -295,16 +295,66 @@ void CGetSize::Check<TLocationRelocated>()
     BOOST_CHECK_THROW_CTX(GetSize(), CNetStorageException, m_Ctx);
 }
 
-// Convenience class for random generator
-struct CRandomSingleton
+struct GetRandom
 {
-    CRandom r;
-    CRandomSingleton() { r.Randomize(); }
+    static const size_t DataSize = 20 * 1024 * 1024;
 
-    static CRandom& instance()
+private:
+    // Convenience class for random generator
+    struct SSingleton
     {
-        static CRandomSingleton rs;
-        return rs.r;
+        static const size_t shift = 100;
+
+        CRandom r;
+        default_random_engine generator;
+        uniform_int_distribution<size_t> distribution;
+        vector<char> data;
+
+        static SSingleton& instance()
+        {
+            static SSingleton rs;
+            return rs;
+        }
+
+    private:
+        SSingleton()
+            : distribution(0, shift)
+        {
+            r.Randomize();
+
+            typedef numeric_limits<char> limits;
+            uniform_int_distribution<short> range(limits::min(), limits::max());
+            auto random_char = bind(range, generator);
+
+            const size_t size = DataSize + shift;
+            data.reserve(size);
+            generate_n(back_inserter(data), size, random_char);
+        }
+    };
+
+public:
+    operator CRandom&()
+    {
+        return SSingleton::instance().r;
+    }
+
+    static default_random_engine& GetGenerator()
+    {
+        return SSingleton::instance().generator;
+    }
+
+    // Convenience function to generate a unique key for CNetStorageByKey
+    static string GetUniqueKey()
+    {
+        CRandom& random = GetRandom();
+        return NStr::NumericToString(time(NULL)) + "t" +
+            NStr::NumericToString(random.GetRandUint8());
+    }
+
+    static const char* const GetData()
+    {
+        SSingleton& s = SSingleton::instance();
+        return s.data.data() + s.distribution(s.generator);
     }
 };
 
@@ -322,12 +372,6 @@ private:
         BOOST_ERROR("PendingCount() is not implemented");
         return eRW_NotImplemented;
     }
-};
-
-// An extended IWriter interface
-struct IExtWriter : public IWriter
-{
-    virtual void Close() = 0;
 };
 
 // A reader that is used to read from a string
@@ -381,7 +425,8 @@ private:
 class CEmpData : public CStrReader
 {
 public:
-    CEmpData()
+    template <class TNetStorage>
+    CEmpData(TNetStorage&, TNetStorageFlags)
         : CStrReader(string())
     {}
 
@@ -392,7 +437,8 @@ public:
 class CStrData : public CStrReader
 {
 public:
-    CStrData()
+    template <class TNetStorage>
+    CStrData(TNetStorage&, TNetStorageFlags)
         : CStrReader("The quick brown fox jumps over the lazy dog")
     {}
 
@@ -405,24 +451,16 @@ class CRndData : public IExtReader
 public:
     struct SSource
     {
-        vector<char> data;
-
-        SSource()
-        {
-            const size_t kSize = 20 * 1024 * 1024; // 20MB
-            data.reserve(kSize);
-
-            uniform_int_distribution<short> range(
-                    numeric_limits<char>::min(),
-                    numeric_limits<char>::max());
-            auto random_char = bind(range, default_random_engine());
-            generate_n(back_inserter(data), kSize, random_char);
-        }
+        const char* const data;
+        SSource() : data(GetRandom::GetData()) {}
     };
 
-    CRndData()
-        : m_Begin(0),
-          m_Length(m_Source.data.size())
+    template <class TNetStorage>
+    CRndData(TNetStorage&, TNetStorageFlags, double multiplier = 1.0)
+        : m_Source(),
+          m_Begin(m_Source.data),
+          m_Size(static_cast<size_t>(min(multiplier, 1.0) * GetRandom::DataSize)),
+          m_Length(m_Size)
     {}
 
     ERW_Result Read(void* buf, size_t count, size_t* bytes_read = 0)
@@ -430,7 +468,7 @@ public:
         if (!m_Length) return eRW_Eof;
 
         size_t read = m_Length < count ? m_Length : count;
-        if (buf) memcpy(buf, &m_Source.data[m_Begin], read);
+        if (buf) memcpy(buf, m_Begin, read);
         m_Begin += read;
         m_Length -= read;
         if (bytes_read) *bytes_read = read;
@@ -439,15 +477,16 @@ public:
 
     void Close()
     {
-        m_Begin = 0;
-        m_Length = m_Source.data.size();
+        m_Begin = m_Source.data;
+        m_Length = m_Size;
     }
 
-    size_t Size() { return m_Source.data.size(); }
+    size_t Size() { return m_Size; }
 
 private:
     SSource m_Source;
-    size_t m_Begin;
+    const char* m_Begin;
+    size_t m_Size;
     size_t m_Length;
 };
 
@@ -455,13 +494,30 @@ private:
 class CNstData : public IExtReader
 {
 public:
-    CNstData(CNetStorageObject object)
-        : m_Object(object)
+    CNstData(CCombinedNetStorage& netstorage, TNetStorageFlags flags)
+        : m_Object(netstorage.Create(flags))
     {
-        // Create a NetStorage object to use as a source
-        CRndData::SSource source;
-        m_Object.Write(&source.data[0], source.data.size());
-        m_Object.Close();
+        Init();
+        m_CleanUp = [&]() mutable
+            {
+                netstorage.Remove(m_Object.GetLoc());
+            };
+    }
+
+    CNstData(CCombinedNetStorageByKey& netstorage, TNetStorageFlags flags)
+        : m_Object(netstorage.Open(GetRandom::GetUniqueKey(), flags))
+    {
+        Init();
+        m_CleanUp = [&]() mutable
+            {
+                CNetStorageObjectLoc loc(nullptr, m_Object.GetLoc());
+                netstorage.Remove(loc.GetShortUniqueKey());
+            };
+    }
+
+    ~CNstData()
+    {
+        m_CleanUp();
     }
 
     ERW_Result Read(void* buf, size_t count, size_t* bytes_read = 0)
@@ -477,90 +533,17 @@ public:
     size_t Size() { return m_Object.GetSize(); }
 
 private:
+    void Init()
+    {
+        // Create a NetStorage object to use as a source
+        CRndData::SSource source;
+        m_Object.Write(source.data, GetRandom::DataSize);
+        m_Object.Close();
+    }
+
     CNetStorageObject m_Object;
+    function<void()> m_CleanUp;
 };
-
-// NetStorage object guard to remove objects after tests
-template <class TNetStorage>
-class CNstObjectGuard
-{
-public:
-    CNstObjectGuard(TNetStorage& netstorage, const string& key)
-        : m_NetStorage(netstorage),
-          m_Key(key)
-    {}
-
-    ~CNstObjectGuard() { try { m_NetStorage.Remove(m_Key); } catch (...) {} }
-
-private:
-    TNetStorage m_NetStorage;
-    const string m_Key;
-};
-
-// NetStorage source data guard to remove underlying objects after tests
-template <class TNetStorage>
-class CNstDataGuard : public CNstData, private CNstObjectGuard<TNetStorage>
-{
-public:
-    CNstDataGuard(CNetStorageObject& object, TNetStorage& netstorage,
-            const string& key)
-        : CNstData(object),
-          CNstObjectGuard<TNetStorage>(netstorage, key)
-    {}
-};
-
-
-// Convenience function to generate a unique key for CNetStorageByKey
-string GetUniqueKey()
-{
-    return NStr::NumericToString(time(NULL)) + "t" +
-        NStr::NumericToString(CRandomSingleton::instance().GetRandUint8());
-}
-
-
-// Template for source data creation
-
-template <class TExpected, class TNetStorage>
-TExpected* Create(TNetStorage&, TNetStorageFlags)
-{
-    return new TExpected();
-}
-
-template <>
-CNstData* Create<CNstData, CNetStorage>(CNetStorage& netstorage,
-        TNetStorageFlags flags)
-{
-    CNetStorageObject object(netstorage.Create(flags));
-    const string key(object.GetLoc());
-    return new CNstDataGuard<CNetStorage>(object, netstorage, key);
-}
-
-template <>
-CNstData* Create<CNstData, CNetStorageByKey>(CNetStorageByKey& netstorage,
-        TNetStorageFlags flags)
-{
-    const string key(GetUniqueKey());
-    CNetStorageObject object(netstorage.Open(key, flags));
-    return new CNstDataGuard<CNetStorageByKey>(object, netstorage, key);
-}
-
-template <>
-CNstData* Create<CNstData, CCombinedNetStorage>(CCombinedNetStorage& netstorage,
-        TNetStorageFlags flags)
-{
-    CNetStorageObject object(netstorage.Create(flags));
-    const string key(object.GetLoc());
-    return new CNstDataGuard<CCombinedNetStorage>(object, netstorage, key);
-}
-
-template <>
-CNstData* Create<CNstData, CCombinedNetStorageByKey>(CCombinedNetStorageByKey& netstorage,
-        TNetStorageFlags flags)
-{
-    const string key(GetUniqueKey());
-    CNetStorageObject object(netstorage.Open(key, flags));
-    return new CNstDataGuard<CCombinedNetStorageByKey>(object, netstorage, key);
-}
 
 
 // NetStorage reader/writer base class
@@ -588,9 +571,10 @@ template <class TImpl>
 class CApi
 {
 public:
+    typedef typename TImpl::CWriter TWriter;
+
     CApi(CNetStorageObject o) : m_Reader(o), m_Writer(o) {}
     IExtReader& GetReader() { return m_Reader; } 
-    IExtWriter& GetWriter() { return m_Writer; }
 
 private:
     typename TImpl::CReader m_Reader;
@@ -608,7 +592,7 @@ struct SStrApiImpl
         void DoInit() { m_Object.Read(&m_Str); }
     };
 
-    class CWriter : public CNetStorageRW<IExtWriter>
+    class CWriter : public CNetStorageRW<IWriter>
     {
     public:
         CWriter(CNetStorageObject o) : TNetStorageRW(o) {}
@@ -646,7 +630,7 @@ struct SBufApiImpl
         }
     };
 
-    class CWriter : public CNetStorageRW<IExtWriter>
+    class CWriter : public CNetStorageRW<IWriter>
     {
     public:
         CWriter(CNetStorageObject o) : TNetStorageRW(o) {}
@@ -683,7 +667,7 @@ struct SIrwApiImpl
         ERW_Result m_Result;
     };
 
-    class CWriter : public CNetStorageRW<IExtWriter>
+    class CWriter : public CNetStorageRW<IWriter>
     {
     public:
         CWriter(CNetStorageObject o)
@@ -732,7 +716,7 @@ struct SIosApiImpl
         auto_ptr<CNcbiIostream> m_Impl;
     };
 
-    class CWriter : public CNetStorageRW<IExtWriter>
+    class CWriter : public CNetStorageRW<IWriter>
     {
     public:
         CWriter(CNetStorageObject o)
@@ -780,7 +764,7 @@ struct SReadHelperBase
         if (length) return true;
 
         // Read random length data
-        CRandom& random(CRandomSingleton::instance());
+        CRandom& random = GetRandom();
         size_t buf_size = 1 + random.GetRandIndexSize_t(kSize);
         m_Result = source.Read(buf, buf_size, &length);
 
@@ -872,10 +856,11 @@ struct SReadHelper<TIosApi, TLocationRelocated> : SReadHelper<TIosApi, TLocation
 };
 
 // A helper to read from expected and write to object
+template<class TApi>
 struct SWriteHelper
 {
-    SWriteHelper(IExtWriter& dest)
-        : m_Dest(dest),
+    SWriteHelper(CNetStorageObject& o)
+        : m_Dest(o),
           m_Result(eRW_Success),
           m_Empty(true)
     {}
@@ -889,7 +874,7 @@ struct SWriteHelper
     template <class TReader>
     bool operator()(const TReader& reader, const SCtx& ctx)
     {
-        CRandom& random(CRandomSingleton::instance());
+        CRandom& random = GetRandom();
         const char* data = reader.buf;
         size_t total = reader.length;
 
@@ -917,23 +902,23 @@ struct SWriteHelper
     operator bool() { return m_Result == eRW_Success; }
 
 private:
-    IExtWriter& m_Dest;
+    typename TApi::CWriter m_Dest;
     ERW_Result m_Result;
     bool m_Empty;
 };
 
 
 // Random attributes set
-struct SAttrApiBase
+struct CAttributes
 {
     typedef map<string, string, PNocase> TAttrs;
     TAttrs attrs;
     typedef vector<pair<const string*, const string*> > TData;
     TData data;
 
-    SAttrApiBase()
+    CAttributes()
     {
-        default_random_engine generator;
+        default_random_engine& generator(GetRandom::GetGenerator());
 
         // Attribute name/value length range
         uniform_int_distribution<size_t> name_range(5, 64);
@@ -1048,305 +1033,946 @@ struct SAttrApiBase
     }
 };
 
-template <class TNetStorage>
-struct TAttrTesting : boost::true_type {};
 
-template <>
-struct TAttrTesting<CCombinedNetStorage> : boost::false_type {};
-
-template <>
-struct TAttrTesting<CCombinedNetStorageByKey> : boost::false_type {};
+typedef pair<string, TNetStorageFlags> TKey;
 
 
-// Default implementation (attribute reading/writing always throws)
-template <class TAttrTesting>
-struct SAttrApi : SAttrApiBase
+NCBITEST_AUTO_INIT()
 {
-    template <class TLocation>
-    void Read(TLocation, const SCtx& ctx, CNetStorageObject& object)
-    {
-        BOOST_CHECK_THROW_CTX(SAttrApiBase::Read(ctx, object),
-                CNetStorageException, ctx);
-    }
-
-    template <class TLocation>
-    void Write(TLocation, const SCtx& ctx, CNetStorageObject& object)
-    {
-        BOOST_CHECK_THROW_CTX(SAttrApiBase::Write(ctx, object),
-                CNetStorageException, ctx);
-    }
-};
-
-// Attribute testing is enabled
-template <>
-struct SAttrApi<boost::true_type> : SAttrApiBase
-{
-    template <class TLocation>
-    void Read(TLocation, const SCtx& ctx, CNetStorageObject& object)
-    {
-        SAttrApiBase::Read(ctx, object);
-    }
-
-    template <class TLocation>
-    void Write(TLocation, const SCtx& ctx, CNetStorageObject& object)
-    {
-        SAttrApiBase::Write(ctx, object);
-    }
-
-    void Read(TLocationNotFound, const SCtx& ctx, CNetStorageObject& object)
-    {
-        BOOST_CHECK_THROW_CTX(SAttrApiBase::Read(ctx, object),
-                CNetStorageException, ctx);
-    }
-
-    void Write(TLocationNotFound, const SCtx& ctx, CNetStorageObject& object)
-    {
-        BOOST_CHECK_THROW_CTX(SAttrApiBase::Write(ctx, object),
-                CNetStorageException, ctx);
-    }
-};
-
-
-// Locations and flags used for tests
-
-struct SLocBase
-{
-    typedef boost::true_type TAttrTesting;
-
-    static const bool check_relocate = true;
-    static const bool loc_info = true;
-
-    static const char* init_string() { return ""; }
-
-    static const char* not_found()
-    {
-        return
-            "CiB5fBBOPGA-TABpLX2KezBRLG35vvgq5_umuK_f6Nmv16_17pra7qSJytGakfnGv4I";
-    }
-};
-
-struct SNC2FT : SLocBase
-{
-    typedef TLocationFileTrack TSource;
-    static const TNetStorageFlags source = fNST_Persistent;
-
-    static const TNetStorageFlags non_existent = fNST_Fast | fNST_Movable;
-
-    typedef TLocationNetCache TCreate;
-    static const TNetStorageFlags create = fNST_Fast | fNST_Movable;
-
-    static const TNetStorageFlags immovable = fNST_Fast;
-
-    static const TNetStorageFlags readable = fNST_Persistent | fNST_Movable;
-
-    typedef TLocationFileTrack TRelocate;
-    static const TNetStorageFlags relocate = fNST_Persistent;
-};
-
-struct SFT2NC : SLocBase
-{
-    typedef TLocationNetCache TSource;
-    static const TNetStorageFlags source = fNST_Fast;
-
-    static const TNetStorageFlags non_existent = fNST_Persistent | fNST_Movable;
-
-    typedef TLocationFileTrack TCreate;
-    static const TNetStorageFlags create = fNST_Persistent | fNST_Movable;
-
-    static const TNetStorageFlags immovable = fNST_Persistent;
-
-    static const TNetStorageFlags readable = fNST_Fast | fNST_Movable;
-
-    typedef TLocationNetCache TRelocate;
-    static const TNetStorageFlags relocate = fNST_Fast;
-};
-
-struct SDirectNC
-{
-    typedef boost::integral_constant<ENetStorageObjectLocation, eNFL_NetCache>
-        TSource;
-    static const TNetStorageFlags source = 0;
-
-    static const TNetStorageFlags non_existent = 0;
-
-    typedef TSource TCreate;
-    static const TNetStorageFlags create = 0;
-
-    static const TNetStorageFlags immovable = 0;
-
-    static const TNetStorageFlags readable = 0;
-
-    typedef TCreate TRelocate;
-    static const TNetStorageFlags relocate = 0;
-
-    typedef boost::false_type TAttrTesting;
-
-    static const bool check_relocate = false;
-    static const bool loc_info = false;
-
-    static const char* init_string() { return "&default_storage=nc"; }
-
-    static const char* not_found()
-    {
-        return "o-c8TRwX3VuFSZnf5BuKLelYjHcUK5xKpizKXbIX8EmNDNle";
-    }
-};
-
-
-template <class TNetStorage>
-inline TNetStorage g_GetNetStorage(const char* mode)
-{
-    string nst_service(TNetStorage_ServiceName::GetDefault());
-    string nc_service(TNetCache_ServiceName::GetDefault());
-    string nst_app_domain(TNetStorage_AppDomain::GetDefault());
-    string init_string(
-            "nst="     + nst_service +
-            "&nc="     + nc_service +
-            "&domain=" + nst_app_domain +
-            "&client="   APP_NAME +
-            "&err_mode=ignore" +
-            mode);
-    return CNetStorage(init_string);
-}
-
-template <>
-inline CNetStorageByKey g_GetNetStorage<CNetStorageByKey>(const char* mode)
-{
-    string nst_service(TNetStorage_ServiceName::GetDefault());
-    string nc_service(TNetCache_ServiceName::GetDefault());
-    string nst_app_domain(TNetStorage_AppDomain::GetDefault());
-    string init_string(
-            "nst="     + nst_service +
-            "&nc="     + nc_service +
-            "&domain=" + nst_app_domain +
-            "&client="   APP_NAME +
-            "&err_mode=ignore" +
-            mode);
-    return CNetStorageByKey(init_string);
+    boost::unit_test::framework::master_test_suite().p_name->assign(
+            "CNetStorage Unit Test");
 }
 
 
-template <>
-inline CCombinedNetStorage g_GetNetStorage<CCombinedNetStorage>(const char*)
-{
-    string nc_service(TNetCache_ServiceName::GetDefault());
-    string nst_app_domain(TNetStorage_AppDomain::GetDefault());
-    string ft_site(TFileTrack_Site::GetDefault());
-    string ft_token(TFileTrack_Token::GetDefault());
-    string init_string(
-            "mode=direct&nc="     + nc_service +
-            "&domain=" + nst_app_domain +
-            "&client="   APP_NAME +
-            "&ft_site=" + ft_site +
-            "&ft_token=" + ft_token);
-    return CCombinedNetStorage(init_string);
-}
+// Templated interfaces
 
-template <>
-inline CCombinedNetStorageByKey g_GetNetStorage<CCombinedNetStorageByKey>(const char*)
+namespace NType
 {
-    string nc_service(TNetCache_ServiceName::GetDefault());
-    string nst_app_domain(TNetStorage_AppDomain::GetDefault());
-    string ft_site(TFileTrack_Site::GetDefault());
-    string ft_token(TFileTrack_Token::GetDefault());
-    string init_string(
-            "mode=direct&nc="     + nc_service +
-            "&domain=" + nst_app_domain +
-            "&client="   APP_NAME +
-            "&ft_site=" + ft_site +
-            "&ft_token=" + ft_token);
-    return CCombinedNetStorageByKey(init_string);
+
+struct TServerless
+{
+    static string GetInitString();
+    static string GetNotFound();
+    static bool CheckLocInfo();
+};
+
+struct TServer
+{
+    static string GetInitString();
+    static string GetNotFound();
+    static bool CheckLocInfo();
+};
+
+struct TNetCache
+{
+    static string GetInitString();
+    static string GetNotFound();
+    static bool CheckLocInfo();
+};
+
 }
 
 
-// Just a convenience wrapper
-template <
-    class TNetStorage,
-    class TExpected,
-    class TApi,
-    class TLoc>
-struct SPolicy
+namespace NStorage
 {
-    typedef TNetStorage NetStorage;
-    typedef TExpected Expected;
-    typedef TApi Api;
-    typedef TLoc Loc;
+
+template <class TType, class TClass, class TBackend> struct SFactory;
+template <class TType, class TClass, class TBackend> struct SStorage;
+
+namespace NTests
+{
+
+template <class TResult, class TStorage, class TKey>
+TKey Relocate(TStorage&, const TKey&, TNetStorageFlags, SCtx&);
+
+template <class TResult, class TStorage, class TKey>
+void Exists(TStorage&, const TKey&, SCtx&);
+
+template <class TResult, class TStorage, class TKey>
+void Exists(TStorage&, const string& old_loc, const TKey&, SCtx&);
+
+template <class TResult, class TStorage, class TKey>
+void Remove(TStorage&, const TKey&, SCtx&);
+
+}
+
+template <class TType, class TClass, class TBackend> struct STestCase;
+
+template <class TType, class TClass, class TBackend>
+struct SFixture : STestCase<TType, TClass, TBackend>
+{
 };
 
-// Test context
-template <class TPolicy>
-struct SFixture
+}
+
+
+namespace NObject
 {
-    // Unwrapping the policy
-    typedef typename TPolicy::NetStorage TNetStorage;
-    typedef typename TPolicy::Expected TExpected;
-    typedef typename TPolicy::Api TApi;
-    typedef typename TPolicy::Loc TLoc;
 
-    TNetStorage netstorage;
-    auto_ptr<TExpected> data;
+namespace NTests
+{
 
-    typedef boost::integral_constant<bool, (TLoc::TAttrTesting::value &&
-            TAttrTesting<TNetStorage>::value)> TAttrTesting;
-    SAttrApi<TAttrTesting> attr_tester;
+template <class TResult, class TExpected = CRndData, class TIo = SBufApiImpl>
+void Read(CNetStorageObject& object, TExpected& expected, SCtx& ctx);
 
-    SCtx ctx;
+template <class TSource = CRndData, class TIo = SBufApiImpl>
+void Write(CNetStorageObject& object, TSource& source, SCtx ctx);
 
-    SFixture()
-        : netstorage(g_GetNetStorage<TNetStorage>(TLoc::init_string()))
-    {
-    }
+template <class TResult>
+void GetSize(CNetStorageObject& object, Uint8 expected, SCtx ctx);
 
-    // These two are used to set test context
-    SFixture& Ctx(const string& d)
-    {
-        LOG_POST(Trace << d);
-        BOOST_TEST_CHECKPOINT(d);
-        ctx.desc = d;
-        return *this;
-    }
-    const SCtx& Line(long l) { ctx.line = l; return ctx; }
+template <class TResult>
+void SetExpiration(CNetStorageObject& object, const CTimeout& ttl, SCtx ctx);
 
-    template <class TLocation>
-    void ReadAndCompare(const string&, CNetStorageObject object);
+template <class TResult, class TType, class TBackend>
+void GetInfo(CNetStorageObject& object, Uint8 size, SCtx ctx);
 
-    template <class TLocation>
-    void ReadTwoAndCompare(const string&,
-            CNetStorageObject object1, CNetStorageObject object2);
+}
 
-    template <class TLocation>
-    string WriteTwoAndRead(CNetStorageObject object1, CNetStorageObject object2);
+template <class TType, class TObject, class TBackend> struct STestCase;
 
-    template <class TLocation, class TId>
-    void ExistsAndRemoveTests(const TId& id);
-
-    // The parameter is only used to select the implementation
-    void Test(CNetStorage&);
-    void Test(CNetStorageByKey&);
+template <class TType, class TObject, class TBackend>
+struct SFixture : STestCase<TType, TObject, TBackend>
+{
 };
+
+}
+
+
+namespace NSource
+{
+
+typedef CEmpData TEmp;
+typedef CStrData TStr;
+typedef CRndData TRnd;
+typedef CNstData TNst;
+
+}
+
+
+namespace NIo
+{
+
+typedef SStrApiImpl TStr;
+typedef SBufApiImpl TBuf;
+typedef SIrwApiImpl TIrw;
+typedef SIosApiImpl TIos;
+
+template <class TType, class TSource, class TIo, class TBackend> struct STestCase;
+
+template <class TType, class TSource, class TIo, class TBackend>
+struct SFixture : STestCase<TType, TSource, TIo, TBackend>
+{
+};
+
+}
+
+
+namespace NBackend
+{
+
+struct TNC
+{
+    static const TNetStorageFlags flags = fNST_NetCache;
+    static const ENetStorageObjectLocation location = eNFL_NetCache;
+};
+
+struct TFT
+{
+    static const TNetStorageFlags flags = fNST_FileTrack;
+    static const ENetStorageObjectLocation location = eNFL_FileTrack;
+};
+
+template <class TBackend> struct TRelocate;
+
+}
+
+
+namespace NResult
+{
 
 // NB: It does not matter whether TLocationNetCache or TLocationFileTrack is used here
-typedef TLocationNetCache TShouldWork;
+struct TSuccess { typedef TLocationNetCache TLocation; };
+struct TFail    { typedef TLocationNotFound TLocation; };
 
-template <class TPolicy>
-template <class TLocation>
-void SFixture<TPolicy>::ReadAndCompare(const string& ctx, CNetStorageObject object)
+typedef TFail TNotFound;
+typedef TFail TCancel;
+typedef TSuccess TFound;
+
+template <class TResult>
+struct TExists;
+
+template <class TResult>
+struct TRemove;
+
+template <class TResult, class TType, class TBackend>
+struct TSetExpiration;
+
+template <class TType, class TBackend>
+struct TExpired;
+
+}
+
+
+// Specialized implementations
+
+namespace NType
 {
-    Ctx(ctx);
-    SReadHelper<TApi, TShouldWork> expected_reader(*data);
-    TApi api(object);
-    SReadHelper<TApi, TLocation> actual_reader(api.GetReader());
 
-    attr_tester.Read(TLocation(), Line(__LINE__), object);
+string TServerless::GetInitString()
+{
+    return
+        string("mode=direct").
+        append("&nc=").append(TNetCache_ServiceName::GetDefault()).
+        append("&domain=").append(TNetStorage_AppDomain::GetDefault()).
+        append("&client=" APP_NAME).
+        append("&ft_site=").append(TFileTrack_Site::GetDefault()).
+        append("&ft_token=").append(TFileTrack_Token::GetDefault());
+}
+
+string TServerless::GetNotFound()
+{
+    return "fSkaPShlfjEubG02APJ8hozs-Wc8e2gLStUfew";
+}
+
+bool TServerless::CheckLocInfo()
+{
+    return true;
+}
+
+string TServer::GetInitString()
+{
+    return
+        string("nst=").append(TNetStorage_ServiceName::GetDefault()).
+        append("&domain=").append(TNetStorage_AppDomain::GetDefault()).
+        append("&client=" APP_NAME).
+        append("&err_mode=ignore");
+};
+
+string TServer::GetNotFound()
+{
+    return "DiggFUIicQdBCUsbfiJSBC68OfKUhMqb8aLWq_OCz7TCDN4jWKlNTDTS2saRsjl-J0ZYeica";
+}
+
+bool TServer::CheckLocInfo()
+{
+    return true;
+}
+
+string TNetCache::GetInitString()
+{
+    return
+        string("nc=").append(TNetCache_ServiceName::GetDefault()).
+        append("&domain=").append(TNetStorage_AppDomain::GetDefault()).
+        append("&client=" APP_NAME).
+        append("&default_storage=nc").
+        append("&err_mode=ignore");
+}
+
+string TNetCache::GetNotFound()
+{
+    return "o-c8TRwX3VuFSZnf5BuKLelYjHcUK5xKpizKXbIX8EmNDNle";
+}
+
+bool TNetCache::CheckLocInfo()
+{
+    return false;
+}
+
+}
+
+
+namespace NStorage
+{
+
+template <class TType, class TClass, class TBackend>
+struct SFactory
+{
+    static TClass Create()
+    {
+        return TClass(TType::GetInitString(), TBackend::flags);
+    }
+};
+
+void SetRegistry(CMemoryRegistry& registry)
+{
+    registry.Set("netstorage_api", "filetrack", "filetrack_api");
+    registry.Set("netstorage_api", "netcache", "netcache_api");
+    registry.Set("netcache_api", "service_name", TNetCache_ServiceName::GetDefault());
+    registry.Set("netcache_api", "cache_name", TNetStorage_AppDomain::GetDefault());
+    registry.Set("filetrack_api", "site", TFileTrack_Site::GetDefault());
+    registry.Set("filetrack_api", "token", TFileTrack_Token::GetDefault());
+    registry.Set("netstorage_api", "relocate_chunk", to_string(GetRandom::DataSize / 10));
+}
+
+template <class TBackend>
+struct SFactory<NType::TServerless, CDirectNetStorage, TBackend>
+{
+    static CDirectNetStorage Create()
+    {
+        CMemoryRegistry registry;
+        SetRegistry(registry);
+        return CDirectNetStorage(
+                registry,
+                TNetStorage_ServiceName::GetDefault(),
+                nullptr);
+    }
+};
+
+template <class TBackend>
+struct SFactory<NType::TServerless, CDirectNetStorageByKey, TBackend>
+{
+    static CDirectNetStorageByKey Create()
+    {
+        CMemoryRegistry registry;
+        SetRegistry(registry);
+        return CDirectNetStorageByKey(
+                registry,
+                TNetStorage_ServiceName::GetDefault(),
+                nullptr,
+                TNetStorage_AppDomain::GetDefault());
+    }
+};
+
+template <class TType, class TClass, class TBackend>
+struct SStorage
+{
+    TClass netstorage;
+    SStorage()
+        : netstorage(SFactory<TType, TClass, TBackend>::Create())
+    {
+    }
+};
+
+
+namespace NGenericApi
+{
+
+// TODO: Remove decltype after switching to C++14
+template <class TNetStorage>
+auto Open(TNetStorage& storage, TKey& key) -> decltype(storage.Open(key.first, key.second))
+{
+    return storage.Open(key.first, key.second);
+}
+
+template <class TNetStorage>
+auto Open(TNetStorage& storage, const string& locator) -> decltype(storage.Open(locator))
+{
+    return storage.Open(locator);
+}
+
+TKey Relocate(CCombinedNetStorageByKey& storage, const TKey& key, TNetStorageFlags flags,
+                    TNetStorageProgressCb cb)
+{
+    storage.Relocate(key.first, flags, key.second, cb);
+    return TKey(key.first, flags);
+}
+
+string Relocate(CCombinedNetStorage& storage, const string& locator, TNetStorageFlags flags,
+                    TNetStorageProgressCb cb)
+{
+    return storage.Relocate(locator, flags, cb);
+}
+
+bool Exists(CCombinedNetStorageByKey& storage, const TKey& key)
+{
+    return storage.Exists(key.first, key.second);
+}
+
+bool Exists(CCombinedNetStorage& storage, const string& locator)
+{
+    return storage.Exists(locator);
+}
+
+bool Exists(CDirectNetStorageByKey& storage, const string& old_loc,
+        const TKey& key)
+{
+    return storage.Exists(old_loc, key.first, key.second);
+}
+
+bool Exists(CDirectNetStorage& storage, const string& old_loc,
+        const string& new_loc)
+{
+    return storage.Exists(old_loc, new_loc);
+}
+
+template <class TNetStorage>
+ENetStorageRemoveResult Remove(TNetStorage& storage, const TKey& key)
+{
+    return storage.Remove(key.first, key.second);
+}
+
+template <class TNetStorage>
+ENetStorageRemoveResult Remove(TNetStorage& storage, const string& locator)
+{
+    return storage.Remove(locator);
+}
+
+}
+
+
+namespace NTests
+{
+
+template <class TResult>
+struct SRelocateCb
+{
+    SCtx& ctx;
+    size_t calls = 0;
+    Int8 current = 0;
+    Int8 total = 0;
+
+    SRelocateCb(SCtx& c) : ctx(c) {}
+
+    void operator()(CJsonNode progress)
+    {
+        BOOST_CHECK_NO_THROW_CTX(current = progress.GetInteger("BytesRelocated"), ctx(__LINE__));
+        BOOST_CHECK_NO_THROW_CTX(progress.GetString("Message"), ctx(__LINE__));
+
+        if (current <= total) {
+            BOOST_ERROR_CTX("Got relocated less than before", ctx(__LINE__));
+        }
+
+        if (current > static_cast<Int8>(GetRandom::DataSize)) {
+            BOOST_ERROR_CTX("Got relocated more than expected", ctx(__LINE__));
+        }
+
+        ++calls;
+        total = current;
+    }
+
+    void Check(function<void()> action)
+    {
+        BOOST_CHECK_NO_THROW_CTX(action(), ctx(__LINE__));
+
+        if (!calls) {
+            BOOST_ERROR_CTX("Progress callback not called", ctx(__LINE__));
+        }
+    }
+};
+
+template <>
+struct SRelocateCb<NResult::TFail> : SRelocateCb<NResult::TSuccess>
+{
+    SRelocateCb(SCtx& c) : SRelocateCb<NResult::TSuccess>(c) {}
+
+    void Check(function<void()> action)
+    {
+        BOOST_CHECK_THROW_CTX(action(), CNetStorageException, ctx(__LINE__));
+    }
+};
+
+template <class TResult, class TStorage, class TKey>
+TKey Relocate(TStorage& storage, const TKey& key, TNetStorageFlags flags, SCtx& ctx)
+{
+    SRelocateCb<TResult> impl(ctx);
+
+    TKey result;
+    auto action = [&]() { result = NGenericApi::Relocate(storage, key, flags, ref(impl)); };
+ 
+    impl.Check(action);
+
+    return result;
+}
+
+// TODO: Enable callback checks after CXX-8302 is implemented
+#ifndef ENABLE_CALLBACK_CHECKS
+
+template <>
+string Relocate<NResult::TSuccess>(CCombinedNetStorage& storage, const string& locator, TNetStorageFlags flags, SCtx& ctx)
+{
+    return NGenericApi::Relocate(storage, locator, flags, TNetStorageProgressCb());
+}
+
+template <>
+TKey Relocate<NResult::TSuccess>(CCombinedNetStorageByKey& storage, const TKey& key, TNetStorageFlags flags, SCtx& ctx)
+{
+    return NGenericApi::Relocate(storage, key, flags, TNetStorageProgressCb());
+}
+
+#endif
+
+template <class TResult, class TStorage, class TKey>
+void Exists(TStorage& storage, const TKey& key, SCtx& ctx)
+{
+    bool expected = NResult::TExists<TResult>::result;
+    bool actual = NGenericApi::Exists(storage, key);
+    BOOST_CHECK_CTX(actual == expected, ctx(__LINE__));
+}
+
+template <class TResult, class TStorage, class TKey>
+void Exists(TStorage& storage, const string& old_loc, const TKey& key, SCtx& ctx)
+{
+    bool expected = NResult::TExists<TResult>::result;
+    bool actual = NGenericApi::Exists(storage, old_loc, key);
+    BOOST_CHECK_CTX(actual == expected, ctx(__LINE__));
+}
+
+template <class TResult, class TStorage, class TKey>
+void Remove(TStorage& storage, const TKey& key, SCtx& ctx)
+{
+    ENetStorageRemoveResult expected = NResult::TRemove<TResult>::result;
+    ENetStorageRemoveResult actual = NGenericApi::Remove(storage, key);
+    BOOST_CHECK_CTX(actual == expected, ctx(__LINE__));
+}
+
+}
+
+
+template <class TType, class TBackend>
+struct STestCase<TType, CCombinedNetStorage, TBackend> :
+        SStorage<TType, CCombinedNetStorage, TBackend>
+{
+    typedef SStorage<TType, CCombinedNetStorage, TBackend> TStorage;
+
+    template <class TResult>
+    void GetInfo(CNetStorageObject& object, Uint8 size, SCtx ctx)
+    {
+        NObject::NTests::GetInfo<TResult, TType, TBackend>(object, size, ctx);
+    }
+
+    void Test()
+    {
+        using namespace NStorage::NGenericApi;
+        using namespace NTests;
+        using namespace NObject::NTests;
+        using namespace NResult;
+
+        SCtx ctx;
+        auto flags = TBackend::flags;
+        auto relocate_flags = NBackend::TRelocate<TBackend>::TResult::flags;
+
+        CCombinedNetStorage& netstorage(TStorage::netstorage);
+        CRndData source(netstorage, flags);
+        string locator(TType::GetNotFound());
+
+        ctx("Non-existing object");
+        CNetStorageObject object(Open(netstorage, locator));
+
+        Read<TFail>(object, source, ctx);
+        Relocate<TFail>(netstorage, locator, relocate_flags, ctx);
+        Exists<TNotFound>(netstorage, locator, ctx);
+        Remove<TNotFound>(netstorage, locator, ctx);
+
+        ctx("Written object, no backend hint");
+        object = netstorage.Create();
+        Write(object, source, ctx);
+        locator = object.GetLoc();
+
+        Read<TSuccess>(object, source, ctx);
+        Exists<TFound>(netstorage, locator, ctx);
+        // Testing location for CXX-8221
+        GetInfo<TFound>(object, source.Size(), ctx);
+        Remove<TFound>(netstorage, locator, ctx);
+
+        ctx("Written object");
+        object = netstorage.Create(flags);
+        Write(object, source, ctx);
+        locator = object.GetLoc();
+
+        Read<TSuccess>(object, source, ctx);
+        Exists<TFound>(netstorage, locator, ctx);
+        // Testing location for CXX-8221
+        GetInfo<TFound>(object, source.Size(), ctx);
+
+        string new_locator = Relocate<TSuccess>(netstorage, locator, relocate_flags, ctx);
+
+        ctx("Old copy");
+        CNetStorageObject new_object(Open(netstorage, new_locator));
+
+        Read<TFail>(object, source, ctx);
+        Relocate<TFail>(netstorage, locator, relocate_flags, ctx);
+        Exists<TNotFound>(netstorage, locator, ctx);
+        Remove<TNotFound>(netstorage, locator, ctx);
+
+        ctx("Relocated object");
+        Read<TSuccess>(new_object, source, ctx);
+        Exists<TFound>(netstorage, new_locator, ctx);
+        Remove<TFound>(netstorage, new_locator, ctx);
+
+        ctx("Removed object");
+        Read<TFail>(new_object, source, ctx);
+        Relocate<TFail>(netstorage, new_locator, flags, ctx);
+        Exists<TNotFound>(netstorage, new_locator, ctx);
+        Remove<TNotFound>(netstorage, new_locator, ctx);
+    }
+};
+
+template <class TType, class TBackend>
+struct STestCase<TType, CCombinedNetStorageByKey, TBackend> :
+        SStorage<TType, CCombinedNetStorageByKey, TBackend>
+{
+    typedef SStorage<TType, CCombinedNetStorageByKey, TBackend> TStorage;
+
+    template <class TResult>
+    void GetInfo(CNetStorageObject& object, Uint8 size, SCtx ctx)
+    {
+        NObject::NTests::GetInfo<TResult, TType, TBackend>(object, size, ctx);
+    }
+
+    void Test()
+    {
+        using namespace NGenericApi;
+        using namespace NTests;
+        using namespace NObject::NTests;
+        using namespace NResult;
+
+        SCtx ctx;
+        auto flags = TBackend::flags;
+        auto relocate_flags = NBackend::TRelocate<TBackend>::TResult::flags;
+
+        CCombinedNetStorageByKey& netstorage(TStorage::netstorage);
+        CRndData source(netstorage, flags);
+
+        TKey key(GetRandom::GetUniqueKey(), flags);
+        TKey new_key(key.first, 0);
+
+        ctx("Non-existing object");
+        CNetStorageObject object(Open(netstorage, key));
+
+        Read<TFail>(object, source, ctx);
+        Relocate<TFail>(netstorage, key, relocate_flags, ctx);
+        Exists<TNotFound>(netstorage, key, ctx);
+        Remove<TNotFound>(netstorage, key, ctx);
+
+        ctx("Written object");
+        object = Open(netstorage, key);
+        Write(object, source, ctx);
+
+        ctx("Written object, no backend hint");
+        CNetStorageObject new_object(Open(netstorage, new_key));
+
+        Read<TSuccess>(new_object, source, ctx);
+        Exists<TFound>(netstorage, new_key, ctx);
+        // Testing location for CXX-8221
+        GetInfo<TFound>(new_object, source.Size(), ctx);
+
+        ctx("Written object");
+        Read<TSuccess>(object, source, ctx);
+        Exists<TFound>(netstorage, key, ctx);
+        // Testing location for CXX-8221
+        GetInfo<TFound>(object, source.Size(), ctx);
+
+        new_key = Relocate<TSuccess>(netstorage, key, relocate_flags, ctx);
+        new_object = Open(netstorage, new_key);
+
+        ctx("Old copy");
+        Read<TFail>(object, source, ctx);
+        Relocate<TFail>(netstorage, key, relocate_flags, ctx);
+        Exists<TNotFound>(netstorage, key, ctx);
+        Remove<TNotFound>(netstorage, key, ctx);
+
+        ctx("Relocated object");
+        Read<TSuccess>(new_object, source, ctx);
+        Exists<TFound>(netstorage, new_key, ctx);
+        Remove<TFound>(netstorage, new_key, ctx);
+
+        ctx("Removed object");
+        Read<TFail>(new_object, source, ctx);
+        Relocate<TFail>(netstorage, new_key, flags, ctx);
+        Exists<TNotFound>(netstorage, new_key, ctx);
+        Remove<TNotFound>(netstorage, new_key, ctx);
+    }
+};
+
+template <class TType, class TBackend>
+struct STestCase<TType, CDirectNetStorage, TBackend> :
+        SStorage<TType, CDirectNetStorage, TBackend>
+{
+    typedef SStorage<TType, CDirectNetStorage, TBackend> TStorage;
+
+    void TestSpecialExists(CDirectNetStorage& netstorage)
+    {
+        // Tests for Exists() overloads with optimising logic inside
+
+        // All following objects do not exist.
+        // Therefore, Exists() returns true only if internal logic has decided
+        // to omit backend checks.
+
+        using namespace NTests;
+        using namespace NResult;
+
+        SCtx ctx;
+
+        // Empty loc
+        string em_loc;
+
+        // Not found
+        string nf_loc("fSkaPShlfjEubG02APJ8hozs-Wc8e2gLStUfew");
+
+        // NetCache
+        string nc_loc("FTwqQHB4TkR2aU1LWO9c49b866n-5v_-AbluEAhUDxQAFyMpTR44Z14KB1VGNRB0VQ");
+
+        // NetCache & Movable
+        string nm_loc("2_L0jq62kIqop5OFhiGCLQ7dM-dS0tXK1x_QYLYksWS-Z51Z826GF-B6uSX4Ra4E6w");
+
+        // FileTrack
+        string ft_loc("gpiBxMecncDBjZbP7wuPZ2dqBrkhHn9mBiuAX4p76VuKLw");
+
+        // FileTrack & Movable
+        string fm_loc("MCojdmUuP3JjPzR9Tbkt1cMBovBm0SupCiENYAdEZGQHEA");
+
+        Exists<TNotFound>(netstorage, em_loc, nf_loc, ctx("Empty vs Not found"));
+        Exists<TNotFound>(netstorage, em_loc, nc_loc, ctx("Empty vs NetCache"));
+        Exists<TNotFound>(netstorage, em_loc, nm_loc, ctx("Empty vs NetCache&Movable"));
+        Exists<TNotFound>(netstorage, em_loc, ft_loc, ctx("Empty vs FileTrack"));
+        Exists<TNotFound>(netstorage, em_loc, fm_loc, ctx("Empty vs FileTrack&Movable"));
+
+        Exists<TNotFound>(netstorage, nf_loc, nf_loc, ctx("Not found vs Not found"));
+        Exists<TNotFound>(netstorage, nf_loc, nc_loc, ctx("Not found vs NetCache"));
+        Exists<TNotFound>(netstorage, nf_loc, nm_loc, ctx("Not found vs NetCache&Movable"));
+        Exists<TNotFound>(netstorage, nf_loc, ft_loc, ctx("Not found vs FileTrack"));
+        Exists<TNotFound>(netstorage, nf_loc, fm_loc, ctx("Not found vs FileTrack&Movable"));
+
+        Exists<TFound>   (netstorage, nc_loc, nf_loc, ctx("NetCache vs Not found"));
+        Exists<TFound>   (netstorage, nc_loc, nc_loc, ctx("NetCache vs NetCache"));
+        Exists<TFound>   (netstorage, nc_loc, nm_loc, ctx("NetCache vs NetCache&Movable"));
+        Exists<TNotFound>(netstorage, nc_loc, ft_loc, ctx("NetCache vs FileTrack"));
+        Exists<TFound>   (netstorage, nc_loc, fm_loc, ctx("NetCache vs FileTrack&Movable"));
+
+        Exists<TFound>   (netstorage, nm_loc, nf_loc, ctx("NetCache&Movable vs Not found"));
+        Exists<TFound>   (netstorage, nm_loc, nc_loc, ctx("NetCache&Movable vs NetCache"));
+        Exists<TFound>   (netstorage, nm_loc, nm_loc, ctx("NetCache&Movable vs NetCache&Movable"));
+        Exists<TNotFound>(netstorage, nm_loc, ft_loc, ctx("NetCache&Movable vs FileTrack"));
+        Exists<TFound>   (netstorage, nm_loc, fm_loc, ctx("NetCache&Movable vs FileTrack&Movable"));
+
+        Exists<TFound>   (netstorage, ft_loc, nf_loc, ctx("FileTrack vs Not found"));
+        Exists<TNotFound>(netstorage, ft_loc, nc_loc, ctx("FileTrack vs NetCache"));
+        Exists<TFound>   (netstorage, ft_loc, nm_loc, ctx("FileTrack vs NetCache&Movable"));
+        Exists<TFound>   (netstorage, ft_loc, ft_loc, ctx("FileTrack vs FileTrack"));
+        Exists<TFound>   (netstorage, ft_loc, fm_loc, ctx("FileTrack vs FileTrack&Movable"));
+
+        Exists<TFound>   (netstorage, fm_loc, nf_loc, ctx("FileTrack&Movable vs Not found"));
+        Exists<TNotFound>(netstorage, fm_loc, nc_loc, ctx("FileTrack&Movable vs NetCache"));
+        Exists<TFound>   (netstorage, fm_loc, nm_loc, ctx("FileTrack&Movable vs NetCache&Movable"));
+        Exists<TFound>   (netstorage, fm_loc, ft_loc, ctx("FileTrack&Movable vs FileTrack"));
+        Exists<TFound>   (netstorage, fm_loc, fm_loc, ctx("FileTrack&Movable vs FileTrack&Movable"));
+    }
+
+    void Test()
+    {
+        using namespace NGenericApi;
+        using namespace NTests;
+        using namespace NObject::NTests;
+        using namespace NResult;
+
+        SCtx ctx;
+        auto flags = TBackend::flags;
+
+        CDirectNetStorage& netstorage(TStorage::netstorage);
+        CRndData source(netstorage, flags);
+        string locator(TType::GetNotFound());
+
+        ctx("Non-existing object");
+        CDirectNetStorageObject object(Open(netstorage, locator));
+
+        Read<TFail>(object, source, ctx);
+
+        ctx("Written object");
+        object = netstorage.Create(TNetStorage_ServiceName::GetDefault(), flags);
+        Write(object, source, ctx);
+        locator = object.GetLoc();
+
+        Read<TSuccess>(object, source, ctx);
+
+        ctx("Existing object");
+        object = Open(netstorage, locator);
+
+        Read<TSuccess>(object, source, ctx);
+        Remove<TFound>(netstorage, locator, ctx);
+
+        TestSpecialExists(netstorage); // Testing CXX-8219
+
+        ctx("Config reporting");
+        CJsonNode config = netstorage.ReportConfig();
+        BOOST_CHECK_CTX(config.HasKey("filetrack"), ctx(__LINE__));
+        BOOST_CHECK_CTX(config.HasKey("netcache"), ctx(__LINE__));
+    }
+};
+
+template <class TType, class TBackend>
+struct STestCase<TType, CDirectNetStorageByKey, TBackend> :
+        SStorage<TType, CDirectNetStorageByKey, TBackend>
+{
+    typedef SStorage<TType, CDirectNetStorageByKey, TBackend> TStorage;
+
+    void TestSpecialExists(CDirectNetStorageByKey& netstorage)
+    {
+        // Tests for Exists() overloads with optimising logic inside
+
+        // All following objects do not exist.
+        // Therefore, Exists() returns true only if internal logic has decided
+        // to omit backend checks.
+
+        using namespace NTests;
+        using namespace NResult;
+
+        SCtx ctx;
+
+        // Empty loc
+        string em_loc;
+
+        // Not found
+        string nf_loc("fSkaPShlfjEubG02APJ8hozs-Wc8e2gLStUfew");
+        auto nf_key = make_pair(GetRandom::GetUniqueKey(), 0);
+
+        // NetCache
+        string nc_loc("FTwqQHB4TkR2aU1LWO9c49b866n-5v_-AbluEAhUDxQAFyMpTR44Z14KB1VGNRB0VQ");
+        auto nc_key = make_pair(GetRandom::GetUniqueKey(), fNST_NetCache);
+
+        // NetCache & Movable
+        string nm_loc("2_L0jq62kIqop5OFhiGCLQ7dM-dS0tXK1x_QYLYksWS-Z51Z826GF-B6uSX4Ra4E6w");
+        auto nm_key = make_pair(GetRandom::GetUniqueKey(), fNST_NetCache | fNST_Movable);
+
+        // FileTrack
+        string ft_loc("gpiBxMecncDBjZbP7wuPZ2dqBrkhHn9mBiuAX4p76VuKLw");
+        auto ft_key = make_pair(GetRandom::GetUniqueKey(), fNST_FileTrack);
+
+        // FileTrack & Movable
+        string fm_loc("MCojdmUuP3JjPzR9Tbkt1cMBovBm0SupCiENYAdEZGQHEA");
+        auto fm_key = make_pair(GetRandom::GetUniqueKey(), fNST_FileTrack | fNST_Movable);
+
+        Exists<TNotFound>(netstorage, em_loc, nf_key, ctx("Empty vs Not found"));
+        Exists<TNotFound>(netstorage, em_loc, nc_key, ctx("Empty vs NetCache"));
+        Exists<TNotFound>(netstorage, em_loc, nm_key, ctx("Empty vs NetCache&Movable"));
+        Exists<TNotFound>(netstorage, em_loc, ft_key, ctx("Empty vs FileTrack"));
+        Exists<TNotFound>(netstorage, em_loc, fm_key, ctx("Empty vs FileTrack&Movable"));
+
+        Exists<TNotFound>(netstorage, nf_loc, nf_key, ctx("Not found vs Not found"));
+        Exists<TNotFound>(netstorage, nf_loc, nc_key, ctx("Not found vs NetCache"));
+        Exists<TNotFound>(netstorage, nf_loc, nm_key, ctx("Not found vs NetCache&Movable"));
+        Exists<TNotFound>(netstorage, nf_loc, ft_key, ctx("Not found vs FileTrack"));
+        Exists<TNotFound>(netstorage, nf_loc, fm_key, ctx("Not found vs FileTrack&Movable"));
+
+        Exists<TFound>   (netstorage, nc_loc, nf_key, ctx("NetCache vs Not found"));
+        Exists<TFound>   (netstorage, nc_loc, nc_key, ctx("NetCache vs NetCache"));
+        Exists<TFound>   (netstorage, nc_loc, nm_key, ctx("NetCache vs NetCache&Movable"));
+        Exists<TNotFound>(netstorage, nc_loc, ft_key, ctx("NetCache vs FileTrack"));
+        Exists<TFound>   (netstorage, nc_loc, fm_key, ctx("NetCache vs FileTrack&Movable"));
+
+        Exists<TFound>   (netstorage, nm_loc, nf_key, ctx("NetCache&Movable vs Not found"));
+        Exists<TFound>   (netstorage, nm_loc, nc_key, ctx("NetCache&Movable vs NetCache"));
+        Exists<TFound>   (netstorage, nm_loc, nm_key, ctx("NetCache&Movable vs NetCache&Movable"));
+        Exists<TNotFound>(netstorage, nm_loc, ft_key, ctx("NetCache&Movable vs FileTrack"));
+        Exists<TFound>   (netstorage, nm_loc, fm_key, ctx("NetCache&Movable vs FileTrack&Movable"));
+
+        Exists<TFound>   (netstorage, ft_loc, nf_key, ctx("FileTrack vs Not found"));
+        Exists<TNotFound>(netstorage, ft_loc, nc_key, ctx("FileTrack vs NetCache"));
+        Exists<TFound>   (netstorage, ft_loc, nm_key, ctx("FileTrack vs NetCache&Movable"));
+        Exists<TFound>   (netstorage, ft_loc, ft_key, ctx("FileTrack vs FileTrack"));
+        Exists<TFound>   (netstorage, ft_loc, fm_key, ctx("FileTrack vs FileTrack&Movable"));
+
+        Exists<TFound>   (netstorage, fm_loc, nf_key, ctx("FileTrack&Movable vs Not found"));
+        Exists<TNotFound>(netstorage, fm_loc, nc_key, ctx("FileTrack&Movable vs NetCache"));
+        Exists<TFound>   (netstorage, fm_loc, nm_key, ctx("FileTrack&Movable vs NetCache&Movable"));
+        Exists<TFound>   (netstorage, fm_loc, ft_key, ctx("FileTrack&Movable vs FileTrack"));
+        Exists<TFound>   (netstorage, fm_loc, fm_key, ctx("FileTrack&Movable vs FileTrack&Movable"));
+    }
+
+    void Test()
+    {
+        using namespace NGenericApi;
+        using namespace NTests;
+        using namespace NObject::NTests;
+        using namespace NResult;
+
+        SCtx ctx;
+        auto flags = TBackend::flags;
+
+        CDirectNetStorageByKey& netstorage(TStorage::netstorage);
+        CRndData source(netstorage, flags);
+
+        TKey key(GetRandom::GetUniqueKey(), flags);
+        TKey new_key(key.first, 0);
+
+        ctx("Non-existing object");
+        CDirectNetStorageObject object(Open(netstorage, key));
+
+        Read<TFail>(object, source, ctx);
+
+        ctx("Written object");
+        object = Open(netstorage, key);
+        Write(object, source, ctx);
+
+        Read<TSuccess>(object, source, ctx);
+
+        ctx("Written object, no backend hint");
+        CDirectNetStorageObject new_object(Open(netstorage, new_key));
+
+        Read<TSuccess>(new_object, source, ctx);
+        Remove<TFound>(netstorage, key, ctx);
+
+        TestSpecialExists(netstorage); // Testing CXX-8219
+    }
+};
+
+template <class TBackend>
+struct STestCase<NType::TNetCache, CCombinedNetStorage, TBackend> :
+        SStorage<NType::TNetCache, CCombinedNetStorage, TBackend>
+{
+    typedef SStorage<NType::TNetCache, CCombinedNetStorage, TBackend> TStorage;
+
+    void Test()
+    {
+        using namespace NGenericApi;
+        using namespace NTests;
+        using namespace NObject::NTests;
+        using namespace NResult;
+
+        SCtx ctx;
+        auto flags = TBackend::flags;
+
+        CCombinedNetStorage& netstorage(TStorage::netstorage);
+        CRndData source(netstorage, flags);
+        string locator(NType::TNetCache::GetNotFound());
+
+        ctx("Non-existing object");
+        CNetStorageObject object(Open(netstorage, locator));
+
+        Read<TFail>(object, source, ctx);
+        Exists<TNotFound>(netstorage, locator, ctx);
+        Remove<TNotFound>(netstorage, locator, ctx);
+
+        ctx("Written object");
+        object = netstorage.Create();
+        Write(object, source, ctx);
+        locator = object.GetLoc();
+
+        Read<TSuccess>(object, source, ctx);
+        Exists<TFound>(netstorage, locator, ctx);
+        Remove<TFound>(netstorage, locator, ctx);
+
+        ctx("Removed object");
+        Read<TFail>(object, source, ctx);
+        Exists<TNotFound>(netstorage, locator, ctx);
+        Remove<TNotFound>(netstorage, locator, ctx);
+    }
+};
+
+}
+
+
+namespace NObject
+{
+
+namespace NTests
+{
+
+template <class TResult, class TExpected, class TIo>
+void Read(CNetStorageObject& object, TExpected& expected, SCtx& ctx)
+{
+    SReadHelper<TIo, NResult::TSuccess::TLocation> expected_reader(expected);
+    typename TIo::CReader object_reader(object);
+    SReadHelper<TIo, typename TResult::TLocation> actual_reader(object_reader);
 
     for (;;) {
-        if (!expected_reader(Line(__LINE__))) break;
-        if (!actual_reader(Line(__LINE__))) break;
+        if (!expected_reader(ctx(__LINE__))) break;
+        if (!actual_reader(ctx(__LINE__))) break;
 
         size_t length = min(expected_reader.length, actual_reader.length);
 
         if (memcmp(expected_reader.buf, actual_reader.buf, length)) {
-            BOOST_ERROR_CTX("Read() returned corrupted data", Line(__LINE__));
+            BOOST_ERROR_CTX("Read() returned corrupted data", ctx(__LINE__));
             break;
         }
 
@@ -1359,347 +1985,562 @@ void SFixture<TPolicy>::ReadAndCompare(const string& ctx, CNetStorageObject obje
             }
 
             if (actual_reader.HasData()) {
-                BOOST_ERROR_CTX("Got more data than expected", Line(__LINE__));
+                BOOST_ERROR_CTX("Got more data than expected", ctx(__LINE__));
                 break;
             }
         }
 
         if (actual_reader.Empty()) {
             if (expected_reader.HasData()) {
-                BOOST_ERROR_CTX("Got less data than expected", Line(__LINE__));
+                BOOST_ERROR_CTX("Got less data than expected", ctx(__LINE__));
                 break;
             }
         }
     }
 
-    expected_reader.Close(Line(__LINE__));
-    actual_reader.Close(Line(__LINE__));
-
-    attr_tester.Read(TLocation(), Line(__LINE__), object);
-
-    CGetInfo<TLocation>(Line(__LINE__), object, data->Size()).Check(TLoc::loc_info);
+    expected_reader.Close(ctx(__LINE__));
+    actual_reader.Close(ctx(__LINE__));
 }
 
-template <class TPolicy>
-template <class TLocation>
-void SFixture<TPolicy>::ReadTwoAndCompare(const string& ctx,
-        CNetStorageObject object1, CNetStorageObject object2)
+template <class TSource, class TIo>
+void Write(CNetStorageObject& object, TSource& source, SCtx ctx)
 {
-    Ctx(ctx);
-    SReadHelper<TApi, TShouldWork> expected_reader(*data);
-    TApi api1(object1);
-    SReadHelper<TApi, TLocation> actual_reader1(api1.GetReader());
-    TApi api2(object2);
-    SReadHelper<TApi, TLocation> actual_reader2(api2.GetReader());
+    SReadHelper<TIo, NResult::TSuccess::TLocation> source_reader(source);
+    SWriteHelper<TIo> dest_writer(object);
 
-    attr_tester.Read(TLocation(), Line(__LINE__), object1);
-    attr_tester.Read(TLocation(), Line(__LINE__), object2);
-
-    for (;;) {
-        if (!expected_reader(Line(__LINE__))) break;
-        if (!actual_reader1(Line(__LINE__))) break;
-        if (!actual_reader2(Line(__LINE__))) break;
-
-        size_t length = min(expected_reader.length,
-                min(actual_reader1.length, actual_reader2.length));
-
-        if (memcmp(expected_reader.buf, actual_reader1.buf, length)) {
-            BOOST_ERROR_CTX("Read() returned corrupted data", Line(__LINE__));
-            break;
-        }
-
-        if (memcmp(expected_reader.buf, actual_reader2.buf, length)) {
-            BOOST_ERROR_CTX("Read() returned corrupted data", Line(__LINE__));
-            break;
-        }
-
-        expected_reader -= length;
-        actual_reader1 -= length;
-        actual_reader2 -= length;
-
-        if (expected_reader.Empty()) {
-            if (actual_reader1.Empty() && actual_reader2.Empty()) {
-                break;
-            }
-
-            if (actual_reader1.HasData()) {
-                BOOST_ERROR_CTX("Got more data than expected", Line(__LINE__));
-                break;
-            }
-
-            if (actual_reader2.HasData()) {
-                BOOST_ERROR_CTX("Got more data than expected", Line(__LINE__));
-                break;
-            }
-        }
-
-        if (actual_reader1.Empty() || actual_reader2.Empty()) {
-            if (expected_reader.HasData()) {
-                BOOST_ERROR_CTX("Got less data than expected", Line(__LINE__));
-                break;
-            }
-        }
-    }
-
-    expected_reader.Close(Line(__LINE__));
-    actual_reader1.Close(Line(__LINE__));
-    actual_reader2.Close(Line(__LINE__));
-
-    attr_tester.Read(TLocation(), Line(__LINE__), object1);
-    attr_tester.Read(TLocation(), Line(__LINE__), object2);
-
-    CGetInfo<TLocation>(Line(__LINE__), object1, data->Size()).Check(TLoc::loc_info);
-    CGetInfo<TLocation>(Line(__LINE__), object2, data->Size()).Check(TLoc::loc_info);
-}
-
-template <class TPolicy>
-template <class TLocation>
-string SFixture<TPolicy>::WriteTwoAndRead(CNetStorageObject object1,
-        CNetStorageObject object2)
-{
-    Ctx("Creating two objects").Line(__LINE__);
-    SReadHelper<TApi, TShouldWork> source_reader(*data);
-    TApi api1(object1);
-    SWriteHelper dest_writer1(api1.GetWriter());
-    TApi api2(object2);
-    SWriteHelper dest_writer2(api2.GetWriter());
-
-    while (source_reader(Line(__LINE__)) &&
-            dest_writer1(source_reader, Line(__LINE__)) &&
-            dest_writer2(source_reader, Line(__LINE__)) &&
+    while (source_reader(ctx(__LINE__)) &&
+            dest_writer(source_reader, ctx(__LINE__)) &&
             !source_reader.Empty()) {
         source_reader.length = 0;
     }
 
-    source_reader.Close(Line(__LINE__));
-    dest_writer1.Close(Line(__LINE__));
-    dest_writer2.Close(Line(__LINE__));
-
-    attr_tester.Write(TLocation(), Line(__LINE__), object1);
-    attr_tester.Write(TLocation(), Line(__LINE__), object2);
-
-    ReadTwoAndCompare<TLocation>("Reading after writing", object1, object2);
-
-    return object1.GetLoc();
+    source_reader.Close(ctx(__LINE__));
+    dest_writer.Close(ctx(__LINE__));
 }
 
-
-// Generic API is used by default by Relocate, Exists and Remove functions
-
-template <class TNetStorage>
-inline string Relocate(TNetStorage& netstorage, const string& object_loc,
-        TNetStorageFlags flags)
+template <class TResult>
+void GetSize(CNetStorageObject& object, Uint8 expected, SCtx ctx)
 {
-    return netstorage.Relocate(object_loc, flags);
+    CGetSize(ctx(__LINE__), object, expected).Check<typename TResult::TLocation>();
 }
 
-template <class TNetStorage>
-inline bool Exists(TNetStorage& netstorage, const string& object_loc)
+template <class TResult>
+void SetExpiration(CNetStorageObject& object, double ttl, SCtx ctx)
 {
-    return netstorage.Exists(object_loc);
+    BOOST_CHECK_THROW_CTX(object.SetExpiration(CTimeout(ttl)), CNetStorageException, ctx(__LINE__));
 }
 
-template <class TNetStorage>
-inline CNetStorageObject Open(TNetStorage& netstorage, const string& object_loc)
+template <>
+void SetExpiration<NResult::TSuccess>(CNetStorageObject& object, double ttl, SCtx ctx)
 {
-    return netstorage.Open(object_loc);
+    BOOST_CHECK_NO_THROW_CTX(object.SetExpiration(CTimeout(ttl)), ctx(__LINE__));
 }
 
-template <class TNetStorage>
-inline ENetStorageRemoveResult Remove(TNetStorage& netstorage, const string& object_loc)
+template <class TResult, class TType, class TBackend>
+void GetInfo(CNetStorageObject& object, Uint8 size, SCtx ctx)
 {
-    return netstorage.Remove(object_loc);
+    typedef typename conditional<
+            is_same<TResult, NResult::TNotFound>::value,
+            NResult::TNotFound::TLocation,
+            integral_constant<ENetStorageObjectLocation, TBackend::location>
+        >::type TLocation;
+
+    CGetInfo<TLocation>(ctx(__LINE__), object, size).Check(TType::CheckLocInfo());
 }
 
-template <class TNetStorageByKey>
-inline string Relocate(TNetStorageByKey& netstorage, const string& unique_key,
-        TNetStorageFlags flags, TNetStorageFlags old_flags)
+template <class TResult>
+struct SObjectRelocateCb : NStorage::NTests::SRelocateCb<TResult>
 {
-    return netstorage.Relocate(unique_key, flags, old_flags);
+    SObjectRelocateCb(CDirectNetStorageObject&, SCtx& c) : NStorage::NTests::SRelocateCb<TResult>(c) {}
+};
+
+template <>
+struct SObjectRelocateCb<NResult::TCancel> : NStorage::NTests::SRelocateCb<NResult::TCancel>
+{
+    typedef NStorage::NTests::SRelocateCb<NResult::TCancel> TBase;
+
+    CDirectNetStorageObject& object;
+
+    SObjectRelocateCb(CDirectNetStorageObject& o, SCtx& c) : TBase(c), object(o) {}
+
+    void operator()(CJsonNode progress)
+    {
+        TBase::operator()(progress);
+
+        if (calls > 1) {
+            object.CancelRelocate();
+        }
+    }
+};
+
+template <class TResult>
+string Relocate(CDirectNetStorageObject& object, TNetStorageFlags flags, SCtx& ctx)
+{
+    SObjectRelocateCb<TResult> impl(object, ctx);
+
+    string result;
+    auto action = [&]() { result = object.Relocate(flags, ref(impl)); };
+ 
+    impl.Check(action);
+
+    return result;
 }
 
-typedef pair<string, TNetStorageFlags> TKey;
-
-template <class TNetStorageByKey>
-inline bool Exists(TNetStorageByKey& netstorage, const TKey& key)
+template <class TResult, class TBackend>
+void GetUserInfo(CDirectNetStorageObject& object, SCtx ctx)
 {
-    return netstorage.Exists(key.first, key.second);
+    BOOST_CHECK_THROW_CTX(object.GetUserInfo(), CNetStorageException, ctx(__LINE__));
 }
 
-template <class TNetStorageByKey>
-inline CNetStorageObject Open(TNetStorageByKey& netstorage, const TKey& key)
+template <>
+void GetUserInfo<NResult::TSuccess, NBackend::TNC>(CDirectNetStorageObject& object, SCtx ctx)
 {
-    return netstorage.Open(key.first, key.second);
+    auto user_info = object.GetUserInfo();
+    BOOST_CHECK_CTX(user_info.first.empty(), ctx(__LINE__));
+    BOOST_CHECK_CTX(user_info.second.empty(), ctx(__LINE__));
 }
 
-template <class TNetStorageByKey>
-inline ENetStorageRemoveResult Remove(TNetStorageByKey& netstorage, const TKey& key)
+template <>
+void GetUserInfo<NResult::TSuccess, NBackend::TFT>(CDirectNetStorageObject& object, SCtx ctx)
 {
-    return netstorage.Remove(key.first, key.second);
+    auto user_info = object.GetUserInfo();
+    BOOST_CHECK_CTX(!user_info.first.empty(), ctx(__LINE__));
+    BOOST_CHECK_CTX(!user_info.second.empty(), ctx(__LINE__));
 }
 
-
-// Tests Exists() and Remove() methods
-template <class TPolicy>
-template <class TLocation, class TId>
-void SFixture<TPolicy>::ExistsAndRemoveTests(const TId& id)
+template <class TResult, class TBackend>
+void FileTrack_Path(CDirectNetStorageObject& object, SCtx ctx)
 {
-    Ctx("Checking existent object").Line(__LINE__);
-    BOOST_CHECK_CTX(Exists(netstorage, id), ctx);
-    CNetStorageObject object(Open(netstorage, id));
-    CGetInfo<TLocation>(Ctx("Reading existent object info").Line(__LINE__),
-            object, data->Size()).Check(TLoc::loc_info);
-    CGetSize(Ctx("Reading existent object size").Line(__LINE__),
-            Open(netstorage, id), data->Size()).Check<TLocation>();
-
-    LOG_POST(Trace << "Removing existent object");
-    BOOST_CHECK_CTX(Remove(netstorage, id) == eNSTRR_Removed, ctx);
-
-    Ctx("Checking removed object").Line(__LINE__);
-    BOOST_CHECK_CTX(!Exists(netstorage, id), ctx);
-
-    ReadAndCompare<TLocationNotFound>("Trying to read removed object",
-        Open(netstorage, id));
+    BOOST_CHECK_THROW_CTX(object.FileTrack_Path(), CNetStorageException, ctx(__LINE__));
 }
 
-void s_MyNcbiID()
+template <>
+void FileTrack_Path<NResult::TSuccess, NBackend::TFT>(CDirectNetStorageObject& object, SCtx ctx)
 {
-    const string value(TNetStorage_MyNcbiId::GetDefault());
+    string path;
+    BOOST_CHECK_NO_THROW_CTX(path = object.FileTrack_Path(), ctx(__LINE__));
 
-    // If testing this is turned off
-    if (value == "none") return;
-
-    const string name("my_ncbi_id");
-    CRequestContext_PassThrough ctx;
-
-    // Send my_ncbi_id to FileTrack every other time
-    if (ctx.IsSet(name)) {
-        ctx.Reset(name);
-    } else {
-        ctx.Set(name, TNetStorage_MyNcbiId::GetDefault());
+    if (path.empty()) {
+        BOOST_ERROR_CTX("FileTrack_Path() returned empty path", ctx(__LINE__));
     }
 }
 
-template <class TPolicy>
-void SFixture<TPolicy>::Test(CNetStorage&)
+template <class TResult>
+void Locator(CDirectNetStorageObject& object, const string& locator, SCtx ctx)
 {
-    s_MyNcbiID();
-    data.reset(Create<TExpected>(netstorage, TLoc::source));
+    BOOST_CHECK_CTX(object.Locator().GetLocator() == locator, ctx(__LINE__));
+}
 
-    ReadAndCompare<TLocationNotFound>("Trying to read non-existent object",
-        netstorage.Open(TLoc::not_found()));
+template <>
+void Locator<NResult::TFail>(CDirectNetStorageObject& object, const string& locator, SCtx ctx)
+{
+    BOOST_CHECK_CTX(object.Locator().GetLocator() != locator, ctx(__LINE__));
+}
 
-    CNetStorageObject second(netstorage.Create(TLoc::create));
-    CNstObjectGuard<CNetStorage> guard(netstorage, second.GetLoc());
+template <class TResult>
+void Remove(CDirectNetStorageObject& object, SCtx ctx)
+{
+    BOOST_CHECK_CTX(object.Remove() == eNSTRR_Removed, ctx(__LINE__));
+}
 
-    // Write and read test data.
-    string object_loc = WriteTwoAndRead<typename TLoc::TCreate>(
-            netstorage.Create(TLoc::create), second);
+template <>
+void Remove<NResult::TNotFound>(CDirectNetStorageObject& object, SCtx ctx)
+{
+    BOOST_CHECK_CTX(object.Remove() == eNSTRR_NotFound, ctx(__LINE__));
+}
 
-    if (TLoc::check_relocate) {
-        // Generate a "non-movable" object ID by calling Relocate()
-        // with the same storage preferences (so the object should not
-        // be actually relocated).
-        Ctx("Creating immovable locator");
-        string immovable_loc = Relocate(netstorage, object_loc, TLoc::immovable);
+template <class TResult, class TType, class TBackend>
+void ReadAttributes(CNetStorageObject& object, CAttributes& attributes, SCtx ctx)
+{
+}
 
-        // Relocate the object to a different storage.
-        Ctx("Relocating object");
-        string relocated_loc = Relocate(netstorage, object_loc, TLoc::relocate);
+template <>
+void ReadAttributes<NResult::TSuccess, NType::TServer, NBackend::TNC>(CNetStorageObject& object,
+        CAttributes& attributes, SCtx ctx)
+{
+    BOOST_CHECK_NO_THROW_CTX(attributes.Read(ctx, object), ctx);
+}
 
-        // Verify that the object has disappeared from the original storage.
-        ReadAndCompare<TLocationRelocated>("Trying to read relocated object",
-            netstorage.Open(immovable_loc));
+template <>
+void ReadAttributes<NResult::TFail, NType::TServer, NBackend::TNC>(CNetStorageObject& object,
+        CAttributes& attributes, SCtx ctx)
+{
+    BOOST_CHECK_THROW_CTX(attributes.Read(ctx, object), CNetStorageException, ctx);
+}
 
-        // However, the object must still be accessible
-        // either using the original ID:
-        ReadAndCompare<typename TLoc::TRelocate>("Reading using original ID",
-                netstorage.Open(object_loc));
-        // or using the newly generated storage ID:
-        ReadAndCompare<typename TLoc::TRelocate>("Reading using newly generated ID",
-                netstorage.Open(relocated_loc));
+template <class TType, class TBackend>
+void WriteAttributes(CNetStorageObject& object, CAttributes& attributes, SCtx ctx)
+{
+}
+
+template <>
+void WriteAttributes<NType::TServer, NBackend::TNC>(CNetStorageObject& object,
+        CAttributes& attributes, SCtx ctx)
+{
+    BOOST_CHECK_NO_THROW_CTX(attributes.Write(ctx, object), ctx);
+}
+
+}
+
+
+template <class TType, class TBackend>
+struct STestCase<TType, CNetStorageObject, TBackend> :
+        NStorage::SStorage<TType, CCombinedNetStorage, TBackend>
+{
+    typedef NStorage::SStorage<TType, CCombinedNetStorage, TBackend> TStorage;
+
+    template <class TResult>
+    void GetInfo(CNetStorageObject& object, Uint8 size, SCtx ctx)
+    {
+        NTests::GetInfo<TResult, TType, TBackend>(object, size, ctx);
     }
 
-    ExistsAndRemoveTests<typename TLoc::TRelocate>(object_loc);
-}
+    template <class TResult, class TStorage, class TKey>
+    void Remove(TStorage& storage, const TKey& key, SCtx& ctx)
+    {
+        NStorage::NTests::Remove<TResult, TStorage, TKey>(storage, key, ctx);
+    }
 
-template <class TPolicy>
-void SFixture<TPolicy>::Test(CNetStorageByKey&)
+    template <class TResult>
+    void ReadAttributes(CNetStorageObject& object, CAttributes& attributes, SCtx ctx)
+    {
+        NTests::ReadAttributes<TResult, TType, TBackend>(object, attributes, ctx);
+    }
+
+    void WriteAttributes(CNetStorageObject& object, CAttributes& attributes, SCtx ctx)
+    {
+        NTests::WriteAttributes<TType, TBackend>(object, attributes, ctx);
+    }
+
+    void Test()
+    {
+        using namespace NStorage::NGenericApi;
+        using namespace NStorage::NTests;
+        using namespace NTests;
+        using namespace NResult;
+
+        SCtx ctx;
+        auto flags = TBackend::flags;
+
+        CCombinedNetStorage& netstorage(TStorage::netstorage);
+        string locator(TType::GetNotFound());
+
+        ctx("Non-existing object");
+        CAttributes attributes;
+        CNetStorageObject object(Open(netstorage, locator));
+
+        ReadAttributes<TFail>(object, attributes, ctx);
+        GetSize<TFail>(object, 0, ctx);
+        GetInfo<TNotFound>(object, 0, ctx);
+
+        ctx("Written object, empty");
+        CEmpData empty_source(netstorage, flags);
+        object = netstorage.Create(flags);
+        Write(object, empty_source, ctx);
+        WriteAttributes(object, attributes, ctx);
+
+        Read<TSuccess>(object, empty_source, ctx);
+        ReadAttributes<TSuccess>(object, attributes, ctx);
+        GetSize<TSuccess>(object, 0, ctx);
+        GetInfo<TFound>(object, 0, ctx);
+
+        typedef typename TSetExpiration<TSuccess, TType, TBackend>::TResult
+                TSetExpirationResult;
+
+        ctx("Written object, half size");
+        CRndData half_source(netstorage, flags, 0.5);
+        object = netstorage.Create(flags);
+        Write(object, half_source, ctx);
+        SetExpiration<TSetExpirationResult>(object, 10.0, ctx);
+
+        Read<TSuccess>(object, half_source, ctx);
+        GetSize<TSuccess>(object, half_source.Size(), ctx);
+        GetInfo<TFound>(object, half_source.Size(), ctx);
+
+        ctx("Written object");
+        CRndData source(netstorage, flags);
+        Write(object, source, ctx);
+
+        Read<TSuccess>(object, source, ctx);
+        GetSize<TSuccess>(object, source.Size(), ctx);
+        GetInfo<TFound>(object, source.Size(), ctx);
+
+        ctx("Written object, quarter size");
+        CRndData quarter_source(netstorage, flags, 0.25);
+        Write(object, quarter_source, ctx);
+        locator = object.GetLoc();
+
+        Read<TSuccess>(object, quarter_source, ctx);
+        GetSize<TSuccess>(object, quarter_source.Size(), ctx);
+        GetInfo<TFound>(object, quarter_source.Size(), ctx);
+        Remove<TFound>(netstorage, locator, ctx);
+
+        ctx("Removed object");
+        Read<TFail>(object, quarter_source, ctx);
+        ReadAttributes<TFail>(object, attributes, ctx);
+        GetSize<TFail>(object, quarter_source.Size(), ctx);
+        GetInfo<TNotFound>(object, quarter_source.Size(), ctx);
+
+        ctx("Written object");
+        Write(object, source, ctx);
+
+        SetExpiration<TSetExpirationResult>(object, 1.0, ctx);
+        this_thread::sleep_for(chrono::seconds(3));
+
+        ctx("Expired object");
+        typedef typename TExpired<TType, TBackend>::TResult TExpiredResult;
+        GetSize<TExpiredResult>(object, source.Size(), ctx);
+        GetInfo<TSuccess>(object, source.Size(), ctx);
+        Read<TExpiredResult>(object, source, ctx);
+    }
+};
+
+template <class TBackend>
+struct STestCase<NType::TServerless, CDirectNetStorageObject, TBackend> :
+        NStorage::SStorage<NType::TServerless, CDirectNetStorage, TBackend>
 {
-    s_MyNcbiID();
-    string unique_key2 = GetUniqueKey();
-    string unique_key3 = GetUniqueKey();
-    CNstObjectGuard<CNetStorageByKey> guard(netstorage, unique_key3);
+    typedef NStorage::SStorage<NType::TServerless, CDirectNetStorage, TBackend> TStorage;
 
-    data.reset(Create<TExpected>(netstorage, TLoc::source));
+    template <class TResult>
+    void GetUserInfo(CDirectNetStorageObject& object, SCtx ctx)
+    {
+        NTests::GetUserInfo<TResult, TBackend>(object, ctx);
+    }
 
-    ReadAndCompare<TLocationNotFound>("Trying to read non-existent object",
-        netstorage.Open(unique_key2, TLoc::non_existent));
+    template <class TResult>
+    void Remove(CDirectNetStorageObject& object, SCtx ctx)
+    {
+        NTests::Remove<TResult>(object, ctx);
+    }
 
-    // Write and read test data using a user-defined key.
-    WriteTwoAndRead<typename TLoc::TCreate>(
-            netstorage.Open(unique_key2, TLoc::create),
-            netstorage.Open(unique_key3, TLoc::create));
+    void Test()
+    {
+        using namespace NStorage::NTests;
+        using namespace NTests;
+        using namespace NResult;
 
-    // Make sure the object is readable with a different combination of flags.
-    ReadAndCompare<typename TLoc::TCreate>("Reading using different set of flags",
-            netstorage.Open(unique_key2, TLoc::readable));
+        SCtx ctx;
+        auto flags = TBackend::flags;
+        auto relocate_flags = NBackend::TRelocate<TBackend>::TResult::flags;
 
-    // Relocate the object to a different storage and make sure
-    // it can be read from there.
-    Ctx("Relocating object");
-    Relocate(netstorage, unique_key2, TLoc::relocate, TLoc::create);
+        CDirectNetStorage& netstorage(TStorage::netstorage);
+        CRndData source(netstorage, flags);
 
-    // Verify that the object has disappeared from the original storage.
-    ReadAndCompare<TLocationRelocated>("Trying to read relocated object",
-            netstorage.Open(unique_key2, TLoc::immovable));
+        ctx("Creating test object");
+        CDirectNetStorageObject object(netstorage.Create(TNetStorage_ServiceName::GetDefault(), flags));
+        Write(object, source, ctx);
+        Read<TSuccess>(object, source, ctx);
+        GetUserInfo<TSuccess>(object, ctx);
+        FileTrack_Path<TSuccess, TBackend>(object, ctx);
 
-    ReadAndCompare<typename TLoc::TRelocate>("Reading using original flags",
-            netstorage.Open(unique_key2, TLoc::create));
+        ctx("Relocating");
+        string new_locator = Relocate<TSuccess>(object, relocate_flags, ctx);
 
-    ReadAndCompare<typename TLoc::TRelocate>("Reading using new flags",
-            netstorage.Open(unique_key2, TLoc::relocate));
+        ctx("Original object");
+        Read<TFail>(object, source, ctx);
+        GetUserInfo<TFail>(object, ctx);
+        FileTrack_Path<TFail, TBackend>(object, ctx);
+        Locator<TFail>(object, new_locator, ctx);
+        Remove<TNotFound>(object, ctx);
 
-    const int create = TLoc::create;
-    ExistsAndRemoveTests<typename TLoc::TRelocate>(TKey(unique_key2, create));
+        ctx("Relocated object");
+        object = netstorage.Open(new_locator);
+        Read<TSuccess>(object, source, ctx);
+
+        ctx("Relocating with cancel");
+        Relocate<TCancel>(object, flags, ctx);
+
+        ctx("Relocated object");
+        Read<TSuccess>(object, source, ctx);
+        Locator<TSuccess>(object, new_locator, ctx);
+        Remove<TSuccess>(object, ctx);
+    }
+};
+
 }
 
-NCBITEST_AUTO_INIT()
+
+namespace NIo
 {
-    boost::unit_test::framework::master_test_suite().p_name->assign(
-            "CNetStorage Unit Test");
+
+template <class TType, class TSource, class TIo, class TBackend>
+struct STestCase : NStorage::SStorage<TType, CCombinedNetStorage, TBackend>
+{
+    typedef NStorage::SStorage<TType, CCombinedNetStorage, TBackend> TStorage;
+
+    template <class TResult>
+    void Read(CNetStorageObject& object, TSource& source, SCtx& ctx)
+    {
+        NObject::NTests::Read<TResult, TSource, TIo>(object, source, ctx);
+    }
+
+    void Write(CNetStorageObject& object, TSource& source, SCtx ctx)
+    {
+        NObject::NTests::Write<TSource, TIo>(object, source, ctx);
+    }
+
+    void Test()
+    {
+        using namespace NStorage::NTests;
+        using namespace NObject::NTests;
+        using namespace NResult;
+
+        SCtx ctx;
+        auto flags = TBackend::flags;
+
+        CCombinedNetStorage& netstorage(TStorage::netstorage);
+
+        ctx("IO test");
+        CNetStorageObject object(netstorage.Create(flags));
+        TSource source(netstorage, flags);
+        Write(object, source, ctx);
+        Read<TSuccess>(object, source, ctx);
+        Remove<TSuccess>(netstorage, object.GetLoc(), ctx);
+    }
+};
+
 }
 
-#define TEST_CASE(ST, SRC, API, LOC) \
-typedef SPolicy<C##ST, C##SRC##Data, CApi<S##API##ApiImpl>, S##LOC> \
-    T##ST##SRC##API##LOC##Policy; \
-BOOST_FIXTURE_TEST_CASE(Test##ST##SRC##API##LOC, \
-        SFixture<T##ST##SRC##API##LOC##Policy>) \
-{ \
-    Test(netstorage); \
+
+namespace NBackend
+{
+
+template <> struct TRelocate<TNC> { typedef TFT TResult; };
+template <> struct TRelocate<TFT> { typedef TNC TResult; };
+
 }
 
-#define DEFINE_TEST_CASE(r, p) TEST_CASE p
 
-#define SERVERLESS_STORAGE  (CombinedNetStorage, (CombinedNetStorageByKey, BOOST_PP_NIL))
-#define SERVER_STORAGE      (NetStorage, (NetStorageByKey, BOOST_PP_NIL))
-#define NETCACHE_STORAGE    (NetStorage, BOOST_PP_NIL)
-#define SOURCE              (Emp, (Str, (Rnd, (Nst, BOOST_PP_NIL))))
-#define API                 (Str, (Buf, (Irw, (Ios, BOOST_PP_NIL))))
-#define LOCATION            (NC2FT, (FT2NC, BOOST_PP_NIL))
-#define NETCACHE_LOCATION   (DirectNC, LOC_LIST1)
+namespace NResult
+{
 
-BOOST_AUTO_TEST_SUITE(Serverless)
-    BOOST_PP_LIST_FOR_EACH_PRODUCT(DEFINE_TEST_CASE, 4, \
-            (SERVERLESS_STORAGE, SOURCE, API, LOCATION))
+template <class TResult>
+struct TExists
+{
+    static const bool result = false;
+};
+
+template <>
+struct TExists<TFound>
+{
+    static const bool result = true;
+};
+
+template <class TResult>
+struct TRemove
+{
+    static const ENetStorageRemoveResult result = eNSTRR_NotFound;
+};
+
+template <>
+struct TRemove<TFound>
+{
+    static const ENetStorageRemoveResult result = eNSTRR_Removed;
+};
+
+template <class TR, class TType, class TBackend>
+struct TSetExpiration
+{
+    typedef TR TResult;
+};
+
+// SetExpiration is not supported by FileTrack
+template <>
+struct TSetExpiration<TSuccess, NType::TServerless, NBackend::TFT>
+{
+    typedef TFail TResult;
+};
+
+// NetCache has too much time to wait for object expiration and
+// FileTrack does not support expiration setting.
+// So, TSuccess is here for all cases except ones via NetStorage server.
+template <class TType, class TBackend>
+struct TExpired
+{
+    typedef TSuccess TResult;
+};
+
+template <class TBackend>
+struct TExpired<NType::TServer, TBackend>
+{
+    typedef TFail TResult;
+};
+
+}
+
+
+// Workaround as Boost > 1.57 seems not like more than one BOOST_PP_COMMA()
+#define COMMON_TEST_CASE(NAME, FIXTURE) \
+    typedef FIXTURE T ## NAME ## Fixture; \
+    BOOST_FIXTURE_TEST_CASE(NAME, T ## NAME ## Fixture) \
+
+#define STORAGE_TEST_CASE(TYPE, STORAGE, BACKEND) \
+    COMMON_TEST_CASE(TYPE ## STORAGE ## BACKEND, \
+        NStorage::SFixture< \
+            NType::T ## TYPE BOOST_PP_COMMA() \
+            C ## STORAGE BOOST_PP_COMMA() \
+            NBackend::T ## BACKEND>) \
+    { Test(); }
+
+#define OBJECT_TEST_CASE(TYPE, OBJECT, BACKEND) \
+    COMMON_TEST_CASE(TYPE ## OBJECT ## BACKEND, \
+        NObject::SFixture< \
+            NType::T ## TYPE BOOST_PP_COMMA() \
+            C ## OBJECT BOOST_PP_COMMA() \
+            NBackend::T ## BACKEND>) \
+    { Test(); }
+
+#define IO_TEST_CASE(TYPE, BACKEND, SOURCE, IO) \
+    COMMON_TEST_CASE(TYPE ## Io ## SOURCE ## IO ## BACKEND, \
+        NIo::SFixture< \
+            NType::T ## TYPE BOOST_PP_COMMA() \
+            NSource::T ## SOURCE BOOST_PP_COMMA() \
+            NIo::T ## IO BOOST_PP_COMMA() \
+            NBackend::T ## BACKEND>) \
+    { Test(); }
+
+
+#define CALL_MACRO(m, p) m p
+
+#define CALL_STORAGE_TEST_CASE(r, p) CALL_MACRO(STORAGE_TEST_CASE, p)
+#define CALL_OBJECT_TEST_CASE(r, p)  CALL_MACRO(OBJECT_TEST_CASE,  p)
+#define CALL_IO_TEST_CASE(r, p)      CALL_MACRO(IO_TEST_CASE,      p)
+
+#define TEST_CASES(TYPES, BACKENDS, OBJECTS, STORAGES, SOURCES, IOS) \
+    BOOST_PP_LIST_FOR_EACH_PRODUCT(CALL_STORAGE_TEST_CASE, 3, (TYPES, STORAGES, BACKENDS)) \
+    BOOST_PP_LIST_FOR_EACH_PRODUCT(CALL_OBJECT_TEST_CASE,  3, (TYPES, OBJECTS, BACKENDS)) \
+    BOOST_PP_LIST_FOR_EACH_PRODUCT(CALL_IO_TEST_CASE,      4, (TYPES, BACKENDS, SOURCES, IOS))
+
+
+#define SOURCES (Emp, Str, Rnd, Nst)
+#define IOS     (Str, Buf, Irw, Ios)
+
+#define TEST_SUITE(TYPE, BACKENDS, OBJECTS, STORAGES) \
+BOOST_AUTO_TEST_SUITE(TYPE) \
+    TEST_CASES( \
+        BOOST_PP_TUPLE_TO_LIST((TYPE)), \
+        BOOST_PP_TUPLE_TO_LIST(BACKENDS), \
+        BOOST_PP_TUPLE_TO_LIST(OBJECTS), \
+        BOOST_PP_TUPLE_TO_LIST(STORAGES), \
+        BOOST_PP_TUPLE_TO_LIST(SOURCES), \
+        BOOST_PP_TUPLE_TO_LIST(IOS)) \
 BOOST_AUTO_TEST_SUITE_END()
 
-BOOST_AUTO_TEST_SUITE(Server)
-    BOOST_PP_LIST_FOR_EACH_PRODUCT(DEFINE_TEST_CASE, 4, \
-            (SERVER_STORAGE, SOURCE, API, LOCATION))
-BOOST_AUTO_TEST_SUITE_END()
 
-BOOST_AUTO_TEST_SUITE(NetCache)
-    BOOST_PP_LIST_FOR_EACH_PRODUCT(DEFINE_TEST_CASE, 4, \
-            (NETCACHE_STORAGE, SOURCE, API, NETCACHE_LOCATION))
-BOOST_AUTO_TEST_SUITE_END()
+TEST_SUITE(
+        Serverless,
+        (NC, FT),
+        (NetStorageObject, DirectNetStorageObject),
+        (CombinedNetStorage, CombinedNetStorageByKey, DirectNetStorage, DirectNetStorageByKey))
+
+TEST_SUITE(
+        Server,
+        (NC, FT),
+        (NetStorageObject),
+        (CombinedNetStorage, CombinedNetStorageByKey))
+
+TEST_SUITE(
+        NetCache,
+        (NC),
+        (NetStorageObject),
+        (CombinedNetStorage))
