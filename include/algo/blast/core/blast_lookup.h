@@ -132,9 +132,8 @@ static NCBI_INLINE Int4 ComputeTableIndexIncremental(Int4 wordsize,
 typedef struct BackboneCell
 {
     Uint4 word;
-    Int4* offsets;
+    Int4 offset;
     Int4 num_offsets;
-    Int4 allocated;
     struct BackboneCell* next;
 } BackboneCell;
 
@@ -148,9 +147,15 @@ BackboneCell* BackboneCellFree(BackboneCell* cell);
 /** Create a new cell for a given word and offset
  *@param word Nucleotide word in 2na [in]
  *@param offset Offset for the word [in]
- *@param size Size of the offset array to be allocated [in]
  */
-BackboneCell* BackboneCellNew(Uint4 word, Int4 offset, Int4 size);
+BackboneCell* BackboneCellNew(Uint4 word, Int4 offset);
+
+/** Initialize an olready allocated cell for a given word and offset
+ *@param cell Pointer to allocated cell [in|out]
+ *@param word Nucleotide word in 2na [in]
+ *@param offset Offset for the word [in]
+ */
+Int4 BackboneCellInit(BackboneCell* cell, Uint4 word, Int4 offset);
 
 
 /** Add all applicable query offsets to a hashed lookup table
@@ -166,7 +171,8 @@ BackboneCell* BackboneCellNew(Uint4 word, Int4 offset, Int4 size);
  * @param pv_array A bit fields with bits set for words that are to be included
  *                 in the lookup table. Must be 1 bit per word. [in]
  */
-void BlastHashLookupIndexQueryExactMatches(BackboneCell **backbone,
+void BlastHashLookupIndexQueryExactMatches(BackboneCell *backbone,
+                                           Int4* offsets,
                                            Int4 word_length,
                                            Int4 charsize,
                                            Int4 lut_word_length,

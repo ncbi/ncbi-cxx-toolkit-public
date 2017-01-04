@@ -137,9 +137,6 @@ BackboneCell* BackboneCellFree(BackboneCell* cell)
     BackboneCell* b = cell;
     while (b) {
         BackboneCell* next = b->next;
-        if (b->offsets) {
-            free(b->offsets);
-        }
         sfree(b);
         b = next;
     }
@@ -147,7 +144,8 @@ BackboneCell* BackboneCellFree(BackboneCell* cell)
     return NULL;
 }
 
-BackboneCell* BackboneCellNew(Uint4 word, Int4 offset, Int4 size)
+
+BackboneCell* BackboneCellNew(Uint4 word, Int4 offset)
 {
     BackboneCell* cell = calloc(1, sizeof(BackboneCell));
     if (!cell) {
@@ -155,22 +153,25 @@ BackboneCell* BackboneCellNew(Uint4 word, Int4 offset, Int4 size)
         return NULL;
     }
 
-    cell->offsets = malloc(size * sizeof(Int4));
-    if (!cell->offsets) {
-        BackboneCellFree(cell);
-        return NULL;
-    }
-
-    cell->word = word;
-    cell->offsets[0] = offset;
-    cell->num_offsets = 1;
-    cell->allocated = size;
-
+    BackboneCellInit(cell, word, offset);
     return cell;
 }
 
 
-static Int2 s_AddWordHit(BackboneCell** backbone, Int4 wordsize,
+Int4 BackboneCellInit(BackboneCell* cell, Uint4 word, Int4 offset)
+{
+    if (!cell) {
+        return -1;
+    }
+
+    cell->word = word;
+    cell->offset = offset;
+    cell->num_offsets = 1;
+
+    return 0;
+}
+
+static Int2 s_AddWordHit(BackboneCell* backbone, Int4* offsets, Int4 wordsize,
                          Int4 charsize, Uint1* seq, Int4 offset,
                          TNaLookupHashFunction hash_func, Uint4 mask,
                          PV_ARRAY_TYPE* pv_array)
@@ -178,7 +179,6 @@ static Int2 s_AddWordHit(BackboneCell** backbone, Int4 wordsize,
     Uint4 large_index;
     Int8 index;
     Int4 i;
-    Int4 num_collisions = 0;
 
     /* convert a sequence from 4NA to 2NA */
     large_index = 0;
@@ -194,52 +194,48 @@ static Int2 s_AddWordHit(BackboneCell** backbone, Int4 wordsize,
 
     index = (Int8)hash_func((Uint1*)&large_index, mask);
 
-    /* if the hash table entry is emtpy, create a new cell */
-    if (!backbone[index]) {
-        Int4 size = 8;
-        backbone[index] = BackboneCellNew(large_index, offset, size);
-        if (!backbone[index]) {
-            return -1;
-        }
+    /* offset zero indicates end of offset list, so we are storing offset + 1
+       values */
+    offset++;
+
+    /* if the hash table entry is emtpy, initialize a new cell */
+    if (backbone[index].num_offsets == 0) {
+        BackboneCellInit(&backbone[index], large_index, offset);
     }
     else {
-        /* otherwiose check if the word was already added */
-
-        BackboneCell* b = backbone[index];
+        /* otherwise check if the word was already added */
+        BackboneCell* b = &backbone[index];
         while (b->next && b->word != large_index) {
             b = b->next;
         }
 
         /* if word was already added, add the new offset to an existing cell */
         if (b->word == large_index) {
-            if (b->num_offsets >= b->allocated) {
-                Int4 new_size = b->allocated * 2;
-                b->offsets = realloc(b->offsets, new_size * sizeof(Int4));
-                if (!b->offsets) {
-                    return -1;
-                }
-                b->allocated = new_size;
-            }
-            b->offsets[b->num_offsets++] = offset;
+            /* word offsets are all sored in a linear array where next offset =
+               offsets[current offset] until offset is zero (similarily to
+               next_pos array in MBLookupTable) */
+
+            ASSERT(offsets[offset] == 0);
+            offsets[offset] = b->offset;
+            b->offset = offset;
+            b->num_offsets++;
         }
         else {
             /* otherwise creare a new cell */
-
-            Int4 size = 8;
             ASSERT(!b->next);
-            b->next = BackboneCellNew(large_index, offset, size);
+            b->next = BackboneCellNew(large_index, offset);
             if (!b->next) {
                 return -1;
             }
-
-            num_collisions++;
         }
     }
 
     return 0;
 }
 
-void BlastHashLookupIndexQueryExactMatches(BackboneCell **backbone,
+
+void BlastHashLookupIndexQueryExactMatches(BackboneCell *backbone,
+                                           Int4* offsets,
                                            Int4 word_length,
                                            Int4 charsize,
                                            Int4 lut_word_length,
@@ -275,6 +271,7 @@ void BlastHashLookupIndexQueryExactMatches(BackboneCell **backbone,
 
             if (seq >= word_target) {
                 s_AddWordHit(backbone,
+                             offsets,
                              lut_word_length, charsize,
                              seq - lut_word_length,
                              offset - lut_word_length,
@@ -290,7 +287,8 @@ void BlastHashLookupIndexQueryExactMatches(BackboneCell **backbone,
 
         /* handle the last word, without loading *seq */
         if (seq >= word_target) {
-            s_AddWordHit(backbone, 
+            s_AddWordHit(backbone,
+                         offsets,
                          lut_word_length, charsize,
                          seq - lut_word_length, 
                          offset - lut_word_length,

@@ -1991,7 +1991,8 @@ static Int2 s_NaHashLookupRemovePolyAWords(BlastNaHashLookupTable* lookup)
  * @param thin_backbone structure containing indexed query offsets [in][out]
  * @param lookup the lookup table [in]
  */
-static void s_BlastNaHashLookupFinalize(BackboneCell** thin_backbone,
+static void s_BlastNaHashLookupFinalize(BackboneCell* thin_backbone,
+                                        Int4* offsets,
                                         BlastNaHashLookupTable* lookup)
 {
     Int4 i;
@@ -2033,12 +2034,14 @@ static void s_BlastNaHashLookupFinalize(BackboneCell** thin_backbone,
 
     /* find out how many cells are needed for the overflow array */
     for (i = 0; i < lookup->backbone_size; i++) {
-        BackboneCell* b = thin_backbone[i];
+        BackboneCell* b = &thin_backbone[i];
         Int4 num_hits = 0;
         Int4 num_words = 0;
-        for (; b; b = b->next) {
-            num_hits += b->num_offsets;
-            num_words++;
+        if (b->num_offsets > 0) {
+            for (; b; b = b->next) {
+                num_hits += b->num_offsets;
+                num_words++;
+            }
         }
 
         if (num_words > NA_WORDS_PER_HASH || num_hits > NA_OFFSETS_PER_HASH) {
@@ -2063,11 +2066,11 @@ static void s_BlastNaHashLookupFinalize(BackboneCell** thin_backbone,
         Int4 num_words = 0;
         Int4 num_offsets = 0;
         NaHashLookupBackboneCell* cell = lookup->thick_backbone + i;
-        BackboneCell* head = thin_backbone[i];
+        BackboneCell* head = &thin_backbone[i];
         BackboneCell* b = NULL;
         Boolean is_overflow = FALSE;
         
-        if (!head) {
+        if (head->num_offsets == 0) {
             continue;
         }
 
@@ -2105,9 +2108,12 @@ static void s_BlastNaHashLookupFinalize(BackboneCell** thin_backbone,
 
                 PV_SET(pv, (Int8)b->word, pv_array_bts);
 
-                for (j = 0;j < b->num_offsets;j++) {
+                j = b->offset;
+                while (j != 0) {
                     ASSERT(n <= NA_OFFSETS_PER_HASH);
-                    cell->offsets[n++] = b->offsets[j];
+                    /* offsets array stores 1-based offsets */
+                    cell->offsets[n++] = j - 1;
+                    j = offsets[j];
                 }
             }
         }
@@ -2134,18 +2140,22 @@ static void s_BlastNaHashLookupFinalize(BackboneCell** thin_backbone,
                 Int4 j;
                 lookup->overflow[overflow_cursor++] = *(Int4*)(&b->word);
                 lookup->overflow[overflow_cursor++] = b->num_offsets;
-                for (j = 0;j < b->num_offsets;j++) {
-                    lookup->overflow[overflow_cursor++] = b->offsets[j];
+
+                j = b->offset;
+                while (j != 0) {
+                    /* offsets array stores 1-based offsets */
+                    lookup->overflow[overflow_cursor++] = j - 1;
+                    j = offsets[j];
                 }
+
                 ASSERT(overflow_cursor <= overflow_cells_needed);
                 PV_SET(pv, (Int8)b->word, pv_array_bts);
             }
         }
 
         /* done with this chain */
-        thin_backbone[i] = BackboneCellFree(thin_backbone[i]);
+        BackboneCellFree(thin_backbone[i].next);
     }
-
     lookup->offsets_size = overflow_cursor;
 
 #ifdef LOOKUP_VERBOSE
@@ -2192,48 +2202,34 @@ Int4 BlastNaHashLookupTableNew(BLAST_SequenceBlk* query,
                                BlastSeqSrc* seqsrc,
                                Uint4 num_threads)
 {
-    BackboneCell **thin_backbone = NULL;
+    BackboneCell *thin_backbone = NULL;
+    Int4* offsets = NULL;
     BlastNaHashLookupTable *lookup = *lut =
         (BlastNaHashLookupTable*) calloc(1, sizeof(BlastNaHashLookupTable));
     /* Number of possible 16-base words */
     const Int8 kNumWords = (1ULL << 32);
-    Int4 num_hash_bits = 24;
-    Int8 database_length = 0LL;
-
+    Int4 num_hash_bits = 8;
+    Int4 i, num_unique_words = 0;
+    
     ASSERT(lookup != NULL);
 
     if (opt->db_filter && !seqsrc) {
         return -1;
     }
 
-    /* use more bits for hash function for larger databases to decrease number
-       of collisions */
-    /* FIXME: number of bits may also depend on concatenated query length */
-    if (seqsrc) {
-        database_length = BlastSeqSrcGetTotLen(seqsrc);
-    }
-    if (database_length > 500000000L) {
-        num_hash_bits = 25;
-    }
-
     lookup->word_length = opt->word_size;
     lookup->lut_word_length = 16;
-    /* 16-base words are hashed to 24-bit or 25-bit values */
-    lookup->backbone_size = 1 << num_hash_bits;
-    lookup->mask = lookup->backbone_size - 1;
     lookup->overflow = NULL;
     lookup->scan_step = lookup->word_length - lookup->lut_word_length + 1;
     lookup->hash_callback = FNV_hash;
-
-    thin_backbone = (BackboneCell**)calloc(lookup->backbone_size,
-                                          sizeof(BackboneCell*));
-    ASSERT(thin_backbone != NULL);
 
     /* PV array does not use hashing */
     lookup->pv_array_bts = PV_ARRAY_BTS;
     lookup->pv = (PV_ARRAY_TYPE*)calloc(kNumWords >> lookup->pv_array_bts,
                                         sizeof(PV_ARRAY_TYPE));
-    ASSERT(lookup->pv);
+    if (!lookup->pv) {
+        return BLASTERR_MEMORY;
+    }
 
     s_NaHashLookupFillPV(query, locations, lookup);
     s_NaHashLookupRemovePolyAWords(lookup);
@@ -2242,8 +2238,33 @@ Int4 BlastNaHashLookupTableNew(BLAST_SequenceBlk* query,
     if (opt->db_filter) {
         s_NaHashLookupScanSubjectForWordCounts(seqsrc, lookup, num_threads);
     }
-    
+
+    /* find number of unique query words */
+    for (i = 0;i < kNumWords >> lookup->pv_array_bts; i++) {
+        num_unique_words += s_Popcount(lookup->pv[i]);
+    }
+
+    /* find number of bits to use for hash function */
+    while ((1 << num_hash_bits) < num_unique_words) {
+        num_hash_bits++;
+    }
+
+    lookup->backbone_size = 1 << num_hash_bits;
+    lookup->mask = lookup->backbone_size - 1;
+
+    thin_backbone = calloc(lookup->backbone_size, sizeof(BackboneCell));
+    if (!thin_backbone) {
+        return BLASTERR_MEMORY;
+    }
+
+    /* it will store 1-based offsets, hence length + 1 */
+    offsets = calloc(query->length + 1, sizeof(Int4));
+    if (!offsets) {
+        return BLASTERR_MEMORY;
+    }
+
     BlastHashLookupIndexQueryExactMatches(thin_backbone,
+                                          offsets,
                                           lookup->word_length,
                                           BITS_PER_NUC,
                                           lookup->lut_word_length,
@@ -2257,8 +2278,9 @@ Int4 BlastNaHashLookupTableNew(BLAST_SequenceBlk* query,
         s_HasMaskAtHashEnabled(query_options)) {
         lookup->masked_locations = s_SeqLocListInvert(locations, query->length);
     }
-    s_BlastNaHashLookupFinalize(thin_backbone, lookup);
+    s_BlastNaHashLookupFinalize(thin_backbone, offsets, lookup);
     sfree(thin_backbone);
+    sfree(offsets);
 
     return 0;
 }
