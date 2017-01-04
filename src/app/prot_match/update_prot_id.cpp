@@ -74,10 +74,6 @@ private:
     void x_UpdateSeqId(const TIdMap& id_map,
                        CSeq_id& id) const;
     
-    void x_UpdateSeqId(const CSeq_id& old_id, 
-                       const CSeq_id& new_id,
-                       CSeq_id& id) const;
-
     CObjectIStream* x_InitInputEntryStream(
             const CArgs& args);
 
@@ -179,8 +175,9 @@ void CProtIdUpdateApp::x_ReadUpdateFile(CObjectIStream& istr,
                 eInputError,
                 "Failed to read Seq-entry");
         }
-    } 
-    else 
+        return;
+    }
+    // else
     if (typeInfo == CBioseq_set::GetTypeInfo()) {
         if (!x_TryReadBioseqSet(istr, seq_entry)) {
             NCBI_THROW(CProteinMatchException,
@@ -248,67 +245,49 @@ bool CProtIdUpdateApp::x_ProcessInputTable(CNcbiIstream& istr, TIdMap& id_map)
     CStreamLineReader lr(istr);
 
     while ( !lr.AtEOF() ) {
-        char c = lr.PeekChar();
-        if (c == '#') {
-            ++lr;
-        } else {
-            string line = *++lr;
-    
-            if (line.empty()) {
-                continue;
-            }
+        string line = *++lr;
 
-            vector<string> entries;
-            string delim = " \t";
-            NStr::Split(line, delim, entries, NStr::fSplit_MergeDelimiters);
-            if (!entries.empty() &&
-                entries[0] == "NA_ACCESSION") {
-                continue;
-            } 
-       
+        if (line.empty() ||
+            NStr::StartsWith(line, "#")) {
+            continue;
+        }
 
-            if (entries.size() < 5) { 
-                continue;             
-            }
-
-
-            if (entries[2] == "---" ||  // No local ID
-                entries[3] != "PROT" || // Not a protein
-                (entries[4] != "Same" && entries[4] != "New")) {
-                continue;
-            }
-
-
-            if (entries[1] == "___") {
-                ERR_POST(Warning << entries[1] << ": Protein accession unspecified");
-                continue;
-            }
-
-
-            CRef<CSeq_id> gb_id = Ref(new CSeq_id());
-            gb_id->SetGenbank().Set(entries[1]);
-
-            CRef<CSeq_id> local = Ref(new CSeq_id());
-            local->SetLocal().SetStr(entries[2]);
-
-            id_map[local] = gb_id;
+        vector<string> entries;
+        string delim = " \t";
+        NStr::Split(line, delim, entries, NStr::fSplit_MergeDelimiters);
+        if (!entries.empty() &&
+            entries[0] == "NA_ACCESSION") {
+            continue;
         } 
-    }
 
+
+        if (entries.size() < 5) { 
+            continue;             
+        }
+
+
+        if (entries[2] == "---" ||  // No local ID
+            entries[3] != "PROT" || // Not a protein
+            (entries[4] != "Same" && entries[4] != "New")) {
+            continue;
+        }
+
+
+        if (entries[1] == "___") {
+            ERR_POST(Warning << entries[1] << ": Protein accession unspecified");
+            continue;
+        }
+
+        CRef<CSeq_id> gb_id = Ref(new CSeq_id());
+        gb_id->SetGenbank().Set(entries[1]);
+
+        CRef<CSeq_id> local = Ref(new CSeq_id());
+        local->SetLocal().SetStr(entries[2]);
+
+        id_map[local] = gb_id;
+    }
 
     return true;
-}
-
-
-void CProtIdUpdateApp::x_UpdateSeqId(const CSeq_id& old_id,
-    const CSeq_id& new_id,
-    CSeq_id& id) const
-{
-    if (id.Compare(old_id) != CSeq_id::e_YES) {
-        return;
-    }
-    id.Assign(new_id);
-    return;
 }
 
 
@@ -319,7 +298,7 @@ void CProtIdUpdateApp::x_UpdateSeqId(const TIdMap& id_map,
         const CSeq_id& old_id = *(id_pair.first);
         const CSeq_id& new_id = *(id_pair.second);
 
-        if (id.Compare(old_id) == CSeq_id::e_YES) {
+        if (id.Equals(old_id)) {
             id.Assign(new_id);
         }
     }
