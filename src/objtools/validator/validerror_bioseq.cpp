@@ -2684,7 +2684,7 @@ bool CValidError_bioseq::HasBadWGSGap(const CBioseq& seq)
                 const CSeq_data& data = lit.GetSeq_data();
                 if (data.Which() == CSeq_data::e_Gap) {
                     const CSeq_gap& gap = data.GetGap();
-                    CSeq_gap::TType gap_type =  gap.GetType();
+                    CSeq_gap::TType gap_type = gap.IsSetType() ? gap.GetType() : CSeq_gap::eType_unknown;
 
                     if (gap_type != CSeq_gap::eType_centromere && gap_type != CSeq_gap::eType_heterochromatin &&
                         gap_type != CSeq_gap::eType_short_arm && gap_type != CSeq_gap::eType_telomere) {
