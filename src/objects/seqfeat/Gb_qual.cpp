@@ -425,22 +425,31 @@ static const char *kInferenceDBChoices[] = {
 
 size_t kNumInferenceDBChoices = sizeof(kInferenceDBChoices) / sizeof(char *);
 
-static const char *kInferenceTypes[] = {
-    "similar to sequence",
-    "similar to AA",
-    "similar to DNA",
-    "similar to RNA",
-    "similar to mRNA",
-    "similar to EST",
-    "similar to other RNA",
-    "profile",
-    "nucleotide motif",
-    "protein motif",
-    "ab initio prediction",
-    "alignment",
-    "\0" };
+typedef SStaticPair<const char*, const char*>  TInferenceTypeSynonymPairElem;
+static const TInferenceTypeSynonymPairElem k_inference_type_synonym_pair_map[] = {
+    { "ab initio prediction", "ab initio prediction" },
+    { "alignment", "alignment" },
+    { "nucleotide motif", "nucleotide motif" },
+    { "profile", "profile" },
+    { "protein motif", "protein motif" },
+    { "similar to AA", "similar to AA sequence" },
+    { "similar to AA sequence", "similar to AA sequence" },
+    { "similar to DNA", "similar to DNA sequence" },
+    { "similar to DNA sequence", "similar to DNA sequence" },
+    { "similar to EST", "similar to RNA sequence, EST" },
+    { "similar to mRNA", "similar to RNA sequence, mRNA" },
+    { "similar to RNA", "similar to RNA sequence" },
+    { "similar to RNA sequence", "similar to RNA sequence" },
+    { "similar to RNA sequence, EST", "similar to RNA sequence, EST" },
+    { "similar to RNA sequence, mRNA", "similar to RNA sequence, mRNA" },
+    { "similar to RNA sequence, other", "similar to RNA sequence, other" },
+    { "similar to sequence", "similar to sequence" }
+};
 
-size_t kNumInferenceTypes = sizeof(kInferenceTypes) / sizeof(char *);
+
+typedef CStaticArrayMap<const char*, const char*, PNocase_CStr> TInferenceTypeSynonymPairMap;
+DEFINE_STATIC_ARRAY_MAP(TInferenceTypeSynonymPairMap, sc_InferenceTypeSynonymPairMap, k_inference_type_synonym_pair_map);
+
 
 void CGb_qual::ParseInferenceString(string val, string &category, string &type_str, bool &is_same_species, string &database, 
                                     string &accession, string &program, string &version, string &acc_list)
@@ -464,24 +473,25 @@ void CGb_qual::ParseInferenceString(string val, string &category, string &type_s
 
     type_str.clear();
     is_same_species = false;
-    // start with 1 - first item is blank
-    for (unsigned int i = 0; kInferenceTypes[i][0] != '\0'; i++)
-    {
-        if (NStr::StartsWith(val, kInferenceTypes[i], NStr::eNocase))
-        {
-            type_str = kInferenceTypes[i];
-            val = val.substr(strlen(kInferenceTypes[i]));
+    TInferenceTypeSynonymPairMap::const_iterator match = sc_InferenceTypeSynonymPairMap.end();
+    ITERATE(TInferenceTypeSynonymPairMap, it, sc_InferenceTypeSynonymPairMap) {
+        if (strlen(it->first) > type_str.length() && NStr::StartsWith(val, it->first, NStr::eNocase)) {
+            type_str = it->first;
+            match = it;
+        }
+    }
+    if (match != sc_InferenceTypeSynonymPairMap.end()) {
+        type_str = match->second;
+        val = val.substr(strlen(match->first));
+        NStr::TruncateSpacesInPlace(val);
+        if (NStr::StartsWith(val, "(same species)", NStr::eNocase)) {
+            is_same_species = true;
+            val = val.substr(14);
             NStr::TruncateSpacesInPlace(val);
-            if (NStr::StartsWith(val, "(same species)", NStr::eNocase)) {
-                is_same_species = true;
-                val = val.substr(14);
-                NStr::TruncateSpacesInPlace(val);
-            }
+        }
 	    if (NStr::StartsWith(val, ":")) {
-                val = val.substr(1);
-                NStr::TruncateSpacesInPlace(val);
-            }
-            break;
+            val = val.substr(1);
+            NStr::TruncateSpacesInPlace(val);
         }
     }
 
@@ -633,10 +643,10 @@ string CGb_qual::CleanupAndRepairInference( const string &orig_inference )
     }
     NStr::ReplaceInPlace(inference, "UniProtKB: ", "UniProtKB:");
 
-    for (size_t i = 0; i < kNumInferenceTypes - 1; i++) {
-        string find = kInferenceTypes[i];
+    ITERATE(TInferenceTypeSynonymPairMap, it, sc_InferenceTypeSynonymPairMap) {
+        string find = it->first;
         find += ": ";
-        string replace = kInferenceTypes[i];
+        string replace = it->second;
         replace += ":";
         NStr::ReplaceInPlace(inference, find, replace);
     }

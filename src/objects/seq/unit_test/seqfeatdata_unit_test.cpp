@@ -1648,4 +1648,6 @@ BOOST_AUTO_TEST_CASE(Test_CleanupAndRepairInference)
 {
     BOOST_CHECK_EQUAL(CGb_qual::CleanupAndRepairInference("similar to sequence : UniProtKB : P39748"), "similar to sequence:UniProtKB:P39748");
     BOOST_CHECK_EQUAL(CGb_qual::CleanupAndRepairInference("similar to RNA sequence, mRNA: INSDC:AY262280.1"), "similar to RNA sequence, mRNA:INSDC:AY262280.1");
+    BOOST_CHECK_EQUAL(CGb_qual::CleanupAndRepairInference("similar to AA: UniProtKB : P39748"), "similar to AA sequence:UniProtKB:P39748");
+    BOOST_CHECK_EQUAL(CGb_qual::CleanupAndRepairInference("similar to AA sequence: UniProtKB : P39748"), "similar to AA sequence:UniProtKB:P39748");
 }
