@@ -1,0 +1,93 @@
+Seq-feat ::= {
+            id
+              local
+                id 2 ,
+            data
+              rna {
+                type tRNA ,
+                ext
+                  tRNA {
+                    aa
+                      ncbieaa 77 ,
+                    anticodon
+                      int {
+                        from 161 ,
+                        to 163 ,
+                        strand minus ,
+                        id
+                          gi 1120879501 } } } ,
+            comment "transfer RNA methionine (anticodon CAU)" ,
+            location
+              int {
+                from 124 ,
+                to 197 ,
+                strand minus ,
+                id
+                  gi 1120879501 } ,
+            qual {
+              {
+                qual "inference" ,
+                val "COORDINATES: profile:tRNAscan-SE:1.23" } } ,
+            ext {
+              type
+                str "CombinedFeatureUserObjects" ,
+              data {
+                {
+                  label
+                    str "TrackingId" ,
+                  data
+                    int 136410 } ,
+                {
+                  label
+                    str "ModelEvidence" ,
+                  data
+                    object {
+                      type
+                        str "ModelEvidence" ,
+                      data {
+                        {
+                          label
+                            str "Method" ,
+                          data
+                            str "tRNAscan-SE" } ,
+                        {
+                          label
+                            str "Anticodon" ,
+                          data
+                            str "CAT" } ,
+                        {
+                          label
+                            str "Score" ,
+                          data
+                            real { 6142, 10, -2 } } ,
+                        {
+                          label
+                            str "Contig Name" ,
+                          data
+                            str "NW_017775184" } ,
+                        {
+                          label
+                            str "Contig Gi" ,
+                          data
+                            int 1120879501 } ,
+                        {
+                          label
+                            str "Contig Span" ,
+                          num 2 ,
+                          data
+                            ints {
+                              124 ,
+                              197 } } } } } } } ,
+            xref {
+              {
+                id
+                  local
+                    id 1 ,
+                data
+                  gene {
+                    locus "TRNAM-CAU" } } } ,
+            dbxref {
+              {
+                db "GeneID" ,
+                tag
+                  id 109443321 } } } 
