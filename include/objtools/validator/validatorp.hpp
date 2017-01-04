@@ -984,7 +984,7 @@ public:
     CValidError_align(CValidError_imp& imp);
     virtual ~CValidError_align(void);
 
-    void ValidateSeqAlign(const CSeq_align& align);
+    void ValidateSeqAlign(const CSeq_align& align, int order = -1);
 
     struct TSegmentGap {
         size_t seg_num; size_t align_pos; string label;

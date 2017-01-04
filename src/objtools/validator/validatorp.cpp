@@ -1534,9 +1534,10 @@ void CValidError_imp::Validate(
         {
             if (IsValidateAlignments()) {
                 CValidError_align align_validator(*this);
+                int order = 1;
                 for (CAlign_CI ai(sah); ai; ++ai) {
                     const CSeq_align& sa = ai.GetOriginalSeq_align();
-                    align_validator.ValidateSeqAlign(sa);
+                    align_validator.ValidateSeqAlign(sa, order++);
                 }
             }
         }

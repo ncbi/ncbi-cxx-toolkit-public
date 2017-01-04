@@ -17793,13 +17793,13 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_Segtype)
     STANDARD_SETUP_WITH_DATABASE
 
     expected_errors.push_back(new CExpectedError("", eDiag_Warning, "Segtype", 
-                  "Segs: This alignment has an undefined or unsupported Seqalign segtype 7"));
+                  "Segs: This alignment has an undefined or unsupported Seqalign segtype 7 (alignment number 1)"));
     options |= CValidator::eVal_val_align | CValidator::eVal_remote_fetch;
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     align->SetSegs().SetSpliced();
-    expected_errors[0]->SetErrMsg("Segs: This alignment has an undefined or unsupported Seqalign segtype 6");
+    expected_errors[0]->SetErrMsg("Segs: This alignment has an undefined or unsupported Seqalign segtype 6 (alignment number 1)");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 

@@ -77,8 +77,15 @@ CValidError_align::~CValidError_align(void)
 {
 }
 
+static void GetInvalidSeqAlignTypeStr(CSeq_align::C_Segs::E_Choice segtype, int order, string& msg)
+{
+    msg = "Segs: This alignment has an undefined or unsupported Seqalign segtype " + NStr::IntToString(segtype);
+    if (order > 0) {
+        msg += " (alignment number " + NStr::IntToString(order) + ')';
+    }
+}
 
-void CValidError_align::ValidateSeqAlign(const CSeq_align& align)
+void CValidError_align::ValidateSeqAlign(const CSeq_align& align, int order)
 {
     if (!align.IsSetSegs()) {
         PostErr (eDiag_Error, eErr_SEQ_ALIGN_NullSegs, 
@@ -108,8 +115,13 @@ void CValidError_align::ValidateSeqAlign(const CSeq_align& align)
 
     case CSeq_align::C_Segs::e_Disc:
         // call recursively
+        {
+
+        int order = 1;
         ITERATE(CSeq_align_set::Tdata, sali, segs.GetDisc().Get()) {
-            ValidateSeqAlign(**sali);
+            ValidateSeqAlign(**sali, order++);
+        }
+
         }
         return;
 
@@ -125,9 +137,12 @@ void CValidError_align::ValidateSeqAlign(const CSeq_align& align)
         if (m_Imp.IsGpipe() && m_Imp.IsGenomic()) {
             return;
         }
-        PostErr(eDiag_Warning, eErr_SEQ_ALIGN_Segtype,
-                "Segs: This alignment has an undefined or unsupported Seqalign segtype "
-                + NStr::IntToString(segtype), align);
+
+        {
+            string msg;
+            GetInvalidSeqAlignTypeStr(segtype, order, msg);
+            PostErr(eDiag_Warning, eErr_SEQ_ALIGN_Segtype, msg, align);
+        }
         return;
         break;
     default:
@@ -135,9 +150,12 @@ void CValidError_align::ValidateSeqAlign(const CSeq_align& align)
         if (m_Imp.IsGpipe() && m_Imp.IsGenomic()) {
             return;
         }
-        PostErr(eDiag_Error, eErr_SEQ_ALIGN_Segtype,
-                "Segs: This alignment has an undefined or unsupported Seqalign segtype "
-                + NStr::IntToString(segtype), align);
+
+        {
+            string msg;
+            GetInvalidSeqAlignTypeStr(segtype, order, msg);
+            PostErr(eDiag_Error, eErr_SEQ_ALIGN_Segtype, msg, align);
+        }
         return;
         break;
     }  // end of switch statement
