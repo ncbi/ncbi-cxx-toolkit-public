@@ -510,9 +510,9 @@ BOOST_AUTO_TEST_CASE(testHashLookupTableWordSize16) {
         (BlastNaHashLookupTable*)lookup_wrap_ptr->lut;
 	BOOST_REQUIRE_EQUAL(16, (int)lookup->lut_word_length); 
 	BOOST_REQUIRE_EQUAL(1, lookup->scan_step);
-	BOOST_REQUIRE_EQUAL(10, lookup->longest_chain);
-    BOOST_REQUIRE_EQUAL(16777216, lookup->backbone_size);
-    BOOST_REQUIRE_EQUAL(24, lookup->offsets_size);
+	BOOST_REQUIRE_EQUAL(11, lookup->longest_chain);
+    BOOST_REQUIRE_EQUAL(32768, lookup->backbone_size);
+    BOOST_REQUIRE_EQUAL(1494, lookup->offsets_size);
     BOOST_REQUIRE_EQUAL(5, lookup->pv_array_bts);
     BOOST_REQUIRE(lookup->hash_callback);
 
@@ -583,7 +583,7 @@ BOOST_AUTO_TEST_CASE(testHashLookupTableWordSize16WithDbFilter) {
 	BOOST_REQUIRE_EQUAL(16, (int)lookup->lut_word_length); 
 	BOOST_REQUIRE_EQUAL(1, lookup->scan_step);
 	BOOST_REQUIRE_EQUAL(10, lookup->longest_chain);
-    BOOST_REQUIRE_EQUAL(16777216, lookup->backbone_size);
+    BOOST_REQUIRE_EQUAL(256, lookup->backbone_size);
     BOOST_REQUIRE_EQUAL(12, lookup->offsets_size);
     BOOST_REQUIRE_EQUAL(5, lookup->pv_array_bts);
     BOOST_REQUIRE(lookup->hash_callback);
