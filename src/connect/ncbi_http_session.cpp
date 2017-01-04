@@ -549,6 +549,7 @@ CHttpRequest::CHttpRequest(CHttpSession& session,
                            EReqMethod    method)
     : m_Session(&session),
       m_Url(url),
+      m_IsService(false),
       m_Method(method),
       m_Headers(new CHttpHeaders),
       m_Timeout(CTimeout::eDefault),
@@ -779,6 +780,7 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
     m_Response.Reset(new CHttpResponse(*m_Session, m_Url, *m_Stream));
     if ( m_Url.GetIsGeneric() ) {
         // Connect using HTTP.
+        m_IsService = false;
         m_Stream->SetConnStream(new CConn_HttpStream(
             m_Url.ComposeUrl(CUrlArgs::eAmp_Char),
             connnetinfo,
@@ -792,6 +794,7 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
     }
     else {
         // Try to resolve service name.
+        m_IsService = true;
         ConnNetInfo_SetUserHeader(connnetinfo, headers.c_str());
         SSERVICE_Extra x_extra;
         memset(&x_extra, 0, sizeof(x_extra));
@@ -849,7 +852,7 @@ EHTTP_HeaderParse CHttpRequest::sx_ParseHeader(const char* http_header,
 // user_data must contain CHttpRequest*.
 int CHttpRequest::sx_Adjust(SConnNetInfo* net_info,
                             void*         user_data,
-                            unsigned int  /*failure_count*/)
+                            unsigned int  failure_count)
 {
     if ( !user_data ) return 1;
     // Reset and re-fill headers on redirects (failure_count == 0).
@@ -875,7 +878,8 @@ int CHttpRequest::sx_Adjust(SConnNetInfo* net_info,
     char* loc = ConnNetInfo_URL(net_info);
     if (loc) {
         CUrl url(loc);
-        if (req->m_AdjustUrl && req->m_AdjustUrl->AdjustUrl(url)) {
+        if (failure_count == (unsigned int)(-1)  &&  req->m_IsService  &&
+            req->m_AdjustUrl  &&  req->m_AdjustUrl->AdjustUrl(url)) {
             ConnNetInfo_ParseURL(net_info, url.ComposeUrl(CUrlArgs::eAmp_Char).c_str());
             // Re-read the url and save it in the response.
             free(loc);

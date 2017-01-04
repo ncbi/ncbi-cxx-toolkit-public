@@ -559,6 +559,7 @@ private:
 
     CRef<CHttpSession>  m_Session;
     CUrl                m_Url;
+    bool                m_IsService;
     EReqMethod          m_Method;
     CRef<CHttpHeaders>  m_Headers;
     CRef<CHttpFormData> m_FormData;
