@@ -885,6 +885,9 @@ string CSubSource::FixDateFormat (const string& test, bool month_first, bool& mo
                 // already have month, error
                 return kEmptyStr;
             }
+            if (one_token.length() > 3) {
+                one_token = one_token.substr(0, 3);
+            }
             try {
                 int month_num = CTime::MonthNameToNum(one_token);
                 found = true;
