@@ -36,6 +36,7 @@ Author: Jason Papadopoulos
  * arguments into blast options
 */
 #include <ncbi_pch.hpp>
+#include <corelib/ncbi_system.hpp>
 #include <algo/blast/api/version.hpp>
 #include <algo/blast/blastinput/blast_args.hpp>
 #include <algo/blast/api/blast_exception.hpp>
@@ -2497,12 +2498,14 @@ CMTArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetCurrentGroup("Miscellaneous options");
 #ifdef NCBI_THREADS
     const int kMinValue = static_cast<int>(CThreadable::kMinNumThreads);
+    const unsigned int kMaxValue = static_cast<int>(GetCpuCount());
+
     arg_desc.AddDefaultKey(kArgNumThreads, "int_value",
                            "Number of threads (CPUs) to use in the BLAST search",
                            CArgDescriptions::eInteger, 
                            NStr::IntToString(kMinValue));
     arg_desc.SetConstraint(kArgNumThreads, 
-                           new CArgAllowValuesGreaterThanOrEqual(kMinValue));
+                           new CArgAllowValuesBetween(kMinValue, kMaxValue, true));
     arg_desc.SetDependency(kArgNumThreads,
                            CArgDescriptions::eExcludes,
                            kArgRemote);
