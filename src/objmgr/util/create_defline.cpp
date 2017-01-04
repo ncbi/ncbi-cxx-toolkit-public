@@ -243,6 +243,9 @@ void x_CleanAndCompress(string& dest, const CTempString& instr)
     }
 
     dest.resize(out - dest.c_str());
+
+    NStr::ReplaceInPlace (dest, ". [", " [");
+    NStr::ReplaceInPlace (dest, ", [", " [");
 }
 
 static const char* x_OrganelleName (
