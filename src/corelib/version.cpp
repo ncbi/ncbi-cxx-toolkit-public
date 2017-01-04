@@ -746,7 +746,7 @@ string CVersion::PrintXml(const string& appname, TPrintFlags flags) const
 
 #ifdef NCBI_TEAMCITY_BUILD_NUMBER
     if (flags & fTCBuildNumber) {
-        os << "<teamcity_build_number>" << NStr::XmlEncode(NCBI_TEAMCITY_BUILD_NUMBER) <<
+        os << "<teamcity_build_number>" << NStr::XmlEncode(NStr::NumericToString(NCBI_TEAMCITY_BUILD_NUMBER)) <<
             "</teamcity_build_number>\n";
     }
 #endif /* NCBI_TEAMCITY_BUILD_NUMBER */
@@ -818,7 +818,7 @@ string CVersion::PrintJson(const string& appname, TPrintFlags flags) const
     if (flags & fTCBuildNumber) {
         if ( need_separator ) os << ",\n";
         os << "    \"teamcity_build_number\": \"" <<
-            NStr::JsonEncode(NCBI_TEAMCITY_BUILD_NUMBER) << "\"";
+            NStr::JsonEncode(NStr::NumericToString(NCBI_TEAMCITY_BUILD_NUMBER)) << "\"";
     }
 #endif /* NCBI_TEAMCITY_BUILD_NUMBER */
 
