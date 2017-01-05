@@ -123,7 +123,6 @@ bdb needs xutil
 bdb needs3party $(BERKELEYDB_LIBS)
 bdb2ez needs xser
 bdbasncli needs bdb2ez
-bdbasncli needs connssl
 bdbasncli needs xconnect
 biblio needs general
 biosample needs $(SDBAPI_LIB)
@@ -197,8 +196,7 @@ config_access needs gpipe_common
 connect needs3party $(NETWORK_LIBS)
 connect needs3party $(ORIG_LIBS)
 connext needs connect
-connssl needs connect
-connssl needs xncbi
+connssl needs3party $(NCBI_C_ncbi)
 creaders needs3party $(ORIG_LIBS)
 crypto needs $(Z_LIB)
 crypto needs3party $(ORIG_LIBS)
@@ -227,7 +225,6 @@ dbapi_driver_wrap_s needs dbapi_driver
 dbapi_sample_base needs $(DBAPI_CTLIB)
 dbapi_sample_base needs $(DBAPI_ODBC)
 dbapi_sample_base needs $(XCONNEXT)
-dbapi_sample_base needs connssl
 dbapi_sample_base needs ncbi_xdbapi_ftds
 dbapi_sample_base needs ncbi_xdbapi_ftds64
 dbapi_sample_base needs ncbi_xdbapi_ftds95
@@ -270,7 +267,6 @@ ehistory needs xser
 einfo needs xser
 elink needs xser
 entrez2 needs xser
-entrez2cli needs connssl
 entrez2cli needs entrez2
 entrez2cli needs xconnect
 entrezgene needs $(SEQ_LIBS)
@@ -281,7 +277,6 @@ espell needs xser
 esummary needs xser
 eueid needs txclient
 eueid needs xportal_auth
-eutils needs connssl
 eutils needs egquery
 eutils needs ehistory
 eutils needs einfo
@@ -314,7 +309,6 @@ fscreen needs dbapi_util_blobstore
 ftgl needs3party $(FREETYPE_LIBS)
 ftgl needs3party $(OPENGL_LIBS)
 ftgl needs3party $(ORIG_LIBS)
-gbproj needs connssl
 gbproj needs submit
 gbproj needs xconnect
 gbseq needs xser
@@ -334,7 +328,6 @@ gcedit needs agp_lookup
 gcedit needs gc_load_utils
 gcrypt needs3party $(ORIG_LIBS)
 gencoll_client needs $(COMPRESS_LIBS)
-gencoll_client needs connssl
 gencoll_client needs genome_collection
 gencoll_client needs xconnect
 gencoll_load needs xser
@@ -351,7 +344,6 @@ generic_db_core needs $(CONNEXT)
 generic_db_core needs dbassist
 generic_db_tmpl_utils needs generic_db_utils
 generic_db_utils needs $(COMPRESS_LIBS)
-generic_db_utils needs connssl
 generic_db_utils needs xconnect
 generic_db_utils needs xser
 generic_db_utils_cgi includes generic_db_utils
@@ -359,7 +351,6 @@ genesbyloc needs xser
 genome_collection needs $(SEQ_LIBS)
 genome_collection needs pub
 genome_size needs $(COMPRESS_LIBS)
-genome_size needs connssl
 genome_size needs xconnect
 genome_size needs xutil
 gensvc_g needs xser
@@ -391,7 +382,6 @@ gpinit needs gpinit_access
 gpinit needs gpinit_obj
 gpinit needs gpipe_objutil
 gpinit_access needs $(SDBAPI_LIB)
-gpinit_access needs connssl
 gpinit_access needs xconnect
 gpinit_access needs xutil
 gpinit_bag_util needs bag_access
@@ -478,7 +468,6 @@ gpipe_sadb needs taxon1
 gpipe_sadb needs xmlwrapp
 gpipe_sqlite needs $(SDBAPI_LIB)
 gpipe_sqlite needs $(SEQ_LIBS)
-gpipe_sqlite needs connssl
 gpipe_sqlite needs pub
 gpipe_sqlite needs sqlitewrapp
 gpipe_sqlite needs xconnect
@@ -498,7 +487,6 @@ gpipe_val needs xmlwrapp
 gpipe_xml needs gpipe_attr
 gpipe_xml needs gpipe_dateutil
 gpipe_xmlutil needs xmlwrapp
-gpxapi needs connssl
 gpxapi needs general
 gpxapi needs xconnect
 gpxlib needs gpipe_common
@@ -550,8 +538,6 @@ gui_opengl needs3party $(GLEW_LIBS)
 gui_opengl needs3party $(OPENGL_LIBS)
 gui_print needs $(COMPRESS_LIBS)
 gui_print needs gui_opengl
-gui_utils needs connssl
-gui_utils needs tables
 gui_utils needs xconnect
 gui_utils needs xutil
 guide_tree needs phytree_format
@@ -580,13 +566,11 @@ icudata needs3party $(ORIG_LIBS)
 icui18n needs3party $(ORIG_LIBS)
 icuuc needs3party $(ORIG_LIBS)
 id1 needs seqset
-id1cli needs connssl
 id1cli needs id1
 id1cli needs xconnect
 id2 needs seqsplit
 id2_split needs $(COMPRESS_LIBS)
 id2_split needs $(SOBJMGR_LIBS)
-id2cli needs connssl
 id2cli needs id2
 id2cli needs xconnect
 ideo needs xmvdatacache
@@ -600,7 +584,6 @@ idload_utils needs gpipe_objutil
 idload_utils needs xid_utils
 igblast needs $(BLAST_LIBS)
 insdseq needs xser
-jiracli needs connssl
 jiracli needs jirasvc
 jiracli needs xconnect
 jirasvc needs xser
@@ -644,7 +627,6 @@ mim needs xser
 mla needs medlars
 mla needs pub
 mla needs pubmed
-mlacli needs connssl
 mlacli needs mla
 mlacli needs xconnect
 mmapi needs $(Z_LIB)
@@ -760,7 +742,6 @@ ncbi_xloader_wgs needs $(SOBJMGR_LIBS)
 ncbi_xloader_wgs needs $(SRAREAD_LIBS)
 ncbi_xreader needs $(COMPRESS_LIBS)
 ncbi_xreader needs $(SOBJMGR_LIBS)
-ncbi_xreader needs connssl
 ncbi_xreader needs id1
 ncbi_xreader needs id2
 ncbi_xreader needs xconnect
@@ -791,12 +772,10 @@ ncbiid1 needs3party netcli
 ncbiid2 needs3party ncbiobj
 ncbiindx needs3party ncbiobj
 ncbils2_admin needs $(NCBILS2_LIB)
-ncbils2_admin needs connssl
 ncbils2_admin needs xconnect
 ncbils2_asn needs ncbils2_cmn
 ncbils2_asn needs xser
 ncbils2_authxml needs xser
-ncbils2_cli needs connssl
 ncbils2_cli needs ncbils2_asn
 ncbils2_cli needs xconnect
 ncbils2_cmn needs $(LIBSSSUTILS)
@@ -850,7 +829,6 @@ omssa needs $(SEQ_LIBS)
 omssa needs pub
 osutils needs3party ctutils
 pathogen_cluster_loader needs $(SDBAPI_LIB)
-pathogen_cluster_loader needs connssl
 pathogen_cluster_loader needs xasmcompare
 pathogen_cluster_loader needs xconnect
 pathogen_connection needs gpipe_common
@@ -891,7 +869,6 @@ python2.7 needs3party $(ORIG_LIBS)
 python_ncbi_dbapi needs $(Z_LIB)
 python_ncbi_dbapi needs connssl
 python_ncbi_dbapi needs dbapi
-python_ncbi_dbapi needs xconnect
 python_ncbi_dbapi needs3party $(PYTHON_LIBS)
 python_ncbi_dbapi needs3party $(Z_LIBS)
 rcobaltasn_g needs xser
@@ -909,7 +886,6 @@ reftrack_access needs xncbi
 reftrack_admin needs xncbi
 remap needs $(SEQ_LIBS)
 remap needs pub
-remapcli needs connssl
 remapcli needs remap
 remapcli needs xconnect
 sage_mappings needs xser
@@ -917,7 +893,6 @@ sample_asn needs general
 sampling needs3party $(ORIG_LIBS)
 scoremat needs seqset
 sdbapi needs $(XCONNEXT)
-sdbapi needs connssl
 sdbapi needs dbapi
 sdbapi needs ncbi_xdbapi_ftds
 sdbapi needs ncbi_xdbapi_ftds64
@@ -939,7 +914,6 @@ seqdb needs sqlitewrapp
 seqedit needs seqset
 seqentry_comparator needs xobjwrite
 seqgapscan needs $(SDBAPI_LIB)
-seqgapscan needs connssl
 seqgapscan needs xconnect
 seqgapscan needs xobjutil
 seqmasks_io needs $(OBJREAD_LIBS)
@@ -955,7 +929,6 @@ simple_asm needs gc_load_utils
 simple_asm needs seqgapscan
 smartasn_g needs submit
 smartnet needs3party vibrant
-smartnetclient needs connssl
 smartnetclient needs xconnect
 snputil needs $(SOBJMGR_LIBS)
 snputil needs variation
@@ -992,7 +965,6 @@ sssdb needs ssssys
 sssdb needs3party $(SYBASE_DLLS)
 sssdb needs3party $(SYBASE_LIBS)
 ssssys needs $(LIBSSSUTILS)
-ssssys needs connssl
 ssssys needs xconnect
 sssutils needs3party $(ORIG_LIBS)
 ssswww needs3party $(ORIG_LIBS)
@@ -1034,11 +1006,9 @@ tables needs3party $(ORIG_LIBS)
 tax_xml needs $(GPIPE_GENCOLL_LIBS)
 taxon needs xser
 taxon1 needs $(SEQ_LIBS)
-taxon1 needs connssl
 taxon1 needs pub
 taxon1 needs xconnect
 taxon3 needs $(SEQ_LIBS)
-taxon3 needs connssl
 taxon3 needs pub
 taxon3 needs xconnect
 taxoscli needs ssscli
@@ -1072,7 +1042,6 @@ trackmgr_objtools needs gencoll_client
 trackmgr_objtools needs trackmgrgridcli
 trackmgr_objtools needs uudutil
 trackmgr_objtools needs xid_mapper
-trackmgrcli needs connssl
 trackmgrcli needs trackmgr
 trackmgrcli needs xconnect
 trackmgrgridcli needs $(COMPRESS_LIBS)
@@ -1084,10 +1053,8 @@ tvlib needs gui_glmesa
 tvlib needs tv_objects
 tvlib needs uudutil
 tvlib needs w_phylo_tree
-txclient needs connssl
 txclient needs xconnect
 txserv needs xmlwrapp
-txserv14 needs connssl
 txserv14 needs txxmldoc
 txserv14 needs xconnect
 txxmldoc needs $(COMPRESS_LIBS)
@@ -1325,10 +1292,9 @@ xcleanup needs xobjutil
 xcompress needs $(CMPRS_LIB)
 xcompress needs xutil
 xcompress needs3party $(CMPRS_LIBS)
-xconnect needs connect
+xconnect includes connssl
 xconnect needs xncbi
 xconnext includes $(CONNEXT)
-xconnext needs connssl
 xconnext needs xconnect
 xconnserv needs xthrserv
 xcser needs xser
@@ -1398,7 +1364,6 @@ ximage needs3party $(IMAGE_LIBS)
 xmergetree needs $(SOBJMGR_LIBS)
 xml2 needs3party $(ORIG_LIBS)
 xmlreaders needs xmlwrapp
-xmlwrapp needs connssl
 xmlwrapp needs xconnect
 xmlwrapp needs3party $(LIBXML_LIBS)
 xmlwrapp needs3party $(LIBXSLT_LIBS)
@@ -1410,7 +1375,6 @@ xmyncbi_captcha needs connect
 xmyncbi_captcha needs xncbi
 xncbi needs3party $(ORIG_LIBS)
 xnetblast needs scoremat
-xnetblastcli needs connssl
 xnetblastcli needs xconnect
 xnetblastcli needs xnetblast
 xngalign needs $(BLAST_INPUT_LIBS)
@@ -1436,7 +1400,6 @@ xobjwrite needs variation_utils
 xobjwrite needs xalnmgr
 xomssa needs $(COMPRESS_LIBS)
 xomssa needs blast
-xomssa needs connssl
 xomssa needs omssa
 xomssa needs pepXML
 xomssa needs seqdb
@@ -1467,7 +1430,6 @@ xslt_xalan needs3party $(CURL_LIBS)
 xslt_xalan needs3party $(ICU_LIBS)
 xslt_xalan needs3party $(XALAN_LIBS)
 xslt_xalan needs3party $(XERCES_LIBS)
-xsoap needs connssl
 xsoap needs xconnect
 xsoap needs xser
 xsoap_server needs xcgi
@@ -1502,7 +1464,6 @@ xsvnaa needs xutil
 xsvsearchcgi needs hgvs
 xsvsearchcgi needs sv_objects
 xsvsearchcgi needs xsvcgi
-xthrserv needs connssl
 xthrserv needs xconnect
 xthrserv needs xutil
 xunittestutil needs xobjutil
@@ -1512,6 +1473,5 @@ xvalidate needs $(XFORMAT_LIBS)
 xvalidate needs valerr
 xvalidate needs xalnmgr
 xxconnect includes connssl
-xxconnect includes xconnect
-xxconnect needs3party $(NCBI_C_ncbi)
+xxconnect needs xncbi
 z needs3party $(ORIG_LIBS)
