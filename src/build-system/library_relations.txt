@@ -196,7 +196,8 @@ config_access needs gpipe_common
 connect needs3party $(NETWORK_LIBS)
 connect needs3party $(ORIG_LIBS)
 connext needs connect
-connssl needs3party $(NCBI_C_ncbi)
+connssl needs3party $(NETWORK_LIBS)
+connssl needs3party $(ORIG_LIBS)
 creaders needs3party $(ORIG_LIBS)
 crypto needs $(Z_LIB)
 crypto needs3party $(ORIG_LIBS)
@@ -538,6 +539,7 @@ gui_opengl needs3party $(GLEW_LIBS)
 gui_opengl needs3party $(OPENGL_LIBS)
 gui_print needs $(COMPRESS_LIBS)
 gui_print needs gui_opengl
+gui_utils needs tables
 gui_utils needs xconnect
 gui_utils needs xutil
 guide_tree needs phytree_format
@@ -867,6 +869,7 @@ pub needs medline
 pubmed needs medline
 python2.7 needs3party $(ORIG_LIBS)
 python_ncbi_dbapi needs $(Z_LIB)
+python_ncbi_dbapi needs connect
 python_ncbi_dbapi needs connssl
 python_ncbi_dbapi needs dbapi
 python_ncbi_dbapi needs3party $(PYTHON_LIBS)
@@ -1292,6 +1295,7 @@ xcleanup needs xobjutil
 xcompress needs $(CMPRS_LIB)
 xcompress needs xutil
 xcompress needs3party $(CMPRS_LIBS)
+xconnect includes connect
 xconnect includes connssl
 xconnect needs xncbi
 xconnext includes $(CONNEXT)
@@ -1474,4 +1478,5 @@ xvalidate needs valerr
 xvalidate needs xalnmgr
 xxconnect includes connssl
 xxconnect needs xncbi
+xxconnect needs3party $(NCBI_C_ncbi)
 z needs3party $(ORIG_LIBS)
