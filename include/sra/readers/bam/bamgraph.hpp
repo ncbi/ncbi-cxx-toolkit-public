@@ -48,6 +48,7 @@ class CSeq_graph;
 class CSeq_inst;
 class CBamMgr;
 class CBamDb;
+class CBamRawDb;
 
 /////////////////////////////////////////////////////////////////////////////
 ///  CBam2Seq_graph
@@ -139,6 +140,8 @@ public:
                                   const string& bam_file,
                                   const string& bam_index);
     vector<Uint8> CollectCoverage(CBamDb& db);
+    vector<Uint8> CollectCoverage(CBamRawDb& db);
+    vector<Uint8> CollectEstimatedCoverage(CBamRawDb& db);
     vector<Uint8> CollectEstimatedCoverage(CBamDb& db);
     vector<Uint8> CollectEstimatedCoverage(const string& bam_file,
                                            const string& bam_index);
@@ -155,6 +158,8 @@ public:
                                    const string& bam_file);
     CRef<CSeq_annot> MakeSeq_annot(CBamDb& db,
                                    const string& bam_file);
+    CRef<CSeq_annot> MakeSeq_annot(CBamRawDb& db,
+                                   const string& bam_file);
     CRef<CSeq_annot> MakeSeq_annot(const vector<Uint8>& cov,
                                    const string& bam_file);
     /// Generate Seq-entry for BAM file
@@ -165,6 +170,8 @@ public:
     CRef<CSeq_entry> MakeSeq_entry(CBamMgr& mgr,
                                    const string& bam_file);
     CRef<CSeq_entry> MakeSeq_entry(CBamDb& db,
+                                   const string& bam_file);
+    CRef<CSeq_entry> MakeSeq_entry(CBamRawDb& db,
                                    const string& bam_file);
     CRef<CSeq_entry> MakeSeq_entry(CRef<CSeq_annot> annot);
 

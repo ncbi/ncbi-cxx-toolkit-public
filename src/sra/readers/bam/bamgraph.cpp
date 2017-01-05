@@ -188,6 +188,12 @@ vector<Uint8> CBam2Seq_graph::CollectCoverage(CBamMgr& mgr,
 }
 
 
+vector<Uint8> CBam2Seq_graph::CollectCoverage(CBamRawDb& db)
+{
+    return CollectEstimatedCoverage(db);
+}
+
+
 vector<Uint8> CBam2Seq_graph::CollectCoverage(CBamDb& db)
 {
     if ( GetEstimated() ) {
@@ -476,6 +482,22 @@ vector<Uint8> CBam2Seq_graph::CollectEstimatedCoverage(const string& bam_file,
 }
 
 
+vector<Uint8> CBam2Seq_graph::CollectEstimatedCoverage(CBamRawDb& db)
+{
+    m_GraphBinSize = kEstimatedGraphBinSize;
+    size_t ref_index = db.GetHeader().GetRefIndex(GetRefLabel());
+    TSeqPos length = db.GetHeader().GetRefLength(ref_index);
+    vector<uint64_t> ret = db.GetIndex().CollectEstimatedCoverage(ref_index);
+    if ( length == 0 || length == kInvalidSeqPos ) {
+        length = TSeqPos(ret.size())*kEstimatedGraphBinSize;
+    }
+    m_TotalRange.SetFrom(0).SetToOpen(length);
+    m_AlignCount = 0;
+    m_MaxAlignSpan = 0;
+    return ret;
+}
+
+
 vector<Uint8> CBam2Seq_graph::CollectRawAccessCoverage(CBamDb& db)
 {
     return CollectRawAccessCoverage(db.GetDbName(), db.GetIndexName());
@@ -684,6 +706,13 @@ CRef<CSeq_annot> CBam2Seq_graph::MakeSeq_annot(CBamDb& db,
 }
 
 
+CRef<CSeq_annot> CBam2Seq_graph::MakeSeq_annot(CBamRawDb& db,
+                                               const string& bam_file)
+{
+    return MakeSeq_annot(CollectCoverage(db), bam_file);
+}
+
+
 CRef<CSeq_annot> CBam2Seq_graph::MakeSeq_annot(CBamMgr& mgr,
                                                const string& bam_file)
 {
@@ -729,6 +758,13 @@ CRef<CSeq_entry> CBam2Seq_graph::MakeSeq_entry(CBamMgr& mgr,
 
 
 CRef<CSeq_entry> CBam2Seq_graph::MakeSeq_entry(CBamDb& db,
+                                               const string& bam_file)
+{
+    return MakeSeq_entry(MakeSeq_annot(db, bam_file));
+}
+
+
+CRef<CSeq_entry> CBam2Seq_graph::MakeSeq_entry(CBamRawDb& db,
                                                const string& bam_file)
 {
     return MakeSeq_entry(MakeSeq_annot(db, bam_file));

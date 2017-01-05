@@ -90,6 +90,9 @@ void CBam2GraphApp::Init(void)
     arg_desc->AddOptionalKey("dir", "Dir",
                              "BAM files files directory",
                              CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("odir", "OutputDir",
+                             "Destination directory",
+                             CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("ref_label", "RefLabel",
                              "RefSeq id in BAM file",
@@ -323,9 +326,17 @@ void CBam2GraphApp::ProcessSrz(string srz_name)
     else {
         dir = CFile(srz_name).GetDir();
     }
+    string odir;
+    if ( args["odir"] ) {
+        odir = args["odir"].AsString();
+    }
+    else {
+        odir = dir;
+    }
     
     CBamMgr mgr;
     CBamDb db;
+    CBamRawDb raw_db;
     CBamHeader header;
     CBamIndex index;
     string db_name;
@@ -355,7 +366,7 @@ void CBam2GraphApp::ProcessSrz(string srz_name)
         }
         string bam_path = CFile::MakePath(dir, bam_name);
         string out_name = tokens[4];
-        string out_path = CFile::MakePath(dir, out_name);
+        string out_path = CFile::MakePath(odir, out_name);
         
         LOG_POST("Processing "<<ref_label<<" -> "<<out_path);
 
@@ -384,6 +395,9 @@ void CBam2GraphApp::ProcessSrz(string srz_name)
         if ( args["estimated"] ) {
             cvt.SetEstimated();
         }
+        if ( args["raw-access"] ) {
+            cvt.SetRawAccess();
+        }
         
         CRef<CSeq_entry> entry;
         if ( 0 && args["estimated"] ) {
@@ -404,9 +418,19 @@ void CBam2GraphApp::ProcessSrz(string srz_name)
         else {
             if ( bam_path != db_name ) {
                 db_name = bam_path;
-                db = CBamDb(mgr, bam_path, bam_path+".bai");
+                if ( cvt.GetEstimated() ) {
+                    raw_db = CBamRawDb(bam_path, bam_path+".bai");
+                }
+                else {
+                    db = CBamDb(mgr, bam_path, bam_path+".bai");
+                }
             }
-            entry = cvt.MakeSeq_entry(db, bam_path);
+            if ( cvt.GetEstimated() ) {
+                entry = cvt.MakeSeq_entry(raw_db, bam_path);
+            }
+            else {
+                entry = cvt.MakeSeq_entry(db, bam_path);
+            }
         }
 
         AutoPtr<CObjectOStream> out
