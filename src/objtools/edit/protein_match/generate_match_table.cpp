@@ -610,7 +610,6 @@ void CMatchTabulate::WriteTable(
 }
 
 
-//CRef<CSeq_table> g_ReadSeqTable(CNcbiIstream& in) 
 void g_ReadSeqTable(CNcbiIstream& in, CSeq_table& table) 
 {
 
@@ -619,7 +618,7 @@ void g_ReadSeqTable(CNcbiIstream& in, CSeq_table& table)
     CRef<ILineReader> pLineReader = ILineReader::New(in);
 
     if ( pLineReader->AtEOF() ) {
-        return table;
+        return;
     }
 
     pLineReader->ReadLine();
@@ -651,7 +650,6 @@ void g_ReadSeqTable(CNcbiIstream& in, CSeq_table& table)
     }
 
     table.SetNum_rows(num_rows);
-    return table;
 }
 
 

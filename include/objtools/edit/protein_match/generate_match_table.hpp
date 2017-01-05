@@ -32,14 +32,14 @@
 #include <corelib/ncbistd.hpp>
 #include <objects/seq/Annotdesc.hpp>
 
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects)
+
 class CSeq_annot;
 class CSeq_feat;
 class CSeq_align;
 class CUser_object;
 class CSeq_table;
-
-BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects)
 
 class CMatchTabulate {
 
