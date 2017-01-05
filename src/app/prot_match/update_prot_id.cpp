@@ -30,7 +30,6 @@
 #include <objtools/edit/protein_match/prot_match_exception.hpp>
 
 BEGIN_NCBI_SCOPE
-
 USING_SCOPE(objects);
 
 
@@ -42,7 +41,7 @@ public:
 
 private:
 
-    typedef map<CRef<CSeq_id>, CRef<CSeq_id>> TIdMap;
+    typedef map<string, CRef<CSeq_id>> TIdMap;
 
     void x_UpdateSeqEntry(const TIdMap& id_map,
         CSeq_entry& nuc_prot_set);
@@ -129,7 +128,8 @@ int CProtIdUpdateApp::Run(void)
     x_ReadUpdateFile(*istr, isSeqSet, *seq_entry);
 
     CNcbiIstream& table_str = args["t"].AsInputFile();
-    map<CRef<CSeq_id>, CRef<CSeq_id>> id_map;
+    //map<CRef<CSeq_id>, CRef<CSeq_id>> id_map;
+    map<string, CRef<CSeq_id>> id_map;
     x_ProcessInputTable(table_str, id_map);
 
     CNcbiOstream& ostr = (args["o"]) ? 
@@ -260,18 +260,15 @@ bool CProtIdUpdateApp::x_ProcessInputTable(CNcbiIstream& istr, TIdMap& id_map)
             continue;
         } 
 
-
         if (entries.size() < 5) { 
             continue;             
         }
-
 
         if (entries[2] == "---" ||  // No local ID
             entries[3] != "PROT" || // Not a protein
             (entries[4] != "Same" && entries[4] != "New")) {
             continue;
         }
-
 
         if (entries[1] == "___") {
             ERR_POST(Warning << entries[1] << ": Protein accession unspecified");
@@ -281,9 +278,7 @@ bool CProtIdUpdateApp::x_ProcessInputTable(CNcbiIstream& istr, TIdMap& id_map)
         CRef<CSeq_id> gb_id = Ref(new CSeq_id());
         gb_id->SetGenbank().Set(entries[1]);
 
-        CRef<CSeq_id> local = Ref(new CSeq_id());
-        local->SetLocal().SetStr(entries[2]);
-
+        string local = entries[2];
         id_map[local] = gb_id;
     }
 
@@ -294,13 +289,19 @@ bool CProtIdUpdateApp::x_ProcessInputTable(CNcbiIstream& istr, TIdMap& id_map)
 void CProtIdUpdateApp::x_UpdateSeqId(const TIdMap& id_map,
     CSeq_id& id) const
 {
-    for (const auto& id_pair : id_map) {
-        const CSeq_id& old_id = *(id_pair.first);
-        const CSeq_id& new_id = *(id_pair.second);
+    if (!id.IsLocal()) {
+        return;
+    }
 
-        if (id.Equals(old_id)) {
-            id.Assign(new_id);
-        }
+    const string id_string = id.GetLocal().IsStr() ?
+        id.GetLocal().GetStr() :
+        NStr::NumericToString(id.GetLocal().GetId());
+
+    const auto match = id_map.find(id_string);
+
+    if (match != id_map.end()) {
+        const CSeq_id& new_id = *(match->second);
+        id.Assign(new_id); 
     }
     return;
 }
@@ -523,9 +524,7 @@ void CProtIdUpdateApp::x_UpdateSeqFeat(const TIdMap& id_map,
     return;
 }
 
-
 END_NCBI_SCOPE
-
 USING_NCBI_SCOPE;
 
 
