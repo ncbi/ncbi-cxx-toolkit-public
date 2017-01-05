@@ -369,6 +369,7 @@ static string s_OfficialPrefixList[] = {
     "MIMS:3.0-Data",
     "MIMS:4.0-Data",
     "RefSeq-Attributes",
+    "SIVDataBaseData",
     "Taxonomic-Update-Statistics"
 };
 
