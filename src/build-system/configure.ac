@@ -6063,7 +6063,7 @@ if test "$with_wxwidgets" != "no" ; then
          libsed="$basesed; s%\$% $deps%"
          ;;
    esac
-   case "`"$wxconf" $wxcfflags --version`" in
+   test -x "$wxconf"  &&  case "`"$wxconf" $wxcfflags --version`" in
       1.* | 2.[[0-7]].* ) wxlibs=std ;;
       *                 ) wxlibs=std,richtext,aui,propgrid ;;
    esac
