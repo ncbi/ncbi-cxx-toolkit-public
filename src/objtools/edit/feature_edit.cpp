@@ -78,7 +78,8 @@ void CFeatTrim::Apply(const CRange<TSeqPos>& range,
     x_TrimLocation(from, to, loc);
     CSeq_feat_EditHandle sfeh(sfh);
     if (loc->IsNull()) {
-        sfeh.Remove();
+        CMappedFeat empty_feat;
+        mapped_feat = empty_feat;
         return;
     }
 
