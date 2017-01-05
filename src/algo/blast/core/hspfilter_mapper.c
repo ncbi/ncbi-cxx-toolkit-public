@@ -2258,7 +2258,7 @@ static HSPPath* HSPPathNew(void)
 }
 
 
-#define NUM_SIGNALS 14
+#define NUM_SIGNALS 23
 
 /* Find a split for HSPs overlapping on the query by finding splice signals in
    the subject sequence. The first HSP must have smaller query offset than the
@@ -2274,23 +2274,32 @@ s_FindSpliceJunctionsForOverlaps(BlastHSP* first, BlastHSP* second,
                                  Uint1* query, Int4 query_len)
 {
     Int4 i, k;
-    /* splice signal pairs from PMC3167048 and spline output */
+    /* splice signal pairs from include/algo/sequence/consensus_splice.hpp */
     Uint1 signals[NUM_SIGNALS] = {0xb2, /* GTAG */
                                   0x71, /* CTAC (reverse complement) */
-                                  0x72, /* CTAG */
                                   0x92, /* GCAG */
-                                  0x9e, /* GCTG */
-                                  0x90, /* GCAA */
-                                  0x9a, /* GCGG */
-                                  0xbe, /* GTTG */
-                                  0xb0, /* GTAA */
+                                  0x79, /* CTGC */
                                   0x31, /* ATAC */
-                                  0x30, /* ATAA */
+                                  0xb3, /* GTAT */
+                                  0xbe, /* GTTG */
+                                  0x41, /* CAAC */
+                                  0xba, /* GTGG */
+                                  0x51, /* CCAC */
+                                  0xb0, /* GTAA */
+                                  0xf1, /* TTAC */
+                                  0x82, /* GAAG */
+                                  0x7d, /* CTTC */
+                                  0xf2, /* TTAG */
+                                  0x70, /* CTAA */
                                   0x32, /* ATAG */
-                                  0x33, /* ATAT */
-                                  
-                                  /*0x45, */ /* CACC */
-                                  0x1f  /* ACTT */};
+                                  0x73, /* CTAT */
+                                  0xa2, /* GGAG */
+                                  0x75, /* CTCC */
+                                  0x33, /* ATAT (revese complemented is self) */
+                                  0x30, /* ATAA */
+                                  0xf3  /* TTAT */};
+
+
     Boolean found = FALSE;
     Uint1* subject = NULL;
     Int4 overlap_len;
@@ -2770,6 +2779,14 @@ s_FindSpliceJunctionsForGap(BlastHSP* first, BlastHSP* second,
     Int4 q;
     Uint1 signal = 0;
     /* use only cannonical splice signals here */
+    /* The procedure does not maximize score for unaligned bases of the query.
+       It only finds splice signals and then the best alignment it can find
+       for the unaligned bases. For limited number of unaligned query bases,
+       we can be sure of the splice site vs a continuous alignment, because a
+       continuous alignment would score better. But we do not compare
+       alignment scores between different splice sites, so we do not know
+       which splice site and signal is better; and many splice signals here
+       would lead to finding wrong splice sites. */
     Uint1 signals[NUM_SIGNALS_CONSENSUS] = {0xb2, /* GTAG */
                                             0x71  /* CTAC */};
 
