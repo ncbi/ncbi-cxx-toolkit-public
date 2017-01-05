@@ -1827,7 +1827,7 @@ void CCgiApplication::ProcessHelpRequest(const string& format)
 
     CCgiResponse& response = m_Context->GetResponse();
     if ( !fname.empty() ) {
-        CNcbiIfstream in(fname);
+        CNcbiIfstream in(fname.c_str());
 
         // Check if the file starts with "Content-type:" header followed by double-eol.
         bool ct_found = false;
