@@ -459,7 +459,7 @@ bool COrg_ref::UpdateFromTable()
     }
     CConstRef<COrg_ref> lookup = TableLookup(GetTaxname());
     if (lookup) {
-        if (!NStr::IsBlank(lookup->GetCommon())) {
+        if (lookup->IsSetCommon() && !NStr::IsBlank(lookup->GetCommon())) {
             SetCommon(lookup->GetCommon());
         }
         if (lookup->IsSetGcode()) {
@@ -498,6 +498,7 @@ bool COrg_ref::UpdateFromTable()
 
 const vector<string>& COrg_ref::GetTaxnameList()
 {
+    s_InitializeOrgRefMap();
     return s_CommonTaxnameList;
 }
 
