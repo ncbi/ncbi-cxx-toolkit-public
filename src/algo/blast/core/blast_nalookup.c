@@ -2245,7 +2245,8 @@ Int4 BlastNaHashLookupTableNew(BLAST_SequenceBlk* query,
     }
 
     /* find number of bits to use for hash function */
-    while ((1 << num_hash_bits) < num_unique_words) {
+    while (num_hash_bits < 32 &&
+           (1LL << num_hash_bits) < num_unique_words) {
         num_hash_bits++;
     }
 
