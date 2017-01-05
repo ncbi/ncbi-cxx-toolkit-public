@@ -70,32 +70,12 @@ namespace cgi {
 template <class TBase>
 class CVersionReporting : public TBase
 {
-    virtual void ProcessVersionRequest(typename TBase::EVersionType ver_type) override
+public:
+    CVersionReporting()
     {
         auto& version = this->GetFullVersion();
         auto package_version =  version.GetPackageVersion();
-        auto& build_info = version.GetBuildInfo();
-        auto& host = GetDiagContext().GetHost();
-
-        CJsonNode node(CJsonNode::eObject);
-
-        if (ver_type == TBase::eVersion_Short) {
-            ostringstream oss;
-            oss << package_version << ", " << build_info.date << ", " << host;
-            node.SetString("versioninfo", oss.str());
-        } else {
-            node.SetInteger("major", package_version.GetMajor());
-            node.SetInteger("minor", package_version.GetMinor());
-            node.SetInteger("patch", package_version.GetPatchLevel());
-            node.SetString("timestamp", build_info.date);
-            node.SetString("host", host);
-        }
-
-        auto& ctx = this->GetContext();
-        auto& reply = ctx.GetResponse();
-
-        reply.WriteHeader();
-        reply.out() << node.Repr();
+        this->SetVersion(package_version);
     }
 };
 
