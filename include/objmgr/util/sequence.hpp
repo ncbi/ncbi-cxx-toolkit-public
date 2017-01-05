@@ -1072,6 +1072,7 @@ public:
     /// Find "best" frame for a coding region. "Best" frame has no
     /// internal stop codons.
     static CCdregion::EFrame FindBestFrame(const CSeq_feat& cds, CScope& scope);
+    static CCdregion::EFrame FindBestFrame(const CSeq_feat& cds, CScope& scope, bool& ambiguous);
 
 };
 

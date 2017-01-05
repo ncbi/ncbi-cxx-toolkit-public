@@ -4203,8 +4203,9 @@ void CSeqTranslator::Translate(const CSeq_feat& feat,
 }
 
 
-CCdregion::EFrame CSeqTranslator::FindBestFrame(const CSeq_feat& cds, CScope& scope)
+CCdregion::EFrame CSeqTranslator::FindBestFrame(const CSeq_feat& cds, CScope& scope, bool& ambiguous)
 {
+    ambiguous = false;
     if (!cds.IsSetLocation() || !cds.IsSetData() || !cds.GetData().IsCdregion()) {
         return CCdregion::eFrame_not_set;
     }
@@ -4244,13 +4245,28 @@ CCdregion::EFrame CSeqTranslator::FindBestFrame(const CSeq_feat& cds, CScope& sc
         if (pos == string::npos) {
             pos = prot.length();
         }
-        if (pos > best || (pos == best && *it == orig_frame)) {
+        if (pos > best) {
             best = pos;
             best_frame = *it;
-        }        
+            ambiguous = false;
+        } else if (pos == best) {
+            if (*it == orig_frame) {
+                best = pos;
+                best_frame = *it;
+            }
+            ambiguous = true;
+        }      
     }
     
     return best_frame;
+}
+
+
+CCdregion::EFrame CSeqTranslator::FindBestFrame(const CSeq_feat& cds, CScope& scope)
+{
+    bool ambiguous = false;
+
+    return FindBestFrame(cds, scope, ambiguous);
 }
 
 
