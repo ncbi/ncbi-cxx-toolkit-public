@@ -359,6 +359,9 @@ void CCgi2RCgiApp::Init()
     CNcbiRegistry& config(GetConfig());
     string grid_cgi_section("grid_cgi");
 
+    // Must correspond to TEnableVersionRequest
+    config.Set("CGI", "EnableVersionRequest", "false");
+
     // Default value must correspond to SRCgiWait value
     m_RefreshDelay = config.GetInt(grid_cgi_section,
         "refresh_delay", 5, IRegistry::eReturn);
