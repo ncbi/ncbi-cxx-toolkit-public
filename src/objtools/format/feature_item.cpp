@@ -1664,9 +1664,18 @@ void CFeatureItem::x_AddQuals(
         } else if ((! feat_gene_xref || ! suppressed) &&
                    subtype != CSeqFeatData::eSubtype_primer_bind) {
 
+            CConstRef<CSeq_feat> overlap;
             CScope& scope = ctx.GetScope();
             const CSeq_feat& orig = m_Feat.GetOriginalFeature();
-            CConstRef<CSeq_feat> overlap = sequence::GetGeneForFeature(orig, scope);
+            if (subtype == CSeqFeatData::eSubtype_cdregion) {
+                CConstRef<CSeq_feat> mrna = sequence::GetmRNAforCDS(orig, scope);
+                if (mrna) {
+                    overlap = sequence::GetGeneForFeature(*mrna, scope);
+                }
+            }
+            if (! overlap) {
+                overlap = sequence::GetGeneForFeature(orig, scope);
+            }
             if (overlap) {
                 gene_feat = overlap;
                 gene_ref = &gene_feat->GetData().GetGene();
