@@ -5646,14 +5646,13 @@ void CValidError_feat::ValidateCommonMRNAProduct(const CSeq_feat& feat)
 void CValidError_feat::ValidatemRNAGene (const CSeq_feat &feat)
 {
     if (feat.IsSetProduct()) {
+        const CGene_ref* genomicgrp = NULL;
         // get gene ref for mRNA feature
-        const CGene_ref* genomicgrp = feat.GetGeneXref();
-        if ( genomicgrp == 0 ) {
-            const CSeq_feat* gene =
-                sequence::GetGeneForFeature(feat, *m_Scope);
-            if ( gene != 0 ) {
-                genomicgrp = &gene->GetData().GetGene();
-            }
+        CConstRef<CSeq_feat> gene = sequence::GetGeneForFeature(feat, *m_Scope);
+        if (gene) {
+            genomicgrp = &(gene->GetData().GetGene());
+        } else {
+            genomicgrp = feat.GetGeneXref();
         }
         if ( genomicgrp != 0 ) {
             // get gene for mRNA product sequence
