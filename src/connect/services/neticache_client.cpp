@@ -769,17 +769,7 @@ bool CNetICacheClient::HasBlob(const string& key, const string& subkey,
 
 void CNetICacheClient::Purge(time_t access_timeout, EKeepVersions keep_last_version)
 {
-
-    if (access_timeout || keep_last_version != ICache::eDropAll) {
-        NCBI_THROW(CNetCacheException, eNotImplemented, "Not implemented");
-    }
-
-    const auto& parameters = m_Impl->m_DefaultParameters;
-    const auto cache_name = NStr::PrintableString(parameters.GetCacheName());
-
-    string cmd("PURGE \"" + cache_name + "\"");
-    m_Impl->AppendClientIPSessionIDPasswordAgeHitID(&cmd, &parameters);
-    m_Impl->m_Service.ExecOnAllServers(cmd);
+    Purge(kEmptyStr, kEmptyStr, access_timeout, keep_last_version);
 }
 
 
@@ -788,28 +778,31 @@ void CNetICacheClient::Purge(const string&    key,
                              time_t           access_timeout,
                              EKeepVersions    keep_last_version)
 {
-    if (key.empty()) {
-        if (subkey.empty()) {
-            return Purge(access_timeout, keep_last_version);
-        }
-
-        NCBI_THROW(CNetCacheException, eNotImplemented, "Not implemented");
-    }
-
-    if (access_timeout || keep_last_version != ICache::eDropAll) {
+    if (access_timeout) {
         NCBI_THROW(CNetCacheException, eNotImplemented, "Not implemented");
     }
 
     if (!subkey.empty()) {
+        if (key.empty()) {
+            NCBI_THROW(CNetCacheException, eNotImplemented, "Not implemented");
+        }
+
         return RemoveBlob(key, 0, subkey);
     }
 
+    // TODO: Replace with a command from CXX-8948 when it is deployed everywhere
     using namespace ncbi::grid::netcache::search;
 
-    auto result = Search(fields::key == key);
+    // NB: 'size >= 0' condition is used to get all blobs
+    auto result = Search(key.empty() ? fields::size >= 0 : fields::key == key);
 
     for (auto& blob_info : result) {
-        RemoveBlob(key, 0, blob_info[fields::subkey]);
+        try {
+            RemoveBlob(blob_info[fields::key], 0, blob_info[fields::subkey]);
+        }
+        catch (CNetCacheException& e) {
+            if (e.GetErrCode() != CNetCacheException::eBlobNotFound) throw;
+        }
     }
 }
 
