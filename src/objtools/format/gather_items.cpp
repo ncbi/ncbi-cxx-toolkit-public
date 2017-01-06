@@ -1697,7 +1697,7 @@ void CFlatGatherer::x_CollectSourceFeatures
     for ( CFeat_CI fi(bh, range, as); fi; ++fi ) {
         TSeqPos start = fi->GetLocation().GetTotalRange().GetFrom();
         TSeqPos stop = fi->GetLocation().GetTotalRange().GetTo();
-        if ( start <= range.GetFrom()  &&  stop  >= range.GetTo() ) {
+        if ( start >= range.GetFrom()  &&  stop  <= range.GetTo() ) {
             CRef<CSourceFeatureItem> sf(new CSourceFeatureItem(*fi, ctx, m_Feat_Tree));
             srcs.push_back(sf);
         }
