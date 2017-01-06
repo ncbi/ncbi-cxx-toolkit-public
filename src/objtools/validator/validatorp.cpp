@@ -3005,25 +3005,13 @@ bool CValidError_imp::BadMultipleSequenceLocation(const CSeq_loc& loc, CScope& s
 
 
 bool CValidError_imp::x_IsFarFetchFailure (const CSeq_loc& loc)
-{
-    bool rval = false;
-    if ( IsOneBioseq(loc, m_Scope) ) {
-        const CSeq_id& prod_id = GetId(loc, m_Scope);
-        CBioseq_Handle prod =
-            m_Scope->GetBioseqHandleFromTSE(prod_id, GetTSE());
-        if ( !prod ) {
-            if (!IsFarFetchMRNAproducts() && !IsFarFetchCDSproducts()
-                && IsFarLocation(loc, GetTSEH())) {
-                rval = true;
-            }                        
-        }
+{    
+    if (!IsFarFetchMRNAproducts() && !IsFarFetchCDSproducts()
+        && IsFarLocation(loc, GetTSEH())) {
+        return true;
     } else {
-        if (!IsFarFetchMRNAproducts() && !IsFarFetchCDSproducts()
-            && IsFarLocation(loc, GetTSEH())) {
-            rval = true;
-        }
+        return false;
     }
-    return rval;
 }
 
 
