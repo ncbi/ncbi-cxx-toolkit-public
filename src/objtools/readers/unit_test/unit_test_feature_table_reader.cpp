@@ -1774,6 +1774,9 @@ BOOST_AUTO_TEST_CASE(TestBetweenBaseIntervals)
         BOOST_REQUIRE(ftable.front()->GetData().IsGene());
         BOOST_REQUIRE(ftable.back()->IsSetData());
         BOOST_REQUIRE_EQUAL(ftable.back()->GetData().GetImp().GetKey(), "variation");
+        
+        const CSeq_loc & variation_loc = ftable.back()->GetLocation();
+        BOOST_CHECK(variation_loc.IsPnt() || variation_loc.IsInt());
     }
 }
 

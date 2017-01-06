@@ -2786,26 +2786,29 @@ void CFeature_table_reader_imp::x_UpdatePointStrand(CSeq_feat& feat, CSeq_interv
 
 void CFeature_table_reader_imp::x_FinishFeature(CRef<CSeq_feat>& feat)
 {
-    if (feat.Empty())
+    if ( ! feat || feat.Empty())
         return;
 
     if (feat->IsSetLocation())
     {
-        // demote single interval seqlocmix to seqlocint
+        
         if (feat->GetLocation().IsMix())
         {
             switch (feat->GetLocation().GetMix().Get().size())
             {
             case 0:
+                // turn empty seqlocmix into a null seq-loc
                 feat->SetLocation().SetNull();
                 break;
             case 1:
             {
+                // demote 1-part seqlocmixes to seq-loc with just that part
                 CRef<CSeq_loc> keep_loc = *feat->SetLocation().SetMix().Set().begin();
                 feat->SetLocation(*keep_loc);
             }
             break;
             default:
+                // mixes with 2 or more parts can be left alone
                 break;
             }
         }
@@ -3048,6 +3051,10 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
             }
         }
     }
+
+    // make sure last feature is finished
+    x_FinishFeature(sfp);
+    x_ResetFeat( sfp, curr_feat_intervals_done );
 
     if ((flags & CFeature_table_reader::fCreateGenesFromCDSs) != 0 ||
         (flags & CFeature_table_reader::fCDSsMustBeInTheirGenes) != 0 ) 
