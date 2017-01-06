@@ -767,18 +767,50 @@ bool CNetICacheClient::HasBlob(const string& key, const string& subkey,
     }
 }
 
-void CNetICacheClient::Purge(time_t, EKeepVersions)
+void CNetICacheClient::Purge(time_t access_timeout, EKeepVersions keep_last_version)
 {
-    NCBI_THROW(CNetCacheException, eNotImplemented, "PRG1 is not implemented");
+
+    if (access_timeout || keep_last_version != ICache::eDropAll) {
+        NCBI_THROW(CNetCacheException, eNotImplemented, "Not implemented");
+    }
+
+    const auto& parameters = m_Impl->m_DefaultParameters;
+    const auto cache_name = NStr::PrintableString(parameters.GetCacheName());
+
+    string cmd("PURGE \"" + cache_name + "\"");
+    m_Impl->AppendClientIPSessionIDPasswordAgeHitID(&cmd, &parameters);
+    m_Impl->m_Service.ExecOnAllServers(cmd);
 }
 
 
-void CNetICacheClient::Purge(const string&    /*key*/,
-                             const string&    /*subkey*/,
-                             time_t           /*access_timeout*/,
-                             EKeepVersions    /*keep_last_version*/)
+void CNetICacheClient::Purge(const string&    key,
+                             const string&    subkey,
+                             time_t           access_timeout,
+                             EKeepVersions    keep_last_version)
 {
-    NCBI_THROW(CNetCacheException, eNotImplemented, "PRG1 is not implemented");
+    if (key.empty()) {
+        if (subkey.empty()) {
+            return Purge(access_timeout, keep_last_version);
+        }
+
+        NCBI_THROW(CNetCacheException, eNotImplemented, "Not implemented");
+    }
+
+    if (access_timeout || keep_last_version != ICache::eDropAll) {
+        NCBI_THROW(CNetCacheException, eNotImplemented, "Not implemented");
+    }
+
+    if (!subkey.empty()) {
+        return RemoveBlob(key, 0, subkey);
+    }
+
+    using namespace ncbi::grid::netcache::search;
+
+    auto result = Search(fields::key == key);
+
+    for (auto& blob_info : result) {
+        RemoveBlob(key, 0, blob_info[fields::subkey]);
+    }
 }
 
 IReader* CNetICacheClient::GetReadStream(
