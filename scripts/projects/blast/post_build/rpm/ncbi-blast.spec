@@ -2,7 +2,7 @@ Name:        ncbi-blast
 Version:     BLAST_VERSION+
 Release:     2
 Source0:     %{name}-%{version}.tgz
-Summary:     NCBI BLAST finds regions of similarity between biological sequences. 
+Summary:     NCBI BLAST finds regions of similarity between biological sequences.
 Exclusiveos: linux
 Group:       NCBI/BLAST
 License:     Public Domain
@@ -11,44 +11,44 @@ BuildRoot:   /var/tmp/%{name}-buildroot
 Prefix:      /usr
 
 AutoReqProv: no
-Requires:    /usr/bin/perl  
-Requires:    ld-linux-x86-64.so.2()(64bit)  
-Requires:    ld-linux-x86-64.so.2(GLIBC_2.3)(64bit)  
-Requires:    libbz2.so.1()(64bit)  
-Requires:    libc.so.6()(64bit)  
-Requires:    libc.so.6(GLIBC_2.2.5)(64bit)  
-Requires:    libc.so.6(GLIBC_2.3)(64bit)  
-Requires:    libc.so.6(GLIBC_2.3.2)(64bit)  
-Requires:    libc.so.6(GLIBC_2.7)(64bit)  
-Requires:    libdl.so.2()(64bit)  
-Requires:    libdl.so.2(GLIBC_2.2.5)(64bit)  
-Requires:    libgcc_s.so.1()(64bit)  
-Requires:    libgcc_s.so.1(GCC_3.0)(64bit)  
-Requires:    libm.so.6()(64bit)  
-Requires:    libm.so.6(GLIBC_2.2.5)(64bit)  
-Requires:    libnsl.so.1()(64bit)  
-Requires:    libpthread.so.0()(64bit)  
-Requires:    libpthread.so.0(GLIBC_2.2.5)(64bit)  
-Requires:    libpthread.so.0(GLIBC_2.3.2)(64bit)  
-Requires:    librt.so.1()(64bit)  
-Requires:    libstdc++.so.6()(64bit)  
-Requires:    libstdc++.so.6(CXXABI_1.3)(64bit)  
-Requires:    libstdc++.so.6(CXXABI_1.3.1)(64bit)  
-Requires:    libstdc++.so.6(GLIBCXX_3.4)(64bit)  
-Requires:    libstdc++.so.6(GLIBCXX_3.4.5)(64bit)  
-Requires:    libz.so.1()(64bit)  
-Requires:    libz.so.1(ZLIB_1.2.0)(64bit)  
-Requires:    perl(Archive::Tar)  
-Requires:    perl(Digest::MD5)  
-Requires:    perl(File::Temp)  
-Requires:    perl(File::stat)  
-Requires:    perl(Getopt::Long)  
-Requires:    perl(List::MoreUtils)  
-Requires:    perl(Net::FTP)  
-Requires:    perl(Pod::Usage)  
-Requires:    perl(constant)  
-Requires:    perl(strict)  
-Requires:    perl(warnings)  
+Requires:    /usr/bin/perl
+Requires:    ld-linux-x86-64.so.2()(64bit)
+Requires:    ld-linux-x86-64.so.2(GLIBC_2.3)(64bit)
+Requires:    libbz2.so.1()(64bit)
+Requires:    libc.so.6()(64bit)
+Requires:    libc.so.6(GLIBC_2.2.5)(64bit)
+Requires:    libc.so.6(GLIBC_2.3)(64bit)
+Requires:    libc.so.6(GLIBC_2.3.2)(64bit)
+Requires:    libc.so.6(GLIBC_2.7)(64bit)
+Requires:    libdl.so.2()(64bit)
+Requires:    libdl.so.2(GLIBC_2.2.5)(64bit)
+Requires:    libgcc_s.so.1()(64bit)
+Requires:    libgcc_s.so.1(GCC_3.0)(64bit)
+Requires:    libm.so.6()(64bit)
+Requires:    libm.so.6(GLIBC_2.2.5)(64bit)
+Requires:    libnsl.so.1()(64bit)
+Requires:    libpthread.so.0()(64bit)
+Requires:    libpthread.so.0(GLIBC_2.2.5)(64bit)
+Requires:    libpthread.so.0(GLIBC_2.3.2)(64bit)
+Requires:    librt.so.1()(64bit)
+Requires:    libstdc++.so.6()(64bit)
+Requires:    libstdc++.so.6(CXXABI_1.3)(64bit)
+Requires:    libstdc++.so.6(CXXABI_1.3.1)(64bit)
+Requires:    libstdc++.so.6(GLIBCXX_3.4)(64bit)
+Requires:    libstdc++.so.6(GLIBCXX_3.4.5)(64bit)
+Requires:    libz.so.1()(64bit)
+Requires:    libz.so.1(ZLIB_1.2.0)(64bit)
+Requires:    perl(Archive::Tar)
+Requires:    perl(Digest::MD5)
+Requires:    perl(File::Temp)
+Requires:    perl(File::stat)
+Requires:    perl(Getopt::Long)
+Requires:    perl(List::MoreUtils)
+Requires:    perl(Net::FTP)
+Requires:    perl(Pod::Usage)
+Requires:    perl(constant)
+Requires:    perl(strict)
+Requires:    perl(warnings)
 Requires:    rpmlib(CompressedFileNames) <= 3.0.4-1
 Requires:    rpmlib(FileDigests) <= 4.6.0-1
 Requires:    rpmlib(PayloadFilesHavePrefix) <= 4.0-1
@@ -63,11 +63,11 @@ significance of matches. BLAST can be used to infer functional and
 evolutionary relationships between sequences as well as help identify
 members of gene families.
 
-%prep 
+%prep
 %setup -q
 
 %build
-./configure
+./configure || ./configure --manifest-config=Linux64-Centos:gcc
 cd c++/*/build
 %__make -f Makefile.flat
 
