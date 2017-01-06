@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include "../ncbi_ansi_ext.h"
 #include "../ncbi_priv.h"
+#include "../ncbi_version.h"
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbifile.hpp>
 #ifdef NCBI_OS_MSWIN
@@ -151,6 +152,11 @@ bool CTestApp::LoadConfig(CNcbiRegistry& reg, const string* conf)
 
 void CTestApp::Init(void)
 {
+    // Show revision number in the name
+    string appname = GetProgramDisplayName() + '/';
+    appname += g_VersionStr("$Revision$");
+    SetProgramDisplayName(appname);
+
     // Init the library explicitly (this sets up the registry)
     {
         class CInPlaceConnIniter : protected CConnIniter
