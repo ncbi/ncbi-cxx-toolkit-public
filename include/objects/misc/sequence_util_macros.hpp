@@ -534,6 +534,12 @@ DO_UNIQUE (CHAR_IN_STRING, Var, Func)
 
 #define GET_FIELD_OR_DEFAULT(Var, Fld, Dflt) \
     ((Var).IsSet##Fld() ? (Var).Get##Fld() : Dflt )
+    
+/// GET_FIELD_CHOICE_OR_DEFAULT base macro
+
+#define GET_FIELD_CHOICE_OR_DEFAULT(Var, Fld, Dflt) \
+    ((Var).Is##Fld() ? (Var).Get##Fld() : Dflt )
+
 
 /// GET_MUTABLE base macro
 
