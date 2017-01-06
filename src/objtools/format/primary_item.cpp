@@ -273,13 +273,14 @@ void CPrimaryItem::x_GetStrForPrimary(CBioseqContext& ctx)
                 continue;
             }
         }
+        string tid = other_id->GetSeqIdString(true);
         if (other_id->IsGeneral()) {
             const CDbtag& dbt = other_id->GetGeneral();
             if (dbt.IsSetDb()  &&  NStr::EqualNocase(dbt.GetDb(), "TI")) {
-                s += "TI";
-            }
+                NStr::ReplaceInPlace (tid, "ti:", "TI");
+             }
         }
-        s += other_id->GetSeqIdString(true);
+        s += tid;
         s.resize(39, ' ');
         s += NStr::IntToString(align.GetSeqStart(1) + 1) + '-' +
             NStr::IntToString(align.GetSeqStop(1) + 1);
