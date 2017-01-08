@@ -67,7 +67,11 @@ members of gene families.
 %setup -q
 
 %build
-./configure || ./configure --manifest-config=Linux64-Centos:gcc
+./configure 2>&1 | tee /tmp/err.out
+grep ERROR /tmp/err.out
+if [ $? == 0 ] ; then
+    ./configure --manifest-config=Linux64-Centos:gcc
+fi
 cd c++/*/build
 %__make -f Makefile.flat
 
