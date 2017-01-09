@@ -77,7 +77,11 @@ protected:
     // this method is declared here to be disabled (exception) at run-time
     virtual CNcbiStreambuf* setbuf(CT_CHAR_TYPE* buf, streamsize buf_size);
 
-    // only seekoff(0, IOS_BASE::cur) is permitted (to obtain current position)
+    /// Only seekoff(0, IOS_BASE::cur, *) to obtain current position, and input
+    /// skip-forward are permitted:
+    /// seekoff(off, IOS_BASE::cur or IOS_BASE::beg, IOS_BASE::in) when the
+    /// requested stream position is past the current input position (so the
+    /// stream can read forward internally to reach that position).
     virtual CT_POS_TYPE seekoff(CT_OFF_TYPE off, IOS_BASE::seekdir whence,
                                 IOS_BASE::openmode which =
                                 IOS_BASE::in | IOS_BASE::out);
@@ -95,8 +99,16 @@ protected:
 #endif /*NCBI_OS_MSWIN*/
 
 protected:
-    int                 x_sync(void)
+    CT_POS_TYPE x_GetGPos(void)
+    { return x_GPos - (CT_OFF_TYPE)(egptr() - gptr()); }
+
+    CT_POS_TYPE x_GetPPos(void)
+    { return x_PPos + (CT_OFF_TYPE)(pptr() - pbase()); }
+
+    int         x_sync(void)
     { return pbase() < pptr() ? sync() : 0; }
+
+    streamsize  x_read(CT_CHAR_TYPE* buf, streamsize n);
 
 private:
     CONN                m_Conn;      // underlying connection handle

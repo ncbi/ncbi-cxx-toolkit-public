@@ -450,10 +450,9 @@ CT_INT_TYPE CRWStreambuf::underflow(void)
 }
 
 
-streamsize CRWStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
+streamsize CRWStreambuf::x_read(CT_CHAR_TYPE* buf, streamsize m)
 {
-    if ( !m_Reader )
-        return 0;
+    _ASSERT(m_Reader);
 
     // flush output buffer, if tied up to it
     if (!(m_Flags & fUntie)  &&  x_sync() != 0)
@@ -471,19 +470,21 @@ streamsize CRWStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
         n_read = (size_t)(egptr() - gptr());
         if (n_read > n)
             n_read = n;
-        memcpy(buf, gptr(), n_read);
+        if (buf)
+            memcpy(buf, gptr(), n_read);
         gbump(int(n_read));
-        n   -= n_read;
+        n       -= n_read;
         if ( !n )
             return (streamsize) n_read;
-        buf += n_read;
+        if (buf)
+            buf += n_read;
     } else
         n_read = 0;
 
     do {
         // next, read directly from the device
-        size_t     x_toread = n  &&  n < m_BufSize ? m_BufSize : n;
-        CT_CHAR_TYPE* x_buf =        n < m_BufSize ? m_ReadBuf : buf;
+        size_t     x_toread = !buf || (n  &&  n < m_BufSize) ? m_BufSize : n;
+        CT_CHAR_TYPE* x_buf = !buf || (       n < m_BufSize) ? m_ReadBuf : buf;
         ERW_Result   result = eRW_Success;
         size_t       x_read = 0;
 
@@ -500,7 +501,8 @@ streamsize CRWStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
             size_t xx_read = x_read;
             if (x_read > n)
                 x_read = n;
-            memcpy(buf, m_ReadBuf, x_read);
+            if (buf)
+                memcpy(buf, m_ReadBuf,  x_read);
             setg(m_ReadBuf, m_ReadBuf + x_read, m_ReadBuf + xx_read);
         } else {
             _ASSERT(x_read <= n);
@@ -508,14 +510,21 @@ streamsize CRWStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
             memcpy(m_ReadBuf, buf + x_read - xx_read, xx_read);
             setg(m_ReadBuf, m_ReadBuf + xx_read, m_ReadBuf + xx_read);
         }
-        n_read += x_read;
+        n_read  += x_read;
         if (result != eRW_Success)
             break;
-        buf    += x_read;
-        n      -= x_read;
+        if (buf)
+            buf += x_read;
+        n       -= x_read;
     } while ( n );
 
     return (streamsize) n_read;
+}
+
+
+streamsize CRWStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
+{
+    return m_Reader ? x_read(buf, m) : 0;
 }
 
 
@@ -561,14 +570,19 @@ CT_POS_TYPE CRWStreambuf::seekoff(CT_OFF_TYPE off, IOS_BASE::seekdir whence,
                                   IOS_BASE::openmode which)
 {
     if (off == 0  &&  whence == IOS_BASE::cur) {
+        // tellp()/tellg() support
         switch (which) {
-        case IOS_BASE::out:
-            return x_GetPPos();
         case IOS_BASE::in:
             return x_GetGPos();
+        case IOS_BASE::out:
+            return x_GetPPos();
         default:
             break;
         }
+    } else if ((whence == IOS_BASE::cur  &&  (off  > 0))  ||
+               (whence == IOS_BASE::beg  &&  (off -= x_GetGPos()) >= 0)) {
+        if (m_Reader  &&  x_read(0, (streamsize) off) == (streamsize) off)
+            return x_GetGPos();
     }
     return (CT_POS_TYPE)((CT_OFF_TYPE)(-1L));
 }
