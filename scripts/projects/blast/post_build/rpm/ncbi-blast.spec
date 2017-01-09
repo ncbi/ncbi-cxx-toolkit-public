@@ -70,7 +70,7 @@ members of gene families.
 TMP=`mktemp`
 trap " /bin/rm -fr $TMP " INT QUIT EXIT HUP KILL ALRM
 ./configure 2>&1 | tee $TMP
-grep ERROR /tmp/err.out || ./configure --manifest-config=Linux64-Centos:gcc
+grep ERROR $TMP || ./configure --manifest-config=Linux64-Centos:gcc
 cd c++/*/build
 %__make -f Makefile.flat
 
