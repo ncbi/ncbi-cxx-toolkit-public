@@ -224,11 +224,20 @@ static int s_Run()
 }
 
 
+struct SCtx
+{
+    string key;
+    int version = 0;
+    string subkey;
+
+    friend ostream& operator<< (ostream& os, const SCtx& ctx)
+    {
+        return os << ". Blob: " << ctx.key << ' ' << ctx.version << ' ' << ctx.subkey;
+    }
+};
+
 static void s_SimpleTest()
 {
-#define SIMPLE_TEST_CTX \
-    ". Blob: " << key << ' ' << version << ' ' << subkey
-
     const string service  = TNetCache_ServiceName::GetDefault();
     const string cache_name  = TNetCache_CacheName::GetDefault();
 
@@ -246,32 +255,33 @@ static void s_SimpleTest()
 
     auto random_uint8 = bind(uniform_int_distribution<Uint8>(), mt19937());
 
-    const string key = to_string(time(NULL)) + "t" + to_string(random_uint8());
+    SCtx ctx;
+    ctx.key = to_string(time(NULL)) + "t" + to_string(random_uint8());
     vector<string> subkeys;
 
-    for (int version = 0; version < kIterations; ++version) {
-        const string subkey = to_string(random_uint8());
-        subkeys.push_back(subkey);
+    for (ctx.version = 0; ctx.version < kIterations; ++ctx.version) {
+        ctx.subkey = to_string(random_uint8());
+        subkeys.push_back(ctx.subkey);
 
         try {
             // Creating blob
             generate_n(src.begin(), src.size(), random_uint8);
             auto ptr = reinterpret_cast<const char*>(src.data());
 
-            api.Store(key, version, subkey, ptr, kSrcSize);
-            BOOST_REQUIRE_MESSAGE(api.HasBlob(key, subkey),
-                    "Blob does not exist" SIMPLE_TEST_CTX);
-            BOOST_REQUIRE_MESSAGE(api.GetBlobSize(key, version, subkey) == kSrcSize,
-                    "Blob size (GetBlobSize) differs from the source" SIMPLE_TEST_CTX);
+            api.Store(ctx.key, ctx.version, ctx.subkey, ptr, kSrcSize);
+            BOOST_REQUIRE_MESSAGE(api.HasBlob(ctx.key, ctx.subkey),
+                    "Blob does not exist" << ctx);
+            BOOST_REQUIRE_MESSAGE(api.GetBlobSize(ctx.key, ctx.version, ctx.subkey) == kSrcSize,
+                    "Blob size (GetBlobSize) differs from the source" << ctx);
 
             // Checking blob
             size_t size = 0;
-            auto_ptr<IReader> reader(api.GetReadStream(key, version, subkey, &size));
+            auto_ptr<IReader> reader(api.GetReadStream(ctx.key, ctx.version, ctx.subkey, &size));
 
             BOOST_REQUIRE_MESSAGE(size == kSrcSize,
-                    "Blob size (GetData) differs from the source" SIMPLE_TEST_CTX);
+                    "Blob size (GetData) differs from the source" << ctx);
             BOOST_REQUIRE_MESSAGE(reader.get(),
-                    "Failed to get reader" SIMPLE_TEST_CTX);
+                    "Failed to get reader" << ctx);
 
             for (;;) {
                 size_t read = 0;
@@ -279,33 +289,33 @@ static void s_SimpleTest()
                 switch (reader->Read(buf.data(), kBufSize, &read)) {
                 case eRW_Success:
                     BOOST_REQUIRE_MESSAGE(!memcmp(buf.data(), ptr, read),
-                            "Blob content does not match the source" SIMPLE_TEST_CTX);
+                            "Blob content does not match the source" << ctx);
                     BOOST_REQUIRE_MESSAGE(size >= read,
-                            "Blob size is greater than the source" SIMPLE_TEST_CTX);
+                            "Blob size is greater than the source" << ctx);
                     ptr += read;
                     size -= read;
                     continue;
 
                 case eRW_Eof:
                     BOOST_REQUIRE_MESSAGE(!size,
-                            "Blob size is less than the source" SIMPLE_TEST_CTX);
+                            "Blob size is less than the source" << ctx);
                     break;
 
                 default:
-                    BOOST_FAIL("Reading blob failed" SIMPLE_TEST_CTX);
+                    BOOST_FAIL("Reading blob failed" << ctx);
                 }
 
                 break;
             }
         }
         catch (...) {
-            BOOST_ERROR("An exception has been caught" SIMPLE_TEST_CTX);
+            BOOST_ERROR("An exception has been caught" << ctx);
             throw;
         }
     }
 
     try {
-        list<string> received(api.GetSubkeyList(key));
+        list<string> received(api.GetSubkeyList(ctx.key));
 
         if (received.size() != subkeys.size()) {
             BOOST_ERROR("Received unexpected number of subkeys: " <<
@@ -316,41 +326,40 @@ static void s_SimpleTest()
 
         for (list<string>::const_iterator i = received.begin();
                 i != received.end(); ++i) {
-            const string subkey = *i;
+            ctx.subkey = *i;
 
-            if (expected.find(subkey) == expected.end()) {
-                BOOST_ERROR("Received unexpected subkey " << subkey <<
-                        " for key " << key);
+            if (expected.find(ctx.subkey) == expected.end()) {
+                BOOST_ERROR("Received unexpected subkey " << ctx.subkey <<
+                        " for key " << ctx.key);
             }
         }
     }
     catch (...) {
-        BOOST_ERROR("An exception has been caught. Key: " << key);
+        BOOST_ERROR("An exception has been caught. Key: " << ctx.key);
         throw;
     }
 
-    for (int version = 0; version < kIterations; ++version) {
-        const string subkey = subkeys.back();
+    for (ctx.version = 0; ctx.version < kIterations; ++ctx.version) {
+        ctx.subkey = subkeys.back();
         subkeys.pop_back();
 
         try {
             // Removing blob
-            api.RemoveBlob(key, version, subkey);
+            api.RemoveBlob(ctx.key, ctx.version, ctx.subkey);
 
             // Checking removed blob
-            BOOST_REQUIRE_MESSAGE(!api.HasBlob(key, subkey),
-                    "Removed blob still exists" SIMPLE_TEST_CTX);
+            BOOST_REQUIRE_MESSAGE(!api.HasBlob(ctx.key, ctx.subkey),
+                    "Removed blob still exists" << ctx);
             size_t size = 0;
-            auto_ptr<IReader> fail_reader(api.GetReadStream(key, version, subkey, &size));
+            auto_ptr<IReader> fail_reader(api.GetReadStream(ctx.key, ctx.version, ctx.subkey, &size));
             BOOST_REQUIRE_MESSAGE(!fail_reader.get(),
-                    "Got reader for removed blob" SIMPLE_TEST_CTX);
+                    "Got reader for removed blob" << ctx);
         }
         catch (...) {
-            BOOST_ERROR("An exception has been caught" SIMPLE_TEST_CTX);
+            BOOST_ERROR("An exception has been caught" << ctx);
             throw;
         }
     }
-#undef SIMPLE_TEST_CTX
 }
 
 BOOST_AUTO_TEST_SUITE(NetICacheClient)
