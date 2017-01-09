@@ -569,8 +569,8 @@ int CRWStreambuf::sync(void)
 CT_POS_TYPE CRWStreambuf::seekoff(CT_OFF_TYPE off, IOS_BASE::seekdir whence,
                                   IOS_BASE::openmode which)
 {
-    if (off == 0  &&  whence == IOS_BASE::cur) {
-        // tellp()/tellg() support
+    if (whence == IOS_BASE::cur  &&  off == 0) {
+        // tellg()/tellp() support
         switch (which) {
         case IOS_BASE::in:
             return x_GetGPos();
@@ -579,8 +579,9 @@ CT_POS_TYPE CRWStreambuf::seekoff(CT_OFF_TYPE off, IOS_BASE::seekdir whence,
         default:
             break;
         }
-    } else if ((whence == IOS_BASE::cur  &&  (off  > 0))  ||
-               (whence == IOS_BASE::beg  &&  (off -= x_GetGPos()) >= 0)) {
+    } else if (which == IOS_BASE::in
+               &&  ((whence == IOS_BASE::cur  &&  (off  > 0))  ||
+                    (whence == IOS_BASE::beg  &&  (off -= x_GetGPos()) >= 0))){
         if (m_Reader  &&  x_read(0, (streamsize) off) == (streamsize) off)
             return x_GetGPos();
     }

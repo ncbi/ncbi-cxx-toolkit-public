@@ -581,7 +581,7 @@ CT_POS_TYPE CConn_Streambuf::seekoff(CT_OFF_TYPE        off,
                                      IOS_BASE::openmode which)
 {
     if (whence == IOS_BASE::cur  &&  off == 0) {
-        // tellp()/tellg() support
+        // tellg()/tellp() support
         switch (which) {
         case IOS_BASE::in:
             return x_GetGPos();
@@ -590,8 +590,9 @@ CT_POS_TYPE CConn_Streambuf::seekoff(CT_OFF_TYPE        off,
         default:
             break;
         }
-    } else if ((whence == IOS_BASE::cur  &&  (off  > 0))  ||
-               (whence == IOS_BASE::beg  &&  (off -= x_GetGPos()) >= 0)) {
+    } else if (which == IOS_BASE::in
+               &&  ((whence == IOS_BASE::cur  &&  (off  > 0))  ||
+                    (whence == IOS_BASE::beg  &&  (off -= x_GetGPos()) >= 0))){
         if (m_Conn  &&  x_read(0, (streamsize) off) == (streamsize) off)
             return x_GetGPos();
     }
