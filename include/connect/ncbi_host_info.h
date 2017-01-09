@@ -142,7 +142,9 @@ int/*bool*/ HINFO_Memusage(const HOST_INFO host_info, double memusage[5]);
 
 
 typedef enum {
-    eArch_Unknown
+    fArch_Virtual = 1,         /**< Set when a VM                            */
+    /* 31 different CPU types (6-bit even values) can be defined             */
+    fArch_Unknown = 0          /**< Unknown/undefined CPU type               */
 } ENcbiArch;
 typedef unsigned short TNcbiArch;
 
