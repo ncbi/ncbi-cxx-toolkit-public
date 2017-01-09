@@ -339,9 +339,14 @@ static void s_SimpleTest()
         throw;
     }
 
-    for (ctx.version = 0; ctx.version < kIterations; ++ctx.version) {
-        ctx.subkey = subkeys.back();
-        subkeys.pop_back();
+    // Removing every other blob
+
+    ctx.version = 0;
+
+    for (const auto& subkey : subkeys) {
+        if (++ctx.version % 2) continue;
+
+        ctx.subkey = subkey;
 
         try {
             // Removing blob
@@ -360,6 +365,55 @@ static void s_SimpleTest()
             throw;
         }
     }
+
+
+    // Creating blob with a different key to check Purge()
+
+    SCtx purge_ctx;
+    purge_ctx.key = to_string(time(NULL)) + "t" + to_string(random_uint8());
+    purge_ctx.subkey = subkeys.back();
+    auto ptr = reinterpret_cast<const char*>(src.data());
+
+    api.Store(purge_ctx.key, purge_ctx.version, purge_ctx.subkey, ptr, kSrcSize);
+
+    BOOST_REQUIRE_MESSAGE(api.HasBlob(purge_ctx.key, purge_ctx.subkey),
+            "Check blob does not exist" << purge_ctx);
+
+
+    // Removing all remaining blobs with the same key
+
+    api.Purge(ctx.key, kEmptyStr, 0);
+
+
+    // Checking Purge() result
+
+    BOOST_REQUIRE_MESSAGE(api.HasBlob(purge_ctx.key, purge_ctx.subkey),
+            "Check blob was purged" << purge_ctx);
+
+    ctx.version = 0;
+
+    for (const auto& subkey : subkeys) {
+        ++ctx.version;
+        ctx.subkey = subkey;
+
+        try {
+            // Checking removed blob
+            BOOST_REQUIRE_MESSAGE(!api.HasBlob(ctx.key, ctx.subkey),
+                    "Removed blob still exists" << ctx);
+            size_t size = 0;
+            auto_ptr<IReader> fail_reader(api.GetReadStream(ctx.key, ctx.version, ctx.subkey, &size));
+            BOOST_REQUIRE_MESSAGE(!fail_reader.get(),
+                    "Got reader for removed blob" << ctx);
+        }
+        catch (...) {
+            BOOST_ERROR("An exception has been caught" << ctx);
+            throw;
+        }
+    }
+
+
+    // Removing check blob
+    api.RemoveBlob(purge_ctx.key, purge_ctx.version, purge_ctx.subkey);
 }
 
 BOOST_AUTO_TEST_SUITE(NetICacheClient)
