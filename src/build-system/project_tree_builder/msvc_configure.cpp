@@ -142,8 +142,7 @@ void CMsvcConfigure::Configure(CMsvcSite&         site,
     InitializeFrom(site);
     site.ProcessMacros(configs);
 
-    if (CMsvc7RegSettings::GetMsvcPlatform() >= CMsvc7RegSettings::eUnix ||
-        GetApp().IsCMakeMode()) {
+    if (CMsvc7RegSettings::GetMsvcPlatform() >= CMsvc7RegSettings::eUnix) {
         return;
     }
     _TRACE("*** Creating Makefile.third_party.mk files ***");
@@ -168,8 +167,7 @@ void CMsvcConfigure::CreateConfH(
     ITERATE(list<SConfigInfo>, p, configs) {
         WriteExtraDefines( site, root_dir, *p);
     }
-    if (CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eUnix ||
-        GetApp().IsCMakeMode()) {
+    if (CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eUnix) {
         return;
     }
     _TRACE("*** Creating local ncbiconf headers ***");

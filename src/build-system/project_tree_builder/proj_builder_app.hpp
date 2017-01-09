@@ -136,7 +136,6 @@ public:
     bool m_Dtdep;
     bool m_AddMissingDep;
     bool m_LibDep;
-    bool m_CMakeMode;
     int m_Ide;
     string m_Arch;
 
@@ -155,8 +154,6 @@ public:
     map<string, list<string> > m_3PartyLibraryOrder;
 
 public:
-    bool IsCMakeMode(void) const {return m_CMakeMode;}
-
     bool UseAbsolutePath(const string& path) const;
     void AddCustomMetaData(const string& file);
     void GetMetaDataFiles(list<string>* files) const;

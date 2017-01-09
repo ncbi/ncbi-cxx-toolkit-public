@@ -405,7 +405,7 @@ struct PIsExcludedByDisuse
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(4,1,5) );
+    SetVersion( CVersionInfo(4,2,0) );
     m_ScanningWholeTree = false;
     m_Dll = false;
     m_AddMissingLibs = false;
@@ -422,7 +422,6 @@ CProjBulderApp::CProjBulderApp(void)
     m_Dtdep = false;
     m_AddMissingDep = false;
     m_LibDep = false;
-    m_CMakeMode = false;
     m_Ide = 0;
     m_ExitCode = 0;
 }
@@ -720,21 +719,17 @@ int CProjBulderApp::Run(void)
         m_ExitCode = 0;
     }
     PTB_INFO("Creating projects...");
-    if (IsCMakeMode()) {
-        CMakeGenerator::GenerateCMakeTree(prj_tree);
-    } else {
-        if (CMsvc7RegSettings::GetMsvcPlatform() < CMsvc7RegSettings::eUnix) {
-            GenerateMsvcProjects(prj_tree);
-        }
-        else if (CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eUnix) {
-            GenerateUnixProjects(prj_tree);
-        }
-        else {
-            GenerateMacProjects(prj_tree);
-        }
-        ReportGeneratedFiles();
-        ReportProjectWatchers();
+    if (CMsvc7RegSettings::GetMsvcPlatform() < CMsvc7RegSettings::eUnix) {
+        GenerateMsvcProjects(prj_tree);
     }
+    else if (CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eUnix) {
+        GenerateUnixProjects(prj_tree);
+    }
+    else {
+        GenerateMacProjects(prj_tree);
+    }
+    ReportGeneratedFiles();
+    ReportProjectWatchers();
     //
     PTB_INFO("Done.  Elapsed time = " << sw.Elapsed() << " seconds");
     return m_ExitCode;
@@ -1865,7 +1860,6 @@ void CProjBulderApp::ParseArguments(void)
                         CDirEntry::CreateRelativePath(m_Root, m_Subtree));
     }
     m_Solution       = CDirEntry::NormalizePath(args["solution"].AsString());
-    m_CMakeMode = NStr::CompareNocase(CDirEntry(m_Solution).GetName(), "cmake?") == 0;
     if (m_Solution == "\"\"") {
         m_Solution = "";
     }
