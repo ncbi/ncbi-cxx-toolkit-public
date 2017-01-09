@@ -98,14 +98,6 @@ CSeqDBImpl::CSeqDBImpl(const string       & db_name_list,
 
     SetIterationRange(0, m_NumOIDs);
 
-    try {
-        m_Atlas.Verify(false);
-        m_TaxInfo = new CSeqDBTaxInfo(m_Atlas);
-        m_Atlas.Verify(false);
-    }
-    catch(CSeqDBException &) {
-    }
-
     // Don't setup the flush callback until the implementation data
     // structures are fully populated (otherwise flushing may try to
     // flush unconstructed memory leases).
@@ -183,12 +175,6 @@ CSeqDBImpl::CSeqDBImpl()
 {
     INIT_CLASS_MARK();
 
-    try {
-        m_TaxInfo = new CSeqDBTaxInfo(m_Atlas);
-    }
-    catch(CSeqDBException &) {
-    }
-
     // Don't setup the flush callback until the implementation data
     // structures are fully populated (otherwise flushing may try to
     // flush unconstructed memory leases).
@@ -231,8 +217,6 @@ CSeqDBImpl::~CSeqDBImpl()
     // Prevent GC from flushing volumes after they are torn down.
 
     m_FlushCB.SetImpl(0);
-
-    m_TaxInfo.Reset();
 
     m_VolSet.UnLease();
 
@@ -625,7 +609,6 @@ CSeqDBImpl::GetBioseq(int oid, TGi target_gi, const CSeq_id * target_seq_id, boo
         return vol->GetBioseq(vol_oid,
                               target_gi,
                               target_seq_id,
-                              m_TaxInfo,
                               seqdata,
                               locked);
     }
@@ -1495,12 +1478,7 @@ void CSeqDBImpl::x_ScanTotals(bool             approx,
 
 void CSeqDBImpl::GetTaxInfo(int taxid, SSeqDBTaxInfo & info)
 {
-    CSeqDBAtlasHolder AH(true, NULL, NULL);
-    CSeqDBAtlas &atlas(AH.Get());
-    CSeqDBLockHold locked(atlas);
-
-    CSeqDBTaxInfo taxinfo(atlas);
-    if (! taxinfo.GetTaxNames(taxid, info, locked)) {
+    if (! CSeqDBTaxInfo::GetTaxNames(taxid, info)) {
         CNcbiOstrstream oss;
         oss << "Taxid " << taxid << " not found";
         string msg = CNcbiOstrstreamToString(oss);

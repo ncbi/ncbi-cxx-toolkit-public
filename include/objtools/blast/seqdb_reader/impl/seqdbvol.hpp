@@ -339,7 +339,6 @@ public:
     GetBioseq(int                    oid,
               TGi                    pref_gi,
               const CSeq_id        * pref_seq_id,
-              CRef<CSeqDBTaxInfo>    tax_info,
               bool                   seqdata,
               CSeqDBLockHold       & locked);
 
@@ -1294,7 +1293,6 @@ private:
     x_GetTaxonomy(int                    oid,
                   TGi                    preferred_gi,
                   const CSeq_id        * preferred_seq_id,
-                  CRef<CSeqDBTaxInfo>    tax_info,
                   CSeqDBLockHold       & locked);
 
     /// Returns the base-offset of the specified oid.

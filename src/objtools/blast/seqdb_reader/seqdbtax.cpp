@@ -39,25 +39,99 @@
 
 BEGIN_NCBI_SCOPE
 
-CSeqDBTaxInfo::CSeqDBTaxInfo(CSeqDBAtlas & atlas)
-    : m_Atlas        (atlas),
-      m_Lease        (atlas),
-      m_AllTaxidCount(0),
-      m_TaxData      (0),
-      m_Initialized  (false),
-      m_MissingDB    (false)
-{
-}
 
-void CSeqDBTaxInfo::x_Init(CSeqDBLockHold & locked)
-{
-    m_Atlas.Lock(locked);
+/// CSeqDBTaxId class
+///
+/// This is a memory overlay class.  Do not change the size or layout
+/// of this class unless corresponding changes happen to the taxonomy
+/// database file format.  This class's constructor and destructor are
+/// not called; instead, a pointer to mapped memory is cast to a
+/// pointer to this type, and the access methods are used to examine
+/// the fields.
 
-    if (m_Initialized) return;
+class CSeqDBTaxId {
+public:
+    /// Constructor
+    ///
+    /// This class is a read-only memory overlay and is not expected
+    /// to ever be constructed.
+    CSeqDBTaxId()
+    {
+        _ASSERT(0);
+    }
+
+    /// Return the taxonomic identifier field (in host order)
+    Int4 GetTaxId()const
+    {
+        return SeqDB_GetStdOrd(& m_Taxid);
+    }
+
+    /// Return the offset field (in host order)
+    Int4 GetOffset() const
+    {
+        return SeqDB_GetStdOrd(& m_Offset);
+    }
+
+private:
+    /// This structure should not be copy constructed
+    CSeqDBTaxId(const CSeqDBTaxId &);
+
+    /// The taxonomic identifier
+    Uint4 m_Taxid;
+
+    /// The offset of the start of the taxonomy data.
+    Uint4 m_Offset;
+};
+
+
+
+class CTaxDBFileInfo
+{
+public:
+	CTaxDBFileInfo();
+    ~CTaxDBFileInfo();
+
+    const char* GetDataPtr() {return m_DataPtr;}
+    const CSeqDBTaxId* GetIndexPtr() {return m_IndexPtr;}
+    bool IsMissingTaxInfo() {return m_MissingDB;}
+    const Int4 GetTaxidCount() { return m_AllTaxidCount;}
+    size_t GetDataFileSize() { return m_DataFileSize;}
+
+private:
+    /// The filename of the taxonomic db index file
+    string m_IndexFN;
+
+    /// The filename of the taxnomoic db data file
+    string m_DataFN;
+
+    /// Total number of taxids in the database
+    Int4 m_AllTaxidCount;
+
+    /// Memory map of the index file
+    auto_ptr<CMemoryFile> m_IndexFileMap;
+    auto_ptr<CMemoryFile> m_DataFileMap;
+    CSeqDBTaxId* m_IndexPtr;
+    char * m_DataPtr;
+
+    size_t m_DataFileSize;
+
+
+    /// Indicator if tax db files are missing
+    bool m_MissingDB;
+};
+
+
+
+CTaxDBFileInfo::CTaxDBFileInfo()
+    : m_AllTaxidCount(0),
+      m_IndexPtr(NULL),
+      m_DataPtr(NULL),
+      m_DataFileSize(0),
+      m_MissingDB(false)
+{
 
     // It is reasonable for this database to not exist.
-    m_IndexFN =
-        SeqDB_FindBlastDBPath("taxdb.bti", '-', 0, true, m_Atlas, locked);
+    m_IndexFN =  SeqDB_ResolveDbPath("taxdb.bti");
 
     if (m_IndexFN.size()) {
         m_DataFN = m_IndexFN;
@@ -69,10 +143,7 @@ void CSeqDBTaxInfo::x_Init(CSeqDBLockHold & locked)
            CFile(m_IndexFN).Exists() &&
            CFile(m_DataFN).Exists())) {
         m_MissingDB = true;
-        m_Atlas.Unlock(locked);
-        NCBI_THROW(CSeqDBException,
-                   eFileErr,
-                   "Error: Tax database file not found.");
+        ERR_POST("Error: Tax database file not found.");
     }
     
     // Size for header data plus one taxid object.
@@ -85,28 +156,24 @@ void CSeqDBTaxInfo::x_Init(CSeqDBLockHold & locked)
     
     if (idx_file_len < (data_start + sizeof(CSeqDBTaxId))) {
         m_MissingDB = true;
-        m_Atlas.Unlock(locked);
-        NCBI_THROW(CSeqDBException,
-                   eFileErr,
-                   "Error: Tax database file not found.");
+        ERR_POST("Error: Tax database file not found.");
     }
     
-    CSeqDBMemLease lease(m_Atlas);
+    m_IndexFileMap.reset(new CMemoryFile(m_IndexFN));
     
+    m_IndexFileMap->Map();
+
     // Last check-up of the database validity
     
-    m_Atlas.GetRegion(lease, m_IndexFN, 0, data_start);
     
-    Uint4 * magic_num_ptr = (Uint4 *) lease.GetPtr(0);
+    Uint4 * magic_num_ptr = (Uint4 *)m_IndexFileMap->GetPtr();
     
     const unsigned TAX_DB_MAGIC_NUMBER = 0x8739;
     
     if (TAX_DB_MAGIC_NUMBER != SeqDB_GetStdOrd(magic_num_ptr ++)) {
         m_MissingDB = true;
-        m_Atlas.Unlock(locked);
-        NCBI_THROW(CSeqDBException,
-                   eFileErr,
-                   "Error: Tax database file has wrong magic number.");
+        m_IndexFileMap.reset();
+        ERR_POST("Error: Tax database file has wrong magic number.");
     }
     
     m_AllTaxidCount = SeqDB_GetStdOrd(magic_num_ptr ++);
@@ -118,7 +185,8 @@ void CSeqDBTaxInfo::x_Init(CSeqDBLockHold & locked)
     
     if (taxid_array_size != m_AllTaxidCount) {
         m_MissingDB = true;
-        ERR_POST_X(1, "SeqDB: Taxid metadata indicates (" << m_AllTaxidCount
+        m_IndexFileMap.reset();
+        ERR_POST("SeqDB: Taxid metadata indicates (" << m_AllTaxidCount
                    << ") entries but file has room for (" << taxid_array_size
                    << ").");
         
@@ -127,47 +195,37 @@ void CSeqDBTaxInfo::x_Init(CSeqDBLockHold & locked)
         }
     }
     
-    m_TaxData = (CSeqDBTaxId*)
-        m_Atlas.GetRegion(m_IndexFN, data_start, idx_file_len, locked);
+    m_DataFileMap.reset(new CMemoryFile(m_DataFN));
+
+    m_DataPtr = (char *) (m_DataFileMap->GetPtr());
+    m_DataFileSize = m_DataFileMap->GetSize();
+    m_IndexPtr = (CSeqDBTaxId*) magic_num_ptr;
     
-    m_Atlas.RetRegion(lease);
-    m_Initialized = true;
 }
 
-CSeqDBTaxInfo::~CSeqDBTaxInfo()
+CTaxDBFileInfo::~CTaxDBFileInfo()
 {
-    if (! m_Initialized) return;
-    if (! m_Lease.Empty()) {
-        m_Atlas.RetRegion(m_Lease);
-    }
-    if (m_TaxData != 0) {
-        m_Atlas.RetRegion((const char*) m_TaxData);
-        m_TaxData = 0;
-    }
+	m_IndexFileMap->Unmap();
+	m_IndexFileMap.reset();
+	m_DataFileMap->Unmap();
+	m_DataFileMap.reset();
 }
+
 
 bool CSeqDBTaxInfo::GetTaxNames(Int4             tax_id,
-                                SSeqDBTaxInfo  & info,
-                                CSeqDBLockHold & locked)
+                                SSeqDBTaxInfo  & info )
 {
-    if (m_MissingDB) return false;
-
-    if (! m_Initialized) {
-        try {
-            x_Init(locked);
-        } catch (CSeqDBException &) {
-            m_MissingDB = true;
-        }
-    }
-
-    if (m_MissingDB) return false;
+	static CTaxDBFileInfo t;
+    if (t.IsMissingTaxInfo()) return false;
 
     Int4 low_index  = 0;
-    Int4 high_index = m_AllTaxidCount - 1;
+    Int4 high_index = t.GetTaxidCount() - 1;
     
-    Int4 low_taxid  = m_TaxData[low_index ].GetTaxId();
-    Int4 high_taxid = m_TaxData[high_index].GetTaxId();
-    
+    const char * Data = t.GetDataPtr();
+    const CSeqDBTaxId*  Index = t.GetIndexPtr();
+    Int4 low_taxid  = Index[low_index ].GetTaxId();
+    Int4 high_taxid = Index[high_index].GetTaxId();
+
     if((tax_id < low_taxid) || (tax_id > high_taxid))
         return false;
     
@@ -175,7 +233,7 @@ bool CSeqDBTaxInfo::GetTaxNames(Int4             tax_id,
     Int4 old_index = new_index;
     
     while(1) {
-        Int4 curr_taxid = m_TaxData[new_index].GetTaxId();
+        Int4 curr_taxid = Index[new_index].GetTaxId();
         
         if (tax_id < curr_taxid) {
             high_index = new_index;
@@ -195,42 +253,26 @@ bool CSeqDBTaxInfo::GetTaxNames(Int4             tax_id,
         old_index = new_index;
     }
     
-    if (tax_id == m_TaxData[new_index].GetTaxId()) {
+    if (tax_id == Index[new_index].GetTaxId()) {
         info.taxid = tax_id;
         
-        m_Atlas.Lock(locked);
-        
-        Uint4 begin_data(m_TaxData[new_index].GetOffset());
+        Uint4 begin_data(Index[new_index].GetOffset());
         Uint4 end_data(0);
         
         if (new_index == high_index) {
             // Last index is special...
-            CSeqDBAtlas::TIndx fsize(0);
-            
-            if (! m_Atlas.GetFileSizeL(m_DataFN, fsize)) {
-                // Should not happen.
-                NCBI_THROW(CSeqDBException,
-                           eFileErr,
-                           "Error: Cannot get tax database file length.");
-            }
-            
-            end_data = Uint4(fsize);
+            end_data = Uint4(t.GetDataFileSize());
             
             if (end_data < begin_data) {
                 // Should not happen.
-                NCBI_THROW(CSeqDBException,
-                           eFileErr,
-                           "Error: Offset error at end of taxdb file.");
+                ERR_POST( "Error: Offset error at end of taxdb file.");
+                return false;
             }
         } else {
-            end_data = (m_TaxData[new_index+1].GetOffset());
+            end_data = (Index[new_index+1].GetOffset());
         }
         
-        if (! m_Lease.Contains(begin_data, end_data)) {
-            m_Atlas.GetRegion(m_Lease, m_DataFN, begin_data, end_data);
-        }
-        
-        const char * start_ptr = m_Lease.GetPtr(begin_data);
+        const char * start_ptr = &Data[begin_data];
         
         CSeqDB_Substring buffer(start_ptr, start_ptr + (end_data - begin_data));
         CSeqDB_Substring sci, com, blast, king;

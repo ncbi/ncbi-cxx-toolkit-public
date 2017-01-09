@@ -1343,9 +1343,6 @@ private:
     /// The list of included OIDs (construction is deferred).
     mutable CRef<CSeqDBOIDList> m_OIDList;
 
-    /// Taxonomic information.
-    CRef<CSeqDBTaxInfo> m_TaxInfo;
-
     /// Starting OID as provided to the constructor.
     int m_RestrictBegin;
 

@@ -1043,8 +1043,8 @@ list< CRef<CSeqdesc> >
 CSeqDBVol::x_GetTaxonomy(int                    oid,
                          TGi                    preferred_gi,
                          const CSeq_id        * preferred_seqid,
-                         CRef<CSeqDBTaxInfo>    tax_info,
                          CSeqDBLockHold       & locked)
+
 {
     const bool provide_new_taxonomy_info = true;
     const bool use_taxinfo_cache         = true;
@@ -1087,16 +1087,11 @@ CSeqDBVol::x_GetTaxonomy(int                    oid,
         }
 
         SSeqDBTaxInfo tnames(taxid);
-
-        if (tax_info.Empty()) {
-            continue;
-        }
-
         bool found_taxid_in_taxonomy_blastdb = true;
 
         if ((! have_org_desc) && provide_new_taxonomy_info) {
             try {
-                found_taxid_in_taxonomy_blastdb = tax_info->GetTaxNames(taxid, tnames, locked);
+                found_taxid_in_taxonomy_blastdb = CSeqDBTaxInfo::GetTaxNames(taxid, tnames);
             } catch (CSeqDBException &) {
                 found_taxid_in_taxonomy_blastdb = false;
             }
@@ -1255,7 +1250,6 @@ CRef<CBioseq>
 CSeqDBVol::GetBioseq(int                    oid,
                      TGi                    target_gi,
                      const CSeq_id        * target_seq_id,
-                     CRef<CSeqDBTaxInfo>    tax_info,
                      bool                   seqdata,
                      CSeqDBLockHold       & locked)
 {
@@ -1413,7 +1407,7 @@ CSeqDBVol::GetBioseq(int                    oid,
     }
 
     list< CRef<CSeqdesc> > tax =
-        x_GetTaxonomy(oid, target_gi, target_seq_id, tax_info, locked);
+        x_GetTaxonomy(oid, target_gi, target_seq_id, locked);
 
     ITERATE(list< CRef<CSeqdesc> >, iter, tax) {
         bioseq->SetDescr().Set().push_back(*iter);
