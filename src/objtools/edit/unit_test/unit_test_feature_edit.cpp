@@ -83,6 +83,16 @@ using TTestNameToInfoMap = map<TTestName, STestInfo>;
 
 CRef<CScope> s_pScope;
 
+CRange<TSeqPos> s_GetRangeFromString(const string& rangeString) 
+{
+    vector<string> vecRange;
+    NStr::Split(rangeString, "_", vecRange);
+    BOOST_REQUIRE(vecRange.size() == 2);
+    const TSeqPos start = NStr::StringToInt(vecRange[0]);
+    const TSeqPos stop = NStr::StringToInt(vecRange[1]);
+    return CRange<TSeqPos>(start, stop);
+}
+
 class CTestNameToInfoMapLoader {
 public:
     CTestNameToInfoMapLoader(
@@ -107,30 +117,24 @@ public:
             return;
         }
 
-        vector<string> vecFileNamePieces;
-        NStr::Split(fileName, ".", vecFileNamePieces);
-        BOOST_REQUIRE(vecFileNamePieces.size() == 3);
+        vector<string> vecFilenamePieces;
+        NStr::Split(fileName, ".", vecFilenamePieces);
+        BOOST_REQUIRE(vecFilenamePieces.size() == 3);
 
-        const string testRange = vecFileNamePieces[1];
+        const string testRange = vecFilenamePieces[1];
         BOOST_REQUIRE(!testRange.empty());
 
-        const string testName = vecFileNamePieces[0] + "_" + testRange ;
+        const string testName = vecFilenamePieces[0] + "." + testRange ;
         BOOST_REQUIRE(!testName.empty());
 
-        vector<string> vecRange;
-        NStr::Split(testRange, "_", vecRange);
-        BOOST_REQUIRE(vecRange.size() == 2);
-
-        const string fileType = vecFileNamePieces[2];
+        const string fileType = vecFilenamePieces[2];
         BOOST_REQUIRE(!fileType.empty());
 
         STestInfo& test_info_to_load = 
             (*m_pTestNameToInfoMap)[testName];
 
         if (test_info_to_load.m_Range.Empty()) {
-            TSeqPos start = NStr::StringToInt(vecRange[0]);
-            TSeqPos stop = NStr::StringToInt(vecRange[1]);
-            test_info_to_load.m_Range = CRange<TSeqPos>(start, stop);
+            test_info_to_load.m_Range = s_GetRangeFromString(testRange);
         }
 
         if (fileType == m_ExtInput) {
@@ -155,7 +159,7 @@ private:
 };
 
 
-void sRunFeatureTrimTest(const string& testName, const STestInfo& testInfo)
+void sRunFeatureTrimTest(const string& testName, const STestInfo& testInfo, const bool keep)
 {
 
     cout << "Running feature-trim test\n";
@@ -185,9 +189,13 @@ void sRunFeatureTrimTest(const string& testName, const STestInfo& testInfo)
 
     const bool success = trimmed_feat.Equals(*baseline);
     if (!success) {
+        if (keep) {
+            CNcbiOfstream ostr(testInfo.m_BaselineFile.GetPath() + ".new");
+            ostr << MSerial_AsnText << trimmed_feat;
+            ostr.close();
+        }
         BOOST_ERROR("Error: " << testName << " failed.");
     }
-
 }
 
 const string dirTestFiles("feature_edit_test_cases");
@@ -204,6 +212,10 @@ NCBITEST_INIT_CMDLINE(arg_descrs)
         "Set the root directory under which all test files can be found.",
         CArgDescriptions::eDirectory,
         dirTestFiles);
+
+    arg_descrs->AddFlag("keep-diffs",
+        "Keep output files that differ from expected baseline.",
+        true);
 }
 
 
@@ -250,7 +262,7 @@ BOOST_AUTO_TEST_CASE(RunTests)
         const string& testName = name_to_info_it->first;
         const STestInfo& testInfo = name_to_info_it->second;
 
-        BOOST_CHECK_NO_THROW(sRunFeatureTrimTest(testName, testInfo));
+        BOOST_CHECK_NO_THROW(sRunFeatureTrimTest(testName, testInfo, args["keep-diffs"]));
     }
 }
 
