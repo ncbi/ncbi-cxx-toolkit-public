@@ -6527,7 +6527,6 @@ UB	sc	University of Brasilia Herbarium
 UB<FRA>	s	Laboratoire de Biostratigraphie
 UBA	s	Mongolian Academy of Sciences
 UBC	s	Beaty Biodiversity Museum, University of British Columbia
-UBC:	s	Beaty Biodiversity Museum, University of British Columbia, Spencer Entomological Museum
 UBC:CTC	s	Beaty Biodiversity Museum, University of British Columbia, Cowan Tetrapod Collection
 UBC:Fish	s	Beaty Biodiversity Museum, University of British Columbia, Fish Collection
 UBC:SEM	s	Beaty Biodiversity Museum, University of British Columbia, Spencer Entomological Museum

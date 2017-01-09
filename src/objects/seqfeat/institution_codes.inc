@@ -6560,7 +6560,6 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UB<FRA>\ts\tLaboratoire de Biostratigraphie",
 "UBA\ts\tMongolian Academy of Sciences",
 "UBC\ts\tBeaty Biodiversity Museum, University of British Columbia",
-"UBC:\ts\tBeaty Biodiversity Museum, University of British Columbia, Spencer Entomological Museum",
 "UBC:CTC\ts\tBeaty Biodiversity Museum, University of British Columbia, Cowan Tetrapod Collection",
 "UBC:Fish\ts\tBeaty Biodiversity Museum, University of British Columbia, Fish Collection",
 "UBC:SEM\ts\tBeaty Biodiversity Museum, University of British Columbia, Spencer Entomological Museum",
