@@ -1817,7 +1817,10 @@ CAutoDefIntergenicSpacerClause::CAutoDefIntergenicSpacerClause(CBioseq_Handle bh
                   : CAutoDefFeatureClause(bh, main_feat, mapped_loc)
 {
 
-    string comment = m_MainFeat.GetComment();
+    string comment = kEmptyStr;
+    if (m_MainFeat.IsSetComment()) {
+        comment = m_MainFeat.GetComment();
+    }
 
     /* truncate at first semicolon */
     string::size_type pos = NStr::Find(comment, ";");
