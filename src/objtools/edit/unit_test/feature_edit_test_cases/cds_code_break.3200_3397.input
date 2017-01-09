@@ -1,0 +1,56 @@
+Seq-feat ::= {
+  id local id 3,
+  data cdregion {
+    frame one,
+    code {
+      id 1
+    },
+    code-break {
+      {
+        loc int {
+          from 3396,
+          to 3398,
+          strand minus,
+          id gi 749407087
+        },
+        aa ncbieaa 88
+      }
+    }
+  },
+  partial TRUE,
+  product whole gi 1126603702,
+  location packed-int {
+    {
+      from 3228,
+      to 3404,
+      strand minus,
+      id gi 749407087,
+      fuzz-to lim gt
+    },
+    {
+      from 2642,
+      to 3111,
+      strand minus,
+      id gi 749407087
+    },
+    {
+      from 2257,
+      to 2561,
+      strand minus,
+      id gi 749407087
+    },
+    {
+      from 1547,
+      to 2040,
+      strand minus,
+      id gi 749407087
+    },
+    {
+      from 384,
+      to 1394,
+      strand minus,
+      id gi 749407087,
+      fuzz-from lim lt
+    }
+  }
+}
