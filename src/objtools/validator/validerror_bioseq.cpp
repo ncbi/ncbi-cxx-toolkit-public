@@ -7830,9 +7830,11 @@ void CValidError_bioseq::x_ReportOverlappingPeptidePair (CSeq_feat_Handle f1, CS
     const CSeq_loc& feat2_loc = feat2.GetLocation();
 
     if ( (feat1_subtype == CSeqFeatData::eSubtype_mat_peptide_aa       ||
+          feat1_subtype == CSeqFeatData::eSubtype_propeptide_aa        ||
           feat1_subtype == CSeqFeatData::eSubtype_sig_peptide_aa       ||
           feat1_subtype == CSeqFeatData::eSubtype_transit_peptide_aa)) {
         if ((feat2_subtype == CSeqFeatData::eSubtype_mat_peptide_aa       ||
+             feat2_subtype == CSeqFeatData::eSubtype_propeptide_aa       ||
              feat2_subtype == CSeqFeatData::eSubtype_sig_peptide_aa       ||
              feat2_subtype == CSeqFeatData::eSubtype_transit_peptide_aa) &&
             sequence::Compare(feat1_loc, feat2_loc, m_Scope, sequence::fCompareOverlapping) != eNoOverlap  &&

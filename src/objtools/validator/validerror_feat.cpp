@@ -4065,6 +4065,8 @@ void CValidError_feat::ValidateImp(
             subtype = CSeqFeatData::eSubtype_precursor_RNA;
         } else if (NStr::EqualNocase (key, "mat_peptide")) {
             subtype = CSeqFeatData::eSubtype_mat_peptide;
+        } else if (NStr::EqualNocase (key, "propeptide")) {
+            subtype = CSeqFeatData::eSubtype_propeptide;
         } else if (NStr::EqualNocase (key, "sig_peptide")) {
             subtype = CSeqFeatData::eSubtype_sig_peptide;
         } else if (NStr::EqualNocase (key, "transit_peptide")) {
@@ -4156,6 +4158,7 @@ void CValidError_feat::ValidateImp(
       break;
 
     case CSeqFeatData::eSubtype_mat_peptide:
+    case CSeqFeatData::eSubtype_propeptide:
     case CSeqFeatData::eSubtype_sig_peptide:
     case CSeqFeatData::eSubtype_transit_peptide:
         if (m_Imp.IsEmbl() || m_Imp.IsDdbj()) {
