@@ -23,7 +23,7 @@
 *
 * ===========================================================================
 *
-* Author:  Colleen Bollin
+* Author:  Colleen Bollin, Michael Kornbluh
 *
 * File Description:
 *
@@ -86,6 +86,18 @@ namespace {
             return true;
         };
     };   
+    
+    // convert a string of text ASN.1 into an object of class TObj
+    template<typename TObj>
+    CRef<TObj> s_StrToObject(CTempString asn_text)
+    {
+        CRef<TObj> new_obj(new TObj);
+        CNcbiIstrstream strmAsnText(asn_text.data());
+        BOOST_REQUIRE_NO_THROW( 
+            strmAsnText >> MSerial_AsnText >> *new_obj );
+        return new_obj;
+    }
+
 }
 
 static const char * sc_Table1 = "\
@@ -1385,9 +1397,8 @@ BOOST_AUTO_TEST_CASE(Test_tRNAAnticodonQualifiers)
 
         BOOST_CHECK_EQUAL(trna_ext.GetAa().GetNcbieaa(), expected_aas[pos] );
 
-        CRef<CSeq_loc> pExpectedAnticodonLoc( new CSeq_loc );
-        CNcbiIstrstream strmAnticodonLoc(pchExpectedAnticodonLocations[pos]);
-        BOOST_REQUIRE_NO_THROW( strmAnticodonLoc >> MSerial_AsnText >> *pExpectedAnticodonLoc );
+        CRef<CSeq_loc> pExpectedAnticodonLoc =
+            s_StrToObject<CSeq_loc>(pchExpectedAnticodonLocations[pos]);
 
         if( ! trna_ext.GetAnticodon().Equals(*pExpectedAnticodonLoc) ) {
             BOOST_ERROR( "Anticodon mismatch: \n"
@@ -1748,6 +1759,8 @@ static const char * sc_Table13 = "\
 \t\t\tgene g0\n\
 17^\tEND\tvariation\n\
 \t\t\treplace\tCCT\n\
+22^\t21\tvariation\n\
+\t\t\treplace\tTAA\n\
 ";
 
 BOOST_AUTO_TEST_CASE(TestBetweenBaseIntervals)
@@ -1768,15 +1781,37 @@ BOOST_AUTO_TEST_CASE(TestBetweenBaseIntervals)
                 errList );
         const CSeq_annot::TData::TFtable& ftable = 
             pSeqAnnot->GetData().GetFtable();
+        BOOST_REQUIRE(ftable.size() == 3);
+            
+        // first feature: a gene
+        auto ftable_iter = ftable.cbegin();
+        CRef<CSeq_feat> gene(*ftable_iter);
+        BOOST_CHECK( FIELD_IS_SET_AND_IS(*gene, Data, Gene) );
 
-        BOOST_REQUIRE(ftable.size() == 2);
-        BOOST_REQUIRE(ftable.front()->IsSetData());
-        BOOST_REQUIRE(ftable.front()->GetData().IsGene());
-        BOOST_REQUIRE(ftable.back()->IsSetData());
-        BOOST_REQUIRE_EQUAL(ftable.back()->GetData().GetImp().GetKey(), "variation");
+        // second feature: a variation on plus strand
+        CRef<CSeq_feat> variation_plus(*++ftable_iter);
+        BOOST_CHECK_EQUAL("variation",
+                          variation_plus->GetData().GetImp().GetKey());
+        if( bGoodLoc ) {
+            const CSeq_loc & variation_plus_loc = variation_plus->GetLocation();
+            BOOST_CHECK_EQUAL(16u, variation_plus_loc.GetPnt().GetPoint());
+            BOOST_CHECK_EQUAL(false, variation_plus_loc.IsReverseStrand());
+            BOOST_CHECK_EQUAL(CInt_fuzz::eLim_tr, 
+                              variation_plus_loc.GetPnt().GetFuzz().GetLim());
+        }
         
-        const CSeq_loc & variation_loc = ftable.back()->GetLocation();
-        BOOST_CHECK(variation_loc.IsPnt() || variation_loc.IsInt());
+        // third feature: a variation on minus strand
+        CRef<CSeq_feat> variation_minus(*++ftable_iter);
+        BOOST_CHECK_EQUAL("variation",
+                          variation_minus->GetData().GetImp().GetKey());
+        const CSeq_loc & variation_minus_loc = variation_minus->GetLocation();
+        BOOST_CHECK_EQUAL(21u, variation_minus_loc.GetPnt().GetPoint());
+        BOOST_CHECK_EQUAL(true, variation_minus_loc.IsReverseStrand());
+        BOOST_CHECK_EQUAL(CInt_fuzz::eLim_tl, 
+                          variation_minus_loc.GetPnt().GetFuzz().GetLim());
+                          
+        // there should be no more feats
+        BOOST_CHECK(ftable.cend() == ++ftable_iter);
     }
 }
 

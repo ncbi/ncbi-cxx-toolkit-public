@@ -2479,6 +2479,7 @@ bool CFeature_table_reader_imp::x_AddIntervalToFeature(
 )
 
 {
+    const Int4 orig_start = start;
     CSeq_interval::TStrand strand = eNa_strand_plus;
 
     if (start > stop) {
@@ -2499,7 +2500,12 @@ bool CFeature_table_reader_imp::x_AddIntervalToFeature(
         else
            x_GetPointStrand(*sfp, strand);
 
-        CRef<CSeq_point> pPoint( new CSeq_point(*m_seq_id, start, strand) );
+        // note usage of orig_start instead of start 
+        // because we want the first part of the point
+        // specified in the file, not the smallest because SetRightOf
+        // works differently for plus vs. minus strand
+        CRef<CSeq_point> pPoint(
+            new CSeq_point(*m_seq_id, orig_start, strand) );
         if( ispoint ) {
             // between two bases
             pPoint->SetRightOf (true);
