@@ -746,7 +746,14 @@ private:
     bool ValidateSeqDescrInSeqEntry (const CSeq_entry& se, CValidError_descr *descr_val);
     bool ValidateSeqDescrInSeqEntry (const CSeq_entry& se);
 
-    void FindEmbeddedScript (const CSerialObject& obj);
+    void x_CheckSingleStrandedRNAViruses
+        (const CBioSource& source,
+        const CSerialObject& obj,
+        const CSeq_entry    *ctx,
+        const CBioseq_Handle& bsh,
+        const CMolInfo& molinfo);
+
+    void FindEmbeddedScript(const CSerialObject& obj);
     void FindNonAsciiText (const CSerialObject& obj);
     void FindCollidingSerialNumbers (const CSerialObject& obj);
 

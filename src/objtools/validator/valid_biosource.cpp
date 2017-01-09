@@ -1739,6 +1739,142 @@ static bool s_HasBadPlasmidChromLinkName(const string& name, const string& taxna
 }
 
 
+void CValidError_imp::x_CheckSingleStrandedRNAViruses
+(const CBioSource& source,
+const CSerialObject& obj,
+const CSeq_entry    *ctx,
+const CBioseq_Handle& bsh,
+const CMolInfo& molinfo)
+{
+    if (bsh.IsAa()) {
+        return;
+    }
+    if (!source.IsSetOrg() || !source.GetOrg().IsSetLineage()) {
+        return;
+    }
+    const string& lineage = source.GetOrg().GetLineage();
+    bool negative_strand_virus = false;
+    bool plus_strand_virus = false;
+    
+    if (NStr::FindNoCase(lineage, "negative-strand viruses") != string::npos) {
+        negative_strand_virus = true;
+    } 
+    if (NStr::FindNoCase(lineage, "ssRNA positive-strand viruses") != string::npos) {
+        plus_strand_virus = true;
+    }
+    if (!negative_strand_virus && !plus_strand_virus) {
+        return;
+    }
+
+    bool is_ambisense = false;
+    if (NStr::FindNoCase(lineage, "Arenavirus") != string::npos
+        || NStr::FindNoCase(lineage, "Arenaviridae") != string::npos
+        || NStr::FindNoCase(lineage, "Phlebovirus") != string::npos
+        || NStr::FindNoCase(lineage, "Tospovirus") != string::npos
+        || NStr::FindNoCase(lineage, "Tenuivirus") != string::npos) {
+        is_ambisense = true;
+    }
+
+    bool is_synthetic = false;
+    if (source.GetOrg().IsSetDivision() && NStr::EqualNocase(source.GetOrg().GetDivision(), "SYN")) {
+        is_synthetic = true;
+    } else if (source.IsSetOrigin()
+        && (source.GetOrigin() == CBioSource::eOrigin_mut
+        || source.GetOrigin() == CBioSource::eOrigin_artificial
+        || source.GetOrigin() == CBioSource::eOrigin_synthetic)) {
+        is_synthetic = true;
+    }
+
+    bool has_cds = false;
+    bool has_plus_cds = false;
+    bool has_minus_cds = false;
+
+    CFeat_CI cds_ci(bsh, SAnnotSelector(CSeqFeatData::e_Cdregion));
+    while (cds_ci) {
+        has_cds = true;
+        if (cds_ci->GetLocation().GetStrand() == eNa_strand_minus) {
+            has_minus_cds = true;
+        } else {
+            has_plus_cds = true;
+        }
+        if (has_minus_cds && has_plus_cds) {
+            break;
+        }
+
+        ++cds_ci;
+    }
+    bool has_minus_misc_feat = false;
+    bool has_plus_misc_feat = false;
+    if (!has_cds) {
+        CFeat_CI misc_ci(bsh, SAnnotSelector(CSeqFeatData::eSubtype_misc_feature));
+        while (misc_ci) {
+            if (misc_ci->IsSetComment()
+                && NStr::FindNoCase(misc_ci->GetComment(), "nonfunctional") != string::npos) {
+                if (misc_ci->GetLocation().GetStrand() == eNa_strand_minus) {
+                    has_minus_misc_feat = true;
+                } else {
+                    has_plus_misc_feat = true;
+                }
+            }
+            if (has_minus_misc_feat && has_plus_misc_feat) {
+                break;
+            }
+            ++misc_ci;
+        }
+    }
+
+    if (has_minus_cds) {
+        if (!molinfo.IsSetBiomol() || molinfo.GetBiomol() != CMolInfo::eBiomol_genomic) {
+            if (negative_strand_virus) {
+                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
+                    "Negative-strand virus with minus strand CDS should be genomic",
+                    obj, ctx);
+            }
+        }
+    }
+    if (has_plus_cds && !is_synthetic && !is_ambisense) {
+        if (negative_strand_virus &&
+            (!molinfo.IsSetBiomol() ||
+            (molinfo.GetBiomol() != CMolInfo::eBiomol_cRNA &&
+            molinfo.GetBiomol() != CMolInfo::eBiomol_mRNA))) {
+            PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
+                "Negative-strand virus with plus strand CDS should be mRNA or cRNA",
+                obj, ctx);
+        }        
+        if (plus_strand_virus) {
+            if (molinfo.IsSetBiomol() && molinfo.GetBiomol() == CMolInfo::eBiomol_cRNA) {
+                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
+                    "Plus-strand virus with plus strand CDS should be genomic RNA or mRNA",
+                    obj, ctx);
+            }
+        }
+    }
+
+    if (has_minus_misc_feat) {
+        if (negative_strand_virus) {
+            if (!molinfo.IsSetBiomol() || molinfo.GetBiomol() != CMolInfo::eBiomol_genomic) {
+                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
+                    "Negative-strand virus with nonfunctional minus strand misc_feature should be genomic",
+                    obj, ctx);
+            }
+        }
+    }
+    if (has_plus_misc_feat) {
+        if (negative_strand_virus) {
+            if (!is_synthetic && !is_ambisense
+                && (!molinfo.IsSetBiomol()
+                || (molinfo.GetBiomol() != CMolInfo::eBiomol_cRNA
+                && molinfo.GetBiomol() != CMolInfo::eBiomol_mRNA))) {
+                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
+                    "Negative-strand virus with nonfunctional plus strand misc_feature should be mRNA or cRNA",
+                    obj, ctx);
+            }
+        }
+    }
+
+}
+
+
 void CValidError_imp::ValidateBioSourceForSeq
 (const CBioSource&    source,
 const CSerialObject& obj,
@@ -1953,76 +2089,8 @@ const CBioseq_Handle& bsh)
                         "Genomic DNA viral lineage indicates no DNA stage",
                         obj, ctx);
                 }
-                if (NStr::FindNoCase(lineage, "negative-strand viruses") != string::npos) {
-                    bool is_ambisense = false;
-                    if (NStr::FindNoCase(lineage, "Arenavirus") != string::npos
-                        || NStr::FindNoCase(lineage, "Arenaviridae") != string::npos
-                        || NStr::FindNoCase(lineage, "Phlebovirus") != string::npos
-                        || NStr::FindNoCase(lineage, "Tospovirus") != string::npos
-                        || NStr::FindNoCase(lineage, "Tenuivirus") != string::npos) {
-                        is_ambisense = true;
-                    }
-
-                    bool is_synthetic = false;
-                    if (orgref.IsSetDivision() && NStr::EqualNocase(orgref.GetDivision(), "SYN")) {
-                        is_synthetic = true;
-                    } else if (source.IsSetOrigin()
-                        && (source.GetOrigin() == CBioSource::eOrigin_mut
-                        || source.GetOrigin() == CBioSource::eOrigin_artificial
-                        || source.GetOrigin() == CBioSource::eOrigin_synthetic)) {
-                        is_synthetic = true;
-                    }
-
-                    bool has_cds = false;
-
-                    CFeat_CI cds_ci(bsh, SAnnotSelector(CSeqFeatData::e_Cdregion));
-                    while (cds_ci) {
-                        has_cds = true;
-                        if (cds_ci->GetLocation().GetStrand() == eNa_strand_minus) {
-                            if (!molinfo.IsSetBiomol() || molinfo.GetBiomol() != CMolInfo::eBiomol_genomic) {
-                                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
-                                    "Negative-strand virus with minus strand CDS should be genomic",
-                                    obj, ctx);
-                            }
-                        } else {
-                            if (!is_synthetic && !is_ambisense
-                                && (!molinfo.IsSetBiomol()
-                                || (molinfo.GetBiomol() != CMolInfo::eBiomol_cRNA
-                                && molinfo.GetBiomol() != CMolInfo::eBiomol_mRNA))) {
-                                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
-                                    "Negative-strand virus with plus strand CDS should be mRNA or cRNA",
-                                    obj, ctx);
-                            }
-                        }
-                        ++cds_ci;
-                    }
-                    if (!has_cds) {
-                        CFeat_CI misc_ci(bsh, SAnnotSelector(CSeqFeatData::eSubtype_misc_feature));
-                        while (misc_ci) {
-                            if (misc_ci->IsSetComment()
-                                && NStr::FindNoCase(misc_ci->GetComment(), "nonfunctional") != string::npos) {
-                                if (misc_ci->GetLocation().GetStrand() == eNa_strand_minus) {
-                                    if (!molinfo.IsSetBiomol() || molinfo.GetBiomol() != CMolInfo::eBiomol_genomic) {
-                                        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
-                                            "Negative-strand virus with nonfunctional minus strand misc_feature should be genomic",
-                                            obj, ctx);
-                                    }
-                                } else {
-                                    if (!is_synthetic && !is_ambisense
-                                        && (!molinfo.IsSetBiomol()
-                                        || (molinfo.GetBiomol() != CMolInfo::eBiomol_cRNA
-                                        && molinfo.GetBiomol() != CMolInfo::eBiomol_mRNA))) {
-                                        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
-                                            "Negative-strand virus with nonfunctional plus strand misc_feature should be mRNA or cRNA",
-                                            obj, ctx);
-                                    }
-                                }
-                            }
-                            ++misc_ci;
-                        }
-                    }
-                }
             }
+            x_CheckSingleStrandedRNAViruses(source, obj, ctx, bsh, molinfo);
         }
 
         if (!bsh.IsAa() && orgref.IsSetLineage()) {
@@ -2593,7 +2661,7 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
 #endif
 
         if (!reply || !reply->IsSetReply()) {
-            PostErr(eDiag_Error, eErr_SEQ_DESCR_TaxonomyLookupProblem,
+            PostErr(eDiag_Error, eErr_GENERIC_ServiceError,
                 "Taxonomy service connection failure", se);
         } else {
             tval.ReportTaxLookupErrors(*reply, *this, is_insd_patent);

@@ -6428,6 +6428,60 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_SingleStrandViruses)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+    unit_test_util::SetLineage(entry, "Viruses; ssRNA positive-strand viruses");
+    unit_test_util::SetBiomol(entry->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_cRNA);
+    entry->SetSet().SetSeq_set().front()->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "BioSourceInconsistency",
+        "Plus-strand virus with plus strand CDS should be genomic RNA or mRNA"));
+    
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    // error goes away if ambisense or synthetic
+    CLEAR_ERRORS
+
+    unit_test_util::SetLineage(entry, "Viruses; ssRNA positive-strand viruses; Arenavirus");
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+    unit_test_util::SetLineage(entry, "Viruses; ssRNA positive-strand viruses; Phlebovirus");
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+    unit_test_util::SetLineage(entry, "Viruses; ssRNA positive-strand viruses; Tospovirus");
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+    unit_test_util::SetLineage(entry, "Viruses; ssRNA positive-strand viruses; Tenuivirus");
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+    unit_test_util::SetLineage(entry, "Viruses; ssRNA positive-strand viruses");
+    unit_test_util::SetOrigin(entry, CBioSource::eOrigin_synthetic);
+    eval = validator.Validate(seh, options);
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "InvalidForType",
+        "Molinfo-biomol other should be used if Biosource-location is synthetic"));
+    CheckErrors(*eval, expected_errors);
+    CLEAR_ERRORS
+    unit_test_util::SetDiv(entry, "VRL");
+    unit_test_util::SetOrigin(entry, CBioSource::eOrigin_mut);
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+    unit_test_util::SetOrigin(entry, CBioSource::eOrigin_artificial);
+    unit_test_util::SetSynthetic_construct(entry);
+    eval = validator.Validate(seh, options);
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "InvalidForType",
+        "artificial origin should have other-genetic"));
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "InvalidForType",
+        "synthetic construct should have other-genetic"));
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_Descr_FastaBracketTitle)
 {
     // prepare entry

@@ -289,6 +289,7 @@ enum EErrType {
     eErr_GENERIC_BarcodeTestFails,
     eErr_GENERIC_BarcodeTestPasses,
     eErr_GENERIC_InvalidAsn,
+    eErr_GENERIC_ServiceError,
     ERR_CODE_END(GENERIC),
 
     ERR_CODE_BEGIN(SEQ_PKG) = 3000,
@@ -622,7 +623,7 @@ public:
     EDiagSev                GetSeverity  (void) const;
     // Error code
     const string            GetErrCode  (void) const;
-    static unsigned int     GetErrCount(void);
+    static size_t           GetErrCount(void);
     // Error group (SEQ_FEAT, SEQ_INST etc.)
     const string            GetErrGroup (void) const;
     // Verbose message

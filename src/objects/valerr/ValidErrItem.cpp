@@ -783,6 +783,8 @@ static const TErrTypStrs sc_ErrStrs[] = {
     { eErr_GENERIC_InvalidAsn,
     { "InvalidAsn",
     "Invalid ASN.1" } },
+    { eErr_GENERIC_ServiceError,
+    { "ServiceError", "Service failure prevented complete validation" } },
 
 /* SEQ_PKG */
 
@@ -1951,7 +1953,7 @@ const string CValidErrItem::GetErrCode(void) const
 }
 
 
-unsigned int CValidErrItem::GetErrCount(void)
+size_t CValidErrItem::GetErrCount(void)
 {
     return sc_ErrStrsMap.size();
 }
