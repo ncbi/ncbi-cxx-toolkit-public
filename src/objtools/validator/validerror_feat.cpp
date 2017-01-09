@@ -510,6 +510,7 @@ void CValidError_feat::ValidateSeqFeatData
         // Validate CGene_ref
         ValidateGene(data.GetGene (), feat);
         ValidateOperon(feat);
+        ValidateGeneCdsPair(feat);
         break;
     case CSeqFeatData::e_Cdregion:
         // Validate CCdregion
@@ -7989,6 +7990,43 @@ void CValidError_feat::ValidateOperon(const CSeq_feat& gene)
             }
         }
     }
+}
+
+void CValidError_feat::ValidateGeneCdsPair(const CSeq_feat& gene)
+{
+    const CSeq_loc& gene_loc = gene.GetLocation();
+
+    TFeatScores scores;
+    GetOverlappingFeatures(gene_loc,
+                           CSeqFeatData::e_Cdregion,
+                           CSeqFeatData::eSubtype_cdregion,
+                           eOverlap_Interval,
+                           scores, *m_Scope);
+
+    if (scores.empty()) { // There is no CDRegion
+
+        GetOverlappingFeatures(gene_loc,
+                               CSeqFeatData::e_not_set,
+                               CSeqFeatData::eSubtype_3UTR,
+                               eOverlap_Interval,
+                               scores, *m_Scope);
+
+        if (!scores.empty()) { // 3UTR is present, check for 5UTR
+
+            scores.clear();
+            GetOverlappingFeatures(gene_loc,
+                                   CSeqFeatData::e_not_set,
+                                   CSeqFeatData::eSubtype_5UTR,
+                                   eOverlap_Interval,
+                                   scores, *m_Scope);
+
+            if (!scores.empty()) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSnotBetweenUTRs,
+                        "Gene has both 5'UTR and 3'UTR but does not have a coding region", gene);
+            }
+        }
+    }
+
 }
 
 bool CValidError_feat::Is5AtEndSpliceSiteOrGap (const CSeq_loc& loc)

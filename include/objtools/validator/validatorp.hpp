@@ -1106,6 +1106,7 @@ private:
     bool x_FindProteinGeneXrefByKey(CBioseq_Handle bsh, const string& key);
     bool FindGeneToMatchGeneXref(const CGene_ref& xref, CSeq_entry_Handle seh);
     void ValidateOperon(const CSeq_feat& feat);
+    void ValidateGeneCdsPair(const CSeq_feat& gene);
 
     void ValidateCdregion(const CCdregion& cdregion, const CSeq_feat& obj);
     void ValidateCdTrans(const CSeq_feat& feat, bool &nonsense_intron);
