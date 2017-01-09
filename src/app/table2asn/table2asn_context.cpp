@@ -67,6 +67,8 @@
 #include <objects/biblio/Cit_sub.hpp>
 #include <objects/seq/Pubdesc.hpp>
 #include <objects/pub/Pub_equiv.hpp>
+#include <objects/seqfeat/Org_ref.hpp>
+#include <objects/seqfeat/OrgName.hpp>
 
 #include <objects/submit/Contact_info.hpp>
 #include <objects/biblio/Author.hpp>
@@ -674,6 +676,79 @@ void CTable2AsnContext::ReportFixedProduct(const string& oldproduct, const strin
     string label;
     loc.GetLabel(&label);
     *m_fixed_products << "Changed " << oldproduct << " to " << newproduct << " " << label << " " << locustag << "\n\n";
+}
+
+CRef<COrg_ref> CTable2AsnContext::GetOrgRef(CSeq_descr& descr)
+{
+    NON_CONST_ITERATE(CSeq_descr_Base::Tdata, it, descr.Set())
+    {
+        if ((**it).IsSource())
+        {
+            CBioSource& source = (**it).SetSource();
+            if (source.IsSetOrg())
+            {
+                return Ref(&source.SetOrg());
+            }
+        }
+        if ((**it).IsOrg())
+        {
+            return Ref(&(**it).SetOrg());
+        }
+    }
+    return CRef<COrg_ref>();
+}
+
+bool CTable2AsnContext::GetOrgName(string& name, const CSeq_entry& entry)
+{
+    if (entry.IsSet() && entry.GetSet().IsSetDescr())
+    {
+        ITERATE(CSeq_descr_Base::Tdata, it, entry.GetSet().GetDescr().Get())
+        {
+            if ((**it).IsSource())
+            {
+                const CBioSource& source = (**it).GetSource();
+                if (source.IsSetTaxname())
+                {
+                    name = source.GetTaxname();
+                    return true;
+                }
+                if (source.IsSetOrgname())
+                {
+                    if (source.GetOrgname().GetFlatName(name))
+                        return true;
+                }
+                if (source.IsSetOrg() && source.GetOrg().IsSetOrgname())
+                {
+                    if (source.GetOrg().GetOrgname().GetFlatName(name))
+                        return true;
+                }
+            }
+            if ((**it).IsOrg())
+            {
+                if ((**it).GetOrg().IsSetOrgname())
+                {
+                    if ((**it).GetOrg().GetOrgname().GetFlatName(name))
+                        return true;
+                }
+            }
+        }
+    }
+    else
+    if (entry.IsSeq())
+    {
+    }
+    return false;
+}
+
+
+void CTable2AsnContext::UpdateTaxonFromTable(CTable2AsnContext& context, objects::CBioseq& bioseq)
+{  
+    if (bioseq.IsSetDescr() && bioseq.GetDescr().IsSet())
+    {
+        CRef<COrg_ref> org_ref = GetOrgRef(bioseq.SetDescr());
+        if (org_ref.NotEmpty())
+            org_ref->UpdateFromTable();
+    }
 }
 
 END_NCBI_SCOPE

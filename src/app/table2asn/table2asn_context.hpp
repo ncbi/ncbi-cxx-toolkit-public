@@ -162,6 +162,10 @@ public:
     CRef<objects::CObjectManager> m_ObjMgr;
     string m_source_mods;
 
+    static bool GetOrgName(string& name, const objects::CSeq_entry& entry);
+    static CRef<objects::COrg_ref> GetOrgRef(objects::CSeq_descr& descr);
+    static void UpdateTaxonFromTable(CTable2AsnContext& context, objects::CBioseq& bioseq);
+
 private:
     void x_MergeSeqDescr(objects::CSeq_descr& dest, const objects::CSeq_descr& src, bool only_set) const;
 };

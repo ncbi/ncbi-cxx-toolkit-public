@@ -850,11 +850,11 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
     if (m_context.m_RemoteTaxonomyLookup)
     {
-#ifdef USE_SCOPE000
-        m_context.VisitAllSeqDesc(entry_edit_handle, m_context.UpdateOrgFromTaxon);
-#else
         m_context.m_remote_updater->UpdateOrgFromTaxon(m_context.m_logger, *entry);
-#endif
+    }
+    else
+    {
+        m_context.VisitAllBioseqs(*entry, CTable2AsnContext::UpdateTaxonFromTable);
     }
 
     fr.m_replacement_protein = m_replacement_proteins;

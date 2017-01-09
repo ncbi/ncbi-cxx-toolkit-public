@@ -43,8 +43,6 @@
 
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
-#include <objects/seqfeat/Org_ref.hpp>
-#include <objects/seqfeat/OrgName.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
 
 #include <objmgr/util/sequence.hpp>
@@ -124,48 +122,6 @@ namespace
                 it++;
             }
         }
-    }
-
-    bool GetOrgName(string& name, const CSeq_entry& entry)
-    {
-        if (entry.IsSet() && entry.GetSet().IsSetDescr())
-        {
-            ITERATE(CSeq_descr_Base::Tdata, it, entry.GetSet().GetDescr().Get())
-            {
-                if ((**it).IsSource())
-                {
-                    const CBioSource& source = (**it).GetSource();
-                    if (source.IsSetTaxname())
-                    {
-                        name = source.GetTaxname();
-                        return true;
-                    }
-                    if (source.IsSetOrgname())
-                    {
-                        if (source.GetOrgname().GetFlatName(name))
-                            return true;
-                    }
-                    if (source.IsSetOrg() && source.GetOrg().IsSetOrgname())
-                    {
-                        if (source.GetOrg().GetOrgname().GetFlatName(name))
-                            return true;
-                    }
-                }
-                if ((**it).IsOrg())
-                {
-                    if ((**it).GetOrg().IsSetOrgname())
-                    {
-                        if ((**it).GetOrg().GetOrgname().GetFlatName(name))
-                            return true;
-                    }
-                }
-            }
-        }
-        else
-        if (entry.IsSeq())
-        {
-        }
-        return false;
     }
 
     const char mapids[] = {
@@ -613,7 +569,7 @@ CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(CSeq_entry_Handle top_en
     feature::AdjustProteinMolInfoToMatchCDS(molinfo_desc.Set().SetMolinfo(), cd_feature);
 
     string org_name;
-    GetOrgName(org_name, *top_entry_h.GetCompleteObject());
+    CTable2AsnContext::GetOrgName(org_name, *top_entry_h.GetCompleteObject());
 
     CTempString locustag;
     if (!gene.Empty() && gene->IsSetData() && gene->GetData().IsGene() && gene->GetData().GetGene().IsSetLocus_tag())
@@ -1433,7 +1389,7 @@ bool CFeatureTableReader::_AddProteinToSeqEntry(const CSeq_entry* protein, CSeq_
     AddFeature(seh, new_cds);
 
     string org_name;
-    GetOrgName(org_name, *seh.GetCompleteObject());
+    CTable2AsnContext::GetOrgName(org_name, *seh.GetCompleteObject());
 
     string protein_name = NewProteinName(*protein_feat, m_context.m_use_hypothetic_protein);
     string title = protein_name;
