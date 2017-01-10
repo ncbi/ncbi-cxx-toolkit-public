@@ -510,6 +510,32 @@ void CNetStorageServerListener::OnWarning(const string& warn_msg,
     }
 }
 
+class CJsonOverUTTPExecHandler : public INetServerExecHandler
+{
+public:
+    CJsonOverUTTPExecHandler(const CJsonNode& request) : m_Request(request) {}
+
+    virtual void Exec(CNetServerConnection::TInstance conn_impl,
+            STimeout* timeout);
+
+    CNetServerConnection GetConnection() const {return m_Connection;}
+
+private:
+    CJsonNode m_Request;
+
+    CNetServerConnection m_Connection;
+};
+
+void CJsonOverUTTPExecHandler::Exec(CNetServerConnection::TInstance conn_impl,
+        STimeout* timeout)
+{
+    CSendJsonOverSocket sender(conn_impl->m_Socket);
+
+    sender.SendMessage(m_Request);
+
+    m_Connection = conn_impl;
+}
+
 struct SNetStorageObjectRPC : public SNetStorageObjectImpl
 {
     enum EObjectIdentification {
@@ -890,32 +916,6 @@ ENetStorageRemoveResult SNetStorageRPC::Remove(const string& object_loc)
     }
 
     return eNSTRR_NotFound;
-}
-
-class CJsonOverUTTPExecHandler : public INetServerExecHandler
-{
-public:
-    CJsonOverUTTPExecHandler(const CJsonNode& request) : m_Request(request) {}
-
-    virtual void Exec(CNetServerConnection::TInstance conn_impl,
-            STimeout* timeout);
-
-    CNetServerConnection GetConnection() const {return m_Connection;}
-
-private:
-    CJsonNode m_Request;
-
-    CNetServerConnection m_Connection;
-};
-
-void CJsonOverUTTPExecHandler::Exec(CNetServerConnection::TInstance conn_impl,
-        STimeout* timeout)
-{
-    CSendJsonOverSocket sender(conn_impl->m_Socket);
-
-    sender.SendMessage(m_Request);
-
-    m_Connection = conn_impl;
 }
 
 CJsonNode SNetStorageRPC::Exchange(CNetService service,
