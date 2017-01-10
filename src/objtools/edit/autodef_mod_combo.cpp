@@ -478,6 +478,7 @@ void CAutoDefModifierCombo::x_AddHIVModifiers(TExtraOrgMods& extra_orgmods, TExt
     string   isolate_text = "";
     bool     src_has_clone = false;
     bool     src_has_isolate = false;
+    bool     src_has_strain = false;
     
     if (!bsrc.IsSetOrg() || !bsrc.GetOrg().IsSetTaxname()) {
         return;
@@ -495,23 +496,35 @@ void CAutoDefModifierCombo::x_AddHIVModifiers(TExtraOrgMods& extra_orgmods, TExt
 
     src_has_clone = x_BioSourceHasSubSrc(bsrc, CSubSource::eSubtype_clone);
     src_has_isolate = x_BioSourceHasOrgMod(bsrc, COrgMod::eSubtype_isolate);
+    src_has_strain = x_BioSourceHasOrgMod(bsrc, COrgMod::eSubtype_strain);
         
-    if ((HasSubSource (CSubSource::eSubtype_clone) && src_has_clone)
-        || (HasOrgMod (COrgMod::eSubtype_isolate) && src_has_isolate)) {
+    if ((HasSubSource (CSubSource::eSubtype_clone) && src_has_clone) || 
+        (HasOrgMod (COrgMod::eSubtype_isolate) && src_has_isolate) ||
+        (HasOrgMod (COrgMod::eSubtype_strain) && src_has_strain)) {
         // no additional changes - isolate and clone rule taken care of
     } else {
+        bool use_isolate = false;
+        bool use_strain = false;
         if ( ! HasOrgMod (COrgMod::eSubtype_isolate) && src_has_isolate
             && (m_HIVCloneIsolateRule == CAutoDefOptions::ePreferIsolate
             || m_HIVCloneIsolateRule == CAutoDefOptions::eWantBoth
                 || !src_has_clone)) {
             if (extra_orgmods.find(COrgMod::eSubtype_isolate) == extra_orgmods.end()) {
                 extra_orgmods.insert(TExtraOrgMod(COrgMod::eSubtype_isolate, true));
+                use_isolate = true;
+            }
+        }
+        if (!HasOrgMod(COrgMod::eSubtype_strain) && src_has_strain &&
+            !use_isolate) {
+            if (extra_orgmods.find(COrgMod::eSubtype_strain) == extra_orgmods.end()) {
+                extra_orgmods.insert(TExtraOrgMod(COrgMod::eSubtype_strain, true));
+                use_strain = true;
             }
         }
         if (! HasSubSource(CSubSource::eSubtype_clone) && src_has_clone
             && (m_HIVCloneIsolateRule == CAutoDefOptions::ePreferClone
             || m_HIVCloneIsolateRule == CAutoDefOptions::eWantBoth
-                || !src_has_isolate)) {
+                || (!src_has_isolate && !src_has_strain))) {
             if (extra_subsrcs.find(CSubSource::eSubtype_clone) == extra_subsrcs.end()) {
                 extra_subsrcs.insert(TExtraSubSrc(CSubSource::eSubtype_clone, true));
             }
