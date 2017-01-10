@@ -852,7 +852,7 @@ string SNetStorageRPC::Relocate(const string& object_loc,
 }
 
 string SNetStorageRPC::RelocateImpl(CNetService service, CJsonNode& request,
-        TNetStorageFlags flags, TNetStorageProgressCb /*cb*/)
+        TNetStorageFlags flags, TNetStorageProgressCb cb)
 {
     m_UseNextSubHitID.ProperCommand();
 
@@ -862,9 +862,34 @@ string SNetStorageRPC::RelocateImpl(CNetService service, CJsonNode& request,
 
     request.SetByKey("NewLocation", new_location);
 
-    // TODO: CXX-8302
+    // Always request progress report to avoid timing out on large objects
+    request.SetBoolean("NeedProgressReport", true);
 
-    return Exchange(service, request).GetString("ObjectLoc");
+    CNetServer server(*service.Iterate(CNetService::eRandomize));
+
+    CJsonOverUTTPExecHandler json_over_uttp_sender(request);
+
+    server->TryExec(json_over_uttp_sender);
+
+    CSocket& sock = json_over_uttp_sender.GetConnection()->m_Socket;
+
+    for (;;) {
+        CReadJsonFromSocket message_reader;
+        CJsonNode reply(message_reader.ReadMessage(sock));
+        s_TrapErrors(request, reply, sock, m_Config.err_mode, *service->m_Listener, server);
+
+        CJsonNode object_loc(reply.GetByKeyOrNull("ObjectLoc"));
+
+        if (object_loc) return object_loc.AsString();
+
+        CJsonNode progress_info(reply.GetByKeyOrNull("ProgressInfo"));
+
+        if (progress_info) {
+            if (cb) cb(progress_info);
+        } else {
+            NCBI_THROW_FMT(CNetStorageException, eServerError, "Unexpected JSON received: " << reply.Repr());
+        }
+    }
 }
 
 bool SNetStorageRPC::Exists(const string& object_loc)
