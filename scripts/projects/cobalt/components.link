@@ -1,10 +1,9 @@
 [components]
-infrastructure  12.0
-core            12.0
-dbase           12.0
-web             12.0
-objects         12.0
-objtools        12.0
-algo            12.0
-blast           12.0
-app             12.0
+infrastructure  18.0
+core            18.0
+dbase           18.0
+web             18.0
+objects         18.0
+objtools        18.0
+algo            18.0
+app             18.0
