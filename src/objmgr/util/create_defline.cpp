@@ -393,6 +393,7 @@ void CDeflineGenerator::x_SetFlags (
 
     m_MainTitle.clear();
     m_GeneralStr.clear();
+    m_GeneralId = 0;
     m_PatentCountry.clear();
     m_PatentNumber.clear();
 
@@ -519,6 +520,8 @@ void CDeflineGenerator::x_SetFlags (
                         const CObject_id& oid = gen_id.GetTag();
                         if (oid.IsStr()) {
                             m_GeneralStr = oid.GetStr();
+                        } else if (oid.IsId()) {
+                            m_GeneralId = oid.GetId();
                         }
                     }
                 }
@@ -2088,9 +2091,17 @@ void CDeflineGenerator::x_SetTitleFromWGS (void)
     }
     if (m_Genome == NCBI_GENOME(plasmid) && m_Topology == NCBI_SEQTOPOLOGY(circular)) {
     } else if (m_Genome == NCBI_GENOME(chromosome)) {
-    } else if (! m_GeneralStr.empty()  &&  m_GeneralStr != m_Chromosome
-        &&  (! m_IsWGS  ||  m_GeneralStr != m_Plasmid)) {
-        joiner.Add(" ").Add(m_GeneralStr);
+    } else if (! m_GeneralStr.empty()) {
+        if (m_GeneralStr != m_Chromosome  &&  (! m_IsWGS  ||  m_GeneralStr != m_Plasmid)) {
+            joiner.Add(" ").Add(m_GeneralStr);
+        }
+    } else if (m_GeneralId > 0) {
+        string tmp = NStr::NumericToString (m_GeneralId);
+        if (! tmp.empty()) {
+            if (tmp != m_Chromosome  &&  (! m_IsWGS  ||  tmp != m_Plasmid)) {
+                joiner.Add(" ").Add(tmp);
+            }
+        }
     }
 
     joiner.Join(&m_MainTitle);
