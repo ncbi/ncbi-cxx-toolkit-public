@@ -1,0 +1,10 @@
+Discrepancy Report Results
+
+Summary
+DUPLICATE_PRIMER_SET: 1 BioSource has duplicate primer pairs.
+
+Detailed Report
+
+DUPLICATE_PRIMER_SET: 1 BioSource has duplicate primer pairs.
+C:\Users\kachalos\Desktop\svn\src\misc\discrepancy\test\test-data\DUPLICATE_PRIMER_SET.asn:ex1:ex1
+

@@ -2250,7 +2250,7 @@ static bool EqualPrimerSets(const CPCRPrimerSet::Tdata& a, const CPCRPrimerSet::
                 break;
             }
         }
-        if (jt != b.end()) {
+        if (jt == b.end()) {
             return false;
         }
     }
