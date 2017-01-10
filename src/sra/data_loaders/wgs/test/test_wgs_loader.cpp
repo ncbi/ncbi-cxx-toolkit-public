@@ -654,6 +654,12 @@ int sx_GetDescCount(const CBioseq_Handle& bh, CSeqdesc::E_Choice type)
     return ret;
 }
 
+void sx_CheckTestDirectory(const string& dir)
+{
+    LOG_POST(boost::unit_test::framework::current_test_case().p_name.get()<<
+             ": directory "<<dir<<" "<<(CDirEntry(dir).Exists()? "exists": "is inaccessible"));
+}
+
 BOOST_AUTO_TEST_CASE(FetchSeq1)
 {
     CRef<CObjectManager> om = sx_InitOM(eWithoutMasterDescr);
@@ -1894,6 +1900,7 @@ BOOST_AUTO_TEST_CASE(TPGTest)
     CScope scope(*om);
 
     string wgs_root = PAN1_PATH "/id_dumps/WGS/tmp";
+    sx_CheckTestDirectory(wgs_root);
     CWGSDataLoader::RegisterInObjectManager(*om,  wgs_root, vector<string>(), CObjectManager::eDefault);
     scope.AddDefaults();
 
@@ -1917,6 +1924,7 @@ BOOST_AUTO_TEST_CASE(FixedFileTest)
 
     vector<string> files;
     string wgs_root = PAN1_PATH "/id_dumps/WGS/tmp";
+    sx_CheckTestDirectory(wgs_root);
     files.push_back(wgs_root+"/DAAH01");
     CWGSDataLoader::RegisterInObjectManager(*om,  "", files, CObjectManager::eDefault);
     scope.AddDefaults();
