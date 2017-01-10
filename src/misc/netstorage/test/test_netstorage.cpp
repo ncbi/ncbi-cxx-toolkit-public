@@ -1475,23 +1475,6 @@ TKey Relocate(TStorage& storage, const TKey& key, TNetStorageFlags flags, SCtx& 
     return result;
 }
 
-// TODO: Enable callback checks after CXX-8302 is implemented
-#ifndef ENABLE_CALLBACK_CHECKS
-
-template <>
-string Relocate<NResult::TSuccess>(CCombinedNetStorage& storage, const string& locator, TNetStorageFlags flags, SCtx& ctx)
-{
-    return NGenericApi::Relocate(storage, locator, flags, TNetStorageProgressCb());
-}
-
-template <>
-TKey Relocate<NResult::TSuccess>(CCombinedNetStorageByKey& storage, const TKey& key, TNetStorageFlags flags, SCtx& ctx)
-{
-    return NGenericApi::Relocate(storage, key, flags, TNetStorageProgressCb());
-}
-
-#endif
-
 template <class TResult, class TStorage, class TKey>
 void Exists(TStorage& storage, const TKey& key, SCtx& ctx)
 {
