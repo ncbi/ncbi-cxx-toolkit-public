@@ -57,6 +57,13 @@ namespace pub_report
 
 class CPubReportApp : public CNcbiApplication
 {
+public:
+    CPubReportApp()
+    {
+        SetVersionByBuild(0);
+    }
+
+private:
     virtual void Init(void);
     virtual int  Run(void);
 
@@ -72,8 +79,6 @@ class CPubReportApp : public CNcbiApplication
 
 void CPubReportApp::Init(void)
 {
-    SetVersionByBuild(0);
-
     // Prepare command line descriptions
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(), "Publications Report");
