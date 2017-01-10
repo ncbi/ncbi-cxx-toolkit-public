@@ -46,11 +46,6 @@ void CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class,
             "cannot be used together with '--" NETSTORAGE_OPTION "'");
     }
 
-    if (IsOptionSet(eFileTrackAPIKey) && IsOptionSet(eFileTrackToken)) {
-        NCBI_THROW(CArgException, eExcludedValue, "'--" FT_TOKEN_OPTION "' "
-            "cannot be used together with '--" FT_API_KEY_OPTION "'");
-    }
-
     if (IsOptionSet(eObjectKey)) {
         if (IsOptionSet(eUserKey)) {
             NCBI_THROW(CArgException, eExcludedValue, "'--" USER_KEY_OPTION "' "
@@ -108,11 +103,6 @@ void CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class,
     if (IsOptionSet(eFileTrackSite)) {
         init_string += "&ft_site=";
         init_string += m_Opts.ft_site;
-    }
-
-    if (IsOptionSet(eFileTrackAPIKey)) {
-        init_string += "&ft_key=";
-        init_string += NStr::URLEncode(m_Opts.ft_key);
     }
 
     if (IsOptionSet(eFileTrackToken)) {
