@@ -209,6 +209,7 @@ private:
 
     string m_MainTitle;
     string m_GeneralStr;
+    int    m_GeneralId;
     string m_PatentCountry;
     string m_PatentNumber;
 
