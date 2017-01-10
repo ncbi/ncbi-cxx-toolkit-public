@@ -1,3 +1,0 @@
-APP_PROJ = feat_trim
-srcdir = @srcdir@
-include @builddir@/Makefile.meta
