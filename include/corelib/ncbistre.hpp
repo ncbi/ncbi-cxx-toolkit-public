@@ -673,8 +673,13 @@ public:
         }
     operator string(void) const;
 private:
+    friend NCBI_XNCBI_EXPORT CNcbiOstream& operator<<(CNcbiOstream& out, const CNcbiOstrstreamToString& s);
+
     CNcbiOstrstream& m_Out;
 };
+
+NCBI_XNCBI_EXPORT
+CNcbiOstream& operator<<(CNcbiOstream& out, const CNcbiOstrstreamToString& s);
 
 inline
 Int8 

@@ -72,7 +72,8 @@ CReader::CDebugPrinter::CDebugPrinter(const char* name)
 
 CReader::CDebugPrinter::~CDebugPrinter()
 {
-    LOG_POST_X(9, Info << SetPostFlags(eDPF_DateTime|eDPF_TID) << rdbuf());
+    LOG_POST_X(9, Info << SetPostFlags(eDPF_DateTime|eDPF_TID) <<
+        CNcbiOstrstreamToString(*this));
 }
 
 

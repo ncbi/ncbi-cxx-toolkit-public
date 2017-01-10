@@ -413,6 +413,22 @@ CNcbiOstrstreamToString::operator string(void) const
 }
 
 
+CNcbiOstream& operator<<(CNcbiOstream& out, const CNcbiOstrstreamToString& s)
+{
+#ifdef NCBI_SHUN_OSTRSTREAM
+    out << s.m_Out.str();
+#else
+    SIZE_TYPE len = (SIZE_TYPE) s.m_Out.pcount();
+    if ( len ) {
+        const char* str = s.m_Out.str();
+        s.m_Out.freeze(false);
+        out.write(str, len);
+    }
+#endif
+    return out;
+}
+
+
 CNcbiOstream& operator<<(CNcbiOstream& out, CUpcaseStringConverter s)
 {
     ITERATE ( string, c, s.m_String ) {
