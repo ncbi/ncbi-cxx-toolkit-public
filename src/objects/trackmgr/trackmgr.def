@@ -17,3 +17,6 @@ min._type = TSeqPos
 max._type = TSeqPos
 mean._type = TSeqPos
 
+[TMgr-BlastRIDDetail]
+created._type = time_t
+

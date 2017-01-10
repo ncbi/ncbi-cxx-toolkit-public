@@ -241,7 +241,7 @@ TMgr-BlastRIDDetail ::= SEQUENCE {
     rid VisibleString,
     title VisibleString OPTIONAL,
     query-sequences SEQUENCE OF TMgr-BlastQuerySeq OPTIONAL,
-    created VisibleString OPTIONAL
+    created INTEGER OPTIONAL
 }
 
 TMgr-BlastRIDReply ::= SEQUENCE {
