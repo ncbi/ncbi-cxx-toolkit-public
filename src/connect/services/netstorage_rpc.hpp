@@ -88,6 +88,9 @@ struct SNetStorageRPC : public SNetStorageImpl
         return flags ? flags : m_DefaultFlags;
     }
 
+    string RelocateImpl(CNetService service, CJsonNode& request,
+        TNetStorageFlags flags, TNetStorageProgressCb cb);
+
 private:
     TNetStorageFlags m_DefaultFlags;
 

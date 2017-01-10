@@ -814,14 +814,21 @@ CNetStorageObject SNetStorageRPC::Open(const string& object_loc)
 }
 
 string SNetStorageRPC::Relocate(const string& object_loc,
-        TNetStorageFlags flags, TNetStorageProgressCb /*cb*/)
+        TNetStorageFlags flags, TNetStorageProgressCb cb)
 {
     if (x_NetCacheMode(object_loc))
         NCBI_THROW_FMT(CNetStorageException, eNotSupported, object_loc <<
                 ": Relocate for NetCache blobs is not implemented");
 
+    auto service = GetServiceFromLocator(object_loc);
+    auto request = MkObjectRequest("RELOCATE", object_loc);
+    return RelocateImpl(service, request, flags, cb);
+}
+
+string SNetStorageRPC::RelocateImpl(CNetService service, CJsonNode& request,
+        TNetStorageFlags flags, TNetStorageProgressCb /*cb*/)
+{
     m_UseNextSubHitID.ProperCommand();
-    CJsonNode request(MkObjectRequest("RELOCATE", object_loc));
 
     CJsonNode new_location(CJsonNode::NewObjectNode());
 
@@ -831,8 +838,7 @@ string SNetStorageRPC::Relocate(const string& object_loc,
 
     // TODO: CXX-8302
 
-    return Exchange(GetServiceFromLocator(object_loc),
-            request).GetString("ObjectLoc");
+    return Exchange(service, request).GetString("ObjectLoc");
 }
 
 bool SNetStorageRPC::Exists(const string& object_loc)
@@ -1497,22 +1503,11 @@ CNetStorageObject SNetStorageByKeyRPC::Open(const string& unique_key,
 
 string SNetStorageByKeyRPC::Relocate(const string& unique_key,
         TNetStorageFlags flags, TNetStorageFlags old_flags,
-        TNetStorageProgressCb /*cb*/)
+        TNetStorageProgressCb cb)
 {
-    m_NetStorageRPC->m_UseNextSubHitID.ProperCommand();
-    CJsonNode request(m_NetStorageRPC->MkObjectRequest(
-            "RELOCATE", unique_key, old_flags));
-
-    CJsonNode new_location(CJsonNode::NewObjectNode());
-
-    SNetStorageRPC::x_SetStorageFlags(new_location, flags);
-
-    request.SetByKey("NewLocation", new_location);
-
-    // TODO: CXX-8302
-
-    return m_NetStorageRPC->Exchange(m_NetStorageRPC->m_Service,
-            request).GetString("ObjectLoc");
+    auto service = m_NetStorageRPC->m_Service;
+    auto request = m_NetStorageRPC->MkObjectRequest("RELOCATE", unique_key, old_flags);
+    return m_NetStorageRPC->RelocateImpl(service, request, flags, cb);
 }
 
 bool SNetStorageByKeyRPC::Exists(const string& key, TNetStorageFlags flags)
