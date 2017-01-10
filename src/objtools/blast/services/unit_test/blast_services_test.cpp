@@ -114,7 +114,7 @@ BOOST_AUTO_TEST_CASE(GetInformationAboutInvalidBlastDatabaseRemotely)
 BOOST_AUTO_TEST_CASE(MultipleDatabaseValidityCheck)
 {
     CBlastServices remote_svc;
-    bool found = remote_svc.IsValidBlastDb("nt wgs", false);
+    bool found = remote_svc.IsValidBlastDb("nt pdbnt", false);
     BOOST_REQUIRE(found == true);
 }
 
