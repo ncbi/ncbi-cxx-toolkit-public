@@ -72,8 +72,6 @@
 
 #include <util/format_guess.hpp>
 
-//#include <objtools/readers/error_container.hpp>
-
 #include "multireader.hpp"
 #include "table2asn_context.hpp"
 
@@ -295,6 +293,12 @@ CMultiReader::xReadFasta(CNcbiIstream& instream)
 
     int max_seqs = kMax_Int;
     CRef<CSeq_entry> result = m_context.m_di_fasta ? pReader->ReadDIFasta(m_context.m_logger) : pReader->ReadSet(max_seqs, m_context.m_logger);
+
+    if (result.NotEmpty())
+    {
+        m_context.MakeGenomeCenterId(*result);
+    }
+
     if (result->IsSet() && !m_context.m_HandleAsSet)
     {
         m_context.m_logger->PutError(*auto_ptr<CLineError>(
@@ -671,8 +675,9 @@ CRef<CSeq_entry> CMultiReader::CreateNewSeqFromTemplate(const CTable2AsnContext&
     return result;
 }
 
-CFormatGuess::EFormat CMultiReader::LoadFile(CNcbiIstream& istream, CRef<CSeq_entry>& entry, CRef<CSeq_submit>& submit)
+CFormatGuess::EFormat CMultiReader::LoadFile(const string& filename, CRef<CSeq_entry>& entry, CRef<CSeq_submit>& submit)
 {
+    CNcbiIfstream istream(filename.c_str());
     CFormatGuess::EFormat uFormat = xReadFile(istream, entry, submit);
     if (entry.NotEmpty())
     {
@@ -1017,10 +1022,9 @@ void CMultiReader::x_PostProcessAnnot(objects::CSeq_entry& entry)
 {
     unsigned int startingLocusTagNumber = 1;
 
-    typedef CGff3Reader::TAnnotList ANNOTS;
-    ANNOTS& annots = entry.SetAnnot();
+    auto& annots = entry.SetAnnot();
    
-    for (ANNOTS::iterator it = annots.begin(); it != annots.end(); ++it) {
+    for (auto it = annots.begin(); it != annots.end(); ++it) {
 
         edit::CFeatTableEdit fte(**it, m_context.m_locus_tag_prefix, startingLocusTagNumber, m_context.m_logger);
         fte.InferPartials();
@@ -1173,8 +1177,9 @@ bool CMultiReader::xGetAnnotLoader(CAnnotationLoader& loader, CNcbiIstream& in)
     return false;
 }
 
-bool CMultiReader::LoadAnnot(objects::CSeq_entry& entry, CNcbiIstream& in)
+bool CMultiReader::LoadAnnot(objects::CSeq_entry& entry, const string& filename)
 {
+    CNcbiIfstream in(filename.c_str());
     CAnnotationLoader annot_loader;
 
     if (xGetAnnotLoader(annot_loader, in))
@@ -1268,16 +1273,18 @@ bool CMultiReader::LoadAnnot(objects::CSeq_entry& entry, CNcbiIstream& in)
                     annot_id->Assign(*matching_id);
                 bioseq.SetAnnot().push_back(annot_it);
             }
+#ifdef _DEBUG
             else
             {
-                //cerr << MSerial_AsnText << "Found unmatched annot: " << *annot_id << endl;
+                cerr << MSerial_AsnText << "Found unmatched annot: " << *annot_id << endl;
             }
+#endif
         }
 
         return true;
     }
     return false;
-    }
+}
 
 CRef<CSeq_entry> CMultiReader::xReadGTF(CNcbiIstream& instream)
 {
@@ -1286,7 +1293,7 @@ CRef<CSeq_entry> CMultiReader::xReadGTF(CNcbiIstream& instream)
     flags |= CGtfReader::fGenbankMode;
     flags |= CGtfReader::fRetainLocusIds;
     //flags |= CGtfReader::fNumericIdsAsLocal;
-    //flags |= CGtfReader::fGenerateChildXrefs;
+    flags |= CGtfReader::fGenerateChildXrefs;
 
     CGtfReader reader(flags, m_AnnotName, m_AnnotTitle);
     CStreamLineReader lr(instream);

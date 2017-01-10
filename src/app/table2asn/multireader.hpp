@@ -29,7 +29,7 @@ public:
    CMultiReader(CTable2AsnContext& context);
    ~CMultiReader();
  
-   CFormatGuess::EFormat LoadFile(CNcbiIstream& in, CRef<objects::CSeq_entry>& entry, CRef<objects::CSeq_submit>& submit);
+   CFormatGuess::EFormat LoadFile(const string& filename, CRef<objects::CSeq_entry>& entry, CRef<objects::CSeq_submit>& submit);
    void Cleanup(CRef<objects::CSeq_entry>);
    void WriteObject(const CSerialObject&, ostream&);
    void ApplyAdditionalProperties(objects::CSeq_entry& entry);
@@ -39,7 +39,7 @@ public:
    void MergeDescriptors(objects::CSeq_descr & dest, const objects::CSeq_descr & source);
    void MergeDescriptors(objects::CSeq_descr & dest, const objects::CSeqdesc & source);
    void ApplyDescriptors(objects::CSeq_entry & obj, const objects::CSeq_descr & source);
-   bool LoadAnnot(objects::CSeq_entry& obj, CNcbiIstream& in);
+   bool LoadAnnot(objects::CSeq_entry& obj, const string& filename);
 
 
 protected:

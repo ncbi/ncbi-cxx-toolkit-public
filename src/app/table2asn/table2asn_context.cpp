@@ -221,30 +221,19 @@ void CTable2AsnContext::ApplyUpdateDate(objects::CSeq_entry& entry) const
     date_desc.Set().SetUpdate_date(*date);
 }
 
-void CTable2AsnContext::ApplyAccession(objects::CSeq_entry& entry) const
+void CTable2AsnContext::x_ApplyAccession(CTable2AsnContext& context, objects::CBioseq& bioseq)
 {
-    if (m_accession.empty())
+    CRef<CSeq_id> accession(new CSeq_id);
+    accession->Assign(*context.m_accession);
+    bioseq.SetId().push_back(accession);
+}
+
+void CTable2AsnContext::ApplyAccession(objects::CSeq_entry& entry)
+{
+    if (m_accession.Empty())
         return;
 
-    switch(entry.Which())
-    {
-    case CSeq_entry::e_Seq:
-        {
-            CRef<CSeq_id> accession_id(new CSeq_id);
-            accession_id->SetGenbank().SetAccession(m_accession);
-            entry.SetSeq().SetId().clear();
-            entry.SetSeq().SetId().push_back(accession_id);
-        }
-        break;
-    case CSeq_entry::e_Set:
-        NON_CONST_ITERATE(CSeq_entry::TSet::TSeq_set, it, entry.SetSet().SetSeq_set())
-        {
-            ApplyAccession(**it);
-        }
-        break;
-    default:
-        break;
-    }
+    VisitAllBioseqs(entry, x_ApplyAccession);
 }
 
 void CTable2AsnContext::UpdateSubmitObject(CRef<objects::CSeq_submit>& submit) const
@@ -474,13 +463,12 @@ void CTable2AsnContext::SmartFeatureAnnotation(CSeq_entry& entry) const
 
 }
 
-void CTable2AsnContext::MakeGenomeCenterId(CSeq_entry_EditHandle& entry_h)
+void CTable2AsnContext::MakeGenomeCenterId(CSeq_entry& entry)
 {
-    CSeq_entry& entry = (CSeq_entry&)*entry_h.GetCompleteSeq_entry();
-    CScope& scope = entry_h.GetScope();
-    scope.RemoveTopLevelSeqEntry(entry_h);
+    if (m_genome_center_id.empty())
+        return;
+
     VisitAllBioseqs(entry, &CTable2AsnContext::MakeGenomeCenterId);
-    entry_h = scope.AddTopLevelSeqEntry(entry).GetEditHandle();   
 }
 
 void CTable2AsnContext::VisitAllBioseqs(objects::CSeq_entry& entry, BioseqVisitorMethod m)
@@ -508,8 +496,8 @@ void CTable2AsnContext::MakeGenomeCenterId(CTable2AsnContext& context, CBioseq& 
 
     NON_CONST_ITERATE(CBioseq::TId, id_it, bioseq.SetId())
     {           
-        CSeq_id* seq_id(*id_it);
-        if (seq_id == 0) continue;
+        CRef<CSeq_id> seq_id(*id_it);
+        if (seq_id.Empty()) continue;
 
         const CObject_id* obj_id;
         switch (seq_id->Which())
@@ -517,9 +505,9 @@ void CTable2AsnContext::MakeGenomeCenterId(CTable2AsnContext& context, CBioseq& 
         case CSeq_id::e_Local:
             obj_id = &seq_id->GetLocal();            
             break;
-        case CSeq_id::e_General:
-            obj_id = &seq_id->GetGeneral().GetTag();
-            break;
+//        case CSeq_id::e_General:
+//            obj_id = &seq_id->GetGeneral().GetTag();
+//            break;
         default:
             continue;
         }

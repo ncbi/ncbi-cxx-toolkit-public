@@ -19,6 +19,7 @@ class CObjectManager;
 class CSeq_entry_EditHandle;
 class CSeq_feat;
 class CSourceModParser;
+class CSeq_id;
 
 namespace edit
 {
@@ -38,7 +39,7 @@ public:
     string m_ResultsDirectory;
     CNcbiOstream* m_output;
     string m_output_filename;
-    string m_accession;
+    CRef<objects::CSeq_id> m_accession;
     string m_OrganismName;
     string m_single_source_qual_file;
     string m_Comment;
@@ -121,7 +122,7 @@ public:
     bool ApplyCreateUpdateDates(objects::CSeq_entry& entry) const;
     bool ApplyCreateDate(objects::CSeq_entry& entry) const;
     void ApplyUpdateDate(objects::CSeq_entry& entry) const;
-    void ApplyAccession(objects::CSeq_entry& entry) const;
+    void ApplyAccession(objects::CSeq_entry& entry);
     void ApplyFileTracks(objects::CSeq_entry& entry) const;
     CRef<CSerialObject> CreateSubmitFromTemplate(
         CRef<objects::CSeq_entry>& object, 
@@ -146,7 +147,7 @@ public:
     void RemoveUnnecessaryXRef(objects::CSeq_entry& entry) const;
     void SmartFeatureAnnotation(objects::CSeq_entry& entry) const;
 
-    void MakeGenomeCenterId(objects::CSeq_entry_EditHandle& entry);
+    void MakeGenomeCenterId(objects::CSeq_entry& entry);
     static void MakeGenomeCenterId(CTable2AsnContext& context, objects::CBioseq& bioseq);
     static void RenameProteinIdsQuals(CTable2AsnContext& context, objects::CSeq_feat& feature);
     static void RemoveProteinIdsQuals(CTable2AsnContext& context, objects::CSeq_feat& feature);
@@ -168,6 +169,7 @@ public:
 
 private:
     void x_MergeSeqDescr(objects::CSeq_descr& dest, const objects::CSeq_descr& src, bool only_set) const;
+    static void x_ApplyAccession(CTable2AsnContext& context, objects::CBioseq& bioseq);
 };
 
 

@@ -462,7 +462,7 @@ int CTbl2AsnApp::Run(void)
     if (args["ft-url-mod"])
         m_context.m_ft_url_mod = args["ft-url-mod"].AsString();
     if (args["A"])
-        m_context.m_accession = args["A"].AsString();
+        m_context.m_accession.Reset(new CSeq_id(args["A"].AsString()));
     if (args["j"])
     {       
         m_context.m_source_mods = args["j"].AsString();
@@ -804,9 +804,7 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     }
     else
     {
-        CNcbiIfstream in(m_context.m_current_file.c_str());
-
-        CFormatGuess::EFormat format = m_reader->LoadFile(in, entry, submit);
+		CFormatGuess::EFormat format = m_reader->LoadFile(m_context.m_current_file, entry, submit);
         if (m_fcs_reader.get())
         {
             m_fcs_reader->PostProcess(*entry);
@@ -828,6 +826,8 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
             break;
         }
     }
+
+    m_context.ApplyAccession(*entry);
 
     if (!IsDryRun())
     {
@@ -878,8 +878,6 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
         fr.ConvertNucSetToSet(entry);
     }
 
-    m_context.ApplyAccession(*entry);
-
     if (do_dates)
     {
         // if create-date exists apply update date
@@ -893,12 +891,9 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     else
         result = m_context.CreateSubmitFromTemplate(entry, submit);
 
-    CSeq_entry_EditHandle entry_edit_handle = m_context.m_scope->AddTopLevelSeqEntry(*entry).GetEditHandle();
+    //m_context.MakeGenomeCenterId(*entry);
 
-    if (!m_context.m_genome_center_id.empty())
-    {
-        //m_context.MakeGenomeCenterId(entry_edit_handle);
-    }
+    CSeq_entry_EditHandle entry_edit_handle = m_context.m_scope->AddTopLevelSeqEntry(*entry).GetEditHandle();
 
     fr.MakeGapsFromFeatures(entry_edit_handle);
 
@@ -1226,9 +1221,7 @@ void CTbl2AsnApp::ProcessAnnotFile(const string& pathname, CSeq_entry& entry)
     CFile file(pathname);
     if (!file.Exists() || file.GetLength() == 0) return;
 
-    CNcbiIfstream in(pathname.c_str());
-
-    m_reader->LoadAnnot(entry, in);
+	m_reader->LoadAnnot(entry, pathname);
 }
 
 /////////////////////////////////////////////////////////////////////////////
