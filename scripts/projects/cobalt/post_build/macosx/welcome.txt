@@ -1,0 +1,6 @@
+NCBI Constrain-Based Alignment Tool (COBALT) aligns multiple protein
+sequences. The program uses amino acid frequencies from conserved domain
+database (CDD) and collection of pairwise constraints derived
+from CDD, protein motifs, and local sequence similarity using RPS-BLAST,
+BLASTP, and PHI-BLAST. The constraints are incorporated into the multiple
+alignment.
