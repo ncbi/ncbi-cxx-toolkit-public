@@ -214,47 +214,6 @@ static void s_ReadSocket(CSocket& sock, void* buffer,
     }
 }
 
-class CReadJsonFromSocket
-{
-public:
-    CJsonNode ReadMessage(CSocket& sock);
-
-private:
-    CUTTPReader m_UTTPReader;
-    CJsonOverUTTPReader m_JSONReader;
-};
-
-CJsonNode CReadJsonFromSocket::ReadMessage(CSocket& sock)
-{
-    try {
-        char read_buffer[READ_BUFFER_SIZE];
-
-        size_t bytes_read;
-
-        do {
-            s_ReadSocket(sock, read_buffer, READ_BUFFER_SIZE, &bytes_read);
-
-            m_UTTPReader.SetNewBuffer(read_buffer, bytes_read);
-
-        } while (!m_JSONReader.ReadMessage(m_UTTPReader));
-    }
-    catch (...) {
-        sock.Close();
-        throw;
-    }
-
-    if (m_UTTPReader.GetNextEvent() != CUTTPReader::eEndOfBuffer) {
-        string server_address(sock.GetPeerAddress());
-        sock.Close();
-        NCBI_THROW_FMT(CNetStorageException, eIOError,
-                "Extra bytes past message end while reading from " <<
-                        server_address << " after receiving " <<
-                        m_JSONReader.GetMessage().Repr() << '.');
-    }
-
-    return m_JSONReader.GetMessage();
-}
-
 struct SIssue
 {
     struct SBuilder;
@@ -439,6 +398,47 @@ static void s_TrapErrors(const CJsonNode& request,
                 "request: " << request.Repr() << "; "
                 "reply: " << reply.Repr() << ").");
     }
+}
+
+class CReadJsonFromSocket
+{
+public:
+    CJsonNode ReadMessage(CSocket& sock);
+
+private:
+    CUTTPReader m_UTTPReader;
+    CJsonOverUTTPReader m_JSONReader;
+};
+
+CJsonNode CReadJsonFromSocket::ReadMessage(CSocket& sock)
+{
+    try {
+        char read_buffer[READ_BUFFER_SIZE];
+
+        size_t bytes_read;
+
+        do {
+            s_ReadSocket(sock, read_buffer, READ_BUFFER_SIZE, &bytes_read);
+
+            m_UTTPReader.SetNewBuffer(read_buffer, bytes_read);
+
+        } while (!m_JSONReader.ReadMessage(m_UTTPReader));
+    }
+    catch (...) {
+        sock.Close();
+        throw;
+    }
+
+    if (m_UTTPReader.GetNextEvent() != CUTTPReader::eEndOfBuffer) {
+        string server_address(sock.GetPeerAddress());
+        sock.Close();
+        NCBI_THROW_FMT(CNetStorageException, eIOError,
+                "Extra bytes past message end while reading from " <<
+                        server_address << " after receiving " <<
+                        m_JSONReader.GetMessage().Repr() << '.');
+    }
+
+    return m_JSONReader.GetMessage();
 }
 
 class CNetStorageServerListener : public INetServerConnectionListener
