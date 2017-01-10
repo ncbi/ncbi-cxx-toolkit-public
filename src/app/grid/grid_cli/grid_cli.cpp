@@ -452,6 +452,9 @@ struct SOptionDefinition {
     {OPT_DEF(eSwitch, eNoServerCheck),
         "no-server-check", "Disable server check.", {-1}},
 
+    {OPT_DEF(eSwitch, eReportProgress),
+        "report-progress", "Report progress.", {-1}},
+
     /* Options available only with --extended-cli go below. */
 
     {OPT_DEF(eSwitch, eExtendedOptionDelimiter), NULL, NULL, {-1}},
@@ -675,6 +678,7 @@ struct SCommandDefinition {
         ABOUT_NETSTORAGE_OPTION,
         {eID, NETSTORAGE_COMMON_OPTIONS,
             NETSTORAGE_DIRECT_OPTIONS, eFileTrackAPIKey, eFileTrackToken,
+            eReportProgress,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetStorageCommand,

@@ -327,10 +327,16 @@ int CGridCommandLineInterfaceApp::Cmd_Relocate()
 
     string new_loc;
 
+    TNetStorageProgressCb cb;
+
+    if (IsOptionSet(eReportProgress)) {
+        cb = [](CJsonNode progress) { cout << progress.Repr(CJsonNode::fOmitOutermostBrackets) << endl; };
+    }
+
     if (IsOptionSet(eUserKey)) {
-        new_loc = m_NetStorageByKey.Relocate(m_Opts.id, m_Opts.netstorage_flags);
+        new_loc = m_NetStorageByKey.Relocate(m_Opts.id, m_Opts.netstorage_flags, 0, cb);
     } else {
-        new_loc = m_NetStorage.Relocate(m_Opts.id, m_Opts.netstorage_flags);
+        new_loc = m_NetStorage.Relocate(m_Opts.id, m_Opts.netstorage_flags, cb);
     }
 
     PrintLine(new_loc);

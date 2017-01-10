@@ -259,6 +259,7 @@ enum EOption {
     eOptionalNCID,
     eDirectMode,
     eNoServerCheck,
+    eReportProgress,
 
     eExtendedOptionDelimiter,
 
