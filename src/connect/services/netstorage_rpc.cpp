@@ -400,18 +400,12 @@ static void s_TrapErrors(const CJsonNode& request,
     }
 }
 
-class CReadJsonFromSocket
+CJsonNode s_ReadMessage(const CJsonNode& request, CSocket& sock, SNetStorage::SConfig::EErrMode err_mode,
+        INetServerConnectionListener& listener, CNetServer& server)
 {
-public:
-    CJsonNode ReadMessage(CSocket& sock);
+    CUTTPReader uttp_reader;
+    CJsonOverUTTPReader json_reader;
 
-private:
-    CUTTPReader m_UTTPReader;
-    CJsonOverUTTPReader m_JSONReader;
-};
-
-CJsonNode CReadJsonFromSocket::ReadMessage(CSocket& sock)
-{
     try {
         char read_buffer[READ_BUFFER_SIZE];
 
@@ -420,25 +414,27 @@ CJsonNode CReadJsonFromSocket::ReadMessage(CSocket& sock)
         do {
             s_ReadSocket(sock, read_buffer, READ_BUFFER_SIZE, &bytes_read);
 
-            m_UTTPReader.SetNewBuffer(read_buffer, bytes_read);
+            uttp_reader.SetNewBuffer(read_buffer, bytes_read);
 
-        } while (!m_JSONReader.ReadMessage(m_UTTPReader));
+        } while (!json_reader.ReadMessage(uttp_reader));
     }
     catch (...) {
         sock.Close();
         throw;
     }
 
-    if (m_UTTPReader.GetNextEvent() != CUTTPReader::eEndOfBuffer) {
+    if (uttp_reader.GetNextEvent() != CUTTPReader::eEndOfBuffer) {
         string server_address(sock.GetPeerAddress());
         sock.Close();
         NCBI_THROW_FMT(CNetStorageException, eIOError,
                 "Extra bytes past message end while reading from " <<
                         server_address << " after receiving " <<
-                        m_JSONReader.GetMessage().Repr() << '.');
+                        json_reader.GetMessage().Repr() << '.');
     }
 
-    return m_JSONReader.GetMessage();
+    CJsonNode reply(json_reader.GetMessage());
+    s_TrapErrors(request, reply, sock, err_mode, listener, server);
+    return reply;
 }
 
 class CNetStorageServerListener : public INetServerConnectionListener
@@ -483,11 +479,7 @@ void CNetStorageServerListener::OnConnected(
 
     message_sender.SendMessage(m_Hello);
 
-    CReadJsonFromSocket message_reader;
-
-    CJsonNode reply(message_reader.ReadMessage(sock));
-
-    s_TrapErrors(m_Hello, reply, sock, m_ErrMode, *this, connection->m_Server);
+    s_ReadMessage(m_Hello, sock, m_ErrMode, *this, connection->m_Server);
 }
 
 void CNetStorageServerListener::OnError(const string& err_msg,
@@ -874,10 +866,7 @@ string SNetStorageRPC::RelocateImpl(CNetService service, CJsonNode& request,
     CSocket& sock = json_over_uttp_sender.GetConnection()->m_Socket;
 
     for (;;) {
-        CReadJsonFromSocket message_reader;
-        CJsonNode reply(message_reader.ReadMessage(sock));
-        s_TrapErrors(request, reply, sock, m_Config.err_mode, *service->m_Listener, server);
-
+        CJsonNode reply(s_ReadMessage(request, sock, m_Config.err_mode, *service->m_Listener, server));
         CJsonNode object_loc(reply.GetByKeyOrNull("ObjectLoc"));
 
         if (object_loc) return object_loc.AsString();
@@ -956,19 +945,12 @@ CJsonNode SNetStorageRPC::Exchange(CNetService service,
 
     server->TryExec(json_over_uttp_sender);
 
-    CReadJsonFromSocket message_reader;
-
     if (conn != NULL)
         *conn = json_over_uttp_sender.GetConnection();
 
     CSocket& sock = json_over_uttp_sender.GetConnection()->m_Socket;
 
-    CJsonNode reply(message_reader.ReadMessage(sock));
-
-    s_TrapErrors(request, reply, sock, m_Config.err_mode, *service->m_Listener,
-            server);
-
-    return reply;
+    return s_ReadMessage(request, sock, m_Config.err_mode, *service->m_Listener, server);
 }
 
 void SNetStorageRPC::x_SetStorageFlags(CJsonNode& node, TNetStorageFlags flags)
@@ -1427,10 +1409,8 @@ void SNetStorageObjectRPC::Close()
 
         s_SendEndOfData(sock);
 
-        CReadJsonFromSocket message_reader;
-
-        s_TrapErrors(m_OriginalRequest,
-                message_reader.ReadMessage(sock), sock,
+        s_ReadMessage(
+                m_OriginalRequest, sock,
                 m_NetStorageRPC->m_Config.err_mode,
                 *m_NetStorageRPC->m_Service->m_Listener, m_Connection->m_Server);
     }
