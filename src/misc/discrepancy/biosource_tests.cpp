@@ -2375,8 +2375,6 @@ DISCREPANCY_CASE(DUP_SRC_QUAL, CBioSource, eDisc | eOncaller | eSmart, "Each qua
     map<string, vector<string> > Map;
     string collected_by;
     string identified_by;
-    string anamorph;
-    string old_name;
     if (obj.CanGetSubtype()) {
         ITERATE (CBioSource::TSubtype, it, obj.GetSubtype()) {
             if ((*it)->CanGetName()) {
@@ -2400,11 +2398,11 @@ DISCREPANCY_CASE(DUP_SRC_QUAL, CBioSource, eDisc | eOncaller | eSmart, "Each qua
             if ((*it)->IsSetSubname()) {
                 const string& s = (*it)->GetSubname();
                 if ((*it)->CanGetSubtype()) {
-                    if ((*it)->GetSubtype() == COrgMod::eSubtype_anamorph) {
-                        anamorph = s;
-                    }
-                    if ((*it)->GetSubtype() == COrgMod::eSubtype_old_name) {
-                        old_name = s;
+                    if ((*it)->GetSubtype() == COrgMod::eSubtype_anamorph || (*it)->GetSubtype() == COrgMod::eSubtype_common ||
+                        (*it)->GetSubtype() == COrgMod::eSubtype_old_name || (*it)->GetSubtype() == COrgMod::eSubtype_old_lineage ||
+                        (*it)->GetSubtype() == COrgMod::eSubtype_gb_acronym || (*it)->GetSubtype() == COrgMod::eSubtype_gb_anamorph ||
+                        (*it)->GetSubtype() == COrgMod::eSubtype_gb_synonym) {
+                        continue;
                     }
                 }
                 if (!s.empty()) {
@@ -2418,9 +2416,6 @@ DISCREPANCY_CASE(DUP_SRC_QUAL, CBioSource, eDisc | eOncaller | eSmart, "Each qua
         if (it->second.size() > 1) {
             if (it->second.size() == 2 && it->first == collected_by && collected_by == identified_by) {
                 continue; // there is no error if collected_by equals to identified_by
-            }
-            if (it->second.size() == 2 && it->first == anamorph && anamorph == old_name) {
-                continue; // there is no error if anamorph equals to old_name
             }
             string s = "[n] biosource[s] [has] value\'";
             s += it->first;
