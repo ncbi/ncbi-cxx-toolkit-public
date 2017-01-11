@@ -133,7 +133,7 @@ private:
 // constructor
 CAsn2FastaApp::CAsn2FastaApp (void)
 {
-    SetVersion(CVersionInfo(0, 9, 3));
+   SetVersionByBuild(1);
 }
 
 // destructor
@@ -328,7 +328,9 @@ CFastaOstreamEx* CAsn2FastaApp::OpenFastaOstream(const string& argname, const st
         CFastaOstreamEx::fEnableGI);
 
     if (GetArgs()["disable-gi"])
+    {
         fasta_os->ResetFlag(CFastaOstreamEx::fEnableGI);
+    }
 
     if( GetArgs()["gap-mode"] ) {
         fasta_os->SetFlag(
