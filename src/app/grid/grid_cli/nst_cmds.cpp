@@ -41,6 +41,8 @@ USING_NCBI_SCOPE;
 void CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class,
         CGridCommandLineInterfaceApp::EAdminCmdSeverity /*cmd_severity*/)
 {
+    // Validation
+
     if (IsOptionSet(eNetStorage) && IsOptionSet(eDirectMode)) {
         NCBI_THROW(CArgException, eExcludedValue, "'--" DIRECT_MODE_OPTION "' "
             "cannot be used together with '--" NETSTORAGE_OPTION "'");
@@ -83,64 +85,70 @@ void CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class,
             "must be explicitly specified.");
     }
 
-    string init_string("mode=direct");
-   
-    if (IsOptionSet(eNetStorage)) {
-        init_string = "nst=";
-        init_string += NStr::URLEncode(m_Opts.nst_service);
 
-    } else if (!IsOptionSet(eDirectMode) && !IsOptionSet(eUserKey) &&
-            (IsOptionSet(eOptionalID) || IsOptionSet(eID))) {
+    // Initialization
+
+    string nst_service = m_Opts.nst_service;
+    string ft_site     = m_Opts.ft_site;
+    string ft_key      = m_Opts.ft_key;
+    string nc_service  = m_Opts.nc_service;
+    string app_domain  = m_Opts.app_domain;
+    string auth        = m_Opts.auth;
+
+    // If object locator has been provided
+    if (!IsOptionSet(eUserKey) && !m_Opts.id.empty()) {
 
         CNetStorageObjectLoc locator(CCompoundIDPool(), m_Opts.id);
 
-        if (locator.HasServiceName()) {
-            init_string = "nst=";
-            init_string += NStr::URLEncode(locator.GetServiceName());
+        if (!IsOptionSet(eDirectMode) && !IsOptionSet(eNetStorage) && locator.HasServiceName()) {
+            nst_service = locator.GetServiceName();
+        }
+
+        if (IsOptionSet(eDirectMode) || (!IsOptionSet(eNetStorage) && !locator.HasServiceName())) {
+
+            if (!IsOptionSet(eFileTrackSite)) {
+                switch (locator.GetFileTrackSite()) {
+                    case CNetStorageObjectLoc::eFileTrack_ProdSite: ft_site = "prod"; break;
+                    case CNetStorageObjectLoc::eFileTrack_DevSite:  ft_site = "dev";  break;
+                    case CNetStorageObjectLoc::eFileTrack_QASite:   ft_site = "qa";   break;
+                    default:                                                          break;
+                }
+            }
+
+            if (!IsOptionSet(eNetCache) && locator.GetLocation() == eNFL_NetCache) {
+                nc_service = locator.GetNCServiceName();
+            }
+        }
+
+        if (!IsOptionSet(eNamespace)) {
+            app_domain = locator.GetAppDomain();
         }
     }
 
-    if (IsOptionSet(eFileTrackSite)) {
-        init_string += "&ft_site=";
-        init_string += m_Opts.ft_site;
+    if (!IsOptionSet(eAuth)) {
+        auth = DEFAULT_APP_UID "::" + GetDiagContext().GetUsername() + '@' + GetDiagContext().GetHost();
     }
 
-    if (IsOptionSet(eFileTrackToken)) {
-        init_string += "&ft_token=";
-        init_string += NStr::URLEncode(m_Opts.ft_key);
-    }
+    ostringstream os;
 
-    if (IsOptionSet(eNetCache)) {
-        init_string += "&nc=";
-        init_string += NStr::URLEncode(m_Opts.nc_service);
-    }
-
-    if (IsOptionSet(eNamespace)) {
-        init_string += "&namespace=";
-        init_string += NStr::URLEncode(m_Opts.app_domain);
-    }
-
-    if (IsOptionSet(eNoMetaData)) {
-        init_string += "&metadata=disabled";
-    }
-
-    string auth;
-
-    if (IsOptionSet(eAuth)) {
-        auth = m_Opts.auth;
+    if (nst_service.empty()) {
+        os << "mode=direct";
     } else {
-        auth = DEFAULT_APP_UID "::" + GetDiagContext().GetUsername() + '@' +
-            GetDiagContext().GetHost();
+        os << "nst=" << NStr::URLEncode(nst_service);
     }
 
-    init_string += "&client=";
-    init_string += NStr::URLEncode(auth);
+    if (!ft_site.empty())    os << "&ft_site="   << NStr::URLEncode(ft_site);
+    if (!ft_key.empty())     os << "&ft_token="  << NStr::URLEncode(ft_key);
+    if (!nc_service.empty()) os << "&nc="        << NStr::URLEncode(nc_service);
+    if (!app_domain.empty()) os << "&namespace=" << NStr::URLEncode(app_domain);
+    if (!auth.empty())       os << "&client="    << NStr::URLEncode(auth);
+
+    if (IsOptionSet(eNoMetaData)) os << "&metadata=disabled";
 
     if (IsOptionSet(eUserKey)) {
-        m_NetStorageByKey = CCombinedNetStorageByKey(init_string,
-                m_Opts.netstorage_flags);
+        m_NetStorageByKey = CCombinedNetStorageByKey(os.str(), m_Opts.netstorage_flags);
     } else {
-        m_NetStorage = CCombinedNetStorage(init_string, m_Opts.netstorage_flags);
+        m_NetStorage = CCombinedNetStorage(os.str(), m_Opts.netstorage_flags);
 
         if (api_class == eNetStorageAdmin)
             m_NetStorageAdmin = CNetStorageAdmin(m_NetStorage);
