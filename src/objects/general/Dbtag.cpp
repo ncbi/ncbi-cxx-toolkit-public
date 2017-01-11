@@ -690,7 +690,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_BioSample, "https://www.ncbi.nlm.nih.gov/biosample/" },
     { CDbtag::eDbtagType_ISHAM_ITS, "http://its.mycologylab.org/BioloMICS.aspx?Table=Sequences&ExactMatch=T&Name=MITS" }, // https not available tested 7/13/2016
     { CDbtag::eDbtagType_I5KNAL, "https://i5k.nal.usda.gov/" },
-    { CDbtag::eDbtagType_VISTA, "http://enhancer.lbl.gov/cgi-bin/dbxref.pl?id=" }, // https not available tested 7/13/2016
+    { CDbtag::eDbtagType_VISTA, "https://enhancer.lbl.gov/cgi-bin/dbxref.pl?id=" }, // https not available tested 7/13/2016
     { CDbtag::eDbtagType_BEI, "https://www.beiresources.org/Catalog/animalViruses/" },
     { CDbtag::eDbtagType_Araport, "https://www.araport.org/locus/" },
     { CDbtag::eDbtagType_VGNC, "http://vertebrate.genenames.org/data/gene-symbol-report/#!/vgnc_id/VGNC:" }, // https not available tested 7/13/2016
