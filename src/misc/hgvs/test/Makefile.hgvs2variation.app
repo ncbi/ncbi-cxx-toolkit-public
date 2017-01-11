@@ -14,3 +14,5 @@ LIB_ = hgvs $(OBJREAD_LIBS) \
 LIB = $(LIB_:%=%$(STATIC))
 
 LIBS = $(PCRE_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+
+REQUIRES = Boost.Spirit
