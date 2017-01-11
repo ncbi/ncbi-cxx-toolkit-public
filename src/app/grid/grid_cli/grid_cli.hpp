@@ -350,7 +350,7 @@ private:
         string attr_value;
         string service_name;
         string ft_site;
-        string ft_key;
+        string ft_token;
 
         struct SNCID {
             string key;

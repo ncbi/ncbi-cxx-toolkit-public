@@ -90,7 +90,7 @@ void CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class,
 
     string nst_service = m_Opts.nst_service;
     string ft_site     = m_Opts.ft_site;
-    string ft_key      = m_Opts.ft_key;
+    string ft_token    = m_Opts.ft_token;
     string nc_service  = m_Opts.nc_service;
     string app_domain  = m_Opts.app_domain;
     string auth        = m_Opts.auth;
@@ -138,7 +138,7 @@ void CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class,
     }
 
     if (!ft_site.empty())    os << "&ft_site="   << NStr::URLEncode(ft_site);
-    if (!ft_key.empty())     os << "&ft_token="  << NStr::URLEncode(ft_key);
+    if (!ft_token.empty())   os << "&ft_token="  << NStr::URLEncode(ft_token);
     if (!nc_service.empty()) os << "&nc="        << NStr::URLEncode(nc_service);
     if (!app_domain.empty()) os << "&namespace=" << NStr::URLEncode(app_domain);
     if (!auth.empty())       os << "&client="    << NStr::URLEncode(auth);

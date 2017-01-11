@@ -174,7 +174,7 @@ int CGridCommandLineInterfaceApp::Cmd_Login()
     }
     if (IsOptionSet(eFileTrackToken)) {
         cid.AppendLabel(LOGIN_TOKEN_FILETRACK_TOKEN);
-        cid.AppendString(m_Opts.ft_key);
+        cid.AppendString(m_Opts.ft_token);
     }
 
     PrintLine(cid.ToString());

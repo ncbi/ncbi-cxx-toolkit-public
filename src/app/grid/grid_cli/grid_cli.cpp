@@ -1599,7 +1599,7 @@ int CGridCommandLineInterfaceApp::Run()
                 m_Opts.ft_site = opt_value;
                 break;
             case eFileTrackToken:
-                m_Opts.ft_key = opt_value;
+                m_Opts.ft_token = opt_value;
                 break;
             case eServiceName:
                 m_Opts.service_name = opt_value;
@@ -1804,7 +1804,7 @@ bool CGridCommandLineInterfaceApp::ParseLoginToken(const string& token)
             m_Opts.ft_site = value_field.GetString();
             MarkOptionAsSet(eFileTrackSite);
         } else if (label == LOGIN_TOKEN_FILETRACK_TOKEN) {
-            m_Opts.ft_key = value_field.GetString();
+            m_Opts.ft_token = value_field.GetString();
             MarkOptionAsSet(eFileTrackToken);
         }
 
