@@ -67,10 +67,7 @@ members of gene families.
 %setup -q
 
 %build
-TMP=`mktemp`
-trap " /bin/rm -fr $TMP " INT QUIT EXIT HUP KILL ALRM
-./configure 2>&1 | tee $TMP
-grep ERROR $TMP || ./configure --manifest-config=Linux64-Centos:gcc
+./configure || ./configure --manifest-config=Linux64-Centos:gcc
 cd c++/*/build
 %__make -f Makefile.flat
 
