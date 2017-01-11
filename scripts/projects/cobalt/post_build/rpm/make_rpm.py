@@ -72,7 +72,7 @@ def cleanup_srctarball_contents():
     for root, dirs, files in os.walk(projects_path): 
         for name in files:
             name = os.path.join(root, name)
-            if fnmatch.fnmatch(name, "*blast/*"): 
+            if fnmatch.fnmatch(name, "*blast/*") or fnmatch.fnmatch(name, "*/cobalt/*"): 
                 continue
             if VERBOSE:
                 print("Deleting file", name)
@@ -80,7 +80,7 @@ def cleanup_srctarball_contents():
             
         for name in dirs:
             name = os.path.join(root, name)
-            if fnmatch.fnmatch(name, "*blast*"):
+            if fnmatch.fnmatch(name, "*blast*") or fnmatch.fnmatch(name, "*/cobalt"):
                 continue
             if VERBOSE: 
                 print("Deleting directory", name)
