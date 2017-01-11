@@ -122,9 +122,6 @@ CRef<CCode_break> s_StringToCodeBreak(
         return pCodeBreak;
     }
 
-    if (strand == eNa_strand_minus) {
-        int temp = from; from = to; to = temp;
-    }
     int aacode = 85; //for now
 
     pCodeBreak.Reset(new CCode_break);
