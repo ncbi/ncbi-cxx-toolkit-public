@@ -347,6 +347,12 @@ public:
 /// @return Boolean indicates whether anything changed
     static bool RemovePseudoProduct(CSeq_feat& cds, CScope& scope);
 
+/// Expands gene to include features it cross-references
+/// @param gene Seq-feat to adjust
+/// @param tse Top-level Seq-entry in which to find other features
+/// @return Boolean indicates whether anything changed
+    static bool ExpandGeneToIncludeChildren(CSeq_feat& gene, CTSE_Handle& tse);
+
 /// Performs WGS specific cleanup
 /// @param entry Seq-entry to edit
 /// @return Boolean return value indicates whether object was updated

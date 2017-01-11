@@ -2292,6 +2292,38 @@ bool CCleanup::RemovePseudoProduct(CSeq_feat& cds, CScope& scope)
 }
 
 
+bool CCleanup::ExpandGeneToIncludeChildren(CSeq_feat& gene, CTSE_Handle& tse)
+{
+    if (!gene.IsSetXref() || !gene.IsSetLocation() || !gene.GetLocation().IsInt()) {
+        return false;
+    }
+    bool any_change = false;
+    TSeqPos gene_start = gene.GetLocation().GetStart(eExtreme_Positional);
+    TSeqPos gene_stop = gene.GetLocation().GetStop(eExtreme_Positional);
+    ITERATE(CSeq_feat::TXref, xit, gene.GetXref()) {
+        if ((*xit)->IsSetId() && (*xit)->GetId().IsLocal()) {
+            const CTSE_Handle::TFeatureId& feat_id = (*xit)->GetId().GetLocal();
+            CTSE_Handle::TSeq_feat_Handles far_feats = tse.GetFeaturesWithId(CSeqFeatData::eSubtype_any, feat_id);
+            ITERATE(CTSE_Handle::TSeq_feat_Handles, f, far_feats) {
+                TSeqPos f_start = f->GetLocation().GetStart(eExtreme_Positional);
+                TSeqPos f_stop = f->GetLocation().GetStop(eExtreme_Positional);
+                if (f_start < gene_start) {
+                    gene.SetLocation().SetInt().SetFrom(f_start);
+                    gene_start = f_start;
+                    any_change = true;
+                }
+                if (f_stop > gene_stop) {
+                    gene.SetLocation().SetInt().SetTo(f_stop);
+                    gene_stop = f_stop;
+                    any_change = true;
+                }
+            }
+        }
+    }
+    return any_change;
+}
+
+
 bool CCleanup::WGSCleanup(CSeq_entry_Handle entry)
 {
     bool any_changes = false;
@@ -2386,12 +2418,16 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry)
 
     }
 
+    CTSE_Handle tse = entry.GetTSE_Handle();
+
     for (CFeat_CI gene_it(entry, SAnnotSelector(CSeqFeatData::e_Gene)); gene_it; ++gene_it) {
         bool change_this_gene;
         CRef<CSeq_feat> new_gene(new CSeq_feat());
         new_gene->Assign(*(gene_it->GetSeq_feat()));
 
-        change_this_gene = SetGenePartialByLongestContainedFeature(*new_gene, entry.GetScope());
+        change_this_gene = ExpandGeneToIncludeChildren(*new_gene, tse);
+
+        change_this_gene |= SetGenePartialByLongestContainedFeature(*new_gene, entry.GetScope());
 
         if (change_this_gene) {
             CSeq_feat_EditHandle gene_h(*gene_it);
