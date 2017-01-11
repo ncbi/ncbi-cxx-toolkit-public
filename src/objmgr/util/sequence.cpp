@@ -2726,22 +2726,42 @@ void CFastaOstream::x_WriteAsFasta(const CBioseq& bioseq)
                 }
             }
         }
-        if ((m_Flags & fEnableGI) == 0 && 
-            (m_Flags & fHideGenBankPrefix) != 0 && 
-            best_id->IsGenbank())
-        {   // see SQD-4144, only Accession.Version should be shown, without prefixes and suffixes
-            const CTextseq_id& gb = best_id->GetGenbank();
-            if (gb.IsSetAccession())
+
+        // see SQD-4144, only Accession.Version should be shown, without prefixes and suffixes
+        const CTextseq_id* text_id = 0;
+        if ((m_Flags & fEnableGI) == 0 &&
+            (m_Flags & fHideGenBankPrefix) != 0)
+        {
+
+            switch (best_id->Which())
             {
-                m_Out << gb.GetAccession();
-                if (gb.IsSetVersion())
+            case CSeq_id::e_Genbank:
+            case CSeq_id::e_Embl:
+            case CSeq_id::e_Other:
+            case CSeq_id::e_Ddbj:
+            case CSeq_id::e_Tpg:
+            case CSeq_id::e_Tpe:
+            case CSeq_id::e_Tpd:
+                text_id = best_id->GetTextseq_Id();
+                break;
+            }
+        }
+
+        if (text_id != 0)
+        {   
+            if (text_id->IsSetAccession())
+            {
+                m_Out << text_id->GetAccession();
+                if (text_id->IsSetVersion())
                 {
-                    m_Out << "." << gb.GetVersion();
+                    m_Out << "." << text_id->GetVersion();
                 }
             }
         }
         else
-           best_id->WriteAsFasta(m_Out);
+        {
+            best_id->WriteAsFasta(m_Out);
+        }
     }
 }
 
