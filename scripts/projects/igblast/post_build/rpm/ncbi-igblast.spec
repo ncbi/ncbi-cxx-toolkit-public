@@ -18,7 +18,7 @@ for the analysis of immunoglobulin sequence data.
 %setup -q
 
 %build
-./configure
+./configure || ./configure --manifest-config=Linux64-Centos:gcc
 cd c++/*/build
 %__make -f Makefile.flat
 
