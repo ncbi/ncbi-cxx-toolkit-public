@@ -1807,7 +1807,7 @@ CNCAlerts::Register(CNCAlerts::eDebugReleaseCacheData1, "ref_cnt is 0");
 #endif
 
     if (data->ref_cnt.Get() != 0  ||  !data->coord.empty()
-#if 0
+#if 1
 #if __NC_CACHEDATA_INTR_SET
         ||  !((TKeyMapHook*)data)->is_linked()
 #endif
@@ -1833,8 +1833,7 @@ CNCAlerts::Register(CNCAlerts::eDebugReleaseCacheData1, "ref_cnt is 0");
 
     if (n != 0) {
         AtomicSub(s_CurKeysCnt, 1);
-//        data->CallRCU();
-        delete data;
+        data->CallRCU();
     }
 #ifdef _DEBUG
     else {
