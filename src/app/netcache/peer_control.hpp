@@ -176,6 +176,7 @@ public:
     bool AcceptsBList(void) const;
     bool AcceptsBList2(void) const;
     bool AcceptsUserFlags(void) const;
+    bool AcceptsPurge2(void) const;
 
 private:
     CNCPeerControl(Uint8 srv_id);
@@ -314,6 +315,12 @@ inline bool
 CNCPeerControl::AcceptsUserFlags(void) const
 {
     return m_HostProtocol >= 61100;
+}
+
+inline bool
+CNCPeerControl::AcceptsPurge2(void) const
+{
+    return m_HostProtocol >= 61107;
 }
 
 inline void

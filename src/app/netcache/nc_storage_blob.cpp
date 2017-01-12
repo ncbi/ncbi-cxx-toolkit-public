@@ -73,6 +73,8 @@ static Uint8 s_CntVers = 0;
 */
 typedef map<string, Uint8> TForgets;
 static TForgets s_Forgets;
+static TForgets s_ForgetKeys;
+static Uint8 s_LatestPurge = 0;
 
 // for PutFailed/PutSucceeded
 static bool s_FailMonitor = false;
@@ -1734,29 +1736,47 @@ CNCBlobAccessor::GetCurPassword(void) const
         return CNCBlobStorage::PrintablePassword(m_CurData->password);
 }
 
-bool
-CNCBlobAccessor::IsPurged(const string& cache) const
+Uint8 CNCBlobAccessor::GetPurgeCount()
 {
-    if (cache.empty()) {
+    return  s_Forgets.size() + s_ForgetKeys.size();
+}
+
+bool
+CNCBlobAccessor::IsPurged(const CNCBlobKeyLight& nc_key) const
+{
+    if (nc_key.Cache().empty()) {
         return false;
     }
+    Uint8 cr_time = GetCurBlobCreateTime();
+    if (cr_time == 0 || cr_time > s_LatestPurge) {
+        return false;
+    }
+    string key(nc_key.Cache());
     bool res = false;
     s_ConsListLock.Lock();
-    map<string, Uint8>::const_iterator i = s_Forgets.find(cache);
-    if (i != s_Forgets.end()) {
-        res = GetCurBlobCreateTime() < i->second;
+    TForgets::const_iterator i = s_Forgets.lower_bound(key);
+    if (i != s_Forgets.end() && i->first == key) {
+        res = cr_time <= i->second;
+    }
+    if (!res) {
+        key.append(1,'\1').append(nc_key.RawKey()).append(1,'\1');
+        i = s_ForgetKeys.find(key);
+        if (i != s_ForgetKeys.end()) {
+            res = cr_time <= i->second;
+        }
     }
     s_ConsListLock.Unlock();
     return res;
 }
 
 bool
-CNCBlobAccessor::Purge(const string& cache, Uint8 when)
+CNCBlobAccessor::Purge(const CNCBlobKeyLight& nc_key, Uint8 when)
 {
     bool res=false;
     Uint8 lifespan = 9U * 24U * 3600U * (Uint8)kUSecsPerSecond; // 9 days
     Uint8 now = CSrvTime::Current().AsUSec();
     Uint8 longago = now > lifespan ? (now-lifespan) : 0;
+    s_LatestPurge = max(s_LatestPurge, when);
     
     s_ConsListLock.Lock();
     ERASE_ITERATE( TForgets, f, s_Forgets) {
@@ -1765,11 +1785,33 @@ CNCBlobAccessor::Purge(const string& cache, Uint8 when)
             res=true;
         }
     }
-    if (!cache.empty()) {
-        TForgets::const_iterator i = s_Forgets.find(cache);
-        if (i == s_Forgets.end() || i->second < when) {
-            s_Forgets[cache] = when;
+    ERASE_ITERATE( TForgets, f, s_ForgetKeys) {
+        if (f->second < longago) {
+            s_ForgetKeys.erase(f);
             res=true;
+        }
+    }
+    if (when != 0) {
+        string key(nc_key.Cache());
+        if (nc_key.RawKey().empty()) {
+            TForgets::iterator i = s_Forgets.lower_bound(key);
+            if (i == s_Forgets.end()) {
+                s_Forgets[key] = when;
+                res=true;
+            } else if (i->first == key && i->second < when) {
+                i->second = when;
+                res=true;
+            }
+        } else {
+            key.append(1,'\1').append(nc_key.RawKey()).append(1,'\1');
+            TForgets::iterator i = s_ForgetKeys.find(key);
+            if (i == s_ForgetKeys.end()) {
+                s_ForgetKeys[key] = when;
+                res=true;
+            } else if (i->second < when) {
+                i->second = when;
+                res=true;
+            }
         }
     }
     s_ConsListLock.Unlock();
@@ -1779,7 +1821,7 @@ CNCBlobAccessor::Purge(const string& cache, Uint8 when)
 string CNCBlobAccessor::GetPurgeData(char separator)
 {
     string res;
-    Purge("",0);
+    Purge(CNCBlobKeyLight(),0);
     s_ConsListLock.Lock();
     ITERATE( TForgets, f, s_Forgets) {
         res += NStr::NumericToString(f->second);

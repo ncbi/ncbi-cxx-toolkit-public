@@ -1368,7 +1368,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
     { "PURGE",
         {&CNCMessageHandler::x_DoCmd_Purge,
             "PURGE",
-            fNeedsAdminClient, eNCNone, eProxyNone},
+            fNoCmdFlags, eNCNone, eProxyNone},
           // Cache name.
         { { "cache",     eNSPT_Str, eNSPA_Required } } },
     { "COPY_PURGE",
@@ -1376,6 +1376,33 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
             "COPY_PURGE", fNoCmdFlags, eNCNone, eProxyNone },
           // Cache name.
         { { "cache",   eNSPT_Str,  eNSPA_Required },
+          // forget blobs created earlier than cr_time
+          { "cr_time", eNSPT_Int,  eNSPA_Required } } },
+    
+    // Added in 6.11.7, CXX-8948
+    { "PURGE2",
+        {&CNCMessageHandler::x_DoCmd_Purge,
+            "PURGE",
+            fNoCmdFlags, eNCNone, eProxyNone},
+          // Cache name.
+        { { "cache",   eNSPT_Id,   eNSPA_ICPrefix },
+          // Blob's key.
+          { "key",     eNSPT_Str,  eNSPA_Required },
+          // Client IP for application sending the command.
+          { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          // Session ID for application sending the command.
+          { "sid",     eNSPT_Str,  eNSPA_Optional },
+          // request Hit ID
+          { "ncbi_phid", eNSPT_Str,  eNSPA_Optional }
+        } },
+    // Added in 6.11.7, CXX-8948
+    { "COPY_PURGE2",
+        {&CNCMessageHandler::x_DoCmd_CopyPurge,
+            "COPY_PURGE", fNoCmdFlags, eNCNone, eProxyNone },
+          // Cache name.
+        { { "cache",   eNSPT_Str,  eNSPA_Required },
+          // Blob's key.
+          { "key",     eNSPT_Str,  eNSPA_Required },
           // forget blobs created earlier than cr_time
           { "cr_time", eNSPT_Int,  eNSPA_Required } } },
 
@@ -3576,12 +3603,17 @@ CNCMessageHandler::x_ExecuteOnLatestSrvId(void)
             }
         }
     }
-    if (!m_PrevCache.empty() && m_BlobAccess->IsPurged(m_PrevCache)) {
+    if (m_BlobAccess->IsPurged(m_NCBlobKey)) {
         if (x_IsFlagSet(fPeerFindExistsOnly)) {
             m_LatestExist = false;
             return m_CmdProcessor;
         }
+#if 0
         return &CNCMessageHandler::x_ReportBlobNotFound;
+#else
+        x_ReportError( GetMessageByStatus(eStatus_NotFound));
+        return &CNCMessageHandler::x_DoCmd_Remove;
+#endif
     }
     if (x_IsFlagSet(fPeerFindExistsOnly) && m_LatestSrvId == CNCDistributionConf::GetSelfID()) {
         return m_CmdProcessor;
@@ -3696,6 +3728,9 @@ CNCMessageHandler::x_PurgeToNextPeer(void)
     if (m_ActiveHub) {
         SRV_FATAL("Previous client not released");
     }
+    if (!m_NCBlobKey.RawKey().empty() && !CNCPeerControl::Peer(srv_id)->AcceptsPurge2()) {
+        return &CNCMessageHandler::x_PurgeToNextPeer;
+    }
     m_ActiveHub = CNCActiveClientHub::Create(srv_id, this);
     return &CNCMessageHandler::x_SendPurgeToPeerCmd;
 }
@@ -3719,7 +3754,7 @@ CNCMessageHandler::x_SendPurgeToPeerCmd(void)
     if (NeedEarlyClose())
         return &CNCMessageHandler::x_FinishCommand;
 
-    m_ActiveHub->GetHandler()->CopyPurge(GetDiagCtx(), m_PrevCache, m_CmdStartTime);
+    m_ActiveHub->GetHandler()->CopyPurge(GetDiagCtx(), m_NCBlobKey, m_CmdStartTime.AsUSec());
     return &CNCMessageHandler::x_ReadPurgeResults;
 }
 
@@ -4834,7 +4869,7 @@ CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_Purge(void)
 {
     LOG_CURRENT_FUNCTION
-    if (CNCBlobAccessor::Purge( m_PrevCache, m_CmdStartTime.AsUSec())) {
+    if (CNCBlobAccessor::Purge( m_NCBlobKey, m_CmdStartTime.AsUSec())) {
         CNCBlobStorage::SavePurgeData();
     }
     CNCDistributionConf::GetPeerServers(m_CheckSrvs);
@@ -4845,7 +4880,7 @@ CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_CopyPurge(void)
 {
     LOG_CURRENT_FUNCTION
-    if (CNCBlobAccessor::Purge( m_PrevCache, m_CopyBlobInfo->create_time)) {
+    if (CNCBlobAccessor::Purge( m_NCBlobKey, m_CopyBlobInfo->create_time)) {
         CNCBlobStorage::SavePurgeData();
     }
     return &CNCMessageHandler::x_FinishCommand;

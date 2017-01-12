@@ -347,18 +347,24 @@ void CNCActiveHandler::AskPeerVersion(void)
 
 void
 CNCActiveHandler::CopyPurge(CRequestContext* cmd_ctx,
-                             const string& cache_name,
-                             const CSrvTime& when)
+                            const CNCBlobKeyLight& nc_key,
+                            Uint8 when)
 {
+    bool p2 = !nc_key.RawKey().empty();
     if (cmd_ctx)
         SetDiagCtx(cmd_ctx);
     m_CurCmd = eNeedOnlyConfirm;
     m_CmdToSend.resize(0);
-    m_CmdToSend += "COPY_PURGE";
+    m_CmdToSend += p2 ? "COPY_PURGE2" : "COPY_PURGE";
     m_CmdToSend += " \"";
-    m_CmdToSend += cache_name;
+    m_CmdToSend += nc_key.Cache();
     m_CmdToSend += "\" ";
-    m_CmdToSend += NStr::UInt8ToString(when.AsUSec());
+    if (p2) {
+        m_CmdToSend += " \"";
+        m_CmdToSend += nc_key.RawKey();
+        m_CmdToSend += "\" ";
+    }
+    m_CmdToSend += NStr::UInt8ToString(when);
     x_SetStateAndStartProcessing(&CNCActiveHandler::x_SendCmdToExecute);
 }
 

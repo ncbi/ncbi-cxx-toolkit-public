@@ -1379,6 +1379,7 @@ void CNCBlobStorage::WriteBlobStat(CSrvSocketTask& task)
     task.WriteText(eol).WriteText("Size").WriteText(iss).WriteText(NStr::UInt8ToString_DataSize(size)).WriteText(eos);
     task.WriteText(eol).WriteText("InCache_count").WriteText( is).WriteNumber( cache_count);
     task.WriteText(eol).WriteText("TimeTable_count").WriteText( is).WriteNumber( timetable_count);
+    task.WriteText(eol).WriteText("Purge_count").WriteText( is).WriteNumber( CNCBlobAccessor::GetPurgeCount());
 
 #if __NC_CACHEDATA_ALL_MONITOR
     size_t ncaches_count = 0;

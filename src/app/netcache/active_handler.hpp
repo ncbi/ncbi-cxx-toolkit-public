@@ -130,9 +130,8 @@ public:
     const SNCBlobSummary& GetBlobSummary(void);
 
     void AskPeerVersion(void);
-    void CopyPurge(CRequestContext* cmd_ctx,
-                 const string& cache,
-                 const CSrvTime& when);
+    void CopyPurge(CRequestContext* cmd_ctx, const CNCBlobKeyLight& key,
+                 Uint8 when);
     /*
         request meta info, x_WaitForMetaInfo ->  x_SendCopyPutCmd -> 
         on error, goto  x_FinishCommand
