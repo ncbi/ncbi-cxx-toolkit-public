@@ -22,6 +22,8 @@ objects/seqres$
 objects/seqset$
 objects/seqtable
 objects/misc$
+objtools$
+objtools/data_loaders$
 objtools/data_loaders/asn_cache
 db$
 db/bdb$
