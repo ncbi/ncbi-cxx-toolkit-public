@@ -189,6 +189,7 @@ const string kArgClonotypeFile("clonotype_out");
 const string kArgTranslate("show_translation");
 const string kArgMinDMatch("min_D_match");
 const string kArgDPenalty("D_penalty");
+const string kArgJPenalty("J_penalty");
 const string kArgIgSeqType("ig_seqtype");
 const string kArgMaxHSPsPerSubject("max_hsps");
 const int    kDfltArgMaxHSPsPerSubject = 0;

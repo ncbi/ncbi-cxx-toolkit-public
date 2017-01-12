@@ -1538,7 +1538,14 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                                 CArgDescriptions::eInteger, "-4");
 
         arg_desc.SetConstraint(kArgDPenalty, 
-                               new CArgAllowValuesBetween(-6, 0));
+                               new CArgAllowValuesBetween(-5, 0));
+
+        arg_desc.AddDefaultKey(kArgJPenalty, "J_penalty",
+                                "Penalty for a nucleotide mismatch in J gene",
+                                CArgDescriptions::eInteger, "-3");
+
+        arg_desc.SetConstraint(kArgJPenalty, 
+                               new CArgAllowValuesBetween(-4, 0));
 
         arg_desc.AddDefaultKey(kArgNumClonotype, "num_clonotype",
                                 "Number of top clonotypes to show ",
@@ -1698,7 +1705,10 @@ CIgBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
     if (args.Exist(kArgDPenalty) && args[kArgDPenalty]) {
         m_IgOptions->m_D_penalty = args[kArgDPenalty].AsInteger();
     }
-
+    
+    if (args.Exist(kArgJPenalty) && args[kArgJPenalty]) {
+        m_IgOptions->m_J_penalty = args[kArgJPenalty].AsInteger();
+    }
 
     CRef<CBlastOptionsHandle> opts_hndl;
     if (m_IgOptions->m_IsProtein) {

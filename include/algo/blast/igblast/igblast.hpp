@@ -69,6 +69,7 @@ public:
     string m_SequenceType;           //ig or tcr?
     int m_Min_D_match;               //the word size for D gene search
     int m_D_penalty;                 //the mismatch penalty for D gene search
+    int m_J_penalty;                 //the mismatch penalty for J gene search
     string m_AuxFilename;            // auxulary file name
     string m_IgDataPath;             // internal data path
     CRef<CLocalDbAdapter> m_Db[4];   // user specified germline database

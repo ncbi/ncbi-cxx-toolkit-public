@@ -375,7 +375,7 @@ void CIgBlast::x_SetupDJSearch(const vector<CRef <CIgAnnotation> > &annots,
     opts.SetMatchReward(1);
     if (db_type == 2){ //J genes are longer so if can afford more reliable identification
         opts.SetWordSize(7);
-        opts.SetMismatchPenalty(-3);
+        opts.SetMismatchPenalty(m_IgOptions->m_J_penalty);
     } else {
         opts.SetWordSize(m_IgOptions->m_Min_D_match);
         opts.SetMismatchPenalty(m_IgOptions->m_D_penalty);
@@ -602,9 +602,9 @@ static bool s_DJNotCompatible(const CSeq_align &d, const CSeq_align &j, bool ms,
     //D gene needs to have minimal match in addition to overlap with J gene
     //D gene needs to end before J gene ends
     if (ms) {
-        if (ds < js + 3 || de < je + margin) return true;
+        if (ds < js || de < je + margin) return true;
     } else { 
-        if (ds > js - margin || de > je + 3) return true;
+        if (ds > js - margin || de > je) return true;
     }
     return false;
 };

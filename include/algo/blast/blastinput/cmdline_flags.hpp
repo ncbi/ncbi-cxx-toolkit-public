@@ -312,6 +312,8 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgTranslate;
 NCBI_BLASTINPUT_EXPORT extern const string kArgMinDMatch;
 /// Argument to specify mismatch penalty for D gene search
 NCBI_BLASTINPUT_EXPORT extern const string kArgDPenalty;
+/// Argument to specify mismatch penalty for J gene search
+NCBI_BLASTINPUT_EXPORT extern const string kArgJPenalty;
 /// Argument to specify IgBlast sequence type
 NCBI_BLASTINPUT_EXPORT extern const string kArgIgSeqType;
 /// Argument to specify non-greedy dynamic programming extension
