@@ -900,11 +900,6 @@ sub{vertical-align:sub;}
 /********************************************************************/
 /*  ComponentID=63266 /projects/standards/standard_popper_css@1.1  */
 
-.tgt_light{background:transparent url(http://www.ncbi.nlm.nih.gov/portal/portal3rc.fcgi/2486979/img/27532) no-repeat 100% -3%; padding-right: 17px; margin-right: 3px;}
-.tgt_light:active{background:transparent url(http://www.ncbi.nlm.nih.gov/portal/portal3rc.fcgi/2486979/img/27532) no-repeat 100% 28%; padding-right: 17px; margin-right: 3px;}
-.tgt_dark{background:transparent url(http://www.ncbi.nlm.nih.gov/portal/portal3rc.fcgi/2486979/img/27532) no-repeat 100% 100%; padding-right: 17px; margin-right: 3px;}
-.tgt_dark:active{background:transparent url(http://www.ncbi.nlm.nih.gov/portal/portal3rc.fcgi/2486979/img/27532) no-repeat 100% 58%; padding-right: 17px; margin-right: 3px;}
-
 .tabPopper{ position:absolute; top: 0; left:0; display: none; background-color:#fff; padding: .2em; margin-top: 3px; *padding-bottom:1em; box-shadow: .4em .4em .5em #999; -webkit-box-shadow: .4em .4em .5em #999; -moz-box-shadow: .4em .4em .5em #999; border: 1px solid #ccc; /* IE hack (6, 7, 8) */ border-bottom: 1px solid #666\0; border-right: 1px solid #666\0; }
 .tabPopperCover{ position:absolute; top:0px; left: 0px; height: 1px; background-color: #FFA600; overflow:hidden; }
 .tabPopper fieldset{border: 0;padding:0;margin:4px 10px;}
