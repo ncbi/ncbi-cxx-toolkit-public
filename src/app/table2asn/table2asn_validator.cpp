@@ -76,7 +76,7 @@ void CTable2AsnValidator::Cleanup(CSeq_entry_Handle& h_entry, const string& flag
     {
         cleanup.BasicCleanup(*entry, CCleanup::eClean_SyncGenCodes);
         if (flags.find('U') != string::npos)
-          cleanup.RemoveUnnecessaryGeneXrefs(h_entry); //remove unnec gen xref included in extended cleanup
+            cleanup.RemoveUnnecessaryGeneXrefs(h_entry); //remove unnec gen xref included in extended cleanup
     }
 
     if (need_recalculate_index) {
@@ -88,6 +88,11 @@ void CTable2AsnValidator::Cleanup(CSeq_entry_Handle& h_entry, const string& flag
     if (flags.find('f') != string::npos)
     {
         m_context->VisitAllBioseqs(*(CSeq_entry*)h_entry.GetCompleteSeq_entry().GetPointer(), FixProductNames);
+    }
+
+    if (flags.find('s') != string::npos)
+    {
+        CCleanup::AddLowQualityException(h_entry.GetEditHandle());
     }
 }
 

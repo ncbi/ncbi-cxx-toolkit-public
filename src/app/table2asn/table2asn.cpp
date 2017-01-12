@@ -273,6 +273,7 @@ void CTbl2AsnApp::Init(void)
       b Basic cleanup (default)\n\
       e Extended cleanup\n\
       f Fix product names\n\
+      s Add exception to short introns\n\
       w WGS cleanup\n\
       - avoid cleanup", CArgDescriptions::eString);
 
@@ -374,7 +375,7 @@ int CTbl2AsnApp::Run(void)
 
     if (args["c"])
     {
-        if (args["c"].AsString().find_first_not_of("-befw") != string::npos)
+        if (args["c"].AsString().find_first_not_of("-befws") != string::npos)
         {
             NCBI_THROW(CArgException, eConvert,
                 "Unrecognized cleanup type " + args["c"].AsString());
