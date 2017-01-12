@@ -358,6 +358,13 @@ public:
 /// @return Boolean return value indicates whether object was updated
     static bool WGSCleanup(CSeq_entry_Handle entry);
 
+/// For table2asn -c s
+/// Adds an exception of "low-quality sequence region" to coding regions
+/// and mRNAs that are not pseudo and have an intron <11bp in length
+/// @param entry Seq-entry to edit
+/// @return Boolean return value indicates whether object was updated
+    static bool AddLowQualityException(CSeq_entry_Handle entry);
+
 /// Normalize Descriptor Order on a specific Seq-entry
 /// @param entry Seq-entry to edit
 /// @return Boolean return value indicates whether object was updated
@@ -484,6 +491,9 @@ private:
     static bool x_MergeDupOrgNames(COrgName& on1, const COrgName& add);
     static bool x_MergeDupOrgRefs(COrg_ref& org1, const COrg_ref& add);
 
+    static bool x_HasShortIntron(const CSeq_loc& loc, size_t min_len = 11);
+    static bool x_AddLowQualityException(CSeq_feat& feat);
+    static bool x_AddLowQualityException(CSeq_entry_Handle entry, CSeqFeatData::ESubtype subtype);
 };
 
 

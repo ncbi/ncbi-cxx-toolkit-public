@@ -2449,6 +2449,104 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry)
     return any_changes;
 }
 
+
+bool CCleanup::x_HasShortIntron(const CSeq_loc& loc, size_t min_len)
+{
+    CSeq_loc_CI li(loc);
+    while (li && li.IsEmpty()) {
+        ++li;
+    }
+    if (!li) {
+        return false;
+    }
+    while (li) {
+        TSeqPos prev_end;
+        ENa_strand prev_strand;
+        if (li.IsSetStrand() && li.GetStrand() == eNa_strand_minus) {
+            prev_end = li.GetRange().GetFrom();
+            prev_strand = eNa_strand_minus;
+        } else {
+            prev_end = li.GetRange().GetTo();
+            prev_strand = eNa_strand_plus;
+        }
+        ++li;
+        while (li && li.IsEmpty()) {
+            ++li;
+        }
+        if (li) {
+            TSeqPos this_start;
+            ENa_strand this_strand;
+            if (li.IsSetStrand() && li.GetStrand() == eNa_strand_minus) {
+                this_start = li.GetRange().GetTo();
+                this_strand = eNa_strand_minus;
+            } else {
+                this_start = li.GetRange().GetFrom();
+                this_strand = eNa_strand_plus;
+            }
+            if (this_strand == prev_strand) {
+                if (abs((long int)this_start - (long int)prev_end) < min_len) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+
+const string kLowQualitySequence = "low-quality sequence region";
+
+bool CCleanup::x_AddLowQualityException(CSeq_feat& feat)
+{
+    bool any_change = false;
+    if (!feat.IsSetExcept()) {
+        any_change = true;
+        feat.SetExcept(true);
+    }
+    if (!feat.IsSetExcept_text() || NStr::IsBlank(feat.GetExcept_text())) {
+        feat.SetExcept_text(kLowQualitySequence);
+        any_change = true;
+    } else if (NStr::Find(feat.GetExcept_text(), kLowQualitySequence) == string::npos) {
+        feat.SetExcept_text(feat.GetExcept_text() + "; " + kLowQualitySequence);
+        any_change = true;
+    }
+    return any_change;
+}
+
+
+bool CCleanup::x_AddLowQualityException(CSeq_entry_Handle entry, CSeqFeatData::ESubtype subtype)
+{
+    bool any_changes = false;
+
+    SAnnotSelector sel(subtype);
+    for (CFeat_CI cds_it(entry, sel); cds_it; ++cds_it) {
+        bool change_this_cds = false;
+        CRef<CSeq_feat> new_cds(new CSeq_feat());
+        new_cds->Assign(*(cds_it->GetSeq_feat()));
+        if (!sequence::IsPseudo(*(cds_it->GetSeq_feat()), entry.GetScope()) &&
+            x_HasShortIntron(cds_it->GetLocation())) {
+            change_this_cds = x_AddLowQualityException(*new_cds);
+        }
+
+        if (change_this_cds) {
+            CSeq_feat_EditHandle cds_h(*cds_it);
+
+            cds_h.Replace(*new_cds);
+            any_changes = true;
+        }
+    }
+    return any_changes;
+}
+
+
+bool CCleanup::AddLowQualityException(CSeq_entry_Handle entry)
+{
+    bool any_changes = x_AddLowQualityException(entry, CSeqFeatData::eSubtype_cdregion);
+    any_changes |= x_AddLowQualityException(entry, CSeqFeatData::eSubtype_mRNA);
+    return any_changes;
+}
+
+
 // maps the type of seqdesc to the order it should be in 
 // (lowest to highest)
 typedef SStaticPair<CSeqdesc::E_Choice, int>  TSeqdescOrderElem;

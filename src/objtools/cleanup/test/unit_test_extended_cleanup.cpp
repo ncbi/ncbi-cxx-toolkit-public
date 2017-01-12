@@ -994,3 +994,98 @@ BOOST_AUTO_TEST_CASE(TEST_ConvertPopToPhy)
     BOOST_CHECK_EQUAL(entry->GetSet().GetClass(), CBioseq_set::eClass_phy_set);
 
 }
+
+
+CRef<CSeq_entry> BuildEntryForExceptText(CSeqFeatData::ESubtype subtype, ENa_strand strand, size_t distance)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    CRef<CSeq_feat> cds = unit_test_util::AddMiscFeature(entry);
+    cds->ResetComment();
+    if (subtype == CSeqFeatData::eSubtype_cdregion) {
+        cds->SetData().SetCdregion();
+    } else {
+        cds->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
+    }
+    CRef<CSeq_loc> int1(new CSeq_loc());
+    int1->SetInt().SetFrom(0);
+    int1->SetInt().SetTo(5);
+    int1->SetInt().SetStrand(strand);
+    int1->SetInt().SetId().Assign(*(entry->GetSeq().GetId().front()));
+    CRef<CSeq_loc> int2(new CSeq_loc());
+    int2->SetInt().SetFrom(5 + distance);
+    int2->SetInt().SetTo(10 + distance);
+    int2->SetInt().SetStrand(strand);
+    int2->SetInt().SetId().Assign(*(entry->GetSeq().GetId().front()));
+    if (strand == eNa_strand_minus) {
+        cds->SetLocation().SetMix().Set().push_back(int2);
+        cds->SetLocation().SetMix().Set().push_back(int1);
+    } else {
+        cds->SetLocation().SetMix().Set().push_back(int1);
+        cds->SetLocation().SetMix().Set().push_back(int2);
+    }
+    return entry;
+}
+
+
+void CheckLowQualityResults(CSeq_entry_Handle seh, CSeqFeatData::ESubtype subtype, bool expected)
+{
+    CFeat_CI c(seh, subtype);
+
+    BOOST_CHECK_EQUAL(CCleanup::AddLowQualityException(seh), expected);
+
+    if (expected) {
+        BOOST_CHECK_EQUAL(c->IsSetExcept(), true);
+        BOOST_CHECK_EQUAL(c->GetExcept_text(), "low-quality sequence region");
+        // won't do it again
+        BOOST_CHECK_EQUAL(CCleanup::AddLowQualityException(seh), false);
+    } else {
+        BOOST_CHECK_EQUAL(c->IsSetExcept(), false);
+        BOOST_CHECK_EQUAL(c->IsSetExcept_text(), false);
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_AddLowQualityException)
+{
+    CRef<CSeq_entry> entry = BuildEntryForExceptText(CSeqFeatData::eSubtype_cdregion, eNa_strand_plus, 5);
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    CheckLowQualityResults(seh, CSeqFeatData::eSubtype_cdregion, true);
+
+    scope->RemoveTopLevelSeqEntry(seh);
+    entry = BuildEntryForExceptText(CSeqFeatData::eSubtype_cdregion, eNa_strand_plus, 15);
+    seh = scope->AddTopLevelSeqEntry(*entry);
+    CheckLowQualityResults(seh, CSeqFeatData::eSubtype_cdregion, false);
+
+    scope->RemoveTopLevelSeqEntry(seh);
+    entry = BuildEntryForExceptText(CSeqFeatData::eSubtype_cdregion, eNa_strand_minus, 5);
+    seh = scope->AddTopLevelSeqEntry(*entry);
+    CheckLowQualityResults(seh, CSeqFeatData::eSubtype_cdregion, true);
+
+    scope->RemoveTopLevelSeqEntry(seh);
+    entry = BuildEntryForExceptText(CSeqFeatData::eSubtype_cdregion, eNa_strand_minus, 15);
+    seh = scope->AddTopLevelSeqEntry(*entry);
+    CheckLowQualityResults(seh, CSeqFeatData::eSubtype_cdregion, false);
+
+    scope->RemoveTopLevelSeqEntry(seh);
+    entry = BuildEntryForExceptText(CSeqFeatData::eSubtype_mRNA, eNa_strand_plus, 5);
+    seh = scope->AddTopLevelSeqEntry(*entry);
+    CheckLowQualityResults(seh, CSeqFeatData::eSubtype_mRNA, true);
+
+    scope->RemoveTopLevelSeqEntry(seh);
+    entry = BuildEntryForExceptText(CSeqFeatData::eSubtype_mRNA, eNa_strand_plus, 15);
+    seh = scope->AddTopLevelSeqEntry(*entry);
+    CheckLowQualityResults(seh, CSeqFeatData::eSubtype_mRNA, false);
+
+    scope->RemoveTopLevelSeqEntry(seh);
+    entry = BuildEntryForExceptText(CSeqFeatData::eSubtype_mRNA, eNa_strand_minus, 5);
+    seh = scope->AddTopLevelSeqEntry(*entry);
+    CheckLowQualityResults(seh, CSeqFeatData::eSubtype_mRNA, true);
+
+    scope->RemoveTopLevelSeqEntry(seh);
+    entry = BuildEntryForExceptText(CSeqFeatData::eSubtype_mRNA, eNa_strand_minus, 15);
+    seh = scope->AddTopLevelSeqEntry(*entry);
+    CheckLowQualityResults(seh, CSeqFeatData::eSubtype_mRNA, false);
+
+}
